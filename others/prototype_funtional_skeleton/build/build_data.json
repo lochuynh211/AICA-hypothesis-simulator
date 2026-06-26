@@ -1,0 +1,1761 @@
+{
+  "meta": {
+    "target_prototype": "TP-001",
+    "use_case": "UC-01",
+    "loop": "LOOP-005",
+    "prototype_version": "v5",
+    "name": "AICA Recovery-Proposal Course Simulator — UC-01 Fatigue / Drowsiness (real-map networked surface)",
+    "warning": "This behavior model is temporary prototype behavior.\nIt is used to make the Target-Prototype executable.\nIt is not final AICA product specification.",
+    "course_sim": {
+      "uc_events": [
+        {
+          "num": 1,
+          "label": "① Refresh proposal",
+          "kind": "fire_on_route"
+        },
+        {
+          "num": 2,
+          "label": "② Rest-spot imminent",
+          "kind": "rest_facility",
+          "uc01_only": true
+        },
+        {
+          "num": 3,
+          "label": "③ Rest-spot arrival",
+          "kind": "rest_facility",
+          "uc01_only": true
+        }
+      ]
+    }
+  },
+  "networked_surface": {
+    "target_kind": "real_google_map",
+    "requirement": "REQ-INT-013",
+    "diff": "DIFF-014",
+    "byo_key_gate": {
+      "state_values": [
+        "absent",
+        "present"
+      ],
+      "inert_until_key": true,
+      "key_shown": false,
+      "key_defaulted": false,
+      "key_persisted": false
+    },
+    "map_persistence": {
+      "pattern": "reparented_map_div",
+      "rerender_trigger": "structural_signature_change",
+      "persists_across": [
+        "play",
+        "pause",
+        "scrub",
+        "seek"
+      ],
+      "tears_down_on_tick": false
+    },
+    "boundary_binning": {
+      "position": "surface_input_boundary",
+      "before_trigger": true,
+      "binned_quantities": [
+        "route_travel_time_to_continuous_driving_time",
+        "remaining_to_destination_to_destination_eta",
+        "rest_spot_reachability_to_rest_spot_eta",
+        "sign_persistence_to_signal_duration"
+      ],
+      "concrete_numeric_reaches_trigger": false
+    },
+    "snapshot_for_review": {
+      "captured": true,
+      "stores": [
+        "route_bands",
+        "rest_spot_offsets"
+      ],
+      "stores_raw_geometry": false,
+      "stores_key": false,
+      "reproduces_offline": true
+    },
+    "waivers": {
+      "G1_offline_byte_determinism": "waived_for_live_map",
+      "G5_self_containment": "waived_for_live_map",
+      "G3_tested_shipped": "holds",
+      "G7_behavioral_acceptance": "holds",
+      "qualitative_trigger": "holds",
+      "review_determinism": "holds_via_snapshot"
+    }
+  },
+  "courses": [
+    {
+      "id": "urban",
+      "label": "Urban (default)",
+      "length_band": "short",
+      "speed_band": "low",
+      "rest_facility": "urban_seg_convenience_store",
+      "segments": [
+        {
+          "id": "urban_seg_home",
+          "location": "home/start",
+          "is_rest_facility": false,
+          "at": 0
+        },
+        {
+          "id": "urban_seg_urban_a",
+          "location": "urban",
+          "is_rest_facility": false,
+          "at": 0.25
+        },
+        {
+          "id": "urban_seg_convenience_store",
+          "location": "convenience store",
+          "is_rest_facility": true,
+          "at": 0.5
+        },
+        {
+          "id": "urban_seg_urban_b",
+          "location": "urban",
+          "is_rest_facility": false,
+          "at": 0.75
+        },
+        {
+          "id": "urban_seg_destination",
+          "location": "destination",
+          "is_rest_facility": false,
+          "at": 1
+        }
+      ]
+    },
+    {
+      "id": "suburban",
+      "label": "Suburban",
+      "length_band": "medium",
+      "speed_band": "medium",
+      "rest_facility": "suburban_seg_roadside_rest",
+      "segments": [
+        {
+          "id": "suburban_seg_home",
+          "location": "home/start",
+          "is_rest_facility": false,
+          "at": 0
+        },
+        {
+          "id": "suburban_seg_highway_road",
+          "location": "urban",
+          "is_rest_facility": false,
+          "at": 0.25
+        },
+        {
+          "id": "suburban_seg_roadside_rest",
+          "location": "roadside rest",
+          "is_rest_facility": true,
+          "at": 0.5
+        },
+        {
+          "id": "suburban_seg_residential",
+          "location": "urban",
+          "is_rest_facility": false,
+          "at": 0.75
+        },
+        {
+          "id": "suburban_seg_destination",
+          "location": "destination",
+          "is_rest_facility": false,
+          "at": 1
+        }
+      ]
+    },
+    {
+      "id": "highway",
+      "label": "Highway",
+      "length_band": "long",
+      "speed_band": "high",
+      "rest_facility": "highway_seg_sa",
+      "segments": [
+        {
+          "id": "highway_seg_home",
+          "location": "home/start",
+          "is_rest_facility": false,
+          "at": 0
+        },
+        {
+          "id": "highway_seg_on_ramp",
+          "location": "urban",
+          "is_rest_facility": false,
+          "at": 0.3
+        },
+        {
+          "id": "highway_seg_sa",
+          "location": "service area (SA)",
+          "is_rest_facility": true,
+          "at": 0.6
+        },
+        {
+          "id": "highway_seg_off_ramp",
+          "location": "urban",
+          "is_rest_facility": false,
+          "at": 0.85
+        },
+        {
+          "id": "highway_seg_destination",
+          "location": "destination",
+          "is_rest_facility": false,
+          "at": 1
+        }
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "drowsiness_level",
+      "label": "Drowsiness Level",
+      "group": "context",
+      "type": "enum",
+      "values": [
+        "none",
+        "weak",
+        "moderate",
+        "strong",
+        "severe"
+      ],
+      "default": "weak"
+    },
+    {
+      "id": "fatigue_level",
+      "label": "Fatigue Level",
+      "group": "context",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    {
+      "id": "signal_duration",
+      "label": "Signal Duration",
+      "group": "context",
+      "type": "enum",
+      "values": [
+        "transient",
+        "brief",
+        "sustained",
+        "persistent"
+      ],
+      "default": "brief"
+    },
+    {
+      "id": "continuous_driving_time",
+      "label": "Continuous Driving Time",
+      "group": "context",
+      "type": "enum",
+      "values": [
+        "short",
+        "moderate",
+        "long"
+      ],
+      "default": "moderate"
+    },
+    {
+      "id": "destination_eta",
+      "label": "Destination ETA",
+      "group": "context",
+      "type": "enum",
+      "values": [
+        "close",
+        "medium",
+        "far"
+      ],
+      "default": "medium"
+    },
+    {
+      "id": "rest_spot_eta",
+      "label": "Rest Spot ETA",
+      "group": "context",
+      "type": "enum",
+      "values": [
+        "none",
+        "near",
+        "far"
+      ],
+      "default": "near"
+    },
+    {
+      "id": "passenger_present",
+      "label": "Passenger Present",
+      "group": "context",
+      "type": "boolean",
+      "values": [
+        true,
+        false
+      ],
+      "default": true
+    },
+    {
+      "id": "vehicle_state",
+      "label": "Vehicle State",
+      "group": "context",
+      "type": "enum",
+      "values": [
+        "moving",
+        "stopped",
+        "parked"
+      ],
+      "default": "moving"
+    },
+    {
+      "id": "personalization_available",
+      "label": "Personalization Available",
+      "group": "context",
+      "type": "boolean",
+      "values": [
+        true,
+        false
+      ],
+      "default": true
+    },
+    {
+      "id": "trigger_sensitivity",
+      "label": "Trigger Sensitivity",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    {
+      "id": "weight_drowsiness",
+      "label": "Drowsiness Signal Weight",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "high"
+    },
+    {
+      "id": "weight_fatigue",
+      "label": "Fatigue Signal Weight",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    {
+      "id": "weight_attention",
+      "label": "Attention Signal Weight",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    {
+      "id": "persistence_requirement",
+      "label": "Persistence Requirement",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    {
+      "id": "proposal_threshold",
+      "label": "Proposal Threshold",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    {
+      "id": "severe_threshold",
+      "label": "Severe Threshold",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "high"
+    },
+    {
+      "id": "require_actionable",
+      "label": "Require Actionable",
+      "group": "hyper",
+      "type": "boolean",
+      "values": [
+        true,
+        false
+      ],
+      "default": true
+    },
+    {
+      "id": "rest_spot_sensitivity",
+      "label": "Rest Spot Sensitivity",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    {
+      "id": "assertiveness",
+      "label": "Assertiveness",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "gentle",
+        "balanced",
+        "firm"
+      ],
+      "default": "gentle"
+    },
+    {
+      "id": "content_safety_strictness",
+      "label": "Content Safety Strictness",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "lenient",
+        "standard",
+        "strict"
+      ],
+      "default": "strict"
+    },
+    {
+      "id": "personalization_eagerness",
+      "label": "Personalization Eagerness",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    {
+      "id": "route_selection",
+      "label": "Route Selection",
+      "group": "networked_surface",
+      "type": "enum",
+      "values": [
+        "preset_scenario",
+        "reviewer_chosen"
+      ],
+      "default": "preset_scenario"
+    },
+    {
+      "id": "byo_maps_key",
+      "label": "Bring-Your-Own Maps Key",
+      "group": "networked_surface",
+      "type": "enum",
+      "values": [
+        "absent",
+        "present"
+      ],
+      "default": "absent"
+    }
+  ],
+  "result_meta": {
+    "NO_TRIGGER": {
+      "label": "No trigger",
+      "explanation": "The damped risk band stayed below the reaction point, so AICA stays silent and keeps monitoring.",
+      "action_preview": "No proposal; the car continues the normal-driving walk.",
+      "allowed_content_mode": "none",
+      "fire": false,
+      "course_label": "AICA stays silent — no ① marker"
+    },
+    "SOFT_WARNING": {
+      "label": "Soft warning",
+      "explanation": "The band reached the reaction point but not the proposal cut-point, so AICA gives a gentle, non-committal heads-up.",
+      "action_preview": "Marker ① with a soft-warning message; no recovery controls.",
+      "allowed_content_mode": "audio_only",
+      "fire": true,
+      "course_label": "① soft warning on the route"
+    },
+    "REST_PROPOSAL": {
+      "label": "Rest proposal",
+      "explanation": "The band reached the proposal cut-point with a reachable rest action, so AICA fires the full proposal.",
+      "action_preview": "Marker ①, proposal view, recovery options as selectable controls.",
+      "allowed_content_mode": "audio_only",
+      "fire": true,
+      "course_label": "① rest proposal → ② → ③ rest spot"
+    },
+    "SEVERE_INTERVENTION": {
+      "label": "Severe intervention",
+      "explanation": "The band reached the severe cut-point, so AICA escalates to a firmer, safety-oriented intervention.",
+      "action_preview": "Marker ①, proposal view in strongest framing, recovery options selectable.",
+      "allowed_content_mode": "audio_only",
+      "fire": true,
+      "course_label": "① firm intervention → ② → ③ rest spot"
+    },
+    "NO_PRACTICAL_ACTION_FALLBACK": {
+      "label": "No practical action",
+      "explanation": "The band reached the proposal cut-point but no reachable rest action exists, so AICA acknowledges the risk without an unreachable proposal.",
+      "action_preview": "Marker ① with an acknowledgement message; no selectable recovery controls.",
+      "allowed_content_mode": "none",
+      "fire": true,
+      "course_label": "① warning, no rest spot reachable"
+    }
+  },
+  "beat_catalog": {
+    "pre": [
+      "UC-01-S001",
+      "UC-01-S002",
+      "UC-01-S003",
+      "UC-01-S004"
+    ],
+    "no_fire": [
+      "UC-01-S002"
+    ],
+    "fire": [
+      "UC-01-S005",
+      "UC-01-S006",
+      "UC-01-S006A",
+      "UC-01-S007",
+      "UC-01-S008",
+      "UC-01-S009",
+      "UC-01-S010A",
+      "UC-01-S010B",
+      "UC-01-S010C",
+      "UC-01-S011"
+    ],
+    "fallback": [
+      "UC-01-S005"
+    ],
+    "selection_beat": "UC-01-S006",
+    "postpone_beat": "UC-01-S006A",
+    "selection_sub_branches": {
+      "rest_option": [
+        "UC-01-S007",
+        "UC-01-S008",
+        "UC-01-S009",
+        "UC-01-S010A",
+        "UC-01-S010B",
+        "UC-01-S010C",
+        "UC-01-S011"
+      ],
+      "postpone": [
+        "UC-01-S006A"
+      ]
+    }
+  },
+  "flow_skeletons": {
+    "NO_TRIGGER": {
+      "branch": "no_fire",
+      "beats": [
+        "UC-01-S001",
+        "UC-01-S002"
+      ]
+    },
+    "SOFT_WARNING": {
+      "branch": "fire",
+      "beats": [
+        "UC-01-S001",
+        "UC-01-S002",
+        "UC-01-S003",
+        "UC-01-S004",
+        "UC-01-S005"
+      ]
+    },
+    "NO_PRACTICAL_ACTION_FALLBACK": {
+      "branch": "fallback",
+      "beats": [
+        "UC-01-S001",
+        "UC-01-S002",
+        "UC-01-S003",
+        "UC-01-S004",
+        "UC-01-S005"
+      ]
+    },
+    "REST_PROPOSAL": {
+      "branch": "fire",
+      "beats": [
+        "UC-01-S001",
+        "UC-01-S002",
+        "UC-01-S003",
+        "UC-01-S004",
+        "UC-01-S005",
+        "UC-01-S006",
+        "UC-01-S007",
+        "UC-01-S008",
+        "UC-01-S009",
+        "UC-01-S010A",
+        "UC-01-S011"
+      ],
+      "selection_default": "rest_option",
+      "postpone": [
+        "UC-01-S006A"
+      ]
+    },
+    "SEVERE_INTERVENTION": {
+      "branch": "fire",
+      "beats": [
+        "UC-01-S001",
+        "UC-01-S002",
+        "UC-01-S003",
+        "UC-01-S004",
+        "UC-01-S005",
+        "UC-01-S006",
+        "UC-01-S007",
+        "UC-01-S008",
+        "UC-01-S009",
+        "UC-01-S010A",
+        "UC-01-S011"
+      ],
+      "selection_default": "rest_option",
+      "postpone": [
+        "UC-01-S006A"
+      ]
+    }
+  },
+  "motion_state_keys": {
+    "held_for_selection_stop": [
+      "UC-01-S006"
+    ],
+    "uc01_arrival_stop": [
+      "UC-01-S009",
+      "UC-01-S010A",
+      "UC-01-S010B",
+      "UC-01-S010C"
+    ],
+    "default_motion": "MOVING"
+  },
+  "fragment_library": {
+    "result_framing": {
+      "NO_TRIGGER": "AICA stays quiet and keeps monitoring; no proposal is shown.",
+      "SOFT_WARNING": "AICA gives a gentle, non-committal heads-up that signs are appearing.",
+      "REST_PROPOSAL": "AICA proposes a recovery and offers the options as selectable controls.",
+      "SEVERE_INTERVENTION": "AICA gives a firmer, safety-oriented intervention while still offering the options.",
+      "NO_PRACTICAL_ACTION_FALLBACK": "AICA acknowledges the risk without offering an unreachable recovery."
+    },
+    "selection_outcome": {
+      "rest_option": "AICA confirms the chosen recovery and guides toward the rest spot; the stop-recover-then-continue path plays.",
+      "postpone": "AICA acknowledges and keeps guiding toward the original destination; no waypoint, no stop, and it stays ready to re-offer rest later."
+    },
+    "assertiveness_tone": {
+      "gentle": "phrased softly and optionally — \"you could rest now if you like\".",
+      "balanced": "phrased plainly and clearly — \"resting now would be a good idea\".",
+      "firm": "phrased directly and safety-first — \"please take a rest now\"."
+    },
+    "content_mode_note": {
+      "audio_only": "visual content is held while moving; only audio plays.",
+      "visual_allowed_after_stop": "visual content is enabled now that the vehicle is stopped.",
+      "none": "no content applies."
+    },
+    "motion_state_note": {
+      "MOVING": "the car is driving along the route; the drive/stop indicator reads driving.",
+      "STOPPED": "the car holds position (held-for-selection or arrived-and-stopped); the drive/stop indicator reads stopped."
+    },
+    "personalization_eagerness_note": {
+      "low": "preference-tuned content appears late and sparingly.",
+      "medium": "preference-tuned content appears at a natural point in the proposal.",
+      "high": "preference-tuned content appears early and prominently."
+    },
+    "course_diff_toast": {
+      "urban": "rest facility is the convenience store (near); fire→arrival is quick.",
+      "suburban": "rest facility is the roadside rest (farther); a longer alertness-support stretch.",
+      "highway": "rest facility is the service area (far); a long fire→arrival stretch."
+    }
+  },
+  "cases": [
+    {
+      "id": "case_a",
+      "label": "A — No Trigger (textbook silent continuation)",
+      "branch": "no_fire",
+      "course": "urban",
+      "expected_result": "NO_TRIGGER",
+      "map_info": {
+        "start_place": "Tokyo Station, Japan",
+        "end_place": "Shibuya Station, Tokyo, Japan"
+      },
+      "route_snapshot": {
+        "captured": true,
+        "route_bands": {
+          "continuous_driving_time": "short",
+          "destination_eta": "close",
+          "signal_duration": "brief"
+        },
+        "rest_spot_offsets": {
+          "rest_spot_eta": "near",
+          "ordinal_position": "mid-route"
+        }
+      },
+      "input_state": {
+        "drowsiness_level": "weak",
+        "fatigue_level": "medium",
+        "signal_duration": "brief",
+        "continuous_driving_time": "short",
+        "destination_eta": "close",
+        "rest_spot_eta": "near",
+        "passenger_present": true,
+        "vehicle_state": "moving",
+        "personalization_available": true,
+        "trigger_sensitivity": "medium",
+        "weight_drowsiness": "high",
+        "weight_fatigue": "medium",
+        "weight_attention": "medium",
+        "persistence_requirement": "medium",
+        "proposal_threshold": "medium",
+        "severe_threshold": "high",
+        "require_actionable": true,
+        "rest_spot_sensitivity": "medium",
+        "assertiveness": "gentle",
+        "content_safety_strictness": "strict",
+        "personalization_eagerness": "medium",
+        "route_selection": "preset_scenario",
+        "byo_maps_key": "absent"
+      },
+      "timeline": [
+        {
+          "status_id": "UC-01-S001",
+          "title": "Setup — profile, oshi-katsu mode, ReadyON with a friend",
+          "category": "SETUP",
+          "motion_state": "MOVING",
+          "description": "Profile and oshi-katsu preferences retrieved at home; friend onboard.",
+          "vehicle_state": "parked",
+          "user_state": "rested",
+          "passenger_state": "present (friend sharing the oshi interest)",
+          "environment_state": "at the outing location / home, safely stopped",
+          "trigger_state": "none",
+          "aica_message": "Welcome back. I have your profile and oshi-katsu preferences ready, so I can tailor anything I suggest on the way home.",
+          "user_options": null,
+          "system_action": "retrieve registered user profile and oshi information; apply oshi-katsu mode and the selected personalization level",
+          "review_points": [
+            "Does retrieving the profile and applying personalization level read as appropriate setup?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S002",
+          "title": "Normal driving — lively conversation, no concern yet",
+          "category": "DRIVING_NORMAL",
+          "motion_state": "MOVING",
+          "description": "Lively conversation, mood high, low fatigue self-awareness; AICA holds back and monitors.",
+          "vehicle_state": "moving",
+          "user_state": "alert but mood high, low fatigue self-awareness",
+          "passenger_state": "present and engaged in conversation",
+          "environment_state": "immediately after departure on the return route",
+          "trigger_state": "none",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "monitor driver and vehicle state without intervening",
+          "review_points": [
+            "Is the no-intervention baseline appropriate while the driver is fresh and engaged?"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "case_b",
+      "label": "B — Rest Proposal (strong drowsiness, reachable rest)",
+      "branch": "fire",
+      "course": "suburban",
+      "expected_result": "REST_PROPOSAL",
+      "map_info": {
+        "start_place": "Tokyo Station, Japan",
+        "end_place": "Kawaguchiko Station, Yamanashi, Japan"
+      },
+      "route_snapshot": {
+        "captured": true,
+        "route_bands": {
+          "continuous_driving_time": "long",
+          "destination_eta": "far",
+          "signal_duration": "sustained"
+        },
+        "rest_spot_offsets": {
+          "rest_spot_eta": "near",
+          "ordinal_position": "near rest facility"
+        }
+      },
+      "input_state": {
+        "drowsiness_level": "strong",
+        "fatigue_level": "medium",
+        "signal_duration": "sustained",
+        "continuous_driving_time": "long",
+        "destination_eta": "far",
+        "rest_spot_eta": "near",
+        "passenger_present": true,
+        "vehicle_state": "moving",
+        "personalization_available": true,
+        "trigger_sensitivity": "medium",
+        "weight_drowsiness": "high",
+        "weight_fatigue": "medium",
+        "weight_attention": "medium",
+        "persistence_requirement": "medium",
+        "proposal_threshold": "medium",
+        "severe_threshold": "high",
+        "require_actionable": true,
+        "rest_spot_sensitivity": "medium",
+        "assertiveness": "gentle",
+        "content_safety_strictness": "strict",
+        "personalization_eagerness": "medium",
+        "route_selection": "preset_scenario",
+        "byo_maps_key": "absent"
+      },
+      "timeline": [
+        {
+          "status_id": "UC-01-S001",
+          "title": "Setup — profile, oshi-katsu mode, ReadyON with a friend",
+          "category": "SETUP",
+          "motion_state": "MOVING",
+          "description": "Profile and oshi-katsu preferences retrieved at home; friend onboard.",
+          "vehicle_state": "parked",
+          "user_state": "rested",
+          "passenger_state": "present",
+          "environment_state": "at home, safely stopped",
+          "trigger_state": "none",
+          "aica_message": "Welcome back. I have your profile and oshi-katsu preferences ready, so I can tailor anything I suggest on the way home.",
+          "user_options": null,
+          "system_action": "retrieve profile; apply oshi-katsu mode and personalization level",
+          "review_points": [
+            "Is the setup appropriate?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S002",
+          "title": "Normal driving — lively conversation",
+          "category": "DRIVING_NORMAL",
+          "motion_state": "MOVING",
+          "description": "Lively cabin; no concern yet.",
+          "vehicle_state": "moving",
+          "user_state": "alert, mood high",
+          "passenger_state": "present",
+          "environment_state": "after departure",
+          "trigger_state": "none",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "monitor without intervening",
+          "review_points": [
+            "Baseline appropriate?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S003",
+          "title": "Risk rising — early drowsiness signs",
+          "category": "RISK_RISING",
+          "motion_state": "MOVING",
+          "description": "Strong drowsiness signs build as the car advances; reading rises but not yet persisted.",
+          "vehicle_state": "moving",
+          "user_state": "fatigue rising; weak-to-moderate drowsiness signs",
+          "passenger_state": "present",
+          "environment_state": "continuing on the familiar route",
+          "trigger_state": "weak",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "blend the weighted danger signals and damp against the persistence requirement",
+          "review_points": [
+            "Does the risk read as rising but not yet actionable?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S004",
+          "title": "Trigger point — signs persist",
+          "category": "TRIGGER_POINT",
+          "motion_state": "MOVING",
+          "description": "Sustained sign on a long drive reaches the proposal cut-point; firing position marked.",
+          "vehicle_state": "moving",
+          "user_state": "tired; drowsiness signs sustained",
+          "passenger_state": "present",
+          "environment_state": "approaching the firing position",
+          "trigger_state": "sustained",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "classify into the rest-proposal result type and mark the firing position",
+          "review_points": [
+            "Does the firing location read as appropriate in place context?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S005",
+          "title": "AICA proposes rest and presents recovery options",
+          "category": "AICA_PROPOSAL",
+          "motion_state": "MOVING",
+          "description": "Gentle optional proposal; personalized recovery options presented as selectable controls.",
+          "vehicle_state": "moving",
+          "user_state": "tired",
+          "passenger_state": "present (friend reacts with interest)",
+          "environment_state": "at the firing position",
+          "trigger_state": "sustained",
+          "aica_message": "I am seeing some signs of drowsiness. You can keep driving home, but if you rest now you may get home more comfortably and safely. Based on your preferences I prepared a few rest methods — which would you like? You can change it on the way.",
+          "user_options": null,
+          "system_action": "present the personalized recovery options; suppress attention-heavy visuals while moving",
+          "review_points": [
+            "Is the proposal gentle and optional? Does it explain its reason?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S006",
+          "title": "Driver picks one offered recovery option",
+          "category": "USER_SELECTION",
+          "motion_state": "STOPPED",
+          "description": "Distinct reviewable choice; friend reacts positively.",
+          "vehicle_state": "moving",
+          "user_state": "tired but engaging with the choice",
+          "passenger_state": "present and reacting positively",
+          "environment_state": "at the firing position",
+          "trigger_state": "sustained",
+          "aica_message": "Understood. I will guide you to a rest spot where you can enjoy the option you chose.",
+          "user_options": [
+            "a brief nap then karaoke after the nap",
+            "a brief nap then a limited live video of the favorite artist after the nap",
+            "rest at a nearby oshi-related spot, with a nap plus experience guidance after arrival",
+            "(B variant) a short practical stretch at a convenience store on the shortest route",
+            "postpone the rest and keep driving for now"
+          ],
+          "system_action": "record the chosen recovery option as the selected branch",
+          "review_points": [
+            "Does the choice surface as its own selectable step? Are options preserved verbatim?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S006A",
+          "title": "Postpone the rest — keep driving to the destination without stopping",
+          "category": "RETURN_TO_DRIVE",
+          "motion_state": "MOVING",
+          "description": "Postpone outcome of the selection sub-branch: no waypoint registered, the car does not stop, it continues toward the original destination without resting (terminal).",
+          "vehicle_state": "moving",
+          "user_state": "tired; chose to keep driving rather than rest now",
+          "passenger_state": "present",
+          "environment_state": "continuing on the route toward the original destination, no waypoint added",
+          "trigger_state": "sustained but no rest action taken",
+          "aica_message": "Understood — I will keep guiding you home for now and stay ready to suggest a rest again if you start feeling more tired.",
+          "user_options": null,
+          "system_action": "acknowledge the postpone choice; keep the original destination guidance without registering a rest waypoint or stopping; continue monitoring",
+          "review_points": [
+            "Does postpone read as a genuinely distinct no-stop continuation rather than a variation of the rest flow?"
+          ],
+          "selection_outcome": "postpone"
+        },
+        {
+          "status_id": "UC-01-S007",
+          "title": "Register the rest spot as a waypoint and update route",
+          "category": "SYSTEM_ACTION",
+          "motion_state": "MOVING",
+          "description": "Chosen rest spot registered as a waypoint; route updated toward it.",
+          "vehicle_state": "moving",
+          "user_state": "tired",
+          "passenger_state": "present",
+          "environment_state": "route updated toward the rest spot",
+          "trigger_state": "sustained",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "register the chosen rest spot as a waypoint and update route guidance toward it",
+          "review_points": [
+            "Does adding the waypoint while preserving the destination read correctly?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S008",
+          "title": "Alertness support en route — rest spot imminent",
+          "category": "SYSTEM_ACTION",
+          "motion_state": "MOVING",
+          "description": "Audio-only humming karaoke / high-awakening music; no lyrics while moving (marker ②).",
+          "vehicle_state": "moving",
+          "user_state": "tired but supported toward alertness",
+          "passenger_state": "present",
+          "environment_state": "approaching the rest facility",
+          "trigger_state": "sustained",
+          "aica_message": "The rest spot is close now. To help with drowsiness I will play some humming karaoke and high-awakening music until we get there.",
+          "user_options": null,
+          "system_action": "play humming karaoke / high-awakening audio; suppress lyrics and visual content while moving",
+          "review_points": [
+            "Is audio-only alertness support safe while moving? Is visual content held until stopped?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S009",
+          "title": "Rest-spot arrival — nap / relaxation mode",
+          "category": "RECOVERY",
+          "motion_state": "STOPPED",
+          "description": "Parked at the rest facility; relaxation mode begins; visuals now permitted (marker ③).",
+          "vehicle_state": "parked",
+          "user_state": "tired, transitioning to relaxed",
+          "passenger_state": "present",
+          "environment_state": "arrived and stopped at the rest facility, lights dimmed",
+          "trigger_state": "sustained",
+          "aica_message": "We have arrived at the rest spot. Let's rest your body first — I will dim the lights and wake you in a little while.",
+          "user_options": null,
+          "system_action": "detect arrival/stopped state; enter relaxation mode; adjust seat, illumination, screen, BGM, and volume; set the rest timer",
+          "review_points": [
+            "Does the arrival-and-rest transition read well now that the vehicle is stopped?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S010A",
+          "title": "After-nap recovery — karaoke option",
+          "category": "RECOVERY",
+          "motion_state": "STOPPED",
+          "description": "Karaoke video and lyrics shown only while stopped; BGM switched to the recommended song.",
+          "vehicle_state": "parked",
+          "user_state": "relaxed, refreshing",
+          "passenger_state": "present",
+          "environment_state": "stopped at the rest facility, screen-on while stopped",
+          "trigger_state": "brief",
+          "aica_message": "You look refreshed. Here is a first karaoke song to ease back in — the video and lyrics are on only while we are stopped.",
+          "user_options": null,
+          "system_action": "show karaoke video and lyrics while stopped; switch BGM to the recommended song; keep volume moderate",
+          "review_points": [
+            "Is visual karaoke content correctly enabled only while stopped?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S011",
+          "title": "Return to driving — refreshed, guidance resumes",
+          "category": "RETURN_TO_DRIVE",
+          "motion_state": "MOVING",
+          "description": "Fatigue eased, attention back on driving; guidance resumes toward the destination.",
+          "vehicle_state": "moving",
+          "user_state": "refreshed, attention back on driving",
+          "passenger_state": "present",
+          "environment_state": "leaving the rest spot, resuming the route",
+          "trigger_state": "none",
+          "aica_message": "You seem more refreshed now — let's continue home safely. I will resume guidance.",
+          "user_options": null,
+          "system_action": "resume route guidance toward the destination",
+          "review_points": [
+            "Does the return-to-drive transition read as a clean recovery close?"
+          ],
+          "selection_outcome": "rest_option"
+        }
+      ]
+    },
+    {
+      "id": "case_c",
+      "label": "C — Rest Proposal (persistent moderate drowsiness, medium destination)",
+      "branch": "fire",
+      "course": "highway",
+      "expected_result": "REST_PROPOSAL",
+      "map_info": {
+        "start_place": "Tokyo Station, Japan",
+        "end_place": "Kamakura Station, Kanagawa, Japan"
+      },
+      "route_snapshot": {
+        "captured": true,
+        "route_bands": {
+          "continuous_driving_time": "long",
+          "destination_eta": "medium",
+          "signal_duration": "persistent"
+        },
+        "rest_spot_offsets": {
+          "rest_spot_eta": "near",
+          "ordinal_position": "near rest facility"
+        }
+      },
+      "input_state": {
+        "drowsiness_level": "moderate",
+        "fatigue_level": "medium",
+        "signal_duration": "persistent",
+        "continuous_driving_time": "long",
+        "destination_eta": "medium",
+        "rest_spot_eta": "near",
+        "passenger_present": true,
+        "vehicle_state": "moving",
+        "personalization_available": true,
+        "trigger_sensitivity": "medium",
+        "weight_drowsiness": "high",
+        "weight_fatigue": "medium",
+        "weight_attention": "medium",
+        "persistence_requirement": "medium",
+        "proposal_threshold": "medium",
+        "severe_threshold": "high",
+        "require_actionable": true,
+        "rest_spot_sensitivity": "medium",
+        "assertiveness": "gentle",
+        "content_safety_strictness": "strict",
+        "personalization_eagerness": "medium",
+        "route_selection": "preset_scenario",
+        "byo_maps_key": "absent"
+      },
+      "timeline": [
+        {
+          "status_id": "UC-01-S001",
+          "title": "Setup",
+          "category": "SETUP",
+          "motion_state": "MOVING",
+          "description": "Profile retrieved at home; friend onboard.",
+          "vehicle_state": "parked",
+          "user_state": "rested",
+          "passenger_state": "present",
+          "environment_state": "at home, stopped",
+          "trigger_state": "none",
+          "aica_message": "Welcome back. I have your profile and oshi-katsu preferences ready, so I can tailor anything I suggest on the way home.",
+          "user_options": null,
+          "system_action": "retrieve profile; apply oshi-katsu mode",
+          "review_points": [
+            "Setup appropriate?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S002",
+          "title": "Normal driving",
+          "category": "DRIVING_NORMAL",
+          "motion_state": "MOVING",
+          "description": "No concern yet.",
+          "vehicle_state": "moving",
+          "user_state": "alert",
+          "passenger_state": "present",
+          "environment_state": "after departure",
+          "trigger_state": "none",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "monitor without intervening",
+          "review_points": [
+            "Baseline appropriate?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S003",
+          "title": "Risk rising — persistent moderate signs",
+          "category": "RISK_RISING",
+          "motion_state": "MOVING",
+          "description": "Persistent moderate drowsiness builds on a long highway drive.",
+          "vehicle_state": "moving",
+          "user_state": "fatigue rising; moderate drowsiness signs",
+          "passenger_state": "present",
+          "environment_state": "on the highway route",
+          "trigger_state": "weak",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "blend and damp the signals",
+          "review_points": [
+            "Rising but not yet actionable?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S004",
+          "title": "Trigger point",
+          "category": "TRIGGER_POINT",
+          "motion_state": "MOVING",
+          "description": "Persistent moderate sign on a long drive reaches the proposal cut-point; high speed band places ① later / farther from home.",
+          "vehicle_state": "moving",
+          "user_state": "tired; signs persistent",
+          "passenger_state": "present",
+          "environment_state": "approaching the firing position on the highway",
+          "trigger_state": "sustained",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "classify into rest-proposal; mark the firing position",
+          "review_points": [
+            "Does the later firing position read well on the high-speed course?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S005",
+          "title": "AICA proposes rest and presents recovery options",
+          "category": "AICA_PROPOSAL",
+          "motion_state": "MOVING",
+          "description": "Gentle optional proposal; personalized options presented.",
+          "vehicle_state": "moving",
+          "user_state": "tired",
+          "passenger_state": "present",
+          "environment_state": "at the firing position",
+          "trigger_state": "sustained",
+          "aica_message": "I am seeing some signs of drowsiness. You can keep driving home, but if you rest now you may get home more comfortably and safely. Based on your preferences I prepared a few rest methods — which would you like? You can change it on the way.",
+          "user_options": null,
+          "system_action": "present the recovery options; suppress visuals while moving",
+          "review_points": [
+            "Gentle and optional?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S006",
+          "title": "Driver picks one offered recovery option",
+          "category": "USER_SELECTION",
+          "motion_state": "STOPPED",
+          "description": "Distinct reviewable choice.",
+          "vehicle_state": "moving",
+          "user_state": "tired but engaging",
+          "passenger_state": "present",
+          "environment_state": "at the firing position",
+          "trigger_state": "sustained",
+          "aica_message": "Understood. I will guide you to a rest spot where you can enjoy the option you chose.",
+          "user_options": [
+            "a brief nap then karaoke after the nap",
+            "a brief nap then a limited live video of the favorite artist after the nap",
+            "rest at a nearby oshi-related spot, with a nap plus experience guidance after arrival",
+            "(B variant) a short practical stretch at a convenience store on the shortest route",
+            "postpone the rest and keep driving for now"
+          ],
+          "system_action": "record the chosen recovery option",
+          "review_points": [
+            "Options preserved verbatim?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S006A",
+          "title": "Postpone the rest — keep driving to the destination without stopping",
+          "category": "RETURN_TO_DRIVE",
+          "motion_state": "MOVING",
+          "description": "Postpone outcome of the selection sub-branch: no waypoint, no stop, continue to the destination (terminal).",
+          "vehicle_state": "moving",
+          "user_state": "tired; chose to keep driving",
+          "passenger_state": "present",
+          "environment_state": "continuing toward the original destination, no waypoint added",
+          "trigger_state": "sustained but no rest action taken",
+          "aica_message": "Understood — I will keep guiding you home for now and stay ready to suggest a rest again if you start feeling more tired.",
+          "user_options": null,
+          "system_action": "acknowledge the postpone choice; keep the original destination guidance without a waypoint or stop; continue monitoring",
+          "review_points": [
+            "Does postpone read as a distinct no-stop continuation?"
+          ],
+          "selection_outcome": "postpone"
+        },
+        {
+          "status_id": "UC-01-S007",
+          "title": "Register the rest spot and update route",
+          "category": "SYSTEM_ACTION",
+          "motion_state": "MOVING",
+          "description": "Rest spot registered; route updated.",
+          "vehicle_state": "moving",
+          "user_state": "tired",
+          "passenger_state": "present",
+          "environment_state": "route updated toward the service area",
+          "trigger_state": "sustained",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "register the waypoint and update route guidance",
+          "review_points": [
+            "Waypoint correct?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S008",
+          "title": "Alertness support en route — rest spot imminent (marker ②)",
+          "category": "SYSTEM_ACTION",
+          "motion_state": "MOVING",
+          "description": "Long fire→arrival stretch to the service area; audio-only support.",
+          "vehicle_state": "moving",
+          "user_state": "tired but supported",
+          "passenger_state": "present",
+          "environment_state": "approaching the service area",
+          "trigger_state": "sustained",
+          "aica_message": "The rest spot is close now. To help with drowsiness I will play some humming karaoke and high-awakening music until we get there.",
+          "user_options": null,
+          "system_action": "play alertness audio; suppress lyrics/visuals while moving",
+          "review_points": [
+            "Audio-only safe while moving?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S009",
+          "title": "Rest-spot arrival — nap / relaxation (marker ③)",
+          "category": "RECOVERY",
+          "motion_state": "STOPPED",
+          "description": "Parked at the service area; relaxation mode; visuals now permitted.",
+          "vehicle_state": "parked",
+          "user_state": "tired, relaxing",
+          "passenger_state": "present",
+          "environment_state": "stopped at the service area",
+          "trigger_state": "sustained",
+          "aica_message": "We have arrived at the rest spot. Let's rest your body first — I will dim the lights and wake you in a little while.",
+          "user_options": null,
+          "system_action": "enter relaxation mode; adjust cabin; set rest timer",
+          "review_points": [
+            "Arrival transition reads well?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S010A",
+          "title": "After-nap recovery — karaoke option",
+          "category": "RECOVERY",
+          "motion_state": "STOPPED",
+          "description": "Karaoke video/lyrics only while stopped.",
+          "vehicle_state": "parked",
+          "user_state": "relaxed, refreshing",
+          "passenger_state": "present",
+          "environment_state": "stopped, screen-on while stopped",
+          "trigger_state": "brief",
+          "aica_message": "You look refreshed. Here is a first karaoke song to ease back in — the video and lyrics are on only while we are stopped.",
+          "user_options": null,
+          "system_action": "show karaoke while stopped; switch BGM",
+          "review_points": [
+            "Visual content only while stopped?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S011",
+          "title": "Return to driving",
+          "category": "RETURN_TO_DRIVE",
+          "motion_state": "MOVING",
+          "description": "Refreshed; guidance resumes.",
+          "vehicle_state": "moving",
+          "user_state": "refreshed",
+          "passenger_state": "present",
+          "environment_state": "leaving the service area",
+          "trigger_state": "none",
+          "aica_message": "You seem more refreshed now — let's continue home safely. I will resume guidance.",
+          "user_options": null,
+          "system_action": "resume route guidance",
+          "review_points": [
+            "Clean recovery close?"
+          ],
+          "selection_outcome": "rest_option"
+        }
+      ]
+    },
+    {
+      "id": "case_d",
+      "label": "D — Severe Intervention (severe drowsiness)",
+      "branch": "fire",
+      "course": "highway",
+      "expected_result": "SEVERE_INTERVENTION",
+      "map_info": {
+        "start_place": "Tokyo Station, Japan",
+        "end_place": "Hakone-Yumoto Station, Kanagawa, Japan"
+      },
+      "route_snapshot": {
+        "captured": true,
+        "route_bands": {
+          "continuous_driving_time": "long",
+          "destination_eta": "medium",
+          "signal_duration": "persistent"
+        },
+        "rest_spot_offsets": {
+          "rest_spot_eta": "near",
+          "ordinal_position": "near rest facility"
+        }
+      },
+      "input_state": {
+        "drowsiness_level": "severe",
+        "fatigue_level": "high",
+        "signal_duration": "persistent",
+        "continuous_driving_time": "long",
+        "destination_eta": "medium",
+        "rest_spot_eta": "near",
+        "passenger_present": true,
+        "vehicle_state": "moving",
+        "personalization_available": true,
+        "trigger_sensitivity": "medium",
+        "weight_drowsiness": "high",
+        "weight_fatigue": "medium",
+        "weight_attention": "medium",
+        "persistence_requirement": "medium",
+        "proposal_threshold": "medium",
+        "severe_threshold": "high",
+        "require_actionable": true,
+        "rest_spot_sensitivity": "medium",
+        "assertiveness": "gentle",
+        "content_safety_strictness": "strict",
+        "personalization_eagerness": "medium",
+        "route_selection": "preset_scenario",
+        "byo_maps_key": "absent"
+      },
+      "timeline": [
+        {
+          "status_id": "UC-01-S001",
+          "title": "Setup",
+          "category": "SETUP",
+          "motion_state": "MOVING",
+          "description": "Profile retrieved; friend onboard.",
+          "vehicle_state": "parked",
+          "user_state": "rested",
+          "passenger_state": "present",
+          "environment_state": "at home, stopped",
+          "trigger_state": "none",
+          "aica_message": "Welcome back. I have your profile and oshi-katsu preferences ready, so I can tailor anything I suggest on the way home.",
+          "user_options": null,
+          "system_action": "retrieve profile",
+          "review_points": [
+            "Setup appropriate?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S002",
+          "title": "Normal driving",
+          "category": "DRIVING_NORMAL",
+          "motion_state": "MOVING",
+          "description": "No concern yet.",
+          "vehicle_state": "moving",
+          "user_state": "alert",
+          "passenger_state": "present",
+          "environment_state": "after departure",
+          "trigger_state": "none",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "monitor without intervening",
+          "review_points": [
+            "Baseline appropriate?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S003",
+          "title": "Risk rising — severe sign present early",
+          "category": "RISK_RISING",
+          "motion_state": "MOVING",
+          "description": "The severe sign is present early on the drive.",
+          "vehicle_state": "moving",
+          "user_state": "severe drowsiness, high fatigue",
+          "passenger_state": "present",
+          "environment_state": "on the highway route",
+          "trigger_state": "weak",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "blend and damp the signals",
+          "review_points": [
+            "Severe sign reads early?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S004",
+          "title": "Trigger point — severe band reached",
+          "category": "TRIGGER_POINT",
+          "motion_state": "MOVING",
+          "description": "The band reaches the severe cut-point; firing position marked.",
+          "vehicle_state": "moving",
+          "user_state": "tired; severe signs",
+          "passenger_state": "present",
+          "environment_state": "approaching the firing position",
+          "trigger_state": "sustained",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "classify into severe-intervention; mark the firing position",
+          "review_points": [
+            "Severe escalation reads correctly?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S005",
+          "title": "AICA proposal — strongest, safety-oriented framing",
+          "category": "AICA_PROPOSAL",
+          "motion_state": "MOVING",
+          "description": "Proposal view in its strongest, safety-oriented framing; recovery options still selectable.",
+          "vehicle_state": "moving",
+          "user_state": "tired",
+          "passenger_state": "present",
+          "environment_state": "at the firing position",
+          "trigger_state": "sustained",
+          "aica_message": "I am seeing some signs of drowsiness. You can keep driving home, but if you rest now you may get home more comfortably and safely. Based on your preferences I prepared a few rest methods — which would you like? You can change it on the way.",
+          "user_options": null,
+          "system_action": "present the recovery options in firm framing; suppress visuals while moving",
+          "review_points": [
+            "Does the severe framing read firmly throughout?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S006",
+          "title": "Driver picks one offered recovery option",
+          "category": "USER_SELECTION",
+          "motion_state": "STOPPED",
+          "description": "Distinct reviewable choice, firmly framed.",
+          "vehicle_state": "moving",
+          "user_state": "tired but engaging",
+          "passenger_state": "present",
+          "environment_state": "at the firing position",
+          "trigger_state": "sustained",
+          "aica_message": "Understood. I will guide you to a rest spot where you can enjoy the option you chose.",
+          "user_options": [
+            "a brief nap then karaoke after the nap",
+            "a brief nap then a limited live video of the favorite artist after the nap",
+            "rest at a nearby oshi-related spot, with a nap plus experience guidance after arrival",
+            "(B variant) a short practical stretch at a convenience store on the shortest route",
+            "postpone the rest and keep driving for now"
+          ],
+          "system_action": "record the chosen recovery option",
+          "review_points": [
+            "Options preserved verbatim?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S006A",
+          "title": "Postpone the rest — keep driving to the destination without stopping",
+          "category": "RETURN_TO_DRIVE",
+          "motion_state": "MOVING",
+          "description": "Postpone outcome of the selection sub-branch, firmly framed: no waypoint, no stop, continue to the destination (terminal).",
+          "vehicle_state": "moving",
+          "user_state": "tired; chose to keep driving",
+          "passenger_state": "present",
+          "environment_state": "continuing toward the original destination, no waypoint added",
+          "trigger_state": "sustained but no rest action taken",
+          "aica_message": "Understood — I will keep guiding you home for now and stay ready to suggest a rest again if you start feeling more tired.",
+          "user_options": null,
+          "system_action": "acknowledge the postpone choice; keep the original destination guidance without a waypoint or stop; continue monitoring",
+          "review_points": [
+            "Does postpone read as a distinct no-stop continuation under severe framing?"
+          ],
+          "selection_outcome": "postpone"
+        },
+        {
+          "status_id": "UC-01-S007",
+          "title": "Register the rest spot and update route",
+          "category": "SYSTEM_ACTION",
+          "motion_state": "MOVING",
+          "description": "Rest spot registered; route updated.",
+          "vehicle_state": "moving",
+          "user_state": "tired",
+          "passenger_state": "present",
+          "environment_state": "route updated toward the service area",
+          "trigger_state": "sustained",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "register the waypoint and update route guidance",
+          "review_points": [
+            "Waypoint correct?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S008",
+          "title": "Alertness support en route (marker ②)",
+          "category": "SYSTEM_ACTION",
+          "motion_state": "MOVING",
+          "description": "Audio-only support, framed firmly.",
+          "vehicle_state": "moving",
+          "user_state": "tired but supported",
+          "passenger_state": "present",
+          "environment_state": "approaching the service area",
+          "trigger_state": "sustained",
+          "aica_message": "The rest spot is close now. To help with drowsiness I will play some humming karaoke and high-awakening music until we get there.",
+          "user_options": null,
+          "system_action": "play alertness audio; suppress lyrics/visuals while moving",
+          "review_points": [
+            "Audio-only safe while moving?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S009",
+          "title": "Rest-spot arrival — nap / relaxation (marker ③)",
+          "category": "RECOVERY",
+          "motion_state": "STOPPED",
+          "description": "Parked at the service area; relaxation mode.",
+          "vehicle_state": "parked",
+          "user_state": "tired, relaxing",
+          "passenger_state": "present",
+          "environment_state": "stopped at the service area",
+          "trigger_state": "sustained",
+          "aica_message": "We have arrived at the rest spot. Let's rest your body first — I will dim the lights and wake you in a little while.",
+          "user_options": null,
+          "system_action": "enter relaxation mode; set rest timer",
+          "review_points": [
+            "Arrival reads well?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S010A",
+          "title": "After-nap recovery — karaoke option",
+          "category": "RECOVERY",
+          "motion_state": "STOPPED",
+          "description": "Karaoke only while stopped.",
+          "vehicle_state": "parked",
+          "user_state": "relaxed",
+          "passenger_state": "present",
+          "environment_state": "stopped",
+          "trigger_state": "brief",
+          "aica_message": "You look refreshed. Here is a first karaoke song to ease back in — the video and lyrics are on only while we are stopped.",
+          "user_options": null,
+          "system_action": "show karaoke while stopped",
+          "review_points": [
+            "Visual only while stopped?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S011",
+          "title": "Return to driving",
+          "category": "RETURN_TO_DRIVE",
+          "motion_state": "MOVING",
+          "description": "Refreshed; guidance resumes.",
+          "vehicle_state": "moving",
+          "user_state": "refreshed",
+          "passenger_state": "present",
+          "environment_state": "leaving the service area",
+          "trigger_state": "none",
+          "aica_message": "You seem more refreshed now — let's continue home safely. I will resume guidance.",
+          "user_options": null,
+          "system_action": "resume route guidance",
+          "review_points": [
+            "Clean close?"
+          ],
+          "selection_outcome": "rest_option"
+        }
+      ]
+    },
+    {
+      "id": "case_e",
+      "label": "E — No Practical Action Fallback (reachable rest absent)",
+      "branch": "fallback",
+      "course": "highway",
+      "expected_result": "NO_PRACTICAL_ACTION_FALLBACK",
+      "map_info": {
+        "start_place": "Tokyo Station, Japan",
+        "end_place": "Nagano Station, Japan"
+      },
+      "route_snapshot": {
+        "captured": true,
+        "route_bands": {
+          "continuous_driving_time": "long",
+          "destination_eta": "far",
+          "signal_duration": "persistent"
+        },
+        "rest_spot_offsets": {
+          "rest_spot_eta": "none",
+          "ordinal_position": "mid-route"
+        }
+      },
+      "input_state": {
+        "drowsiness_level": "moderate",
+        "fatigue_level": "medium",
+        "signal_duration": "persistent",
+        "continuous_driving_time": "long",
+        "destination_eta": "far",
+        "rest_spot_eta": "none",
+        "passenger_present": true,
+        "vehicle_state": "moving",
+        "personalization_available": true,
+        "trigger_sensitivity": "medium",
+        "weight_drowsiness": "high",
+        "weight_fatigue": "medium",
+        "weight_attention": "medium",
+        "persistence_requirement": "medium",
+        "proposal_threshold": "medium",
+        "severe_threshold": "high",
+        "require_actionable": true,
+        "rest_spot_sensitivity": "medium",
+        "assertiveness": "gentle",
+        "content_safety_strictness": "strict",
+        "personalization_eagerness": "medium",
+        "route_selection": "preset_scenario",
+        "byo_maps_key": "absent"
+      },
+      "timeline": [
+        {
+          "status_id": "UC-01-S001",
+          "title": "Setup",
+          "category": "SETUP",
+          "motion_state": "MOVING",
+          "description": "Profile retrieved; friend onboard.",
+          "vehicle_state": "parked",
+          "user_state": "rested",
+          "passenger_state": "present",
+          "environment_state": "at home, stopped",
+          "trigger_state": "none",
+          "aica_message": "Welcome back. I have your profile and oshi-katsu preferences ready, so I can tailor anything I suggest on the way home.",
+          "user_options": null,
+          "system_action": "retrieve profile",
+          "review_points": [
+            "Setup appropriate?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S002",
+          "title": "Normal driving",
+          "category": "DRIVING_NORMAL",
+          "motion_state": "MOVING",
+          "description": "No concern yet.",
+          "vehicle_state": "moving",
+          "user_state": "alert",
+          "passenger_state": "present",
+          "environment_state": "after departure",
+          "trigger_state": "none",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "monitor without intervening",
+          "review_points": [
+            "Baseline appropriate?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S003",
+          "title": "Risk rising — persistent moderate drowsiness",
+          "category": "RISK_RISING",
+          "motion_state": "MOVING",
+          "description": "Persistent moderate drowsiness on a long drive.",
+          "vehicle_state": "moving",
+          "user_state": "moderate drowsiness, persistent",
+          "passenger_state": "present",
+          "environment_state": "on the highway route",
+          "trigger_state": "weak",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "blend and damp the signals",
+          "review_points": [
+            "Rising signal reads right?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S004",
+          "title": "Trigger point — proposing band, no reachable rest",
+          "category": "TRIGGER_POINT",
+          "motion_state": "MOVING",
+          "description": "The proposing band is reached but actionability fails (no rest spot); firing position marked.",
+          "vehicle_state": "moving",
+          "user_state": "tired; signs persistent",
+          "passenger_state": "present",
+          "environment_state": "approaching the firing position",
+          "trigger_state": "sustained",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "classify into the no-practical-action fallback; mark the firing position",
+          "review_points": [
+            "Does the fallback engage instead of an empty proposal?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S005",
+          "title": "AICA acknowledges risk — fallback framing (terminal)",
+          "category": "AICA_PROPOSAL",
+          "motion_state": "MOVING",
+          "description": "Acknowledgement / soft-warning message at the firing position; no selectable recovery controls, no branch opens; content mode none.",
+          "vehicle_state": "moving",
+          "user_state": "tired",
+          "passenger_state": "present",
+          "environment_state": "at the firing position",
+          "trigger_state": "sustained",
+          "aica_message": "I am seeing some signs of drowsiness. You can keep driving home, but if you rest now you may get home more comfortably and safely. Based on your preferences I prepared a few rest methods — which would you like? You can change it on the way.",
+          "user_options": null,
+          "system_action": "show the acknowledgement message; present no selectable recovery controls",
+          "review_points": [
+            "Does the no-practical-action fallback read correctly with no unreachable proposal?"
+          ]
+        }
+      ]
+    }
+  ],
+  "review": {
+    "questions": [
+      "Should AICA fire in this case?",
+      "If it fires, is the timing acceptable?",
+      "Is the trigger reason understandable?",
+      "Is the required data realistic?",
+      "Is the proposed action safe while driving?",
+      "Should personalization be delayed until the vehicle is stopped or parked?"
+    ],
+    "verdicts": [
+      "agree",
+      "adjust",
+      "reject"
+    ],
+    "schema_version": "1"
+  }
+}

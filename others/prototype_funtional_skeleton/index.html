@@ -1,0 +1,3486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AICA Recovery-Proposal Course Simulator</title>
+<style>
+:root{--bg:#0f1418;--panel:#171f26;--panel2:#1d272f;--line:#2a3742;--ink:#e7eef2;--muted:#9fb0bc;--accent:#5bc0be;--warn:#f4b860;--fire:#7bd88f;--severe:#ef6f6c;--fallback:#c9a0ff;--road:#33414d}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,Segoe UI,Roboto,sans-serif}
+header{padding:9px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:14px;margin:0;font-weight:600}
+.ids{font-size:11px;color:var(--muted)}
+.warning{background:#3a2c12;color:#f0c98b;border:1px solid #5a4a22;border-radius:6px;padding:4px 9px;font-size:11px;margin-left:auto;white-space:pre-line}
+.modebar{display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+.modebar button{font:inherit;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 12px;cursor:pointer}
+.modebar button.active{border-color:var(--accent);color:var(--accent);background:#11302f}
+.modebar .hint{font-size:11px;color:var(--muted)}
+.layout{display:grid;grid-template-columns:250px 1fr 330px;height:calc(100% - 92px)}
+.panel{padding:13px;border-right:1px solid var(--line);overflow:auto}
+.panel:last-child{border-right:none}
+.region{margin-bottom:15px}
+.region h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px}
+select,button{font:inherit;color:var(--ink)}
+select{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px}
+select:disabled{opacity:.5;cursor:not-allowed}
+/* left — case + course + timeline */
+.seglist{list-style:none;margin:0;padding:0}
+.seglist li{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-left:3px solid var(--line);border-radius:6px;padding:6px 8px;margin-bottom:5px;background:var(--panel);font-size:12px}
+.seglist li.active{border-left-color:var(--accent);background:var(--panel2)}
+.seglist li.rest{border-left-color:var(--accent)}
+.seg-ic{font-size:15px}
+.seg-name{flex:1}
+.seg-fire{font-size:11px;color:var(--fire)}
+.beatlist{list-style:none;margin:6px 0 0;padding:0}
+.beatlist li{border:1px solid var(--line);border-left:3px solid var(--line);border-radius:6px;padding:5px 8px;margin-bottom:4px;background:var(--panel);font-size:11.5px;cursor:pointer}
+.beatlist li:hover{border-color:var(--accent)}
+.beatlist li.active{border-left-color:var(--accent);background:var(--panel2)}
+.beatlist .cat{font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.beatlist .seekhint{font-size:9px;color:var(--muted);margin:2px 0 6px}
+.drive-meta{display:flex;gap:14px;margin-top:8px;font-size:12px}
+.drive-meta b{color:var(--accent)}
+/* center — progress */
+.progress-wrap{padding:6px 4px 2px}
+.markers{position:relative;height:26px}
+.marker{position:absolute;top:0;transform:translateX(-50%);text-align:center;transition:left .35s ease}
+.marker .badge{font-size:13px}
+.marker .stem{width:0;height:8px;border-left:1px solid var(--muted);margin:0 auto}
+.marker.fired .badge{filter:drop-shadow(0 0 4px var(--fire))}
+.track{position:relative;height:10px;background:var(--road);border-radius:6px;margin:2px 0 4px}
+.track .fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);opacity:.4;border-radius:6px;width:0}
+.track .dot{position:absolute;top:50%;width:9px;height:9px;border-radius:50%;background:#3a6cff;transform:translate(-50%,-50%)}
+.track .dot.end{left:100%}
+.car{position:absolute;top:50%;font-size:18px;transform:translate(-50%,-58%) scaleX(-1);transition:left .12s linear}
+.divider{position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,.18)}
+.pbctl{display:flex;gap:8px;align-items:center;margin-top:6px}
+.pbctl button{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer}
+.pbctl .sp{font-size:11px;color:var(--muted)}
+.scrub{flex:1}
+/* REQ-INT-012 — always-legible drive-versus-stopped motion indicator. Rides on
+   the playback / animation surface; follows the current beat's motion_state
+   through play / pause / scrub / next-beat / click-to-seek. */
+.motionbar{display:flex;align-items:center;gap:9px;margin-top:8px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel2)}
+.motion-indicator{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;padding:3px 11px;border-radius:14px;letter-spacing:.02em}
+.motion-indicator .dotm{width:10px;height:10px;border-radius:50%}
+.motion-indicator.driving{background:#11302f;color:var(--fire)}
+.motion-indicator.driving .dotm{background:var(--fire);box-shadow:0 0 6px var(--fire)}
+.motion-indicator.stopped{background:#3a2c12;color:var(--warn)}
+.motion-indicator.stopped .dotm{background:var(--warn)}
+.motionbar .motion-why{font-size:10.5px;color:var(--muted)}
+.state-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.scard{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px}
+.scard h3{margin:0 0 6px;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
+.scard .row{display:flex;justify-content:space-between;font-size:12px;padding:2px 0}
+.scard .row .k{color:var(--muted)}
+.drow{height:6px;background:#0a0e15;border-radius:4px;overflow:hidden;margin-top:3px}
+.drow .fill{height:100%;background:linear-gradient(90deg,var(--fire),var(--severe));width:20%}
+/* REQ-INT-013 / DIFF-014 — the map-control bar (Load-map, Find-route, start/end
+   selection + the BYO-key gate). Styled from named cockpit theme variables (not
+   literal colors) so it is legible against the cockpit chrome (the spike's
+   white-on-white fix). */
+.mapctl{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:6px 0;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.mapctl input,.mapctl button{font:inherit;background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:5px}
+.mapctl input{min-width:120px}
+.mapctl .gkey{flex:1;min-width:150px}
+.mapctl button{cursor:pointer;padding:5px 12px}
+.mapctl .keynote{flex-basis:100%;font-size:10px;color:var(--muted);margin-top:2px}
+.cockpit{margin-top:12px;border:1px solid var(--line);border-radius:8px;background:#0a0e15;min-height:150px;position:relative;overflow:hidden}
+.cockpit h3{margin:0;padding:7px 10px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--line)}
+.cockpit .nav{padding:10px 12px;color:var(--muted);font-size:13px}
+.cockpit .nav .head{font-size:13px;color:var(--ink);margin-bottom:6px}
+/* REQ-INT-013 — the persistent embedded real-map slot (the spike's reparented
+   map-div pattern). One persistent map DOM node is moved, never re-created, into
+   this slot on a structural-signature change only — so the map persists across
+   play / pause / scrub / seek and does not disappear on Play. */
+.mapsurface{width:100%;display:block;background:#0c1117;border-radius:6px}
+.nav .legend{font-size:10px;color:var(--muted);margin-top:5px;display:flex;gap:12px;flex-wrap:wrap}
+.nav .legend b{color:var(--accent)}
+/* REQ-INT-002 — UC-01 stopped recovery sequence on the cockpit/nav surface */
+.recovery{padding:14px}
+.recovery .who{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--accent)}
+.recovery .phase{font-size:11px;color:var(--muted);margin:3px 0 8px}
+.recovery .stage{border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--panel2);min-height:54px}
+.recovery .stage.dim{background:#05070b;color:#566;border-color:#10161d}
+.recovery .stage.wake{background:#11302f;color:var(--accent)}
+.recovery .stage.content{background:#1d272f;color:var(--ink)}
+.recovery .stagemsg{font-size:13px;margin-top:4px}
+.recovery .steps{display:flex;gap:6px;margin-top:9px}
+.recovery .steps .dot{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.recovery .steps .dot.on{background:var(--accent)}
+.stopflag{font-size:10.5px;color:var(--warn);margin-top:6px}
+.cockpit .proposal{padding:14px}
+.cockpit .proposal .who{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--accent)}
+.cockpit .proposal .msg{margin:5px 0 10px;font-size:13.5px}
+.cockpit .proposal .preview{font-size:11px;color:var(--muted);margin:0 0 8px}
+.opts{display:flex;flex-direction:column;gap:7px}
+.opt{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:12px;color:var(--ink);cursor:pointer;text-align:left}
+.opt:hover{border-color:var(--accent)}
+.opt.selected{border-color:var(--accent);background:#11302f;color:var(--accent)}
+.opt-note{margin-top:8px;font-size:11px;color:var(--accent)}
+.overlay{border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--panel2);margin-top:12px}
+.overlay h3{margin:0 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.badge-r{display:inline-block;font-weight:700;padding:2px 9px;border-radius:12px;font-size:12px}
+.r-NO_TRIGGER{background:#1f2a30;color:var(--muted)}
+.r-SOFT_WARNING{background:#2c2f1c;color:#dcd87a}
+.r-REST_PROPOSAL{background:#11302f;color:var(--accent)}
+.r-SEVERE_INTERVENTION{background:#3a1f1c;color:var(--severe)}
+.r-NO_PRACTICAL_ACTION_FALLBACK{background:#2c2419;color:var(--warn)}
+.overlay table{width:100%;border-collapse:collapse;margin-top:6px;font-size:12px}
+.overlay td{padding:2px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+.overlay td.k{color:var(--muted);width:55%}
+.reason{font-size:11px;color:var(--muted);margin-top:5px}
+.fired-flag{font-size:11px;margin-top:6px}
+.fired-flag.yes{color:var(--fire)}
+.fired-flag.no{color:var(--muted)}
+/* REQ-INT-006 / REQ-INT-013 — on-map overlay: the AICA proposal + selectable
+   options drawn OVER the persistent embedded real map, which stays visible
+   underneath. */
+.mapwrap{position:relative}
+.mapoverlay{position:absolute;left:8px;right:8px;bottom:8px;background:rgba(8,12,20,.92);border:1px solid var(--accent);border-radius:9px;padding:10px 12px;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+.mapoverlay .who{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--accent)}
+.mapoverlay .msg{margin:5px 0 8px;font-size:13px}
+.mapoverlay .preview{font-size:11px;color:var(--muted);margin:0 0 8px}
+/* REQ-INT-007 — UC-01 stopped-rest animated recovery visuals (CSS/SVG only;
+   deterministic; no timestamps in the rendered HTML). */
+.recovery-vis{position:relative;border-radius:8px;overflow:hidden;min-height:170px;background:#0a1018}
+/* dim / darkening sleep overlay — a genuine darkening layer that pulses */
+.recovery-vis .dimlayer{position:absolute;inset:0;background:#000;opacity:.0;animation:dimsleep 3.2s ease-in-out infinite;pointer-events:none}
+@keyframes dimsleep{0%{opacity:.15}50%{opacity:.72}100%{opacity:.15}}
+/* sleep cue — a pulsing moon and animated Z's */
+.sleepcue{position:absolute;top:14px;left:14px;display:flex;align-items:center;gap:6px}
+.sleepcue .moon{font-size:26px;animation:moonpulse 2.6s ease-in-out infinite}
+@keyframes moonpulse{0%{opacity:.5;transform:scale(.92)}50%{opacity:1;transform:scale(1.08)}100%{opacity:.5;transform:scale(.92)}}
+.sleepcue .zs span{display:inline-block;color:var(--accent);font-weight:700;animation:zfloat 2.4s ease-in-out infinite}
+.sleepcue .zs span:nth-child(1){font-size:12px;animation-delay:0s}
+.sleepcue .zs span:nth-child(2){font-size:16px;animation-delay:.5s}
+.sleepcue .zs span:nth-child(3){font-size:20px;animation-delay:1s}
+@keyframes zfloat{0%{opacity:0;transform:translateY(6px)}40%{opacity:1}100%{opacity:0;transform:translateY(-10px)}}
+/* animated chosen-content visual — a karaoke screen with animated bars and a
+   scrolling lyric line */
+.karaoke{position:absolute;left:0;right:0;bottom:0;padding:12px 14px;background:linear-gradient(0deg,rgba(17,48,47,.85),rgba(17,48,47,0))}
+.karaoke .bars{display:flex;align-items:flex-end;gap:4px;height:42px;margin-bottom:8px}
+.karaoke .bars i{flex:1;background:linear-gradient(180deg,var(--accent),var(--fire));border-radius:2px;animation:eq 1s ease-in-out infinite}
+.karaoke .bars i:nth-child(1){animation-delay:0s}
+.karaoke .bars i:nth-child(2){animation-delay:.12s}
+.karaoke .bars i:nth-child(3){animation-delay:.24s}
+.karaoke .bars i:nth-child(4){animation-delay:.36s}
+.karaoke .bars i:nth-child(5){animation-delay:.48s}
+.karaoke .bars i:nth-child(6){animation-delay:.6s}
+.karaoke .bars i:nth-child(7){animation-delay:.72s}
+.karaoke .bars i:nth-child(8){animation-delay:.84s}
+@keyframes eq{0%{height:18%}50%{height:96%}100%{height:18%}}
+.karaoke .lyricwrap{overflow:hidden;white-space:nowrap;border-top:1px solid rgba(255,255,255,.12);padding-top:6px}
+.karaoke .lyric{display:inline-block;font-size:12.5px;color:var(--ink);padding-left:100%;animation:lyricscroll 9s linear infinite}
+@keyframes lyricscroll{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
+.recovery-vis .chosenlabel{position:absolute;top:14px;right:14px;font-size:10.5px;color:var(--accent);max-width:55%;text-align:right}
+.recovery-msg{font-size:12.5px;margin:8px 2px 4px}
+.recovery-head{font-size:11px;color:var(--muted);margin:0 2px 8px}
+.recovery-steps{display:flex;gap:6px;margin:8px 2px 0}
+.recovery-steps .dot{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.recovery-steps .dot.on{background:var(--accent)}
+/* right — events + params + review */
+.acc{border:1px solid var(--line);border-radius:8px;margin-bottom:7px;background:var(--panel)}
+.acc>summary{cursor:pointer;padding:8px 10px;font-size:12.5px;list-style:none;display:flex;gap:7px;align-items:center}
+.acc>summary::-webkit-details-marker{display:none}
+.acc .body{padding:0 10px 10px;font-size:12px;color:#c4d2da}
+.field{margin-bottom:7px}
+.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:2px}
+.pgroup{border:1px solid var(--line);border-radius:8px;padding:9px;margin-bottom:11px;background:var(--panel)}
+.pgroup h3{font-size:11px;margin:0 0 8px;color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
+.result-expl{font-size:12px;color:#c4d2da;margin:4px 0 10px}
+.cap label{display:block;font-size:11px;color:var(--muted);margin:8px 0 2px}
+.cap textarea{width:100%;font:inherit;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px;min-height:44px}
+.cap select{margin-bottom:4px}
+.q{font-size:12px;margin-bottom:5px}
+.export-out{white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:11px;background:#0a0e15;border:1px solid var(--line);border-radius:6px;padding:8px;margin-top:8px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:rgba(8,12,20,.95);border:1px solid var(--accent);color:var(--ink);padding:9px 15px;border-radius:9px;font-size:12.5px;opacity:0;pointer-events:none;transition:.3s;z-index:9}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.locked{opacity:.55}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<header>
+  <h1 id="proto-name"></h1>
+  <span class="ids" id="proto-ids"></span>
+  <span class="warning" id="warning"></span>
+</header>
+<div class="modebar">
+  <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Mode</span>
+  <div id="mode-toggle"></div>
+  <span class="hint" id="mode-hint"></span>
+</div>
+<div class="layout">
+
+  <!-- LEFT — case selector + driving course + scenario timeline -->
+  <aside class="panel">
+    <div class="region">
+      <h2>Case</h2>
+      <select id="case-select"></select>
+    </div>
+    <div class="region">
+      <h2>Driving course</h2>
+      <select id="course-select"></select>
+      <div class="drive-meta">
+        <span>Pos <b id="drive-pos">start</b></span>
+        <span>Beat <b id="drive-beat">—</b></span>
+      </div>
+    </div>
+    <div class="region">
+      <h2>Route segments</h2>
+      <ul class="seglist" id="seglist"></ul>
+    </div>
+    <div class="region">
+      <h2>Scenario timeline</h2>
+      <ul class="beatlist" id="beatlist"></ul>
+    </div>
+  </aside>
+
+  <!-- CENTER — progress / state / cockpit / why-fired -->
+  <main class="panel">
+    <div class="region">
+      <h2>Course progress</h2>
+      <div class="progress-wrap">
+        <div class="markers" id="markers"></div>
+        <div class="track" id="track">
+          <div class="fill" id="fill"></div>
+          <div class="dot"></div><div class="dot end"></div>
+          <div id="dividers"></div>
+          <div class="car" id="car">🚗</div>
+        </div>
+        <div class="pbctl">
+          <button id="play">▶ Play</button>
+          <button id="next-beat" title="Step to the next scenario beat">⏭ Next beat</button>
+          <button id="reset">⟲</button>
+          <input class="scrub" id="scrub" type="range" min="0" max="1000" value="0">
+          <span class="sp">Speed</span>
+          <select id="speed" style="width:auto"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option></select>
+        </div>
+        <!-- REQ-INT-012 — drive-vs-stopped motion indicator on the animation surface -->
+        <div class="motionbar">
+          <span id="motion-indicator" class="motion-indicator driving"><span class="dotm"></span><span id="motion-label">Driving</span></span>
+          <span class="motion-why" id="motion-why"></span>
+        </div>
+      </div>
+      <div class="state-cards">
+        <div class="scard">
+          <h3>Cabin status</h3>
+          <div class="row"><span class="k">Occupants</span><span id="st-occ">driver</span></div>
+          <div class="row"><span class="k">Drowsiness</span><span id="st-drow">low</span></div>
+          <div class="drow"><div class="fill" id="st-drowbar"></div></div>
+          <div class="row"><span class="k">Vehicle</span><span id="st-veh">moving</span></div>
+        </div>
+        <div class="scard">
+          <h3>Exterior status</h3>
+          <div class="row"><span class="k">Area</span><span id="st-area">urban</span></div>
+          <div class="row"><span class="k">Speed band</span><span id="st-speed">—</span></div>
+        </div>
+      </div>
+      <!-- REQ-INT-013 / DIFF-014 — map-control bar: BYO-key gate (no key shown,
+           defaulted, or persisted), Load-map, start/end selection, Find-route. -->
+      <div class="mapctl" id="mapctl">
+        <input id="gkey" class="gkey" type="password" autocomplete="off" placeholder="Bring your own Maps key (runtime only; never stored)"/>
+        <button id="gload">Load map</button>
+        <input id="gstart" type="text" placeholder="start place"/>
+        <input id="gend" type="text" placeholder="end place"/>
+        <button id="groute">Find route + rest spots</button>
+        <span class="keynote">No key is shipped, shown, defaulted, or persisted. The map stays inert until you enter your own key. The navigation surface is the one declared networked surface (REQ-INT-013 / DIFF-014); everything else is offline and self-contained.</span>
+      </div>
+      <div class="cockpit" id="cockpit"></div>
+      <div class="overlay" id="overlay"></div>
+    </div>
+  </main>
+
+  <!-- RIGHT — events + parameters + review -->
+  <aside class="panel">
+    <div class="region">
+      <h2>UC events</h2>
+      <div id="events"></div>
+    </div>
+    <div class="region">
+      <h2>Parameters</h2>
+      <div class="pgroup"><h3>Context inputs</h3><div id="panel-context"></div></div>
+      <div class="pgroup"><h3>Algorithm hyperparameters</h3><div id="panel-hyper"></div></div>
+      <div class="pgroup"><h3>Networked surface controls</h3><div id="panel-networked_surface"></div></div>
+    </div>
+    <div class="region">
+      <h2>Result explanation</h2>
+      <div class="result-expl" id="result-expl"></div>
+    </div>
+    <div class="region">
+      <h2>Review</h2>
+      <div id="questions"></div>
+      <div class="cap">
+        <label>Actual result shown</label>
+        <select id="cap-actual"></select>
+        <label>Reviewer verdict</label>
+        <select id="cap-verdict"></select>
+        <label>Comment</label>
+        <textarea id="cap-comment"></textarea>
+      </div>
+      <button id="export-btn" style="margin-top:8px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer">Export review JSON</button>
+      <div class="export-out" id="export-out" hidden></div>
+    </div>
+  </aside>
+</div>
+
+<!-- BUILD-DATA:START -->
+<script id="build-data" type="application/json">
+{
+  "meta": {
+    "target_prototype": "TP-001",
+    "use_case": "UC-01",
+    "loop": "LOOP-005",
+    "prototype_version": "v5",
+    "name": "AICA Recovery-Proposal Course Simulator — UC-01 Fatigue / Drowsiness (real-map networked surface)",
+    "warning": "This behavior model is temporary prototype behavior.\nIt is used to make the Target-Prototype executable.\nIt is not final AICA product specification.",
+    "course_sim": {
+      "uc_events": [
+        {
+          "num": 1,
+          "label": "① Refresh proposal",
+          "kind": "fire_on_route"
+        },
+        {
+          "num": 2,
+          "label": "② Rest-spot imminent",
+          "kind": "rest_facility",
+          "uc01_only": true
+        },
+        {
+          "num": 3,
+          "label": "③ Rest-spot arrival",
+          "kind": "rest_facility",
+          "uc01_only": true
+        }
+      ]
+    }
+  },
+  "networked_surface": {
+    "target_kind": "real_google_map",
+    "requirement": "REQ-INT-013",
+    "diff": "DIFF-014",
+    "byo_key_gate": {
+      "state_values": [
+        "absent",
+        "present"
+      ],
+      "inert_until_key": true,
+      "key_shown": false,
+      "key_defaulted": false,
+      "key_persisted": false
+    },
+    "map_persistence": {
+      "pattern": "reparented_map_div",
+      "rerender_trigger": "structural_signature_change",
+      "persists_across": [
+        "play",
+        "pause",
+        "scrub",
+        "seek"
+      ],
+      "tears_down_on_tick": false
+    },
+    "boundary_binning": {
+      "position": "surface_input_boundary",
+      "before_trigger": true,
+      "binned_quantities": [
+        "route_travel_time_to_continuous_driving_time",
+        "remaining_to_destination_to_destination_eta",
+        "rest_spot_reachability_to_rest_spot_eta",
+        "sign_persistence_to_signal_duration"
+      ],
+      "concrete_numeric_reaches_trigger": false
+    },
+    "snapshot_for_review": {
+      "captured": true,
+      "stores": [
+        "route_bands",
+        "rest_spot_offsets"
+      ],
+      "stores_raw_geometry": false,
+      "stores_key": false,
+      "reproduces_offline": true
+    },
+    "waivers": {
+      "G1_offline_byte_determinism": "waived_for_live_map",
+      "G5_self_containment": "waived_for_live_map",
+      "G3_tested_shipped": "holds",
+      "G7_behavioral_acceptance": "holds",
+      "qualitative_trigger": "holds",
+      "review_determinism": "holds_via_snapshot"
+    }
+  },
+  "courses": [
+    {
+      "id": "urban",
+      "label": "Urban (default)",
+      "length_band": "short",
+      "speed_band": "low",
+      "rest_facility": "urban_seg_convenience_store",
+      "segments": [
+        {
+          "id": "urban_seg_home",
+          "location": "home/start",
+          "is_rest_facility": false,
+          "at": 0
+        },
+        {
+          "id": "urban_seg_urban_a",
+          "location": "urban",
+          "is_rest_facility": false,
+          "at": 0.25
+        },
+        {
+          "id": "urban_seg_convenience_store",
+          "location": "convenience store",
+          "is_rest_facility": true,
+          "at": 0.5
+        },
+        {
+          "id": "urban_seg_urban_b",
+          "location": "urban",
+          "is_rest_facility": false,
+          "at": 0.75
+        },
+        {
+          "id": "urban_seg_destination",
+          "location": "destination",
+          "is_rest_facility": false,
+          "at": 1
+        }
+      ]
+    },
+    {
+      "id": "suburban",
+      "label": "Suburban",
+      "length_band": "medium",
+      "speed_band": "medium",
+      "rest_facility": "suburban_seg_roadside_rest",
+      "segments": [
+        {
+          "id": "suburban_seg_home",
+          "location": "home/start",
+          "is_rest_facility": false,
+          "at": 0
+        },
+        {
+          "id": "suburban_seg_highway_road",
+          "location": "urban",
+          "is_rest_facility": false,
+          "at": 0.25
+        },
+        {
+          "id": "suburban_seg_roadside_rest",
+          "location": "roadside rest",
+          "is_rest_facility": true,
+          "at": 0.5
+        },
+        {
+          "id": "suburban_seg_residential",
+          "location": "urban",
+          "is_rest_facility": false,
+          "at": 0.75
+        },
+        {
+          "id": "suburban_seg_destination",
+          "location": "destination",
+          "is_rest_facility": false,
+          "at": 1
+        }
+      ]
+    },
+    {
+      "id": "highway",
+      "label": "Highway",
+      "length_band": "long",
+      "speed_band": "high",
+      "rest_facility": "highway_seg_sa",
+      "segments": [
+        {
+          "id": "highway_seg_home",
+          "location": "home/start",
+          "is_rest_facility": false,
+          "at": 0
+        },
+        {
+          "id": "highway_seg_on_ramp",
+          "location": "urban",
+          "is_rest_facility": false,
+          "at": 0.3
+        },
+        {
+          "id": "highway_seg_sa",
+          "location": "service area (SA)",
+          "is_rest_facility": true,
+          "at": 0.6
+        },
+        {
+          "id": "highway_seg_off_ramp",
+          "location": "urban",
+          "is_rest_facility": false,
+          "at": 0.85
+        },
+        {
+          "id": "highway_seg_destination",
+          "location": "destination",
+          "is_rest_facility": false,
+          "at": 1
+        }
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "drowsiness_level",
+      "label": "Drowsiness Level",
+      "group": "context",
+      "type": "enum",
+      "values": [
+        "none",
+        "weak",
+        "moderate",
+        "strong",
+        "severe"
+      ],
+      "default": "weak"
+    },
+    {
+      "id": "fatigue_level",
+      "label": "Fatigue Level",
+      "group": "context",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    {
+      "id": "signal_duration",
+      "label": "Signal Duration",
+      "group": "context",
+      "type": "enum",
+      "values": [
+        "transient",
+        "brief",
+        "sustained",
+        "persistent"
+      ],
+      "default": "brief"
+    },
+    {
+      "id": "continuous_driving_time",
+      "label": "Continuous Driving Time",
+      "group": "context",
+      "type": "enum",
+      "values": [
+        "short",
+        "moderate",
+        "long"
+      ],
+      "default": "moderate"
+    },
+    {
+      "id": "destination_eta",
+      "label": "Destination ETA",
+      "group": "context",
+      "type": "enum",
+      "values": [
+        "close",
+        "medium",
+        "far"
+      ],
+      "default": "medium"
+    },
+    {
+      "id": "rest_spot_eta",
+      "label": "Rest Spot ETA",
+      "group": "context",
+      "type": "enum",
+      "values": [
+        "none",
+        "near",
+        "far"
+      ],
+      "default": "near"
+    },
+    {
+      "id": "passenger_present",
+      "label": "Passenger Present",
+      "group": "context",
+      "type": "boolean",
+      "values": [
+        true,
+        false
+      ],
+      "default": true
+    },
+    {
+      "id": "vehicle_state",
+      "label": "Vehicle State",
+      "group": "context",
+      "type": "enum",
+      "values": [
+        "moving",
+        "stopped",
+        "parked"
+      ],
+      "default": "moving"
+    },
+    {
+      "id": "personalization_available",
+      "label": "Personalization Available",
+      "group": "context",
+      "type": "boolean",
+      "values": [
+        true,
+        false
+      ],
+      "default": true
+    },
+    {
+      "id": "trigger_sensitivity",
+      "label": "Trigger Sensitivity",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    {
+      "id": "weight_drowsiness",
+      "label": "Drowsiness Signal Weight",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "high"
+    },
+    {
+      "id": "weight_fatigue",
+      "label": "Fatigue Signal Weight",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    {
+      "id": "weight_attention",
+      "label": "Attention Signal Weight",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    {
+      "id": "persistence_requirement",
+      "label": "Persistence Requirement",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    {
+      "id": "proposal_threshold",
+      "label": "Proposal Threshold",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    {
+      "id": "severe_threshold",
+      "label": "Severe Threshold",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "high"
+    },
+    {
+      "id": "require_actionable",
+      "label": "Require Actionable",
+      "group": "hyper",
+      "type": "boolean",
+      "values": [
+        true,
+        false
+      ],
+      "default": true
+    },
+    {
+      "id": "rest_spot_sensitivity",
+      "label": "Rest Spot Sensitivity",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    {
+      "id": "assertiveness",
+      "label": "Assertiveness",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "gentle",
+        "balanced",
+        "firm"
+      ],
+      "default": "gentle"
+    },
+    {
+      "id": "content_safety_strictness",
+      "label": "Content Safety Strictness",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "lenient",
+        "standard",
+        "strict"
+      ],
+      "default": "strict"
+    },
+    {
+      "id": "personalization_eagerness",
+      "label": "Personalization Eagerness",
+      "group": "hyper",
+      "type": "enum",
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    {
+      "id": "route_selection",
+      "label": "Route Selection",
+      "group": "networked_surface",
+      "type": "enum",
+      "values": [
+        "preset_scenario",
+        "reviewer_chosen"
+      ],
+      "default": "preset_scenario"
+    },
+    {
+      "id": "byo_maps_key",
+      "label": "Bring-Your-Own Maps Key",
+      "group": "networked_surface",
+      "type": "enum",
+      "values": [
+        "absent",
+        "present"
+      ],
+      "default": "absent"
+    }
+  ],
+  "result_meta": {
+    "NO_TRIGGER": {
+      "label": "No trigger",
+      "explanation": "The damped risk band stayed below the reaction point, so AICA stays silent and keeps monitoring.",
+      "action_preview": "No proposal; the car continues the normal-driving walk.",
+      "allowed_content_mode": "none",
+      "fire": false,
+      "course_label": "AICA stays silent — no ① marker"
+    },
+    "SOFT_WARNING": {
+      "label": "Soft warning",
+      "explanation": "The band reached the reaction point but not the proposal cut-point, so AICA gives a gentle, non-committal heads-up.",
+      "action_preview": "Marker ① with a soft-warning message; no recovery controls.",
+      "allowed_content_mode": "audio_only",
+      "fire": true,
+      "course_label": "① soft warning on the route"
+    },
+    "REST_PROPOSAL": {
+      "label": "Rest proposal",
+      "explanation": "The band reached the proposal cut-point with a reachable rest action, so AICA fires the full proposal.",
+      "action_preview": "Marker ①, proposal view, recovery options as selectable controls.",
+      "allowed_content_mode": "audio_only",
+      "fire": true,
+      "course_label": "① rest proposal → ② → ③ rest spot"
+    },
+    "SEVERE_INTERVENTION": {
+      "label": "Severe intervention",
+      "explanation": "The band reached the severe cut-point, so AICA escalates to a firmer, safety-oriented intervention.",
+      "action_preview": "Marker ①, proposal view in strongest framing, recovery options selectable.",
+      "allowed_content_mode": "audio_only",
+      "fire": true,
+      "course_label": "① firm intervention → ② → ③ rest spot"
+    },
+    "NO_PRACTICAL_ACTION_FALLBACK": {
+      "label": "No practical action",
+      "explanation": "The band reached the proposal cut-point but no reachable rest action exists, so AICA acknowledges the risk without an unreachable proposal.",
+      "action_preview": "Marker ① with an acknowledgement message; no selectable recovery controls.",
+      "allowed_content_mode": "none",
+      "fire": true,
+      "course_label": "① warning, no rest spot reachable"
+    }
+  },
+  "beat_catalog": {
+    "pre": [
+      "UC-01-S001",
+      "UC-01-S002",
+      "UC-01-S003",
+      "UC-01-S004"
+    ],
+    "no_fire": [
+      "UC-01-S002"
+    ],
+    "fire": [
+      "UC-01-S005",
+      "UC-01-S006",
+      "UC-01-S006A",
+      "UC-01-S007",
+      "UC-01-S008",
+      "UC-01-S009",
+      "UC-01-S010A",
+      "UC-01-S010B",
+      "UC-01-S010C",
+      "UC-01-S011"
+    ],
+    "fallback": [
+      "UC-01-S005"
+    ],
+    "selection_beat": "UC-01-S006",
+    "postpone_beat": "UC-01-S006A",
+    "selection_sub_branches": {
+      "rest_option": [
+        "UC-01-S007",
+        "UC-01-S008",
+        "UC-01-S009",
+        "UC-01-S010A",
+        "UC-01-S010B",
+        "UC-01-S010C",
+        "UC-01-S011"
+      ],
+      "postpone": [
+        "UC-01-S006A"
+      ]
+    }
+  },
+  "flow_skeletons": {
+    "NO_TRIGGER": {
+      "branch": "no_fire",
+      "beats": [
+        "UC-01-S001",
+        "UC-01-S002"
+      ]
+    },
+    "SOFT_WARNING": {
+      "branch": "fire",
+      "beats": [
+        "UC-01-S001",
+        "UC-01-S002",
+        "UC-01-S003",
+        "UC-01-S004",
+        "UC-01-S005"
+      ]
+    },
+    "NO_PRACTICAL_ACTION_FALLBACK": {
+      "branch": "fallback",
+      "beats": [
+        "UC-01-S001",
+        "UC-01-S002",
+        "UC-01-S003",
+        "UC-01-S004",
+        "UC-01-S005"
+      ]
+    },
+    "REST_PROPOSAL": {
+      "branch": "fire",
+      "beats": [
+        "UC-01-S001",
+        "UC-01-S002",
+        "UC-01-S003",
+        "UC-01-S004",
+        "UC-01-S005",
+        "UC-01-S006",
+        "UC-01-S007",
+        "UC-01-S008",
+        "UC-01-S009",
+        "UC-01-S010A",
+        "UC-01-S011"
+      ],
+      "selection_default": "rest_option",
+      "postpone": [
+        "UC-01-S006A"
+      ]
+    },
+    "SEVERE_INTERVENTION": {
+      "branch": "fire",
+      "beats": [
+        "UC-01-S001",
+        "UC-01-S002",
+        "UC-01-S003",
+        "UC-01-S004",
+        "UC-01-S005",
+        "UC-01-S006",
+        "UC-01-S007",
+        "UC-01-S008",
+        "UC-01-S009",
+        "UC-01-S010A",
+        "UC-01-S011"
+      ],
+      "selection_default": "rest_option",
+      "postpone": [
+        "UC-01-S006A"
+      ]
+    }
+  },
+  "motion_state_keys": {
+    "held_for_selection_stop": [
+      "UC-01-S006"
+    ],
+    "uc01_arrival_stop": [
+      "UC-01-S009",
+      "UC-01-S010A",
+      "UC-01-S010B",
+      "UC-01-S010C"
+    ],
+    "default_motion": "MOVING"
+  },
+  "fragment_library": {
+    "result_framing": {
+      "NO_TRIGGER": "AICA stays quiet and keeps monitoring; no proposal is shown.",
+      "SOFT_WARNING": "AICA gives a gentle, non-committal heads-up that signs are appearing.",
+      "REST_PROPOSAL": "AICA proposes a recovery and offers the options as selectable controls.",
+      "SEVERE_INTERVENTION": "AICA gives a firmer, safety-oriented intervention while still offering the options.",
+      "NO_PRACTICAL_ACTION_FALLBACK": "AICA acknowledges the risk without offering an unreachable recovery."
+    },
+    "selection_outcome": {
+      "rest_option": "AICA confirms the chosen recovery and guides toward the rest spot; the stop-recover-then-continue path plays.",
+      "postpone": "AICA acknowledges and keeps guiding toward the original destination; no waypoint, no stop, and it stays ready to re-offer rest later."
+    },
+    "assertiveness_tone": {
+      "gentle": "phrased softly and optionally — \"you could rest now if you like\".",
+      "balanced": "phrased plainly and clearly — \"resting now would be a good idea\".",
+      "firm": "phrased directly and safety-first — \"please take a rest now\"."
+    },
+    "content_mode_note": {
+      "audio_only": "visual content is held while moving; only audio plays.",
+      "visual_allowed_after_stop": "visual content is enabled now that the vehicle is stopped.",
+      "none": "no content applies."
+    },
+    "motion_state_note": {
+      "MOVING": "the car is driving along the route; the drive/stop indicator reads driving.",
+      "STOPPED": "the car holds position (held-for-selection or arrived-and-stopped); the drive/stop indicator reads stopped."
+    },
+    "personalization_eagerness_note": {
+      "low": "preference-tuned content appears late and sparingly.",
+      "medium": "preference-tuned content appears at a natural point in the proposal.",
+      "high": "preference-tuned content appears early and prominently."
+    },
+    "course_diff_toast": {
+      "urban": "rest facility is the convenience store (near); fire→arrival is quick.",
+      "suburban": "rest facility is the roadside rest (farther); a longer alertness-support stretch.",
+      "highway": "rest facility is the service area (far); a long fire→arrival stretch."
+    }
+  },
+  "cases": [
+    {
+      "id": "case_a",
+      "label": "A — No Trigger (textbook silent continuation)",
+      "branch": "no_fire",
+      "course": "urban",
+      "expected_result": "NO_TRIGGER",
+      "map_info": {
+        "start_place": "Tokyo Station, Japan",
+        "end_place": "Shibuya Station, Tokyo, Japan"
+      },
+      "route_snapshot": {
+        "captured": true,
+        "route_bands": {
+          "continuous_driving_time": "short",
+          "destination_eta": "close",
+          "signal_duration": "brief"
+        },
+        "rest_spot_offsets": {
+          "rest_spot_eta": "near",
+          "ordinal_position": "mid-route"
+        }
+      },
+      "input_state": {
+        "drowsiness_level": "weak",
+        "fatigue_level": "medium",
+        "signal_duration": "brief",
+        "continuous_driving_time": "short",
+        "destination_eta": "close",
+        "rest_spot_eta": "near",
+        "passenger_present": true,
+        "vehicle_state": "moving",
+        "personalization_available": true,
+        "trigger_sensitivity": "medium",
+        "weight_drowsiness": "high",
+        "weight_fatigue": "medium",
+        "weight_attention": "medium",
+        "persistence_requirement": "medium",
+        "proposal_threshold": "medium",
+        "severe_threshold": "high",
+        "require_actionable": true,
+        "rest_spot_sensitivity": "medium",
+        "assertiveness": "gentle",
+        "content_safety_strictness": "strict",
+        "personalization_eagerness": "medium",
+        "route_selection": "preset_scenario",
+        "byo_maps_key": "absent"
+      },
+      "timeline": [
+        {
+          "status_id": "UC-01-S001",
+          "title": "Setup — profile, oshi-katsu mode, ReadyON with a friend",
+          "category": "SETUP",
+          "motion_state": "MOVING",
+          "description": "Profile and oshi-katsu preferences retrieved at home; friend onboard.",
+          "vehicle_state": "parked",
+          "user_state": "rested",
+          "passenger_state": "present (friend sharing the oshi interest)",
+          "environment_state": "at the outing location / home, safely stopped",
+          "trigger_state": "none",
+          "aica_message": "Welcome back. I have your profile and oshi-katsu preferences ready, so I can tailor anything I suggest on the way home.",
+          "user_options": null,
+          "system_action": "retrieve registered user profile and oshi information; apply oshi-katsu mode and the selected personalization level",
+          "review_points": [
+            "Does retrieving the profile and applying personalization level read as appropriate setup?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S002",
+          "title": "Normal driving — lively conversation, no concern yet",
+          "category": "DRIVING_NORMAL",
+          "motion_state": "MOVING",
+          "description": "Lively conversation, mood high, low fatigue self-awareness; AICA holds back and monitors.",
+          "vehicle_state": "moving",
+          "user_state": "alert but mood high, low fatigue self-awareness",
+          "passenger_state": "present and engaged in conversation",
+          "environment_state": "immediately after departure on the return route",
+          "trigger_state": "none",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "monitor driver and vehicle state without intervening",
+          "review_points": [
+            "Is the no-intervention baseline appropriate while the driver is fresh and engaged?"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "case_b",
+      "label": "B — Rest Proposal (strong drowsiness, reachable rest)",
+      "branch": "fire",
+      "course": "suburban",
+      "expected_result": "REST_PROPOSAL",
+      "map_info": {
+        "start_place": "Tokyo Station, Japan",
+        "end_place": "Kawaguchiko Station, Yamanashi, Japan"
+      },
+      "route_snapshot": {
+        "captured": true,
+        "route_bands": {
+          "continuous_driving_time": "long",
+          "destination_eta": "far",
+          "signal_duration": "sustained"
+        },
+        "rest_spot_offsets": {
+          "rest_spot_eta": "near",
+          "ordinal_position": "near rest facility"
+        }
+      },
+      "input_state": {
+        "drowsiness_level": "strong",
+        "fatigue_level": "medium",
+        "signal_duration": "sustained",
+        "continuous_driving_time": "long",
+        "destination_eta": "far",
+        "rest_spot_eta": "near",
+        "passenger_present": true,
+        "vehicle_state": "moving",
+        "personalization_available": true,
+        "trigger_sensitivity": "medium",
+        "weight_drowsiness": "high",
+        "weight_fatigue": "medium",
+        "weight_attention": "medium",
+        "persistence_requirement": "medium",
+        "proposal_threshold": "medium",
+        "severe_threshold": "high",
+        "require_actionable": true,
+        "rest_spot_sensitivity": "medium",
+        "assertiveness": "gentle",
+        "content_safety_strictness": "strict",
+        "personalization_eagerness": "medium",
+        "route_selection": "preset_scenario",
+        "byo_maps_key": "absent"
+      },
+      "timeline": [
+        {
+          "status_id": "UC-01-S001",
+          "title": "Setup — profile, oshi-katsu mode, ReadyON with a friend",
+          "category": "SETUP",
+          "motion_state": "MOVING",
+          "description": "Profile and oshi-katsu preferences retrieved at home; friend onboard.",
+          "vehicle_state": "parked",
+          "user_state": "rested",
+          "passenger_state": "present",
+          "environment_state": "at home, safely stopped",
+          "trigger_state": "none",
+          "aica_message": "Welcome back. I have your profile and oshi-katsu preferences ready, so I can tailor anything I suggest on the way home.",
+          "user_options": null,
+          "system_action": "retrieve profile; apply oshi-katsu mode and personalization level",
+          "review_points": [
+            "Is the setup appropriate?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S002",
+          "title": "Normal driving — lively conversation",
+          "category": "DRIVING_NORMAL",
+          "motion_state": "MOVING",
+          "description": "Lively cabin; no concern yet.",
+          "vehicle_state": "moving",
+          "user_state": "alert, mood high",
+          "passenger_state": "present",
+          "environment_state": "after departure",
+          "trigger_state": "none",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "monitor without intervening",
+          "review_points": [
+            "Baseline appropriate?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S003",
+          "title": "Risk rising — early drowsiness signs",
+          "category": "RISK_RISING",
+          "motion_state": "MOVING",
+          "description": "Strong drowsiness signs build as the car advances; reading rises but not yet persisted.",
+          "vehicle_state": "moving",
+          "user_state": "fatigue rising; weak-to-moderate drowsiness signs",
+          "passenger_state": "present",
+          "environment_state": "continuing on the familiar route",
+          "trigger_state": "weak",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "blend the weighted danger signals and damp against the persistence requirement",
+          "review_points": [
+            "Does the risk read as rising but not yet actionable?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S004",
+          "title": "Trigger point — signs persist",
+          "category": "TRIGGER_POINT",
+          "motion_state": "MOVING",
+          "description": "Sustained sign on a long drive reaches the proposal cut-point; firing position marked.",
+          "vehicle_state": "moving",
+          "user_state": "tired; drowsiness signs sustained",
+          "passenger_state": "present",
+          "environment_state": "approaching the firing position",
+          "trigger_state": "sustained",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "classify into the rest-proposal result type and mark the firing position",
+          "review_points": [
+            "Does the firing location read as appropriate in place context?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S005",
+          "title": "AICA proposes rest and presents recovery options",
+          "category": "AICA_PROPOSAL",
+          "motion_state": "MOVING",
+          "description": "Gentle optional proposal; personalized recovery options presented as selectable controls.",
+          "vehicle_state": "moving",
+          "user_state": "tired",
+          "passenger_state": "present (friend reacts with interest)",
+          "environment_state": "at the firing position",
+          "trigger_state": "sustained",
+          "aica_message": "I am seeing some signs of drowsiness. You can keep driving home, but if you rest now you may get home more comfortably and safely. Based on your preferences I prepared a few rest methods — which would you like? You can change it on the way.",
+          "user_options": null,
+          "system_action": "present the personalized recovery options; suppress attention-heavy visuals while moving",
+          "review_points": [
+            "Is the proposal gentle and optional? Does it explain its reason?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S006",
+          "title": "Driver picks one offered recovery option",
+          "category": "USER_SELECTION",
+          "motion_state": "STOPPED",
+          "description": "Distinct reviewable choice; friend reacts positively.",
+          "vehicle_state": "moving",
+          "user_state": "tired but engaging with the choice",
+          "passenger_state": "present and reacting positively",
+          "environment_state": "at the firing position",
+          "trigger_state": "sustained",
+          "aica_message": "Understood. I will guide you to a rest spot where you can enjoy the option you chose.",
+          "user_options": [
+            "a brief nap then karaoke after the nap",
+            "a brief nap then a limited live video of the favorite artist after the nap",
+            "rest at a nearby oshi-related spot, with a nap plus experience guidance after arrival",
+            "(B variant) a short practical stretch at a convenience store on the shortest route",
+            "postpone the rest and keep driving for now"
+          ],
+          "system_action": "record the chosen recovery option as the selected branch",
+          "review_points": [
+            "Does the choice surface as its own selectable step? Are options preserved verbatim?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S006A",
+          "title": "Postpone the rest — keep driving to the destination without stopping",
+          "category": "RETURN_TO_DRIVE",
+          "motion_state": "MOVING",
+          "description": "Postpone outcome of the selection sub-branch: no waypoint registered, the car does not stop, it continues toward the original destination without resting (terminal).",
+          "vehicle_state": "moving",
+          "user_state": "tired; chose to keep driving rather than rest now",
+          "passenger_state": "present",
+          "environment_state": "continuing on the route toward the original destination, no waypoint added",
+          "trigger_state": "sustained but no rest action taken",
+          "aica_message": "Understood — I will keep guiding you home for now and stay ready to suggest a rest again if you start feeling more tired.",
+          "user_options": null,
+          "system_action": "acknowledge the postpone choice; keep the original destination guidance without registering a rest waypoint or stopping; continue monitoring",
+          "review_points": [
+            "Does postpone read as a genuinely distinct no-stop continuation rather than a variation of the rest flow?"
+          ],
+          "selection_outcome": "postpone"
+        },
+        {
+          "status_id": "UC-01-S007",
+          "title": "Register the rest spot as a waypoint and update route",
+          "category": "SYSTEM_ACTION",
+          "motion_state": "MOVING",
+          "description": "Chosen rest spot registered as a waypoint; route updated toward it.",
+          "vehicle_state": "moving",
+          "user_state": "tired",
+          "passenger_state": "present",
+          "environment_state": "route updated toward the rest spot",
+          "trigger_state": "sustained",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "register the chosen rest spot as a waypoint and update route guidance toward it",
+          "review_points": [
+            "Does adding the waypoint while preserving the destination read correctly?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S008",
+          "title": "Alertness support en route — rest spot imminent",
+          "category": "SYSTEM_ACTION",
+          "motion_state": "MOVING",
+          "description": "Audio-only humming karaoke / high-awakening music; no lyrics while moving (marker ②).",
+          "vehicle_state": "moving",
+          "user_state": "tired but supported toward alertness",
+          "passenger_state": "present",
+          "environment_state": "approaching the rest facility",
+          "trigger_state": "sustained",
+          "aica_message": "The rest spot is close now. To help with drowsiness I will play some humming karaoke and high-awakening music until we get there.",
+          "user_options": null,
+          "system_action": "play humming karaoke / high-awakening audio; suppress lyrics and visual content while moving",
+          "review_points": [
+            "Is audio-only alertness support safe while moving? Is visual content held until stopped?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S009",
+          "title": "Rest-spot arrival — nap / relaxation mode",
+          "category": "RECOVERY",
+          "motion_state": "STOPPED",
+          "description": "Parked at the rest facility; relaxation mode begins; visuals now permitted (marker ③).",
+          "vehicle_state": "parked",
+          "user_state": "tired, transitioning to relaxed",
+          "passenger_state": "present",
+          "environment_state": "arrived and stopped at the rest facility, lights dimmed",
+          "trigger_state": "sustained",
+          "aica_message": "We have arrived at the rest spot. Let's rest your body first — I will dim the lights and wake you in a little while.",
+          "user_options": null,
+          "system_action": "detect arrival/stopped state; enter relaxation mode; adjust seat, illumination, screen, BGM, and volume; set the rest timer",
+          "review_points": [
+            "Does the arrival-and-rest transition read well now that the vehicle is stopped?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S010A",
+          "title": "After-nap recovery — karaoke option",
+          "category": "RECOVERY",
+          "motion_state": "STOPPED",
+          "description": "Karaoke video and lyrics shown only while stopped; BGM switched to the recommended song.",
+          "vehicle_state": "parked",
+          "user_state": "relaxed, refreshing",
+          "passenger_state": "present",
+          "environment_state": "stopped at the rest facility, screen-on while stopped",
+          "trigger_state": "brief",
+          "aica_message": "You look refreshed. Here is a first karaoke song to ease back in — the video and lyrics are on only while we are stopped.",
+          "user_options": null,
+          "system_action": "show karaoke video and lyrics while stopped; switch BGM to the recommended song; keep volume moderate",
+          "review_points": [
+            "Is visual karaoke content correctly enabled only while stopped?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S011",
+          "title": "Return to driving — refreshed, guidance resumes",
+          "category": "RETURN_TO_DRIVE",
+          "motion_state": "MOVING",
+          "description": "Fatigue eased, attention back on driving; guidance resumes toward the destination.",
+          "vehicle_state": "moving",
+          "user_state": "refreshed, attention back on driving",
+          "passenger_state": "present",
+          "environment_state": "leaving the rest spot, resuming the route",
+          "trigger_state": "none",
+          "aica_message": "You seem more refreshed now — let's continue home safely. I will resume guidance.",
+          "user_options": null,
+          "system_action": "resume route guidance toward the destination",
+          "review_points": [
+            "Does the return-to-drive transition read as a clean recovery close?"
+          ],
+          "selection_outcome": "rest_option"
+        }
+      ]
+    },
+    {
+      "id": "case_c",
+      "label": "C — Rest Proposal (persistent moderate drowsiness, medium destination)",
+      "branch": "fire",
+      "course": "highway",
+      "expected_result": "REST_PROPOSAL",
+      "map_info": {
+        "start_place": "Tokyo Station, Japan",
+        "end_place": "Kamakura Station, Kanagawa, Japan"
+      },
+      "route_snapshot": {
+        "captured": true,
+        "route_bands": {
+          "continuous_driving_time": "long",
+          "destination_eta": "medium",
+          "signal_duration": "persistent"
+        },
+        "rest_spot_offsets": {
+          "rest_spot_eta": "near",
+          "ordinal_position": "near rest facility"
+        }
+      },
+      "input_state": {
+        "drowsiness_level": "moderate",
+        "fatigue_level": "medium",
+        "signal_duration": "persistent",
+        "continuous_driving_time": "long",
+        "destination_eta": "medium",
+        "rest_spot_eta": "near",
+        "passenger_present": true,
+        "vehicle_state": "moving",
+        "personalization_available": true,
+        "trigger_sensitivity": "medium",
+        "weight_drowsiness": "high",
+        "weight_fatigue": "medium",
+        "weight_attention": "medium",
+        "persistence_requirement": "medium",
+        "proposal_threshold": "medium",
+        "severe_threshold": "high",
+        "require_actionable": true,
+        "rest_spot_sensitivity": "medium",
+        "assertiveness": "gentle",
+        "content_safety_strictness": "strict",
+        "personalization_eagerness": "medium",
+        "route_selection": "preset_scenario",
+        "byo_maps_key": "absent"
+      },
+      "timeline": [
+        {
+          "status_id": "UC-01-S001",
+          "title": "Setup",
+          "category": "SETUP",
+          "motion_state": "MOVING",
+          "description": "Profile retrieved at home; friend onboard.",
+          "vehicle_state": "parked",
+          "user_state": "rested",
+          "passenger_state": "present",
+          "environment_state": "at home, stopped",
+          "trigger_state": "none",
+          "aica_message": "Welcome back. I have your profile and oshi-katsu preferences ready, so I can tailor anything I suggest on the way home.",
+          "user_options": null,
+          "system_action": "retrieve profile; apply oshi-katsu mode",
+          "review_points": [
+            "Setup appropriate?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S002",
+          "title": "Normal driving",
+          "category": "DRIVING_NORMAL",
+          "motion_state": "MOVING",
+          "description": "No concern yet.",
+          "vehicle_state": "moving",
+          "user_state": "alert",
+          "passenger_state": "present",
+          "environment_state": "after departure",
+          "trigger_state": "none",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "monitor without intervening",
+          "review_points": [
+            "Baseline appropriate?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S003",
+          "title": "Risk rising — persistent moderate signs",
+          "category": "RISK_RISING",
+          "motion_state": "MOVING",
+          "description": "Persistent moderate drowsiness builds on a long highway drive.",
+          "vehicle_state": "moving",
+          "user_state": "fatigue rising; moderate drowsiness signs",
+          "passenger_state": "present",
+          "environment_state": "on the highway route",
+          "trigger_state": "weak",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "blend and damp the signals",
+          "review_points": [
+            "Rising but not yet actionable?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S004",
+          "title": "Trigger point",
+          "category": "TRIGGER_POINT",
+          "motion_state": "MOVING",
+          "description": "Persistent moderate sign on a long drive reaches the proposal cut-point; high speed band places ① later / farther from home.",
+          "vehicle_state": "moving",
+          "user_state": "tired; signs persistent",
+          "passenger_state": "present",
+          "environment_state": "approaching the firing position on the highway",
+          "trigger_state": "sustained",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "classify into rest-proposal; mark the firing position",
+          "review_points": [
+            "Does the later firing position read well on the high-speed course?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S005",
+          "title": "AICA proposes rest and presents recovery options",
+          "category": "AICA_PROPOSAL",
+          "motion_state": "MOVING",
+          "description": "Gentle optional proposal; personalized options presented.",
+          "vehicle_state": "moving",
+          "user_state": "tired",
+          "passenger_state": "present",
+          "environment_state": "at the firing position",
+          "trigger_state": "sustained",
+          "aica_message": "I am seeing some signs of drowsiness. You can keep driving home, but if you rest now you may get home more comfortably and safely. Based on your preferences I prepared a few rest methods — which would you like? You can change it on the way.",
+          "user_options": null,
+          "system_action": "present the recovery options; suppress visuals while moving",
+          "review_points": [
+            "Gentle and optional?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S006",
+          "title": "Driver picks one offered recovery option",
+          "category": "USER_SELECTION",
+          "motion_state": "STOPPED",
+          "description": "Distinct reviewable choice.",
+          "vehicle_state": "moving",
+          "user_state": "tired but engaging",
+          "passenger_state": "present",
+          "environment_state": "at the firing position",
+          "trigger_state": "sustained",
+          "aica_message": "Understood. I will guide you to a rest spot where you can enjoy the option you chose.",
+          "user_options": [
+            "a brief nap then karaoke after the nap",
+            "a brief nap then a limited live video of the favorite artist after the nap",
+            "rest at a nearby oshi-related spot, with a nap plus experience guidance after arrival",
+            "(B variant) a short practical stretch at a convenience store on the shortest route",
+            "postpone the rest and keep driving for now"
+          ],
+          "system_action": "record the chosen recovery option",
+          "review_points": [
+            "Options preserved verbatim?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S006A",
+          "title": "Postpone the rest — keep driving to the destination without stopping",
+          "category": "RETURN_TO_DRIVE",
+          "motion_state": "MOVING",
+          "description": "Postpone outcome of the selection sub-branch: no waypoint, no stop, continue to the destination (terminal).",
+          "vehicle_state": "moving",
+          "user_state": "tired; chose to keep driving",
+          "passenger_state": "present",
+          "environment_state": "continuing toward the original destination, no waypoint added",
+          "trigger_state": "sustained but no rest action taken",
+          "aica_message": "Understood — I will keep guiding you home for now and stay ready to suggest a rest again if you start feeling more tired.",
+          "user_options": null,
+          "system_action": "acknowledge the postpone choice; keep the original destination guidance without a waypoint or stop; continue monitoring",
+          "review_points": [
+            "Does postpone read as a distinct no-stop continuation?"
+          ],
+          "selection_outcome": "postpone"
+        },
+        {
+          "status_id": "UC-01-S007",
+          "title": "Register the rest spot and update route",
+          "category": "SYSTEM_ACTION",
+          "motion_state": "MOVING",
+          "description": "Rest spot registered; route updated.",
+          "vehicle_state": "moving",
+          "user_state": "tired",
+          "passenger_state": "present",
+          "environment_state": "route updated toward the service area",
+          "trigger_state": "sustained",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "register the waypoint and update route guidance",
+          "review_points": [
+            "Waypoint correct?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S008",
+          "title": "Alertness support en route — rest spot imminent (marker ②)",
+          "category": "SYSTEM_ACTION",
+          "motion_state": "MOVING",
+          "description": "Long fire→arrival stretch to the service area; audio-only support.",
+          "vehicle_state": "moving",
+          "user_state": "tired but supported",
+          "passenger_state": "present",
+          "environment_state": "approaching the service area",
+          "trigger_state": "sustained",
+          "aica_message": "The rest spot is close now. To help with drowsiness I will play some humming karaoke and high-awakening music until we get there.",
+          "user_options": null,
+          "system_action": "play alertness audio; suppress lyrics/visuals while moving",
+          "review_points": [
+            "Audio-only safe while moving?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S009",
+          "title": "Rest-spot arrival — nap / relaxation (marker ③)",
+          "category": "RECOVERY",
+          "motion_state": "STOPPED",
+          "description": "Parked at the service area; relaxation mode; visuals now permitted.",
+          "vehicle_state": "parked",
+          "user_state": "tired, relaxing",
+          "passenger_state": "present",
+          "environment_state": "stopped at the service area",
+          "trigger_state": "sustained",
+          "aica_message": "We have arrived at the rest spot. Let's rest your body first — I will dim the lights and wake you in a little while.",
+          "user_options": null,
+          "system_action": "enter relaxation mode; adjust cabin; set rest timer",
+          "review_points": [
+            "Arrival transition reads well?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S010A",
+          "title": "After-nap recovery — karaoke option",
+          "category": "RECOVERY",
+          "motion_state": "STOPPED",
+          "description": "Karaoke video/lyrics only while stopped.",
+          "vehicle_state": "parked",
+          "user_state": "relaxed, refreshing",
+          "passenger_state": "present",
+          "environment_state": "stopped, screen-on while stopped",
+          "trigger_state": "brief",
+          "aica_message": "You look refreshed. Here is a first karaoke song to ease back in — the video and lyrics are on only while we are stopped.",
+          "user_options": null,
+          "system_action": "show karaoke while stopped; switch BGM",
+          "review_points": [
+            "Visual content only while stopped?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S011",
+          "title": "Return to driving",
+          "category": "RETURN_TO_DRIVE",
+          "motion_state": "MOVING",
+          "description": "Refreshed; guidance resumes.",
+          "vehicle_state": "moving",
+          "user_state": "refreshed",
+          "passenger_state": "present",
+          "environment_state": "leaving the service area",
+          "trigger_state": "none",
+          "aica_message": "You seem more refreshed now — let's continue home safely. I will resume guidance.",
+          "user_options": null,
+          "system_action": "resume route guidance",
+          "review_points": [
+            "Clean recovery close?"
+          ],
+          "selection_outcome": "rest_option"
+        }
+      ]
+    },
+    {
+      "id": "case_d",
+      "label": "D — Severe Intervention (severe drowsiness)",
+      "branch": "fire",
+      "course": "highway",
+      "expected_result": "SEVERE_INTERVENTION",
+      "map_info": {
+        "start_place": "Tokyo Station, Japan",
+        "end_place": "Hakone-Yumoto Station, Kanagawa, Japan"
+      },
+      "route_snapshot": {
+        "captured": true,
+        "route_bands": {
+          "continuous_driving_time": "long",
+          "destination_eta": "medium",
+          "signal_duration": "persistent"
+        },
+        "rest_spot_offsets": {
+          "rest_spot_eta": "near",
+          "ordinal_position": "near rest facility"
+        }
+      },
+      "input_state": {
+        "drowsiness_level": "severe",
+        "fatigue_level": "high",
+        "signal_duration": "persistent",
+        "continuous_driving_time": "long",
+        "destination_eta": "medium",
+        "rest_spot_eta": "near",
+        "passenger_present": true,
+        "vehicle_state": "moving",
+        "personalization_available": true,
+        "trigger_sensitivity": "medium",
+        "weight_drowsiness": "high",
+        "weight_fatigue": "medium",
+        "weight_attention": "medium",
+        "persistence_requirement": "medium",
+        "proposal_threshold": "medium",
+        "severe_threshold": "high",
+        "require_actionable": true,
+        "rest_spot_sensitivity": "medium",
+        "assertiveness": "gentle",
+        "content_safety_strictness": "strict",
+        "personalization_eagerness": "medium",
+        "route_selection": "preset_scenario",
+        "byo_maps_key": "absent"
+      },
+      "timeline": [
+        {
+          "status_id": "UC-01-S001",
+          "title": "Setup",
+          "category": "SETUP",
+          "motion_state": "MOVING",
+          "description": "Profile retrieved; friend onboard.",
+          "vehicle_state": "parked",
+          "user_state": "rested",
+          "passenger_state": "present",
+          "environment_state": "at home, stopped",
+          "trigger_state": "none",
+          "aica_message": "Welcome back. I have your profile and oshi-katsu preferences ready, so I can tailor anything I suggest on the way home.",
+          "user_options": null,
+          "system_action": "retrieve profile",
+          "review_points": [
+            "Setup appropriate?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S002",
+          "title": "Normal driving",
+          "category": "DRIVING_NORMAL",
+          "motion_state": "MOVING",
+          "description": "No concern yet.",
+          "vehicle_state": "moving",
+          "user_state": "alert",
+          "passenger_state": "present",
+          "environment_state": "after departure",
+          "trigger_state": "none",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "monitor without intervening",
+          "review_points": [
+            "Baseline appropriate?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S003",
+          "title": "Risk rising — severe sign present early",
+          "category": "RISK_RISING",
+          "motion_state": "MOVING",
+          "description": "The severe sign is present early on the drive.",
+          "vehicle_state": "moving",
+          "user_state": "severe drowsiness, high fatigue",
+          "passenger_state": "present",
+          "environment_state": "on the highway route",
+          "trigger_state": "weak",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "blend and damp the signals",
+          "review_points": [
+            "Severe sign reads early?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S004",
+          "title": "Trigger point — severe band reached",
+          "category": "TRIGGER_POINT",
+          "motion_state": "MOVING",
+          "description": "The band reaches the severe cut-point; firing position marked.",
+          "vehicle_state": "moving",
+          "user_state": "tired; severe signs",
+          "passenger_state": "present",
+          "environment_state": "approaching the firing position",
+          "trigger_state": "sustained",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "classify into severe-intervention; mark the firing position",
+          "review_points": [
+            "Severe escalation reads correctly?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S005",
+          "title": "AICA proposal — strongest, safety-oriented framing",
+          "category": "AICA_PROPOSAL",
+          "motion_state": "MOVING",
+          "description": "Proposal view in its strongest, safety-oriented framing; recovery options still selectable.",
+          "vehicle_state": "moving",
+          "user_state": "tired",
+          "passenger_state": "present",
+          "environment_state": "at the firing position",
+          "trigger_state": "sustained",
+          "aica_message": "I am seeing some signs of drowsiness. You can keep driving home, but if you rest now you may get home more comfortably and safely. Based on your preferences I prepared a few rest methods — which would you like? You can change it on the way.",
+          "user_options": null,
+          "system_action": "present the recovery options in firm framing; suppress visuals while moving",
+          "review_points": [
+            "Does the severe framing read firmly throughout?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S006",
+          "title": "Driver picks one offered recovery option",
+          "category": "USER_SELECTION",
+          "motion_state": "STOPPED",
+          "description": "Distinct reviewable choice, firmly framed.",
+          "vehicle_state": "moving",
+          "user_state": "tired but engaging",
+          "passenger_state": "present",
+          "environment_state": "at the firing position",
+          "trigger_state": "sustained",
+          "aica_message": "Understood. I will guide you to a rest spot where you can enjoy the option you chose.",
+          "user_options": [
+            "a brief nap then karaoke after the nap",
+            "a brief nap then a limited live video of the favorite artist after the nap",
+            "rest at a nearby oshi-related spot, with a nap plus experience guidance after arrival",
+            "(B variant) a short practical stretch at a convenience store on the shortest route",
+            "postpone the rest and keep driving for now"
+          ],
+          "system_action": "record the chosen recovery option",
+          "review_points": [
+            "Options preserved verbatim?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S006A",
+          "title": "Postpone the rest — keep driving to the destination without stopping",
+          "category": "RETURN_TO_DRIVE",
+          "motion_state": "MOVING",
+          "description": "Postpone outcome of the selection sub-branch, firmly framed: no waypoint, no stop, continue to the destination (terminal).",
+          "vehicle_state": "moving",
+          "user_state": "tired; chose to keep driving",
+          "passenger_state": "present",
+          "environment_state": "continuing toward the original destination, no waypoint added",
+          "trigger_state": "sustained but no rest action taken",
+          "aica_message": "Understood — I will keep guiding you home for now and stay ready to suggest a rest again if you start feeling more tired.",
+          "user_options": null,
+          "system_action": "acknowledge the postpone choice; keep the original destination guidance without a waypoint or stop; continue monitoring",
+          "review_points": [
+            "Does postpone read as a distinct no-stop continuation under severe framing?"
+          ],
+          "selection_outcome": "postpone"
+        },
+        {
+          "status_id": "UC-01-S007",
+          "title": "Register the rest spot and update route",
+          "category": "SYSTEM_ACTION",
+          "motion_state": "MOVING",
+          "description": "Rest spot registered; route updated.",
+          "vehicle_state": "moving",
+          "user_state": "tired",
+          "passenger_state": "present",
+          "environment_state": "route updated toward the service area",
+          "trigger_state": "sustained",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "register the waypoint and update route guidance",
+          "review_points": [
+            "Waypoint correct?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S008",
+          "title": "Alertness support en route (marker ②)",
+          "category": "SYSTEM_ACTION",
+          "motion_state": "MOVING",
+          "description": "Audio-only support, framed firmly.",
+          "vehicle_state": "moving",
+          "user_state": "tired but supported",
+          "passenger_state": "present",
+          "environment_state": "approaching the service area",
+          "trigger_state": "sustained",
+          "aica_message": "The rest spot is close now. To help with drowsiness I will play some humming karaoke and high-awakening music until we get there.",
+          "user_options": null,
+          "system_action": "play alertness audio; suppress lyrics/visuals while moving",
+          "review_points": [
+            "Audio-only safe while moving?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S009",
+          "title": "Rest-spot arrival — nap / relaxation (marker ③)",
+          "category": "RECOVERY",
+          "motion_state": "STOPPED",
+          "description": "Parked at the service area; relaxation mode.",
+          "vehicle_state": "parked",
+          "user_state": "tired, relaxing",
+          "passenger_state": "present",
+          "environment_state": "stopped at the service area",
+          "trigger_state": "sustained",
+          "aica_message": "We have arrived at the rest spot. Let's rest your body first — I will dim the lights and wake you in a little while.",
+          "user_options": null,
+          "system_action": "enter relaxation mode; set rest timer",
+          "review_points": [
+            "Arrival reads well?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S010A",
+          "title": "After-nap recovery — karaoke option",
+          "category": "RECOVERY",
+          "motion_state": "STOPPED",
+          "description": "Karaoke only while stopped.",
+          "vehicle_state": "parked",
+          "user_state": "relaxed",
+          "passenger_state": "present",
+          "environment_state": "stopped",
+          "trigger_state": "brief",
+          "aica_message": "You look refreshed. Here is a first karaoke song to ease back in — the video and lyrics are on only while we are stopped.",
+          "user_options": null,
+          "system_action": "show karaoke while stopped",
+          "review_points": [
+            "Visual only while stopped?"
+          ],
+          "selection_outcome": "rest_option"
+        },
+        {
+          "status_id": "UC-01-S011",
+          "title": "Return to driving",
+          "category": "RETURN_TO_DRIVE",
+          "motion_state": "MOVING",
+          "description": "Refreshed; guidance resumes.",
+          "vehicle_state": "moving",
+          "user_state": "refreshed",
+          "passenger_state": "present",
+          "environment_state": "leaving the service area",
+          "trigger_state": "none",
+          "aica_message": "You seem more refreshed now — let's continue home safely. I will resume guidance.",
+          "user_options": null,
+          "system_action": "resume route guidance",
+          "review_points": [
+            "Clean close?"
+          ],
+          "selection_outcome": "rest_option"
+        }
+      ]
+    },
+    {
+      "id": "case_e",
+      "label": "E — No Practical Action Fallback (reachable rest absent)",
+      "branch": "fallback",
+      "course": "highway",
+      "expected_result": "NO_PRACTICAL_ACTION_FALLBACK",
+      "map_info": {
+        "start_place": "Tokyo Station, Japan",
+        "end_place": "Nagano Station, Japan"
+      },
+      "route_snapshot": {
+        "captured": true,
+        "route_bands": {
+          "continuous_driving_time": "long",
+          "destination_eta": "far",
+          "signal_duration": "persistent"
+        },
+        "rest_spot_offsets": {
+          "rest_spot_eta": "none",
+          "ordinal_position": "mid-route"
+        }
+      },
+      "input_state": {
+        "drowsiness_level": "moderate",
+        "fatigue_level": "medium",
+        "signal_duration": "persistent",
+        "continuous_driving_time": "long",
+        "destination_eta": "far",
+        "rest_spot_eta": "none",
+        "passenger_present": true,
+        "vehicle_state": "moving",
+        "personalization_available": true,
+        "trigger_sensitivity": "medium",
+        "weight_drowsiness": "high",
+        "weight_fatigue": "medium",
+        "weight_attention": "medium",
+        "persistence_requirement": "medium",
+        "proposal_threshold": "medium",
+        "severe_threshold": "high",
+        "require_actionable": true,
+        "rest_spot_sensitivity": "medium",
+        "assertiveness": "gentle",
+        "content_safety_strictness": "strict",
+        "personalization_eagerness": "medium",
+        "route_selection": "preset_scenario",
+        "byo_maps_key": "absent"
+      },
+      "timeline": [
+        {
+          "status_id": "UC-01-S001",
+          "title": "Setup",
+          "category": "SETUP",
+          "motion_state": "MOVING",
+          "description": "Profile retrieved; friend onboard.",
+          "vehicle_state": "parked",
+          "user_state": "rested",
+          "passenger_state": "present",
+          "environment_state": "at home, stopped",
+          "trigger_state": "none",
+          "aica_message": "Welcome back. I have your profile and oshi-katsu preferences ready, so I can tailor anything I suggest on the way home.",
+          "user_options": null,
+          "system_action": "retrieve profile",
+          "review_points": [
+            "Setup appropriate?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S002",
+          "title": "Normal driving",
+          "category": "DRIVING_NORMAL",
+          "motion_state": "MOVING",
+          "description": "No concern yet.",
+          "vehicle_state": "moving",
+          "user_state": "alert",
+          "passenger_state": "present",
+          "environment_state": "after departure",
+          "trigger_state": "none",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "monitor without intervening",
+          "review_points": [
+            "Baseline appropriate?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S003",
+          "title": "Risk rising — persistent moderate drowsiness",
+          "category": "RISK_RISING",
+          "motion_state": "MOVING",
+          "description": "Persistent moderate drowsiness on a long drive.",
+          "vehicle_state": "moving",
+          "user_state": "moderate drowsiness, persistent",
+          "passenger_state": "present",
+          "environment_state": "on the highway route",
+          "trigger_state": "weak",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "blend and damp the signals",
+          "review_points": [
+            "Rising signal reads right?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S004",
+          "title": "Trigger point — proposing band, no reachable rest",
+          "category": "TRIGGER_POINT",
+          "motion_state": "MOVING",
+          "description": "The proposing band is reached but actionability fails (no rest spot); firing position marked.",
+          "vehicle_state": "moving",
+          "user_state": "tired; signs persistent",
+          "passenger_state": "present",
+          "environment_state": "approaching the firing position",
+          "trigger_state": "sustained",
+          "aica_message": null,
+          "user_options": null,
+          "system_action": "classify into the no-practical-action fallback; mark the firing position",
+          "review_points": [
+            "Does the fallback engage instead of an empty proposal?"
+          ]
+        },
+        {
+          "status_id": "UC-01-S005",
+          "title": "AICA acknowledges risk — fallback framing (terminal)",
+          "category": "AICA_PROPOSAL",
+          "motion_state": "MOVING",
+          "description": "Acknowledgement / soft-warning message at the firing position; no selectable recovery controls, no branch opens; content mode none.",
+          "vehicle_state": "moving",
+          "user_state": "tired",
+          "passenger_state": "present",
+          "environment_state": "at the firing position",
+          "trigger_state": "sustained",
+          "aica_message": "I am seeing some signs of drowsiness. You can keep driving home, but if you rest now you may get home more comfortably and safely. Based on your preferences I prepared a few rest methods — which would you like? You can change it on the way.",
+          "user_options": null,
+          "system_action": "show the acknowledgement message; present no selectable recovery controls",
+          "review_points": [
+            "Does the no-practical-action fallback read correctly with no unreachable proposal?"
+          ]
+        }
+      ]
+    }
+  ],
+  "review": {
+    "questions": [
+      "Should AICA fire in this case?",
+      "If it fires, is the timing acceptable?",
+      "Is the trigger reason understandable?",
+      "Is the required data realistic?",
+      "Is the proposed action safe while driving?",
+      "Should personalization be delayed until the vehicle is stopped or parked?"
+    ],
+    "verdicts": [
+      "agree",
+      "adjust",
+      "reject"
+    ],
+    "schema_version": "1"
+  }
+}
+</script>
+<!-- BUILD-DATA:END -->
+
+<!-- MODULES:START -->
+<script type="module">
+// evaluate_trigger.mjs — role evaluateTrigger (TP-001 v5)
+//
+// Pure, side-effect-free implementation of the temporary parametric trigger
+// logic of behavior_model/temporary_logic.md §1/§3. It blends the weighted
+// danger signals into one qualitative risk reading, damps it by the persistence
+// requirement, and classifies the damped reading against the reaction point and
+// the escalation cut-points — and crucially those cut-points are the **algorithm
+// hyperparameters**, so moving a hyperparameter moves which result fires (the
+// trigger is genuinely tunable, not frozen at default hyperparameters). All
+// values are qualitative ordinals (positions in a closed catalog value set); no
+// concrete thresholds, minutes, distances, or scores. No I/O, no globals.
+//
+// v5 carry-forward (REQ-INT-013 / DIFF-014, networked surface target): this engine
+// is byte-identical to v4. On the networked map surface the SAME ordinal bands are
+// sourced from the real route via the boundary-binning of surface_binning.mjs
+// BEFORE the engine — no concrete route quantity reaches this decision logic, so
+// Constitution Principle III is preserved. The engine is byte-identical between the
+// offline (v4) and networked (v5) surfaces.
+//
+// evaluateTrigger(inputState) -> { result_type, rule_id, reason_inputs }
+
+// Ordinal position of each catalog value within its closed value set. These are
+// positions in an enum (qualitative bands), never magnitudes for behavior.
+const ORD = {
+  // drowsiness_level
+  none: 0, weak: 1, moderate: 2, strong: 3, severe: 4,
+  // fatigue_level / weights / thresholds / sensitivities / eagerness
+  low: 0, medium: 1, high: 2,
+  // signal_duration
+  transient: 0, brief: 1, sustained: 2, persistent: 3,
+  // continuous_driving_time
+  short: 0, long: 2, // "moderate" already mapped above to 1
+  // rest_spot_eta
+  near: 1, far: 2, // "none" already mapped above to 0
+  // assertiveness
+  gentle: 0, balanced: 1, firm: 2,
+  // content_safety_strictness
+  lenient: 0, standard: 1, strict: 2
+};
+
+function ord(v) {
+  return Object.prototype.hasOwnProperty.call(ORD, v) ? ORD[v] : 0;
+}
+
+// Stage 1 — blend the danger signals into one qualitative risk reading, each
+// signal weighted by its weight hyperparameter; continuous driving time adds an
+// accumulation contribution. (Ordinal arithmetic over qualitative bands.)
+function blendReading(s) {
+  const wD = ord(s.weight_drowsiness);     // 0..2
+  const wF = ord(s.weight_fatigue);        // 0..2
+  const drowsiness = ord(s.drowsiness_level); // 0..4
+  const fatigue = ord(s.fatigue_level);       // 0..2
+  const drive = ord(s.continuous_driving_time); // 0..2
+  // Proportional contribution; weights tilt which signal leads the blend.
+  return drowsiness * (0.5 + 0.25 * wD) + fatigue * (0.2 * wF) + drive * 0.4;
+}
+
+// Stage 2 — damp the blended reading by signal persistence: a brief sign under a
+// higher persistence_requirement is damped; a sustained/persistent sign passes
+// undamped and lifts the reading.
+function dampedBand(s) {
+  const blend = blendReading(s);
+  const dur = ord(s.signal_duration);          // 0..3
+  const req = ord(s.persistence_requirement);  // 0..2
+  const shortfall = Math.max(0, (req + 1) - dur);
+  const persistenceLift = Math.max(0, dur - 1) * 0.6;
+  return Math.max(0, blend - shortfall + persistenceLift);
+}
+
+// Stage 3 — the qualitative cut-points, set by the algorithm hyperparameters.
+// Lower dial → lower cut → AICA reacts/escalates more readily; higher dial → the
+// band must be higher to cross. Default hyperparameters (sensitivity medium,
+// proposal_threshold medium, severe_threshold high) place the cuts so the five
+// presets reproduce. These are ordinal band positions, not committed thresholds.
+function reactionPoint(s) { return 1.8 - ord(s.trigger_sensitivity) * 0.4; } // low 1.8 · med 1.4 · high 1.0
+function proposalCut(s)   { return 2.0 + ord(s.proposal_threshold) * 1.0; }  // low 2.0 · med 3.0 · high 4.0
+function severeCut(s)     { return 3.0 + ord(s.severe_threshold) * 1.0; }    // low 3.0 · med 4.0 · high 5.0
+
+// Actionability: a rest action is reachable unless require_actionable is true AND
+// rest_spot_eta is none (or far with low rest_spot_sensitivity).
+function restReachable(s) {
+  if (s.require_actionable !== true) return true;
+  if (s.rest_spot_eta === 'none') return false;
+  if (s.rest_spot_eta === 'far' && ord(s.rest_spot_sensitivity) === 0) return false;
+  return true;
+}
+
+function evaluateTrigger(inputState) {
+  const s = inputState;
+  const damped = dampedBand(s);
+  const reaction = reactionPoint(s);
+  const propCut = proposalCut(s);
+  const sevCut = severeCut(s);
+
+  // --- Rule R1 — SEVERE_INTERVENTION ---
+  // drowsiness severe always intervenes; otherwise the damped band reaching the
+  // severe cut-point (set by severe_threshold) escalates.
+  if (s.drowsiness_level === 'severe') {
+    return { result_type: 'SEVERE_INTERVENTION', rule_id: 'R1', reason_inputs: ['drowsiness_level'] };
+  }
+  if (damped >= sevCut) {
+    return {
+      result_type: 'SEVERE_INTERVENTION', rule_id: 'R1',
+      reason_inputs: ['drowsiness_level', 'fatigue_level', 'signal_duration', 'weight_drowsiness', 'severe_threshold']
+    };
+  }
+
+  // --- proposing band — the damped band reaches the proposal cut-point (set by
+  // proposal_threshold) but stays below the severe cut-point. ---
+  if (damped >= propCut) {
+    // --- Rule R2 — NO_PRACTICAL_ACTION_FALLBACK (proposing, but no reachable rest) ---
+    if (!restReachable(s)) {
+      return {
+        result_type: 'NO_PRACTICAL_ACTION_FALLBACK', rule_id: 'R2',
+        reason_inputs: ['drowsiness_level', 'signal_duration', 'continuous_driving_time',
+          'proposal_threshold', 'require_actionable', 'rest_spot_eta']
+      };
+    }
+    // --- Rule R3 — REST_PROPOSAL ---
+    return {
+      result_type: 'REST_PROPOSAL', rule_id: 'R3',
+      reason_inputs: ['drowsiness_level', 'signal_duration', 'continuous_driving_time',
+        'weight_drowsiness', 'persistence_requirement', 'proposal_threshold', 'rest_spot_eta']
+    };
+  }
+
+  // --- Rule R4 — SOFT_WARNING — reaches the reaction point but not the proposal
+  // cut-point (set by trigger_sensitivity vs proposal_threshold). ---
+  if (damped >= reaction) {
+    return {
+      result_type: 'SOFT_WARNING', rule_id: 'R4',
+      reason_inputs: ['drowsiness_level', 'signal_duration', 'trigger_sensitivity', 'proposal_threshold']
+    };
+  }
+
+  // --- Rule R5 — catch-all → NO_TRIGGER (below the reaction point) ---
+  return {
+    result_type: 'NO_TRIGGER', rule_id: 'R5',
+    reason_inputs: ['drowsiness_level', 'signal_duration', 'trigger_sensitivity']
+  };
+}
+
+// compose_timeline.mjs — role composeTimeline (TP-001 v5)
+//
+// Pure, side-effect-free assembly of a case's scenario beat arc. Given a case
+// definition (which names its branch) and the payload beat catalog, it returns
+// the ordered beat-id array for that case: the shared pre-trigger segment
+// followed by the branch segment (no_fire | fire | fallback). It hardcodes no
+// beat ids — every id comes from the passed-in beat catalog — and reads nothing
+// from globals or I/O.
+//
+// v3 carry-forward (REQ-INT-005, still pure / BUILD-DATA-driven): for a "fire"
+// branch whose beat_catalog declares a selection sub-branch (a `selection_beat`
+// plus a `selection_sub_branches` map with `rest_option` / `postpone` beat-id
+// lists), an optional third argument selects which sub-branch the realized arc
+// follows after the selection beat. When the catalog declares no sub-branch
+// (UC-02..04) the behavior is byte-equivalent to v2.
+//
+// v4 extension (REQ-INT-009/010/011/012, all pure / BUILD-DATA-driven):
+//  - `motionStateFor(beatId, motionKeys)` threads each beat's MOVING | STOPPED
+//    motion state from the payload `motion_state_keys` (held-for-selection stops
+//    and the UC-01 rest-spot arrival stops are STOPPED; everything else is the
+//    declared `default_motion`). It hardcodes no beat id.
+//  - `regenerateTimeline(spec)` recomputes the WHOLE explore-mode timeline —
+//    branch, included beats, and per-beat content + motion_state — from the
+//    payload `flow_skeletons` (keyed by the trigger result type, the trigger
+//    result acting as the branch selector) and the per-beat authored content,
+//    so an explore-mode parameter edit that flips the trigger result yields a
+//    different regenerated timeline (different branch / beats). Pure: same inputs
+//    give the same regenerated timeline.
+//
+// v5 carry-forward (REQ-INT-013 / DIFF-014, networked surface target): this
+// timeline-composition + motion / regeneration logic is byte-identical to v4. The
+// networked map surface (the route / places data source) is thin glue that calls
+// these tested modules; only the data source moves outside the deterministic
+// boundary, never the algorithm.
+//
+// composeTimeline(caseDef, beatCatalog [, selectionOutcome]) -> [beatId, ...]
+// motionStateFor(beatId, motionKeys)                          -> 'MOVING' | 'STOPPED'
+// regenerateTimeline(spec)                                    -> { branch, beats: [...] }
+//
+// Branch semantics (behavior_rules.md / fixtures.md):
+//  - "no_fire": the pre arc up to and including the case's no-fire terminal beat,
+//    then no proposal branch.
+//  - "fire":    the full pre arc, then the fire branch's realized arc (the
+//    selectable-recovery proposal through return-to-drive). Beat-variant ids in
+//    the fire list (alternate selection branches) are not part of the default
+//    realized arc; the realized arc is the canonical chain excluding the
+//    alternate "<base>B".."<base>E" sibling variants. When a selection sub-branch
+//    is declared and an outcome is given, the post-selection beats follow that
+//    outcome's declared beat-id list instead.
+//  - "fallback": the pre arc up to and including the case's fallback terminal
+//    beat (the acknowledgement beat), then no branch.
+
+function indexOfTerminal(preArc, terminalId) {
+  const i = preArc.indexOf(terminalId);
+  return i === -1 ? preArc.length - 1 : i;
+}
+
+// From an ordered beat list, drop the alternate selection-branch sibling
+// variants — beat ids that share a numeric stem with an earlier id but carry a
+// later letter suffix (e.g. keep "...S010A", drop "...S010B".."...S010E").
+function realizedArc(beatList) {
+  const seenStems = new Set();
+  const out = [];
+  for (const id of beatList) {
+    const m = /^(.*?)([A-Z])$/.exec(id); // trailing single-letter variant suffix
+    if (m) {
+      const stem = m[1];
+      const letter = m[2];
+      if (seenStems.has(stem)) {
+        // An earlier variant of this stem is already in the arc; this is a
+        // sibling alternate selection branch — not part of the realized arc.
+        continue;
+      }
+      seenStems.add(stem);
+      // Keep only the first variant of each stem (e.g. the "A" branch).
+      if (letter === 'A') {
+        out.push(id);
+        continue;
+      }
+      // A lettered id whose stem was not yet seen and is not "A": keep it as the
+      // canonical realized beat for that stem.
+      out.push(id);
+      continue;
+    }
+    out.push(id);
+  }
+  return out;
+}
+
+function composeTimeline(caseDef, beatCatalog, selectionOutcome) {
+  const branch = caseDef && caseDef.branch;
+  const pre = Array.isArray(beatCatalog.pre) ? beatCatalog.pre.slice() : [];
+
+  if (branch === 'no_fire') {
+    const terminal = (beatCatalog.no_fire && beatCatalog.no_fire[beatCatalog.no_fire.length - 1]);
+    const end = indexOfTerminal(pre, terminal);
+    return pre.slice(0, end + 1);
+  }
+
+  if (branch === 'fallback') {
+    const terminal = (beatCatalog.fallback && beatCatalog.fallback[beatCatalog.fallback.length - 1]);
+    const end = indexOfTerminal(pre, terminal);
+    // The fallback terminal is the AICA_PROPOSAL acknowledgement beat. If it is
+    // not part of pre, append it explicitly so the fallback arc ends on it.
+    if (pre.indexOf(terminal) === -1 && terminal) {
+      return pre.concat([terminal]);
+    }
+    return pre.slice(0, end + 1);
+  }
+
+  if (branch === 'fire') {
+    // REQ-INT-005 — selection sub-branch: when the catalog declares a
+    // selection_beat and a selection_sub_branches map, the realized fire arc is
+    // the proposal + selection beats up to and including the selection beat,
+    // then the chosen outcome's declared post-selection beats. All beat ids come
+    // from the catalog; no ids are hardcoded.
+    const sub = beatCatalog.selection_sub_branches;
+    const selBeat = beatCatalog.selection_beat;
+    if (sub && selBeat) {
+      const fire = Array.isArray(beatCatalog.fire) ? beatCatalog.fire : [];
+      const selIdx = fire.indexOf(selBeat);
+      // Lead = the fire beats up to and including the selection beat, with
+      // alternate sibling variants dropped (none expected before the selection).
+      const lead = realizedArc(selIdx === -1 ? fire : fire.slice(0, selIdx + 1));
+      // Resolve the outcome's declared beat list; default to rest_option (the
+      // canonical recovery path) when no explicit, recognized outcome is given.
+      const key = (selectionOutcome === 'postpone' || selectionOutcome === 'rest_option')
+        ? selectionOutcome
+        : 'rest_option';
+      const tail = realizedArc(Array.isArray(sub[key]) ? sub[key] : []);
+      return pre.concat(lead, tail);
+    }
+    // No sub-branch declared (UC-02..04): byte-equivalent to v2.
+    const fireArc = realizedArc(Array.isArray(beatCatalog.fire) ? beatCatalog.fire : []);
+    return pre.concat(fireArc);
+  }
+
+  // Unknown branch: return the pre arc unchanged (total, deterministic).
+  return pre;
+}
+
+// REQ-INT-009/010/012 — thread each beat's motion state through to the rendered
+// timeline. STOPPED at every held-for-selection stop and (UC-01) at every
+// rest-spot arrival/hold beat; MOVING (the declared default) everywhere else.
+// No beat id is hardcoded — the stop sets come from the payload motion_state_keys.
+function motionStateFor(beatId, motionKeys) {
+  const keys = motionKeys || {};
+  const held = Array.isArray(keys.held_for_selection_stop) ? keys.held_for_selection_stop : [];
+  const arrival = Array.isArray(keys.uc01_arrival_stop) ? keys.uc01_arrival_stop : [];
+  if (held.indexOf(beatId) !== -1) return 'STOPPED';
+  if (arrival.indexOf(beatId) !== -1) return 'STOPPED';
+  return keys.default_motion || 'MOVING';
+}
+
+// REQ-INT-009/010 — PURE PRESENTATION LOGIC (tier A): the per-beat route layout.
+// This is the behavior REQ-INT-010 describes (the car holds ON the rest spot
+// through the whole recovery, not driving past it), kept in a tested module rather
+// than the untested template app-layer so it is verified by node --test (see
+// compose_timeline.test.mjs). restStopIdsFor returns the arrival/recovery STOPPED
+// beats present in the arc, in order.
+function restStopIdsFor(arc, motionKeys) {
+  const stop = (motionKeys && Array.isArray(motionKeys.uc01_arrival_stop)) ? motionKeys.uc01_arrival_stop : [];
+  if (!stop.length) return [];
+  const set = new Set(stop);
+  return (Array.isArray(arc) ? arc : []).filter((id) => set.has(id));
+}
+// beatLayout(spec) -> [{ id, motion, pos }] for the whole arc (pos = route fraction
+// in [0,1]). spec = { arc, motionKeys, preLen, fp1, restAt, restLayout }.
+//  - restLayout=true (the UC-01 rest-spot stop-recover flow): the branch beats
+//    split into APPROACH (spread across [fp1, restAt)), the STOPPED arrival/recovery
+//    beats (ALL co-located AT restAt — the car holds here), and DEPART beats (across
+//    (restAt, 1]). This is what stops the car ON the rest spot through dim/sleep →
+//    chosen content instead of driving through them.
+//  - otherwise: branch beats spread evenly across [fp1, 1] (the default, unchanged).
+// Pure: same inputs -> same layout.
+function beatLayout(spec) {
+  const s = spec || {};
+  const arc = Array.isArray(s.arc) ? s.arc : [];
+  const motionKeys = s.motionKeys || {};
+  const preLen = Math.max(0, s.preLen | 0);
+  const fp1 = (typeof s.fp1 === 'number') ? s.fp1 : 1;
+  const restAt = (typeof s.restAt === 'number') ? s.restAt : null;
+  const out = arc.map((id) => ({ id, motion: motionStateFor(id, motionKeys), pos: 0 }));
+  for (let i = 0; i < out.length && i < preLen; i++) { out[i].pos = preLen ? (i / preLen) * fp1 : 0; }
+  const branch = out.slice(preLen);
+  if (!branch.length) return out;
+  if (s.restLayout && restAt != null) {
+    const stopSet = new Set(restStopIdsFor(arc, motionKeys));
+    const first = branch.findIndex((b) => stopSet.has(b.id));
+    let last = -1; for (let i = 0; i < branch.length; i++) { if (stopSet.has(branch[i].id)) last = i; }
+    if (first !== -1) {
+      const approach = branch.slice(0, first);
+      const stop = branch.slice(first, last + 1);
+      const depart = branch.slice(last + 1);
+      approach.forEach((b, j) => { b.pos = fp1 + ((j + 1) / (approach.length + 1)) * (restAt - fp1); });
+      stop.forEach((b) => { b.pos = restAt; });
+      depart.forEach((b, m) => { b.pos = depart.length <= 1 ? Math.min(1, restAt + 0.02) : restAt + (m / (depart.length - 1)) * (1 - restAt); });
+      return out;
+    }
+  }
+  const restCount = branch.length;
+  branch.forEach((b, k) => { b.pos = fp1 + (k / restCount) * (1 - fp1); });
+  return out;
+}
+
+// REQ-INT-011 — recompute the WHOLE explore-mode timeline from the parameter
+// groups. The trigger `result` (computed by evaluateTrigger from the live input
+// state) is the branch selector: flowSkeletons[result.result_type] gives the
+// branch and its included beat ids. For the UC-01 fire branch, a `postpone`
+// selection outcome substitutes the skeleton's `postpone` beat list for the
+// post-selection beats (no waypoint / no stop). Each included beat is dressed
+// with its authored per-beat content (title, category, aica_message, system
+// action, the per-beat states) keyed by id, and its motion_state from
+// motionStateFor. When the authored case timeline does not carry a skeleton beat
+// (e.g. a beat only present in another case), a minimal content stub keyed off
+// the fragment library / beat id is produced so the regenerated timeline is
+// always complete. Pure & deterministic.
+//
+// spec = {
+//   result,              // { result_type, ... } from evaluateTrigger
+//   flowSkeletons,       // payload flow_skeletons
+//   beatById,            // { beatId -> authored beat object }
+//   motionKeys,          // payload motion_state_keys
+//   fragments,           // payload fragment_library
+//   selectionOutcome,    // 'rest_option' | 'postpone' | null
+//   params               // the live input state (context + hyperparameters): the
+//                        //   presentation hyperparameters (assertiveness,
+//                        //   content_safety_strictness, personalization_*) shape
+//                        //   each beat's content per temporary_logic.md §1A pt 3.
+// }
+function regenerateTimeline(spec) {
+  const s = spec || {};
+  const result = s.result || {};
+  const skeletons = s.flowSkeletons || {};
+  const beatById = s.beatById || {};
+  const fragments = s.fragments || {};
+  const rt = result.result_type;
+  const sk = skeletons[rt];
+  if (!sk) {
+    return { branch: 'unknown', result_type: rt || null, beats: [] };
+  }
+  // The skeleton's beat list is the included-beat view for this result type.
+  let ids = Array.isArray(sk.beats) ? sk.beats.slice() : [];
+  // UC-01 postpone outcome: replace the post-selection tail with the skeleton's
+  // declared postpone beats. The selection beat is the last held-for-selection
+  // stop present in the skeleton; everything after it is the post-selection tail.
+  if (s.selectionOutcome === 'postpone' && Array.isArray(sk.postpone) && sk.postpone.length) {
+    const held = (s.motionKeys && s.motionKeys.held_for_selection_stop) || [];
+    let cut = -1;
+    for (let i = 0; i < ids.length; i++) { if (held.indexOf(ids[i]) !== -1) cut = i; }
+    if (cut !== -1) {
+      ids = ids.slice(0, cut + 1).concat(sk.postpone);
+    }
+  }
+  const framing = (fragments.result_framing && fragments.result_framing[rt]) || '';
+  // §1A pt 3 — the presentation hyperparameters qualitatively shape each beat's
+  // content. These are deterministic look-ups into the fragment library keyed by
+  // the live hyperparameter values, so changing assertiveness / content strictness
+  // / personalization regenerates the per-beat information (not just the branch).
+  const p = s.params || {};
+  const tone = (fragments.assertiveness_tone && fragments.assertiveness_tone[p.assertiveness]) || '';
+  const persoOn = p.personalization_available !== false;
+  const persoNote = persoOn
+    ? ((fragments.personalization_eagerness_note && fragments.personalization_eagerness_note[p.personalization_eagerness]) || '')
+    : '';
+  // Content mode: while moving, visual is held unless strictness is lenient; once
+  // stopped, visual is allowed — so content_safety_strictness is a live dial.
+  const contentModeFor = (motion) => {
+    if (motion === 'STOPPED') return 'visual_allowed_after_stop';
+    return (p.content_safety_strictness === 'lenient') ? 'visual_allowed_after_stop' : 'audio_only';
+  };
+  const beats = ids.map((id) => {
+    const b = beatById[id] || {};
+    const motion = motionStateFor(id, s.motionKeys);
+    const motionNote = (fragments.motion_state_note && fragments.motion_state_note[motion]) || '';
+    const cat = b.category || '';
+    const speaks = cat === 'AICA_PROPOSAL' || cat === 'USER_SELECTION';
+    const carriesContent = cat === 'RECOVERY' || cat === 'SYSTEM_ACTION';
+    const extras = [];
+    if (speaks && tone) extras.push(tone);
+    if (speaks && persoNote) extras.push(persoNote);
+    if (carriesContent) {
+      const cm = (fragments.content_mode_note && fragments.content_mode_note[contentModeFor(motion)]) || '';
+      if (cm) extras.push(cm);
+    }
+    const information = [b.description || framing, ...extras].filter(Boolean).join(' ');
+    return {
+      id,
+      category: cat,
+      title: b.title || id,
+      motion_state: motion,
+      aica_message: (b.aica_message != null ? b.aica_message : null),
+      status: motionNote,
+      information,
+      user_options: (b.user_options != null ? b.user_options : null)
+    };
+  });
+  return { branch: sk.branch || '', result_type: rt, beats };
+}
+
+// firePosition.mjs — derived on-route marker placement (TP-001 v5)
+//
+// Pure, side-effect-free placement of the on-route firing markers ①②③ as a
+// route fraction in [0, 1]. This is the derived presentation rule of the
+// data / interface models (draft §5.4): the *result type* decides whether ①
+// appears, and where ① lands is driven by how soon the trigger fires (earlier
+// when the risk is higher / fires sooner — i.e. higher sensitivity or a
+// stronger/long-drive band) and the course speed band; events ②③ sit at and
+// just before the course's flagged rest-facility segment (UC-01 only). No
+// concrete distances or speeds — only qualitative ordinal bands and the course's
+// own segment fractions. No I/O, no globals.
+//
+// Carried forward byte-for-byte from v4 (and v3/v2/v1): the v5 navigation-surface
+// swap (REQ-INT-013 / DIFF-014) is render / template-side and does not change this
+// module. On the networked map surface the firing marker is placed on the real
+// route at the same derived fraction; the placement math is byte-identical.
+//
+// firePosition(eventNum, result, course) -> number in [0, 1]
+//
+//  - result: { result_type, rule_id, reason_inputs, input_state?, earliness? }
+//            earliness (0..1) is an optional caller-supplied "fires-sooner"
+//            reading; when absent it is derived from the result type band.
+//  - course: a BUILD-DATA course object with .segments[] carrying .is_rest_facility
+//            and .at (0..1) and a qualitative .speed_band.
+
+const SPEED_PUSH = { low: 0.0, medium: 0.06, high: 0.12 };
+
+function restFraction(course) {
+  const segs = (course && course.segments) || [];
+  const rest = segs.find(s => s.is_rest_facility);
+  if (rest && typeof rest.at === 'number') return rest.at;
+  // Fallback: middle of the route if no flagged rest facility.
+  return 0.5;
+}
+
+// Map a result type to a default earliness in [0,1] (1 = fires as soon as
+// possible, nearest home; 0 = fires latest). Higher-risk results fire sooner.
+function defaultEarliness(resultType) {
+  switch (resultType) {
+    case 'SEVERE_INTERVENTION': return 0.9;
+    case 'REST_PROPOSAL': return 0.65;
+    case 'NO_PRACTICAL_ACTION_FALLBACK': return 0.6;
+    case 'SOFT_WARNING': return 0.45;
+    default: return 0.0; // NO_TRIGGER — no marker; caller should not place ①
+  }
+}
+
+function firePosition(eventNum, result, course) {
+  const restAt = restFraction(course);
+  const speedPush = SPEED_PUSH[(course && course.speed_band)] || 0;
+
+  if (eventNum === 1) {
+    // ① lands before the rest facility; earlier (toward home, smaller fraction)
+    // as the result fires sooner / risk is higher; a higher speed band pushes it
+    // a little later down the route.
+    const earliness = (result && typeof result.earliness === 'number')
+      ? result.earliness
+      : defaultEarliness(result && result.result_type);
+    // earliness 1 -> nearest home (small fraction); 0 -> just before rest.
+    const lo = 0.12;                 // closest ① ever lands to home
+    const hi = Math.max(lo + 0.02, restAt - 0.05); // latest ① before the rest seg
+    const frac = hi - (hi - lo) * earliness + speedPush;
+    return Math.min(hi, Math.max(lo, frac));
+  }
+
+  if (eventNum === 2) {
+    // ② rest-spot imminent — just before the rest facility.
+    return Math.max(0, restAt - 0.08);
+  }
+
+  // ③ rest-spot arrival — at the rest facility.
+  return restAt;
+}
+
+// surface_binning.mjs — tier-A boundary-binning + structural-signature (TP-001 v5)
+//
+// NEW in v5 (REQ-INT-013 / DIFF-014, networked surface target). Two pure,
+// side-effect-free computations that the networked map surface depends on; both
+// are unit-tested (G3 = tested is shipped) and inlined byte-for-byte into the
+// artifact, so the behavior the artifact relies on is the behavior tested under
+// `node --test`, not untested app-layer script (G7).
+//
+//   1. boundaryBin(rawRoute) — the surface→input boundary. Maps the live route's
+//      REAL quantities (travel-time seconds, remaining-to-destination seconds,
+//      rest-spot reachability distance metres) into the existing QUALITATIVE
+//      ordinal bands the §5 trigger already tests (continuous_driving_time,
+//      destination_eta, rest_spot_eta). This runs BEFORE the engine, so no
+//      concrete numeric ever reaches the decision logic — Constitution
+//      Principle III is preserved on the networked surface. The output is a small
+//      object of ordinal band values only (never a number, never raw geometry,
+//      never a key).
+//
+//   2. structuralSignature(state) — the persist-vs-rerender decision for the
+//      reparented map div. The signature is a stable string of the STRUCTURAL
+//      fields of the regenerated scenario (the proposal stage, the result type,
+//      the selected option, the recovery / selection flags, the selection
+//      outcome, the active course). It is STABLE across a playback tick (pos /
+//      time advancing) — pos is deliberately NOT part of the signature — so the
+//      cockpit (and the embedded map) re-renders ONLY when the structure changes,
+//      not on every animation frame, which is what keeps the map from
+//      disappearing on Play. The decision is therefore a tested computation, not
+//      an app-layer one.
+//
+// boundaryBin(rawRoute)       -> { continuous_driving_time, destination_eta, rest_spot_eta }
+// structuralSignature(state)  -> string (stable across a playback tick)
+
+// --- 1. boundary-binning: live route metres / seconds -> ordinal bands ---------
+
+// Travel time (seconds) -> continuous_driving_time band. Short under 30 min,
+// moderate under 90 min, long beyond. Qualitative bands, not committed thresholds.
+function binDriveTime(sec) {
+  if (sec == null) return 'short';
+  if (sec < 1800) return 'short';
+  if (sec < 5400) return 'moderate';
+  return 'long';
+}
+
+// Remaining-to-destination (seconds) -> destination_eta band.
+function binDestEta(sec) {
+  if (sec == null) return 'medium';
+  if (sec < 1200) return 'close';
+  if (sec < 3600) return 'medium';
+  return 'far';
+}
+
+// Rest-spot reachability (metres to the nearest targeted rest spot, or null when
+// none was found) -> rest_spot_eta band. A reachable nearby spot is near; a far
+// spot is far; no spot found is none.
+function binRestEta(metres) {
+  if (metres == null) return 'none';
+  if (metres <= 20000) return 'near';
+  return 'far';
+}
+
+// The whole surface→input boundary. rawRoute carries ONLY the live numeric
+// quantities the surface measured; this returns ONLY ordinal bands. No number,
+// no raw geometry, no key crosses out of here into the engine.
+//
+// rawRoute = { travel_time_sec, remaining_to_destination_sec, rest_spot_metres }
+function boundaryBin(rawRoute) {
+  const r = rawRoute || {};
+  return {
+    continuous_driving_time: binDriveTime(r.travel_time_sec),
+    destination_eta: binDestEta(r.remaining_to_destination_sec),
+    rest_spot_eta: binRestEta(r.rest_spot_metres)
+  };
+}
+
+// --- 2. structural-signature: persist-vs-rerender for the reparented map div ----
+
+// The structural fields of the regenerated scenario. Anything that changes the
+// COCKPIT STRUCTURE (which panel/overlay is shown, the branch, the chosen option,
+// the recovery / selection flags, the active route) belongs here; the per-frame
+// playback position (pos / time) deliberately does NOT, so a playback tick yields
+// the SAME signature and the map is not torn down and reparented every frame.
+function structuralSignature(state) {
+  const s = state || {};
+  return [
+    s.proposalNum,            // which on-route event's overlay is showing (null / 1 / 2 / 3)
+    s.resultType,             // the trigger result type (branch selector)
+    s.selectedOption,         // the chosen recovery/consent option
+    s.recoveryActive,         // UC-01 stopped-recovery sequence showing?
+    s.recoveryReleased,       // recovery played out (car departed)?
+    s.recoveryCursor,         // which recovery beat is playing
+    s.selectionConsumed,      // held-for-selection stop released?
+    s.selectionOutcome,       // rest_option | postpone | null
+    s.courseId                // active course / route id
+  ].join('|');
+}
+
+window.__AICA_MODULES__ = { evaluateTrigger, composeTimeline, firePosition, motionStateFor, regenerateTimeline, beatLayout, restStopIdsFor, boundaryBin, structuralSignature, binDriveTime, binDestEta, binRestEta };
+</script>
+<!-- MODULES:END -->
+
+<!-- BYO-key, git-ignored, OPTIONAL dev convenience: if present it may set
+     window.__DEV_MAPS_KEY so the map auto-loads during local testing. It is
+     NEVER committed and NEVER contains a real key value in the repo; the map
+     stays inert until a runtime key is present. -->
+<script src="./key.local.js" onerror="void 0"></script>
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const DATA = JSON.parse($('build-data').textContent);
+const M = window.__AICA_MODULES__;
+const { evaluateTrigger, composeTimeline, firePosition } = M;
+// REQ-INT-009/010/011/012 — v4 pure helpers; REQ-INT-013 — v5 networked-surface
+// helpers (boundaryBin = the surface→input boundary; structuralSignature = the
+// persist-vs-rerender decision). All come from the tested tier-A modules
+// (compose_timeline.mjs / surface_binning.mjs), guarded so an older inlined module
+// set still loads.
+const motionStateFor = M.motionStateFor || ((id) => (DATA.motion_state_keys && DATA.motion_state_keys.default_motion) || 'MOVING');
+const regenerateTimeline = M.regenerateTimeline || null;
+// REQ-INT-013 — boundary-binning of live route quantities into ordinal bands
+// BEFORE the engine (Constitution Principle III): live metres / seconds never
+// reach the trigger; only the ordinal bands do. The single source of these binners
+// is the tested tier-A module — the app layer only calls them.
+const boundaryBin = M.boundaryBin;
+const structuralSignature = M.structuralSignature;
+
+const RESULT_TYPES = ['NO_TRIGGER','SOFT_WARNING','REST_PROPOSAL','SEVERE_INTERVENTION','NO_PRACTICAL_ACTION_FALLBACK'];
+const BADGE = ['①','②','③'];
+const segIcon = (s) => s.is_rest_facility ? '☕' : (s.at === 0 ? '🏠' : (s.at >= 1 ? '🏁' : '🏙️'));
+
+let mode = 'preset';
+let caseId = (DATA.cases[0] || {}).id;
+let courseId = (DATA.courses[0] || {}).id;
+let live = {};            // current input state (preset: case input_state; explore: editable)
+let pos = 0;              // 0..1 along the course
+let playing = false, speed = 1, raf = null, last = null;
+let selectedOption = null;
+// REQ-INT-005 / REQ-INT-008 — the UC-01 recovery-selection outcome drives the flow.
+let restDwell = 0;        // dwell time (s) on the current stopped recovery beat
+let recoveryReleased = false;
+let recoveryCursor = 0;
+let selectionConsumed = false;
+const fired = new Set();
+const captures = {};      // case_id -> { input_values, computed_result, reviewer_verdict, comment }
+
+const curCase = () => DATA.cases.find(c => c.id === caseId) || DATA.cases[0];
+const course = () => DATA.courses.find(c => c.id === courseId) || DATA.courses[0];
+const result = () => evaluateTrigger(live);
+const meta = (rt) => DATA.result_meta[rt] || {};
+
+// REQ-INT-005 — the UC-01 selection outcome (rest-option vs postpone).
+function selectionOutcomeKey(){
+  if (DATA.meta.use_case !== 'UC-01') return null;
+  if (!(DATA.beat_catalog && DATA.beat_catalog.selection_sub_branches)) return null;
+  if (selectedOption && /postpone/i.test(String(selectedOption))) return 'postpone';
+  return 'rest_option';
+}
+const beatById = () => Object.fromEntries((curCase().timeline || []).map(b => [b.status_id, b]));
+
+// REQ-INT-011 — the regenerated whole timeline. The live result is the branch
+// selector; branch + included beats + per-beat content + motion_state are recomputed.
+function regen(){
+  if (regenerateTimeline && DATA.flow_skeletons){
+    return regenerateTimeline({
+      result: result(),
+      flowSkeletons: DATA.flow_skeletons,
+      beatById: beatById(),
+      motionKeys: DATA.motion_state_keys,
+      fragments: DATA.fragment_library,
+      selectionOutcome: selectionOutcomeKey(),
+      params: live
+    });
+  }
+  const ids = composeTimeline(curCase(), DATA.beat_catalog, selectionOutcomeKey());
+  const by = beatById();
+  return { branch: (curCase().branch || ''), result_type: result().result_type,
+    beats: ids.map(id => { const b = by[id] || {}; return { id, category: b.category||'', title: b.title||id, motion_state: motionStateFor(id, DATA.motion_state_keys), aica_message: (b.aica_message!=null?b.aica_message:null), user_options: (b.user_options!=null?b.user_options:null) }; }) };
+}
+const regenBeatById = () => Object.fromEntries(regen().beats.map(b => [b.id, b]));
+const arc = () => regen().beats.map(b => b.id);
+function currentMotionState(){
+  const id = currentBeatId();
+  const rb = regenBeatById();
+  if (id && rb[id]) return rb[id].motion_state || 'MOVING';
+  return motionStateFor(id, DATA.motion_state_keys);
+}
+
+function proposalBeat(){ return (curCase().timeline || []).find(b => b.category === 'AICA_PROPOSAL'); }
+function selectionBeat(){ return (curCase().timeline || []).find(b => b.category === 'USER_SELECTION'); }
+
+function activeEvents(){
+  const rt = result().result_type;
+  const m = meta(rt);
+  if (!m.fire) return [];
+  const fullBranch = rt === 'REST_PROPOSAL' || rt === 'SEVERE_INTERVENTION';
+  const isUc01 = DATA.meta.use_case === 'UC-01';
+  return DATA.meta.course_sim.uc_events.filter(e => {
+    if (e.num === 1) return true;
+    if (!fullBranch) return false;
+    if (e.uc01_only && !isUc01) return false;
+    return true;
+  });
+}
+function firePos(n){
+  const r = result();
+  return firePosition(n, { result_type: r.result_type, rule_id: r.rule_id, input_state: live }, course());
+}
+
+/* ---------- header / mode ---------- */
+function renderHeader(){
+  $('proto-name').textContent = DATA.meta.name;
+  $('proto-ids').textContent = `${DATA.meta.target_prototype} · ${DATA.meta.use_case} · ${DATA.meta.loop} · ${DATA.meta.prototype_version}`;
+  $('warning').textContent = DATA.meta.warning;
+}
+function renderMode(){
+  $('mode-toggle').innerHTML = ['preset','explore'].map(m => `<button data-m="${m}" class="${m===mode?'active':''}">${m}</button>`).join(' ');
+  $('mode-hint').textContent = mode==='preset'
+    ? 'Preset: the case input vector + course are the golden reference (read-only).'
+    : 'Explore: edit any parameter; the result and the on-route markers recompute live.';
+  $('mode-toggle').querySelectorAll('button').forEach(b => b.onclick = () => { mode = b.dataset.m; loadCase(); });
+}
+
+/* ---------- case + course selection ---------- */
+function loadCase(){
+  const c = curCase();
+  live = { ...c.input_state };
+  courseId = c.course || courseId;
+  resetRun();
+  renderAll();
+  if (typeof presetRoute === 'function') presetRoute(); // REQ-INT-013 — set up the live route for this preset
+}
+// REQ-INT-004 — the case selector HOLDS the chosen case (built once; re-renders
+// only sync the held .value, never rebuild the dropdown).
+function buildCaseSelectOnce(){
+  const sel = $('case-select');
+  if (sel.dataset.built === '1') { sel.value = caseId; return; }
+  sel.innerHTML = DATA.cases.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
+  sel.value = caseId;
+  sel.dataset.built = '1';
+  sel.onchange = (e) => { caseId = e.target.value; loadCase(); }; // hold the chosen case
+}
+function renderCaseSelect(){
+  const sel = $('case-select');
+  if (sel.dataset.built !== '1') { buildCaseSelectOnce(); return; }
+  if (sel.value !== caseId) sel.value = caseId; // hold the chosen case
+}
+function renderCourseControls(){
+  $('course-select').innerHTML = DATA.courses.map(c => `<option value="${c.id}" ${c.id===courseId?'selected':''}>${c.label} · rest: ${restName(c)}</option>`).join('');
+  $('course-select').disabled = (mode === 'preset');
+  $('course-select').onchange = (e) => { courseId = e.target.value; resetRun(); renderAll(); showToast(`course → ${course().label}`); };
+}
+function restName(c){ const r = (c.segments||[]).find(s => s.is_rest_facility); return r ? r.location : '—'; }
+
+/* ---------- left: segments + scenario timeline ---------- */
+function renderSegments(){
+  const segs = course().segments || [];
+  const cur = segIndexAt(pos);
+  $('seglist').innerHTML = segs.map((s,i) =>
+    `<li class="${i===cur?'active ':''}${s.is_rest_facility?'rest':''}"><span class="seg-ic">${segIcon(s)}</span><span class="seg-name">${s.location}</span>${s.is_rest_facility?'<span class="seg-fire">rest</span>':''}</li>`).join('');
+}
+function segIndexAt(p){ const segs = course().segments || []; let idx = 0; for (let i=0;i<segs.length;i++){ if (p >= segs[i].at) idx = i; } return idx; }
+function renderBeats(){
+  const beats = regen().beats;
+  const curBeat = currentBeatId();
+  $('beatlist').innerHTML =
+    '<div class="seekhint">Click a beat to jump the whole view to it.</div>'
+    + beats.map((b, idx) => {
+      const stopped = b.motion_state === 'STOPPED';
+      const tag = `<span style="float:right;font-size:9px;color:${stopped?'var(--warn)':'var(--fire)'}">${stopped?'■ stopped':'▶ driving'}</span>`;
+      return `<li class="${b.id===curBeat?'active':''}" data-beat="${b.id}" data-idx="${idx}" data-motion="${b.motion_state||'MOVING'}"><div class="cat">${b.category||''}${tag}</div>${b.title||b.id}</li>`;
+    }).join('');
+  $('beatlist').querySelectorAll('li[data-idx]').forEach(li => {
+    li.onclick = () => seekToBeat(+li.dataset.idx);
+  });
+}
+
+// REQ-INT-009/010 — the STOPPED arrival/recovery beats present in the current arc.
+// Delegates to the tested pure module (compose_timeline.mjs M.restStopIdsFor).
+function restStopIds(){
+  return M.restStopIdsFor ? M.restStopIdsFor(arc(), DATA.motion_state_keys) : [];
+}
+function restLayoutOn(){
+  if (DATA.meta.use_case !== 'UC-01') return false;
+  if (restSpotFraction() == null) return false;
+  const rt = result().result_type;
+  if (rt !== 'REST_PROPOSAL' && rt !== 'SEVERE_INTERVENTION') return false;
+  if (selectionOutcomeKey() === 'postpone') return false;
+  return restStopIds().length > 0;
+}
+// REQ-INT-009/010 — the position math is the pure, UNIT-TESTED M.beatLayout
+// (compose_timeline.mjs): for the UC-01 rest flow the STOPPED arrival/recovery beats
+// are co-located AT the rest-spot fraction so the car holds ON the rest spot; the
+// template only gathers the runtime inputs and delegates — no position logic here.
+function beatLayout(){
+  return M.beatLayout({
+    arc: arc(),
+    motionKeys: DATA.motion_state_keys,
+    preLen: (DATA.beat_catalog.pre || []).length,
+    fp1: activeEvents().some(e => e.num === 1) ? firePos(1) : 1,
+    restAt: restSpotFraction(),
+    restLayout: restLayoutOn()
+  });
+}
+function beatPosition(idx){
+  const lay = beatLayout();
+  if (!lay.length) return 0;
+  return lay[Math.max(0, Math.min(lay.length - 1, idx))].pos;
+}
+function inRestHold(){
+  if (!restLayoutOn() || recoveryReleased) return false;
+  const restAt = restSpotFraction();
+  return restAt != null && pos >= restAt - 0.0006;
+}
+
+function seekToBeat(idx){
+  playing = false; if (raf) cancelAnimationFrame(raf); raf = null;
+  const p = $('play'); if (p) p.textContent = '▶ Play';
+  const restAt = restSpotFraction();
+  const target = beatPosition(idx);
+  if (restAt != null && target > restAt + 0.0006 && selectionOutcomeKey() !== 'postpone'){
+    recoveryReleased = true;
+  }
+  const rsSeek = restStopIds();
+  const seekId = arc()[Math.max(0, Math.min(arc().length - 1, idx))];
+  const rsIdx = rsSeek.indexOf(seekId);
+  if (rsIdx !== -1){ recoveryCursor = rsIdx; recoveryReleased = false; }
+  else if (rsSeek.length && restAt != null && target > restAt + 0.0006){ recoveryCursor = rsSeek.length - 1; }
+  const selAt = selectionStopFraction();
+  if (selAt != null && target > selAt + 0.0006){ selectionConsumed = true; }
+  pos = clampPlaybackPos(target);
+  fired.clear(); checkFire();
+  $('scrub').value = Math.round(pos * 1000);
+  renderProgress(); renderState(); renderCockpit(); renderBeats(); renderOverlay(); renderMotionIndicator();
+}
+
+function uc01RestClamp(){
+  const isUc01 = DATA.meta.use_case === 'UC-01';
+  if (!isUc01) return null;
+  const rt = result().result_type;
+  const fullBranch = rt === 'REST_PROPOSAL' || rt === 'SEVERE_INTERVENTION';
+  if (!fullBranch) return null;
+  if (selectionOutcomeKey() === 'postpone') return null;
+  if (recoveryReleased) return null;
+  const segs = course().segments || [];
+  const rest = segs.find(s => s.is_rest_facility);
+  if (!rest || typeof rest.at !== 'number') return null;
+  return rest.at;
+}
+function selectionStopFraction(){
+  const held = (DATA.motion_state_keys && DATA.motion_state_keys.held_for_selection_stop) || [];
+  if (!held.length) return null;
+  const ids = arc();
+  for (let i = 0; i < ids.length; i++){
+    if (held.indexOf(ids[i]) !== -1){
+      const fp1 = activeEvents().some(e=>e.num===1) ? firePos(1) : 1;
+      const at = beatPosition(i);
+      return at >= fp1 - 0.001 ? at : null;
+    }
+  }
+  return null;
+}
+function selectionStopClamp(){
+  if (selectionConsumed) return null;
+  return selectionStopFraction();
+}
+function clampPlaybackPos(p){
+  const rest = uc01RestClamp();
+  const sel = selectionStopClamp();
+  let clamp = null;
+  if (rest != null) clamp = rest;
+  if (sel != null) clamp = (clamp == null) ? sel : Math.min(clamp, sel);
+  if (clamp == null) return Math.min(1, Math.max(0, p));
+  return Math.min(clamp, Math.max(0, p));
+}
+function currentBeatId(){
+  const ids = arc();
+  if (!ids.length) return null;
+  if (inRestHold()){
+    const rs = restStopIds();
+    return rs.length ? rs[Math.min(recoveryCursor, rs.length - 1)] : ids[ids.length - 1];
+  }
+  const fp1 = activeEvents().some(e=>e.num===1) ? firePos(1) : 1;
+  if (restLayoutOn()){
+    const lay = beatLayout();
+    const stopSet = new Set(restStopIds());
+    let cur = lay[0].id;
+    for (const b of lay){ if (stopSet.has(b.id)) continue; if (pos >= b.pos - 1e-9) cur = b.id; }
+    return cur;
+  }
+  if (pos < fp1) {
+    const pre = DATA.beat_catalog.pre || [];
+    if (!pre.length) return ids[0];
+    const k = Math.min(pre.length-1, Math.floor((pos/Math.max(fp1,0.001))*pre.length));
+    return pre[k];
+  }
+  const rest = ids.slice((DATA.beat_catalog.pre||[]).length);
+  if (!rest.length) return ids[ids.length-1];
+  const k = Math.min(rest.length-1, Math.floor(((pos-fp1)/Math.max(1-fp1,0.001))*rest.length));
+  return rest[k];
+}
+
+/* ---------- center: progress + markers + car ---------- */
+function renderProgress(){
+  const evs = activeEvents();
+  $('markers').innerHTML = evs.map(e => `<div class="marker ${fired.has(e.num)?'fired':''}" id="mk${e.num}" style="left:${(firePos(e.num)*100).toFixed(1)}%"><div class="badge">${BADGE[e.num-1]}</div><div class="stem"></div></div>`).join('');
+  const segs = course().segments || [];
+  $('dividers').innerHTML = segs.slice(1,-1).map(s => `<div class="divider" style="left:${(s.at*100).toFixed(1)}%"></div>`).join('');
+  $('fill').style.width = (pos*100).toFixed(1)+'%';
+  $('car').style.left = (pos*100).toFixed(1)+'%';
+}
+function renderState(){
+  const segs = course().segments || []; const cur = segs[segIndexAt(pos)] || {location:'—'};
+  const drowPct = ({none:8,weak:22,moderate:48,strong:74,severe:95})[live.drowsiness_level] || 20;
+  $('st-occ').textContent = (live.passenger_present === false) ? 'driver' : 'driver + 1';
+  $('st-drow').textContent = live.drowsiness_level;
+  $('st-drowbar').style.width = drowPct+'%';
+  $('st-veh').textContent = live.vehicle_state || 'moving';
+  $('st-area').textContent = cur.location;
+  $('st-speed').textContent = (course().speed_band || '—') + ' speed band';
+  $('drive-pos').textContent = cur.location;
+  const cb = beatById()[currentBeatId()];
+  $('drive-beat').textContent = cb ? (cb.category || cb.status_id) : '—';
+}
+
+// REQ-INT-012 — the always-legible drive-versus-stopped indicator.
+function renderMotionIndicator(){
+  const ms = currentMotionState();
+  const el = $('motion-indicator');
+  if (!el) return;
+  const stopped = ms === 'STOPPED';
+  el.className = 'motion-indicator ' + (stopped ? 'stopped' : 'driving');
+  $('motion-label').textContent = stopped ? 'Stopped' : 'Driving';
+  const note = (DATA.fragment_library && DATA.fragment_library.motion_state_note
+    && DATA.fragment_library.motion_state_note[ms]) || '';
+  $('motion-why').textContent = note;
+}
+
+/* ---------- cockpit: nav ↔ proposal ---------- */
+function activeProposalNum(){
+  let n = null;
+  for (const e of activeEvents()){ if (fired.has(e.num) && pos >= firePos(e.num) - 0.001) n = e.num; }
+  return n;
+}
+/* ===== REQ-INT-013 / DIFF-014 — the ONLY change from v4: the navigation surface
+   is a REAL Google map (a networked surface target). The v4 playback engine (pos,
+   clamp, beats, presets, timeline, overlays) is byte-identical; the car / fire /
+   rest markers are driven imperatively from `pos` + the live route. A persistent
+   map div is reparented into the per-render slot (the reparented-map-div pattern),
+   and the cockpit re-renders ONLY on a structural-signature change (computed by the
+   tested M.structuralSignature) — so the map persists across play / pause / scrub /
+   seek and does not disappear on Play. The route's real quantities are
+   boundary-binned (M.boundaryBin) into the existing ordinal bands BEFORE the
+   engine — no concrete numeric reaches the trigger. ===== */
+let gmapEl = null, gmap = null, gDir = null, gRenderer = null, gPlaces = null;
+let routePath = null, routeCum = null, routeLenM = 0, gRestMarkers = [];
+let gCar = null, gFire = null, gRest = null;
+function gposAt(f){
+  if (!routePath) return null;
+  const target = routeLenM * Math.max(0, Math.min(1, f));
+  for (let i = 1; i < routeCum.length; i++) if (routeCum[i] >= target){ const seg = (routeCum[i]-routeCum[i-1])||1; return google.maps.geometry.spherical.interpolate(routePath[i-1], routePath[i], (target-routeCum[i-1])/seg); }
+  return routePath[routePath.length-1];
+}
+function gfracOf(ll){ let best=0,bd=Infinity; for(let i=0;i<routePath.length;i++){ const d=google.maps.geometry.spherical.computeDistanceBetween(routePath[i],ll); if(d<bd){bd=d;best=i;} } return routeLenM?routeCum[best]/routeLenM:0.6; }
+function syncGmap(){
+  const slot = document.getElementById('gmap-slot');
+  if (!slot || !gmapEl) return;
+  if (gmapEl.parentNode !== slot){ const c = gmap && gmap.getCenter(); slot.appendChild(gmapEl); if (window.google && gmap){ google.maps.event.trigger(gmap,'resize'); if (c) gmap.setCenter(c); } }
+  updateMapMarkers();
+}
+function gmark(cur,f,color,scale){ if(!routePath) return cur; const p=gposAt(f); if(!p) return cur; const mk=cur||new google.maps.Marker({map:gmap,icon:{path:google.maps.SymbolPath.CIRCLE,scale,fillColor:color,fillOpacity:1,strokeWeight:2,strokeColor:'#fff'}}); mk.setPosition(p); mk.setMap(gmap); return mk; }
+function updateMapMarkers(){
+  if (!gmap || !routePath) return;
+  const held = (typeof inRestHold === 'function') && inRestHold();
+  const cp = gposAt(held ? restSpotFraction() : pos);
+  if (cp){ if(!gCar) gCar=new google.maps.Marker({map:gmap,zIndex:999,icon:{path:google.maps.SymbolPath.FORWARD_CLOSED_ARROW,scale:5,fillColor:'#4493f8',fillOpacity:1,strokeWeight:1,strokeColor:'#fff'}}); gCar.setPosition(cp); }
+  const r = result().result_type;
+  const fp = (r !== 'NO_TRIGGER') ? firePosition(1, { result_type:r, rule_id:result().rule_id, input_state:live }, course()) : null;
+  if (fp != null && fp < 1) gFire = gmark(gFire, fp, '#ff7b54', 7); else if (gFire){ gFire.setMap(null); gFire=null; }
+  const ra = restSpotFraction();
+  if (ra != null) gRest = gmark(gRest, ra, '#f0c000', 6); else if (gRest){ gRest.setMap(null); gRest=null; }
+}
+// BYO-KEY (HARD RULE) — the key is read from the runtime field only; never shipped,
+// shown, defaulted, persisted, or stored. The map stays inert until a key is present.
+function loadMaps(){
+  const key = ($('gkey') && $('gkey').value.trim()) || '';
+  if (!key){ showToast('Enter your own Maps key first — the map is inert until a key is present.'); return; }
+  if (window.google && window.google.maps){ onMapsReady(); return; }
+  window.__onMapsReady = onMapsReady;
+  const s = document.createElement('script');
+  s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places,geometry&v=weekly&callback=__onMapsReady`;
+  s.async = true; s.onerror = () => showToast('Maps JS failed — check your key + its referrer restrictions.');
+  document.head.appendChild(s); showToast('Loading Google Maps with your key…');
+}
+function onMapsReady(){
+  if (!gmapEl){ gmapEl = document.createElement('div'); gmapEl.style.width='100%'; gmapEl.style.height='100%'; }
+  gmap = new google.maps.Map(gmapEl, { center:{lat:35,lng:136}, zoom:6, mapTypeControl:false, streetViewControl:false, fullscreenControl:false });
+  gDir = new google.maps.DirectionsService();
+  gRenderer = new google.maps.DirectionsRenderer({ map:gmap, suppressMarkers:true, preserveViewport:false });
+  gPlaces = new google.maps.places.PlacesService(gmap);
+  new google.maps.places.Autocomplete($('gstart')).bindTo('bounds', gmap);
+  new google.maps.places.Autocomplete($('gend')).bindTo('bounds', gmap);
+  showToast('Map loaded — set start & end, then Find route.'); syncGmap();
+  if (typeof presetRoute === 'function') presetRoute(); // auto-route the initially selected preset
+}
+function findRoute(){
+  if (!gDir){ showToast('Load the map first (enter your key).'); return; }
+  const o = $('gstart').value.trim(), d = $('gend').value.trim();
+  if (!o || !d){ showToast('Enter start and end.'); return; }
+  showToast('Finding route…');
+  gDir.route({ origin:o, destination:d, travelMode: google.maps.TravelMode.DRIVING }, (res,st)=>{
+    if (st !== 'OK'){ showToast('Route failed: '+st); return; }
+    gRenderer.setDirections(res);
+    const rt = res.routes[0], leg = rt.legs[0];
+    routePath = rt.overview_path; routeCum=[0]; routeLenM=0;
+    for (let i=1;i<routePath.length;i++){ routeLenM += google.maps.geometry.spherical.computeDistanceBetween(routePath[i-1],routePath[i]); routeCum.push(routeLenM); }
+    findRestSpots(leg.duration ? leg.duration.value : null);
+  });
+}
+function findRestSpots(durSec){
+  const samples = [0.3,0.5,0.7].map(f=>gposAt(f)); let found=[], pending=samples.length;
+  samples.forEach(pt=>gPlaces.nearbySearch({location:pt,radius:10000,type:'gas_station'},(r,st)=>{ if(st===google.maps.places.PlacesServiceStatus.OK&&r) found=found.concat(r); if(--pending===0) finishRoute(found,durSec); }));
+}
+function finishRoute(results,durSec){
+  gRestMarkers.forEach(m=>m.setMap(null)); gRestMarkers=[];
+  const seen=new Set(),spots=[]; for(const r of results){ if(seen.has(r.place_id)) continue; seen.add(r.place_id); spots.push(r); }
+  spots.slice(0,12).forEach(r=>{ const m=new google.maps.Marker({map:gmap,position:r.geometry.location,title:r.name,icon:{path:google.maps.SymbolPath.CIRCLE,scale:5,fillColor:'#3fb950',fillOpacity:1,strokeWeight:0}}); m.addListener('click',()=>targetRest(r)); gRestMarkers.push(m); });
+  // Auto-target a rest spot ~60% along the route — ahead of the driver, leaving
+  // room for the AICA proposal + the selection BEFORE the rest-spot-imminent event.
+  let target=null,bestGap=Infinity;
+  for(const r of spots){ const gap=Math.abs(gfracOf(r.geometry.location)-0.6); if(gap<bestGap){bestGap=gap;target=r;} }
+  // REQ-INT-013 — BOUNDARY-BINNING: the live route's real quantities (travel-time
+  // seconds, remaining-to-destination, rest-spot metres) are mapped into the
+  // existing ordinal bands by the tested module BEFORE they touch the engine. No
+  // number is assigned to a trigger input directly here.
+  const bands = boundaryBin({ travel_time_sec: durSec, remaining_to_destination_sec: durSec, rest_spot_metres: target ? 10000 : null });
+  live.continuous_driving_time = bands.continuous_driving_time;
+  live.destination_eta = bands.destination_eta;
+  if (target) targetRest(target); else { setRouteCourse(0.62,'rest area'); live.rest_spot_eta = bands.rest_spot_eta; renderAll(); }
+  showToast('Route ready — click a green marker to target a rest spot, change a dial, or Play.');
+}
+function targetRest(spot){
+  const frac = Math.min(0.85, Math.max(0.55, gfracOf(spot.geometry.location)));
+  setRouteCourse(frac, spot.name);
+  // REQ-INT-013 — the targeted rest spot's reachability is boundary-binned to its
+  // ordinal band before it touches the trigger input (no metres reach the engine).
+  live.rest_spot_eta = boundaryBin({ rest_spot_metres: 10000 }).rest_spot_eta; // a concrete reachable spot → 'near'
+  gRestMarkers.forEach(m=>{ const on=m.getTitle()===spot.name; m.setIcon({path:google.maps.SymbolPath.CIRCLE,scale:on?7:5,fillColor:on?'#f0c000':'#3fb950',fillOpacity:1,strokeWeight:on?2:0,strokeColor:'#fff'}); });
+  pos=0; recoveryReleased=false; recoveryCursor=0; selectionConsumed=false; renderAll();
+}
+function setRouteCourse(frac, name){
+  const syn = { id:'__route', label:'real route', segments:[{at:0,location:'start'},{at:frac,is_rest_facility:true,location:name},{at:1,location:'destination'}], speed_band:'high' };
+  DATA.courses = DATA.courses.filter(c=>c.id!=='__route'); DATA.courses.push(syn); courseId='__route';
+}
+function initMaps(){ $('gload').onclick = loadMaps; $('groute').onclick = findRoute; if (window.__DEV_MAPS_KEY){ $('gkey').value = window.__DEV_MAPS_KEY; loadMaps(); } }
+// REQ-INT-013 — each preset's start/end come from THAT case's map_info (named
+// places). Choosing a preset auto-finds the route and auto-targets the nearest rest
+// spot; the route then supplies the boundary-binned context bands, while the preset
+// supplies the driver state + hyperparameters. In explore mode with route_selection
+// = reviewer_chosen the reviewer's own start/end are kept.
+function presetRoute(){
+  const c = curCase();
+  const mi = c && c.map_info;
+  if (mi && live.route_selection !== 'reviewer_chosen'){
+    if ($('gstart')) $('gstart').value = mi.start_place || '';
+    if ($('gend')) $('gend').value = mi.end_place || '';
+  }
+  if (gDir) findRoute(); // map ready → auto-find route + auto-select nearest rest spot + renderAll
+}
+
+function mapSurfaceSVG(){
+  // REQ-INT-013 — the real Google map slot. The persistent map is reparented into
+  // this slot synchronously by the renderCockpit wrapper (which re-renders only on a
+  // structural-signature change), and its markers are updated imperatively.
+  return `<div id="gmap-slot" class="mapsurface" style="height:62vh;min-height:460px;width:100%;position:relative"></div>`;
+}
+
+function restSpotFraction(){
+  const segs = course().segments || [];
+  const rest = segs.find(s => s.is_rest_facility);
+  return (rest && typeof rest.at === 'number') ? rest.at : null;
+}
+function uc01RecoveryActive(){
+  const isUc01 = DATA.meta.use_case === 'UC-01';
+  if (!isUc01) return false;
+  const rt = result().result_type;
+  const fullBranch = rt === 'REST_PROPOSAL' || rt === 'SEVERE_INTERVENTION';
+  if (!fullBranch) return false;
+  if (selectionOutcomeKey() === 'postpone') return false;
+  if (recoveryReleased) return false;
+  const restAt = restSpotFraction();
+  if (restAt == null) return false;
+  return pos >= restAt - 0.001;
+}
+function uc01RecoveryBeats(){
+  const rec = (curCase().timeline || []).filter(b => b.category === 'RECOVERY');
+  return { arrival: rec[0] || null, content: rec[1] || rec[0] || null };
+}
+// REQ-INT-007 — the stopped-state recovery sequence as GENUINE self-contained
+// visual simulation drawn OVER the persistent real map (CSS/SVG animation only).
+function renderRecoverySequence(){
+  const { arrival, content } = uc01RecoveryBeats();
+  const chosen = (selectedOption && String(selectedOption)) || null;
+  const dimMsg = (arrival && arrival.aica_message) || 'We have arrived at the rest spot. I will dim the lights and wake you in a little while.';
+  const contentMsg = chosen
+    ? `Now surfacing the recovery you chose: ${chosen}.`
+    : ((content && content.aica_message) || 'Surfacing the chosen recovery content.');
+  const lyric = chosen
+    ? `♪ ${chosen} — singing along while we are safely stopped ♪`
+    : '♪ a first karaoke song to ease back in — on only while we are stopped ♪';
+  const bars = Array.from({length: 8}).map(() => '<i></i>').join('');
+  $('cockpit').innerHTML = navSurfaceBlock(
+    `<div class="mapoverlay recovery-overlay" style="max-height:64%;overflow:auto"><div class="who">AICA · rest-spot recovery (stopped — map stays visible)</div>`
+    + `<div class="recovery">`
+    + `<div class="recovery-head">The car has stopped at the rest spot. Dim / sleep, then the animated chosen-content visual plays — only while stopped.</div>`
+    + `<div class="recovery-vis">`
+    +   `<div class="dimlayer"></div>`
+    +   `<div class="sleepcue"><span class="moon">🌙</span><span class="zs"><span>z</span><span>z</span><span>z</span></span></div>`
+    +   `<div class="chosenlabel">${chosen ? ('chosen: ' + chosen) : 'chosen recovery content'}</div>`
+    +   `<div class="karaoke"><div class="bars">${bars}</div><div class="lyricwrap"><span class="lyric">${lyric}</span></div></div>`
+    + `</div>`
+    + `<div class="recovery-msg">${dimMsg}</div>`
+    + `<div class="recovery-msg">${contentMsg}</div>`
+    + `<div class="stopflag">Vehicle stopped at the rest spot. Visual content is permitted only while stopped; the car departs and continues once the recovery has played.</div>`
+    + `<div class="recovery-steps"><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div>`
+    + `</div></div>`);
+}
+
+// Build the persistent embedded-real-map navigation surface block (REQ-INT-013),
+// wrapped so an on-map overlay (REQ-INT-006) can be drawn over it with the map
+// still visible underneath. `overlayHtml` is the optional overlay markup.
+function navSurfaceBlock(overlayHtml){
+  const segs = course().segments || [];
+  const seg = segs[segIndexAt(pos)] || {location:'home'};
+  const dest = segs[segs.length-1] || {location:'destination'};
+  const mi = (curCase() && curCase().map_info) || {};
+  const startLbl = mi.start_place || seg.location;
+  const endLbl = mi.end_place || dest.location;
+  return `<h3>Cockpit — navigation view (real map)</h3>`
+    + `<div class="nav"><div class="mapwrap">${mapSurfaceSVG()}${overlayHtml || ''}</div>`
+    + `<div class="head">${segIcon(seg)} ${startLbl} → ${endLbl}</div>`
+    + `<div class="legend"><span><b>—</b> live route</span><span><b>☕</b> rest-spot waypoint</span><span><b>🚗</b> vehicle</span></div>`
+    + `</div>`;
+}
+
+function renderCockpit(){
+  const n = activeProposalNum();
+  if (uc01RecoveryActive()){ renderRecoverySequence(); return; }
+  if (n == null){
+    $('cockpit').innerHTML = navSurfaceBlock(null);
+    return;
+  }
+  const rt = result().result_type;
+  const m = meta(rt);
+  const fullBranch = rt === 'REST_PROPOSAL' || rt === 'SEVERE_INTERVENTION';
+  let msg = '', options = [];
+  if (n === 1){
+    const pb = proposalBeat();
+    msg = (pb && pb.aica_message) || '';
+    if (fullBranch){ const sb = selectionBeat(); options = (sb && sb.user_options) || []; }
+  } else {
+    const branchBeats = (curCase().timeline || []).filter(b => ['SYSTEM_ACTION','RECOVERY'].includes(b.category) && b.aica_message);
+    const pick = branchBeats[n-2];
+    msg = pick ? pick.aica_message : '';
+  }
+  let opts = '';
+  if (options.length){
+    opts = '<div class="opts">' + options.map(o => `<button class="opt ${o===selectedOption?'selected':''}" data-opt="${o.replace(/"/g,'&quot;')}">${o}</button>`).join('') + '</div>';
+    if (selectedOption && options.includes(selectedOption)) opts += `<div class="opt-note">Driver chose: ${selectedOption}</div>`;
+  }
+  // REQ-INT-006 — the AICA proposal message + the selectable options render as an
+  // ON-MAP OVERLAY drawn over the persistent real map (the map stays visible
+  // underneath), clearing back to the plain map as the car continues.
+  const overlay = `<div class="mapoverlay"><div class="who">AICA · ${m.label||rt} (event ${BADGE[n-1]})</div>`
+    + `<div class="msg">${msg}</div>`
+    + (n===1 ? `<div class="preview">Action preview: ${m.action_preview||''}</div>` : '')
+    + `${opts}</div>`;
+  $('cockpit').innerHTML = navSurfaceBlock(overlay);
+  $('cockpit').querySelectorAll('.opt').forEach(b => b.onclick = () => { selectedOption = b.dataset.opt; onSelectOption(); });
+}
+function onSelectOption(){
+  recoveryReleased = false;
+  restDwell = 0;
+  recoveryCursor = 0;
+  selectionConsumed = true;
+  pos = clampPlaybackPos(pos);
+  fired.clear(); checkFire();
+  renderProgress(); renderState(); renderBeats(); renderCockpit(); renderOverlay(); renderMotionIndicator();
+}
+
+/* ---------- why-fired overlay ---------- */
+function renderOverlay(){
+  const r = result(); const m = meta(r.result_type);
+  const fired_ = !!m.fire;
+  const rows = (r.reason_inputs || []).map(id => `<tr><td class="k">${id}</td><td>${live[id]}</td></tr>`).join('');
+  const hyperRows = (DATA.inputs.filter(i => i.group === 'hyper'))
+    .map(i => `<tr><td class="k">${i.id}</td><td>${live[i.id]}</td></tr>`).join('');
+  $('overlay').innerHTML =
+    `<h3>Why-fired</h3>`
+    + `<span class="badge-r r-${r.result_type}">${m.label||r.result_type}</span>`
+    + `<div class="fired-flag ${fired_?'yes':'no'}">${fired_ ? 'AICA fired (marker ① placed)' : 'AICA did not fire (no marker ①)'} · rule ${r.rule_id}</div>`
+    + `<div class="reason">${m.course_label||''}</div>`
+    + `<div class="reason">Deciding signals (computed from the boundary-binned ordinal route bands)</div><table>${rows}</table>`
+    + `<div class="reason">Active hyperparameters</div><table>${hyperRows}</table>`;
+}
+
+/* ---------- right: events + params + result explanation + review ---------- */
+function renderEvents(){
+  const evs = DATA.meta.course_sim.uc_events;
+  const isUc01 = DATA.meta.use_case === 'UC-01';
+  $('events').innerHTML = evs.map(e => {
+    const applies = e.num === 1 || (!e.uc01_only || isUc01);
+    const tag = (e.uc01_only && !isUc01) ? ' (UC-01 only — not in this artifact)' : '';
+    return `<details class="acc"><summary>${BADGE[e.num-1]} ${e.label.replace(/^[①②③]\s*/,'')}${tag}</summary><div class="body">${eventBody(e, applies)}</div></details>`;
+  }).join('');
+}
+function eventBody(e, applies){
+  if (e.num === 1) return 'Fires on the route where the trigger fires — position driven by the result (earlier as risk rises / fires sooner) and the course speed band. Edit the parameters below to move ①.';
+  if (!applies) return 'Rest-facility event — present for the physical-rest-spot use case (UC-01) only; this artifact recovers in-cabin at the ① firing position.';
+  if (e.num === 2) return 'Alertness support, fixed just before the rest facility (UC-01).';
+  return 'Rest-spot arrival; the chosen recovery option plays out (UC-01).';
+}
+function renderPanels(){
+  for (const group of ['context','hyper','networked_surface']){
+    const host = $('panel-'+group);
+    if (!host) continue;
+    host.innerHTML = '';
+    DATA.inputs.filter(i => i.group===group).forEach(inp => {
+      const f = document.createElement('div'); f.className = 'field';
+      const lab = document.createElement('label'); lab.textContent = inp.label; f.appendChild(lab);
+      const sel = document.createElement('select'); sel.disabled = (mode==='preset');
+      inp.values.forEach(v => { const o = document.createElement('option'); o.value = String(v); o.textContent = String(v); if (v===live[inp.id]) o.selected = true; sel.appendChild(o); });
+      sel.onchange = () => {
+        let val = sel.value;
+        if (inp.type === 'boolean') val = (val === 'true');
+        live[inp.id] = val; resetRun(); renderAll();
+      };
+      f.appendChild(sel); host.appendChild(f);
+    });
+  }
+}
+function renderResultExpl(){
+  const r = result(); const m = meta(r.result_type);
+  $('result-expl').innerHTML = `<span class="badge-r r-${r.result_type}">${m.label||r.result_type}</span><div style="margin-top:6px">${m.explanation||''}</div><div class="reason">Action preview: ${m.action_preview||''}</div><div class="reason">Allowed content mode: ${m.allowed_content_mode||'—'}</div>`;
+}
+function renderReview(){
+  $('questions').innerHTML = (DATA.review.questions || []).map((q,i) => `<div class="q">${i+1}. ${q}</div>`).join('');
+  $('cap-actual').innerHTML = '<option value="">— actual result —</option>' + RESULT_TYPES.map(rt => `<option value="${rt}">${rt}</option>`).join('');
+  $('cap-actual').value = result().result_type;
+  $('cap-verdict').innerHTML = '<option value="">— verdict —</option>' + (DATA.review.verdicts || []).map(v => `<option value="${v}">${v}</option>`).join('');
+  $('export-btn').onclick = doExport;
+}
+function captureCurrent(){
+  // REQ-INT-013 — input_values include the two networked-surface controls; the
+  // BYO-key VALUE is NEVER captured or exported (only the qualitative gate state).
+  const input_values = {};
+  DATA.inputs.forEach(i => { input_values[i.id] = live[i.id]; });
+  captures[caseId] = {
+    case_id: caseId,
+    input_values,
+    computed_result: $('cap-actual').value || result().result_type,
+    reviewer_verdict: $('cap-verdict').value || '',
+    comment: $('cap-comment').value || ''
+  };
+}
+function doExport(){
+  captureCurrent();
+  const out = {
+    target_prototype: DATA.meta.target_prototype,
+    prototype_version: DATA.meta.prototype_version,
+    schema_version: DATA.review.schema_version || '1',
+    exported_at: new Date().toISOString(),  // produced at export click, never at render
+    entries: Object.values(captures)
+  };
+  $('export-out').hidden = false;
+  $('export-out').textContent = JSON.stringify(out, null, 2);
+  showToast('review exported');
+}
+
+/* ---------- playback ---------- */
+function resetRun(){ pos = 0; fired.clear(); selectedOption = null; restDwell = 0; recoveryReleased = false; recoveryCursor = 0; selectionConsumed = false; playing = false; if (raf) cancelAnimationFrame(raf); raf=null; const p=$('play'); if (p) p.textContent = '▶ Play'; }
+function checkFire(){ for (const e of activeEvents()){ if (!fired.has(e.num) && pos >= firePos(e.num)) fired.add(e.num); } }
+const REST_DWELL_SECONDS = 1.6;
+function frame(ts){
+  if (!playing) return;
+  if (last == null) last = ts;
+  const dt = (ts - last)/1000; last = ts;
+  const clampBefore = uc01RestClamp();
+  const selBefore = selectionStopClamp();
+  if (selBefore != null && pos >= selBefore - 0.0006 && !selectionConsumed){
+    pos = clampPlaybackPos(pos);
+  } else if (clampBefore != null && pos >= clampBefore - 0.0006 && !recoveryReleased){
+    pos = clampPlaybackPos(pos);
+    const rs = restStopIds();
+    restDwell += dt;
+    if (restDwell >= REST_DWELL_SECONDS){
+      restDwell = 0;
+      if (recoveryCursor < rs.length - 1){ recoveryCursor++; }
+      else { recoveryReleased = true; }
+    }
+  } else {
+    pos = clampPlaybackPos(pos + dt * speed / 36);
+  }
+  checkFire();
+  renderProgress(); renderState(); renderCockpit(); renderBeats(); renderMotionIndicator(); $('scrub').value = Math.round(pos*1000);
+  if (pos >= 1 - 0.0005){ playing = false; $('play').textContent = '▶ Play'; return; }
+  raf = requestAnimationFrame(frame);
+}
+function stepNextBeat(){
+  const ids = arc();
+  if (!ids.length) return;
+  const cur = currentBeatId();
+  let idx = ids.indexOf(cur);
+  if (idx < 0) idx = 0;
+  const next = Math.min(ids.length - 1, idx + 1);
+  seekToBeat(next);
+}
+function wirePlayback(){
+  $('play').onclick = () => { playing = !playing; $('play').textContent = playing ? '⏸ Pause' : '▶ Play'; if (playing){ last=null; raf=requestAnimationFrame(frame);} else if (raf) cancelAnimationFrame(raf); };
+  $('next-beat').onclick = stepNextBeat;
+  $('reset').onclick = () => { resetRun(); renderAll(); };
+  $('speed').onchange = (e) => speed = +e.target.value;
+  $('scrub').oninput = (e) => {
+    const want = +e.target.value/1000;
+    const selAt = selectionStopFraction();
+    if (selAt != null && want > selAt + 0.0006){ selectionConsumed = true; }
+    pos = clampPlaybackPos(want);
+    fired.clear(); checkFire();
+    renderProgress(); renderState(); renderCockpit(); renderBeats(); renderOverlay(); renderMotionIndicator();
+  };
+}
+
+/* ---------- toast ---------- */
+let toastT = null;
+function showToast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); if (toastT) clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('show'), 3000); }
+
+function renderAll(){
+  renderHeader(); renderMode(); renderCaseSelect(); renderCourseControls();
+  renderSegments(); renderBeats();
+  renderProgress(); renderState(); renderCockpit(); renderOverlay(); renderMotionIndicator();
+  renderEvents(); renderPanels(); renderResultExpl(); renderReview();
+}
+// REQ-INT-013 — the Google map is a persistent widget, but the v4 cockpit re-renders
+// #cockpit every playback frame, which would wipe + reparent the map ~60x/sec and
+// make it vanish. Wrap renderCockpit so it only re-renders the cockpit innerHTML when
+// its STRUCTURE changes (the structural-signature, computed by the tested
+// M.structuralSignature); on unchanged frames just move the markers, leaving the map
+// attached. The persist-vs-rerender decision is therefore a TESTED computation, not
+// an app-layer one. Reparenting is then synchronous (no race).
+let __cockSig = null;
+const __renderCockpit0 = renderCockpit;
+renderCockpit = function(){
+  const sig = structuralSignature({
+    proposalNum: activeProposalNum(),
+    resultType: result().result_type,
+    selectedOption,
+    recoveryActive: uc01RecoveryActive(),
+    recoveryReleased,
+    recoveryCursor,
+    selectionConsumed,
+    selectionOutcome: selectionOutcomeKey(),
+    courseId
+  });
+  const mapAttached = gmapEl && gmapEl.parentNode && document.getElementById('gmap-slot');
+  if (sig === __cockSig && mapAttached){ updateMapMarkers(); return; }
+  __cockSig = sig;
+  __renderCockpit0();
+  syncGmap();
+};
+
+wirePlayback();
+buildCaseSelectOnce(); // REQ-INT-004 — build the case dropdown once; it then holds.
+loadCase();
+initMaps(); // REQ-INT-013 — wire the BYO-key map controls + optional dev-key auto-load
+</script>
+</body>
+</html>

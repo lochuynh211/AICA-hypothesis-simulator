@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ドライブコースシミュレーター</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Toast notification -->
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <div class="app-layout">
+    <!-- LEFT PANEL: Course Info -->
+    <aside class="left-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">コース情報</h2>
+        <select id="courseSelect" class="course-select">
+          <option value="city">市街地コース</option>
+          <option value="suburban">郊外コース</option>
+          <option value="highway">高速利用コース</option>
+        </select>
+      </div>
+
+      <div class="course-meta">
+        <div class="meta-row">
+          <span class="meta-label">総距離</span>
+          <span class="meta-value" id="totalDistance">15 km</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">所要時間</span>
+          <span class="meta-value" id="totalDuration">30 分</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">休憩施設</span>
+          <span class="meta-value" id="restFacility">コンビニ</span>
+        </div>
+      </div>
+
+      <div class="driving-time-display">
+        <div class="driving-time-label">走行時間</div>
+        <div class="driving-time-value" id="drivingTime">00:00</div>
+        <div class="driving-time-label">現在位置</div>
+        <div class="driving-time-value" id="currentPosition">0.0 km</div>
+      </div>
+
+      <div class="segments-section">
+        <div class="segments-title">ルートセグメント</div>
+        <ul class="segment-list" id="segmentList"></ul>
+      </div>
+    </aside>
+
+    <!-- CENTER: Main simulation area -->
+    <main class="center-panel">
+      <!-- Progress Bar Section -->
+      <section class="progress-section">
+        <div class="progress-header">
+          <div class="playback-controls">
+            <button id="playPauseBtn" class="btn btn-primary">▶ 再生</button>
+            <div class="speed-controls">
+              <span class="speed-label">速度:</span>
+              <button class="speed-btn active" data-speed="1">1x</button>
+              <button class="speed-btn" data-speed="2">2x</button>
+              <button class="speed-btn" data-speed="4">4x</button>
+            </div>
+          </div>
+          <div class="progress-info">
+            <span id="progressPercent">0%</span>
+          </div>
+        </div>
+
+        <div class="progress-track-wrapper">
+          <!-- Fire point markers above the bar -->
+          <div class="markers-layer" id="markersLayer">
+            <div class="fire-marker" id="marker1" data-uc="1">
+              <div class="marker-badge">①</div>
+              <div class="marker-line"></div>
+            </div>
+            <div class="fire-marker" id="marker2" data-uc="2">
+              <div class="marker-badge">②</div>
+              <div class="marker-line"></div>
+            </div>
+            <div class="fire-marker" id="marker3" data-uc="3">
+              <div class="marker-badge">③</div>
+              <div class="marker-line"></div>
+            </div>
+          </div>
+
+          <!-- Progress bar -->
+          <div class="progress-bar-track" id="progressTrack">
+            <div class="progress-bar-fill" id="progressFill"></div>
+            <div class="segment-dividers" id="segmentDividers"></div>
+            <div class="car-icon" id="carIcon">🚗</div>
+          </div>
+
+          <!-- Segment labels below -->
+          <div class="segment-labels" id="segmentLabels"></div>
+        </div>
+      </section>
+
+      <!-- State Panels -->
+      <section class="state-panels">
+        <!-- Car Interior -->
+        <div class="state-card">
+          <div class="state-card-header">
+            <span class="state-card-icon">🚗</span>
+            <h3 class="state-card-title">車内状態</h3>
+          </div>
+          <div class="state-card-body">
+            <div class="state-row">
+              <span class="state-label">乗員数</span>
+              <span class="state-value" id="driverCount">1名（運転者のみ）</span>
+            </div>
+            <div class="state-row">
+              <span class="state-label">眠気レベル</span>
+              <div class="drowsiness-display">
+                <div class="drowsiness-bar">
+                  <div class="drowsiness-fill" id="drowsinessBar"></div>
+                </div>
+                <span class="drowsiness-label" id="drowsinessLabel">低</span>
+              </div>
+            </div>
+            <div class="state-row">
+              <span class="state-label">車内温度</span>
+              <span class="state-value" id="cabinTemp">22°C</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Car Exterior -->
+        <div class="state-card">
+          <div class="state-card-header">
+            <span class="state-card-icon">🛣️</span>
+            <h3 class="state-card-title">走行環境</h3>
+          </div>
+          <div class="state-card-body">
+            <div class="state-row">
+              <span class="state-label">走行エリア</span>
+              <span class="state-value" id="drivingArea">会社(出発)</span>
+            </div>
+            <div class="state-row">
+              <span class="state-label">現在速度</span>
+              <div class="speed-display">
+                <span class="speed-value" id="currentSpeed">0</span>
+                <span class="speed-unit">km/h</span>
+              </div>
+            </div>
+            <div class="state-row">
+              <span class="state-label">道路種別</span>
+              <span class="state-value" id="roadType">市街地</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cockpit Screen -->
+      <section class="cockpit-section">
+        <div class="cockpit-screen" id="cockpitScreen">
+          <!-- Nav display (default) -->
+          <div class="cockpit-nav" id="cockpitNav">
+            <div class="nav-direction" id="navDirection">↑</div>
+            <div class="nav-info">
+              <div class="nav-place" id="navPlace">市街地</div>
+              <div class="nav-distance" id="navDistance">3.0 km先</div>
+            </div>
+            <div class="nav-bar">
+              <div class="nav-bar-fill" id="navBarFill"></div>
+            </div>
+          </div>
+
+          <!-- Proposal screen (shown on UC fire) -->
+          <div class="cockpit-proposal" id="cockpitProposal">
+            <div class="proposal-header">
+              <span class="proposal-icon" id="proposalIcon">💤</span>
+              <span class="proposal-uc" id="proposalUC">UC①</span>
+            </div>
+            <div class="proposal-speech" id="proposalSpeech">
+              お疲れさまです。走行開始から10分が経過しました。この先にあるコンビニで休憩はいかがですか？
+            </div>
+            <div class="proposal-trigger" id="proposalTrigger"></div>
+            <div class="proposal-warning" id="proposalWarning"></div>
+            <div class="proposal-options" id="proposalOptions">
+              <button class="proposal-btn proposal-btn-yes">はい、向かいます</button>
+              <button class="proposal-btn proposal-btn-no">後で</button>
+            </div>
+            <button class="proposal-close" id="proposalClose">✕ 閉じる</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- RIGHT PANEL: UC Event list -->
+    <aside class="right-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">UCイベント設定</h2>
+      </div>
+
+      <!-- UC Event Cards -->
+      <div class="uc-cards">
+
+        <!-- UC① -->
+        <div class="uc-card" id="ucCard1">
+          <div class="uc-card-header" data-uc="1">
+            <div class="uc-badge uc-badge-1">①</div>
+            <div class="uc-card-info">
+              <div class="uc-card-title">リフレッシュ提案</div>
+              <div class="uc-card-pos" id="ucPos1">発火位置: -- km</div>
+            </div>
+            <div class="uc-toggle-icon">▼</div>
+          </div>
+          <div class="uc-card-body" id="ucBody1">
+            <div class="form-group">
+              <label class="form-label">走行時間しきい値 (分)</label>
+              <div class="range-row">
+                <input type="range" class="form-range" id="uc1TimeThreshold" min="1" max="30" value="10">
+                <span class="range-val" id="uc1TimeThresholdVal">10分</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">眠気サイン検知</label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="uc1Drowsiness" checked>
+                <span class="toggle-slider"></span>
+                <span class="toggle-label">ON</span>
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="form-label">操舵検知</label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="uc1Steering" checked>
+                <span class="toggle-slider"></span>
+                <span class="toggle-label">ON</span>
+              </label>
+            </div>
+            <div class="form-group">
+              <label class="form-label">複合しきい値 (1-10)</label>
+              <div class="range-row">
+                <input type="range" class="form-range" id="uc1CombinedThreshold" min="1" max="10" value="5">
+                <span class="range-val" id="uc1CombinedThresholdVal">5</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">提案音声テキスト</label>
+              <textarea class="form-textarea" id="uc1Speech" rows="3">お疲れさまです。走行開始から{time}が経過しました。この先にある{restName}で休憩はいかがですか？</textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- UC② -->
+        <div class="uc-card" id="ucCard2">
+          <div class="uc-card-header" data-uc="2">
+            <div class="uc-badge uc-badge-2">②</div>
+            <div class="uc-card-info">
+              <div class="uc-card-title">休憩所到着間近</div>
+              <div class="uc-card-pos" id="ucPos2">発火位置: -- km</div>
+            </div>
+            <div class="uc-toggle-icon">▼</div>
+          </div>
+          <div class="uc-card-body" id="ucBody2">
+            <div class="form-group">
+              <label class="form-label">覚醒サポート方法</label>
+              <select class="form-select" id="uc2AlertnessMethod">
+                <option value="音楽再生">音楽再生</option>
+                <option value="会話">会話</option>
+                <option value="換気" selected>換気</option>
+                <option value="ストレッチガイド">ストレッチガイド</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">提案音声テキスト</label>
+              <textarea class="form-textarea" id="uc2Speech" rows="3">あと約5分で{restName}に到着します。もう少しがんばりましょう。窓を開けて換気しませんか？</textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- UC③ -->
+        <div class="uc-card" id="ucCard3">
+          <div class="uc-card-header" data-uc="3">
+            <div class="uc-badge uc-badge-3">③</div>
+            <div class="uc-card-info">
+              <div class="uc-card-title">休憩所到着</div>
+              <div class="uc-card-pos" id="ucPos3">発火位置: -- km</div>
+            </div>
+            <div class="uc-toggle-icon">▼</div>
+          </div>
+          <div class="uc-card-body" id="ucBody3">
+            <div class="form-group">
+              <label class="form-label">休憩方法</label>
+              <select class="form-select" id="uc3RestMethod">
+                <option value="ストレッチ">ストレッチ</option>
+                <option value="仮眠">仮眠</option>
+                <option value="飲み物休憩" selected>飲み物休憩</option>
+                <option value="洗顔">洗顔</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">休憩時間</label>
+              <select class="form-select" id="uc3RestTime">
+                <option value="3分" selected>3分</option>
+                <option value="5分">5分</option>
+                <option value="10分">10分</option>
+                <option value="15分">15分</option>
+                <option value="20分">20分</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">提案音声テキスト</label>
+              <textarea class="form-textarea" id="uc3Speech" rows="3">お疲れさまです。{restName}に到着しました。{restMethod}で{restTime}ほど休憩しましょう。</textarea>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
