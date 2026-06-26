@@ -3,7 +3,7 @@
 **Document status:** Draft specification  
 **Primary audience:** Technical, algorithm, product-planning, and UX reviewers  
 **Purpose:** Define AICA Hypothesis Simulator as a configurable, evidence-producing review environment for AICA trigger hypotheses.  
-**Source context:** Japanese PowerPoint `CDC-SU_音楽企画_システム要求仕様書.pptx`, translated planning notes, four AICA use cases, and prototype skeletons under `others/`.  
+**Source context:** Japanese PowerPoint `AICA_proposed_system_en.md`, translated planning notes, four AICA use cases, and prototype skeletons under `others/`.  
 **Naming rule:** Product screens, APIs, documents, and implementation labels shall use **AICA** only.
 
 ---
