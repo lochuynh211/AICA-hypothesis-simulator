@@ -33,8 +33,10 @@ to exactly this shape. Rule-only runs leave hybrid-only fields empty.
 ## Invariants (adapter normalization)
 - `result_type` is always one of the five enum values (totality).
 - A **suppressed** candidate stays in `candidates` with `fire_control.suppressed =
-  true` and the result typically carries `result_type: "SUPPRESSED"`/no proposal —
-  it is never dropped (FR-008).
+  true` and no proposal — it is never dropped (FR-008). The top-level `result_type`
+  remains one of the five enum values (e.g. `NO_PRACTICAL_ACTION_FALLBACK` when the
+  rest candidate is suppressed by the actionability guard, or `SOFT_WARNING`/
+  `NO_TRIGGER`); there is no separate `"SUPPRESSED"` result_type.
 - When no proposal fires, `proposal` is `null`.
 - An algorithm exception or a return that fails validation yields an
   `AlgorithmError` event, **not** a `DecisionResult` (FR-011).
