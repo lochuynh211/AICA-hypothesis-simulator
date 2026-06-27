@@ -1,0 +1,104 @@
+{
+  "_comment": [
+    "Scenario: UC-01 fatigue/drowsiness — long friend drive.",
+    "Design: drowsiness ramps none→weak→moderate over the first 42% of the route.",
+    "At fraction 0.42, with default hyperparameters (proposal_threshold=medium →",
+    "proposalCut=3.0) and fatigue_level=medium, the first tick with drowsiness=moderate",
+    "produces damped=3.1 ≥ proposalCut=3.0, rest reachable → R3 REST_PROPOSAL fires.",
+    "The run then pauses, ensuring exactly ONE R3 tick.",
+    "",
+    "Blend derivation at trigger tick (fraction ≥ 0.42):",
+    "  drowsiness=moderate(2), fatigue=medium(1), drive=moderate(ord=2 per ORD table)",
+    "  signal=sustained(2), persistence_req=medium(1), wD=wF=medium(1)",
+    "  blend = 2*(0.5+0.25) + 1*(0.2) + 2*0.4 = 1.5+0.2+0.8 = 2.5",
+    "  shortfall = max(0,(1+1)-2)=0, persistenceLift=(2-1)*0.6=0.6",
+    "  damped = 2.5+0.6 = 3.1 ≥ proposalCut(3.0) → R3 ✓",
+    "",
+    "initial_state uses fatigue_level='medium' (not 'low') because with fatigue=low",
+    "and default hyperparameters, damped=2.9 < proposalCut=3.0 and R3 never fires."
+  ],
+  "id": "uc01_fatigue_friend_drive_v0_1",
+  "version": "0.1.0",
+  "type": "uc01_fatigue",
+  "persona": {
+    "name": "Haruto Tanaka",
+    "description": "A 35-year-old office worker on a 2-hour interstate drive to visit a friend. Started mid-afternoon after a short night's sleep; fatigue is already at a medium baseline."
+  },
+  "route_intent": {
+    "rest_facility": {
+      "label": {
+        "ja": "道の駅 友好",
+        "en": "Yuuko Roadside Station"
+      }
+    },
+    "segments": [
+      {
+        "id": "seg_start",
+        "name": {"ja": "出発地（住宅街）", "en": "Start (Residential)"},
+        "type": "start",
+        "at": 0.0,
+        "speed_band": "slow",
+        "length_band": "short",
+        "is_rest_facility": false
+      },
+      {
+        "id": "seg_urban",
+        "name": {"ja": "市街地", "en": "Urban Zone"},
+        "type": "urban",
+        "at": 0.2,
+        "speed_band": "medium",
+        "length_band": "medium",
+        "is_rest_facility": false
+      },
+      {
+        "id": "seg_rest",
+        "name": {"ja": "道の駅 友好", "en": "Yuuko Roadside Station"},
+        "type": "rest",
+        "at": 0.5,
+        "speed_band": "slow",
+        "length_band": "short",
+        "is_rest_facility": true
+      },
+      {
+        "id": "seg_highway",
+        "name": {"ja": "高速道路区間", "en": "Highway Section"},
+        "type": "highway",
+        "at": 0.75,
+        "speed_band": "fast",
+        "length_band": "long",
+        "is_rest_facility": false
+      },
+      {
+        "id": "seg_end",
+        "name": {"ja": "目的地（友人宅）", "en": "Destination (Friend's Home)"},
+        "type": "end",
+        "at": 1.0,
+        "speed_band": "slow",
+        "length_band": "short",
+        "is_rest_facility": false
+      }
+    ]
+  },
+  "initial_state": {
+    "drowsiness_level": "none",
+    "fatigue_level": "medium"
+  },
+  "event_presets": {
+    "drowsiness_schedule": [
+      {"at": 0.0, "band": "none"},
+      {"at": 0.3, "band": "weak"},
+      {"at": 0.42, "band": "moderate"}
+    ],
+    "signal_duration_at_trigger": "sustained",
+    "signal_duration_schedule": [
+      {"at": 0.0,  "band": "transient"},
+      {"at": 0.3,  "band": "brief"},
+      {"at": 0.42, "band": "sustained"}
+    ],
+    "rest_spot_eta_near_before": "seg_rest"
+  },
+  "total_duration_seconds": 7200,
+  "tick_seconds": 60,
+  "allowed_actions": ["accept_rest", "postpone"],
+  "review_focus": "UC-01 fatigue/drowsiness: verify R3 REST_PROPOSAL fires exactly once at the moderate-drowsiness threshold with default hyperparameters, and that prior ticks are SOFT_WARNING or NO_TRIGGER."
+}
