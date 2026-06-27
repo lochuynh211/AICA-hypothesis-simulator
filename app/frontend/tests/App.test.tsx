@@ -20,6 +20,7 @@ describe('App — backend health display', () => {
 
     // After the async fetch resolves
     expect(await screen.findByText('Backend: ok — aica-api')).toBeInTheDocument()
+    expect(global.fetch).toHaveBeenCalledWith('/api/health')
   })
 
   it('shows error state when fetch rejects (network error)', async () => {
@@ -33,6 +34,17 @@ describe('App — backend health display', () => {
   it('shows error state when response is non-ok', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
+    })
+
+    render(<App />)
+
+    expect(await screen.findByText('Backend unavailable')).toBeInTheDocument()
+  })
+
+  it('shows error state when response body has unexpected shape', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ result: 'fine' }),
     })
 
     render(<App />)

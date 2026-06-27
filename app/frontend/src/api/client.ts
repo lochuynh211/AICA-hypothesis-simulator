@@ -9,5 +9,9 @@ export async function getHealth(): Promise<HealthStatus> {
   if (!response.ok) {
     throw new Error(`Health check failed: ${response.status}`)
   }
-  return (await response.json()) as HealthStatus
+  const data = await response.json()
+  if (typeof data?.status !== 'string' || typeof data?.service !== 'string') {
+    throw new Error('Unexpected health response shape')
+  }
+  return data as HealthStatus
 }
