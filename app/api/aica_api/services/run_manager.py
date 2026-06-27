@@ -145,6 +145,109 @@ def _is_m2_scenario(scenario: ScenarioDef) -> bool:
     return scenario.driver_profile is not None
 
 
+def _derive_history(
+    events: list,
+    tick_seconds: float,
+    current_sim_sec: float = 0.0,
+) -> tuple[dict, list]:
+    """Derive proposal_history and user_action_history from the event log.
+
+    Walks the event list once.  TickEvents with a fired proposal contribute to
+    ``proposal_history``; ActionEvents contribute to ``user_action_history``.
+
+    Time convention: a proposal at ``tick_index`` has sim-time
+    ``tick_index * tick_seconds``.  This is consistent with the M1 plan and
+    approximates M2 (where elapsed_seconds is stored per-event in tick_state but
+    would require accessing it from each stored TickEvent).
+
+    Args:
+        events:          The run log events (TickEvent | ActionEvent | AlgorithmError).
+        tick_seconds:    Scenario tick cadence in seconds (for sim-time computation).
+        current_sim_sec: Current simulation time (for proposalCountLast30Min).
+
+    Returns:
+        A tuple ``(proposal_history, user_action_history)`` where:
+          proposal_history = {
+            "lastProposalTimeSec":      float | None,
+            "lastProposalCategory":     str | None,
+            "lastProposalResult":       str | None,  # action taken after last proposal
+            "proposalCountLast30Min":   int,
+            "acceptanceRateRecent":     float,        # 0.0 when none acted
+          }
+          user_action_history = [{"tick_index": int, "action": str}, ...]
+    """
+    # Collect fired proposals (tick_index, selected_category) in order.
+    fired_proposal_ticks: list[int] = []
+    fired_proposal_categories: list[str] = []
+    # Collect actions (tick_index, action) in order.
+    action_by_order: list[tuple[int, str]] = []
+    user_action_history: list[dict] = []
+
+    for event in events:
+        kind = event.kind
+        if kind == "tick":
+            dr = event.trace.decision_result
+            if dr.fire_control.fired and dr.proposal is not None:
+                fired_proposal_ticks.append(event.tick_index)
+                fired_proposal_categories.append(dr.selected_category or "")
+        elif kind == "action":
+            action_by_order.append((event.tick_index, event.action))
+            user_action_history.append(
+                {"tick_index": event.tick_index, "action": event.action}
+            )
+
+    if not fired_proposal_ticks:
+        return {
+            "lastProposalTimeSec": None,
+            "lastProposalCategory": None,
+            "lastProposalResult": None,
+            "proposalCountLast30Min": 0,
+            "acceptanceRateRecent": 0.0,
+        }, user_action_history
+
+    # ── Last proposal ──────────────────────────────────────────────────────
+    last_tick = fired_proposal_ticks[-1]
+    last_category = fired_proposal_categories[-1]
+    last_time_sec = float(last_tick * tick_seconds)
+
+    # lastProposalResult: first action at or after the last proposal's tick_index.
+    last_proposal_result: str | None = None
+    for action_tick, action in action_by_order:
+        if action_tick >= last_tick:
+            last_proposal_result = action
+            break
+
+    # ── proposalCountLast30Min (1800 sec window) ───────────────────────────
+    window_start_sec = current_sim_sec - 1800.0
+    proposals_in_window = sum(
+        1 for t in fired_proposal_ticks if t * tick_seconds >= window_start_sec
+    )
+
+    # ── acceptanceRateRecent ───────────────────────────────────────────────
+    # Match each fired proposal to the first action at or after its tick_index.
+    acted_count = 0
+    accepted_count = 0
+    action_search_start = 0
+    for proposal_tick in fired_proposal_ticks:
+        for i in range(action_search_start, len(action_by_order)):
+            if action_by_order[i][0] >= proposal_tick:
+                acted_count += 1
+                if action_by_order[i][1] == "accept_rest":
+                    accepted_count += 1
+                action_search_start = i + 1
+                break
+
+    acceptance_rate = accepted_count / acted_count if acted_count > 0 else 0.0
+
+    return {
+        "lastProposalTimeSec": last_time_sec,
+        "lastProposalCategory": last_category,
+        "lastProposalResult": last_proposal_result,
+        "proposalCountLast30Min": proposals_in_window,
+        "acceptanceRateRecent": acceptance_rate,
+    }, user_action_history
+
+
 # ---------------------------------------------------------------------------
 # Public API — create_run
 # ---------------------------------------------------------------------------
@@ -363,6 +466,20 @@ def tick(run_id: str) -> TickOutcome:
 
     # ── Build context and call adapter ────────────────────────────────────
     context = build_adapter_context(tick_state)
+
+    # T005: inject simulation_time_sec, proposal_history, user_action_history.
+    # These are required by python_module packages and harmless for built-ins.
+    # simulation_time_sec: use tick_state.elapsed_seconds (already computed by
+    # tick_engine; reliable for both M1 and M2 variable-cadence paths).
+    context["simulation_time_sec"] = float(tick_state.elapsed_seconds)
+    _proposal_history, _user_action_history = _derive_history(
+        recorder.run_log.events,
+        tick_seconds=float(run_state.event_plan.tick_seconds),
+        current_sim_sec=float(tick_state.elapsed_seconds),
+    )
+    context["proposal_history"] = _proposal_history
+    context["user_action_history"] = _user_action_history
+
     # Use current_parameters/hyperparameters (may be overridden in expert mode)
     hyperparameters = run_state.current_hyperparameters or {
         hp.key: hp.default for hp in package.hyperparameters

@@ -1,4 +1,4 @@
-"""Algorithm adapter (T014/T016) — the single, authoritative dispatch path.
+"""Algorithm adapter (T014/T016/T004) — the single, authoritative dispatch path.
 
 Every algorithm call goes through this module.  It dispatches by
 ``package.algorithm.type``, calls the implementation, normalises the output
@@ -21,37 +21,25 @@ M2 additions (T016):
   - Dispatches ``weighted_score`` by ``package.algorithm.type``.
   - weighted_score populates scores/states/candidates/selected_category;
     next_package_runtime_state is always passthrough-empty from both built-ins.
+
+M3 additions (T004):
+  - Dispatches ``python_module`` by ``package.algorithm.type``.
+  - python_module validates the enriched context (simulation_time_sec, raw_state,
+    feature_groups.normalized), then loads + evaluates the package's evaluate().
+  - result_type passed verbatim; next_package_runtime_state threaded through.
 """
 
 from __future__ import annotations
 
 from aica_api.algorithms import declarative_rule as _dr
+from aica_api.algorithms import python_module as _pm
 from aica_api.algorithms import weighted_score as _ws
+from aica_api.algorithms._errors import AlgorithmAdapterError  # re-exported below
 from aica_api.models.decision import DecisionResult
 from aica_api.models.package import PackageManifest
 
-
-# ---------------------------------------------------------------------------
-# Error type
-# ---------------------------------------------------------------------------
-
-
-class AlgorithmAdapterError(Exception):
-    """Raised when an algorithm fails to produce a valid DecisionResult.
-
-    Callers (the tick engine) should convert this to an ``AlgorithmError``
-    log event (with the appropriate tick_index), never to a DecisionResult.
-
-    Attributes:
-        error_type: Machine-readable category ("algorithm_exception" or
-                    "invalid_result_shape").
-        message:    Human-readable description including the original error.
-    """
-
-    def __init__(self, error_type: str, message: str) -> None:
-        self.error_type = error_type
-        self.message = message
-        super().__init__(f"{error_type}: {message}")
+# Re-export for backward compatibility — external callers import from here.
+__all__ = ["AlgorithmAdapterError", "evaluate"]
 
 
 # ---------------------------------------------------------------------------
@@ -101,6 +89,11 @@ def evaluate(
 
     if algo_type == "weighted_score":
         return _dispatch_weighted_score(context, parameters, hyperparameters)
+
+    if algo_type == "python_module":
+        return _dispatch_python_module(
+            package, context, parameters, hyperparameters, package_runtime_state
+        )
 
     raise AlgorithmAdapterError(
         error_type="unsupported_algorithm_type",
@@ -213,4 +206,33 @@ def _dispatch_weighted_score(
         reason_inputs=result.reason_inputs,
         explanation=result.explanation,
         next_package_runtime_state={},
+    )
+
+
+def _dispatch_python_module(
+    package: PackageManifest,
+    context: dict,
+    parameters: dict,
+    hyperparameters: dict,
+    package_runtime_state: dict,
+) -> DecisionResult:
+    """Dispatch to python_module.dispatch() which validates, loads, calls, and normalises.
+
+    For python_module packages:
+      - result_type is stored verbatim (no alias map).
+      - next_package_runtime_state is preserved from the algorithm's return
+        (unlike built-ins which force {}).
+      - Context must already be enriched with simulation_time_sec, proposal_history,
+        and user_action_history (injected by run_manager T005).
+
+    Raises:
+        AlgorithmAdapterError: With error_type in {context_error, missing_evaluate,
+            algorithm_exception, invalid_result_shape} on any failure.
+    """
+    return _pm.dispatch(
+        package=package,
+        context=context,
+        parameters=parameters,
+        hyperparameters=hyperparameters,
+        package_runtime_state=package_runtime_state,
     )
