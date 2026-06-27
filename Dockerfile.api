@@ -4,17 +4,18 @@ RUN pip install uv
 
 WORKDIR /app
 
-# Copy dependency manifests first for layer caching
+# Copy dependency manifests only — stable cache layer for third-party deps
 COPY app/api/pyproject.toml app/api/uv.lock ./
 
-# Copy source package so hatchling can install aica_api in editable mode
-COPY app/api/aica_api ./aica_api
+# Install third-party deps without the local project so this layer is stable
+# across source changes (adding main.py, editing aica_api/, etc.)
+RUN uv sync --frozen --no-install-project
 
-# Install dependencies; .venv lives at /app/.venv (uv default)
-RUN uv sync
-
-# Copy the rest of the api source
+# Copy full source now that deps are cached
 COPY app/api/ ./
+
+# Register/build the local aica_api package (fast — third-party already installed)
+RUN uv sync --frozen
 
 EXPOSE 8137
 

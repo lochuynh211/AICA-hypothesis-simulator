@@ -1,0 +1,7 @@
+.git
+.superpowers/
+others/
+docs/
+specs/
+app/frontend/node_modules
+app/api/.venv
