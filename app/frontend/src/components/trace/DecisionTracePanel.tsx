@@ -91,6 +91,71 @@ function ScoresRow({ scores }: { scores: Record<string, unknown> }) {
   )
 }
 
+function StateLabelsRow({ states }: { states: Record<string, unknown> }) {
+  const entries = Object.entries(states)
+  if (entries.length === 0) return null
+
+  return (
+    <div style={{ marginTop: '3px', fontSize: '0.80em', color: '#c9f' }}>
+      {entries.map(([key, val]) => (
+        <span
+          key={key}
+          data-testid={`state-${key}`}
+          style={{ marginRight: '10px' }}
+        >
+          {key}={String(val)}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+type PackageRuntimeState = {
+  smoothed_scores?: Record<string, number>
+  persistence_counters?: Record<string, number>
+  smoothed_features?: Record<string, unknown>
+  states?: Record<string, unknown>
+}
+
+function RuntimeStateIndicator({ runtimeState }: { runtimeState: Record<string, unknown> }) {
+  if (Object.keys(runtimeState).length === 0) return null
+
+  const rs = runtimeState as PackageRuntimeState
+  const smoothedScores = rs.smoothed_scores ?? {}
+  const persistenceCounters = rs.persistence_counters ?? {}
+
+  const scoreEntries = Object.entries(smoothedScores)
+  const counterEntries = Object.entries(persistenceCounters)
+
+  return (
+    <div
+      data-testid="runtime-state-indicator"
+      style={{ marginTop: '3px', fontSize: '0.78em', color: '#88b', borderLeft: '2px solid #448', paddingLeft: '6px' }}
+    >
+      {scoreEntries.length > 0 && (
+        <span style={{ marginRight: '8px' }}>
+          scores:{' '}
+          {scoreEntries.map(([k, v]) => (
+            <span key={k} style={{ marginRight: '6px' }}>
+              {k}={typeof v === 'number' ? v.toFixed(3) : String(v)}
+            </span>
+          ))}
+        </span>
+      )}
+      {counterEntries.length > 0 && (
+        <span>
+          persist:{' '}
+          {counterEntries.map(([k, v]) => (
+            <span key={k} style={{ marginRight: '6px' }}>
+              {k}={typeof v === 'number' ? String(v) : String(v)}
+            </span>
+          ))}
+        </span>
+      )}
+    </div>
+  )
+}
+
 function TraceEntryRow({ entry }: { entry: TraceEntry }) {
   const hasScores = entry.scores && Object.keys(entry.scores).length > 0
 
@@ -117,6 +182,9 @@ function TraceEntryRow({ entry }: { entry: TraceEntry }) {
 
       {/* Per-category scores (weighted-score richer trace) */}
       {hasScores && <ScoresRow scores={entry.scores} />}
+
+      {/* Per-tick state labels (hybrid algorithm) */}
+      <StateLabelsRow states={entry.states ?? {}} />
 
       {/* Candidates */}
       {entry.candidates.length > 0 && (
@@ -145,6 +213,9 @@ function TraceEntryRow({ entry }: { entry: TraceEntry }) {
       <div style={{ color: '#ccc', marginTop: '2px', fontStyle: 'italic' }}>
         {entry.explanation}
       </div>
+
+      {/* Runtime-state indicator (hybrid algorithm — recorded output this tick) */}
+      <RuntimeStateIndicator runtimeState={entry.next_package_runtime_state ?? {}} />
     </div>
   )
 }

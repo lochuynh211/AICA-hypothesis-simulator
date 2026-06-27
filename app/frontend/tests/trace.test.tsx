@@ -349,3 +349,189 @@ describe('DecisionTracePanel — T019 weighted-score richer trace', () => {
     expect(screen.getByTestId('candidate-suppressed-label')).toHaveTextContent(/suppressed/i)
   })
 })
+
+// ── T013: hybrid state labels + runtime-state indicator (M3) ──────────────────
+
+const hybridDecisionWithStates: DecisionResult = {
+  result_type: 'REST_PROPOSAL',
+  trigger_candidate: true,
+  selected_category: 'rest_required',
+  score: 0.71,
+  features: { drowsiness_level: 'moderate' },
+  scores: {
+    rest_required_score: 0.71,
+    monotony_prevention_score: 0.12,
+  },
+  states: {
+    rest: 'REST_SUGGEST',
+    monotony: 'MONOTONY_WATCH',
+  },
+  criteria: {},
+  candidates: [
+    {
+      category: 'rest_required',
+      exists: true,
+      score: 0.71,
+      state: 'REST_SUGGEST',
+      strength: 'gentle',
+      fire_control: { fired: true, suppressed: false, override: false, reason: null },
+    },
+  ],
+  fire_control: { fired: true, suppressed: false, override: false, reason: null },
+  proposal: null,
+  reason_inputs: [],
+  explanation: 'Hybrid decision.',
+  next_package_runtime_state: {
+    smoothed_scores: {
+      rest_required_score: 0.71,
+      monotony_prevention_score: 0.12,
+    },
+    persistence_counters: {
+      rest_required: 2,
+      monotony_prevention: 0,
+    },
+    smoothed_features: { drowsiness_score: 0.65 },
+    states: { rest: 'REST_SUGGEST', monotony: 'MONOTONY_WATCH' },
+  },
+}
+
+const hybridSuppressedDecision: DecisionResult = {
+  result_type: 'NO_PRACTICAL_ACTION_FALLBACK',
+  trigger_candidate: false,
+  selected_category: null,
+  score: null,
+  features: {},
+  scores: {
+    rest_required_score: 0.82,
+    monotony_prevention_score: 0.15,
+  },
+  states: {
+    rest: 'REST_SUGGEST',
+    monotony: 'MONOTONY_WATCH',
+  },
+  criteria: {},
+  candidates: [
+    {
+      category: 'rest_required',
+      exists: true,
+      score: 0.82,
+      state: 'REST_SUGGEST',
+      strength: 'clear',
+      fire_control: {
+        fired: false,
+        suppressed: true,
+        override: false,
+        reason: 'no_rest_spot_reachable',
+      },
+    },
+  ],
+  fire_control: { fired: false, suppressed: true, override: false, reason: 'no_rest_spot_reachable' },
+  proposal: null,
+  reason_inputs: [],
+  explanation: 'Python hybrid: suppressed due to no reachable rest spot.',
+  next_package_runtime_state: {
+    smoothed_scores: {
+      rest_required_score: 0.82,
+      monotony_prevention_score: 0.15,
+    },
+    persistence_counters: {
+      rest_required: 3,
+      monotony_prevention: 0,
+    },
+    smoothed_features: {},
+    states: { rest: 'REST_SUGGEST', monotony: 'MONOTONY_WATCH' },
+  },
+}
+
+const builtinDecision: DecisionResult = {
+  result_type: 'NO_TRIGGER',
+  trigger_candidate: false,
+  selected_category: null,
+  score: 0.0,
+  features: {},
+  scores: {},
+  states: {},
+  criteria: {},
+  candidates: [],
+  fire_control: { fired: false, suppressed: false, override: false, reason: null },
+  proposal: null,
+  reason_inputs: [],
+  explanation: 'No trigger.',
+  next_package_runtime_state: {},
+}
+
+describe('DecisionTracePanel — T013 hybrid state labels + runtime-state indicator', () => {
+  it('(h) renders per-tick state labels for hybrid decisions', () => {
+    renderWithStore(<DecisionTracePanel />, (dispatch) => {
+      dispatch({
+        type: 'TICK_APPENDED',
+        runState: { ...minimalRunState, current_tick: 8 },
+        decision: hybridDecisionWithStates,
+        tickIndex: 8,
+        paused: false,
+        completed: false,
+      })
+    })
+
+    expect(screen.getByTestId('state-rest')).toBeInTheDocument()
+    expect(screen.getByTestId('state-rest')).toHaveTextContent('REST_SUGGEST')
+    expect(screen.getByTestId('state-monotony')).toBeInTheDocument()
+    expect(screen.getByTestId('state-monotony')).toHaveTextContent('MONOTONY_WATCH')
+  })
+
+  it('(i) renders runtime-state indicator with smoothed_scores and persistence_counters', () => {
+    renderWithStore(<DecisionTracePanel />, (dispatch) => {
+      dispatch({
+        type: 'TICK_APPENDED',
+        runState: { ...minimalRunState, current_tick: 9 },
+        decision: hybridDecisionWithStates,
+        tickIndex: 9,
+        paused: false,
+        completed: false,
+      })
+    })
+
+    const indicator = screen.getByTestId('runtime-state-indicator')
+    expect(indicator).toBeInTheDocument()
+    // smoothed scores rendered with toFixed(3) formatting
+    expect(indicator).toHaveTextContent('0.710')
+    expect(indicator).toHaveTextContent('0.120')
+    // persistence counter value visible
+    expect(indicator).toHaveTextContent('2')
+  })
+
+  it('(j) SC-006: Python hybrid suppressed candidate is visibly marked suppressed', () => {
+    renderWithStore(<DecisionTracePanel />, (dispatch) => {
+      dispatch({
+        type: 'TICK_APPENDED',
+        runState: { ...minimalRunState, current_tick: 10 },
+        decision: hybridSuppressedDecision,
+        tickIndex: 10,
+        paused: false,
+        completed: false,
+      })
+    })
+
+    expect(screen.getByTestId('candidate-suppressed-label')).toBeInTheDocument()
+    expect(screen.getByTestId('candidate-suppressed-label')).toHaveTextContent(/suppressed/i)
+    // The candidate is still visible (not hidden)
+    expect(screen.getAllByText(/rest_required/).length).toBeGreaterThan(0)
+  })
+
+  it('(k) built-in entry with empty states/runtime_state renders no state labels and no runtime-state indicator', () => {
+    renderWithStore(<DecisionTracePanel />, (dispatch) => {
+      dispatch({
+        type: 'TICK_APPENDED',
+        runState: { ...minimalRunState, current_tick: 11 },
+        decision: builtinDecision,
+        tickIndex: 11,
+        paused: false,
+        completed: false,
+      })
+    })
+
+    expect(screen.queryByTestId('state-rest')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('state-monotony')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('runtime-state-indicator')).not.toBeInTheDocument()
+  })
+})
