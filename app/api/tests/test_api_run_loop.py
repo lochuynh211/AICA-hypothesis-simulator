@@ -4,19 +4,29 @@ M2 extension: covers all four pairings (both packages × both scenarios) via the
 plan_id flow (POST /api/run-plans → POST /api/runs{plan_id} → tick → action →
 GET /log), with full log-structure and determinism assertions.
 
+M3 extension (T014): adds the transparent hybrid package to all pairings; guards
+hybrid-specific assertions (full trace + evolving per-tick runtime state) to that
+pairing; adds a dedicated e2e test driving the full HTTP plan flow with route
+analysis (POST /api/routes/analyze) as step 1.
+
 Coverage:
   1. Full loop   — POST /api/runs → tick to REST_PROPOSAL → accept_rest → GET /log
   2. Determinism — two independent runs produce identical decision-trace sequences
   3. Past-end    — ticking after completion is idempotent (completed: true)
   4. Overtime decline e2e — decline → resume → complete, no further proposal
-  5. All-pairings e2e (M2, T029) — all four pairings (rule_based + weighted_score ×
-     friend_drive + overtime) via plan_id flow; asserts exactly one REST_PROPOSAL,
-     full log structure, and per-tick raw_state/feature_groups/driver+vehicle
-     updates/package_runtime_state.
-  6. All-pairings determinism (M2, T029) — two runs → identical decision-trace sequences
+  5. All-pairings e2e (M2+M3, T029/T014) — five pairings (rule_based + weighted_score
+     × friend_drive + overtime, plus hybrid × friend_drive) via plan_id flow; asserts
+     exactly one REST_PROPOSAL, full log structure, and per-tick M2 fields.
+     Hybrid pairing additionally asserts: full decision trace (scores/states/candidates/
+     fire_control/explanation) and evolving per-tick package_runtime_state (M3 headline).
+  6. All-pairings determinism (M2+M3, T029/T014) — two runs → identical decision-trace
   7. Weighted-score overtime strength (M2, T029/FR-013) — fired candidate strength is
      "gentle" or "clear", never "strong".
   8. Decline with no pending proposal → 409 (M2, T029)
+  9. Hybrid HTTP full-flow + evolving state (M3, T014) — analyze → run-plans → runs →
+     tick-loop → actions → log; asserts SUPPRESSED tick visible, full trace, non-empty
+     evolving package_runtime_state in every persisted TickEvent.
+ 10. Hybrid HTTP determinism (M3, T014) — two independent hybrid runs → same trace.
 
 Isolation: runs dir is redirected to tmp_path via AICA_RUNS_DIR monkeypatch;
 the in-memory run registry is cleared before and after every test (autouse).
@@ -38,10 +48,15 @@ VALID_SCENARIO_ID = "uc01_fatigue_friend_drive_v0_1"
 OVERTIME_SCENARIO_ID = "uc01_overtime_driver_v0_1"
 WEIGHTED_PACKAGE_ID = "rest_weighted_score_v0_1"
 
-# Safety cap: the fixture scenario has 120 ticks total; 200 is generous.
-_MAX_TICKS = 200
+# M3: transparent hybrid package constants
+HYBRID_PACKAGE_ID = "aica_transparent_hybrid_trigger_v1"
+HYBRID_SCENARIO_ID = "uc01_fatigue_friend_drive_v0_1"  # fires exactly one REST_PROPOSAL at tick 100
 
-# M2 pairings that fire exactly one REST_PROPOSAL: (package_id, scenario_id, resolve_action)
+# Safety cap: the fixture scenario has 120 ticks total; 200 is generous.
+# The hybrid fires at tick 100 (tick_seconds=30, 240-tick budget) — 250 is safe.
+_MAX_TICKS = 250
+
+# M2+M3 pairings that fire exactly one REST_PROPOSAL: (package_id, scenario_id, resolve_action)
 _FIRING_PAIRINGS = [
     pytest.param(
         "rest_rule_based_v0_1", "uc01_fatigue_friend_drive_v0_1", "accept_rest",
@@ -58,6 +73,11 @@ _FIRING_PAIRINGS = [
     pytest.param(
         "rest_weighted_score_v0_1", "uc01_fatigue_friend_drive_v0_1", "accept_rest",
         id="ws-friend",
+    ),
+    # M3: transparent hybrid fires at tick 100 on friend-drive; accept_rest ∈ allowed_actions
+    pytest.param(
+        HYBRID_PACKAGE_ID, HYBRID_SCENARIO_ID, "accept_rest",
+        id="hybrid-friend",
     ),
 ]
 
@@ -505,6 +525,53 @@ def test_all_pairings_e2e(client, package_id, scenario_id, resolve_action):
             f"pairing={package_id}×{scenario_id}"
         )
 
+    # ── M3 hybrid-specific: full trace + evolving per-tick runtime state ──────
+    if package_id == HYBRID_PACKAGE_ID:
+        # The paused decision must carry the full transparent trace.
+        assert decision.get("scores"), (
+            "hybrid REST_PROPOSAL must carry per-category scores"
+        )
+        assert {"base_safety_risk", "rest_required_score", "monotony_prevention_score"} <= set(
+            decision["scores"]
+        ), f"hybrid scores must include all three keys; got {set(decision['scores'])!r}"
+
+        assert decision.get("states"), (
+            "hybrid REST_PROPOSAL must carry state-machine labels"
+        )
+        assert {"rest", "monotony"} <= set(decision["states"]), (
+            f"hybrid states must carry rest+monotony labels; got {set(decision['states'])!r}"
+        )
+
+        assert decision.get("fire_control", {}).get("fired") is True, (
+            "hybrid fire_control.fired must be True on the REST_PROPOSAL"
+        )
+        assert decision.get("explanation"), (
+            "hybrid REST_PROPOSAL must carry an explanation"
+        )
+
+        # M3 headline: every TickEvent's package_runtime_state is non-empty AND evolves.
+        runtime_states = [e.get("package_runtime_state", {}) for e in tick_events]
+
+        empty_indices = [i for i, rs in enumerate(runtime_states) if not rs]
+        assert not empty_indices, (
+            f"Tick events at indices {empty_indices} have empty package_runtime_state "
+            f"for {package_id} — hybrid must persist non-empty state every tick"
+        )
+
+        smoothed_rest = [
+            rs["smoothed_scores"]["rest_required_score"] for rs in runtime_states
+        ]
+        assert len(set(smoothed_rest)) > 1, (
+            "smoothed_scores[rest_required_score] must change across ticks for the hybrid "
+            "(M3 headline: per-tick runtime state genuinely carried forward)"
+        )
+
+        rest_counters = [rs["persistence_counters"]["rest_required"] for rs in runtime_states]
+        assert max(rest_counters) >= 1, (
+            "persistence_counters[rest_required] must reach >= 1 for the hybrid "
+            "(persistence gate: SUPPRESSED tick → REST_PROPOSAL tick)"
+        )
+
     # ── Resolve the proposal ──────────────────────────────────────────────────
     action_resp = client.post(
         f"/api/runs/{run_id}/actions",
@@ -659,3 +726,215 @@ def test_decline_with_no_pending_proposal_is_409(client):
         f"decline with no pending proposal must return 409 (No pending proposal), "
         f"not {action_resp.status_code}: {action_resp.json()}"
     )
+
+
+# ── T014 (M3): Hybrid HTTP full plan-flow + evolving persisted runtime state ──
+
+
+def test_hybrid_http_full_flow_evolving_state(client):
+    """T014 (M3): transparent hybrid through the REAL HTTP plan flow with route analysis.
+
+    Full flow: POST /api/routes/analyze → POST /api/run-plans → POST /api/runs →
+               POST /api/runs/{id}/tick (×~100) → POST /api/runs/{id}/actions →
+               GET /api/runs/{id}/log.
+
+    This is the M3 end-to-end headline test. It asserts:
+    - Exactly one REST_PROPOSAL at the paused tick (tick 100 for the hybrid on
+      uc01_fatigue_friend_drive_v0_1 with tick_seconds=30)
+    - Full decision trace present: scores, states, candidates (incl. the
+      persistence-gated SUPPRESSED candidate at tick 99), fire_control, explanation
+    - accept_rest resolves the proposal (status → completed)
+    - The persisted per-tick package_runtime_state is non-empty for EVERY TickEvent
+      AND changes across ticks (smoothed_scores and persistence_counters evolve) —
+      the M3 headline: state is genuinely threaded forward in the evidence, not reset.
+    - SUPPRESSED tick visible in the log (persistence gate: counter 0→1 at tick 99)
+    """
+    # 1. Analyze route (warms route facts; included to cover the full HTTP surface)
+    analyze_resp = client.post(
+        "/api/routes/analyze",
+        json={"scenario_id": HYBRID_SCENARIO_ID},
+    )
+    assert analyze_resp.status_code == 200, (
+        f"Route analyze must succeed: {analyze_resp.json()}"
+    )
+
+    # 2. Create run plan via POST /api/run-plans
+    plan_resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": HYBRID_PACKAGE_ID,
+            "scenario_id": HYBRID_SCENARIO_ID,
+            "parameters": {},
+            "hyperparameters": {},
+            "run_mode": "standard",
+        },
+    )
+    assert plan_resp.status_code == 201, f"Plan creation failed: {plan_resp.json()}"
+    plan_id = plan_resp.json()["plan_id"]
+
+    # 3. Create run from plan via POST /api/runs
+    run_resp = client.post("/api/runs", json={"plan_id": plan_id})
+    assert run_resp.status_code == 201, f"Run creation failed: {run_resp.json()}"
+    run_id = run_resp.json()["run_id"]
+
+    # Log must be persisted immediately after creation
+    log_resp = client.get(f"/api/runs/{run_id}/log")
+    assert log_resp.status_code == 200
+    initial_log = log_resp.json()
+    assert initial_log["run_id"] == run_id
+    assert initial_log["snapshot"]["package"]["id"] == HYBRID_PACKAGE_ID
+
+    # 4. Tick repeatedly until the run pauses on a REST_PROPOSAL
+    all_bodies, paused_body = _tick_until_paused(client, run_id)
+
+    # Exactly one paused tick across the whole run
+    paused_ticks = [b for b in all_bodies if b.get("paused") is True]
+    assert len(paused_ticks) == 1, (
+        f"Expected exactly one paused tick (one REST_PROPOSAL), "
+        f"got {len(paused_ticks)}"
+    )
+
+    # Paused tick must carry REST_PROPOSAL with a proposal
+    decision = paused_body["decision"]
+    assert decision is not None, "Paused tick must carry a decision"
+    assert decision["result_type"] == "REST_PROPOSAL", (
+        f"Expected REST_PROPOSAL at pause, got {decision['result_type']!r}"
+    )
+    assert decision["proposal"] is not None, "REST_PROPOSAL must include a proposal object"
+
+    # Full transparent trace fields (hybrid-specific M3 fields)
+    assert decision.get("scores"), "hybrid decision must carry category scores"
+    expected_score_keys = {"base_safety_risk", "rest_required_score", "monotony_prevention_score"}
+    assert expected_score_keys <= set(decision["scores"]), (
+        f"hybrid trace must include all score keys; got {set(decision['scores'])!r}"
+    )
+
+    assert decision.get("states"), "hybrid decision must carry state-machine labels"
+    assert {"rest", "monotony"} <= set(decision["states"]), (
+        f"hybrid trace must carry rest+monotony state labels; got {set(decision['states'])!r}"
+    )
+
+    candidates = decision.get("candidates", [])
+    assert len(candidates) >= 1, "hybrid decision must carry at least one candidate"
+    assert any(c["category"] == "rest_required" for c in candidates), (
+        "rest_required candidate must be present in hybrid decision"
+    )
+    # At least one fired candidate for rest_required
+    assert any(
+        c["category"] == "rest_required" and c.get("fire_control", {}).get("fired") is True
+        for c in candidates
+    ), "hybrid REST_PROPOSAL must have a fired rest_required candidate"
+
+    assert decision.get("fire_control", {}).get("fired") is True, (
+        "fire_control.fired must be True on the REST_PROPOSAL"
+    )
+    assert decision.get("explanation"), "hybrid decision must carry explanation lines"
+
+    # 5. Accept the rest proposal (accept_rest ∈ proposal.options ∩ allowed_actions)
+    action_resp = client.post(
+        f"/api/runs/{run_id}/actions",
+        json={"action": "accept_rest"},
+    )
+    assert action_resp.status_code == 200, f"accept_rest failed: {action_resp.json()}"
+    post_action = action_resp.json()
+    assert post_action["status"] == "completed", (
+        f"Expected completed after accept_rest, got {post_action['status']!r}"
+    )
+    assert post_action["pending_proposal"] is None
+
+    # 6. GET /api/runs/{run_id}/log — verify full persisted evidence
+    final_log = client.get(f"/api/runs/{run_id}/log").json()
+    all_events = final_log["events"]
+    tick_events = [e for e in all_events if e.get("kind") == "tick"]
+    action_events = [e for e in all_events if e.get("kind") == "action"]
+
+    # Exactly one REST_PROPOSAL in the tick trace
+    rest_proposals_in_log = [
+        e for e in tick_events
+        if e.get("trace", {}).get("decision_result", {}).get("result_type") == "REST_PROPOSAL"
+    ]
+    assert len(rest_proposals_in_log) == 1, (
+        f"Expected exactly 1 REST_PROPOSAL in persisted log, got {len(rest_proposals_in_log)}"
+    )
+
+    # SUPPRESSED tick visible — the persistence gate is observable end-to-end:
+    # tick 99 records SUPPRESSED (counter→1), tick 100 fires REST_PROPOSAL (counter→2).
+    suppressed_in_log = [
+        e for e in tick_events
+        if e.get("trace", {}).get("decision_result", {}).get("result_type") == "SUPPRESSED"
+    ]
+    assert len(suppressed_in_log) >= 1, (
+        "At least one SUPPRESSED tick must appear in the log "
+        "(persistence gate: score crosses threshold at tick 99 → SUPPRESSED, fires at tick 100)"
+    )
+
+    # Exactly one action event (the accept_rest)
+    assert len(action_events) == 1, f"Expected 1 action event, got {len(action_events)}"
+    assert action_events[0]["action"] == "accept_rest"
+    assert action_events[0]["resulting_status"] == "completed"
+
+    # 7. M3 headline: per-tick package_runtime_state is non-empty AND evolves
+    runtime_states = [e.get("package_runtime_state", {}) for e in tick_events]
+
+    # Every TickEvent must carry a non-empty package_runtime_state for the hybrid
+    empty_indices = [i for i, rs in enumerate(runtime_states) if not rs]
+    assert not empty_indices, (
+        f"TickEvents at indices {empty_indices} have empty package_runtime_state — "
+        "the hybrid algorithm must return non-empty next_package_runtime_state every tick"
+    )
+
+    # smoothed_scores[rest_required_score] must change across ticks (state evolves)
+    smoothed_rest_scores = [
+        rs["smoothed_scores"]["rest_required_score"] for rs in runtime_states
+    ]
+    assert len(set(smoothed_rest_scores)) > 1, (
+        "smoothed_scores[rest_required_score] must change across ticks — "
+        "M3 headline: per-tick runtime state is genuinely carried forward, not reset"
+    )
+
+    # persistence_counters[rest_required] must advance to >= 1
+    rest_counters = [rs["persistence_counters"]["rest_required"] for rs in runtime_states]
+    assert max(rest_counters) >= 1, (
+        "persistence_counters[rest_required] must reach >= 1 "
+        "(visible progression: 0→1 at tick 99, 1→2 at tick 100)"
+    )
+
+
+# ── T014 (M3): Hybrid HTTP determinism ───────────────────────────────────────
+
+
+def test_hybrid_http_determinism(tmp_path, monkeypatch):
+    """T014 (M3): two independent hybrid HTTP runs produce identical decision traces.
+
+    Verifies that the stateful smoothing + persistence threading is purely
+    deterministic: no clocks, no random, same trace sequence across runs.
+    """
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+    client = TestClient(app)
+
+    # Run A
+    run_id_a = _create_run_for_pairing(client, HYBRID_PACKAGE_ID, HYBRID_SCENARIO_ID)
+    all_bodies_a, _ = _tick_until_paused(client, run_id_a)
+    trace_a = _extract_trace(all_bodies_a)
+
+    # Run B — independent run, same package+scenario
+    run_id_b = _create_run_for_pairing(client, HYBRID_PACKAGE_ID, HYBRID_SCENARIO_ID)
+    all_bodies_b, _ = _tick_until_paused(client, run_id_b)
+    trace_b = _extract_trace(all_bodies_b)
+
+    # Same number of ticks (same proposal tick)
+    assert len(all_bodies_a) == len(all_bodies_b), (
+        f"Hybrid HTTP determinism: Run A had {len(all_bodies_a)} ticks to proposal, "
+        f"Run B had {len(all_bodies_b)} — must be identical"
+    )
+
+    # Same decision-trace sequence
+    assert len(trace_a) == len(trace_b), (
+        f"Hybrid determinism: Run A produced {len(trace_a)} decisions, "
+        f"Run B produced {len(trace_b)}"
+    )
+    for i, (ea, eb) in enumerate(zip(trace_a, trace_b)):
+        assert ea == eb, (
+            f"Hybrid HTTP determinism: tick {i} diverged — "
+            f"Run A={ea!r}, Run B={eb!r}"
+        )
