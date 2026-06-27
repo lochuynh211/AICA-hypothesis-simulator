@@ -58,11 +58,19 @@ persistence; second scenario `uc01_overtime_driver_v0_1`; schema hardening
 run_mode/evidence_status); run-log completeness; frontend multi-option selectors +
 param/hyperparam editors + draft-plan preview/regenerate.
 
+M2 also adds, per master M2 scope (milestones §4, "package runtime state"), the
+**schema + plumbing for `package_runtime_state`**: a validated `dict` field on run
+state and the run log, fed tick-to-tick through the adapter (the run manager stores
+each tick's returned `next_package_runtime_state` into the next tick's input). M2's
+built-in algorithms leave it empty; M3's transparent-hybrid populates it
+(smoothing/persistence/state-machine logic). The pass-through and persistence must
+work in M2 even with empty values.
+
 **Out (later milestones):** Google Maps route surface (M4); Python
 `python_module` + the transparent-hybrid `aica_transparent_hybrid_trigger_v1`
-(M3 — incl. smoothing, persistence counters, state machines, `package_runtime_state`);
-structured feedback capture + evidence replay (M5); `expert_override` mode (M5+);
-run comparison (post-V1).
+*logic* (M3 — the smoothing/persistence/state-machine computation that *fills*
+`package_runtime_state`); structured feedback capture + evidence replay (M5);
+`expert_override` mode (M5+); run comparison (post-V1).
 
 ## 4. Behavioral engine (slice 1 — foundation)
 
@@ -99,10 +107,32 @@ progression.
   over the rolling window from driver state + road type.
 - **Recovery:** rest actions apply `recovery_model` deltas (workflow §7.1).
 
-### 4.3 Binning seam (`services/binning.py`)
-Numeric driver/vehicle outputs (0–100 levels, counts) → ordinal bands
-(`drowsiness_level`, `fatigue_level`, `signal_duration`, `driving_anomaly`, etc.)
-**before** the adapter context. No raw number reaches the trigger.
+### 4.3 Algorithm context: `raw_state` + `feature_groups` (binning reframed)
+
+**The constitution-IV invariant is about *external-service* numerics, not all
+numbers.** Principle IV bans a raw quantity *derived from an external service*
+(live map distances/geometry) from driving a trigger directly, and requires such
+quantities to be bounded/snapshotted into route facts before reaching decision
+logic. It does **not** ban the simulator's own deterministic internal numerics
+(driver/vehicle state, speed-profile-derived position) from reaching an algorithm.
+
+Accordingly the tick engine builds an algorithm context (per runtime workflow) with
+**both** views, and packages consume what fits their type:
+- **`raw_state`** — numeric internal state the transparent-hybrid (M3) expects:
+  `drowsinessLevel`, `fatigueLevel`, `attentionLevel`, `speedKph`,
+  `steeringInstabilityLevel`, `laneDepartureCount`, `nextRestSpotMin`,
+  `weatherRiskLevel`, etc. (all simulator-computed, reproducible).
+- **`feature_groups`** — normalized 0–1 feature scores **and** ordinal bands
+  (`drowsiness_level`, `fatigue_level`, `signal_duration`, `rest_spot_eta`,
+  `driving_anomaly`, …) derived from `raw_state` by `services/binning.py`.
+
+`declarative_rule` consumes the ordinal bands; `weighted_score` (and M3's hybrid)
+consume `raw_state` + normalized features. `services/binning.py` retains the
+distinct **external-service boundary** role for M4: when Google Maps supplies raw
+route geometry/distances, those are bounded/snapshotted into the route facts at
+ingestion — that is the numeric the constitution forbids from driving a trigger
+directly. Run logs persist `raw_state` (simulator-internal, reproducible) and the
+bounded route facts, never raw external-service detail.
 
 ### 4.4 Migration
 The M1 authored-`drowsiness_schedule` path is removed; `event_plan`/`tick_engine`
@@ -117,7 +147,10 @@ populates the multi-category §11 fields. No smoothing/persistence/state-machine
 (those are M3's transparent-hybrid Python package).
 
 ### 5.1 `algorithms/weighted_score.py`
-- **Feature scores** (0–1) mapped from the binned ordinal bands.
+- **Feature scores** (0–1) — normalized from the numeric `raw_state` (the same
+  `feature_groups` normalized values the M3 hybrid will use), not from ordinal
+  bands. This is the contract the transparent-hybrid expects; building it now keeps
+  M3 a pure add of the hybrid *logic*.
 - **Category scores** (proposal §10):
   - `base_safety_risk = clamp(0.40·drowsiness + 0.25·fatigue +
     0.25·driving_anomaly + 0.10·future_fatigue, 0, 1)`
@@ -209,9 +242,25 @@ Make-real (Pydantic-validated) the fields M1 stubbed: full `RouteFacts`,
 `states`/multi-`candidates`/`selected_category`. `RunLog`/`RunState` extended with
 route-derived facts, frozen event plan, selected profiles + speed profile,
 `run_mode`/`evidence_status`, `initial`/`current` parameters + hyperparameters, the
-`original_values`/`modified_values` setup diff, and per-tick
-`driver_updates`/`vehicle_updates` (component deltas). `package_runtime_state`
-stays empty (M3). Persist after every event (append-only, unchanged).
+`original_values`/`modified_values` setup diff, per-tick
+`driver_updates`/`vehicle_updates` (component deltas), and the per-tick `raw_state`
+snapshot. Persist after every event (append-only, unchanged).
+
+**`package_runtime_state` (schema + plumbing, M2):** a validated `dict` field on
+`RunState` and the run log, with an empty default. The run manager threads it
+tick-to-tick — passing the current value into `adapter.evaluate(...,
+package_runtime_state)` and storing the returned `next_package_runtime_state` into
+the run state for the next tick (architecture §13.4 step 9). M2's algorithms return
+it empty; the plumbing + persistence are exercised and tested so M3's hybrid only
+adds the logic that fills it.
+
+**Localized message/explanation (schema hardening for M3):** harden the package
+`ProposalDef.message` and the `DecisionResult.proposal.message` to localized
+`{ja, en}` objects (already so in M1) **and** make `DecisionResult.explanation`
+support a localized form — `{ja, en}` or a list of localized explanation lines —
+with a plain-string fallback. M2's algorithms may emit a single string; the schema
+must accept the localized shape the transparent-hybrid proposal requires so M3
+loads without a schema change.
 
 ## 9. Implementation slices (ordered, independent)
 
@@ -219,7 +268,8 @@ stays empty (M3). Persist after every event (append-only, unchanged).
    speed-driven position, binning seam; migrate tick engine + re-author friend-drive
    fixture.
 2. **`weighted_score`** — algorithm + package + adapter branch; multi-category +
-   priority.
+   priority; `raw_state`/`feature_groups` context; `package_runtime_state`
+   pass-through threading in the run manager (empty values, but exercised).
 3. **Setup/run-plan API** — `routes/analyze`, `run-plans`(+regenerate), migrated
    `runs`; route facts + draft event plan.
 4. **Editable setup + persistence** — validation, original/modified values, run-log
@@ -239,7 +289,19 @@ slice.)
 - **`weighted_score`:** category-score math matches the proposal formulas; gated
   rest bonus can't trigger alone; strength thresholds; multi-category candidates
   incl. a **suppressed** one; priority selects the right candidate; totality +
-  determinism; normalized §11 with populated `scores`/`states`.
+  determinism; normalized §11 with populated `scores`/`states`. **Monotony is
+  proven as schema/output support via a backend test/fixture** — a high-monotony
+  `raw_state` makes `weighted_score` emit a `monotony_prevention` candidate with the
+  right strength/state — *not* a full UX scenario (full monotony scenario review
+  stays M8).
+- **`package_runtime_state` round-trip:** the run manager passes it into the adapter
+  and stores `next_package_runtime_state` back into run state across ticks; a stub
+  algorithm returning a non-empty value proves the value persists tick-to-tick and
+  into the run log (M2 built-ins return it empty).
+- **Algorithm context:** `raw_state` carries the numeric internal state; the binning
+  also yields ordinal `feature_groups`; both are present in the context and
+  `raw_state` is persisted per tick. No raw *external-service* numeric exists yet
+  (Maps is M4).
 - **Setup/run-plan API:** `routes/analyze` returns facts; `run-plans` deterministic
   draft + validates edits (out-of-range → clear error); `regenerate` changes the
   draft; `runs {plan_id}` freezes + persists; invalid edited value rejected
@@ -272,10 +334,15 @@ slice.)
 - **II** Append-only/honest failure — recorder unchanged; algorithm errors as events.
 - **III** Deterministic — engine + draft-plan generation pure; ids/timestamps at the
   boundary; frozen plan.
-- **IV** Qualitative discipline — numeric profiles binned to ordinal bands before
-  the trigger; the binning seam is the only entry point.
+- **IV** Qualitative discipline — the invariant is *external-service* numerics: no
+  raw map quantity may drive a trigger directly (none exist until M4; map data will
+  be bounded into route facts at ingestion). The simulator's own deterministic
+  `raw_state` numerics reach weighted/hybrid algorithms; `binning` also provides
+  ordinal `feature_groups` for rule packages. Run logs persist `raw_state` +
+  bounded route facts, not raw external detail.
 - **V** One adapter contract — `weighted_score` dispatched through the same
-  `evaluate(...) → DecisionResult`; normalized; suppressed retained.
+  `evaluate(..., package_runtime_state) → DecisionResult`; normalized; suppressed
+  retained; `package_runtime_state` threaded tick-to-tick (empty for M2 built-ins).
 - **VI** Local-first YAGNI — two packages/scenarios, file-based, no DB/cloud; Maps/
   Python/feedback/expert-override deferred.
 
