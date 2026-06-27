@@ -579,6 +579,103 @@ def test_context_missing_feature_groups_normalized_raises_context_error(tmp_path
     assert exc_info.value.error_type == "context_error"
 
 
+def test_context_missing_feature_groups_itself_raises_context_error(tmp_path, monkeypatch):
+    """Context without feature_groups at all → context_error with precise message."""
+    (tmp_path / _PKG_ID).mkdir()
+    (tmp_path / _PKG_ID / "algorithm.py").write_text("def evaluate(ctx): pass\n")
+
+    monkeypatch.setenv("AICA_PACKAGES_DIR", str(tmp_path))
+    pkg = _make_pm_package(tmp_path)
+
+    bad_ctx = {k: v for k, v in _VALID_PM_CTX.items() if k != "feature_groups"}
+
+    with pytest.raises(AlgorithmAdapterError) as exc_info:
+        evaluate(
+            package=pkg,
+            context=bad_ctx,
+            parameters={},
+            hyperparameters={"w_test": 0.5},
+            history=[],
+            package_runtime_state={},
+        )
+    err = exc_info.value
+    assert err.error_type == "context_error"
+    assert err.message == "missing required field: 'feature_groups'"
+
+
+def test_context_missing_proposal_history_raises_context_error(tmp_path, monkeypatch):
+    """Context without proposal_history → context_error."""
+    (tmp_path / _PKG_ID).mkdir()
+    (tmp_path / _PKG_ID / "algorithm.py").write_text("def evaluate(ctx): pass\n")
+
+    monkeypatch.setenv("AICA_PACKAGES_DIR", str(tmp_path))
+    pkg = _make_pm_package(tmp_path)
+
+    bad_ctx = {k: v for k, v in _VALID_PM_CTX.items() if k != "proposal_history"}
+
+    with pytest.raises(AlgorithmAdapterError) as exc_info:
+        evaluate(
+            package=pkg,
+            context=bad_ctx,
+            parameters={},
+            hyperparameters={"w_test": 0.5},
+            history=[],
+            package_runtime_state={},
+        )
+    err = exc_info.value
+    assert err.error_type == "context_error"
+    assert err.message == "missing required field: 'proposal_history'"
+
+
+def test_context_missing_user_action_history_raises_context_error(tmp_path, monkeypatch):
+    """Context without user_action_history → context_error."""
+    (tmp_path / _PKG_ID).mkdir()
+    (tmp_path / _PKG_ID / "algorithm.py").write_text("def evaluate(ctx): pass\n")
+
+    monkeypatch.setenv("AICA_PACKAGES_DIR", str(tmp_path))
+    pkg = _make_pm_package(tmp_path)
+
+    bad_ctx = {k: v for k, v in _VALID_PM_CTX.items() if k != "user_action_history"}
+
+    with pytest.raises(AlgorithmAdapterError) as exc_info:
+        evaluate(
+            package=pkg,
+            context=bad_ctx,
+            parameters={},
+            hyperparameters={"w_test": 0.5},
+            history=[],
+            package_runtime_state={},
+        )
+    err = exc_info.value
+    assert err.error_type == "context_error"
+    assert err.message == "missing required field: 'user_action_history'"
+
+
+def test_broken_module_import_raises_algorithm_exception(tmp_path, monkeypatch):
+    """Module that raises at import time → algorithm_exception (not missing_evaluate)."""
+    algo_py = textwrap.dedent("""\
+        raise RuntimeError("intentional import-time crash")
+    """)
+    (tmp_path / _PKG_ID).mkdir()
+    (tmp_path / _PKG_ID / "algorithm.py").write_text(algo_py)
+
+    monkeypatch.setenv("AICA_PACKAGES_DIR", str(tmp_path))
+    pkg = _make_pm_package(tmp_path)
+
+    with pytest.raises(AlgorithmAdapterError) as exc_info:
+        evaluate(
+            package=pkg,
+            context=_VALID_PM_CTX,
+            parameters={},
+            hyperparameters={"w_test": 0.5},
+            history=[],
+            package_runtime_state={},
+        )
+    err = exc_info.value
+    assert err.error_type == "algorithm_exception"
+    assert "intentional import-time crash" in err.message
+
+
 def test_optional_sensor_fields_absent_does_not_raise(pkg_dir, monkeypatch):
     """Optional enhancement fields (trafficJamAheadMin, etc.) may be absent — no error."""
     monkeypatch.setenv("AICA_PACKAGES_DIR", str(pkg_dir))

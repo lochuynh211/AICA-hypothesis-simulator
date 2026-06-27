@@ -102,7 +102,7 @@ def load_evaluate(package: PackageManifest):
         spec.loader.exec_module(module)  # type: ignore[union-attr]
     except Exception as exc:  # noqa: BLE001
         raise AlgorithmAdapterError(
-            error_type="missing_evaluate",
+            error_type="algorithm_exception",
             message=f"Failed to load module {entry_path}: {exc}",
         ) from exc
 
@@ -254,6 +254,11 @@ def _validate_context(context: dict) -> None:
         )
 
     feature_groups = context.get("feature_groups")
+    if feature_groups is None:
+        raise AlgorithmAdapterError(
+            error_type="context_error",
+            message="missing required field: 'feature_groups'",
+        )
     if not isinstance(feature_groups, dict) or "normalized" not in feature_groups:
         raise AlgorithmAdapterError(
             error_type="context_error",
@@ -264,3 +269,10 @@ def _validate_context(context: dict) -> None:
             error_type="context_error",
             message="'feature_groups.normalized' must be a dict",
         )
+
+    for key in ("proposal_history", "user_action_history"):
+        if key not in context:
+            raise AlgorithmAdapterError(
+                error_type="context_error",
+                message=f"missing required field: '{key}'",
+            )
