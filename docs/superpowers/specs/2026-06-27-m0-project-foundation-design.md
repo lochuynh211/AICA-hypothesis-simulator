@@ -32,6 +32,12 @@ minimal scaffold that satisfies every M0 acceptance criterion.
 | D6 | Frontend host port | **5180** | 5173/5174/5175 occupied locally; 5180 verified free. |
 | D7 | Frontend↔backend transport (dev) | **Vite dev-server proxy** | `vite.config.ts` proxies `/api/*` → `http://api:8137`. Frontend calls relative `/api/health` — no CORS config, no hardcoded host, no `VITE_API_URL` juggling for a local-only tool. |
 
+**Port caveat (D5/D6):** 8137 and 5180 were verified free *in this workspace*;
+they are not universally guaranteed. The README must document the chosen host
+ports and how to change them (a single edit point in `docker-compose.yml`, and
+`server.port` / proxy target in `vite.config.ts`) if they are occupied on
+another machine.
+
 ### Stack (fixed by architecture doc §5, not re-litigated here)
 
 - **Backend:** Python + FastAPI + Pydantic. `pyproject.toml`. Tests: pytest.
@@ -89,7 +95,7 @@ docker-compose.yml              # services: api (:8137), frontend (:5180)
 Dockerfile.api                  # python base + uv
 Dockerfile.frontend             # node base + npm
 docs/superpowers/specs/         # this ADR
-README.md                       # updated: docker compose up, ports, test commands
+README.md                       # updated: docker compose up, ports + how to change if occupied, test commands
 ```
 
 Design notes:
@@ -155,4 +161,3 @@ Pydantic domain models, the tick engine, Google Maps surface.
   §allows it), the proxy is dev-only and drops away cleanly.
 - Minimal scaffold means later milestones create their own files; this ADR
   deliberately does not pre-create the full architecture tree.
-```
