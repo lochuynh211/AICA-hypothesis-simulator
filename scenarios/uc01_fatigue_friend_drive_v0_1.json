@@ -2,20 +2,25 @@
   "_comment": [
     "Scenario: UC-01 fatigue/drowsiness — long friend drive (M2 behavioral engine).",
     "",
-    "M2 design: drowsiness grows at base=0.5/min + monotony=0.3/min = 0.8/min on",
+    "M2 design: drowsiness grows at base=0.9/min + monotony=0.3/min = 1.2/min on",
     "normal_road (monotonous segments).  Initial state: drowsiness=0 (none),",
-    "fatigue=30 (medium baseline after a short night's sleep).",
+    "fatigue=60 (high — exhausted from short night's sleep before a long drive).",
     "",
-    "Proposal timeline (tick_seconds=60, 60 kph on normal_road → 1 km/tick):",
-    "  Ticks 0–23:  drowsiness < 20 (none)  → NO_TRIGGER",
-    "  Tick 24:     drowsiness = 20.0 (weak), above_weak=1 (brief) → NO_TRIGGER",
-    "  Ticks 25–48: drowsiness in [20,40) (weak), above_weak 2–25  → SOFT_WARNING",
-    "  Tick 49:     drowsiness = 40.0 (moderate), above_weak=26 (persistent)",
-    "               blend = 2×0.75 + 1×0.2 + 2×0.4 = 2.5",
-    "               persistenceLift = (3-1)×0.6 = 1.2  →  damped = 3.7 ≥ 3.0",
-    "               nextRestSpotKm = 60 - 50 = 10 km (near) → REST_PROPOSAL fires",
+    "Proposal timeline (tick_seconds=60, 60 kph on normal_road → 1 km/tick;",
+    "tick N advances to elapsed=N+1 min, distance=N+1 km):",
+    "  Ticks 0-10:  drowsiness ≤ 13.2 (none band) → NO_TRIGGER",
+    "  Tick 11:     drowsiness = 14.4 (none→weak at 20), fatigue_level=high boosts blend",
+    "  Ticks 11-28: drowsiness in [none,weak), aw 0-16 → SOFT_WARNING via high-fatigue blend",
+    "  Tick 29:     drowsiness = 36.0 (weak, aw=18), fatigue=68.7 (high)",
+    "               damped blend ≥ 3.0  →  declarative_rule fires REST_PROPOSAL",
+    "               rest spot at 60 km, distance=30 km → 30 min ahead (far, reachable)",
+    "  Tick 50:     drowsiness = 61.2 (moderate, aw≈39), fatigue=75.3 (high)",
+    "               base_safety_risk = 0.512 ≥ 0.45 (min_risk)",
+    "               rest_required_score = 0.620 ≥ 0.62 (threshold_suggest)",
+    "               rest spot at 60 km, distance=51 km → 9 min ahead (actionable)",
+    "               weighted_score fires REST_PROPOSAL (gentle)",
     "",
-    "Exactly ONE REST_PROPOSAL across the run.  The run pauses; user accepts rest.",
+    "Exactly ONE REST_PROPOSAL per package across the run.  The run pauses; user accepts rest.",
     "",
     "Note: event_presets.signal_duration_at_trigger is retained (required field) but",
     "      is not used by the M2 tick engine; the signal_duration ordinal is derived",
@@ -26,7 +31,7 @@
   "type": "uc01_fatigue",
   "persona": {
     "name": "Haruto Tanaka",
-    "description": "A 35-year-old office worker on a 2-hour interstate drive to visit a friend. Started mid-afternoon after a short night's sleep; fatigue is already at a medium baseline."
+    "description": "A 35-year-old office worker on a long interstate drive to visit a friend. Started mid-afternoon after a very short night's sleep; fatigue is already high at departure."
   },
   "route_intent": {
     "rest_facility": {
@@ -85,12 +90,12 @@
   },
   "initial_state": {
     "drowsiness_level": "none",
-    "fatigue_level": "medium"
+    "fatigue_level": "high"
   },
   "driver_profile": {
     "id": "friend_drive_driver_v1",
     "drowsiness_model": {
-      "base_growth_per_min": 0.5,
+      "base_growth_per_min": 0.9,
       "night_add_per_min": 0.3,
       "monotony_add_per_min": 0.3,
       "traffic_jam_add_per_min": 0.1
@@ -159,5 +164,5 @@
   "total_duration_seconds": 7200,
   "tick_seconds": 60,
   "allowed_actions": ["accept_rest", "postpone"],
-  "review_focus": "UC-01 fatigue/drowsiness (M2): verify profile-driven drowsiness progression fires exactly one REST_PROPOSAL at the moderate-threshold crossing (tick 49, damped=3.7), with all prior ticks as SOFT_WARNING or NO_TRIGGER."
+  "review_focus": "UC-01 fatigue/drowsiness (M2): verify profile-driven fatigue+drowsiness progression fires exactly one REST_PROPOSAL — declarative_rule at tick ~29 (high fatigue boosts blend to ≥ 3.0, rest spot 30 min ahead), weighted_score at tick ~50 (base_safety_risk ≥ 0.45 gates rest bonus, rest_required ≥ 0.62, rest spot 9 min ahead) — with all prior ticks as SOFT_WARNING or NO_TRIGGER."
 }

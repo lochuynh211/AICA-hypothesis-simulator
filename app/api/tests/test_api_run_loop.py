@@ -9,9 +9,10 @@ Coverage:
   2. Determinism — two independent runs produce identical decision-trace sequences
   3. Past-end    — ticking after completion is idempotent (completed: true)
   4. Overtime decline e2e — decline → resume → complete, no further proposal
-  5. All-pairings e2e (M2, T029) — rule_based + weighted_score × friend_drive + overtime
-     via plan_id flow; asserts exactly one REST_PROPOSAL, full log structure, and
-     per-tick raw_state/feature_groups/driver+vehicle updates/package_runtime_state.
+  5. All-pairings e2e (M2, T029) — all four pairings (rule_based + weighted_score ×
+     friend_drive + overtime) via plan_id flow; asserts exactly one REST_PROPOSAL,
+     full log structure, and per-tick raw_state/feature_groups/driver+vehicle
+     updates/package_runtime_state.
   6. All-pairings determinism (M2, T029) — two runs → identical decision-trace sequences
   7. Weighted-score overtime strength (M2, T029/FR-013) — fired candidate strength is
      "gentle" or "clear", never "strong".
@@ -41,9 +42,6 @@ WEIGHTED_PACKAGE_ID = "rest_weighted_score_v0_1"
 _MAX_TICKS = 200
 
 # M2 pairings that fire exactly one REST_PROPOSAL: (package_id, scenario_id, resolve_action)
-# Note: ws × friend-drive does NOT produce a REST_PROPOSAL (the score crosses the
-# threshold near the end of the route but is suppressed — no actionable rest spot).
-# That pairing is covered separately by test_ws_friend_drive_e2e.
 _FIRING_PAIRINGS = [
     pytest.param(
         "rest_rule_based_v0_1", "uc01_fatigue_friend_drive_v0_1", "accept_rest",
@@ -56,6 +54,10 @@ _FIRING_PAIRINGS = [
     pytest.param(
         "rest_weighted_score_v0_1", "uc01_overtime_driver_v0_1", "decline",
         id="ws-overtime",
+    ),
+    pytest.param(
+        "rest_weighted_score_v0_1", "uc01_fatigue_friend_drive_v0_1", "accept_rest",
+        id="ws-friend",
     ),
 ]
 
@@ -583,77 +585,6 @@ def test_all_pairings_determinism(tmp_path, monkeypatch, package_id, scenario_id
         assert entry_a == entry_b, (
             f"Tick {i} diverged for {package_id}×{scenario_id}: "
             f"Run A={entry_a!r}, Run B={entry_b!r}"
-        )
-
-
-def test_ws_friend_drive_determinism(tmp_path, monkeypatch):
-    """T029: two ws×friend-drive runs produce identical decision-trace sequences.
-
-    This pairing completes without a REST_PROPOSAL, so we tick to completion.
-    """
-    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
-    client = TestClient(app)
-
-    run_id_a = _create_run_for_pairing(client, WEIGHTED_PACKAGE_ID, VALID_SCENARIO_ID)
-    all_bodies_a = _tick_to_paused_or_complete(client, run_id_a)
-    trace_a = _extract_trace(all_bodies_a)
-
-    run_id_b = _create_run_for_pairing(client, WEIGHTED_PACKAGE_ID, VALID_SCENARIO_ID)
-    all_bodies_b = _tick_to_paused_or_complete(client, run_id_b)
-    trace_b = _extract_trace(all_bodies_b)
-
-    assert len(trace_a) == len(trace_b), (
-        f"Determinism failed for ws×friend-drive: "
-        f"Run A has {len(trace_a)} decisions, Run B has {len(trace_b)}"
-    )
-    for i, (entry_a, entry_b) in enumerate(zip(trace_a, trace_b)):
-        assert entry_a == entry_b, (
-            f"Tick {i} diverged: Run A={entry_a!r}, Run B={entry_b!r}"
-        )
-
-
-# ── T029: ws × friend-drive e2e (completes without REST_PROPOSAL) ─────────────
-
-
-def test_ws_friend_drive_e2e(client):
-    """T029: weighted-score × friend-drive runs to completion via plan_id flow.
-
-    This pairing does not produce a REST_PROPOSAL (the algorithm's candidate
-    score crosses the threshold at the end of the route but is suppressed by
-    the actionability guard with no reachable rest spot).  The test verifies:
-    - plan_id flow works end-to-end
-    - Log carries snapshot, frozen plan, original/modified values
-    - Per-tick TickEvents carry the M2 fields (raw_state, feature_groups,
-      driver_update, vehicle_update, package_runtime_state)
-    - Run completes (completed: true) and determinism holds
-    """
-    run_id = _create_run_for_pairing(
-        client, WEIGHTED_PACKAGE_ID, VALID_SCENARIO_ID
-    )
-
-    # Log available immediately
-    initial_log = client.get(f"/api/runs/{run_id}/log").json()
-    assert initial_log["snapshot"]["package"]["id"] == WEIGHTED_PACKAGE_ID
-    assert initial_log["snapshot"]["scenario"]["id"] == VALID_SCENARIO_ID
-    assert initial_log["event_plan"].get("tick_seconds", 0) > 0
-    assert len(initial_log["event_plan"].get("rest_opportunities", [])) > 0
-    assert "original_values" in initial_log
-    assert "modified_values" in initial_log
-
-    # Tick to completion (no REST_PROPOSAL expected for this pairing)
-    completed_bodies = _tick_to_completion(client, run_id, max_ticks=_MAX_TICKS)
-    assert completed_bodies[-1].get("completed") is True
-
-    # Verify per-tick M2 fields in the log
-    final_log = client.get(f"/api/runs/{run_id}/log").json()
-    tick_events = [e for e in final_log["events"] if e.get("kind") == "tick"]
-    assert len(tick_events) >= 1
-
-    first_tick = tick_events[0]
-    for field in ("raw_state", "feature_groups", "driver_update", "vehicle_update",
-                  "package_runtime_state"):
-        assert field in first_tick, (
-            f"TickEvent must carry {field!r} field (M2) for ws×friend-drive"
         )
 
 
