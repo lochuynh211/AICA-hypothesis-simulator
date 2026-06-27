@@ -8,6 +8,12 @@
 
 **Input**: User description: "M0 Project Foundation — implement the M0 skeleton per docs/superpowers/specs/2026-06-27-m0-project-foundation-design.md: project structure (app/api, app/frontend, packages, scenarios, runs), Docker Compose (dev hot-reload), backend skeleton with a health endpoint, frontend shell that calls backend health, backend and frontend test runners, and placeholder directories. No package/scenario/evaluation logic."
 
+## Clarifications
+
+### Session 2026-06-27
+
+- Q: When the frontend loads before the backend is ready, should it retry automatically or require a manual reload? → A: Fetch health once on page load; on failure show an error state and the developer reloads the page to retry. No automatic retry or polling in M0.
+
 ## User Scenarios & Testing *(mandatory)*
 
 The primary audience for this milestone is the **developer/reviewer** working on
@@ -103,8 +109,8 @@ control.
   documentation MUST tell the developer which ports are used and how to change
   them.
 - **Cold start timing**: When the frontend loads before the backend has finished
-  starting, the shell MUST resolve to a healthy state once the backend is ready
-  (e.g., on reload or retry) rather than remaining permanently errored.
+  starting, the shell shows the error state; reloading the page once the backend
+  is ready MUST resolve it to a healthy state. M0 does not auto-retry.
 
 ## Requirements *(mandatory)*
 
@@ -116,8 +122,9 @@ control.
   response containing a status indicator and an identifier of the backend service.
 - **FR-003**: The frontend MUST present an application shell that requests the
   backend health status and displays it to the developer.
-- **FR-004**: The frontend MUST display a clear non-healthy/error state when the
-  backend health request does not succeed.
+- **FR-004**: The frontend MUST request backend health once on page load and
+  display a clear non-healthy/error state when the request does not succeed. M0
+  performs no automatic retry or polling; the developer reloads the page to retry.
 - **FR-005**: The system MUST provide a backend test runner that discovers and
   executes backend tests, including a test that verifies the health endpoint's
   successful response.
