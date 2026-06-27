@@ -35,6 +35,25 @@ class AnalyzeRouteBody(BaseModel):
     end: str | None = None
 
 
+def _scale_scenario_rest_positions(scenario: Any, maps_total_km: float) -> list[dict[str, Any]]:
+    """Fallback for Places failure: scale scenario local rest positions onto a Maps route.
+
+    Takes the scenario's local rest positions as fractions of the local total distance
+    and scales them onto the Maps route distance, returning RawPlace-compatible dicts.
+    """
+    local_facts = analyze_route(scenario)
+    local_total = local_facts.total_route_distance_km or 1.0
+    return [
+        {
+            "name": "scenario_fallback_rest_stop",
+            "type": "rest_stop",
+            "location": {"lat": 0.0, "lng": 0.0},
+            "distance_along_route_m": (pos / local_total) * maps_total_km * 1000.0,
+        }
+        for pos in local_facts.rest_spot_positions
+    ]
+
+
 def _derive_context(raw_route: dict[str, Any]) -> dict[str, str]:
     """Return route_type context for places_rest_stops.
 
@@ -102,16 +121,22 @@ def analyze_route_endpoint(body: AnalyzeRouteBody):
                 },
             )
 
-        # ── Places (one call per route; empty result is fine) ─────────────────
+        # ── Places (one call per route) ───────────────────────────────────────
+        # Empty result is honest (no rest stops on route).
+        # Transport failure degrades gracefully to scenario-scaled fallback.
         places_by_route: dict[str, list[dict[str, Any]]] = {}
+        notices_by_route: dict[str, list[str]] = {}
         for raw in raw_routes:
             rid = raw["route_id"]
             context = _derive_context(raw)
             try:
                 places = maps_client.places_rest_stops(key, raw["encoded_polyline"], context)
+                notices_by_route[rid] = ["no_rest_stops_found"] if not places else []
             except MapsError:
-                # Places failure is non-fatal: treat as empty list (U5 handles retries)
-                places = []
+                # Places failure: fall back to scenario rest positions scaled onto Maps distance
+                maps_total_km = raw["distance_m"] / 1000.0
+                places = _scale_scenario_rest_positions(scenario, maps_total_km)
+                notices_by_route[rid] = ["rest_data_degraded"]
             places_by_route[rid] = places
 
         # ── Normalize ─────────────────────────────────────────────────────────
@@ -137,6 +162,7 @@ def analyze_route_endpoint(body: AnalyzeRouteBody):
                     if alt["display"] is not None and hasattr(alt["display"], "model_dump")
                     else alt["display"]
                 ),
+                "notices": notices_by_route.get(alt["route_id"], []),
             })
 
         return {"route_source": "maps", "alternatives": serialized}
@@ -152,6 +178,7 @@ def analyze_route_endpoint(body: AnalyzeRouteBody):
                     "summary": scenario.id,
                     "route_facts": route_facts.model_dump(mode="json"),
                     "display": None,
+                    "notices": [],
                 }
             ],
         }

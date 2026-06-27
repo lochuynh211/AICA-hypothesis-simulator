@@ -302,10 +302,13 @@ def create_run(
             bands={feature.key: feature.band_values for feature in package.features},
         )
 
-    # M2 guard: an M2 scenario with no rest opportunities signals a failed or
-    # empty plan — do not start the run (failures must never be disguised as a
-    # normal empty-plan run).
-    if _is_m2_scenario(scenario) and len(event_plan.rest_opportunities) == 0:
+    # M2 guard: an M2 scenario with no rest opportunities on a LOCAL route signals
+    # a failed or empty plan build — do not start the run (failures must never be
+    # disguised as a normal empty-plan run).
+    # Maps-sourced routes may legitimately have no rest opportunities when Places
+    # returned an empty result (honest "no rest stops on this route" case).
+    is_maps_route = getattr(route_facts, "route_source", "local") == "maps"
+    if _is_m2_scenario(scenario) and not is_maps_route and len(event_plan.rest_opportunities) == 0:
         raise ValueError(
             f"M2 event plan for plan_id={plan_id!r} has no rest opportunities. "
             "The plan build may have failed or the scenario route has no rest spots. "
