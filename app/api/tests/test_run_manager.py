@@ -348,3 +348,102 @@ def test_action_invalid_action_raises(tmp_path, uc01_package, uc01_scenario):
 
     with pytest.raises(ActionNotAllowedError):
         action("run_bad_act", "invalid_action_xyz")
+
+
+# ---------------------------------------------------------------------------
+# T028 — suppressed candidate survives into the persisted trace (FR-008)
+# ---------------------------------------------------------------------------
+
+
+def test_suppressed_candidate_persists_to_disk(tmp_path, uc01_package, uc01_scenario, monkeypatch):
+    """T028 FR-008: a suppressed candidate is never dropped from the persisted log.
+
+    Monkeypatches the adapter to return a DecisionResult shaped like R2
+    (NO_PRACTICAL_ACTION_FALLBACK — rest candidate suppressed by the
+    actionability guard) and then verifies that the persisted RunLog on disk
+    retains that suppressed candidate verbatim, including
+    fire_control.suppressed=True and the correct category.
+    """
+    import aica_api.algorithms.adapter as adapter_mod
+    from aica_api.models.decision import (
+        Candidate,
+        DecisionResult,
+        FireControl,
+        ResultType,
+    )
+
+    # Build a DecisionResult with a suppressed rest_required candidate (R2 shape).
+    suppressed_fc = FireControl(
+        fired=False,
+        suppressed=True,
+        override=False,
+        reason="actionability_guard_rest_not_reachable",
+    )
+    suppressed_candidate = Candidate(
+        category="rest_required",
+        exists=True,
+        score=3.5,
+        state=None,
+        strength="clear",
+        fire_control=suppressed_fc,
+    )
+    suppressed_result = DecisionResult(
+        result_type=ResultType.NO_PRACTICAL_ACTION_FALLBACK,
+        trigger_candidate=False,
+        selected_category=None,
+        score=3.5,
+        features={"drowsiness_level": "moderate", "rest_spot_eta": "none"},
+        scores={},
+        states={},
+        criteria={"reaction_point": 1.4, "proposal_cut": 3.0, "severe_cut": 4.0},
+        candidates=[suppressed_candidate],
+        fire_control=FireControl(
+            fired=False,
+            suppressed=True,
+            override=False,
+            reason="actionability_guard_rest_not_reachable",
+        ),
+        proposal=None,
+        reason_inputs=["drowsiness_level", "rest_spot_eta"],
+        explanation=(
+            "Damped blend passed the proposal threshold but no actionable "
+            "rest spot is reachable."
+        ),
+        next_package_runtime_state={},
+    )
+
+    monkeypatch.setattr(adapter_mod, "evaluate", lambda *a, **kw: suppressed_result)
+
+    create_run(uc01_package, uc01_scenario, "run_suppressed_t028", tmp_path)
+    outcome = tick("run_suppressed_t028")
+
+    # ── In-memory outcome sanity ───────────────────────────────────────────
+    assert outcome.decision is not None, "expected a decision, not an algorithm error"
+    assert outcome.decision.result_type == ResultType.NO_PRACTICAL_ACTION_FALLBACK
+    in_mem_suppressed = [
+        c for c in outcome.decision.candidates if c.fire_control.suppressed
+    ]
+    assert len(in_mem_suppressed) == 1
+    assert in_mem_suppressed[0].category == "rest_required"
+
+    # ── Persisted log (read back from disk) ───────────────────────────────
+    data = json.loads((tmp_path / "run_suppressed_t028.json").read_text(encoding="utf-8"))
+    tick_events = [e for e in data["events"] if e.get("kind") == "tick"]
+    assert len(tick_events) == 1, "exactly one tick event must be persisted"
+
+    # Backend TraceEntry serializes as { tick_index, decision_result: { candidates, … } }
+    trace = tick_events[0]["trace"]
+    decision_result_data = trace.get("decision_result", {})
+    persisted_candidates = decision_result_data.get("candidates", [])
+    assert len(persisted_candidates) == 1, (
+        "suppressed candidate must NOT be dropped from the persisted trace (FR-008); "
+        f"trace keys: {list(trace.keys())}, decision_result keys: {list(decision_result_data.keys())}"
+    )
+
+    persisted_candidate = persisted_candidates[0]
+    assert persisted_candidate["category"] == "rest_required"
+    persisted_fc = persisted_candidate["fire_control"]
+    assert persisted_fc["suppressed"] is True, (
+        "fire_control.suppressed must be True in the persisted log (FR-008)"
+    )
+    assert persisted_fc["fired"] is False
