@@ -1,0 +1,101 @@
+{
+  "status": "OK",
+  "geocoded_waypoints": [
+    {"geocoder_status": "OK", "place_id": "start_place_id", "types": ["route"]},
+    {"geocoder_status": "OK", "place_id": "end_place_id", "types": ["route"]}
+  ],
+  "routes": [
+    {
+      "summary": "via I-5 N",
+      "overview_polyline": {"points": "mzneFnpyjV_}t@nhEb|FA"},
+      "legs": [
+        {
+          "distance": {"value": 150000, "text": "150 km"},
+          "duration": {"value": 5400, "text": "1 hour 30 mins"},
+          "start_address": "San Francisco, CA, USA",
+          "end_address": "Sacramento, CA, USA",
+          "steps": [
+            {
+              "distance": {"value": 5000},
+              "maneuver": "straight",
+              "travel_mode": "DRIVING",
+              "html_instructions": "Head north on Market St"
+            },
+            {
+              "distance": {"value": 130000},
+              "maneuver": "merge",
+              "travel_mode": "DRIVING",
+              "html_instructions": "Merge onto I-5 N"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "summary": "via US-101 N",
+      "overview_polyline": {"points": "mzneFnpyjVkzl@zoHaaFA"},
+      "legs": [
+        {
+          "distance": {"value": 170000, "text": "170 km"},
+          "duration": {"value": 6300, "text": "1 hour 45 mins"},
+          "start_address": "San Francisco, CA, USA",
+          "end_address": "Sacramento, CA, USA",
+          "steps": [
+            {
+              "distance": {"value": 10000},
+              "maneuver": "straight",
+              "travel_mode": "DRIVING",
+              "html_instructions": "Head north on Market St"
+            },
+            {
+              "distance": {"value": 140000},
+              "maneuver": "merge",
+              "travel_mode": "DRIVING",
+              "html_instructions": "Merge onto US-101 N"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "summary": "via CA-1 N",
+      "overview_polyline": {"points": "mzneFnpyjV_jf@~kQaaFA"},
+      "legs": [
+        {
+          "distance": {"value": 220000, "text": "220 km"},
+          "duration": {"value": 9000, "text": "2 hours 30 mins"},
+          "start_address": "San Francisco, CA, USA",
+          "end_address": "Sacramento, CA, USA",
+          "steps": [
+            {
+              "distance": {"value": 220000},
+              "maneuver": "straight",
+              "travel_mode": "DRIVING",
+              "html_instructions": "Continue on CA-1 N (scenic coastal highway)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "summary": "via CA-99 N",
+      "overview_polyline": {"points": "mzneFnpyjV_}t@nhEaaFB"},
+      "legs": [
+        {
+          "distance": {"value": 160000, "text": "160 km"},
+          "duration": {"value": 5800, "text": "1 hour 37 mins"},
+          "start_address": "San Francisco, CA, USA",
+          "end_address": "Sacramento, CA, USA",
+          "steps": [
+            {
+              "distance": {"value": 160000},
+              "maneuver": "merge",
+              "travel_mode": "DRIVING",
+              "html_instructions": "Merge onto CA-99 N"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

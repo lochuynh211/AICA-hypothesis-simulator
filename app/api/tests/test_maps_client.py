@@ -339,3 +339,116 @@ class TestKeyDoesNotLeak:
         err = exc_info.value
         assert self.SENTINEL not in err.message
         assert self.SENTINEL not in str(err)
+
+
+# ---------------------------------------------------------------------------
+# Fix 1 — fail-loud guard: _urlopen not monkeypatched → RuntimeError in pytest
+# ---------------------------------------------------------------------------
+
+class TestLiveNetworkGuard:
+    def test_unmocked_urlopen_raises_in_pytest(self, monkeypatch):
+        """When _urlopen is not monkeypatched the default guard fires under pytest."""
+        # Explicitly restore _urlopen to the real (unpatched) default so this test
+        # is independent of ordering with other tests that monkeypatch it.
+        monkeypatch.setattr(mc, "_urlopen", mc._default_urlopen)
+        # PYTEST_CURRENT_TEST is set by pytest during all test runs.
+        with pytest.raises(RuntimeError, match="_urlopen not mocked"):
+            mc.directions("FAKE_KEY", "start", "end")
+
+    def test_guard_message_does_not_contain_key(self, monkeypatch):
+        """Guard RuntimeError message must never expose the API key."""
+        sentinel = "GUARD_SENTINEL_KEY_77_ZZ"
+        monkeypatch.setattr(mc, "_urlopen", mc._default_urlopen)
+        with pytest.raises(RuntimeError) as exc_info:
+            mc.directions(sentinel, "start", "end")
+        assert sentinel not in str(exc_info.value)
+
+    def test_guard_fires_for_places_too(self, monkeypatch):
+        """Guard fires for places_rest_stops as well (not just directions)."""
+        monkeypatch.setattr(mc, "_urlopen", mc._default_urlopen)
+        with pytest.raises(RuntimeError, match="_urlopen not mocked"):
+            mc.places_rest_stops("FAKE_KEY", TEST_POLYLINE, {"route_type": "highway"})
+
+
+# ---------------------------------------------------------------------------
+# Fix 2 — quota error_type coverage: OVER_DAILY_LIMIT and OVER_QUERY_LIMIT
+# ---------------------------------------------------------------------------
+
+class TestQuotaErrors:
+    def test_directions_over_daily_limit_raises_quota(self, monkeypatch):
+        monkeypatch.setattr(mc, "_urlopen", _make_transport("quota.json"))
+        with pytest.raises(mc.MapsError) as exc_info:
+            mc.directions("FAKE_KEY", "start", "end")
+        assert exc_info.value.error_type == "quota"
+
+    def test_places_over_daily_limit_raises_quota(self, monkeypatch):
+        monkeypatch.setattr(mc, "_urlopen", _make_transport("quota.json"))
+        with pytest.raises(mc.MapsError) as exc_info:
+            mc.places_rest_stops("FAKE_KEY", TEST_POLYLINE, {"route_type": "highway"})
+        assert exc_info.value.error_type == "quota"
+
+    def test_directions_over_query_limit_raises_quota(self, monkeypatch):
+        monkeypatch.setattr(mc, "_urlopen", _make_transport("quota_query_limit.json"))
+        with pytest.raises(mc.MapsError) as exc_info:
+            mc.directions("FAKE_KEY", "start", "end")
+        assert exc_info.value.error_type == "quota"
+
+    def test_places_over_query_limit_raises_quota(self, monkeypatch):
+        monkeypatch.setattr(mc, "_urlopen", _make_transport("quota_query_limit.json"))
+        with pytest.raises(mc.MapsError) as exc_info:
+            mc.places_rest_stops("FAKE_KEY", TEST_POLYLINE, {"route_type": "highway"})
+        assert exc_info.value.error_type == "quota"
+
+
+# ---------------------------------------------------------------------------
+# Fix 3 — cap at 3: fixture with 4 routes → only 3 returned
+# ---------------------------------------------------------------------------
+
+class TestAlternativesCap:
+    def test_cap_truncates_four_alternatives_to_three(self, monkeypatch):
+        """directions() must truncate a 4-route response to exactly 3."""
+        monkeypatch.setattr(mc, "_urlopen", _make_transport("directions_4_alternatives.json"))
+        routes = mc.directions("FAKE_KEY", "start", "end")
+        assert len(routes) == 3
+
+
+# ---------------------------------------------------------------------------
+# Fix 4 — assert road_class VALUES from the 3-alternatives fixture steps
+# ---------------------------------------------------------------------------
+
+class TestRoadClassValues:
+    def test_merge_step_maps_to_highway(self, monkeypatch):
+        """A step with maneuver='merge' must produce road_class='HIGHWAY'."""
+        monkeypatch.setattr(mc, "_urlopen", _make_transport("directions_3_alternatives.json"))
+        routes = mc.directions("FAKE_KEY", "start", "end")
+        # routes[0].segments[1] has maneuver="merge" (Merge onto I-5 N)
+        seg = routes[0]["segments"][1]
+        assert seg["maneuver"] == "merge"
+        assert seg["road_class"] == "HIGHWAY"
+
+    def test_straight_step_maps_to_local(self, monkeypatch):
+        """A step with maneuver='straight' and no highway keywords → road_class='LOCAL'."""
+        monkeypatch.setattr(mc, "_urlopen", _make_transport("directions_3_alternatives.json"))
+        routes = mc.directions("FAKE_KEY", "start", "end")
+        # routes[0].segments[0] has maneuver="straight" (Head north on Market St)
+        seg = routes[0]["segments"][0]
+        assert seg["maneuver"] == "straight"
+        assert seg["road_class"] == "LOCAL"
+
+
+# ---------------------------------------------------------------------------
+# Fix 5 — invalid polyline → graceful [] with no exception
+# ---------------------------------------------------------------------------
+
+class TestInvalidPolyline:
+    def test_empty_polyline_returns_empty_list(self, monkeypatch):
+        """An empty polyline string must return [] without raising."""
+        monkeypatch.setattr(mc, "_urlopen", _make_transport("places_service_area.json"))
+        result = mc.places_rest_stops("FAKE_KEY", "", {"route_type": "highway"})
+        assert result == []
+
+    def test_garbage_polyline_returns_empty_list(self, monkeypatch):
+        """A garbage/invalid polyline string must return [] without raising."""
+        monkeypatch.setattr(mc, "_urlopen", _make_transport("places_service_area.json"))
+        result = mc.places_rest_stops("FAKE_KEY", "!!!INVALID@@@", {"route_type": "highway"})
+        assert result == []

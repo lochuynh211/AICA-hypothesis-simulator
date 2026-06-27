@@ -61,6 +61,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -119,7 +120,17 @@ def _default_urlopen(url: str) -> bytes:
 
     Uses stdlib urllib.request.  The URL includes the API key — it is never
     stored or logged by this module.
+
+    Guard: if this function is called inside a pytest run (PYTEST_CURRENT_TEST
+    is set by pytest), it raises RuntimeError immediately instead of making a
+    live network call.  Tests that need network responses must monkeypatch
+    ``_urlopen`` before calling any maps_client function.
     """
+    if os.getenv("PYTEST_CURRENT_TEST"):
+        raise RuntimeError(
+            "_urlopen not mocked — no live network allowed in tests. "
+            "Monkeypatch maps_client._urlopen in your test."
+        )
     req = urllib.request.Request(url, headers={"User-Agent": "aica-simulator/1.0"})
     with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310
         return resp.read()
