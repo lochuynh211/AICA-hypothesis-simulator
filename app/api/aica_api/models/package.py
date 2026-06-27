@@ -4,6 +4,13 @@ M2 extensions:
 - AlgorithmDef.type Literal adds "weighted_score".
 - HyperparameterDef.kind adds "numeric" for weighted_score weight/threshold params.
 - Numeric hyperparameters carry optional min/max/step for range validation in UI.
+
+M3 extensions:
+- AlgorithmDef.type Literal adds "python_module".
+- AlgorithmDef.tick_seconds: optional package-declared evaluation cadence (int | None).
+  When set, the tick engine prefers it over the scenario's (engine wiring is a later task).
+- AlgorithmDef.error_mode: "blocking" (default) or "non_blocking" — whether algorithm
+  errors pause the run. The run_manager wiring is a later task.
 """
 
 from __future__ import annotations
@@ -14,10 +21,17 @@ from pydantic import BaseModel, field_validator, model_validator
 
 
 class AlgorithmDef(BaseModel):
-    """Algorithm specification embedded in a package manifest."""
+    """Algorithm specification embedded in a package manifest.
 
-    type: Literal["declarative_rule", "weighted_score"]
+    M3: type now also accepts "python_module" for locally-trusted Python packages.
+    tick_seconds overrides the scenario cadence when set (engine wiring: later task).
+    error_mode controls whether algorithm errors pause the run (run_manager wiring: later task).
+    """
+
+    type: Literal["declarative_rule", "weighted_score", "python_module"]
     entrypoint: str
+    tick_seconds: int | None = None
+    error_mode: Literal["blocking", "non_blocking"] = "blocking"
 
 
 class ParameterDef(BaseModel):

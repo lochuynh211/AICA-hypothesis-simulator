@@ -393,18 +393,25 @@ def test_decision_result_valid():
     from aica_api.models.decision import DecisionResult
 
     dr = DecisionResult(**VALID_DECISION)
-    assert dr.result_type.value == "REST_PROPOSAL"
+    # result_type is now a plain str (M3 T003 relaxation); compare as string
+    assert dr.result_type == "REST_PROPOSAL"
     assert dr.trigger_candidate is True
     assert len(dr.candidates) == 1
     assert dr.candidates[0].fire_control.fired is True
     assert dr.proposal.id == "rest_guidance"
 
 
-def test_decision_result_invalid_type():
+def test_decision_result_unknown_type_now_valid():
+    """M3 T003: result_type is a plain str — arbitrary values are accepted verbatim.
+
+    Previously (M1/M2) this field was a strict ResultType enum and "UNKNOWN_TYPE"
+    raised ValidationError.  After the T003 relaxation any string is valid so that
+    python_module packages can emit their own result categories.
+    """
     from aica_api.models.decision import DecisionResult
 
-    with pytest.raises(ValidationError):
-        DecisionResult(**{**VALID_DECISION, "result_type": "UNKNOWN_TYPE"})
+    dr = DecisionResult(**{**VALID_DECISION, "result_type": "UNKNOWN_TYPE"})
+    assert dr.result_type == "UNKNOWN_TYPE"
 
 
 def test_decision_result_all_five_enum_values():
@@ -1017,3 +1024,142 @@ def test_tick_state_m2_fields():
     assert isinstance(ts.feature_groups, FeatureGroups)
     assert ts.distance_km == 42.5
     assert ts.continuous_driving_min == 35.0
+
+
+# ─── M3 T002 — AlgorithmDef python_module + new fields ───────────────────────
+
+
+def test_algorithm_def_python_module_type_accepted():
+    """AlgorithmDef accepts type='python_module' (M3 T002)."""
+    from aica_api.models.package import AlgorithmDef
+
+    algo = AlgorithmDef(type="python_module", entrypoint="algorithm.py")
+    assert algo.type == "python_module"
+    assert algo.entrypoint == "algorithm.py"
+
+
+def test_algorithm_def_tick_seconds_optional_with_value():
+    """AlgorithmDef accepts optional tick_seconds (M3 T002)."""
+    from aica_api.models.package import AlgorithmDef
+
+    algo = AlgorithmDef(type="python_module", entrypoint="algorithm.py", tick_seconds=30)
+    assert algo.tick_seconds == 30
+
+
+def test_algorithm_def_tick_seconds_defaults_none():
+    """AlgorithmDef tick_seconds defaults to None when omitted (M3 T002)."""
+    from aica_api.models.package import AlgorithmDef
+
+    algo = AlgorithmDef(type="declarative_rule", entrypoint="aica_api.algorithms.declarative_rule")
+    assert algo.tick_seconds is None
+
+
+def test_algorithm_def_error_mode_defaults_blocking():
+    """AlgorithmDef error_mode defaults to 'blocking' when omitted (M3 T002)."""
+    from aica_api.models.package import AlgorithmDef
+
+    algo = AlgorithmDef(type="declarative_rule", entrypoint="aica_api.algorithms.declarative_rule")
+    assert algo.error_mode == "blocking"
+
+
+def test_algorithm_def_error_mode_non_blocking_accepted():
+    """AlgorithmDef accepts error_mode='non_blocking' (M3 T002)."""
+    from aica_api.models.package import AlgorithmDef
+
+    algo = AlgorithmDef(type="python_module", entrypoint="algorithm.py", error_mode="non_blocking")
+    assert algo.error_mode == "non_blocking"
+
+
+def test_algorithm_def_error_mode_invalid_rejected():
+    """AlgorithmDef rejects unknown error_mode values (M3 T002)."""
+    from aica_api.models.package import AlgorithmDef
+
+    with pytest.raises(ValidationError):
+        AlgorithmDef(type="python_module", entrypoint="algorithm.py", error_mode="silent")
+
+
+def test_algorithm_def_existing_types_backward_compat():
+    """Existing declarative_rule and weighted_score manifests still validate without new fields (M3 T002)."""
+    from aica_api.models.package import AlgorithmDef
+
+    dr = AlgorithmDef(type="declarative_rule", entrypoint="aica_api.algorithms.declarative_rule")
+    ws = AlgorithmDef(type="weighted_score", entrypoint="aica_api.algorithms.weighted_score")
+    assert dr.type == "declarative_rule"
+    assert ws.type == "weighted_score"
+    # Defaults apply when fields are absent
+    assert dr.tick_seconds is None
+    assert dr.error_mode == "blocking"
+    assert ws.tick_seconds is None
+    assert ws.error_mode == "blocking"
+
+
+def test_package_manifest_python_module_algorithm_accepted():
+    """Full PackageManifest validates with algorithm.type='python_module' (M3 T002)."""
+    from aica_api.models.package import PackageManifest
+
+    py_pkg = {
+        **VALID_PACKAGE,
+        "algorithm": {
+            "type": "python_module",
+            "entrypoint": "algorithm.py",
+            "tick_seconds": 30,
+            "error_mode": "blocking",
+        },
+    }
+    m = PackageManifest(**py_pkg)
+    assert m.algorithm.type == "python_module"
+    assert m.algorithm.tick_seconds == 30
+    assert m.algorithm.error_mode == "blocking"
+
+
+# ─── M3 T003 — DecisionResult.result_type relaxed to str ─────────────────────
+
+
+def test_decision_result_builtin_via_enum_member_coerces_to_str():
+    """ResultType enum member is coerced to its plain string value (M3 T003).
+
+    Because ResultType is a str-subclass enum, passing ResultType.REST_PROPOSAL
+    to a str field is valid and the stored value compares equal to both the
+    enum member and its string value.
+    """
+    from aica_api.models.decision import DecisionResult, ResultType
+
+    dr = DecisionResult(**{**VALID_DECISION, "result_type": ResultType.REST_PROPOSAL})
+    # Stored value equals the enum member (str-enum equality)
+    assert dr.result_type == ResultType.REST_PROPOSAL
+    # And equals the plain string
+    assert dr.result_type == "REST_PROPOSAL"
+
+
+def test_decision_result_custom_result_types_verbatim():
+    """Arbitrary package-defined result_type strings are accepted and stored verbatim (M3 T003)."""
+    from aica_api.models.decision import DecisionResult
+
+    base = {
+        **VALID_DECISION,
+        "proposal": None,
+        "trigger_candidate": False,
+        "selected_category": None,
+        "score": None,
+    }
+    for custom_rt in ["MONOTONY_PROPOSAL", "SUPPRESSED", "NO_PROPOSAL", "PKG_DEFINED_RESULT_XYZ"]:
+        dr = DecisionResult(**{**base, "result_type": custom_rt})
+        assert dr.result_type == custom_rt, f"Expected {custom_rt!r}, got {dr.result_type!r}"
+
+
+def test_decision_result_all_five_builtin_values_still_valid_as_str():
+    """All 5 original ResultType enum values still validate as plain strings (M3 T003)."""
+    from aica_api.models.decision import DecisionResult, ResultType
+
+    base = {
+        **VALID_DECISION,
+        "proposal": None,
+        "trigger_candidate": False,
+        "selected_category": None,
+        "score": None,
+    }
+    for rt in ResultType:
+        dr = DecisionResult(**{**base, "result_type": rt.value})
+        assert dr.result_type == rt.value
+        # str-enum equality: plain string equals its enum counterpart
+        assert dr.result_type == rt
