@@ -1163,3 +1163,187 @@ def test_decision_result_all_five_builtin_values_still_valid_as_str():
         assert dr.result_type == rt.value
         # str-enum equality: plain string equals its enum counterpart
         assert dr.result_type == rt
+
+
+# ─── M4 T002 — Route provenance + DisplayRoute model ─────────────────────────
+
+
+def test_route_facts_route_source_defaults_local():
+    """RouteFacts.route_source defaults to 'local' (backward compat, M4 T002)."""
+    from aica_api.models.run import RouteFacts
+
+    rf = RouteFacts(**VALID_ROUTE_FACTS)
+    assert rf.route_source == "local"
+
+
+def test_route_facts_route_source_accepts_maps():
+    """RouteFacts.route_source accepts 'maps' (M4 T002)."""
+    from aica_api.models.run import RouteFacts
+
+    rf = RouteFacts(**{**VALID_ROUTE_FACTS, "route_source": "maps"})
+    assert rf.route_source == "maps"
+
+
+def test_route_facts_route_source_rejects_unknown():
+    """RouteFacts.route_source rejects an unknown value (M4 T002)."""
+    from aica_api.models.run import RouteFacts
+
+    with pytest.raises(ValidationError):
+        RouteFacts(**{**VALID_ROUTE_FACTS, "route_source": "google_maps"})
+
+
+def test_display_route_valid():
+    """DisplayRoute validates with the four required fields (M4 T002)."""
+    from aica_api.models.run import DisplayRoute
+
+    dr = DisplayRoute(
+        summary="Tokyo → Osaka via Tomei Expressway",
+        encoded_polyline="_p~iF~ps|U_ulLnnqC_mqNvxq`@",
+        start_label="Tokyo Station",
+        end_label="Osaka Station",
+    )
+    assert dr.summary == "Tokyo → Osaka via Tomei Expressway"
+    assert dr.encoded_polyline == "_p~iF~ps|U_ulLnnqC_mqNvxq`@"
+    assert dr.start_label == "Tokyo Station"
+    assert dr.end_label == "Osaka Station"
+
+
+def test_display_route_model_dump_roundtrip():
+    """DisplayRoute round-trips via model_dump (M4 T002)."""
+    from aica_api.models.run import DisplayRoute
+
+    original = DisplayRoute(
+        summary="A → B",
+        encoded_polyline="abc123",
+        start_label="Start",
+        end_label="End",
+    )
+    dumped = original.model_dump()
+    restored = DisplayRoute(**dumped)
+    assert restored.summary == original.summary
+    assert restored.encoded_polyline == original.encoded_polyline
+    assert restored.start_label == original.start_label
+    assert restored.end_label == original.end_label
+
+
+def test_run_state_route_source_and_display_route():
+    """RunState accepts route_source and display_route (M4 T002)."""
+    from aica_api.models.run import DisplayRoute, RunState
+
+    display_route = DisplayRoute(
+        summary="A → B",
+        encoded_polyline="abc123",
+        start_label="A",
+        end_label="B",
+    )
+    rs = RunState(
+        run_id="run_m4_test",
+        status="created",
+        current_tick=0,
+        pending_proposal=None,
+        snapshot=VALID_SNAPSHOT,
+        event_plan=VALID_EVENT_PLAN,
+        route_facts=VALID_ROUTE_FACTS,
+        route_source="maps",
+        display_route=display_route,
+    )
+    assert rs.route_source == "maps"
+    assert rs.display_route is not None
+    assert rs.display_route.summary == "A → B"
+
+
+def test_run_state_backward_compat_without_m4_fields():
+    """RunState validates without route_source/display_route (M1-M3 backward compat, M4 T002)."""
+    from aica_api.models.run import RunState
+
+    rs = RunState(
+        run_id="run_m1_compat",
+        status="created",
+        current_tick=0,
+        pending_proposal=None,
+        snapshot=VALID_SNAPSHOT,
+        event_plan=VALID_EVENT_PLAN,
+        route_facts=VALID_ROUTE_FACTS,
+    )
+    assert rs.route_source == "local"
+    assert rs.display_route is None
+
+
+def test_run_log_route_source_and_display_route():
+    """RunLog accepts route_source and display_route (M4 T002)."""
+    from aica_api.models.log import RunLog
+
+    display_route = {
+        "summary": "Tokyo → Osaka",
+        "encoded_polyline": "xyz789",
+        "start_label": "Tokyo",
+        "end_label": "Osaka",
+    }
+    log = RunLog(**{
+        **VALID_RUN_LOG,
+        "route_source": "maps",
+        "display_route": display_route,
+    })
+    assert log.route_source == "maps"
+    assert log.display_route is not None
+    assert log.display_route.end_label == "Osaka"
+
+
+def test_run_log_backward_compat_without_m4_fields():
+    """RunLog validates without route_source/display_route (M1-M3 backward compat, M4 T002)."""
+    from aica_api.models.log import RunLog
+
+    log = RunLog(**VALID_RUN_LOG)
+    assert log.route_source == "local"
+    assert log.display_route is None
+
+
+def test_run_plan_draft_route_source_and_display_route():
+    """RunPlanDraft accepts route_source and display_route (M4 T002)."""
+    from aica_api.models.run import DisplayRoute, EventPlan, RouteFacts, RunPlanDraft
+
+    display_route = DisplayRoute(
+        summary="X → Y",
+        encoded_polyline="def456",
+        start_label="X",
+        end_label="Y",
+    )
+    draft = RunPlanDraft(
+        plan_id="plan_m4",
+        package_id="pkg",
+        scenario_id="sc",
+        route_facts=RouteFacts(**VALID_ROUTE_FACTS),
+        route_source="maps",
+        display_route=display_route,
+    )
+    assert draft.route_source == "maps"
+    assert draft.display_route is not None
+    assert draft.display_route.start_label == "X"
+
+
+def test_run_plan_draft_backward_compat_without_m4_fields():
+    """RunPlanDraft validates without route_source/display_route (M1-M3 backward compat, M4 T002)."""
+    from aica_api.models.run import RouteFacts, RunPlanDraft
+
+    draft = RunPlanDraft(
+        plan_id="plan_compat",
+        package_id="pkg",
+        scenario_id="sc",
+        route_facts=RouteFacts(**VALID_ROUTE_FACTS),
+    )
+    assert draft.route_source == "local"
+    assert draft.display_route is None
+
+
+def test_key_safety_no_maps_key_in_models():
+    """No persisted model defines a maps_key or key field (M4 T002 key-safety guard)."""
+    from aica_api.models.run import DisplayRoute, RouteFacts, RunPlanDraft, RunState
+    from aica_api.models.log import RunLog
+
+    for model in [RouteFacts, RunState, RunLog, RunPlanDraft, DisplayRoute]:
+        assert "maps_key" not in model.model_fields, (
+            f"{model.__name__} must not define a 'maps_key' field"
+        )
+        assert "key" not in model.model_fields, (
+            f"{model.__name__} must not define a 'key' field"
+        )

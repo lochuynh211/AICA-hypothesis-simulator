@@ -130,11 +130,12 @@ class RouteSegmentFact(BaseModel):
 
 
 class RouteFacts(BaseModel):
-    """Route evidence — M1 fields kept for backward compat; M2 fields added.
+    """Route evidence — M1 fields kept for backward compat; M2/M4 fields added.
 
     M1: segments (RouteSegment list), bands dict.
     M2: total_route_distance_km, estimated_route_duration_min, route_segments[],
         rest_spot_positions[], route_progress_checkpoints[].
+    M4: route_source (provenance flag — "local" or "maps").
     """
 
     # M1 fields (kept for backward compat with existing engine/tests)
@@ -148,7 +149,26 @@ class RouteFacts(BaseModel):
     rest_spot_positions: list[float] = []
     route_progress_checkpoints: list[float] = []
 
+    # M4: route provenance — default "local" keeps all M1/M2/M3 data valid
+    route_source: Literal["maps", "local"] = "local"
+
     model_config = {"extra": "allow"}
+
+
+# ─── DisplayRoute ─────────────────────────────────────────────────────────────
+
+
+class DisplayRoute(BaseModel):
+    """Minimal, render-only route snapshot for frontend replay (M4).
+
+    Captures only what the frontend needs to draw the route.  No API key,
+    no raw Maps payload — those are request-scoped and never persisted.
+    """
+
+    summary: str
+    encoded_polyline: str
+    start_label: str
+    end_label: str
 
 
 # ─── TickState ───────────────────────────────────────────────────────────────
@@ -196,6 +216,8 @@ class RunPlanDraft(BaseModel):
 
     Created from a package + scenario before a run starts; validated against
     schema constraints; frozen into a run_id on user confirmation.
+
+    M4: route_source + display_route added (optional, safe defaults).
     """
 
     plan_id: str
@@ -205,6 +227,10 @@ class RunPlanDraft(BaseModel):
     effective_setup: dict[str, Any] = {}
     draft_event_plan: EventPlan = EventPlan()
     validation_errors: list[dict] = []
+
+    # M4: route provenance + display snapshot (optional; defaults preserve M1-M3 compat)
+    route_source: Literal["maps", "local"] = "local"
+    display_route: DisplayRoute | None = None
 
 
 # ─── RunState ────────────────────────────────────────────────────────────────
@@ -256,3 +282,7 @@ class RunState(BaseModel):
     # A non-None value combined with status==paused triggers the halted-run guard
     # in tick(), preventing duplicate error events on stray re-calls.
     last_error: dict | None = None
+
+    # M4: route provenance + display snapshot (optional; defaults preserve M1-M3 compat)
+    route_source: Literal["maps", "local"] = "local"
+    display_route: DisplayRoute | None = None

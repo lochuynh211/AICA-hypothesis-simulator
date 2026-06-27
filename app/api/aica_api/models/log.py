@@ -14,7 +14,7 @@ from typing import Annotated, Any, Literal, Union
 from pydantic import BaseModel, Field
 
 from aica_api.models.decision import DecisionResult
-from aica_api.models.run import EventPlan, FeatureGroups, RouteFacts, Snapshot, TickState
+from aica_api.models.run import DisplayRoute, EventPlan, FeatureGroups, RouteFacts, Snapshot, TickState
 
 
 # ─── TraceEntry ──────────────────────────────────────────────────────────────
@@ -113,3 +113,7 @@ class RunLog(BaseModel):
     current_parameters: dict[str, Any] = {}
     initial_hyperparameters: dict[str, Any] = {}
     current_hyperparameters: dict[str, Any] = {}
+
+    # M4: route provenance + display snapshot (optional; defaults preserve M1-M3 compat)
+    route_source: Literal["maps", "local"] = "local"
+    display_route: DisplayRoute | None = None
