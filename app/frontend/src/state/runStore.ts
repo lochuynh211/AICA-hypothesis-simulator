@@ -7,6 +7,8 @@ import type {
   DecisionResult,
   AlgorithmError,
   TraceEntry,
+  SetupValue,
+  ValidationError,
 } from '../api/types'
 
 // ── State ──────────────────────────────────────────────────────────────────
@@ -29,6 +31,22 @@ export type RunStoreState = {
   completed: boolean
   errors: string[]
   algorithmErrors: AlgorithmError[]
+
+  // ── Setup-draft state (M2) ───────────────────────────────────────────────
+  /** Edited parameter values (key → value); absent keys use package defaults. */
+  editedParameters: Record<string, SetupValue>
+  /** Edited hyperparameter values (key → value); absent keys use defaults. */
+  editedHyperparameters: Record<string, SetupValue>
+  /** The frozen draft plan_id once a plan has been drafted, else null. */
+  planId: string | null
+  /** The draft EventPlan from the most recent run-plan response. */
+  draftPlan: unknown | null
+  /** The effective_setup snapshot from the most recent run-plan response. */
+  effectiveSetup: Record<string, unknown> | null
+  /** Field-level validation errors (client-side or from a 400 response). */
+  validationErrors: ValidationError[]
+  /** Top-level setup error message (e.g. analyze/plan request failure). */
+  setupError: string | null
 }
 
 const initialState: RunStoreState = {
@@ -46,6 +64,13 @@ const initialState: RunStoreState = {
   completed: false,
   errors: [],
   algorithmErrors: [],
+  editedParameters: {},
+  editedHyperparameters: {},
+  planId: null,
+  draftPlan: null,
+  effectiveSetup: null,
+  validationErrors: [],
+  setupError: null,
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -67,6 +92,17 @@ export type RunStoreAction =
   | { type: 'ACTION_APPLIED'; runState: RunState }
   | { type: 'ALGORITHM_ERROR_APPENDED'; runState: RunState; error: AlgorithmError }
   | { type: 'SET_RUN_ERROR'; message: string | null }
+  // ── Setup-draft actions (M2) ─────────────────────────────────────────────
+  | { type: 'SET_PARAMETER'; key: string; value: SetupValue }
+  | { type: 'SET_HYPERPARAMETER'; key: string; value: SetupValue }
+  | {
+      type: 'PLAN_DRAFTED'
+      planId: string
+      draftPlan: unknown
+      effectiveSetup: Record<string, unknown>
+    }
+  | { type: 'SET_VALIDATION_ERRORS'; errors: ValidationError[] }
+  | { type: 'SET_SETUP_ERROR'; message: string | null }
   | { type: 'RESET' }
 
 // ── Reducer ────────────────────────────────────────────────────────────────
@@ -88,10 +124,72 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
       }
 
     case 'SELECT_PACKAGE':
-      return { ...state, selectedPackageId: action.id }
+      // Changing the package invalidates any edited values + draft.
+      return {
+        ...state,
+        selectedPackageId: action.id,
+        editedParameters: {},
+        editedHyperparameters: {},
+        planId: null,
+        draftPlan: null,
+        effectiveSetup: null,
+        validationErrors: [],
+        setupError: null,
+      }
 
     case 'SELECT_SCENARIO':
-      return { ...state, selectedScenarioId: action.id }
+      // Changing the scenario invalidates the draft (route facts change).
+      return {
+        ...state,
+        selectedScenarioId: action.id,
+        planId: null,
+        draftPlan: null,
+        effectiveSetup: null,
+        setupError: null,
+      }
+
+    case 'SET_PARAMETER':
+      // Editing a value invalidates the existing draft (must re-preview).
+      return {
+        ...state,
+        editedParameters: { ...state.editedParameters, [action.key]: action.value },
+        planId: null,
+        draftPlan: null,
+        effectiveSetup: null,
+      }
+
+    case 'SET_HYPERPARAMETER':
+      return {
+        ...state,
+        editedHyperparameters: {
+          ...state.editedHyperparameters,
+          [action.key]: action.value,
+        },
+        planId: null,
+        draftPlan: null,
+        effectiveSetup: null,
+      }
+
+    case 'PLAN_DRAFTED':
+      return {
+        ...state,
+        planId: action.planId,
+        draftPlan: action.draftPlan,
+        effectiveSetup: action.effectiveSetup,
+        validationErrors: [],
+        setupError: null,
+      }
+
+    case 'SET_VALIDATION_ERRORS':
+      return {
+        ...state,
+        validationErrors: action.errors,
+        // An invalid edit cannot have a usable draft.
+        planId: action.errors.length > 0 ? null : state.planId,
+      }
+
+    case 'SET_SETUP_ERROR':
+      return { ...state, setupError: action.message }
 
     case 'RUN_CREATED':
       return {
@@ -147,6 +245,13 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         errors: [],
         algorithmErrors: [],
         runError: null,
+        editedParameters: {},
+        editedHyperparameters: {},
+        planId: null,
+        draftPlan: null,
+        effectiveSetup: null,
+        validationErrors: [],
+        setupError: null,
       }
 
     default:

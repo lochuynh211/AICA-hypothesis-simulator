@@ -239,15 +239,15 @@ describe('getScenario', () => {
 describe('createRun', () => {
   beforeEach(() => vi.resetAllMocks())
 
-  it('calls POST /api/runs with body and returns RunState', async () => {
+  it('calls POST /api/runs with {plan_id} and returns RunState', async () => {
     global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 201, json: async () => runStateFixture })
-    const result = await createRun('rest_rule_based_v0_1', 'uc01_fatigue_friend_drive_v0_1')
+    const result = await createRun('plan_123')
     expect(global.fetch).toHaveBeenCalledWith(
       '/api/runs',
       expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ package_id: 'rest_rule_based_v0_1', scenario_id: 'uc01_fatigue_friend_drive_v0_1' }),
+        body: JSON.stringify({ plan_id: 'plan_123' }),
       }),
     )
     expect(result.run_id).toBe('run-abc')
@@ -256,7 +256,77 @@ describe('createRun', () => {
 
   it('throws on 400', async () => {
     global.fetch = vi.fn().mockResolvedValue(mockNotOk(400))
-    await expect(createRun('bad', 'bad')).rejects.toThrow('400')
+    await expect(createRun('bad_plan')).rejects.toThrow('400')
+  })
+})
+
+describe('routesAnalyze / createRunPlan / regenerateRunPlan', () => {
+  beforeEach(() => vi.resetAllMocks())
+
+  it('routesAnalyze POSTs /api/routes/analyze with {scenario_id}', async () => {
+    const facts = { total_route_distance_km: 120, route_segments: [], rest_spot_positions: [] }
+    global.fetch = vi.fn().mockResolvedValue(mockOk(facts))
+    const { routesAnalyze } = await import('../src/api/client')
+    await routesAnalyze('uc01_fatigue_friend_drive_v0_1')
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/routes/analyze',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ scenario_id: 'uc01_fatigue_friend_drive_v0_1' }),
+      }),
+    )
+  })
+
+  it('createRunPlan POSTs /api/run-plans with the full body', async () => {
+    const resp = { plan_id: 'plan_abc', draft_plan: {}, effective_setup: {}, validation_errors: [] }
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 201, json: async () => resp })
+    const { createRunPlan } = await import('../src/api/client')
+    const result = await createRunPlan({
+      packageId: 'rest_rule_based_v0_1',
+      scenarioId: 'uc01_fatigue_friend_drive_v0_1',
+      hyperparameters: { w_drowsiness: 0.4 },
+    })
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/run-plans',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          package_id: 'rest_rule_based_v0_1',
+          scenario_id: 'uc01_fatigue_friend_drive_v0_1',
+          parameters: {},
+          hyperparameters: { w_drowsiness: 0.4 },
+          presets: {},
+          run_mode: 'standard',
+        }),
+      }),
+    )
+    expect(result.plan_id).toBe('plan_abc')
+  })
+
+  it('createRunPlan throws on 400', async () => {
+    global.fetch = vi.fn().mockResolvedValue(mockNotOk(400))
+    const { createRunPlan } = await import('../src/api/client')
+    await expect(
+      createRunPlan({ packageId: 'p', scenarioId: 's' }),
+    ).rejects.toThrow('400')
+  })
+
+  it('regenerateRunPlan POSTs /api/run-plans/{id}/regenerate', async () => {
+    const resp = { plan_id: 'plan_abc', draft_plan: {}, effective_setup: {}, validation_errors: [] }
+    global.fetch = vi.fn().mockResolvedValue(mockOk(resp))
+    const { regenerateRunPlan } = await import('../src/api/client')
+    await regenerateRunPlan('plan_abc', { hyperparameters: { w_drowsiness: 0.5 } })
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/run-plans/plan_abc/regenerate',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          parameters: {},
+          hyperparameters: { w_drowsiness: 0.5 },
+          presets: {},
+        }),
+      }),
+    )
   })
 })
 

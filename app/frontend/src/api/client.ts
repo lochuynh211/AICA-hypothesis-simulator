@@ -4,8 +4,11 @@ import type {
   ScenarioSummary,
   ScenarioDef,
   RegistryError,
+  RouteFacts,
+  RunPlanResponse,
   RunState,
   RunSummary,
+  SetupValue,
   TickResponse,
   RunLog,
 } from './types'
@@ -64,13 +67,64 @@ export async function getScenario(id: string): Promise<ScenarioDef> {
   return apiFetch(`/api/scenarios/${id}`, { method: 'GET' })
 }
 
+// ── Routes / run-plans (M2 setup flow) ───────────────────────────────────────
+
+export async function routesAnalyze(scenarioId: string): Promise<RouteFacts> {
+  return apiFetch('/api/routes/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ scenario_id: scenarioId }),
+  })
+}
+
+export async function createRunPlan(args: {
+  packageId: string
+  scenarioId: string
+  parameters?: Record<string, SetupValue>
+  hyperparameters?: Record<string, SetupValue>
+  presets?: Record<string, unknown>
+  runMode?: string
+}): Promise<RunPlanResponse> {
+  return apiFetch('/api/run-plans', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      package_id: args.packageId,
+      scenario_id: args.scenarioId,
+      parameters: args.parameters ?? {},
+      hyperparameters: args.hyperparameters ?? {},
+      presets: args.presets ?? {},
+      run_mode: args.runMode ?? 'standard',
+    }),
+  })
+}
+
+export async function regenerateRunPlan(
+  planId: string,
+  args: {
+    parameters?: Record<string, SetupValue>
+    hyperparameters?: Record<string, SetupValue>
+    presets?: Record<string, unknown>
+  },
+): Promise<RunPlanResponse> {
+  return apiFetch(`/api/run-plans/${planId}/regenerate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      parameters: args.parameters ?? {},
+      hyperparameters: args.hyperparameters ?? {},
+      presets: args.presets ?? {},
+    }),
+  })
+}
+
 // ── Runs ───────────────────────────────────────────────────────────────────
 
-export async function createRun(packageId: string, scenarioId: string): Promise<RunState> {
+export async function createRun(planId: string): Promise<RunState> {
   return apiFetch('/api/runs', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ package_id: packageId, scenario_id: scenarioId }),
+    body: JSON.stringify({ plan_id: planId }),
   })
 }
 

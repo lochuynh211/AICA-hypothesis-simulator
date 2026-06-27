@@ -27,9 +27,12 @@ export type ParameterDef = {
 export type HyperparameterDef = {
   key: string
   label: { ja: string; en: string }
-  kind: 'band' | 'bool'
+  kind: 'band' | 'bool' | 'numeric'
   band_values?: string[]
-  default: string | boolean
+  default: string | boolean | number
+  min?: number
+  max?: number
+  step?: number
 }
 
 export type FeatureDef = {
@@ -116,6 +119,41 @@ export type ScenarioDef = {
   tick_seconds: number
   allowed_actions: string[]
   review_focus: string
+}
+
+// ── Setup / run-plan domain (M2) ───────────────────────────────────────────
+
+export type RouteSegmentFact = {
+  segment_type: 'highway' | 'normal_road' | 'mountain_road' | 'sightseeing_road'
+  start_km: number
+  length_km: number
+}
+
+export type RouteFacts = {
+  total_route_distance_km: number | null
+  estimated_route_duration_min: number | null
+  route_segments: RouteSegmentFact[]
+  rest_spot_positions: number[]
+  route_progress_checkpoints: number[]
+  segments?: unknown[]
+  bands?: Record<string, string[]>
+}
+
+/** A single field-level validation error from /api/run-plans. */
+export type ValidationError = {
+  field: string
+  message: string
+}
+
+/** Setup-time parameter/hyperparameter value (band/bool/numeric). */
+export type SetupValue = string | boolean | number
+
+/** Response from POST /api/run-plans and the regenerate endpoint. */
+export type RunPlanResponse = {
+  plan_id: string
+  draft_plan: unknown
+  effective_setup: Record<string, unknown>
+  validation_errors: ValidationError[]
 }
 
 // ── Run domain ─────────────────────────────────────────────────────────────

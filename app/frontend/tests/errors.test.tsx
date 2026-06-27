@@ -25,6 +25,9 @@ vi.mock('../src/api/client', () => ({
   listPackages: vi.fn(),
   listScenarios: vi.fn(),
   createRun: vi.fn(),
+  createRunPlan: vi.fn(),
+  regenerateRunPlan: vi.fn(),
+  routesAnalyze: vi.fn(),
   actRun: vi.fn(),
   tickRun: vi.fn(),
   getPackage: vi.fn(),
@@ -39,7 +42,7 @@ import * as client from '../src/api/client'
 
 import PackageSelector from '../src/components/setup/PackageSelector'
 import ScenarioSelector from '../src/components/setup/ScenarioSelector'
-import StartRunButton from '../src/components/setup/StartRunButton'
+import PlanPreview from '../src/components/setup/PlanPreview'
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -181,24 +184,40 @@ describe('ScenarioSelector — registry error display', () => {
   })
 })
 
-// ── T031c: StartRunButton surfaces createRun failure ─────────────────────────
+// ── T031c: PlanPreview surfaces createRun failure (plan_id flow) ─────────────
 
-describe('StartRunButton — createRun error display', () => {
+/** Render PlanPreview with a drafted plan already in the store, plus a state probe. */
+function renderPreviewWithDraft(
+  stateRef: { current: ReturnType<typeof useRunStore>['state'] | null },
+) {
+  function StateProbe() {
+    const { state } = useRunStore()
+    stateRef.current = state
+    return null
+  }
+  return renderInStore(
+    <>
+      <StateProbe />
+      <PlanPreview />
+    </>,
+    (dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: 'rest_rule_based_v0_1' })
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
+      dispatch({ type: 'PLAN_DRAFTED', planId: 'plan_x', draftPlan: {}, effectiveSetup: { run_mode: 'standard' } })
+    },
+  )
+}
+
+describe('PlanPreview — createRun error display', () => {
   beforeEach(() => vi.resetAllMocks())
 
   it('shows error message when createRun rejects with 400', async () => {
     vi.mocked(client.createRun).mockRejectedValue(new Error('API error: 400'))
 
-    renderInStore(
-      <StartRunButton />,
-      (dispatch) => {
-        dispatch({ type: 'SELECT_PACKAGE', id: 'rest_rule_based_v0_1' })
-        dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
-      },
-    )
+    const stateRef: { current: ReturnType<typeof useRunStore>['state'] | null } = { current: null }
+    renderPreviewWithDraft(stateRef)
 
-    const startBtn = screen.getByRole('button', { name: /start run/i })
-    fireEvent.click(startBtn)
+    fireEvent.click(screen.getByRole('button', { name: /start run/i }))
 
     expect(await screen.findByRole('alert')).toBeInTheDocument()
     expect(await screen.findByText(/API error: 400/)).toBeInTheDocument()
@@ -207,52 +226,26 @@ describe('StartRunButton — createRun error display', () => {
   it('does not start a run when createRun fails', async () => {
     vi.mocked(client.createRun).mockRejectedValue(new Error('API error: 400'))
 
-    const wrapper = ({ children }: { children: React.ReactNode }) =>
-      React.createElement(RunStoreProvider, null, children)
+    const stateRef: { current: ReturnType<typeof useRunStore>['state'] | null } = { current: null }
+    renderPreviewWithDraft(stateRef)
 
-    const { result } = renderHook(() => useRunStore(), { wrapper })
-
-    act(() => result.current.dispatch({ type: 'SELECT_PACKAGE', id: 'rest_rule_based_v0_1' }))
-    act(() => result.current.dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' }))
-
-    // Render the button within the same store context
-    renderInStore(
-      <StartRunButton />,
-      (dispatch) => {
-        dispatch({ type: 'SELECT_PACKAGE', id: 'rest_rule_based_v0_1' })
-        dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
-      },
-    )
-
-    const startBtn = screen.getByRole('button', { name: /start run/i })
-    fireEvent.click(startBtn)
+    fireEvent.click(screen.getByRole('button', { name: /start run/i }))
 
     await screen.findByRole('alert')
-    // createRun was called
-    expect(vi.mocked(client.createRun)).toHaveBeenCalledWith(
-      'rest_rule_based_v0_1',
-      'uc01_fatigue_friend_drive_v0_1',
-    )
-    // But no run state exists
-    expect(result.current.state.runState).toBeNull()
+    expect(vi.mocked(client.createRun)).toHaveBeenCalledWith('plan_x')
+    // No run state was created
+    expect(stateRef.current?.runState).toBeNull()
   })
 
   it('clears error message when a run is subsequently created', async () => {
-    // First fail
     vi.mocked(client.createRun).mockRejectedValueOnce(new Error('API error: 400'))
 
-    renderInStore(
-      <StartRunButton />,
-      (dispatch) => {
-        dispatch({ type: 'SELECT_PACKAGE', id: 'rest_rule_based_v0_1' })
-        dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
-      },
-    )
+    const stateRef: { current: ReturnType<typeof useRunStore>['state'] | null } = { current: null }
+    renderPreviewWithDraft(stateRef)
 
     fireEvent.click(screen.getByRole('button', { name: /start run/i }))
     expect(await screen.findByRole('alert')).toBeInTheDocument()
 
-    // Now succeed
     const runState = {
       run_id: 'run-ok',
       status: 'created' as const,

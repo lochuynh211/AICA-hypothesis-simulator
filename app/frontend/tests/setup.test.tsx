@@ -22,6 +22,9 @@ vi.mock('../src/api/client', () => ({
   listPackages: vi.fn(),
   listScenarios: vi.fn(),
   createRun: vi.fn(),
+  createRunPlan: vi.fn(),
+  regenerateRunPlan: vi.fn(),
+  routesAnalyze: vi.fn(),
   actRun: vi.fn(),
   tickRun: vi.fn(),
   getPackage: vi.fn(),
@@ -35,6 +38,9 @@ vi.mock('../src/api/client', () => ({
 import * as client from '../src/api/client'
 import PackageSelector from '../src/components/setup/PackageSelector'
 import ScenarioSelector from '../src/components/setup/ScenarioSelector'
+import HyperparameterEditor from '../src/components/setup/HyperparameterEditor'
+import PlanPreview from '../src/components/setup/PlanPreview'
+import type { PackageManifest } from '../src/api/types'
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -218,5 +224,159 @@ describe('ScenarioSelector — T018', () => {
 
     // uc99 scenario (type=uc99_other) should NOT appear
     expect(screen.queryByText(/Other/)).not.toBeInTheDocument()
+  })
+})
+
+// ── T024: editable setup + plan preview/regenerate/start ──────────────────────
+
+const manifestWithHyperparams: PackageManifest = {
+  id: 'rest_weighted_score_v0_1',
+  version: '0.1.0',
+  label: { ja: '重みスコア', en: 'Weighted Score' },
+  compatible_scenario_types: ['uc01_fatigue'],
+  algorithm: { type: 'weighted_score', entrypoint: 'builtin' },
+  parameters: [],
+  features: [],
+  hyperparameters: [
+    {
+      key: 'w_drowsiness',
+      label: { ja: '睡気重み', en: 'Drowsiness Weight' },
+      kind: 'numeric',
+      default: 0.4,
+      min: 0.0,
+      max: 1.0,
+      step: 0.01,
+    },
+  ],
+  trigger_categories: [],
+  rules: [],
+  fire_control: { threshold_source: 'x', actionability_guard: {} },
+  proposals: [],
+  feedback_schema: [],
+  evidence_metrics: [],
+}
+
+function renderSetup(setupFn?: (dispatch: React.Dispatch<RunStoreAction>) => void) {
+  return renderInStore(
+    <>
+      <HyperparameterEditor />
+      <PlanPreview />
+    </>,
+    setupFn,
+  )
+}
+
+const draftedPlanResponse = {
+  plan_id: 'plan_w1',
+  draft_plan: { tick_seconds: 60, rest_opportunities: [{}] },
+  effective_setup: { run_mode: 'standard', hyperparameters: { w_drowsiness: 0.6 } },
+  validation_errors: [],
+}
+
+const runStateFixture = {
+  run_id: 'run-xyz',
+  status: 'created' as const,
+  current_tick: 0,
+  pending_proposal: null,
+  package_runtime_state: {},
+  snapshot: {
+    package: { id: 'rest_weighted_score_v0_1', version: '0.1.0', hash: 'a' },
+    scenario: { id: 'uc01_fatigue_friend_drive_v0_1', version: '0.1.0', hash: 'b' },
+  },
+  event_plan: {},
+  route_facts: {},
+}
+
+describe('HyperparameterEditor + PlanPreview — T024', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    vi.mocked(client.getPackage).mockResolvedValue(manifestWithHyperparams)
+  })
+
+  it('renders the numeric hyperparameter with its default pre-filled', async () => {
+    renderSetup((dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: 'rest_weighted_score_v0_1' })
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
+    })
+
+    const input = (await screen.findByLabelText('Drowsiness Weight')) as HTMLInputElement
+    expect(input).toHaveValue(0.4)
+    expect(input).toHaveAttribute('step', '0.01')
+  })
+
+  it('edit valid → preview → regenerate → start (full flow)', async () => {
+    vi.mocked(client.routesAnalyze).mockResolvedValue({
+      total_route_distance_km: 120,
+      estimated_route_duration_min: 120,
+      route_segments: [],
+      rest_spot_positions: [],
+      route_progress_checkpoints: [],
+    })
+    vi.mocked(client.createRunPlan).mockResolvedValue(draftedPlanResponse)
+    vi.mocked(client.regenerateRunPlan).mockResolvedValue({
+      ...draftedPlanResponse,
+      effective_setup: { run_mode: 'standard', hyperparameters: { w_drowsiness: 0.7 } },
+    })
+    vi.mocked(client.createRun).mockResolvedValue(runStateFixture)
+
+    renderSetup((dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: 'rest_weighted_score_v0_1' })
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
+    })
+
+    // Edit to a valid in-range value
+    const input = (await screen.findByLabelText('Drowsiness Weight')) as HTMLInputElement
+    fireEvent.change(input, { target: { value: '0.6' } })
+
+    // Preview
+    fireEvent.click(screen.getByRole('button', { name: /preview plan/i }))
+    await screen.findByTestId('plan-summary')
+    expect(vi.mocked(client.routesAnalyze)).toHaveBeenCalledWith('uc01_fatigue_friend_drive_v0_1')
+    expect(vi.mocked(client.createRunPlan)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        packageId: 'rest_weighted_score_v0_1',
+        scenarioId: 'uc01_fatigue_friend_drive_v0_1',
+        hyperparameters: { w_drowsiness: 0.6 },
+      }),
+    )
+
+    // Regenerate
+    fireEvent.click(screen.getByRole('button', { name: /regenerate/i }))
+    await waitFor(() => {
+      expect(vi.mocked(client.regenerateRunPlan)).toHaveBeenCalledWith(
+        'plan_w1',
+        expect.objectContaining({ hyperparameters: { w_drowsiness: 0.6 } }),
+      )
+    })
+
+    // Start
+    fireEvent.click(screen.getByRole('button', { name: /start run/i }))
+    await waitFor(() => {
+      expect(vi.mocked(client.createRun)).toHaveBeenCalledWith('plan_w1')
+    })
+  })
+
+  it('edit invalid (out-of-range) → visible error + no run plan', async () => {
+    vi.mocked(client.createRunPlan).mockResolvedValue(draftedPlanResponse)
+
+    renderSetup((dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: 'rest_weighted_score_v0_1' })
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
+    })
+
+    const input = (await screen.findByLabelText('Drowsiness Weight')) as HTMLInputElement
+    // 5 is above max (1.0)
+    fireEvent.change(input, { target: { value: '5' } })
+
+    // A visible validation error appears (field-level + aggregate)
+    const alerts = await screen.findAllByRole('alert')
+    expect(alerts.length).toBeGreaterThan(0)
+    expect(await screen.findByTestId('setup-validation-error')).toBeInTheDocument()
+
+    // Preview button is disabled — no plan can be built
+    const previewBtn = screen.getByRole('button', { name: /preview plan/i })
+    expect(previewBtn).toBeDisabled()
+    fireEvent.click(previewBtn)
+    expect(vi.mocked(client.createRunPlan)).not.toHaveBeenCalled()
   })
 })

@@ -1,6 +1,8 @@
 import PackageSelector from '../setup/PackageSelector'
 import ScenarioSelector from '../setup/ScenarioSelector'
-import StartRunButton from '../setup/StartRunButton'
+import ParameterEditor from '../setup/ParameterEditor'
+import HyperparameterEditor from '../setup/HyperparameterEditor'
+import PlanPreview from '../setup/PlanPreview'
 import RouteSegmentList from '../context/RouteSegmentList'
 import LiveReadouts from '../context/LiveReadouts'
 
@@ -22,7 +24,9 @@ export default function LeftContextPanel({ healthStatus }: Props) {
         </h2>
         <PackageSelector />
         <ScenarioSelector />
-        <StartRunButton />
+        <ParameterEditor />
+        <HyperparameterEditor />
+        <PlanPreview />
       </section>
 
       <section style={{ marginBottom: '16px' }}>
