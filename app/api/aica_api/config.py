@@ -1,0 +1,44 @@
+"""AICA API runtime configuration.
+
+Resolves file-system paths for the three data directories:
+  packages_dir  — AICA_PACKAGES_DIR  (default: <repo-root>/packages)
+  scenarios_dir — AICA_SCENARIOS_DIR (default: <repo-root>/scenarios)
+  runs_dir      — AICA_RUNS_DIR      (default: <repo-root>/runs)
+
+The repo root is derived from this file's location:
+  app/api/aica_api/config.py  →  parents[3]  →  repo root
+Environment variable overrides always win. No third-party libraries are used.
+"""
+
+import os
+from pathlib import Path
+
+# Repo root: <repo>/app/api/aica_api/config.py  → parents[3] = <repo>
+_REPO_ROOT: Path = Path(__file__).resolve().parents[3]
+
+
+def _resolve(env_var: str, default_name: str) -> Path:
+    """Return the Path from the env-var override, or the repo-root default."""
+    override = os.environ.get(env_var)
+    if override:
+        return Path(override).resolve()
+    return _REPO_ROOT / default_name
+
+
+class Settings:
+    """Lightweight settings object — no Pydantic dependency."""
+
+    @property
+    def packages_dir(self) -> Path:
+        return _resolve("AICA_PACKAGES_DIR", "packages")
+
+    @property
+    def scenarios_dir(self) -> Path:
+        return _resolve("AICA_SCENARIOS_DIR", "scenarios")
+
+    @property
+    def runs_dir(self) -> Path:
+        return _resolve("AICA_RUNS_DIR", "runs")
+
+
+settings = Settings()

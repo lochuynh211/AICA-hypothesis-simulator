@@ -1,0 +1,45 @@
+/*
+ * app.css — 3-panel layout shell for AICA Hypothesis Simulator
+ *
+ * .app-shell     full-viewport CSS grid container (left / center / right)
+ * .left-panel    scenario/package context (fixed narrow column)
+ * .center-panel  playback + cockpit (flexible main column)
+ * .right-panel   controls + trace + feedback (fixed narrow column)
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 280px 1fr 320px;
+  grid-template-rows: 1fr;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+.left-panel {
+  grid-column: 1;
+  overflow-y: auto;
+}
+
+.center-panel {
+  grid-column: 2;
+  overflow-y: auto;
+}
+
+.right-panel {
+  grid-column: 3;
+  overflow-y: auto;
+}
