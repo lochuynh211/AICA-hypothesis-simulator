@@ -90,7 +90,17 @@ export type RunStoreAction =
       completed: boolean
     }
   | { type: 'ACTION_APPLIED'; runState: RunState }
-  | { type: 'ALGORITHM_ERROR_APPENDED'; runState: RunState; error: AlgorithmError }
+  | {
+      type: 'ALGORITHM_ERROR_APPENDED'
+      runState: RunState
+      error: AlgorithmError
+      /**
+       * True when the package's error_mode is "blocking" (default).
+       * Mirrors the `paused` field in the tick envelope so the store
+       * reflects the run's halted state — no proposal/action awaited.
+       */
+      paused: boolean
+    }
   | { type: 'SET_RUN_ERROR'; message: string | null }
   // ── Setup-draft actions (M2) ─────────────────────────────────────────────
   | { type: 'SET_PARAMETER'; key: string; value: SetupValue }
@@ -224,11 +234,14 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
       }
 
     case 'ALGORITHM_ERROR_APPENDED':
-      // Update runState, append error — do NOT update latestDecision or set paused
+      // Update runState and append the error.  Set paused from the envelope so a
+      // blocking error (paused=true) halts the UI — no proposal/action awaited.
+      // Do NOT update latestDecision or append to trace (errors are not decisions).
       return {
         ...state,
         runState: action.runState,
         algorithmErrors: [...state.algorithmErrors, action.error],
+        paused: action.paused,
       }
 
     case 'SET_RUN_ERROR':

@@ -612,7 +612,11 @@ def test_action_400_disallowed_action(client, run_id, monkeypatch):
 
 
 def test_tick_algorithm_error_envelope(client, run_id, monkeypatch):
-    """Adapter failure → 200 with {run_state, error, paused: false}; log has algorithm_error."""
+    """Adapter failure → 200 with {run_state, error, paused: true}; log has algorithm_error.
+
+    MIGRATED from M1/M2 continue-on-error (paused=False) to pause-by-default (M3 T009/T010).
+    The default error_mode is "blocking", so the run is now paused on adapter failure.
+    """
     # Force the adapter to raise AlgorithmAdapterError
     def _raise(*a, **kw):
         raise AlgorithmAdapterError(
@@ -626,10 +630,18 @@ def test_tick_algorithm_error_envelope(client, run_id, monkeypatch):
     assert resp.status_code == 200
     body = resp.json()
 
-    # Envelope must have run_state, error, and paused=False
+    # Envelope: run_state + error present; paused=True (blocking error halts the run)
     assert "run_state" in body
     assert "error" in body
-    assert body["paused"] is False
+    assert body["paused"] is True
+
+    # run_state reflects the paused status and populated last_error
+    run_state = body["run_state"]
+    assert run_state["status"] == "paused"
+    assert run_state["last_error"] is not None
+    assert run_state["last_error"]["error_type"] == "algorithm_exception"
+    # current_tick must NOT advance on a blocking error
+    assert run_state["current_tick"] == 0
 
     # The persisted log must contain an algorithm_error event
     log_resp = client.get(f"/api/runs/{run_id}/log")

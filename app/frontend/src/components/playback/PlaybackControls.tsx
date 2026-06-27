@@ -22,7 +22,13 @@ export default function PlaybackControls() {
         type: 'ALGORITHM_ERROR_APPENDED',
         runState: resp.run_state,
         error: resp.error,
+        paused: resp.paused,
       })
+      // Stop playing when a blocking error halts the run (resp.paused === true).
+      // For non_blocking errors the run continues and playback is uninterrupted.
+      if (resp.paused) {
+        setIsPlaying(false)
+      }
     } else if (resp.decision !== null && resp.tick_index !== null) {
       // Normal evaluated tick: use resp.tick_index (pre-increment) so the
       // live trace label matches the persisted TickEvent.tick_index in the log.

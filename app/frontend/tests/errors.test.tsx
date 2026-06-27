@@ -355,3 +355,88 @@ describe('runStore — packageErrors / scenarioErrors / runError', () => {
     expect(result.current.state.runError).toBeNull()
   })
 })
+
+// ── T008/T010 frontend: ALGORITHM_ERROR_APPENDED pause-by-default ────────────
+
+/**
+ * These tests verify that a blocking algorithm error (paused=true in the
+ * tick envelope) leaves the run store paused and records the error in
+ * algorithmErrors — never as a decision trace entry or latestDecision.
+ *
+ * MIGRATED from M1/M2 continue-on-error: ALGORITHM_ERROR_APPENDED now carries
+ * a `paused` field (boolean) and the reducer sets state.paused accordingly.
+ */
+describe('runStore — ALGORITHM_ERROR_APPENDED pause-by-default', () => {
+  const wrapper = ({ children }: { children: React.ReactNode }) =>
+    React.createElement(RunStoreProvider, null, children)
+
+  const baseRunState = {
+    run_id: 'run-err',
+    status: 'playing' as const,
+    current_tick: 0,
+    pending_proposal: null,
+    package_runtime_state: {},
+    snapshot: {
+      package: { id: 'p', version: '1', hash: 'a' },
+      scenario: { id: 's', version: '1', hash: 'b' },
+    },
+    event_plan: {},
+    route_facts: {},
+  }
+
+  it('blocking algorithm error sets paused=true in the store', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+
+    act(() => result.current.dispatch({ type: 'RUN_CREATED', runState: baseRunState }))
+    act(() =>
+      result.current.dispatch({
+        type: 'ALGORITHM_ERROR_APPENDED',
+        runState: { ...baseRunState, status: 'paused' as const },
+        error: { tick_index: 0, error_type: 'algorithm_exception', message: 'crash' },
+        paused: true,
+      }),
+    )
+
+    expect(result.current.state.paused).toBe(true)
+    expect(result.current.state.algorithmErrors).toHaveLength(1)
+    expect(result.current.state.algorithmErrors[0].error_type).toBe('algorithm_exception')
+  })
+
+  it('non_blocking algorithm error does NOT set paused', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+
+    act(() => result.current.dispatch({ type: 'RUN_CREATED', runState: baseRunState }))
+    act(() =>
+      result.current.dispatch({
+        type: 'ALGORITHM_ERROR_APPENDED',
+        runState: baseRunState,
+        error: { tick_index: 0, error_type: 'algorithm_exception', message: 'crash' },
+        paused: false,
+      }),
+    )
+
+    expect(result.current.state.paused).toBe(false)
+    expect(result.current.state.algorithmErrors).toHaveLength(1)
+  })
+
+  it('algorithm error is never shown as a decision trace entry', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+
+    act(() => result.current.dispatch({ type: 'RUN_CREATED', runState: baseRunState }))
+    act(() =>
+      result.current.dispatch({
+        type: 'ALGORITHM_ERROR_APPENDED',
+        runState: { ...baseRunState, status: 'paused' as const },
+        error: { tick_index: 0, error_type: 'missing_evaluate', message: 'no evaluate fn' },
+        paused: true,
+      }),
+    )
+
+    // Error must NOT appear in the decision trace or latestDecision
+    expect(result.current.state.trace).toHaveLength(0)
+    expect(result.current.state.latestDecision).toBeNull()
+    // Error appears only in algorithmErrors
+    expect(result.current.state.algorithmErrors).toHaveLength(1)
+    expect(result.current.state.algorithmErrors[0].error_type).toBe('missing_evaluate')
+  })
+})

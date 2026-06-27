@@ -249,3 +249,10 @@ class RunState(BaseModel):
 
     # Scenario-level allowed actions (copied from scenario at run creation)
     allowed_actions: list[str] = []
+
+    # M3: populated by run_manager when a blocking algorithm error halts the run.
+    # Shape: {tick_index: int, error_type: str, message: str}.
+    # None when the run has not been halted by an algorithm error.
+    # A non-None value combined with status==paused triggers the halted-run guard
+    # in tick(), preventing duplicate error events on stray re-calls.
+    last_error: dict | None = None

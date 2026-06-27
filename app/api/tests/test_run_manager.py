@@ -294,7 +294,12 @@ def test_tick_unknown_run_raises(tmp_path):
 
 
 def test_tick_adapter_failure_records_algorithm_error(tmp_path, uc01_scenario, monkeypatch):
-    """On adapter failure, an AlgorithmError is appended; decision is None."""
+    """On adapter failure with default blocking error_mode:
+    - AlgorithmError is appended; decision is None; run is PAUSED (not continued).
+    - current_tick does NOT advance.
+    - run_state.last_error is populated.
+    MIGRATED from M1/M2 continue-on-error to pause-by-default (M3 T009).
+    """
     from aica_api.algorithms import adapter as adapter_mod
     from aica_api.algorithms.adapter import AlgorithmAdapterError
 
@@ -304,7 +309,7 @@ def test_tick_adapter_failure_records_algorithm_error(tmp_path, uc01_scenario, m
 
     monkeypatch.setattr(adapter_mod, "evaluate", _raise)
 
-    # Use a minimal package that will trigger the patched adapter
+    # rest_rule_based_v0_1 uses default error_mode="blocking"
     pkg_data = json.loads((_PACKAGE_PATH).read_text(encoding="utf-8"))
     package = PackageManifest(**pkg_data)
 
@@ -313,7 +318,13 @@ def test_tick_adapter_failure_records_algorithm_error(tmp_path, uc01_scenario, m
 
     assert outcome.decision is None
     assert outcome.algorithm_error is not None
-    assert outcome.paused is False
+    # Blocking pause-by-default: the run halts at the broken tick
+    assert outcome.paused is True
+    assert outcome.run_state.status == RunStatus.paused
+    assert outcome.run_state.last_error is not None
+    assert outcome.run_state.last_error["error_type"] == "algorithm_exception"
+    # current_tick must NOT advance on a blocking error
+    assert outcome.run_state.current_tick == 0
 
     # The log must contain an algorithm_error event, not a tick event
     data = json.loads((tmp_path / "run_err_test.json").read_text(encoding="utf-8"))

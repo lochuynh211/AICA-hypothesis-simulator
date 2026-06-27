@@ -242,7 +242,12 @@ describe('runStore — ACTION_APPLIED', () => {
 })
 
 describe('runStore — ALGORITHM_ERROR_APPENDED', () => {
-  it('appends algorithm error and does NOT set latestDecision', () => {
+  /**
+   * MIGRATED from M1/M2 continue-on-error to pause-by-default (M3 T010).
+   * ALGORITHM_ERROR_APPENDED now carries a `paused: boolean` field;
+   * the reducer sets state.paused accordingly.
+   */
+  it('non_blocking algorithm error appends error, does NOT set latestDecision, paused stays false', () => {
     const { result } = renderHook(() => useRunStore(), { wrapper })
     act(() => result.current.dispatch({ type: 'RUN_CREATED', runState: createdRun }))
 
@@ -257,19 +262,51 @@ describe('runStore — ALGORITHM_ERROR_APPENDED', () => {
     }))
     const decisionBefore = result.current.state.latestDecision
 
-    // Algorithm error — should NOT overwrite latestDecision
+    // Non-blocking algorithm error (error_mode="non_blocking" on the package)
     act(() => result.current.dispatch({
       type: 'ALGORITHM_ERROR_APPENDED',
       runState: playingRun,
       error: algError,
+      paused: false,   // non_blocking: run continues, not paused
     }))
 
     expect(result.current.state.algorithmErrors).toHaveLength(1)
     expect(result.current.state.algorithmErrors[0].error_type).toBe('invalid_return')
-    // latestDecision must NOT change from what it was before
+    // latestDecision must NOT change from what it was before the error
     expect(result.current.state.latestDecision).toEqual(decisionBefore)
-    // paused stays false
+    // non_blocking → paused stays false
     expect(result.current.state.paused).toBe(false)
+  })
+
+  it('blocking algorithm error appends error, does NOT set latestDecision, paused becomes true', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    act(() => result.current.dispatch({ type: 'RUN_CREATED', runState: createdRun }))
+
+    // First tick with normal decision
+    act(() => result.current.dispatch({
+      type: 'TICK_APPENDED',
+      runState: playingRun,
+      decision: noTriggerDecision,
+      tickIndex: 1,
+      paused: false,
+      completed: false,
+    }))
+    const decisionBefore = result.current.state.latestDecision
+
+    // Blocking algorithm error (default error_mode="blocking")
+    act(() => result.current.dispatch({
+      type: 'ALGORITHM_ERROR_APPENDED',
+      runState: { ...playingRun, status: 'paused' as const },
+      error: algError,
+      paused: true,   // blocking: run is halted
+    }))
+
+    expect(result.current.state.algorithmErrors).toHaveLength(1)
+    expect(result.current.state.algorithmErrors[0].error_type).toBe('invalid_return')
+    // latestDecision must NOT change from what it was before the error
+    expect(result.current.state.latestDecision).toEqual(decisionBefore)
+    // blocking → paused becomes true; run halted
+    expect(result.current.state.paused).toBe(true)
   })
 })
 

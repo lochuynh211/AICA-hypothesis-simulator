@@ -173,6 +173,12 @@ export type RunState = {
   event_plan: unknown
   route_facts: unknown
   allowed_actions?: string[]
+  /**
+   * M3: populated by the backend when a blocking algorithm error halts the run.
+   * Shape mirrors run_state.last_error in the RunState model.
+   * null when the run has not been halted by a blocking error.
+   */
+  last_error?: { tick_index: number; error_type: string; message: string } | null
 }
 
 export type RunSummary = {
@@ -256,7 +262,12 @@ export type TickResponseSuccess = {
 export type TickResponseError = {
   run_state: RunState
   error: AlgorithmError
-  paused: false
+  /**
+   * True when the package's error_mode is "blocking" (the default).
+   * False when error_mode is "non_blocking" (run continues after the error).
+   * MIGRATED from literal `false` to `boolean` in M3 T010.
+   */
+  paused: boolean
   /** The tick_index of the AlgorithmError event persisted during this call. */
   tick_index: number | null
 }

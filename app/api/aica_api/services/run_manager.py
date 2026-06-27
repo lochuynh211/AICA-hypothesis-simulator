@@ -448,6 +448,22 @@ def tick(run_id: str) -> TickOutcome:
             evaluated_tick_index=None,
         )
 
+    # ── Blocking-error halt guard ─────────────────────────────────────────
+    # A run that is paused due to a blocking algorithm error (last_error is
+    # not None) must not retry the broken tick.  Return a no-op TickOutcome
+    # so stray second tick() calls don't append duplicate error events.
+    # NOTE: a normal proposal-pause has last_error == None and is unaffected.
+    # Recovery requires starting a new run — there is no resume endpoint.
+    if run_state.status == RunStatus.paused and run_state.last_error is not None:
+        return TickOutcome(
+            run_state=run_state,
+            decision=None,
+            algorithm_error=None,
+            paused=True,
+            completed=False,
+            evaluated_tick_index=None,
+        )
+
     current_tick = run_state.current_tick
 
     # ── Compute tick state ────────────────────────────────────────────────
@@ -517,19 +533,44 @@ def tick(run_id: str) -> TickOutcome:
             message=exc.message,
         )
         recorder.append(algo_error)
-        # Advance tick so subsequent calls don't retry the same broken tick
-        run_state.current_tick += 1
-        # Update prior_state for M2 (do NOT update package_runtime_state — failed)
-        if _is_m2_scenario(scenario):
-            _registry[run_id] = (run_state, package, scenario, recorder, tick_state)
-        return TickOutcome(
-            run_state=run_state,
-            decision=None,
-            algorithm_error=algo_error,
-            paused=False,
-            completed=False,
-            evaluated_tick_index=current_tick,
-        )
+
+        if package.algorithm.error_mode == "non_blocking":
+            # Non-blocking: advance tick, continue run unchanged.
+            # This is the M1/M2 legacy behaviour, now opt-in.
+            run_state.current_tick += 1
+            # Update prior_state for M2 (do NOT update package_runtime_state — failed)
+            if _is_m2_scenario(scenario):
+                _registry[run_id] = (run_state, package, scenario, recorder, tick_state)
+            return TickOutcome(
+                run_state=run_state,
+                decision=None,
+                algorithm_error=algo_error,
+                paused=False,
+                completed=False,
+                evaluated_tick_index=current_tick,
+            )
+        else:
+            # Blocking (default): pause the run; do NOT advance current_tick.
+            # The run is halted at the broken tick — no decision is produced,
+            # and the error is shown in the evidence trace.
+            # Recovery requires a new run; there is no resume endpoint.
+            run_state.status = RunStatus.paused
+            run_state.last_error = {
+                "tick_index": current_tick,
+                "error_type": exc.error_type,
+                "message": exc.message,
+            }
+            # Update prior_state for M2 (tick_state was computed before the error)
+            if _is_m2_scenario(scenario):
+                _registry[run_id] = (run_state, package, scenario, recorder, tick_state)
+            return TickOutcome(
+                run_state=run_state,
+                decision=None,
+                algorithm_error=algo_error,
+                paused=True,
+                completed=False,
+                evaluated_tick_index=current_tick,
+            )
 
     # ── Thread package_runtime_state: store what the algorithm returned ───
     run_state.package_runtime_state = decision_result.next_package_runtime_state

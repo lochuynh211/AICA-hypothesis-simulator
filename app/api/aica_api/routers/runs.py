@@ -77,7 +77,7 @@ def tick_endpoint(run_id: str):
         return {
             "run_state": outcome.run_state,
             "error": outcome.algorithm_error,
-            "paused": False,
+            "paused": outcome.paused,
             "tick_index": outcome.evaluated_tick_index,
         }
     return {
