@@ -12,7 +12,7 @@ simulator with a backend tick engine + algorithm adapter (declarative_rule,
 weighted_score, python_module incl. the transparent hybrid), append-only evidence,
 and a React review UI. Route facts today come **only** from local scenario fixtures
 (`POST /api/routes/analyze` → `RouteFacts` → frozen event plan → tick engine →
-`feature_groups`).
+numeric `raw_state` + ordinal `feature_groups`, runtime workflow §467).
 
 M4 makes **Google Maps the default route surface when a BYO key is present**, while
 keeping the existing deterministic local route as the fallback. Authoritative scope:
@@ -159,8 +159,10 @@ tick/decision/evidence pipeline is unchanged below `analyze`.
   network in any test.**
 - **Key-safety guard tests**: the key never appears in any run log, API response, or
   persisted draft.
-- **Binning tests**: raw Google numerics → ordinal bands; no raw numeric in algorithm
-  context.
+- **Boundary tests**: raw Google numerics are normalized into frozen `RouteFacts`;
+  algorithm context may contain simulator-owned numeric `raw_state` (e.g.
+  `nextRestSpotMin`) plus ordinal `feature_groups`; **no raw external-service payload
+  value reaches the algorithm**.
 - **Determinism**: analyze freezes; replay performs no Maps call; repeat run identical.
 - **Fallback tests**: no-key path = existing local route still fully works;
   Directions-failure → error + retry + local fallback; Places-failure → degraded rest
@@ -191,5 +193,7 @@ tick/decision/evidence pipeline is unchanged below `analyze`.
   decimated path) and its size budget in the run log.
 - Geocoding of free-text start/end (Directions accepts addresses directly; a separate
   Geocoding call is likely unnecessary for V1).
-- Per-alternative Places cost (≤3 alternatives) vs deferring rest-spot derivation to the
-  selected route only — confirm during spec if cost matters.
+- Per-alternative Places cost (≤3 alternatives): D3 stands (analyze returns
+  per-alternative facts). If cost proves material, an allowed implementation optimization
+  is to derive rest spots only for the selected route at run-plans — but it MUST yield the
+  same selected-route facts before the plan is built (no behavior change).
