@@ -1,27 +1,45 @@
-"""Route analysis service (T012) — derive RouteFacts from a ScenarioDef.
+"""Route analysis service — derive RouteFacts from a ScenarioDef or Google Maps data.
 
-Pure, deterministic, side-effect-free.  Same ScenarioDef → same RouteFacts.
+Two entry points, both pure, deterministic, side-effect-free:
 
-The route analysis function converts the qualitative scenario structure
-(route_intent.segments with at-fractions, type labels, speed_band) into the
-M2 RouteFacts with physical kilometre extents and rest-spot positions the
-M2 tick engine can consume directly.
+  analyze_route(scenario)  — LOCAL path (T012)
+      Converts the qualitative scenario structure (route_intent.segments with
+      at-fractions, type labels, speed_band) into M2 RouteFacts.
 
-Segment type mapping (M1 RouteSegment.type → M2 RouteSegmentFact.segment_type):
+  analyze_route_maps(raw_routes, places_by_route, start_label, end_label)  — MAPS path (T004/U3)
+      Normalises already-fetched Google Directions + Places data into
+      RouteFacts + DisplayRoute per alternative.  Does NOT call maps_client
+      or the network.
+
+Segment type mapping for the LOCAL path
+  (M1 RouteSegment.type → M2 segment_type vocabulary):
   highway               → highway
   start / urban / national / residential / rest / end → normal_road
   (mountain / sightseeing not in M1 Literal; reserved for future scenarios)
 
-Total route distance is taken from scenario.presets["total_route_distance_km"]
-when present.  When absent, it is estimated as:
-  total_km = (total_duration_seconds / 3600) * default_speed_kph
-where default_speed_kph = 60 (≈ normal urban/mixed route average).
+Segment type mapping for the MAPS path (V1 classification):
+  HIGHWAY               → highway
+  LOCAL                 → normal_road
+  anything else         → normal_road  (mountain/sightseeing have no reliable
+                                        Google signal in V1)
+
+Total route distance for the LOCAL path is taken from
+scenario.presets["total_route_distance_km"] when present; otherwise estimated
+as: total_km = (total_duration_seconds / 3600) * default_speed_kph
+where default_speed_kph = 60.
 """
 
 from __future__ import annotations
 
-from aica_api.models.run import RouteFacts, RouteSegmentFact
+from typing import Any
+
+from aica_api.models.run import DisplayRoute, RouteFacts, RouteSegmentFact
 from aica_api.models.scenario import ScenarioDef
+
+# Type aliases (plain dicts at runtime — same convention as maps_client)
+RawRoute = dict[str, Any]
+RawPlace = dict[str, Any]
+RouteAlternative = dict[str, Any]  # {route_id, route_facts, display, summary}
 
 # Default speed used to estimate total route distance when not specified in presets.
 _DEFAULT_SPEED_KPH = 60.0
@@ -114,6 +132,143 @@ def analyze_route(scenario: ScenarioDef) -> RouteFacts:
         rest_spot_positions=rest_spot_positions,
         route_progress_checkpoints=route_progress_checkpoints,
     )
+
+
+# ---------------------------------------------------------------------------
+# Maps normalizer (T004 / U3)
+# ---------------------------------------------------------------------------
+
+# Maximum alternatives to return (maps_client already caps; enforce here too).
+_MAX_ALTERNATIVES = 3
+
+# V1 road-class mapping: Google step road_class → simulator segment_type.
+# mountain_road / sightseeing_road have no reliable Google signal in V1 →
+# default to normal_road for anything not explicitly HIGHWAY.
+_ROAD_CLASS_MAP: dict[str, str] = {
+    "HIGHWAY": "highway",
+    "LOCAL": "normal_road",
+}
+
+
+def analyze_route_maps(
+    raw_routes: list[RawRoute],
+    places_by_route: dict[str, list[RawPlace]],
+    start_label: str,
+    end_label: str,
+) -> list[RouteAlternative]:
+    """Normalise already-fetched Google data into simulator route facts.
+
+    Pure, deterministic — does NOT call maps_client or the network.
+
+    Args:
+        raw_routes:       Up to 3 RawRoute dicts from maps_client.directions().
+        places_by_route:  RawPlace lists keyed by route_id; missing keys are
+                          treated as an empty list (no fabrication).
+        start_label:      Human-readable origin label for DisplayRoute.
+        end_label:        Human-readable destination label for DisplayRoute.
+
+    Returns:
+        list[RouteAlternative] — one per raw route, capped at 3.
+        Each RouteAlternative is a dict: {route_id, route_facts, display, summary}.
+    """
+    alternatives: list[RouteAlternative] = []
+
+    for raw in raw_routes[:_MAX_ALTERNATIVES]:
+        route_id: str = raw["route_id"]
+        total_km: float = raw["distance_m"] / 1000.0
+        duration_min: float = raw["duration_s"] / 60.0
+
+        # ── Route segments — classify + merge consecutive same-type ───────────
+        route_segments = _build_route_segments_maps(raw.get("segments", []))
+
+        # ── Rest spot positions (km) — sorted ascending, empty-safe ──────────
+        places: list[RawPlace] = places_by_route.get(route_id, [])
+        rest_spot_positions: list[float] = sorted(
+            p["distance_along_route_m"] / 1000.0 for p in places
+        )
+
+        # ── Route progress checkpoints (25 %, 50 %, 75 % of total km) ────────
+        route_progress_checkpoints: list[float] = [
+            0.25 * total_km,
+            0.50 * total_km,
+            0.75 * total_km,
+        ]
+
+        route_facts = RouteFacts(
+            total_route_distance_km=total_km,
+            estimated_route_duration_min=duration_min,
+            route_segments=route_segments,
+            rest_spot_positions=rest_spot_positions,
+            route_progress_checkpoints=route_progress_checkpoints,
+            route_source="maps",
+        )
+
+        display = DisplayRoute(
+            summary=raw.get("summary", ""),
+            encoded_polyline=raw.get("encoded_polyline", ""),
+            start_label=start_label,
+            end_label=end_label,
+        )
+
+        alternatives.append(
+            {
+                "route_id": route_id,
+                "summary": raw.get("summary", ""),
+                "route_facts": route_facts,
+                "display": display,
+            }
+        )
+
+    return alternatives
+
+
+def _build_route_segments_maps(raw_segments: list[dict[str, Any]]) -> list[RouteSegmentFact]:
+    """Convert raw step dicts into RouteSegmentFact list, merging consecutive same-type.
+
+    Accumulates start_km as we walk; merges adjacent segments of identical type.
+    """
+    if not raw_segments:
+        return []
+
+    result: list[RouteSegmentFact] = []
+    start_km: float = 0.0
+
+    # Initialise with the first step
+    first = raw_segments[0]
+    current_type = _ROAD_CLASS_MAP.get(first["road_class"], "normal_road")
+    current_length_km = first["distance_m"] / 1000.0
+    current_start_km = 0.0
+
+    for step in raw_segments[1:]:
+        step_type = _ROAD_CLASS_MAP.get(step["road_class"], "normal_road")
+        step_length_km = step["distance_m"] / 1000.0
+
+        if step_type == current_type:
+            # Merge: extend the current segment
+            current_length_km += step_length_km
+        else:
+            # Emit the current segment and start a new one
+            result.append(
+                RouteSegmentFact(
+                    segment_type=current_type,
+                    start_km=current_start_km,
+                    length_km=current_length_km,
+                )
+            )
+            current_start_km += current_length_km
+            current_type = step_type
+            current_length_km = step_length_km
+
+    # Emit the final (possibly only) segment
+    result.append(
+        RouteSegmentFact(
+            segment_type=current_type,
+            start_km=current_start_km,
+            length_km=current_length_km,
+        )
+    )
+
+    return result
 
 
 # ---------------------------------------------------------------------------
