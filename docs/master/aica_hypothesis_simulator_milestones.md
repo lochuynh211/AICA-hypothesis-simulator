@@ -130,6 +130,14 @@ Make package and scenario contracts real enough to support multiple hypotheses s
   - decision result;
   - trace entry;
   - feedback event.
+- Include schema support for:
+  - package runtime state;
+  - fixed evaluation tick metadata;
+  - category scores;
+  - state-machine state labels;
+  - multi-category trigger candidates;
+  - suppressed candidates;
+  - selected candidate and priority result.
 - Add validation errors visible in frontend.
 - Add second built-in package: weighted-score rest proposal.
 - Add second UC-01 scenario: overtime driver branch.
@@ -157,7 +165,7 @@ Make package and scenario contracts real enough to support multiple hypotheses s
 
 ### Goal
 
-Support Python-authored trigger algorithms as first-class local package algorithms.
+Support Python-authored trigger algorithms as first-class local package algorithms and execute the first transparent hybrid trigger package inside the simulator.
 
 ### Scope
 
@@ -170,6 +178,10 @@ def evaluate(context: dict) -> dict:
 ```
 
 - Add one Python package fixture equivalent to weighted-score rest proposal.
+- Add `aica_transparent_hybrid_trigger_v1` as a trusted local Python package fixture, using the master algorithm result contract.
+- Pass package runtime state into Python evaluation and persist returned runtime state for smoothing, velocity, persistence counters, and state-machine behavior.
+- Support fixed tick evaluation for Python packages that declare `tick_seconds`.
+- Preserve Python-returned features, scores, state labels, candidates, suppressed candidates, selected candidate, priority result, proposal, and explanation in the trace.
 - Validate Python algorithm outputs against standard decision result schema.
 - Catch Python exceptions and invalid returns.
 - Append `algorithm_error` events to run logs.
@@ -184,9 +196,16 @@ def evaluate(context: dict) -> dict:
 
 - A package with `algorithm.py` can be selected and evaluated.
 - Parameter/hyperparameter changes are passed into Python evaluation immediately.
+- The transparent hybrid trigger package can run against at least one UC-01 rest-required scenario.
+- The transparent hybrid package can emit a full trace with features, scores, states, candidates, fire-control, selected proposal, and next runtime state.
+- Suppressed candidates are persisted and visible in the trace.
 - Python output is normalized into the same trace/result shape as other algorithms.
 - Python errors are persisted as evidence and shown in UI.
 - The simulator remains local/trusted-code only; no untrusted upload sandboxing is required.
+
+### Scope Boundary
+
+M3 proves that the simulator can execute and trace the transparent hybrid algorithm. It does not require full UC-03 monotony scenario coverage. Monotony candidate output may be structurally supported in M3, while full monotony-prevention UX review remains M8 unless the project intentionally moves UC-03 earlier.
 
 ---
 
@@ -328,8 +347,10 @@ Scope:
 
 Scope:
 
-- expand beyond rest proposal into non-urgent intervention;
-- validate soft-warning and audio-first engagement bands.
+- expand scenario and UI coverage beyond rest proposal into non-urgent intervention;
+- add at least one monotony-prevention scenario that exercises the transparent hybrid package's monotony category;
+- validate soft-warning and audio-first engagement bands;
+- validate that safety-oriented rest proposals can override active monotony content.
 
 ### M9 — UC-02 Child Passenger Expansion
 
@@ -384,4 +405,3 @@ V1 excludes:
 - production vehicle integration;
 - untrusted Python sandboxing;
 - UC-02, UC-03, and UC-04 full scenario support.
-

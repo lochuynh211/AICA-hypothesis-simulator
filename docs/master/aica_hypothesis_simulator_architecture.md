@@ -387,6 +387,8 @@ A package manifest shall define:
 - algorithm type and entrypoint;
 - fire-control rules;
 - proposal definitions;
+- package runtime state defaults when the algorithm carries state across ticks;
+- trigger category definitions and priority order when the package can emit multiple candidates;
 - feedback schema;
 - evidence metrics.
 
@@ -427,7 +429,7 @@ All algorithms shall pass through one backend adapter contract.
 Standard backend call:
 
 ```text
-evaluate(package, scenario_state, parameters, hyperparameters, history)
+evaluate(package, scenario_state, parameters, hyperparameters, history, package_runtime_state)
 → decision_result
 ```
 
@@ -437,10 +439,53 @@ Standard decision result shape:
 {
   "result_type": "REST_PROPOSAL",
   "trigger_candidate": true,
+  "selected_category": "rest_required",
   "score": 0.78,
+  "features": {
+    "drowsiness_score": 0.74,
+    "fatigue_score": 0.62,
+    "rest_window_score": 0.9
+  },
+  "scores": {
+    "base_safety_risk": 0.58,
+    "rest_required_score": 0.78,
+    "monotony_prevention_score": 0.44
+  },
+  "states": {
+    "rest": "REST_RECOMMEND",
+    "monotony": "MONOTONY_WATCH"
+  },
   "criteria": {
     "risk_threshold": 0.72
   },
+  "candidates": [
+    {
+      "category": "rest_required",
+      "exists": true,
+      "score": 0.78,
+      "state": "REST_RECOMMEND",
+      "strength": "clear",
+      "fire_control": {
+        "fired": true,
+        "suppressed": false,
+        "override": false,
+        "reason": "fire_control_passed"
+      }
+    },
+    {
+      "category": "monotony_prevention",
+      "exists": false,
+      "score": 0.44,
+      "state": "MONOTONY_WATCH",
+      "strength": null,
+      "fire_control": {
+        "fired": false,
+        "suppressed": false,
+        "override": false,
+        "reason": "below_threshold"
+      }
+    }
+  ],
   "fire_control": {
     "suppressed": false,
     "override": false,
@@ -452,9 +497,23 @@ Standard decision result shape:
     "options": ["accept_rest", "postpone"]
   },
   "reason_inputs": ["drowsiness_level", "fatigue_level", "rest_opportunity_score"],
-  "explanation": "Risk score exceeded threshold and a rest spot is reachable."
+  "explanation": "Risk score exceeded threshold and a rest spot is reachable.",
+  "next_package_runtime_state": {
+    "smoothed_scores": {
+      "rest_required_score": 0.73,
+      "monotony_prevention_score": 0.42
+    },
+    "persistence_counters": {
+      "rest_required": 2,
+      "monotony_prevention": 0
+    }
+  }
 }
 ```
+
+For simpler algorithms, `features`, `scores`, `states`, `candidates`, and `next_package_runtime_state` may be empty or omitted when the schema permits it. For hybrid algorithms, these fields are the primary evidence surface and should be preserved in the trace.
+
+Suppressed candidates are normal decision results. A suppressed result shall keep the candidate in `candidates`, set the candidate fire-control `suppressed` flag, and usually return `proposal: null` with `result_type: "SUPPRESSED"`.
 
 For Python packages, the backend imports a package-local module and calls:
 
@@ -466,6 +525,8 @@ def evaluate(context: dict) -> dict:
 The backend validates and normalizes the returned dictionary. Missing fields, invalid values, or exceptions produce an `algorithm_error` event rather than a normal AICA decision.
 
 Python algorithms are treated as local trusted code in V1. They are not untrusted uploads.
+
+Python packages may implement the transparent hybrid trigger pattern: feature extraction, score smoothing, state thresholds, persistence, multi-category candidate generation, fire-control, priority resolution, and bilingual proposal generation. The backend remains generic by passing context in and validating the normalized result out.
 
 ---
 
@@ -560,10 +621,11 @@ This section describes the sequence of runtime interactions.
 5. Backend dispatches to algorithm adapter.
 6. Algorithm adapter calls declarative, weighted-score, or Python algorithm implementation.
 7. Backend validates and normalizes decision result.
-8. Backend appends decision trace entry.
-9. Backend persists updated run log to runs/.
-10. Backend returns decision result and trace entry.
-11. Frontend updates cockpit proposal, timeline marker, and trace panel.
+8. Backend stores returned `next_package_runtime_state` into the run state when present.
+9. Backend appends decision trace entry, including all candidates and suppressed candidates.
+10. Backend persists updated run log to runs/.
+11. Backend returns decision result, trace entry, and updated run state.
+12. Frontend updates cockpit proposal, timeline marker, and trace panel.
 ```
 
 ### 13.4 User Action Sequence
@@ -768,4 +830,3 @@ The following decisions should be handled during milestone/version planning or V
 - whether run logs should be JSON only or JSON plus Markdown export;
 - whether optional map support belongs in V1 or a later milestone;
 - how much logic from the functional skeleton should be reused directly versus rewritten against the new contracts.
-

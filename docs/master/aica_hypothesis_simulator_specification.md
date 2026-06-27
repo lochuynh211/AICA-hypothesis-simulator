@@ -411,6 +411,8 @@ Before playback, a package shall provide enough information for validation.
 | Algorithm | Define or reference the evaluation logic. |
 | Fire control | Define cooldown, suppression, override, and proposal-density behavior. |
 | Proposals | Define AICA messages, options, and allowed state changes. |
+| Runtime state | Define any package-owned state needed across ticks, such as smoothed scores, persistence counters, active content, or last category state. |
+| Candidate categories | Define one or more trigger categories and their priority when multiple candidates are valid. |
 | Labels | Provide display labels in supported languages. |
 | Feedback schema | Define structured review labels and free-text fields. |
 | Metrics schema | Define values recorded in evidence reports and comparison views. |
@@ -427,6 +429,8 @@ Before a package can be used, the simulator shall validate:
 - trigger algorithm reference or definition is available;
 - fire-control rules are defined or explicitly disabled;
 - proposal definitions are valid;
+- runtime state defaults are valid when package-owned state is used;
+- candidate category and priority definitions are valid when the package can emit multiple candidates;
 - required labels are available in at least one supported language;
 - feedback schema is available;
 - evidence metrics are declared.
@@ -550,6 +554,8 @@ The simulator shall support canonical state categories:
 
 Packages may add custom state without changing simulator core workflow.
 
+Package-owned runtime state shall be stored in the run state and passed back to the package on each evaluation. This allows algorithms to implement smoothing, trend detection, persistence counters, state-machine transitions, category cooldown context, and active-content state without making the simulator core algorithm-specific.
+
 ### 10.3 Timeline Events
 
 Timeline events may update state and trigger algorithm evaluation.
@@ -613,6 +619,8 @@ Evaluation points may be:
 - user actions;
 - package-defined decision points.
 
+Packages may declare a preferred fixed evaluation interval, such as a 30-second simulation tick. The simulator shall still preserve scenario-event evaluation and user-action evaluation, but fixed ticks are required for algorithms that depend on smoothing, velocity, or persistence over time.
+
 ### 11.2 Algorithm Input
 
 Algorithm input shall include:
@@ -624,22 +632,27 @@ Algorithm input shall include:
 - route and rest-opportunity state;
 - proposal history;
 - test-user action history;
-- package-specific custom state.
+- package-specific custom state;
+- previous package runtime state when the package uses smoothing, persistence, trend, or state-machine behavior.
 
 ### 11.3 Algorithm Output
 
 Algorithm output shall include:
 
 - trigger candidate status;
-- score, rule result, state-machine state, or equivalent decision basis;
+- result type, such as `NO_PROPOSAL`, `SUPPRESSED`, `REST_PROPOSAL`, `MONOTONY_PROPOSAL`, or a package-defined proposal type;
+- score, rule result, state-machine state, category score, or equivalent decision basis;
 - threshold or criteria used when applicable;
+- all generated candidates when the package evaluates more than one category;
+- selected candidate or selected proposal category when one candidate wins priority resolution;
 - fire-control status;
 - suppression status;
 - override status;
 - selected proposal category when fired;
 - proposal message and options when fired;
 - explanation data for the trace;
-- references to parameter, feature, and hyperparameter values used in the decision.
+- references to parameter, feature, and hyperparameter values used in the decision;
+- next package runtime state when the package owns state across ticks.
 
 ### 11.4 Required Algorithm Styles For V1
 
@@ -651,7 +664,12 @@ V1 shall support at least:
 2. **Weighted scoring algorithm**
    - Example: calculate risk from fatigue, drowsiness, route condition, and rest opportunity.
 
-Future versions may support state machines, optimization models, machine-learning models, or external algorithm plugins.
+3. **Trusted local Python module algorithm**
+   - Example: execute a package-local `evaluate(context: dict) -> dict` function inside the backend container.
+
+V1 algorithm output shall be rich enough to support hybrid transparent algorithms that combine feature extraction, weighted scores, state thresholds, persistence, fire-control, and priority resolution. The simulator does not need to understand every internal formula, but it must validate and record the returned trace fields.
+
+Future versions may support optimization models, machine-learning models, or external algorithm plugins.
 
 ### 11.5 Fire-Control Requirements
 
@@ -696,10 +714,14 @@ Each decision trace entry shall include:
 - feature values calculated;
 - hyperparameter values used;
 - trigger candidate result;
-- score, rule result, or equivalent decision basis;
+- result type;
+- score, category scores, rule result, state-machine state, or equivalent decision basis;
+- candidate list when multiple trigger categories are evaluated;
+- selected candidate when priority resolution chooses one;
 - threshold or criteria comparison when applicable;
 - fire-control result;
 - suppression or override state;
+- package runtime state summary when relevant to smoothing, trend, persistence, or cooldown behavior;
 - proposal result;
 - explanation text;
 - test-user action after the decision when applicable.
