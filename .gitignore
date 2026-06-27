@@ -1,0 +1,28 @@
+.agents/
+.specify/
+.worktrees/
+AGENTS.md
+
+.claude/
+CLAUDE.md
+
+.codex/
+.superpowers/
+.venv/
+*.egg-info/
+__pycache__/
+*.pyc
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+artifacts/
+.understand-anything/
+
+# Local secrets / live-adapter credentials (never commit)
+.env
+.env.local
+
+# BYO-key runtime placeholders for networked-surface targets (never commit a key)
+*.local.js
+key.local.js
