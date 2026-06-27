@@ -23,8 +23,8 @@ runnable, testable foundation that every later milestone builds on.
 ### User Story 1 - Start the application and see it is alive (Priority: P1)
 
 A developer clones the repository and starts the whole application with a single
-command. A browser page opens showing an application shell that reports whether
-the backend is reachable and healthy.
+command, then opens the served page in a browser. The page shows an application
+shell that reports whether the backend is reachable and healthy.
 
 **Why this priority**: This is the core proof that the foundation exists and the
 two halves of the system (frontend shell + backend service) are wired together.
