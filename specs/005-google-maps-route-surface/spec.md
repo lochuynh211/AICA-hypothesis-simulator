@@ -34,6 +34,22 @@ Authoritative design:
 `docs/superpowers/specs/2026-06-27-m4-google-maps-route-surface-design.md`. Master scope:
 milestones §6 (M4), runtime workflow §3.3–3.4 + §11.1, architecture §6.3.
 
+## Clarifications
+
+### Session 2026-06-27
+
+- Q: How does the reviewer enter the start and end for a Maps route? → A: Free-text place
+  names / addresses, geocoded directly by the route service; the resolved endpoints are
+  frozen into the run log for reproducibility.
+- Q: When no rest stops are found along the route (or the rest-stop lookup fails), how
+  should the simulator behave? → A: Do NOT fabricate rest stops. The route facts carry an
+  honest empty rest list (surfaced as a notice), so the trigger recognizes the rest need
+  but, with no reachable rest target, yields its existing non-actionable
+  `NO_PRACTICAL_ACTION_FALLBACK` alert — which does not pause the run — and the drive
+  continues.
+- Q: How many route alternatives should the reviewer be offered? → A: Up to 3 (whatever
+  the route service returns, capped at 3).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Review an algorithm over a real Google Maps route (Priority: P1)
@@ -104,9 +120,10 @@ without route facts, and that no run log/response/saved file ever contains the k
 1. **Given** the route service fails, **When** the reviewer requests a route, **Then** an
    error is shown, retry is offered, the local-route fallback is offered, and no run can
    start without route facts.
-2. **Given** the rest-stop service fails but a route exists, **When** the route facts are
-   built, **Then** the simulator degrades to deterministic substitute rest stops (a
-   surfaced notice), so the rest trigger still has actionable targets.
+2. **Given** the rest-stop service fails or finds nothing along a valid route, **When**
+   the route facts are built, **Then** no rest stops are fabricated — the rest list is
+   honestly empty (a surfaced notice) and the trigger yields its non-actionable
+   `NO_PRACTICAL_ACTION_FALLBACK` alert (no pause), so the drive continues.
 3. **Given** any real-route interaction, **When** the run log, any API response, and any
    saved file are inspected, **Then** the map key never appears in any of them.
 
@@ -116,8 +133,10 @@ without route facts, and that no run log/response/saved file ever contains the k
 
 - **Key present but route service unreachable / invalid key**: surfaced error, retry, and
   local-route fallback; never start a run without route facts (master §11.1).
-- **Rest-stop lookup returns nothing along the route**: deterministic substitute rest
-  stops are used so `nextRestSpotMin` remains meaningful; the substitution is surfaced.
+- **Rest-stop lookup returns nothing along the route**: no rest stops are fabricated;
+  `nextRestSpotMin` is "none", so the trigger yields its non-actionable
+  `NO_PRACTICAL_ACTION_FALLBACK` alert (not a pause) and the drive continues; the absence
+  is surfaced as a notice.
 - **Replay / refresh after a real-route run**: the run replays from frozen route facts
   and the saved display snapshot — the map service is never re-contacted, and the result
   is identical.
@@ -138,10 +157,12 @@ without route facts, and that no run log/response/saved file ever contains the k
   any run log, any persisted file, any API response body, or any application log, and MUST
   NOT be exported. It is used only for the live map display and for the per-request route
   derivation, and is discarded immediately after use.
-- **FR-003**: The reviewer MUST be able to enter a start and an end at runtime; the system
-  MUST offer one or more route alternatives, each carrying its own derived route facts
-  (total distance, segment types, rest-stop positions, progress checkpoints) and a
-  drawable route. The reviewer selects one alternative for the run.
+- **FR-003**: The reviewer MUST be able to enter a start and an end at runtime as
+  **free-text place names / addresses** (geocoded directly by the route service); the
+  system MUST offer **up to 3** route alternatives, each carrying its own derived route
+  facts (total distance, segment types, rest-stop positions, progress checkpoints) and a
+  drawable route. The reviewer selects one alternative for the run; the resolved endpoints
+  and the chosen route are frozen into the run log.
 - **FR-004**: Rest-stop positions for a real route MUST be derived from real points of
   interest along the route, classified by road context (a highway service/parking area
   when on a highway; otherwise the nearest convenience store), and frozen with the route
@@ -163,8 +184,11 @@ without route facts, and that no run log/response/saved file ever contains the k
   geometry.
 - **FR-008**: If the route service cannot return a route, the system MUST show an error,
   allow retry, allow the local-route fallback, and MUST NOT start a run without route
-  facts. If the rest-stop service fails, the system MUST degrade to deterministic
-  substitute rest stops and surface that substitution.
+  facts. If the rest-stop lookup fails or finds no rest stops along the route, the system
+  MUST NOT fabricate rest stops: the route facts carry an **honest empty rest list**
+  (surfaced as a notice), so the trigger recognizes the rest need but, with no reachable
+  rest target, yields its existing non-actionable `NO_PRACTICAL_ACTION_FALLBACK` alert
+  (which does not pause the run) and the drive continues.
 - **FR-009**: During playback of a real-route run, the map MUST display the car, progress,
   and decision (proposal) markers positioned from the run's deterministic per-tick
   progress.
@@ -216,6 +240,8 @@ without route facts, and that no run log/response/saved file ever contains the k
   backend + React/Vite frontend, file-based data, the M2 route-facts → frozen plan → tick
   engine → raw_state + feature_groups pipeline. This spec states *what*; the ADR/plan own
   *how* (backend-proxied route derivation, the in-browser interactive map, the freezing).
+- **Start/end are free-text addresses** geocoded by the route service (no separate
+  geocoding step); up to **3** route alternatives are offered.
 - **One reviewer, one key at a time**; no saved keys, no multi-key, no route
   editing/drawing, no offline map tiles — deferred to later milestones.
 - **V1 segment classification** prioritizes highway and normal_road; mountain/sightseeing
