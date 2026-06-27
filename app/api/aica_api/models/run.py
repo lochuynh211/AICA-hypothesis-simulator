@@ -246,3 +246,6 @@ class RunState(BaseModel):
     # Audit trail for expert overrides
     original_values: dict[str, Any] = {}
     modified_values: dict[str, Any] = {}
+
+    # Scenario-level allowed actions (copied from scenario at run creation)
+    allowed_actions: list[str] = []

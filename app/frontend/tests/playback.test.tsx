@@ -270,6 +270,67 @@ describe('CockpitView', () => {
       expect(client.actRun).toHaveBeenCalledWith('run-test-001', 'accept_rest')
     })
   })
+
+  it('(f) shows Decline button when "decline" is in allowed_actions', async () => {
+    const runWithDecline: RunState = { ...pausedRun, allowed_actions: ['accept_rest', 'postpone', 'decline'] }
+
+    renderInStore(<CockpitView />, (dispatch) => {
+      dispatch({ type: 'RUN_CREATED', runState: runWithDecline })
+      dispatch({
+        type: 'TICK_APPENDED',
+        runState: runWithDecline,
+        decision: restProposalDecision,
+        tickIndex: 5,
+        paused: true,
+        completed: false,
+      })
+    })
+
+    await screen.findByTestId('proposal-overlay')
+    expect(screen.getByRole('button', { name: /decline/i })).toBeInTheDocument()
+  })
+
+  it('(g) Decline button is absent when "decline" not in allowed_actions', async () => {
+    renderInStore(<CockpitView />, (dispatch) => {
+      dispatch({ type: 'RUN_CREATED', runState: pausedRun })
+      dispatch({
+        type: 'TICK_APPENDED',
+        runState: pausedRun,
+        decision: restProposalDecision,
+        tickIndex: 5,
+        paused: true,
+        completed: false,
+      })
+    })
+
+    await screen.findByTestId('proposal-overlay')
+    expect(screen.queryByRole('button', { name: /decline/i })).not.toBeInTheDocument()
+  })
+
+  it('(h) Decline button calls actRun with "decline"', async () => {
+    const runWithDecline: RunState = { ...pausedRun, allowed_actions: ['accept_rest', 'postpone', 'decline'] }
+    const resumedRun: RunState = { ...runWithDecline, status: 'playing', pending_proposal: null }
+    vi.mocked(client.actRun).mockResolvedValue(resumedRun)
+
+    renderInStore(<CockpitView />, (dispatch) => {
+      dispatch({ type: 'RUN_CREATED', runState: runWithDecline })
+      dispatch({
+        type: 'TICK_APPENDED',
+        runState: runWithDecline,
+        decision: restProposalDecision,
+        tickIndex: 5,
+        paused: true,
+        completed: false,
+      })
+    })
+
+    const declineButton = await screen.findByRole('button', { name: /decline/i })
+    fireEvent.click(declineButton)
+
+    await waitFor(() => {
+      expect(client.actRun).toHaveBeenCalledWith('run-test-001', 'decline')
+    })
+  })
 })
 
 describe('RouteTimeline — FR-016 display-only animation', () => {

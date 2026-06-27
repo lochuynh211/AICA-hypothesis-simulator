@@ -1,0 +1,166 @@
+{
+  "_comment": [
+    "Scenario: UC-01-02 fatigue/drowsiness — overtime night/solo/rest-resistant driver (M2).",
+    "",
+    "UC-01-02 persona B: early-30s male, solo, driving home late after overtime.",
+    "High rest-resistance; wants to get home fast. Proposed action: convenience-store micro-rest.",
+    "",
+    "Profile rates on normal_road at night:",
+    "  drowsiness: base=2.0 + night=0.5 + monotony=0.5 = 3.0/min",
+    "  fatigue:    base=2.0/min (exhausted after overtime)",
+    "  initial:    drowsiness=0 (none), fatigue=60 (high)",
+    "",
+    "Proposal timeline (tick_seconds=60, 60kph on normal_road -> 1km/tick):",
+    "  Ticks 0-5:  drowsiness < 20 (none) -> NO_TRIGGER",
+    "  Tick 6:     drowsiness=21 (weak), above_weak=1 (brief) -> SOFT_WARNING",
+    "  Ticks 7-14: weak->moderate, above_weak 2-9 (sustained) -> SOFT_WARNING",
+    "  Tick 15:    drowsiness=48 (moderate), above_weak=10 (persistent)",
+    "              declarative_rule: blend=1.9, damped=3.1 >= 3.0 -> REST_PROPOSAL",
+    "              weighted_score:   rest_required=0.632 >= 0.62 -> REST_PROPOSAL (gentle)",
+    "              rest spot at 16.5km, distance=16km -> 0.5min ahead -> near",
+    "  Tick 16+:   distance=17km > 16.5km rest -> rest_spot_eta=none -> no further proposal",
+    "  Tick 39:    distance=40km -> completed",
+    "",
+    "Exactly ONE REST_PROPOSAL for both packages; decline -> playing -> completed at route end.",
+    "No further proposal (rest spot passed after tick 15)."
+  ],
+  "id": "uc01_overtime_driver_v0_1",
+  "version": "0.1.0",
+  "type": "uc01_fatigue",
+  "persona": {
+    "name": "B",
+    "description": "Early-30s male, driving home alone after late-night overtime. Head feels tired and foggy. Wants to get home quickly to rest and see family; perceives rest stops as time loss."
+  },
+  "route_intent": {
+    "rest_facility": {
+      "label": {
+        "ja": "コンビニ（ルート沿い）",
+        "en": "Convenience Store (on route)"
+      }
+    },
+    "segments": [
+      {
+        "id": "seg_start",
+        "name": {"ja": "出発地（オフィス）", "en": "Start (Office Building)"},
+        "type": "start",
+        "at": 0.0,
+        "speed_band": "slow",
+        "length_band": "short",
+        "is_rest_facility": false
+      },
+      {
+        "id": "seg_urban",
+        "name": {"ja": "市街地", "en": "Urban Zone"},
+        "type": "urban",
+        "at": 0.1,
+        "speed_band": "medium",
+        "length_band": "medium",
+        "is_rest_facility": false
+      },
+      {
+        "id": "seg_convenience",
+        "name": {"ja": "コンビニ（ルート沿い）", "en": "Convenience Store (on route)"},
+        "type": "rest",
+        "at": 0.4125,
+        "speed_band": "slow",
+        "length_band": "short",
+        "is_rest_facility": true
+      },
+      {
+        "id": "seg_residential",
+        "name": {"ja": "住宅街", "en": "Residential Area"},
+        "type": "residential",
+        "at": 0.45,
+        "speed_band": "medium",
+        "length_band": "long",
+        "is_rest_facility": false
+      },
+      {
+        "id": "seg_end",
+        "name": {"ja": "自宅", "en": "Home"},
+        "type": "end",
+        "at": 1.0,
+        "speed_band": "slow",
+        "length_band": "short",
+        "is_rest_facility": false
+      }
+    ]
+  },
+  "initial_state": {
+    "drowsiness_level": "none",
+    "fatigue_level": "high"
+  },
+  "driver_profile": {
+    "id": "overtime_driver_v1",
+    "drowsiness_model": {
+      "base_growth_per_min": 2.0,
+      "night_add_per_min": 0.5,
+      "monotony_add_per_min": 0.5,
+      "traffic_jam_add_per_min": 0.2
+    },
+    "fatigue_model": {
+      "base_growth_per_min": 2.0,
+      "continuous_driving_add_per_min_after_60_min": 0.3,
+      "mountain_road_add_per_min": 0.3,
+      "traffic_jam_add_per_min": 0.1
+    },
+    "attention_model": {
+      "base_recovery_per_min": 0.05,
+      "monotony_drop_per_min": 0.20,
+      "drowsiness_drop_factor": 0.4,
+      "active_content_recovery_per_min": 0.3
+    },
+    "recovery_model": {
+      "short_rest_drowsiness_recovery": 15.0,
+      "short_rest_fatigue_recovery": 10.0,
+      "long_rest_drowsiness_recovery": 30.0,
+      "long_rest_fatigue_recovery": 25.0
+    }
+  },
+  "vehicle_profile": {
+    "rolling_window_seconds": 300,
+    "steering_instability": {
+      "base_level": 10.0,
+      "drowsiness_factor": 0.40,
+      "fatigue_factor": 0.30,
+      "mountain_road_add": 10.0,
+      "traffic_jam_reduce": 3.0
+    },
+    "lane_departure": {
+      "enabled_on": ["highway", "normal_road"],
+      "drowsiness_threshold": 50.0,
+      "fatigue_threshold": 65.0,
+      "count_when_threshold_exceeded": 1
+    },
+    "pedal_abnormality": {
+      "base_level": 5.0,
+      "fatigue_factor": 0.15,
+      "traffic_jam_add": 10.0,
+      "mountain_road_add": 5.0
+    },
+    "adas_warning": {
+      "lane_departure_warning_threshold": 1.0,
+      "steering_instability_warning_threshold": 55.0
+    }
+  },
+  "speed_profile": {
+    "normal_road_kph": 60,
+    "highway_kph": 100,
+    "mountain_road_kph": 40,
+    "sightseeing_road_kph": 30,
+    "traffic_jam_kph": 20
+  },
+  "is_night": true,
+  "presets": {
+    "total_route_distance_km": 40,
+    "traffic_events": [],
+    "weather_events": []
+  },
+  "event_presets": {
+    "signal_duration_at_trigger": "persistent"
+  },
+  "total_duration_seconds": 2400,
+  "tick_seconds": 60,
+  "allowed_actions": ["accept_rest", "postpone", "decline"],
+  "review_focus": "UC-01-02 overnight solo driver (M2): verify profile-driven drowsiness+fatigue fires exactly ONE micro-rest REST_PROPOSAL (gentle/clear) at tick 15, that decline is recorded and the run continues to completion at tick 39 with no further proposal (rest spot passes at tick 16)."
+}

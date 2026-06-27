@@ -31,6 +31,8 @@ from aica_api.services.run_plan import clear_draft_registry, create_draft
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
 _SCENARIO_PATH = _REPO_ROOT / "scenarios" / "uc01_fatigue_friend_drive_v0_1.json"
 _PACKAGE_PATH = _REPO_ROOT / "packages" / "rest_rule_based_v0_1" / "package.json"
+_OVERTIME_SCENARIO_PATH = _REPO_ROOT / "scenarios" / "uc01_overtime_driver_v0_1.json"
+_WEIGHTED_PACKAGE_PATH = _REPO_ROOT / "packages" / "rest_weighted_score_v0_1" / "package.json"
 
 
 # ---------------------------------------------------------------------------
@@ -57,6 +59,18 @@ def uc01_scenario() -> ScenarioDef:
 @pytest.fixture
 def uc01_package() -> PackageManifest:
     data = json.loads(_PACKAGE_PATH.read_text(encoding="utf-8"))
+    return PackageManifest(**data)
+
+
+@pytest.fixture
+def overtime_scenario() -> ScenarioDef:
+    data = json.loads(_OVERTIME_SCENARIO_PATH.read_text(encoding="utf-8"))
+    return ScenarioDef(**data)
+
+
+@pytest.fixture
+def weighted_package() -> PackageManifest:
+    data = json.loads(_WEIGHTED_PACKAGE_PATH.read_text(encoding="utf-8"))
     return PackageManifest(**data)
 
 
@@ -537,3 +551,121 @@ def test_suppressed_candidate_persists_to_disk(tmp_path, uc01_package, uc01_scen
         "fire_control.suppressed must be True in the persisted log (FR-008)"
     )
     assert persisted_fc["fired"] is False
+
+
+# ---------------------------------------------------------------------------
+# T025 — overtime scenario parses and fires exactly one REST_PROPOSAL
+# ---------------------------------------------------------------------------
+
+
+def test_overtime_scenario_parses(overtime_scenario):
+    """T025: scenario file parses as a valid ScenarioDef."""
+    assert overtime_scenario.id == "uc01_overtime_driver_v0_1"
+    assert overtime_scenario.type == "uc01_fatigue"
+    assert overtime_scenario.is_night is True
+    assert "decline" in overtime_scenario.allowed_actions
+
+
+def test_overtime_scenario_fires_one_proposal_rule_package(
+    tmp_path, uc01_package, overtime_scenario
+):
+    """T025: rule package fires exactly one REST_PROPOSAL on overtime scenario."""
+    _plan_and_run(uc01_package, overtime_scenario, "run_ot_rule", tmp_path)
+    n_ticks = overtime_scenario.total_duration_seconds // overtime_scenario.tick_seconds
+    rest_proposals = 0
+    for _ in range(n_ticks + 5):
+        outcome = tick("run_ot_rule")
+        if outcome.decision and outcome.decision.result_type == ResultType.REST_PROPOSAL:
+            rest_proposals += 1
+        if outcome.paused:
+            action("run_ot_rule", "decline")
+        if outcome.completed:
+            break
+    assert rest_proposals == 1
+
+
+def test_overtime_scenario_fires_one_proposal_weighted_package(
+    tmp_path, weighted_package, overtime_scenario
+):
+    """T025: weighted package fires exactly one REST_PROPOSAL on overtime scenario."""
+    _plan_and_run(weighted_package, overtime_scenario, "run_ot_ws", tmp_path)
+    n_ticks = overtime_scenario.total_duration_seconds // overtime_scenario.tick_seconds
+    rest_proposals = 0
+    for _ in range(n_ticks + 5):
+        outcome = tick("run_ot_ws")
+        if outcome.decision and outcome.decision.result_type == ResultType.REST_PROPOSAL:
+            rest_proposals += 1
+        if outcome.paused:
+            action("run_ot_ws", "decline")
+        if outcome.completed:
+            break
+    assert rest_proposals == 1
+
+
+# ---------------------------------------------------------------------------
+# T026 — decline action
+# ---------------------------------------------------------------------------
+
+
+def test_action_decline_resumes_run(tmp_path, uc01_package, overtime_scenario):
+    """decline while paused resumes the run (status -> playing)."""
+    _plan_and_run(uc01_package, overtime_scenario, "run_decline", tmp_path)
+    _tick_to_proposal("run_decline", uc01_package, overtime_scenario)
+
+    state_after = action("run_decline", "decline")
+    assert state_after.status == RunStatus.playing
+    assert state_after.pending_proposal is None
+
+
+def test_action_decline_appends_action_event(tmp_path, uc01_package, overtime_scenario):
+    """decline is persisted as an ActionEvent with action='decline' and resulting_status='playing'."""
+    _plan_and_run(uc01_package, overtime_scenario, "run_decline_log", tmp_path)
+    _tick_to_proposal("run_decline_log", uc01_package, overtime_scenario)
+
+    action("run_decline_log", "decline")
+
+    data = json.loads((tmp_path / "run_decline_log.json").read_text(encoding="utf-8"))
+    action_events = [e for e in data["events"] if e["kind"] == "action"]
+    assert len(action_events) == 1
+    assert action_events[0]["action"] == "decline"
+    assert action_events[0]["resulting_status"] == "playing"
+
+
+def test_decline_then_no_further_proposal(tmp_path, uc01_package, overtime_scenario):
+    """After decline, the run completes at route end with no further REST_PROPOSAL."""
+    _plan_and_run(uc01_package, overtime_scenario, "run_no_reprop", tmp_path)
+    n_ticks = overtime_scenario.total_duration_seconds // overtime_scenario.tick_seconds
+
+    declined = False
+    rest_proposals = 0
+    for _ in range(n_ticks + 5):
+        outcome = tick("run_no_reprop")
+        if outcome.decision and outcome.decision.result_type == ResultType.REST_PROPOSAL:
+            rest_proposals += 1
+        if outcome.paused and not declined:
+            action("run_no_reprop", "decline")
+            declined = True
+        if outcome.completed:
+            break
+
+    from aica_api.services.run_manager import get_run
+    final_state = get_run("run_no_reprop")
+    assert declined is True
+    assert rest_proposals == 1
+    assert final_state.status == RunStatus.completed
+
+
+def test_decline_rejected_when_not_in_allowed_actions(tmp_path, uc01_package, uc01_scenario):
+    """decline is rejected (ActionNotAllowedError) when not in scenario.allowed_actions."""
+    _plan_and_run(uc01_package, uc01_scenario, "run_no_decline", tmp_path)
+    _tick_to_proposal("run_no_decline", uc01_package, uc01_scenario)
+
+    with pytest.raises(ActionNotAllowedError):
+        action("run_no_decline", "decline")
+
+
+def test_run_state_has_allowed_actions(tmp_path, uc01_package, overtime_scenario):
+    """RunState exposes allowed_actions from the scenario."""
+    state = _plan_and_run(uc01_package, overtime_scenario, "run_allowed", tmp_path)
+    assert "decline" in state.allowed_actions
+    assert "accept_rest" in state.allowed_actions

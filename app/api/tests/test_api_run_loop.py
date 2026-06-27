@@ -23,6 +23,7 @@ from aica_api.services.run_plan import clear_draft_registry
 
 VALID_PACKAGE_ID = "rest_rule_based_v0_1"
 VALID_SCENARIO_ID = "uc01_fatigue_friend_drive_v0_1"
+OVERTIME_SCENARIO_ID = "uc01_overtime_driver_v0_1"
 
 # Safety cap: the fixture scenario has 120 ticks total; 200 is generous.
 _MAX_TICKS = 200
@@ -262,3 +263,104 @@ def test_tick_past_end_is_idempotent(client):
     assert body1["run_state"]["current_tick"] == body2["run_state"]["current_tick"], (
         "current_tick must not advance once the run is completed"
     )
+
+
+# ── Helpers for overtime tests ────────────────────────────────────────────────
+
+
+def _create_overtime_run(client: TestClient) -> str:
+    """Create a run with the overtime scenario + rule package."""
+    plan_resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": VALID_PACKAGE_ID,
+            "scenario_id": OVERTIME_SCENARIO_ID,
+            "parameters": {},
+            "hyperparameters": {},
+            "run_mode": "standard",
+        },
+    )
+    assert plan_resp.status_code == 201, f"Plan creation failed: {plan_resp.json()}"
+    plan_id = plan_resp.json()["plan_id"]
+
+    resp = client.post("/api/runs", json={"plan_id": plan_id})
+    assert resp.status_code == 201, f"Run creation failed: {resp.json()}"
+    return resp.json()["run_id"]
+
+
+def _tick_to_completion(client: TestClient, run_id: str, max_ticks: int = 200) -> list[dict]:
+    """Tick until completed. Returns all tick response bodies."""
+    bodies = []
+    for _ in range(max_ticks):
+        resp = client.post(f"/api/runs/{run_id}/tick")
+        assert resp.status_code == 200
+        body = resp.json()
+        bodies.append(body)
+        if body.get("completed"):
+            return bodies
+    pytest.fail(f"Run {run_id!r} did not complete within {max_ticks} ticks.")
+
+
+# ── Test T028: overtime decline e2e ──────────────────────────────────────────
+
+
+def test_overtime_decline_loop(client):
+    """T028: overtime scenario — tick to proposal → decline → tick to end → completed.
+
+    Verifies:
+    - Exactly one REST_PROPOSAL in the run
+    - Decline is recorded in the log with resulting_status='playing'
+    - Run completes at route end (status=completed)
+    - No further REST_PROPOSAL after decline
+    """
+    run_id = _create_overtime_run(client)
+
+    # Tick until first proposal
+    all_pre, paused_body = _tick_until_paused(client, run_id)
+
+    decision = paused_body["decision"]
+    assert decision is not None
+    assert decision["result_type"] == "REST_PROPOSAL"
+
+    # Decline the proposal
+    decline_resp = client.post(
+        f"/api/runs/{run_id}/actions",
+        json={"action": "decline"},
+    )
+    assert decline_resp.status_code == 200
+    resumed_state = decline_resp.json()
+    assert resumed_state["status"] == "playing"
+    assert resumed_state["pending_proposal"] is None
+
+    # Tick to completion — no further pause expected
+    post_decline_bodies = _tick_to_completion(client, run_id)
+
+    # Must not pause again (no second proposal)
+    second_pauses = [b for b in post_decline_bodies if b.get("paused") is True]
+    assert len(second_pauses) == 0, (
+        f"Run paused again after decline — no further proposal expected; "
+        f"got {len(second_pauses)} pause(s)"
+    )
+
+    # Final state must be completed
+    assert post_decline_bodies[-1].get("completed") is True
+
+    # Verify log: exactly one REST_PROPOSAL, one decline action event
+    log_resp = client.get(f"/api/runs/{run_id}/log")
+    assert log_resp.status_code == 200
+    log = log_resp.json()
+
+    tick_events = [e for e in log["events"] if e.get("kind") == "tick"]
+    action_events = [e for e in log["events"] if e.get("kind") == "action"]
+
+    rest_proposals = [
+        e for e in tick_events
+        if e.get("trace", {}).get("decision_result", {}).get("result_type") == "REST_PROPOSAL"
+    ]
+    assert len(rest_proposals) == 1, (
+        f"Expected exactly 1 REST_PROPOSAL in log, got {len(rest_proposals)}"
+    )
+
+    assert len(action_events) == 1
+    assert action_events[0]["action"] == "decline"
+    assert action_events[0]["resulting_status"] == "playing"

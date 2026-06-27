@@ -7,9 +7,10 @@ type Props = {
   runId: string
   reasonInputs: string[]
   explanation: string
+  allowedActions?: string[]
 }
 
-export default function ProposalPanel({ proposal, runId, reasonInputs, explanation }: Props) {
+export default function ProposalPanel({ proposal, runId, reasonInputs, explanation, allowedActions = [] }: Props) {
   const { dispatch } = useRunStore()
 
   async function handleAction(action: string) {
@@ -34,6 +35,9 @@ export default function ProposalPanel({ proposal, runId, reasonInputs, explanati
       <div style={{ display: 'flex', gap: '8px' }}>
         <button onClick={() => handleAction('accept_rest')}>Accept rest</button>
         <button onClick={() => handleAction('postpone')}>Postpone</button>
+        {allowedActions.includes('decline') && (
+          <button onClick={() => handleAction('decline')}>Decline</button>
+        )}
       </div>
     </div>
   )

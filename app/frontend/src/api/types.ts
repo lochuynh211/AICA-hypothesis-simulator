@@ -172,6 +172,7 @@ export type RunState = {
   snapshot: Snapshot
   event_plan: unknown
   route_facts: unknown
+  allowed_actions?: string[]
 }
 
 export type RunSummary = {

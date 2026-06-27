@@ -12,6 +12,7 @@ export default function CockpitView() {
         runId={runState.run_id}
         reasonInputs={latestDecision.reason_inputs}
         explanation={latestDecision.explanation}
+        allowedActions={runState.allowed_actions ?? []}
       />
     )
   }

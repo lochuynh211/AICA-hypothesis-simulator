@@ -264,6 +264,7 @@ def create_run(
         current_hyperparameters=effective_hps.copy(),
         original_values=original_values,
         modified_values=modified_values,
+        allowed_actions=list(scenario.allowed_actions),
     )
 
     # Initial RunLog
