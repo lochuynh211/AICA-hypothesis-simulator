@@ -277,3 +277,10 @@ button[style*="width:100%"]:disabled {
   background: #444;
   border-radius: 3px;
 }
+
+/* ── Setup panel (M2: package/scenario selectors, param editors, plan preview) ── */
+.setup-panel { display: flex; flex-direction: column; gap: 0.75rem; }
+.setup-field { display: flex; flex-direction: column; gap: 0.25rem; }
+.setup-field label { font-size: 0.8rem; font-weight: 600; }
+.plan-preview { border: 1px solid #ccc; border-radius: 4px; padding: 0.5rem; font-size: 0.85rem; }
+.setup-error { color: #b00020; font-size: 0.85rem; }
