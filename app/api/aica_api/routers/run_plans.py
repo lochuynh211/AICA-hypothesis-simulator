@@ -141,9 +141,11 @@ def create_run_plan_endpoint(body: CreateRunPlanBody):
                 ),
             )
 
-    # Coerce raw dicts to Pydantic models for type safety
+    # Coerce raw dicts to Pydantic models for type safety.
+    # For the local path, discard any client-supplied route_facts / display_route —
+    # local analysis is used exclusively and the client-supplied values are ignored.
     route_facts = _coerce_route_facts(body.route_facts) if body.route_source == "maps" else None
-    display_route = _coerce_display_route(body.display_route)
+    display_route = _coerce_display_route(body.display_route) if body.route_source == "maps" else None
 
     plan_id = _make_plan_id()
     draft = create_draft(

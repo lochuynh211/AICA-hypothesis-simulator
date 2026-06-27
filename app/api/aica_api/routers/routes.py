@@ -38,10 +38,12 @@ class AnalyzeRouteBody(BaseModel):
 def _derive_context(raw_route: dict[str, Any]) -> dict[str, str]:
     """Return route_type context for places_rest_stops.
 
-    "highway" if any segment has road_class == "HIGHWAY", else "local".
+    Returns ``{"route_type": "highway"}`` if any segment has road_class == "HIGHWAY",
+    else ``{"route_type": "urban"}`` — matching the vocabulary expected by
+    ``maps_client.places_rest_stops`` (``"highway" | "urban" | ...``).
     """
     segments = raw_route.get("segments", [])
-    route_type = "highway" if any(s.get("road_class") == "HIGHWAY" for s in segments) else "local"
+    route_type = "highway" if any(s.get("road_class") == "HIGHWAY" for s in segments) else "urban"
     return {"route_type": route_type}
 
 

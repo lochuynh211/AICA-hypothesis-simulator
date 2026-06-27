@@ -338,7 +338,8 @@ def create_draft(
     validation_errors = _validate_edits(package, parameters, hyperparameters)
 
     if validation_errors:
-        # Return draft with errors but do NOT register it
+        # Return draft with errors but do NOT register it.
+        # Error-path drafts always use local analysis and no display route.
         return RunPlanDraft(
             plan_id=plan_id,
             package_id=package.id,
@@ -346,6 +347,8 @@ def create_draft(
             route_facts=route_facts if route_facts is not None else analyze_route(scenario),
             effective_setup={},
             validation_errors=validation_errors,
+            route_source="local",
+            display_route=None,
         )
 
     # Build the draft (pure, deterministic)
@@ -369,6 +372,7 @@ def create_draft(
             "field": "event_plan",
             "message": f"Failed to build event plan: {exc}",
         }]
+        # Error-path drafts always use local analysis and no display route.
         return RunPlanDraft(
             plan_id=plan_id,
             package_id=package.id,
@@ -376,6 +380,8 @@ def create_draft(
             route_facts=route_facts if route_facts is not None else analyze_route(scenario),
             effective_setup={},
             validation_errors=plan_error,
+            route_source="local",
+            display_route=None,
         )
 
     # Register the draft (with the full package + scenario for create_run)
@@ -415,6 +421,7 @@ def regenerate_draft(
     # Re-run full create_draft logic (validate + build)
     validation_errors = _validate_edits(package, parameters, hyperparameters)
     if validation_errors:
+        # Error-path drafts always use local analysis and no display route.
         return RunPlanDraft(
             plan_id=plan_id,
             package_id=package.id,
@@ -422,6 +429,8 @@ def regenerate_draft(
             route_facts=analyze_route(scenario),
             effective_setup={},
             validation_errors=validation_errors,
+            route_source="local",
+            display_route=None,
         )
 
     # Extract run_mode from the existing draft's effective_setup
@@ -443,6 +452,7 @@ def regenerate_draft(
             "field": "event_plan",
             "message": f"Failed to build event plan: {exc}",
         }]
+        # Error-path drafts always use local analysis and no display route.
         return RunPlanDraft(
             plan_id=plan_id,
             package_id=package.id,
@@ -450,6 +460,8 @@ def regenerate_draft(
             route_facts=analyze_route(scenario),
             effective_setup={},
             validation_errors=plan_error,
+            route_source="local",
+            display_route=None,
         )
 
     # Update registry

@@ -1,0 +1,35 @@
+{
+  "status": "OK",
+  "geocoded_waypoints": [
+    {"geocoder_status": "OK", "place_id": "start_place_id", "types": ["route"]},
+    {"geocoder_status": "OK", "place_id": "end_place_id", "types": ["route"]}
+  ],
+  "routes": [
+    {
+      "summary": "via Main St",
+      "overview_polyline": {"points": "mzneFnpyjVsAxBuBfC"},
+      "legs": [
+        {
+          "distance": {"value": 20000, "text": "20 km"},
+          "duration": {"value": 1200, "text": "20 mins"},
+          "start_address": "Town A",
+          "end_address": "Town B",
+          "steps": [
+            {
+              "distance": {"value": 10000},
+              "maneuver": "straight",
+              "travel_mode": "DRIVING",
+              "html_instructions": "Head north on Main St"
+            },
+            {
+              "distance": {"value": 10000},
+              "maneuver": "turn-right",
+              "travel_mode": "DRIVING",
+              "html_instructions": "Turn right onto Broadway"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
