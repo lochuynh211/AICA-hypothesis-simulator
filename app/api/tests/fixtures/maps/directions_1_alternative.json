@@ -1,0 +1,35 @@
+{
+  "status": "OK",
+  "geocoded_waypoints": [
+    {"geocoder_status": "OK", "place_id": "start_place_id", "types": ["route"]},
+    {"geocoder_status": "OK", "place_id": "end_place_id", "types": ["route"]}
+  ],
+  "routes": [
+    {
+      "summary": "via A8",
+      "overview_polyline": {"points": "mzneFnpyjVsAxBuBfC"},
+      "legs": [
+        {
+          "distance": {"value": 45000, "text": "45 km"},
+          "duration": {"value": 1800, "text": "30 mins"},
+          "start_address": "Nice, France",
+          "end_address": "Cannes, France",
+          "steps": [
+            {
+              "distance": {"value": 2000},
+              "maneuver": "turn-right",
+              "travel_mode": "DRIVING",
+              "html_instructions": "Turn right onto Promenade des Anglais"
+            },
+            {
+              "distance": {"value": 43000},
+              "maneuver": "merge",
+              "travel_mode": "DRIVING",
+              "html_instructions": "Merge onto A8 motorway toward Cannes"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

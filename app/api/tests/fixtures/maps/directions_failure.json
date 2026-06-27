@@ -1,0 +1,8 @@
+{
+  "status": "ZERO_RESULTS",
+  "geocoded_waypoints": [
+    {"geocoder_status": "OK", "place_id": "start_place_id", "types": ["route"]},
+    {"geocoder_status": "OK", "place_id": "end_place_id", "types": ["route"]}
+  ],
+  "routes": []
+}

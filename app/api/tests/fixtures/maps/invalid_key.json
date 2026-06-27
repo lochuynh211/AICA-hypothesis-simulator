@@ -1,0 +1,4 @@
+{
+  "status": "REQUEST_DENIED",
+  "error_message": "The provided API key is invalid. Please pass a valid API key."
+}

@@ -1,0 +1,23 @@
+{
+  "status": "OK",
+  "results": [
+    {
+      "name": "Highway 5 Service Area",
+      "place_id": "service_area_1",
+      "geometry": {
+        "location": {"lat": 37.5, "lng": -121.8}
+      },
+      "types": ["gas_station", "parking", "point_of_interest", "establishment"],
+      "vicinity": "I-5 Northbound, Stockton"
+    },
+    {
+      "name": "Rest Area Northbound Mile 220",
+      "place_id": "service_area_2",
+      "geometry": {
+        "location": {"lat": 37.9, "lng": -121.5}
+      },
+      "types": ["rest_stop", "parking", "point_of_interest", "establishment"],
+      "vicinity": "I-5 Northbound near Lodi"
+    }
+  ]
+}
