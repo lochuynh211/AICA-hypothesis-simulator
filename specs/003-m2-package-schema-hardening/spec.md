@@ -34,12 +34,13 @@ design: `docs/superpowers/specs/2026-06-27-m2-package-schema-hardening-design.md
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - Compare two hypothesis packages on the same drive (Priority: P1)
+### User Story 1 - Run and inspect either of two hypothesis packages (Priority: P1)
 
 A reviewer selects either the rule-based package or the weighted-score package for a
-UC-01 scenario, runs it, and inspects how each decides — the weighted-score package
-showing per-category scores, multiple candidates (including a non-selected and a
-suppressed one), and which candidate was selected by priority.
+UC-01 scenario, runs it, and inspects how that package decides — the weighted-score
+package showing per-category scores, multiple candidates (including a non-selected and a
+suppressed one), and which candidate was selected by priority. (Each run is reviewed via
+its own trace/log; a side-by-side **run comparison** feature is post-V1, not part of M2.)
 
 **Why this priority**: The headline M2 value is reviewing more than one hypothesis.
 The second algorithm and its richer decision output are what "package hardening"
@@ -120,7 +121,7 @@ drive from the driver/vehicle profiles and the route — deterministically — a
 evolving values are what lead to the proposal, replacing M1's fixed schedule.
 
 **Why this priority**: The behavioral engine is the foundation the algorithms consume;
-its realism is what makes the comparison in US1 meaningful. It is verification-heavy and
+its realism is what makes inspecting each package's decision in US1 meaningful. It is verification-heavy and
 underpins the other stories.
 
 **Independent Test**: Run a scenario twice and confirm the per-tick driver/vehicle state
@@ -188,7 +189,12 @@ a hardcoded schedule.
   value after start requires a new run rather than mutating the active run.
 - **FR-010**: The run evidence MUST record the setup snapshot, the route-derived facts, the
   frozen generated plan, the selected driver/vehicle/speed profiles, the run mode and
-  evidence status, and both the original (default) and modified setup values.
+  evidence status, and both the original (default) and modified setup values. The evidence
+  MUST also record, **per tick**, the numeric internal state (`raw_state`), the
+  normalized/ordinal feature views (`feature_groups`), the component-traceable driver and
+  vehicle updates, and the package runtime-state value — so the full decision basis is
+  reviewable (and so the M3 transparent-hybrid's raw inputs, feature scores, and
+  fire-control trace will be reviewable on the same shape).
 - **FR-011**: The decision output and package definitions MUST support localized
   (Japanese/English) proposal messages and explanations, with a plain-text fallback.
 - **FR-012**: The system MUST carry a per-package runtime-state value through evaluation —
@@ -236,7 +242,9 @@ a hardcoded schedule.
 - **SC-003**: A reviewer can edit a value before starting; an out-of-range value is rejected
   with a clear message and starts no run, and a valid edit is used by the run.
 - **SC-004**: The run evidence contains the setup snapshot, route facts, frozen plan, selected
-  profiles, run mode/evidence status, and both original and modified values.
+  profiles, run mode/evidence status, both original and modified values, and — per tick — the
+  numeric `raw_state`, the `feature_groups` views, the driver/vehicle updates, and the package
+  runtime-state value.
 - **SC-005**: Running the same package, scenario, profiles, plan, and choices twice produces
   identical per-tick state and identical decision traces.
 - **SC-006**: A reviewer can choose between two UC-01 scenarios; the second reaches a short
