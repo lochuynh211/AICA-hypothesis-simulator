@@ -111,6 +111,17 @@ Prove the smallest useful simulator loop end-to-end.
 - Borrow layout direction from the accepted skeleton.
 - Use the trigger-result idea from the functional skeleton as reference only, not as a direct dependency.
 
+### Schema And Architecture Note (per M1 ADR 2026-06-27)
+
+The accepted M1 design (`docs/superpowers/specs/2026-06-27-m1-first-vertical-slice-design.md`)
+makes M1 a deliberately **thick** vertical slice. M1 introduces the core backend
+Pydantic models — package manifest, scenario, the **full decision result**
+(architecture §11), run state, and trace entry — plus the package and scenario
+registries, the single algorithm-adapter contract with the built-in
+`declarative_rule` algorithm, the deterministic tick engine (with an internally
+frozen generated event plan), and the append-only evidence recorder. M2 therefore
+**hardens and extends** these rather than introducing them (see the M2 note below).
+
 ---
 
 ## 4. M2 — Package And Schema Hardening
@@ -118,6 +129,14 @@ Prove the smallest useful simulator loop end-to-end.
 ### Goal
 
 Make package and scenario contracts real enough to support multiple hypotheses safely.
+
+> **Note (per M1 ADR 2026-06-27):** the base Pydantic models (manifest, scenario,
+> full decision result, run state, trace entry), the registries, the adapter
+> contract, the deterministic tick engine, and the evidence recorder are
+> introduced in M1. M2 hardens the schema (deeper validation, the remaining
+> models/fields listed below, editable setup parameters/hyperparameters), adds the
+> second (weighted-score) package and second UC-01 scenario, and adds the
+> setup / run-plan editing flow with frontend validation errors.
 
 ### Scope
 

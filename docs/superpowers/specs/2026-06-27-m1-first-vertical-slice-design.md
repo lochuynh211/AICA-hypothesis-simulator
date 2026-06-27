@@ -54,7 +54,9 @@ one UC-01 scenario, a close-to-skeleton functional 3-panel frontend with
 accept/postpone actions.
 
 **Out (later milestones):** `POST /api/routes/analyze` + `/api/run-plans` setup
-flow (M2); Google Maps surface (M4); structured feedback capture + evidence
+flow (M2) — note the *frozen event plan itself* is still required and is generated
+internally inside `POST /api/runs` and persisted to the log (§4.2); only the
+editable setup API around it is deferred. Google Maps surface (M4); structured feedback capture + evidence
 replay (M5); `weighted_score` (M2) and `python_module` (M3) algorithms;
 expert-override (M5+); full bilingual/UX polish (M6).
 
@@ -96,8 +98,11 @@ GET  /api/runs/{run_id}/log
   scenario authors bands directly, so this is near-identity; it is the single
   server-side place raw values would enter, satisfying constitution principle IV
   and giving M4 (Maps) a plug-in point.
-- `event_plan.py` — freeze a concrete `EventPlan` from scenario `event_presets` at
-  run start (deterministic).
+- `event_plan.py` — freeze a concrete `EventPlan` from scenario `event_presets`,
+  generated **internally during `POST /api/runs`** (not via the deferred
+  `/api/run-plans` setup API), deterministic, and persisted into the run log. The
+  architecture's required "frozen generated event plan" is thus present in M1; only
+  the *editable setup flow* around it is deferred to M2.
 - `tick_engine.py` — per-tick: advance sim time, compute route position from `at`
   fractions, resolve active events, derive qualitative driver/vehicle bands and
   rolling state, build the evaluation **context**.
@@ -143,8 +148,15 @@ everything routes through (constitution I, II, V).
 
 ## 5. Data files
 
-Both authored in **qualitative bands only** — no concrete number reaches the
-trigger (constitution IV).
+The package's decision **inputs** are qualitative ordinal bands. The
+constitution-IV invariant is precise: **no *raw external-service* numeric may
+drive a trigger directly** — it does not ban numbers everywhere. M1's tick engine
+still computes numeric route position/time internally, and the master runtime
+workflow's numeric speed profile + exact tick-distance calculation remain valid
+seams; the `binning` service converts any such numeric into ordinal bands before
+it reaches the rule. M1's local scenario authors route fractions + bands directly,
+so binning is near-identity here — but the numeric seam is preserved for the
+master workflow and M4 Maps.
 
 ### 5.1 `packages/rest_rule_based_v0_1/package.json` (+ `README.md`)
 
