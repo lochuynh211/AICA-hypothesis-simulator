@@ -467,3 +467,78 @@ def test_hybrid_fields_empty_for_rule():
     result = _eval(_R3_CTX)
     assert result.scores == {}
     assert result.states == {}
+
+
+# ---------------------------------------------------------------------------
+# Fix 1 — top-level fire_control.fired consistency with trigger_candidate
+# ---------------------------------------------------------------------------
+
+
+def test_r4_fire_control_fired_false():
+    """R4 (SOFT_WARNING): trigger_candidate=False → fire_control.fired must also be False."""
+    ctx = {
+        "drowsiness_level": "moderate",
+        "fatigue_level": "medium",
+        "signal_duration": "brief",
+        "continuous_driving_time": "long",
+        "rest_spot_eta": "near",
+    }
+    result = _eval(ctx)
+    assert result.result_type == ResultType.SOFT_WARNING
+    assert result.trigger_candidate is False
+    assert result.fire_control.fired is False
+
+
+def test_r5_fire_control_fired_false():
+    """R5 (NO_TRIGGER): trigger_candidate=False → fire_control.fired must also be False."""
+    ctx = {
+        "drowsiness_level": "none",
+        "fatigue_level": "low",
+        "signal_duration": "transient",
+        "continuous_driving_time": "short",
+        "rest_spot_eta": "none",
+    }
+    result = _eval(ctx)
+    assert result.result_type == ResultType.NO_TRIGGER
+    assert result.trigger_candidate is False
+    assert result.fire_control.fired is False
+
+
+def test_r1_fire_control_fired_true():
+    """R1 (SEVERE_INTERVENTION): trigger_candidate=True → fire_control.fired must be True."""
+    ctx = {
+        "drowsiness_level": "severe",
+        "fatigue_level": "low",
+        "signal_duration": "transient",
+        "continuous_driving_time": "short",
+        "rest_spot_eta": "none",
+    }
+    result = _eval(ctx)
+    assert result.result_type == ResultType.SEVERE_INTERVENTION
+    assert result.trigger_candidate is True
+    assert result.fire_control.fired is True
+
+
+def test_r3_fire_control_fired_true():
+    """R3 (REST_PROPOSAL): trigger_candidate=True → fire_control.fired must be True."""
+    result = _eval(_R3_CTX)
+    assert result.result_type == ResultType.REST_PROPOSAL
+    assert result.trigger_candidate is True
+    assert result.fire_control.fired is True
+
+
+# ---------------------------------------------------------------------------
+# Fix 4 — drive-time broken conjunct drops R3 to R4
+# ---------------------------------------------------------------------------
+
+
+def test_r3_broken_drive_time_short_not_r3():
+    """continuous_driving_time=short → damped≈2.3 < proposalCut(3.0) → not R3.
+
+    From _R3_CTX baseline: blend=moderate(2)×0.75 + medium(1)×0.2 + short(0)×0.4 = 1.7
+    sustained(2), req=medium(1): shortfall=0, lift=0.6 → damped=2.3 < 3.0 → R4 SOFT_WARNING
+    """
+    ctx = {**_R3_CTX, "continuous_driving_time": "short"}
+    result = _eval(ctx)
+    assert result.result_type != ResultType.REST_PROPOSAL
+    assert result.result_type == ResultType.SOFT_WARNING

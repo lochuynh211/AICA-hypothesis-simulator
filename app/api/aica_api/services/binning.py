@@ -97,7 +97,9 @@ def bin_context(ctx: dict) -> dict:
     # part of M1 decision context — drop after binning if caller wants).
     if "remaining_to_destination_sec" in ctx:
         sec = ctx["remaining_to_destination_sec"]
-        if sec is None or sec < 1200:
+        if sec is None:
+            result["destination_eta"] = "medium"
+        elif sec < 1200:
             result["destination_eta"] = "close"
         elif sec < 3600:
             result["destination_eta"] = "medium"

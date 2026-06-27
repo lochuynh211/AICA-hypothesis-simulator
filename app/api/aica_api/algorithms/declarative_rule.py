@@ -223,7 +223,7 @@ def evaluate(
         else:
             reason_inputs = [
                 "drowsiness_level", "fatigue_level", "signal_duration",
-                "continuous_driving_time", "severe_threshold",
+                "weight_drowsiness", "severe_threshold",
             ]
             explanation = (
                 "Damped fatigue/drowsiness blend reached the severe cut-point."
@@ -346,7 +346,7 @@ def evaluate(
             scores={}, states={},
             criteria=criteria,
             candidates=[candidate],
-            fire_control=_fire_control(suppressed=False, reason="below_proposal_cut"),
+            fire_control=FireControl(fired=False, suppressed=False, override=False, reason="below_proposal_cut"),
             proposal=None,
             reason_inputs=[
                 "drowsiness_level", "signal_duration",
@@ -376,7 +376,7 @@ def evaluate(
         scores={}, states={},
         criteria=criteria,
         candidates=[candidate],
-        fire_control=_fire_control(suppressed=False, reason="below_reaction_point"),
+        fire_control=FireControl(fired=False, suppressed=False, override=False, reason="below_reaction_point"),
         proposal=None,
         reason_inputs=["drowsiness_level", "signal_duration", "trigger_sensitivity"],
         explanation="Damped blend is below the reaction point — no action required.",

@@ -234,6 +234,40 @@ def test_mixed_raw_and_banded_fields():
         assert isinstance(v, str)
 
 
+# ─── destination_eta binning ──────────────────────────────────────────────────
+
+
+def test_dest_eta_null_returns_medium():
+    """remaining_to_destination_sec=None → destination_eta='medium' (prototype fidelity).
+
+    Mirrors surface_binning.mjs binDestEta(null) → 'medium'.
+    """
+    ctx = {"remaining_to_destination_sec": None}
+    result = bin_context(ctx)
+    assert result["destination_eta"] == "medium"
+
+
+def test_dest_eta_close():
+    """remaining_to_destination_sec < 1200 → destination_eta='close'."""
+    ctx = {"remaining_to_destination_sec": 600}
+    result = bin_context(ctx)
+    assert result["destination_eta"] == "close"
+
+
+def test_dest_eta_medium():
+    """1200 ≤ remaining_to_destination_sec < 3600 → destination_eta='medium'."""
+    ctx = {"remaining_to_destination_sec": 2000}
+    result = bin_context(ctx)
+    assert result["destination_eta"] == "medium"
+
+
+def test_dest_eta_far():
+    """remaining_to_destination_sec ≥ 3600 → destination_eta='far'."""
+    ctx = {"remaining_to_destination_sec": 5000}
+    result = bin_context(ctx)
+    assert result["destination_eta"] == "far"
+
+
 # ─── Determinism ──────────────────────────────────────────────────────────────
 
 
