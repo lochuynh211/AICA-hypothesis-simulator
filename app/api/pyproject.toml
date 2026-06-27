@@ -6,15 +6,19 @@ build-backend = "hatchling.build"
 name = "aica-api"
 version = "0.0.0"
 requires-python = ">=3.12"
+# Pinned to trusted, well-established versions. A newer cluster on PyPI
+# (fastapi 0.138.x / starlette 1.3.x / httpx2 / pytest 9.x, all uploaded
+# 2026-06) steers starlette.testclient to a 2-day-old "httpx2" typosquat;
+# we deliberately avoid it. Revisit/upgrade only after verifying upstream.
 dependencies = [
-    "fastapi",
-    "uvicorn[standard]",
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.32.1",
 ]
 
 [dependency-groups]
 dev = [
-    "pytest",
-    "httpx2",
+    "pytest==8.3.4",
+    "httpx==0.28.1",
 ]
 
 [tool.hatch.build.targets.wheel]
