@@ -279,8 +279,160 @@ button[style*="width:100%"]:disabled {
 }
 
 /* ── Setup panel (M2: package/scenario selectors, param editors, plan preview) ── */
-.setup-panel { display: flex; flex-direction: column; gap: 0.75rem; }
-.setup-field { display: flex; flex-direction: column; gap: 0.25rem; }
-.setup-field label { font-size: 0.8rem; font-weight: 600; }
-.plan-preview { border: 1px solid #ccc; border-radius: 4px; padding: 0.5rem; font-size: 0.85rem; }
-.setup-error { color: #b00020; font-size: 0.85rem; }
+
+.setup-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 12px;
+}
+
+.setup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.setup-field label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+  letter-spacing: 0.03em;
+}
+
+/* ── ParameterEditor / HyperparameterEditor ───────────────────────────────── */
+
+[data-testid="parameter-editor"],
+[data-testid="hyperparameter-editor"] {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+}
+
+[data-testid="parameter-editor"] label,
+[data-testid="hyperparameter-editor"] label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+  display: block;
+  margin-bottom: 4px;
+}
+
+[data-testid="parameter-editor"] input[type="number"],
+[data-testid="hyperparameter-editor"] input[type="number"] {
+  width: 100%;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  border: 1px solid #d0d5dd;
+  border-radius: 4px;
+  background: #fff;
+  color: #1a1a1a;
+  box-sizing: border-box;
+}
+
+[data-testid="parameter-editor"] input[type="number"]:focus,
+[data-testid="hyperparameter-editor"] input[type="number"]:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+  border-color: #2563eb;
+}
+
+/* Inline validation errors for parameter / hyperparameter editors */
+[data-testid^="hp-error-"],
+[data-testid="setup-validation-error"] {
+  font-size: 0.78rem;
+  color: #b91c1c;
+  margin-top: 3px;
+}
+
+/* ── Plan preview ─────────────────────────────────────────────────────────── */
+
+[data-testid="plan-preview"] {
+  border: 1px solid #d0d5dd;
+  border-radius: 5px;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  background: #f8fafc;
+}
+
+[data-testid="plan-summary"] {
+  margin-top: 6px;
+  line-height: 1.6;
+  color: #374151;
+}
+
+[data-testid="effective-setup"] {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.plan-preview {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.setup-error {
+  color: #b00020;
+  font-size: 0.85rem;
+}
+
+/* ── Weighted-score trace (category scores rows, candidate strength/state) ── */
+
+/* Category scores section (data-testid="scores-<key>") */
+[data-testid^="scores-"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  padding: 2px 0;
+  border-bottom: 1px solid #1e1e1e;
+  color: #d4d4d4;
+}
+
+[data-testid^="scores-"]:last-child {
+  border-bottom: none;
+}
+
+/* Candidate strength badge */
+[data-testid^="candidate-strength-"] {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+
+/* "gentle" strength — muted blue */
+[data-testid^="candidate-strength-"][data-strength="gentle"] {
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+
+/* "clear" strength — amber */
+[data-testid^="candidate-strength-"][data-strength="clear"] {
+  background: #451a03;
+  color: #fbbf24;
+}
+
+/* "strong" strength — red (SEVERE_INTERVENTION, not REST_PROPOSAL) */
+[data-testid^="candidate-strength-"][data-strength="strong"] {
+  background: #3b0606;
+  color: #f87171;
+}
+
+/* Candidate state badge */
+[data-testid^="candidate-state-"] {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  margin-left: 4px;
+}
