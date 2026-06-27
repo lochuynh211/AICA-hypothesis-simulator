@@ -11,10 +11,10 @@ dependencies = [
     "uvicorn[standard]",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "pytest",
-    "httpx",
+    "httpx2",
 ]
 
 [tool.hatch.build.targets.wheel]
