@@ -4,12 +4,16 @@ import { listPackages } from '../../api/client'
 
 export default function PackageSelector() {
   const { state, dispatch } = useRunStore()
-  const { packages, selectedPackageId } = state
+  const { packages, selectedPackageId, packageErrors } = state
 
   useEffect(() => {
     listPackages()
-      .then(({ packages }) => dispatch({ type: 'LOAD_PACKAGES', packages }))
-      .catch(() => {})
+      .then(({ packages, errors }) =>
+        dispatch({ type: 'LOAD_PACKAGES', packages, errors })
+      )
+      .catch(() =>
+        dispatch({ type: 'SET_RUN_ERROR', message: 'Failed to load packages from server' })
+      )
   }, [dispatch])
 
   return (
@@ -33,6 +37,11 @@ export default function PackageSelector() {
           </option>
         ))}
       </select>
+      {packageErrors.length > 0 && (
+        <p role="alert" data-testid="package-registry-errors" style={{ color: '#c00', fontSize: '0.75em', marginTop: '4px' }}>
+          {packageErrors.length} package(s) could not be loaded
+        </p>
+      )}
     </div>
   )
 }

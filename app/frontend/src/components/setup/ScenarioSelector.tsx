@@ -4,12 +4,16 @@ import { listScenarios } from '../../api/client'
 
 export default function ScenarioSelector() {
   const { state, dispatch } = useRunStore()
-  const { scenarios, selectedScenarioId } = state
+  const { scenarios, selectedScenarioId, scenarioErrors } = state
 
   useEffect(() => {
     listScenarios()
-      .then(({ scenarios }) => dispatch({ type: 'LOAD_SCENARIOS', scenarios }))
-      .catch(() => {})
+      .then(({ scenarios, errors }) =>
+        dispatch({ type: 'LOAD_SCENARIOS', scenarios, errors })
+      )
+      .catch(() =>
+        dispatch({ type: 'SET_RUN_ERROR', message: 'Failed to load scenarios from server' })
+      )
   }, [dispatch])
 
   return (
@@ -33,6 +37,11 @@ export default function ScenarioSelector() {
           </option>
         ))}
       </select>
+      {scenarioErrors.length > 0 && (
+        <p role="alert" data-testid="scenario-registry-errors" style={{ color: '#c00', fontSize: '0.75em', marginTop: '4px' }}>
+          {scenarioErrors.length} scenario(s) could not be loaded
+        </p>
+      )}
     </div>
   )
 }

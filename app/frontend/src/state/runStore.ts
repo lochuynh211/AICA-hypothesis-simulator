@@ -2,6 +2,7 @@ import React, { createContext, useContext, useReducer } from 'react'
 import type {
   PackageSummary,
   ScenarioSummary,
+  RegistryError,
   RunState,
   DecisionResult,
   AlgorithmError,
@@ -13,6 +14,12 @@ import type {
 export type RunStoreState = {
   packages: PackageSummary[]
   scenarios: ScenarioSummary[]
+  /** Registry errors reported when loading package manifests. */
+  packageErrors: RegistryError[]
+  /** Registry errors reported when loading scenario files. */
+  scenarioErrors: RegistryError[]
+  /** Error message from the most recent createRun / actRun failure. */
+  runError: string | null
   selectedPackageId: string | null
   selectedScenarioId: string | null
   runState: RunState | null
@@ -27,6 +34,9 @@ export type RunStoreState = {
 const initialState: RunStoreState = {
   packages: [],
   scenarios: [],
+  packageErrors: [],
+  scenarioErrors: [],
+  runError: null,
   selectedPackageId: null,
   selectedScenarioId: null,
   runState: null,
@@ -41,8 +51,8 @@ const initialState: RunStoreState = {
 // ── Actions ────────────────────────────────────────────────────────────────
 
 export type RunStoreAction =
-  | { type: 'LOAD_PACKAGES'; packages: PackageSummary[] }
-  | { type: 'LOAD_SCENARIOS'; scenarios: ScenarioSummary[] }
+  | { type: 'LOAD_PACKAGES'; packages: PackageSummary[]; errors?: RegistryError[] }
+  | { type: 'LOAD_SCENARIOS'; scenarios: ScenarioSummary[]; errors?: RegistryError[] }
   | { type: 'SELECT_PACKAGE'; id: string }
   | { type: 'SELECT_SCENARIO'; id: string }
   | { type: 'RUN_CREATED'; runState: RunState }
@@ -56,6 +66,7 @@ export type RunStoreAction =
     }
   | { type: 'ACTION_APPLIED'; runState: RunState }
   | { type: 'ALGORITHM_ERROR_APPENDED'; runState: RunState; error: AlgorithmError }
+  | { type: 'SET_RUN_ERROR'; message: string | null }
   | { type: 'RESET' }
 
 // ── Reducer ────────────────────────────────────────────────────────────────
@@ -63,10 +74,18 @@ export type RunStoreAction =
 function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
   switch (action.type) {
     case 'LOAD_PACKAGES':
-      return { ...state, packages: action.packages }
+      return {
+        ...state,
+        packages: action.packages,
+        packageErrors: action.errors ?? [],
+      }
 
     case 'LOAD_SCENARIOS':
-      return { ...state, scenarios: action.scenarios }
+      return {
+        ...state,
+        scenarios: action.scenarios,
+        scenarioErrors: action.errors ?? [],
+      }
 
     case 'SELECT_PACKAGE':
       return { ...state, selectedPackageId: action.id }
@@ -84,6 +103,7 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         completed: false,
         errors: [],
         algorithmErrors: [],
+        runError: null,
       }
 
     case 'TICK_APPENDED': {
@@ -113,6 +133,9 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         algorithmErrors: [...state.algorithmErrors, action.error],
       }
 
+    case 'SET_RUN_ERROR':
+      return { ...state, runError: action.message }
+
     case 'RESET':
       return {
         ...state,
@@ -123,6 +146,7 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         completed: false,
         errors: [],
         algorithmErrors: [],
+        runError: null,
       }
 
     default:
