@@ -141,6 +141,7 @@ describe('PlaybackControls', () => {
       decision: noTriggerDecision,
       paused: false,
       completed: false,
+      tick_index: 1, // evaluated tick (pre-increment); run_state.current_tick is 2 (post-increment)
     }
     vi.mocked(client.tickRun).mockResolvedValue(tickResponse)
 
@@ -171,6 +172,53 @@ describe('PlaybackControls', () => {
     renderInStore(<PlaybackControls />)
     const stepButton = await screen.findByRole('button', { name: /step/i })
     expect(stepButton).toBeDisabled()
+  })
+
+  it('(e) dispatches tickIndex from resp.tick_index (not run_state.current_tick)', async () => {
+    // playingRun.current_tick = 1; after tick, post-increment current_tick = 2.
+    // The evaluated tick_index = 1 (pre-increment).  The store trace entry must
+    // carry tick_index = 1, NOT 2, so it matches the persisted TickEvent.
+    const evaluatedTickIndex = 1
+    const tickResponse: TickResponse = {
+      run_state: { ...playingRun, current_tick: 2 }, // post-increment
+      decision: noTriggerDecision,
+      paused: false,
+      completed: false,
+      tick_index: evaluatedTickIndex, // pre-increment — the persisted value
+    }
+    vi.mocked(client.tickRun).mockResolvedValue(tickResponse)
+
+    let capturedTrace: Array<{ tick_index: number }> | null = null
+
+    function TraceCapture() {
+      const { state } = useRunStore()
+      capturedTrace = state.trace as Array<{ tick_index: number }>
+      return null
+    }
+
+    renderInStore(
+      <>
+        <TraceCapture />
+        <PlaybackControls />
+      </>,
+      (dispatch) => {
+        dispatch({ type: 'RUN_CREATED', runState: playingRun })
+      },
+    )
+
+    const stepButton = await screen.findByRole('button', { name: /step/i })
+    fireEvent.click(stepButton)
+
+    await waitFor(() => {
+      expect(client.tickRun).toHaveBeenCalledTimes(1)
+    })
+
+    // The trace entry's tick_index must equal resp.tick_index (1), not run_state.current_tick (2)
+    await waitFor(() => {
+      expect(capturedTrace).not.toBeNull()
+      expect(capturedTrace!.length).toBe(1)
+      expect(capturedTrace![0].tick_index).toBe(evaluatedTickIndex)
+    })
   })
 })
 

@@ -97,12 +97,14 @@ def tick_endpoint(run_id: str):
             "run_state": outcome.run_state,
             "error": outcome.algorithm_error,
             "paused": False,
+            "tick_index": outcome.evaluated_tick_index,
         }
     return {
         "run_state": outcome.run_state,
         "decision": outcome.decision,
         "paused": outcome.paused,
         "completed": outcome.completed,
+        "tick_index": outcome.evaluated_tick_index,
     }
 
 

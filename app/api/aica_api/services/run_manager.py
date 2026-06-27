@@ -78,13 +78,20 @@ class ActionNotAllowedError(Exception):
 
 @dataclass
 class TickOutcome:
-    """Return value of tick()."""
+    """Return value of tick().
+
+    evaluated_tick_index is the tick_index of the TickEvent (or AlgorithmError event)
+    that was persisted during this call — i.e. the value of current_tick BEFORE the
+    post-increment.  It is None when no evaluation happened (completed/no-op and
+    tick_state.completed early-exit paths).
+    """
 
     run_state: RunState
     decision: DecisionResult | None
     algorithm_error: AlgorithmError | None
     paused: bool
     completed: bool
+    evaluated_tick_index: int | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -236,6 +243,7 @@ def tick(run_id: str) -> TickOutcome:
             algorithm_error=None,
             paused=False,
             completed=True,
+            evaluated_tick_index=None,
         )
 
     current_tick = run_state.current_tick
@@ -251,6 +259,7 @@ def tick(run_id: str) -> TickOutcome:
             algorithm_error=None,
             paused=False,
             completed=True,
+            evaluated_tick_index=None,
         )
 
     # ── Build context and call adapter ────────────────────────────────────
@@ -284,6 +293,7 @@ def tick(run_id: str) -> TickOutcome:
             algorithm_error=algo_error,
             paused=False,
             completed=False,
+            evaluated_tick_index=current_tick,
         )
 
     # ── Append TickEvent ──────────────────────────────────────────────────
@@ -325,6 +335,7 @@ def tick(run_id: str) -> TickOutcome:
         algorithm_error=None,
         paused=paused,
         completed=completed,
+        evaluated_tick_index=current_tick,
     )
 
 

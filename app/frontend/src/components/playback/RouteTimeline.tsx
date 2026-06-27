@@ -6,7 +6,10 @@ export default function RouteTimeline() {
   const { runState, trace } = state
 
   const ep = runState?.event_plan as { ticks?: Array<{ route_fraction: number }> } | undefined
-  const currentFraction = ep?.ticks?.[runState?.current_tick ?? 0]?.route_fraction ?? 0
+  // Use the last trace entry's tick_index (the evaluated tick) so the car position
+  // matches the evidence log, not the post-increment current_tick.
+  const lastEntry = trace.length > 0 ? trace[trace.length - 1] : null
+  const currentFraction = ep?.ticks?.[lastEntry?.tick_index ?? 0]?.route_fraction ?? 0
   const positionPct = `${Math.round(currentFraction * 100)}%`
 
   const proposalEntry = trace.find((e: TraceEntry) => e.proposal !== null)

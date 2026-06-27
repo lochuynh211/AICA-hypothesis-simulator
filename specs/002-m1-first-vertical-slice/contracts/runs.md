@@ -12,13 +12,21 @@
 ## `POST /api/runs/{run_id}/tick`
 - Advances one fixed sim-time step, builds context, evaluates via the adapter,
   appends a `TickEvent` (with the `DecisionResult` trace), persists the log.
-- **200** → `{ run_state, decision: DecisionResult, paused: bool, completed: bool }`.
+- **200** → `{ run_state, decision: DecisionResult | null, paused: bool, completed: bool, tick_index: int | null }`.
+  - `tick_index` is the index of the tick that was **evaluated and persisted** in this
+    call (i.e. the `tick_index` on the `TickEvent` in the log).  It is the value of
+    `current_tick` **before** the post-increment, so it always matches
+    `TickEvent.tick_index` in the persisted log.
+  - `tick_index: null` when no evaluation happened — i.e. on the already-completed
+    no-op path (run was already `completed` before this call, or `tick_state.completed`
+    early-exit) where no event is appended and `current_tick` does not advance.
   - `paused: true` with `run_state.pending_proposal` set when a proposal fires.
   - `completed: true` when the route end is reached; further ticks are no-ops
     returning `completed: true` without advancing.
 - On algorithm failure: appends an `AlgorithmError` event, persists, and returns
-  **200** → `{ run_state, error: AlgorithmError, paused: false }` — **never** a
-  fabricated decision (FR-011).
+  **200** → `{ run_state, error: AlgorithmError, paused: false, tick_index: int }` —
+  `tick_index` is the evaluated (and persisted) tick index.  **Never** a fabricated
+  decision (FR-011).
 - **404** unknown run.
 
 ## `POST /api/runs/{run_id}/actions`

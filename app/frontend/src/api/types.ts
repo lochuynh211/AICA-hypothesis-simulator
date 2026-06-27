@@ -202,39 +202,61 @@ export type AlgorithmError = {
 
 export type TickResponseSuccess = {
   run_state: RunState
-  decision: DecisionResult
+  /** null when no evaluation happened (completed no-op). */
+  decision: DecisionResult | null
   paused: boolean
   completed: boolean
+  /**
+   * The tick_index of the TickEvent persisted during this call — i.e.
+   * current_tick BEFORE post-increment.  null when no evaluation happened
+   * (completed no-op or tick_state.completed early-exit).
+   */
+  tick_index: number | null
 }
 
 export type TickResponseError = {
   run_state: RunState
   error: AlgorithmError
   paused: false
+  /** The tick_index of the AlgorithmError event persisted during this call. */
+  tick_index: number | null
 }
 
 export type TickResponse = TickResponseSuccess | TickResponseError
 
 // ── Log domain ─────────────────────────────────────────────────────────────
 
+/**
+ * In-memory store trace entry: DecisionResult flattened with tick_index.
+ * Used by runStore.ts; NOT the same as the persisted JSON shape.
+ */
 export type TraceEntry = DecisionResult & { tick_index: number }
 
+/**
+ * Persisted trace entry shape (inside a TickEvent in the run log JSON).
+ * Nested: { tick_index, decision_result: DecisionResult }.
+ */
+export type LogTraceEntry = {
+  tick_index: number
+  decision_result: DecisionResult
+}
+
 export type TickEvent = {
-  kind: 'TickEvent'
+  kind: 'tick'
   tick_index: number
   tick_state: Record<string, unknown>
-  trace: TraceEntry
+  trace: LogTraceEntry
 }
 
 export type ActionEvent = {
-  kind: 'ActionEvent'
+  kind: 'action'
   tick_index: number
   action: string
   resulting_status: string
 }
 
 export type AlgorithmErrorEvent = {
-  kind: 'AlgorithmError'
+  kind: 'algorithm_error'
 } & AlgorithmError
 
 export type RunLogEvent = TickEvent | ActionEvent | AlgorithmErrorEvent

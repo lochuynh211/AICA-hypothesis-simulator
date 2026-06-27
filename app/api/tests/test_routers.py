@@ -198,7 +198,7 @@ def test_tick_unknown_run(client):
 
 
 def test_tick_normal_envelope_fields(client, run_id):
-    """Normal tick envelope has all four fields: run_state, decision, paused, completed."""
+    """Normal tick envelope has all five fields: run_state, decision, paused, completed, tick_index."""
     resp = client.post(f"/api/runs/{run_id}/tick")
     assert resp.status_code == 200
     body = resp.json()
@@ -206,6 +206,29 @@ def test_tick_normal_envelope_fields(client, run_id):
     assert "decision" in body
     assert "paused" in body
     assert "completed" in body
+    assert "tick_index" in body
+
+
+def test_tick_response_tick_index_matches_log(client, run_id):
+    """Normal tick response tick_index equals the TickEvent.tick_index persisted in the log.
+
+    This verifies Fix 1: the live-dispatched tick_index and the evidence log use the
+    same evaluated-tick index (before post-increment), so the live trace label and the
+    persisted evidence label refer to the same tick.
+    """
+    resp = client.post(f"/api/runs/{run_id}/tick")
+    assert resp.status_code == 200
+    body = resp.json()
+    tick_index_in_response = body["tick_index"]
+    assert tick_index_in_response is not None, "Normal tick must return a non-null tick_index"
+
+    log_resp = client.get(f"/api/runs/{run_id}/log")
+    assert log_resp.status_code == 200
+    events = log_resp.json()["events"]
+    tick_events = [e for e in events if e.get("kind") == "tick"]
+    assert len(tick_events) >= 1
+    # The response tick_index must match the last persisted TickEvent.tick_index
+    assert tick_events[-1]["tick_index"] == tick_index_in_response
 
 
 # ── Run listing and detail tests ──────────────────────────────────────────────

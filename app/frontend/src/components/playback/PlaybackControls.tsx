@@ -17,12 +17,20 @@ export default function PlaybackControls() {
   const doTick = useCallback(async () => {
     if (!runState) return
     const resp = await tickRun(runState.run_id)
-    if ('decision' in resp) {
+    if ('error' in resp) {
+      dispatch({
+        type: 'ALGORITHM_ERROR_APPENDED',
+        runState: resp.run_state,
+        error: resp.error,
+      })
+    } else if (resp.decision !== null && resp.tick_index !== null) {
+      // Normal evaluated tick: use resp.tick_index (pre-increment) so the
+      // live trace label matches the persisted TickEvent.tick_index in the log.
       dispatch({
         type: 'TICK_APPENDED',
         runState: resp.run_state,
         decision: resp.decision,
-        tickIndex: resp.run_state.current_tick,
+        tickIndex: resp.tick_index,
         paused: resp.paused,
         completed: resp.completed,
       })
@@ -30,11 +38,10 @@ export default function PlaybackControls() {
         setIsPlaying(false)
       }
     } else {
-      dispatch({
-        type: 'ALGORITHM_ERROR_APPENDED',
-        runState: resp.run_state,
-        error: resp.error,
-      })
+      // Completed no-op (decision: null, tick_index: null) — just stop playing.
+      if (resp.completed) {
+        setIsPlaying(false)
+      }
     }
   }, [runState, dispatch])
 
