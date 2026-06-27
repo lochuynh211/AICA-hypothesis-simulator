@@ -218,15 +218,15 @@ def test_create_run_plan_400_bad_package(client):
 
 
 def test_create_run_plan_400_out_of_range(client):
-    """POST /api/run-plans with out-of-range hyperparameter → 400."""
-    # Get the package to find a numeric hyperparameter
+    """POST /api/run-plans with out-of-range hyperparameter → 400 with structured body."""
+    # Use a band hyperparameter (always present) with an invalid value
     pkg_resp = client.get(f"/api/packages/{VALID_PACKAGE_ID}")
     pkg = pkg_resp.json()
-    numeric_hps = [hp for hp in pkg.get("hyperparameters", []) if hp.get("kind") == "numeric"]
-    if not numeric_hps:
-        pytest.skip("No numeric hyperparameters")
-    hp = numeric_hps[0]
-    bad_value = (hp.get("max") or 10.0) + 9999.0
+    band_hps = [hp for hp in pkg.get("hyperparameters", []) if hp.get("kind") == "band"]
+    if not band_hps:
+        pytest.skip("No band hyperparameters in fixture package")
+    hp = band_hps[0]
+    bad_value = "INVALID_BAND_VALUE_XYZ"
 
     resp = client.post(
         "/api/run-plans",
@@ -239,6 +239,16 @@ def test_create_run_plan_400_out_of_range(client):
         },
     )
     assert resp.status_code == 400
+    # Contract: 400 body must include validation_errors[{field, message}]
+    body = resp.json()
+    detail = body.get("detail", {})
+    assert "validation_errors" in detail, (
+        f"Expected 'validation_errors' key in 400 detail; got: {detail}"
+    )
+    ve = detail["validation_errors"]
+    assert isinstance(ve, list) and len(ve) > 0
+    assert "field" in ve[0] and "message" in ve[0]
+    assert ve[0]["field"] == hp["key"]
 
 
 def test_regenerate_run_plan_200(client, plan_id):
@@ -259,6 +269,32 @@ def test_regenerate_run_plan_404_unknown(client):
         json={"presets": {}, "parameters": {}, "hyperparameters": {}},
     )
     assert resp.status_code == 404
+
+
+def test_regenerate_run_plan_400_invalid_has_validation_errors(client, plan_id):
+    """POST /api/run-plans/{plan_id}/regenerate with invalid hp → 400 with validation_errors."""
+    pkg_resp = client.get(f"/api/packages/{VALID_PACKAGE_ID}")
+    pkg = pkg_resp.json()
+    band_hps = [hp for hp in pkg.get("hyperparameters", []) if hp.get("kind") == "band"]
+    if not band_hps:
+        pytest.skip("No band hyperparameters in fixture package")
+    hp = band_hps[0]
+
+    resp = client.post(
+        f"/api/run-plans/{plan_id}/regenerate",
+        json={
+            "presets": {},
+            "parameters": {},
+            "hyperparameters": {hp["key"]: "INVALID_BAND_XYZ"},
+        },
+    )
+    assert resp.status_code == 400
+    body = resp.json()
+    detail = body.get("detail", {})
+    assert "validation_errors" in detail
+    ve = detail["validation_errors"]
+    assert isinstance(ve, list) and len(ve) > 0
+    assert "field" in ve[0] and "message" in ve[0]
 
 
 # ── Run creation via plan_id ──────────────────────────────────────────────────

@@ -93,7 +93,10 @@ def create_run_plan_endpoint(body: CreateRunPlanBody):
     if draft.validation_errors:
         raise HTTPException(
             status_code=400,
-            detail="One or more parameter/hyperparameter values are invalid.",
+            detail={
+                "detail": "One or more parameter/hyperparameter values are invalid.",
+                "validation_errors": draft.validation_errors,
+            },
         )
 
     return {
@@ -129,7 +132,10 @@ def regenerate_run_plan_endpoint(plan_id: str, body: RegenerateRunPlanBody):
     if draft.validation_errors:
         raise HTTPException(
             status_code=400,
-            detail="One or more parameter/hyperparameter values are invalid.",
+            detail={
+                "detail": "One or more parameter/hyperparameter values are invalid.",
+                "validation_errors": draft.validation_errors,
+            },
         )
 
     return {

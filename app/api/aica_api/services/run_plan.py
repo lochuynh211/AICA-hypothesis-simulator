@@ -275,18 +275,16 @@ def _build_draft(
 ) -> RunPlanDraft:
     """Pure draft construction — deterministic given (route_facts, presets).
 
-    Does NOT check validation — call _validate_edits first.
+    Does NOT check parameter/hyperparameter validation — call _validate_edits
+    first.  Raises if build_event_plan fails (caller must catch and convert to
+    a validation error).
     """
     # Route analysis (deterministic)
     route_facts = analyze_route(scenario)
     route_facts.bands = {f.key: f.band_values for f in package.features}
 
-    # Event plan (deterministic)
-    from aica_api.models.run import EventPlan
-    try:
-        event_plan = build_event_plan(route_facts, scenario)
-    except Exception:
-        event_plan = EventPlan()
+    # Event plan (deterministic) — caller-supplied presets threaded through
+    event_plan = build_event_plan(route_facts, scenario, presets)
 
     # Merge defaults + overrides
     effective_params, effective_hps = _merge_defaults(package, parameters, hyperparameters)
@@ -354,15 +352,31 @@ def create_draft(
         )
 
     # Build the draft (pure, deterministic)
-    draft = _build_draft(
-        plan_id=plan_id,
-        package=package,
-        scenario=scenario,
-        presets=presets,
-        parameters=parameters,
-        hyperparameters=hyperparameters,
-        run_mode=run_mode,
-    )
+    # If build_event_plan raises, surface it as a validation error — never
+    # register a draft with a silently empty plan.
+    try:
+        draft = _build_draft(
+            plan_id=plan_id,
+            package=package,
+            scenario=scenario,
+            presets=presets,
+            parameters=parameters,
+            hyperparameters=hyperparameters,
+            run_mode=run_mode,
+        )
+    except Exception as exc:  # noqa: BLE001
+        plan_error: list[dict[str, str]] = [{
+            "field": "event_plan",
+            "message": f"Failed to build event plan: {exc}",
+        }]
+        return RunPlanDraft(
+            plan_id=plan_id,
+            package_id=package.id,
+            scenario_id=scenario.id,
+            route_facts=analyze_route(scenario),
+            effective_setup={},
+            validation_errors=plan_error,
+        )
 
     # Register the draft (with the full package + scenario for create_run)
     _draft_registry[plan_id] = (draft, package, scenario)
@@ -413,15 +427,30 @@ def regenerate_draft(
     # Extract run_mode from the existing draft's effective_setup
     run_mode = existing_draft.effective_setup.get("run_mode", "standard")
 
-    new_draft = _build_draft(
-        plan_id=plan_id,
-        package=package,
-        scenario=scenario,
-        presets=presets,
-        parameters=parameters,
-        hyperparameters=hyperparameters,
-        run_mode=run_mode,
-    )
+    # Build the new draft — surface plan-build errors as validation errors
+    try:
+        new_draft = _build_draft(
+            plan_id=plan_id,
+            package=package,
+            scenario=scenario,
+            presets=presets,
+            parameters=parameters,
+            hyperparameters=hyperparameters,
+            run_mode=run_mode,
+        )
+    except Exception as exc:  # noqa: BLE001
+        plan_error: list[dict[str, str]] = [{
+            "field": "event_plan",
+            "message": f"Failed to build event plan: {exc}",
+        }]
+        return RunPlanDraft(
+            plan_id=plan_id,
+            package_id=package.id,
+            scenario_id=scenario.id,
+            route_facts=analyze_route(scenario),
+            effective_setup={},
+            validation_errors=plan_error,
+        )
 
     # Update registry
     _draft_registry[plan_id] = (new_draft, package, scenario)

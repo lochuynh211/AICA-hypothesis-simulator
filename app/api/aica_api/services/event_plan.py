@@ -16,6 +16,8 @@ For each tick index i in 0..N-1 (N = total_duration // tick_seconds):
 
 from __future__ import annotations
 
+from typing import Any
+
 from aica_api.models.run import EventPlan, RestOpportunity, RouteFacts, TickPlanEntry, TrafficEvent, WeatherEvent
 from aica_api.models.scenario import ScenarioDef
 from aica_api.services.binning import bin_context
@@ -149,7 +151,11 @@ def freeze_event_plan(scenario: ScenarioDef) -> EventPlan:
 # ---------------------------------------------------------------------------
 
 
-def build_event_plan(route_facts: RouteFacts, scenario: ScenarioDef) -> EventPlan:
+def build_event_plan(
+    route_facts: RouteFacts,
+    scenario: ScenarioDef,
+    presets: dict[str, Any] | None = None,
+) -> EventPlan:
     """Build the M2 EventPlan from RouteFacts and scenario presets.
 
     Returns an EventPlan with M2 fields (tick_seconds, traffic_events,
@@ -157,26 +163,39 @@ def build_event_plan(route_facts: RouteFacts, scenario: ScenarioDef) -> EventPla
     This is the deterministic, declarative event schedule the M2 tick engine
     uses to resolve active events at each tick.
 
+    Caller-supplied ``presets`` are merged on top of ``scenario.presets``
+    (caller wins on key conflict).  Supported preset keys:
+
+    - ``tick_seconds`` (int)  — overrides ``scenario.tick_seconds``.
+    - ``traffic_events`` (list[dict])  — replaces any traffic events from
+      ``scenario.presets``; each dict must satisfy the ``TrafficEvent`` schema.
+    - ``weather_events`` (list[dict])  — replaces weather events from
+      ``scenario.presets``; each dict must satisfy the ``WeatherEvent`` schema.
+
     Args:
         route_facts: RouteFacts derived from analyze_route(scenario).
         scenario:    Validated ScenarioDef (M2, with profiles + presets).
+        presets:     Optional caller overrides merged on top of scenario.presets.
 
     Returns:
         EventPlan with tick_seconds and event lists; ticks=[] (M2 mode).
     """
-    presets = scenario.presets or {}
+    # Merge scenario presets with caller presets (caller takes priority)
+    merged_presets: dict[str, Any] = dict(scenario.presets or {})
+    if presets:
+        merged_presets.update(presets)
 
     # ── Tick seconds ──────────────────────────────────────────────────────────
-    tick_seconds: int = scenario.tick_seconds
+    tick_seconds: int = int(merged_presets.get("tick_seconds", scenario.tick_seconds))
 
     # ── Traffic events ────────────────────────────────────────────────────────
     traffic_events: list[TrafficEvent] = []
-    for raw in presets.get("traffic_events", []):
+    for raw in merged_presets.get("traffic_events", []):
         traffic_events.append(TrafficEvent(**raw))
 
     # ── Weather events ────────────────────────────────────────────────────────
     weather_events: list[WeatherEvent] = []
-    for raw in presets.get("weather_events", []):
+    for raw in merged_presets.get("weather_events", []):
         weather_events.append(WeatherEvent(**raw))
 
     # ── Rest opportunities from route_facts ───────────────────────────────────

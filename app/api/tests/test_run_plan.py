@@ -296,3 +296,151 @@ def test_regenerate_draft_404_unknown_plan():
             parameters={},
             hyperparameters={},
         )
+
+
+# ---------------------------------------------------------------------------
+# Fix 1 — plan-build failure does not produce a startable run
+# ---------------------------------------------------------------------------
+
+
+def test_plan_build_failure_surfaces_as_validation_error(uc01_package, uc01_scenario, monkeypatch):
+    """When build_event_plan raises, create_draft returns validation_errors and
+    does NOT register the draft (so no run can be started)."""
+    import aica_api.services.run_plan as run_plan_mod
+
+    def _raise(route_facts, scenario, presets=None):
+        raise RuntimeError("Simulated plan-build failure")
+
+    monkeypatch.setattr(run_plan_mod, "build_event_plan", _raise)
+
+    draft = create_draft(
+        plan_id="plan_build_fail",
+        package=uc01_package,
+        scenario=uc01_scenario,
+        presets={},
+        parameters={},
+        hyperparameters={},
+        run_mode="standard",
+    )
+
+    # Draft must carry a validation error pointing to event_plan
+    assert len(draft.validation_errors) > 0
+    error_fields = [e["field"] for e in draft.validation_errors]
+    assert "event_plan" in error_fields
+
+    # The failed draft must NOT be registered (cannot start a run from it)
+    assert get_draft_entry("plan_build_fail") is None
+
+
+# ---------------------------------------------------------------------------
+# Fix 3 — non-vacuous preset test: changed preset produces a different draft
+# ---------------------------------------------------------------------------
+
+
+def test_regenerate_with_changed_tick_seconds_produces_different_plan(uc01_package, uc01_scenario):
+    """Regenerating with a different tick_seconds preset changes draft_event_plan."""
+    # First draft with default presets (no tick_seconds override)
+    create_draft(
+        plan_id="plan_preset_test",
+        package=uc01_package,
+        scenario=uc01_scenario,
+        presets={},
+        parameters={},
+        hyperparameters={},
+        run_mode="standard",
+    )
+    entry = get_draft_entry("plan_preset_test")
+    assert entry is not None
+    original_tick_seconds = entry[0].draft_event_plan.tick_seconds
+
+    # Regenerate with a doubled tick_seconds
+    doubled = original_tick_seconds * 2
+    new_draft = regenerate_draft(
+        plan_id="plan_preset_test",
+        presets={"tick_seconds": doubled},
+        parameters={},
+        hyperparameters={},
+    )
+    assert new_draft.validation_errors == []
+    assert new_draft.draft_event_plan.tick_seconds == doubled
+    assert new_draft.draft_event_plan.tick_seconds != original_tick_seconds
+
+
+# ---------------------------------------------------------------------------
+# Fix 4 — synthetic band-parameter test: _validate_parameter exercised
+# ---------------------------------------------------------------------------
+
+
+def test_synthetic_band_parameter_out_of_range_rejected(uc01_scenario):
+    """An invalid band value for a *parameter* (not hyperparameter) is rejected.
+
+    Uses a synthetic in-memory PackageManifest with a band parameter so the
+    test is never skipped regardless of what the fixture package declares.
+    """
+    from aica_api.models.package import (
+        AlgorithmDef,
+        FeatureDef,
+        FireControlRule,
+        HyperparameterDef,
+        PackageManifest,
+        ParameterDef,
+        ProposalDef,
+        TriggerCategoryDef,
+    )
+
+    synth_param = ParameterDef(
+        key="alert_mode",
+        label={"en": "Alert Mode"},
+        kind="band",
+        band_values=["gentle", "standard", "firm"],
+        default="standard",
+    )
+    synth_package = PackageManifest(
+        id="rest_rule_based_v0_1",  # must match compatible_scenario_types lookup
+        version="0.0.1-test",
+        label={"en": "Synthetic test package"},
+        compatible_scenario_types=[uc01_scenario.type],
+        algorithm=AlgorithmDef(type="declarative_rule", entrypoint="rules"),
+        parameters=[synth_param],
+        features=[
+            FeatureDef(key="drowsiness_level", band_values=["none", "mild", "moderate", "strong"]),
+        ],
+        hyperparameters=[
+            HyperparameterDef(
+                key="require_actionable",
+                label={"en": "Require Actionable"},
+                kind="bool",
+                default=True,
+            ),
+        ],
+        trigger_categories=[TriggerCategoryDef(id="rest_required", priority=1)],
+        rules=[],
+        fire_control=FireControlRule(
+            threshold_source="proposal_threshold",
+            actionability_guard="require_actionable",
+        ),
+        proposals=[
+            ProposalDef(
+                id="rest_guidance",
+                message={"en": "Please rest."},
+                options=["accept_rest"],
+            )
+        ],
+    )
+
+    # Submit an invalid band value for the parameter
+    draft = create_draft(
+        plan_id="plan_synth_param",
+        package=synth_package,
+        scenario=uc01_scenario,
+        presets={},
+        parameters={"alert_mode": "INVALID_BAND_VALUE"},
+        hyperparameters={},
+        run_mode="standard",
+    )
+
+    assert len(draft.validation_errors) > 0
+    error_fields = [e["field"] for e in draft.validation_errors]
+    assert "alert_mode" in error_fields
+    # Must NOT be registered
+    assert get_draft_entry("plan_synth_param") is None

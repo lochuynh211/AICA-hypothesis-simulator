@@ -188,6 +188,16 @@ def create_run(
             bands={feature.key: feature.band_values for feature in package.features},
         )
 
+    # M2 guard: an M2 scenario with no rest opportunities signals a failed or
+    # empty plan — do not start the run (failures must never be disguised as a
+    # normal empty-plan run).
+    if _is_m2_scenario(scenario) and len(event_plan.rest_opportunities) == 0:
+        raise ValueError(
+            f"M2 event plan for plan_id={plan_id!r} has no rest opportunities. "
+            "The plan build may have failed or the scenario route has no rest spots. "
+            "Fix the scenario/package and create a new run plan."
+        )
+
     # Extract effective setup
     effective_setup = draft.effective_setup
     effective_params = effective_setup.get("parameters", {})
