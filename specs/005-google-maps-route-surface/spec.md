@@ -41,12 +41,14 @@ milestones §6 (M4), runtime workflow §3.3–3.4 + §11.1, architecture §6.3.
 - Q: How does the reviewer enter the start and end for a Maps route? → A: Free-text place
   names / addresses, geocoded directly by the route service; the resolved endpoints are
   frozen into the run log for reproducibility.
-- Q: When no rest stops are found along the route (or the rest-stop lookup fails), how
-  should the simulator behave? → A: Do NOT fabricate rest stops. The route facts carry an
-  honest empty rest list (surfaced as a notice), so the trigger recognizes the rest need
-  but, with no reachable rest target, yields its existing non-actionable
-  `NO_PRACTICAL_ACTION_FALLBACK` alert — which does not pause the run — and the drive
-  continues.
+- Q: When no rest stops are found along the route, how should the simulator behave? → A:
+  Do NOT fabricate rest stops. The route facts carry an honest empty rest list (surfaced
+  as a notice), so the trigger recognizes the rest need but, with no reachable rest
+  target, yields its existing non-actionable `NO_PRACTICAL_ACTION_FALLBACK` alert — which
+  does not pause the run — and the drive continues. (Distinct from a rest-stop lookup
+  *failure*, where data could not be obtained — see FR-008: that degrades to the
+  scenario's local rest pattern with a visible degraded-data notice, so rest targets
+  remain available rather than falsely asserting absence.)
 - Q: How many route alternatives should the reviewer be offered? → A: Up to 3 (whatever
   the route service returns, capped at 3).
 
@@ -120,10 +122,13 @@ without route facts, and that no run log/response/saved file ever contains the k
 1. **Given** the route service fails, **When** the reviewer requests a route, **Then** an
    error is shown, retry is offered, the local-route fallback is offered, and no run can
    start without route facts.
-2. **Given** the rest-stop service fails or finds nothing along a valid route, **When**
-   the route facts are built, **Then** no rest stops are fabricated — the rest list is
-   honestly empty (a surfaced notice) and the trigger yields its non-actionable
-   `NO_PRACTICAL_ACTION_FALLBACK` alert (no pause), so the drive continues.
+2. **Given** the rest-stop lookup **finds nothing** on a valid route, **When** the route
+   facts are built, **Then** no rest stops are fabricated — the rest list is honestly
+   empty (a surfaced notice) and the trigger yields its non-actionable
+   `NO_PRACTICAL_ACTION_FALLBACK` alert (no pause), so the drive continues. **And given**
+   the rest-stop lookup instead **fails**, **Then** the system falls back to the
+   scenario's local rest pattern with a visible degraded-data notice (rest targets remain
+   available), never falsely asserting absence.
 3. **Given** any real-route interaction, **When** the run log, any API response, and any
    saved file are inspected, **Then** the map key never appears in any of them.
 
@@ -133,10 +138,12 @@ without route facts, and that no run log/response/saved file ever contains the k
 
 - **Key present but route service unreachable / invalid key**: surfaced error, retry, and
   local-route fallback; never start a run without route facts (master §11.1).
-- **Rest-stop lookup returns nothing along the route**: no rest stops are fabricated;
-  `nextRestSpotMin` is "none", so the trigger yields its non-actionable
-  `NO_PRACTICAL_ACTION_FALLBACK` alert (not a pause) and the drive continues; the absence
-  is surfaced as a notice.
+- **Rest-stop lookup returns nothing vs fails**: a successful-but-empty lookup → no rest
+  stops fabricated, `nextRestSpotMin` is "none", so the trigger yields its non-actionable
+  `NO_PRACTICAL_ACTION_FALLBACK` alert (not a pause), the drive continues, and the absence
+  is surfaced. A rest-stop lookup *failure* (data unobtainable) → fall back to the
+  scenario's local rest pattern (scaled onto the route) with a visible degraded-data
+  notice, so rest targets remain available.
 - **Replay / refresh after a real-route run**: the run replays from frozen route facts
   and the saved display snapshot — the map service is never re-contacted, and the result
   is identical.
@@ -184,11 +191,16 @@ without route facts, and that no run log/response/saved file ever contains the k
   geometry.
 - **FR-008**: If the route service cannot return a route, the system MUST show an error,
   allow retry, allow the local-route fallback, and MUST NOT start a run without route
-  facts. If the rest-stop lookup fails or finds no rest stops along the route, the system
-  MUST NOT fabricate rest stops: the route facts carry an **honest empty rest list**
-  (surfaced as a notice), so the trigger recognizes the rest need but, with no reachable
-  rest target, yields its existing non-actionable `NO_PRACTICAL_ACTION_FALLBACK` alert
-  (which does not pause the run) and the drive continues.
+  facts. Rest-stop handling distinguishes two cases: **(a) lookup succeeds but finds no
+  rest stops** along the route → the system MUST NOT fabricate rest stops; the route facts
+  carry an **honest empty rest list** (surfaced as a notice), so the trigger recognizes
+  the rest need but, with no reachable target, yields its existing non-actionable
+  `NO_PRACTICAL_ACTION_FALLBACK` alert (no pause) and the drive continues. **(b) the
+  rest-stop lookup itself fails** (data could not be obtained) → the system MUST fall back
+  to the scenario's local rest pattern (scaled onto the route) with a **visible
+  degraded-data notice**, so the rest trigger still has estimated targets and review is
+  not blocked by a transient failure (the simulator must not falsely assert absence when
+  it simply could not check).
 - **FR-009**: During playback of a real-route run, the map MUST display the car, progress,
   and decision (proposal) markers positioned from the run's deterministic per-tick
   progress.

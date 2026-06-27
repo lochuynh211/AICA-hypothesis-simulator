@@ -36,6 +36,11 @@
   stays behavioral about how the key is handled, how routes are derived/frozen, and how
   failures degrade. The ADR owns the concrete *how* (backend-proxied derivation, in-browser
   map, stdlib HTTP, freezing).
+- A few **contract-level** terms (`raw_state`, `feature_groups`,
+  `NO_PRACTICAL_ACTION_FALLBACK`, `route_source`) appear intentionally: they are the
+  existing simulator's compatibility contract this feature must preserve (the M2/M3
+  algorithm-context + result-type contract), not new implementation choices. Naming them
+  keeps the boundary requirements (FR-005, FR-008) testable against the real contract.
 - No [NEEDS CLARIFICATION] markers: the ADR review resolved the major forks (key locus,
   start/end source, rest-spot source, the two-layer numeric boundary, alternatives flow,
   snapshot persistence). `/speckit-clarify` may still probe edge details.

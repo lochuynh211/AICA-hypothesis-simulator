@@ -78,8 +78,14 @@ replay** — preserving Principle III (deterministic, replayable).
   surface). `route_source: "local"`.
 - **Directions failure** → show error, **allow retry**, **allow local-fixture
   fallback**; **never start a run without route facts** (master §11.1).
-- **Places failure** → degrade to synthetic-cadence / scenario rest spots (surfaced as
-  a notice), so the rest trigger still has actionable targets.
+- **No rest stops found** (Places succeeds but the route genuinely has none) → **no
+  fabrication**; the rest list is honestly empty (surfaced) and the trigger yields its
+  existing non-actionable `NO_PRACTICAL_ACTION_FALLBACK` alert (no pause); the drive
+  continues.
+- **Places lookup failure** (data could not be obtained) → fall back to the scenario's
+  local rest pattern (scaled onto the route) with a **visible degraded-data notice**, so
+  rest targets remain available and a transient failure does not block review (do not
+  falsely assert absence when we could not check).
 
 ### D7 — Two-layer numeric boundary: Google-raw → frozen route facts → simulator raw_state
 The external boundary is between **Google's raw API payload** (metres, seconds, live
