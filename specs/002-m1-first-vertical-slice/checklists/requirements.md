@@ -34,9 +34,11 @@
 - All three quality dimensions passed on first validation. No [NEEDS CLARIFICATION]
   markers needed — the M1 ADR resolved the open decisions (scope boundaries,
   full §11 result shape, deferrals, branch plan).
-- Content Quality: concrete stack/endpoint/file names are kept out of the
-  requirements and success criteria and confined to the Assumptions section as
-  references to the M1 ADR, which owns the "how". Requirements describe the loop's
-  behavior (validate, evaluate, persist, refuse-invalid) without naming tech.
+- Content Quality scope: the "No implementation details" item is judged against the
+  **requirements and success criteria**, which name no languages/frameworks/APIs.
+  Concrete stack names (FastAPI/Pydantic/React/Vite) appear **only** in the
+  Assumptions section, intentionally, as references to the M1 ADR/master architecture
+  that own the "how" — this is the speckit convention, not a leak into the
+  requirements. The item is therefore marked passing on that basis.
 - FR-017 / SC-002 / SC-003 encode the constitution's qualitative-discipline and
   determinism principles as testable requirements.

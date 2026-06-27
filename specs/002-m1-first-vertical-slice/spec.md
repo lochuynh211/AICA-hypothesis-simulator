@@ -86,22 +86,23 @@ applies) and that the evidence log content is viewable.
 
 ### User Story 3 - Drive the same loop backend-only (Priority: P3)
 
-An operator (or automated test) performs the full create-run → evaluate →
-act → read-evidence loop directly through the backend interface, with no
-frontend involved, and gets the same decisions and persisted evidence.
+An operator (or automated test) performs the full create-run → tick (evaluation
+happens inside each tick) → act → read-evidence loop directly through the backend
+interface, with no frontend involved, and gets the same decisions and persisted
+evidence.
 
 **Why this priority**: Confirms the backend is the source of truth and the loop is
 not dependent on the UI — a constitutional requirement and a milestone acceptance
 criterion — but it is verification of US1's mechanism rather than new user value.
 
-**Independent Test**: Drive create-run, repeated evaluation to the proposal, the
+**Independent Test**: Drive create-run, repeated ticking until the proposal, the
 action, and evidence retrieval entirely through the backend interface; confirm the
 same proposal and a persisted log.
 
 **Acceptance Scenarios**:
 
 1. **Given** no frontend is used, **When** the operator creates a run and repeatedly
-   evaluates, **Then** the same single rest proposal is reached deterministically.
+   ticks, **Then** the same single rest proposal is reached deterministically.
 2. **Given** the backend-only run reached a proposal, **When** the operator records
    an action and retrieves the evidence, **Then** the persisted log matches what a
    UI-driven run would produce.
@@ -197,6 +198,8 @@ incompatible pairing) and confirm a visible error and that no run can start with
 - **FR-015**: The reviewer-facing experience MUST present three regions: drive
   context (package/scenario, route segments, live readouts), playback and the
   in-cockpit proposal, and the decision trace plus the persisted evidence view.
+  The persisted evidence view is a **static display** of the saved log JSON;
+  read-only evidence **replay playback** is out of scope for M1 (M5).
 - **FR-016**: The reviewer-facing experience MUST display decisions and evidence
   produced by the backend and MUST NOT itself originate or alter any decision or
   recorded evidence (it may compute display-only animation/progress).
@@ -238,9 +241,9 @@ incompatible pairing) and confirm a visible error and that no run can start with
 - **SC-005**: The decision trace for the run shows, for the firing tick, the result
   type, the candidate(s) including any suppressed candidate, the fire-control
   outcome, the reasons, and an explanation.
-- **SC-006**: The full create-run → evaluate → act → read-evidence loop can be
-  completed through the backend interface alone, producing the same proposal and a
-  persisted log as the UI-driven loop.
+- **SC-006**: The full create-run → tick (evaluation inside the tick) → act →
+  read-evidence loop can be completed through the backend interface alone, producing
+  the same proposal and a persisted log as the UI-driven loop.
 - **SC-007**: An invalid package or scenario, or an incompatible pairing, is
   reported as an error and cannot be used to start a run.
 - **SC-008**: An evaluation failure appears in the evidence as an explicit error
