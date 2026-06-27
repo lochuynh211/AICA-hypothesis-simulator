@@ -80,7 +80,7 @@ and data directories at repository root.
 
 **Independent Test**: Run each test command; both discover tests and report all passing.
 
-- [ ] T013 [US2] Verify backend test runner: `cd app/api && uv run pytest` discovers `tests/test_health.py` and passes; fix `pyproject.toml` pytest config if discovery fails
+- [ ] T013 [US2] Verify backend test runner: `cd app/api && uv run pytest` discovers `tests/test_health.py` and passes (verification only; pytest config was established in T002 — adjust there if discovery fails)
 - [ ] T014 [US2] Verify frontend test runner: `cd app/frontend && npm test` runs Vitest, discovers `tests/App.test.tsx` and passes; fix `vite.config.ts` / test setup (jsdom, jest-dom matchers) if discovery fails
 
 **Checkpoint**: Both runners green — the project is testable from milestone one.
@@ -105,7 +105,7 @@ and data directories at repository root.
 
 - [ ] T016 [P] Update `.gitignore` to ignore frontend build/dependency artifacts (`node_modules/`, `dist/`) in addition to the existing Python entries
 - [ ] T017 [P] Write `README.md`: single start command (`docker compose up`), host ports 8137/5180 and how to change them if occupied, and the two test commands (FR-009)
-- [ ] T018 Run `quickstart.md` validation end-to-end (start, observe health at `:5180`, run both test suites green)
+- [ ] T018 Run `quickstart.md` validation end-to-end (start, observe health at `:5180`, run both test suites green) and confirm FR-010 holds — no package/scenario/registry/run/tick/algorithm-evaluation modules exist anywhere under `app/api/aica_api/` (skeleton only)
 
 ---
 
