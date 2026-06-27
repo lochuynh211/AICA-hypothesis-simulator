@@ -35,10 +35,13 @@
   the M3 ADR (two review rounds) resolved the open decisions (module loading, context
   shape, result_type pass-through, required-vs-optional inputs, proposal-history scope,
   hybrid fidelity).
-- Content Quality scope: "No implementation details" is judged against the requirements
-  and success criteria, which name no languages/frameworks/APIs. Concrete mechanics
-  (the python_module adapter, importlib loading, the hybrid's formulas/constants) live
-  only in the Assumptions section as references to the M3 ADR (speckit convention).
+- Content Quality scope: "No implementation details" is checked with the understanding
+  that the few technical nouns this spec necessarily uses (Python package, local code
+  file / `algorithm.py`, runtime-state) are **milestone-defining contract terms** — the
+  milestone IS "Python algorithm support," so naming the contract is the user-facing
+  value, not a leak. No frameworks/APIs/code-structure appear in the requirements or
+  success criteria; deeper mechanics (the adapter, importlib loading, the hybrid's
+  formulas/constants) live only in Assumptions as references to the M3 ADR.
 - FR-003/FR-009/SC-003 encode the runtime-state threading + determinism (the M3
   acceptance heart); FR-004 captures the result_type-pass-through correction; FR-006/
   SC-005 capture the three-failure-kind error matrix.

@@ -30,6 +30,12 @@ decision. Authoritative design:
   built-in algorithms? → A: No — Python packages produce the same normalized decision
   shape through the one decision contract; the simulator adjusts shape/field-names
   only and records the algorithm's own result category verbatim.
+- Q: On an algorithm error (Python or built-in), does the run continue or pause? → A:
+  Pause by default, per the master runtime workflow — the error is recorded + shown,
+  no fabricated decision, and resuming requires the appropriate recovery (reset /
+  setup-value change / package-or-scenario change) for the error type; an error
+  explicitly configured non-blocking instead continues. M3 unifies built-in and
+  Python algorithm-error handling to this pause-by-default model.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -110,8 +116,9 @@ produces a clear error event in the evidence and the trace, and no normal decisi
 **Acceptance Scenarios**:
 
 1. **Given** a Python package missing its required entry point, **When** it is
-   evaluated, **Then** an error event is recorded and shown, and no decision is
-   produced for that tick.
+   evaluated, **Then** an error event is recorded and shown, no decision is produced
+   for that tick, and the run pauses by default (continuing only if the error is
+   configured non-blocking).
 2. **Given** a Python package that raises during evaluation, **When** it is evaluated,
    **Then** the error is captured as an error event with a message, shown in the
    trace, and not disguised as a decision.
@@ -124,8 +131,12 @@ produces a clear error event in the evidence and the trace, and no normal decisi
 ### Edge Cases
 
 - **Missing entry point / raise / invalid result**: each becomes a distinct error
-  event (kind of failure identified), persisted and shown; the run continues to the
-  next tick without a fabricated decision.
+  event (kind of failure identified), persisted and shown, and **pauses the run by
+  default** — no fabricated decision is ever produced, and resuming requires the
+  appropriate recovery for the error type (reset, a setup-value change, or a
+  package/scenario change), per the master runtime workflow. An error explicitly
+  configured as **non-blocking** instead lets the run continue to the next tick
+  (still recording and showing the error).
 - **Runtime state on the first tick**: the package receives an empty prior runtime
   state and returns its initial state; subsequent ticks receive the previous tick's
   returned state.
@@ -162,8 +173,13 @@ produces a clear error event in the evidence and the trace, and no normal decisi
   sensor/route enhancement inputs may default to absent/zero.
 - **FR-006**: If the package logic is missing its entry point, raises during
   evaluation, or returns an unusable result, the system MUST record a distinct error
-  event in the evidence and show it in the trace, and MUST NOT produce a normal
-  decision for that tick.
+  event in the evidence and show it in the trace, MUST NOT produce a normal decision
+  for that tick, and MUST **pause the run by default** (resuming requires the
+  appropriate recovery for the error type — reset, a setup-value change, or a
+  package/scenario change) — unless the error is explicitly configured as
+  non-blocking, in which case the run continues. This unifies algorithm-error
+  handling across built-in and Python algorithms to the master's pause-by-default
+  model.
 - **FR-007**: The system MUST ship two Python packages: a simple one equivalent to the
   built-in weighted-score rest proposal, and the transparent-hybrid trigger that
   carries smoothing, velocity, persistence counters, state machines, multi-category
@@ -213,8 +229,9 @@ produces a clear error event in the evidence and the trace, and no normal decisi
 - **SC-004**: The simple Python package produces decisions equivalent to the built-in
   weighted-score package on the same inputs.
 - **SC-005**: A Python package that is missing its entry point, raises, or returns an
-  unusable result yields a distinct, visible error event and no normal decision for
-  that tick — verified for all three failure kinds.
+  unusable result yields a distinct, visible error event, no normal decision for that
+  tick, and a paused run by default (continuing only when the error is configured
+  non-blocking) — verified for all three failure kinds.
 - **SC-006**: Suppressed candidates from a Python package are persisted and visible in
   the trace.
 - **SC-007**: The trace surfaces the hybrid's per-tick state labels and recorded
