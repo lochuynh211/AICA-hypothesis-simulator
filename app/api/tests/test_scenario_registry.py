@@ -61,6 +61,14 @@ def test_summary_has_required_keys(registry):
         assert "version" in s
         assert "type" in s
         assert "review_focus" in s
+        assert "persona_label" in s
+
+
+def test_summary_persona_label_correct(registry):
+    """persona_label in the summary matches the fixture's persona name."""
+    summaries = registry.list_summaries()
+    s = next(s for s in summaries if s["id"] == "uc01_fatigue_friend_drive_v0_1")
+    assert s["persona_label"] == "Haruto Tanaka"
 
 
 def test_summary_id_correct(registry):

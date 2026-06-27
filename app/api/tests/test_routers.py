@@ -15,11 +15,25 @@ Uses monkeypatch of AICA_RUNS_DIR so tests never litter the repo's runs/ dir.
 
 from __future__ import annotations
 
+import json
+import shutil
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
+from aica_api.algorithms.adapter import AlgorithmAdapterError
 from aica_api.main import app
+from aica_api.models.decision import (
+    Candidate,
+    DecisionResult,
+    FireControl,
+    Proposal,
+    ResultType,
+)
 from aica_api.services.run_manager import clear_registry
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -184,15 +198,14 @@ def test_tick_unknown_run(client):
 
 
 def test_tick_normal_envelope_fields(client, run_id):
-    """Normal tick envelope has run_state, decision, paused, completed."""
+    """Normal tick envelope has all four fields: run_state, decision, paused, completed."""
     resp = client.post(f"/api/runs/{run_id}/tick")
     assert resp.status_code == 200
     body = resp.json()
-    # Only check for standard fields; algorithm errors would show 'error' instead
-    if "error" not in body:
-        assert "decision" in body
-        assert "paused" in body
-        assert "completed" in body
+    assert "run_state" in body
+    assert "decision" in body
+    assert "paused" in body
+    assert "completed" in body
 
 
 # ── Run listing and detail tests ──────────────────────────────────────────────
@@ -290,3 +303,162 @@ def test_action_404_unknown_run(client):
         json={"action": "accept_rest"},
     )
     assert resp.status_code == 404
+
+
+# ── Fix 2: incompatible-pairing 400 ──────────────────────────────────────────
+
+
+def test_create_run_incompatible_scenario_400(tmp_path, monkeypatch):
+    """POST /api/runs with a scenario whose type is not in compatible_scenario_types → 400."""
+    scenarios_dir = tmp_path / "scenarios"
+    scenarios_dir.mkdir()
+    runs_dir = tmp_path / "runs"
+    runs_dir.mkdir()
+
+    # Copy the standard valid scenario so the registry can load it
+    src = _REPO_ROOT / "scenarios" / "uc01_fatigue_friend_drive_v0_1.json"
+    shutil.copy(src, scenarios_dir / "uc01_fatigue_friend_drive_v0_1.json")
+
+    # Write a minimal but valid ScenarioDef with an incompatible type
+    incompat = {
+        "id": "uc99_incompat_test_v0_1",
+        "version": "0.1.0",
+        "type": "uc99_other",
+        "persona": {"name": "Test Driver", "description": ""},
+        "route_intent": {
+            "rest_facility": {"label": {"en": "Test Stop"}},
+            "segments": [
+                {
+                    "id": "seg_start", "name": {"en": "Start"},
+                    "type": "start", "at": 0.0,
+                    "speed_band": "low", "length_band": "short",
+                    "is_rest_facility": False,
+                },
+                {
+                    "id": "seg_rest", "name": {"en": "Rest"},
+                    "type": "rest", "at": 0.5,
+                    "speed_band": "low", "length_band": "short",
+                    "is_rest_facility": True,
+                },
+                {
+                    "id": "seg_end", "name": {"en": "End"},
+                    "type": "end", "at": 1.0,
+                    "speed_band": "low", "length_band": "short",
+                    "is_rest_facility": False,
+                },
+            ],
+        },
+        "initial_state": {},
+        "event_presets": {
+            "drowsiness_schedule": [{"at": 0.0, "band": "none"}],
+            "signal_duration_at_trigger": "brief",
+        },
+        "total_duration_seconds": 3600,
+        "tick_seconds": 60,
+        "allowed_actions": ["accept_rest"],
+        "review_focus": "",
+    }
+    (scenarios_dir / "uc99_incompat_test_v0_1.json").write_text(
+        json.dumps(incompat), encoding="utf-8"
+    )
+
+    monkeypatch.setenv("AICA_SCENARIOS_DIR", str(scenarios_dir))
+    monkeypatch.setenv("AICA_RUNS_DIR", str(runs_dir))
+
+    test_client = TestClient(app)
+    resp = test_client.post(
+        "/api/runs",
+        json={"package_id": VALID_PACKAGE_ID, "scenario_id": "uc99_incompat_test_v0_1"},
+    )
+    assert resp.status_code == 400
+    # Confirm no run log was persisted
+    assert list(runs_dir.glob("*.json")) == []
+
+
+# ── Fix 3: action 400 (disallowed action) ────────────────────────────────────
+
+
+def _make_fired_proposal_result() -> DecisionResult:
+    """Build a DecisionResult that fires a REST_PROPOSAL (for test setup)."""
+    proposal = Proposal(
+        id="rest_guidance",
+        message={"en": "Test proposal — take a rest."},
+        options=["accept_rest", "postpone"],
+    )
+    fc_fired = FireControl(fired=True, suppressed=False, override=False, reason="test")
+    candidate = Candidate(
+        category="rest_required",
+        exists=True,
+        score=3.5,
+        state=None,
+        strength="clear",
+        fire_control=fc_fired,
+    )
+    return DecisionResult(
+        result_type=ResultType.REST_PROPOSAL,
+        trigger_candidate=True,
+        selected_category="rest_required",
+        score=3.5,
+        features={"drowsiness_level": "strong"},
+        criteria={"reaction_point": 1.8, "proposal_cut": 3.0, "severe_cut": 4.0},
+        candidates=[candidate],
+        fire_control=fc_fired,
+        proposal=proposal,
+        reason_inputs=["drowsiness_level"],
+        explanation="Forced proposal for test.",
+    )
+
+
+def test_action_400_disallowed_action(client, run_id, monkeypatch):
+    """POST /actions with a disallowed action on a paused run → 400."""
+    # Force the adapter to return a fired proposal so the run becomes paused
+    fired_result = _make_fired_proposal_result()
+    monkeypatch.setattr(
+        "aica_api.algorithms.adapter.evaluate",
+        lambda *a, **kw: fired_result,
+    )
+
+    # Tick once — should pause the run with a pending proposal
+    tick_resp = client.post(f"/api/runs/{run_id}/tick")
+    assert tick_resp.status_code == 200
+    tick_body = tick_resp.json()
+    assert tick_body["paused"] is True
+
+    # Now submit a disallowed action
+    resp = client.post(
+        f"/api/runs/{run_id}/actions",
+        json={"action": "demolish"},
+    )
+    assert resp.status_code == 400
+
+
+# ── Fix 4: algorithm-error tick envelope (FR-011) ────────────────────────────
+
+
+def test_tick_algorithm_error_envelope(client, run_id, monkeypatch):
+    """Adapter failure → 200 with {run_state, error, paused: false}; log has algorithm_error."""
+    # Force the adapter to raise AlgorithmAdapterError
+    def _raise(*a, **kw):
+        raise AlgorithmAdapterError(
+            error_type="algorithm_exception",
+            message="Simulated adapter failure for test",
+        )
+
+    monkeypatch.setattr("aica_api.algorithms.adapter.evaluate", _raise)
+
+    resp = client.post(f"/api/runs/{run_id}/tick")
+    assert resp.status_code == 200
+    body = resp.json()
+
+    # Envelope must have run_state, error, and paused=False
+    assert "run_state" in body
+    assert "error" in body
+    assert body["paused"] is False
+
+    # The persisted log must contain an algorithm_error event
+    log_resp = client.get(f"/api/runs/{run_id}/log")
+    assert log_resp.status_code == 200
+    events = log_resp.json()["events"]
+    error_events = [e for e in events if e.get("kind") == "algorithm_error"]
+    assert len(error_events) >= 1
+    assert error_events[0]["error_type"] == "algorithm_exception"

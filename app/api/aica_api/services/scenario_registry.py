@@ -43,6 +43,7 @@ class ScenarioRegistry:
                 "review_focus": sc.review_focus,
                 "total_duration_seconds": sc.total_duration_seconds,
                 "tick_seconds": sc.tick_seconds,
+                "persona_label": sc.persona.name,
             }
             for sc in self._scenarios.values()
         ]
