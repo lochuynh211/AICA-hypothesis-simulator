@@ -687,6 +687,46 @@ def test_run_state_has_allowed_actions(tmp_path, uc01_package, overtime_scenario
 # ---------------------------------------------------------------------------
 
 
+def test_create_run_local_m2_zero_rest_opportunities_raises(
+    tmp_path, uc01_package, uc01_scenario
+):
+    """Fix 1 (Critical): LOCAL M2 scenario with zero rest opportunities must raise ValueError.
+
+    The guard in create_run rejects local-route M2 plans with no rest opportunities
+    (signals a failed/empty plan build — failures must never be disguised as a
+    normal empty-plan run).  This pins the LOCAL side of the guard.
+
+    The MAPS side (empty Places result is allowed) is covered by
+    TestEndToEndEmptyRestRun in test_t012_rest_handling.py.
+    """
+    from aica_api.models.run import RouteFacts
+
+    # Build route_facts with NO rest spots and local provenance
+    empty_rest_route_facts = RouteFacts(
+        total_route_distance_km=120.0,
+        estimated_route_duration_min=120.0,
+        rest_spot_positions=[],   # no rest stops → event_plan.rest_opportunities == []
+        route_source="local",     # local, not maps → guard must fire
+    )
+
+    plan_id = "plan_local_zero_rest"
+    create_draft(
+        plan_id=plan_id,
+        package=uc01_package,
+        scenario=uc01_scenario,   # M2 scenario (has driver_profile)
+        presets={},
+        parameters={},
+        hyperparameters={},
+        run_mode="standard",
+        route_facts=empty_rest_route_facts,
+        route_source="local",
+    )
+
+    # create_run must reject this draft: local M2 + no rest opportunities
+    with pytest.raises(ValueError, match="no rest opportunities"):
+        create_run(plan_id, "run_local_zero_rest", tmp_path)
+
+
 def test_non_actionable_proposal_does_not_pause(
     tmp_path, uc01_package, uc01_scenario, monkeypatch
 ):

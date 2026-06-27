@@ -35,13 +35,17 @@ class AnalyzeRouteBody(BaseModel):
     end: str | None = None
 
 
-def _scale_scenario_rest_positions(scenario: Any, maps_total_km: float) -> list[dict[str, Any]]:
+def _scale_scenario_rest_positions(local_facts: RouteFacts, maps_total_km: float) -> list[dict[str, Any]]:
     """Fallback for Places failure: scale scenario local rest positions onto a Maps route.
 
-    Takes the scenario's local rest positions as fractions of the local total distance
-    and scales them onto the Maps route distance, returning RawPlace-compatible dicts.
+    Takes pre-computed local route facts and scales their rest positions (as fractions
+    of the local total distance) onto the Maps route distance, returning
+    RawPlace-compatible dicts.  Returns [] if the scenario has no local rest positions.
+
+    ``local_facts`` must be pre-computed by the caller (once per analyze request, not
+    once per alternative) to avoid re-calling ``analyze_route`` for each failing
+    alternative.
     """
-    local_facts = analyze_route(scenario)
     local_total = local_facts.total_route_distance_km or 1.0
     return [
         {
@@ -121,6 +125,11 @@ def analyze_route_endpoint(body: AnalyzeRouteBody):
                 },
             )
 
+        # ── Local fallback facts (pre-computed once for all alternatives) ────
+        # analyze_route is pure and scenario-constant; compute once here so it
+        # is NOT re-called for each failing Places alternative (Fix 3).
+        local_fallback_facts = analyze_route(scenario)
+
         # ── Places (one call per route) ───────────────────────────────────────
         # Empty result is honest (no rest stops on route).
         # Transport failure degrades gracefully to scenario-scaled fallback.
@@ -133,10 +142,16 @@ def analyze_route_endpoint(body: AnalyzeRouteBody):
                 places = maps_client.places_rest_stops(key, raw["encoded_polyline"], context)
                 notices_by_route[rid] = ["no_rest_stops_found"] if not places else []
             except MapsError:
-                # Places failure: fall back to scenario rest positions scaled onto Maps distance
+                # Places failure: fall back to scenario rest positions scaled onto Maps distance.
+                # local_fallback_facts is pre-computed once above — not re-derived here.
                 maps_total_km = raw["distance_m"] / 1000.0
-                places = _scale_scenario_rest_positions(scenario, maps_total_km)
-                notices_by_route[rid] = ["rest_data_degraded"]
+                places = _scale_scenario_rest_positions(local_fallback_facts, maps_total_km)
+                # Fix 2: honest notice — degraded only when fallback is non-empty;
+                # unavailable when the scenario has no local rest pattern either.
+                if places:
+                    notices_by_route[rid] = ["rest_data_degraded"]
+                else:
+                    notices_by_route[rid] = ["rest_data_unavailable"]
             places_by_route[rid] = places
 
         # ── Normalize ─────────────────────────────────────────────────────────

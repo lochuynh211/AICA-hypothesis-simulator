@@ -232,6 +232,99 @@ class TestPlacesFailure:
                 )
 
 
+# ── Fix 2: correct notice when Places fails — degraded vs unavailable ─────────
+
+
+class TestPlacesFailureFallbackNotice:
+    """Fix 2: when Places fails, the notice depends on whether a local fallback exists.
+
+    Notice string set: {no_rest_stops_found, rest_data_degraded, rest_data_unavailable}.
+
+    Sub-case A — scenario HAS a local rest pattern (is_rest_facility=True segment exists):
+      → fallback is non-empty → notice = "rest_data_degraded".
+    Sub-case B — scenario has NO local rest pattern (no is_rest_facility segments):
+      → fallback is [] → notice = "rest_data_unavailable" (honest absence, not false claim).
+    """
+
+    def test_places_failure_with_local_rest_pattern_has_degraded_notice_and_nonempty_positions(
+        self, client, monkeypatch
+    ):
+        """Sub-case A: Places fails + scenario HAS local rest → degraded + non-empty positions."""
+        # uc01_fatigue_friend_drive_v0_1 has a rest facility (is_rest_facility=True) at 0.5
+        dir_data = _fixture_bytes("directions_3_alternatives.json")
+        fail_data = _fixture_bytes("places_failure.json")
+        monkeypatch.setattr(
+            mc, "_urlopen",
+            _make_urlopen_seq([dir_data, fail_data, fail_data, fail_data]),
+        )
+
+        resp = client.post(
+            "/api/routes/analyze",
+            json={
+                "scenario_id": VALID_SCENARIO_ID,
+                "maps_key": _SENTINEL_KEY,
+                "start": "A",
+                "end": "B",
+            },
+        )
+        assert resp.status_code == 200
+        for alt in resp.json()["alternatives"]:
+            assert "rest_data_degraded" in alt["notices"], (
+                f"Expected 'rest_data_degraded' when scenario has local rest pattern; "
+                f"got notices: {alt['notices']}"
+            )
+            assert "rest_data_unavailable" not in alt["notices"]
+            positions = alt["route_facts"]["rest_spot_positions"]
+            assert len(positions) > 0, (
+                f"Expected non-empty rest positions when scenario has local rest pattern; "
+                f"got: {positions}"
+            )
+
+    def test_places_failure_without_local_rest_pattern_has_unavailable_notice_and_empty_positions(
+        self, client, monkeypatch
+    ):
+        """Sub-case B: Places fails + scenario has NO local rest → unavailable + empty positions.
+
+        Monkeypatches _scale_scenario_rest_positions (in the routes module) to return []
+        to simulate a scenario whose route_intent has no is_rest_facility segments.
+        """
+        import aica_api.routers.routes as routes_mod
+
+        # Simulate a scenario with no local rest positions
+        monkeypatch.setattr(routes_mod, "_scale_scenario_rest_positions", lambda *args: [])
+
+        dir_data = _fixture_bytes("directions_3_alternatives.json")
+        fail_data = _fixture_bytes("places_failure.json")
+        monkeypatch.setattr(
+            mc, "_urlopen",
+            _make_urlopen_seq([dir_data, fail_data, fail_data, fail_data]),
+        )
+
+        resp = client.post(
+            "/api/routes/analyze",
+            json={
+                "scenario_id": VALID_SCENARIO_ID,
+                "maps_key": _SENTINEL_KEY,
+                "start": "A",
+                "end": "B",
+            },
+        )
+        assert resp.status_code == 200
+        for alt in resp.json()["alternatives"]:
+            assert "rest_data_unavailable" in alt["notices"], (
+                f"Expected 'rest_data_unavailable' when scenario has no local rest pattern; "
+                f"got notices: {alt['notices']}"
+            )
+            assert "rest_data_degraded" not in alt["notices"], (
+                "Must NOT claim 'rest_data_degraded' when fallback is empty (false claim of "
+                "present-but-degraded data); got notices: {alt['notices']}"
+            )
+            assert alt["route_facts"]["rest_spot_positions"] == [], (
+                f"Expected empty rest positions when scenario has no local rest pattern; "
+                f"got: {alt['route_facts']['rest_spot_positions']}"
+            )
+
+
 # ── Directions failure still 502 ──────────────────────────────────────────────
 
 
