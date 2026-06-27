@@ -18,6 +18,13 @@ automatically persisted evidence log. The same loop is exercisable through the
 backend API without the frontend. Authoritative design:
 `docs/superpowers/specs/2026-06-27-m1-first-vertical-slice-design.md`.
 
+## Clarifications
+
+### Session 2026-06-27
+
+- Q: How does the backend advance the simulation per tick? → A: Each tick advances simulation time by a fixed step; route position is derived from elapsed time over the scenario's total duration; the run is bounded by that total duration. (Aligns with the master runtime workflow's numeric tick model; the qualitative bands the trigger consumes are derived from this state, not the raw values.)
+- Q: Does the rule-based algorithm produce a numeric score? → A: Yes — it computes an ordinal blend score from the banded inputs (as the functional skeleton does) and populates the score on the decision result and the firing candidate; the decision itself remains first-match rule classification.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Review a UC-01 fatigue drive end-to-end (Priority: P1)
@@ -153,9 +160,11 @@ incompatible pairing) and confirm a visible error and that no run can start with
 - **FR-004**: The system MUST create a run that freezes a snapshot of the chosen
   package, scenario, and a generated deterministic event plan at run start, and
   MUST record an initial evidence log at that moment.
-- **FR-005**: The system MUST advance the drive deterministically: the same
-  scenario and choices MUST produce the same sequence of decisions and the same
-  trace on every run.
+- **FR-005**: The system MUST advance the drive deterministically: each tick
+  advances simulation time by a fixed step, route position is derived from elapsed
+  time over the scenario's total duration, and the run is bounded by that duration.
+  The same scenario and choices MUST produce the same sequence of decisions and the
+  same trace on every run.
 - **FR-006**: The system MUST evaluate the hypothesis at each advance through a
   single common decision contract, regardless of algorithm type, and MUST produce a
   normalized decision result for each evaluation.
@@ -163,7 +172,9 @@ incompatible pairing) and confirm a visible error and that no run can start with
   whether a trigger candidate exists, the selected category, a score, the
   candidate(s) with their fire-control outcome, the overall fire-control outcome,
   the proposal (when one fires), the reasons that drove the decision, and a
-  human-readable explanation.
+  human-readable explanation. For the M1 rule-based algorithm, the score is an
+  ordinal blend computed from the banded inputs, populated on the result and the
+  firing candidate, while the decision remains first-match rule classification.
 - **FR-008**: Suppressed candidates MUST be preserved in the decision result and
   marked as suppressed, never dropped.
 - **FR-009**: For the UC-01 fatigue scenario, the drive MUST reach exactly one rest
