@@ -6,5 +6,7 @@ Backend service for the AICA Hypothesis Simulator.
 
 ```bash
 uv sync --extra dev
-uv run uvicorn aica_api.main:app --host 0.0.0.0 --port 8137 --reload
 ```
+
+The FastAPI app and its run command are added in a later unit; see the root
+`README.md` for how to start the full stack via Docker Compose.
