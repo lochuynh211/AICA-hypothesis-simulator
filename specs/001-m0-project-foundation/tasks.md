@@ -32,9 +32,9 @@ and data directories at repository root.
 
 **Purpose**: Repository structure and per-side project skeletons that every story builds on. No app logic yet.
 
-- [ ] T001 Create repository directory structure (`app/api/aica_api/`, `app/api/tests/`, `app/frontend/src/api/`, `app/frontend/tests/`, `packages/`, `scenarios/`, `runs/`) and add `.gitkeep` to `packages/`, `scenarios/`, and `runs/`
-- [ ] T002 [P] Initialize backend project: `app/api/pyproject.toml` (PEP 621, uv-managed; runtime deps `fastapi`, `uvicorn[standard]`; dev deps `pytest`, `httpx`; configure pytest testpaths=`tests`) and empty `app/api/aica_api/__init__.py`
-- [ ] T003 [P] Initialize frontend project: `app/frontend/package.json` (deps `react`, `react-dom`; dev `vite`, `typescript`, `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, `jsdom`; `"test": "vitest run"` script), `app/frontend/tsconfig.json`, `app/frontend/index.html`, and `app/frontend/vite.config.ts` (`server.port` 5180, `server.host` true, proxy `/api` → `http://api:8137`, Vitest `environment: 'jsdom'`)
+- [x] T001 Create repository directory structure (`app/api/aica_api/`, `app/api/tests/`, `app/frontend/src/api/`, `app/frontend/tests/`, `packages/`, `scenarios/`, `runs/`) and add `.gitkeep` to `packages/`, `scenarios/`, and `runs/`
+- [x] T002 [P] Initialize backend project: `app/api/pyproject.toml` (PEP 621, uv-managed; runtime deps `fastapi`, `uvicorn[standard]`; dev deps `pytest`, `httpx`; configure pytest testpaths=`tests`) and empty `app/api/aica_api/__init__.py`
+- [x] T003 [P] Initialize frontend project: `app/frontend/package.json` (deps `react`, `react-dom`; dev `vite`, `typescript`, `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, `jsdom`; `"test": "vitest run"` script), `app/frontend/tsconfig.json`, `app/frontend/index.html`, and `app/frontend/vite.config.ts` (`server.port` 5180, `server.host` true, proxy `/api` → `http://api:8137`, Vitest `environment: 'jsdom'`)
 
 ---
 
@@ -44,9 +44,9 @@ and data directories at repository root.
 
 **⚠️ CRITICAL**: US1's "start with one command" acceptance depends on this phase.
 
-- [ ] T004 [P] Create `Dockerfile.api` (`python:3.12-slim`, install `uv`, install backend deps from `app/api/pyproject.toml`, run `uvicorn aica_api.main:app --reload --host 0.0.0.0 --port 8137`)
-- [ ] T005 [P] Create `Dockerfile.frontend` (`node:22`, `npm install` from `app/frontend/package.json`, run Vite dev server `--host` on port 5180)
-- [ ] T006 Create `docker-compose.yml` at repo root: service `api` (build `Dockerfile.api`, publish `8137:8137`, bind-mount `./app/api`, keep container `.venv`), service `frontend` (build `Dockerfile.frontend`, publish `5180:5180`, bind-mount `./app/frontend`, keep container `node_modules`, depends_on `api`)
+- [x] T004 [P] Create `Dockerfile.api` (`python:3.12-slim`, install `uv`, install backend deps from `app/api/pyproject.toml`, run `uvicorn aica_api.main:app --reload --host 0.0.0.0 --port 8137`)
+- [x] T005 [P] Create `Dockerfile.frontend` (`node:22`, `npm install` from `app/frontend/package.json`, run Vite dev server `--host` on port 5180)
+- [x] T006 Create `docker-compose.yml` at repo root: service `api` (build `Dockerfile.api`, publish `8137:8137`, bind-mount `./app/api`, keep container `.venv`), service `frontend` (build `Dockerfile.frontend`, publish `5180:5180`, bind-mount `./app/frontend`, keep container `node_modules`, depends_on `api`)
 
 **Checkpoint**: `docker compose up` builds and starts both services (endpoints/shell still to come in US1).
 
@@ -60,15 +60,15 @@ and data directories at repository root.
 
 ### Tests for User Story 1 (write FIRST, ensure they FAIL) ⚠️
 
-- [ ] T007 [P] [US1] Backend contract test in `app/api/tests/test_health.py`: `GET /api/health` returns 200 and JSON `{"status":"ok","service":"aica-api","version":"0.0.0"}` (FastAPI `TestClient`). MUST FAIL before T009.
-- [ ] T008 [P] [US1] Frontend test in `app/frontend/tests/App.test.tsx`: with `fetch` mocked to the success body, `<App>` renders a healthy status naming the backend service; with `fetch` rejecting / non-200, `<App>` renders the error state. MUST FAIL before T010/T011.
+- [x] T007 [P] [US1] Backend contract test in `app/api/tests/test_health.py`: `GET /api/health` returns 200 and JSON `{"status":"ok","service":"aica-api","version":"0.0.0"}` (FastAPI `TestClient`). MUST FAIL before T009.
+- [x] T008 [P] [US1] Frontend test in `app/frontend/tests/App.test.tsx`: with `fetch` mocked to the success body, `<App>` renders a healthy status naming the backend service; with `fetch` rejecting / non-200, `<App>` renders the error state. MUST FAIL before T010/T011.
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Implement `app/api/aica_api/main.py`: FastAPI app exposing `GET /api/health` returning the contract body (makes T007 pass)
-- [ ] T010 [P] [US1] Implement `app/frontend/src/api/client.ts`: `getHealth()` calling `fetch('/api/health')`, returning the parsed HealthStatus or throwing on non-ok
-- [ ] T011 [US1] Implement `app/frontend/src/App.tsx` (fetch health once on mount via `getHealth()`, render healthy status or error state; no retry/polling) and `app/frontend/src/main.tsx` (mount `<App>`) — makes T008 pass (depends on T010)
-- [ ] T012 [US1] Manual end-to-end verification: `docker compose up`, open `http://localhost:5180` (shell shows backend health), and `curl http://localhost:8137/api/health` matches the contract
+- [x] T009 [US1] Implement `app/api/aica_api/main.py`: FastAPI app exposing `GET /api/health` returning the contract body (makes T007 pass)
+- [x] T010 [P] [US1] Implement `app/frontend/src/api/client.ts`: `getHealth()` calling `fetch('/api/health')`, returning the parsed HealthStatus or throwing on non-ok
+- [x] T011 [US1] Implement `app/frontend/src/App.tsx` (fetch health once on mount via `getHealth()`, render healthy status or error state; no retry/polling) and `app/frontend/src/main.tsx` (mount `<App>`) — makes T008 pass (depends on T010)
+- [x] T012 [US1] Manual end-to-end verification: `docker compose up`, open `http://localhost:5180` (shell shows backend health), and `curl http://localhost:8137/api/health` matches the contract
 
 **Checkpoint**: US1 fully functional — the health round-trip works end-to-end. This is the MVP.
 
@@ -80,8 +80,8 @@ and data directories at repository root.
 
 **Independent Test**: Run each test command; both discover tests and report all passing.
 
-- [ ] T013 [US2] Verify backend test runner: `cd app/api && uv run pytest` discovers `tests/test_health.py` and passes (verification only; pytest config was established in T002 — adjust there if discovery fails)
-- [ ] T014 [US2] Verify frontend test runner: `cd app/frontend && npm test` runs Vitest, discovers `tests/App.test.tsx` and passes; fix `vite.config.ts` / test setup (jsdom, jest-dom matchers) if discovery fails
+- [x] T013 [US2] Verify backend test runner: `cd app/api && uv run pytest` discovers `tests/test_health.py` and passes (verification only; pytest config was established in T002 — adjust there if discovery fails)
+- [x] T014 [US2] Verify frontend test runner: `cd app/frontend && npm test` runs Vitest, discovers `tests/App.test.tsx` and passes; fix `vite.config.ts` / test setup (jsdom, jest-dom matchers) if discovery fails
 
 **Checkpoint**: Both runners green — the project is testable from milestone one.
 
@@ -93,7 +93,7 @@ and data directories at repository root.
 
 **Independent Test**: Inspect the tree; confirm required dirs and that empty data dirs survive a fresh checkout.
 
-- [ ] T015 [US3] Verify foundation tree and placeholders: `app/api`, `app/frontend`, and `packages/`, `scenarios/`, `runs/` exist with `.gitkeep` so a fresh `git checkout` retains the empty data directories (confirm via `git ls-files packages scenarios runs`)
+- [x] T015 [US3] Verify foundation tree and placeholders: `app/api`, `app/frontend`, and `packages/`, `scenarios/`, `runs/` exist with `.gitkeep` so a fresh `git checkout` retains the empty data directories (confirm via `git ls-files packages scenarios runs`)
 
 **Checkpoint**: Repository skeleton complete and version-controlled.
 
@@ -103,9 +103,9 @@ and data directories at repository root.
 
 **Purpose**: Documentation and environment hygiene spanning the stories.
 
-- [ ] T016 [P] Update `.gitignore` to ignore frontend build/dependency artifacts (`node_modules/`, `dist/`) in addition to the existing Python entries
-- [ ] T017 [P] Write `README.md`: single start command (`docker compose up`), host ports 8137/5180 and how to change them if occupied, and the two test commands (FR-009)
-- [ ] T018 Run `quickstart.md` validation end-to-end (start, observe health at `:5180`, run both test suites green) and confirm FR-010 holds — no package/scenario/registry/run/tick/algorithm-evaluation modules exist anywhere under `app/api/aica_api/` (skeleton only)
+- [x] T016 [P] Update `.gitignore` to ignore frontend build/dependency artifacts (`node_modules/`, `dist/`) in addition to the existing Python entries
+- [x] T017 [P] Write `README.md`: single start command (`docker compose up`), host ports 8137/5180 and how to change them if occupied, and the two test commands (FR-009)
+- [x] T018 Run `quickstart.md` validation end-to-end (start, observe health at `:5180`, run both test suites green) and confirm FR-010 holds — no package/scenario/registry/run/tick/algorithm-evaluation modules exist anywhere under `app/api/aica_api/` (skeleton only)
 
 ---
 
