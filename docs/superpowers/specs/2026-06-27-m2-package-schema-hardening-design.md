@@ -33,11 +33,11 @@ scoring are fully specified and are the references for M2's engine and
 |---|----------|--------|
 | D1 | `weighted_score` distinctiveness | **Multi-category** (rest_required + monotony_prevention), real category scores, priority resolution — populates the §11 `scores`/multi-candidate/`selected_category`/`states` fields M1 left empty. |
 | D2 | Setup-edit flow | **Full run-plans draft API** (`routes/analyze` + `run-plans` + `regenerate` → `runs` freezes), per architecture §13.2. |
-| D3 | Profiles | **Rich behavioral modeling** — real driver/vehicle/speed profile models driving deterministic per-tick driver+vehicle state; binned before the trigger. |
+| D3 | Profiles | **Rich behavioral modeling** — real driver/vehicle/speed profile models driving deterministic per-tick driver+vehicle state, exposed as numeric `raw_state` + binned `feature_groups` (see §4.3). |
 | D4 | Feedback-event model | **Deferred to M5** (M5 owns structured feedback; defining it now is speculative). |
 | D5 | Milestone size | **One M2**, implemented as ~6 ordered independent slices (not split into M2a/M2b). |
 | D6 | M1 friend-drive fixture | **Re-authored** to the profile-driven engine (drop the authored `drowsiness_schedule`); single clean model. |
-| D7 | Run mode | **`standard` only**; `expert_override` stays deferred to M5+. |
+| D7 | Run mode | **`standard` only**; `expert_override` deferred to a later milestone. |
 
 ### Honest size note
 
@@ -49,7 +49,8 @@ Maps, Python algorithms, and structured feedback remain in later milestones.
 
 ## 3. In scope / out of scope
 
-**In:** rich driver/vehicle/speed behavioral engine (binned before the trigger);
+**In:** rich driver/vehicle/speed behavioral engine (numeric `raw_state` + binned
+`feature_groups`, §4.3);
 `weighted_score` algorithm + `rest_weighted_score_v0_1` package; the
 `routes/analyze` + `run-plans` (+`regenerate`) + migrated `runs` setup flow;
 editable parameters/hyperparameters before run start with original/modified
@@ -70,7 +71,7 @@ work in M2 even with empty values.
 `python_module` + the transparent-hybrid `aica_transparent_hybrid_trigger_v1`
 *logic* (M3 — the smoothing/persistence/state-machine computation that *fills*
 `package_runtime_state`); structured feedback capture + evidence replay (M5);
-`expert_override` mode (M5+); run comparison (post-V1).
+`expert_override` mode (a later milestone); run comparison (post-V1).
 
 ## 4. Behavioral engine (slice 1 — foundation)
 
@@ -285,7 +286,9 @@ slice.)
 
 - **Behavioral engine:** determinism (same profile+plan → identical
   driver/vehicle progression); speed-driven position; `>60min` term; recovery on
-  rest action; **binning emits only ordinal bands** (no raw number in context).
+  rest action; the context carries numeric `raw_state` **and** binned
+  `feature_groups` (normalized + ordinal); `binning` derives the ordinal bands from
+  `raw_state` (no raw *external-service* numeric exists until M4).
 - **`weighted_score`:** category-score math matches the proposal formulas; gated
   rest bonus can't trigger alone; strength thresholds; multi-category candidates
   incl. a **suppressed** one; priority selects the right candidate; totality +
