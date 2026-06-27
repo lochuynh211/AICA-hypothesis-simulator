@@ -5,9 +5,20 @@ services:
       dockerfile: Dockerfile.api
     ports:
       - "8137:8137"
+    environment:
+      # The package code is mounted at /app, so the repo-root default does not
+      # apply in-container; point the registries/recorder at the mounted data dirs.
+      - AICA_PACKAGES_DIR=/data/packages
+      - AICA_SCENARIOS_DIR=/data/scenarios
+      - AICA_RUNS_DIR=/data/runs
     volumes:
       - ./app/api:/app
       - api_venv:/app/.venv
+      # Data directories mounted from the repo root so packages/scenarios load
+      # and run logs persist back to the host's runs/ directory.
+      - ./packages:/data/packages
+      - ./scenarios:/data/scenarios
+      - ./runs:/data/runs
 
   frontend:
     build:

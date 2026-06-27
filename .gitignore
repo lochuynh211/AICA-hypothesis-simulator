@@ -29,3 +29,6 @@ artifacts/
 # BYO-key runtime placeholders for networked-surface targets (never commit a key)
 *.local.js
 key.local.js
+
+# Run evidence logs (only .gitkeep is tracked)
+runs/*.json

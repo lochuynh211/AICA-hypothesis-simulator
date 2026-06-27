@@ -13,8 +13,16 @@ Environment variable overrides always win. No third-party libraries are used.
 import os
 from pathlib import Path
 
-# Repo root: <repo>/app/api/aica_api/config.py  → parents[3] = <repo>
-_REPO_ROOT: Path = Path(__file__).resolve().parents[3]
+def _repo_root() -> Path:
+    """Best-effort repo root for the default data-dir locations.
+
+    Host layout: ``<repo>/app/api/aica_api/config.py`` → ``parents[3]`` = repo root.
+    In the container the package is mounted at ``/app`` (a shallower path), where
+    the default is never used because ``AICA_*_DIR`` env vars are set explicitly;
+    guard the index so importing this module never raises there.
+    """
+    parents = Path(__file__).resolve().parents
+    return parents[3] if len(parents) > 3 else parents[-1]
 
 
 def _resolve(env_var: str, default_name: str) -> Path:
@@ -22,7 +30,7 @@ def _resolve(env_var: str, default_name: str) -> Path:
     override = os.environ.get(env_var)
     if override:
         return Path(override).resolve()
-    return _REPO_ROOT / default_name
+    return _repo_root() / default_name
 
 
 class Settings:
