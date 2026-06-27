@@ -669,3 +669,99 @@ def test_run_state_has_allowed_actions(tmp_path, uc01_package, overtime_scenario
     state = _plan_and_run(uc01_package, overtime_scenario, "run_allowed", tmp_path)
     assert "decline" in state.allowed_actions
     assert "accept_rest" in state.allowed_actions
+
+
+# ---------------------------------------------------------------------------
+# Fix 1: non-actionable proposal must not pause a run (monotony SOFT_WARNING)
+# ---------------------------------------------------------------------------
+
+
+def test_non_actionable_proposal_does_not_pause(
+    tmp_path, uc01_package, uc01_scenario, monkeypatch
+):
+    """A fired proposal whose options have no overlap with scenario.allowed_actions
+    must NOT pause the run.  The tick decision is still recorded in the trace.
+
+    uc01_scenario (friend_drive) has allowed_actions = ['accept_rest', 'postpone'].
+    We inject a SOFT_WARNING with proposal.options = ['acknowledge'] — no overlap →
+    the run must stay 'playing' with pending_proposal=None.  The decision is still
+    carried in the TickOutcome and persisted to the evidence log.
+    """
+    import aica_api.algorithms.adapter as adapter_mod
+    from aica_api.models.decision import (
+        Candidate,
+        DecisionResult,
+        FireControl,
+        Proposal,
+        ResultType,
+    )
+
+    # Monotony SOFT_WARNING whose proposal options are NOT in allowed_actions
+    monotony_fc = FireControl(
+        fired=True,
+        suppressed=False,
+        override=False,
+        reason="monotony_threshold_crossed",
+    )
+    monotony_proposal = Proposal(
+        id="monotony_sw_001",
+        message={"en": "You have been driving monotonously for a while."},
+        options=["acknowledge"],  # NOT in ['accept_rest', 'postpone']
+    )
+    monotony_result = DecisionResult(
+        result_type=ResultType.SOFT_WARNING,
+        trigger_candidate=True,
+        selected_category="monotony_prevention",
+        score=0.65,
+        features={"monotony": "high"},
+        scores={},
+        states={},
+        criteria={},
+        candidates=[
+            Candidate(
+                category="monotony_prevention",
+                exists=True,
+                score=0.65,
+                state=None,
+                strength="gentle",
+                fire_control=monotony_fc,
+            )
+        ],
+        fire_control=monotony_fc,
+        proposal=monotony_proposal,
+        reason_inputs=["monotony"],
+        explanation="Monotony SOFT_WARNING — advisory only.",
+        next_package_runtime_state={},
+    )
+
+    monkeypatch.setattr(adapter_mod, "evaluate", lambda *a, **kw: monotony_result)
+
+    _plan_and_run(uc01_package, uc01_scenario, "run_non_actionable", tmp_path)
+
+    # The tick fires a SOFT_WARNING with options=['acknowledge'] not in allowed_actions.
+    outcome = tick("run_non_actionable")
+
+    # Run must NOT pause — options have no overlap with allowed_actions
+    assert outcome.paused is False, (
+        "A proposal with options outside allowed_actions must NOT pause the run"
+    )
+    assert outcome.run_state.status == RunStatus.playing, (
+        "Run status must remain 'playing' after a non-actionable proposal"
+    )
+    assert outcome.run_state.pending_proposal is None, (
+        "pending_proposal must remain None for a non-actionable proposal"
+    )
+
+    # The decision is still present in the outcome (evidence preserved)
+    assert outcome.decision is not None, (
+        "Decision must still be returned in the outcome even for non-actionable proposal"
+    )
+    assert outcome.decision.result_type == ResultType.SOFT_WARNING
+
+    # Persisted log must carry the tick event with the decision
+    data = json.loads((tmp_path / "run_non_actionable.json").read_text(encoding="utf-8"))
+    tick_events = [e for e in data["events"] if e.get("kind") == "tick"]
+    assert len(tick_events) == 1, (
+        "Tick event must be persisted in the log even for a non-actionable proposal"
+    )
+    assert tick_events[0]["trace"]["decision_result"]["result_type"] == "SOFT_WARNING"

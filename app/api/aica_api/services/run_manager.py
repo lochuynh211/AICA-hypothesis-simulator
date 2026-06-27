@@ -439,8 +439,16 @@ def tick(run_id: str) -> TickOutcome:
         decision_result.fire_control.fired
         and decision_result.proposal is not None
     )
+    # Pause ONLY when the fired proposal is actionable — i.e. at least one of
+    # the proposal's options overlaps scenario.allowed_actions.  A fired
+    # monotony SOFT_WARNING whose options (e.g. ["acknowledge"]) have no
+    # overlap with allowed_actions is recorded in the evidence but must NOT
+    # dead-end the run by leaving it paused with no valid action.
+    proposal_is_actionable = proposal_fired and bool(
+        set(decision_result.proposal.options) & set(scenario.allowed_actions)
+    )
 
-    if proposal_fired:
+    if proposal_is_actionable:
         run_state.status = RunStatus.paused
         run_state.pending_proposal = decision_result.proposal.id
         paused = True

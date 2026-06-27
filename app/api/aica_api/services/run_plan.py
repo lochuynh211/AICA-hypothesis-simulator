@@ -205,31 +205,6 @@ def _merge_defaults(
     return effective_params, effective_hps
 
 
-def _compute_original_modified(
-    package: PackageManifest,
-    parameters: dict[str, Any],
-    hyperparameters: dict[str, Any],
-) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Compute original_values / modified_values diff."""
-    defaults_params = {p.key: p.default for p in package.parameters}
-    defaults_hps = {hp.key: hp.default for hp in package.hyperparameters}
-
-    original: dict[str, Any] = {}
-    modified: dict[str, Any] = {}
-
-    for key, new_val in parameters.items():
-        if key in defaults_params and defaults_params[key] != new_val:
-            original[f"parameters.{key}"] = defaults_params[key]
-            modified[f"parameters.{key}"] = new_val
-
-    for key, new_val in hyperparameters.items():
-        if key in defaults_hps and defaults_hps[key] != new_val:
-            original[f"hyperparameters.{key}"] = defaults_hps[key]
-            modified[f"hyperparameters.{key}"] = new_val
-
-    return original, modified
-
-
 def _build_effective_setup(
     package: PackageManifest,
     scenario: ScenarioDef,
