@@ -298,7 +298,7 @@ def _raw(
     pedalAbnormalityLevel: float = 3.0,
     laneDepartureCount: int = 0,
     adasWarningCount: int = 0,
-    nextRestSpotKm: float = -1.0,
+    nextRestSpotMin: float = 9999.0,
     routeFraction: float = 0.0,
     continuousDrivingMin: float = 0.0,
     isNight: bool = False,
@@ -315,7 +315,7 @@ def _raw(
         "pedalAbnormalityLevel": pedalAbnormalityLevel,
         "laneDepartureCount": laneDepartureCount,
         "adasWarningCount": adasWarningCount,
-        "nextRestSpotKm": nextRestSpotKm,
+        "nextRestSpotMin": nextRestSpotMin,
         "routeFraction": routeFraction,
         "continuousDrivingMin": continuousDrivingMin,
         "isNight": isNight,
@@ -429,24 +429,27 @@ def test_ordinal_signal_duration_persistent():
 
 # ── Ordinal: rest_spot_eta (from nextRestSpotKm) ──────────────────────────────
 
-def test_ordinal_rest_spot_eta_none_when_negative():
-    """nextRestSpotKm < 0 means no rest spot ahead."""
-    fg = build_feature_groups(_raw(nextRestSpotKm=-1.0))
+def test_ordinal_rest_spot_eta_none_when_no_rest():
+    """nextRestSpotMin >= 9999 (sentinel) means no rest spot ahead."""
+    fg = build_feature_groups(_raw(nextRestSpotMin=9999.0))
     assert fg["ordinal"]["rest_spot_eta"] == "none"
 
 
 def test_ordinal_rest_spot_eta_near():
-    fg = build_feature_groups(_raw(nextRestSpotKm=10.0))
+    """nextRestSpotMin = 10.0 min is within the near threshold."""
+    fg = build_feature_groups(_raw(nextRestSpotMin=10.0))
     assert fg["ordinal"]["rest_spot_eta"] == "near"
 
 
 def test_ordinal_rest_spot_eta_near_at_20():
-    fg = build_feature_groups(_raw(nextRestSpotKm=20.0))
+    """Boundary: exactly 20 min -> near (inclusive)."""
+    fg = build_feature_groups(_raw(nextRestSpotMin=20.0))
     assert fg["ordinal"]["rest_spot_eta"] == "near"
 
 
 def test_ordinal_rest_spot_eta_far():
-    fg = build_feature_groups(_raw(nextRestSpotKm=20.1))
+    """nextRestSpotMin just over 20 min -> far."""
+    fg = build_feature_groups(_raw(nextRestSpotMin=20.1))
     assert fg["ordinal"]["rest_spot_eta"] == "far"
 
 

@@ -271,12 +271,19 @@ def advance_tick(
         adas_warn = 0
         new_vehicle_history = []
 
-    # ── Compute nextRestSpotKm ────────────────────────────────────────────
-    next_rest_km = -1.0
-    for pos_km in sorted(route_facts.rest_spot_positions):
-        if pos_km > new_distance_km:
-            next_rest_km = pos_km - new_distance_km
-            break
+    # ── Compute nextRestSpotMin ───────────────────────────────────────────
+    # Minutes to the next rest opportunity ahead, using the current effective speed.
+    # Sentinel 9999.0 means no rest spot remains ahead (or speed == 0 — unreachable
+    # in zero time).  Guard divide-by-zero: if effective_speed == 0, keep sentinel.
+    _NO_REST_SENTINEL = 9999.0
+    next_rest_min: float = _NO_REST_SENTINEL
+    if effective_speed > 0:
+        for pos_km in sorted(route_facts.rest_spot_positions):
+            if pos_km > new_distance_km:
+                distance_to_next_rest_km = pos_km - new_distance_km
+                next_rest_min = (distance_to_next_rest_km / effective_speed) * 60.0
+                break
+    # If effective_speed == 0 or no rest spot ahead, next_rest_min stays at sentinel.
 
     # ── Build raw_state ───────────────────────────────────────────────────
     raw_state: dict = {
@@ -288,7 +295,7 @@ def advance_tick(
         "pedalAbnormalityLevel": pedal,
         "laneDepartureCount": lane_dep,
         "adasWarningCount": adas_warn,
-        "nextRestSpotKm": next_rest_km,
+        "nextRestSpotMin": next_rest_min,
         "routeFraction": route_fraction,
         "continuousDrivingMin": new_continuous_min,
         "isNight": is_night,

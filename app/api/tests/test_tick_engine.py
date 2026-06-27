@@ -393,18 +393,30 @@ def test_uc01_exactly_one_rest_proposal(m1_scenario, uc01_package):
 
 
 def test_uc01_pre_trigger_ticks_have_no_trigger_or_soft_warning(uc01_scenario, uc01_package):
+    """M2: pre-proposal ticks are NO_TRIGGER or SOFT_WARNING under the profile-driven engine.
+
+    Uses the M2 advance_tick path so drowsiness actually builds from the
+    driver profile, giving meaningful signal before the REST_PROPOSAL fires.
+    """
     from aica_api.algorithms.adapter import evaluate
 
     hyperparameters = {hp.key: hp.default for hp in uc01_package.hyperparameters}
-    plan = freeze_event_plan(uc01_scenario)
+    route_facts = analyze_route(uc01_scenario)
+    event_plan = build_event_plan(route_facts, uc01_scenario)
+    n_ticks = uc01_scenario.total_duration_seconds // uc01_scenario.tick_seconds
 
-    for tick_idx in range(len(plan.ticks)):
-        ts = compute_tick_state(plan, tick_idx, uc01_scenario)
+    ts = None
+    for tick_idx in range(n_ticks):
+        ts = advance_tick(ts, tick_idx, event_plan, route_facts, uc01_scenario)
+        if ts.completed:
+            break
         ctx = build_adapter_context(ts)
         result = evaluate(uc01_package, ctx, {}, hyperparameters, [], {})
         if result.result_type == ResultType.REST_PROPOSAL:
             break
-        assert result.result_type in (ResultType.NO_TRIGGER, ResultType.SOFT_WARNING)
+        assert result.result_type in (ResultType.NO_TRIGGER, ResultType.SOFT_WARNING), (
+            f"tick {tick_idx}: expected NO_TRIGGER or SOFT_WARNING, got {result.result_type}"
+        )
 
 
 # ---------------------------------------------------------------------------

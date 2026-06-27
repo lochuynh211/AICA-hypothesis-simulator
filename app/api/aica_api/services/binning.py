@@ -73,7 +73,7 @@ def _bin_rest_eta(metres: int | float | None) -> str:
 # raw_state keys (camelCase, simulator-internal numerics):
 #   drowsinessLevel, fatigueLevel, attentionLevel, speedKph,
 #   steeringInstabilityLevel, pedalAbnormalityLevel, laneDepartureCount,
-#   adasWarningCount, nextRestSpotKm (-1 = no rest ahead), routeFraction,
+#   adasWarningCount, nextRestSpotMin (9999 = no rest ahead), routeFraction,
 #   continuousDrivingMin, isNight, weatherRiskLevel, segmentType,
 #   drowsinessAboveWeakTicks (consecutive ticks with drowsiness ≥ 20)
 #
@@ -81,7 +81,7 @@ def _bin_rest_eta(metres: int | float | None) -> str:
 #   drowsiness_level: none<20, weak 20–40, moderate 40–60, strong 60–80, severe≥80
 #   fatigue_level:    low<30, medium 30–60, high≥60
 #   signal_duration:  transient=0, brief=1, sustained 2–9, persistent≥10 (AboveWeakTicks)
-#   rest_spot_eta:    none=nextRestSpotKm<0, near≤20km, far>20km
+#   rest_spot_eta:    none=nextRestSpotMin≥9999, near≤20min, far>20min
 #   continuous_driving_time: short<30min, moderate 30–90min, long≥90min
 
 
@@ -115,10 +115,10 @@ def _bin_signal_duration(above_weak_ticks: int) -> str:
     return "persistent"
 
 
-def _bin_rest_spot_eta(next_rest_km: float) -> str:
-    if next_rest_km < 0:
+def _bin_rest_spot_eta(next_rest_min: float) -> str:
+    if next_rest_min >= 9999.0:
         return "none"
-    if next_rest_km <= 20.0:
+    if next_rest_min <= 20.0:
         return "near"
     return "far"
 
@@ -153,14 +153,14 @@ def build_feature_groups(raw_state: dict) -> dict:
     steering = float(raw_state.get("steeringInstabilityLevel", 0.0))
     pedal = float(raw_state.get("pedalAbnormalityLevel", 0.0))
     continuous_min = float(raw_state.get("continuousDrivingMin", 0.0))
-    next_rest_km = float(raw_state.get("nextRestSpotKm", -1.0))
+    next_rest_min = float(raw_state.get("nextRestSpotMin", 9999.0))
     above_weak = int(raw_state.get("drowsinessAboveWeakTicks", 0))
 
     ordinal = {
         "drowsiness_level": _bin_drowsiness(drowsiness),
         "fatigue_level": _bin_fatigue(fatigue),
         "signal_duration": _bin_signal_duration(above_weak),
-        "rest_spot_eta": _bin_rest_spot_eta(next_rest_km),
+        "rest_spot_eta": _bin_rest_spot_eta(next_rest_min),
         "continuous_driving_time": _bin_continuous_driving(continuous_min),
     }
 
