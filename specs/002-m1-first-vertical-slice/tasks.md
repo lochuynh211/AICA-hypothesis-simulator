@@ -71,7 +71,7 @@ tests `app/frontend/tests/`; data `packages/`, `scenarios/`, `runs/`.
 
 ### Backend registries + API
 
-- [ ] T019 [P] [US1] Implement `app/api/aica_api/services/package_registry.py` and `scenario_registry.py` (scan/load/validate, summaries+detail, compatibility) — covered by US4 tests T030; basic load covered here
+- [ ] T019 [P] [US1] Write failing `app/api/tests/test_package_registry.py` + `test_scenario_registry.py` (valid fixtures load; correct summaries; detail returns full model; compatibility check passes for the matched pair) then implement `app/api/aica_api/services/package_registry.py` and `scenario_registry.py`. (Invalid/incompatible cases are hardened in US4/T030.) Registries are a contract surface — tested-first here.
 - [ ] T020 [US1] Implement routers `app/api/aica_api/routers/{packages.py,scenarios.py,runs.py}` and wire into `app/api/aica_api/main.py` (per contracts/runs.md + packages-scenarios.md); run-id generated at the router boundary (research R3)
 
 ### Frontend (tests first)
@@ -80,7 +80,7 @@ tests `app/frontend/tests/`; data `packages/`, `scenarios/`, `runs/`.
 - [ ] T022 [P] [US1] Implement `app/frontend/src/state/runStore.ts` (Context + reducer: run state, latest decision, trace list, pause flag) with `app/frontend/tests/runStore.test.tsx` (select→run→tick→pause→action→resume transitions)
 - [ ] T023 [US1] Implement layout `app/frontend/src/components/layout/{AppShell,LeftContextPanel,CenterPlaybackPanel,RightReviewPanel}.tsx` and compose in `App.tsx` (3-panel grid)
 - [ ] T024 [P] [US1] Implement `app/frontend/src/components/setup/{PackageSelector,ScenarioSelector}.tsx` and `context/{RouteSegmentList,LiveReadouts}.tsx` (bands from tick state)
-- [ ] T025 [US1] Write failing `app/frontend/tests/playback.test.tsx` then implement `app/frontend/src/components/playback/{PlaybackControls,RouteTimeline,CockpitView,ProposalPanel}.tsx` (play/step/speed; cockpit swaps to proposal on fire; accept_rest/postpone call POST /actions)
+- [ ] T025 [US1] Write failing `app/frontend/tests/playback.test.tsx` then implement `app/frontend/src/components/playback/{PlaybackControls,RouteTimeline,CockpitView,ProposalPanel}.tsx` (play/step/speed; cockpit swaps to proposal on fire; accept_rest/postpone call POST /actions). Include an assertion that display-only animation/progress never mutates the decision/trace state held in runStore (guards constitution I / FR-016).
 
 **Checkpoint**: US1 end-to-end loop works in the UI; the MVP.
 
@@ -94,7 +94,7 @@ tests `app/frontend/tests/`; data `packages/`, `scenarios/`, `runs/`.
 
 - [ ] T026 [P] [US2] Write failing `app/frontend/tests/trace.test.tsx` then implement `app/frontend/src/components/trace/DecisionTracePanel.tsx` (per-tick result_type, selected_category, score, candidates incl. suppressed marked suppressed, fire-control, reason_inputs, explanation)
 - [ ] T027 [P] [US2] Implement `app/frontend/src/components/runs/RunLogViewer.tsx` (GET /api/runs/{id}/log → static JSON display; no replay) with `app/frontend/tests/runlog.test.tsx`
-- [ ] T028 [US2] Backend test in `app/api/tests/test_run_manager.py` (extend): a run that exercises the R2 actionability guard records a suppressed candidate in the persisted trace (verifies suppressed-preservation through the whole pipeline)
+- [ ] T028 [US2] Additively extend the backend test `app/api/tests/test_run_manager.py` (created in T018): add a case where a run exercising the R2 actionability guard records a suppressed candidate in the persisted trace (verifies suppressed-preservation through the whole pipeline). Append-only to that file; does not modify T018's existing cases.
 
 **Checkpoint**: decisions and evidence are fully inspectable.
 
