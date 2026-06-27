@@ -258,8 +258,14 @@ def _build_draft(
     route_facts = analyze_route(scenario)
     route_facts.bands = {f.key: f.band_values for f in package.features}
 
-    # Event plan (deterministic) — caller-supplied presets threaded through
-    event_plan = build_event_plan(route_facts, scenario, presets)
+    # Package-declared tick_seconds takes precedence over the scenario cadence.
+    # Merge into a copy of presets so the caller's dict is not mutated.
+    effective_presets = dict(presets)
+    if package.algorithm.tick_seconds is not None:
+        effective_presets["tick_seconds"] = package.algorithm.tick_seconds
+
+    # Event plan (deterministic) — effective presets threaded through
+    event_plan = build_event_plan(route_facts, scenario, effective_presets)
 
     # Merge defaults + overrides
     effective_params, effective_hps = _merge_defaults(package, parameters, hyperparameters)
