@@ -285,6 +285,17 @@ def create_run(
     # M1 fallback: if scenario has no driver_profile and event_plan has no ticks,
     # re-freeze using the scenario's event_presets
     if not _is_m2_scenario(scenario) and len(event_plan.ticks) == 0:
+        # Guard: package-declared tick_seconds is an M2-only feature.  The M1 legacy
+        # path calls freeze_event_plan(scenario) which ignores it silently — that
+        # would be a confusing trap.  Fail loudly instead.
+        if package.algorithm.tick_seconds is not None:
+            raise ValueError(
+                "package-declared tick_seconds is only supported for M2 profile-driven "
+                "scenarios (scenario must have a driver_profile). "
+                "The M1 legacy path (no driver_profile) re-freezes via freeze_event_plan "
+                "which ignores the package tick_seconds override. "
+                "Use an M2 scenario or remove tick_seconds from the package manifest."
+            )
         event_plan = freeze_event_plan(scenario)
         route_facts = RouteFacts(
             segments=scenario.route_intent.segments,
