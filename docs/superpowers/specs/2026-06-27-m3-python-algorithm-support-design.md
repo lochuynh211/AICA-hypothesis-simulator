@@ -33,7 +33,7 @@ machines). Local trusted code only; no sandboxing (constitution + milestone).
 | D3 | Hybrid fidelity | **Faithful core machinery** — smoothing, persistence counters, velocity, state machines, multi-category + priority, populated `next_package_runtime_state`. |
 | D4 | Frontend | **Modest trace extension** — surface state labels + a compact runtime-state indicator per tick; full detail in the log viewer. |
 | D5 | result_type | **Relax `result_type` to the master/package set — no alias map.** The master spec/architecture explicitly allow `REST_PROPOSAL`, `MONOTONY_PROPOSAL`, `SUPPRESSED`, `NO_PROPOSAL`, and package-defined values; architecture §11 shows suppressed candidates carrying `result_type: "SUPPRESSED"`. The Python algorithm's semantic result type is **passed through unchanged**; the adapter normalizes shape/field-names only. (This relaxes M1's narrow 5-value enum, which was an M1-era simplification — backward compatible, since M1/M2's values remain valid.) |
-| D6 | Context inputs | **Required fields validated; optional fields default to 0.** Required simulation-state fields the simulator always provides (`simulation_time_sec`, driver `drowsinessLevel`/`fatigueLevel`/`attentionLevel`, `speedKph`, distance/time to destination, `proposal_history` count) MUST be present — a missing required field is a context-build error, not a silent 0. Only optional sensor/route enhancements the hybrid lists (e.g. `highwayRemainingMin`, `monotonousRoadRemainingMin`, `familiarRouteRatio`, `restSpotDensity`) default to 0 (per the proposal). The hybrid fires a real **rest** proposal from the drowsiness/fatigue/rest-window path; monotony/route features stay inert until those optional inputs are authored (full monotony UX is M8). |
+| D6 | Context inputs | **Required fields validated; optional fields default to 0.** Required simulation-state fields the simulator always provides (`simulation_time_sec`, driver `drowsinessLevel`/`fatigueLevel`/`attentionLevel`, `speedKph`, distance/time to destination, `proposal_history` count) MUST be present — a missing required field is a context-build error, not a silent 0. Only optional sensor/route enhancements the hybrid lists (e.g. `highwayRemainingMin`, `monotonousRoadRemainingMin`, `familiarRouteRatio`, `restSpotDensityNext30Min`) default to 0 (per the proposal). The hybrid fires a real **rest** proposal from the drowsiness/fatigue/rest-window path; monotony/route features stay inert until those optional inputs are authored (full monotony UX is M8). |
 | D7 | Scenario | **Reuse an existing UC-01 rest scenario** (no new scenario). |
 
 ## 3. `python_module` adapter
@@ -54,7 +54,8 @@ once; reloaded only if its path changes). It must expose
 {
   "simulation_time_sec": <tick state>,
   "raw_state": {...},            # numeric internal state (M2); hybrid-expected fields,
-                                 # missing ones absent → algorithm defaults them to 0
+                                 # required fields always present; only optional
+                                 # enhancement fields may be absent → default to 0
   "feature_groups": {...},       # M2 normalized + ordinal
   "parameters": {...},           # frozen/edited setup parameters
   "hyperparameters": {...},      # the package's config (the hybrid's §19 defaults, edited)
@@ -165,7 +166,9 @@ inputs ~0 on current scenarios; full monotony UX is M8).
 
 `components/trace/DecisionTracePanel.tsx`: add per-tick **state labels**
 (`states.rest`/`states.monotony`) and a compact **runtime-state indicator**
-(smoothed_scores + persistence_counters from the tick's `package_runtime_state`),
+(smoothed_scores + persistence_counters from the tick's **recorded output**
+runtime state — the decision's returned `next_package_runtime_state` persisted for
+that tick, NOT the pre-evaluation `package_runtime_state` input),
 in addition to the M2 scores/candidates. Full detail stays in the `RunLogViewer`.
 `python_module` packages appear in the existing multi-option selectors
 automatically; algorithm-error rendering already exists. Types in `api/types.ts`
