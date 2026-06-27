@@ -86,10 +86,15 @@ run to a rest proposal; trace + persisted evidence reflect the real route; no ke
 - [ ] T009 [US2] Write failing test (analyze with NO key → `{route_source:"local",
   alternatives:[one local alternative]}`; an existing UC-01 run is unchanged vs today) then
   wrap the existing `analyze_route` result in the uniform alternatives envelope WITHOUT
-  changing local behavior; `route_source="local"` recorded.
+  changing local route behavior; `route_source="local"` recorded. **MIGRATION (not a silent
+  shape change):** the analyze response shape changes from a bare `RouteFacts` to the
+  `{route_source, alternatives[...]}` envelope — UPDATE every existing consumer + test that
+  reads the old shape (M2/M3 `test_routes`/`test_api_run_loop` analyze assertions, the
+  frontend setup/plan flow + its tests, and the run-plans path that consumes route_facts).
+  Local runs must remain byte-for-byte deterministic.
 - [ ] T010 [US2] Confirm/extend `test_api_run_loop.py` that the no-key path still produces
-  identical deterministic decisions and that no map artifacts (key, display snapshot from
-  Maps) appear in its evidence.
+  identical deterministic decisions and that no map artifacts (key, Maps display snapshot)
+  appear in its evidence. List every migrated consumer/test from T009 in the unit report.
 
 **Checkpoint**: the simulator is fully usable without a key; Maps is additive.
 
