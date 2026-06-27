@@ -46,12 +46,18 @@ Rejected for V1: backend Static-Maps images (no live animation) and a no-Google
 schematic canvas (loses the real map the milestone calls for). Note this means the key
 does live client-side for *display*; the data calls remain backend-proxied per D1.
 
-### D3 — Reviewer enters start/end at runtime; route + endpoints frozen
+### D3 — Reviewer enters start/end at runtime; pick-then-finalize alternatives flow
 Per runtime workflow §3.3, the reviewer enters **start** and **end** at setup time and
 **picks among Directions alternatives**; the scenario stays the abstract experiment
-definition. The chosen start/end and the chosen route's bounded facts are **frozen into
-the run log** at run start, so a past run reproduces deterministically. Rejected for
-V1: geocodable locations baked into scenarios, and a fixed curated preset set.
+definition. Concrete flow (resolves the per-alternative ambiguity):
+`POST /api/routes/analyze` returns the alternatives **each with its own bounded
+per-alternative `RouteFacts` + display geometry + a `route_id`** (segment classification
+and Places rest-spot derivation run per alternative; alternatives are few, ~2–3). The
+reviewer picks one; its **`route_id` is passed to `POST /api/run-plans`**, which builds
+the draft plan from that alternative's facts. The chosen start/end + that alternative's
+bounded facts are **frozen into the run log** at run start, so a past run reproduces
+deterministically. Rejected for V1: geocodable locations baked into scenarios, and a
+fixed curated preset set.
 
 ### D4 — Rest spots = real, context-typed Places POIs, computed server-side and frozen
 The backend computes rest opportunities from **Google Places along the chosen route**,
@@ -75,14 +81,26 @@ replay** — preserving Principle III (deterministic, replayable).
 - **Places failure** → degrade to synthetic-cadence / scenario rest spots (surfaced as
   a notice), so the rest trigger still has actionable targets.
 
-### D7 — Boundary-bin all Maps numerics; persist only bounded/snapshot evidence
-Directions/Places return raw external numerics (metres, seconds, live durations, POI
-distances). They **only ever populate `RouteFacts`** (distance, segment types,
-rest-spot positions, checkpoints), which the M2 tick engine already converts to ordinal
-`feature_groups` before any algorithm sees them. **No raw Google numeric reaches an
-algorithm or is persisted as a decision input.** Persisted evidence carries only
-bounded facts + a `route_source` flag + (optionally) the display polyline as *snapshot
-evidence* for replay rendering — **never the key, never unnecessary raw geometry.**
+### D7 — Two-layer numeric boundary: Google-raw → frozen route facts → simulator raw_state
+The external boundary is between **Google's raw API payload** (metres, seconds, live
+durations, geometry, Places raw distances) and the **simulator's own state**. Google raw
+numerics **never directly drive a trigger**. At analyze they are normalized into
+**frozen, simulator-owned `RouteFacts`** (total distance, segment types, rest-spot
+positions+types, checkpoints). The tick engine then derives the simulator's **numeric
+`raw_state` route fields** (`nextRestSpotMin`, `highwayRemainingMin`,
+`trafficJamAheadMin`, `monotonousRoadRemainingMin`, …) **from those frozen facts**, plus
+normalized/ordinal `feature_groups` — **exactly the M2 pipeline** (runtime workflow §467:
+algorithm context carries both `raw_state` and `feature_groups`), with Google merely
+replacing the local fixture as the SOURCE of the frozen facts. The transparent hybrid
+(and weighted_score) legitimately consume those **simulator-owned numeric** raw_state
+fields they need (hybrid proposal §184); constitution IV bans only **external-service**
+raw numerics reaching a trigger — not the simulator's own derived numerics. **No raw
+Google payload value is handed to an algorithm or persisted as a decision input.**
+
+**Persisted evidence** carries: the bounded `RouteFacts`, a `route_source` flag, and a
+**minimal display route snapshot** (selected route summary + an encoded/simplified
+polyline) sufficient for replay to render the same route (runtime workflow §595, §713) —
+**never the key, never raw Places payloads, never unnecessary raw geometry.**
 
 ### D8 — No new dependencies
 Backend server-side HTTP uses **stdlib `urllib.request`** (`httpx` is test-only here;
@@ -95,15 +113,17 @@ conceptually only.
 1. Reviewer enters BYO key (browser memory) + start + end.
 2. Browser injects the Maps JS loader with the key → interactive map.
 3. Frontend `POST /api/routes/analyze { maps_key, start, end, scenario_id }`.
-4. Backend `maps_client` (stdlib urllib) → Directions (+ alternatives) + Places (rest
-   POIs); `route_analysis` classifies segments + derives context-typed
-   `rest_spot_positions`, **bins into `RouteFacts`**; returns bounded facts + display
-   polyline/alternatives + `route_source`; **discards the key**.
-5. Browser draws the polyline + segment/rest/marker overlays; reviewer picks an
-   alternative.
-6. `POST /api/run-plans` → draft event plan from the bounded facts (unchanged M2 path);
-   `POST /api/runs` **freezes** facts + chosen start/end into the run log; ticks compute
-   from frozen facts; replay never re-fetches. Key absent from all evidence.
+4. Backend `maps_client` (stdlib urllib) → Directions **alternatives** + Places (rest
+   POIs per alternative); `route_analysis` classifies segments + derives context-typed
+   `rest_spot_positions` and **normalizes each alternative into its own
+   frozen-ready `RouteFacts`**; returns **`alternatives[{route_id, RouteFacts, display
+   geometry}]`** + `route_source`; **discards the key**.
+5. Browser draws each alternative; reviewer picks one (`route_id`).
+6. `POST /api/run-plans { route_id }` → draft event plan from that alternative's bounded
+   facts (unchanged M2 path); `POST /api/runs` **freezes** the chosen `RouteFacts` +
+   start/end + minimal display snapshot into the run log; the tick engine derives the
+   numeric `raw_state` route fields + `feature_groups` from the frozen facts each tick;
+   replay never re-fetches. Key absent from all evidence.
 
 ## Components
 
@@ -114,10 +134,14 @@ conceptually only.
   path; V1 segment classification = highway + normal_road (mountain/sightseeing
   best-effort via tags, else default); context-typed rest spots; bin → `RouteFacts`.
 - `routers/routes.py::/api/routes/analyze` (EXTEND) — optional `maps_key`/`start`/`end`;
-  key present+valid → Maps path else local fallback; returns bounded facts + display
-  geometry/alternatives + `route_source`. Key request-scoped only.
-- Models — display polyline as snapshot evidence (separate from algorithm-facing facts);
-  `route_source` on frozen evidence; **no key field anywhere**.
+  key present+valid → Maps path else local fallback; returns
+  `alternatives[{route_id, RouteFacts, display geometry}]` + `route_source`. Key
+  request-scoped only.
+- `routers/run_plans.py::/api/run-plans` (EXTEND) — accept the selected `route_id`; build
+  the draft from that alternative's bounded facts.
+- Models — minimal display route snapshot (summary + encoded/simplified polyline) on the
+  frozen evidence, separate from algorithm-facing facts; `route_source` on frozen
+  evidence; **no key field anywhere**.
 
 **Frontend**
 - BYO-key input + start/end entry (in-memory state only).
@@ -151,8 +175,10 @@ tick/decision/evidence pipeline is unchanged below `analyze`.
 - II Append-only / failures-never-hidden — PASS (honest Maps failure + fallback; never
   start without facts).
 - III Deterministic/replayable — PASS (call-once-at-analyze, freeze, no replay re-fetch).
-- IV Qualitative trigger discipline — PASS (Maps is exactly the external service whose
-  raw numerics are binned before algorithms; this is the headline interaction).
+- IV Qualitative trigger discipline — PASS (Google raw numerics are normalized into
+  frozen simulator-owned route facts; the tick engine then derives numeric `raw_state` +
+  ordinal `feature_groups` from those facts, as in M2 — no **external-service** raw
+  numeric reaches a trigger. This two-layer boundary is the headline interaction).
 - V One adapter contract — PASS (unchanged; M4 is upstream of the adapter).
 - VI Local-first / YAGNI / no new deps — PASS (stdlib urllib + script-injection loader;
   local fallback preserved; no DB/cloud).
@@ -161,7 +187,9 @@ tick/decision/evidence pipeline is unchanged below `analyze`.
 
 ## Open Questions for the Spec Phase
 - Exact Directions/Places request shape + the recorded-fixture set for offline tests.
-- Whether the display polyline is persisted as snapshot evidence or kept display-only
-  (lean: keep display-only unless replay rendering needs it).
+- The exact minimal display-snapshot representation (encoded polyline vs simplified
+  decimated path) and its size budget in the run log.
 - Geocoding of free-text start/end (Directions accepts addresses directly; a separate
   Geocoding call is likely unnecessary for V1).
+- Per-alternative Places cost (≤3 alternatives) vs deferring rest-spot derivation to the
+  selected route only — confirm during spec if cost matters.
