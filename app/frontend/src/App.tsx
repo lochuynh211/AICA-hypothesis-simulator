@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react'
 import { getHealth, HealthStatus } from './api/client'
+import { RunStoreProvider } from './state/runStore'
+import AppShell from './components/layout/AppShell'
+import LeftContextPanel from './components/layout/LeftContextPanel'
+import CenterPlaybackPanel from './components/layout/CenterPlaybackPanel'
+import RightReviewPanel from './components/layout/RightReviewPanel'
 
 type State =
   | { phase: 'loading' }
@@ -19,9 +24,19 @@ export default function App() {
     return <p>Checking backend…</p>
   }
 
-  if (state.phase === 'ok') {
-    return <p>{`Backend: ${state.data.status} — ${state.data.service}`}</p>
+  if (state.phase === 'error') {
+    return <p>Backend unavailable</p>
   }
 
-  return <p>Backend unavailable</p>
+  const healthStatus = `Backend: ${state.data.status} — ${state.data.service}`
+
+  return (
+    <RunStoreProvider>
+      <AppShell
+        left={<LeftContextPanel healthStatus={healthStatus} />}
+        center={<CenterPlaybackPanel />}
+        right={<RightReviewPanel />}
+      />
+    </RunStoreProvider>
+  )
 }
