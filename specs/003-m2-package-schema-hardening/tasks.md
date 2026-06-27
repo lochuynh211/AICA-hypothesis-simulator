@@ -52,8 +52,8 @@ tests `app/frontend/tests/`; data `packages/`, `scenarios/`.
 - [ ] T010 [P] [US4] Write failing `app/api/tests/test_vehicle_model.py` (steering/pedal levels; rolling-window lane-departure/ADAS counts; determinism) then implement `app/api/aica_api/services/behavior/vehicle_model.py`
 - [ ] T011 [US4] Extend `app/api/aica_api/services/binning.py` + `app/api/tests/test_binning.py`: `raw_state → feature_groups{normalized 0–1, ordinal bands}` (test-first); ordinal are strings, normalized 0–1, both present
 - [ ] T012 [US4] Write failing `app/api/tests/test_event_plan.py` updates + implement `app/api/aica_api/services/event_plan.py` to build the full EventPlan (tick_seconds, traffic/weather events, rest_opportunities) from route facts + presets; `services/route_analysis.py` deriving RouteFacts from a scenario (test-first)
-- [ ] T013 [US4] MIGRATE `app/api/aica_api/services/tick_engine.py` (+ rewrite `app/api/tests/test_tick_engine.py`): speed-driven position (distance_km), profile-driven driver/vehicle state, build context `{raw_state, feature_groups}`, completed past end; determinism (two passes identical raw_state). Remove the drowsiness_schedule path.
-- [ ] T014 [US4] Re-author `scenarios/uc01_fatigue_friend_drive_v0_1.json` to carry driver/vehicle/speed profiles + presets (drop drowsiness_schedule), tuned so the profile-driven progression fires exactly one REST_PROPOSAL; update the M1 declarative_rule path to consume `feature_groups.ordinal`
+- [ ] T013 [US4] MIGRATE `app/api/aica_api/services/tick_engine.py` (+ rewrite `app/api/tests/test_tick_engine.py`): speed-driven position (distance_km), profile-driven driver/vehicle state, build context `{raw_state, feature_groups}`, completed past end; determinism (two passes identical raw_state). Remove the drowsiness_schedule path. **Remove/rewrite the M1 `test_adapter_context_no_raw_numbers` assertion** — `raw_state` now intentionally carries numerics; assert instead that `feature_groups.ordinal` are strings and `raw_state` is present.
+- [ ] T014 [US4] Re-author `scenarios/uc01_fatigue_friend_drive_v0_1.json` to carry driver/vehicle/speed profiles + presets (drop drowsiness_schedule), tuned so the profile-driven progression fires exactly one REST_PROPOSAL; update `algorithms/declarative_rule.py` to read `context.feature_groups.ordinal` and **keep `app/api/tests/test_declarative_rule.py` green** (update fixtures to the new context shape — its rule semantics are unchanged)
 
 **Checkpoint**: deterministic behavioral engine; friend-drive still fires one proposal.
 
@@ -98,7 +98,7 @@ tests `app/frontend/tests/`; data `packages/`, `scenarios/`.
 **Independent Test**: run the overtime scenario → one micro-rest proposal; decline recorded, run continues.
 
 - [ ] T025 [P] [US3] Author `scenarios/uc01_overtime_driver_v0_1.json` (is_night, solo, fatigue-susceptible profile, convenience-store micro-rest, `allowed_actions:[accept_rest,postpone,decline]`), tuned to fire exactly one proposal; parses under the scenario model
-- [ ] T026 [US3] Backend `decline` action: `run_manager.action` + router accept `decline` → recorded, run continues without rest; `app/api/tests/test_run_manager.py` / routers test (decline transition; no further proposal)
+- [ ] T026 [US3] Backend `decline` action: `run_manager.action` + router accept `decline` → recorded; the run **continues (status → playing)** without a rest and naturally **completes at route end**, with **no further proposal** (M2 one-proposal model); `app/api/tests/test_run_manager.py` / routers test (decline → playing → completed; no second proposal)
 - [ ] T027 [US3] Frontend: `playback/ProposalPanel.tsx` adds a Decline button (shown when allowed) calling actRun("decline"); `app/frontend/tests/playback.test.tsx`
 - [ ] T028 [US3] Backend e2e for the overtime pairing in `app/api/tests/test_api_run_loop.py` (TestClient: analyze→run-plans→runs→tick to proposal→decline→log)
 
