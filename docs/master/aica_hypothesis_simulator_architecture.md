@@ -264,20 +264,43 @@ The backend shall:
 - read scenario definitions from `scenarios/`;
 - validate scenario structure;
 - validate scenario compatibility with the selected package;
-- return scenario summaries and initial state.
+- return scenario summaries, default profiles, setup presets, and initial state.
 
-### 6.3 Run Manager
+### 6.3 Route Analyzer And Plan Generator
+
+The backend shall:
+
+- accept Google Maps route data or local route fixtures;
+- derive route facts such as distance, segments, segment type, rest spots, and route progress checkpoints;
+- classify route segments for simulator use;
+- generate concrete event plans from route-derived facts and user-controlled presets;
+- freeze the generated event plan when a run starts.
+
+### 6.4 Run Manager
 
 The backend shall:
 
 - create run IDs;
-- snapshot selected package/scenario metadata;
+- snapshot selected package/scenario metadata, route facts, presets, profiles, and generated event plan;
 - initialize run state;
-- apply parameter and hyperparameter changes;
+- apply parameter and hyperparameter changes only before run start;
+- reject normal parameter and hyperparameter mutation after run start and require a new simulation;
 - receive test-user actions;
+- receive expert override edits only when expert override mode was selected before start;
 - maintain run state for evaluation.
 
-### 6.4 Algorithm Adapter
+### 6.5 Tick Engine
+
+The backend shall:
+
+- advance simulation time by the configured tick size;
+- calculate effective speed and route progress;
+- update route, driver, and vehicle state;
+- maintain rolling-window vehicle event counts;
+- build skeleton-aligned feature groups;
+- pause simulation when interaction is required.
+
+### 6.6 Algorithm Adapter
 
 The backend shall:
 
@@ -286,7 +309,7 @@ The backend shall:
 - normalize algorithm outputs into one decision result shape;
 - catch algorithm errors and append error events.
 
-### 6.5 Trace And Evidence Recorder
+### 6.7 Trace And Evidence Recorder
 
 The backend shall:
 
@@ -308,7 +331,7 @@ The frontend shall:
 
 - show package list;
 - show compatible scenarios;
-- show editable parameters and hyperparameters;
+- show setup-time editable parameters and hyperparameters;
 - show changed-vs-default values.
 
 ### 7.2 Playback UI
@@ -412,13 +435,16 @@ A scenario file shall define:
 
 - scenario metadata and version;
 - persona;
-- route and rest opportunities;
+- route intent and rest-opportunity defaults;
 - initial state;
-- timeline events;
+- generated-event presets;
+- default driver model profile;
+- default vehicle behavior profile;
+- default speed profile;
 - allowed test-user actions;
 - review focus.
 
-The backend validates package/scenario compatibility before run creation.
+The backend validates package/scenario compatibility before run creation. The scenario is a backbone; the concrete event plan is generated after route selection and before run start.
 
 ---
 
@@ -538,12 +564,14 @@ Run lifecycle:
 
 ```text
 create_run
-→ load package + scenario snapshot
+→ freeze package + scenario + route + generated plan snapshot
 → initialize state
-→ receive playback/evaluation events
+→ receive tick events
+→ update route/driver/vehicle state
 → call algorithm adapter
-→ append decision trace
-→ receive user action
+→ append tick and decision trace
+→ pause when interaction is required
+→ receive user action or expert override
 → append action event
 → receive feedback
 → append feedback event
@@ -559,14 +587,22 @@ Each run log shall contain:
 - simulator version;
 - package snapshot: ID, version, path/hash;
 - scenario snapshot: ID, version, path/hash;
+- route snapshot and route-derived facts;
+- generated event plan;
+- run mode and evidence status;
+- selected driver model profile;
+- selected vehicle behavior profile;
+- speed profile;
 - initial parameters;
 - current/final parameters;
 - initial hyperparameters;
 - current/final hyperparameters;
-- timeline events;
+- tick events and timeline events;
+- route, driver, vehicle, and feature-group updates;
 - decision trace entries;
 - AICA proposal events;
 - user action events;
+- expert override events when any occur;
 - feedback events;
 - algorithm errors when any occur.
 
@@ -595,40 +631,56 @@ This section describes the sequence of runtime interactions.
 8. Frontend renders package and scenario setup UI.
 ```
 
-### 13.2 Run Creation Sequence
+### 13.2 Setup And Generated Plan Sequence
 
 ```text
 1. User selects a package.
 2. Frontend requests package detail from backend.
 3. User selects a compatible scenario.
 4. Frontend requests scenario detail from backend.
-5. User edits allowed initial parameters and hyperparameters.
-6. Frontend calls POST /api/runs.
-7. Backend validates package/scenario compatibility.
-8. Backend creates run ID.
-9. Backend snapshots package/scenario metadata and initial values.
-10. Backend writes initial run log to runs/.
-11. Backend returns run state to frontend.
+5. User enters start/end locations or selects a local route fixture.
+6. Frontend calls POST /api/routes/analyze.
+7. Backend derives route facts and returns candidate route summaries.
+8. User selects route, presets, profiles, initial state, hyperparameters, and run mode.
+9. Frontend calls POST /api/run-plans.
+10. Backend generates a draft event plan from route facts and presets.
+11. Frontend displays generated plan summary.
+12. User may regenerate or edit allowed advanced generated-plan details before start.
 ```
 
-### 13.3 Playback And Evaluation Sequence
+### 13.3 Run Creation And Start Sequence
+
+```text
+1. User presses Start.
+2. Frontend calls POST /api/runs with selected package, scenario, route facts, presets, profiles, hyperparameters, run mode, and generated event plan.
+3. Backend validates package/scenario/route/plan compatibility.
+4. Backend creates run ID.
+5. Backend freezes the setup snapshot and generated event plan.
+6. Backend initializes run state.
+7. Backend writes initial run log to runs/.
+8. Backend returns run state to frontend.
+```
+
+### 13.4 Playback And Evaluation Sequence
 
 ```text
 1. User starts or steps playback.
-2. Frontend updates display-only playback state.
-3. At a decision point, frontend calls POST /api/runs/{run_id}/evaluate.
-4. Backend builds evaluation context from run state, parameters, hyperparameters, timeline, and history.
-5. Backend dispatches to algorithm adapter.
-6. Algorithm adapter calls declarative, weighted-score, or Python algorithm implementation.
-7. Backend validates and normalizes decision result.
-8. Backend stores returned `next_package_runtime_state` into the run state when present.
-9. Backend appends decision trace entry, including all candidates and suppressed candidates.
-10. Backend persists updated run log to runs/.
-11. Backend returns decision result, trace entry, and updated run state.
-12. Frontend updates cockpit proposal, timeline marker, and trace panel.
+2. Frontend calls POST /api/runs/{run_id}/tick.
+3. Backend tick engine advances simulation time when not paused.
+4. Backend calculates route progress, active generated events, driver state, vehicle state, rolling counts, and skeleton-aligned feature groups.
+5. Backend builds evaluation context from run state, route facts, generated plan, parameters, hyperparameters, profiles, history, and package runtime state.
+6. Backend dispatches to algorithm adapter.
+7. Algorithm adapter calls declarative, weighted-score, or Python algorithm implementation.
+8. Backend validates and normalizes decision result.
+9. Backend stores returned `next_package_runtime_state` into the run state when present.
+10. Backend appends tick event and decision trace entry, including all candidates and suppressed candidates.
+11. Backend pauses the run if proposal or required interaction exists.
+12. Backend persists updated run log to runs/.
+13. Backend returns decision result, trace entry, pause state, and updated run state.
+14. Frontend updates cockpit proposal, timeline marker, and trace panel.
 ```
 
-### 13.4 User Action Sequence
+### 13.5 User Action Sequence
 
 ```text
 1. AICA proposal is visible in frontend.
@@ -642,20 +694,31 @@ This section describes the sequence of runtime interactions.
 9. Frontend updates playback and available controls.
 ```
 
-### 13.5 Parameter Or Hyperparameter Change Sequence
+### 13.6 Setup Value Change Sequence
 
 ```text
-1. User pauses playback or edits before run start.
+1. User edits before run start.
 2. User changes a permitted parameter or hyperparameter.
-3. Frontend calls POST /api/runs/{run_id}/parameters or POST /api/runs/{run_id}/hyperparameters.
+3. Frontend calls POST /api/run-plans or updates draft setup state.
 4. Backend validates value against package definition.
-5. Backend updates run state.
-6. Backend appends value-change event.
-7. Backend persists updated run log to runs/.
-8. Next evaluation uses the updated value.
+5. Backend regenerates or updates the draft generated event plan when needed.
+6. Frontend shows the updated setup and generated-plan summary.
+7. After run start, the same change requires a new simulation rather than mutating the active run.
 ```
 
-### 13.6 Feedback And Log Sequence
+### 13.7 Expert Override Sequence
+
+```text
+1. Run is paused and run mode is expert_override.
+2. User edits an allowed runtime state field and provides a reason.
+3. Frontend calls POST /api/runs/{run_id}/expert-overrides.
+4. Backend validates the field is override-allowed.
+5. Backend appends expert_override event and marks evidence_status as non_standard.
+6. Backend persists updated run log to runs/.
+7. Backend returns updated run state.
+```
+
+### 13.8 Feedback And Log Sequence
 
 ```text
 1. User submits structured labels and/or free-text feedback.
@@ -668,7 +731,18 @@ This section describes the sequence of runtime interactions.
 8. Frontend displays log and optionally allows copy/download.
 ```
 
-### 13.7 Algorithm Error Sequence
+### 13.9 Evidence Replay Sequence
+
+```text
+1. User opens an existing run log.
+2. Frontend calls GET /api/runs/{run_id}/log.
+3. Backend returns the persisted evidence JSON.
+4. Frontend renders read-only playback from recorded tick, proposal, action, and feedback events.
+5. Algorithm decisions are not recalculated.
+6. No new user actions are collected.
+```
+
+### 13.10 Algorithm Error Sequence
 
 ```text
 1. Frontend requests evaluation.
@@ -694,11 +768,14 @@ GET  /api/packages/{package_id}
 GET  /api/scenarios
 GET  /api/scenarios/{scenario_id}
 
+POST /api/routes/analyze
+POST /api/run-plans
+POST /api/run-plans/{plan_id}/regenerate
+
 POST /api/runs
-POST /api/runs/{run_id}/parameters
-POST /api/runs/{run_id}/hyperparameters
-POST /api/runs/{run_id}/evaluate
+POST /api/runs/{run_id}/tick
 POST /api/runs/{run_id}/actions
+POST /api/runs/{run_id}/expert-overrides
 POST /api/runs/{run_id}/feedback
 
 GET  /api/runs
@@ -708,13 +785,17 @@ GET  /api/runs/{run_id}/log
 
 Endpoint behavior:
 
-- `POST /api/runs` creates a run from selected package/scenario and persists the first log file.
-- `POST /api/runs/{run_id}/parameters` applies parameter changes and persists the run log.
-- `POST /api/runs/{run_id}/hyperparameters` applies hyperparameter changes and persists the run log.
-- `POST /api/runs/{run_id}/evaluate` calls the algorithm adapter and appends a trace entry.
+- `POST /api/routes/analyze` derives route facts from Google Maps route data or a local fixture.
+- `POST /api/run-plans` generates a draft event plan from route facts and setup presets.
+- `POST /api/run-plans/{plan_id}/regenerate` regenerates the draft plan before run start.
+- `POST /api/runs` freezes selected setup and generated plan, creates a run, and persists the first log file.
+- `POST /api/runs/{run_id}/tick` advances the deterministic tick engine, calls the algorithm adapter, and appends tick/trace entries.
 - `POST /api/runs/{run_id}/actions` records reviewer choices.
+- `POST /api/runs/{run_id}/expert-overrides` records allowed paused-state edits only for expert override runs.
 - `POST /api/runs/{run_id}/feedback` records structured and free-text feedback.
 - `GET /api/runs/{run_id}/log` returns the evidence JSON persisted on disk.
+
+Parameter and hyperparameter edits are setup-time operations for V1. After run start, changed setup values require a new simulation rather than active-run mutation.
 
 No authentication is required for V1 local single-user operation.
 
@@ -780,15 +861,23 @@ Backend tests shall cover:
 - package validation rejects invalid hyperparameters;
 - package validation rejects invalid algorithm entrypoints;
 - scenario validation checks package compatibility;
+- route analysis returns route-derived facts for local route fixtures;
+- generated plan creation freezes concrete traffic/rest events before run start;
 - run creation writes an initial log file;
-- parameter updates are persisted;
-- hyperparameter updates are persisted;
+- setup-time parameter and hyperparameter changes are reflected in generated runs;
+- active-run parameter and hyperparameter mutation is rejected for standard runs;
+- tick engine advances route progress from numeric speed profile;
+- traffic jam speed overrides road speed;
+- driver and vehicle profile updates are deterministic;
+- rolling-window vehicle counts are calculated correctly;
 - algorithm adapter normalizes declarative, weighted-score, and Python results;
 - algorithm failures append `algorithm_error` events;
 - evaluation appends decision trace entries;
 - actions append events;
+- expert overrides append events and mark evidence as non-standard;
 - feedback appends events;
-- run log can be reloaded from disk.
+- run log can be reloaded from disk;
+- evidence replay can render from a persisted log without recalculating algorithm decisions.
 
 ### 16.2 Frontend Tests
 
@@ -796,11 +885,13 @@ Frontend tests shall cover:
 
 - package/scenario selection renders backend data;
 - editable parameters and hyperparameters render from schema;
+- route setup and generated-plan summary render backend data;
 - playback controls send expected API calls;
 - AICA proposal options send user actions;
 - trace panel displays backend decision results;
 - feedback form submits structured and free-text data;
-- run log view loads persisted evidence.
+- run log view loads persisted evidence;
+- evidence replay displays recorded events read-only.
 
 ### 16.3 Integration Tests
 
@@ -808,11 +899,12 @@ An integration test should:
 
 1. start the app;
 2. create a UC-01 run;
-3. change a hyperparameter;
-4. evaluate;
-5. accept a proposal;
-6. submit feedback;
-7. verify `runs/<run-id>.json` exists and contains trace, action, and feedback.
+3. generate a route plan;
+4. start playback;
+5. tick until evaluation appends trace;
+6. accept a proposal;
+7. submit feedback;
+8. verify `runs/<run-id>.json` exists and contains route facts, generated plan, tick trace, action, and feedback.
 
 Testing rule:
 

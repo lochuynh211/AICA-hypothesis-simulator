@@ -133,6 +133,12 @@ Make package and scenario contracts real enough to support multiple hypotheses s
 - Include schema support for:
   - package runtime state;
   - fixed evaluation tick metadata;
+  - route-derived facts;
+  - generated event plan;
+  - driver model profile;
+  - vehicle behavior profile;
+  - numeric speed profile;
+  - run mode and evidence status;
   - category scores;
   - state-machine state labels;
   - multi-category trigger candidates;
@@ -141,8 +147,8 @@ Make package and scenario contracts real enough to support multiple hypotheses s
 - Add validation errors visible in frontend.
 - Add second built-in package: weighted-score rest proposal.
 - Add second UC-01 scenario: overtime driver branch.
-- Support editable parameters and hyperparameters in frontend.
-- Persist parameter/hyperparameter changes to run log.
+- Support editable setup parameters and hyperparameters in frontend before run start.
+- Persist setup snapshots, generated plan, and original/modified setup values to run log.
 - Add backend tests for invalid packages/scenarios.
 
 ### Acceptance Criteria
@@ -151,8 +157,8 @@ Make package and scenario contracts real enough to support multiple hypotheses s
 - Frontend shows package/scenario validation errors.
 - User can choose between rule-based and weighted-score packages.
 - User can choose between two UC-01 scenarios.
-- User can edit values before evaluation.
-- Run log records original and modified values.
+- User can edit values before starting playback.
+- Run log records setup snapshot, generated plan, original values, and modified values.
 
 ### Prototype Relation
 
@@ -195,7 +201,7 @@ def evaluate(context: dict) -> dict:
 ### Acceptance Criteria
 
 - A package with `algorithm.py` can be selected and evaluated.
-- Parameter/hyperparameter changes are passed into Python evaluation immediately.
+- Setup-time parameter/hyperparameter changes are passed into Python evaluation when playback starts.
 - The transparent hybrid trigger package can run against at least one UC-01 rest-required scenario.
 - The transparent hybrid package can emit a full trace with features, scores, states, candidates, fire-control, selected proposal, and next runtime state.
 - Suppressed candidates are persisted and visible in the trace.
@@ -268,6 +274,7 @@ Complete the human-review evidence loop for V1.
   - end of run.
 - Persist all feedback events in run log.
 - Add run log viewer.
+- Add evidence replay from persisted log.
 - Add copy/download evidence JSON.
 - Add optional Markdown export if cheap; JSON is required.
 
@@ -275,7 +282,8 @@ Complete the human-review evidence loop for V1.
 
 - User can submit structured and free-text feedback.
 - Feedback is traceable to run, decision, proposal, or action.
-- Run log includes trace, actions, parameter changes, hyperparameter changes, feedback, and algorithm errors.
+- Run log includes route facts, generated plan, profiles, trace, actions, setup values, feedback, and algorithm errors.
+- Evidence replay can display a persisted run without recalculating algorithm decisions.
 - User can inspect persisted log from browser.
 - Evidence export clearly separates simulator facts from human review comments.
 
@@ -312,6 +320,7 @@ Make the UC-01 simulator stable enough for real review sessions.
 - Google Maps default route surface works with BYO key and falls back safely.
 - Logs persist automatically.
 - Feedback and trace are complete enough for review.
+- Evidence replay from persisted logs works.
 - Setup instructions are clear.
 - Run comparison is still not required for V1.
 
@@ -387,13 +396,17 @@ V1 includes:
 - rule-based package;
 - weighted-score package;
 - Python algorithm package;
-- editable parameters and hyperparameters;
+- editable setup parameters and hyperparameters before run start;
+- generated event plan;
+- deterministic tick engine;
+- driver and vehicle behavior profiles;
 - backend algorithm evaluation;
 - decision trace;
 - Google Maps default route surface with BYO key and local fallback;
 - structured/free-text feedback;
 - automatic backend run-log persistence;
-- evidence JSON viewing and export.
+- evidence JSON viewing and export;
+- evidence replay from persisted logs.
 
 V1 excludes:
 

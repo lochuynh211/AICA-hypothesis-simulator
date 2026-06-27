@@ -3,7 +3,7 @@
 **Document status:** Draft specification  
 **Primary audience:** Technical, algorithm, product-planning, and UX reviewers  
 **Purpose:** Define AICA Hypothesis Simulator as a configurable, evidence-producing review environment for AICA trigger hypotheses.  
-**Source context:** Japanese PowerPoint `AICA_proposed_system_en.md`, translated planning notes, four AICA use cases, and prototype skeletons under `others/`.  
+**Source context:** Japanese PowerPoint `AICA_proposed_system_en.md`, translated planning notes, four AICA use cases, prototype skeletons under `others/`, and `docs/master/aica_hypothesis_simulator_runtime_workflow.md`.
 **Naming rule:** Product screens, APIs, documents, and implementation labels shall use **AICA** only.
 
 ---
@@ -20,8 +20,8 @@ The simulator is not an autonomous algorithm judge. It does not decide that a tr
 2. select or configure a compatible scenario;
 3. run interactive playback;
 4. inspect why AICA fired, suppressed, or did not fire;
-5. change allowed parameters or hyperparameters;
-6. compare behavior across runs or variants;
+5. change allowed parameters or hyperparameters before starting a new simulation;
+6. replay recorded evidence or later compare behavior across runs;
 7. record structured feedback;
 8. export evidence for later requirement and algorithm refinement.
 
@@ -212,7 +212,9 @@ The simulator shall support:
 - structured and free-text review feedback;
 - Japanese and English UI labels;
 - evidence report generation;
-- run comparison by package, scenario, parameter, hyperparameter, trigger timing, proposal result, action, and feedback.
+- evidence replay from persisted logs.
+
+Post-V1 expansion may add run comparison by package, scenario, parameter, hyperparameter, trigger timing, proposal result, action, and feedback.
 
 ### 5.2 First-Version Focus
 
@@ -327,13 +329,17 @@ Examples:
 
 A **scenario** is a simulated driving situation containing persona, route, driver state, environment, rest opportunities, timeline events, allowed test-user interactions, and review focus.
 
+In the runtime workflow, a scenario provides a scenario backbone rather than a fully pre-generated tick timeline. The simulator combines the scenario backbone with selected route facts, profiles, presets, and a generated event plan.
+
 ### 6.7 Simulation Run
 
-A **simulation run** is one execution of a selected hypothesis package against a selected scenario with selected parameter values, selected hyperparameter values, timeline state, test-user actions, trace entries, and feedback.
+A **simulation run** is one execution of a selected hypothesis package against a selected scenario with selected route, route-derived facts, generated event plan, parameter values, hyperparameter values, driver and vehicle profiles, timeline state, test-user actions, trace entries, and feedback.
 
 ### 6.8 Playback
 
 **Playback** is the visible simulation experience shown to the test user. It is generated from selected package, selected scenario, current state, algorithm decisions, and test-user choices. It is not a fixed linear video.
+
+Playback shall use the generated-event-plan plus deterministic-tick-engine model defined in the runtime workflow. The simulator shall not require every tick to be pre-generated before playback.
 
 ### 6.9 Decision Trace
 
@@ -341,9 +347,25 @@ A **decision trace** is the structured explanation record for algorithm evaluati
 
 ### 6.10 Evidence Report
 
-An **evidence report** is the exportable record of a run. It includes package version, scenario version, parameter and hyperparameter values, timeline events, decision trace, AICA proposals, test-user actions, and human feedback.
+An **evidence report** is the exportable record of a run. It includes package version, scenario version, route facts, generated event plan, profiles, parameter and hyperparameter values, timeline events, decision trace, AICA proposals, test-user actions, expert overrides when any exist, and human feedback.
 
-### 6.11 Review Feedback
+### 6.11 Generated Event Plan
+
+A **generated event plan** is the concrete, frozen set of generated events created before simulation starts from route-derived facts and user-controlled presets. It may include traffic events, weather events, rest opportunity timeline, and route progress checkpoints.
+
+### 6.12 Route-Derived Facts
+
+**Route-derived facts** are values the simulator calculates from the selected Google Maps route or local route fixture, such as segment types, route distance, rest spot positions, toll usage, traffic-aware duration, and route progress checkpoints.
+
+### 6.13 Driver And Vehicle Profiles
+
+**Driver model profiles** and **vehicle behavior profiles** define deterministic state progression. Driver profiles control drowsiness, fatigue, attention, and recovery effects. Vehicle profiles control steering instability, pedal abnormality, lane departure events, ADAS warning events, and rolling-window aggregation.
+
+### 6.14 Evidence Replay
+
+**Evidence replay** is read-only visual playback from an existing log file. It does not recalculate algorithm decisions or collect new user actions.
+
+### 6.15 Review Feedback
 
 **Review feedback** is structured and free-text input submitted by the human test user. It belongs to the human review process. The simulator stores and organizes it but does not replace the reviewer's judgment.
 
@@ -356,12 +378,14 @@ The simulator shall support this stable workflow:
 ```text
 select package
 → select scenario
-→ configure scenario parameters and hyperparameters
+→ select route and derive route facts
+→ configure presets, profiles, initial state, and hyperparameters
+→ generate and review event plan
 → run playback
 → interact with AICA
 → inspect decision trace
 → submit feedback
-→ compare runs or variants
+→ replay or compare runs when available
 → export evidence
 ```
 
@@ -500,8 +524,7 @@ Each hyperparameter definition shall include:
 - allowed range or enum values;
 - step size when numeric;
 - whether it is editable before playback;
-- whether it is editable during playback;
-- whether changing it requires restart, pause, or fork;
+- whether changing it requires a new simulation after playback starts;
 - whether it should be included in comparison view.
 
 ### 9.4 Hyperparameter Modification Behavior
@@ -511,11 +534,14 @@ The simulator shall support the following modification modes when allowed by the
 | Mode | Behavior |
 |---|---|
 | Before-run modification | Test user changes values before playback starts. |
-| Pause-and-modify | Test user pauses playback, changes values, and resumes with trace recording. |
-| Fork-and-rerun | Test user duplicates a run state with modified values and compares outcomes. |
-| Variant comparison | Test user selects multiple value sets and compares behavior. |
+| New simulation | After playback starts, changing setup values, parameters, profiles, route, generated plan, or hyperparameters creates a new simulation rather than mutating the active run. |
+| Interactive replay | Test user replays the same frozen setup and generated plan with fresh user actions. |
+| Evidence replay | Test user replays an existing log exactly, without recalculating decisions or collecting new actions. |
+| Expert override | When selected before start, test user may edit selected runtime state fields while paused; every edit is logged and marks the run non-standard. |
 
 The simulator shall clearly show when a run uses modified values rather than package defaults.
+
+For standard runs, setup values are frozen after start except for declared user actions and simulator-generated state progression. Arbitrary active-run parameter or hyperparameter mutation is out of scope for V1.
 
 ---
 
@@ -539,6 +565,8 @@ Each scenario shall include:
 - allowed test-user actions;
 - expected review focus.
 
+The scenario may declare default driver model profile, vehicle behavior profile, speed profile, generated-event presets, and supported run modes. Concrete generated events are produced before start and stored in the run log.
+
 ### 10.2 Canonical Scenario State
 
 The simulator shall support canonical state categories:
@@ -551,6 +579,11 @@ The simulator shall support canonical state categories:
 - rest opportunity state;
 - proposal history;
 - user response history.
+- route-derived facts;
+- generated event plan;
+- driver model profile;
+- vehicle behavior profile;
+- run mode.
 
 Packages may add custom state without changing simulator core workflow.
 
@@ -574,6 +607,8 @@ Examples:
 - AICA proposal is rejected;
 - content starts, continues, switches, or ends.
 
+Timeline events in a run are produced from the frozen generated event plan, deterministic tick engine, declared user actions, and optional expert overrides. They should not be randomly regenerated during active playback.
+
 ### 10.4 Playback Controls
 
 The simulator shall provide:
@@ -586,7 +621,8 @@ The simulator shall provide:
 - jump to decision point;
 - show or hide decision trace;
 - fork run from current point when supported;
-- modify allowed values when paused or before rerun.
+- configure values before run start;
+- use expert override edits while paused only when expert override mode was selected before start.
 
 ### 10.5 V1 Rest-Related Interactions
 
@@ -614,9 +650,10 @@ Evaluation points may be:
 - fixed simulation intervals;
 - scenario timeline events;
 - route or rest-opportunity changes;
-- parameter changes;
-- hyperparameter changes;
+- setup parameter changes before playback start;
+- setup hyperparameter changes before playback start;
 - user actions;
+- expert override events when expert override mode is active;
 - package-defined decision points.
 
 Packages may declare a preferred fixed evaluation interval, such as a 30-second simulation tick. The simulator shall still preserve scenario-event evaluation and user-action evaluation, but fixed ticks are required for algorithms that depend on smoothing, velocity, or persistence over time.
@@ -783,7 +820,7 @@ The simulator shall allow feedback:
 - at the end of playback;
 - at each decision point when configured;
 - after accepting or rejecting a proposal;
-- after modifying parameters or hyperparameters;
+- after running a new simulation with changed setup values;
 - after comparing two runs.
 
 ---
@@ -806,14 +843,21 @@ Each evidence report shall include:
 - selected UI language;
 - package ID and version;
 - scenario ID and version;
+- route snapshot;
+- route-derived facts;
+- generated event plan;
+- run mode and evidence status;
 - initial parameter values;
 - final parameter values if changed;
 - initial hyperparameter values;
 - final hyperparameter values if changed;
+- selected driver model profile;
+- selected vehicle behavior profile;
 - timeline events;
 - decision trace entries;
 - AICA proposal events;
 - test-user actions;
+- expert override events when any occur;
 - structured review feedback labels;
 - free-text comments;
 - run comparison reference when applicable.
@@ -825,8 +869,13 @@ A run shall be reproducible from:
 - simulator version;
 - package ID and version;
 - scenario ID and version;
+- route snapshot;
+- route-derived facts;
+- generated event plan;
 - parameter values;
 - hyperparameter values;
+- driver model profile;
+- vehicle behavior profile;
 - timeline events;
 - test-user actions;
 - selected branch or fork state when applicable.
@@ -882,10 +931,13 @@ The simulator shall include these user-facing areas or equivalent workflows:
    - Submit structured labels and comments.
    - Review previous feedback in the run.
 
-7. **Run comparison**
-   - Compare package, parameter, hyperparameter, trigger timing, proposal outcome, user action, and feedback differences.
+7. **Evidence replay**
+   - Replay recorded logs exactly without recalculating decisions.
 
-8. **Evidence report**
+8. **Post-V1 run comparison**
+   - Compare package, parameter, hyperparameter, trigger timing, proposal outcome, user action, and feedback differences when comparison is implemented.
+
+9. **Evidence report**
    - Display, copy, or download structured evidence.
 
 ### 15.2 Test-User-Oriented UX
@@ -930,9 +982,9 @@ Language requirements:
 
 ## 16. Run Comparison Requirements
 
-The simulator shall support comparison of at least two runs.
+Full run comparison is a post-V1 capability. V1 shall preserve enough evidence for later comparison, but it does not need a dedicated comparison UI.
 
-Comparison shall show:
+When implemented, comparison shall show:
 
 - package ID/version differences;
 - scenario differences;
@@ -945,6 +997,8 @@ Comparison shall show:
 - feedback differences.
 
 Comparison shall not automatically declare a winning package or optimal threshold. It may show facts and reviewer feedback; human reviewers draw conclusions.
+
+V1 shall instead support evidence replay from a persisted log so reviewers can inspect what happened in one run exactly as recorded.
 
 ---
 
@@ -1053,6 +1107,7 @@ Acceptance criteria:
 - Non-editable parameters are visible or hidden according to package configuration.
 - Invalid values are rejected.
 - Changed values are recorded in run evidence.
+- After playback starts, changing setup parameters requires a new simulation unless expert override mode permits a logged runtime-state edit.
 
 ### FR-004 — Edit Trigger Hyperparameters
 
@@ -1064,17 +1119,19 @@ Acceptance criteria:
 - User can change allowed values within range.
 - User can reset to defaults.
 - User can see which values differ from defaults.
-- Changed values affect subsequent algorithm evaluation according to package rules.
+- Changed values affect algorithm evaluation when the simulation starts.
 - Changed values are recorded in evidence.
+- After playback starts, changing trigger hyperparameters requires a new simulation.
 
 ### FR-005 — Run Interactive Playback
 
-The simulator shall generate dynamic playback from selected package, scenario, parameters, hyperparameters, timeline state, and test-user actions.
+The simulator shall generate dynamic playback from selected package, scenario backbone, route-derived facts, generated event plan, parameters, profiles, hyperparameters, timeline state, and test-user actions.
 
 Acceptance criteria:
 
 - Playback can start, pause, resume, step, and reset.
 - Timeline state changes are visible.
+- Simulation state is calculated by the deterministic tick engine rather than a fully pre-generated tick timeline.
 - AICA proposals appear according to algorithm evaluation and fire control.
 - User choices affect subsequent playback where defined by the scenario and package.
 
@@ -1121,15 +1178,16 @@ Acceptance criteria:
 - Feedback labels can switch.
 - Selected language is recorded in evidence.
 
-### FR-010 — Compare Runs
+### FR-010 — Evidence Replay
 
-The simulator shall support comparison of at least two runs.
+The simulator shall support read-only evidence replay from a persisted run log.
 
 Acceptance criteria:
 
-- User can compare runs with different packages, scenarios, parameters, or hyperparameters.
-- Differences in trigger timing, proposal result, selected actions, and feedback are visible.
-- Comparison does not automatically declare a winner unless the human reviewer records that conclusion as feedback.
+- User can open a persisted run log.
+- Playback displays recorded ticks, proposals, actions, feedback, and errors.
+- Algorithm decisions are not recalculated during evidence replay.
+- Evidence replay does not collect new user actions.
 
 ### FR-011 — Export Evidence Report
 
@@ -1137,7 +1195,7 @@ The simulator shall export a simulation evidence report.
 
 Acceptance criteria:
 
-- Report includes package, scenario, parameter values, hyperparameter values, trace, actions, and feedback.
+- Report includes package, scenario, route facts, generated plan, profiles, parameter values, hyperparameter values, trace, actions, expert overrides when any exist, and feedback.
 - Report can be saved or copied for requirement refinement.
 - Report distinguishes simulator facts from human review comments.
 
@@ -1150,16 +1208,18 @@ V1 is acceptable when:
 1. A test user can select a valid hypothesis package.
 2. A test user can select a compatible UC-01 scenario.
 3. A test user can switch the UI between Japanese and English.
-4. A test user can edit allowed scenario parameters.
-5. A test user can edit allowed trigger hyperparameters.
-6. The simulator generates dynamic playback from selected package and scenario.
-7. AICA can fire, suppress, or skip a proposal according to the selected hypothesis and fire-control rules.
-8. The test user can accept or reject a rest proposal.
-9. Playback changes based on test-user actions where defined.
-10. The test user can inspect decision traces.
-11. The test user can submit review feedback.
-12. The evidence report records package, scenario, parameter values, hyperparameter values, trace, actions, and feedback.
-13. The simulator does not present itself as automatically judging algorithm correctness.
+4. A test user can edit allowed setup parameters before start.
+5. A test user can edit allowed trigger hyperparameters before start.
+6. The simulator derives route facts and freezes a generated event plan before playback starts.
+7. The simulator generates dynamic playback from selected package, scenario backbone, generated event plan, profiles, and user actions.
+8. AICA can fire, suppress, or skip a proposal according to the selected hypothesis and fire-control rules.
+9. The test user can accept or reject a rest proposal.
+10. Playback changes based on test-user actions where defined.
+11. The test user can inspect decision traces.
+12. The test user can submit review feedback.
+13. The evidence report records package, scenario, route facts, generated plan, profiles, parameter values, hyperparameter values, trace, actions, and feedback.
+14. The simulator can replay a persisted evidence log without recalculating decisions.
+15. The simulator does not present itself as automatically judging algorithm correctness.
 
 ---
 
@@ -1168,9 +1228,9 @@ V1 is acceptable when:
 The following questions remain for architecture and V1 planning:
 
 1. What exact package schema format should be used for V1?
-2. Should package algorithms be declarative only in V1, or should JavaScript plugin functions be allowed?
-3. Should hyperparameter changes during playback update the current run immediately, always fork a new run, or support both modes?
-4. What is the minimum comparison view needed for V1?
+2. Should JavaScript plugin functions remain deferred behind Python support, or be added as a future package type?
+3. What exact route-classification rules should be used for `highway`, `normal_road`, `mountain_road`, and `sightseeing_road`?
+4. What exact evidence replay controls are needed in V1?
 5. Which evidence report formats should V1 export: JSON, Markdown, or both?
 6. How much custom UI should packages be allowed to define?
 7. Which parts of the accepted skeleton layout are mandatory for V1?
