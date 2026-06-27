@@ -52,6 +52,12 @@ If 8137 or 5180 is already in use on your machine, change them in two places:
   (`http://api:8137`). The backend container port itself is set by the `--port`
   flag in `Dockerfile.api`.
 
+> **Note on dependency changes:** the `.venv` and `node_modules` directories
+> live in named Docker volumes that are seeded only when first created. If you
+> change backend or frontend dependencies later, run `docker compose down -v`
+> (to drop the stale volumes) before `docker compose up` so the rebuilt images'
+> dependencies take effect.
+
 ## Running the tests
 
 Backend (pytest, via uv):
