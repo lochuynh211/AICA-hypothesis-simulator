@@ -1,4 +1,4 @@
-"""Algorithm adapter (T014) — the single, authoritative dispatch path.
+"""Algorithm adapter (T014/T016) — the single, authoritative dispatch path.
 
 Every algorithm call goes through this module.  It dispatches by
 ``package.algorithm.type``, calls the implementation, normalises the output
@@ -16,11 +16,17 @@ Design constraints:
   - An algorithm exception or invalid return → AlgorithmAdapterError,
     NEVER a faked DecisionResult (FR-011).
   - Suppressed candidates are passed through unchanged (FR-008).
+
+M2 additions (T016):
+  - Dispatches ``weighted_score`` by ``package.algorithm.type``.
+  - weighted_score populates scores/states/candidates/selected_category;
+    next_package_runtime_state is always passthrough-empty from both built-ins.
 """
 
 from __future__ import annotations
 
 from aica_api.algorithms import declarative_rule as _dr
+from aica_api.algorithms import weighted_score as _ws
 from aica_api.models.decision import DecisionResult
 from aica_api.models.package import PackageManifest
 
@@ -59,7 +65,7 @@ def evaluate(
     parameters: dict,
     hyperparameters: dict,
     history: list,  # noqa: ARG001 — reserved for stateful algorithms (M3+)
-    package_runtime_state: dict,  # noqa: ARG001 — empty for declarative_rule
+    package_runtime_state: dict,  # noqa: ARG001 — empty for both M2 built-ins
 ) -> DecisionResult:
     """Dispatch to the algorithm implementation and return a DecisionResult.
 
@@ -68,16 +74,19 @@ def evaluate(
 
     Args:
         package:               Validated PackageManifest.
-        context:               Fully-banded tick context (from binning).
+        context:               Tick context dict.  For declarative_rule: ordinal
+                               bands.  For weighted_score: {raw_state,
+                               feature_groups.normalized}.
         parameters:            Setup-time parameter values.
         hyperparameters:       Tuning hyperparameter values (user or defaults).
         history:               Prior tick decisions (for stateful algorithms).
         package_runtime_state: Opaque state carried across ticks (empty for
-                               rule-only packages).
+                               both M2 built-ins).
 
     Returns:
-        A normalised ``DecisionResult`` (§11 shape, hybrid-only fields empty
-        for rule-only packages).
+        A normalised ``DecisionResult`` (§11 shape).
+        - declarative_rule: hybrid-only fields (scores, states) empty.
+        - weighted_score:   hybrid-only fields fully populated.
 
     Raises:
         AlgorithmAdapterError: If the algorithm raises any exception, or if
@@ -90,8 +99,9 @@ def evaluate(
     if algo_type == "declarative_rule":
         return _dispatch_declarative_rule(context, parameters, hyperparameters)
 
-    # Future algorithm types (python_module, weighted_score, …) would be
-    # dispatched here.  For M1, only declarative_rule is supported.
+    if algo_type == "weighted_score":
+        return _dispatch_weighted_score(context, parameters, hyperparameters)
+
     raise AlgorithmAdapterError(
         error_type="unsupported_algorithm_type",
         message=f"Algorithm type {algo_type!r} is not supported in this version.",
@@ -142,6 +152,60 @@ def _dispatch_declarative_rule(
         features=result.features,
         scores={},
         states={},
+        criteria=result.criteria,
+        candidates=result.candidates,
+        fire_control=result.fire_control,
+        proposal=result.proposal,
+        reason_inputs=result.reason_inputs,
+        explanation=result.explanation,
+        next_package_runtime_state={},
+    )
+
+
+def _dispatch_weighted_score(
+    context: dict,
+    parameters: dict,
+    hyperparameters: dict,
+) -> DecisionResult:
+    """Call weighted_score.evaluate, validate, and normalise the result.
+
+    The weighted_score algorithm already populates the full §11 shape
+    (scores/states/candidates/selected_category), so normalisation here
+    just enforces next_package_runtime_state={} passthrough.
+    """
+    try:
+        result = _ws.evaluate(
+            context=context,
+            parameters=parameters,
+            hyperparameters=hyperparameters,
+        )
+    except Exception as exc:  # noqa: BLE001
+        raise AlgorithmAdapterError(
+            error_type="algorithm_exception",
+            message=str(exc),
+        ) from exc
+
+    # Validate that the result is a proper DecisionResult.
+    if not isinstance(result, DecisionResult):
+        raise AlgorithmAdapterError(
+            error_type="invalid_result_shape",
+            message=(
+                f"Algorithm returned {type(result).__name__!r} "
+                "instead of a DecisionResult."
+            ),
+        )
+
+    # Enforce M2 contract: next_package_runtime_state is always empty.
+    # The weighted_score implementation should already return {}, but we
+    # guarantee it here at the adapter boundary.
+    return DecisionResult(
+        result_type=result.result_type,
+        trigger_candidate=result.trigger_candidate,
+        selected_category=result.selected_category,
+        score=result.score,
+        features=result.features,
+        scores=result.scores,
+        states=result.states,
         criteria=result.criteria,
         candidates=result.candidates,
         fire_control=result.fire_control,

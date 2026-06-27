@@ -161,6 +161,41 @@ def test_registry_reports_errors_for_invalid_package(tmp_path):
     assert errors[0]["package_dir"] == str(bad_dir)
 
 
+# ---------------------------------------------------------------------------
+# T017 — Both packages listed in the registry
+# ---------------------------------------------------------------------------
+
+
+def test_registry_lists_both_packages(registry):
+    """Registry lists both rest_rule_based_v0_1 and rest_weighted_score_v0_1."""
+    summaries = registry.list_summaries()
+    ids = [s["id"] for s in summaries]
+    assert "rest_rule_based_v0_1" in ids, f"rest_rule_based_v0_1 missing from: {ids}"
+    assert "rest_weighted_score_v0_1" in ids, f"rest_weighted_score_v0_1 missing from: {ids}"
+
+
+def test_weighted_score_package_loads_without_errors(registry):
+    """rest_weighted_score_v0_1 parses under PackageManifest with no errors."""
+    pkg = registry.get("rest_weighted_score_v0_1")
+    assert pkg is not None, "rest_weighted_score_v0_1 failed to load"
+    assert pkg.id == "rest_weighted_score_v0_1"
+    assert pkg.version == "0.1.0"
+    assert pkg.algorithm.type == "weighted_score"
+    assert len(pkg.trigger_categories) == 2
+    cats = [c.id for c in pkg.trigger_categories]
+    assert "rest_required" in cats
+    assert "monotony_prevention" in cats
+    assert len(pkg.hyperparameters) >= 1
+    assert len(pkg.proposals) >= 1
+    assert pkg.compatible_scenario_types == ["uc01_fatigue"]
+
+
+def test_registry_no_errors_for_weighted_score_package(registry):
+    """No registry errors are reported for rest_weighted_score_v0_1."""
+    errors = registry.list_errors()
+    assert len(errors) == 0, f"Unexpected registry errors: {errors}"
+
+
 def test_registry_valid_package_not_contaminated_by_invalid(tmp_path):
     """A valid package alongside an invalid one still loads correctly."""
     # Copy the valid fixture

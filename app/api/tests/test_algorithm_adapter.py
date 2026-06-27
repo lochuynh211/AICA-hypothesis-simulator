@@ -316,3 +316,205 @@ def test_adapter_determinism():
     assert r1.result_type == r2.result_type
     assert r1.score == r2.score
     assert r1.criteria == r2.criteria
+
+
+# ---------------------------------------------------------------------------
+# T016 — weighted_score dispatch through the adapter
+# ---------------------------------------------------------------------------
+
+_WS_ALGORITHM = AlgorithmDef(type="weighted_score", entrypoint="weighted_score")
+
+_WS_HP = {
+    "w_drowsiness": 0.40,
+    "w_fatigue": 0.25,
+    "w_driving_anomaly": 0.25,
+    "w_future_fatigue": 0.10,
+    "minimum_risk_for_rest_bonus": 0.45,
+    "w_rest_window": 0.10,
+    "w_rest_scarcity": 0.08,
+    "w_monotony": 0.30,
+    "w_familiar_route": 0.20,
+    "w_attention_drop": 0.25,
+    "w_traffic_jam": 0.15,
+    "w_long_highway": 0.10,
+    "threshold_suggest": 0.62,
+    "threshold_recommend": 0.76,
+    "threshold_urgent": 0.88,
+    "require_rest_actionable": True,
+    "rest_actionable_max_min": 30.0,
+}
+
+# M2 context with raw_state + feature_groups.normalized
+_WS_CTX = {
+    "raw_state": {
+        "drowsinessLevel": 80.0,
+        "fatigueLevel": 70.0,
+        "attentionLevel": 40.0,
+        "steeringInstabilityLevel": 50.0,
+        "pedalAbnormalityLevel": 0.0,
+        "laneDepartureCount": 0,
+        "adasWarningCount": 0,
+        "nextRestSpotMin": 10.0,
+        "continuousDrivingMin": 90.0,
+        "isNight": False,
+        "weatherRiskLevel": 0.0,
+    },
+    "feature_groups": {
+        "normalized": {
+            "drowsiness_score": 0.80,
+            "fatigue_score": 0.70,
+            "attention_score": 0.40,
+            "driving_anomaly_score": 0.50,
+            "pedal_anomaly_score": 0.0,
+        }
+    },
+}
+
+_WS_FEATURES = [
+    FeatureDef(key="drowsiness_score", band_values=[]),
+    FeatureDef(key="fatigue_score", band_values=[]),
+    FeatureDef(key="driving_anomaly_score", band_values=[]),
+]
+
+_WS_HP_DEFS = [
+    HyperparameterDef(
+        key="w_drowsiness", label={"ja": "", "en": ""},
+        kind="numeric", default=0.40, min=0.0, max=1.0, step=0.01,
+    ),
+]
+
+_WS_CATEGORIES = [
+    TriggerCategoryDef(id="rest_required", priority=1),
+    TriggerCategoryDef(id="monotony_prevention", priority=2),
+]
+
+
+def _make_ws_package() -> PackageManifest:
+    return PackageManifest(
+        id="rest_weighted_score_v0_1",
+        version="0.1.0",
+        label={"ja": "重みスコア", "en": "Weighted Score"},
+        compatible_scenario_types=["uc01_fatigue"],
+        algorithm=_WS_ALGORITHM,
+        parameters=[],
+        features=_WS_FEATURES,
+        hyperparameters=_WS_HP_DEFS,
+        trigger_categories=_WS_CATEGORIES,
+        rules=[],
+        fire_control=FireControlRule(
+            threshold_source="threshold_suggest",
+            actionability_guard="rest_spot_reachable",
+        ),
+        proposals=[
+            ProposalDef(
+                id="rest_guidance",
+                message={"ja": "休憩を", "en": "Take a rest"},
+                options=["accept_rest", "postpone"],
+            )
+        ],
+    )
+
+
+_WS_PACKAGE = _make_ws_package()
+
+
+def test_adapter_weighted_score_dispatches():
+    """evaluate() dispatches to weighted_score algorithm by package.algorithm.type."""
+    result = evaluate(
+        package=_WS_PACKAGE,
+        context=_WS_CTX,
+        parameters={},
+        hyperparameters=_WS_HP,
+        history=[],
+        package_runtime_state={},
+    )
+    assert isinstance(result, DecisionResult)
+
+
+def test_adapter_weighted_score_full_shape():
+    """weighted_score result has populated scores/states (not empty like declarative_rule)."""
+    result = evaluate(
+        package=_WS_PACKAGE,
+        context=_WS_CTX,
+        parameters={},
+        hyperparameters=_WS_HP,
+        history=[],
+        package_runtime_state={},
+    )
+    assert "base_safety_risk" in result.scores
+    assert "rest_required_score" in result.scores
+    assert "monotony_prevention_score" in result.scores
+    assert "rest" in result.states
+    assert "monotony" in result.states
+
+
+def test_adapter_weighted_score_next_state_empty():
+    """weighted_score adapter returns next_package_runtime_state={} (M2 constraint)."""
+    result = evaluate(
+        package=_WS_PACKAGE,
+        context=_WS_CTX,
+        parameters={},
+        hyperparameters=_WS_HP,
+        history=[],
+        package_runtime_state={},
+    )
+    assert result.next_package_runtime_state == {}
+
+
+def test_adapter_weighted_score_suppressed_retained():
+    """Suppressed weighted_score candidates are retained in candidates[]."""
+    ctx_no_rest = {
+        **_WS_CTX,
+        "raw_state": {**_WS_CTX["raw_state"], "nextRestSpotMin": 9999.0},
+    }
+    result = evaluate(
+        package=_WS_PACKAGE,
+        context=ctx_no_rest,
+        parameters={},
+        hyperparameters=_WS_HP,
+        history=[],
+        package_runtime_state={},
+    )
+    rrs = result.scores.get("rest_required_score", 0.0)
+    if rrs >= 0.62:
+        suppressed = [c for c in result.candidates if c.fire_control.suppressed]
+        assert len(suppressed) >= 1, "Expected suppressed candidate to be retained"
+
+
+def test_adapter_weighted_score_raises_on_exception(monkeypatch):
+    """weighted_score exception → AlgorithmAdapterError (never faked decision)."""
+    import aica_api.algorithms.weighted_score as ws_module
+
+    def _raising(*args, **kwargs):
+        raise RuntimeError("simulated weighted_score crash")
+
+    monkeypatch.setattr(ws_module, "evaluate", _raising)
+
+    with pytest.raises(AlgorithmAdapterError) as exc_info:
+        evaluate(
+            package=_WS_PACKAGE,
+            context=_WS_CTX,
+            parameters={},
+            hyperparameters=_WS_HP,
+            history=[],
+            package_runtime_state={},
+        )
+    assert exc_info.value.error_type == "algorithm_exception"
+
+
+def test_adapter_weighted_score_raises_on_invalid_return(monkeypatch):
+    """weighted_score returning non-DecisionResult → AlgorithmAdapterError."""
+    import aica_api.algorithms.weighted_score as ws_module
+
+    monkeypatch.setattr(ws_module, "evaluate", lambda *a, **kw: {"result_type": "BAD"})
+
+    with pytest.raises(AlgorithmAdapterError) as exc_info:
+        evaluate(
+            package=_WS_PACKAGE,
+            context=_WS_CTX,
+            parameters={},
+            hyperparameters=_WS_HP,
+            history=[],
+            package_runtime_state={},
+        )
+    assert exc_info.value.error_type == "invalid_result_shape"

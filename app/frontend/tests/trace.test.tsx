@@ -184,3 +184,168 @@ describe('DecisionTracePanel', () => {
     expect(screen.queryByText(/NO_TRIGGER/)).not.toBeInTheDocument()
   })
 })
+
+// ── T019: weighted-score richer trace tests ────────────────────────────────────
+
+// A weighted-score style decision: multiple candidates, populated scores, states
+const weightedScoreDecision: DecisionResult = {
+  result_type: 'REST_PROPOSAL',
+  trigger_candidate: true,
+  selected_category: 'rest_required',
+  score: 0.72,
+  features: {},
+  scores: {
+    base_safety_risk: 0.62,
+    rest_required_score: 0.72,
+    monotony_prevention_score: 0.45,
+  },
+  states: {
+    rest: 'REST_RECOMMEND',
+    monotony: 'MONOTONY_NORMAL',
+  },
+  criteria: { threshold_suggest: 0.62, threshold_recommend: 0.76, threshold_urgent: 0.88 },
+  candidates: [
+    {
+      category: 'rest_required',
+      exists: true,
+      score: 0.72,
+      state: 'REST_RECOMMEND',
+      strength: 'gentle',
+      fire_control: { fired: true, suppressed: false, override: false, reason: 'threshold_passed' },
+    },
+    {
+      category: 'monotony_prevention',
+      exists: false,
+      score: 0.45,
+      state: null,
+      strength: null,
+      fire_control: { fired: false, suppressed: false, override: false, reason: 'below_suggest_threshold' },
+    },
+  ],
+  fire_control: { fired: true, suppressed: false, override: false, reason: 'threshold_passed' },
+  proposal: {
+    id: 'rest_required_proposal',
+    message: { ja: '休憩をお勧めします', en: 'Rest is recommended.' },
+    options: ['accept_rest', 'postpone', 'decline'],
+  },
+  reason_inputs: ['drowsiness_score', 'fatigue_score', 'rest_required_score'],
+  explanation: 'rest_required_score=0.720 ≥ threshold; strength=\'gentle\'.',
+  next_package_runtime_state: {},
+}
+
+// A weighted-score with suppressed rest_required + fired monotony
+const weightedScoreSuppressedRestDecision: DecisionResult = {
+  result_type: 'NO_PRACTICAL_ACTION_FALLBACK',
+  trigger_candidate: false,
+  selected_category: null,
+  score: null,
+  features: {},
+  scores: {
+    base_safety_risk: 0.75,
+    rest_required_score: 0.82,
+    monotony_prevention_score: 0.50,
+  },
+  states: { rest: 'REST_RECOMMEND', monotony: 'MONOTONY_NORMAL' },
+  criteria: { threshold_suggest: 0.62 },
+  candidates: [
+    {
+      category: 'rest_required',
+      exists: true,
+      score: 0.82,
+      state: 'REST_RECOMMEND',
+      strength: 'clear',
+      fire_control: {
+        fired: false,
+        suppressed: true,
+        override: false,
+        reason: 'actionability_guard_rest_not_reachable',
+      },
+    },
+    {
+      category: 'monotony_prevention',
+      exists: false,
+      score: 0.50,
+      state: null,
+      strength: null,
+      fire_control: { fired: false, suppressed: false, override: false, reason: 'below_suggest_threshold' },
+    },
+  ],
+  fire_control: { fired: false, suppressed: true, override: false, reason: 'actionability_guard_rest_not_reachable' },
+  proposal: null,
+  reason_inputs: ['base_safety_risk', 'rest_required_score'],
+  explanation: 'rest_required_score=0.820 suppressed: no reachable rest spot.',
+  next_package_runtime_state: {},
+}
+
+describe('DecisionTracePanel — T019 weighted-score richer trace', () => {
+  it('(d) renders per-category scores from the scores dict', () => {
+    renderWithStore(<DecisionTracePanel />, (dispatch) => {
+      dispatch({
+        type: 'TICK_APPENDED',
+        runState: { ...minimalRunState, current_tick: 4, status: 'paused', pending_proposal: 'rest_required_proposal' },
+        decision: weightedScoreDecision,
+        tickIndex: 4,
+        paused: true,
+        completed: false,
+      })
+    })
+
+    // Category scores should be rendered
+    expect(screen.getByTestId('scores-base_safety_risk')).toBeInTheDocument()
+    expect(screen.getByTestId('scores-rest_required_score')).toBeInTheDocument()
+    expect(screen.getByTestId('scores-monotony_prevention_score')).toBeInTheDocument()
+  })
+
+  it('(e) renders candidate strength and state for each candidate', () => {
+    renderWithStore(<DecisionTracePanel />, (dispatch) => {
+      dispatch({
+        type: 'TICK_APPENDED',
+        runState: { ...minimalRunState, current_tick: 5 },
+        decision: weightedScoreDecision,
+        tickIndex: 5,
+        paused: false,
+        completed: false,
+      })
+    })
+
+    // The fired candidate (rest_required) should show its strength
+    expect(screen.getByTestId('candidate-strength-rest_required')).toBeInTheDocument()
+    expect(screen.getByTestId('candidate-strength-rest_required')).toHaveTextContent('gentle')
+
+    // The candidate's state label should appear
+    expect(screen.getByTestId('candidate-state-rest_required')).toBeInTheDocument()
+    expect(screen.getByTestId('candidate-state-rest_required')).toHaveTextContent('REST_RECOMMEND')
+  })
+
+  it('(f) renders selected_category with clear visual label in the weighted-score trace', () => {
+    renderWithStore(<DecisionTracePanel />, (dispatch) => {
+      dispatch({
+        type: 'TICK_APPENDED',
+        runState: { ...minimalRunState, current_tick: 6 },
+        decision: weightedScoreDecision,
+        tickIndex: 6,
+        paused: false,
+        completed: false,
+      })
+    })
+
+    // selected_category "rest_required" should be shown
+    expect(screen.getAllByText(/rest_required/).length).toBeGreaterThan(0)
+  })
+
+  it('(g) suppressed candidate in weighted-score trace is still marked suppressed', () => {
+    renderWithStore(<DecisionTracePanel />, (dispatch) => {
+      dispatch({
+        type: 'TICK_APPENDED',
+        runState: { ...minimalRunState, current_tick: 7 },
+        decision: weightedScoreSuppressedRestDecision,
+        tickIndex: 7,
+        paused: false,
+        completed: false,
+      })
+    })
+
+    expect(screen.getByTestId('candidate-suppressed-label')).toBeInTheDocument()
+    expect(screen.getByTestId('candidate-suppressed-label')).toHaveTextContent(/suppressed/i)
+  })
+})

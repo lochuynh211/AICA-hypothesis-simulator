@@ -1,10 +1,12 @@
 /**
- * DecisionTracePanel — T026
+ * DecisionTracePanel — T026 + T019
  *
  * Renders the live decision trace from the run store:
  *   - Each tick entry (TraceEntry) with result_type, selected_category, score,
  *     candidates (suppressed candidates visibly marked), fire_control, reason_inputs,
  *     and explanation.
+ *   - Per-category scores (scores dict) and per-candidate strength + state labels
+ *     for weighted-score entries (T019 richer trace).
  *   - algorithmErrors rendered as distinct error entries (never disguised as decisions).
  */
 
@@ -14,7 +16,7 @@ import { useRunStore } from '../../state/runStore'
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function CandidateRow({ candidate }: { candidate: Candidate }) {
-  const { fire_control, category, score } = candidate
+  const { fire_control, category, score, strength, state } = candidate
   const suppressed = fire_control.suppressed
 
   return (
@@ -30,6 +32,22 @@ function CandidateRow({ candidate }: { candidate: Candidate }) {
       <span style={{ fontWeight: 600 }}>{category}</span>
       {' '}
       <span style={{ color: '#aaa' }}>score={score}</span>
+      {strength && (
+        <span
+          data-testid={`candidate-strength-${category}`}
+          style={{ marginLeft: '6px', color: '#8cf', fontStyle: 'italic' }}
+        >
+          [{strength}]
+        </span>
+      )}
+      {state && (
+        <span
+          data-testid={`candidate-state-${category}`}
+          style={{ marginLeft: '6px', color: '#9d9', fontSize: '0.85em' }}
+        >
+          {state}
+        </span>
+      )}
       {suppressed && (
         <span
           data-testid="candidate-suppressed-label"
@@ -54,7 +72,28 @@ function CandidateRow({ candidate }: { candidate: Candidate }) {
   )
 }
 
+function ScoresRow({ scores }: { scores: Record<string, unknown> }) {
+  const entries = Object.entries(scores)
+  if (entries.length === 0) return null
+
+  return (
+    <div style={{ marginTop: '3px', fontSize: '0.80em', color: '#9b9' }}>
+      {entries.map(([key, val]) => (
+        <span
+          key={key}
+          data-testid={`scores-${key}`}
+          style={{ marginRight: '10px' }}
+        >
+          {key}={typeof val === 'number' ? val.toFixed(3) : String(val)}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 function TraceEntryRow({ entry }: { entry: TraceEntry }) {
+  const hasScores = entry.scores && Object.keys(entry.scores).length > 0
+
   return (
     <div
       style={{
@@ -75,6 +114,9 @@ function TraceEntryRow({ entry }: { entry: TraceEntry }) {
           <span style={{ color: '#fc9' }}>score={entry.score}</span>
         )}
       </div>
+
+      {/* Per-category scores (weighted-score richer trace) */}
+      {hasScores && <ScoresRow scores={entry.scores} />}
 
       {/* Candidates */}
       {entry.candidates.length > 0 && (

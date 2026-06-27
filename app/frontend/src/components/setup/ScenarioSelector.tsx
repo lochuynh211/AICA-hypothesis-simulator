@@ -4,7 +4,7 @@ import { listScenarios } from '../../api/client'
 
 export default function ScenarioSelector() {
   const { state, dispatch } = useRunStore()
-  const { scenarios, selectedScenarioId, scenarioErrors } = state
+  const { scenarios, selectedScenarioId, scenarioErrors, packages, selectedPackageId } = state
 
   useEffect(() => {
     listScenarios()
@@ -16,6 +16,14 @@ export default function ScenarioSelector() {
       )
   }, [dispatch])
 
+  // Compatibility filter: when a package is selected, show only scenarios whose
+  // type is listed in the package's compatible_scenario_types.
+  const selectedPackage = packages.find((p) => p.id === selectedPackageId) ?? null
+  const filteredScenarios =
+    selectedPackage != null
+      ? scenarios.filter((s) => selectedPackage.compatible_scenario_types.includes(s.type))
+      : scenarios
+
   return (
     <div style={{ marginBottom: '8px' }}>
       <label htmlFor="scenario-select" style={{ display: 'block', fontSize: '0.8em', color: '#666', marginBottom: '2px' }}>
@@ -25,13 +33,13 @@ export default function ScenarioSelector() {
         id="scenario-select"
         value={selectedScenarioId ?? ''}
         onChange={(e) => dispatch({ type: 'SELECT_SCENARIO', id: e.target.value })}
-        disabled={scenarios.length === 0}
+        disabled={filteredScenarios.length === 0}
         style={{ width: '100%' }}
       >
         <option value="" disabled>
-          {scenarios.length === 0 ? 'Loading…' : 'Select scenario'}
+          {filteredScenarios.length === 0 ? 'Loading…' : 'Select scenario'}
         </option>
-        {scenarios.map((s) => (
+        {filteredScenarios.map((s) => (
           <option key={s.id} value={s.id}>
             {s.persona_label} — {s.review_focus}
           </option>
