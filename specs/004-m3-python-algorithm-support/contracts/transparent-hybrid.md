@@ -14,8 +14,16 @@ config = the proposal §19 defaults as hyperparameters. Pure & deterministic.
    - `monotony_prevention_score = clamp(0.30·monotony + 0.20·familiar_route + 0.25·attention_drop + 0.15·traffic_jam + 0.10·long_highway)`
 4. **Velocity** = score − prev smoothed score; **persistence counters** (rest 2,
    monotony 3 ticks; skip-if rest>0.88 OR velocity>0.08).
-5. **State machines**: REST_NORMAL→WATCH(0.45)→SUGGEST(0.62)→RECOMMEND(0.76)→
-   URGENT(0.88)(→RECOVERY on accept); MONOTONY_NORMAL→WATCH(0.40)→CONTENT_SUGGEST(0.58).
+5. **State machines**: REST_NORMAL→WATCH(0.45)→SUGGEST(`threshold_suggest`)→
+   RECOMMEND(0.76)→URGENT(0.88)(→RECOVERY on accept);
+   MONOTONY_NORMAL→WATCH(0.40)→CONTENT_SUGGEST(0.58).
+   - The SUGGEST band and the rest fire-gate share the single `threshold_suggest`
+     hyperparameter (proposal §19). Its proposal default is 0.62; the shipped
+     `aica_transparent_hybrid_trigger_v1` default is **0.58** — tuned down because the
+     α=0.35 feature smoothing lags the raw signal, so the smoothed rest score peaks
+     near 0.62 and only grazes the 0.62 gate. 0.58 clears with a deterministic margin
+     while still firing exactly once. Editable at setup; the trace records the
+     effective value.
 6. **Fire-control**: no-candidate → emergency override → cooldown
    (result-based max category-specific) → 30-min count limit → pass.
 7. **Strength** gentle/clear/strong; **priority** [rest_required, monotony_prevention]
