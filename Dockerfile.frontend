@@ -1,0 +1,15 @@
+FROM node:22
+
+WORKDIR /app
+
+# Copy dependency manifests first for layer caching
+COPY app/frontend/package.json app/frontend/package-lock.json ./
+
+RUN npm ci
+
+# Copy the rest of the frontend source
+COPY app/frontend/ ./
+
+EXPOSE 5180
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5180"]

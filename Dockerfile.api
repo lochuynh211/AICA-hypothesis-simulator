@@ -1,0 +1,21 @@
+FROM python:3.12-slim
+
+RUN pip install uv
+
+WORKDIR /app
+
+# Copy dependency manifests first for layer caching
+COPY app/api/pyproject.toml app/api/uv.lock ./
+
+# Copy source package so hatchling can install aica_api in editable mode
+COPY app/api/aica_api ./aica_api
+
+# Install dependencies; .venv lives at /app/.venv (uv default)
+RUN uv sync
+
+# Copy the rest of the api source
+COPY app/api/ ./
+
+EXPOSE 8137
+
+CMD ["uv", "run", "uvicorn", "aica_api.main:app", "--host", "0.0.0.0", "--port", "8137", "--reload"]

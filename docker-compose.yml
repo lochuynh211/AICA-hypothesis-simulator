@@ -1,0 +1,26 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "8137:8137"
+    volumes:
+      - ./app/api:/app
+      - api_venv:/app/.venv
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "5180:5180"
+    volumes:
+      - ./app/frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - api
+
+volumes:
+  api_venv:
+  frontend_node_modules:
