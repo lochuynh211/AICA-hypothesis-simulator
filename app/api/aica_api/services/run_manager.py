@@ -1,4 +1,4 @@
-"""Run manager (T018) — orchestrates the full run lifecycle.
+"""Run manager (T013 M2 migration) — orchestrates the full run lifecycle.
 
 Holds in-memory state keyed by run_id (M1 single-process; no DB).
 Backed by the append-only EvidenceRecorder for persistence.
@@ -17,6 +17,9 @@ Design constraints:
     trace — it is generated here (outside the tick-level core).
   - Ordinal bands only reach the adapter (via tick_engine).
   - Adapter failure → AlgorithmError event; never a faked DecisionResult.
+
+M1 path: scenario.driver_profile is None → freeze_event_plan + compute_tick_state.
+M2 path: scenario.driver_profile is not None → analyze_route + build_event_plan + advance_tick.
 """
 
 from __future__ import annotations
@@ -46,10 +49,12 @@ from aica_api.models.run import (
     RunState,
     RunStatus,
     Snapshot,
+    TickState,
 )
 from aica_api.models.scenario import ScenarioDef
-from aica_api.services.event_plan import freeze_event_plan
-from aica_api.services.tick_engine import build_adapter_context, compute_tick_state
+from aica_api.services.event_plan import build_event_plan, freeze_event_plan
+from aica_api.services.route_analysis import analyze_route
+from aica_api.services.tick_engine import advance_tick, build_adapter_context, compute_tick_state
 from aica_api.storage.evidence_recorder import EvidenceRecorder
 
 # ---------------------------------------------------------------------------
@@ -99,8 +104,11 @@ class TickOutcome:
 # ---------------------------------------------------------------------------
 
 # Keyed by run_id:
-#   (RunState, PackageManifest, ScenarioDef, EvidenceRecorder)
-_registry: dict[str, tuple[RunState, PackageManifest, ScenarioDef, EvidenceRecorder]] = {}
+#   (RunState, PackageManifest, ScenarioDef, EvidenceRecorder, TickState | None)
+# 5th element: prior TickState for M2 advance_tick path (None = no prior tick yet)
+_registry: dict[
+    str, tuple[RunState, PackageManifest, ScenarioDef, EvidenceRecorder, TickState | None]
+] = {}
 
 
 def clear_registry() -> None:
@@ -137,6 +145,11 @@ def _default_parameters(package: PackageManifest) -> dict:
     return {p.key: p.default for p in package.parameters}
 
 
+def _is_m2_scenario(scenario: ScenarioDef) -> bool:
+    """True if the scenario has M2 profile-driven fields."""
+    return scenario.driver_profile is not None
+
+
 # ---------------------------------------------------------------------------
 # Public API — create_run
 # ---------------------------------------------------------------------------
@@ -150,6 +163,9 @@ def create_run(
 ) -> RunState:
     """Initialise a new run and persist the initial run log.
 
+    For M1 scenarios (no driver_profile): uses freeze_event_plan.
+    For M2 scenarios (has driver_profile): uses analyze_route + build_event_plan.
+
     Args:
         package:   Validated PackageManifest.
         scenario:  Validated ScenarioDef.
@@ -160,7 +176,19 @@ def create_run(
         The initial RunState (status=created, current_tick=0).
     """
     # ── Freeze immutable artifacts ────────────────────────────────────────
-    event_plan: EventPlan = freeze_event_plan(scenario)
+    if _is_m2_scenario(scenario):
+        # M2 path: route analysis + M2 event plan
+        route_facts = analyze_route(scenario)
+        # Merge M1 backward-compat bands from package
+        route_facts.bands = {feature.key: feature.band_values for feature in package.features}
+        event_plan: EventPlan = build_event_plan(route_facts, scenario)
+    else:
+        # M1 path: per-tick event plan
+        event_plan = freeze_event_plan(scenario)
+        route_facts = RouteFacts(
+            segments=scenario.route_intent.segments,
+            bands={feature.key: feature.band_values for feature in package.features},
+        )
 
     package_data = package.model_dump(mode="json")
     scenario_data = scenario.model_dump(mode="json")
@@ -175,11 +203,6 @@ def create_run(
             version=scenario.version,
             hash=_content_hash(scenario_data),
         ),
-    )
-
-    route_facts = RouteFacts(
-        segments=scenario.route_intent.segments,
-        bands={feature.key: feature.band_values for feature in package.features},
     )
 
     # ── Initial RunState ──────────────────────────────────────────────────
@@ -206,7 +229,8 @@ def create_run(
     )
 
     recorder = EvidenceRecorder(run_log, runs_dir)
-    _registry[run_id] = (run_state, package, scenario, recorder)
+    # 5th element: prior TickState (None = no ticks yet)
+    _registry[run_id] = (run_state, package, scenario, recorder, None)
     return run_state
 
 
@@ -221,6 +245,9 @@ def tick(run_id: str) -> TickOutcome:
     Dispatches to the adapter, appends a TickEvent (or AlgorithmError),
     persists, and pauses when a proposal fires.
 
+    For M1 scenarios: uses compute_tick_state.
+    For M2 scenarios: uses advance_tick with prior TickState.
+
     Args:
         run_id: The run to advance.
 
@@ -233,7 +260,7 @@ def tick(run_id: str) -> TickOutcome:
     if run_id not in _registry:
         raise RunNotFoundError(f"Unknown run_id: {run_id!r}")
 
-    run_state, package, scenario, recorder = _registry[run_id]
+    run_state, package, scenario, recorder, prior_tick_state = _registry[run_id]
 
     # ── Already completed — no-op ─────────────────────────────────────────
     if run_state.status == RunStatus.completed:
@@ -249,7 +276,18 @@ def tick(run_id: str) -> TickOutcome:
     current_tick = run_state.current_tick
 
     # ── Compute tick state ────────────────────────────────────────────────
-    tick_state = compute_tick_state(run_state.event_plan, current_tick, scenario)
+    if _is_m2_scenario(scenario):
+        # M2 path: advance_tick with prior state
+        tick_state = advance_tick(
+            prior_tick_state,
+            current_tick,
+            run_state.event_plan,
+            run_state.route_facts,
+            scenario,
+        )
+    else:
+        # M1 path: read from frozen per-tick plan
+        tick_state = compute_tick_state(run_state.event_plan, current_tick, scenario)
 
     if tick_state.completed:
         run_state.status = RunStatus.completed
@@ -287,6 +325,9 @@ def tick(run_id: str) -> TickOutcome:
         recorder.append(algo_error)
         # Advance tick so subsequent calls don't retry the same broken tick
         run_state.current_tick += 1
+        # Update prior_state for M2
+        if _is_m2_scenario(scenario):
+            _registry[run_id] = (run_state, package, scenario, recorder, tick_state)
         return TickOutcome(
             run_state=run_state,
             decision=None,
@@ -309,6 +350,10 @@ def tick(run_id: str) -> TickOutcome:
     # ── Advance tick ──────────────────────────────────────────────────────
     run_state.current_tick += 1
 
+    # ── Update prior_state for M2 ─────────────────────────────────────────
+    if _is_m2_scenario(scenario):
+        _registry[run_id] = (run_state, package, scenario, recorder, tick_state)
+
     # ── Determine new status ──────────────────────────────────────────────
     proposal_fired = (
         decision_result.fire_control.fired
@@ -320,7 +365,14 @@ def tick(run_id: str) -> TickOutcome:
         run_state.pending_proposal = decision_result.proposal.id
         paused = True
         completed = False
+    elif _is_m2_scenario(scenario):
+        # M2: completion detected by tick_state (distance >= total_km)
+        # post-increment: check if next advance would be completed
+        run_state.status = RunStatus.playing
+        paused = False
+        completed = False
     elif run_state.current_tick >= len(run_state.event_plan.ticks):
+        # M1: completion by exhausting the per-tick plan
         run_state.status = RunStatus.completed
         paused = False
         completed = True
@@ -362,7 +414,7 @@ def action(run_id: str, action_str: str) -> RunState:
     if run_id not in _registry:
         raise RunNotFoundError(f"Unknown run_id: {run_id!r}")
 
-    run_state, package, scenario, recorder = _registry[run_id]
+    run_state, package, scenario, recorder, prior_tick_state = _registry[run_id]
 
     if run_state.status != RunStatus.paused or run_state.pending_proposal is None:
         raise ActionNotAllowedError(

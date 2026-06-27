@@ -1,4 +1,4 @@
-"""TDD binning tests (T012) — written BEFORE implementation; confirm RED, implement to GREEN.
+"""TDD binning tests (T012 + T011) — written BEFORE implementation; confirm RED, implement to GREEN.
 
 binning.py maps a context dict through the qualitative boundary:
 - Already-banded context: identity pass-through (band fields preserved unchanged).
@@ -15,7 +15,7 @@ import pathlib
 
 import pytest
 
-from aica_api.services.binning import bin_context
+from aica_api.services.binning import bin_context, build_feature_groups
 
 
 # ─── Fixture validation ────────────────────────────────────────────────────────
@@ -275,3 +275,223 @@ def test_binning_determinism():
     """Same input always produces the same output (pure function)."""
     ctx = {"travel_time_sec": 3600, "rest_spot_metres": 12000}
     assert bin_context(ctx) == bin_context(ctx)
+
+
+# ─── T011: build_feature_groups(raw_state) ────────────────────────────────────
+#
+# raw_state keys (camelCase, simulator-internal numerics):
+#   drowsinessLevel, fatigueLevel, attentionLevel, speedKph,
+#   steeringInstabilityLevel, pedalAbnormalityLevel, laneDepartureCount,
+#   adasWarningCount, nextRestSpotKm, routeFraction, continuousDrivingMin,
+#   isNight, weatherRiskLevel, segmentType, drowsinessAboveWeakTicks
+#
+# Returns {normalized: {key: 0..1}, ordinal: {key: "band_string"}}
+
+
+def _raw(
+    *,
+    drowsinessLevel: float = 0.0,
+    fatigueLevel: float = 0.0,
+    attentionLevel: float = 100.0,
+    speedKph: float = 80.0,
+    steeringInstabilityLevel: float = 5.0,
+    pedalAbnormalityLevel: float = 3.0,
+    laneDepartureCount: int = 0,
+    adasWarningCount: int = 0,
+    nextRestSpotKm: float = -1.0,
+    routeFraction: float = 0.0,
+    continuousDrivingMin: float = 0.0,
+    isNight: bool = False,
+    weatherRiskLevel: float = 0.0,
+    segmentType: str = "normal_road",
+    drowsinessAboveWeakTicks: int = 0,
+) -> dict:
+    return {
+        "drowsinessLevel": drowsinessLevel,
+        "fatigueLevel": fatigueLevel,
+        "attentionLevel": attentionLevel,
+        "speedKph": speedKph,
+        "steeringInstabilityLevel": steeringInstabilityLevel,
+        "pedalAbnormalityLevel": pedalAbnormalityLevel,
+        "laneDepartureCount": laneDepartureCount,
+        "adasWarningCount": adasWarningCount,
+        "nextRestSpotKm": nextRestSpotKm,
+        "routeFraction": routeFraction,
+        "continuousDrivingMin": continuousDrivingMin,
+        "isNight": isNight,
+        "weatherRiskLevel": weatherRiskLevel,
+        "segmentType": segmentType,
+        "drowsinessAboveWeakTicks": drowsinessAboveWeakTicks,
+    }
+
+
+# ── Return shape ──────────────────────────────────────────────────────────────
+
+def test_build_feature_groups_returns_normalized_and_ordinal():
+    fg = build_feature_groups(_raw())
+    assert "normalized" in fg
+    assert "ordinal" in fg
+
+
+def test_normalized_values_are_floats_in_0_1():
+    fg = build_feature_groups(_raw(drowsinessLevel=50.0, fatigueLevel=30.0))
+    for key, val in fg["normalized"].items():
+        assert isinstance(val, float), f"{key} not float"
+        assert 0.0 <= val <= 1.0, f"{key}={val} out of [0,1]"
+
+
+def test_ordinal_values_are_strings():
+    fg = build_feature_groups(_raw())
+    for key, val in fg["ordinal"].items():
+        assert isinstance(val, str), f"{key} not string"
+
+
+# ── Ordinal: drowsiness_level ─────────────────────────────────────────────────
+
+def test_ordinal_drowsiness_none():
+    fg = build_feature_groups(_raw(drowsinessLevel=0.0))
+    assert fg["ordinal"]["drowsiness_level"] == "none"
+
+
+def test_ordinal_drowsiness_none_boundary_below_20():
+    fg = build_feature_groups(_raw(drowsinessLevel=19.9))
+    assert fg["ordinal"]["drowsiness_level"] == "none"
+
+
+def test_ordinal_drowsiness_weak():
+    fg = build_feature_groups(_raw(drowsinessLevel=20.0))
+    assert fg["ordinal"]["drowsiness_level"] == "weak"
+
+
+def test_ordinal_drowsiness_moderate():
+    fg = build_feature_groups(_raw(drowsinessLevel=40.0))
+    assert fg["ordinal"]["drowsiness_level"] == "moderate"
+
+
+def test_ordinal_drowsiness_strong():
+    fg = build_feature_groups(_raw(drowsinessLevel=60.0))
+    assert fg["ordinal"]["drowsiness_level"] == "strong"
+
+
+def test_ordinal_drowsiness_severe():
+    fg = build_feature_groups(_raw(drowsinessLevel=80.0))
+    assert fg["ordinal"]["drowsiness_level"] == "severe"
+
+
+def test_ordinal_drowsiness_severe_at_100():
+    fg = build_feature_groups(_raw(drowsinessLevel=100.0))
+    assert fg["ordinal"]["drowsiness_level"] == "severe"
+
+
+# ── Ordinal: fatigue_level ────────────────────────────────────────────────────
+
+def test_ordinal_fatigue_low():
+    fg = build_feature_groups(_raw(fatigueLevel=0.0))
+    assert fg["ordinal"]["fatigue_level"] == "low"
+
+
+def test_ordinal_fatigue_medium():
+    fg = build_feature_groups(_raw(fatigueLevel=30.0))
+    assert fg["ordinal"]["fatigue_level"] == "medium"
+
+
+def test_ordinal_fatigue_high():
+    fg = build_feature_groups(_raw(fatigueLevel=60.0))
+    assert fg["ordinal"]["fatigue_level"] == "high"
+
+
+# ── Ordinal: signal_duration (from drowsinessAboveWeakTicks) ─────────────────
+
+def test_ordinal_signal_duration_transient():
+    fg = build_feature_groups(_raw(drowsinessAboveWeakTicks=0))
+    assert fg["ordinal"]["signal_duration"] == "transient"
+
+
+def test_ordinal_signal_duration_brief():
+    fg = build_feature_groups(_raw(drowsinessAboveWeakTicks=1))
+    assert fg["ordinal"]["signal_duration"] == "brief"
+
+
+def test_ordinal_signal_duration_sustained():
+    fg = build_feature_groups(_raw(drowsinessAboveWeakTicks=2))
+    assert fg["ordinal"]["signal_duration"] == "sustained"
+
+
+def test_ordinal_signal_duration_sustained_at_9():
+    fg = build_feature_groups(_raw(drowsinessAboveWeakTicks=9))
+    assert fg["ordinal"]["signal_duration"] == "sustained"
+
+
+def test_ordinal_signal_duration_persistent():
+    fg = build_feature_groups(_raw(drowsinessAboveWeakTicks=10))
+    assert fg["ordinal"]["signal_duration"] == "persistent"
+
+
+# ── Ordinal: rest_spot_eta (from nextRestSpotKm) ──────────────────────────────
+
+def test_ordinal_rest_spot_eta_none_when_negative():
+    """nextRestSpotKm < 0 means no rest spot ahead."""
+    fg = build_feature_groups(_raw(nextRestSpotKm=-1.0))
+    assert fg["ordinal"]["rest_spot_eta"] == "none"
+
+
+def test_ordinal_rest_spot_eta_near():
+    fg = build_feature_groups(_raw(nextRestSpotKm=10.0))
+    assert fg["ordinal"]["rest_spot_eta"] == "near"
+
+
+def test_ordinal_rest_spot_eta_near_at_20():
+    fg = build_feature_groups(_raw(nextRestSpotKm=20.0))
+    assert fg["ordinal"]["rest_spot_eta"] == "near"
+
+
+def test_ordinal_rest_spot_eta_far():
+    fg = build_feature_groups(_raw(nextRestSpotKm=20.1))
+    assert fg["ordinal"]["rest_spot_eta"] == "far"
+
+
+# ── Ordinal: continuous_driving_time ──────────────────────────────────────────
+
+def test_ordinal_continuous_driving_short():
+    fg = build_feature_groups(_raw(continuousDrivingMin=0.0))
+    assert fg["ordinal"]["continuous_driving_time"] == "short"
+
+
+def test_ordinal_continuous_driving_moderate():
+    fg = build_feature_groups(_raw(continuousDrivingMin=30.0))
+    assert fg["ordinal"]["continuous_driving_time"] == "moderate"
+
+
+def test_ordinal_continuous_driving_long():
+    fg = build_feature_groups(_raw(continuousDrivingMin=90.0))
+    assert fg["ordinal"]["continuous_driving_time"] == "long"
+
+
+# ── Normalized: drowsiness_score ──────────────────────────────────────────────
+
+def test_normalized_drowsiness_score():
+    fg = build_feature_groups(_raw(drowsinessLevel=50.0))
+    assert fg["normalized"]["drowsiness_score"] == pytest.approx(0.5)
+
+
+def test_normalized_fatigue_score():
+    fg = build_feature_groups(_raw(fatigueLevel=75.0))
+    assert fg["normalized"]["fatigue_score"] == pytest.approx(0.75)
+
+
+def test_normalized_attention_score():
+    fg = build_feature_groups(_raw(attentionLevel=80.0))
+    assert fg["normalized"]["attention_score"] == pytest.approx(0.80)
+
+
+def test_normalized_driving_anomaly_score_clamped():
+    """driving_anomaly_score is clamped to [0, 1]."""
+    fg = build_feature_groups(_raw(steeringInstabilityLevel=200.0))
+    assert fg["normalized"]["driving_anomaly_score"] == pytest.approx(1.0)
+
+
+# ── Determinism ───────────────────────────────────────────────────────────────
+
+def test_build_feature_groups_deterministic():
+    raw = _raw(drowsinessLevel=35.0, fatigueLevel=45.0, drowsinessAboveWeakTicks=5)
+    assert build_feature_groups(raw) == build_feature_groups(raw)

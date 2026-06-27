@@ -122,6 +122,19 @@ class SteeringInstabilityProfile(BaseModel):
     mountain_road_add: float
     traffic_jam_reduce: float
 
+    @field_validator(
+        "base_level",
+        "drowsiness_factor",
+        "fatigue_factor",
+        "mountain_road_add",
+        "traffic_jam_reduce",
+    )
+    @classmethod
+    def _nonneg(cls, v: float) -> float:
+        if v < 0:
+            raise ValueError(f"rate must be >= 0, got {v!r}")
+        return v
+
 
 class LaneDepartureProfile(BaseModel):
     """Lane departure detection model."""
@@ -146,6 +159,18 @@ class PedalAbnormalityProfile(BaseModel):
     fatigue_factor: float
     traffic_jam_add: float
     mountain_road_add: float
+
+    @field_validator(
+        "base_level",
+        "fatigue_factor",
+        "traffic_jam_add",
+        "mountain_road_add",
+    )
+    @classmethod
+    def _nonneg(cls, v: float) -> float:
+        if v < 0:
+            raise ValueError(f"rate must be >= 0, got {v!r}")
+        return v
 
 
 class AdasWarningProfile(BaseModel):

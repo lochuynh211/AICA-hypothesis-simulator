@@ -66,6 +66,115 @@ def _bin_rest_eta(metres: int | float | None) -> str:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# T011: build_feature_groups(raw_state) → {normalized, ordinal}
+# ---------------------------------------------------------------------------
+#
+# raw_state keys (camelCase, simulator-internal numerics):
+#   drowsinessLevel, fatigueLevel, attentionLevel, speedKph,
+#   steeringInstabilityLevel, pedalAbnormalityLevel, laneDepartureCount,
+#   adasWarningCount, nextRestSpotKm (-1 = no rest ahead), routeFraction,
+#   continuousDrivingMin, isNight, weatherRiskLevel, segmentType,
+#   drowsinessAboveWeakTicks (consecutive ticks with drowsiness ≥ 20)
+#
+# Ordinal thresholds:
+#   drowsiness_level: none<20, weak 20–40, moderate 40–60, strong 60–80, severe≥80
+#   fatigue_level:    low<30, medium 30–60, high≥60
+#   signal_duration:  transient=0, brief=1, sustained 2–9, persistent≥10 (AboveWeakTicks)
+#   rest_spot_eta:    none=nextRestSpotKm<0, near≤20km, far>20km
+#   continuous_driving_time: short<30min, moderate 30–90min, long≥90min
+
+
+def _bin_drowsiness(level: float) -> str:
+    if level < 20.0:
+        return "none"
+    if level < 40.0:
+        return "weak"
+    if level < 60.0:
+        return "moderate"
+    if level < 80.0:
+        return "strong"
+    return "severe"
+
+
+def _bin_fatigue(level: float) -> str:
+    if level < 30.0:
+        return "low"
+    if level < 60.0:
+        return "medium"
+    return "high"
+
+
+def _bin_signal_duration(above_weak_ticks: int) -> str:
+    if above_weak_ticks <= 0:
+        return "transient"
+    if above_weak_ticks == 1:
+        return "brief"
+    if above_weak_ticks < 10:
+        return "sustained"
+    return "persistent"
+
+
+def _bin_rest_spot_eta(next_rest_km: float) -> str:
+    if next_rest_km < 0:
+        return "none"
+    if next_rest_km <= 20.0:
+        return "near"
+    return "far"
+
+
+def _bin_continuous_driving(minutes: float) -> str:
+    if minutes < 30.0:
+        return "short"
+    if minutes < 90.0:
+        return "moderate"
+    return "long"
+
+
+def build_feature_groups(raw_state: dict) -> dict:
+    """Derive {normalized, ordinal} feature groups from a tick raw_state dict.
+
+    This is the single seam between simulator-internal numeric state and the
+    decision layer.  Algorithms consume feature_groups; raw_state is
+    available for the evidence trace and weighted_score formula.
+
+    Args:
+        raw_state: Dict of camelCase simulator-internal numeric fields produced
+                   by the tick engine per tick.
+
+    Returns:
+        Dict with two sub-dicts:
+        - ``normalized``: {feature_name: float in [0, 1]}
+        - ``ordinal``:    {feature_name: str band label}
+    """
+    drowsiness = float(raw_state.get("drowsinessLevel", 0.0))
+    fatigue = float(raw_state.get("fatigueLevel", 0.0))
+    attention = float(raw_state.get("attentionLevel", 100.0))
+    steering = float(raw_state.get("steeringInstabilityLevel", 0.0))
+    pedal = float(raw_state.get("pedalAbnormalityLevel", 0.0))
+    continuous_min = float(raw_state.get("continuousDrivingMin", 0.0))
+    next_rest_km = float(raw_state.get("nextRestSpotKm", -1.0))
+    above_weak = int(raw_state.get("drowsinessAboveWeakTicks", 0))
+
+    ordinal = {
+        "drowsiness_level": _bin_drowsiness(drowsiness),
+        "fatigue_level": _bin_fatigue(fatigue),
+        "signal_duration": _bin_signal_duration(above_weak),
+        "rest_spot_eta": _bin_rest_spot_eta(next_rest_km),
+        "continuous_driving_time": _bin_continuous_driving(continuous_min),
+    }
+
+    normalized = {
+        "drowsiness_score": min(1.0, max(0.0, drowsiness / 100.0)),
+        "fatigue_score": min(1.0, max(0.0, fatigue / 100.0)),
+        "attention_score": min(1.0, max(0.0, attention / 100.0)),
+        "driving_anomaly_score": min(1.0, max(0.0, steering / 100.0)),
+        "pedal_anomaly_score": min(1.0, max(0.0, pedal / 100.0)),
+    }
+
+    return {"normalized": normalized, "ordinal": ordinal}
+
+
 def bin_context(ctx: dict) -> dict:
     """Convert a context dict to a fully-banded context.
 

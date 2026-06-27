@@ -91,8 +91,11 @@ def test_create_run_snapshot_set(tmp_path, uc01_package, uc01_scenario):
 
 def test_create_run_event_plan_frozen(tmp_path, uc01_package, uc01_scenario):
     state = create_run(uc01_package, uc01_scenario, "run_plan", tmp_path)
-    expected_n = uc01_scenario.total_duration_seconds // uc01_scenario.tick_seconds
-    assert len(state.event_plan.ticks) == expected_n
+    # M2 scenario: build_event_plan returns no per-tick ticks[] (M2 uses advance_tick)
+    assert len(state.event_plan.ticks) == 0
+    # M2 event plan carries tick_seconds and at least one rest opportunity
+    assert state.event_plan.tick_seconds == uc01_scenario.tick_seconds
+    assert len(state.event_plan.rest_opportunities) > 0
 
 
 def test_create_run_writes_log_file(tmp_path, uc01_package, uc01_scenario):

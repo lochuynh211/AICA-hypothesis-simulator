@@ -62,22 +62,43 @@ def _ord(value: object) -> int:
     return 0
 
 
+def _resolve_ordinals(ctx: dict) -> dict:
+    """Extract the ordinal bands dict from either M1 (flat) or M2 context.
+
+    For M2 context (with feature_groups.ordinal): returns the ordinal sub-dict.
+    For M1 context (flat string values at the top level): returns ctx directly.
+
+    This lets the algorithm work with both context formats without branching
+    throughout every helper.
+    """
+    fg = ctx.get("feature_groups")
+    if isinstance(fg, dict):
+        ordinal = fg.get("ordinal")
+        if isinstance(ordinal, dict):
+            return ordinal
+    return ctx
+
+
 # ---------------------------------------------------------------------------
 # Stage 1: blend danger signals
 # ---------------------------------------------------------------------------
 
 
-def _blend(ctx: dict, hp: dict) -> float:
+def _blend(ordinals: dict, hp: dict) -> float:
     """Weighted ordinal blend of drowsiness, fatigue, and driving time.
 
     The blend is ordinal arithmetic — all values are positions in an
     ordered band catalog, never raw magnitudes.
+
+    Args:
+        ordinals: The resolved ordinal bands dict (from _resolve_ordinals).
+        hp:       Hyperparameters dict.
     """
     w_d = _ord(hp.get("weight_drowsiness", "medium"))  # 0..2, default medium
     w_f = _ord(hp.get("weight_fatigue", "medium"))      # 0..2, default medium
-    drowsiness = _ord(ctx.get("drowsiness_level", "none"))
-    fatigue = _ord(ctx.get("fatigue_level", "low"))
-    drive = _ord(ctx.get("continuous_driving_time", "short"))
+    drowsiness = _ord(ordinals.get("drowsiness_level", "none"))
+    fatigue = _ord(ordinals.get("fatigue_level", "low"))
+    drive = _ord(ordinals.get("continuous_driving_time", "short"))
     return drowsiness * (0.5 + 0.25 * w_d) + fatigue * (0.2 * w_f) + drive * 0.4
 
 
@@ -86,14 +107,18 @@ def _blend(ctx: dict, hp: dict) -> float:
 # ---------------------------------------------------------------------------
 
 
-def _damped(ctx: dict, hp: dict) -> float:
+def _damped(ordinals: dict, hp: dict) -> float:
     """Damp the blend by signal persistence.
 
     A signal that is too brief relative to the persistence_requirement is
     damped; a sustained/persistent signal lifts the reading.
+
+    Args:
+        ordinals: The resolved ordinal bands dict (from _resolve_ordinals).
+        hp:       Hyperparameters dict.
     """
-    blend = _blend(ctx, hp)
-    dur = _ord(ctx.get("signal_duration", "transient"))   # 0..3
+    blend = _blend(ordinals, hp)
+    dur = _ord(ordinals.get("signal_duration", "transient"))   # 0..3
     req = _ord(hp.get("persistence_requirement", "medium"))  # 0..2
     shortfall = max(0, (req + 1) - dur)
     persistence_lift = max(0, dur - 1) * 0.6
@@ -122,7 +147,7 @@ def _severe_cut(hp: dict) -> float:
 # ---------------------------------------------------------------------------
 
 
-def _rest_reachable(ctx: dict, hp: dict) -> bool:
+def _rest_reachable(ordinals: dict, hp: dict) -> bool:
     """Return True if a rest action is practically reachable.
 
     Mirrors ``restReachable`` in evaluate_trigger.mjs:
@@ -130,10 +155,14 @@ def _rest_reachable(ctx: dict, hp: dict) -> bool:
       - rest_spot_eta='none'    → not reachable.
       - rest_spot_eta='far' AND rest_spot_sensitivity=low → not reachable.
       - Otherwise               → reachable.
+
+    Args:
+        ordinals: The resolved ordinal bands dict (from _resolve_ordinals).
+        hp:       Hyperparameters dict.
     """
     if hp.get("require_actionable", True) is not True:
         return True
-    eta = ctx.get("rest_spot_eta", "none")
+    eta = ordinals.get("rest_spot_eta", "none")
     if eta == "none":
         return False
     if eta == "far" and _ord(hp.get("rest_spot_sensitivity", "medium")) == 0:
@@ -200,23 +229,27 @@ def evaluate(
         ``next_package_runtime_state``) are always empty for this algorithm.
     """
     hp = hyperparameters
-    damped = _damped(context, hp)
+    # Resolve M2 (feature_groups.ordinal) or M1 (flat) context to the ordinal bands dict.
+    ordinals = _resolve_ordinals(context)
+    damped = _damped(ordinals, hp)
     reaction = _reaction_point(hp)
     prop_cut = _proposal_cut(hp)
     sev_cut = _severe_cut(hp)
-    reachable = _rest_reachable(context, hp)
+    reachable = _rest_reachable(ordinals, hp)
 
     criteria = {
         "reaction_point": reaction,
         "proposal_cut": prop_cut,
         "severe_cut": sev_cut,
     }
-    features = {k: v for k, v in context.items() if isinstance(v, str)}
+    # Features come from the ordinal bands dict, not from the raw context.
+    # This ensures raw_state numerics and feature_groups dicts are excluded.
+    features = {k: v for k, v in ordinals.items() if isinstance(v, str)}
 
     # ------------------------------------------------------------------
     # R1 — SEVERE_INTERVENTION
     # ------------------------------------------------------------------
-    if context.get("drowsiness_level") == "severe" or damped >= sev_cut:
+    if ordinals.get("drowsiness_level") == "severe" or damped >= sev_cut:
         if context.get("drowsiness_level") == "severe":
             reason_inputs = ["drowsiness_level"]
             explanation = "Drowsiness is at the severe level — immediate intervention required."

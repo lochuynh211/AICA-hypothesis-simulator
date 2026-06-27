@@ -16,7 +16,7 @@ For each tick index i in 0..N-1 (N = total_duration // tick_seconds):
 
 from __future__ import annotations
 
-from aica_api.models.run import EventPlan, TickPlanEntry
+from aica_api.models.run import EventPlan, RestOpportunity, RouteFacts, TickPlanEntry, TrafficEvent, WeatherEvent
 from aica_api.models.scenario import ScenarioDef
 from aica_api.services.binning import bin_context
 
@@ -142,3 +142,57 @@ def freeze_event_plan(scenario: ScenarioDef) -> EventPlan:
         ticks.append(entry)
 
     return EventPlan(ticks=ticks)
+
+
+# ---------------------------------------------------------------------------
+# M2 Public API — build_event_plan (no per-tick ticks[])
+# ---------------------------------------------------------------------------
+
+
+def build_event_plan(route_facts: RouteFacts, scenario: ScenarioDef) -> EventPlan:
+    """Build the M2 EventPlan from RouteFacts and scenario presets.
+
+    Returns an EventPlan with M2 fields (tick_seconds, traffic_events,
+    weather_events, rest_opportunities) and NO per-tick ticks[] entries.
+    This is the deterministic, declarative event schedule the M2 tick engine
+    uses to resolve active events at each tick.
+
+    Args:
+        route_facts: RouteFacts derived from analyze_route(scenario).
+        scenario:    Validated ScenarioDef (M2, with profiles + presets).
+
+    Returns:
+        EventPlan with tick_seconds and event lists; ticks=[] (M2 mode).
+    """
+    presets = scenario.presets or {}
+
+    # ── Tick seconds ──────────────────────────────────────────────────────────
+    tick_seconds: int = scenario.tick_seconds
+
+    # ── Traffic events ────────────────────────────────────────────────────────
+    traffic_events: list[TrafficEvent] = []
+    for raw in presets.get("traffic_events", []):
+        traffic_events.append(TrafficEvent(**raw))
+
+    # ── Weather events ────────────────────────────────────────────────────────
+    weather_events: list[WeatherEvent] = []
+    for raw in presets.get("weather_events", []):
+        weather_events.append(WeatherEvent(**raw))
+
+    # ── Rest opportunities from route_facts ───────────────────────────────────
+    rest_opportunities: list[RestOpportunity] = []
+    for i, pos_km in enumerate(route_facts.rest_spot_positions):
+        rest_opportunities.append(
+            RestOpportunity(
+                id=f"rest_{i}",
+                route_position_km=pos_km,
+            )
+        )
+
+    return EventPlan(
+        ticks=[],
+        tick_seconds=tick_seconds,
+        traffic_events=traffic_events,
+        weather_events=weather_events,
+        rest_opportunities=rest_opportunities,
+    )

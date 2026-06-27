@@ -90,7 +90,7 @@ def test_get_returns_scenario_def(registry):
 def test_get_returns_correct_scenario(registry):
     sc = registry.get("uc01_fatigue_friend_drive_v0_1")
     assert sc.id == "uc01_fatigue_friend_drive_v0_1"
-    assert sc.version == "0.1.0"
+    assert sc.version == "0.2.0"
 
 
 def test_get_unknown_returns_none(registry):
@@ -104,8 +104,9 @@ def test_get_includes_route_intent(registry):
 
 
 def test_get_includes_event_presets(registry):
+    """M2 scenario event_presets carries at least signal_duration_at_trigger."""
     sc = registry.get("uc01_fatigue_friend_drive_v0_1")
-    assert len(sc.event_presets.drowsiness_schedule) >= 1
+    assert sc.event_presets.signal_duration_at_trigger == "persistent"
 
 
 def test_get_includes_allowed_actions(registry):

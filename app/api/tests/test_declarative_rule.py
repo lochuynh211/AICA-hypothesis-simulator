@@ -542,3 +542,117 @@ def test_r3_broken_drive_time_short_not_r3():
     result = _eval(ctx)
     assert result.result_type != ResultType.REST_PROPOSAL
     assert result.result_type == ResultType.SOFT_WARNING
+
+
+# ---------------------------------------------------------------------------
+# M2 context shape — feature_groups.ordinal path
+# ---------------------------------------------------------------------------
+
+# The M2 context includes both feature_groups.ordinal AND the flat ordinal keys
+# at the top level (from build_adapter_context's **ordinal spread).  The
+# algorithm must read from feature_groups.ordinal and produce the same result
+# as when fed the equivalent M1 flat context.
+
+_M2_R3_CTX = {
+    "raw_state": {
+        "drowsinessLevel": 40.0,
+        "fatigueLevel": 45.0,
+        "attentionLevel": 80.0,
+        "speedKph": 60.0,
+        "steeringInstabilityLevel": 8.0,
+        "pedalAbnormalityLevel": 3.0,
+        "laneDepartureCount": 0,
+        "adasWarningCount": 0,
+        "nextRestSpotKm": 10.0,
+        "routeFraction": 0.417,
+        "continuousDrivingMin": 50.0,
+        "isNight": False,
+        "weatherRiskLevel": 0.0,
+        "segmentType": "normal_road",
+        "drowsinessAboveWeakTicks": 26,
+    },
+    "feature_groups": {
+        "normalized": {
+            "drowsiness_score": 0.4,
+            "fatigue_score": 0.45,
+            "attention_score": 0.8,
+            "driving_anomaly_score": 0.08,
+            "pedal_anomaly_score": 0.03,
+        },
+        "ordinal": {
+            "drowsiness_level": "moderate",
+            "fatigue_level": "medium",
+            "signal_duration": "persistent",
+            "rest_spot_eta": "near",
+            "continuous_driving_time": "moderate",
+        },
+    },
+    # Flat keys at top level — mirrors build_adapter_context M2 **ordinal spread
+    "drowsiness_level": "moderate",
+    "fatigue_level": "medium",
+    "signal_duration": "persistent",
+    "rest_spot_eta": "near",
+    "continuous_driving_time": "moderate",
+}
+
+
+def test_m2_context_shape_fires_rest_proposal():
+    """M2 context (feature_groups.ordinal) with persistent signal fires REST_PROPOSAL.
+
+    moderate(2)×0.75 + medium(1)×0.2 + moderate(2)×0.4 = 2.5
+    persistent(3): shortfall=0, persistenceLift=(3-1)×0.6=1.2 → damped=3.7 ≥ 3.0 → R3
+    """
+    result = _eval(_M2_R3_CTX)
+    assert result.result_type == ResultType.REST_PROPOSAL
+
+
+def test_m2_context_features_come_from_ordinals():
+    """With M2 context, result.features comes from feature_groups.ordinal (not raw_state).
+
+    The features dict must contain only the 5 ordinal band keys, not raw numerics
+    or nested dicts like 'raw_state' or 'feature_groups'.
+    """
+    result = _eval(_M2_R3_CTX)
+    assert set(result.features.keys()) == {
+        "drowsiness_level",
+        "fatigue_level",
+        "signal_duration",
+        "rest_spot_eta",
+        "continuous_driving_time",
+    }
+    assert "raw_state" not in result.features
+    assert "feature_groups" not in result.features
+
+
+def test_m2_context_same_ordinals_same_result():
+    """M2 and M1 contexts with the same ordinal bands produce the same result_type."""
+    m1_equivalent = {
+        "drowsiness_level": "moderate",
+        "fatigue_level": "medium",
+        "signal_duration": "sustained",
+        "rest_spot_eta": "near",
+        "continuous_driving_time": "long",
+    }
+    m2_ctx = {
+        "raw_state": {"drowsinessLevel": 40.0},
+        "feature_groups": {
+            "normalized": {},
+            "ordinal": {
+                "drowsiness_level": "moderate",
+                "fatigue_level": "medium",
+                "signal_duration": "sustained",
+                "rest_spot_eta": "near",
+                "continuous_driving_time": "long",
+            },
+        },
+        # Flat keys at top level
+        "drowsiness_level": "moderate",
+        "fatigue_level": "medium",
+        "signal_duration": "sustained",
+        "rest_spot_eta": "near",
+        "continuous_driving_time": "long",
+    }
+    result_m1 = _eval(m1_equivalent)
+    result_m2 = _eval(m2_ctx)
+    assert result_m1.result_type == result_m2.result_type
+    assert result_m1.score == result_m2.score
