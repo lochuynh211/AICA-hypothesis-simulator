@@ -3,11 +3,11 @@
 A local, single-user tool for reviewing AICA (AI Cockpit Assistant) trigger
 algorithms by running driving scenarios and inspecting decision traces.
 
-> **Status: M0 — Project Foundation.** This milestone delivers only the runnable
-> skeleton: a FastAPI backend with a health endpoint, a React/Vite frontend shell
-> that displays that health, Docker Compose wiring, and test runners on both
-> sides. There is no package/scenario selection, playback, or algorithm
-> evaluation yet — those arrive in later milestones.
+> **Status: M1 — First Vertical Slice.** This milestone delivers the full
+> UC-01 fatigue review loop: one rule-based package, one scenario, backend tick
+> engine, append-only evidence recorder, and a 3-panel React UI for playback
+> and trace inspection. There is no Google Maps integration, second package, or
+> structured feedback yet — those arrive in later milestones.
 
 ## Prerequisites
 
@@ -26,20 +26,10 @@ This starts two services with hot reload:
 
 | Service    | URL                     | Purpose                          |
 |------------|-------------------------|----------------------------------|
-| `frontend` | http://localhost:5180   | App shell (open this in browser) |
+| `frontend` | http://localhost:5180   | App UI (open this in browser)    |
 | `api`      | http://localhost:8137   | FastAPI backend                  |
 
-Open **http://localhost:5180**. The shell fetches backend health once on load
-and shows `Backend: ok — aica-api` when the backend is reachable, or
-`Backend unavailable` otherwise. If you open the page before the backend has
-finished starting, reload once it is ready (M0 does not auto-retry).
-
-Verify the backend directly (optional):
-
-```bash
-curl http://localhost:8137/api/health
-# {"status":"ok","service":"aica-api","version":"0.0.0"}
-```
+Open **http://localhost:5180**.
 
 ### Changing the ports
 
@@ -58,6 +48,47 @@ If 8137 or 5180 is already in use on your machine, change them in two places:
 > (to drop the stale volumes) before `docker compose up` so the rebuilt images'
 > dependencies take effect.
 
+## UC-01 fatigue review loop (UI)
+
+1. **Left panel — Setup:** select package **Rest proposal (rule-based)** and
+   scenario **UC-01 fatigue friend drive** (the only options in M1).
+2. Press **Start Run** → a run is created and `runs/<run_id>.json` is written
+   immediately by the backend.
+3. Press **Play** (or **Step** to advance one tick at a time). The left panel
+   readouts update with drowsiness/fatigue bands and route position; the right
+   panel trace fills with one row per tick.
+4. When the fatigue decision point is reached the run pauses and the cockpit
+   area switches to the **rest proposal**. The trace shows
+   `result_type: REST_PROPOSAL`, the selected candidate, fire-control outcome,
+   and explanation.
+5. Click **Accept rest** or **Postpone** → the action is recorded in the
+   evidence log and playback resumes to completion.
+6. Click **Load** in the **RUN LOG** section (bottom-right panel) to load the
+   persisted evidence JSON for the run, including the full trace and your
+   driver action.
+
+## Verify backend-only (no frontend)
+
+```bash
+# Create a run
+curl -s -XPOST http://localhost:8137/api/runs \
+  -H 'content-type: application/json' \
+  -d '{"package_id":"rest_rule_based_v0_1","scenario_id":"uc01_fatigue_friend_drive_v0_1"}'
+
+# Tick until "paused": true (the rest proposal)
+curl -s -XPOST http://localhost:8137/api/runs/<run_id>/tick
+
+# Act on the proposal
+curl -s -XPOST http://localhost:8137/api/runs/<run_id>/actions \
+  -H 'content-type: application/json' -d '{"action":"accept_rest"}'
+
+# Read the persisted evidence
+curl -s http://localhost:8137/api/runs/<run_id>/log
+
+# The file also appears at:
+ls runs/   # <run_id>.json
+```
+
 ## Running the tests
 
 Backend (pytest, via uv):
@@ -72,16 +103,31 @@ Frontend (Vitest):
 cd app/frontend && npm test
 ```
 
-## Project layout (M0)
+## M1 scope — what is NOT here yet
+
+| Feature | Milestone |
+|---------|-----------|
+| Google Maps route surface (BYO API key) | M4 |
+| Second hypothesis package or scenario | M2 |
+| Weighted-score or Python algorithm | M3 |
+| Editable setup / run-plan flow | M2 |
+| Structured driver feedback form | M5 |
+| Evidence replay (re-running from log without backend) | M5 |
+
+These are intentional gaps, not bugs. M1 is a runnable end-to-end loop for
+the single UC-01 use case.
+
+## Project layout
 
 ```
-app/api/         FastAPI backend (package aica_api; GET /api/health)
-app/frontend/    React + TypeScript + Vite shell
-packages/        hypothesis packages        (empty until M1+)
-scenarios/       driving scenarios          (empty until M1+)
-runs/            persisted run evidence     (written at runtime, M1+)
+app/api/         FastAPI backend (aica_api package; tick engine, registries, evidence)
+app/frontend/    React + TypeScript + Vite (3-panel UI)
+packages/        hypothesis packages (rest_rule_based_v0_1/)
+scenarios/       driving scenarios   (uc01_fatigue_friend_drive_v0_1.json)
+runs/            persisted run evidence — written at runtime, gitignored
 docker-compose.yml, Dockerfile.api, Dockerfile.frontend
-docs/master/     authoritative design specification and architecture
+docs/master/     authoritative specification, architecture, and milestone plan
+specs/           Spec Kit feature specs
 ```
 
 See `docs/master/` for the full specification, architecture, and milestone plan.
