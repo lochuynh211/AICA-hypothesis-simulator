@@ -27,6 +27,7 @@ from fastapi.testclient import TestClient
 from aica_api.main import app
 from aica_api.services.package_registry import PackageRegistry
 from aica_api.services.run_manager import clear_registry
+from aica_api.services.run_plan import clear_draft_registry
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _REAL_PACKAGES_DIR = _REPO_ROOT / "packages"
@@ -146,10 +147,12 @@ def _write_scenario(scenarios_dir: Path, data: dict) -> Path:
 
 @pytest.fixture(autouse=True)
 def _reset_run_registry():
-    """Isolate every test — clear the in-memory run registry before and after."""
+    """Isolate every test — clear both in-memory registries before and after."""
     clear_registry()
+    clear_draft_registry()
     yield
     clear_registry()
+    clear_draft_registry()
 
 
 # ── T030a: Bad algorithm type ─────────────────────────────────────────────────
@@ -317,7 +320,7 @@ class TestMixedValidAndInvalidScenarios:
 
 
 class TestIncompatiblePairing:
-    """Valid package + valid scenario with incompatible type → POST /api/runs 400."""
+    """Valid package + valid scenario with incompatible type → POST /api/run-plans 400."""
 
     @pytest.fixture
     def setup(self, tmp_path, monkeypatch):
@@ -334,10 +337,12 @@ class TestIncompatiblePairing:
     def test_incompatible_pairing_returns_400(self, setup):
         client, _ = setup
         resp = client.post(
-            "/api/runs",
+            "/api/run-plans",
             json={
                 "package_id": "rest_rule_based_v0_1",
                 "scenario_id": "uc99_incompat_v0_1",
+                "parameters": {},
+                "hyperparameters": {},
             },
         )
         assert resp.status_code == 400
@@ -345,10 +350,12 @@ class TestIncompatiblePairing:
     def test_incompatible_pairing_no_run_file_created(self, setup):
         client, runs_dir = setup
         client.post(
-            "/api/runs",
+            "/api/run-plans",
             json={
                 "package_id": "rest_rule_based_v0_1",
                 "scenario_id": "uc99_incompat_v0_1",
+                "parameters": {},
+                "hyperparameters": {},
             },
         )
         assert list(runs_dir.glob("*.json")) == []
@@ -356,10 +363,12 @@ class TestIncompatiblePairing:
     def test_incompatible_pairing_error_detail(self, setup):
         client, _ = setup
         resp = client.post(
-            "/api/runs",
+            "/api/run-plans",
             json={
                 "package_id": "rest_rule_based_v0_1",
                 "scenario_id": "uc99_incompat_v0_1",
+                "parameters": {},
+                "hyperparameters": {},
             },
         )
         detail = resp.json()["detail"]

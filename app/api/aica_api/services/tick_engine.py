@@ -315,6 +315,24 @@ def advance_tick(
     # ── Active segment ID (for M1 compat field) ───────────────────────────
     active_segment_id = _active_segment_id(route_fraction, scenario)
 
+    # ── Build driver_update dict for evidence trace ───────────────────────
+    if scenario.driver_profile is not None:
+        import dataclasses as _dc
+        driver_update_dict = {
+            "previous": _dc.asdict(driver_update.previous),
+            "delta": _dc.asdict(driver_update.delta),
+            "next": {"drowsiness": new_drowsiness, "fatigue": new_fatigue, "attention": new_attention},
+        }
+    else:
+        driver_update_dict = {}
+
+    vehicle_update_dict = {
+        "steering_instability_level": steering,
+        "pedal_abnormality_level": pedal,
+        "lane_departure_count": lane_dep,
+        "adas_warning_count": adas_warn,
+    }
+
     return TickState(
         tick_index=tick_index,
         elapsed_seconds=(tick_index + 1) * tick_seconds,
@@ -330,8 +348,10 @@ def advance_tick(
         feature_groups=feature_groups,
         distance_km=new_distance_km,
         continuous_driving_min=new_continuous_min,
-        # Pass vehicle event history through extra fields
+        # Pass state through extra fields (model_config extra=allow)
         _vehicle_event_history=new_vehicle_history,
+        _driver_update=driver_update_dict,
+        _vehicle_update=vehicle_update_dict,
     )
 
 

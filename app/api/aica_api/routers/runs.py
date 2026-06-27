@@ -11,7 +11,6 @@ from pydantic import BaseModel
 
 from aica_api.config import settings
 from aica_api.models.run import RunStatus
-from aica_api.services.package_registry import PackageRegistry
 from aica_api.services.run_manager import (
     ActionNotAllowedError,
     RunNotFoundError,
@@ -20,7 +19,6 @@ from aica_api.services.run_manager import (
     get_run,
     tick,
 )
-from aica_api.services.scenario_registry import ScenarioRegistry
 
 router = APIRouter()
 
@@ -39,8 +37,7 @@ def _make_run_id() -> str:
 
 
 class CreateRunBody(BaseModel):
-    package_id: str
-    scenario_id: str
+    plan_id: str
 
 
 class ActionBody(BaseModel):
@@ -52,35 +49,19 @@ class ActionBody(BaseModel):
 
 @router.post("/api/runs", status_code=201)
 def create_run_endpoint(body: CreateRunBody):
-    """Validate compatibility, generate run_id, initialise the run, return 201 RunState."""
-    pkg_reg = PackageRegistry(settings.packages_dir)
-    sc_reg = ScenarioRegistry(settings.scenarios_dir)
-
-    package = pkg_reg.get(body.package_id)
-    if package is None:
+    """Freeze draft plan, create run, return 201 RunState. 400 for unknown plan_id."""
+    from aica_api.services.run_plan import get_draft_entry
+    if get_draft_entry(body.plan_id) is None:
         raise HTTPException(
             status_code=400,
-            detail=f"Package {body.package_id!r} not found or invalid",
-        )
-
-    scenario = sc_reg.get(body.scenario_id)
-    if scenario is None:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Scenario {body.scenario_id!r} not found or invalid",
-        )
-
-    if not pkg_reg.is_compatible(package, scenario):
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"Package {body.package_id!r} is not compatible with "
-                f"scenario {body.scenario_id!r} (type={scenario.type!r})"
-            ),
+            detail=f"Run plan {body.plan_id!r} not found or expired",
         )
 
     run_id = _make_run_id()
-    run_state = create_run(package, scenario, run_id, settings.runs_dir)
+    try:
+        run_state = create_run(body.plan_id, run_id, settings.runs_dir)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     return run_state
 
 

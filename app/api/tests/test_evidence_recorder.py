@@ -317,3 +317,78 @@ def test_run_log_property_updated_after_append(tmp_path):
     recorder.append(evt)
 
     assert len(recorder.run_log.events) == 1
+
+
+# ---------------------------------------------------------------------------
+# T023 — M2 persistence completeness
+# ---------------------------------------------------------------------------
+
+def test_tick_event_carries_raw_state(tmp_path):
+    """TickEvent.raw_state is persisted when non-empty."""
+    log = _make_run_log("run_raw_state")
+    recorder = EvidenceRecorder(log, tmp_path)
+
+    tick_state = _make_tick_state(0)
+    tick_state_with_raw = tick_state.model_copy(
+        update={"raw_state": {"drowsinessLevel": 15.0, "fatigueLevel": 5.0}}
+    )
+    decision = _make_decision_result()
+    trace = TraceEntry(tick_index=0, decision_result=decision)
+    from aica_api.models.log import FeatureGroups
+    event = TickEvent(
+        kind="tick",
+        tick_index=0,
+        tick_state=tick_state_with_raw,
+        trace=trace,
+        raw_state={"drowsinessLevel": 15.0, "fatigueLevel": 5.0},
+        package_runtime_state={"stub": 1},
+    )
+    recorder.append(event)
+
+    data = json.loads((tmp_path / "run_raw_state.json").read_text(encoding="utf-8"))
+    tick_events = [e for e in data["events"] if e.get("kind") == "tick"]
+    assert tick_events[0]["raw_state"]["drowsinessLevel"] == 15.0
+    assert tick_events[0]["package_runtime_state"] == {"stub": 1}
+
+
+def test_run_log_persists_initial_parameters(tmp_path):
+    """RunLog.initial_parameters and current_parameters are persisted."""
+    log = RunLog(
+        run_id="run_params",
+        created_at="2026-01-01T00:00:00Z",
+        simulator_version="0.1.0",
+        snapshot=_SNAPSHOT,
+        route_facts=_ROUTE_FACTS,
+        event_plan=_EVENT_PLAN,
+        initial_parameters={"trigger_sensitivity": "normal"},
+        current_parameters={"trigger_sensitivity": "normal"},
+        initial_hyperparameters={"weight_drowsiness": 0.7},
+        current_hyperparameters={"weight_drowsiness": 0.7},
+        original_values={},
+        modified_values={},
+        events=[],
+    )
+    recorder = EvidenceRecorder(log, tmp_path)
+    data = json.loads((tmp_path / "run_params.json").read_text(encoding="utf-8"))
+    assert data["initial_parameters"] == {"trigger_sensitivity": "normal"}
+    assert data["current_parameters"] == {"trigger_sensitivity": "normal"}
+    assert data["initial_hyperparameters"] == {"weight_drowsiness": 0.7}
+
+
+def test_run_log_persists_original_modified_values(tmp_path):
+    """RunLog.original_values / modified_values are persisted."""
+    log = RunLog(
+        run_id="run_orig_mod",
+        created_at="2026-01-01T00:00:00Z",
+        simulator_version="0.1.0",
+        snapshot=_SNAPSHOT,
+        route_facts=_ROUTE_FACTS,
+        event_plan=_EVENT_PLAN,
+        original_values={"hyperparameters.weight_drowsiness": 0.4},
+        modified_values={"hyperparameters.weight_drowsiness": 0.7},
+        events=[],
+    )
+    recorder = EvidenceRecorder(log, tmp_path)
+    data = json.loads((tmp_path / "run_orig_mod.json").read_text(encoding="utf-8"))
+    assert data["original_values"] == {"hyperparameters.weight_drowsiness": 0.4}
+    assert data["modified_values"] == {"hyperparameters.weight_drowsiness": 0.7}

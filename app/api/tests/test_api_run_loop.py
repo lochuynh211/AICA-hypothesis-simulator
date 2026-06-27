@@ -17,6 +17,7 @@ from fastapi.testclient import TestClient
 
 from aica_api.main import app
 from aica_api.services.run_manager import clear_registry
+from aica_api.services.run_plan import clear_draft_registry
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -32,10 +33,12 @@ _MAX_TICKS = 200
 
 @pytest.fixture(autouse=True)
 def reset_run_registry():
-    """Isolate every test — clear the in-memory run registry before and after."""
+    """Isolate every test — clear both in-memory registries before and after."""
     clear_registry()
+    clear_draft_registry()
     yield
     clear_registry()
+    clear_draft_registry()
 
 
 @pytest.fixture
@@ -49,12 +52,24 @@ def client(tmp_path, monkeypatch):
 
 
 def _create_run(client: TestClient) -> str:
-    """POST /api/runs with the standard M1 fixtures and return the run_id."""
-    resp = client.post(
-        "/api/runs",
-        json={"package_id": VALID_PACKAGE_ID, "scenario_id": VALID_SCENARIO_ID},
+    """Create a run plan then a run via the plan flow; return the run_id."""
+    # Step 1: Create run plan
+    plan_resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": VALID_PACKAGE_ID,
+            "scenario_id": VALID_SCENARIO_ID,
+            "parameters": {},
+            "hyperparameters": {},
+            "run_mode": "standard",
+        },
     )
-    assert resp.status_code == 201
+    assert plan_resp.status_code == 201, f"Plan creation failed: {plan_resp.json()}"
+    plan_id = plan_resp.json()["plan_id"]
+
+    # Step 2: Create run from plan
+    resp = client.post("/api/runs", json={"plan_id": plan_id})
+    assert resp.status_code == 201, f"Run creation failed: {resp.json()}"
     return resp.json()["run_id"]
 
 

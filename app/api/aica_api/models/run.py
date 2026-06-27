@@ -204,7 +204,7 @@ class RunPlanDraft(BaseModel):
     route_facts: RouteFacts
     effective_setup: dict[str, Any] = {}
     draft_event_plan: EventPlan = EventPlan()
-    validation_errors: list[str] = []
+    validation_errors: list[dict] = []
 
 
 # ─── RunState ────────────────────────────────────────────────────────────────

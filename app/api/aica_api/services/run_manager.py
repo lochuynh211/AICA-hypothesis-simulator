@@ -1,10 +1,10 @@
-"""Run manager (T013 M2 migration) — orchestrates the full run lifecycle.
+"""Run manager (T021 M2 migration) — orchestrates the full run lifecycle.
 
 Holds in-memory state keyed by run_id (M1 single-process; no DB).
 Backed by the append-only EvidenceRecorder for persistence.
 
 Public API:
-  create_run(package, scenario, run_id, runs_dir) -> RunState
+  create_run(plan_id, run_id, runs_dir) -> RunState
   tick(run_id) -> TickOutcome
   action(run_id, action_str) -> RunState
   get_run(run_id) -> RunState | None
@@ -12,14 +12,18 @@ Public API:
 
 Design constraints:
   - NO timestamps/UUIDs/randomness generated inside the decision path.
-  - run_id is supplied by the caller (the router at Unit 4).
+  - plan_id is resolved from the draft registry (run_plan service).
+  - run_id is supplied by the caller (the router).
   - The created_at timestamp in RunLog is metadata, not part of the decision
     trace — it is generated here (outside the tick-level core).
   - Ordinal bands only reach the adapter (via tick_engine).
   - Adapter failure → AlgorithmError event; never a faked DecisionResult.
+  - package_runtime_state is threaded tick-to-tick:
+    pass current in → adapter returns next → store returned next.
 
 M1 path: scenario.driver_profile is None → freeze_event_plan + compute_tick_state.
-M2 path: scenario.driver_profile is not None → analyze_route + build_event_plan + advance_tick.
+M2 path: scenario.driver_profile is not None → plan draft frozen (route_facts +
+         event_plan already computed) + advance_tick.
 """
 
 from __future__ import annotations
@@ -52,8 +56,7 @@ from aica_api.models.run import (
     TickState,
 )
 from aica_api.models.scenario import ScenarioDef
-from aica_api.services.event_plan import build_event_plan, freeze_event_plan
-from aica_api.services.route_analysis import analyze_route
+from aica_api.services.event_plan import freeze_event_plan
 from aica_api.services.tick_engine import advance_tick, build_adapter_context, compute_tick_state
 from aica_api.storage.evidence_recorder import EvidenceRecorder
 
@@ -137,14 +140,6 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def _default_hyperparameters(package: PackageManifest) -> dict:
-    return {hp.key: hp.default for hp in package.hyperparameters}
-
-
-def _default_parameters(package: PackageManifest) -> dict:
-    return {p.key: p.default for p in package.parameters}
-
-
 def _is_m2_scenario(scenario: ScenarioDef) -> bool:
     """True if the scenario has M2 profile-driven fields."""
     return scenario.driver_profile is not None
@@ -156,40 +151,64 @@ def _is_m2_scenario(scenario: ScenarioDef) -> bool:
 
 
 def create_run(
-    package: PackageManifest,
-    scenario: ScenarioDef,
+    plan_id: str,
     run_id: str,
     runs_dir: pathlib.Path,
 ) -> RunState:
-    """Initialise a new run and persist the initial run log.
-
-    For M1 scenarios (no driver_profile): uses freeze_event_plan.
-    For M2 scenarios (has driver_profile): uses analyze_route + build_event_plan.
+    """Initialise a new run from a frozen run plan draft.
 
     Args:
-        package:   Validated PackageManifest.
-        scenario:  Validated ScenarioDef.
-        run_id:    Unique identifier supplied by the router.
-        runs_dir:  Directory for persisting ``<run_id>.json``.
+        plan_id:   The frozen draft plan identifier (from run_plan service).
+        run_id:    Unique run identifier (supplied by the router).
+        runs_dir:  Directory for persisting <run_id>.json.
 
     Returns:
         The initial RunState (status=created, current_tick=0).
+
+    Raises:
+        ValueError: If plan_id is not in the draft registry.
     """
-    # ── Freeze immutable artifacts ────────────────────────────────────────
-    if _is_m2_scenario(scenario):
-        # M2 path: route analysis + M2 event plan
-        route_facts = analyze_route(scenario)
-        # Merge M1 backward-compat bands from package
-        route_facts.bands = {feature.key: feature.band_values for feature in package.features}
-        event_plan: EventPlan = build_event_plan(route_facts, scenario)
-    else:
-        # M1 path: per-tick event plan
+    from aica_api.services.run_plan import get_draft_entry
+    entry = get_draft_entry(plan_id)
+    if entry is None:
+        raise ValueError(f"Unknown plan_id {plan_id!r}")
+
+    draft, package, scenario = entry
+
+    # Use the frozen route_facts and event_plan from the draft
+    route_facts = draft.route_facts
+    event_plan = draft.draft_event_plan
+
+    # M1 fallback: if scenario has no driver_profile and event_plan has no ticks,
+    # re-freeze using the scenario's event_presets
+    if not _is_m2_scenario(scenario) and len(event_plan.ticks) == 0:
         event_plan = freeze_event_plan(scenario)
         route_facts = RouteFacts(
             segments=scenario.route_intent.segments,
             bands={feature.key: feature.band_values for feature in package.features},
         )
 
+    # Extract effective setup
+    effective_setup = draft.effective_setup
+    effective_params = effective_setup.get("parameters", {})
+    effective_hps = effective_setup.get("hyperparameters", {})
+    run_mode = effective_setup.get("run_mode", "standard")
+
+    # original_values / modified_values diff
+    original_values: dict = {}
+    modified_values: dict = {}
+    default_params = {p.key: p.default for p in package.parameters}
+    default_hps = {hp.key: hp.default for hp in package.hyperparameters}
+    for key, val in effective_params.items():
+        if key in default_params and default_params[key] != val:
+            original_values[f"parameters.{key}"] = default_params[key]
+            modified_values[f"parameters.{key}"] = val
+    for key, val in effective_hps.items():
+        if key in default_hps and default_hps[key] != val:
+            original_values[f"hyperparameters.{key}"] = default_hps[key]
+            modified_values[f"hyperparameters.{key}"] = val
+
+    # Build snapshot
     package_data = package.model_dump(mode="json")
     scenario_data = scenario.model_dump(mode="json")
     snapshot = Snapshot(
@@ -205,7 +224,7 @@ def create_run(
         ),
     )
 
-    # ── Initial RunState ──────────────────────────────────────────────────
+    # Initial RunState (with full M2 setup snapshot)
     run_state = RunState(
         run_id=run_id,
         status=RunStatus.created,
@@ -215,9 +234,29 @@ def create_run(
         snapshot=snapshot,
         event_plan=event_plan,
         route_facts=route_facts,
+        run_mode=run_mode,
+        evidence_status="standard",
+        driver_profile=(
+            scenario.driver_profile.model_dump(mode="json")
+            if scenario.driver_profile else None
+        ),
+        vehicle_profile=(
+            scenario.vehicle_profile.model_dump(mode="json")
+            if scenario.vehicle_profile else None
+        ),
+        speed_profile=(
+            scenario.speed_profile.model_dump(mode="json")
+            if scenario.speed_profile else None
+        ),
+        initial_parameters=effective_params,
+        current_parameters=effective_params.copy(),
+        initial_hyperparameters=effective_hps,
+        current_hyperparameters=effective_hps.copy(),
+        original_values=original_values,
+        modified_values=modified_values,
     )
 
-    # ── Initial RunLog ────────────────────────────────────────────────────
+    # Initial RunLog
     run_log = RunLog(
         run_id=run_id,
         created_at=_now_iso(),
@@ -225,6 +264,14 @@ def create_run(
         snapshot=snapshot,
         route_facts=route_facts,
         event_plan=event_plan,
+        run_mode=run_mode,
+        evidence_status="standard",
+        initial_parameters=effective_params,
+        current_parameters=effective_params.copy(),
+        initial_hyperparameters=effective_hps,
+        current_hyperparameters=effective_hps.copy(),
+        original_values=original_values,
+        modified_values=modified_values,
         events=[],
     )
 
@@ -244,6 +291,9 @@ def tick(run_id: str) -> TickOutcome:
 
     Dispatches to the adapter, appends a TickEvent (or AlgorithmError),
     persists, and pauses when a proposal fires.
+
+    Threads package_runtime_state: passes current state into the adapter,
+    then stores the returned next_package_runtime_state back into run_state.
 
     For M1 scenarios: uses compute_tick_state.
     For M2 scenarios: uses advance_tick with prior TickState.
@@ -302,8 +352,13 @@ def tick(run_id: str) -> TickOutcome:
 
     # ── Build context and call adapter ────────────────────────────────────
     context = build_adapter_context(tick_state)
-    hyperparameters = _default_hyperparameters(package)
-    parameters = _default_parameters(package)
+    # Use current_parameters/hyperparameters (may be overridden in expert mode)
+    hyperparameters = run_state.current_hyperparameters or {
+        hp.key: hp.default for hp in package.hyperparameters
+    }
+    parameters = run_state.current_parameters or {
+        p.key: p.default for p in package.parameters
+    }
 
     try:
         decision_result: DecisionResult = _adapter.evaluate(
@@ -325,7 +380,7 @@ def tick(run_id: str) -> TickOutcome:
         recorder.append(algo_error)
         # Advance tick so subsequent calls don't retry the same broken tick
         run_state.current_tick += 1
-        # Update prior_state for M2
+        # Update prior_state for M2 (do NOT update package_runtime_state — failed)
         if _is_m2_scenario(scenario):
             _registry[run_id] = (run_state, package, scenario, recorder, tick_state)
         return TickOutcome(
@@ -337,13 +392,27 @@ def tick(run_id: str) -> TickOutcome:
             evaluated_tick_index=current_tick,
         )
 
-    # ── Append TickEvent ──────────────────────────────────────────────────
+    # ── Thread package_runtime_state: store what the algorithm returned ───
+    run_state.package_runtime_state = decision_result.next_package_runtime_state
+
+    # ── Extract M2 tick evidence fields from tick_state ───────────────────
+    raw_state = tick_state.raw_state or {}
+    feature_groups = tick_state.feature_groups
+    driver_update = (tick_state.model_extra or {}).get("_driver_update", {})
+    vehicle_update = (tick_state.model_extra or {}).get("_vehicle_update", {})
+
+    # ── Append TickEvent with M2 fields ──────────────────────────────────
     trace = TraceEntry(tick_index=current_tick, decision_result=decision_result)
     tick_event = TickEvent(
         kind="tick",
         tick_index=current_tick,
         tick_state=tick_state,
         trace=trace,
+        raw_state=raw_state,
+        feature_groups=feature_groups,
+        driver_update=driver_update,
+        vehicle_update=vehicle_update,
+        package_runtime_state=decision_result.next_package_runtime_state,
     )
     recorder.append(tick_event)
 

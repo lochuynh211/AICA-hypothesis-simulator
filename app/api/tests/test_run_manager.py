@@ -1,7 +1,7 @@
-"""TDD run_manager tests (T018) — RED then GREEN.
+"""TDD run_manager tests (T021) — uses plan flow (create_draft → create_run).
 
 Tests for:
-  create_run(package, scenario, run_id, runs_dir) -> RunState
+  create_run(plan_id, run_id, runs_dir) -> RunState
   tick(run_id) -> TickOutcome
   action(run_id, action) -> RunState
 """
@@ -26,6 +26,7 @@ from aica_api.services.run_manager import (
     create_run,
     tick,
 )
+from aica_api.services.run_plan import clear_draft_registry, create_draft
 
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
 _SCENARIO_PATH = _REPO_ROOT / "scenarios" / "uc01_fatigue_friend_drive_v0_1.json"
@@ -39,10 +40,12 @@ _PACKAGE_PATH = _REPO_ROOT / "packages" / "rest_rule_based_v0_1" / "package.json
 
 @pytest.fixture(autouse=True)
 def reset_registry():
-    """Isolate each test — clear the in-memory run registry."""
+    """Isolate each test — clear both in-memory registries."""
     clear_registry()
+    clear_draft_registry()
     yield
     clear_registry()
+    clear_draft_registry()
 
 
 @pytest.fixture
@@ -58,39 +61,59 @@ def uc01_package() -> PackageManifest:
 
 
 # ---------------------------------------------------------------------------
+# Helper: create a draft then a run from it
+# ---------------------------------------------------------------------------
+
+
+def _plan_and_run(package, scenario, run_id, tmp_path):
+    """Helper: create a draft plan and a run from it."""
+    plan_id = f"plan_{run_id}"
+    create_draft(
+        plan_id=plan_id,
+        package=package,
+        scenario=scenario,
+        presets={},
+        parameters={},
+        hyperparameters={},
+        run_mode="standard",
+    )
+    return create_run(plan_id, run_id, tmp_path)
+
+
+# ---------------------------------------------------------------------------
 # create_run
 # ---------------------------------------------------------------------------
 
 
 def test_create_run_returns_run_state(tmp_path, uc01_package, uc01_scenario):
     from aica_api.models.run import RunState
-    state = create_run(uc01_package, uc01_scenario, "run_001", tmp_path)
+    state = _plan_and_run(uc01_package, uc01_scenario, "run_001", tmp_path)
     assert isinstance(state, RunState)
 
 
 def test_create_run_status_is_created(tmp_path, uc01_package, uc01_scenario):
-    state = create_run(uc01_package, uc01_scenario, "run_create_status", tmp_path)
+    state = _plan_and_run(uc01_package, uc01_scenario, "run_create_status", tmp_path)
     assert state.status == RunStatus.created
 
 
 def test_create_run_current_tick_zero(tmp_path, uc01_package, uc01_scenario):
-    state = create_run(uc01_package, uc01_scenario, "run_tick0", tmp_path)
+    state = _plan_and_run(uc01_package, uc01_scenario, "run_tick0", tmp_path)
     assert state.current_tick == 0
 
 
 def test_create_run_no_pending_proposal(tmp_path, uc01_package, uc01_scenario):
-    state = create_run(uc01_package, uc01_scenario, "run_no_prop", tmp_path)
+    state = _plan_and_run(uc01_package, uc01_scenario, "run_no_prop", tmp_path)
     assert state.pending_proposal is None
 
 
 def test_create_run_snapshot_set(tmp_path, uc01_package, uc01_scenario):
-    state = create_run(uc01_package, uc01_scenario, "run_snap", tmp_path)
+    state = _plan_and_run(uc01_package, uc01_scenario, "run_snap", tmp_path)
     assert state.snapshot.package.id == uc01_package.id
     assert state.snapshot.scenario.id == uc01_scenario.id
 
 
 def test_create_run_event_plan_frozen(tmp_path, uc01_package, uc01_scenario):
-    state = create_run(uc01_package, uc01_scenario, "run_plan", tmp_path)
+    state = _plan_and_run(uc01_package, uc01_scenario, "run_plan", tmp_path)
     # M2 scenario: build_event_plan returns no per-tick ticks[] (M2 uses advance_tick)
     assert len(state.event_plan.ticks) == 0
     # M2 event plan carries tick_seconds and at least one rest opportunity
@@ -99,13 +122,13 @@ def test_create_run_event_plan_frozen(tmp_path, uc01_package, uc01_scenario):
 
 
 def test_create_run_writes_log_file(tmp_path, uc01_package, uc01_scenario):
-    create_run(uc01_package, uc01_scenario, "run_log_file", tmp_path)
+    _plan_and_run(uc01_package, uc01_scenario, "run_log_file", tmp_path)
     log_file = tmp_path / "run_log_file.json"
     assert log_file.exists()
 
 
 def test_create_run_log_file_is_valid_run_log(tmp_path, uc01_package, uc01_scenario):
-    create_run(uc01_package, uc01_scenario, "run_valid_log", tmp_path)
+    _plan_and_run(uc01_package, uc01_scenario, "run_valid_log", tmp_path)
     data = json.loads((tmp_path / "run_valid_log.json").read_text(encoding="utf-8"))
     log = RunLog(**data)
     assert log.run_id == "run_valid_log"
@@ -113,12 +136,12 @@ def test_create_run_log_file_is_valid_run_log(tmp_path, uc01_package, uc01_scena
 
 
 def test_create_run_route_facts_has_segments(tmp_path, uc01_package, uc01_scenario):
-    state = create_run(uc01_package, uc01_scenario, "run_rf", tmp_path)
+    state = _plan_and_run(uc01_package, uc01_scenario, "run_rf", tmp_path)
     assert len(state.route_facts.segments) > 0
 
 
 def test_create_run_route_facts_has_bands(tmp_path, uc01_package, uc01_scenario):
-    state = create_run(uc01_package, uc01_scenario, "run_bands", tmp_path)
+    state = _plan_and_run(uc01_package, uc01_scenario, "run_bands", tmp_path)
     assert "drowsiness_level" in state.route_facts.bands
 
 
@@ -129,47 +152,47 @@ def test_create_run_route_facts_has_bands(tmp_path, uc01_package, uc01_scenario)
 
 def test_tick_returns_run_state(tmp_path, uc01_package, uc01_scenario):
     from aica_api.models.run import RunState
-    create_run(uc01_package, uc01_scenario, "run_tick_state", tmp_path)
+    _plan_and_run(uc01_package, uc01_scenario, "run_tick_state", tmp_path)
     outcome = tick("run_tick_state")
     assert isinstance(outcome.run_state, RunState)
 
 
 def test_tick_advances_current_tick(tmp_path, uc01_package, uc01_scenario):
-    create_run(uc01_package, uc01_scenario, "run_advance", tmp_path)
+    _plan_and_run(uc01_package, uc01_scenario, "run_advance", tmp_path)
     outcome = tick("run_advance")
     assert outcome.run_state.current_tick == 1
 
 
 def test_first_tick_status_playing(tmp_path, uc01_package, uc01_scenario):
     """After the first tick (no proposal), status is 'playing'."""
-    create_run(uc01_package, uc01_scenario, "run_playing", tmp_path)
+    _plan_and_run(uc01_package, uc01_scenario, "run_playing", tmp_path)
     outcome = tick("run_playing")
     assert outcome.run_state.status == RunStatus.playing
 
 
 def test_tick_decision_result_present(tmp_path, uc01_package, uc01_scenario):
     from aica_api.models.decision import DecisionResult
-    create_run(uc01_package, uc01_scenario, "run_decision", tmp_path)
+    _plan_and_run(uc01_package, uc01_scenario, "run_decision", tmp_path)
     outcome = tick("run_decision")
     assert outcome.decision is not None
     assert isinstance(outcome.decision, DecisionResult)
 
 
 def test_tick_no_algorithm_error_on_normal_run(tmp_path, uc01_package, uc01_scenario):
-    create_run(uc01_package, uc01_scenario, "run_no_err", tmp_path)
+    _plan_and_run(uc01_package, uc01_scenario, "run_no_err", tmp_path)
     outcome = tick("run_no_err")
     assert outcome.algorithm_error is None
 
 
 def test_tick_not_paused_on_no_trigger(tmp_path, uc01_package, uc01_scenario):
     """First tick (NO_TRIGGER) should not pause."""
-    create_run(uc01_package, uc01_scenario, "run_no_pause", tmp_path)
+    _plan_and_run(uc01_package, uc01_scenario, "run_no_pause", tmp_path)
     outcome = tick("run_no_pause")
     assert outcome.paused is False
 
 
 def test_tick_event_written_to_log(tmp_path, uc01_package, uc01_scenario):
-    create_run(uc01_package, uc01_scenario, "run_log_tick", tmp_path)
+    _plan_and_run(uc01_package, uc01_scenario, "run_log_tick", tmp_path)
     tick("run_log_tick")
     data = json.loads((tmp_path / "run_log_tick.json").read_text(encoding="utf-8"))
     assert len(data["events"]) == 1
@@ -192,7 +215,7 @@ def _tick_to_proposal(run_id: str, package: PackageManifest, scenario: ScenarioD
 
 def test_tick_pauses_on_rest_proposal(tmp_path, uc01_package, uc01_scenario):
     """At the trigger tick, the run pauses and pending_proposal is set."""
-    create_run(uc01_package, uc01_scenario, "run_pause", tmp_path)
+    _plan_and_run(uc01_package, uc01_scenario, "run_pause", tmp_path)
     _tick_to_proposal("run_pause", uc01_package, uc01_scenario)
     outcome = tick.__wrapped__("run_pause") if hasattr(tick, "__wrapped__") else None
     # Re-check by reading state via separate tick after proposal
@@ -206,7 +229,7 @@ def test_tick_pauses_on_rest_proposal(tmp_path, uc01_package, uc01_scenario):
 
 def test_exactly_one_rest_proposal_in_full_run(tmp_path, uc01_package, uc01_scenario):
     """The UC-01 fixture fires exactly one REST_PROPOSAL across the full run."""
-    create_run(uc01_package, uc01_scenario, "run_one_r3", tmp_path)
+    _plan_and_run(uc01_package, uc01_scenario, "run_one_r3", tmp_path)
     n_ticks = uc01_scenario.total_duration_seconds // uc01_scenario.tick_seconds
     rest_proposals = 0
     for _ in range(n_ticks):
@@ -228,7 +251,7 @@ def test_exactly_one_rest_proposal_in_full_run(tmp_path, uc01_package, uc01_scen
 
 def test_tick_past_end_returns_completed(tmp_path, uc01_package, uc01_scenario):
     """Ticking past the last valid index returns completed=True."""
-    create_run(uc01_package, uc01_scenario, "run_completed", tmp_path)
+    _plan_and_run(uc01_package, uc01_scenario, "run_completed", tmp_path)
     n_ticks = uc01_scenario.total_duration_seconds // uc01_scenario.tick_seconds
     # Tick all the way through, accepting any proposals
     for _ in range(n_ticks + 5):
@@ -271,7 +294,7 @@ def test_tick_adapter_failure_records_algorithm_error(tmp_path, uc01_scenario, m
     pkg_data = json.loads((_PACKAGE_PATH).read_text(encoding="utf-8"))
     package = PackageManifest(**pkg_data)
 
-    create_run(package, uc01_scenario, "run_err_test", tmp_path)
+    _plan_and_run(package, uc01_scenario, "run_err_test", tmp_path)
     outcome = tick("run_err_test")
 
     assert outcome.decision is None
@@ -285,13 +308,77 @@ def test_tick_adapter_failure_records_algorithm_error(tmp_path, uc01_scenario, m
 
 
 # ---------------------------------------------------------------------------
+# T021 R6 — package_runtime_state threaded tick-to-tick
+# ---------------------------------------------------------------------------
+
+
+def test_tick_threads_package_runtime_state(tmp_path, uc01_package, uc01_scenario, monkeypatch):
+    """T021 R6: package_runtime_state is threaded tick-to-tick.
+
+    A stub algorithm returns a non-empty next_package_runtime_state.
+    After the tick, run_state.package_runtime_state == the returned value.
+    The persisted log also carries this value.
+    """
+    import aica_api.algorithms.adapter as adapter_mod
+    from aica_api.models.decision import (
+        Candidate, DecisionResult, FireControl, ResultType,
+    )
+
+    stub_prs = {"stub_counter": 42}
+
+    def _stub(*args, **kwargs):
+        return DecisionResult(
+            result_type=ResultType.NO_TRIGGER,
+            trigger_candidate=False,
+            selected_category=None,
+            score=0.0,
+            features={},
+            scores={},
+            states={},
+            criteria={},
+            candidates=[],
+            fire_control=FireControl(fired=False, suppressed=False, override=False, reason="stub"),
+            proposal=None,
+            reason_inputs=[],
+            explanation="stub",
+            next_package_runtime_state=stub_prs,
+        )
+
+    monkeypatch.setattr(adapter_mod, "evaluate", _stub)
+
+    _plan_and_run(uc01_package, uc01_scenario, "run_prs_test", tmp_path)
+    outcome1 = tick("run_prs_test")
+
+    # run_state should now carry the stub's returned state
+    assert outcome1.run_state.package_runtime_state == stub_prs
+
+    # Second tick: the adapter receives the stub_prs as package_runtime_state
+    captured_prs = {}
+    original_stub = _stub
+
+    def _stub2(*args, **kwargs):
+        captured_prs["got"] = kwargs.get("package_runtime_state", {})
+        return original_stub(*args, **kwargs)
+
+    monkeypatch.setattr(adapter_mod, "evaluate", _stub2)
+    tick("run_prs_test")
+    assert captured_prs.get("got") == stub_prs
+
+    # Check persisted log carries package_runtime_state in TickEvent
+    data = json.loads((tmp_path / "run_prs_test.json").read_text(encoding="utf-8"))
+    tick_events = [e for e in data["events"] if e.get("kind") == "tick"]
+    assert len(tick_events) >= 1
+    assert tick_events[0].get("package_runtime_state") == stub_prs
+
+
+# ---------------------------------------------------------------------------
 # action — valid action while paused
 # ---------------------------------------------------------------------------
 
 
 def test_action_accept_rest_completes_run(tmp_path, uc01_package, uc01_scenario):
     """accept_rest while paused transitions the run to completed."""
-    create_run(uc01_package, uc01_scenario, "run_accept", tmp_path)
+    _plan_and_run(uc01_package, uc01_scenario, "run_accept", tmp_path)
     _tick_to_proposal("run_accept", uc01_package, uc01_scenario)
 
     from aica_api.services.run_manager import get_run
@@ -305,7 +392,7 @@ def test_action_accept_rest_completes_run(tmp_path, uc01_package, uc01_scenario)
 
 def test_action_postpone_resumes_run(tmp_path, uc01_package, uc01_scenario):
     """postpone while paused resumes the run (status back to playing)."""
-    create_run(uc01_package, uc01_scenario, "run_postpone", tmp_path)
+    _plan_and_run(uc01_package, uc01_scenario, "run_postpone", tmp_path)
     _tick_to_proposal("run_postpone", uc01_package, uc01_scenario)
 
     state_after = action("run_postpone", "postpone")
@@ -314,7 +401,7 @@ def test_action_postpone_resumes_run(tmp_path, uc01_package, uc01_scenario):
 
 
 def test_action_appends_action_event_to_log(tmp_path, uc01_package, uc01_scenario):
-    create_run(uc01_package, uc01_scenario, "run_act_log", tmp_path)
+    _plan_and_run(uc01_package, uc01_scenario, "run_act_log", tmp_path)
     _tick_to_proposal("run_act_log", uc01_package, uc01_scenario)
 
     action("run_act_log", "accept_rest")
@@ -333,7 +420,7 @@ def test_action_appends_action_event_to_log(tmp_path, uc01_package, uc01_scenari
 
 def test_action_when_not_paused_raises(tmp_path, uc01_package, uc01_scenario):
     """Taking an action while not paused (no pending proposal) raises."""
-    create_run(uc01_package, uc01_scenario, "run_not_paused", tmp_path)
+    _plan_and_run(uc01_package, uc01_scenario, "run_not_paused", tmp_path)
     # Don't tick to a proposal — run is in 'created' state
     with pytest.raises(ActionNotAllowedError):
         action("run_not_paused", "accept_rest")
@@ -346,7 +433,7 @@ def test_action_unknown_run_raises(tmp_path):
 
 def test_action_invalid_action_raises(tmp_path, uc01_package, uc01_scenario):
     """An action not in scenario.allowed_actions raises ActionNotAllowedError."""
-    create_run(uc01_package, uc01_scenario, "run_bad_act", tmp_path)
+    _plan_and_run(uc01_package, uc01_scenario, "run_bad_act", tmp_path)
     _tick_to_proposal("run_bad_act", uc01_package, uc01_scenario)
 
     with pytest.raises(ActionNotAllowedError):
@@ -417,7 +504,7 @@ def test_suppressed_candidate_persists_to_disk(tmp_path, uc01_package, uc01_scen
 
     monkeypatch.setattr(adapter_mod, "evaluate", lambda *a, **kw: suppressed_result)
 
-    create_run(uc01_package, uc01_scenario, "run_suppressed_t028", tmp_path)
+    _plan_and_run(uc01_package, uc01_scenario, "run_suppressed_t028", tmp_path)
     outcome = tick("run_suppressed_t028")
 
     # ── In-memory outcome sanity ───────────────────────────────────────────

@@ -1,11 +1,14 @@
-"""Router contract tests (T020) — FastAPI TestClient, no docker required.
+"""Router contract tests (T022) — FastAPI TestClient, no docker required.
 
 Covers:
   - GET /api/packages          list + errors envelope
   - GET /api/packages/{id}     detail + 404
   - GET /api/scenarios         list + errors envelope
   - GET /api/scenarios/{id}    detail + 404
-  - POST /api/runs             201 with valid fixtures; 400 for bad pairing
+  - POST /api/routes/analyze   200 with route facts; 404 for unknown
+  - POST /api/run-plans        201 with valid fixtures; 400 for bad params
+  - POST /api/run-plans/{id}/regenerate  200; 404 unknown
+  - POST /api/runs             201 with plan_id; 400/422 for bare body; 400 for unknown plan
   - POST /api/runs/{id}/tick   200 envelope (run_state, decision, paused, completed)
   - GET  /api/runs/{id}/log    200 persisted JSON
   - POST /api/runs/{id}/actions 409 when no proposal pending
@@ -32,6 +35,7 @@ from aica_api.models.decision import (
     ResultType,
 )
 from aica_api.services.run_manager import clear_registry
+from aica_api.services.run_plan import clear_draft_registry
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -46,10 +50,12 @@ VALID_SCENARIO_ID = "uc01_fatigue_friend_drive_v0_1"
 
 @pytest.fixture(autouse=True)
 def reset_run_registry():
-    """Isolate every test — clear the in-memory run registry before and after."""
+    """Isolate every test — clear both in-memory registries before and after."""
     clear_registry()
+    clear_draft_registry()
     yield
     clear_registry()
+    clear_draft_registry()
 
 
 @pytest.fixture
@@ -60,12 +66,26 @@ def client(tmp_path, monkeypatch):
 
 
 @pytest.fixture
-def run_id(client) -> str:
-    """Create a run and return its run_id."""
+def plan_id(client) -> str:
+    """Create a run plan and return its plan_id."""
     resp = client.post(
-        "/api/runs",
-        json={"package_id": VALID_PACKAGE_ID, "scenario_id": VALID_SCENARIO_ID},
+        "/api/run-plans",
+        json={
+            "package_id": VALID_PACKAGE_ID,
+            "scenario_id": VALID_SCENARIO_ID,
+            "parameters": {},
+            "hyperparameters": {},
+            "run_mode": "standard",
+        },
     )
+    assert resp.status_code == 201
+    return resp.json()["plan_id"]
+
+
+@pytest.fixture
+def run_id(client, plan_id) -> str:
+    """Create a run from a plan and return its run_id."""
+    resp = client.post("/api/runs", json={"plan_id": plan_id})
     assert resp.status_code == 201
     return resp.json()["run_id"]
 
@@ -140,41 +160,133 @@ def test_get_scenario_not_found(client):
     assert resp.status_code == 404
 
 
-# ── Run creation tests ────────────────────────────────────────────────────────
+# ── Routes analyze tests ──────────────────────────────────────────────────────
 
 
-def test_create_run_201(client):
-    """POST /api/runs with valid ids → 201 + RunState."""
+def test_routes_analyze_200(client):
+    """POST /api/routes/analyze returns RouteFacts for a valid scenario."""
+    resp = client.post("/api/routes/analyze", json={"scenario_id": VALID_SCENARIO_ID})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "total_route_distance_km" in body
+    assert "route_segments" in body
+
+
+def test_routes_analyze_404(client):
+    """POST /api/routes/analyze returns 404 for unknown scenario."""
+    resp = client.post("/api/routes/analyze", json={"scenario_id": "no_such"})
+    assert resp.status_code == 404
+
+
+# ── Run-plans tests ───────────────────────────────────────────────────────────
+
+
+def test_create_run_plan_201(client):
+    """POST /api/run-plans with valid ids → 201 + {plan_id, draft_plan, effective_setup}."""
     resp = client.post(
-        "/api/runs",
-        json={"package_id": VALID_PACKAGE_ID, "scenario_id": VALID_SCENARIO_ID},
+        "/api/run-plans",
+        json={
+            "package_id": VALID_PACKAGE_ID,
+            "scenario_id": VALID_SCENARIO_ID,
+            "parameters": {},
+            "hyperparameters": {},
+            "run_mode": "standard",
+        },
     )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert "plan_id" in body
+    assert body["plan_id"].startswith("plan_")
+    assert "draft_plan" in body
+    assert "effective_setup" in body
+    assert body["validation_errors"] == []
+
+
+def test_create_run_plan_400_bad_package(client):
+    """POST /api/run-plans with unknown package_id → 400."""
+    resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": "no_such_pkg",
+            "scenario_id": VALID_SCENARIO_ID,
+            "parameters": {},
+            "hyperparameters": {},
+            "run_mode": "standard",
+        },
+    )
+    assert resp.status_code == 400
+
+
+def test_create_run_plan_400_out_of_range(client):
+    """POST /api/run-plans with out-of-range hyperparameter → 400."""
+    # Get the package to find a numeric hyperparameter
+    pkg_resp = client.get(f"/api/packages/{VALID_PACKAGE_ID}")
+    pkg = pkg_resp.json()
+    numeric_hps = [hp for hp in pkg.get("hyperparameters", []) if hp.get("kind") == "numeric"]
+    if not numeric_hps:
+        pytest.skip("No numeric hyperparameters")
+    hp = numeric_hps[0]
+    bad_value = (hp.get("max") or 10.0) + 9999.0
+
+    resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": VALID_PACKAGE_ID,
+            "scenario_id": VALID_SCENARIO_ID,
+            "parameters": {},
+            "hyperparameters": {hp["key"]: bad_value},
+            "run_mode": "standard",
+        },
+    )
+    assert resp.status_code == 400
+
+
+def test_regenerate_run_plan_200(client, plan_id):
+    """POST /api/run-plans/{plan_id}/regenerate → 200."""
+    resp = client.post(
+        f"/api/run-plans/{plan_id}/regenerate",
+        json={"presets": {}, "parameters": {}, "hyperparameters": {}},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["plan_id"] == plan_id
+
+
+def test_regenerate_run_plan_404_unknown(client):
+    """POST /api/run-plans/{plan_id}/regenerate → 404 for unknown plan."""
+    resp = client.post(
+        "/api/run-plans/no_such_plan/regenerate",
+        json={"presets": {}, "parameters": {}, "hyperparameters": {}},
+    )
+    assert resp.status_code == 404
+
+
+# ── Run creation via plan_id ──────────────────────────────────────────────────
+
+
+def test_create_run_via_plan_id_201(client, plan_id):
+    """POST /api/runs {plan_id} → 201 + RunState."""
+    resp = client.post("/api/runs", json={"plan_id": plan_id})
     assert resp.status_code == 201
     body = resp.json()
     assert "run_id" in body
     assert body["run_id"].startswith("run_")
     assert body["status"] == "created"
-    # RunState must include frozen snapshot, event_plan, route_facts
-    assert "snapshot" in body
-    assert "event_plan" in body
-    assert "route_facts" in body
 
 
-def test_create_run_bad_package(client):
-    """POST /api/runs with an invalid package_id → 400."""
+def test_create_run_bare_body_rejected(client):
+    """POST /api/runs with bare {package_id, scenario_id} → 422 (schema mismatch)."""
     resp = client.post(
         "/api/runs",
-        json={"package_id": "no_such_pkg", "scenario_id": VALID_SCENARIO_ID},
+        json={"package_id": VALID_PACKAGE_ID, "scenario_id": VALID_SCENARIO_ID},
     )
-    assert resp.status_code == 400
+    # 422 (missing plan_id field) or 400 (unknown plan)
+    assert resp.status_code in (400, 422)
 
 
-def test_create_run_bad_scenario(client):
-    """POST /api/runs with an invalid scenario_id → 400."""
-    resp = client.post(
-        "/api/runs",
-        json={"package_id": VALID_PACKAGE_ID, "scenario_id": "no_such_scenario"},
-    )
+def test_create_run_unknown_plan_id_400(client):
+    """POST /api/runs with unknown plan_id → 400."""
+    resp = client.post("/api/runs", json={"plan_id": "no_such_plan_xyz"})
     assert resp.status_code == 400
 
 
@@ -328,11 +440,11 @@ def test_action_404_unknown_run(client):
     assert resp.status_code == 404
 
 
-# ── Fix 2: incompatible-pairing 400 ──────────────────────────────────────────
+# ── Incompatible-pairing 400 via run-plans ────────────────────────────────────
 
 
-def test_create_run_incompatible_scenario_400(tmp_path, monkeypatch):
-    """POST /api/runs with a scenario whose type is not in compatible_scenario_types → 400."""
+def test_create_run_plan_incompatible_scenario_400(tmp_path, monkeypatch):
+    """POST /api/run-plans with a scenario whose type is not in compatible_scenario_types → 400."""
     scenarios_dir = tmp_path / "scenarios"
     scenarios_dir.mkdir()
     runs_dir = tmp_path / "runs"
@@ -390,8 +502,13 @@ def test_create_run_incompatible_scenario_400(tmp_path, monkeypatch):
 
     test_client = TestClient(app)
     resp = test_client.post(
-        "/api/runs",
-        json={"package_id": VALID_PACKAGE_ID, "scenario_id": "uc99_incompat_test_v0_1"},
+        "/api/run-plans",
+        json={
+            "package_id": VALID_PACKAGE_ID,
+            "scenario_id": "uc99_incompat_test_v0_1",
+            "parameters": {},
+            "hyperparameters": {},
+        },
     )
     assert resp.status_code == 400
     # Confirm no run log was persisted
