@@ -164,12 +164,25 @@ def test_get_scenario_not_found(client):
 
 
 def test_routes_analyze_200(client):
-    """POST /api/routes/analyze returns RouteFacts for a valid scenario."""
+    """POST /api/routes/analyze returns the alternatives envelope for a valid scenario.
+
+    MIGRATED (T009/M4): response is now {route_source, alternatives:[...]} for
+    both local and maps paths.  Bare RouteFacts at the top level is gone.
+    """
     resp = client.post("/api/routes/analyze", json={"scenario_id": VALID_SCENARIO_ID})
     assert resp.status_code == 200
     body = resp.json()
-    assert "total_route_distance_km" in body
-    assert "route_segments" in body
+    # Envelope shape
+    assert "route_source" in body, f"Missing route_source in response: {body}"
+    assert "alternatives" in body, f"Missing alternatives in response: {body}"
+    assert body["route_source"] == "local"
+    assert isinstance(body["alternatives"], list)
+    assert len(body["alternatives"]) == 1
+    alt = body["alternatives"][0]
+    # Alternative carries route_facts with physical fields
+    assert "route_facts" in alt
+    assert "total_route_distance_km" in alt["route_facts"]
+    assert "route_segments" in alt["route_facts"]
 
 
 def test_routes_analyze_404(client):

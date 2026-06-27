@@ -18,7 +18,7 @@ from __future__ import annotations
 from typing import Any
 
 from aica_api.models.package import HyperparameterDef, PackageManifest, ParameterDef
-from aica_api.models.run import RunPlanDraft
+from aica_api.models.run import DisplayRoute, RouteFacts, RunPlanDraft
 from aica_api.models.scenario import ScenarioDef
 from aica_api.services.event_plan import build_event_plan
 from aica_api.services.route_analysis import analyze_route
@@ -247,15 +247,23 @@ def _build_draft(
     parameters: dict[str, Any],
     hyperparameters: dict[str, Any],
     run_mode: str,
+    route_facts: RouteFacts | None = None,
+    route_source: str = "local",
+    display_route: DisplayRoute | None = None,
 ) -> RunPlanDraft:
     """Pure draft construction — deterministic given (route_facts, presets).
 
     Does NOT check parameter/hyperparameter validation — call _validate_edits
     first.  Raises if build_event_plan fails (caller must catch and convert to
     a validation error).
+
+    M4: route_facts may be supplied externally (maps selection); if None,
+    derived locally from scenario (local path — byte-for-byte unchanged).
+    route_source and display_route are threaded into RunPlanDraft.
     """
-    # Route analysis (deterministic)
-    route_facts = analyze_route(scenario)
+    # Route analysis (deterministic) — use external facts if provided (maps path)
+    if route_facts is None:
+        route_facts = analyze_route(scenario)
     route_facts.bands = {f.key: f.band_values for f in package.features}
 
     # Package-declared tick_seconds takes precedence over the scenario cadence.
@@ -283,6 +291,8 @@ def _build_draft(
         effective_setup=effective_setup,
         draft_event_plan=event_plan,
         validation_errors=[],
+        route_source=route_source,
+        display_route=display_route,
     )
 
 
@@ -299,6 +309,9 @@ def create_draft(
     parameters: dict[str, Any],
     hyperparameters: dict[str, Any],
     run_mode: str = "standard",
+    route_facts: RouteFacts | None = None,
+    route_source: str = "local",
+    display_route: DisplayRoute | None = None,
 ) -> RunPlanDraft:
     """Create and register a draft run plan.
 
@@ -314,6 +327,9 @@ def create_draft(
         parameters:       Setup-time parameter overrides (key → value).
         hyperparameters:  Hyperparameter overrides (key → value).
         run_mode:         "standard" (or "expert_override" in future).
+        route_facts:      M4 — pre-computed facts from maps selection (None = local).
+        route_source:     M4 — "maps" or "local" (default "local").
+        display_route:    M4 — render-only snapshot from maps selection (None = local).
 
     Returns:
         A RunPlanDraft.  Check validation_errors before using.
@@ -327,7 +343,7 @@ def create_draft(
             plan_id=plan_id,
             package_id=package.id,
             scenario_id=scenario.id,
-            route_facts=analyze_route(scenario),
+            route_facts=route_facts if route_facts is not None else analyze_route(scenario),
             effective_setup={},
             validation_errors=validation_errors,
         )
@@ -344,6 +360,9 @@ def create_draft(
             parameters=parameters,
             hyperparameters=hyperparameters,
             run_mode=run_mode,
+            route_facts=route_facts,
+            route_source=route_source,
+            display_route=display_route,
         )
     except Exception as exc:  # noqa: BLE001
         plan_error: list[dict[str, str]] = [{
@@ -354,7 +373,7 @@ def create_draft(
             plan_id=plan_id,
             package_id=package.id,
             scenario_id=scenario.id,
-            route_facts=analyze_route(scenario),
+            route_facts=route_facts if route_facts is not None else analyze_route(scenario),
             effective_setup={},
             validation_errors=plan_error,
         )

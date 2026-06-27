@@ -348,6 +348,10 @@ def create_run(
         ),
     )
 
+    # M4: route provenance from draft (default "local" / None for pre-M4 drafts)
+    draft_route_source = getattr(draft, "route_source", "local")
+    draft_display_route = getattr(draft, "display_route", None)
+
     # Initial RunState (with full M2 setup snapshot)
     run_state = RunState(
         run_id=run_id,
@@ -379,6 +383,8 @@ def create_run(
         original_values=original_values,
         modified_values=modified_values,
         allowed_actions=list(scenario.allowed_actions),
+        route_source=draft_route_source,
+        display_route=draft_display_route,
     )
 
     # Initial RunLog
@@ -398,6 +404,8 @@ def create_run(
         original_values=original_values,
         modified_values=modified_values,
         events=[],
+        route_source=draft_route_source,
+        display_route=draft_display_route,
     )
 
     recorder = EvidenceRecorder(run_log, runs_dir)
