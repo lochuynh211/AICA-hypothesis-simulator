@@ -191,12 +191,23 @@ export type RunSummary = {
 
 // ── Decision domain (§11 normalized shape) ────────────────────────────────
 
+// M3: the backend records result_type VERBATIM — built-in algorithms emit the
+// five values below; Python packages (e.g. the transparent hybrid) emit their
+// own categories (MONOTONY_PROPOSAL / SUPPRESSED / NO_PROPOSAL) or package-defined
+// values. The `(string & {})` arm keeps the union open while preserving editor
+// autocomplete for the known constants. The trace renders the value as text; do
+// not write an exhaustive switch over this type.
 export type ResultType =
   | 'NO_TRIGGER'
   | 'SOFT_WARNING'
   | 'REST_PROPOSAL'
   | 'SEVERE_INTERVENTION'
   | 'NO_PRACTICAL_ACTION_FALLBACK'
+  | 'MONOTONY_PROPOSAL'
+  | 'SUPPRESSED'
+  | 'NO_PROPOSAL'
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  | (string & {})
 
 export type FireControl = {
   fired: boolean
