@@ -32,8 +32,8 @@ machines). Local trusted code only; no sandboxing (constitution + milestone).
 | D2 | Python fixtures | **Both**: a simple `rest_python_v0_1` (mirrors weighted_score; de-risks the adapter) + the full `aica_transparent_hybrid_trigger_v1`. |
 | D3 | Hybrid fidelity | **Faithful core machinery** — smoothing, persistence counters, velocity, state machines, multi-category + priority, populated `next_package_runtime_state`. |
 | D4 | Frontend | **Modest trace extension** — surface state labels + a compact runtime-state indicator per tick; full detail in the log viewer. |
-| D5 | result_type | **Keep the existing 5-value enum**; the `python_module` adapter applies a documented **alias map** when normalizing (see §3.4). No schema churn. |
-| D6 | Missing hybrid inputs | **Default to 0** (per the proposal). Expose existing `raw_state` fields under the hybrid's names; the rest default to 0 — the hybrid fires a real **rest** proposal from drowsiness/fatigue/rest-window; monotony/route features stay inert (full monotony UX is M8). |
+| D5 | result_type | **Relax `result_type` to the master/package set — no alias map.** The master spec/architecture explicitly allow `REST_PROPOSAL`, `MONOTONY_PROPOSAL`, `SUPPRESSED`, `NO_PROPOSAL`, and package-defined values; architecture §11 shows suppressed candidates carrying `result_type: "SUPPRESSED"`. The Python algorithm's semantic result type is **passed through unchanged**; the adapter normalizes shape/field-names only. (This relaxes M1's narrow 5-value enum, which was an M1-era simplification — backward compatible, since M1/M2's values remain valid.) |
+| D6 | Context inputs | **Required fields validated; optional fields default to 0.** Required simulation-state fields the simulator always provides (`simulation_time_sec`, driver `drowsinessLevel`/`fatigueLevel`/`attentionLevel`, `speedKph`, distance/time to destination, `proposal_history` count) MUST be present — a missing required field is a context-build error, not a silent 0. Only optional sensor/route enhancements the hybrid lists (e.g. `highwayRemainingMin`, `monotonousRoadRemainingMin`, `familiarRouteRatio`, `restSpotDensity`) default to 0 (per the proposal). The hybrid fires a real **rest** proposal from the drowsiness/fatigue/rest-window path; monotony/route features stay inert until those optional inputs are authored (full monotony UX is M8). |
 | D7 | Scenario | **Reuse an existing UC-01 rest scenario** (no new scenario). |
 
 ## 3. `python_module` adapter
@@ -68,28 +68,46 @@ once; reloaded only if its path changes). It must expose
 ```
 `proposal_history` is the new context plumbing: `run_manager` derives it from the
 run log's proposal/action events (M1/M2 built-ins ignored history; the hybrid needs
-it for fire-control cooldowns/limits). Determinism: `simulation_time_sec` is from
-the frozen tick state, never wall clock.
+it for fire-control cooldowns/limits). **Scope (M3):** only the proposal-history-
+derived **cooldown / count / acceptance** fields are added (lastProposalTimeSec,
+lastProposalCategory, lastProposalResult, proposalCountLast30Min,
+acceptanceRateRecent). Active-content / rest-guidance *interaction effects* (e.g.
+content playing, rest-in-progress recovery) remain **whatever M2 already supports** —
+M3 does NOT add new interaction/recovery state machinery beyond the action effects
+M2 implemented. Determinism: `simulation_time_sec` is from the frozen tick state,
+never wall clock.
 
-### 3.3 Normalization → `DecisionResult`
-The returned dict is validated/coerced into the existing §11 `DecisionResult`
-Pydantic model (same as built-ins): localized `explanation` accepted (M2 schema),
+**Required vs optional fields (D6):** the adapter validates that the **required**
+fields are present in the context it builds (the simulator always provides them) —
+a missing required field is a context-build error surfaced to the run, not a silent
+0. Only the hybrid's optional sensor/route enhancement fields default to 0.
+
+### 3.3 Normalization → `DecisionResult` (shape/field-names only, not semantics)
+The returned dict is validated/coerced into the §11 `DecisionResult` Pydantic
+model (same as built-ins): localized `explanation` accepted (M2 schema),
 **suppressed candidates retained**, and the returned `next_package_runtime_state`
 stored so `run_manager` threads it to the next tick (M2 plumbing — now non-empty).
+Normalization adjusts **shape and field names** (filling optional fields, coercing
+types) — it does **not** remap the algorithm's semantic `result_type`.
 
-### 3.4 result_type alias map (D5)
-Before validation, map the hybrid's natural labels into the 5-value enum:
-`REST_PROPOSAL → REST_PROPOSAL`; `MONOTONY_PROPOSAL → SOFT_WARNING` (matching M2
-weighted_score); `SUPPRESSED → NO_PRACTICAL_ACTION_FALLBACK`;
-`NO_PROPOSAL → NO_TRIGGER`; severe rest → `SEVERE_INTERVENTION`. A returned
-`result_type` already in the enum passes through. A value that is neither a valid
-enum member nor a known alias → `invalid_result_shape` error. Fine-grained detail
-lives in `states`/`candidates`.
+### 3.4 result_type is passed through (D5)
+`DecisionResult.result_type` is relaxed from M1's narrow 5-value Literal to a
+permissive value accepting the master/package set — `REST_PROPOSAL`,
+`MONOTONY_PROPOSAL`, `SUPPRESSED`, `NO_PROPOSAL`, the M1/M2 values
+(`NO_TRIGGER`/`SOFT_WARNING`/`SEVERE_INTERVENTION`/`NO_PRACTICAL_ACTION_FALLBACK`),
+and package-defined values. The Python algorithm's `result_type` is recorded
+**verbatim** in the trace; no alias map. This is a small, backward-compatible
+schema relaxation (every M1/M2 value remains valid). Downstream pausing/UX already
+keys off **proposal actionability** (options ∩ `allowed_actions`, per the M2
+final-review fix) and `fire_control`, **not** off a fixed `result_type` set, so the
+relaxation requires no run-manager/UI logic change. Suppressed candidates carry
+`fire_control.suppressed: true` and the result may legitimately be
+`result_type: "SUPPRESSED"`.
 
 ### 3.5 Error handling (the M3 test matrix)
 - module **missing `evaluate`** → `algorithm_error` (`error_type:"missing_evaluate"`);
 - `evaluate` **raises** → `algorithm_error` (`error_type:"algorithm_exception"`, message);
-- **invalid return** (non-dict / fails validation after alias-mapping) →
+- **invalid return** (non-dict, or fails `DecisionResult` validation) →
   `algorithm_error` (`error_type:"invalid_result_shape"`).
 All three are persisted as evidence and shown in the frontend trace
 (M1/M2 `algorithmErrors`), **never disguised as a normal decision** (constitution II).
@@ -157,7 +175,9 @@ gain the runtime-state shape; no new dependency.
 
 - **Adapter:** successful Python eval → normalized §11; **missing `evaluate`** /
   **exception** / **invalid return** → the three `algorithm_error` types (the
-  explicit M3 matrix); the result_type alias-map; suppressed retained;
+  explicit M3 matrix); result_type passed through verbatim (a `SUPPRESSED` /
+  `MONOTONY_PROPOSAL` / `NO_PROPOSAL` / package value is recorded as-is, not remapped);
+  required-field validation; suppressed retained;
   `next_package_runtime_state` threaded back into the next tick.
 - **Simple package:** parity with built-in `weighted_score` on the same context
   (the Python path matches a known-good built-in).
@@ -186,7 +206,7 @@ gain the runtime-state shape; no new dependency.
 | Transparent hybrid runs against a UC-01 rest scenario | hybrid fixture + existing scenario |
 | Full trace: features, scores, states, candidates, fire-control, selected proposal, next runtime state | hybrid returns all; normalized + persisted + traced |
 | Suppressed candidates persisted + visible | retained through adapter + trace (M1/M2 + M3) |
-| Python output normalized into the same shape | adapter → §11 `DecisionResult` + alias map |
+| Python output normalized into the same shape | adapter → §11 `DecisionResult` (shape/field-names normalized; semantic `result_type` passed through) |
 | Python errors persisted as evidence + shown in UI | three `algorithm_error` types + trace |
 | Local/trusted only; no sandboxing | isolated importlib load, in-process |
 
@@ -210,8 +230,11 @@ gain the runtime-state shape; no new dependency.
   transparent hybrid — proving the package-author contract end-to-end.
 - `package_runtime_state` becomes non-empty and meaningful (smoothing/persistence/
   states), exercising the plumbing M2 built only structurally.
-- The result_type alias-map keeps the §11 enum stable while letting Python authors
-  use natural labels; the defaults-to-0 input policy keeps M3 bounded without a
-  large `raw_state`/scenario expansion (monotony/route enrichment can come with M8).
+- Relaxing `result_type` to the master/package set records each algorithm's semantic
+  result type verbatim (no corruption of the hybrid's own categories/suppression
+  semantics); the required-vs-optional input policy validates required fields while
+  letting only optional sensor/route enhancements default to 0 — keeping M3 bounded
+  without a large `raw_state`/scenario expansion (monotony/route enrichment can come
+  with M8).
 - M4 (Maps) and M5 (feedback/replay) build on an unchanged, now Python-capable
   adapter + complete evidence.
