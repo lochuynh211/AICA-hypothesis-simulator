@@ -1,8 +1,14 @@
-"""Package domain models — PackageManifest and supporting types."""
+"""Package domain models — PackageManifest and supporting types.
+
+M2 extensions:
+- AlgorithmDef.type Literal adds "weighted_score".
+- HyperparameterDef.kind adds "numeric" for weighted_score weight/threshold params.
+- Numeric hyperparameters carry optional min/max/step for range validation in UI.
+"""
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, field_validator, model_validator
 
@@ -10,7 +16,7 @@ from pydantic import BaseModel, field_validator, model_validator
 class AlgorithmDef(BaseModel):
     """Algorithm specification embedded in a package manifest."""
 
-    type: Literal["declarative_rule"]
+    type: Literal["declarative_rule", "weighted_score"]
     entrypoint: str
 
 
@@ -37,13 +43,22 @@ class ParameterDef(BaseModel):
 
 
 class HyperparameterDef(BaseModel):
-    """A tuning hyperparameter definition (same shape as ParameterDef)."""
+    """A tuning hyperparameter definition.
+
+    M1: kind ∈ band | bool.
+    M2: kind also accepts "numeric" for weighted_score category weights and
+        thresholds (suggest/recommend/urgent, minimum_risk_for_rest_bonus, etc.).
+        Numeric params carry optional min/max/step for UI range hints.
+    """
 
     key: str
     label: dict[str, str]
-    kind: Literal["band", "bool"]
+    kind: Literal["band", "bool", "numeric"]
     band_values: list[str] | None = None
-    default: str | bool
+    default: Any  # str (band), bool, or float (numeric)
+    min: float | None = None
+    max: float | None = None
+    step: float | None = None
 
     @model_validator(mode="after")
     def _default_in_band_values(self) -> HyperparameterDef:

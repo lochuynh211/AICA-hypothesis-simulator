@@ -166,8 +166,6 @@ VALID_SCENARIO = {
         "signal_duration_at_trigger": "sustained",
         "rest_spot_eta_near_before": "s2",
     },
-    "driver_profile": {"name": "default"},
-    "vehicle_profile": {"name": "default"},
     "total_duration_seconds": 7200,
     "tick_seconds": 10,
     "allowed_actions": ["accept_rest", "postpone"],
@@ -614,3 +612,408 @@ def test_run_log_json_roundtrip():
     assert type(log2.events[0]) is type(log.events[0])
     assert type(log2.events[1]) is type(log.events[1])
     assert type(log2.events[2]) is type(log.events[2])
+
+
+# ─── T008 — M2 extended model tests ──────────────────────────────────────────
+
+
+# ── Extended PackageManifest: weighted_score algorithm + numeric hyperparams ──
+
+
+def test_package_manifest_weighted_score_algorithm_accepted():
+    """algorithm.type = 'weighted_score' is now a valid Literal value."""
+    from aica_api.models.package import PackageManifest
+
+    ws_pkg = {
+        **VALID_PACKAGE,
+        "algorithm": {"type": "weighted_score", "entrypoint": "aica_api.algorithms.weighted_score"},
+    }
+    m = PackageManifest(**ws_pkg)
+    assert m.algorithm.type == "weighted_score"
+
+
+def test_package_manifest_numeric_hyperparameter_accepted():
+    """HyperparameterDef with kind='numeric' is accepted for weighted_score packages."""
+    from aica_api.models.package import HyperparameterDef
+
+    hp = HyperparameterDef(
+        key="drowsiness_weight",
+        label={"ja": "眠気重み", "en": "Drowsiness Weight"},
+        kind="numeric",
+        default=0.5,
+        min=0.0,
+        max=1.0,
+        step=0.05,
+    )
+    assert hp.key == "drowsiness_weight"
+    assert hp.default == 0.5
+    assert hp.min == 0.0
+
+
+def test_package_manifest_numeric_hyperparameter_in_manifest():
+    """A full PackageManifest with mixed band + numeric hyperparameters parses."""
+    from aica_api.models.package import PackageManifest
+
+    mixed_hyper = [
+        {
+            "key": "proposal_threshold",
+            "label": {"ja": "提案閾値", "en": "Proposal Threshold"},
+            "kind": "band",
+            "band_values": ["low", "medium", "high"],
+            "default": "medium",
+        },
+        {
+            "key": "drowsiness_weight",
+            "label": {"ja": "眠気重み", "en": "Drowsiness Weight"},
+            "kind": "numeric",
+            "default": 0.5,
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.05,
+        },
+    ]
+    m = PackageManifest(**{**VALID_PACKAGE, "hyperparameters": mixed_hyper})
+    assert len(m.hyperparameters) == 2
+    assert m.hyperparameters[1].kind == "numeric"
+
+
+# ── Extended ScenarioDef: profiles, is_night ──────────────────────────────────
+
+_DRIVER_PROFILE_DICT = {
+    "id": "default_driver",
+    "drowsiness_model": {
+        "base_growth_per_min": 0.1,
+        "night_add_per_min": 0.05,
+        "monotony_add_per_min": 0.02,
+        "traffic_jam_add_per_min": 0.03,
+    },
+    "fatigue_model": {
+        "base_growth_per_min": 0.08,
+        "continuous_driving_add_per_min_after_60_min": 0.04,
+        "mountain_road_add_per_min": 0.06,
+        "traffic_jam_add_per_min": 0.02,
+    },
+    "attention_model": {
+        "base_recovery_per_min": 0.0,
+        "monotony_drop_per_min": 0.01,
+        "drowsiness_drop_factor": 0.5,
+        "active_content_recovery_per_min": 0.1,
+    },
+    "recovery_model": {
+        "short_rest_drowsiness_recovery": 30.0,
+        "short_rest_fatigue_recovery": 20.0,
+        "long_rest_drowsiness_recovery": 80.0,
+        "long_rest_fatigue_recovery": 60.0,
+    },
+}
+
+_VEHICLE_PROFILE_DICT = {
+    "rolling_window_seconds": 300,
+    "steering_instability": {
+        "base_level": 0.1,
+        "drowsiness_factor": 0.3,
+        "fatigue_factor": 0.2,
+        "mountain_road_add": 0.05,
+        "traffic_jam_reduce": 0.02,
+    },
+    "lane_departure": {
+        "enabled_on": ["highway", "normal_road"],
+        "drowsiness_threshold": 60.0,
+        "fatigue_threshold": 70.0,
+        "count_when_threshold_exceeded": 2,
+    },
+    "pedal_abnormality": {
+        "base_level": 0.05,
+        "fatigue_factor": 0.2,
+        "traffic_jam_add": 0.1,
+        "mountain_road_add": 0.08,
+    },
+    "adas_warning": {
+        "lane_departure_warning_threshold": 80.0,
+        "steering_instability_warning_threshold": 75.0,
+    },
+}
+
+_SPEED_PROFILE_DICT = {
+    "normal_road_kph": 60,
+    "highway_kph": 100,
+    "mountain_road_kph": 40,
+    "sightseeing_road_kph": 30,
+    "traffic_jam_kph": 10,
+}
+
+# Build a VALID_SCENARIO extended with M2 profiles
+VALID_SCENARIO_M2 = {
+    **{k: v for k, v in VALID_SCENARIO.items()},
+    "driver_profile": _DRIVER_PROFILE_DICT,
+    "vehicle_profile": _VEHICLE_PROFILE_DICT,
+    "speed_profile": _SPEED_PROFILE_DICT,
+    "is_night": True,
+    "presets": {"monotony": "highway"},
+}
+
+
+def test_scenario_def_with_m2_profiles_valid():
+    """ScenarioDef with full M2 profiles, is_night, and presets parses correctly."""
+    from aica_api.models.scenario import ScenarioDef
+
+    s = ScenarioDef(**VALID_SCENARIO_M2)
+    assert s.driver_profile is not None
+    assert s.driver_profile.id == "default_driver"
+    assert s.vehicle_profile is not None
+    assert s.vehicle_profile.rolling_window_seconds == 300
+    assert s.speed_profile is not None
+    assert s.speed_profile.highway_kph == 100
+    assert s.is_night is True
+    assert s.presets == {"monotony": "highway"}
+
+
+def test_scenario_def_without_profiles_valid():
+    """ScenarioDef without profiles still parses (profiles default to None)."""
+    from aica_api.models.scenario import ScenarioDef
+
+    s = ScenarioDef(**VALID_SCENARIO)
+    assert s.driver_profile is None
+    assert s.vehicle_profile is None
+    assert s.speed_profile is None
+    assert s.is_night is False
+
+
+# ── Extended DecisionResult: localized explanation ────────────────────────────
+
+
+def test_decision_result_explanation_str():
+    """Plain string explanation (M1 backward compat)."""
+    from aica_api.models.decision import DecisionResult
+
+    dr = DecisionResult(**VALID_DECISION)
+    assert isinstance(dr.explanation, str)
+
+
+def test_decision_result_explanation_localized():
+    """LocalizedText dict explanation accepted."""
+    from aica_api.models.decision import DecisionResult, LocalizedText
+
+    loc_decision = {**VALID_DECISION, "explanation": {"ja": "眠気が高い", "en": "High drowsiness"}}
+    dr = DecisionResult(**loc_decision)
+    assert isinstance(dr.explanation, LocalizedText)
+    assert dr.explanation.en == "High drowsiness"
+
+
+def test_decision_result_explanation_list():
+    """List of str/LocalizedText explanation accepted."""
+    from aica_api.models.decision import DecisionResult, LocalizedText
+
+    list_explanation = [
+        "First reason",
+        {"ja": "二番目の理由", "en": "Second reason"},
+    ]
+    list_decision = {**VALID_DECISION, "explanation": list_explanation}
+    dr = DecisionResult(**list_decision)
+    assert isinstance(dr.explanation, list)
+    assert len(dr.explanation) == 2
+    assert isinstance(dr.explanation[1], LocalizedText)
+
+
+# ── Extended log: decline action, TickEvent M2 fields, RunLog M2 fields ───────
+
+
+def test_action_event_decline_accepted():
+    """ActionEvent.action = 'decline' is accepted."""
+    from aica_api.models.log import ActionEvent
+
+    evt = ActionEvent(kind="action", tick_index=5, action="decline", resulting_status="playing")
+    assert evt.action == "decline"
+
+
+def test_tick_event_m2_fields():
+    """TickEvent carries raw_state, feature_groups, driver_update, vehicle_update, package_runtime_state."""
+    from aica_api.models.log import TickEvent
+    from aica_api.models.run import FeatureGroups
+
+    m2_tick_event = {
+        "kind": "tick",
+        "tick_index": 0,
+        "tick_state": VALID_TICK_STATE,
+        "trace": VALID_TRACE,
+        "raw_state": {"drowsiness": 0.45, "fatigue": 0.3, "is_night": False},
+        "feature_groups": {"normalized": {"drowsiness": 0.45}, "ordinal": {"drowsiness_level": "mild"}},
+        "driver_update": {"drowsiness_delta": 0.02},
+        "vehicle_update": {"steering_instability": 0.12},
+        "package_runtime_state": {"last_triggered_at": 42},
+    }
+    evt = TickEvent(**m2_tick_event)
+    assert evt.raw_state["drowsiness"] == 0.45
+    assert isinstance(evt.feature_groups, FeatureGroups)
+    assert evt.feature_groups.ordinal["drowsiness_level"] == "mild"
+    assert evt.driver_update["drowsiness_delta"] == 0.02
+    assert evt.package_runtime_state["last_triggered_at"] == 42
+
+
+def test_run_log_m2_fields():
+    """RunLog carries original_values, modified_values, and parameter snapshots."""
+    from aica_api.models.log import RunLog
+
+    m2_log = {
+        **VALID_RUN_LOG,
+        "original_values": {"proposal_threshold": "medium"},
+        "modified_values": {"proposal_threshold": "high"},
+        "initial_parameters": {"sensitivity": "medium"},
+        "current_parameters": {"sensitivity": "high"},
+        "initial_hyperparameters": {"proposal_threshold": "medium"},
+        "current_hyperparameters": {"proposal_threshold": "high"},
+    }
+    log = RunLog(**m2_log)
+    assert log.original_values == {"proposal_threshold": "medium"}
+    assert log.modified_values == {"proposal_threshold": "high"}
+    assert log.initial_parameters == {"sensitivity": "medium"}
+    assert log.current_hyperparameters == {"proposal_threshold": "high"}
+
+
+# ── Extended RunState: M2 fields ──────────────────────────────────────────────
+
+
+def test_run_state_m2_fields():
+    """RunState carries profile snapshots and parameter audit fields."""
+    from aica_api.models.run import RunState, RunStatus
+
+    run_state_dict = {
+        "run_id": "run_m2_test",
+        "status": "created",
+        "current_tick": 0,
+        "pending_proposal": None,
+        "snapshot": VALID_SNAPSHOT,
+        "event_plan": VALID_EVENT_PLAN,
+        "route_facts": VALID_ROUTE_FACTS,
+        "run_mode": "standard",
+        "evidence_status": "standard",
+        "initial_parameters": {"sensitivity": "medium"},
+        "current_parameters": {"sensitivity": "medium"},
+        "initial_hyperparameters": {"proposal_threshold": "medium"},
+        "current_hyperparameters": {"proposal_threshold": "medium"},
+        "original_values": {},
+        "modified_values": {},
+    }
+    rs = RunState(**run_state_dict)
+    assert rs.run_mode == "standard"
+    assert rs.evidence_status == "standard"
+    assert rs.initial_parameters == {"sensitivity": "medium"}
+    assert rs.driver_profile is None  # optional, not supplied
+
+
+# ── Extended RouteFacts + EventPlan M2 fields ─────────────────────────────────
+
+
+def test_route_facts_m2_fields():
+    """RouteFacts accepts M2 fields (total_route_distance_km, route_segments, etc.)."""
+    from aica_api.models.run import RouteFacts, RouteSegmentFact
+
+    rf = RouteFacts(
+        total_route_distance_km=250.0,
+        estimated_route_duration_min=180.0,
+        route_segments=[
+            {"segment_type": "highway", "start_km": 0.0, "length_km": 120.0},
+            {"segment_type": "normal_road", "start_km": 120.0, "length_km": 80.0},
+            {"segment_type": "mountain_road", "start_km": 200.0, "length_km": 50.0},
+        ],
+        rest_spot_positions=[80.0, 160.0],
+        route_progress_checkpoints=[0.25, 0.5, 0.75],
+    )
+    assert rf.total_route_distance_km == 250.0
+    assert len(rf.route_segments) == 3
+    assert rf.route_segments[0].segment_type == "highway"
+    assert rf.rest_spot_positions == [80.0, 160.0]
+
+
+def test_route_segment_fact_invalid_type_rejected():
+    """RouteSegmentFact rejects unknown segment_type values."""
+    from aica_api.models.run import RouteSegmentFact
+
+    with pytest.raises(Exception):
+        RouteSegmentFact(segment_type="urban", start_km=0.0, length_km=10.0)
+
+
+def test_event_plan_m2_fields():
+    """EventPlan accepts M2 traffic/weather/rest-opportunity event lists."""
+    from aica_api.models.run import EventPlan, RestOpportunity, TrafficEvent, WeatherEvent
+
+    ep = EventPlan(
+        tick_seconds=60,
+        traffic_events=[
+            {"id": "te1", "start_min": 30.0, "duration_min": 20.0, "affected_segment_id": "seg_urban", "speed_kph": 20.0},
+        ],
+        weather_events=[
+            {"id": "we1", "start_min": 60.0, "duration_min": 15.0},
+        ],
+        rest_opportunities=[
+            {"id": "ro1", "route_position_km": 80.0},
+        ],
+    )
+    assert ep.tick_seconds == 60
+    assert len(ep.traffic_events) == 1
+    assert ep.traffic_events[0].id == "te1"
+    assert ep.rest_opportunities[0].route_position_km == 80.0
+
+
+def test_event_plan_m1_backward_compat():
+    """EventPlan with only M1 ticks field still parses (backward compat)."""
+    from aica_api.models.run import EventPlan
+
+    ep = EventPlan(**VALID_EVENT_PLAN)
+    assert len(ep.ticks) == 1
+    assert ep.traffic_events == []
+
+
+# ── RunPlanDraft ──────────────────────────────────────────────────────────────
+
+
+def test_run_plan_draft_valid():
+    """RunPlanDraft parses with all required fields."""
+    from aica_api.models.run import EventPlan, RouteFacts, RunPlanDraft
+
+    draft = RunPlanDraft(
+        plan_id="plan_001",
+        package_id="rest_rule_based_v0_1",
+        scenario_id="uc01_fatigue_friend_drive_v0_1",
+        route_facts=RouteFacts(**VALID_ROUTE_FACTS),
+        effective_setup={"run_mode": "standard"},
+        draft_event_plan=EventPlan(**VALID_EVENT_PLAN),
+        validation_errors=[],
+    )
+    assert draft.plan_id == "plan_001"
+    assert draft.package_id == "rest_rule_based_v0_1"
+    assert draft.validation_errors == []
+
+
+def test_run_plan_draft_defaults():
+    """RunPlanDraft optional fields default correctly."""
+    from aica_api.models.run import RouteFacts, RunPlanDraft
+
+    draft = RunPlanDraft(
+        plan_id="plan_002",
+        package_id="pkg",
+        scenario_id="sc",
+        route_facts=RouteFacts(**VALID_ROUTE_FACTS),
+    )
+    assert draft.effective_setup == {}
+    assert draft.validation_errors == []
+
+
+# ── TickState M2 fields ───────────────────────────────────────────────────────
+
+
+def test_tick_state_m2_fields():
+    """TickState accepts raw_state, feature_groups, distance_km, continuous_driving_min."""
+    from aica_api.models.run import FeatureGroups, TickState
+
+    ts = TickState(
+        **VALID_TICK_STATE,
+        raw_state={"drowsiness": 0.45, "fatigue": 0.30},
+        feature_groups={"normalized": {"drowsiness": 0.45}, "ordinal": {"drowsiness_level": "mild"}},
+        distance_km=42.5,
+        continuous_driving_min=35.0,
+    )
+    assert ts.raw_state == {"drowsiness": 0.45, "fatigue": 0.30}
+    assert isinstance(ts.feature_groups, FeatureGroups)
+    assert ts.distance_km == 42.5
+    assert ts.continuous_driving_min == 35.0

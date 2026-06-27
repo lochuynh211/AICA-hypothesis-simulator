@@ -64,11 +64,9 @@ def freeze_event_plan(scenario: ScenarioDef) -> EventPlan:
     tick_seconds = scenario.tick_seconds
     n_ticks = total_duration // tick_seconds
 
-    # ── Drowsiness schedule ────────────────────────────────────────────────
-    drowsiness_schedule = [
-        {"at": e.at, "band": e.band}
-        for e in scenario.event_presets.drowsiness_schedule
-    ]
+    # ── Drowsiness schedule (now stored as extra data; removed from declared fields in M2) ──
+    _extra = scenario.event_presets.model_extra or {}
+    drowsiness_schedule = _extra.get("drowsiness_schedule", [])
 
     # ── Signal duration schedule (optional extra field) ────────────────────
     extra = scenario.event_presets.model_extra or {}

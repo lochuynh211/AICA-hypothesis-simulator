@@ -1,10 +1,41 @@
-"""Decision domain models — DecisionResult and the full §11 normalized shape."""
+"""Decision domain models — DecisionResult and the full §11 normalized shape.
+
+M2 extensions:
+- LocalizedText({ja, en}) type for localized strings.
+- explanation field accepts str | LocalizedText | list[str|LocalizedText].
+- Candidate.strength: gentle|clear|strong|None (already partly present).
+- Candidate.state: str|None (already present).
+"""
 
 from __future__ import annotations
 
 from enum import Enum
+from typing import Union
 
 from pydantic import BaseModel
+
+
+# ─── LocalizedText ────────────────────────────────────────────────────────────
+
+
+class LocalizedText(BaseModel):
+    """A localized string with Japanese and English variants."""
+
+    ja: str
+    en: str
+
+
+# ─── Explanation type alias ───────────────────────────────────────────────────
+
+# Accepted forms for DecisionResult.explanation:
+#   - plain str (backward compat / M1)
+#   - LocalizedText {ja, en}
+#   - list of str or LocalizedText items
+ExplanationItem = Union[str, LocalizedText]
+ExplanationType = Union[str, LocalizedText, list[ExplanationItem]]
+
+
+# ─── ResultType ──────────────────────────────────────────────────────────────
 
 
 class ResultType(str, Enum):
@@ -52,6 +83,8 @@ class DecisionResult(BaseModel):
     Every algorithm (built-in declarative_rule or future python_module) is
     coerced to exactly this shape by the adapter.  Rule-only runs leave
     hybrid-only fields (scores, states, next_package_runtime_state) empty.
+
+    M2: explanation accepts str | LocalizedText | list[str|LocalizedText].
     """
 
     result_type: ResultType
@@ -66,5 +99,5 @@ class DecisionResult(BaseModel):
     fire_control: FireControl
     proposal: Proposal | None
     reason_inputs: list[str]
-    explanation: str
+    explanation: ExplanationType
     next_package_runtime_state: dict = {}

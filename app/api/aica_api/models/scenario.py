@@ -1,10 +1,18 @@
-"""Scenario domain models — ScenarioDef and supporting types."""
+"""Scenario domain models — ScenarioDef and supporting types.
+
+M2 extensions: driver_profile (DriverModelProfile), vehicle_profile (VehicleBehaviorProfile),
+speed_profile (SpeedProfile), is_night, presets.  The drowsiness_schedule field is removed
+from EventPreset (replaced by the M2 behavioral engine); it is accepted as extra data for
+backward compatibility while M1 fixture files are re-authored in a later unit.
+"""
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, field_validator, model_validator
+
+from aica_api.models.profile import DriverModelProfile, SpeedProfile, VehicleBehaviorProfile
 
 
 class Persona(BaseModel):
@@ -12,22 +20,6 @@ class Persona(BaseModel):
 
     name: str
     description: str = ""
-
-
-class DriverProfile(BaseModel):
-    """Driver profile (placeholder for M1)."""
-
-    name: str = "default"
-
-    model_config = {"extra": "allow"}
-
-
-class VehicleProfile(BaseModel):
-    """Vehicle profile (placeholder for M1)."""
-
-    name: str = "default"
-
-    model_config = {"extra": "allow"}
 
 
 class RouteSegment(BaseModel):
@@ -84,17 +76,14 @@ class RouteIntent(BaseModel):
         return self
 
 
-class DrowsinessScheduleEntry(BaseModel):
-    """A drowsiness band that becomes active at a fractional route position."""
-
-    at: float
-    band: str
-
-
 class EventPreset(BaseModel):
-    """Deterministic event schedule resolved from scenario configuration."""
+    """Deterministic event schedule resolved from scenario configuration.
 
-    drowsiness_schedule: list[DrowsinessScheduleEntry]
+    drowsiness_schedule has been removed from the declared fields (M2: replaced
+    by the behavioral engine).  The field is still accepted as extra data while
+    M1 fixture files are re-authored in a later unit.
+    """
+
     signal_duration_at_trigger: str
     rest_spot_eta_near_before: str | None = None
     rest_spot_eta_schedule: list[dict] | None = None
@@ -103,7 +92,12 @@ class EventPreset(BaseModel):
 
 
 class ScenarioDef(BaseModel):
-    """Top-level scenario definition."""
+    """Top-level scenario definition.
+
+    M2 additions: driver_profile, vehicle_profile, speed_profile (all optional
+    with None default so existing fixture files continue to parse), is_night,
+    presets.
+    """
 
     id: str
     version: str
@@ -112,9 +106,14 @@ class ScenarioDef(BaseModel):
     route_intent: RouteIntent
     initial_state: dict[str, str]
     event_presets: EventPreset
-    driver_profile: DriverProfile = DriverProfile()
-    vehicle_profile: VehicleProfile = VehicleProfile()
     total_duration_seconds: int
     tick_seconds: int
     allowed_actions: list[str]
     review_focus: str = ""
+
+    # M2 profile fields — optional so M1 fixture files still parse
+    driver_profile: DriverModelProfile | None = None
+    vehicle_profile: VehicleBehaviorProfile | None = None
+    speed_profile: SpeedProfile | None = None
+    is_night: bool = False
+    presets: dict[str, Any] = {}
