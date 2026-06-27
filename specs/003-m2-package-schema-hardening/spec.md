@@ -26,6 +26,11 @@ design: `docs/superpowers/specs/2026-06-27-m2-package-schema-hardening-design.md
   algorithms pass through the one evaluation contract and produce the same normalized
   decision shape; the second algorithm additionally populates the multi-category
   score/state/priority fields the first leaves empty.
+- Q: How does run creation migrate to the run-plan flow? → A: Run creation requires a
+  draft-plan reference produced by the setup flow (route facts → draft plan); the prior
+  one-step "create from package+scenario" path is removed. The full setup flow is the
+  only way to start a run, and M1's backend-only loop is migrated to it. Single coherent
+  contract, no dual path.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -173,6 +178,8 @@ a hardcoded schedule.
 - **FR-007**: The system MUST provide a setup step that derives route facts from the
   scenario, generates a draft event plan from those facts and the reviewer's presets,
   allows regenerating the draft, and freezes the chosen draft when the run starts.
+  Starting a run MUST require a reference to a draft plan produced by this setup step;
+  the prior one-step create-from-package+scenario path is removed (single coherent flow).
 - **FR-008**: The reviewer MUST be able to edit the selected package's parameters and
   hyperparameters before the run starts; the system MUST validate each value against its
   definition (allowed values / range / step) and reject invalid values with a clear,
@@ -192,7 +199,9 @@ a hardcoded schedule.
   rest-resistant driver, deterministically reach a short micro-intervention proposal, and
   offer a decline action that is recorded and continues the run without a rest.
 - **FR-014**: Both package/scenario pairings MUST be runnable end-to-end (setup → plan →
-  run → proposal → action → evidence) from the frontend and via the programmatic interface.
+  run → proposal → action → evidence) from the frontend and via the programmatic
+  interface, in both cases going through the draft-plan step before run creation (the
+  migrated M1 backend-only loop included).
 - **FR-015**: The weighted-score algorithm MUST be able to emit a secondary (monotony-
   prevention) category candidate, demonstrated by an automated check, even though a
   dedicated monotony review scenario is out of scope for this milestone.
