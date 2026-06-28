@@ -281,7 +281,7 @@ describe('AppShell — view switching via header nav (T003)', () => {
     expect(screen.queryByTestId('setup-screen')).not.toBeInTheDocument()
   })
 
-  it('"← New run / Setup" button returns to Setup and clears run state', async () => {
+  it('"← New run / Setup" button returns to the Setup view', async () => {
     const { getDispatch } = renderInStore(<AppShell />)
 
     // Go to Review via RUN_CREATED (auto-transition)
@@ -361,6 +361,67 @@ describe('AppShell — M5 regression: feedback attach points on Review screen', 
 
     await waitFor(() => {
       expect(screen.getByTestId('run-feedback-section')).toBeInTheDocument()
+    })
+  })
+
+  it('proposal-feedback-section present on Review screen when proposal fires and run is paused', async () => {
+    const proposalDecision: DecisionResult = {
+      result_type: 'REST_PROPOSAL',
+      trigger_candidate: true,
+      selected_category: 'rest_required',
+      score: 3.5,
+      features: {},
+      scores: {},
+      states: {},
+      criteria: {},
+      candidates: [],
+      fire_control: { fired: true, suppressed: false, override: false, reason: null },
+      proposal: {
+        id: 'rest_required',
+        message: { ja: '休憩を取ってください', en: 'Please take a rest' },
+        options: ['accept_rest', 'postpone'],
+      },
+      reason_inputs: ['drowsiness_level=moderate'],
+      explanation: 'Proposal fired.',
+      next_package_runtime_state: {},
+    }
+
+    const { getDispatch } = renderInStore(<AppShell />)
+
+    act(() => {
+      getDispatch()({ type: 'RUN_CREATED', runState: createdRun })
+      getDispatch()({
+        type: 'TICK_APPENDED',
+        runState: { ...createdRun, status: 'paused', current_tick: 5, pending_proposal: 'rest_required' },
+        decision: proposalDecision,
+        tickIndex: 5,
+        paused: true,
+        completed: false,
+      })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('proposal-feedback-section')).toBeInTheDocument()
+    })
+  })
+
+  it('feedback-toggle-tick control present in trace on Review screen', async () => {
+    const { getDispatch } = renderInStore(<AppShell />)
+
+    act(() => {
+      getDispatch()({ type: 'RUN_CREATED', runState: createdRun })
+      getDispatch()({
+        type: 'TICK_APPENDED',
+        runState: { ...createdRun, status: 'playing', current_tick: 1 },
+        decision: noTriggerDecision,
+        tickIndex: 1,
+        paused: false,
+        completed: false,
+      })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('feedback-toggle-tick-1')).toBeInTheDocument()
     })
   })
 })
