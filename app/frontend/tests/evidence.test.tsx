@@ -110,7 +110,9 @@ function renderWithStore(
   }
 
   const result = render(
-    <RunStoreProvider>
+    // Seed JA: these tests assert the current language ('ja') is forwarded to the
+    // evidence export calls (the UI default is now English).
+    <RunStoreProvider initialLanguage="ja">
       <DispatchCapture />
       {ui}
     </RunStoreProvider>,

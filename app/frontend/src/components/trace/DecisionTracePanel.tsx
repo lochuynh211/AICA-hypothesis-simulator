@@ -390,7 +390,7 @@ export default function DecisionTracePanel({ replayTick }: { replayTick?: Replay
           borderBottom: '1px solid #333',
         }}
       >
-        DECISION TRACE
+        EVENT LOG · LIVE
       </div>
       {merged.map((item, i) =>
         item.kind === 'trace' ? (

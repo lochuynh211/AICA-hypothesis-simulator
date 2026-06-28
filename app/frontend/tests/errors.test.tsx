@@ -87,7 +87,8 @@ function renderInStore(
   }
 
   const result = render(
-    <RunStoreProvider>
+    // Seed JA: these tests assert Japanese labels (the UI default is now English).
+    <RunStoreProvider initialLanguage="ja">
       <DispatchCapture />
       {ui}
     </RunStoreProvider>,
@@ -136,7 +137,7 @@ describe('PackageSelector — registry error display', () => {
 
     renderInStore(<PackageSelector />)
 
-    // Wait for packages to load — default lang is 'ja', so the JA label is shown
+    // Wait for packages to load — store seeded to 'ja', so the JA label is shown
     await screen.findByText('テスト (0.1.0)')
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
@@ -149,7 +150,7 @@ describe('PackageSelector — registry error display', () => {
 
     renderInStore(<PackageSelector />)
 
-    // Default lang is 'ja' — JA label rendered, not EN
+    // Store seeded to 'ja' — JA label rendered, not EN
     expect(await screen.findByText('テスト (0.1.0)')).toBeInTheDocument()
     expect(await screen.findByText('1 package(s) could not be loaded')).toBeInTheDocument()
   })

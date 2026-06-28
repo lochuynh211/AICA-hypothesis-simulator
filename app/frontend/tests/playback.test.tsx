@@ -118,7 +118,8 @@ function renderInStore(
   }
 
   const result = render(
-    <RunStoreProvider>
+    // Seed JA: one test asserts a Japanese proposal message (the UI default is now English).
+    <RunStoreProvider initialLanguage="ja">
       <DispatchCapture />
       {ui}
     </RunStoreProvider>,
@@ -248,7 +249,7 @@ describe('CockpitView', () => {
 
     const overlay = await screen.findByTestId('proposal-overlay')
     expect(overlay).toBeInTheDocument()
-    // Default lang is 'ja' — proposal message rendered in Japanese
+    // Store seeded to 'ja' — proposal message rendered in Japanese
     expect(screen.getByText(/休憩を取ってください/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /accept rest/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /postpone/i })).toBeInTheDocument()

@@ -117,7 +117,8 @@ function renderWithStore(
   }
 
   const result = render(
-    <RunStoreProvider>
+    // Seed JA: these tests assert Japanese schema labels (the UI default is now English).
+    <RunStoreProvider initialLanguage="ja">
       <DispatchCapture />
       {ui}
     </RunStoreProvider>,
@@ -369,31 +370,34 @@ describe('RightReviewPanel — I-1 regression (FeedbackForm shown when run is co
   })
 })
 
-describe('CockpitView — I-1 regression (FeedbackForm shown on paused proposal)', () => {
+describe('Proposal affordances — I-1 regression (overlay in cockpit, feedback in right panel)', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     vi.mocked(client.getFeedbackSchema).mockResolvedValue(mockSchema)
     vi.mocked(client.actRun).mockResolvedValue(pausedRunState)
   })
 
-  it('renders the proposal-feedback section when the run is paused with a proposal', async () => {
-    renderWithStore(
-      <CockpitView />,
-      (dispatch) => {
-        dispatch({ type: 'RUN_CREATED', runState: pausedRunState })
-        dispatch({
-          type: 'TICK_APPENDED',
-          runState: pausedRunState,
-          decision: proposalDecision,
-          tickIndex: 5,
-          paused: true,
-          completed: false,
-        })
-      },
-    )
+  const seedProposal = (dispatch: React.Dispatch<RunStoreAction>) => {
+    dispatch({ type: 'RUN_CREATED', runState: pausedRunState })
+    dispatch({
+      type: 'TICK_APPENDED',
+      runState: pausedRunState,
+      decision: proposalDecision,
+      tickIndex: 5,
+      paused: true,
+      completed: false,
+    })
+  }
 
-    // The proposal overlay and the proposal-feedback section must both be present.
+  it('CockpitView shows the proposal overlay (option buttons) on a paused proposal', async () => {
+    renderWithStore(<CockpitView />, seedProposal)
     expect(await screen.findByTestId('proposal-overlay')).toBeInTheDocument()
+    // Feedback no longer lives in the middle cockpit.
+    expect(screen.queryByTestId('proposal-feedback-section')).not.toBeInTheDocument()
+  })
+
+  it('RightReviewPanel shows the proposal-feedback section on a paused proposal', async () => {
+    renderWithStore(<RightReviewPanel />, seedProposal)
     expect(await screen.findByTestId('proposal-feedback-section')).toBeInTheDocument()
   })
 })

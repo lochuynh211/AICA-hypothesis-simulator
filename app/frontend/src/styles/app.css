@@ -33,9 +33,10 @@ body {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 280px 1fr 340px;
+  /* Review layout: a narrower left context column, wide middle cockpit, right review. */
+  grid-template-columns: 0.7fr 2fr 1fr;
   grid-template-rows: 1fr;
-  height: 100vh;
+  height: 100%;
   width: 100%;
   overflow: hidden;
 }
@@ -44,6 +45,11 @@ body {
 
 .left-panel {
   grid-column: 1;
+  /* min-width:0 lets the 1fr track shrink to its share instead of being forced
+     wide by its content's min-content — otherwise the grid overflows and the
+     overflow:hidden shell clips the right panel off-screen. */
+  min-width: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   background: #ffffff;
   border-right: 1px solid #d0d5dd;
@@ -53,6 +59,8 @@ body {
 
 .center-panel {
   grid-column: 2;
+  min-width: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   background: #f8fafc;
   border-right: 1px solid #d0d5dd;
@@ -62,6 +70,8 @@ body {
 
 .right-panel {
   grid-column: 3;
+  min-width: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   background: #111111;
 }

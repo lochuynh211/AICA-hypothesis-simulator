@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRunStore } from '../../state/runStore'
-import type { TraceEntry } from '../../api/types'
+import { useRouteProgress } from '../playback/useRouteProgress'
+import { useSmoothFraction } from '../playback/useSmoothFraction'
 
 /**
  * MapSurface (T008 / M4) — Google Maps route surface for the playback panel.
@@ -36,9 +37,39 @@ function getGMaps(): GMapsLib | undefined {
   return (window as any).google?.maps
 }
 
+/** True only on a real Maps SDK — the test mock omits Marker + geometry.spherical. */
+function hasGeoMarkers(gmaps: GMapsLib | undefined): boolean {
+  return Boolean(gmaps?.Marker && gmaps?.geometry?.spherical)
+}
+
+/** Cumulative along-path distances + total, for fraction → lat/lng interpolation. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildCumulative(path: any[], spherical: any): { cum: number[]; total: number } {
+  const cum = [0]
+  let total = 0
+  for (let i = 1; i < path.length; i++) {
+    total += spherical.computeDistanceBetween(path[i - 1], path[i])
+    cum.push(total)
+  }
+  return { cum, total }
+}
+
+/** Interpolate the lat/lng at fraction f (0–1) of the path's total length. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function latLngAt(path: any[], cum: number[], total: number, f: number, spherical: any): any {
+  if (path.length === 0) return null
+  if (f <= 0) return path[0]
+  if (f >= 1) return path[path.length - 1]
+  const target = f * total
+  let i = 1
+  while (i < cum.length && cum[i] < target) i++
+  const span = cum[i] - cum[i - 1] || 1
+  return spherical.interpolate(path[i - 1], path[i], (target - cum[i - 1]) / span)
+}
+
 export default function MapSurface() {
   const { state } = useRunStore()
-  const { mapsKey, alternatives, selectedRouteId, trace, runState } = state
+  const { mapsKey, alternatives, selectedRouteId } = state
 
   // mapsReady: true when the Google Maps SDK is available (either pre-loaded or
   // after the async script callback fires). Drives the map-init useEffect so
@@ -59,17 +90,22 @@ export default function MapSurface() {
   const selectedAlt = alternatives.find((a) => a.route_id === selectedRouteId) ?? null
   const display = selectedAlt?.display ?? null
 
-  // ── Compute car position (identical logic to RouteTimeline) ───────────────
-  const ep = runState?.event_plan as { ticks?: Array<{ route_fraction: number }> } | undefined
-  const lastEntry: TraceEntry | null = trace.length > 0 ? trace[trace.length - 1] : null
-  const currentFraction = ep?.ticks?.[lastEntry?.tick_index ?? 0]?.route_fraction ?? 0
+  // ── Route position (shared, clamped) + eased car fraction ─────────────────
+  const { currentFraction, proposalFraction, restFraction } = useRouteProgress()
   const positionPct = `${Math.round(currentFraction * 100)}%`
+  const shownFraction = useSmoothFraction(currentFraction)
 
-  // ── Compute proposal position ─────────────────────────────────────────────
-  const proposalEntry = trace.find((e: TraceEntry) => e.proposal !== null)
-  const proposalFraction = proposalEntry
-    ? (ep?.ticks?.[proposalEntry.tick_index]?.route_fraction ?? null)
-    : null
+  // Holds the decoded route path + cumulative distances + the live markers, so
+  // the car can be interpolated along the real polyline each frame.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pathRef = useRef<{ path: any[]; cum: number[]; total: number } | null>(null)
+  const carRef = useRef<GMapsLib>(null)
+  const startRef = useRef<GMapsLib>(null)
+  const restRef = useRef<GMapsLib>(null)
+  const fireRef = useRef<GMapsLib>(null)
+  // realMarkers: true once geographic markers are drawn — hides the DOM-overlay
+  // fallback markers so the car isn't shown twice on a real map.
+  const [realMarkers, setRealMarkers] = useState(false)
 
   // ── Google Maps script injection ──────────────────────────────────────────
   // Only inject when we have a key, a display, and Maps is not already loaded.
@@ -159,6 +195,45 @@ export default function MapSurface() {
         strokeWeight: 4,
       })
       polyline.setMap(mapInstanceRef.current)
+
+      // Zoom to cover the whole route (start → end) at load.
+      if (gmaps.LatLngBounds) {
+        const bounds = new gmaps.LatLngBounds()
+        path.forEach((p: { lat: () => number; lng: () => number }) => bounds.extend(p))
+        mapInstanceRef.current.fitBounds?.(bounds)
+      }
+
+      // Real-SDK geographic markers: car (arrow on the route), start, rest, fire.
+      // Skipped under the test mock (no Marker / geometry.spherical) — the DOM
+      // overlay markers below stay as the testable fallback.
+      if (hasGeoMarkers(gmaps)) {
+        const { cum, total } = buildCumulative(path, gmaps.geometry.spherical)
+        pathRef.current = { path, cum, total }
+        const map = mapInstanceRef.current
+
+        startRef.current = new gmaps.Marker({
+          position: path[0],
+          map,
+          icon: { path: gmaps.SymbolPath.CIRCLE, scale: 6, fillColor: '#22c55e', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+          title: 'Start',
+          zIndex: 998,
+        })
+        // End marker — the destination at the end of the polyline.
+        new gmaps.Marker({
+          position: path[path.length - 1],
+          map,
+          icon: { path: gmaps.SymbolPath.CIRCLE, scale: 6, fillColor: '#64748b', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+          title: 'Destination',
+          zIndex: 998,
+        })
+        carRef.current = new gmaps.Marker({
+          position: path[0],
+          map,
+          icon: { path: gmaps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 5, fillColor: '#2563eb', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+          zIndex: 999,
+        })
+        setRealMarkers(true)
+      }
     } catch (err) {
       // Canvas initialization failed — show inline fallback instead of propagating.
       // Car and decision markers still work; only the actual map canvas is missing.
@@ -167,6 +242,51 @@ export default function MapSurface() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapsReady, display?.encoded_polyline])
+
+  // ── Move/refresh geographic markers as the run progresses ─────────────────
+  // Car eases along the route via shownFraction; rest/fire markers track their
+  // fractions. No-op under the test mock (pathRef stays null → realMarkers false).
+  useEffect(() => {
+    const gmaps = getGMaps()
+    const built = pathRef.current
+    if (!built || !hasGeoMarkers(gmaps) || !mapInstanceRef.current) return
+    const sph = gmaps.geometry.spherical
+    const { path, cum, total } = built
+
+    // Car — interpolated position at the eased fraction.
+    const carPos = latLngAt(path, cum, total, shownFraction, sph)
+    if (carPos && carRef.current) carRef.current.setPosition(carPos)
+
+    // Rest marker (gold) at the rest-facility fraction.
+    if (restFraction != null) {
+      const rp = latLngAt(path, cum, total, restFraction, sph)
+      if (rp) {
+        if (!restRef.current) {
+          restRef.current = new gmaps.Marker({
+            map: mapInstanceRef.current,
+            icon: { path: gmaps.SymbolPath.CIRCLE, scale: 6, fillColor: '#f0c000', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+            zIndex: 997,
+          })
+        }
+        restRef.current.setPosition(rp)
+      }
+    }
+
+    // Fire marker (orange) where the proposal fired.
+    if (proposalFraction != null) {
+      const fp = latLngAt(path, cum, total, proposalFraction, sph)
+      if (fp) {
+        if (!fireRef.current) {
+          fireRef.current = new gmaps.Marker({
+            map: mapInstanceRef.current,
+            icon: { path: gmaps.SymbolPath.CIRCLE, scale: 7, fillColor: '#ff7b54', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+            zIndex: 998,
+          })
+        }
+        fireRef.current.setPosition(fp)
+      }
+    }
+  }, [shownFraction, restFraction, proposalFraction])
 
   // ── Guard: nothing to show ────────────────────────────────────────────────
   // When display is null (local path), return null so the caller can fall back
@@ -184,7 +304,8 @@ export default function MapSurface() {
           data-testid="map-init-error"
           role="alert"
           style={{
-            height: '280px',
+            height: '52vh',
+            minHeight: '360px',
             background: '#fff3f3',
             border: '1px solid #fca5a5',
             borderRadius: '4px',
@@ -202,7 +323,7 @@ export default function MapSurface() {
         <div
           ref={mapContainerRef}
           data-testid="map-container"
-          style={{ height: '280px', background: '#e8e8e8', borderRadius: '4px' }}
+          style={{ height: '52vh', minHeight: '360px', background: '#e8e8e8', borderRadius: '4px' }}
         />
       )}
 
@@ -224,6 +345,8 @@ export default function MapSurface() {
           transition: 'left 0.5s ease',
           boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
           zIndex: 10,
+          // Hidden when the real on-route car marker is drawn (avoids two cars).
+          visibility: realMarkers ? 'hidden' : 'visible',
         }}
       />
 
@@ -242,6 +365,7 @@ export default function MapSurface() {
             background: '#dc2626',
             borderRadius: '2px',
             zIndex: 10,
+            visibility: realMarkers ? 'hidden' : 'visible',
           }}
         />
       )}

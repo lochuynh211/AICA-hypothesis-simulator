@@ -1,97 +1,130 @@
-import { useRunStore } from '../../state/runStore'
-import type { TraceEntry } from '../../api/types'
+import { useRouteProgress } from './useRouteProgress'
+import { useSmoothFraction } from './useSmoothFraction'
 import type { ReplayTick } from '../../replay/replaySource'
 
+/**
+ * RouteTimeline — animated progress track (FR-016 display-only).
+ *
+ * A growing blue fill, segment divider ticks, start / rest / fire markers, and a
+ * car icon that glides between tick positions via useSmoothFraction. The car
+ * aria-label always reports the EXACT evaluated route_fraction (not the eased
+ * display value) so it matches the evidence log; only the on-screen position is
+ * smoothed. No store writes — animation is purely visual.
+ */
 export default function RouteTimeline({ replayTick }: { replayTick?: ReplayTick | null } = {}) {
-  const { state } = useRunStore()
-  const { runState, trace } = state
+  const progress = useRouteProgress()
 
-  // ── REPLAY MODE — use recorded route_fraction directly ─────────────────────
-  if (replayTick != null) {
-    const positionPct = `${Math.round(replayTick.route_fraction * 100)}%`
-    const proposalFired =
-      replayTick.decision.fire_control.fired && replayTick.decision.proposal != null
-    const proposalFraction = proposalFired ? replayTick.route_fraction : null
+  // Target fraction: recorded value in replay, else the live evaluated tick.
+  const targetFraction = replayTick != null ? replayTick.route_fraction : progress.currentFraction
+  const shown = useSmoothFraction(targetFraction)
 
-    return (
-      <div
-        style={{
-          position: 'relative',
-          height: '48px',
-          background: '#e0e0e0',
-          borderRadius: '4px',
-          margin: '12px 0',
-        }}
-      >
-        <div
-          data-testid="car-marker"
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: positionPct,
-            transform: 'translate(-50%, -50%)',
-            width: '20px',
-            height: '20px',
-            background: '#2563eb',
-            borderRadius: '50%',
-          }}
-          aria-label={`Route position: ${positionPct}`}
-        />
-        {/* TODO(post-V1): pin replay fire-marker to historical fire tick (see U7 review) */}
-        {proposalFraction !== null && (
-          <div
-            data-testid="fire-marker"
-            style={{
-              position: 'absolute',
-              top: '0',
-              left: `${Math.round(proposalFraction * 100)}%`,
-              transform: 'translateX(-50%)',
-              width: '4px',
-              height: '100%',
-              background: '#dc2626',
-            }}
-            aria-label="Proposal position"
-          />
-        )}
-      </div>
-    )
-  }
+  // Replay proposal marker: only when the recorded decision fired a proposal.
+  const replayProposalFraction =
+    replayTick != null &&
+    replayTick.decision.fire_control.fired &&
+    replayTick.decision.proposal != null
+      ? replayTick.route_fraction
+      : null
 
-  // ── LIVE MODE — unchanged ───────────────────────────────────────────────────
-  const ep = runState?.event_plan as { ticks?: Array<{ route_fraction: number }> } | undefined
-  // Use the last trace entry's tick_index (the evaluated tick) so the car position
-  // matches the evidence log, not the post-increment current_tick.
-  const lastEntry = trace.length > 0 ? trace[trace.length - 1] : null
-  const currentFraction = ep?.ticks?.[lastEntry?.tick_index ?? 0]?.route_fraction ?? 0
-  const positionPct = `${Math.round(currentFraction * 100)}%`
+  const proposalFraction = replayTick != null ? replayProposalFraction : progress.proposalFraction
+  const restFraction = replayTick != null ? null : progress.restFraction
+  const boundaries = replayTick != null ? [] : progress.boundaries
 
-  const proposalEntry = trace.find((e: TraceEntry) => e.proposal !== null)
-  const proposalFraction = proposalEntry
-    ? ((runState?.event_plan as { ticks?: Array<{ route_fraction: number }> })?.ticks?.[proposalEntry.tick_index]?.route_fraction ?? null)
-    : null
+  const targetPct = Math.round(targetFraction * 100)
+  const shownPct = shown * 100
 
   return (
-    <div style={{ position: 'relative', height: '48px', background: '#e0e0e0', borderRadius: '4px', margin: '12px 0' }}>
-      {/* Car marker — CSS transition provides display-only animation */}
+    <div data-testid="route-timeline" style={{ position: 'relative', height: '40px', margin: '12px 0' }}>
+      {/* Track */}
       <div
-        data-testid="car-marker"
         style={{
           position: 'absolute',
           top: '50%',
-          left: positionPct,
-          transform: 'translate(-50%, -50%)',
-          width: '20px',
-          height: '20px',
-          background: '#2563eb',
-          borderRadius: '50%',
-          transition: 'left 0.5s ease',
+          left: 0,
+          right: 0,
+          transform: 'translateY(-50%)',
+          height: '14px',
+          background: '#e2e8f0',
+          borderRadius: '7px',
+          overflow: 'hidden',
         }}
-        aria-label={`Route position: ${positionPct}`}
+      >
+        {/* Growing fill */}
+        <div
+          data-testid="progress-fill"
+          style={{
+            height: '100%',
+            width: `${shownPct}%`,
+            background: 'linear-gradient(90deg, #2563eb, #60a5fa)',
+            transition: 'width 0.12s linear',
+          }}
+        />
+      </div>
+
+      {/* Segment divider ticks */}
+      {boundaries.map((at, i) =>
+        at > 0 && at < 1 ? (
+          <div
+            key={`seg-${i}`}
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: `${at * 100}%`,
+              transform: 'translate(-50%, -50%)',
+              width: '2px',
+              height: '14px',
+              background: '#fff',
+              opacity: 0.8,
+            }}
+          />
+        ) : null,
+      )}
+
+      {/* Start marker */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '0%',
+          transform: 'translate(-50%, -50%)',
+          width: '10px',
+          height: '10px',
+          borderRadius: '50%',
+          background: '#fff',
+          border: '2px solid #94a3b8',
+        }}
+        aria-hidden
       />
-      {/* Fire marker at proposal position */}
+
+      {/* Rest marker */}
+      {restFraction !== null && (
+        <div
+          data-testid="rest-marker"
+          aria-label="Rest facility position"
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: `${restFraction * 100}%`,
+            transform: 'translate(-50%, -50%)',
+            width: '14px',
+            height: '14px',
+            borderRadius: '50%',
+            background: '#f0c000',
+            border: '2px solid #fff',
+            textAlign: 'center',
+            fontSize: '9px',
+            lineHeight: '12px',
+          }}
+        >
+          ☕
+        </div>
+      )}
+
+      {/* Fire / proposal marker */}
       {proposalFraction !== null && (
         <div
           data-testid="fire-marker"
+          aria-label="Proposal position"
           style={{
             position: 'absolute',
             top: '0',
@@ -101,9 +134,26 @@ export default function RouteTimeline({ replayTick }: { replayTick?: ReplayTick 
             height: '100%',
             background: '#dc2626',
           }}
-          aria-label="Proposal position"
         />
       )}
+
+      {/* Car icon — smoothed position, exact aria-label */}
+      <div
+        data-testid="car-marker"
+        aria-label={`Route position: ${targetPct}%`}
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: `${shownPct}%`,
+          transform: 'translate(-50%, -50%) scaleX(-1)',
+          fontSize: '20px',
+          transition: 'left 0.12s linear',
+          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))',
+          zIndex: 5,
+        }}
+      >
+        🚗
+      </div>
     </div>
   )
 }

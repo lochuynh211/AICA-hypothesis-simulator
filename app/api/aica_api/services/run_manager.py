@@ -100,6 +100,10 @@ class TickOutcome:
     paused: bool
     completed: bool
     evaluated_tick_index: int | None = None
+    # The TickState evaluated this call — carries the authoritative route_fraction,
+    # distance_km, and raw_state (speedKph). Surfaced so the UI shows the real
+    # speed-integrated position rather than re-deriving it. None on no-op ticks.
+    tick_state: "TickState | None" = None
 
 
 # ---------------------------------------------------------------------------
@@ -524,6 +528,7 @@ def tick(run_id: str) -> TickOutcome:
             paused=False,
             completed=True,
             evaluated_tick_index=None,
+            tick_state=tick_state,
         )
 
     # ── Build context and call adapter ────────────────────────────────────
@@ -583,6 +588,7 @@ def tick(run_id: str) -> TickOutcome:
                 paused=False,
                 completed=False,
                 evaluated_tick_index=current_tick,
+                tick_state=tick_state,
             )
         else:
             # Blocking (default): pause the run; do NOT advance current_tick.
@@ -605,6 +611,7 @@ def tick(run_id: str) -> TickOutcome:
                 paused=True,
                 completed=False,
                 evaluated_tick_index=current_tick,
+                tick_state=tick_state,
             )
 
     # ── Thread package_runtime_state: store what the algorithm returned ───
@@ -680,6 +687,7 @@ def tick(run_id: str) -> TickOutcome:
         paused=paused,
         completed=completed,
         evaluated_tick_index=current_tick,
+        tick_state=tick_state,
     )
 
 

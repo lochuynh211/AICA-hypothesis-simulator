@@ -85,7 +85,7 @@ export type RunStoreState = {
   /**
    * The language shown in the UI. Session-only — NOT persisted to localStorage
    * and NOT cleared by RESET (it is a reviewer preference, not run state).
-   * Default 'ja'; toggled via SET_LANGUAGE.
+   * Default 'en'; toggled via SET_LANGUAGE.
    */
   uiLanguage: 'ja' | 'en'
 
@@ -140,8 +140,8 @@ const initialState: RunStoreState = {
   mapsError: null,
   // M6 — default to Setup screen
   viewMode: 'setup',
-  // M6 T004 — default to Japanese
-  uiLanguage: 'ja',
+  // M6 T004 — default to English
+  uiLanguage: 'en',
   // M6 T009 — no profile overrides initially
   profileOverrides: null,
   // tick seconds — null means "use scenario default"
@@ -163,6 +163,8 @@ export type RunStoreAction =
       tickIndex: number
       paused: boolean
       completed: boolean
+      /** Authoritative route position (0–1) from the tick response, if present. */
+      routeFraction?: number | null
     }
   | { type: 'ACTION_APPLIED'; runState: RunState }
   | {
@@ -324,7 +326,11 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
       }
 
     case 'TICK_APPENDED': {
-      const entry: TraceEntry = { ...action.decision, tick_index: action.tickIndex }
+      const entry: TraceEntry = {
+        ...action.decision,
+        tick_index: action.tickIndex,
+        route_fraction: action.routeFraction ?? null,
+      }
       return {
         ...state,
         runState: action.runState,
@@ -452,8 +458,21 @@ const RunStoreContext = createContext<RunStoreContextValue | null>(null)
 
 // ── Provider ───────────────────────────────────────────────────────────────
 
-export function RunStoreProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, initialState)
+export function RunStoreProvider({
+  children,
+  initialLanguage,
+}: {
+  children: React.ReactNode
+  /**
+   * Optional override for the initial UI language. When omitted, the store
+   * uses its default (English). Lets a caller seed a preferred language.
+   */
+  initialLanguage?: 'ja' | 'en'
+}) {
+  const [state, dispatch] = useReducer(
+    reducer,
+    initialLanguage ? { ...initialState, uiLanguage: initialLanguage } : initialState,
+  )
   const value: RunStoreContextValue = { state, dispatch }
   return React.createElement(RunStoreContext.Provider, { value }, children)
 }

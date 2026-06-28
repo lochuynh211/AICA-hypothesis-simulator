@@ -1,13 +1,15 @@
 /**
- * LeftContextPanel — left column of the 3-panel Review screen (M6 T003).
+ * LeftContextPanel — left column of the 3-panel Review screen.
  *
- * Now shows context-only content: live readouts and the route segment list.
- * The setup editors (PackageSelector, ScenarioSelector, ParameterEditor,
- * HyperparameterEditor, MapKeyAndRouteInput, PlanPreview) have been relocated
- * to SetupScreen — this panel is de-cluttered for the active-run context.
+ * Holds everything about the *current route status*:
+ *   - RouteStatus      — driving time, position, distance from start
+ *   - RouteSegmentList — the scenario steps with the active segment highlighted
+ *
+ * Driver fatigue/drowsiness lives in the right-panel DriverStatus, not here.
+ * Setup editors live on SetupScreen — this panel is active-run context only.
  */
-import RouteSegmentList from '../context/RouteSegmentList'
-import LiveReadouts from '../context/LiveReadouts'
+import RouteStatus from '../context/RouteStatus'
+import ScenarioBeats from '../context/ScenarioBeats'
 
 export default function LeftContextPanel() {
   return (
@@ -22,12 +24,12 @@ export default function LeftContextPanel() {
             letterSpacing: '0.05em',
           }}
         >
-          Live Readouts
+          Route Status
         </h2>
-        <LiveReadouts />
+        <RouteStatus />
       </section>
 
-      <section style={{ flex: 1, overflow: 'auto' }}>
+      <section style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
         <h2
           style={{
             fontSize: '0.85em',
@@ -37,9 +39,9 @@ export default function LeftContextPanel() {
             letterSpacing: '0.05em',
           }}
         >
-          Route
+          Scenario Beats
         </h2>
-        <RouteSegmentList />
+        <ScenarioBeats />
       </section>
     </div>
   )

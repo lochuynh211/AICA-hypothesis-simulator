@@ -92,9 +92,9 @@ describe('runStore — uiLanguage field and SET_LANGUAGE action (T004)', () => {
     <RunStoreProvider>{children}</RunStoreProvider>
   )
 
-  it('defaults to ja', () => {
+  it('defaults to en', () => {
     const { result } = renderHook(() => useRunStore(), { wrapper })
-    expect(result.current.state.uiLanguage).toBe('ja')
+    expect(result.current.state.uiLanguage).toBe('en')
   })
 
   it('SET_LANGUAGE switches to en', () => {
@@ -143,14 +143,14 @@ describe('LanguageToggle component', () => {
     expect(screen.getByTestId('lang-toggle-en')).toBeInTheDocument()
   })
 
-  it('JA button has aria-pressed=true by default (default lang is ja)', () => {
+  it('EN button has aria-pressed=true by default (default lang is en)', () => {
     render(
       <RunStoreProvider>
         <LanguageToggle />
       </RunStoreProvider>,
     )
-    expect(screen.getByTestId('lang-toggle-ja')).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByTestId('lang-toggle-en')).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByTestId('lang-toggle-en')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('lang-toggle-ja')).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('clicking EN toggles aria-pressed to EN=true, JA=false', () => {
@@ -209,12 +209,13 @@ describe('PackageSelector — bilingual label audit (representative)', () => {
     vi.mocked(client.listScenarios).mockResolvedValue({ scenarios: [], errors: [] })
   })
 
-  it('shows the JA label by default (never shows EN or raw object)', async () => {
+  it('shows the JA label when JA is selected (never shows EN or raw object)', async () => {
     render(
       <WithToggle>
         <PackageSelector />
       </WithToggle>,
     )
+    fireEvent.click(screen.getByTestId('lang-toggle-ja'))
     await waitFor(() => {
       // JA label should appear in the select option
       expect(screen.getByRole('option', { name: /ルールパッケージ/ })).toBeInTheDocument()
@@ -231,6 +232,8 @@ describe('PackageSelector — bilingual label audit (representative)', () => {
         <PackageSelector />
       </WithToggle>,
     )
+    // Start from JA so the toggle-to-EN transition is observable
+    fireEvent.click(screen.getByTestId('lang-toggle-ja'))
     await waitFor(() => {
       expect(screen.getByRole('option', { name: /ルールパッケージ/ })).toBeInTheDocument()
     })
@@ -283,15 +286,9 @@ describe('HyperparameterEditor — bilingual label audit (U3 fix regression)', (
     vi.mocked(client.getPackage).mockResolvedValue(mockHpManifest)
   })
 
-  it('shows the JA label by default (uiLanguage=ja)', async () => {
-    render(
-      <WithToggle>
-        <HyperparameterEditor />
-      </WithToggle>,
-    )
+  it('shows the JA label when JA is selected', async () => {
     // Seed package selection via dispatch — render inside store context
     // The WithToggle wrapper provides the store; we need to select a package first.
-    // Re-render with store dispatch to select a package.
     const dispatchRef: { current: React.Dispatch<RunStoreAction> | null } = { current: null }
     function DispatchCapture() {
       const { dispatch } = useRunStore()
@@ -305,10 +302,11 @@ describe('HyperparameterEditor — bilingual label audit (U3 fix regression)', (
         <HyperparameterEditor />
       </RunStoreProvider>,
     )
+    fireEvent.click(screen.getByTestId('lang-toggle-ja'))
     act(() => {
       dispatchRef.current!({ type: 'SELECT_PACKAGE', id: 'test-pkg' })
     })
-    // JA label renders by default
+    // JA label renders once JA is selected
     expect(await screen.findByLabelText('睡気重み')).toBeInTheDocument()
     // EN label must NOT be visible
     expect(screen.queryByText('Drowsiness Weight')).not.toBeInTheDocument()
@@ -328,6 +326,7 @@ describe('HyperparameterEditor — bilingual label audit (U3 fix regression)', (
         <HyperparameterEditor />
       </RunStoreProvider>,
     )
+    fireEvent.click(screen.getByTestId('lang-toggle-ja'))
     act(() => {
       dispatchRef.current!({ type: 'SELECT_PACKAGE', id: 'test-pkg' })
     })
@@ -386,7 +385,7 @@ describe('RouteSegmentList — bilingual name audit (U3 fix regression)', () => 
     vi.mocked(client.getScenario).mockResolvedValue(mockScenarioDef)
   })
 
-  it('shows the JA segment name by default (uiLanguage=ja)', async () => {
+  it('shows the JA segment name when JA is selected', async () => {
     const dispatchRef: { current: React.Dispatch<RunStoreAction> | null } = { current: null }
     function DispatchCapture() {
       const { dispatch } = useRunStore()
@@ -400,10 +399,11 @@ describe('RouteSegmentList — bilingual name audit (U3 fix regression)', () => 
         <RouteSegmentList />
       </RunStoreProvider>,
     )
+    fireEvent.click(screen.getByTestId('lang-toggle-ja'))
     act(() => {
       dispatchRef.current!({ type: 'SELECT_SCENARIO', id: 'test-scenario' })
     })
-    // JA segment name renders by default
+    // JA segment name renders once JA is selected
     expect(await screen.findByText('東京出発')).toBeInTheDocument()
     // EN name must NOT be visible
     expect(screen.queryByText('Tokyo Departure')).not.toBeInTheDocument()
@@ -423,6 +423,7 @@ describe('RouteSegmentList — bilingual name audit (U3 fix regression)', () => 
         <RouteSegmentList />
       </RunStoreProvider>,
     )
+    fireEvent.click(screen.getByTestId('lang-toggle-ja'))
     act(() => {
       dispatchRef.current!({ type: 'SELECT_SCENARIO', id: 'test-scenario' })
     })
@@ -521,7 +522,7 @@ describe('EvidencePanel — getEvidence() passes current uiLanguage (T005)', () 
     vi.mocked(client.getEvidence).mockResolvedValue(mockReport)
   })
 
-  it('calls getEvidence with runId and the current uiLanguage (ja by default)', async () => {
+  it('calls getEvidence with runId and the current uiLanguage (en by default)', async () => {
     renderWithStore(<EvidencePanel />, (dispatch) => {
       dispatch({ type: 'RUN_CREATED', runState: mockRunState })
     })
@@ -529,11 +530,11 @@ describe('EvidencePanel — getEvidence() passes current uiLanguage (T005)', () 
     fireEvent.click(screen.getByTestId('evidence-copy-btn'))
 
     await waitFor(() => {
-      expect(client.getEvidence).toHaveBeenCalledWith('run-lang-test-001', 'ja')
+      expect(client.getEvidence).toHaveBeenCalledWith('run-lang-test-001', 'en')
     })
   })
 
-  it('calls getEvidence with uiLanguage=en after switching to EN', async () => {
+  it('calls getEvidence with uiLanguage=ja after switching to JA', async () => {
     renderWithStore(
       <>
         <LanguageToggle />
@@ -544,14 +545,14 @@ describe('EvidencePanel — getEvidence() passes current uiLanguage (T005)', () 
       },
     )
 
-    // Switch to EN
-    fireEvent.click(screen.getByTestId('lang-toggle-en'))
+    // Switch to JA
+    fireEvent.click(screen.getByTestId('lang-toggle-ja'))
 
     // Trigger export
     fireEvent.click(screen.getByTestId('evidence-copy-btn'))
 
     await waitFor(() => {
-      expect(client.getEvidence).toHaveBeenCalledWith('run-lang-test-001', 'en')
+      expect(client.getEvidence).toHaveBeenCalledWith('run-lang-test-001', 'ja')
     })
   })
 })

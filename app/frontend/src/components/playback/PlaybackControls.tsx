@@ -39,8 +39,12 @@ export default function PlaybackControls() {
         tickIndex: resp.tick_index,
         paused: resp.paused,
         completed: resp.completed,
+        routeFraction: resp.route_fraction ?? null,
       })
-      if (resp.paused || resp.completed) {
+      // A proposal pause is a temporary halt awaiting the driver's choice — keep
+      // isPlaying so the interval (which is gated on `!paused`) auto-resumes once
+      // the action clears `paused`. Only completion is terminal.
+      if (resp.completed) {
         setIsPlaying(false)
       }
     } else {
@@ -56,12 +60,13 @@ export default function PlaybackControls() {
     doTickRef.current = doTick
   }, [doTick])
 
-  // Stop playing when the store says paused or completed
+  // Stop playing on completion only. A proposal pause keeps isPlaying so the run
+  // auto-resumes once the driver picks an option (paused → false).
   useEffect(() => {
-    if (paused || completed) {
+    if (completed) {
       setIsPlaying(false)
     }
-  }, [paused, completed])
+  }, [completed])
 
   // Manage interval
   useEffect(() => {

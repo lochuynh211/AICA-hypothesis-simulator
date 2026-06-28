@@ -112,7 +112,8 @@ function renderInStore(
   }
 
   const result = render(
-    <RunStoreProvider>
+    // Seed JA: these tests assert Japanese labels (the UI default is now English).
+    <RunStoreProvider initialLanguage="ja">
       <DispatchCapture />
       {ui}
     </RunStoreProvider>,

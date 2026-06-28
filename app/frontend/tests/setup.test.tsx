@@ -92,7 +92,8 @@ function renderInStore(
   }
 
   const result = render(
-    <RunStoreProvider>
+    // Seed JA: these tests assert Japanese schema labels (the UI default is now English).
+    <RunStoreProvider initialLanguage="ja">
       <DispatchCapture />
       {ui}
     </RunStoreProvider>,
@@ -119,12 +120,13 @@ describe('PackageSelector — T018', () => {
     })
 
     render(
-      <RunStoreProvider>
+      // Seed JA: asserts Japanese package labels (the UI default is now English).
+      <RunStoreProvider initialLanguage="ja">
         <PackageSelector />
       </RunStoreProvider>,
     )
 
-    // Both package labels should appear as options — default lang is 'ja'
+    // Both package labels should appear as options — store seeded to 'ja'
     await waitFor(() => {
       expect(screen.getByText(/ルールベース v0\.1/)).toBeInTheDocument()
       expect(screen.getByText(/重みスコア v0\.1/)).toBeInTheDocument()
@@ -150,7 +152,8 @@ describe('PackageSelector — T018', () => {
 
     // Use the real store but intercept by re-rendering with store so dispatch is shared
     render(
-      <RunStoreProvider>
+      // Seed JA: asserts Japanese package labels (the UI default is now English).
+      <RunStoreProvider initialLanguage="ja">
         <PackageSelector />
       </RunStoreProvider>,
     )
@@ -300,7 +303,7 @@ describe('HyperparameterEditor + PlanPreview — T024', () => {
       dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
     })
 
-    // Default uiLanguage is 'ja', so the label renders as '睡気重み'
+    // Store seeded to 'ja', so the label renders as '睡気重み'
     const input = (await screen.findByLabelText('睡気重み')) as HTMLInputElement
     expect(input).toHaveValue(0.4)
     expect(input).toHaveAttribute('step', '0.01')

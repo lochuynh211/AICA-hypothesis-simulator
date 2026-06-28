@@ -31,22 +31,57 @@ export default function RouteSegmentList() {
   }
 
   return (
-    <ul style={{ listStyle: 'none', padding: '0', margin: '0' }}>
-      {segments.map((seg) => (
-        <li
-          key={seg.id}
-          style={{
-            padding: '6px 8px',
-            background: seg.id === activeSegment?.id ? '#dbeafe' : 'transparent',
-            borderLeft: seg.id === activeSegment?.id ? '3px solid #2563eb' : '3px solid transparent',
-            fontSize: '0.85em',
-          }}
-        >
-          {t(seg.name, uiLanguage)}
-          <span style={{ color: '#888', marginLeft: '4px' }}>({seg.type})</span>
-          {seg.is_rest_facility && <span style={{ marginLeft: '4px', color: '#059669' }}>⊙ rest</span>}
-        </li>
-      ))}
+    <ul style={{ listStyle: 'none', padding: '0', margin: '0', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      {segments.map((seg) => {
+        const active = seg.id === activeSegment?.id
+        return (
+          <li
+            key={seg.id}
+            data-testid={`route-segment-${seg.id}`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '6px 8px',
+              borderRadius: '6px',
+              border: '1px solid #e5e7eb',
+              borderLeft: active ? '3px solid #2563eb' : '3px solid #e5e7eb',
+              background: active ? '#dbeafe' : '#fff',
+              fontSize: '0.85em',
+              fontWeight: active ? 600 : 400,
+            }}
+          >
+            <span aria-hidden style={{ fontSize: '1em' }}>{segIcon(seg)}</span>
+            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {t(seg.name, uiLanguage)}
+            </span>
+            {seg.is_rest_facility && (
+              <span style={{ color: '#059669', fontSize: '0.82em', fontWeight: 700 }}>⊙ rest</span>
+            )}
+          </li>
+        )
+      })}
     </ul>
   )
+}
+
+/** Emoji glyph for a route segment by type / rest-facility flag. */
+function segIcon(seg: RouteSegment): string {
+  if (seg.is_rest_facility || seg.type === 'rest') return '☕'
+  switch (seg.type) {
+    case 'start':
+      return '🏁'
+    case 'end':
+      return '🏁'
+    case 'highway':
+      return '🛣️'
+    case 'national':
+      return '🛤️'
+    case 'urban':
+      return '🏙️'
+    case 'residential':
+      return '🏘️'
+    default:
+      return '📍'
+  }
 }

@@ -245,12 +245,22 @@ def tick_endpoint(run_id: str):
     except RunNotFoundError:
         raise HTTPException(status_code=404, detail=f"Run {run_id!r} not found")
 
+    # Authoritative display position from the evaluated TickState (speed-integrated
+    # route_fraction + current speed), so the UI never re-derives position.
+    ts = outcome.tick_state
+    route_fraction = ts.route_fraction if ts is not None else None
+    distance_km = ts.distance_km if ts is not None else None
+    speed_kph = (ts.raw_state or {}).get("speedKph") if ts is not None else None
+
     if outcome.algorithm_error is not None:
         return {
             "run_state": outcome.run_state,
             "error": outcome.algorithm_error,
             "paused": outcome.paused,
             "tick_index": outcome.evaluated_tick_index,
+            "route_fraction": route_fraction,
+            "distance_km": distance_km,
+            "speed_kph": speed_kph,
         }
     return {
         "run_state": outcome.run_state,
@@ -258,6 +268,9 @@ def tick_endpoint(run_id: str):
         "paused": outcome.paused,
         "completed": outcome.completed,
         "tick_index": outcome.evaluated_tick_index,
+        "route_fraction": route_fraction,
+        "distance_km": distance_km,
+        "speed_kph": speed_kph,
     }
 
 

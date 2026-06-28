@@ -1,6 +1,5 @@
 import { useRunStore } from '../../state/runStore'
 import ProposalPanel from './ProposalPanel'
-import FeedbackForm from '../feedback/FeedbackForm'
 import { t } from '../../i18n/t'
 import type { LocalizedLabel } from '../../i18n/t'
 import type { ReplayTick } from '../../replay/replaySource'
@@ -58,32 +57,18 @@ export default function CockpitView({ replayTick }: { replayTick?: ReplayTick | 
     )
   }
 
-  // ── LIVE MODE — unchanged ───────────────────────────────────────────────────
+  // ── LIVE MODE — proposal overlay (option buttons only) ──────────────────────
+  // The proposal feedback form lives in the right review panel, not here, so the
+  // middle cockpit stays focused on the decision + its accept/decline options.
   if (paused && latestDecision?.proposal && runState) {
-    const proposalTarget = {
-      scope: 'proposal' as const,
-      tick_index: runState.current_tick,
-      proposal_id: latestDecision.proposal.id,
-    }
     return (
-      <div>
-        <ProposalPanel
-          proposal={latestDecision.proposal}
-          runId={runState.run_id}
-          reasonInputs={latestDecision.reason_inputs}
-          explanation={latestDecision.explanation as LocalizedLabel}
-          allowedActions={runState.allowed_actions ?? []}
-        />
-        <div
-          data-testid="proposal-feedback-section"
-          style={{ marginTop: '12px', padding: '8px', border: '1px solid #333', borderRadius: '4px', background: '#0f0f0f' }}
-        >
-          <div style={{ fontSize: '0.75em', fontWeight: 700, color: '#aaa', marginBottom: '6px', letterSpacing: '0.05em' }}>
-            PROPOSAL FEEDBACK
-          </div>
-          <FeedbackForm target={proposalTarget} />
-        </div>
-      </div>
+      <ProposalPanel
+        proposal={latestDecision.proposal}
+        runId={runState.run_id}
+        reasonInputs={latestDecision.reason_inputs}
+        explanation={latestDecision.explanation as LocalizedLabel}
+        allowedActions={runState.allowed_actions ?? []}
+      />
     )
   }
 

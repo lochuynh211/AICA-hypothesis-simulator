@@ -328,6 +328,12 @@ export type TickResponseSuccess = {
    * (completed no-op or tick_state.completed early-exit).
    */
   tick_index: number | null
+  /** Authoritative speed-integrated position (0–1) from the evaluated TickState. */
+  route_fraction?: number | null
+  /** Distance travelled so far (km). */
+  distance_km?: number | null
+  /** Current effective speed (kph) at this tick. */
+  speed_kph?: number | null
 }
 
 export type TickResponseError = {
@@ -351,7 +357,11 @@ export type TickResponse = TickResponseSuccess | TickResponseError
  * In-memory store trace entry: DecisionResult flattened with tick_index.
  * Used by runStore.ts; NOT the same as the persisted JSON shape.
  */
-export type TraceEntry = DecisionResult & { tick_index: number }
+export type TraceEntry = DecisionResult & {
+  tick_index: number
+  /** Authoritative route position (0–1) recorded with this tick, when available. */
+  route_fraction?: number | null
+}
 
 /**
  * Persisted trace entry shape (inside a TickEvent in the run log JSON).
