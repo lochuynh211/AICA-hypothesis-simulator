@@ -741,6 +741,9 @@ class TestEvidenceEndpoint:
     def test_report_has_unique_report_id_per_call(self, client, active_run_id):
         resp1 = client.get(f"/api/runs/{active_run_id}/evidence")
         resp2 = client.get(f"/api/runs/{active_run_id}/evidence")
-        # report_id must be present (uniqueness: just check it's a string)
-        assert isinstance(resp1.json()["report_id"], str)
-        assert isinstance(resp2.json()["report_id"], str)
+        report_id_1 = resp1.json()["report_id"]
+        report_id_2 = resp2.json()["report_id"]
+        assert isinstance(report_id_1, str)
+        assert isinstance(report_id_2, str)
+        # report_id is generated per call at the router boundary — must be unique.
+        assert report_id_1 != report_id_2
