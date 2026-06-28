@@ -1335,6 +1335,124 @@ def test_run_plan_draft_backward_compat_without_m4_fields():
     assert draft.display_route is None
 
 
+# ─── M5 T003 — RunLog FeedbackEvent union + profile fields ───────────────────
+
+
+VALID_FEEDBACK_EVENT = {
+    "kind": "feedback",
+    "target": {"scope": "run"},
+    "labels": {"overall_judgment": "good_trigger"},
+    "comment": "Looked good.",
+}
+
+
+def test_run_log_accepts_feedback_event_in_events():
+    """RunLog with a FeedbackEvent in events deserialises correctly (M5 T003)."""
+    from aica_api.models.log import RunLog
+
+    log = RunLog(**{
+        **VALID_RUN_LOG,
+        "events": [VALID_FEEDBACK_EVENT],
+    })
+    assert len(log.events) == 1
+    evt = log.events[0]
+    assert evt.kind == "feedback"
+
+
+def test_run_log_feedback_event_discriminated_type():
+    """The deserialized feedback event is a FeedbackEvent instance (M5 T003)."""
+    from aica_api.models.feedback import FeedbackEvent
+    from aica_api.models.log import RunLog
+
+    log = RunLog(**{
+        **VALID_RUN_LOG,
+        "events": [VALID_FEEDBACK_EVENT],
+    })
+    assert isinstance(log.events[0], FeedbackEvent)
+
+
+def test_run_log_feedback_event_json_roundtrip():
+    """A RunLog with a FeedbackEvent round-trips JSON (M5 T003)."""
+    from aica_api.models.log import RunLog
+
+    log = RunLog(**{
+        **VALID_RUN_LOG,
+        "events": [VALID_FEEDBACK_EVENT],
+    })
+    json_str = log.model_dump_json()
+    log2 = RunLog.model_validate_json(json_str)
+    assert len(log2.events) == 1
+    assert log2.events[0].kind == "feedback"
+
+
+def test_run_log_mixed_events_with_feedback():
+    """RunLog accepts a mix of tick, action, algorithm_error, and feedback events (M5 T003)."""
+    from aica_api.models.feedback import FeedbackEvent
+    from aica_api.models.log import ActionEvent, RunLog, TickEvent
+
+    log = RunLog(**{
+        **VALID_RUN_LOG,
+        "events": [
+            {
+                "kind": "tick",
+                "tick_index": 0,
+                "tick_state": VALID_TICK_STATE,
+                "trace": VALID_TRACE,
+            },
+            {
+                "kind": "action",
+                "tick_index": 0,
+                "action": "accept_rest",
+                "resulting_status": "completed",
+            },
+            VALID_FEEDBACK_EVENT,
+        ],
+    })
+    assert isinstance(log.events[0], TickEvent)
+    assert isinstance(log.events[1], ActionEvent)
+    assert isinstance(log.events[2], FeedbackEvent)
+
+
+def test_run_log_accepts_driver_vehicle_speed_profiles():
+    """RunLog accepts driver_profile, vehicle_profile, speed_profile (M5 T003)."""
+    from aica_api.models.log import RunLog
+
+    log = RunLog(**{
+        **VALID_RUN_LOG,
+        "driver_profile": {"id": "default_driver", "drowsiness_model": {}},
+        "vehicle_profile": {"rolling_window_seconds": 300},
+        "speed_profile": {"highway_kph": 100},
+    })
+    assert log.driver_profile == {"id": "default_driver", "drowsiness_model": {}}
+    assert log.vehicle_profile == {"rolling_window_seconds": 300}
+    assert log.speed_profile == {"highway_kph": 100}
+
+
+def test_run_log_profiles_default_none_backward_compat():
+    """RunLog without profile fields still validates — profiles default to None (M5 T003, M1–M4 compat)."""
+    from aica_api.models.log import RunLog
+
+    log = RunLog(**VALID_RUN_LOG)
+    assert log.driver_profile is None
+    assert log.vehicle_profile is None
+    assert log.speed_profile is None
+
+
+def test_run_log_json_roundtrip_with_profiles():
+    """RunLog with profiles round-trips JSON (M5 T003)."""
+    from aica_api.models.log import RunLog
+
+    log = RunLog(**{
+        **VALID_RUN_LOG,
+        "driver_profile": {"id": "dp1"},
+        "vehicle_profile": {"rolling_window_seconds": 60},
+        "speed_profile": {"highway_kph": 80},
+    })
+    log2 = RunLog.model_validate_json(log.model_dump_json())
+    assert log2.driver_profile == {"id": "dp1"}
+    assert log2.speed_profile == {"highway_kph": 80}
+
+
 def test_key_safety_no_maps_key_in_models():
     """No persisted model defines a maps_key or key field (M4 T002 key-safety guard)."""
     from aica_api.models.run import DisplayRoute, RouteFacts, RunPlanDraft, RunState

@@ -159,6 +159,85 @@ def test_create_run_route_facts_has_bands(tmp_path, uc01_package, uc01_scenario)
     assert "drowsiness_level" in state.route_facts.bands
 
 
+# ─── M5 T003 — create_run persists profiles into the RunLog ──────────────────
+
+
+def test_create_run_persists_driver_profile_in_log(tmp_path, uc01_package, uc01_scenario):
+    """create_run writes driver_profile into the persisted RunLog (M5 T003).
+
+    uc01_fatigue_friend_drive_v0_1 has a driver_profile — confirm it is
+    threaded through into RunLog.driver_profile on disk.
+    """
+    _plan_and_run(uc01_package, uc01_scenario, "run_dp", tmp_path)
+    data = json.loads((tmp_path / "run_dp.json").read_text(encoding="utf-8"))
+    log = RunLog(**data)
+    # The uc01 scenario has a driver_profile — must be present in the log
+    assert log.driver_profile is not None
+    assert isinstance(log.driver_profile, dict)
+    # Spot-check: the scenario's driver_profile has an "id" key
+    assert "id" in log.driver_profile
+
+
+def test_create_run_persists_vehicle_profile_in_log(tmp_path, uc01_package, uc01_scenario):
+    """create_run writes vehicle_profile into the persisted RunLog (M5 T003)."""
+    _plan_and_run(uc01_package, uc01_scenario, "run_vp", tmp_path)
+    data = json.loads((tmp_path / "run_vp.json").read_text(encoding="utf-8"))
+    log = RunLog(**data)
+    assert log.vehicle_profile is not None
+    assert isinstance(log.vehicle_profile, dict)
+
+
+def test_create_run_persists_speed_profile_in_log(tmp_path, uc01_package, uc01_scenario):
+    """create_run writes speed_profile into the persisted RunLog (M5 T003)."""
+    _plan_and_run(uc01_package, uc01_scenario, "run_sp", tmp_path)
+    data = json.loads((tmp_path / "run_sp.json").read_text(encoding="utf-8"))
+    log = RunLog(**data)
+    assert log.speed_profile is not None
+    assert isinstance(log.speed_profile, dict)
+
+
+def test_create_run_profiles_none_for_m1_scenario(tmp_path, uc01_package, uc01_scenario):
+    """A scenario without profiles produces None profile fields in the log (backward compat, M5 T003)."""
+    import copy
+
+    # Build a minimal M1-style scenario without profiles
+    from aica_api.models.scenario import ScenarioDef
+
+    m1_data = {
+        "id": "uc01_fatigue_friend_drive_v0_1",
+        "version": "0.1.0",
+        "type": "uc01_fatigue",
+        "persona": {"name": "Kenji", "description": "A tired commuter"},
+        "route_intent": {
+            "rest_facility": {"label": {"ja": "SA花輪", "en": "Hanawa SA"}},
+            "segments": [
+                {"id": "s0", "name": {"ja": "出発", "en": "Start"}, "type": "start",
+                 "at": 0.0, "speed_band": "low", "length_band": "short", "is_rest_facility": False},
+                {"id": "s1", "name": {"ja": "SA", "en": "SA"}, "type": "rest",
+                 "at": 0.6, "speed_band": "low", "length_band": "short", "is_rest_facility": True},
+                {"id": "s2", "name": {"ja": "到着", "en": "End"}, "type": "end",
+                 "at": 1.0, "speed_band": "low", "length_band": "short", "is_rest_facility": False},
+            ],
+        },
+        "initial_state": {"drowsiness_level": "mild", "fatigue_level": "medium"},
+        "event_presets": {
+            "drowsiness_schedule": [{"at": 0.0, "band": "mild"}],
+            "signal_duration_at_trigger": "sustained",
+            "rest_spot_eta_near_before": "s1",
+        },
+        "total_duration_seconds": 7200,
+        "tick_seconds": 60,
+        "allowed_actions": ["accept_rest", "postpone"],
+    }
+    scenario_no_profiles = ScenarioDef(**m1_data)
+    _plan_and_run(uc01_package, scenario_no_profiles, "run_m1_no_prof", tmp_path)
+    data = json.loads((tmp_path / "run_m1_no_prof.json").read_text(encoding="utf-8"))
+    log = RunLog(**data)
+    assert log.driver_profile is None
+    assert log.vehicle_profile is None
+    assert log.speed_profile is None
+
+
 # ---------------------------------------------------------------------------
 # tick — normal advance
 # ---------------------------------------------------------------------------

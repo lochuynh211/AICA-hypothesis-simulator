@@ -391,6 +391,9 @@ def create_run(
     )
 
     # Initial RunLog
+    # M5: thread driver/vehicle/speed profiles from the scenario into the log
+    # so the §14.2 evidence export has them.  The values are already on run_state
+    # (sourced from scenario.{driver,vehicle,speed}_profile above).
     run_log = RunLog(
         run_id=run_id,
         created_at=_now_iso(),
@@ -409,6 +412,9 @@ def create_run(
         events=[],
         route_source=draft_route_source,
         display_route=draft_display_route,
+        driver_profile=run_state.driver_profile,
+        vehicle_profile=run_state.vehicle_profile,
+        speed_profile=run_state.speed_profile,
     )
 
     recorder = EvidenceRecorder(run_log, runs_dir)

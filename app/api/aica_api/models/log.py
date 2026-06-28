@@ -5,6 +5,10 @@ M2 extensions:
   package_runtime_state (in addition to the decision trace).
 - RunLog carries original_values / modified_values + extended RunState snapshot fields.
 - ActionEvent.action explicitly accepts "decline" (in addition to M1 accept_rest/postpone).
+
+M5 additions:
+- FeedbackEvent added to the discriminated Event union (append-only reviewer evidence).
+- RunLog carries driver_profile, vehicle_profile, speed_profile (optional; M1–M4 compat).
 """
 
 from __future__ import annotations
@@ -14,6 +18,7 @@ from typing import Annotated, Any, Literal, Union
 from pydantic import BaseModel, Field
 
 from aica_api.models.decision import DecisionResult
+from aica_api.models.feedback import FeedbackEvent
 from aica_api.models.run import DisplayRoute, EventPlan, FeatureGroups, RouteFacts, Snapshot, TickState
 
 
@@ -76,8 +81,9 @@ class AlgorithmError(BaseModel):
 
 
 # Pydantic v2 discriminated union on the `kind` literal
+# M5: FeedbackEvent added alongside the simulator-generated event types.
 Event = Annotated[
-    Union[TickEvent, ActionEvent, AlgorithmError],
+    Union[TickEvent, ActionEvent, AlgorithmError, FeedbackEvent],
     Field(discriminator="kind"),
 ]
 
@@ -117,3 +123,8 @@ class RunLog(BaseModel):
     # M4: route provenance + display snapshot (optional; defaults preserve M1-M3 compat)
     route_source: Literal["maps", "local"] = "local"
     display_route: DisplayRoute | None = None
+
+    # M5: driver/vehicle/speed profiles (optional; None preserves M1–M4 log deserialization)
+    driver_profile: dict | None = None
+    vehicle_profile: dict | None = None
+    speed_profile: dict | None = None
