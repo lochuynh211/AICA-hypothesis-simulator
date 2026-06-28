@@ -23,7 +23,6 @@ const C = {
   rowSelected: '#dbeafe',
   muted: '#6b7280',
   text: '#111827',
-  error: '#dc2626',
 }
 
 type RunListProps = {

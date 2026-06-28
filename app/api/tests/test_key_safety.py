@@ -276,16 +276,13 @@ class TestComprehensiveKeySafety:
 
         # GET /evidence (JSON)
         evidence_resp = client.get(f"/api/runs/{run_id}/evidence")
-        # May be 404 if not yet implemented — in that case skip assertion
-        if evidence_resp.status_code != 404:
-            assert evidence_resp.status_code == 200
-            _assert_sentinel_absent(evidence_resp.text, "GET /evidence response")
+        assert evidence_resp.status_code == 200
+        _assert_sentinel_absent(evidence_resp.text, "GET /evidence response")
 
         # GET /evidence.md
         evidence_md_resp = client.get(f"/api/runs/{run_id}/evidence.md")
-        if evidence_md_resp.status_code != 404:
-            assert evidence_md_resp.status_code == 200
-            _assert_sentinel_absent(evidence_md_resp.text, "GET /evidence.md response")
+        assert evidence_md_resp.status_code == 200
+        _assert_sentinel_absent(evidence_md_resp.text, "GET /evidence.md response")
 
     def test_key_absent_evidence_endpoint_places_degraded(self, client, tmp_path, monkeypatch):
         """Evidence endpoints (degraded): sentinel absent from GET /evidence and GET /evidence.md."""
@@ -335,12 +332,10 @@ class TestComprehensiveKeySafety:
 
         # GET /evidence (JSON)
         evidence_resp = client.get(f"/api/runs/{run_id}/evidence")
-        if evidence_resp.status_code != 404:
-            assert evidence_resp.status_code == 200
-            _assert_sentinel_absent(evidence_resp.text, "GET /evidence response (degraded)")
+        assert evidence_resp.status_code == 200
+        _assert_sentinel_absent(evidence_resp.text, "GET /evidence response (degraded)")
 
         # GET /evidence.md
         evidence_md_resp = client.get(f"/api/runs/{run_id}/evidence.md")
-        if evidence_md_resp.status_code != 404:
-            assert evidence_md_resp.status_code == 200
-            _assert_sentinel_absent(evidence_md_resp.text, "GET /evidence.md response (degraded)")
+        assert evidence_md_resp.status_code == 200
+        _assert_sentinel_absent(evidence_md_resp.text, "GET /evidence.md response (degraded)")
