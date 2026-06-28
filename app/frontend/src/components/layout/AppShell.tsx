@@ -29,19 +29,19 @@ type Props = {
 
 export default function AppShell({ healthStatus }: Props) {
   const { state, dispatch } = useRunStore()
-  const { viewMode, planId } = state
+  const { viewMode, planId, runError } = state
 
   /** Restart — re-run the current frozen plan from tick 0 (session-scoped).
    *  Requires a planId from PLAN_DRAFTED; unavailable if no plan has been drafted.
    *  Does NOT return to Setup — stays on Review with a fresh run. */
   async function handleRestart() {
     if (!planId) return
+    dispatch({ type: 'SET_RUN_ERROR', message: null })
     try {
       const rs = await createRun(planId)
       dispatch({ type: 'RUN_CREATED', runState: rs })
-    } catch {
-      // Errors surface through the existing runError mechanism in PlanPreview;
-      // AppShell does not own an error surface — leave it silent here.
+    } catch (e) {
+      dispatch({ type: 'SET_RUN_ERROR', message: e instanceof Error ? e.message : 'Restart failed' })
     }
   }
 
@@ -184,6 +184,19 @@ export default function AppShell({ healthStatus }: Props) {
               >
                 ↺ Restart
               </button>
+
+              {/* Inline restart error — shown in the affordance bar so it is visible
+                  on the Review screen. runError is also rendered in PlanPreview (Setup
+                  screen) but would be invisible to the user here without this surface. */}
+              {runError && (
+                <span
+                  role="alert"
+                  data-testid="restart-error"
+                  style={{ fontSize: '0.75em', color: '#c00' }}
+                >
+                  {runError}
+                </span>
+              )}
             </div>
 
             {/* 3-panel grid — left: context only; center: playback; right: trace+feedback */}

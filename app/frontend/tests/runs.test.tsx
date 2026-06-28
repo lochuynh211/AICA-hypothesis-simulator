@@ -14,7 +14,7 @@
  *  - EvidencePanel accepts explicit runId prop and renders/uses it.
  */
 
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
 import { RunStoreProvider, useRunStore } from '../src/state/runStore'
@@ -224,6 +224,31 @@ describe('T006 — Restart (session-scoped, Review affordance)', () => {
     })
     expect(screen.queryByTestId('setup-screen')).not.toBeInTheDocument()
   })
+
+  it('failed restart dispatches SET_RUN_ERROR and shows the error in the affordance bar', async () => {
+    vi.mocked(client.createRun).mockRejectedValue(new Error('backend down'))
+
+    const { getDispatch } = renderInStore(<AppShell />)
+
+    act(() => {
+      getDispatch()({ type: 'PLAN_DRAFTED', planId: 'plan-abc', draftPlan: {}, effectiveSetup: {} })
+      getDispatch()({ type: 'RUN_CREATED', runState: createdRun })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('review-screen')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByTestId('restart-run-btn'))
+
+    // Error must appear inline in the Review affordance bar (not silently swallowed)
+    await waitFor(() => {
+      expect(screen.getByTestId('restart-error')).toBeInTheDocument()
+      expect(screen.getByTestId('restart-error')).toHaveTextContent('backend down')
+    })
+    // Still on Review — restart failure does not navigate away
+    expect(screen.getByTestId('review-screen')).toBeInTheDocument()
+  })
 })
 
 // ── T007 — RunList + Read-Only Evidence ───────────────────────────────────────
@@ -304,8 +329,12 @@ describe('T007 — RunsScreen: RunList and read-only evidence', () => {
       expect(screen.getByTestId('past-run-evidence')).toBeInTheDocument()
     })
 
-    // No restart affordance in the past-run view
-    expect(screen.queryByTestId('restart-run-btn')).not.toBeInTheDocument()
+    // restart-run-btn is AppShell/Review-scoped by design — it lives in the Review
+    // affordance bar rendered by AppShell, not inside RunsScreen or past-run-evidence.
+    // Assert it is absent within the past-run-evidence panel specifically.
+    expect(
+      within(screen.getByTestId('past-run-evidence')).queryByTestId('restart-run-btn'),
+    ).not.toBeInTheDocument()
   })
 
   it('closing (deselecting) a run hides the past-run-evidence panel', async () => {
@@ -429,5 +458,28 @@ describe('T007 — EvidencePanel: explicit runId prop', () => {
 
     const dlBtn = screen.getByTestId('evidence-download-btn')
     expect(dlBtn).toHaveTextContent('active-run-id')
+  })
+
+  it('copy passes explicit runId and uiLanguage from store to getEvidence', async () => {
+    // Proves that past-run export respects the current uiLanguage setting even when
+    // the runId comes from a prop rather than the active run in the store.
+    vi.mocked(client.getEvidence).mockResolvedValue({} as never)
+
+    // Mock clipboard so the copy handler does not throw
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: vi.fn().mockResolvedValue(undefined) },
+      writable: true,
+      configurable: true,
+    })
+
+    renderInStore(<EvidencePanel runId="past-run-id" />, (dispatch) => {
+      dispatch({ type: 'SET_LANGUAGE', lang: 'en' })
+    })
+
+    fireEvent.click(screen.getByTestId('evidence-copy-btn'))
+
+    await waitFor(() => {
+      expect(client.getEvidence).toHaveBeenCalledWith('past-run-id', 'en')
+    })
   })
 })
