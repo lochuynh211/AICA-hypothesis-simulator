@@ -21,6 +21,7 @@ import LeftContextPanel from './LeftContextPanel'
 import CenterPlaybackPanel from './CenterPlaybackPanel'
 import RightReviewPanel from './RightReviewPanel'
 import LanguageToggle from './LanguageToggle'
+import ErrorNotice from '../common/ErrorNotice'
 
 type Props = {
   /** Health status string from the backend — shown in the header when available. */
@@ -189,13 +190,7 @@ export default function AppShell({ healthStatus }: Props) {
                   on the Review screen. runError is also rendered in PlanPreview (Setup
                   screen) but would be invisible to the user here without this surface. */}
               {runError && (
-                <span
-                  role="alert"
-                  data-testid="restart-error"
-                  style={{ fontSize: '0.75em', color: '#c00' }}
-                >
-                  {runError}
-                </span>
+                <ErrorNotice testid="restart-error" message={runError} />
               )}
             </div>
 

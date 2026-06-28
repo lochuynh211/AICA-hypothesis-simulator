@@ -3,6 +3,7 @@ import { useRunStore } from '../../state/runStore'
 import { getPackage } from '../../api/client'
 import type { HyperparameterDef, SetupValue, ValidationError } from '../../api/types'
 import { t } from '../../i18n/t'
+import ErrorNotice from '../common/ErrorNotice'
 
 /**
  * HyperparameterEditor (T024) — renders the selected package's hyperparameter
@@ -120,13 +121,7 @@ export default function HyperparameterEditor() {
               />
             )}
             {fieldError && (
-              <p
-                role="alert"
-                data-testid={`hp-error-${def.key}`}
-                style={{ color: '#c00', fontSize: '0.7em', margin: '2px 0 0' }}
-              >
-                {fieldError.message}
-              </p>
+              <ErrorNotice testid={`hp-error-${def.key}`} message={fieldError.message} />
             )}
           </div>
         )

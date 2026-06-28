@@ -3,6 +3,7 @@ import { useRunStore } from '../../state/runStore'
 import { routesAnalyze } from '../../api/client'
 import { MapsError } from '../../api/types'
 import type { RouteAlternative, RouteNotice } from '../../api/types'
+import ErrorNotice from '../common/ErrorNotice'
 
 /**
  * MapKeyAndRouteInput (T007 / M4) — BYO Maps API key + route input + alternative picker.
@@ -158,26 +159,14 @@ export default function MapKeyAndRouteInput() {
 
       {/* 502 Maps error */}
       {mapsError && (
-        <div
-          role="alert"
-          data-testid="maps-error"
-          style={{ background: '#fff3f3', border: '1px solid #fca5a5', borderRadius: '4px', padding: '8px', marginBottom: '6px' }}
-        >
-          <p style={{ margin: '0 0 6px', fontSize: '0.8em', color: '#b91c1c' }}>
-            {mapsError.message}
-          </p>
+        <ErrorNotice testid="maps-error" message={mapsError.message}>
           {mapsError.suggestion && (
-            <p style={{ margin: '0 0 6px', fontSize: '0.75em', color: '#666' }}>
-              {mapsError.suggestion}
-            </p>
+            <p style={{ margin: '4px 0', fontSize: '0.9em', color: '#666' }}>{mapsError.suggestion}</p>
           )}
-          <button
-            onClick={handleUseLocalRoute}
-            style={{ fontSize: '0.8em', padding: '4px 8px' }}
-          >
+          <button onClick={handleUseLocalRoute} style={{ fontSize: '0.8em', padding: '4px 8px', marginTop: '4px' }}>
             Use local route
           </button>
-        </div>
+        </ErrorNotice>
       )}
 
       {/* Alternatives list */}

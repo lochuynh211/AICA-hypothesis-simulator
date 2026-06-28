@@ -13,6 +13,7 @@
 import { useState, useEffect } from 'react'
 import { listRuns } from '../../api/client'
 import type { RunSummary } from '../../api/types'
+import ErrorNotice from '../common/ErrorNotice'
 
 const C = {
   bg: '#fff',
@@ -61,14 +62,7 @@ export default function RunList({ onSelect, selectedRunId }: RunListProps) {
   }
 
   if (error) {
-    return (
-      <div
-        data-testid="run-list-error"
-        style={{ padding: '12px', color: C.error, fontSize: '0.9em' }}
-      >
-        Error: {error}
-      </div>
-    )
+    return <ErrorNotice testid="run-list-error" message={`Error: ${error}`} />
   }
 
   if (runs.length === 0) {

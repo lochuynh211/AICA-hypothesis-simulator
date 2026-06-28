@@ -15,13 +15,13 @@ import { getRunLog } from '../../api/client'
 import { useRunStore } from '../../state/runStore'
 import type {
   RunLog,
-  RunLogEvent,
   TickEvent,
   ActionEvent,
   AlgorithmErrorEvent,
   FeedbackEvent,
   FeedbackTarget,
 } from '../../api/types'
+import ErrorNotice from '../common/ErrorNotice'
 
 // ── Colour tokens (dark-theme, matches DecisionTracePanel palette) ─────────────
 
@@ -497,12 +497,7 @@ export default function RunLogViewer({ runId: runIdProp }: RunLogViewerProps = {
 
       {/* Error */}
       {error && (
-        <div
-          data-testid="runlog-error"
-          style={{ color: '#f66', padding: '6px 8px', background: '#200' }}
-        >
-          Error: {error}
-        </div>
+        <ErrorNotice testid="runlog-error" message={`Error: ${error}`} />
       )}
 
       {/* Timeline */}

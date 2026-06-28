@@ -226,3 +226,121 @@ class TestComprehensiveKeySafety:
         )
         assert resp.status_code == 502
         _assert_sentinel_absent(resp.text, "502 error response")
+
+    def test_key_absent_evidence_endpoint_places_success(self, client, tmp_path, monkeypatch):
+        """Evidence endpoints: sentinel absent from GET /evidence and GET /evidence.md."""
+        monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+
+        dir_data = _fixture_bytes("directions_3_alternatives.json")
+        places_data = _fixture_bytes("places_service_area.json")
+        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq([dir_data, places_data, places_data, places_data]))
+
+        # Full setup: analyze → plan → run → tick
+        analyze_resp = client.post(
+            "/api/routes/analyze",
+            json={
+                "scenario_id": VALID_SCENARIO_ID,
+                "maps_key": _SENTINEL,
+                "start": "Origin City",
+                "end": "Destination City",
+            },
+        )
+        assert analyze_resp.status_code == 200
+        alt0 = analyze_resp.json()["alternatives"][0]
+
+        plan_resp = client.post(
+            "/api/run-plans",
+            json={
+                "package_id": VALID_PACKAGE_ID,
+                "scenario_id": VALID_SCENARIO_ID,
+                "route_id": alt0["route_id"],
+                "route_source": "maps",
+                "route_facts": alt0["route_facts"],
+                "display_route": alt0["display"],
+                "parameters": {},
+                "hyperparameters": {},
+            },
+        )
+        assert plan_resp.status_code == 201
+        plan_id = plan_resp.json()["plan_id"]
+
+        run_resp = client.post("/api/runs", json={"plan_id": plan_id})
+        assert run_resp.status_code == 201
+        run_id = run_resp.json()["run_id"]
+
+        for i in range(5):
+            tick_resp = client.post(f"/api/runs/{run_id}/tick")
+            assert tick_resp.status_code == 200
+            if tick_resp.json().get("completed") or tick_resp.json().get("paused"):
+                break
+
+        # GET /evidence (JSON)
+        evidence_resp = client.get(f"/api/runs/{run_id}/evidence")
+        # May be 404 if not yet implemented — in that case skip assertion
+        if evidence_resp.status_code != 404:
+            assert evidence_resp.status_code == 200
+            _assert_sentinel_absent(evidence_resp.text, "GET /evidence response")
+
+        # GET /evidence.md
+        evidence_md_resp = client.get(f"/api/runs/{run_id}/evidence.md")
+        if evidence_md_resp.status_code != 404:
+            assert evidence_md_resp.status_code == 200
+            _assert_sentinel_absent(evidence_md_resp.text, "GET /evidence.md response")
+
+    def test_key_absent_evidence_endpoint_places_degraded(self, client, tmp_path, monkeypatch):
+        """Evidence endpoints (degraded): sentinel absent from GET /evidence and GET /evidence.md."""
+        monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+
+        dir_data = _fixture_bytes("directions_3_alternatives.json")
+        fail_data = _fixture_bytes("places_failure.json")
+        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq([dir_data, fail_data, fail_data, fail_data]))
+
+        analyze_resp = client.post(
+            "/api/routes/analyze",
+            json={
+                "scenario_id": VALID_SCENARIO_ID,
+                "maps_key": _SENTINEL,
+                "start": "Origin City",
+                "end": "Destination City",
+            },
+        )
+        assert analyze_resp.status_code == 200
+        alt0 = analyze_resp.json()["alternatives"][0]
+
+        plan_resp = client.post(
+            "/api/run-plans",
+            json={
+                "package_id": VALID_PACKAGE_ID,
+                "scenario_id": VALID_SCENARIO_ID,
+                "route_id": alt0["route_id"],
+                "route_source": "maps",
+                "route_facts": alt0["route_facts"],
+                "display_route": alt0["display"],
+                "parameters": {},
+                "hyperparameters": {},
+            },
+        )
+        assert plan_resp.status_code == 201
+        plan_id = plan_resp.json()["plan_id"]
+
+        run_resp = client.post("/api/runs", json={"plan_id": plan_id})
+        assert run_resp.status_code == 201
+        run_id = run_resp.json()["run_id"]
+
+        for i in range(5):
+            tick_resp = client.post(f"/api/runs/{run_id}/tick")
+            assert tick_resp.status_code == 200
+            if tick_resp.json().get("completed") or tick_resp.json().get("paused"):
+                break
+
+        # GET /evidence (JSON)
+        evidence_resp = client.get(f"/api/runs/{run_id}/evidence")
+        if evidence_resp.status_code != 404:
+            assert evidence_resp.status_code == 200
+            _assert_sentinel_absent(evidence_resp.text, "GET /evidence response (degraded)")
+
+        # GET /evidence.md
+        evidence_md_resp = client.get(f"/api/runs/{run_id}/evidence.md")
+        if evidence_md_resp.status_code != 404:
+            assert evidence_md_resp.status_code == 200
+            _assert_sentinel_absent(evidence_md_resp.text, "GET /evidence.md response (degraded)")

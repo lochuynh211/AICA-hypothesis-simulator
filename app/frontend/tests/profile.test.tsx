@@ -445,3 +445,67 @@ describe('ProfileEditor — T009', () => {
     expect(screen.getByTestId('profile-field-vehicle-rolling_window_seconds')).toHaveValue(300)
   })
 })
+
+// Additional fixture: scenario WITHOUT speed_profile
+const scenarioWithoutSpeed = {
+  id: 'uc01_no_speed_v0_1',
+  version: '0.2.0',
+  type: 'uc01_fatigue',
+  persona: { name: 'Haruto Tanaka', description: 'Test persona' },
+  route_intent: {
+    rest_facility: { label: { ja: '道の駅', en: 'Roadside Station' } },
+    segments: [],
+  },
+  initial_state: {},
+  event_presets: { signal_duration_at_trigger: 'sustained' },
+  total_duration_seconds: 7200,
+  tick_seconds: 60,
+  allowed_actions: ['accept', 'decline'],
+  review_focus: 'No speed profile',
+  driver_profile: driverProfileA,
+  vehicle_profile: vehicleProfileA,
+  speed_profile: null,
+}
+
+describe('ProfileEditor — U9 Minors', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    vi.mocked(client.listPackages).mockResolvedValue({ packages: [], errors: [] })
+    vi.mocked(client.listScenarios).mockResolvedValue({ scenarios: [], errors: [] })
+  })
+
+  it('scenario without speed_profile still renders driver+vehicle sections, speed section absent', async () => {
+    vi.mocked(client.getScenario).mockResolvedValue(scenarioWithoutSpeed)
+
+    renderInStore(<ProfileEditor />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_no_speed_v0_1' })
+    })
+
+    // Driver and vehicle fields should appear
+    await waitFor(() => {
+      expect(screen.getByTestId('profile-field-driver-drowsiness_model-base_growth_per_min')).toBeInTheDocument()
+    })
+    expect(screen.getByTestId('profile-field-vehicle-rolling_window_seconds')).toBeInTheDocument()
+
+    // Speed fields should NOT be present
+    expect(screen.queryByTestId('profile-field-speed-normal_road_kph')).not.toBeInTheDocument()
+  })
+
+  it('clearing a numeric field does not force it to 0 (empty input stays non-zero, not wiped)', async () => {
+    vi.mocked(client.getScenario).mockResolvedValue(scenarioWithProfiles)
+
+    renderInStore(<ProfileEditor />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('profile-field-driver-drowsiness_model-base_growth_per_min')).toBeInTheDocument()
+    })
+
+    const input = screen.getByTestId('profile-field-driver-drowsiness_model-base_growth_per_min')
+    // Simulate clearing the field (empty string) — should NOT force it to 0
+    fireEvent.change(input, { target: { value: '' } })
+    // The displayed value should be empty (not forced to 0)
+    expect((input as HTMLInputElement).value).toBe('')
+  })
+})

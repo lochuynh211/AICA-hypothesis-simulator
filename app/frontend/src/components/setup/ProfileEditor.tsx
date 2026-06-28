@@ -180,16 +180,16 @@ function extractSpeedEdits(sp: Record<string, unknown>): SpeedEdits {
 // ── Sparse override computation ────────────────────────────────────────────────
 
 function computeSparseOverride(
-  driverEdits: DriverEdits,
-  vehicleEdits: VehicleEdits,
-  speedEdits: SpeedEdits,
+  driverEdits: DriverEdits | null,
+  vehicleEdits: VehicleEdits | null,
+  speedEdits: SpeedEdits | null,
   scenarioDef: ScenarioDef,
 ): ProfileOverrides | null {
   const overrides: ProfileOverrides = {}
 
   // ─── Driver ───────────────────────────────────────────────────────────────
   const dp = scenarioDef.driver_profile as Record<string, Record<string, number>> | null | undefined
-  if (dp) {
+  if (dp && driverEdits) {
     const driverOverride: Record<string, Record<string, number>> = {}
     const submodels: Array<keyof DriverEdits> = [
       'drowsiness_model',
@@ -211,7 +211,7 @@ function computeSparseOverride(
 
   // ─── Vehicle ──────────────────────────────────────────────────────────────
   const vp = scenarioDef.vehicle_profile as Record<string, unknown> | null | undefined
-  if (vp) {
+  if (vp && vehicleEdits) {
     const vehicleOverride: Record<string, unknown> = {}
 
     // rolling_window_seconds (top-level scalar)
@@ -235,7 +235,9 @@ function computeSparseOverride(
       const defaults = (vp.lane_departure ?? {}) as Record<string, unknown>
       const current = vehicleEdits.lane_departure
       const subDiff: Record<string, unknown> = {}
-      if (JSON.stringify(current.enabled_on) !== JSON.stringify(defaults.enabled_on)) {
+      const _sortedCurrent = [...current.enabled_on].sort()
+      const _sortedDefault = [...((defaults.enabled_on as string[]) ?? [])].sort()
+      if (JSON.stringify(_sortedCurrent) !== JSON.stringify(_sortedDefault)) {
         subDiff.enabled_on = current.enabled_on
       }
       if (current.drowsiness_threshold !== (defaults.drowsiness_threshold as number)) {
@@ -277,7 +279,7 @@ function computeSparseOverride(
 
   // ─── Speed ────────────────────────────────────────────────────────────────
   const sp = scenarioDef.speed_profile as Record<string, number> | null | undefined
-  if (sp) {
+  if (sp && speedEdits) {
     const speedDiff: Record<string, number> = {}
     for (const [field, val] of Object.entries(speedEdits)) {
       if (val !== sp[field]) speedDiff[field] = val
@@ -316,6 +318,13 @@ function NumericField({
   onChange: (v: number) => void
   step?: string | number
 }) {
+  const [display, setDisplay] = useState(String(value))
+
+  // Sync when parent resets or changes the value externally
+  useEffect(() => {
+    setDisplay(String(value))
+  }, [value])
+
   return (
     <div style={S.row}>
       <label htmlFor={testid} style={S.label}>
@@ -325,10 +334,18 @@ function NumericField({
         id={testid}
         data-testid={testid}
         type="number"
-        value={value}
+        value={display}
         min={0}
         step={step}
-        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+        onChange={(e) => {
+          setDisplay(e.target.value)
+          const n = parseFloat(e.target.value)
+          if (!isNaN(n)) onChange(n)
+        }}
+        onBlur={() => {
+          const n = parseFloat(display)
+          if (isNaN(n)) setDisplay(String(value))
+        }}
         style={S.input}
       />
     </div>
@@ -383,8 +400,8 @@ export default function ProfileEditor() {
     sub: keyof DriverEdits,
     field: string,
     value: number,
-    currentVehicle: VehicleEdits,
-    currentSpeed: SpeedEdits,
+    currentVehicle: VehicleEdits | null,
+    currentSpeed: SpeedEdits | null,
   ) {
     const nextEdits: DriverEdits = {
       ...driverEdits!,
@@ -401,8 +418,8 @@ export default function ProfileEditor() {
 
   function updateVehicle(
     nextVehicle: VehicleEdits,
-    currentDriver: DriverEdits,
-    currentSpeed: SpeedEdits,
+    currentDriver: DriverEdits | null,
+    currentSpeed: SpeedEdits | null,
   ) {
     setVehicleEdits(nextVehicle)
     if (localDef) {
@@ -413,7 +430,7 @@ export default function ProfileEditor() {
     }
   }
 
-  function updateSpeed(field: keyof SpeedEdits, value: number, currentDriver: DriverEdits, currentVehicle: VehicleEdits) {
+  function updateSpeed(field: keyof SpeedEdits, value: number, currentDriver: DriverEdits | null, currentVehicle: VehicleEdits | null) {
     const nextSpeed: SpeedEdits = { ...speedEdits!, [field]: value }
     setSpeedEdits(nextSpeed)
     if (localDef) {
@@ -432,10 +449,10 @@ export default function ProfileEditor() {
     dispatch({ type: 'SET_PROFILE_OVERRIDES', overrides: null })
   }
 
-  // Render nothing until scenario and all profiles are loaded
-  if (!selectedScenarioId || !localDef || !driverEdits || !vehicleEdits || !speedEdits) {
-    return null
-  }
+  // No scenario selected yet or def not loaded — hide entirely
+  if (!selectedScenarioId || !localDef) return null
+  // At least one profile section needed to render
+  if (!driverEdits && !vehicleEdits && !speedEdits) return null
 
   const P = 'profile-field'
 
@@ -450,7 +467,7 @@ export default function ProfileEditor() {
       </button>
 
       {/* ── Driver Model ─────────────────────────────────────────────────── */}
-      <details open>
+      {driverEdits && <details open>
         <summary style={{ fontSize: '0.75em', fontWeight: 600, color: '#444', cursor: 'pointer', marginBottom: '6px' }}>
           Driver Model
         </summary>
@@ -490,10 +507,10 @@ export default function ProfileEditor() {
           <NumericField testid={`${P}-driver-recovery_model-long_rest_drowsiness_recovery`} label="long_rest_drowsiness_recovery" value={driverEdits.recovery_model.long_rest_drowsiness_recovery} onChange={(v) => updateDriver('recovery_model', 'long_rest_drowsiness_recovery', v, vehicleEdits, speedEdits)} />
           <NumericField testid={`${P}-driver-recovery_model-long_rest_fatigue_recovery`} label="long_rest_fatigue_recovery" value={driverEdits.recovery_model.long_rest_fatigue_recovery} onChange={(v) => updateDriver('recovery_model', 'long_rest_fatigue_recovery', v, vehicleEdits, speedEdits)} />
         </fieldset>
-      </details>
+      </details>}
 
       {/* ── Vehicle Behavior ─────────────────────────────────────────────── */}
-      <details open>
+      {vehicleEdits && <details open>
         <summary style={{ fontSize: '0.75em', fontWeight: 600, color: '#444', cursor: 'pointer', marginBottom: '6px' }}>
           Vehicle Behavior
         </summary>
@@ -563,10 +580,10 @@ export default function ProfileEditor() {
           <NumericField testid={`${P}-vehicle-adas_warning-lane_departure_warning_threshold`} label="lane_departure_warning_threshold" value={vehicleEdits.adas_warning.lane_departure_warning_threshold} onChange={(v) => updateVehicle({ ...vehicleEdits, adas_warning: { ...vehicleEdits.adas_warning, lane_departure_warning_threshold: v } }, driverEdits, speedEdits)} />
           <NumericField testid={`${P}-vehicle-adas_warning-steering_instability_warning_threshold`} label="steering_instability_warning_threshold" value={vehicleEdits.adas_warning.steering_instability_warning_threshold} onChange={(v) => updateVehicle({ ...vehicleEdits, adas_warning: { ...vehicleEdits.adas_warning, steering_instability_warning_threshold: v } }, driverEdits, speedEdits)} />
         </fieldset>
-      </details>
+      </details>}
 
       {/* ── Speed Profile ────────────────────────────────────────────────── */}
-      <details open>
+      {speedEdits && <details open>
         <summary style={{ fontSize: '0.75em', fontWeight: 600, color: '#444', cursor: 'pointer', marginBottom: '6px' }}>
           Speed Profile
         </summary>
@@ -578,7 +595,7 @@ export default function ProfileEditor() {
           <NumericField testid={`${P}-speed-sightseeing_road_kph`} label="sightseeing_road_kph" value={speedEdits.sightseeing_road_kph} step={1} onChange={(v) => updateSpeed('sightseeing_road_kph', Math.round(v), driverEdits, vehicleEdits)} />
           <NumericField testid={`${P}-speed-traffic_jam_kph`} label="traffic_jam_kph" value={speedEdits.traffic_jam_kph} step={1} onChange={(v) => updateSpeed('traffic_jam_kph', Math.round(v), driverEdits, vehicleEdits)} />
         </fieldset>
-      </details>
+      </details>}
     </div>
   )
 }

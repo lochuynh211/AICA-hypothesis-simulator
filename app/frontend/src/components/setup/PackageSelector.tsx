@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useRunStore } from '../../state/runStore'
 import { listPackages } from '../../api/client'
 import { t } from '../../i18n/t'
+import ErrorNotice from '../common/ErrorNotice'
 
 export default function PackageSelector() {
   const { state, dispatch } = useRunStore()
@@ -39,9 +40,7 @@ export default function PackageSelector() {
         ))}
       </select>
       {packageErrors.length > 0 && (
-        <p role="alert" data-testid="package-registry-errors" style={{ color: '#c00', fontSize: '0.75em', marginTop: '4px' }}>
-          {packageErrors.length} package(s) could not be loaded
-        </p>
+        <ErrorNotice testid="package-registry-errors" message={`${packageErrors.length} package(s) could not be loaded`} />
       )}
     </div>
   )
