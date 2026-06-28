@@ -432,6 +432,7 @@ def create_run(
         driver_profile=run_state.driver_profile,
         vehicle_profile=run_state.vehicle_profile,
         speed_profile=run_state.speed_profile,
+        profile_overrides=getattr(draft, "profile_overrides", None),
     )
 
     recorder = EvidenceRecorder(run_log, runs_dir)

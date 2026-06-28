@@ -232,6 +232,9 @@ class RunPlanDraft(BaseModel):
     route_source: Literal["maps", "local"] = "local"
     display_route: DisplayRoute | None = None
 
+    # U5: raw sparse profile override dict submitted by user (None = no override)
+    profile_overrides: dict | None = None
+
 
 # ─── RunState ────────────────────────────────────────────────────────────────
 

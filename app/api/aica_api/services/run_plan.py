@@ -334,6 +334,7 @@ def _build_draft(
     route_facts: RouteFacts | None = None,
     route_source: str = "local",
     display_route: DisplayRoute | None = None,
+    profile_overrides: dict | None = None,
 ) -> RunPlanDraft:
     """Pure draft construction — deterministic given (route_facts, presets).
 
@@ -377,6 +378,7 @@ def _build_draft(
         validation_errors=[],
         route_source=route_source,
         display_route=display_route,
+        profile_overrides=profile_overrides,
     )
 
 
@@ -462,6 +464,7 @@ def create_draft(
             route_facts=route_facts,
             route_source=route_source,
             display_route=display_route,
+            profile_overrides=profiles if profiles else None,
         )
     except Exception as exc:  # noqa: BLE001
         plan_error: list[dict[str, str]] = [{
@@ -550,8 +553,9 @@ def regenerate_draft(
     # Extract run_mode from the existing draft's effective_setup
     run_mode = existing_draft.effective_setup.get("run_mode", "standard")
 
-    # Build the new draft — thread Maps provenance through to preserve the
-    # selected route; surface plan-build errors as validation errors.
+    # Build the new draft — thread Maps provenance and profile_overrides through to
+    # preserve the selected route and any active profile overrides; surface
+    # plan-build errors as validation errors.
     try:
         new_draft = _build_draft(
             plan_id=plan_id,
@@ -564,6 +568,7 @@ def regenerate_draft(
             route_facts=preserved_route_facts,
             route_source=preserved_route_source,
             display_route=preserved_display_route,
+            profile_overrides=existing_draft.profile_overrides,
         )
     except Exception as exc:  # noqa: BLE001
         plan_error: list[dict[str, str]] = [{

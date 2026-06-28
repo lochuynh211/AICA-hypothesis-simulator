@@ -128,3 +128,8 @@ class RunLog(BaseModel):
     driver_profile: dict | None = None
     vehicle_profile: dict | None = None
     speed_profile: dict | None = None
+
+    # U5: raw sparse profile override dict the user submitted (None = no override active).
+    # Records WHAT was overridden (facts only), not a verdict.  Optional so existing logs
+    # deserialize without this field (None default = backward-compatible).
+    profile_overrides: dict | None = None

@@ -16,6 +16,8 @@ from pydantic import BaseModel, ConfigDict, field_validator
 class DrowsinessModel(BaseModel):
     """Per-minute growth rates for the drowsiness component."""
 
+    model_config = ConfigDict(extra="forbid")
+
     base_growth_per_min: float
     night_add_per_min: float
     monotony_add_per_min: float
@@ -36,6 +38,8 @@ class DrowsinessModel(BaseModel):
 
 class FatigueModel(BaseModel):
     """Per-minute growth rates for the fatigue component."""
+
+    model_config = ConfigDict(extra="forbid")
 
     base_growth_per_min: float
     continuous_driving_add_per_min_after_60_min: float
@@ -58,6 +62,8 @@ class FatigueModel(BaseModel):
 class AttentionModel(BaseModel):
     """Attention recovery and drop rates."""
 
+    model_config = ConfigDict(extra="forbid")
+
     base_recovery_per_min: float
     monotony_drop_per_min: float
     drowsiness_drop_factor: float
@@ -78,6 +84,8 @@ class AttentionModel(BaseModel):
 
 class RecoveryModel(BaseModel):
     """Recovery amounts (absolute units) for short and long rests."""
+
+    model_config = ConfigDict(extra="forbid")
 
     short_rest_drowsiness_recovery: float
     short_rest_fatigue_recovery: float
@@ -103,6 +111,8 @@ class RecoveryModel(BaseModel):
 class DriverModelProfile(BaseModel):
     """Complete driver behaviour model: drowsiness, fatigue, attention, recovery."""
 
+    model_config = ConfigDict(extra="forbid")
+
     id: str
     drowsiness_model: DrowsinessModel
     fatigue_model: FatigueModel
@@ -115,6 +125,8 @@ class DriverModelProfile(BaseModel):
 
 class SteeringInstabilityProfile(BaseModel):
     """Steering instability signal model."""
+
+    model_config = ConfigDict(extra="forbid")
 
     base_level: float
     drowsiness_factor: float
@@ -139,6 +151,8 @@ class SteeringInstabilityProfile(BaseModel):
 class LaneDepartureProfile(BaseModel):
     """Lane departure detection model."""
 
+    model_config = ConfigDict(extra="forbid")
+
     enabled_on: list[str]
     drowsiness_threshold: float
     fatigue_threshold: float
@@ -154,6 +168,8 @@ class LaneDepartureProfile(BaseModel):
 
 class PedalAbnormalityProfile(BaseModel):
     """Pedal abnormality signal model."""
+
+    model_config = ConfigDict(extra="forbid")
 
     base_level: float
     fatigue_factor: float
@@ -176,6 +192,8 @@ class PedalAbnormalityProfile(BaseModel):
 class AdasWarningProfile(BaseModel):
     """ADAS warning threshold configuration."""
 
+    model_config = ConfigDict(extra="forbid")
+
     lane_departure_warning_threshold: float
     steering_instability_warning_threshold: float
 
@@ -195,6 +213,8 @@ class AdasWarningProfile(BaseModel):
 
 class VehicleBehaviorProfile(BaseModel):
     """Vehicle sensor behaviour model."""
+
+    model_config = ConfigDict(extra="forbid")
 
     rolling_window_seconds: int = 300
     steering_instability: SteeringInstabilityProfile

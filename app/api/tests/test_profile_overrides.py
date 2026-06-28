@@ -29,7 +29,7 @@ from aica_api.services.run_manager import (
     create_run,
     tick,
 )
-from aica_api.services.run_plan import clear_draft_registry, create_draft, get_draft_entry
+from aica_api.services.run_plan import clear_draft_registry, create_draft, get_draft_entry, regenerate_draft
 
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
 _SCENARIO_PATH = _REPO_ROOT / "scenarios" / "uc01_fatigue_friend_drive_v0_1.json"
@@ -99,29 +99,34 @@ def test_speed_override_changes_tick_speed(tmp_path, uc01_package, uc01_scenario
     """A speed override causes the tick engine to use the overridden speed.
 
     Scenario default: normal_road_kph=60.  Override: normal_road_kph=120.
-    At tick 0 (distance=0, segment=normal_road), speedKph should be 120.
+    After tick 0 (first segment = normal_road), raw_state["speedKph"] should
+    be 120 for the override run and 60 for the baseline.
     """
+    from aica_api.services.run_manager import get_active_run_log
+
     # Baseline run — no override
     baseline_state = _plan_and_run(uc01_package, uc01_scenario, "run_baseline", tmp_path)
-    baseline_outcome = tick(baseline_state.run_id)
-    baseline_speed = baseline_outcome.run_state.event_plan  # not what we need
-    # Get speed from tick_state via the outcome — it's in the TickOutcome.run_state
-    # Actually tick() returns a TickOutcome; raw_state is only in TickEvent
-    # We need to call tick and capture the tick state from the recorder
-    # Use the run_manager tick function which returns TickOutcome
-    # The speed override effect is visible in RunState.speed_profile (frozen snapshot)
-    # and in tick raw_state recorded by the recorder.
-    # The simplest assertion: RunState.speed_profile["normal_road_kph"] == 120
-    pass  # covered by snapshot test below; integration via distance test
+    tick(baseline_state.run_id)
 
     # Override run — double normal_road speed
     overridden_state = _plan_and_run(
         uc01_package, uc01_scenario, "run_override_speed", tmp_path,
         profiles={"speed": {"normal_road_kph": 120}},
     )
-    override_outcome = tick(overridden_state.run_id)
+    tick(overridden_state.run_id)
 
-    # The overridden RunState should have the override in speed_profile
+    # Read raw tick state from the recorder
+    baseline_log = get_active_run_log(baseline_state.run_id)
+    override_log = get_active_run_log(overridden_state.run_id)
+
+    baseline_tick = [e for e in baseline_log.events if e.kind == "tick"][0]
+    override_tick = [e for e in override_log.events if e.kind == "tick"][0]
+
+    # Baseline should use scenario default (60 kph); override should use 120 kph
+    assert baseline_tick.raw_state["speedKph"] == 60
+    assert override_tick.raw_state["speedKph"] == 120
+
+    # The overridden RunState snapshot also reflects the override
     assert overridden_state.speed_profile is not None
     assert overridden_state.speed_profile["normal_road_kph"] == 120
 
@@ -460,3 +465,146 @@ def test_api_valid_profile_returns_201(tmp_path, monkeypatch):
         },
     )
     assert resp.status_code == 201
+
+
+# ---------------------------------------------------------------------------
+# T008-9 (IMPORTANT): extra fields in driver/vehicle profiles are rejected
+# ---------------------------------------------------------------------------
+
+
+def test_invalid_extra_driver_field_rejected(uc01_package, uc01_scenario, tmp_path):
+    """Unknown field in a nested driver override violates extra='forbid' → validation error.
+
+    Mirrors test_invalid_extra_speed_field_rejected but for the driver profile.
+    A typo'd key (basse_growth_per_min) must produce a validation error and
+    prevent the draft from being registered.
+    """
+    plan_id = "plan_invalid_extra_driver"
+    draft = create_draft(
+        plan_id=plan_id,
+        package=uc01_package,
+        scenario=uc01_scenario,
+        presets={},
+        parameters={},
+        hyperparameters={},
+        run_mode="standard",
+        profiles={"driver": {"drowsiness_model": {"basse_growth_per_min": 1.0}}},
+    )
+
+    assert draft.validation_errors, "Unknown driver field must produce a validation error"
+    assert any("profiles.driver" in e.get("field", "") for e in draft.validation_errors), (
+        f"Expected 'profiles.driver' in error fields, got: {draft.validation_errors}"
+    )
+    assert get_draft_entry(plan_id) is None, "Invalid draft must not be registered"
+
+
+def test_invalid_extra_vehicle_field_rejected(uc01_package, uc01_scenario, tmp_path):
+    """Unknown field in a nested vehicle override violates extra='forbid' → validation error.
+
+    A typo'd key (baes_level) inside steering_instability must produce a validation
+    error and prevent the draft from being registered.
+    """
+    plan_id = "plan_invalid_extra_vehicle"
+    draft = create_draft(
+        plan_id=plan_id,
+        package=uc01_package,
+        scenario=uc01_scenario,
+        presets={},
+        parameters={},
+        hyperparameters={},
+        run_mode="standard",
+        profiles={"vehicle": {"steering_instability": {"baes_level": 5.0}}},
+    )
+
+    assert draft.validation_errors, "Unknown vehicle field must produce a validation error"
+    assert any("profiles.vehicle" in e.get("field", "") for e in draft.validation_errors), (
+        f"Expected 'profiles.vehicle' in error fields, got: {draft.validation_errors}"
+    )
+    assert get_draft_entry(plan_id) is None, "Invalid draft must not be registered"
+
+
+# ---------------------------------------------------------------------------
+# T008-10 (Minor 2): profile overrides survive regenerate_draft
+# ---------------------------------------------------------------------------
+
+
+def test_overrides_survive_regenerate_draft(tmp_path, uc01_package, uc01_scenario):
+    """Profile overrides applied at create_draft remain in effect after regenerate_draft.
+
+    Flow: create_draft with speed override → regenerate_draft (change presets) →
+    create_run → tick → assert override speedKph is used in the tick engine.
+    """
+    from aica_api.services.run_manager import get_active_run_log
+
+    plan_id = "plan_regen_override"
+
+    # 1. Create draft with speed override (normal_road_kph=120)
+    draft_v1 = create_draft(
+        plan_id=plan_id,
+        package=uc01_package,
+        scenario=uc01_scenario,
+        presets={},
+        parameters={},
+        hyperparameters={},
+        run_mode="standard",
+        profiles={"speed": {"normal_road_kph": 120}},
+    )
+    assert not draft_v1.validation_errors, f"Unexpected errors: {draft_v1.validation_errors}"
+
+    # 2. Regenerate the draft (different preset/parameters — no new profiles arg).
+    #    The effective scenario with the override is already in the registry.
+    draft_v2 = regenerate_draft(
+        plan_id=plan_id,
+        presets={},
+        parameters={},
+        hyperparameters={},
+    )
+    assert not draft_v2.validation_errors, f"Unexpected regen errors: {draft_v2.validation_errors}"
+
+    # 3. Create a run from the regenerated draft
+    from aica_api.services.run_manager import create_run, tick
+    run_state = create_run(plan_id, "run_regen_override", tmp_path)
+    tick(run_state.run_id)
+
+    # 4. Assert the override is still in effect in the tick engine
+    log = get_active_run_log(run_state.run_id)
+    assert log is not None
+    tick_event = [e for e in log.events if e.kind == "tick"][0]
+    assert tick_event.raw_state["speedKph"] == 120, (
+        f"Expected 120 kph after regenerate, got {tick_event.raw_state['speedKph']}"
+    )
+
+    # 5. The profile_overrides should be carried through to the RunLog
+    assert log.profile_overrides is not None, "profile_overrides must be set in RunLog"
+    assert log.profile_overrides.get("speed", {}).get("normal_road_kph") == 120
+
+
+# ---------------------------------------------------------------------------
+# T008-11 (Minor 3): profile_overrides captured in RunLog evidence
+# ---------------------------------------------------------------------------
+
+
+def test_profile_overrides_recorded_in_run_log(tmp_path, uc01_package, uc01_scenario):
+    """When profile overrides are active, RunLog.profile_overrides records the raw override dict.
+
+    The field is additive/optional: None when no override was submitted.
+    """
+    from aica_api.services.run_manager import get_active_run_log
+
+    # Run WITH override
+    override_state = _plan_and_run(
+        uc01_package, uc01_scenario, "run_log_overrides", tmp_path,
+        profiles={"speed": {"highway_kph": 175}},
+    )
+    tick(override_state.run_id)
+    override_log = get_active_run_log(override_state.run_id)
+
+    assert override_log.profile_overrides is not None
+    assert override_log.profile_overrides == {"speed": {"highway_kph": 175}}
+
+    # Run WITHOUT override — field should be None
+    baseline_state = _plan_and_run(uc01_package, uc01_scenario, "run_log_no_overrides", tmp_path)
+    tick(baseline_state.run_id)
+    baseline_log = get_active_run_log(baseline_state.run_id)
+
+    assert baseline_log.profile_overrides is None
