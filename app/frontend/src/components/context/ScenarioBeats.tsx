@@ -49,7 +49,6 @@ function segIcon(seg: RouteSegment): string {
 
 const RECOVERY_BEATS: Record<string, { icon: string; label: { ja: string; en: string } }> = {
   wakefulness: { icon: '🚗', label: { ja: 'ドライブ中の覚醒', en: 'Wakefulness en route' } },
-  arriving:    { icon: '🅿️', label: { ja: '到着', en: 'Arrived' } },
   nap:         { icon: '😴', label: { ja: '仮眠中', en: 'Resting (nap)' } },
   content:     { icon: '🎤', label: { ja: '休憩後カラオケ', en: 'Karaoke after nap' } },
   resuming:    { icon: '🚙', label: { ja: '再出発', en: 'Resumed' } },

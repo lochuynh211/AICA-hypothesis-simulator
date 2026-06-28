@@ -40,6 +40,10 @@ export default function PlaybackControls() {
         paused: resp.paused,
         completed: resp.completed,
         routeFraction: resp.route_fraction ?? null,
+        motionState: resp.motion_state ?? null,
+        recoveryPhase: resp.recovery_phase ?? null,
+        activeContent: resp.active_content ?? null,
+        isTrafficJam: resp.is_traffic_jam ?? null,
       })
       // A proposal pause is a temporary halt awaiting the driver's choice — keep
       // isPlaying so the interval (which is gated on `!paused`) auto-resumes once
