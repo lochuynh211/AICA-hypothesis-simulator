@@ -1,20 +1,19 @@
 /**
- * RunsScreen — browse past runs (M6 T003, T007).
+ * RunsScreen — browse past runs (M6 T003, T007, T010/T011 S7 replay).
  *
  * Lists persisted runs via GET /api/runs (through RunList).  Selecting a row
- * opens that run's evidence read-only: RunLogViewer (timeline) + EvidencePanel
- * (export), both driven by an explicit runId prop so they read the past run's
- * log — NOT the active run's store state.
+ * opens that run's evidence read-only: ReplayViewer (S7 visual replay),
+ * RunLogViewer (timeline) + EvidencePanel (export), all driven by an explicit
+ * runId prop so they read the past run's log — NOT the active run's store state.
  *
  * Read-only invariant: no Restart, no live controls in this view.
- * Visual replay (S7) is a later unit — leave the seam clear via the explicit
- * runId prop on RunLogViewer and EvidencePanel.
  */
 
 import { useState } from 'react'
 import RunList from '../runs/RunList'
 import RunLogViewer from '../runs/RunLogViewer'
 import EvidencePanel from '../evidence/EvidencePanel'
+import ReplayViewer from '../replay/ReplayViewer'
 
 export default function RunsScreen() {
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null)
@@ -81,7 +80,10 @@ export default function RunsScreen() {
             </span>
           </div>
 
-          {/* RunLogViewer with explicit past-run id — S7 replay attaches here */}
+          {/* S7: Visual replay — fetches RunLog via getRunLog, no new endpoint */}
+          <ReplayViewer runId={selectedRunId} />
+
+          {/* RunLogViewer with explicit past-run id */}
           <RunLogViewer runId={selectedRunId} />
 
           {/* EvidencePanel with explicit past-run id — export only, no live controls */}
