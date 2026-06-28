@@ -114,6 +114,9 @@ def build_evidence_report(
         # Pre-M5 runs export profiles as null — no error (RunLog fields default None)
         "driver_profile": run_log.driver_profile,
         "vehicle_profile": run_log.vehicle_profile,
+        # speed_profile and profile_overrides: None for pre-M5/pre-U5 runs (back-compat)
+        "speed_profile": run_log.speed_profile,
+        "profile_overrides": run_log.profile_overrides,
         "timeline_events": timeline_events,
         "decision_trace": decision_trace,
         "proposal_events": proposal_events,

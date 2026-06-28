@@ -120,13 +120,15 @@ describe('SetupScreen — renders setup editors (T003)', () => {
     vi.mocked(client.listScenarios).mockResolvedValue({ scenarios: [], errors: [] })
   })
 
-  it('renders with data-testid="setup-screen"', () => {
+  it('renders with data-testid="setup-screen"', async () => {
     render(
       <RunStoreProvider>
         <SetupScreen />
       </RunStoreProvider>,
     )
-    expect(screen.getByTestId('setup-screen')).toBeInTheDocument()
+    // findByTestId waits for async mount effects (listPackages/listScenarios) to settle,
+    // silencing the un-act()-wrapped state-update warning.
+    expect(await screen.findByTestId('setup-screen')).toBeInTheDocument()
   })
 
   it('renders MapKeyAndRouteInput (M4 regression — maps input lives on Setup)', async () => {
@@ -200,13 +202,15 @@ describe('RunsScreen — placeholder (T003)', () => {
     vi.mocked(client.listRuns).mockResolvedValue({ runs: [] })
   })
 
-  it('renders with data-testid="runs-screen"', () => {
+  it('renders with data-testid="runs-screen"', async () => {
     render(
       <RunStoreProvider>
         <RunsScreen />
       </RunStoreProvider>,
     )
-    expect(screen.getByTestId('runs-screen')).toBeInTheDocument()
+    // findByTestId waits for async mount effects (listRuns fetch) to settle,
+    // silencing the un-act()-wrapped state-update warning.
+    expect(await screen.findByTestId('runs-screen')).toBeInTheDocument()
   })
 })
 

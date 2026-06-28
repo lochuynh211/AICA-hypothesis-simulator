@@ -43,6 +43,8 @@ def _make_report(
     scenario_id: str = "sc_md",
     driver_profile: dict | None = None,
     vehicle_profile: dict | None = None,
+    speed_profile: dict | None = None,
+    profile_overrides: dict | None = None,
     algorithm_errors: list | None = None,
     feedback_labels: list | None = None,
     free_text_comments: list | None = None,
@@ -72,6 +74,8 @@ def _make_report(
             "initial_hyperparameters": {"suggest_threshold": 2.5},
             "driver_profile": driver_profile,
             "vehicle_profile": vehicle_profile,
+            "speed_profile": speed_profile,
+            "profile_overrides": profile_overrides,
             "timeline_events": [],
             "decision_trace": [],
             "proposal_events": [],
@@ -256,6 +260,108 @@ class TestNoVerdictLanguage:
         md = render_evidence_markdown(report).lower()
         for phrase in self.VERDICT_WORDS:
             assert phrase not in md, f"Verdict language found: {phrase!r}"
+
+
+class TestSpeedProfileAndOverridesMarkdown:
+    """MINOR 1 + MINOR 3: speed_profile and profile_overrides render correctly in Markdown."""
+
+    def _facts_section(self, md: str) -> str:
+        """Extract the text between ## Simulator Facts and ## Human Review."""
+        start = md.index("## Simulator Facts")
+        end = md.index("## Human Review")
+        return md[start:end]
+
+    def test_speed_profile_value_in_facts_when_set(self):
+        """A set speed_profile renders its values inside ## Simulator Facts."""
+        report = _make_report(speed_profile={"id": "sp1", "highway_speed_band": "fast"})
+        md = render_evidence_markdown(report)
+        facts = self._facts_section(md)
+        assert "sp1" in facts
+        assert "highway_speed_band" in facts or "fast" in facts
+
+    def test_speed_profile_not_recorded_line_when_absent(self):
+        """When speed_profile is None, the facts section says 'not recorded', not 'N/A'."""
+        report = _make_report(speed_profile=None)
+        md = render_evidence_markdown(report)
+        facts = self._facts_section(md)
+        assert "not recorded" in facts
+        # Old misleading wording must not appear
+        assert "N/A (pre-M5 run or no override)" not in facts
+
+    def test_profile_overrides_in_facts_when_set(self):
+        """profile_overrides (sparse overrides) render inside ## Simulator Facts."""
+        report = _make_report(
+            speed_profile={"id": "sp1", "highway_speed_band": "fast"},
+            profile_overrides={"highway_speed_band": "fast"},
+        )
+        md = render_evidence_markdown(report)
+        facts = self._facts_section(md)
+        assert "highway_speed_band" in facts
+
+    def test_profile_overrides_no_override_line_when_absent(self):
+        """When profile_overrides is None/empty, facts section says 'no override applied'."""
+        report = _make_report(profile_overrides=None)
+        md = render_evidence_markdown(report)
+        facts = self._facts_section(md)
+        assert "no override applied" in facts
+
+    def test_speed_only_override_appears_in_facts_json_and_markdown(self):
+        """Speed-only override: effective speed value visible in Simulator Facts."""
+        report = _make_report(
+            speed_profile={"id": "sp1", "highway_speed_band": "fast"},
+            profile_overrides={"highway_speed_band": "fast"},
+        )
+        md = render_evidence_markdown(report)
+        facts = self._facts_section(md)
+        assert "fast" in facts
+
+    def test_no_override_applied_not_present_when_overrides_exist(self):
+        """When overrides ARE set, 'no override applied' should not appear in facts."""
+        report = _make_report(profile_overrides={"highway_speed_band": "fast"})
+        md = render_evidence_markdown(report)
+        facts = self._facts_section(md)
+        assert "no override applied" not in facts
+
+    def test_driver_profile_not_na_when_present(self):
+        """When driver_profile IS set, the old 'N/A (pre-M5 run or no override)' must not appear."""
+        report = _make_report(driver_profile={"id": "d1", "age_band": "30s"})
+        md = render_evidence_markdown(report)
+        facts = self._facts_section(md)
+        assert "N/A (pre-M5 run or no override)" not in facts
+        assert "d1" in facts
+
+    def test_vehicle_profile_not_na_when_present(self):
+        """When vehicle_profile IS set, the old 'N/A (pre-M5 run or no override)' must not appear."""
+        report = _make_report(vehicle_profile={"id": "v1", "type": "sedan"})
+        md = render_evidence_markdown(report)
+        facts = self._facts_section(md)
+        assert "N/A (pre-M5 run or no override)" not in facts
+        assert "v1" in facts
+
+    def test_pre_m5_run_no_crash_all_profiles_absent(self):
+        """Pre-M5 run: all profiles absent — renders without error."""
+        report = _make_report(
+            driver_profile=None,
+            vehicle_profile=None,
+            speed_profile=None,
+            profile_overrides=None,
+        )
+        md = render_evidence_markdown(report)
+        assert "## Simulator Facts" in md
+        assert "## Human Review" in md
+
+    def test_pre_m5_run_shows_not_recorded_not_na_wording(self):
+        """Pre-M5 run: 'not recorded' appears; old 'N/A (pre-M5 run or no override)' does not."""
+        report = _make_report(
+            driver_profile=None,
+            vehicle_profile=None,
+            speed_profile=None,
+            profile_overrides=None,
+        )
+        md = render_evidence_markdown(report)
+        facts = self._facts_section(md)
+        assert "not recorded" in facts
+        assert "N/A (pre-M5 run or no override)" not in facts
 
 
 class TestDerivedFromBuildEvidenceReport:

@@ -175,7 +175,7 @@ def render_evidence_markdown(report: dict[str, Any]) -> str:
         lines.extend(_dict_bullets(final_hyper))
     lines.append("\n")
 
-    # ── Profiles (driver + vehicle) — U5 profile overrides stored here ─────────
+    # ── Profiles (driver + vehicle + speed) — U5 profile overrides stored here ──
     lines.append("### Profiles\n\n")
 
     driver = sf.get("driver_profile")
@@ -183,14 +183,28 @@ def render_evidence_markdown(report: dict[str, Any]) -> str:
         lines.append("**Driver Profile:**\n\n")
         lines.extend(_dict_bullets(driver))
     else:
-        lines.append("- driver_profile: N/A (pre-M5 run or no override)\n")
+        lines.append("- driver_profile: not recorded (pre-M5 run)\n")
 
     vehicle = sf.get("vehicle_profile")
     if vehicle is not None and isinstance(vehicle, dict) and vehicle:
         lines.append("\n**Vehicle Profile:**\n\n")
         lines.extend(_dict_bullets(vehicle))
     else:
-        lines.append("- vehicle_profile: N/A (pre-M5 run or no override)\n")
+        lines.append("\n- vehicle_profile: not recorded (pre-M5 run)\n")
+
+    speed = sf.get("speed_profile")
+    if speed is not None and isinstance(speed, dict) and speed:
+        lines.append("\n**Speed Profile:**\n\n")
+        lines.extend(_dict_bullets(speed))
+    else:
+        lines.append("\n- speed_profile: not recorded (pre-M5 run)\n")
+
+    overrides = sf.get("profile_overrides")
+    if overrides is not None and isinstance(overrides, dict) and overrides:
+        lines.append("\n**Profile Overrides (fields overridden from defaults):**\n\n")
+        lines.extend(_dict_bullets(overrides))
+    else:
+        lines.append("\n- profile_overrides: no override applied\n")
     lines.append("\n")
 
     # ── Event Plan ─────────────────────────────────────────────────────────────
