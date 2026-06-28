@@ -469,3 +469,125 @@ class TestMissingFactsValidation:
             },
         )
         assert resp.status_code == 400
+
+
+# ── Regenerate provenance preservation ───────────────────────────────────────
+
+
+class TestRegenerateProvenancePreservation:
+    """Regenerate must preserve Maps provenance; local drafts stay local.
+
+    Bug fix I1: regenerate_draft previously called _build_draft without
+    route_facts/route_source/display_route, causing a Maps draft to silently
+    flip back to local analysis (route_source='local', display_route dropped,
+    rest_spot_positions re-derived from the scenario).
+    """
+
+    def test_regenerate_preserves_maps_provenance(self, client):
+        """Regenerating a Maps draft keeps route_source='maps', route_facts, and display_route.
+
+        1. Create a Maps draft (route_source='maps', display_route, non-empty rest_spot_positions).
+        2. Call POST /api/run-plans/{plan_id}/regenerate with unchanged params.
+        3. Assert the regenerated draft still has route_source='maps'.
+        4. Create a run from it; assert RunState has route_source='maps',
+           the same total_route_distance_km, rest_spot_positions, and display_route.
+        """
+        # 1. Create Maps draft
+        plan_resp = client.post(
+            "/api/run-plans",
+            json={
+                "package_id": VALID_PACKAGE_ID,
+                "scenario_id": VALID_SCENARIO_ID,
+                "route_id": "route-0",
+                "route_source": "maps",
+                "route_facts": _FAKE_ROUTE_FACTS,
+                "display_route": _FAKE_DISPLAY_ROUTE,
+                "parameters": {},
+                "hyperparameters": {},
+            },
+        )
+        assert plan_resp.status_code == 201
+        plan_id = plan_resp.json()["plan_id"]
+
+        # 2. Regenerate with unchanged parameters
+        regen_resp = client.post(
+            f"/api/run-plans/{plan_id}/regenerate",
+            json={
+                "presets": {},
+                "parameters": {},
+                "hyperparameters": {},
+            },
+        )
+        assert regen_resp.status_code == 200, (
+            f"Regenerate failed: {regen_resp.json()}"
+        )
+
+        # 3. Create a run from the regenerated draft
+        run_resp = client.post("/api/runs", json={"plan_id": plan_id})
+        assert run_resp.status_code == 201
+        run_state = run_resp.json()
+
+        # 4. Assert Maps provenance is preserved in RunState
+        assert run_state.get("route_source") == "maps", (
+            f"Expected route_source='maps' after regenerate, got {run_state.get('route_source')!r}"
+        )
+        rf = run_state.get("route_facts", {})
+        assert rf.get("total_route_distance_km") == _FAKE_ROUTE_FACTS["total_route_distance_km"], (
+            "route_facts.total_route_distance_km must be preserved after regenerate"
+        )
+        assert rf.get("rest_spot_positions") == _FAKE_ROUTE_FACTS["rest_spot_positions"], (
+            "route_facts.rest_spot_positions must be preserved after regenerate"
+        )
+        dr = run_state.get("display_route")
+        assert dr is not None, "display_route must be preserved after regenerate for a Maps draft"
+        assert dr["encoded_polyline"] == _FAKE_DISPLAY_ROUTE["encoded_polyline"], (
+            "display_route.encoded_polyline must be preserved after regenerate"
+        )
+        assert dr["summary"] == _FAKE_DISPLAY_ROUTE["summary"], (
+            "display_route.summary must be preserved after regenerate"
+        )
+
+    def test_regenerate_local_draft_stays_local(self, client):
+        """Regenerating a local draft keeps route_source='local' and re-derives route_facts.
+
+        Existing behavior must be unchanged: a local draft regenerate uses
+        scenario-derived route analysis (not any externally supplied facts).
+        """
+        # 1. Create local draft
+        plan_resp = client.post(
+            "/api/run-plans",
+            json={
+                "package_id": VALID_PACKAGE_ID,
+                "scenario_id": VALID_SCENARIO_ID,
+                "parameters": {},
+                "hyperparameters": {},
+            },
+        )
+        assert plan_resp.status_code == 201
+        plan_id = plan_resp.json()["plan_id"]
+
+        # 2. Regenerate
+        regen_resp = client.post(
+            f"/api/run-plans/{plan_id}/regenerate",
+            json={
+                "presets": {},
+                "parameters": {},
+                "hyperparameters": {},
+            },
+        )
+        assert regen_resp.status_code == 200, (
+            f"Regenerate failed: {regen_resp.json()}"
+        )
+
+        # 3. Create a run
+        run_resp = client.post("/api/runs", json={"plan_id": plan_id})
+        assert run_resp.status_code == 201
+        run_state = run_resp.json()
+
+        # 4. Must still be local; display_route must be absent
+        assert run_state.get("route_source") == "local", (
+            f"Expected route_source='local' after regenerate, got {run_state.get('route_source')!r}"
+        )
+        assert run_state.get("display_route") is None, (
+            "Local draft regenerate must not produce a display_route"
+        )

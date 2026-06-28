@@ -139,16 +139,12 @@ export type RouteFacts = {
   bands?: Record<string, string[]>
 }
 
-/** Viewport bounds for a Maps route alternative. */
-export type ViewportBounds = {
-  northeast: { lat: number; lng: number }
-  southwest: { lat: number; lng: number }
-}
-
 /** Display data for a Maps alternative; null for the local path. */
 export type DisplayRoute = {
+  summary: string
   encoded_polyline: string
-  viewport: ViewportBounds | null
+  start_label: string
+  end_label: string
 }
 
 export type RouteNotice = 'no_rest_stops_found' | 'rest_data_degraded' | 'rest_data_unavailable'

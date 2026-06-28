@@ -400,6 +400,11 @@ def regenerate_draft(
 
     Same plan_id, new draft_event_plan.
 
+    M4: preserves Maps route provenance (route_source, route_facts,
+    display_route) from the registered draft so that a Regenerate after
+    selecting a Google route does not silently flip back to local analysis.
+    A local draft stays local (route_facts re-derived from the scenario).
+
     Args:
         plan_id:         Must exist in the registry.
         presets:         New preset overrides.
@@ -418,25 +423,37 @@ def regenerate_draft(
 
     existing_draft, package, scenario = entry
 
+    # Preserve Maps provenance from the registered draft.
+    # For a Maps draft: pass the frozen route_facts + display_route through so
+    # _build_draft does not re-derive from the scenario (which would flip
+    # route_source back to "local" and lose the selected route).
+    # For a local draft: pass None so _build_draft re-derives as before.
+    is_maps = existing_draft.route_source == "maps"
+    preserved_route_facts: RouteFacts | None = existing_draft.route_facts if is_maps else None
+    preserved_route_source: str = existing_draft.route_source
+    preserved_display_route: DisplayRoute | None = existing_draft.display_route if is_maps else None
+
     # Re-run full create_draft logic (validate + build)
     validation_errors = _validate_edits(package, parameters, hyperparameters)
     if validation_errors:
-        # Error-path drafts always use local analysis and no display route.
+        # Error-path drafts are never registered and thus never started.
+        # Preserve the route provenance in the error response for accuracy.
         return RunPlanDraft(
             plan_id=plan_id,
             package_id=package.id,
             scenario_id=scenario.id,
-            route_facts=analyze_route(scenario),
+            route_facts=preserved_route_facts if preserved_route_facts is not None else analyze_route(scenario),
             effective_setup={},
             validation_errors=validation_errors,
-            route_source="local",
-            display_route=None,
+            route_source=preserved_route_source,
+            display_route=preserved_display_route,
         )
 
     # Extract run_mode from the existing draft's effective_setup
     run_mode = existing_draft.effective_setup.get("run_mode", "standard")
 
-    # Build the new draft — surface plan-build errors as validation errors
+    # Build the new draft — thread Maps provenance through to preserve the
+    # selected route; surface plan-build errors as validation errors.
     try:
         new_draft = _build_draft(
             plan_id=plan_id,
@@ -446,22 +463,26 @@ def regenerate_draft(
             parameters=parameters,
             hyperparameters=hyperparameters,
             run_mode=run_mode,
+            route_facts=preserved_route_facts,
+            route_source=preserved_route_source,
+            display_route=preserved_display_route,
         )
     except Exception as exc:  # noqa: BLE001
         plan_error: list[dict[str, str]] = [{
             "field": "event_plan",
             "message": f"Failed to build event plan: {exc}",
         }]
-        # Error-path drafts always use local analysis and no display route.
+        # Error-path drafts are never registered and thus never started.
+        # Preserve the route provenance in the error response for accuracy.
         return RunPlanDraft(
             plan_id=plan_id,
             package_id=package.id,
             scenario_id=scenario.id,
-            route_facts=analyze_route(scenario),
+            route_facts=preserved_route_facts if preserved_route_facts is not None else analyze_route(scenario),
             effective_setup={},
             validation_errors=plan_error,
-            route_source="local",
-            display_route=None,
+            route_source=preserved_route_source,
+            display_route=preserved_display_route,
         )
 
     # Update registry
