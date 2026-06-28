@@ -10,8 +10,10 @@
  *   - algorithmErrors rendered as distinct error entries (never disguised as decisions).
  */
 
+import { useState } from 'react'
 import type { TraceEntry, AlgorithmError, Candidate } from '../../api/types'
 import { useRunStore } from '../../state/runStore'
+import FeedbackForm from '../feedback/FeedbackForm'
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -158,6 +160,7 @@ function RuntimeStateIndicator({ runtimeState }: { runtimeState: Record<string, 
 
 function TraceEntryRow({ entry }: { entry: TraceEntry }) {
   const hasScores = entry.scores && Object.keys(entry.scores).length > 0
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
 
   return (
     <div
@@ -169,7 +172,7 @@ function TraceEntryRow({ entry }: { entry: TraceEntry }) {
       }}
     >
       {/* Header row */}
-      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
         <span style={{ color: '#6af', fontWeight: 700 }}>tick#{entry.tick_index}</span>
         <span style={{ color: '#ffe066', fontWeight: 700 }}>{entry.result_type}</span>
         {entry.selected_category && (
@@ -178,6 +181,25 @@ function TraceEntryRow({ entry }: { entry: TraceEntry }) {
         {entry.score !== null && entry.score !== undefined && (
           <span style={{ color: '#fc9' }}>score={entry.score}</span>
         )}
+        {/* Per-decision feedback affordance */}
+        <button
+          data-testid={`feedback-toggle-tick-${entry.tick_index}`}
+          onClick={() => setFeedbackOpen((prev) => !prev)}
+          style={{
+            marginLeft: 'auto',
+            fontSize: '0.78em',
+            padding: '1px 6px',
+            cursor: 'pointer',
+            background: feedbackOpen ? '#2a2a4a' : '#1a1a1a',
+            color: feedbackOpen ? '#9cf' : '#666',
+            border: '1px solid #444',
+            borderRadius: '3px',
+          }}
+          aria-expanded={feedbackOpen}
+          aria-label={`Give feedback on tick ${entry.tick_index}`}
+        >
+          {feedbackOpen ? 'Close feedback' : 'Give feedback'}
+        </button>
       </div>
 
       {/* Per-category scores (weighted-score richer trace) */}
@@ -216,6 +238,25 @@ function TraceEntryRow({ entry }: { entry: TraceEntry }) {
 
       {/* Runtime-state indicator (hybrid algorithm — recorded output this tick) */}
       <RuntimeStateIndicator runtimeState={entry.next_package_runtime_state ?? {}} />
+
+      {/* Inline feedback form for this decision tick */}
+      {feedbackOpen && (
+        <div
+          data-testid={`decision-feedback-form-tick-${entry.tick_index}`}
+          style={{
+            marginTop: '6px',
+            padding: '6px',
+            background: '#0f0f1a',
+            border: '1px solid #333',
+            borderRadius: '4px',
+          }}
+        >
+          <FeedbackForm
+            target={{ scope: 'decision', tick_index: entry.tick_index }}
+            onSuccess={() => setFeedbackOpen(false)}
+          />
+        </div>
+      )}
     </div>
   )
 }

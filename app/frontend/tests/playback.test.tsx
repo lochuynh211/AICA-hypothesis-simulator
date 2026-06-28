@@ -18,6 +18,9 @@ vi.mock('../src/api/client', () => ({
   getRun: vi.fn(),
   getRunLog: vi.fn(),
   getHealth: vi.fn(),
+  // FeedbackForm (rendered inside CockpitView when paused) calls this on mount
+  getFeedbackSchema: vi.fn(),
+  submitFeedback: vi.fn(),
 }))
 
 import * as client from '../src/api/client'
@@ -225,6 +228,9 @@ describe('PlaybackControls', () => {
 describe('CockpitView', () => {
   beforeEach(() => {
     vi.resetAllMocks()
+    // FeedbackForm is now rendered inside CockpitView when a proposal is active.
+    // Return an empty schema so the form mounts without errors.
+    vi.mocked(client.getFeedbackSchema).mockResolvedValue({ fields: [] })
   })
 
   it('(b) shows proposal overlay when latestDecision has a proposal and store is paused', async () => {

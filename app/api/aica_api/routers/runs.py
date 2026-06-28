@@ -166,12 +166,20 @@ def _resolve_event_ref(target: FeedbackTarget, run_log: RunLog) -> FeedbackTarge
                     "when event_ref is not provided."
                 ),
             )
+        if action_str is None:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "target.action is required for scope='action' "
+                    "when event_ref is not provided."
+                ),
+            )
         matches = [
             i for i, e in enumerate(events)
             if (
                 e.kind == "action"
                 and e.tick_index == tick_index
-                and (action_str is None or e.action == action_str)
+                and e.action == action_str
             )
         ]
         if len(matches) == 0:

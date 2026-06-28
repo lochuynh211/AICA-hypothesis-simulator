@@ -350,3 +350,37 @@ class TestPostFeedback:
         feedback_events = [e for e in events if e.get("kind") == "feedback"]
         assert len(feedback_events) == 1
         assert feedback_events[0]["comment"] == "persist check"
+
+    def test_disk_run_feedback_persisted_to_disk(self, client, disk_run_id):
+        """After POSTing feedback to a disk-only run, the FeedbackEvent is
+        persisted to disk and readable via GET /api/runs/{id}/log. (Fix m-2)"""
+        resp = client.post(
+            f"/api/runs/{disk_run_id}/feedback",
+            json={"target": {"scope": "run"}, "comment": "disk persist check"},
+        )
+        assert resp.status_code == 201
+
+        # Read back via the log endpoint — verifies disk persistence, not just 201
+        log_resp = client.get(f"/api/runs/{disk_run_id}/log")
+        assert log_resp.status_code == 200
+        events = log_resp.json()["events"]
+        feedback_events = [e for e in events if e.get("kind") == "feedback"]
+        assert len(feedback_events) == 1
+        assert feedback_events[0]["comment"] == "disk persist check"
+
+    def test_action_scope_missing_action_returns_400(self, client, active_run_with_action):
+        """action scope with tick_index but no 'action' field → 400. (Fix m-3)"""
+        run_id, tick_index, _ = active_run_with_action
+        resp = client.post(
+            f"/api/runs/{run_id}/feedback",
+            json={
+                "target": {
+                    "scope": "action",
+                    "tick_index": tick_index,
+                    # no "action" field — must be required
+                },
+            },
+        )
+        assert resp.status_code == 400
+        detail = resp.json().get("detail", "")
+        assert "action" in detail.lower()
