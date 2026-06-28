@@ -95,8 +95,12 @@ Backend `app/api/aica_api/`, tests `app/api/tests/`; frontend `app/frontend/src/
   `services/evidence.py::build_evidence_report(run_log)` → the master §14.2 report
   `{report meta, simulator_facts, human_review}` derived from the persisted log; feedback ONLY under
   `human_review` (labels vs free_text_comments split); conditional sections present only when
-  applicable; §14.3 reproducibility fields present; ui_language fixed "bilingual".
-- [ ] T011 [US3] `routers/runs.py`: `GET /api/runs/{id}/evidence` (active + on-disk). Router test.
+  applicable; §14.3 reproducibility fields present; ui_language fixed "bilingual". **Handle
+  pre-M5 runs gracefully**: a persisted log lacking `driver_profile`/`vehicle_profile`/`speed_profile`
+  (created before T003) exports them as null without error.
+- [ ] T011 [US3] `routers/runs.py`: `GET /api/runs/{id}/evidence` (active + on-disk). Generate
+  `report_id` + `timestamp` at the **router boundary** (the project's timestamp/uuid discipline — the
+  export is a derived view, not persisted evidence). Router test.
 - [ ] T012 [US3] Frontend: copy-to-clipboard + download of the evidence JSON (buttons in the
   evidence view); `api/types.ts`+`client.ts` (`getEvidence`, EvidenceReport type). `tests` for copy/download.
 
