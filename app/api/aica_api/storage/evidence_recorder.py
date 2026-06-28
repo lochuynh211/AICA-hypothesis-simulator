@@ -49,7 +49,7 @@ class EvidenceRecorder:
         """Append an event and persist the full log atomically.
 
         Args:
-            event: A TickEvent, ActionEvent, or AlgorithmError instance.
+            event: A TickEvent, ActionEvent, AlgorithmError, or FeedbackEvent instance.
 
         Note:
             Prior events are never mutated.  This method only ever adds to the

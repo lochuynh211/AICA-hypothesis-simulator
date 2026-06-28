@@ -437,6 +437,33 @@ def test_validate_non_run_out_of_range_event_ref_returns_error():
     assert "event_ref" in errors[0].field
 
 
+def test_validate_negative_event_ref_returns_error():
+    """scope='decision' with event_ref=-1 (negative) → error."""
+    from aica_api.services.feedback import validate
+
+    tick = _make_tick_event(0)
+    run_log = _make_run_log([tick])
+    event = _make_feedback_event(scope="decision", event_ref=-1)
+    errors = validate(event, _v1_schema(), run_log)
+
+    assert len(errors) == 1
+    assert "event_ref" in errors[0].field
+
+
+def test_validate_note_field_dict_missing_choice_key_returns_error():
+    """Note-form dict missing 'choice' key → targeted error message."""
+    from aica_api.services.feedback import validate
+
+    # acceptance_reason has note=True, so dict form is allowed — but 'choice' is required
+    labels = {"acceptance_reason": {"note": "no choice here"}}
+    event = _make_feedback_event(scope="run", labels=labels)
+    errors = validate(event, _v1_schema(), _make_run_log())
+
+    assert len(errors) == 1
+    assert "acceptance_reason" in errors[0].field or "acceptance_reason" in errors[0].message
+    assert "choice" in errors[0].message
+
+
 # ---------------------------------------------------------------------------
 # T005 — validate: multiple errors
 # ---------------------------------------------------------------------------

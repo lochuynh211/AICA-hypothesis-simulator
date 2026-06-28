@@ -161,3 +161,47 @@ def test_effective_schema_collision_error_message_contains_key():
 
     with pytest.raises(SchemaCollisionError, match="overall_judgment"):
         effective_schema(pkg)
+
+
+# ---------------------------------------------------------------------------
+# T004-4 — malformed extra: missing required field → SchemaCollisionError with package id
+# ---------------------------------------------------------------------------
+
+
+def test_effective_schema_malformed_extra_missing_key_raises_collision_error():
+    """An extra missing the required 'key' field → SchemaCollisionError naming the package."""
+    from aica_api.models.package import PackageManifest
+    from aica_api.services.feedback import SchemaCollisionError, effective_schema
+
+    data = json.loads(_BASELINE_PKG_PATH.read_text(encoding="utf-8"))
+    # Inject a malformed extra: 'key' field is absent (required by FieldDef)
+    data["feedback_schema"] = [
+        {
+            "label": {"ja": "テスト", "en": "Test"},
+            "type": "choice",
+            "options": ["a", "b"],
+        }
+    ]
+    pkg = PackageManifest(**data)
+
+    with pytest.raises(SchemaCollisionError, match=pkg.id):
+        effective_schema(pkg)
+
+
+def test_effective_schema_malformed_extra_bad_type_raises_collision_error():
+    """An extra with an invalid 'type' value → SchemaCollisionError naming the package."""
+    from aica_api.models.package import PackageManifest
+    from aica_api.services.feedback import SchemaCollisionError, effective_schema
+
+    data = json.loads(_BASELINE_PKG_PATH.read_text(encoding="utf-8"))
+    data["feedback_schema"] = [
+        {
+            "key": "custom_field",
+            "label": {"ja": "テスト", "en": "Test"},
+            "type": "not_a_real_type",  # invalid enum value
+        }
+    ]
+    pkg = PackageManifest(**data)
+
+    with pytest.raises(SchemaCollisionError, match=pkg.id):
+        effective_schema(pkg)

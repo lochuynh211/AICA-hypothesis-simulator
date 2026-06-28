@@ -20,6 +20,8 @@ import pathlib
 from dataclasses import dataclass
 from typing import Any
 
+from pydantic import ValidationError
+
 from aica_api.models.feedback import FieldDef, FeedbackEvent, V1_FEEDBACK_SCHEMA
 from aica_api.models.log import RunLog
 from aica_api.models.package import PackageManifest
@@ -73,7 +75,12 @@ def effective_schema(package: PackageManifest) -> list[FieldDef]:
     extras: list[FieldDef] = []
 
     for raw in package.feedback_schema:
-        fd = FieldDef(**raw)
+        try:
+            fd = FieldDef(**raw)
+        except ValidationError as e:
+            raise SchemaCollisionError(
+                f"Malformed feedback_schema field in package {package.id!r}: {e}"
+            ) from e
         if fd.key in v1_keys:
             raise SchemaCollisionError(
                 f"Package extra feedback_schema key {fd.key!r} collides with a "
@@ -190,6 +197,12 @@ def _validate_choice_value(
                     f"Field {key!r} does not accept note-form dict values "
                     f"(note=False); provide a plain option string instead."
                 ),
+            ))
+            return
+        if "choice" not in value:
+            errors.append(FeedbackValidationError(
+                field=f"labels.{key}",
+                message=f"{key}: object form requires a 'choice' key",
             ))
             return
         choice = value.get("choice")
@@ -384,4 +397,11 @@ def append_feedback(
     run_log = RunLog(**data)
     # Append only — never touch existing events
     run_log.events.append(feedback_event)
+    # Idempotency assumption: loading via RunLog(**data) then re-serializing with
+    # model_dump(mode="json") produces byte-identical output for prior events ONLY
+    # because EvidenceRecorder writes with the same Pydantic serialization path.
+    # A future Pydantic version bump or serialization change could reformat existing
+    # events on the first append — if that matters, compare before/after and gate on
+    # equality.  Until then this round-trip is trusted to be stable within a single
+    # installed version.
     write_json_atomic(str(run_path), run_log.model_dump(mode="json"))
