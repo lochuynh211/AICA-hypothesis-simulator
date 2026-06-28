@@ -156,11 +156,23 @@ into the facts), and that the facts section carries enough to reproduce the run.
 
 - **FR-001**: The reviewer MUST be able to submit structured review labels and a free-text
   comment for a run. The free-text comment MUST NOT force a single language.
-- **FR-002**: The structured labels MUST include the V1 baseline set (proposal timing, safety
-  impression, intrusiveness, understandability, rest-spot suitability, proposal-content
-  suitability, acceptance reason, rejection reason, overall judgment), each constrained to its
-  defined categorical values; all fields are optional. The **acceptance reason** and **rejection
-  reason** labels are each a categorical choice **plus an optional free-text note**.
+- **FR-002**: The structured labels MUST include the V1 baseline set below, each constrained to
+  its allowed values (master §13.2); all fields are optional:
+
+  | label | allowed values |
+  |---|---|
+  | `proposal_timing` | too_early / appropriate / too_late / unnecessary / missed_opportunity |
+  | `safety_impression` | safe / somewhat_risky / unsafe / unclear |
+  | `intrusiveness` | not_intrusive / acceptable / intrusive / very_intrusive |
+  | `understandability` | clear / somewhat_clear / unclear |
+  | `rest_spot_suitability` | suitable / acceptable / unsuitable / no_suitable_rest_spot |
+  | `proposal_content_suitability` | suitable / acceptable / unsuitable |
+  | `acceptance_reason` | choice (rest_needed / convenient_timing / trusted_suggestion / other) + optional note |
+  | `rejection_reason` | choice (not_tired / bad_timing / unsuitable_rest_spot / distrust / other) + optional note |
+  | `overall_judgment` | good_trigger / acceptable / poor_trigger |
+
+  The **acceptance reason** and **rejection reason** labels are each a categorical choice **plus an
+  optional free-text note**.
 - **FR-003**: A package MAY define additional review fields; the reviewer-facing form and the
   validation MUST then use the V1 baseline plus those extra fields. A package field that
   redefines a V1 label MUST be rejected.
@@ -238,7 +250,8 @@ into the facts), and that the facts section carries enough to reproduce the run.
   is deferred to M6. **Acceptance/rejection reasons are choice + optional note** (V1 reason sets per
   the Clarifications). **Feedback works on any persisted run** (disk-backed append), not only active runs.
 - **Markdown export, a visual scrubbable replay, feedback edit/delete, cross-run analytics, the
-  setup-change and run-comparison feedback scopes, expert-override events, and auth are out of
-  scope** (later milestones); the export schema reserves the conditional sections for when those
-  features exist.
+  setup-change and run-comparison feedback scopes, creating expert-override events, and auth are out
+  of scope** (later milestones). **Creating** expert-override events is out of scope (M6); the export
+  simply **includes already-recorded expert-override events when present** (none occur in V1) — the
+  export schema reserves these conditional sections for when those features exist.
 - **Feedback is always optional and never blocks the run**; the simulator never auto-judges.
