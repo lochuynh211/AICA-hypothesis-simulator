@@ -36,7 +36,12 @@ Backend `app/api/aica_api/`, tests `app/api/tests/`; frontend `app/frontend/src/
   ScenarioSelector, ParameterEditor, HyperparameterEditor, MapKeyAndRouteInput, PlanPreview); the
   Review screen = the existing 3-panel composition; a NEW `RunsScreen.tsx` placeholder (filled by S4/S7);
   a header nav + "← New run / Setup" affordance. Tests: each view renders; Start Run → review; setup
-  editors are on the Setup screen.
+  editors are on the Setup screen. **MIGRATION (not a silent restructure):** the existing frontend tests
+  (`App.test.tsx`, `setup.test.tsx`, the playback tests) assume the current flat 3-panel layout — UPDATE
+  them to the three-view structure. **Preserve the existing wirings on the correct screens:** the M4
+  MapKeyAndRouteInput (now on the Setup screen) and the M5 feedback attach points (run-feedback-section
+  on Review/completed, proposal-feedback-section in the cockpit, per-tick feedback in the trace) must
+  still render and work.
 
 ## Phase 3: S3 — Language switching (US3)
 - [ ] T004 [US3] NEW `i18n/t.ts` (`t(label, lang) -> label[lang]`) + `state/runStore.ts`
@@ -59,7 +64,10 @@ Backend `app/api/aica_api/`, tests `app/api/tests/`; frontend `app/frontend/src/
   `CreateRunPlanBody.profiles` in `services/run_plan.py`: parse + **validate** against
   `DriverModelProfile`/`VehicleBehaviorProfile`/`SpeedProfile` (invalid → structured error, no run);
   the draft uses the **effective** (override-or-scenario) profiles; `run_manager.create_run` snapshots
-  the effective profiles into `RunLog`; `tick_engine.advance_tick` uses them; **frozen at run start**.
+  the effective profiles into `RunLog`; **`tick_engine.advance_tick` must consume the EFFECTIVE profiles,
+  not the raw scenario** — today it reads `scenario.{driver,vehicle,speed}_profile` directly, so thread
+  the effective profiles to it (e.g. pass them explicitly, or apply the overrides onto the scenario copy
+  used for the run). **frozen at run start** (no mid-run change).
   Tests: override changes the run (visible in log/evidence, e.g. edited speed_profile → changed speedKph);
   no override = scenario unchanged; invalid → error/no-run; frozen (no mid-run change).
 - [ ] T009 [US5] Frontend NEW `components/setup/ProfileEditor.tsx` on the Setup screen: render EVERY
