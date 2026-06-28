@@ -284,7 +284,11 @@ def test_qualitative_boundary_feature_groups_in_tick_events(client):
             f"TickEvent {i}: ordinal bands must be non-empty (at least one feature binned)"
         )
 
-    # Sanity: a REST_PROPOSAL tick's decision must reference ordinal features, not raw floats
+    # Sanity: a REST_PROPOSAL tick's decision must reference ordinal features, not raw floats.
+    # NOTE: declarative_rule emits only string values in features{} so the float guard
+    # below is vacuous for that algorithm type alone.  The weighted_score check further
+    # down exercises the same boundary against genuine float feature_groups.normalized
+    # values, making the combined guard meaningful.
     proposal_events = [
         e for e in tick_events
         if e["trace"]["decision_result"]["result_type"] == "REST_PROPOSAL"
@@ -299,6 +303,26 @@ def test_qualitative_boundary_feature_groups_in_tick_events(client):
             f"Decision feature {key!r}={val!r} looks like a raw numeric — "
             "expected ordinal band label or normalized 0/1; qualitative boundary may be broken"
         )
+
+    # ── Also exercise against weighted_score: feature_groups.normalized must be [0,1] ──
+    # weighted_score uses feature_groups.normalized (genuine floats) rather than ordinal
+    # string bands.  Verify those normalized scores are all in [0,1] — raw external
+    # numerics (e.g. drowsinessLevel=73.5) must NEVER appear in this boundary layer.
+    ws_run_id = _plan_and_run(client, WEIGHTED_PKG, FRIEND_SCENARIO)
+    ws_bodies, _ = _tick_to_pause(client, ws_run_id)
+
+    ws_log = client.get(f"/api/runs/{ws_run_id}/log").json()
+    ws_tick_events = [e for e in ws_log["events"] if e.get("kind") == "tick"]
+    assert len(ws_tick_events) >= 1, "weighted_score run must produce at least one tick event"
+
+    for i, evt in enumerate(ws_tick_events):
+        normalized = evt.get("feature_groups", {}).get("normalized", {})
+        for feat_key, feat_val in normalized.items():
+            assert isinstance(feat_val, float) and 0.0 <= feat_val <= 1.0, (
+                f"weighted_score TickEvent {i}: feature_groups.normalized[{feat_key!r}]="
+                f"{feat_val!r} is outside [0,1] — raw external numeric must not leak "
+                "past the qualitative boundary"
+            )
 
 
 # ── §3 — Feedback: append categoricals + comment, assert append-only ──────────
@@ -535,7 +559,7 @@ def test_evidence_markdown_separation(client):
                 "tick_index": proposal_tick_index,
                 "proposal_id": proposal_id,
             },
-            "labels": {"overall_judgment": "good_trigger"},
+            "labels": {"proposal_timing": "appropriate"},
             "comment": "S9 markdown test: UNIQUE_MARKER_XYZ",
         },
     )
@@ -604,9 +628,10 @@ def test_algorithm_error_surfaces_as_event_not_disguised_decision(tmp_path, monk
     Will FAIL if errors are silently swallowed or disguised as NO_TRIGGER ticks.
     """
     monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
-    clear_registry()
-    clear_draft_registry()
-
+    # §6 builds its own client (not the `client` fixture) so that the adapter
+    # monkeypatch is applied AFTER client construction but BEFORE the tick call.
+    # The autouse `reset_registries` fixture already clears registries around
+    # this test — no manual clear_registry() / clear_draft_registry() needed.
     client = TestClient(app)
 
     # Create a run with the python_module package
@@ -760,26 +785,46 @@ def test_replay_log_faithful_to_live_ticks(client):
 
 
 def test_profile_override_visible_in_evidence(client):
-    """§8 — A setup-time driver-profile override is reflected in the evidence.
+    """§8 — A setup-time driver-profile override drives the run differently AND is in evidence.
 
-    Creates a run with a driver profile override (base_growth_per_min: 2.0,
-    which differs from the scenario default of 0.9).  Proves:
-    - The run is created successfully with the override
-    - GET /log shows speed_profile / driver_profile with the overridden value
+    SC-006: "an edited profile drives its run."
+
+    Runs TWO runs from the same scenario:
+      - DEFAULT:  no profile override (base_growth_per_min = 0.9 per scenario)
+      - OVERRIDE: 10× faster drowsiness growth (base_growth_per_min = 9.0)
+
+    Proves BEHAVIORAL effect: the override run reaches REST_PROPOSAL at a
+    LOWER tick index than the default run (faster growth → earlier trigger).
+
+    Also proves recording fidelity:
+    - GET /log shows the overridden driver_profile with the override rate
     - GET /evidence shows the overridden driver_profile in simulator_facts
+    - profile_overrides field is set in the run log
 
-    Will FAIL if profile overrides are not threaded into the run log or evidence.
+    Will FAIL if:
+    - Profile overrides are not threaded into the run log or evidence.
+    - The override does not measurably change when the proposal fires.
     """
-    OVERRIDE_RATE = 2.0  # different from scenario default 0.9
-    profiles = {
+    DEFAULT_RATE = 0.9   # scenario default base_growth_per_min
+    OVERRIDE_RATE = 9.0  # 10× default — unambiguously faster drowsiness growth
+
+    # ── DEFAULT run (no profile override) ────────────────────────────────────
+    default_run_id = _plan_and_run(client, RULE_BASED_PKG, FRIEND_SCENARIO)
+    default_bodies, default_paused_body = _tick_to_pause(client, default_run_id)
+    _accept_rest(client, default_run_id)
+    default_proposal_tick = default_paused_body["tick_index"]
+
+    # ── OVERRIDE run (10× drowsiness growth rate) ────────────────────────────
+    override_profiles = {
         "driver": {
             "drowsiness_model": {"base_growth_per_min": OVERRIDE_RATE}
         }
     }
+    run_id = _plan_and_run(
+        client, RULE_BASED_PKG, FRIEND_SCENARIO, profiles=override_profiles
+    )
 
-    run_id = _plan_and_run(client, RULE_BASED_PKG, FRIEND_SCENARIO, profiles=profiles)
-
-    # Log must carry the overridden driver_profile
+    # ── Recording assertions (pre-tick) ──────────────────────────────────────
     log_resp = client.get(f"/api/runs/{run_id}/log")
     assert log_resp.status_code == 200
     log = log_resp.json()
@@ -800,12 +845,24 @@ def test_profile_override_visible_in_evidence(client):
         "run_log.profile_overrides must be set when a profile override is applied"
     )
 
-    # Tick to proposal and accept (run must work with override, not crash)
-    _, _ = _tick_to_pause(client, run_id)
+    # ── Tick override run to proposal and accept ──────────────────────────────
+    _, override_paused_body = _tick_to_pause(client, run_id)
+    override_proposal_tick = override_paused_body["tick_index"]
     action_state = _accept_rest(client, run_id)
     assert action_state["status"] == "completed"
 
-    # Evidence must show the overridden driver_profile
+    # ── BEHAVIORAL assertion: SC-006 "an edited profile drives its run" ───────
+    # A 10× drowsiness growth rate must cause the proposal to fire at a lower
+    # tick index.  Higher base_growth_per_min → drowsiness crosses ordinal-band
+    # thresholds sooner → damped blend reaches proposal_cut sooner.
+    assert override_proposal_tick < default_proposal_tick, (
+        f"SC-006 VIOLATED: override run (rate={OVERRIDE_RATE}) fired REST_PROPOSAL "
+        f"at tick {override_proposal_tick}, but default run (rate={DEFAULT_RATE}) "
+        f"fired at tick {default_proposal_tick}.  A 10× growth rate must produce "
+        "an earlier trigger — the profile override must actually drive the run."
+    )
+
+    # ── Evidence recording assertions ─────────────────────────────────────────
     evidence_resp = client.get(f"/api/runs/{run_id}/evidence")
     assert evidence_resp.status_code == 200
     evidence = evidence_resp.json()
@@ -848,9 +905,9 @@ def test_maps_sentinel_key_absent_from_log(tmp_path, monkeypatch):
     Will FAIL if the key leaks into any response, log, or evidence.
     """
     monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
-    clear_registry()
-    clear_draft_registry()
-
+    # §9 builds its own client so the Maps _urlopen monkeypatch can be applied
+    # after client construction.  The autouse `reset_registries` fixture already
+    # clears registries before/after this test — no manual calls needed here.
     client = TestClient(app)
 
     _SENTINEL = "SENTINEL_API_KEY_MUST_NOT_LEAK_S9"
