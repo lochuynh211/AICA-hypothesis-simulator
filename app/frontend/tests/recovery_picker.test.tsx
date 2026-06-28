@@ -138,7 +138,14 @@ describe('RecoveryPicker', () => {
     vi.mocked(client.getScenario).mockResolvedValue(mockScenario)
     vi.mocked(client.getRestSpots).mockResolvedValue({
       rest_spots: [
-        { id: 'p1', label: { ja: 'パーキング1', en: 'Parking 1' }, route_fraction: 0.5 },
+        {
+          id: 'p1',
+          label: { ja: 'パーキング1', en: 'Parking 1' },
+          route_fraction: 0.5,
+          distance_km: 12.3,
+          eta_min: 8,
+          reachable: true,
+        },
       ],
     })
     vi.mocked(client.actRun).mockResolvedValue(resolvedRunState)
@@ -163,6 +170,12 @@ describe('RecoveryPicker', () => {
     await screen.findByTestId('rest-spot-p1')
     await screen.findByTestId('recovery-option-nap_karaoke')
 
+    // Name is shown
+    expect(screen.getByText('Parking 1')).toBeInTheDocument()
+    // Distance and ETA are shown
+    expect(screen.getByText(/12\.3 km/)).toBeInTheDocument()
+    expect(screen.getByText(/8 min/)).toBeInTheDocument()
+
     // Select the rest spot first, then the option
     fireEvent.click(screen.getByTestId('rest-spot-p1'))
     fireEvent.click(screen.getByTestId('recovery-option-nap_karaoke'))
@@ -174,5 +187,46 @@ describe('RecoveryPicker', () => {
         { recovery_option_id: 'nap_karaoke', rest_spot: expect.objectContaining({ id: 'p1' }) },
       ),
     )
+  })
+
+  it('disables a rest spot with reachable:false and shows "too far"', async () => {
+    vi.mocked(client.getScenario).mockResolvedValue(mockScenario)
+    vi.mocked(client.getRestSpots).mockResolvedValue({
+      rest_spots: [
+        {
+          id: 'far1',
+          label: { ja: '遠い SA', en: 'Far SA' },
+          route_fraction: 0.9,
+          distance_km: 95.0,
+          eta_min: null,
+          reachable: false,
+        },
+      ],
+    })
+
+    renderWithStore(
+      <RecoveryPicker />,
+      (dispatch) => {
+        dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_test' })
+        dispatch({ type: 'RUN_CREATED', runState: pausedRunState })
+        dispatch({
+          type: 'TICK_APPENDED',
+          runState: pausedRunState,
+          decision: proposalDecision,
+          tickIndex: 5,
+          paused: true,
+          completed: false,
+        })
+      },
+    )
+
+    await screen.findByTestId('rest-spot-far1')
+
+    // Button is disabled
+    expect(screen.getByTestId('rest-spot-far1')).toBeDisabled()
+    // "too far" note visible
+    expect(screen.getByText(/too far/i)).toBeInTheDocument()
+    // ETA shows — when null
+    expect(screen.getByText(/ETA: —/)).toBeInTheDocument()
   })
 })

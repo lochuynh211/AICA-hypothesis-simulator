@@ -167,7 +167,7 @@ describe('ScenarioBeats', () => {
     }
     renderWithStore(<ScenarioBeats />, driveThrough)
     await waitFor(() => {
-      expect(screen.getByText('Highway')).toBeInTheDocument()
+      expect(screen.getByText('Driving · Highway')).toBeInTheDocument()
     })
     expect(screen.getByText('Start')).toBeInTheDocument()
     expect(screen.getByText('AICA proposes rest')).toBeInTheDocument()

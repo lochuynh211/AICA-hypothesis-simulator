@@ -341,6 +341,9 @@ export type RestSpot = {
   lat?: number | null
   lng?: number | null
   route_fraction: number
+  distance_km?: number | null
+  eta_min?: number | null
+  reachable?: boolean
 }
 
 export type RecoveryStateT = {

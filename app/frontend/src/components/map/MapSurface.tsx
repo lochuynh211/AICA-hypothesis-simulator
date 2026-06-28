@@ -95,7 +95,7 @@ export default function MapSurface() {
   const display = selectedAlt?.display ?? null
 
   // ── Route position (shared, clamped) + eased car fraction ─────────────────
-  const { currentFraction, proposalFraction, restFraction } = useRouteProgress()
+  const { currentFraction, proposalFraction } = useRouteProgress()
   const positionPct = `${Math.round(currentFraction * 100)}%`
   const shownFraction = useSmoothFraction(currentFraction)
 
@@ -105,7 +105,6 @@ export default function MapSurface() {
   const pathRef = useRef<{ path: any[]; cum: number[]; total: number } | null>(null)
   const carRef = useRef<GMapsLib>(null)
   const startRef = useRef<GMapsLib>(null)
-  const restRef = useRef<GMapsLib>(null)
   const fireRef = useRef<GMapsLib>(null)
   // Geographic marker for the chosen rest spot (real SDK only).
   const chosenRestRef = useRef<GMapsLib>(null)
@@ -263,21 +262,6 @@ export default function MapSurface() {
     const carPos = latLngAt(path, cum, total, shownFraction, sph)
     if (carPos && carRef.current) carRef.current.setPosition(carPos)
 
-    // Rest marker (gold) at the rest-facility fraction.
-    if (restFraction != null) {
-      const rp = latLngAt(path, cum, total, restFraction, sph)
-      if (rp) {
-        if (!restRef.current) {
-          restRef.current = new gmaps.Marker({
-            map: mapInstanceRef.current,
-            icon: { path: gmaps.SymbolPath.CIRCLE, scale: 6, fillColor: '#f0c000', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
-            zIndex: 997,
-          })
-        }
-        restRef.current.setPosition(rp)
-      }
-    }
-
     // Fire marker (orange) where the proposal fired.
     if (proposalFraction != null) {
       const fp = latLngAt(path, cum, total, proposalFraction, sph)
@@ -313,7 +297,7 @@ export default function MapSurface() {
       chosenRestRef.current.setMap(null)
       chosenRestRef.current = null
     }
-  }, [shownFraction, restFraction, proposalFraction, restSpot])
+  }, [shownFraction, proposalFraction, restSpot])
 
   // ── Guard: nothing to show ────────────────────────────────────────────────
   // When display is null (local path), return null so the caller can fall back

@@ -130,21 +130,35 @@ export default function RecoveryPicker() {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {spots.map((spot) => {
               const selected = selectedSpot?.id === spot.id
+              const unreachable = spot.reachable === false
               return (
                 <button
                   key={spot.id}
                   data-testid={`rest-spot-${spot.id}`}
-                  onClick={() => setSelectedSpot(spot)}
+                  onClick={() => !unreachable && setSelectedSpot(spot)}
+                  disabled={unreachable}
                   style={{
-                    padding: '6px 12px',
+                    padding: '8px 12px',
                     border: selected ? '2px solid #0ea5e9' : '1px solid #ccc',
                     borderRadius: '4px',
-                    background: selected ? '#e0f2fe' : '#fff',
-                    cursor: 'pointer',
+                    background: selected ? '#e0f2fe' : unreachable ? '#f5f5f5' : '#fff',
+                    cursor: unreachable ? 'not-allowed' : 'pointer',
                     fontWeight: selected ? 700 : 400,
+                    textAlign: 'left',
+                    opacity: unreachable ? 0.6 : 1,
                   }}
                 >
-                  {t(spot.label, uiLanguage)}
+                  <div style={{ fontWeight: 600 }}>{t(spot.label, uiLanguage)}</div>
+                  <div style={{ fontSize: '0.82em', color: '#555', marginTop: '2px' }}>
+                    {spot.distance_km != null ? `${spot.distance_km} km` : '—'}
+                    {' · '}
+                    {t({ ja: 'ETA', en: 'ETA' }, uiLanguage)}: {spot.eta_min != null ? `${spot.eta_min} min` : '—'}
+                  </div>
+                  {unreachable && (
+                    <div style={{ fontSize: '0.78em', color: '#c00', marginTop: '2px' }}>
+                      {t({ ja: '届かない', en: 'too far' }, uiLanguage)}
+                    </div>
+                  )}
                 </button>
               )
             })}

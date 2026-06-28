@@ -32,16 +32,21 @@ function segIcon(seg: RouteSegment): string {
     case 'start':
     case 'end':
       return '🏁'
-    case 'highway':
-      return '🛣️'
-    case 'national':
-      return '🛤️'
-    case 'urban':
-      return '🏙️'
-    case 'residential':
-      return '🏘️'
     default:
-      return '📍'
+      return '🚗'  // all driving types: urban, highway, national, residential, etc.
+  }
+}
+
+function segBeatLabel(seg: RouteSegment, lang: string): string {
+  if (seg.is_rest_facility || seg.type === 'rest') return t(seg.name, lang)
+  switch (seg.type) {
+    case 'start':        return t({ ja: '出発', en: 'Start' }, lang)
+    case 'end':          return t({ ja: '目的地', en: 'Destination' }, lang)
+    case 'urban':        return t({ ja: '市街地', en: 'Driving · Urban zone' }, lang)
+    case 'highway':      return t({ ja: '高速道路', en: 'Driving · Highway' }, lang)
+    case 'national':     return t({ ja: '国道', en: 'Driving · National road' }, lang)
+    case 'residential':  return t({ ja: '住宅地', en: 'Driving · Residential area' }, lang)
+    default:             return t({ ja: '走行中', en: 'Driving · Road' }, lang)
   }
 }
 
@@ -108,7 +113,7 @@ export default function ScenarioBeats() {
           .map((s) => (
             <li key={s.id} data-testid={`beat-seg-${s.id}`} style={beatStyle(false, false, '#2563eb')}>
               <span aria-hidden>{segIcon(s)}</span>
-              <span style={labelCell}>{t(s.name, uiLanguage)}</span>
+              <span style={labelCell}>{segBeatLabel(s, uiLanguage)}</span>
             </li>
           ))}
       </ul>
@@ -123,6 +128,7 @@ export default function ScenarioBeats() {
   let prevResultType: string | null = null
   let prevRecoveryPhase: string | null = null
   let actionEmitted = false
+  let earlyDrivingEmitted = false
 
   trace.forEach((e: TraceEntry) => {
     // 1. Road-type / segment change — emits start beat on tick 0 (type "start")
@@ -132,10 +138,27 @@ export default function ScenarioBeats() {
       beats.push({
         id: `seg-${e.tick_index}-${seg.id}`,
         icon: segIcon(seg),
-        label: t(seg.name, uiLanguage),
+        label: segBeatLabel(seg, uiLanguage),
         kind: 'segment',
       })
       prevSegId = seg.id
+    }
+
+    // Early driving beat: emit 🚗 "Driving" once on the first MOVING tick
+    // while the active segment is still 'start' (handles long start segments).
+    if (
+      seg?.type === 'start' &&
+      seg.id === prevSegId &&
+      e.motion_state === 'MOVING' &&
+      !earlyDrivingEmitted
+    ) {
+      earlyDrivingEmitted = true
+      beats.push({
+        id: `driving-early-${e.tick_index}`,
+        icon: '🚗',
+        label: t({ ja: '走行中', en: 'Driving' }, uiLanguage),
+        kind: 'segment',
+      })
     }
 
     // 2. Traffic jam — rising edge only
@@ -241,7 +264,7 @@ export default function ScenarioBeats() {
           <span aria-hidden>{segIcon(upcoming)}</span>
           <span style={{ ...labelCell, fontStyle: 'italic' }}>
             {t({ ja: '次: ', en: 'Next: ' }, uiLanguage)}
-            {t(upcoming.name, uiLanguage)}
+            {segBeatLabel(upcoming, uiLanguage)}
           </span>
         </li>
       )}
