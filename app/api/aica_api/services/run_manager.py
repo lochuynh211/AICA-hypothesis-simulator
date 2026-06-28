@@ -722,3 +722,27 @@ def action(run_id: str, action_str: str) -> RunState:
     run_state.pending_proposal = None
 
     return run_state
+
+
+# ---------------------------------------------------------------------------
+# Public API — append_feedback (M5)
+# ---------------------------------------------------------------------------
+
+
+def append_feedback(run_id: str, event: "FeedbackEvent") -> None:
+    """Append a FeedbackEvent to an active run's EvidenceRecorder.
+
+    NON-ALGORITHMIC: only ever calls recorder.append(); never touches the
+    adapter, the tick engine, or any previously recorded TickEvent.
+
+    Args:
+        run_id: The active run identifier (must be in the registry).
+        event:  The FeedbackEvent to append (kind="feedback").
+
+    Raises:
+        RunNotFoundError: If run_id is not in the active registry.
+    """
+    if run_id not in _registry:
+        raise RunNotFoundError(f"Unknown run_id: {run_id!r}")
+    _, _, _, recorder, _ = _registry[run_id]
+    recorder.append(event)
