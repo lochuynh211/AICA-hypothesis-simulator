@@ -19,7 +19,7 @@ export default function ProposalPanel({ proposal, runId, reasonInputs, explanati
   async function handleAction(action: string) {
     try {
       const runState = await actRun(runId, action)
-      dispatch({ type: 'ACTION_APPLIED', runState })
+      dispatch({ type: 'ACTION_APPLIED', runState, action })
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Action failed'
       dispatch({ type: 'SET_RUN_ERROR', message })

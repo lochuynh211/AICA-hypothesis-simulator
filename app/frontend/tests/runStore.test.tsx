@@ -234,7 +234,7 @@ describe('runStore — ACTION_APPLIED', () => {
     }))
     expect(result.current.state.paused).toBe(true)
 
-    act(() => result.current.dispatch({ type: 'ACTION_APPLIED', runState: resumedRun }))
+    act(() => result.current.dispatch({ type: 'ACTION_APPLIED', runState: resumedRun, action: 'accept_rest' }))
     expect(result.current.state.runState?.status).toBe('playing')
     expect(result.current.state.runState?.pending_proposal).toBeNull()
     expect(result.current.state.paused).toBe(false)

@@ -104,9 +104,17 @@ export type RunStoreState = {
    * Cleared on SELECT_SCENARIO and RESET so each new scenario starts fresh.
    */
   tickSecondsOverride: number | null
+
+  // ── M7: last applied action (for beat timeline / recovery) ─────────────────
+  /**
+   * The action string from the most recent ACTION_APPLIED dispatch.
+   * Used by downstream components (e.g. recovery beat timeline) to know what
+   * the reviewer just did. Null until the first action is taken; cleared on RESET.
+   */
+  lastAction: string | null
 }
 
-const initialState: RunStoreState = {
+export const initialState: RunStoreState = {
   packages: [],
   scenarios: [],
   packageErrors: [],
@@ -146,6 +154,8 @@ const initialState: RunStoreState = {
   profileOverrides: null,
   // tick seconds — null means "use scenario default"
   tickSecondsOverride: null,
+  // M7 — no action taken yet
+  lastAction: null,
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -165,8 +175,21 @@ export type RunStoreAction =
       completed: boolean
       /** Authoritative route position (0–1) from the tick response, if present. */
       routeFraction?: number | null
+      /** Current motion state (e.g. 'MOVING', 'STOPPED') from the recovery engine. */
+      motionState?: string | null
+      /** Current recovery phase label from the recovery engine. */
+      recoveryPhase?: string | null
+      /** Active content string shown during a recovery stage. */
+      activeContent?: string | null
+      /** True when the current segment is a traffic jam. */
+      isTrafficJam?: boolean | null
     }
-  | { type: 'ACTION_APPLIED'; runState: RunState }
+  | {
+      type: 'ACTION_APPLIED'
+      runState: RunState
+      /** The action string applied — recorded for the beat timeline. */
+      action: string
+    }
   | {
       type: 'ALGORITHM_ERROR_APPENDED'
       runState: RunState
@@ -217,7 +240,7 @@ export type RunStoreAction =
 
 // ── Reducer ────────────────────────────────────────────────────────────────
 
-function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
+export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
   switch (action.type) {
     case 'LOAD_PACKAGES':
       return {
@@ -330,6 +353,9 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         ...action.decision,
         tick_index: action.tickIndex,
         route_fraction: action.routeFraction ?? null,
+        motion_state: action.motionState ?? null,
+        recovery_phase: action.recoveryPhase ?? null,
+        is_traffic_jam: action.isTrafficJam ?? null,
       }
       return {
         ...state,
@@ -346,6 +372,7 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         ...state,
         runState: action.runState,
         paused: false,
+        lastAction: action.action,
       }
 
     case 'ALGORITHM_ERROR_APPENDED':
@@ -440,6 +467,8 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         profileOverrides: null,
         // Clear tick seconds override on reset
         tickSecondsOverride: null,
+        // M7: clear last action on reset
+        lastAction: null,
       }
 
     default:

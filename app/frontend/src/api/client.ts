@@ -18,6 +18,7 @@ import type {
   FeedbackEvent,
   EvidenceReport,
   ProfileOverrides,
+  RestSpot,
 } from './types'
 import { MapsError, FeedbackValidationError } from './types'
 
@@ -185,12 +186,24 @@ export async function tickRun(runId: string): Promise<TickResponse> {
   return apiFetch(`/api/runs/${runId}/tick`, { method: 'POST' })
 }
 
-export async function actRun(runId: string, action: string): Promise<RunState> {
+export async function actRun(
+  runId: string,
+  action: string,
+  opts: { recovery_option_id?: string; rest_spot?: RestSpot } = {},
+): Promise<RunState> {
   return apiFetch(`/api/runs/${runId}/actions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action }),
+    body: JSON.stringify({ action, ...opts }),
   })
+}
+
+export async function getRestSpots(
+  runId: string,
+  mapsKey?: string,
+): Promise<{ rest_spots: RestSpot[] }> {
+  const q = mapsKey ? `?maps_key=${encodeURIComponent(mapsKey)}` : ''
+  return apiFetch(`/api/runs/${runId}/rest-spots${q}`, { method: 'GET' })
 }
 
 export async function listRuns(): Promise<{ runs: RunSummary[] }> {
