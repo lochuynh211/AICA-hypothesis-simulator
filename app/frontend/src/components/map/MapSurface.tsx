@@ -76,23 +76,32 @@ export default function MapSurface() {
   useEffect(() => {
     if (!display || !mapsKey) return
 
+    // Fix 2: clear any stale map error so a fresh key/polyline attempt starts
+    // without showing the previous failure banner (e.g. bad key → valid key).
+    setMapError(null)
+
     // I3 fix: register gm_authfailure BEFORE injecting the script so the SDK
     // calls our handler instead of rendering its full-page blocking overlay.
     // When the Maps SDK detects an invalid/domain-restricted key it looks for
     // window.gm_authfailure; if found it calls it; if not it falls back to its
     // built-in modal dialog that captures all pointer events (UI freeze).
+    // authCleanup is shared by ALL paths (early-returns and full injection)
+    // so the handler is never left on window after unmount.
+    const authCleanup = () => {
+      delete (window as Record<string, unknown>)['gm_authfailure']
+    }
     ;(window as Record<string, unknown>)['gm_authfailure'] = () => {
       setMapError(
         'Google Maps authorization failed. Verify your API key and domain restrictions.',
       )
     }
 
-    if (getGMaps()?.geometry?.encoding) return // already loaded
+    if (getGMaps()?.geometry?.encoding) return authCleanup // already loaded
 
     const callbackName = '__aicaHypSimMapsInit'
     const scriptId = 'aica-hyp-sim-gmaps-script'
 
-    if (document.getElementById(scriptId)) return // injection already in progress
+    if (document.getElementById(scriptId)) return authCleanup // injection already in progress
 
     ;(window as Record<string, unknown>)[callbackName] = () => {
       delete (window as Record<string, unknown>)[callbackName]
@@ -110,7 +119,7 @@ export default function MapSurface() {
       const existing = document.getElementById(scriptId)
       if (existing) document.head.removeChild(existing)
       delete (window as Record<string, unknown>)[callbackName]
-      delete (window as Record<string, unknown>)['gm_authfailure']
+      authCleanup()
     }
   }, [mapsKey, display?.encoded_polyline])
 

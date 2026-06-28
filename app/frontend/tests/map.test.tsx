@@ -624,6 +624,87 @@ describe('MapSurface — I3 regression: Maps SDK auth failure causes UI freeze',
       expect(screen.getByTestId('car-marker')).toBeInTheDocument()
     },
   )
+
+  it(
+    '(u) gm_authfailure is removed from window after unmount on the already-loaded path',
+    () => {
+      // Google Maps is already present at mount time — the effect hits the
+      // early-return ("already loaded") branch.  Before Fix 1 that path had no
+      // cleanup so the handler lingered on window after unmount.
+      setupGoogleMapsMock()
+
+      const { unmount } = renderInStore(<MapSurface />, (dispatch) => {
+        dispatch({ type: 'SET_MAPS_KEY', key: 'test-key' })
+        dispatch({ type: 'SET_ALTERNATIVES', envelope: mapsEnvelope })
+        dispatch({ type: 'SELECT_ROUTE', routeId: 'route-0' })
+      })
+
+      // Handler must be registered while the component is mounted.
+      expect(typeof (window as Record<string, unknown>).gm_authfailure).toBe('function')
+
+      // After unmount the effect cleanup (authCleanup) must delete it.
+      unmount()
+      expect((window as Record<string, unknown>).gm_authfailure).toBeUndefined()
+    },
+  )
+
+  it(
+    '(v) a new valid key after an error clears the stale error and renders the map container',
+    async () => {
+      // Start without Google Maps so the script-injection path runs.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (window as any).google
+      delete (window as Record<string, unknown>).gm_authfailure
+
+      // We need a dispatch reference accessible after initial render so we can
+      // simulate the user entering a new valid key.
+      let capturedDispatch: React.Dispatch<RunStoreAction> | null = null
+      function CaptureDispatch() {
+        const { dispatch } = useRunStore()
+        capturedDispatch = dispatch
+        return null
+      }
+
+      const { RunStoreProvider: Provider } = await import('../src/state/runStore')
+
+      render(
+        <Provider>
+          <CaptureDispatch />
+          <MapSurface />
+        </Provider>,
+      )
+
+      act(() => {
+        capturedDispatch!({ type: 'SET_MAPS_KEY', key: 'bad-key' })
+        capturedDispatch!({ type: 'SET_ALTERNATIVES', envelope: mapsEnvelope })
+        capturedDispatch!({ type: 'SELECT_ROUTE', routeId: 'route-0' })
+      })
+
+      // Simulate the Maps SDK calling our auth-failure handler.
+      const authFailureHandler = (window as Record<string, unknown>).gm_authfailure as
+        | (() => void)
+        | undefined
+      expect(authFailureHandler).toBeDefined()
+      await act(async () => { authFailureHandler?.() })
+
+      // Confirm the stale error banner is showing.
+      expect(screen.getByTestId('map-init-error')).toBeInTheDocument()
+      expect(screen.queryByTestId('map-container')).not.toBeInTheDocument()
+
+      // Install the valid Google Maps mock and switch to a new valid key.
+      // The mapsKey change reruns the effect which calls setMapError(null) first.
+      setupGoogleMapsMock()
+      await act(async () => {
+        capturedDispatch!({ type: 'SET_MAPS_KEY', key: 'valid-key' })
+      })
+
+      // The stale error banner must be gone and the map canvas must appear.
+      await waitFor(() => {
+        expect(screen.queryByTestId('map-init-error')).not.toBeInTheDocument()
+        expect(screen.getByTestId('map-container')).toBeInTheDocument()
+      })
+    },
+  )
 })
 
 // Note: routesAnalyze envelope behaviour (local path, maps path, 502 MapsError)
