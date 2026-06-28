@@ -42,10 +42,7 @@ export function createReplaySource(log: RunLog): ReplaySource {
       return {
         tick_index: ev.tick_index,
         tick_state: ev.tick_state as Record<string, unknown>,
-        // raw_state is present on the backend TickEvent but not in the frontend type;
-        // cast through unknown to access it when serialised from JSON.
-        raw_state:
-          (ev as unknown as { raw_state?: Record<string, unknown> }).raw_state ?? {},
+        raw_state: ev.raw_state ?? {},
         decision: ev.trace.decision_result as unknown as DecisionResult,
         route_fraction,
       }

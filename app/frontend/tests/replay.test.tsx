@@ -324,6 +324,47 @@ describe('T011 — ReplayViewer (source abstraction + scrubber)', () => {
       expect(screen.getByTestId('replay-decision-trace')).toBeInTheDocument()
     })
   })
+
+  it('scrubbing to a gap tick (tick 1) shows replay-no-tick placeholder and hides panels', async () => {
+    render(
+      <RunStoreProvider>
+        <ReplayViewer runId="replay-test-001" />
+      </RunStoreProvider>,
+    )
+    await waitFor(() => {
+      expect(screen.getByTestId('replay-scrubber')).toBeInTheDocument()
+    })
+    // tick 1 has no event in sampleRunLog (gap between 0 and 2)
+    fireEvent.change(screen.getByTestId('replay-scrubber'), { target: { value: '1' } })
+    await waitFor(() => {
+      expect(screen.getByTestId('replay-no-tick')).toBeInTheDocument()
+    })
+    // live-default panels must NOT mount for a gap tick
+    expect(screen.queryByTestId('car-marker')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('nav-view')).not.toBeInTheDocument()
+  })
+
+  it('scrubbing from a gap tick (1) to tick 2 recovers recorded tick-2 data', async () => {
+    render(
+      <RunStoreProvider>
+        <ReplayViewer runId="replay-test-001" />
+      </RunStoreProvider>,
+    )
+    await waitFor(() => {
+      expect(screen.getByTestId('replay-scrubber')).toBeInTheDocument()
+    })
+    // go to gap
+    fireEvent.change(screen.getByTestId('replay-scrubber'), { target: { value: '1' } })
+    await waitFor(() => {
+      expect(screen.getByTestId('replay-no-tick')).toBeInTheDocument()
+    })
+    // move to tick 2 — recorded data should reappear
+    fireEvent.change(screen.getByTestId('replay-scrubber'), { target: { value: '2' } })
+    await waitFor(() => {
+      expect(screen.queryByTestId('replay-no-tick')).not.toBeInTheDocument()
+      expect(screen.getByTestId('car-marker')).toHaveAttribute('aria-label', 'Route position: 30%')
+    })
+  })
 })
 
 // ── Source abstraction — panels accept replayTick prop ─────────────────────────

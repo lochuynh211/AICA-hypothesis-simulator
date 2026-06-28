@@ -37,6 +37,7 @@ export default function RouteTimeline({ replayTick }: { replayTick?: ReplayTick 
           }}
           aria-label={`Route position: ${positionPct}`}
         />
+        {/* TODO(post-V1): pin replay fire-marker to historical fire tick (see U7 review) */}
         {proposalFraction !== null && (
           <div
             data-testid="fire-marker"

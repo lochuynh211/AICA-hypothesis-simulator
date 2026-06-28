@@ -366,6 +366,7 @@ export type TickEvent = {
   kind: 'tick'
   tick_index: number
   tick_state: Record<string, unknown>
+  raw_state?: Record<string, unknown>
   trace: LogTraceEntry
 }
 

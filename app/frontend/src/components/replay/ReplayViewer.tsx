@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { getRunLog } from '../../api/client'
 import { createReplaySource } from '../../replay/replaySource'
 import ReplayControls from './ReplayControls'
@@ -18,6 +18,9 @@ export default function ReplayViewer({ runId }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentTick, setCurrentTick] = useState(0)
+
+  // Memoize: log only changes once after fetch — avoid rebuilding the O(n) map+sort on every render/scrub.
+  const source = useMemo(() => (log ? createReplaySource(log) : null), [log])
 
   useEffect(() => {
     let cancelled = false
@@ -68,9 +71,8 @@ export default function ReplayViewer({ runId }: Props) {
     )
   }
 
-  if (!log) return null
+  if (!log || !source) return null
 
-  const source = createReplaySource(log)
   const replayTick = source.getAt(currentTick)
 
   return (
@@ -98,9 +100,23 @@ export default function ReplayViewer({ runId }: Props) {
       </div>
       <div style={{ padding: '8px' }}>
         <ReplayControls source={source} currentTick={currentTick} onSeek={setCurrentTick} />
-        <RouteTimeline replayTick={replayTick} />
-        <CockpitView replayTick={replayTick} />
-        <DecisionTracePanel replayTick={replayTick} />
+        {replayTick === null ? (
+          <div
+            data-testid="replay-no-tick"
+            style={{ padding: '12px', color: '#aaa', fontSize: '0.85em', textAlign: 'center' }}
+          >
+            {t(
+              { ja: 'このティックに記録データがありません', en: 'No recorded data for this tick' },
+              uiLanguage,
+            )}
+          </div>
+        ) : (
+          <>
+            <RouteTimeline replayTick={replayTick} />
+            <CockpitView replayTick={replayTick} />
+            <DecisionTracePanel replayTick={replayTick} />
+          </>
+        )}
       </div>
     </div>
   )
