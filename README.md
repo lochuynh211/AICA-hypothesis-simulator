@@ -3,10 +3,11 @@
 A local, single-user tool for reviewing AICA (AI Cockpit Assistant) trigger
 algorithms by running driving scenarios and inspecting decision traces.
 
-> **Status: M5 — Review Feedback & Evidence Completeness.** M5 adds structured
-> reviewer feedback, a read-only evidence timeline, and a downloadable evidence report.
-> M4 features (BYO-key Google Maps route surface) and all prior milestone features
-> are still fully supported.
+> **Status: M6 — V1 Release Candidate.** M6 completes the V1 feature set: dedicated
+> Setup screen, three-view shell (Setup / Review / Runs), JA/EN language switching,
+> run management (reset, restart, run list), setup-time profile editor, visual
+> scrubbable replay, Markdown evidence export, and a full stabilization sweep.
+> All M0–M5 features (tick engine, Maps surface, feedback, evidence) are unchanged.
 
 ## Prerequisites
 
@@ -46,6 +47,114 @@ If 8137 or 5180 is already in use on your machine, change them in two places:
 > change backend or frontend dependencies later, run `docker compose down -v`
 > (to drop the stale volumes) before `docker compose up` so the rebuilt images'
 > dependencies take effect.
+
+## M6 review flow — V1 end-to-end (UI)
+
+M6 restructures the UI into **three views** — Setup, Review, and Runs — so a
+reviewer can complete the full UC-01 loop without developer help.
+
+### Step 1: Setup screen
+
+Open **http://localhost:5180**.  The **Setup** screen is the entry point.
+
+1. **Pick a package** — one of four algorithm types:
+   - **Rest proposal (rule-based)** — `declarative_rule`
+   - **Rest proposal (weighted-score)** — `weighted_score`
+   - **Python rest proposal** — `python_module` (same logic, Python port)
+   - **AICA Transparent Hybrid Trigger v1** — stateful, evolving runtime state
+2. **Pick a scenario** — UC-01 friend drive or UC-01 overtime driver.
+3. **Tune parameters / hyperparameters** — defaults pre-filled; invalid values
+   show an inline error and block the plan.
+4. **Edit behavior profiles** *(optional)* — the driver, vehicle, and speed behavior
+   profiles from the selected scenario are pre-filled in the profile editor.  Edit
+   any field to override the scenario default before the run starts.  Click
+   **Reset to scenario default** to restore the originals.  Invalid values are
+   rejected with a clear error — no run starts until profiles are valid.
+5. **Enter a Maps route** *(optional)* — enter your BYO Google Maps API key and a
+   start/end address to request up to three route alternatives.  The key is held in
+   browser memory only — **never sent to persistent storage, never written to any
+   log file**.  Omit the key entirely to use the deterministic local route fallback
+   (works fully offline; `route_source: "local"` in the evidence).
+6. **Generate plan** — the backend derives a frozen event plan (tick cadence,
+   traffic, rest opportunities).  Regenerate as desired.
+7. **Language toggle** — switch the UI between **Japanese** (JA) and **English** (EN)
+   at any time.  All bilingual labels switch instantly; the selected language is
+   recorded in the exported evidence.  The selection is session-only (not persisted).
+8. **Start** — the run is created and the log is persisted to `runs/<run_id>.json`
+   immediately.  The UI switches to the **Review** screen.  Profile edits are frozen
+   at this point; they cannot be changed mid-run.
+
+### Step 2: Review screen
+
+The Review screen is the 3-panel layout: **context** (left), **playback+cockpit**
+(centre), **controls+trace+feedback** (right).
+
+1. Press **Play** (or **Step** one tick at a time).  Controls are always responsive
+   (the M6 freeze fix eliminates the prior "buttons unresponsive / no animation" bug).
+2. The left panel shows drowsiness/fatigue bands and route position in real time.
+3. When the fatigue decision point is reached the run pauses and the cockpit shows
+   the **rest proposal**.  Press **Accept rest**, **Postpone**, or (overtime scenario)
+   **Decline**.
+4. **Record feedback** — the Proposal Feedback form in the cockpit area lets you
+   record V1 review labels (timing, safety, intrusiveness, etc.) plus a free-text
+   comment.  Run-level feedback (overall judgment) is available in the right panel
+   once the run completes.
+5. **Reset** — returns to the Setup screen with the current run cleared.
+6. **Restart** — starts a fresh run from the current session's frozen plan (same
+   package + scenario + profiles) from tick 0 — no re-setup needed.
+7. **New run** — returns to Setup for a fresh configuration.
+
+### Step 3: Runs screen
+
+The **Runs** view lists all persisted runs from `runs/` (disk + any active run).
+Each entry shows: `run_id`, package, scenario, created time, and status.
+
+Click any past run to open its evidence read-only:
+
+- **Evidence timeline** — expandable list of all recorded events (ticks, proposals,
+  actions, algorithm errors, feedback) in order.  Feedback events are visually
+  distinct from simulator facts.
+- **Visual replay** — scrub or step through the recorded ticks in the full playback
+  view (cockpit, route/map, decision trace).  Replay renders from the saved log with
+  **no algorithm recalculation** — every value shown was recorded at run time.
+- **Export JSON** — `evidence-<run_id>.json` with `simulator_facts` and `human_review`
+  sections (§14.2 format; see below).
+- **Export Markdown** — `.md` file with `## Simulator Facts` and `## Human Review`
+  sections.  Never claims the simulator judged the algorithm.
+
+A past run opened from Runs is **read-only**: evidence + replay + export only.
+To run again, go back to Setup and reconfigure.
+
+### Evidence export format (§14.2)
+
+The exported evidence file has two top-level sections:
+
+- **`simulator_facts`** — route snapshot, route facts, frozen event plan, setup
+  parameters and hyperparameters, driver and vehicle profiles (including any profile
+  overrides), the full event timeline (ticks, proposals, actions, algorithm errors),
+  decision trace, and proposal events.  **No feedback value appears anywhere in this
+  section.**
+- **`human_review`** — structured review labels and free-text comments keyed by
+  their targets (proposal, run, decision, or action).
+
+The report carries enough to reproduce the run (package id+version, scenario
+id+version, parameters, profiles, event plan, route facts), records the selected
+`ui_language`, and never claims the simulator independently judged the algorithm.
+
+### Maps key safety
+
+The API key reaches the backend in a single POST body, is used to call Google APIs,
+and is **immediately discarded**.  It is never stored in memory between requests,
+never written to disk, and never echoed in any response or error body.  The
+key-safety property is verified end-to-end by the S9 integration tests.
+
+### Algorithm errors
+
+A `python_module` package whose `algorithm.py` raises, lacks `evaluate`, or returns
+an invalid result shape produces an `algorithm_error` event in the trace.  Errors are
+**never disguised as normal AICA decisions** — the error event appears in the log and
+pauses the run by default (`error_mode: "blocking"`).  The S9 integration tests
+verify this invariant.
 
 ## M2 review flow (UI)
 
@@ -235,6 +344,43 @@ advance until the user acts), unless the package declares
 `"error_mode": "non_blocking"` in its manifest. Errors are never disguised as
 normal AICA decisions.
 
+## Backend-only flow — M6 additions (curl)
+
+```bash
+B=http://localhost:8137
+
+# ── Run list (Runs screen — FR-005) ──────────────────────────────────────────
+
+# List all past + active runs (returns run_id, package_id, scenario_id, status, created_at)
+curl -s $B/api/runs | python3 -m json.tool
+
+# ── Profile override (Setup screen profile editor — FR-006) ───────────────────
+
+# Create a run plan with a driver-profile override (base_growth_per_min: 2.0 vs default 0.9)
+PLAN=$(curl -s -XPOST $B/api/run-plans \
+  -H 'content-type: application/json' \
+  -d '{"package_id":"rest_rule_based_v0_1",
+       "scenario_id":"uc01_fatigue_friend_drive_v0_1",
+       "parameters":{},"hyperparameters":{},
+       "profiles":{"driver":{"drowsiness_model":{"base_growth_per_min":2.0}}}}' \
+  | python3 -c 'import sys,json;print(json.load(sys.stdin)["plan_id"])')
+
+RID=$(curl -s -XPOST $B/api/runs \
+  -H 'content-type: application/json' \
+  -d "{\"plan_id\":\"$PLAN\"}" \
+  | python3 -c 'import sys,json;print(json.load(sys.stdin)["run_id"])')
+
+# The run log and evidence both carry the effective driver_profile (with the override)
+curl -s $B/api/runs/$RID/log | python3 -c \
+  'import sys,json;d=json.load(sys.stdin);print(d["driver_profile"]["drowsiness_model"])'
+
+# ── Markdown evidence export (FR-009) ─────────────────────────────────────────
+
+# Export the evidence as Markdown (## Simulator Facts / ## Human Review separation)
+curl -s $B/api/runs/$RID/evidence.md
+# With language: curl -s "$B/api/runs/$RID/evidence.md?ui_language=ja"
+```
+
 ## Backend-only flow (curl)
 
 ```bash
@@ -318,13 +464,22 @@ M3 HTTP e2e (analyze → run-plans → runs → tick-loop → actions → log wi
 per-tick `package_runtime_state`), M4 Maps coverage (maps_client Directions + Places
 mocked at `_urlopen` — **no live network**, key-safety guard, numeric boundary,
 rest empty/failure/degraded handling, Maps determinism, replay-no-refetch, and the
-full mocked-maps e2e), and M5 feedback + evidence coverage: feedback schema (GET,
+full mocked-maps e2e), M5 feedback + evidence coverage: feedback schema (GET,
 active + disk runs), feedback POST validation matrix (all scopes, event_ref
 resolution, invalid key → 400, nothing appended), evidence §14.2 shape and
 separation invariant (feedback absent from `simulator_facts`, present only under
 `human_review`), and the full M5 HTTP e2e (tick to proposal → proposal feedback →
 accept → run feedback → log trace-unchanged assertion → invalid POST idempotency →
-evidence report with reproducibility fields verified).
+evidence report with reproducibility fields verified), and **M6 S9 full UC-01
+integration tests** (`tests/test_uc01_integration_s9.py`): all 4 algorithm types
+end-to-end (declarative_rule × weighted_score × python_module × transparent-hybrid),
+qualitative boundary (feature_groups in every tick event, no raw external numeric in
+decision context), feedback append-only, evidence JSON + Markdown facts/review
+separation, algorithm_error surfaced as event not disguised decision (monkeypatched
+adapter through the HTTP layer), replay log faithfulness (recorded tick values match
+live-tick responses — no recalculation), profile-override visible in evidence, Maps
+sentinel-key absent from log, local fallback without key, run list, and restart
+from same plan.
 
 Frontend (Vitest):
 
@@ -338,30 +493,34 @@ availability, route timeline, trace panel (incl. M3 state labels and runtime-sta
 indicator), run store, error display, M4 MapSurface (markers from tick progress,
 key held in memory only), M5 FeedbackForm (all field types, submit, success +
 validation-error display, no-runId guard, wired into cockpit/trace/review panels),
-and EvidencePanel (copy JSON, download blob, separation scan, no-runId guard).
+EvidencePanel (copy JSON, download blob, separation scan, no-runId guard), and
+**M6 additions**: Setup/Review/Runs view switching, i18n language toggle (JA/EN,
+session-only), ProfileEditor (all three sub-objects, reset-to-default, invalid
+rejection), RunList + RunLog (past runs browse, status, timestamps), visual replay
+(replaySource pure projector, ReplayViewer + scrubber, CockpitView/RouteTimeline/
+DecisionTracePanel accepting replayTick prop, no tickRun/createRun called during
+replay, gap-tick placeholder), ErrorNotice component, and key-safety browser
+storage guard.
 
-## M5 — what is NOT here yet
+## V1 — what is NOT in M6 (deferred)
 
 | Feature | Deferred to |
 |---------|-------------|
-| Markdown evidence export | M6 |
-| Visual scrubbable replay | M6 |
-| UI language selector (`ui_language`) | M6 |
-| Feedback edit / delete | post-M5 |
-| Cross-run feedback analytics | post-M5 |
-| Setup-change / comparison feedback scopes | post-M5 |
-| Route drawing / editing / saving | post-M4 |
-| Saved / named routes (multi-key, multiple stored routes) | post-M4 |
-| Offline map tiles (no-network mode for the map view) | post-M4 |
-| Static Maps image path (screenshot-style route preview) | post-M4 |
+| Feedback edit / delete | post-V1 |
+| Cross-run feedback analytics | post-V1 |
+| Setup-change / comparison feedback scopes | post-V1 |
+| Route drawing / editing / saving | post-V1 |
+| Saved / named routes (multi-key, multiple stored routes) | post-V1 |
+| Offline map tiles (no-network mode for the map view) | post-V1 |
+| Static Maps image path (screenshot-style route preview) | post-V1 |
 | Full monotony-prevention UX scenario | M8 |
 | Untrusted-upload sandboxing for `python_module` packages | post-M3 |
 | `expert_override` mode | post-M3 |
 | Run comparison | post-M3 |
 
-> **No new dependencies in M4 or M5:** the Maps surface uses only stdlib `urllib`
-> (already used by maps_client); feedback and evidence use only the existing FastAPI
-> + Pydantic stack.  No Google Maps SDK or third-party HTTP client was added.
+> **No new dependencies in M6:** M6 adds no new Python or npm packages.  The Maps
+> surface uses stdlib `urllib`; language switching, profile editor, replay, and
+> Markdown export use only the existing React/Vite + FastAPI/Pydantic stack.
 
 > **Local-trusted-code note:** `python_module` packages run in the same process as
 > the backend with no sandboxing. Only use packages you trust. The AICA Hypothesis
