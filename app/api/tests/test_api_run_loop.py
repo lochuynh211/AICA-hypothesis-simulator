@@ -1145,3 +1145,249 @@ def test_maps_e2e_full_flow(tmp_path, monkeypatch):
     assert len(action_events) == 1, f"Expected 1 action event, got {len(action_events)}"
     assert action_events[0]["action"] == "accept_rest"
     assert action_events[0]["resulting_status"] == "completed"
+
+
+# ── T013 (M5): feedback→evidence loop e2e ─────────────────────────────────────
+
+
+def _contains_feedback_event(obj: object) -> bool:
+    """Recursively scan any JSON-decoded object for a dict with kind='feedback'.
+
+    Used to assert the separation invariant: simulator_facts must never contain
+    a FeedbackEvent.  Follows lists and all dict values.
+    """
+    if isinstance(obj, dict):
+        if obj.get("kind") == "feedback":
+            return True
+        return any(_contains_feedback_event(v) for v in obj.values())
+    if isinstance(obj, list):
+        return any(_contains_feedback_event(item) for item in obj)
+    return False
+
+
+def test_m5_feedback_evidence_e2e(client):
+    """T013 (M5): full feedback→evidence loop through the real HTTP surface.
+
+    Flow:
+    1. Create run plan → run (rest_rule_based × friend_drive, local route)
+    2. Tick to REST_PROPOSAL (paused=True)
+    3. POST /feedback attached to that proposal (proposal scope, labels + comment)
+    4. POST /api/runs/{id}/actions accept_rest → run completes
+    5. POST /feedback at end-of-run (run scope, overall_judgment + comment)
+    6. GET /log — assert both feedback events present and traceable
+    7. Assert decision trace UNCHANGED by feedback (TickEvents byte-for-byte identical
+       to the snapshot taken before the first feedback POST)
+    8. POST invalid feedback → 400 with validation_errors; log event count unchanged
+    9. GET /evidence → §14.2 report:
+       - feedback ONLY under human_review (labels + free_text_comments)
+       - simulator_facts contains NO feedback value (recursive scan)
+       - reproducibility fields present (route_facts, event_plan, parameters,
+         hyperparameters, profiles, timeline, actions, decision_trace)
+       - simulator_version, package id+version, scenario id+version at report level
+
+    Asserts:
+    - POST /feedback (proposal scope): 201; event traceable to the proposal tick
+    - POST /feedback (run scope): 201; event traceable to the run
+    - GET /log: exactly 2 feedback events (proposal + run)
+    - TickEvents in final log == TickEvents in pre-feedback snapshot (identity)
+    - Invalid feedback → 400 + validation_errors; event count unchanged
+    - GET /evidence: feedback absent from simulator_facts; present in human_review;
+      both labels and free_text_comments populated; reproducibility fields present
+    """
+    # ── 1. Create run ─────────────────────────────────────────────────────────
+    run_id = _create_run(client)
+
+    log_resp = client.get(f"/api/runs/{run_id}/log")
+    assert log_resp.status_code == 200
+    assert log_resp.json()["run_id"] == run_id
+
+    # ── 2. Tick to REST_PROPOSAL ──────────────────────────────────────────────
+    all_bodies, paused_body = _tick_until_paused(client, run_id)
+
+    decision = paused_body["decision"]
+    assert decision is not None
+    assert decision["result_type"] == "REST_PROPOSAL"
+    proposal = decision["proposal"]
+    assert proposal is not None
+
+    proposal_tick_index: int = paused_body["tick_index"]
+    proposal_id: str = proposal.get("id", "rest_required")
+
+    # Snapshot TickEvents BEFORE the first feedback POST — to verify unchanged later.
+    pre_feedback_log = client.get(f"/api/runs/{run_id}/log").json()
+    tick_events_snapshot = [
+        e for e in pre_feedback_log["events"] if e.get("kind") == "tick"
+    ]
+    assert len(tick_events_snapshot) >= 1, "Must have at least one TickEvent before feedback"
+
+    # ── 3. POST feedback on the proposal ─────────────────────────────────────
+    proposal_fb_resp = client.post(
+        f"/api/runs/{run_id}/feedback",
+        json={
+            "target": {
+                "scope": "proposal",
+                "tick_index": proposal_tick_index,
+                "proposal_id": proposal_id,
+            },
+            "labels": {
+                "proposal_timing": "appropriate",
+                "safety_impression": "safe",
+            },
+            "comment": "Good timing on the rest proposal",
+        },
+    )
+    assert proposal_fb_resp.status_code == 201, (
+        f"Proposal feedback must return 201; got {proposal_fb_resp.json()}"
+    )
+    proposal_fb_event = proposal_fb_resp.json()
+    assert proposal_fb_event["kind"] == "feedback"
+    assert proposal_fb_event["target"]["scope"] == "proposal"
+
+    # ── 4. Accept the rest proposal ───────────────────────────────────────────
+    action_resp = client.post(
+        f"/api/runs/{run_id}/actions",
+        json={"action": "accept_rest"},
+    )
+    assert action_resp.status_code == 200
+    assert action_resp.json()["status"] == "completed"
+
+    # ── 5. POST feedback at end-of-run ────────────────────────────────────────
+    run_fb_resp = client.post(
+        f"/api/runs/{run_id}/feedback",
+        json={
+            "target": {"scope": "run"},
+            "labels": {"overall_judgment": "good_trigger"},
+            "comment": "Timely trigger, felt natural",
+        },
+    )
+    assert run_fb_resp.status_code == 201, (
+        f"Run feedback must return 201; got {run_fb_resp.json()}"
+    )
+    run_fb_event = run_fb_resp.json()
+    assert run_fb_event["kind"] == "feedback"
+    assert run_fb_event["target"]["scope"] == "run"
+
+    # ── 6. GET /log — both feedback events present and traceable ─────────────
+    final_log_resp = client.get(f"/api/runs/{run_id}/log")
+    assert final_log_resp.status_code == 200
+    final_log = final_log_resp.json()
+    final_events = final_log["events"]
+
+    feedback_events = [e for e in final_events if e.get("kind") == "feedback"]
+    assert len(feedback_events) == 2, (
+        f"Expected 2 feedback events in final log, got {len(feedback_events)}"
+    )
+
+    # Proposal-scoped feedback: traceable to the proposal tick
+    proposal_feedbacks = [
+        e for e in feedback_events if e["target"]["scope"] == "proposal"
+    ]
+    assert len(proposal_feedbacks) == 1, "Expected exactly one proposal-scoped feedback"
+    assert proposal_feedbacks[0]["target"]["tick_index"] == proposal_tick_index, (
+        "Proposal feedback must reference the proposal's tick_index"
+    )
+
+    # Run-scoped feedback: traceable to the run (no tick_index required)
+    run_feedbacks = [
+        e for e in feedback_events if e["target"]["scope"] == "run"
+    ]
+    assert len(run_feedbacks) == 1, "Expected exactly one run-scoped feedback"
+    assert run_feedbacks[0]["labels"].get("overall_judgment") == "good_trigger"
+
+    # ── 7. Decision trace UNCHANGED by feedback (byte-for-byte identical) ────
+    tick_events_final = [e for e in final_events if e.get("kind") == "tick"]
+    assert len(tick_events_snapshot) == len(tick_events_final), (
+        "Feedback must not add or remove TickEvents: "
+        f"snapshot had {len(tick_events_snapshot)}, final log has {len(tick_events_final)}"
+    )
+    for idx, (before, after) in enumerate(zip(tick_events_snapshot, tick_events_final)):
+        assert before == after, (
+            f"TickEvent at position {idx} was mutated by feedback posting; "
+            f"before={before!r}, after={after!r}"
+        )
+
+    # ── 8. Invalid feedback → 400, nothing appended ──────────────────────────
+    events_count_after_two_feedbacks = len(final_events)
+    invalid_fb_resp = client.post(
+        f"/api/runs/{run_id}/feedback",
+        json={
+            "target": {"scope": "run"},
+            "labels": {"totally_unknown_label_key_xyz": "bad_value"},
+        },
+    )
+    assert invalid_fb_resp.status_code == 400, (
+        f"Invalid feedback must return 400; got {invalid_fb_resp.status_code}: "
+        f"{invalid_fb_resp.json()}"
+    )
+    invalid_detail = invalid_fb_resp.json().get("detail", invalid_fb_resp.json())
+    assert "validation_errors" in invalid_detail, (
+        "400 response must include validation_errors"
+    )
+
+    # Event count must be unchanged after the rejected POST
+    log_after_invalid = client.get(f"/api/runs/{run_id}/log").json()
+    assert len(log_after_invalid["events"]) == events_count_after_two_feedbacks, (
+        "Invalid feedback POST must not append anything to the log"
+    )
+
+    # ── 9. GET /evidence — §14.2 report ──────────────────────────────────────
+    evidence_resp = client.get(f"/api/runs/{run_id}/evidence")
+    assert evidence_resp.status_code == 200
+    evidence = evidence_resp.json()
+
+    # Top-level keys
+    assert "simulator_facts" in evidence, "Evidence must have simulator_facts"
+    assert "human_review" in evidence, "Evidence must have human_review"
+    simulator_facts = evidence["simulator_facts"]
+    human_review = evidence["human_review"]
+
+    # Feedback ONLY in human_review — both events present
+    assert "feedback_labels" in human_review
+    assert "free_text_comments" in human_review
+    assert len(human_review["feedback_labels"]) == 2, (
+        f"Expected 2 feedback_labels entries, got {len(human_review['feedback_labels'])}"
+    )
+    assert len(human_review["free_text_comments"]) == 2, (
+        f"Expected 2 free_text_comments (both feedbacks had comments), "
+        f"got {len(human_review['free_text_comments'])}"
+    )
+
+    # simulator_facts must contain NO feedback event (separation invariant — deep scan)
+    assert not _contains_feedback_event(simulator_facts), (
+        "Separation invariant violated: simulator_facts contains a feedback event. "
+        "Feedback must appear ONLY under human_review."
+    )
+
+    # Reproducibility fields present in simulator_facts
+    for reproducibility_field in (
+        "route_facts",
+        "event_plan",
+        "initial_parameters",
+        "initial_hyperparameters",
+        "driver_profile",
+        "vehicle_profile",
+        "timeline_events",
+        "decision_trace",
+        "actions",
+    ):
+        assert reproducibility_field in simulator_facts, (
+            f"simulator_facts must carry reproducibility field {reproducibility_field!r}"
+        )
+
+    # Reproducibility fields at the report level
+    assert "simulator_version" in evidence, "Evidence must carry simulator_version"
+    assert "package" in evidence
+    assert evidence["package"]["id"] == VALID_PACKAGE_ID
+    assert "version" in evidence["package"], "Evidence package must carry version"
+    assert "scenario" in evidence
+    assert evidence["scenario"]["id"] == VALID_SCENARIO_ID
+    assert "version" in evidence["scenario"], "Evidence scenario must carry version"
+
+    # timeline_events must be non-empty (at least the ticks and action are there)
+    assert len(simulator_facts["timeline_events"]) >= 1, (
+        "timeline_events must be non-empty after a completed run"
+    )
+    # timeline_events must not include any feedback events
+    assert not any(
+        e.get("kind") == "feedback" for e in simulator_facts["timeline_events"]
+    ), "timeline_events must not include any feedback events"

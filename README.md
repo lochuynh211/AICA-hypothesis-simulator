@@ -3,13 +3,10 @@
 A local, single-user tool for reviewing AICA (AI Cockpit Assistant) trigger
 algorithms by running driving scenarios and inspecting decision traces.
 
-> **Status: M4 — Google Maps Route Surface.** M4 adds a BYO-key Google Maps route
-> surface: enter a Maps API key (held in memory only, never saved) plus start and end
-> addresses to get up to three real route alternatives; pick one and run the scenario
-> along the real route.  The key never appears in any response, log file, or evidence
-> record.  Without a key the simulator falls back to the existing deterministic local
-> route.  M3 features (Python `algorithm.py` adapter, transparent hybrid trigger,
-> per-tick runtime-state threading, algorithm-error evidence) are still fully supported.
+> **Status: M5 — Review Feedback & Evidence Completeness.** M5 adds structured
+> reviewer feedback, a read-only evidence timeline, and a downloadable evidence report.
+> M4 features (BYO-key Google Maps route surface) and all prior milestone features
+> are still fully supported.
 
 ## Prerequisites
 
@@ -92,6 +89,95 @@ If 8137 or 5180 is already in use on your machine, change them in two places:
 4. When the rest proposal arrives, press **Accept rest** or **Postpone**.
 5. In the **RUN LOG** the per-tick `package_runtime_state` is non-empty for every
    tick and changes across the run — proving state is threaded forward, not reset.
+
+## M5 review flow — feedback & evidence completeness (UI)
+
+M5 adds structured reviewer feedback, a read-only evidence timeline, and a
+downloadable evidence report separating simulator facts from human review.
+
+### Recording feedback
+
+1. **Run a scenario to a proposal** using any package.
+2. In the cockpit area, open the **Proposal Feedback** form — it shows the V1
+   review labels (proposal timing, safety impression, intrusiveness,
+   understandability, rest-spot suitability, content suitability,
+   acceptance/rejection reason, overall judgment) plus a free-text comment and any
+   package-defined extra fields.
+3. Submit the form.  The feedback is attached to that specific proposal tick and
+   appended to the run log immediately — decisions are unchanged.
+4. Take your action (Accept rest / Postpone / Decline).
+5. When the run completes, the **Run Feedback** form in the right review panel lets
+   you record an overall judgment and comment for the run as a whole.
+
+Feedback can also be attached to individual decision ticks via the toggle in the
+Decision Trace panel.  Feedback works on any persisted run — including on-disk runs
+loaded after a backend restart — and is always evidence-only: it never alters prior
+facts, re-runs any algorithm, or feeds back into the decision logic.
+
+### Reviewing a persisted run (evidence timeline)
+
+Open a finished run's log (click **Load** in the RUN LOG panel).  The recorded
+events — ticks with decision trace, proposals, actions, algorithm errors, and
+feedback — appear as an expandable read-only timeline in the order they occurred.
+Feedback events are visually distinct from simulator facts.  No algorithm is
+re-run during replay.
+
+### Exporting the evidence
+
+Press **Copy JSON** or **Download** in the evidence panel.  The downloaded file
+(`evidence-<run_id>.json`) has two top-level sections:
+
+- **`simulator_facts`** — route snapshot, route facts, frozen event plan, setup
+  parameters and hyperparameters, driver and vehicle profiles, the full event
+  timeline (ticks, proposals, actions, algorithm errors), decision trace, and
+  proposal events.  No feedback values appear anywhere in this section.
+- **`human_review`** — the structured review labels and free-text comments keyed
+  by their targets (proposal, run, decision, or action).
+
+The report carries enough to reproduce the run (package id+version, scenario
+id+version, parameters, profiles, event plan, route facts) and never claims the
+simulator independently judged the algorithm.
+
+### Backend-only (curl — M5)
+
+```bash
+B=http://localhost:8137
+RID=<run_id>   # from a completed run
+
+# Get the effective feedback schema for a run
+curl -s $B/api/runs/$RID/feedback-schema
+
+# Record proposal feedback (after ticking to a REST_PROPOSAL)
+curl -s -XPOST $B/api/runs/$RID/feedback \
+  -H 'content-type: application/json' \
+  -d '{"target":{"scope":"proposal","tick_index":5},"labels":{"proposal_timing":"appropriate","safety_impression":"safe"},"comment":"Felt natural"}'
+
+# Record end-of-run feedback
+curl -s -XPOST $B/api/runs/$RID/feedback \
+  -H 'content-type: application/json' \
+  -d '{"target":{"scope":"run"},"labels":{"overall_judgment":"good_trigger"},"comment":"Timely trigger"}'
+
+# Export the §14.2 evidence report (simulator_facts / human_review)
+curl -s $B/api/runs/$RID/evidence | python3 -m json.tool
+```
+
+Feedback also works on older on-disk runs (after a restart): the backend loads
+the file, appends the event, and re-persists atomically.
+
+### What is NOT in M5
+
+| Feature | Deferred to |
+|---------|-------------|
+| Markdown evidence export | M6 |
+| Visual scrubbable replay | M6 |
+| UI language selector (`ui_language`) | M6 |
+| Feedback edit / delete | post-M5 |
+| Cross-run feedback analytics | post-M5 |
+| Setup-change / comparison feedback scopes | post-M5 |
+| Expert-override events | post-M3 |
+
+> **No new dependencies in M5:** feedback and evidence use only the existing
+> FastAPI + Pydantic stack.
 
 ## M4 review flow — Google Maps route surface (UI)
 
@@ -229,14 +315,16 @@ the `python_module` adapter (missing_evaluate / algorithm_exception /
 invalid_result_shape error matrix), the transparent hybrid (smoothing, persistence,
 state machines, fire-control, priority, determinism, runtime-state threading), the
 M3 HTTP e2e (analyze → run-plans → runs → tick-loop → actions → log with evolving
-per-tick `package_runtime_state`), and M4 Maps coverage: maps_client (Directions +
-Places, mocked at `_urlopen` — **no live network**), route_analysis Maps path,
-key-safety guard (sentinel absent from all responses and disk logs), numeric boundary
-(raw Google quantities stay out of algorithm context), rest empty/failure/degraded
-handling, Maps analyze determinism (two calls → identical alternatives), replay-no-
-refetch (RAISE after run creation proves tick loop never contacts Maps), and the
-full mocked-maps e2e (analyze → run-plans → runs → tick-loop → actions → log with
-`route_source: "maps"` and `display_route` persisted).
+per-tick `package_runtime_state`), M4 Maps coverage (maps_client Directions + Places
+mocked at `_urlopen` — **no live network**, key-safety guard, numeric boundary,
+rest empty/failure/degraded handling, Maps determinism, replay-no-refetch, and the
+full mocked-maps e2e), and M5 feedback + evidence coverage: feedback schema (GET,
+active + disk runs), feedback POST validation matrix (all scopes, event_ref
+resolution, invalid key → 400, nothing appended), evidence §14.2 shape and
+separation invariant (feedback absent from `simulator_facts`, present only under
+`human_review`), and the full M5 HTTP e2e (tick to proposal → proposal feedback →
+accept → run feedback → log trace-unchanged assertion → invalid POST idempotency →
+evidence report with reproducibility fields verified).
 
 Frontend (Vitest):
 
@@ -247,27 +335,33 @@ cd app/frontend && npm test
 This covers: package/scenario selectors, parameter/hyperparameter editors,
 plan preview, playback controls, cockpit proposal overlay, decline button
 availability, route timeline, trace panel (incl. M3 state labels and runtime-state
-indicator), run store, error display, and M4 MapSurface (markers from tick progress,
-key held in memory only).
+indicator), run store, error display, M4 MapSurface (markers from tick progress,
+key held in memory only), M5 FeedbackForm (all field types, submit, success +
+validation-error display, no-runId guard, wired into cockpit/trace/review panels),
+and EvidencePanel (copy JSON, download blob, separation scan, no-runId guard).
 
-## M4 — what is NOT here yet
+## M5 — what is NOT here yet
 
 | Feature | Deferred to |
 |---------|-------------|
+| Markdown evidence export | M6 |
+| Visual scrubbable replay | M6 |
+| UI language selector (`ui_language`) | M6 |
+| Feedback edit / delete | post-M5 |
+| Cross-run feedback analytics | post-M5 |
+| Setup-change / comparison feedback scopes | post-M5 |
 | Route drawing / editing / saving | post-M4 |
 | Saved / named routes (multi-key, multiple stored routes) | post-M4 |
 | Offline map tiles (no-network mode for the map view) | post-M4 |
 | Static Maps image path (screenshot-style route preview) | post-M4 |
-| Structured driver feedback form | M5 |
-| Evidence replay (re-running from log without backend) | M5 |
 | Full monotony-prevention UX scenario | M8 |
 | Untrusted-upload sandboxing for `python_module` packages | post-M3 |
 | `expert_override` mode | post-M3 |
 | Run comparison | post-M3 |
 
-> **No new dependencies in M4:** the Maps surface uses only stdlib `urllib` (already
-> used by maps_client) and the existing FastAPI + Pydantic stack.  No Google Maps SDK
-> or third-party HTTP client was added.
+> **No new dependencies in M4 or M5:** the Maps surface uses only stdlib `urllib`
+> (already used by maps_client); feedback and evidence use only the existing FastAPI
+> + Pydantic stack.  No Google Maps SDK or third-party HTTP client was added.
 
 > **Local-trusted-code note:** `python_module` packages run in the same process as
 > the backend with no sandboxing. Only use packages you trust. The AICA Hypothesis
