@@ -9,6 +9,12 @@ hybrid-specific assertions (full trace + evolving per-tick runtime state) to tha
 pairing; adds a dedicated e2e test driving the full HTTP plan flow with route
 analysis (POST /api/routes/analyze) as step 1.
 
+M4 extension (T015): mocked-maps full HTTP e2e through the real endpoint chain
+(POST /api/routes/analyze → pick alternative → POST /api/run-plans → POST /api/runs
+→ tick-loop → actions → GET /log).  Maps mocked at _urlopen; sentinel key proven
+absent from the entire log.  Asserts route_source='maps', DisplayRoute persisted,
+exactly one REST_PROPOSAL, and Places-derived rest_spot_positions non-empty.
+
 Coverage:
   1. Full loop   — POST /api/runs → tick to REST_PROPOSAL → accept_rest → GET /log
   2. Determinism — two independent runs produce identical decision-trace sequences
@@ -34,12 +40,17 @@ the in-memory run registry is cleared before and after every test (autouse).
 
 from __future__ import annotations
 
+import pathlib
+
 import pytest
 from fastapi.testclient import TestClient
 
+import aica_api.services.maps_client as _mc
 from aica_api.main import app
 from aica_api.services.run_manager import clear_registry
 from aica_api.services.run_plan import clear_draft_registry
+
+_MAPS_FIXTURE_DIR = pathlib.Path(__file__).parent / "fixtures" / "maps"
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -938,3 +949,199 @@ def test_hybrid_http_determinism(tmp_path, monkeypatch):
             f"Hybrid HTTP determinism: tick {i} diverged — "
             f"Run A={ea!r}, Run B={eb!r}"
         )
+
+
+# ── T015 (M4): Mocked-maps full HTTP e2e ──────────────────────────────────────
+
+
+def _maps_urlopen_seq(responses: list[bytes]):
+    """_urlopen mock that returns responses in order; raises on overrun."""
+    calls = list(responses)
+
+    def _mock(url: str) -> bytes:
+        if not calls:
+            raise AssertionError("_urlopen called more than expected — Maps overrun.")
+        return calls.pop(0)
+
+    return _mock
+
+
+def test_maps_e2e_full_flow(tmp_path, monkeypatch):
+    """T015 (M4): mocked-maps full HTTP e2e through the real endpoint chain.
+
+    Flow: POST /api/routes/analyze (Maps mocked at _urlopen, sentinel key) →
+          pick first alternative (route-0) →
+          POST /api/run-plans (maps route, require_actionable=false) →
+          POST /api/runs →
+          tick loop to REST_PROPOSAL →
+          POST /api/runs/{id}/actions accept_rest →
+          GET /api/runs/{id}/log.
+
+    Asserts:
+    - Exactly one REST_PROPOSAL fires (the run pauses exactly once).
+    - route_source == 'maps' in the persisted RunLog.
+    - DisplayRoute snapshot (encoded_polyline, summary) is persisted in log.
+    - Sentinel API key is absent from the entire log JSON (key-safety end-to-end).
+    - route_facts.rest_spot_positions is non-empty (Places-derived, not empty fallback).
+    - route_facts.route_source == 'maps' in the log.
+    - Exactly one action event (accept_rest → completed).
+
+    Note: ``require_actionable: false`` is set on the run plan so REST_PROPOSAL fires
+    even when rest_spot_eta is 'none'.  The toy polyline in directions_3_alternatives.json
+    places all rest stops at 0 km on the 150 km route, which means the rest spot is behind
+    the car before the fatigue threshold is crossed.  The hyperparameter override removes
+    this gate so the test focuses on the Maps plumbing (key-safety, route_source, DisplayRoute),
+    not on rest-stop geometry.
+    """
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+    client = TestClient(app)
+
+    _SENTINEL_KEY = "SENTINEL_API_KEY_MUST_NOT_LEAK"
+
+    # ── Step 1: Mock _urlopen; POST /api/routes/analyze ─────────────────────
+    dir_data = (_MAPS_FIXTURE_DIR / "directions_3_alternatives.json").read_bytes()
+    pl_data = (_MAPS_FIXTURE_DIR / "places_service_area.json").read_bytes()
+    # 1 directions call + 3 places calls (one per alternative)
+    monkeypatch.setattr(_mc, "_urlopen", _maps_urlopen_seq([dir_data, pl_data, pl_data, pl_data]))
+
+    analyze_resp = client.post(
+        "/api/routes/analyze",
+        json={
+            "scenario_id": VALID_SCENARIO_ID,
+            "maps_key": _SENTINEL_KEY,
+            "start": "San Francisco, CA",
+            "end": "Sacramento, CA",
+        },
+    )
+    assert analyze_resp.status_code == 200, f"Analyze failed: {analyze_resp.json()}"
+    assert _SENTINEL_KEY not in analyze_resp.text, (
+        "Sentinel key must not appear in /api/routes/analyze response"
+    )
+
+    analyze_body = analyze_resp.json()
+    assert analyze_body["route_source"] == "maps"
+    alts = analyze_body["alternatives"]
+    assert len(alts) >= 1, "Need at least one alternative from the directions fixture"
+
+    # Pick the first alternative (route-0, via I-5 N, 150 km)
+    chosen = alts[0]
+    assert chosen["route_id"] == "route-0"
+    assert chosen["route_facts"]["route_source"] == "maps"
+    # Places fixture has 2 results → rest_spot_positions must be non-empty
+    assert len(chosen["route_facts"]["rest_spot_positions"]) > 0, (
+        "rest_spot_positions must be non-empty — Places fixture provided 2 results"
+    )
+    assert chosen["display"] is not None
+    assert chosen["display"]["encoded_polyline"], "Display route must carry the encoded polyline"
+
+    # ── Step 2: POST /api/run-plans ──────────────────────────────────────────
+    plan_resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": VALID_PACKAGE_ID,         # rest_rule_based_v0_1
+            "scenario_id": VALID_SCENARIO_ID,        # uc01_fatigue_friend_drive_v0_1
+            "route_id": chosen["route_id"],
+            "route_source": "maps",
+            "route_facts": chosen["route_facts"],
+            "display_route": chosen["display"],
+            "parameters": {},
+            # require_actionable=False: REST_PROPOSAL fires regardless of rest_spot_eta
+            # (the polyline puts rest_spots at 0 km so the actionability gate would
+            # otherwise suppress the proposal after tick 0)
+            "hyperparameters": {"require_actionable": False},
+        },
+    )
+    assert plan_resp.status_code == 201, f"Plan creation failed: {plan_resp.json()}"
+    assert _SENTINEL_KEY not in plan_resp.text, "Sentinel key in run-plans response"
+    plan_id = plan_resp.json()["plan_id"]
+
+    # ── Step 3: POST /api/runs ───────────────────────────────────────────────
+    run_resp = client.post("/api/runs", json={"plan_id": plan_id})
+    assert run_resp.status_code == 201, f"Run creation failed: {run_resp.json()}"
+    assert _SENTINEL_KEY not in run_resp.text, "Sentinel key in run creation response"
+    run_id = run_resp.json()["run_id"]
+
+    # The initial log must already carry maps provenance.
+    initial_log = client.get(f"/api/runs/{run_id}/log").json()
+    assert initial_log["route_source"] == "maps"
+    dr_init = initial_log.get("display_route")
+    assert dr_init is not None, "Initial log must carry display_route for maps run"
+    assert dr_init["encoded_polyline"], "Initial log display_route.encoded_polyline must be set"
+
+    # ── Step 4: Tick loop to REST_PROPOSAL ──────────────────────────────────
+    all_bodies, paused_body = _tick_until_paused(client, run_id)
+
+    decision = paused_body["decision"]
+    assert decision is not None
+    assert decision["result_type"] == "REST_PROPOSAL", (
+        f"Expected REST_PROPOSAL at paused tick, got {decision['result_type']!r}"
+    )
+    assert decision["proposal"] is not None
+
+    # Exactly one paused tick across the entire run
+    paused_ticks = [b for b in all_bodies if b.get("paused")]
+    assert len(paused_ticks) == 1, (
+        f"Expected exactly one paused tick (one REST_PROPOSAL), "
+        f"got {len(paused_ticks)}"
+    )
+
+    # ── Step 5: POST /api/runs/{id}/actions accept_rest ──────────────────────
+    action_resp = client.post(
+        f"/api/runs/{run_id}/actions",
+        json={"action": "accept_rest"},
+    )
+    assert action_resp.status_code == 200, f"accept_rest failed: {action_resp.json()}"
+    assert action_resp.json()["status"] == "completed"
+    assert _SENTINEL_KEY not in action_resp.text, "Sentinel key in actions response"
+
+    # ── Step 6: GET /api/runs/{id}/log — full evidence assertions ────────────
+    final_log_resp = client.get(f"/api/runs/{run_id}/log")
+    assert final_log_resp.status_code == 200
+
+    # Sentinel key must be absent from the entire log JSON
+    assert _SENTINEL_KEY not in final_log_resp.text, (
+        "Sentinel API key must not appear anywhere in the persisted RunLog"
+    )
+
+    final_log = final_log_resp.json()
+
+    # route_source == 'maps' in the persisted log
+    assert final_log["route_source"] == "maps", (
+        f"RunLog route_source must be 'maps', got {final_log['route_source']!r}"
+    )
+
+    # DisplayRoute snapshot persisted (encoded_polyline + summary)
+    dr = final_log.get("display_route")
+    assert dr is not None, "RunLog must carry display_route for maps run"
+    assert dr["encoded_polyline"] == chosen["display"]["encoded_polyline"], (
+        "Persisted display_route.encoded_polyline must match the chosen alternative"
+    )
+    assert dr["summary"] == chosen["display"]["summary"], (
+        "Persisted display_route.summary must match the chosen alternative"
+    )
+
+    # route_facts reflect the Maps-derived data (Places-derived rest_spot_positions)
+    rf = final_log.get("route_facts", {})
+    assert rf.get("route_source") == "maps", (
+        f"Persisted route_facts.route_source must be 'maps', got {rf.get('route_source')!r}"
+    )
+    assert len(rf.get("rest_spot_positions", [])) > 0, (
+        "Persisted route_facts.rest_spot_positions must be non-empty "
+        "(Places fixture provided 2 results)"
+    )
+
+    # Exactly one REST_PROPOSAL in the tick events
+    tick_events = [e for e in final_log["events"] if e.get("kind") == "tick"]
+    rest_proposals = [
+        e for e in tick_events
+        if e.get("trace", {}).get("decision_result", {}).get("result_type") == "REST_PROPOSAL"
+    ]
+    assert len(rest_proposals) == 1, (
+        f"Expected exactly 1 REST_PROPOSAL in persisted log, got {len(rest_proposals)}"
+    )
+
+    # Exactly one action event (accept_rest → completed)
+    action_events = [e for e in final_log["events"] if e.get("kind") == "action"]
+    assert len(action_events) == 1, f"Expected 1 action event, got {len(action_events)}"
+    assert action_events[0]["action"] == "accept_rest"
+    assert action_events[0]["resulting_status"] == "completed"

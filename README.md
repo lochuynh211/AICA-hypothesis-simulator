@@ -3,13 +3,13 @@
 A local, single-user tool for reviewing AICA (AI Cockpit Assistant) trigger
 algorithms by running driving scenarios and inspecting decision traces.
 
-> **Status: M3 — Python Algorithm Support.** M3 adds a Python `algorithm.py`
-> adapter (any package can now ship a local `algorithm.py`), the transparent hybrid
-> trigger package (`aica_transparent_hybrid_trigger_v1`), per-tick runtime-state
-> threading (smoothed scores + persistence counters that evolve across ticks), and
-> algorithm-error evidence (errors pause the run and are recorded in the trace). M2
-> features (weighted-score, overtime scenario, editable parameters/hyperparameters,
-> draft run-plan flow, richer per-tick evidence) are still fully supported.
+> **Status: M4 — Google Maps Route Surface.** M4 adds a BYO-key Google Maps route
+> surface: enter a Maps API key (held in memory only, never saved) plus start and end
+> addresses to get up to three real route alternatives; pick one and run the scenario
+> along the real route.  The key never appears in any response, log file, or evidence
+> record.  Without a key the simulator falls back to the existing deterministic local
+> route.  M3 features (Python `algorithm.py` adapter, transparent hybrid trigger,
+> per-tick runtime-state threading, algorithm-error evidence) are still fully supported.
 
 ## Prerequisites
 
@@ -93,6 +93,52 @@ If 8137 or 5180 is already in use on your machine, change them in two places:
 5. In the **RUN LOG** the per-tick `package_runtime_state` is non-empty for every
    tick and changes across the run — proving state is threaded forward, not reset.
 
+## M4 review flow — Google Maps route surface (UI)
+
+1. **Enter your Google Maps API key** in the route panel (held in browser memory only —
+   never sent to the backend's persistent storage, never written to any log).  Add a
+   **start** and **end** (free-text addresses or place names).
+2. **Request route** → up to **three alternatives** appear, each with its derived route
+   facts (distance, duration, segment types, rest-stop positions from Google Places).
+   Pick one.  If Directions fails, an error is shown with **Retry** and
+   **Use local route** options — a run cannot start without route facts.
+3. **Select a package + scenario**, generate the plan, and press **Start**.  The car /
+   progress / decision markers follow the real route; the trace is identical in structure
+   to local runs.
+4. When the rest proposal fires, press **Accept rest** or **Postpone**.
+5. In the **RUN LOG** the persisted evidence shows `route_source: "maps"`, the
+   `display_route` snapshot (encoded polyline for replay), bounded route facts — and
+   **no API key anywhere**.
+
+### Failure modes
+
+- **Directions failure** → structured 502 error; the UI offers Retry and Use local route.
+  A run cannot start without route facts.
+- **No rest stops found** → no fabrication; the run continues and the rest trigger yields
+  a non-actionable `NO_PRACTICAL_ACTION_FALLBACK` alert.
+- **Rest-stop lookup fails** → the scenario's local rest pattern is scaled onto the Maps
+  route distance and a visible **degraded-data** notice appears on the alternative.  If
+  the scenario has no local rest pattern either, a **rest-data-unavailable** notice
+  replaces it.
+
+### Without a key (local fallback)
+
+Skip the key field entirely: the simulator uses the existing deterministic local route
+(`route_source: "local"`); everything works exactly as before.
+
+### Key-safety and the two-layer boundary
+
+The API key is a **request-scoped** parameter only — it reaches the backend in a single
+POST body, is used to call Google APIs, and is immediately discarded.  It is never
+stored in memory between requests, never written to disk, and never echoed in any
+response or error body.
+
+Route quantities from Google (raw distances, durations, encoded polyline) are bounded
+before they reach the decision logic: distances and durations become ordinal bands (the
+same boundary already used for local routes); the encoded polyline is kept only in the
+`display_route` snapshot for frontend rendering and never enters the algorithm context.
+No raw Google API value drives a trigger decision.
+
 ### Python algorithm errors
 
 A `python_module` package whose `algorithm.py` lacks `evaluate`, raises an
@@ -108,26 +154,44 @@ normal AICA decisions.
 ```bash
 B=http://localhost:8137
 
-# List available packages (includes rest_python_v0_1 and aica_transparent_hybrid_trigger_v1)
+# List available packages
 curl -s $B/api/packages | python3 -c \
   'import sys,json;print([p["id"] for p in json.load(sys.stdin)["packages"]])'
 
-# Analyse route (optional — warms the route facts)
+# ── Local route (no key required) ────────────────────────────────────────────
+
+# Analyse local route (returns the single local alternative)
 curl -s -XPOST $B/api/routes/analyze \
   -H 'content-type: application/json' \
   -d '{"scenario_id":"uc01_fatigue_friend_drive_v0_1"}'
 
-# Create a draft run plan (use the transparent hybrid package)
+# ── Google Maps route (BYO key) ───────────────────────────────────────────────
+
+# Analyse with a real key → up to 3 alternatives; key never appears in the response
+ALTS=$(curl -s -XPOST $B/api/routes/analyze \
+  -H 'content-type: application/json' \
+  -d '{"scenario_id":"uc01_fatigue_friend_drive_v0_1",
+       "maps_key":"YOUR_KEY_HERE",
+       "start":"San Francisco, CA","end":"Sacramento, CA"}')
+echo $ALTS | python3 -m json.tool  # inspect alternatives; key is absent
+
+# Pick the first alternative and extract the fields needed by run-plans
+ROUTE_ID=$(echo $ALTS | python3 -c \
+  'import sys,json;d=json.load(sys.stdin);print(d["alternatives"][0]["route_id"])')
+ROUTE_FACTS=$(echo $ALTS | python3 -c \
+  'import sys,json;d=json.load(sys.stdin);print(json.dumps(d["alternatives"][0]["route_facts"]))')
+DISPLAY=$(echo $ALTS | python3 -c \
+  'import sys,json;d=json.load(sys.stdin);print(json.dumps(d["alternatives"][0]["display"]))')
+
+# Create a draft run plan from the chosen maps alternative
 PLAN=$(curl -s -XPOST $B/api/run-plans \
   -H 'content-type: application/json' \
-  -d '{"package_id":"aica_transparent_hybrid_trigger_v1",
-       "scenario_id":"uc01_fatigue_friend_drive_v0_1",
-       "parameters":{},"hyperparameters":{},"run_mode":"standard"}' \
+  -d "{\"package_id\":\"aica_transparent_hybrid_trigger_v1\",
+       \"scenario_id\":\"uc01_fatigue_friend_drive_v0_1\",
+       \"route_id\":\"$ROUTE_ID\",\"route_source\":\"maps\",
+       \"route_facts\":$ROUTE_FACTS,\"display_route\":$DISPLAY,
+       \"parameters\":{},\"hyperparameters\":{},\"run_mode\":\"standard\"}" \
   | python3 -c 'import sys,json;print(json.load(sys.stdin)["plan_id"])')
-
-# Regenerate the plan (optional; changes parameter overrides etc.)
-curl -s -XPOST $B/api/run-plans/$PLAN/regenerate \
-  -H 'content-type: application/json' -d '{}'
 
 # Create a run from the plan
 RID=$(curl -s -XPOST $B/api/runs \
@@ -135,15 +199,15 @@ RID=$(curl -s -XPOST $B/api/runs \
   -d "{\"plan_id\":\"$PLAN\"}" \
   | python3 -c 'import sys,json;print(json.load(sys.stdin)["run_id"])')
 
-# Tick until "paused": true (the rest proposal fires at tick 100)
+# Tick until "paused": true
 curl -s -XPOST $B/api/runs/$RID/tick
 
 # Act on the proposal (accept_rest | postpone)
 curl -s -XPOST $B/api/runs/$RID/actions \
   -H 'content-type: application/json' -d '{"action":"accept_rest"}'
 
-# Read the full persisted evidence — check package_runtime_state per tick
-curl -s $B/api/runs/$RID/log | python3 -m json.tool | grep -A5 package_runtime_state
+# Read the full persisted evidence — route_source, display_route, and no key
+curl -s $B/api/runs/$RID/log | python3 -m json.tool | grep -E '"route_source"|"encoded_polyline"'
 
 # The file is also at:
 ls runs/   # <run_id>.json
@@ -163,9 +227,16 @@ run-plan draft flow, all five pairings (rule-based + weighted-score × friend-dr
 (gentle/clear, not strong), decline-with-no-pending → 409, full evidence persistence,
 the `python_module` adapter (missing_evaluate / algorithm_exception /
 invalid_result_shape error matrix), the transparent hybrid (smoothing, persistence,
-state machines, fire-control, priority, determinism, runtime-state threading), and
-the M3 HTTP e2e (analyze → run-plans → runs → tick-loop → actions → log with
-evolving per-tick `package_runtime_state`).
+state machines, fire-control, priority, determinism, runtime-state threading), the
+M3 HTTP e2e (analyze → run-plans → runs → tick-loop → actions → log with evolving
+per-tick `package_runtime_state`), and M4 Maps coverage: maps_client (Directions +
+Places, mocked at `_urlopen` — **no live network**), route_analysis Maps path,
+key-safety guard (sentinel absent from all responses and disk logs), numeric boundary
+(raw Google quantities stay out of algorithm context), rest empty/failure/degraded
+handling, Maps analyze determinism (two calls → identical alternatives), replay-no-
+refetch (RAISE after run creation proves tick loop never contacts Maps), and the
+full mocked-maps e2e (analyze → run-plans → runs → tick-loop → actions → log with
+`route_source: "maps"` and `display_route` persisted).
 
 Frontend (Vitest):
 
@@ -176,19 +247,27 @@ cd app/frontend && npm test
 This covers: package/scenario selectors, parameter/hyperparameter editors,
 plan preview, playback controls, cockpit proposal overlay, decline button
 availability, route timeline, trace panel (incl. M3 state labels and runtime-state
-indicator), run store, and error display.
+indicator), run store, error display, and M4 MapSurface (markers from tick progress,
+key held in memory only).
 
-## M3 scope — what is NOT here yet
+## M4 — what is NOT here yet
 
-| Feature | Milestone |
-|---------|-----------|
-| Google Maps route surface (BYO API key) | M4 |
+| Feature | Deferred to |
+|---------|-------------|
+| Route drawing / editing / saving | post-M4 |
+| Saved / named routes (multi-key, multiple stored routes) | post-M4 |
+| Offline map tiles (no-network mode for the map view) | post-M4 |
+| Static Maps image path (screenshot-style route preview) | post-M4 |
 | Structured driver feedback form | M5 |
 | Evidence replay (re-running from log without backend) | M5 |
 | Full monotony-prevention UX scenario | M8 |
 | Untrusted-upload sandboxing for `python_module` packages | post-M3 |
 | `expert_override` mode | post-M3 |
 | Run comparison | post-M3 |
+
+> **No new dependencies in M4:** the Maps surface uses only stdlib `urllib` (already
+> used by maps_client) and the existing FastAPI + Pydantic stack.  No Google Maps SDK
+> or third-party HTTP client was added.
 
 > **Local-trusted-code note:** `python_module` packages run in the same process as
 > the backend with no sandboxing. Only use packages you trust. The AICA Hypothesis
