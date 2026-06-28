@@ -19,6 +19,12 @@ import type { TraceEntry } from '../../api/types'
  * - mapsKey is NEVER written to localStorage, sessionStorage, or any file.
  * - NO new npm dependencies (google maps loaded via script injection).
  * - Guard: if display === null, return null (no crash, no map rendered).
+ *
+ * I3 fix: registers window.gm_authfailure before script injection so the Maps SDK
+ * calls our handler instead of rendering its full-page blocking overlay when the
+ * API key is invalid or domain-restricted.  Canvas init is also wrapped in
+ * try-catch so constructor errors degrade to an inline message rather than
+ * propagating as an uncaught React effect error (dev overlay / page freeze).
  */
 
 // Minimal type for the Google Maps surface we use — avoids @types/google.maps.
@@ -38,6 +44,11 @@ export default function MapSurface() {
   // after the async script callback fires). Drives the map-init useEffect so
   // the canvas initializes after the SDK loads, not just on the next unrelated render.
   const [mapsReady, setMapsReady] = useState(() => Boolean(getGMaps()?.geometry?.encoding))
+
+  // mapError: set when the Maps SDK fails to initialize (invalid key, auth error,
+  // or constructor throwing). Causes the component to render an inline fallback
+  // instead of the canvas — car/decision markers remain functional.
+  const [mapError, setMapError] = useState<string | null>(null)
 
   const mapContainerRef = useRef<HTMLDivElement>(null)
   // Holds the google.maps.Map instance across renders — not React state
@@ -64,6 +75,18 @@ export default function MapSurface() {
   // Only inject when we have a key, a display, and Maps is not already loaded.
   useEffect(() => {
     if (!display || !mapsKey) return
+
+    // I3 fix: register gm_authfailure BEFORE injecting the script so the SDK
+    // calls our handler instead of rendering its full-page blocking overlay.
+    // When the Maps SDK detects an invalid/domain-restricted key it looks for
+    // window.gm_authfailure; if found it calls it; if not it falls back to its
+    // built-in modal dialog that captures all pointer events (UI freeze).
+    ;(window as Record<string, unknown>)['gm_authfailure'] = () => {
+      setMapError(
+        'Google Maps authorization failed. Verify your API key and domain restrictions.',
+      )
+    }
+
     if (getGMaps()?.geometry?.encoding) return // already loaded
 
     const callbackName = '__aicaHypSimMapsInit'
@@ -87,6 +110,7 @@ export default function MapSurface() {
       const existing = document.getElementById(scriptId)
       if (existing) document.head.removeChild(existing)
       delete (window as Record<string, unknown>)[callbackName]
+      delete (window as Record<string, unknown>)['gm_authfailure']
     }
   }, [mapsKey, display?.encoded_polyline])
 
@@ -101,25 +125,37 @@ export default function MapSurface() {
     // Skip if already initialized for this polyline.
     if (mapInstanceRef.current) return
 
-    const path: Array<{ lat: () => number; lng: () => number }> =
-      gmaps.geometry.encoding.decodePath(display.encoded_polyline)
+    // I3 fix: wrap in try-catch so any SDK constructor error (e.g. thrown by an
+    // invalid key or a Maps SDK version mismatch) is handled gracefully.
+    // Without this the error propagates from useEffect, React re-throws it during
+    // commit, and in development the full-page React error overlay appears —
+    // identical to the "can't press any button" freeze reported in M4 testing.
+    try {
+      const path: Array<{ lat: () => number; lng: () => number }> =
+        gmaps.geometry.encoding.decodePath(display.encoded_polyline)
 
-    if (path.length === 0) return
+      if (path.length === 0) return
 
-    const center = { lat: path[0].lat(), lng: path[0].lng() }
+      const center = { lat: path[0].lat(), lng: path[0].lng() }
 
-    mapInstanceRef.current = new gmaps.Map(mapContainerRef.current, {
-      center,
-      zoom: 10,
-    })
+      mapInstanceRef.current = new gmaps.Map(mapContainerRef.current, {
+        center,
+        zoom: 10,
+      })
 
-    const polyline = new gmaps.Polyline({
-      path,
-      strokeColor: '#2563eb',
-      strokeOpacity: 0.9,
-      strokeWeight: 4,
-    })
-    polyline.setMap(mapInstanceRef.current)
+      const polyline = new gmaps.Polyline({
+        path,
+        strokeColor: '#2563eb',
+        strokeOpacity: 0.9,
+        strokeWeight: 4,
+      })
+      polyline.setMap(mapInstanceRef.current)
+    } catch (err) {
+      // Canvas initialization failed — show inline fallback instead of propagating.
+      // Car and decision markers still work; only the actual map canvas is missing.
+      console.error('[MapSurface] Maps canvas init failed:', err)
+      setMapError(err instanceof Error ? err.message : 'Map initialization failed')
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapsReady, display?.encoded_polyline])
 
@@ -133,12 +169,33 @@ export default function MapSurface() {
       data-testid="map-surface"
       style={{ position: 'relative', margin: '12px 0' }}
     >
-      {/* Google Maps canvas */}
-      <div
-        ref={mapContainerRef}
-        data-testid="map-container"
-        style={{ height: '280px', background: '#e8e8e8', borderRadius: '4px' }}
-      />
+      {/* Google Maps canvas — or inline error fallback when init fails */}
+      {mapError ? (
+        <div
+          data-testid="map-init-error"
+          role="alert"
+          style={{
+            height: '280px',
+            background: '#fff3f3',
+            border: '1px solid #fca5a5',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+        >
+          <p style={{ color: '#b91c1c', fontSize: '0.85em', textAlign: 'center', margin: 0 }}>
+            Map unavailable — {mapError}
+          </p>
+        </div>
+      ) : (
+        <div
+          ref={mapContainerRef}
+          data-testid="map-container"
+          style={{ height: '280px', background: '#e8e8e8', borderRadius: '4px' }}
+        />
+      )}
 
       {/* DOM overlay: car marker — position from route_fraction (0–100%). */}
       {/* CSS left drives display-only position; no store mutation on animation. */}

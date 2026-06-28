@@ -502,6 +502,130 @@ describe('MapSurface — async script load (I2 regression)', () => {
   })
 })
 
+// ── I3 regression: Maps SDK auth failure / init failure causes UI freeze ────────
+//
+// Root cause: MapSurface had no `window.gm_authfailure` handler registered and no
+// try-catch in the canvas-init effect.  When the Maps SDK detects an invalid or
+// domain-restricted key it either:
+//   (a) calls `window.gm_authfailure()` — if undefined the SDK falls back to
+//       rendering a full-page blocking dialog (`position:fixed; z-index:9999999`)
+//       that intercepts ALL clicks → "can't press any button" freeze.
+//   (b) the `new gmaps.Map()` constructor itself throws → uncaught React-effect
+//       error → React dev overlay covers the page → same symptom + no animation.
+//
+// The fix registers `gm_authfailure` BEFORE injecting the script (so the SDK
+// never reaches its blocking overlay path) and wraps the canvas init in a
+// try-catch so constructor errors degrade gracefully instead of crashing.
+
+describe('MapSurface — I3 regression: Maps SDK auth failure causes UI freeze', () => {
+  afterEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).google
+    delete (window as Record<string, unknown>).__aicaHypSimMapsInit
+    delete (window as Record<string, unknown>).gm_authfailure
+  })
+
+  it(
+    '(r) registers gm_authfailure BEFORE injecting the Maps script ' +
+      'so the SDK never shows its blocking overlay',
+    () => {
+      // Ensure google.maps is NOT available at mount time (script not yet loaded).
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (window as any).google
+      delete (window as Record<string, unknown>).gm_authfailure
+
+      renderInStore(<MapSurface />, (dispatch) => {
+        dispatch({ type: 'SET_MAPS_KEY', key: 'invalid-key' })
+        dispatch({ type: 'SET_ALTERNATIVES', envelope: mapsEnvelope })
+        dispatch({ type: 'SELECT_ROUTE', routeId: 'route-0' })
+      })
+
+      // gm_authfailure MUST be a function after mount.
+      // Without the fix it is undefined, allowing the Maps SDK to render
+      // its full-page blocking dialog instead of calling our handler.
+      expect(typeof (window as Record<string, unknown>).gm_authfailure).toBe('function')
+    },
+  )
+
+  it(
+    '(s) calling gm_authfailure shows an inline error and keeps controls interactive',
+    async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (window as any).google
+      delete (window as Record<string, unknown>).gm_authfailure
+
+      renderInStore(<MapSurface />, (dispatch) => {
+        dispatch({ type: 'SET_MAPS_KEY', key: 'invalid-key' })
+        dispatch({ type: 'SET_ALTERNATIVES', envelope: mapsEnvelope })
+        dispatch({ type: 'SELECT_ROUTE', routeId: 'route-0' })
+      })
+
+      // map-surface is in the DOM (display is non-null)
+      expect(screen.getByTestId('map-surface')).toBeInTheDocument()
+
+      // Simulate the Maps SDK detecting auth failure and calling our handler
+      const authFailureHandler = (window as Record<string, unknown>).gm_authfailure as
+        | (() => void)
+        | undefined
+      expect(authFailureHandler).toBeDefined()
+
+      await act(async () => {
+        authFailureHandler?.()
+      })
+
+      // Component must show an inline error — NOT crash or go blank
+      expect(screen.getByTestId('map-init-error')).toBeInTheDocument()
+      // Car marker still rendered so animation position still tracks
+      expect(screen.getByTestId('car-marker')).toBeInTheDocument()
+      // No map canvas (avoids SDK injecting its overlay inside the container)
+      expect(screen.queryByTestId('map-container')).not.toBeInTheDocument()
+    },
+  )
+
+  it(
+    '(t) Maps constructor throwing does NOT propagate as uncaught error ' +
+      '(no React dev overlay / page freeze)',
+    async () => {
+      // Maps SDK is present BUT Map constructor throws (e.g. SDK-level auth error)
+      // In the current code this throws out of useEffect → React dev error overlay
+      // covers the viewport → "can't press any button" + "no animation".
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(window as any).google = {
+        maps: {
+          Map: vi.fn().mockImplementation(() => {
+            throw new Error('InvalidKey: Google Maps API key is not authorized.')
+          }),
+          Polyline: vi.fn().mockReturnValue({ setMap: vi.fn() }),
+          geometry: {
+            encoding: {
+              decodePath: vi.fn().mockReturnValue([
+                { lat: () => 35.0, lng: () => 135.0 },
+                { lat: () => 35.5, lng: () => 135.5 },
+              ]),
+            },
+          },
+        },
+      }
+
+      // Render — MUST NOT throw or propagate an unhandled error
+      renderInStore(<MapSurface />, (dispatch) => {
+        dispatch({ type: 'SET_MAPS_KEY', key: 'invalid-key' })
+        dispatch({ type: 'SET_ALTERNATIVES', envelope: mapsEnvelope })
+        dispatch({ type: 'SELECT_ROUTE', routeId: 'route-0' })
+      })
+
+      // map-surface must remain in the DOM (React tree did NOT crash)
+      expect(screen.getByTestId('map-surface')).toBeInTheDocument()
+
+      // An inline error indicator must appear so the user understands the map is broken
+      expect(await screen.findByTestId('map-init-error')).toBeInTheDocument()
+
+      // Car marker is still rendered — route position animation is NOT lost
+      expect(screen.getByTestId('car-marker')).toBeInTheDocument()
+    },
+  )
+})
+
 // Note: routesAnalyze envelope behaviour (local path, maps path, 502 MapsError)
 // and createRunPlan route selection fields are covered in client.test.tsx, which
 // tests the real client implementation directly (no vi.mock on the client module).
