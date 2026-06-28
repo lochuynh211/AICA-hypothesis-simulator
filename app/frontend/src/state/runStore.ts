@@ -94,10 +94,12 @@ const initialState: RunStoreState = {
   effectiveSetup: null,
   validationErrors: [],
   setupError: null,
-  // M4
-  mapsKey: '',
-  mapsStart: '',
-  mapsEnd: '',
+  // M4 — dev presets (key from gitignored .env.local; start/end default to a
+  // Tokyo→Osaka example). All overridable via VITE_* env vars. The key still
+  // lives only in in-memory state — never persisted/logged.
+  mapsKey: import.meta.env.VITE_GOOGLE_MAPS_KEY ?? '',
+  mapsStart: import.meta.env.VITE_MAPS_START ?? 'Tokyo Station',
+  mapsEnd: import.meta.env.VITE_MAPS_END ?? 'Osaka Station',
   alternatives: [],
   routeSource: 'local',
   selectedRouteId: null,
