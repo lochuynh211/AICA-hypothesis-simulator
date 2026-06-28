@@ -1,10 +1,12 @@
 import { useRunStore } from '../../state/runStore'
 import ProposalPanel from './ProposalPanel'
 import FeedbackForm from '../feedback/FeedbackForm'
+import { t } from '../../i18n/t'
+import type { LocalizedLabel } from '../../i18n/t'
 
 export default function CockpitView() {
   const { state } = useRunStore()
-  const { paused, latestDecision, runState } = state
+  const { paused, latestDecision, runState, uiLanguage } = state
 
   if (paused && latestDecision?.proposal && runState) {
     const proposalTarget = {
@@ -18,7 +20,7 @@ export default function CockpitView() {
           proposal={latestDecision.proposal}
           runId={runState.run_id}
           reasonInputs={latestDecision.reason_inputs}
-          explanation={latestDecision.explanation}
+          explanation={latestDecision.explanation as LocalizedLabel}
           allowedActions={runState.allowed_actions ?? []}
         />
         <div
@@ -39,7 +41,7 @@ export default function CockpitView() {
       <p style={{ color: '#888', marginBottom: '8px' }}>Navigation view</p>
       {latestDecision && (
         <span data-testid="decision-explanation" style={{ fontSize: '0.9em' }}>
-          {latestDecision.explanation}
+          {t(latestDecision.explanation as LocalizedLabel, uiLanguage)}
         </span>
       )}
     </div>

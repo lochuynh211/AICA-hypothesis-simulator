@@ -124,10 +124,10 @@ describe('PackageSelector — T018', () => {
       </RunStoreProvider>,
     )
 
-    // Both package labels should appear as options
+    // Both package labels should appear as options — default lang is 'ja'
     await waitFor(() => {
-      expect(screen.getByText(/Rule-Based Rest Proposal/)).toBeInTheDocument()
-      expect(screen.getByText(/Weighted Score Rest Proposal/)).toBeInTheDocument()
+      expect(screen.getByText(/ルールベース v0\.1/)).toBeInTheDocument()
+      expect(screen.getByText(/重みスコア v0\.1/)).toBeInTheDocument()
     })
   })
 
@@ -156,7 +156,7 @@ describe('PackageSelector — T018', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText(/Rule-Based Rest Proposal/)).toBeInTheDocument()
+      expect(screen.getByText(/ルールベース v0\.1/)).toBeInTheDocument()
     })
 
     const select = screen.getByRole('combobox')

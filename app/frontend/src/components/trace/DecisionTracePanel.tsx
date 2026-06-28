@@ -14,6 +14,7 @@ import { useState } from 'react'
 import type { TraceEntry, AlgorithmError, Candidate } from '../../api/types'
 import { useRunStore } from '../../state/runStore'
 import FeedbackForm from '../feedback/FeedbackForm'
+import { t } from '../../i18n/t'
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -161,6 +162,8 @@ function RuntimeStateIndicator({ runtimeState }: { runtimeState: Record<string, 
 function TraceEntryRow({ entry }: { entry: TraceEntry }) {
   const hasScores = entry.scores && Object.keys(entry.scores).length > 0
   const [feedbackOpen, setFeedbackOpen] = useState(false)
+  const { state } = useRunStore()
+  const { uiLanguage } = state
 
   return (
     <div
@@ -233,7 +236,7 @@ function TraceEntryRow({ entry }: { entry: TraceEntry }) {
 
       {/* explanation */}
       <div style={{ color: '#ccc', marginTop: '2px', fontStyle: 'italic' }}>
-        {entry.explanation}
+        {t(entry.explanation as Parameters<typeof t>[0], uiLanguage)}
       </div>
 
       {/* Runtime-state indicator (hybrid algorithm — recorded output this tick) */}

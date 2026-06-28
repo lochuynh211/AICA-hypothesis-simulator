@@ -13,7 +13,7 @@ import os
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from aica_api.config import settings
@@ -437,7 +437,10 @@ def post_feedback(run_id: str, body: FeedbackBody):
 
 
 @router.get("/api/runs/{run_id}/evidence")
-def get_evidence(run_id: str):
+def get_evidence(
+    run_id: str,
+    ui_language: str = Query(default="bilingual", alias="ui_language"),
+):
     """Derive and return the §14.2 evidence report for a run (active or on-disk).
 
     The report is a derived view — it is NOT persisted.  report_id and timestamp
@@ -445,6 +448,11 @@ def get_evidence(run_id: str):
 
     Separation invariant: FeedbackEvents appear ONLY under human_review;
     simulator_facts NEVER contains a feedback value.
+
+    Query params:
+        ui_language: The reviewer's selected UI language at export time (e.g.
+                     ``"ja"``, ``"en"``).  Defaults to ``"bilingual"`` when
+                     absent (back-compat with pre-M6 callers).
 
     404: run not found (active or on-disk).
     """
@@ -454,4 +462,9 @@ def get_evidence(run_id: str):
     report_id = _make_report_id()
     timestamp = datetime.now(timezone.utc).isoformat()
 
-    return build_evidence_report(run_log, report_id=report_id, timestamp=timestamp)
+    return build_evidence_report(
+        run_log,
+        report_id=report_id,
+        timestamp=timestamp,
+        ui_language=ui_language,
+    )

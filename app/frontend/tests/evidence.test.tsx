@@ -167,7 +167,7 @@ describe('EvidencePanel', () => {
     fireEvent.click(screen.getByTestId('evidence-copy-btn'))
 
     await waitFor(() => {
-      expect(client.getEvidence).toHaveBeenCalledWith('run-evidence-test-001')
+      expect(client.getEvidence).toHaveBeenCalledWith('run-evidence-test-001', 'ja')
       expect(navigator.clipboard.writeText).toHaveBeenCalledTimes(1)
     })
 
@@ -202,7 +202,7 @@ describe('EvidencePanel', () => {
     fireEvent.click(screen.getByTestId('evidence-download-btn'))
 
     await waitFor(() => {
-      expect(client.getEvidence).toHaveBeenCalledWith('run-evidence-test-001')
+      expect(client.getEvidence).toHaveBeenCalledWith('run-evidence-test-001', 'ja')
       expect(URL.createObjectURL).toHaveBeenCalled()
       expect(clickSpy).toHaveBeenCalled()
     })

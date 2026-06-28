@@ -747,3 +747,67 @@ class TestEvidenceEndpoint:
         assert isinstance(report_id_2, str)
         # report_id is generated per call at the router boundary — must be unique.
         assert report_id_1 != report_id_2
+
+
+# ── M6 T005: ui_language param on build_evidence_report + GET /evidence ───────
+
+
+class TestUiLanguageParam:
+    """build_evidence_report accepts an optional ui_language; router passes it through."""
+
+    def test_default_ui_language_is_bilingual(self):
+        """Absent ui_language → 'bilingual' for back-compat."""
+        run_log = _make_run_log()
+        report = build_evidence_report(run_log, report_id="r", timestamp="t")
+        assert report["ui_language"] == "bilingual"
+
+    def test_explicit_ja_is_recorded(self):
+        """ui_language='ja' is stored verbatim in the report."""
+        run_log = _make_run_log()
+        report = build_evidence_report(run_log, report_id="r", timestamp="t", ui_language="ja")
+        assert report["ui_language"] == "ja"
+
+    def test_explicit_en_is_recorded(self):
+        """ui_language='en' is stored verbatim in the report."""
+        run_log = _make_run_log()
+        report = build_evidence_report(run_log, report_id="r", timestamp="t", ui_language="en")
+        assert report["ui_language"] == "en"
+
+    def test_explicit_bilingual_is_still_valid(self):
+        """Passing 'bilingual' explicitly is fine (unchanged from M5 callers)."""
+        run_log = _make_run_log()
+        report = build_evidence_report(run_log, report_id="r", timestamp="t", ui_language="bilingual")
+        assert report["ui_language"] == "bilingual"
+
+
+class TestEvidenceEndpointUiLanguage:
+    """GET /api/runs/{id}/evidence accepts optional ui_language query param."""
+
+    def test_absent_ui_language_returns_bilingual(self, client, active_run_id):
+        """No ?ui_language= → report['ui_language'] == 'bilingual'."""
+        resp = client.get(f"/api/runs/{active_run_id}/evidence")
+        assert resp.status_code == 200
+        assert resp.json()["ui_language"] == "bilingual"
+
+    def test_ui_language_ja_is_recorded(self, client, active_run_id):
+        """?ui_language=ja → report['ui_language'] == 'ja'."""
+        resp = client.get(f"/api/runs/{active_run_id}/evidence?ui_language=ja")
+        assert resp.status_code == 200
+        assert resp.json()["ui_language"] == "ja"
+
+    def test_ui_language_en_is_recorded(self, client, active_run_id):
+        """?ui_language=en → report['ui_language'] == 'en'."""
+        resp = client.get(f"/api/runs/{active_run_id}/evidence?ui_language=en")
+        assert resp.status_code == 200
+        assert resp.json()["ui_language"] == "en"
+
+    def test_ui_language_does_not_change_other_fields(self, client, active_run_id):
+        """ui_language param only affects the ui_language field; other fields unchanged."""
+        resp_bilingual = client.get(f"/api/runs/{active_run_id}/evidence")
+        resp_ja = client.get(f"/api/runs/{active_run_id}/evidence?ui_language=ja")
+        b = resp_bilingual.json()
+        j = resp_ja.json()
+        # run_id, simulator_facts shape, human_review shape must be identical
+        assert b["run_id"] == j["run_id"]
+        assert b["simulator_facts"].keys() == j["simulator_facts"].keys()
+        assert b["human_review"].keys() == j["human_review"].keys()

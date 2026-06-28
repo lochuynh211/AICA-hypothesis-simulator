@@ -79,6 +79,14 @@ export type RunStoreState = {
    * - 'runs'   → RunsScreen (browse past runs; placeholder in M6)
    */
   viewMode: 'setup' | 'review' | 'runs'
+
+  // ── M6: UI language (T004) ─────────────────────────────────────────────────
+  /**
+   * The language shown in the UI. Session-only — NOT persisted to localStorage
+   * and NOT cleared by RESET (it is a reviewer preference, not run state).
+   * Default 'ja'; toggled via SET_LANGUAGE.
+   */
+  uiLanguage: 'ja' | 'en'
 }
 
 const initialState: RunStoreState = {
@@ -115,6 +123,8 @@ const initialState: RunStoreState = {
   mapsError: null,
   // M6 — default to Setup screen
   viewMode: 'setup',
+  // M6 T004 — default to Japanese
+  uiLanguage: 'ja',
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -172,6 +182,9 @@ export type RunStoreAction =
   /** Navigate to a specific view. Use RESET to return to Setup and clear run. */
   | { type: 'SET_VIEW_MODE'; mode: 'setup' | 'review' | 'runs' }
   | { type: 'RESET' }
+  // ── M6 T004: UI language ──────────────────────────────────────────────────
+  /** Switch the UI language. Session-only — survives RESET. */
+  | { type: 'SET_LANGUAGE'; lang: 'ja' | 'en' }
 
 // ── Reducer ────────────────────────────────────────────────────────────────
 
@@ -348,6 +361,9 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
     // ── M6 actions ─────────────────────────────────────────────────────────
     case 'SET_VIEW_MODE':
       return { ...state, viewMode: action.mode }
+
+    case 'SET_LANGUAGE':
+      return { ...state, uiLanguage: action.lang }
 
     case 'RESET':
       return {

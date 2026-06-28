@@ -490,7 +490,7 @@ export type EvidenceReport = {
   report_id: string
   run_id: string
   timestamp: string
-  ui_language: 'bilingual'
+  ui_language: string
   simulator_version: string
   package: { id: string; version: string }
   scenario: { id: string; version: string }

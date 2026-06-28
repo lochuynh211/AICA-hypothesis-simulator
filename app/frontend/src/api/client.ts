@@ -205,9 +205,16 @@ export async function getFeedbackSchema(runId: string): Promise<FeedbackSchema> 
   return apiFetch(`/api/runs/${runId}/feedback-schema`, { method: 'GET' })
 }
 
-/** Fetch the §14.2 evidence report for a run (derived, not persisted). */
-export async function getEvidence(runId: string): Promise<EvidenceReport> {
-  return apiFetch(`/api/runs/${runId}/evidence`, { method: 'GET' })
+/**
+ * Fetch the §14.2 evidence report for a run (derived, not persisted).
+ *
+ * @param runId      The run to export.
+ * @param uiLanguage Optional language tag passed as ?ui_language= query param.
+ *                   When omitted the backend defaults to 'bilingual' (back-compat).
+ */
+export async function getEvidence(runId: string, uiLanguage?: string): Promise<EvidenceReport> {
+  const qs = uiLanguage ? `?ui_language=${encodeURIComponent(uiLanguage)}` : ''
+  return apiFetch(`/api/runs/${runId}/evidence${qs}`, { method: 'GET' })
 }
 
 /**

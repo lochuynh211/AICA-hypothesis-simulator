@@ -19,6 +19,7 @@ import RunsScreen from '../screens/RunsScreen'
 import LeftContextPanel from './LeftContextPanel'
 import CenterPlaybackPanel from './CenterPlaybackPanel'
 import RightReviewPanel from './RightReviewPanel'
+import LanguageToggle from './LanguageToggle'
 
 type Props = {
   /** Health status string from the backend — shown in the header when available. */
@@ -94,6 +95,8 @@ export default function AppShell({ healthStatus }: Props) {
             Runs
           </button>
         </nav>
+
+        <LanguageToggle />
 
         {healthStatus && (
           <span

@@ -31,6 +31,7 @@ const C = {
 export default function EvidencePanel() {
   const { state } = useRunStore()
   const runId = state.runState?.run_id ?? null
+  const { uiLanguage } = state
 
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'ok' | 'error'>('idle')
   const [dlStatus, setDlStatus] = useState<'idle' | 'fetching' | 'ok' | 'error'>('idle')
@@ -39,7 +40,7 @@ export default function EvidencePanel() {
     if (!runId) return
     setCopyStatus('copying')
     try {
-      const report = await getEvidence(runId)
+      const report = await getEvidence(runId, uiLanguage)
       await navigator.clipboard.writeText(JSON.stringify(report, null, 2))
       setCopyStatus('ok')
       setTimeout(() => setCopyStatus('idle'), 2000)
@@ -53,7 +54,7 @@ export default function EvidencePanel() {
     if (!runId) return
     setDlStatus('fetching')
     try {
-      const report = await getEvidence(runId)
+      const report = await getEvidence(runId, uiLanguage)
       const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')

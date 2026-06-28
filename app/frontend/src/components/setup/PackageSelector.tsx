@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
 import { useRunStore } from '../../state/runStore'
 import { listPackages } from '../../api/client'
+import { t } from '../../i18n/t'
 
 export default function PackageSelector() {
   const { state, dispatch } = useRunStore()
-  const { packages, selectedPackageId, packageErrors } = state
+  const { packages, selectedPackageId, packageErrors, uiLanguage } = state
 
   useEffect(() => {
     listPackages()
@@ -33,7 +34,7 @@ export default function PackageSelector() {
         </option>
         {packages.map((p) => (
           <option key={p.id} value={p.id}>
-            {p.label.en} ({p.version})
+            {t(p.label, uiLanguage)} ({p.version})
           </option>
         ))}
       </select>

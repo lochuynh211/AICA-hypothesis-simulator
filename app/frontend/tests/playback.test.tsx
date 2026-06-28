@@ -248,7 +248,8 @@ describe('CockpitView', () => {
 
     const overlay = await screen.findByTestId('proposal-overlay')
     expect(overlay).toBeInTheDocument()
-    expect(screen.getByText(/Take a rest/)).toBeInTheDocument()
+    // Default lang is 'ja' — proposal message rendered in Japanese
+    expect(screen.getByText(/休憩を取ってください/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /accept rest/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /postpone/i })).toBeInTheDocument()
   })

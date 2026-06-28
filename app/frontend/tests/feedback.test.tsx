@@ -159,16 +159,16 @@ describe('FeedbackForm', () => {
     })
 
     // choice field — rendered as a select or radio group
-    await screen.findByText(/proposal timing/i)
+    await screen.findByText(/提案タイミング/)
 
-    // choice+note field
-    expect(screen.getByText(/acceptance reason/i)).toBeInTheDocument()
+    // choice+note field — JA label (default lang is 'ja')
+    expect(screen.getByText(/承諾理由/)).toBeInTheDocument()
 
-    // text field — textarea
-    expect(screen.getByText(/overall comments/i)).toBeInTheDocument()
+    // text field — textarea — JA label
+    expect(screen.getByText(/コメント/)).toBeInTheDocument()
 
-    // scale field
-    expect(screen.getByText(/satisfaction score/i)).toBeInTheDocument()
+    // scale field — JA label
+    expect(screen.getByText(/満足度/)).toBeInTheDocument()
 
     // Always-present free-text comment field (exact label "Comment")
     expect(screen.getByLabelText('Comment', { exact: true })).toBeInTheDocument()
@@ -194,7 +194,7 @@ describe('FeedbackForm', () => {
 
     // Wait for schema to load
     await waitFor(() => expect(client.getFeedbackSchema).toHaveBeenCalled())
-    await screen.findByText(/proposal timing/i)
+    await screen.findByText(/提案タイミング/)
 
     // Submit the form without filling any field (all optional)
     const submitButton = screen.getByRole('button', { name: /submit/i })
@@ -225,7 +225,7 @@ describe('FeedbackForm', () => {
     )
 
     await waitFor(() => expect(client.getFeedbackSchema).toHaveBeenCalled())
-    await screen.findByText(/proposal timing/i)
+    await screen.findByText(/提案タイミング/)
 
     fireEvent.click(screen.getByRole('button', { name: /submit/i }))
 
@@ -250,7 +250,7 @@ describe('FeedbackForm', () => {
     )
 
     await waitFor(() => expect(client.getFeedbackSchema).toHaveBeenCalled())
-    await screen.findByText(/proposal timing/i)
+    await screen.findByText(/提案タイミング/)
 
     fireEvent.click(screen.getByRole('button', { name: /submit/i }))
 
