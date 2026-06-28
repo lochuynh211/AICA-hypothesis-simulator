@@ -2,9 +2,6 @@ import { useEffect, useState } from 'react'
 import { getHealth, HealthStatus } from './api/client'
 import { RunStoreProvider } from './state/runStore'
 import AppShell from './components/layout/AppShell'
-import LeftContextPanel from './components/layout/LeftContextPanel'
-import CenterPlaybackPanel from './components/layout/CenterPlaybackPanel'
-import RightReviewPanel from './components/layout/RightReviewPanel'
 
 type State =
   | { phase: 'loading' }
@@ -32,11 +29,7 @@ export default function App() {
 
   return (
     <RunStoreProvider>
-      <AppShell
-        left={<LeftContextPanel healthStatus={healthStatus} />}
-        center={<CenterPlaybackPanel />}
-        right={<RightReviewPanel />}
-      />
+      <AppShell healthStatus={healthStatus} />
     </RunStoreProvider>
   )
 }

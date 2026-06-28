@@ -40,7 +40,7 @@ import PackageSelector from '../src/components/setup/PackageSelector'
 import ScenarioSelector from '../src/components/setup/ScenarioSelector'
 import HyperparameterEditor from '../src/components/setup/HyperparameterEditor'
 import PlanPreview from '../src/components/setup/PlanPreview'
-import LeftContextPanel from '../src/components/layout/LeftContextPanel'
+import SetupScreen from '../src/components/screens/SetupScreen'
 import type { PackageManifest } from '../src/api/types'
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -397,23 +397,26 @@ describe('HyperparameterEditor + PlanPreview — T024', () => {
   })
 })
 
-// ── I1 regression: LeftContextPanel renders MapKeyAndRouteInput ───────────────
+// ── I1 regression (migrated M6): SetupScreen renders MapKeyAndRouteInput ─────
+//
+// Previously tested LeftContextPanel — re-pointed to SetupScreen after M6
+// relocated the setup editors. The Maps API key input lives on SetupScreen.
 
-describe('LeftContextPanel — I1 regression', () => {
+describe('SetupScreen — I1 regression (M6 migration)', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     vi.mocked(client.listPackages).mockResolvedValue({ packages: [], errors: [] })
     vi.mocked(client.listScenarios).mockResolvedValue({ scenarios: [], errors: [] })
   })
 
-  it('renders the Maps API key field inside the Setup section', async () => {
+  it('renders the Maps API key field on the Setup screen', async () => {
     render(
       <RunStoreProvider>
-        <LeftContextPanel />
+        <SetupScreen />
       </RunStoreProvider>,
     )
     // The Maps API key password input is present — this would fail if
-    // MapKeyAndRouteInput were not rendered in the Setup section.
+    // MapKeyAndRouteInput were not rendered in SetupScreen.
     // Use findByLabelText to let the async effects (listPackages/listScenarios) settle.
     expect(await screen.findByLabelText(/maps api key/i)).toBeInTheDocument()
   })

@@ -71,6 +71,14 @@ export type RunStoreState = {
   /** Structured error from a 502 Maps failure; null when no error. */
   mapsError: MapsErrorBody | null
 
+  // ── M6: view mode ─────────────────────────────────────────────────────────
+  /**
+   * Which top-level view is active. Drives the three-view app shell.
+   * - 'setup'  → SetupScreen (default; also restored on RESET)
+   * - 'review' → 3-panel Review screen (auto-transition on RUN_CREATED)
+   * - 'runs'   → RunsScreen (browse past runs; placeholder in M6)
+   */
+  viewMode: 'setup' | 'review' | 'runs'
 }
 
 const initialState: RunStoreState = {
@@ -105,6 +113,8 @@ const initialState: RunStoreState = {
   routeSource: 'local',
   selectedRouteId: null,
   mapsError: null,
+  // M6 — default to Setup screen
+  viewMode: 'setup',
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -158,6 +168,9 @@ export type RunStoreAction =
   | { type: 'SELECT_ROUTE'; routeId: string }
   /** Record a Maps API error (502) from routesAnalyze. */
   | { type: 'SET_MAPS_ERROR'; error: MapsErrorBody | null }
+  // ── M6: view mode ─────────────────────────────────────────────────────────
+  /** Navigate to a specific view. Use RESET to return to Setup and clear run. */
+  | { type: 'SET_VIEW_MODE'; mode: 'setup' | 'review' | 'runs' }
   | { type: 'RESET' }
 
 // ── Reducer ────────────────────────────────────────────────────────────────
@@ -252,6 +265,7 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
       return { ...state, setupError: action.message }
 
     case 'RUN_CREATED':
+      // Auto-transition to Review so the user sees the run immediately.
       return {
         ...state,
         runState: action.runState,
@@ -262,6 +276,7 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         errors: [],
         algorithmErrors: [],
         runError: null,
+        viewMode: 'review',
       }
 
     case 'TICK_APPENDED': {
@@ -330,6 +345,10 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
     case 'SET_MAPS_ERROR':
       return { ...state, mapsError: action.error, alternatives: [] }
 
+    // ── M6 actions ─────────────────────────────────────────────────────────
+    case 'SET_VIEW_MODE':
+      return { ...state, viewMode: action.mode }
+
     case 'RESET':
       return {
         ...state,
@@ -356,6 +375,8 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         routeSource: 'local',
         selectedRouteId: null,
         mapsError: null,
+        // M6: return to Setup after resetting
+        viewMode: 'setup',
       }
 
     default:

@@ -310,6 +310,47 @@ describe('runStore — ALGORITHM_ERROR_APPENDED', () => {
   })
 })
 
+describe('runStore — viewMode transitions (T002)', () => {
+  it('initial state: viewMode === "setup"', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    expect(result.current.state.viewMode).toBe('setup')
+  })
+
+  it('SET_VIEW_MODE "review" → viewMode becomes "review"', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    act(() => result.current.dispatch({ type: 'SET_VIEW_MODE', mode: 'review' }))
+    expect(result.current.state.viewMode).toBe('review')
+  })
+
+  it('SET_VIEW_MODE "runs" → viewMode becomes "runs"', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    act(() => result.current.dispatch({ type: 'SET_VIEW_MODE', mode: 'runs' }))
+    expect(result.current.state.viewMode).toBe('runs')
+  })
+
+  it('SET_VIEW_MODE "setup" → viewMode becomes "setup"', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    act(() => result.current.dispatch({ type: 'SET_VIEW_MODE', mode: 'review' }))
+    act(() => result.current.dispatch({ type: 'SET_VIEW_MODE', mode: 'setup' }))
+    expect(result.current.state.viewMode).toBe('setup')
+  })
+
+  it('RUN_CREATED automatically transitions viewMode to "review"', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    expect(result.current.state.viewMode).toBe('setup')
+    act(() => result.current.dispatch({ type: 'RUN_CREATED', runState: createdRun }))
+    expect(result.current.state.viewMode).toBe('review')
+  })
+
+  it('RESET transitions viewMode back to "setup" (new-run / setup semantics)', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    act(() => result.current.dispatch({ type: 'RUN_CREATED', runState: createdRun }))
+    expect(result.current.state.viewMode).toBe('review')
+    act(() => result.current.dispatch({ type: 'RESET' }))
+    expect(result.current.state.viewMode).toBe('setup')
+  })
+})
+
 describe('runStore — RESET', () => {
   it('clears run state and trace but preserves lists', () => {
     const { result } = renderHook(() => useRunStore(), { wrapper })
