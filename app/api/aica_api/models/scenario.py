@@ -91,6 +91,23 @@ class EventPreset(BaseModel):
     model_config = {"extra": "allow"}
 
 
+class RecoveryStage(BaseModel):
+    phase: str                                   # wakefulness | nap | content
+    content: str                                 # audio_karaoke | sleep | video_karaoke | stretch | ...
+    motion: Literal["MOVING", "STOPPED"]
+    ticks: int | None = None                     # None = lasts until rest spot (wakefulness)
+    model_config = {"extra": "allow"}
+
+
+class RecoveryOption(BaseModel):
+    id: str
+    label: dict                                  # {ja, en}
+    rest_type: Literal["short", "long"] | None = None
+    stages: list[RecoveryStage] = []
+    postpone: bool = False
+    model_config = {"extra": "allow"}
+
+
 class ScenarioDef(BaseModel):
     """Top-level scenario definition.
 
@@ -109,6 +126,7 @@ class ScenarioDef(BaseModel):
     total_duration_seconds: int
     tick_seconds: int
     allowed_actions: list[str]
+    recovery_options: list[RecoveryOption] = []
     review_focus: str = ""
 
     # M2 profile fields — optional so M1 fixture files still parse
