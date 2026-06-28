@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from aica_api.config import settings
 from aica_api.models.feedback import FeedbackEvent, FeedbackTarget
 from aica_api.models.log import RunLog
-from aica_api.models.run import RunStatus
+from aica_api.models.run import RestSpot, RunStatus
 from aica_api.services.evidence import build_evidence_report
 from aica_api.services.evidence_markdown import render_evidence_markdown
 from aica_api.services.feedback import (
@@ -69,6 +69,8 @@ class CreateRunBody(BaseModel):
 
 class ActionBody(BaseModel):
     action: str
+    recovery_option_id: str | None = None
+    rest_spot: RestSpot | None = None
 
 
 class FeedbackBody(BaseModel):
@@ -250,7 +252,13 @@ def tick_endpoint(run_id: str):
     ts = outcome.tick_state
     route_fraction = ts.route_fraction if ts is not None else None
     distance_km = ts.distance_km if ts is not None else None
-    speed_kph = (ts.raw_state or {}).get("speedKph") if ts is not None else None
+    # Collapse raw_state once — guards both the None-ts and missing-key cases.
+    raw = (ts.raw_state or {}) if ts is not None else {}
+    speed_kph = raw.get("speedKph")
+    motion_state = raw.get("motionState")
+    recovery_phase = raw.get("recoveryPhase")
+    active_content = raw.get("activeContent")
+    is_traffic_jam = raw.get("isTrafficJam")
 
     if outcome.algorithm_error is not None:
         return {
@@ -261,6 +269,10 @@ def tick_endpoint(run_id: str):
             "route_fraction": route_fraction,
             "distance_km": distance_km,
             "speed_kph": speed_kph,
+            "motion_state": motion_state,
+            "recovery_phase": recovery_phase,
+            "active_content": active_content,
+            "is_traffic_jam": is_traffic_jam,
         }
     return {
         "run_state": outcome.run_state,
@@ -271,6 +283,10 @@ def tick_endpoint(run_id: str):
         "route_fraction": route_fraction,
         "distance_km": distance_km,
         "speed_kph": speed_kph,
+        "motion_state": motion_state,
+        "recovery_phase": recovery_phase,
+        "active_content": active_content,
+        "is_traffic_jam": is_traffic_jam,
     }
 
 
@@ -285,7 +301,9 @@ def action_endpoint(run_id: str, body: ActionBody):
         raise HTTPException(status_code=409, detail="No pending proposal")
 
     try:
-        updated = action(run_id, body.action)
+        updated = action(run_id, body.action,
+                         recovery_option_id=body.recovery_option_id,
+                         rest_spot=body.rest_spot)
     except RunNotFoundError:
         raise HTTPException(status_code=404, detail=f"Run {run_id!r} not found")
     except ActionNotAllowedError as exc:
@@ -345,6 +363,41 @@ def get_run_endpoint(run_id: str):
     if rs is None:
         raise HTTPException(status_code=404, detail=f"Run {run_id!r} not found")
     return rs
+
+
+@router.get("/api/runs/{run_id}/rest-spots")
+def rest_spots_endpoint(run_id: str, maps_key: str | None = None):
+    """Return candidate rest stops for a run.
+
+    Fallback path (REQUIRED, deterministic, offline):
+      Builds spots from run_state.route_facts.rest_spot_positions
+      → {id, label:{ja,en}, route_fraction: pos_km/total_km}.
+      Works without any network access.
+
+    Maps/Places path (maps_key present):
+      Not yet wired — the fallback is returned regardless of maps_key.
+      When Places wiring is added, key must stay in-memory only and must
+      never be persisted or logged (maps-key-never-persisted constraint).
+
+    404 if run_id is unknown.
+    """
+    rs = get_run(run_id)
+    if rs is None:
+        raise HTTPException(status_code=404, detail=f"Run {run_id!r} not found")
+
+    total_km = rs.route_facts.total_route_distance_km or 120.0
+    # Fallback: scenario/route positions → RestSpot dicts (deterministic, offline).
+    spots = [
+        {
+            "id": f"rest_{i}",
+            "label": {"ja": f"休憩所{i + 1}", "en": f"Rest stop {i + 1}"},
+            "route_fraction": min(1.0, pos_km / total_km),
+        }
+        for i, pos_km in enumerate(rs.route_facts.rest_spot_positions)
+    ]
+    # (When maps_key is present, replace `spots` with Places results via the
+    #  routes.py Places helper; key stays in-memory, never persisted or logged.)
+    return {"rest_spots": spots}
 
 
 @router.get("/api/runs/{run_id}/log")
