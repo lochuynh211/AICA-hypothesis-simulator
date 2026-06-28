@@ -96,6 +96,14 @@ export type RunStoreState = {
    * Cleared on SELECT_SCENARIO and RESET.
    */
   profileOverrides: ProfileOverrides | null
+
+  // ── Tick seconds override (setup-time) ─────────────────────────────────────
+  /**
+   * User-set tick duration in seconds. Null means "use scenario default" —
+   * nothing is sent in presets. A positive integer sends presets.tick_seconds.
+   * Cleared on SELECT_SCENARIO and RESET so each new scenario starts fresh.
+   */
+  tickSecondsOverride: number | null
 }
 
 const initialState: RunStoreState = {
@@ -136,6 +144,8 @@ const initialState: RunStoreState = {
   uiLanguage: 'ja',
   // M6 T009 — no profile overrides initially
   profileOverrides: null,
+  // tick seconds — null means "use scenario default"
+  tickSecondsOverride: null,
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -199,6 +209,9 @@ export type RunStoreAction =
   // ── M6 T009: ProfileEditor overrides ─────────────────────────────────────
   /** Sparse profile overrides from ProfileEditor; null to clear. */
   | { type: 'SET_PROFILE_OVERRIDES'; overrides: ProfileOverrides | null }
+  // ── Tick seconds override ─────────────────────────────────────────────────
+  /** Set the tick duration override (positive integer), or null to clear (use scenario default). */
+  | { type: 'SET_TICK_SECONDS'; seconds: number | null }
 
 // ── Reducer ────────────────────────────────────────────────────────────────
 
@@ -248,6 +261,8 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         mapsError: null,
         // T009: clear profile overrides — new scenario has its own defaults.
         profileOverrides: null,
+        // Clear tick seconds override — new scenario has its own default.
+        tickSecondsOverride: null,
       }
 
     case 'SET_PARAMETER':
@@ -384,6 +399,9 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
     case 'SET_PROFILE_OVERRIDES':
       return { ...state, profileOverrides: action.overrides }
 
+    case 'SET_TICK_SECONDS':
+      return { ...state, tickSecondsOverride: action.seconds }
+
     case 'RESET':
       return {
         ...state,
@@ -414,6 +432,8 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         viewMode: 'setup',
         // T009: clear profile overrides on reset
         profileOverrides: null,
+        // Clear tick seconds override on reset
+        tickSecondsOverride: null,
       }
 
     default:

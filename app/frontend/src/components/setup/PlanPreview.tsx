@@ -33,6 +33,7 @@ export default function PlanPreview() {
     selectedRouteId,
     routeSource,
     profileOverrides,
+    tickSecondsOverride,
   } = state
 
   const hasActiveRun = runState !== null && runState.status !== 'completed'
@@ -74,11 +75,17 @@ export default function PlanPreview() {
         resolvedDisplay = alt.display
       }
 
+      // Build presets: include tick_seconds only when the user set an override.
+      // Omit when null (unchanged / reset) so behavior is byte-identical to before.
+      const presets: Record<string, unknown> =
+        tickSecondsOverride != null ? { tick_seconds: tickSecondsOverride } : {}
+
       const resp = await createRunPlan({
         packageId: selectedPackageId,
         scenarioId: selectedScenarioId,
         parameters: editedParameters,
         hyperparameters: editedHyperparameters,
+        presets,
         runMode: 'standard',
         routeId: resolvedRouteId,
         routeSource: resolvedRouteSource,

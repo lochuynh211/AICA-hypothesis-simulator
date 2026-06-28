@@ -3,8 +3,9 @@
  *
  * Hosts all setup editors that were previously crammed into LeftContextPanel:
  * PackageSelector, ScenarioSelector, ParameterEditor, HyperparameterEditor,
- * ProfileEditor (T009 — scenario profile field overrides), MapKeyAndRouteInput
- * (M4 — key stays in-memory only), and PlanPreview.
+ * ProfileEditor (T009 — scenario profile field overrides), TickSecondsEditor
+ * (setup-time tick duration override), MapKeyAndRouteInput (M4 — key stays
+ * in-memory only), and PlanPreview.
  *
  * "Start Run" in PlanPreview dispatches RUN_CREATED, which auto-transitions
  * the store's viewMode to 'review' — no explicit navigation needed here.
@@ -15,6 +16,7 @@ import ScenarioSelector from '../setup/ScenarioSelector'
 import ParameterEditor from '../setup/ParameterEditor'
 import HyperparameterEditor from '../setup/HyperparameterEditor'
 import ProfileEditor from '../setup/ProfileEditor'
+import TickSecondsEditor from '../setup/TickSecondsEditor'
 import MapKeyAndRouteInput from '../setup/MapKeyAndRouteInput'
 import PlanPreview from '../setup/PlanPreview'
 
@@ -93,6 +95,22 @@ export default function SetupScreen() {
           Driver &amp; Vehicle Profiles
         </h2>
         <ProfileEditor />
+      </section>
+
+      <section style={{ marginBottom: '20px' }}>
+        <h2
+          style={{
+            fontSize: '0.78em',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            color: '#6b7280',
+            marginBottom: '10px',
+          }}
+        >
+          Timing
+        </h2>
+        <TickSecondsEditor />
       </section>
 
       <section style={{ marginBottom: '20px' }}>
