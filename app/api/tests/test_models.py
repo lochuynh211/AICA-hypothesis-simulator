@@ -1489,3 +1489,17 @@ def test_recovery_option_parses_stages_and_postpone():
     postpone = RecoveryOption(id="postpone", label={"ja": "見送る", "en": "Postpone"}, postpone=True)
     assert postpone.postpone is True
     assert postpone.stages == []
+
+
+# ─── M7 T002 — RecoveryState / RestSpot on RunState ──────────────────────────
+
+from aica_api.models.run import RecoveryState, RestSpot
+
+
+def test_recovery_state_defaults():
+    rs = RecoveryState(active=True, option_id="nap_karaoke",
+                        rest_spot=RestSpot(id="p1", label={"ja":"SA","en":"SA"}, route_fraction=0.6),
+                        phase="wakefulness")
+    assert rs.stage_index == 0
+    assert rs.stage_ticks_remaining == 0
+    assert rs.rest_spot.route_fraction == 0.6

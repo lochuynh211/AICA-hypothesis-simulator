@@ -236,6 +236,28 @@ class RunPlanDraft(BaseModel):
     profile_overrides: dict | None = None
 
 
+# ─── Recovery models ─────────────────────────────────────────────────────────
+
+
+class RestSpot(BaseModel):
+    id: str
+    label: dict
+    lat: float | None = None
+    lng: float | None = None
+    route_fraction: float
+    model_config = {"extra": "allow"}
+
+
+class RecoveryState(BaseModel):
+    active: bool = False
+    option_id: str | None = None
+    rest_spot: RestSpot | None = None
+    phase: str | None = None              # wakefulness|arriving|nap|content|resuming
+    stage_index: int = 0
+    stage_ticks_remaining: int = 0
+    model_config = {"extra": "allow"}
+
+
 # ─── RunState ────────────────────────────────────────────────────────────────
 
 
@@ -285,6 +307,9 @@ class RunState(BaseModel):
     # A non-None value combined with status==paused triggers the halted-run guard
     # in tick(), preventing duplicate error events on stray re-calls.
     last_error: dict | None = None
+
+    # M7: recovery state machine block (None until recovery begins)
+    recovery: RecoveryState | None = None
 
     # M4: route provenance + display snapshot (optional; defaults preserve M1-M3 compat)
     route_source: Literal["maps", "local"] = "local"
