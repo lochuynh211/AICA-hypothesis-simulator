@@ -2,6 +2,7 @@ import { useRunStore } from '../../state/runStore'
 import DecisionTracePanel from '../trace/DecisionTracePanel'
 import RunLogViewer from '../runs/RunLogViewer'
 import FeedbackForm from '../feedback/FeedbackForm'
+import EvidencePanel from '../evidence/EvidencePanel'
 
 export default function RightReviewPanel() {
   const { state } = useRunStore()
@@ -54,6 +55,19 @@ export default function RightReviewPanel() {
               RUN FEEDBACK
             </div>
             <FeedbackForm target={{ scope: 'run' }} />
+          </div>
+        </>
+      )}
+
+      {/* Evidence export — visible whenever a run is active (active or completed) */}
+      {state.runState && (
+        <>
+          <div style={{ height: '1px', background: '#2a2a2a', flexShrink: 0 }} />
+          <div
+            data-testid="evidence-export-section"
+            style={{ flexShrink: 0, padding: '8px' }}
+          >
+            <EvidencePanel />
           </div>
         </>
       )}

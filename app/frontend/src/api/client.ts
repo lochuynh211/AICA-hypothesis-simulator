@@ -16,6 +16,7 @@ import type {
   FeedbackSchema,
   FeedbackSubmitBody,
   FeedbackEvent,
+  EvidenceReport,
 } from './types'
 import { MapsError, FeedbackValidationError } from './types'
 
@@ -202,6 +203,11 @@ export async function getRunLog(runId: string): Promise<RunLog> {
 /** Fetch the effective feedback schema for a run's package. */
 export async function getFeedbackSchema(runId: string): Promise<FeedbackSchema> {
   return apiFetch(`/api/runs/${runId}/feedback-schema`, { method: 'GET' })
+}
+
+/** Fetch the §14.2 evidence report for a run (derived, not persisted). */
+export async function getEvidence(runId: string): Promise<EvidenceReport> {
+  return apiFetch(`/api/runs/${runId}/evidence`, { method: 'GET' })
 }
 
 /**

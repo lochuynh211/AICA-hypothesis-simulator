@@ -444,3 +444,56 @@ export type RunLog = {
   evidence_status: string
   events: RunLogEvent[]
 }
+
+// ── M5 Evidence report (§14.2) ─────────────────────────────────────────────
+
+/** §14.2 simulator facts — machine-recorded simulator outputs (no human feedback). */
+export type EvidenceSimulatorFacts = {
+  route_snapshot: unknown | null
+  route_facts: unknown
+  event_plan: unknown
+  run_mode: string
+  evidence_status: string
+  initial_parameters: Record<string, unknown>
+  final_parameters?: Record<string, unknown>
+  initial_hyperparameters: Record<string, unknown>
+  final_hyperparameters?: Record<string, unknown>
+  driver_profile: Record<string, unknown> | null
+  vehicle_profile: Record<string, unknown> | null
+  timeline_events: unknown[]
+  decision_trace: unknown[]
+  proposal_events: unknown[]
+  actions: unknown[]
+  expert_override_events?: unknown[]
+  algorithm_errors: unknown[]
+  run_comparison_reference?: unknown | null
+}
+
+/** §14.2 human review — only human feedback values; never simulator facts. */
+export type EvidenceHumanReview = {
+  feedback_labels: Array<{
+    target: FeedbackTarget
+    labels: Record<string, unknown>
+  }>
+  free_text_comments: Array<{
+    target: FeedbackTarget
+    comment: string
+  }>
+}
+
+/**
+ * §14.2 Evidence report — derived from the persisted RunLog.
+ * Separation invariant: FeedbackEvents appear ONLY under human_review;
+ * simulator_facts NEVER contains a feedback value.
+ */
+export type EvidenceReport = {
+  report_id: string
+  run_id: string
+  timestamp: string
+  ui_language: 'bilingual'
+  simulator_version: string
+  package: { id: string; version: string }
+  scenario: { id: string; version: string }
+  simulator_facts: EvidenceSimulatorFacts
+  human_review: EvidenceHumanReview
+}

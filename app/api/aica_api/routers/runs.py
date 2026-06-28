@@ -3,6 +3,7 @@
 M5 additions:
   - GET  /api/runs/{id}/feedback-schema  — effective schema for the run's package.
   - POST /api/runs/{id}/feedback         — append a FeedbackEvent (schema-validated).
+  - GET  /api/runs/{id}/evidence         — derive the §14.2 evidence report (T011).
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ from aica_api.config import settings
 from aica_api.models.feedback import FeedbackEvent, FeedbackTarget
 from aica_api.models.log import RunLog
 from aica_api.models.run import RunStatus
+from aica_api.services.evidence import build_evidence_report
 from aica_api.services.feedback import (
     SchemaCollisionError,
     append_feedback,
@@ -47,6 +49,13 @@ def _make_run_id() -> str:
     ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     rand = os.urandom(3).hex()
     return f"run_{ts}_{rand}"
+
+
+def _make_report_id() -> str:
+    """Generate a unique report_id: report_<YYYYMMDD-HHMMSS>_<6-hex>."""
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    rand = os.urandom(3).hex()
+    return f"report_{ts}_{rand}"
 
 
 # ── Request body models ───────────────────────────────────────────────────────
@@ -422,3 +431,27 @@ def post_feedback(run_id: str, body: FeedbackBody):
         raise HTTPException(status_code=404, detail=f"Run {run_id!r} not found")
 
     return event.model_dump()
+
+
+# ── M5 Evidence export endpoint ────────────────────────────────────────────────
+
+
+@router.get("/api/runs/{run_id}/evidence")
+def get_evidence(run_id: str):
+    """Derive and return the §14.2 evidence report for a run (active or on-disk).
+
+    The report is a derived view — it is NOT persisted.  report_id and timestamp
+    are generated at this router boundary (the project's timestamp/uuid discipline).
+
+    Separation invariant: FeedbackEvents appear ONLY under human_review;
+    simulator_facts NEVER contains a feedback value.
+
+    404: run not found (active or on-disk).
+    """
+    run_log = _resolve_run_log(run_id)
+
+    # Generate report_id + timestamp at the router boundary (not inside the pure fn)
+    report_id = _make_report_id()
+    timestamp = datetime.now(timezone.utc).isoformat()
+
+    return build_evidence_report(run_log, report_id=report_id, timestamp=timestamp)
