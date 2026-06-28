@@ -51,6 +51,18 @@ def _dict_bullets(d: dict[str, Any], indent: str = "") -> list[str]:
     return lines
 
 
+def _as_blockquote(text: str | None) -> str:
+    """Render free-text as a Markdown blockquote, neutralizing embedded structure.
+
+    Every line is prefixed with ``> ``, which prevents any embedded ``## heading``,
+    list marker, code fence, or other Markdown structure from becoming real document
+    structure.  An empty or None input renders as a single ``> (empty)`` line.
+    """
+    if not text:
+        return "> (empty)\n"
+    return "\n".join(f"> {line}" for line in text.splitlines()) + "\n"
+
+
 # ── Public API ─────────────────────────────────────────────────────────────────
 
 
@@ -228,7 +240,11 @@ def render_evidence_markdown(report: dict[str, Any]) -> str:
             tick_idx = err.get("tick_index", "?")
             err_type = err.get("error_type", "?")
             msg = err.get("message", "")
-            lines.append(f"- tick {tick_idx}: [{err_type}] {msg}\n")
+            # Render the user-supplied error message as a blockquote so embedded
+            # Markdown structure (e.g. "## Human Review") is quoted text, not a heading.
+            lines.append(f"- tick {tick_idx}: [{err_type}]\n\n")
+            lines.append(_as_blockquote(msg))
+            lines.append("\n")
     else:
         lines.append("- No algorithm errors recorded.\n")
     lines.append("\n")
@@ -280,7 +296,12 @@ def render_evidence_markdown(report: dict[str, Any]) -> str:
                 target_parts.append(f"tick={tick_idx}")
             target_str = ", ".join(target_parts)
 
-            lines.append(f"- **{target_str}**: {comment}\n")
+            # Render the reviewer-supplied comment as a blockquote so embedded
+            # Markdown structure (e.g. "## Simulator Facts") is quoted text, not
+            # a heading that could forge document structure.
+            lines.append(f"- **{target_str}**:\n\n")
+            lines.append(_as_blockquote(comment))
+            lines.append("\n")
     else:
         lines.append("- (no free-text comments)\n")
     lines.append("\n")

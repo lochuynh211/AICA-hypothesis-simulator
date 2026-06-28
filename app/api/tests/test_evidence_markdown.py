@@ -126,8 +126,8 @@ class TestSimulatorFacts:
     def test_package_id_in_facts(self):
         report = _make_report(package_id="my_special_package")
         md = render_evidence_markdown(report)
-        # Package id must appear in the document (metadata header, before facts section)
-        assert "my_special_package" in md
+        # Package id must appear in the metadata/Facts region (before ## Human Review)
+        assert "my_special_package" in md[:md.index("## Human Review")]
 
     def test_scenario_id_in_facts_region(self):
         report = _make_report(scenario_id="uc01_fatigue_friend_drive_v0_1")
@@ -427,3 +427,96 @@ class TestEvidenceMarkdownRoute:
     def test_ui_language_en_in_content(self, client, active_run_id):
         resp = client.get(f"/api/runs/{active_run_id}/evidence.md?ui_language=en")
         assert "en" in resp.text
+
+
+class TestMarkdownInjectionDefense:
+    """Free-text fields (comment, algorithm error message) must not be able to forge
+    document structure.  An embedded ``## Simulator Facts`` or ``## Human Review``
+    must never create a second real heading that blurs the Facts/Review boundary.
+
+    These tests are written so they FAIL against the pre-fix code (where free-text
+    is interpolated raw) and PASS after the blockquote-escaping fix.
+    """
+
+    @staticmethod
+    def _count_heading_at_bol(md: str, heading: str) -> int:
+        """Count lines in the raw Markdown source that are exactly the given heading."""
+        return sum(1 for line in md.splitlines() if line == heading)
+
+    # ── I1 / M4: feedback comment injection ───────────────────────────────────
+
+    def test_comment_cannot_inject_simulator_facts_heading(self):
+        """A comment containing '## Simulator Facts' must NOT create a second heading."""
+        injected = "normal text\n\n## Simulator Facts\n\nfake_facts"
+        comments = [{"target": {"scope": "run"}, "comment": injected}]
+        report = _make_report(free_text_comments=comments)
+        md = render_evidence_markdown(report)
+
+        # Exactly one real ## Simulator Facts heading in the document
+        count = self._count_heading_at_bol(md, "## Simulator Facts")
+        assert count == 1, (
+            f"Expected exactly 1 '## Simulator Facts' heading at BOL, found {count}. "
+            "Comment may have injected a fake heading."
+        )
+
+        # The injected text appears only AFTER the real ## Human Review (in quoted form)
+        review_pos = md.index("## Human Review")
+        review_section = md[review_pos:]
+        assert "fake_facts" in review_section, (
+            "Injected content should still be present in the Human Review section"
+        )
+
+    def test_comment_cannot_inject_human_review_heading(self):
+        """A comment containing '## Human Review' must NOT create a second heading."""
+        injected = "normal text\n\n## Human Review\n\nfake_review"
+        comments = [{"target": {"scope": "run"}, "comment": injected}]
+        report = _make_report(free_text_comments=comments)
+        md = render_evidence_markdown(report)
+
+        count = self._count_heading_at_bol(md, "## Human Review")
+        assert count == 1, (
+            f"Expected exactly 1 '## Human Review' heading at BOL, found {count}. "
+            "Comment may have injected a fake heading."
+        )
+
+    def test_comment_with_none_renders_without_crashing(self):
+        """None or empty comment must not crash and must not inject structure."""
+        comments = [{"target": {"scope": "run"}, "comment": None}]
+        report = _make_report(free_text_comments=comments)
+        md = render_evidence_markdown(report)
+        assert "## Simulator Facts" in md
+        assert "## Human Review" in md
+        assert self._count_heading_at_bol(md, "## Human Review") == 1
+
+    # ── M2 / M4: algorithm error message injection ─────────────────────────────
+
+    def test_algorithm_error_cannot_inject_human_review_heading(self):
+        """An error message containing '## Human Review' must NOT create a second heading."""
+        injected_msg = "line 1\n\n## Human Review\n\nfake_review_content"
+        err = {"tick_index": 1, "error_type": "RuntimeError", "message": injected_msg}
+        report = _make_report(algorithm_errors=[err])
+        md = render_evidence_markdown(report)
+
+        count = self._count_heading_at_bol(md, "## Human Review")
+        assert count == 1, (
+            f"Expected exactly 1 '## Human Review' heading at BOL, found {count}. "
+            "Algorithm error message may have injected a fake heading."
+        )
+
+    def test_algorithm_error_cannot_inject_simulator_facts_heading(self):
+        """An error message containing '## Simulator Facts' must NOT forge a heading."""
+        injected_msg = "err\n\n## Simulator Facts\n\nfake_facts"
+        err = {"tick_index": 2, "error_type": "ValueError", "message": injected_msg}
+        report = _make_report(algorithm_errors=[err])
+        md = render_evidence_markdown(report)
+
+        count = self._count_heading_at_bol(md, "## Simulator Facts")
+        assert count == 1, (
+            f"Expected exactly 1 '## Simulator Facts' heading at BOL, found {count}. "
+            "Algorithm error message may have injected a fake heading."
+        )
+
+        # tick index and error type remain readable outside the quoted block
+        facts_section = md[md.index("## Simulator Facts"):md.index("## Human Review")]
+        assert "ValueError" in facts_section
+        assert "fake_facts" in facts_section  # content still present, just quoted
