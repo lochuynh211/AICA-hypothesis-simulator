@@ -201,6 +201,7 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         // Changing scenario also invalidates the previously analyzed route.
         alternatives: [],
         selectedRouteId: null,
+        routeSource: 'local',
         mapsError: null,
       }
 
@@ -307,6 +308,7 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         // Changing the route input invalidates any previous analyze result.
         alternatives: [],
         selectedRouteId: null,
+        routeSource: 'local',
         mapsError: null,
       }
 

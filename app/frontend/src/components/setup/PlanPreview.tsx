@@ -1,5 +1,6 @@
 import { useRunStore } from '../../state/runStore'
 import { routesAnalyze, createRunPlan, regenerateRunPlan, createRun } from '../../api/client'
+import type { RouteFacts, DisplayRoute } from '../../api/types'
 
 /**
  * PlanPreview (T024 / M4) — orchestrates the setup flow:
@@ -45,8 +46,8 @@ export default function PlanPreview() {
       // ── Resolve the route alternative to use ──────────────────────────────
       let resolvedRouteId: string
       let resolvedRouteSource: string
-      let resolvedRouteFacts: unknown
-      let resolvedDisplay: unknown
+      let resolvedRouteFacts: RouteFacts | null = null
+      let resolvedDisplay: DisplayRoute | null = null
 
       if (alternatives.length > 0 && selectedRouteId) {
         // Maps path: alternatives already loaded by MapKeyAndRouteInput.
@@ -79,8 +80,8 @@ export default function PlanPreview() {
         runMode: 'standard',
         routeId: resolvedRouteId,
         routeSource: resolvedRouteSource,
-        routeFacts: resolvedRouteFacts as Parameters<typeof createRunPlan>[0]['routeFacts'],
-        displayRoute: resolvedDisplay as Parameters<typeof createRunPlan>[0]['displayRoute'],
+        routeFacts: resolvedRouteFacts,
+        displayRoute: resolvedDisplay,
       })
       dispatch({
         type: 'PLAN_DRAFTED',

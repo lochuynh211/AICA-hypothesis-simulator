@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRunStore } from '../../state/runStore'
 import { routesAnalyze } from '../../api/client'
 import { MapsError } from '../../api/types'
@@ -38,6 +38,11 @@ export default function MapKeyAndRouteInput() {
 
   const [localKey, setLocalKey] = useState(mapsKey)
   const [analyzing, setAnalyzing] = useState(false)
+
+  // Sync the password field when the store's mapsKey is reset externally (e.g. RESET action).
+  useEffect(() => {
+    setLocalKey(mapsKey)
+  }, [mapsKey])
 
   function handleKeyChange(e: React.ChangeEvent<HTMLInputElement>) {
     setLocalKey(e.target.value)

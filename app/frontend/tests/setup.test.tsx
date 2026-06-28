@@ -40,6 +40,7 @@ import PackageSelector from '../src/components/setup/PackageSelector'
 import ScenarioSelector from '../src/components/setup/ScenarioSelector'
 import HyperparameterEditor from '../src/components/setup/HyperparameterEditor'
 import PlanPreview from '../src/components/setup/PlanPreview'
+import LeftContextPanel from '../src/components/layout/LeftContextPanel'
 import type { PackageManifest } from '../src/api/types'
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -393,5 +394,27 @@ describe('HyperparameterEditor + PlanPreview — T024', () => {
     expect(previewBtn).toBeDisabled()
     fireEvent.click(previewBtn)
     expect(vi.mocked(client.createRunPlan)).not.toHaveBeenCalled()
+  })
+})
+
+// ── I1 regression: LeftContextPanel renders MapKeyAndRouteInput ───────────────
+
+describe('LeftContextPanel — I1 regression', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    vi.mocked(client.listPackages).mockResolvedValue({ packages: [], errors: [] })
+    vi.mocked(client.listScenarios).mockResolvedValue({ scenarios: [], errors: [] })
+  })
+
+  it('renders the Maps API key field inside the Setup section', async () => {
+    render(
+      <RunStoreProvider>
+        <LeftContextPanel />
+      </RunStoreProvider>,
+    )
+    // The Maps API key password input is present — this would fail if
+    // MapKeyAndRouteInput were not rendered in the Setup section.
+    // Use findByLabelText to let the async effects (listPackages/listScenarios) settle.
+    expect(await screen.findByLabelText(/maps api key/i)).toBeInTheDocument()
   })
 })

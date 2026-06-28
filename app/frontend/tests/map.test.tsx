@@ -459,6 +459,49 @@ describe('MapKeyAndRouteInput', () => {
   })
 })
 
+// ── I2 regression: async Maps script load triggers canvas init ───────────────
+
+describe('MapSurface — async script load (I2 regression)', () => {
+  afterEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).google
+    delete (window as Record<string, unknown>).__aicaHypSimMapsInit
+  })
+
+  it('(q) initializes the Maps canvas after the global init callback fires (no pre-loaded SDK)', async () => {
+    // Ensure google.maps is NOT available at mount time.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).google
+
+    renderInStore(<MapSurface />, (dispatch) => {
+      dispatch({ type: 'SET_MAPS_KEY', key: 'test-key' })
+      dispatch({ type: 'SET_ALTERNATIVES', envelope: mapsEnvelope })
+      dispatch({ type: 'SELECT_ROUTE', routeId: 'route-0' })
+    })
+
+    // Component renders the surface (display is non-null) but Map is not yet initialized.
+    expect(screen.getByTestId('map-surface')).toBeInTheDocument()
+
+    // Now install the Google Maps mock and fire the global init callback,
+    // simulating the async script load completing.
+    const { mockMaps } = setupGoogleMapsMock()
+
+    await act(async () => {
+      const cb = (window as Record<string, unknown>).__aicaHypSimMapsInit as
+        | (() => void)
+        | undefined
+      expect(cb).toBeDefined()
+      cb?.()
+    })
+
+    // After setMapsReady(true) triggers a re-render, the map-init effect should
+    // have run and constructed the Google Maps instance.
+    await waitFor(() => {
+      expect(mockMaps.Map).toHaveBeenCalled()
+    })
+  })
+})
+
 // Note: routesAnalyze envelope behaviour (local path, maps path, 502 MapsError)
 // and createRunPlan route selection fields are covered in client.test.tsx, which
 // tests the real client implementation directly (no vi.mock on the client module).

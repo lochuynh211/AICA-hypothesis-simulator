@@ -2,6 +2,7 @@ import PackageSelector from '../setup/PackageSelector'
 import ScenarioSelector from '../setup/ScenarioSelector'
 import ParameterEditor from '../setup/ParameterEditor'
 import HyperparameterEditor from '../setup/HyperparameterEditor'
+import MapKeyAndRouteInput from '../setup/MapKeyAndRouteInput'
 import PlanPreview from '../setup/PlanPreview'
 import RouteSegmentList from '../context/RouteSegmentList'
 import LiveReadouts from '../context/LiveReadouts'
@@ -26,6 +27,7 @@ export default function LeftContextPanel({ healthStatus }: Props) {
         <ScenarioSelector />
         <ParameterEditor />
         <HyperparameterEditor />
+        <MapKeyAndRouteInput />
         <PlanPreview />
       </section>
 

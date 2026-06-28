@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRunStore } from '../../state/runStore'
 import type { TraceEntry } from '../../api/types'
 
@@ -34,6 +34,11 @@ export default function MapSurface() {
   const { state } = useRunStore()
   const { mapsKey, alternatives, selectedRouteId, trace, runState } = state
 
+  // mapsReady: true when the Google Maps SDK is available (either pre-loaded or
+  // after the async script callback fires). Drives the map-init useEffect so
+  // the canvas initializes after the SDK loads, not just on the next unrelated render.
+  const [mapsReady, setMapsReady] = useState(() => Boolean(getGMaps()?.geometry?.encoding))
+
   const mapContainerRef = useRef<HTMLDivElement>(null)
   // Holds the google.maps.Map instance across renders — not React state
   // because we don't want re-renders on Map init.
@@ -68,9 +73,8 @@ export default function MapSurface() {
 
     ;(window as Record<string, unknown>)[callbackName] = () => {
       delete (window as Record<string, unknown>)[callbackName]
-      // Trigger a re-render so the initMap effect can pick it up.
-      // We do this by forcing a dummy state-independent re-render via the
-      // map container ref observation (handled by the init effect below).
+      // Trigger a re-render so the map-init effect runs after the SDK is ready.
+      setMapsReady(true)
     }
 
     const script = document.createElement('script')
@@ -87,7 +91,7 @@ export default function MapSurface() {
   }, [mapsKey, display?.encoded_polyline])
 
   // ── Google Maps canvas initialization ─────────────────────────────────────
-  // Runs when display or the container becomes available.
+  // Runs when the SDK becomes ready (mapsReady) or the selected polyline changes.
   // Uses the pre-loaded google.maps from window (either injected or mocked in tests).
   useEffect(() => {
     if (!display || !mapContainerRef.current) return
@@ -116,7 +120,8 @@ export default function MapSurface() {
       strokeWeight: 4,
     })
     polyline.setMap(mapInstanceRef.current)
-  })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapsReady, display?.encoded_polyline])
 
   // ── Guard: nothing to show ────────────────────────────────────────────────
   // When display is null (local path), return null so the caller can fall back
