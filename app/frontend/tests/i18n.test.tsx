@@ -246,6 +246,199 @@ describe('PackageSelector — bilingual label audit (representative)', () => {
   })
 })
 
+// ── Bilingual render regression: HyperparameterEditor (U3 audit fix) ──────────
+import HyperparameterEditor from '../src/components/setup/HyperparameterEditor'
+import type { PackageManifest } from '../src/api/types'
+
+const mockHpManifest: PackageManifest = {
+  id: 'test-pkg',
+  version: '0.1.0',
+  label: { ja: 'テストパッケージ', en: 'Test Package' },
+  compatible_scenario_types: ['uc01_fatigue'],
+  algorithm: { type: 'weighted_score', entrypoint: 'builtin' },
+  parameters: [],
+  features: [],
+  hyperparameters: [
+    {
+      key: 'w_drowsiness',
+      label: { ja: '睡気重み', en: 'Drowsiness Weight' },
+      kind: 'numeric',
+      default: 0.4,
+      min: 0.0,
+      max: 1.0,
+      step: 0.01,
+    },
+  ],
+  trigger_categories: [],
+  rules: [],
+  fire_control: { threshold_source: 'x', actionability_guard: {} },
+  proposals: [],
+  feedback_schema: [],
+  evidence_metrics: [],
+}
+
+describe('HyperparameterEditor — bilingual label audit (U3 fix regression)', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    vi.mocked(client.getPackage).mockResolvedValue(mockHpManifest)
+  })
+
+  it('shows the JA label by default (uiLanguage=ja)', async () => {
+    render(
+      <WithToggle>
+        <HyperparameterEditor />
+      </WithToggle>,
+    )
+    // Seed package selection via dispatch — render inside store context
+    // The WithToggle wrapper provides the store; we need to select a package first.
+    // Re-render with store dispatch to select a package.
+    const dispatchRef: { current: React.Dispatch<RunStoreAction> | null } = { current: null }
+    function DispatchCapture() {
+      const { dispatch } = useRunStore()
+      dispatchRef.current = dispatch
+      return null
+    }
+    render(
+      <RunStoreProvider>
+        <LanguageToggle />
+        <DispatchCapture />
+        <HyperparameterEditor />
+      </RunStoreProvider>,
+    )
+    act(() => {
+      dispatchRef.current!({ type: 'SELECT_PACKAGE', id: 'test-pkg' })
+    })
+    // JA label renders by default
+    expect(await screen.findByLabelText('睡気重み')).toBeInTheDocument()
+    // EN label must NOT be visible
+    expect(screen.queryByText('Drowsiness Weight')).not.toBeInTheDocument()
+  })
+
+  it('shows the EN label after toggling to EN (JA label disappears)', async () => {
+    const dispatchRef: { current: React.Dispatch<RunStoreAction> | null } = { current: null }
+    function DispatchCapture() {
+      const { dispatch } = useRunStore()
+      dispatchRef.current = dispatch
+      return null
+    }
+    render(
+      <RunStoreProvider>
+        <LanguageToggle />
+        <DispatchCapture />
+        <HyperparameterEditor />
+      </RunStoreProvider>,
+    )
+    act(() => {
+      dispatchRef.current!({ type: 'SELECT_PACKAGE', id: 'test-pkg' })
+    })
+    // Wait for JA label
+    await screen.findByLabelText('睡気重み')
+
+    // Toggle to EN
+    fireEvent.click(screen.getByTestId('lang-toggle-en'))
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Drowsiness Weight')).toBeInTheDocument()
+    })
+    expect(screen.queryByText('睡気重み')).not.toBeInTheDocument()
+  })
+})
+
+// ── Bilingual render regression: RouteSegmentList (U3 audit fix) ──────────────
+import RouteSegmentList from '../src/components/context/RouteSegmentList'
+import type { ScenarioDef } from '../src/api/types'
+
+const mockScenarioDef: ScenarioDef = {
+  id: 'test-scenario',
+  version: '0.1.0',
+  type: 'uc01_fatigue',
+  persona: {},
+  route_intent: {
+    rest_facility: { label: 'SA' },
+    segments: [
+      {
+        id: 'seg1',
+        name: { ja: '東京出発', en: 'Tokyo Departure' },
+        type: 'start',
+        at: 0,
+        speed_band: 'low',
+        length_band: 'short',
+        is_rest_facility: false,
+      },
+    ],
+  },
+  initial_state: {},
+  event_presets: {
+    drowsiness_schedule: [],
+    signal_duration_at_trigger: 'short',
+  },
+  driver_profile: {},
+  vehicle_profile: {},
+  total_duration_seconds: 3600,
+  tick_seconds: 60,
+  allowed_actions: [],
+  review_focus: 'Base trigger timing',
+}
+
+describe('RouteSegmentList — bilingual name audit (U3 fix regression)', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    vi.mocked(client.getScenario).mockResolvedValue(mockScenarioDef)
+  })
+
+  it('shows the JA segment name by default (uiLanguage=ja)', async () => {
+    const dispatchRef: { current: React.Dispatch<RunStoreAction> | null } = { current: null }
+    function DispatchCapture() {
+      const { dispatch } = useRunStore()
+      dispatchRef.current = dispatch
+      return null
+    }
+    render(
+      <RunStoreProvider>
+        <LanguageToggle />
+        <DispatchCapture />
+        <RouteSegmentList />
+      </RunStoreProvider>,
+    )
+    act(() => {
+      dispatchRef.current!({ type: 'SELECT_SCENARIO', id: 'test-scenario' })
+    })
+    // JA segment name renders by default
+    expect(await screen.findByText('東京出発')).toBeInTheDocument()
+    // EN name must NOT be visible
+    expect(screen.queryByText('Tokyo Departure')).not.toBeInTheDocument()
+  })
+
+  it('shows the EN segment name after toggling to EN (JA name disappears)', async () => {
+    const dispatchRef: { current: React.Dispatch<RunStoreAction> | null } = { current: null }
+    function DispatchCapture() {
+      const { dispatch } = useRunStore()
+      dispatchRef.current = dispatch
+      return null
+    }
+    render(
+      <RunStoreProvider>
+        <LanguageToggle />
+        <DispatchCapture />
+        <RouteSegmentList />
+      </RunStoreProvider>,
+    )
+    act(() => {
+      dispatchRef.current!({ type: 'SELECT_SCENARIO', id: 'test-scenario' })
+    })
+    // Wait for JA name
+    await screen.findByText('東京出発')
+
+    // Toggle to EN
+    fireEvent.click(screen.getByTestId('lang-toggle-en'))
+
+    await waitFor(() => {
+      expect(screen.getByText('Tokyo Departure')).toBeInTheDocument()
+    })
+    expect(screen.queryByText('東京出発')).not.toBeInTheDocument()
+  })
+})
+
 // ── T005: getEvidence() passes uiLanguage to the backend ─────────────────────
 import type { EvidenceReport, RunState } from '../src/api/types'
 import EvidencePanel from '../src/components/evidence/EvidencePanel'

@@ -300,7 +300,8 @@ describe('HyperparameterEditor + PlanPreview — T024', () => {
       dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
     })
 
-    const input = (await screen.findByLabelText('Drowsiness Weight')) as HTMLInputElement
+    // Default uiLanguage is 'ja', so the label renders as '睡気重み'
+    const input = (await screen.findByLabelText('睡気重み')) as HTMLInputElement
     expect(input).toHaveValue(0.4)
     expect(input).toHaveAttribute('step', '0.01')
   })
@@ -337,8 +338,8 @@ describe('HyperparameterEditor + PlanPreview — T024', () => {
       dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
     })
 
-    // Edit to a valid in-range value
-    const input = (await screen.findByLabelText('Drowsiness Weight')) as HTMLInputElement
+    // Edit to a valid in-range value — default uiLanguage is 'ja', label renders as '睡気重み'
+    const input = (await screen.findByLabelText('睡気重み')) as HTMLInputElement
     fireEvent.change(input, { target: { value: '0.6' } })
 
     // Preview
@@ -380,7 +381,8 @@ describe('HyperparameterEditor + PlanPreview — T024', () => {
       dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
     })
 
-    const input = (await screen.findByLabelText('Drowsiness Weight')) as HTMLInputElement
+    // Default uiLanguage is 'ja', label renders as '睡気重み'
+    const input = (await screen.findByLabelText('睡気重み')) as HTMLInputElement
     // 5 is above max (1.0)
     fireEvent.change(input, { target: { value: '5' } })
 

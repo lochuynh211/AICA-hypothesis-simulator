@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import { useRunStore } from '../../state/runStore'
 import { getScenario } from '../../api/client'
 import type { RouteSegment } from '../../api/types'
+import { t } from '../../i18n/t'
 
 export default function RouteSegmentList() {
   const { state } = useRunStore()
-  const { selectedScenarioId, runState } = state
+  const { selectedScenarioId, runState, uiLanguage } = state
   const [segments, setSegments] = useState<RouteSegment[]>([])
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export default function RouteSegmentList() {
             fontSize: '0.85em',
           }}
         >
-          {seg.name.en}
+          {t(seg.name, uiLanguage)}
           <span style={{ color: '#888', marginLeft: '4px' }}>({seg.type})</span>
           {seg.is_rest_facility && <span style={{ marginLeft: '4px', color: '#059669' }}>⊙ rest</span>}
         </li>
