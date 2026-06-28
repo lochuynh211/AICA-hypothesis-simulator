@@ -707,6 +707,65 @@ describe('MapSurface — I3 regression: Maps SDK auth failure causes UI freeze',
   )
 })
 
+// ── T011: rest-spot marker ────────────────────────────────────────────────────
+
+describe('MapSurface — T011: rest-spot marker', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    setupGoogleMapsMock()
+    localStorage.clear()
+    sessionStorage.clear()
+  })
+
+  afterEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).google
+  })
+
+  it('(w) renders rest-spot-marker when recovery.rest_spot is set', () => {
+    const runStateWithRestSpot = {
+      ...runStateWithTicks,
+      recovery: {
+        active: true,
+        option_id: 'rest_short',
+        rest_spot: {
+          id: 'spot-1',
+          label: { ja: '道の駅', en: 'Rest Area' },
+          lat: 35.2,
+          lng: 135.2,
+          route_fraction: 0.6,
+        },
+        phase: 'driving',
+        stage_index: 0,
+        stage_ticks_remaining: 10,
+      },
+    }
+
+    renderInStore(<MapSurface />, (dispatch) => {
+      dispatch({ type: 'SET_MAPS_KEY', key: 'test-key' })
+      dispatch({ type: 'SET_ALTERNATIVES', envelope: mapsEnvelope })
+      dispatch({ type: 'SELECT_ROUTE', routeId: 'route-0' })
+      dispatch({ type: 'RUN_CREATED', runState: runStateWithRestSpot })
+    })
+
+    const marker = screen.getByTestId('rest-spot-marker')
+    expect(marker).toBeInTheDocument()
+    // Positioned at 60% (route_fraction=0.6)
+    expect(marker).toHaveStyle({ left: '60%' })
+  })
+
+  it('(x) does not render rest-spot-marker when recovery.rest_spot is absent', () => {
+    renderInStore(<MapSurface />, (dispatch) => {
+      dispatch({ type: 'SET_MAPS_KEY', key: 'test-key' })
+      dispatch({ type: 'SET_ALTERNATIVES', envelope: mapsEnvelope })
+      dispatch({ type: 'SELECT_ROUTE', routeId: 'route-0' })
+      dispatch({ type: 'RUN_CREATED', runState: runStateWithTicks })
+    })
+
+    expect(screen.queryByTestId('rest-spot-marker')).not.toBeInTheDocument()
+  })
+})
+
 // Note: routesAnalyze envelope behaviour (local path, maps path, 502 MapsError)
 // and createRunPlan route selection fields are covered in client.test.tsx, which
 // tests the real client implementation directly (no vi.mock on the client module).

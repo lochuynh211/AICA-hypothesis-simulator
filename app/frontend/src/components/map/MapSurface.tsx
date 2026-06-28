@@ -71,6 +71,10 @@ export default function MapSurface() {
   const { state } = useRunStore()
   const { mapsKey, alternatives, selectedRouteId } = state
 
+  // Chosen rest spot from the recovery engine (null when no recovery is active
+  // or the spot has not been selected yet). Drives the DOM-overlay marker.
+  const restSpot = state.runState?.recovery?.rest_spot ?? null
+
   // mapsReady: true when the Google Maps SDK is available (either pre-loaded or
   // after the async script callback fires). Drives the map-init useEffect so
   // the canvas initializes after the SDK loads, not just on the next unrelated render.
@@ -103,6 +107,8 @@ export default function MapSurface() {
   const startRef = useRef<GMapsLib>(null)
   const restRef = useRef<GMapsLib>(null)
   const fireRef = useRef<GMapsLib>(null)
+  // Geographic marker for the chosen rest spot (real SDK only).
+  const chosenRestRef = useRef<GMapsLib>(null)
   // realMarkers: true once geographic markers are drawn — hides the DOM-overlay
   // fallback markers so the car isn't shown twice on a real map.
   const [realMarkers, setRealMarkers] = useState(false)
@@ -286,7 +292,28 @@ export default function MapSurface() {
         fireRef.current.setPosition(fp)
       }
     }
-  }, [shownFraction, restFraction, proposalFraction])
+
+    // Chosen rest-spot marker (gold star / emphasized) — only when a rest spot
+    // has been selected by the recovery engine.
+    if (restSpot != null) {
+      const rsp = latLngAt(path, cum, total, restSpot.route_fraction, sph)
+      if (rsp) {
+        if (!chosenRestRef.current) {
+          chosenRestRef.current = new gmaps.Marker({
+            map: mapInstanceRef.current,
+            icon: { path: gmaps.SymbolPath.CIRCLE, scale: 8, fillColor: '#f0c000', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 },
+            title: restSpot.label?.en ?? 'Chosen Rest Spot',
+            zIndex: 999,
+          })
+        }
+        chosenRestRef.current.setPosition(rsp)
+      }
+    } else if (chosenRestRef.current) {
+      // Rest spot cleared — hide the geographic marker.
+      chosenRestRef.current.setMap(null)
+      chosenRestRef.current = null
+    }
+  }, [shownFraction, restFraction, proposalFraction, restSpot])
 
   // ── Guard: nothing to show ────────────────────────────────────────────────
   // When display is null (local path), return null so the caller can fall back
@@ -365,6 +392,30 @@ export default function MapSurface() {
             background: '#dc2626',
             borderRadius: '2px',
             zIndex: 10,
+            visibility: realMarkers ? 'hidden' : 'visible',
+          }}
+        />
+      )}
+
+      {/* DOM overlay: chosen rest-spot marker (gold circle) — positioned by
+          route_fraction from recovery.rest_spot.  Hidden when the real SDK
+          geographic marker is active (realMarkers=true). Absent entirely when
+          no rest spot has been chosen.  testable under the mock (no Marker). */}
+      {restSpot !== null && (
+        <div
+          data-testid="rest-spot-marker"
+          aria-label={`Chosen rest spot: ${restSpot.label?.en ?? restSpot.id}`}
+          style={{
+            position: 'absolute',
+            bottom: '0',
+            left: `${Math.round(restSpot.route_fraction * 100)}%`,
+            transform: 'translateX(-50%)',
+            width: '16px',
+            height: '16px',
+            background: '#f0c000',
+            borderRadius: '50%',
+            border: '3px solid white',
+            zIndex: 11,
             visibility: realMarkers ? 'hidden' : 'visible',
           }}
         />
