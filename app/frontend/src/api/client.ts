@@ -17,6 +17,7 @@ import type {
   FeedbackSubmitBody,
   FeedbackEvent,
   EvidenceReport,
+  ProfileOverrides,
 } from './types'
 import { MapsError, FeedbackValidationError } from './types'
 
@@ -123,6 +124,8 @@ export async function createRunPlan(args: {
   routeSource?: string
   routeFacts?: RouteFacts | null
   displayRoute?: DisplayRoute | null
+  // T009: sparse profile overrides (omit entirely when nothing changed)
+  profiles?: ProfileOverrides | null
 }): Promise<RunPlanResponse> {
   const body: Record<string, unknown> = {
     package_id: args.packageId,
@@ -137,6 +140,10 @@ export async function createRunPlan(args: {
   if (args.routeSource !== undefined) body.route_source = args.routeSource
   if (args.routeFacts !== undefined) body.route_facts = args.routeFacts
   if (args.displayRoute !== undefined) body.display_route = args.displayRoute
+  // T009: include profiles only when non-empty (back-compat: omit for unchanged defaults)
+  if (args.profiles != null && Object.keys(args.profiles).length > 0) {
+    body.profiles = args.profiles
+  }
 
   return apiFetch('/api/run-plans', {
     method: 'POST',
@@ -205,9 +212,37 @@ export async function getFeedbackSchema(runId: string): Promise<FeedbackSchema> 
   return apiFetch(`/api/runs/${runId}/feedback-schema`, { method: 'GET' })
 }
 
-/** Fetch the §14.2 evidence report for a run (derived, not persisted). */
-export async function getEvidence(runId: string): Promise<EvidenceReport> {
-  return apiFetch(`/api/runs/${runId}/evidence`, { method: 'GET' })
+/**
+ * Fetch the §14.2 evidence report for a run (derived, not persisted).
+ *
+ * @param runId      The run to export.
+ * @param uiLanguage Optional language tag passed as ?ui_language= query param.
+ *                   When omitted the backend defaults to 'bilingual' (back-compat).
+ */
+export async function getEvidence(runId: string, uiLanguage?: string): Promise<EvidenceReport> {
+  const qs = uiLanguage ? `?ui_language=${encodeURIComponent(uiLanguage)}` : ''
+  return apiFetch(`/api/runs/${runId}/evidence${qs}`, { method: 'GET' })
+}
+
+/**
+ * Fetch the §14.2 evidence report for a run as human-readable Markdown (S8).
+ *
+ * Calls GET /api/runs/{runId}/evidence.md which returns text/markdown.
+ * The Markdown has the same facts as the JSON evidence endpoint — derived
+ * from build_evidence_report, not a separate computation.
+ * Separation preserved: ## Simulator Facts / ## Human Review.
+ *
+ * @param runId      The run to export (active or past run).
+ * @param uiLanguage Optional language tag passed as ?ui_language=.
+ *                   When omitted the backend defaults to 'bilingual'.
+ */
+export async function getEvidenceMarkdown(runId: string, uiLanguage?: string): Promise<string> {
+  const qs = uiLanguage ? `?ui_language=${encodeURIComponent(uiLanguage)}` : ''
+  const response = await fetch(`/api/runs/${runId}/evidence.md${qs}`, { method: 'GET' })
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`)
+  }
+  return response.text()
 }
 
 /**

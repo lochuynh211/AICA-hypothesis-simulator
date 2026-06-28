@@ -1,10 +1,12 @@
 import { useEffect } from 'react'
 import { useRunStore } from '../../state/runStore'
 import { listPackages } from '../../api/client'
+import { t } from '../../i18n/t'
+import ErrorNotice from '../common/ErrorNotice'
 
 export default function PackageSelector() {
   const { state, dispatch } = useRunStore()
-  const { packages, selectedPackageId, packageErrors } = state
+  const { packages, selectedPackageId, packageErrors, uiLanguage } = state
 
   useEffect(() => {
     listPackages()
@@ -33,14 +35,12 @@ export default function PackageSelector() {
         </option>
         {packages.map((p) => (
           <option key={p.id} value={p.id}>
-            {p.label.en} ({p.version})
+            {t(p.label, uiLanguage)} ({p.version})
           </option>
         ))}
       </select>
       {packageErrors.length > 0 && (
-        <p role="alert" data-testid="package-registry-errors" style={{ color: '#c00', fontSize: '0.75em', marginTop: '4px' }}>
-          {packageErrors.length} package(s) could not be loaded
-        </p>
+        <ErrorNotice testid="package-registry-errors" message={`${packageErrors.length} package(s) could not be loaded`} />
       )}
     </div>
   )

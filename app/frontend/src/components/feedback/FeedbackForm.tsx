@@ -23,6 +23,7 @@ import { useRunStore } from '../../state/runStore'
 import { getFeedbackSchema, submitFeedback } from '../../api/client'
 import { FeedbackValidationError } from '../../api/types'
 import type { FieldDef, FeedbackTarget, FeedbackSchema } from '../../api/types'
+import { t } from '../../i18n/t'
 
 type Props = {
   /** Attach-point: what this feedback is about. */
@@ -34,6 +35,7 @@ type Props = {
 export default function FeedbackForm({ target, onSuccess }: Props) {
   const { state } = useRunStore()
   const runId = state.runState?.run_id ?? null
+  const { uiLanguage } = state
 
   const [schema, setSchema] = useState<FeedbackSchema | null>(null)
   const [schemaError, setSchemaError] = useState<string | null>(null)
@@ -135,7 +137,7 @@ export default function FeedbackForm({ target, onSuccess }: Props) {
           htmlFor={labelId}
           style={{ display: 'block', fontSize: '0.8em', fontWeight: 600, marginBottom: '3px' }}
         >
-          {fd.label.en}
+          {t(fd.label, uiLanguage)}
         </label>
 
         {fd.type === 'choice' && (

@@ -190,6 +190,90 @@ def _validate_edits(
 # ---------------------------------------------------------------------------
 
 
+def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    """Recursively merge *override* onto *base*.
+
+    For each key in *override*:
+      - If the value is a dict and the matching key in *base* is also a dict,
+        recurse so that nested fields are merged at the sub-model level.
+      - Otherwise the override value replaces the base value.
+
+    Neither *base* nor *override* is mutated.
+    """
+    result: dict[str, Any] = dict(base)
+    for key, val in override.items():
+        if key in result and isinstance(result[key], dict) and isinstance(val, dict):
+            result[key] = _deep_merge(result[key], val)
+        else:
+            result[key] = val
+    return result
+
+
+def _apply_profile_overrides(
+    scenario: ScenarioDef,
+    profiles: dict[str, Any],
+) -> tuple[ScenarioDef, list[dict[str, str]]]:
+    """Deep-merge profile override dicts onto scenario profiles and validate.
+
+    For each of driver / vehicle / speed provided in *profiles*:
+      1. Take the scenario's existing profile as a dict (or empty if absent).
+      2. Deep-merge the override dict onto it (unset fields keep scenario values).
+      3. Validate the merged result against the typed profile model.
+      4. Collect any Pydantic validation errors (prefixed "profiles.<type>.*").
+
+    Returns:
+        (effective_scenario, errors) — if errors is non-empty, effective_scenario
+        is the unmodified original (do NOT register the draft).
+    """
+    from pydantic import ValidationError
+
+    from aica_api.models.profile import DriverModelProfile, SpeedProfile, VehicleBehaviorProfile
+
+    errors: list[dict[str, str]] = []
+    updates: dict[str, Any] = {}
+
+    driver_override = profiles.get("driver")
+    if driver_override is not None:
+        base = scenario.driver_profile.model_dump(mode="json") if scenario.driver_profile else {}
+        merged = _deep_merge(base, driver_override)
+        try:
+            updates["driver_profile"] = DriverModelProfile.model_validate(merged)
+        except ValidationError as exc:
+            for e in exc.errors():
+                loc = ".".join(str(x) for x in e["loc"])
+                errors.append({"field": f"profiles.driver.{loc}", "message": e["msg"]})
+
+    vehicle_override = profiles.get("vehicle")
+    if vehicle_override is not None:
+        base = scenario.vehicle_profile.model_dump(mode="json") if scenario.vehicle_profile else {}
+        merged = _deep_merge(base, vehicle_override)
+        try:
+            updates["vehicle_profile"] = VehicleBehaviorProfile.model_validate(merged)
+        except ValidationError as exc:
+            for e in exc.errors():
+                loc = ".".join(str(x) for x in e["loc"])
+                errors.append({"field": f"profiles.vehicle.{loc}", "message": e["msg"]})
+
+    speed_override = profiles.get("speed")
+    if speed_override is not None:
+        base = scenario.speed_profile.model_dump(mode="json") if scenario.speed_profile else {}
+        merged = _deep_merge(base, speed_override)
+        try:
+            updates["speed_profile"] = SpeedProfile.model_validate(merged)
+        except ValidationError as exc:
+            for e in exc.errors():
+                loc = ".".join(str(x) for x in e["loc"])
+                errors.append({"field": f"profiles.speed.{loc}", "message": e["msg"]})
+
+    if errors:
+        return scenario, errors
+
+    if updates:
+        return scenario.model_copy(update=updates), []
+
+    return scenario, []
+
+
 def _merge_defaults(
     package: PackageManifest,
     parameters: dict[str, Any],
@@ -250,6 +334,7 @@ def _build_draft(
     route_facts: RouteFacts | None = None,
     route_source: str = "local",
     display_route: DisplayRoute | None = None,
+    profile_overrides: dict | None = None,
 ) -> RunPlanDraft:
     """Pure draft construction — deterministic given (route_facts, presets).
 
@@ -293,6 +378,7 @@ def _build_draft(
         validation_errors=[],
         route_source=route_source,
         display_route=display_route,
+        profile_overrides=profile_overrides,
     )
 
 
@@ -312,6 +398,7 @@ def create_draft(
     route_facts: RouteFacts | None = None,
     route_source: str = "local",
     display_route: DisplayRoute | None = None,
+    profiles: dict[str, Any] | None = None,
 ) -> RunPlanDraft:
     """Create and register a draft run plan.
 
@@ -330,12 +417,23 @@ def create_draft(
         route_facts:      M4 — pre-computed facts from maps selection (None = local).
         route_source:     M4 — "maps" or "local" (default "local").
         display_route:    M4 — render-only snapshot from maps selection (None = local).
+        profiles:         T008 — optional profile override dict with optional keys
+                          "driver", "vehicle", "speed" (each a partial or full profile
+                          dict deep-merged onto the scenario profile).  None = no override.
 
     Returns:
         A RunPlanDraft.  Check validation_errors before using.
     """
-    # Validate edits first
+    # Validate parameter/hyperparameter edits
     validation_errors = _validate_edits(package, parameters, hyperparameters)
+
+    # T008: Apply profile overrides (deep-merge then validate the merged whole).
+    # Compute the effective scenario regardless — profile errors are collected
+    # alongside parameter errors so the caller gets a single combined error list.
+    effective_scenario = scenario
+    if profiles:
+        effective_scenario, profile_errors = _apply_profile_overrides(scenario, profiles)
+        validation_errors = validation_errors + profile_errors
 
     if validation_errors:
         # Return draft with errors but do NOT register it.
@@ -351,14 +449,14 @@ def create_draft(
             display_route=None,
         )
 
-    # Build the draft (pure, deterministic)
+    # Build the draft (pure, deterministic) using the effective scenario.
     # If build_event_plan raises, surface it as a validation error — never
     # register a draft with a silently empty plan.
     try:
         draft = _build_draft(
             plan_id=plan_id,
             package=package,
-            scenario=scenario,
+            scenario=effective_scenario,
             presets=presets,
             parameters=parameters,
             hyperparameters=hyperparameters,
@@ -366,6 +464,7 @@ def create_draft(
             route_facts=route_facts,
             route_source=route_source,
             display_route=display_route,
+            profile_overrides=profiles if profiles else None,
         )
     except Exception as exc:  # noqa: BLE001
         plan_error: list[dict[str, str]] = [{
@@ -384,8 +483,10 @@ def create_draft(
             display_route=None,
         )
 
-    # Register the draft (with the full package + scenario for create_run)
-    _draft_registry[plan_id] = (draft, package, scenario)
+    # Register the draft with the EFFECTIVE scenario (profile overrides frozen here).
+    # create_run and advance_tick will read profiles from effective_scenario, so the
+    # tick engine automatically uses the overridden values without any signature change.
+    _draft_registry[plan_id] = (draft, package, effective_scenario)
 
     return draft
 
@@ -452,8 +553,9 @@ def regenerate_draft(
     # Extract run_mode from the existing draft's effective_setup
     run_mode = existing_draft.effective_setup.get("run_mode", "standard")
 
-    # Build the new draft — thread Maps provenance through to preserve the
-    # selected route; surface plan-build errors as validation errors.
+    # Build the new draft — thread Maps provenance and profile_overrides through to
+    # preserve the selected route and any active profile overrides; surface
+    # plan-build errors as validation errors.
     try:
         new_draft = _build_draft(
             plan_id=plan_id,
@@ -466,6 +568,7 @@ def regenerate_draft(
             route_facts=preserved_route_facts,
             route_source=preserved_route_source,
             display_route=preserved_display_route,
+            profile_overrides=existing_draft.profile_overrides,
         )
     except Exception as exc:  # noqa: BLE001
         plan_error: list[dict[str, str]] = [{

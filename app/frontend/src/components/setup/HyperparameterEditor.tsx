@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useRunStore } from '../../state/runStore'
 import { getPackage } from '../../api/client'
 import type { HyperparameterDef, SetupValue, ValidationError } from '../../api/types'
+import { t } from '../../i18n/t'
+import ErrorNotice from '../common/ErrorNotice'
 
 /**
  * HyperparameterEditor (T024) — renders the selected package's hyperparameter
@@ -16,7 +18,7 @@ import type { HyperparameterDef, SetupValue, ValidationError } from '../../api/t
  */
 export default function HyperparameterEditor() {
   const { state, dispatch } = useRunStore()
-  const { selectedPackageId, editedHyperparameters, validationErrors } = state
+  const { selectedPackageId, editedHyperparameters, validationErrors, uiLanguage } = state
   const [defs, setDefs] = useState<HyperparameterDef[]>([])
 
   useEffect(() => {
@@ -49,14 +51,14 @@ export default function HyperparameterEditor() {
       const raw = next[def.key]
       const v = raw !== undefined ? Number(raw) : Number(def.default)
       if (Number.isNaN(v)) {
-        errors.push({ field: def.key, message: `${def.label.en} must be a number` })
+        errors.push({ field: def.key, message: `${t(def.label, uiLanguage)} must be a number` })
         continue
       }
       if (def.min !== undefined && v < def.min) {
-        errors.push({ field: def.key, message: `${def.label.en} must be ≥ ${def.min}` })
+        errors.push({ field: def.key, message: `${t(def.label, uiLanguage)} must be ≥ ${def.min}` })
       }
       if (def.max !== undefined && v > def.max) {
-        errors.push({ field: def.key, message: `${def.label.en} must be ≤ ${def.max}` })
+        errors.push({ field: def.key, message: `${t(def.label, uiLanguage)} must be ≤ ${def.max}` })
       }
     }
     return errors
@@ -82,7 +84,7 @@ export default function HyperparameterEditor() {
         return (
           <div key={def.key} style={{ marginBottom: '6px' }}>
             <label htmlFor={inputId} style={{ display: 'block', fontSize: '0.75em', color: '#555' }}>
-              {def.label.en}
+              {t(def.label, uiLanguage)}
             </label>
             {def.kind === 'band' && (
               <select
@@ -119,13 +121,7 @@ export default function HyperparameterEditor() {
               />
             )}
             {fieldError && (
-              <p
-                role="alert"
-                data-testid={`hp-error-${def.key}`}
-                style={{ color: '#c00', fontSize: '0.7em', margin: '2px 0 0' }}
-              >
-                {fieldError.message}
-              </p>
+              <ErrorNotice testid={`hp-error-${def.key}`} message={fieldError.message} />
             )}
           </div>
         )

@@ -12,6 +12,7 @@ import type {
   RouteAlternative,
   RouteEnvelope,
   MapsErrorBody,
+  ProfileOverrides,
 } from '../api/types'
 
 // ── State ──────────────────────────────────────────────────────────────────
@@ -71,6 +72,30 @@ export type RunStoreState = {
   /** Structured error from a 502 Maps failure; null when no error. */
   mapsError: MapsErrorBody | null
 
+  // ── M6: view mode ─────────────────────────────────────────────────────────
+  /**
+   * Which top-level view is active. Drives the three-view app shell.
+   * - 'setup'  → SetupScreen (default; also restored on RESET)
+   * - 'review' → 3-panel Review screen (auto-transition on RUN_CREATED)
+   * - 'runs'   → RunsScreen (browse past runs; placeholder in M6)
+   */
+  viewMode: 'setup' | 'review' | 'runs'
+
+  // ── M6: UI language (T004) ─────────────────────────────────────────────────
+  /**
+   * The language shown in the UI. Session-only — NOT persisted to localStorage
+   * and NOT cleared by RESET (it is a reviewer preference, not run state).
+   * Default 'ja'; toggled via SET_LANGUAGE.
+   */
+  uiLanguage: 'ja' | 'en'
+
+  // ── M6 T009: ProfileEditor overrides ───────────────────────────────────────
+  /**
+   * Sparse profile overrides computed by ProfileEditor.
+   * Null means no overrides (omit profiles from run-plan body).
+   * Cleared on SELECT_SCENARIO and RESET.
+   */
+  profileOverrides: ProfileOverrides | null
 }
 
 const initialState: RunStoreState = {
@@ -105,6 +130,12 @@ const initialState: RunStoreState = {
   routeSource: 'local',
   selectedRouteId: null,
   mapsError: null,
+  // M6 — default to Setup screen
+  viewMode: 'setup',
+  // M6 T004 — default to Japanese
+  uiLanguage: 'ja',
+  // M6 T009 — no profile overrides initially
+  profileOverrides: null,
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -158,7 +189,16 @@ export type RunStoreAction =
   | { type: 'SELECT_ROUTE'; routeId: string }
   /** Record a Maps API error (502) from routesAnalyze. */
   | { type: 'SET_MAPS_ERROR'; error: MapsErrorBody | null }
+  // ── M6: view mode ─────────────────────────────────────────────────────────
+  /** Navigate to a specific view. Use RESET to return to Setup and clear run. */
+  | { type: 'SET_VIEW_MODE'; mode: 'setup' | 'review' | 'runs' }
   | { type: 'RESET' }
+  // ── M6 T004: UI language ──────────────────────────────────────────────────
+  /** Switch the UI language. Session-only — survives RESET. */
+  | { type: 'SET_LANGUAGE'; lang: 'ja' | 'en' }
+  // ── M6 T009: ProfileEditor overrides ─────────────────────────────────────
+  /** Sparse profile overrides from ProfileEditor; null to clear. */
+  | { type: 'SET_PROFILE_OVERRIDES'; overrides: ProfileOverrides | null }
 
 // ── Reducer ────────────────────────────────────────────────────────────────
 
@@ -206,6 +246,8 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         selectedRouteId: null,
         routeSource: 'local',
         mapsError: null,
+        // T009: clear profile overrides — new scenario has its own defaults.
+        profileOverrides: null,
       }
 
     case 'SET_PARAMETER':
@@ -252,6 +294,7 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
       return { ...state, setupError: action.message }
 
     case 'RUN_CREATED':
+      // Auto-transition to Review so the user sees the run immediately.
       return {
         ...state,
         runState: action.runState,
@@ -262,6 +305,7 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         errors: [],
         algorithmErrors: [],
         runError: null,
+        viewMode: 'review',
       }
 
     case 'TICK_APPENDED': {
@@ -330,6 +374,16 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
     case 'SET_MAPS_ERROR':
       return { ...state, mapsError: action.error, alternatives: [] }
 
+    // ── M6 actions ─────────────────────────────────────────────────────────
+    case 'SET_VIEW_MODE':
+      return { ...state, viewMode: action.mode }
+
+    case 'SET_LANGUAGE':
+      return { ...state, uiLanguage: action.lang }
+
+    case 'SET_PROFILE_OVERRIDES':
+      return { ...state, profileOverrides: action.overrides }
+
     case 'RESET':
       return {
         ...state,
@@ -356,6 +410,10 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         routeSource: 'local',
         selectedRouteId: null,
         mapsError: null,
+        // M6: return to Setup after resetting
+        viewMode: 'setup',
+        // T009: clear profile overrides on reset
+        profileOverrides: null,
       }
 
     default:

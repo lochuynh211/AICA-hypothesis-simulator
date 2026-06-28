@@ -14,6 +14,8 @@ import { useState } from 'react'
 import type { TraceEntry, AlgorithmError, Candidate } from '../../api/types'
 import { useRunStore } from '../../state/runStore'
 import FeedbackForm from '../feedback/FeedbackForm'
+import { t } from '../../i18n/t'
+import type { ReplayTick } from '../../replay/replaySource'
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -161,6 +163,8 @@ function RuntimeStateIndicator({ runtimeState }: { runtimeState: Record<string, 
 function TraceEntryRow({ entry }: { entry: TraceEntry }) {
   const hasScores = entry.scores && Object.keys(entry.scores).length > 0
   const [feedbackOpen, setFeedbackOpen] = useState(false)
+  const { state } = useRunStore()
+  const { uiLanguage } = state
 
   return (
     <div
@@ -233,7 +237,7 @@ function TraceEntryRow({ entry }: { entry: TraceEntry }) {
 
       {/* explanation */}
       <div style={{ color: '#ccc', marginTop: '2px', fontStyle: 'italic' }}>
-        {entry.explanation}
+        {t(entry.explanation as Parameters<typeof t>[0], uiLanguage)}
       </div>
 
       {/* Runtime-state indicator (hybrid algorithm — recorded output this tick) */}
@@ -284,10 +288,66 @@ function AlgorithmErrorRow({ error }: { error: AlgorithmError }) {
 
 // ── Main panel ────────────────────────────────────────────────────────────────
 
-export default function DecisionTracePanel() {
+export default function DecisionTracePanel({ replayTick }: { replayTick?: ReplayTick | null } = {}) {
   const { state } = useRunStore()
   const { trace, algorithmErrors } = state
 
+  // ── REPLAY MODE — read-only single-tick display, no feedback affordances ────
+  if (replayTick != null) {
+    const dr = replayTick.decision
+    return (
+      <div
+        data-testid="replay-decision-trace"
+        style={{ background: '#111', color: '#ddd', fontSize: '0.85em' }}
+      >
+        <div
+          style={{
+            padding: '4px 8px',
+            background: '#1a1a1a',
+            fontWeight: 700,
+            fontSize: '0.8em',
+            letterSpacing: '0.05em',
+            color: '#aaa',
+            borderBottom: '1px solid #333',
+          }}
+        >
+          DECISION TRACE
+        </div>
+        <div
+          style={{
+            borderBottom: '1px solid #2a2a2a',
+            padding: '6px 4px',
+            fontFamily: 'monospace',
+          }}
+        >
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ color: '#6af', fontWeight: 700 }}>tick#{replayTick.tick_index}</span>
+            <span style={{ color: '#ffe066', fontWeight: 700 }}>{dr.result_type}</span>
+            {dr.selected_category && (
+              <span style={{ color: '#8f8' }}>cat={dr.selected_category}</span>
+            )}
+            {dr.score != null && <span style={{ color: '#fc9' }}>score={dr.score}</span>}
+          </div>
+          <div style={{ color: '#aaa', marginTop: '2px' }}>
+            fire_control: fired={String(dr.fire_control.fired)}{' '}
+            suppressed={String(dr.fire_control.suppressed)}
+          </div>
+          {dr.reason_inputs.length > 0 && (
+            <div style={{ color: '#888', marginTop: '2px' }}>
+              inputs: {dr.reason_inputs.join(', ')}
+            </div>
+          )}
+          <div style={{ color: '#ccc', marginTop: '2px', fontStyle: 'italic' }}>
+            {typeof dr.explanation === 'string'
+              ? dr.explanation
+              : JSON.stringify(dr.explanation)}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── LIVE MODE — unchanged ───────────────────────────────────────────────────
   const hasEntries = trace.length > 0 || algorithmErrors.length > 0
 
   if (!hasEntries) {

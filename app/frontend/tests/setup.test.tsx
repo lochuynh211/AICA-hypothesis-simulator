@@ -40,7 +40,7 @@ import PackageSelector from '../src/components/setup/PackageSelector'
 import ScenarioSelector from '../src/components/setup/ScenarioSelector'
 import HyperparameterEditor from '../src/components/setup/HyperparameterEditor'
 import PlanPreview from '../src/components/setup/PlanPreview'
-import LeftContextPanel from '../src/components/layout/LeftContextPanel'
+import SetupScreen from '../src/components/screens/SetupScreen'
 import type { PackageManifest } from '../src/api/types'
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -124,10 +124,10 @@ describe('PackageSelector — T018', () => {
       </RunStoreProvider>,
     )
 
-    // Both package labels should appear as options
+    // Both package labels should appear as options — default lang is 'ja'
     await waitFor(() => {
-      expect(screen.getByText(/Rule-Based Rest Proposal/)).toBeInTheDocument()
-      expect(screen.getByText(/Weighted Score Rest Proposal/)).toBeInTheDocument()
+      expect(screen.getByText(/ルールベース v0\.1/)).toBeInTheDocument()
+      expect(screen.getByText(/重みスコア v0\.1/)).toBeInTheDocument()
     })
   })
 
@@ -156,7 +156,7 @@ describe('PackageSelector — T018', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText(/Rule-Based Rest Proposal/)).toBeInTheDocument()
+      expect(screen.getByText(/ルールベース v0\.1/)).toBeInTheDocument()
     })
 
     const select = screen.getByRole('combobox')
@@ -300,7 +300,8 @@ describe('HyperparameterEditor + PlanPreview — T024', () => {
       dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
     })
 
-    const input = (await screen.findByLabelText('Drowsiness Weight')) as HTMLInputElement
+    // Default uiLanguage is 'ja', so the label renders as '睡気重み'
+    const input = (await screen.findByLabelText('睡気重み')) as HTMLInputElement
     expect(input).toHaveValue(0.4)
     expect(input).toHaveAttribute('step', '0.01')
   })
@@ -337,8 +338,8 @@ describe('HyperparameterEditor + PlanPreview — T024', () => {
       dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
     })
 
-    // Edit to a valid in-range value
-    const input = (await screen.findByLabelText('Drowsiness Weight')) as HTMLInputElement
+    // Edit to a valid in-range value — default uiLanguage is 'ja', label renders as '睡気重み'
+    const input = (await screen.findByLabelText('睡気重み')) as HTMLInputElement
     fireEvent.change(input, { target: { value: '0.6' } })
 
     // Preview
@@ -380,7 +381,8 @@ describe('HyperparameterEditor + PlanPreview — T024', () => {
       dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
     })
 
-    const input = (await screen.findByLabelText('Drowsiness Weight')) as HTMLInputElement
+    // Default uiLanguage is 'ja', label renders as '睡気重み'
+    const input = (await screen.findByLabelText('睡気重み')) as HTMLInputElement
     // 5 is above max (1.0)
     fireEvent.change(input, { target: { value: '5' } })
 
@@ -397,23 +399,26 @@ describe('HyperparameterEditor + PlanPreview — T024', () => {
   })
 })
 
-// ── I1 regression: LeftContextPanel renders MapKeyAndRouteInput ───────────────
+// ── I1 regression (migrated M6): SetupScreen renders MapKeyAndRouteInput ─────
+//
+// Previously tested LeftContextPanel — re-pointed to SetupScreen after M6
+// relocated the setup editors. The Maps API key input lives on SetupScreen.
 
-describe('LeftContextPanel — I1 regression', () => {
+describe('SetupScreen — I1 regression (M6 migration)', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     vi.mocked(client.listPackages).mockResolvedValue({ packages: [], errors: [] })
     vi.mocked(client.listScenarios).mockResolvedValue({ scenarios: [], errors: [] })
   })
 
-  it('renders the Maps API key field inside the Setup section', async () => {
+  it('renders the Maps API key field on the Setup screen', async () => {
     render(
       <RunStoreProvider>
-        <LeftContextPanel />
+        <SetupScreen />
       </RunStoreProvider>,
     )
     // The Maps API key password input is present — this would fail if
-    // MapKeyAndRouteInput were not rendered in the Setup section.
+    // MapKeyAndRouteInput were not rendered in SetupScreen.
     // Use findByLabelText to let the async effects (listPackages/listScenarios) settle.
     expect(await screen.findByLabelText(/maps api key/i)).toBeInTheDocument()
   })

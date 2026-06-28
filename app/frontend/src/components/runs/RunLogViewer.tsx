@@ -15,13 +15,13 @@ import { getRunLog } from '../../api/client'
 import { useRunStore } from '../../state/runStore'
 import type {
   RunLog,
-  RunLogEvent,
   TickEvent,
   ActionEvent,
   AlgorithmErrorEvent,
   FeedbackEvent,
   FeedbackTarget,
 } from '../../api/types'
+import ErrorNotice from '../common/ErrorNotice'
 
 // ── Colour tokens (dark-theme, matches DecisionTracePanel palette) ─────────────
 
@@ -430,9 +430,15 @@ function Timeline({ log }: { log: RunLog }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function RunLogViewer() {
+type RunLogViewerProps = {
+  /** Explicit run_id to load — overrides the active run from the store.
+   *  Pass this when viewing a past run from the Runs screen. */
+  runId?: string
+}
+
+export default function RunLogViewer({ runId: runIdProp }: RunLogViewerProps = {}) {
   const { state } = useRunStore()
-  const runId = state.runState?.run_id ?? null
+  const runId = runIdProp ?? state.runState?.run_id ?? null
 
   const [log, setLog] = useState<RunLog | null>(null)
   const [loading, setLoading] = useState(false)
@@ -491,12 +497,7 @@ export default function RunLogViewer() {
 
       {/* Error */}
       {error && (
-        <div
-          data-testid="runlog-error"
-          style={{ color: '#f66', padding: '6px 8px', background: '#200' }}
-        >
-          Error: {error}
-        </div>
+        <ErrorNotice testid="runlog-error" message={`Error: ${error}`} />
       )}
 
       {/* Timeline */}

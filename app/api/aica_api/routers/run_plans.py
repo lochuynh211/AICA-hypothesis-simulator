@@ -41,12 +41,31 @@ def _make_plan_id() -> str:
 # ── Request body models ───────────────────────────────────────────────────────
 
 
+class ProfileOverrides(BaseModel):
+    """T008: Setup-time profile overrides (all sub-objects optional).
+
+    Each provided sub-object is deep-merged onto the scenario's corresponding
+    profile (field-by-field, recursively for nested dicts).  Unset fields keep
+    the scenario value.  The merged result is validated against the typed profile
+    model — invalid fields or unknown keys cause a 400 with no run created.
+
+    Body shape for U6 ProfileEditor:
+      { "profiles": { "driver": { ... }, "vehicle": { ... }, "speed": { ... } } }
+    All three sub-objects are optional; supply only the sub-objects you want to
+    override.  Within each sub-object, supply only the fields you want to change.
+    """
+
+    driver: dict | None = None   # partial DriverModelProfile dict (deep-merged)
+    vehicle: dict | None = None  # partial VehicleBehaviorProfile dict (deep-merged)
+    speed: dict | None = None    # partial SpeedProfile dict (deep-merged)
+
+
 class CreateRunPlanBody(BaseModel):
     package_id: str
     scenario_id: str
     route_facts: Any = None  # optional; computed locally if absent (local path)
     presets: dict = {}
-    profiles: Any = None
+    profiles: ProfileOverrides | None = None  # T008: typed optional profile overrides
     parameters: dict = {}
     hyperparameters: dict = {}
     run_mode: str = "standard"
@@ -147,6 +166,12 @@ def create_run_plan_endpoint(body: CreateRunPlanBody):
     route_facts = _coerce_route_facts(body.route_facts) if body.route_source == "maps" else None
     display_route = _coerce_display_route(body.display_route) if body.route_source == "maps" else None
 
+    # T008: convert typed ProfileOverrides to a plain dict for the service layer
+    # (exclude_none so absent sub-objects are not passed as None entries).
+    profiles_dict: dict | None = (
+        body.profiles.model_dump(exclude_none=True) if body.profiles else None
+    )
+
     plan_id = _make_plan_id()
     draft = create_draft(
         plan_id=plan_id,
@@ -159,6 +184,7 @@ def create_run_plan_endpoint(body: CreateRunPlanBody):
         route_facts=route_facts,
         route_source=body.route_source,
         display_route=display_route,
+        profiles=profiles_dict,
     )
 
     if draft.validation_errors:

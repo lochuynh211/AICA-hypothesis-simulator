@@ -31,7 +31,7 @@ describe('App — backend health display', () => {
     // Initial loading state
     expect(screen.getByText('Checking backend…')).toBeInTheDocument()
 
-    // After the async fetch resolves — health status appears in the left panel
+    // After the async fetch resolves — health status appears in the AppShell header
     expect(await screen.findByText('Backend: ok — aica-api')).toBeInTheDocument()
     expect(global.fetch).toHaveBeenCalledWith('/api/health')
   })

@@ -1,6 +1,7 @@
 import { useRunStore } from '../../state/runStore'
 import { routesAnalyze, createRunPlan, regenerateRunPlan, createRun } from '../../api/client'
 import type { RouteFacts, DisplayRoute } from '../../api/types'
+import ErrorNotice from '../common/ErrorNotice'
 
 /**
  * PlanPreview (T024 / M4) — orchestrates the setup flow:
@@ -31,6 +32,7 @@ export default function PlanPreview() {
     alternatives,
     selectedRouteId,
     routeSource,
+    profileOverrides,
   } = state
 
   const hasActiveRun = runState !== null && runState.status !== 'completed'
@@ -82,6 +84,8 @@ export default function PlanPreview() {
         routeSource: resolvedRouteSource,
         routeFacts: resolvedRouteFacts,
         displayRoute: resolvedDisplay,
+        // T009: include sparse profile overrides only when non-null
+        ...(profileOverrides != null ? { profiles: profileOverrides } : {}),
       })
       dispatch({
         type: 'PLAN_DRAFTED',
@@ -163,31 +167,13 @@ export default function PlanPreview() {
       )}
 
       {hasValidationErrors && (
-        <p
-          role="alert"
-          data-testid="setup-validation-error"
-          style={{ color: '#c00', fontSize: '0.75em', marginTop: '4px' }}
-        >
-          {validationErrors.length} invalid value(s) — fix before previewing
-        </p>
+        <ErrorNotice testid="setup-validation-error" message={`${validationErrors.length} invalid value(s) — fix before previewing`} />
       )}
       {setupError && (
-        <p
-          role="alert"
-          data-testid="setup-error"
-          style={{ color: '#c00', fontSize: '0.75em', marginTop: '4px' }}
-        >
-          {setupError}
-        </p>
+        <ErrorNotice testid="setup-error" message={setupError} />
       )}
       {runError && (
-        <p
-          role="alert"
-          data-testid="run-creation-error"
-          style={{ color: '#c00', fontSize: '0.75em', marginTop: '4px' }}
-        >
-          {runError}
-        </p>
+        <ErrorNotice testid="run-creation-error" message={runError ?? undefined} />
       )}
     </div>
   )

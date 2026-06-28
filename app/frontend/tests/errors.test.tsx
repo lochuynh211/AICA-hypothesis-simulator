@@ -136,8 +136,8 @@ describe('PackageSelector — registry error display', () => {
 
     renderInStore(<PackageSelector />)
 
-    // Wait for packages to load
-    await screen.findByText('Test (0.1.0)')
+    // Wait for packages to load — default lang is 'ja', so the JA label is shown
+    await screen.findByText('テスト (0.1.0)')
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
@@ -149,7 +149,8 @@ describe('PackageSelector — registry error display', () => {
 
     renderInStore(<PackageSelector />)
 
-    expect(await screen.findByText('Test (0.1.0)')).toBeInTheDocument()
+    // Default lang is 'ja' — JA label rendered, not EN
+    expect(await screen.findByText('テスト (0.1.0)')).toBeInTheDocument()
     expect(await screen.findByText('1 package(s) could not be loaded')).toBeInTheDocument()
   })
 })

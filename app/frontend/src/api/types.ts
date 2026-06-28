@@ -115,10 +115,23 @@ export type ScenarioDef = {
   event_presets: EventPreset
   driver_profile: Record<string, unknown>
   vehicle_profile: Record<string, unknown>
+  /** M6 T009: speed profile — optional for back-compat with older scenarios. */
+  speed_profile?: Record<string, unknown>
   total_duration_seconds: number
   tick_seconds: number
   allowed_actions: string[]
   review_focus: string
+}
+
+/**
+ * Sparse profile overrides for the run-plan body (U5/T008 backend contract).
+ * Each sub-object is optional and deep-merged on the backend.
+ * Send ONLY changed fields; omit this entirely when nothing changed.
+ */
+export type ProfileOverrides = {
+  driver?: Record<string, unknown>
+  vehicle?: Record<string, unknown>
+  speed?: Record<string, unknown>
 }
 
 // ── Setup / run-plan domain (M2) ───────────────────────────────────────────
@@ -353,6 +366,7 @@ export type TickEvent = {
   kind: 'tick'
   tick_index: number
   tick_state: Record<string, unknown>
+  raw_state?: Record<string, unknown>
   trace: LogTraceEntry
 }
 
@@ -490,7 +504,7 @@ export type EvidenceReport = {
   report_id: string
   run_id: string
   timestamp: string
-  ui_language: 'bilingual'
+  ui_language: string
   simulator_version: string
   package: { id: string; version: string }
   scenario: { id: string; version: string }

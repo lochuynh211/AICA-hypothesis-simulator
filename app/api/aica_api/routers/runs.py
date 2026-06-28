@@ -13,7 +13,8 @@ import os
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import Response
 from pydantic import BaseModel
 
 from aica_api.config import settings
@@ -21,6 +22,7 @@ from aica_api.models.feedback import FeedbackEvent, FeedbackTarget
 from aica_api.models.log import RunLog
 from aica_api.models.run import RunStatus
 from aica_api.services.evidence import build_evidence_report
+from aica_api.services.evidence_markdown import render_evidence_markdown
 from aica_api.services.feedback import (
     SchemaCollisionError,
     append_feedback,
@@ -437,7 +439,10 @@ def post_feedback(run_id: str, body: FeedbackBody):
 
 
 @router.get("/api/runs/{run_id}/evidence")
-def get_evidence(run_id: str):
+def get_evidence(
+    run_id: str,
+    ui_language: str = Query(default="bilingual", alias="ui_language"),
+):
     """Derive and return the §14.2 evidence report for a run (active or on-disk).
 
     The report is a derived view — it is NOT persisted.  report_id and timestamp
@@ -445,6 +450,11 @@ def get_evidence(run_id: str):
 
     Separation invariant: FeedbackEvents appear ONLY under human_review;
     simulator_facts NEVER contains a feedback value.
+
+    Query params:
+        ui_language: The reviewer's selected UI language at export time (e.g.
+                     ``"ja"``, ``"en"``).  Defaults to ``"bilingual"`` when
+                     absent (back-compat with pre-M6 callers).
 
     404: run not found (active or on-disk).
     """
@@ -454,4 +464,52 @@ def get_evidence(run_id: str):
     report_id = _make_report_id()
     timestamp = datetime.now(timezone.utc).isoformat()
 
-    return build_evidence_report(run_log, report_id=report_id, timestamp=timestamp)
+    return build_evidence_report(
+        run_log,
+        report_id=report_id,
+        timestamp=timestamp,
+        ui_language=ui_language,
+    )
+
+
+# ── S8 Markdown evidence export (T012) ────────────────────────────────────────
+
+
+@router.get("/api/runs/{run_id}/evidence.md")
+def get_evidence_markdown(
+    run_id: str,
+    ui_language: str = Query(default="bilingual", alias="ui_language"),
+):
+    """Derive the §14.2 evidence report and return it as human-readable Markdown.
+
+    Calls build_evidence_report (same facts as the JSON evidence endpoint) then
+    render_evidence_markdown — no divergent computation.
+
+    Separation invariant preserved: FeedbackEvents appear ONLY under
+    ## Human Review; ## Simulator Facts NEVER contains feedback values.
+    NEVER a verdict: the Markdown presents objective facts and, separately,
+    the human's recorded feedback.
+
+    Query params:
+        ui_language: The reviewer's selected UI language at export time
+                     (e.g. ``"ja"``, ``"en"``).  Defaults to ``"bilingual"``.
+
+    Returns:
+        text/markdown response containing the rendered Markdown document.
+
+    404: run not found (active or on-disk).
+    """
+    run_log = _resolve_run_log(run_id)
+
+    # Generate report_id + timestamp at the router boundary (pure-function discipline)
+    report_id = _make_report_id()
+    timestamp = datetime.now(timezone.utc).isoformat()
+
+    report = build_evidence_report(
+        run_log,
+        report_id=report_id,
+        timestamp=timestamp,
+        ui_language=ui_language,
+    )
+    md_text = render_evidence_markdown(report)
+    return Response(content=md_text, media_type="text/markdown; charset=utf-8")

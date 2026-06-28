@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useRunStore } from '../../state/runStore'
 import { getPackage } from '../../api/client'
 import type { ParameterDef, SetupValue } from '../../api/types'
+import { t } from '../../i18n/t'
 
 /**
  * ParameterEditor (T024) — renders the selected package's setup-time parameter
@@ -14,7 +15,7 @@ import type { ParameterDef, SetupValue } from '../../api/types'
  */
 export default function ParameterEditor() {
   const { state, dispatch } = useRunStore()
-  const { selectedPackageId, editedParameters } = state
+  const { selectedPackageId, editedParameters, uiLanguage } = state
   const [defs, setDefs] = useState<ParameterDef[]>([])
 
   useEffect(() => {
@@ -53,7 +54,7 @@ export default function ParameterEditor() {
         return (
           <div key={def.key} style={{ marginBottom: '6px' }}>
             <label htmlFor={inputId} style={{ display: 'block', fontSize: '0.75em', color: '#555' }}>
-              {def.label.en}
+              {t(def.label, uiLanguage)}
             </label>
             {def.kind === 'band' && (
               <select

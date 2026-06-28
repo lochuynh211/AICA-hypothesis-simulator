@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useRunStore } from '../../state/runStore'
 import { listScenarios } from '../../api/client'
+import ErrorNotice from '../common/ErrorNotice'
 
 export default function ScenarioSelector() {
   const { state, dispatch } = useRunStore()
@@ -46,9 +47,7 @@ export default function ScenarioSelector() {
         ))}
       </select>
       {scenarioErrors.length > 0 && (
-        <p role="alert" data-testid="scenario-registry-errors" style={{ color: '#c00', fontSize: '0.75em', marginTop: '4px' }}>
-          {scenarioErrors.length} scenario(s) could not be loaded
-        </p>
+        <ErrorNotice testid="scenario-registry-errors" message={`${scenarioErrors.length} scenario(s) could not be loaded`} />
       )}
     </div>
   )
