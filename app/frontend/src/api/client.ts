@@ -225,6 +225,27 @@ export async function getEvidence(runId: string, uiLanguage?: string): Promise<E
 }
 
 /**
+ * Fetch the §14.2 evidence report for a run as human-readable Markdown (S8).
+ *
+ * Calls GET /api/runs/{runId}/evidence.md which returns text/markdown.
+ * The Markdown has the same facts as the JSON evidence endpoint — derived
+ * from build_evidence_report, not a separate computation.
+ * Separation preserved: ## Simulator Facts / ## Human Review.
+ *
+ * @param runId      The run to export (active or past run).
+ * @param uiLanguage Optional language tag passed as ?ui_language=.
+ *                   When omitted the backend defaults to 'bilingual'.
+ */
+export async function getEvidenceMarkdown(runId: string, uiLanguage?: string): Promise<string> {
+  const qs = uiLanguage ? `?ui_language=${encodeURIComponent(uiLanguage)}` : ''
+  const response = await fetch(`/api/runs/${runId}/evidence.md${qs}`, { method: 'GET' })
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`)
+  }
+  return response.text()
+}
+
+/**
  * Submit reviewer feedback for a run.
  * Throws FeedbackValidationError (with validationErrors list) on 400.
  * Throws Error on other non-2xx responses.

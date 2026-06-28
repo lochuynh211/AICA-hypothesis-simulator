@@ -33,6 +33,7 @@ vi.mock('../src/api/client', () => ({
   getFeedbackSchema: vi.fn(),
   submitFeedback: vi.fn(),
   getEvidence: vi.fn(),
+  getEvidenceMarkdown: vi.fn(),
 }))
 
 import * as client from '../src/api/client'
@@ -246,5 +247,119 @@ describe('EvidencePanel', () => {
 
     // Either buttons are absent or getEvidence is never called
     expect(client.getEvidence).not.toHaveBeenCalled()
+  })
+})
+
+// ── S8: Markdown copy/download tests (T013) ──────────────────────────────────
+
+const mockMarkdownText = `# Evidence Report: run-evidence-test-001
+
+- Report ID: rpt-001
+- Run ID: run-evidence-test-001
+- UI Language: ja
+
+## Simulator Facts
+
+### Run Mode
+
+- run_mode: standard
+
+## Human Review
+
+### Feedback Labels
+
+- **scope=run**: good_trigger
+`
+
+describe('EvidencePanel — Markdown export (S8)', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: vi.fn().mockResolvedValue(undefined) },
+      writable: true,
+      configurable: true,
+    })
+    global.URL.createObjectURL = vi.fn().mockReturnValue('blob:mock-md-url')
+    global.URL.revokeObjectURL = vi.fn()
+    vi.mocked(client.getEvidenceMarkdown).mockResolvedValue(mockMarkdownText)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // ── T1: .md buttons present when run is active ──────────────────────────
+  it('renders Copy .md and Download .md buttons when a run is active', () => {
+    renderWithStore(<EvidencePanel />, (dispatch) => {
+      dispatch({ type: 'RUN_CREATED', runState: mockRunState })
+    })
+
+    expect(screen.getByTestId('evidence-copy-md-btn')).toBeInTheDocument()
+    expect(screen.getByTestId('evidence-download-md-btn')).toBeInTheDocument()
+  })
+
+  // ── T2: .md buttons present when past run is provided via prop ───────────
+  it('renders Copy .md and Download .md buttons when runId prop is supplied (past run)', () => {
+    renderWithStore(<EvidencePanel runId="run-past-001" />)
+
+    expect(screen.getByTestId('evidence-copy-md-btn')).toBeInTheDocument()
+    expect(screen.getByTestId('evidence-download-md-btn')).toBeInTheDocument()
+  })
+
+  // ── T3: Copy .md calls getEvidenceMarkdown with runId + uiLanguage ───────
+  it('Copy .md button calls getEvidenceMarkdown(runId, uiLanguage) and writes text to clipboard', async () => {
+    renderWithStore(<EvidencePanel />, (dispatch) => {
+      dispatch({ type: 'RUN_CREATED', runState: mockRunState })
+    })
+
+    fireEvent.click(screen.getByTestId('evidence-copy-md-btn'))
+
+    await waitFor(() => {
+      expect(client.getEvidenceMarkdown).toHaveBeenCalledWith('run-evidence-test-001', 'ja')
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(mockMarkdownText)
+    })
+  })
+
+  // ── T4: Download .md calls getEvidenceMarkdown with correct filename ─────
+  it('Download .md button calls getEvidenceMarkdown and downloads .md file', async () => {
+    renderWithStore(<EvidencePanel />, (dispatch) => {
+      dispatch({ type: 'RUN_CREATED', runState: mockRunState })
+    })
+
+    const clickSpy = vi.fn()
+    let capturedAnchor: HTMLAnchorElement | null = null
+    const appendChildSpy = vi.spyOn(document.body, 'appendChild').mockImplementation((node) => {
+      if ((node as HTMLElement).tagName === 'A') {
+        capturedAnchor = node as HTMLAnchorElement
+        vi.spyOn(capturedAnchor, 'click').mockImplementation(clickSpy)
+      }
+      return node
+    })
+    const removeChildSpy = vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node)
+
+    fireEvent.click(screen.getByTestId('evidence-download-md-btn'))
+
+    await waitFor(() => {
+      expect(client.getEvidenceMarkdown).toHaveBeenCalledWith('run-evidence-test-001', 'ja')
+      expect(URL.createObjectURL).toHaveBeenCalled()
+      expect(clickSpy).toHaveBeenCalled()
+    })
+
+    expect(capturedAnchor).not.toBeNull()
+    expect((capturedAnchor as unknown as HTMLAnchorElement).download).toMatch(/evidence-run-evidence-test-001\.md/)
+
+    appendChildSpy.mockRestore()
+    removeChildSpy.mockRestore()
+  })
+
+  // ── T5: Past run via prop — getEvidenceMarkdown called with prop runId ───
+  it('uses runId prop for past run — Copy .md calls getEvidenceMarkdown with prop id', async () => {
+    renderWithStore(<EvidencePanel runId="run-past-999" />)
+
+    fireEvent.click(screen.getByTestId('evidence-copy-md-btn'))
+
+    await waitFor(() => {
+      expect(client.getEvidenceMarkdown).toHaveBeenCalledWith('run-past-999', 'ja')
+    })
   })
 })
