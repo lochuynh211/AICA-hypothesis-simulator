@@ -12,6 +12,7 @@
 import { useState, useEffect } from 'react'
 import { useRunStore } from '../../state/runStore'
 import { getScenario } from '../../api/client'
+import { t } from '../../i18n/t'
 
 export default function TickSecondsEditor() {
   const { state, dispatch } = useRunStore()
@@ -79,11 +80,9 @@ export default function TickSecondsEditor() {
   // Don't render until a scenario is selected and its def is loaded.
   if (!selectedScenarioId || scenarioDefault === null) return null
 
-  const label = uiLanguage === 'ja' ? 'ティック秒数' : 'Tick seconds'
-  const resetLabel = uiLanguage === 'ja' ? 'デフォルトに戻す' : 'Reset to default'
-  const hint = uiLanguage === 'ja'
-    ? `シナリオのデフォルト: ${scenarioDefault}s`
-    : `Scenario default: ${scenarioDefault}s`
+  const label = t({ ja: 'ティック秒数', en: 'Tick seconds' }, uiLanguage)
+  const resetLabel = t({ ja: 'デフォルトに戻す', en: 'Reset to default' }, uiLanguage)
+  const hint = `${t({ ja: 'シナリオのデフォルト', en: 'Scenario default' }, uiLanguage)}: ${scenarioDefault}s`
 
   return (
     <div
