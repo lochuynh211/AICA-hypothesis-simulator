@@ -31,6 +31,20 @@ Authoritative design:
 `docs/superpowers/specs/2026-06-28-m6-stabilization-uiux-design.md`. Master scope: milestones §8 (M6
 V1 stabilization).
 
+## Clarifications
+
+### Session 2026-06-28
+
+- Q: How are the app's screens organized (where do the run list + visual replay live)? → A: **Three
+  views — Setup / Review / Runs.** A dedicated **Runs** screen lists past runs and hosts each finished
+  run's evidence (structured timeline + JSON/Markdown export + the visual replay), reusing the playback
+  components in read-only mode. Setup = configuration; Review = the live run (3-panel skeleton); Runs =
+  browse/replay past runs.
+- Q: Is "restart from the same configuration" session-scoped or available for past runs reopened from
+  disk? → A: **Session-scoped** — restart re-runs the CURRENT session's frozen plan from tick 0. A past
+  run reopened from the Runs screen is **read-only** (timeline / replay / export); to run again, the
+  reviewer reconfigures on the Setup screen.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Run UC-01 end-to-end without developer help (Priority: P1)
@@ -115,10 +129,10 @@ list and reopen a past run's evidence.
 
 1. **Given** an active or finished run, **When** the reviewer resets, **Then** the run is cleared and
    the app is ready for a new setup.
-2. **Given** a configured run, **When** the reviewer restarts, **Then** a fresh run begins from the
-   start using the same configuration (no re-setup needed).
-3. **Given** past runs exist, **When** the reviewer opens the run list and selects one, **Then** that
-   run's evidence (timeline + export + visual replay) opens read-only.
+2. **Given** the current session's configured run, **When** the reviewer restarts, **Then** a fresh run
+   begins from the start using that same frozen plan (no re-setup needed).
+3. **Given** past runs exist, **When** the reviewer opens the **Runs** view and selects one, **Then** that
+   run's evidence (timeline + export + visual replay) opens read-only (no restart for a past run).
 
 ---
 
@@ -211,9 +225,12 @@ separate human-review section, and never claims the simulator judged the algorit
   MUST render in the single chosen language (never both, never raw data); the selection is session-only
   (not persisted to disk).
 - **FR-004**: The exported evidence MUST record the actually-selected UI language (not a fixed placeholder).
-- **FR-005**: The reviewer MUST be able to **reset** (clear the run, return to Setup), **restart** (begin a
-  fresh run from the same configuration without re-setup), and browse a **list of past runs** (from the
-  persisted logs) and reopen any run's evidence read-only.
+- **FR-005**: The app MUST present **three views — Setup, Review, and Runs**. The reviewer MUST be able to
+  **reset** (clear the run, return to Setup), **restart** (begin a fresh run from the **current session's**
+  same frozen plan from tick 0, without re-setup), and use the **Runs** view to browse a **list of past
+  runs** (from the persisted logs) and reopen any run's evidence (timeline + export + visual replay)
+  **read-only**. A past run reopened from disk is read-only (no restart there); to run again the reviewer
+  reconfigures on Setup.
 - **FR-006**: The reviewer MUST be able to edit every driver/vehicle/speed behavior-profile field on the
   Setup screen (pre-filled from the selected scenario), with "reset to scenario default". Edits are
   setup-time-only overrides, validated, **frozen at run start**, used by the run, and recorded in the run's
@@ -234,7 +251,7 @@ separate human-review section, and never claims the simulator judged the algorit
 
 ### Key Entities
 
-- **App view mode**: which screen is shown — Setup or Review.
+- **App view mode**: which screen is shown — Setup, Review, or Runs.
 - **UI language**: the reviewer's chosen display language (Japanese/English), session-only.
 - **Profile override**: a reviewer-edited driver/vehicle/speed behavior profile, frozen at run start.
 - **Run list entry**: a summary of a persisted run (identity, package, scenario, status, created time).
@@ -269,6 +286,8 @@ separate human-review section, and never claims the simulator judged the algorit
   replay source, the Markdown formatter).
 - **One large milestone built as internal slices**, ordered so the V1 release candidate is shippable; the
   bug fix lands first.
+- **Three app views (Setup / Review / Runs)**; the Runs view hosts past-run evidence + visual replay
+  (read-only). **Restart is session-scoped** (the current frozen plan); past runs are read-only.
 - **No new dependencies** (no router, i18n, or Markdown library); the language selection and Maps key are
   not persisted to disk.
 - **Out of scope** (later/never for V1): run comparison, expert-override mode, accounts/auth/multi-user/cloud.
