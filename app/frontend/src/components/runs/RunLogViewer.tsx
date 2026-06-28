@@ -430,9 +430,15 @@ function Timeline({ log }: { log: RunLog }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function RunLogViewer() {
+type RunLogViewerProps = {
+  /** Explicit run_id to load — overrides the active run from the store.
+   *  Pass this when viewing a past run from the Runs screen. */
+  runId?: string
+}
+
+export default function RunLogViewer({ runId: runIdProp }: RunLogViewerProps = {}) {
   const { state } = useRunStore()
-  const runId = state.runState?.run_id ?? null
+  const runId = runIdProp ?? state.runState?.run_id ?? null
 
   const [log, setLog] = useState<RunLog | null>(null)
   const [loading, setLoading] = useState(false)

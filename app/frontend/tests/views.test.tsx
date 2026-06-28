@@ -195,6 +195,11 @@ describe('LeftContextPanel — setup editors removed (T003)', () => {
 // ── RunsScreen ────────────────────────────────────────────────────────────────
 
 describe('RunsScreen — placeholder (T003)', () => {
+  beforeEach(() => {
+    // RunsScreen now mounts RunList which calls listRuns on mount
+    vi.mocked(client.listRuns).mockResolvedValue({ runs: [] })
+  })
+
   it('renders with data-testid="runs-screen"', () => {
     render(
       <RunStoreProvider>
@@ -213,6 +218,8 @@ describe('AppShell — view switching via header nav (T003)', () => {
     vi.mocked(client.listPackages).mockResolvedValue({ packages: [], errors: [] })
     vi.mocked(client.listScenarios).mockResolvedValue({ scenarios: [], errors: [] })
     vi.mocked(client.getFeedbackSchema).mockResolvedValue({ fields: [] })
+    // RunsScreen now mounts RunList which calls listRuns on mount
+    vi.mocked(client.listRuns).mockResolvedValue({ runs: [] })
   })
 
   it('header nav has Setup, Review, and Runs buttons', async () => {
@@ -310,6 +317,7 @@ describe('AppShell — M4 regression: maps input lives on Setup, not Review', ()
     vi.mocked(client.listPackages).mockResolvedValue({ packages: [], errors: [] })
     vi.mocked(client.listScenarios).mockResolvedValue({ scenarios: [], errors: [] })
     vi.mocked(client.getFeedbackSchema).mockResolvedValue({ fields: [] })
+    vi.mocked(client.listRuns).mockResolvedValue({ runs: [] })
   })
 
   it('MapKeyAndRouteInput is present on Setup screen', async () => {
@@ -342,6 +350,7 @@ describe('AppShell — M5 regression: feedback attach points on Review screen', 
     vi.mocked(client.listPackages).mockResolvedValue({ packages: [], errors: [] })
     vi.mocked(client.listScenarios).mockResolvedValue({ scenarios: [], errors: [] })
     vi.mocked(client.getFeedbackSchema).mockResolvedValue({ fields: [] })
+    vi.mocked(client.listRuns).mockResolvedValue({ runs: [] })
   })
 
   it('run-feedback-section present on Review screen when run is completed', async () => {

@@ -14,6 +14,7 @@
  */
 
 import { useRunStore } from '../../state/runStore'
+import { createRun } from '../../api/client'
 import SetupScreen from '../screens/SetupScreen'
 import RunsScreen from '../screens/RunsScreen'
 import LeftContextPanel from './LeftContextPanel'
@@ -28,7 +29,21 @@ type Props = {
 
 export default function AppShell({ healthStatus }: Props) {
   const { state, dispatch } = useRunStore()
-  const { viewMode } = state
+  const { viewMode, planId } = state
+
+  /** Restart — re-run the current frozen plan from tick 0 (session-scoped).
+   *  Requires a planId from PLAN_DRAFTED; unavailable if no plan has been drafted.
+   *  Does NOT return to Setup — stays on Review with a fresh run. */
+  async function handleRestart() {
+    if (!planId) return
+    try {
+      const rs = await createRun(planId)
+      dispatch({ type: 'RUN_CREATED', runState: rs })
+    } catch {
+      // Errors surface through the existing runError mechanism in PlanPreview;
+      // AppShell does not own an error surface — leave it silent here.
+    }
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
@@ -121,15 +136,19 @@ export default function AppShell({ healthStatus }: Props) {
             data-testid="review-screen"
             style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
           >
-            {/* ← New run / Setup affordance — clears run state and returns to Setup */}
+            {/* Review affordance bar — Reset + Restart controls */}
             <div
               style={{
                 padding: '4px 12px',
                 background: '#f8fafc',
                 borderBottom: '1px solid #e5e7eb',
                 flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
               }}
             >
+              {/* RESET — clears run state and returns to Setup */}
               <button
                 onClick={() => dispatch({ type: 'RESET' })}
                 style={{
@@ -143,6 +162,27 @@ export default function AppShell({ healthStatus }: Props) {
                 }}
               >
                 ← New run / Setup
+              </button>
+
+              {/* Restart — re-runs the current frozen plan from tick 0 (session-scoped).
+                  Disabled when no planId is set (nothing to restart from). */}
+              <button
+                data-testid="restart-run-btn"
+                onClick={handleRestart}
+                disabled={!planId}
+                title={planId ? `Restart from plan ${planId}` : 'No plan to restart from'}
+                style={{
+                  fontSize: '0.78em',
+                  padding: '3px 10px',
+                  background: planId ? '#2563eb' : 'transparent',
+                  border: planId ? '1px solid #1d4ed8' : '1px solid #d0d5dd',
+                  color: planId ? '#fff' : '#9ca3af',
+                  borderRadius: '4px',
+                  cursor: planId ? 'pointer' : 'not-allowed',
+                  opacity: planId ? 1 : 0.6,
+                }}
+              >
+                ↺ Restart
               </button>
             </div>
 

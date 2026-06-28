@@ -28,9 +28,15 @@ const C = {
   error: '#c44',
 }
 
-export default function EvidencePanel() {
+type EvidencePanelProps = {
+  /** Explicit run_id to load — overrides the active run from the store.
+   *  Pass this when viewing a past run from the Runs screen. */
+  runId?: string
+}
+
+export default function EvidencePanel({ runId: runIdProp }: EvidencePanelProps = {}) {
   const { state } = useRunStore()
-  const runId = state.runState?.run_id ?? null
+  const runId = runIdProp ?? state.runState?.run_id ?? null
   const { uiLanguage } = state
 
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'ok' | 'error'>('idle')
