@@ -135,3 +135,6 @@ class ScenarioDef(BaseModel):
     speed_profile: SpeedProfile | None = None
     is_night: bool = False
     presets: dict[str, Any] = {}
+
+    # M7 UC-01: safety ceiling for rest-spot reachability check (0–100, percent)
+    rest_drowsiness_ceiling: float = 80.0

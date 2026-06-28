@@ -36,7 +36,9 @@ from aica_api.services.run_manager import (
     action,
     create_run,
     get_active_run_log,
+    get_prior_tick_state,
     get_run,
+    get_scenario,
     tick,
 )
 
@@ -367,17 +369,22 @@ def get_run_endpoint(run_id: str):
 
 @router.get("/api/runs/{run_id}/rest-spots")
 def rest_spots_endpoint(run_id: str, maps_key: str | None = None):
-    """Return candidate rest stops for a run.
+    """Return candidate rest stops for a run, enriched with distance/ETA/reachability.
 
     Fallback path (REQUIRED, deterministic, offline):
-      Builds spots from run_state.route_facts.rest_spot_positions
-      → {id, label:{ja,en}, route_fraction: pos_km/total_km}.
-      Works without any network access.
+      Builds spots from run_state.route_facts.rest_spot_positions and enriches
+      each with distance_km (from current position), eta_min (minutes to reach
+      at current speed), and reachable (False when projected drowsiness on arrival
+      would exceed scenario.rest_drowsiness_ceiling).
+
+    Projection uses base_growth_per_min only — a linear approximation that
+    omits night/monotony/traffic multipliers (agreed approximation for
+    reachability estimates; note in comment per spec).
 
     Maps/Places path (maps_key present):
       Not yet wired — the fallback is returned regardless of maps_key.
-      When Places wiring is added, key must stay in-memory only and must
-      never be persisted or logged (maps-key-never-persisted constraint).
+      Key must stay in-memory only and must never be persisted or logged
+      (maps-key-never-persisted constraint).
 
     404 if run_id is unknown.
     """
@@ -386,15 +393,56 @@ def rest_spots_endpoint(run_id: str, maps_key: str | None = None):
         raise HTTPException(status_code=404, detail=f"Run {run_id!r} not found")
 
     total_km = rs.route_facts.total_route_distance_km or 120.0
-    # Fallback: scenario/route positions → RestSpot dicts (deterministic, offline).
-    spots = [
-        {
+
+    # ── Current driving state from prior tick (zero-defaults if no tick yet) ─
+    prior_tick = get_prior_tick_state(run_id)
+    if prior_tick is not None:
+        current_distance_km = prior_tick.distance_km or 0.0
+        raw = prior_tick.raw_state
+        current_drowsiness = float(raw.get("drowsinessLevel", 0.0))
+        current_speed_kph = float(raw.get("speedKph", 0.0))
+    else:
+        current_distance_km = 0.0
+        current_drowsiness = 0.0
+        current_speed_kph = 0.0
+
+    # ── Drowsiness growth rate and safety ceiling from scenario ───────────────
+    # Growth projection uses base_growth_per_min only — a simple linear model
+    # that omits night/monotony/traffic multipliers (agreed approximation for
+    # reachability estimates).  See scenario.rest_drowsiness_ceiling for ceiling.
+    scenario = get_scenario(run_id)
+    if scenario is not None and scenario.driver_profile is not None:
+        base_growth_per_min = scenario.driver_profile.drowsiness_model.base_growth_per_min
+        ceiling = scenario.rest_drowsiness_ceiling
+    else:
+        base_growth_per_min = 0.0
+        ceiling = 80.0
+
+    # ── Fallback: scenario/route positions → enriched RestSpot dicts ─────────
+    spots = []
+    for i, pos_km in enumerate(rs.route_facts.rest_spot_positions):
+        route_fraction = min(1.0, pos_km / total_km)
+        spot_distance_km = round(max(0.0, pos_km - current_distance_km), 1)
+
+        if current_speed_kph <= 0:
+            # Guard divide-by-zero: speed unknown → ETA unknown, unreachable
+            eta_min: float | None = None
+            reachable = False
+        else:
+            raw_eta = (spot_distance_km / current_speed_kph) * 60.0
+            eta_min = round(raw_eta, 1)
+            projected_drowsiness = current_drowsiness + base_growth_per_min * raw_eta
+            reachable = projected_drowsiness <= ceiling
+
+        spots.append({
             "id": f"rest_{i}",
             "label": {"ja": f"休憩所{i + 1}", "en": f"Rest stop {i + 1}"},
-            "route_fraction": min(1.0, pos_km / total_km),
-        }
-        for i, pos_km in enumerate(rs.route_facts.rest_spot_positions)
-    ]
+            "route_fraction": route_fraction,
+            "distance_km": spot_distance_km,
+            "eta_min": eta_min,
+            "reachable": reachable,
+        })
+
     # (When maps_key is present, replace `spots` with Places results via the
     #  routes.py Places helper; key stays in-memory, never persisted or logged.)
     return {"rest_spots": spots}

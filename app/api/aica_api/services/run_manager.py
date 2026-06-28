@@ -148,6 +148,38 @@ def get_active_run_log(run_id: str) -> "RunLog | None":
     return entry[3].run_log if entry is not None else None
 
 
+def get_prior_tick_state(run_id: str) -> "TickState | None":
+    """Return the prior TickState for a run, or None if no tick yet / not active.
+
+    Used by the rest-spots endpoint to read current drowsiness, distance, and speed
+    without going through the full tick path.
+
+    Args:
+        run_id: The run identifier to look up.
+
+    Returns:
+        The last TickState computed for this run, or None.
+    """
+    entry = _registry.get(run_id)
+    return entry[4] if entry is not None else None
+
+
+def get_scenario(run_id: str) -> "ScenarioDef | None":
+    """Return the ScenarioDef for an active run, or None if unknown.
+
+    Used by the rest-spots endpoint to read scenario-level config such as
+    rest_drowsiness_ceiling and driver_profile growth rates.
+
+    Args:
+        run_id: The run identifier to look up.
+
+    Returns:
+        The ScenarioDef, or None if run_id is not in the active registry.
+    """
+    entry = _registry.get(run_id)
+    return entry[2] if entry is not None else None
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
