@@ -39,13 +39,23 @@ append-only evidence recorder (persisted immediately). It NEVER blocks the run, 
 simulator facts, or feeds an algorithm — it is post-hoc human judgment, kept distinct from
 machine-generated evidence (constitution II).
 
-### D3 — Three attach points, traceable via `FeedbackTarget`
-Feedback may be submitted after a **decision** (`{scope:"decision", tick_index}`), a
-**proposal** (`{scope:"proposal", tick_index, proposal_id}`), an **action**
-(`{scope:"action", tick_index, action}`), or at **end of run** (`{scope:"run"}`). The
-target is validated to reference something real in the log (the tick_index / proposal_id /
-action exists), so every feedback is traceable to run/decision/proposal/action (acceptance
-criterion). All fields optional; feedback is never required to proceed.
+### D3 — Attach scopes, each traceable via a precise `FeedbackTarget` (master §14.4)
+`FeedbackTarget` anchors feedback to a **specific log event by index** so it is uniquely
+traceable even when actions/decisions repeat:
+`{ scope, event_ref?: int (log event index), tick_index?, proposal_id?, action?: str }` —
+`event_ref` is the unique anchor; `tick_index`/`proposal_id`/`action` are display metadata.
+M5 V1 scopes (master §14.4 traceability):
+- `run` — entire run (end of playback)
+- `decision` — a specific decision point (`event_ref` → that tick event)
+- `proposal` — a specific proposal (`event_ref` → the proposal-bearing tick event, + `proposal_id`)
+- `action` — a specific test-user **action** (`event_ref` → that action event; `tick_index`/`action`
+  display-only — this is the fix for "repeated actions aren't uniquely identified")
+
+Validation: `event_ref` must point to an event of the matching kind in the persisted log. The
+master's remaining traceability scopes — `setup_change` (a parameter/hyperparameter change) and
+`comparison` (between runs) — are **reserved** in the model but not wired until those features exist
+(M6+). All fields optional; feedback never blocks the run. Feedback **timing** follows master §13.4
+(end of playback / each decision point when configured / after accepting or rejecting a proposal).
 
 ### D4 — Evidence replay = structured event-timeline viewer (no recalculation)
 "Evidence replay" for M5 upgrades `RunLogViewer` into a read-only, ordered, expandable
@@ -55,19 +65,51 @@ the persisted log without recalculating any algorithm decision** (constitution I
 architecture §13.9). The richer **visual scrubbable playback** (re-driving the cockpit/map
 from the log) is deferred to the M6 UI/UX-polish milestone.
 
-### D5 — Backend-derived evidence export separating facts from human review
-`GET /api/runs/{id}/evidence` returns a derived structure
-`{ simulator_facts: {snapshot, route_facts, event_plan, profiles, setup_values, trace,
-actions, algorithm_errors}, human_review: {feedback: [...]} }`. Deriving it server-side keeps
-the fact/review separation in the source of truth and unit-testable. The frontend offers
-**copy-to-clipboard + download** of this JSON (required). **Markdown export deferred** to M6.
+### D5 — Backend-derived evidence export with the full master §14.2 contents
+`GET /api/runs/{id}/evidence` returns a derived report carrying the complete master §14.2
+contents, separating machine facts from human review:
+```
+{ report_id, run_id, timestamp, ui_language, simulator_version,
+  package: {id, version}, scenario: {id, version},
+  simulator_facts: {
+    route_snapshot,                 # M4 display_route snapshot (when a maps run)
+    route_facts, event_plan, run_mode, evidence_status,
+    initial_parameters, final_parameters,          # final_* only when changed
+    initial_hyperparameters, final_hyperparameters, # final_* only when changed
+    driver_profile, vehicle_profile,
+    timeline_events, decision_trace, proposal_events, actions,
+    expert_override_events,         # when any occur (M6+ feature; empty for now)
+    algorithm_errors,
+    run_comparison_reference        # when applicable (compare is future; omitted for now)
+  },
+  human_review: { feedback_labels: [...], free_text_comments: [...] } }
+```
+Conditional sections (`expert_override_events`, `run_comparison_reference`, `final_*` values)
+appear only when present. The master §13.1 record distinction maps as: simulator trace →
+`simulator_facts`; test-user labels → `human_review.feedback_labels`; test-user comments →
+`human_review.free_text_comments` (optional reviewer-notes / analyst-conclusions are future).
+The report is **reproducible** per master §14.3 (it carries simulator version, package/scenario
+ids+versions, route snapshot + facts, plan, parameter/hyperparameter values, profiles, timeline,
+and actions). Deriving server-side keeps the separation in the source of truth + unit-testable.
+Frontend offers **copy + download** of this JSON (required). **Markdown deferred** to M6.
 
-### D6 — Field-type vocabulary; localized; all optional
-A small typed vocabulary: `scale` (min/max, e.g. 1–5), `choice` (options), `text`. The V1
-fields: `timing` (choice), `safety_impression` / `intrusiveness` / `understandability` /
-`rest_spot_suitability` / `proposal_content_suitability` (scale 1–5), `acceptance_rejection_reason`
-(choice + text note), `overall_judgment` (choice). Plus an always-available free-text
-`comment`. Labels localized `{ja,en}` like the rest of the system. All fields optional.
+### D6 — V1 field schema = master §13.2 categoricals; localized; all optional
+Field vocabulary: `choice` (options) and `text`; `scale` remains available for package extras,
+but the **V1 baseline uses categorical `choice` fields to match the master spec** (NOT numeric
+scales). The V1 baseline fields (per master §13.2; all optional):
+- `proposal_timing` — choice: too_early / appropriate / too_late / unnecessary / missed_opportunity
+- `safety_impression` — choice: safe / somewhat_risky / unsafe / unclear
+- `intrusiveness` — choice: not_intrusive / acceptable / intrusive / very_intrusive
+- `understandability` — choice: clear / somewhat_clear / unclear
+- `rest_spot_suitability` — choice: suitable / acceptable / unsuitable / no_suitable_rest_spot
+- `proposal_content_suitability` — choice: suitable / acceptable / unsuitable
+- `acceptance_reason` — text (surfaced when the proposal was accepted)
+- `rejection_reason` — text (surfaced when the proposal was declined) — master lists acceptance
+  and rejection reasons as SEPARATE labels
+- `overall_judgment` — choice: good_trigger / acceptable / poor_trigger (exact option set finalized in spec)
+
+Plus an always-available free-text `comment` with no forced language (master §13.3). Labels
+localized `{ja,en}`.
 
 ### D7 — Per-package extras exercised via a test fixture
 Shipped packages keep `feedback_schema: []`; the baseline-∪-extras path is exercised with a
@@ -111,10 +153,13 @@ No visual scrubbable replay (M6), no Markdown export (M6), no feedback edit/dele
 no cross-run analytics/aggregation, no auth. Feedback never feeds an algorithm or alters facts.
 
 ## Testing Strategy
-- Backend: effective-schema build (baseline ∪ extras; collision rejected); validation matrix
-  (valid; unknown key; wrong type / out-of-range; bad target); `POST .../feedback` appends a
-  persisted `FeedbackEvent`; `GET .../feedback-schema`; `GET .../evidence` separation (feedback ONLY
-  under `human_review`; facts never include feedback).
+- Backend: effective-schema build (baseline ∪ extras; collision rejected); the V1 baseline matches
+  master §13.2 categoricals; validation matrix (valid; unknown key; value not in a field's `choice`
+  options; `event_ref` missing or pointing to the wrong event kind); `POST .../feedback` appends a
+  persisted `FeedbackEvent`; `GET .../feedback-schema`; `GET .../evidence` carries the full master
+  §14.2 contents, with feedback ONLY under `human_review` (labels vs free-text comments separated) and
+  facts never including feedback; conditional sections (expert_override_events, run_comparison_reference,
+  final_* values) present only when applicable; reproducibility fields (§14.3) all present.
 - Frontend: FeedbackForm renders each field type + submits with the right target; a package-extra
   field renders (fixture); timeline viewer renders feedback distinct from facts; copy + download evidence.
 - e2e: run → submit feedback at a proposal + end-of-run → persisted log contains the feedback events →
@@ -131,8 +176,12 @@ no cross-run analytics/aggregation, no auth. Feedback never feeds an algorithm o
 - Security — feedback is human review text; no secrets; standard handling.
 
 ## Open Questions for the Spec Phase
-- Exact `acceptance_rejection_reason` option set + which reasons map to accept vs reject.
-- Whether `rest_spot_suitability` "N/A" is a choice value or an explicit not-applicable flag.
-- The exact UI placement of the decision-scoped (per-tick) feedback affordance in the trace — it
-  IS in scope (the master lists "decision point" alongside proposal action and end of run); only its
-  presentation is a spec/UX detail.
+- `overall_judgment` exact option set (proposed good_trigger / acceptable / poor_trigger).
+- Whether `acceptance_reason` / `rejection_reason` are free `text` or `choice` (a fixed reason set) +
+  optional note; and whether the form shows acceptance vs rejection based on the recorded action.
+- `rest_spot_suitability` already includes `no_suitable_rest_spot` as a choice value (master §13.2) —
+  confirm no separate not-applicable flag is needed.
+- The exact UI placement of the decision-scoped (per-tick) feedback affordance in the trace — it IS in
+  scope (master §13.4 lists "each decision point when configured"); only its presentation is a UX detail.
+- The forward-compatible `setup_change` / `comparison` scopes are reserved but not wired in M5 (depend on
+  expert_override / compare, which are M6+) — confirm they stay out of M5 implementation.
