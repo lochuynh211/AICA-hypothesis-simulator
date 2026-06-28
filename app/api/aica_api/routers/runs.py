@@ -1,21 +1,37 @@
-"""Run lifecycle router — /api/runs."""
+"""Run lifecycle router — /api/runs.
+
+M5 additions:
+  - GET  /api/runs/{id}/feedback-schema  — effective schema for the run's package.
+  - POST /api/runs/{id}/feedback         — append a FeedbackEvent (schema-validated).
+"""
 
 from __future__ import annotations
 
 import json
 import os
 from datetime import datetime, timezone
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from aica_api.config import settings
+from aica_api.models.feedback import FeedbackEvent, FeedbackTarget
+from aica_api.models.log import RunLog
 from aica_api.models.run import RunStatus
+from aica_api.services.feedback import (
+    SchemaCollisionError,
+    append_feedback,
+    effective_schema,
+    validate,
+)
+from aica_api.services.package_registry import PackageRegistry
 from aica_api.services.run_manager import (
     ActionNotAllowedError,
     RunNotFoundError,
     action,
     create_run,
+    get_active_run_log,
     get_run,
     tick,
 )
@@ -42,6 +58,143 @@ class CreateRunBody(BaseModel):
 
 class ActionBody(BaseModel):
     action: str
+
+
+class FeedbackBody(BaseModel):
+    """POST body for /api/runs/{id}/feedback."""
+
+    target: FeedbackTarget
+    labels: dict[str, Any] = {}
+    comment: str | None = None
+
+
+# ── Private helpers ───────────────────────────────────────────────────────────
+
+
+def _resolve_run_log(run_id: str) -> RunLog:
+    """Return the RunLog for run_id (active → recorder; inactive → disk).
+
+    Resolution order:
+    1. Active run in the in-memory registry → recorder's run_log.
+    2. On-disk run (runs/{run_id}.json) → parsed RunLog.
+    3. Neither → raise 404 HTTPException.
+    """
+    # Try active first (no disk I/O)
+    log = get_active_run_log(run_id)
+    if log is not None:
+        return log
+    # Try disk
+    log_path = settings.runs_dir / f"{run_id}.json"
+    if log_path.exists():
+        data = json.loads(log_path.read_text(encoding="utf-8"))
+        return RunLog(**data)
+    raise HTTPException(status_code=404, detail=f"Run {run_id!r} not found")
+
+
+def _resolve_event_ref(target: FeedbackTarget, run_log: RunLog) -> FeedbackTarget:
+    """Resolve event_ref when the frontend submits a human anchor without it.
+
+    If event_ref is already set, return target unchanged.
+    Otherwise, search run_log.events for the matching event by scope rules:
+      - scope="run"      → no event_ref needed; return unchanged.
+      - scope="decision" → find TickEvent whose tick_index matches target.tick_index.
+      - scope="proposal" → same as decision but the tick must have fire_control.fired=True
+                           and proposal is not None.
+      - scope="action"   → find ActionEvent matching target.tick_index + target.action.
+
+    Raises HTTPException(400) when not found or ambiguous.
+    """
+    scope = target.scope
+
+    if scope == "run":
+        return target  # no event_ref required
+
+    if target.event_ref is not None:
+        return target  # already provided — use as-is
+
+    tick_index = target.tick_index
+    action_str = target.action
+
+    events = run_log.events
+
+    if scope in ("decision", "proposal"):
+        if tick_index is None:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"target.tick_index is required for scope={scope!r} "
+                    "when event_ref is not provided."
+                ),
+            )
+        # Find TickEvents matching the tick_index
+        matches = [
+            i for i, e in enumerate(events)
+            if e.kind == "tick" and e.tick_index == tick_index
+        ]
+        if scope == "proposal":
+            # Additionally filter to ticks that fired a proposal
+            matches = [
+                i for i in matches
+                if (
+                    events[i].trace.decision_result.fire_control.fired
+                    and events[i].trace.decision_result.proposal is not None
+                )
+            ]
+        if len(matches) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"No {scope} event found for tick_index={tick_index} in the run log."
+                ),
+            )
+        if len(matches) > 1:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Ambiguous: {len(matches)} {scope} events found "
+                    f"for tick_index={tick_index}."
+                ),
+            )
+        return target.model_copy(update={"event_ref": matches[0]})
+
+    elif scope == "action":
+        if tick_index is None:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "target.tick_index is required for scope='action' "
+                    "when event_ref is not provided."
+                ),
+            )
+        matches = [
+            i for i, e in enumerate(events)
+            if (
+                e.kind == "action"
+                and e.tick_index == tick_index
+                and (action_str is None or e.action == action_str)
+            )
+        ]
+        if len(matches) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"No action event found for tick_index={tick_index}"
+                    + (f", action={action_str!r}" if action_str else "")
+                    + " in the run log."
+                ),
+            )
+        if len(matches) > 1:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Ambiguous: {len(matches)} action events found "
+                    f"for tick_index={tick_index}."
+                ),
+            )
+        return target.model_copy(update={"event_ref": matches[0]})
+
+    # Unknown scope — let validate() catch it
+    return target
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -171,3 +324,93 @@ def get_run_log(run_id: str):
             status_code=404, detail=f"Run log for {run_id!r} not found"
         )
     return json.loads(log_path.read_text(encoding="utf-8"))
+
+
+# ── M5 Feedback endpoints ──────────────────────────────────────────────────────
+
+
+@router.get("/api/runs/{run_id}/feedback-schema")
+def get_feedback_schema(run_id: str):
+    """Return the effective feedback schema for the run's package.
+
+    Works for active (in-memory) and completed (on-disk) runs.
+    The schema is V1_FEEDBACK_SCHEMA ∪ the package's extra feedback_schema fields.
+
+    404: run not found.
+    422: package not found in registry or malformed feedback_schema (collision).
+    """
+    run_log = _resolve_run_log(run_id)
+    package_id = run_log.snapshot.package.id
+
+    pkg = PackageRegistry(settings.packages_dir).get(package_id)
+    if pkg is None:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Package {package_id!r} for run {run_id!r} not found in registry.",
+        )
+
+    try:
+        schema = effective_schema(pkg)
+    except SchemaCollisionError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    return {"fields": [f.model_dump() for f in schema]}
+
+
+@router.post("/api/runs/{run_id}/feedback", status_code=201)
+def post_feedback(run_id: str, body: FeedbackBody):
+    """Append a reviewer FeedbackEvent to the run log.
+
+    1. Resolve the run log (active → recorder; inactive → disk; 404 if neither).
+    2. Resolve event_ref from the human anchor (tick_index / action) if not provided.
+    3. Get effective schema from the run's package.
+    4. Validate labels + target.  400 with validation_errors on failure; nothing appended.
+    5. Build and append FeedbackEvent.  Return 201 with the appended event.
+
+    The FeedbackEvent is evidence-only — it NEVER alters any prior event, decision,
+    or algorithm result.
+    """
+    # ── 1. Resolve run log ─────────────────────────────────────────────────────
+    run_log = _resolve_run_log(run_id)
+
+    # ── 2. Resolve event_ref from human anchor ────────────────────────────────
+    resolved_target = _resolve_event_ref(body.target, run_log)
+
+    # ── 3. Effective schema ───────────────────────────────────────────────────
+    package_id = run_log.snapshot.package.id
+    pkg = PackageRegistry(settings.packages_dir).get(package_id)
+    if pkg is None:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Package {package_id!r} for run {run_id!r} not found in registry.",
+        )
+    try:
+        schema = effective_schema(pkg)
+    except SchemaCollisionError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    # ── 4. Build event + validate ─────────────────────────────────────────────
+    event = FeedbackEvent(
+        kind="feedback",
+        target=resolved_target,
+        labels=body.labels,
+        comment=body.comment,
+    )
+    errors = validate(event, schema, run_log)
+    if errors:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "validation_errors": [
+                    {"field": e.field, "message": e.message} for e in errors
+                ]
+            },
+        )
+
+    # ── 5. Append ─────────────────────────────────────────────────────────────
+    try:
+        append_feedback(run_id, event, settings.runs_dir)
+    except RunNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Run {run_id!r} not found")
+
+    return event.model_dump()

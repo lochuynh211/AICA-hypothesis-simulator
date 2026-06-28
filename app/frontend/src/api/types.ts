@@ -367,7 +367,71 @@ export type AlgorithmErrorEvent = {
   kind: 'algorithm_error'
 } & AlgorithmError
 
-export type RunLogEvent = TickEvent | ActionEvent | AlgorithmErrorEvent
+// ── M5 Feedback domain ─────────────────────────────────────────────────────
+
+/**
+ * A single review label field definition (mirrors backend FieldDef).
+ * type="choice": options list; note=true → reviewer may add a free-text note.
+ * type="text":   free text only.
+ * type="scale":  numeric within [min, max].
+ */
+export type FieldDef = {
+  key: string
+  label: { ja: string; en: string }
+  type: 'choice' | 'text' | 'scale'
+  options?: string[] | null
+  note?: boolean
+  min?: number | null
+  max?: number | null
+}
+
+/** Identifies what a FeedbackEvent is about (run / decision / proposal / action). */
+export type FeedbackTarget = {
+  scope: 'run' | 'decision' | 'proposal' | 'action'
+  event_ref?: number | null
+  tick_index?: number | null
+  proposal_id?: string | null
+  action?: string | null
+}
+
+/**
+ * Append-only reviewer feedback event (kind="feedback") in RunLog.events.
+ * labels values may be a plain string, or {"choice": string, "note"?: string}
+ * for note-enabled choice fields.
+ */
+export type FeedbackEvent = {
+  kind: 'feedback'
+  target: FeedbackTarget
+  labels: Record<string, unknown>
+  comment?: string | null
+}
+
+/** Response from GET /api/runs/{id}/feedback-schema. */
+export type FeedbackSchema = {
+  fields: FieldDef[]
+}
+
+/** POST body for /api/runs/{id}/feedback. */
+export type FeedbackSubmitBody = {
+  target: FeedbackTarget
+  labels?: Record<string, unknown>
+  comment?: string | null
+}
+
+/**
+ * Runtime error thrown by submitFeedback when the backend returns 400.
+ * Carries the structured validation_errors list.
+ */
+export class FeedbackValidationError extends Error {
+  readonly validationErrors: { field: string; message: string }[]
+  constructor(detail: { validation_errors?: { field: string; message: string }[] }) {
+    super('Feedback validation failed')
+    this.name = 'FeedbackValidationError'
+    this.validationErrors = detail?.validation_errors ?? []
+  }
+}
+
+export type RunLogEvent = TickEvent | ActionEvent | AlgorithmErrorEvent | FeedbackEvent
 
 export type RunLog = {
   run_id: string

@@ -125,6 +125,23 @@ def get_run(run_id: str) -> RunState | None:
     return entry[0] if entry is not None else None
 
 
+def get_active_run_log(run_id: str) -> "RunLog | None":
+    """Return the EvidenceRecorder's RunLog for an active run, or None if not active.
+
+    Used by the feedback router to get the current in-memory log without
+    going through the disk round-trip.  The recorder's log is always at least
+    as current as the disk (it persists on every append).
+
+    Args:
+        run_id: The run identifier to look up.
+
+    Returns:
+        The in-memory RunLog, or None if run_id is not in the active registry.
+    """
+    entry = _registry.get(run_id)
+    return entry[3].run_log if entry is not None else None
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

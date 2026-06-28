@@ -12,6 +12,7 @@ import type {
   RouteAlternative,
   RouteEnvelope,
   MapsErrorBody,
+  FeedbackSchema,
 } from '../api/types'
 
 // ── State ──────────────────────────────────────────────────────────────────
@@ -70,6 +71,16 @@ export type RunStoreState = {
   selectedRouteId: string | null
   /** Structured error from a 502 Maps failure; null when no error. */
   mapsError: MapsErrorBody | null
+
+  // ── M5: Feedback state ───────────────────────────────────────────────────
+  /** Loaded effective schema for the current run; null until fetched. */
+  feedbackSchema: FeedbackSchema | null
+  /** Submission status for the active FeedbackForm. */
+  feedbackSubmitStatus: 'idle' | 'submitting' | 'success' | 'error'
+  /** Human-readable submit error (non-validation); null when no error. */
+  feedbackSubmitError: string | null
+  /** Structured field-level validation errors from a 400 feedback response. */
+  feedbackValidationErrors: { field: string; message: string }[]
 }
 
 const initialState: RunStoreState = {
@@ -104,6 +115,11 @@ const initialState: RunStoreState = {
   routeSource: 'local',
   selectedRouteId: null,
   mapsError: null,
+  // M5 feedback
+  feedbackSchema: null,
+  feedbackSubmitStatus: 'idle',
+  feedbackSubmitError: null,
+  feedbackValidationErrors: [],
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -157,6 +173,11 @@ export type RunStoreAction =
   | { type: 'SELECT_ROUTE'; routeId: string }
   /** Record a Maps API error (502) from routesAnalyze. */
   | { type: 'SET_MAPS_ERROR'; error: MapsErrorBody | null }
+  // ── M5: Feedback actions ────────────────────────────────────────────────────
+  /** Store the loaded feedback schema for the current run. */
+  | { type: 'FEEDBACK_SCHEMA_LOADED'; schema: FeedbackSchema }
+  /** Track feedback submission lifecycle. */
+  | { type: 'FEEDBACK_SUBMIT_STATUS'; status: 'idle' | 'submitting' | 'success' | 'error'; error?: string | null; validationErrors?: { field: string; message: string }[] }
   | { type: 'RESET' }
 
 // ── Reducer ────────────────────────────────────────────────────────────────
@@ -329,6 +350,18 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
     case 'SET_MAPS_ERROR':
       return { ...state, mapsError: action.error, alternatives: [] }
 
+    // ── M5 feedback ───────────────────────────────────────────────────────
+    case 'FEEDBACK_SCHEMA_LOADED':
+      return { ...state, feedbackSchema: action.schema }
+
+    case 'FEEDBACK_SUBMIT_STATUS':
+      return {
+        ...state,
+        feedbackSubmitStatus: action.status,
+        feedbackSubmitError: action.error ?? null,
+        feedbackValidationErrors: action.validationErrors ?? [],
+      }
+
     case 'RESET':
       return {
         ...state,
@@ -355,6 +388,11 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         routeSource: 'local',
         selectedRouteId: null,
         mapsError: null,
+        // M5: clear feedback state on reset
+        feedbackSchema: null,
+        feedbackSubmitStatus: 'idle',
+        feedbackSubmitError: null,
+        feedbackValidationErrors: [],
       }
 
     default:

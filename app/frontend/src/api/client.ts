@@ -13,8 +13,11 @@ import type {
   SetupValue,
   TickResponse,
   RunLog,
+  FeedbackSchema,
+  FeedbackSubmitBody,
+  FeedbackEvent,
 } from './types'
-import { MapsError } from './types'
+import { MapsError, FeedbackValidationError } from './types'
 
 export type HealthStatus = {
   status: string
@@ -192,4 +195,35 @@ export async function getRun(runId: string): Promise<RunState> {
 
 export async function getRunLog(runId: string): Promise<RunLog> {
   return apiFetch(`/api/runs/${runId}/log`, { method: 'GET' })
+}
+
+// ── M5 Feedback ────────────────────────────────────────────────────────────
+
+/** Fetch the effective feedback schema for a run's package. */
+export async function getFeedbackSchema(runId: string): Promise<FeedbackSchema> {
+  return apiFetch(`/api/runs/${runId}/feedback-schema`, { method: 'GET' })
+}
+
+/**
+ * Submit reviewer feedback for a run.
+ * Throws FeedbackValidationError (with validationErrors list) on 400.
+ * Throws Error on other non-2xx responses.
+ */
+export async function submitFeedback(
+  runId: string,
+  body: FeedbackSubmitBody,
+): Promise<FeedbackEvent> {
+  const response = await fetch(`/api/runs/${runId}/feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (response.status === 400) {
+    const errJson = await response.json()
+    throw new FeedbackValidationError(errJson.detail ?? errJson)
+  }
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`)
+  }
+  return response.json() as Promise<FeedbackEvent>
 }
