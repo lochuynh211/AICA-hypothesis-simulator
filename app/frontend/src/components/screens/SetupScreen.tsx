@@ -3,18 +3,18 @@
  *
  * Hosts all setup editors that were previously crammed into LeftContextPanel:
  * PackageSelector, ScenarioSelector, ParameterEditor, HyperparameterEditor,
- * MapKeyAndRouteInput (M4 — key stays in-memory only), and PlanPreview.
+ * ProfileEditor (T009 — scenario profile field overrides), MapKeyAndRouteInput
+ * (M4 — key stays in-memory only), and PlanPreview.
  *
  * "Start Run" in PlanPreview dispatches RUN_CREATED, which auto-transitions
  * the store's viewMode to 'review' — no explicit navigation needed here.
- *
- * A later unit will add the ProfileEditor to this screen.
  */
 
 import PackageSelector from '../setup/PackageSelector'
 import ScenarioSelector from '../setup/ScenarioSelector'
 import ParameterEditor from '../setup/ParameterEditor'
 import HyperparameterEditor from '../setup/HyperparameterEditor'
+import ProfileEditor from '../setup/ProfileEditor'
 import MapKeyAndRouteInput from '../setup/MapKeyAndRouteInput'
 import PlanPreview from '../setup/PlanPreview'
 
@@ -77,6 +77,22 @@ export default function SetupScreen() {
         </h2>
         <ParameterEditor />
         <HyperparameterEditor />
+      </section>
+
+      <section style={{ marginBottom: '20px' }}>
+        <h2
+          style={{
+            fontSize: '0.78em',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            color: '#6b7280',
+            marginBottom: '10px',
+          }}
+        >
+          Driver &amp; Vehicle Profiles
+        </h2>
+        <ProfileEditor />
       </section>
 
       <section style={{ marginBottom: '20px' }}>

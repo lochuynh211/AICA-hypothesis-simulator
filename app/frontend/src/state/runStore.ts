@@ -12,6 +12,7 @@ import type {
   RouteAlternative,
   RouteEnvelope,
   MapsErrorBody,
+  ProfileOverrides,
 } from '../api/types'
 
 // ── State ──────────────────────────────────────────────────────────────────
@@ -87,6 +88,14 @@ export type RunStoreState = {
    * Default 'ja'; toggled via SET_LANGUAGE.
    */
   uiLanguage: 'ja' | 'en'
+
+  // ── M6 T009: ProfileEditor overrides ───────────────────────────────────────
+  /**
+   * Sparse profile overrides computed by ProfileEditor.
+   * Null means no overrides (omit profiles from run-plan body).
+   * Cleared on SELECT_SCENARIO and RESET.
+   */
+  profileOverrides: ProfileOverrides | null
 }
 
 const initialState: RunStoreState = {
@@ -125,6 +134,8 @@ const initialState: RunStoreState = {
   viewMode: 'setup',
   // M6 T004 — default to Japanese
   uiLanguage: 'ja',
+  // M6 T009 — no profile overrides initially
+  profileOverrides: null,
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -185,6 +196,9 @@ export type RunStoreAction =
   // ── M6 T004: UI language ──────────────────────────────────────────────────
   /** Switch the UI language. Session-only — survives RESET. */
   | { type: 'SET_LANGUAGE'; lang: 'ja' | 'en' }
+  // ── M6 T009: ProfileEditor overrides ─────────────────────────────────────
+  /** Sparse profile overrides from ProfileEditor; null to clear. */
+  | { type: 'SET_PROFILE_OVERRIDES'; overrides: ProfileOverrides | null }
 
 // ── Reducer ────────────────────────────────────────────────────────────────
 
@@ -232,6 +246,8 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         selectedRouteId: null,
         routeSource: 'local',
         mapsError: null,
+        // T009: clear profile overrides — new scenario has its own defaults.
+        profileOverrides: null,
       }
 
     case 'SET_PARAMETER':
@@ -365,6 +381,9 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
     case 'SET_LANGUAGE':
       return { ...state, uiLanguage: action.lang }
 
+    case 'SET_PROFILE_OVERRIDES':
+      return { ...state, profileOverrides: action.overrides }
+
     case 'RESET':
       return {
         ...state,
@@ -393,6 +412,8 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         mapsError: null,
         // M6: return to Setup after resetting
         viewMode: 'setup',
+        // T009: clear profile overrides on reset
+        profileOverrides: null,
       }
 
     default:

@@ -17,6 +17,7 @@ import type {
   FeedbackSubmitBody,
   FeedbackEvent,
   EvidenceReport,
+  ProfileOverrides,
 } from './types'
 import { MapsError, FeedbackValidationError } from './types'
 
@@ -123,6 +124,8 @@ export async function createRunPlan(args: {
   routeSource?: string
   routeFacts?: RouteFacts | null
   displayRoute?: DisplayRoute | null
+  // T009: sparse profile overrides (omit entirely when nothing changed)
+  profiles?: ProfileOverrides | null
 }): Promise<RunPlanResponse> {
   const body: Record<string, unknown> = {
     package_id: args.packageId,
@@ -137,6 +140,10 @@ export async function createRunPlan(args: {
   if (args.routeSource !== undefined) body.route_source = args.routeSource
   if (args.routeFacts !== undefined) body.route_facts = args.routeFacts
   if (args.displayRoute !== undefined) body.display_route = args.displayRoute
+  // T009: include profiles only when non-empty (back-compat: omit for unchanged defaults)
+  if (args.profiles != null && Object.keys(args.profiles).length > 0) {
+    body.profiles = args.profiles
+  }
 
   return apiFetch('/api/run-plans', {
     method: 'POST',

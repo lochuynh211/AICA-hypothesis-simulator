@@ -31,6 +31,7 @@ export default function PlanPreview() {
     alternatives,
     selectedRouteId,
     routeSource,
+    profileOverrides,
   } = state
 
   const hasActiveRun = runState !== null && runState.status !== 'completed'
@@ -82,6 +83,8 @@ export default function PlanPreview() {
         routeSource: resolvedRouteSource,
         routeFacts: resolvedRouteFacts,
         displayRoute: resolvedDisplay,
+        // T009: include sparse profile overrides only when non-null
+        ...(profileOverrides != null ? { profiles: profileOverrides } : {}),
       })
       dispatch({
         type: 'PLAN_DRAFTED',
