@@ -260,14 +260,35 @@ describe('createRun', () => {
   })
 })
 
+// ── M4 envelope fixture ───────────────────────────────────────────────────────
+
+const localEnvelope = {
+  route_source: 'local' as const,
+  alternatives: [
+    {
+      route_id: 'local',
+      summary: 'test-scenario',
+      route_facts: {
+        total_route_distance_km: 120,
+        estimated_route_duration_min: 120,
+        route_segments: [],
+        rest_spot_positions: [],
+        route_progress_checkpoints: [],
+      },
+      display: null,
+      notices: [],
+    },
+  ],
+}
+
 describe('routesAnalyze / createRunPlan / regenerateRunPlan', () => {
   beforeEach(() => vi.resetAllMocks())
 
-  it('routesAnalyze POSTs /api/routes/analyze with {scenario_id}', async () => {
-    const facts = { total_route_distance_km: 120, route_segments: [], rest_spot_positions: [] }
-    global.fetch = vi.fn().mockResolvedValue(mockOk(facts))
+  // M4 migration: routesAnalyze now accepts an object arg and returns RouteEnvelope
+  it('routesAnalyze POSTs /api/routes/analyze with {scenario_id} (local path)', async () => {
+    global.fetch = vi.fn().mockResolvedValue(mockOk(localEnvelope))
     const { routesAnalyze } = await import('../src/api/client')
-    await routesAnalyze('uc01_fatigue_friend_drive_v0_1')
+    const result = await routesAnalyze({ scenarioId: 'uc01_fatigue_friend_drive_v0_1' })
     expect(global.fetch).toHaveBeenCalledWith(
       '/api/routes/analyze',
       expect.objectContaining({
@@ -275,9 +296,73 @@ describe('routesAnalyze / createRunPlan / regenerateRunPlan', () => {
         body: JSON.stringify({ scenario_id: 'uc01_fatigue_friend_drive_v0_1' }),
       }),
     )
+    expect(result.route_source).toBe('local')
+    expect(result.alternatives[0].route_id).toBe('local')
   })
 
-  it('createRunPlan POSTs /api/run-plans with the full body', async () => {
+  it('routesAnalyze POSTs maps_key/start/end when provided', async () => {
+    const mapsEnv = {
+      route_source: 'maps' as const,
+      alternatives: [
+        {
+          route_id: 'route-0',
+          summary: 'Via A',
+          route_facts: {
+            total_route_distance_km: 200,
+            estimated_route_duration_min: 150,
+            route_segments: [],
+            rest_spot_positions: [],
+            route_progress_checkpoints: [],
+          },
+          display: { encoded_polyline: 'abc', viewport: null },
+          notices: [],
+        },
+      ],
+    }
+    global.fetch = vi.fn().mockResolvedValue(mockOk(mapsEnv))
+    const { routesAnalyze } = await import('../src/api/client')
+    const result = await routesAnalyze({
+      scenarioId: 'uc01_fatigue_friend_drive_v0_1',
+      mapsKey: 'my-key',
+      start: 'Tokyo',
+      end: 'Osaka',
+    })
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/routes/analyze',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          scenario_id: 'uc01_fatigue_friend_drive_v0_1',
+          maps_key: 'my-key',
+          start: 'Tokyo',
+          end: 'Osaka',
+        }),
+      }),
+    )
+    expect(result.route_source).toBe('maps')
+  })
+
+  it('routesAnalyze throws MapsError on 502', async () => {
+    const errBody = { error_type: 'DIRECTIONS_ERROR', message: 'API failed', suggestion: 'Try local' }
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 502,
+      json: async () => ({ detail: errBody }),
+    })
+    const { routesAnalyze } = await import('../src/api/client')
+    const { MapsError } = await import('../src/api/types')
+    await expect(
+      routesAnalyze({ scenarioId: 's', mapsKey: 'k', start: 'A', end: 'B' }),
+    ).rejects.toBeInstanceOf(MapsError)
+  })
+
+  it('routesAnalyze throws on other non-ok responses', async () => {
+    global.fetch = vi.fn().mockResolvedValue(mockNotOk(500))
+    const { routesAnalyze } = await import('../src/api/client')
+    await expect(routesAnalyze({ scenarioId: 's' })).rejects.toThrow('500')
+  })
+
+  it('createRunPlan POSTs /api/run-plans with the full body (local path, no route fields)', async () => {
     const resp = { plan_id: 'plan_abc', draft_plan: {}, effective_setup: {}, validation_errors: [] }
     global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 201, json: async () => resp })
     const { createRunPlan } = await import('../src/api/client')
@@ -301,6 +386,26 @@ describe('routesAnalyze / createRunPlan / regenerateRunPlan', () => {
       }),
     )
     expect(result.plan_id).toBe('plan_abc')
+  })
+
+  it('createRunPlan includes route selection fields when provided', async () => {
+    const resp = { plan_id: 'plan_xyz', draft_plan: {}, effective_setup: {}, validation_errors: [] }
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 201, json: async () => resp })
+    const { createRunPlan } = await import('../src/api/client')
+    await createRunPlan({
+      packageId: 'pkg',
+      scenarioId: 'scen',
+      routeId: 'route-0',
+      routeSource: 'maps',
+      routeFacts: { total_route_distance_km: 200, estimated_route_duration_min: 150, route_segments: [], rest_spot_positions: [], route_progress_checkpoints: [] },
+      displayRoute: { encoded_polyline: 'abc123', viewport: null },
+    })
+    const sentBody = JSON.parse(
+      (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body as string,
+    )
+    expect(sentBody.route_id).toBe('route-0')
+    expect(sentBody.route_source).toBe('maps')
+    expect(sentBody.display_route.encoded_polyline).toBe('abc123')
   })
 
   it('createRunPlan throws on 400', async () => {

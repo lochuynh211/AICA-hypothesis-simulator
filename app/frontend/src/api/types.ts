@@ -139,6 +139,57 @@ export type RouteFacts = {
   bands?: Record<string, string[]>
 }
 
+/** Viewport bounds for a Maps route alternative. */
+export type ViewportBounds = {
+  northeast: { lat: number; lng: number }
+  southwest: { lat: number; lng: number }
+}
+
+/** Display data for a Maps alternative; null for the local path. */
+export type DisplayRoute = {
+  encoded_polyline: string
+  viewport: ViewportBounds | null
+}
+
+export type RouteNotice = 'no_rest_stops_found' | 'rest_data_degraded' | 'rest_data_unavailable'
+
+/** A single alternative from POST /api/routes/analyze (M4). */
+export type RouteAlternative = {
+  route_id: string
+  summary: string
+  route_facts: RouteFacts
+  display: DisplayRoute | null
+  notices: RouteNotice[]
+}
+
+/** Response envelope from POST /api/routes/analyze (M4). */
+export type RouteEnvelope = {
+  route_source: 'maps' | 'local'
+  alternatives: RouteAlternative[]
+}
+
+/** Structured error body from HTTP 502 on Maps API failure. */
+export type MapsErrorBody = {
+  error_type: string
+  message: string
+  suggestion: string
+}
+
+/**
+ * Runtime error thrown by routesAnalyze when the backend returns 502.
+ * Carries the structured detail body so the UI can surface the message
+ * and offer a "Use local route" fallback.
+ * The API key is never included in this error body.
+ */
+export class MapsError extends Error {
+  readonly body: MapsErrorBody
+  constructor(body: MapsErrorBody) {
+    super(body.message)
+    this.name = 'MapsError'
+    this.body = body
+  }
+}
+
 /** A single field-level validation error from /api/run-plans. */
 export type ValidationError = {
   field: string

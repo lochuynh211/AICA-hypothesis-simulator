@@ -2,14 +2,17 @@ import { useRunStore } from '../../state/runStore'
 import { routesAnalyze, createRunPlan, regenerateRunPlan, createRun } from '../../api/client'
 
 /**
- * PlanPreview (T024) — orchestrates the M2 setup flow:
+ * PlanPreview (T024 / M4) — orchestrates the setup flow:
  *   1. Preview  → routes/analyze + run-plans → draft summary (PLAN_DRAFTED)
  *   2. Regenerate → run-plans/{plan_id}/regenerate (same plan_id)
  *   3. Start    → runs {plan_id} (RUN_CREATED)
  *
- * Validation errors (client-side numeric range or a 400 from the server) and
- * request failures are surfaced via role="alert"; an invalid setup can never
- * reach a run (Preview/Start are blocked while errors exist or no plan exists).
+ * M4 migration: routesAnalyze now returns a RouteEnvelope.
+ * - If alternatives are already in the store (set by MapKeyAndRouteInput for the
+ *   maps path), the Preview step skips the analyze call and uses the selected alt.
+ * - Otherwise (local path): calls routesAnalyze({ scenarioId }) → auto-selects
+ *   the single local alternative.
+ * - createRunPlan always receives the route selection fields from the alt.
  */
 export default function PlanPreview() {
   const { state, dispatch } = useRunStore()
@@ -24,6 +27,9 @@ export default function PlanPreview() {
     setupError,
     runError,
     runState,
+    alternatives,
+    selectedRouteId,
+    routeSource,
   } = state
 
   const hasActiveRun = runState !== null && runState.status !== 'completed'
@@ -34,15 +40,47 @@ export default function PlanPreview() {
   async function handlePreview() {
     if (!selectedPackageId || !selectedScenarioId || hasValidationErrors) return
     dispatch({ type: 'SET_SETUP_ERROR', message: null })
+
     try {
-      // Local route analysis (M2; Google Maps is M4).
-      await routesAnalyze(selectedScenarioId)
+      // ── Resolve the route alternative to use ──────────────────────────────
+      let resolvedRouteId: string
+      let resolvedRouteSource: string
+      let resolvedRouteFacts: unknown
+      let resolvedDisplay: unknown
+
+      if (alternatives.length > 0 && selectedRouteId) {
+        // Maps path: alternatives already loaded by MapKeyAndRouteInput.
+        const alt = alternatives.find((a) => a.route_id === selectedRouteId)
+        if (!alt) throw new Error(`Selected route "${selectedRouteId}" not found in alternatives`)
+        resolvedRouteId = alt.route_id
+        resolvedRouteSource = routeSource
+        resolvedRouteFacts = alt.route_facts
+        resolvedDisplay = alt.display
+      } else {
+        // Local path: call routesAnalyze and auto-select the single local alternative.
+        const envelope = await routesAnalyze({ scenarioId: selectedScenarioId })
+        dispatch({ type: 'SET_ALTERNATIVES', envelope })
+        if (envelope.alternatives.length === 0) {
+          throw new Error('No route alternatives returned from analyze')
+        }
+        const alt = envelope.alternatives[0]
+        dispatch({ type: 'SELECT_ROUTE', routeId: alt.route_id })
+        resolvedRouteId = alt.route_id
+        resolvedRouteSource = envelope.route_source
+        resolvedRouteFacts = alt.route_facts
+        resolvedDisplay = alt.display
+      }
+
       const resp = await createRunPlan({
         packageId: selectedPackageId,
         scenarioId: selectedScenarioId,
         parameters: editedParameters,
         hyperparameters: editedHyperparameters,
         runMode: 'standard',
+        routeId: resolvedRouteId,
+        routeSource: resolvedRouteSource,
+        routeFacts: resolvedRouteFacts as Parameters<typeof createRunPlan>[0]['routeFacts'],
+        displayRoute: resolvedDisplay as Parameters<typeof createRunPlan>[0]['displayRoute'],
       })
       dispatch({
         type: 'PLAN_DRAFTED',

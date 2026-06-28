@@ -305,12 +305,24 @@ describe('HyperparameterEditor + PlanPreview — T024', () => {
   })
 
   it('edit valid → preview → regenerate → start (full flow)', async () => {
+    // M4 migration: routesAnalyze now returns RouteEnvelope (not bare RouteFacts)
     vi.mocked(client.routesAnalyze).mockResolvedValue({
-      total_route_distance_km: 120,
-      estimated_route_duration_min: 120,
-      route_segments: [],
-      rest_spot_positions: [],
-      route_progress_checkpoints: [],
+      route_source: 'local' as const,
+      alternatives: [
+        {
+          route_id: 'local',
+          summary: 'uc01_fatigue_friend_drive_v0_1',
+          route_facts: {
+            total_route_distance_km: 120,
+            estimated_route_duration_min: 120,
+            route_segments: [],
+            rest_spot_positions: [],
+            route_progress_checkpoints: [],
+          },
+          display: null,
+          notices: [],
+        },
+      ],
     })
     vi.mocked(client.createRunPlan).mockResolvedValue(draftedPlanResponse)
     vi.mocked(client.regenerateRunPlan).mockResolvedValue({
@@ -331,7 +343,10 @@ describe('HyperparameterEditor + PlanPreview — T024', () => {
     // Preview
     fireEvent.click(screen.getByRole('button', { name: /preview plan/i }))
     await screen.findByTestId('plan-summary')
-    expect(vi.mocked(client.routesAnalyze)).toHaveBeenCalledWith('uc01_fatigue_friend_drive_v0_1')
+    // M4: routesAnalyze is now called with an object arg (not a plain string)
+    expect(vi.mocked(client.routesAnalyze)).toHaveBeenCalledWith(
+      expect.objectContaining({ scenarioId: 'uc01_fatigue_friend_drive_v0_1' }),
+    )
     expect(vi.mocked(client.createRunPlan)).toHaveBeenCalledWith(
       expect.objectContaining({
         packageId: 'rest_weighted_score_v0_1',

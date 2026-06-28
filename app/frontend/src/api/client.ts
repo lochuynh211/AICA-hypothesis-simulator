@@ -5,6 +5,8 @@ import type {
   ScenarioDef,
   RegistryError,
   RouteFacts,
+  DisplayRoute,
+  RouteEnvelope,
   RunPlanResponse,
   RunState,
   RunSummary,
@@ -12,6 +14,7 @@ import type {
   TickResponse,
   RunLog,
 } from './types'
+import { MapsError } from './types'
 
 export type HealthStatus = {
   status: string
@@ -67,14 +70,41 @@ export async function getScenario(id: string): Promise<ScenarioDef> {
   return apiFetch(`/api/scenarios/${id}`, { method: 'GET' })
 }
 
-// ── Routes / run-plans (M2 setup flow) ───────────────────────────────────────
+// ── Routes / run-plans (M4 setup flow) ────────────────────────────────────────
+//
+// routesAnalyze now returns the envelope {route_source, alternatives:[...]}.
+// Maps path: pass mapsKey + start + end.  Local path: omit them.
+// HTTP 502 from the maps path is surfaced as a MapsError (structured body).
+// The API key is never stored, logged, or echoed in any error.
 
-export async function routesAnalyze(scenarioId: string): Promise<RouteFacts> {
-  return apiFetch('/api/routes/analyze', {
+export async function routesAnalyze(args: {
+  scenarioId: string
+  mapsKey?: string
+  start?: string
+  end?: string
+}): Promise<RouteEnvelope> {
+  const body: Record<string, string> = { scenario_id: args.scenarioId }
+  if (args.mapsKey) body.maps_key = args.mapsKey
+  if (args.start) body.start = args.start
+  if (args.end) body.end = args.end
+
+  const response = await fetch('/api/routes/analyze', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ scenario_id: scenarioId }),
+    body: JSON.stringify(body),
   })
+
+  // 502 carries a structured Maps error (key is never in this body)
+  if (response.status === 502) {
+    const errJson = await response.json()
+    throw new MapsError(errJson.detail)
+  }
+
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`)
+  }
+
+  return response.json() as Promise<RouteEnvelope>
 }
 
 export async function createRunPlan(args: {
@@ -84,18 +114,30 @@ export async function createRunPlan(args: {
   hyperparameters?: Record<string, SetupValue>
   presets?: Record<string, unknown>
   runMode?: string
+  // M4: route selection (optional — omitted for the local path)
+  routeId?: string
+  routeSource?: string
+  routeFacts?: RouteFacts | null
+  displayRoute?: DisplayRoute | null
 }): Promise<RunPlanResponse> {
+  const body: Record<string, unknown> = {
+    package_id: args.packageId,
+    scenario_id: args.scenarioId,
+    parameters: args.parameters ?? {},
+    hyperparameters: args.hyperparameters ?? {},
+    presets: args.presets ?? {},
+    run_mode: args.runMode ?? 'standard',
+  }
+  // Only include route selection fields when explicitly provided
+  if (args.routeId !== undefined) body.route_id = args.routeId
+  if (args.routeSource !== undefined) body.route_source = args.routeSource
+  if (args.routeFacts !== undefined) body.route_facts = args.routeFacts
+  if (args.displayRoute !== undefined) body.display_route = args.displayRoute
+
   return apiFetch('/api/run-plans', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      package_id: args.packageId,
-      scenario_id: args.scenarioId,
-      parameters: args.parameters ?? {},
-      hyperparameters: args.hyperparameters ?? {},
-      presets: args.presets ?? {},
-      run_mode: args.runMode ?? 'standard',
-    }),
+    body: JSON.stringify(body),
   })
 }
 

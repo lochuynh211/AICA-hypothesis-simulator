@@ -9,6 +9,9 @@ import type {
   TraceEntry,
   SetupValue,
   ValidationError,
+  RouteAlternative,
+  RouteEnvelope,
+  MapsErrorBody,
 } from '../api/types'
 
 // ── State ──────────────────────────────────────────────────────────────────
@@ -47,6 +50,26 @@ export type RunStoreState = {
   validationErrors: ValidationError[]
   /** Top-level setup error message (e.g. analyze/plan request failure). */
   setupError: string | null
+
+  // ── M4: Maps route surface ────────────────────────────────────────────────
+  /**
+   * BYO Maps API key — held in-memory ONLY.
+   * NEVER written to localStorage, sessionStorage, or any persisted store.
+   * Cleared on RESET.
+   */
+  mapsKey: string
+  /** Start location string (free-text) for the Maps analyze call. */
+  mapsStart: string
+  /** End location string (free-text) for the Maps analyze call. */
+  mapsEnd: string
+  /** Route alternatives returned by the most recent routesAnalyze call. */
+  alternatives: RouteAlternative[]
+  /** Route source from the most recent routesAnalyze envelope. */
+  routeSource: 'maps' | 'local'
+  /** The route_id selected by the reviewer; null until the user selects one. */
+  selectedRouteId: string | null
+  /** Structured error from a 502 Maps failure; null when no error. */
+  mapsError: MapsErrorBody | null
 }
 
 const initialState: RunStoreState = {
@@ -71,6 +94,14 @@ const initialState: RunStoreState = {
   effectiveSetup: null,
   validationErrors: [],
   setupError: null,
+  // M4
+  mapsKey: '',
+  mapsStart: '',
+  mapsEnd: '',
+  alternatives: [],
+  routeSource: 'local',
+  selectedRouteId: null,
+  mapsError: null,
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -113,6 +144,17 @@ export type RunStoreAction =
     }
   | { type: 'SET_VALIDATION_ERRORS'; errors: ValidationError[] }
   | { type: 'SET_SETUP_ERROR'; message: string | null }
+  // ── M4: Maps route surface actions ────────────────────────────────────────
+  /** Set the BYO Maps API key (in-memory only — never persisted). */
+  | { type: 'SET_MAPS_KEY'; key: string }
+  /** Update the start/end location strings. */
+  | { type: 'SET_MAPS_ROUTE_INPUT'; start: string; end: string }
+  /** Populate alternatives from a successful routesAnalyze response. */
+  | { type: 'SET_ALTERNATIVES'; envelope: RouteEnvelope }
+  /** Select a specific alternative by route_id. */
+  | { type: 'SELECT_ROUTE'; routeId: string }
+  /** Record a Maps API error (502) from routesAnalyze. */
+  | { type: 'SET_MAPS_ERROR'; error: MapsErrorBody | null }
   | { type: 'RESET' }
 
 // ── Reducer ────────────────────────────────────────────────────────────────
@@ -156,6 +198,10 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         draftPlan: null,
         effectiveSetup: null,
         setupError: null,
+        // Changing scenario also invalidates the previously analyzed route.
+        alternatives: [],
+        selectedRouteId: null,
+        mapsError: null,
       }
 
     case 'SET_PARAMETER':
@@ -247,6 +293,38 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
     case 'SET_RUN_ERROR':
       return { ...state, runError: action.message }
 
+    // ── M4 actions ─────────────────────────────────────────────────────────
+    case 'SET_MAPS_KEY':
+      // Key is kept in-memory inside this reducer state — never serialized,
+      // never written to localStorage/sessionStorage.
+      return { ...state, mapsKey: action.key }
+
+    case 'SET_MAPS_ROUTE_INPUT':
+      return {
+        ...state,
+        mapsStart: action.start,
+        mapsEnd: action.end,
+        // Changing the route input invalidates any previous analyze result.
+        alternatives: [],
+        selectedRouteId: null,
+        mapsError: null,
+      }
+
+    case 'SET_ALTERNATIVES':
+      return {
+        ...state,
+        alternatives: action.envelope.alternatives,
+        routeSource: action.envelope.route_source,
+        selectedRouteId: null,
+        mapsError: null,
+      }
+
+    case 'SELECT_ROUTE':
+      return { ...state, selectedRouteId: action.routeId }
+
+    case 'SET_MAPS_ERROR':
+      return { ...state, mapsError: action.error, alternatives: [] }
+
     case 'RESET':
       return {
         ...state,
@@ -265,6 +343,14 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         effectiveSetup: null,
         validationErrors: [],
         setupError: null,
+        // M4: clear all Maps state on reset (key is ephemeral anyway)
+        mapsKey: '',
+        mapsStart: '',
+        mapsEnd: '',
+        alternatives: [],
+        routeSource: 'local',
+        selectedRouteId: null,
+        mapsError: null,
       }
 
     default:
