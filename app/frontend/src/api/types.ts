@@ -121,6 +121,8 @@ export type ScenarioDef = {
   tick_seconds: number
   allowed_actions: string[]
   review_focus: string
+  /** M7 UC-01: recovery options defined per scenario. Absent in pre-M7 scenarios. */
+  recovery_options?: RecoveryOption[]
 }
 
 /**
