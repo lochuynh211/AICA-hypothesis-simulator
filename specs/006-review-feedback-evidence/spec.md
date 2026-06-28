@@ -36,6 +36,22 @@ Authoritative design:
 `docs/superpowers/specs/2026-06-28-m5-review-feedback-evidence-design.md`. Master scope:
 specification §13 (feedback) + §14 (evidence report), architecture §7.4 + §13.8–13.9.
 
+## Clarifications
+
+### Session 2026-06-28
+
+- Q: How are the acceptance/rejection reason labels captured? → A: Each is a **categorical
+  choice + an optional free-text note**. V1 reason sets: acceptance = rest_needed /
+  convenient_timing / trusted_suggestion / other; rejection = not_tired / bad_timing /
+  unsuitable_rest_spot / distrust / other (final sets confirmed in design).
+- Q: How is the export's "selected UI language" handled with no language selector today? → A:
+  Record a **fixed V1 constant** `ui_language: "bilingual"` (the UI renders ja+en); a real
+  language toggle is deferred to M6. The report field is present and honest.
+- Q: Which runs can accept feedback? → A: **Any persisted run** — if the run is not in the
+  active in-memory registry, the backend loads its log from disk, validates + appends the
+  feedback event, and re-persists. Reviewing and annotating historical runs works after a
+  restart. The read-only timeline and export likewise work for any persisted run.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Record structured + free-text feedback on a run (Priority: P1)
@@ -131,6 +147,8 @@ into the facts), and that the facts section carries enough to reproduce the run.
 - **Conditional report sections** (expert overrides, run comparison, changed setup values) →
   appear in the export only when they actually occurred; otherwise omitted.
 - **Opening an old/partial run** → the evidence timeline renders whatever was recorded, read-only.
+- **Feedback on an on-disk-only run** (e.g. after a server restart) → supported: the log is loaded
+  from disk, the feedback validated + appended, and the log re-persisted.
 
 ## Requirements *(mandatory)*
 
@@ -141,7 +159,8 @@ into the facts), and that the facts section carries enough to reproduce the run.
 - **FR-002**: The structured labels MUST include the V1 baseline set (proposal timing, safety
   impression, intrusiveness, understandability, rest-spot suitability, proposal-content
   suitability, acceptance reason, rejection reason, overall judgment), each constrained to its
-  defined categorical values; all fields are optional.
+  defined categorical values; all fields are optional. The **acceptance reason** and **rejection
+  reason** labels are each a categorical choice **plus an optional free-text note**.
 - **FR-003**: A package MAY define additional review fields; the reviewer-facing form and the
   validation MUST then use the V1 baseline plus those extra fields. A package field that
   redefines a V1 label MUST be rejected.
@@ -153,6 +172,10 @@ into the facts), and that the facts section carries enough to reproduce the run.
   rejected with a clear error and MUST NOT be recorded.
 - **FR-006**: Accepted feedback MUST be persisted as an append-only record in the run's evidence
   log; it MUST NOT alter any recorded simulator decision and MUST NOT influence any algorithm.
+- **FR-006a**: Feedback MUST be submittable for **any persisted run**, not only runs active in the
+  current session — when the run is not in the in-memory registry, the system loads its log from
+  disk, validates + appends the feedback, and re-persists. The read-only timeline (FR-007) and the
+  export (FR-009) likewise operate on any persisted run.
 - **FR-007**: The reviewer MUST be able to open a persisted run and see its recorded events
   (ticks + decision trace, proposals, actions, feedback, algorithm errors) as an ordered,
   read-only timeline, with human feedback visually distinguished from simulator facts.
@@ -162,7 +185,8 @@ into the facts), and that the facts section carries enough to reproduce the run.
   download), structured so that simulator-generated facts are clearly separated from human
   review comments.
 - **FR-010**: The evidence export MUST include the required report contents — report and run
-  identity (ids, timestamp, language, simulator version, package and scenario id+version), the
+  identity (ids, timestamp, the recorded UI language — a fixed V1 constant "bilingual", simulator
+  version, package and scenario id+version), the
   simulator facts (route snapshot, route-derived facts, generated plan, run mode and evidence
   status, initial and — when changed — final parameter and hyperparameter values, driver and
   vehicle profiles, timeline events, decision trace, proposal events, reviewer actions, expert
@@ -210,6 +234,9 @@ into the facts), and that the facts section carries enough to reproduce the run.
 - **The V1 feedback labels are the fixed master §13.2 categorical set**; packages may append extra
   fields but the V1 baseline is constant. Shipped packages keep an empty extra schema; the
   per-package-extras path is exercised by a test fixture.
+- **The UI language is a fixed V1 constant** ("bilingual") in the export; a real language selector
+  is deferred to M6. **Acceptance/rejection reasons are choice + optional note** (V1 reason sets per
+  the Clarifications). **Feedback works on any persisted run** (disk-backed append), not only active runs.
 - **Markdown export, a visual scrubbable replay, feedback edit/delete, cross-run analytics, the
   setup-change and run-comparison feedback scopes, expert-override events, and auth are out of
   scope** (later milestones); the export schema reserves the conditional sections for when those
