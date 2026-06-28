@@ -58,6 +58,7 @@ from aica_api.models.run import (
 )
 from aica_api.models.scenario import ScenarioDef
 from aica_api.services.event_plan import freeze_event_plan
+from aica_api.services.recovery import start_recovery
 from aica_api.services.tick_engine import advance_tick, build_adapter_context, compute_tick_state
 from aica_api.storage.evidence_recorder import EvidenceRecorder
 
@@ -673,13 +674,16 @@ def tick(run_id: str) -> TickOutcome:
     )
 
     # ── Fire-control: suppress REST_PROPOSAL during active recovery ───────────
-    # The driver is already resting — a second fired proposal must not pause the
+    # The driver is already resting — a second REST_PROPOSAL must not pause the
     # run.  The TickEvent (with the fired proposal) is already written to the
     # evidence log above, so the suppressed proposal is still visible in the
     # evidence trace.  We just clear the actionability flag so the run
     # continues instead of pausing.
+    # NOTE: Only REST_PROPOSAL is suppressed.  Escalation proposals such as
+    # SEVERE_INTERVENTION still pause the run even during recovery
+    # (per runtime_workflow §7.2).
     recovery_active = bool(run_state.recovery and run_state.recovery.active)
-    if recovery_active and proposal_is_actionable:
+    if recovery_active and proposal_is_actionable and decision_result.result_type == "REST_PROPOSAL":
         proposal_is_actionable = False
 
     if proposal_is_actionable:
@@ -775,7 +779,6 @@ def action(
     if action_str == "accept_rest":
         if scenario.recovery_options:
             # M7: scenario offers recovery options — validate and start recovery.
-            from aica_api.services.recovery import start_recovery
             option = next(
                 (o for o in scenario.recovery_options if o.id == recovery_option_id),
                 None,
