@@ -261,6 +261,7 @@ def tick_endpoint(run_id: str):
     recovery_phase = raw.get("recoveryPhase")
     active_content = raw.get("activeContent")
     is_traffic_jam = raw.get("isTrafficJam")
+    segment_type = raw.get("segmentType")
 
     if outcome.algorithm_error is not None:
         return {
@@ -275,6 +276,7 @@ def tick_endpoint(run_id: str):
             "recovery_phase": recovery_phase,
             "active_content": active_content,
             "is_traffic_jam": is_traffic_jam,
+            "segment_type": segment_type,
         }
     return {
         "run_state": outcome.run_state,
@@ -289,6 +291,7 @@ def tick_endpoint(run_id: str):
         "recovery_phase": recovery_phase,
         "active_content": active_content,
         "is_traffic_jam": is_traffic_jam,
+        "segment_type": segment_type,
     }
 
 

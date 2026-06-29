@@ -71,7 +71,7 @@ def test_tick_response_exposes_motion_and_phase():
     })
     r = client.post(f"/api/runs/{run_id}/tick")
     body = r.json()
-    assert "motion_state" in body and "recovery_phase" in body
+    assert "motion_state" in body and "recovery_phase" in body and "segment_type" in body
 
 
 def test_rest_spots_404_for_unknown_run():

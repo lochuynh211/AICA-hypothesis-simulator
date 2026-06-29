@@ -2,10 +2,10 @@
  * ScenarioBeats — left-panel realtime narrative of the drive, built per tick.
  *
  * Emits ONE beat per status change as the trace advances so the list reads
- * like a running play-by-play, NOT a drowsiness-band spam:
+ * like a running play-by-play:
  *
- *   🏁  Start (first segment beat — type "start")
- *   🛣️  Road-type change (active segment boundary crossed)
+ *   🏁  Start (first tick)
+ *   🚗/⏸️  Motion + road-class change (from per-tick segment_type, skipped during recovery)
  *   🚥  Traffic jam (is_traffic_jam rising edge)
  *   ⚠️  AICA alert (result_type SOFT_WARNING, on first occurrence)
  *   ☕  AICA proposes rest (result_type REST_PROPOSAL)
@@ -13,58 +13,53 @@
  *   😴/🚗/🅿️/🎤/🚙  Recovery phase (recovery_phase change)
  *   🏁  Destination (run completed)
  *
- * Drowsiness-band beats have been REMOVED (Task 10) — drowsiness is a driver
- * state indicator shown in DriverStatus, not a scenario narrative event.
+ * Road-type beats are now driven by the tick engine's segmentType (real Google
+ * road class on a MAPS route; scenario-derived on local). Fictional route_intent
+ * segments are NOT used, eliminating phantom "Yuuko Roadside Station" beats.
  *
  * The most recent beat is labelled "▶ now".
- * Before the run starts, planned segments are shown faint as a preview.
+ * Before the run starts, a simple "Ready — press Play to begin" placeholder is shown.
  */
 import { useRunStore } from '../../state/runStore'
-import { useRouteProgress } from '../playback/useRouteProgress'
 import { t } from '../../i18n/t'
-import type { RouteSegment, TraceEntry } from '../../api/types'
+import type { TraceEntry } from '../../api/types'
 
-// ── Icon helpers ─────────────────────────────────────────────────────────────
+// ── Motion+road helpers ───────────────────────────────────────────────────────
 
-function segIcon(seg: RouteSegment): string {
-  if (seg.is_rest_facility || seg.type === 'rest') return '☕'
-  switch (seg.type) {
-    case 'start':
-    case 'end':
-      return '🏁'
-    default:
-      return '🚗'  // all driving types: urban, highway, national, residential, etc.
-  }
+const ROAD_CLASS_LABELS: Record<string, { ja: string; en: string }> = {
+  highway:          { ja: '高速道路', en: 'Highway' },
+  normal_road:      { ja: '一般道',   en: 'Normal road' },
+  mountain_road:    { ja: '山道',     en: 'Mountain road' },
+  sightseeing_road: { ja: '観光道路', en: 'Scenic road' },
 }
 
-function segBeatLabel(seg: RouteSegment, lang: string): string {
-  if (seg.is_rest_facility || seg.type === 'rest') return t(seg.name, lang)
-  switch (seg.type) {
-    case 'start':        return t({ ja: '出発', en: 'Start' }, lang)
-    case 'end':          return t({ ja: '目的地', en: 'Destination' }, lang)
-    case 'urban':        return t({ ja: '市街地', en: 'Driving · Urban zone' }, lang)
-    case 'highway':      return t({ ja: '高速道路', en: 'Driving · Highway' }, lang)
-    case 'national':     return t({ ja: '国道', en: 'Driving · National road' }, lang)
-    case 'residential':  return t({ ja: '住宅地', en: 'Driving · Residential area' }, lang)
-    default:             return t({ ja: '走行中', en: 'Driving · Road' }, lang)
-  }
+function motionRoadIcon(motionState: string | null): string {
+  return motionState === 'STOPPED' ? '⏸️' : '🚗'
+}
+
+function motionRoadLabel(motionState: string | null, segType: string | null | undefined, lang: string): string {
+  const motionLabel = motionState === 'STOPPED'
+    ? t({ ja: '停車中', en: 'Stopped' }, lang)
+    : t({ ja: '走行中', en: 'Driving' }, lang)
+  const roadEntry = segType ? ROAD_CLASS_LABELS[segType] : null
+  return roadEntry ? `${motionLabel} · ${t(roadEntry, lang)}` : motionLabel
 }
 
 // ── Recovery-phase beat table ─────────────────────────────────────────────────
 
 const RECOVERY_BEATS: Record<string, { icon: string; label: { ja: string; en: string } }> = {
   wakefulness: { icon: '🚗', label: { ja: 'ドライブ中の覚醒', en: 'Wakefulness en route' } },
-  nap:         { icon: '😴', label: { ja: '仮眠中', en: 'Resting (nap)' } },
-  content:     { icon: '🎤', label: { ja: '休憩後カラオケ', en: 'Karaoke after nap' } },
-  resuming:    { icon: '🚙', label: { ja: '再出発', en: 'Resumed' } },
+  nap:         { icon: '😴', label: { ja: '仮眠中',           en: 'Resting (nap)' } },
+  content:     { icon: '🎤', label: { ja: '休憩後カラオケ',   en: 'Karaoke after nap' } },
+  resuming:    { icon: '🚙', label: { ja: '再出発',           en: 'Resumed' } },
 }
 
 // ── Driver-action label table ─────────────────────────────────────────────────
 
 const ACTION_LABELS: Record<string, { icon: string; label: { ja: string; en: string } }> = {
   accept_rest: { icon: '👉', label: { ja: '休憩を承諾', en: 'Accepted rest' } },
-  postpone:    { icon: '👉', label: { ja: '後回し', en: 'Postponed' } },
-  decline:     { icon: '👉', label: { ja: '断る', en: 'Declined' } },
+  postpone:    { icon: '👉', label: { ja: '後回し',     en: 'Postponed' } },
+  decline:     { icon: '👉', label: { ja: '断る',       en: 'Declined' } },
 }
 
 // ── Beat type ─────────────────────────────────────────────────────────────────
@@ -95,27 +90,17 @@ function kindAccent(kind: BeatKind): string {
 export default function ScenarioBeats() {
   const { state } = useRunStore()
   const { trace, uiLanguage, lastAction, completed } = state
-  const { segments, currentFraction, hasRun, fractionAtTick } = useRouteProgress()
 
-  if (segments.length === 0) {
-    return <p style={{ padding: '8px', fontSize: '0.85em', color: '#888' }}>No route loaded</p>
-  }
-
-  const sortedSegsDesc = [...segments].sort((a, b) => b.at - a.at)
-  const segAt = (f: number): RouteSegment | null => sortedSegsDesc.find((s) => s.at <= f) ?? null
-
-  // ── Preview (before the run): planned segments, faint ──────────────────────
-  if (!hasRun || trace.length === 0) {
+  // ── Pre-run placeholder ───────────────────────────────────────────────────
+  if (trace.length === 0) {
     return (
       <ul data-testid="scenario-beats" style={listStyle}>
-        {[...segments]
-          .sort((a, b) => a.at - b.at)
-          .map((s) => (
-            <li key={s.id} data-testid={`beat-seg-${s.id}`} style={beatStyle(false, false, '#2563eb')}>
-              <span aria-hidden>{segIcon(s)}</span>
-              <span style={labelCell}>{segBeatLabel(s, uiLanguage)}</span>
-            </li>
-          ))}
+        <li style={beatStyle(false, false, '#94a3b8')}>
+          <span aria-hidden>⏸️</span>
+          <span style={{ ...labelCell, fontStyle: 'italic' }}>
+            {t({ ja: '準備完了 — 再生して開始', en: 'Ready — press Play to begin' }, uiLanguage)}
+          </span>
+        </li>
       </ul>
     )
   }
@@ -123,45 +108,43 @@ export default function ScenarioBeats() {
   // ── Realtime projection: one beat per status change ───────────────────────
   const beats: Beat[] = []
 
-  let prevSegId: string | null = null
+  let prevMotionKey: string | null = null
+  let prevSegType: string | null = null
   let prevWasTrafficJam = false
   let prevResultType: string | null = null
   let prevRecoveryPhase: string | null = null
   let actionEmitted = false
-  let earlyDrivingEmitted = false
 
-  trace.forEach((e: TraceEntry) => {
-    // 1. Road-type / segment change — emits start beat on tick 0 (type "start")
-    const f = fractionAtTick(e.tick_index)
-    const seg = segAt(f)
-    if (seg && seg.id !== prevSegId) {
-      beats.push({
-        id: `seg-${e.tick_index}-${seg.id}`,
-        icon: segIcon(seg),
-        label: segBeatLabel(seg, uiLanguage),
-        kind: 'segment',
-      })
-      prevSegId = seg.id
-    }
+  trace.forEach((e: TraceEntry, idx: number) => {
+    const motionKey = e.motion_state ?? null
+    const segType = e.segment_type ?? null
+    const hasRecovery = Boolean(e.recovery_phase)
 
-    // Early driving beat: emit 🚗 "Driving" once on the first MOVING tick
-    // while the active segment is still 'start' (handles long start segments).
-    if (
-      seg?.type === 'start' &&
-      seg.id === prevSegId &&
-      e.motion_state === 'MOVING' &&
-      !earlyDrivingEmitted
-    ) {
-      earlyDrivingEmitted = true
+    // 1. Start beat — first tick only
+    if (idx === 0) {
       beats.push({
-        id: `driving-early-${e.tick_index}`,
-        icon: '🚗',
-        label: t({ ja: '走行中', en: 'Driving' }, uiLanguage),
+        id: `start-${e.tick_index}`,
+        icon: '🏁',
+        label: t({ ja: '出発', en: 'Start' }, uiLanguage),
         kind: 'segment',
       })
     }
 
-    // 2. Traffic jam — rising edge only
+    // 2. Motion+road state change (not first tick, not during recovery)
+    if (idx > 0 && !hasRecovery && (motionKey !== prevMotionKey || segType !== prevSegType)) {
+      beats.push({
+        id: `motion-${e.tick_index}`,
+        icon: motionRoadIcon(motionKey),
+        label: motionRoadLabel(motionKey, segType, uiLanguage),
+        kind: 'segment',
+      })
+    }
+
+    // Always track prev (even during recovery, so resuming doesn't re-emit)
+    prevMotionKey = motionKey
+    prevSegType = segType
+
+    // 3. Traffic jam — rising edge only
     const isJam = Boolean(e.is_traffic_jam)
     if (isJam && !prevWasTrafficJam) {
       beats.push({
@@ -173,7 +156,7 @@ export default function ScenarioBeats() {
     }
     prevWasTrafficJam = isJam
 
-    // 3. SOFT_WARNING alert — emit once on first occurrence
+    // 4. SOFT_WARNING alert — emit once on first occurrence
     if (e.result_type === 'SOFT_WARNING' && prevResultType !== 'SOFT_WARNING') {
       beats.push({
         id: `alert-${e.tick_index}`,
@@ -183,7 +166,7 @@ export default function ScenarioBeats() {
       })
     }
 
-    // 4. REST_PROPOSAL — emit once, then immediately inject the action beat
+    // 5. REST_PROPOSAL — emit once, then immediately inject the action beat
     //    (if the reviewer already responded) so order is: propose → action → recovery
     if (e.result_type === 'REST_PROPOSAL' && prevResultType !== 'REST_PROPOSAL') {
       beats.push({
@@ -206,7 +189,7 @@ export default function ScenarioBeats() {
 
     prevResultType = e.result_type ?? null
 
-    // 5. Recovery phase change
+    // 6. Recovery phase change
     const phase = e.recovery_phase ?? null
     if (phase && phase !== prevRecoveryPhase) {
       const rb = RECOVERY_BEATS[phase]
@@ -242,8 +225,6 @@ export default function ScenarioBeats() {
     })
   }
 
-  // Upcoming segment look-ahead (faint, next boundary not yet reached)
-  const upcoming = [...segments].sort((a, b) => a.at - b.at).find((s) => s.at > currentFraction)
   const activeId = beats.length > 0 ? beats[beats.length - 1].id : null
 
   return (
@@ -259,15 +240,6 @@ export default function ScenarioBeats() {
           </li>
         )
       })}
-      {upcoming && (
-        <li key="upcoming" data-testid="beat-upcoming" style={beatStyle(false, false, '#94a3b8')}>
-          <span aria-hidden>{segIcon(upcoming)}</span>
-          <span style={{ ...labelCell, fontStyle: 'italic' }}>
-            {t({ ja: '次: ', en: 'Next: ' }, uiLanguage)}
-            {segBeatLabel(upcoming, uiLanguage)}
-          </span>
-        </li>
-      )}
     </ul>
   )
 }

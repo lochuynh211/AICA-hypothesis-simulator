@@ -384,6 +384,8 @@ export type TickResponseSuccess = {
   active_content?: string | null
   /** True when the current segment is a traffic jam. */
   is_traffic_jam?: boolean | null
+  /** Current road segment class from the tick engine (e.g. 'highway', 'normal_road'). */
+  segment_type?: string | null
 }
 
 export type TickResponseError = {
@@ -417,6 +419,8 @@ export type TraceEntry = DecisionResult & {
   recovery_phase?: string | null
   /** True when this tick was inside a traffic jam segment. */
   is_traffic_jam?: boolean | null
+  /** Road segment class at this tick (from per-tick engine state). */
+  segment_type?: string | null
 }
 
 /**
