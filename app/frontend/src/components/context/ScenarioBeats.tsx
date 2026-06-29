@@ -110,6 +110,7 @@ export default function ScenarioBeats() {
 
   let prevMotionKey: string | null = null
   let prevSegType: string | null = null
+  let prevHadRecovery = false
   let prevWasTrafficJam = false
   let prevResultType: string | null = null
   let prevRecoveryPhase: string | null = null
@@ -119,6 +120,8 @@ export default function ScenarioBeats() {
     const motionKey = e.motion_state ?? null
     const segType = e.segment_type ?? null
     const hasRecovery = Boolean(e.recovery_phase)
+    // True on the first non-recovery tick right after a recovery sequence ended.
+    const justResumed = prevHadRecovery && !hasRecovery
 
     // 1. Start beat — first tick only
     if (idx === 0) {
@@ -131,10 +134,12 @@ export default function ScenarioBeats() {
     }
 
     // 2. Motion+road state beat — emits on the FIRST non-recovery tick (the
-    //    Start→Driving transition) and on every subsequent (motion, road) change.
-    //    prev* start as null, so the first driving tick always produces a beat
-    //    even when the road class never changes (or segment_type is absent).
-    if (!hasRecovery && (motionKey !== prevMotionKey || segType !== prevSegType)) {
+    //    Start→Driving transition), on every subsequent (motion, road) change,
+    //    AND once right after recovery resumes (justResumed) so the driver is
+    //    shown back on the road even when the road class is unchanged.
+    //    prev* are NOT updated during recovery, so the post-rest state compares
+    //    against the last real driving state.
+    if (!hasRecovery && (justResumed || motionKey !== prevMotionKey || segType !== prevSegType)) {
       beats.push({
         id: `motion-${e.tick_index}`,
         icon: motionRoadIcon(motionKey),
@@ -143,9 +148,13 @@ export default function ScenarioBeats() {
       })
     }
 
-    // Always track prev (even during recovery, so resuming doesn't re-emit)
-    prevMotionKey = motionKey
-    prevSegType = segType
+    // Track prev driving state ONLY when not in recovery, so a recovery dwell
+    // doesn't overwrite the pre-rest state and mask the resume transition.
+    if (!hasRecovery) {
+      prevMotionKey = motionKey
+      prevSegType = segType
+    }
+    prevHadRecovery = hasRecovery
 
     // 3. Traffic jam — rising edge only
     const isJam = Boolean(e.is_traffic_jam)
