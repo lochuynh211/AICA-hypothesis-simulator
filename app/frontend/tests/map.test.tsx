@@ -769,3 +769,78 @@ describe('MapSurface — T011: rest-spot marker', () => {
 // Note: routesAnalyze envelope behaviour (local path, maps path, 502 MapsError)
 // and createRunPlan route selection fields are covered in client.test.tsx, which
 // tests the real client implementation directly (no vi.mock on the client module).
+
+// ── Road-class colored polyline ──────────────────────────────────────────────
+
+describe('MapSurface — road-class colored polyline', () => {
+  afterEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).google
+  })
+
+  it('(y) draws one Polyline per route_segment with the correct road-class strokeColor', () => {
+    const decodePath = vi.fn().mockReturnValue([
+      { lat: () => 35.0, lng: () => 135.0 },
+      { lat: () => 35.3, lng: () => 135.3 },
+      { lat: () => 35.6, lng: () => 135.6 },
+    ])
+    // Mock spherical so buildCumulative + slicePath work
+    const computeDistanceBetween = vi.fn().mockReturnValue(30000) // 30 km each leg
+    const interpolate = vi.fn().mockImplementation((a: any, _b: any, _t: number) => a)
+
+    const mockPolyline = { setMap: vi.fn() }
+    const mockMaps = {
+      Map: vi.fn().mockReturnValue({ fitBounds: vi.fn() }),
+      Polyline: vi.fn().mockReturnValue(mockPolyline),
+      LatLngBounds: vi.fn().mockReturnValue({ extend: vi.fn() }),
+      geometry: {
+        encoding: { decodePath },
+        spherical: { computeDistanceBetween, interpolate },
+      },
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(window as any).google = { maps: mockMaps }
+
+    const colorEnvelope: RouteEnvelope = {
+      route_source: 'maps',
+      alternatives: [
+        {
+          route_id: 'route-color',
+          summary: 'Colored Route',
+          route_facts: {
+            total_route_distance_km: 60,
+            estimated_route_duration_min: 60,
+            route_segments: [
+              { segment_type: 'normal_road', start_km: 0, length_km: 30 },
+              { segment_type: 'highway', start_km: 30, length_km: 30 },
+            ],
+            rest_spot_positions: [],
+            route_progress_checkpoints: [],
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          display: { encoded_polyline: TEST_POLYLINE } as any,
+          notices: [],
+        },
+      ],
+    }
+
+    renderInStore(<MapSurface />, (dispatch) => {
+      dispatch({ type: 'SET_MAPS_KEY', key: 'test-key' })
+      dispatch({ type: 'SET_ALTERNATIVES', envelope: colorEnvelope })
+      dispatch({ type: 'SELECT_ROUTE', routeId: 'route-color' })
+    })
+
+    // 2 Polylines (one per segment), not 1
+    expect(mockMaps.Polyline).toHaveBeenCalledTimes(2)
+    // First: normal_road → blue #2563eb
+    expect(mockMaps.Polyline).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ strokeColor: '#2563eb' }),
+    )
+    // Second: highway → cyan #06b6d4
+    expect(mockMaps.Polyline).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ strokeColor: '#06b6d4' }),
+    )
+  })
+})

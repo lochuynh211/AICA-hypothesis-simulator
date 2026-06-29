@@ -67,6 +67,26 @@ function latLngAt(path: any[], cum: number[], total: number, f: number, spherica
   return spherical.interpolate(path[i - 1], path[i], (target - cum[i - 1]) / span)
 }
 
+/**
+ * Extracts the sub-path covering the fraction range [fStart, fEnd].
+ * Includes interpolated boundary points so adjacent segments join without gaps.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function slicePath(path: any[], cum: number[], total: number, fStart: number, fEnd: number, spherical: any): any[] {
+  if (path.length === 0 || total === 0) return []
+  const dStart = fStart * total
+  const dEnd = fEnd * total
+  const pts: any[] = []
+  const ptStart = latLngAt(path, cum, total, fStart, spherical)
+  if (ptStart) pts.push(ptStart)
+  for (let i = 0; i < path.length; i++) {
+    if (cum[i] > dStart && cum[i] < dEnd) pts.push(path[i])
+  }
+  const ptEnd = latLngAt(path, cum, total, fEnd, spherical)
+  if (ptEnd) pts.push(ptEnd)
+  return pts
+}
+
 export default function MapSurface() {
   const { state } = useRunStore()
   const { mapsKey, alternatives, selectedRouteId } = state
@@ -193,13 +213,45 @@ export default function MapSurface() {
         zoom: 10,
       })
 
-      const polyline = new gmaps.Polyline({
-        path,
-        strokeColor: '#2563eb',
-        strokeOpacity: 0.9,
-        strokeWeight: 4,
-      })
-      polyline.setMap(mapInstanceRef.current)
+      // Road-class colors (mobile Google Maps inspired).
+      // Red is reserved for future traffic zone rendering — traffic zones are
+      // not modeled per-segment yet and will be layered on top when available.
+      const ROAD_COLORS: Record<string, string> = {
+        highway: '#06b6d4',           // cyan
+        normal_road: '#2563eb',       // blue (default)
+        mountain_road: '#f59e0b',     // orange
+        sightseeing_road: '#22c55e',  // green
+      }
+      const routeSegments = selectedAlt?.route_facts?.route_segments ?? []
+      const totalKm = selectedAlt?.route_facts?.total_route_distance_km ?? 0
+      const canColorSegments =
+        routeSegments.length > 0 &&
+        Boolean(gmaps.geometry?.spherical) &&
+        totalKm > 0
+
+      if (canColorSegments) {
+        const { cum, total } = buildCumulative(path, gmaps.geometry.spherical)
+        for (const seg of routeSegments) {
+          const fStart = seg.start_km / totalKm
+          const fEnd = (seg.start_km + seg.length_km) / totalKm
+          const segPath = slicePath(path, cum, total, fStart, fEnd, gmaps.geometry.spherical)
+          const segPolyline = new gmaps.Polyline({
+            path: segPath,
+            strokeColor: ROAD_COLORS[seg.segment_type] ?? '#2563eb',
+            strokeOpacity: 0.9,
+            strokeWeight: 5,
+          })
+          segPolyline.setMap(mapInstanceRef.current)
+        }
+      } else {
+        const polyline = new gmaps.Polyline({
+          path,
+          strokeColor: '#2563eb',
+          strokeOpacity: 0.9,
+          strokeWeight: 4,
+        })
+        polyline.setMap(mapInstanceRef.current)
+      }
 
       // Zoom to cover the whole route (start → end) at load.
       if (gmaps.LatLngBounds) {
