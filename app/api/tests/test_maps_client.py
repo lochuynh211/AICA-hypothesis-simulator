@@ -437,6 +437,94 @@ class TestRoadClassValues:
 
 
 # ---------------------------------------------------------------------------
+# Fix 4b — _infer_road_class direct unit tests (expressway/toll keywords +
+#            long-step heuristic)
+# ---------------------------------------------------------------------------
+
+
+class TestInferRoadClassDirect:
+    """Unit tests for _infer_road_class covering all three classification paths:
+    maneuver-based, keyword-based (English instructions), and long-step heuristic."""
+
+    def test_expressway_keyword_in_instructions_maps_to_highway(self):
+        """Step with 'Expressway' in html_instructions → HIGHWAY (English keyword match)."""
+        step = {
+            "distance": {"value": 2000},
+            "maneuver": "straight",
+            "html_instructions": "Continue on Tomei Expressway toward Nagoya",
+        }
+        assert mc._infer_road_class(step) == "HIGHWAY"
+
+    def test_toll_keyword_in_instructions_maps_to_highway(self):
+        """Step with 'toll' in html_instructions → HIGHWAY."""
+        step = {
+            "distance": {"value": 1500},
+            "maneuver": "",
+            "html_instructions": "Pass through the toll gate",
+        }
+        assert mc._infer_road_class(step) == "HIGHWAY"
+
+    def test_long_step_no_keyword_no_maneuver_maps_to_highway(self):
+        """Step >= 8 km with no highway keyword and no merge/ramp maneuver → HIGHWAY.
+
+        This is the cross-language long-step heuristic: a continuous 30 km step
+        with no maneuver is almost certainly an expressway main section even when
+        the instruction text is not in English.
+        """
+        step = {
+            "distance": {"value": 30_000},
+            "maneuver": "",
+            "html_instructions": "Continue straight on some road",
+        }
+        assert mc._infer_road_class(step) == "HIGHWAY"
+
+    def test_exactly_threshold_distance_maps_to_highway(self):
+        """Step at exactly _HIGHWAY_MIN_STEP_M (8 km) → HIGHWAY (boundary inclusive)."""
+        step = {
+            "distance": {"value": mc._HIGHWAY_MIN_STEP_M},
+            "maneuver": "straight",
+            "html_instructions": "Continue on some road",
+        }
+        assert mc._infer_road_class(step) == "HIGHWAY"
+
+    def test_short_local_step_maps_to_local(self):
+        """Short step (800 m), local instruction, non-highway maneuver → LOCAL."""
+        step = {
+            "distance": {"value": 800},
+            "maneuver": "turn-left",
+            "html_instructions": "Turn left onto Main St",
+        }
+        assert mc._infer_road_class(step) == "LOCAL"
+
+    def test_ramp_maneuver_maps_to_highway(self):
+        """Step with maneuver containing 'ramp' → HIGHWAY regardless of distance or text."""
+        step = {
+            "distance": {"value": 500},
+            "maneuver": "ramp-right",
+            "html_instructions": "Take the ramp onto the freeway",
+        }
+        assert mc._infer_road_class(step) == "HIGHWAY"
+
+    def test_freeway_keyword_maps_to_highway(self):
+        """Step with 'freeway' keyword → HIGHWAY."""
+        step = {
+            "distance": {"value": 1000},
+            "maneuver": "straight",
+            "html_instructions": "Merge onto the freeway",
+        }
+        assert mc._infer_road_class(step) == "HIGHWAY"
+
+    def test_step_below_threshold_no_keyword_maps_to_local(self):
+        """Step < 8 km with no highway keyword and no merge/ramp → LOCAL."""
+        step = {
+            "distance": {"value": 7_999},
+            "maneuver": "straight",
+            "html_instructions": "Head north on Park Ave",
+        }
+        assert mc._infer_road_class(step) == "LOCAL"
+
+
+# ---------------------------------------------------------------------------
 # Fix 5 — invalid polyline → graceful [] with no exception
 # ---------------------------------------------------------------------------
 

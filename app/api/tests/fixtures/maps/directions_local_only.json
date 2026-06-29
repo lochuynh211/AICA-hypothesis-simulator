@@ -16,13 +16,13 @@
           "end_address": "Town B",
           "steps": [
             {
-              "distance": {"value": 10000},
+              "distance": {"value": 4000},
               "maneuver": "straight",
               "travel_mode": "DRIVING",
               "html_instructions": "Head north on Main St"
             },
             {
-              "distance": {"value": 10000},
+              "distance": {"value": 4000},
               "maneuver": "turn-right",
               "travel_mode": "DRIVING",
               "html_instructions": "Turn right onto Broadway"

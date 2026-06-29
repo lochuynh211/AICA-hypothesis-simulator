@@ -93,6 +93,27 @@ _PLACES_SAMPLE_POINTS = 6
 # multiple overlapping bubbles spanning the whole route.
 _PLACES_RADIUS_M = 25_000
 
+# Minimum step distance (metres) that triggers the long-step HIGHWAY heuristic.
+# A continuous step of 8 km or more with no maneuver and no highway keyword is
+# almost always an expressway main section (e.g. a 30–100 km stretch on the
+# Tomei or Meishin expressway that Google returns as a single step with no
+# "Merge" maneuver and whose Japanese-language html_instructions won't match
+# English keywords).  This acts as a cross-language safety net so that routes
+# returned without language=en still classify correctly.
+_HIGHWAY_MIN_STEP_M = 8_000
+
+# Keywords in (lowercased) html_instructions that indicate a highway-class step.
+# These appear when Google returns step text in English (language=en request param).
+_HIGHWAY_INSTRUCTION_KEYWORDS: tuple[str, ...] = (
+    "highway",
+    "motorway",
+    "freeway",
+    "expressway",
+    "expwy",
+    "interstate",
+    "toll",
+)
+
 
 # ---------------------------------------------------------------------------
 # Public exception
@@ -315,14 +336,30 @@ def _distance_along_route(
 
 
 def _infer_road_class(step: dict[str, Any]) -> str:
-    """Infer a simplified road class from a Directions step dict."""
+    """Infer a simplified road class from a raw Google Directions step dict.
+
+    Returns "HIGHWAY" when ANY of the following conditions hold:
+      1. Maneuver — step.maneuver contains "merge" or "ramp".
+      2. Keyword   — step.html_instructions (lowercased) contains any of the
+                     strings in _HIGHWAY_INSTRUCTION_KEYWORDS (highway, motorway,
+                     freeway, expressway, expwy, interstate, toll).  These appear
+                     when Google returns English text (language=en param).
+      3. Long-step — step.distance.value >= _HIGHWAY_MIN_STEP_M (8 km).  A
+                     multi-km step with no maneuver and no keyword is almost
+                     certainly an expressway main section — this is the
+                     cross-language safety net for routes whose step text arrives
+                     in a non-English script.
+    Otherwise returns "LOCAL".
+    """
     maneuver = step.get("maneuver", "").lower()
     instructions = step.get("html_instructions", "").lower()
+    distance_m: int = step.get("distance", {}).get("value", 0)
+
     if (
         "merge" in maneuver
         or "ramp" in maneuver
-        or "motorway" in instructions
-        or "highway" in instructions
+        or any(kw in instructions for kw in _HIGHWAY_INSTRUCTION_KEYWORDS)
+        or distance_m >= _HIGHWAY_MIN_STEP_M
     ):
         return "HIGHWAY"
     return "LOCAL"
@@ -388,6 +425,7 @@ def directions(key: str, start: str, end: str) -> list[RawRoute]:
         "destination": end,
         "alternatives": "true",
         "mode": "driving",
+        "language": "en",  # ensure step text is English so keyword checks are reliable
     }
     url = _build_url(_DIRECTIONS_URL, params, key)
     payload = _fetch_json(url, "directions_failure")
