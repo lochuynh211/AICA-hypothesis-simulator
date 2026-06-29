@@ -26,6 +26,7 @@ import RestCeilingEditor from '../setup/RestCeilingEditor'
 import RestSpacingEditor from '../setup/RestSpacingEditor'
 import MapKeyAndRouteInput from '../setup/MapKeyAndRouteInput'
 import PlanPreview from '../setup/PlanPreview'
+import InitialDriverStateEditor from '../setup/InitialDriverStateEditor'
 
 const sectionHeadingStyle: CSSProperties = {
   fontSize: '0.78em',
@@ -148,6 +149,9 @@ export default function SetupScreen() {
         <Panel title="Profiles">
           <Section title="Scenario Profile">
             <ScenarioSelector />
+          </Section>
+          <Section title="Initial Driver State">
+            <InitialDriverStateEditor />
           </Section>
           <Section title="Driver &amp; Vehicle Profiles">
             <ProfileEditor />

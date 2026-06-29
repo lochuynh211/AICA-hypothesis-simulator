@@ -136,6 +136,12 @@ export type ProfileOverrides = {
   speed?: Record<string, unknown>
 }
 
+/** Numeric starting driver-state override (0–100). Omit a key to use the scenario default. */
+export type InitialStateOverride = {
+  drowsiness_level?: number
+  fatigue_level?: number
+}
+
 // ── Setup / run-plan domain (M2) ───────────────────────────────────────────
 
 export type RouteSegmentFact = {

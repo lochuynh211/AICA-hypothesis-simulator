@@ -131,6 +131,17 @@ export type RunStoreState = {
    * the reviewer just did. Null until the first action is taken; cleared on RESET.
    */
   lastAction: string | null
+
+  // ── Initial driver state override (setup-time) ────────────────────────────
+  /**
+   * User-set starting drowsiness (0–100). Null = use scenario default. Cleared on SELECT_SCENARIO and RESET.
+   */
+  initialDrowsiness: number | null
+
+  /**
+   * User-set starting fatigue (0–100). Null = use scenario default. Cleared on SELECT_SCENARIO and RESET.
+   */
+  initialFatigue: number | null
 }
 
 export const initialState: RunStoreState = {
@@ -179,6 +190,9 @@ export const initialState: RunStoreState = {
   minRestSpacingKm: null,
   // M7 — no action taken yet
   lastAction: null,
+  // initial driver state overrides — null means "use scenario default"
+  initialDrowsiness: null,
+  initialFatigue: null,
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -268,6 +282,11 @@ export type RunStoreAction =
   // ── Rest-spot minimum spacing override ───────────────────────────────────
   /** Set the minimum distance (km) between rest spots, or null to clear (use backend default 20 km). */
   | { type: 'SET_MIN_REST_SPACING_KM'; value: number | null }
+  // ── Initial driver state overrides ─────────────────────────────────────────
+  /** Set the starting drowsiness (0–100), or null to clear (use scenario default). */
+  | { type: 'SET_INITIAL_DROWSINESS'; value: number | null }
+  /** Set the starting fatigue (0–100), or null to clear (use scenario default). */
+  | { type: 'SET_INITIAL_FATIGUE'; value: number | null }
 
 // ── Reducer ────────────────────────────────────────────────────────────────
 
@@ -323,6 +342,9 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         restDrowsinessCeiling: null,
         // Clear rest-spot spacing override — new scenario has its own default.
         minRestSpacingKm: null,
+        // Clear initial driver state overrides — new scenario has its own defaults.
+        initialDrowsiness: null,
+        initialFatigue: null,
       }
 
     case 'SET_PARAMETER':
@@ -477,6 +499,12 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
     case 'SET_MIN_REST_SPACING_KM':
       return { ...state, minRestSpacingKm: action.value }
 
+    case 'SET_INITIAL_DROWSINESS':
+      return { ...state, initialDrowsiness: action.value }
+
+    case 'SET_INITIAL_FATIGUE':
+      return { ...state, initialFatigue: action.value }
+
     case 'RESET':
       return {
         ...state,
@@ -515,6 +543,9 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         minRestSpacingKm: null,
         // M7: clear last action on reset
         lastAction: null,
+        // Clear initial driver state overrides on reset
+        initialDrowsiness: null,
+        initialFatigue: null,
       }
 
     default:
