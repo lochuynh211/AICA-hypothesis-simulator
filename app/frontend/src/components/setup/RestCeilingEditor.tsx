@@ -7,14 +7,21 @@
  * A value above 100 is valid (lets the driver "overload").
  * Empty input → null (backend uses the scenario's rest_drowsiness_ceiling default).
  */
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRunStore } from '../../state/runStore'
 import { t } from '../../i18n/t'
 
 export default function RestCeilingEditor() {
   const { state, dispatch } = useRunStore()
-  const { uiLanguage } = state
+  const { uiLanguage, selectedScenarioId } = state
   const [inputValue, setInputValue] = useState<number | null>(null)
+
+  // Re-sync the displayed input when the scenario changes: the store clears
+  // restDrowsinessCeiling on SELECT_SCENARIO, so the input must clear too
+  // (otherwise a stale typed value would be shown while the override is null).
+  useEffect(() => {
+    setInputValue(null)
+  }, [selectedScenarioId])
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value

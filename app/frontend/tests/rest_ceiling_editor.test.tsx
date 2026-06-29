@@ -1,8 +1,8 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import React from 'react'
 import RestCeilingEditor from '../src/components/setup/RestCeilingEditor'
-import { RunStoreProvider } from '../src/state/runStore'
+import { RunStoreProvider, useRunStore } from '../src/state/runStore'
 
 describe('RestCeilingEditor', () => {
   it('dispatches SET_REST_DROWSINESS_CEILING with a number when input changes', () => {
@@ -38,5 +38,35 @@ describe('RestCeilingEditor', () => {
       </RunStoreProvider>,
     )
     expect(screen.getByTestId('rest-ceiling-editor')).toBeInTheDocument()
+  })
+
+  it('clears the input when the selected scenario changes', () => {
+    // Capture store dispatch via a sibling component in the same tree.
+    let dispatchRef: ReturnType<typeof useRunStore>['dispatch'] | null = null
+
+    function DispatchCapture() {
+      const { dispatch } = useRunStore()
+      dispatchRef = dispatch
+      return null
+    }
+
+    render(
+      <RunStoreProvider>
+        <DispatchCapture />
+        <RestCeilingEditor />
+      </RunStoreProvider>,
+    )
+
+    const input = screen.getByTestId('rest-ceiling-input')
+    // Type a ceiling value
+    fireEvent.change(input, { target: { value: '120' } })
+    expect((input as HTMLInputElement).value).toBe('120')
+
+    // Switch scenario — the store clears restDrowsinessCeiling; the input must clear too
+    act(() => {
+      dispatchRef!({ type: 'SELECT_SCENARIO', id: 'different-scenario' })
+    })
+
+    expect((input as HTMLInputElement).value).toBe('')
   })
 })

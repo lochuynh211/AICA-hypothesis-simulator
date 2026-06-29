@@ -375,7 +375,8 @@ def rest_spots_endpoint(run_id: str, maps_key: str | None = None, drowsiness_cei
       Builds spots from run_state.route_facts.rest_spot_positions and enriches
       each with distance_km (from current position), eta_min (minutes to reach
       at current speed), and reachable (False when projected drowsiness on arrival
-      would exceed scenario.rest_drowsiness_ceiling).
+      would exceed the effective ceiling — the drowsiness_ceiling query param if provided,
+      else scenario.rest_drowsiness_ceiling).
 
     Projection uses base_growth_per_min only — a linear approximation that
     omits night/monotony/traffic multipliers (agreed approximation for
