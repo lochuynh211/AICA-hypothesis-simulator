@@ -75,6 +75,11 @@ class CreateRunPlanBody(BaseModel):
     route_source: str = "local"     # "local" | "maps"
     display_route: Any = None       # DisplayRoute dict from maps selection (None for local)
 
+    # Numeric initial driver state override (0–100 per dimension).
+    # When provided, overrides scenario's initial_state band strings.
+    # Keys: "drowsiness_level" and/or "fatigue_level" as floats in [0, 100].
+    initial_state: dict | None = None
+
 
 class RegenerateRunPlanBody(BaseModel):
     presets: dict = {}
@@ -172,6 +177,35 @@ def create_run_plan_endpoint(body: CreateRunPlanBody):
         body.profiles.model_dump(exclude_none=True) if body.profiles else None
     )
 
+    # Validate initial_state override keys and ranges.
+    if body.initial_state is not None:
+        _VALID_INITIAL_STATE_KEYS = {"drowsiness_level", "fatigue_level"}
+        init_errors: list[dict[str, str]] = []
+        for key, value in body.initial_state.items():
+            if key not in _VALID_INITIAL_STATE_KEYS:
+                init_errors.append({
+                    "field": f"initial_state.{key}",
+                    "message": f"Unknown initial_state key {key!r}. Valid keys: {sorted(_VALID_INITIAL_STATE_KEYS)}",
+                })
+            elif not isinstance(value, (int, float)):
+                init_errors.append({
+                    "field": f"initial_state.{key}",
+                    "message": f"initial_state.{key} must be a number in [0, 100]; got {value!r}",
+                })
+            elif not (0 <= float(value) <= 100):
+                init_errors.append({
+                    "field": f"initial_state.{key}",
+                    "message": f"initial_state.{key} must be in [0, 100]; got {value!r}",
+                })
+        if init_errors:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "detail": "One or more initial_state values are invalid.",
+                    "validation_errors": init_errors,
+                },
+            )
+
     plan_id = _make_plan_id()
     draft = create_draft(
         plan_id=plan_id,
@@ -185,6 +219,7 @@ def create_run_plan_endpoint(body: CreateRunPlanBody):
         route_source=body.route_source,
         display_route=display_route,
         profiles=profiles_dict,
+        initial_state=body.initial_state,
     )
 
     if draft.validation_errors:

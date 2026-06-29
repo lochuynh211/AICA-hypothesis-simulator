@@ -589,3 +589,49 @@ def test_advance_tick_two_passes_identical(m2_scenario, m2_event_plan, m2_route_
         return states
 
     assert _run() == _run()
+
+
+# ---------------------------------------------------------------------------
+# _initial_drowsiness / _initial_fatigue — numeric branch (Task A)
+# ---------------------------------------------------------------------------
+
+
+from aica_api.services.tick_engine import _initial_drowsiness, _initial_fatigue
+
+
+def test_initial_drowsiness_numeric():
+    """Numeric input is clamped to [0, 100] and returned as float."""
+    assert _initial_drowsiness(80) == 80.0
+    assert _initial_drowsiness(0) == 0.0
+    assert _initial_drowsiness(100) == 100.0
+    assert _initial_drowsiness(150) == 100.0   # clamped at upper bound
+    assert _initial_drowsiness(-10) == 0.0     # clamped at lower bound
+    assert isinstance(_initial_drowsiness(80), float)
+
+
+def test_initial_fatigue_numeric():
+    """Numeric input is clamped to [0, 100] and returned as float."""
+    assert _initial_fatigue(30) == 30.0
+    assert _initial_fatigue(0) == 0.0
+    assert _initial_fatigue(100) == 100.0
+    assert _initial_fatigue(150) == 100.0      # clamped
+    assert _initial_fatigue(-10) == 0.0        # clamped
+    assert isinstance(_initial_fatigue(30), float)
+
+
+def test_initial_drowsiness_band_unchanged():
+    """Band-string path is unchanged by the numeric branch."""
+    assert _initial_drowsiness("none") == 0.0
+    assert _initial_drowsiness("weak") == 20.0
+    assert _initial_drowsiness("moderate") == 40.0
+    assert _initial_drowsiness("strong") == 60.0
+    assert _initial_drowsiness("severe") == 80.0
+    assert _initial_drowsiness("unknown_band") == 0.0  # default
+
+
+def test_initial_fatigue_band_unchanged():
+    """Band-string path is unchanged by the numeric branch."""
+    assert _initial_fatigue("low") == 0.0
+    assert _initial_fatigue("medium") == 30.0
+    assert _initial_fatigue("high") == 60.0
+    assert _initial_fatigue("unknown_band") == 0.0  # default

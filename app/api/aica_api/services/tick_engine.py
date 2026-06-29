@@ -418,24 +418,38 @@ def _last_drowsiness(plan: EventPlan) -> str:
     return "none"
 
 
-def _initial_drowsiness(band: str) -> float:
-    """Convert a drowsiness band label to an initial numeric value."""
+def _initial_drowsiness(value) -> float:
+    """Convert a drowsiness band label or numeric value to an initial float.
+
+    Accepts either:
+    - A number (int/float): clamp to [0, 100] and return as float.
+    - A band string: map via the established drowsiness-band lookup.
+    """
+    if isinstance(value, (int, float)):
+        return float(max(0.0, min(100.0, float(value))))
     return {
         "none": 0.0,
         "weak": 20.0,
         "moderate": 40.0,
         "strong": 60.0,
         "severe": 80.0,
-    }.get(band, 0.0)
+    }.get(value, 0.0)
 
 
-def _initial_fatigue(band: str) -> float:
-    """Convert a fatigue band label to an initial numeric value."""
+def _initial_fatigue(value) -> float:
+    """Convert a fatigue band label or numeric value to an initial float.
+
+    Accepts either:
+    - A number (int/float): clamp to [0, 100] and return as float.
+    - A band string: map via the established fatigue-band lookup.
+    """
+    if isinstance(value, (int, float)):
+        return float(max(0.0, min(100.0, float(value))))
     return {
         "low": 0.0,
         "medium": 30.0,
         "high": 60.0,
-    }.get(band, 0.0)
+    }.get(value, 0.0)
 
 
 # M2 segment type from km position along route_facts

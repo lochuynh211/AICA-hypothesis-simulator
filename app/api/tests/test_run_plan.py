@@ -444,3 +444,140 @@ def test_synthetic_band_parameter_out_of_range_rejected(uc01_scenario):
     assert "alert_mode" in error_fields
     # Must NOT be registered
     assert get_draft_entry("plan_synth_param") is None
+
+
+# ---------------------------------------------------------------------------
+# Task A: numeric initial_state override — service layer
+# ---------------------------------------------------------------------------
+
+
+def test_initial_state_numeric_override_e2e(uc01_package, uc01_scenario):
+    """create_draft with numeric initial_state; advance_tick(0) initializes from that value."""
+    from aica_api.services.tick_engine import advance_tick
+
+    draft = create_draft(
+        plan_id="plan_init_numeric_e2e",
+        package=uc01_package,
+        scenario=uc01_scenario,
+        presets={},
+        parameters={},
+        hyperparameters={},
+        run_mode="standard",
+        initial_state={"drowsiness_level": 80, "fatigue_level": 30},
+    )
+    assert not draft.validation_errors
+
+    entry = get_draft_entry("plan_init_numeric_e2e")
+    assert entry is not None
+    _, _, effective_scenario = entry
+
+    # Confirm the override was frozen into the effective scenario
+    assert effective_scenario.initial_state["drowsiness_level"] == 80
+    assert effective_scenario.initial_state["fatigue_level"] == 30
+
+    # advance_tick at tick 0 (prior_state=None) initializes from the numeric values.
+    # The returned raw_state reflects one driver-model step from those starting values.
+    ts = advance_tick(
+        prior_state=None,
+        tick_index=0,
+        event_plan=draft.draft_event_plan,
+        route_facts=draft.route_facts,
+        scenario=effective_scenario,
+    )
+    assert ts.raw_state is not None
+    # After one tick starting from 80 (driver model grows slightly), still well above 70.
+    assert ts.raw_state["drowsinessLevel"] > 70
+    # After one tick starting from 30, fatigue should remain in that ballpark.
+    assert ts.raw_state["fatigueLevel"] >= 25
+
+
+def test_initial_state_no_override_uses_scenario_defaults(uc01_package, uc01_scenario):
+    """Without initial_state override, the scenario band-string init is used unchanged."""
+    draft = create_draft(
+        plan_id="plan_no_init_override",
+        package=uc01_package,
+        scenario=uc01_scenario,
+        presets={},
+        parameters={},
+        hyperparameters={},
+        run_mode="standard",
+    )
+    assert not draft.validation_errors
+    entry = get_draft_entry("plan_no_init_override")
+    assert entry is not None
+    _, _, effective_scenario = entry
+    # initial_state should still be the scenario's original band strings
+    assert isinstance(effective_scenario.initial_state.get("drowsiness_level"), str)
+    assert isinstance(effective_scenario.initial_state.get("fatigue_level"), str)
+
+
+# ---------------------------------------------------------------------------
+# Task A: numeric initial_state override — HTTP validation
+# ---------------------------------------------------------------------------
+
+
+def test_initial_state_http_out_of_range_returns_400(tmp_path, monkeypatch):
+    """POST /api/run-plans with initial_state value > 100 → 400 with validation_errors."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+
+    from fastapi.testclient import TestClient
+    from aica_api.main import app
+    client = TestClient(app)
+
+    resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": "rest_rule_based_v0_1",
+            "scenario_id": "uc01_fatigue_friend_drive_v0_1",
+            "initial_state": {"drowsiness_level": 150},
+        },
+    )
+    assert resp.status_code == 400
+    body = resp.json()
+    detail = body.get("detail", body)
+    assert "validation_errors" in detail
+    errors = detail["validation_errors"]
+    assert any("drowsiness_level" in e.get("field", "") for e in errors)
+
+
+def test_initial_state_http_unknown_key_returns_400(tmp_path, monkeypatch):
+    """POST /api/run-plans with unknown initial_state key → 400."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+
+    from fastapi.testclient import TestClient
+    from aica_api.main import app
+    client = TestClient(app)
+
+    resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": "rest_rule_based_v0_1",
+            "scenario_id": "uc01_fatigue_friend_drive_v0_1",
+            "initial_state": {"bad_key": 50},
+        },
+    )
+    assert resp.status_code == 400
+    body = resp.json()
+    detail = body.get("detail", body)
+    assert "validation_errors" in detail
+    errors = detail["validation_errors"]
+    assert any("bad_key" in e.get("field", "") for e in errors)
+
+
+def test_initial_state_http_valid_returns_201(tmp_path, monkeypatch):
+    """POST /api/run-plans with valid numeric initial_state → 201."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+
+    from fastapi.testclient import TestClient
+    from aica_api.main import app
+    client = TestClient(app)
+
+    resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": "rest_rule_based_v0_1",
+            "scenario_id": "uc01_fatigue_friend_drive_v0_1",
+            "initial_state": {"drowsiness_level": 80, "fatigue_level": 30},
+        },
+    )
+    assert resp.status_code == 201

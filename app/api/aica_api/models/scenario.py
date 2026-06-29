@@ -121,7 +121,7 @@ class ScenarioDef(BaseModel):
     type: str
     persona: Persona
     route_intent: RouteIntent
-    initial_state: dict[str, str]
+    initial_state: dict[str, Any]
     event_presets: EventPreset
     total_duration_seconds: int
     tick_seconds: int

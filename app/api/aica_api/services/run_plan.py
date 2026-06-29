@@ -403,6 +403,7 @@ def create_draft(
     route_source: str = "local",
     display_route: DisplayRoute | None = None,
     profiles: dict[str, Any] | None = None,
+    initial_state: dict | None = None,
 ) -> RunPlanDraft:
     """Create and register a draft run plan.
 
@@ -424,6 +425,10 @@ def create_draft(
         profiles:         T008 — optional profile override dict with optional keys
                           "driver", "vehicle", "speed" (each a partial or full profile
                           dict deep-merged onto the scenario profile).  None = no override.
+        initial_state:    Optional numeric initial driver state override.  Keys:
+                          "drowsiness_level" and/or "fatigue_level" as floats in [0, 100].
+                          Merged onto effective_scenario.initial_state AFTER profile
+                          overrides so the effective_scenario is already resolved.
 
     Returns:
         A RunPlanDraft.  Check validation_errors before using.
@@ -438,6 +443,12 @@ def create_draft(
     if profiles:
         effective_scenario, profile_errors = _apply_profile_overrides(scenario, profiles)
         validation_errors = validation_errors + profile_errors
+
+    # Apply numeric initial_state override onto the effective scenario's initial_state.
+    # This is merged AFTER profile overrides so the effective_scenario is already resolved.
+    if initial_state:
+        merged_initial = {**effective_scenario.initial_state, **initial_state}
+        effective_scenario = effective_scenario.model_copy(update={"initial_state": merged_initial})
 
     if validation_errors:
         # Return draft with errors but do NOT register it.
