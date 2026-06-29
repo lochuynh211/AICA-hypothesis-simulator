@@ -115,6 +115,15 @@ export type RunStoreState = {
    */
   restDrowsinessCeiling: number | null
 
+  // ── Rest-spot minimum spacing override (setup-time) ───────────────────────
+  /**
+   * User-set minimum distance (km) between returned rest spots. Null means
+   * "use backend default (20 km)" — nothing is sent as a query param.
+   * A positive number overrides the backend default.
+   * Cleared on SELECT_SCENARIO and RESET.
+   */
+  minRestSpacingKm: number | null
+
   // ── M7: last applied action (for beat timeline / recovery) ─────────────────
   /**
    * The action string from the most recent ACTION_APPLIED dispatch.
@@ -166,6 +175,8 @@ export const initialState: RunStoreState = {
   tickSecondsOverride: null,
   // rest-spot reachability ceiling — null means "use scenario default"
   restDrowsinessCeiling: null,
+  // rest-spot minimum spacing — null means "use backend default (20 km)"
+  minRestSpacingKm: null,
   // M7 — no action taken yet
   lastAction: null,
 }
@@ -252,6 +263,9 @@ export type RunStoreAction =
   // ── Rest-spot reachability ceiling override ───────────────────────────────
   /** Set the rest-spot reachability ceiling (drowsiness %), or null to clear (use scenario default). */
   | { type: 'SET_REST_DROWSINESS_CEILING'; value: number | null }
+  // ── Rest-spot minimum spacing override ───────────────────────────────────
+  /** Set the minimum distance (km) between rest spots, or null to clear (use backend default 20 km). */
+  | { type: 'SET_MIN_REST_SPACING_KM'; value: number | null }
 
 // ── Reducer ────────────────────────────────────────────────────────────────
 
@@ -305,6 +319,8 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         tickSecondsOverride: null,
         // Clear rest-spot ceiling override — new scenario has its own default.
         restDrowsinessCeiling: null,
+        // Clear rest-spot spacing override — new scenario has its own default.
+        minRestSpacingKm: null,
       }
 
     case 'SET_PARAMETER':
@@ -455,6 +471,9 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
     case 'SET_REST_DROWSINESS_CEILING':
       return { ...state, restDrowsinessCeiling: action.value }
 
+    case 'SET_MIN_REST_SPACING_KM':
+      return { ...state, minRestSpacingKm: action.value }
+
     case 'RESET':
       return {
         ...state,
@@ -489,6 +508,8 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         tickSecondsOverride: null,
         // Clear rest-spot ceiling override on reset
         restDrowsinessCeiling: null,
+        // Clear rest-spot spacing override on reset
+        minRestSpacingKm: null,
         // M7: clear last action on reset
         lastAction: null,
       }

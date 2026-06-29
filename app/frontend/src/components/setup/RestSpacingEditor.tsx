@@ -1,23 +1,20 @@
 /**
- * RestCeilingEditor — setup-time rest-spot reachability ceiling control.
+ * RestSpacingEditor — setup-time minimum distance between rest spots control.
  *
- * Sets the drowsiness % ceiling used by GET /rest-spots to mark spots reachable.
- * This is SEPARATE from the algorithm's trigger threshold — it controls only the
- * display-only reachability advisory shown in the recovery picker.
- * A value above 100 is valid (lets the driver "overload").
- * Empty input → null (backend uses the scenario's rest_drowsiness_ceiling default).
+ * Sets the minimum spacing (km) between rest spots returned by GET /rest-spots.
+ * Empty input → null (backend uses the default 20 km spacing).
  */
 import { useState, useEffect } from 'react'
 import { useRunStore } from '../../state/runStore'
 import { t } from '../../i18n/t'
 
-export default function RestCeilingEditor() {
+export default function RestSpacingEditor() {
   const { state, dispatch } = useRunStore()
   const { uiLanguage, selectedScenarioId } = state
   const [inputValue, setInputValue] = useState<number | null>(null)
 
   // Re-sync the displayed input when the scenario changes: the store clears
-  // restDrowsinessCeiling on SELECT_SCENARIO, so the input must clear too
+  // minRestSpacingKm on SELECT_SCENARIO, so the input must clear too
   // (otherwise a stale typed value would be shown while the override is null).
   useEffect(() => {
     setInputValue(null)
@@ -27,37 +24,37 @@ export default function RestCeilingEditor() {
     const raw = e.target.value
     if (raw === '') {
       setInputValue(null)
-      dispatch({ type: 'SET_REST_DROWSINESS_CEILING', value: null })
+      dispatch({ type: 'SET_MIN_REST_SPACING_KM', value: null })
       return
     }
     const parsed = parseFloat(raw)
-    if (!isNaN(parsed) && parsed >= 0) {
+    if (!isNaN(parsed) && parsed >= 1) {
       setInputValue(parsed)
-      dispatch({ type: 'SET_REST_DROWSINESS_CEILING', value: parsed })
+      dispatch({ type: 'SET_MIN_REST_SPACING_KM', value: parsed })
     } else {
       setInputValue(null)
-      dispatch({ type: 'SET_REST_DROWSINESS_CEILING', value: null })
+      dispatch({ type: 'SET_MIN_REST_SPACING_KM', value: null })
     }
   }
 
   function handleReset() {
     setInputValue(null)
-    dispatch({ type: 'SET_REST_DROWSINESS_CEILING', value: null })
+    dispatch({ type: 'SET_MIN_REST_SPACING_KM', value: null })
   }
 
   const label = t(
-    { ja: '休憩スポット到達限界 (眠気%)', en: 'Rest-spot reachability ceiling (drowsiness %)' },
+    { ja: '休憩スポット間の最小距離 (km)', en: 'Min. distance between rest spots (km)' },
     uiLanguage,
   )
   const hint = t(
-    { ja: '(算法の発火閾値とは別。デフォルト100%。100超も可)', en: '(Separate from trigger threshold; default 100%; may exceed 100)' },
+    { ja: '(デフォルト: 20 km)', en: '(default 20 km)' },
     uiLanguage,
   )
   const resetLabel = t({ ja: 'クリア', en: 'Clear' }, uiLanguage)
 
   return (
     <div
-      data-testid="rest-ceiling-editor"
+      data-testid="rest-spacing-editor"
       style={{
         display: 'flex',
         alignItems: 'flex-start',
@@ -68,15 +65,14 @@ export default function RestCeilingEditor() {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <label htmlFor="rest-ceiling-input" style={{ color: '#374151', flexShrink: 0 }}>
+        <label htmlFor="rest-spacing-input" style={{ color: '#374151', flexShrink: 0 }}>
           {label}
         </label>
         <input
-          id="rest-ceiling-input"
-          data-testid="rest-ceiling-input"
+          id="rest-spacing-input"
+          data-testid="rest-spacing-input"
           type="number"
-          min={0}
-          max={200}
+          min={1}
           step={5}
           value={inputValue ?? ''}
           onChange={handleChange}
@@ -91,7 +87,7 @@ export default function RestCeilingEditor() {
           }}
         />
         <button
-          data-testid="rest-ceiling-reset"
+          data-testid="rest-spacing-reset"
           onClick={handleReset}
           title={resetLabel}
           style={{
