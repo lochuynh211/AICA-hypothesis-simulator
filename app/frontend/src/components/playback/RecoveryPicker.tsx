@@ -28,6 +28,7 @@ export default function RecoveryPicker() {
   const [selectedSpot, setSelectedSpot] = useState<RestSpot | null>(null)
   const [loading, setLoading] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
+  const [noSpotsNotice, setNoSpotsNotice] = useState<string | null>(null)
 
   useEffect(() => {
     if (!selectedScenarioId || !runState) return
@@ -45,6 +46,7 @@ export default function RecoveryPicker() {
       .then(([scenario, spotsResp]) => {
         setOptions(scenario.recovery_options ?? [])
         setSpots(spotsResp.rest_spots)
+        setNoSpotsNotice(spotsResp.notice ?? null)
       })
       .catch((err: unknown) => {
         setFetchError(err instanceof Error ? err.message : 'Failed to load recovery options')
@@ -164,6 +166,19 @@ export default function RecoveryPicker() {
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* No spots notice */}
+      {spots.length === 0 && noSpotsNotice === 'no_rest_stops_found' && (
+        <div
+          data-testid="no-rest-spots-notice"
+          style={{ marginBottom: '16px', color: '#b45309', fontSize: '0.9em' }}
+        >
+          {t({
+            ja: 'このルートには休憩スポットが見つかりません — 実際の休憩スポットデータが利用できません（マップキーにPlacesアクセス権がない可能性があります）。',
+            en: 'No rest stops found for this route — real rest-stop data is unavailable (the maps key may lack Places access).',
+          }, uiLanguage)}
         </div>
       )}
 

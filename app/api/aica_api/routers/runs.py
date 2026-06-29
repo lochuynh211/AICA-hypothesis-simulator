@@ -447,9 +447,15 @@ def rest_spots_endpoint(
 
     # ── Build candidate list (named when available, else generic) ─────────────
     # Each candidate: (position_km, name)
+    # Synthetic spots (fabricated by _scale_scenario_rest_positions) are excluded
+    # from the picker — they are internal route-analysis artefacts, not real facilities.
     named = rs.route_facts.named_rest_spots
     if named:
-        candidates = [(s.position_km, s.name) for s in named]
+        real_named = [s for s in named if not s.synthetic]
+        if real_named:
+            candidates = [(s.position_km, s.name) for s in real_named]
+        else:
+            candidates = []
     else:
         candidates = [
             (pos_km, f"Rest stop {i + 1}")
@@ -499,7 +505,8 @@ def rest_spots_endpoint(
 
     # (When maps_key is present, replace `spots` with Places results via the
     #  routes.py Places helper; key stays in-memory, never persisted or logged.)
-    return {"rest_spots": spots}
+    notice = "no_rest_stops_found" if not spots else None
+    return {"rest_spots": spots, "notice": notice}
 
 
 @router.get("/api/runs/{run_id}/log")

@@ -213,6 +213,7 @@ def analyze_route_maps(
                 position_km=p["distance_along_route_m"] / 1000.0,
                 lat=p["location"]["lat"],
                 lng=p["location"]["lng"],
+                synthetic=p.get("synthetic", False),
             )
             for p in places_sorted
         ]

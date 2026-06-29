@@ -53,6 +53,7 @@ def _scale_scenario_rest_positions(local_facts: RouteFacts, maps_total_km: float
             "type": "rest_stop",
             "location": {"lat": 0.0, "lng": 0.0},
             "distance_along_route_m": (pos / local_total) * maps_total_km * 1000.0,
+            "synthetic": True,
         }
         for pos in local_facts.rest_spot_positions
     ]

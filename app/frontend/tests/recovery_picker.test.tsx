@@ -147,6 +147,7 @@ describe('RecoveryPicker', () => {
           reachable: true,
         },
       ],
+      notice: null,
     })
     vi.mocked(client.actRun).mockResolvedValue(resolvedRunState)
 
@@ -202,6 +203,7 @@ describe('RecoveryPicker', () => {
           reachable: true,
         },
       ],
+      notice: null,
     })
 
     renderWithStore(
@@ -247,6 +249,7 @@ describe('RecoveryPicker', () => {
           reachable: false,
         },
       ],
+      notice: null,
     })
 
     renderWithStore(
@@ -273,5 +276,39 @@ describe('RecoveryPicker', () => {
     expect(screen.getByText(/too far/i)).toBeInTheDocument()
     // ETA shows — when null
     expect(screen.getByText(/ETA: —/)).toBeInTheDocument()
+  })
+
+  it('shows no-rest-spots-notice when rest_spots is empty and notice=no_rest_stops_found, postpone still available', async () => {
+    vi.mocked(client.getScenario).mockResolvedValue(mockScenario)
+    vi.mocked(client.getRestSpots).mockResolvedValue({
+      rest_spots: [],
+      notice: 'no_rest_stops_found',
+    })
+
+    renderWithStore(
+      <RecoveryPicker />,
+      (dispatch) => {
+        dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_test' })
+        dispatch({ type: 'RUN_CREATED', runState: pausedRunState })
+        dispatch({
+          type: 'TICK_APPENDED',
+          runState: pausedRunState,
+          decision: proposalDecision,
+          tickIndex: 5,
+          paused: true,
+          completed: false,
+        })
+      },
+    )
+
+    // Notice is rendered
+    await screen.findByTestId('no-rest-spots-notice')
+    expect(screen.getByTestId('no-rest-spots-notice')).toHaveTextContent(
+      /No rest stops found for this route/i,
+    )
+
+    // Postpone button is still available (not disabled)
+    const postponeBtn = screen.getByTestId('recovery-option-postpone')
+    expect(postponeBtn).not.toBeDisabled()
   })
 })

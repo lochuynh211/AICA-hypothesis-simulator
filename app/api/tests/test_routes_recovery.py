@@ -285,3 +285,39 @@ def test_rest_spots_use_real_names_when_named_spots_present():
             f"unexpected spot label: {label_en!r} (Behind SA should be filtered; "
             "Close SA should be dropped by spacing)"
         )
+
+
+# ---------------------------------------------------------------------------
+# Synthetic spot filtering + notice
+# ---------------------------------------------------------------------------
+
+
+def test_rest_spots_excludes_synthetic_spots():
+    """Named rest spots with synthetic=True are excluded from the picker response.
+    When all named spots are synthetic, rest_spots is [] and notice='no_rest_stops_found'."""
+    run_id = create_paused_rest_run_multi_spots(
+        named_spots=[
+            {"name": "scenario_fallback_rest_stop", "position_km": 80.0, "synthetic": True},
+        ]
+    )
+    r = client.get(f"/api/runs/{run_id}/rest-spots")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["rest_spots"] == [], f"expected no spots, got {body['rest_spots']}"
+    assert body["notice"] == "no_rest_stops_found"
+
+
+def test_rest_spots_real_named_spot_passes_filter():
+    """A named spot with synthetic=False (the default) is NOT excluded.
+    The endpoint returns it and notice is None."""
+    run_id = create_paused_rest_run_multi_spots(
+        named_spots=[
+            {"name": "Yuuko Roadside Station", "position_km": 80.0},  # synthetic defaults to False
+        ]
+    )
+    r = client.get(f"/api/runs/{run_id}/rest-spots")
+    assert r.status_code == 200
+    body = r.json()
+    assert len(body["rest_spots"]) >= 1
+    assert body["rest_spots"][0]["label"]["en"] == "Yuuko Roadside Station"
+    assert body["notice"] is None

@@ -203,7 +203,7 @@ export async function getRestSpots(
   mapsKey?: string,
   drowsinessCeiling?: number,
   minDistanceKm?: number,
-): Promise<{ rest_spots: RestSpot[] }> {
+): Promise<{ rest_spots: RestSpot[]; notice?: string | null }> {
   const params = new URLSearchParams()
   if (mapsKey) params.set('maps_key', mapsKey)
   if (drowsinessCeiling !== undefined) params.set('drowsiness_ceiling', String(drowsinessCeiling))

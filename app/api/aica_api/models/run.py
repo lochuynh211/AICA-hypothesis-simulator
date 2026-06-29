@@ -141,6 +141,7 @@ class NamedRestSpot(BaseModel):
     position_km: float
     lat: float | None = None
     lng: float | None = None
+    synthetic: bool = False
 
     model_config = {"extra": "allow"}
 
