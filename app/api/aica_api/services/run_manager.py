@@ -592,6 +592,16 @@ def tick(run_id: str) -> TickOutcome:
     )
     context["proposal_history"] = _proposal_history
     context["user_action_history"] = _user_action_history
+    # recovery_active: True only while the driver is currently in an accepted
+    # rest sequence.  The algorithm uses this to scope its REST_RECOVERY
+    # suppression to the rest itself — once the driver resumes, recovery_active
+    # is False and the algorithm re-evaluates normally so a fresh REST_PROPOSAL
+    # can fire when drowsiness rebuilds.  Without this the algorithm would stay
+    # locked in REST_RECOVERY forever after a single accept (lastProposalResult
+    # never clears, since no later rest proposal is allowed to fire).
+    context["recovery_active"] = bool(
+        run_state.recovery and run_state.recovery.active
+    )
 
     # Use current_parameters/hyperparameters (may be overridden in expert mode)
     hyperparameters = run_state.current_hyperparameters or {

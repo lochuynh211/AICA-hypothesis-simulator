@@ -558,9 +558,20 @@ def evaluate(context: dict) -> dict:
     prev_mono_counter = int(prev_counters.get("monotony_prevention", 0))
 
     # Recovery: an accept seen for this category (only rest is acceptable here).
+    # Scoped to the active rest sequence: recovery_active is True only while the
+    # driver is currently resting (the adapter sets it from run_state.recovery).
+    # Once the driver resumes, recovery_active is False and we leave REST_RECOVERY
+    # so a fresh proposal can fire when drowsiness rebuilds — without this gate
+    # rest_recovered would latch forever (lastProposalResult stays "accept_rest"
+    # because no later rest proposal is ever allowed to fire).
     last_result = proposal_history.get("lastProposalResult")
     last_cat = proposal_history.get("lastProposalCategory")
-    rest_recovered = (last_result == "accept_rest") and (last_cat in (None, "rest_required"))
+    recovery_active = bool(context.get("recovery_active", False))
+    rest_recovered = (
+        recovery_active
+        and (last_result == "accept_rest")
+        and (last_cat in (None, "rest_required"))
+    )
 
     # ── 5. state-machine labels (recorded output) ──────────────────────────
     states = {
