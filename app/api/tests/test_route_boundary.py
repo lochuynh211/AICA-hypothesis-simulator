@@ -76,7 +76,14 @@ def _run_maps_and_get_log(client, tmp_path, monkeypatch, n_ticks: int = 5) -> di
 
     dir_data = _fixture_bytes("directions_3_alternatives.json")
     places_data = _fixture_bytes("places_service_area.json")
-    monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq([dir_data, places_data, places_data, places_data]))
+    # 1 directions + 3 alts × mc._PLACES_SAMPLE_POINTS places calls
+    monkeypatch.setattr(
+        mc,
+        "_urlopen",
+        _make_urlopen_seq(
+            [dir_data] + [places_data] * (3 * mc._PLACES_SAMPLE_POINTS)
+        ),
+    )
 
     analyze_resp = client.post(
         "/api/routes/analyze",

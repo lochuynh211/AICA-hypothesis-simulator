@@ -88,8 +88,12 @@ def _make_urlopen_seq(responses: list[bytes]):
 
 
 def _analyze_seq(n_alts: int = 3) -> list[bytes]:
-    """One directions call + one places call per alternative."""
-    return [_dir_bytes()] + [_pl_bytes()] * n_alts
+    """One directions call + _PLACES_SAMPLE_POINTS places calls per alternative.
+
+    Each alternative now triggers exactly mc._PLACES_SAMPLE_POINTS Nearby Search
+    calls (multi-point sampling along the route).
+    """
+    return [_dir_bytes()] + [_pl_bytes()] * (n_alts * mc._PLACES_SAMPLE_POINTS)
 
 
 def _do_analyze(client) -> dict:
@@ -165,7 +169,7 @@ class TestAnalyzeDeterminism:
         No non-determinism from dict iteration order, float operations, or
         the Places loop ordering.
         """
-        # 4 calls per analyze (1 directions + 3 places) × 2 = 8 total
+        # (1 directions + 3 alts × _PLACES_SAMPLE_POINTS places) × 2 = 38 total
         call_seq = _analyze_seq(3) + _analyze_seq(3)
         monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq(call_seq))
 

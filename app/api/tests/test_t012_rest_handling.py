@@ -68,7 +68,11 @@ class TestPlacesEmpty:
         """When Places returns empty, rest_spot_positions must be []."""
         dir_data = _fixture_bytes("directions_3_alternatives.json")
         empty_data = _fixture_bytes("places_empty.json")
-        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq([dir_data, empty_data, empty_data, empty_data]))
+        monkeypatch.setattr(
+            mc,
+            "_urlopen",
+            _make_urlopen_seq([dir_data] + [empty_data] * (3 * mc._PLACES_SAMPLE_POINTS)),
+        )
 
         resp = client.post(
             "/api/routes/analyze",
@@ -87,7 +91,11 @@ class TestPlacesEmpty:
         """When Places returns empty, each alternative must have notices: ['no_rest_stops_found']."""
         dir_data = _fixture_bytes("directions_3_alternatives.json")
         empty_data = _fixture_bytes("places_empty.json")
-        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq([dir_data, empty_data, empty_data, empty_data]))
+        monkeypatch.setattr(
+            mc,
+            "_urlopen",
+            _make_urlopen_seq([dir_data] + [empty_data] * (3 * mc._PLACES_SAMPLE_POINTS)),
+        )
 
         resp = client.post(
             "/api/routes/analyze",
@@ -109,7 +117,11 @@ class TestPlacesEmpty:
         """When Places succeeds with data, notices must be [] (no warning)."""
         dir_data = _fixture_bytes("directions_3_alternatives.json")
         places_data = _fixture_bytes("places_service_area.json")
-        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq([dir_data, places_data, places_data, places_data]))
+        monkeypatch.setattr(
+            mc,
+            "_urlopen",
+            _make_urlopen_seq([dir_data] + [places_data] * (3 * mc._PLACES_SAMPLE_POINTS)),
+        )
 
         resp = client.post(
             "/api/routes/analyze",
@@ -360,7 +372,11 @@ class TestEndToEndEmptyRestRun:
         # Analyze: directions succeeds, places returns empty for all alternatives
         dir_data = _fixture_bytes("directions_3_alternatives.json")
         empty_data = _fixture_bytes("places_empty.json")
-        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq([dir_data, empty_data, empty_data, empty_data]))
+        monkeypatch.setattr(
+            mc,
+            "_urlopen",
+            _make_urlopen_seq([dir_data] + [empty_data] * (3 * mc._PLACES_SAMPLE_POINTS)),
+        )
 
         analyze_resp = client.post(
             "/api/routes/analyze",

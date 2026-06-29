@@ -452,3 +452,141 @@ class TestInvalidPolyline:
         monkeypatch.setattr(mc, "_urlopen", _make_transport("places_service_area.json"))
         result = mc.places_rest_stops("FAKE_KEY", "!!!INVALID@@@", {"route_type": "highway"})
         assert result == []
+
+
+# ---------------------------------------------------------------------------
+# Multi-point sampling: dedup + spanning + sort
+# ---------------------------------------------------------------------------
+
+# A longer polyline (8 points SF → LA via intermediate waypoints) ensures
+# _PLACES_SAMPLE_POINTS distinct sample coordinates span the whole route.
+LONG_POLYLINE = _encode_polyline([
+    (37.7749, -122.4194),   # SF start
+    (37.5,    -121.8),      # pt 1
+    (37.0,    -121.2),      # pt 2
+    (36.0,    -120.5),      # pt 3 (route midpoint)
+    (35.5,    -119.8),      # pt 4
+    (35.0,    -119.1),      # pt 5
+    (34.5,    -118.7),      # pt 6
+    (34.0522, -118.2437),   # LA end
+])
+
+
+class TestMultiPointSampling:
+    """Prove dedup, route-spanning, and ascending sort across sample points."""
+
+    def test_dedup_across_sample_points(self, monkeypatch):
+        """Results with the same place_id returned by multiple sample points are deduped.
+
+        Six mock responses are provided (one per _PLACES_SAMPLE_POINTS call):
+        - calls 1–2: [place_a, place_b]
+        - call  3:   [place_a, place_c]  (A duplicate, C is new)
+        - call  4:   [place_b]           (duplicate)
+        - call  5:   [place_c]           (duplicate)
+        - call  6:   []
+
+        Expected deduped output: 3 unique places sorted ascending by
+        distance_along_route_m.
+        """
+        import json as _json
+
+        # place_a is near SF, projects to route start (low distance)
+        place_a = {
+            "name": "Start Rest Area",
+            "place_id": "place_a_id",
+            "geometry": {"location": {"lat": 37.7749, "lng": -122.4194}},
+            "types": ["rest_stop"],
+        }
+        # place_b is near LA, projects to route end (high distance)
+        place_b = {
+            "name": "End Service Area",
+            "place_id": "place_b_id",
+            "geometry": {"location": {"lat": 34.0522, "lng": -118.2437}},
+            "types": ["gas_station"],
+        }
+        # place_c is at the midpoint, projects to middle (intermediate distance)
+        place_c = {
+            "name": "Mid Rest Stop",
+            "place_id": "place_c_id",
+            "geometry": {"location": {"lat": 36.0, "lng": -120.5}},
+            "types": ["rest_stop"],
+        }
+
+        responses = [
+            _json.dumps({"status": "OK", "results": [place_a, place_b]}).encode(),
+            _json.dumps({"status": "OK", "results": [place_a, place_b]}).encode(),
+            _json.dumps({"status": "OK", "results": [place_a, place_c]}).encode(),
+            _json.dumps({"status": "OK", "results": [place_b]}).encode(),
+            _json.dumps({"status": "OK", "results": [place_c]}).encode(),
+            _json.dumps({"status": "ZERO_RESULTS", "results": []}).encode(),
+        ]
+        calls = list(responses)
+        monkeypatch.setattr(mc, "_urlopen", lambda url: calls.pop(0))
+
+        places = mc.places_rest_stops(
+            "FAKE_KEY", LONG_POLYLINE, {"route_type": "highway"}
+        )
+
+        # Exactly 3 unique places (no duplicates from repeated sample points)
+        assert len(places) == 3
+        names = {p["name"] for p in places}
+        assert names == {"Start Rest Area", "End Service Area", "Mid Rest Stop"}
+
+        # Sorted ascending by distance_along_route_m
+        dists = [p["distance_along_route_m"] for p in places]
+        assert dists == sorted(dists), (
+            f"Expected ascending sort; got distances: {dists}"
+        )
+
+    def test_dedup_without_place_id_uses_name_and_coords(self, monkeypatch):
+        """Places without place_id are deduped by (name, rounded lat, rounded lng)."""
+        import json as _json
+
+        # Two identical results without place_id — same name + same coords
+        place_no_id = {
+            "name": "Unnamed Rest Stop",
+            "geometry": {"location": {"lat": 36.0, "lng": -120.5}},
+            "types": ["rest_stop"],
+            # no "place_id" field
+        }
+        # Return the same place from two different sample-point calls
+        single_response = _json.dumps({"status": "OK", "results": [place_no_id]}).encode()
+        empty_response = _json.dumps({"status": "ZERO_RESULTS", "results": []}).encode()
+        responses = [single_response] + [empty_response] * (mc._PLACES_SAMPLE_POINTS - 1)
+        calls = list(responses)
+        monkeypatch.setattr(mc, "_urlopen", lambda url: calls.pop(0))
+
+        places = mc.places_rest_stops(
+            "FAKE_KEY", LONG_POLYLINE, {"route_type": "highway"}
+        )
+        assert len(places) == 1, (
+            f"Dedup by (name, coords) should yield 1 place, got {len(places)}"
+        )
+
+    def test_sample_point_count_bounded(self, monkeypatch):
+        """Exactly _PLACES_SAMPLE_POINTS Nearby Search calls are made per route."""
+        nearby_call_count = 0
+        pl_data = _load_fixture("places_service_area.json")
+
+        def counting_transport(url: str) -> bytes:
+            nonlocal nearby_call_count
+            if "nearbysearch" in url:
+                nearby_call_count += 1
+            return pl_data
+
+        monkeypatch.setattr(mc, "_urlopen", counting_transport)
+        mc.places_rest_stops("FAKE_KEY", LONG_POLYLINE, {"route_type": "highway"})
+
+        assert nearby_call_count == mc._PLACES_SAMPLE_POINTS, (
+            f"Expected exactly {mc._PLACES_SAMPLE_POINTS} Places calls, "
+            f"got {nearby_call_count}"
+        )
+
+    def test_result_sorted_ascending_by_distance(self, monkeypatch):
+        """Multi-point results are sorted ascending by distance_along_route_m."""
+        monkeypatch.setattr(mc, "_urlopen", _make_transport("places_service_area.json"))
+        places = mc.places_rest_stops(
+            "FAKE_KEY", LONG_POLYLINE, {"route_type": "highway"}
+        )
+        dists = [p["distance_along_route_m"] for p in places]
+        assert dists == sorted(dists), f"Places not sorted ascending: {dists}"

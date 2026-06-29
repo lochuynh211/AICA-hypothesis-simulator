@@ -914,9 +914,11 @@ def test_maps_sentinel_key_absent_from_log(tmp_path, monkeypatch):
 
     dir_data = (_MAPS_FIXTURE_DIR / "directions_3_alternatives.json").read_bytes()
     pl_data = (_MAPS_FIXTURE_DIR / "places_service_area.json").read_bytes()
+    # 1 directions + 3 alts × _PLACES_SAMPLE_POINTS places calls
     monkeypatch.setattr(
-        _mc, "_urlopen",
-        _maps_urlopen_seq([dir_data, pl_data, pl_data, pl_data])
+        _mc,
+        "_urlopen",
+        _maps_urlopen_seq([dir_data] + [pl_data] * (3 * _mc._PLACES_SAMPLE_POINTS)),
     )
 
     # Analyze route with sentinel key
