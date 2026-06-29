@@ -15,7 +15,10 @@ import { useRunStore } from '../../state/runStore'
 export default function RouteTimeline({ replayTick }: { replayTick?: ReplayTick | null } = {}) {
   const progress = useRouteProgress()
   const { state } = useRunStore()
-  const chosenRestSpot = state.runState?.recovery?.rest_spot ?? null
+  // Persistent gold markers for every accepted rest — sourced from restHistory
+  // (captured at accept time) so they survive after recovery ends, instead of
+  // the transient recovery.rest_spot which clears the moment the driver resumes.
+  const restSpots = state.restHistory.map((r) => r.spot)
 
   // Target fraction: recorded value in replay, else the live evaluated tick.
   const targetFraction = replayTick != null ? replayTick.route_fraction : progress.currentFraction
@@ -98,15 +101,16 @@ export default function RouteTimeline({ replayTick }: { replayTick?: ReplayTick 
         aria-hidden
       />
 
-      {/* Chosen rest-spot marker (gold) — only when a spot has been selected */}
-      {chosenRestSpot !== null && (
+      {/* Chosen rest-spot markers (gold) — one per accepted rest; persist as history */}
+      {restSpots.map((spot, i) => (
         <div
+          key={`rest-${i}-${spot.id}`}
           data-testid="progress-rest-spot-marker"
-          aria-label="Chosen rest spot"
+          aria-label={`Chosen rest spot: ${spot.label?.en ?? spot.id}`}
           style={{
             position: 'absolute',
             top: '50%',
-            left: `${Math.round(chosenRestSpot.route_fraction * 100)}%`,
+            left: `${Math.round(spot.route_fraction * 100)}%`,
             transform: 'translate(-50%, -50%)',
             width: '14px',
             height: '14px',
@@ -115,7 +119,7 @@ export default function RouteTimeline({ replayTick }: { replayTick?: ReplayTick 
             border: '2px solid #fff',
           }}
         />
-      )}
+      ))}
 
       {/* Fire / proposal marker */}
       {proposalFraction !== null && (

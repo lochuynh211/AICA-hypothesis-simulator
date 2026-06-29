@@ -13,6 +13,7 @@ import type {
   RouteEnvelope,
   MapsErrorBody,
   ProfileOverrides,
+  RestChoice,
 } from '../api/types'
 
 // ── State ──────────────────────────────────────────────────────────────────
@@ -132,6 +133,14 @@ export type RunStoreState = {
    */
   lastAction: string | null
 
+  /**
+   * Accepted rests this run, in order. Captured at accept time so the chosen
+   * spot + option persist after the transient recovery state clears — drives
+   * the persistent rest markers (map + progress bar) and the event-log
+   * "driver chose rest" line. Cleared on new run / scenario change / reset.
+   */
+  restHistory: RestChoice[]
+
   // ── Initial driver state override (setup-time) ────────────────────────────
   /**
    * User-set starting drowsiness (0–100). Null = use scenario default. Cleared on SELECT_SCENARIO and RESET.
@@ -190,6 +199,8 @@ export const initialState: RunStoreState = {
   minRestSpacingKm: null,
   // M7 — no action taken yet
   lastAction: null,
+  // M7 — no rests accepted yet
+  restHistory: [],
   // initial driver state overrides — null means "use scenario default"
   initialDrowsiness: null,
   initialFatigue: null,
@@ -228,6 +239,11 @@ export type RunStoreAction =
       runState: RunState
       /** The action string applied — recorded for the beat timeline. */
       action: string
+      /**
+       * Present only for an accepted rest: the chosen option + spot, appended
+       * to restHistory so the markers/log survive after recovery ends.
+       */
+      restChoice?: RestChoice
     }
   | {
       type: 'ALGORITHM_ERROR_APPENDED'
@@ -345,6 +361,8 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         // Clear initial driver state overrides — new scenario has its own defaults.
         initialDrowsiness: null,
         initialFatigue: null,
+        // New scenario — discard any prior accepted-rest history.
+        restHistory: [],
       }
 
     case 'SET_PARAMETER':
@@ -403,6 +421,8 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         algorithmErrors: [],
         runError: null,
         viewMode: 'review',
+        // Fresh run — no rests accepted yet.
+        restHistory: [],
       }
 
     case 'TICK_APPENDED': {
@@ -412,6 +432,7 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         route_fraction: action.routeFraction ?? null,
         motion_state: action.motionState ?? null,
         recovery_phase: action.recoveryPhase ?? null,
+        active_content: action.activeContent ?? null,
         is_traffic_jam: action.isTrafficJam ?? null,
         segment_type: action.segmentType ?? null,
       }
@@ -431,6 +452,9 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         runState: action.runState,
         paused: false,
         lastAction: action.action,
+        restHistory: action.restChoice
+          ? [...state.restHistory, action.restChoice]
+          : state.restHistory,
       }
 
     case 'ALGORITHM_ERROR_APPENDED':
@@ -543,6 +567,8 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         minRestSpacingKm: null,
         // M7: clear last action on reset
         lastAction: null,
+        // M7: clear accepted-rest history on reset
+        restHistory: [],
         // Clear initial driver state overrides on reset
         initialDrowsiness: null,
         initialFatigue: null,

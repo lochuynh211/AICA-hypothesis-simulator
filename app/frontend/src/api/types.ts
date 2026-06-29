@@ -362,6 +362,19 @@ export type RecoveryStateT = {
   stage_ticks_remaining: number
 }
 
+/**
+ * A persisted record of an accepted rest — captured at accept time so the
+ * chosen spot + option survive after the transient recovery state clears.
+ * Drives the persistent rest markers (map + progress bar) and the event-log
+ * "driver chose rest" line. Cleared on new run / scenario change / reset.
+ */
+export type RestChoice = {
+  tickIndex: number
+  optionId: string | null
+  optionLabel: { ja: string; en: string } | null
+  spot: RestSpot
+}
+
 // ── Tick response (discriminated union) ───────────────────────────────────
 
 export type TickResponseSuccess = {

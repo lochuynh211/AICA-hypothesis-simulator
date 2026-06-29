@@ -722,30 +722,31 @@ describe('MapSurface — T011: rest-spot marker', () => {
     delete (window as any).google
   })
 
-  it('(w) renders rest-spot-marker when recovery.rest_spot is set', () => {
-    const runStateWithRestSpot = {
-      ...runStateWithTicks,
-      recovery: {
-        active: true,
-        option_id: 'rest_short',
-        rest_spot: {
-          id: 'spot-1',
-          label: { ja: '道の駅', en: 'Rest Area' },
-          lat: 35.2,
-          lng: 135.2,
-          route_fraction: 0.6,
-        },
-        phase: 'driving',
-        stage_index: 0,
-        stage_ticks_remaining: 10,
-      },
-    }
-
+  it('(w) renders rest-spot-marker for an accepted rest in restHistory', () => {
     renderInStore(<MapSurface />, (dispatch) => {
       dispatch({ type: 'SET_MAPS_KEY', key: 'test-key' })
       dispatch({ type: 'SET_ALTERNATIVES', envelope: mapsEnvelope })
       dispatch({ type: 'SELECT_ROUTE', routeId: 'route-0' })
-      dispatch({ type: 'RUN_CREATED', runState: runStateWithRestSpot })
+      dispatch({ type: 'RUN_CREATED', runState: runStateWithTicks })
+      // Marker now persists from restHistory (captured at accept time), so it
+      // survives after recovery ends rather than vanishing with recovery state.
+      dispatch({
+        type: 'ACTION_APPLIED',
+        runState: runStateWithTicks,
+        action: 'accept_rest',
+        restChoice: {
+          tickIndex: 1,
+          optionId: 'rest_short',
+          optionLabel: { ja: '短い休憩', en: 'Short Rest' },
+          spot: {
+            id: 'spot-1',
+            label: { ja: '道の駅', en: 'Rest Area' },
+            lat: 35.2,
+            lng: 135.2,
+            route_fraction: 0.6,
+          },
+        },
+      })
     })
 
     const marker = screen.getByTestId('rest-spot-marker')

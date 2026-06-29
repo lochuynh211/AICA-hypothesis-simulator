@@ -11,11 +11,27 @@
  */
 
 import { useState } from 'react'
-import type { TraceEntry, AlgorithmError, Candidate } from '../../api/types'
+import type { TraceEntry, AlgorithmError, Candidate, RestChoice } from '../../api/types'
 import { useRunStore } from '../../state/runStore'
 import FeedbackForm from '../feedback/FeedbackForm'
 import { t } from '../../i18n/t'
 import type { ReplayTick } from '../../replay/replaySource'
+
+// Recovery-phase + content labels so the event log narrates the rest sequence
+// (arriving at the spot, napping, karaoke, resuming) rather than going silent.
+const RECOVERY_PHASE_LABELS: Record<string, { ja: string; en: string }> = {
+  wakefulness: { ja: 'ドライブ中の覚醒', en: 'En route to rest' },
+  arriving:    { ja: '休憩所に到着',     en: 'Arriving at rest spot' },
+  nap:         { ja: '仮眠中',           en: 'Resting (nap)' },
+  content:     { ja: '休憩後コンテンツ', en: 'Rest activity' },
+  resuming:    { ja: '再出発',           en: 'Resuming drive' },
+}
+
+const CONTENT_LABELS: Record<string, { ja: string; en: string }> = {
+  audio_karaoke: { ja: 'カラオケ',     en: 'Karaoke' },
+  sleep:         { ja: '睡眠',         en: 'Sleep' },
+  stretch:       { ja: 'ストレッチ',   en: 'Stretch' },
+}
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -240,6 +256,31 @@ function TraceEntryRow({ entry }: { entry: TraceEntry }) {
         {t(entry.explanation as Parameters<typeof t>[0], uiLanguage)}
       </div>
 
+      {/* Recovery sequence line — the driver is resting at the chosen spot */}
+      {entry.recovery_phase && (
+        <div
+          data-testid={`recovery-line-${entry.tick_index}`}
+          style={{ color: '#34d399', marginTop: '2px' }}
+        >
+          🛌{' '}
+          {t(
+            RECOVERY_PHASE_LABELS[entry.recovery_phase] ?? {
+              ja: entry.recovery_phase,
+              en: entry.recovery_phase,
+            },
+            uiLanguage,
+          )}
+          {entry.active_content &&
+            ` · ${t(
+              CONTENT_LABELS[entry.active_content] ?? {
+                ja: entry.active_content,
+                en: entry.active_content,
+              },
+              uiLanguage,
+            )}`}
+        </div>
+      )}
+
       {/* Runtime-state indicator (hybrid algorithm — recorded output this tick) */}
       <RuntimeStateIndicator runtimeState={entry.next_package_runtime_state ?? {}} />
 
@@ -261,6 +302,35 @@ function TraceEntryRow({ entry }: { entry: TraceEntry }) {
           />
         </div>
       )}
+    </div>
+  )
+}
+
+function RestChoiceRow({ rest, lang }: { rest: RestChoice; lang: string }) {
+  const km = rest.spot.distance_km
+  return (
+    <div
+      data-testid={`rest-choice-${rest.tickIndex}`}
+      style={{
+        borderBottom: '1px solid #2a2a2a',
+        padding: '6px 4px',
+        fontSize: '0.85em',
+        fontFamily: 'monospace',
+        background: '#0c1f14',
+      }}
+    >
+      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <span style={{ color: '#6af', fontWeight: 700 }}>tick#{rest.tickIndex}</span>
+        <span style={{ color: '#34d399', fontWeight: 700 }}>
+          ☕ {t({ ja: '休憩を承諾', en: 'Rest accepted' }, lang)}
+        </span>
+      </div>
+      <div style={{ color: '#a7f3d0', marginTop: '2px' }}>
+        {rest.optionLabel ? t(rest.optionLabel, lang) : rest.optionId ?? '—'}
+        {' · '}
+        {t(rest.spot.label, lang)}
+        {km != null ? ` (${km} km)` : ''}
+      </div>
     </div>
   )
 }
@@ -290,7 +360,7 @@ function AlgorithmErrorRow({ error }: { error: AlgorithmError }) {
 
 export default function DecisionTracePanel({ replayTick }: { replayTick?: ReplayTick | null } = {}) {
   const { state } = useRunStore()
-  const { trace, algorithmErrors } = state
+  const { trace, algorithmErrors, restHistory, uiLanguage } = state
 
   // ── REPLAY MODE — read-only single-tick display, no feedback affordances ────
   if (replayTick != null) {
@@ -348,7 +418,7 @@ export default function DecisionTracePanel({ replayTick }: { replayTick?: Replay
   }
 
   // ── LIVE MODE — unchanged ───────────────────────────────────────────────────
-  const hasEntries = trace.length > 0 || algorithmErrors.length > 0
+  const hasEntries = trace.length > 0 || algorithmErrors.length > 0 || restHistory.length > 0
 
   if (!hasEntries) {
     return (
@@ -363,10 +433,12 @@ export default function DecisionTracePanel({ replayTick }: { replayTick?: Replay
   type MergedEntry =
     | { kind: 'trace'; tickIndex: number; entry: TraceEntry }
     | { kind: 'error'; tickIndex: number; error: AlgorithmError }
+    | { kind: 'rest'; tickIndex: number; rest: RestChoice }
 
   const merged: MergedEntry[] = [
     ...trace.map((e) => ({ kind: 'trace' as const, tickIndex: e.tick_index, entry: e })),
     ...algorithmErrors.map((e) => ({ kind: 'error' as const, tickIndex: e.tick_index, error: e })),
+    ...restHistory.map((r) => ({ kind: 'rest' as const, tickIndex: r.tickIndex, rest: r })),
   ].sort((a, b) => a.tickIndex - b.tickIndex)
 
   return (
@@ -395,6 +467,8 @@ export default function DecisionTracePanel({ replayTick }: { replayTick?: Replay
       {merged.map((item, i) =>
         item.kind === 'trace' ? (
           <TraceEntryRow key={`t-${i}`} entry={item.entry} />
+        ) : item.kind === 'rest' ? (
+          <RestChoiceRow key={`r-${i}`} rest={item.rest} lang={uiLanguage} />
         ) : (
           <AlgorithmErrorRow key={`e-${i}`} error={item.error} />
         ),

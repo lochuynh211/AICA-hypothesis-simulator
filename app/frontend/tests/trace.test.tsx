@@ -534,4 +534,52 @@ describe('DecisionTracePanel — T013 hybrid state labels + runtime-state indica
     expect(screen.queryByTestId('state-monotony')).not.toBeInTheDocument()
     expect(screen.queryByTestId('runtime-state-indicator')).not.toBeInTheDocument()
   })
+
+  it('(l) renders a rest-choice row from restHistory with the option + spot location', () => {
+    renderWithStore(<DecisionTracePanel />, (dispatch) => {
+      dispatch({
+        type: 'ACTION_APPLIED',
+        runState: minimalRunState,
+        action: 'accept_rest',
+        restChoice: {
+          tickIndex: 2,
+          optionId: 'nap_karaoke',
+          optionLabel: { ja: '仮眠＋カラオケ', en: 'Nap + Karaoke' },
+          spot: {
+            id: 'p1',
+            label: { ja: '優子道の駅', en: 'Yuuko Roadside Station' },
+            route_fraction: 0.5,
+            distance_km: 49.5,
+          },
+        },
+      })
+    })
+
+    const row = screen.getByTestId('rest-choice-2')
+    expect(row).toBeInTheDocument()
+    expect(row.textContent).toMatch(/Rest accepted/)
+    expect(row.textContent).toMatch(/Nap \+ Karaoke/)
+    expect(row.textContent).toMatch(/Yuuko Roadside Station/)
+    expect(row.textContent).toMatch(/49\.5 km/)
+  })
+
+  it('(m) renders a recovery line (phase + content) for a tick taken during recovery', () => {
+    renderWithStore(<DecisionTracePanel />, (dispatch) => {
+      dispatch({
+        type: 'TICK_APPENDED',
+        runState: { ...minimalRunState, current_tick: 5 },
+        decision: builtinDecision,
+        tickIndex: 5,
+        paused: false,
+        completed: false,
+        recoveryPhase: 'nap',
+        activeContent: 'sleep',
+      })
+    })
+
+    const line = screen.getByTestId('recovery-line-5')
+    expect(line).toBeInTheDocument()
+    expect(line.textContent).toMatch(/Resting \(nap\)/)
+    expect(line.textContent).toMatch(/Sleep/)
+  })
 })

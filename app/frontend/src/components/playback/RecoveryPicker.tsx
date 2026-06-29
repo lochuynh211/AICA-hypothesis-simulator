@@ -71,7 +71,18 @@ export default function RecoveryPicker() {
 
     try {
       const newRunState = await actRun(runId, action, opts)
-      dispatch({ type: 'ACTION_APPLIED', runState: newRunState, action })
+      // Capture the accepted rest so the chosen spot + option persist after
+      // recovery ends (markers + event log read this from restHistory).
+      const restChoice =
+        action === 'accept_rest' && selectedSpot
+          ? {
+              tickIndex: runState!.current_tick,
+              optionId: opt.id,
+              optionLabel: opt.label ?? null,
+              spot: selectedSpot,
+            }
+          : undefined
+      dispatch({ type: 'ACTION_APPLIED', runState: newRunState, action, restChoice })
     } catch (err: unknown) {
       dispatch({
         type: 'SET_RUN_ERROR',

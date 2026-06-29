@@ -91,9 +91,11 @@ export default function MapSurface() {
   const { state } = useRunStore()
   const { mapsKey, alternatives, selectedRouteId } = state
 
-  // Chosen rest spot from the recovery engine (null when no recovery is active
-  // or the spot has not been selected yet). Drives the DOM-overlay marker.
-  const restSpot = state.runState?.recovery?.rest_spot ?? null
+  // Accepted rest spots (one per accepted rest), captured at accept time into
+  // restHistory so the gold markers persist after recovery ends instead of
+  // vanishing with the transient recovery.rest_spot. Drives both the
+  // geographic markers and the DOM-overlay fallback markers.
+  const restSpots = state.restHistory.map((r) => r.spot)
 
   // mapsReady: true when the Google Maps SDK is available (either pre-loaded or
   // after the async script callback fires). Drives the map-init useEffect so
@@ -126,8 +128,9 @@ export default function MapSurface() {
   const carRef = useRef<GMapsLib>(null)
   const startRef = useRef<GMapsLib>(null)
   const fireRef = useRef<GMapsLib>(null)
-  // Geographic marker for the chosen rest spot (real SDK only).
-  const chosenRestRef = useRef<GMapsLib>(null)
+  // Geographic markers for the accepted rest spots (real SDK only) — one per
+  // restHistory entry, so all accepted rests stay visible on the map.
+  const chosenRestRefs = useRef<GMapsLib[]>([])
   // realMarkers: true once geographic markers are drawn — hides the DOM-overlay
   // fallback markers so the car isn't shown twice on a real map.
   const [realMarkers, setRealMarkers] = useState(false)
@@ -329,27 +332,28 @@ export default function MapSurface() {
       }
     }
 
-    // Chosen rest-spot marker (gold star / emphasized) — only when a rest spot
-    // has been selected by the recovery engine.
-    if (restSpot != null) {
-      const rsp = latLngAt(path, cum, total, restSpot.route_fraction, sph)
-      if (rsp) {
-        if (!chosenRestRef.current) {
-          chosenRestRef.current = new gmaps.Marker({
-            map: mapInstanceRef.current,
-            icon: { path: gmaps.SymbolPath.CIRCLE, scale: 8, fillColor: '#f0c000', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 },
-            title: restSpot.label?.en ?? 'Chosen Rest Spot',
-            zIndex: 999,
-          })
-        }
-        chosenRestRef.current.setPosition(rsp)
+    // Chosen rest-spot markers (gold) — one per accepted rest; they persist as
+    // history.  Sync the marker array to restSpots: create/position present
+    // ones, drop any extras (e.g. after a reset clears restHistory).
+    restSpots.forEach((spot, i) => {
+      const rsp = latLngAt(path, cum, total, spot.route_fraction, sph)
+      if (!rsp) return
+      if (!chosenRestRefs.current[i]) {
+        chosenRestRefs.current[i] = new gmaps.Marker({
+          map: mapInstanceRef.current,
+          icon: { path: gmaps.SymbolPath.CIRCLE, scale: 8, fillColor: '#f0c000', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 },
+          title: spot.label?.en ?? 'Chosen Rest Spot',
+          zIndex: 999,
+        })
       }
-    } else if (chosenRestRef.current) {
-      // Rest spot cleared — hide the geographic marker.
-      chosenRestRef.current.setMap(null)
-      chosenRestRef.current = null
+      chosenRestRefs.current[i].setPosition(rsp)
+    })
+    if (chosenRestRefs.current.length > restSpots.length) {
+      for (const m of chosenRestRefs.current.splice(restSpots.length)) {
+        m.setMap(null)
+      }
     }
-  }, [shownFraction, proposalFraction, restSpot])
+  }, [shownFraction, proposalFraction, restSpots.length])
 
   // ── Guard: nothing to show ────────────────────────────────────────────────
   // When display is null (local path), return null so the caller can fall back
@@ -433,18 +437,19 @@ export default function MapSurface() {
         />
       )}
 
-      {/* DOM overlay: chosen rest-spot marker (gold circle) — positioned by
-          route_fraction from recovery.rest_spot.  Hidden when the real SDK
-          geographic marker is active (realMarkers=true). Absent entirely when
-          no rest spot has been chosen.  testable under the mock (no Marker). */}
-      {restSpot !== null && (
+      {/* DOM overlay: chosen rest-spot markers (gold circles) — one per accepted
+          rest from restHistory, positioned by route_fraction. Persist as history.
+          Hidden when the real SDK geographic markers are active (realMarkers=true).
+          testable under the mock (no Marker). */}
+      {restSpots.map((spot, i) => (
         <div
+          key={`rest-${i}-${spot.id}`}
           data-testid="rest-spot-marker"
-          aria-label={`Chosen rest spot: ${restSpot.label?.en ?? restSpot.id}`}
+          aria-label={`Chosen rest spot: ${spot.label?.en ?? spot.id}`}
           style={{
             position: 'absolute',
             bottom: '0',
-            left: `${Math.round(restSpot.route_fraction * 100)}%`,
+            left: `${Math.round(spot.route_fraction * 100)}%`,
             transform: 'translateX(-50%)',
             width: '16px',
             height: '16px',
@@ -455,7 +460,7 @@ export default function MapSurface() {
             visibility: realMarkers ? 'hidden' : 'visible',
           }}
         />
-      )}
+      ))}
     </div>
   )
 }
