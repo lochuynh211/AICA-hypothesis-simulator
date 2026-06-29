@@ -1,11 +1,12 @@
 import { useRouteProgress } from './useRouteProgress'
 import { useSmoothFraction } from './useSmoothFraction'
 import type { ReplayTick } from '../../replay/replaySource'
+import { useRunStore } from '../../state/runStore'
 
 /**
  * RouteTimeline — animated progress track (FR-016 display-only).
  *
- * A growing blue fill, segment divider ticks, start / rest / fire markers, and a
+ * A growing blue fill, segment divider ticks, start / chosen-rest-spot / fire markers, and a
  * car icon that glides between tick positions via useSmoothFraction. The car
  * aria-label always reports the EXACT evaluated route_fraction (not the eased
  * display value) so it matches the evidence log; only the on-screen position is
@@ -13,6 +14,11 @@ import type { ReplayTick } from '../../replay/replaySource'
  */
 export default function RouteTimeline({ replayTick }: { replayTick?: ReplayTick | null } = {}) {
   const progress = useRouteProgress()
+  const { state } = useRunStore()
+  // Persistent gold markers for every accepted rest — sourced from restHistory
+  // (captured at accept time) so they survive after recovery ends, instead of
+  // the transient recovery.rest_spot which clears the moment the driver resumes.
+  const restSpots = state.restHistory.map((r) => r.spot)
 
   // Target fraction: recorded value in replay, else the live evaluated tick.
   const targetFraction = replayTick != null ? replayTick.route_fraction : progress.currentFraction
@@ -27,7 +33,6 @@ export default function RouteTimeline({ replayTick }: { replayTick?: ReplayTick 
       : null
 
   const proposalFraction = replayTick != null ? replayProposalFraction : progress.proposalFraction
-  const restFraction = replayTick != null ? null : progress.restFraction
   const boundaries = replayTick != null ? [] : progress.boundaries
 
   const targetPct = Math.round(targetFraction * 100)
@@ -96,29 +101,25 @@ export default function RouteTimeline({ replayTick }: { replayTick?: ReplayTick 
         aria-hidden
       />
 
-      {/* Rest marker */}
-      {restFraction !== null && (
+      {/* Chosen rest-spot markers (gold) — one per accepted rest; persist as history */}
+      {restSpots.map((spot, i) => (
         <div
-          data-testid="rest-marker"
-          aria-label="Rest facility position"
+          key={`rest-${i}-${spot.id}`}
+          data-testid="progress-rest-spot-marker"
+          aria-label={`Chosen rest spot: ${spot.label?.en ?? spot.id}`}
           style={{
             position: 'absolute',
             top: '50%',
-            left: `${restFraction * 100}%`,
+            left: `${Math.round(spot.route_fraction * 100)}%`,
             transform: 'translate(-50%, -50%)',
             width: '14px',
             height: '14px',
             borderRadius: '50%',
             background: '#f0c000',
             border: '2px solid #fff',
-            textAlign: 'center',
-            fontSize: '9px',
-            lineHeight: '12px',
           }}
-        >
-          ☕
-        </div>
-      )}
+        />
+      ))}
 
       {/* Fire / proposal marker */}
       {proposalFraction !== null && (

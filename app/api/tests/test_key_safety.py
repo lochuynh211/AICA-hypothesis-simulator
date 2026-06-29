@@ -79,7 +79,11 @@ class TestComprehensiveKeySafety:
 
         dir_data = _fixture_bytes("directions_3_alternatives.json")
         places_data = _fixture_bytes("places_service_area.json")
-        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq([dir_data, places_data, places_data, places_data]))
+        monkeypatch.setattr(
+            mc,
+            "_urlopen",
+            _make_urlopen_seq([dir_data] + [places_data] * (3 * mc._PLACES_SAMPLE_POINTS)),
+        )
 
         # 1. Analyze
         analyze_resp = client.post(
@@ -233,7 +237,11 @@ class TestComprehensiveKeySafety:
 
         dir_data = _fixture_bytes("directions_3_alternatives.json")
         places_data = _fixture_bytes("places_service_area.json")
-        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq([dir_data, places_data, places_data, places_data]))
+        monkeypatch.setattr(
+            mc,
+            "_urlopen",
+            _make_urlopen_seq([dir_data] + [places_data] * (3 * mc._PLACES_SAMPLE_POINTS)),
+        )
 
         # Full setup: analyze → plan → run → tick
         analyze_resp = client.post(

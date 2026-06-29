@@ -33,7 +33,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from aica_api.models.run import DisplayRoute, RouteFacts, RouteSegmentFact
+from aica_api.models.run import DisplayRoute, NamedRestSpot, RouteFacts, RouteSegmentFact
 from aica_api.models.scenario import ScenarioDef
 
 # Type aliases (plain dicts at runtime — same convention as maps_client)
@@ -106,6 +106,20 @@ def analyze_route(scenario: ScenarioDef) -> RouteFacts:
         if seg.is_rest_facility
     ]
 
+    # ── Named rest spots (M8) — same segments, but with human name ─────────
+    # Uses the segment's EN name; falls back to the route_intent.rest_facility
+    # label (EN) if the segment name is blank.  lat/lng not available on the
+    # local path.
+    _rf_label_en: str = scenario.route_intent.rest_facility.label.get("en", "Rest Stop")
+    named_rest_spots: list[NamedRestSpot] = [
+        NamedRestSpot(
+            name=seg.name.get("en") or _rf_label_en,
+            position_km=seg.at * total_km,
+        )
+        for seg in segments
+        if seg.is_rest_facility
+    ]
+
     # ── Route progress checkpoints (25 %, 50 %, 75 % of total km) ────────────
     route_progress_checkpoints: list[float] = [
         0.25 * total_km,
@@ -131,6 +145,9 @@ def analyze_route(scenario: ScenarioDef) -> RouteFacts:
         route_segments=route_segments,
         rest_spot_positions=rest_spot_positions,
         route_progress_checkpoints=route_progress_checkpoints,
+
+        # M8: named rest facilities (local path — lat/lng not available)
+        named_rest_spots=named_rest_spots,
     )
 
 
@@ -183,9 +200,23 @@ def analyze_route_maps(
 
         # ── Rest spot positions (km) — sorted ascending, empty-safe ──────────
         places: list[RawPlace] = places_by_route.get(route_id, [])
-        rest_spot_positions: list[float] = sorted(
-            p["distance_along_route_m"] / 1000.0 for p in places
-        )
+        # Sort places once by along-route distance to keep both lists in sync.
+        places_sorted = sorted(places, key=lambda p: p["distance_along_route_m"])
+        rest_spot_positions: list[float] = [
+            p["distance_along_route_m"] / 1000.0 for p in places_sorted
+        ]
+
+        # ── Named rest spots (M8) — preserve facility names from Places ───────
+        named_rest_spots: list[NamedRestSpot] = [
+            NamedRestSpot(
+                name=p["name"],
+                position_km=p["distance_along_route_m"] / 1000.0,
+                lat=p["location"]["lat"],
+                lng=p["location"]["lng"],
+                synthetic=p.get("synthetic", False),
+            )
+            for p in places_sorted
+        ]
 
         # ── Route progress checkpoints (25 %, 50 %, 75 % of total km) ────────
         route_progress_checkpoints: list[float] = [
@@ -201,6 +232,7 @@ def analyze_route_maps(
             rest_spot_positions=rest_spot_positions,
             route_progress_checkpoints=route_progress_checkpoints,
             route_source="maps",
+            named_rest_spots=named_rest_spots,
         )
 
         display = DisplayRoute(

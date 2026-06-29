@@ -67,9 +67,35 @@ function latLngAt(path: any[], cum: number[], total: number, f: number, spherica
   return spherical.interpolate(path[i - 1], path[i], (target - cum[i - 1]) / span)
 }
 
+/**
+ * Extracts the sub-path covering the fraction range [fStart, fEnd].
+ * Includes interpolated boundary points so adjacent segments join without gaps.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function slicePath(path: any[], cum: number[], total: number, fStart: number, fEnd: number, spherical: any): any[] {
+  if (path.length === 0 || total === 0) return []
+  const dStart = fStart * total
+  const dEnd = fEnd * total
+  const pts: any[] = []
+  const ptStart = latLngAt(path, cum, total, fStart, spherical)
+  if (ptStart) pts.push(ptStart)
+  for (let i = 0; i < path.length; i++) {
+    if (cum[i] > dStart && cum[i] < dEnd) pts.push(path[i])
+  }
+  const ptEnd = latLngAt(path, cum, total, fEnd, spherical)
+  if (ptEnd) pts.push(ptEnd)
+  return pts
+}
+
 export default function MapSurface() {
   const { state } = useRunStore()
   const { mapsKey, alternatives, selectedRouteId } = state
+
+  // Accepted rest spots (one per accepted rest), captured at accept time into
+  // restHistory so the gold markers persist after recovery ends instead of
+  // vanishing with the transient recovery.rest_spot. Drives both the
+  // geographic markers and the DOM-overlay fallback markers.
+  const restSpots = state.restHistory.map((r) => r.spot)
 
   // mapsReady: true when the Google Maps SDK is available (either pre-loaded or
   // after the async script callback fires). Drives the map-init useEffect so
@@ -91,7 +117,7 @@ export default function MapSurface() {
   const display = selectedAlt?.display ?? null
 
   // ── Route position (shared, clamped) + eased car fraction ─────────────────
-  const { currentFraction, proposalFraction, restFraction } = useRouteProgress()
+  const { currentFraction, proposalFraction } = useRouteProgress()
   const positionPct = `${Math.round(currentFraction * 100)}%`
   const shownFraction = useSmoothFraction(currentFraction)
 
@@ -101,8 +127,10 @@ export default function MapSurface() {
   const pathRef = useRef<{ path: any[]; cum: number[]; total: number } | null>(null)
   const carRef = useRef<GMapsLib>(null)
   const startRef = useRef<GMapsLib>(null)
-  const restRef = useRef<GMapsLib>(null)
   const fireRef = useRef<GMapsLib>(null)
+  // Geographic markers for the accepted rest spots (real SDK only) — one per
+  // restHistory entry, so all accepted rests stay visible on the map.
+  const chosenRestRefs = useRef<GMapsLib[]>([])
   // realMarkers: true once geographic markers are drawn — hides the DOM-overlay
   // fallback markers so the car isn't shown twice on a real map.
   const [realMarkers, setRealMarkers] = useState(false)
@@ -188,13 +216,45 @@ export default function MapSurface() {
         zoom: 10,
       })
 
-      const polyline = new gmaps.Polyline({
-        path,
-        strokeColor: '#2563eb',
-        strokeOpacity: 0.9,
-        strokeWeight: 4,
-      })
-      polyline.setMap(mapInstanceRef.current)
+      // Road-class colors (mobile Google Maps inspired).
+      // Red is reserved for future traffic zone rendering — traffic zones are
+      // not modeled per-segment yet and will be layered on top when available.
+      const ROAD_COLORS: Record<string, string> = {
+        highway: '#06b6d4',           // cyan
+        normal_road: '#2563eb',       // blue (default)
+        mountain_road: '#f59e0b',     // orange
+        sightseeing_road: '#22c55e',  // green
+      }
+      const routeSegments = selectedAlt?.route_facts?.route_segments ?? []
+      const totalKm = selectedAlt?.route_facts?.total_route_distance_km ?? 0
+      const canColorSegments =
+        routeSegments.length > 0 &&
+        Boolean(gmaps.geometry?.spherical) &&
+        totalKm > 0
+
+      if (canColorSegments) {
+        const { cum, total } = buildCumulative(path, gmaps.geometry.spherical)
+        for (const seg of routeSegments) {
+          const fStart = seg.start_km / totalKm
+          const fEnd = (seg.start_km + seg.length_km) / totalKm
+          const segPath = slicePath(path, cum, total, fStart, fEnd, gmaps.geometry.spherical)
+          const segPolyline = new gmaps.Polyline({
+            path: segPath,
+            strokeColor: ROAD_COLORS[seg.segment_type] ?? '#2563eb',
+            strokeOpacity: 0.9,
+            strokeWeight: 5,
+          })
+          segPolyline.setMap(mapInstanceRef.current)
+        }
+      } else {
+        const polyline = new gmaps.Polyline({
+          path,
+          strokeColor: '#2563eb',
+          strokeOpacity: 0.9,
+          strokeWeight: 4,
+        })
+        polyline.setMap(mapInstanceRef.current)
+      }
 
       // Zoom to cover the whole route (start → end) at load.
       if (gmaps.LatLngBounds) {
@@ -257,21 +317,6 @@ export default function MapSurface() {
     const carPos = latLngAt(path, cum, total, shownFraction, sph)
     if (carPos && carRef.current) carRef.current.setPosition(carPos)
 
-    // Rest marker (gold) at the rest-facility fraction.
-    if (restFraction != null) {
-      const rp = latLngAt(path, cum, total, restFraction, sph)
-      if (rp) {
-        if (!restRef.current) {
-          restRef.current = new gmaps.Marker({
-            map: mapInstanceRef.current,
-            icon: { path: gmaps.SymbolPath.CIRCLE, scale: 6, fillColor: '#f0c000', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
-            zIndex: 997,
-          })
-        }
-        restRef.current.setPosition(rp)
-      }
-    }
-
     // Fire marker (orange) where the proposal fired.
     if (proposalFraction != null) {
       const fp = latLngAt(path, cum, total, proposalFraction, sph)
@@ -286,7 +331,29 @@ export default function MapSurface() {
         fireRef.current.setPosition(fp)
       }
     }
-  }, [shownFraction, restFraction, proposalFraction])
+
+    // Chosen rest-spot markers (gold) — one per accepted rest; they persist as
+    // history.  Sync the marker array to restSpots: create/position present
+    // ones, drop any extras (e.g. after a reset clears restHistory).
+    restSpots.forEach((spot, i) => {
+      const rsp = latLngAt(path, cum, total, spot.route_fraction, sph)
+      if (!rsp) return
+      if (!chosenRestRefs.current[i]) {
+        chosenRestRefs.current[i] = new gmaps.Marker({
+          map: mapInstanceRef.current,
+          icon: { path: gmaps.SymbolPath.CIRCLE, scale: 8, fillColor: '#f0c000', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 },
+          title: spot.label?.en ?? 'Chosen Rest Spot',
+          zIndex: 999,
+        })
+      }
+      chosenRestRefs.current[i].setPosition(rsp)
+    })
+    if (chosenRestRefs.current.length > restSpots.length) {
+      for (const m of chosenRestRefs.current.splice(restSpots.length)) {
+        m.setMap(null)
+      }
+    }
+  }, [shownFraction, proposalFraction, restSpots.length])
 
   // ── Guard: nothing to show ────────────────────────────────────────────────
   // When display is null (local path), return null so the caller can fall back
@@ -369,6 +436,31 @@ export default function MapSurface() {
           }}
         />
       )}
+
+      {/* DOM overlay: chosen rest-spot markers (gold circles) — one per accepted
+          rest from restHistory, positioned by route_fraction. Persist as history.
+          Hidden when the real SDK geographic markers are active (realMarkers=true).
+          testable under the mock (no Marker). */}
+      {restSpots.map((spot, i) => (
+        <div
+          key={`rest-${i}-${spot.id}`}
+          data-testid="rest-spot-marker"
+          aria-label={`Chosen rest spot: ${spot.label?.en ?? spot.id}`}
+          style={{
+            position: 'absolute',
+            bottom: '0',
+            left: `${Math.round(spot.route_fraction * 100)}%`,
+            transform: 'translateX(-50%)',
+            width: '16px',
+            height: '16px',
+            background: '#f0c000',
+            borderRadius: '50%',
+            border: '3px solid white',
+            zIndex: 11,
+            visibility: realMarkers ? 'hidden' : 'visible',
+          }}
+        />
+      ))}
     </div>
   )
 }

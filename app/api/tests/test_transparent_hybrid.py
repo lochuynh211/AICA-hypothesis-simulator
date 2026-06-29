@@ -91,7 +91,14 @@ def _norm_from_raw(raw: dict) -> dict:
     }
 
 
-def _ctx(raw, prev_state=None, proposal_history=None, sim_time=3600.0, hp=None):
+def _ctx(
+    raw,
+    prev_state=None,
+    proposal_history=None,
+    sim_time=3600.0,
+    hp=None,
+    recovery_active=False,
+):
     return {
         "simulation_time_sec": sim_time,
         "raw_state": raw,
@@ -101,6 +108,7 @@ def _ctx(raw, prev_state=None, proposal_history=None, sim_time=3600.0, hp=None):
         "proposal_history": proposal_history or dict(_EMPTY_PH),
         "user_action_history": [],
         "package_runtime_state": prev_state or {},
+        "recovery_active": recovery_active,
     }
 
 
@@ -329,6 +337,46 @@ def test_fire_control_cooldown_suppresses_too_soon():
     long_ago = dict(too_soon, lastProposalTimeSec=10.0)
     r_fire = mod.evaluate(_ctx(_HIGH_RAW, prev_state=prev, proposal_history=long_ago, sim_time=3600.0))
     assert r_fire["result_type"] == "REST_PROPOSAL"
+
+
+def test_recovery_after_accept_suppresses_only_while_recovery_active():
+    """REST_RECOVERY suppression is scoped to the active rest sequence.
+
+    Regression: rest_recovered used to latch forever on lastProposalResult ==
+    "accept_rest" (which never clears, since no later rest proposal is allowed
+    to fire), leaving the algorithm stuck in REST_RECOVERY and suppressing every
+    subsequent proposal with recovery_after_accept.  It must now depend on the
+    adapter's recovery_active flag: True only while the driver is still resting.
+    """
+    prev = _steady_state(_HIGH_RAW, counter_rest=2, vel_rest=0.0)
+    accepted = {
+        "lastProposalTimeSec": 10.0,  # long ago -> cooldown elapsed
+        "lastProposalCategory": "rest_required",
+        "lastProposalResult": "accept_rest",
+        "proposalCountLast30Min": 0,
+        "acceptanceRateRecent": 1.0,
+    }
+
+    # Driver still resting -> suppressed as recovery_after_accept, state RECOVERY.
+    r_resting = mod.evaluate(
+        _ctx(_HIGH_RAW, prev_state=prev, proposal_history=accepted,
+             sim_time=3600.0, recovery_active=True)
+    )
+    assert r_resting["result_type"] == "SUPPRESSED"
+    assert r_resting["states"]["rest"] == "REST_RECOVERY"
+    rest_cand = next(c for c in r_resting["candidates"] if c["category"] == "rest_required")
+    assert rest_cand["fire_control"]["reason"] == "recovery_after_accept"
+
+    # Driver has resumed -> no longer in recovery -> evaluates normally and fires
+    # the next proposal when drowsiness is high again.
+    r_resumed = mod.evaluate(
+        _ctx(_HIGH_RAW, prev_state=prev, proposal_history=accepted,
+             sim_time=3600.0, recovery_active=False)
+    )
+    assert r_resumed["states"]["rest"] != "REST_RECOVERY"
+    assert r_resumed["result_type"] == "REST_PROPOSAL"
+    rest_cand2 = next(c for c in r_resumed["candidates"] if c["category"] == "rest_required")
+    assert rest_cand2["fire_control"]["reason"] != "recovery_after_accept"
 
 
 def test_fire_control_count_limit_suppresses():

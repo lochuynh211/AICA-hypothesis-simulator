@@ -49,6 +49,7 @@ from aica_api.models.package import PackageManifest
 from aica_api.models.run import (
     ArtifactRef,
     EventPlan,
+    RestSpot,
     RouteFacts,
     RunState,
     RunStatus,
@@ -57,6 +58,7 @@ from aica_api.models.run import (
 )
 from aica_api.models.scenario import ScenarioDef
 from aica_api.services.event_plan import freeze_event_plan
+from aica_api.services.recovery import start_recovery
 from aica_api.services.tick_engine import advance_tick, build_adapter_context, compute_tick_state
 from aica_api.storage.evidence_recorder import EvidenceRecorder
 
@@ -144,6 +146,38 @@ def get_active_run_log(run_id: str) -> "RunLog | None":
     """
     entry = _registry.get(run_id)
     return entry[3].run_log if entry is not None else None
+
+
+def get_prior_tick_state(run_id: str) -> "TickState | None":
+    """Return the prior TickState for a run, or None if no tick yet / not active.
+
+    Used by the rest-spots endpoint to read current drowsiness, distance, and speed
+    without going through the full tick path.
+
+    Args:
+        run_id: The run identifier to look up.
+
+    Returns:
+        The last TickState computed for this run, or None.
+    """
+    entry = _registry.get(run_id)
+    return entry[4] if entry is not None else None
+
+
+def get_scenario(run_id: str) -> "ScenarioDef | None":
+    """Return the ScenarioDef for an active run, or None if unknown.
+
+    Used by the rest-spots endpoint to read scenario-level config such as
+    rest_drowsiness_ceiling and driver_profile growth rates.
+
+    Args:
+        run_id: The run identifier to look up.
+
+    Returns:
+        The ScenarioDef, or None if run_id is not in the active registry.
+    """
+    entry = _registry.get(run_id)
+    return entry[2] if entry is not None else None
 
 
 # ---------------------------------------------------------------------------
@@ -507,29 +541,41 @@ def tick(run_id: str) -> TickOutcome:
 
     # ── Compute tick state ────────────────────────────────────────────────
     if _is_m2_scenario(scenario):
-        # M2 path: advance_tick with prior state
+        # M2 path: advance_tick with prior state, threading recovery
         tick_state = advance_tick(
             prior_tick_state,
             current_tick,
             run_state.event_plan,
             run_state.route_facts,
             scenario,
+            recovery=run_state.recovery,
         )
+        # Thread _recovery_next back: advance_tick stashes the updated
+        # RecoveryState in model_extra["_recovery_next"] when recovery is active.
+        rec_next = (tick_state.model_extra or {}).get("_recovery_next")
+        if rec_next is not None:
+            run_state.recovery = rec_next if rec_next.active else None
     else:
         # M1 path: read from frozen per-tick plan
         tick_state = compute_tick_state(run_state.event_plan, current_tick, scenario)
 
     if tick_state.completed:
-        run_state.status = RunStatus.completed
-        return TickOutcome(
-            run_state=run_state,
-            decision=None,
-            algorithm_error=None,
-            paused=False,
-            completed=True,
-            evaluated_tick_index=None,
-            tick_state=tick_state,
-        )
+        # Do not exit early if recovery is still active — the tick engine holds
+        # position at the rest spot (STOPPED phase keeps completed=False), so
+        # this guard is only needed for the "resuming" phase coinciding with
+        # route-end.  After reading _recovery_next above, run_state.recovery
+        # is already None in that case (resuming → active=False).
+        if not (run_state.recovery and run_state.recovery.active):
+            run_state.status = RunStatus.completed
+            return TickOutcome(
+                run_state=run_state,
+                decision=None,
+                algorithm_error=None,
+                paused=False,
+                completed=True,
+                evaluated_tick_index=None,
+                tick_state=tick_state,
+            )
 
     # ── Build context and call adapter ────────────────────────────────────
     context = build_adapter_context(tick_state)
@@ -546,6 +592,16 @@ def tick(run_id: str) -> TickOutcome:
     )
     context["proposal_history"] = _proposal_history
     context["user_action_history"] = _user_action_history
+    # recovery_active: True only while the driver is currently in an accepted
+    # rest sequence.  The algorithm uses this to scope its REST_RECOVERY
+    # suppression to the rest itself — once the driver resumes, recovery_active
+    # is False and the algorithm re-evaluates normally so a fresh REST_PROPOSAL
+    # can fire when drowsiness rebuilds.  Without this the algorithm would stay
+    # locked in REST_RECOVERY forever after a single accept (lastProposalResult
+    # never clears, since no later rest proposal is allowed to fire).
+    context["recovery_active"] = bool(
+        run_state.recovery and run_state.recovery.active
+    )
 
     # Use current_parameters/hyperparameters (may be overridden in expert mode)
     hyperparameters = run_state.current_hyperparameters or {
@@ -659,10 +715,30 @@ def tick(run_id: str) -> TickOutcome:
         set(decision_result.proposal.options) & set(scenario.allowed_actions)
     )
 
+    # ── Fire-control: suppress REST_PROPOSAL during active recovery ───────────
+    # The driver is already resting — a second REST_PROPOSAL must not pause the
+    # run.  The TickEvent (with the fired proposal) is already written to the
+    # evidence log above, so the suppressed proposal is still visible in the
+    # evidence trace.  We just clear the actionability flag so the run
+    # continues instead of pausing.
+    # NOTE: Only REST_PROPOSAL is suppressed.  Escalation proposals such as
+    # SEVERE_INTERVENTION still pause the run even during recovery
+    # (per runtime_workflow §7.2).
+    recovery_active = bool(run_state.recovery and run_state.recovery.active)
+    if recovery_active and proposal_is_actionable and decision_result.result_type == "REST_PROPOSAL":
+        proposal_is_actionable = False
+
     if proposal_is_actionable:
         run_state.status = RunStatus.paused
         run_state.pending_proposal = decision_result.proposal.id
         paused = True
+        completed = False
+    elif recovery_active:
+        # Recovery in progress: force playing regardless of M1/M2/completion.
+        # The tick engine already prevents distance-based completion during
+        # STOPPED phases.
+        run_state.status = RunStatus.playing
+        paused = False
         completed = False
     elif _is_m2_scenario(scenario):
         # M2: completion detected by tick_state (distance >= total_km)
@@ -696,12 +772,23 @@ def tick(run_id: str) -> TickOutcome:
 # ---------------------------------------------------------------------------
 
 
-def action(run_id: str, action_str: str) -> RunState:
+def action(
+    run_id: str,
+    action_str: str,
+    *,
+    recovery_option_id: str | None = None,
+    rest_spot: RestSpot | None = None,
+) -> RunState:
     """Apply a driver action to a paused run.
 
     Args:
-        run_id:     The run identifier.
-        action_str: The action taken (must be in scenario.allowed_actions).
+        run_id:              The run identifier.
+        action_str:          The action taken (must be in scenario.allowed_actions).
+        recovery_option_id:  M7 — required when action_str == "accept_rest" and
+                             the scenario has recovery_options.  Must match a
+                             RecoveryOption.id in scenario.recovery_options.
+        rest_spot:           M7 — required alongside recovery_option_id.  The
+                             rest facility the driver will stop at.
 
     Returns:
         The updated RunState.
@@ -709,7 +796,9 @@ def action(run_id: str, action_str: str) -> RunState:
     Raises:
         RunNotFoundError:    If run_id is not in the registry.
         ActionNotAllowedError: If the run is not paused, no proposal is pending,
-                               or the action is not in allowed_actions.
+                               the action is not in allowed_actions, or
+                               recovery_option_id / rest_spot are missing or
+                               invalid for a scenario that has recovery_options.
     """
     if run_id not in _registry:
         raise RunNotFoundError(f"Unknown run_id: {run_id!r}")
@@ -730,7 +819,22 @@ def action(run_id: str, action_str: str) -> RunState:
 
     # ── Determine resulting status ────────────────────────────────────────
     if action_str == "accept_rest":
-        new_status = RunStatus.completed
+        if scenario.recovery_options:
+            # M7: scenario offers recovery options — validate and start recovery.
+            option = next(
+                (o for o in scenario.recovery_options if o.id == recovery_option_id),
+                None,
+            )
+            if option is None or rest_spot is None:
+                raise ActionNotAllowedError(
+                    f"accept_rest requires a valid recovery_option_id + rest_spot "
+                    f"(got {recovery_option_id!r})."
+                )
+            run_state.recovery = start_recovery(option, rest_spot)
+            new_status = RunStatus.playing
+        else:
+            # Back-compat: scenario has no recovery menu — accept_rest completes.
+            new_status = RunStatus.completed
     else:
         new_status = RunStatus.playing
 

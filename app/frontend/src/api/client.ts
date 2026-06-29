@@ -18,6 +18,7 @@ import type {
   FeedbackEvent,
   EvidenceReport,
   ProfileOverrides,
+  RestSpot,
 } from './types'
 import { MapsError, FeedbackValidationError } from './types'
 
@@ -126,6 +127,8 @@ export async function createRunPlan(args: {
   displayRoute?: DisplayRoute | null
   // T009: sparse profile overrides (omit entirely when nothing changed)
   profiles?: ProfileOverrides | null
+  // Numeric starting driver-state override (omit to use scenario default)
+  initialState?: { drowsiness_level?: number; fatigue_level?: number }
 }): Promise<RunPlanResponse> {
   const body: Record<string, unknown> = {
     package_id: args.packageId,
@@ -143,6 +146,10 @@ export async function createRunPlan(args: {
   // T009: include profiles only when non-empty (back-compat: omit for unchanged defaults)
   if (args.profiles != null && Object.keys(args.profiles).length > 0) {
     body.profiles = args.profiles
+  }
+  // include initial_state only when at least one dimension is set
+  if (args.initialState != null && Object.keys(args.initialState).length > 0) {
+    body.initial_state = args.initialState
   }
 
   return apiFetch('/api/run-plans', {
@@ -185,12 +192,30 @@ export async function tickRun(runId: string): Promise<TickResponse> {
   return apiFetch(`/api/runs/${runId}/tick`, { method: 'POST' })
 }
 
-export async function actRun(runId: string, action: string): Promise<RunState> {
+export async function actRun(
+  runId: string,
+  action: string,
+  opts: { recovery_option_id?: string; rest_spot?: RestSpot } = {},
+): Promise<RunState> {
   return apiFetch(`/api/runs/${runId}/actions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action }),
+    body: JSON.stringify({ action, ...opts }),
   })
+}
+
+export async function getRestSpots(
+  runId: string,
+  mapsKey?: string,
+  drowsinessCeiling?: number,
+  minDistanceKm?: number,
+): Promise<{ rest_spots: RestSpot[]; notice?: string | null }> {
+  const params = new URLSearchParams()
+  if (mapsKey) params.set('maps_key', mapsKey)
+  if (drowsinessCeiling !== undefined) params.set('drowsiness_ceiling', String(drowsinessCeiling))
+  if (minDistanceKm !== undefined) params.set('min_distance_km', String(minDistanceKm))
+  const q = params.toString() ? `?${params.toString()}` : ''
+  return apiFetch(`/api/runs/${runId}/rest-spots${q}`, { method: 'GET' })
 }
 
 export async function listRuns(): Promise<{ runs: RunSummary[] }> {

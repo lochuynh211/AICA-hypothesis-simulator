@@ -1465,3 +1465,41 @@ def test_key_safety_no_maps_key_in_models():
         assert "key" not in model.model_fields, (
             f"{model.__name__} must not define a 'key' field"
         )
+
+
+# ─── M7 T001 — RecoveryOption / RecoveryStage scenario model ─────────────────
+
+from aica_api.models.scenario import RecoveryOption, RecoveryStage
+
+
+def test_recovery_option_parses_stages_and_postpone():
+    opt = RecoveryOption(
+        id="nap_karaoke",
+        label={"ja": "仮眠後にカラオケ", "en": "Brief nap, then karaoke"},
+        rest_type="long",
+        stages=[
+            {"phase": "wakefulness", "content": "audio_karaoke", "motion": "MOVING"},
+            {"phase": "nap", "content": "sleep", "motion": "STOPPED", "ticks": 3},
+        ],
+    )
+    assert opt.stages[1].ticks == 3
+    assert opt.stages[0].ticks is None
+    assert opt.postpone is False
+
+    postpone = RecoveryOption(id="postpone", label={"ja": "見送る", "en": "Postpone"}, postpone=True)
+    assert postpone.postpone is True
+    assert postpone.stages == []
+
+
+# ─── M7 T002 — RecoveryState / RestSpot on RunState ──────────────────────────
+
+from aica_api.models.run import RecoveryState, RestSpot
+
+
+def test_recovery_state_defaults():
+    rs = RecoveryState(active=True, option_id="nap_karaoke",
+                        rest_spot=RestSpot(id="p1", label={"ja":"SA","en":"SA"}, route_fraction=0.6),
+                        phase="wakefulness")
+    assert rs.stage_index == 0
+    assert rs.stage_ticks_remaining == 0
+    assert rs.rest_spot.route_fraction == 0.6

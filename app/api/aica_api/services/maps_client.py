@@ -84,8 +84,35 @@ _PLACES_NEARBY_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/js
 # Maximum number of route alternatives the client will return.
 _MAX_ALTERNATIVES = 3
 
-# Search radius (metres) for Places nearby search centred on route midpoint.
-_PLACES_RADIUS_M = 50_000
+# Number of evenly-spaced sample points along the route for Places searches.
+# Exactly this many Nearby Search calls are made per route (bounded to cap quota).
+_PLACES_SAMPLE_POINTS = 6
+
+# Search radius (metres) for each per-point Places Nearby Search.
+# Reduced from the former 50 km single-midpoint radius because we now have
+# multiple overlapping bubbles spanning the whole route.
+_PLACES_RADIUS_M = 25_000
+
+# Minimum step distance (metres) that triggers the long-step HIGHWAY heuristic.
+# A continuous step of 8 km or more with no maneuver and no highway keyword is
+# almost always an expressway main section (e.g. a 30–100 km stretch on the
+# Tomei or Meishin expressway that Google returns as a single step with no
+# "Merge" maneuver and whose Japanese-language html_instructions won't match
+# English keywords).  This acts as a cross-language safety net so that routes
+# returned without language=en still classify correctly.
+_HIGHWAY_MIN_STEP_M = 8_000
+
+# Keywords in (lowercased) html_instructions that indicate a highway-class step.
+# These appear when Google returns step text in English (language=en request param).
+_HIGHWAY_INSTRUCTION_KEYWORDS: tuple[str, ...] = (
+    "highway",
+    "motorway",
+    "freeway",
+    "expressway",
+    "expwy",
+    "interstate",
+    "toll",
+)
 
 
 # ---------------------------------------------------------------------------
@@ -309,14 +336,30 @@ def _distance_along_route(
 
 
 def _infer_road_class(step: dict[str, Any]) -> str:
-    """Infer a simplified road class from a Directions step dict."""
+    """Infer a simplified road class from a raw Google Directions step dict.
+
+    Returns "HIGHWAY" when ANY of the following conditions hold:
+      1. Maneuver — step.maneuver contains "merge" or "ramp".
+      2. Keyword   — step.html_instructions (lowercased) contains any of the
+                     strings in _HIGHWAY_INSTRUCTION_KEYWORDS (highway, motorway,
+                     freeway, expressway, expwy, interstate, toll).  These appear
+                     when Google returns English text (language=en param).
+      3. Long-step — step.distance.value >= _HIGHWAY_MIN_STEP_M (8 km).  A
+                     multi-km step with no maneuver and no keyword is almost
+                     certainly an expressway main section — this is the
+                     cross-language safety net for routes whose step text arrives
+                     in a non-English script.
+    Otherwise returns "LOCAL".
+    """
     maneuver = step.get("maneuver", "").lower()
     instructions = step.get("html_instructions", "").lower()
+    distance_m: int = step.get("distance", {}).get("value", 0)
+
     if (
         "merge" in maneuver
         or "ramp" in maneuver
-        or "motorway" in instructions
-        or "highway" in instructions
+        or any(kw in instructions for kw in _HIGHWAY_INSTRUCTION_KEYWORDS)
+        or distance_m >= _HIGHWAY_MIN_STEP_M
     ):
         return "HIGHWAY"
     return "LOCAL"
@@ -382,6 +425,7 @@ def directions(key: str, start: str, end: str) -> list[RawRoute]:
         "destination": end,
         "alternatives": "true",
         "mode": "driving",
+        "language": "en",  # ensure step text is English so keyword checks are reliable
     }
     url = _build_url(_DIRECTIONS_URL, params, key)
     payload = _fetch_json(url, "directions_failure")
@@ -420,11 +464,27 @@ def places_rest_stops(
     polyline: str,
     context: dict[str, Any],
 ) -> list[RawPlace]:
-    """Find rest POIs near the route and return a list of RawPlace dicts.
+    """Find rest POIs along the whole route and return a list of RawPlace dicts.
 
-    Uses Google Places Nearby Search, biased by *context*.  On highway
-    routes, searches for gas stations / service areas; otherwise searches for
-    convenience stores.
+    Strategy: decode the polyline, pick ``_PLACES_SAMPLE_POINTS`` evenly-spaced
+    sample points (at 1/(n+1), 2/(n+1) … n/(n+1) of total route distance), and
+    run one Places Nearby Search per point.  Results from all points are merged,
+    deduped by ``place_id`` (falling back to name + rounded lat/lng when absent),
+    projected onto the route to compute ``distance_along_route_m``, and returned
+    sorted ascending by that distance.
+
+    Search params per point:
+      - ``keyword="service area rest area"`` — the primary broadening term; finds
+        Japanese expressway service areas (サービスエリア) and roadside rest stops
+        beyond what a single POI type can capture.
+      - ``type="gas_station"`` (highway routes only) — additional bias per spec;
+        omitted on urban routes to maximise recall via keyword alone.
+      - ``radius=_PLACES_RADIUS_M`` (25 km) — smaller per-point bubble because
+        multiple overlapping bubbles now span the whole route.
+
+    Exactly ``_PLACES_SAMPLE_POINTS`` HTTP calls are made per invocation (the
+    sample algorithm always picks that many, some may coincide for very short
+    polylines — duplicates are removed by the dedup step).
 
     Parameters
     ----------
@@ -446,7 +506,7 @@ def places_rest_stops(
     MapsError("quota", ...)
         Quota exceeded.
     """
-    # Decode polyline to derive a search centre (route midpoint).
+    # Decode polyline to a list of (lat, lng) vertices.
     try:
         route_points = _decode_polyline(polyline)
     except (ValueError, IndexError):
@@ -456,45 +516,81 @@ def places_rest_stops(
     if not route_points:
         return []
 
-    mid_idx = len(route_points) // 2
-    center_lat, center_lng = route_points[mid_idx]
+    # Pre-compute cumulative distances for sample-point selection and projection.
+    cum_dist = _cumulative_distances(route_points)
+    total_dist = cum_dist[-1]
 
-    # Choose POI type based on route context.
+    # Route context controls search params.
     route_type = context.get("route_type", "urban")
-    place_type = "gas_station" if route_type == "highway" else "convenience_store"
 
-    params: dict[str, Any] = {
-        "location": f"{center_lat},{center_lng}",
-        "radius": _PLACES_RADIUS_M,
-        "type": place_type,
-    }
-    url = _build_url(_PLACES_NEARBY_URL, params, key)
-    payload = _fetch_json(url, "places_failure")
-    _check_status(payload, "places_failure", zero_results_is_error=False)
+    # ── Sample point selection ────────────────────────────────────────────────
+    # Pick _PLACES_SAMPLE_POINTS interior fractions: 1/(n+1), 2/(n+1) … n/(n+1)
+    # of total route distance.  For n=6: 1/7, 2/7, 3/7, 4/7, 5/7, 6/7 — spans
+    # the whole route without clustering at the endpoints.  For short polylines
+    # multiple fractions may map to the same vertex; the dedup step handles that.
+    n_samples = _PLACES_SAMPLE_POINTS
+    sample_points: list[tuple[float, float]] = []
+    for i in range(1, n_samples + 1):
+        target = total_dist * i / (n_samples + 1)
+        # Find the polyline vertex whose cumulative distance is closest to target.
+        best_idx = min(range(len(cum_dist)), key=lambda j: abs(cum_dist[j] - target))
+        sample_points.append(route_points[best_idx])
 
-    results = payload.get("results", [])
-    if not results:
+    # ── Per-point Nearby Searches ─────────────────────────────────────────────
+    all_results: list[dict[str, Any]] = []
+    for s_lat, s_lng in sample_points:
+        params: dict[str, Any] = {
+            "location": f"{s_lat},{s_lng}",
+            "radius": _PLACES_RADIUS_M,
+            "keyword": "service area rest area",
+        }
+        if route_type == "highway":
+            # Keep gas_station as an additional bias on highway routes (spec §3).
+            params["type"] = "gas_station"
+        # (Urban routes: keyword alone to avoid narrowing recall via type.)
+        url = _build_url(_PLACES_NEARBY_URL, params, key)
+        payload = _fetch_json(url, "places_failure")
+        _check_status(payload, "places_failure", zero_results_is_error=False)
+        all_results.extend(payload.get("results", []))
+
+    if not all_results:
         return []
 
-    # Pre-compute cumulative distances for along-route projection.
-    cum_dist = _cumulative_distances(route_points)
+    # ── Dedupe by place_id (fall back to name + rounded coords if absent) ────
+    seen: set[str] = set()
+    deduped: list[dict[str, Any]] = []
+    for result in all_results:
+        pid = result.get("place_id")
+        if pid:
+            dedup_key = f"pid:{pid}"
+        else:
+            geom = result.get("geometry", {}).get("location", {})
+            rlat = round(float(geom.get("lat", 0.0)), 4)
+            rlng = round(float(geom.get("lng", 0.0)), 4)
+            dedup_key = f"name:{result.get('name', '')}:{rlat}:{rlng}"
+        if dedup_key in seen:
+            continue
+        seen.add(dedup_key)
+        deduped.append(result)
 
+    # ── Project onto route, build RawPlace list, sort ascending ──────────────
     places: list[RawPlace] = []
-    for result in results:
+    for result in deduped:
         geom = result.get("geometry", {}).get("location", {})
-        lat = float(geom.get("lat", 0.0))
-        lng = float(geom.get("lng", 0.0))
+        plat = float(geom.get("lat", 0.0))
+        plng = float(geom.get("lng", 0.0))
         google_types: list[str] = result.get("types", [])
 
-        dist_along = _distance_along_route((lat, lng), route_points, cum_dist)
+        dist_along = _distance_along_route((plat, plng), route_points, cum_dist)
 
         places.append(
             {
                 "name": result.get("name", ""),
                 "type": _classify_place_type(google_types, route_type),
-                "location": {"lat": lat, "lng": lng},
+                "location": {"lat": plat, "lng": plng},
                 "distance_along_route_m": dist_along,
             }
         )
 
+    places.sort(key=lambda p: p["distance_along_route_m"])
     return places

@@ -121,6 +121,8 @@ export type ScenarioDef = {
   tick_seconds: number
   allowed_actions: string[]
   review_focus: string
+  /** M7 UC-01: recovery options defined per scenario. Absent in pre-M7 scenarios. */
+  recovery_options?: RecoveryOption[]
 }
 
 /**
@@ -132,6 +134,12 @@ export type ProfileOverrides = {
   driver?: Record<string, unknown>
   vehicle?: Record<string, unknown>
   speed?: Record<string, unknown>
+}
+
+/** Numeric starting driver-state override (0–100). Omit a key to use the scenario default. */
+export type InitialStateOverride = {
+  drowsiness_level?: number
+  fatigue_level?: number
 }
 
 // ── Setup / run-plan domain (M2) ───────────────────────────────────────────
@@ -239,6 +247,8 @@ export type RunState = {
    * null when the run has not been halted by a blocking error.
    */
   last_error?: { tick_index: number; error_type: string; message: string } | null
+  /** M7: current recovery state; null when no recovery is active. */
+  recovery?: RecoveryStateT | null
 }
 
 export type RunSummary = {
@@ -314,6 +324,57 @@ export type AlgorithmError = {
   message: string
 }
 
+// ── Recovery domain (M7 UC-01 Rest & Recovery) ────────────────────────────
+
+export type RecoveryStage = {
+  phase: string
+  content: string
+  motion: 'MOVING' | 'STOPPED'
+  ticks?: number | null
+}
+
+export type RecoveryOption = {
+  id: string
+  label: { ja: string; en: string }
+  rest_type?: 'short' | 'long' | null
+  stages?: RecoveryStage[]
+  postpone?: boolean
+}
+
+export type RestSpot = {
+  id: string
+  label: { ja: string; en: string }
+  lat?: number | null
+  lng?: number | null
+  route_fraction: number
+  distance_km?: number | null
+  eta_min?: number | null
+  reachable?: boolean
+  synthetic?: boolean
+}
+
+export type RecoveryStateT = {
+  active: boolean
+  option_id: string | null
+  rest_spot: RestSpot | null
+  phase: string | null
+  stage_index: number
+  stage_ticks_remaining: number
+}
+
+/**
+ * A persisted record of an accepted rest — captured at accept time so the
+ * chosen spot + option survive after the transient recovery state clears.
+ * Drives the persistent rest markers (map + progress bar) and the event-log
+ * "driver chose rest" line. Cleared on new run / scenario change / reset.
+ */
+export type RestChoice = {
+  tickIndex: number
+  optionId: string | null
+  optionLabel: { ja: string; en: string } | null
+  spot: RestSpot
+}
+
 // ── Tick response (discriminated union) ───────────────────────────────────
 
 export type TickResponseSuccess = {
@@ -334,6 +395,16 @@ export type TickResponseSuccess = {
   distance_km?: number | null
   /** Current effective speed (kph) at this tick. */
   speed_kph?: number | null
+  /** Current motion state (e.g. 'MOVING', 'STOPPED') from the recovery engine. */
+  motion_state?: string | null
+  /** Current recovery phase label from the recovery engine. */
+  recovery_phase?: string | null
+  /** Active content string shown during a recovery stage. */
+  active_content?: string | null
+  /** True when the current segment is a traffic jam. */
+  is_traffic_jam?: boolean | null
+  /** Current road segment class from the tick engine (e.g. 'highway', 'normal_road'). */
+  segment_type?: string | null
 }
 
 export type TickResponseError = {
@@ -361,6 +432,14 @@ export type TraceEntry = DecisionResult & {
   tick_index: number
   /** Authoritative route position (0–1) recorded with this tick, when available. */
   route_fraction?: number | null
+  /** Motion state at this tick (e.g. 'MOVING', 'STOPPED'). */
+  motion_state?: string | null
+  /** Recovery phase label at this tick, if recovery was active. */
+  recovery_phase?: string | null
+  /** True when this tick was inside a traffic jam segment. */
+  is_traffic_jam?: boolean | null
+  /** Road segment class at this tick (from per-tick engine state). */
+  segment_type?: string | null
 }
 
 /**

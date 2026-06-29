@@ -63,6 +63,22 @@ def _make_urlopen_seq(responses: list[bytes]):
     return _mock
 
 
+def _maps_call_seq(
+    n_alts: int = 3,
+    dir_fixture: str = "directions_3_alternatives.json",
+    places_fixture: str = "places_service_area.json",
+) -> list[bytes]:
+    """Build a response sequence for one /api/routes/analyze call.
+
+    Returns one directions response followed by exactly
+    n_alts × mc._PLACES_SAMPLE_POINTS places responses — matching the number
+    of Nearby Search calls the multi-point sampling strategy makes.
+    """
+    return [_directions_bytes(dir_fixture)] + [_places_bytes(places_fixture)] * (
+        n_alts * mc._PLACES_SAMPLE_POINTS
+    )
+
+
 # ── Local path (no maps_key) ──────────────────────────────────────────────────
 
 
@@ -220,11 +236,8 @@ class TestMapsPath:
 
     def test_maps_path_returns_envelope(self, client, monkeypatch):
         """Maps path returns {route_source: 'maps', alternatives: [...]}."""
-        # 1 directions call + 3 places calls (one per alternative)
-        dir_data = _directions_bytes("directions_3_alternatives.json")
-        pl_data = _places_bytes("places_service_area.json")
-        call_seq = [dir_data, pl_data, pl_data, pl_data]
-        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq(call_seq))
+        # 1 directions + 3 alts × _PLACES_SAMPLE_POINTS places = 1+18 calls
+        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq(_maps_call_seq(3)))
 
         resp = client.post(
             "/api/routes/analyze",
@@ -242,10 +255,7 @@ class TestMapsPath:
 
     def test_maps_path_alternatives_count_le_3(self, client, monkeypatch):
         """Maps path yields ≤ 3 alternatives."""
-        dir_data = _directions_bytes("directions_3_alternatives.json")
-        pl_data = _places_bytes("places_service_area.json")
-        call_seq = [dir_data, pl_data, pl_data, pl_data]
-        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq(call_seq))
+        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq(_maps_call_seq(3)))
 
         resp = client.post(
             "/api/routes/analyze",
@@ -262,10 +272,7 @@ class TestMapsPath:
 
     def test_maps_path_alternative_fields(self, client, monkeypatch):
         """Each maps alternative has route_id, summary, route_facts, display."""
-        dir_data = _directions_bytes("directions_3_alternatives.json")
-        pl_data = _places_bytes("places_service_area.json")
-        call_seq = [dir_data, pl_data, pl_data, pl_data]
-        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq(call_seq))
+        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq(_maps_call_seq(3)))
 
         resp = client.post(
             "/api/routes/analyze",
@@ -285,10 +292,7 @@ class TestMapsPath:
 
     def test_maps_path_route_facts_source_is_maps(self, client, monkeypatch):
         """Maps alternative route_facts have route_source == 'maps'."""
-        dir_data = _directions_bytes("directions_3_alternatives.json")
-        pl_data = _places_bytes("places_service_area.json")
-        call_seq = [dir_data, pl_data, pl_data, pl_data]
-        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq(call_seq))
+        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq(_maps_call_seq(3)))
 
         resp = client.post(
             "/api/routes/analyze",
@@ -305,10 +309,7 @@ class TestMapsPath:
 
     def test_maps_path_display_has_polyline(self, client, monkeypatch):
         """Maps alternative display has encoded_polyline (non-null)."""
-        dir_data = _directions_bytes("directions_3_alternatives.json")
-        pl_data = _places_bytes("places_service_area.json")
-        call_seq = [dir_data, pl_data, pl_data, pl_data]
-        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq(call_seq))
+        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq(_maps_call_seq(3)))
 
         resp = client.post(
             "/api/routes/analyze",
@@ -334,10 +335,7 @@ class TestKeySafety:
 
     def test_maps_path_key_absent_from_response(self, client, monkeypatch):
         """Sentinel key is not present anywhere in the maps success response."""
-        dir_data = _directions_bytes("directions_3_alternatives.json")
-        pl_data = _places_bytes("places_service_area.json")
-        call_seq = [dir_data, pl_data, pl_data, pl_data]
-        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq(call_seq))
+        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq(_maps_call_seq(3)))
 
         resp = client.post(
             "/api/routes/analyze",
@@ -463,19 +461,25 @@ class TestDeriveContextPlacesBiasing:
 
     Verifies that the context value derived from the raw route actually affects
     the Places API search by capturing the constructed URL at the _urlopen level
-    and asserting the correct 'type' parameter is present.
+    and asserting the correct search params are present.
+
+    New multi-point strategy:
+      - All routes: keyword="service area rest area" (primary broadening term).
+      - Highway routes: additionally type=gas_station as bias.
+      - Urban routes: keyword only — no type, to maximise recall.
     """
 
     def test_highway_route_requests_gas_station(self, client, monkeypatch):
-        """Highway route (merge maneuver → road_class=HIGHWAY) → places uses type=gas_station.
+        """Highway route (merge maneuver → road_class=HIGHWAY) → places uses
+        keyword AND type=gas_station.
 
-        The real code path runs: directions fixture → _infer_road_class → _derive_context →
-        places_rest_stops → _build_url; the captured URL must contain 'type=gas_station'.
+        The real code path: directions fixture → _infer_road_class →
+        _derive_context → places_rest_stops → _build_url; the captured URL must
+        contain both 'keyword=service' and 'type=gas_station'.
         """
         captured_urls: list[str] = []
-        dir_data = _directions_bytes("directions_3_alternatives.json")
-        pl_data = _places_bytes("places_service_area.json")
-        call_seq = [dir_data, pl_data, pl_data, pl_data]
+        # 1 directions + 3 alts × _PLACES_SAMPLE_POINTS places calls
+        call_seq = _maps_call_seq(3)
 
         def capturing_urlopen(url: str) -> bytes:
             captured_urls.append(url)
@@ -494,25 +498,32 @@ class TestDeriveContextPlacesBiasing:
         )
         assert resp.status_code == 200
 
-        # The directions_3_alternatives fixture has 'merge' maneuvers → HIGHWAY
-        # Each places URL must use type=gas_station (highway biasing)
+        # The directions_3_alternatives fixture has 'merge' maneuvers → HIGHWAY.
+        # Every places URL must carry keyword= and type=gas_station (highway bias).
         places_urls = [u for u in captured_urls if "nearbysearch" in u]
         assert len(places_urls) >= 1, "At least one places call should have been made"
         for url in places_urls:
+            assert "keyword=service" in url, (
+                f"All routes must use keyword search; got places URL: {url!r}"
+            )
             assert "type=gas_station" in url, (
-                f"Highway route must use gas_station POI type; got places URL: {url!r}"
+                f"Highway route must add gas_station bias; got places URL: {url!r}"
             )
 
-    def test_local_route_requests_convenience_store(self, client, monkeypatch):
-        """Non-highway route (no merge/ramp) → places uses type=convenience_store.
+    def test_local_route_uses_keyword_without_type(self, client, monkeypatch):
+        """Non-highway route (no merge/ramp) → places uses keyword-only, no type.
 
         The directions_local_only fixture has only straight/turn-right maneuvers →
-        road_class=LOCAL → _derive_context returns 'urban' → convenience_store.
+        road_class=LOCAL → _derive_context returns 'urban' → keyword alone
+        (no type parameter, to maximise recall beyond a single POI category).
         """
         captured_urls: list[str] = []
-        dir_data = _directions_bytes("directions_local_only.json")
-        pl_data = _places_bytes("places_convenience_store.json")
-        call_seq = [dir_data, pl_data]  # 1 direction + 1 places (single alternative)
+        # 1 direction + 1 alt × _PLACES_SAMPLE_POINTS places calls
+        call_seq = _maps_call_seq(
+            1,
+            dir_fixture="directions_local_only.json",
+            places_fixture="places_convenience_store.json",
+        )
 
         def capturing_urlopen(url: str) -> bytes:
             captured_urls.append(url)
@@ -534,7 +545,10 @@ class TestDeriveContextPlacesBiasing:
         places_urls = [u for u in captured_urls if "nearbysearch" in u]
         assert len(places_urls) >= 1, "At least one places call should have been made"
         for url in places_urls:
-            assert "type=convenience_store" in url, (
-                f"Local/urban route must use convenience_store POI type; "
+            assert "keyword=service" in url, (
+                f"Urban route must use keyword search; got places URL: {url!r}"
+            )
+            assert "type=convenience_store" not in url, (
+                f"Urban route must not narrow via type=convenience_store; "
                 f"got places URL: {url!r}"
             )

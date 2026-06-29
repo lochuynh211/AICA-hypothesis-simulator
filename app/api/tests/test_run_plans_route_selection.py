@@ -337,10 +337,10 @@ class TestMapsSelection:
         is used to create a run plan WITHOUT the key.  The sentinel must not appear
         in ANY downstream response: analyze, run-plans, run creation, tick, or RunLog.
         """
-        # 1. Prepare mock: 1 directions call + 3 places calls (3 alternatives)
+        # 1. Prepare mock: 1 directions + 3 alts × mc._PLACES_SAMPLE_POINTS places calls
         dir_data = _directions_bytes("directions_3_alternatives.json")
         pl_data = _places_bytes("places_service_area.json")
-        call_seq = [dir_data, pl_data, pl_data, pl_data]
+        call_seq = [dir_data] + [pl_data] * (3 * mc._PLACES_SAMPLE_POINTS)
         monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq(call_seq))
 
         # 2. Submit sentinel key to /api/routes/analyze

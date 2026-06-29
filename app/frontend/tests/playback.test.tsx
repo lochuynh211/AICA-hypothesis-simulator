@@ -341,6 +341,69 @@ describe('CockpitView', () => {
   })
 })
 
+describe('PlaybackControls — TICK_APPENDED integration (motion/recovery fields)', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+  })
+
+  it('(i) forwards motion_state, recovery_phase, is_traffic_jam from tick response into the trace entry', async () => {
+    // This test validates the seam between doTick() and TICK_APPENDED.
+    // It must FAIL before Fix 1 (fields not forwarded → null) and PASS after.
+    const tickResponse: TickResponse = {
+      run_state: { ...playingRun, current_tick: 2 },
+      decision: noTriggerDecision,
+      paused: false,
+      completed: false,
+      tick_index: 1,
+      route_fraction: 0.1,
+      motion_state: 'STOPPED',
+      recovery_phase: 'nap',
+      active_content: 'karaoke',
+      is_traffic_jam: true,
+    }
+    vi.mocked(client.tickRun).mockResolvedValue(tickResponse)
+
+    let capturedTrace: Array<{
+      tick_index: number
+      motion_state: string | null
+      recovery_phase: string | null
+      is_traffic_jam: boolean | null
+    }> | null = null
+
+    function TraceCapture() {
+      const { state } = useRunStore()
+      capturedTrace = state.trace as typeof capturedTrace
+      return null
+    }
+
+    renderInStore(
+      <>
+        <TraceCapture />
+        <PlaybackControls />
+      </>,
+      (dispatch) => {
+        dispatch({ type: 'RUN_CREATED', runState: playingRun })
+      },
+    )
+
+    const stepButton = await screen.findByRole('button', { name: /step/i })
+    fireEvent.click(stepButton)
+
+    await waitFor(() => {
+      expect(client.tickRun).toHaveBeenCalledTimes(1)
+    })
+
+    await waitFor(() => {
+      expect(capturedTrace).not.toBeNull()
+      expect(capturedTrace!.length).toBe(1)
+      // These assertions fail before Fix 1 (fields are null) and pass after.
+      expect(capturedTrace![0].motion_state).toBe('STOPPED')
+      expect(capturedTrace![0].recovery_phase).toBe('nap')
+      expect(capturedTrace![0].is_traffic_jam).toBe(true)
+    })
+  })
+})
+
 describe('RouteTimeline — FR-016 display-only animation', () => {
   afterEach(() => {
     vi.useRealTimers()

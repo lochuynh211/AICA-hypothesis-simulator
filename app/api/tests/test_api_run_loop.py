@@ -1001,8 +1001,12 @@ def test_maps_e2e_full_flow(tmp_path, monkeypatch):
     # ── Step 1: Mock _urlopen; POST /api/routes/analyze ─────────────────────
     dir_data = (_MAPS_FIXTURE_DIR / "directions_3_alternatives.json").read_bytes()
     pl_data = (_MAPS_FIXTURE_DIR / "places_service_area.json").read_bytes()
-    # 1 directions call + 3 places calls (one per alternative)
-    monkeypatch.setattr(_mc, "_urlopen", _maps_urlopen_seq([dir_data, pl_data, pl_data, pl_data]))
+    # 1 directions + 3 alts × _PLACES_SAMPLE_POINTS places calls per alternative
+    monkeypatch.setattr(
+        _mc,
+        "_urlopen",
+        _maps_urlopen_seq([dir_data] + [pl_data] * (3 * _mc._PLACES_SAMPLE_POINTS)),
+    )
 
     analyze_resp = client.post(
         "/api/routes/analyze",

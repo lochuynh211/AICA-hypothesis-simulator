@@ -24,7 +24,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from aica_api.models.run import EventPlan, FeatureGroups, RouteFacts, TickState
+from aica_api.models.run import EventPlan, FeatureGroups, RecoveryState, RouteFacts, TickState
 from aica_api.models.scenario import ScenarioDef
 from aica_api.services.binning import bin_context, build_feature_groups
 
@@ -150,6 +150,8 @@ def advance_tick(
     event_plan: EventPlan,
     route_facts: RouteFacts,
     scenario: ScenarioDef,
+    *,
+    recovery: RecoveryState | None = None,
 ) -> TickState:
     """Advance the simulation by one tick using the M2 profile-driven model.
 
@@ -218,6 +220,28 @@ def advance_tick(
     completed = new_distance_km >= total_km
     new_continuous_min = continuous_driving_min + tick_seconds / 60.0
 
+    # ── Recovery override (Approach A) ────────────────────────────────────
+    from aica_api.services.recovery import advance_recovery, current_stage
+    recovery_next = None
+    motion_state = "MOVING"
+    recovery_phase = None
+    active_content = None
+    if recovery is not None and recovery.active:
+        option = next((o for o in scenario.recovery_options if o.id == recovery.option_id), None)
+        if option is not None:
+            stage = current_stage(recovery, option)
+            spot_frac = recovery.rest_spot.route_fraction if recovery.rest_spot else 1.0
+            at_spot = new_distance_km / total_km >= spot_frac
+            if stage is not None and stage.motion == "STOPPED":
+                # Hold position at the rest spot; do not advance distance.
+                new_distance_km = spot_frac * total_km
+                route_fraction = spot_frac
+                completed = False
+                motion_state = "STOPPED"
+            recovery_phase = recovery.phase
+            active_content = stage.content if stage is not None else None
+            recovery_next = advance_recovery(recovery, option, at_rest_spot=at_spot)
+
     # ── Advance driver state ──────────────────────────────────────────────
     if scenario.driver_profile is not None:
         from aica_api.services.behavior.driver_model import DriverState, advance_driver_state
@@ -239,6 +263,18 @@ def advance_tick(
         new_drowsiness = drowsiness
         new_fatigue = fatigue
         new_attention = attention
+
+    # ── Recovery: apply rest recovery when STOPPED ────────────────────────
+    if recovery is not None and recovery.active and motion_state == "STOPPED" and scenario.driver_profile is not None:
+        from aica_api.services.behavior.driver_model import DriverState, apply_rest_recovery
+        _rec_option = next((o for o in scenario.recovery_options if o.id == recovery.option_id), None)
+        rest_type = (_rec_option.rest_type if _rec_option and _rec_option.rest_type else "short")
+        recovered = apply_rest_recovery(
+            scenario.driver_profile,
+            DriverState(drowsiness=drowsiness, fatigue=fatigue, attention=attention),
+            rest_type,
+        )
+        new_drowsiness, new_fatigue, new_attention = recovered.drowsiness, recovered.fatigue, recovered.attention
 
     # ── Update drowsinessAboveWeakTicks counter ───────────────────────────
     if new_drowsiness >= 20.0:
@@ -302,7 +338,13 @@ def advance_tick(
         "weatherRiskLevel": 0.0,
         "segmentType": segment_type,
         "drowsinessAboveWeakTicks": new_above_weak,
+        "motionState": motion_state,
+        "isTrafficJam": is_traffic_jam,
     }
+    if recovery_phase is not None:
+        raw_state["recoveryPhase"] = recovery_phase
+    if active_content is not None:
+        raw_state["activeContent"] = active_content
 
     # ── Build feature_groups ──────────────────────────────────────────────
     fg_dict = build_feature_groups(raw_state)
@@ -333,7 +375,7 @@ def advance_tick(
         "adas_warning_count": adas_warn,
     }
 
-    return TickState(
+    ts = TickState(
         tick_index=tick_index,
         elapsed_seconds=(tick_index + 1) * tick_seconds,
         route_fraction=route_fraction,
@@ -353,6 +395,9 @@ def advance_tick(
         _driver_update=driver_update_dict,
         _vehicle_update=vehicle_update_dict,
     )
+    if recovery_next is not None:
+        ts.model_extra["_recovery_next"] = recovery_next
+    return ts
 
 
 # ---------------------------------------------------------------------------
@@ -373,24 +418,38 @@ def _last_drowsiness(plan: EventPlan) -> str:
     return "none"
 
 
-def _initial_drowsiness(band: str) -> float:
-    """Convert a drowsiness band label to an initial numeric value."""
+def _initial_drowsiness(value) -> float:
+    """Convert a drowsiness band label or numeric value to an initial float.
+
+    Accepts either:
+    - A number (int/float): clamp to [0, 100] and return as float.
+    - A band string: map via the established drowsiness-band lookup.
+    """
+    if isinstance(value, (int, float)):
+        return float(max(0.0, min(100.0, float(value))))
     return {
         "none": 0.0,
         "weak": 20.0,
         "moderate": 40.0,
         "strong": 60.0,
         "severe": 80.0,
-    }.get(band, 0.0)
+    }.get(value, 0.0)
 
 
-def _initial_fatigue(band: str) -> float:
-    """Convert a fatigue band label to an initial numeric value."""
+def _initial_fatigue(value) -> float:
+    """Convert a fatigue band label or numeric value to an initial float.
+
+    Accepts either:
+    - A number (int/float): clamp to [0, 100] and return as float.
+    - A band string: map via the established fatigue-band lookup.
+    """
+    if isinstance(value, (int, float)):
+        return float(max(0.0, min(100.0, float(value))))
     return {
         "low": 0.0,
         "medium": 30.0,
         "high": 60.0,
-    }.get(band, 0.0)
+    }.get(value, 0.0)
 
 
 # M2 segment type from km position along route_facts

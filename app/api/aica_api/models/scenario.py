@@ -91,6 +91,23 @@ class EventPreset(BaseModel):
     model_config = {"extra": "allow"}
 
 
+class RecoveryStage(BaseModel):
+    phase: str                                   # wakefulness | nap | content
+    content: str                                 # audio_karaoke | sleep | video_karaoke | stretch | ...
+    motion: Literal["MOVING", "STOPPED"]
+    ticks: int | None = None                     # None = lasts until rest spot (wakefulness)
+    model_config = {"extra": "allow"}
+
+
+class RecoveryOption(BaseModel):
+    id: str
+    label: dict                                  # {ja, en}
+    rest_type: Literal["short", "long"] | None = None
+    stages: list[RecoveryStage] = []
+    postpone: bool = False
+    model_config = {"extra": "allow"}
+
+
 class ScenarioDef(BaseModel):
     """Top-level scenario definition.
 
@@ -104,11 +121,12 @@ class ScenarioDef(BaseModel):
     type: str
     persona: Persona
     route_intent: RouteIntent
-    initial_state: dict[str, str]
+    initial_state: dict[str, Any]
     event_presets: EventPreset
     total_duration_seconds: int
     tick_seconds: int
     allowed_actions: list[str]
+    recovery_options: list[RecoveryOption] = []
     review_focus: str = ""
 
     # M2 profile fields — optional so M1 fixture files still parse
@@ -117,3 +135,8 @@ class ScenarioDef(BaseModel):
     speed_profile: SpeedProfile | None = None
     is_night: bool = False
     presets: dict[str, Any] = {}
+
+    # M8 UC-01: safety ceiling for rest-spot reachability check (0–100+, percent).
+    # Default 100.0 = full drowsiness scale; values above 100 allow "overload"
+    # (driver may reach a distant spot even at high drowsiness).
+    rest_drowsiness_ceiling: float = 100.0

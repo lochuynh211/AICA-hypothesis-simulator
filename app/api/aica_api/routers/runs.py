@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from aica_api.config import settings
 from aica_api.models.feedback import FeedbackEvent, FeedbackTarget
 from aica_api.models.log import RunLog
-from aica_api.models.run import RunStatus
+from aica_api.models.run import RestSpot, RunStatus
 from aica_api.services.evidence import build_evidence_report
 from aica_api.services.evidence_markdown import render_evidence_markdown
 from aica_api.services.feedback import (
@@ -36,7 +36,9 @@ from aica_api.services.run_manager import (
     action,
     create_run,
     get_active_run_log,
+    get_prior_tick_state,
     get_run,
+    get_scenario,
     tick,
 )
 
@@ -69,6 +71,8 @@ class CreateRunBody(BaseModel):
 
 class ActionBody(BaseModel):
     action: str
+    recovery_option_id: str | None = None
+    rest_spot: RestSpot | None = None
 
 
 class FeedbackBody(BaseModel):
@@ -250,7 +254,14 @@ def tick_endpoint(run_id: str):
     ts = outcome.tick_state
     route_fraction = ts.route_fraction if ts is not None else None
     distance_km = ts.distance_km if ts is not None else None
-    speed_kph = (ts.raw_state or {}).get("speedKph") if ts is not None else None
+    # Collapse raw_state once — guards both the None-ts and missing-key cases.
+    raw = (ts.raw_state or {}) if ts is not None else {}
+    speed_kph = raw.get("speedKph")
+    motion_state = raw.get("motionState")
+    recovery_phase = raw.get("recoveryPhase")
+    active_content = raw.get("activeContent")
+    is_traffic_jam = raw.get("isTrafficJam")
+    segment_type = raw.get("segmentType")
 
     if outcome.algorithm_error is not None:
         return {
@@ -261,6 +272,11 @@ def tick_endpoint(run_id: str):
             "route_fraction": route_fraction,
             "distance_km": distance_km,
             "speed_kph": speed_kph,
+            "motion_state": motion_state,
+            "recovery_phase": recovery_phase,
+            "active_content": active_content,
+            "is_traffic_jam": is_traffic_jam,
+            "segment_type": segment_type,
         }
     return {
         "run_state": outcome.run_state,
@@ -271,6 +287,11 @@ def tick_endpoint(run_id: str):
         "route_fraction": route_fraction,
         "distance_km": distance_km,
         "speed_kph": speed_kph,
+        "motion_state": motion_state,
+        "recovery_phase": recovery_phase,
+        "active_content": active_content,
+        "is_traffic_jam": is_traffic_jam,
+        "segment_type": segment_type,
     }
 
 
@@ -285,7 +306,9 @@ def action_endpoint(run_id: str, body: ActionBody):
         raise HTTPException(status_code=409, detail="No pending proposal")
 
     try:
-        updated = action(run_id, body.action)
+        updated = action(run_id, body.action,
+                         recovery_option_id=body.recovery_option_id,
+                         rest_spot=body.rest_spot)
     except RunNotFoundError:
         raise HTTPException(status_code=404, detail=f"Run {run_id!r} not found")
     except ActionNotAllowedError as exc:
@@ -345,6 +368,148 @@ def get_run_endpoint(run_id: str):
     if rs is None:
         raise HTTPException(status_code=404, detail=f"Run {run_id!r} not found")
     return rs
+
+
+_REST_SPOTS_MAX = 5
+_REST_SPOTS_DEFAULT_MIN_DISTANCE_KM = 20.0
+
+
+@router.get("/api/runs/{run_id}/rest-spots")
+def rest_spots_endpoint(
+    run_id: str,
+    maps_key: str | None = None,
+    drowsiness_ceiling: float | None = None,
+    min_distance_km: float | None = None,
+):
+    """Return candidate rest stops for a run, enriched with distance/ETA/reachability.
+
+    Candidate selection (M8):
+      1. Source: named_rest_spots when non-empty (real facility names from Places
+         or local scenario); else rest_spot_positions with generic labels.
+      2. Filter: only spots strictly AHEAD of the current driving position.
+      3. Sort: ascending by position_km.
+      4. Space: greedy walk — take a spot, then skip any within min_distance_km
+         of the last taken spot.  Default spacing = 20 km.
+      5. Cap: at most 5 spots returned.
+
+    Enrichment per spot:
+      distance_km — from current position (rounded to 1 dp).
+      eta_min     — minutes to reach at current speed; None when speed ≤ 0.
+      reachable   — False when projected drowsiness on arrival exceeds the
+                    effective ceiling.  Projection = current_drowsiness +
+                    base_growth_per_min × eta_min (linear approximation;
+                    omits night/monotony/traffic multipliers by design).
+
+    Query params:
+      drowsiness_ceiling — overrides scenario.rest_drowsiness_ceiling.
+      min_distance_km    — minimum spacing between returned spots (default 20).
+      maps_key           — not yet wired; key stays in-memory only and is never
+                           persisted or logged (maps-key-never-persisted constraint).
+
+    404 if run_id is unknown.
+    """
+    rs = get_run(run_id)
+    if rs is None:
+        raise HTTPException(status_code=404, detail=f"Run {run_id!r} not found")
+
+    total_km = rs.route_facts.total_route_distance_km or 120.0
+
+    # ── Current driving state from prior tick (zero-defaults if no tick yet) ─
+    prior_tick = get_prior_tick_state(run_id)
+    if prior_tick is not None:
+        current_distance_km = prior_tick.distance_km or 0.0
+        raw = prior_tick.raw_state
+        current_drowsiness = float(raw.get("drowsinessLevel", 0.0))
+        current_speed_kph = float(raw.get("speedKph", 0.0))
+    else:
+        current_distance_km = 0.0
+        current_drowsiness = 0.0
+        current_speed_kph = 0.0
+
+    # ── Drowsiness growth rate and safety ceiling from scenario ───────────────
+    # Growth projection uses base_growth_per_min only — a simple linear model
+    # that omits night/monotony/traffic multipliers (agreed approximation for
+    # reachability estimates).  See scenario.rest_drowsiness_ceiling for ceiling.
+    #
+    # REST-SPOT reachability ceiling — independent of the algorithm's trigger
+    # threshold.  A ceiling above 100 lets the driver "overload" (reach a distant
+    # spot even with high drowsiness).  The query param drowsiness_ceiling
+    # (if provided) overrides the scenario default.
+    scenario = get_scenario(run_id)
+    if scenario is not None and scenario.driver_profile is not None:
+        base_growth_per_min = scenario.driver_profile.drowsiness_model.base_growth_per_min
+        ceiling = drowsiness_ceiling if drowsiness_ceiling is not None else scenario.rest_drowsiness_ceiling
+    else:
+        base_growth_per_min = 0.0
+        ceiling = drowsiness_ceiling if drowsiness_ceiling is not None else 100.0
+
+    # ── Minimum spacing between returned spots ────────────────────────────────
+    effective_min_distance_km = (
+        min_distance_km if min_distance_km is not None else _REST_SPOTS_DEFAULT_MIN_DISTANCE_KM
+    )
+
+    # ── Build candidate list (named when available, else generic) ─────────────
+    # Each candidate: (position_km, name)
+    # Synthetic spots (fabricated by _scale_scenario_rest_positions) are excluded
+    # from the picker — they are internal route-analysis artefacts, not real facilities.
+    named = rs.route_facts.named_rest_spots
+    if named:
+        real_named = [s for s in named if not s.synthetic]
+        if real_named:
+            candidates = [(s.position_km, s.name) for s in real_named]
+        else:
+            candidates = []
+    else:
+        candidates = [
+            (pos_km, f"Rest stop {i + 1}")
+            for i, pos_km in enumerate(rs.route_facts.rest_spot_positions)
+        ]
+
+    # ── Filter to spots strictly ahead of the current position ───────────────
+    ahead = [(pos_km, name) for pos_km, name in candidates if pos_km > current_distance_km]
+
+    # ── Sort ascending by position_km ─────────────────────────────────────────
+    ahead.sort(key=lambda t: t[0])
+
+    # ── Greedy spacing filter ─────────────────────────────────────────────────
+    spaced: list[tuple[float, str]] = []
+    last_taken_km: float | None = None
+    for pos_km, name in ahead:
+        if last_taken_km is None or (pos_km - last_taken_km) >= effective_min_distance_km:
+            spaced.append((pos_km, name))
+            last_taken_km = pos_km
+            if len(spaced) >= _REST_SPOTS_MAX:
+                break
+
+    # ── Enrich each selected candidate ───────────────────────────────────────
+    spots = []
+    for i, (pos_km, name) in enumerate(spaced):
+        route_fraction = min(1.0, pos_km / total_km)
+        spot_distance_km = round(max(0.0, pos_km - current_distance_km), 1)
+
+        if current_speed_kph <= 0:
+            # Guard divide-by-zero: speed unknown → ETA unknown, unreachable
+            eta_min: float | None = None
+            reachable = False
+        else:
+            raw_eta = (spot_distance_km / current_speed_kph) * 60.0
+            eta_min = round(raw_eta, 1)
+            projected_drowsiness = current_drowsiness + base_growth_per_min * raw_eta
+            reachable = projected_drowsiness <= ceiling
+
+        spots.append({
+            "id": f"rest_{i}",
+            "label": {"ja": name, "en": name},
+            "route_fraction": route_fraction,
+            "distance_km": spot_distance_km,
+            "eta_min": eta_min,
+            "reachable": reachable,
+        })
+
+    # (When maps_key is present, replace `spots` with Places results via the
+    #  routes.py Places helper; key stays in-memory, never persisted or logged.)
+    notice = "no_rest_stops_found" if not spots else None
+    return {"rest_spots": spots, "notice": notice}
 
 
 @router.get("/api/runs/{run_id}/log")

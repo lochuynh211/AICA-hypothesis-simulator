@@ -707,6 +707,141 @@ describe('MapSurface — I3 regression: Maps SDK auth failure causes UI freeze',
   )
 })
 
+// ── T011: rest-spot marker ────────────────────────────────────────────────────
+
+describe('MapSurface — T011: rest-spot marker', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    setupGoogleMapsMock()
+    localStorage.clear()
+    sessionStorage.clear()
+  })
+
+  afterEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).google
+  })
+
+  it('(w) renders rest-spot-marker for an accepted rest in restHistory', () => {
+    renderInStore(<MapSurface />, (dispatch) => {
+      dispatch({ type: 'SET_MAPS_KEY', key: 'test-key' })
+      dispatch({ type: 'SET_ALTERNATIVES', envelope: mapsEnvelope })
+      dispatch({ type: 'SELECT_ROUTE', routeId: 'route-0' })
+      dispatch({ type: 'RUN_CREATED', runState: runStateWithTicks })
+      // Marker now persists from restHistory (captured at accept time), so it
+      // survives after recovery ends rather than vanishing with recovery state.
+      dispatch({
+        type: 'ACTION_APPLIED',
+        runState: runStateWithTicks,
+        action: 'accept_rest',
+        restChoice: {
+          tickIndex: 1,
+          optionId: 'rest_short',
+          optionLabel: { ja: '短い休憩', en: 'Short Rest' },
+          spot: {
+            id: 'spot-1',
+            label: { ja: '道の駅', en: 'Rest Area' },
+            lat: 35.2,
+            lng: 135.2,
+            route_fraction: 0.6,
+          },
+        },
+      })
+    })
+
+    const marker = screen.getByTestId('rest-spot-marker')
+    expect(marker).toBeInTheDocument()
+    // Positioned at 60% (route_fraction=0.6)
+    expect(marker).toHaveStyle({ left: '60%' })
+  })
+
+  it('(x) does not render rest-spot-marker when recovery.rest_spot is absent', () => {
+    renderInStore(<MapSurface />, (dispatch) => {
+      dispatch({ type: 'SET_MAPS_KEY', key: 'test-key' })
+      dispatch({ type: 'SET_ALTERNATIVES', envelope: mapsEnvelope })
+      dispatch({ type: 'SELECT_ROUTE', routeId: 'route-0' })
+      dispatch({ type: 'RUN_CREATED', runState: runStateWithTicks })
+    })
+
+    expect(screen.queryByTestId('rest-spot-marker')).not.toBeInTheDocument()
+  })
+})
+
 // Note: routesAnalyze envelope behaviour (local path, maps path, 502 MapsError)
 // and createRunPlan route selection fields are covered in client.test.tsx, which
 // tests the real client implementation directly (no vi.mock on the client module).
+
+// ── Road-class colored polyline ──────────────────────────────────────────────
+
+describe('MapSurface — road-class colored polyline', () => {
+  afterEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).google
+  })
+
+  it('(y) draws one Polyline per route_segment with the correct road-class strokeColor', () => {
+    const decodePath = vi.fn().mockReturnValue([
+      { lat: () => 35.0, lng: () => 135.0 },
+      { lat: () => 35.3, lng: () => 135.3 },
+      { lat: () => 35.6, lng: () => 135.6 },
+    ])
+    // Mock spherical so buildCumulative + slicePath work
+    const computeDistanceBetween = vi.fn().mockReturnValue(30000) // 30 km each leg
+    const interpolate = vi.fn().mockImplementation((a: any, _b: any, _t: number) => a)
+
+    const mockPolyline = { setMap: vi.fn() }
+    const mockMaps = {
+      Map: vi.fn().mockReturnValue({ fitBounds: vi.fn() }),
+      Polyline: vi.fn().mockReturnValue(mockPolyline),
+      LatLngBounds: vi.fn().mockReturnValue({ extend: vi.fn() }),
+      geometry: {
+        encoding: { decodePath },
+        spherical: { computeDistanceBetween, interpolate },
+      },
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(window as any).google = { maps: mockMaps }
+
+    const colorEnvelope: RouteEnvelope = {
+      route_source: 'maps',
+      alternatives: [
+        {
+          route_id: 'route-color',
+          summary: 'Colored Route',
+          route_facts: {
+            total_route_distance_km: 60,
+            estimated_route_duration_min: 60,
+            route_segments: [
+              { segment_type: 'normal_road', start_km: 0, length_km: 30 },
+              { segment_type: 'highway', start_km: 30, length_km: 30 },
+            ],
+            rest_spot_positions: [],
+            route_progress_checkpoints: [],
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          display: { encoded_polyline: TEST_POLYLINE } as any,
+          notices: [],
+        },
+      ],
+    }
+
+    renderInStore(<MapSurface />, (dispatch) => {
+      dispatch({ type: 'SET_MAPS_KEY', key: 'test-key' })
+      dispatch({ type: 'SET_ALTERNATIVES', envelope: colorEnvelope })
+      dispatch({ type: 'SELECT_ROUTE', routeId: 'route-color' })
+    })
+
+    // 2 Polylines (one per segment), not 1
+    expect(mockMaps.Polyline).toHaveBeenCalledTimes(2)
+    // First: normal_road → blue #2563eb
+    expect(mockMaps.Polyline).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ strokeColor: '#2563eb' }),
+    )
+    // Second: highway → cyan #06b6d4
+    expect(mockMaps.Polyline).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ strokeColor: '#06b6d4' }),
+    )
+  })
+})

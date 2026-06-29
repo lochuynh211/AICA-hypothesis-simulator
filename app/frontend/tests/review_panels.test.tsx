@@ -142,23 +142,38 @@ describe('ScenarioBeats', () => {
     vi.mocked(client.getScenario).mockResolvedValue(scenarioDef)
   })
 
-  it('emits a beat per status change as the trace advances (road type + drowsiness)', async () => {
-    // Drive through start (f=0) → highway (f=0.35) → rest (f=0.5), drowsy high at the end.
+  it('emits a beat per status change as the trace advances (road-type, proposal, recovery)', async () => {
+    // Drive: start (tick 0) → highway MOVING (tick 1) → REST_PROPOSAL (tick 2) → nap (tick 3) → content (tick 4)
     const driveThrough = (dispatch: React.Dispatch<RunStoreAction>) => {
       dispatch({ type: 'SELECT_SCENARIO', id: 'sc1' })
       dispatch({ type: 'RUN_CREATED', runState })
-      const calm = { ...decision, features: { drowsiness_level: 'low', fatigue_level: 'low' } }
-      dispatch({ type: 'TICK_APPENDED', decision: calm, tickIndex: 0, runState, paused: false, completed: false, routeFraction: 0 })
-      dispatch({ type: 'TICK_APPENDED', decision: calm, tickIndex: 1, runState, paused: false, completed: false, routeFraction: 0.35 })
-      dispatch({ type: 'TICK_APPENDED', decision, tickIndex: 2, runState, paused: false, completed: false, routeFraction: 0.5 })
+      const noTrigger = { ...decision, result_type: 'NO_TRIGGER' as const, trigger_candidate: false, selected_category: null as null }
+      const proposalDecision = { ...decision, result_type: 'REST_PROPOSAL' as const }
+      // Tick 0: Start — MOVING on normal_road
+      dispatch({ type: 'TICK_APPENDED', decision: noTrigger, tickIndex: 0, runState, paused: false, completed: false, motionState: 'MOVING', segmentType: 'normal_road' })
+      // Tick 1: Road class changes to highway — state beat emitted
+      dispatch({ type: 'TICK_APPENDED', decision: noTrigger, tickIndex: 1, runState, paused: false, completed: false, motionState: 'MOVING', segmentType: 'highway' })
+      // Tick 2: REST_PROPOSAL fires (still on highway)
+      dispatch({ type: 'TICK_APPENDED', decision: proposalDecision, tickIndex: 2, runState, paused: true, completed: false, motionState: 'MOVING', segmentType: 'highway' })
+      // Driver accepts rest
+      dispatch({ type: 'ACTION_APPLIED', runState, action: 'accept_rest' })
+      // Tick 3: recovery nap phase
+      dispatch({ type: 'TICK_APPENDED', decision: noTrigger, tickIndex: 3, runState, paused: false, completed: false, motionState: 'STOPPED', segmentType: 'highway', recoveryPhase: 'nap' })
+      // Tick 4: content (karaoke) phase
+      dispatch({ type: 'TICK_APPENDED', decision: noTrigger, tickIndex: 4, runState, paused: false, completed: false, motionState: 'STOPPED', segmentType: 'highway', recoveryPhase: 'content' })
     }
     renderWithStore(<ScenarioBeats />, driveThrough)
     await waitFor(() => {
-      expect(screen.getByText('Highway')).toBeInTheDocument()
+      expect(screen.getByText('Driving · Highway')).toBeInTheDocument()
     })
     expect(screen.getByText('Start')).toBeInTheDocument()
-    // High drowsiness at the last tick surfaces an escalation beat.
-    expect(screen.getByText(/Drowsiness: high/)).toBeInTheDocument()
+    expect(screen.getByText('AICA proposes rest')).toBeInTheDocument()
+    expect(screen.getByText('Resting (nap)')).toBeInTheDocument()
+    expect(screen.getByText(/Karaoke after nap/)).toBeInTheDocument()
+    // Drowsiness beats must NOT appear
+    expect(screen.queryByText(/Drowsiness:/)).not.toBeInTheDocument()
+    // No route_intent segment name ("Yuuko" or "Highway" from route_intent) appears as a standalone beat
+    expect(screen.queryByText('Yuuko Roadside Station')).not.toBeInTheDocument()
     // The latest beat is active ("▶ now").
     expect(screen.getByTestId('scenario-beats')).toHaveTextContent('now')
   })

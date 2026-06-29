@@ -234,10 +234,79 @@ describe('runStore — ACTION_APPLIED', () => {
     }))
     expect(result.current.state.paused).toBe(true)
 
-    act(() => result.current.dispatch({ type: 'ACTION_APPLIED', runState: resumedRun }))
+    act(() => result.current.dispatch({ type: 'ACTION_APPLIED', runState: resumedRun, action: 'accept_rest' }))
     expect(result.current.state.runState?.status).toBe('playing')
     expect(result.current.state.runState?.pending_proposal).toBeNull()
     expect(result.current.state.paused).toBe(false)
+  })
+})
+
+describe('runStore — restHistory (accepted rests persist)', () => {
+  const restChoice = {
+    tickIndex: 3,
+    optionId: 'nap_karaoke',
+    optionLabel: { ja: '仮眠＋カラオケ', en: 'Nap + Karaoke' },
+    spot: {
+      id: 'p1',
+      label: { ja: '優子道の駅', en: 'Yuuko Roadside Station' },
+      route_fraction: 0.5,
+      distance_km: 49.5,
+    },
+  }
+
+  it('appends restChoice on accept_rest and leaves history untouched for actions without one', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+
+    act(() => result.current.dispatch({ type: 'RUN_CREATED', runState: playingRun }))
+    act(() =>
+      result.current.dispatch({
+        type: 'ACTION_APPLIED',
+        runState: playingRun,
+        action: 'accept_rest',
+        restChoice,
+      }),
+    )
+    expect(result.current.state.restHistory).toHaveLength(1)
+    expect(result.current.state.restHistory[0].spot.label.en).toBe('Yuuko Roadside Station')
+
+    // A later non-accept action (postpone/decline) carries no restChoice.
+    act(() =>
+      result.current.dispatch({
+        type: 'ACTION_APPLIED',
+        runState: playingRun,
+        action: 'postpone',
+      }),
+    )
+    expect(result.current.state.restHistory).toHaveLength(1)
+  })
+
+  it('clears restHistory on a new run, scenario change, and reset', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+
+    const seed = () => {
+      act(() => result.current.dispatch({ type: 'RUN_CREATED', runState: playingRun }))
+      act(() =>
+        result.current.dispatch({
+          type: 'ACTION_APPLIED',
+          runState: playingRun,
+          action: 'accept_rest',
+          restChoice,
+        }),
+      )
+      expect(result.current.state.restHistory).toHaveLength(1)
+    }
+
+    seed()
+    act(() => result.current.dispatch({ type: 'RUN_CREATED', runState: playingRun }))
+    expect(result.current.state.restHistory).toEqual([])
+
+    seed()
+    act(() => result.current.dispatch({ type: 'SELECT_SCENARIO', id: 'other_scenario' }))
+    expect(result.current.state.restHistory).toEqual([])
+
+    seed()
+    act(() => result.current.dispatch({ type: 'RESET' }))
+    expect(result.current.state.restHistory).toEqual([])
   })
 })
 

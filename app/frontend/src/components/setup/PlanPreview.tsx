@@ -34,6 +34,8 @@ export default function PlanPreview() {
     routeSource,
     profileOverrides,
     tickSecondsOverride,
+    initialDrowsiness,
+    initialFatigue,
   } = state
 
   const hasActiveRun = runState !== null && runState.status !== 'completed'
@@ -80,6 +82,10 @@ export default function PlanPreview() {
       const presets: Record<string, unknown> =
         tickSecondsOverride != null ? { tick_seconds: tickSecondsOverride } : {}
 
+      const initialState: { drowsiness_level?: number; fatigue_level?: number } = {}
+      if (initialDrowsiness != null) initialState.drowsiness_level = initialDrowsiness
+      if (initialFatigue != null) initialState.fatigue_level = initialFatigue
+
       const resp = await createRunPlan({
         packageId: selectedPackageId,
         scenarioId: selectedScenarioId,
@@ -93,6 +99,8 @@ export default function PlanPreview() {
         displayRoute: resolvedDisplay,
         // T009: include sparse profile overrides only when non-null
         ...(profileOverrides != null ? { profiles: profileOverrides } : {}),
+        // Include initial_state only when at least one dimension is set
+        ...(Object.keys(initialState).length > 0 ? { initialState } : {}),
       })
       dispatch({
         type: 'PLAN_DRAFTED',

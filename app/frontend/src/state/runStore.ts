@@ -13,6 +13,7 @@ import type {
   RouteEnvelope,
   MapsErrorBody,
   ProfileOverrides,
+  RestChoice,
 } from '../api/types'
 
 // ── State ──────────────────────────────────────────────────────────────────
@@ -104,9 +105,55 @@ export type RunStoreState = {
    * Cleared on SELECT_SCENARIO and RESET so each new scenario starts fresh.
    */
   tickSecondsOverride: number | null
+
+  // ── Rest-spot reachability ceiling override (setup-time) ──────────────────
+  /**
+   * User-set rest-spot reachability ceiling (drowsiness %). Null means "use
+   * scenario default" — nothing is sent as a query param. A number (may exceed
+   * 100) overrides the scenario default. This is the REST-SPOT ceiling only,
+   * independent of the algorithm trigger threshold.
+   * Cleared on SELECT_SCENARIO and RESET.
+   */
+  restDrowsinessCeiling: number | null
+
+  // ── Rest-spot minimum spacing override (setup-time) ───────────────────────
+  /**
+   * User-set minimum distance (km) between returned rest spots. Null means
+   * "use backend default (20 km)" — nothing is sent as a query param.
+   * A positive number overrides the backend default.
+   * Cleared on SELECT_SCENARIO and RESET.
+   */
+  minRestSpacingKm: number | null
+
+  // ── M7: last applied action (for beat timeline / recovery) ─────────────────
+  /**
+   * The action string from the most recent ACTION_APPLIED dispatch.
+   * Used by downstream components (e.g. recovery beat timeline) to know what
+   * the reviewer just did. Null until the first action is taken; cleared on RESET.
+   */
+  lastAction: string | null
+
+  /**
+   * Accepted rests this run, in order. Captured at accept time so the chosen
+   * spot + option persist after the transient recovery state clears — drives
+   * the persistent rest markers (map + progress bar) and the event-log
+   * "driver chose rest" line. Cleared on new run / scenario change / reset.
+   */
+  restHistory: RestChoice[]
+
+  // ── Initial driver state override (setup-time) ────────────────────────────
+  /**
+   * User-set starting drowsiness (0–100). Null = use scenario default. Cleared on SELECT_SCENARIO and RESET.
+   */
+  initialDrowsiness: number | null
+
+  /**
+   * User-set starting fatigue (0–100). Null = use scenario default. Cleared on SELECT_SCENARIO and RESET.
+   */
+  initialFatigue: number | null
 }
 
-const initialState: RunStoreState = {
+export const initialState: RunStoreState = {
   packages: [],
   scenarios: [],
   packageErrors: [],
@@ -146,6 +193,17 @@ const initialState: RunStoreState = {
   profileOverrides: null,
   // tick seconds — null means "use scenario default"
   tickSecondsOverride: null,
+  // rest-spot reachability ceiling — null means "use scenario default"
+  restDrowsinessCeiling: null,
+  // rest-spot minimum spacing — null means "use backend default (20 km)"
+  minRestSpacingKm: null,
+  // M7 — no action taken yet
+  lastAction: null,
+  // M7 — no rests accepted yet
+  restHistory: [],
+  // initial driver state overrides — null means "use scenario default"
+  initialDrowsiness: null,
+  initialFatigue: null,
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -165,8 +223,28 @@ export type RunStoreAction =
       completed: boolean
       /** Authoritative route position (0–1) from the tick response, if present. */
       routeFraction?: number | null
+      /** Current motion state (e.g. 'MOVING', 'STOPPED') from the recovery engine. */
+      motionState?: string | null
+      /** Current recovery phase label from the recovery engine. */
+      recoveryPhase?: string | null
+      /** Active content string shown during a recovery stage. */
+      activeContent?: string | null
+      /** True when the current segment is a traffic jam. */
+      isTrafficJam?: boolean | null
+      /** Current road segment class from the tick engine. */
+      segmentType?: string | null
     }
-  | { type: 'ACTION_APPLIED'; runState: RunState }
+  | {
+      type: 'ACTION_APPLIED'
+      runState: RunState
+      /** The action string applied — recorded for the beat timeline. */
+      action: string
+      /**
+       * Present only for an accepted rest: the chosen option + spot, appended
+       * to restHistory so the markers/log survive after recovery ends.
+       */
+      restChoice?: RestChoice
+    }
   | {
       type: 'ALGORITHM_ERROR_APPENDED'
       runState: RunState
@@ -214,10 +292,21 @@ export type RunStoreAction =
   // ── Tick seconds override ─────────────────────────────────────────────────
   /** Set the tick duration override (positive integer), or null to clear (use scenario default). */
   | { type: 'SET_TICK_SECONDS'; seconds: number | null }
+  // ── Rest-spot reachability ceiling override ───────────────────────────────
+  /** Set the rest-spot reachability ceiling (drowsiness %), or null to clear (use scenario default). */
+  | { type: 'SET_REST_DROWSINESS_CEILING'; value: number | null }
+  // ── Rest-spot minimum spacing override ───────────────────────────────────
+  /** Set the minimum distance (km) between rest spots, or null to clear (use backend default 20 km). */
+  | { type: 'SET_MIN_REST_SPACING_KM'; value: number | null }
+  // ── Initial driver state overrides ─────────────────────────────────────────
+  /** Set the starting drowsiness (0–100), or null to clear (use scenario default). */
+  | { type: 'SET_INITIAL_DROWSINESS'; value: number | null }
+  /** Set the starting fatigue (0–100), or null to clear (use scenario default). */
+  | { type: 'SET_INITIAL_FATIGUE'; value: number | null }
 
 // ── Reducer ────────────────────────────────────────────────────────────────
 
-function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
+export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
   switch (action.type) {
     case 'LOAD_PACKAGES':
       return {
@@ -265,6 +354,15 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         profileOverrides: null,
         // Clear tick seconds override — new scenario has its own default.
         tickSecondsOverride: null,
+        // Clear rest-spot ceiling override — new scenario has its own default.
+        restDrowsinessCeiling: null,
+        // Clear rest-spot spacing override — new scenario has its own default.
+        minRestSpacingKm: null,
+        // Clear initial driver state overrides — new scenario has its own defaults.
+        initialDrowsiness: null,
+        initialFatigue: null,
+        // New scenario — discard any prior accepted-rest history.
+        restHistory: [],
       }
 
     case 'SET_PARAMETER':
@@ -323,6 +421,8 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         algorithmErrors: [],
         runError: null,
         viewMode: 'review',
+        // Fresh run — no rests accepted yet.
+        restHistory: [],
       }
 
     case 'TICK_APPENDED': {
@@ -330,6 +430,11 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         ...action.decision,
         tick_index: action.tickIndex,
         route_fraction: action.routeFraction ?? null,
+        motion_state: action.motionState ?? null,
+        recovery_phase: action.recoveryPhase ?? null,
+        active_content: action.activeContent ?? null,
+        is_traffic_jam: action.isTrafficJam ?? null,
+        segment_type: action.segmentType ?? null,
       }
       return {
         ...state,
@@ -346,6 +451,10 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         ...state,
         runState: action.runState,
         paused: false,
+        lastAction: action.action,
+        restHistory: action.restChoice
+          ? [...state.restHistory, action.restChoice]
+          : state.restHistory,
       }
 
     case 'ALGORITHM_ERROR_APPENDED':
@@ -408,6 +517,18 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
     case 'SET_TICK_SECONDS':
       return { ...state, tickSecondsOverride: action.seconds }
 
+    case 'SET_REST_DROWSINESS_CEILING':
+      return { ...state, restDrowsinessCeiling: action.value }
+
+    case 'SET_MIN_REST_SPACING_KM':
+      return { ...state, minRestSpacingKm: action.value }
+
+    case 'SET_INITIAL_DROWSINESS':
+      return { ...state, initialDrowsiness: action.value }
+
+    case 'SET_INITIAL_FATIGUE':
+      return { ...state, initialFatigue: action.value }
+
     case 'RESET':
       return {
         ...state,
@@ -440,6 +561,17 @@ function reducer(state: RunStoreState, action: RunStoreAction): RunStoreState {
         profileOverrides: null,
         // Clear tick seconds override on reset
         tickSecondsOverride: null,
+        // Clear rest-spot ceiling override on reset
+        restDrowsinessCeiling: null,
+        // Clear rest-spot spacing override on reset
+        minRestSpacingKm: null,
+        // M7: clear last action on reset
+        lastAction: null,
+        // M7: clear accepted-rest history on reset
+        restHistory: [],
+        // Clear initial driver state overrides on reset
+        initialDrowsiness: null,
+        initialFatigue: null,
       }
 
     default:
