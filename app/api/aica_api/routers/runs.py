@@ -368,7 +368,7 @@ def get_run_endpoint(run_id: str):
 
 
 @router.get("/api/runs/{run_id}/rest-spots")
-def rest_spots_endpoint(run_id: str, maps_key: str | None = None):
+def rest_spots_endpoint(run_id: str, maps_key: str | None = None, drowsiness_ceiling: float | None = None):
     """Return candidate rest stops for a run, enriched with distance/ETA/reachability.
 
     Fallback path (REQUIRED, deterministic, offline):
@@ -410,13 +410,17 @@ def rest_spots_endpoint(run_id: str, maps_key: str | None = None):
     # Growth projection uses base_growth_per_min only — a simple linear model
     # that omits night/monotony/traffic multipliers (agreed approximation for
     # reachability estimates).  See scenario.rest_drowsiness_ceiling for ceiling.
+    #
+    # REST-SPOT reachability ceiling — independent of the algorithm's trigger threshold.
+    # A ceiling above 100 lets the driver "overload" (reach a distant spot even with high drowsiness).
+    # The query param drowsiness_ceiling (if provided) overrides the scenario default.
     scenario = get_scenario(run_id)
     if scenario is not None and scenario.driver_profile is not None:
         base_growth_per_min = scenario.driver_profile.drowsiness_model.base_growth_per_min
-        ceiling = scenario.rest_drowsiness_ceiling
+        ceiling = drowsiness_ceiling if drowsiness_ceiling is not None else scenario.rest_drowsiness_ceiling
     else:
         base_growth_per_min = 0.0
-        ceiling = 80.0
+        ceiling = drowsiness_ceiling if drowsiness_ceiling is not None else 80.0
 
     # ── Fallback: scenario/route positions → enriched RestSpot dicts ─────────
     spots = []

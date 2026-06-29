@@ -107,6 +107,26 @@ def test_rest_spots_at_least_one_reachable_normal_run():
     )
 
 
+def test_rest_spots_ceiling_override_via_query_param():
+    """drowsiness_ceiling query param overrides scenario ceiling; a far spot unreachable at
+    default ceiling=80 becomes reachable at ceiling=200."""
+    run_id = create_paused_rest_run()
+
+    # With a very tight ceiling (1.0) at least one spot is unreachable
+    r_tight = client.get(f"/api/runs/{run_id}/rest-spots?drowsiness_ceiling=1.0")
+    assert r_tight.status_code == 200
+    spots_tight = r_tight.json()["rest_spots"]
+    assert any(not s["reachable"] for s in spots_tight), "expected some unreachable at ceiling=1.0"
+
+    # With a very high ceiling (200) those spots become reachable
+    r_high = client.get(f"/api/runs/{run_id}/rest-spots?drowsiness_ceiling=200")
+    assert r_high.status_code == 200
+    spots_high = r_high.json()["rest_spots"]
+    assert any(s["reachable"] for s in spots_high), (
+        f"expected at least one spot reachable at ceiling=200; got {spots_high}"
+    )
+
+
 def test_rest_spots_unreachable_when_ceiling_very_low():
     """All spots unreachable when rest_drowsiness_ceiling is lower than current drowsiness."""
     import json as _json

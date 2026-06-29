@@ -21,7 +21,7 @@ import { t } from '../../i18n/t'
 
 export default function RecoveryPicker() {
   const { state, dispatch } = useRunStore()
-  const { runState, selectedScenarioId, mapsKey, uiLanguage, paused, latestDecision } = state
+  const { runState, selectedScenarioId, mapsKey, uiLanguage, paused, latestDecision, restDrowsinessCeiling } = state
 
   const [options, setOptions] = useState<RecoveryOption[]>([])
   const [spots, setSpots] = useState<RestSpot[]>([])
@@ -39,7 +39,8 @@ export default function RecoveryPicker() {
 
     Promise.all([
       getScenario(selectedScenarioId),
-      getRestSpots(runId, mapsKey || undefined),
+      // Note: ceiling is display-only advisory; the chosen spot is frozen in the log for replay.
+      getRestSpots(runId, mapsKey || undefined, restDrowsinessCeiling ?? undefined),
     ])
       .then(([scenario, spotsResp]) => {
         setOptions(scenario.recovery_options ?? [])
@@ -49,7 +50,7 @@ export default function RecoveryPicker() {
         setFetchError(err instanceof Error ? err.message : 'Failed to load recovery options')
       })
       .finally(() => setLoading(false))
-  }, [selectedScenarioId, runState?.run_id, mapsKey])
+  }, [selectedScenarioId, runState?.run_id, mapsKey, restDrowsinessCeiling])
 
   // Only visible when the run is paused on an active REST_PROPOSAL
   if (!paused || !latestDecision?.proposal || !runState) return null

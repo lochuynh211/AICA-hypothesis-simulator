@@ -201,8 +201,12 @@ export async function actRun(
 export async function getRestSpots(
   runId: string,
   mapsKey?: string,
+  drowsinessCeiling?: number,
 ): Promise<{ rest_spots: RestSpot[] }> {
-  const q = mapsKey ? `?maps_key=${encodeURIComponent(mapsKey)}` : ''
+  const params = new URLSearchParams()
+  if (mapsKey) params.set('maps_key', mapsKey)
+  if (drowsinessCeiling !== undefined) params.set('drowsiness_ceiling', String(drowsinessCeiling))
+  const q = params.toString() ? `?${params.toString()}` : ''
   return apiFetch(`/api/runs/${runId}/rest-spots${q}`, { method: 'GET' })
 }
 

@@ -22,6 +22,7 @@ import ParameterEditor from '../setup/ParameterEditor'
 import HyperparameterEditor from '../setup/HyperparameterEditor'
 import ProfileEditor from '../setup/ProfileEditor'
 import TickSecondsEditor from '../setup/TickSecondsEditor'
+import RestCeilingEditor from '../setup/RestCeilingEditor'
 import MapKeyAndRouteInput from '../setup/MapKeyAndRouteInput'
 import PlanPreview from '../setup/PlanPreview'
 
@@ -119,6 +120,9 @@ export default function SetupScreen() {
           </Section>
           <Section title="Route (optional: Google Maps)">
             <MapKeyAndRouteInput />
+          </Section>
+          <Section title="Rest-Spot Ceiling">
+            <RestCeilingEditor />
           </Section>
           <Section title="Timing">
             <TickSecondsEditor />

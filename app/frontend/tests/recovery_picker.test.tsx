@@ -189,6 +189,51 @@ describe('RecoveryPicker', () => {
     )
   })
 
+  it('passes restDrowsinessCeiling from store as 3rd arg to getRestSpots', async () => {
+    vi.mocked(client.getScenario).mockResolvedValue(mockScenario)
+    vi.mocked(client.getRestSpots).mockResolvedValue({
+      rest_spots: [
+        {
+          id: 'p1',
+          label: { ja: 'パーキング1', en: 'Parking 1' },
+          route_fraction: 0.5,
+          distance_km: 12.3,
+          eta_min: 8,
+          reachable: true,
+        },
+      ],
+    })
+
+    renderWithStore(
+      <RecoveryPicker />,
+      (dispatch) => {
+        dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_test' })
+        dispatch({ type: 'RUN_CREATED', runState: pausedRunState })
+        dispatch({
+          type: 'TICK_APPENDED',
+          runState: pausedRunState,
+          decision: proposalDecision,
+          tickIndex: 5,
+          paused: true,
+          completed: false,
+        })
+        // Set ceiling override in store before the effect fires
+        dispatch({ type: 'SET_REST_DROWSINESS_CEILING', value: 150 })
+      },
+    )
+
+    await screen.findByTestId('rest-spot-p1')
+
+    // getRestSpots should have been called with ceiling=150 as the 3rd argument.
+    // We don't assert the exact mapsKey (may come from VITE_GOOGLE_MAPS_KEY env) —
+    // just verify run_id and ceiling are correct.
+    const calls = vi.mocked(client.getRestSpots).mock.calls
+    expect(calls.length).toBeGreaterThan(0)
+    const lastCall = calls[calls.length - 1]
+    expect(lastCall[0]).toBe('r1')
+    expect(lastCall[2]).toBe(150)
+  })
+
   it('disables a rest spot with reachable:false and shows "too far"', async () => {
     vi.mocked(client.getScenario).mockResolvedValue(mockScenario)
     vi.mocked(client.getRestSpots).mockResolvedValue({
