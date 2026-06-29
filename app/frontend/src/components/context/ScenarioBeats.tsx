@@ -130,8 +130,11 @@ export default function ScenarioBeats() {
       })
     }
 
-    // 2. Motion+road state change (not first tick, not during recovery)
-    if (idx > 0 && !hasRecovery && (motionKey !== prevMotionKey || segType !== prevSegType)) {
+    // 2. Motion+road state beat — emits on the FIRST non-recovery tick (the
+    //    Start→Driving transition) and on every subsequent (motion, road) change.
+    //    prev* start as null, so the first driving tick always produces a beat
+    //    even when the road class never changes (or segment_type is absent).
+    if (!hasRecovery && (motionKey !== prevMotionKey || segType !== prevSegType)) {
       beats.push({
         id: `motion-${e.tick_index}`,
         icon: motionRoadIcon(motionKey),
