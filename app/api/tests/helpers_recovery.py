@@ -27,7 +27,7 @@ from aica_api.models.profile import (
     SteeringInstabilityProfile,
     VehicleBehaviorProfile,
 )
-from aica_api.models.run import EventPlan, RouteFacts
+from aica_api.models.run import EventPlan, NamedRestSpot, RouteFacts
 from aica_api.models.scenario import RecoveryOption, RecoveryStage, ScenarioDef
 from aica_api.services.event_plan import build_event_plan
 from aica_api.services.route_analysis import analyze_route
@@ -230,5 +230,99 @@ def create_paused_rest_run() -> str:
         raise RuntimeError(
             "create_paused_rest_run: REST_PROPOSAL did not fire within 200 ticks"
         )
+
+    return run_id
+
+
+def create_paused_rest_run_multi_spots(
+    named_spots: list[dict] | None = None,
+) -> str:
+    """Create a paused rest run and seed multiple named rest spots on its route_facts.
+
+    Uses total_km=200.0 so spots can be spread across the full route.
+    The run pauses around tick 29 (drowsiness-driven; not position-driven).
+
+    After the run is paused, this helper replaces route_facts.named_rest_spots
+    in-memory so the rest-spots endpoint returns the supplied spots.  It also
+    clears rest_spot_positions so the endpoint uses named_rest_spots exclusively.
+
+    Default named_spots (if None):
+      - "Behind SA"  at  20 km  (will be filtered by the AHEAD filter)
+      - "Near SA"    at  35 km  (taken first)
+      - "Close SA"   at  45 km  (within 20 km of 35 → skipped at default spacing)
+      - "Mid SA 1"   at  65 km
+      - "Mid SA 2"   at  85 km
+      - "Far SA 1"   at 105 km
+      - "Far SA 2"   at 125 km
+      - "Far SA 3"   at 145 km  (beyond cap of 5 at default spacing=20)
+
+    Args:
+        named_spots: list of dicts accepted by NamedRestSpot (name, position_km,
+                     optional lat/lng).  If None the default set above is used.
+
+    Returns:
+        run_id of the paused run.
+    """
+    from aica_api.services.run_manager import create_run, get_run, tick
+    from aica_api.services.run_plan import create_draft
+
+    if named_spots is None:
+        named_spots = [
+            {"name": "Behind SA",  "position_km": 20.0},
+            {"name": "Near SA",    "position_km": 35.0},
+            {"name": "Close SA",   "position_km": 45.0},
+            {"name": "Mid SA 1",   "position_km": 65.0},
+            {"name": "Mid SA 2",   "position_km": 85.0},
+            {"name": "Far SA 1",   "position_km": 105.0},
+            {"name": "Far SA 2",   "position_km": 125.0},
+            {"name": "Far SA 3",   "position_km": 145.0},
+        ]
+
+    scenario = m2_scenario_with_recovery(total_km=200.0, initial_drowsiness="weak")
+    package_data = json.loads(_PACKAGE_PATH.read_text(encoding="utf-8"))
+    package = PackageManifest(**package_data)
+
+    run_id = "paused_rest_run_multi"
+    plan_id = f"plan_{run_id}"
+    runs_dir = pathlib.Path(tempfile.mkdtemp())
+
+    create_draft(
+        plan_id=plan_id,
+        package=package,
+        scenario=scenario,
+        presets={},
+        parameters={},
+        hyperparameters={},
+        run_mode="standard",
+    )
+    create_run(plan_id, run_id, runs_dir)
+
+    # Tick until REST_PROPOSAL pauses the run (~tick 29 with initial_drowsiness="weak").
+    for _ in range(200):
+        outcome = tick(run_id)
+        if outcome.paused:
+            break
+        if outcome.completed:
+            raise RuntimeError(
+                "create_paused_rest_run_multi_spots: run completed without a REST_PROPOSAL pause"
+            )
+    else:
+        raise RuntimeError(
+            "create_paused_rest_run_multi_spots: REST_PROPOSAL did not fire within 200 ticks"
+        )
+
+    # Patch the in-memory RunState's route_facts with the desired named spots.
+    # get_run() returns the actual RunState object from the registry, so mutating
+    # it propagates to all callers (including the rest-spots endpoint).
+    rs = get_run(run_id)
+    if rs is None:  # pragma: no cover
+        raise RuntimeError("create_paused_rest_run_multi_spots: run not found after creation")
+
+    named_spot_objs = [NamedRestSpot(**s) for s in named_spots]
+    rs.route_facts = rs.route_facts.model_copy(update={
+        "named_rest_spots": named_spot_objs,
+        # Clear generic positions so the endpoint uses named_rest_spots exclusively
+        "rest_spot_positions": [],
+    })
 
     return run_id

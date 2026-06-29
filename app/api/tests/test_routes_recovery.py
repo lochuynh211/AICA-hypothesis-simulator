@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 from aica_api.main import app
 from aica_api.services.run_manager import clear_registry
 from aica_api.services.run_plan import clear_draft_registry
-from tests.helpers_recovery import create_paused_rest_run
+from tests.helpers_recovery import create_paused_rest_run, create_paused_rest_run_multi_spots
 
 client = TestClient(app)
 
@@ -96,20 +96,20 @@ def test_rest_spots_has_distance_eta_reachable_keys():
 
 
 def test_rest_spots_at_least_one_reachable_normal_run():
-    """For a normal paused run (ceiling=80), at least one spot is reachable."""
+    """For a normal paused run (default ceiling=100), at least one spot is reachable."""
     run_id = create_paused_rest_run()
     r = client.get(f"/api/runs/{run_id}/rest-spots")
     spots = r.json()["rest_spots"]
-    # Default ceiling is 80.0; base_growth_per_min=0.5; drowsiness at tick 29 is
+    # Default ceiling is 100.0; base_growth_per_min=0.5; drowsiness at tick 29 is
     # well under the ceiling (started at "weak" ~20, grew ~14.5 pts over 29 min).
     assert any(spot["reachable"] for spot in spots), (
-        "expected at least one reachable spot for a normal run (ceiling=80)"
+        "expected at least one reachable spot for a normal run (default ceiling=100)"
     )
 
 
 def test_rest_spots_ceiling_override_via_query_param():
-    """drowsiness_ceiling query param overrides scenario ceiling; a far spot unreachable at
-    default ceiling=80 becomes reachable at ceiling=200."""
+    """drowsiness_ceiling query param overrides scenario ceiling; a spot unreachable at
+    ceiling=1.0 becomes reachable at ceiling=200."""
     run_id = create_paused_rest_run()
 
     # With a very tight ceiling (1.0) at least one spot is unreachable
@@ -177,3 +177,111 @@ def test_rest_spots_unreachable_when_ceiling_very_low():
     assert all(not spot["reachable"] for spot in spots), (
         f"expected all spots unreachable with ceiling=1.0; got {spots}"
     )
+
+
+# ---------------------------------------------------------------------------
+# M8: named rest spots — cap, spacing, ahead-filter, real names
+# ---------------------------------------------------------------------------
+
+
+def test_rest_spots_capped_at_five():
+    """GET /rest-spots returns at most 5 spots even when more than 5 are seeded.
+
+    Default fixture has 8 spots (1 behind, 7 ahead).  After the AHEAD filter
+    and default spacing (20 km) the greedy walk produces up to 5 results.
+    """
+    run_id = create_paused_rest_run_multi_spots()
+    r = client.get(f"/api/runs/{run_id}/rest-spots")
+    assert r.status_code == 200
+    spots = r.json()["rest_spots"]
+    assert len(spots) <= 5, f"expected at most 5 spots, got {len(spots)}: {spots}"
+
+
+def test_rest_spots_all_ahead_of_current_position():
+    """GET /rest-spots only returns spots strictly ahead of the current driving position.
+
+    The default fixture has 'Behind SA' at 20 km; the run pauses around 29 km.
+    That spot must not appear in the response.
+    """
+    run_id = create_paused_rest_run_multi_spots()
+    # Retrieve current position via prior tick state.
+    from aica_api.services.run_manager import get_prior_tick_state, get_run
+
+    rs = get_run(run_id)
+    prior = get_prior_tick_state(run_id)
+    current_km = prior.distance_km if prior else 0.0
+
+    r = client.get(f"/api/runs/{run_id}/rest-spots")
+    assert r.status_code == 200
+    spots = r.json()["rest_spots"]
+    total_km = rs.route_facts.total_route_distance_km or 200.0
+    for spot in spots:
+        # Recover position_km from route_fraction
+        pos_km = spot["route_fraction"] * total_km
+        assert pos_km > current_km, (
+            f"spot at {pos_km:.1f} km is not strictly ahead of current {current_km:.1f} km: {spot}"
+        )
+
+
+def test_rest_spots_default_spacing_20km():
+    """With default min_distance_km=20, consecutive returned spots are ≥ 20 km apart."""
+    run_id = create_paused_rest_run_multi_spots()
+    r = client.get(f"/api/runs/{run_id}/rest-spots")
+    assert r.status_code == 200
+    spots = r.json()["rest_spots"]
+    assert len(spots) >= 2, "need at least 2 spots to verify spacing"
+
+    from aica_api.services.run_manager import get_run
+    rs = get_run(run_id)
+    total_km = rs.route_facts.total_route_distance_km or 200.0
+
+    positions_km = [s["route_fraction"] * total_km for s in spots]
+    for i in range(1, len(positions_km)):
+        gap = positions_km[i] - positions_km[i - 1]
+        assert gap >= 20.0, (
+            f"consecutive spots too close: {positions_km[i - 1]:.1f} km and "
+            f"{positions_km[i]:.1f} km (gap={gap:.1f} < 20)"
+        )
+
+
+def test_rest_spots_explicit_min_distance_50km():
+    """?min_distance_km=50 returns spots at least 50 km apart."""
+    run_id = create_paused_rest_run_multi_spots()
+    r = client.get(f"/api/runs/{run_id}/rest-spots?min_distance_km=50")
+    assert r.status_code == 200
+    spots = r.json()["rest_spots"]
+    # With spots at [35, 45, 65, 85, 105, 125, 145] and spacing=50:
+    # take 35, skip 45/65, take 85 (85-35=50>=50), skip 105/125, take 145 (145-85=60>=50)
+    assert len(spots) >= 1, "expected at least 1 spot with min_distance_km=50"
+    assert len(spots) <= 5, f"expected at most 5 spots, got {len(spots)}"
+
+    from aica_api.services.run_manager import get_run
+    rs = get_run(run_id)
+    total_km = rs.route_facts.total_route_distance_km or 200.0
+
+    positions_km = [s["route_fraction"] * total_km for s in spots]
+    for i in range(1, len(positions_km)):
+        gap = positions_km[i] - positions_km[i - 1]
+        assert gap >= 50.0, (
+            f"consecutive spots too close at min_distance_km=50: "
+            f"{positions_km[i - 1]:.1f} km and {positions_km[i]:.1f} km (gap={gap:.1f})"
+        )
+
+
+def test_rest_spots_use_real_names_when_named_spots_present():
+    """Each spot's label uses the real facility name, not a generic 'Rest stop N'."""
+    run_id = create_paused_rest_run_multi_spots()
+    r = client.get(f"/api/runs/{run_id}/rest-spots")
+    assert r.status_code == 200
+    spots = r.json()["rest_spots"]
+    assert len(spots) >= 1, "expected at least one spot"
+    for spot in spots:
+        label_en = spot["label"]["en"]
+        # Must be a real name from the fixture, not a generic label
+        assert not label_en.startswith("Rest stop "), (
+            f"expected real facility name, got generic label: {label_en!r}"
+        )
+        assert label_en in {"Near SA", "Mid SA 1", "Mid SA 2", "Far SA 1", "Far SA 2", "Far SA 3"}, (
+            f"unexpected spot label: {label_en!r} (Behind SA should be filtered; "
+            "Close SA should be dropped by spacing)"
+        )

@@ -136,5 +136,7 @@ class ScenarioDef(BaseModel):
     is_night: bool = False
     presets: dict[str, Any] = {}
 
-    # M7 UC-01: safety ceiling for rest-spot reachability check (0–100, percent)
-    rest_drowsiness_ceiling: float = 80.0
+    # M8 UC-01: safety ceiling for rest-spot reachability check (0–100+, percent).
+    # Default 100.0 = full drowsiness scale; values above 100 allow "overload"
+    # (driver may reach a distant spot even at high drowsiness).
+    rest_drowsiness_ceiling: float = 100.0

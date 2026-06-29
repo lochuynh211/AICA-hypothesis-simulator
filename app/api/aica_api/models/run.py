@@ -129,13 +129,31 @@ class RouteSegmentFact(BaseModel):
     model_config = {"extra": "allow"}
 
 
+class NamedRestSpot(BaseModel):
+    """A rest facility with a human name and kilometre position (M8).
+
+    Populated from Google Places results (maps path) or from the scenario's
+    rest-facility segments (local path).  Carries optional lat/lng for future
+    map rendering.  Extra fields are allowed for forward-compatibility.
+    """
+
+    name: str
+    position_km: float
+    lat: float | None = None
+    lng: float | None = None
+
+    model_config = {"extra": "allow"}
+
+
 class RouteFacts(BaseModel):
-    """Route evidence — M1 fields kept for backward compat; M2/M4 fields added.
+    """Route evidence — M1 fields kept for backward compat; M2/M4/M8 fields added.
 
     M1: segments (RouteSegment list), bands dict.
     M2: total_route_distance_km, estimated_route_duration_min, route_segments[],
         rest_spot_positions[], route_progress_checkpoints[].
     M4: route_source (provenance flag — "local" or "maps").
+    M8: named_rest_spots[] — facility names + positions (additive, default empty
+        so all existing route_facts remain valid).
     """
 
     # M1 fields (kept for backward compat with existing engine/tests)
@@ -151,6 +169,12 @@ class RouteFacts(BaseModel):
 
     # M4: route provenance — default "local" keeps all M1/M2/M3 data valid
     route_source: Literal["maps", "local"] = "local"
+
+    # M8: named rest facilities — additive field; empty default preserves all
+    # existing route_facts. Populated by analyze_route() (local/offline path,
+    # from is_rest_facility segments) and analyze_route_maps() (Maps path,
+    # from Google Places results).
+    named_rest_spots: list[NamedRestSpot] = []
 
     model_config = {"extra": "allow"}
 
