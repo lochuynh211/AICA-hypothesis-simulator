@@ -404,6 +404,7 @@ def create_draft(
     display_route: DisplayRoute | None = None,
     profiles: dict[str, Any] | None = None,
     initial_state: dict | None = None,
+    context_overrides: dict | None = None,
 ) -> RunPlanDraft:
     """Create and register a draft run plan.
 
@@ -449,6 +450,10 @@ def create_draft(
     if initial_state:
         merged_initial = {**effective_scenario.initial_state, **initial_state}
         effective_scenario = effective_scenario.model_copy(update={"initial_state": merged_initial})
+
+    # Apply boolean context overrides (child_passenger, familiar_route).
+    if context_overrides:
+        effective_scenario = effective_scenario.model_copy(update=context_overrides)
 
     if validation_errors:
         # Return draft with errors but do NOT register it.

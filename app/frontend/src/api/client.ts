@@ -140,6 +140,8 @@ export async function createRunPlan(args: {
   profiles?: ProfileOverrides | null
   // Numeric starting driver-state override (omit to use scenario default)
   initialState?: { drowsiness_level?: number; fatigue_level?: number }
+  // Boolean scenario context overrides
+  contextOverrides?: { child_passenger?: boolean; familiar_route?: boolean }
 }): Promise<RunPlanResponse> {
   const body: Record<string, unknown> = {
     package_id: args.packageId,
@@ -161,6 +163,10 @@ export async function createRunPlan(args: {
   // include initial_state only when at least one dimension is set
   if (args.initialState != null && Object.keys(args.initialState).length > 0) {
     body.initial_state = args.initialState
+  }
+  // include context_overrides only when provided
+  if (args.contextOverrides != null && Object.keys(args.contextOverrides).length > 0) {
+    body.context_overrides = args.contextOverrides
   }
 
   return apiFetch('/api/run-plans', {

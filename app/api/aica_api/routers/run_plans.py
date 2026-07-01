@@ -80,6 +80,10 @@ class CreateRunPlanBody(BaseModel):
     # Keys: "drowsiness_level" and/or "fatigue_level" as floats in [0, 100].
     initial_state: dict | None = None
 
+    # Boolean scenario context overrides. When provided, override the scenario's
+    # top-level flags. Supported keys: "child_passenger", "familiar_route".
+    context_overrides: dict | None = None
+
 
 class RegenerateRunPlanBody(BaseModel):
     presets: dict = {}
@@ -206,6 +210,27 @@ def create_run_plan_endpoint(body: CreateRunPlanBody):
                 },
             )
 
+    # Validate context_overrides keys and types.
+    if body.context_overrides is not None:
+        _VALID_CONTEXT_KEYS = {"child_passenger", "familiar_route"}
+        ctx_errors: list[dict[str, str]] = []
+        for key, value in body.context_overrides.items():
+            if key not in _VALID_CONTEXT_KEYS:
+                ctx_errors.append({
+                    "field": f"context_overrides.{key}",
+                    "message": f"Unknown context key {key!r}. Valid keys: {sorted(_VALID_CONTEXT_KEYS)}",
+                })
+            elif not isinstance(value, bool):
+                ctx_errors.append({
+                    "field": f"context_overrides.{key}",
+                    "message": f"context_overrides.{key} must be a boolean; got {value!r}",
+                })
+        if ctx_errors:
+            raise HTTPException(
+                status_code=400,
+                detail={"detail": "One or more context_overrides values are invalid.", "validation_errors": ctx_errors},
+            )
+
     plan_id = _make_plan_id()
     draft = create_draft(
         plan_id=plan_id,
@@ -220,6 +245,7 @@ def create_run_plan_endpoint(body: CreateRunPlanBody):
         display_route=display_route,
         profiles=profiles_dict,
         initial_state=body.initial_state,
+        context_overrides=body.context_overrides,
     )
 
     if draft.validation_errors:

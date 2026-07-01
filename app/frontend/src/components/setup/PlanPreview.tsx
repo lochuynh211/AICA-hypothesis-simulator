@@ -86,12 +86,15 @@ export default function PlanPreview() {
       if (initialDrowsiness != null) initialState.drowsiness_level = initialDrowsiness
       if (initialFatigue != null) initialState.fatigue_level = initialFatigue
 
-      // child_passenger / familiar_route are scenario-model fields — not package
-      // parameters. Strip them so the backend doesn't reject them as unknown keys.
-      const SCENARIO_CONTEXT_KEYS = new Set(['child_passenger', 'familiar_route'])
+      // Separate scenario context flags from algorithm parameters.
+      const CONTEXT_KEYS = ['child_passenger', 'familiar_route'] as const
       const algParameters = Object.fromEntries(
-        Object.entries(editedParameters).filter(([k]) => !SCENARIO_CONTEXT_KEYS.has(k)),
+        Object.entries(editedParameters).filter(([k]) => !CONTEXT_KEYS.includes(k as typeof CONTEXT_KEYS[number])),
       )
+      const contextOverrides: { child_passenger?: boolean; familiar_route?: boolean } = {}
+      for (const k of CONTEXT_KEYS) {
+        if (k in editedParameters) contextOverrides[k] = Boolean(editedParameters[k])
+      }
 
       const resp = await createRunPlan({
         packageId: selectedPackageId,
@@ -108,6 +111,8 @@ export default function PlanPreview() {
         ...(profileOverrides != null ? { profiles: profileOverrides } : {}),
         // Include initial_state only when at least one dimension is set
         ...(Object.keys(initialState).length > 0 ? { initialState } : {}),
+        // Include context overrides when any flag was explicitly set
+        ...(Object.keys(contextOverrides).length > 0 ? { contextOverrides } : {}),
       })
       dispatch({
         type: 'PLAN_DRAFTED',
