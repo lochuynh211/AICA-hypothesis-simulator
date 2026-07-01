@@ -27,7 +27,7 @@ export type RouteProgress = {
   elapsedSeconds: number
   tickSeconds: number
   activeSegment: RouteSegment | null
-  proposalFraction: number | null
+  proposalFractions: number[]
   restFraction: number | null
   boundaries: number[]
   segments: RouteSegment[]
@@ -99,12 +99,11 @@ export function useRouteProgress(): RouteProgress {
       ? lastEntry.route_fraction
       : fractionAtTick(tickIndex)
 
-  const proposalEntry = trace.find((e: TraceEntry) => e.proposal !== null)
-  const proposalFraction = proposalEntry
-    ? (typeof proposalEntry.route_fraction === 'number'
-        ? proposalEntry.route_fraction
-        : fractionAtTick(proposalEntry.tick_index))
-    : null
+  const proposalFractions = trace
+    .filter((e: TraceEntry) => e.proposal !== null)
+    .map((e: TraceEntry) =>
+      typeof e.route_fraction === 'number' ? e.route_fraction : fractionAtTick(e.tick_index),
+    )
 
   const restSeg = segments.find((s) => s.is_rest_facility)
   const restFraction = restSeg ? restSeg.at : null
@@ -118,7 +117,7 @@ export function useRouteProgress(): RouteProgress {
     elapsedSeconds,
     tickSeconds,
     activeSegment,
-    proposalFraction,
+    proposalFractions,
     restFraction,
     boundaries: segments.map((s) => s.at),
     segments,

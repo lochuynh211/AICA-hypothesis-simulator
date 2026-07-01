@@ -4,6 +4,9 @@ import { getPackage } from '../../api/client'
 import type { ParameterDef, SetupValue } from '../../api/types'
 import { t } from '../../i18n/t'
 
+/** Keys rendered separately in ScenarioContextEditor (right panel). */
+const CONTEXT_FLAG_KEYS = new Set(['child_passenger', 'familiar_route'])
+
 /**
  * ParameterEditor (T024) — renders the selected package's setup-time parameter
  * defs as editable controls:
@@ -41,14 +44,13 @@ export default function ParameterEditor() {
     return edited !== undefined ? edited : (def.default as SetupValue)
   }
 
-  if (!selectedPackageId || defs.length === 0) return null
+  const filteredDefs = defs.filter((d) => !CONTEXT_FLAG_KEYS.has(d.key))
+
+  if (!selectedPackageId || filteredDefs.length === 0) return null
 
   return (
     <div data-testid="parameter-editor" style={{ marginBottom: '8px' }}>
-      <h3 style={{ fontSize: '0.75em', fontWeight: 600, color: '#666', margin: '8px 0 4px' }}>
-        Parameters
-      </h3>
-      {defs.map((def) => {
+      {filteredDefs.map((def) => {
         const value = effectiveValue(def)
         const inputId = `param-${def.key}`
         return (

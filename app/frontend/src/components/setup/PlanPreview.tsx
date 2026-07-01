@@ -86,10 +86,17 @@ export default function PlanPreview() {
       if (initialDrowsiness != null) initialState.drowsiness_level = initialDrowsiness
       if (initialFatigue != null) initialState.fatigue_level = initialFatigue
 
+      // child_passenger / familiar_route are scenario-model fields — not package
+      // parameters. Strip them so the backend doesn't reject them as unknown keys.
+      const SCENARIO_CONTEXT_KEYS = new Set(['child_passenger', 'familiar_route'])
+      const algParameters = Object.fromEntries(
+        Object.entries(editedParameters).filter(([k]) => !SCENARIO_CONTEXT_KEYS.has(k)),
+      )
+
       const resp = await createRunPlan({
         packageId: selectedPackageId,
         scenarioId: selectedScenarioId,
-        parameters: editedParameters,
+        parameters: algParameters,
         hyperparameters: editedHyperparameters,
         presets,
         runMode: 'standard',

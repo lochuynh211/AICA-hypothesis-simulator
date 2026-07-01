@@ -1,9 +1,9 @@
 {
   "id": "aica_transparent_hybrid_trigger_v1",
-  "version": "1.0.0",
+  "version": "0.1",
   "label": {
-    "ja": "AICA 透明ハイブリッド・トリガー v1",
-    "en": "AICA Transparent Hybrid Trigger v1"
+    "ja": "透明ハイブリッド・トリガー v0.1",
+    "en": "Transparent Hybrid Trigger v0.1"
   },
   "compatible_scenario_types": ["uc01_fatigue"],
   "algorithm": {

@@ -1,9 +1,9 @@
 {
   "id": "nri_fatigue_score_v1",
-  "version": "1.0.0",
+  "version": "0.1",
   "label": {
-    "ja": "NRI 疲労蓄積スコア v1",
-    "en": "NRI Fatigue Accumulation Score v1"
+    "ja": "疲労蓄積スコア v0.1",
+    "en": "Fatigue Accumulation Score v0.1"
   },
   "compatible_scenario_types": ["uc01_fatigue"],
   "algorithm": {

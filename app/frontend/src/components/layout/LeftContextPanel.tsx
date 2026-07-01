@@ -5,7 +5,7 @@
  *   - RouteStatus      — driving time, position, distance from start
  *   - RouteSegmentList — the scenario steps with the active segment highlighted
  *
- * Driver fatigue/drowsiness lives in the right-panel DriverStatus, not here.
+ * Driver fatigue/drowsiness lives in the center-panel StateCards, not here.
  * Setup editors live on SetupScreen — this panel is active-run context only.
  */
 import RouteStatus from '../context/RouteStatus'

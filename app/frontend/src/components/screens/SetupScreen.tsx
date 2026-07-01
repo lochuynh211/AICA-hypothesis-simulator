@@ -27,6 +27,7 @@ import RestSpacingEditor from '../setup/RestSpacingEditor'
 import MapKeyAndRouteInput from '../setup/MapKeyAndRouteInput'
 import PlanPreview from '../setup/PlanPreview'
 import InitialDriverStateEditor from '../setup/InitialDriverStateEditor'
+import ScenarioContextEditor from '../setup/ScenarioContextEditor'
 
 const sectionHeadingStyle: CSSProperties = {
   fontSize: '0.78em',
@@ -137,9 +138,7 @@ export default function SetupScreen() {
 
         {/* Middle — algorithm tuning */}
         <Panel title="Algorithm Parameters">
-          <Section title="Parameters">
-            <ParameterEditor />
-          </Section>
+          <ParameterEditor />
           <Section title="Hyperparameters">
             <HyperparameterEditor />
           </Section>
@@ -152,6 +151,9 @@ export default function SetupScreen() {
           </Section>
           <Section title="Initial Driver State">
             <InitialDriverStateEditor />
+          </Section>
+          <Section title="Scenario Context">
+            <ScenarioContextEditor />
           </Section>
           <Section title="Driver &amp; Vehicle Profiles">
             <ProfileEditor />

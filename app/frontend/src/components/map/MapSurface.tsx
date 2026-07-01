@@ -117,7 +117,7 @@ export default function MapSurface() {
   const display = selectedAlt?.display ?? null
 
   // ── Route position (shared, clamped) + eased car fraction ─────────────────
-  const { currentFraction, proposalFraction } = useRouteProgress()
+  const { currentFraction, proposalFractions } = useRouteProgress()
   const positionPct = `${Math.round(currentFraction * 100)}%`
   const shownFraction = useSmoothFraction(currentFraction)
 
@@ -127,7 +127,7 @@ export default function MapSurface() {
   const pathRef = useRef<{ path: any[]; cum: number[]; total: number } | null>(null)
   const carRef = useRef<GMapsLib>(null)
   const startRef = useRef<GMapsLib>(null)
-  const fireRef = useRef<GMapsLib>(null)
+  const fireRefs = useRef<GMapsLib[]>([])
   // Geographic markers for the accepted rest spots (real SDK only) — one per
   // restHistory entry, so all accepted rests stay visible on the map.
   const chosenRestRefs = useRef<GMapsLib[]>([])
@@ -317,18 +317,23 @@ export default function MapSurface() {
     const carPos = latLngAt(path, cum, total, shownFraction, sph)
     if (carPos && carRef.current) carRef.current.setPosition(carPos)
 
-    // Fire marker (orange) where the proposal fired.
-    if (proposalFraction != null) {
-      const fp = latLngAt(path, cum, total, proposalFraction, sph)
-      if (fp) {
-        if (!fireRef.current) {
-          fireRef.current = new gmaps.Marker({
-            map: mapInstanceRef.current,
-            icon: { path: gmaps.SymbolPath.CIRCLE, scale: 7, fillColor: '#ff7b54', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
-            zIndex: 998,
-          })
-        }
-        fireRef.current.setPosition(fp)
+    // Fire markers (orange) — one per proposal that fired.
+    proposalFractions.forEach((pf, i) => {
+      const fp = latLngAt(path, cum, total, pf, sph)
+      if (!fp) return
+      if (!fireRefs.current[i]) {
+        fireRefs.current[i] = new gmaps.Marker({
+          map: mapInstanceRef.current,
+          icon: { path: gmaps.SymbolPath.CIRCLE, scale: 7, fillColor: '#ff7b54', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+          zIndex: 998,
+        })
+      }
+      fireRefs.current[i].setPosition(fp)
+    })
+    // Remove stale markers when proposal count decreases (e.g. after reset).
+    if (fireRefs.current.length > proposalFractions.length) {
+      for (const m of fireRefs.current.splice(proposalFractions.length)) {
+        m.setMap(null)
       }
     }
 
@@ -353,7 +358,7 @@ export default function MapSurface() {
         m.setMap(null)
       }
     }
-  }, [shownFraction, proposalFraction, restSpots.length])
+  }, [shownFraction, proposalFractions, restSpots.length])
 
   // ── Guard: nothing to show ────────────────────────────────────────────────
   // When display is null (local path), return null so the caller can fall back
@@ -417,15 +422,16 @@ export default function MapSurface() {
         }}
       />
 
-      {/* DOM overlay: decision/proposal marker */}
-      {proposalFraction !== null && (
+      {/* DOM overlay: decision/proposal markers — one per proposal */}
+      {proposalFractions.map((pf, i) => (
         <div
+          key={`decision-${i}`}
           data-testid="decision-marker"
           aria-label="Proposal position"
           style={{
             position: 'absolute',
             bottom: '0',
-            left: `${Math.round(proposalFraction * 100)}%`,
+            left: `${Math.round(pf * 100)}%`,
             transform: 'translateX(-50%)',
             width: '4px',
             height: '24px',
@@ -435,7 +441,7 @@ export default function MapSurface() {
             visibility: realMarkers ? 'hidden' : 'visible',
           }}
         />
-      )}
+      ))}
 
       {/* DOM overlay: chosen rest-spot markers (gold circles) — one per accepted
           rest from restHistory, positioned by route_fraction. Persist as history.

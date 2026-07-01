@@ -1,17 +1,6 @@
-/**
- * StateCards — middle-panel "car status + current environment" cards.
- *
- * Two side-by-side cards (mirrors the prototype state panels):
- *   - In-car status     : drowsiness band bar + vehicle motion (moving/stopped)
- *   - Driving environment: road type + speed band of the active route segment
- *
- * Drowsiness comes from the backend decision features; road type / speed band /
- * motion come from the active route segment (the segment whose `at` is the
- * greatest ≤ current route_fraction). Display-only.
- */
 import { useRunStore } from '../../state/runStore'
-import { useRouteProgress } from './useRouteProgress'
 import { bandViz } from '../common/bands'
+import { t } from '../../i18n/t'
 
 const cardStyle: React.CSSProperties = {
   flex: 1,
@@ -40,51 +29,53 @@ const rowStyle: React.CSSProperties = {
 const keyStyle: React.CSSProperties = { color: '#6b7280' }
 const valStyle: React.CSSProperties = { color: '#111', fontWeight: 600 }
 
+function BandBar({ label, band }: { label: string; band: string | null | undefined }) {
+  const viz = bandViz(band)
+  return (
+    <>
+      <div style={rowStyle}>
+        <span style={keyStyle}>{label}</span>
+        <span style={{ ...valStyle, color: viz.color }}>{band ?? '—'}</span>
+      </div>
+      <div style={{ height: '8px', background: '#e5e7eb', borderRadius: '4px', overflow: 'hidden', marginBottom: '8px' }}>
+        <div
+          style={{
+            height: '100%',
+            width: `${viz.pct}%`,
+            background: viz.color,
+            transition: 'width 0.5s ease, background 0.5s ease',
+          }}
+        />
+      </div>
+    </>
+  )
+}
+
 export default function StateCards() {
   const { state } = useRunStore()
-  const { latestDecision } = state
-  const { activeSegment, hasRun } = useRouteProgress()
+  const { latestDecision, uiLanguage } = state
 
-  const drowsiness = latestDecision?.features?.drowsiness_level ?? null
-  const viz = bandViz(drowsiness)
-  const stopped = activeSegment?.is_rest_facility ?? false
+  const features = latestDecision?.features ?? {}
+
+  const labels = {
+    inCar:       t({ ja: '🚗 車内状態',       en: '🚗 In-car status' },        uiLanguage),
+    driver:      t({ ja: 'ドライバー',         en: 'Driver' },                  uiLanguage),
+    drowsiness:  t({ ja: '眠気レベル',         en: 'Drowsiness' },              uiLanguage),
+    fatigue:     t({ ja: '疲労レベル',         en: 'Fatigue' },                 uiLanguage),
+    drivingEnv:  t({ ja: '🛣️ 走行環境',       en: '🛣️ Driving environment' },  uiLanguage),
+  }
 
   return (
     <div data-testid="state-cards" style={{ display: 'flex', gap: '12px', margin: '12px 0' }}>
-      {/* In-car status */}
       <div style={cardStyle}>
-        <div style={cardTitle}>🚗 In-car status</div>
-        <div style={rowStyle}>
-          <span style={keyStyle}>Drowsiness</span>
-          <span style={{ ...valStyle, color: viz.color }}>{drowsiness ?? '—'}</span>
-        </div>
-        <div style={{ height: '8px', background: '#e5e7eb', borderRadius: '4px', overflow: 'hidden', marginBottom: '8px' }}>
-          <div
-            style={{
-              height: '100%',
-              width: `${viz.pct}%`,
-              background: viz.color,
-              transition: 'width 0.5s ease, background 0.5s ease',
-            }}
-          />
-        </div>
-        <div style={{ ...rowStyle, marginBottom: 0 }}>
-          <span style={keyStyle}>Vehicle</span>
-          <span style={valStyle}>{hasRun ? (stopped ? 'stopped' : 'moving') : '—'}</span>
-        </div>
+        <div style={cardTitle}>{labels.inCar}</div>
+        <div style={{ ...cardTitle, fontSize: '0.68em', color: '#9ca3af', marginBottom: '6px', marginTop: '4px' }}>{labels.driver}</div>
+        <BandBar label={labels.drowsiness} band={features.drowsiness_level} />
+        <BandBar label={labels.fatigue} band={features.fatigue_level} />
       </div>
 
-      {/* Driving environment */}
       <div style={cardStyle}>
-        <div style={cardTitle}>🛣️ Driving environment</div>
-        <div style={rowStyle}>
-          <span style={keyStyle}>Road type</span>
-          <span style={valStyle}>{activeSegment?.type ?? '—'}</span>
-        </div>
-        <div style={{ ...rowStyle, marginBottom: 0 }}>
-          <span style={keyStyle}>Speed band</span>
-          <span style={valStyle}>{activeSegment?.speed_band ?? '—'}</span>
-        </div>
+        <div style={cardTitle}>{labels.drivingEnv}</div>
       </div>
     </div>
   )

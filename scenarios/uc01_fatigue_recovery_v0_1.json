@@ -27,7 +27,7 @@
   "type": "uc01_fatigue",
   "persona": {
     "name": "Haruto Tanaka",
-    "description": "A 35-year-old office worker on a long interstate drive to visit a friend. Started mid-afternoon after a very short night's sleep; fatigue is already high at departure."
+    "description": "uc-01-01"
   },
   "route_intent": {
     "rest_facility": {
@@ -85,8 +85,8 @@
     ]
   },
   "initial_state": {
-    "drowsiness_level": "none",
-    "fatigue_level": "high"
+    "drowsiness_level": 20,
+    "fatigue_level": 20
   },
   "driver_profile": {
     "id": "friend_drive_driver_v1",
@@ -149,8 +149,8 @@
     "traffic_jam_kph": 20
   },
   "is_night": false,
-  "child_passenger": false,
-  "familiar_route": false,
+  "child_passenger": true,
+  "familiar_route": true,
   "presets": {
     "total_route_distance_km": 120,
     "traffic_events": [],
@@ -212,5 +212,5 @@
       "stages": []
     }
   ],
-  "review_focus": "UC-01 fatigue/drowsiness with M7 staged recovery: verify REST_PROPOSAL fires (declarative_rule, ~tick 29), accept_rest with nap_karaoke triggers wakefulness → nap → content sequence, drowsiness/fatigue drop during STOPPED ticks, and the run completes after resuming."
+  "review_focus": "UC-01-01"
 }

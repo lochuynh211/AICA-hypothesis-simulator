@@ -14,14 +14,19 @@ import { t } from '../../i18n/t'
 export default function RestCeilingEditor() {
   const { state, dispatch } = useRunStore()
   const { uiLanguage, selectedScenarioId } = state
-  const [inputValue, setInputValue] = useState<number | null>(null)
+  const DEFAULT_CEILING = 150
+  const [inputValue, setInputValue] = useState<number | null>(DEFAULT_CEILING)
 
-  // Re-sync the displayed input when the scenario changes: the store clears
-  // restDrowsinessCeiling on SELECT_SCENARIO, so the input must clear too
-  // (otherwise a stale typed value would be shown while the override is null).
+  // Seed the store with the default value on first mount.
   useEffect(() => {
-    setInputValue(null)
-  }, [selectedScenarioId])
+    dispatch({ type: 'SET_REST_DROWSINESS_CEILING', value: DEFAULT_CEILING })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Re-sync the displayed input when the scenario changes.
+  useEffect(() => {
+    setInputValue(DEFAULT_CEILING)
+    dispatch({ type: 'SET_REST_DROWSINESS_CEILING', value: DEFAULT_CEILING })
+  }, [selectedScenarioId, dispatch])
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value
@@ -50,7 +55,7 @@ export default function RestCeilingEditor() {
     uiLanguage,
   )
   const hint = t(
-    { ja: '(算法の発火閾値とは別。デフォルト100%。100超も可)', en: '(Separate from trigger threshold; default 100%; may exceed 100)' },
+    { ja: '(算法の発火閾値とは別。デフォルト150%。100超も可)', en: '(Separate from trigger threshold; default 150%; may exceed 100)' },
     uiLanguage,
   )
   const resetLabel = t({ ja: 'クリア', en: 'Clear' }, uiLanguage)

@@ -18,6 +18,86 @@ import { useEffect, useState } from 'react'
 import { useRunStore } from '../../state/runStore'
 import { getScenario } from '../../api/client'
 import type { ScenarioDef, ProfileOverrides } from '../../api/types'
+import { t } from '../../i18n/t'
+import type { BilingualLabel } from '../../i18n/t'
+
+// ── Bilingual labels ──────────────────────────────────────────────────────────
+
+const LABELS: Record<string, BilingualLabel> = {
+  // Section headings
+  driver_model: { ja: 'ドライバーモデル', en: 'Driver Model' },
+  vehicle_behavior: { ja: '車両挙動', en: 'Vehicle Behavior' },
+  speed_profile: { ja: '速度プロファイル', en: 'Speed Profile' },
+
+  // Driver sub-model headings
+  drowsiness_model: { ja: '眠気モデル', en: 'Drowsiness Model' },
+  fatigue_model: { ja: '疲労モデル', en: 'Fatigue Model' },
+  attention_model: { ja: '注意力モデル', en: 'Attention Model' },
+  recovery_model: { ja: '回復モデル', en: 'Recovery Model' },
+
+  // Drowsiness fields
+  'drowsiness.base_growth_per_min': { ja: '基本増加率 (/分)', en: 'Base Growth (/min)' },
+  'drowsiness.night_add_per_min': { ja: '夜間追加 (/分)', en: 'Night Addition (/min)' },
+  'drowsiness.monotony_add_per_min': { ja: '単調追加 (/分)', en: 'Monotony Addition (/min)' },
+  'drowsiness.traffic_jam_add_per_min': { ja: '渋滞追加 (/分)', en: 'Traffic Jam Addition (/min)' },
+
+  // Fatigue fields
+  'fatigue.base_growth_per_min': { ja: '基本増加率 (/分)', en: 'Base Growth (/min)' },
+  'fatigue.continuous_driving_add': { ja: '60分超連続運転追加 (/分)', en: 'Continuous Driving Addition (after 60min, /min)' },
+  'fatigue.mountain_road_add_per_min': { ja: '山道追加 (/分)', en: 'Mountain Road Addition (/min)' },
+  'fatigue.traffic_jam_add_per_min': { ja: '渋滞追加 (/分)', en: 'Traffic Jam Addition (/min)' },
+
+  // Attention fields
+  'attention.base_recovery_per_min': { ja: '基本回復率 (/分)', en: 'Base Recovery (/min)' },
+  'attention.monotony_drop_per_min': { ja: '単調低下 (/分)', en: 'Monotony Drop (/min)' },
+  'attention.drowsiness_drop_factor': { ja: '眠気低下係数', en: 'Drowsiness Drop Factor' },
+  'attention.active_content_recovery': { ja: 'コンテンツ回復 (/分)', en: 'Active Content Recovery (/min)' },
+
+  // Recovery fields
+  'recovery.short_rest_drowsiness': { ja: '短休憩・眠気回復', en: 'Short Rest Drowsiness Recovery' },
+  'recovery.short_rest_fatigue': { ja: '短休憩・疲労回復', en: 'Short Rest Fatigue Recovery' },
+  'recovery.long_rest_drowsiness': { ja: '長休憩・眠気回復', en: 'Long Rest Drowsiness Recovery' },
+  'recovery.long_rest_fatigue': { ja: '長休憩・疲労回復', en: 'Long Rest Fatigue Recovery' },
+
+  // Vehicle headings
+  rolling_window: { ja: 'ローリングウィンドウ', en: 'Rolling Window' },
+  steering_instability: { ja: 'ステアリング不安定性', en: 'Steering Instability' },
+  lane_departure: { ja: '車線逸脱', en: 'Lane Departure' },
+  pedal_abnormality: { ja: 'ペダル異常', en: 'Pedal Abnormality' },
+  adas_warning: { ja: 'ADAS警告', en: 'ADAS Warning' },
+
+  // Vehicle fields
+  'vehicle.rolling_window_seconds': { ja: 'ウィンドウ秒数', en: 'Window (seconds)' },
+  'steering.base_level': { ja: '基本レベル', en: 'Base Level' },
+  'steering.drowsiness_factor': { ja: '眠気係数', en: 'Drowsiness Factor' },
+  'steering.fatigue_factor': { ja: '疲労係数', en: 'Fatigue Factor' },
+  'steering.mountain_road_add': { ja: '山道追加', en: 'Mountain Road Addition' },
+  'steering.traffic_jam_reduce': { ja: '渋滞軽減', en: 'Traffic Jam Reduction' },
+  'lane.enabled_on': { ja: '有効道路種別 (カンマ区切り)', en: 'Enabled On (comma-separated)' },
+  'lane.drowsiness_threshold': { ja: '眠気閾値', en: 'Drowsiness Threshold' },
+  'lane.fatigue_threshold': { ja: '疲労閾値', en: 'Fatigue Threshold' },
+  'lane.count_when_exceeded': { ja: '超過時カウント', en: 'Count When Exceeded' },
+  'pedal.base_level': { ja: '基本レベル', en: 'Base Level' },
+  'pedal.fatigue_factor': { ja: '疲労係数', en: 'Fatigue Factor' },
+  'pedal.traffic_jam_add': { ja: '渋滞追加', en: 'Traffic Jam Addition' },
+  'pedal.mountain_road_add': { ja: '山道追加', en: 'Mountain Road Addition' },
+  'adas.lane_departure_warning': { ja: '車線逸脱警告閾値', en: 'Lane Departure Warning Threshold' },
+  'adas.steering_warning': { ja: 'ステアリング警告閾値', en: 'Steering Instability Warning Threshold' },
+
+  // Speed fields
+  'speed.normal_road': { ja: '一般道 (kph)', en: 'Normal Road (kph)' },
+  'speed.highway': { ja: '高速道路 (kph)', en: 'Highway (kph)' },
+  'speed.mountain_road': { ja: '山道 (kph)', en: 'Mountain Road (kph)' },
+  'speed.sightseeing_road': { ja: '観光道路 (kph)', en: 'Sightseeing Road (kph)' },
+  'speed.traffic_jam': { ja: '渋滞 (kph)', en: 'Traffic Jam (kph)' },
+
+  // Speed heading
+  expected_speeds: { ja: '想定速度 (kph)', en: 'Expected Speeds (kph)' },
+}
+
+function L(key: string, lang: 'ja' | 'en'): string {
+  return t(LABELS[key], lang) || key
+}
 
 // ── Local edit-state types ─────────────────────────────────────────────────────
 
@@ -455,6 +535,7 @@ export default function ProfileEditor() {
   if (!driverEdits && !vehicleEdits && !speedEdits) return null
 
   const P = 'profile-field'
+  const lang = state.uiLanguage
 
   return (
     <div data-testid="profile-editor" style={S.section}>
@@ -469,77 +550,77 @@ export default function ProfileEditor() {
       {/* ── Driver Model ─────────────────────────────────────────────────── */}
       {driverEdits && <details open>
         <summary style={{ fontSize: '0.75em', fontWeight: 600, color: '#444', cursor: 'pointer', marginBottom: '6px' }}>
-          Driver Model
+          {L('driver_model', lang)}
         </summary>
 
         {/* drowsiness_model */}
         <fieldset style={S.fieldset}>
-          <legend style={S.legend}>Drowsiness Model</legend>
-          <NumericField testid={`${P}-driver-drowsiness_model-base_growth_per_min`} label="base_growth_per_min" value={driverEdits.drowsiness_model.base_growth_per_min} onChange={(v) => updateDriver('drowsiness_model', 'base_growth_per_min', v, vehicleEdits, speedEdits)} />
-          <NumericField testid={`${P}-driver-drowsiness_model-night_add_per_min`} label="night_add_per_min" value={driverEdits.drowsiness_model.night_add_per_min} onChange={(v) => updateDriver('drowsiness_model', 'night_add_per_min', v, vehicleEdits, speedEdits)} />
-          <NumericField testid={`${P}-driver-drowsiness_model-monotony_add_per_min`} label="monotony_add_per_min" value={driverEdits.drowsiness_model.monotony_add_per_min} onChange={(v) => updateDriver('drowsiness_model', 'monotony_add_per_min', v, vehicleEdits, speedEdits)} />
-          <NumericField testid={`${P}-driver-drowsiness_model-traffic_jam_add_per_min`} label="traffic_jam_add_per_min" value={driverEdits.drowsiness_model.traffic_jam_add_per_min} onChange={(v) => updateDriver('drowsiness_model', 'traffic_jam_add_per_min', v, vehicleEdits, speedEdits)} />
+          <legend style={S.legend}>{L('drowsiness_model', lang)}</legend>
+          <NumericField testid={`${P}-driver-drowsiness_model-base_growth_per_min`} label={L('drowsiness.base_growth_per_min', lang)} value={driverEdits.drowsiness_model.base_growth_per_min} onChange={(v) => updateDriver('drowsiness_model', 'base_growth_per_min', v, vehicleEdits, speedEdits)} />
+          <NumericField testid={`${P}-driver-drowsiness_model-night_add_per_min`} label={L('drowsiness.night_add_per_min', lang)} value={driverEdits.drowsiness_model.night_add_per_min} onChange={(v) => updateDriver('drowsiness_model', 'night_add_per_min', v, vehicleEdits, speedEdits)} />
+          <NumericField testid={`${P}-driver-drowsiness_model-monotony_add_per_min`} label={L('drowsiness.monotony_add_per_min', lang)} value={driverEdits.drowsiness_model.monotony_add_per_min} onChange={(v) => updateDriver('drowsiness_model', 'monotony_add_per_min', v, vehicleEdits, speedEdits)} />
+          <NumericField testid={`${P}-driver-drowsiness_model-traffic_jam_add_per_min`} label={L('drowsiness.traffic_jam_add_per_min', lang)} value={driverEdits.drowsiness_model.traffic_jam_add_per_min} onChange={(v) => updateDriver('drowsiness_model', 'traffic_jam_add_per_min', v, vehicleEdits, speedEdits)} />
         </fieldset>
 
         {/* fatigue_model */}
         <fieldset style={S.fieldset}>
-          <legend style={S.legend}>Fatigue Model</legend>
-          <NumericField testid={`${P}-driver-fatigue_model-base_growth_per_min`} label="base_growth_per_min" value={driverEdits.fatigue_model.base_growth_per_min} onChange={(v) => updateDriver('fatigue_model', 'base_growth_per_min', v, vehicleEdits, speedEdits)} />
-          <NumericField testid={`${P}-driver-fatigue_model-continuous_driving_add_per_min_after_60_min`} label="continuous_driving_add_per_min_after_60_min" value={driverEdits.fatigue_model.continuous_driving_add_per_min_after_60_min} onChange={(v) => updateDriver('fatigue_model', 'continuous_driving_add_per_min_after_60_min', v, vehicleEdits, speedEdits)} />
-          <NumericField testid={`${P}-driver-fatigue_model-mountain_road_add_per_min`} label="mountain_road_add_per_min" value={driverEdits.fatigue_model.mountain_road_add_per_min} onChange={(v) => updateDriver('fatigue_model', 'mountain_road_add_per_min', v, vehicleEdits, speedEdits)} />
-          <NumericField testid={`${P}-driver-fatigue_model-traffic_jam_add_per_min`} label="traffic_jam_add_per_min" value={driverEdits.fatigue_model.traffic_jam_add_per_min} onChange={(v) => updateDriver('fatigue_model', 'traffic_jam_add_per_min', v, vehicleEdits, speedEdits)} />
+          <legend style={S.legend}>{L('fatigue_model', lang)}</legend>
+          <NumericField testid={`${P}-driver-fatigue_model-base_growth_per_min`} label={L('fatigue.base_growth_per_min', lang)} value={driverEdits.fatigue_model.base_growth_per_min} onChange={(v) => updateDriver('fatigue_model', 'base_growth_per_min', v, vehicleEdits, speedEdits)} />
+          <NumericField testid={`${P}-driver-fatigue_model-continuous_driving_add_per_min_after_60_min`} label={L('fatigue.continuous_driving_add', lang)} value={driverEdits.fatigue_model.continuous_driving_add_per_min_after_60_min} onChange={(v) => updateDriver('fatigue_model', 'continuous_driving_add_per_min_after_60_min', v, vehicleEdits, speedEdits)} />
+          <NumericField testid={`${P}-driver-fatigue_model-mountain_road_add_per_min`} label={L('fatigue.mountain_road_add_per_min', lang)} value={driverEdits.fatigue_model.mountain_road_add_per_min} onChange={(v) => updateDriver('fatigue_model', 'mountain_road_add_per_min', v, vehicleEdits, speedEdits)} />
+          <NumericField testid={`${P}-driver-fatigue_model-traffic_jam_add_per_min`} label={L('fatigue.traffic_jam_add_per_min', lang)} value={driverEdits.fatigue_model.traffic_jam_add_per_min} onChange={(v) => updateDriver('fatigue_model', 'traffic_jam_add_per_min', v, vehicleEdits, speedEdits)} />
         </fieldset>
 
         {/* attention_model */}
         <fieldset style={S.fieldset}>
-          <legend style={S.legend}>Attention Model</legend>
-          <NumericField testid={`${P}-driver-attention_model-base_recovery_per_min`} label="base_recovery_per_min" value={driverEdits.attention_model.base_recovery_per_min} onChange={(v) => updateDriver('attention_model', 'base_recovery_per_min', v, vehicleEdits, speedEdits)} />
-          <NumericField testid={`${P}-driver-attention_model-monotony_drop_per_min`} label="monotony_drop_per_min" value={driverEdits.attention_model.monotony_drop_per_min} onChange={(v) => updateDriver('attention_model', 'monotony_drop_per_min', v, vehicleEdits, speedEdits)} />
-          <NumericField testid={`${P}-driver-attention_model-drowsiness_drop_factor`} label="drowsiness_drop_factor" value={driverEdits.attention_model.drowsiness_drop_factor} onChange={(v) => updateDriver('attention_model', 'drowsiness_drop_factor', v, vehicleEdits, speedEdits)} />
-          <NumericField testid={`${P}-driver-attention_model-active_content_recovery_per_min`} label="active_content_recovery_per_min" value={driverEdits.attention_model.active_content_recovery_per_min} onChange={(v) => updateDriver('attention_model', 'active_content_recovery_per_min', v, vehicleEdits, speedEdits)} />
+          <legend style={S.legend}>{L('attention_model', lang)}</legend>
+          <NumericField testid={`${P}-driver-attention_model-base_recovery_per_min`} label={L('attention.base_recovery_per_min', lang)} value={driverEdits.attention_model.base_recovery_per_min} onChange={(v) => updateDriver('attention_model', 'base_recovery_per_min', v, vehicleEdits, speedEdits)} />
+          <NumericField testid={`${P}-driver-attention_model-monotony_drop_per_min`} label={L('attention.monotony_drop_per_min', lang)} value={driverEdits.attention_model.monotony_drop_per_min} onChange={(v) => updateDriver('attention_model', 'monotony_drop_per_min', v, vehicleEdits, speedEdits)} />
+          <NumericField testid={`${P}-driver-attention_model-drowsiness_drop_factor`} label={L('attention.drowsiness_drop_factor', lang)} value={driverEdits.attention_model.drowsiness_drop_factor} onChange={(v) => updateDriver('attention_model', 'drowsiness_drop_factor', v, vehicleEdits, speedEdits)} />
+          <NumericField testid={`${P}-driver-attention_model-active_content_recovery_per_min`} label={L('attention.active_content_recovery', lang)} value={driverEdits.attention_model.active_content_recovery_per_min} onChange={(v) => updateDriver('attention_model', 'active_content_recovery_per_min', v, vehicleEdits, speedEdits)} />
         </fieldset>
 
         {/* recovery_model */}
         <fieldset style={S.fieldset}>
-          <legend style={S.legend}>Recovery Model</legend>
-          <NumericField testid={`${P}-driver-recovery_model-short_rest_drowsiness_recovery`} label="short_rest_drowsiness_recovery" value={driverEdits.recovery_model.short_rest_drowsiness_recovery} onChange={(v) => updateDriver('recovery_model', 'short_rest_drowsiness_recovery', v, vehicleEdits, speedEdits)} />
-          <NumericField testid={`${P}-driver-recovery_model-short_rest_fatigue_recovery`} label="short_rest_fatigue_recovery" value={driverEdits.recovery_model.short_rest_fatigue_recovery} onChange={(v) => updateDriver('recovery_model', 'short_rest_fatigue_recovery', v, vehicleEdits, speedEdits)} />
-          <NumericField testid={`${P}-driver-recovery_model-long_rest_drowsiness_recovery`} label="long_rest_drowsiness_recovery" value={driverEdits.recovery_model.long_rest_drowsiness_recovery} onChange={(v) => updateDriver('recovery_model', 'long_rest_drowsiness_recovery', v, vehicleEdits, speedEdits)} />
-          <NumericField testid={`${P}-driver-recovery_model-long_rest_fatigue_recovery`} label="long_rest_fatigue_recovery" value={driverEdits.recovery_model.long_rest_fatigue_recovery} onChange={(v) => updateDriver('recovery_model', 'long_rest_fatigue_recovery', v, vehicleEdits, speedEdits)} />
+          <legend style={S.legend}>{L('recovery_model', lang)}</legend>
+          <NumericField testid={`${P}-driver-recovery_model-short_rest_drowsiness_recovery`} label={L('recovery.short_rest_drowsiness', lang)} value={driverEdits.recovery_model.short_rest_drowsiness_recovery} onChange={(v) => updateDriver('recovery_model', 'short_rest_drowsiness_recovery', v, vehicleEdits, speedEdits)} />
+          <NumericField testid={`${P}-driver-recovery_model-short_rest_fatigue_recovery`} label={L('recovery.short_rest_fatigue', lang)} value={driverEdits.recovery_model.short_rest_fatigue_recovery} onChange={(v) => updateDriver('recovery_model', 'short_rest_fatigue_recovery', v, vehicleEdits, speedEdits)} />
+          <NumericField testid={`${P}-driver-recovery_model-long_rest_drowsiness_recovery`} label={L('recovery.long_rest_drowsiness', lang)} value={driverEdits.recovery_model.long_rest_drowsiness_recovery} onChange={(v) => updateDriver('recovery_model', 'long_rest_drowsiness_recovery', v, vehicleEdits, speedEdits)} />
+          <NumericField testid={`${P}-driver-recovery_model-long_rest_fatigue_recovery`} label={L('recovery.long_rest_fatigue', lang)} value={driverEdits.recovery_model.long_rest_fatigue_recovery} onChange={(v) => updateDriver('recovery_model', 'long_rest_fatigue_recovery', v, vehicleEdits, speedEdits)} />
         </fieldset>
       </details>}
 
       {/* ── Vehicle Behavior ─────────────────────────────────────────────── */}
       {vehicleEdits && <details open>
         <summary style={{ fontSize: '0.75em', fontWeight: 600, color: '#444', cursor: 'pointer', marginBottom: '6px' }}>
-          Vehicle Behavior
+          {L('vehicle_behavior', lang)}
         </summary>
 
         {/* rolling_window_seconds — top-level */}
         <fieldset style={S.fieldset}>
-          <legend style={S.legend}>Rolling Window</legend>
-          <NumericField testid={`${P}-vehicle-rolling_window_seconds`} label="rolling_window_seconds" value={vehicleEdits.rolling_window_seconds} step={1} onChange={(v) => updateVehicle({ ...vehicleEdits, rolling_window_seconds: Math.round(v) }, driverEdits, speedEdits)} />
+          <legend style={S.legend}>{L('rolling_window', lang)}</legend>
+          <NumericField testid={`${P}-vehicle-rolling_window_seconds`} label={L('vehicle.rolling_window_seconds', lang)} value={vehicleEdits.rolling_window_seconds} step={1} onChange={(v) => updateVehicle({ ...vehicleEdits, rolling_window_seconds: Math.round(v) }, driverEdits, speedEdits)} />
         </fieldset>
 
         {/* steering_instability */}
         <fieldset style={S.fieldset}>
-          <legend style={S.legend}>Steering Instability</legend>
-          <NumericField testid={`${P}-vehicle-steering_instability-base_level`} label="base_level" value={vehicleEdits.steering_instability.base_level} onChange={(v) => updateVehicle({ ...vehicleEdits, steering_instability: { ...vehicleEdits.steering_instability, base_level: v } }, driverEdits, speedEdits)} />
-          <NumericField testid={`${P}-vehicle-steering_instability-drowsiness_factor`} label="drowsiness_factor" value={vehicleEdits.steering_instability.drowsiness_factor} onChange={(v) => updateVehicle({ ...vehicleEdits, steering_instability: { ...vehicleEdits.steering_instability, drowsiness_factor: v } }, driverEdits, speedEdits)} />
-          <NumericField testid={`${P}-vehicle-steering_instability-fatigue_factor`} label="fatigue_factor" value={vehicleEdits.steering_instability.fatigue_factor} onChange={(v) => updateVehicle({ ...vehicleEdits, steering_instability: { ...vehicleEdits.steering_instability, fatigue_factor: v } }, driverEdits, speedEdits)} />
-          <NumericField testid={`${P}-vehicle-steering_instability-mountain_road_add`} label="mountain_road_add" value={vehicleEdits.steering_instability.mountain_road_add} onChange={(v) => updateVehicle({ ...vehicleEdits, steering_instability: { ...vehicleEdits.steering_instability, mountain_road_add: v } }, driverEdits, speedEdits)} />
-          <NumericField testid={`${P}-vehicle-steering_instability-traffic_jam_reduce`} label="traffic_jam_reduce" value={vehicleEdits.steering_instability.traffic_jam_reduce} onChange={(v) => updateVehicle({ ...vehicleEdits, steering_instability: { ...vehicleEdits.steering_instability, traffic_jam_reduce: v } }, driverEdits, speedEdits)} />
+          <legend style={S.legend}>{L('steering_instability', lang)}</legend>
+          <NumericField testid={`${P}-vehicle-steering_instability-base_level`} label={L('steering.base_level', lang)} value={vehicleEdits.steering_instability.base_level} onChange={(v) => updateVehicle({ ...vehicleEdits, steering_instability: { ...vehicleEdits.steering_instability, base_level: v } }, driverEdits, speedEdits)} />
+          <NumericField testid={`${P}-vehicle-steering_instability-drowsiness_factor`} label={L('steering.drowsiness_factor', lang)} value={vehicleEdits.steering_instability.drowsiness_factor} onChange={(v) => updateVehicle({ ...vehicleEdits, steering_instability: { ...vehicleEdits.steering_instability, drowsiness_factor: v } }, driverEdits, speedEdits)} />
+          <NumericField testid={`${P}-vehicle-steering_instability-fatigue_factor`} label={L('steering.fatigue_factor', lang)} value={vehicleEdits.steering_instability.fatigue_factor} onChange={(v) => updateVehicle({ ...vehicleEdits, steering_instability: { ...vehicleEdits.steering_instability, fatigue_factor: v } }, driverEdits, speedEdits)} />
+          <NumericField testid={`${P}-vehicle-steering_instability-mountain_road_add`} label={L('steering.mountain_road_add', lang)} value={vehicleEdits.steering_instability.mountain_road_add} onChange={(v) => updateVehicle({ ...vehicleEdits, steering_instability: { ...vehicleEdits.steering_instability, mountain_road_add: v } }, driverEdits, speedEdits)} />
+          <NumericField testid={`${P}-vehicle-steering_instability-traffic_jam_reduce`} label={L('steering.traffic_jam_reduce', lang)} value={vehicleEdits.steering_instability.traffic_jam_reduce} onChange={(v) => updateVehicle({ ...vehicleEdits, steering_instability: { ...vehicleEdits.steering_instability, traffic_jam_reduce: v } }, driverEdits, speedEdits)} />
         </fieldset>
 
         {/* lane_departure */}
         <fieldset style={S.fieldset}>
-          <legend style={S.legend}>Lane Departure</legend>
+          <legend style={S.legend}>{L('lane_departure', lang)}</legend>
           <div style={S.row}>
             <label
               htmlFor={`${P}-vehicle-lane_departure-enabled_on`}
               style={S.label}
             >
-              enabled_on (comma-separated)
+              {L('lane.enabled_on', lang)}
             </label>
             <input
               id={`${P}-vehicle-lane_departure-enabled_on`}
@@ -560,40 +641,40 @@ export default function ProfileEditor() {
               style={S.textInput}
             />
           </div>
-          <NumericField testid={`${P}-vehicle-lane_departure-drowsiness_threshold`} label="drowsiness_threshold" value={vehicleEdits.lane_departure.drowsiness_threshold} onChange={(v) => updateVehicle({ ...vehicleEdits, lane_departure: { ...vehicleEdits.lane_departure, drowsiness_threshold: v } }, driverEdits, speedEdits)} />
-          <NumericField testid={`${P}-vehicle-lane_departure-fatigue_threshold`} label="fatigue_threshold" value={vehicleEdits.lane_departure.fatigue_threshold} onChange={(v) => updateVehicle({ ...vehicleEdits, lane_departure: { ...vehicleEdits.lane_departure, fatigue_threshold: v } }, driverEdits, speedEdits)} />
-          <NumericField testid={`${P}-vehicle-lane_departure-count_when_threshold_exceeded`} label="count_when_threshold_exceeded" value={vehicleEdits.lane_departure.count_when_threshold_exceeded} step={1} onChange={(v) => updateVehicle({ ...vehicleEdits, lane_departure: { ...vehicleEdits.lane_departure, count_when_threshold_exceeded: Math.round(v) } }, driverEdits, speedEdits)} />
+          <NumericField testid={`${P}-vehicle-lane_departure-drowsiness_threshold`} label={L('lane.drowsiness_threshold', lang)} value={vehicleEdits.lane_departure.drowsiness_threshold} onChange={(v) => updateVehicle({ ...vehicleEdits, lane_departure: { ...vehicleEdits.lane_departure, drowsiness_threshold: v } }, driverEdits, speedEdits)} />
+          <NumericField testid={`${P}-vehicle-lane_departure-fatigue_threshold`} label={L('lane.fatigue_threshold', lang)} value={vehicleEdits.lane_departure.fatigue_threshold} onChange={(v) => updateVehicle({ ...vehicleEdits, lane_departure: { ...vehicleEdits.lane_departure, fatigue_threshold: v } }, driverEdits, speedEdits)} />
+          <NumericField testid={`${P}-vehicle-lane_departure-count_when_threshold_exceeded`} label={L('lane.count_when_exceeded', lang)} value={vehicleEdits.lane_departure.count_when_threshold_exceeded} step={1} onChange={(v) => updateVehicle({ ...vehicleEdits, lane_departure: { ...vehicleEdits.lane_departure, count_when_threshold_exceeded: Math.round(v) } }, driverEdits, speedEdits)} />
         </fieldset>
 
         {/* pedal_abnormality */}
         <fieldset style={S.fieldset}>
-          <legend style={S.legend}>Pedal Abnormality</legend>
-          <NumericField testid={`${P}-vehicle-pedal_abnormality-base_level`} label="base_level" value={vehicleEdits.pedal_abnormality.base_level} onChange={(v) => updateVehicle({ ...vehicleEdits, pedal_abnormality: { ...vehicleEdits.pedal_abnormality, base_level: v } }, driverEdits, speedEdits)} />
-          <NumericField testid={`${P}-vehicle-pedal_abnormality-fatigue_factor`} label="fatigue_factor" value={vehicleEdits.pedal_abnormality.fatigue_factor} onChange={(v) => updateVehicle({ ...vehicleEdits, pedal_abnormality: { ...vehicleEdits.pedal_abnormality, fatigue_factor: v } }, driverEdits, speedEdits)} />
-          <NumericField testid={`${P}-vehicle-pedal_abnormality-traffic_jam_add`} label="traffic_jam_add" value={vehicleEdits.pedal_abnormality.traffic_jam_add} onChange={(v) => updateVehicle({ ...vehicleEdits, pedal_abnormality: { ...vehicleEdits.pedal_abnormality, traffic_jam_add: v } }, driverEdits, speedEdits)} />
-          <NumericField testid={`${P}-vehicle-pedal_abnormality-mountain_road_add`} label="mountain_road_add" value={vehicleEdits.pedal_abnormality.mountain_road_add} onChange={(v) => updateVehicle({ ...vehicleEdits, pedal_abnormality: { ...vehicleEdits.pedal_abnormality, mountain_road_add: v } }, driverEdits, speedEdits)} />
+          <legend style={S.legend}>{L('pedal_abnormality', lang)}</legend>
+          <NumericField testid={`${P}-vehicle-pedal_abnormality-base_level`} label={L('pedal.base_level', lang)} value={vehicleEdits.pedal_abnormality.base_level} onChange={(v) => updateVehicle({ ...vehicleEdits, pedal_abnormality: { ...vehicleEdits.pedal_abnormality, base_level: v } }, driverEdits, speedEdits)} />
+          <NumericField testid={`${P}-vehicle-pedal_abnormality-fatigue_factor`} label={L('pedal.fatigue_factor', lang)} value={vehicleEdits.pedal_abnormality.fatigue_factor} onChange={(v) => updateVehicle({ ...vehicleEdits, pedal_abnormality: { ...vehicleEdits.pedal_abnormality, fatigue_factor: v } }, driverEdits, speedEdits)} />
+          <NumericField testid={`${P}-vehicle-pedal_abnormality-traffic_jam_add`} label={L('pedal.traffic_jam_add', lang)} value={vehicleEdits.pedal_abnormality.traffic_jam_add} onChange={(v) => updateVehicle({ ...vehicleEdits, pedal_abnormality: { ...vehicleEdits.pedal_abnormality, traffic_jam_add: v } }, driverEdits, speedEdits)} />
+          <NumericField testid={`${P}-vehicle-pedal_abnormality-mountain_road_add`} label={L('pedal.mountain_road_add', lang)} value={vehicleEdits.pedal_abnormality.mountain_road_add} onChange={(v) => updateVehicle({ ...vehicleEdits, pedal_abnormality: { ...vehicleEdits.pedal_abnormality, mountain_road_add: v } }, driverEdits, speedEdits)} />
         </fieldset>
 
         {/* adas_warning */}
         <fieldset style={S.fieldset}>
-          <legend style={S.legend}>ADAS Warning</legend>
-          <NumericField testid={`${P}-vehicle-adas_warning-lane_departure_warning_threshold`} label="lane_departure_warning_threshold" value={vehicleEdits.adas_warning.lane_departure_warning_threshold} onChange={(v) => updateVehicle({ ...vehicleEdits, adas_warning: { ...vehicleEdits.adas_warning, lane_departure_warning_threshold: v } }, driverEdits, speedEdits)} />
-          <NumericField testid={`${P}-vehicle-adas_warning-steering_instability_warning_threshold`} label="steering_instability_warning_threshold" value={vehicleEdits.adas_warning.steering_instability_warning_threshold} onChange={(v) => updateVehicle({ ...vehicleEdits, adas_warning: { ...vehicleEdits.adas_warning, steering_instability_warning_threshold: v } }, driverEdits, speedEdits)} />
+          <legend style={S.legend}>{L('adas_warning', lang)}</legend>
+          <NumericField testid={`${P}-vehicle-adas_warning-lane_departure_warning_threshold`} label={L('adas.lane_departure_warning', lang)} value={vehicleEdits.adas_warning.lane_departure_warning_threshold} onChange={(v) => updateVehicle({ ...vehicleEdits, adas_warning: { ...vehicleEdits.adas_warning, lane_departure_warning_threshold: v } }, driverEdits, speedEdits)} />
+          <NumericField testid={`${P}-vehicle-adas_warning-steering_instability_warning_threshold`} label={L('adas.steering_warning', lang)} value={vehicleEdits.adas_warning.steering_instability_warning_threshold} onChange={(v) => updateVehicle({ ...vehicleEdits, adas_warning: { ...vehicleEdits.adas_warning, steering_instability_warning_threshold: v } }, driverEdits, speedEdits)} />
         </fieldset>
       </details>}
 
       {/* ── Speed Profile ────────────────────────────────────────────────── */}
       {speedEdits && <details open>
         <summary style={{ fontSize: '0.75em', fontWeight: 600, color: '#444', cursor: 'pointer', marginBottom: '6px' }}>
-          Speed Profile
+          {L('speed_profile', lang)}
         </summary>
         <fieldset style={S.fieldset}>
-          <legend style={S.legend}>Expected Speeds (kph)</legend>
-          <NumericField testid={`${P}-speed-normal_road_kph`} label="normal_road_kph" value={speedEdits.normal_road_kph} step={1} onChange={(v) => updateSpeed('normal_road_kph', Math.round(v), driverEdits, vehicleEdits)} />
-          <NumericField testid={`${P}-speed-highway_kph`} label="highway_kph" value={speedEdits.highway_kph} step={1} onChange={(v) => updateSpeed('highway_kph', Math.round(v), driverEdits, vehicleEdits)} />
-          <NumericField testid={`${P}-speed-mountain_road_kph`} label="mountain_road_kph" value={speedEdits.mountain_road_kph} step={1} onChange={(v) => updateSpeed('mountain_road_kph', Math.round(v), driverEdits, vehicleEdits)} />
-          <NumericField testid={`${P}-speed-sightseeing_road_kph`} label="sightseeing_road_kph" value={speedEdits.sightseeing_road_kph} step={1} onChange={(v) => updateSpeed('sightseeing_road_kph', Math.round(v), driverEdits, vehicleEdits)} />
-          <NumericField testid={`${P}-speed-traffic_jam_kph`} label="traffic_jam_kph" value={speedEdits.traffic_jam_kph} step={1} onChange={(v) => updateSpeed('traffic_jam_kph', Math.round(v), driverEdits, vehicleEdits)} />
+          <legend style={S.legend}>{L('expected_speeds', lang)}</legend>
+          <NumericField testid={`${P}-speed-normal_road_kph`} label={L('speed.normal_road', lang)} value={speedEdits.normal_road_kph} step={1} onChange={(v) => updateSpeed('normal_road_kph', Math.round(v), driverEdits, vehicleEdits)} />
+          <NumericField testid={`${P}-speed-highway_kph`} label={L('speed.highway', lang)} value={speedEdits.highway_kph} step={1} onChange={(v) => updateSpeed('highway_kph', Math.round(v), driverEdits, vehicleEdits)} />
+          <NumericField testid={`${P}-speed-mountain_road_kph`} label={L('speed.mountain_road', lang)} value={speedEdits.mountain_road_kph} step={1} onChange={(v) => updateSpeed('mountain_road_kph', Math.round(v), driverEdits, vehicleEdits)} />
+          <NumericField testid={`${P}-speed-sightseeing_road_kph`} label={L('speed.sightseeing_road', lang)} value={speedEdits.sightseeing_road_kph} step={1} onChange={(v) => updateSpeed('sightseeing_road_kph', Math.round(v), driverEdits, vehicleEdits)} />
+          <NumericField testid={`${P}-speed-traffic_jam_kph`} label={L('speed.traffic_jam', lang)} value={speedEdits.traffic_jam_kph} step={1} onChange={(v) => updateSpeed('traffic_jam_kph', Math.round(v), driverEdits, vehicleEdits)} />
         </fieldset>
       </details>}
     </div>

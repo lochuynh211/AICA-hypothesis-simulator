@@ -69,9 +69,9 @@ export default function InitialDriverStateEditor() {
         const f = bandToNum(raw.fatigue_level, FATIGUE_BAND_TO_NUM)
         setDrowsinessValue(d)
         setFatigueValue(f)
-        // Scenario switched — always clear any prior override (prefill is display-only).
-        dispatch({ type: 'SET_INITIAL_DROWSINESS', value: null })
-        dispatch({ type: 'SET_INITIAL_FATIGUE', value: null })
+        // Seed the store with the scenario's initial values so the run uses them by default.
+        dispatch({ type: 'SET_INITIAL_DROWSINESS', value: d })
+        dispatch({ type: 'SET_INITIAL_FATIGUE', value: f })
         setLoaded(true)
       })
       .catch(() => {

@@ -32,7 +32,10 @@ export default function RouteTimeline({ replayTick }: { replayTick?: ReplayTick 
       ? replayTick.route_fraction
       : null
 
-  const proposalFraction = replayTick != null ? replayProposalFraction : progress.proposalFraction
+  const proposalFractions: number[] =
+    replayTick != null
+      ? replayProposalFraction != null ? [replayProposalFraction] : []
+      : progress.proposalFractions
   const boundaries = replayTick != null ? [] : progress.boundaries
 
   const targetPct = Math.round(targetFraction * 100)
@@ -121,22 +124,23 @@ export default function RouteTimeline({ replayTick }: { replayTick?: ReplayTick 
         />
       ))}
 
-      {/* Fire / proposal marker */}
-      {proposalFraction !== null && (
+      {/* Fire / proposal markers — one per proposal that fired */}
+      {proposalFractions.map((pf, i) => (
         <div
+          key={`fire-${i}`}
           data-testid="fire-marker"
           aria-label="Proposal position"
           style={{
             position: 'absolute',
             top: '0',
-            left: `${Math.round(proposalFraction * 100)}%`,
+            left: `${Math.round(pf * 100)}%`,
             transform: 'translateX(-50%)',
             width: '4px',
             height: '100%',
             background: '#dc2626',
           }}
         />
-      )}
+      ))}
 
       {/* Car icon — smoothed position, exact aria-label */}
       <div

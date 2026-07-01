@@ -233,6 +233,8 @@ export type RunStoreAction =
       isTrafficJam?: boolean | null
       /** Current road segment class from the tick engine. */
       segmentType?: string | null
+      /** Current effective speed (kph) from the tick engine. */
+      speedKph?: number | null
     }
   | {
       type: 'ACTION_APPLIED'
@@ -435,6 +437,7 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         active_content: action.activeContent ?? null,
         is_traffic_jam: action.isTrafficJam ?? null,
         segment_type: action.segmentType ?? null,
+        speed_kph: action.speedKph ?? null,
       }
       return {
         ...state,

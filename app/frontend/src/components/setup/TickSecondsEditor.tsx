@@ -37,9 +37,9 @@ export default function TickSecondsEditor() {
       .then((def) => {
         if (cancelled) return
         setScenarioDefault(def.tick_seconds)
-        setInputValue(def.tick_seconds)
-        // Scenario switched — always clear any prior override.
-        dispatch({ type: 'SET_TICK_SECONDS', seconds: null })
+        setInputValue(180)
+        // Scenario switched — set override to 180 (user default).
+        dispatch({ type: 'SET_TICK_SECONDS', seconds: 180 })
       })
       .catch(() => {
         if (!cancelled) {
@@ -73,8 +73,8 @@ export default function TickSecondsEditor() {
   }
 
   function handleReset() {
-    setInputValue(scenarioDefault)
-    dispatch({ type: 'SET_TICK_SECONDS', seconds: null })
+    setInputValue(180)
+    dispatch({ type: 'SET_TICK_SECONDS', seconds: 180 })
   }
 
   // Don't render until a scenario is selected and its def is loaded.
@@ -82,7 +82,7 @@ export default function TickSecondsEditor() {
 
   const label = t({ ja: 'ティック秒数', en: 'Tick seconds' }, uiLanguage)
   const resetLabel = t({ ja: 'デフォルトに戻す', en: 'Reset to default' }, uiLanguage)
-  const hint = `${t({ ja: 'シナリオのデフォルト', en: 'Scenario default' }, uiLanguage)}: ${scenarioDefault}s`
+  const hint = `${t({ ja: 'デフォルト', en: 'Default' }, uiLanguage)}: 180s`
 
   return (
     <div

@@ -1,5 +1,4 @@
 import { useRunStore } from '../../state/runStore'
-import DriverStatus from '../context/DriverStatus'
 import DecisionTracePanel from '../trace/DecisionTracePanel'
 import FeedbackForm from '../feedback/FeedbackForm'
 import EvidencePanel from '../evidence/EvidencePanel'
@@ -18,11 +17,8 @@ const sectionHeaderStyle = {
 /**
  * RightReviewPanel — right column of the Review screen.
  *
- * Top: current driver status (drowsiness / fatigue bands).
  * Main: the single streaming event log (DecisionTracePanel) — live decisions +
  *       algorithm errors appended every tick, with per-decision feedback.
- *       (The static persisted Run Log moved off this panel; it remains on the
- *       Runs screen for past runs and in the evidence export.)
  * Bottom: run-level feedback (on completion) + evidence export.
  */
 export default function RightReviewPanel() {
@@ -51,11 +47,6 @@ export default function RightReviewPanel() {
         overflow: 'hidden',
       }}
     >
-      {/* Top: current driver status */}
-      <div style={{ flexShrink: 0, borderBottom: '1px solid #2a2a2a' }}>
-        <DriverStatus />
-      </div>
-
       {/* Main: live streaming event log */}
       <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
         <DecisionTracePanel />
