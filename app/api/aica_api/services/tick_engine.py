@@ -340,6 +340,8 @@ def advance_tick(
         "drowsinessAboveWeakTicks": new_above_weak,
         "motionState": motion_state,
         "isTrafficJam": is_traffic_jam,
+        "childPassenger": scenario.child_passenger,
+        "familiarRoute": scenario.familiar_route,
     }
     if recovery_phase is not None:
         raw_state["recoveryPhase"] = recovery_phase

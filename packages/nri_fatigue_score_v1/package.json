@@ -1,0 +1,164 @@
+{
+  "id": "nri_fatigue_score_v1",
+  "version": "1.0.0",
+  "label": {
+    "ja": "NRI 疲労蓄積スコア v1",
+    "en": "NRI Fatigue Accumulation Score v1"
+  },
+  "compatible_scenario_types": ["uc01_fatigue"],
+  "algorithm": {
+    "type": "python_module",
+    "entrypoint": "algorithm.py",
+    "tick_seconds": 60,
+    "error_mode": "blocking"
+  },
+  "features": [
+    { "key": "drowsiness", "band_values": [] },
+    { "key": "fatigue", "band_values": [] },
+    { "key": "driving_anomaly", "band_values": [] },
+    { "key": "future_fatigue", "band_values": [] },
+    { "key": "rest_window", "band_values": [] },
+    { "key": "rest_scarcity", "band_values": [] },
+    { "key": "monotony", "band_values": [] },
+    { "key": "familiar_route", "band_values": [] },
+    { "key": "attention_drop", "band_values": [] },
+    { "key": "traffic_jam", "band_values": [] },
+    { "key": "long_highway", "band_values": [] }
+  ],
+  "parameters": [
+    {
+      "key": "child_passenger",
+      "label": { "ja": "子供同乗", "en": "Child Passenger" },
+      "kind": "bool",
+      "default": false
+    },
+    {
+      "key": "familiar_route",
+      "label": { "ja": "慣れた道", "en": "Familiar Route" },
+      "kind": "bool",
+      "default": false
+    }
+  ],
+  "hyperparameters": [
+    {
+      "key": "w_base",
+      "label": { "ja": "基本蓄積ペース (点/分)", "en": "Base Accumulation Rate (pts/min)" },
+      "kind": "numeric", "default": 0.5, "min": 0.1, "max": 2.0, "step": 0.05
+    },
+    {
+      "key": "w_child",
+      "label": { "ja": "子供同乗オフセット (点)", "en": "Child Passenger Offset (pts)" },
+      "kind": "numeric", "default": 20.0, "min": 0.0, "max": 50.0, "step": 1.0
+    },
+    {
+      "key": "m_night",
+      "label": { "ja": "夜間増幅係数", "en": "Night Multiplier" },
+      "kind": "numeric", "default": 1.2, "min": 1.0, "max": 2.0, "step": 0.05
+    },
+    {
+      "key": "m_familiar",
+      "label": { "ja": "慣れた道増幅係数", "en": "Familiar Route Multiplier" },
+      "kind": "numeric", "default": 1.2, "min": 1.0, "max": 2.0, "step": 0.05
+    },
+    {
+      "key": "w_jam",
+      "label": { "ja": "渋滞追加重み (点/分)", "en": "Traffic Jam Weight (pts/min)" },
+      "kind": "numeric", "default": 0.8, "min": 0.0, "max": 3.0, "step": 0.05
+    },
+    {
+      "key": "w_highway",
+      "label": { "ja": "高速追加重み (点/分)", "en": "Highway Weight (pts/min)" },
+      "kind": "numeric", "default": 0.2, "min": 0.0, "max": 2.0, "step": 0.05
+    },
+    {
+      "key": "w_monotonous",
+      "label": { "ja": "単調道追加重み (点/分)", "en": "Monotonous Road Weight (pts/min)" },
+      "kind": "numeric", "default": 0.3, "min": 0.0, "max": 2.0, "step": 0.05
+    },
+    {
+      "key": "theta_sleep",
+      "label": { "ja": "眠気不感帯しきい値", "en": "Drowsiness Dead-zone Threshold" },
+      "kind": "numeric", "default": 60.0, "min": 0.0, "max": 100.0, "step": 5.0
+    },
+    {
+      "key": "w_sleep",
+      "label": { "ja": "眠気ペナルティ重み", "en": "Drowsiness Penalty Weight" },
+      "kind": "numeric", "default": 1.5, "min": 0.0, "max": 5.0, "step": 0.1
+    },
+    {
+      "key": "theta_fatigue",
+      "label": { "ja": "疲労不感帯しきい値", "en": "Fatigue Dead-zone Threshold" },
+      "kind": "numeric", "default": 60.0, "min": 0.0, "max": 100.0, "step": 5.0
+    },
+    {
+      "key": "w_fatigue",
+      "label": { "ja": "疲労ペナルティ重み", "en": "Fatigue Penalty Weight" },
+      "kind": "numeric", "default": 1.5, "min": 0.0, "max": 5.0, "step": 0.1
+    },
+    {
+      "key": "threshold_fire",
+      "label": { "ja": "発火しきい値 (点)", "en": "Fire Threshold (pts)" },
+      "kind": "numeric", "default": 80.0, "min": 20.0, "max": 200.0, "step": 5.0
+    },
+    {
+      "key": "threshold_suggest",
+      "label": { "ja": "休憩提案閾値 (点)", "en": "Suggest Threshold (pts)" },
+      "kind": "numeric", "default": 60.0, "min": 10.0, "max": 150.0, "step": 5.0
+    },
+    {
+      "key": "threshold_recommend",
+      "label": { "ja": "休憩推奨閾値 (点)", "en": "Recommend Threshold (pts)" },
+      "kind": "numeric", "default": 80.0, "min": 20.0, "max": 180.0, "step": 5.0
+    },
+    {
+      "key": "threshold_urgent",
+      "label": { "ja": "休憩緊急閾値 (点)", "en": "Urgent Threshold (pts)" },
+      "kind": "numeric", "default": 100.0, "min": 40.0, "max": 200.0, "step": 5.0
+    },
+    {
+      "key": "rest_spot_eta_filter_min",
+      "label": { "ja": "休憩施設ETA上限 (分)", "en": "Rest Spot ETA Filter (min)" },
+      "kind": "numeric", "default": 15.0, "min": 1.0, "max": 60.0, "step": 1.0
+    },
+    {
+      "key": "rest_cooldown_sec",
+      "label": { "ja": "休憩クールダウン秒", "en": "Rest Cooldown (sec)" },
+      "kind": "numeric", "default": 600.0, "min": 0.0, "max": 3600.0, "step": 30.0
+    },
+    {
+      "key": "max_proposals_per_30min",
+      "label": { "ja": "30分あたり最大提案数", "en": "Max Proposals per 30 min" },
+      "kind": "numeric", "default": 3, "min": 1, "max": 10, "step": 1
+    },
+    {
+      "key": "emergency_override_threshold",
+      "label": { "ja": "緊急オーバーライド閾値 (点)", "en": "Emergency Override Threshold (pts)" },
+      "kind": "numeric", "default": 100.0, "min": 40.0, "max": 200.0, "step": 5.0
+    },
+    {
+      "key": "persistence_ticks",
+      "label": { "ja": "持続ティック数", "en": "Persistence Ticks" },
+      "kind": "numeric", "default": 2, "min": 1, "max": 10, "step": 1
+    }
+  ],
+  "trigger_categories": [
+    { "id": "rest_required", "priority": 1 }
+  ],
+  "rules": [],
+  "fire_control": {
+    "threshold_source": "threshold_fire",
+    "actionability_guard": "rest_spot_reachable"
+  },
+  "proposals": [
+    {
+      "id": "rest_required_proposal",
+      "message": {
+        "ja": "疲労スコアが基準値を超えました。近くの休憩施設でのご休憩をお勧めします。",
+        "en": "Fatigue score has exceeded the threshold. We suggest resting at a nearby facility."
+      },
+      "options": ["accept_rest", "postpone", "decline"]
+    }
+  ],
+  "feedback_schema": [],
+  "evidence_metrics": []
+}

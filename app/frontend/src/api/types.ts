@@ -123,6 +123,9 @@ export type ScenarioDef = {
   review_focus: string
   /** M7 UC-01: recovery options defined per scenario. Absent in pre-M7 scenarios. */
   recovery_options?: RecoveryOption[]
+  /** NRI: scenario-level context flags (editable via package parameters). */
+  child_passenger?: boolean
+  familiar_route?: boolean
 }
 
 /**

@@ -134,6 +134,8 @@ class ScenarioDef(BaseModel):
     vehicle_profile: VehicleBehaviorProfile | None = None
     speed_profile: SpeedProfile | None = None
     is_night: bool = False
+    child_passenger: bool = False
+    familiar_route: bool = False
     presets: dict[str, Any] = {}
 
     # M8 UC-01: safety ceiling for rest-spot reachability check (0–100+, percent).
