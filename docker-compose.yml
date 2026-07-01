@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.api
+    restart: unless-stopped
     ports:
       - "8137:8137"
     environment:
@@ -11,6 +12,15 @@ services:
       - AICA_PACKAGES_DIR=/data/packages
       - AICA_SCENARIOS_DIR=/data/scenarios
       - AICA_RUNS_DIR=/data/runs
+      # watchfiles polling for reliable hot-reload over Windows volume mounts
+      - WATCHFILES_FORCE_POLLING=true
+      # Corporate proxy for outbound API calls (Google Maps)
+      - http_proxy=http://163.116.128.80:8080
+      - https_proxy=http://163.116.128.80:8080
+      - HTTP_PROXY=http://163.116.128.80:8080
+      - HTTPS_PROXY=http://163.116.128.80:8080
+      - no_proxy=localhost,127.0.0.1,api
+      - NO_PROXY=localhost,127.0.0.1,api
     volumes:
       - ./app/api:/app
       - api_venv:/app/.venv
@@ -24,8 +34,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+    restart: unless-stopped
     ports:
       - "5180:5180"
+    environment:
+      - VITE_API_TARGET=http://api:8137
+      # Polling for reliable HMR over Windows volume mounts
+      - CHOKIDAR_USEPOLLING=true
     volumes:
       - ./app/frontend:/app
       - frontend_node_modules:/app/node_modules

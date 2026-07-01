@@ -208,7 +208,7 @@ def test_invalid_result_shape_blocking_pauses_run(tmp_path, uc01_scenario, monke
     pkg_dir = tmp_path / _PKG_ID
     pkg_dir.mkdir()
     (pkg_dir / "algorithm.py").write_text(
-        "def evaluate(ctx):\n    return 'not a dict — invalid shape'\n"
+        "def evaluate(ctx):\n    return 'not a dict -- invalid shape'\n"
     )
 
     package = _make_package(error_mode="blocking")

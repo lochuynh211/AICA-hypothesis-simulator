@@ -1,0 +1,11 @@
+# Ensure consistent LF line endings for files mounted into Linux containers.
+# Docker on Windows uses WSL2 Linux containers — CRLF in Python/JS source causes issues.
+* text=auto eol=lf
+
+# Windows batch scripts must keep CRLF
+*.bat text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.gif binary

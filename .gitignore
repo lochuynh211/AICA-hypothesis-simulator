@@ -32,3 +32,4 @@ key.local.js
 
 # Run evidence logs (only .gitkeep is tracked)
 runs/*.json
+corporate-proxy.crt

@@ -31,7 +31,7 @@ def test_package_fixture_parses():
         / "rest_rule_based_v0_1"
         / "package.json"
     )
-    raw = json.loads(fixture_path.read_text())
+    raw = json.loads(fixture_path.read_text(encoding="utf-8"))
     manifest = PackageManifest.model_validate(raw)
     assert manifest.id == "rest_rule_based_v0_1"
     assert manifest.algorithm.type == "declarative_rule"
@@ -48,7 +48,7 @@ def test_scenario_fixture_parses():
         / "scenarios"
         / "uc01_fatigue_friend_drive_v0_1.json"
     )
-    raw = json.loads(fixture_path.read_text())
+    raw = json.loads(fixture_path.read_text(encoding="utf-8"))
     # Strip the _comment key (not part of the model)
     raw.pop("_comment", None)
     scenario = ScenarioDef.model_validate(raw)

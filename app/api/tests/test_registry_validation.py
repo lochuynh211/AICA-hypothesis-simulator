@@ -402,7 +402,7 @@ def test_is_compatible_returns_true_for_matched_type():
     assert pkg is not None
 
     scenario_data = json.loads(
-        (_REAL_SCENARIOS_DIR / "uc01_fatigue_friend_drive_v0_1.json").read_text()
+        (_REAL_SCENARIOS_DIR / "uc01_fatigue_friend_drive_v0_1.json").read_text(encoding="utf-8")
     )
     sc = ScenarioDef(**scenario_data)
     assert pkg_reg.is_compatible(pkg, sc) is True

@@ -1,6 +1,14 @@
 FROM node:22
 
+# Corporate proxy CA cert (for environments with SSL-inspecting proxies)
+COPY corporate-proxy.crt /usr/local/share/ca-certificates/corporate-proxy.crt
+RUN update-ca-certificates || true
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+
 WORKDIR /app
+
+# Disable strict SSL for npm behind corporate proxies
+RUN npm config set strict-ssl false
 
 # Copy dependency manifests first for layer caching
 COPY app/frontend/package.json app/frontend/package-lock.json ./

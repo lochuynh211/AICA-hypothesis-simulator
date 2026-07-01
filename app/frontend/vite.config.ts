@@ -1,6 +1,8 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
+const apiTarget = process.env.VITE_API_TARGET || 'http://localhost:8137'
+
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -8,9 +10,12 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://api:8137',
+        target: apiTarget,
         changeOrigin: true,
       },
+    },
+    watch: {
+      usePolling: !!process.env.CHOKIDAR_USEPOLLING,
     },
   },
   test: {

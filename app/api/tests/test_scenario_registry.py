@@ -129,7 +129,7 @@ def test_is_compatible_matched_pair(registry):
     from aica_api.models.package import PackageManifest
 
     pkg_data = json.loads(
-        (_PACKAGES_DIR / "rest_rule_based_v0_1" / "package.json").read_text()
+        (_PACKAGES_DIR / "rest_rule_based_v0_1" / "package.json").read_text(encoding="utf-8")
     )
     package = PackageManifest(**pkg_data)
     sc = registry.get("uc01_fatigue_friend_drive_v0_1")
@@ -142,7 +142,7 @@ def test_is_compatible_mismatched(registry):
     from aica_api.models.package import PackageManifest
 
     pkg_data = json.loads(
-        (_PACKAGES_DIR / "rest_rule_based_v0_1" / "package.json").read_text()
+        (_PACKAGES_DIR / "rest_rule_based_v0_1" / "package.json").read_text(encoding="utf-8")
     )
     pkg_data["compatible_scenario_types"] = ["uc99_something_else"]
     package = PackageManifest(**pkg_data)

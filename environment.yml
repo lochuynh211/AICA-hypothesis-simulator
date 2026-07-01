@@ -1,0 +1,13 @@
+name: aica-dev
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - nodejs=22
+  - pip
+  - pip:
+      - fastapi==0.115.6
+      - uvicorn[standard]==0.32.1
+      - pytest==8.3.4
+      - httpx==0.28.1

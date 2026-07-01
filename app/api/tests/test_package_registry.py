@@ -117,7 +117,7 @@ def test_is_compatible_matching_pair(registry):
     from aica_api.models.scenario import ScenarioDef
 
     scenario_data = json.loads(
-        (_SCENARIOS_DIR / "uc01_fatigue_friend_drive_v0_1.json").read_text()
+        (_SCENARIOS_DIR / "uc01_fatigue_friend_drive_v0_1.json").read_text(encoding="utf-8")
     )
     scenario = ScenarioDef(**scenario_data)
     pkg = registry.get("rest_rule_based_v0_1")
@@ -130,7 +130,7 @@ def test_is_compatible_mismatched_type(registry):
     from aica_api.models.scenario import ScenarioDef
 
     scenario_data = json.loads(
-        (_SCENARIOS_DIR / "uc01_fatigue_friend_drive_v0_1.json").read_text()
+        (_SCENARIOS_DIR / "uc01_fatigue_friend_drive_v0_1.json").read_text(encoding="utf-8")
     )
     scenario = ScenarioDef(**scenario_data)
 
