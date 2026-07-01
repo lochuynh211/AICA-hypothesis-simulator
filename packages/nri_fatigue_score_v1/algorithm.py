@@ -189,20 +189,19 @@ def evaluate(context: dict) -> dict:
     persistence_required = int(hp.get("persistence_ticks", 2))
 
     # ── Recovery detection (early — needed before accumulation) ───────────
-    last_result = proposal_history.get("lastProposalResult")
-    last_cat = proposal_history.get("lastProposalCategory")
-    recovery_active = bool(context.get("recovery_active", False))
+    # Detect recovery from raw_state.recoveryPhase (set by tick engine when
+    # a recovery sequence is active). No framework-level flag needed.
+    recovery_phase = raw.get("recoveryPhase")
+    recovery_active = recovery_phase is not None
     was_in_recovery = bool(prev_state.get("was_in_recovery", False))
 
     # Recovery just completed: driver was resting, now resumed driving
     recovery_just_completed = was_in_recovery and not recovery_active
 
-    # Currently suppressed (driver is actively resting)
-    recovered = (
-        recovery_active
-        and (last_result == "accept_rest")
-        and (last_cat in (None, "rest_required"))
-    )
+    # Suppress all firing while recovery is active (unconditional — the score
+    # stays high due to cumulative accumulators, so we cannot rely on
+    # lastProposalResult which gets overwritten if a new proposal fires)
+    recovered = recovery_active
 
     # ── Retrieve cumulative state from previous tick ──────────────────────
     prev_jam_min = float(prev_state.get("cumulative_jam_min", 0.0))
