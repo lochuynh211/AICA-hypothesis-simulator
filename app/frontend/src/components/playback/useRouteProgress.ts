@@ -100,7 +100,7 @@ export function useRouteProgress(): RouteProgress {
       : fractionAtTick(tickIndex)
 
   const proposalFractions = trace
-    .filter((e: TraceEntry) => e.proposal !== null)
+    .filter((e: TraceEntry) => e.proposal !== null && e.proposal_paused === true)
     .map((e: TraceEntry) =>
       typeof e.route_fraction === 'number' ? e.route_fraction : fractionAtTick(e.tick_index),
     )

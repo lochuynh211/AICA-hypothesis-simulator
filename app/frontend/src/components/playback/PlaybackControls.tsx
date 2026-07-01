@@ -46,6 +46,7 @@ export default function PlaybackControls() {
         isTrafficJam: resp.is_traffic_jam ?? null,
         segmentType: resp.segment_type ?? null,
         speedKph: resp.speed_kph ?? null,
+        proposalPaused: resp.paused && resp.decision?.proposal != null,
       })
       // A proposal pause is a temporary halt awaiting the driver's choice — keep
       // isPlaying so the interval (which is gated on `!paused`) auto-resumes once

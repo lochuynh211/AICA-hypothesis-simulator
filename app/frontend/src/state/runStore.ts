@@ -235,6 +235,8 @@ export type RunStoreAction =
       segmentType?: string | null
       /** Current effective speed (kph) from the tick engine. */
       speedKph?: number | null
+      /** True when this tick's proposal actually paused the run (not suppressed during recovery). */
+      proposalPaused?: boolean
     }
   | {
       type: 'ACTION_APPLIED'
@@ -438,6 +440,7 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         is_traffic_jam: action.isTrafficJam ?? null,
         segment_type: action.segmentType ?? null,
         speed_kph: action.speedKph ?? null,
+        proposal_paused: action.proposalPaused ?? false,
       }
       return {
         ...state,

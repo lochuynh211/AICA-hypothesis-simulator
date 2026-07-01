@@ -454,6 +454,8 @@ export type TraceEntry = DecisionResult & {
   is_traffic_jam?: boolean | null
   /** Road segment class at this tick (from per-tick engine state). */
   segment_type?: string | null
+  /** True when this tick's proposal actually paused the run (not suppressed by recovery guard). */
+  proposal_paused?: boolean
 }
 
 /**
