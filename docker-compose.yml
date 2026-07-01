@@ -12,6 +12,7 @@ services:
       - AICA_PACKAGES_DIR=/data/packages
       - AICA_SCENARIOS_DIR=/data/scenarios
       - AICA_RUNS_DIR=/data/runs
+      - AICA_ROUTES_DIR=/data/routes
       # watchfiles polling for reliable hot-reload over Windows volume mounts
       - WATCHFILES_FORCE_POLLING=true
       # Corporate proxy for outbound API calls (Google Maps)
@@ -29,6 +30,7 @@ services:
       - ./packages:/data/packages
       - ./scenarios:/data/scenarios
       - ./runs:/data/runs
+      - ./routes:/data/routes
 
   frontend:
     build:

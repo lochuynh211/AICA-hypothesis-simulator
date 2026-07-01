@@ -188,6 +188,17 @@ export type RouteEnvelope = {
   alternatives: RouteAlternative[]
 }
 
+/** A route preset summary from GET /api/routes/presets. */
+export type RoutePresetSummary = {
+  id: string
+  label: { ja: string; en: string }
+  start: string
+  end: string
+  distance_km: number
+  duration_min: number
+  summary: string
+}
+
 /** Structured error body from HTTP 502 on Maps API failure. */
 export type MapsErrorBody = {
   error_type: string

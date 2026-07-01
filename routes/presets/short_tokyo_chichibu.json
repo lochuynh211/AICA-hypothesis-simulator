@@ -1,0 +1,411 @@
+{
+  "id": "short_tokyo_chichibu",
+  "label": {
+    "ja": "東京→秩父（短距離）",
+    "en": "Tokyo → Chichibu (short)"
+  },
+  "start": "Tokyo Station",
+  "end": "Chichibu Station",
+  "route_source": "maps",
+  "raw_route": {
+    "route_id": "route-0",
+    "summary": "新潟線/関越自動車道",
+    "distance_m": 112134,
+    "duration_s": 6643,
+    "encoded_polyline": "cjxxE}z`tYeAlJ_@lCsB_@{EaA{Ck@}PcDyC~BqGjNo@hNsBxEiInImE~MaFbCeMpA}V|IaFrFCjQaApHaEhBwStEuBnGsA|PqDb]mJxUih@lToEbC_AvC_AlEeCfC}PdG}HvKoJ`QkC`CaHj@_V^cIhAmGfFsHdEsFfL}IbUiDrF{Cp@_E}ByJ_BaNIkMGyVw@_QrDyh@lOeVdHmCjFeAzNaLvWwNfKkNnu@qFhZyCpQ_KvUkCzBcG`BcCpC_AbPsFzr@kK`r@qFf[y@jOs@~E_IdGoK|AuLcBaZ{Ie{@aWgTh@i[`CuHjB}L|HiKlJoOzL_AzBdDrGpMbSfq@tq@fg@pe@`a@fZfNhJdKlD~Lf@xRg@zLtAjKtFxKnLbItH|QzFrKjHhOzPhNzKvUbIbe@jIbYvCfBoBeAcBeCxAcQvUiJhYwD`b@iAvTaD`VgG`RsMxRe\\tTcVzNcYtYiN~TsSdc@oTb`@{L`Nwc@lZuNlMgKhM}]j`@cm@r_@eZdWuXx]c[hb@m[xXiMxGoSxGiKlByl@rGkPhEqUpLiQrOaPrUiMnT_OzQ_ZjRic@hNoN~GcOpLyHbJkRd]_Qv]aPbUcZtUsk@z[eWjPcP~PaKrRcJn^eGbj@sKnp@{P`d@mNlTmQ~QwTdOw`@nQeu@bZsZlU_N~PeHhMkTvf@{JnOaNpLiM`G_MnCwx@pCyi@x@mRgA_SuEk}@m^yXqGwM}@aST{RnCua@tMaUvGqTtD{f@`DmUzCmQrF_XhQwQ|UaN~Z}EzQ{Et^uAz_@gDzZaKpX}MtP_PxOgJlNoJbVgJvSyLhQuWzYaIpOaGdVsIzj@kIfUwLhRmQtOyMzG_V|LyNrO_PfYqNnQiO`KsVdKySbK}ZnSkc@`c@kUl\\{Pn\\_^vu@kKnTqEfNrEvVcBrKpLhx@H~UiB~c@aEzeA~@vY}CvKeShc@?tC~B|GzTli@jDvL`CzQh@n^~Ezs@bChKjJdE~_@`JhMhJjGxNjJls@xCfKdNpSvHfKdVrTnYzTbiAj_A|Q|JfGpKhBvQhEn`@jD`Pv@dKrC|JfNbPz\\j[fFlIdFtRnCjH`B|HlQp`@bArBp@jApAs@vD}CrByCfFwBbGtB|K[~LgCrHb@`Tv@bD@~EjBnLhIjG|CtOrBvGxAxJ`JbKnNxCjCnH|AzMP~UoF`SeCdKFjJeDhIb@vIg@pEoAlHyDrJnBj_@bH~Dt@vAm@f@{Bt@s@nDbA|Cv@HBbEtA~AbBbAJvANj@_BDg@Ou@eAi@mAm@ME",
+    "segments": [
+      {
+        "road_class": "LOCAL",
+        "maneuver": "",
+        "distance_m": 5
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 212
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 217
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "straight",
+        "distance_m": 439
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-left",
+        "distance_m": 288
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 177
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-right",
+        "distance_m": 529
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "",
+        "distance_m": 8371
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "keep-left",
+        "distance_m": 11739
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-left",
+        "distance_m": 1172
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 7709
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp",
+        "distance_m": 576
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 55224
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "ramp-left",
+        "distance_m": 759
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "merge",
+        "distance_m": 6405
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "keep-right",
+        "distance_m": 9708
+      },
+      {
+        "road_class": "HIGHWAY",
+        "maneuver": "turn-slight-left",
+        "distance_m": 998
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 4618
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 2154
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 124
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-right",
+        "distance_m": 397
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-slight-left",
+        "distance_m": 116
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 88
+      },
+      {
+        "road_class": "LOCAL",
+        "maneuver": "turn-left",
+        "distance_m": 109
+      }
+    ]
+  },
+  "places": [
+    {
+      "name": "Eneos Doctor Drive Gotandaosaki Service Station",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6252303,
+        "lng": 139.7305064
+      },
+      "distance_along_route_m": 236.35128727361487
+    },
+    {
+      "name": "ENEOS Higashikanda Filling Station",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6950175,
+        "lng": 139.782444
+      },
+      "distance_along_route_m": 844.9253758946147
+    },
+    {
+      "name": "Petrol Station",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6977724,
+        "lng": 139.74027
+      },
+      "distance_along_route_m": 3465.319923142089
+    },
+    {
+      "name": "Apollo Station Yashio Daiichi",
+      "type": "service_area",
+      "location": {
+        "lat": 35.8105855,
+        "lng": 139.8419563
+      },
+      "distance_along_route_m": 12229.673858866947
+    },
+    {
+      "name": "ENEOS Urawa Inter SS /",
+      "type": "service_area",
+      "location": {
+        "lat": 35.8589597,
+        "lng": 139.7340474
+      },
+      "distance_along_route_m": 21843.873501262926
+    },
+    {
+      "name": "ENEOS (株)東日本宇佐美 埼玉栃木販売支店 122号浦和インター下りSS",
+      "type": "service_area",
+      "location": {
+        "lat": 35.9069245,
+        "lng": 139.710307
+      },
+      "distance_along_route_m": 22473.419401133713
+    },
+    {
+      "name": "ENEOS Route 122 Urawa IC Up Service Station",
+      "type": "service_area",
+      "location": {
+        "lat": 35.87623,
+        "lng": 139.7337911
+      },
+      "distance_along_route_m": 22473.419401133713
+    },
+    {
+      "name": "Showa Shell Hasuda SA North bound Filling Station",
+      "type": "service_area",
+      "location": {
+        "lat": 36.0016494,
+        "lng": 139.6675445
+      },
+      "distance_along_route_m": 22539.683147351527
+    },
+    {
+      "name": "Esso Kukiaoba Filling Station",
+      "type": "service_area",
+      "location": {
+        "lat": 36.0726201,
+        "lng": 139.6964485
+      },
+      "distance_along_route_m": 22539.683147351527
+    },
+    {
+      "name": "ENEOS Hasuda Service Area South bound SS",
+      "type": "service_area",
+      "location": {
+        "lat": 35.9766847,
+        "lng": 139.6658129
+      },
+      "distance_along_route_m": 22539.683147351527
+    },
+    {
+      "name": "ENEOS 浦和インター上りSS／太陽鉱油（株）",
+      "type": "service_area",
+      "location": {
+        "lat": 35.9231969,
+        "lng": 139.7040456
+      },
+      "distance_along_route_m": 22539.683147351527
+    },
+    {
+      "name": "Shell Self Nanpeidai Filling Station",
+      "type": "service_area",
+      "location": {
+        "lat": 35.5953596,
+        "lng": 139.5715949
+      },
+      "distance_along_route_m": 31049.667167463063
+    },
+    {
+      "name": "apollostation セルフすがおSS 関東礦油",
+      "type": "service_area",
+      "location": {
+        "lat": 35.5988038,
+        "lng": 139.5540713
+      },
+      "distance_along_route_m": 31049.667167463063
+    },
+    {
+      "name": "Esso Omiyamae Service Station",
+      "type": "service_area",
+      "location": {
+        "lat": 35.6953333,
+        "lng": 139.5985084
+      },
+      "distance_along_route_m": 31049.667167463063
+    },
+    {
+      "name": "apollostation／ルート16号横田店／エネクスフリート（株）",
+      "type": "service_area",
+      "location": {
+        "lat": 35.7605553,
+        "lng": 139.3421268
+      },
+      "distance_along_route_m": 43306.00335307623
+    },
+    {
+      "name": "Apollo Station Self Hinode Inter",
+      "type": "service_area",
+      "location": {
+        "lat": 35.7396361,
+        "lng": 139.2793469
+      },
+      "distance_along_route_m": 43306.00335307623
+    },
+    {
+      "name": "ENEOS Route 17 Shin Omiya Bypass Up Service Station",
+      "type": "service_area",
+      "location": {
+        "lat": 35.9350491,
+        "lng": 139.5984821
+      },
+      "distance_along_route_m": 48982.96232038065
+    },
+    {
+      "name": "apollostation Kuki IC Service Station",
+      "type": "service_area",
+      "location": {
+        "lat": 36.0305959,
+        "lng": 139.651865
+      },
+      "distance_along_route_m": 53086.61163301673
+    },
+    {
+      "name": "Eneos Hasuda Filling Station",
+      "type": "service_area",
+      "location": {
+        "lat": 36.0267115,
+        "lng": 139.6319846
+      },
+      "distance_along_route_m": 53086.61163301673
+    },
+    {
+      "name": "apollostation Takasaka SA Up Service Station",
+      "type": "service_area",
+      "location": {
+        "lat": 35.9849506,
+        "lng": 139.3824619
+      },
+      "distance_along_route_m": 64939.112847206256
+    },
+    {
+      "name": "apollostation Takasaka SA Down Service Station",
+      "type": "service_area",
+      "location": {
+        "lat": 35.9874177,
+        "lng": 139.3837301
+      },
+      "distance_along_route_m": 64939.112847206256
+    },
+    {
+      "name": "apollostation Shobu PA Service Station",
+      "type": "service_area",
+      "location": {
+        "lat": 36.0384751,
+        "lng": 139.587695
+      },
+      "distance_along_route_m": 67593.50783751458
+    },
+    {
+      "name": "ENEOS",
+      "type": "service_area",
+      "location": {
+        "lat": 36.0648814,
+        "lng": 139.6236877
+      },
+      "distance_along_route_m": 70168.77211848497
+    },
+    {
+      "name": "ENEOS Shinrin Koen SS",
+      "type": "service_area",
+      "location": {
+        "lat": 36.0758882,
+        "lng": 139.4081087
+      },
+      "distance_along_route_m": 71500.83625184238
+    },
+    {
+      "name": "ENEOS オンワード興産(株) 熊谷SS",
+      "type": "service_area",
+      "location": {
+        "lat": 36.1183864,
+        "lng": 139.3787483
+      },
+      "distance_along_route_m": 76816.92402861363
+    },
+    {
+      "name": "Kantosangyookabeekinan Filling Station",
+      "type": "service_area",
+      "location": {
+        "lat": 36.1962434,
+        "lng": 139.2328923
+      },
+      "distance_along_route_m": 87127.79868409413
+    },
+    {
+      "name": "コスモ石油／岡部店／エネクスフリート（株）",
+      "type": "service_area",
+      "location": {
+        "lat": 36.2243972,
+        "lng": 139.2238493
+      },
+      "distance_along_route_m": 91098.64577770124
+    },
+    {
+      "name": "Showa Shell Self Kamisato Filling Station",
+      "type": "service_area",
+      "location": {
+        "lat": 36.261111,
+        "lng": 139.1427437
+      },
+      "distance_along_route_m": 91166.00687526262
+    },
+    {
+      "name": "Shell Kamisaka Service Area Northbound SS",
+      "type": "service_area",
+      "location": {
+        "lat": 36.2551051,
+        "lng": 139.118287
+      },
+      "distance_along_route_m": 93759.8841865817
+    },
+    {
+      "name": "ENEOS Kamisato Service Area South bound SS",
+      "type": "service_area",
+      "location": {
+        "lat": 36.2552837,
+        "lng": 139.1213595
+      },
+      "distance_along_route_m": 93759.8841865817
+    }
+  ]
+}

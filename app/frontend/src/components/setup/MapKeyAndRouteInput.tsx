@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useRunStore } from '../../state/runStore'
-import { routesAnalyze } from '../../api/client'
+import { routesAnalyze, listRoutePresets, loadRoutePreset } from '../../api/client'
 import { MapsError } from '../../api/types'
-import type { RouteAlternative, RouteNotice } from '../../api/types'
+import type { RouteAlternative, RouteNotice, RoutePresetSummary } from '../../api/types'
 import ErrorNotice from '../common/ErrorNotice'
 
 /**
@@ -39,6 +39,13 @@ export default function MapKeyAndRouteInput() {
 
   const [localKey, setLocalKey] = useState(mapsKey)
   const [analyzing, setAnalyzing] = useState(false)
+  const [presets, setPresets] = useState<RoutePresetSummary[]>([])
+  const [loadingPreset, setLoadingPreset] = useState(false)
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null)
+
+  useEffect(() => {
+    listRoutePresets().then(res => setPresets(res.presets)).catch(() => {})
+  }, [])
 
   // Sync the password field when the store's mapsKey is reset externally (e.g. RESET action).
   useEffect(() => {
@@ -104,58 +111,131 @@ export default function MapKeyAndRouteInput() {
     dispatch({ type: 'SELECT_ROUTE', routeId })
   }
 
+  async function handleLoadPreset(presetId: string) {
+    setSelectedPresetId(presetId)
+    setLoadingPreset(true)
+    dispatch({ type: 'SET_MAPS_ERROR', error: null })
+    try {
+      const envelope = await loadRoutePreset(presetId)
+      dispatch({ type: 'SET_ALTERNATIVES', envelope })
+      if (envelope.alternatives.length === 1) {
+        dispatch({ type: 'SELECT_ROUTE', routeId: envelope.alternatives[0].route_id })
+      }
+    } catch (err: unknown) {
+      setSelectedPresetId(null)
+      dispatch({
+        type: 'SET_MAPS_ERROR',
+        error: {
+          error_type: 'PRESET_ERROR',
+          message: err instanceof Error ? err.message : 'Failed to load preset',
+          suggestion: 'Try another preset or use manual route input.',
+        },
+      })
+    } finally {
+      setLoadingPreset(false)
+    }
+  }
+
+  function handleSwitchToManual() {
+    setSelectedPresetId(null)
+  }
+
+  const manualDisabled = selectedPresetId !== null
+
   return (
     <div data-testid="map-key-route-input" style={{ marginBottom: '8px' }}>
-      <div style={{ marginBottom: '4px' }}>
-        <label htmlFor="maps-api-key" style={{ display: 'block', fontSize: '0.8em' }}>
-          Maps API Key
-        </label>
-        <input
-          id="maps-api-key"
-          type="password"
-          value={localKey}
-          onChange={handleKeyChange}
-          placeholder="Enter Google Maps API key"
-          autoComplete="off"
-          style={{ width: '100%', fontSize: '0.8em', padding: '4px' }}
-        />
-      </div>
+      {/* Preset route selector */}
+      {presets.length > 0 && (
+        <div style={{ marginBottom: '8px' }}>
+          <label htmlFor="route-preset" style={{ display: 'block', fontSize: '0.8em', fontWeight: 'bold', marginBottom: '4px' }}>
+            Preset Routes
+          </label>
+          <select
+            id="route-preset"
+            value={selectedPresetId ?? ''}
+            onChange={(e) => {
+              const val = e.target.value
+              if (val) {
+                handleLoadPreset(val)
+              } else {
+                setSelectedPresetId(null)
+              }
+            }}
+            disabled={loadingPreset}
+            style={{ width: '100%', fontSize: '0.8em', padding: '6px' }}
+          >
+            <option value="">— Select a preset route —</option>
+            {presets.map((preset) => (
+              <option key={preset.id} value={preset.id}>
+                {preset.label.en} ({preset.distance_km} km, ~{preset.duration_min} min)
+              </option>
+            ))}
+          </select>
+          {loadingPreset && (
+            <p style={{ fontSize: '0.75em', color: '#666', margin: '4px 0' }}>Loading preset…</p>
+          )}
+        </div>
+      )}
 
-      <div style={{ marginBottom: '4px' }}>
-        <label htmlFor="route-start" style={{ display: 'block', fontSize: '0.8em' }}>
-          Start
-        </label>
-        <input
-          id="route-start"
-          type="text"
-          value={mapsStart}
-          onChange={handleStartChange}
-          placeholder="e.g. Tokyo Station"
-          style={{ width: '100%', fontSize: '0.8em', padding: '4px' }}
-        />
-      </div>
+      {/* Manual / Customize route input */}
+      <div style={{ opacity: manualDisabled ? 0.4 : 1, pointerEvents: manualDisabled ? 'none' : 'auto' }}>
+        <p style={{ margin: '0 0 4px', fontSize: '0.8em', fontWeight: 'bold' }}>
+          Custom Route
+        </p>
+        <div style={{ marginBottom: '4px' }}>
+          <label htmlFor="maps-api-key" style={{ display: 'block', fontSize: '0.8em' }}>
+            Maps API Key
+          </label>
+          <input
+            id="maps-api-key"
+            type="password"
+            value={localKey}
+            onChange={handleKeyChange}
+            placeholder="Enter Google Maps API key"
+            autoComplete="off"
+            disabled={manualDisabled}
+            style={{ width: '100%', fontSize: '0.8em', padding: '4px' }}
+          />
+        </div>
 
-      <div style={{ marginBottom: '6px' }}>
-        <label htmlFor="route-end" style={{ display: 'block', fontSize: '0.8em' }}>
-          End
-        </label>
-        <input
-          id="route-end"
-          type="text"
-          value={mapsEnd}
-          onChange={handleEndChange}
-          placeholder="e.g. Osaka Station"
-          style={{ width: '100%', fontSize: '0.8em', padding: '4px' }}
-        />
-      </div>
+        <div style={{ marginBottom: '4px' }}>
+          <label htmlFor="route-start" style={{ display: 'block', fontSize: '0.8em' }}>
+            Start
+          </label>
+          <input
+            id="route-start"
+            type="text"
+            value={mapsStart}
+            onChange={handleStartChange}
+            placeholder="e.g. Tokyo Station"
+            disabled={manualDisabled}
+            style={{ width: '100%', fontSize: '0.8em', padding: '4px' }}
+          />
+        </div>
 
-      <button
-        onClick={handleAnalyze}
-        disabled={analyzing || !selectedScenarioId}
-        style={{ width: '100%', padding: '6px', marginBottom: '6px' }}
-      >
-        {analyzing ? 'Analyzing…' : 'Analyze Route'}
-      </button>
+        <div style={{ marginBottom: '6px' }}>
+          <label htmlFor="route-end" style={{ display: 'block', fontSize: '0.8em' }}>
+            End
+          </label>
+          <input
+            id="route-end"
+            type="text"
+            value={mapsEnd}
+            onChange={handleEndChange}
+            placeholder="e.g. Osaka Station"
+            disabled={manualDisabled}
+            style={{ width: '100%', fontSize: '0.8em', padding: '4px' }}
+          />
+        </div>
+
+        <button
+          onClick={handleAnalyze}
+          disabled={analyzing || !selectedScenarioId || manualDisabled}
+          style={{ width: '100%', padding: '6px', marginBottom: '6px' }}
+        >
+          {analyzing ? 'Analyzing…' : 'Analyze Route'}
+        </button>
+      </div>
 
       {/* 502 Maps error */}
       {mapsError && (

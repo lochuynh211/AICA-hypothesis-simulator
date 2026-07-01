@@ -7,6 +7,7 @@ import type {
   RouteFacts,
   DisplayRoute,
   RouteEnvelope,
+  RoutePresetSummary,
   RunPlanResponse,
   RunState,
   RunSummary,
@@ -74,6 +75,16 @@ export async function listScenarios(): Promise<{ scenarios: ScenarioSummary[]; e
 
 export async function getScenario(id: string): Promise<ScenarioDef> {
   return apiFetch(`/api/scenarios/${id}`, { method: 'GET' })
+}
+
+// ── Route presets ─────────────────────────────────────────────────────────────
+
+export async function listRoutePresets(): Promise<{ presets: RoutePresetSummary[] }> {
+  return apiFetch('/api/routes/presets', { method: 'GET' })
+}
+
+export async function loadRoutePreset(presetId: string): Promise<RouteEnvelope> {
+  return apiFetch(`/api/routes/presets/${presetId}/load`, { method: 'POST' })
 }
 
 // ── Routes / run-plans (M4 setup flow) ────────────────────────────────────────

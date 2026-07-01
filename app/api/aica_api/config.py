@@ -48,5 +48,9 @@ class Settings:
     def runs_dir(self) -> Path:
         return _resolve("AICA_RUNS_DIR", "runs")
 
+    @property
+    def routes_dir(self) -> Path:
+        return _resolve("AICA_ROUTES_DIR", "routes")
+
 
 settings = Settings()
