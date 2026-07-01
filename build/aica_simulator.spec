@@ -13,16 +13,33 @@ Run from repo root:
 """
 
 import os
+import glob
 from pathlib import Path
 
 repo_root = Path(os.getcwd())
 build_dir = repo_root / "build"
+api_dir = repo_root / "app" / "api"
 
 block_cipher = None
 
+# Auto-discover all aica_api modules so the spec never needs manual updates
+def collect_submodules(package_dir, package_name):
+    """Walk the package tree and return all importable module paths."""
+    modules = []
+    for py_file in sorted(Path(package_dir).rglob("*.py")):
+        rel = py_file.relative_to(package_dir)
+        parts = list(rel.with_suffix("").parts)
+        if parts[-1] == "__init__":
+            parts = parts[:-1]
+        if parts:
+            modules.append(".".join(parts))
+    return modules
+
+aica_modules = collect_submodules(api_dir, "aica_api")
+
 a = Analysis(
     [str(build_dir / "launcher.py")],
-    pathex=[str(repo_root / "app" / "api")],
+    pathex=[str(api_dir)],
     binaries=[],
     datas=[
         # Frontend build output
@@ -32,52 +49,8 @@ a = Analysis(
         # Scenario definitions
         (str(repo_root / "scenarios"), "scenarios"),
     ],
-    hiddenimports=[
-        # Backend package — all modules
-        "aica_api",
-        "aica_api.main",
-        "aica_api.config",
-        "aica_api.algorithms",
-        "aica_api.algorithms._errors",
-        "aica_api.algorithms.adapter",
-        "aica_api.algorithms.declarative_rule",
-        "aica_api.algorithms.python_module",
-        "aica_api.algorithms.weighted_score",
-        "aica_api.models",
-        "aica_api.models.decision",
-        "aica_api.models.feedback",
-        "aica_api.models.log",
-        "aica_api.models.package",
-        "aica_api.models.profile",
-        "aica_api.models.run",
-        "aica_api.models.scenario",
-        "aica_api.routers",
-        "aica_api.routers.packages",
-        "aica_api.routers.routes",
-        "aica_api.routers.run_plans",
-        "aica_api.routers.runs",
-        "aica_api.routers.scenarios",
-        "aica_api.services",
-        "aica_api.services.behavior",
-        "aica_api.services.behavior.driver_model",
-        "aica_api.services.behavior.vehicle_model",
-        "aica_api.services.binning",
-        "aica_api.services.event_plan",
-        "aica_api.services.evidence",
-        "aica_api.services.evidence_markdown",
-        "aica_api.services.feedback",
-        "aica_api.services.maps_client",
-        "aica_api.services.package_registry",
-        "aica_api.services.recovery",
-        "aica_api.services.route_analysis",
-        "aica_api.services.run_manager",
-        "aica_api.services.run_plan",
-        "aica_api.services.scenario_registry",
-        "aica_api.services.tick_engine",
-        "aica_api.storage",
-        "aica_api.storage.evidence_recorder",
-        "aica_api.storage.file_store",
-        # Uvicorn
+    hiddenimports=aica_modules + [
+        # Uvicorn (dynamic internal imports)
         "uvicorn",
         "uvicorn.logging",
         "uvicorn.loops",
