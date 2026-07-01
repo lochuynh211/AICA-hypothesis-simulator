@@ -149,6 +149,8 @@
     "traffic_jam_kph": 20
   },
   "is_night": false,
+  "child_passenger": false,
+  "familiar_route": false,
   "presets": {
     "total_route_distance_km": 120,
     "traffic_events": [],
