@@ -1,0 +1,358 @@
+{
+  "input": {
+    "scenario": {
+      "_comment": [
+        "Scenario: UC-01 fatigue/drowsiness with staged recovery options (M7 Task 12).",
+        "",
+        "This scenario is derived from uc01_fatigue_friend_drive_v0_1 and adds a",
+        "recovery_options array so that accept_rest triggers a staged recovery sequence",
+        "instead of completing the run immediately (the pre-M7 back-compat path).",
+        "",
+        "Recovery options:",
+        "  nap_karaoke        \u2014 long rest: wakefulness (MOVING) \u2192 nap 3 ticks \u2192 karaoke 3 ticks",
+        "  convenience_stretch \u2014 short rest: wakefulness (MOVING) \u2192 stretch 2 ticks",
+        "  postpone           \u2014 postpone=true, no stages (acts as continue driving)",
+        "",
+        "Proposal timeline (identical to friend_drive \u2014 same profile, route, presets):",
+        "  Tick ~29: declarative_rule fires REST_PROPOSAL (high fatigue + moderate drowsiness).",
+        "            rest spot at 60 km, ~30 min ahead.",
+        "  After accept_rest(nap_karaoke): wakefulness until 60 km \u2192 nap (3 ticks STOPPED) \u2192",
+        "            content (3 ticks STOPPED) \u2192 resuming \u2192 route completion.",
+        "",
+        "uc01_fatigue_friend_drive_v0_1 is left UNTOUCHED (no recovery_options) so that",
+        "existing tests that call accept_rest expecting immediate completion still pass.",
+        "",
+        "allowed_actions includes decline (M7 requirement) in addition to accept_rest/postpone."
+      ],
+      "id": "uc01_fatigue_recovery_v0_1",
+      "version": "0.1.0",
+      "type": "uc01_fatigue",
+      "persona": {
+        "name": "Haruto Tanaka",
+        "description": "uc-01-01"
+      },
+      "route_intent": {
+        "rest_facility": {
+          "label": {
+            "ja": "\u9053\u306e\u99c5 \u53cb\u597d",
+            "en": "Yuuko Roadside Station"
+          }
+        },
+        "segments": [
+          {
+            "id": "seg_start",
+            "name": {
+              "ja": "\u51fa\u767a\u5730\uff08\u4f4f\u5b85\u8857\uff09",
+              "en": "Start (Residential)"
+            },
+            "type": "start",
+            "at": 0.0,
+            "speed_band": "slow",
+            "length_band": "short",
+            "is_rest_facility": false
+          },
+          {
+            "id": "seg_urban",
+            "name": {
+              "ja": "\u5e02\u8857\u5730",
+              "en": "Urban Zone"
+            },
+            "type": "urban",
+            "at": 0.2,
+            "speed_band": "medium",
+            "length_band": "medium",
+            "is_rest_facility": false
+          },
+          {
+            "id": "seg_rest",
+            "name": {
+              "ja": "\u9053\u306e\u99c5 \u53cb\u597d",
+              "en": "Yuuko Roadside Station"
+            },
+            "type": "rest",
+            "at": 0.5,
+            "speed_band": "slow",
+            "length_band": "short",
+            "is_rest_facility": true
+          },
+          {
+            "id": "seg_highway",
+            "name": {
+              "ja": "\u9ad8\u901f\u9053\u8def\u533a\u9593",
+              "en": "Highway Section"
+            },
+            "type": "highway",
+            "at": 0.75,
+            "speed_band": "fast",
+            "length_band": "long",
+            "is_rest_facility": false
+          },
+          {
+            "id": "seg_end",
+            "name": {
+              "ja": "\u76ee\u7684\u5730\uff08\u53cb\u4eba\u5b85\uff09",
+              "en": "Destination (Friend's Home)"
+            },
+            "type": "end",
+            "at": 1.0,
+            "speed_band": "slow",
+            "length_band": "short",
+            "is_rest_facility": false
+          }
+        ]
+      },
+      "initial_state": {
+        "drowsiness_level": 20,
+        "fatigue_level": 20
+      },
+      "driver_profile": {
+        "id": "friend_drive_driver_v1",
+        "drowsiness_model": {
+          "base_growth_per_min": 0.9,
+          "night_add_per_min": 0.3,
+          "monotony_add_per_min": 0.3,
+          "traffic_jam_add_per_min": 0.1
+        },
+        "fatigue_model": {
+          "base_growth_per_min": 0.3,
+          "continuous_driving_add_per_min_after_60_min": 0.2,
+          "mountain_road_add_per_min": 0.2,
+          "traffic_jam_add_per_min": 0.05
+        },
+        "attention_model": {
+          "base_recovery_per_min": 0.1,
+          "monotony_drop_per_min": 0.15,
+          "drowsiness_drop_factor": 0.3,
+          "active_content_recovery_per_min": 0.5
+        },
+        "recovery_model": {
+          "short_rest_drowsiness_recovery": 20.0,
+          "short_rest_fatigue_recovery": 15.0,
+          "long_rest_drowsiness_recovery": 35.0,
+          "long_rest_fatigue_recovery": 30.0
+        }
+      },
+      "vehicle_profile": {
+        "rolling_window_seconds": 300,
+        "steering_instability": {
+          "base_level": 5.0,
+          "drowsiness_factor": 0.25,
+          "fatigue_factor": 0.15,
+          "mountain_road_add": 8.0,
+          "traffic_jam_reduce": 4.0
+        },
+        "lane_departure": {
+          "enabled_on": [
+            "highway",
+            "normal_road"
+          ],
+          "drowsiness_threshold": 60.0,
+          "fatigue_threshold": 70.0,
+          "count_when_threshold_exceeded": 1
+        },
+        "pedal_abnormality": {
+          "base_level": 3.0,
+          "fatigue_factor": 0.12,
+          "traffic_jam_add": 10.0,
+          "mountain_road_add": 5.0
+        },
+        "adas_warning": {
+          "lane_departure_warning_threshold": 1.0,
+          "steering_instability_warning_threshold": 55.0
+        }
+      },
+      "speed_profile": {
+        "normal_road_kph": 60,
+        "highway_kph": 100,
+        "mountain_road_kph": 40,
+        "sightseeing_road_kph": 30,
+        "traffic_jam_kph": 20
+      },
+      "is_night": false,
+      "child_passenger": true,
+      "familiar_route": true,
+      "presets": {
+        "total_route_distance_km": 120,
+        "traffic_events": [],
+        "weather_events": []
+      },
+      "event_presets": {
+        "signal_duration_at_trigger": "persistent"
+      },
+      "total_duration_seconds": 7200,
+      "tick_seconds": 60,
+      "allowed_actions": [
+        "accept_rest",
+        "postpone",
+        "decline"
+      ],
+      "recovery_options": [
+        {
+          "id": "nap_karaoke",
+          "label": {
+            "ja": "\u4eee\u7720\uff0b\u30ab\u30e9\u30aa\u30b1",
+            "en": "Nap + Karaoke"
+          },
+          "rest_type": "long",
+          "stages": [
+            {
+              "phase": "wakefulness",
+              "content": "audio_karaoke",
+              "motion": "MOVING"
+            },
+            {
+              "phase": "nap",
+              "content": "sleep",
+              "motion": "STOPPED",
+              "ticks": 3
+            },
+            {
+              "phase": "content",
+              "content": "audio_karaoke",
+              "motion": "STOPPED",
+              "ticks": 3
+            }
+          ]
+        },
+        {
+          "id": "convenience_stretch",
+          "label": {
+            "ja": "\u30b3\u30f3\u30d3\u30cb\u4f11\u61a9\uff0b\u30b9\u30c8\u30ec\u30c3\u30c1",
+            "en": "Convenience + Stretch"
+          },
+          "rest_type": "short",
+          "stages": [
+            {
+              "phase": "wakefulness",
+              "content": "stretch",
+              "motion": "MOVING"
+            },
+            {
+              "phase": "content",
+              "content": "stretch",
+              "motion": "STOPPED",
+              "ticks": 2
+            }
+          ]
+        },
+        {
+          "id": "postpone",
+          "label": {
+            "ja": "\u5148\u5ef6\u3070\u3057",
+            "en": "Postpone"
+          },
+          "postpone": true,
+          "stages": []
+        }
+      ],
+      "review_focus": "UC-01-01"
+    }
+  },
+  "output": {
+    "segments": [
+      {
+        "id": "seg_start",
+        "name": {
+          "ja": "\u51fa\u767a\u5730\uff08\u4f4f\u5b85\u8857\uff09",
+          "en": "Start (Residential)"
+        },
+        "type": "start",
+        "at": 0.0,
+        "speed_band": "slow",
+        "length_band": "short",
+        "is_rest_facility": false
+      },
+      {
+        "id": "seg_urban",
+        "name": {
+          "ja": "\u5e02\u8857\u5730",
+          "en": "Urban Zone"
+        },
+        "type": "urban",
+        "at": 0.2,
+        "speed_band": "medium",
+        "length_band": "medium",
+        "is_rest_facility": false
+      },
+      {
+        "id": "seg_rest",
+        "name": {
+          "ja": "\u9053\u306e\u99c5 \u53cb\u597d",
+          "en": "Yuuko Roadside Station"
+        },
+        "type": "rest",
+        "at": 0.5,
+        "speed_band": "slow",
+        "length_band": "short",
+        "is_rest_facility": true
+      },
+      {
+        "id": "seg_highway",
+        "name": {
+          "ja": "\u9ad8\u901f\u9053\u8def\u533a\u9593",
+          "en": "Highway Section"
+        },
+        "type": "highway",
+        "at": 0.75,
+        "speed_band": "fast",
+        "length_band": "long",
+        "is_rest_facility": false
+      },
+      {
+        "id": "seg_end",
+        "name": {
+          "ja": "\u76ee\u7684\u5730\uff08\u53cb\u4eba\u5b85\uff09",
+          "en": "Destination (Friend's Home)"
+        },
+        "type": "end",
+        "at": 1.0,
+        "speed_band": "slow",
+        "length_band": "short",
+        "is_rest_facility": false
+      }
+    ],
+    "bands": {},
+    "total_route_distance_km": 120.0,
+    "estimated_route_duration_min": 108.0,
+    "route_segments": [
+      {
+        "segment_type": "normal_road",
+        "start_km": 0.0,
+        "length_km": 24.0
+      },
+      {
+        "segment_type": "normal_road",
+        "start_km": 24.0,
+        "length_km": 36.0
+      },
+      {
+        "segment_type": "normal_road",
+        "start_km": 60.0,
+        "length_km": 30.0
+      },
+      {
+        "segment_type": "highway",
+        "start_km": 90.0,
+        "length_km": 30.0
+      }
+    ],
+    "rest_spot_positions": [
+      60.0
+    ],
+    "route_progress_checkpoints": [
+      30.0,
+      60.0,
+      90.0
+    ],
+    "route_source": "local",
+    "named_rest_spots": [
+      {
+        "name": "Yuuko Roadside Station",
+        "position_km": 60.0,
+        "lat": null,
+        "lng": null,
+        "synthetic": false
+      }
+    ]
+  }
+}

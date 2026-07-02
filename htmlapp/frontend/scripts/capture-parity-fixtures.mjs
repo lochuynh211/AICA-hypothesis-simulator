@@ -97,4 +97,28 @@ export async function api(path, init) {
 // committed) lived at gen_fixtures.py during authoring — see
 // task-S3.3-report.md for the exact snippet if it needs to be regenerated.
 
+// route_analysis (Task S7.2, local path): analyze_route(scenario) is a pure
+// internal service with no dedicated debug HTTP endpoint (POST
+// /api/routes/analyze wraps it together with the Maps path and notice
+// computation, which is out of scope for this fixture). route_analysis.json
+// was derived by importing the actual Python modules from app/api's project
+// venv (`./.venv/bin/python`) and calling analyze_route(...) directly on the
+// bundled uc01_fatigue_recovery_v0_1 scenario JSON shipped at
+// src/data/scenarios/uc01_fatigue_recovery_v0_1.json (the SAME JSON the
+// offline app ships, so fixture input == app input):
+//   scenario = ScenarioDef.model_validate(json.load(open(scenario_path)))
+//   result = analyze_route(scenario)
+//   fixture = {
+//     "input": {"scenario": <raw bundled JSON dict, unmodified — NOT the
+//                round-tripped pydantic dump, so fixture input is byte-for-byte
+//                what analyzeRoute(scenario) in the TS test actually receives>},
+//     "output": json.loads(result.model_dump_json()),
+//   }
+// The generating script (not committed) lived at gen_route_analysis_fixture.py
+// during authoring — see task-S7.2-report.md for the exact snippet if it
+// needs to be regenerated. analyze_route_maps (the Maps path) is NOT captured
+// here — it is faithfully ported in route_analysis.ts but deferred to task
+// S7.3's fixture/parity test, since it needs raw Directions/Places payload
+// shapes that S7.3 owns.
+
 console.log('capture complete')
