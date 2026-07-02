@@ -53,6 +53,8 @@ import type {
 import { packageRegistry } from '../engine/services/package_registry'
 import { scenarioRegistry } from '../engine/services/scenario_registry'
 import { seedDefaults } from '../storage/db'
+import { DEFAULT_ROUTE_PRESETS } from '../data/routes'
+import { analyzeRouteMaps, type RawRoute, type RawPlace } from '../engine/services/route_analysis'
 import pkg from '../../package.json'
 import {
   createDraft,
@@ -117,15 +119,64 @@ export async function getScenario(id: string): Promise<ScenarioDef> {
   return scenarioRegistry.get(id)
 }
 
-// ── Route presets (stub — later slice) ─────────────────────────────────────
+// ── Route presets ────────────────────────────────────────────────────────
+//
+// Mirrors app/api/aica_api/routers/route_presets.py's list_route_presets /
+// load_route_preset EXACTLY, swapping the on-disk routes/presets/*.json glob
+// for the bundled DEFAULT_ROUTE_PRESETS array. Presets are read-only bundled
+// defaults (no IndexedDB involved, same as the docker app which reads them
+// straight off disk on every request — no persistence layer either side).
+//
+// listRoutePresets: summary keys are byte-for-byte the router's dict
+// (id/label/start/end/distance_km/duration_min/summary), rounded the same
+// way (distance_km to 1 decimal, duration_min to the nearest whole minute).
+//
+// loadRoutePreset: the router returns a RouteEnvelope built with the exact
+// same maps-path shaping used by /api/routes/analyze's maps branch
+// (_build_route_segments_maps + rest-spot/named-rest-spot derivation) — no
+// additional analysis. That shaping already exists here as
+// `analyzeRouteMaps` (S7.2 port of the same Python helper), so it's reused
+// rather than duplicated. notices is always [] (the router never populates
+// it for presets).
 
 export async function listRoutePresets(): Promise<{ presets: RoutePresetSummary[] }> {
-  throw new Error('not implemented: listRoutePresets')
+  const presets: RoutePresetSummary[] = DEFAULT_ROUTE_PRESETS.map((preset) => ({
+    id: preset.id,
+    label: preset.label,
+    start: preset.start,
+    end: preset.end,
+    distance_km: Math.round((preset.raw_route.distance_m / 1000) * 10) / 10,
+    duration_min: Math.round(preset.raw_route.duration_s / 60),
+    summary: preset.raw_route.summary ?? '',
+  }))
+  return { presets }
 }
 
 export async function loadRoutePreset(presetId: string): Promise<RouteEnvelope> {
-  void presetId
-  throw new Error('not implemented: loadRoutePreset')
+  const preset = DEFAULT_ROUTE_PRESETS.find((p) => p.id === presetId)
+  if (!preset) {
+    throw new Error(`Preset ${pyReprValue(presetId)} not found`)
+  }
+
+  const [alternative] = analyzeRouteMaps(
+    [preset.raw_route as unknown as RawRoute],
+    { [preset.raw_route.route_id]: preset.places as unknown as RawPlace[] },
+    preset.start,
+    preset.end,
+  )
+
+  return {
+    route_source: 'maps',
+    alternatives: [
+      {
+        route_id: alternative.route_id,
+        summary: alternative.summary,
+        route_facts: alternative.route_facts,
+        display: alternative.display,
+        notices: [],
+      },
+    ],
+  }
 }
 
 // ── Routes / run-plans (M4 setup flow) ──────────────────────────────────────
