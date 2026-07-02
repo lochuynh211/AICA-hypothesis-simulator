@@ -1,0 +1,55 @@
+{
+  "input": {
+    "raw_state": {
+      "drowsinessLevel": 45.0,
+      "fatigueLevel": 45.0,
+      "attentionLevel": 70.0,
+      "speedKph": 80.0,
+      "steeringInstabilityLevel": 150.0,
+      "pedalAbnormalityLevel": 50.0,
+      "laneDepartureCount": 0,
+      "adasWarningCount": 0,
+      "nextRestSpotMin": 15.0,
+      "routeFraction": 0.0,
+      "continuousDrivingMin": 45.0,
+      "isNight": false,
+      "weatherRiskLevel": 0.0,
+      "segmentType": "normal_road",
+      "drowsinessAboveWeakTicks": 5
+    },
+    "ctx": {
+      "drowsiness_level": "weak",
+      "fatigue_level": "low",
+      "signal_duration": "brief",
+      "travel_time_sec": 2500,
+      "remaining_to_destination_sec": 5000,
+      "rest_spot_metres": 8000
+    }
+  },
+  "output": {
+    "build_feature_groups": {
+      "normalized": {
+        "drowsiness_score": 0.45,
+        "fatigue_score": 0.45,
+        "attention_score": 0.70,
+        "driving_anomaly_score": 1.0,
+        "pedal_anomaly_score": 0.50
+      },
+      "ordinal": {
+        "drowsiness_level": "moderate",
+        "fatigue_level": "medium",
+        "signal_duration": "sustained",
+        "rest_spot_eta": "near",
+        "continuous_driving_time": "moderate"
+      }
+    },
+    "bin_context": {
+      "drowsiness_level": "weak",
+      "fatigue_level": "low",
+      "signal_duration": "brief",
+      "continuous_driving_time": "moderate",
+      "destination_eta": "far",
+      "rest_spot_eta": "near"
+    }
+  }
+}

@@ -22,6 +22,14 @@ export async function api(path, init) {
 }
 
 // ── Captures (each port task appends here) ──────────────────────────────────
-// (populated starting in Task S2.4)
+
+// binning: mirror the canonical inputs/outputs asserted in test_binning.py.
+// If no HTTP surface exists, hand-transcribe {input, output} pairs from that
+// test into binning.json (the test file is the reference).
+//
+// binning.py's build_feature_groups/bin_context are internal service
+// functions with no dedicated debug HTTP endpoint, so binning.json was
+// hand-derived directly from app/api/tests/test_binning.py's asserted
+// thresholds/bands rather than captured from a running docker endpoint.
 
 console.log('capture complete')
