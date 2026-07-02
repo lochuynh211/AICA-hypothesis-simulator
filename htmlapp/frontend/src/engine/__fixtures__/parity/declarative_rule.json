@@ -1,0 +1,523 @@
+[
+  {
+    "input": {
+      "manifest": {
+        "id": "pkg-declarative-parity",
+        "version": "1.0.0",
+        "label": {
+          "ja": "宣言的ルール（パリティ）",
+          "en": "Declarative Rule (Parity)"
+        },
+        "compatible_scenario_types": [
+          "fatigue_drowsiness"
+        ],
+        "algorithm": {
+          "type": "declarative_rule",
+          "entrypoint": "declarative_rule"
+        },
+        "parameters": [],
+        "features": [],
+        "hyperparameters": [],
+        "trigger_categories": [
+          {
+            "id": "rest_required",
+            "priority": 1
+          }
+        ],
+        "rules": [],
+        "fire_control": {
+          "threshold_source": "hyperparameters",
+          "actionability_guard": {}
+        },
+        "proposals": [],
+        "feedback_schema": [],
+        "evidence_metrics": []
+      },
+      "context": {
+        "drowsiness_level": "severe",
+        "fatigue_level": "low",
+        "signal_duration": "transient",
+        "continuous_driving_time": "short",
+        "rest_spot_eta": "none"
+      },
+      "parameters": {},
+      "hyperparameters": {
+        "trigger_sensitivity": "medium",
+        "proposal_threshold": "medium",
+        "severe_threshold": "medium",
+        "persistence_requirement": "medium",
+        "require_actionable": true,
+        "rest_spot_sensitivity": "medium"
+      }
+    },
+    "output": {
+      "result_type": "SEVERE_INTERVENTION",
+      "trigger_candidate": true,
+      "selected_category": "rest_required",
+      "score": 1.0,
+      "features": {
+        "drowsiness_level": "severe",
+        "fatigue_level": "low",
+        "signal_duration": "transient",
+        "continuous_driving_time": "short",
+        "rest_spot_eta": "none"
+      },
+      "scores": {},
+      "states": {},
+      "criteria": {
+        "reaction_point": 1.4,
+        "proposal_cut": 3.0,
+        "severe_cut": 4.0
+      },
+      "candidates": [
+        {
+          "category": "rest_required",
+          "exists": true,
+          "score": 1.0,
+          "state": null,
+          "strength": "severe",
+          "fire_control": {
+            "fired": true,
+            "suppressed": false,
+            "override": false,
+            "reason": "severe_cut_passed"
+          }
+        }
+      ],
+      "fire_control": {
+        "fired": true,
+        "suppressed": false,
+        "override": false,
+        "reason": "severe_cut_passed"
+      },
+      "proposal": null,
+      "reason_inputs": [
+        "drowsiness_level"
+      ],
+      "explanation": "Drowsiness is at the severe level — immediate intervention required.",
+      "next_package_runtime_state": {}
+    }
+  },
+  {
+    "input": {
+      "manifest": {
+        "id": "pkg-declarative-parity",
+        "version": "1.0.0",
+        "label": {
+          "ja": "宣言的ルール（パリティ）",
+          "en": "Declarative Rule (Parity)"
+        },
+        "compatible_scenario_types": [
+          "fatigue_drowsiness"
+        ],
+        "algorithm": {
+          "type": "declarative_rule",
+          "entrypoint": "declarative_rule"
+        },
+        "parameters": [],
+        "features": [],
+        "hyperparameters": [],
+        "trigger_categories": [
+          {
+            "id": "rest_required",
+            "priority": 1
+          }
+        ],
+        "rules": [],
+        "fire_control": {
+          "threshold_source": "hyperparameters",
+          "actionability_guard": {}
+        },
+        "proposals": [],
+        "feedback_schema": [],
+        "evidence_metrics": []
+      },
+      "context": {
+        "drowsiness_level": "moderate",
+        "fatigue_level": "medium",
+        "signal_duration": "sustained",
+        "continuous_driving_time": "long",
+        "rest_spot_eta": "none"
+      },
+      "parameters": {},
+      "hyperparameters": {
+        "trigger_sensitivity": "medium",
+        "proposal_threshold": "medium",
+        "severe_threshold": "medium",
+        "persistence_requirement": "medium",
+        "require_actionable": true,
+        "rest_spot_sensitivity": "medium"
+      }
+    },
+    "output": {
+      "result_type": "NO_PRACTICAL_ACTION_FALLBACK",
+      "trigger_candidate": false,
+      "selected_category": null,
+      "score": 3.1,
+      "features": {
+        "drowsiness_level": "moderate",
+        "fatigue_level": "medium",
+        "signal_duration": "sustained",
+        "continuous_driving_time": "long",
+        "rest_spot_eta": "none"
+      },
+      "scores": {},
+      "states": {},
+      "criteria": {
+        "reaction_point": 1.4,
+        "proposal_cut": 3.0,
+        "severe_cut": 4.0
+      },
+      "candidates": [
+        {
+          "category": "rest_required",
+          "exists": true,
+          "score": 3.1,
+          "state": null,
+          "strength": "clear",
+          "fire_control": {
+            "fired": false,
+            "suppressed": true,
+            "override": false,
+            "reason": "actionability_guard_rest_not_reachable"
+          }
+        }
+      ],
+      "fire_control": {
+        "fired": false,
+        "suppressed": true,
+        "override": false,
+        "reason": "actionability_guard_rest_not_reachable"
+      },
+      "proposal": null,
+      "reason_inputs": [
+        "drowsiness_level",
+        "signal_duration",
+        "continuous_driving_time",
+        "proposal_threshold",
+        "require_actionable",
+        "rest_spot_eta"
+      ],
+      "explanation": "Damped blend passed the proposal threshold but no actionable rest spot is reachable.",
+      "next_package_runtime_state": {}
+    }
+  },
+  {
+    "input": {
+      "manifest": {
+        "id": "pkg-declarative-parity",
+        "version": "1.0.0",
+        "label": {
+          "ja": "宣言的ルール（パリティ）",
+          "en": "Declarative Rule (Parity)"
+        },
+        "compatible_scenario_types": [
+          "fatigue_drowsiness"
+        ],
+        "algorithm": {
+          "type": "declarative_rule",
+          "entrypoint": "declarative_rule"
+        },
+        "parameters": [],
+        "features": [],
+        "hyperparameters": [],
+        "trigger_categories": [
+          {
+            "id": "rest_required",
+            "priority": 1
+          }
+        ],
+        "rules": [],
+        "fire_control": {
+          "threshold_source": "hyperparameters",
+          "actionability_guard": {}
+        },
+        "proposals": [],
+        "feedback_schema": [],
+        "evidence_metrics": []
+      },
+      "context": {
+        "drowsiness_level": "moderate",
+        "fatigue_level": "medium",
+        "signal_duration": "sustained",
+        "continuous_driving_time": "long",
+        "rest_spot_eta": "near"
+      },
+      "parameters": {},
+      "hyperparameters": {
+        "trigger_sensitivity": "medium",
+        "proposal_threshold": "medium",
+        "severe_threshold": "medium",
+        "persistence_requirement": "medium",
+        "require_actionable": true,
+        "rest_spot_sensitivity": "medium"
+      }
+    },
+    "output": {
+      "result_type": "REST_PROPOSAL",
+      "trigger_candidate": true,
+      "selected_category": "rest_required",
+      "score": 3.1,
+      "features": {
+        "drowsiness_level": "moderate",
+        "fatigue_level": "medium",
+        "signal_duration": "sustained",
+        "continuous_driving_time": "long",
+        "rest_spot_eta": "near"
+      },
+      "scores": {},
+      "states": {},
+      "criteria": {
+        "reaction_point": 1.4,
+        "proposal_cut": 3.0,
+        "severe_cut": 4.0
+      },
+      "candidates": [
+        {
+          "category": "rest_required",
+          "exists": true,
+          "score": 3.1,
+          "state": null,
+          "strength": "clear",
+          "fire_control": {
+            "fired": true,
+            "suppressed": false,
+            "override": false,
+            "reason": "proposal_cut_passed_rest_reachable"
+          }
+        }
+      ],
+      "fire_control": {
+        "fired": true,
+        "suppressed": false,
+        "override": false,
+        "reason": "proposal_cut_passed_rest_reachable"
+      },
+      "proposal": {
+        "id": "rest_guidance",
+        "message": {
+          "ja": "長時間の運転が続いています。近くの休憩施設でご休憩をお勧めします。",
+          "en": "You have been driving for a long time. We recommend resting at the nearby facility."
+        },
+        "options": [
+          "accept_rest",
+          "postpone"
+        ]
+      },
+      "reason_inputs": [
+        "drowsiness_level",
+        "signal_duration",
+        "continuous_driving_time",
+        "weight_drowsiness",
+        "persistence_requirement",
+        "proposal_threshold",
+        "rest_spot_eta"
+      ],
+      "explanation": "Damped fatigue/drowsiness blend passed the proposal threshold and a rest spot is reachable.",
+      "next_package_runtime_state": {}
+    }
+  },
+  {
+    "input": {
+      "manifest": {
+        "id": "pkg-declarative-parity",
+        "version": "1.0.0",
+        "label": {
+          "ja": "宣言的ルール（パリティ）",
+          "en": "Declarative Rule (Parity)"
+        },
+        "compatible_scenario_types": [
+          "fatigue_drowsiness"
+        ],
+        "algorithm": {
+          "type": "declarative_rule",
+          "entrypoint": "declarative_rule"
+        },
+        "parameters": [],
+        "features": [],
+        "hyperparameters": [],
+        "trigger_categories": [
+          {
+            "id": "rest_required",
+            "priority": 1
+          }
+        ],
+        "rules": [],
+        "fire_control": {
+          "threshold_source": "hyperparameters",
+          "actionability_guard": {}
+        },
+        "proposals": [],
+        "feedback_schema": [],
+        "evidence_metrics": []
+      },
+      "context": {
+        "drowsiness_level": "moderate",
+        "fatigue_level": "medium",
+        "signal_duration": "brief",
+        "continuous_driving_time": "long",
+        "rest_spot_eta": "near"
+      },
+      "parameters": {},
+      "hyperparameters": {
+        "trigger_sensitivity": "medium",
+        "proposal_threshold": "medium",
+        "severe_threshold": "medium",
+        "persistence_requirement": "medium",
+        "require_actionable": true,
+        "rest_spot_sensitivity": "medium"
+      }
+    },
+    "output": {
+      "result_type": "SOFT_WARNING",
+      "trigger_candidate": false,
+      "selected_category": null,
+      "score": 1.5,
+      "features": {
+        "drowsiness_level": "moderate",
+        "fatigue_level": "medium",
+        "signal_duration": "brief",
+        "continuous_driving_time": "long",
+        "rest_spot_eta": "near"
+      },
+      "scores": {},
+      "states": {},
+      "criteria": {
+        "reaction_point": 1.4,
+        "proposal_cut": 3.0,
+        "severe_cut": 4.0
+      },
+      "candidates": [
+        {
+          "category": "rest_required",
+          "exists": true,
+          "score": 1.5,
+          "state": null,
+          "strength": "forming",
+          "fire_control": {
+            "fired": false,
+            "suppressed": false,
+            "override": false,
+            "reason": "below_proposal_cut"
+          }
+        }
+      ],
+      "fire_control": {
+        "fired": false,
+        "suppressed": false,
+        "override": false,
+        "reason": "below_proposal_cut"
+      },
+      "proposal": null,
+      "reason_inputs": [
+        "drowsiness_level",
+        "signal_duration",
+        "trigger_sensitivity",
+        "proposal_threshold"
+      ],
+      "explanation": "Damped blend reached the reaction point but has not yet crossed the proposal threshold.",
+      "next_package_runtime_state": {}
+    }
+  },
+  {
+    "input": {
+      "manifest": {
+        "id": "pkg-declarative-parity",
+        "version": "1.0.0",
+        "label": {
+          "ja": "宣言的ルール（パリティ）",
+          "en": "Declarative Rule (Parity)"
+        },
+        "compatible_scenario_types": [
+          "fatigue_drowsiness"
+        ],
+        "algorithm": {
+          "type": "declarative_rule",
+          "entrypoint": "declarative_rule"
+        },
+        "parameters": [],
+        "features": [],
+        "hyperparameters": [],
+        "trigger_categories": [
+          {
+            "id": "rest_required",
+            "priority": 1
+          }
+        ],
+        "rules": [],
+        "fire_control": {
+          "threshold_source": "hyperparameters",
+          "actionability_guard": {}
+        },
+        "proposals": [],
+        "feedback_schema": [],
+        "evidence_metrics": []
+      },
+      "context": {
+        "drowsiness_level": "none",
+        "fatigue_level": "low",
+        "signal_duration": "transient",
+        "continuous_driving_time": "short",
+        "rest_spot_eta": "none"
+      },
+      "parameters": {},
+      "hyperparameters": {
+        "trigger_sensitivity": "medium",
+        "proposal_threshold": "medium",
+        "severe_threshold": "medium",
+        "persistence_requirement": "medium",
+        "require_actionable": true,
+        "rest_spot_sensitivity": "medium"
+      }
+    },
+    "output": {
+      "result_type": "NO_TRIGGER",
+      "trigger_candidate": false,
+      "selected_category": null,
+      "score": 0.0,
+      "features": {
+        "drowsiness_level": "none",
+        "fatigue_level": "low",
+        "signal_duration": "transient",
+        "continuous_driving_time": "short",
+        "rest_spot_eta": "none"
+      },
+      "scores": {},
+      "states": {},
+      "criteria": {
+        "reaction_point": 1.4,
+        "proposal_cut": 3.0,
+        "severe_cut": 4.0
+      },
+      "candidates": [
+        {
+          "category": "rest_required",
+          "exists": false,
+          "score": 0.0,
+          "state": null,
+          "strength": null,
+          "fire_control": {
+            "fired": false,
+            "suppressed": false,
+            "override": false,
+            "reason": "below_reaction_point"
+          }
+        }
+      ],
+      "fire_control": {
+        "fired": false,
+        "suppressed": false,
+        "override": false,
+        "reason": "below_reaction_point"
+      },
+      "proposal": null,
+      "reason_inputs": [
+        "drowsiness_level",
+        "signal_duration",
+        "trigger_sensitivity"
+      ],
+      "explanation": "Damped blend is below the reaction point — no action required.",
+      "next_package_runtime_state": {}
+    }
+  }
+]

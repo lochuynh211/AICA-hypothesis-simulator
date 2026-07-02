@@ -32,4 +32,17 @@ export async function api(path, init) {
 // hand-derived directly from app/api/tests/test_binning.py's asserted
 // thresholds/bands rather than captured from a running docker endpoint.
 
+// declarative_rule / weighted_score: adapter.py, declarative_rule.py, and
+// weighted_score.py are pure internal functions with no dedicated debug HTTP
+// endpoint (they are invoked by the tick engine mid-run, not exposed as a
+// standalone route). declarative_rule.json and weighted_score.json were
+// derived by importing the actual Python modules from app/api's project
+// venv (`./.venv/bin/python`) and calling `evaluate(...)` directly on inputs
+// transcribed from app/api/tests/test_declarative_rule.py and
+// test_weighted_score.py (R1-R5 result types for declarative_rule; fire /
+// no-fire / boundary-strength / high-monotony / suppressed-candidate cases
+// for weighted_score), capturing `result.model_dump_json()` as the golden
+// output. This is more reliable than hand-computing the float arithmetic
+// and exact `.3f`-formatted explanation strings by hand.
+
 console.log('capture complete')
