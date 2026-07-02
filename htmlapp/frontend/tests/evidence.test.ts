@@ -60,6 +60,37 @@ describe('evidence markdown parity', () => {
     expect(md).not.toContain('googleMapsApiKey')
     expect(md).not.toMatch(/AIza[0-9A-Za-z_-]{10,}/)
   })
+
+  // Regression fixture for the S8.1 review finding: the bundled
+  // nri_fatigue_score_v1 package's numeric hyperparameter defaults are
+  // whole-number Python floats (e.g. `w_child: 20.0`, `rest_cooldown_sec:
+  // 600.0`). JSON has no int/float distinction, so JS's `JSON.parse`
+  // collapses `20.0` to the number `20`, and a generic `String(v)`
+  // formatter (the pre-fix behavior) would render `"w_child: 20"` —
+  // diverging from Python's `str(20.0) == "20.0"`. This fixture was
+  // captured by driving the REAL Python services end to end (see
+  // task-S8.1-report.md for the exact capture script) through
+  // build_evidence_report(...) then render_evidence_markdown(...), for a
+  // full run of nri_fatigue_score_v1 + uc01_fatigue_recovery_v0_1 (107
+  // ticks, 47 REST_PROPOSAL pauses all declined, run completed). Its
+  // `initial_hyperparameters`/`current_hyperparameters` contain BOTH
+  // whole-number-float values (`w_child: 20.0`, `theta_sleep: 60.0`,
+  // `rest_cooldown_sec: 600.0`, `emergency_override_threshold: 100.0`, ...)
+  // AND two genuinely Python-`int`-valued numeric hyperparameters
+  // (`max_proposals_per_30min: 3`, `persistence_ticks: 2` — plain `3`/`2`
+  // integer literals in packages/nri_fatigue_score_v1/package.json, never
+  // coerced to float anywhere in the Python pipeline since every
+  // hyperparameter-carrying field is typed `Any`/`dict[str, Any]`, so the
+  // plain Python `int` is rendered as-is via `_safe_str`'s `str(value)`),
+  // so this fixture also guards against a naive "float-format every
+  // number in the Hyperparameters section" fix, which would incorrectly turn `3`/`2`
+  // into `"3.0"`/`"2.0"` and introduce a NEW divergence. Only the render
+  // step is asserted here (not report-building) because nri's
+  // `python_module` algorithm can't tick inside the TS engine.
+  it('renders whole-number-float AND genuine-int hyperparameters like Python (nri_fatigue_score_v1)', () => {
+    const fx = loadFixture('evidence_markdown_nri')
+    expect(renderEvidenceMarkdown(fx.input)).toBe(fx.output)
+  })
 })
 
 // Drives a TS run to completion with the SAME package/scenario/plan/run ids

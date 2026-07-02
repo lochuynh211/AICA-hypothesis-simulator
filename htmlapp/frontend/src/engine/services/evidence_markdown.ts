@@ -51,6 +51,74 @@ function dictBullets(d: Record<string, unknown>, indent = ''): string[] {
   return lines
 }
 
+// ── Hyperparameters: Python float-vs-int rendering ──────────────────────────
+//
+// `HyperparameterDef.default` is typed `Any` in Python
+// (models/package.py:72, `# str (band), bool, or float (numeric)`) and flows
+// through `dict[str, Any]`-typed fields all the way to
+// `RunLog.initial_hyperparameters`/`current_hyperparameters` — nothing on
+// that path coerces types, so whatever numeric type the JSON manifest
+// literal parsed to (Python `int` for `3`, `float` for `20.0`) is exactly
+// what `_safe_str`'s `str(value)` renders. JS's `JSON.parse` collapses both
+// `3` and `20.0` to the same `number`, losing that distinction — a real
+// byte-for-byte divergence for every numeric hyperparameter default written
+// as a whole number in the manifest (`json.loads("20.0") == 20.0`, whose
+// `str()` is `"20.0"`; `JSON.parse("20.0") === 20`, whose default JS
+// rendering is `"20"`).
+//
+// `ParameterDef.default` is `str | bool` (models/package.py:44) — parameters
+// are NEVER numeric, so this does not apply to the Parameters section.
+//
+// The bundled packages' manifests are NOT uniformly float: two numeric
+// hyperparameter keys are genuinely declared as Python `int` literals (no
+// decimal point) rather than `float` —
+// `packages/nri_fatigue_score_v1/package.json`'s `max_proposals_per_30min`
+// (3) and `persistence_ticks` (2), and
+// `packages/aica_transparent_hybrid_trigger_v1/package.json`'s
+// `max_proposals_per_30min` (3), `rest_persistence_ticks` (2), and
+// `monotony_persistence_ticks` (3) — confirmed by reading the actual JSON
+// literals in both manifests (not guessed). Blindly float-formatting every
+// numeric hyperparameter would turn Python's `"3"`/`"2"` into `"3.0"`/
+// `"2.0"`, introducing a NEW divergence. So — mirroring the
+// `PROFILE_SUBMODEL_INT_FIELDS` pattern below — the known genuinely-`int`
+// hyperparameter keys are hardcoded per package id here; every other
+// numeric hyperparameter value renders as a Python float (`pyFloatStr`),
+// matching the `HyperparameterDef` docstring's documented convention.
+const HYPERPARAMETER_INT_KEYS: Record<string, Set<string>> = {
+  nri_fatigue_score_v1: new Set(['max_proposals_per_30min', 'persistence_ticks']),
+  aica_transparent_hybrid_trigger_v1: new Set([
+    'max_proposals_per_30min',
+    'rest_persistence_ticks',
+    'monotony_persistence_ticks',
+  ]),
+}
+
+/** Format a number the way Python's `str(float)` renders a whole-number
+ * float — always keeps a `.0` suffix (`20` -> `"20.0"`); a non-integral
+ * value uses its normal decimal form (`0.5` -> `"0.5"`), matching JS's
+ * default shortest round-trip representation for the simple decimal
+ * fractions the bundled manifests use. */
+function pyFloatStr(n: number): string {
+  return Number.isInteger(n) ? `${n}.0` : String(n)
+}
+
+/** Render each k/v of a hyperparameters dict as bullet lines. Every value
+ * that is a JS `number` corresponds to a Python `HyperparameterDef.default`
+ * of kind `numeric` — a Python `float` UNLESS its key is a known genuine
+ * `int` for this package (see `HYPERPARAMETER_INT_KEYS`); band/string and
+ * bool values are unaffected (rendered exactly as `dictBullets` would).
+ * Scoped ONLY to the Hyperparameters sections — parameters, profiles,
+ * route, timeline, etc. keep generic `dictBullets`/`safeStr` formatting. */
+function hyperparameterBullets(d: Record<string, unknown>, packageId: string): string[] {
+  const intKeys = HYPERPARAMETER_INT_KEYS[packageId] ?? new Set<string>()
+  const lines: string[] = []
+  for (const [k, v] of Object.entries(d)) {
+    const vs = typeof v === 'number' && !intKeys.has(k) ? pyFloatStr(v) : safeStr(v)
+    lines.push(`- ${k}: ${vs}\n`)
+  }
+  return lines
+}
+
 // ── Python float-vs-int JSON rendering (driver_profile / vehicle_profile) ───
 //
 // JSON has no int/float distinction, so a JS number parsed from
@@ -252,10 +320,11 @@ export function renderEvidenceMarkdown(report: EvidenceReport): string {
 
   // ── Hyperparameters ────────────────────────────────────────────────────
   lines.push('### Hyperparameters\n\n')
+  const packageId = (pkg.id as string | undefined) ?? ''
   const initialHyper = (sf.initial_hyperparameters as Record<string, unknown> | null | undefined) ?? {}
   if (initialHyper && Object.keys(initialHyper).length > 0) {
     lines.push('**Initial Hyperparameters:**\n\n')
-    lines.push(...dictBullets(initialHyper))
+    lines.push(...hyperparameterBullets(initialHyper, packageId))
   } else {
     lines.push('- (no hyperparameters)\n')
   }
@@ -263,7 +332,7 @@ export function renderEvidenceMarkdown(report: EvidenceReport): string {
   const finalHyper = sf.final_hyperparameters
   if (finalHyper !== null && finalHyper !== undefined && typeof finalHyper === 'object' && !Array.isArray(finalHyper) && Object.keys(finalHyper as object).length > 0) {
     lines.push('\n**Final Hyperparameters (changed during run):**\n\n')
-    lines.push(...dictBullets(finalHyper as Record<string, unknown>))
+    lines.push(...hyperparameterBullets(finalHyper as Record<string, unknown>, packageId))
   }
   lines.push('\n')
 
