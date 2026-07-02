@@ -1,0 +1,305 @@
+{
+  "input": {
+    "manifest": {
+      "id": "test_pkg_with_extras_v0_1",
+      "version": "0.1.0",
+      "label": {
+        "ja": "\u8ffd\u52a0\u30d5\u30a3\u30fc\u30c9\u30d0\u30c3\u30af\u30d5\u30a3\u30fc\u30eb\u30c9\u30c6\u30b9\u30c8\u30d1\u30c3\u30b1\u30fc\u30b8",
+        "en": "Test Package With Extra Feedback Fields"
+      },
+      "compatible_scenario_types": [
+        "uc01_fatigue"
+      ],
+      "algorithm": {
+        "type": "declarative_rule",
+        "entrypoint": "rules"
+      },
+      "parameters": [],
+      "features": [
+        {
+          "key": "drowsiness_level",
+          "band_values": [
+            "none",
+            "weak",
+            "moderate",
+            "strong",
+            "severe"
+          ]
+        }
+      ],
+      "hyperparameters": [],
+      "trigger_categories": [
+        {
+          "id": "rest_required",
+          "priority": 1
+        }
+      ],
+      "rules": [],
+      "fire_control": {
+        "threshold_source": "trigger_categories",
+        "actionability_guard": "rest_spot_eta"
+      },
+      "proposals": [],
+      "feedback_schema": [
+        {
+          "key": "comfort",
+          "label": {
+            "ja": "\u4e57\u308a\u5fc3\u5730",
+            "en": "Ride Comfort"
+          },
+          "type": "choice",
+          "options": [
+            "smooth",
+            "ok",
+            "jarring"
+          ]
+        },
+        {
+          "key": "seat_quality",
+          "label": {
+            "ja": "\u5ea7\u5e2d\u306e\u8cea",
+            "en": "Seat Quality"
+          },
+          "type": "scale",
+          "min": 1.0,
+          "max": 5.0
+        }
+      ],
+      "evidence_metrics": []
+    },
+    "body": {
+      "target": {
+        "scope": "run"
+      },
+      "labels": {
+        "proposal_timing": "appropriate",
+        "safety_impression": "safe",
+        "comfort": "smooth",
+        "seat_quality": 4
+      },
+      "comment": "Felt natural"
+    },
+    "invalid_body": {
+      "target": {
+        "scope": "run"
+      },
+      "labels": {
+        "proposal_timing": "maybe",
+        "seat_quality": 10
+      },
+      "comment": null
+    }
+  },
+  "output": {
+    "schema": [
+      {
+        "key": "proposal_timing",
+        "label": {
+          "ja": "\u63d0\u6848\u30bf\u30a4\u30df\u30f3\u30b0",
+          "en": "Proposal Timing"
+        },
+        "type": "choice",
+        "options": [
+          "too_early",
+          "appropriate",
+          "too_late",
+          "unnecessary",
+          "missed_opportunity"
+        ],
+        "note": false,
+        "min": null,
+        "max": null
+      },
+      {
+        "key": "safety_impression",
+        "label": {
+          "ja": "\u5b89\u5168\u6027\u306e\u5370\u8c61",
+          "en": "Safety Impression"
+        },
+        "type": "choice",
+        "options": [
+          "safe",
+          "somewhat_risky",
+          "unsafe",
+          "unclear"
+        ],
+        "note": false,
+        "min": null,
+        "max": null
+      },
+      {
+        "key": "intrusiveness",
+        "label": {
+          "ja": "\u7169\u308f\u3057\u3055",
+          "en": "Intrusiveness"
+        },
+        "type": "choice",
+        "options": [
+          "not_intrusive",
+          "acceptable",
+          "intrusive",
+          "very_intrusive"
+        ],
+        "note": false,
+        "min": null,
+        "max": null
+      },
+      {
+        "key": "understandability",
+        "label": {
+          "ja": "\u308f\u304b\u308a\u3084\u3059\u3055",
+          "en": "Understandability"
+        },
+        "type": "choice",
+        "options": [
+          "clear",
+          "somewhat_clear",
+          "unclear"
+        ],
+        "note": false,
+        "min": null,
+        "max": null
+      },
+      {
+        "key": "rest_spot_suitability",
+        "label": {
+          "ja": "\u4f11\u61a9\u5834\u6240\u306e\u9069\u5207\u3055",
+          "en": "Rest Spot Suitability"
+        },
+        "type": "choice",
+        "options": [
+          "suitable",
+          "acceptable",
+          "unsuitable",
+          "no_suitable_rest_spot"
+        ],
+        "note": false,
+        "min": null,
+        "max": null
+      },
+      {
+        "key": "proposal_content_suitability",
+        "label": {
+          "ja": "\u63d0\u6848\u5185\u5bb9\u306e\u9069\u5207\u3055",
+          "en": "Proposal Content Suitability"
+        },
+        "type": "choice",
+        "options": [
+          "suitable",
+          "acceptable",
+          "unsuitable"
+        ],
+        "note": false,
+        "min": null,
+        "max": null
+      },
+      {
+        "key": "acceptance_reason",
+        "label": {
+          "ja": "\u627f\u8afe\u7406\u7531",
+          "en": "Acceptance Reason"
+        },
+        "type": "choice",
+        "options": [
+          "rest_needed",
+          "convenient_timing",
+          "trusted_suggestion",
+          "other"
+        ],
+        "note": true,
+        "min": null,
+        "max": null
+      },
+      {
+        "key": "rejection_reason",
+        "label": {
+          "ja": "\u62d2\u5426\u7406\u7531",
+          "en": "Rejection Reason"
+        },
+        "type": "choice",
+        "options": [
+          "not_tired",
+          "bad_timing",
+          "unsuitable_rest_spot",
+          "distrust",
+          "other"
+        ],
+        "note": true,
+        "min": null,
+        "max": null
+      },
+      {
+        "key": "overall_judgment",
+        "label": {
+          "ja": "\u7dcf\u5408\u8a55\u4fa1",
+          "en": "Overall Judgment"
+        },
+        "type": "choice",
+        "options": [
+          "good_trigger",
+          "acceptable",
+          "poor_trigger"
+        ],
+        "note": false,
+        "min": null,
+        "max": null
+      },
+      {
+        "key": "comfort",
+        "label": {
+          "ja": "\u4e57\u308a\u5fc3\u5730",
+          "en": "Ride Comfort"
+        },
+        "type": "choice",
+        "options": [
+          "smooth",
+          "ok",
+          "jarring"
+        ],
+        "note": false,
+        "min": null,
+        "max": null
+      },
+      {
+        "key": "seat_quality",
+        "label": {
+          "ja": "\u5ea7\u5e2d\u306e\u8cea",
+          "en": "Seat Quality"
+        },
+        "type": "scale",
+        "options": null,
+        "note": false,
+        "min": 1.0,
+        "max": 5.0
+      }
+    ],
+    "valid": true,
+    "invalid_errors": [
+      {
+        "field": "labels.proposal_timing",
+        "message": "Value 'maybe' is not a valid option for field 'proposal_timing'; expected one of ['too_early', 'appropriate', 'too_late', 'unnecessary', 'missed_opportunity']."
+      },
+      {
+        "field": "labels.seat_quality",
+        "message": "Scale value 10 for field 'seat_quality' exceeds maximum 5.0."
+      }
+    ],
+    "event": {
+      "kind": "feedback",
+      "target": {
+        "scope": "run",
+        "event_ref": null,
+        "tick_index": null,
+        "proposal_id": null,
+        "action": null
+      },
+      "labels": {
+        "proposal_timing": "appropriate",
+        "safety_impression": "safe",
+        "comfort": "smooth",
+        "seat_quality": 4
+      },
+      "comment": "Felt natural"
+    }
+  }
+}

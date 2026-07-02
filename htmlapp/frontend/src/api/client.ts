@@ -19,11 +19,11 @@
  *
  * Note: the frozen source imports the *runtime* classes `MapsError` and
  * `FeedbackValidationError` from './types' (used only inside the real
- * `routesAnalyze`/`submitFeedback` bodies). `MapsError` is now imported as a
+ * `routesAnalyze`/`submitFeedback` bodies). `MapsError` is imported as a
  * value (S7.3 implements `routesAnalyze`/`getRestSpots`); `FeedbackValidationError`
- * remains omitted until the M5 feedback slice implements `submitFeedback` — an
- * unused value import would fail this project's `noUnusedLocals` tsc gate. All
- * *type* imports referenced by the 21 signatures below are copied verbatim.
+ * is now also imported as a value (S5.1 implements `submitFeedback`, throwing it
+ * on validation failure — matching the docker client's 400 path). All *type*
+ * imports referenced by the 21 signatures below are copied verbatim.
  */
 import type {
   PackageSummary,
@@ -51,7 +51,7 @@ import type {
   ValidationError,
   Snapshot,
 } from './types'
-import { MapsError } from './types'
+import { MapsError, FeedbackValidationError } from './types'
 import { packageRegistry } from '../engine/services/package_registry'
 import { scenarioRegistry } from '../engine/services/scenario_registry'
 import { seedDefaults } from '../storage/db'
@@ -83,6 +83,11 @@ import {
   getScenario as engineGetScenario,
 } from '../engine/run_manager'
 import { runsStore } from '../storage/runs_store'
+import {
+  effectiveSchema,
+  validate as validateFeedback,
+  appendFeedback as engineAppendFeedback,
+} from '../engine/services/feedback'
 
 export type HealthStatus = {
   status: string
@@ -837,11 +842,28 @@ export async function getRunLog(runId: string): Promise<RunLog> {
   return log
 }
 
-// ── M5 Feedback (stub — later slice) ────────────────────────────────────────
+// ── M5 Feedback ──────────────────────────────────────────────────────────────
+//
+// Mirrors runs.py's get_feedback_schema/post_feedback: resolve the run's
+// RunLog to find its package_id, load that package's full manifest (for
+// feedback_schema extras), and derive the effective schema from it — same
+// resolution `_resolve_run_log` + `PackageRegistry(...).get(package_id)`
+// does server-side. Only ACTIVE runs are resolvable here (no on-disk
+// fallback exists in this build — same pre-existing scope gap as
+// `getRunLog` above, which also only reads the in-memory registry).
+
+async function resolveFeedbackPackage(runId: string): Promise<{ log: RunLog; pkg: PackageManifest }> {
+  const log = await engineGetActiveRunLog(runId)
+  if (log === null) {
+    throw new Error(`Run log for '${runId}' not found`)
+  }
+  const pkg = await packageRegistry.get(log.snapshot.package.id)
+  return { log, pkg }
+}
 
 export async function getFeedbackSchema(runId: string): Promise<FeedbackSchema> {
-  void runId
-  throw new Error('not implemented: getFeedbackSchema')
+  const { pkg } = await resolveFeedbackPackage(runId)
+  return { fields: effectiveSchema(pkg) }
 }
 
 export async function getEvidence(runId: string, uiLanguage?: string): Promise<EvidenceReport> {
@@ -856,11 +878,23 @@ export async function getEvidenceMarkdown(runId: string, uiLanguage?: string): P
   throw new Error('not implemented: getEvidenceMarkdown')
 }
 
+/**
+ * Validate + append a reviewer FeedbackEvent to the run log.
+ *
+ * Throws FeedbackValidationError (with validationErrors list) on invalid
+ * input — matching the docker client's 400 path exactly. Nothing is
+ * appended in that case. On success, the event is appended (append-only)
+ * and returned.
+ */
 export async function submitFeedback(
   runId: string,
   body: FeedbackSubmitBody,
 ): Promise<FeedbackEvent> {
-  void runId
-  void body
-  throw new Error('not implemented: submitFeedback')
+  const { log, pkg } = await resolveFeedbackPackage(runId)
+  const schema = effectiveSchema(pkg)
+  const result = validateFeedback(schema, body, log)
+  if (!result.ok) {
+    throw new FeedbackValidationError({ validation_errors: result.errors })
+  }
+  return engineAppendFeedback(runId, body)
 }

@@ -174,4 +174,47 @@ export async function api(path, init) {
 // during authoring — see task-S4.2-report.md for the exact source if it
 // needs to be regenerated.
 
+// feedback (Task S5.1): effective_schema/validate (feedback.py) are pure
+// internal service functions with no dedicated debug HTTP endpoint that
+// returns their raw output outside a live server + PackageRegistry/RunLog
+// setup, so feedback.json was derived by importing the actual Python
+// modules from app/api's project venv (`./.venv/bin/python`) and calling
+// them directly:
+//   manifest = json.load(open("app/api/tests/fixtures/pkg_with_extras/package.json"))
+//     — the same fixture package test_feedback_schema.py's T004-2 tests use
+//     (2 extras: "comfort" choice, "seat_quality" scale) — chosen over the
+//     schema-only baseline package referenced by those tests
+//     (packages/rest_rule_based_v0_1/package.json) because that path no
+//     longer exists in this repo (pre-existing gap: the package was deleted
+//     at some point after the M5 tests were written; run
+//     `app/api/.venv/bin/python -m pytest tests/test_feedback_schema.py`
+//     to see the 7 resulting FileNotFoundError failures — unrelated to this
+//     port, out of scope to fix here). pkg_with_extras exercises BOTH the
+//     V1-baseline-first ordering AND the extras-appended behavior in one
+//     fixture, which the baseline-only package could not.
+//   pkg = PackageManifest(**manifest); schema = effective_schema(pkg)  → 11 fields
+//   run_log = RunLog(run_id=..., snapshot=Snapshot(package=ArtifactRef(id=pkg.id, ...), ...),
+//                     route_facts=RouteFacts(), event_plan=EventPlan(), events=[])
+//   valid_body   = {target: {scope: "run"}, labels: {proposal_timing: "appropriate",
+//                   safety_impression: "safe", comfort: "smooth", seat_quality: 4},
+//                   comment: "Felt natural"}
+//   invalid_body = {target: {scope: "run"}, labels: {proposal_timing: "maybe" (bad option),
+//                   seat_quality: 10 (exceeds max=5.0)}, comment: null}
+//   valid_ev  = FeedbackEvent(kind="feedback", target=FeedbackTarget(**valid_body["target"]),
+//               labels=valid_body["labels"], comment=valid_body["comment"])
+//   invalid_ev = <same shape from invalid_body>
+//   valid_errors   = validate(valid_ev, schema, run_log)    → []
+//   invalid_errors = validate(invalid_ev, schema, run_log)  → 2 ValidationErrors
+//     (labels.proposal_timing: bad option; labels.seat_quality: exceeds maximum)
+// fixture = {
+//   "input": {"manifest": manifest, "body": valid_body, "invalid_body": invalid_body},
+//   "output": {"schema": [f.model_dump() for f in schema],
+//              "valid": len(valid_errors) == 0,
+//              "invalid_errors": [{"field": e.field, "message": e.message} for e in invalid_errors],
+//              "event": valid_ev.model_dump()},
+// }
+// The generating script (not committed) was run as an inline `python -c`
+// one-liner during authoring — see task-S5.1-report.md for the exact
+// source if it needs to be regenerated.
+
 console.log('capture complete')
