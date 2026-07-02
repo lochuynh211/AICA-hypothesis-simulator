@@ -121,4 +121,57 @@ export async function api(path, init) {
 // S7.3's fixture/parity test, since it needs raw Directions/Places payload
 // shapes that S7.3 owns.
 
+// run_log_e2e (Task S4.2, run_manager keystone port): create_run/tick/action
+// (run_manager.py) + create_draft (run_plan.py) are pure internal services
+// with no dedicated debug HTTP endpoint that returns the raw RunLog without
+// a live server + disk round-trip, so run_log_e2e.json was derived by
+// importing the actual Python modules from app/api's project venv
+// (`./.venv/bin/python`) and driving them directly, end to end:
+//   package = PackageManifest(**<reconstructed rest_rule_based_v0_1 dict>)
+//     — this declarative_rule package used to exist at
+//     packages/rest_rule_based_v0_1/package.json (deleted at commit
+//     a612b56; reconstructed byte-for-byte from a612b56~1). It is used
+//     instead of either package actually bundled into the htmlapp today
+//     (nri_fatigue_score_v1, aica_transparent_hybrid_trigger_v1) because
+//     BOTH of those are algorithm.type="python_module", which
+//     src/engine/algorithms/adapter.ts does not support (only
+//     declarative_rule/weighted_score are ported) — every TS tick() would
+//     immediately raise AlgorithmAdapterError("unsupported_algorithm_type"),
+//     never reach a REST_PROPOSAL, and never exercise accept_rest.
+//   scenario = ScenarioDef(**json.load(open("scenarios/uc01_fatigue_recovery_v0_1.json")))
+//     — the SAME JSON the offline app ships at
+//     src/data/scenarios/uc01_fatigue_recovery_v0_1.json (byte-identical;
+//     diffed during authoring). Its own _comment documents that
+//     declarative_rule fires REST_PROPOSAL around tick 29 against this
+//     exact profile/route/presets.
+//   plan = create_draft(plan_id=..., package=package, scenario=scenario,
+//                        presets={}, parameters={}, hyperparameters={})
+//   create_run(plan_id, run_id, runs_dir=<tmp>)
+//   loop: outcome = tick(run_id); on the first outcome.paused (always a
+//     REST_PROPOSAL — SEVERE_INTERVENTION/NO_PRACTICAL_ACTION_FALLBACK never
+//     set decision.proposal for this algorithm, so they never pause):
+//       action(run_id, "accept_rest", recovery_option_id="nap_karaoke",
+//              rest_spot=RestSpot(id="p1", label={"ja":"SA","en":"SA"},
+//              route_fraction=0.5))
+//     any SUBSEQUENT pause (none occurred in the captured run —
+//     declined_count stayed 0): action(run_id, "decline")
+//   until outcome.completed. Captured run needed exactly ONE accept_rest
+//   action (114 events: 113 tick + 1 action; result_type counts included
+//   REST_PROPOSAL x4 — 3 suppressed by the active-recovery fire-control
+//   guard, so only the first ever paused the run — SEVERE_INTERVENTION x27
+//   and NO_PRACTICAL_ACTION_FALLBACK x15, neither of which ever pauses since
+//   declarative_rule sets proposal=null for both).
+// fixture = {
+//   "input": {"package": <the reconstructed dict, unmodified>,
+//             "scenario": <raw bundled JSON dict, unmodified>,
+//             "parameters": {}, "hyperparameters": {}, "presets": {},
+//             "runMode": "standard", "recoveryOptionId": "nap_karaoke",
+//             "restSpot": {"id": "p1", "label": {"ja": "SA", "en": "SA"},
+//                          "route_fraction": 0.5}},
+//   "output": get_active_run_log(run_id).model_dump(mode="json"),
+// }
+// The generating script (not committed) lived at capture_run_log_e2e.py
+// during authoring — see task-S4.2-report.md for the exact source if it
+// needs to be regenerated.
+
 console.log('capture complete')

@@ -1,0 +1,943 @@
+/**
+ * Run manager — orchestrates the full run lifecycle (create/tick/action) plus
+ * IndexedDB-backed persistence and RunLog assembly.
+ *
+ * Ported from `app/api/aica_api/services/run_manager.py` (behavior-of-record,
+ * 878 LoC — the largest module in the port). This is the KEYSTONE of the
+ * htmlapp engine: it is the only module that wires together run_plan (draft
+ * registry), tick_engine (advanceTick/computeTickState), the algorithm
+ * adapter, recovery, and the evidence recorder into one deterministic run
+ * loop, and it owns the authoritative RunLog assembly (S4.1's
+ * `EvidenceRecorder` intentionally only assembles the M1 subset of RunLog
+ * fields — see its module docstring — so the M2 audit-trail fields
+ * (original_values/modified_values/initial|current_parameters/
+ * initial|current_hyperparameters) and the M4/M5 fields (route_source,
+ * display_route, driver/vehicle/speed profiles, profile_overrides) are
+ * surfaced here instead, from the run header this module builds at
+ * `createRun`).
+ *
+ * In-memory registry design: Python holds a single in-process dict keyed by
+ * run_id, mapping to (RunState, PackageManifest, ScenarioDef, EvidenceRecorder,
+ * priorTickState). The htmlapp offline build mirrors this with a module-level
+ * `Map` for the SAME reason Python needs it (constant-time lookups without an
+ * async round-trip on every tick/action call) — durability then comes from
+ * ALSO persisting a run header row (`runsStore.putHeader`) at creation and on
+ * every status change, and appending every event via `EvidenceRecorder`
+ * (which itself writes straight through to the `run_events` IndexedDB store —
+ * see its module docstring). `getActiveRunLog` reads the in-memory mirror
+ * (header + events) exactly like Python's `get_active_run_log` reads
+ * `entry[3].run_log` — no disk/IndexedDB round-trip for an active run.
+ *
+ * Design constraints (mirrors the Python docstring):
+ *   - NO timestamps/UUIDs/randomness generated inside the decision path
+ *     (tick()/action() never call Date.now()/Math.random(); `createRun`'s
+ *     `created_at` timestamp is metadata generated ONCE, outside the
+ *     per-tick loop, exactly like Python's `_now_iso()` call site).
+ *   - planId is resolved from the draft registry (`./run_plan`).
+ *   - runId is supplied by the caller.
+ *   - Ordinal bands only reach the adapter (via tick_engine's
+ *     buildAdapterContext).
+ *   - Adapter failure -> an `algorithm_error` EVENT; NEVER a faked
+ *     DecisionResult (master invariant, FR-011).
+ *   - package_runtime_state is threaded tick-to-tick: pass current in,
+ *     adapter returns next, store returned next.
+ *
+ * M1 path: scenario.driver_profile is null/undefined -> freezeEventPlan +
+ *          computeTickState.
+ * M2 path: scenario.driver_profile is set -> plan draft frozen (route_facts +
+ *          event_plan already computed) + advanceTick.
+ *
+ * Only the exported function identifiers (createRun, tick, action, getRun,
+ * getActiveRunLog, getPriorTickState, getScenario, appendFeedback,
+ * clearRegistry) are camelCased. Every object key inside RunState/RunLog/
+ * event payloads is preserved byte-for-byte from the Python (snake_case)
+ * because they cross the parity boundary.
+ */
+
+import type {
+  ActionEvent,
+  AlgorithmError,
+  AlgorithmErrorEvent,
+  DecisionResult,
+  DisplayRoute,
+  FeedbackEvent,
+  RecoveryStateT,
+  RestSpot,
+  RunLog,
+  RunLogEvent,
+  RunState,
+  RouteFacts,
+  Snapshot,
+} from '../api/types'
+import { getDraftEntry, type PackageManifestM2 } from './run_plan'
+import { freezeEventPlan, type EventPlan, type ScenarioDefM2 } from './event_plan'
+import {
+  advanceTick,
+  buildAdapterContext,
+  computeTickState,
+  type FeatureGroups,
+  type TickState,
+} from './tick_engine'
+import { evaluate } from './algorithms/adapter'
+import { AlgorithmAdapterError } from './algorithms/errors'
+import { startRecovery } from './recovery'
+import { EvidenceRecorder } from './services/evidence_recorder'
+import { runsStore } from '../storage/runs_store'
+import type { RunHeader } from '../storage/db'
+
+// ---------------------------------------------------------------------------
+// Simulator version
+// ---------------------------------------------------------------------------
+
+const SIMULATOR_VERSION = '0.1.0'
+
+// ---------------------------------------------------------------------------
+// Error types
+// ---------------------------------------------------------------------------
+
+/** Raised when the run_id is not in the registry. */
+export class RunNotFoundError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'RunNotFoundError'
+  }
+}
+
+/** Raised when an action is invalid given the current run state. */
+export class ActionNotAllowedError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ActionNotAllowedError'
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Public types — RunState/RunLog M2 extensions genuinely absent from the
+// synced ../api/types.ts (see module docstring for why these live here
+// instead of editing the synced file).
+// ---------------------------------------------------------------------------
+
+export type RunStateM2 = RunState & {
+  run_mode: string
+  evidence_status: string
+  driver_profile: Record<string, unknown> | null
+  vehicle_profile: Record<string, unknown> | null
+  speed_profile: Record<string, unknown> | null
+  initial_parameters: Record<string, unknown>
+  current_parameters: Record<string, unknown>
+  initial_hyperparameters: Record<string, unknown>
+  current_hyperparameters: Record<string, unknown>
+  original_values: Record<string, unknown>
+  modified_values: Record<string, unknown>
+  route_source: 'maps' | 'local'
+  display_route: DisplayRoute | null
+}
+
+export type RunLogM2 = RunLog & {
+  original_values: Record<string, unknown>
+  modified_values: Record<string, unknown>
+  initial_parameters: Record<string, unknown>
+  current_parameters: Record<string, unknown>
+  initial_hyperparameters: Record<string, unknown>
+  current_hyperparameters: Record<string, unknown>
+  route_source: 'maps' | 'local'
+  display_route: DisplayRoute | null
+  driver_profile: Record<string, unknown> | null
+  vehicle_profile: Record<string, unknown> | null
+  speed_profile: Record<string, unknown> | null
+  profile_overrides: Record<string, unknown> | null
+}
+
+/** M2 TickEvent — feature_groups/driver_update/vehicle_update/package_runtime_state
+ * are genuinely absent from the synced ../api/types.ts TickEvent (M1-only shape). */
+export type TickEventM2 = {
+  kind: 'tick'
+  tick_index: number
+  tick_state: Record<string, unknown>
+  trace: { tick_index: number; decision_result: DecisionResult }
+  raw_state: Record<string, unknown>
+  feature_groups: FeatureGroups
+  driver_update: Record<string, unknown>
+  vehicle_update: Record<string, unknown>
+  package_runtime_state: Record<string, unknown>
+}
+
+/**
+ * Return value of tick(). `evaluatedTickIndex` is the tick_index of the
+ * TickEvent (or algorithm_error event) persisted during this call — i.e. the
+ * value of current_tick BEFORE the post-increment. It is null when no
+ * evaluation happened (completed/no-op and tick_state.completed early-exit
+ * paths). `tickState` carries the authoritative route_fraction, distance_km,
+ * and raw_state (speedKph) evaluated this call; null on no-op ticks.
+ */
+export type TickOutcome = {
+  runState: RunStateM2
+  decision: DecisionResult | null
+  algorithmError: AlgorithmError | null
+  paused: boolean
+  completed: boolean
+  evaluatedTickIndex: number | null
+  tickState: TickState | null
+}
+
+// ---------------------------------------------------------------------------
+// In-memory registry
+// ---------------------------------------------------------------------------
+
+type RegistryEntry = {
+  runState: RunStateM2
+  package: PackageManifestM2
+  scenario: ScenarioDefM2
+  recorder: EvidenceRecorder
+  /** Prior TickState for the M2 advanceTick path (null = no tick yet). */
+  priorTickState: TickState | null
+  /** In-memory mirror of persisted events — the source `getActiveRunLog` reads
+   * from directly, exactly like Python's `entry[3].run_log.events`. */
+  events: RunLogEvent[]
+  /** Header (RunLog minus events) fixed at createRun — nothing in this port
+   * mutates route_facts/event_plan/parameter snapshots after creation. */
+  header: Omit<RunLogM2, 'events'>
+}
+
+const _registry = new Map<string, RegistryEntry>()
+
+/** Clear the in-memory registry. Used for test isolation only. */
+export function clearRegistry(): void {
+  _registry.clear()
+}
+
+/** Return the current RunState for a run, or null if unknown. */
+export function getRun(runId: string): RunStateM2 | null {
+  return _registry.get(runId)?.runState ?? null
+}
+
+/**
+ * Return the in-memory RunLog for an active run, or null if not active.
+ * No disk/IndexedDB round-trip — mirrors Python's `get_active_run_log`.
+ */
+export async function getActiveRunLog(runId: string): Promise<RunLogM2 | null> {
+  const entry = _registry.get(runId)
+  if (!entry) return null
+  return { ...entry.header, events: [...entry.events] }
+}
+
+/** Return the prior TickState for a run, or null if no tick yet / not active. */
+export function getPriorTickState(runId: string): TickState | null {
+  return _registry.get(runId)?.priorTickState ?? null
+}
+
+/** Return the ScenarioDefM2 for an active run, or null if unknown. */
+export function getScenario(runId: string): ScenarioDefM2 | null {
+  return _registry.get(runId)?.scenario ?? null
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Recursively sort object keys so JSON.stringify is canonical (mirrors
+ * Python's `json.dumps(data, sort_keys=True)`). */
+function canonicalize(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalize)
+  if (value && typeof value === 'object') {
+    const obj = value as Record<string, unknown>
+    const sorted: Record<string, unknown> = {}
+    for (const key of Object.keys(obj).sort()) sorted[key] = canonicalize(obj[key])
+    return sorted
+  }
+  return value
+}
+
+/**
+ * SHA-256 hash of the canonical JSON representation of a value, via Web
+ * Crypto (`crypto.subtle`) — available in both the browser and the Vitest
+ * (jsdom/Node) test environment; no Node-only `crypto` module dependency.
+ * NOTE: this need not (and does not) byte-match Python's hash — Python
+ * hashes the Pydantic-canonicalized `model_dump(mode="json")` representation
+ * (which adds Pydantic-model defaults our raw JS objects don't carry), so an
+ * identical hash algorithm on non-identical canonical bytes would still
+ * diverge. Nothing in the parity contract asserts on `snapshot.*.hash`
+ * (see task report) — only that *some* deterministic content hash exists.
+ *
+ * `crypto.subtle` is present in every real browser but jsdom (the Vitest
+ * test environment) stubs `crypto` WITHOUT `.subtle` — falls back to a
+ * simple deterministic (non-cryptographic) string hash in that case so the
+ * test suite doesn't depend on a Node-only `node:crypto` import (which would
+ * break the browser bundle).
+ */
+async function contentHash(data: unknown): Promise<string> {
+  const payload = JSON.stringify(canonicalize(data))
+  if (typeof crypto !== 'undefined' && crypto.subtle) {
+    const bytes = new TextEncoder().encode(payload)
+    const digest = await crypto.subtle.digest('SHA-256', bytes)
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
+  }
+  return fnv1aHash(payload)
+}
+
+/** Deterministic 32-bit FNV-1a hash, hex-encoded — fallback only (see contentHash). */
+function fnv1aHash(payload: string): string {
+  let hash = 0x811c9dc5
+  for (let i = 0; i < payload.length; i++) {
+    hash ^= payload.charCodeAt(i)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0')
+}
+
+/** True if the scenario has M2 profile-driven fields (mirrors Python's
+ * `scenario.driver_profile is not None` — checked for null/undefined only,
+ * NOT emptiness, exactly like Python's `is not None`). */
+function isM2Scenario(scenario: ScenarioDefM2): boolean {
+  return scenario.driver_profile !== null && scenario.driver_profile !== undefined
+}
+
+type ProposalHistory = {
+  lastProposalTimeSec: number | null
+  lastProposalCategory: string | null
+  lastProposalResult: string | null
+  proposalCountLast30Min: number
+  acceptanceRateRecent: number
+}
+
+/**
+ * Derive proposal_history and user_action_history from the event log.
+ * Ported from Python's `_derive_history` — see that function's docstring for
+ * the full field semantics. Walks `events` once.
+ */
+function deriveHistory(
+  events: RunLogEvent[],
+  tickSeconds: number,
+  currentSimSec: number,
+): [ProposalHistory, { tick_index: number; action: string }[]] {
+  const firedProposalTicks: number[] = []
+  const firedProposalCategories: string[] = []
+  const actionByOrder: [number, string][] = []
+  const userActionHistory: { tick_index: number; action: string }[] = []
+
+  for (const event of events) {
+    if (event.kind === 'tick') {
+      const dr = event.trace.decision_result
+      if (dr.fire_control.fired && dr.proposal !== null) {
+        firedProposalTicks.push(event.tick_index)
+        firedProposalCategories.push(dr.selected_category ?? '')
+      }
+    } else if (event.kind === 'action') {
+      actionByOrder.push([event.tick_index, event.action])
+      userActionHistory.push({ tick_index: event.tick_index, action: event.action })
+    }
+  }
+
+  if (firedProposalTicks.length === 0) {
+    return [
+      {
+        lastProposalTimeSec: null,
+        lastProposalCategory: null,
+        lastProposalResult: null,
+        proposalCountLast30Min: 0,
+        acceptanceRateRecent: 0.0,
+      },
+      userActionHistory,
+    ]
+  }
+
+  const lastTick = firedProposalTicks[firedProposalTicks.length - 1]
+  const lastCategory = firedProposalCategories[firedProposalCategories.length - 1]
+  const lastTimeSec = lastTick * tickSeconds
+
+  let lastProposalResult: string | null = null
+  for (const [actionTick, act] of actionByOrder) {
+    if (actionTick >= lastTick) {
+      lastProposalResult = act
+      break
+    }
+  }
+
+  const windowStartSec = currentSimSec - 1800.0
+  const proposalsInWindow = firedProposalTicks.filter((t) => t * tickSeconds >= windowStartSec).length
+
+  let actedCount = 0
+  let acceptedCount = 0
+  let searchStart = 0
+  for (const proposalTick of firedProposalTicks) {
+    for (let i = searchStart; i < actionByOrder.length; i++) {
+      if (actionByOrder[i][0] >= proposalTick) {
+        actedCount += 1
+        if (actionByOrder[i][1] === 'accept_rest') acceptedCount += 1
+        searchStart = i + 1
+        break
+      }
+    }
+  }
+  const acceptanceRate = actedCount > 0 ? acceptedCount / actedCount : 0.0
+
+  return [
+    {
+      lastProposalTimeSec: lastTimeSec,
+      lastProposalCategory: lastCategory,
+      lastProposalResult,
+      proposalCountLast30Min: proposalsInWindow,
+      acceptanceRateRecent: acceptanceRate,
+    },
+    userActionHistory,
+  ]
+}
+
+/** Append one event to the in-memory mirror, persist it (durability), and
+ * re-persist the header's `status` field. Called after EVERY meaningful
+ * event, matching the append-only + "persist after every meaningful event"
+ * invariants. */
+async function recordEvent(entry: RegistryEntry, event: RunLogEvent): Promise<void> {
+  entry.events.push(event)
+  await entry.recorder.append(event)
+  await persistHeader(entry)
+}
+
+async function persistHeader(entry: RegistryEntry): Promise<void> {
+  const header: RunHeader = { id: entry.runState.run_id, status: entry.runState.status, ...entry.header }
+  await runsStore.putHeader(header)
+}
+
+// ---------------------------------------------------------------------------
+// Public API — createRun
+// ---------------------------------------------------------------------------
+
+/**
+ * Initialise a new run from a frozen run plan draft.
+ *
+ * @param planId The frozen draft plan identifier (from the run_plan draft registry).
+ * @param runId  Unique run identifier (supplied by the caller).
+ * @returns The initial RunStateM2 (status=created, current_tick=0).
+ * @throws Error if planId is not in the draft registry, or an M1/M2 build
+ *   guard fails (mirrors Python's ValueError raises exactly).
+ */
+export async function createRun(planId: string, runId: string): Promise<RunStateM2> {
+  const entry = getDraftEntry(planId)
+  if (entry === null) {
+    throw new Error(`Unknown plan_id '${planId}'`)
+  }
+  const { draft, scenario } = entry
+  // getDraftEntry's DraftEntry.package is typed as the plain (non-M2)
+  // PackageManifest in run_plan.ts (a pre-existing typing gap in that
+  // already-merged module — out of scope to edit here); the actual runtime
+  // object createDraft stores is always a PackageManifestM2 (it accepts one
+  // as input and stores it verbatim), so this cast is safe.
+  const pkg = entry.package as PackageManifestM2
+
+  let routeFacts: RouteFacts = draft.route_facts
+  let eventPlan: EventPlan = draft.draft_event_plan
+
+  // M1 fallback: if the scenario has no driver_profile and event_plan has no
+  // ticks, re-freeze using the scenario's event_presets.
+  if (!isM2Scenario(scenario) && eventPlan.ticks.length === 0) {
+    if (pkg.algorithm.tick_seconds != null) {
+      throw new Error(
+        'package-declared tick_seconds is only supported for M2 profile-driven '
+          + 'scenarios (scenario must have a driver_profile). '
+          + 'The M1 legacy path (no driver_profile) re-freezes via freezeEventPlan '
+          + 'which ignores the package tick_seconds override. '
+          + 'Use an M2 scenario or remove tick_seconds from the package manifest.',
+      )
+    }
+    eventPlan = freezeEventPlan(scenario)
+    routeFacts = {
+      segments: scenario.route_intent.segments as unknown as RouteFacts['segments'],
+      bands: Object.fromEntries(pkg.features.map((f) => [f.key, f.band_values])),
+      total_route_distance_km: null,
+      estimated_route_duration_min: null,
+      route_segments: [],
+      rest_spot_positions: [],
+      route_progress_checkpoints: [],
+    }
+  }
+
+  // M2 guard: an M2 scenario with no rest opportunities on a LOCAL route
+  // signals a failed or empty plan build — do not start the run.
+  const isMapsRoute = (routeFacts as { route_source?: string }).route_source === 'maps'
+  if (isM2Scenario(scenario) && !isMapsRoute && eventPlan.rest_opportunities.length === 0) {
+    throw new Error(
+      `M2 event plan for plan_id='${planId}' has no rest opportunities. `
+        + 'The plan build may have failed or the scenario route has no rest spots. '
+        + 'Fix the scenario/package and create a new run plan.',
+    )
+  }
+
+  // Extract effective setup.
+  const effectiveSetup = draft.effective_setup
+  const effectiveParams = (effectiveSetup['parameters'] as Record<string, unknown> | undefined) ?? {}
+  const effectiveHps = (effectiveSetup['hyperparameters'] as Record<string, unknown> | undefined) ?? {}
+  const runMode = (effectiveSetup['run_mode'] as string | undefined) ?? 'standard'
+
+  // original_values / modified_values diff.
+  const originalValues: Record<string, unknown> = {}
+  const modifiedValues: Record<string, unknown> = {}
+  const defaultParams: Record<string, unknown> = Object.fromEntries(pkg.parameters.map((p) => [p.key, p.default]))
+  const defaultHps: Record<string, unknown> = Object.fromEntries(pkg.hyperparameters.map((hp) => [hp.key, hp.default]))
+  for (const [key, val] of Object.entries(effectiveParams)) {
+    if (key in defaultParams && defaultParams[key] !== val) {
+      originalValues[`parameters.${key}`] = defaultParams[key]
+      modifiedValues[`parameters.${key}`] = val
+    }
+  }
+  for (const [key, val] of Object.entries(effectiveHps)) {
+    if (key in defaultHps && defaultHps[key] !== val) {
+      originalValues[`hyperparameters.${key}`] = defaultHps[key]
+      modifiedValues[`hyperparameters.${key}`] = val
+    }
+  }
+
+  // Build snapshot.
+  const snapshot: Snapshot = {
+    package: { id: pkg.id, version: pkg.version, hash: await contentHash(pkg) },
+    scenario: { id: scenario.id, version: scenario.version, hash: await contentHash(scenario) },
+  }
+
+  const draftRouteSource = draft.route_source ?? 'local'
+  const draftDisplayRoute = draft.display_route ?? null
+
+  const driverProfile = (scenario.driver_profile as Record<string, unknown> | null | undefined) ?? null
+  const vehicleProfile = (scenario.vehicle_profile as Record<string, unknown> | null | undefined) ?? null
+  const speedProfile = (scenario.speed_profile as Record<string, unknown> | null | undefined) ?? null
+
+  const runState: RunStateM2 = {
+    run_id: runId,
+    status: 'created',
+    current_tick: 0,
+    pending_proposal: null,
+    package_runtime_state: {},
+    snapshot,
+    event_plan: eventPlan,
+    route_facts: routeFacts,
+    run_mode: runMode,
+    evidence_status: 'standard',
+    driver_profile: driverProfile,
+    vehicle_profile: vehicleProfile,
+    speed_profile: speedProfile,
+    initial_parameters: effectiveParams,
+    current_parameters: { ...effectiveParams },
+    initial_hyperparameters: effectiveHps,
+    current_hyperparameters: { ...effectiveHps },
+    original_values: originalValues,
+    modified_values: modifiedValues,
+    allowed_actions: [...scenario.allowed_actions],
+    route_source: draftRouteSource,
+    display_route: draftDisplayRoute,
+    last_error: null,
+    recovery: null,
+  }
+
+  const header: Omit<RunLogM2, 'events'> = {
+    run_id: runId,
+    created_at: new Date().toISOString(),
+    simulator_version: SIMULATOR_VERSION,
+    snapshot,
+    route_facts: routeFacts,
+    event_plan: eventPlan,
+    run_mode: runMode,
+    evidence_status: 'standard',
+    initial_parameters: effectiveParams,
+    current_parameters: { ...effectiveParams },
+    initial_hyperparameters: effectiveHps,
+    current_hyperparameters: { ...effectiveHps },
+    original_values: originalValues,
+    modified_values: modifiedValues,
+    route_source: draftRouteSource,
+    display_route: draftDisplayRoute,
+    driver_profile: driverProfile,
+    vehicle_profile: vehicleProfile,
+    speed_profile: speedProfile,
+    profile_overrides: draft.profile_overrides ?? null,
+  }
+
+  const recorder = new EvidenceRecorder(runId)
+  const registryEntry: RegistryEntry = {
+    runState,
+    package: pkg,
+    scenario,
+    recorder,
+    priorTickState: null,
+    events: [],
+    header,
+  }
+  _registry.set(runId, registryEntry)
+  await persistHeader(registryEntry)
+
+  return runState
+}
+
+// ---------------------------------------------------------------------------
+// Public API — tick
+// ---------------------------------------------------------------------------
+
+/**
+ * Advance one simulation tick for the given run.
+ *
+ * Dispatches to the adapter, appends a TickEvent (or algorithm_error),
+ * persists, and pauses when an actionable proposal fires.
+ *
+ * @throws RunNotFoundError if runId is not in the registry.
+ */
+export async function tick(runId: string): Promise<TickOutcome> {
+  const entry = _registry.get(runId)
+  if (!entry) {
+    throw new RunNotFoundError(`Unknown run_id: '${runId}'`)
+  }
+  const { runState, package: pkg, scenario } = entry
+
+  // ── Already completed — no-op ─────────────────────────────────────────
+  if (runState.status === 'completed') {
+    return {
+      runState,
+      decision: null,
+      algorithmError: null,
+      paused: false,
+      completed: true,
+      evaluatedTickIndex: null,
+      tickState: null,
+    }
+  }
+
+  // ── Blocking-error halt guard ─────────────────────────────────────────
+  // A run paused due to a blocking algorithm error (last_error is not null)
+  // must not retry the broken tick. A normal proposal-pause has
+  // last_error == null and is unaffected. Recovery requires a new run.
+  if (runState.status === 'paused' && runState.last_error != null) {
+    return {
+      runState,
+      decision: null,
+      algorithmError: null,
+      paused: true,
+      completed: false,
+      evaluatedTickIndex: null,
+      tickState: null,
+    }
+  }
+
+  const currentTick = runState.current_tick
+
+  // ── Compute tick state ────────────────────────────────────────────────
+  let tickState: TickState
+  if (isM2Scenario(scenario)) {
+    tickState = advanceTick({
+      priorState: entry.priorTickState,
+      tickIndex: currentTick,
+      eventPlan: runState.event_plan as EventPlan,
+      routeFacts: runState.route_facts as RouteFacts,
+      scenario,
+      recovery: runState.recovery ?? null,
+    })
+    // Thread _recovery_next back: advanceTick stashes the updated
+    // RecoveryStateT on the returned TickState when recovery is active.
+    const recNext = tickState._recovery_next
+    if (recNext !== undefined) {
+      runState.recovery = recNext.active ? recNext : null
+    }
+  } else {
+    tickState = computeTickState(runState.event_plan as EventPlan, currentTick, scenario)
+  }
+
+  if (tickState.completed) {
+    // Do not exit early if recovery is still active — the tick engine holds
+    // position at the rest spot, so this guard only applies once recovery
+    // has finished (run_state.recovery already null in that case, per the
+    // _recovery_next handling above).
+    if (!(runState.recovery && runState.recovery.active)) {
+      // NOTE: Python does NOT update the registry's prior_tick_state in this
+      // early-exit branch (only the success/error paths below do) — matched
+      // here by deliberately NOT touching entry.priorTickState.
+      runState.status = 'completed'
+      await persistHeader(entry)
+      return {
+        runState,
+        decision: null,
+        algorithmError: null,
+        paused: false,
+        completed: true,
+        evaluatedTickIndex: null,
+        tickState,
+      }
+    }
+  }
+
+  // ── Build context and call the adapter ────────────────────────────────
+  const context = buildAdapterContext(tickState)
+
+  // Inject simulation_time_sec, proposal_history, user_action_history —
+  // required by python_module packages and harmless for built-ins.
+  context['simulation_time_sec'] = Number(tickState.elapsed_seconds)
+  const [proposalHistory, userActionHistory] = deriveHistory(
+    entry.events,
+    Number((runState.event_plan as EventPlan).tick_seconds),
+    Number(tickState.elapsed_seconds),
+  )
+  context['proposal_history'] = proposalHistory
+  context['user_action_history'] = userActionHistory
+  // recovery_active: true only while the driver is currently in an accepted
+  // rest sequence — scopes REST_PROPOSAL suppression to the rest itself.
+  context['recovery_active'] = Boolean(runState.recovery && runState.recovery.active)
+
+  // Use current_parameters/hyperparameters (may be overridden in expert mode).
+  const hyperparameters = runState.current_hyperparameters
+    ?? Object.fromEntries(pkg.hyperparameters.map((hp) => [hp.key, hp.default]))
+  const parameters = runState.current_parameters
+    ?? Object.fromEntries(pkg.parameters.map((p) => [p.key, p.default]))
+
+  let decisionResult: DecisionResult
+  try {
+    decisionResult = evaluate({
+      manifest: pkg,
+      context,
+      parameters,
+      hyperparameters,
+      history: [],
+      packageRuntimeState: runState.package_runtime_state,
+    })
+  } catch (exc) {
+    if (!(exc instanceof AlgorithmAdapterError)) {
+      throw exc
+    }
+
+    // ── Adapter failure: record an algorithm_error EVENT, never a faked
+    // decision (master invariant). CARRY 1: AlgorithmAdapterError stores
+    // { message, detail } where detail.error_type is the machine category
+    // and `.message` is `"${error_type}: ${humanMessage}"` (errors.ts
+    // combines them for Error.message/console display). Python's
+    // AlgorithmAdapterError instead keeps error_type and message as SEPARATE
+    // attributes — `.message` is the clean human message WITHOUT the
+    // "type: " prefix (see app/api/aica_api/algorithms/_errors.py:
+    // `super().__init__(f"{error_type}: {message}")` — the combined string
+    // only backs str(exc), never the `.message` attribute the router reads).
+    // So here we read error_type from exc.detail.error_type and strip the
+    // "${error_type}: " prefix from exc.message to recover the clean human
+    // message, so the emitted event's `message` field matches Python's
+    // AlgorithmError.message byte-for-byte (never double-embedding the type).
+    const detail = exc.detail as { error_type?: string } | undefined
+    const errorType = detail?.error_type ?? 'unknown_error'
+    const prefix = `${errorType}: `
+    const cleanMessage = exc.message.startsWith(prefix) ? exc.message.slice(prefix.length) : exc.message
+
+    const algoError: AlgorithmError = { tick_index: currentTick, error_type: errorType, message: cleanMessage }
+    const algoErrorEvent: AlgorithmErrorEvent = {
+      kind: 'algorithm_error',
+      tick_index: currentTick,
+      error_type: errorType,
+      message: cleanMessage,
+    }
+    await recordEvent(entry, algoErrorEvent)
+
+    const errorMode = pkg.algorithm.error_mode ?? 'blocking'
+    if (errorMode === 'non_blocking') {
+      // Non-blocking: advance tick, continue the run unchanged.
+      runState.current_tick += 1
+      if (isM2Scenario(scenario)) entry.priorTickState = tickState
+      await persistHeader(entry)
+      return {
+        runState,
+        decision: null,
+        algorithmError: algoError,
+        paused: false,
+        completed: false,
+        evaluatedTickIndex: currentTick,
+        tickState,
+      }
+    }
+
+    // Blocking (default): pause the run; do NOT advance current_tick. The
+    // run is halted at the broken tick — no decision is produced, and the
+    // error is visible in the evidence trace. Recovery requires a new run.
+    runState.status = 'paused'
+    runState.last_error = { tick_index: currentTick, error_type: errorType, message: cleanMessage }
+    if (isM2Scenario(scenario)) entry.priorTickState = tickState
+    await persistHeader(entry)
+    return {
+      runState,
+      decision: null,
+      algorithmError: algoError,
+      paused: true,
+      completed: false,
+      evaluatedTickIndex: currentTick,
+      tickState,
+    }
+  }
+
+  // ── Thread package_runtime_state: store what the algorithm returned ───
+  runState.package_runtime_state = decisionResult.next_package_runtime_state
+
+  // ── Extract M2 tick evidence fields from tick_state ────────────────────
+  const rawState = tickState.raw_state ?? {}
+  const featureGroups = tickState.feature_groups
+  const driverUpdate = tickState._driver_update ?? {}
+  const vehicleUpdate = tickState._vehicle_update ?? {}
+
+  // ── Append TickEvent with M2 fields ────────────────────────────────────
+  const tickEvent: TickEventM2 = {
+    kind: 'tick',
+    tick_index: currentTick,
+    tick_state: tickState as unknown as Record<string, unknown>,
+    trace: { tick_index: currentTick, decision_result: decisionResult },
+    raw_state: rawState,
+    feature_groups: featureGroups,
+    driver_update: driverUpdate,
+    vehicle_update: vehicleUpdate,
+    package_runtime_state: decisionResult.next_package_runtime_state,
+  }
+  await recordEvent(entry, tickEvent as unknown as RunLogEvent)
+
+  // ── Advance tick ─────────────────────────────────────────────────────
+  runState.current_tick += 1
+
+  // ── Update prior_state for M2 ───────────────────────────────────────
+  if (isM2Scenario(scenario)) entry.priorTickState = tickState
+
+  // ── Determine new status ────────────────────────────────────────────
+  const proposalFired = decisionResult.fire_control.fired && decisionResult.proposal !== null
+  // Pause ONLY when the fired proposal is actionable — at least one of the
+  // proposal's options overlaps scenario.allowed_actions.
+  let proposalIsActionable = proposalFired
+    && decisionResult.proposal!.options.some((opt) => scenario.allowed_actions.includes(opt))
+
+  // ── Fire-control: suppress REST_PROPOSAL during active recovery ───────
+  // Only REST_PROPOSAL is suppressed — SEVERE_INTERVENTION still pauses the
+  // run even during recovery (runtime_workflow §7.2).
+  const recoveryActive = Boolean(runState.recovery && runState.recovery.active)
+  if (recoveryActive && proposalIsActionable && decisionResult.result_type === 'REST_PROPOSAL') {
+    proposalIsActionable = false
+  }
+
+  let paused: boolean
+  let completed: boolean
+  if (proposalIsActionable) {
+    runState.status = 'paused'
+    runState.pending_proposal = decisionResult.proposal!.id
+    paused = true
+    completed = false
+  } else if (recoveryActive) {
+    // Recovery in progress: force playing regardless of M1/M2/completion.
+    runState.status = 'playing'
+    paused = false
+    completed = false
+  } else if (isM2Scenario(scenario)) {
+    // M2: completion detected by tick_state (distance >= total_km).
+    runState.status = 'playing'
+    paused = false
+    completed = false
+  } else if (runState.current_tick >= (runState.event_plan as EventPlan).ticks.length) {
+    // M1: completion by exhausting the per-tick plan.
+    runState.status = 'completed'
+    paused = false
+    completed = true
+  } else {
+    runState.status = 'playing'
+    paused = false
+    completed = false
+  }
+
+  await persistHeader(entry)
+
+  return {
+    runState,
+    decision: decisionResult,
+    algorithmError: null,
+    paused,
+    completed,
+    evaluatedTickIndex: currentTick,
+    tickState,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Public API — action
+// ---------------------------------------------------------------------------
+
+export type ActionOpts = {
+  /** M7 — required when actionStr === "accept_rest" and the scenario has recovery_options. */
+  recoveryOptionId?: string | null
+  /** M7 — required alongside recoveryOptionId. The rest facility the driver will stop at. */
+  restSpot?: RestSpot | null
+}
+
+/**
+ * Apply a driver action to a paused run.
+ *
+ * @throws RunNotFoundError if runId is not in the registry.
+ * @throws ActionNotAllowedError if the run is not paused, no proposal is
+ *   pending, the action is not in allowed_actions, or recoveryOptionId/
+ *   restSpot are missing/invalid for a scenario with recovery_options.
+ */
+export async function action(runId: string, actionStr: string, opts: ActionOpts = {}): Promise<RunStateM2> {
+  const entry = _registry.get(runId)
+  if (!entry) {
+    throw new RunNotFoundError(`Unknown run_id: '${runId}'`)
+  }
+  const { runState, scenario } = entry
+
+  if (runState.status !== 'paused' || runState.pending_proposal === null) {
+    throw new ActionNotAllowedError(
+      `No pending proposal for run '${runId}' (status='${runState.status}', pending=${JSON.stringify(runState.pending_proposal)}).`,
+    )
+  }
+
+  if (!scenario.allowed_actions.includes(actionStr)) {
+    throw new ActionNotAllowedError(
+      `Action '${actionStr}' is not in allowed_actions ${JSON.stringify(scenario.allowed_actions)}.`,
+    )
+  }
+
+  // ── Determine resulting status ──────────────────────────────────────
+  let newStatus: RunStateM2['status']
+  if (actionStr === 'accept_rest') {
+    if (scenario.recovery_options && scenario.recovery_options.length > 0) {
+      // M7: scenario offers recovery options — validate and start recovery.
+      const option = scenario.recovery_options.find((o) => o.id === opts.recoveryOptionId) ?? null
+      if (option === null || !opts.restSpot) {
+        throw new ActionNotAllowedError(
+          `accept_rest requires a valid recovery_option_id + rest_spot (got ${JSON.stringify(opts.recoveryOptionId ?? null)}).`,
+        )
+      }
+      runState.recovery = startRecovery(option, opts.restSpot) as RecoveryStateT
+      newStatus = 'playing'
+    } else {
+      // Back-compat: no recovery menu — accept_rest completes the run.
+      newStatus = 'completed'
+    }
+  } else {
+    newStatus = 'playing'
+  }
+
+  // ── Append ActionEvent ──────────────────────────────────────────────
+  const actionEvent: ActionEvent = {
+    kind: 'action',
+    tick_index: runState.current_tick - 1, // tick that fired the proposal
+    action: actionStr,
+    resulting_status: newStatus,
+  }
+  await recordEvent(entry, actionEvent)
+
+  // ── Update state ─────────────────────────────────────────────────────
+  runState.status = newStatus
+  runState.pending_proposal = null
+
+  return runState
+}
+
+// ---------------------------------------------------------------------------
+// Public API — appendFeedback (M5)
+// ---------------------------------------------------------------------------
+
+/**
+ * Append a FeedbackEvent to an active run's evidence log.
+ *
+ * NON-ALGORITHMIC: only ever appends the event; never touches the adapter,
+ * the tick engine, or any previously recorded event.
+ *
+ * @throws RunNotFoundError if runId is not in the active registry.
+ */
+export async function appendFeedback(runId: string, event: FeedbackEvent): Promise<void> {
+  const entry = _registry.get(runId)
+  if (!entry) {
+    throw new RunNotFoundError(`Unknown run_id: '${runId}'`)
+  }
+  await recordEvent(entry, event)
+}
