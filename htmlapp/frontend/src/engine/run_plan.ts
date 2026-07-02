@@ -15,18 +15,24 @@
  *   - plan_id is supplied by the caller; not generated here.
  *   - Draft-plan generation is pure given (route_facts, presets) — deterministic.
  *
- * DEVIATION FROM PYTHON (documented, not a bug): the Python `create_draft`
- * accepts `route_facts: RouteFacts | None = None` and, when None, derives it
- * locally via `analyze_route(scenario)` (services/route_analysis.py). That
- * module has NOT been ported to the htmlapp engine yet (out of scope for this
- * task — see task-S3.3-brief.md's `Consumes` list, which does not include
- * `./route_analysis`). Therefore `createDraft` here requires `routeFacts` as
- * an explicit input; the caller (a later task's route-facts port, or the
- * fixture harness for parity testing) must supply the same value Python's
- * `analyze_route(scenario)` would produce. `regenerateDraft` reuses the
- * routeFacts value cached at create time — for a "local" draft this is exactly
- * equivalent to re-deriving, since `analyze_route` is a pure function of
- * `scenario` alone and `scenario` never changes between create and regenerate.
+ * ROUTE FACTS (S3.4): the Python `create_draft`/`_build_draft` accept
+ * `route_facts: RouteFacts | None = None` and, when None, derive it locally
+ * via `analyze_route(scenario)` (services/route_analysis.py). That module was
+ * ported in S7.2 (`./services/route_analysis`). `createDraft`'s `routeFacts`
+ * input is therefore OPTIONAL here too: when omitted (or `null`), `buildDraft`
+ * calls `analyzeRoute(scenario)` fresh, exactly mirroring `_build_draft`'s
+ * `if route_facts is None: route_facts = analyze_route(scenario)`. Error-path
+ * drafts (validation failures / build exceptions) mirror Python's fallback to
+ * `analyze_route(scenario)` using the ORIGINAL (pre-profile-override) scenario,
+ * exactly as `create_draft`'s two `except`/error branches do.
+ *
+ * `regenerateDraft` mirrors `regenerate_draft`: for a "maps" draft the frozen
+ * `route_facts` is preserved from the registered draft (never re-derived,
+ * so a selected Maps route survives a regenerate); for a "local" draft
+ * `route_facts` is `null`, so each regenerate calls `analyzeRoute(scenario)`
+ * FRESH from the registered (effective) scenario — matching Python exactly
+ * and resolving a documented S3.3 aliasing carry (a single shared RouteFacts
+ * object had been reused across regenerates instead of being re-derived).
  *
  * Only the exported function identifiers (createDraft, regenerateDraft,
  * getDraftEntry, clearDraftRegistry) are camelCased. All RunPlanDraft object
@@ -44,6 +50,7 @@ import type {
 } from '../api/types'
 import type { EventPlan, ScenarioDefM2 } from './event_plan'
 import { buildEventPlan, defaultEventPlan } from './event_plan'
+import { analyzeRoute } from './services/route_analysis'
 
 // ---------------------------------------------------------------------------
 // Public types (mirror aica_api.models.run.RunPlanDraft — absent from api/types.ts)
@@ -87,8 +94,12 @@ export type CreateDraftArgs = {
   parameters: Record<string, unknown>
   hyperparameters: Record<string, unknown>
   runMode?: string
-  /** See module docstring's "DEVIATION FROM PYTHON" — required here. */
-  routeFacts: RouteFacts
+  /**
+   * M4 — pre-computed facts from a maps selection. `undefined`/`null` (the
+   * default) means "derive locally" — `buildDraft` calls `analyzeRoute(scenario)`
+   * fresh, mirroring Python's `_build_draft`. See module docstring.
+   */
+  routeFacts?: RouteFacts | null
   routeSource?: 'maps' | 'local'
   displayRoute?: DisplayRoute | null
   profiles?: Record<string, unknown> | null
@@ -106,8 +117,8 @@ export type RegenerateDraftPatch = {
 // In-memory registry
 // ---------------------------------------------------------------------------
 
-/** Keyed by plan_id: {draft, package, scenario, routeFacts}. Mirrors Python's module-global dict. */
-const draftRegistry = new Map<string, DraftEntry & { routeFacts: RouteFacts }>()
+/** Keyed by plan_id: {draft, package, scenario}. Mirrors Python's module-global dict. */
+const draftRegistry = new Map<string, DraftEntry>()
 
 /** Clear the in-memory draft registry. Used for test isolation only. */
 export function clearDraftRegistry(): void {
@@ -116,9 +127,7 @@ export function clearDraftRegistry(): void {
 
 /** Return the stored draft entry for a plan_id, or null if unknown. */
 export function getDraftEntry(planId: string): DraftEntry | null {
-  const entry = draftRegistry.get(planId)
-  if (!entry) return null
-  return { draft: entry.draft, package: entry.package, scenario: entry.scenario }
+  return draftRegistry.get(planId) ?? null
 }
 
 // ---------------------------------------------------------------------------
@@ -261,41 +270,245 @@ function deepMerge(base: Record<string, unknown>, override: Record<string, unkno
   return result
 }
 
+// ---------------------------------------------------------------------------
+// Profile-model constraints (ported from app/api/aica_api/models/profile.py)
+// ---------------------------------------------------------------------------
+//
+// A small declarative schema + validator standing in for Pydantic's
+// model_validate. ACCEPTED DIVERGENCE (documented, mirrors S3.3's pyRepr
+// validation-message approximation): error MESSAGE strings are NOT
+// byte-identical to Pydantic's wording — only the FIELD PATHS
+// ("profiles.<driver|vehicle|speed>.<loc>", loc joined with "." exactly like
+// Pydantic's `e["loc"]`) and the accept/reject DECISION are required to match.
+//
+// Constraints ported (see models/profile.py):
+//   - required vs optional fields (Pydantic fields without a default are
+//     required; `rolling_window_seconds` has default=300 so it is optional)
+//   - `extra="forbid"` on every sub-model (unknown keys rejected)
+//   - numeric type checks (float/int) and `list[str]` for `enabled_on`
+//   - `_nonneg` field_validator: rate/level/recovery fields must be >= 0
+//   - `_threshold_in_range` field_validator: threshold fields in [0, 100]
+//
+// NOT ported (documented gap): Pydantic's exact coercion rules for numeric
+// strings (e.g. "5" -> 5.0) and its precise int/float boundary messaging.
+// This engine treats only `typeof value === 'number'` as numeric input,
+// which is the only shape a JSON-driven UI ever produces here.
+
+type ProfileFieldSchema =
+  | { kind: 'number'; nonneg?: boolean; range?: [number, number] }
+  | { kind: 'int' }
+  | { kind: 'string' }
+  | { kind: 'stringArray' }
+  | { kind: 'object'; fields: Record<string, { schema: ProfileFieldSchema; required: boolean }> }
+
+/** A sub-model whose every declared field is a required, non-negative number. */
+function nonnegRateModel(fields: string[]): ProfileFieldSchema {
+  return {
+    kind: 'object',
+    fields: Object.fromEntries(
+      fields.map((f) => [f, { schema: { kind: 'number', nonneg: true } as ProfileFieldSchema, required: true }]),
+    ),
+  }
+}
+
+const DRIVER_MODEL_PROFILE_SCHEMA: ProfileFieldSchema = {
+  kind: 'object',
+  fields: {
+    id: { schema: { kind: 'string' }, required: true },
+    drowsiness_model: {
+      schema: nonnegRateModel(['base_growth_per_min', 'night_add_per_min', 'monotony_add_per_min', 'traffic_jam_add_per_min']),
+      required: true,
+    },
+    fatigue_model: {
+      schema: nonnegRateModel([
+        'base_growth_per_min',
+        'continuous_driving_add_per_min_after_60_min',
+        'mountain_road_add_per_min',
+        'traffic_jam_add_per_min',
+      ]),
+      required: true,
+    },
+    attention_model: {
+      schema: nonnegRateModel([
+        'base_recovery_per_min',
+        'monotony_drop_per_min',
+        'drowsiness_drop_factor',
+        'active_content_recovery_per_min',
+      ]),
+      required: true,
+    },
+    recovery_model: {
+      schema: nonnegRateModel([
+        'short_rest_drowsiness_recovery',
+        'short_rest_fatigue_recovery',
+        'long_rest_drowsiness_recovery',
+        'long_rest_fatigue_recovery',
+      ]),
+      required: true,
+    },
+  },
+}
+
+const VEHICLE_BEHAVIOR_PROFILE_SCHEMA: ProfileFieldSchema = {
+  kind: 'object',
+  fields: {
+    rolling_window_seconds: { schema: { kind: 'int' }, required: false },
+    steering_instability: {
+      schema: nonnegRateModel(['base_level', 'drowsiness_factor', 'fatigue_factor', 'mountain_road_add', 'traffic_jam_reduce']),
+      required: true,
+    },
+    lane_departure: {
+      schema: {
+        kind: 'object',
+        fields: {
+          enabled_on: { schema: { kind: 'stringArray' }, required: true },
+          drowsiness_threshold: { schema: { kind: 'number', range: [0, 100] }, required: true },
+          fatigue_threshold: { schema: { kind: 'number', range: [0, 100] }, required: true },
+          count_when_threshold_exceeded: { schema: { kind: 'int' }, required: true },
+        },
+      },
+      required: true,
+    },
+    pedal_abnormality: {
+      schema: nonnegRateModel(['base_level', 'fatigue_factor', 'traffic_jam_add', 'mountain_road_add']),
+      required: true,
+    },
+    adas_warning: {
+      schema: {
+        kind: 'object',
+        fields: {
+          lane_departure_warning_threshold: { schema: { kind: 'number', range: [0, 100] }, required: true },
+          steering_instability_warning_threshold: { schema: { kind: 'number', range: [0, 100] }, required: true },
+        },
+      },
+      required: true,
+    },
+  },
+}
+
+const SPEED_PROFILE_SCHEMA: ProfileFieldSchema = {
+  kind: 'object',
+  fields: Object.fromEntries(
+    ['normal_road_kph', 'highway_kph', 'mountain_road_kph', 'sightseeing_road_kph', 'traffic_jam_kph'].map((f) => [
+      f,
+      { schema: { kind: 'int' } as ProfileFieldSchema, required: true },
+    ]),
+  ),
+}
+
+function profileFieldError(profileType: string, loc: (string | number)[], message: string): ValidationError {
+  return { field: `profiles.${profileType}.${loc.join('.')}`, message }
+}
+
+/** Recursively validate `value` against `schema`, pushing errors with `profiles.<type>.<loc>` field paths. */
+function validateProfileSchema(
+  value: unknown,
+  schema: ProfileFieldSchema,
+  loc: (string | number)[],
+  profileType: string,
+  errors: ValidationError[],
+): void {
+  if (schema.kind === 'object') {
+    if (!isPlainObject(value)) {
+      errors.push(profileFieldError(profileType, loc, 'Input should be a valid object'))
+      return
+    }
+    for (const [key, spec] of Object.entries(schema.fields)) {
+      if (!(key in value)) {
+        if (spec.required) {
+          errors.push(profileFieldError(profileType, [...loc, key], 'Field required'))
+        }
+        continue
+      }
+      validateProfileSchema(value[key], spec.schema, [...loc, key], profileType, errors)
+    }
+    for (const key of Object.keys(value)) {
+      if (!(key in schema.fields)) {
+        errors.push(profileFieldError(profileType, [...loc, key], 'Extra inputs are not permitted'))
+      }
+    }
+    return
+  }
+
+  if (schema.kind === 'number') {
+    if (typeof value !== 'number' || Number.isNaN(value)) {
+      errors.push(profileFieldError(profileType, loc, 'Input should be a valid number'))
+      return
+    }
+    if (schema.nonneg && value < 0) {
+      errors.push(profileFieldError(profileType, loc, `rate must be >= 0, got ${value}`))
+    }
+    if (schema.range && (value < schema.range[0] || value > schema.range[1])) {
+      errors.push(profileFieldError(profileType, loc, `threshold must be in [${schema.range[0]}, ${schema.range[1]}], got ${value}`))
+    }
+    return
+  }
+
+  if (schema.kind === 'int') {
+    if (typeof value !== 'number' || Number.isNaN(value) || !Number.isInteger(value)) {
+      errors.push(profileFieldError(profileType, loc, 'Input should be a valid integer'))
+    }
+    return
+  }
+
+  if (schema.kind === 'string') {
+    if (typeof value !== 'string') {
+      errors.push(profileFieldError(profileType, loc, 'Input should be a valid string'))
+    }
+    return
+  }
+
+  if (schema.kind === 'stringArray') {
+    if (!Array.isArray(value) || !value.every((v) => typeof v === 'string')) {
+      errors.push(profileFieldError(profileType, loc, 'Input should be a valid list of strings'))
+    }
+  }
+}
+
 /**
- * Deep-merge profile override dicts onto scenario profiles.
+ * Deep-merge profile override dicts onto scenario profiles and validate.
  *
- * NOTE: the Python `_apply_profile_overrides` validates the merged result
- * against Pydantic's DriverModelProfile/VehicleBehaviorProfile/SpeedProfile
- * models and collects per-field ValidationError messages. That structural
- * validation is NOT reproduced here (no Pydantic-equivalent in this engine);
- * this port performs the same deep-merge and always reports zero errors for
- * a well-formed override. This is an accepted, documented divergence: the
- * S3.3 parity-tested path (canonical run-plan setup) supplies no profile
- * overrides, so it never exercises this function. A later slice that wires
- * profile-override UI end-to-end should add real structural validation here.
+ * Ported from Python `_apply_profile_overrides`: for each of driver/vehicle/
+ * speed present in *profiles*, deep-merge onto the scenario's existing
+ * profile, then validate the merged whole against the ported profile-model
+ * constraints. If ANY of the three validations produced errors, the
+ * ORIGINAL scenario is returned unmodified together with ALL collected
+ * errors (even successfully-merged sub-objects are discarded) — exactly
+ * Python's `if errors: return scenario, errors` before the update is applied.
  */
 function applyProfileOverrides(
   scenario: ScenarioDefM2,
   profiles: Record<string, unknown>,
 ): [ScenarioDefM2, ValidationError[]] {
+  const errors: ValidationError[] = []
   const updates: Record<string, unknown> = {}
 
   const driverOverride = profiles['driver']
   if (isPlainObject(driverOverride)) {
     const base = isPlainObject(scenario.driver_profile) ? scenario.driver_profile : {}
-    updates['driver_profile'] = deepMerge(base, driverOverride)
+    const merged = deepMerge(base, driverOverride)
+    validateProfileSchema(merged, DRIVER_MODEL_PROFILE_SCHEMA, [], 'driver', errors)
+    updates['driver_profile'] = merged
   }
 
   const vehicleOverride = profiles['vehicle']
   if (isPlainObject(vehicleOverride)) {
     const base = isPlainObject(scenario.vehicle_profile) ? scenario.vehicle_profile : {}
-    updates['vehicle_profile'] = deepMerge(base, vehicleOverride)
+    const merged = deepMerge(base, vehicleOverride)
+    validateProfileSchema(merged, VEHICLE_BEHAVIOR_PROFILE_SCHEMA, [], 'vehicle', errors)
+    updates['vehicle_profile'] = merged
   }
 
   const speedOverride = profiles['speed']
   if (isPlainObject(speedOverride)) {
     const base = isPlainObject(scenario.speed_profile) ? scenario.speed_profile : {}
-    updates['speed_profile'] = deepMerge(base, speedOverride)
+    const merged = deepMerge(base, speedOverride)
+    validateProfileSchema(merged, SPEED_PROFILE_SCHEMA, [], 'speed', errors)
+    updates['speed_profile'] = merged
+  }
+
+  if (errors.length > 0) {
+    return [scenario, errors]
   }
 
   if (Object.keys(updates).length > 0) {
@@ -351,7 +564,8 @@ type BuildDraftArgs = {
   parameters: Record<string, unknown>
   hyperparameters: Record<string, unknown>
   runMode: string
-  routeFacts: RouteFacts
+  /** `null`/`undefined` -> derive locally via `analyzeRoute(scenario)` (mirrors Python `_build_draft`). */
+  routeFacts: RouteFacts | null
   routeSource: 'maps' | 'local'
   displayRoute: DisplayRoute | null
   profileOverrides: Record<string, unknown> | null
@@ -362,7 +576,8 @@ type BuildDraftArgs = {
  * Does NOT check parameter/hyperparameter validation — call validateEdits first.
  */
 function buildDraft(args: BuildDraftArgs): RunPlanDraft {
-  const routeFacts = args.routeFacts
+  // route_facts = route_facts if route_facts is not None else analyze_route(scenario)
+  const routeFacts: RouteFacts = args.routeFacts ?? analyzeRoute(args.scenario)
   // route_facts.bands = {f.key: f.band_values for f in package.features}
   routeFacts.bands = Object.fromEntries(args.package.features.map((f) => [f.key, f.band_values]))
 
@@ -414,7 +629,7 @@ export function createDraft(input: CreateDraftArgs): DraftEntry {
     parameters,
     hyperparameters,
     runMode = 'standard',
-    routeFacts,
+    routeFacts = null,
     routeSource = 'local',
     displayRoute = null,
     profiles = null,
@@ -454,7 +669,9 @@ export function createDraft(input: CreateDraftArgs): DraftEntry {
         plan_id: planId,
         package_id: pkg.id,
         scenario_id: scenario.id,
-        route_facts: routeFacts,
+        // Python: route_facts if route_facts is not None else analyze_route(scenario)
+        // — uses the ORIGINAL (pre-profile-override) scenario, not effectiveScenario.
+        route_facts: routeFacts ?? analyzeRoute(scenario),
         effective_setup: {},
         draft_event_plan: defaultEventPlan(),
         validation_errors: validationErrors,
@@ -492,7 +709,7 @@ export function createDraft(input: CreateDraftArgs): DraftEntry {
         plan_id: planId,
         package_id: pkg.id,
         scenario_id: scenario.id,
-        route_facts: routeFacts,
+        route_facts: routeFacts ?? analyzeRoute(scenario),
         effective_setup: {},
         draft_event_plan: defaultEventPlan(),
         validation_errors: planError,
@@ -506,7 +723,7 @@ export function createDraft(input: CreateDraftArgs): DraftEntry {
   }
 
   // Register the draft with the EFFECTIVE scenario (profile overrides frozen here).
-  draftRegistry.set(planId, { draft, package: pkg, scenario: effectiveScenario, routeFacts })
+  draftRegistry.set(planId, { draft, package: pkg, scenario: effectiveScenario })
 
   return { draft, package: pkg, scenario: effectiveScenario }
 }
@@ -517,19 +734,25 @@ export function createDraft(input: CreateDraftArgs): DraftEntry {
  *
  * Preserves route provenance (route_source, route_facts, display_route) from
  * the registered draft so that a regenerate does not silently flip a Maps
- * route back to local, or (in this port) require re-deriving local
- * route_facts via an unported analyze_route (see module docstring).
+ * route back to local. Mirrors Python `regenerate_draft` exactly: for a
+ * "maps" draft, `route_facts` is preserved (never re-derived); for a "local"
+ * draft, `route_facts` is `null` so `buildDraft` calls `analyzeRoute(scenario)`
+ * FRESH from the registered (effective) scenario on every regenerate — the
+ * same behavior Python gets from `_build_draft`'s `if route_facts is None`
+ * branch being re-entered each call.
  */
 export function regenerateDraft(planId: string, patch: RegenerateDraftPatch): RunPlanDraft {
   const entry = draftRegistry.get(planId)
   if (!entry) {
     throw new Error(`Unknown plan_id ${pyRepr(planId)} — cannot regenerate.`)
   }
-  const { draft: existingDraft, package: pkg, scenario, routeFacts: storedRouteFacts } = entry
+  const { draft: existingDraft, package: pkg, scenario } = entry
 
-  const preservedRouteFacts = storedRouteFacts
+  const isMaps = existingDraft.route_source === 'maps'
+  // Python: preserved_route_facts = existing_draft.route_facts if is_maps else None
+  const preservedRouteFacts: RouteFacts | null = isMaps ? existingDraft.route_facts : null
   const preservedRouteSource = existingDraft.route_source
-  const preservedDisplayRoute = existingDraft.route_source === 'maps' ? existingDraft.display_route : null
+  const preservedDisplayRoute = isMaps ? existingDraft.display_route : null
 
   const validationErrors = validateEdits(pkg, patch.parameters, patch.hyperparameters)
   if (validationErrors.length > 0) {
@@ -537,7 +760,7 @@ export function regenerateDraft(planId: string, patch: RegenerateDraftPatch): Ru
       plan_id: planId,
       package_id: pkg.id,
       scenario_id: scenario.id,
-      route_facts: preservedRouteFacts,
+      route_facts: preservedRouteFacts ?? analyzeRoute(scenario),
       effective_setup: {},
       draft_event_plan: defaultEventPlan(),
       validation_errors: validationErrors,
@@ -572,7 +795,7 @@ export function regenerateDraft(planId: string, patch: RegenerateDraftPatch): Ru
       plan_id: planId,
       package_id: pkg.id,
       scenario_id: scenario.id,
-      route_facts: preservedRouteFacts,
+      route_facts: preservedRouteFacts ?? analyzeRoute(scenario),
       effective_setup: {},
       draft_event_plan: defaultEventPlan(),
       validation_errors: planError,
@@ -582,7 +805,7 @@ export function regenerateDraft(planId: string, patch: RegenerateDraftPatch): Ru
     }
   }
 
-  draftRegistry.set(planId, { draft: newDraft, package: pkg, scenario, routeFacts: preservedRouteFacts })
+  draftRegistry.set(planId, { draft: newDraft, package: pkg, scenario })
 
   return newDraft
 }
