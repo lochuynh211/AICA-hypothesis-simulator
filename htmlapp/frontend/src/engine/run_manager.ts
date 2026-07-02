@@ -48,8 +48,9 @@
  *          event_plan already computed) + advanceTick.
  *
  * Only the exported function identifiers (createRun, tick, action, getRun,
- * getActiveRunLog, getPriorTickState, getScenario, appendFeedback,
- * clearRegistry) are camelCased. Every object key inside RunState/RunLog/
+ * getActiveRunLog, resolveRunLog, getPriorTickState, getScenario,
+ * appendFeedback, clearRegistry) are camelCased. Every object key inside
+ * RunState/RunLog/
  * event payloads is preserved byte-for-byte from the Python (snake_case)
  * because they cross the parity boundary.
  */
@@ -83,7 +84,7 @@ import { AlgorithmAdapterError } from './algorithms/errors'
 import { startRecovery } from './recovery'
 import { EvidenceRecorder } from './services/evidence_recorder'
 import { runsStore } from '../storage/runs_store'
-import type { RunHeader } from '../storage/db'
+import type { RunHeader, EvidenceEvent } from '../storage/db'
 
 // ---------------------------------------------------------------------------
 // Simulator version
@@ -212,13 +213,87 @@ export function getRun(runId: string): RunStateM2 | null {
 }
 
 /**
+ * Assemble a RunLogM2 from a header (RunLog minus events) and an ordered
+ * event list. This is the ONE definition of "what a RunLog looks like" in
+ * this module — both `getActiveRunLog` (in-memory header+events) and
+ * `resolveRunLog`'s inactive/IndexedDB branch (persisted header+events,
+ * reconstructed to the identical shape by `headerFromStore`/`eventsFromStore`
+ * below) call this same helper, so active and inactive resolution produce
+ * byte-identical RunLog shapes — never two divergent assembly definitions.
+ */
+function assembleRunLog(header: Omit<RunLogM2, 'events'>, events: RunLogEvent[]): RunLogM2 {
+  return { ...header, events: [...events] }
+}
+
+/**
  * Return the in-memory RunLog for an active run, or null if not active.
  * No disk/IndexedDB round-trip — mirrors Python's `get_active_run_log`.
  */
 export async function getActiveRunLog(runId: string): Promise<RunLogM2 | null> {
   const entry = _registry.get(runId)
   if (!entry) return null
-  return { ...entry.header, events: [...entry.events] }
+  return assembleRunLog(entry.header, entry.events)
+}
+
+/**
+ * Recover the exact `Omit<RunLogM2, 'events'>` shape `entry.header` already
+ * is in the active path, from a `runs`-store row. `persistHeader` writes
+ * `{ id, status, ...entry.header }` (see below) — `id`/`status` are
+ * IndexedDB-only bookkeeping (keyPath + a redundant status mirror) that are
+ * NOT RunLogM2 fields, so they must be stripped for `resolveRunLog`'s
+ * inactive branch to produce a byte-identical RunLog to the active branch.
+ */
+function headerFromStore(stored: RunHeader): Omit<RunLogM2, 'events'> {
+  const { id, status, ...header } = stored as RunHeader & Record<string, unknown>
+  return header as unknown as Omit<RunLogM2, 'events'>
+}
+
+/**
+ * Recover the exact event shape `entry.events` already holds in the active
+ * path (see `recordEvent`, which pushes the raw RunLogEvent with no storage
+ * metadata), from `run_events`-store rows. `runsStore.appendEvent` writes
+ * `{ ...event, runId, seq }` — `runId`/`seq` are IndexedDB-only bookkeeping
+ * (index key + ordering) that are NOT RunLogEvent fields, so they must be
+ * stripped for byte-identical parity with the active in-memory events.
+ */
+function eventsFromStore(stored: EvidenceEvent[]): RunLogEvent[] {
+  return stored.map((e) => {
+    const { seq, runId, ...rest } = e as EvidenceEvent & Record<string, unknown>
+    return rest as unknown as RunLogEvent
+  })
+}
+
+/**
+ * Return the RunLog for run_id: active (in-memory registry) → persisted
+ * (IndexedDB `runs` + `run_events` stores) → not-found. Mirrors Python's
+ * `_resolve_run_log` (routers/runs.py:89-107) resolution order EXACTLY:
+ *   1. Active run in the in-memory registry (no disk/IndexedDB I/O) — same
+ *      source `getActiveRunLog` reads.
+ *   2. Inactive: read the persisted header + ordered events written by
+ *      `persistHeader`/`EvidenceRecorder.append` at every meaningful event
+ *      (this build's equivalent of Python's `runs/{run_id}.json` disk read)
+ *      and reassemble via the SAME `assembleRunLog` helper `getActiveRunLog`
+ *      uses.
+ *   3. Neither → throw (404-equivalent; matches the pre-existing `getRunLog`
+ *      not-found message convention in `../api/client.ts`).
+ *
+ * READ-ONLY: never re-registers an inactive run as active/resumable in
+ * `_registry` — Python has no such re-activation path either (continued
+ * ticking after a reload is out of scope; see `_resolve_run_log`'s own
+ * docstring, which only ever *reads* the resolved log).
+ */
+export async function resolveRunLog(runId: string): Promise<RunLogM2> {
+  const active = await getActiveRunLog(runId)
+  if (active !== null) return active
+
+  const [storedHeader, storedEvents] = await Promise.all([
+    runsStore.getHeader(runId),
+    runsStore.getEvents(runId),
+  ])
+  if (storedHeader === undefined) {
+    throw new Error(`Run log for '${runId}' not found`)
+  }
+  return assembleRunLog(headerFromStore(storedHeader), eventsFromStore(storedEvents))
 }
 
 /** Return the prior TickState for a run, or null if no tick yet / not active. */

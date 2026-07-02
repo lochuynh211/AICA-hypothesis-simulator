@@ -15,27 +15,37 @@
  *   - `scenarios/<id>.json` is the `ScenarioDef` (models/scenario.py).
  *
  * This module does NOT re-port persistence — it consumes the existing seams:
- *   - `../run_manager#getActiveRunLog` for the run's RunLog (RunLogM2 — a
+ *   - `../run_manager#resolveRunLog` for the run's RunLog (RunLogM2 — a
  *     strict superset of the docker RunLog with the M2/M4/M5 extension
- *     fields the docker app's log.py model also carries).
+ *     fields the docker app's log.py model also carries). `resolveRunLog`
+ *     mirrors Python's `_resolve_run_log` (active → persisted/IndexedDB →
+ *     404 — REHYDRATE task), so unlike the pre-REHYDRATE `getActiveRunLog`,
+ *     it also resolves runs that predate the current session (persisted in
+ *     IndexedDB but no longer in the in-memory registry after a reload).
  *   - `../../storage/{runs_store,packages_store,scenarios_store}` for
  *     persistence of imported records.
  *   - `../../api/types` for the shapes imports are validated against.
  *
- * Known scope gap (pre-existing, documented elsewhere in this codebase —
- * see run_manager.ts / api/client.ts `getRunLog`): `getActiveRunLog` only
- * resolves runs that are still in the in-memory registry (i.e. created this
- * session). There is no on-disk-fallback reconstruction of a RunLog for a
- * run that predates the current session. `exportRun`/`exportAllRuns`
- * inherit that limitation — they can only export runs currently resolvable
- * via `getActiveRunLog`. Fixing that gap is out of scope for this task.
+ * `exportRun`/`exportAllRuns` can therefore export ANY persisted run, not
+ * just runs still active in this session (closes the S8.3 review's
+ * "session-active-only" scope gap) — `exportAllRuns` enumerates every
+ * persisted header via `runsStore.listHeaders()` and resolves each via
+ * `resolveRunLog`.
+ *
+ * `importRun` additionally guards against clobbering a LIVE run: if
+ * `run_id` is currently active in `../run_manager`'s in-memory registry
+ * (`getRun(run_id) !== null`), it throws rather than delete-then-rebuild the
+ * run's append-only event chain out from under an in-progress tick/action
+ * loop (S8.3 Important review finding). Python has no equivalent import
+ * feature to compare against — this guard is htmlapp-specific, motivated by
+ * the same append-only invariant Python's evidence recorder enforces.
  *
  * Imported records are always persisted with `origin: 'user'` — an import
  * must never be able to masquerade as (or silently overwrite) a built-in
  * default, since `resetToDefaults`/`seedDefaults` treat `origin: 'builtin'`
  * specially.
  */
-import { getActiveRunLog, type RunLogM2 } from '../run_manager'
+import { resolveRunLog, getRun, type RunLogM2 } from '../run_manager'
 import { runsStore } from '../../storage/runs_store'
 import { packagesStore } from '../../storage/packages_store'
 import { scenariosStore } from '../../storage/scenarios_store'
@@ -213,12 +223,10 @@ function validateScenarioDef(json: unknown): ScenarioDef {
 
 /** Export one run as its docker `runs/<id>.json`-shaped RunLog. Built from an
  * explicit field allowlist (never a spread) so no settings/key material can
- * ever ride along, then guarded. */
+ * ever ride along, then guarded. Resolves active OR persisted (inactive)
+ * runs via `resolveRunLog` (REHYDRATE task) — not session-active-only. */
 export async function exportRun(runId: string): Promise<RunLogM2> {
-  const log = await getActiveRunLog(runId)
-  if (log === null) {
-    throw new Error(`exportRun: run '${runId}' not found (not active in this session)`)
-  }
+  const log = await resolveRunLog(runId)
   const dump: RunLogM2 = {
     run_id: log.run_id,
     created_at: log.created_at,
@@ -247,9 +255,11 @@ export async function exportRun(runId: string): Promise<RunLogM2> {
 }
 
 /**
- * Export every run resolvable via `exportRun` (see the module-level scope-gap
- * note: only runs still in the in-memory registry are resolvable — same
- * limitation as `api/client.ts#getRunLog`). Shape: `{ runs: RunLog[] }`
+ * Export every PERSISTED run (active or inactive — REHYDRATE task closed the
+ * former "session-active-only" scope gap: `resolveRunLog` reconstructs
+ * inactive runs from IndexedDB exactly like Python's `_resolve_run_log` disk
+ * fallback). Enumerates every header via `runsStore.listHeaders()` and
+ * resolves+exports each via `exportRun`. Shape: `{ runs: RunLog[] }`
  * (documented choice — an object envelope rather than a bare array, so the
  * export is self-describing and mirrors the `{ runs: [...] }` shape already
  * used by `listRuns()`).
@@ -258,8 +268,7 @@ export async function exportAllRuns(): Promise<{ runs: RunLogM2[] }> {
   const headers = await runsStore.listHeaders()
   const runs: RunLogM2[] = []
   for (const h of headers) {
-    const log = await getActiveRunLog(h.id)
-    if (log !== null) runs.push(await exportRun(h.id))
+    runs.push(await exportRun(h.id))
   }
   const dump = { runs }
   assertNoSensitiveKeys(dump)
@@ -339,9 +348,25 @@ export async function exportScenario(id: string): Promise<ScenarioDef> {
  * keys), any existing header/events/feedback for that id are cleared first
  * via `runsStore.deleteRun` (the one sanctioned event-deletion path) so the
  * import always lands cleanly and idempotently.
+ *
+ * ACTIVE-GUARD (S8.3 Important review finding): refuses to import over a
+ * run_id that is currently ACTIVE in `../run_manager`'s in-memory registry
+ * (`getRun(run_id) !== null`). Without this guard, the delete-then-rebuild
+ * above would silently wipe an in-progress run's persisted append-only log
+ * out from under it — a live tick()/action() call could then re-append to a
+ * `seq` sequence that no longer matches what was just written, corrupting
+ * the append-only chain. Nothing is deleted or written when this guard
+ * fires.
  */
 export async function importRun(json: unknown): Promise<void> {
   const log = validateRunLog(json)
+  if (getRun(log.run_id) !== null) {
+    throw new Error(
+      `importRun: refusing to import over run '${log.run_id}' — it is currently active. `
+        + 'Importing would clobber a live run\'s append-only log/seq-chain. '
+        + 'Wait for the run to finish (or reload) before importing over it.',
+    )
+  }
   const { events, ...header } = log
   const runHeader: RunHeader = { id: log.run_id, status: 'completed', ...header }
   await runsStore.deleteRun(log.run_id)

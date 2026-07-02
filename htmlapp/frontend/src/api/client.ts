@@ -78,7 +78,7 @@ import {
   tick as engineTick,
   action as engineAction,
   getRun as engineGetRun,
-  getActiveRunLog as engineGetActiveRunLog,
+  resolveRunLog as engineResolveRunLog,
   getPriorTickState as engineGetPriorTickState,
   getScenario as engineGetScenario,
 } from '../engine/run_manager'
@@ -838,11 +838,10 @@ export async function getRun(runId: string): Promise<RunState> {
 }
 
 export async function getRunLog(runId: string): Promise<RunLog> {
-  const log = await engineGetActiveRunLog(runId)
-  if (log === null) {
-    throw new Error(`Run log for '${runId}' not found`)
-  }
-  return log
+  // resolveRunLog mirrors Python's `_resolve_run_log`: active (in-memory
+  // registry) → persisted (IndexedDB) → throws its own 404-equivalent Error
+  // (same message convention this seam always used) when neither resolves.
+  return engineResolveRunLog(runId)
 }
 
 // ── M5 Feedback ──────────────────────────────────────────────────────────────
@@ -851,15 +850,15 @@ export async function getRunLog(runId: string): Promise<RunLog> {
 // RunLog to find its package_id, load that package's full manifest (for
 // feedback_schema extras), and derive the effective schema from it — same
 // resolution `_resolve_run_log` + `PackageRegistry(...).get(package_id)`
-// does server-side. Only ACTIVE runs are resolvable here (no on-disk
-// fallback exists in this build — same pre-existing scope gap as
-// `getRunLog` above, which also only reads the in-memory registry).
+// does server-side. Works for active AND persisted (inactive) runs — mirrors
+// Python's `_resolve_run_log` disk fallback (REHYDRATE task) — via
+// `resolveRunLog`. Note the ACTUAL feedback append below (`engineAppendFeedback`)
+// still requires the run to be active (matches Python's `append_feedback`,
+// which is registry-only even though `_resolve_run_log`/`post_feedback`'s
+// earlier steps support the disk fallback for event_ref/schema resolution).
 
 async function resolveFeedbackPackage(runId: string): Promise<{ log: RunLog; pkg: PackageManifest }> {
-  const log = await engineGetActiveRunLog(runId)
-  if (log === null) {
-    throw new Error(`Run log for '${runId}' not found`)
-  }
+  const log = await engineResolveRunLog(runId)
   const pkg = await packageRegistry.get(log.snapshot.package.id)
   return { log, pkg }
 }
@@ -872,12 +871,11 @@ export async function getFeedbackSchema(runId: string): Promise<FeedbackSchema> 
 // ── M5/S8 Evidence export ─────────────────────────────────────────────────
 //
 // Mirrors runs.py's get_evidence/get_evidence_markdown (@619/@656): resolve
-// the run's log via buildEvidenceReport (which itself resolves the active
-// run via ../engine/run_manager's getActiveRunLog — see that module's
-// docstring for why the on-disk `runs/{id}.json` fallback branch of
-// Python's `_resolve_run_log` has no equivalent here: every run this seam
-// can reach is either active or does not exist) and shape/derive the §14.2
-// report. `ui_language` defaults to `"bilingual"`, matching the router's
+// the run's log via buildEvidenceReport (which itself resolves the run via
+// ../engine/run_manager's resolveRunLog — active (in-memory registry) →
+// persisted (IndexedDB), mirroring Python's `_resolve_run_log` disk fallback
+// exactly; REHYDRATE task) and shape/derive the §14.2 report. `ui_language`
+// defaults to `"bilingual"`, matching the router's
 // `Query(default="bilingual", ...)` back-compat default for pre-M6 callers.
 // getEvidenceMarkdown calls build_evidence_report then render_evidence_markdown
 // with NO divergent computation, exactly like the Python router.

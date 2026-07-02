@@ -22,13 +22,13 @@
  * generated at the ROUTER boundary, never inside the pure service
  * function). This offline build has no separate router layer, so
  * `buildEvidenceReport` folds that router-boundary responsibility in:
- * it resolves the run log via `getActiveRunLog` (mirrors
- * `_resolve_run_log`'s active-registry branch — this build has no on-disk
- * `runs/{id}.json` fallback path to port; every run this seam can reach is
- * either active or does not exist) and generates report_id/timestamp itself,
- * OUTSIDE any decision-affecting path (report generation never feeds back
- * into the tick loop), exactly like `_make_report_id()`/`datetime.now()` at
- * the Python router boundary.
+ * it resolves the run log via `resolveRunLog` (mirrors `_resolve_run_log`'s
+ * full active → persisted → 404 resolution order — REHYDRATE task; the
+ * IndexedDB `runs`/`run_events` stores are this build's equivalent of
+ * Python's on-disk `runs/{id}.json`) and generates report_id/timestamp
+ * itself, OUTSIDE any decision-affecting path (report generation never
+ * feeds back into the tick loop), exactly like `_make_report_id()`/
+ * `datetime.now()` at the Python router boundary.
  *
  * MAP KEY EXCLUSION (master invariant): nothing in RunLog ever carries a
  * Google Maps API key (the key is never persisted — see maps_client.ts /
@@ -44,7 +44,7 @@ import type {
   FeedbackEvent,
   TickEvent,
 } from '../../api/types'
-import { getActiveRunLog, RunNotFoundError, type RunLogM2 } from '../run_manager'
+import { resolveRunLog, type RunLogM2 } from '../run_manager'
 
 // ---------------------------------------------------------------------------
 // EvidenceReport M2 extension — speed_profile/profile_overrides are genuinely
@@ -87,20 +87,17 @@ function deepEqualJson(a: unknown, b: unknown): boolean {
  * Derive the §14.2 evidence report from a run's RunLog (resolved via
  * `getActiveRunLog`).
  *
- * @param runId      The active run identifier.
+ * @param runId      The run identifier (active or persisted/inactive).
  * @param uiLanguage The reviewer's selected UI language at export time (e.g.
  *                   `"ja"`, `"en"`). Defaults to `"bilingual"` — matching
  *                   Python's back-compat default for pre-M6 callers.
- * @throws RunNotFoundError if runId is not in the active registry.
+ * @throws Error if runId is neither active nor persisted (see `resolveRunLog`).
  */
 export async function buildEvidenceReport(
   runId: string,
   uiLanguage: string = 'bilingual',
 ): Promise<EvidenceReportM2> {
-  const runLog = await getActiveRunLog(runId)
-  if (runLog === null) {
-    throw new RunNotFoundError(`Run '${runId}' not found`)
-  }
+  const runLog = await resolveRunLog(runId)
 
   const reportId = makeReportId()
   const timestamp = new Date().toISOString()

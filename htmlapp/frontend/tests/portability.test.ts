@@ -47,6 +47,12 @@ describe('portability — runs', () => {
     expect(dump.run_id).toBe(runId)
     expect(dump.events.length).toBeGreaterThan(0)
 
+    // importRun refuses to import over a currently-active run_id (REHYDRATE
+    // task's active-guard — see rehydrate.test.ts for the dedicated
+    // coverage). Simulate the run no longer being active (e.g. a reload)
+    // before re-importing, matching the realistic scenario the guard is
+    // meant to allow.
+    clearRegistry()
     await expect(importRun(dump)).resolves.not.toThrow()
 
     // Round-trip proof: re-read what was actually persisted (via the store,
