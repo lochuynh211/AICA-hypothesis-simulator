@@ -1,0 +1,34 @@
+{
+  "name": "aica-htmlapp",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/check-size.mjs",
+    "build:customer": "node scripts/check-customer-config.mjs && npm run build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "sync": "node scripts/sync-from-app.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "idb": "^8.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.3.4",
+    "@playwright/test": "^1.48.0",
+    "fake-indexeddb": "^6.0.0",
+    "jsdom": "^24.1.3",
+    "typescript": "^5.8.3",
+    "vite": "^5.4.19",
+    "vite-plugin-singlefile": "^2.0.1",
+    "vitest": "^1.6.1"
+  }
+}
