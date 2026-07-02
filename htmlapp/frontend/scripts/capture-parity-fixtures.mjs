@@ -45,4 +45,24 @@ export async function api(path, init) {
 // output. This is more reliable than hand-computing the float arithmetic
 // and exact `.3f`-formatted explanation strings by hand.
 
+// driver_model / vehicle_model / recovery (Task S3.2): advance_driver_state,
+// apply_rest_recovery, advance_vehicle_state, current_stage, start_recovery,
+// and advance_recovery are pure internal functions with no dedicated debug
+// HTTP endpoint (behavior engine + pure state machine, invoked by the tick
+// engine and run_manager mid-run). driver_model.json, vehicle_model.json,
+// and recovery.json were derived by importing the actual Python modules from
+// app/api's project venv (`./.venv/bin/python`) and calling
+// advance_driver_state / apply_rest_recovery / advance_vehicle_state /
+// start_recovery / advance_recovery directly on inputs transcribed from
+// app/api/tests/test_driver_model.py, test_vehicle_model.py, test_recovery.py,
+// and the nap_karaoke/postpone RecoveryOption fixtures in
+// app/api/tests/test_recovery.py + scenarios/uc01_fatigue_recovery_v0_1.json,
+// capturing dataclasses.asdict(...) (driver_model/vehicle_model dataclasses)
+// or .model_dump() (recovery's pydantic RecoveryState/RecoveryOption/RestSpot)
+// as the golden output. recovery.json's staged-timing cases walk the full
+// nap(2 ticks)->content(1 tick)->resuming->done sequence from
+// test_stopped_stages_count_down_then_resume, plus a postpone-option
+// (empty stages) case and the resuming->{active:false,phase:null} transition
+// that gates the REST_RECOVERY re-arm in algorithm.py (M7).
+
 console.log('capture complete')

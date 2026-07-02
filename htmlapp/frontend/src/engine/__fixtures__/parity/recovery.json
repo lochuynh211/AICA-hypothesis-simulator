@@ -1,0 +1,522 @@
+[
+  {
+    "name": "wakefulness_holds_when_not_at_rest_spot",
+    "input": {
+      "start": true,
+      "option": {
+        "id": "nap_karaoke",
+        "label": {
+          "ja": "x",
+          "en": "x"
+        },
+        "rest_type": "long",
+        "stages": [
+          {
+            "phase": "wakefulness",
+            "content": "audio_karaoke",
+            "motion": "MOVING",
+            "ticks": null
+          },
+          {
+            "phase": "nap",
+            "content": "sleep",
+            "motion": "STOPPED",
+            "ticks": 2
+          },
+          {
+            "phase": "content",
+            "content": "video_karaoke",
+            "motion": "STOPPED",
+            "ticks": 1
+          }
+        ],
+        "postpone": false
+      },
+      "restSpot": {
+        "id": "p1",
+        "label": {
+          "ja": "SA",
+          "en": "SA"
+        },
+        "lat": null,
+        "lng": null,
+        "route_fraction": 0.6
+      },
+      "atRestSpot": false
+    },
+    "output": {
+      "active": true,
+      "option_id": "nap_karaoke",
+      "rest_spot": {
+        "id": "p1",
+        "label": {
+          "ja": "SA",
+          "en": "SA"
+        },
+        "lat": null,
+        "lng": null,
+        "route_fraction": 0.6
+      },
+      "phase": "wakefulness",
+      "stage_index": 0,
+      "stage_ticks_remaining": 0
+    }
+  },
+  {
+    "name": "wakefulness_transitions_to_nap_at_rest_spot",
+    "input": {
+      "start": false,
+      "option": {
+        "id": "nap_karaoke",
+        "label": {
+          "ja": "x",
+          "en": "x"
+        },
+        "rest_type": "long",
+        "stages": [
+          {
+            "phase": "wakefulness",
+            "content": "audio_karaoke",
+            "motion": "MOVING",
+            "ticks": null
+          },
+          {
+            "phase": "nap",
+            "content": "sleep",
+            "motion": "STOPPED",
+            "ticks": 2
+          },
+          {
+            "phase": "content",
+            "content": "video_karaoke",
+            "motion": "STOPPED",
+            "ticks": 1
+          }
+        ],
+        "postpone": false
+      },
+      "state": {
+        "active": true,
+        "option_id": "nap_karaoke",
+        "rest_spot": {
+          "id": "p1",
+          "label": {
+            "ja": "SA",
+            "en": "SA"
+          },
+          "lat": null,
+          "lng": null,
+          "route_fraction": 0.6
+        },
+        "phase": "wakefulness",
+        "stage_index": 0,
+        "stage_ticks_remaining": 0
+      },
+      "atRestSpot": true
+    },
+    "output": {
+      "active": true,
+      "option_id": "nap_karaoke",
+      "rest_spot": {
+        "id": "p1",
+        "label": {
+          "ja": "SA",
+          "en": "SA"
+        },
+        "lat": null,
+        "lng": null,
+        "route_fraction": 0.6
+      },
+      "phase": "nap",
+      "stage_index": 1,
+      "stage_ticks_remaining": 2
+    }
+  },
+  {
+    "name": "start_recovery_then_enter_nap_stage",
+    "input": {
+      "start": true,
+      "option": {
+        "id": "nap_karaoke",
+        "label": {
+          "ja": "x",
+          "en": "x"
+        },
+        "rest_type": "long",
+        "stages": [
+          {
+            "phase": "wakefulness",
+            "content": "audio_karaoke",
+            "motion": "MOVING",
+            "ticks": null
+          },
+          {
+            "phase": "nap",
+            "content": "sleep",
+            "motion": "STOPPED",
+            "ticks": 2
+          },
+          {
+            "phase": "content",
+            "content": "video_karaoke",
+            "motion": "STOPPED",
+            "ticks": 1
+          }
+        ],
+        "postpone": false
+      },
+      "restSpot": {
+        "id": "p1",
+        "label": {
+          "ja": "SA",
+          "en": "SA"
+        },
+        "lat": null,
+        "lng": null,
+        "route_fraction": 0.6
+      },
+      "atRestSpot": true
+    },
+    "output": {
+      "active": true,
+      "option_id": "nap_karaoke",
+      "rest_spot": {
+        "id": "p1",
+        "label": {
+          "ja": "SA",
+          "en": "SA"
+        },
+        "lat": null,
+        "lng": null,
+        "route_fraction": 0.6
+      },
+      "phase": "nap",
+      "stage_index": 1,
+      "stage_ticks_remaining": 2
+    }
+  },
+  {
+    "name": "nap_stage_ticks_down_2_to_1",
+    "input": {
+      "start": false,
+      "option": {
+        "id": "nap_karaoke",
+        "label": {
+          "ja": "x",
+          "en": "x"
+        },
+        "rest_type": "long",
+        "stages": [
+          {
+            "phase": "wakefulness",
+            "content": "audio_karaoke",
+            "motion": "MOVING",
+            "ticks": null
+          },
+          {
+            "phase": "nap",
+            "content": "sleep",
+            "motion": "STOPPED",
+            "ticks": 2
+          },
+          {
+            "phase": "content",
+            "content": "video_karaoke",
+            "motion": "STOPPED",
+            "ticks": 1
+          }
+        ],
+        "postpone": false
+      },
+      "state": {
+        "active": true,
+        "option_id": "nap_karaoke",
+        "rest_spot": {
+          "id": "p1",
+          "label": {
+            "ja": "SA",
+            "en": "SA"
+          },
+          "lat": null,
+          "lng": null,
+          "route_fraction": 0.6
+        },
+        "phase": "nap",
+        "stage_index": 1,
+        "stage_ticks_remaining": 2
+      },
+      "atRestSpot": true
+    },
+    "output": {
+      "active": true,
+      "option_id": "nap_karaoke",
+      "rest_spot": {
+        "id": "p1",
+        "label": {
+          "ja": "SA",
+          "en": "SA"
+        },
+        "lat": null,
+        "lng": null,
+        "route_fraction": 0.6
+      },
+      "phase": "nap",
+      "stage_index": 1,
+      "stage_ticks_remaining": 1
+    }
+  },
+  {
+    "name": "nap_stage_completes_enters_content_stage",
+    "input": {
+      "start": false,
+      "option": {
+        "id": "nap_karaoke",
+        "label": {
+          "ja": "x",
+          "en": "x"
+        },
+        "rest_type": "long",
+        "stages": [
+          {
+            "phase": "wakefulness",
+            "content": "audio_karaoke",
+            "motion": "MOVING",
+            "ticks": null
+          },
+          {
+            "phase": "nap",
+            "content": "sleep",
+            "motion": "STOPPED",
+            "ticks": 2
+          },
+          {
+            "phase": "content",
+            "content": "video_karaoke",
+            "motion": "STOPPED",
+            "ticks": 1
+          }
+        ],
+        "postpone": false
+      },
+      "state": {
+        "active": true,
+        "option_id": "nap_karaoke",
+        "rest_spot": {
+          "id": "p1",
+          "label": {
+            "ja": "SA",
+            "en": "SA"
+          },
+          "lat": null,
+          "lng": null,
+          "route_fraction": 0.6
+        },
+        "phase": "nap",
+        "stage_index": 1,
+        "stage_ticks_remaining": 1
+      },
+      "atRestSpot": true
+    },
+    "output": {
+      "active": true,
+      "option_id": "nap_karaoke",
+      "rest_spot": {
+        "id": "p1",
+        "label": {
+          "ja": "SA",
+          "en": "SA"
+        },
+        "lat": null,
+        "lng": null,
+        "route_fraction": 0.6
+      },
+      "phase": "content",
+      "stage_index": 2,
+      "stage_ticks_remaining": 1
+    }
+  },
+  {
+    "name": "content_stage_completes_enters_resuming",
+    "input": {
+      "start": false,
+      "option": {
+        "id": "nap_karaoke",
+        "label": {
+          "ja": "x",
+          "en": "x"
+        },
+        "rest_type": "long",
+        "stages": [
+          {
+            "phase": "wakefulness",
+            "content": "audio_karaoke",
+            "motion": "MOVING",
+            "ticks": null
+          },
+          {
+            "phase": "nap",
+            "content": "sleep",
+            "motion": "STOPPED",
+            "ticks": 2
+          },
+          {
+            "phase": "content",
+            "content": "video_karaoke",
+            "motion": "STOPPED",
+            "ticks": 1
+          }
+        ],
+        "postpone": false
+      },
+      "state": {
+        "active": true,
+        "option_id": "nap_karaoke",
+        "rest_spot": {
+          "id": "p1",
+          "label": {
+            "ja": "SA",
+            "en": "SA"
+          },
+          "lat": null,
+          "lng": null,
+          "route_fraction": 0.6
+        },
+        "phase": "content",
+        "stage_index": 2,
+        "stage_ticks_remaining": 1
+      },
+      "atRestSpot": true
+    },
+    "output": {
+      "active": true,
+      "option_id": "nap_karaoke",
+      "rest_spot": {
+        "id": "p1",
+        "label": {
+          "ja": "SA",
+          "en": "SA"
+        },
+        "lat": null,
+        "lng": null,
+        "route_fraction": 0.6
+      },
+      "phase": "resuming",
+      "stage_index": 3,
+      "stage_ticks_remaining": 0
+    }
+  },
+  {
+    "name": "resuming_completes_recovery_rest_recovery_rearm",
+    "input": {
+      "start": false,
+      "option": {
+        "id": "nap_karaoke",
+        "label": {
+          "ja": "x",
+          "en": "x"
+        },
+        "rest_type": "long",
+        "stages": [
+          {
+            "phase": "wakefulness",
+            "content": "audio_karaoke",
+            "motion": "MOVING",
+            "ticks": null
+          },
+          {
+            "phase": "nap",
+            "content": "sleep",
+            "motion": "STOPPED",
+            "ticks": 2
+          },
+          {
+            "phase": "content",
+            "content": "video_karaoke",
+            "motion": "STOPPED",
+            "ticks": 1
+          }
+        ],
+        "postpone": false
+      },
+      "state": {
+        "active": true,
+        "option_id": "nap_karaoke",
+        "rest_spot": {
+          "id": "p1",
+          "label": {
+            "ja": "SA",
+            "en": "SA"
+          },
+          "lat": null,
+          "lng": null,
+          "route_fraction": 0.6
+        },
+        "phase": "resuming",
+        "stage_index": 3,
+        "stage_ticks_remaining": 0
+      },
+      "atRestSpot": true
+    },
+    "output": {
+      "active": false,
+      "option_id": "nap_karaoke",
+      "rest_spot": {
+        "id": "p1",
+        "label": {
+          "ja": "SA",
+          "en": "SA"
+        },
+        "lat": null,
+        "lng": null,
+        "route_fraction": 0.6
+      },
+      "phase": null,
+      "stage_index": 3,
+      "stage_ticks_remaining": 0
+    }
+  },
+  {
+    "name": "start_recovery_postpone_option_empty_stages",
+    "input": {
+      "start": true,
+      "option": {
+        "id": "postpone",
+        "label": {
+          "ja": "先延ばし",
+          "en": "Postpone"
+        },
+        "rest_type": null,
+        "stages": [],
+        "postpone": true
+      },
+      "restSpot": {
+        "id": "p1",
+        "label": {
+          "ja": "SA",
+          "en": "SA"
+        },
+        "lat": null,
+        "lng": null,
+        "route_fraction": 0.6
+      },
+      "atRestSpot": true
+    },
+    "output": {
+      "active": false,
+      "option_id": "postpone",
+      "rest_spot": {
+        "id": "p1",
+        "label": {
+          "ja": "SA",
+          "en": "SA"
+        },
+        "lat": null,
+        "lng": null,
+        "route_fraction": 0.6
+      },
+      "phase": null,
+      "stage_index": 0,
+      "stage_ticks_remaining": 0
+    }
+  }
+]
