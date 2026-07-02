@@ -1,0 +1,448 @@
+/*
+ * app.css — 3-panel layout shell for AICA Hypothesis Simulator
+ *
+ * .app-shell     full-viewport CSS grid container (left / center / right)
+ * .left-panel    scenario/package context (fixed narrow column)
+ * .center-panel  playback + cockpit (flexible main column)
+ * .right-panel   controls + trace + feedback (fixed narrow column)
+ */
+
+/* ── Reset ──────────────────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Base typography ─────────────────────────────────────────────────────────── */
+
+html,
+body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1a1a1a;
+  background: #f5f5f5;
+}
+
+/* ── 3-panel shell ───────────────────────────────────────────────────────────── */
+
+.app-shell {
+  display: grid;
+  /* Review layout: a narrower left context column, wide middle cockpit, right review. */
+  grid-template-columns: 0.7fr 2fr 1fr;
+  grid-template-rows: 1fr;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* ── Left panel — context / setup ────────────────────────────────────────────── */
+
+.left-panel {
+  grid-column: 1;
+  /* min-width:0 lets the 1fr track shrink to its share instead of being forced
+     wide by its content's min-content — otherwise the grid overflows and the
+     overflow:hidden shell clips the right panel off-screen. */
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: #ffffff;
+  border-right: 1px solid #d0d5dd;
+}
+
+/* ── Center panel — playback + cockpit ───────────────────────────────────────── */
+
+.center-panel {
+  grid-column: 2;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: #f8fafc;
+  border-right: 1px solid #d0d5dd;
+}
+
+/* ── Right panel — trace + log ───────────────────────────────────────────────── */
+
+.right-panel {
+  grid-column: 3;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: #111111;
+}
+
+/* ── Panel section headings (used via inline h2 in layout components) ─────────── */
+
+.left-panel h2 {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+/* ── Form controls ───────────────────────────────────────────────────────────── */
+
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #fff;
+  border: 1px solid #d0d5dd;
+  border-radius: 4px;
+  padding: 5px 28px 5px 8px;
+  font-size: 0.85rem;
+  color: #1a1a1a;
+  cursor: pointer;
+  width: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+
+select:disabled {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+select:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────────── */
+
+button {
+  padding: 5px 14px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  border: 1px solid #d0d5dd;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+
+button:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+button:active:not(:disabled) {
+  background: #e5e7eb;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Primary action button — Start Run fills full width (inline style sets width) */
+button[style*="width: 100%"],
+button[style*="width:100%"] {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #1d4ed8;
+  font-weight: 600;
+}
+
+button[style*="width: 100%"]:hover:not(:disabled),
+button[style*="width:100%"]:hover:not(:disabled) {
+  background: #1d4ed8;
+  border-color: #1e40af;
+}
+
+button[style*="width: 100%"]:disabled,
+button[style*="width:100%"]:disabled {
+  background: #93c5fd;
+  border-color: #93c5fd;
+}
+
+/* ── Error / alert display ────────────────────────────────────────────────────── */
+
+[role="alert"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid #fca5a5;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-top: 6px;
+}
+
+[role="alert"]::before {
+  content: "⚠";
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+
+/* ── Route timeline ───────────────────────────────────────────────────────────── */
+
+/* The timeline itself is rendered via inline styles; we add label text support */
+[data-testid="car-marker"] {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35), 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+[data-testid="fire-marker"] {
+  box-shadow: 1px 0 4px rgba(220, 38, 38, 0.4);
+}
+
+/* ── Cockpit / proposal panel ─────────────────────────────────────────────────── */
+
+[data-testid="proposal-overlay"] {
+  /* Reinforce the amber proposal panel so it pops against the center background */
+  box-shadow: 0 2px 12px rgba(240, 165, 0, 0.25);
+}
+
+[data-testid="proposal-overlay"] h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #92400e;
+}
+
+[data-testid="proposal-overlay"] button {
+  font-weight: 600;
+}
+
+/* Accept rest — green tint */
+[data-testid="proposal-overlay"] button:first-of-type {
+  background: #059669;
+  border-color: #047857;
+  color: #ffffff;
+}
+
+[data-testid="proposal-overlay"] button:first-of-type:hover:not(:disabled) {
+  background: #047857;
+}
+
+/* Postpone — neutral outline */
+[data-testid="proposal-overlay"] button:last-of-type {
+  background: #ffffff;
+  border-color: #9ca3af;
+  color: #374151;
+}
+
+[data-testid="proposal-overlay"] button:last-of-type:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+/* ── Nav view (cockpit idle state) ───────────────────────────────────────────── */
+
+[data-testid="nav-view"] {
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border: 1px dashed #d0d5dd;
+  border-radius: 6px;
+  background: #f0f4ff;
+  margin: 12px 0;
+  text-align: center;
+}
+
+[data-testid="nav-view"] p {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+[data-testid="decision-explanation"] {
+  font-size: 0.85rem;
+  color: #4b5563;
+  font-style: italic;
+}
+
+/* ── Suppressed candidate highlight (orange — must remain distinct) ─────────── */
+
+[data-testid="candidate-suppressed-label"] {
+  /* Already styled orange inline; reinforce readability */
+  letter-spacing: 0.06em;
+}
+
+/* ── Scrollbar polish for dark right panel ────────────────────────────────────── */
+
+.right-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.right-panel::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.right-panel::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 3px;
+}
+
+/* ── Setup panel (M2: package/scenario selectors, param editors, plan preview) ── */
+
+.setup-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 12px;
+}
+
+.setup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.setup-field label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+  letter-spacing: 0.03em;
+}
+
+/* ── ParameterEditor / HyperparameterEditor ───────────────────────────────── */
+
+[data-testid="parameter-editor"],
+[data-testid="hyperparameter-editor"] {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+}
+
+[data-testid="parameter-editor"] label,
+[data-testid="hyperparameter-editor"] label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+  display: block;
+  margin-bottom: 4px;
+}
+
+[data-testid="parameter-editor"] input[type="number"],
+[data-testid="hyperparameter-editor"] input[type="number"] {
+  width: 100%;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  border: 1px solid #d0d5dd;
+  border-radius: 4px;
+  background: #fff;
+  color: #1a1a1a;
+  box-sizing: border-box;
+}
+
+[data-testid="parameter-editor"] input[type="number"]:focus,
+[data-testid="hyperparameter-editor"] input[type="number"]:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
+  border-color: #2563eb;
+}
+
+/* Inline validation errors for parameter / hyperparameter editors */
+[data-testid^="hp-error-"],
+[data-testid="setup-validation-error"] {
+  font-size: 0.78rem;
+  color: #b91c1c;
+  margin-top: 3px;
+}
+
+/* ── Plan preview ─────────────────────────────────────────────────────────── */
+
+[data-testid="plan-preview"] {
+  border: 1px solid #d0d5dd;
+  border-radius: 5px;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  background: #f8fafc;
+}
+
+[data-testid="plan-summary"] {
+  margin-top: 6px;
+  line-height: 1.6;
+  color: #374151;
+}
+
+[data-testid="effective-setup"] {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.plan-preview {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.setup-error {
+  color: #b00020;
+  font-size: 0.85rem;
+}
+
+/* ── Weighted-score trace (category scores rows, candidate strength/state) ── */
+
+/* Category scores section (data-testid="scores-<key>") */
+[data-testid^="scores-"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  padding: 2px 0;
+  border-bottom: 1px solid #1e1e1e;
+  color: #d4d4d4;
+}
+
+[data-testid^="scores-"]:last-child {
+  border-bottom: none;
+}
+
+/* Candidate strength badge */
+[data-testid^="candidate-strength-"] {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+
+/* "gentle" strength — muted blue */
+[data-testid^="candidate-strength-"][data-strength="gentle"] {
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+
+/* "clear" strength — amber */
+[data-testid^="candidate-strength-"][data-strength="clear"] {
+  background: #451a03;
+  color: #fbbf24;
+}
+
+/* "strong" strength — red (SEVERE_INTERVENTION, not REST_PROPOSAL) */
+[data-testid^="candidate-strength-"][data-strength="strong"] {
+  background: #3b0606;
+  color: #f87171;
+}
+
+/* Candidate state badge */
+[data-testid^="candidate-state-"] {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  margin-left: 4px;
+}
