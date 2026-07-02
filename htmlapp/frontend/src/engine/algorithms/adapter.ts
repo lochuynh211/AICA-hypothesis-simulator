@@ -22,9 +22,34 @@ import type { DecisionResult, PackageManifest } from '../../api/types'
 import { AlgorithmAdapterError } from './errors'
 import { evaluateDeclarative } from './declarative_rule'
 import { evaluateWeighted } from './weighted_score'
+import type { JsModuleRunner } from './js_module'
 
 export type EvaluateArgs = {
   manifest: PackageManifest
+  context: Record<string, unknown>
+  parameters: Record<string, unknown>
+  hyperparameters: Record<string, unknown>
+  history: unknown[]
+  packageRuntimeState: Record<string, unknown>
+}
+
+/**
+ * Args for the `js_module` async dispatch entry (`evaluateJsModule`).
+ *
+ * `js_module` (UNTRUSTED user-uploaded packages, run in a sandboxed Web
+ * Worker — see `./js_module.ts`) is the one adapter strategy that cannot be
+ * evaluated synchronously: a worker call is inherently a message round-trip.
+ * Every other strategy — `declarative_rule`, `weighted_score`, and the
+ * trusted-TS-port `builtin_js_module` (S9.3) — stays on the synchronous
+ * `evaluate()` path above and is untouched by this addition.
+ *
+ * `runner` is a per-package `JsModuleRunner` (one Worker per uploaded
+ * package). Constructing/caching that runner across ticks is the run
+ * manager's job, not this adapter's — see the seam note on
+ * `evaluateJsModule` below.
+ */
+export type EvaluateJsModuleArgs = {
+  runner: JsModuleRunner
   context: Record<string, unknown>
   parameters: Record<string, unknown>
   hyperparameters: Record<string, unknown>
@@ -66,10 +91,81 @@ export function evaluate(args: EvaluateArgs): DecisionResult {
     return dispatchWeightedScore(args.context, args.parameters, args.hyperparameters)
   }
 
+  // NOTE: 'js_module' intentionally falls through to unsupported_algorithm_type
+  // here. A js_module package needs a per-package Web Worker runner, which
+  // this synchronous entry point has no way to await — see `evaluateJsModule`
+  // below for the async dispatch path. Until the run manager is wired to call
+  // it (S9.2), a js_module package tick correctly surfaces as an
+  // algorithm_error via this same generic path (tick engine continues,
+  // package flagged unhealthy — same contract as every other adapter error).
   throw new AlgorithmAdapterError(
     `unsupported_algorithm_type: Algorithm type '${algoType}' is not supported in this version.`,
     { error_type: 'unsupported_algorithm_type' },
   )
+}
+
+/**
+ * Async dispatch entry for `js_module` (UNTRUSTED user-uploaded packages).
+ *
+ * Calls `args.runner.evaluate(...)` (a Web Worker round-trip — see
+ * `./js_module.ts`), then validates + normalizes the result to the §11
+ * `DecisionResult` shape exactly like the synchronous strategies above.
+ *
+ * Like `python_module` (the docker app's equivalent trusted-local strategy)
+ * and unlike the two built-ins, `next_package_runtime_state` is THREADED
+ * THROUGH from the package's return value, not forced to `{}` — a js_module
+ * package may be stateful across ticks. `result_type` is likewise passed
+ * through verbatim (no alias map), matching `python_module`'s contract.
+ *
+ * Any failure — the worker throwing, crashing, timing out, or returning a
+ * value that isn't a valid `DecisionResult` shape — becomes an
+ * `AlgorithmAdapterError`, never a faked decision (FR-011). The caller
+ * converts this to an `algorithm_error` event exactly as it does for the
+ * synchronous strategies' errors.
+ *
+ * INTEGRATION SEAM for S9.2: this function does not construct, cache, or
+ * tear down `JsModuleRunner`s — it only calls the one it's given. Owning a
+ * runner's lifecycle (spawn on package load/upload, reuse across ticks of a
+ * run, `terminate()` on run end / package deletion / registry eviction) is
+ * `run_manager`'s responsibility once the upload feature (S9.2) exists to
+ * feed an uploaded js_module package through a run. `run_manager.tick`
+ * itself is already `async`, so wiring is a matter of branching on the
+ * package's dispatch strategy and `await`ing this function instead of
+ * calling the synchronous `evaluate()` — no change to the synchronous path
+ * is required to do that.
+ */
+export async function evaluateJsModule(args: EvaluateJsModuleArgs): Promise<DecisionResult> {
+  let raw: Record<string, unknown>
+  try {
+    raw = await args.runner.evaluate({
+      context: args.context,
+      parameters: args.parameters,
+      hyperparameters: args.hyperparameters,
+      history: args.history,
+      package_runtime_state: args.packageRuntimeState,
+    })
+  } catch (exc) {
+    throw new AlgorithmAdapterError(
+      `algorithm_exception: ${exc instanceof Error ? exc.message : String(exc)}`,
+      { error_type: 'algorithm_exception' },
+    )
+  }
+
+  if (!isDecisionResultShape(raw)) {
+    throw new AlgorithmAdapterError(
+      "invalid_result_shape: Algorithm returned a value that is not a DecisionResult.",
+      { error_type: 'invalid_result_shape' },
+    )
+  }
+
+  // next_package_runtime_state and result_type are passed through verbatim
+  // (js_module packages may be stateful and may emit their own result
+  // category strings) — everything else is copied as-is since the shape
+  // guard above already confirmed the required §11 fields are present.
+  return {
+    ...raw,
+    next_package_runtime_state: raw.next_package_runtime_state ?? {},
+  }
 }
 
 // ---------------------------------------------------------------------------
