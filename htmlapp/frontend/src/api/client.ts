@@ -19,11 +19,11 @@
  *
  * Note: the frozen source imports the *runtime* classes `MapsError` and
  * `FeedbackValidationError` from './types' (used only inside the real
- * `routesAnalyze`/`submitFeedback` bodies, both still stubs here). They are
- * intentionally omitted from this file's imports until the slices that
- * implement those two functions reintroduce them — an unused value import
- * would fail this project's `noUnusedLocals` tsc gate. All *type* imports
- * referenced by the 21 signatures below are copied verbatim.
+ * `routesAnalyze`/`submitFeedback` bodies). `MapsError` is now imported as a
+ * value (S7.3 implements `routesAnalyze`/`getRestSpots`); `FeedbackValidationError`
+ * remains omitted until the M5 feedback slice implements `submitFeedback` — an
+ * unused value import would fail this project's `noUnusedLocals` tsc gate. All
+ * *type* imports referenced by the 21 signatures below are copied verbatim.
  */
 import type {
   PackageSummary,
@@ -34,6 +34,7 @@ import type {
   RouteFacts,
   DisplayRoute,
   RouteEnvelope,
+  RouteNotice,
   RoutePresetSummary,
   RunPlanResponse,
   RunState,
@@ -50,11 +51,20 @@ import type {
   ValidationError,
   Snapshot,
 } from './types'
+import { MapsError } from './types'
 import { packageRegistry } from '../engine/services/package_registry'
 import { scenarioRegistry } from '../engine/services/scenario_registry'
 import { seedDefaults } from '../storage/db'
+import { settingsStore } from '../storage/settings_store'
 import { DEFAULT_ROUTE_PRESETS } from '../data/routes'
-import { analyzeRouteMaps, type RawRoute, type RawPlace } from '../engine/services/route_analysis'
+import {
+  analyzeRoute,
+  analyzeRouteMaps,
+  type RawRoute,
+  type RawPlace,
+  type RouteFactsFull,
+} from '../engine/services/route_analysis'
+import * as mapsClient from '../engine/services/maps_client'
 import pkg from '../../package.json'
 import {
   createDraft,
@@ -69,6 +79,8 @@ import {
   action as engineAction,
   getRun as engineGetRun,
   getActiveRunLog as engineGetActiveRunLog,
+  getPriorTickState as engineGetPriorTickState,
+  getScenario as engineGetScenario,
 } from '../engine/run_manager'
 import { runsStore } from '../storage/runs_store'
 
@@ -272,14 +284,133 @@ function validateContextOverridesBody(contextOverrides: Record<string, unknown>)
   return errors
 }
 
+// ── Routes / maps analysis (S7.3) ────────────────────────────────────────
+//
+// routesAnalyze replicates app/api/aica_api/routers/routes.py's
+// analyze_route_endpoint EXACTLY (envelope shaping, path-selection order,
+// notice derivation), swapping the FastAPI HTTPException(404) for a thrown
+// Error, the maps_client urllib calls for the browser SDK wrapper
+// (./engine/services/maps_client — S7.3, loaded lazily via loadMapsSdk),
+// and the FastAPI HTTPException(502, {error_type,message,suggestion}) for a
+// thrown MapsError carrying the SAME structured, key-free body. The key is
+// a local variable only inside this function — never stored, logged, or
+// echoed into any error.
+//
+// Path selection mirrors the router's `use_maps` truthiness check via the
+// frozen docker client.ts convention (`if (args.mapsKey) ...` — a falsy/
+// empty key is treated as "no key", same as the docker fetch body builder
+// omitting the field entirely), not Python's `is not None`. When the caller
+// omits mapsKey, the persisted settings-store key is used as a fallback
+// (the UI itself normally passes the key explicitly, matching docker).
+
+/** Read the persisted Maps key from IndexedDB settings, or undefined if unset/empty. */
+async function resolvePersistedMapsKey(): Promise<string | undefined> {
+  const stored = await settingsStore.get('googleMapsApiKey')
+  return typeof stored === 'string' && stored.length > 0 ? stored : undefined
+}
+
+/** Mirrors routes.py's `_derive_context`: highway if any segment road_class is HIGHWAY, else urban. */
+function deriveMapsContext(raw: RawRoute): { route_type: string } {
+  const segments = raw.segments ?? []
+  return { route_type: segments.some((s) => s.road_class === 'HIGHWAY') ? 'highway' : 'urban' }
+}
+
+/** Mirrors routes.py's `_scale_scenario_rest_positions`: fallback for a Places failure. */
+function scaleScenarioRestPositions(localFacts: RouteFactsFull, mapsTotalKm: number): RawPlace[] {
+  const localTotal = localFacts.total_route_distance_km || 1.0
+  return localFacts.rest_spot_positions.map((pos) => ({
+    name: 'scenario_fallback_rest_stop',
+    location: { lat: 0.0, lng: 0.0 },
+    distance_along_route_m: (pos / localTotal) * mapsTotalKm * 1000.0,
+    synthetic: true,
+  }))
+}
+
 export async function routesAnalyze(args: {
   scenarioId: string
   mapsKey?: string
   start?: string
   end?: string
 }): Promise<RouteEnvelope> {
-  void args
-  throw new Error('not implemented: routesAnalyze')
+  await ready()
+
+  // ── Validate scenario first (before any Maps call) — 404-equivalent ────────
+  const scenario = await scenarioRegistry.get(args.scenarioId)
+
+  const key = args.mapsKey || (await resolvePersistedMapsKey())
+  const useMaps = !!key && !!args.start && !!args.end
+
+  if (!useMaps) {
+    // ── Local path ─────────────────────────────────────────────────────────
+    const routeFacts = analyzeRoute(scenario as unknown as ScenarioDefM2)
+    return {
+      route_source: 'local',
+      alternatives: [
+        {
+          route_id: 'local',
+          summary: scenario.id,
+          route_facts: routeFacts,
+          display: null,
+          notices: [],
+        },
+      ],
+    }
+  }
+
+  // ── Maps path ────────────────────────────────────────────────────────────
+  // key/start/end are local variables only from here down — never stored,
+  // logged, or included in any error.
+  const start = args.start as string
+  const end = args.end as string
+
+  let rawRoutes: RawRoute[]
+  try {
+    rawRoutes = await mapsClient.directions(key as string, start, end)
+  } catch (exc) {
+    if (exc instanceof MapsError) throw exc
+    throw new MapsError({
+      error_type: 'directions_failure',
+      message: exc instanceof Error ? exc.message : 'Directions request failed',
+      suggestion: 'Check your API key and network connection, or use the local route fallback.',
+    })
+  }
+
+  // Local fallback facts (pre-computed once for all alternatives) — mirrors
+  // the router computing this once, not per failing Places alternative.
+  const localFallbackFacts = analyzeRoute(scenario as unknown as ScenarioDefM2)
+
+  const placesByRoute: Record<string, RawPlace[]> = {}
+  const noticesByRoute: Record<string, RouteNotice[]> = {}
+  for (const raw of rawRoutes) {
+    const rid = raw.route_id
+    const context = deriveMapsContext(raw)
+    try {
+      const places = await mapsClient.placesRestStops(key as string, raw.encoded_polyline ?? '', context)
+      placesByRoute[rid] = places
+      noticesByRoute[rid] = places.length === 0 ? ['no_rest_stops_found'] : []
+    } catch {
+      // Places failure degrades gracefully to scenario-scaled fallback — never
+      // surfaced as a MapsError (mirrors the router: only Directions failures
+      // are fatal; Places failures degrade the notice instead).
+      const mapsTotalKm = raw.distance_m / 1000.0
+      const scaled = scaleScenarioRestPositions(localFallbackFacts, mapsTotalKm)
+      placesByRoute[rid] = scaled
+      noticesByRoute[rid] = scaled.length > 0 ? ['rest_data_degraded'] : ['rest_data_unavailable']
+    }
+  }
+
+  const alternatives = analyzeRouteMaps(rawRoutes, placesByRoute, start, end)
+
+  return {
+    route_source: 'maps',
+    alternatives: alternatives.map((alt) => ({
+      route_id: alt.route_id,
+      summary: alt.summary,
+      route_facts: alt.route_facts,
+      display: alt.display,
+      notices: noticesByRoute[alt.route_id] ?? [],
+    })),
+  }
 }
 
 export async function createRunPlan(args: {
@@ -539,17 +670,152 @@ export async function actRun(
   })
 }
 
+// ── Rest spots (S7.3) ────────────────────────────────────────────────────
+//
+// getRestSpots ports app/api/aica_api/routers/runs.py's rest_spots_endpoint
+// FAITHFULLY (candidate source/filter/sort/spacing/cap/enrichment/ceiling/
+// notice — see that function's docstring, mirrored step-by-step below),
+// swapping the FastAPI HTTPException(404) for a thrown Error and
+// get_run/get_prior_tick_state/get_scenario for their run_manager.ts
+// equivalents. Field names and rounding are preserved byte-for-byte.
+//
+// Maps addition (beyond the current Python behavior-of-record, which
+// accepts `maps_key` but never uses it — see that router's own "not yet
+// wired" comment): when a key is present AND the route-facts-derived
+// candidate list is empty AND the run has a Maps display route (an
+// encoded polyline), this falls back to a live Places lookup via the SDK
+// (../engine/services/maps_client) before giving up with the
+// no_rest_stops_found notice. Failures here degrade silently back to the
+// empty-candidate result — Places is a best-effort enrichment, never a
+// reason to fail the whole call. The key never appears in any returned or
+// thrown value.
+
+const REST_SPOTS_MAX = 5
+const REST_SPOTS_DEFAULT_MIN_DISTANCE_KM = 20.0
+
+function round1(n: number): number {
+  return Math.round(n * 10) / 10
+}
+
+/** (position_km, name) candidate pairs, named source preferred over generic positions. */
+function buildRestSpotCandidates(routeFacts: RouteFactsFull): [number, string][] {
+  const named = routeFacts.named_rest_spots ?? []
+  if (named.length > 0) {
+    const realNamed = named.filter((s) => !s.synthetic)
+    return realNamed.map((s) => [s.position_km, s.name])
+  }
+  return (routeFacts.rest_spot_positions ?? []).map((pos, i) => [pos, `Rest stop ${i + 1}`])
+}
+
 export async function getRestSpots(
   runId: string,
   mapsKey?: string,
   drowsinessCeiling?: number,
   minDistanceKm?: number,
 ): Promise<{ rest_spots: RestSpot[]; notice?: string | null }> {
-  void runId
-  void mapsKey
-  void drowsinessCeiling
-  void minDistanceKm
-  throw new Error('not implemented: getRestSpots')
+  await ready()
+
+  const rs = engineGetRun(runId)
+  if (rs === null) {
+    throw new Error(`Run '${runId}' not found`)
+  }
+
+  const routeFacts = rs.route_facts as RouteFactsFull
+  const totalKm = routeFacts.total_route_distance_km || 120.0
+
+  // ── Current driving state from prior tick (zero-defaults if no tick yet) ──
+  const priorTick = engineGetPriorTickState(runId)
+  let currentDistanceKm = 0.0
+  let currentDrowsiness = 0.0
+  let currentSpeedKph = 0.0
+  if (priorTick !== null) {
+    currentDistanceKm = priorTick.distance_km ?? 0.0
+    const raw = priorTick.raw_state
+    currentDrowsiness = Number(raw['drowsinessLevel'] ?? 0)
+    currentSpeedKph = Number(raw['speedKph'] ?? 0)
+  }
+
+  // ── Drowsiness growth rate and safety ceiling from scenario ───────────────
+  const scenario = engineGetScenario(runId)
+  let baseGrowthPerMin = 0.0
+  let ceiling = drowsinessCeiling ?? 100.0
+  if (scenario != null && scenario.driver_profile != null) {
+    const driverProfile = scenario.driver_profile as unknown as {
+      drowsiness_model: { base_growth_per_min: number }
+    }
+    baseGrowthPerMin = driverProfile.drowsiness_model.base_growth_per_min
+    ceiling = drowsinessCeiling ?? scenario.rest_drowsiness_ceiling ?? 100.0
+  }
+
+  const effectiveMinDistanceKm = minDistanceKm ?? REST_SPOTS_DEFAULT_MIN_DISTANCE_KM
+
+  // ── Build candidate list (named when available, else generic positions) ──
+  let candidates = buildRestSpotCandidates(routeFacts)
+
+  // ── Maps enrichment (beyond behavior-of-record; see module comment above) ─
+  const key = mapsKey || (await resolvePersistedMapsKey())
+  if (candidates.length === 0 && key && routeFacts.route_source === 'maps') {
+    const polyline = rs.display_route?.encoded_polyline
+    if (polyline) {
+      try {
+        const routeType = (routeFacts.route_segments ?? []).some((s) => s.segment_type === 'highway')
+          ? 'highway'
+          : 'urban'
+        const places = await mapsClient.placesRestStops(key, polyline, { route_type: routeType })
+        candidates = places.map((p) => [p.distance_along_route_m / 1000.0, p.name])
+      } catch {
+        // Best-effort enrichment only — a Places failure here degrades to the
+        // (already empty) route-facts candidate list, never thrown.
+      }
+    }
+  }
+
+  // ── Filter to spots strictly ahead of the current position ───────────────
+  const ahead = candidates.filter(([pos]) => pos > currentDistanceKm)
+
+  // ── Sort ascending by position_km ─────────────────────────────────────────
+  ahead.sort((a, b) => a[0] - b[0])
+
+  // ── Greedy spacing filter ─────────────────────────────────────────────────
+  const spaced: [number, string][] = []
+  let lastTakenKm: number | null = null
+  for (const [posKm, name] of ahead) {
+    if (lastTakenKm === null || posKm - lastTakenKm >= effectiveMinDistanceKm) {
+      spaced.push([posKm, name])
+      lastTakenKm = posKm
+      if (spaced.length >= REST_SPOTS_MAX) break
+    }
+  }
+
+  // ── Enrich each selected candidate ───────────────────────────────────────
+  const spots: RestSpot[] = spaced.map(([posKm, name], i) => {
+    const routeFraction = Math.min(1.0, posKm / totalKm)
+    const spotDistanceKm = round1(Math.max(0.0, posKm - currentDistanceKm))
+
+    let etaMin: number | null
+    let reachable: boolean
+    if (currentSpeedKph <= 0) {
+      etaMin = null
+      reachable = false
+    } else {
+      const rawEta = (spotDistanceKm / currentSpeedKph) * 60.0
+      etaMin = round1(rawEta)
+      const projectedDrowsiness = currentDrowsiness + baseGrowthPerMin * rawEta
+      reachable = projectedDrowsiness <= ceiling
+    }
+
+    return {
+      id: `rest_${i}`,
+      label: { ja: name, en: name },
+      route_fraction: routeFraction,
+      distance_km: spotDistanceKm,
+      eta_min: etaMin,
+      reachable,
+    }
+  })
+
+  const notice = spots.length === 0 ? 'no_rest_stops_found' : null
+  return { rest_spots: spots, notice }
 }
 
 export async function listRuns(): Promise<{ runs: RunSummary[] }> {
