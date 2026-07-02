@@ -56,6 +56,8 @@ import { packageRegistry } from '../engine/services/package_registry'
 import { scenarioRegistry } from '../engine/services/scenario_registry'
 import { seedDefaults } from '../storage/db'
 import { settingsStore } from '../storage/settings_store'
+import { packagesStore } from '../storage/packages_store'
+import { createJsModuleRunner, type EvaluateInput, type EvaluateOutput } from '../engine/algorithms/js_module'
 import { DEFAULT_ROUTE_PRESETS } from '../data/routes'
 import {
   analyzeRoute,
@@ -125,6 +127,161 @@ export async function listPackages(): Promise<{ packages: PackageSummary[]; erro
 export async function getPackage(id: string): Promise<PackageManifest> {
   await ready()
   return packageRegistry.get(id)
+}
+
+// ── User package upload (S9.2, offline-only seam) ──────────────────────────
+//
+// addUserPackage is NOT part of the frozen app/frontend/src/api/client.ts
+// surface — the docker app has no upload UI, and the controller confirmed no
+// copied component references any upload handler. It is a new offline-only
+// seam that lets a developer add an UNTRUSTED `js_module` algorithm package
+// (source text exporting `manifest` + `evaluate`) at runtime, gated by a
+// smoke test so a broken/malformed package is never silently committed.
+//
+// Two separate executions of the user's source happen here, by design:
+//   1. `extractUserManifest` loads the module on the MAIN THREAD (via a
+//      `data:` URL dynamic import — works in both real browsers and Node/
+//      Vitest, unlike a `blob:` URL, which jsdom's dynamic import does not
+//      support) purely to read the static `manifest` export. No `evaluate()`
+//      call happens in this step.
+//   2. `createJsModuleRunner(source)` (S9.1) spins the SANDBOXED Web Worker
+//      and calls `evaluate()` once with a canned representative input — this
+//      is the untrusted, potentially-misbehaving code path, and it never
+//      touches the main thread's DOM/IndexedDB.
+//
+// Strategy-seam reconciliation (S9.1 -> S9.2): every user-uploaded package is
+// committed with `strategy: 'js_module'` AND `manifest.algorithm.type` FORCED
+// to `'js_module'` (regardless of what the source declared), because
+// `algorithms/adapter.ts` dispatches purely on `manifest.algorithm.type` —
+// this is what routes the package to the async worker path
+// (`evaluateJsModule`) instead of falling through to `unsupported_algorithm_type`.
+//
+// Commit gating: `packagesStore.put` is called ONLY after BOTH the manifest
+// shape check and the smoke evaluate() succeed. Any failure (source fails to
+// load, manifest missing required fields, evaluate() throws/rejects, or the
+// response isn't a plain-object EvaluateOutput) throws and stores nothing.
+// The smoke runner is always terminated (success or failure) — no leaked
+// worker.
+
+/** Minimal, representative probe input for the upload-time smoke test. */
+const UPLOAD_SMOKE_INPUT: EvaluateInput = {
+  context: {},
+  parameters: {},
+  hyperparameters: {},
+  history: [],
+  package_runtime_state: {},
+}
+
+/**
+ * Loose shape guard for the required manifest fields addUserPackage/
+ * packageRegistry.listSummaries actually need. Intentionally NOT a full
+ * PackageManifest validation (parameters/features/rules/etc. may be empty
+ * arrays or absent) — only the fields that would otherwise make the
+ * registry/summary/adapter dispatch silently misbehave are required.
+ */
+function isWellFormedUserManifest(value: unknown): value is PackageManifest {
+  if (!value || typeof value !== 'object') return false
+  const v = value as Record<string, unknown>
+  if (typeof v['id'] !== 'string' || v['id'].length === 0) return false
+  if (typeof v['version'] !== 'string') return false
+  const algorithm = v['algorithm'] as Record<string, unknown> | undefined
+  if (!algorithm || typeof algorithm['type'] !== 'string') return false
+  const label = v['label'] as Record<string, unknown> | undefined
+  if (!label || typeof label['en'] !== 'string' || typeof label['ja'] !== 'string') return false
+  if (!Array.isArray(v['compatible_scenario_types'])) return false
+  return true
+}
+
+/**
+ * Load the user's source as its own ES module (main thread) purely to read
+ * its static `manifest` export. Mirrors `js_module.worker.ts#loadSource`'s
+ * technique (module-scope execution only — `evaluate()` is never invoked
+ * here) but via a `data:` URL rather than `blob:`, since a `data:` URL
+ * dynamic import works uniformly under Vitest/jsdom AND real browsers,
+ * whereas jsdom has no Blob-URL-backed dynamic import.
+ */
+async function extractUserManifest(source: string): Promise<PackageManifest> {
+  const encoded = encodeURIComponent(source)
+  let mod: Record<string, unknown>
+  try {
+    mod = (await import(
+      /* @vite-ignore */ `data:text/javascript;charset=utf-8,${encoded}`
+    )) as Record<string, unknown>
+  } catch (exc) {
+    throw new Error(
+      `invalid_package_source: failed to load package source (${exc instanceof Error ? exc.message : String(exc)})`,
+    )
+  }
+  const manifest = mod['manifest']
+  if (!isWellFormedUserManifest(manifest)) {
+    throw new Error(
+      "invalid_package_manifest: package source does not export a well-formed 'manifest' " +
+        '(requires string id/version, algorithm.type, label.en/ja, and an array compatible_scenario_types)',
+    )
+  }
+  return manifest
+}
+
+/** EvaluateOutput is a loose `Record<string, unknown>` — any plain, non-array object qualifies. */
+function isEvaluateOutputShape(value: unknown): value is EvaluateOutput {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+/**
+ * Add an untrusted `js_module` package: parse its manifest, smoke-test its
+ * `evaluate()` in a sandboxed Web Worker, and commit to IndexedDB only if
+ * both succeed. Throws a validation Error (storing nothing) otherwise.
+ */
+export async function addUserPackage(source: string): Promise<PackageSummary> {
+  await ready()
+
+  // ── 1. Manifest (main thread, no evaluate() call) ──────────────────────
+  const manifest = await extractUserManifest(source)
+
+  // ── 2. Smoke test evaluate() in the sandboxed worker (S9.1 runner) ─────
+  const runner = createJsModuleRunner(source)
+  try {
+    let output: EvaluateOutput
+    try {
+      output = await runner.evaluate(UPLOAD_SMOKE_INPUT)
+    } catch (exc) {
+      throw new Error(
+        `js_module_smoke_failed: package evaluate() failed during smoke test (${exc instanceof Error ? exc.message : String(exc)})`,
+      )
+    }
+    if (!isEvaluateOutputShape(output)) {
+      throw new Error(
+        'js_module_smoke_failed: package evaluate() did not return a valid object result during smoke test',
+      )
+    }
+  } finally {
+    // Always terminate the smoke runner — success or failure — no leaked worker.
+    runner.terminate()
+  }
+
+  // ── 3. Commit (only reached if both checks above passed) ───────────────
+  // Force algorithm.type='js_module' regardless of what the source declared
+  // — see module comment above (strategy-seam reconciliation with adapter.ts's
+  // dispatch-by-manifest.algorithm.type).
+  const committedManifest: PackageManifest = {
+    ...manifest,
+    algorithm: { ...manifest.algorithm, type: 'js_module' },
+  }
+  await packagesStore.put({
+    id: committedManifest.id,
+    manifest: committedManifest,
+    origin: 'user',
+    strategy: 'js_module',
+    source,
+  })
+
+  return {
+    id: committedManifest.id,
+    version: committedManifest.version,
+    label: committedManifest.label,
+    algorithm_type: committedManifest.algorithm.type,
+    compatible_scenario_types: committedManifest.compatible_scenario_types,
+  }
 }
 
 // ── Scenarios ──────────────────────────────────────────────────────────────

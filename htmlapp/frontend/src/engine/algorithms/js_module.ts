@@ -26,6 +26,20 @@
  *   - `terminate()` tears the worker down and rejects any in-flight calls.
  */
 
+// Vite's `?worker&inline` import form (rather than the
+// `new Worker(new URL('./js_module.worker.ts', import.meta.url), { type: 'module' })`
+// pattern) is REQUIRED for `vite-plugin-singlefile` to bundle the worker's
+// code as a base64 data: URL directly inside the single shipped HTML file.
+// The plain `new URL(...)` form only gets inlined while the worker was
+// unreachable from any production entry point; S9.2 makes `client.ts` (a
+// real production module) import `createJsModuleRunner`, which makes this
+// module — and therefore the worker chunk — reachable from the production
+// build for the first time. Without `?worker&inline`, Vite emits the worker
+// as a SIBLING chunk (e.g. `dist/js_module.worker-XXXX.js`), which breaks the
+// single-file / `file://`-openable distributable requirement (verified via
+// `npm run build` + `ls dist/` — see S9.2 report).
+import JsWorker from './js_module.worker.ts?worker&inline'
+
 export type EvaluateInput = {
   context: Record<string, unknown>
   parameters: Record<string, unknown>
@@ -80,14 +94,15 @@ function errorFromInfo(fallbackType: string, error: WorkerErrorInfo | undefined)
 /**
  * Create a runner backed by exactly one Web Worker running `source`.
  *
- * The worker is spawned via `new Worker(new URL(...), { type: 'module' })`
- * — the import pattern that both Vite dev/build and `vite-plugin-singlefile`
- * (via the `?worker&inline` machinery, finalized in S9.3) can inline into
- * the single shipped HTML file.
+ * The worker is spawned via the `JsWorker` class imported through Vite's
+ * `?worker&inline` query (see the import at the top of this file) — the
+ * form `vite-plugin-singlefile` inlines as a base64 `data:` URL directly
+ * inside the single shipped HTML file, verified by `npm run build` + `ls
+ * dist/` producing exactly one `index.html` (S9.2).
  */
 export function createJsModuleRunner(source: string, options?: JsModuleRunnerOptions): JsModuleRunner {
   const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS
-  const worker = new Worker(new URL('./js_module.worker.ts', import.meta.url), { type: 'module' })
+  const worker = new JsWorker()
 
   let nextRequestId = 1
   const pending = new Map<number, PendingEntry>()
