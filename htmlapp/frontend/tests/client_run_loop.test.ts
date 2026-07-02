@@ -80,4 +80,72 @@ describe('client run loop seam', () => {
     expect(summary.run_id).toBe(run.run_id)
     expect(summary.status).toBe('completed')
   })
+
+  it('setup → run → tick loop → completion (hybrid-port follow-up milestone: bundled aica_transparent_hybrid_trigger_v1 now runs offline)', async () => {
+    // MILESTONE PROOF: aica_transparent_hybrid_trigger_v1's BUNDLED manifest
+    // also declares algorithm.type="python_module" — it was the OTHER
+    // bundled package left unported by S9.3 (see that task's report), so it
+    // still surfaced "unsupported_algorithm_type" at tick 0 until this
+    // follow-up ported algorithm.py to
+    // src/data/packages/builtin/aica_transparent_hybrid_trigger_v1.ts and
+    // registered it in BUILTIN_EVALUATORS. This test drives the SAME bundled
+    // package (the stateful transparent-hybrid trigger) + bundled scenario
+    // through the full client API surface (createRunPlan -> createRun ->
+    // tickRun loop -> actRun on pause) entirely offline (fake-indexeddb, no
+    // server) and asserts the run COMPLETES with real decisions — never an
+    // algorithm_error — proving the SECOND bundled package can now run end
+    // to end offline too.
+    const plan = await createRunPlan({ packageId: 'aica_transparent_hybrid_trigger_v1', scenarioId: 'uc01_fatigue_recovery_v0_1' })
+    const run = await createRun((plan as any).plan_id)
+    expect(run.run_id).toBeTruthy()
+    expect(run.status).toBe('created')
+
+    const resultTypesSeen = new Set<string>()
+    let acceptedOnce = false
+    let resp = await tickRun(run.run_id)
+    let guard = 1
+
+    for (;;) {
+      expect('error' in resp, `unexpected algorithm_error at tick ${guard}: ${JSON.stringify((resp as any).error)}`).toBe(false)
+      if (!('error' in resp)) {
+        if (resp.decision) resultTypesSeen.add(resp.decision.result_type)
+        if (resp.completed) break
+        if (resp.paused) {
+          if (!acceptedOnce && resp.decision?.result_type === 'REST_PROPOSAL') {
+            await actRun(run.run_id, 'accept_rest', {
+              recovery_option_id: 'nap_karaoke',
+              rest_spot: { id: 'p1', label: { ja: 'SA', en: 'SA' }, route_fraction: 0.5 },
+            })
+            acceptedOnce = true
+          } else {
+            // Any subsequent pause (e.g. a MONOTONY_PROPOSAL, whose options
+            // are ['acknowledge', 'decline'] — only 'decline' overlaps this
+            // scenario's allowed_actions) — mirrors the fixture capture
+            // script's fallback exactly.
+            await actRun(run.run_id, 'decline')
+          }
+        }
+      }
+      guard += 1
+      if (guard > 500) throw new Error('run did not complete within 500 ticks — aica_transparent_hybrid_trigger_v1 likely regressed')
+      resp = await tickRun(run.run_id)
+    }
+
+    expect(acceptedOnce, 'the run must exercise at least one accept_rest action (REST_PROPOSAL fired)').toBe(true)
+    // Real decisions, not a faked/empty trace: multiple distinct result
+    // types observed (NO_PROPOSAL, SUPPRESSED, REST_PROPOSAL), across a
+    // genuine multi-tick run.
+    expect(resultTypesSeen.has('REST_PROPOSAL')).toBe(true)
+    expect(resultTypesSeen.size).toBeGreaterThan(1)
+
+    const log = await getRunLog(run.run_id)
+    expect((log as any).events.length).toBeGreaterThan(0)
+    expect((log as any).events.some((e: any) => e.kind === 'algorithm_error')).toBe(false)
+    expect((log as any).events.some((e: any) => e.kind === 'tick' && e.trace?.decision_result?.result_type)).toBe(true)
+
+    expect((await listRuns()).runs.length).toBe(1)
+    const summary = (await listRuns()).runs[0]
+    expect(summary.run_id).toBe(run.run_id)
+    expect(summary.status).toBe('completed')
+  })
 })

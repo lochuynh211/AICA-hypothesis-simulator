@@ -2,6 +2,7 @@ import type { DecisionResult, PackageManifest } from '../../api/types'
 import nri from './nri_fatigue_score_v1.json'
 import hybrid from './aica_transparent_hybrid_trigger_v1.json'
 import { evaluate as nriEvaluate } from './builtin/nri_fatigue_score_v1'
+import { evaluate as hybridEvaluate } from './builtin/aica_transparent_hybrid_trigger_v1'
 
 export type PackageRecord = {
   id: string
@@ -31,9 +32,9 @@ export const DEFAULT_PACKAGES: PackageRecord[] = [record(nri), record(hybrid)]
 // a package's `evaluate` by id (via its manifest path) rather than by a
 // caller-supplied strategy tag.
 //
-// `aica_transparent_hybrid_trigger_v1` is deliberately NOT registered here
-// yet — it remains an unported `python_module` package (still surfaces
-// `unsupported_algorithm_type` if run), out of scope for S9.3.
+// `aica_transparent_hybrid_trigger_v1` (the OTHER bundled `python_module`
+// package, unported as of S9.3) is now registered too (follow-up task) —
+// see `./builtin/aica_transparent_hybrid_trigger_v1.ts` for its TS port.
 // ---------------------------------------------------------------------------
 
 /** Mirrors python_module.dispatch()'s `py_context` dict — the input every builtin_js_module evaluate fn receives. */
@@ -52,4 +53,5 @@ export type BuiltinEvaluateFn = (input: BuiltinPyContext) => DecisionResult
 
 export const BUILTIN_EVALUATORS: Record<string, BuiltinEvaluateFn> = {
   nri_fatigue_score_v1: nriEvaluate,
+  aica_transparent_hybrid_trigger_v1: hybridEvaluate,
 }
