@@ -58,6 +58,15 @@ export type EvaluateOutput = Record<string, unknown>
 export type JsModuleRunner = {
   evaluate(input: EvaluateInput): Promise<EvaluateOutput>
   smokeTest(): Promise<boolean>
+  /**
+   * Resolves with the package's static `manifest` export, as reported by
+   * the WORKER's `loaded` message (or `null` if the source didn't export
+   * one) — never obtained via a separate main-thread import of the
+   * untrusted source (S9.2 review fix; see `js_module.worker.ts`'s module
+   * doc comment for the isolation rationale). Triggers the load handshake
+   * on first call, same as `evaluate()`.
+   */
+  getManifest(): Promise<unknown>
   terminate(): void
 }
 
@@ -108,6 +117,10 @@ export function createJsModuleRunner(source: string, options?: JsModuleRunnerOpt
   const pending = new Map<number, PendingEntry>()
   let loadPromise: Promise<void> | null = null
   let rejectLoadPromise: ((err: Error) => void) | null = null
+  // Populated from the worker's `loaded` message — the ONLY source of the
+  // package's manifest (S9.2 review fix: never read via a main-thread
+  // import of the untrusted source).
+  let loadedManifest: unknown = null
 
   function settleAllWith(err: Error): void {
     for (const [id, entry] of pending) {
@@ -151,8 +164,9 @@ export function createJsModuleRunner(source: string, options?: JsModuleRunnerOpt
           reject(err)
         }
         const onMessage = (ev: MessageEvent) => {
-          const msg = ev.data as { type?: string; error?: WorkerErrorInfo } | undefined
+          const msg = ev.data as { type?: string; error?: WorkerErrorInfo; manifest?: unknown } | undefined
           if (msg?.type === 'loaded') {
+            loadedManifest = msg.manifest ?? null
             worker.removeEventListener('message', onMessage)
             rejectLoadPromise = null
             resolve()
@@ -191,10 +205,15 @@ export function createJsModuleRunner(source: string, options?: JsModuleRunnerOpt
     }
   }
 
+  async function getManifest(): Promise<unknown> {
+    await ensureLoaded()
+    return loadedManifest
+  }
+
   function terminate(): void {
     settleAllWith(new Error('terminated'))
     worker.terminate()
   }
 
-  return { evaluate, smokeTest, terminate }
+  return { evaluate, smokeTest, getManifest, terminate }
 }

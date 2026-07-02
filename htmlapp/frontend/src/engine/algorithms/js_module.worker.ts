@@ -20,11 +20,21 @@
  *
  * Message protocol (see `./js_module.ts` for the runner that speaks it):
  *   in  { type: 'load', source: string }
- *   out { type: 'loaded' } | { type: 'load-error', error: WorkerErrorInfo }
+ *   out { type: 'loaded', manifest: unknown } | { type: 'load-error', error: WorkerErrorInfo }
  *
  *   in  { type: 'evaluate', requestId: number, input: unknown }
  *   out { type: 'result', requestId: number, output: unknown }
  *     | { type: 'error', requestId: number, error: WorkerErrorInfo }
+ *
+ * Security note (S9.2 review fix): the module's static `manifest` export is
+ * captured HERE, inside the worker's isolated scope, during the same
+ * dynamic `import()` that already executes the untrusted source to obtain
+ * `evaluate`, and is sent back to the main thread as plain structured-clone
+ * DATA on the `loaded` message. The main thread must NEVER independently
+ * `import()`/`eval`/`new Function` the untrusted source itself to read
+ * `manifest` — that would defeat the isolation boundary this file exists to
+ * provide (see `./js_module.ts#getManifest` and `../../api/client.ts#addUserPackage`,
+ * which consume `manifest` purely as data off this message).
  *
  * Inlining: this file is imported by `js_module.ts` via
  * `new Worker(new URL('./js_module.worker.ts', import.meta.url), { type: 'module' })`
@@ -41,7 +51,7 @@ type LoadMessage = { type: 'load'; source: string }
 type EvaluateMessage = { type: 'evaluate'; requestId: number; input: unknown }
 type InMessage = LoadMessage | EvaluateMessage
 
-type LoadedMessage = { type: 'loaded' }
+type LoadedMessage = { type: 'loaded'; manifest: unknown }
 type LoadErrorMessage = { type: 'load-error'; error: WorkerErrorInfo }
 type ResultMessage = { type: 'result'; requestId: number; output: unknown }
 type ErrorMessage = { type: 'error'; requestId: number; error: WorkerErrorInfo }
@@ -64,21 +74,25 @@ function toErrorInfo(errorType: string, exc: unknown): WorkerErrorInfo {
  * Load the user's source as its own ES module via a Blob URL + dynamic
  * import(). Throws (caller catches) on any failure: syntax error, an
  * exception during module evaluation, or a missing/non-callable `evaluate`
- * export. `manifest` is read but not currently required — packages may omit
- * it; only `evaluate` is load-bearing here.
+ * export. Returns the module's static `manifest` export (or `null` if the
+ * source doesn't export one) so the caller can post it back to the main
+ * thread as plain data — this is the ONLY place the untrusted source's
+ * `manifest` is ever read; it never crosses back into module code on the
+ * main thread (S9.2 review fix).
  */
-async function loadSource(source: string): Promise<void> {
+async function loadSource(source: string): Promise<unknown> {
   const blob = new Blob([source], { type: 'text/javascript' })
   const url = URL.createObjectURL(blob)
   try {
     // @vite-ignore — the URL is a runtime-constructed blob: URL, never
     // resolvable/analyzable at bundle time.
-    const mod = await import(/* @vite-ignore */ url)
-    const evaluateFn = (mod as Record<string, unknown>)['evaluate']
+    const mod = (await import(/* @vite-ignore */ url)) as Record<string, unknown>
+    const evaluateFn = mod['evaluate']
     if (typeof evaluateFn !== 'function') {
       throw new Error("package does not export a callable 'evaluate' function")
     }
     userEvaluate = evaluateFn as (input: unknown) => unknown
+    return mod['manifest'] ?? null
   } finally {
     URL.revokeObjectURL(url)
   }
@@ -95,8 +109,8 @@ function post(message: OutMessage): void {
 async function handleMessage(msg: InMessage): Promise<void> {
   if (msg.type === 'load') {
     try {
-      await loadSource(msg.source)
-      post({ type: 'loaded' })
+      const manifest = await loadSource(msg.source)
+      post({ type: 'loaded', manifest })
     } catch (exc) {
       post({ type: 'load-error', error: toErrorInfo('load_error', exc) })
     }

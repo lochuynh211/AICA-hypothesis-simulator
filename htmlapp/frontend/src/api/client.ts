@@ -138,16 +138,28 @@ export async function getPackage(id: string): Promise<PackageManifest> {
 // (source text exporting `manifest` + `evaluate`) at runtime, gated by a
 // smoke test so a broken/malformed package is never silently committed.
 //
-// Two separate executions of the user's source happen here, by design:
-//   1. `extractUserManifest` loads the module on the MAIN THREAD (via a
-//      `data:` URL dynamic import — works in both real browsers and Node/
-//      Vitest, unlike a `blob:` URL, which jsdom's dynamic import does not
-//      support) purely to read the static `manifest` export. No `evaluate()`
-//      call happens in this step.
-//   2. `createJsModuleRunner(source)` (S9.1) spins the SANDBOXED Web Worker
-//      and calls `evaluate()` once with a canned representative input — this
-//      is the untrusted, potentially-misbehaving code path, and it never
-//      touches the main thread's DOM/IndexedDB.
+// The untrusted source is executed EXCLUSIVELY inside the sandboxed Web
+// Worker (S9.1's `createJsModuleRunner`) — never on the main thread. Two
+// worker round-trips happen against the SAME runner/worker instance:
+//   1. `runner.getManifest()` triggers the worker's load handshake (module-
+//      scope execution happens INSIDE the worker) and resolves with the
+//      `manifest` the worker reported back as plain structured-clone data
+//      (see `js_module.worker.ts#loadSource`). No `evaluate()` call happens
+//      in this step.
+//   2. `runner.evaluate(UPLOAD_SMOKE_INPUT)` calls `evaluate()` once with a
+//      canned representative input — the untrusted, potentially-misbehaving
+//      code path, still confined to the worker.
+//
+// SECURITY (S9.2 review fix): a prior version of this function additionally
+// `import()`ed the raw source as a `data:` URL on the MAIN THREAD (via a
+// since-removed `extractUserManifest` helper) purely to read `manifest`.
+// Because ES module import executes ALL top-level module code, any top-level
+// side effect in the uploaded source (fetch, DOM/window access, IndexedDB
+// reads) ran with FULL MAIN-THREAD privileges before the worker-sandboxed
+// smoke test ever started — defeating the isolation boundary the worker
+// exists to provide. That helper is gone; `manifest` now comes exclusively
+// from the worker's `loaded` message, so no untrusted source is ever
+// imported/eval'd/`new Function`'d on the main thread.
 //
 // Strategy-seam reconciliation (S9.1 -> S9.2): every user-uploaded package is
 // committed with `strategy: 'js_module'` AND `manifest.algorithm.type` FORCED
@@ -192,36 +204,6 @@ function isWellFormedUserManifest(value: unknown): value is PackageManifest {
   return true
 }
 
-/**
- * Load the user's source as its own ES module (main thread) purely to read
- * its static `manifest` export. Mirrors `js_module.worker.ts#loadSource`'s
- * technique (module-scope execution only — `evaluate()` is never invoked
- * here) but via a `data:` URL rather than `blob:`, since a `data:` URL
- * dynamic import works uniformly under Vitest/jsdom AND real browsers,
- * whereas jsdom has no Blob-URL-backed dynamic import.
- */
-async function extractUserManifest(source: string): Promise<PackageManifest> {
-  const encoded = encodeURIComponent(source)
-  let mod: Record<string, unknown>
-  try {
-    mod = (await import(
-      /* @vite-ignore */ `data:text/javascript;charset=utf-8,${encoded}`
-    )) as Record<string, unknown>
-  } catch (exc) {
-    throw new Error(
-      `invalid_package_source: failed to load package source (${exc instanceof Error ? exc.message : String(exc)})`,
-    )
-  }
-  const manifest = mod['manifest']
-  if (!isWellFormedUserManifest(manifest)) {
-    throw new Error(
-      "invalid_package_manifest: package source does not export a well-formed 'manifest' " +
-        '(requires string id/version, algorithm.type, label.en/ja, and an array compatible_scenario_types)',
-    )
-  }
-  return manifest
-}
-
 /** EvaluateOutput is a loose `Record<string, unknown>` — any plain, non-array object qualifies. */
 function isEvaluateOutputShape(value: unknown): value is EvaluateOutput {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -235,12 +217,29 @@ function isEvaluateOutputShape(value: unknown): value is EvaluateOutput {
 export async function addUserPackage(source: string): Promise<PackageSummary> {
   await ready()
 
-  // ── 1. Manifest (main thread, no evaluate() call) ──────────────────────
-  const manifest = await extractUserManifest(source)
-
-  // ── 2. Smoke test evaluate() in the sandboxed worker (S9.1 runner) ─────
+  // ── Every step below runs against ONE sandboxed worker instance (S9.1
+  // runner). The untrusted source is loaded/executed exclusively inside
+  // that worker — see the module comment above (S9.2 review fix). ─────────
   const runner = createJsModuleRunner(source)
   try {
+    // ── 1. Manifest — obtained FROM the worker's load handshake, never via
+    // a main-thread import of the untrusted source. ────────────────────────
+    let manifest: unknown
+    try {
+      manifest = await runner.getManifest()
+    } catch (exc) {
+      throw new Error(
+        `invalid_package_source: failed to load package source (${exc instanceof Error ? exc.message : String(exc)})`,
+      )
+    }
+    if (!isWellFormedUserManifest(manifest)) {
+      throw new Error(
+        "invalid_package_manifest: package source does not export a well-formed 'manifest' " +
+          '(requires string id/version, algorithm.type, label.en/ja, and an array compatible_scenario_types)',
+      )
+    }
+
+    // ── 2. Smoke test evaluate() in the same sandboxed worker ──────────────
     let output: EvaluateOutput
     try {
       output = await runner.evaluate(UPLOAD_SMOKE_INPUT)
@@ -254,33 +253,33 @@ export async function addUserPackage(source: string): Promise<PackageSummary> {
         'js_module_smoke_failed: package evaluate() did not return a valid object result during smoke test',
       )
     }
+
+    // ── 3. Commit (only reached if both checks above passed) ───────────────
+    // Force algorithm.type='js_module' regardless of what the source declared
+    // — see module comment above (strategy-seam reconciliation with adapter.ts's
+    // dispatch-by-manifest.algorithm.type).
+    const committedManifest: PackageManifest = {
+      ...manifest,
+      algorithm: { ...manifest.algorithm, type: 'js_module' },
+    }
+    await packagesStore.put({
+      id: committedManifest.id,
+      manifest: committedManifest,
+      origin: 'user',
+      strategy: 'js_module',
+      source,
+    })
+
+    return {
+      id: committedManifest.id,
+      version: committedManifest.version,
+      label: committedManifest.label,
+      algorithm_type: committedManifest.algorithm.type,
+      compatible_scenario_types: committedManifest.compatible_scenario_types,
+    }
   } finally {
     // Always terminate the smoke runner — success or failure — no leaked worker.
     runner.terminate()
-  }
-
-  // ── 3. Commit (only reached if both checks above passed) ───────────────
-  // Force algorithm.type='js_module' regardless of what the source declared
-  // — see module comment above (strategy-seam reconciliation with adapter.ts's
-  // dispatch-by-manifest.algorithm.type).
-  const committedManifest: PackageManifest = {
-    ...manifest,
-    algorithm: { ...manifest.algorithm, type: 'js_module' },
-  }
-  await packagesStore.put({
-    id: committedManifest.id,
-    manifest: committedManifest,
-    origin: 'user',
-    strategy: 'js_module',
-    source,
-  })
-
-  return {
-    id: committedManifest.id,
-    version: committedManifest.version,
-    label: committedManifest.label,
-    algorithm_type: committedManifest.algorithm.type,
-    compatible_scenario_types: committedManifest.compatible_scenario_types,
   }
 }
 
