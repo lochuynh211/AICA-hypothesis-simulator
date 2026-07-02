@@ -65,4 +65,36 @@ export async function api(path, init) {
 // (empty stages) case and the resuming->{active:false,phase:null} transition
 // that gates the REST_RECOVERY re-arm in algorithm.py (M7).
 
+// event_plan / run_plan / tick_sequence (Task S3.3): freeze_event_plan,
+// build_event_plan, create_draft, and advance_tick are pure internal
+// services with no dedicated debug HTTP endpoint (the tick loop and draft
+// registry are invoked mid-run / mid-setup by run_manager and the
+// /api/run-plans router, not exposed as raw pass-through routes). All three
+// fixtures were derived by importing the actual Python modules from app/api's
+// project venv (`./.venv/bin/python`) and calling them directly on the
+// bundled uc01_fatigue_recovery_v0_1 scenario JSON shipped at
+// src/data/scenarios/uc01_fatigue_recovery_v0_1.json (the SAME JSON the
+// offline app ships, so fixture input == app input):
+//   - event_plan.json:    freeze_event_plan(scenario) — no seed param exists
+//     in Python; the fixture's input.seed=0 is a harness-compatibility no-op
+//     (freezeEventPlan(scenario, seed) ignores it — see event_plan.ts docstring).
+//   - tick_sequence.json: route_facts = analyze_route(scenario); event_plan =
+//     build_event_plan(route_facts, scenario, {}); then prior=None, and for
+//     i in range(...): state = advance_tick(prior, i, event_plan, route_facts,
+//     scenario); record state; prior = state — until state.completed is True
+//     (108 ticks to completion for this scenario, tick 107 inclusive).
+//   - run_plan.json: create_draft(plan_id="fixture-plan-1",
+//     package=nri_fatigue_score_v1, scenario=uc01_fatigue_recovery_v0_1,
+//     presets={}, parameters={}, hyperparameters={}) with route_facts=None
+//     (Python derives it locally via analyze_route(scenario)); the fixture's
+//     output is {draft, package, scenario} (draft.model_dump(mode="json") +
+//     the same package/scenario dumps used as input), NOT the bare RunPlanDraft
+//     create_draft actually returns — this shape was chosen so createDraft's
+//     TS port can conveniently echo back its (possibly profile-overridden)
+//     effective package/scenario alongside the draft, mirroring what
+//     get_draft_entry's registry tuple carries.
+// Each dump used model.model_dump(mode="json"); the generating script (not
+// committed) lived at gen_fixtures.py during authoring — see
+// task-S3.3-report.md for the exact snippet if it needs to be regenerated.
+
 console.log('capture complete')
