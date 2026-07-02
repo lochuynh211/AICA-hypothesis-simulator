@@ -26,6 +26,7 @@
  * path.
  */
 import type {
+  ActionEvent,
   FeedbackEvent,
   FeedbackSubmitBody,
   FeedbackTarget,
@@ -33,8 +34,10 @@ import type {
   PackageManifest,
   RunLog,
   RunLogEvent,
+  TickEvent,
   ValidationError,
 } from '../../api/types'
+import { FeedbackValidationError } from '../../api/types'
 import { appendFeedback as runManagerAppendFeedback } from '../run_manager'
 
 // ---------------------------------------------------------------------------
@@ -194,6 +197,128 @@ export function effectiveSchema(manifest: PackageManifest): FieldDef[] {
   }
 
   return [...V1_FEEDBACK_SCHEMA, ...extras]
+}
+
+// ---------------------------------------------------------------------------
+// resolveEventRef
+// ---------------------------------------------------------------------------
+
+/** Render a string the way Python's `!r}` formats a `str` — single-quoted
+ * (e.g. "'decision'") — so resolution-error messages match Python
+ * byte-for-byte. Only used for simple identifier-like values (scope names,
+ * action strings) that never contain a `'`. */
+function pyRepr(value: string): string {
+  return `'${value}'`
+}
+
+/**
+ * Resolve `target.event_ref` from a human anchor (`target.tick_index` /
+ * `target.action`) when the caller omits it.
+ *
+ * Ported from `app/api/aica_api/routers/runs.py::_resolve_event_ref`
+ * (behavior-of-record). Called BEFORE validation, exactly as `post_feedback`
+ * does (`_resolve_event_ref` is step 2, `validate` is step 4).
+ *
+ * Resolution rules, matching Python exactly:
+ * - scope="run": no event_ref needed; return target unchanged.
+ * - event_ref already set: return target unchanged (used as-is).
+ * - scope in ("decision", "proposal"): requires target.tick_index; find
+ *   indices of runLog.events where kind="tick" and tick_index matches; for
+ *   "proposal", additionally filter to ticks where
+ *   trace.decision_result.fire_control.fired && proposal !== null.
+ *   0 matches -> "No {scope} event found..." error. >1 matches -> ambiguous
+ *   error. Exactly 1 -> event_ref = that index.
+ * - scope="action": requires target.tick_index and target.action; find the
+ *   ActionEvent matching both; same 0/ambiguous/1 handling.
+ * - unknown scope: returned unchanged (validate() catches it).
+ *
+ * Resolution failures surface as `FeedbackValidationError` — mirroring
+ * Python's `HTTPException(400, detail=<string>)` (a single message, not a
+ * per-field validation_errors list) but adapted to the one error type this
+ * seam's callers (e.g. FeedbackForm) already know how to render: a single
+ * `{ field: 'target.event_ref', message: <detail> }` entry, so the same
+ * `err.validationErrors` UI path used for the docker app's HTTP 400s shows
+ * the message here too (a plain-string `detail` would otherwise be silently
+ * dropped by `FeedbackValidationError`'s `detail.validation_errors` read —
+ * see `app/frontend/src/api/types.ts`'s constructor — since there's no HTTP
+ * round-trip in this build to preserve that quirk faithfully).
+ *
+ * @throws FeedbackValidationError when a required anchor field is missing,
+ *   no event matches, or more than one event matches.
+ */
+export function resolveEventRef(target: FeedbackTarget, runLog: RunLog): FeedbackTarget {
+  const scope = target.scope
+
+  if (scope === 'run') {
+    return target // no event_ref required
+  }
+
+  if (target.event_ref != null) {
+    return target // already provided — use as-is
+  }
+
+  const tickIndex = target.tick_index ?? null
+  const actionStr = target.action ?? null
+  const events = runLog.events
+
+  const fail = (message: string): never => {
+    throw new FeedbackValidationError({
+      validation_errors: [{ field: 'target.event_ref', message }],
+    })
+  }
+
+  if (scope === 'decision' || scope === 'proposal') {
+    if (tickIndex == null) {
+      fail(`target.tick_index is required for scope=${pyRepr(scope)} when event_ref is not provided.`)
+    }
+    let matches = events
+      .map((e, i) => ({ e, i }))
+      .filter(({ e }) => e.kind === 'tick' && (e as TickEvent).tick_index === tickIndex)
+      .map(({ i }) => i)
+    if (scope === 'proposal') {
+      matches = matches.filter((i) => {
+        const dr = (events[i] as TickEvent).trace.decision_result
+        return dr.fire_control.fired && dr.proposal !== null
+      })
+    }
+    if (matches.length === 0) {
+      fail(`No ${scope} event found for tick_index=${tickIndex} in the run log.`)
+    }
+    if (matches.length > 1) {
+      fail(`Ambiguous: ${matches.length} ${scope} events found for tick_index=${tickIndex}.`)
+    }
+    return { ...target, event_ref: matches[0] }
+  }
+
+  if (scope === 'action') {
+    if (tickIndex == null) {
+      fail("target.tick_index is required for scope='action' when event_ref is not provided.")
+    }
+    if (actionStr == null) {
+      fail("target.action is required for scope='action' when event_ref is not provided.")
+    }
+    const matches = events
+      .map((e, i) => ({ e, i }))
+      .filter(
+        ({ e }) =>
+          e.kind === 'action' && (e as ActionEvent).tick_index === tickIndex && (e as ActionEvent).action === actionStr,
+      )
+      .map(({ i }) => i)
+    if (matches.length === 0) {
+      fail(
+        `No action event found for tick_index=${tickIndex}`
+          + (actionStr ? `, action=${pyRepr(actionStr)}` : '')
+          + ' in the run log.',
+      )
+    }
+    if (matches.length > 1) {
+      fail(`Ambiguous: ${matches.length} action events found for tick_index=${tickIndex}.`)
+    }
+    return { ...target, event_ref: matches[0] }
+  }
+
+  // Unknown scope — let validate() catch it
+  return target
 }
 
 // ---------------------------------------------------------------------------

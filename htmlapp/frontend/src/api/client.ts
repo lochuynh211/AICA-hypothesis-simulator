@@ -87,6 +87,7 @@ import {
   effectiveSchema,
   validate as validateFeedback,
   appendFeedback as engineAppendFeedback,
+  resolveEventRef,
 } from '../engine/services/feedback'
 
 export type HealthStatus = {
@@ -881,20 +882,29 @@ export async function getEvidenceMarkdown(runId: string, uiLanguage?: string): P
 /**
  * Validate + append a reviewer FeedbackEvent to the run log.
  *
+ * Mirrors `post_feedback`'s order (runs.py @557): resolve the run log ->
+ * resolve `target.event_ref` from the human anchor (tick_index/action) when
+ * omitted -> effective schema -> validate the RESOLVED target -> append.
+ * The resolved target (with event_ref set) is what gets validated AND what
+ * is stored on the appended FeedbackEvent — never the raw, unresolved body.
+ *
  * Throws FeedbackValidationError (with validationErrors list) on invalid
- * input — matching the docker client's 400 path exactly. Nothing is
- * appended in that case. On success, the event is appended (append-only)
- * and returned.
+ * input, including when event_ref resolution fails (not found / ambiguous /
+ * missing anchor field) — matching the docker client's 400 path exactly.
+ * Nothing is appended in that case. On success, the event is appended
+ * (append-only) and returned.
  */
 export async function submitFeedback(
   runId: string,
   body: FeedbackSubmitBody,
 ): Promise<FeedbackEvent> {
   const { log, pkg } = await resolveFeedbackPackage(runId)
+  const resolvedTarget = resolveEventRef(body.target, log)
+  const resolvedBody: FeedbackSubmitBody = { ...body, target: resolvedTarget }
   const schema = effectiveSchema(pkg)
-  const result = validateFeedback(schema, body, log)
+  const result = validateFeedback(schema, resolvedBody, log)
   if (!result.ok) {
     throw new FeedbackValidationError({ validation_errors: result.errors })
   }
-  return engineAppendFeedback(runId, body)
+  return engineAppendFeedback(runId, resolvedBody)
 }
