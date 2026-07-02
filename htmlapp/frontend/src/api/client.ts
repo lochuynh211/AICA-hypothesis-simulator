@@ -89,6 +89,8 @@ import {
   appendFeedback as engineAppendFeedback,
   resolveEventRef,
 } from '../engine/services/feedback'
+import { buildEvidenceReport } from '../engine/services/evidence'
+import { renderEvidenceMarkdown } from '../engine/services/evidence_markdown'
 
 export type HealthStatus = {
   status: string
@@ -867,16 +869,26 @@ export async function getFeedbackSchema(runId: string): Promise<FeedbackSchema> 
   return { fields: effectiveSchema(pkg) }
 }
 
+// ── M5/S8 Evidence export ─────────────────────────────────────────────────
+//
+// Mirrors runs.py's get_evidence/get_evidence_markdown (@619/@656): resolve
+// the run's log via buildEvidenceReport (which itself resolves the active
+// run via ../engine/run_manager's getActiveRunLog — see that module's
+// docstring for why the on-disk `runs/{id}.json` fallback branch of
+// Python's `_resolve_run_log` has no equivalent here: every run this seam
+// can reach is either active or does not exist) and shape/derive the §14.2
+// report. `ui_language` defaults to `"bilingual"`, matching the router's
+// `Query(default="bilingual", ...)` back-compat default for pre-M6 callers.
+// getEvidenceMarkdown calls build_evidence_report then render_evidence_markdown
+// with NO divergent computation, exactly like the Python router.
+
 export async function getEvidence(runId: string, uiLanguage?: string): Promise<EvidenceReport> {
-  void runId
-  void uiLanguage
-  throw new Error('not implemented: getEvidence')
+  return buildEvidenceReport(runId, uiLanguage ?? 'bilingual')
 }
 
 export async function getEvidenceMarkdown(runId: string, uiLanguage?: string): Promise<string> {
-  void runId
-  void uiLanguage
-  throw new Error('not implemented: getEvidenceMarkdown')
+  const report = await buildEvidenceReport(runId, uiLanguage ?? 'bilingual')
+  return renderEvidenceMarkdown(report)
 }
 
 /**

@@ -217,4 +217,69 @@ export async function api(path, init) {
 // one-liner during authoring — see task-S5.1-report.md for the exact
 // source if it needs to be regenerated.
 
+// evidence_report / evidence_markdown (Task S8.1): build_evidence_report
+// (evidence.py) and render_evidence_markdown (evidence_markdown.py) are pure
+// internal services with no dedicated debug HTTP endpoint that returns their
+// raw dict/string output outside a live server (the router endpoints
+// @619/@656 generate report_id/timestamp and shape the HTTP response), so
+// both fixtures were derived by importing the actual Python modules from
+// app/api's project venv (`./.venv/bin/python`) and driving them directly,
+// end to end — reusing the SAME reconstructed declarative_rule package
+// (`rest_rule_based_v0_1`) + scenario (`uc01_fatigue_recovery_v0_1`) +
+// accept_rest flow as run_log_e2e.json (Task S4.2; see that fixture's own
+// capture-notes above for why: both packages actually bundled into the
+// htmlapp are algorithm.type="python_module", unsupported by
+// src/engine/algorithms/adapter.ts, so every tick would immediately raise
+// AlgorithmAdapterError and never reach a REST_PROPOSAL/accept_rest):
+//   package = PackageManifest(**<same reconstructed rest_rule_based_v0_1 dict
+//     as run_log_e2e.json's input.package>)
+//   scenario = ScenarioDef(**json.load(open("scenarios/uc01_fatigue_recovery_v0_1.json")))
+//   create_draft(plan_id="plan_evidence_fixture", package=package, scenario=scenario,
+//                presets={}, parameters={}, hyperparameters={}, run_mode="standard")
+//   create_run("plan_evidence_fixture", "run_evidence_fixture", runs_dir=<tmp>)
+//   loop: outcome = tick(run_id); on the first outcome.paused (REST_PROPOSAL):
+//     action(run_id, "accept_rest", recovery_option_id="nap_karaoke",
+//            rest_spot=RestSpot(id="p1", label={"ja":"SA","en":"SA"}, route_fraction=0.5))
+//     until outcome.completed (same 4x REST_PROPOSAL / 1x accept_rest / 113-tick
+//     shape as run_log_e2e.json — tick 29 fires the accepted proposal).
+//   THEN, to exercise BOTH ## Human Review subsections (not just an empty
+//   run), two FeedbackEvents were appended via run_manager.append_feedback:
+//     decision_feedback = FeedbackEvent(kind="feedback",
+//       target=FeedbackTarget(scope="decision", event_ref=29, tick_index=29),
+//       labels={"proposal_timing": "appropriate", "safety_impression": "safe"},
+//       comment="Felt like a natural moment to suggest a rest.")
+//     run_feedback = FeedbackEvent(kind="feedback",
+//       target=FeedbackTarget(scope="run"),
+//       labels={"overall_judgment": "good_trigger"}, comment=None)
+//   report = build_evidence_report(get_active_run_log(run_id),
+//     report_id="report_fixture_20260701-000000_abcdef",
+//     timestamp="2026-07-01T00:00:00+00:00", ui_language="en")
+//     — captures ONE language (en); the parity test renders that same report
+//     (uiLanguage is a pass-through label field, not branching logic — the
+//     Python renderer never special-cases it beyond echoing the string).
+//   markdown = render_evidence_markdown(report)
+// fixture = {
+//   "evidence_report.json": {
+//     "input": {"package": <dict>, "scenario": <dict>, "parameters": {},
+//               "hyperparameters": {}, "presets": {}, "runMode": "standard",
+//               "recoveryOptionId": "nap_karaoke",
+//               "restSpot": {"id": "p1", "label": {"ja": "SA", "en": "SA"},
+//                            "lat": None, "lng": None, "route_fraction": 0.5},
+//               "uiLanguage": "en",
+//               "feedback": {"decision": decision_feedback.model_dump_json(),
+//                            "run": run_feedback.model_dump_json(),
+//                            "proposalTickIndex": 29, "proposalEventRef": 29}},
+//     "output": report,   # the raw dict returned by build_evidence_report
+//   },
+//   "evidence_markdown.json": {"input": report, "output": markdown},
+// }
+// A guard in the capture script also asserts no Google Maps key material
+// (the string "googleMapsApiKey"/"google_maps_api_key", or an "AIza..."-shaped
+// token) appears anywhere in the report JSON or markdown — the master
+// invariant that the evidence export never carries the Maps key, verified at
+// fixture-generation time as well as by tests/evidence.test.ts.
+// The generating script (not committed) lived at
+// capture_evidence_fixtures.py during authoring — see task-S8.1-report.md
+// for the exact source if it needs to be regenerated.
+
 console.log('capture complete')
