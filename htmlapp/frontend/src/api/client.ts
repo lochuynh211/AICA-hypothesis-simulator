@@ -679,16 +679,10 @@ export async function actRun(
 // get_run/get_prior_tick_state/get_scenario for their run_manager.ts
 // equivalents. Field names and rounding are preserved byte-for-byte.
 //
-// Maps addition (beyond the current Python behavior-of-record, which
-// accepts `maps_key` but never uses it — see that router's own "not yet
-// wired" comment): when a key is present AND the route-facts-derived
-// candidate list is empty AND the run has a Maps display route (an
-// encoded polyline), this falls back to a live Places lookup via the SDK
-// (../engine/services/maps_client) before giving up with the
-// no_rest_stops_found notice. Failures here degrade silently back to the
-// empty-candidate result — Places is a best-effort enrichment, never a
-// reason to fail the whole call. The key never appears in any returned or
-// thrown value.
+// mapsKey is accepted (to keep the signature identical to app/frontend's
+// client.ts) but, exactly like Python's rest_spots_endpoint, it is never
+// used for candidate selection — Python's own docstring says maps_key is
+// "not yet wired". No Places/SDK call is made here.
 
 const REST_SPOTS_MAX = 5
 const REST_SPOTS_DEFAULT_MIN_DISTANCE_KM = 20.0
@@ -713,6 +707,10 @@ export async function getRestSpots(
   drowsinessCeiling?: number,
   minDistanceKm?: number,
 ): Promise<{ rest_spots: RestSpot[]; notice?: string | null }> {
+  // mapsKey is part of the signature (parity with app/frontend/src/api/client.ts)
+  // but intentionally unused — matches Python's rest_spots_endpoint, which
+  // accepts maps_key and never wires it up. See module comment above.
+  void mapsKey
   await ready()
 
   const rs = engineGetRun(runId)
@@ -750,25 +748,9 @@ export async function getRestSpots(
   const effectiveMinDistanceKm = minDistanceKm ?? REST_SPOTS_DEFAULT_MIN_DISTANCE_KM
 
   // ── Build candidate list (named when available, else generic positions) ──
-  let candidates = buildRestSpotCandidates(routeFacts)
-
-  // ── Maps enrichment (beyond behavior-of-record; see module comment above) ─
-  const key = mapsKey || (await resolvePersistedMapsKey())
-  if (candidates.length === 0 && key && routeFacts.route_source === 'maps') {
-    const polyline = rs.display_route?.encoded_polyline
-    if (polyline) {
-      try {
-        const routeType = (routeFacts.route_segments ?? []).some((s) => s.segment_type === 'highway')
-          ? 'highway'
-          : 'urban'
-        const places = await mapsClient.placesRestStops(key, polyline, { route_type: routeType })
-        candidates = places.map((p) => [p.distance_along_route_m / 1000.0, p.name])
-      } catch {
-        // Best-effort enrichment only — a Places failure here degrades to the
-        // (already empty) route-facts candidate list, never thrown.
-      }
-    }
-  }
+  // mapsKey is accepted but intentionally unused here — see module comment
+  // above (matches Python's rest_spots_endpoint, which never wires it up).
+  const candidates = buildRestSpotCandidates(routeFacts)
 
   // ── Filter to spots strictly ahead of the current position ───────────────
   const ahead = candidates.filter(([pos]) => pos > currentDistanceKm)
