@@ -906,7 +906,18 @@ export async function action(runId: string, actionStr: string, opts: ActionOpts 
     newStatus = 'playing'
   }
 
+  // ── Update state ─────────────────────────────────────────────────────
+  // Mutate runState BEFORE recordEvent() so its internal persistHeader()
+  // call (which reads entry.runState.status at that moment) persists the
+  // FINAL post-action status, not the stale pre-action one — mirrors how
+  // tick() only calls persistHeader() after runState.status is finalized.
+  runState.status = newStatus
+  runState.pending_proposal = null
+
   // ── Append ActionEvent ──────────────────────────────────────────────
+  // resulting_status is the previously-computed `newStatus` value (identical
+  // to Python's ActionEvent.resulting_status = new_status.value) — unaffected
+  // by the reordering above.
   const actionEvent: ActionEvent = {
     kind: 'action',
     tick_index: runState.current_tick - 1, // tick that fired the proposal
@@ -914,10 +925,6 @@ export async function action(runId: string, actionStr: string, opts: ActionOpts 
     resulting_status: newStatus,
   }
   await recordEvent(entry, actionEvent)
-
-  // ── Update state ─────────────────────────────────────────────────────
-  runState.status = newStatus
-  runState.pending_proposal = null
 
   return runState
 }

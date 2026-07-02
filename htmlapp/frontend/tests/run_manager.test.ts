@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { IDBFactory } from 'fake-indexeddb'
 import { loadFixture, expectParity } from '../src/engine/__fixtures__/parity'
 import { createDraft, clearDraftRegistry } from '../src/engine/run_plan'
-import { createRun, tick, action, getActiveRunLog, clearRegistry } from '../src/engine/run_manager'
+import { createRun, tick, action, getActiveRunLog, getRun, clearRegistry } from '../src/engine/run_manager'
+import { runsStore } from '../src/storage/runs_store'
 
 beforeEach(() => {
   globalThis.indexedDB = new IDBFactory()
@@ -53,6 +54,23 @@ describe('run manager e2e (S4.2 keystone)', () => {
           expect(outcome.decision?.result_type).toBe('REST_PROPOSAL')
           await action(runId, 'accept_rest', { recoveryOptionId, restSpot })
           acceptedOnce = true
+
+          // ── Regression (S4.2 review, Important defect) ─────────────────
+          // recordEvent() inside action() persists the `runs` header row by
+          // reading entry.runState.status AT THAT MOMENT. If the header
+          // persist happens before runState.status is updated to its final
+          // post-action value, the persisted header is left stuck at the
+          // stale pre-action 'paused' status — permanently, in the
+          // back-compat (no recovery_options) accept_rest -> 'completed'
+          // path, since nothing ever re-persists after a run completes.
+          // Assert the persisted header already reflects the FINAL
+          // post-action status immediately after action() returns — i.e.
+          // BEFORE the next tick() gets a chance to mask the bug by
+          // unconditionally overwriting the header again.
+          const liveRunState = getRun(runId)
+          const persistedHeaderAfterAction = await runsStore.getHeader(runId)
+          expect(persistedHeaderAfterAction?.status).toBe(liveRunState?.status)
+          expect(persistedHeaderAfterAction?.status).not.toBe('paused')
         } else {
           await action(runId, 'decline')
         }
