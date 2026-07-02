@@ -23,6 +23,7 @@ import { AlgorithmAdapterError } from './errors'
 import { evaluateDeclarative } from './declarative_rule'
 import { evaluateWeighted } from './weighted_score'
 import type { JsModuleRunner } from './js_module'
+import { BUILTIN_EVALUATORS, type BuiltinEvaluateFn, type BuiltinPyContext } from '../../data/packages'
 
 export type EvaluateArgs = {
   manifest: PackageManifest
@@ -91,13 +92,57 @@ export function evaluate(args: EvaluateArgs): DecisionResult {
     return dispatchWeightedScore(args.context, args.parameters, args.hyperparameters)
   }
 
+  // ── DISPATCH SEAM (S9.3): trusted local packages whose behavior-of-record
+  // is a Python `python_module` (app/api's trusted-local-Python strategy)
+  // now ship as a TS port registered under `BUILTIN_EVALUATORS` (keyed by
+  // package id — see `../../data/packages/index.ts`). The bundled manifest's
+  // `algorithm.type` stays `'python_module'` (it's the SAME JSON the docker
+  // app ships, byte-identical, never hand-edited for the offline build), and
+  // `PackageRecord.strategy` is separately remapped to `'builtin_js_module'`
+  // at load time (see `data/packages/index.ts`'s `record()`) — but nothing
+  // upstream of THIS function ever threads that `strategy` string through to
+  // here (`EvaluateArgs` only carries `manifest`, matching Python
+  // adapter.py's signature exactly, and `run_manager.tick` calls this
+  // synchronous `evaluate()` unchanged, see the docstring above). Rather
+  // than widen `EvaluateArgs` with a `strategy` field (which `run_manager`
+  // would then need to source from a `PackageRecord` it doesn't otherwise
+  // carry), the adapter consults the SAME registry `data/packages/index.ts`
+  // populates by package id whenever the manifest's declared type is
+  // `python_module` OR (for forward-compat, if a manifest is ever authored
+  // saying so directly) `builtin_js_module`. This is a closer structural
+  // match to Python's own `_dispatch_python_module` (which also looks the
+  // trusted implementation up — via `importlib`, keyed by package id — from
+  // inside the adapter, not from a caller-supplied strategy tag).
+  //
+  // `dispatchBuiltinJsModule` applies the SAME required-context-field
+  // validation and §11 DecisionResult normalization that
+  // `app/api/aica_api/algorithms/python_module.py`'s `dispatch()` applies
+  // around the package's `evaluate()` (context_error / algorithm_exception /
+  // invalid_result_shape), and — unlike declarative_rule/weighted_score —
+  // threads `next_package_runtime_state` through rather than forcing `{}`,
+  // matching `python_module`'s stateful contract exactly.
+  //
+  // Any package id NOT present in the registry (e.g.
+  // `aica_transparent_hybrid_trigger_v1` — still UNPORTED, deliberately out
+  // of scope for S9.3) correctly falls through to `unsupported_algorithm_type`
+  // below, same as before this task.
+  if (algoType === 'python_module' || algoType === 'builtin_js_module') {
+    const builtinEvaluate = BUILTIN_EVALUATORS[args.manifest.id]
+    if (builtinEvaluate) {
+      return dispatchBuiltinJsModule(builtinEvaluate, args.context, args.parameters, args.hyperparameters, args.packageRuntimeState)
+    }
+  }
+
   // NOTE: 'js_module' intentionally falls through to unsupported_algorithm_type
   // here. A js_module package needs a per-package Web Worker runner, which
   // this synchronous entry point has no way to await — see `evaluateJsModule`
   // below for the async dispatch path. Until the run manager is wired to call
-  // it (S9.2), a js_module package tick correctly surfaces as an
-  // algorithm_error via this same generic path (tick engine continues,
-  // package flagged unhealthy — same contract as every other adapter error).
+  // it (a separate, still-deferred follow-up — see that function's seam
+  // note), a js_module package tick correctly surfaces as an algorithm_error
+  // via this same generic path (tick engine continues, package flagged
+  // unhealthy — same contract as every other adapter error). An unregistered
+  // python_module/builtin_js_module package id (no TS port yet) also lands
+  // here.
   throw new AlgorithmAdapterError(
     `unsupported_algorithm_type: Algorithm type '${algoType}' is not supported in this version.`,
     { error_type: 'unsupported_algorithm_type' },
@@ -211,6 +256,151 @@ function dispatchDeclarativeRule(
     reason_inputs: result.reason_inputs,
     explanation: result.explanation,
     next_package_runtime_state: {},
+  }
+}
+
+/**
+ * Call a registered `builtin_js_module` evaluate fn (a trusted TS port of a
+ * `python_module` package's `evaluate()` — currently `nri_fatigue_score_v1`,
+ * see `../../data/packages/builtin/nri_fatigue_score_v1.ts`), validate +
+ * build its input, call it, and normalize the result.
+ *
+ * Ported from `app/api/aica_api/algorithms/python_module.py`'s `dispatch()`
+ * (behavior-of-record):
+ *   1. Validate required context fields BEFORE calling the package
+ *      (`validateBuiltinContext`, mirrors `_validate_context` exactly).
+ *   2. Build the py_context-equivalent input handed to the package.
+ *   3. Call it; any thrown exception -> `algorithm_exception`.
+ *   4. Normalize the returned value to a §11 DecisionResult; an invalid
+ *      shape -> `invalid_result_shape`.
+ *
+ * Unlike declarative_rule/weighted_score, `next_package_runtime_state` is
+ * threaded through (NOT forced to `{}`) and `result_type` is passed through
+ * verbatim (no alias map) — same contract as `python_module`.
+ */
+function dispatchBuiltinJsModule(
+  builtinEvaluate: BuiltinEvaluateFn,
+  context: Record<string, unknown>,
+  parameters: Record<string, unknown>,
+  hyperparameters: Record<string, unknown>,
+  packageRuntimeState: Record<string, unknown>,
+): DecisionResult {
+  // ── Step 1: validate required context fields ─────────────────────────
+  validateBuiltinContext(context)
+
+  // ── Step 2: build the py_context-equivalent input ─────────────────────
+  // Mirrors python_module.dispatch()'s py_context construction exactly —
+  // note `context['recovery_active']` (injected by run_manager) is
+  // deliberately NOT forwarded, matching Python (it's dropped at this same
+  // boundary there too).
+  const input: BuiltinPyContext = {
+    simulation_time_sec: context['simulation_time_sec'] as number,
+    raw_state: context['raw_state'] as Record<string, unknown>,
+    feature_groups: context['feature_groups'] as Record<string, unknown>,
+    parameters,
+    hyperparameters,
+    proposal_history: context['proposal_history'] as Record<string, unknown>,
+    user_action_history: context['user_action_history'] as unknown[],
+    package_runtime_state: packageRuntimeState,
+  }
+
+  // ── Step 3: call the builtin ────────────────────────────────────────
+  let result: DecisionResult
+  try {
+    result = builtinEvaluate(input)
+  } catch (exc) {
+    throw new AlgorithmAdapterError(
+      `algorithm_exception: ${exc instanceof Error ? exc.message : String(exc)}`,
+      { error_type: 'algorithm_exception' },
+    )
+  }
+
+  // ── Step 4: normalize ──────────────────────────────────────────────
+  if (!isDecisionResultShape(result)) {
+    throw new AlgorithmAdapterError(
+      "invalid_result_shape: Algorithm returned a value that is not a DecisionResult.",
+      { error_type: 'invalid_result_shape' },
+    )
+  }
+
+  // result_type passed verbatim; next_package_runtime_state threaded
+  // through (NOT forced to {}) — matching python_module's contract exactly.
+  return {
+    ...result,
+    next_package_runtime_state: result.next_package_runtime_state ?? {},
+  }
+}
+
+/**
+ * Validate the required context fields BEFORE calling a `builtin_js_module`
+ * evaluate fn.
+ *
+ * Ported from `app/api/aica_api/algorithms/python_module.py`'s
+ * `_validate_context` (behavior-of-record) — same required fields, same
+ * `error_type` ("context_error"):
+ *   - `simulation_time_sec`
+ *   - `raw_state` with the four core sensor keys (drowsinessLevel,
+ *     fatigueLevel, attentionLevel, speedKph)
+ *   - `feature_groups.normalized` (a dict)
+ *   - `proposal_history`, `user_action_history` (present, any shape)
+ *
+ * Optional sensor/route enhancement fields may be absent; the package
+ * itself defaults them.
+ */
+const REQUIRED_RAW_STATE_FIELDS = ['drowsinessLevel', 'fatigueLevel', 'attentionLevel', 'speedKph'] as const
+
+function validateBuiltinContext(context: Record<string, unknown>): void {
+  if (!('simulation_time_sec' in context)) {
+    throw new AlgorithmAdapterError(
+      "context_error: missing required field: 'simulation_time_sec'",
+      { error_type: 'context_error' },
+    )
+  }
+
+  const rawState = context['raw_state']
+  if (rawState == null || typeof rawState !== 'object') {
+    throw new AlgorithmAdapterError(
+      "context_error: missing required field: 'raw_state'",
+      { error_type: 'context_error' },
+    )
+  }
+
+  const missingSensor = REQUIRED_RAW_STATE_FIELDS.filter((k) => !(k in rawState))
+  if (missingSensor.length > 0) {
+    throw new AlgorithmAdapterError(
+      `context_error: missing required field(s) in raw_state: [${missingSensor.slice().sort().map((s) => `'${s}'`).join(', ')}]`,
+      { error_type: 'context_error' },
+    )
+  }
+
+  const featureGroups = context['feature_groups']
+  if (featureGroups == null || typeof featureGroups !== 'object') {
+    throw new AlgorithmAdapterError(
+      "context_error: missing required field: 'feature_groups'",
+      { error_type: 'context_error' },
+    )
+  }
+  if (!('normalized' in featureGroups)) {
+    throw new AlgorithmAdapterError(
+      "context_error: missing required field: 'feature_groups.normalized'",
+      { error_type: 'context_error' },
+    )
+  }
+  const normalized = (featureGroups as Record<string, unknown>)['normalized']
+  if (typeof normalized !== 'object' || normalized === null) {
+    throw new AlgorithmAdapterError(
+      "context_error: 'feature_groups.normalized' must be a dict",
+      { error_type: 'context_error' },
+    )
+  }
+
+  for (const key of ['proposal_history', 'user_action_history']) {
+    if (!(key in context)) {
+      throw new AlgorithmAdapterError(
+        `context_error: missing required field: '${key}'`,
+        { error_type: 'context_error' },
+      )
+    }
   }
 }
 
