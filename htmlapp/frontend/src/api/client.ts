@@ -48,6 +48,7 @@ import type {
   ProfileOverrides,
   RestSpot,
   ValidationError,
+  Snapshot,
 } from './types'
 import { packageRegistry } from '../engine/services/package_registry'
 import { scenarioRegistry } from '../engine/services/scenario_registry'
@@ -60,6 +61,14 @@ import {
   type PackageManifestM2,
 } from '../engine/run_plan'
 import type { ScenarioDefM2 } from '../engine/event_plan'
+import {
+  createRun as engineCreateRun,
+  tick as engineTick,
+  action as engineAction,
+  getRun as engineGetRun,
+  getActiveRunLog as engineGetActiveRunLog,
+} from '../engine/run_manager'
+import { runsStore } from '../storage/runs_store'
 
 export type HealthStatus = {
   status: string
@@ -367,16 +376,101 @@ export async function regenerateRunPlan(
   }
 }
 
-// ── Runs (stub — later slice) ───────────────────────────────────────────────
-
-export async function createRun(planId: string): Promise<RunState> {
-  void planId
-  throw new Error('not implemented: createRun')
+// ── Runs (S4.3) ──────────────────────────────────────────────────────────────
+//
+// createRun/tickRun/actRun/listRuns/getRun/getRunLog replicate
+// app/api/aica_api/routers/runs.py's create_run_endpoint/tick_endpoint/
+// action_endpoint/list_runs_endpoint/get_run_endpoint/get_run_log EXACTLY
+// (response-shaping), swapping the FastAPI in-process run_manager +
+// on-disk `runs/` directory for the local `../engine/run_manager` module +
+// IndexedDB-backed `runsStore`.
+//
+// Run-id generation (S4.3): the Python router's `_make_run_id()` uses
+// `run_<YYYYMMDD-HHMMSS>_<6-hex>` (wall clock + os.urandom — the ONE place
+// timestamps/randomness are allowed in the Python service, exactly like
+// `_make_plan_id()`). This engine must stay deterministic, so run_id here is
+// a monotonic in-memory counter instead (mirrors `makePlanId` above) — the id
+// is generated ONCE at creation time, OUTSIDE the deterministic tick loop, so
+// only uniqueness (never the exact format) is a contract any caller depends on.
+let _runIdCounter = 0
+function makeRunId(): string {
+  _runIdCounter += 1
+  return `run_${String(_runIdCounter).padStart(6, '0')}`
 }
 
+// Error convention: run_manager's RunNotFoundError/ActionNotAllowedError are
+// already `Error` subclasses (see engine/run_manager.ts) carrying a clean
+// human message — exactly the shape app/frontend's `apiFetch` convention
+// requires of every failure here (`instanceof Error`, `.message` inspectable).
+// We deliberately let them propagate unwrapped rather than re-throwing a
+// generic `Error`: no behavior is lost (still `instanceof Error`), and the
+// original class name/message survives for anything that wants to
+// distinguish "not found" from "not allowed".
+
+export async function createRun(planId: string): Promise<RunState> {
+  await ready()
+  const runId = makeRunId()
+  return engineCreateRun(planId, runId)
+}
+
+/**
+ * Shapes TickOutcome into TickResponseSuccess | TickResponseError exactly as
+ * runs.py's tick_endpoint does: the authoritative display position
+ * (route_fraction/distance_km) and raw_state-derived fields (speed_kph/
+ * motion_state/recovery_phase/active_content/is_traffic_jam/segment_type)
+ * are attached to BOTH branches (Python attaches them even on the error
+ * branch — see tick_endpoint @266-280); the error branch swaps
+ * decision/completed for `error` (the AlgorithmError).
+ */
 export async function tickRun(runId: string): Promise<TickResponse> {
-  void runId
-  throw new Error('not implemented: tickRun')
+  const outcome = await engineTick(runId)
+
+  const ts = outcome.tickState
+  const routeFraction = ts ? ts.route_fraction : null
+  const distanceKm = ts ? ts.distance_km : null
+  const raw = (ts ? ts.raw_state : {}) as Record<string, unknown>
+  const speedKph = (raw['speedKph'] as number | undefined) ?? null
+  const motionState = (raw['motionState'] as string | undefined) ?? null
+  const recoveryPhase = (raw['recoveryPhase'] as string | undefined) ?? null
+  const activeContent = (raw['activeContent'] as string | undefined) ?? null
+  const isTrafficJam = (raw['isTrafficJam'] as boolean | undefined) ?? null
+  const segmentType = (raw['segmentType'] as string | undefined) ?? null
+
+  const algorithmError = outcome.algorithmError
+  if (algorithmError !== null) {
+    const response = {
+      run_state: outcome.runState,
+      error: algorithmError,
+      paused: outcome.paused,
+      tick_index: outcome.evaluatedTickIndex,
+      route_fraction: routeFraction,
+      distance_km: distanceKm,
+      speed_kph: speedKph,
+      motion_state: motionState,
+      recovery_phase: recoveryPhase,
+      active_content: activeContent,
+      is_traffic_jam: isTrafficJam,
+      segment_type: segmentType,
+    }
+    return response as TickResponse
+  }
+
+  const response = {
+    run_state: outcome.runState,
+    decision: outcome.decision,
+    paused: outcome.paused,
+    completed: outcome.completed,
+    tick_index: outcome.evaluatedTickIndex,
+    route_fraction: routeFraction,
+    distance_km: distanceKm,
+    speed_kph: speedKph,
+    motion_state: motionState,
+    recovery_phase: recoveryPhase,
+    active_content: activeContent,
+    is_traffic_jam: isTrafficJam,
+    segment_type: segmentType,
+  }
+  return response as TickResponse
 }
 
 export async function actRun(
@@ -384,10 +478,14 @@ export async function actRun(
   action: string,
   opts: { recovery_option_id?: string; rest_spot?: RestSpot } = {},
 ): Promise<RunState> {
-  void runId
-  void action
-  void opts
-  throw new Error('not implemented: actRun')
+  // run_manager.action() already performs every check action_endpoint does
+  // (unknown run -> RunNotFoundError; not paused/no pending proposal or
+  // disallowed action / missing recovery option+rest spot -> ActionNotAllowedError)
+  // — see its docstring. Nothing left to pre-check at this seam.
+  return engineAction(runId, action, {
+    recoveryOptionId: opts.recovery_option_id ?? null,
+    restSpot: opts.rest_spot ?? null,
+  })
 }
 
 export async function getRestSpots(
@@ -404,17 +502,40 @@ export async function getRestSpots(
 }
 
 export async function listRuns(): Promise<{ runs: RunSummary[] }> {
-  throw new Error('not implemented: listRuns')
+  const headers = await runsStore.listHeaders()
+  const runs: RunSummary[] = headers
+    .slice()
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .map((h) => {
+      const snapshot = h['snapshot'] as Snapshot | undefined
+      // Prefer in-memory status for currently active runs (mirrors
+      // list_runs_endpoint's `get_run(run_id)` override of the persisted status).
+      const active = engineGetRun(h.id)
+      return {
+        run_id: h.id,
+        created_at: (h['created_at'] as string | undefined) ?? '',
+        package_id: snapshot?.package.id ?? '',
+        scenario_id: snapshot?.scenario.id ?? '',
+        status: active?.status ?? h.status,
+      }
+    })
+  return { runs }
 }
 
 export async function getRun(runId: string): Promise<RunState> {
-  void runId
-  throw new Error('not implemented: getRun')
+  const runState = engineGetRun(runId)
+  if (runState === null) {
+    throw new Error(`Run '${runId}' not found`)
+  }
+  return runState
 }
 
 export async function getRunLog(runId: string): Promise<RunLog> {
-  void runId
-  throw new Error('not implemented: getRunLog')
+  const log = await engineGetActiveRunLog(runId)
+  if (log === null) {
+    throw new Error(`Run log for '${runId}' not found`)
+  }
+  return log
 }
 
 // ── M5 Feedback (stub — later slice) ────────────────────────────────────────
