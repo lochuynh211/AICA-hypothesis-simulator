@@ -122,10 +122,10 @@ export function evaluate(args: EvaluateArgs): DecisionResult {
   // threads `next_package_runtime_state` through rather than forcing `{}`,
   // matching `python_module`'s stateful contract exactly.
   //
-  // Any package id NOT present in the registry (e.g.
-  // `aica_transparent_hybrid_trigger_v1` — still UNPORTED, deliberately out
-  // of scope for S9.3) correctly falls through to `unsupported_algorithm_type`
-  // below, same as before this task.
+  // Both bundled UC-01 packages are registered (nri_fatigue_score_v1 and
+  // aica_transparent_hybrid_trigger_v1). Any package id NOT present in the
+  // registry — e.g. an uploaded/unported python_module package — correctly
+  // falls through to `unsupported_algorithm_type` below.
   if (algoType === 'python_module' || algoType === 'builtin_js_module') {
     const builtinEvaluate = BUILTIN_EVALUATORS[args.manifest.id]
     if (builtinEvaluate) {
