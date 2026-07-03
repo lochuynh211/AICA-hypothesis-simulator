@@ -1,9 +1,9 @@
 {
   "id": "aica_transparent_hybrid_trigger_v1",
-  "version": "0.1",
+  "version": "0.2",
   "label": {
-    "ja": "透明ハイブリッド・トリガー v0.1",
-    "en": "Transparent Hybrid Trigger v0.1"
+    "ja": "透明ハイブリッド・トリガー v0.2（コンパクト8特徴量）",
+    "en": "Transparent Hybrid Trigger v0.2 (compact 8-feature)"
   },
   "compatible_scenario_types": ["uc01_fatigue"],
   "algorithm": {
@@ -16,14 +16,11 @@
     { "key": "drowsiness", "band_values": [] },
     { "key": "fatigue", "band_values": [] },
     { "key": "driving_anomaly", "band_values": [] },
-    { "key": "future_fatigue", "band_values": [] },
+    { "key": "env_load", "band_values": [] },
+    { "key": "monotony", "band_values": [] },
     { "key": "rest_window", "band_values": [] },
     { "key": "rest_scarcity", "band_values": [] },
-    { "key": "monotony", "band_values": [] },
-    { "key": "familiar_route", "band_values": [] },
-    { "key": "attention_drop", "band_values": [] },
-    { "key": "traffic_jam", "band_values": [] },
-    { "key": "long_highway", "band_values": [] }
+    { "key": "familiar_route", "band_values": [] }
   ],
   "parameters": [],
   "hyperparameters": [
@@ -48,9 +45,14 @@
       "kind": "numeric", "default": 0.25, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
-      "key": "w_future_fatigue",
-      "label": { "ja": "将来疲労スコア重み", "en": "Future Fatigue Weight" },
+      "key": "w_env",
+      "label": { "ja": "環境負荷重み", "en": "Environment Load Weight" },
       "kind": "numeric", "default": 0.10, "min": 0.0, "max": 1.0, "step": 0.01
+    },
+    {
+      "key": "K",
+      "label": { "ja": "異常率正規化係数 K", "en": "Anomaly-Rate Normalization K" },
+      "kind": "numeric", "default": 5, "min": 1, "max": 50, "step": 1
     },
     {
       "key": "minimum_risk_for_rest_bonus",
@@ -70,27 +72,17 @@
     {
       "key": "w_monotony",
       "label": { "ja": "単調性重み", "en": "Monotony Weight" },
+      "kind": "numeric", "default": 0.45, "min": 0.0, "max": 1.0, "step": 0.01
+    },
+    {
+      "key": "w_env_mono",
+      "label": { "ja": "単調性・環境負荷重み", "en": "Monotony Environment-Load Weight" },
       "kind": "numeric", "default": 0.30, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
-      "key": "w_familiar_route",
+      "key": "w_familiar",
       "label": { "ja": "慣れた道重み", "en": "Familiar Route Weight" },
-      "kind": "numeric", "default": 0.20, "min": 0.0, "max": 1.0, "step": 0.01
-    },
-    {
-      "key": "w_attention_drop",
-      "label": { "ja": "注意力低下重み", "en": "Attention Drop Weight" },
       "kind": "numeric", "default": 0.25, "min": 0.0, "max": 1.0, "step": 0.01
-    },
-    {
-      "key": "w_traffic_jam",
-      "label": { "ja": "渋滞重み", "en": "Traffic Jam Weight" },
-      "kind": "numeric", "default": 0.15, "min": 0.0, "max": 1.0, "step": 0.01
-    },
-    {
-      "key": "w_long_highway",
-      "label": { "ja": "長距離高速重み", "en": "Long Highway Weight" },
-      "kind": "numeric", "default": 0.10, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
       "key": "rest_watch_threshold",

@@ -196,6 +196,23 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def resolve_manifest_defaults(defaults: dict[str, Any], overrides: dict[str, Any] | None) -> dict[str, Any]:
+    """Per-key merge: manifest `defaults` ⊕ `overrides` — override wins per key.
+
+    Feature 009 (FR-009 / contracts/tiered-context.md): `context["hyperparameters"]`
+    (and `parameters`) delivered to an algorithm MUST always contain every manifest-
+    declared key, so algorithms never need an `hp.get(key, <hardcoded default>)`
+    fallback. A plain ``overrides or defaults`` is WRONG here: it swaps in the raw
+    override dict wholesale the moment it's non-empty, silently dropping any
+    manifest key the override dict doesn't mention. This always starts from the
+    full default set and layers only the keys actually present in `overrides`.
+    """
+    resolved = dict(defaults)
+    if overrides:
+        resolved.update(overrides)
+    return resolved
+
+
 def _is_m2_scenario(scenario: ScenarioDef) -> bool:
     """True if the scenario has M2/feature-009 tiered-signal-driven fields."""
     return scenario.driver_signal_params is not None
@@ -611,13 +628,22 @@ def tick(run_id: str) -> TickOutcome:
         run_state.recovery and run_state.recovery.active
     )
 
-    # Use current_parameters/hyperparameters (may be overridden in expert mode)
-    hyperparameters = run_state.current_hyperparameters or {
-        hp.key: hp.default for hp in package.hyperparameters
-    }
-    parameters = run_state.current_parameters or {
-        p.key: p.default for p in package.parameters
-    }
+    # Use current_parameters/hyperparameters (may be overridden in expert mode).
+    # Feature 009 (FR-009): resolved PER KEY — manifest default unless the run's
+    # current_* dict overrides that specific key — so every declared hyperparameter
+    # is always present even if current_hyperparameters is empty/partial. Do NOT
+    # use `or` here: an `or` falls back to the raw manifest-default dict only when
+    # current_hyperparameters is completely empty, silently dropping any manifest
+    # keys that current_hyperparameters simply doesn't mention (e.g. a package.json
+    # key added after this run's draft was created ⊕ overrides).
+    hyperparameters = resolve_manifest_defaults(
+        {hp.key: hp.default for hp in package.hyperparameters},
+        run_state.current_hyperparameters,
+    )
+    parameters = resolve_manifest_defaults(
+        {p.key: p.default for p in package.parameters},
+        run_state.current_parameters,
+    )
 
     try:
         decision_result: DecisionResult = _adapter.evaluate(
