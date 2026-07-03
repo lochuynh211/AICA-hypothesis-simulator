@@ -14,6 +14,11 @@ contract. This file covers exactly the six required tests listed there:
 5. A package that raises in evaluate() -> error populated, fired not
    fabricated.
 6. Old-shape scenario -> rejected with a clear error (no partial preview).
+
+Also covers a whole-branch-review fix: POST /api/run-plans now accepts an
+explicit run_seed and threads it into the persisted run (previously it was
+silently dropped in favor of scenario.run_seed_default) — see
+test_create_run_plan_explicit_run_seed_threads_into_persisted_run below.
 """
 
 from __future__ import annotations
@@ -155,6 +160,91 @@ def test_preview_fire_tick_matches_persisted_run(package_id, monkeypatch, tmp_pa
         f"{package_id}: preview fire tick {preview_body['fire']['tick']} != "
         f"persisted run fire tick {persisted_fire_tick}"
     )
+
+
+# ---------------------------------------------------------------------------
+# 3b — Fix (whole-branch review): explicit run_seed threads through
+#      POST /api/run-plans into the PERSISTED run, matching a /preview with
+#      the same seed, and differing from the default-seed run. Before the
+#      fix, CreateRunPlanBody had no run_seed field at all, so a re-rolled
+#      seed silently persisted under scenario.run_seed_default (42) instead.
+# ---------------------------------------------------------------------------
+
+
+def test_create_run_plan_explicit_run_seed_threads_into_persisted_run(monkeypatch, tmp_path):
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+    client = TestClient(app)
+    package_id = _HYBRID_PKG_ID
+    explicit_seed = 999  # non-default; scenario.run_seed_default == 42
+
+    def _run_to_first_pause_or_completion(run_id: str) -> dict:
+        for _ in range(400):
+            tick_resp = client.post(f"/api/runs/{run_id}/tick")
+            assert tick_resp.status_code == 200, tick_resp.text
+            tbody = tick_resp.json()
+            if tbody.get("paused") or tbody.get("completed"):
+                return tbody
+        raise AssertionError("run did not pause or complete within 400 ticks")
+
+    # ── Persisted run created with an EXPLICIT non-default run_seed ────────
+    plan_resp = client.post(
+        "/api/run-plans",
+        json={"package_id": package_id, "scenario_id": _SCENARIO_ID, "run_seed": explicit_seed},
+    )
+    assert plan_resp.status_code == 201, plan_resp.text
+    plan_id = plan_resp.json()["plan_id"]
+
+    run_resp = client.post("/api/runs", json={"plan_id": plan_id})
+    assert run_resp.status_code == 201, run_resp.text
+    run_id = run_resp.json()["run_id"]
+
+    explicit_seed_tick = _run_to_first_pause_or_completion(run_id)
+    assert explicit_seed_tick.get("paused"), "expected the explicit-seed run to pause on a fired proposal"
+    explicit_seed_fire_tick = explicit_seed_tick["tick_index"]
+
+    # ── Persisted run created with NO run_seed (falls back to the default) ──
+    clear_registry()
+    clear_draft_registry()
+    default_plan_resp = client.post(
+        "/api/run-plans", json={"package_id": package_id, "scenario_id": _SCENARIO_ID}
+    )
+    assert default_plan_resp.status_code == 201, default_plan_resp.text
+    default_plan_id = default_plan_resp.json()["plan_id"]
+
+    default_run_resp = client.post("/api/runs", json={"plan_id": default_plan_id})
+    assert default_run_resp.status_code == 201, default_run_resp.text
+    default_run_id = default_run_resp.json()["run_id"]
+
+    default_seed_tick = _run_to_first_pause_or_completion(default_run_id)
+    assert default_seed_tick.get("paused"), "expected the default-seed run to pause on a fired proposal"
+    default_seed_fire_tick = default_seed_tick["tick_index"]
+
+    # The two seeds must actually drive DIFFERENT anomaly sequences — otherwise
+    # this test wouldn't discriminate the bug (the anomaly generator is seeded
+    # per (run_seed, tick, "anomaly"); 999 != 42 must change the fire tick).
+    assert explicit_seed_fire_tick != default_seed_fire_tick, (
+        "explicit run_seed=999 and default run_seed=42 produced the SAME fire "
+        "tick — this test fixture can't discriminate the seed-threading bug"
+    )
+
+    # ── /preview with the SAME explicit seed must match the persisted run ──
+    clear_registry()
+    clear_draft_registry()
+    preview_resp = client.post(
+        "/api/runs/preview", json=_preview_body(package_id=package_id, run_seed=explicit_seed)
+    )
+    assert preview_resp.status_code == 200, preview_resp.text
+    preview_body = preview_resp.json()
+
+    assert preview_body["fired"] is True
+    assert preview_body["fire"]["tick"] == explicit_seed_fire_tick, (
+        f"/preview(run_seed={explicit_seed}) fire tick {preview_body['fire']['tick']} != "
+        f"persisted run (run_seed={explicit_seed}) fire tick {explicit_seed_fire_tick} — "
+        "run_seed did not thread through POST /api/run-plans into the persisted run"
+    )
+
+    # ── And /preview with the explicit seed must differ from the default-seed run ──
+    assert preview_body["fire"]["tick"] != default_seed_fire_tick
 
 
 # ---------------------------------------------------------------------------

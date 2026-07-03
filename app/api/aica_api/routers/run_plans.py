@@ -91,6 +91,14 @@ class CreateRunPlanBody(BaseModel):
     # top-level flags. Supported keys: "child_passenger", "familiar_route".
     context_overrides: dict | None = None
 
+    # Fix (whole-branch review, feature 009): explicit run_seed from the setup
+    # screen / preview, so re-rolling the seed and clicking "Open full run"
+    # persists a run under the SAME seed the preview showed (FR-015; see
+    # contracts/ephemeral-evaluate.md "Open full run"). None (default) falls
+    # back to scenario.run_seed_default — existing default-seed behavior is
+    # unchanged.
+    run_seed: int | None = None
+
 
 class RegenerateRunPlanBody(BaseModel):
     presets: dict = {}
@@ -253,6 +261,7 @@ def create_run_plan_endpoint(body: CreateRunPlanBody):
         profiles=profiles_dict,
         initial_state=body.initial_state,
         context_overrides=body.context_overrides,
+        run_seed=body.run_seed,
     )
 
     if draft.validation_errors:

@@ -144,6 +144,10 @@ export async function createRunPlan(args: {
   initialState?: { drowsiness_level?: number; fatigue_level?: number }
   // Boolean scenario context overrides
   contextOverrides?: { child_passenger?: boolean; familiar_route?: boolean }
+  // Fix (whole-branch review, feature 009): explicit run_seed so "Open full
+  // run" persists under the SAME seed the preview/setup screen showed
+  // (omit to fall back to scenario.run_seed_default, unchanged behavior).
+  runSeed?: number
 }): Promise<RunPlanResponse> {
   const body: Record<string, unknown> = {
     package_id: args.packageId,
@@ -153,6 +157,7 @@ export async function createRunPlan(args: {
     presets: args.presets ?? {},
     run_mode: args.runMode ?? 'standard',
   }
+  if (args.runSeed !== undefined) body.run_seed = args.runSeed
   // Only include route selection fields when explicitly provided
   if (args.routeId !== undefined) body.route_id = args.routeId
   if (args.routeSource !== undefined) body.route_source = args.routeSource

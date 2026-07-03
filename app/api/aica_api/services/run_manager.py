@@ -429,8 +429,16 @@ def create_run(
     draft_display_route = getattr(draft, "display_route", None)
 
     # Feature 009: run_seed is frozen at run start from scenario.run_seed_default
-    # (setup-time override wiring is a later unit — C3/D/E) and threaded through
-    # tick() into advance_tick's anomaly generator.
+    # and threaded through tick() into advance_tick's anomaly generator.
+    #
+    # Fix (whole-branch review): `scenario` here is the EFFECTIVE scenario
+    # registered by run_plan.create_draft (entry[2] above) — if the client
+    # passed an explicit run_seed to POST /api/run-plans, create_draft already
+    # baked it into effective_scenario.run_seed_default (see
+    # run_plan.create_draft), so this line picks it up with no further
+    # threading needed. When no explicit run_seed was supplied,
+    # scenario.run_seed_default is the untouched scenario default — unchanged
+    # behavior.
     run_seed = scenario.run_seed_default
 
     # Initial RunState (with full M2 setup snapshot)

@@ -440,6 +440,7 @@ def create_draft(
     profiles: dict[str, Any] | None = None,
     initial_state: dict | None = None,
     context_overrides: dict | None = None,
+    run_seed: int | None = None,
 ) -> RunPlanDraft:
     """Create and register a draft run plan.
 
@@ -465,6 +466,15 @@ def create_draft(
                           "drowsiness_level" and/or "fatigue_level" as floats in [0, 100].
                           Merged onto effective_scenario.initial_state AFTER profile
                           overrides so the effective_scenario is already resolved.
+        run_seed:         Fix (whole-branch review, feature 009) — explicit run_seed
+                          override from the setup screen / preview.  None (default)
+                          leaves effective_scenario.run_seed_default untouched.  Baked
+                          into effective_scenario.run_seed_default so that BOTH the
+                          draft's frozen event_plan (build_event_plan defaults to
+                          scenario.run_seed_default) AND a later run_manager.create_run
+                          (which reads scenario.run_seed_default off this same
+                          registered effective_scenario) use the identical seed —
+                          no other call site needs to change.
 
     Returns:
         A RunPlanDraft.  Check validation_errors before using.
@@ -489,6 +499,12 @@ def create_draft(
     # Apply boolean context overrides (child_passenger, familiar_route).
     if context_overrides:
         effective_scenario = effective_scenario.model_copy(update=context_overrides)
+
+    # Apply explicit run_seed override (fix, whole-branch review, feature 009).
+    # None (default) leaves scenario.run_seed_default untouched — existing
+    # default-seed behavior is unchanged.
+    if run_seed is not None:
+        effective_scenario = effective_scenario.model_copy(update={"run_seed_default": run_seed})
 
     if validation_errors:
         # Return draft with errors but do NOT register it.

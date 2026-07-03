@@ -166,6 +166,7 @@ export default function InstantResultStrip() {
         routeSource: resolvedRouteSource,
         routeFacts,
         displayRoute,
+        runSeed,
         ...(profileOverrides != null ? { profiles: profileOverrides } : {}),
         ...(Object.keys(initialState).length > 0 ? { initialState } : {}),
         ...(Object.keys(contextOverrides).length > 0 ? { contextOverrides } : {}),

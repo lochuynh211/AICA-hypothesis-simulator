@@ -9,6 +9,9 @@
  *  (d) the overrides chip shows the live diff count against manifest defaults.
  *  (e) the seed chip's 🎲 dispatches REROLL_SEED.
  *  (f) "Open full run" triggers createRunPlan → createRun → RUN_CREATED.
+ *  (f3) "Open full run" threads the store's runSeed into createRunPlan
+ *      (whole-branch review fix — re-rolling the seed then opening the full
+ *      run must persist under the SAME seed, not the default).
  *  (g) NRI-scale case: a points-scale threshold (not 0–1) still renders —
  *      proves the y-axis is derived per-result, not hardcoded 0–1.
  */
@@ -384,6 +387,62 @@ describe('InstantResultStrip — feature 009 FE4', () => {
 
     expect(await screen.findByTestId('instant-result-open-run-error')).toBeInTheDocument()
     expect(client.createRunPlan).not.toHaveBeenCalled()
+  })
+
+  it('(f3) "Open full run" sends the store\'s (re-rolled) runSeed, not the default 42 — fix for the whole-branch review seed-threading bug', async () => {
+    vi.mocked(client.routesAnalyze).mockResolvedValue({
+      route_source: 'local',
+      alternatives: [
+        {
+          route_id: 'local-1',
+          summary: 'Local route',
+          route_facts: {
+            total_route_distance_km: 100,
+            estimated_route_duration_min: 120,
+            route_segments: [],
+            rest_spot_positions: [],
+            route_progress_checkpoints: [],
+          },
+          display: null,
+          notices: [],
+        },
+      ],
+    })
+    vi.mocked(client.createRunPlan).mockResolvedValue({
+      plan_id: 'plan-1',
+      draft_plan: {},
+      effective_setup: {},
+      validation_errors: [],
+    })
+    vi.mocked(client.createRun).mockResolvedValue(createdRun)
+
+    let dispatchFn: React.Dispatch<RunStoreAction> | null = null
+    function Capture() {
+      const { dispatch } = useRunStore()
+      dispatchFn = dispatch
+      return null
+    }
+
+    render(
+      <RunStoreProvider>
+        <Capture />
+        <InstantResultStrip />
+      </RunStoreProvider>,
+    )
+
+    act(() => {
+      dispatchFn!({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
+      dispatchFn!({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
+      // Re-roll to a non-default seed (default is 42 — see DEFAULT_RUN_SEED).
+      dispatchFn!({ type: 'SET_RUN_SEED', seed: 777 })
+    })
+
+    fireEvent.click(await screen.findByTestId('instant-result-open-full-run'))
+
+    await waitFor(() => expect(client.createRunPlan).toHaveBeenCalledTimes(1))
+    const callArg = vi.mocked(client.createRunPlan).mock.calls[0][0] as Record<string, unknown>
+    expect(callArg.runSeed).toBe(777)
+    expect(callArg.runSeed).not.toBe(42)
   })
 
   it('(g) NRI-scale case: a points-scale threshold (not 0–1) still renders the curve/threshold', async () => {
