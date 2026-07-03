@@ -13,12 +13,30 @@ Where:
 Fire condition: S_total >= threshold_fire
 Post-fire filter: next rest spot ETA <= rest_spot_eta_filter_min
 
+Feature 009 (signal-tier redesign) — reads from the tiered `context["signals"]`
+contract (`specs/009-signal-tier-redesign/contracts/tiered-context.md`) instead of a
+flat `raw_state`. The math is UNCHANGED (see `others/aica_trigger_algorithms_math_comparison.md`
+Part 1 §1.2 and `specs/009-signal-tier-redesign/data-model.md` §6); only the input SOURCE
+changed, and `S_realtime` is now genuinely live because Tier-3a `drowsiness`/`fatigue`
+signals exist (they were always 0 before 009).
+
+  - Tier 1 (fixed, scenario constants): `isNight`, `familiarRoute`, `childPassenger`.
+  - Tier 2 (dynamic): `isTrafficJam`, `segmentType`, `motionState`, `nextRestSpotMin`,
+    `recoveryPhase`.
+  - Tier 3a (simulated, latent): `drowsiness`, `fatigue` — feed `S_realtime`.
+
 State carried across ticks (via package_runtime_state):
   - cumulative_jam_min: minutes spent in traffic jam
   - cumulative_highway_min: minutes spent on highway
   - cumulative_monotonous_min: minutes spent on monotonous road
   - persistence_counter: consecutive ticks above threshold
   - last_score: previous tick's total score (for velocity)
+
+Every hyperparameter is read via direct `hp[key]` indexing — NO `hp.get(key, <hardcoded
+default>)` fallback. `context["hyperparameters"]` is guaranteed fully resolved (manifest
+defaults ⊕ overrides, every declared key present) by the adapter/run_manager (FR-009); a
+missing key here is a real configuration bug and MUST surface as a KeyError ->
+algorithm_error, never a silently-wrong default.
 
 Pure & deterministic: no backend imports, no clocks, no randomness.
 """
@@ -38,10 +56,10 @@ def _compute_base_score(
     familiar_route: bool,
     hp: dict,
 ) -> float:
-    w_base = float(hp.get("w_base", 0.5))
-    w_child = float(hp.get("w_child", 20.0))
-    m_night = float(hp.get("m_night", 1.2)) if is_night else 1.0
-    m_familiar = float(hp.get("m_familiar", 1.2)) if familiar_route else 1.0
+    w_base = float(hp["w_base"])
+    w_child = float(hp["w_child"])
+    m_night = float(hp["m_night"]) if is_night else 1.0
+    m_familiar = float(hp["m_familiar"]) if familiar_route else 1.0
 
     child_offset = w_child if child_passenger else 0.0
     time_damage = continuous_driving_min * w_base * m_night * m_familiar
@@ -55,9 +73,9 @@ def _compute_env_score(
     cumulative_monotonous_min: float,
     hp: dict,
 ) -> float:
-    w_jam = float(hp.get("w_jam", 0.8))
-    w_highway = float(hp.get("w_highway", 0.2))
-    w_monotonous = float(hp.get("w_monotonous", 0.3))
+    w_jam = float(hp["w_jam"])
+    w_highway = float(hp["w_highway"])
+    w_monotonous = float(hp["w_monotonous"])
 
     return (
         cumulative_jam_min * w_jam
@@ -71,10 +89,10 @@ def _compute_realtime_score(
     fatigue_level: float,
     hp: dict,
 ) -> float:
-    theta_sleep = float(hp.get("theta_sleep", 60.0))
-    w_sleep = float(hp.get("w_sleep", 1.5))
-    theta_fatigue = float(hp.get("theta_fatigue", 60.0))
-    w_fatigue = float(hp.get("w_fatigue", 1.5))
+    theta_sleep = float(hp["theta_sleep"])
+    w_sleep = float(hp["w_sleep"])
+    theta_fatigue = float(hp["theta_fatigue"])
+    w_fatigue = float(hp["w_fatigue"])
 
     sleep_penalty = max(0.0, drowsiness_level - theta_sleep) * w_sleep
     fatigue_penalty = max(0.0, fatigue_level - theta_fatigue) * w_fatigue
@@ -105,9 +123,9 @@ def _strength(score: float, suggest: float, recommend: float, urgent: float):
 def _state_label(score: float, recovered: bool, hp: dict) -> str:
     if recovered:
         return "REST_RECOVERY"
-    suggest = float(hp.get("threshold_suggest", 60.0))
-    recommend = float(hp.get("threshold_recommend", 80.0))
-    urgent = float(hp.get("threshold_urgent", 100.0))
+    suggest = float(hp["threshold_suggest"])
+    recommend = float(hp["threshold_recommend"])
+    urgent = float(hp["threshold_urgent"])
     if score >= urgent:
         return "REST_URGENT"
     if score >= recommend:
@@ -155,43 +173,47 @@ def _build_proposal(strength_label: str) -> dict:
 
 def evaluate(context: dict) -> dict:
     """Evaluate the NRI fatigue accumulation score; return a DecisionResult dict + state."""
-    hp = context.get("hyperparameters", {}) or {}
-    params = context.get("parameters", {}) or {}
-    raw = context.get("raw_state", {}) or {}
+    hp = context["hyperparameters"]
+    signals = context.get("signals", {}) or {}
+    fixed = signals.get("fixed", {}) or {}
+    dynamic = signals.get("dynamic", {}) or {}
+    simulated = signals.get("simulated", {}) or {}
     feature_groups = context.get("feature_groups", {}) or {}
     ordinal = feature_groups.get("ordinal", {}) or {}
     prev_state = context.get("package_runtime_state", {}) or {}
     proposal_history = context.get("proposal_history", {}) or {}
     sim_time = float(context.get("simulation_time_sec", 0.0))
 
-    # ── Extract parameters (setup-time, with raw_state fallback) ─────────
-    child_passenger = bool(params.get("child_passenger", raw.get("childPassenger", False)))
-    familiar_route = bool(params.get("familiar_route", raw.get("familiarRoute", False)))
+    # ── Extract Tier-1 fixed signals (scenario constants) ─────────────────
+    child_passenger = bool(fixed.get("childPassenger", False))
+    familiar_route = bool(fixed.get("familiarRoute", False))
+    is_night = bool(fixed.get("isNight", False))
 
-    # ── Extract raw_state values ──────────────────────────────────────────
-    is_night = bool(raw.get("isNight", False))
-    is_traffic_jam = bool(raw.get("isTrafficJam", False))
-    segment_type = raw.get("segmentType", "normal_road")
-    drowsiness_level = float(raw.get("drowsinessLevel", 0.0))
-    fatigue_level = float(raw.get("fatigueLevel", 0.0))
-    next_rest_min = float(raw.get("nextRestSpotMin", 9999.0))
-    motion_state = raw.get("motionState", "MOVING")
+    # ── Extract Tier-2 dynamic signals ─────────────────────────────────────
+    is_traffic_jam = bool(dynamic.get("isTrafficJam", False))
+    segment_type = dynamic.get("segmentType", "normal_road")
+    next_rest_min = float(dynamic.get("nextRestSpotMin", 9999.0))
+    motion_state = dynamic.get("motionState", "MOVING")
+
+    # ── Extract Tier-3a simulated signals (now live — feed S_realtime) ─────
+    drowsiness_level = float(simulated.get("drowsiness", 0.0))
+    fatigue_level = float(simulated.get("fatigue", 0.0))
 
     # ── Hyperparameters ───────────────────────────────────────────────────
-    threshold_fire = float(hp.get("threshold_fire", 80.0))
-    threshold_suggest = float(hp.get("threshold_suggest", 60.0))
-    threshold_recommend = float(hp.get("threshold_recommend", 80.0))
-    threshold_urgent = float(hp.get("threshold_urgent", 100.0))
-    rest_eta_filter = float(hp.get("rest_spot_eta_filter_min", 15.0))
-    rest_cooldown = float(hp.get("rest_cooldown_sec", 600.0))
-    max_per_30min = int(hp.get("max_proposals_per_30min", 3))
-    emergency_threshold = float(hp.get("emergency_override_threshold", 100.0))
-    persistence_required = int(hp.get("persistence_ticks", 2))
+    threshold_fire = float(hp["threshold_fire"])
+    threshold_suggest = float(hp["threshold_suggest"])
+    threshold_recommend = float(hp["threshold_recommend"])
+    threshold_urgent = float(hp["threshold_urgent"])
+    rest_eta_filter = float(hp["rest_spot_eta_filter_min"])
+    rest_cooldown = float(hp["rest_cooldown_sec"])
+    max_per_30min = int(hp["max_proposals_per_30min"])
+    emergency_threshold = float(hp["emergency_override_threshold"])
+    persistence_required = int(hp["persistence_ticks"])
 
     # ── Recovery detection (early — needed before accumulation) ───────────
-    # Detect recovery from raw_state.recoveryPhase (set by tick engine when
+    # Detect recovery from dynamic.recoveryPhase (set by tick engine when
     # a recovery sequence is active). No framework-level flag needed.
-    recovery_phase = raw.get("recoveryPhase")
+    recovery_phase = dynamic.get("recoveryPhase")
     recovery_active = recovery_phase is not None
     was_in_recovery = bool(prev_state.get("was_in_recovery", False))
 
