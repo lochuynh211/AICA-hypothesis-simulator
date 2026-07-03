@@ -155,11 +155,13 @@ def build_event_plan(
     route_facts: RouteFacts,
     scenario: ScenarioDef,
     presets: dict[str, Any] | None = None,
+    *,
+    run_seed: int | None = None,
 ) -> EventPlan:
     """Build the M2 EventPlan from RouteFacts and scenario presets.
 
     Returns an EventPlan with M2 fields (tick_seconds, traffic_events,
-    weather_events, rest_opportunities) and NO per-tick ticks[] entries.
+    weather_events, rest_opportunities, run_seed) and NO per-tick ticks[] entries.
     This is the deterministic, declarative event schedule the M2 tick engine
     uses to resolve active events at each tick.
 
@@ -176,9 +178,12 @@ def build_event_plan(
         route_facts: RouteFacts derived from analyze_route(scenario).
         scenario:    Validated ScenarioDef (M2, with profiles + presets).
         presets:     Optional caller overrides merged on top of scenario.presets.
+        run_seed:    Feature 009 — the run's frozen seed, threaded into the event
+                     plan so it is available for replay/regeneration alongside the
+                     other frozen event data.  Defaults to scenario.run_seed_default.
 
     Returns:
-        EventPlan with tick_seconds and event lists; ticks=[] (M2 mode).
+        EventPlan with tick_seconds, event lists, and run_seed; ticks=[] (M2 mode).
     """
     # Merge scenario presets with caller presets (caller takes priority)
     merged_presets: dict[str, Any] = dict(scenario.presets or {})
@@ -208,10 +213,14 @@ def build_event_plan(
             )
         )
 
+    # ── Frozen run seed (Principle III — determinism) ──────────────────────
+    frozen_run_seed = run_seed if run_seed is not None else scenario.run_seed_default
+
     return EventPlan(
         ticks=[],
         tick_seconds=tick_seconds,
         traffic_events=traffic_events,
         weather_events=weather_events,
         rest_opportunities=rest_opportunities,
+        run_seed=frozen_run_seed,
     )

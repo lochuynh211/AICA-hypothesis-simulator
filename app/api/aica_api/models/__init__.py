@@ -12,9 +12,9 @@ from aica_api.models.package import (
     TriggerCategoryDef,
 )
 from aica_api.models.profile import (
-    DriverModelProfile,
+    AnomalySignalParams,
+    DriverSignalParams,
     SpeedProfile,
-    VehicleBehaviorProfile,
 )
 from aica_api.models.run import (
     ArtifactRef,
@@ -66,8 +66,8 @@ __all__ = [
     "FireControlRule",
     "PackageManifest",
     # profile
-    "DriverModelProfile",
-    "VehicleBehaviorProfile",
+    "DriverSignalParams",
+    "AnomalySignalParams",
     "SpeedProfile",
     # run
     "RunStatus",

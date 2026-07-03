@@ -684,9 +684,9 @@ def test_package_manifest_numeric_hyperparameter_in_manifest():
     assert m.hyperparameters[1].kind == "numeric"
 
 
-# ── Extended ScenarioDef: profiles, is_night ──────────────────────────────────
+# ── Extended ScenarioDef: tiered-signal params, is_night (feature 009) ────────
 
-_DRIVER_PROFILE_DICT = {
+_DRIVER_SIGNAL_PARAMS_DICT = {
     "id": "default_driver",
     "drowsiness_model": {
         "base_growth_per_min": 0.1,
@@ -700,12 +700,6 @@ _DRIVER_PROFILE_DICT = {
         "mountain_road_add_per_min": 0.06,
         "traffic_jam_add_per_min": 0.02,
     },
-    "attention_model": {
-        "base_recovery_per_min": 0.0,
-        "monotony_drop_per_min": 0.01,
-        "drowsiness_drop_factor": 0.5,
-        "active_content_recovery_per_min": 0.1,
-    },
     "recovery_model": {
         "short_rest_drowsiness_recovery": 30.0,
         "short_rest_fatigue_recovery": 20.0,
@@ -714,31 +708,11 @@ _DRIVER_PROFILE_DICT = {
     },
 }
 
-_VEHICLE_PROFILE_DICT = {
-    "rolling_window_seconds": 300,
-    "steering_instability": {
-        "base_level": 0.1,
-        "drowsiness_factor": 0.3,
-        "fatigue_factor": 0.2,
-        "mountain_road_add": 0.05,
-        "traffic_jam_reduce": 0.02,
-    },
-    "lane_departure": {
-        "enabled_on": ["highway", "normal_road"],
-        "drowsiness_threshold": 60.0,
-        "fatigue_threshold": 70.0,
-        "count_when_threshold_exceeded": 2,
-    },
-    "pedal_abnormality": {
-        "base_level": 0.05,
-        "fatigue_factor": 0.2,
-        "traffic_jam_add": 0.1,
-        "mountain_road_add": 0.08,
-    },
-    "adas_warning": {
-        "lane_departure_warning_threshold": 80.0,
-        "steering_instability_warning_threshold": 75.0,
-    },
+_ANOMALY_SIGNAL_PARAMS_DICT = {
+    "lambda_base": 0.02,
+    "lambda_gain": 0.15,
+    "theta": 40.0,
+    "window_min": 5.0,
 }
 
 _SPEED_PROFILE_DICT = {
@@ -749,41 +723,74 @@ _SPEED_PROFILE_DICT = {
     "traffic_jam_kph": 10,
 }
 
-# Build a VALID_SCENARIO extended with M2 profiles
+# Build a VALID_SCENARIO extended with feature-009 tiered-signal params
 VALID_SCENARIO_M2 = {
     **{k: v for k, v in VALID_SCENARIO.items()},
-    "driver_profile": _DRIVER_PROFILE_DICT,
-    "vehicle_profile": _VEHICLE_PROFILE_DICT,
+    "driver_signal_params": _DRIVER_SIGNAL_PARAMS_DICT,
+    "anomaly_signal_params": _ANOMALY_SIGNAL_PARAMS_DICT,
+    "run_seed_default": 7,
     "speed_profile": _SPEED_PROFILE_DICT,
     "is_night": True,
     "presets": {"monotony": "highway"},
 }
 
 
-def test_scenario_def_with_m2_profiles_valid():
-    """ScenarioDef with full M2 profiles, is_night, and presets parses correctly."""
+def test_scenario_def_with_tiered_signal_params_valid():
+    """ScenarioDef with driver_signal_params/anomaly_signal_params, is_night, and
+    presets parses correctly (feature 009 — replaces driver_profile/vehicle_profile)."""
     from aica_api.models.scenario import ScenarioDef
 
     s = ScenarioDef(**VALID_SCENARIO_M2)
-    assert s.driver_profile is not None
-    assert s.driver_profile.id == "default_driver"
-    assert s.vehicle_profile is not None
-    assert s.vehicle_profile.rolling_window_seconds == 300
+    assert s.driver_signal_params is not None
+    assert s.driver_signal_params.id == "default_driver"
+    assert s.anomaly_signal_params is not None
+    assert s.anomaly_signal_params.lambda_base == 0.02
+    assert s.run_seed_default == 7
     assert s.speed_profile is not None
     assert s.speed_profile.highway_kph == 100
     assert s.is_night is True
     assert s.presets == {"monotony": "highway"}
 
 
-def test_scenario_def_without_profiles_valid():
-    """ScenarioDef without profiles still parses (profiles default to None)."""
+def test_scenario_def_without_tiered_signal_params_valid():
+    """ScenarioDef without driver_signal_params/anomaly_signal_params still parses
+    (they default to None; run_seed_default defaults to 42)."""
     from aica_api.models.scenario import ScenarioDef
 
     s = ScenarioDef(**VALID_SCENARIO)
-    assert s.driver_profile is None
-    assert s.vehicle_profile is None
+    assert s.driver_signal_params is None
+    assert s.anomaly_signal_params is None
+    assert s.run_seed_default == 42
     assert s.speed_profile is None
     assert s.is_night is False
+
+
+def test_scenario_def_rejects_old_driver_profile_shape():
+    """A scenario dict still using the old driver_profile key is rejected with a
+    clear re-author error (feature 009 FR-017)."""
+    from aica_api.models.scenario import ScenarioDef
+
+    old_shape = {
+        **{k: v for k, v in VALID_SCENARIO.items()},
+        "driver_profile": _DRIVER_SIGNAL_PARAMS_DICT,
+    }
+    with pytest.raises(ValidationError) as exc_info:
+        ScenarioDef(**old_shape)
+    assert "driver_profile/vehicle_profile removed" in str(exc_info.value)
+
+
+def test_scenario_def_rejects_old_vehicle_profile_shape():
+    """A scenario dict still using the old vehicle_profile key is rejected with a
+    clear re-author error (feature 009 FR-017)."""
+    from aica_api.models.scenario import ScenarioDef
+
+    old_shape = {
+        **{k: v for k, v in VALID_SCENARIO.items()},
+        "vehicle_profile": {"rolling_window_seconds": 300},
+    }
+    with pytest.raises(ValidationError) as exc_info:
+        ScenarioDef(**old_shape)
+    assert "driver_profile/vehicle_profile removed" in str(exc_info.value)
 
 
 # ── Extended DecisionResult: localized explanation ────────────────────────────

@@ -8,7 +8,7 @@ Verifies that advance_tick honors an active RecoveryState:
 from aica_api.models.run import RecoveryState, RestSpot
 from aica_api.models.scenario import RecoveryOption
 from aica_api.services.tick_engine import advance_tick
-from aica_api.services.behavior.driver_model import DriverState
+from aica_api.services.behavior.driver_signals import DriverState
 # Reuse the M2 scenario+plan fixture builders from the recovery helpers.
 from tests.helpers_recovery import m2_scenario_with_recovery, m2_event_plan, m2_route_facts
 

@@ -1,4 +1,12 @@
-"""Profile domain models — DriverModelProfile, VehicleBehaviorProfile, SpeedProfile.
+"""Profile domain models — DriverSignalParams, AnomalySignalParams, SpeedProfile.
+
+Feature 009 (signal-tier redesign): DriverModelProfile is renamed to
+DriverSignalParams and loses its attention sub-model (Tier "attention" signal
+removed from the tick output — see specs/009-signal-tier-redesign/data-model.md
+§1).  AnomalySignalParams is new: it carries the seeded-Poisson anomaly-rate
+generator's parameters (see services/behavior/anomaly_signal.py).  All
+vehicle-profile classes (steering/pedal/lane/ADAS) are removed — the vehicle
+behaviour model is retired in this feature.
 
 All numeric rate fields must be ≥ 0.
 Threshold fields (percentages) must be in [0, 100].
@@ -10,7 +18,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, field_validator
 
 
-# ─── DriverModelProfile sub-models ───────────────────────────────────────────
+# ─── DriverSignalParams sub-models ───────────────────────────────────────────
 
 
 class DrowsinessModel(BaseModel):
@@ -59,29 +67,6 @@ class FatigueModel(BaseModel):
         return v
 
 
-class AttentionModel(BaseModel):
-    """Attention recovery and drop rates."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    base_recovery_per_min: float
-    monotony_drop_per_min: float
-    drowsiness_drop_factor: float
-    active_content_recovery_per_min: float
-
-    @field_validator(
-        "base_recovery_per_min",
-        "monotony_drop_per_min",
-        "drowsiness_drop_factor",
-        "active_content_recovery_per_min",
-    )
-    @classmethod
-    def _nonneg(cls, v: float) -> float:
-        if v < 0:
-            raise ValueError(f"rate must be >= 0, got {v!r}")
-        return v
-
-
 class RecoveryModel(BaseModel):
     """Recovery amounts (absolute units) for short and long rests."""
 
@@ -105,122 +90,61 @@ class RecoveryModel(BaseModel):
         return v
 
 
-# ─── DriverModelProfile ───────────────────────────────────────────────────────
+# ─── DriverSignalParams (renamed from DriverModelProfile; attention removed) ──
 
 
-class DriverModelProfile(BaseModel):
-    """Complete driver behaviour model: drowsiness, fatigue, attention, recovery."""
+class DriverSignalParams(BaseModel):
+    """Driver signal generator parameters: drowsiness, fatigue, recovery.
+
+    Renamed from DriverModelProfile (feature 009).  The attention sub-model
+    is removed — attentionLevel is a retired tick-output signal.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
     id: str
     drowsiness_model: DrowsinessModel
     fatigue_model: FatigueModel
-    attention_model: AttentionModel
     recovery_model: RecoveryModel
 
 
-# ─── VehicleBehaviorProfile sub-models ───────────────────────────────────────
+# ─── AnomalySignalParams (new — seeded-Poisson anomaly-rate generator) ───────
 
 
-class SteeringInstabilityProfile(BaseModel):
-    """Steering instability signal model."""
+class AnomalySignalParams(BaseModel):
+    """Parameters for the seeded-Poisson anomaly-event generator (Tier 3b).
+
+    See specs/009-signal-tier-redesign/contracts/anomaly-generator.md and
+    services/behavior/anomaly_signal.py::advance_anomaly.
+
+    lambda_base:  baseline anomaly rate (events/min) at or below theta.
+    lambda_gain:  extra rate per drowsiness point above theta (events/min per
+                  drowsiness unit, scaled by /100 in the rate formula).
+    theta:        drowsiness threshold [0, 100] above which the rate increases.
+    window_min:   rolling-window width, in minutes, over which anomaly_rate
+                  counts recent spikes.  Must be > 0.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
-    base_level: float
-    drowsiness_factor: float
-    fatigue_factor: float
-    mountain_road_add: float
-    traffic_jam_reduce: float
+    lambda_base: float
+    lambda_gain: float
+    theta: float
+    window_min: float
 
-    @field_validator(
-        "base_level",
-        "drowsiness_factor",
-        "fatigue_factor",
-        "mountain_road_add",
-        "traffic_jam_reduce",
-    )
+    @field_validator("lambda_base", "lambda_gain", "theta")
     @classmethod
     def _nonneg(cls, v: float) -> float:
         if v < 0:
-            raise ValueError(f"rate must be >= 0, got {v!r}")
+            raise ValueError(f"value must be >= 0, got {v!r}")
         return v
 
-
-class LaneDepartureProfile(BaseModel):
-    """Lane departure detection model."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    enabled_on: list[str]
-    drowsiness_threshold: float
-    fatigue_threshold: float
-    count_when_threshold_exceeded: int
-
-    @field_validator("drowsiness_threshold", "fatigue_threshold")
+    @field_validator("window_min")
     @classmethod
-    def _threshold_in_range(cls, v: float) -> float:
-        if not (0.0 <= v <= 100.0):
-            raise ValueError(f"threshold must be in [0, 100], got {v!r}")
+    def _positive(cls, v: float) -> float:
+        if v <= 0:
+            raise ValueError(f"window_min must be > 0, got {v!r}")
         return v
-
-
-class PedalAbnormalityProfile(BaseModel):
-    """Pedal abnormality signal model."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    base_level: float
-    fatigue_factor: float
-    traffic_jam_add: float
-    mountain_road_add: float
-
-    @field_validator(
-        "base_level",
-        "fatigue_factor",
-        "traffic_jam_add",
-        "mountain_road_add",
-    )
-    @classmethod
-    def _nonneg(cls, v: float) -> float:
-        if v < 0:
-            raise ValueError(f"rate must be >= 0, got {v!r}")
-        return v
-
-
-class AdasWarningProfile(BaseModel):
-    """ADAS warning threshold configuration."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    lane_departure_warning_threshold: float
-    steering_instability_warning_threshold: float
-
-    @field_validator(
-        "lane_departure_warning_threshold",
-        "steering_instability_warning_threshold",
-    )
-    @classmethod
-    def _threshold_in_range(cls, v: float) -> float:
-        if not (0.0 <= v <= 100.0):
-            raise ValueError(f"threshold must be in [0, 100], got {v!r}")
-        return v
-
-
-# ─── VehicleBehaviorProfile ───────────────────────────────────────────────────
-
-
-class VehicleBehaviorProfile(BaseModel):
-    """Vehicle sensor behaviour model."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    rolling_window_seconds: int = 300
-    steering_instability: SteeringInstabilityProfile
-    lane_departure: LaneDepartureProfile
-    pedal_abnormality: PedalAbnormalityProfile
-    adas_warning: AdasWarningProfile
 
 
 # ─── SpeedProfile ─────────────────────────────────────────────────────────────

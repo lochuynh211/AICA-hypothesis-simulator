@@ -15,17 +15,11 @@ import tempfile
 
 from aica_api.models.package import PackageManifest
 from aica_api.models.profile import (
-    AdasWarningProfile,
-    AttentionModel,
+    DriverSignalParams,
     DrowsinessModel,
-    DriverModelProfile,
     FatigueModel,
-    LaneDepartureProfile,
-    PedalAbnormalityProfile,
     RecoveryModel,
     SpeedProfile,
-    SteeringInstabilityProfile,
-    VehicleBehaviorProfile,
 )
 from aica_api.models.run import EventPlan, NamedRestSpot, RouteFacts
 from aica_api.models.scenario import RecoveryOption, RecoveryStage, ScenarioDef
@@ -54,7 +48,7 @@ def m2_scenario_with_recovery(
                             with total_km=64, which lets the recovery sequence
                             complete within 40 ticks after acceptance).
     """
-    driver_profile = DriverModelProfile(
+    driver_signal_params = DriverSignalParams(
         id="test_driver_recovery",
         drowsiness_model=DrowsinessModel(
             base_growth_per_min=0.5,
@@ -68,37 +62,11 @@ def m2_scenario_with_recovery(
             mountain_road_add_per_min=0.2,
             traffic_jam_add_per_min=0.05,
         ),
-        attention_model=AttentionModel(
-            base_recovery_per_min=0.1,
-            monotony_drop_per_min=0.15,
-            drowsiness_drop_factor=0.3,
-            active_content_recovery_per_min=0.5,
-        ),
         recovery_model=RecoveryModel(
             short_rest_drowsiness_recovery=20.0,
             short_rest_fatigue_recovery=15.0,
             long_rest_drowsiness_recovery=35.0,
             long_rest_fatigue_recovery=30.0,
-        ),
-    )
-    vehicle_profile = VehicleBehaviorProfile(
-        rolling_window_seconds=300,
-        steering_instability=SteeringInstabilityProfile(
-            base_level=5.0, drowsiness_factor=0.2, fatigue_factor=0.1,
-            mountain_road_add=8.0, traffic_jam_reduce=3.0,
-        ),
-        lane_departure=LaneDepartureProfile(
-            enabled_on=["highway", "normal_road"],
-            drowsiness_threshold=60.0, fatigue_threshold=70.0,
-            count_when_threshold_exceeded=1,
-        ),
-        pedal_abnormality=PedalAbnormalityProfile(
-            base_level=3.0, fatigue_factor=0.1,
-            traffic_jam_add=8.0, mountain_road_add=5.0,
-        ),
-        adas_warning=AdasWarningProfile(
-            lane_departure_warning_threshold=1.0,
-            steering_instability_warning_threshold=55.0,
         ),
     )
     speed_profile = SpeedProfile(
@@ -155,8 +123,7 @@ def m2_scenario_with_recovery(
         total_duration_seconds=7200,
         tick_seconds=60,
         allowed_actions=["accept_rest", "postpone"],
-        driver_profile=driver_profile,
-        vehicle_profile=vehicle_profile,
+        driver_signal_params=driver_signal_params,
         speed_profile=speed_profile,
         presets={"total_route_distance_km": total_km},
         recovery_options=[nap_karaoke],

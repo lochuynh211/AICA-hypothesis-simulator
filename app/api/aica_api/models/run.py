@@ -109,6 +109,11 @@ class EventPlan(BaseModel):
     weather_events: list[WeatherEvent] = []
     rest_opportunities: list[RestOpportunity] = []
 
+    # Feature 009: the run's frozen seed (Principle III — determinism). Threaded
+    # into advance_tick's anomaly generator; frozen here alongside the rest of
+    # the deterministic event schedule.
+    run_seed: int = 42
+
     model_config = {"extra": "allow"}
 
 
@@ -210,7 +215,12 @@ class TickState(BaseModel):
     """Computed state at a single simulation tick.
 
     M1 fields: tick_index through completed.
-    M2 additions: raw_state, feature_groups, distance_km, continuous_driving_min.
+    M2 additions: feature_groups, distance_km, continuous_driving_min.
+    Feature 009 (signal-tier redesign): the flat M2 `raw_state` dict is replaced by
+    `signals` — the tiered {fixed, dynamic, simulated} dict (see
+    specs/009-signal-tier-redesign/contracts/tiered-context.md).  `anomaly_events`
+    and `above_weak_ticks` are carried-through numeric state the engine needs to
+    compute the NEXT tick (anomaly rolling window; signal_duration streak).
     """
 
     tick_index: int
@@ -225,12 +235,37 @@ class TickState(BaseModel):
     completed: bool
 
     # M2 extensions
-    raw_state: dict[str, float | int | bool | str] = {}
     feature_groups: FeatureGroups = FeatureGroups()
     distance_km: float | None = None
     continuous_driving_min: float | None = None
 
+    # Feature 009: tiered signals {fixed, dynamic, simulated} — replaces raw_state.
+    signals: dict[str, Any] = {}
+    # Carry-throughs the engine needs tick-to-tick (not part of the adapter context).
+    anomaly_events: list[int] = []
+    above_weak_ticks: int = 0
+
     model_config = {"extra": "allow"}
+
+
+# ─── RunConfig ────────────────────────────────────────────────────────────────
+
+
+class RunConfig(BaseModel):
+    """Setup-time run configuration (data-model.md §4).
+
+    package_id/scenario_id select the algorithm + scenario; hyperparameter_overrides
+    holds changed-from-default values only (resolved hyperparameters = manifest
+    defaults ⊕ overrides, injected into the adapter context by run_manager).
+    run_seed is frozen at run start into the event plan and drives anomaly_rate
+    (Principle III — determinism: same RunConfig → identical trace).
+    """
+
+    package_id: str
+    scenario_id: str
+    hyperparameter_overrides: dict[str, Any] = {}
+    run_seed: int
+    expert_override: bool = False
 
 
 # ─── RunPlanDraft ─────────────────────────────────────────────────────────────
@@ -307,6 +342,11 @@ class RunState(BaseModel):
     # M2 extensions — all optional with safe defaults so M1 create_run still works
     run_mode: str = "standard"
     evidence_status: str = "standard"
+
+    # Feature 009: frozen run seed — sourced from scenario.run_seed_default at
+    # create_run time; threaded into advance_tick's anomaly generator so the same
+    # (scenario, run_seed) always reproduces the same anomaly_rate series.
+    run_seed: int = 42
 
     # Profile snapshots (set when profiles are selected at plan time)
     driver_profile: Any | None = None

@@ -21,9 +21,10 @@ Design constraints:
   - package_runtime_state is threaded tick-to-tick:
     pass current in → adapter returns next → store returned next.
 
-M1 path: scenario.driver_profile is None → freeze_event_plan + compute_tick_state.
-M2 path: scenario.driver_profile is not None → plan draft frozen (route_facts +
-         event_plan already computed) + advance_tick.
+M1 path: scenario.driver_signal_params is None → freeze_event_plan + compute_tick_state.
+M2 path: scenario.driver_signal_params is not None → plan draft frozen (route_facts +
+         event_plan already computed) + advance_tick.  Feature 009: the anomaly
+         signal's run_seed is threaded from run_state.run_seed into advance_tick.
 """
 
 from __future__ import annotations
@@ -168,7 +169,7 @@ def get_scenario(run_id: str) -> "ScenarioDef | None":
     """Return the ScenarioDef for an active run, or None if unknown.
 
     Used by the rest-spots endpoint to read scenario-level config such as
-    rest_drowsiness_ceiling and driver_profile growth rates.
+    rest_drowsiness_ceiling and driver_signal_params growth rates.
 
     Args:
         run_id: The run identifier to look up.
@@ -196,8 +197,8 @@ def _now_iso() -> str:
 
 
 def _is_m2_scenario(scenario: ScenarioDef) -> bool:
-    """True if the scenario has M2 profile-driven fields."""
-    return scenario.driver_profile is not None
+    """True if the scenario has M2/feature-009 tiered-signal-driven fields."""
+    return scenario.driver_signal_params is not None
 
 
 def _derive_history(
@@ -337,18 +338,18 @@ def create_run(
     route_facts = draft.route_facts
     event_plan = draft.draft_event_plan
 
-    # M1 fallback: if scenario has no driver_profile and event_plan has no ticks,
-    # re-freeze using the scenario's event_presets
+    # M1 fallback: if scenario has no driver_signal_params and event_plan has no
+    # ticks, re-freeze using the scenario's event_presets
     if not _is_m2_scenario(scenario) and len(event_plan.ticks) == 0:
         # Guard: package-declared tick_seconds is an M2-only feature.  The M1 legacy
         # path calls freeze_event_plan(scenario) which ignores it silently — that
         # would be a confusing trap.  Fail loudly instead.
         if package.algorithm.tick_seconds is not None:
             raise ValueError(
-                "package-declared tick_seconds is only supported for M2 profile-driven "
-                "scenarios (scenario must have a driver_profile). "
-                "The M1 legacy path (no driver_profile) re-freezes via freeze_event_plan "
-                "which ignores the package tick_seconds override. "
+                "package-declared tick_seconds is only supported for M2 tiered-signal "
+                "scenarios (scenario must have driver_signal_params). "
+                "The M1 legacy path (no driver_signal_params) re-freezes via "
+                "freeze_event_plan which ignores the package tick_seconds override. "
                 "Use an M2 scenario or remove tick_seconds from the package manifest."
             )
         event_plan = freeze_event_plan(scenario)
@@ -410,6 +411,11 @@ def create_run(
     draft_route_source = getattr(draft, "route_source", "local")
     draft_display_route = getattr(draft, "display_route", None)
 
+    # Feature 009: run_seed is frozen at run start from scenario.run_seed_default
+    # (setup-time override wiring is a later unit — C3/D/E) and threaded through
+    # tick() into advance_tick's anomaly generator.
+    run_seed = scenario.run_seed_default
+
     # Initial RunState (with full M2 setup snapshot)
     run_state = RunState(
         run_id=run_id,
@@ -422,13 +428,14 @@ def create_run(
         route_facts=route_facts,
         run_mode=run_mode,
         evidence_status="standard",
+        run_seed=run_seed,
+        # NOTE (feature 009): RunState/RunLog keep the field name `driver_profile`
+        # (a plain evidence-snapshot dict, untouched by this unit) but it now
+        # carries the driver_signal_params dump.  vehicle_profile is always None
+        # — the vehicle model is retired.
         driver_profile=(
-            scenario.driver_profile.model_dump(mode="json")
-            if scenario.driver_profile else None
-        ),
-        vehicle_profile=(
-            scenario.vehicle_profile.model_dump(mode="json")
-            if scenario.vehicle_profile else None
+            scenario.driver_signal_params.model_dump(mode="json")
+            if scenario.driver_signal_params else None
         ),
         speed_profile=(
             scenario.speed_profile.model_dump(mode="json")
@@ -549,6 +556,7 @@ def tick(run_id: str) -> TickOutcome:
             run_state.route_facts,
             scenario,
             recovery=run_state.recovery,
+            run_seed=run_state.run_seed,
         )
         # Thread _recovery_next back: advance_tick stashes the updated
         # RecoveryState in model_extra["_recovery_next"] when recovery is active.
@@ -674,7 +682,10 @@ def tick(run_id: str) -> TickOutcome:
     run_state.package_runtime_state = decision_result.next_package_runtime_state
 
     # ── Extract M2 tick evidence fields from tick_state ───────────────────
-    raw_state = tick_state.raw_state or {}
+    # Feature 009: raw_state now carries the tiered {fixed, dynamic, simulated}
+    # signals dict (evidence field name kept for TickEvent back-compat — see
+    # aica_api.models.log.TickEvent.raw_state, out of scope for this unit).
+    raw_state = tick_state.signals or {}
     feature_groups = tick_state.feature_groups
     driver_update = (tick_state.model_extra or {}).get("_driver_update", {})
     vehicle_update = (tick_state.model_extra or {}).get("_vehicle_update", {})

@@ -418,9 +418,9 @@ def rest_spots_endpoint(
     prior_tick = get_prior_tick_state(run_id)
     if prior_tick is not None:
         current_distance_km = prior_tick.distance_km or 0.0
-        raw = prior_tick.raw_state
-        current_drowsiness = float(raw.get("drowsinessLevel", 0.0))
-        current_speed_kph = float(raw.get("speedKph", 0.0))
+        signals = prior_tick.signals or {}
+        current_drowsiness = float(signals.get("simulated", {}).get("drowsiness", 0.0))
+        current_speed_kph = float(signals.get("dynamic", {}).get("speedKph", 0.0))
     else:
         current_distance_km = 0.0
         current_drowsiness = 0.0
@@ -436,8 +436,8 @@ def rest_spots_endpoint(
     # spot even with high drowsiness).  The query param drowsiness_ceiling
     # (if provided) overrides the scenario default.
     scenario = get_scenario(run_id)
-    if scenario is not None and scenario.driver_profile is not None:
-        base_growth_per_min = scenario.driver_profile.drowsiness_model.base_growth_per_min
+    if scenario is not None and scenario.driver_signal_params is not None:
+        base_growth_per_min = scenario.driver_signal_params.drowsiness_model.base_growth_per_min
         ceiling = drowsiness_ceiling if drowsiness_ceiling is not None else scenario.rest_drowsiness_ceiling
     else:
         base_growth_per_min = 0.0

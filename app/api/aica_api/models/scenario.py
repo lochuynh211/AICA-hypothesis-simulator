@@ -1,9 +1,16 @@
 """Scenario domain models — ScenarioDef and supporting types.
 
-M2 extensions: driver_profile (DriverModelProfile), vehicle_profile (VehicleBehaviorProfile),
-speed_profile (SpeedProfile), is_night, presets.  The drowsiness_schedule field is removed
-from EventPreset (replaced by the M2 behavioral engine); it is accepted as extra data for
-backward compatibility while M1 fixture files are re-authored in a later unit.
+Feature 009 (signal-tier redesign): driver_profile / vehicle_profile are replaced by
+driver_signal_params (DriverSignalParams) and anomaly_signal_params (AnomalySignalParams);
+vehicle_profile is removed entirely (the vehicle behaviour model is retired).
+run_seed_default carries the seed suggested at setup time, frozen per run.  A scenario
+dict that still contains the old driver_profile/vehicle_profile keys is rejected with a
+clear "incompatible — re-author" error (FR-017).
+
+M2 extensions (still present): speed_profile (SpeedProfile), is_night, presets.  The
+drowsiness_schedule field is removed from EventPreset (replaced by the M2 behavioral
+engine); it is accepted as extra data for backward compatibility while M1 fixture files
+are re-authored in a later unit.
 """
 
 from __future__ import annotations
@@ -12,7 +19,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, field_validator, model_validator
 
-from aica_api.models.profile import DriverModelProfile, SpeedProfile, VehicleBehaviorProfile
+from aica_api.models.profile import AnomalySignalParams, DriverSignalParams, SpeedProfile
 
 
 class Persona(BaseModel):
@@ -111,9 +118,11 @@ class RecoveryOption(BaseModel):
 class ScenarioDef(BaseModel):
     """Top-level scenario definition.
 
-    M2 additions: driver_profile, vehicle_profile, speed_profile (all optional
-    with None default so existing fixture files continue to parse), is_night,
-    presets.
+    Feature 009: driver_signal_params (DriverSignalParams) and anomaly_signal_params
+    (AnomalySignalParams) replace the old driver_profile/vehicle_profile pair.
+    run_seed_default is the seed suggested at setup (frozen per run).  speed_profile
+    is unaffected (all optional with None default so existing fixture files continue
+    to parse), is_night, presets.
     """
 
     id: str
@@ -129,9 +138,12 @@ class ScenarioDef(BaseModel):
     recovery_options: list[RecoveryOption] = []
     review_focus: str = ""
 
-    # M2 profile fields — optional so M1 fixture files still parse
-    driver_profile: DriverModelProfile | None = None
-    vehicle_profile: VehicleBehaviorProfile | None = None
+    # Feature 009: tiered-signal generator params — optional so M1 fixture files
+    # (route/segment validation tests etc.) still parse without them.
+    driver_signal_params: DriverSignalParams | None = None
+    anomaly_signal_params: AnomalySignalParams | None = None
+    run_seed_default: int = 42
+
     speed_profile: SpeedProfile | None = None
     is_night: bool = False
     child_passenger: bool = False
@@ -142,3 +154,18 @@ class ScenarioDef(BaseModel):
     # Default 100.0 = full drowsiness scale; values above 100 allow "overload"
     # (driver may reach a distant spot even at high drowsiness).
     rest_drowsiness_ceiling: float = 100.0
+
+    @model_validator(mode="before")
+    @classmethod
+    def _reject_old_shape(cls, data: Any) -> Any:
+        """Reject scenario dicts still in the old driver_profile/vehicle_profile shape.
+
+        Feature 009 (FR-017): driver_profile and vehicle_profile are removed from the
+        scenario schema.  A scenario authored against the old shape must fail loudly
+        and clearly rather than silently dropping fields or half-parsing.
+        """
+        if isinstance(data, dict) and ("driver_profile" in data or "vehicle_profile" in data):
+            raise ValueError(
+                "incompatible scenario shape — re-author: driver_profile/vehicle_profile removed"
+            )
+        return data
