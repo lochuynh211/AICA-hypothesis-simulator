@@ -3,6 +3,7 @@ import { useRunStore } from '../../state/runStore'
 import { getPackage } from '../../api/client'
 import type { HyperparameterDef, PackageManifest, SetupValue } from '../../api/types'
 import { t } from '../../i18n/t'
+import PackageSelector from './PackageSelector'
 import {
   getFormulationTemplate,
   templateHyperparameterKeys,
@@ -13,15 +14,20 @@ import {
 } from './formulationTemplates'
 
 /**
- * AlgorithmFormulationPanel (feature 009, FE3) — right editor panel of the
- * new setup screen (others/aica_setup_screen_uiux.md "Right panel —
+ * AlgorithmFormulationPanel (feature 009, FE3 + UX-FE1) — right editor panel
+ * of the new setup screen (others/aica_setup_screen_uiux.md "Right panel —
  * Algorithm as formulation").
  *
- * Renders the selected package's algorithm as its own math: feature
- * definitions, hyperparameters as inline editable `[coefficient]` fields
- * inside the formula they belong to, and scores reading down to their fire
- * thresholds — per-package structure comes from the static
- * `formulationTemplates.ts` data file (§5 Hybrid / §6 NRI).
+ * Layout:
+ *   1. PackageSelector — moved here from SignalsPanel (UX-FE1): the algorithm
+ *      choice belongs next to its own formulation, not the scenario/signals
+ *      editor. Rendered unconditionally at the top (before a package is even
+ *      selected) so it doubles as the entry point for picking one.
+ *   2. The selected package's algorithm as its own math: feature definitions,
+ *      hyperparameters as inline editable `[coefficient]` fields inside the
+ *      formula they belong to, and scores reading down to their fire
+ *      thresholds — per-package structure comes from the static
+ *      `formulationTemplates.ts` data file (§5 Hybrid / §6 NRI).
  *
  * Contract (no props — store-driven, matching every other setup/* editor):
  *   Reads: selectedPackageId, editedHyperparameters, highlightedSignalKey.
@@ -76,16 +82,8 @@ export default function AlgorithmFormulationPanel() {
     })
   }
 
-  if (!selectedPackageId || !manifest) {
-    return (
-      <div data-testid="algorithm-formulation-panel" style={{ fontSize: '0.85em', color: '#6b7280' }}>
-        Select a package to view its formulation.
-      </div>
-    )
-  }
-
   const defsByKey: Record<string, HyperparameterDef> = {}
-  for (const def of manifest.hyperparameters ?? []) defsByKey[def.key] = def
+  for (const def of manifest?.hyperparameters ?? []) defsByKey[def.key] = def
 
   const ctx: FormulaCtx = {
     defsByKey,
@@ -97,11 +95,14 @@ export default function AlgorithmFormulationPanel() {
     unhighlight,
   }
 
-  const template = getFormulationTemplate(manifest.id)
+  const template = manifest ? getFormulationTemplate(manifest.id) : null
 
   return (
     <div data-testid="algorithm-formulation-panel">
-      {template ? (
+      <PackageSelector />
+      {!selectedPackageId || !manifest ? (
+        <div style={{ fontSize: '0.85em', color: '#6b7280' }}>Select a package to view its formulation.</div>
+      ) : template ? (
         <FormulationTemplateView
           template={template}
           manifest={manifest}

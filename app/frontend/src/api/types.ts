@@ -178,6 +178,25 @@ export type ScenarioDef = {
    * Read-only in the setup UI (no backend context-override key exists for it yet —
    * unlike child_passenger/familiar_route, see run_plans.py _VALID_CONTEXT_KEYS). */
   is_night?: boolean
+  /** Feature 009 (UX-BE/FE1): Fixed-tier weather-risk signal, float [0, 100].
+   * Editable at setup time via `context_overrides.weather_risk` — same override
+   * mechanism as child_passenger/familiar_route. Defaults to 0.0 on the backend
+   * when a scenario file omits it. */
+  weather_risk?: number
+}
+
+/**
+ * Feature 009 (UX-BE/FE1): Fixed-tier scenario-context overrides, changed-
+ * from-scenario-default only (a component should delete a key once its value
+ * reverts to the scenario's own default — mirrors the editedHyperparameters
+ * convention). Sent verbatim as `context_overrides` to BOTH
+ * POST /api/runs/preview and POST /api/run-plans.
+ */
+export type ContextOverrides = {
+  child_passenger?: boolean
+  familiar_route?: boolean
+  /** Float in [0, 100]. */
+  weather_risk?: number
 }
 
 /**
@@ -305,6 +324,12 @@ export type RunConfig = {
   hyperparameter_overrides: Record<string, SetupValue>
   run_seed: number
   expert_override?: boolean
+  /** Feature 009 (FE1): sparse profile overrides threaded through to the preview
+   * (same shape/semantics as createRunPlan's `profiles`). Omit/null when unchanged. */
+  profiles?: ProfileOverrides | null
+  /** Feature 009 (FE1): sparse Fixed-tier context overrides (child_passenger/
+   * familiar_route/weather_risk) threaded through to the preview. Omit/null when unchanged. */
+  context_overrides?: ContextOverrides | null
 }
 
 /** The first actionable "rest_required" fire observed during a preview run. */

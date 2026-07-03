@@ -207,6 +207,9 @@ function highlightedKey(): string {
 describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
   beforeEach(() => {
     vi.resetAllMocks()
+    // UX-FE1: PackageSelector now renders at the top of this panel — its own
+    // effect calls listPackages() on mount, so it must resolve here too.
+    vi.mocked(client.listPackages).mockResolvedValue({ packages: [], errors: [] })
   })
 
   it('(a) renders the Hybrid formulation with feature names + inline coefficient inputs', async () => {
@@ -285,6 +288,17 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     fireEvent.click(link)
 
     await waitFor(() => expect(highlightedKey()).toBe('drowsiness'))
+  })
+
+  it('(f) UX-FE1: renders PackageSelector at the top, even before a package is selected', async () => {
+    renderInStore(<AlgorithmFormulationPanel />)
+
+    // The "Algorithm Package" select is now rendered inside this panel,
+    // regardless of whether a package is already selected.
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Algorithm Package/i)).toBeInTheDocument()
+    })
+    expect(screen.getByText(/Select a package to view its formulation\./)).toBeInTheDocument()
   })
 
   it('(e) renders the NRI formulation without error', async () => {

@@ -70,6 +70,7 @@ export default function InstantResultStrip() {
     selectedRouteId,
     routeSource,
     profileOverrides,
+    contextOverrides,
     tickSecondsOverride,
     initialDrowsiness,
     initialFatigue,
@@ -146,19 +147,10 @@ export default function InstantResultStrip() {
       if (initialDrowsiness != null) initialState.drowsiness_level = initialDrowsiness
       if (initialFatigue != null) initialState.fatigue_level = initialFatigue
 
-      const CONTEXT_KEYS = ['child_passenger', 'familiar_route'] as const
-      const algParameters = Object.fromEntries(
-        Object.entries(editedParameters).filter(([k]) => !CONTEXT_KEYS.includes(k as (typeof CONTEXT_KEYS)[number])),
-      )
-      const contextOverrides: { child_passenger?: boolean; familiar_route?: boolean } = {}
-      for (const k of CONTEXT_KEYS) {
-        if (k in editedParameters) contextOverrides[k] = Boolean(editedParameters[k])
-      }
-
       const planResp = await createRunPlan({
         packageId: selectedPackageId,
         scenarioId: selectedScenarioId,
-        parameters: algParameters,
+        parameters: editedParameters,
         hyperparameters: editedHyperparameters,
         presets,
         runMode: 'standard',

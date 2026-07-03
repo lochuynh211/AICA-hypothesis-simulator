@@ -1,9 +1,8 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, type ChangeEvent, type ReactNode } from 'react'
 import { useRunStore } from '../../state/runStore'
 import { getScenario } from '../../api/client'
 import type { ScenarioDef } from '../../api/types'
 import { t } from '../../i18n/t'
-import PackageSelector from './PackageSelector'
 import ScenarioSelector from './ScenarioSelector'
 import SignalInfoPopover, { type SignalInfoKey } from './SignalInfoPopover'
 
@@ -12,23 +11,22 @@ import SignalInfoPopover, { type SignalInfoKey } from './SignalInfoPopover'
  * (others/aica_setup_screen_uiux.md "Left panel — Scenario & Signals").
  *
  * Layout:
- *   1. Location/Preset — PackageSelector + ScenarioSelector, reused as-is.
+ *   1. Location/Preset — ScenarioSelector (the algorithm/package selector
+ *      moved to the top of AlgorithmFormulationPanel — see UX-FE1 report).
  *   2. The selected scenario's signals, grouped under three tier headings:
  *      Fixed / Dynamic / Simulated (matches the engine's signal-tier model —
  *      see packages/nri_fatigue_score_v1/algorithm.py's signals.fixed /
  *      .dynamic / .simulated read).
  *
  * Editable vs read-only:
- *   - Fixed: familiarRoute/childPassenger are scenario-editable (✎ checkbox,
- *     dispatches SET_PARAMETER with keys 'familiar_route'/'child_passenger' —
- *     the same keys PlanPreview.tsx already splits into contextOverrides for
- *     the real run-plan flow, and the only two keys the backend's
- *     _VALID_CONTEXT_KEYS accepts). isNight is shown but NOT editable: the
- *     backend has no context-override key for it yet (see ScenarioDef.is_night
- *     doc in api/types.ts) — sending it through SET_PARAMETER would either be
- *     silently dropped or misrouted as an unknown algorithm parameter by
- *     PlanPreview's CONTEXT_KEYS split, so it is intentionally left read-only
- *     until a backend follow-up adds the context key.
+ *   - Fixed: familiarRoute/childPassenger/weatherRisk are scenario-editable
+ *     (✎ checkbox / numeric input, dispatching SET_CONTEXT_OVERRIDE into
+ *     `contextOverrides` — changed-from-scenario-default only, mirroring the
+ *     editedHyperparameters/SET_HYPERPARAMETER convention). `contextOverrides`
+ *     is sent as `context_overrides` to BOTH the instant preview and the real
+ *     run-plan (see state/runStore.ts, api/client.ts). isNight is shown but
+ *     NOT editable: the backend has no context-override key for it yet (see
+ *     ScenarioDef.is_night doc in api/types.ts).
  *   - Dynamic: always read-only/muted — these are runtime-computed per tick;
  *     at setup time there is no run yet, so rows show a descriptive
  *     placeholder rather than a live value.
@@ -45,7 +43,7 @@ import SignalInfoPopover, { type SignalInfoKey } from './SignalInfoPopover'
  */
 export default function SignalsPanel() {
   const { state, dispatch } = useRunStore()
-  const { selectedScenarioId, editedParameters, highlightedSignalKey, uiLanguage, runSeed } = state
+  const { selectedScenarioId, contextOverrides, highlightedSignalKey, uiLanguage, runSeed } = state
   const [scenario, setScenario] = useState<ScenarioDef | null>(null)
 
   useEffect(() => {
@@ -73,9 +71,23 @@ export default function SignalsPanel() {
     dispatch({ type: 'SET_HIGHLIGHTED_SIGNAL', key: null })
   }
 
+  const familiarRouteDefault = Boolean(scenario?.familiar_route ?? false)
+  const familiarRouteValue = Boolean(contextOverrides.familiar_route ?? familiarRouteDefault)
+  const childPassengerDefault = Boolean(scenario?.child_passenger ?? false)
+  const childPassengerValue = Boolean(contextOverrides.child_passenger ?? childPassengerDefault)
+  const weatherRiskDefault = scenario?.weather_risk ?? 0
+  const weatherRiskValue = contextOverrides.weather_risk ?? weatherRiskDefault
+
+  function handleWeatherRiskChange(e: ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value
+    if (raw === '') return
+    const num = Number(raw)
+    if (Number.isNaN(num)) return
+    dispatch({ type: 'SET_CONTEXT_OVERRIDE', key: 'weather_risk', value: num, default: weatherRiskDefault })
+  }
+
   return (
     <div data-testid="signals-panel">
-      <PackageSelector />
       <ScenarioSelector />
 
       {scenario && (
@@ -93,7 +105,7 @@ export default function SignalsPanel() {
             <SignalRow
               signalKey="familiarRoute"
               label={t({ en: 'Familiar Route', ja: '慣れた道' }, uiLanguage)}
-              value={Boolean(editedParameters.familiar_route ?? scenario.familiar_route ?? false) ? 'yes' : 'no'}
+              value={familiarRouteValue ? 'yes' : 'no'}
               highlighted={highlightedSignalKey === 'familiarRoute'}
               onHover={() => highlight('familiarRoute')}
               onLeave={unhighlight}
@@ -102,9 +114,14 @@ export default function SignalsPanel() {
                   type="checkbox"
                   data-testid="signal-edit-familiarRoute"
                   aria-label={t({ en: 'Familiar Route', ja: '慣れた道' }, uiLanguage)}
-                  checked={Boolean(editedParameters.familiar_route ?? scenario.familiar_route ?? false)}
+                  checked={familiarRouteValue}
                   onChange={(e) =>
-                    dispatch({ type: 'SET_PARAMETER', key: 'familiar_route', value: e.target.checked })
+                    dispatch({
+                      type: 'SET_CONTEXT_OVERRIDE',
+                      key: 'familiar_route',
+                      value: e.target.checked,
+                      default: familiarRouteDefault,
+                    })
                   }
                 />
               }
@@ -112,7 +129,7 @@ export default function SignalsPanel() {
             <SignalRow
               signalKey="childPassenger"
               label={t({ en: 'Child Passenger', ja: '子供同乗' }, uiLanguage)}
-              value={Boolean(editedParameters.child_passenger ?? scenario.child_passenger ?? false) ? 'yes' : 'no'}
+              value={childPassengerValue ? 'yes' : 'no'}
               highlighted={highlightedSignalKey === 'childPassenger'}
               onHover={() => highlight('childPassenger')}
               onLeave={unhighlight}
@@ -121,10 +138,36 @@ export default function SignalsPanel() {
                   type="checkbox"
                   data-testid="signal-edit-childPassenger"
                   aria-label={t({ en: 'Child Passenger', ja: '子供同乗' }, uiLanguage)}
-                  checked={Boolean(editedParameters.child_passenger ?? scenario.child_passenger ?? false)}
+                  checked={childPassengerValue}
                   onChange={(e) =>
-                    dispatch({ type: 'SET_PARAMETER', key: 'child_passenger', value: e.target.checked })
+                    dispatch({
+                      type: 'SET_CONTEXT_OVERRIDE',
+                      key: 'child_passenger',
+                      value: e.target.checked,
+                      default: childPassengerDefault,
+                    })
                   }
+                />
+              }
+            />
+            <SignalRow
+              signalKey="weatherRisk"
+              label={t({ en: 'Weather Risk', ja: '天候リスク' }, uiLanguage)}
+              value={String(weatherRiskValue)}
+              highlighted={highlightedSignalKey === 'weatherRisk'}
+              onHover={() => highlight('weatherRisk')}
+              onLeave={unhighlight}
+              editControl={
+                <input
+                  type="number"
+                  data-testid="signal-edit-weatherRisk"
+                  aria-label={t({ en: 'Weather Risk', ja: '天候リスク' }, uiLanguage)}
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={weatherRiskValue}
+                  onChange={handleWeatherRiskChange}
+                  style={{ width: '52px' }}
                 />
               }
             />

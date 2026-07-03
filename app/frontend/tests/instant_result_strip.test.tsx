@@ -445,6 +445,66 @@ describe('InstantResultStrip — feature 009 FE4', () => {
     expect(callArg.runSeed).not.toBe(42)
   })
 
+  it('(f4) UX-FE1: "Open full run" sends the store\'s contextOverrides/profileOverrides as contextOverrides/profiles', async () => {
+    vi.mocked(client.routesAnalyze).mockResolvedValue({
+      route_source: 'local',
+      alternatives: [
+        {
+          route_id: 'local-1',
+          summary: 'Local route',
+          route_facts: {
+            total_route_distance_km: 100,
+            estimated_route_duration_min: 120,
+            route_segments: [],
+            rest_spot_positions: [],
+            route_progress_checkpoints: [],
+          },
+          display: null,
+          notices: [],
+        },
+      ],
+    })
+    vi.mocked(client.createRunPlan).mockResolvedValue({
+      plan_id: 'plan-1',
+      draft_plan: {},
+      effective_setup: {},
+      validation_errors: [],
+    })
+    vi.mocked(client.createRun).mockResolvedValue(createdRun)
+
+    let dispatchFn: React.Dispatch<RunStoreAction> | null = null
+    function Capture() {
+      const { dispatch } = useRunStore()
+      dispatchFn = dispatch
+      return null
+    }
+
+    render(
+      <RunStoreProvider>
+        <Capture />
+        <InstantResultStrip />
+      </RunStoreProvider>,
+    )
+
+    act(() => {
+      dispatchFn!({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
+      dispatchFn!({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
+      dispatchFn!({ type: 'SET_CONTEXT_OVERRIDE', key: 'weather_risk', value: 65, default: 0 })
+      dispatchFn!({ type: 'SET_CONTEXT_OVERRIDE', key: 'child_passenger', value: true, default: false })
+      dispatchFn!({
+        type: 'SET_PROFILE_OVERRIDES',
+        overrides: { driver: { drowsiness_model: { base_growth_per_min: 1.1 } } },
+      })
+    })
+
+    fireEvent.click(await screen.findByTestId('instant-result-open-full-run'))
+
+    await waitFor(() => expect(client.createRunPlan).toHaveBeenCalledTimes(1))
+    const callArg = vi.mocked(client.createRunPlan).mock.calls[0][0] as Record<string, unknown>
+    expect(callArg.contextOverrides).toEqual({ weather_risk: 65, child_passenger: true })
+    expect(callArg.profiles).toEqual({ driver: { drowsiness_model: { base_growth_per_min: 1.1 } } })
+  })
+
   it('(g) NRI-scale case: a points-scale threshold (not 0–1) still renders the curve/threshold', async () => {
     renderInStore(<InstantResultStrip />, (dispatch) => {
       dispatch({ type: 'SELECT_PACKAGE', id: 'nri_fatigue_score_v1' })

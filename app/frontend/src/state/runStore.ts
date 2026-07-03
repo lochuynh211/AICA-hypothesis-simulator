@@ -13,6 +13,7 @@ import type {
   RouteEnvelope,
   MapsErrorBody,
   ProfileOverrides,
+  ContextOverrides,
   RestChoice,
   InstantResult,
 } from '../api/types'
@@ -99,6 +100,19 @@ export type RunStoreState = {
    * Cleared on SELECT_SCENARIO and RESET.
    */
   profileOverrides: ProfileOverrides | null
+
+  // ── Feature 009 (UX-FE1): Fixed-tier scenario-context overrides ────────────
+  /**
+   * Sparse, changed-from-scenario-default Fixed-tier signal overrides
+   * (child_passenger, familiar_route, weather_risk). A key is present ONLY
+   * when its value differs from the scenario's own default — mirrors the
+   * editedHyperparameters/SET_HYPERPARAMETER revert-to-default convention
+   * (see SET_CONTEXT_OVERRIDE below). Sent as `context_overrides` in BOTH
+   * useRunPreview's POST /runs/preview body and the "Open full run"
+   * createRunPlan call, so preview and real run stay faithful to each other.
+   * Cleared on SELECT_SCENARIO and RESET (a new scenario has its own defaults).
+   */
+  contextOverrides: ContextOverrides
 
   // ── Tick seconds override (setup-time) ─────────────────────────────────────
   /**
@@ -218,6 +232,8 @@ export const initialState: RunStoreState = {
   uiLanguage: 'en',
   // M6 T009 — no profile overrides initially
   profileOverrides: null,
+  // Feature 009 (UX-FE1) — no Fixed-tier context overrides initially
+  contextOverrides: {},
   // tick seconds — null means "use scenario default"
   tickSecondsOverride: null,
   // rest-spot reachability ceiling — null means "use scenario default"
@@ -339,6 +355,22 @@ export type RunStoreAction =
   // ── M6 T009: ProfileEditor overrides ─────────────────────────────────────
   /** Sparse profile overrides from ProfileEditor; null to clear. */
   | { type: 'SET_PROFILE_OVERRIDES'; overrides: ProfileOverrides | null }
+  // ── Feature 009 (UX-FE1): Fixed-tier scenario-context overrides ───────────
+  /**
+   * Set a single Fixed-tier context-override field (child_passenger,
+   * familiar_route, weather_risk). When `value` equals `default` (the
+   * scenario's own default for this key), the reducer REMOVES `key` from
+   * `contextOverrides` instead of storing it — same changed-from-default
+   * discipline as SET_HYPERPARAMETER (see its reducer case for the bug this
+   * pattern fixes: a stale override sitting around after a revert-to-default
+   * edit would otherwise still be sent to the preview/real run).
+   */
+  | {
+      type: 'SET_CONTEXT_OVERRIDE'
+      key: keyof ContextOverrides
+      value: SetupValue
+      default: SetupValue
+    }
   // ── Tick seconds override ─────────────────────────────────────────────────
   /** Set the tick duration override (positive integer), or null to clear (use scenario default). */
   | { type: 'SET_TICK_SECONDS'; seconds: number | null }
@@ -418,6 +450,8 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         mapsError: null,
         // T009: clear profile overrides — new scenario has its own defaults.
         profileOverrides: null,
+        // Feature 009 (UX-FE1): clear context overrides — new scenario has its own defaults.
+        contextOverrides: {},
         // Clear tick seconds override — new scenario has its own default.
         tickSecondsOverride: null,
         // Clear rest-spot ceiling override — new scenario has its own default.
@@ -610,6 +644,18 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
     case 'SET_PROFILE_OVERRIDES':
       return { ...state, profileOverrides: action.overrides }
 
+    case 'SET_CONTEXT_OVERRIDE': {
+      if (action.value === action.default) {
+        const next = { ...state.contextOverrides }
+        delete next[action.key]
+        return { ...state, contextOverrides: next }
+      }
+      return {
+        ...state,
+        contextOverrides: { ...state.contextOverrides, [action.key]: action.value } as ContextOverrides,
+      }
+    }
+
     case 'SET_TICK_SECONDS':
       return { ...state, tickSecondsOverride: action.seconds }
 
@@ -674,6 +720,8 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         viewMode: 'setup',
         // T009: clear profile overrides on reset
         profileOverrides: null,
+        // Feature 009 (UX-FE1): clear context overrides on reset
+        contextOverrides: {},
         // Clear tick seconds override on reset
         tickSecondsOverride: null,
         // Clear rest-spot ceiling override on reset
@@ -778,7 +826,14 @@ const PREVIEW_DEBOUNCE_MS = 400
  */
 export function useRunPreview(debounceMs: number = PREVIEW_DEBOUNCE_MS): void {
   const { state, dispatch } = useRunStore()
-  const { selectedPackageId, selectedScenarioId, editedHyperparameters, runSeed } = state
+  const {
+    selectedPackageId,
+    selectedScenarioId,
+    editedHyperparameters,
+    runSeed,
+    profileOverrides,
+    contextOverrides,
+  } = state
 
   useEffect(() => {
     if (!selectedPackageId || !selectedScenarioId) return
@@ -791,6 +846,11 @@ export function useRunPreview(debounceMs: number = PREVIEW_DEBOUNCE_MS): void {
         scenario_id: selectedScenarioId,
         hyperparameter_overrides: editedHyperparameters,
         run_seed: runSeed,
+        // Feature 009 (FE1): thread sparse profile/context overrides through
+        // so the preview stays faithful to the real run (createRunPlan
+        // already receives both — see InstantResultStrip's handleOpenFullRun).
+        ...(profileOverrides != null ? { profiles: profileOverrides } : {}),
+        ...(Object.keys(contextOverrides).length > 0 ? { context_overrides: contextOverrides } : {}),
       })
         .then((result) => {
           if (!cancelled) dispatch({ type: 'PREVIEW_SUCCEEDED', result })
@@ -810,5 +870,14 @@ export function useRunPreview(debounceMs: number = PREVIEW_DEBOUNCE_MS): void {
       clearTimeout(timer)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPackageId, selectedScenarioId, editedHyperparameters, runSeed, debounceMs, dispatch])
+  }, [
+    selectedPackageId,
+    selectedScenarioId,
+    editedHyperparameters,
+    runSeed,
+    profileOverrides,
+    contextOverrides,
+    debounceMs,
+    dispatch,
+  ])
 }

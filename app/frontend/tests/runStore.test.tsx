@@ -597,6 +597,68 @@ describe('runStore — run_seed (feature 009)', () => {
   })
 })
 
+describe('runStore — SET_CONTEXT_OVERRIDE (feature 009 UX-FE1)', () => {
+  it('defaults contextOverrides to {}', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    expect(result.current.state.contextOverrides).toEqual({})
+  })
+
+  it('setting weather_risk to a non-default value populates contextOverrides', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    act(() =>
+      result.current.dispatch({
+        type: 'SET_CONTEXT_OVERRIDE',
+        key: 'weather_risk',
+        value: 65,
+        default: 0,
+      }),
+    )
+    expect(result.current.state.contextOverrides).toEqual({ weather_risk: 65 })
+  })
+
+  it('reverting weather_risk back to the scenario default REMOVES the key (changed-from-default only)', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    act(() =>
+      result.current.dispatch({ type: 'SET_CONTEXT_OVERRIDE', key: 'weather_risk', value: 65, default: 0 }),
+    )
+    act(() =>
+      result.current.dispatch({ type: 'SET_CONTEXT_OVERRIDE', key: 'weather_risk', value: 0, default: 0 }),
+    )
+    expect(result.current.state.contextOverrides).toEqual({})
+  })
+
+  it('setting child_passenger to a non-default value populates contextOverrides alongside weather_risk', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    act(() =>
+      result.current.dispatch({ type: 'SET_CONTEXT_OVERRIDE', key: 'weather_risk', value: 65, default: 0 }),
+    )
+    act(() =>
+      result.current.dispatch({
+        type: 'SET_CONTEXT_OVERRIDE',
+        key: 'child_passenger',
+        value: true,
+        default: false,
+      }),
+    )
+    expect(result.current.state.contextOverrides).toEqual({ weather_risk: 65, child_passenger: true })
+  })
+
+  it('SELECT_SCENARIO and RESET clear contextOverrides', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    act(() =>
+      result.current.dispatch({ type: 'SET_CONTEXT_OVERRIDE', key: 'weather_risk', value: 65, default: 0 }),
+    )
+    act(() => result.current.dispatch({ type: 'SELECT_SCENARIO', id: 'other_scenario' }))
+    expect(result.current.state.contextOverrides).toEqual({})
+
+    act(() =>
+      result.current.dispatch({ type: 'SET_CONTEXT_OVERRIDE', key: 'weather_risk', value: 65, default: 0 }),
+    )
+    act(() => result.current.dispatch({ type: 'RESET' }))
+    expect(result.current.state.contextOverrides).toEqual({})
+  })
+})
+
 describe('useRunPreview — debounced POST /runs/preview (feature 009)', () => {
   const mockInstantResult: InstantResult = {
     fired: true,
@@ -685,6 +747,85 @@ describe('useRunPreview — debounced POST /runs/preview (feature 009)', () => {
 
       expect(result.current.state.previewError).toBe('boom')
       expect(result.current.state.previewLoading).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('UX-FE1: includes contextOverrides as context_overrides in the preview body when set', async () => {
+    vi.useFakeTimers()
+    try {
+      vi.mocked(client.runPreview).mockResolvedValue(mockInstantResult)
+
+      const { result } = renderHook(
+        () => {
+          const store = useRunStore()
+          useRunPreview()
+          return store
+        },
+        { wrapper },
+      )
+
+      act(() => {
+        result.current.dispatch({ type: 'SELECT_PACKAGE', id: 'pkg1' })
+        result.current.dispatch({ type: 'SELECT_SCENARIO', id: 'scen1' })
+        result.current.dispatch({ type: 'SET_CONTEXT_OVERRIDE', key: 'weather_risk', value: 65, default: 0 })
+      })
+
+      await act(async () => {
+        vi.advanceTimersByTime(500)
+        await Promise.resolve()
+        await Promise.resolve()
+      })
+
+      expect(client.runPreview).toHaveBeenCalledWith({
+        package_id: 'pkg1',
+        scenario_id: 'scen1',
+        hyperparameter_overrides: {},
+        run_seed: 42,
+        context_overrides: { weather_risk: 65 },
+      })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('UX-FE1: includes profileOverrides as profiles in the preview body when set', async () => {
+    vi.useFakeTimers()
+    try {
+      vi.mocked(client.runPreview).mockResolvedValue(mockInstantResult)
+
+      const { result } = renderHook(
+        () => {
+          const store = useRunStore()
+          useRunPreview()
+          return store
+        },
+        { wrapper },
+      )
+
+      act(() => {
+        result.current.dispatch({ type: 'SELECT_PACKAGE', id: 'pkg1' })
+        result.current.dispatch({ type: 'SELECT_SCENARIO', id: 'scen1' })
+        result.current.dispatch({
+          type: 'SET_PROFILE_OVERRIDES',
+          overrides: { driver: { drowsiness_model: { base_growth_per_min: 1.1 } } },
+        })
+      })
+
+      await act(async () => {
+        vi.advanceTimersByTime(500)
+        await Promise.resolve()
+        await Promise.resolve()
+      })
+
+      expect(client.runPreview).toHaveBeenCalledWith({
+        package_id: 'pkg1',
+        scenario_id: 'scen1',
+        hyperparameter_overrides: {},
+        run_seed: 42,
+        profiles: { driver: { drowsiness_model: { base_growth_per_min: 1.1 } } },
+      })
     } finally {
       vi.useRealTimers()
     }

@@ -1,15 +1,20 @@
 /**
- * SignalsPanel — feature 009 FE2.
+ * SignalsPanel — feature 009 FE2 + UX-FE1.
  *
  * Tests:
  *  (a) Renders the three tier groups (Fixed / Dynamic / Simulated) with the
  *      expected signal rows once a scenario is selected.
- *  (b) Editable Fixed signals (familiarRoute, childPassenger) expose a ✎
- *      (checkbox) edit control; isNight (Fixed, no backend context-override
+ *  (b) Editable Fixed signals (familiarRoute, childPassenger, weatherRisk)
+ *      expose a ✎ edit control; isNight (Fixed, no backend context-override
  *      key) and all Dynamic/Simulated signals do not.
- *  (c) Editing an editable signal dispatches SET_PARAMETER and updates the
- *      store (checkbox reflects the new value).
+ *  (c) Editing an editable checkbox signal dispatches SET_CONTEXT_OVERRIDE
+ *      and updates the store (checkbox reflects the new value).
  *  (d) Simulated signals each expose an ⓘ info button.
+ *  (e) UX-FE1: weather_risk is editable — dispatches SET_CONTEXT_OVERRIDE
+ *      into contextOverrides.weather_risk; reverting to the scenario default
+ *      removes the override key.
+ *  (f) UX-FE1: PackageSelector no longer renders inside this panel (moved to
+ *      AlgorithmFormulationPanel).
  */
 
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
@@ -88,9 +93,19 @@ const scenarioFixture: ScenarioDef = {
   is_night: false,
   child_passenger: true,
   familiar_route: true,
+  weather_risk: 30,
 }
 
 // ── Render helper ───────────────────────────────────────────────────────────
+
+function StateProbe() {
+  const { state } = useRunStore()
+  return <div data-testid="state-probe" data-context={JSON.stringify(state.contextOverrides)} />
+}
+
+function contextOverrides(): Record<string, unknown> {
+  return JSON.parse(screen.getByTestId('state-probe').getAttribute('data-context') ?? '{}')
+}
 
 function renderInStore(
   ui: React.ReactElement,
@@ -107,6 +122,7 @@ function renderInStore(
   const result = render(
     <RunStoreProvider>
       <DispatchCapture />
+      <StateProbe />
       {ui}
     </RunStoreProvider>,
   )
@@ -129,9 +145,15 @@ describe('SignalsPanel — feature 009 FE2', () => {
     renderInStore(<SignalsPanel />)
     expect(screen.getByTestId('signals-panel')).toBeInTheDocument()
     expect(screen.queryByTestId('signal-group-fixed')).not.toBeInTheDocument()
-    // Let PackageSelector/ScenarioSelector's own list* effects settle before
-    // the next test renders, so their state updates don't leak across tests.
-    await waitFor(() => expect(client.listPackages).toHaveBeenCalled())
+    // Let ScenarioSelector's own listScenarios effect settle before the next
+    // test renders, so its state update doesn't leak across tests.
+    await waitFor(() => expect(client.listScenarios).toHaveBeenCalled())
+  })
+
+  it('(f) UX-FE1: PackageSelector no longer renders inside SignalsPanel (moved to AlgorithmFormulationPanel)', async () => {
+    renderInStore(<SignalsPanel />)
+    expect(screen.queryByLabelText(/Algorithm Package/i)).not.toBeInTheDocument()
+    await waitFor(() => expect(client.listScenarios).toHaveBeenCalled())
   })
 
   it('(a) renders the three tier groups with the expected signal rows once a scenario is selected', async () => {
@@ -151,6 +173,7 @@ describe('SignalsPanel — feature 009 FE2', () => {
     expect(screen.getByTestId('signal-row-isNight')).toBeInTheDocument()
     expect(screen.getByTestId('signal-row-familiarRoute')).toBeInTheDocument()
     expect(screen.getByTestId('signal-row-childPassenger')).toBeInTheDocument()
+    expect(screen.getByTestId('signal-row-weatherRisk')).toBeInTheDocument()
     // Dynamic
     expect(screen.getByTestId('signal-row-continuousDrivingMin')).toBeInTheDocument()
     expect(screen.getByTestId('signal-row-segmentMotionJam')).toBeInTheDocument()
@@ -171,6 +194,7 @@ describe('SignalsPanel — feature 009 FE2', () => {
       expect(screen.getByTestId('signal-edit-familiarRoute')).toBeInTheDocument()
     })
     expect(screen.getByTestId('signal-edit-childPassenger')).toBeInTheDocument()
+    expect(screen.getByTestId('signal-edit-weatherRisk')).toBeInTheDocument()
 
     // isNight: no edit control
     expect(screen.queryByTestId('signal-edit-isNight')).not.toBeInTheDocument()
@@ -182,7 +206,7 @@ describe('SignalsPanel — feature 009 FE2', () => {
     expect(screen.queryByTestId('signal-edit-anomaly_rate')).not.toBeInTheDocument()
   })
 
-  it('(c) editing an editable signal dispatches SET_PARAMETER and updates the store', async () => {
+  it('(c) editing an editable signal dispatches SET_CONTEXT_OVERRIDE and updates the store', async () => {
     vi.mocked(client.getScenario).mockResolvedValue(scenarioFixture)
 
     renderInStore(<SignalsPanel />, (dispatch) => {
@@ -196,10 +220,35 @@ describe('SignalsPanel — feature 009 FE2', () => {
     fireEvent.click(checkbox)
 
     // The checkbox reflects the new (unchecked) value — proves the change
-    // round-tripped through SET_PARAMETER back into editedParameters.
+    // round-tripped through SET_CONTEXT_OVERRIDE back into contextOverrides.
     await waitFor(() => {
       expect((screen.getByTestId('signal-edit-childPassenger') as HTMLInputElement).checked).toBe(false)
     })
+    expect(contextOverrides().child_passenger).toBe(false)
+
+    // Reverting back to the scenario default (true) removes the override key
+    // entirely — changed-from-default only (mirrors SET_HYPERPARAMETER).
+    fireEvent.click(screen.getByTestId('signal-edit-childPassenger'))
+    await waitFor(() => expect(contextOverrides().child_passenger).toBeUndefined())
+  })
+
+  it('(e) UX-FE1: weather_risk is editable — dispatches SET_CONTEXT_OVERRIDE, revert-to-default removes the key', async () => {
+    vi.mocked(client.getScenario).mockResolvedValue(scenarioFixture)
+
+    renderInStore(<SignalsPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: scenarioFixture.id })
+    })
+
+    const input = (await screen.findByTestId('signal-edit-weatherRisk')) as HTMLInputElement
+    // Pre-filled from the scenario's own weather_risk default (30).
+    expect(input.value).toBe('30')
+
+    fireEvent.change(input, { target: { value: '65' } })
+    await waitFor(() => expect(contextOverrides().weather_risk).toBe(65))
+
+    // Reverting to the scenario default (30) removes the override key.
+    fireEvent.change(screen.getByTestId('signal-edit-weatherRisk'), { target: { value: '30' } })
+    await waitFor(() => expect(contextOverrides().weather_risk).toBeUndefined())
   })
 
   it('(d) each Simulated signal exposes an ⓘ info button', async () => {

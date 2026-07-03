@@ -19,6 +19,7 @@ import type {
   FeedbackEvent,
   EvidenceReport,
   ProfileOverrides,
+  ContextOverrides,
   RestSpot,
   RunConfig,
   InstantResult,
@@ -142,8 +143,8 @@ export async function createRunPlan(args: {
   profiles?: ProfileOverrides | null
   // Numeric starting driver-state override (omit to use scenario default)
   initialState?: { drowsiness_level?: number; fatigue_level?: number }
-  // Boolean scenario context overrides
-  contextOverrides?: { child_passenger?: boolean; familiar_route?: boolean }
+  // Fixed-tier scenario context overrides (child_passenger/familiar_route/weather_risk)
+  contextOverrides?: ContextOverrides
   // Fix (whole-branch review, feature 009): explicit run_seed so "Open full
   // run" persists under the SAME seed the preview/setup screen showed
   // (omit to fall back to scenario.run_seed_default, unchanged behavior).
@@ -224,6 +225,16 @@ export async function runPreview(
     run_seed: config.run_seed,
   }
   if (restOptionId !== undefined) body.rest_option_id = restOptionId
+  // Feature 009 (FE1): thread sparse profile/context overrides through to the
+  // preview — same shape as CreateRunPlanBody so a preview computed with the
+  // same overrides as a subsequent "Open full run" matches it exactly. Omit
+  // when empty (back-compat — every existing caller still works unchanged).
+  if (config.profiles != null && Object.keys(config.profiles).length > 0) {
+    body.profiles = config.profiles
+  }
+  if (config.context_overrides != null && Object.keys(config.context_overrides).length > 0) {
+    body.context_overrides = config.context_overrides
+  }
   return apiFetch('/api/runs/preview', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
