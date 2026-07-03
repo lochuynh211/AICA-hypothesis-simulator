@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from aica_api.config import settings
 from aica_api.models.feedback import FeedbackEvent, FeedbackTarget
 from aica_api.models.log import RunLog
-from aica_api.models.run import RestSpot, RunStatus
+from aica_api.models.run import InstantResult, RestSpot, RunStatus
 from aica_api.services.evidence import build_evidence_report
 from aica_api.services.evidence_markdown import render_evidence_markdown
 from aica_api.services.feedback import (
@@ -30,6 +30,7 @@ from aica_api.services.feedback import (
     validate,
 )
 from aica_api.services.package_registry import PackageRegistry
+from aica_api.services.preview import PreviewValidationError, evaluate_preview
 from aica_api.services.run_manager import (
     ActionNotAllowedError,
     RunNotFoundError,
@@ -67,6 +68,16 @@ def _make_report_id() -> str:
 
 class CreateRunBody(BaseModel):
     plan_id: str
+
+
+class PreviewRunBody(BaseModel):
+    """RunConfig for POST /runs/preview (contracts/ephemeral-evaluate.md)."""
+
+    package_id: str
+    scenario_id: str
+    hyperparameter_overrides: dict[str, Any] = {}
+    run_seed: int
+    rest_option_id: str | None = None
 
 
 class ActionBody(BaseModel):
@@ -239,6 +250,32 @@ def create_run_endpoint(body: CreateRunBody):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return run_state
+
+
+@router.post("/api/runs/preview", response_model=InstantResult)
+def preview_run_endpoint(body: PreviewRunBody):
+    """Ephemeral, non-persisting instant-result preview (feature 009, US1).
+
+    Runs the full tick loop for the given RunConfig through the SAME tick
+    engine + algorithm adapter as a persisted run (see services/preview.py),
+    but writes NOTHING to runs/ — the EvidenceRecorder is never invoked.
+
+    400 for an unknown/incompatible package or scenario, an old-shape
+    scenario (FR-017), or invalid hyperparameter overrides.
+    """
+    try:
+        result = evaluate_preview(
+            package_id=body.package_id,
+            scenario_id=body.scenario_id,
+            hyperparameter_overrides=body.hyperparameter_overrides,
+            run_seed=body.run_seed,
+            rest_option_id=body.rest_option_id,
+            packages_dir=settings.packages_dir,
+            scenarios_dir=settings.scenarios_dir,
+        )
+    except PreviewValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return result
 
 
 @router.post("/api/runs/{run_id}/tick")

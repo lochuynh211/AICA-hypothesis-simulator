@@ -379,3 +379,75 @@ class RunState(BaseModel):
     # M4: route provenance + display snapshot (optional; defaults preserve M1-M3 compat)
     route_source: Literal["maps", "local"] = "local"
     display_route: DisplayRoute | None = None
+
+
+# ─── InstantResult (feature 009, US1 — ephemeral preview) ────────────────────
+
+
+class FirePoint(BaseModel):
+    """The first actionable "rest_required" fire observed during a preview run."""
+
+    category: str | None = None
+    strength: str | None = None
+    tick: int
+    time_min: float
+
+
+class ScoreSeriesPoint(BaseModel):
+    """One rest_required_score sample (for the setup-screen preview curve)."""
+
+    t: int
+    score: float
+
+
+class PreviewSegment(BaseModel):
+    """A contiguous run of one segment type over the previewed route."""
+
+    type: str | None = None
+    from_min: float
+    to_min: float
+
+
+class PreviewRestSpot(BaseModel):
+    """The rest spot the auto-chosen recovery stopped at."""
+
+    at_km: float
+    eta_min: float | None = None
+
+
+class PreviewRestOption(BaseModel):
+    """The recovery option auto-accepted when the first proposal fired."""
+
+    id: str
+    auto_chosen: bool = True
+    recovery_from_min: float | None = None
+    to_min: float | None = None
+
+
+class PreviewError(BaseModel):
+    """An algorithm/context error surfaced during the preview (never a faked decision)."""
+
+    tick_index: int
+    error_type: str
+    message: str
+
+
+class InstantResult(BaseModel):
+    """Ephemeral, non-persisting preview result (data-model.md §7).
+
+    Returned by POST /runs/preview. Never stored — the preview is a pure
+    computation over a RunConfig, never written to runs/.
+    """
+
+    fired: bool
+    fire: FirePoint | None = None
+    peak_score: float
+    threshold: float | None = None
+    score_series: list[ScoreSeriesPoint] = []
+    segments: list[PreviewSegment] = []
+    rest_spot: PreviewRestSpot | None = None
+    rest_option: PreviewRestOption | None = None
+    completed_min: float | None = None
+    seed: int
+    overrides: list[dict[str, Any]] = []
+    error: PreviewError | None = None
