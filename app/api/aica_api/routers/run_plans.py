@@ -49,15 +49,22 @@ class ProfileOverrides(BaseModel):
     the scenario value.  The merged result is validated against the typed profile
     model — invalid fields or unknown keys cause a 400 with no run created.
 
+    Feature 009 (signal-tier redesign): the vehicle behaviour model is retired.
+    ``vehicle`` is still accepted here (as a plain dict) purely so
+    ``run_plan._apply_profile_overrides`` can reject it with a clear 400
+    validation error instead of a generic "unknown field" 422. ``anomaly`` is
+    new — overrides the Tier-3b seeded anomaly-rate generator's parameters.
+
     Body shape for U6 ProfileEditor:
-      { "profiles": { "driver": { ... }, "vehicle": { ... }, "speed": { ... } } }
-    All three sub-objects are optional; supply only the sub-objects you want to
+      { "profiles": { "driver": { ... }, "anomaly": { ... }, "speed": { ... } } }
+    All sub-objects are optional; supply only the sub-objects you want to
     override.  Within each sub-object, supply only the fields you want to change.
     """
 
-    driver: dict | None = None   # partial DriverModelProfile dict (deep-merged)
-    vehicle: dict | None = None  # partial VehicleBehaviorProfile dict (deep-merged)
+    driver: dict | None = None   # partial DriverSignalParams dict (deep-merged)
+    anomaly: dict | None = None  # partial AnomalySignalParams dict (deep-merged)
     speed: dict | None = None    # partial SpeedProfile dict (deep-merged)
+    vehicle: dict | None = None  # retired — rejected by _apply_profile_overrides
 
 
 class CreateRunPlanBody(BaseModel):

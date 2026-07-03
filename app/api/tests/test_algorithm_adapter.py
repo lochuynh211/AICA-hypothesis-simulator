@@ -41,13 +41,12 @@ _PKG_ID = "test_adapter_pkg"
 
 _VALID_CTX = {
     "simulation_time_sec": 60.0,
-    "raw_state": {
-        "drowsinessLevel": 40.0,
-        "fatigueLevel": 30.0,
-        "attentionLevel": 70.0,
-        "speedKph": 80.0,
+    "signals": {
+        "fixed": {"isNight": False, "familiarRoute": True, "childPassenger": False},
+        "dynamic": {"isTrafficJam": False, "segmentType": "normal_road", "motionState": "MOVING"},
+        "simulated": {"drowsiness": 40.0, "fatigue": 30.0, "anomaly_rate": 0.0},
     },
-    "feature_groups": {"normalized": {"drowsiness_score": 0.4}},
+    "feature_groups": {"normalized": {"drowsiness_score": 0.4}, "ordinal": {}},
     "proposal_history": {
         "lastProposalTimeSec": None,
         "lastProposalCategory": None,

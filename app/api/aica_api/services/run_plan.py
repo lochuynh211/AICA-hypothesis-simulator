@@ -215,7 +215,14 @@ def _apply_profile_overrides(
 ) -> tuple[ScenarioDef, list[dict[str, str]]]:
     """Deep-merge profile override dicts onto scenario profiles and validate.
 
-    For each of driver / vehicle / speed provided in *profiles*:
+    Feature 009 (signal-tier redesign): ``driver_profile``/``vehicle_profile``
+    are retired from ``ScenarioDef`` — replaced by ``driver_signal_params``
+    (still overridable) and ``anomaly_signal_params`` (new override surface).
+    The vehicle behaviour model has no replacement; a ``"vehicle"`` override
+    key is rejected with a clear validation error rather than importing the
+    deleted ``VehicleBehaviorProfile`` class.
+
+    For each of driver / anomaly / speed provided in *profiles*:
       1. Take the scenario's existing profile as a dict (or empty if absent).
       2. Deep-merge the override dict onto it (unset fields keep scenario values).
       3. Validate the merged result against the typed profile model.
@@ -227,32 +234,52 @@ def _apply_profile_overrides(
     """
     from pydantic import ValidationError
 
-    from aica_api.models.profile import DriverModelProfile, SpeedProfile, VehicleBehaviorProfile
+    from aica_api.models.profile import AnomalySignalParams, DriverSignalParams, SpeedProfile
 
     errors: list[dict[str, str]] = []
     updates: dict[str, Any] = {}
 
     driver_override = profiles.get("driver")
     if driver_override is not None:
-        base = scenario.driver_profile.model_dump(mode="json") if scenario.driver_profile else {}
+        base = (
+            scenario.driver_signal_params.model_dump(mode="json")
+            if scenario.driver_signal_params
+            else {}
+        )
         merged = _deep_merge(base, driver_override)
         try:
-            updates["driver_profile"] = DriverModelProfile.model_validate(merged)
+            updates["driver_signal_params"] = DriverSignalParams.model_validate(merged)
         except ValidationError as exc:
             for e in exc.errors():
                 loc = ".".join(str(x) for x in e["loc"])
                 errors.append({"field": f"profiles.driver.{loc}", "message": e["msg"]})
 
-    vehicle_override = profiles.get("vehicle")
-    if vehicle_override is not None:
-        base = scenario.vehicle_profile.model_dump(mode="json") if scenario.vehicle_profile else {}
-        merged = _deep_merge(base, vehicle_override)
+    anomaly_override = profiles.get("anomaly")
+    if anomaly_override is not None:
+        base = (
+            scenario.anomaly_signal_params.model_dump(mode="json")
+            if scenario.anomaly_signal_params
+            else {}
+        )
+        merged = _deep_merge(base, anomaly_override)
         try:
-            updates["vehicle_profile"] = VehicleBehaviorProfile.model_validate(merged)
+            updates["anomaly_signal_params"] = AnomalySignalParams.model_validate(merged)
         except ValidationError as exc:
             for e in exc.errors():
                 loc = ".".join(str(x) for x in e["loc"])
-                errors.append({"field": f"profiles.vehicle.{loc}", "message": e["msg"]})
+                errors.append({"field": f"profiles.anomaly.{loc}", "message": e["msg"]})
+
+    # The vehicle behaviour model is retired (feature 009) — no replacement
+    # profile exists. Reject explicitly instead of importing a deleted class
+    # or silently dropping the override.
+    if profiles.get("vehicle") is not None:
+        errors.append({
+            "field": "profiles.vehicle",
+            "message": (
+                "vehicle profile overrides are no longer supported — the vehicle "
+                "behavior model was retired in feature 009 (signal-tier redesign)."
+            ),
+        })
 
     speed_override = profiles.get("speed")
     if speed_override is not None:
@@ -296,7 +323,14 @@ def _build_effective_setup(
     effective_hps: dict[str, Any],
     run_mode: str,
 ) -> dict[str, Any]:
-    """Build the effective_setup dict for the draft response."""
+    """Build the effective_setup dict for the draft response.
+
+    Feature 009 (signal-tier redesign): ``driver_profile`` keeps its evidence
+    field name for backward compatibility but now carries the
+    ``driver_signal_params`` dump (see run_manager.create_run's identical
+    convention). ``vehicle_profile`` is always ``None`` — the vehicle
+    behaviour model is retired. ``anomaly_signal_params`` is a new key.
+    """
     return {
         "package_id": package.id,
         "package_version": package.version,
@@ -306,13 +340,14 @@ def _build_effective_setup(
         "parameters": effective_params,
         "hyperparameters": effective_hps,
         "driver_profile": (
-            scenario.driver_profile.model_dump(mode="json")
-            if scenario.driver_profile is not None
+            scenario.driver_signal_params.model_dump(mode="json")
+            if scenario.driver_signal_params is not None
             else None
         ),
-        "vehicle_profile": (
-            scenario.vehicle_profile.model_dump(mode="json")
-            if scenario.vehicle_profile is not None
+        "vehicle_profile": None,
+        "anomaly_signal_params": (
+            scenario.anomaly_signal_params.model_dump(mode="json")
+            if scenario.anomaly_signal_params is not None
             else None
         ),
         "speed_profile": (

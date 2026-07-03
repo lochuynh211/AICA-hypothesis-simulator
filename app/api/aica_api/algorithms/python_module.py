@@ -7,6 +7,14 @@ Design:
   - result_type is stored verbatim — no alias map.
   - next_package_runtime_state is threaded through (NOT forced to {}).
 
+Feature 009 (signal-tier redesign): the flat ``raw_state`` context shape is
+retired.  ``run_manager.build_adapter_context()`` now emits
+``context["signals"] = {fixed, dynamic, simulated}`` (+ ``feature_groups``) and
+layers ``simulation_time_sec``, ``proposal_history``, ``user_action_history``,
+``recovery_active`` on top (see specs/009-signal-tier-redesign/contracts/
+tiered-context.md).  ``_validate_context`` and ``dispatch`` are updated to
+match this shape exactly — no ``raw_state`` key anywhere in this module.
+
 Public API used by adapter.py:
   load_evaluate(package) -> callable   — load (or return cached) evaluate callable
   dispatch(package, context, parameters, hyperparameters, package_runtime_state)
@@ -39,8 +47,9 @@ _MODULE_CACHE: dict[str, tuple[str, Any]] = {}
 # Required core context fields — validated before calling the package
 # ---------------------------------------------------------------------------
 
-_REQUIRED_RAW_STATE_FIELDS: frozenset[str] = frozenset(
-    {"drowsinessLevel", "fatigueLevel", "attentionLevel", "speedKph"}
+# Tier-3a (simulated) signals every package's evaluate() reads directly.
+_REQUIRED_SIMULATED_FIELDS: frozenset[str] = frozenset(
+    {"drowsiness", "fatigue", "anomaly_rate"}
 )
 
 
@@ -138,10 +147,11 @@ def dispatch(
 
     Args:
         package:               PackageManifest (``algorithm.type == "python_module"``).
-        context:               Tick context enriched by run_manager (T005) with
-                               ``simulation_time_sec``, ``raw_state``,
-                               ``feature_groups``, ``proposal_history``,
-                               ``user_action_history``.
+        context:               Tick context enriched by run_manager with
+                               ``simulation_time_sec``, ``signals``
+                               (``{fixed, dynamic, simulated}``), ``feature_groups``,
+                               ``proposal_history``, ``user_action_history``,
+                               ``recovery_active``.
         parameters:            Setup-time parameter values.
         hyperparameters:       Hyperparameter values.
         package_runtime_state: Opaque state returned from the prior tick (or {}).
@@ -158,16 +168,17 @@ def dispatch(
     # ── Step 1: validate required context fields ───────────────────────────
     _validate_context(context)
 
-    # ── Step 2: build py_context ───────────────────────────────────────────
+    # ── Step 2: build py_context — tiered signals, NO raw_state ────────────
     py_context: dict[str, Any] = {
         "simulation_time_sec": context["simulation_time_sec"],
-        "raw_state": context["raw_state"],
-        "feature_groups": context["feature_groups"],
+        "signals": context["signals"],
+        "feature_groups": context.get("feature_groups", {}),
         "parameters": parameters,
         "hyperparameters": hyperparameters,
         "proposal_history": context["proposal_history"],
-        "user_action_history": context["user_action_history"],
+        "user_action_history": context.get("user_action_history", []),
         "package_runtime_state": package_runtime_state,
+        "recovery_active": context.get("recovery_active", False),
     }
 
     # ── Step 3: load evaluate callable ────────────────────────────────────
@@ -212,16 +223,21 @@ def dispatch(
 
 
 def _validate_context(context: dict) -> None:
-    """Assert the tick context contains the required fields for python_module.
+    """Assert the tick context contains the required tiered fields for python_module.
 
     Required fields (their absence raises ``context_error``):
-      - ``simulation_time_sec``                      (injected by run_manager T005)
-      - ``raw_state`` with the four core sensor keys  (drowsinessLevel, fatigueLevel,
-                                                       attentionLevel, speedKph)
-      - ``feature_groups.normalized``                (a dict)
+      - ``simulation_time_sec``                      (injected by run_manager)
+      - ``signals.fixed``                            (a dict)
+      - ``signals.dynamic``                          (a dict)
+      - ``signals.simulated``                        (a dict) with the three
+                                                       Tier-3a keys: drowsiness,
+                                                       fatigue, anomaly_rate
+      - ``proposal_history``                         (injected by run_manager)
+      - ``user_action_history``                      (injected by run_manager)
 
-    Optional sensor/route enhancement fields (trafficJamAheadMin, etc.) may be
-    absent; the package should default them to 0.
+    ``feature_groups`` is optional here (both packages default missing/absent
+    ordinal features to an empty dict for display purposes only — it never
+    drives a decision).
 
     Args:
         context: The tick context dict to validate.
@@ -236,38 +252,35 @@ def _validate_context(context: dict) -> None:
             message="missing required field: 'simulation_time_sec'",
         )
 
-    raw_state = context.get("raw_state")
-    if raw_state is None:
+    signals = context.get("signals")
+    if not isinstance(signals, dict):
         raise AlgorithmAdapterError(
             error_type="context_error",
-            message="missing required field: 'raw_state'",
+            message="missing required field: 'signals'",
         )
 
-    missing_sensor = _REQUIRED_RAW_STATE_FIELDS - set(raw_state.keys())
-    if missing_sensor:
+    for tier in ("fixed", "dynamic"):
+        if not isinstance(signals.get(tier), dict):
+            raise AlgorithmAdapterError(
+                error_type="context_error",
+                message=f"missing required field: 'signals.{tier}'",
+            )
+
+    simulated = signals.get("simulated")
+    if not isinstance(simulated, dict):
+        raise AlgorithmAdapterError(
+            error_type="context_error",
+            message="missing required field: 'signals.simulated'",
+        )
+
+    missing_simulated = _REQUIRED_SIMULATED_FIELDS - set(simulated.keys())
+    if missing_simulated:
         raise AlgorithmAdapterError(
             error_type="context_error",
             message=(
-                f"missing required field(s) in raw_state: "
-                f"{sorted(missing_sensor)}"
+                f"missing required field(s) in signals.simulated: "
+                f"{sorted(missing_simulated)}"
             ),
-        )
-
-    feature_groups = context.get("feature_groups")
-    if feature_groups is None:
-        raise AlgorithmAdapterError(
-            error_type="context_error",
-            message="missing required field: 'feature_groups'",
-        )
-    if not isinstance(feature_groups, dict) or "normalized" not in feature_groups:
-        raise AlgorithmAdapterError(
-            error_type="context_error",
-            message="missing required field: 'feature_groups.normalized'",
-        )
-    if not isinstance(feature_groups["normalized"], dict):
-        raise AlgorithmAdapterError(
-            error_type="context_error",
-            message="'feature_groups.normalized' must be a dict",
         )
 
     for key in ("proposal_history", "user_action_history"):
