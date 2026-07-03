@@ -169,3 +169,19 @@ class ScenarioDef(BaseModel):
                 "incompatible scenario shape — re-author: driver_profile/vehicle_profile removed"
             )
         return data
+
+    @model_validator(mode="after")
+    def _require_anomaly_with_driver_signal_params(self) -> ScenarioDef:
+        """Reject driver_signal_params without a matching anomaly_signal_params.
+
+        The two are independently Optional, so a scenario could set
+        driver_signal_params but omit anomaly_signal_params and silently run with
+        the anomaly signal pinned at 0 (no anomaly events ever generated). Fail
+        loudly instead so gaps are caught at authoring time, not at run time.
+        """
+        if self.driver_signal_params is not None and self.anomaly_signal_params is None:
+            raise ValueError(
+                "anomaly_signal_params is required when driver_signal_params is set "
+                "— omitting it silently pins the anomaly signal at 0"
+            )
+        return self

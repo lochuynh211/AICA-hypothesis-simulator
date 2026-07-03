@@ -254,14 +254,17 @@ def tick_endpoint(run_id: str):
     ts = outcome.tick_state
     route_fraction = ts.route_fraction if ts is not None else None
     distance_km = ts.distance_km if ts is not None else None
-    # Collapse raw_state once — guards both the None-ts and missing-key cases.
-    raw = (ts.raw_state or {}) if ts is not None else {}
-    speed_kph = raw.get("speedKph")
-    motion_state = raw.get("motionState")
-    recovery_phase = raw.get("recoveryPhase")
-    active_content = raw.get("activeContent")
-    is_traffic_jam = raw.get("isTrafficJam")
-    segment_type = raw.get("segmentType")
+    # Collapse tiered signals once — guards both the None-ts and missing-key cases.
+    # Feature 009: raw_state was replaced by tiered signals {fixed, dynamic, simulated};
+    # the per-tick display fields below live in the "dynamic" tier.
+    signals = (ts.signals or {}) if ts is not None else {}
+    dynamic = signals.get("dynamic", {})
+    speed_kph = dynamic.get("speedKph")
+    motion_state = dynamic.get("motionState")
+    recovery_phase = dynamic.get("recoveryPhase")
+    active_content = dynamic.get("activeContent")
+    is_traffic_jam = dynamic.get("isTrafficJam")
+    segment_type = dynamic.get("segmentType")
 
     if outcome.algorithm_error is not None:
         return {

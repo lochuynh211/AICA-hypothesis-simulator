@@ -765,6 +765,20 @@ def test_scenario_def_without_tiered_signal_params_valid():
     assert s.is_night is False
 
 
+def test_scenario_def_requires_anomaly_signal_params_with_driver_signal_params():
+    """driver_signal_params without anomaly_signal_params is rejected — omitting
+    it would silently pin the anomaly signal at 0 (feature 009 spec-gap fix)."""
+    from aica_api.models.scenario import ScenarioDef
+
+    driver_only = {
+        **{k: v for k, v in VALID_SCENARIO.items()},
+        "driver_signal_params": _DRIVER_SIGNAL_PARAMS_DICT,
+    }
+    with pytest.raises(ValidationError) as exc_info:
+        ScenarioDef(**driver_only)
+    assert "anomaly_signal_params is required" in str(exc_info.value)
+
+
 def test_scenario_def_rejects_old_driver_profile_shape():
     """A scenario dict still using the old driver_profile key is rejected with a
     clear re-author error (feature 009 FR-017)."""
