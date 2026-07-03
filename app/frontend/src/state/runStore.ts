@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer } from 'react'
+import React, { createContext, useContext, useEffect, useReducer } from 'react'
 import type {
   PackageSummary,
   ScenarioSummary,
@@ -14,7 +14,9 @@ import type {
   MapsErrorBody,
   ProfileOverrides,
   RestChoice,
+  InstantResult,
 } from '../api/types'
+import { runPreview as runPreviewClient } from '../api/client'
 
 // ── State ──────────────────────────────────────────────────────────────────
 
@@ -151,7 +153,32 @@ export type RunStoreState = {
    * User-set starting fatigue (0–100). Null = use scenario default. Cleared on SELECT_SCENARIO and RESET.
    */
   initialFatigue: number | null
+
+  // ── Feature 009: setup-screen instant-result preview ───────────────────────
+  /**
+   * The run_seed used for the setup-screen preview (POST /runs/preview) and,
+   * eventually, the real run. Defaults to 42 (mirrors the backend ScenarioDef
+   * default); a SignalsPanel that has loaded the full ScenarioDef should
+   * dispatch SET_RUN_SEED with the scenario's actual run_seed_default once
+   * known. Reset to the default on SELECT_SCENARIO / RESET.
+   */
+  runSeed: number
+  /** Latest ephemeral InstantResult from POST /runs/preview; null before the first preview or after it errors. */
+  instantResult: InstantResult | null
+  /** True while a preview request is in flight (debounced — see useRunPreview). */
+  previewLoading: boolean
+  /** Error message from the most recent failed preview request; null when the last preview succeeded. */
+  previewError: string | null
+  /**
+   * The signal key currently cross-highlighted between SignalsPanel and
+   * AlgorithmFormulationPanel (hover/click a feature name ↔ its signal row).
+   * Null when nothing is highlighted.
+   */
+  highlightedSignalKey: string | null
 }
+
+/** The seed used before a scenario's real run_seed_default is known (mirrors the backend ScenarioDef default). */
+const DEFAULT_RUN_SEED = 42
 
 export const initialState: RunStoreState = {
   packages: [],
@@ -204,6 +231,12 @@ export const initialState: RunStoreState = {
   // initial driver state overrides — null means "use scenario default"
   initialDrowsiness: null,
   initialFatigue: null,
+  // Feature 009 — setup-screen instant-result preview
+  runSeed: DEFAULT_RUN_SEED,
+  instantResult: null,
+  previewLoading: false,
+  previewError: null,
+  highlightedSignalKey: null,
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -307,6 +340,19 @@ export type RunStoreAction =
   | { type: 'SET_INITIAL_DROWSINESS'; value: number | null }
   /** Set the starting fatigue (0–100), or null to clear (use scenario default). */
   | { type: 'SET_INITIAL_FATIGUE'; value: number | null }
+  // ── Feature 009: setup-screen instant-result preview ───────────────────────
+  /** Set the run_seed used for the preview (and eventually the real run). */
+  | { type: 'SET_RUN_SEED'; seed: number }
+  /** Draw a fresh random seed (re-rolls the anomaly_rate event pattern). */
+  | { type: 'REROLL_SEED' }
+  /** A debounced preview request has been sent; clears any previous error. */
+  | { type: 'PREVIEW_REQUESTED' }
+  /** The preview request succeeded; stores the InstantResult. */
+  | { type: 'PREVIEW_SUCCEEDED'; result: InstantResult }
+  /** The preview request failed; stores the error message. */
+  | { type: 'PREVIEW_FAILED'; message: string }
+  /** Cross-link highlight between SignalsPanel and AlgorithmFormulationPanel. */
+  | { type: 'SET_HIGHLIGHTED_SIGNAL'; key: string | null }
 
 // ── Reducer ────────────────────────────────────────────────────────────────
 
@@ -338,6 +384,9 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         effectiveSetup: null,
         validationErrors: [],
         setupError: null,
+        // A different algorithm invalidates the previous preview.
+        instantResult: null,
+        previewError: null,
       }
 
     case 'SELECT_SCENARIO':
@@ -367,6 +416,12 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         initialFatigue: null,
         // New scenario — discard any prior accepted-rest history.
         restHistory: [],
+        // Feature 009: new scenario invalidates the previous preview + seed
+        // (a SignalsPanel that loads the ScenarioDef should re-seed via
+        // SET_RUN_SEED with the scenario's own run_seed_default).
+        runSeed: DEFAULT_RUN_SEED,
+        instantResult: null,
+        previewError: null,
       }
 
     case 'SET_PARAMETER':
@@ -535,6 +590,25 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
     case 'SET_INITIAL_FATIGUE':
       return { ...state, initialFatigue: action.value }
 
+    // ── Feature 009: setup-screen instant-result preview ────────────────────
+    case 'SET_RUN_SEED':
+      return { ...state, runSeed: action.seed }
+
+    case 'REROLL_SEED':
+      return { ...state, runSeed: Math.floor(Math.random() * 1_000_000) }
+
+    case 'PREVIEW_REQUESTED':
+      return { ...state, previewLoading: true, previewError: null }
+
+    case 'PREVIEW_SUCCEEDED':
+      return { ...state, previewLoading: false, instantResult: action.result, previewError: null }
+
+    case 'PREVIEW_FAILED':
+      return { ...state, previewLoading: false, previewError: action.message }
+
+    case 'SET_HIGHLIGHTED_SIGNAL':
+      return { ...state, highlightedSignalKey: action.key }
+
     case 'RESET':
       return {
         ...state,
@@ -578,6 +652,12 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         // Clear initial driver state overrides on reset
         initialDrowsiness: null,
         initialFatigue: null,
+        // Feature 009: clear the preview + seed on reset
+        runSeed: DEFAULT_RUN_SEED,
+        instantResult: null,
+        previewLoading: false,
+        previewError: null,
+        highlightedSignalKey: null,
       }
 
     default:
@@ -623,4 +703,77 @@ export function useRunStore(): RunStoreContextValue {
     throw new Error('useRunStore must be used within a RunStoreProvider')
   }
   return ctx
+}
+
+// ── Feature 009: overrides-diff selector + debounced preview hook ──────────
+
+/** One changed-from-manifest-default hyperparameter (mirrors InstantResult.overrides shape). */
+export type OverridesDiffEntry = { key: string; default: SetupValue; value: SetupValue }
+
+/**
+ * Pure selector: the subset of `edited` that actually differs from `defaults`
+ * (changed-from-manifest-default). `defaults` is keyed by hyperparameter key,
+ * e.g. built from a fetched PackageManifest's `hyperparameters[].default`.
+ * Keys absent from `defaults` (unknown to the current package) are ignored.
+ */
+export function selectOverridesDiff(
+  edited: Record<string, SetupValue>,
+  defaults: Record<string, SetupValue>,
+): OverridesDiffEntry[] {
+  return Object.entries(edited)
+    .filter(([key, value]) => key in defaults && value !== defaults[key])
+    .map(([key, value]) => ({ key, default: defaults[key], value }))
+}
+
+/** Debounce window (ms) for the setup-screen instant-result preview. */
+const PREVIEW_DEBOUNCE_MS = 400
+
+/**
+ * Fires a debounced POST /runs/preview whenever the setup changes (package,
+ * scenario, hyperparameter overrides, or run_seed), storing the resulting
+ * InstantResult (or error) back into the store. Call this ONCE from a
+ * top-level setup component (e.g. SetupScreen) — it reads/writes the shared
+ * store, so multiple call sites would fire duplicate requests.
+ *
+ * hyperparameter_overrides is sent as-is from `editedHyperparameters` — by
+ * convention that map holds changed-from-default values only (see
+ * RunStoreState.editedHyperparameters); callers that populate it should keep
+ * that invariant (use selectOverridesDiff against the package manifest before
+ * dispatching SET_HYPERPARAMETER for values equal to the default).
+ */
+export function useRunPreview(debounceMs: number = PREVIEW_DEBOUNCE_MS): void {
+  const { state, dispatch } = useRunStore()
+  const { selectedPackageId, selectedScenarioId, editedHyperparameters, runSeed } = state
+
+  useEffect(() => {
+    if (!selectedPackageId || !selectedScenarioId) return
+
+    let cancelled = false
+    const timer = setTimeout(() => {
+      dispatch({ type: 'PREVIEW_REQUESTED' })
+      runPreviewClient({
+        package_id: selectedPackageId,
+        scenario_id: selectedScenarioId,
+        hyperparameter_overrides: editedHyperparameters,
+        run_seed: runSeed,
+      })
+        .then((result) => {
+          if (!cancelled) dispatch({ type: 'PREVIEW_SUCCEEDED', result })
+        })
+        .catch((err: unknown) => {
+          if (!cancelled) {
+            dispatch({
+              type: 'PREVIEW_FAILED',
+              message: err instanceof Error ? err.message : 'Preview request failed',
+            })
+          }
+        })
+    }, debounceMs)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPackageId, selectedScenarioId, editedHyperparameters, runSeed, debounceMs, dispatch])
 }

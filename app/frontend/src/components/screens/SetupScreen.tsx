@@ -1,54 +1,31 @@
 /**
- * SetupScreen — the dedicated setup view (M6 three-view shell, T003).
+ * SetupScreen — the setup-screen skeleton (feature 009, signal-tier redesign, FE1).
  *
- * Three equal-width panels laid out side by side:
- *   - Left   : run essentials — package, route/map, tick duration, and the
- *              Plan Preview + Start Run button.
- *   - Middle : algorithm tuning — setup parameters and hyperparameters.
- *   - Right  : context profiles — scenario selection and driver/vehicle/speed
- *              profile overrides.
+ * Replaces the M6 three-equal-column layout with the two-editor +
+ * full-width-instant-result-strip layout from others/aica_setup_screen_uiux.md:
  *
- * Each panel scrolls independently so a long section in one column never pushes
- * the others off-screen.
+ *   ┌─ Scenario & Signals ──────────┬─ Algorithm (formulation) ─────────┐
+ *   │        SignalsPanel           │      AlgorithmFormulationPanel    │
+ *   ├────────────────────────────────┴───────────────────────────────────┤
+ *   │                        InstantResultStrip                          │
+ *   └──────────────────────────────────────────────────────────────────────┘
  *
- * "Start Run" in PlanPreview dispatches RUN_CREATED, which auto-transitions the
- * store's viewMode to 'review' — no explicit navigation needed here.
+ * SignalsPanel / AlgorithmFormulationPanel / InstantResultStrip are FE1
+ * plumbing stubs — FE2/FE3/FE4 implement their internals. See each
+ * component's file for its props/store contract.
+ *
+ * useRunPreview() is wired here (once, at the screen level) so the debounced
+ * POST /runs/preview fires on any setup change regardless of which panel
+ * triggered it — see state/runStore.ts.
  */
 
 import type { CSSProperties, ReactNode } from 'react'
-import PackageSelector from '../setup/PackageSelector'
-import ScenarioSelector from '../setup/ScenarioSelector'
-import ParameterEditor from '../setup/ParameterEditor'
-import HyperparameterEditor from '../setup/HyperparameterEditor'
-import ProfileEditor from '../setup/ProfileEditor'
-import TickSecondsEditor from '../setup/TickSecondsEditor'
-import RestCeilingEditor from '../setup/RestCeilingEditor'
-import RestSpacingEditor from '../setup/RestSpacingEditor'
-import MapKeyAndRouteInput from '../setup/MapKeyAndRouteInput'
-import PlanPreview from '../setup/PlanPreview'
-import InitialDriverStateEditor from '../setup/InitialDriverStateEditor'
-import ScenarioContextEditor from '../setup/ScenarioContextEditor'
+import SignalsPanel from '../setup/SignalsPanel'
+import AlgorithmFormulationPanel from '../setup/AlgorithmFormulationPanel'
+import InstantResultStrip from '../setup/InstantResultStrip'
+import { useRunPreview } from '../../state/runStore'
 
-const sectionHeadingStyle: CSSProperties = {
-  fontSize: '0.78em',
-  fontWeight: 700,
-  textTransform: 'uppercase',
-  letterSpacing: '0.06em',
-  color: '#6b7280',
-  marginBottom: '10px',
-}
-
-/** A titled group of editors within a panel. */
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section style={{ marginBottom: '20px' }}>
-      <h2 style={sectionHeadingStyle}>{title}</h2>
-      {children}
-    </section>
-  )
-}
-
-/** One of the three equal-width, independently-scrolling columns. */
+/** One of the two equal-width, independently-scrolling editor panels. */
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div
@@ -82,7 +59,20 @@ function Panel({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
+const stripStyle: CSSProperties = {
+  marginTop: '16px',
+  flexShrink: 0,
+  padding: '16px',
+  background: '#fafafa',
+  border: '1px solid #e5e7eb',
+  borderRadius: '8px',
+}
+
 export default function SetupScreen() {
+  // Debounced POST /runs/preview on any setup change (package/scenario/
+  // hyperparameter-overrides/run_seed) — see state/runStore.ts.
+  useRunPreview()
+
   return (
     <div
       data-testid="setup-screen"
@@ -107,58 +97,27 @@ export default function SetupScreen() {
         Run Setup
       </h1>
 
+      {/* Two balanced editor panels on top */}
       <div
         style={{
           flex: 1,
           minHeight: 0,
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
+          gridTemplateColumns: '1fr 1fr',
           gap: '16px',
         }}
       >
-        {/* Left — run essentials */}
-        <Panel title="Run Essentials">
-          <Section title="Package">
-            <PackageSelector />
-          </Section>
-          <Section title="Route (optional: Google Maps)">
-            <MapKeyAndRouteInput />
-          </Section>
-          <Section title="Rest-Spot Ceiling">
-            <RestCeilingEditor />
-            <RestSpacingEditor />
-          </Section>
-          <Section title="Timing">
-            <TickSecondsEditor />
-          </Section>
-          <Section title="Plan Preview">
-            <PlanPreview />
-          </Section>
+        <Panel title="Scenario & Signals">
+          <SignalsPanel />
         </Panel>
+        <Panel title="Algorithm">
+          <AlgorithmFormulationPanel />
+        </Panel>
+      </div>
 
-        {/* Middle — algorithm tuning */}
-        <Panel title="Algorithm Parameters">
-          <ParameterEditor />
-          <Section title="Hyperparameters">
-            <HyperparameterEditor />
-          </Section>
-        </Panel>
-
-        {/* Right — context profiles */}
-        <Panel title="Profiles">
-          <Section title="Scenario Profile">
-            <ScenarioSelector />
-          </Section>
-          <Section title="Initial Driver State">
-            <InitialDriverStateEditor />
-          </Section>
-          <Section title="Scenario Context">
-            <ScenarioContextEditor />
-          </Section>
-          <Section title="Driver &amp; Vehicle Profiles">
-            <ProfileEditor />
-          </Section>
-        </Panel>
+      {/* Full-width instant-result strip pinned across the bottom */}
+      <div style={stripStyle}>
+        <InstantResultStrip />
       </div>
     </div>
   )

@@ -112,8 +112,14 @@ function renderInStore(
 }
 
 // ── SetupScreen ───────────────────────────────────────────────────────────────
+//
+// Feature 009 (signal-tier redesign): the old 3-column layout (PackageSelector /
+// MapKeyAndRouteInput / PlanPreview / ScenarioSelector all visible at once) is
+// replaced by the two-editor + instant-result-strip skeleton from
+// others/aica_setup_screen_uiux.md. Those retired editors are reused by FE2's
+// SignalsPanel later — this plumbing unit only wires the three panel slots.
 
-describe('SetupScreen — renders setup editors (T003)', () => {
+describe('SetupScreen — renders the feature 009 skeleton (T003)', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     vi.mocked(client.listPackages).mockResolvedValue({ packages: [], errors: [] })
@@ -131,40 +137,31 @@ describe('SetupScreen — renders setup editors (T003)', () => {
     expect(await screen.findByTestId('setup-screen')).toBeInTheDocument()
   })
 
-  it('renders MapKeyAndRouteInput (M4 regression — maps input lives on Setup)', async () => {
+  it('renders the SignalsPanel slot', async () => {
     render(
       <RunStoreProvider>
         <SetupScreen />
       </RunStoreProvider>,
     )
-    expect(await screen.findByTestId('map-key-route-input')).toBeInTheDocument()
+    expect(await screen.findByTestId('signals-panel')).toBeInTheDocument()
   })
 
-  it('renders PlanPreview', async () => {
+  it('renders the AlgorithmFormulationPanel slot', async () => {
     render(
       <RunStoreProvider>
         <SetupScreen />
       </RunStoreProvider>,
     )
-    expect(await screen.findByTestId('plan-preview')).toBeInTheDocument()
+    expect(await screen.findByTestId('algorithm-formulation-panel')).toBeInTheDocument()
   })
 
-  it('renders PackageSelector (Algorithm Package label)', async () => {
+  it('renders the InstantResultStrip slot', async () => {
     render(
       <RunStoreProvider>
         <SetupScreen />
       </RunStoreProvider>,
     )
-    expect(await screen.findByLabelText(/algorithm package/i)).toBeInTheDocument()
-  })
-
-  it('renders ScenarioSelector', async () => {
-    render(
-      <RunStoreProvider>
-        <SetupScreen />
-      </RunStoreProvider>,
-    )
-    expect(await screen.findByLabelText(/^scenario$/i)).toBeInTheDocument()
+    expect(await screen.findByTestId('instant-result-strip')).toBeInTheDocument()
   })
 })
 
@@ -313,9 +310,14 @@ describe('AppShell — view switching via header nav (T003)', () => {
   })
 })
 
-// ── M4 regression: MapKeyAndRouteInput on Setup only ─────────────────────────
+// ── Feature 009 regression: setup skeleton lives on Setup only ───────────────
+//
+// Retired the M4 "MapKeyAndRouteInput on Setup only" regression (that editor
+// is no longer wired directly into SetupScreen — see the note above). Kept
+// the spirit of the check: the new setup-screen skeleton is Setup-only, not
+// rendered on the Review screen.
 
-describe('AppShell — M4 regression: maps input lives on Setup, not Review', () => {
+describe('AppShell — feature 009: setup skeleton lives on Setup, not Review', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     vi.mocked(client.listPackages).mockResolvedValue({ packages: [], errors: [] })
@@ -324,17 +326,17 @@ describe('AppShell — M4 regression: maps input lives on Setup, not Review', ()
     vi.mocked(client.listRuns).mockResolvedValue({ runs: [] })
   })
 
-  it('MapKeyAndRouteInput is present on Setup screen', async () => {
+  it('SignalsPanel is present on Setup screen', async () => {
     render(
       <RunStoreProvider>
         <AppShell />
       </RunStoreProvider>,
     )
     // Default: setup screen
-    expect(await screen.findByTestId('map-key-route-input')).toBeInTheDocument()
+    expect(await screen.findByTestId('signals-panel')).toBeInTheDocument()
   })
 
-  it('MapKeyAndRouteInput is NOT present on Review screen', async () => {
+  it('SignalsPanel is NOT present on Review screen', async () => {
     const { getDispatch } = renderInStore(<AppShell />)
 
     act(() => getDispatch()({ type: 'SET_VIEW_MODE', mode: 'review' }))
@@ -342,7 +344,7 @@ describe('AppShell — M4 regression: maps input lives on Setup, not Review', ()
     await waitFor(() => {
       expect(screen.getByTestId('review-screen')).toBeInTheDocument()
     })
-    expect(screen.queryByTestId('map-key-route-input')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('signals-panel')).not.toBeInTheDocument()
   })
 })
 

@@ -105,6 +105,49 @@ export type EventPreset = {
   rest_spot_eta_near_before?: string
 }
 
+// ── Feature 009: tiered-signal generator params ───────────────────────────
+// Mirrors app/api/aica_api/models/profile.py. driver_profile/vehicle_profile
+// (M1-M8) are retired; driver_signal_params/anomaly_signal_params replace them.
+// The vehicle behaviour model (steering/pedal/lane/ADAS) is removed entirely.
+
+export type DrowsinessModel = {
+  base_growth_per_min: number
+  night_add_per_min: number
+  monotony_add_per_min: number
+  traffic_jam_add_per_min: number
+}
+
+export type FatigueModel = {
+  base_growth_per_min: number
+  continuous_driving_add_per_min_after_60_min: number
+  mountain_road_add_per_min: number
+  traffic_jam_add_per_min: number
+}
+
+export type RecoveryModel = {
+  short_rest_drowsiness_recovery: number
+  short_rest_fatigue_recovery: number
+  long_rest_drowsiness_recovery: number
+  long_rest_fatigue_recovery: number
+}
+
+/** Driver signal generator parameters (drowsiness, fatigue, recovery). Renamed
+ * from DriverModelProfile; the attention sub-model is retired. */
+export type DriverSignalParams = {
+  id: string
+  drowsiness_model: DrowsinessModel
+  fatigue_model: FatigueModel
+  recovery_model: RecoveryModel
+}
+
+/** Parameters for the seeded-Poisson anomaly-event generator (Tier 3b). */
+export type AnomalySignalParams = {
+  lambda_base: number
+  lambda_gain: number
+  theta: number
+  window_min: number
+}
+
 export type ScenarioDef = {
   id: string
   version: string
@@ -113,8 +156,13 @@ export type ScenarioDef = {
   route_intent: RouteIntent
   initial_state: Record<string, string>
   event_presets: EventPreset
-  driver_profile: Record<string, unknown>
-  vehicle_profile: Record<string, unknown>
+  /** Feature 009: tiered-signal generator params — optional (older/M1 fixtures omit them). */
+  driver_signal_params?: DriverSignalParams | null
+  anomaly_signal_params?: AnomalySignalParams | null
+  /** Feature 009: the seed suggested at setup time, frozen per run. Optional
+   * for back-compat with fixtures/older responses; the backend always
+   * serializes it (defaults to 42) so treat an absent value as 42. */
+  run_seed_default?: number
   /** M6 T009: speed profile — optional for back-compat with older scenarios. */
   speed_profile?: Record<string, unknown>
   total_duration_seconds: number
@@ -132,10 +180,12 @@ export type ScenarioDef = {
  * Sparse profile overrides for the run-plan body (U5/T008 backend contract).
  * Each sub-object is optional and deep-merged on the backend.
  * Send ONLY changed fields; omit this entirely when nothing changed.
+ * Feature 009: `vehicle` is retired (the vehicle behaviour model is gone);
+ * `anomaly` is new — overrides the Tier-3b seeded anomaly-rate generator.
  */
 export type ProfileOverrides = {
   driver?: Record<string, unknown>
-  vehicle?: Record<string, unknown>
+  anomaly?: Record<string, unknown>
   speed?: Record<string, unknown>
 }
 
@@ -236,6 +286,89 @@ export type RunPlanResponse = {
   draft_plan: unknown
   effective_setup: Record<string, unknown>
   validation_errors: ValidationError[]
+}
+
+// ── Feature 009: RunConfig + ephemeral preview (InstantResult) ────────────
+
+/**
+ * Setup-time run configuration (mirrors backend RunConfig, data-model.md §4).
+ * hyperparameter_overrides holds changed-from-manifest-default values only.
+ * run_seed is frozen at run start (or per-preview) and drives anomaly_rate.
+ */
+export type RunConfig = {
+  package_id: string
+  scenario_id: string
+  hyperparameter_overrides: Record<string, SetupValue>
+  run_seed: number
+  expert_override?: boolean
+}
+
+/** The first actionable "rest_required" fire observed during a preview run. */
+export type FirePoint = {
+  category: string | null
+  strength: string | null
+  tick: number
+  time_min: number
+}
+
+/** One rest_required_score sample (for the setup-screen preview curve). */
+export type ScoreSeriesPoint = {
+  t: number
+  score: number
+}
+
+/** A contiguous run of one segment type over the previewed route. */
+export type PreviewSegment = {
+  type: string | null
+  from_min: number
+  to_min: number
+}
+
+/** The rest spot the auto-chosen recovery stopped at. */
+export type PreviewRestSpot = {
+  at_km: number
+  eta_min: number | null
+}
+
+/** The recovery option auto-accepted when the first proposal fired. */
+export type PreviewRestOption = {
+  id: string
+  auto_chosen: boolean
+  recovery_from_min: number | null
+  to_min: number | null
+}
+
+/** An algorithm/context error surfaced during the preview (never a faked decision). */
+export type PreviewError = {
+  tick_index: number
+  error_type: string
+  message: string
+}
+
+/** A single hyperparameter override as echoed back by the preview endpoint. */
+export type PreviewOverrideEntry = {
+  key: string
+  default: unknown
+  value: unknown
+}
+
+/**
+ * Ephemeral, non-persisting preview result — response body of POST /api/runs/preview
+ * (feature 009, US1). Never stored; a pure computation over a RunConfig.
+ */
+export type InstantResult = {
+  fired: boolean
+  fire: FirePoint | null
+  peak_score: number
+  threshold: number | null
+  score_series: ScoreSeriesPoint[]
+  segments: PreviewSegment[]
+  rest_spot: PreviewRestSpot | null
+  rest_option: PreviewRestOption | null
+  completed_min: number | null
+  seed: number
+  overrides: PreviewOverrideEntry[]
+  error: PreviewError | null
 }
 
 // ── Run domain ─────────────────────────────────────────────────────────────

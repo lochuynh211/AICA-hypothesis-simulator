@@ -20,6 +20,8 @@ import type {
   EvidenceReport,
   ProfileOverrides,
   RestSpot,
+  RunConfig,
+  InstantResult,
 } from './types'
 import { MapsError, FeedbackValidationError } from './types'
 
@@ -196,6 +198,33 @@ export async function regenerateRunPlan(
 }
 
 // ── Runs ───────────────────────────────────────────────────────────────────
+
+/**
+ * Ephemeral, non-persisting instant-result preview (feature 009, US1).
+ *
+ * Runs the full tick loop for the given RunConfig through the SAME tick
+ * engine + algorithm adapter as a persisted run, but writes NOTHING to
+ * runs/ — safe to call on every setup-screen edit. `restOptionId` optionally
+ * pins which recovery option the preview auto-accepts on the first proposal
+ * (defaults to the scenario's first recovery option when omitted).
+ */
+export async function runPreview(
+  config: RunConfig,
+  restOptionId?: string | null,
+): Promise<InstantResult> {
+  const body: Record<string, unknown> = {
+    package_id: config.package_id,
+    scenario_id: config.scenario_id,
+    hyperparameter_overrides: config.hyperparameter_overrides,
+    run_seed: config.run_seed,
+  }
+  if (restOptionId !== undefined) body.rest_option_id = restOptionId
+  return apiFetch('/api/runs/preview', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
 
 export async function createRun(planId: string): Promise<RunState> {
   return apiFetch('/api/runs', {

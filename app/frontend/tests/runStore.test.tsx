@@ -1,8 +1,23 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import React from 'react'
-import { RunStoreProvider, useRunStore } from '../src/state/runStore'
-import type { RunState, DecisionResult, AlgorithmError, PackageSummary, ScenarioSummary } from '../src/api/types'
+import { RunStoreProvider, useRunStore, useRunPreview, selectOverridesDiff } from '../src/state/runStore'
+import type {
+  RunState,
+  DecisionResult,
+  AlgorithmError,
+  PackageSummary,
+  ScenarioSummary,
+  InstantResult,
+} from '../src/api/types'
+
+// ── Feature 009: mock the API client's runPreview (used by useRunPreview) ────
+// Only runPreview is mocked/used below; other store tests in this file never
+// touch the client module.
+vi.mock('../src/api/client', () => ({
+  runPreview: vi.fn(),
+}))
+import * as client from '../src/api/client'
 
 // ── fixtures ─────────────────────────────────────────────────────────────────
 
@@ -447,5 +462,164 @@ describe('runStore — RESET', () => {
     // Lists and selection preserved
     expect(state.packages).toHaveLength(1)
     expect(state.selectedPackageId).toBe('rest_rule_based_v0_1')
+  })
+})
+
+// ── Feature 009: overrides-diff selector + run_seed + instant-result preview ──
+
+describe('selectOverridesDiff — feature 009', () => {
+  it('returns only entries that differ from the manifest defaults', () => {
+    const edited = { w_drowsiness: 0.6, w_fatigue: 0.25 }
+    const defaults = { w_drowsiness: 0.4, w_fatigue: 0.25, w_anomaly: 0.1 }
+    expect(selectOverridesDiff(edited, defaults)).toEqual([
+      { key: 'w_drowsiness', default: 0.4, value: 0.6 },
+    ])
+  })
+
+  it('ignores keys unknown to the manifest defaults', () => {
+    expect(selectOverridesDiff({ unknown_key: 1 }, {})).toEqual([])
+  })
+
+  it('returns an empty diff when nothing has changed from the defaults', () => {
+    const defaults = { w_drowsiness: 0.4 }
+    expect(selectOverridesDiff({ w_drowsiness: 0.4 }, defaults)).toEqual([])
+  })
+})
+
+describe('runStore — SET_HYPERPARAMETER drives the overrides-diff (feature 009)', () => {
+  it('the overrides-diff reflects a SET_HYPERPARAMETER edit against manifest defaults', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    const defaults = { w_drowsiness: 0.4, w_fatigue: 0.25 }
+
+    expect(selectOverridesDiff(result.current.state.editedHyperparameters, defaults)).toEqual([])
+
+    act(() =>
+      result.current.dispatch({ type: 'SET_HYPERPARAMETER', key: 'w_drowsiness', value: 0.6 }),
+    )
+
+    expect(selectOverridesDiff(result.current.state.editedHyperparameters, defaults)).toEqual([
+      { key: 'w_drowsiness', default: 0.4, value: 0.6 },
+    ])
+  })
+})
+
+describe('runStore — run_seed (feature 009)', () => {
+  it('defaults runSeed to 42', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    expect(result.current.state.runSeed).toBe(42)
+  })
+
+  it('SET_RUN_SEED sets an explicit seed', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    act(() => result.current.dispatch({ type: 'SET_RUN_SEED', seed: 7 }))
+    expect(result.current.state.runSeed).toBe(7)
+  })
+
+  it('REROLL_SEED draws a new numeric seed', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    act(() => result.current.dispatch({ type: 'REROLL_SEED' }))
+    expect(typeof result.current.state.runSeed).toBe('number')
+  })
+
+  it('SELECT_SCENARIO resets runSeed and clears the previous instantResult', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    act(() => result.current.dispatch({ type: 'SET_RUN_SEED', seed: 999 }))
+    act(() => result.current.dispatch({ type: 'SELECT_SCENARIO', id: 'other_scenario' }))
+    expect(result.current.state.runSeed).toBe(42)
+    expect(result.current.state.instantResult).toBeNull()
+  })
+})
+
+describe('useRunPreview — debounced POST /runs/preview (feature 009)', () => {
+  const mockInstantResult: InstantResult = {
+    fired: true,
+    fire: { category: 'rest_required', strength: 'gentle', tick: 111, time_min: 56.0 },
+    peak_score: 0.59,
+    threshold: 0.58,
+    score_series: [{ t: 0, score: 0.0 }],
+    segments: [{ type: 'highway', from_min: 0, to_min: 60 }],
+    rest_spot: null,
+    rest_option: null,
+    completed_min: 111.5,
+    seed: 42,
+    overrides: [],
+    error: null,
+  }
+
+  it('debounces, calls runPreview with the right RunConfig, and stores the InstantResult', async () => {
+    vi.useFakeTimers()
+    try {
+      vi.mocked(client.runPreview).mockResolvedValue(mockInstantResult)
+
+      const { result } = renderHook(
+        () => {
+          const store = useRunStore()
+          useRunPreview()
+          return store
+        },
+        { wrapper },
+      )
+
+      act(() => {
+        result.current.dispatch({ type: 'SELECT_PACKAGE', id: 'pkg1' })
+        result.current.dispatch({ type: 'SELECT_SCENARIO', id: 'scen1' })
+        result.current.dispatch({ type: 'SET_HYPERPARAMETER', key: 'w_drowsiness', value: 0.6 })
+      })
+
+      // Nothing fires before the debounce window elapses.
+      expect(client.runPreview).not.toHaveBeenCalled()
+
+      await act(async () => {
+        vi.advanceTimersByTime(500)
+        // Flush the microtask queue so the mocked promise resolves.
+        await Promise.resolve()
+        await Promise.resolve()
+      })
+
+      expect(client.runPreview).toHaveBeenCalledTimes(1)
+      expect(client.runPreview).toHaveBeenCalledWith({
+        package_id: 'pkg1',
+        scenario_id: 'scen1',
+        hyperparameter_overrides: { w_drowsiness: 0.6 },
+        run_seed: 42,
+      })
+      expect(result.current.state.instantResult).toEqual(mockInstantResult)
+      expect(result.current.state.previewLoading).toBe(false)
+      expect(result.current.state.previewError).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('stores an error message when the preview request fails', async () => {
+    vi.useFakeTimers()
+    try {
+      vi.mocked(client.runPreview).mockRejectedValue(new Error('boom'))
+
+      const { result } = renderHook(
+        () => {
+          const store = useRunStore()
+          useRunPreview()
+          return store
+        },
+        { wrapper },
+      )
+
+      act(() => {
+        result.current.dispatch({ type: 'SELECT_PACKAGE', id: 'pkg1' })
+        result.current.dispatch({ type: 'SELECT_SCENARIO', id: 'scen1' })
+      })
+
+      await act(async () => {
+        vi.advanceTimersByTime(500)
+        await Promise.resolve()
+        await Promise.resolve()
+      })
+
+      expect(result.current.state.previewError).toBe('boom')
+      expect(result.current.state.previewLoading).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
