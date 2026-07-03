@@ -25,20 +25,7 @@
     { "key": "traffic_jam", "band_values": [] },
     { "key": "long_highway", "band_values": [] }
   ],
-  "parameters": [
-    {
-      "key": "child_passenger",
-      "label": { "ja": "子供同乗", "en": "Child Passenger" },
-      "kind": "bool",
-      "default": false
-    },
-    {
-      "key": "familiar_route",
-      "label": { "ja": "慣れた道", "en": "Familiar Route" },
-      "kind": "bool",
-      "default": false
-    }
-  ],
+  "parameters": [],
   "hyperparameters": [
     {
       "key": "w_base",

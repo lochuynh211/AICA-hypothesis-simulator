@@ -10,6 +10,15 @@
 - `others/aica_transparent_hybrid_trigger_algorithm_proposal.md`
 - `others/aica_trigger_condition_skeleton.png`
 
+> **Design update — 2026-07-03 (feature `009-signal-tier-redesign`), landed.** §5.1/§5.2 (raw state /
+> feature groups) and §4.3/§4.4 (driver/vehicle state update) were re-designed around the **tiered signal
+> contract** — Fixed, Dynamic, and **Simulated** signals (§5.1); `drowsiness`/`fatigue` as deterministic
+> derived signals and a single seeded-Poisson `anomaly_rate` (§4.3a) replace the retired deterministic
+> vehicle sensors, `attention`, and route look-ahead signals. `python_module` is the sole supported
+> algorithm type (§6; the `declarative_rule`/`weighted_score` built-ins were retired). §3.8 adds the
+> ephemeral instant-result preview (`POST /api/runs/preview`). Superseded subsections are marked retired /
+> pre-009 in place rather than deleted, for history. See `specs/009-signal-tier-redesign/`.
+
 ---
 
 ## 1. Purpose
@@ -68,11 +77,12 @@ The setup model has separate layers so test users can understand which values ar
 
 The selected AICA algorithm package.
 
-Examples:
+Both shipped packages are `python_module` type (the sole supported algorithm type as of feature
+`009-signal-tier-redesign`, §6):
 
-- rule-based rest proposal package;
-- weighted-score rest proposal package;
-- `aica_transparent_hybrid_trigger_v1` Python package.
+- `aica_transparent_hybrid_trigger_v1` — compact transparent hybrid trigger (rule + weighted-score +
+  state-machine pattern implemented as trusted Python, not as a separate built-in type);
+- `nri_fatigue_score_v1` — NRI fatigue accumulation score.
 
 ### 3.2 Scenario Backbone
 
@@ -84,8 +94,9 @@ It includes:
 - review focus;
 - default route intent;
 - allowed user actions;
-- default driver model profile;
-- default vehicle behavior profile;
+- simulated-signal generator parameters — `driver_signal_params`, `anomaly_signal_params` (§4.3a; renamed
+  from the retired `driver_model_profile` / `vehicle_behavior_profile`);
+- a suggested `run_seed_default`;
 - default initial state;
 - default generated-event settings.
 
@@ -128,10 +139,9 @@ Presets express experiment intent. They are deterministic inputs chosen before s
 
 Examples:
 
-- initial driver state;
-- initial vehicle state;
-- driver model profile;
-- vehicle behavior profile;
+- initial driver state (`drowsiness`, `fatigue` starting values);
+- `driver_signal_params` / `anomaly_signal_params` (§4.3a);
+- a `run_seed` (frozen at run start; the only source of randomness — §4.3a);
 - numeric speed profile by road style;
 - traffic jam enabled/disabled;
 - traffic jam severity;
@@ -189,6 +199,20 @@ Before start, the test user may:
 
 After start, the generated event plan is frozen.
 
+### 3.8 Instant Result Preview (feature `009-signal-tier-redesign`)
+
+On the setup screen, any hyperparameter, signal, or run-seed edit debounces a call to
+`POST /api/runs/preview` with the candidate configuration (package, scenario, hyperparameter overrides,
+run seed, rest option). The backend runs the identical deterministic tick loop (§4) and algorithm adapter
+(§6) headlessly — no animation, no interaction pauses — to completion or first fire, and returns an
+`InstantResult`: fired/not, fire point, peak score vs threshold, a per-tick score series, segments, rest
+spot, auto-chosen rest option, completion time, the seed, and the applied overrides (or an
+`algorithm_error` descriptor — never a fabricated normal decision).
+
+This path is **ephemeral**: the evidence recorder is never invoked and nothing is written to `runs/`.
+"Open full run" re-submits the identical configuration through the normal §3.7 → run-creation path, which
+is the point a run actually becomes a persisted, append-only evidence record.
+
 ---
 
 ## 4. Deterministic Tick Loop
@@ -204,15 +228,13 @@ while destination_not_reached:
   3. Determine active generated events at this simulation time.
   4. Calculate effective speed.
   5. Advance route position.
-  6. Update route and rest state.
-  7. Update driver state from driver model profile.
-  8. Update vehicle state from vehicle behavior profile.
-  9. Update rolling vehicle event counts.
-  10. Build skeleton-aligned feature groups.
-  11. Build trigger algorithm context.
-  12. Call trigger package.
-  13. Append tick and decision trace to run log.
-  14. Pause if proposal or required interaction exists.
+  6. Update route and rest state (dynamic tier — §5.1).
+  7. Update simulated signals (drowsiness, fatigue, anomaly_rate) per §4.3a.
+  8. Build tiered signal groups (fixed / dynamic / simulated — §5.1) and generic feature-band groups (§5.2).
+  9. Build trigger algorithm context.
+  10. Call trigger package (`python_module`; §6).
+  11. Append tick and decision trace to run log.
+  12. Pause if proposal or required interaction exists.
 ```
 
 ### 4.1 Speed Calculation
@@ -256,7 +278,11 @@ Each tick updates:
 - traffic jam active state;
 - low-speed duration.
 
-### 4.3 Driver State Update
+### 4.3 Driver State Update (pre-009 shape — see §4.3a)
+
+> Retained for history. Feature `009-signal-tier-redesign` renamed `driver_model_profile` to the
+> scenario's `driver_signal_params` and removed the `attention_model` sub-object (§5.1). The
+> `drowsiness`/`fatigue` update math is otherwise the same shape as below.
 
 Driver progression should be controlled by a separate driver model profile.
 
@@ -299,7 +325,13 @@ driver_update:
   next_drowsiness: 42.07
 ```
 
-### 4.4 Vehicle State Update
+### 4.4 Vehicle State Update — RETIRED (feature `009-signal-tier-redesign`)
+
+> **This entire subsection describes a retired mechanism, kept for history only.** The deterministic
+> vehicle-behavior-profile / vehicle sensors described below (steering instability, lane departure, pedal
+> abnormality, ADAS warnings) were removed with no V1 replacement — they were fabricated deterministic
+> signals presented as if they were sensor measurements, which the tiered-signal re-design explicitly
+> rules out (§5.1). There is no "vehicle" tier in the current signal contract.
 
 Vehicle behavior should be controlled by a separate vehicle behavior profile.
 
@@ -359,6 +391,25 @@ Each tick:
 5. Count recent events for algorithm input.
 ```
 
+### 4.3a Simulated Signal Update (feature `009-signal-tier-redesign`, current)
+
+This replaces §4.3/§4.4 above. Each tick, the tick engine advances the deterministic `drowsiness`/`fatigue`
+signals and the seeded `anomaly_rate` signal from the scenario's `driver_signal_params` /
+`anomaly_signal_params` (renamed from the retired `driver_model_profile` / `vehicle_behavior_profile`):
+
+```text
+drowsiness[t] = clamp₀₋₁₀₀( drowsiness[t-1]
+   + (base + night·isNight + monotony·isMonotonous + jam·isTrafficJam) · Δt/60 )
+fatigue[t]    = clamp₀₋₁₀₀( fatigue[t-1]
+   + (base + continuous·[continuousMin≥60] + mountain·isMountain + jam·isTrafficJam) · Δt/60 )
+anomaly_rate[t] = rolling count of a seeded Poisson `spike[t]` process over `window_min`,
+   whose λ increases with drowsiness (see `specs/009-signal-tier-redesign/contracts/anomaly-generator.md`)
+```
+
+Recovery (accepting a rest option) reduces `drowsiness`/`fatigue` per the scenario's recovery parameters.
+Both signals are presented to the reviewer as *derived*, not sensor-measured. There is no vehicle-signal
+update step — no vehicle tier exists in the current signal contract (§5.1).
+
 ---
 
 ## 5. Skeleton-Aligned State And Features
@@ -377,88 +428,63 @@ monitoring data
 → proposal firing
 ```
 
-### 5.1 Raw Simulation State
+### 5.1 Raw Simulation State — Tiered Signals (feature `009-signal-tier-redesign`)
 
-The simulator should maintain raw state that can feed the trigger skeleton.
+> This section replaced the earlier undifferentiated `simulation_state` shape (driver/vehicle/route/context
+> sub-objects with deterministic vehicle sensors and look-ahead fields). See
+> `specs/009-signal-tier-redesign/contracts/tiered-context.md` for the authoritative contract.
+
+The simulator maintains raw state as **three named tiers**, all exposed to every trigger package on every
+tick (`signals.fixed` / `signals.dynamic` / `signals.simulated`):
 
 ```yaml
-simulation_state:
-  trip:
-    elapsed_drive_time_min: number
-    distance_driven_km: number
-    distance_to_destination_km: number
-  driver:
-    drowsinessLevel: number
-    fatigueLevel: number
-    attentionLevel: number
-    responseDelayMs: number
-    voiceEnergyLevel: number
-  route:
-    current_segment_type: string
-    nextRestSpotDistanceKm: number
-    nextRestSpotMin: number
-    highwayRemainingMin: number
-    trafficJamAheadMin: number
-    monotonousRoadRemainingMin: number
-    familiarRouteRatio: number
-    recommendedNearbyPlaceAvailable: boolean
-    routeUnusualnessLevel: number
-  vehicle:
-    speedKph: number
-    steeringInstabilityLevel: number
-    laneDepartureCount: number
-    pedalAbnormalityLevel: number
-    adasWarningCount: number
-  context:
+signals:
+  fixed:                        # scenario constants — constant for the whole run
     isNight: boolean
+    familiarRoute: boolean
+    childPassenger: boolean
     weatherRiskLevel: number
-    traffic_jam_active: boolean
-    lowSpeedDurationMin: number
-  passenger:
-    childOnboard: boolean
-  proposalHistory:
-    lastProposalTimeSec: number
-    lastProposalCategory: string
-    lastProposalResult: string
-    proposalCountLast30Min: number
-    acceptanceRateRecent: number
+  dynamic:                      # f(fixed + elapsed time + user actions) — read-only, derived
+    segmentType: string          # highway | normal_road | mountain_road | sightseeing_road | rest
+    motionState: string          # MOVING | STOPPED
+    continuousDrivingMin: number
+    speedKph: number
+    routeFraction: number
+    nextRestSpotMin: number
+    isTrafficJam: boolean
+    recoveryPhase: string | null
+  simulated:                    # values the simulator DERIVES, not fabricated sensor reads
+    drowsiness: number           # 0-100, deterministic accumulation (driver_signal_params)
+    fatigue: number               # 0-100, deterministic accumulation (driver_signal_params)
+    anomaly_rate: number          # seeded-Poisson point-process rate; higher when drowsiness is higher
 ```
+
+`drowsiness`/`fatigue` are presented as **derived** quantities, never as pretend sensor measurements.
+`anomaly_rate` is the **only stochastic signal** — a seeded Poisson generator whose event rate rises with
+drowsiness, so identical `(scenario, run_seed)` pairs always reproduce identical anomaly events (§4.3a).
+
+**Retired, no V1 replacement**: the deterministic vehicle sensors (`steeringInstabilityLevel`,
+`pedalAbnormalityLevel`, `laneDepartureCount`, `adasWarningCount`), `attentionLevel`, and route look-ahead
+fields (`highwayRemainingMin`, `trafficJamAheadMin`, `monotonousRoadRemainingMin`,
+`recommendedNearbyPlaceAvailable`, `routeUnusualnessLevel`). §4.3/§4.4 above describe the retired
+driver-model/vehicle-behavior-profile mechanics for history; §4.3a replaces them.
 
 ### 5.2 Feature Groups
 
-The simulator should build shared feature groups before calling the trigger package.
+Each trigger package derives its **own** named features from the shared tiered signals — there is no longer
+one fixed shared skeleton grouping imposed by the simulator core. The simulator only carries a generic,
+package-agnostic banding/normalization envelope per tick:
 
 ```yaml
 feature_groups:
-  driving_achievement:
-    elapsed_drive_time_score: number
-    distance_driven_score: number
-  current_driver_state:
-    drowsiness_score: number
-    fatigue_score: number
-    attention_drop_score: number
-  future_fatigue_factor:
-    traffic_jam_score: number
-    long_highway_score: number
-    weather_risk_score: number
-  recovery_possibility:
-    rest_window_score: number
-    rest_scarcity_score: number
-  unstimulated_state:
-    monotony_score: number
-    familiar_route_score: number
-    low_speed_repetition_score: number
-  route_information_level:
-    characteristic_route_score: number
-    recommended_place_score: number
-    route_unusualness_score: number
-  child_passenger:
-    child_onboard: boolean
+  normalized: { <key>: number }   # 0-1 clamped values the package computed
+  ordinal:    { <key>: string }   # boundary-binned band labels (Principle IV — qualitative discipline)
 ```
 
-The simulator calculates raw state and shared skeleton-aligned feature groups. The trigger package may calculate package-specific scores from those features.
-
-This keeps the simulator aligned with the AIP/AICA trigger skeleton without hard-coding one algorithm's internal formula into the simulator core.
+For example, the compact Hybrid package derives `drowsiness`, `fatigue`, `driving_anomaly`, `env_load`,
+`monotony`, `rest_window`, `rest_scarcity`, `familiar_route` from the tiered signals (see
+`specs/009-signal-tier-redesign/data-model.md` §5); the NRI package derives its own realtime/base/env terms
+(§6). The simulator core does not hard-code either algorithm's feature formula.
 
 ---
 
@@ -469,14 +495,20 @@ At each tick, the simulator builds an algorithm context:
 ```yaml
 algorithm_context:
   simulation_time_sec: number
-  raw_state: object
-  feature_groups: object
+  signals: object            # tiered {fixed, dynamic, simulated} — §5.1
+  feature_groups: object     # generic {normalized, ordinal} envelope — §5.2
   parameters: object
   hyperparameters: object
   proposal_history: object
   user_action_history: object
   package_runtime_state: object
 ```
+
+`python_module` is the sole supported algorithm type (feature `009-signal-tier-redesign` retired the
+`declarative_rule` and `weighted_score` built-ins — §3.1); the backend imports the package-local module and
+calls `evaluate(context: dict) -> dict`, validating and normalizing the result. Every algorithm decides
+which signal tiers it reads and computes its own features — the simulator core does not pre-select tiers
+per algorithm.
 
 The trigger package returns a normalized decision result:
 
@@ -513,8 +545,7 @@ When paused:
 
 - simulation time stops;
 - route position does not advance;
-- driver state does not change;
-- vehicle state does not update;
+- simulated signals (drowsiness, fatigue, anomaly_rate) do not change;
 - algorithm is not called repeatedly;
 - wall-clock audit timestamps may continue.
 
@@ -545,7 +576,7 @@ choose_later_rest_spot:
 
 accept_humming_karaoke:
   active_content: humming_karaoke
-  driver_model_effect: active_content_support
+  driver_signal_effect: active_content_support
 
 take_short_rest:
   drowsiness_recovery: configured_value
@@ -714,14 +745,16 @@ It should include:
 
 - run metadata;
 - setup snapshot;
+- the frozen `run_seed` (§4.3a; drives the seeded `anomaly_rate` generator);
 - route snapshot;
 - route-derived facts;
-- preset snapshot;
+- preset snapshot (`driver_signal_params`, `anomaly_signal_params`);
 - generated event plan;
 - tick events;
 - route updates;
-- driver updates;
-- vehicle updates;
+- driver updates (simulated-signal deltas — §4.3a);
+- vehicle updates (kept in the per-tick schema for evidence-log back-compat; always empty post-009 — no
+  vehicle-signal producer exists);
 - feature groups;
 - algorithm decision trace;
 - proposal events;
@@ -794,9 +827,9 @@ V1 should verify:
 - same evidence log produces the same visual evidence replay;
 - traffic jam speed overrides route speed;
 - numeric speed profile calculates route progress exactly;
-- driver state changes deterministically from the driver model profile;
-- vehicle continuous levels are deterministic;
-- vehicle rolling-window counts work;
+- `drowsiness`/`fatigue` change deterministically from `driver_signal_params` (§4.3a);
+- identical `(scenario, run_seed)` reproduces an identical `anomaly_rate` event series and decision trace
+  (FR-005/FR-006);
 - simulation time stops during interaction pause;
 - active rest guidance suppresses duplicate rest proposals;
 - urgent risk can override active guidance suppression;

@@ -10,8 +10,8 @@ context carries them (see `contracts/tiered-context.md`).
 
 | Tier | Signals | Editable at setup | Notes |
 |---|---|---|---|
-| **1 — Fixed** | `isNight`, `familiarRoute`, `childPassenger`, weather setup, route/segments, rest options | some (scenario constants) | constant for the whole run |
-| **2 — Dynamic** | `segmentType`, `motionState`, `continuousDrivingMin`, `speedKph`, `routeFraction`, `nextRestSpotMin`, `isTrafficJam`, `recoveryPhase`, `weatherRiskLevel` | read-only (derived) | `= f(fixed + elapsed time + user actions)` |
+| **1 — Fixed** | `isNight`, `familiarRoute`, `childPassenger`, `weatherRiskLevel`, route/segments, rest options | some (scenario constants) | constant for the whole run |
+| **2 — Dynamic** | `segmentType`, `motionState`, `continuousDrivingMin`, `speedKph`, `routeFraction`, `nextRestSpotMin`, `isTrafficJam`, `recoveryPhase` | read-only (derived) | `= f(fixed + elapsed time + user actions)` |
 | **3 — Simulated** | `drowsiness`, `fatigue` (latent) · `anomaly_rate` (sensor) | curve params editable | drowsiness/fatigue deterministic; anomaly_rate seeded-stochastic |
 
 **Removed from the tick output**: `attentionLevel`, `steeringInstabilityLevel`, `pedalAbnormalityLevel`,

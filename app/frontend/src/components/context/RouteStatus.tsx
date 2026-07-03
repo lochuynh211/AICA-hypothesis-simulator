@@ -22,11 +22,23 @@ const valueStyle: React.CSSProperties = {
   marginBottom: '8px',
 }
 
-function Row({ label, value, last }: { label: string; value: string | null; last?: boolean }) {
+function Row({
+  label,
+  value,
+  last,
+  testId,
+}: {
+  label: string
+  value: string | null
+  last?: boolean
+  testId: string
+}) {
   return (
     <>
       <div style={labelStyle}>{label}</div>
-      <div style={{ ...valueStyle, marginBottom: last ? 0 : '8px' }}>{value ?? '—'}</div>
+      <div data-testid={testId} style={{ ...valueStyle, marginBottom: last ? 0 : '8px' }}>
+        {value ?? '—'}
+      </div>
     </>
   )
 }
@@ -70,10 +82,10 @@ export default function RouteStatus() {
 
   return (
     <div data-testid="route-status" style={{ padding: '10px 12px', background: '#eff6ff', borderRadius: '6px' }}>
-      <Row label={L.distFromStart} value={distFromStart} />
-      <Row label={L.distToDest}    value={distToDest} />
-      <Row label={L.speed}         value={speed} />
-      <Row label={L.eta}           value={eta} last />
+      <Row label={L.distFromStart} value={distFromStart} testId="route-status-dist-from-start" />
+      <Row label={L.distToDest}    value={distToDest}    testId="route-status-dist-to-dest" />
+      <Row label={L.speed}         value={speed}         testId="route-status-speed" />
+      <Row label={L.eta}           value={eta}            testId="route-status-eta" last />
     </div>
   )
 }

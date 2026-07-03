@@ -5,15 +5,17 @@
 **Purpose:** Define the implementation architecture for AICA Hypothesis Simulator as a simple local, single-user, containerized simulator.  
 **Primary runtime goal:** Open browser, test hypotheses, inspect traces, and receive automatically persisted run logs.
 
-> **Design update — 2026-07-03 (feature `009-signal-tier-redesign`).** The raw-state / feature model is
-> being re-designed. Raw signals are organized into **three tiers** — Fixed, Dynamic, and **Simulated
-> signals** (`drowsiness`/`fatigue` as deterministic derived values, plus a single **seeded-Poisson
-> `anomaly_rate`**; the deterministic vehicle sensors and `attention` are removed). Each algorithm derives
-> its own features from the shared signal set; the Hybrid is compacted to 8 features (NRI unchanged, its
-> realtime term now live). The setup screen becomes two editor panels + a full-width **ephemeral
-> instant-result** preview (never persisted). Authoritative detail: `others/aica_trigger_algorithms_math_comparison.md`
-> (Part 2) and `others/aica_setup_screen_uiux.md`; feature spec `specs/009-signal-tier-redesign/`. Sections
-> below are updated as the feature lands (task T046).
+> **Design update — 2026-07-03 (feature `009-signal-tier-redesign`), landed.** The raw-state / feature
+> model was re-designed: raw signals are organized into **three tiers** — Fixed, Dynamic, and **Simulated
+> signals** (§8.1) — replacing the earlier undifferentiated driver/vehicle-profile model. `drowsiness` and
+> `fatigue` are simulated *derived* values (not pretend sensors); the only stochastic signal is a single
+> **seeded-Poisson `anomaly_rate`** (replayable via a frozen `run_seed`). The deterministic vehicle sensors
+> (steering, pedal, lane-departure, ADAS) and `attention` are retired, along with route look-ahead signals
+> and the `declarative_rule` / `weighted_score` built-in algorithm types (§9, §11) — `python_module` is now
+> the sole supported algorithm type. The setup screen is two editor panels + a full-width **ephemeral
+> instant-result** preview via `POST /api/runs/preview` (§13.11, §14) — headless, never persisted. See
+> `specs/009-signal-tier-redesign/` and `others/aica_trigger_algorithms_math_comparison.md` (Part 2) for full
+> authoritative detail.
 
 ---
 
@@ -140,8 +142,6 @@ AICA-hypothesis-simulator/
         algorithms/
           __init__.py
           adapter.py
-          declarative_rule.py
-          weighted_score.py
           python_module.py
         storage/
           __init__.py
@@ -196,12 +196,13 @@ AICA-hypothesis-simulator/
         feedback.test.tsx
 
   packages/
-    rest_weighted_score_v0_1/
+    aica_transparent_hybrid_trigger_v1/
       package.json
       algorithm.py
       README.md
-    rest_rule_based_v0_1/
+    nri_fatigue_score_v1/
       package.json
+      algorithm.py
       README.md
 
   scenarios/
@@ -236,9 +237,7 @@ AICA-hypothesis-simulator/
 | `app/api/aica_api/services/run_manager.py` | Run creation, state updates, evaluation orchestration. |
 | `app/api/aica_api/services/evidence_recorder.py` | Append-only run event handling and persisted log writing. |
 | `app/api/aica_api/algorithms/adapter.py` | Common algorithm dispatch and decision-result normalization. |
-| `app/api/aica_api/algorithms/declarative_rule.py` | Built-in declarative rule algorithm support. |
-| `app/api/aica_api/algorithms/weighted_score.py` | Built-in weighted-score algorithm support. |
-| `app/api/aica_api/algorithms/python_module.py` | Local trusted Python algorithm module loading and execution. |
+| `app/api/aica_api/algorithms/python_module.py` | Local trusted Python algorithm module loading and execution — the sole supported algorithm type (feature 009 retired the `declarative_rule` / `weighted_score` built-ins). |
 | `app/api/aica_api/storage/file_store.py` | Safe JSON read/write helpers for local files. |
 | `app/frontend/src/api/` | Typed API client and shared frontend API response types. |
 | `app/frontend/src/components/setup/` | Package/scenario selection and editable parameter controls. |
@@ -391,7 +390,11 @@ Example package and scenario folders:
 
 ```text
 packages/
-  rest_weighted_score_v0_1/
+  aica_transparent_hybrid_trigger_v1/
+    package.json
+    algorithm.py
+    README.md
+  nri_fatigue_score_v1/
     package.json
     algorithm.py
     README.md
@@ -401,10 +404,39 @@ scenarios/
   uc01_overtime_driver_v0_1.json
 
 runs/
-  2026-06-26T120000Z_uc01_rest_weighted_score_<run-id>.json
+  2026-06-26T120000Z_uc01_nri_fatigue_score_<run-id>.json
 ```
 
 Only files referenced by a package manifest are active. Optional files may be absent.
+
+---
+
+### 8.1 Raw Signal Tiers (Fixed / Dynamic / Simulated)
+
+Feature 009 replaced the earlier undifferentiated driver/vehicle-profile state with one **tiered raw-state
+contract** that every algorithm reads from. Every per-tick signal belongs to exactly one of three named
+tiers, and the tick engine emits all three on every tick (`signals.fixed` / `signals.dynamic` /
+`signals.simulated`; see `specs/009-signal-tier-redesign/contracts/tiered-context.md`):
+
+| Tier | Example signals | Editable at setup | Notes |
+|---|---|---|---|
+| **1 — Fixed** | `isNight`, `familiarRoute`, `childPassenger`, `weatherRiskLevel`, route/segments, rest options | some (scenario constants) | constant for the whole run |
+| **2 — Dynamic** | `segmentType`, `motionState`, `continuousDrivingMin`, `speedKph`, `routeFraction`, `nextRestSpotMin`, `isTrafficJam`, `recoveryPhase` | read-only (derived) | `= f(fixed + elapsed time + user actions)` |
+| **3 — Simulated** | `drowsiness`, `fatigue` (deterministic derived) · `anomaly_rate` (seeded-stochastic) | curve parameters editable | see below |
+
+**Simulated signals are derived, not fabricated sensors.** `drowsiness` and `fatigue` accumulate
+deterministically from elapsed driving time, time of day, road monotony, and traffic jams (per-scenario
+`driver_signal_params`); they are display-labeled as derived quantities, never presented as ground-truth
+sensor readings. The **only stochastic signal** is `anomaly_rate` — a seeded Poisson (point-process)
+generator whose event rate increases with drowsiness, so identical `(scenario, run_seed)` pairs always
+reproduce identical anomaly events. Each simulated signal carries a plain-language `explanation` string,
+surfaced by the setup screen's signal-info popover.
+
+**Retired in this re-design** (no replacement in V1; see the feature spec's Assumptions for return paths):
+the deterministic vehicle sensors (`steeringInstabilityLevel`, `pedalAbnormalityLevel`,
+`laneDepartureCount`, `adasWarningCount`), the `attentionLevel` signal, and all route look-ahead signals
+(e.g. `*RemainingMin`, `restSpotDensityNext30Min`). Each algorithm derives its own features from the shared
+signal set — the backend does not pre-select which tiers a given algorithm may read.
 
 ---
 
@@ -425,11 +457,11 @@ A package manifest shall define:
 - feedback schema;
 - evidence metrics.
 
-V1 supported algorithm types:
+V1 supported algorithm type:
 
-- `declarative_rule`;
-- `weighted_score`;
-- `python_module`.
+- `python_module` — local trusted Python module (the sole supported type; `AlgorithmDef.type` is
+  `Literal["python_module"]`). The earlier `declarative_rule` and `weighted_score` built-in types were
+  retired by feature `009-signal-tier-redesign` — see Constitution Principle V.
 
 Future algorithm types may include:
 
@@ -446,13 +478,19 @@ A scenario file shall define:
 - scenario metadata and version;
 - persona;
 - route intent and rest-opportunity defaults;
-- initial state;
+- Tier-1 fixed context (`is_night`, `child_passenger`, `familiar_route`, weather);
 - generated-event presets;
-- default driver model profile;
-- default vehicle behavior profile;
+- simulated-signal generator parameters — `driver_signal_params` (drowsiness/fatigue curves + recovery)
+  and `anomaly_signal_params` (seeded-Poisson rate) (§8.1; renamed from the retired `driver_profile` /
+  `vehicle_profile` model);
 - default speed profile;
+- a `run_seed_default` suggested at setup and frozen per run;
 - allowed test-user actions;
 - review focus.
+
+The scenario loader rejects an old-shape scenario (one still carrying `driver_profile` / `vehicle_profile`)
+with a clear "incompatible — re-author" error rather than silently mis-reading it (no automatic migration
+tool; feature `009-signal-tier-redesign`, FR-017).
 
 The backend validates package/scenario compatibility before run creation. The scenario is a backbone; the concrete event plan is generated after route selection and before run start.
 
@@ -551,6 +589,16 @@ For simpler algorithms, `features`, `scores`, `states`, `candidates`, and `next_
 
 Suppressed candidates are normal decision results. A suppressed result shall keep the candidate in `candidates`, set the candidate fire-control `suppressed` flag, and usually return `proposal: null` with `result_type: "SUPPRESSED"`.
 
+`result_type` also defines a `NO_PRACTICAL_ACTION_FALLBACK` value in the schema for a trigger that fires
+with no actionable proposal available. As of feature `009-signal-tier-redesign` neither surviving package
+(the compact Hybrid or NRI) emits it — a product-visible change from the earlier built-in algorithms. The
+value is kept in the schema (not removed) since a future package may still need it; the adapter does not
+require every algorithm to use every enum value.
+
+The `context` passed to `evaluate` carries the tiered `signals` object (§8.1: `signals.fixed` /
+`signals.dynamic` / `signals.simulated`) alongside history and `package_runtime_state`; the algorithm
+selects which signals/tiers it needs and computes its own features from them.
+
 For Python packages, the backend imports a package-local module and calls:
 
 ```python
@@ -560,7 +608,9 @@ def evaluate(context: dict) -> dict:
 
 The backend validates and normalizes the returned dictionary. Missing fields, invalid values, or exceptions produce an `algorithm_error` event rather than a normal AICA decision.
 
-Python algorithms are treated as local trusted code in V1. They are not untrusted uploads.
+Python algorithms are treated as local trusted code in V1. They are not untrusted uploads. `python_module`
+is the only supported algorithm type (§9) — the earlier `declarative_rule` and `weighted_score` built-ins
+were retired.
 
 Python packages may implement the transparent hybrid trigger pattern: feature extraction, score smoothing, state thresholds, persistence, multi-category candidate generation, fire-control, priority resolution, and bilingual proposal generation. The backend remains generic by passing context in and validating the normalized result out.
 
@@ -600,15 +650,20 @@ Each run log shall contain:
 - route snapshot and route-derived facts;
 - generated event plan;
 - run mode and evidence status;
-- selected driver model profile;
-- selected vehicle behavior profile;
+- the frozen `run_seed` (§8.1; drives the seeded `anomaly_rate` generator so `(scenario, run_seed)`
+  reproduces byte-identical decision traces — FR-005/FR-006);
+- simulated-signal generator parameter snapshots (`driver_signal_params`, `anomaly_signal_params`; the
+  `driver_profile`/`vehicle_profile` log fields are kept for pre-009 evidence-log compatibility only —
+  `vehicle_profile` is unused going forward since the deterministic vehicle sensors were retired);
 - speed profile;
 - initial parameters;
 - current/final parameters;
 - initial hyperparameters;
 - current/final hyperparameters;
 - tick events and timeline events;
-- route, driver, vehicle, and feature-group updates;
+- tiered raw-state (`raw_state`: fixed/dynamic/simulated signals) and feature-group updates per tick
+  (`driver_update`; `vehicle_update` is kept in the per-tick schema for log back-compat but is always
+  empty post-009 — no vehicle-signal producer sets it);
 - decision trace entries;
 - AICA proposal events;
 - user action events;
@@ -680,7 +735,7 @@ This section describes the sequence of runtime interactions.
 4. Backend calculates route progress, active generated events, driver state, vehicle state, rolling counts, and skeleton-aligned feature groups.
 5. Backend builds evaluation context from run state, route facts, generated plan, parameters, hyperparameters, profiles, history, and package runtime state.
 6. Backend dispatches to algorithm adapter.
-7. Algorithm adapter calls declarative, weighted-score, or Python algorithm implementation.
+7. Algorithm adapter calls the package's `python_module` implementation.
 8. Backend validates and normalizes decision result.
 9. Backend stores returned `next_package_runtime_state` into the run state when present.
 10. Backend appends tick event and decision trace entry, including all candidates and suppressed candidates.
@@ -765,6 +820,27 @@ This section describes the sequence of runtime interactions.
 8. Frontend shows error in trace panel and avoids showing a normal AICA decision.
 ```
 
+### 13.11 Instant Result Preview Sequence
+
+Feature `009-signal-tier-redesign` added an ephemeral, non-persisting preview so the setup screen can show
+the *tune → observe* effect of a hyperparameter or signal change without starting a full run.
+
+```text
+1. User edits a hyperparameter, signal, or the run seed on the setup screen (before Start).
+2. Frontend debounces the change and calls POST /api/runs/preview with the candidate RunConfig
+   (package_id, scenario_id, hyperparameter_overrides, run_seed, rest_option_id).
+3. Backend runs the SAME tick engine + algorithm adapter loop as a persisted run, headlessly (no
+   animation), to completion or first fire.
+4. Backend returns an InstantResult: fired/not, fire point + category + strength, peak score vs
+   threshold, a per-tick score series, segments, rest spot, auto-chosen rest option, completion time,
+   the seed, and the overrides actually applied — or an algorithm_error descriptor (never a fabricated
+   normal decision; FR-010).
+5. The EvidenceRecorder is NEVER invoked for this path — nothing is written to runs/.
+6. Frontend renders the instant-result timeline. "Open full run" re-issues the identical configuration
+   through the normal POST /api/run-plans → POST /api/runs sequence (§13.2–§13.3), which is the point a
+   run is actually persisted.
+```
+
 ---
 
 ## 14. API Shape
@@ -783,6 +859,7 @@ POST /api/run-plans
 POST /api/run-plans/{plan_id}/regenerate
 
 POST /api/runs
+POST /api/runs/preview
 POST /api/runs/{run_id}/tick
 POST /api/runs/{run_id}/actions
 POST /api/runs/{run_id}/expert-overrides
@@ -799,6 +876,10 @@ Endpoint behavior:
 - `POST /api/run-plans` generates a draft event plan from route facts and setup presets.
 - `POST /api/run-plans/{plan_id}/regenerate` regenerates the draft plan before run start.
 - `POST /api/runs` freezes selected setup and generated plan, creates a run, and persists the first log file.
+- `POST /api/runs/preview` (feature 009, §13.11) runs the same tick engine + algorithm adapter loop
+  headlessly for a candidate RunConfig and returns an `InstantResult` — **ephemeral**, never persisted;
+  the EvidenceRecorder is never invoked. 400 for an unknown/incompatible package or scenario, an
+  old-shape (pre-re-design) scenario, or invalid hyperparameter overrides.
 - `POST /api/runs/{run_id}/tick` advances the deterministic tick engine, calls the algorithm adapter, and appends tick/trace entries.
 - `POST /api/runs/{run_id}/actions` records reviewer choices.
 - `POST /api/runs/{run_id}/expert-overrides` records allowed paused-state edits only for expert override runs.

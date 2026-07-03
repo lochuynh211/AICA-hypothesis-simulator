@@ -2,10 +2,11 @@
  * Review-screen panel rebuild — RouteStatus, DriverStatus, StateCards, MusicOverlay.
  *
  * Covers the data each new panel derives from the store:
- *  - RouteStatus: driving time (tick_index × tick_seconds) + position % from the
- *    frozen event_plan + last trace entry.
+ *  - RouteStatus: distance from start/destination + current speed + ETA, from
+ *    route_facts and the last trace entry.
  *  - DriverStatus: drowsiness / fatigue bands from latestDecision.features.
- *  - StateCards: drowsiness + vehicle motion + active-segment road type / speed band.
+ *  - StateCards: drowsiness + fatigue band readout (road type / speed band /
+ *    vehicle motion live in ScenarioBeats' event-driven timeline instead).
  *  - MusicOverlay: visible only when the active segment is a rest facility.
  */
 import { render, screen, act, waitFor } from '@testing-library/react'
@@ -42,7 +43,13 @@ const runState: RunState = {
   },
   // tick 2 → 50% along route; 60s ticks → 02:00 elapsed at tick_index 2
   event_plan: { tick_seconds: 60, ticks: [{ route_fraction: 0 }, { route_fraction: 0.25 }, { route_fraction: 0.5 }] },
-  route_facts: { total_distance_km: 100 },
+  route_facts: {
+    total_route_distance_km: 100,
+    estimated_route_duration_min: 120,
+    route_segments: [],
+    rest_spot_positions: [],
+    route_progress_checkpoints: [],
+  },
 }
 
 const decision: DecisionResult = {
@@ -108,7 +115,15 @@ function renderWithStore(
 function seedRun(dispatch: React.Dispatch<RunStoreAction>) {
   dispatch({ type: 'SELECT_SCENARIO', id: 'sc1' })
   dispatch({ type: 'RUN_CREATED', runState })
-  dispatch({ type: 'TICK_APPENDED', decision, tickIndex: 2, runState, paused: true, completed: false })
+  dispatch({
+    type: 'TICK_APPENDED',
+    decision,
+    tickIndex: 2,
+    runState,
+    paused: true,
+    completed: false,
+    speedKph: 85,
+  })
 }
 
 // ── RouteStatus ────────────────────────────────────────────────────────────────
@@ -121,15 +136,21 @@ describe('RouteStatus', () => {
 
   it('shows placeholders when no run is active', () => {
     renderWithStore(<RouteStatus />)
-    expect(screen.getByTestId('route-status-time')).toHaveTextContent('—')
-    expect(screen.getByTestId('route-status-position')).toHaveTextContent('—')
+    expect(screen.getByTestId('route-status-dist-from-start')).toHaveTextContent('—')
+    expect(screen.getByTestId('route-status-dist-to-dest')).toHaveTextContent('—')
+    expect(screen.getByTestId('route-status-speed')).toHaveTextContent('—')
+    expect(screen.getByTestId('route-status-eta')).toHaveTextContent('—')
   })
 
-  it('shows driving time, position, and distance from the evaluated tick', () => {
+  it('shows distance from start/destination, current speed, and ETA from the evaluated tick', () => {
     renderWithStore(<RouteStatus />, seedRun)
-    expect(screen.getByTestId('route-status-time')).toHaveTextContent('02:00')
-    expect(screen.getByTestId('route-status-position')).toHaveTextContent('50%')
-    expect(screen.getByTestId('route-status-distance')).toHaveTextContent('50.0 km')
+    // currentFraction 0.5 of a 100 km route → 50.0 km each way
+    expect(screen.getByTestId('route-status-dist-from-start')).toHaveTextContent('50.0 km')
+    expect(screen.getByTestId('route-status-dist-to-dest')).toHaveTextContent('50.0 km')
+    // speed comes straight from the tick's speedKph
+    expect(screen.getByTestId('route-status-speed')).toHaveTextContent('85 km/h')
+    // remaining = 120 min total × (1 - 0.5) = 60 min
+    expect(screen.getByTestId('route-status-eta')).toHaveTextContent('~60 min')
   })
 })
 
@@ -200,14 +221,14 @@ describe('StateCards', () => {
     vi.mocked(client.getScenario).mockResolvedValue(scenarioDef)
   })
 
-  it('shows the active segment road type / speed band and vehicle motion', async () => {
+  // Road type / speed band / vehicle motion moved out of StateCards into the
+  // event-driven ScenarioBeats timeline (see the "Driving · Highway" /
+  // "Resting (nap)" assertions in the ScenarioBeats describe block above) —
+  // StateCards is now the driver band readout only (drowsiness + fatigue).
+  it('shows the drowsiness and fatigue bands from the latest decision', () => {
     renderWithStore(<StateCards />, seedRun)
-    // route_fraction 0.5 → active segment s2 (rest facility) → stopped, road type "rest"
-    await waitFor(() => {
-      expect(screen.getByTestId('state-cards')).toHaveTextContent('rest')
-    })
-    expect(screen.getByTestId('state-cards')).toHaveTextContent('stopped')
     expect(screen.getByTestId('state-cards')).toHaveTextContent('high') // drowsiness band
+    expect(screen.getByTestId('state-cards')).toHaveTextContent('moderate') // fatigue band
   })
 })
 

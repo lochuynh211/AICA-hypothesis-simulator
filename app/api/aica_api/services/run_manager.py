@@ -714,9 +714,12 @@ def tick(run_id: str) -> TickOutcome:
     raw_state = tick_state.signals or {}
     feature_groups = tick_state.feature_groups
     driver_update = (tick_state.model_extra or {}).get("_driver_update", {})
-    vehicle_update = (tick_state.model_extra or {}).get("_vehicle_update", {})
 
     # ── Append TickEvent with M2 fields ──────────────────────────────────
+    # vehicle_update is no vehicle-signal producer sets `_vehicle_update` on
+    # tick_state post-009 (drowsiness/fatigue are simulated driver signals, not
+    # vehicle telemetry) — always {}. The TickEvent field itself is kept for
+    # evidence-log schema back-compat (see aica_api.models.log.TickEvent).
     trace = TraceEntry(tick_index=current_tick, decision_result=decision_result)
     tick_event = TickEvent(
         kind="tick",
@@ -726,7 +729,6 @@ def tick(run_id: str) -> TickOutcome:
         raw_state=raw_state,
         feature_groups=feature_groups,
         driver_update=driver_update,
-        vehicle_update=vehicle_update,
         package_runtime_state=decision_result.next_package_runtime_state,
     )
     recorder.append(tick_event)

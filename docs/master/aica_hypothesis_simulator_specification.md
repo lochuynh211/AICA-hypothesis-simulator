@@ -6,13 +6,14 @@
 **Source context:** Japanese PowerPoint `AICA_proposed_system_en.md`, translated planning notes, four AICA use cases, prototype skeletons under `others/`, and `docs/master/aica_hypothesis_simulator_runtime_workflow.md`.
 **Naming rule:** Product screens, APIs, documents, and implementation labels shall use **AICA** only.
 
-> **Design update — 2026-07-03 (feature `009-signal-tier-redesign`).** Signals are re-organized into three
-> tiers (Fixed / Dynamic / **Simulated**). `drowsiness`/`fatigue` are simulated *derived* signals (not
-> pretend sensors); a single **seeded-Poisson `anomaly_rate`** is the only stochastic signal (replayable via
-> a frozen `run_seed`); `attention` and the deterministic vehicle sensors are removed. Algorithms derive
-> their own features from the shared signals; the setup screen gains an **ephemeral instant-result** preview
-> (headless, never persisted — only "Open full run" persists). See `specs/009-signal-tier-redesign/` and the
-> design docs in `others/`. Affected sections are revised as the feature lands (task T046).
+> **Design update — 2026-07-03 (feature `009-signal-tier-redesign`), landed.** Signals are re-organized into
+> three tiers (Fixed / Dynamic / **Simulated** — §6.13). `drowsiness`/`fatigue` are simulated *derived*
+> signals (not pretend sensors); a single **seeded-Poisson `anomaly_rate`** is the only stochastic signal
+> (replayable via a frozen `run_seed`); `attention` and the deterministic vehicle sensors are removed, along
+> with the `declarative_rule` / `weighted_score` built-in algorithm types (`python_module` is now the sole
+> supported type). Algorithms derive their own features from the shared signals; the setup screen gains an
+> **ephemeral instant-result** preview via `POST /api/runs/preview` (headless, never persisted — only "Open
+> full run" persists). See `specs/009-signal-tier-redesign/` and the design docs in `others/`.
 
 ---
 
@@ -341,7 +342,7 @@ In the runtime workflow, a scenario provides a scenario backbone rather than a f
 
 ### 6.7 Simulation Run
 
-A **simulation run** is one execution of a selected hypothesis package against a selected scenario with selected route, route-derived facts, generated event plan, parameter values, hyperparameter values, driver and vehicle profiles, timeline state, test-user actions, trace entries, and feedback.
+A **simulation run** is one execution of a selected hypothesis package against a selected scenario with selected route, route-derived facts, generated event plan, parameter values, hyperparameter values, simulated-signal generator parameters, a frozen run seed, timeline state, test-user actions, trace entries, and feedback.
 
 ### 6.8 Playback
 
@@ -365,9 +366,32 @@ A **generated event plan** is the concrete, frozen set of generated events creat
 
 **Route-derived facts** are values the simulator calculates from the selected Google Maps route or local route fixture, such as segment types, route distance, rest spot positions, toll usage, traffic-aware duration, and route progress checkpoints.
 
-### 6.13 Driver And Vehicle Profiles
+### 6.13 Raw Signal Tiers (Fixed / Dynamic / Simulated)
 
-**Driver model profiles** and **vehicle behavior profiles** define deterministic state progression. Driver profiles control drowsiness, fatigue, attention, and recovery effects. Vehicle profiles control steering instability, pedal abnormality, lane departure events, ADAS warning events, and rolling-window aggregation.
+Every raw signal the simulator produces belongs to exactly one of **three tiers** (feature
+`009-signal-tier-redesign`, replacing the earlier undifferentiated driver-model/vehicle-behavior-profile
+state):
+
+- **Fixed** — scenario constants that hold for the whole run: `isNight`, `familiarRoute`,
+  `childPassenger`, `weatherRiskLevel`, route/segments, rest options.
+- **Dynamic** — observable values derived from fixed context plus elapsed time and user actions:
+  `segmentType`, `motionState`, `continuousDrivingMin`, `speedKph`, `routeFraction`, `nextRestSpotMin`,
+  `isTrafficJam`, `recoveryPhase`.
+- **Simulated** — values the simulator derives rather than measures: `drowsiness` and `fatigue`
+  (deterministic, accumulating from elapsed driving time, time of day, road monotony, and traffic jams;
+  presented as *derived* quantities, never as pretend sensor readings), plus a single stochastic
+  `anomaly_rate` — a seeded Poisson (point-process) signal whose event rate rises with drowsiness, so an
+  identical `(scenario, run_seed)` pair always reproduces identical anomaly events.
+
+Each simulated signal carries a plain-language explanation shown on the setup screen's signal-info
+popover. All tiers are exposed to every algorithm; each algorithm decides which signals it uses and
+derives its own features from them.
+
+**Retired by this re-design** (no V1 replacement): the deterministic vehicle sensors (steering
+instability, pedal abnormality, lane departure, ADAS warnings), the `attention` signal, and route
+look-ahead signals (e.g. minutes-remaining / rest-spot-density lookaheads). The earlier `declarative_rule`
+and `weighted_score` built-in algorithm types were retired at the same time — `python_module` (a local
+trusted Python module) is the sole supported algorithm type.
 
 ### 6.14 Evidence Replay
 
@@ -573,24 +597,25 @@ Each scenario shall include:
 - allowed test-user actions;
 - expected review focus.
 
-The scenario may declare default driver model profile, vehicle behavior profile, speed profile, generated-event presets, and supported run modes. Concrete generated events are produced before start and stored in the run log.
+The scenario may declare simulated-signal generator parameters (§6.13 — `driver_signal_params` for
+drowsiness/fatigue curves and recovery, `anomaly_signal_params` for the seeded-Poisson anomaly rate), a
+speed profile, generated-event presets, a suggested `run_seed`, and supported run modes. Concrete
+generated events are produced before start and stored in the run log.
 
 ### 10.2 Canonical Scenario State
 
 The simulator shall support canonical state categories:
 
 - simulation time;
-- driver state;
-- vehicle state;
+- driver state (simulated signals: drowsiness, fatigue, anomaly_rate — §6.13);
 - route state;
-- environment state;
+- environment state (fixed/dynamic signals: night, weather, traffic jam, etc. — §6.13);
 - rest opportunity state;
 - proposal history;
 - user response history.
 - route-derived facts;
 - generated event plan;
-- driver model profile;
-- vehicle behavior profile;
+- simulated-signal generator parameters (`driver_signal_params`, `anomaly_signal_params`);
 - run mode.
 
 Packages may add custom state without changing simulator core workflow.
@@ -671,6 +696,8 @@ Packages may declare a preferred fixed evaluation interval, such as a 30-second 
 Algorithm input shall include:
 
 - current simulation time;
+- the tiered raw signal set — Fixed, Dynamic, and Simulated (§6.13); every algorithm may read any tier
+  and derives its own features from it;
 - current parameters;
 - calculated features;
 - current hyperparameters;
@@ -701,16 +728,15 @@ Algorithm output shall include:
 
 ### 11.4 Required Algorithm Styles For V1
 
-V1 shall support at least:
+V1 shall support:
 
-1. **Rule-based algorithm**
-   - Example: fire if drowsiness exceeds a threshold and a rest spot is near.
-
-2. **Weighted scoring algorithm**
-   - Example: calculate risk from fatigue, drowsiness, route condition, and rest opportunity.
-
-3. **Trusted local Python module algorithm**
+1. **Trusted local Python module algorithm** (`python_module`)
    - Example: execute a package-local `evaluate(context: dict) -> dict` function inside the backend container.
+   - This is the sole supported algorithm type. The earlier built-in **rule-based** (`declarative_rule`)
+     and **weighted-scoring** (`weighted_score`) algorithm types were retired by feature
+     `009-signal-tier-redesign` — both shipped hypothesis packages (the compact Hybrid trigger and NRI
+     fatigue score) are rule-based / weighted-scoring *patterns* implemented as trusted Python modules
+     rather than as built-in types, so the single-adapter contract is unchanged (Constitution Principle V).
 
 V1 algorithm output shall be rich enough to support hybrid transparent algorithms that combine feature extraction, weighted scores, state thresholds, persistence, fire-control, and priority resolution. The simulator does not need to understand every internal formula, but it must validate and record the returned trace fields.
 
@@ -859,8 +885,8 @@ Each evidence report shall include:
 - final parameter values if changed;
 - initial hyperparameter values;
 - final hyperparameter values if changed;
-- selected driver model profile;
-- selected vehicle behavior profile;
+- the frozen `run_seed` (§6.13; drives the seeded `anomaly_rate` generator);
+- simulated-signal generator parameter snapshot (`driver_signal_params`, `anomaly_signal_params`);
 - timeline events;
 - decision trace entries;
 - AICA proposal events;
@@ -882,8 +908,9 @@ A run shall be reproducible from:
 - generated event plan;
 - parameter values;
 - hyperparameter values;
-- driver model profile;
-- vehicle behavior profile;
+- the frozen `run_seed` — the only source of randomness (the seeded `anomaly_rate` generator); identical
+  `(scenario, run_seed)` inputs MUST reproduce a byte-identical decision trace;
+- simulated-signal generator parameters (`driver_signal_params`, `anomaly_signal_params`);
 - timeline events;
 - test-user actions;
 - selected branch or fork state when applicable.
@@ -925,28 +952,36 @@ The simulator shall include these user-facing areas or equivalent workflows:
    - Reset to defaults.
    - Mark changed values for comparison.
 
-4. **Simulation playback**
+4. **Instant result preview** (feature `009-signal-tier-redesign`)
+   - On every setup change, recompute headlessly via `POST /api/runs/preview` and show a static timeline:
+     risk-score-vs-threshold curve, segment context, fire point(s), rest spot, auto-chosen rest option, and
+     completion — or an explicit "no trigger" state.
+   - Ephemeral: never written to `runs/`/evidence.
+   - "Open full run" opens the animated review with the identical configuration, which is the point a run
+     is actually persisted.
+
+5. **Simulation playback**
    - View route/timeline.
-   - View driver, vehicle, and context state.
+   - View driver and context state.
    - View AICA proposals.
    - Select user actions.
    - Pause and step through decisions.
 
-5. **Decision trace**
+6. **Decision trace**
    - Show parameters, features, hyperparameters, algorithm result, fire-control result, and proposal result.
 
-6. **Review feedback**
+7. **Review feedback**
    - Submit structured labels and comments.
    - Review previous feedback in the run.
 
-7. **Evidence replay**
+8. **Evidence replay**
    - Replay recorded logs exactly without recalculating decisions.
 
-8. **Post-V1 run comparison**
+9. **Post-V1 run comparison**
    - Compare package, parameter, hyperparameter, trigger timing, proposal outcome, user action, and feedback differences when comparison is implemented.
 
-9. **Evidence report**
-   - Display, copy, or download structured evidence.
+10. **Evidence report**
+    - Display, copy, or download structured evidence.
 
 ### 15.2 Test-User-Oriented UX
 
