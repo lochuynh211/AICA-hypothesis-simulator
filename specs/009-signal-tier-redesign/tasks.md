@@ -14,7 +14,7 @@ This is a **deliberately behavior-changing** re-design; backend baselines are re
 
 ## Phase 1: Setup
 
-- [ ] T001 [P] Scaffold new backend modules: create empty `app/api/aica_api/services/prng.py` and `app/api/aica_api/services/behavior/anomaly_signal.py`; `git mv app/api/aica_api/services/behavior/driver_model.py app/api/aica_api/services/behavior/driver_signals.py`; `git rm app/api/aica_api/services/behavior/vehicle_model.py`
+- [ ] T001 [P] Scaffold new backend modules only (keep tree green): create `app/api/aica_api/services/prng.py` and `app/api/aica_api/services/behavior/anomaly_signal.py` as stubs (functions raise `NotImplementedError`). Do NOT rename `driver_model.py` or delete `vehicle_model.py` yet — the rename folds into T008 and the deletion into T014 (each updates importers atomically).
 - [ ] T002 [P] Scaffold frontend setup tree: create `app/frontend/src/components/setup/{SignalsPanel,AlgorithmFormulationPanel,InstantResultStrip,SignalInfoPopover}.tsx` as empty components and matching empty test files under `app/frontend/tests/`
 
 ---
@@ -36,7 +36,7 @@ The backend signal-tier core. No user story can be demonstrated until this phase
 ### Driver signals (drowsiness/fatigue only)
 
 - [ ] T007 [P] Test `driver_signals` produces `drowsiness`/`fatigue` and **no** `attention`; recovery reduces both, in `app/api/tests/test_driver_signals.py`
-- [ ] T008 Refactor `driver_signals.py` (renamed): remove attention model + `attention` output; keep drowsiness/fatigue growth + recovery
+- [ ] T008 `git mv driver_model.py → driver_signals.py` and refactor: remove the attention model + `attention` output; keep drowsiness/fatigue growth + recovery. Update ALL importers (e.g. `tick_engine.py`, tests) in the same commit so the tree stays green.
 
 ### Models: profiles, scenario schema, run config
 
@@ -48,7 +48,7 @@ The backend signal-tier core. No user story can be demonstrated until this phase
 ### Tick engine → tiered signals + anomaly
 
 - [ ] T013 [P] Test `tick_engine` emits the three tier groups, contains **none** of the removed keys, and invokes the anomaly generator, in `app/api/tests/test_tick_engine.py` (update existing)
-- [ ] T014 Update `app/api/aica_api/services/tick_engine.py`: build tiered signals, call `advance_anomaly` (thread its window state), drop all vehicle-model calls, thread `run_seed`
+- [ ] T014 Update `app/api/aica_api/services/tick_engine.py`: build tiered signals, call `advance_anomaly` (thread its window state), drop all vehicle-model calls, thread `run_seed`; `git rm app/api/aica_api/services/behavior/vehicle_model.py` and remove its importers in the same commit (tree stays green)
 - [ ] T015 Update `app/api/aica_api/services/binning.py`: keep route boundary-binning for `feature_groups`; remove steering/pedal derivations and any removed-key output
 - [ ] T016 Update `app/api/aica_api/services/event_plan.py`: freeze `run_seed` into the event plan at run start
 
