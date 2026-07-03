@@ -107,7 +107,7 @@ def build_adapter_context(tick_state: TickState) -> dict:
 
     For M2 TickStates (has raw_state/feature_groups): returns dict with both
     'raw_state' and 'feature_groups' (plus the flat ordinal keys at the top
-    level for backward compat with declarative_rule's M1 code path).
+    level for backward compat with earlier ordinal-only consumers).
 
     Args:
         tick_state: The computed TickState for the current tick.

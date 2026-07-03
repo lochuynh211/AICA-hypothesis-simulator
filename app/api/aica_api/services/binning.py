@@ -136,7 +136,7 @@ def build_feature_groups(raw_state: dict) -> dict:
 
     This is the single seam between simulator-internal numeric state and the
     decision layer.  Algorithms consume feature_groups; raw_state is
-    available for the evidence trace and weighted_score formula.
+    available for the evidence trace and for packages' own scoring formulas.
 
     Args:
         raw_state: Dict of camelCase simulator-internal numeric fields produced
