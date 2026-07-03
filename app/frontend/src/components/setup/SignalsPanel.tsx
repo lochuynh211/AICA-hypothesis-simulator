@@ -5,6 +5,7 @@ import type { ScenarioDef } from '../../api/types'
 import { t } from '../../i18n/t'
 import ScenarioSelector from './ScenarioSelector'
 import SignalFormulationEditor from './SignalFormulationEditor'
+import { SIGNAL_LABELS } from './signalLabels'
 
 /**
  * SignalsPanel (feature 009, FE2) — left editor panel of the new setup screen
@@ -98,7 +99,7 @@ export default function SignalsPanel() {
           <SignalGroup title="Fixed" testid="signal-group-fixed">
             <SignalRow
               signalKey="isNight"
-              label={t({ en: 'Night', ja: '夜間' }, uiLanguage)}
+              label={t(SIGNAL_LABELS.isNight, uiLanguage)}
               value={scenario.is_night ? 'on' : 'off'}
               muted
               highlighted={highlightedSignalKey === 'isNight'}
@@ -107,7 +108,7 @@ export default function SignalsPanel() {
             />
             <SignalRow
               signalKey="familiarRoute"
-              label={t({ en: 'Familiar Route', ja: '慣れた道' }, uiLanguage)}
+              label={t(SIGNAL_LABELS.familiarRoute, uiLanguage)}
               value={familiarRouteValue ? 'yes' : 'no'}
               highlighted={highlightedSignalKey === 'familiarRoute'}
               onHover={() => highlight('familiarRoute')}
@@ -116,7 +117,7 @@ export default function SignalsPanel() {
                 <input
                   type="checkbox"
                   data-testid="signal-edit-familiarRoute"
-                  aria-label={t({ en: 'Familiar Route', ja: '慣れた道' }, uiLanguage)}
+                  aria-label={t(SIGNAL_LABELS.familiarRoute, uiLanguage)}
                   checked={familiarRouteValue}
                   onChange={(e) =>
                     dispatch({
@@ -131,7 +132,7 @@ export default function SignalsPanel() {
             />
             <SignalRow
               signalKey="childPassenger"
-              label={t({ en: 'Child Passenger', ja: '子供同乗' }, uiLanguage)}
+              label={t(SIGNAL_LABELS.childPassenger, uiLanguage)}
               value={childPassengerValue ? 'yes' : 'no'}
               highlighted={highlightedSignalKey === 'childPassenger'}
               onHover={() => highlight('childPassenger')}
@@ -140,7 +141,7 @@ export default function SignalsPanel() {
                 <input
                   type="checkbox"
                   data-testid="signal-edit-childPassenger"
-                  aria-label={t({ en: 'Child Passenger', ja: '子供同乗' }, uiLanguage)}
+                  aria-label={t(SIGNAL_LABELS.childPassenger, uiLanguage)}
                   checked={childPassengerValue}
                   onChange={(e) =>
                     dispatch({
@@ -155,7 +156,7 @@ export default function SignalsPanel() {
             />
             <SignalRow
               signalKey="weatherRisk"
-              label={t({ en: 'Weather Risk', ja: '天候リスク' }, uiLanguage)}
+              label={t(SIGNAL_LABELS.weatherRisk, uiLanguage)}
               value={String(weatherRiskValue)}
               highlighted={highlightedSignalKey === 'weatherRisk'}
               onHover={() => highlight('weatherRisk')}
@@ -164,7 +165,7 @@ export default function SignalsPanel() {
                 <input
                   type="number"
                   data-testid="signal-edit-weatherRisk"
-                  aria-label={t({ en: 'Weather Risk', ja: '天候リスク' }, uiLanguage)}
+                  aria-label={t(SIGNAL_LABELS.weatherRisk, uiLanguage)}
                   min={0}
                   max={100}
                   step={1}
@@ -179,7 +180,7 @@ export default function SignalsPanel() {
           <SignalGroup title="Dynamic" testid="signal-group-dynamic">
             <SignalRow
               signalKey="continuousDrivingMin"
-              label={t({ en: 'Continuous Driving', ja: '連続運転時間' }, uiLanguage)}
+              label={t(SIGNAL_LABELS.continuousDrivingMin, uiLanguage)}
               value="0 min → …"
               muted
               highlighted={highlightedSignalKey === 'continuousDrivingMin'}
@@ -188,7 +189,7 @@ export default function SignalsPanel() {
             />
             <SignalRow
               signalKey="segmentMotionJam"
-              label={t({ en: 'Segment / Motion / Jam', ja: '区間・走行状態・渋滞' }, uiLanguage)}
+              label={t(SIGNAL_LABELS.segmentMotionJam, uiLanguage)}
               value="computed during run"
               muted
               highlighted={highlightedSignalKey === 'segmentMotionJam'}
@@ -200,13 +201,13 @@ export default function SignalsPanel() {
           <SignalGroup title="Simulated (tier 3)" testid="signal-group-simulated">
             <SignalRow
               signalKey="drowsiness"
-              label={t({ en: 'Drowsiness', ja: '眠気' }, uiLanguage)}
+              label={t(SIGNAL_LABELS.drowsiness, uiLanguage)}
               value="~curve"
               muted
               formulaEditor={
                 <SignalFormulationEditor
                   signalKey="drowsiness"
-                  label={t({ en: 'Drowsiness', ja: '眠気' }, uiLanguage)}
+                  label={t(SIGNAL_LABELS.drowsiness, uiLanguage)}
                   scenario={scenario}
                 />
               }
@@ -216,13 +217,13 @@ export default function SignalsPanel() {
             />
             <SignalRow
               signalKey="fatigue"
-              label={t({ en: 'Fatigue', ja: '疲労' }, uiLanguage)}
+              label={t(SIGNAL_LABELS.fatigue, uiLanguage)}
               value="~curve"
               muted
               formulaEditor={
                 <SignalFormulationEditor
                   signalKey="fatigue"
-                  label={t({ en: 'Fatigue', ja: '疲労' }, uiLanguage)}
+                  label={t(SIGNAL_LABELS.fatigue, uiLanguage)}
                   scenario={scenario}
                 />
               }
@@ -232,13 +233,13 @@ export default function SignalsPanel() {
             />
             <SignalRow
               signalKey="anomaly_rate"
-              label={t({ en: 'Anomaly Rate', ja: '異常発生率' }, uiLanguage)}
+              label={t(SIGNAL_LABELS.anomaly_rate, uiLanguage)}
               value={`seeded Poisson (seed ${runSeed})`}
               muted
               formulaEditor={
                 <SignalFormulationEditor
                   signalKey="anomaly_rate"
-                  label={t({ en: 'Anomaly Rate', ja: '異常発生率' }, uiLanguage)}
+                  label={t(SIGNAL_LABELS.anomaly_rate, uiLanguage)}
                   scenario={scenario}
                 />
               }

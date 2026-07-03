@@ -4,6 +4,7 @@ import { getPackage } from '../../api/client'
 import type { HyperparameterDef, PackageManifest, SetupValue } from '../../api/types'
 import { t } from '../../i18n/t'
 import PackageSelector from './PackageSelector'
+import { SIGNAL_LABELS } from './signalLabels'
 import {
   getFormulationTemplate,
   templateHyperparameterKeys,
@@ -255,7 +256,17 @@ function ExtraHyperparameterView({ keyName, ctx }: { keyName: string; ctx: Formu
 function renderParts(parts: FormulaPart[], ctx: FormulaCtx) {
   return parts.map((part, idx) => {
     if ('coef' in part) return <CoefField key={idx} keyName={part.coef} ctx={ctx} />
-    if ('link' in part) return <LinkSpan key={idx} signalKey={part.link} text={part.text ?? part.link} ctx={ctx} />
+    if ('link' in part) {
+      // Raw display token (the manifest/data-model term this link stands for).
+      // When it names an actual signal/param (per signalLabels.ts) — e.g.
+      // 'isNight', 'familiar_route', 'drowsiness' — show the localized label
+      // instead of the raw variable name. Terms with no registry entry
+      // (computed formula quantities like 'env_load', 'monotony',
+      // 'driving_anomaly') are left as their own math notation, unchanged.
+      const raw = part.text ?? part.link
+      const label = SIGNAL_LABELS[raw] ? t(SIGNAL_LABELS[raw], ctx.uiLanguage) : raw
+      return <LinkSpan key={idx} signalKey={part.link} text={label} ctx={ctx} />
+    }
     return <span key={idx}>{part.text}</span>
   })
 }

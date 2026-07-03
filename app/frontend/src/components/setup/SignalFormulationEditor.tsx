@@ -3,6 +3,7 @@ import { useRunStore } from '../../state/runStore'
 import { t } from '../../i18n/t'
 import type { BilingualLabel } from '../../i18n/t'
 import type { DriverSignalParams, AnomalySignalParams, ProfileOverrides } from '../../api/types'
+import { SIGNAL_LABELS } from './signalLabels'
 
 /**
  * SignalFormulationEditor (feature 009, UX-FE2) — the ⓘ explainer for a
@@ -41,24 +42,27 @@ type FieldSpec = {
 }
 
 const DROWSINESS_FIELDS: FieldSpec[] = [
-  { key: 'base_growth_per_min', label: { en: 'base', ja: '基本上昇' } },
-  { key: 'night_add_per_min', label: { en: 'night', ja: '夜間加算' } },
-  { key: 'monotony_add_per_min', label: { en: 'monotony', ja: '単調道路加算' } },
-  { key: 'traffic_jam_add_per_min', label: { en: 'jam', ja: '渋滞加算' } },
+  { key: 'base_growth_per_min', label: SIGNAL_LABELS.base_growth_per_min },
+  { key: 'night_add_per_min', label: SIGNAL_LABELS.night_add_per_min },
+  { key: 'monotony_add_per_min', label: SIGNAL_LABELS.monotony_add_per_min },
+  { key: 'traffic_jam_add_per_min', label: SIGNAL_LABELS.traffic_jam_add_per_min },
 ]
 
 const FATIGUE_FIELDS: FieldSpec[] = [
-  { key: 'base_growth_per_min', label: { en: 'base', ja: '基本上昇' } },
-  { key: 'continuous_driving_add_per_min_after_60_min', label: { en: 'continuous (>60min)', ja: '継続運転(60分超)加算' } },
-  { key: 'mountain_road_add_per_min', label: { en: 'mountain', ja: '山道加算' } },
-  { key: 'traffic_jam_add_per_min', label: { en: 'jam', ja: '渋滞加算' } },
+  { key: 'base_growth_per_min', label: SIGNAL_LABELS.base_growth_per_min },
+  {
+    key: 'continuous_driving_add_per_min_after_60_min',
+    label: SIGNAL_LABELS.continuous_driving_add_per_min_after_60_min,
+  },
+  { key: 'mountain_road_add_per_min', label: SIGNAL_LABELS.mountain_road_add_per_min },
+  { key: 'traffic_jam_add_per_min', label: SIGNAL_LABELS.traffic_jam_add_per_min },
 ]
 
 const ANOMALY_FIELDS: FieldSpec[] = [
-  { key: 'lambda_base', label: { en: 'lambda_base', ja: 'lambda_base' } },
-  { key: 'lambda_gain', label: { en: 'lambda_gain', ja: 'lambda_gain' } },
-  { key: 'theta', label: { en: 'theta', ja: 'theta' } },
-  { key: 'window_min', label: { en: 'window_min', ja: 'window_min' } },
+  { key: 'lambda_base', label: SIGNAL_LABELS.lambda_base },
+  { key: 'lambda_gain', label: SIGNAL_LABELS.lambda_gain },
+  { key: 'theta', label: SIGNAL_LABELS.theta },
+  { key: 'window_min', label: SIGNAL_LABELS.window_min },
 ]
 
 const FORMULA_TEXT: Record<FormulationSignalKey, BilingualLabel> = {

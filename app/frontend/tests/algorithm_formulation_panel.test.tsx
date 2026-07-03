@@ -65,7 +65,7 @@ const HYBRID_MANIFEST: PackageManifest = {
     { key: 'familiar_route', band_values: [] },
   ],
   hyperparameters: [
-    { key: 'smoothing_alpha', label: { ja: '', en: 'Smoothing Alpha' }, kind: 'numeric', default: 0.35, min: 0.05, max: 1.0, step: 0.05 },
+    { key: 'smoothing_alpha', label: { ja: '平滑化係数 α', en: 'Smoothing Alpha' }, kind: 'numeric', default: 0.35, min: 0.05, max: 1.0, step: 0.05 },
     { key: 'w_drowsiness', label: { ja: '', en: 'Drowsiness Weight' }, kind: 'numeric', default: 0.4, min: 0, max: 1, step: 0.01 },
     { key: 'w_fatigue', label: { ja: '', en: 'Fatigue Weight' }, kind: 'numeric', default: 0.25, min: 0, max: 1, step: 0.01 },
     { key: 'w_driving_anomaly', label: { ja: '', en: 'Driving Anomaly Weight' }, kind: 'numeric', default: 0.25, min: 0, max: 1, step: 0.01 },
@@ -192,7 +192,7 @@ function renderInStore(
     act(() => setupFn(dispatchRef.current!))
   }
 
-  return result
+  return { ...result, dispatch: dispatchRef.current as React.Dispatch<RunStoreAction> }
 }
 
 function editedHyperparams(): Record<string, unknown> {
@@ -224,9 +224,13 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     })
 
     // Feature names appear as cross-links inside the base_safety_risk line.
+    // 'drowsiness'/'fatigue' are real signals (signalLabels.ts) so UX-FE3
+    // renders their localized label ("Drowsiness"/"Fatigue"), not the raw
+    // key; 'driving_anomaly'/'env_load' are computed formula quantities with
+    // no registry entry, so they still render as their own math notation.
     const line = screen.getByTestId('formula-line-base_safety_risk')
-    expect(line.textContent).toContain('drowsiness')
-    expect(line.textContent).toContain('fatigue')
+    expect(line.textContent).toContain('Drowsiness')
+    expect(line.textContent).toContain('Fatigue')
     expect(line.textContent).toContain('driving_anomaly')
     expect(line.textContent).toContain('env_load')
 
@@ -288,6 +292,25 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     fireEvent.click(link)
 
     await waitFor(() => expect(highlightedKey()).toBe('drowsiness'))
+  })
+
+  it('(g) UX-FE3: renders a hyperparameter by its manifest label (not its key), switching with uiLanguage', async () => {
+    vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
+
+    const { dispatch } = renderInStore(<AlgorithmFormulationPanel />, (d) => {
+      d({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
+    })
+
+    // fire_control renders its hyperparameters via ExtraHyperparameterView,
+    // which prints the manifest label as visible text (not the raw key).
+    const section = await screen.findByTestId('formulation-section-fire_control')
+    expect(section).toHaveTextContent('Smoothing Alpha')
+    expect(section).not.toHaveTextContent('smoothing_alpha')
+
+    act(() => dispatch({ type: 'SET_LANGUAGE', lang: 'ja' }))
+    await waitFor(() => {
+      expect(screen.getByTestId('formulation-section-fire_control')).toHaveTextContent('平滑化係数 α')
+    })
   })
 
   it('(f) UX-FE1: renders PackageSelector at the top, even before a package is selected', async () => {

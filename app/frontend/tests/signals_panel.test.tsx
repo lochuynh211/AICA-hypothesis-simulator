@@ -141,7 +141,7 @@ function renderInStore(
     act(() => setupFn(dispatchRef.current!))
   }
 
-  return result
+  return { ...result, dispatch: dispatchRef.current as React.Dispatch<RunStoreAction> }
 }
 
 describe('SignalsPanel — feature 009 FE2', () => {
@@ -191,6 +191,30 @@ describe('SignalsPanel — feature 009 FE2', () => {
     expect(screen.getByTestId('signal-row-drowsiness')).toBeInTheDocument()
     expect(screen.getByTestId('signal-row-fatigue')).toBeInTheDocument()
     expect(screen.getByTestId('signal-row-anomaly_rate')).toBeInTheDocument()
+  })
+
+  it('(h) UX-FE3: signal labels are localized (not raw keys) and switch when uiLanguage toggles', async () => {
+    vi.mocked(client.getScenario).mockResolvedValue(scenarioFixture)
+
+    const { dispatch } = renderInStore(<SignalsPanel />, (d) => {
+      d({ type: 'SELECT_SCENARIO', id: scenarioFixture.id })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('signal-row-isNight')).toBeInTheDocument()
+    })
+
+    // English default — human label, never the raw key.
+    expect(screen.getByTestId('signal-row-isNight')).toHaveTextContent('Night')
+    expect(screen.getByTestId('signal-row-isNight')).not.toHaveTextContent('isNight')
+    expect(screen.getByTestId('signal-row-anomaly_rate')).toHaveTextContent('Anomaly Rate')
+
+    // Toggling uiLanguage switches the shown text to the Japanese label.
+    act(() => dispatch({ type: 'SET_LANGUAGE', lang: 'ja' }))
+    await waitFor(() => {
+      expect(screen.getByTestId('signal-row-isNight')).toHaveTextContent('夜間')
+    })
+    expect(screen.getByTestId('signal-row-anomaly_rate')).toHaveTextContent('異常発生率')
   })
 
   it('(b) editable Fixed signals expose a ✎ control; isNight and Dynamic/Simulated signals do not', async () => {
