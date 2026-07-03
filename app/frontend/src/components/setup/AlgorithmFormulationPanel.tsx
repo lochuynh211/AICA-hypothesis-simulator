@@ -26,24 +26,16 @@ import {
  * Contract (no props — store-driven, matching every other setup/* editor):
  *   Reads: selectedPackageId, editedHyperparameters, highlightedSignalKey.
  *   Dispatches:
- *     - SET_HYPERPARAMETER — editing an inline coefficient, but ONLY when
- *       the new value actually differs from the manifest default (keeps
+ *     - SET_HYPERPARAMETER — editing an inline coefficient. Always dispatched
+ *       (with the manifest `default` attached) so the reducer can decide
+ *       whether to store the override or remove a stale one when the value
+ *       is reverted back to the default (see the FE4 fix in
+ *       state/runStore.ts's SET_HYPERPARAMETER reducer case). This keeps
  *       `selectOverridesDiff`'s "N overrides" chip — and the verbatim
- *       `hyperparameter_overrides` payload useRunPreview sends — accurate;
- *       see FE1 report / runStore.ts useRunPreview doc).
+ *       `hyperparameter_overrides` payload useRunPreview sends — accurate.
  *     - SET_HIGHLIGHTED_SIGNAL — on hover AND click of a feature/signal name
  *       cross-link, so SignalsPanel can mirror the highlight.
  *   Fetches (own effect): getPackage(selectedPackageId) for the manifest.
- *
- * Known limitation: because SET_HYPERPARAMETER is skipped when a coefficient
- * is edited back to its default, reverting a *previously overridden* field
- * to the default value leaves the old override sitting in
- * editedHyperparameters (there is no UNSET/RESET action in the reducer yet).
- * The input's own displayed value is always correct (local state, not
- * store-derived) but the value actually sent to POST /runs/preview would
- * stay stale in that specific revert-after-override case. Flagged for
- * FE4/final review; introducing a RESET_HYPERPARAMETER action is a clean
- * follow-up if this matters in practice.
  */
 export default function AlgorithmFormulationPanel() {
   const { state, dispatch } = useRunStore()
@@ -293,11 +285,11 @@ function CoefField({ keyName, ctx }: { keyName: string; ctx: FormulaCtx }) {
     if (raw === '') return
     const num = Number(raw)
     if (Number.isNaN(num)) return
-    // Only propagate to the store when it actually differs from the
-    // manifest default — keeps the overrides chip / preview payload accurate.
-    if (num !== Number(def!.default)) {
-      ctx.dispatch({ type: 'SET_HYPERPARAMETER', key: keyName, value: num })
-    }
+    // Always dispatch — pass the manifest default so the reducer can decide
+    // whether to store the override or (when num equals the default, e.g. a
+    // revert-to-default edit) remove any stale override for this key. See
+    // the SET_HYPERPARAMETER reducer case in state/runStore.ts.
+    ctx.dispatch({ type: 'SET_HYPERPARAMETER', key: keyName, value: num, default: Number(def!.default) })
   }
 
   return (

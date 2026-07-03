@@ -65,7 +65,10 @@ export default function HyperparameterEditor() {
   }
 
   function handleChange(def: HyperparameterDef, value: SetupValue) {
-    dispatch({ type: 'SET_HYPERPARAMETER', key: def.key, value })
+    // Pass the manifest default so the reducer removes a stale override when
+    // the value is reverted back to it (feature 009 FE4 fix — see
+    // state/runStore.ts's SET_HYPERPARAMETER reducer case).
+    dispatch({ type: 'SET_HYPERPARAMETER', key: def.key, value, default: def.default as SetupValue })
     const next = { ...editedHyperparameters, [def.key]: value }
     dispatch({ type: 'SET_VALIDATION_ERRORS', errors: validateAll(next) })
   }

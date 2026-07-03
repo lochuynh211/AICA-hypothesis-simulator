@@ -503,6 +503,73 @@ describe('runStore — SET_HYPERPARAMETER drives the overrides-diff (feature 009
   })
 })
 
+describe('runStore — SET_HYPERPARAMETER revert-to-default removes the override (feature 009 FE4 fix)', () => {
+  it('overriding then reverting to the manifest default removes the key from editedHyperparameters', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    const defaults = { w_drowsiness: 0.4, w_fatigue: 0.25 }
+
+    // Override away from the default.
+    act(() =>
+      result.current.dispatch({ type: 'SET_HYPERPARAMETER', key: 'w_drowsiness', value: 0.6, default: 0.4 }),
+    )
+    expect(result.current.state.editedHyperparameters).toEqual({ w_drowsiness: 0.6 })
+    expect(selectOverridesDiff(result.current.state.editedHyperparameters, defaults)).toEqual([
+      { key: 'w_drowsiness', default: 0.4, value: 0.6 },
+    ])
+
+    // Revert back to the default — the key must be REMOVED, not merely set
+    // to the default value (the bug: it used to stay in the map, sending a
+    // stale override to POST /runs/preview and to the real run-plan).
+    act(() =>
+      result.current.dispatch({ type: 'SET_HYPERPARAMETER', key: 'w_drowsiness', value: 0.4, default: 0.4 }),
+    )
+    expect(result.current.state.editedHyperparameters).toEqual({})
+    expect('w_drowsiness' in result.current.state.editedHyperparameters).toBe(false)
+    expect(selectOverridesDiff(result.current.state.editedHyperparameters, defaults)).toEqual([])
+  })
+
+  it('leaves other overrides untouched when reverting one key to its default', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+
+    act(() => {
+      result.current.dispatch({ type: 'SET_HYPERPARAMETER', key: 'w_drowsiness', value: 0.6, default: 0.4 })
+      result.current.dispatch({ type: 'SET_HYPERPARAMETER', key: 'w_fatigue', value: 0.3, default: 0.25 })
+    })
+    expect(result.current.state.editedHyperparameters).toEqual({ w_drowsiness: 0.6, w_fatigue: 0.3 })
+
+    act(() =>
+      result.current.dispatch({ type: 'SET_HYPERPARAMETER', key: 'w_drowsiness', value: 0.4, default: 0.4 }),
+    )
+    expect(result.current.state.editedHyperparameters).toEqual({ w_fatigue: 0.3 })
+  })
+
+  it('back-compat: omitting `default` keeps the old always-set behavior', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+
+    act(() => result.current.dispatch({ type: 'SET_HYPERPARAMETER', key: 'w_drowsiness', value: 0.4 }))
+    // No default supplied — the reducer cannot know 0.4 is "the default", so
+    // it stores it verbatim (existing call sites, e.g. HyperparameterEditor
+    // pass `default`; this documents the fallback for any that don't).
+    expect(result.current.state.editedHyperparameters).toEqual({ w_drowsiness: 0.4 })
+  })
+
+  it('a payload built from the resulting editedHyperparameters is clean after a revert-to-default', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+
+    act(() =>
+      result.current.dispatch({ type: 'SET_HYPERPARAMETER', key: 'w_drowsiness', value: 0.6, default: 0.4 }),
+    )
+    act(() =>
+      result.current.dispatch({ type: 'SET_HYPERPARAMETER', key: 'w_drowsiness', value: 0.4, default: 0.4 }),
+    )
+
+    // Simulates the exact payload useRunPreview sends as hyperparameter_overrides.
+    const outgoingPayload = { ...result.current.state.editedHyperparameters }
+    expect(outgoingPayload).toEqual({})
+    expect(JSON.stringify(outgoingPayload)).toBe('{}')
+  })
+})
+
 describe('runStore — run_seed (feature 009)', () => {
   it('defaults runSeed to 42', () => {
     const { result } = renderHook(() => useRunStore(), { wrapper })

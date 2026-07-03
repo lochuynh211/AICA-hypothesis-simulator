@@ -296,7 +296,20 @@ export type RunStoreAction =
   | { type: 'SET_RUN_ERROR'; message: string | null }
   // ── Setup-draft actions (M2) ─────────────────────────────────────────────
   | { type: 'SET_PARAMETER'; key: string; value: SetupValue }
-  | { type: 'SET_HYPERPARAMETER'; key: string; value: SetupValue }
+  | {
+      type: 'SET_HYPERPARAMETER'
+      key: string
+      value: SetupValue
+      /**
+       * The hyperparameter's manifest default, when known to the caller.
+       * When `value` equals `default`, the reducer REMOVES `key` from
+       * `editedHyperparameters` instead of storing it — this is the fix for
+       * the FE3 "stale override" bug (see reducer case below). Callers that
+       * omit `default` keep the old always-set behavior (back-compat for
+       * call sites that don't have the manifest default at hand).
+       */
+      default?: SetupValue
+    }
   | {
       type: 'PLAN_DRAFTED'
       planId: string
@@ -434,7 +447,28 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         effectiveSetup: null,
       }
 
-    case 'SET_HYPERPARAMETER':
+    case 'SET_HYPERPARAMETER': {
+      // Bug fix (feature 009 FE4): when the caller supplies the manifest
+      // default and the new value equals it, REMOVE the key from
+      // editedHyperparameters rather than storing it. Without this, reverting
+      // a previously-overridden value back to its default left a stale
+      // override sitting in editedHyperparameters — sent verbatim as
+      // hyperparameter_overrides to POST /runs/preview (via useRunPreview)
+      // and baked into a real run via PlanPreview → createRunPlan. The
+      // "N overrides" chip was also wrong (selectOverridesDiff compares
+      // against the SAME defaults, so a stale-but-equal-to-default entry
+      // would previously survive as a bogus override until the diff was
+      // rechecked externally).
+      if (action.default !== undefined && action.value === action.default) {
+        const { [action.key]: _removed, ...rest } = state.editedHyperparameters
+        return {
+          ...state,
+          editedHyperparameters: rest,
+          planId: null,
+          draftPlan: null,
+          effectiveSetup: null,
+        }
+      }
       return {
         ...state,
         editedHyperparameters: {
@@ -445,6 +479,7 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         draftPlan: null,
         effectiveSetup: null,
       }
+    }
 
     case 'PLAN_DRAFTED':
       return {
