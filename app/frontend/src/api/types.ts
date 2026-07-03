@@ -174,6 +174,10 @@ export type ScenarioDef = {
   /** NRI: scenario-level context flags (editable via package parameters). */
   child_passenger?: boolean
   familiar_route?: boolean
+  /** Feature 009 (FE2): Tier-1 fixed signal — true if the scenario drives at night.
+   * Read-only in the setup UI (no backend context-override key exists for it yet —
+   * unlike child_passenger/familiar_route, see run_plans.py _VALID_CONTEXT_KEYS). */
+  is_night?: boolean
 }
 
 /**
