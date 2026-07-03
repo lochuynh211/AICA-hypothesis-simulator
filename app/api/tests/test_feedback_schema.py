@@ -15,7 +15,8 @@ import pytest
 
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
 _FIXTURES = pathlib.Path(__file__).parent / "fixtures"
-_BASELINE_PKG_PATH = _REPO_ROOT / "packages" / "rest_rule_based_v0_1" / "package.json"
+# Feature 009: rest_rule_based_v0_1 is retired.
+_BASELINE_PKG_PATH = _REPO_ROOT / "packages" / "aica_transparent_hybrid_trigger_v1" / "package.json"
 _EXTRAS_PKG_PATH = _FIXTURES / "pkg_with_extras" / "package.json"
 
 

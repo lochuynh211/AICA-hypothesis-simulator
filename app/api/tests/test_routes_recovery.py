@@ -142,7 +142,8 @@ def test_rest_spots_unreachable_when_ceiling_very_low():
     from tests.helpers_recovery import m2_scenario_with_recovery
 
     _REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
-    _PKG_PATH = _REPO_ROOT / "packages" / "rest_rule_based_v0_1" / "package.json"
+    # Feature 009: rest_rule_based_v0_1 (declarative_rule) is retired.
+    _PKG_PATH = _REPO_ROOT / "packages" / "nri_fatigue_score_v1" / "package.json"
     package = PackageManifest(**_json.loads(_PKG_PATH.read_text(encoding="utf-8")))
 
     # ceiling=1.0: any drowsiness > 1.0 makes all spots unreachable

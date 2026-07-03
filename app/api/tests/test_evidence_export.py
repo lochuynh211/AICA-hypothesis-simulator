@@ -675,8 +675,8 @@ class TestPureFunction:
 
 # ── Router-level tests: GET /api/runs/{id}/evidence ───────────────────────────
 
-VALID_PACKAGE_ID = "rest_rule_based_v0_1"
-VALID_SCENARIO_ID = "uc01_fatigue_friend_drive_v0_1"
+VALID_PACKAGE_ID = "aica_transparent_hybrid_trigger_v1"  # feature 009: rest_rule_based_v0_1 retired
+VALID_SCENARIO_ID = "uc01_fatigue_recovery_v0_1"  # feature 009: friend_drive retired
 
 
 @pytest.fixture(autouse=True)

@@ -25,8 +25,9 @@ from aica_api.services.run_plan import clear_draft_registry
 
 _FIXTURE_DIR = pathlib.Path(__file__).parent / "fixtures" / "maps"
 
-VALID_SCENARIO_ID = "uc01_fatigue_friend_drive_v0_1"
-VALID_PACKAGE_ID = "rest_rule_based_v0_1"
+# Feature 009: uc01_fatigue_friend_drive_v0_1 / rest_rule_based_v0_1 are retired.
+VALID_SCENARIO_ID = "uc01_fatigue_recovery_v0_1"
+VALID_PACKAGE_ID = "aica_transparent_hybrid_trigger_v1"
 _SENTINEL_KEY = "SENTINEL_API_KEY_MUST_NOT_LEAK"
 
 
@@ -262,7 +263,7 @@ class TestPlacesFailureFallbackNotice:
         self, client, monkeypatch
     ):
         """Sub-case A: Places fails + scenario HAS local rest → degraded + non-empty positions."""
-        # uc01_fatigue_friend_drive_v0_1 has a rest facility (is_rest_facility=True) at 0.5
+        # uc01_fatigue_recovery_v0_1 has a rest facility (is_rest_facility=True) at 0.5
         dir_data = _fixture_bytes("directions_3_alternatives.json")
         fail_data = _fixture_bytes("places_failure.json")
         monkeypatch.setattr(
@@ -359,14 +360,29 @@ class TestDirectionsFailureUnchanged:
         assert resp.status_code == 502
 
 
-# ── End-to-end: UC-01 run with empty rest → NO_PRACTICAL_ACTION_FALLBACK ─────
+# ── End-to-end: UC-01 run with empty rest spots ──────────────────────────────
 
 
 class TestEndToEndEmptyRestRun:
-    """Maps route with empty places → run eventually produces NO_PRACTICAL_ACTION_FALLBACK."""
+    """Maps route with empty places → run behaves sanely with rest_spot_positions=[].
 
-    def test_empty_rest_run_produces_no_practical_action_fallback(self, client, monkeypatch, tmp_path):
-        """End-to-end: empty places → rest_spot_positions=[] → eventually NO_PRACTICAL_ACTION_FALLBACK."""
+    Feature 009 (signal-tier redesign): NO_PRACTICAL_ACTION_FALLBACK was a
+    declarative_rule-specific "actionability guard" result — the retired
+    algorithm suppressed REST_PROPOSAL entirely when no rest spot was reachable
+    and surfaced this fallback result_type instead.  Neither surviving
+    python_module package reproduces that guard: aica_transparent_hybrid_trigger_v1's
+    rest_scarcity feature score MAXES OUT when nextRestSpotMin never resolves
+    (sentinel 9999), which if anything makes rest_required MORE likely to cross
+    its threshold, not less; nri_fatigue_score_v1's post-fire filter explicitly
+    treats nextRestSpotMin>=9999 ("no more rest spot ahead") as a reason to fire
+    rather than suppress.  Regenerated from actual behavior (FR-018): with
+    rest_spot_positions=[], REST_PROPOSAL still fires normally, and
+    NO_PRACTICAL_ACTION_FALLBACK never appears for these packages.
+    """
+
+    def test_empty_rest_run_still_fires_rest_proposal(self, client, monkeypatch, tmp_path):
+        """End-to-end: empty places → rest_spot_positions=[] → REST_PROPOSAL still fires,
+        with zero algorithm_errors and no NO_PRACTICAL_ACTION_FALLBACK."""
         monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
 
         # Analyze: directions succeeds, places returns empty for all alternatives
@@ -416,22 +432,38 @@ class TestEndToEndEmptyRestRun:
         assert run_resp.status_code == 201
         run_id = run_resp.json()["run_id"]
 
-        # Tick until we see NO_PRACTICAL_ACTION_FALLBACK or exhaust ticks
+        # Tick until paused (REST_PROPOSAL) or completed; declining every pause
+        # so the run can keep progressing (uc01_fatigue_recovery_v0_1 has
+        # recovery_options, so "decline" — not "accept_rest" — resolves a pause
+        # without requiring recovery_option_id/rest_spot).
         result_types_seen = set()
+        algorithm_errors_seen = []
         for _ in range(400):
             tick_resp = client.post(f"/api/runs/{run_id}/tick")
             assert tick_resp.status_code == 200
             body = tick_resp.json()
             if body.get("decision") is not None:
                 result_types_seen.add(body["decision"]["result_type"])
+            if body.get("error") is not None:
+                algorithm_errors_seen.append(body["error"])
+            if body.get("paused"):
+                decline_resp = client.post(
+                    f"/api/runs/{run_id}/actions", json={"action": "decline"}
+                )
+                assert decline_resp.status_code == 200
             if body.get("completed"):
                 break
 
-        assert "NO_PRACTICAL_ACTION_FALLBACK" in result_types_seen, (
-            f"Expected NO_PRACTICAL_ACTION_FALLBACK in a run with empty rest spots. "
+        assert algorithm_errors_seen == [], (
+            f"Empty rest_spot_positions must never cause an algorithm_error; "
+            f"got: {algorithm_errors_seen}"
+        )
+        # REST_PROPOSAL still fires normally — neither surviving package
+        # suppresses it when no rest spot is reachable (see class docstring).
+        assert "REST_PROPOSAL" in result_types_seen, (
+            f"Expected REST_PROPOSAL to still fire with rest_spot_positions=[]. "
             f"Result types seen: {result_types_seen}"
         )
-        # Must NOT have paused (no REST_PROPOSAL with empty rest spots)
-        assert "REST_PROPOSAL" not in result_types_seen, (
-            "REST_PROPOSAL should not fire when rest_spot_positions=[] (rest_spot_eta='none')"
-        )
+        # NO_PRACTICAL_ACTION_FALLBACK is a retired declarative_rule-only result
+        # type — python_module packages never emit it.
+        assert "NO_PRACTICAL_ACTION_FALLBACK" not in result_types_seen

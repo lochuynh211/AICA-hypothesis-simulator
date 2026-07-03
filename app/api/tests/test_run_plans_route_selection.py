@@ -42,8 +42,9 @@ def _make_urlopen_seq(responses: list[bytes]):
 
     return _mock
 
-VALID_PACKAGE_ID = "rest_rule_based_v0_1"
-VALID_SCENARIO_ID = "uc01_fatigue_friend_drive_v0_1"
+# Feature 009: uc01_fatigue_friend_drive_v0_1 / rest_rule_based_v0_1 are retired.
+VALID_PACKAGE_ID = "aica_transparent_hybrid_trigger_v1"
+VALID_SCENARIO_ID = "uc01_fatigue_recovery_v0_1"
 
 _SENTINEL_KEY = "SENTINEL_API_KEY_MUST_NOT_LEAK"
 

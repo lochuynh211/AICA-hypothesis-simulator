@@ -36,8 +36,8 @@ from aica_api.services.run_plan import clear_draft_registry
 
 _FIXTURE_DIR = pathlib.Path(__file__).parent / "fixtures" / "maps"
 
-VALID_PACKAGE_ID = "rest_rule_based_v0_1"
-VALID_SCENARIO_ID = "uc01_fatigue_friend_drive_v0_1"
+VALID_PACKAGE_ID = "aica_transparent_hybrid_trigger_v1"  # feature 009: rest_rule_based_v0_1 retired
+VALID_SCENARIO_ID = "uc01_fatigue_recovery_v0_1"  # feature 009: friend_drive retired
 _TEST_KEY = "T014_DETERMINISM_TEST_KEY"
 
 _MAX_TICKS = 300
@@ -114,9 +114,11 @@ def _do_analyze(client) -> dict:
 def _create_maps_run(client, alt: dict) -> str:
     """Create plan + run from a maps alternative.  Returns run_id.
 
-    Uses ``require_actionable: false`` so REST_PROPOSAL fires regardless of
-    rest_spot_eta (the toy polyline puts rest_spots at 0 km on the 150 km
-    route, so the rest spot is behind the car by the time fatigue peaks).
+    Feature 009: python_module packages have no "require_actionable"
+    hyperparameter (that was a declarative_rule-only actionability-guard
+    concept, retired along with the built-in algorithm types) — the hybrid
+    trigger fires from its own persisted score thresholds regardless of
+    rest-spot position.
     """
     plan_resp = client.post(
         "/api/run-plans",
@@ -128,7 +130,7 @@ def _create_maps_run(client, alt: dict) -> str:
             "route_facts": alt["route_facts"],
             "display_route": alt["display"],
             "parameters": {},
-            "hyperparameters": {"require_actionable": False},
+            "hyperparameters": {},
         },
     )
     assert plan_resp.status_code == 201, f"Plan creation failed: {plan_resp.json()}"
@@ -271,13 +273,17 @@ class TestReplayNoRefetch:
 
         monkeypatch.setattr(mc, "_urlopen", _maps_forbidden)
 
-        # 4. Tick to REST_PROPOSAL — must succeed despite the raising mock.
+        # 4. Tick to a fired proposal — must succeed despite the raising mock.
+        # The hybrid trigger may fire REST_PROPOSAL or MONOTONY_PROPOSAL first
+        # depending on the maps-derived route's segment mix (both actionable via
+        # "decline") — this test is about Maps-call isolation, not which
+        # category fires first.
         all_bodies, paused_body = _tick_until_paused(client, run_id)
 
         decision = paused_body["decision"]
         assert decision is not None
-        assert decision["result_type"] == "REST_PROPOSAL", (
-            f"Expected REST_PROPOSAL at pause, got {decision['result_type']!r}"
+        assert decision["result_type"] in ("REST_PROPOSAL", "MONOTONY_PROPOSAL"), (
+            f"Expected a fired proposal at pause, got {decision['result_type']!r}"
         )
         assert decision["proposal"] is not None
 
@@ -301,13 +307,16 @@ class TestReplayNoRefetch:
         # Tick to proposal.
         _tick_until_paused(client, run_id)
 
-        # Accept proposal.
+        # Resolve the proposal via "decline" — uc01_fatigue_recovery_v0_1 has
+        # recovery_options, so accept_rest would require recovery_option_id +
+        # rest_spot (dedicated coverage: test_run_manager_recovery.py); decline
+        # always resolves a pause regardless of which category fired.
         action_resp = client.post(
             f"/api/runs/{run_id}/actions",
-            json={"action": "accept_rest"},
+            json={"action": "decline"},
         )
         assert action_resp.status_code == 200
-        assert action_resp.json()["status"] == "completed"
+        assert action_resp.json()["status"] == "playing"
 
         # GET /log — must succeed without any Maps contact.
         log_resp = client.get(f"/api/runs/{run_id}/log")

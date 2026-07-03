@@ -21,7 +21,8 @@ from aica_api.services.route_analysis import analyze_route
 # ---------------------------------------------------------------------------
 
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
-_SCENARIO_PATH = _REPO_ROOT / "scenarios" / "uc01_fatigue_friend_drive_v0_1.json"
+# Feature 009: uc01_fatigue_friend_drive_v0_1 is retired.
+_SCENARIO_PATH = _REPO_ROOT / "scenarios" / "uc01_fatigue_recovery_v0_1.json"
 
 
 @pytest.fixture

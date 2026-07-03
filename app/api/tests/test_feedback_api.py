@@ -20,8 +20,8 @@ import pytest
 # ---------------------------------------------------------------------------
 
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
-_SCENARIO_PATH = _REPO_ROOT / "scenarios" / "uc01_fatigue_friend_drive_v0_1.json"
-_PACKAGE_PATH = _REPO_ROOT / "packages" / "rest_rule_based_v0_1" / "package.json"
+_SCENARIO_PATH = _REPO_ROOT / "scenarios" / "uc01_fatigue_recovery_v0_1.json"
+_PACKAGE_PATH = _REPO_ROOT / "packages" / "aica_transparent_hybrid_trigger_v1" / "package.json"
 
 
 # ---------------------------------------------------------------------------
@@ -600,7 +600,7 @@ def disk_run(tmp_path):
         created_at="2026-01-01T00:00:00Z",
         simulator_version="0.1.0",
         snapshot=Snapshot(
-            package=ArtifactRef(id="rest_rule_based_v0_1", version="0.1.0", hash="abc"),
+            package=ArtifactRef(id="aica_transparent_hybrid_trigger_v1", version="0.1.0", hash="abc"),
             scenario=ArtifactRef(id="sc_test", version="0.1.0", hash="def"),
         ),
         route_facts=RouteFacts(),

@@ -4,14 +4,24 @@ Exercises the COMPLETE V1 review loop end-to-end using the backend TestClient.
 Each test drives: setup (POST /api/run-plans) → POST /api/runs → tick to
 REST_PROPOSAL → action → (feedback) → (evidence JSON) → (evidence Markdown).
 
+Feature 009 (signal-tier redesign): declarative_rule (rest_rule_based_v0_1),
+weighted_score (rest_weighted_score_v0_1), rest_python_v0_1, the
+uc01_fatigue_friend_drive_v0_1 scenario, and uc01_overtime_driver_v0_1 are all
+retired.  Repointed to the two surviving python_module packages
+(aica_transparent_hybrid_trigger_v1, nri_fatigue_score_v1) on the surviving
+uc01_fatigue_recovery_v0_1 scenario.  That scenario has recovery_options, so
+accept_rest now requires recovery_option_id + rest_spot and resolves to
+status="playing" (recovery active) rather than completing the run outright —
+tests below that only need to *resolve* a pause (not exercise the recovery
+sequence itself, which has dedicated coverage in test_run_manager_recovery.py)
+use "decline" instead.
+
 Coverage matrix
 ───────────────────────────────────────────────────────────────────────────────
 Algorithm type           | Package                               | Stage covered
 ─────────────────────────┼───────────────────────────────────────┼──────────────
-declarative_rule         | rest_rule_based_v0_1                  | §1
-weighted_score           | rest_weighted_score_v0_1              | §1
-python_module            | rest_python_v0_1                      | §1, §5
-transparent-hybrid       | aica_transparent_hybrid_trigger_v1    | §1, §6 runtime state
+python_module (hybrid)   | aica_transparent_hybrid_trigger_v1    | §1, §2, §3-§12
+python_module (nri)      | nri_fatigue_score_v1                  | §1
 
 Additional integration stages (§2–§8):
   §2  Qualitative boundary — feature_groups present in every tick event; no raw
@@ -54,17 +64,17 @@ from aica_api.services.run_plan import clear_draft_registry
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
-RULE_BASED_PKG   = "rest_rule_based_v0_1"
-WEIGHTED_PKG     = "rest_weighted_score_v0_1"
-PYTHON_PKG       = "rest_python_v0_1"
 HYBRID_PKG       = "aica_transparent_hybrid_trigger_v1"
+NRI_PKG          = "nri_fatigue_score_v1"
 
-FRIEND_SCENARIO  = "uc01_fatigue_friend_drive_v0_1"
-OVERTIME_SCENARIO = "uc01_overtime_driver_v0_1"
+RECOVERY_SCENARIO = "uc01_fatigue_recovery_v0_1"
 
 _MAPS_FIXTURE_DIR = pathlib.Path(__file__).parent / "fixtures" / "maps"
 
-_MAX_TICKS = 300   # generous ceiling — hybrid fires around tick 100
+# Generous ceiling: observed firing ticks are 111 (hybrid, tick_seconds=30) and
+# 45 (nri, tick_seconds=60) on uc01_fatigue_recovery_v0_1; the full route
+# completes within ~217 ticks for the hybrid (test_end_to_end_run.py).
+_MAX_TICKS = 300
 
 
 # ── Fixtures ───────────────────────────────────────────────────────────────────
@@ -136,39 +146,47 @@ def _tick_to_pause(client: TestClient, run_id: str) -> tuple[list[dict], dict]:
     )
 
 
-def _tick_to_completion(client: TestClient, run_id: str) -> list[dict]:
-    """Tick until completed.  Returns all tick bodies."""
+def _tick_declining_to_completion(client: TestClient, run_id: str) -> list[dict]:
+    """Tick until completed, declining every paused proposal along the way.
+
+    uc01_fatigue_recovery_v0_1 has recovery_options, so a plain accept_rest no
+    longer completes the run outright; "decline" always resolves a pause
+    without touching the recovery-sequence machinery (dedicated coverage in
+    test_run_manager_recovery.py). Returns all tick bodies.
+    """
     bodies: list[dict] = []
     for _ in range(_MAX_TICKS):
         resp = client.post(f"/api/runs/{run_id}/tick")
         assert resp.status_code == 200
         body = resp.json()
         bodies.append(body)
+        if body.get("paused"):
+            decline_resp = client.post(f"/api/runs/{run_id}/actions", json={"action": "decline"})
+            assert decline_resp.status_code == 200
         if body.get("completed") is True:
             return bodies
     pytest.fail(f"Run {run_id!r} did not complete within {_MAX_TICKS} ticks.")
 
 
-def _accept_rest(client: TestClient, run_id: str) -> dict:
-    resp = client.post(f"/api/runs/{run_id}/actions", json={"action": "accept_rest"})
-    assert resp.status_code == 200, f"accept_rest failed: {resp.json()}"
+def _decline(client: TestClient, run_id: str) -> dict:
+    """Resolve a paused run's pending proposal via "decline" (status → playing)."""
+    resp = client.post(f"/api/runs/{run_id}/actions", json={"action": "decline"})
+    assert resp.status_code == 200, f"decline failed: {resp.json()}"
     return resp.json()
 
 
-# ── §1 — All 4 algorithm types: full loop (plan → run → tick → proposal → action) ──
+# ── §1 — Both surviving python_module packages: full loop (plan → run → tick → proposal → action) ──
 
 
 @pytest.mark.parametrize(
-    "package_id,scenario_id,action_name",
+    "package_id,scenario_id",
     [
-        pytest.param(RULE_BASED_PKG,  FRIEND_SCENARIO, "accept_rest", id="declarative_rule"),
-        pytest.param(WEIGHTED_PKG,    FRIEND_SCENARIO, "accept_rest", id="weighted_score"),
-        pytest.param(PYTHON_PKG,      FRIEND_SCENARIO, "accept_rest", id="python_module"),
-        pytest.param(HYBRID_PKG,      FRIEND_SCENARIO, "accept_rest", id="transparent_hybrid"),
+        pytest.param(HYBRID_PKG, RECOVERY_SCENARIO, id="transparent_hybrid"),
+        pytest.param(NRI_PKG,    RECOVERY_SCENARIO, id="nri_fatigue_score"),
     ],
 )
-def test_full_loop_all_four_algorithm_types(client, package_id, scenario_id, action_name):
-    """§1 — Full UC-01 loop for each algorithm type.
+def test_full_loop_both_surviving_algorithm_types(client, package_id, scenario_id):
+    """§1 — Full UC-01 loop for each surviving python_module package.
 
     Proves: plan accepted → log persisted → tick fires exactly one REST_PROPOSAL
     → action accepted → final log has correct structure with at least one TickEvent.
@@ -206,8 +224,8 @@ def test_full_loop_all_four_algorithm_types(client, package_id, scenario_id, act
     )
     assert decision["proposal"] is not None, "REST_PROPOSAL must include a proposal object"
 
-    # Pre-pause ticks: must NOT be REST_PROPOSAL (allowed: NO_TRIGGER, SOFT_WARNING,
-    # SUPPRESSED, NO_PROPOSAL — varies by algorithm type).
+    # Pre-pause ticks: must NOT be REST_PROPOSAL (allowed: NO_PROPOSAL, SUPPRESSED,
+    # MONOTONY_PROPOSAL — varies by algorithm type; only one REST_PROPOSAL expected).
     for i, body in enumerate(all_bodies[:-1]):
         d = body.get("decision")
         if d is None:
@@ -218,8 +236,11 @@ def test_full_loop_all_four_algorithm_types(client, package_id, scenario_id, act
         )
 
     # ── Action ─────────────────────────────────────────────────────────────────
-    action_state = _accept_rest(client, run_id)
-    assert action_state["status"] == "completed"
+    # uc01_fatigue_recovery_v0_1 has recovery_options — "decline" resolves the
+    # pause without requiring recovery_option_id/rest_spot (see
+    # test_run_manager_recovery.py for dedicated recovery-sequence coverage).
+    action_state = _decline(client, run_id)
+    assert action_state["status"] == "playing"
     assert action_state["pending_proposal"] is None
 
     # ── Final log structure ────────────────────────────────────────────────────
@@ -233,8 +254,8 @@ def test_full_loop_all_four_algorithm_types(client, package_id, scenario_id, act
         assert "decision_result" in evt["trace"], "trace must contain decision_result"
 
     assert len(action_events) == 1, f"Expected 1 action event, got {len(action_events)}"
-    assert action_events[0]["action"] == action_name
-    assert action_events[0]["resulting_status"] == "completed"
+    assert action_events[0]["action"] == "decline"
+    assert action_events[0]["resulting_status"] == "playing"
 
     # Exactly ONE REST_PROPOSAL in the persisted log
     rest_proposals = [
@@ -258,7 +279,7 @@ def test_qualitative_boundary_feature_groups_in_tick_events(client):
 
     Will FAIL if tick events are missing feature_groups or ordinal bands.
     """
-    run_id = _plan_and_run(client, RULE_BASED_PKG, FRIEND_SCENARIO)
+    run_id = _plan_and_run(client, HYBRID_PKG, RECOVERY_SCENARIO)
     all_bodies, _ = _tick_to_pause(client, run_id)
 
     final_log = client.get(f"/api/runs/{run_id}/log").json()
@@ -285,10 +306,11 @@ def test_qualitative_boundary_feature_groups_in_tick_events(client):
         )
 
     # Sanity: a REST_PROPOSAL tick's decision must reference ordinal features, not raw floats.
-    # NOTE: declarative_rule emits only string values in features{} so the float guard
-    # below is vacuous for that algorithm type alone.  The weighted_score check further
-    # down exercises the same boundary against genuine float feature_groups.normalized
-    # values, making the combined guard meaningful.
+    # NOTE: both surviving python_module packages emit only string values in
+    # features{} (features_ordinal = {k: str(v) ...}) so this float guard is
+    # vacuous by construction — the feature_groups.normalized check just below
+    # exercises the same boundary against genuine floats, making the combined
+    # guard meaningful.
     proposal_events = [
         e for e in tick_events
         if e["trace"]["decision_result"]["result_type"] == "REST_PROPOSAL"
@@ -304,22 +326,16 @@ def test_qualitative_boundary_feature_groups_in_tick_events(client):
             "expected ordinal band label or normalized 0/1; qualitative boundary may be broken"
         )
 
-    # ── Also exercise against weighted_score: feature_groups.normalized must be [0,1] ──
-    # weighted_score uses feature_groups.normalized (genuine floats) rather than ordinal
-    # string bands.  Verify those normalized scores are all in [0,1] — raw external
-    # numerics (e.g. drowsinessLevel=73.5) must NEVER appear in this boundary layer.
-    ws_run_id = _plan_and_run(client, WEIGHTED_PKG, FRIEND_SCENARIO)
-    ws_bodies, _ = _tick_to_pause(client, ws_run_id)
-
-    ws_log = client.get(f"/api/runs/{ws_run_id}/log").json()
-    ws_tick_events = [e for e in ws_log["events"] if e.get("kind") == "tick"]
-    assert len(ws_tick_events) >= 1, "weighted_score run must produce at least one tick event"
-
-    for i, evt in enumerate(ws_tick_events):
+    # ── feature_groups.normalized must be [0,1] ──────────────────────────────
+    # feature_groups is computed by the tick engine/binning layer independent of
+    # the algorithm — reuse the same run's tick events.  Verify those normalized
+    # scores are all in [0,1] — raw external numerics (e.g. drowsinessLevel=73.5)
+    # must NEVER appear in this boundary layer.
+    for i, evt in enumerate(tick_events):
         normalized = evt.get("feature_groups", {}).get("normalized", {})
         for feat_key, feat_val in normalized.items():
             assert isinstance(feat_val, float) and 0.0 <= feat_val <= 1.0, (
-                f"weighted_score TickEvent {i}: feature_groups.normalized[{feat_key!r}]="
+                f"TickEvent {i}: feature_groups.normalized[{feat_key!r}]="
                 f"{feat_val!r} is outside [0,1] — raw external numeric must not leak "
                 "past the qualitative boundary"
             )
@@ -341,7 +357,7 @@ def test_feedback_append_only_after_proposal(client):
     Will FAIL if feedback is not stored, if tick events are mutated, or if
     invalid feedback is accepted.
     """
-    run_id = _plan_and_run(client, RULE_BASED_PKG, FRIEND_SCENARIO)
+    run_id = _plan_and_run(client, HYBRID_PKG, RECOVERY_SCENARIO)
     all_bodies, paused_body = _tick_to_pause(client, run_id)
 
     decision = paused_body["decision"]
@@ -369,8 +385,9 @@ def test_feedback_append_only_after_proposal(client):
     assert fb1.status_code == 201, f"Proposal feedback must return 201; got {fb1.json()}"
     assert fb1.json()["kind"] == "feedback"
 
-    # Accept rest → complete run
-    _accept_rest(client, run_id)
+    # Resolve the proposal (decline — the run stays active in the registry,
+    # which is all run-scoped feedback requires)
+    _decline(client, run_id)
 
     # POST run-scoped feedback
     fb2 = client.post(
@@ -435,7 +452,7 @@ def test_evidence_json_separation_invariant(client):
 
     Will FAIL if the separation invariant is broken.
     """
-    run_id = _plan_and_run(client, RULE_BASED_PKG, FRIEND_SCENARIO)
+    run_id = _plan_and_run(client, HYBRID_PKG, RECOVERY_SCENARIO)
     all_bodies, paused_body = _tick_to_pause(client, run_id)
 
     proposal_tick_index = paused_body["tick_index"]
@@ -457,7 +474,7 @@ def test_evidence_json_separation_invariant(client):
     assert fb_proposal.status_code == 201, (
         f"Proposal feedback must return 201; got {fb_proposal.status_code}: {fb_proposal.json()}"
     )
-    _accept_rest(client, run_id)
+    _decline(client, run_id)
     fb_run = client.post(
         f"/api/runs/{run_id}/feedback",
         json={
@@ -526,8 +543,8 @@ def test_evidence_json_separation_invariant(client):
 
     # Report-level fields
     assert "simulator_version" in evidence
-    assert evidence["package"]["id"] == RULE_BASED_PKG
-    assert evidence["scenario"]["id"] == FRIEND_SCENARIO
+    assert evidence["package"]["id"] == HYBRID_PKG
+    assert evidence["scenario"]["id"] == RECOVERY_SCENARIO
 
 
 # ── §5 — Evidence Markdown: ## Simulator Facts / ## Human Review separation ───
@@ -545,7 +562,7 @@ def test_evidence_markdown_separation(client):
 
     Will FAIL if the Markdown formatter or endpoint is broken.
     """
-    run_id = _plan_and_run(client, RULE_BASED_PKG, FRIEND_SCENARIO)
+    run_id = _plan_and_run(client, HYBRID_PKG, RECOVERY_SCENARIO)
     _, paused_body = _tick_to_pause(client, run_id)
 
     proposal_tick_index = paused_body["tick_index"]
@@ -563,7 +580,7 @@ def test_evidence_markdown_separation(client):
             "comment": "S9 markdown test: UNIQUE_MARKER_XYZ",
         },
     )
-    _accept_rest(client, run_id)
+    _decline(client, run_id)
 
     md_resp = client.get(f"/api/runs/{run_id}/evidence.md")
     assert md_resp.status_code == 200, f"evidence.md endpoint failed: {md_resp.text}"
@@ -638,8 +655,8 @@ def test_algorithm_error_surfaces_as_event_not_disguised_decision(tmp_path, monk
     plan_resp = client.post(
         "/api/run-plans",
         json={
-            "package_id": PYTHON_PKG,
-            "scenario_id": FRIEND_SCENARIO,
+            "package_id": HYBRID_PKG,
+            "scenario_id": RECOVERY_SCENARIO,
             "parameters": {},
             "hyperparameters": {},
             "run_mode": "standard",
@@ -730,11 +747,11 @@ def test_replay_log_faithful_to_live_ticks(client):
 
     Will FAIL if the log is not written faithfully or is re-computed on read.
     """
-    run_id = _plan_and_run(client, RULE_BASED_PKG, FRIEND_SCENARIO)
+    run_id = _plan_and_run(client, HYBRID_PKG, RECOVERY_SCENARIO)
 
     # ── Live run: capture tick responses ──────────────────────────────────────
     all_bodies, paused_body = _tick_to_pause(client, run_id)
-    _accept_rest(client, run_id)
+    _decline(client, run_id)
 
     # Build a map of tick_index → live decision_result (from tick responses)
     live_decisions: dict[int, dict] = {}
@@ -809,9 +826,9 @@ def test_profile_override_visible_in_evidence(client):
     OVERRIDE_RATE = 9.0  # 10× default — unambiguously faster drowsiness growth
 
     # ── DEFAULT run (no profile override) ────────────────────────────────────
-    default_run_id = _plan_and_run(client, RULE_BASED_PKG, FRIEND_SCENARIO)
+    default_run_id = _plan_and_run(client, HYBRID_PKG, RECOVERY_SCENARIO)
     default_bodies, default_paused_body = _tick_to_pause(client, default_run_id)
-    _accept_rest(client, default_run_id)
+    _decline(client, default_run_id)
     default_proposal_tick = default_paused_body["tick_index"]
 
     # ── OVERRIDE run (10× drowsiness growth rate) ────────────────────────────
@@ -821,7 +838,7 @@ def test_profile_override_visible_in_evidence(client):
         }
     }
     run_id = _plan_and_run(
-        client, RULE_BASED_PKG, FRIEND_SCENARIO, profiles=override_profiles
+        client, HYBRID_PKG, RECOVERY_SCENARIO, profiles=override_profiles
     )
 
     # ── Recording assertions (pre-tick) ──────────────────────────────────────
@@ -845,11 +862,11 @@ def test_profile_override_visible_in_evidence(client):
         "run_log.profile_overrides must be set when a profile override is applied"
     )
 
-    # ── Tick override run to proposal and accept ──────────────────────────────
+    # ── Tick override run to proposal and resolve ─────────────────────────────
     _, override_paused_body = _tick_to_pause(client, run_id)
     override_proposal_tick = override_paused_body["tick_index"]
-    action_state = _accept_rest(client, run_id)
-    assert action_state["status"] == "completed"
+    action_state = _decline(client, run_id)
+    assert action_state["status"] == "playing"
 
     # ── BEHAVIORAL assertion: SC-006 "an edited profile drives its run" ───────
     # A 10× drowsiness growth rate must cause the proposal to fire at a lower
@@ -925,7 +942,7 @@ def test_maps_sentinel_key_absent_from_log(tmp_path, monkeypatch):
     analyze_resp = client.post(
         "/api/routes/analyze",
         json={
-            "scenario_id": FRIEND_SCENARIO,
+            "scenario_id": RECOVERY_SCENARIO,
             "maps_key": _SENTINEL,
             "start": "Tokyo, Japan",
             "end": "Osaka, Japan",
@@ -938,18 +955,22 @@ def test_maps_sentinel_key_absent_from_log(tmp_path, monkeypatch):
     assert len(alts) >= 1
     chosen = alts[0]
 
-    # Create run plan with maps route (require_actionable=False for toy polyline)
+    # Create run plan with maps route.  Feature 009: python_module packages have
+    # no "require_actionable" hyperparameter (that was a declarative_rule-only
+    # actionability-guard concept, retired along with the built-in algorithm
+    # types) — the hybrid trigger fires from its own persisted score thresholds
+    # regardless of rest-spot position.
     plan_resp = client.post(
         "/api/run-plans",
         json={
-            "package_id": RULE_BASED_PKG,
-            "scenario_id": FRIEND_SCENARIO,
+            "package_id": HYBRID_PKG,
+            "scenario_id": RECOVERY_SCENARIO,
             "route_id": chosen["route_id"],
             "route_source": "maps",
             "route_facts": chosen["route_facts"],
             "display_route": chosen["display"],
             "parameters": {},
-            "hyperparameters": {"require_actionable": False},
+            "hyperparameters": {},
         },
     )
     assert plan_resp.status_code == 201, f"Plan creation failed: {plan_resp.json()}"
@@ -968,7 +989,7 @@ def test_maps_sentinel_key_absent_from_log(tmp_path, monkeypatch):
 
     action_resp = client.post(
         f"/api/runs/{run_id}/actions",
-        json={"action": "accept_rest"},
+        json={"action": "decline"},
     )
     assert action_resp.status_code == 200
     assert _SENTINEL not in action_resp.text
@@ -999,7 +1020,7 @@ def test_local_route_fallback_works_without_key(client):
     # Analyze without a key → local fallback
     analyze_resp = client.post(
         "/api/routes/analyze",
-        json={"scenario_id": FRIEND_SCENARIO},
+        json={"scenario_id": RECOVERY_SCENARIO},
     )
     assert analyze_resp.status_code == 200
     body = analyze_resp.json()
@@ -1008,10 +1029,10 @@ def test_local_route_fallback_works_without_key(client):
     )
 
     # Full run with local route
-    run_id = _plan_and_run(client, RULE_BASED_PKG, FRIEND_SCENARIO)
+    run_id = _plan_and_run(client, HYBRID_PKG, RECOVERY_SCENARIO)
     _, _ = _tick_to_pause(client, run_id)
-    action_state = _accept_rest(client, run_id)
-    assert action_state["status"] == "completed"
+    action_state = _decline(client, run_id)
+    assert action_state["status"] == "playing"
 
     log = client.get(f"/api/runs/{run_id}/log").json()
     assert log["route_source"] == "local"
@@ -1029,9 +1050,11 @@ def test_run_list_includes_completed_run(client):
 
     Will FAIL if the run list endpoint is broken or returns wrong fields.
     """
-    run_id = _plan_and_run(client, RULE_BASED_PKG, FRIEND_SCENARIO)
-    _, _ = _tick_to_pause(client, run_id)
-    _accept_rest(client, run_id)
+    run_id = _plan_and_run(client, HYBRID_PKG, RECOVERY_SCENARIO)
+    # Genuinely complete the run (decline every proposal) — §11 explicitly
+    # asserts status=="completed" in the run list, so a single decline (which
+    # only resumes to "playing") isn't enough here.
+    _tick_declining_to_completion(client, run_id)
 
     list_resp = client.get("/api/runs")
     assert list_resp.status_code == 200
@@ -1045,8 +1068,8 @@ def test_run_list_includes_completed_run(client):
     for field in ("run_id", "created_at", "package_id", "scenario_id", "status"):
         assert field in entry, f"Run list entry missing required field {field!r}"
 
-    assert entry["package_id"] == RULE_BASED_PKG
-    assert entry["scenario_id"] == FRIEND_SCENARIO
+    assert entry["package_id"] == HYBRID_PKG
+    assert entry["scenario_id"] == RECOVERY_SCENARIO
     assert entry["status"] == "completed"
 
 
@@ -1065,8 +1088,8 @@ def test_restart_from_same_plan(client):
     plan_resp = client.post(
         "/api/run-plans",
         json={
-            "package_id": RULE_BASED_PKG,
-            "scenario_id": FRIEND_SCENARIO,
+            "package_id": HYBRID_PKG,
+            "scenario_id": RECOVERY_SCENARIO,
             "parameters": {},
             "hyperparameters": {},
             "run_mode": "standard",
@@ -1081,7 +1104,7 @@ def test_restart_from_same_plan(client):
     run1_id = run1_resp.json()["run_id"]
 
     _, _ = _tick_to_pause(client, run1_id)
-    _accept_rest(client, run1_id)
+    _decline(client, run1_id)
     assert client.get(f"/api/runs/{run1_id}/log").json()["run_id"] == run1_id
 
     # Second run from the SAME plan (restart)
@@ -1095,5 +1118,5 @@ def test_restart_from_same_plan(client):
     # Second run starts at tick 0
     log2 = client.get(f"/api/runs/{run2_id}/log").json()
     assert log2["run_id"] == run2_id
-    assert log2["snapshot"]["package"]["id"] == RULE_BASED_PKG
-    assert log2["snapshot"]["scenario"]["id"] == FRIEND_SCENARIO
+    assert log2["snapshot"]["package"]["id"] == HYBRID_PKG
+    assert log2["snapshot"]["scenario"]["id"] == RECOVERY_SCENARIO

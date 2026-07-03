@@ -39,7 +39,8 @@ from aica_api.services.run_manager import clear_registry, create_run, tick
 from aica_api.services.run_plan import clear_draft_registry, create_draft
 
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
-_SCENARIO_PATH = _REPO_ROOT / "scenarios" / "uc01_fatigue_friend_drive_v0_1.json"
+# Feature 009: uc01_fatigue_friend_drive_v0_1 is retired.
+_SCENARIO_PATH = _REPO_ROOT / "scenarios" / "uc01_fatigue_recovery_v0_1.json"
 
 _PKG_ID = "err_test_pkg"
 
@@ -227,7 +228,9 @@ def test_context_error_blocking_pauses_run(tmp_path, uc01_scenario, monkeypatch)
     """error_type=context_error + blocking → run paused, tick NOT advanced.
 
     Monkeypatches build_adapter_context (in run_manager's namespace) to return
-    a context that omits raw_state, causing _validate_context to raise context_error.
+    a context that omits "signals" (feature 009: the tiered signals dict —
+    replaces the old flat raw_state), causing _validate_context to raise
+    context_error.
     """
     monkeypatch.setenv("AICA_PACKAGES_DIR", str(tmp_path))
     pkg_dir = tmp_path / _PKG_ID
@@ -243,7 +246,7 @@ def test_context_error_blocking_pauses_run(tmp_path, uc01_scenario, monkeypatch)
 
     def _stripped_context(tick_state):
         ctx = original_build(tick_state)
-        ctx.pop("raw_state", None)  # remove required field → triggers context_error
+        ctx.pop("signals", None)  # remove required field → triggers context_error
         return ctx
 
     monkeypatch.setattr(rm_mod, "build_adapter_context", _stripped_context)

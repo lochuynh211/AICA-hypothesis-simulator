@@ -11,7 +11,9 @@ VALID_PACKAGE = {
     "version": "0.1.0",
     "label": {"ja": "ルールベース安静", "en": "Rule-based Rest"},
     "compatible_scenario_types": ["uc01_fatigue"],
-    "algorithm": {"type": "declarative_rule", "entrypoint": "aica_api.algorithms.declarative_rule"},
+    # Feature 009: declarative_rule/weighted_score are retired — python_module is
+    # the only Literal value AlgorithmDef.type accepts.
+    "algorithm": {"type": "python_module", "entrypoint": "algorithm.py"},
     "parameters": [
         {
             "key": "sensitivity",
@@ -56,7 +58,7 @@ def test_package_manifest_valid():
 
     m = PackageManifest(**VALID_PACKAGE)
     assert m.id == "rest_rule_based_v0_1"
-    assert m.algorithm.type == "declarative_rule"
+    assert m.algorithm.type == "python_module"
     assert len(m.parameters) == 1
     assert m.parameters[0].key == "sensitivity"
     assert m.trigger_categories[0].id == "rest_required"
@@ -627,16 +629,17 @@ def test_run_log_json_roundtrip():
 # ── Extended PackageManifest: weighted_score algorithm + numeric hyperparams ──
 
 
-def test_package_manifest_weighted_score_algorithm_accepted():
-    """algorithm.type = 'weighted_score' is now a valid Literal value."""
+def test_package_manifest_weighted_score_algorithm_rejected():
+    """Feature 009: weighted_score is retired — algorithm.type='weighted_score'
+    is no longer a valid Literal value (python_module is the only survivor)."""
     from aica_api.models.package import PackageManifest
 
     ws_pkg = {
         **VALID_PACKAGE,
         "algorithm": {"type": "weighted_score", "entrypoint": "aica_api.algorithms.weighted_score"},
     }
-    m = PackageManifest(**ws_pkg)
-    assert m.algorithm.type == "weighted_score"
+    with pytest.raises(ValidationError):
+        PackageManifest(**ws_pkg)
 
 
 def test_package_manifest_numeric_hyperparameter_accepted():
@@ -1071,7 +1074,7 @@ def test_algorithm_def_tick_seconds_defaults_none():
     """AlgorithmDef tick_seconds defaults to None when omitted (M3 T002)."""
     from aica_api.models.package import AlgorithmDef
 
-    algo = AlgorithmDef(type="declarative_rule", entrypoint="aica_api.algorithms.declarative_rule")
+    algo = AlgorithmDef(type="python_module", entrypoint="algorithm.py")
     assert algo.tick_seconds is None
 
 
@@ -1079,7 +1082,7 @@ def test_algorithm_def_error_mode_defaults_blocking():
     """AlgorithmDef error_mode defaults to 'blocking' when omitted (M3 T002)."""
     from aica_api.models.package import AlgorithmDef
 
-    algo = AlgorithmDef(type="declarative_rule", entrypoint="aica_api.algorithms.declarative_rule")
+    algo = AlgorithmDef(type="python_module", entrypoint="algorithm.py")
     assert algo.error_mode == "blocking"
 
 
@@ -1099,19 +1102,15 @@ def test_algorithm_def_error_mode_invalid_rejected():
         AlgorithmDef(type="python_module", entrypoint="algorithm.py", error_mode="silent")
 
 
-def test_algorithm_def_existing_types_backward_compat():
-    """Existing declarative_rule and weighted_score manifests still validate without new fields (M3 T002)."""
+def test_algorithm_def_rejects_retired_types():
+    """Feature 009: declarative_rule and weighted_score are retired — AlgorithmDef
+    only accepts type='python_module' now."""
     from aica_api.models.package import AlgorithmDef
 
-    dr = AlgorithmDef(type="declarative_rule", entrypoint="aica_api.algorithms.declarative_rule")
-    ws = AlgorithmDef(type="weighted_score", entrypoint="aica_api.algorithms.weighted_score")
-    assert dr.type == "declarative_rule"
-    assert ws.type == "weighted_score"
-    # Defaults apply when fields are absent
-    assert dr.tick_seconds is None
-    assert dr.error_mode == "blocking"
-    assert ws.tick_seconds is None
-    assert ws.error_mode == "blocking"
+    with pytest.raises(ValidationError):
+        AlgorithmDef(type="declarative_rule", entrypoint="aica_api.algorithms.declarative_rule")
+    with pytest.raises(ValidationError):
+        AlgorithmDef(type="weighted_score", entrypoint="aica_api.algorithms.weighted_score")
 
 
 def test_package_manifest_python_module_algorithm_accepted():

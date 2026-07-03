@@ -1,0 +1,31 @@
+{
+  "_comment": "Test-only fixture (feature 009) for test_feedback_schema.py's effective_schema() extras tests. Repointed from the retired declarative_rule shape to python_module: only the feedback_schema extras are exercised by these tests, so the algorithm/rules/fire_control/proposals fields are minimal placeholders.",
+  "id": "pkg_with_extras",
+  "version": "0.1.0-test",
+  "label": { "ja": "追加フィードバックのテストパッケージ", "en": "Feedback Extras Test Package" },
+  "compatible_scenario_types": ["uc01_fatigue"],
+  "algorithm": { "type": "python_module", "entrypoint": "algorithm.py" },
+  "parameters": [],
+  "features": [],
+  "hyperparameters": [],
+  "trigger_categories": [{ "id": "rest_required", "priority": 1 }],
+  "rules": [],
+  "fire_control": { "threshold_source": "score", "actionability_guard": "none" },
+  "proposals": [],
+  "feedback_schema": [
+    {
+      "key": "comfort",
+      "label": { "ja": "快適さ", "en": "Comfort" },
+      "type": "choice",
+      "options": ["smooth", "ok", "jarring"]
+    },
+    {
+      "key": "seat_quality",
+      "label": { "ja": "座席の質", "en": "Seat Quality" },
+      "type": "scale",
+      "min": 1.0,
+      "max": 5.0
+    }
+  ],
+  "evidence_metrics": []
+}

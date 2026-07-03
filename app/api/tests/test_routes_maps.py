@@ -24,7 +24,7 @@ from aica_api.services.run_plan import clear_draft_registry
 
 _FIXTURE_DIR = pathlib.Path(__file__).parent / "fixtures" / "maps"
 
-VALID_SCENARIO_ID = "uc01_fatigue_friend_drive_v0_1"
+VALID_SCENARIO_ID = "uc01_fatigue_recovery_v0_1"  # feature 009: friend_drive retired
 _SENTINEL_KEY = "SENTINEL_API_KEY_MUST_NOT_LEAK"
 
 
@@ -174,7 +174,7 @@ class TestLocalPath:
             plan_resp = client.post(
                 "/api/run-plans",
                 json={
-                    "package_id": "rest_rule_based_v0_1",
+                    "package_id": "aica_transparent_hybrid_trigger_v1",
                     "scenario_id": VALID_SCENARIO_ID,
                     "parameters": {},
                     "hyperparameters": {},

@@ -1,12 +1,22 @@
 """TDD profile-override tests (T008 / U5) — RED then GREEN.
 
-Tests that setup-time driver/vehicle/speed profile overrides are:
+Feature 009 (signal-tier redesign): driver_profile/vehicle_profile are retired
+from ScenarioDef — replaced by driver_signal_params (still overridable via the
+"driver" profiles key) and anomaly_signal_params (new "anomaly" override key,
+untested here — out of this migration's scope).  The vehicle behaviour model
+has no replacement; a "vehicle" override key is now unconditionally rejected
+(see run_plan._apply_profile_overrides) rather than validated field-by-field,
+so the vehicle-specific nested-validation tests below are regenerated to pin
+that outright-rejection behavior instead.
+
+Tests that setup-time driver/speed profile overrides are:
   - Accepted in CreateRunPlanBody.profiles (typed, optional per sub-object)
   - Deep-merged onto the scenario profile (unset fields keep scenario defaults)
   - Validated against the existing profile models (invalid → no run created)
   - Frozen into the run snapshot / RunLog at run start
   - Consumed by the tick engine (tick values reflect the override, not scenario default)
   - No-override → identical behaviour to pre-override code (back-compat)
+- A "vehicle" override key is always rejected (retired, no replacement profile)
 
 Partial-override semantics: each provided profile dict is deep-merged onto the
 scenario profile dict field-by-field (including nested dicts). Unset fields keep
@@ -32,8 +42,9 @@ from aica_api.services.run_manager import (
 from aica_api.services.run_plan import clear_draft_registry, create_draft, get_draft_entry, regenerate_draft
 
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
-_SCENARIO_PATH = _REPO_ROOT / "scenarios" / "uc01_fatigue_friend_drive_v0_1.json"
-_PACKAGE_PATH = _REPO_ROOT / "packages" / "rest_rule_based_v0_1" / "package.json"
+# Feature 009: uc01_fatigue_friend_drive_v0_1 / rest_rule_based_v0_1 are retired.
+_SCENARIO_PATH = _REPO_ROOT / "scenarios" / "uc01_fatigue_recovery_v0_1.json"
+_PACKAGE_PATH = _REPO_ROOT / "packages" / "aica_transparent_hybrid_trigger_v1" / "package.json"
 
 
 # ---------------------------------------------------------------------------
@@ -99,8 +110,10 @@ def test_speed_override_changes_tick_speed(tmp_path, uc01_package, uc01_scenario
     """A speed override causes the tick engine to use the overridden speed.
 
     Scenario default: normal_road_kph=60.  Override: normal_road_kph=120.
-    After tick 0 (first segment = normal_road), raw_state["speedKph"] should
-    be 120 for the override run and 60 for the baseline.
+    After tick 0 (first segment = normal_road), signals.dynamic.speedKph should
+    be 120 for the override run and 60 for the baseline.  Feature 009: the old
+    flat raw_state dict is replaced by signals={fixed,dynamic,simulated} —
+    speedKph now lives under signals["dynamic"].
     """
     from aica_api.services.run_manager import get_active_run_log
 
@@ -123,8 +136,8 @@ def test_speed_override_changes_tick_speed(tmp_path, uc01_package, uc01_scenario
     override_tick = [e for e in override_log.events if e.kind == "tick"][0]
 
     # Baseline should use scenario default (60 kph); override should use 120 kph
-    assert baseline_tick.raw_state["speedKph"] == 60
-    assert override_tick.raw_state["speedKph"] == 120
+    assert baseline_tick.raw_state["dynamic"]["speedKph"] == 60
+    assert override_tick.raw_state["dynamic"]["speedKph"] == 120
 
     # The overridden RunState snapshot also reflects the override
     assert overridden_state.speed_profile is not None
@@ -170,11 +183,10 @@ def test_speed_override_distance_larger_than_baseline(tmp_path, uc01_package, uc
 def test_driver_override_changes_drowsiness_growth(tmp_path, uc01_package, uc01_scenario):
     """A driver override causes faster drowsiness growth in the tick engine.
 
-    Scenario default: base_growth_per_min=0.9.  Override: 9.0 (10x).
-    Initial drowsiness = 0.0 (initial_state.drowsiness_level="none").
-    After tick 0 (5 min of tick_seconds=300):
-      baseline: 0.0 + 0.9 * 5 = 4.5
-      override: 0.0 + 9.0 * 5 = 45.0
+    Scenario default: base_growth_per_min=0.9.  Override: 9.0 (10x).  Regardless
+    of the scenario's initial drowsiness value or tick cadence, a 10x growth-rate
+    override must produce substantially higher drowsiness after one tick than
+    the baseline — this is a relative comparison, not an exact-value pin.
     """
     # Baseline
     baseline_state = _plan_and_run(uc01_package, uc01_scenario, "run_drown_base", tmp_path)
@@ -194,12 +206,19 @@ def test_driver_override_changes_drowsiness_growth(tmp_path, uc01_package, uc01_
     baseline_tick = [e for e in baseline_log.events if e.kind == "tick"][0]
     override_tick = [e for e in override_log.events if e.kind == "tick"][0]
 
-    baseline_drowsiness = baseline_tick.raw_state["drowsinessLevel"]
-    override_drowsiness = override_tick.raw_state["drowsinessLevel"]
+    baseline_drowsiness = baseline_tick.raw_state["simulated"]["drowsiness"]
+    override_drowsiness = override_tick.raw_state["simulated"]["drowsiness"]
 
-    # Override drowsiness must be substantially higher (10x growth rate)
-    assert override_drowsiness > baseline_drowsiness * 5, (
-        f"Expected override ({override_drowsiness:.2f}) >> baseline ({baseline_drowsiness:.2f})"
+    # Compare growth DELTAS from the shared initial value (the recovery scenario
+    # starts at drowsiness_level=20, not 0 — comparing absolute levels against a
+    # multiple would be swamped by that nonzero starting point).
+    initial_drowsiness = float(uc01_scenario.initial_state["drowsiness_level"])
+    baseline_delta = baseline_drowsiness - initial_drowsiness
+    override_delta = override_drowsiness - initial_drowsiness
+
+    # Override growth delta must be substantially higher (10x growth rate)
+    assert override_delta > baseline_delta * 5, (
+        f"Expected override delta ({override_delta:.2f}) >> baseline delta ({baseline_delta:.2f})"
     )
 
 
@@ -227,7 +246,8 @@ def test_partial_speed_override_preserves_unset_fields(tmp_path, uc01_package, u
 
 def test_partial_driver_override_preserves_unset_sub_fields(tmp_path, uc01_package, uc01_scenario):
     """Partial driver override: only one drowsiness_model field; others from scenario."""
-    scenario_night_add = uc01_scenario.driver_profile.drowsiness_model.night_add_per_min  # 0.3
+    # Feature 009: driver_profile is renamed driver_signal_params.
+    scenario_night_add = uc01_scenario.driver_signal_params.drowsiness_model.night_add_per_min  # 0.3
 
     state = _plan_and_run(
         uc01_package, uc01_scenario, "run_partial_driver", tmp_path,
@@ -286,8 +306,13 @@ def test_invalid_extra_speed_field_rejected(uc01_package, uc01_scenario, tmp_pat
     assert get_draft_entry(plan_id) is None, "Invalid draft must not be registered"
 
 
-def test_invalid_vehicle_negative_field_rejected(uc01_package, uc01_scenario, tmp_path):
-    """Negative value in vehicle override violates nonneg → validation error."""
+def test_vehicle_override_key_always_rejected(uc01_package, uc01_scenario, tmp_path):
+    """Feature 009: the vehicle behaviour model is retired — ANY "vehicle" override
+    key is rejected outright (no nested validation; there is no replacement
+    profile to validate against). Regenerated from actual behavior (FR-018):
+    this used to validate steering_instability.base_level >= 0; now the whole
+    "vehicle" key is unconditionally invalid.
+    """
     plan_id = "plan_invalid_vehicle"
     draft = create_draft(
         plan_id=plan_id,
@@ -300,8 +325,11 @@ def test_invalid_vehicle_negative_field_rejected(uc01_package, uc01_scenario, tm
         profiles={"vehicle": {"steering_instability": {"base_level": -5.0}}},
     )
 
-    assert draft.validation_errors, "Negative vehicle field must produce a validation error"
+    assert draft.validation_errors, "Any vehicle override must produce a validation error"
     assert any("profiles.vehicle" in e.get("field", "") for e in draft.validation_errors)
+    assert any(
+        "no longer supported" in e.get("message", "") for e in draft.validation_errors
+    ), f"Expected a 'no longer supported' message; got {draft.validation_errors}"
     assert get_draft_entry(plan_id) is None, "Invalid draft must not be registered"
 
 
@@ -370,8 +398,8 @@ def test_no_override_same_as_baseline(tmp_path, uc01_package, uc01_scenario):
     tick_a = [e for e in log_a.events if e.kind == "tick"][0]
     tick_b = [e for e in log_b.events if e.kind == "tick"][0]
 
-    assert tick_a.raw_state["drowsinessLevel"] == tick_b.raw_state["drowsinessLevel"]
-    assert tick_a.raw_state["speedKph"] == tick_b.raw_state["speedKph"]
+    assert tick_a.raw_state["simulated"]["drowsiness"] == tick_b.raw_state["simulated"]["drowsiness"]
+    assert tick_a.raw_state["dynamic"]["speedKph"] == tick_b.raw_state["dynamic"]["speedKph"]
     assert tick_a.tick_state.distance_km == tick_b.tick_state.distance_km
 
 
@@ -434,8 +462,8 @@ def test_api_invalid_profile_returns_400(tmp_path, monkeypatch):
     resp = client.post(
         "/api/run-plans",
         json={
-            "package_id": "rest_rule_based_v0_1",
-            "scenario_id": "uc01_fatigue_friend_drive_v0_1",
+            "package_id": "aica_transparent_hybrid_trigger_v1",
+            "scenario_id": "uc01_fatigue_recovery_v0_1",
             "profiles": {
                 "speed": {"nonexistent_field": 999}
             },
@@ -457,8 +485,8 @@ def test_api_valid_profile_returns_201(tmp_path, monkeypatch):
     resp = client.post(
         "/api/run-plans",
         json={
-            "package_id": "rest_rule_based_v0_1",
-            "scenario_id": "uc01_fatigue_friend_drive_v0_1",
+            "package_id": "aica_transparent_hybrid_trigger_v1",
+            "scenario_id": "uc01_fatigue_recovery_v0_1",
             "profiles": {
                 "speed": {"highway_kph": 150},
             },
@@ -498,11 +526,13 @@ def test_invalid_extra_driver_field_rejected(uc01_package, uc01_scenario, tmp_pa
     assert get_draft_entry(plan_id) is None, "Invalid draft must not be registered"
 
 
-def test_invalid_extra_vehicle_field_rejected(uc01_package, uc01_scenario, tmp_path):
-    """Unknown field in a nested vehicle override violates extra='forbid' → validation error.
+def test_vehicle_override_rejected_regardless_of_payload_shape(uc01_package, uc01_scenario, tmp_path):
+    """Feature 009: a "vehicle" override key is rejected regardless of its nested
+    payload shape — even a well-formed-looking (but semantically meaningless,
+    since the vehicle model is retired) payload is rejected outright.
 
-    A typo'd key (baes_level) inside steering_instability must produce a validation
-    error and prevent the draft from being registered.
+    Regenerated from actual behavior (FR-018): this used to pin extra='forbid'
+    validation on a typo'd nested key; now any "vehicle" key at all is invalid.
     """
     plan_id = "plan_invalid_extra_vehicle"
     draft = create_draft(
@@ -513,10 +543,10 @@ def test_invalid_extra_vehicle_field_rejected(uc01_package, uc01_scenario, tmp_p
         parameters={},
         hyperparameters={},
         run_mode="standard",
-        profiles={"vehicle": {"steering_instability": {"baes_level": 5.0}}},
+        profiles={"vehicle": {"steering_instability": {"base_level": 5.0}}},
     )
 
-    assert draft.validation_errors, "Unknown vehicle field must produce a validation error"
+    assert draft.validation_errors, "Any vehicle override must produce a validation error"
     assert any("profiles.vehicle" in e.get("field", "") for e in draft.validation_errors), (
         f"Expected 'profiles.vehicle' in error fields, got: {draft.validation_errors}"
     )
@@ -570,8 +600,8 @@ def test_overrides_survive_regenerate_draft(tmp_path, uc01_package, uc01_scenari
     log = get_active_run_log(run_state.run_id)
     assert log is not None
     tick_event = [e for e in log.events if e.kind == "tick"][0]
-    assert tick_event.raw_state["speedKph"] == 120, (
-        f"Expected 120 kph after regenerate, got {tick_event.raw_state['speedKph']}"
+    assert tick_event.raw_state["dynamic"]["speedKph"] == 120, (
+        f"Expected 120 kph after regenerate, got {tick_event.raw_state['dynamic']['speedKph']}"
     )
 
     # 5. The profile_overrides should be carried through to the RunLog

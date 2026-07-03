@@ -44,10 +44,13 @@ def test_uc01_rest_recovery_full_run(monkeypatch, tmp_path):
     client = TestClient(app)
 
     # ── Step 1: Create a run plan ────────────────────────────────────────────
+    # Feature 009: rest_rule_based_v0_1 (declarative_rule) is retired —
+    # nri_fatigue_score_v1 (python_module) fires quickly (~tick 45) on this
+    # scenario, well within the tick budgets below.
     plan_resp = client.post(
         "/api/run-plans",
         json={
-            "package_id": "rest_rule_based_v0_1",
+            "package_id": "nri_fatigue_score_v1",
             "scenario_id": "uc01_fatigue_recovery_v0_1",
         },
     )
@@ -64,10 +67,11 @@ def test_uc01_rest_recovery_full_run(monkeypatch, tmp_path):
     run_id = run_resp.json()["run_id"]
 
     # ── Step 3: Tick until paused on REST_PROPOSAL ────────────────────────────
-    # The friend_drive profile + declarative_rule fires at ~tick 29 with the
-    # uc01_fatigue_recovery_v0_1 scenario (same initial_state + driver_profile).
+    # nri_fatigue_score_v1's cumulative fatigue score fires at ~tick 45 on this
+    # scenario's default driver_signal_params (regenerated from actual behavior,
+    # FR-018 — was ~tick 29 under the retired declarative_rule package).
     paused = False
-    for _ in range(80):  # generous budget; proposal fires at ~tick 29
+    for _ in range(80):  # generous budget; proposal fires at ~tick 45
         tick_resp = client.post(f"/api/runs/{run_id}/tick")
         assert tick_resp.status_code == 200, tick_resp.text
         body = tick_resp.json()
