@@ -6,6 +6,14 @@
 **Source context:** Japanese PowerPoint `AICA_proposed_system_en.md`, translated planning notes, four AICA use cases, prototype skeletons under `others/`, and `docs/master/aica_hypothesis_simulator_runtime_workflow.md`.
 **Naming rule:** Product screens, APIs, documents, and implementation labels shall use **AICA** only.
 
+> **Design update — 2026-07-03 (feature `009-signal-tier-redesign`).** Signals are re-organized into three
+> tiers (Fixed / Dynamic / **Simulated**). `drowsiness`/`fatigue` are simulated *derived* signals (not
+> pretend sensors); a single **seeded-Poisson `anomaly_rate`** is the only stochastic signal (replayable via
+> a frozen `run_seed`); `attention` and the deterministic vehicle sensors are removed. Algorithms derive
+> their own features from the shared signals; the setup screen gains an **ephemeral instant-result** preview
+> (headless, never persisted — only "Open full run" persists). See `specs/009-signal-tier-redesign/` and the
+> design docs in `others/`. Affected sections are revised as the feature lands (task T046).
+
 ---
 
 ## 1. Executive Summary

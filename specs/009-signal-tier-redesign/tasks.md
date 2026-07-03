@@ -8,6 +8,8 @@ This is a **deliberately behavior-changing** re-design; backend baselines are re
 
 **Legend**: `[P]` = parallelizable (different files, no incomplete deps). `[USn]` = serves user story n.
 
+**Canonical terminology** (avoid drift): new backend code uses **tiered signals** (`signals.{fixed,dynamic,simulated}`), not the old flat `raw_state`. Migrate references as touched; do not reintroduce `raw_state` as the context shape.
+
 ---
 
 ## Phase 1: Setup
@@ -114,10 +116,10 @@ The backend signal-tier core. No user story can be demonstrated until this phase
 **Goal**: Reproducible runs, seeded anomaly, and an accurate changed-from-default overrides view.
 **Independent test**: same setup+seed twice → identical result; overrides view shows only changed knobs.
 
-- [ ] T040 [P] [US3] Integration test: identical `RunConfig`+`run_seed` → identical `InstantResult` and identical persisted trace (byte-level), in `app/api/tests/test_determinism.py`
+- [ ] T040 [P] [US3] Integration test: identical `RunConfig`+`run_seed` → identical `InstantResult` and identical persisted trace (byte-level); AND assert the anomaly generator is the **only** randomness source — no non-seeded RNG affects results (FR-006) — in `app/api/tests/test_determinism.py`
 - [ ] T041 [P] [US3] Test the overrides diff (only changed-from-default keys, correct default/value pairs) — backend resolution + frontend display
 - [ ] T042 [US3] Implement overrides-diff surfacing: backend exposes resolved defaults; frontend computes + renders the overrides chip and "reset to default"
-- [ ] T043 [US3] Implement seed control + 🎲 re-roll in the setup screen; assert re-roll changes the anomaly pattern deterministically under the new seed
+- [ ] T043 [US3] Implement seed control + 🎲 re-roll in the setup screen; assert re-roll changes the anomaly pattern deterministically under the new seed; assert the preview reflects the **unstarted** setup only and never starts/mutates a persisted run (setup-time-only, FR-016)
 
 **Checkpoint**: US3 independently verifiable — reproducibility and overrides transparency hold.
 
@@ -138,7 +140,7 @@ The backend signal-tier core. No user story can be demonstrated until this phase
 - [ ] T046 [P] Update master docs `docs/master/*` (architecture/spec/runtime-workflow) to describe the 3-tier signal model, simulated signals, and the seeded anomaly generator; note attention/sensors/look-ahead deferrals
 - [ ] T047 [P] Update Spec Kit memory/constitution notes if any principle wording needs alignment (e.g. simulated-signal vocabulary); otherwise record no-change
 - [ ] T048 Run full `pytest app/api/tests -q` and `npm test` in `app/frontend`; fix regressions; verify SC-001..SC-008
-- [ ] T049 [P] Execute `specs/009-signal-tier-redesign/quickstart.md` end-to-end (preview determinism, no-persistence, both algorithms)
+- [ ] T049 [P] Execute `specs/009-signal-tier-redesign/quickstart.md` end-to-end (preview determinism, no-persistence, both algorithms); assert instant-result recompute latency budget < 1 s (SC-001)
 - [ ] T050 `docker compose up` smoke: setup screen → instant preview → Open full run → animated review works
 
 ---

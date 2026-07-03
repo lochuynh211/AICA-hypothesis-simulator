@@ -5,6 +5,16 @@
 **Purpose:** Define the implementation architecture for AICA Hypothesis Simulator as a simple local, single-user, containerized simulator.  
 **Primary runtime goal:** Open browser, test hypotheses, inspect traces, and receive automatically persisted run logs.
 
+> **Design update — 2026-07-03 (feature `009-signal-tier-redesign`).** The raw-state / feature model is
+> being re-designed. Raw signals are organized into **three tiers** — Fixed, Dynamic, and **Simulated
+> signals** (`drowsiness`/`fatigue` as deterministic derived values, plus a single **seeded-Poisson
+> `anomaly_rate`**; the deterministic vehicle sensors and `attention` are removed). Each algorithm derives
+> its own features from the shared signal set; the Hybrid is compacted to 8 features (NRI unchanged, its
+> realtime term now live). The setup screen becomes two editor panels + a full-width **ephemeral
+> instant-result** preview (never persisted). Authoritative detail: `others/aica_trigger_algorithms_math_comparison.md`
+> (Part 2) and `others/aica_setup_screen_uiux.md`; feature spec `specs/009-signal-tier-redesign/`. Sections
+> below are updated as the feature lands (task T046).
+
 ---
 
 ## 1. Architecture Goal
