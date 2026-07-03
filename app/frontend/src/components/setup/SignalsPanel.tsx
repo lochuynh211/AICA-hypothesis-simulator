@@ -4,7 +4,7 @@ import { getScenario } from '../../api/client'
 import type { ScenarioDef } from '../../api/types'
 import { t } from '../../i18n/t'
 import ScenarioSelector from './ScenarioSelector'
-import SignalInfoPopover, { type SignalInfoKey } from './SignalInfoPopover'
+import SignalFormulationEditor from './SignalFormulationEditor'
 
 /**
  * SignalsPanel (feature 009, FE2) — left editor panel of the new setup screen
@@ -30,11 +30,14 @@ import SignalInfoPopover, { type SignalInfoKey } from './SignalInfoPopover'
  *   - Dynamic: always read-only/muted — these are runtime-computed per tick;
  *     at setup time there is no run yet, so rows show a descriptive
  *     placeholder rather than a live value.
- *   - Simulated (tier 3): always read-only/muted; each carries an ⓘ
- *     (SignalInfoPopover) explaining how it's formulated. drowsiness/fatigue
- *     are deterministic curves off driver_signal_params; anomaly_rate is the
- *     seeded-Poisson generator off anomaly_signal_params (see
- *     SignalInfoPopover's explanation map).
+ *   - Simulated (tier 3): the "value" cell stays read-only/muted, but each
+ *     carries an ⓘ (SignalFormulationEditor, UX-FE2) that expands into the
+ *     signal's formula with its generator sub-params as editable inline
+ *     fields. drowsiness/fatigue edit `driver_signal_params.{drowsiness_model,
+ *     fatigue_model}`; anomaly_rate edits `anomaly_signal_params`. Edits are
+ *     dispatched as `SET_PROFILE_OVERRIDES` (changed-from-scenario-default
+ *     only, sparse `{driver?, anomaly?}`), which re-runs the instant preview
+ *     the same way contextOverrides does (see SignalFormulationEditor.tsx).
  *
  * Cross-link highlight: hovering any signal row dispatches
  * SET_HIGHLIGHTED_SIGNAL so AlgorithmFormulationPanel (FE3) can mirror the
@@ -200,7 +203,13 @@ export default function SignalsPanel() {
               label={t({ en: 'Drowsiness', ja: '眠気' }, uiLanguage)}
               value="~curve"
               muted
-              info="drowsiness"
+              formulaEditor={
+                <SignalFormulationEditor
+                  signalKey="drowsiness"
+                  label={t({ en: 'Drowsiness', ja: '眠気' }, uiLanguage)}
+                  scenario={scenario}
+                />
+              }
               highlighted={highlightedSignalKey === 'drowsiness'}
               onHover={() => highlight('drowsiness')}
               onLeave={unhighlight}
@@ -210,7 +219,13 @@ export default function SignalsPanel() {
               label={t({ en: 'Fatigue', ja: '疲労' }, uiLanguage)}
               value="~curve"
               muted
-              info="fatigue"
+              formulaEditor={
+                <SignalFormulationEditor
+                  signalKey="fatigue"
+                  label={t({ en: 'Fatigue', ja: '疲労' }, uiLanguage)}
+                  scenario={scenario}
+                />
+              }
               highlighted={highlightedSignalKey === 'fatigue'}
               onHover={() => highlight('fatigue')}
               onLeave={unhighlight}
@@ -220,7 +235,13 @@ export default function SignalsPanel() {
               label={t({ en: 'Anomaly Rate', ja: '異常発生率' }, uiLanguage)}
               value={`seeded Poisson (seed ${runSeed})`}
               muted
-              info="anomaly_rate"
+              formulaEditor={
+                <SignalFormulationEditor
+                  signalKey="anomaly_rate"
+                  label={t({ en: 'Anomaly Rate', ja: '異常発生率' }, uiLanguage)}
+                  scenario={scenario}
+                />
+              }
               highlighted={highlightedSignalKey === 'anomaly_rate'}
               onHover={() => highlight('anomaly_rate')}
               onLeave={unhighlight}
@@ -260,7 +281,7 @@ function SignalRow({
   value,
   muted = false,
   editControl,
-  info,
+  formulaEditor,
   highlighted = false,
   onHover,
   onLeave,
@@ -272,8 +293,8 @@ function SignalRow({
   muted?: boolean
   /** Present only for editable Fixed signals (familiarRoute/childPassenger). */
   editControl?: ReactNode
-  /** Present only for Simulated (tier-3) signals — renders the ⓘ explainer. */
-  info?: SignalInfoKey
+  /** Present only for Simulated (tier-3) signals — renders the ⓘ formulation editor. */
+  formulaEditor?: ReactNode
   highlighted?: boolean
   onHover?: () => void
   onLeave?: () => void
@@ -301,7 +322,7 @@ function SignalRow({
           {value}
         </span>
         {editControl}
-        {info && <SignalInfoPopover signalKey={info} label={label} />}
+        {formulaEditor}
       </span>
     </div>
   )

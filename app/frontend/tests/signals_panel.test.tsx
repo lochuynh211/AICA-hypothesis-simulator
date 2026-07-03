@@ -100,11 +100,21 @@ const scenarioFixture: ScenarioDef = {
 
 function StateProbe() {
   const { state } = useRunStore()
-  return <div data-testid="state-probe" data-context={JSON.stringify(state.contextOverrides)} />
+  return (
+    <div
+      data-testid="state-probe"
+      data-context={JSON.stringify(state.contextOverrides)}
+      data-profiles={JSON.stringify(state.profileOverrides)}
+    />
+  )
 }
 
 function contextOverrides(): Record<string, unknown> {
   return JSON.parse(screen.getByTestId('state-probe').getAttribute('data-context') ?? '{}')
+}
+
+function profileOverrides(): Record<string, unknown> | null {
+  return JSON.parse(screen.getByTestId('state-probe').getAttribute('data-profiles') ?? 'null')
 }
 
 function renderInStore(
@@ -263,5 +273,43 @@ describe('SignalsPanel — feature 009 FE2', () => {
     })
     expect(screen.getByTestId('signal-info-btn-fatigue')).toBeInTheDocument()
     expect(screen.getByTestId('signal-info-btn-anomaly_rate')).toBeInTheDocument()
+  })
+
+  it('(g) UX-FE2: opening a Simulated signal shows its formulation editor, and editing a param dispatches SET_PROFILE_OVERRIDES', async () => {
+    vi.mocked(client.getScenario).mockResolvedValue(scenarioFixture)
+
+    renderInStore(<SignalsPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: scenarioFixture.id })
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('signal-info-btn-drowsiness')).toBeInTheDocument()
+    })
+
+    // Opening drowsiness's ⓘ shows the formula text and a pre-filled field.
+    fireEvent.click(screen.getByTestId('signal-info-btn-drowsiness'))
+    expect(screen.getByTestId('signal-formula-text-drowsiness')).toHaveTextContent(/Δt\/60/)
+    const drowsinessInput = screen.getByTestId(
+      'signal-formula-field-drowsiness-base_growth_per_min',
+    ) as HTMLInputElement
+    expect(drowsinessInput.value).toBe('0.9')
+
+    fireEvent.change(drowsinessInput, { target: { value: '1.4' } })
+    await waitFor(() =>
+      expect(profileOverrides()).toEqual({ driver: { drowsiness_model: { base_growth_per_min: 1.4 } } }),
+    )
+
+    // Revert to the scenario default removes the override entirely.
+    fireEvent.change(screen.getByTestId('signal-formula-field-drowsiness-base_growth_per_min'), {
+      target: { value: '0.9' },
+    })
+    await waitFor(() => expect(profileOverrides()).toBeNull())
+
+    // anomaly_rate: editing lambda_base sets anomaly.lambda_base.
+    fireEvent.click(screen.getByTestId('signal-info-btn-anomaly_rate'))
+    const lambdaInput = screen.getByTestId('signal-formula-field-anomaly_rate-lambda_base') as HTMLInputElement
+    expect(lambdaInput.value).toBe('0.02')
+    fireEvent.change(lambdaInput, { target: { value: '0.08' } })
+    await waitFor(() => expect(profileOverrides()).toEqual({ anomaly: { lambda_base: 0.08 } }))
   })
 })
