@@ -597,3 +597,131 @@ def test_initial_state_http_valid_returns_201(tmp_path, monkeypatch):
         },
     )
     assert resp.status_code == 201
+
+
+# ---------------------------------------------------------------------------
+# UX-BE: weather_risk context override — service layer + HTTP validation
+# ---------------------------------------------------------------------------
+
+
+def test_context_override_weather_risk_e2e(uc01_package, uc01_scenario):
+    """create_draft with context_overrides={"weather_risk": ...} freezes it into
+    the effective scenario, and advance_tick's fixed-tier weatherRiskLevel
+    reflects it (not the scenario default)."""
+    from aica_api.services.tick_engine import advance_tick
+
+    assert uc01_scenario.weather_risk == 0.0  # scenario default, sanity check
+
+    draft = create_draft(
+        plan_id="plan_weather_risk_e2e",
+        package=uc01_package,
+        scenario=uc01_scenario,
+        presets={},
+        parameters={},
+        hyperparameters={},
+        run_mode="standard",
+        context_overrides={"weather_risk": 42.0},
+    )
+    assert not draft.validation_errors
+
+    entry = get_draft_entry("plan_weather_risk_e2e")
+    assert entry is not None
+    _, _, effective_scenario = entry
+    assert effective_scenario.weather_risk == 42.0
+
+    ts = advance_tick(
+        prior_state=None,
+        tick_index=0,
+        event_plan=draft.draft_event_plan,
+        route_facts=draft.route_facts,
+        scenario=effective_scenario,
+    )
+    assert ts.signals["fixed"]["weatherRiskLevel"] == 42.0
+
+
+def test_context_overrides_http_unknown_key_returns_400(tmp_path, monkeypatch):
+    """POST /api/run-plans with an unknown context_overrides key → 400."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+
+    from fastapi.testclient import TestClient
+    from aica_api.main import app
+    client = TestClient(app)
+
+    resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": "aica_transparent_hybrid_trigger_v1",
+            "scenario_id": "uc01_fatigue_recovery_v0_1",
+            "context_overrides": {"bad_key": True},
+        },
+    )
+    assert resp.status_code == 400
+    body = resp.json()
+    detail = body.get("detail", body)
+    errors = detail["validation_errors"]
+    assert any("bad_key" in e.get("field", "") for e in errors)
+
+
+def test_context_overrides_http_weather_risk_out_of_range_returns_400(tmp_path, monkeypatch):
+    """POST /api/run-plans with weather_risk > 100 → 400."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+
+    from fastapi.testclient import TestClient
+    from aica_api.main import app
+    client = TestClient(app)
+
+    resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": "aica_transparent_hybrid_trigger_v1",
+            "scenario_id": "uc01_fatigue_recovery_v0_1",
+            "context_overrides": {"weather_risk": 150},
+        },
+    )
+    assert resp.status_code == 400
+    body = resp.json()
+    detail = body.get("detail", body)
+    errors = detail["validation_errors"]
+    assert any("weather_risk" in e.get("field", "") for e in errors)
+
+
+def test_context_overrides_http_weather_risk_wrong_type_returns_400(tmp_path, monkeypatch):
+    """POST /api/run-plans with a non-numeric weather_risk → 400."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+
+    from fastapi.testclient import TestClient
+    from aica_api.main import app
+    client = TestClient(app)
+
+    resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": "aica_transparent_hybrid_trigger_v1",
+            "scenario_id": "uc01_fatigue_recovery_v0_1",
+            "context_overrides": {"weather_risk": "high"},
+        },
+    )
+    assert resp.status_code == 400
+    body = resp.json()
+    detail = body.get("detail", body)
+    errors = detail["validation_errors"]
+    assert any("weather_risk" in e.get("field", "") for e in errors)
+
+
+def test_context_overrides_http_valid_weather_risk_returns_201(tmp_path, monkeypatch):
+    """POST /api/run-plans with a valid weather_risk override → 201."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+
+    from fastapi.testclient import TestClient
+    from aica_api.main import app
+    client = TestClient(app)
+
+    resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": "aica_transparent_hybrid_trigger_v1",
+            "scenario_id": "uc01_fatigue_recovery_v0_1",
+            "context_overrides": {"weather_risk": 65.0, "child_passenger": False},
+        },
+    )
+    assert resp.status_code == 201

@@ -334,7 +334,7 @@ def advance_tick(
             "isNight": is_night,
             "familiarRoute": scenario.familiar_route,
             "childPassenger": scenario.child_passenger,
-            "weatherRiskLevel": 0.0,
+            "weatherRiskLevel": scenario.weather_risk,
         },
         "dynamic": {
             "segmentType": segment_type,

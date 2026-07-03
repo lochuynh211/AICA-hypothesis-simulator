@@ -121,6 +121,7 @@
   "is_night": false,
   "child_passenger": true,
   "familiar_route": true,
+  "weather_risk": 0,
   "presets": {
     "total_route_distance_km": 120,
     "traffic_events": [],

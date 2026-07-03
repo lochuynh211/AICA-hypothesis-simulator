@@ -20,9 +20,15 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from aica_api.config import settings
+from aica_api.models.profile import ProfileOverrides
 from aica_api.models.run import DisplayRoute, RouteFacts
 from aica_api.services.package_registry import PackageRegistry
-from aica_api.services.run_plan import create_draft, get_draft_entry, regenerate_draft
+from aica_api.services.run_plan import (
+    create_draft,
+    get_draft_entry,
+    regenerate_draft,
+    validate_context_overrides,
+)
 from aica_api.services.scenario_registry import ScenarioRegistry
 
 router = APIRouter()
@@ -39,32 +45,6 @@ def _make_plan_id() -> str:
 
 
 # ── Request body models ───────────────────────────────────────────────────────
-
-
-class ProfileOverrides(BaseModel):
-    """T008: Setup-time profile overrides (all sub-objects optional).
-
-    Each provided sub-object is deep-merged onto the scenario's corresponding
-    profile (field-by-field, recursively for nested dicts).  Unset fields keep
-    the scenario value.  The merged result is validated against the typed profile
-    model — invalid fields or unknown keys cause a 400 with no run created.
-
-    Feature 009 (signal-tier redesign): the vehicle behaviour model is retired.
-    ``vehicle`` is still accepted here (as a plain dict) purely so
-    ``run_plan._apply_profile_overrides`` can reject it with a clear 400
-    validation error instead of a generic "unknown field" 422. ``anomaly`` is
-    new — overrides the Tier-3b seeded anomaly-rate generator's parameters.
-
-    Body shape for U6 ProfileEditor:
-      { "profiles": { "driver": { ... }, "anomaly": { ... }, "speed": { ... } } }
-    All sub-objects are optional; supply only the sub-objects you want to
-    override.  Within each sub-object, supply only the fields you want to change.
-    """
-
-    driver: dict | None = None   # partial DriverSignalParams dict (deep-merged)
-    anomaly: dict | None = None  # partial AnomalySignalParams dict (deep-merged)
-    speed: dict | None = None    # partial SpeedProfile dict (deep-merged)
-    vehicle: dict | None = None  # retired — rejected by _apply_profile_overrides
 
 
 class CreateRunPlanBody(BaseModel):
@@ -87,8 +67,9 @@ class CreateRunPlanBody(BaseModel):
     # Keys: "drowsiness_level" and/or "fatigue_level" as floats in [0, 100].
     initial_state: dict | None = None
 
-    # Boolean scenario context overrides. When provided, override the scenario's
-    # top-level flags. Supported keys: "child_passenger", "familiar_route".
+    # Scenario context overrides. When provided, override the scenario's
+    # top-level Fixed-tier context. Supported keys: "child_passenger" (bool),
+    # "familiar_route" (bool), "weather_risk" (float, 0-100; UX-BE).
     context_overrides: dict | None = None
 
     # Fix (whole-branch review, feature 009): explicit run_seed from the setup
@@ -225,21 +206,11 @@ def create_run_plan_endpoint(body: CreateRunPlanBody):
                 },
             )
 
-    # Validate context_overrides keys and types.
+    # Validate context_overrides keys and types (shared with /api/runs/preview
+    # — see services/run_plan.validate_context_overrides — so both paths reject
+    # the identical set of bad inputs).
     if body.context_overrides is not None:
-        _VALID_CONTEXT_KEYS = {"child_passenger", "familiar_route"}
-        ctx_errors: list[dict[str, str]] = []
-        for key, value in body.context_overrides.items():
-            if key not in _VALID_CONTEXT_KEYS:
-                ctx_errors.append({
-                    "field": f"context_overrides.{key}",
-                    "message": f"Unknown context key {key!r}. Valid keys: {sorted(_VALID_CONTEXT_KEYS)}",
-                })
-            elif not isinstance(value, bool):
-                ctx_errors.append({
-                    "field": f"context_overrides.{key}",
-                    "message": f"context_overrides.{key} must be a boolean; got {value!r}",
-                })
+        ctx_errors = validate_context_overrides(body.context_overrides)
         if ctx_errors:
             raise HTTPException(
                 status_code=400,

@@ -209,6 +209,56 @@ def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any
     return result
 
 
+# ---------------------------------------------------------------------------
+# Context overrides (Fixed-tier scenario context: child_passenger,
+# familiar_route, weather_risk) — shared by routers/run_plans.py (a real
+# POST /api/run-plans) and services/preview.py (the ephemeral POST
+# /api/runs/preview), so both paths validate + apply identical inputs and a
+# preview is faithful to what "Open full run" would persist (UX-BE).
+# ---------------------------------------------------------------------------
+
+_VALID_CONTEXT_OVERRIDE_KEYS = {"child_passenger", "familiar_route", "weather_risk"}
+
+
+def validate_context_overrides(context_overrides: dict[str, Any]) -> list[dict[str, str]]:
+    """Validate context_overrides keys/types.
+
+    ``child_passenger`` / ``familiar_route`` must be booleans; ``weather_risk``
+    (UX-BE) must be a number in [0, 100] — mirrors ScenarioDef.weather_risk's
+    own range validator so a bad override is caught here with a field-scoped
+    message rather than surfacing as a generic 500 from model_copy/validation
+    deeper in create_draft.
+
+    Returns a list of {"field", "message"} dicts (empty when valid) — the same
+    shape as RunPlanDraft.validation_errors, so callers can merge or 400 on it
+    directly.
+    """
+    errors: list[dict[str, str]] = []
+    for key, value in context_overrides.items():
+        if key not in _VALID_CONTEXT_OVERRIDE_KEYS:
+            errors.append({
+                "field": f"context_overrides.{key}",
+                "message": f"Unknown context key {key!r}. Valid keys: {sorted(_VALID_CONTEXT_OVERRIDE_KEYS)}",
+            })
+        elif key == "weather_risk":
+            if not isinstance(value, (int, float)) or isinstance(value, bool):
+                errors.append({
+                    "field": f"context_overrides.{key}",
+                    "message": f"context_overrides.{key} must be a number in [0, 100]; got {value!r}",
+                })
+            elif not (0 <= float(value) <= 100):
+                errors.append({
+                    "field": f"context_overrides.{key}",
+                    "message": f"context_overrides.{key} must be in [0, 100]; got {value!r}",
+                })
+        elif not isinstance(value, bool):
+            errors.append({
+                "field": f"context_overrides.{key}",
+                "message": f"context_overrides.{key} must be a boolean; got {value!r}",
+            })
+    return errors
+
+
 def _apply_profile_overrides(
     scenario: ScenarioDef,
     profiles: dict[str, Any],

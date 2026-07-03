@@ -353,3 +353,208 @@ def test_preview_rejects_old_shape_scenario(monkeypatch, tmp_path):
 
     assert resp.status_code == 400, resp.text
     assert "not found or invalid" in resp.json()["detail"]
+
+
+# ---------------------------------------------------------------------------
+# UX-BE — preview reflects driver_signal_params / anomaly_signal_params /
+# weather_risk overrides (previously ignored: preview only applied
+# hyperparameter_overrides + run_seed). Faithfulness: a preview with the same
+# profiles/context_overrides as a persisted POST /run-plans + POST /runs must
+# match it (same computed result), not just "look plausible".
+# ---------------------------------------------------------------------------
+
+
+def _run_to_first_pause_or_completion(client: TestClient, run_id: str) -> dict:
+    for _ in range(400):
+        tick_resp = client.post(f"/api/runs/{run_id}/tick")
+        assert tick_resp.status_code == 200, tick_resp.text
+        tbody = tick_resp.json()
+        if tbody.get("paused") or tbody.get("completed"):
+            return tbody
+    raise AssertionError("run did not pause or complete within 400 ticks")
+
+
+def test_preview_driver_signal_params_override_faithful_and_differs(monkeypatch, tmp_path):
+    """A driver_signal_params override (profiles.driver, higher drowsiness
+    base_growth) must (a) change the preview's fire tick vs. the default, and
+    (b) match a persisted run created with the SAME profiles.driver override."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+    client = TestClient(app)
+    package_id = _HYBRID_PKG_ID
+    driver_override = {"drowsiness_model": {"base_growth_per_min": 5.0}}
+
+    # ── Persisted run WITH the override ────────────────────────────────────
+    plan_resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": package_id,
+            "scenario_id": _SCENARIO_ID,
+            "profiles": {"driver": driver_override},
+        },
+    )
+    assert plan_resp.status_code == 201, plan_resp.text
+    plan_id = plan_resp.json()["plan_id"]
+    run_resp = client.post("/api/runs", json={"plan_id": plan_id})
+    assert run_resp.status_code == 201, run_resp.text
+    run_id = run_resp.json()["run_id"]
+
+    overridden = _run_to_first_pause_or_completion(client, run_id)
+    assert overridden.get("paused"), "expected the overridden run to pause on a fired proposal"
+    overridden_fire_tick = overridden["tick_index"]
+
+    # ── Default preview (no override) — the discriminating baseline ────────
+    clear_registry()
+    clear_draft_registry()
+    default_resp = client.post("/api/runs/preview", json=_preview_body(package_id=package_id))
+    assert default_resp.status_code == 200, default_resp.text
+    default_fire_tick = default_resp.json()["fire"]["tick"]
+
+    # ── Preview WITH the SAME override ──────────────────────────────────────
+    clear_registry()
+    clear_draft_registry()
+    body = _preview_body(package_id=package_id)
+    body["profiles"] = {"driver": driver_override}
+    preview_resp = client.post("/api/runs/preview", json=body)
+    assert preview_resp.status_code == 200, preview_resp.text
+    preview_body = preview_resp.json()
+
+    assert preview_body["fired"] is True
+    assert preview_body["fire"]["tick"] == overridden_fire_tick, (
+        "preview with profiles.driver override must match the persisted run "
+        "created with the same override"
+    )
+    assert preview_body["fire"]["tick"] != default_fire_tick, (
+        "preview with profiles.driver override must differ from the default "
+        "(unoverridden) preview — otherwise the override was silently ignored"
+    )
+
+
+def test_preview_anomaly_signal_params_override_faithful_and_differs(monkeypatch, tmp_path):
+    """An anomaly_signal_params override (profiles.anomaly, much higher lambda_base)
+    must (a) change the preview's fire tick vs. the default, and (b) match a
+    persisted run created with the SAME profiles.anomaly override."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+    client = TestClient(app)
+    package_id = _HYBRID_PKG_ID
+    anomaly_override = {"lambda_base": 50.0}
+
+    plan_resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": package_id,
+            "scenario_id": _SCENARIO_ID,
+            "profiles": {"anomaly": anomaly_override},
+        },
+    )
+    assert plan_resp.status_code == 201, plan_resp.text
+    plan_id = plan_resp.json()["plan_id"]
+    run_resp = client.post("/api/runs", json={"plan_id": plan_id})
+    assert run_resp.status_code == 201, run_resp.text
+    run_id = run_resp.json()["run_id"]
+
+    overridden = _run_to_first_pause_or_completion(client, run_id)
+    assert overridden.get("paused"), "expected the overridden run to pause on a fired proposal"
+    overridden_fire_tick = overridden["tick_index"]
+
+    clear_registry()
+    clear_draft_registry()
+    default_resp = client.post("/api/runs/preview", json=_preview_body(package_id=package_id))
+    assert default_resp.status_code == 200, default_resp.text
+    default_fire_tick = default_resp.json()["fire"]["tick"]
+
+    clear_registry()
+    clear_draft_registry()
+    body = _preview_body(package_id=package_id)
+    body["profiles"] = {"anomaly": anomaly_override}
+    preview_resp = client.post("/api/runs/preview", json=body)
+    assert preview_resp.status_code == 200, preview_resp.text
+    preview_body = preview_resp.json()
+
+    assert preview_body["fired"] is True
+    assert preview_body["fire"]["tick"] == overridden_fire_tick, (
+        "preview with profiles.anomaly override must match the persisted run "
+        "created with the same override"
+    )
+    assert preview_body["fire"]["tick"] != default_fire_tick, (
+        "preview with profiles.anomaly override must differ from the default "
+        "(unoverridden) preview — otherwise the override was silently ignored"
+    )
+
+
+def test_preview_weather_risk_context_override_faithful_and_differs(monkeypatch, tmp_path):
+    """A weather_risk context override must (a) measurably change the preview's
+    computed score vs. the default (the fixed-tier signal feeds the algorithm
+    from tick 0, unlike accumulator-based env signals), and (b) match a
+    persisted run created with the SAME context_overrides."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+    client = TestClient(app)
+    package_id = _HYBRID_PKG_ID
+    context_overrides = {"weather_risk": 100.0}
+
+    plan_resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": package_id,
+            "scenario_id": _SCENARIO_ID,
+            "context_overrides": context_overrides,
+        },
+    )
+    assert plan_resp.status_code == 201, plan_resp.text
+    plan_id = plan_resp.json()["plan_id"]
+    run_resp = client.post("/api/runs", json={"plan_id": plan_id})
+    assert run_resp.status_code == 201, run_resp.text
+    run_id = run_resp.json()["run_id"]
+
+    overridden = _run_to_first_pause_or_completion(client, run_id)
+    assert overridden.get("paused"), "expected the overridden run to pause on a fired proposal"
+    overridden_fire_tick = overridden["tick_index"]
+
+    clear_registry()
+    clear_draft_registry()
+    default_resp = client.post("/api/runs/preview", json=_preview_body(package_id=package_id))
+    assert default_resp.status_code == 200, default_resp.text
+    default_body = default_resp.json()
+
+    clear_registry()
+    clear_draft_registry()
+    body = _preview_body(package_id=package_id)
+    body["context_overrides"] = context_overrides
+    preview_resp = client.post("/api/runs/preview", json=body)
+    assert preview_resp.status_code == 200, preview_resp.text
+    preview_body = preview_resp.json()
+
+    assert preview_body["fired"] is True
+    assert preview_body["fire"]["tick"] == overridden_fire_tick, (
+        "preview with context_overrides.weather_risk must match the persisted "
+        "run created with the same override"
+    )
+    # The weather_risk override feeds the algorithm's env_load term from tick 0
+    # (no accumulator ramp-up needed) — the very first score sample must differ
+    # from the unoverridden default, proving the override actually reached the
+    # adapter context rather than being silently dropped.
+    assert preview_body["score_series"][0]["score"] != default_body["score_series"][0]["score"]
+
+
+def test_preview_invalid_context_override_returns_400(monkeypatch, tmp_path):
+    """An out-of-range weather_risk in /runs/preview's context_overrides -> 400,
+    mirroring POST /api/run-plans' validation (same shared validator)."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+    client = TestClient(app)
+
+    body = _preview_body(package_id=_HYBRID_PKG_ID)
+    body["context_overrides"] = {"weather_risk": 500.0}
+    resp = client.post("/api/runs/preview", json=body)
+    assert resp.status_code == 400, resp.text
+    assert "weather_risk" in resp.json()["detail"]
+
+
+def test_preview_invalid_profile_override_returns_400(monkeypatch, tmp_path):
+    """An invalid profiles.anomaly override (unknown field) in /runs/preview ->
+    400, via the same _apply_profile_overrides validation a real run uses."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+    client = TestClient(app)
+
+    body = _preview_body(package_id=_HYBRID_PKG_ID)
+    body["profiles"] = {"anomaly": {"not_a_real_field": 1.0}}
+    resp = client.post("/api/runs/preview", json=body)
+    assert resp.status_code == 400, resp.text

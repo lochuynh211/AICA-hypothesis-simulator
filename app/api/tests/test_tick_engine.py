@@ -184,6 +184,17 @@ def test_advance_tick_fixed_tier_values(uc01_scenario, event_plan, route_facts):
     assert fixed["isNight"] == uc01_scenario.is_night
     assert fixed["familiarRoute"] == uc01_scenario.familiar_route
     assert fixed["childPassenger"] == uc01_scenario.child_passenger
+    assert fixed["weatherRiskLevel"] == uc01_scenario.weather_risk
+
+
+def test_advance_tick_weather_risk_level_reflects_scenario_not_hardcoded(
+    uc01_scenario, event_plan, route_facts
+):
+    """UX-BE: weatherRiskLevel must equal the scenario's weather_risk field,
+    not a hardcoded 0.0 — confirmed by overriding it away from the default."""
+    overridden = uc01_scenario.model_copy(update={"weather_risk": 37.5})
+    ts = advance_tick(None, 0, event_plan, route_facts, overridden, run_seed=1)
+    assert ts.signals["fixed"]["weatherRiskLevel"] == 37.5
 
 
 def test_advance_tick_dynamic_tier_motion_state_moving(uc01_scenario, event_plan, route_facts):

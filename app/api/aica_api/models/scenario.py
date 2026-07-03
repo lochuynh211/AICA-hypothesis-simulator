@@ -148,12 +148,27 @@ class ScenarioDef(BaseModel):
     is_night: bool = False
     child_passenger: bool = False
     familiar_route: bool = False
+
+    # UX-BE (feature 009 UX iteration): editable scalar weather-risk context
+    # (Fixed tier). Feeds signals.fixed.weatherRiskLevel in the tick engine
+    # (tick_engine.py), replacing the previously hardcoded 0.0. Editable at
+    # setup time the same way as child_passenger/familiar_route (see
+    # run_plan._VALID_CONTEXT_OVERRIDE_KEYS).
+    weather_risk: float = 0.0
+
     presets: dict[str, Any] = {}
 
     # M8 UC-01: safety ceiling for rest-spot reachability check (0–100+, percent).
     # Default 100.0 = full drowsiness scale; values above 100 allow "overload"
     # (driver may reach a distant spot even at high drowsiness).
     rest_drowsiness_ceiling: float = 100.0
+
+    @field_validator("weather_risk")
+    @classmethod
+    def _weather_risk_in_range(cls, v: float) -> float:
+        if not (0.0 <= v <= 100.0):
+            raise ValueError(f"weather_risk={v!r} must be in [0, 100]")
+        return v
 
     @model_validator(mode="before")
     @classmethod

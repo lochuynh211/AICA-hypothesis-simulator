@@ -34,7 +34,7 @@ from aica_api.models.scenario import ScenarioDef
 from aica_api.services.package_registry import PackageRegistry
 from aica_api.services.recovery import start_recovery
 from aica_api.services.run_manager import _derive_history, resolve_manifest_defaults
-from aica_api.services.run_plan import create_draft, get_draft_entry
+from aica_api.services.run_plan import create_draft, get_draft_entry, validate_context_overrides
 from aica_api.services.scenario_registry import ScenarioRegistry
 from aica_api.services.tick_engine import advance_tick, build_adapter_context
 
@@ -128,18 +128,40 @@ def evaluate_preview(
     rest_option_id: str | None,
     packages_dir,
     scenarios_dir,
+    profiles: dict[str, Any] | None = None,
+    context_overrides: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Run a headless, non-persisting evaluation and return an InstantResult dict.
 
+    UX-BE (feature 009 UX iteration): *profiles* (partial ``driver``/``anomaly``/
+    ``speed`` overrides — same shape as ``CreateRunPlanBody.profiles``) and
+    *context_overrides* (``child_passenger``/``familiar_route``/``weather_risk``
+    — same shape as ``CreateRunPlanBody.context_overrides``) are applied via the
+    SAME ``create_draft``/``_apply_profile_overrides`` machinery a real
+    ``POST /api/run-plans`` uses (see routers/run_plans.py), so a preview
+    computed with the same overrides as "Open full run" is faithful to it.
+
     Raises:
         PreviewValidationError: unknown/incompatible package or scenario, an
-            old-shape scenario, or invalid hyperparameter overrides.
+            old-shape scenario, invalid hyperparameter overrides, invalid
+            profile overrides, or invalid context overrides.
     """
     overrides = dict(hyperparameter_overrides or {})
 
     package, scenario = _resolve_package_and_scenario(
         package_id, scenario_id, packages_dir, scenarios_dir
     )
+
+    # Validate context_overrides BEFORE create_draft — mirrors routers/run_plans.py
+    # (validated ahead of create_draft there too), and create_draft itself does
+    # not validate context_overrides (it applies them via a blind model_copy).
+    if context_overrides:
+        ctx_errors = validate_context_overrides(context_overrides)
+        if ctx_errors:
+            raise PreviewValidationError(
+                "Invalid context overrides: "
+                + "; ".join(f"{e['field']}: {e['message']}" for e in ctx_errors)
+            )
 
     # plan_id is deterministic per (package, scenario, overrides, seed) — the
     # draft registry entry is ephemeral, in-memory-only (never touches disk),
@@ -153,10 +175,12 @@ def evaluate_preview(
         parameters={},
         hyperparameters=overrides,
         run_mode="standard",
+        profiles=profiles,
+        context_overrides=context_overrides,
     )
     if draft.validation_errors:
         raise PreviewValidationError(
-            "Invalid hyperparameter overrides: "
+            "Invalid setup overrides: "
             + "; ".join(f"{e['field']}: {e['message']}" for e in draft.validation_errors)
         )
 

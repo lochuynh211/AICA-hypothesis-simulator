@@ -163,3 +163,38 @@ class SpeedProfile(BaseModel):
     traffic_jam_kph: int
 
     model_config = ConfigDict(extra="forbid")
+
+
+# ─── ProfileOverrides (request-body envelope, shared by /run-plans + /preview) ─
+
+
+class ProfileOverrides(BaseModel):
+    """T008: Setup-time profile overrides (all sub-objects optional).
+
+    Each provided sub-object is deep-merged onto the scenario's corresponding
+    profile (field-by-field, recursively for nested dicts).  Unset fields keep
+    the scenario value.  The merged result is validated against the typed profile
+    model — invalid fields or unknown keys cause a 400 with no run created.
+
+    Feature 009 (signal-tier redesign): the vehicle behaviour model is retired.
+    ``vehicle`` is still accepted here (as a plain dict) purely so
+    ``run_plan._apply_profile_overrides`` can reject it with a clear 400
+    validation error instead of a generic "unknown field" 422. ``anomaly`` is
+    new — overrides the Tier-3b seeded anomaly-rate generator's parameters.
+
+    Body shape for U6 ProfileEditor:
+      { "profiles": { "driver": { ... }, "anomaly": { ... }, "speed": { ... } } }
+    All sub-objects are optional; supply only the sub-objects you want to
+    override.  Within each sub-object, supply only the fields you want to change.
+
+    UX-BE (feature 009 UX iteration): shared verbatim between
+    ``POST /api/run-plans`` (routers/run_plans.py) and the ephemeral
+    ``POST /api/runs/preview`` (routers/runs.py) so a preview computed with the
+    same ``profiles`` payload as a real run is faithful to it — see
+    services/preview.py::evaluate_preview.
+    """
+
+    driver: dict | None = None   # partial DriverSignalParams dict (deep-merged)
+    anomaly: dict | None = None  # partial AnomalySignalParams dict (deep-merged)
+    speed: dict | None = None    # partial SpeedProfile dict (deep-merged)
+    vehicle: dict | None = None  # retired — rejected by _apply_profile_overrides

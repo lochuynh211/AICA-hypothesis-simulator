@@ -810,6 +810,35 @@ def test_scenario_def_rejects_old_vehicle_profile_shape():
     assert "driver_profile/vehicle_profile removed" in str(exc_info.value)
 
 
+# ── weather_risk: editable scalar Fixed-tier context (UX-BE) ──────────────────
+
+
+def test_scenario_def_weather_risk_defaults_to_zero():
+    """weather_risk defaults to 0.0 when not authored on the scenario."""
+    from aica_api.models.scenario import ScenarioDef
+
+    s = ScenarioDef(**VALID_SCENARIO)
+    assert s.weather_risk == 0.0
+
+
+def test_scenario_def_weather_risk_editable():
+    """weather_risk is a plain editable scalar — any authored value in range parses."""
+    from aica_api.models.scenario import ScenarioDef
+
+    s = ScenarioDef(**{**VALID_SCENARIO, "weather_risk": 55.0})
+    assert s.weather_risk == 55.0
+
+
+@pytest.mark.parametrize("bad_value", [-1.0, 100.1, 500.0])
+def test_scenario_def_weather_risk_out_of_range_rejected(bad_value):
+    """weather_risk must be in [0, 100] — out-of-range values are rejected loudly."""
+    from aica_api.models.scenario import ScenarioDef
+
+    with pytest.raises(ValidationError) as exc_info:
+        ScenarioDef(**{**VALID_SCENARIO, "weather_risk": bad_value})
+    assert "weather_risk" in str(exc_info.value)
+
+
 # ── Extended DecisionResult: localized explanation ────────────────────────────
 
 

@@ -259,6 +259,11 @@ class RunConfig(BaseModel):
     defaults ⊕ overrides, injected into the adapter context by run_manager).
     run_seed is frozen at run start into the event plan and drives anomaly_rate
     (Principle III — determinism: same RunConfig → identical trace).
+
+    UX-BE (feature 009 UX iteration): profiles/context_overrides mirror
+    CreateRunPlanBody's fields of the same name (routers/run_plans.py) and
+    PreviewRunBody's (routers/runs.py) — same shape for a real run and for the
+    ephemeral preview, so both are faithful to each other.
     """
 
     package_id: str
@@ -266,6 +271,8 @@ class RunConfig(BaseModel):
     hyperparameter_overrides: dict[str, Any] = {}
     run_seed: int
     expert_override: bool = False
+    profiles: dict[str, Any] | None = None
+    context_overrides: dict[str, Any] | None = None
 
 
 # ─── RunPlanDraft ─────────────────────────────────────────────────────────────

@@ -20,6 +20,7 @@ from pydantic import BaseModel
 from aica_api.config import settings
 from aica_api.models.feedback import FeedbackEvent, FeedbackTarget
 from aica_api.models.log import RunLog
+from aica_api.models.profile import ProfileOverrides
 from aica_api.models.run import InstantResult, RestSpot, RunStatus
 from aica_api.services.evidence import build_evidence_report
 from aica_api.services.evidence_markdown import render_evidence_markdown
@@ -71,13 +72,31 @@ class CreateRunBody(BaseModel):
 
 
 class PreviewRunBody(BaseModel):
-    """RunConfig for POST /runs/preview (contracts/ephemeral-evaluate.md)."""
+    """RunConfig for POST /runs/preview (contracts/ephemeral-evaluate.md).
+
+    UX-BE (feature 009 UX iteration): ``profiles`` and ``context_overrides``
+    are the SAME shape accepted by ``CreateRunPlanBody`` (routers/run_plans.py)
+    — a preview computed with the same overrides as a subsequent "Open full
+    run" (``POST /api/run-plans`` with matching ``profiles``/
+    ``context_overrides``) is faithful to it:
+
+      profiles.driver / profiles.anomaly — partial DriverSignalParams /
+        AnomalySignalParams overrides, deep-merged onto the scenario's values
+        (same as a real run's profile override).
+      context_overrides — {"child_passenger": bool, "familiar_route": bool,
+        "weather_risk": float in [0, 100]}.
+
+    Both are optional and default to no override (unchanged preview behavior
+    when omitted).
+    """
 
     package_id: str
     scenario_id: str
     hyperparameter_overrides: dict[str, Any] = {}
     run_seed: int
     rest_option_id: str | None = None
+    profiles: ProfileOverrides | None = None
+    context_overrides: dict[str, Any] | None = None
 
 
 class ActionBody(BaseModel):
@@ -261,8 +280,15 @@ def preview_run_endpoint(body: PreviewRunBody):
     but writes NOTHING to runs/ — the EvidenceRecorder is never invoked.
 
     400 for an unknown/incompatible package or scenario, an old-shape
-    scenario (FR-017), or invalid hyperparameter overrides.
+    scenario (FR-017), invalid hyperparameter overrides, invalid profile
+    overrides, or invalid context overrides.
     """
+    # Convert typed ProfileOverrides to a plain dict for the service layer
+    # (exclude_none so absent sub-objects are not passed as None entries) —
+    # identical conversion to routers/run_plans.py's CreateRunPlanBody.profiles.
+    profiles_dict: dict[str, Any] | None = (
+        body.profiles.model_dump(exclude_none=True) if body.profiles else None
+    )
     try:
         result = evaluate_preview(
             package_id=body.package_id,
@@ -272,6 +298,8 @@ def preview_run_endpoint(body: PreviewRunBody):
             rest_option_id=body.rest_option_id,
             packages_dir=settings.packages_dir,
             scenarios_dir=settings.scenarios_dir,
+            profiles=profiles_dict,
+            context_overrides=body.context_overrides,
         )
     except PreviewValidationError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
