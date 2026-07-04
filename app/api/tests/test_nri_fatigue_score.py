@@ -270,9 +270,8 @@ def test_accumulators_reset_after_recovery_completes():
     assert state1["was_in_recovery"] is False
 
     # Enter recovery (recoveryPhase set) — no accumulation happens while resting,
-    # and was_in_recovery flips to True. Recovery suppression (recovery_after_accept)
-    # only applies when a candidate `exists` (score >= threshold_suggest), so drive the
-    # live realtime term high enough to clear that bar.
+    # and was_in_recovery flips to True. Recovery suppression is unconditional (we
+    # never propose a rest while the driver is already resting), regardless of score.
     signals_recovering = _signals(
         drowsiness=100.0, fatigue=0.0, recovery_phase="resting", motion_state="STOPPED"
     )
@@ -300,194 +299,92 @@ def test_accumulators_reset_after_recovery_completes():
 
 
 # ---------------------------------------------------------------------------
-# Fire condition + persistence gate
+# Fire condition — SINGLE fire threshold + post-fire ETA filter (design-aligned).
+#
+# NRI's documented fire logic is one threshold: fire ⇔ S_total ≥ threshold_fire,
+# with the next-rest-spot ETA as a post-fire filter only. There is NO
+# suggest/recommend/urgent ladder, persistence gate, cooldown, 30-min cap, or
+# emergency override — those were carried over from the Hybrid and are removed to
+# match the spec (others/20260630_発火ロジック検討用資料.md line 217-218; math
+# comparison §1.2 "fire ⇔ S_total ≥ threshold_fire (80); post-fire filter").
 # ---------------------------------------------------------------------------
 
 
-def _primed_state(
-    *,
-    driving_min_since_rest=110.0,
-    jam_min=5.0,
-    hw_min=5.0,
-    mono_min=5.0,
-    persistence_counter=0,
-    last_score=0.0,
-) -> dict:
-    """Craft a package_runtime_state as if the driver has already accumulated substantial
-    exposure, so a single subsequent tick lands S_total in the [threshold_fire,
-    emergency_override_threshold) band deterministically (no need to tick-simulate for
-    tens of minutes). `last_sim_time=0.0` forces the algorithm's documented default
-    1-minute tick duration (see evaluate(): tick_duration_min falls back to 1.0 whenever
-    prev_sim_time is not > 0), independent of whatever simulation_time_sec is passed.
-    """
+def _primed_state(*, driving_min_since_rest=160.0, jam_min=0.0, hw_min=0.0, mono_min=0.0) -> dict:
+    """Runtime state as if the driver has accumulated enough exposure that one more
+    1-minute tick lands S_total ≥ threshold_fire. `last_sim_time=0.0` forces the
+    algorithm's documented default 1-minute tick duration."""
     return {
         "cumulative_jam_min": jam_min,
         "cumulative_highway_min": hw_min,
         "cumulative_monotonous_min": mono_min,
         "driving_min_since_rest": driving_min_since_rest,
-        "persistence_counter": persistence_counter,
-        "last_score": last_score,
         "last_sim_time": 0.0,
         "was_in_recovery": False,
     }
 
 
-# Signals that, combined with `_primed_state()`, land S_total in [threshold_fire=80,
-# emergency_override_threshold=100) for exactly one 1-minute tick: S_base = 20 (child) +
-# 111*0.5 = 75.5; S_env = 6*(0.8+0.2+0.3) = 7.8; S_realtime = 0. Total = 83.3.
-_FIRE_BAND_SIGNALS = _signals(
-    drowsiness=0.0, fatigue=0.0, child_passenger=True,
-    is_traffic_jam=True, segment_type="highway",
-)
+def test_fires_on_first_tick_at_or_above_threshold_fire_no_persistence():
+    # S_base = 161 * 0.5 = 80.5 ≥ threshold_fire (80) on the FIRST over-threshold
+    # tick — fires immediately, no persistence gate. Sentinel rest spot passes ETA.
+    signals = _signals(next_rest_spot_min=9999.0)
+    r = mod.evaluate(_ctx(signals, prev_state=_primed_state(), sim_time=60.0))
+    assert r["scores"]["s_total"] >= HP["threshold_fire"]
+    assert r["candidates"][0]["exists"] is True
+    assert r["fire_control"]["fired"] is True
+    assert r["fire_control"]["reason"] == "fire_threshold_passed"
+    assert r["result_type"] == "REST_PROPOSAL"
+    assert r["proposal"] is not None
+    assert r["states"]["rest"] == "REST_FIRE"
 
 
-def test_fire_condition_requires_persistence_ticks():
-    # Tick 1: first tick above threshold_fire (80) but below emergency (100); the
-    # persistence_counter only reaches 1 (< persistence_ticks=2) -> persistence_gate.
-    r1 = mod.evaluate(_ctx(_FIRE_BAND_SIGNALS, prev_state=_primed_state(), sim_time=60.0))
-    assert HP["threshold_fire"] <= r1["scores"]["s_total"] < HP["emergency_override_threshold"]
-    assert r1["next_package_runtime_state"]["persistence_counter"] == 1
-    assert r1["fire_control"]["suppressed"] is True
-    assert r1["fire_control"]["reason"] == "persistence_gate"
-    assert r1["fire_control"]["fired"] is False
-
-    # Tick 2: persistence_counter reaches 2 -> passes the gate. Rest spot is close
-    # (default sentinel 9999 -> "no spot ahead" also passes the ETA filter) -> fires.
-    r2 = mod.evaluate(
-        _ctx(_FIRE_BAND_SIGNALS, prev_state=r1["next_package_runtime_state"], sim_time=120.0)
-    )
-    assert r2["next_package_runtime_state"]["persistence_counter"] == 2
-    assert r2["fire_control"]["fired"] is True
-    assert r2["fire_control"]["reason"] == "threshold_passed_persisted"
-    assert r2["result_type"] == "REST_PROPOSAL"
-    assert r2["proposal"] is not None
-
-
-def test_below_suggest_threshold_no_candidate():
-    signals = _signals(drowsiness=0.0, fatigue=0.0)
+def test_below_fire_threshold_is_no_proposal():
+    signals = _signals(drowsiness=0.0, fatigue=0.0)  # tiny S_total
     result = mod.evaluate(_ctx(signals, sim_time=60.0))
+    assert result["scores"]["s_total"] < HP["threshold_fire"]
     assert result["candidates"][0]["exists"] is False
     assert result["fire_control"]["fired"] is False
-    assert result["fire_control"]["reason"] == "below_suggest_threshold"
+    assert result["fire_control"]["reason"] == "below_fire_threshold"
     assert result["result_type"] == "NO_PROPOSAL"
 
 
-def test_between_suggest_and_fire_is_below_fire_threshold():
-    # S_total between threshold_suggest (60) and threshold_fire (80): exists but
-    # not fired, reason below_fire_threshold. First tick (T_drive=1): S_base=0.5,
-    # S_env=0, S_realtime=(100-60)*1.5=60 -> total=60.5.
-    signals = _signals(drowsiness=100.0, fatigue=0.0)
-    result = mod.evaluate(_ctx(signals, sim_time=60.0))
-    assert 60.0 <= result["scores"]["s_total"] < 80.0
-    assert result["candidates"][0]["exists"] is True
-    assert result["fire_control"]["fired"] is False
-    assert result["fire_control"]["reason"] == "below_fire_threshold"
-
-
 # ---------------------------------------------------------------------------
-# Post-fire ETA filter
+# Post-fire ETA filter (the only gate after the fire threshold)
 # ---------------------------------------------------------------------------
-
-
-def _fired_eligible_state():
-    """A prev_state one tick away from clearing persistence (counter=1 -> 2), reused by
-    the ETA/cooldown/rate-limit tests below (all check the checks that run AFTER the
-    persistence gate clears)."""
-    r1 = mod.evaluate(_ctx(_FIRE_BAND_SIGNALS, prev_state=_primed_state(), sim_time=60.0))
-    assert r1["fire_control"]["reason"] == "persistence_gate"  # sanity: still gated
-    return r1["next_package_runtime_state"]
 
 
 def test_post_fire_eta_filter_suppresses_when_rest_spot_too_far():
-    signals = _signals(
-        drowsiness=0.0, fatigue=0.0, child_passenger=True,
-        is_traffic_jam=True, segment_type="highway",
-        next_rest_spot_min=30.0,  # > rest_spot_eta_filter_min (15)
-    )
-    result = mod.evaluate(_ctx(signals, prev_state=_fired_eligible_state(), sim_time=120.0))
-    assert HP["threshold_fire"] <= result["scores"]["s_total"] < HP["emergency_override_threshold"]
+    signals = _signals(next_rest_spot_min=30.0)  # > rest_spot_eta_filter_min (15)
+    result = mod.evaluate(_ctx(signals, prev_state=_primed_state(), sim_time=60.0))
+    assert result["scores"]["s_total"] >= HP["threshold_fire"]
     assert result["fire_control"]["suppressed"] is True
     assert result["fire_control"]["reason"] == "rest_spot_too_far"
     assert result["fire_control"]["fired"] is False
 
 
+def test_post_fire_eta_filter_fires_when_spot_within_filter():
+    signals = _signals(next_rest_spot_min=10.0)  # <= 15
+    result = mod.evaluate(_ctx(signals, prev_state=_primed_state(), sim_time=60.0))
+    assert result["fire_control"]["fired"] is True
+    assert result["fire_control"]["reason"] == "fire_threshold_passed"
+
+
 def test_post_fire_eta_filter_fires_when_no_rest_spot_ahead_sentinel():
-    signals = _signals(
-        drowsiness=0.0, fatigue=0.0, child_passenger=True,
-        is_traffic_jam=True, segment_type="highway",
-        next_rest_spot_min=9999.0,  # sentinel: no rest spot ahead -> filter passes
-    )
-    result = mod.evaluate(_ctx(signals, prev_state=_fired_eligible_state(), sim_time=120.0))
+    signals = _signals(next_rest_spot_min=9999.0)  # no spot ahead -> filter passes
+    result = mod.evaluate(_ctx(signals, prev_state=_primed_state(), sim_time=60.0))
     assert result["fire_control"]["fired"] is True
-    assert result["fire_control"]["reason"] == "threshold_passed_persisted"
+    assert result["fire_control"]["reason"] == "fire_threshold_passed"
 
 
-# ---------------------------------------------------------------------------
-# Cooldown + 30-min rate limit
-# ---------------------------------------------------------------------------
-
-
-def test_cooldown_suppresses_repeat_proposal():
-    signals = _signals(
-        drowsiness=0.0, fatigue=0.0, child_passenger=True,
-        is_traffic_jam=True, segment_type="highway", next_rest_spot_min=5.0,
-    )
-    proposal_history = {
-        "lastProposalTimeSec": 100.0,
-        "lastProposalCategory": "rest_required",
-        "lastProposalResult": None,
-        "proposalCountLast30Min": 1,
-        "acceptanceRateRecent": 0.0,
+def test_hybrid_style_fire_control_hyperparameters_are_removed():
+    """Design-aligned NRI has one fire threshold — the Hybrid-style knobs must be
+    gone from the manifest (they are undocumented for NRI)."""
+    removed = {
+        "threshold_suggest", "threshold_recommend", "threshold_urgent",
+        "persistence_ticks", "rest_cooldown_sec", "max_proposals_per_30min",
+        "emergency_override_threshold",
     }
-    result = mod.evaluate(
-        _ctx(signals, prev_state=_fired_eligible_state(), sim_time=120.0, proposal_history=proposal_history)
-    )
-    # sim_time=120.0, well within rest_cooldown_sec (600) of lastProposalTimeSec=100.0.
-    assert result["fire_control"]["suppressed"] is True
-    assert result["fire_control"]["reason"] == "cooldown_active"
-
-
-def test_rate_limit_30min_suppresses_when_count_at_max():
-    signals = _signals(
-        drowsiness=0.0, fatigue=0.0, child_passenger=True,
-        is_traffic_jam=True, segment_type="highway", next_rest_spot_min=5.0,
-    )
-    proposal_history = {
-        "lastProposalTimeSec": None,
-        "lastProposalCategory": None,
-        "lastProposalResult": None,
-        "proposalCountLast30Min": HP["max_proposals_per_30min"],
-        "acceptanceRateRecent": 0.0,
-    }
-    result = mod.evaluate(
-        _ctx(signals, prev_state=_fired_eligible_state(), sim_time=120.0, proposal_history=proposal_history)
-    )
-    assert result["fire_control"]["suppressed"] is True
-    assert result["fire_control"]["reason"] == "rate_limit_30min"
-
-
-def test_emergency_override_bypasses_persistence_cooldown_and_rate_limit():
-    # Push S_total well above emergency_override_threshold (100) on the very first tick
-    # (persistence_counter starts at 0 — override must fire despite that).
-    signals = _signals(
-        drowsiness=0.0, fatigue=0.0, child_passenger=True,
-        is_traffic_jam=False, segment_type="normal_road", next_rest_spot_min=30.0,
-    )
-    prev_state = _primed_state(driving_min_since_rest=200.0, jam_min=0.0, hw_min=0.0, mono_min=0.0)
-    proposal_history = {
-        "lastProposalTimeSec": 55.0,
-        "lastProposalCategory": "rest_required",
-        "lastProposalResult": None,
-        "proposalCountLast30Min": HP["max_proposals_per_30min"],
-        "acceptanceRateRecent": 0.0,
-    }
-    result = mod.evaluate(
-        _ctx(signals, prev_state=prev_state, sim_time=60.0, proposal_history=proposal_history)
-    )
-    assert result["scores"]["s_total"] >= HP["emergency_override_threshold"]
-    assert result["fire_control"]["fired"] is True
-    assert result["fire_control"]["override"] is True
-    assert result["fire_control"]["reason"] == "emergency_override"
+    assert removed.isdisjoint(set(HP)), f"stale fire-control hp still declared: {removed & set(HP)}"
 
 
 # ---------------------------------------------------------------------------
@@ -543,8 +440,6 @@ def test_every_hyperparameter_the_algorithm_reads_has_a_manifest_default():
         "w_base", "w_child", "m_night", "m_familiar",
         "w_jam", "w_highway", "w_monotonous",
         "theta_sleep", "w_sleep", "theta_fatigue", "w_fatigue",
-        "threshold_fire", "threshold_suggest", "threshold_recommend", "threshold_urgent",
-        "rest_spot_eta_filter_min", "rest_cooldown_sec", "max_proposals_per_30min",
-        "emergency_override_threshold", "persistence_ticks",
+        "threshold_fire", "rest_spot_eta_filter_min",
     }
     assert required_keys <= set(HP)

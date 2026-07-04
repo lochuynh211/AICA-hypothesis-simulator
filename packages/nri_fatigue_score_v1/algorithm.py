@@ -10,8 +10,12 @@ Where:
   S_env     = T_jam * W_jam + T_hw * W_highway + T_mono * W_monotonous
   S_realtime = max(0, V_sleep - θ_sleep) * W_sleep + max(0, V_fatigue - θ_fatigue) * W_fatigue
 
-Fire condition: S_total >= threshold_fire
-Post-fire filter: next rest spot ETA <= rest_spot_eta_filter_min
+Fire condition (design-aligned — a SINGLE threshold): fire ⇔ S_total >= threshold_fire.
+Post-fire filter: next rest spot ETA <= rest_spot_eta_filter_min (or no spot ahead).
+Recovery suppresses firing. There is NO suggest/recommend/urgent ladder, persistence
+gate, cooldown, 30-min cap, or emergency override — those were Hybrid carry-overs and
+are removed to match the NRI spec (others/20260630_発火ロジック検討用資料.md line 217;
+others/aica_trigger_algorithms_math_comparison.md §1.2).
 
 Feature 009 (signal-tier redesign) — reads from the tiered `context["signals"]`
 contract (`specs/009-signal-tier-redesign/contracts/tiered-context.md`) instead of a
@@ -29,8 +33,8 @@ State carried across ticks (via package_runtime_state):
   - cumulative_jam_min: minutes spent in traffic jam
   - cumulative_highway_min: minutes spent on highway
   - cumulative_monotonous_min: minutes spent on monotonous road
-  - persistence_counter: consecutive ticks above threshold
-  - last_score: previous tick's total score (for velocity)
+  - driving_min_since_rest: minutes driven since the last rest (reset on recovery)
+  - was_in_recovery: whether the previous tick was a recovery tick (reset edge)
 
 Every hyperparameter is read via direct `hp[key]` indexing — NO `hp.get(key, <hardcoded
 default>)` fallback. `context["hyperparameters"]` is guaranteed fully resolved (manifest
@@ -101,39 +105,17 @@ def _compute_realtime_score(
 
 
 # ---------------------------------------------------------------------------
-# Strength mapping
+# State label — a single fire threshold (design-aligned; no suggest/recommend/
+# urgent ladder). REST_RECOVERY while resting, REST_FIRE at/above threshold_fire,
+# else REST_NORMAL.
 # ---------------------------------------------------------------------------
 
 
-def _strength(score: float, suggest: float, recommend: float, urgent: float):
-    if score >= urgent:
-        return "strong"
-    if score >= recommend:
-        return "clear"
-    if score >= suggest:
-        return "gentle"
-    return None
-
-
-# ---------------------------------------------------------------------------
-# State label
-# ---------------------------------------------------------------------------
-
-
-def _state_label(score: float, recovered: bool, hp: dict) -> str:
+def _state_label(score: float, recovered: bool, threshold_fire: float) -> str:
     if recovered:
         return "REST_RECOVERY"
-    suggest = float(hp["threshold_suggest"])
-    recommend = float(hp["threshold_recommend"])
-    urgent = float(hp["threshold_urgent"])
-    if score >= urgent:
-        return "REST_URGENT"
-    if score >= recommend:
-        return "REST_RECOMMEND"
-    if score >= suggest:
-        return "REST_SUGGEST"
-    if score >= suggest * 0.7:
-        return "REST_WATCH"
+    if score >= threshold_fire:
+        return "REST_FIRE"
     return "REST_NORMAL"
 
 
@@ -199,16 +181,9 @@ def evaluate(context: dict) -> dict:
     drowsiness_level = float(simulated.get("drowsiness", 0.0))
     fatigue_level = float(simulated.get("fatigue", 0.0))
 
-    # ── Hyperparameters ───────────────────────────────────────────────────
+    # ── Hyperparameters — a single fire threshold + post-fire ETA filter ──
     threshold_fire = float(hp["threshold_fire"])
-    threshold_suggest = float(hp["threshold_suggest"])
-    threshold_recommend = float(hp["threshold_recommend"])
-    threshold_urgent = float(hp["threshold_urgent"])
     rest_eta_filter = float(hp["rest_spot_eta_filter_min"])
-    rest_cooldown = float(hp["rest_cooldown_sec"])
-    max_per_30min = int(hp["max_proposals_per_30min"])
-    emergency_threshold = float(hp["emergency_override_threshold"])
-    persistence_required = int(hp["persistence_ticks"])
 
     # ── Recovery detection (early — needed before accumulation) ───────────
     # Detect recovery from dynamic.recoveryPhase (set by tick engine when
@@ -230,8 +205,6 @@ def evaluate(context: dict) -> dict:
     prev_highway_min = float(prev_state.get("cumulative_highway_min", 0.0))
     prev_mono_min = float(prev_state.get("cumulative_monotonous_min", 0.0))
     prev_driving_min = float(prev_state.get("driving_min_since_rest", 0.0))
-    prev_counter = int(prev_state.get("persistence_counter", 0))
-    prev_score = float(prev_state.get("last_score", 0.0))
 
     # ── Reset accumulators after recovery completes ───────────────────────
     if recovery_just_completed:
@@ -239,8 +212,6 @@ def evaluate(context: dict) -> dict:
         prev_highway_min = 0.0
         prev_mono_min = 0.0
         prev_driving_min = 0.0
-        prev_counter = 0
-        prev_score = 0.0
 
     # ── Determine tick duration from simulation time ──────────────────────
     prev_sim_time = float(prev_state.get("last_sim_time", 0.0))
@@ -275,62 +246,34 @@ def evaluate(context: dict) -> dict:
     s_realtime = _compute_realtime_score(drowsiness_level, fatigue_level, hp)
     s_total = s_base + s_env + s_realtime
 
-    # ── Velocity ──────────────────────────────────────────────────────────
-    velocity = s_total - prev_score
-
     # ── State label ───────────────────────────────────────────────────────
-    state_label = _state_label(s_total, recovered, hp)
+    state_label = _state_label(s_total, recovered, threshold_fire)
 
-    # ── Candidate evaluation ──────────────────────────────────────────────
-    exists = s_total >= threshold_suggest
-    strength_label = _strength(s_total, threshold_suggest, threshold_recommend, threshold_urgent)
-    new_counter = (prev_counter + 1) if (s_total >= threshold_fire) else 0
+    # ── Fire-control — a SINGLE fire threshold, then the post-fire ETA filter.
+    # Order: recovery suppression (never propose while resting) → below fire
+    # threshold (no candidate) → ETA filter → fire. No persistence gate, cooldown,
+    # 30-min cap, or emergency override (design: fire ⇔ S_total ≥ threshold_fire).
+    exists = s_total >= threshold_fire
+    # Manifested-risk (drowsiness/fatigue past their θ dead-band) → a stronger
+    # message; otherwise the accumulated-fatigue message. Uses only the existing
+    # θ thresholds — no extra fire-control hyperparameter.
+    strength_label = ("strong" if s_realtime > 0.0 else "clear") if exists else None
 
-    # Fire-control logic
     fired = False
     suppressed = False
     override = False
-    reason = "below_fire_threshold"
 
-    if not exists:
-        reason = "below_suggest_threshold"
-    elif recovered:
+    if recovered:
         suppressed = True
         reason = "recovery_after_accept"
-    elif s_total < threshold_fire:
+    elif not exists:
         reason = "below_fire_threshold"
-    elif new_counter < persistence_required and s_total < emergency_threshold:
-        suppressed = True
-        reason = "persistence_gate"
-    elif s_total >= emergency_threshold:
+    elif next_rest_min <= rest_eta_filter or next_rest_min >= 9999.0:
         fired = True
-        override = True
-        reason = "emergency_override"
+        reason = "fire_threshold_passed"
     else:
-        # Check cooldown
-        last_time = proposal_history.get("lastProposalTimeSec")
-        last_prop_cat = proposal_history.get("lastProposalCategory")
-        if (
-            last_time is not None
-            and last_prop_cat == "rest_required"
-            and (sim_time - float(last_time)) < rest_cooldown
-        ):
-            suppressed = True
-            reason = "cooldown_active"
-        else:
-            # Check 30-min rate limit
-            count_30 = int(proposal_history.get("proposalCountLast30Min", 0))
-            if count_30 >= max_per_30min:
-                suppressed = True
-                reason = "rate_limit_30min"
-            else:
-                # Post-fire filter: rest spot ETA
-                if next_rest_min <= rest_eta_filter or next_rest_min >= 9999.0:
-                    fired = True
-                    reason = "threshold_passed_persisted"
-                else:
-                    suppressed = True
-                    reason = "rest_spot_too_far"
+        suppressed = True
+        reason = "rest_spot_too_far"
 
     # ── Build candidate ───────────────────────────────────────────────────
     candidate = {
@@ -395,8 +338,6 @@ def evaluate(context: dict) -> dict:
         "cumulative_highway_min": cumulative_highway_min,
         "cumulative_monotonous_min": cumulative_monotonous_min,
         "driving_min_since_rest": driving_min_since_rest,
-        "persistence_counter": new_counter,
-        "last_score": s_total,
         "last_sim_time": sim_time,
         "was_in_recovery": recovery_active,
     }
@@ -405,7 +346,7 @@ def evaluate(context: dict) -> dict:
     features_ordinal = {k: str(v) for k, v in ordinal.items()}
 
     # ── Normalized score (0-1 range for UI compatibility) ─────────────────
-    max_display = max(threshold_urgent * 1.5, 150.0)
+    max_display = max(threshold_fire * 1.5, 150.0)
     normalized_score = min(1.0, s_total / max_display) if max_display > 0 else 0.0
 
     return {
@@ -419,7 +360,6 @@ def evaluate(context: dict) -> dict:
             "s_base": s_base,
             "s_env": s_env,
             "s_realtime": s_realtime,
-            "velocity": velocity,
             "rest_required_score": normalized_score,
         },
         "states": {
@@ -427,11 +367,7 @@ def evaluate(context: dict) -> dict:
         },
         "criteria": {
             "threshold_fire": threshold_fire,
-            "threshold_suggest": threshold_suggest,
-            "threshold_recommend": threshold_recommend,
-            "threshold_urgent": threshold_urgent,
             "rest_spot_eta_filter_min": rest_eta_filter,
-            "persistence_ticks": persistence_required,
         },
         "candidates": candidates,
         "fire_control": overall_fc,
