@@ -9,6 +9,7 @@ import MapKeyAndRouteInput from './MapKeyAndRouteInput'
 import RestCeilingEditor from './RestCeilingEditor'
 import RestSpacingEditor from './RestSpacingEditor'
 import RestOptionsEditor from './RestOptionsEditor'
+import InitialSignalValue from './InitialSignalValue'
 import SignalFormulationEditor, { type FormulationSignalKey } from './SignalFormulationEditor'
 import { SIGNAL_LABELS } from './signalLabels'
 import { HIGHLIGHT_BG } from './highlight'
@@ -452,6 +453,7 @@ export default function SignalsPanel() {
               dimmed={isDimmed('drowsiness')}
               onHover={() => highlight('drowsiness')}
               onLeave={unhighlight}
+              initialControl={<InitialSignalValue signalKey="drowsiness" scenario={scenario} />}
             />
             <SimulatedSignal
               signalKey="fatigue"
@@ -461,6 +463,7 @@ export default function SignalsPanel() {
               dimmed={isDimmed('fatigue')}
               onHover={() => highlight('fatigue')}
               onLeave={unhighlight}
+              initialControl={<InitialSignalValue signalKey="fatigue" scenario={scenario} />}
             />
             <SimulatedSignal
               signalKey="anomaly_rate"
@@ -587,6 +590,7 @@ function SimulatedSignal({
   dimmed = false,
   onHover,
   onLeave,
+  initialControl,
 }: {
   signalKey: FormulationSignalKey
   label: string
@@ -596,6 +600,9 @@ function SimulatedSignal({
   dimmed?: boolean
   onHover: () => void
   onLeave: () => void
+  /** Optional setup-time "starting value" control (drowsiness/fatigue), rendered
+      below the formula so the initial value lives inside this signal's section. */
+  initialControl?: ReactNode
 }) {
   const rowRef = useHighlightScroll(highlighted)
   return (
@@ -616,6 +623,7 @@ function SimulatedSignal({
     >
       <span style={{ fontSize: '0.8em', fontWeight: 600, color: '#374151' }}>{label}</span>
       <SignalFormulationEditor signalKey={signalKey} label={label} scenario={scenario} />
+      {initialControl}
     </div>
   )
 }

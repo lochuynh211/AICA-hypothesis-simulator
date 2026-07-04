@@ -131,7 +131,7 @@
     "signal_duration_at_trigger": "persistent"
   },
   "total_duration_seconds": 7200,
-  "tick_seconds": 60,
+  "tick_seconds": 180,
   "allowed_actions": ["accept_rest", "postpone", "decline"],
   "recovery_options": [
     {
