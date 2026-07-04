@@ -94,6 +94,9 @@ export default function SignalsPanel() {
   const routeSelected = selectedRouteId != null
   const [scenario, setScenario] = useState<ScenarioDef | null>(null)
   const [packageFeatures, setPackageFeatures] = useState<FeatureDef[] | undefined>(undefined)
+  // The selected package may override the tick cadence via algorithm.tick_seconds
+  // (the value the backend actually runs at). null when unset / no package.
+  const [packageTickSeconds, setPackageTickSeconds] = useState<number | null>(null)
 
   useEffect(() => {
     if (!selectedScenarioId) {
@@ -119,15 +122,22 @@ export default function SignalsPanel() {
   useEffect(() => {
     if (!selectedPackageId) {
       setPackageFeatures(undefined)
+      setPackageTickSeconds(null)
       return
     }
     let cancelled = false
     getPackage(selectedPackageId)
       .then((pkg) => {
-        if (!cancelled) setPackageFeatures(pkg.features)
+        if (!cancelled) {
+          setPackageFeatures(pkg.features)
+          setPackageTickSeconds(pkg.algorithm?.tick_seconds ?? null)
+        }
       })
       .catch(() => {
-        if (!cancelled) setPackageFeatures(undefined)
+        if (!cancelled) {
+          setPackageFeatures(undefined)
+          setPackageTickSeconds(null)
+        }
       })
     return () => {
       cancelled = true
@@ -178,10 +188,12 @@ export default function SignalsPanel() {
     dispatch({ type: 'SET_CONTEXT_OVERRIDE', key: 'weather_risk', value: stored, default: weatherRiskDefault })
   }
 
-  // Tick duration (seconds per simulation step). Default comes from the selected
-  // scenario (tick_seconds); an override is sent as presets.tick_seconds on the
-  // full run (see InstantResultStrip/PlanPreview). null once reverted to default.
-  const tickDefault = scenario?.tick_seconds ?? 60
+  // Tick duration (seconds per simulation step). The default must match the
+  // cadence the backend actually runs at: the package's algorithm.tick_seconds
+  // override wins (run_plan.py precedence), then the scenario's tick_seconds,
+  // then a hardcoded fallback. An explicit edit is sent as presets.tick_seconds
+  // on the full run (see InstantResultStrip); null once reverted to default.
+  const tickDefault = packageTickSeconds ?? scenario?.tick_seconds ?? 60
   const tickValue = tickSecondsOverride ?? tickDefault
 
   function handleTickChange(e: ChangeEvent<HTMLInputElement>) {

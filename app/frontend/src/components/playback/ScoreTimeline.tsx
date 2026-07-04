@@ -1,5 +1,6 @@
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { timelineYDomain, type TimelineData } from './timelineData'
+import { t, type UiLanguage, type BilingualLabel } from '../../i18n/t'
 
 // Road-band colors are COPIED VERBATIM from MapSurface's ROAD_COLORS so a road
 // reads identically on the timeline and on the Google map: highway cyan,
@@ -14,11 +15,23 @@ const SEGMENT_COLORS: Record<string, string> = {
 // start / end are route endpoints, not road classes — they get no distinct band
 // or legend entry (the neutral track shows through instead of a grey block).
 const HIDDEN_SEGMENT_TYPES = new Set(['start', 'end'])
-// Human-readable road-band labels (for the optional legend).
-const SEGMENT_LABELS: Record<string, string> = {
-  urban: 'urban', highway: 'highway', national: 'national road',
-  normal_road: 'normal road', residential: 'residential', mountain_road: 'mountain road',
-  sightseeing_road: 'scenic road', rest: 'rest stop',
+// Human-readable, bilingual road-band labels (for the optional legend). Shared:
+// InstantResultStrip imports segLabel() so preview + review read identically.
+export const SEGMENT_LABELS: Record<string, BilingualLabel> = {
+  urban: { en: 'urban', ja: '市街地' },
+  highway: { en: 'highway', ja: '高速道路' },
+  national: { en: 'national road', ja: '国道' },
+  normal_road: { en: 'normal road', ja: '一般道' },
+  residential: { en: 'residential', ja: '住宅街' },
+  mountain_road: { en: 'mountain road', ja: '山道' },
+  sightseeing_road: { en: 'scenic road', ja: '観光道路' },
+  rest: { en: 'rest stop', ja: '休憩施設' },
+}
+
+/** Localized road-band label; falls back to the raw segment_type when unknown. */
+export function segLabel(type: string, lang: UiLanguage): string {
+  const label = SEGMENT_LABELS[type]
+  return label ? t(label, lang) : type
 }
 const DEFAULT_SEGMENT_COLOR = '#f3f4f6'
 const REST_COLOR = '#2563eb'
@@ -57,6 +70,8 @@ export type ScoreTimelineProps = {
    *  below the SVG. Off by default so the Setup strip (which owns its own legend)
    *  is unaffected; the Review timeline turns it on. */
   showLegend?: boolean
+  /** UI language for the built-in legend labels (default 'en'). */
+  lang?: UiLanguage
 }
 
 function useMeasuredWidth<T extends HTMLElement>(ref: React.RefObject<T>): number {
@@ -77,7 +92,7 @@ function useMeasuredWidth<T extends HTMLElement>(ref: React.RefObject<T>): numbe
 export default function ScoreTimeline({
   data, revealFraction = 1, ghostAhead = false, animated = false,
   showPlayhead = false, playheadAriaLabel, height = 92, testIds = {},
-  thresholdLabel, monotonyThresholdLabel, restDotAriaLabel, showLegend = false,
+  thresholdLabel, monotonyThresholdLabel, restDotAriaLabel, showLegend = false, lang = 'en',
 }: ScoreTimelineProps) {
   const ref = useRef<HTMLDivElement>(null)
   const measured = useMeasuredWidth(ref)
@@ -254,14 +269,14 @@ export default function ScoreTimeline({
       {showLegend && (
         <div data-testid={testIds.legend}
           style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px', fontSize: '0.72em', color: '#6b7280', margin: '2px 0 0' }}>
-          <LegendLine color={REST_COLOR} label="rest-propose score" />
-          {data.monotonyScore.length > 0 && <LegendLine color={MONOTONY_COLOR} label="monotony score" />}
-          {data.restThreshold != null && <LegendLine color={TRIGGER_COLOR} label="threshold" dashed />}
+          <LegendLine color={REST_COLOR} label={t({ en: 'rest-propose score', ja: '休憩提案スコア' }, lang)} />
+          {data.monotonyScore.length > 0 && <LegendLine color={MONOTONY_COLOR} label={t({ en: 'monotony score', ja: '単調性スコア' }, lang)} />}
+          {data.restThreshold != null && <LegendLine color={TRIGGER_COLOR} label={t({ en: 'threshold', ja: 'しきい値' }, lang)} dashed />}
           {presentSegTypes.map((type) => (
             <LegendSwatch key={type} color={SEGMENT_COLORS[type] ?? DEFAULT_SEGMENT_COLOR}
-              label={SEGMENT_LABELS[type] ?? type} />
+              label={segLabel(type, lang)} />
           ))}
-          {data.restDots.length > 0 && <LegendDot color={REST_SPOT_COLOR} label="chosen rest spot" />}
+          {data.restDots.length > 0 && <LegendDot color={REST_SPOT_COLOR} label={t({ en: 'chosen rest spot', ja: '選択した休憩地点' }, lang)} />}
         </div>
       )}
     </div>

@@ -9,7 +9,7 @@
   "algorithm": {
     "type": "python_module",
     "entrypoint": "algorithm.py",
-    "tick_seconds": 60,
+    "tick_seconds": 180,
     "error_mode": "blocking"
   },
   "features": [

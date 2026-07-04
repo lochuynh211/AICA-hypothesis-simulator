@@ -377,7 +377,15 @@ def evaluate_preview(
         if tick_index in (tick_state.anomaly_events or []):
             spikes.append({"t": tick_index, "time_min": elapsed_min})
 
-        crit_threshold = decision.criteria.get("threshold_fire", decision.criteria.get("threshold_suggest"))
+        # The score_series plots the NORMALIZED rest_required_score (0-1), so the
+        # threshold line must be on the same scale: prefer the normalized
+        # `rest_required_threshold` (NRI), then the hybrid's already-0-1
+        # `threshold_suggest`.  `threshold_fire` (raw s_total scale) is a last resort
+        # only — pairing it with a 0-1 curve flattens the plot.
+        crit = decision.criteria
+        crit_threshold = crit.get("rest_required_threshold")
+        if crit_threshold is None:
+            crit_threshold = crit.get("threshold_suggest", crit.get("threshold_fire"))
         if crit_threshold is not None:
             threshold = float(crit_threshold)
 

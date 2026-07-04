@@ -218,6 +218,29 @@ def test_evaluate_s_realtime_zero_when_signals_below_dead_band():
     assert result["scores"]["s_realtime"] == 0.0
 
 
+def test_criteria_exposes_normalized_threshold_matching_rest_required_score_scale():
+    """The timeline plots the NORMALIZED rest_required_score (0-1); criteria must
+    carry the threshold on the SAME scale (rest_required_threshold), else the UI's
+    y-domain stretches to the raw threshold_fire (~80) and flattens the curve.
+    """
+    ctx = _ctx(_signals(drowsiness=90.0, fatigue=90.0), sim_time=60.0)
+    result = mod.evaluate(ctx)
+    crit = result["criteria"]
+    threshold_fire = HP["threshold_fire"]
+
+    # Raw threshold is still exposed (truthful, for the "fire ⇔ s_total ≥ 80" rule).
+    assert crit["threshold_fire"] == threshold_fire
+    # Normalized threshold is present, on the 0-1 rest_required_score scale.
+    norm = crit["rest_required_threshold"]
+    assert 0.0 <= norm <= 1.0
+    # It equals threshold_fire normalized by the same divisor the score uses.
+    max_display = max(threshold_fire * 1.5, 150.0)
+    assert norm == pytest.approx(threshold_fire / max_display)
+    # And it is genuinely on the score's scale (both ≤ 1), unlike threshold_fire.
+    assert result["scores"]["rest_required_score"] <= 1.0
+    assert crit["threshold_fire"] > 1.0  # the raw one would flatten a 0-1 curve
+
+
 def test_evaluate_uses_fixed_tier_for_child_night_familiar():
     signals_plain = _signals()
     signals_loaded = _signals(is_night=True, familiar_route=True, child_passenger=True)

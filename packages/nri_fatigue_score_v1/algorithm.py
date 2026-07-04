@@ -348,6 +348,13 @@ def evaluate(context: dict) -> dict:
     # ── Normalized score (0-1 range for UI compatibility) ─────────────────
     max_display = max(threshold_fire * 1.5, 150.0)
     normalized_score = min(1.0, s_total / max_display) if max_display > 0 else 0.0
+    # The §11 `score`/`rest_required_score` is NORMALIZED to 0-1; the timeline plots
+    # that curve and its threshold line on the same axis.  `threshold_fire` is on the
+    # RAW s_total scale (e.g. 80), so we also expose it normalized by the same
+    # divisor — otherwise the UI's y-domain stretches to ~80 and the 0-1 curve
+    # collapses to a flat line at the bottom (mirrors the hybrid's already-0-1
+    # `threshold_suggest`).
+    normalized_threshold = min(1.0, threshold_fire / max_display) if max_display > 0 else 0.0
 
     return {
         "result_type": result_type,
@@ -367,6 +374,9 @@ def evaluate(context: dict) -> dict:
         },
         "criteria": {
             "threshold_fire": threshold_fire,
+            # threshold on the SAME 0-1 scale as rest_required_score (for the
+            # timeline threshold line); threshold_fire above stays raw (s_total scale).
+            "rest_required_threshold": normalized_threshold,
             "rest_spot_eta_filter_min": rest_eta_filter,
         },
         "candidates": candidates,

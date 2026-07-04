@@ -3,6 +3,8 @@ import { useSmoothFraction } from './useSmoothFraction'
 import ScoreTimeline from './ScoreTimeline'
 import type { ScoreTimelineTestIds } from './ScoreTimeline'
 import type { ReplayTick } from '../../replay/replaySource'
+import { useRunStore } from '../../state/runStore'
+import { t } from '../../i18n/t'
 
 /**
  * RouteTimeline — the Review-screen progress timeline (FR-016 display-only).
@@ -30,6 +32,7 @@ export default function RouteTimeline({ replayTick }: { replayTick?: ReplayTick 
   const { data, exactFraction } = useLiveTimelineData(replayTick)
   const shown = useSmoothFraction(exactFraction)
   const targetPct = Math.round(exactFraction * 100)
+  const lang = useRunStore().state.uiLanguage
 
   return (
     <div style={{ margin: '12px 0' }}>
@@ -39,11 +42,12 @@ export default function RouteTimeline({ replayTick }: { replayTick?: ReplayTick 
         ghostAhead
         animated
         showPlayhead
-        playheadAriaLabel={`Route position: ${targetPct}%`}
+        playheadAriaLabel={t({ en: `Route position: ${targetPct}%`, ja: `ルート位置: ${targetPct}%` }, lang)}
         height={112}
         testIds={REVIEW_TEST_IDS}
-        restDotAriaLabel="Chosen rest spot"
+        restDotAriaLabel={t({ en: 'Chosen rest spot', ja: '選択した休憩地点' }, lang)}
         showLegend
+        lang={lang}
       />
     </div>
   )

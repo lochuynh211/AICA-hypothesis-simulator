@@ -62,8 +62,15 @@ export function useLiveTimelineData(replayTick?: ReplayTick | null): {
     .map((e) => ({ x: fracFor(e), y: num(e.scores?.['monotony_prevention_score']) as number }))
 
   const last = upTo.length > 0 ? upTo[upTo.length - 1] : null
+  // The rest curve plots the NORMALIZED rest_required_score (0-1); the threshold
+  // line must share that scale. Prefer NRI's normalized `rest_required_threshold`
+  // and the hybrid's already-0-1 `threshold_suggest`. Raw `threshold_fire` (s_total
+  // scale, e.g. 80) is a last resort only — pairing it with a 0-1 curve flattens it.
   const restThreshold =
-    num(last?.criteria?.['threshold_fire']) ?? num(last?.criteria?.['threshold_suggest']) ?? null
+    num(last?.criteria?.['rest_required_threshold']) ??
+    num(last?.criteria?.['threshold_suggest']) ??
+    num(last?.criteria?.['threshold_fire']) ??
+    null
   const monotonyThreshold = num(last?.criteria?.['monotony_suggest_threshold']) ?? null
 
   // Fires: rising-edge episodes of an actionable (paused) proposal.

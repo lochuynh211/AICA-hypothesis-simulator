@@ -61,7 +61,7 @@ export type PackageManifest = {
   version: string
   label: { ja: string; en: string }
   compatible_scenario_types: string[]
-  algorithm: { type: string; entrypoint: string }
+  algorithm: { type: string; entrypoint: string; tick_seconds?: number | null; error_mode?: string }
   parameters: ParameterDef[]
   features: FeatureDef[]
   hyperparameters: HyperparameterDef[]

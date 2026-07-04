@@ -99,16 +99,16 @@
       "traffic_jam_add_per_min": 0.05
     },
     "recovery_model": {
-      "sleep": {"drowsiness": 60.0, "fatigue": 50.0},
-      "audio_karaoke": {"drowsiness": 15.0, "fatigue": 12.0},
+      "sleep": {"drowsiness": 60.0, "fatigue": 60.0},
+      "audio_karaoke": {"drowsiness": 25.0, "fatigue": 25.0},
       "stretch": {"drowsiness": 25.0, "fatigue": 25.0}
     }
   },
   "anomaly_signal_params": {
     "lambda_base": 0.02,
     "lambda_gain": 0.50,
-    "theta": 40.0,
-    "window_min": 5.0
+    "theta": 60.0,
+    "window_min": 15.0
   },
   "run_seed_default": 42,
   "speed_profile": {

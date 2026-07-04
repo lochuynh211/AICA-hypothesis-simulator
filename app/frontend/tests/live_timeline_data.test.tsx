@@ -52,6 +52,23 @@ describe('useLiveTimelineData (live)', () => {
     expect(captured!.exactFraction).toBe(0.5)
   })
 
+  it('uses NRI normalized rest_required_threshold (0-1), not raw threshold_fire, so the curve is not flattened', async () => {
+    // NRI reports the fire threshold on the raw s_total scale (threshold_fire=80)
+    // AND normalized to the rest_required_score scale (rest_required_threshold≈0.53).
+    // The timeline plots the 0-1 curve, so it must pick the normalized threshold —
+    // otherwise the y-domain stretches to ~80 and the 0-1 curve collapses flat.
+    const nri = decision(0.14, 0, false)
+    nri.scores = { rest_required_score: 0.14 } // no monotony curve (single-curve algo)
+    nri.criteria = { threshold_fire: 80, rest_required_threshold: 0.533 }
+    render(<RunStoreProvider><Dispatcher /><Probe /></RunStoreProvider>)
+    await act(async () => {
+      dispatch!({ type: 'RUN_CREATED', runState })
+      dispatch!({ type: 'TICK_APPENDED', runState, decision: nri, tickIndex: 0, paused: false, completed: false, routeFraction: 0.1 })
+    })
+    expect(captured!.data.restThreshold).toBe(0.533)
+    expect(captured!.data.restThreshold).toBeLessThanOrEqual(1) // same scale as the curve
+  })
+
   it('sources road bands from the SELECTED alternative route_facts.route_segments (same as the map), by distance fraction', async () => {
     render(<RunStoreProvider><Dispatcher /><Probe /></RunStoreProvider>)
     const envelope = {

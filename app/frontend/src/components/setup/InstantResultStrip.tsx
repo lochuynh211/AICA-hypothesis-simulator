@@ -3,8 +3,9 @@ import { useRunStore, selectOverridesDiff } from '../../state/runStore'
 import { getPackage, routesAnalyze, createRunPlan, createRun } from '../../api/client'
 import type { InstantResult, PackageManifest, RouteFacts, DisplayRoute } from '../../api/types'
 import ErrorNotice from '../common/ErrorNotice'
-import ScoreTimeline, { type ScoreTimelineTestIds } from '../playback/ScoreTimeline'
+import ScoreTimeline, { type ScoreTimelineTestIds, segLabel } from '../playback/ScoreTimeline'
 import { instantResultToTimeline } from '../playback/timelineData'
+import { t, type UiLanguage } from '../../i18n/t'
 
 /**
  * InstantResultStrip (feature 009, FE4) — full-width bottom strip of the new
@@ -66,6 +67,7 @@ export default function InstantResultStrip() {
     tickSecondsOverride,
     initialDrowsiness,
     initialFatigue,
+    uiLanguage,
   } = state
 
   const [manifest, setManifest] = useState<PackageManifest | null>(null)
@@ -181,14 +183,14 @@ export default function InstantResultStrip() {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#374151' }}>
           <strong style={{ letterSpacing: '0.05em', textTransform: 'uppercase', fontSize: '0.85em', color: '#6b7280' }}>
-            Instant Result
+            {t({ en: 'Instant Result', ja: '即時結果' }, uiLanguage)}
           </strong>
           <span data-testid="instant-result-seed-chip">
-            seed {runSeed}{' '}
+            {t({ en: 'seed', ja: 'シード' }, uiLanguage)} {runSeed}{' '}
             <button
               type="button"
               data-testid="instant-result-reroll"
-              aria-label="Re-roll seed"
+              aria-label={t({ en: 'Re-roll seed', ja: 'シード再生成' }, uiLanguage)}
               onClick={handleReroll}
               style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '1em' }}
             >
@@ -196,7 +198,13 @@ export default function InstantResultStrip() {
             </button>
           </span>
           <span data-testid="instant-result-overrides-chip">
-            {overridesDiff.length} override{overridesDiff.length === 1 ? '' : 's'}
+            {t(
+              {
+                en: `${overridesDiff.length} override${overridesDiff.length === 1 ? '' : 's'}`,
+                ja: `${overridesDiff.length} 件の変更`,
+              },
+              uiLanguage,
+            )}
           </span>
         </div>
         <button
@@ -206,7 +214,9 @@ export default function InstantResultStrip() {
           disabled={!canOpenFullRun}
           style={{ padding: '4px 10px', fontSize: '0.9em' }}
         >
-          {openRunLoading ? 'Opening…' : '▸ Open full run'}
+          {openRunLoading
+            ? t({ en: 'Opening…', ja: '開いています…' }, uiLanguage)
+            : t({ en: '▸ Open full run', ja: '▸ フル実行を開く' }, uiLanguage)}
         </button>
       </div>
 
@@ -214,7 +224,7 @@ export default function InstantResultStrip() {
 
       {previewLoading && (
         <div data-testid="instant-result-loading" style={{ fontSize: '0.85em', color: '#6b7280', padding: '8px 0' }}>
-          Computing preview…
+          {t({ en: 'Computing preview…', ja: 'プレビューを計算中…' }, uiLanguage)}
         </div>
       )}
 
@@ -222,11 +232,13 @@ export default function InstantResultStrip() {
         <ErrorNotice testid="instant-result-preview-error" message={previewError} />
       )}
 
-      {!previewLoading && !previewError && instantResult && <InstantResultTimeline result={instantResult} />}
+      {!previewLoading && !previewError && instantResult && (
+        <InstantResultTimeline result={instantResult} lang={uiLanguage} />
+      )}
 
       {!previewLoading && !previewError && !instantResult && (
         <div data-testid="instant-result-empty" style={{ fontSize: '0.85em', color: '#9ca3af', padding: '8px 0' }}>
-          Select a package and scenario to see a preview.
+          {t({ en: 'Select a package and scenario to see a preview.', ja: 'パッケージとシナリオを選択するとプレビューが表示されます。' }, uiLanguage)}
         </div>
       )}
     </div>
@@ -259,20 +271,8 @@ const DEFAULT_SEGMENT_COLOR = '#f3f4f6'
 // rest-spot dot, so a reviewer can point at a spike and see the curve step up.
 const SPIKE_COLOR = '#db2777'
 
-// Human-readable road-band labels (segment `type` → label) for band text + legend.
-const SEGMENT_LABELS: Record<string, string> = {
-  start: 'start',
-  urban: 'urban',
-  highway: 'highway',
-  national: 'national road',
-  normal_road: 'normal road',
-  residential: 'residential',
-  mountain_road: 'mountain road',
-  sightseeing_road: 'scenic road',
-  rest: 'rest stop',
-  end: 'end',
-}
-const segLabel = (type: string | null | undefined) => (type ? SEGMENT_LABELS[type] ?? type : '')
+// Road-band labels are shared with the Review timeline via ScoreTimeline.segLabel
+// (bilingual), so preview + review read identically in both languages.
 
 // Score-curve colors — rest-propose (blue) vs monotony-prevention (teal). Chosen
 // to stay distinct from the red threshold and the pale amber/orange road bands.
@@ -302,7 +302,7 @@ const STRIP_TEST_IDS: ScoreTimelineTestIds = {
   segment: (i) => `instant-result-segment-${i}`,
 }
 
-function InstantResultTimeline({ result }: { result: InstantResult }) {
+function InstantResultTimeline({ result, lang }: { result: InstantResult; lang: UiLanguage }) {
   const { segments, threshold, error } = result
   // Second (monotony) curve — present only for the hybrid; NRI leaves it empty.
   const monotony_series = result.monotony_series ?? []
@@ -338,9 +338,16 @@ function InstantResultTimeline({ result }: { result: InstantResult }) {
         showPlayhead={false}
         height={92}
         testIds={STRIP_TEST_IDS}
-        thresholdLabel={threshold != null ? `threshold ${formatNum(threshold)}` : undefined}
+        lang={lang}
+        thresholdLabel={
+          threshold != null
+            ? t({ en: `threshold ${formatNum(threshold)}`, ja: `しきい値 ${formatNum(threshold)}` }, lang)
+            : undefined
+        }
         monotonyThresholdLabel={
-          hasMonotony && monotony_threshold != null ? `monotony ${formatNum(monotony_threshold)}` : undefined
+          hasMonotony && monotony_threshold != null
+            ? t({ en: `monotony ${formatNum(monotony_threshold)}`, ja: `単調性 ${formatNum(monotony_threshold)}` }, lang)
+            : undefined
         }
       />
 
@@ -356,14 +363,14 @@ function InstantResultTimeline({ result }: { result: InstantResult }) {
           margin: '2px 0 0',
         }}
       >
-        <LegendLine color={REST_COLOR} label="rest-propose score" />
-        {hasMonotony && <LegendLine color={MONOTONY_COLOR} label="monotony score" />}
-        {spikes.length > 0 && <LegendSwatch color={SPIKE_COLOR} label="anomaly spike" />}
+        <LegendLine color={REST_COLOR} label={t({ en: 'rest-propose score', ja: '休憩提案スコア' }, lang)} />
+        {hasMonotony && <LegendLine color={MONOTONY_COLOR} label={t({ en: 'monotony score', ja: '単調性スコア' }, lang)} />}
+        {spikes.length > 0 && <LegendSwatch color={SPIKE_COLOR} label={t({ en: 'anomaly spike', ja: '異常スパイク' }, lang)} />}
         {presentSegTypes.map((type) => (
           <LegendSwatch
             key={type}
             color={SEGMENT_COLORS[type] ?? DEFAULT_SEGMENT_COLOR}
-            label={segLabel(type)}
+            label={segLabel(type, lang)}
           />
         ))}
       </div>
@@ -371,12 +378,18 @@ function InstantResultTimeline({ result }: { result: InstantResult }) {
       {error && (
         <ErrorNotice
           testid="instant-result-error"
-          message={`Algorithm error @ tick ${error.tick_index} (${error.error_type}): ${error.message}`}
+          message={t(
+            {
+              en: `Algorithm error @ tick ${error.tick_index} (${error.error_type}): ${error.message}`,
+              ja: `アルゴリズムエラー @ tick ${error.tick_index}（${error.error_type}）: ${error.message}`,
+            },
+            lang,
+          )}
         />
       )}
 
       <p data-testid="instant-result-line" style={{ fontSize: '0.85em', color: '#374151', margin: '4px 0 0' }}>
-        {buildResultLine(result)}
+        {buildResultLine(result, lang)}
       </p>
     </div>
   )
@@ -409,21 +422,41 @@ function LegendSwatch({ color, label }: { color: string; label: string }) {
 }
 
 /** Builds the "Fired: …" / "No trigger — …" result line (never a fabricated fire). */
-function buildResultLine(result: InstantResult): string {
+function buildResultLine(result: InstantResult, lang: UiLanguage): string {
   const { fired, fire, peak_score, threshold, rest_option, completed_min, error } = result
 
   if (error) {
-    return `Preview halted by an algorithm error (${error.error_type}) — no result to report.`
+    return t(
+      {
+        en: `Preview halted by an algorithm error (${error.error_type}) — no result to report.`,
+        ja: `アルゴリズムエラーによりプレビューが中断されました（${error.error_type}）— 結果はありません。`,
+      },
+      lang,
+    )
   }
 
   if (!fired || !fire) {
     const thresholdText = threshold != null ? formatNum(threshold) : '—'
-    return `No trigger — peak ${formatNum(peak_score)} (threshold ${thresholdText})`
+    return t(
+      {
+        en: `No trigger — peak ${formatNum(peak_score)} (threshold ${thresholdText})`,
+        ja: `発火なし — ピーク ${formatNum(peak_score)}（しきい値 ${thresholdText}）`,
+      },
+      lang,
+    )
   }
 
   const category = fire.category ? fire.category.split('_')[0].toUpperCase() : 'TRIGGER'
   const strength = fire.strength ? ` · ${fire.strength}` : ''
   const restPart = rest_option ? ` · auto-rest ${rest_option.id}` : ''
   const donePart = completed_min != null ? ` · done ${Math.round(completed_min)} min` : ''
-  return `Fired: ${category}${strength} @ ${Math.round(fire.time_min)} min · peak ${formatNum(peak_score)}${restPart}${donePart}`
+  const restPartJa = rest_option ? ` · 自動休憩 ${rest_option.id}` : ''
+  const donePartJa = completed_min != null ? ` · 完了 ${Math.round(completed_min)}分` : ''
+  return t(
+    {
+      en: `Fired: ${category}${strength} @ ${Math.round(fire.time_min)} min · peak ${formatNum(peak_score)}${restPart}${donePart}`,
+      ja: `発火: ${category}${strength} @ ${Math.round(fire.time_min)}分 · ピーク ${formatNum(peak_score)}${restPartJa}${donePartJa}`,
+    },
+    lang,
+  )
 }

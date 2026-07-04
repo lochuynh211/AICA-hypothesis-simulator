@@ -224,6 +224,33 @@ describe('SignalsPanel — feature 009 FE2', () => {
     await waitFor(() => expect(tickOverride()).toBe('null'))
   })
 
+  it('(t2) tick-duration default reflects the package algorithm.tick_seconds override (not the scenario)', async () => {
+    vi.mocked(client.getScenario).mockResolvedValue(scenarioFixture) // scenario tick_seconds = 60
+    // The hybrid package overrides the cadence via algorithm.tick_seconds — the
+    // value the backend actually runs at. The setup default must show THAT (30),
+    // not the scenario's 60, so setup matches the run + review clock.
+    vi.mocked(client.getPackage).mockResolvedValue({
+      id: 'aica_transparent_hybrid_trigger_v1',
+      features: [],
+      algorithm: { type: 'python_module', entrypoint: 'algorithm.py', tick_seconds: 30 },
+    } as never)
+
+    renderInStore(<SignalsPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: scenarioFixture.id })
+      dispatch({ type: 'SELECT_PACKAGE', id: 'aica_transparent_hybrid_trigger_v1' })
+    })
+
+    const input = (await screen.findByTestId('tick-seconds-input')) as HTMLInputElement
+    await waitFor(() => expect(input.value).toBe('30'))
+    expect(tickOverride()).toBe('null')
+
+    // Typing the package default (30) is a no-op override; a different value sets it.
+    fireEvent.change(input, { target: { value: '30' } })
+    await waitFor(() => expect(tickOverride()).toBe('null'))
+    fireEvent.change(input, { target: { value: '90' } })
+    await waitFor(() => expect(tickOverride()).toBe('90'))
+  })
+
   it('(j) UX-FE5: editing a speed-profile field dispatches SET_PROFILE_OVERRIDES(speed.<field>); revert removes it', async () => {
     vi.mocked(client.getScenario).mockResolvedValue(scenarioFixture)
 
