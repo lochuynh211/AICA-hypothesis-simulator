@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useRunStore } from '../../state/runStore'
 import PlaybackControls from '../playback/PlaybackControls'
 import RouteTimeline from '../playback/RouteTimeline'
-import StateCards from '../playback/StateCards'
 import MapSurface from '../map/MapSurface'
 import MusicOverlay from '../playback/MusicOverlay'
 import CockpitView from '../playback/CockpitView'
@@ -17,7 +16,6 @@ import { getScenario } from '../../api/client'
  * Top-to-bottom:
  *   - PlaybackControls + MotionBadge  — play/pause/speed + vehicle motion state
  *   - RouteTimeline                   — progress track (car + fire marker)
- *   - StateCards                      — in-car status + driving environment
  *   - Cockpit surface                 — big Google Map (when a maps route is selected)
  *     with layered overlays:
  *       · MusicOverlay          — now-playing at rest
@@ -85,7 +83,6 @@ export default function CenterPlaybackPanel() {
       </div>
 
       <RouteTimeline />
-      <StateCards />
 
       {/* Cockpit surface — map (when available) with layered overlays. */}
       <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>

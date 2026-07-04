@@ -1,13 +1,14 @@
 /**
- * Review-screen panel rebuild — RouteStatus, DriverStatus, StateCards, MusicOverlay.
+ * Review-screen panel rebuild — RouteStatus, DriverStatus, MusicOverlay,
+ * CenterPlaybackPanel.
  *
  * Covers the data each new panel derives from the store:
  *  - RouteStatus: distance from start/destination + current speed + ETA, from
  *    route_facts and the last trace entry.
  *  - DriverStatus: drowsiness / fatigue bands from latestDecision.features.
- *  - StateCards: drowsiness + fatigue band readout (road type / speed band /
- *    vehicle motion live in ScenarioBeats' event-driven timeline instead).
  *  - MusicOverlay: visible only when the active segment is a rest facility.
+ *  - CenterPlaybackPanel: no longer renders StateCards (removed — the live
+ *    RouteTimeline takes its place).
  */
 import { render, screen, act, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -26,8 +27,8 @@ import * as client from '../src/api/client'
 import RouteStatus from '../src/components/context/RouteStatus'
 import ScenarioBeats from '../src/components/context/ScenarioBeats'
 import DriverStatus from '../src/components/context/DriverStatus'
-import StateCards from '../src/components/playback/StateCards'
 import MusicOverlay from '../src/components/playback/MusicOverlay'
+import CenterPlaybackPanel from '../src/components/layout/CenterPlaybackPanel'
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -213,22 +214,18 @@ describe('DriverStatus', () => {
   })
 })
 
-// ── StateCards ──────────────────────────────────────────────────────────────────
+// ── CenterPlaybackPanel — StateCards removed ─────────────────────────────────────
 
-describe('StateCards', () => {
+describe('CenterPlaybackPanel — StateCards removed', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     vi.mocked(client.getScenario).mockResolvedValue(scenarioDef)
   })
 
-  // Road type / speed band / vehicle motion moved out of StateCards into the
-  // event-driven ScenarioBeats timeline (see the "Driving · Highway" /
-  // "Resting (nap)" assertions in the ScenarioBeats describe block above) —
-  // StateCards is now the driver band readout only (drowsiness + fatigue).
-  it('shows the drowsiness and fatigue bands from the latest decision', () => {
-    renderWithStore(<StateCards />, seedRun)
-    expect(screen.getByTestId('state-cards')).toHaveTextContent('high') // drowsiness band
-    expect(screen.getByTestId('state-cards')).toHaveTextContent('moderate') // fatigue band
+  it('does not render the state-cards block, and renders the route timeline', () => {
+    renderWithStore(<CenterPlaybackPanel />, seedRun)
+    expect(screen.queryByTestId('state-cards')).not.toBeInTheDocument()
+    expect(screen.getByTestId('route-timeline')).toBeInTheDocument()
   })
 })
 
