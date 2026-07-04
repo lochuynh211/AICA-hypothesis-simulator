@@ -147,6 +147,17 @@ const nriResult: InstantResult = {
   error: null,
 }
 
+// Hybrid case carrying a SECOND (monotony) curve + its own threshold.
+const hybridTwoCurveResult: InstantResult = {
+  ...firedResult,
+  monotony_series: [
+    { t: 0, score: 0.0 },
+    { t: 50, score: 0.2 },
+    { t: 111, score: 0.55 },
+  ],
+  monotony_threshold: 0.5,
+}
+
 const createdRun: RunState = {
   run_id: 'run-xyz',
   status: 'created',
@@ -221,6 +232,127 @@ describe('InstantResultStrip — feature 009 FE4', () => {
 
     // No error surface when there's no error.
     expect(screen.queryByTestId('instant-result-error')).not.toBeInTheDocument()
+  })
+
+  it('(a2) hybrid with a monotony_series renders TWO curves + a monotony threshold', async () => {
+    renderInStore(<InstantResultStrip />, (dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
+      dispatch({ type: 'PREVIEW_SUCCEEDED', result: hybridTwoCurveResult })
+    })
+
+    // Both score curves + both threshold lines.
+    expect(await screen.findByTestId('instant-result-curve')).toBeInTheDocument()
+    expect(screen.getByTestId('instant-result-monotony-curve')).toBeInTheDocument()
+    expect(screen.getByTestId('instant-result-threshold')).toBeInTheDocument()
+    expect(screen.getByTestId('instant-result-monotony-threshold')).toBeInTheDocument()
+
+    // Monotony curve y-coordinates are finite (shared, valid y-axis).
+    const monoPts = screen.getByTestId('instant-result-monotony-curve').getAttribute('points') ?? ''
+    for (const coord of monoPts.split(/[ ,]/).filter(Boolean)) {
+      expect(Number.isFinite(Number(coord))).toBe(true)
+    }
+
+    // Legend names both score lines AND only the road bands actually present —
+    // never a hardcoded "normal road" the current route doesn't contain.
+    const legend = screen.getByTestId('instant-result-legend').textContent ?? ''
+    expect(legend).toContain('rest-propose score')
+    expect(legend).toContain('monotony score')
+    expect(legend).toContain('urban')
+    expect(legend).toContain('highway')
+    expect(legend).not.toContain('normal road')
+  })
+
+  it('(a3) NRI-style result (no monotony_series) renders a SINGLE curve, no monotony threshold', async () => {
+    renderInStore(<InstantResultStrip />, (dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
+      dispatch({ type: 'PREVIEW_SUCCEEDED', result: nriResult })
+    })
+
+    expect(await screen.findByTestId('instant-result-curve')).toBeInTheDocument()
+    expect(screen.queryByTestId('instant-result-monotony-curve')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('instant-result-monotony-threshold')).not.toBeInTheDocument()
+    // Legend omits the monotony line when there's no second curve.
+    const legend = screen.getByTestId('instant-result-legend').textContent ?? ''
+    expect(legend).not.toContain('monotony score')
+  })
+
+  it('(a4) rest triggers are solid red lines, monotony triggers thin amber; one orange dot per rest stop', async () => {
+    const multiFire: InstantResult = {
+      ...firedResult,
+      fires: [
+        { category: 'rest_required', strength: 'gentle', tick: 40, time_min: 20.0 },
+        { category: 'monotony_prevention', strength: 'clear', tick: 120, time_min: 60.0 },
+        { category: 'rest_required', strength: 'strong', tick: 200, time_min: 100.0 },
+      ],
+      // Two auto-accepted rests → two orange dots at their recovery times.
+      rest_options: [
+        { id: 'nap_karaoke', auto_chosen: true, recovery_from_min: 22.0, to_min: 30.0 },
+        { id: 'nap_karaoke', auto_chosen: true, recovery_from_min: 102.0, to_min: 110.0 },
+      ],
+    }
+    renderInStore(<InstantResultStrip />, (dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
+      dispatch({ type: 'PREVIEW_SUCCEEDED', result: multiFire })
+    })
+
+    // REST triggers → prominent solid red lines (2 of the 3 fires).
+    const restLines = await screen.findAllByTestId('instant-result-fire-line')
+    expect(restLines).toHaveLength(2)
+    for (const ln of restLines) {
+      expect(ln.tagName.toLowerCase()).toBe('line')
+      expect(ln.getAttribute('stroke')).toBe('#dc2626')
+    }
+    // MONOTONY triggers → secondary thin amber lines (1 of the 3).
+    const monoLines = screen.getAllByTestId('instant-result-monotony-fire-line')
+    expect(monoLines).toHaveLength(1)
+    expect(monoLines[0].getAttribute('stroke')).toBe('#0d9488')
+
+    // One orange rest DOT per accepted rest (positioned at recovery time).
+    const dots = screen.getAllByTestId('instant-result-rest-dot')
+    expect(dots).toHaveLength(2)
+    for (const d of dots) {
+      expect(d.tagName.toLowerCase()).toBe('circle')
+      expect(d.getAttribute('fill')).toBe('#f59e0b')
+    }
+  })
+
+  it('(a5) anomaly spikes render one pink caret each, aligned to their tick, with a legend entry', async () => {
+    const withSpikes: InstantResult = {
+      ...firedResult,
+      spikes: [
+        { t: 50, time_min: 13.0 },
+        { t: 111, time_min: 29.0 },
+      ],
+    }
+    renderInStore(<InstantResultStrip />, (dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
+      dispatch({ type: 'PREVIEW_SUCCEEDED', result: withSpikes })
+    })
+
+    const carets = await screen.findAllByTestId('instant-result-spike')
+    expect(carets).toHaveLength(2)
+    for (const c of carets) {
+      expect(c.tagName.toLowerCase()).toBe('polygon')
+      expect(c.getAttribute('fill')).toBe('#db2777')
+    }
+    // Legend gains an "anomaly spike" entry only when spikes are present.
+    expect(screen.getByText('anomaly spike')).toBeInTheDocument()
+  })
+
+  it('(a6) no spikes → no caret markers and no legend entry', async () => {
+    renderInStore(<InstantResultStrip />, (dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
+      dispatch({ type: 'PREVIEW_SUCCEEDED', result: firedResult })
+    })
+
+    await screen.findByTestId('instant-result-timeline')
+    expect(screen.queryByTestId('instant-result-spike')).not.toBeInTheDocument()
+    expect(screen.queryByText('anomaly spike')).not.toBeInTheDocument()
   })
 
   it('(b) fired=false renders the "No trigger" state with peak vs threshold, no fire marker', async () => {

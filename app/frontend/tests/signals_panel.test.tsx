@@ -262,6 +262,37 @@ describe('SignalsPanel — feature 009 FE2', () => {
     await waitFor(() => expect(profileOverrides()).toBeNull())
   })
 
+  it('(dim) signals a package does not consume render dimmed (data-dimmed=true)', async () => {
+    vi.mocked(client.getScenario).mockResolvedValue(scenarioFixture)
+    // NRI has no env_load feature and never links weatherRisk → weatherRisk dims.
+    vi.mocked(client.getPackage).mockResolvedValue({
+      id: 'nri_fatigue_score_v1',
+      features: [
+        'drowsiness', 'fatigue', 'driving_anomaly', 'future_fatigue', 'rest_window',
+        'rest_scarcity', 'monotony', 'familiar_route', 'attention_drop', 'traffic_jam', 'long_highway',
+      ].map((key) => ({ key, band_values: [] })),
+    } as never)
+
+    renderInStore(<SignalsPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: scenarioFixture.id })
+      dispatch({ type: 'SELECT_PACKAGE', id: 'nri_fatigue_score_v1' })
+    })
+
+    const weatherRow = await screen.findByTestId('signal-row-weatherRisk')
+    await waitFor(() => expect(weatherRow.getAttribute('data-dimmed')).toBe('true'))
+    // A signal NRI does use stays undimmed.
+    expect(screen.getByTestId('signal-row-drowsiness').getAttribute('data-dimmed')).toBe('false')
+  })
+
+  it('(dim) nothing is dimmed when no package is selected', async () => {
+    vi.mocked(client.getScenario).mockResolvedValue(scenarioFixture)
+    renderInStore(<SignalsPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: scenarioFixture.id })
+    })
+    const weatherRow = await screen.findByTestId('signal-row-weatherRisk')
+    expect(weatherRow.getAttribute('data-dimmed')).toBe('false')
+  })
+
   it('(a) renders the three tier groups with the expected signal rows once a scenario is selected', async () => {
     vi.mocked(client.getScenario).mockResolvedValue(scenarioFixture)
 

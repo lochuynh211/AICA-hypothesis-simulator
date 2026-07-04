@@ -407,6 +407,17 @@ class ScoreSeriesPoint(BaseModel):
     score: float
 
 
+class SpikePoint(BaseModel):
+    """One anomaly-spike event (for the setup-screen preview timeline marker).
+
+    `t` is the tick index (aligns with score_series.t); `time_min` is the same
+    instant in minutes (aligns with segment bands / markers plotted by minute).
+    """
+
+    t: int
+    time_min: float
+
+
 class PreviewSegment(BaseModel):
     """A contiguous run of one segment type over the previewed route."""
 
@@ -448,12 +459,26 @@ class InstantResult(BaseModel):
 
     fired: bool
     fire: FirePoint | None = None
+    # Every actionable trigger across the run (first entry == `fire`) — lets the
+    # setup strip mark multiple triggers like the Review timeline. Empty on error.
+    fires: list[FirePoint] = []
     peak_score: float
     threshold: float | None = None
     score_series: list[ScoreSeriesPoint] = []
+    # Second (monotony-prevention) curve — populated only by algorithms that emit
+    # a `monotony_prevention_score` (the transparent hybrid); empty for NRI, which
+    # has a single rest-required score. `monotony_threshold` is its trigger level.
+    monotony_series: list[ScoreSeriesPoint] = []
+    monotony_threshold: float | None = None
+    # Anomaly-spike events over the run — one marker per Poisson spike so the
+    # reviewer can see the rest-propose curve step up right after a spike.
+    spikes: list[SpikePoint] = []
     segments: list[PreviewSegment] = []
     rest_spot: PreviewRestSpot | None = None
     rest_option: PreviewRestOption | None = None
+    # Every auto-accepted rest across the run (rest_spot/rest_option == first of each).
+    rest_spots: list[PreviewRestSpot] = []
+    rest_options: list[PreviewRestOption] = []
     completed_min: float | None = None
     seed: int
     overrides: list[dict[str, Any]] = []

@@ -333,6 +333,36 @@ def test_drive_min_since_rest_rebaselines_while_recovery_active():
     assert mod._driving_time_score(210.0 - 205.0) == 0.0
 
 
+def test_monotony_and_env_exposure_rebaseline_after_rest():
+    """The jam/highway/monotony accumulators are measured SINCE THE LAST REST: a
+    rest rebaselines them so monotony DROPS afterwards and rebuilds, instead of
+    saturating and never falling. Regression for 'monotony not decrease after rest'."""
+    # Drive a long monotonous highway stretch (advance sim_time so mono_min grows).
+    st: dict = {}
+    t = 3600.0
+    for i in range(6):
+        sig = _signals(segment_type="highway", motion_state="MOVING", continuous_driving_min=(i + 1) * 30.0)
+        st = mod.evaluate(_ctx(sig, prev_state=st, sim_time=t))["next_package_runtime_state"]
+        t += 1800.0  # +30 min/tick
+
+    mono_driving = st["smoothed_features"]["monotony"]
+    cumulative_mono = st["accumulators"]["mono_min"]
+    assert mono_driving > 0.2 and cumulative_mono >= 100.0  # built up + saturated
+
+    # Rest: recovery_active True -> baseline captures the current cumulative totals.
+    resting = _signals(segment_type="highway", motion_state="STOPPED", continuous_driving_min=210.0)
+    r_rest = mod.evaluate(_ctx(resting, prev_state=st, sim_time=t, recovery_active=True))
+    base = r_rest["next_package_runtime_state"]["accum_baseline"]
+    assert base["mono_min"] == cumulative_mono
+    assert "jam_min" in base and "hw_min" in base  # env_load exposure rebaselined too
+
+    # Resume shortly after (small delta) -> since-rest monotony ~0 -> smoothed DROPS.
+    resumed = _signals(segment_type="highway", motion_state="MOVING", continuous_driving_min=211.0)
+    r_resume = mod.evaluate(_ctx(resumed, prev_state=r_rest["next_package_runtime_state"], sim_time=t + 60.0))
+    mono_after = r_resume["next_package_runtime_state"]["smoothed_features"]["monotony"]
+    assert mono_after < mono_driving, f"monotony must fall after a rest: {mono_after} !< {mono_driving}"
+
+
 # ---------------------------------------------------------------------------
 # child_passenger — fixed additive bonus into rest_required_score (raw, not smoothed)
 # ---------------------------------------------------------------------------

@@ -165,6 +165,38 @@ describe('runStore — SELECT_PACKAGE / SELECT_SCENARIO', () => {
     act(() => result.current.dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' }))
     expect(result.current.state.selectedScenarioId).toBe('uc01_fatigue_friend_drive_v0_1')
   })
+
+  it('SELECT_SCENARIO PRESERVES a maps/preset route but CLEARS a local one', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    const envelope = {
+      route_source: 'maps' as const,
+      alternatives: [
+        { route_id: 'preset-osaka', summary: 'T→O', route_facts: { total_route_distance_km: 515 }, display: {}, notices: [] },
+      ],
+    }
+    // Maps/preset route selected, THEN scenario chosen → route must survive.
+    act(() => {
+      result.current.dispatch({ type: 'SET_ALTERNATIVES', envelope: envelope as never })
+      result.current.dispatch({ type: 'SELECT_ROUTE', routeId: 'preset-osaka' })
+      result.current.dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_friend_drive_v0_1' })
+    })
+    expect(result.current.state.routeSource).toBe('maps')
+    expect(result.current.state.selectedRouteId).toBe('preset-osaka')
+    expect(result.current.state.alternatives).toHaveLength(1)
+
+    // A LOCAL route, by contrast, is scenario-derived → cleared on scenario change.
+    act(() => {
+      result.current.dispatch({
+        type: 'SET_ALTERNATIVES',
+        envelope: { route_source: 'local', alternatives: [{ route_id: 'local', summary: '', route_facts: {}, display: null, notices: [] }] } as never,
+      })
+      result.current.dispatch({ type: 'SELECT_ROUTE', routeId: 'local' })
+      result.current.dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
+    })
+    expect(result.current.state.routeSource).toBe('local')
+    expect(result.current.state.selectedRouteId).toBeNull()
+    expect(result.current.state.alternatives).toHaveLength(0)
+  })
 })
 
 describe('runStore — RUN_CREATED', () => {
@@ -826,6 +858,130 @@ describe('useRunPreview — debounced POST /runs/preview (feature 009)', () => {
         run_seed: 42,
         profiles: { driver: { drowsiness_model: { base_growth_per_min: 1.1 } } },
       })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('includes the selected preset route on the FIRST preview after the package is chosen', async () => {
+    vi.useFakeTimers()
+    try {
+      vi.mocked(client.runPreview).mockResolvedValue(mockInstantResult)
+      vi.mocked(client.runPreview).mockClear() // module-level spy — isolate from prior tests
+
+      const envelope = {
+        route_source: 'maps' as const,
+        alternatives: [
+          {
+            route_id: 'preset-osaka',
+            summary: 'Tokyo → Osaka',
+            route_facts: { total_route_distance_km: 515, route_segments: [] },
+            display: { summary: 'Tokyo → Osaka', encoded_polyline: 'abc', start_label: 'Tokyo', end_label: 'Osaka' },
+            notices: [],
+          },
+        ],
+      }
+
+      const { result } = renderHook(
+        () => {
+          const store = useRunStore()
+          useRunPreview()
+          return store
+        },
+        { wrapper },
+      )
+
+      // Scenario + preset route selected FIRST (no package yet → no preview fires).
+      act(() => {
+        result.current.dispatch({ type: 'SELECT_SCENARIO', id: 'scen1' })
+        result.current.dispatch({ type: 'SET_ALTERNATIVES', envelope: envelope as never })
+        result.current.dispatch({ type: 'SELECT_ROUTE', routeId: 'preset-osaka' })
+      })
+      await act(async () => {
+        vi.advanceTimersByTime(500)
+        await Promise.resolve()
+      })
+      expect(client.runPreview).not.toHaveBeenCalled()
+
+      // Now the user chooses the package — the FIRST preview must carry the route.
+      act(() => {
+        result.current.dispatch({ type: 'SELECT_PACKAGE', id: 'pkg1' })
+      })
+      await act(async () => {
+        vi.advanceTimersByTime(500)
+        await Promise.resolve()
+        await Promise.resolve()
+      })
+
+      expect(client.runPreview).toHaveBeenCalledTimes(1)
+      expect(client.runPreview).toHaveBeenCalledWith(
+        expect.objectContaining({
+          package_id: 'pkg1',
+          route_source: 'maps',
+          route_id: 'preset-osaka',
+          route_facts: { total_route_distance_km: 515, route_segments: [] },
+        }),
+      )
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('re-fires WITH the route when a preset is selected AFTER an initial (local) preview', async () => {
+    vi.useFakeTimers()
+    try {
+      vi.mocked(client.runPreview).mockResolvedValue(mockInstantResult)
+      vi.mocked(client.runPreview).mockClear() // module-level spy — isolate from prior tests
+
+      const envelope = {
+        route_source: 'maps' as const,
+        alternatives: [
+          {
+            route_id: 'preset-osaka',
+            summary: 'Tokyo → Osaka',
+            route_facts: { total_route_distance_km: 515, route_segments: [] },
+            display: { summary: 'Tokyo → Osaka', encoded_polyline: 'abc', start_label: 'Tokyo', end_label: 'Osaka' },
+            notices: [],
+          },
+        ],
+      }
+
+      const { result } = renderHook(
+        () => {
+          const store = useRunStore()
+          useRunPreview()
+          return store
+        },
+        { wrapper },
+      )
+
+      // Package + scenario chosen first → an initial LOCAL preview fires.
+      act(() => {
+        result.current.dispatch({ type: 'SELECT_PACKAGE', id: 'pkg1' })
+        result.current.dispatch({ type: 'SELECT_SCENARIO', id: 'scen1' })
+      })
+      await act(async () => {
+        vi.advanceTimersByTime(500)
+        await Promise.resolve()
+      })
+      expect(client.runPreview).toHaveBeenLastCalledWith(
+        expect.not.objectContaining({ route_source: 'maps' }),
+      )
+
+      // Then the user selects a preset → a NEW preview must fire WITH the route.
+      act(() => {
+        result.current.dispatch({ type: 'SET_ALTERNATIVES', envelope: envelope as never })
+        result.current.dispatch({ type: 'SELECT_ROUTE', routeId: 'preset-osaka' })
+      })
+      await act(async () => {
+        vi.advanceTimersByTime(500)
+        await Promise.resolve()
+        await Promise.resolve()
+      })
+
+      expect(client.runPreview).toHaveBeenLastCalledWith(
+        expect.objectContaining({ route_source: 'maps', route_id: 'preset-osaka' }),
+      )
     } finally {
       vi.useRealTimers()
     }

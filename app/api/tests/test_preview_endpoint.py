@@ -78,7 +78,7 @@ def test_preview_returns_instant_result_and_does_not_persist(package_id, monkeyp
 
     # InstantResult shape (data-model.md §7).
     for key in (
-        "fired", "fire", "peak_score", "threshold", "score_series", "segments",
+        "fired", "fire", "peak_score", "threshold", "score_series", "spikes", "segments",
         "rest_spot", "rest_option", "completed_min", "seed", "overrides", "error",
     ):
         assert key in body, f"InstantResult missing key {key!r}"
@@ -93,6 +93,106 @@ def test_preview_returns_instant_result_and_does_not_persist(package_id, monkeyp
 
     after = sorted(p.name for p in tmp_path.glob("*.json"))
     assert before == after == [], "runs/ must be unchanged (empty) after a /preview call"
+
+
+# ---------------------------------------------------------------------------
+# 1b — Second (monotony) curve: populated for the hybrid, empty for NRI.
+# ---------------------------------------------------------------------------
+
+
+def test_preview_monotony_series_present_for_hybrid_absent_for_nri(monkeypatch, tmp_path):
+    """The hybrid emits a `monotony_prevention_score` → the preview carries a
+    second `monotony_series` + `monotony_threshold`; NRI (single rest score)
+    leaves both empty/None so the setup strip renders a single curve."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+    client = TestClient(app)
+
+    hybrid = client.post("/api/runs/preview", json=_preview_body(package_id=_HYBRID_PKG_ID)).json()
+    assert isinstance(hybrid["monotony_series"], list) and len(hybrid["monotony_series"]) > 0
+    # Same length as the rest curve — one sample per evaluated tick.
+    assert len(hybrid["monotony_series"]) == len(hybrid["score_series"])
+    assert hybrid["monotony_threshold"] is not None
+
+    nri = client.post("/api/runs/preview", json=_preview_body(package_id=_NRI_PKG_ID)).json()
+    assert nri["monotony_series"] == []
+    assert nri["monotony_threshold"] is None
+
+
+# ---------------------------------------------------------------------------
+# 1b' — Anomaly spikes are emitted and marked on the timeline (aligned to ticks).
+# ---------------------------------------------------------------------------
+
+
+def test_preview_emits_anomaly_spikes_aligned_to_score_ticks(monkeypatch, tmp_path):
+    """The seeded-Poisson generator fires spikes over the run; the preview marks
+    each one so the setup strip can point at it. Every spike's tick index lines up
+    with a score_series sample (same x-axis), and its time_min is non-negative.
+    Deterministic given the run_seed."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+    client = TestClient(app)
+
+    body = client.post("/api/runs/preview", json=_preview_body(package_id=_HYBRID_PKG_ID)).json()
+
+    spikes = body["spikes"]
+    assert isinstance(spikes, list) and len(spikes) > 0, "uc01 drives drowsiness high enough to spike"
+    score_ticks = {p["t"] for p in body["score_series"]}
+    for s in spikes:
+        assert set(s) >= {"t", "time_min"}
+        assert s["t"] in score_ticks, "spike must align with a score-curve point"
+        assert s["time_min"] >= 0.0
+
+    # Deterministic: same run_seed → identical spike ticks.
+    body2 = client.post("/api/runs/preview", json=_preview_body(package_id=_HYBRID_PKG_ID)).json()
+    assert [s["t"] for s in body2["spikes"]] == [s["t"] for s in spikes]
+
+
+# ---------------------------------------------------------------------------
+# 1c — A selected Maps/preset route is honored by the preview (not the scenario
+#      default local route).
+# ---------------------------------------------------------------------------
+
+
+def test_preview_honors_selected_maps_route(monkeypatch, tmp_path):
+    """Selecting a preset route in setup must change the preview: passing the
+    preset's route_facts with route_source='maps' runs the preview against that
+    route (its distance/duration), so the result differs from the local default."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+    client = TestClient(app)
+
+    # Local (scenario-default) preview.
+    local = client.post("/api/runs/preview", json=_preview_body(package_id=_HYBRID_PKG_ID)).json()
+
+    # Load a long preset route (Tokyo–Osaka) and feed its facts into the preview.
+    preset = client.post("/api/routes/presets/long_tokyo_osaka/load")
+    assert preset.status_code == 200, preset.text
+    alt = preset.json()["alternatives"][0]
+
+    body = _preview_body(package_id=_HYBRID_PKG_ID)
+    body["route_source"] = "maps"
+    body["route_id"] = alt["route_id"]
+    body["route_facts"] = alt["route_facts"]
+    body["display_route"] = alt["display"]
+    maps = client.post("/api/runs/preview", json=body)
+    assert maps.status_code == 200, maps.text
+    maps_body = maps.json()
+
+    # The long preset route takes far longer than the scenario default → the
+    # preview's completed/last segment time must differ (route was honored).
+    def _span(r):
+        segs = r.get("segments") or []
+        return segs[-1]["to_min"] if segs else (r.get("completed_min") or 0.0)
+
+    assert _span(maps_body) != _span(local), (
+        f"maps-route preview span {_span(maps_body)} must differ from local {_span(local)}"
+    )
+
+    # A long route surfaces MULTIPLE triggers across the drive (like the Review
+    # timeline), not just the first — and its first entry equals `fire`.
+    assert len(maps_body["fires"]) > 1, f"expected multiple triggers, got {maps_body['fires']}"
+    assert maps_body["fires"][0] == maps_body["fire"]
+    # It exercises real road classes (highway / normal_road) — colored to match the map.
+    seg_types = {s["type"] for s in maps_body["segments"]}
+    assert "highway" in seg_types or "normal_road" in seg_types
 
 
 # ---------------------------------------------------------------------------

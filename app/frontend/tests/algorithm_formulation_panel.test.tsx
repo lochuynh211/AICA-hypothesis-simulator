@@ -212,6 +212,7 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
 
     renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
       dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
     })
 
@@ -258,6 +259,7 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
 
     renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
       dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
     })
 
@@ -273,6 +275,7 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
 
     renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
       dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
     })
 
@@ -290,6 +293,7 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
 
     renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
       dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
     })
 
@@ -306,6 +310,7 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
 
     const { dispatch } = renderInStore(<AlgorithmFormulationPanel />, (d) => {
+      d({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
       d({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
     })
 
@@ -325,6 +330,7 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
 
     renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
       dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
     })
 
@@ -341,6 +347,7 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
 
     renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
       dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
     })
 
@@ -354,6 +361,7 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
 
     renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
       dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
     })
 
@@ -376,6 +384,7 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
 
     renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
       dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
     })
 
@@ -391,6 +400,7 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
 
     renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
       dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
     })
 
@@ -409,6 +419,7 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
 
     renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
       dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
     })
 
@@ -427,6 +438,7 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
 
     renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
       dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
     })
 
@@ -441,6 +453,7 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
 
     renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
       dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
     })
 
@@ -464,6 +477,7 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
 
     const { dispatch } = renderInStore(<AlgorithmFormulationPanel />, (d) => {
+      d({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
       d({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
     })
     await screen.findByTestId('formulation-section-fire_control')
@@ -482,6 +496,7 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
 
     renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
       dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
     })
 
@@ -498,6 +513,7 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
 
     renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
       dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
     })
 
@@ -527,8 +543,11 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     }
   })
 
-  it('(f) UX-FE1: renders PackageSelector at the top, even before a package is selected', async () => {
-    renderInStore(<AlgorithmFormulationPanel />)
+  it('(f) UX-FE1: renders PackageSelector at the top once the scenario step unlocks it, before a package is selected', async () => {
+    // Feature 009 forced order: the package step is gated behind a scenario.
+    renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
+    })
 
     // The "Algorithm Package" select is now rendered inside this panel,
     // regardless of whether a package is already selected.
@@ -538,10 +557,18 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     expect(screen.getByText(/Select a package to view its formulation\./)).toBeInTheDocument()
   })
 
+  it('(g) feature 009: the package step is locked until a scenario is selected', async () => {
+    renderInStore(<AlgorithmFormulationPanel />)
+    // No scenario yet → the package gate shows its lock hint and no formulation prompt.
+    expect(await screen.findByTestId('package-gate')).toHaveAttribute('data-locked', 'true')
+    expect(screen.queryByText(/Select a package to view its formulation\./)).not.toBeInTheDocument()
+  })
+
   it('(e) renders the NRI formulation without error', async () => {
     vi.mocked(client.getPackage).mockResolvedValue(NRI_MANIFEST)
 
     renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
       dispatch({ type: 'SELECT_PACKAGE', id: NRI_MANIFEST.id })
     })
 
@@ -560,6 +587,7 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     vi.mocked(client.getPackage).mockResolvedValue(NRI_MANIFEST)
 
     renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: 'uc01_fatigue_recovery_v0_1' })
       dispatch({ type: 'SELECT_PACKAGE', id: NRI_MANIFEST.id })
     })
 

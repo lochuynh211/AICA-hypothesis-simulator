@@ -98,12 +98,15 @@ export async function loadRoutePreset(presetId: string): Promise<RouteEnvelope> 
 // The API key is never stored, logged, or echoed in any error.
 
 export async function routesAnalyze(args: {
-  scenarioId: string
+  // Optional (feature 009 route-first): a Maps search can run before a scenario
+  // is chosen. Omitted → the backend derives the route from Maps alone.
+  scenarioId?: string
   mapsKey?: string
   start?: string
   end?: string
 }): Promise<RouteEnvelope> {
-  const body: Record<string, string> = { scenario_id: args.scenarioId }
+  const body: Record<string, string> = {}
+  if (args.scenarioId) body.scenario_id = args.scenarioId
   if (args.mapsKey) body.maps_key = args.mapsKey
   if (args.start) body.start = args.start
   if (args.end) body.end = args.end
@@ -234,6 +237,15 @@ export async function runPreview(
   }
   if (config.context_overrides != null && Object.keys(config.context_overrides).length > 0) {
     body.context_overrides = config.context_overrides
+  }
+  // UX fix: thread the selected Maps/preset route so the preview runs against it
+  // (distance/duration/segments/rest spots) instead of the scenario default.
+  // Only when route_source=="maps" with route_facts present (local path unchanged).
+  if (config.route_source === 'maps' && config.route_facts != null) {
+    body.route_source = 'maps'
+    if (config.route_id != null) body.route_id = config.route_id
+    body.route_facts = config.route_facts
+    if (config.display_route != null) body.display_route = config.display_route
   }
   return apiFetch('/api/runs/preview', {
     method: 'POST',

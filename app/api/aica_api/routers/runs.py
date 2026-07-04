@@ -97,6 +97,14 @@ class PreviewRunBody(BaseModel):
     rest_option_id: str | None = None
     profiles: ProfileOverrides | None = None
     context_overrides: dict[str, Any] | None = None
+    # UX fix: the selected Maps/preset route (same optional fields as
+    # CreateRunPlanBody). When route_source=="maps" the preview runs against the
+    # chosen route (distance/duration/segments/rest spots) instead of re-deriving
+    # the scenario's default local route. Omitted/local → unchanged behavior.
+    route_id: str | None = None
+    route_source: str = "local"
+    route_facts: Any = None
+    display_route: Any = None
 
 
 class ActionBody(BaseModel):
@@ -300,6 +308,9 @@ def preview_run_endpoint(body: PreviewRunBody):
             scenarios_dir=settings.scenarios_dir,
             profiles=profiles_dict,
             context_overrides=body.context_overrides,
+            route_source=body.route_source,
+            route_facts=body.route_facts,
+            display_route=body.display_route,
         )
     except PreviewValidationError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

@@ -61,12 +61,11 @@ function Panel({ title, children }: { title: string; children: ReactNode }) {
 
 const stripStyle: CSSProperties = {
   marginTop: '16px',
-  // Quick-review panel occupies ~1/3 of the viewport height (was content-sized
-  // and too short); scrolls internally when its content overflows.
-  height: '33vh',
+  // Quick-review panel is content-sized and kept THIN (a slim score curve over a
+  // thin road band, like the Review progress bar); scrolls if it ever overflows.
   flexShrink: 0,
+  maxHeight: '40vh',
   overflowY: 'auto',
-  minHeight: 0,
   boxSizing: 'border-box',
   padding: '16px',
   background: '#fafafa',

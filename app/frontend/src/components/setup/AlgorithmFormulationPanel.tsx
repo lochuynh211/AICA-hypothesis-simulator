@@ -4,7 +4,9 @@ import { getPackage } from '../../api/client'
 import type { HyperparameterDef, PackageManifest, SetupValue } from '../../api/types'
 import { t } from '../../i18n/t'
 import PackageSelector from './PackageSelector'
+import StepGate from './StepGate'
 import { formulaOutputLabel, formulaTokenLabel } from './signalLabels'
+import { HIGHLIGHT_BG, HIGHLIGHT_FG } from './highlight'
 import {
   getFormulationTemplate,
   templateHyperparameterKeys,
@@ -47,7 +49,10 @@ import {
  */
 export default function AlgorithmFormulationPanel() {
   const { state, dispatch } = useRunStore()
-  const { selectedPackageId, editedHyperparameters, highlightedSignalKey, uiLanguage } = state
+  const { selectedPackageId, selectedScenarioId, editedHyperparameters, highlightedSignalKey, uiLanguage } = state
+  // Forced setup order (feature 009): Route → Scenario → Package. The package
+  // step stays locked until a scenario is selected.
+  const scenarioSelected = selectedScenarioId != null
   const [manifest, setManifest] = useState<PackageManifest | null>(null)
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
 
@@ -101,8 +106,26 @@ export default function AlgorithmFormulationPanel() {
 
   return (
     <div data-testid="algorithm-formulation-panel">
-      <PackageSelector />
-      {!selectedPackageId || !manifest ? (
+      <h3
+        style={{
+          fontSize: '0.72em',
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          color: '#9ca3af',
+          margin: '0 0 4px',
+        }}
+      >
+        {t({ en: 'Step 3 · Algorithm', ja: 'ステップ3 · アルゴリズム' }, uiLanguage)}
+      </h3>
+      <StepGate
+        locked={!scenarioSelected}
+        hint={t({ en: 'Select a scenario first', ja: '先にシナリオを選択してください' }, uiLanguage)}
+        testid="package-gate"
+      >
+        <PackageSelector />
+      </StepGate>
+      {!scenarioSelected ? null : !selectedPackageId || !manifest ? (
         <div style={{ fontSize: '0.85em', color: '#6b7280' }}>Select a package to view its formulation.</div>
       ) : template ? (
         <FormulationTemplateView
@@ -234,7 +257,7 @@ function FormulaLineView({ line, ctx }: { line: FormulaLine; ctx: FormulaCtx }) 
         margin: '3px 0',
         lineHeight: 1.6,
         borderRadius: '3px',
-        background: highlighted ? '#eef2ff' : 'transparent',
+        background: highlighted ? HIGHLIGHT_BG : 'transparent',
       }}
     >
       <LinkSpan signalKey={line.output} text={formulaOutputLabel(line.output, ctx.uiLanguage)} ctx={ctx} bold />{' '}
@@ -504,8 +527,8 @@ function LinkSpan({
         textDecoration: 'underline dotted',
         borderRadius: '3px',
         padding: '0 1px',
-        color: highlighted ? '#4338ca' : '#1d4ed8',
-        background: highlighted ? '#eef2ff' : 'transparent',
+        color: highlighted ? HIGHLIGHT_FG : '#1d4ed8',
+        background: highlighted ? HIGHLIGHT_BG : 'transparent',
       }}
     >
       {text}

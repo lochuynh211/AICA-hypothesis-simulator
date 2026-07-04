@@ -70,12 +70,12 @@ export default function MapKeyAndRouteInput() {
   }
 
   async function handleAnalyze() {
-    if (!selectedScenarioId) return
     setAnalyzing(true)
     dispatch({ type: 'SET_MAPS_ERROR', error: null })
     try {
       const envelope = await routesAnalyze({
-        scenarioId: selectedScenarioId,
+        // Route-first (feature 009): a scenario is no longer required to search.
+        scenarioId: selectedScenarioId || undefined,
         mapsKey: mapsKey || undefined,
         start: mapsStart || undefined,
         end: mapsEnd || undefined,
@@ -230,7 +230,7 @@ export default function MapKeyAndRouteInput() {
 
         <button
           onClick={handleAnalyze}
-          disabled={analyzing || !selectedScenarioId || manualDisabled}
+          disabled={analyzing || manualDisabled}
           style={{ width: '100%', padding: '6px', marginBottom: '6px' }}
         >
           {analyzing ? 'Analyzing…' : 'Analyze Route'}

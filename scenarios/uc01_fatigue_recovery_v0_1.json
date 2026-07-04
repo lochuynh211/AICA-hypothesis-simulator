@@ -106,7 +106,7 @@
   },
   "anomaly_signal_params": {
     "lambda_base": 0.02,
-    "lambda_gain": 0.15,
+    "lambda_gain": 0.50,
     "theta": 40.0,
     "window_min": 5.0
   },

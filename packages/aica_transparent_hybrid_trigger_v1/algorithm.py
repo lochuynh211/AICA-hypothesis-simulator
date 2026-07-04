@@ -601,8 +601,31 @@ def evaluate(context: dict) -> dict:
     drive_min_since_rest = max(0.0, continuous_driving_min - drive_min_baseline)
     accumulators["drive_min_since_rest"] = drive_min_since_rest
 
-    # ── 2-3. extract + smooth features ──────────────────────────────────────
-    raw_features = extract_features(signals, accumulators, hp)
+    # ── 1c. rebaseline env/monotony exposure on rest ───────────────────────
+    # The jam/highway/monotony accumulators (feeding env_load + monotony) are
+    # measured SINCE THE LAST REST, exactly like drive_min_since_rest: while the
+    # driver is resting we rebaseline them to the current cumulative totals, so a
+    # rest drops env_load AND monotony to ~0 and they rebuild afterwards (a rest
+    # relieves monotony; without this monotony saturates and never falls). The
+    # cumulative `accumulators` are still threaded forward unchanged so
+    # advance_accumulators keeps the running totals — `accum_baseline` is separate.
+    if recovery_active:
+        accum_baseline = {
+            "jam_min": accumulators["jam_min"],
+            "hw_min": accumulators["hw_min"],
+            "mono_min": accumulators["mono_min"],
+        }
+    else:
+        accum_baseline = prev_state.get("accum_baseline", {}) or {}
+    since_rest_accumulators = {
+        "jam_min": max(0.0, accumulators["jam_min"] - float(accum_baseline.get("jam_min", 0.0))),
+        "hw_min": max(0.0, accumulators["hw_min"] - float(accum_baseline.get("hw_min", 0.0))),
+        "mono_min": max(0.0, accumulators["mono_min"] - float(accum_baseline.get("mono_min", 0.0))),
+        "drive_min_since_rest": drive_min_since_rest,
+    }
+
+    # ── 2-3. extract + smooth features (from the since-rest exposures) ──────
+    raw_features = extract_features(signals, since_rest_accumulators, hp)
     prev_smoothed_features = prev_state.get("smoothed_features", {}) or {}
     smoothed_features = smooth_features(raw_features, prev_smoothed_features, alpha)
 
@@ -744,6 +767,7 @@ def evaluate(context: dict) -> dict:
         },
         "accumulators": accumulators,
         "drive_min_baseline": drive_min_baseline,
+        "accum_baseline": accum_baseline,
         "prev_sim_time_sec": sim_time,
     }
 

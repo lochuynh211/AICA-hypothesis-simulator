@@ -28,7 +28,10 @@ router = APIRouter()
 
 
 class AnalyzeRouteBody(BaseModel):
-    scenario_id: str
+    # Feature 009 UX (route-first): scenario_id is OPTIONAL so a real Maps search
+    # can run before a scenario is chosen. When present it still 404-validates and
+    # supplies the local-route geometry + Places-failure rest fallback (unchanged).
+    scenario_id: str | None = None
     # M4: optional Maps fields — all three must be present to use the maps path
     maps_key: str | None = None
     start: str | None = None
@@ -89,13 +92,17 @@ def analyze_route_endpoint(body: AnalyzeRouteBody):
     404 for unknown scenario (checked before any Maps call).
     """
     # ── Validate scenario first (before any Maps call) ─────────────────────────
-    sc_reg = ScenarioRegistry(settings.scenarios_dir)
-    scenario = sc_reg.get(body.scenario_id)
-    if scenario is None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Scenario {body.scenario_id!r} not found or invalid",
-        )
+    # Feature 009 UX: scenario_id is optional. When omitted, the route is derived
+    # from Maps alone (route-first flow); when present it 404-validates as before.
+    scenario = None
+    if body.scenario_id is not None:
+        sc_reg = ScenarioRegistry(settings.scenarios_dir)
+        scenario = sc_reg.get(body.scenario_id)
+        if scenario is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Scenario {body.scenario_id!r} not found or invalid",
+            )
 
     # ── Decide path ────────────────────────────────────────────────────────────
     use_maps = (
@@ -129,7 +136,9 @@ def analyze_route_endpoint(body: AnalyzeRouteBody):
         # ── Local fallback facts (pre-computed once for all alternatives) ────
         # analyze_route is pure and scenario-constant; compute once here so it
         # is NOT re-called for each failing Places alternative (Fix 3).
-        local_fallback_facts = analyze_route(scenario)
+        # None when no scenario was supplied (route-first flow) — Places failures
+        # then degrade to an honest "unavailable" notice with no rest fallback.
+        local_fallback_facts = analyze_route(scenario) if scenario is not None else None
 
         # ── Places (one call per route) ───────────────────────────────────────
         # Empty result is honest (no rest stops on route).
@@ -145,8 +154,12 @@ def analyze_route_endpoint(body: AnalyzeRouteBody):
             except MapsError:
                 # Places failure: fall back to scenario rest positions scaled onto Maps distance.
                 # local_fallback_facts is pre-computed once above — not re-derived here.
-                maps_total_km = raw["distance_m"] / 1000.0
-                places = _scale_scenario_rest_positions(local_fallback_facts, maps_total_km)
+                # With no scenario (route-first), there is nothing to fall back to.
+                if local_fallback_facts is not None:
+                    maps_total_km = raw["distance_m"] / 1000.0
+                    places = _scale_scenario_rest_positions(local_fallback_facts, maps_total_km)
+                else:
+                    places = []
                 # Fix 2: honest notice — degraded only when fallback is non-empty;
                 # unavailable when the scenario has no local rest pattern either.
                 if places:
@@ -185,6 +198,17 @@ def analyze_route_endpoint(body: AnalyzeRouteBody):
 
     else:
         # ── Local path ────────────────────────────────────────────────────────
+        # The local route geometry comes entirely from the scenario. With neither
+        # a scenario nor a Maps key there is nothing to derive a route from — the
+        # route-first flow expects the caller to pick a preset or run a Maps search.
+        if scenario is None:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "No route source: provide a Maps key with start/end, or select "
+                    "a preset route / scenario to derive a local route."
+                ),
+            )
         route_facts = analyze_route(scenario)
         return {
             "route_source": "local",

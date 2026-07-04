@@ -28,7 +28,7 @@
     {
       "key": "smoothing_alpha",
       "label": { "ja": "平滑化係数 α", "en": "Smoothing Alpha" },
-      "kind": "numeric", "default": 0.35, "min": 0.05, "max": 1.0, "step": 0.05
+      "kind": "numeric", "default": 0.45, "min": 0.05, "max": 1.0, "step": 0.05
     },
     {
       "key": "w_drowsiness",
@@ -43,7 +43,7 @@
     {
       "key": "w_driving_anomaly",
       "label": { "ja": "運転異常スコア重み", "en": "Driving Anomaly Weight" },
-      "kind": "numeric", "default": 0.25, "min": 0.0, "max": 1.0, "step": 0.01
+      "kind": "numeric", "default": 0.30, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
       "key": "w_driving_time",
@@ -63,7 +63,7 @@
     {
       "key": "K",
       "label": { "ja": "異常率正規化係数 K", "en": "Anomaly-Rate Normalization K" },
-      "kind": "numeric", "default": 5, "min": 1, "max": 50, "step": 1
+      "kind": "numeric", "default": 3, "min": 1, "max": 50, "step": 1
     },
     {
       "key": "minimum_risk_for_rest_bonus",

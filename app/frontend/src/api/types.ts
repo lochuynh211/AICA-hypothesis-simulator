@@ -337,6 +337,13 @@ export type RunConfig = {
   /** Feature 009 (FE1): sparse Fixed-tier context overrides (child_passenger/
    * familiar_route/weather_risk) threaded through to the preview. Omit/null when unchanged. */
   context_overrides?: ContextOverrides | null
+  /** UX fix: the selected Maps/preset route, threaded into the preview so the
+   * strip reflects the chosen route (distance/duration/segments/rest spots),
+   * not the scenario's default local route. Omit for the local scenario route. */
+  route_id?: string | null
+  route_source?: string
+  route_facts?: RouteFacts | null
+  display_route?: DisplayRoute | null
 }
 
 /** The first actionable "rest_required" fire observed during a preview run. */
@@ -351,6 +358,13 @@ export type FirePoint = {
 export type ScoreSeriesPoint = {
   t: number
   score: number
+}
+
+/** One anomaly-spike event marked on the preview timeline. `t` aligns with
+ *  score_series.t (tick index); `time_min` is the same instant in minutes. */
+export type SpikePoint = {
+  t: number
+  time_min: number
 }
 
 /** A contiguous run of one segment type over the previewed route. */
@@ -395,12 +409,28 @@ export type PreviewOverrideEntry = {
 export type InstantResult = {
   fired: boolean
   fire: FirePoint | null
+  /** Every actionable trigger across the run (first entry == `fire`). Optional so
+   * pre-existing fixtures/constructors still typecheck; the backend always sends it. */
+  fires?: FirePoint[]
   peak_score: number
   threshold: number | null
   score_series: ScoreSeriesPoint[]
+  /** Second curve: the hybrid's monotony-prevention score/threshold. Empty for
+   * algorithms (NRI) with a single rest-required score → strip renders one curve.
+   * Optional so hand-built fixtures/constructors predating the field still typecheck;
+   * the backend always sends them (defaulting to [] / null). */
+  monotony_series?: ScoreSeriesPoint[]
+  monotony_threshold?: number | null
+  /** Anomaly-spike events over the run. Optional so hand-built fixtures predating
+   * the field still typecheck; the backend always sends it (defaulting to []). */
+  spikes?: SpikePoint[]
   segments: PreviewSegment[]
   rest_spot: PreviewRestSpot | null
   rest_option: PreviewRestOption | null
+  /** Every auto-accepted rest across the run (rest_spot/rest_option == first of each).
+   * Optional so pre-existing fixtures still typecheck; the backend always sends them. */
+  rest_spots?: PreviewRestSpot[]
+  rest_options?: PreviewRestOption[]
   completed_min: number | null
   seed: number
   overrides: PreviewOverrideEntry[]

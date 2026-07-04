@@ -231,6 +231,49 @@ class TestLocalPath:
 # ── Maps path (maps_key + start + end) ────────────────────────────────────────
 
 
+class TestScenarioOptional:
+    """Feature 009 UX (route-first): a route search no longer requires a scenario.
+
+    A real Maps search works with no scenario_id so the setup wizard can put the
+    route step BEFORE scenario selection. A no-scenario + no-key request has no
+    route source and is a 400.
+    """
+
+    def test_maps_path_without_scenario_id(self, client, monkeypatch):
+        """maps_key + start + end and NO scenario_id → 200 maps envelope."""
+        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq(_maps_call_seq(3)))
+        resp = client.post(
+            "/api/routes/analyze",
+            json={"maps_key": _SENTINEL_KEY, "start": "A", "end": "B"},
+        )
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["route_source"] == "maps"
+
+    def test_places_failure_without_scenario_is_unavailable(self, client, monkeypatch):
+        """No scenario to fall back to → Places failure yields rest_data_unavailable."""
+        # Directions succeeds; every Places call fails (non-JSON → MapsError).
+        seq = [_directions_bytes()] + [b"not json"] * (3 * mc._PLACES_SAMPLE_POINTS)
+        monkeypatch.setattr(mc, "_urlopen", _make_urlopen_seq(seq))
+        resp = client.post(
+            "/api/routes/analyze",
+            json={"maps_key": _SENTINEL_KEY, "start": "A", "end": "B"},
+        )
+        assert resp.status_code == 200, resp.text
+        for alt in resp.json()["alternatives"]:
+            assert "rest_data_unavailable" in alt["notices"]
+
+    def test_no_scenario_no_key_returns_400(self, client):
+        """No scenario_id and no maps_key → nothing to derive a route from → 400."""
+        resp = client.post("/api/routes/analyze", json={})
+        assert resp.status_code == 400
+
+    def test_local_path_still_requires_scenario_when_provided(self, client):
+        """Backward compatible: scenario_id + no key → unchanged local envelope."""
+        resp = client.post("/api/routes/analyze", json={"scenario_id": VALID_SCENARIO_ID})
+        assert resp.status_code == 200
+        assert resp.json()["route_source"] == "local"
+
+
 class TestMapsPath:
     """POST /api/routes/analyze with maps_key, start, end → maps envelope."""
 

@@ -1,13 +1,41 @@
-import { useEffect, useState, type ChangeEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { useRunStore } from '../../state/runStore'
-import { getScenario } from '../../api/client'
-import type { ScenarioDef } from '../../api/types'
+import { getScenario, getPackage } from '../../api/client'
+import type { FeatureDef, ScenarioDef } from '../../api/types'
+import { usedSignalKeys } from './signalUsage'
 import { t } from '../../i18n/t'
 import ScenarioSelector from './ScenarioSelector'
 import MapKeyAndRouteInput from './MapKeyAndRouteInput'
+import RestCeilingEditor from './RestCeilingEditor'
+import RestSpacingEditor from './RestSpacingEditor'
 import RestOptionsEditor from './RestOptionsEditor'
 import SignalFormulationEditor, { type FormulationSignalKey } from './SignalFormulationEditor'
 import { SIGNAL_LABELS } from './signalLabels'
+import { HIGHLIGHT_BG } from './highlight'
+import StepGate from './StepGate'
+
+/** Faded opacity for a signal row the selected package doesn't consume. */
+const DIMMED_OPACITY = 0.35
+const UNUSED_SIGNAL_TITLE = 'Not used by the selected algorithm'
+
+/**
+ * Auto-scroll a cross-link source row into view when it becomes highlighted.
+ * The highlight is usually triggered from the *right* panel (hovering a feature
+ * name in AlgorithmFormulationPanel), and the source signal it points at may be
+ * scrolled out of view in this left panel — so bring it back. `block: 'nearest'`
+ * makes it a no-op when the row is already visible (e.g. when the hover
+ * originates on the row itself), so it never jumps for no reason.
+ */
+function useHighlightScroll(highlighted: boolean) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    // Guarded: jsdom (test env) leaves scrollIntoView unimplemented.
+    if (highlighted && typeof ref.current?.scrollIntoView === 'function') {
+      ref.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    }
+  }, [highlighted])
+  return ref
+}
 
 /**
  * SignalsPanel (feature 009, FE2) — left editor panel of the new setup screen
@@ -50,9 +78,21 @@ import { SIGNAL_LABELS } from './signalLabels'
  */
 export default function SignalsPanel() {
   const { state, dispatch } = useRunStore()
-  const { selectedScenarioId, contextOverrides, highlightedSignalKey, uiLanguage, runSeed, tickSecondsOverride } =
-    state
+  const {
+    selectedScenarioId,
+    selectedPackageId,
+    selectedRouteId,
+    contextOverrides,
+    highlightedSignalKey,
+    uiLanguage,
+    runSeed,
+    tickSecondsOverride,
+  } = state
+  // Forced setup order (feature 009): Route → Scenario → Package. The scenario
+  // step stays locked until a route is selected.
+  const routeSelected = selectedRouteId != null
   const [scenario, setScenario] = useState<ScenarioDef | null>(null)
+  const [packageFeatures, setPackageFeatures] = useState<FeatureDef[] | undefined>(undefined)
 
   useEffect(() => {
     if (!selectedScenarioId) {
@@ -71,6 +111,41 @@ export default function SignalsPanel() {
       cancelled = true
     }
   }, [selectedScenarioId])
+
+  // Load the selected package's feature list so we can dim signals it never uses
+  // (see signalUsage.ts). Only `features` is needed here; the full manifest is
+  // owned by AlgorithmFormulationPanel.
+  useEffect(() => {
+    if (!selectedPackageId) {
+      setPackageFeatures(undefined)
+      return
+    }
+    let cancelled = false
+    getPackage(selectedPackageId)
+      .then((pkg) => {
+        if (!cancelled) setPackageFeatures(pkg.features)
+      })
+      .catch(() => {
+        if (!cancelled) setPackageFeatures(undefined)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [selectedPackageId])
+
+  // When the scenario step unlocks (a route is selected), bring it into view so
+  // the user sees the next step without hunting for it.
+  const scenarioSectionRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (routeSelected && typeof scenarioSectionRef.current?.scrollIntoView === 'function') {
+      scenarioSectionRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    }
+  }, [routeSelected])
+
+  // Signals the selected package consumes; everything else renders dimmed. When
+  // no package is selected this is the full set, so nothing dims.
+  const usedSignals = usedSignalKeys(selectedPackageId, packageFeatures)
+  const isDimmed = (signalKey: string) => !usedSignals.has(signalKey as never)
 
   function highlight(key: string) {
     dispatch({ type: 'SET_HIGHLIGHTED_SIGNAL', key })
@@ -129,9 +204,17 @@ export default function SignalsPanel() {
             margin: '0 0 4px',
           }}
         >
-          {t({ en: 'Route (optional: Google Maps)', ja: 'ルート（任意: Google マップ）' }, uiLanguage)}
+          {t(
+            { en: 'Step 1 · Route (preset or Google Maps)', ja: 'ステップ1 · ルート（プリセット / Google マップ）' },
+            uiLanguage,
+          )}
         </h3>
         <MapKeyAndRouteInput />
+        {/* Rest-spot review controls: the reachability ceiling used to mark spots
+            reachable, and the minimum spacing between returned spots. Both feed
+            GET /rest-spots via the recovery picker. */}
+        <RestCeilingEditor />
+        <RestSpacingEditor />
       </div>
 
       <div data-testid="tick-section" style={{ marginTop: '12px' }}>
@@ -181,8 +264,26 @@ export default function SignalsPanel() {
         </div>
       </div>
 
-      <div data-testid="scenario-section" style={{ marginTop: '12px' }}>
-        <ScenarioSelector />
+      <div ref={scenarioSectionRef} data-testid="scenario-section" style={{ marginTop: '12px' }}>
+        <h3
+          style={{
+            fontSize: '0.72em',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            color: '#9ca3af',
+            margin: '0 0 4px',
+          }}
+        >
+          {t({ en: 'Step 2 · Scenario', ja: 'ステップ2 · シナリオ' }, uiLanguage)}
+        </h3>
+        <StepGate
+          locked={!routeSelected}
+          hint={t({ en: 'Select a route first', ja: '先にルートを選択してください' }, uiLanguage)}
+          testid="scenario-gate"
+        >
+          <ScenarioSelector />
+        </StepGate>
       </div>
 
       {scenario && (
@@ -193,6 +294,7 @@ export default function SignalsPanel() {
               label={t(SIGNAL_LABELS.isNight, uiLanguage)}
               value={isNightValue ? 'on' : 'off'}
               highlighted={highlightedSignalKey === 'isNight'}
+              dimmed={isDimmed('isNight')}
               onHover={() => highlight('isNight')}
               onLeave={unhighlight}
               editControl={
@@ -217,6 +319,7 @@ export default function SignalsPanel() {
               label={t(SIGNAL_LABELS.familiarRoute, uiLanguage)}
               value={familiarRouteValue ? 'yes' : 'no'}
               highlighted={highlightedSignalKey === 'familiarRoute'}
+              dimmed={isDimmed('familiarRoute')}
               onHover={() => highlight('familiarRoute')}
               onLeave={unhighlight}
               editControl={
@@ -241,6 +344,7 @@ export default function SignalsPanel() {
               label={t(SIGNAL_LABELS.childPassenger, uiLanguage)}
               value={childPassengerValue ? 'yes' : 'no'}
               highlighted={highlightedSignalKey === 'childPassenger'}
+              dimmed={isDimmed('childPassenger')}
               onHover={() => highlight('childPassenger')}
               onLeave={unhighlight}
               editControl={
@@ -265,6 +369,7 @@ export default function SignalsPanel() {
               label={t(SIGNAL_LABELS.weatherRisk, uiLanguage)}
               value={weatherRiskFraction.toFixed(2)}
               highlighted={highlightedSignalKey === 'weatherRisk'}
+              dimmed={isDimmed('weatherRisk')}
               onHover={() => highlight('weatherRisk')}
               onLeave={unhighlight}
               editControl={
@@ -300,6 +405,7 @@ export default function SignalsPanel() {
               value={t({ en: 'grows while moving; resets after a rest', ja: '走行中に増加し、休憩後にリセット' }, uiLanguage)}
               muted
               highlighted={highlightedSignalKey === 'continuousDrivingMin'}
+              dimmed={isDimmed('continuousDrivingMin')}
               onHover={() => highlight('continuousDrivingMin')}
               onLeave={unhighlight}
             />
@@ -309,6 +415,7 @@ export default function SignalsPanel() {
               value={t({ en: 'urban / highway / mountain / sightseeing', ja: '市街地／高速／山道／観光道路' }, uiLanguage)}
               muted
               highlighted={highlightedSignalKey === 'segmentType'}
+              dimmed={isDimmed('segmentType')}
               onHover={() => highlight('segmentType')}
               onLeave={unhighlight}
             />
@@ -318,6 +425,7 @@ export default function SignalsPanel() {
               value={t({ en: 'on inside congested stretches', ja: '渋滞区間でオン' }, uiLanguage)}
               muted
               highlighted={highlightedSignalKey === 'isTrafficJam'}
+              dimmed={isDimmed('isTrafficJam')}
               onHover={() => highlight('isTrafficJam')}
               onLeave={unhighlight}
             />
@@ -327,6 +435,7 @@ export default function SignalsPanel() {
               value={t({ en: 'minutes to the next rest opportunity', ja: '次の休憩機会までの分数' }, uiLanguage)}
               muted
               highlighted={highlightedSignalKey === 'nextRestSpotMin'}
+              dimmed={isDimmed('nextRestSpotMin')}
               onHover={() => highlight('nextRestSpotMin')}
               onLeave={unhighlight}
             />
@@ -340,6 +449,7 @@ export default function SignalsPanel() {
               label={t(SIGNAL_LABELS.drowsiness, uiLanguage)}
               scenario={scenario}
               highlighted={highlightedSignalKey === 'drowsiness'}
+              dimmed={isDimmed('drowsiness')}
               onHover={() => highlight('drowsiness')}
               onLeave={unhighlight}
             />
@@ -348,6 +458,7 @@ export default function SignalsPanel() {
               label={t(SIGNAL_LABELS.fatigue, uiLanguage)}
               scenario={scenario}
               highlighted={highlightedSignalKey === 'fatigue'}
+              dimmed={isDimmed('fatigue')}
               onHover={() => highlight('fatigue')}
               onLeave={unhighlight}
             />
@@ -356,6 +467,7 @@ export default function SignalsPanel() {
               label={`${t(SIGNAL_LABELS.anomaly_rate, uiLanguage)} · seed ${runSeed}`}
               scenario={scenario}
               highlighted={highlightedSignalKey === 'anomaly_rate'}
+              dimmed={isDimmed('anomaly_rate')}
               onHover={() => highlight('anomaly_rate')}
               onLeave={unhighlight}
             />
@@ -410,6 +522,7 @@ function SignalRow({
   muted = false,
   editControl,
   highlighted = false,
+  dimmed = false,
   onHover,
   onLeave,
 }: {
@@ -421,14 +534,20 @@ function SignalRow({
   /** Present only for editable Fixed signals (isNight/familiarRoute/childPassenger/weatherRisk). */
   editControl?: ReactNode
   highlighted?: boolean
+  /** The selected package doesn't consume this signal — render faded (see signalUsage.ts). */
+  dimmed?: boolean
   onHover?: () => void
   onLeave?: () => void
 }) {
+  const rowRef = useHighlightScroll(highlighted)
   return (
     <div
+      ref={rowRef}
       data-testid={`signal-row-${signalKey}`}
+      data-dimmed={dimmed ? 'true' : 'false'}
       onMouseEnter={onHover}
       onMouseLeave={onLeave}
+      title={dimmed ? UNUSED_SIGNAL_TITLE : undefined}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -437,7 +556,8 @@ function SignalRow({
         padding: '3px 4px',
         marginBottom: '2px',
         borderRadius: '4px',
-        background: highlighted ? '#eef2ff' : 'transparent',
+        opacity: dimmed ? DIMMED_OPACITY : 1,
+        background: highlighted ? HIGHLIGHT_BG : 'transparent',
         fontSize: '0.8em',
       }}
     >
@@ -464,6 +584,7 @@ function SimulatedSignal({
   label,
   scenario,
   highlighted,
+  dimmed = false,
   onHover,
   onLeave,
 }: {
@@ -471,19 +592,26 @@ function SimulatedSignal({
   label: string
   scenario: ScenarioDef
   highlighted: boolean
+  /** The selected package doesn't consume this signal — render faded (see signalUsage.ts). */
+  dimmed?: boolean
   onHover: () => void
   onLeave: () => void
 }) {
+  const rowRef = useHighlightScroll(highlighted)
   return (
     <div
+      ref={rowRef}
       data-testid={`signal-row-${signalKey}`}
+      data-dimmed={dimmed ? 'true' : 'false'}
       onMouseEnter={onHover}
       onMouseLeave={onLeave}
+      title={dimmed ? UNUSED_SIGNAL_TITLE : undefined}
       style={{
         padding: '4px',
         marginBottom: '4px',
         borderRadius: '4px',
-        background: highlighted ? '#eef2ff' : 'transparent',
+        opacity: dimmed ? DIMMED_OPACITY : 1,
+        background: highlighted ? HIGHLIGHT_BG : 'transparent',
       }}
     >
       <span style={{ fontSize: '0.8em', fontWeight: 600, color: '#374151' }}>{label}</span>

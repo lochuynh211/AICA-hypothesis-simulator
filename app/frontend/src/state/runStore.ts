@@ -434,8 +434,13 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         previewError: null,
       }
 
-    case 'SELECT_SCENARIO':
+    case 'SELECT_SCENARIO': {
       // Changing the scenario invalidates the draft (route facts change).
+      // A LOCALLY-analyzed route is scenario-derived, so it's cleared; a
+      // Maps/preset route is a real geographic route independent of the scenario,
+      // so it's PRESERVED (else picking route→scenario→package would silently drop
+      // the chosen preset and the preview would fall back to the local route).
+      const keepMapsRoute = state.routeSource === 'maps' && state.selectedRouteId != null
       return {
         ...state,
         selectedScenarioId: action.id,
@@ -443,10 +448,10 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         draftPlan: null,
         effectiveSetup: null,
         setupError: null,
-        // Changing scenario also invalidates the previously analyzed route.
-        alternatives: [],
-        selectedRouteId: null,
-        routeSource: 'local',
+        // Clear a locally-analyzed route; keep a maps/preset selection.
+        alternatives: keepMapsRoute ? state.alternatives : [],
+        selectedRouteId: keepMapsRoute ? state.selectedRouteId : null,
+        routeSource: keepMapsRoute ? 'maps' : 'local',
         mapsError: null,
         // T009: clear profile overrides — new scenario has its own defaults.
         profileOverrides: null,
@@ -470,6 +475,7 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         instantResult: null,
         previewError: null,
       }
+    }
 
     case 'SET_PARAMETER':
       // Editing a value invalidates the existing draft (must re-preview).
@@ -833,7 +839,17 @@ export function useRunPreview(debounceMs: number = PREVIEW_DEBOUNCE_MS): void {
     runSeed,
     profileOverrides,
     contextOverrides,
+    alternatives,
+    selectedRouteId,
+    routeSource,
   } = state
+
+  // Selected Maps/preset route (if any) — threaded into the preview so the strip
+  // reflects the chosen route, matching "Open full run". Null on the local path.
+  const selectedAlt =
+    routeSource === 'maps' && selectedRouteId != null
+      ? alternatives.find((a) => a.route_id === selectedRouteId) ?? null
+      : null
 
   useEffect(() => {
     if (!selectedPackageId || !selectedScenarioId) return
@@ -851,6 +867,15 @@ export function useRunPreview(debounceMs: number = PREVIEW_DEBOUNCE_MS): void {
         // already receives both — see InstantResultStrip's handleOpenFullRun).
         ...(profileOverrides != null ? { profiles: profileOverrides } : {}),
         ...(Object.keys(contextOverrides).length > 0 ? { context_overrides: contextOverrides } : {}),
+        // Selected Maps/preset route — so a chosen preset actually changes the strip.
+        ...(selectedAlt != null
+          ? {
+              route_source: 'maps',
+              route_id: selectedAlt.route_id,
+              route_facts: selectedAlt.route_facts,
+              display_route: selectedAlt.display,
+            }
+          : {}),
       })
         .then((result) => {
           if (!cancelled) dispatch({ type: 'PREVIEW_SUCCEEDED', result })
@@ -877,6 +902,7 @@ export function useRunPreview(debounceMs: number = PREVIEW_DEBOUNCE_MS): void {
     runSeed,
     profileOverrides,
     contextOverrides,
+    selectedAlt,
     debounceMs,
     dispatch,
   ])

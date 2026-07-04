@@ -519,6 +519,24 @@ export function getFormulationTemplate(packageId: string): PackageFormulationTem
   return TEMPLATES[packageId]
 }
 
+/**
+ * Every cross-link token referenced anywhere in a template (the `link` parts of
+ * formula lines). Includes both raw-signal links (e.g. `anomaly_rate`) and
+ * computed-feature links (e.g. `env_load`); callers intersect with the set they
+ * care about. Used to decide which SignalsPanel rows a package actually names.
+ */
+export function templateLinkKeys(template: PackageFormulationTemplate): Set<string> {
+  const keys = new Set<string>()
+  for (const section of template.sections) {
+    for (const line of section.lines ?? []) {
+      for (const part of line.parts) {
+        if ('link' in part) keys.add(part.link)
+      }
+    }
+  }
+  return keys
+}
+
 /** Every hyperparameter key referenced anywhere in a template (coef tokens + extraHyperparameters). */
 export function templateHyperparameterKeys(template: PackageFormulationTemplate): Set<string> {
   const keys = new Set<string>()

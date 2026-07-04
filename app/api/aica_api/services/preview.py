@@ -29,7 +29,7 @@ import aica_api.algorithms.adapter as _adapter
 from aica_api.algorithms.adapter import AlgorithmAdapterError
 from aica_api.models.log import ActionEvent, TickEvent, TraceEntry
 from aica_api.models.package import PackageManifest
-from aica_api.models.run import RecoveryState, RestSpot, RouteFacts
+from aica_api.models.run import DisplayRoute, RecoveryState, RestSpot, RouteFacts
 from aica_api.models.scenario import ScenarioDef
 from aica_api.services.package_registry import PackageRegistry
 from aica_api.services.recovery import start_recovery
@@ -130,6 +130,9 @@ def evaluate_preview(
     scenarios_dir,
     profiles: dict[str, Any] | None = None,
     context_overrides: dict[str, Any] | None = None,
+    route_source: str = "local",
+    route_facts: Any = None,
+    display_route: Any = None,
 ) -> dict[str, Any]:
     """Run a headless, non-persisting evaluation and return an InstantResult dict.
 
@@ -163,10 +166,32 @@ def evaluate_preview(
                 + "; ".join(f"{e['field']}: {e['message']}" for e in ctx_errors)
             )
 
-    # plan_id is deterministic per (package, scenario, overrides, seed) — the
-    # draft registry entry is ephemeral, in-memory-only (never touches disk),
-    # exactly like a real /api/run-plans draft before a run is created.
-    plan_id = f"preview_{package_id}_{scenario_id}_{run_seed}"
+    # Selected Maps/preset route — coerce raw dicts to models and honor it only
+    # when route_source=="maps" (mirrors routers/run_plans.py, which discards
+    # client-supplied route facts on the local path and re-derives locally).
+    selected_route_facts: RouteFacts | None = None
+    selected_display_route: DisplayRoute | None = None
+    if route_source == "maps":
+        if route_facts is None:
+            raise PreviewValidationError(
+                "route_facts is required when route_source is 'maps'."
+            )
+        selected_route_facts = (
+            route_facts if isinstance(route_facts, RouteFacts) else RouteFacts.model_validate(route_facts)
+        )
+        if display_route is not None:
+            selected_display_route = (
+                display_route if isinstance(display_route, DisplayRoute)
+                else DisplayRoute.model_validate(display_route)
+            )
+
+    # plan_id is deterministic per (package, scenario, overrides, seed, route) —
+    # the draft registry entry is ephemeral, in-memory-only (never touches disk),
+    # exactly like a real /api/run-plans draft before a run is created. The route
+    # source is folded into the id so switching routes can't collide on a cached
+    # draft key.
+    route_key = selected_route_facts.route_source if selected_route_facts else "local"
+    plan_id = f"preview_{package_id}_{scenario_id}_{run_seed}_{route_key}"
     draft = create_draft(
         plan_id=plan_id,
         package=package,
@@ -175,6 +200,9 @@ def evaluate_preview(
         parameters={},
         hyperparameters=overrides,
         run_mode="standard",
+        route_facts=selected_route_facts,
+        route_source=route_source,
+        display_route=selected_display_route,
         profiles=profiles,
         context_overrides=context_overrides,
     )
@@ -215,10 +243,26 @@ def evaluate_preview(
     events: list[Any] = []  # TickEvent | ActionEvent, in-memory only — never persisted
 
     fired_at: dict[str, Any] | None = None
-    recovery_taken = False
+    # Distinct trigger EPISODES over the whole run (like the Review timeline, which
+    # marks each proposal that fired+paused). Rising-edge, category-agnostic: a
+    # continuous run of actionable ticks — even if the winning category flips
+    # rest↔monotony within it — is ONE marker, not one per tick. A new marker only
+    # after actionability lapses (the run "resumes") and fires again.
+    fires: list[dict[str, Any]] = []
+    fire_active = False
     peak_score = 0.0
     threshold: float | None = None
     score_series: list[dict[str, Any]] = []
+    # Anomaly spikes — ticks where the seeded-Poisson generator fired an event.
+    # Detected from tick_state.anomaly_events: the generator appends `tick_index`
+    # on a spike, so a spike at tick i is exactly `i in anomaly_events`. Marked on
+    # the timeline so a reviewer can point at a spike and see the rest-propose
+    # curve step up right after it (the spike raises driving_anomaly → base risk).
+    spikes: list[dict[str, Any]] = []
+    # Second curve — the hybrid's monotony-prevention score/threshold. Stays empty
+    # for algorithms (e.g. NRI) that emit no `monotony_prevention_score`.
+    monotony_series: list[dict[str, Any]] = []
+    monotony_threshold: float | None = None
 
     segments: list[dict[str, Any]] = []
     seg_type: str | None = None
@@ -227,10 +271,13 @@ def evaluate_preview(
 
     completed_min: float | None = None
     error_out: dict[str, Any] | None = None
-    rest_spot_out: dict[str, Any] | None = None
-    rest_option_out: dict[str, Any] | None = None
-    recovery_from_min: float | None = None
-    recovery_to_min: float | None = None
+    # Every auto-accepted rest across the run (a real reviewer accepts each rest,
+    # which resets fatigue → a handful of triggers, not dozens). rest_spots/
+    # rest_options are the full lists; rest_spot/rest_option keep the FIRST for
+    # back-compat. recovery_from_min/to_min of the LAST-accepted option are filled
+    # from its STOPPED ticks as the loop runs.
+    rest_spots_out: list[dict[str, Any]] = []
+    rest_options_out: list[dict[str, Any]] = []
 
     for tick_index in range(_MAX_PREVIEW_TICKS):
         tick_state = advance_tick(
@@ -250,10 +297,11 @@ def evaluate_preview(
         # ── Track recovery-in-progress span (STOPPED ticks of the CURRENT
         #    recovery, using the PRE-tick recovery state — same state advance_tick
         #    itself used to decide this tick's motion_state) ────────────────
-        if recovery is not None and recovery.active and dynamic.get("motionState") == "STOPPED":
-            if recovery_from_min is None:
-                recovery_from_min = elapsed_min
-            recovery_to_min = elapsed_min
+        if recovery is not None and recovery.active and dynamic.get("motionState") == "STOPPED" and rest_options_out:
+            cur = rest_options_out[-1]
+            if cur["recovery_from_min"] is None:
+                cur["recovery_from_min"] = elapsed_min
+            cur["to_min"] = elapsed_min
 
         if rec_next is not None:
             recovery = rec_next if rec_next.active else None
@@ -325,9 +373,23 @@ def evaluate_preview(
         score_series.append({"t": tick_index, "score": score})
         peak_score = max(peak_score, score)
 
+        # ── Anomaly spike marker (aligned with the score point above) ──────
+        if tick_index in (tick_state.anomaly_events or []):
+            spikes.append({"t": tick_index, "time_min": elapsed_min})
+
         crit_threshold = decision.criteria.get("threshold_fire", decision.criteria.get("threshold_suggest"))
         if crit_threshold is not None:
             threshold = float(crit_threshold)
+
+        # ── Second curve: monotony-prevention (hybrid only) ─────────────────
+        # Algorithms without a monotony score (NRI) leave both empty → the strip
+        # renders a single rest-required curve.
+        mono_score = decision.scores.get("monotony_prevention_score")
+        if mono_score is not None:
+            monotony_series.append({"t": tick_index, "score": float(mono_score)})
+            mono_crit = decision.criteria.get("monotony_suggest_threshold")
+            if mono_crit is not None:
+                monotony_threshold = float(mono_crit)
 
         # ── Fire-control: actionable proposal? (identical rule to run_manager) ─
         proposal_fired = decision.fire_control.fired and decision.proposal is not None
@@ -338,21 +400,35 @@ def evaluate_preview(
         if recovery_active_now and proposal_is_actionable and decision.result_type == "REST_PROPOSAL":
             proposal_is_actionable = False
 
-        if proposal_is_actionable and decision.selected_category == "rest_required" and fired_at is None:
-            strength = next(
-                (c.strength for c in decision.candidates if c.category == "rest_required"),
-                None,
-            )
-            fired_at = {
-                "category": decision.selected_category,
-                "strength": strength,
-                "tick": tick_index,
-                "time_min": elapsed_min,
-            }
+        # Trigger capture — one marker per actionable EPISODE (rising edge), matching
+        # the Review timeline where the run pauses once per proposal then resumes.
+        # Category-agnostic: consecutive actionable ticks (even flipping rest↔monotony)
+        # are a single episode, so a long route shows a handful of triggers, not one
+        # per tick.
+        if proposal_is_actionable:
+            if not fire_active:  # rising edge — a fresh trigger episode
+                strength = next(
+                    (c.strength for c in decision.candidates if c.category == decision.selected_category),
+                    None,
+                )
+                fire = {
+                    "category": decision.selected_category,
+                    "strength": strength,
+                    "tick": tick_index,
+                    "time_min": elapsed_min,
+                }
+                fires.append(fire)
+                if fired_at is None:
+                    fired_at = fire  # first trigger — kept for the result-line/back-compat
+            fire_active = True
+        else:
+            fire_active = False
 
         if proposal_is_actionable:
+            # Accept EACH rest proposal (not just the first) — but never while a
+            # recovery is still running (that proposal is already suppressed above).
             can_accept = (
-                not recovery_taken
+                not (recovery and recovery.active)
                 and decision.selected_category == "rest_required"
                 and bool(effective_scenario.recovery_options)
                 and "accept_rest" in decision.proposal.options
@@ -368,18 +444,17 @@ def evaluate_preview(
                 spot = _pick_rest_spot(route_facts, tick_state.distance_km or 0.0)
                 if spot is not None:
                     total_km = route_facts.total_route_distance_km or 120.0
-                    rest_spot_out = {
+                    rest_spots_out.append({
                         "at_km": spot.route_fraction * total_km,
                         "eta_min": dynamic.get("nextRestSpotMin"),
-                    }
-                    rest_option_out = {
+                    })
+                    rest_options_out.append({
                         "id": option.id,
                         "auto_chosen": True,
                         "recovery_from_min": None,  # filled in once STOPPED is observed
                         "to_min": None,
-                    }
+                    })
                     recovery = start_recovery(option, spot)
-                    recovery_taken = True
                     events.append(
                         ActionEvent(
                             kind="action",
@@ -395,10 +470,9 @@ def evaluate_preview(
                     events.append(
                         ActionEvent(kind="action", tick_index=tick_index, action=decline, resulting_status="playing")
                     )
-            elif not effective_scenario.recovery_options and "accept_rest" in decision.proposal.options and not recovery_taken and decision.selected_category == "rest_required":
+            elif not effective_scenario.recovery_options and "accept_rest" in decision.proposal.options and not rest_options_out and decision.selected_category == "rest_required":
                 # Back-compat (run_manager.action()): a scenario with no recovery
                 # menu completes the run immediately on accept_rest.
-                recovery_taken = True
                 completed_min = elapsed_min
                 events.append(
                     ActionEvent(kind="action", tick_index=tick_index, action="accept_rest", resulting_status="completed")
@@ -416,21 +490,26 @@ def evaluate_preview(
     if seg_type is not None:
         segments.append({"type": seg_type, "from_min": seg_start_min, "to_min": last_elapsed_min})
 
-    if rest_option_out is not None:
-        rest_option_out["recovery_from_min"] = recovery_from_min
-        rest_option_out["to_min"] = recovery_to_min
-
     fired = fired_at is not None and error_out is None
 
     return {
         "fired": fired,
         "fire": fired_at if fired else None,
+        # All triggers across the run (empty on error) — first entry == `fire`.
+        "fires": fires if error_out is None else [],
         "peak_score": peak_score,
         "threshold": threshold,
         "score_series": score_series,
+        "spikes": spikes if error_out is None else [],
+        "monotony_series": monotony_series,
+        "monotony_threshold": monotony_threshold,
         "segments": segments,
-        "rest_spot": rest_spot_out,
-        "rest_option": rest_option_out,
+        # First-accepted rest kept as rest_spot/rest_option for back-compat; the
+        # full lists let the strip mark every rest stop taken over the route.
+        "rest_spot": rest_spots_out[0] if rest_spots_out else None,
+        "rest_option": rest_options_out[0] if rest_options_out else None,
+        "rest_spots": rest_spots_out,
+        "rest_options": rest_options_out,
         "completed_min": completed_min,
         "seed": run_seed,
         "overrides": overrides_out,
