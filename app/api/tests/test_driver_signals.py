@@ -9,10 +9,10 @@ from __future__ import annotations
 import pytest
 
 from aica_api.models.profile import (
+    ActivityRecovery,
     DriverSignalParams,
     DrowsinessModel,
     FatigueModel,
-    RecoveryModel,
 )
 from aica_api.services.behavior.driver_signals import (
     DriverState,
@@ -36,12 +36,10 @@ _PARAMS = DriverSignalParams(
         mountain_road_add_per_min=0.05,
         traffic_jam_add_per_min=0.03,
     ),
-    recovery_model=RecoveryModel(
-        short_rest_drowsiness_recovery=20.0,
-        short_rest_fatigue_recovery=15.0,
-        long_rest_drowsiness_recovery=35.0,
-        long_rest_fatigue_recovery=30.0,
-    ),
+    recovery_model={
+        "stretch": ActivityRecovery(drowsiness=20.0, fatigue=15.0),
+        "sleep": ActivityRecovery(drowsiness=35.0, fatigue=30.0),
+    },
 )
 
 _INITIAL = DriverState(drowsiness=0.0, fatigue=30.0)
@@ -294,33 +292,40 @@ def test_delta_continuous_nonzero_at_60min():
 # ─── Recovery ──────────────────────────────────────────────────────────────────
 
 
-def test_short_rest_reduces_drowsiness():
+def test_activity_reduces_drowsiness():
     state = DriverState(drowsiness=50.0, fatigue=40.0)
-    recovered = apply_rest_recovery(_PARAMS, state, "short")
+    recovered = apply_rest_recovery(_PARAMS, state, "stretch")
     assert recovered.drowsiness == pytest.approx(50.0 - 20.0)
 
 
-def test_short_rest_reduces_fatigue():
+def test_activity_reduces_fatigue():
     state = DriverState(drowsiness=50.0, fatigue=40.0)
-    recovered = apply_rest_recovery(_PARAMS, state, "short")
+    recovered = apply_rest_recovery(_PARAMS, state, "stretch")
     assert recovered.fatigue == pytest.approx(40.0 - 15.0)
 
 
-def test_long_rest_reduces_drowsiness():
+def test_higher_recovery_activity_reduces_drowsiness_more():
     state = DriverState(drowsiness=50.0, fatigue=50.0)
-    recovered = apply_rest_recovery(_PARAMS, state, "long")
+    recovered = apply_rest_recovery(_PARAMS, state, "sleep")
     assert recovered.drowsiness == pytest.approx(50.0 - 35.0)
 
 
-def test_long_rest_reduces_fatigue():
+def test_higher_recovery_activity_reduces_fatigue_more():
     state = DriverState(drowsiness=50.0, fatigue=50.0)
-    recovered = apply_rest_recovery(_PARAMS, state, "long")
+    recovered = apply_rest_recovery(_PARAMS, state, "sleep")
     assert recovered.fatigue == pytest.approx(50.0 - 30.0)
+
+
+def test_unknown_activity_recovers_nothing():
+    state = DriverState(drowsiness=50.0, fatigue=40.0)
+    recovered = apply_rest_recovery(_PARAMS, state, "unlisted_activity")
+    assert recovered.drowsiness == pytest.approx(50.0)
+    assert recovered.fatigue == pytest.approx(40.0)
 
 
 def test_rest_recovery_clamped_at_zero():
     state = DriverState(drowsiness=5.0, fatigue=5.0)
-    recovered = apply_rest_recovery(_PARAMS, state, "long")
+    recovered = apply_rest_recovery(_PARAMS, state, "sleep")
     assert recovered.drowsiness >= 0.0
     assert recovered.fatigue >= 0.0
 

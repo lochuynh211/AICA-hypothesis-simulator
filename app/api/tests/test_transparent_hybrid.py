@@ -1,8 +1,8 @@
-"""TDD tests for the compact-8-feature transparent hybrid package (feature 009, Unit D).
+"""TDD tests for the compact-9-feature transparent hybrid package (feature 009, Unit D).
 
 The headline 009 deliverable: `aica_transparent_hybrid_trigger_v1` rewritten onto the
 tiered-signal contract (`context["signals"] = {fixed, dynamic, simulated}`) with the
-compact 8-feature form (no route look-ahead; one stochastic signal `anomaly_rate`).
+compact 9-feature form (adds driving_time + childPassenger bonus; one stochastic signal `anomaly_rate`).
 
 Authoritative math: `specs/009-signal-tier-redesign/data-model.md` §5 and
 `others/aica_trigger_algorithms_math_comparison.md` Part 2 §2.3.
@@ -184,14 +184,14 @@ _LOW_SIGNALS = _signals(
 
 
 # ---------------------------------------------------------------------------
-# Feature extraction — the compact 8-feature form
+# Feature extraction — the compact 9-feature form
 # ---------------------------------------------------------------------------
 
 
-def test_extract_features_returns_exactly_the_compact_8_keys():
+def test_extract_features_returns_exactly_the_compact_9_keys():
     feats = mod.extract_features(_HIGH_SIGNALS, {"jam_min": 0.0, "hw_min": 0.0, "mono_min": 0.0}, HP)
     assert set(feats) == {
-        "drowsiness", "fatigue", "driving_anomaly", "env_load",
+        "drowsiness", "fatigue", "driving_anomaly", "driving_time", "env_load",
         "monotony", "rest_window", "rest_scarcity", "familiar_route",
     }
     for key, value in feats.items():
@@ -267,6 +267,109 @@ def test_familiar_route_boolean_to_feature():
     feats_false = mod.extract_features(_signals(familiar_route=False), {"jam_min": 0.0, "hw_min": 0.0, "mono_min": 0.0}, HP)
     assert feats_true["familiar_route"] == 1.0
     assert feats_false["familiar_route"] == 0.0
+
+
+# ---------------------------------------------------------------------------
+# driving_time — banded time-on-task feature (continuousDrivingMin, reset on rest)
+# ---------------------------------------------------------------------------
+
+
+def test_driving_time_band_boundaries():
+    assert mod._driving_time_score(0.0) == 0.0
+    assert mod._driving_time_score(59.0) == 0.0
+    assert mod._driving_time_score(60.0) == 0.4
+    assert mod._driving_time_score(119.0) == 0.4
+    assert mod._driving_time_score(120.0) == 0.7
+    assert mod._driving_time_score(179.0) == 0.7
+    assert mod._driving_time_score(180.0) == 1.0
+    assert mod._driving_time_score(500.0) == 1.0
+
+
+def test_driving_time_feature_from_drive_min_since_rest_accumulator():
+    feats = mod.extract_features(
+        _signals(),
+        {"jam_min": 0.0, "hw_min": 0.0, "mono_min": 0.0, "drive_min_since_rest": 130.0},
+        HP,
+    )
+    assert feats["driving_time"] == 0.7
+
+
+def test_driving_time_defaults_to_zero_when_accumulator_absent():
+    """Back-compat: callers passing only jam/hw/mono get driving_time == 0, so the
+    pre-existing crafted-signal calibration is preserved."""
+    feats = mod.extract_features(_signals(), {"jam_min": 0.0, "hw_min": 0.0, "mono_min": 0.0}, HP)
+    assert feats["driving_time"] == 0.0
+
+
+def test_driving_time_raises_base_safety_risk_by_its_weight():
+    signals = _signals(drowsiness=40.0, fatigue=40.0, next_rest_spot_min=10.0)
+    acc_fresh = {"jam_min": 0.0, "hw_min": 0.0, "mono_min": 0.0, "drive_min_since_rest": 0.0}
+    acc_long = {"jam_min": 0.0, "hw_min": 0.0, "mono_min": 0.0, "drive_min_since_rest": 200.0}
+    base_fresh = mod.category_scores(mod.extract_features(signals, acc_fresh, HP), HP)["base_safety_risk"]
+    base_long = mod.category_scores(mod.extract_features(signals, acc_long, HP), HP)["base_safety_risk"]
+    assert base_long > base_fresh
+    # driving_time raw = 1.0 at 200 min -> adds exactly w_driving_time to base.
+    assert abs((base_long - base_fresh) - HP["w_driving_time"] * 1.0) < 1e-9
+
+
+def test_drive_min_since_rest_rebaselines_while_recovery_active():
+    """continuousDrivingMin is monotonic (the engine never resets it). The Hybrid
+    rebaselines its since-rest clock while recovery_active, so time-on-task drops
+    to its lowest band right after a rest even though continuousDrivingMin climbs."""
+    pre = _signals(drowsiness=40.0, fatigue=40.0, next_rest_spot_min=10.0, continuous_driving_min=200.0)
+    r_pre = mod.evaluate(_ctx(pre, prev_state={}, recovery_active=False))
+    assert r_pre["next_package_runtime_state"]["smoothed_features"]["driving_time"] > 0.0
+    assert r_pre["next_package_runtime_state"]["drive_min_baseline"] == 0.0
+
+    # Rest: recovery_active True; continuousDrivingMin still rising (engine counts stopped time).
+    resting = _signals(drowsiness=10.0, fatigue=10.0, continuous_driving_min=205.0)
+    r_rest = mod.evaluate(_ctx(resting, prev_state=r_pre["next_package_runtime_state"], recovery_active=True))
+    assert r_rest["next_package_runtime_state"]["drive_min_baseline"] == 205.0
+
+    # Resume driving shortly after: since-rest is small -> driving_time raw band 0.
+    resumed = _signals(drowsiness=30.0, fatigue=30.0, next_rest_spot_min=10.0, continuous_driving_min=210.0)
+    r_resume = mod.evaluate(_ctx(resumed, prev_state=r_rest["next_package_runtime_state"], recovery_active=False))
+    assert r_resume["next_package_runtime_state"]["drive_min_baseline"] == 205.0
+    assert mod._driving_time_score(210.0 - 205.0) == 0.0
+
+
+# ---------------------------------------------------------------------------
+# child_passenger — fixed additive bonus into rest_required_score (raw, not smoothed)
+# ---------------------------------------------------------------------------
+
+
+def test_child_passenger_adds_fixed_bonus_to_rest_required_score_only():
+    feats = mod.extract_features(_HIGH_SIGNALS, {"jam_min": 0.0, "hw_min": 0.0, "mono_min": 0.0}, HP)
+    no_child = mod.category_scores(feats, HP, child_passenger=False)
+    with_child = mod.category_scores(feats, HP, child_passenger=True)
+    delta = with_child["rest_required_score"] - no_child["rest_required_score"]
+    assert abs(delta - HP["w_child_bonus"]) < 1e-9
+    # base_safety_risk and monotony are untouched by the child bonus.
+    assert with_child["base_safety_risk"] == no_child["base_safety_risk"]
+    assert with_child["monotony_prevention_score"] == no_child["monotony_prevention_score"]
+
+
+def test_child_bonus_does_not_unlock_rest_spot_bonus_gate():
+    """The child bonus lands in rest_required_score, NOT base_safety_risk, so it must
+    not open the base >= minimum_risk_for_rest_bonus gate on its own."""
+    signals = _signals(drowsiness=20.0, fatigue=10.0, next_rest_spot_min=10.0)  # low base
+    feats = mod.extract_features(signals, {"jam_min": 0.0, "hw_min": 0.0, "mono_min": 0.0}, HP)
+    base = mod.category_scores(feats, HP)["base_safety_risk"]
+    assert base < HP["minimum_risk_for_rest_bonus"]  # gate closed
+    with_child = mod.category_scores(feats, HP, child_passenger=True)
+    # rest score == base + 0 (gate closed, no rest-spot bonus) + child_bonus only.
+    assert abs(with_child["rest_required_score"] - (base + HP["w_child_bonus"])) < 1e-9
+
+
+def test_child_bonus_applies_from_tick_zero_not_ramped():
+    """The child bonus is a raw constant: it applies fully on tick 0, unlike a
+    smoothed feature which would ramp in over several ticks."""
+    child = _signals(drowsiness=50.0, fatigue=50.0, next_rest_spot_min=10.0, child_passenger=True)
+    plain = _signals(drowsiness=50.0, fatigue=50.0, next_rest_spot_min=10.0, child_passenger=False)
+    r_child = mod.evaluate(_ctx(child, prev_state={}))
+    r_plain = mod.evaluate(_ctx(plain, prev_state={}))
+    delta = r_child["scores"]["rest_required_score"] - r_plain["scores"]["rest_required_score"]
+    assert abs(delta - HP["w_child_bonus"]) < 1e-9
 
 
 # ---------------------------------------------------------------------------

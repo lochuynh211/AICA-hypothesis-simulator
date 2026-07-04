@@ -276,7 +276,12 @@ def advance_tick(
         new_drowsiness = drowsiness
         new_fatigue = fatigue
 
-    # ── Recovery: apply rest recovery when STOPPED ────────────────────────
+    # ── Recovery: apply a rest activity's fixed recovery ONCE, on entry ────
+    # Feature 009 (UX iteration): recovery is applied a single time per activity
+    # (the first STOPPED tick of each recovery stage), keyed by the stage's
+    # ``content`` — NOT accumulated every tick. A stage's first dwell tick is the
+    # one where recovery.stage_ticks_remaining still equals the stage's full
+    # ``ticks`` (it is decremented by advance_recovery from this tick onward).
     if (
         recovery is not None
         and recovery.active
@@ -285,13 +290,19 @@ def advance_tick(
     ):
         from aica_api.services.behavior.driver_signals import DriverState, apply_rest_recovery
         _rec_option = next((o for o in scenario.recovery_options if o.id == recovery.option_id), None)
-        rest_type = (_rec_option.rest_type if _rec_option and _rec_option.rest_type else "short")
-        recovered = apply_rest_recovery(
-            scenario.driver_signal_params,
-            DriverState(drowsiness=drowsiness, fatigue=fatigue),
-            rest_type,
+        _stage = (
+            _rec_option.stages[recovery.stage_index]
+            if _rec_option and 0 <= recovery.stage_index < len(_rec_option.stages)
+            else None
         )
-        new_drowsiness, new_fatigue = recovered.drowsiness, recovered.fatigue
+        _is_activity_entry = _stage is not None and recovery.stage_ticks_remaining == (_stage.ticks or 0)
+        if _stage is not None and _is_activity_entry:
+            recovered = apply_rest_recovery(
+                scenario.driver_signal_params,
+                DriverState(drowsiness=new_drowsiness, fatigue=new_fatigue),
+                _stage.content,
+            )
+            new_drowsiness, new_fatigue = recovered.drowsiness, recovered.fatigue
 
     # ── Update drowsinessAboveWeakTicks counter (signal_duration ordinal) ──
     new_above_weak = above_weak + 1 if new_drowsiness >= 20.0 else 0

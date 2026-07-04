@@ -659,8 +659,10 @@ def test_hybrid_http_full_flow_evolving_state(client):
     - The persisted per-tick package_runtime_state is non-empty for EVERY TickEvent
       AND changes across ticks (smoothed_scores and persistence_counters evolve) —
       the M3 headline: state is genuinely threaded forward in the evidence, not reset.
-    - SUPPRESSED ticks visible in the log (persistence gate gradually building up
-      to the fired REST_PROPOSAL)
+    - Exactly one REST_PROPOSAL, with no premature fire before it (with a child
+      aboard the child rest-bonus makes uc01 fire at the rest-bonus gate crossing
+      via the velocity skip-if bypass; the persistence gate is exercised directly
+      in test_transparent_hybrid.py).
     """
     # 1. Analyze route (warms route facts; included to cover the full HTTP surface)
     analyze_resp = client.post(
@@ -778,16 +780,27 @@ def test_hybrid_http_full_flow_evolving_state(client):
         f"Expected exactly 1 REST_PROPOSAL in persisted log, got {len(rest_proposals_in_log)}"
     )
 
-    # SUPPRESSED ticks visible — the persistence gate is observable end-to-end:
-    # the persistence counter builds up over several SUPPRESSED ticks before the
-    # REST_PROPOSAL finally fires.
-    suppressed_in_log = [
-        e for e in tick_events
-        if e.get("trace", {}).get("decision_result", {}).get("result_type") == "SUPPRESSED"
-    ]
-    assert len(suppressed_in_log) >= 1, (
-        "At least one SUPPRESSED tick must appear in the log "
-        "(persistence gate building up before the REST_PROPOSAL fires)"
+    # No premature proposal — every tick before the single fire is a non-firing
+    # result. uc01 sets child_passenger=true, so the child rest-bonus lifts the
+    # score at the rest-bonus gate crossing above threshold_suggest; that gate
+    # step's velocity trips the skip-if bypass, so the proposal fires on the first
+    # over-suggest tick (reason threshold_passed_persisted / velocity skip-if)
+    # rather than after a run of persistence-gated SUPPRESSED ticks. The
+    # persistence gate itself is exercised directly in test_transparent_hybrid.py.
+    proposal_index = next(
+        i for i, e in enumerate(tick_events)
+        if e.get("trace", {}).get("decision_result", {}).get("result_type") == "REST_PROPOSAL"
+    )
+    pre_fire_types = {
+        e.get("trace", {}).get("decision_result", {}).get("result_type")
+        for e in tick_events[:proposal_index]
+    }
+    assert pre_fire_types <= {"NO_PROPOSAL", "SUPPRESSED"}, (
+        f"No premature REST_PROPOSAL before the single fire; pre-fire types were {pre_fire_types}"
+    )
+    fired_reason = tick_events[proposal_index]["trace"]["decision_result"]["fire_control"]["reason"]
+    assert fired_reason in {"threshold_passed_persisted", "emergency_override"}, (
+        f"REST_PROPOSAL fired for an unexpected reason: {fired_reason!r}"
     )
 
     # Exactly one action event (the accept_rest starting recovery)

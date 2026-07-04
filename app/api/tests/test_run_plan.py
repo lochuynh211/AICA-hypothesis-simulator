@@ -639,6 +639,64 @@ def test_context_override_weather_risk_e2e(uc01_package, uc01_scenario):
     assert ts.signals["fixed"]["weatherRiskLevel"] == 42.0
 
 
+def test_context_override_is_night_e2e(uc01_package, uc01_scenario):
+    """create_draft with context_overrides={"is_night": True} freezes it into the
+    effective scenario, and advance_tick's fixed-tier isNight reflects it (not the
+    scenario default) — so the setup screen can toggle day/night."""
+    from aica_api.services.tick_engine import advance_tick
+
+    assert uc01_scenario.is_night is False  # scenario default, sanity check
+
+    draft = create_draft(
+        plan_id="plan_is_night_e2e",
+        package=uc01_package,
+        scenario=uc01_scenario,
+        presets={},
+        parameters={},
+        hyperparameters={},
+        run_mode="standard",
+        context_overrides={"is_night": True},
+    )
+    assert not draft.validation_errors
+
+    entry = get_draft_entry("plan_is_night_e2e")
+    assert entry is not None
+    _, _, effective_scenario = entry
+    assert effective_scenario.is_night is True
+
+    ts = advance_tick(
+        prior_state=None,
+        tick_index=0,
+        event_plan=draft.draft_event_plan,
+        route_facts=draft.route_facts,
+        scenario=effective_scenario,
+    )
+    assert ts.signals["fixed"]["isNight"] is True
+
+
+def test_context_overrides_http_is_night_wrong_type_returns_400(tmp_path, monkeypatch):
+    """POST /api/run-plans with a non-boolean is_night → 400."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+
+    from fastapi.testclient import TestClient
+    from aica_api.main import app
+    client = TestClient(app)
+
+    resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": "aica_transparent_hybrid_trigger_v1",
+            "scenario_id": "uc01_fatigue_recovery_v0_1",
+            "context_overrides": {"is_night": "yes"},
+        },
+    )
+    assert resp.status_code == 400
+    body = resp.json()
+    detail = body.get("detail", body)
+    errors = detail["validation_errors"]
+    assert any("is_night" in e.get("field", "") for e in errors)
+
+
 def test_context_overrides_http_unknown_key_returns_400(tmp_path, monkeypatch):
     """POST /api/run-plans with an unknown context_overrides key → 400."""
     monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))

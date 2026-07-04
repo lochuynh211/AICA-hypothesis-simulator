@@ -704,10 +704,8 @@ _DRIVER_SIGNAL_PARAMS_DICT = {
         "traffic_jam_add_per_min": 0.02,
     },
     "recovery_model": {
-        "short_rest_drowsiness_recovery": 30.0,
-        "short_rest_fatigue_recovery": 20.0,
-        "long_rest_drowsiness_recovery": 80.0,
-        "long_rest_fatigue_recovery": 60.0,
+        "sleep": {"drowsiness": 80.0, "fatigue": 60.0},
+        "audio_karaoke": {"drowsiness": 8.0, "fatigue": 5.0},
     },
 }
 
@@ -1525,7 +1523,6 @@ def test_recovery_option_parses_stages_and_postpone():
     opt = RecoveryOption(
         id="nap_karaoke",
         label={"ja": "仮眠後にカラオケ", "en": "Brief nap, then karaoke"},
-        rest_type="long",
         stages=[
             {"phase": "wakefulness", "content": "audio_karaoke", "motion": "MOVING"},
             {"phase": "nap", "content": "sleep", "motion": "STOPPED", "ticks": 3},

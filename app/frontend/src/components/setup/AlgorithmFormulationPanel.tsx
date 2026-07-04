@@ -4,10 +4,11 @@ import { getPackage } from '../../api/client'
 import type { HyperparameterDef, PackageManifest, SetupValue } from '../../api/types'
 import { t } from '../../i18n/t'
 import PackageSelector from './PackageSelector'
-import { SIGNAL_LABELS } from './signalLabels'
+import { formulaOutputLabel, formulaTokenLabel } from './signalLabels'
 import {
   getFormulationTemplate,
   templateHyperparameterKeys,
+  type ExplainedStep,
   type FormulaLine,
   type FormulaPart,
   type FormulationSection,
@@ -197,6 +198,9 @@ function FormulationTemplateView({
                 {(section.thresholdReads ?? []).map((read) => (
                   <ThresholdReadView key={read.scoreName} read={read} ctx={ctx} />
                 ))}
+                {(section.steps ?? []).map((step, i) => (
+                  <StepView key={i} step={step} sectionId={section.id} index={i} ctx={ctx} />
+                ))}
                 {section.extraHyperparameters && section.extraHyperparameters.length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                     {section.extraHyperparameters.map((key) => (
@@ -214,29 +218,153 @@ function FormulationTemplateView({
 }
 
 function FormulaLineView({ line, ctx }: { line: FormulaLine; ctx: FormulaCtx }) {
+  // The output name IS a cross-link target: hovering it highlights this quantity
+  // everywhere it's referenced, and the line highlights when any reference to it
+  // is hovered — wiring the formulation to its own features (both directions).
+  const highlighted = ctx.highlightedSignalKey === line.output
+  const [binOpen, setBinOpen] = useState(false)
   return (
     <div
       data-testid={`formula-line-${line.output}`}
-      style={{ fontFamily: 'monospace', fontSize: '0.82em', color: '#1f2937', margin: '3px 0', lineHeight: 1.6 }}
+      data-highlighted={highlighted ? 'true' : 'false'}
+      style={{
+        fontFamily: 'monospace',
+        fontSize: '0.82em',
+        color: '#1f2937',
+        margin: '3px 0',
+        lineHeight: 1.6,
+        borderRadius: '3px',
+        background: highlighted ? '#eef2ff' : 'transparent',
+      }}
     >
-      <strong>{line.output}</strong> = {renderParts(line.parts, ctx)}
+      <LinkSpan signalKey={line.output} text={formulaOutputLabel(line.output, ctx.uiLanguage)} ctx={ctx} bold />{' '}
+      = {renderParts(line.parts, ctx)}
+      {line.binInfo && (
+        <span style={{ position: 'relative', display: 'inline-block', marginLeft: '4px' }}>
+          <button
+            type="button"
+            data-testid={`formula-bin-info-${line.output}`}
+            aria-label={`Bands for ${formulaOutputLabel(line.output, ctx.uiLanguage)}`}
+            aria-expanded={binOpen}
+            onClick={() => setBinOpen((o) => !o)}
+            style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6b7280', fontSize: '1em', lineHeight: 1, padding: 0, verticalAlign: 'middle' }}
+          >
+            ⓘ
+          </button>
+          {binOpen && (
+            <div
+              role="tooltip"
+              data-testid={`formula-bin-bands-${line.output}`}
+              style={{
+                position: 'absolute',
+                zIndex: 10,
+                top: '100%',
+                left: 0,
+                marginTop: '4px',
+                width: '210px',
+                padding: '8px 10px',
+                background: '#111827',
+                color: '#f9fafb',
+                fontSize: '0.85em',
+                lineHeight: 1.5,
+                borderRadius: '6px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+              }}
+            >
+              <div style={{ marginBottom: '4px', color: '#d1d5db' }}>{t(line.binInfo.input, ctx.uiLanguage)}</div>
+              {line.binInfo.bands.map((b) => (
+                <div key={b.when} style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                  <span>{b.when}</span>
+                  <span style={{ fontWeight: 700 }}>→ {b.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </span>
+      )}
     </div>
   )
 }
 
 function ThresholdReadView({ read, ctx }: { read: ThresholdRead; ctx: FormulaCtx }) {
+  const scoreKey = read.scoreKey ?? read.scoreName
   return (
     <div
       data-testid={`formula-threshold-${read.scoreName}`}
-      style={{ fontFamily: 'monospace', fontSize: '0.8em', color: '#4b5563', margin: '3px 0' }}
+      style={{ fontSize: '0.8em', color: '#4b5563', margin: '5px 0' }}
     >
-      → {read.scoreName} →{' '}
-      {read.steps.map((step, i) => (
-        <span key={step.coef}>
-          {i > 0 && ' / '}
-          {step.label} <CoefField keyName={step.coef} ctx={ctx} />
-        </span>
+      {/* Header names the exact score each threshold is compared against, and
+          links to its definition line above. */}
+      <div style={{ marginBottom: '3px' }}>
+        <LinkSpan signalKey={scoreKey} text={formulaOutputLabel(scoreKey, ctx.uiLanguage)} ctx={ctx} bold />{' '}
+        <span style={{ color: '#6b7280' }}>{t({ en: 'is compared to:', ja: 'を以下と比較:' }, ctx.uiLanguage)}</span>
+      </div>
+      {read.steps.map((step) => (
+        <div
+          key={step.coef}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0 2px 8px', flexWrap: 'wrap' }}
+        >
+          <span style={{ fontFamily: 'monospace', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            ≥ <CoefField keyName={step.coef} ctx={ctx} /> →
+          </span>
+          <span style={{ fontWeight: 600, textTransform: 'uppercase', fontSize: '0.9em', color: '#4b5563' }}>
+            {step.label}
+          </span>
+          {step.meaning && <span style={{ color: '#6b7280' }}>— {t(step.meaning, ctx.uiLanguage)}</span>}
+        </div>
       ))}
+    </div>
+  )
+}
+
+function StepView({
+  step,
+  sectionId,
+  index,
+  ctx,
+}: {
+  step: ExplainedStep
+  sectionId: string
+  index: number
+  ctx: FormulaCtx
+}) {
+  return (
+    <div
+      data-testid={`formulation-step-${sectionId}-${index}`}
+      style={{ margin: '5px 0', paddingLeft: '2px', borderLeft: '2px solid #e5e7eb', paddingBottom: '2px' }}
+    >
+      <div style={{ fontSize: '0.78em', color: '#374151', lineHeight: 1.45, paddingLeft: '6px' }}>{step.text}</div>
+      {step.checks && step.checks.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', margin: '3px 0 0 12px' }}>
+          {step.checks.map((check, i) => (
+            <div
+              key={i}
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap', fontSize: '0.74em', color: '#4b5563' }}
+            >
+              <span>{t(check.operand, ctx.uiLanguage)}</span>
+              <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{check.op}</span>
+              <CoefField keyName={check.coef} ctx={ctx} />
+              <span style={{ color: '#9ca3af' }}>→</span>
+              <span style={{ color: '#6b7280' }}>{t(check.outcome, ctx.uiLanguage)}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', margin: '3px 0 0 6px' }}>
+          {(step.coefs ?? []).map((key) => {
+            const def = ctx.defsByKey[key]
+            return (
+              <span
+                key={key}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.74em', color: '#6b7280' }}
+              >
+                <span>{def ? t(def.label, ctx.uiLanguage) : key}</span>
+                <CoefField keyName={key} ctx={ctx} />
+              </span>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -257,14 +385,14 @@ function renderParts(parts: FormulaPart[], ctx: FormulaCtx) {
   return parts.map((part, idx) => {
     if ('coef' in part) return <CoefField key={idx} keyName={part.coef} ctx={ctx} />
     if ('link' in part) {
-      // Raw display token (the manifest/data-model term this link stands for).
-      // When it names an actual signal/param (per signalLabels.ts) — e.g.
-      // 'isNight', 'familiar_route', 'drowsiness' — show the localized label
-      // instead of the raw variable name. Terms with no registry entry
-      // (computed formula quantities like 'env_load', 'monotony',
-      // 'driving_anomaly') are left as their own math notation, unchanged.
+      // Cross-link token. Display is the localized label of the quantity it
+      // points at — a raw signal ('isNight', 'drowsiness') or a computed feature
+      // ('env_load', 'driving_anomaly'), both bilingual via formulaTokenLabel.
+      // `part.text` overrides the label-lookup KEY (not the literal text): a
+      // registered alias localizes ('child_passenger' → "Child Passenger"); an
+      // unregistered descriptor ('highway'/'monotonous') falls back to itself.
       const raw = part.text ?? part.link
-      const label = SIGNAL_LABELS[raw] ? t(SIGNAL_LABELS[raw], ctx.uiLanguage) : raw
+      const label = formulaTokenLabel(raw, ctx.uiLanguage)
       return <LinkSpan key={idx} signalKey={part.link} text={label} ctx={ctx} />
     }
     return <span key={idx}>{part.text}</span>
@@ -329,7 +457,17 @@ function CoefField({ keyName, ctx }: { keyName: string; ctx: FormulaCtx }) {
   )
 }
 
-function LinkSpan({ signalKey, text, ctx }: { signalKey: string; text: string; ctx: FormulaCtx }) {
+function LinkSpan({
+  signalKey,
+  text,
+  ctx,
+  bold = false,
+}: {
+  signalKey: string
+  text: string
+  ctx: FormulaCtx
+  bold?: boolean
+}) {
   const highlighted = ctx.highlightedSignalKey === signalKey
   return (
     <span
@@ -344,6 +482,7 @@ function LinkSpan({ signalKey, text, ctx }: { signalKey: string; text: string; c
       }}
       style={{
         cursor: 'pointer',
+        fontWeight: bold ? 700 : undefined,
         textDecoration: 'underline dotted',
         borderRadius: '3px',
         padding: '0 1px',

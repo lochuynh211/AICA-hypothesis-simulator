@@ -33,6 +33,8 @@ vi.mock('../src/api/client', () => ({
   createRunPlan: vi.fn(),
   regenerateRunPlan: vi.fn(),
   routesAnalyze: vi.fn(),
+  listRoutePresets: vi.fn(() => Promise.resolve({ presets: [] })),
+  loadRoutePreset: vi.fn(),
   actRun: vi.fn(),
   tickRun: vi.fn(),
   getPackage: vi.fn(),
@@ -78,10 +80,8 @@ const scenarioFixture: ScenarioDef = {
       traffic_jam_add_per_min: 0.05,
     },
     recovery_model: {
-      short_rest_drowsiness_recovery: 20,
-      short_rest_fatigue_recovery: 15,
-      long_rest_drowsiness_recovery: 35,
-      long_rest_fatigue_recovery: 30,
+      sleep: { drowsiness: 35, fatigue: 30 },
+      audio_karaoke: { drowsiness: 8, fatigue: 5 },
     },
   },
   anomaly_signal_params: { lambda_base: 0.02, lambda_gain: 0.15, theta: 40, window_min: 5 },
@@ -94,6 +94,24 @@ const scenarioFixture: ScenarioDef = {
   child_passenger: true,
   familiar_route: true,
   weather_risk: 30,
+  speed_profile: {
+    normal_road_kph: 60,
+    highway_kph: 100,
+    mountain_road_kph: 40,
+    sightseeing_road_kph: 30,
+    traffic_jam_kph: 20,
+  },
+  recovery_options: [
+    {
+      id: 'nap_karaoke',
+      label: { ja: '仮眠＋カラオケ', en: 'Nap + Karaoke' },
+      stages: [
+        { phase: 'wakefulness', content: 'audio_karaoke', motion: 'MOVING' },
+        { phase: 'nap', content: 'sleep', motion: 'STOPPED', ticks: 3 },
+        { phase: 'content', content: 'audio_karaoke', motion: 'STOPPED', ticks: 3 },
+      ],
+    },
+  ],
 }
 
 // ── Render helper ───────────────────────────────────────────────────────────
@@ -166,6 +184,51 @@ describe('SignalsPanel — feature 009 FE2', () => {
     await waitFor(() => expect(client.listScenarios).toHaveBeenCalled())
   })
 
+  it('(i) UX-FE4: the Route (Google Maps) surface is restored in the left panel', async () => {
+    renderInStore(<SignalsPanel />)
+    expect(await screen.findByTestId('route-section')).toBeInTheDocument()
+    expect(screen.getByTestId('map-key-route-input')).toBeInTheDocument()
+    await waitFor(() => expect(client.listScenarios).toHaveBeenCalled())
+  })
+
+  it('(j) UX-FE5: editing a speed-profile field dispatches SET_PROFILE_OVERRIDES(speed.<field>); revert removes it', async () => {
+    vi.mocked(client.getScenario).mockResolvedValue(scenarioFixture)
+
+    renderInStore(<SignalsPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: scenarioFixture.id })
+    })
+
+    const highway = (await screen.findByTestId('speed-field-highway_kph')) as HTMLInputElement
+    expect(highway.value).toBe('100') // scenario default
+
+    fireEvent.change(highway, { target: { value: '120' } })
+    await waitFor(() => expect(profileOverrides()).toEqual({ speed: { highway_kph: 120 } }))
+
+    // Reverting to the scenario default removes the override entirely.
+    fireEvent.change(screen.getByTestId('speed-field-highway_kph'), { target: { value: '100' } })
+    await waitFor(() => expect(profileOverrides()).toBeNull())
+  })
+
+  it('(k) UX-FE7: editing an activity recovery dispatches SET_PROFILE_OVERRIDES(driver.recovery_model.<activity>.<field>); revert clears it', async () => {
+    vi.mocked(client.getScenario).mockResolvedValue(scenarioFixture)
+
+    renderInStore(<SignalsPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: scenarioFixture.id })
+    })
+
+    const sleepDrowsiness = (await screen.findByTestId('rest-recovery-field-sleep-drowsiness')) as HTMLInputElement
+    expect(sleepDrowsiness.value).toBe('35') // scenario recovery_model.sleep.drowsiness
+
+    fireEvent.change(sleepDrowsiness, { target: { value: '50' } })
+    await waitFor(() =>
+      expect(profileOverrides()).toEqual({ driver: { recovery_model: { sleep: { drowsiness: 50 } } } }),
+    )
+
+    // Reverting to the scenario default removes the whole sparse override.
+    fireEvent.change(screen.getByTestId('rest-recovery-field-sleep-drowsiness'), { target: { value: '35' } })
+    await waitFor(() => expect(profileOverrides()).toBeNull())
+  })
+
   it('(a) renders the three tier groups with the expected signal rows once a scenario is selected', async () => {
     vi.mocked(client.getScenario).mockResolvedValue(scenarioFixture)
 
@@ -184,9 +247,20 @@ describe('SignalsPanel — feature 009 FE2', () => {
     expect(screen.getByTestId('signal-row-familiarRoute')).toBeInTheDocument()
     expect(screen.getByTestId('signal-row-childPassenger')).toBeInTheDocument()
     expect(screen.getByTestId('signal-row-weatherRisk')).toBeInTheDocument()
-    // Dynamic
+    // Dynamic — clearer per-signal rows (was a single cryptic "Segment / Motion / Jam").
+    // speedKph is intentionally NOT shown here: no algorithm reads it and the
+    // editable Speed Profile section already covers speed.
     expect(screen.getByTestId('signal-row-continuousDrivingMin')).toBeInTheDocument()
-    expect(screen.getByTestId('signal-row-segmentMotionJam')).toBeInTheDocument()
+    expect(screen.getByTestId('signal-row-segmentType')).toBeInTheDocument()
+    expect(screen.getByTestId('signal-row-isTrafficJam')).toBeInTheDocument()
+    expect(screen.getByTestId('signal-row-nextRestSpotMin')).toBeInTheDocument()
+    expect(screen.queryByTestId('signal-row-speedKph')).not.toBeInTheDocument()
+    // Speed profile (restored "speed setup")
+    expect(screen.getByTestId('speed-profile-section')).toBeInTheDocument()
+    expect(screen.getByTestId('speed-field-highway_kph')).toBeInTheDocument()
+    // Rest options — per-activity recovery
+    expect(screen.getByTestId('rest-options-section')).toBeInTheDocument()
+    expect(screen.getByTestId('rest-activity-sleep')).toBeInTheDocument()
     // Simulated
     expect(screen.getByTestId('signal-row-drowsiness')).toBeInTheDocument()
     expect(screen.getByTestId('signal-row-fatigue')).toBeInTheDocument()
@@ -217,7 +291,7 @@ describe('SignalsPanel — feature 009 FE2', () => {
     expect(screen.getByTestId('signal-row-anomaly_rate')).toHaveTextContent('異常発生率')
   })
 
-  it('(b) editable Fixed signals expose a ✎ control; isNight and Dynamic/Simulated signals do not', async () => {
+  it('(b) editable Fixed signals (isNight/familiarRoute/childPassenger/weatherRisk) expose a ✎ control; Dynamic/Simulated do not', async () => {
     vi.mocked(client.getScenario).mockResolvedValue(scenarioFixture)
 
     renderInStore(<SignalsPanel />, (dispatch) => {
@@ -229,15 +303,34 @@ describe('SignalsPanel — feature 009 FE2', () => {
     })
     expect(screen.getByTestId('signal-edit-childPassenger')).toBeInTheDocument()
     expect(screen.getByTestId('signal-edit-weatherRisk')).toBeInTheDocument()
+    // isNight is now editable (is_night boolean context override).
+    expect(screen.getByTestId('signal-edit-isNight')).toBeInTheDocument()
 
-    // isNight: no edit control
-    expect(screen.queryByTestId('signal-edit-isNight')).not.toBeInTheDocument()
     // Dynamic/Simulated: no edit control
     expect(screen.queryByTestId('signal-edit-continuousDrivingMin')).not.toBeInTheDocument()
     expect(screen.queryByTestId('signal-edit-segmentMotionJam')).not.toBeInTheDocument()
     expect(screen.queryByTestId('signal-edit-drowsiness')).not.toBeInTheDocument()
     expect(screen.queryByTestId('signal-edit-fatigue')).not.toBeInTheDocument()
     expect(screen.queryByTestId('signal-edit-anomaly_rate')).not.toBeInTheDocument()
+  })
+
+  it('(b2) toggling isNight dispatches SET_CONTEXT_OVERRIDE(is_night); revert-to-default clears it', async () => {
+    vi.mocked(client.getScenario).mockResolvedValue(scenarioFixture)
+
+    renderInStore(<SignalsPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: scenarioFixture.id })
+    })
+
+    const checkbox = (await screen.findByTestId('signal-edit-isNight')) as HTMLInputElement
+    // Scenario default is_night is false → unchecked.
+    expect(checkbox.checked).toBe(false)
+
+    fireEvent.click(checkbox)
+    await waitFor(() => expect(contextOverrides().is_night).toBe(true))
+
+    // Reverting back to the scenario default (false) removes the override key.
+    fireEvent.click(screen.getByTestId('signal-edit-isNight'))
+    await waitFor(() => expect(contextOverrides().is_night).toBeUndefined())
   })
 
   it('(c) editing an editable signal dispatches SET_CONTEXT_OVERRIDE and updates the store', async () => {
@@ -266,22 +359,24 @@ describe('SignalsPanel — feature 009 FE2', () => {
     await waitFor(() => expect(contextOverrides().child_passenger).toBeUndefined())
   })
 
-  it('(e) UX-FE1: weather_risk is editable — dispatches SET_CONTEXT_OVERRIDE, revert-to-default removes the key', async () => {
+  it('(e) UX-FE5: weather_risk is a 0–1 slider mapping ×100 to the stored [0,100] value; revert removes the key', async () => {
     vi.mocked(client.getScenario).mockResolvedValue(scenarioFixture)
 
     renderInStore(<SignalsPanel />, (dispatch) => {
       dispatch({ type: 'SELECT_SCENARIO', id: scenarioFixture.id })
     })
 
-    const input = (await screen.findByTestId('signal-edit-weatherRisk')) as HTMLInputElement
-    // Pre-filled from the scenario's own weather_risk default (30).
-    expect(input.value).toBe('30')
+    const slider = (await screen.findByTestId('signal-edit-weatherRisk')) as HTMLInputElement
+    // The slider shows the 0–1 fraction of the scenario default (30 → 0.3).
+    expect(slider.type).toBe('range')
+    expect(slider.value).toBe('0.3')
 
-    fireEvent.change(input, { target: { value: '65' } })
+    // Sliding to 0.65 stores 65 (the exact weight env_load applies).
+    fireEvent.change(slider, { target: { value: '0.65' } })
     await waitFor(() => expect(contextOverrides().weather_risk).toBe(65))
 
-    // Reverting to the scenario default (30) removes the override key.
-    fireEvent.change(screen.getByTestId('signal-edit-weatherRisk'), { target: { value: '30' } })
+    // Back to the scenario default fraction (0.3 → 30) removes the override key.
+    fireEvent.change(screen.getByTestId('signal-edit-weatherRisk'), { target: { value: '0.3' } })
     await waitFor(() => expect(contextOverrides().weather_risk).toBeUndefined())
   })
 
@@ -299,23 +394,22 @@ describe('SignalsPanel — feature 009 FE2', () => {
     expect(screen.getByTestId('signal-info-btn-anomaly_rate')).toBeInTheDocument()
   })
 
-  it('(g) UX-FE2: opening a Simulated signal shows its formulation editor, and editing a param dispatches SET_PROFILE_OVERRIDES', async () => {
+  it('(g) UX-FE4: a Simulated signal shows its formula INLINE with editable params; editing dispatches SET_PROFILE_OVERRIDES', async () => {
     vi.mocked(client.getScenario).mockResolvedValue(scenarioFixture)
 
     renderInStore(<SignalsPanel />, (dispatch) => {
       dispatch({ type: 'SELECT_SCENARIO', id: scenarioFixture.id })
     })
 
-    await waitFor(() => {
-      expect(screen.getByTestId('signal-info-btn-drowsiness')).toBeInTheDocument()
-    })
-
-    // Opening drowsiness's ⓘ shows the formula text and a pre-filled field.
-    fireEvent.click(screen.getByTestId('signal-info-btn-drowsiness'))
-    expect(screen.getByTestId('signal-formula-text-drowsiness')).toHaveTextContent(/Δt\/60/)
-    const drowsinessInput = screen.getByTestId(
+    // The formula line and its param fields are visible WITHOUT clicking the ⓘ
+    // (inline, mirroring the right panel — no popover to open).
+    const drowsinessInput = (await screen.findByTestId(
       'signal-formula-field-drowsiness-base_growth_per_min',
-    ) as HTMLInputElement
+    )) as HTMLInputElement
+    // The state-update recurrence is shown, Δt explained in words, and the
+    // named params are visible inline without opening the ⓘ.
+    expect(screen.getByTestId('signal-formula-equation-drowsiness')).toHaveTextContent('drowsiness[t] = drowsiness[t−1]')
+    expect(screen.getByTestId('signal-formula-lead-drowsiness')).toHaveTextContent(/Δt/)
     expect(drowsinessInput.value).toBe('0.9')
 
     fireEvent.change(drowsinessInput, { target: { value: '1.4' } })
@@ -329,11 +423,25 @@ describe('SignalsPanel — feature 009 FE2', () => {
     })
     await waitFor(() => expect(profileOverrides()).toBeNull())
 
-    // anomaly_rate: editing lambda_base sets anomaly.lambda_base.
-    fireEvent.click(screen.getByTestId('signal-info-btn-anomaly_rate'))
+    // anomaly_rate: editing lambda_base sets anomaly.lambda_base (also inline).
     const lambdaInput = screen.getByTestId('signal-formula-field-anomaly_rate-lambda_base') as HTMLInputElement
     expect(lambdaInput.value).toBe('0.02')
     fireEvent.change(lambdaInput, { target: { value: '0.08' } })
     await waitFor(() => expect(profileOverrides()).toEqual({ anomaly: { lambda_base: 0.08 } }))
+  })
+
+  it('(g2) UX-FE4: the ⓘ icon shows a brief words-only explanation (not the editable formula)', async () => {
+    vi.mocked(client.getScenario).mockResolvedValue(scenarioFixture)
+
+    renderInStore(<SignalsPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: scenarioFixture.id })
+    })
+
+    const infoBtn = await screen.findByTestId('signal-info-btn-drowsiness')
+    // Explanation is hidden until the ⓘ is clicked.
+    expect(screen.queryByTestId('signal-explain-drowsiness')).not.toBeInTheDocument()
+
+    fireEvent.click(infoBtn)
+    expect(screen.getByTestId('signal-explain-drowsiness')).toHaveTextContent(/Accumulates over driving time/)
   })
 })

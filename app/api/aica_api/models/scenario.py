@@ -109,7 +109,6 @@ class RecoveryStage(BaseModel):
 class RecoveryOption(BaseModel):
     id: str
     label: dict                                  # {ja, en}
-    rest_type: Literal["short", "long"] | None = None
     stages: list[RecoveryStage] = []
     postpone: bool = False
     model_config = {"extra": "allow"}

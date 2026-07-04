@@ -211,19 +211,19 @@ def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any
 
 # ---------------------------------------------------------------------------
 # Context overrides (Fixed-tier scenario context: child_passenger,
-# familiar_route, weather_risk) — shared by routers/run_plans.py (a real
+# familiar_route, weather_risk, is_night) — shared by routers/run_plans.py (a real
 # POST /api/run-plans) and services/preview.py (the ephemeral POST
 # /api/runs/preview), so both paths validate + apply identical inputs and a
 # preview is faithful to what "Open full run" would persist (UX-BE).
 # ---------------------------------------------------------------------------
 
-_VALID_CONTEXT_OVERRIDE_KEYS = {"child_passenger", "familiar_route", "weather_risk"}
+_VALID_CONTEXT_OVERRIDE_KEYS = {"child_passenger", "familiar_route", "weather_risk", "is_night"}
 
 
 def validate_context_overrides(context_overrides: dict[str, Any]) -> list[dict[str, str]]:
     """Validate context_overrides keys/types.
 
-    ``child_passenger`` / ``familiar_route`` must be booleans; ``weather_risk``
+    ``child_passenger`` / ``familiar_route`` / ``is_night`` must be booleans; ``weather_risk``
     (UX-BE) must be a number in [0, 100] — mirrors ScenarioDef.weather_risk's
     own range validator so a bad override is caught here with a field-scoped
     message rather than surfacing as a generic 500 from model_copy/validation
@@ -546,7 +546,10 @@ def create_draft(
         merged_initial = {**effective_scenario.initial_state, **initial_state}
         effective_scenario = effective_scenario.model_copy(update={"initial_state": merged_initial})
 
-    # Apply boolean context overrides (child_passenger, familiar_route).
+    # Apply boolean context overrides (child_passenger, familiar_route, is_night)
+    # plus numeric weather_risk. is_night flips the scenario day/night constant
+    # (Fixed-tier signal) so the setup screen can toggle it — model_copy applies
+    # it onto ScenarioDef.is_night directly.
     if context_overrides:
         effective_scenario = effective_scenario.model_copy(update=context_overrides)
 

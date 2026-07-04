@@ -15,11 +15,11 @@ import tempfile
 
 from aica_api.models.package import PackageManifest
 from aica_api.models.profile import (
+    ActivityRecovery,
     AnomalySignalParams,
     DriverSignalParams,
     DrowsinessModel,
     FatigueModel,
-    RecoveryModel,
     SpeedProfile,
 )
 from aica_api.models.run import EventPlan, NamedRestSpot, RouteFacts
@@ -43,9 +43,10 @@ def m2_scenario_with_recovery(
 ) -> ScenarioDef:
     """Minimal M2 ScenarioDef with recovery_model + nap_karaoke recovery option.
 
-    Driver profile has positive short/long rest recovery amounts so that
-    apply_rest_recovery() lowers drowsiness/fatigue on each STOPPED tick.
-    Route includes exactly one is_rest_facility segment at at=0.5.
+    Driver profile has positive per-activity recovery amounts (keyed by stage
+    content: "sleep", "karaoke") so apply_rest_recovery() lowers drowsiness/
+    fatigue once when each activity is entered. Route includes exactly one
+    is_rest_facility segment at at=0.5.
 
     Args:
         total_km:           Total route distance in km (default 120.0).
@@ -68,12 +69,10 @@ def m2_scenario_with_recovery(
             mountain_road_add_per_min=0.2,
             traffic_jam_add_per_min=0.05,
         ),
-        recovery_model=RecoveryModel(
-            short_rest_drowsiness_recovery=20.0,
-            short_rest_fatigue_recovery=15.0,
-            long_rest_drowsiness_recovery=35.0,
-            long_rest_fatigue_recovery=30.0,
-        ),
+        recovery_model={
+            "sleep": ActivityRecovery(drowsiness=35.0, fatigue=30.0),
+            "karaoke": ActivityRecovery(drowsiness=8.0, fatigue=5.0),
+        },
     )
     speed_profile = SpeedProfile(
         normal_road_kph=60, highway_kph=100,
@@ -92,7 +91,6 @@ def m2_scenario_with_recovery(
     nap_karaoke = RecoveryOption(
         id="nap_karaoke",
         label={"ja": "仮眠＋カラオケ", "en": "Nap + Karaoke"},
-        rest_type="short",
         stages=[
             RecoveryStage(phase="wakefulness", content="audio_karaoke", motion="MOVING"),
             RecoveryStage(phase="nap", content="sleep", motion="STOPPED", ticks=3),

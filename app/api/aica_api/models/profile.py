@@ -67,22 +67,22 @@ class FatigueModel(BaseModel):
         return v
 
 
-class RecoveryModel(BaseModel):
-    """Recovery amounts (absolute units) for short and long rests."""
+class ActivityRecovery(BaseModel):
+    """Fixed recovery amounts applied ONCE when a rest activity is performed.
+
+    Feature 009 (UX iteration): replaces the old short/long RecoveryModel. Each
+    rest activity (a recovery-option stage's ``content`` — e.g. ``sleep``,
+    ``audio_karaoke``, ``stretch``) carries its own drowsiness/fatigue recovery.
+    The amount is applied once per activity, independent of how long the stage
+    lasts (no per-minute rate, no short/long distinction).
+    """
 
     model_config = ConfigDict(extra="forbid")
 
-    short_rest_drowsiness_recovery: float
-    short_rest_fatigue_recovery: float
-    long_rest_drowsiness_recovery: float
-    long_rest_fatigue_recovery: float
+    drowsiness: float = 0.0
+    fatigue: float = 0.0
 
-    @field_validator(
-        "short_rest_drowsiness_recovery",
-        "short_rest_fatigue_recovery",
-        "long_rest_drowsiness_recovery",
-        "long_rest_fatigue_recovery",
-    )
+    @field_validator("drowsiness", "fatigue")
     @classmethod
     def _nonneg(cls, v: float) -> float:
         if v < 0:
@@ -105,7 +105,9 @@ class DriverSignalParams(BaseModel):
     id: str
     drowsiness_model: DrowsinessModel
     fatigue_model: FatigueModel
-    recovery_model: RecoveryModel
+    # Per-activity recovery, keyed by a recovery-option stage's ``content``
+    # (e.g. "sleep", "audio_karaoke", "stretch"). Applied once per activity.
+    recovery_model: dict[str, ActivityRecovery] = {}
 
 
 # ─── AnomalySignalParams (new — seeded-Poisson anomaly-rate generator) ───────

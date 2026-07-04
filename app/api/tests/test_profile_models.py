@@ -31,10 +31,8 @@ VALID_FATIGUE_MODEL = {
 }
 
 VALID_RECOVERY_MODEL = {
-    "short_rest_drowsiness_recovery": 30.0,
-    "short_rest_fatigue_recovery": 20.0,
-    "long_rest_drowsiness_recovery": 80.0,
-    "long_rest_fatigue_recovery": 60.0,
+    "sleep": {"drowsiness": 80.0, "fatigue": 60.0},
+    "stretch": {"drowsiness": 30.0, "fatigue": 20.0},
 }
 
 VALID_DRIVER_SIGNAL_PARAMS = {
@@ -63,7 +61,7 @@ def test_driver_signal_params_valid():
     assert p.id == "default_driver"
     assert p.drowsiness_model.base_growth_per_min == 0.1
     assert p.fatigue_model.traffic_jam_add_per_min == 0.02
-    assert p.recovery_model.long_rest_drowsiness_recovery == 80.0
+    assert p.recovery_model["sleep"].drowsiness == 80.0
 
 
 def test_driver_signal_params_has_no_attention_model():
@@ -100,7 +98,7 @@ def test_driver_signal_params_fatigue_model_rate_negative_rejected():
 def test_driver_signal_params_recovery_model_rate_negative_rejected():
     from aica_api.models.profile import DriverSignalParams
 
-    bad = {**VALID_DRIVER_SIGNAL_PARAMS, "recovery_model": {**VALID_RECOVERY_MODEL, "short_rest_drowsiness_recovery": -5.0}}
+    bad = {**VALID_DRIVER_SIGNAL_PARAMS, "recovery_model": {"sleep": {"drowsiness": -5.0, "fatigue": 10.0}}}
     with pytest.raises(ValidationError):
         DriverSignalParams(**bad)
 

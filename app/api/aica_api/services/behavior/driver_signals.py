@@ -136,29 +136,31 @@ def advance_driver_state(
 def apply_rest_recovery(
     params: DriverSignalParams,
     current: DriverState,
-    rest_type: str,
+    activity: str,
 ) -> DriverState:
-    """Apply rest recovery to the current driver state.
+    """Apply a rest activity's fixed recovery to the current driver state.
+
+    Feature 009 (UX iteration): recovery is now keyed by the activity performed
+    (a recovery-option stage's ``content`` — e.g. "sleep", "audio_karaoke",
+    "stretch"), not by a short/long rest type. The amount is a FIXED number
+    applied ONCE per activity (the caller invokes this once, on activity entry),
+    independent of the stage's duration. An unknown activity recovers nothing.
 
     Args:
-        params:    DriverSignalParams (provides recovery amounts).
-        current:   State before rest.
-        rest_type: "short" or "long".
+        params:   DriverSignalParams (provides the per-activity recovery map).
+        current:  State before the activity.
+        activity: The stage ``content`` naming the rest activity.
 
     Returns:
         Recovered DriverState (drowsiness/fatigue reduced).
     """
-    rm = params.recovery_model
-    if rest_type == "long":
-        d_rec = rm.long_rest_drowsiness_recovery
-        f_rec = rm.long_rest_fatigue_recovery
-    else:  # "short" (default)
-        d_rec = rm.short_rest_drowsiness_recovery
-        f_rec = rm.short_rest_fatigue_recovery
+    rec = params.recovery_model.get(activity)
+    if rec is None:
+        return DriverState(drowsiness=current.drowsiness, fatigue=current.fatigue)
 
     return DriverState(
-        drowsiness=_clamp(current.drowsiness - d_rec),
-        fatigue=_clamp(current.fatigue - f_rec),
+        drowsiness=_clamp(current.drowsiness - rec.drowsiness),
+        fatigue=_clamp(current.fatigue - rec.fatigue),
     )
 
 

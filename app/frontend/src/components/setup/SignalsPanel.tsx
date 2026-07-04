@@ -4,7 +4,9 @@ import { getScenario } from '../../api/client'
 import type { ScenarioDef } from '../../api/types'
 import { t } from '../../i18n/t'
 import ScenarioSelector from './ScenarioSelector'
-import SignalFormulationEditor from './SignalFormulationEditor'
+import MapKeyAndRouteInput from './MapKeyAndRouteInput'
+import RestOptionsEditor from './RestOptionsEditor'
+import SignalFormulationEditor, { type FormulationSignalKey } from './SignalFormulationEditor'
 import { SIGNAL_LABELS } from './signalLabels'
 
 /**
@@ -20,23 +22,24 @@ import { SIGNAL_LABELS } from './signalLabels'
  *      .dynamic / .simulated read).
  *
  * Editable vs read-only:
- *   - Fixed: familiarRoute/childPassenger/weatherRisk are scenario-editable
- *     (✎ checkbox / numeric input, dispatching SET_CONTEXT_OVERRIDE into
- *     `contextOverrides` — changed-from-scenario-default only, mirroring the
- *     editedHyperparameters/SET_HYPERPARAMETER convention). `contextOverrides`
- *     is sent as `context_overrides` to BOTH the instant preview and the real
- *     run-plan (see state/runStore.ts, api/client.ts). isNight is shown but
- *     NOT editable: the backend has no context-override key for it yet (see
- *     ScenarioDef.is_night doc in api/types.ts).
+ *   - Fixed: isNight/familiarRoute/childPassenger/weatherRisk are scenario-
+ *     editable (✎ checkbox / numeric input, dispatching SET_CONTEXT_OVERRIDE
+ *     into `contextOverrides` — changed-from-scenario-default only, mirroring
+ *     the editedHyperparameters/SET_HYPERPARAMETER convention). `is_night` is a
+ *     boolean context-override key like child_passenger/familiar_route (see
+ *     services/run_plan._VALID_CONTEXT_OVERRIDE_KEYS). `contextOverrides` is
+ *     sent as `context_overrides` to BOTH the instant preview and the real
+ *     run-plan (see state/runStore.ts, api/client.ts).
  *   - Dynamic: always read-only/muted — these are runtime-computed per tick;
  *     at setup time there is no run yet, so rows show a descriptive
  *     placeholder rather than a live value.
- *   - Simulated (tier 3): the "value" cell stays read-only/muted, but each
- *     carries an ⓘ (SignalFormulationEditor, UX-FE2) that expands into the
- *     signal's formula with its generator sub-params as editable inline
- *     fields. drowsiness/fatigue edit `driver_signal_params.{drowsiness_model,
- *     fatigue_model}`; anomaly_rate edits `anomaly_signal_params`. Edits are
- *     dispatched as `SET_PROFILE_OVERRIDES` (changed-from-scenario-default
+ *   - Simulated (tier 3): rendered by SimulatedSignal — the signal name above
+ *     its formula shown INLINE (SignalFormulationEditor, UX-FE4) with the
+ *     generator sub-params as editable inline `[coefficient]` fields, mirroring
+ *     the right panel's formula-as-UI. The ⓘ is demoted to a brief words-only
+ *     explanation. drowsiness/fatigue edit `driver_signal_params.{drowsiness_
+ *     model,fatigue_model}`; anomaly_rate edits `anomaly_signal_params`. Edits
+ *     are dispatched as `SET_PROFILE_OVERRIDES` (changed-from-scenario-default
  *     only, sparse `{driver?, anomaly?}`), which re-runs the instant preview
  *     the same way contextOverrides does (see SignalFormulationEditor.tsx).
  *
@@ -75,24 +78,50 @@ export default function SignalsPanel() {
     dispatch({ type: 'SET_HIGHLIGHTED_SIGNAL', key: null })
   }
 
+  const isNightDefault = Boolean(scenario?.is_night ?? false)
+  const isNightValue = Boolean(contextOverrides.is_night ?? isNightDefault)
   const familiarRouteDefault = Boolean(scenario?.familiar_route ?? false)
   const familiarRouteValue = Boolean(contextOverrides.familiar_route ?? familiarRouteDefault)
   const childPassengerDefault = Boolean(scenario?.child_passenger ?? false)
   const childPassengerValue = Boolean(contextOverrides.child_passenger ?? childPassengerDefault)
+  // weather_risk is stored/validated on the backend as [0, 100] (env_load
+  // divides by 100 → a 0..1 term). The user-facing control is a 0..1 slider;
+  // we map fraction → stored (×100) on write and stored → fraction (÷100) on
+  // read, so what the slider shows IS the exact weight the algorithm applies.
   const weatherRiskDefault = scenario?.weather_risk ?? 0
   const weatherRiskValue = contextOverrides.weather_risk ?? weatherRiskDefault
+  const weatherRiskFraction = weatherRiskValue / 100
 
   function handleWeatherRiskChange(e: ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value
     if (raw === '') return
-    const num = Number(raw)
-    if (Number.isNaN(num)) return
-    dispatch({ type: 'SET_CONTEXT_OVERRIDE', key: 'weather_risk', value: num, default: weatherRiskDefault })
+    const fraction = Number(raw)
+    if (Number.isNaN(fraction)) return
+    const stored = Math.round(fraction * 100)
+    dispatch({ type: 'SET_CONTEXT_OVERRIDE', key: 'weather_risk', value: stored, default: weatherRiskDefault })
   }
 
   return (
     <div data-testid="signals-panel">
-      <ScenarioSelector />
+      <div data-testid="route-section">
+        <h3
+          style={{
+            fontSize: '0.72em',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            color: '#9ca3af',
+            margin: '0 0 4px',
+          }}
+        >
+          {t({ en: 'Route (optional: Google Maps)', ja: 'ルート（任意: Google マップ）' }, uiLanguage)}
+        </h3>
+        <MapKeyAndRouteInput />
+      </div>
+
+      <div data-testid="scenario-section" style={{ marginTop: '12px' }}>
+        <ScenarioSelector />
+      </div>
 
       {scenario && (
         <>
@@ -100,11 +129,26 @@ export default function SignalsPanel() {
             <SignalRow
               signalKey="isNight"
               label={t(SIGNAL_LABELS.isNight, uiLanguage)}
-              value={scenario.is_night ? 'on' : 'off'}
-              muted
+              value={isNightValue ? 'on' : 'off'}
               highlighted={highlightedSignalKey === 'isNight'}
               onHover={() => highlight('isNight')}
               onLeave={unhighlight}
+              editControl={
+                <input
+                  type="checkbox"
+                  data-testid="signal-edit-isNight"
+                  aria-label={t(SIGNAL_LABELS.isNight, uiLanguage)}
+                  checked={isNightValue}
+                  onChange={(e) =>
+                    dispatch({
+                      type: 'SET_CONTEXT_OVERRIDE',
+                      key: 'is_night',
+                      value: e.target.checked,
+                      default: isNightDefault,
+                    })
+                  }
+                />
+              }
             />
             <SignalRow
               signalKey="familiarRoute"
@@ -157,97 +201,105 @@ export default function SignalsPanel() {
             <SignalRow
               signalKey="weatherRisk"
               label={t(SIGNAL_LABELS.weatherRisk, uiLanguage)}
-              value={String(weatherRiskValue)}
+              value={weatherRiskFraction.toFixed(2)}
               highlighted={highlightedSignalKey === 'weatherRisk'}
               onHover={() => highlight('weatherRisk')}
               onLeave={unhighlight}
               editControl={
                 <input
-                  type="number"
+                  type="range"
                   data-testid="signal-edit-weatherRisk"
                   aria-label={t(SIGNAL_LABELS.weatherRisk, uiLanguage)}
                   min={0}
-                  max={100}
-                  step={1}
-                  value={weatherRiskValue}
+                  max={1}
+                  step={0.05}
+                  value={weatherRiskFraction}
                   onChange={handleWeatherRiskChange}
-                  style={{ width: '52px' }}
+                  style={{ width: '96px' }}
                 />
               }
             />
           </SignalGroup>
 
-          <SignalGroup title="Dynamic" testid="signal-group-dynamic">
+          <SignalGroup
+            title="Dynamic"
+            testid="signal-group-dynamic"
+            caption={t(
+              {
+                en: 'Computed live each tick as the drive plays out — read-only here.',
+                ja: '走行の進行に合わせてティックごとに算出される値（ここでは編集不可）。',
+              },
+              uiLanguage,
+            )}
+          >
             <SignalRow
               signalKey="continuousDrivingMin"
               label={t(SIGNAL_LABELS.continuousDrivingMin, uiLanguage)}
-              value="0 min → …"
+              value={t({ en: 'grows while moving; resets after a rest', ja: '走行中に増加し、休憩後にリセット' }, uiLanguage)}
               muted
               highlighted={highlightedSignalKey === 'continuousDrivingMin'}
               onHover={() => highlight('continuousDrivingMin')}
               onLeave={unhighlight}
             />
             <SignalRow
-              signalKey="segmentMotionJam"
-              label={t(SIGNAL_LABELS.segmentMotionJam, uiLanguage)}
-              value="computed during run"
+              signalKey="segmentType"
+              label={t(SIGNAL_LABELS.segmentType, uiLanguage)}
+              value={t({ en: 'urban / highway / mountain / sightseeing', ja: '市街地／高速／山道／観光道路' }, uiLanguage)}
               muted
-              highlighted={highlightedSignalKey === 'segmentMotionJam'}
-              onHover={() => highlight('segmentMotionJam')}
+              highlighted={highlightedSignalKey === 'segmentType'}
+              onHover={() => highlight('segmentType')}
+              onLeave={unhighlight}
+            />
+            <SignalRow
+              signalKey="isTrafficJam"
+              label={t(SIGNAL_LABELS.isTrafficJam, uiLanguage)}
+              value={t({ en: 'on inside congested stretches', ja: '渋滞区間でオン' }, uiLanguage)}
+              muted
+              highlighted={highlightedSignalKey === 'isTrafficJam'}
+              onHover={() => highlight('isTrafficJam')}
+              onLeave={unhighlight}
+            />
+            <SignalRow
+              signalKey="nextRestSpotMin"
+              label={t(SIGNAL_LABELS.nextRestSpotMin, uiLanguage)}
+              value={t({ en: 'minutes to the next rest opportunity', ja: '次の休憩機会までの分数' }, uiLanguage)}
+              muted
+              highlighted={highlightedSignalKey === 'nextRestSpotMin'}
+              onHover={() => highlight('nextRestSpotMin')}
               onLeave={unhighlight}
             />
           </SignalGroup>
 
+          <SpeedProfileSection scenario={scenario} />
+
           <SignalGroup title="Simulated (tier 3)" testid="signal-group-simulated">
-            <SignalRow
+            <SimulatedSignal
               signalKey="drowsiness"
               label={t(SIGNAL_LABELS.drowsiness, uiLanguage)}
-              value="~curve"
-              muted
-              formulaEditor={
-                <SignalFormulationEditor
-                  signalKey="drowsiness"
-                  label={t(SIGNAL_LABELS.drowsiness, uiLanguage)}
-                  scenario={scenario}
-                />
-              }
+              scenario={scenario}
               highlighted={highlightedSignalKey === 'drowsiness'}
               onHover={() => highlight('drowsiness')}
               onLeave={unhighlight}
             />
-            <SignalRow
+            <SimulatedSignal
               signalKey="fatigue"
               label={t(SIGNAL_LABELS.fatigue, uiLanguage)}
-              value="~curve"
-              muted
-              formulaEditor={
-                <SignalFormulationEditor
-                  signalKey="fatigue"
-                  label={t(SIGNAL_LABELS.fatigue, uiLanguage)}
-                  scenario={scenario}
-                />
-              }
+              scenario={scenario}
               highlighted={highlightedSignalKey === 'fatigue'}
               onHover={() => highlight('fatigue')}
               onLeave={unhighlight}
             />
-            <SignalRow
+            <SimulatedSignal
               signalKey="anomaly_rate"
-              label={t(SIGNAL_LABELS.anomaly_rate, uiLanguage)}
-              value={`seeded Poisson (seed ${runSeed})`}
-              muted
-              formulaEditor={
-                <SignalFormulationEditor
-                  signalKey="anomaly_rate"
-                  label={t(SIGNAL_LABELS.anomaly_rate, uiLanguage)}
-                  scenario={scenario}
-                />
-              }
+              label={`${t(SIGNAL_LABELS.anomaly_rate, uiLanguage)} · seed ${runSeed}`}
+              scenario={scenario}
               highlighted={highlightedSignalKey === 'anomaly_rate'}
               onHover={() => highlight('anomaly_rate')}
               onLeave={unhighlight}
             />
           </SignalGroup>
+
+          <RestOptionsEditor scenario={scenario} />
         </>
       )}
     </div>
@@ -256,7 +308,17 @@ export default function SignalsPanel() {
 
 // ── Presentational helpers ──────────────────────────────────────────────────
 
-function SignalGroup({ title, testid, children }: { title: string; testid: string; children: ReactNode }) {
+function SignalGroup({
+  title,
+  testid,
+  caption,
+  children,
+}: {
+  title: string
+  testid: string
+  caption?: string
+  children: ReactNode
+}) {
   return (
     <div data-testid={testid} style={{ marginTop: '12px' }}>
       <h3
@@ -271,6 +333,9 @@ function SignalGroup({ title, testid, children }: { title: string; testid: strin
       >
         {title}
       </h3>
+      {caption && (
+        <p style={{ fontSize: '0.7em', color: '#9ca3af', margin: '0 0 6px', lineHeight: 1.4 }}>{caption}</p>
+      )}
       {children}
     </div>
   )
@@ -282,7 +347,6 @@ function SignalRow({
   value,
   muted = false,
   editControl,
-  formulaEditor,
   highlighted = false,
   onHover,
   onLeave,
@@ -290,12 +354,10 @@ function SignalRow({
   signalKey: string
   label: string
   value: string
-  /** Read-only rows (Dynamic + Simulated, and isNight within Fixed) render muted. */
+  /** Read-only rows (Dynamic) render muted. */
   muted?: boolean
-  /** Present only for editable Fixed signals (familiarRoute/childPassenger). */
+  /** Present only for editable Fixed signals (isNight/familiarRoute/childPassenger/weatherRisk). */
   editControl?: ReactNode
-  /** Present only for Simulated (tier-3) signals — renders the ⓘ formulation editor. */
-  formulaEditor?: ReactNode
   highlighted?: boolean
   onHover?: () => void
   onLeave?: () => void
@@ -323,8 +385,149 @@ function SignalRow({
           {value}
         </span>
         {editControl}
-        {formulaEditor}
       </span>
     </div>
+  )
+}
+
+/**
+ * A Simulated (tier-3) signal: its name (a cross-link, same hover-highlight as
+ * SignalRow) stacked above its inline formulation — the formula shown in place
+ * with editable `[param]` fields, mirroring the right panel's formula-as-UI
+ * (AlgorithmFormulationPanel). The old ⓘ-popover-only presentation is gone; the
+ * ⓘ (inside SignalFormulationEditor) now carries just a brief word-explanation.
+ */
+function SimulatedSignal({
+  signalKey,
+  label,
+  scenario,
+  highlighted,
+  onHover,
+  onLeave,
+}: {
+  signalKey: FormulationSignalKey
+  label: string
+  scenario: ScenarioDef
+  highlighted: boolean
+  onHover: () => void
+  onLeave: () => void
+}) {
+  return (
+    <div
+      data-testid={`signal-row-${signalKey}`}
+      onMouseEnter={onHover}
+      onMouseLeave={onLeave}
+      style={{
+        padding: '4px',
+        marginBottom: '4px',
+        borderRadius: '4px',
+        background: highlighted ? '#eef2ff' : 'transparent',
+      }}
+    >
+      <span style={{ fontSize: '0.8em', fontWeight: 600, color: '#374151' }}>{label}</span>
+      <SignalFormulationEditor signalKey={signalKey} label={label} scenario={scenario} />
+    </div>
+  )
+}
+
+const SPEED_FIELDS = [
+  'normal_road_kph',
+  'highway_kph',
+  'mountain_road_kph',
+  'sightseeing_road_kph',
+  'traffic_jam_kph',
+] as const
+
+/**
+ * SpeedProfileSection (UX-FE5) — restores the "speed setup" dropped by the 009
+ * redesign. Edits the scenario's `speed_profile` (kph per road-segment type),
+ * which drives the Dynamic `speedKph` signal (and thus how long each segment
+ * takes). Edits are dispatched as `SET_PROFILE_OVERRIDES` into
+ * `profileOverrides.speed` — changed-from-scenario-default only, same sparse-
+ * patch discipline as the tier-3 SignalFormulationEditor. The backend deep-
+ * merges this onto the scenario's own speed_profile and validates the whole
+ * against SpeedProfile (see services/run_plan._apply_profile_overrides).
+ *
+ * Hidden when the scenario carries no speed_profile (older scenarios) — a
+ * partial override would fail SpeedProfile's required-fields validation.
+ */
+function SpeedProfileSection({ scenario }: { scenario: ScenarioDef }) {
+  const { state, dispatch } = useRunStore()
+  const { uiLanguage, profileOverrides } = state
+
+  const defaults = (scenario.speed_profile ?? {}) as Record<string, number>
+  if (Object.keys(defaults).length === 0) return null
+
+  const speedOverrides = (profileOverrides?.speed as Record<string, unknown> | undefined) ?? {}
+
+  function handleChange(fieldKey: string, defaultValue: number, raw: string) {
+    if (raw === '') return
+    const num = Number(raw)
+    if (Number.isNaN(num)) return
+
+    const next = { ...(profileOverrides ?? {}) }
+    const speed = { ...((next.speed as Record<string, unknown> | undefined) ?? {}) }
+    if (num === defaultValue) delete speed[fieldKey]
+    else speed[fieldKey] = num
+    if (Object.keys(speed).length === 0) delete next.speed
+    else next.speed = speed
+
+    const isEmpty = Object.keys(next).length === 0
+    dispatch({ type: 'SET_PROFILE_OVERRIDES', overrides: isEmpty ? null : next })
+  }
+
+  return (
+    <SignalGroup
+      title={t(SIGNAL_LABELS.speed_profile, uiLanguage)}
+      testid="speed-profile-section"
+      caption={t(
+        { en: 'Travel speed for each road type — sets how fast the drive covers each segment.', ja: '道路種別ごとの走行速度。各区間の所要時間を決めます。' },
+        uiLanguage,
+      )}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+        {SPEED_FIELDS.map((key) => {
+          const defaultValue = Number(defaults[key] ?? 0)
+          const override = speedOverrides[key] as number | undefined
+          const value = override !== undefined ? override : defaultValue
+          const changed = override !== undefined && override !== defaultValue
+          const label = t(SIGNAL_LABELS[key], uiLanguage)
+          return (
+            <div
+              key={key}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '8px',
+                fontSize: '0.78em',
+              }}
+            >
+              <span style={{ color: '#374151' }}>{label}</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                <input
+                  type="number"
+                  data-testid={`speed-field-${key}`}
+                  aria-label={label}
+                  min={0}
+                  step={1}
+                  value={value}
+                  onChange={(e) => handleChange(key, defaultValue, e.target.value)}
+                  style={{
+                    width: '56px',
+                    fontSize: '1em',
+                    textAlign: 'center',
+                    border: `1px solid ${changed ? '#6366f1' : '#d1d5db'}`,
+                    borderRadius: '3px',
+                    background: changed ? '#eef2ff' : '#fff',
+                  }}
+                />
+                <span style={{ color: '#9ca3af', fontSize: '0.85em' }}>km/h</span>
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </SignalGroup>
   )
 }

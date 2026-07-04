@@ -14,7 +14,7 @@
  *      no crash on the differently-shaped package).
  */
 
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
 import { RunStoreProvider, useRunStore } from '../src/state/runStore'
@@ -58,6 +58,7 @@ const HYBRID_MANIFEST: PackageManifest = {
     { key: 'drowsiness', band_values: [] },
     { key: 'fatigue', band_values: [] },
     { key: 'driving_anomaly', band_values: [] },
+    { key: 'driving_time', band_values: [] },
     { key: 'env_load', band_values: [] },
     { key: 'monotony', band_values: [] },
     { key: 'rest_window', band_values: [] },
@@ -69,7 +70,9 @@ const HYBRID_MANIFEST: PackageManifest = {
     { key: 'w_drowsiness', label: { ja: '', en: 'Drowsiness Weight' }, kind: 'numeric', default: 0.4, min: 0, max: 1, step: 0.01 },
     { key: 'w_fatigue', label: { ja: '', en: 'Fatigue Weight' }, kind: 'numeric', default: 0.25, min: 0, max: 1, step: 0.01 },
     { key: 'w_driving_anomaly', label: { ja: '', en: 'Driving Anomaly Weight' }, kind: 'numeric', default: 0.25, min: 0, max: 1, step: 0.01 },
+    { key: 'w_driving_time', label: { ja: '連続運転時間重み', en: 'Time-on-Task Weight' }, kind: 'numeric', default: 0.15, min: 0, max: 1, step: 0.01 },
     { key: 'w_env', label: { ja: '', en: 'Environment Load Weight' }, kind: 'numeric', default: 0.1, min: 0, max: 1, step: 0.01 },
+    { key: 'w_child_bonus', label: { ja: '子供同乗ボーナス', en: 'Child-Passenger Rest Bonus' }, kind: 'numeric', default: 0.05, min: 0, max: 1, step: 0.01 },
     { key: 'K', label: { ja: '', en: 'Anomaly-Rate Normalization K' }, kind: 'numeric', default: 5, min: 1, max: 50, step: 1 },
     { key: 'minimum_risk_for_rest_bonus', label: { ja: '', en: 'Minimum Risk for Rest Bonus' }, kind: 'numeric', default: 0.45, min: 0, max: 1, step: 0.01 },
     { key: 'w_rest_window', label: { ja: '', en: 'Rest Window Weight' }, kind: 'numeric', default: 0.1, min: 0, max: 1, step: 0.01 },
@@ -231,14 +234,26 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     const line = screen.getByTestId('formula-line-base_safety_risk')
     expect(line.textContent).toContain('Drowsiness')
     expect(line.textContent).toContain('Fatigue')
-    expect(line.textContent).toContain('driving_anomaly')
-    expect(line.textContent).toContain('env_load')
+    // #2: features render as localized text, not raw variable names.
+    expect(line.textContent).toContain('Driving Anomaly')
+    expect(line.textContent).toContain('Environmental Load')
+    expect(line.textContent).not.toContain('env_load')
 
     // Inline coefficient inputs, pre-filled from manifest defaults.
     expect((screen.getByTestId('coef-w_drowsiness') as HTMLInputElement).value).toBe('0.4')
     expect((screen.getByTestId('coef-w_fatigue') as HTMLInputElement).value).toBe('0.25')
     expect((screen.getByTestId('coef-w_driving_anomaly') as HTMLInputElement).value).toBe('0.25')
     expect((screen.getByTestId('coef-w_env') as HTMLInputElement).value).toBe('0.1')
+
+    // The two new terms live INSIDE the formula, not in an "Other" bucket:
+    // w_driving_time in base_safety_risk, w_child_bonus in rest_required.
+    expect(line.textContent).toContain('Time-on-Task')
+    expect((screen.getByTestId('coef-w_driving_time') as HTMLInputElement).value).toBe('0.15')
+    const restLine = screen.getByTestId('formula-line-rest_required_score')
+    expect(restLine.textContent).toContain('Child Passenger') // localized childPassenger cross-link
+    expect((screen.getByTestId('coef-w_child_bonus') as HTMLInputElement).value).toBe('0.05')
+    // No leftover "Other" section — every hyperparameter is placed in context.
+    expect(screen.queryByTestId('formulation-section-other')).toBeNull()
 
     // rest_required / monotony_prevention / fire-control sections present.
     expect(screen.getByTestId('formulation-section-rest_required')).toBeInTheDocument()
@@ -301,8 +316,8 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
       d({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
     })
 
-    // fire_control renders its hyperparameters via ExtraHyperparameterView,
-    // which prints the manifest label as visible text (not the raw key).
+    // fire_control renders each stage's coefficient with its manifest label as
+    // visible text (not the raw key), inside the step-by-step explanation.
     const section = await screen.findByTestId('formulation-section-fire_control')
     expect(section).toHaveTextContent('Smoothing Alpha')
     expect(section).not.toHaveTextContent('smoothing_alpha')
@@ -311,6 +326,178 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     await waitFor(() => {
       expect(screen.getByTestId('formulation-section-fire_control')).toHaveTextContent('平滑化係数 α')
     })
+  })
+
+  it('(i) #4: env_load + monotony live in a separate "combined features" section, not among per-signal features', async () => {
+    vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
+
+    renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
+    })
+
+    const combined = await screen.findByTestId('formulation-section-combined')
+    expect(within(combined).getByTestId('formula-line-env_load')).toBeInTheDocument()
+    expect(within(combined).getByTestId('formula-line-monotony')).toBeInTheDocument()
+
+    // The per-signal Features section must NOT contain the combined ones.
+    const features = screen.getByTestId('formulation-section-features')
+    expect(within(features).queryByTestId('formula-line-env_load')).toBeNull()
+  })
+
+  it('(j) #3+#2: feature output lines read as localized text (Normalized Drowsiness / Environmental Load)', async () => {
+    vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
+
+    renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
+    })
+
+    const drow = await screen.findByTestId('formula-line-drowsiness')
+    expect(drow.textContent).toContain('Normalized Drowsiness')
+    const env = screen.getByTestId('formula-line-env_load')
+    expect(env.textContent).toContain('Environmental Load')
+  })
+
+  it('(k) #1: features referenced in the score formulas are wired cross-links (highlight their feature line)', async () => {
+    vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
+
+    renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
+    })
+
+    const base = await screen.findByTestId('formula-line-base_safety_risk')
+    // env_load / driving_anomaly / driving_time inside base_safety_risk are links.
+    const envLink = within(base).getByTestId('formula-link-env_load')
+    expect(within(base).getByTestId('formula-link-driving_anomaly')).toBeInTheDocument()
+    expect(within(base).getByTestId('formula-link-driving_time')).toBeInTheDocument()
+
+    // Hovering the link highlights the env_load quantity across the panel.
+    fireEvent.mouseEnter(envLink)
+    await waitFor(() => expect(highlightedKey()).toBe('env_load'))
+
+    // And the env_load feature DEFINITION line reflects the highlight (wired both ways).
+    const envDef = screen.getByTestId('formula-line-env_load')
+    expect(envDef.getAttribute('data-highlighted')).toBe('true')
+  })
+
+  it('(l) #1: signals inside the combined-feature definitions wire to their SignalsPanel rows', async () => {
+    vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
+
+    renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
+    })
+
+    const env = await screen.findByTestId('formula-line-env_load')
+    // env_load blends Traffic Jam + Highway(segmentType) + Weather Risk signals.
+    expect(within(env).getByTestId('formula-link-isTrafficJam')).toBeInTheDocument()
+    expect(within(env).getByTestId('formula-link-weatherRisk')).toBeInTheDocument()
+    const mono = screen.getByTestId('formula-line-monotony')
+    expect(within(mono).getByTestId('formula-link-isNight')).toBeInTheDocument()
+  })
+
+  it('(m) bins() features expose an ⓘ that reveals the band table (ranges + values)', async () => {
+    vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
+
+    renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
+    })
+
+    const btn = await screen.findByTestId('formula-bin-info-driving_time')
+    fireEvent.click(btn)
+    const bands = await screen.findByTestId('formula-bin-bands-driving_time')
+    expect(bands.textContent).toMatch(/60/) // a band boundary
+    expect(bands.textContent).toContain('0.4') // a band value
+    expect(bands.textContent).toContain('1.0')
+
+    // rest_window is banded too.
+    expect(screen.getByTestId('formula-bin-info-rest_window')).toBeInTheDocument()
+  })
+
+  it('(n) threshold reads name the compared score and what each level does', async () => {
+    vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
+
+    renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
+    })
+
+    const thr = await screen.findByTestId('formula-threshold-rest_required')
+    // Names the score being compared (localized), and links to its definition line.
+    expect(thr.textContent).toMatch(/Rest-Required Score/i)
+    expect(within(thr).getByTestId('formula-link-rest_required_score')).toBeInTheDocument()
+    // Shows the comparison operator explicitly on each level.
+    expect(thr.textContent).toContain('≥')
+    // Explains what crossing each level does.
+    expect(thr.textContent).toMatch(/watch/i)
+    expect(thr.textContent).toMatch(/proposal|suggest/i)
+  })
+
+  it('(o) the emergency step spells out that it overrides cooldown and the 30-min cap', async () => {
+    vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
+
+    renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
+    })
+
+    const section = await screen.findByTestId('formulation-section-fire_control')
+    const emg = within(section).getByTestId('formulation-step-fire_control-3')
+    expect(emg.textContent).toMatch(/cooldown/i)
+    expect(emg.textContent).toMatch(/30/)
+    expect(emg.textContent).toMatch(/even|override|regardless/i)
+  })
+
+  it('(p) each fire-control threshold names WHAT is compared (operand + operator + outcome)', async () => {
+    vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
+
+    renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
+    })
+
+    const section = await screen.findByTestId('formulation-section-fire_control')
+    const text = section.textContent || ''
+    // Operands are named for each threshold, and skip-if/emergency name BOTH
+    // scores explicitly (they are two independent scores, not one final score).
+    expect(text).toMatch(/Rest-Required.*Monotony|Monotony.*Rest-Required/i)
+    expect(text).toMatch(/tick/i) // persistence compares consecutive ticks
+    expect(text).toMatch(/second/i) // cooldown compares seconds since last proposal
+    expect(text).toMatch(/30 min/i) // rate cap compares proposals in 30 minutes
+    // Comparison operators are shown explicitly.
+    expect(text).toContain('≥')
+    expect(text).toContain('<')
+    // The threshold hyperparameters are still editable inline.
+    expect(within(section).getByTestId('coef-skip_if_velocity')).toBeInTheDocument()
+    expect(within(section).getByTestId('coef-emergency_override_threshold')).toBeInTheDocument()
+  })
+
+  it('(h) fire-control is a step-by-step explanation, each stage naming the hyperparameter it uses', async () => {
+    vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
+
+    renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
+    })
+
+    const section = await screen.findByTestId('formulation-section-fire_control')
+
+    // Numbered explanatory steps (not a bare parameter list).
+    const steps = within(section).getAllByTestId(/^formulation-step-fire_control-/)
+    expect(steps.length).toBeGreaterThanOrEqual(5)
+
+    // The step text explains the fire-control pipeline in words.
+    expect(section.textContent).toMatch(/persist/i)
+    expect(section.textContent).toMatch(/cooldown/i)
+    expect(section.textContent).toMatch(/emergenc/i)
+
+    // Every fire-control hyperparameter is still an editable inline coefficient,
+    // now shown within the stage that uses it.
+    for (const key of [
+      'smoothing_alpha',
+      'rest_persistence_ticks',
+      'skip_if_score',
+      'skip_if_velocity',
+      'emergency_override_threshold',
+      'rest_cooldown_sec',
+      'max_proposals_per_30min',
+    ]) {
+      expect(within(section).getByTestId(`coef-${key}`)).toBeInTheDocument()
+    }
   })
 
   it('(f) UX-FE1: renders PackageSelector at the top, even before a package is selected', async () => {

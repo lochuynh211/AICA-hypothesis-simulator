@@ -124,12 +124,16 @@ export type FatigueModel = {
   traffic_jam_add_per_min: number
 }
 
-export type RecoveryModel = {
-  short_rest_drowsiness_recovery: number
-  short_rest_fatigue_recovery: number
-  long_rest_drowsiness_recovery: number
-  long_rest_fatigue_recovery: number
+/** Fixed recovery for one rest activity, applied once when performed. */
+export type ActivityRecovery = {
+  drowsiness: number
+  fatigue: number
 }
+
+/** Per-activity recovery, keyed by a recovery-option stage's `content`
+ * (e.g. "sleep", "audio_karaoke", "stretch"). Replaces the old short/long
+ * RecoveryModel — see app/api/aica_api/models/profile.py. */
+export type RecoveryModel = Record<string, ActivityRecovery>
 
 /** Driver signal generator parameters (drowsiness, fatigue, recovery). Renamed
  * from DriverModelProfile; the attention sub-model is retired. */
@@ -175,8 +179,9 @@ export type ScenarioDef = {
   child_passenger?: boolean
   familiar_route?: boolean
   /** Feature 009 (FE2): Tier-1 fixed signal — true if the scenario drives at night.
-   * Read-only in the setup UI (no backend context-override key exists for it yet —
-   * unlike child_passenger/familiar_route, see run_plans.py _VALID_CONTEXT_KEYS). */
+   * Editable at setup time via `context_overrides.is_night` (a boolean context
+   * override like child_passenger/familiar_route — see run_plan.py
+   * _VALID_CONTEXT_OVERRIDE_KEYS). */
   is_night?: boolean
   /** Feature 009 (UX-BE/FE1): Fixed-tier weather-risk signal, float [0, 100].
    * Editable at setup time via `context_overrides.weather_risk` — same override
@@ -195,6 +200,8 @@ export type ScenarioDef = {
 export type ContextOverrides = {
   child_passenger?: boolean
   familiar_route?: boolean
+  /** Day/night Fixed-tier constant; toggles ScenarioDef.is_night on the backend. */
+  is_night?: boolean
   /** Float in [0, 100]. */
   weather_risk?: number
 }
@@ -512,7 +519,6 @@ export type RecoveryStage = {
 export type RecoveryOption = {
   id: string
   label: { ja: string; en: string }
-  rest_type?: 'short' | 'long' | null
   stages?: RecoveryStage[]
   postpone?: boolean
 }

@@ -61,6 +61,21 @@ export const SIGNAL_LABELS: Record<string, BilingualLabel> = {
   },
   mountain_road_add_per_min: { en: 'Mountain Road Add-on (per min)', ja: '山道加算（分あたり）' },
 
+  // ── Rest activities (recovery keyed by a recovery-option stage content) ─
+  sleep: { en: 'Sleep / nap', ja: '睡眠・仮眠' },
+  audio_karaoke: { en: 'Karaoke (audio)', ja: 'カラオケ（音声）' },
+  video_karaoke: { en: 'Karaoke (video)', ja: 'カラオケ（映像）' },
+  karaoke: { en: 'Karaoke', ja: 'カラオケ' },
+  stretch: { en: 'Stretch', ja: 'ストレッチ' },
+
+  // ── Speed profile (kph by road-segment type) ───────────────────────────
+  speed_profile: { en: 'Speed (km/h by road type)', ja: '速度（道路種別ごと・km/h）' },
+  normal_road_kph: { en: 'Urban road', ja: '一般道' },
+  highway_kph: { en: 'Highway', ja: '高速道路' },
+  mountain_road_kph: { en: 'Mountain road', ja: '山道' },
+  sightseeing_road_kph: { en: 'Sightseeing road', ja: '観光道路' },
+  traffic_jam_kph: { en: 'Traffic jam', ja: '渋滞' },
+
   // ── Tier-3 anomaly generator params ────────────────────────────────────
   lambda_base: { en: 'Base Event Rate', ja: '基本発生率' },
   lambda_gain: { en: 'Anomaly Gain', ja: '異常上昇係数' },
@@ -68,9 +83,64 @@ export const SIGNAL_LABELS: Record<string, BilingualLabel> = {
   window_min: { en: 'Window (min)', ja: '集計ウィンドウ（分）' },
 }
 
+/**
+ * FEATURE_LABELS — localized {ja,en} names for the *computed* quantities in a
+ * package formulation (features and composite scores), as opposed to the raw
+ * signals in SIGNAL_LABELS. Used by AlgorithmFormulationPanel so every formula
+ * term renders as text in both languages instead of a bare variable name.
+ */
+export const FEATURE_LABELS: Record<string, BilingualLabel> = {
+  // Hybrid features
+  driving_anomaly: { en: 'Driving Anomaly', ja: '運転異常度' },
+  driving_time: { en: 'Time-on-Task', ja: '連続運転度' },
+  env_load: { en: 'Environmental Load', ja: '環境負荷' },
+  monotony: { en: 'Monotony', ja: '単調度' },
+  rest_window: { en: 'Rest Window', ja: '休憩タイミング' },
+  rest_scarcity: { en: 'Rest Scarcity', ja: '休憩の希少性' },
+  // Hybrid composite scores
+  base_safety_risk: { en: 'Base Safety Risk', ja: '基礎安全リスク' },
+  rest_required_score: { en: 'Rest-Required Score', ja: '休憩必要度' },
+  monotony_prevention_score: { en: 'Monotony-Prevention Score', ja: '単調性抑止度' },
+  // NRI composite scores
+  S_base: { en: 'Base Score', ja: '基礎スコア' },
+  S_env: { en: 'Environment Score', ja: '環境スコア' },
+  S_realtime: { en: 'Realtime Score', ja: 'リアルタイムスコア' },
+  S_total: { en: 'Total Score', ja: '合計スコア' },
+}
+
+/**
+ * Output-line label overrides: where a feature's LHS name must differ from the
+ * underlying signal it normalizes — the 0-1 feature vs the 0-100 raw signal.
+ */
+export const FEATURE_OUTPUT_LABELS: Record<string, BilingualLabel> = {
+  drowsiness: { en: 'Normalized Drowsiness', ja: '正規化した眠気' },
+  fatigue: { en: 'Normalized Fatigue', ja: '正規化した疲労' },
+}
+
 /** Resolve a signal/param key to its localized label, falling back to the raw key. */
 export function signalLabel(key: string, lang: 'ja' | 'en'): string {
   const entry = SIGNAL_LABELS[key]
+  if (!entry) return key
+  return entry[lang] || entry[lang === 'ja' ? 'en' : 'ja'] || key
+}
+
+/**
+ * Label for a formula *token* (a feature/signal reference). Raw signals win
+ * (so `drowsiness` shows "Drowsiness", not the feature label), then computed
+ * features, then the raw key.
+ */
+export function formulaTokenLabel(key: string, lang: 'ja' | 'en'): string {
+  const entry = SIGNAL_LABELS[key] ?? FEATURE_LABELS[key]
+  if (!entry) return key
+  return entry[lang] || entry[lang === 'ja' ? 'en' : 'ja'] || key
+}
+
+/**
+ * Label for a formula *output* (the LHS name). Output overrides win (normalized
+ * feature names), then computed-feature labels, then signals, then the raw key.
+ */
+export function formulaOutputLabel(key: string, lang: 'ja' | 'en'): string {
+  const entry = FEATURE_OUTPUT_LABELS[key] ?? FEATURE_LABELS[key] ?? SIGNAL_LABELS[key]
   if (!entry) return key
   return entry[lang] || entry[lang === 'ja' ? 'en' : 'ja'] || key
 }

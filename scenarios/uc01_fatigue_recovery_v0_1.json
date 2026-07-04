@@ -10,9 +10,10 @@
     "anomaly_rate is the seeded-stochastic Tier-3b signal (the only randomness",
     "in the simulation, seeded by run_seed).",
     "",
-    "Recovery options:",
-    "  nap_karaoke        — long rest: wakefulness (MOVING) -> nap 3 ticks -> karaoke 3 ticks",
-    "  convenience_stretch — short rest: wakefulness (MOVING) -> stretch 2 ticks",
+    "Recovery options (recovery_model gives each activity's fixed drowsiness/fatigue",
+    "recovery, applied once per activity — no short/long rest distinction):",
+    "  nap_karaoke        — wakefulness (MOVING) -> nap/sleep 3 ticks -> karaoke 3 ticks",
+    "  convenience_stretch — wakefulness (MOVING) -> stretch 2 ticks",
     "  postpone           — postpone=true, no stages (acts as continue driving)",
     "",
     "allowed_actions includes decline in addition to accept_rest/postpone."
@@ -98,10 +99,9 @@
       "traffic_jam_add_per_min": 0.05
     },
     "recovery_model": {
-      "short_rest_drowsiness_recovery": 20.0,
-      "short_rest_fatigue_recovery": 15.0,
-      "long_rest_drowsiness_recovery": 35.0,
-      "long_rest_fatigue_recovery": 30.0
+      "sleep": {"drowsiness": 60.0, "fatigue": 50.0},
+      "audio_karaoke": {"drowsiness": 15.0, "fatigue": 12.0},
+      "stretch": {"drowsiness": 25.0, "fatigue": 25.0}
     }
   },
   "anomaly_signal_params": {
@@ -137,7 +137,6 @@
     {
       "id": "nap_karaoke",
       "label": {"ja": "仮眠＋カラオケ", "en": "Nap + Karaoke"},
-      "rest_type": "long",
       "stages": [
         {
           "phase": "wakefulness",
@@ -161,7 +160,6 @@
     {
       "id": "convenience_stretch",
       "label": {"ja": "コンビニ休憩＋ストレッチ", "en": "Convenience + Stretch"},
-      "rest_type": "short",
       "stages": [
         {
           "phase": "wakefulness",

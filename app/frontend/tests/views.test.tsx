@@ -27,6 +27,8 @@ vi.mock('../src/api/client', () => ({
   createRunPlan: vi.fn(),
   regenerateRunPlan: vi.fn(),
   routesAnalyze: vi.fn(),
+  listRoutePresets: vi.fn(() => Promise.resolve({ presets: [] })),
+  loadRoutePreset: vi.fn(),
   actRun: vi.fn(),
   tickRun: vi.fn(),
   getPackage: vi.fn(),

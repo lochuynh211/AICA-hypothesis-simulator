@@ -338,13 +338,18 @@ def test_recovery_stopped_holds_position(uc01_scenario, event_plan, route_facts)
 
 
 def test_recovery_stopped_recovers_drowsiness(uc01_scenario, event_plan, route_facts):
-    """apply_rest_recovery lowers drowsiness relative to the prior tick while STOPPED."""
+    """The sleep activity's fixed recovery lowers drowsiness on its entry tick.
+
+    Feature 009 (UX iteration): recovery is applied ONCE per activity, on the
+    stage's entry tick (stage_ticks_remaining still == the stage's full ticks=3),
+    not every STOPPED tick.
+    """
     spot = RestSpot(
         id="seg_rest", label={"ja": "休憩", "en": "Rest"}, route_fraction=0.5,
     )
     rec = RecoveryState(
         active=True, option_id="nap_karaoke", rest_spot=spot,
-        phase="nap", stage_index=1, stage_ticks_remaining=2,
+        phase="nap", stage_index=1, stage_ticks_remaining=3,
     )
     prior = advance_tick(None, 0, event_plan, route_facts, uc01_scenario, run_seed=1)
     drowsy_before = prior.signals["simulated"]["drowsiness"]

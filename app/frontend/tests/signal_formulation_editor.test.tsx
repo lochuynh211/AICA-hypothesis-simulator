@@ -1,9 +1,10 @@
 /**
- * SignalFormulationEditor — feature 009 UX-FE2.
+ * SignalFormulationEditor — feature 009 UX-FE2 → UX-FE4 (inline redesign).
  *
  * Tests:
- *  (a) The formula text renders for each Tier-3 signal (drowsiness, fatigue,
- *      anomaly_rate) once its ⓘ is opened.
+ *  (a) The formula renders INLINE for each Tier-3 signal (drowsiness, fatigue,
+ *      anomaly_rate) — visible immediately, no ⓘ click needed. The ⓘ now only
+ *      toggles a brief words-only explanation.
  *  (b) Editing a drowsiness param to a non-default value dispatches
  *      SET_PROFILE_OVERRIDES with `driver.drowsiness_model.<field>` set;
  *      reverting to the scenario default removes the override entirely
@@ -37,10 +38,8 @@ const driverDefaults: DriverSignalParams = {
     traffic_jam_add_per_min: 0.05,
   },
   recovery_model: {
-    short_rest_drowsiness_recovery: 20,
-    short_rest_fatigue_recovery: 15,
-    long_rest_drowsiness_recovery: 35,
-    long_rest_fatigue_recovery: 30,
+    sleep: { drowsiness: 35, fatigue: 30 },
+    audio_karaoke: { drowsiness: 8, fatigue: 5 },
   },
 }
 
@@ -58,37 +57,48 @@ function profileOverrides(): Record<string, unknown> | null {
   return JSON.parse(raw)
 }
 
-describe('SignalFormulationEditor — feature 009 UX-FE2', () => {
-  it('(a) drowsiness: opening the ⓘ shows the formula text', () => {
+describe('SignalFormulationEditor — feature 009 UX-FE4 (inline)', () => {
+  it('(a) drowsiness: shows the state-update recurrence with GROWTH terms; recovery lives in Rest Options; ⓘ toggles a brief note', () => {
     render(
       <RunStoreProvider>
         <SignalFormulationEditor signalKey="drowsiness" label="Drowsiness" scenario={scenarioFixture} />
       </RunStoreProvider>,
     )
+    // Explicit recurrence, Δt explained in words, growth params editable inline.
+    expect(screen.getByTestId('signal-formula-equation-drowsiness')).toHaveTextContent('drowsiness[t] = drowsiness[t−1]')
+    expect(screen.getByTestId('signal-formula-lead-drowsiness')).toHaveTextContent(/Δt/)
+    expect(screen.getByTestId('signal-formulation-drowsiness')).toHaveTextContent(/Base Growth/i)
+    expect(screen.getByTestId('signal-formula-field-drowsiness-base_growth_per_min')).toBeInTheDocument()
+    // Recovery is NOT edited here anymore — it moved to the Rest Options section.
+    expect(screen.queryByTestId('signal-formula-field-drowsiness-short_rest_drowsiness_recovery')).not.toBeInTheDocument()
+    expect(screen.getByTestId('signal-formula-lead-drowsiness')).toHaveTextContent(/Rest Options/i)
+
+    // ⓘ reveals only a words-only explanation.
+    expect(screen.queryByTestId('signal-explain-drowsiness')).not.toBeInTheDocument()
     fireEvent.click(screen.getByTestId('signal-info-btn-drowsiness'))
-    expect(screen.getByTestId('signal-formula-text-drowsiness')).toHaveTextContent(/night/i)
-    expect(screen.getByTestId('signal-formula-text-drowsiness')).toHaveTextContent(/Δt\/60/)
+    expect(screen.getByTestId('signal-explain-drowsiness')).toHaveTextContent(/Deterministic/i)
   })
 
-  it('(a) fatigue: opening the ⓘ shows the formula text', () => {
+  it('(a) fatigue: recurrence with fatigue growth terms only (no recovery fields)', () => {
     render(
       <RunStoreProvider>
         <SignalFormulationEditor signalKey="fatigue" label="Fatigue" scenario={scenarioFixture} />
       </RunStoreProvider>,
     )
-    fireEvent.click(screen.getByTestId('signal-info-btn-fatigue'))
-    expect(screen.getByTestId('signal-formula-text-fatigue')).toHaveTextContent(/mountain/i)
+    expect(screen.getByTestId('signal-formula-equation-fatigue')).toHaveTextContent('fatigue[t] = fatigue[t−1]')
+    expect(screen.getByTestId('signal-formulation-fatigue')).toHaveTextContent(/Mountain Road/i)
+    expect(screen.queryByTestId('signal-formula-field-fatigue-short_rest_fatigue_recovery')).not.toBeInTheDocument()
   })
 
-  it('(a) anomaly_rate: opening the ⓘ shows the formula text', () => {
+  it('(a) anomaly_rate: shows the rate equation and its params', () => {
     render(
       <RunStoreProvider>
         <SignalFormulationEditor signalKey="anomaly_rate" label="Anomaly Rate" scenario={scenarioFixture} />
       </RunStoreProvider>,
     )
-    fireEvent.click(screen.getByTestId('signal-info-btn-anomaly_rate'))
-    expect(screen.getByTestId('signal-formula-text-anomaly_rate')).toHaveTextContent(/lambda_base/)
-    expect(screen.getByTestId('signal-formula-text-anomaly_rate')).toHaveTextContent(/window_min/)
+    expect(screen.getByTestId('signal-formula-equation-anomaly_rate')).toHaveTextContent(/λ/)
+    expect(screen.getByTestId('signal-formula-field-anomaly_rate-lambda_base')).toBeInTheDocument()
+    expect(screen.getByTestId('signal-formula-field-anomaly_rate-window_min')).toBeInTheDocument()
   })
 
   it('(b) editing a drowsiness param dispatches SET_PROFILE_OVERRIDES with driver.drowsiness_model.<field>; revert removes it', () => {
@@ -98,8 +108,6 @@ describe('SignalFormulationEditor — feature 009 UX-FE2', () => {
         <SignalFormulationEditor signalKey="drowsiness" label="Drowsiness" scenario={scenarioFixture} />
       </RunStoreProvider>,
     )
-    fireEvent.click(screen.getByTestId('signal-info-btn-drowsiness'))
-
     const input = screen.getByTestId('signal-formula-field-drowsiness-night_add_per_min') as HTMLInputElement
     expect(input.value).toBe('0.3')
 
@@ -120,8 +128,6 @@ describe('SignalFormulationEditor — feature 009 UX-FE2', () => {
         <SignalFormulationEditor signalKey="fatigue" label="Fatigue" scenario={scenarioFixture} />
       </RunStoreProvider>,
     )
-    fireEvent.click(screen.getByTestId('signal-info-btn-fatigue'))
-
     fireEvent.change(screen.getByTestId('signal-formula-field-fatigue-mountain_road_add_per_min'), {
       target: { value: '0.5' },
     })
@@ -135,8 +141,6 @@ describe('SignalFormulationEditor — feature 009 UX-FE2', () => {
         <SignalFormulationEditor signalKey="anomaly_rate" label="Anomaly Rate" scenario={scenarioFixture} />
       </RunStoreProvider>,
     )
-    fireEvent.click(screen.getByTestId('signal-info-btn-anomaly_rate'))
-
     const input = screen.getByTestId('signal-formula-field-anomaly_rate-lambda_base') as HTMLInputElement
     expect(input.value).toBe('0.02')
 
@@ -157,9 +161,6 @@ describe('SignalFormulationEditor — feature 009 UX-FE2', () => {
         <SignalFormulationEditor signalKey="anomaly_rate" label="Anomaly Rate" scenario={scenarioFixture} />
       </RunStoreProvider>,
     )
-    fireEvent.click(screen.getByTestId('signal-info-btn-drowsiness'))
-    fireEvent.click(screen.getByTestId('signal-info-btn-anomaly_rate'))
-
     fireEvent.change(screen.getByTestId('signal-formula-field-drowsiness-base_growth_per_min'), {
       target: { value: '1.2' },
     })
