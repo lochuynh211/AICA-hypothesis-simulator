@@ -1,4 +1,4 @@
-import { render, screen, act } from '@testing-library/react'
+import { render, act } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import React from 'react'
 import { RunStoreProvider, useRunStore } from '../src/state/runStore'

@@ -18,6 +18,7 @@ const REVIEW_TEST_IDS: ScoreTimelineTestIds = {
   root: 'route-timeline',
   playhead: 'car-marker',
   fire: 'fire-marker',
+  monotonyFire: 'monotony-fire-marker',
   restDot: 'progress-rest-spot-marker',
   curve: 'progress-fill', // the growing rest-propose curve is the "fill" of the bar
 }
@@ -38,6 +39,7 @@ export default function RouteTimeline({ replayTick }: { replayTick?: ReplayTick 
         playheadAriaLabel={`Route position: ${targetPct}%`}
         height={112}
         testIds={REVIEW_TEST_IDS}
+        restDotAriaLabel="Chosen rest spot"
       />
     </div>
   )

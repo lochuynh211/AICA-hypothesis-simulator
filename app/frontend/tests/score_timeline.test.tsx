@@ -110,6 +110,16 @@ describe('ScoreTimeline', () => {
     expect(screen.queryByTestId('ttl-rest-option-group')).not.toBeInTheDocument()
   })
 
+  it('applies restDotAriaLabel to each rest-dot when provided, and none when omitted', () => {
+    const { rerender } = render(
+      <ScoreTimeline data={data} testIds={TID} restDotAriaLabel="Chosen rest spot" />,
+    )
+    expect(screen.getByTestId('progress-rest-spot-marker')).toHaveAttribute('aria-label', 'Chosen rest spot')
+
+    rerender(<ScoreTimeline data={data} testIds={TID} />)
+    expect(screen.getByTestId('progress-rest-spot-marker')).not.toHaveAttribute('aria-label')
+  })
+
   it('gives each mounted instance a unique clipPath id', () => {
     const { container } = render(
       <>

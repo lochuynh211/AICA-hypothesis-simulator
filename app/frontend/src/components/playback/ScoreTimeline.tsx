@@ -38,6 +38,7 @@ export type ScoreTimelineProps = {
   testIds?: ScoreTimelineTestIds
   thresholdLabel?: string
   monotonyThresholdLabel?: string
+  restDotAriaLabel?: string
 }
 
 function useMeasuredWidth<T extends HTMLElement>(ref: React.RefObject<T>): number {
@@ -58,7 +59,7 @@ function useMeasuredWidth<T extends HTMLElement>(ref: React.RefObject<T>): numbe
 export default function ScoreTimeline({
   data, revealFraction = 1, ghostAhead = false, animated = false,
   showPlayhead = false, playheadAriaLabel, height = 92, testIds = {},
-  thresholdLabel, monotonyThresholdLabel,
+  thresholdLabel, monotonyThresholdLabel, restDotAriaLabel,
 }: ScoreTimelineProps) {
   const ref = useRef<HTMLDivElement>(null)
   const measured = useMeasuredWidth(ref)
@@ -161,7 +162,8 @@ export default function ScoreTimeline({
             <g data-testid={testIds.restSpotGroup}>
               {data.restDots.map((x, i) => (
                 <circle key={i} data-testid={testIds.restDot} cx={x * W} cy={BAND_MID} r={6}
-                  fill={REST_SPOT_COLOR} stroke="#fff" strokeWidth={2} />
+                  fill={REST_SPOT_COLOR} stroke="#fff" strokeWidth={2}
+                  aria-label={restDotAriaLabel} />
               ))}
             </g>
           )}
