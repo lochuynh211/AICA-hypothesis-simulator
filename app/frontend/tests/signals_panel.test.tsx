@@ -123,12 +123,17 @@ function StateProbe() {
       data-testid="state-probe"
       data-context={JSON.stringify(state.contextOverrides)}
       data-profiles={JSON.stringify(state.profileOverrides)}
+      data-tick={String(state.tickSecondsOverride)}
     />
   )
 }
 
 function contextOverrides(): Record<string, unknown> {
   return JSON.parse(screen.getByTestId('state-probe').getAttribute('data-context') ?? '{}')
+}
+
+function tickOverride(): string {
+  return screen.getByTestId('state-probe').getAttribute('data-tick') ?? 'null'
 }
 
 function profileOverrides(): Record<string, unknown> | null {
@@ -189,6 +194,34 @@ describe('SignalsPanel — feature 009 FE2', () => {
     expect(await screen.findByTestId('route-section')).toBeInTheDocument()
     expect(screen.getByTestId('map-key-route-input')).toBeInTheDocument()
     await waitFor(() => expect(client.listScenarios).toHaveBeenCalled())
+  })
+
+  it('(t) tick-duration setup is restored below the route section and edits dispatch SET_TICK_SECONDS', async () => {
+    vi.mocked(client.getScenario).mockResolvedValue(scenarioFixture)
+
+    renderInStore(<SignalsPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_SCENARIO', id: scenarioFixture.id })
+    })
+
+    const input = (await screen.findByTestId('tick-seconds-input')) as HTMLInputElement
+    // Defaults to the scenario's tick_seconds (60), no override yet.
+    expect(input.value).toBe('60')
+    expect(tickOverride()).toBe('null')
+
+    // It sits below the route section in DOM order.
+    const panel = screen.getByTestId('signals-panel')
+    const route = screen.getByTestId('route-section')
+    const tick = screen.getByTestId('tick-section')
+    const order = Array.from(panel.querySelectorAll('[data-testid]'))
+    expect(order.indexOf(route)).toBeLessThan(order.indexOf(tick))
+
+    // Editing to a non-default value dispatches the override.
+    fireEvent.change(input, { target: { value: '30' } })
+    await waitFor(() => expect(tickOverride()).toBe('30'))
+
+    // Reverting to the scenario default clears the override.
+    fireEvent.change(input, { target: { value: '60' } })
+    await waitFor(() => expect(tickOverride()).toBe('null'))
   })
 
   it('(j) UX-FE5: editing a speed-profile field dispatches SET_PROFILE_OVERRIDES(speed.<field>); revert removes it', async () => {

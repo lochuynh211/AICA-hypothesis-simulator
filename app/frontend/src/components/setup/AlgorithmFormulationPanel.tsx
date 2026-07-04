@@ -333,7 +333,25 @@ function StepView({
       data-testid={`formulation-step-${sectionId}-${index}`}
       style={{ margin: '5px 0', paddingLeft: '2px', borderLeft: '2px solid #e5e7eb', paddingBottom: '2px' }}
     >
-      <div style={{ fontSize: '0.78em', color: '#374151', lineHeight: 1.45, paddingLeft: '6px' }}>{step.text}</div>
+      <div style={{ fontSize: '0.78em', color: '#374151', lineHeight: 1.45, paddingLeft: '6px' }}>
+        {t(step.text, ctx.uiLanguage)}
+      </div>
+      {step.equation && (
+        <div
+          style={{
+            fontFamily: 'monospace',
+            fontSize: '0.78em',
+            color: '#1f2937',
+            background: '#f3f4f6',
+            borderRadius: '4px',
+            padding: '3px 6px',
+            margin: '3px 0 0 6px',
+            display: 'inline-block',
+          }}
+        >
+          {step.equation}
+        </div>
+      )}
       {step.checks && step.checks.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', margin: '3px 0 0 12px' }}>
           {step.checks.map((check, i) => (

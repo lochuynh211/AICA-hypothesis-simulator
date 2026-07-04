@@ -50,7 +50,8 @@ import { SIGNAL_LABELS } from './signalLabels'
  */
 export default function SignalsPanel() {
   const { state, dispatch } = useRunStore()
-  const { selectedScenarioId, contextOverrides, highlightedSignalKey, uiLanguage, runSeed } = state
+  const { selectedScenarioId, contextOverrides, highlightedSignalKey, uiLanguage, runSeed, tickSecondsOverride } =
+    state
   const [scenario, setScenario] = useState<ScenarioDef | null>(null)
 
   useEffect(() => {
@@ -101,6 +102,20 @@ export default function SignalsPanel() {
     dispatch({ type: 'SET_CONTEXT_OVERRIDE', key: 'weather_risk', value: stored, default: weatherRiskDefault })
   }
 
+  // Tick duration (seconds per simulation step). Default comes from the selected
+  // scenario (tick_seconds); an override is sent as presets.tick_seconds on the
+  // full run (see InstantResultStrip/PlanPreview). null once reverted to default.
+  const tickDefault = scenario?.tick_seconds ?? 60
+  const tickValue = tickSecondsOverride ?? tickDefault
+
+  function handleTickChange(e: ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value
+    if (raw === '') return
+    const num = Math.round(Number(raw))
+    if (Number.isNaN(num) || num < 1) return
+    dispatch({ type: 'SET_TICK_SECONDS', seconds: num === tickDefault ? null : num })
+  }
+
   return (
     <div data-testid="signals-panel">
       <div data-testid="route-section">
@@ -117,6 +132,53 @@ export default function SignalsPanel() {
           {t({ en: 'Route (optional: Google Maps)', ja: 'ルート（任意: Google マップ）' }, uiLanguage)}
         </h3>
         <MapKeyAndRouteInput />
+      </div>
+
+      <div data-testid="tick-section" style={{ marginTop: '12px' }}>
+        <h3
+          style={{
+            fontSize: '0.72em',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            color: '#9ca3af',
+            margin: '0 0 4px',
+          }}
+        >
+          {t({ en: 'Tick duration', ja: 'ティック時間' }, uiLanguage)}
+        </h3>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '8px',
+            fontSize: '0.8em',
+            color: '#374151',
+          }}
+        >
+          <span>{t({ en: 'Seconds per tick', ja: '1ティックあたりの秒数' }, uiLanguage)}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <input
+              type="number"
+              data-testid="tick-seconds-input"
+              aria-label={t({ en: 'Seconds per tick', ja: '1ティックあたりの秒数' }, uiLanguage)}
+              min={1}
+              step={1}
+              value={tickValue}
+              onChange={handleTickChange}
+              style={{
+                width: '56px',
+                fontSize: '1em',
+                textAlign: 'center',
+                border: `1px solid ${tickSecondsOverride != null ? '#6366f1' : '#d1d5db'}`,
+                borderRadius: '3px',
+                background: tickSecondsOverride != null ? '#eef2ff' : '#fff',
+              }}
+            />
+            <span style={{ color: '#9ca3af' }}>s</span>
+          </span>
+        </div>
       </div>
 
       <div data-testid="scenario-section" style={{ marginTop: '12px' }}>

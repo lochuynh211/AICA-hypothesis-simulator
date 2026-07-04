@@ -141,14 +141,7 @@ const NRI_MANIFEST: PackageManifest = {
     { key: 'theta_fatigue', label: { ja: '', en: 'Fatigue Dead-zone Threshold' }, kind: 'numeric', default: 60, min: 0, max: 100, step: 5 },
     { key: 'w_fatigue', label: { ja: '', en: 'Fatigue Penalty Weight' }, kind: 'numeric', default: 1.5, min: 0, max: 5, step: 0.1 },
     { key: 'threshold_fire', label: { ja: '', en: 'Fire Threshold' }, kind: 'numeric', default: 80, min: 20, max: 200, step: 5 },
-    { key: 'threshold_suggest', label: { ja: '', en: 'Suggest Threshold' }, kind: 'numeric', default: 60, min: 10, max: 150, step: 5 },
-    { key: 'threshold_recommend', label: { ja: '', en: 'Recommend Threshold' }, kind: 'numeric', default: 80, min: 20, max: 180, step: 5 },
-    { key: 'threshold_urgent', label: { ja: '', en: 'Urgent Threshold' }, kind: 'numeric', default: 100, min: 40, max: 200, step: 5 },
     { key: 'rest_spot_eta_filter_min', label: { ja: '', en: 'Rest Spot ETA Filter' }, kind: 'numeric', default: 15, min: 1, max: 60, step: 1 },
-    { key: 'rest_cooldown_sec', label: { ja: '', en: 'Rest Cooldown (sec)' }, kind: 'numeric', default: 600, min: 0, max: 3600, step: 30 },
-    { key: 'max_proposals_per_30min', label: { ja: '', en: 'Max Proposals per 30 min' }, kind: 'numeric', default: 3, min: 1, max: 10, step: 1 },
-    { key: 'emergency_override_threshold', label: { ja: '', en: 'Emergency Override Threshold' }, kind: 'numeric', default: 100, min: 40, max: 200, step: 5 },
-    { key: 'persistence_ticks', label: { ja: '', en: 'Persistence Ticks' }, kind: 'numeric', default: 2, min: 1, max: 10, step: 1 },
   ],
   trigger_categories: [{ id: 'rest_required', priority: 1 }],
   rules: [],
@@ -467,6 +460,40 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     expect(within(section).getByTestId('coef-emergency_override_threshold')).toBeInTheDocument()
   })
 
+  it('(r) fire-control step explanations are localized to Japanese', async () => {
+    vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
+
+    const { dispatch } = renderInStore(<AlgorithmFormulationPanel />, (d) => {
+      d({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
+    })
+    await screen.findByTestId('formulation-section-fire_control')
+
+    act(() => dispatch({ type: 'SET_LANGUAGE', lang: 'ja' }))
+    await waitFor(() => {
+      const section = screen.getByTestId('formulation-section-fire_control')
+      // Step prose (not just coef labels) is Japanese.
+      expect(section.textContent).toMatch(/平滑化|クールダウン|持続ゲート/)
+    })
+    // And no English step prose leaks through.
+    expect(screen.getByTestId('formulation-section-fire_control').textContent).not.toMatch(/Smoothing —/)
+  })
+
+  it('(q) the smoothing step shows the EWMA formula that α drives', async () => {
+    vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
+
+    renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: HYBRID_MANIFEST.id })
+    })
+
+    const section = await screen.findByTestId('formulation-section-fire_control')
+    const step0 = within(section).getByTestId('formulation-step-fire_control-0')
+    expect(step0.textContent).toMatch(/smoothed\[t\]/)
+    expect(step0.textContent).toContain('α')
+    expect(step0.textContent).toMatch(/1\s*[−-]\s*α/) // the (1 − α) term
+    // α remains editable inline.
+    expect(within(step0).getByTestId('coef-smoothing_alpha')).toBeInTheDocument()
+  })
+
   it('(h) fire-control is a step-by-step explanation, each stage naming the hyperparameter it uses', async () => {
     vi.mocked(client.getPackage).mockResolvedValue(HYBRID_MANIFEST)
 
@@ -527,5 +554,20 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
     // No "coef-missing-*" placeholders — every referenced hyperparameter key
     // exists in the fixture manifest.
     expect(screen.queryAllByTestId(/coef-missing-/).length).toBe(0)
+  })
+
+  it('(u) NRI S_env terms wire to their real source signals (isTrafficJam / segmentType)', async () => {
+    vi.mocked(client.getPackage).mockResolvedValue(NRI_MANIFEST)
+
+    renderInStore(<AlgorithmFormulationPanel />, (dispatch) => {
+      dispatch({ type: 'SELECT_PACKAGE', id: NRI_MANIFEST.id })
+    })
+
+    const env = await screen.findByTestId('formula-line-S_env')
+    // jam-minutes wire to the Traffic Jam signal; highway/monotonous minutes to Segment Type.
+    expect(within(env).getByTestId('formula-link-isTrafficJam')).toBeInTheDocument()
+    expect(within(env).getAllByTestId('formula-link-segmentType').length).toBeGreaterThanOrEqual(2)
+    // The terms read as cumulative minutes, not bare signal names.
+    expect(env.textContent).toMatch(/min/i)
   })
 })

@@ -85,8 +85,10 @@ export type StepCheck = {
  * shown inline as editable coefficients.
  */
 export type ExplainedStep = {
-  /** What this stage does, in words. */
-  text: string
+  /** What this stage does, in words (localized). */
+  text: BilingualLabel
+  /** Optional monospace equation shown under the text (e.g. the EWMA recurrence). */
+  equation?: string
   /** Hyperparameters this stage uses when it has no explicit `checks`. */
   coefs?: string[]
   /** Explicit comparisons this stage makes (preferred over `coefs`). */
@@ -178,13 +180,13 @@ const HYBRID_TEMPLATE: PackageFormulationTemplate = {
         {
           output: 'env_load',
           parts: [
-            { text: 'clamp( 0.5·' },
+            { text: 'clamp( 0.5·( ' },
             { link: 'isTrafficJam' },
-            { text: ' + 0.3·' },
+            { text: ' ? 1 : jam-min/20 ) + 0.3·' },
             { link: 'segmentType', text: 'highway' },
-            { text: '-min + 0.2·' },
+            { text: '-min/60 + 0.2·' },
             { link: 'weatherRisk' },
-            { text: ' )' },
+            { text: '/100 )' },
           ],
         },
         {
@@ -312,38 +314,57 @@ const HYBRID_TEMPLATE: PackageFormulationTemplate = {
       title: 'fire-control',
       steps: [
         {
-          text: '1. Smoothing — each feature and category score is eased toward its new value every tick (EWMA) before any decision. Higher α reacts faster, lower α is steadier. (Not a threshold.)',
+          text: {
+            en: '1. Smoothing — each feature and category score is eased toward its new value every tick (EWMA) before any decision. Higher α reacts faster, lower α is steadier. (Not a threshold.)',
+            ja: '1. 平滑化 — 判断の前に、各特徴量とカテゴリスコアを毎ティックで新しい値へ滑らかに近づけます（EWMA）。αが大きいほど反応が速く、小さいほど安定します。（しきい値ではありません）',
+          },
+          equation: 'smoothed[t] = α·value[t] + (1 − α)·smoothed[t−1]',
           coefs: ['smoothing_alpha'],
         },
         {
-          text: '2. Persistence gate — a score must hold above its suggest threshold for several ticks before it may fire, filtering one-tick spikes:',
+          text: {
+            en: '2. Persistence gate — a score must hold above its suggest threshold for several ticks before it may fire, filtering one-tick spikes:',
+            ja: '2. 持続ゲート — スコアが提案しきい値を数ティック連続で超えて初めて発火可能になり、単発のスパイクを除去します:',
+          },
           checks: [
             { operand: { en: 'Rest-Required Score consecutive ticks above suggest', ja: '休憩必要度が提案しきい値を超えた連続ティック数' }, op: '≥', coef: 'rest_persistence_ticks', outcome: { en: 'rest may fire', ja: '休憩提案が発火可能に' } },
             { operand: { en: 'Monotony Score consecutive ticks above suggest', ja: '単調性抑止度が提案しきい値を超えた連続ティック数' }, op: '≥', coef: 'monotony_persistence_ticks', outcome: { en: 'monotony may fire', ja: '単調性提案が発火可能に' } },
           ],
         },
         {
-          text: '3. Skip-if — a fast, genuine escalation skips the persistence wait:',
+          text: {
+            en: '3. Skip-if — a fast, genuine escalation skips the persistence wait:',
+            ja: '3. スキップ条件 — 急速かつ本物の悪化は持続待ちをスキップします:',
+          },
           checks: [
             { operand: { en: 'Rest-Required or Monotony Score (each checked on its own)', ja: '休憩必要度／単調性抑止度スコア（各々を個別に判定）' }, op: '≥', coef: 'skip_if_score', outcome: { en: 'skip the persistence wait, fire now', ja: '持続待ちをスキップして即発火' } },
             { operand: { en: 'Per-tick change in that score (rest or monotony)', ja: 'そのスコア（休憩／単調性）のティックあたりの変化量' }, op: '≥', coef: 'skip_if_velocity', outcome: { en: 'skip the persistence wait, fire now', ja: '持続待ちをスキップして即発火' } },
           ],
         },
         {
-          text: '4. Emergency override — extreme urgency fires even while rate-limited:',
+          text: {
+            en: '4. Emergency override — extreme urgency fires even while rate-limited:',
+            ja: '4. 緊急オーバーライド — 極度の緊急時はレート制限中でも発火します:',
+          },
           checks: [
             { operand: { en: 'Rest-Required or Monotony Score (each checked on its own)', ja: '休憩必要度／単調性抑止度スコア（各々を個別に判定）' }, op: '≥', coef: 'emergency_override_threshold', outcome: { en: 'fire even during cooldown or after the 30-min cap', ja: 'クールダウン中でも30分上限後でも発火' } },
           ],
         },
         {
-          text: '5. Cooldown — a proposal too soon after the previous one of the same category is suppressed:',
+          text: {
+            en: '5. Cooldown — a proposal too soon after the previous one of the same category is suppressed:',
+            ja: '5. クールダウン — 同じカテゴリの前回提案から間もない提案は抑制されます:',
+          },
           checks: [
             { operand: { en: 'Seconds since last rest proposal', ja: '前回の休憩提案からの秒数' }, op: '<', coef: 'rest_cooldown_sec', outcome: { en: 'suppress', ja: '抑制' } },
             { operand: { en: 'Seconds since last monotony proposal', ja: '前回の単調性提案からの秒数' }, op: '<', coef: 'monotony_cooldown_sec', outcome: { en: 'suppress', ja: '抑制' } },
           ],
         },
         {
-          text: '6. Rate cap — never fire too many proposals in a rolling 30-minute window:',
+          text: {
+            en: '6. Rate cap — never fire too many proposals in a rolling 30-minute window:',
+            ja: '6. レート上限 — 直近30分の提案数が多すぎないように制限します:',
+          },
           checks: [
             { operand: { en: 'Proposals in the last 30 minutes', ja: '直近30分の提案数' }, op: '≥', coef: 'max_proposals_per_30min', outcome: { en: 'suppress', ja: '抑制' } },
           ],
@@ -394,16 +415,19 @@ const NRI_TEMPLATE: PackageFormulationTemplate = {
       lines: [
         {
           output: 'S_env',
+          // Each term is cumulative MINUTES accumulated while MOVING (T_jam/T_hw/
+          // T_mono), sourced from the isTrafficJam / segmentType signals — wired
+          // to those rows and labelled as minutes (not bare signal names).
           parts: [
-            { link: 'traffic_jam' },
+            { link: 'isTrafficJam', text: 'jam-min' },
             { text: '·' },
             { coef: 'w_jam' },
             { text: ' + ' },
-            { link: 'long_highway' },
+            { link: 'segmentType', text: 'highway-min' },
             { text: '·' },
             { coef: 'w_highway' },
             { text: ' + ' },
-            { link: 'monotony' },
+            { link: 'segmentType', text: 'monotonous-min' },
             { text: '·' },
             { coef: 'w_monotonous' },
           ],
@@ -447,10 +471,7 @@ const NRI_TEMPLATE: PackageFormulationTemplate = {
           scoreName: 'rest_required',
           scoreKey: 'S_total',
           steps: [
-            { label: 'suggest', coef: 'threshold_suggest', meaning: { en: 'a rest proposal becomes possible', ja: '休憩提案が可能になる' } },
-            { label: 'recommend', coef: 'threshold_recommend', meaning: { en: 'escalates to a clear recommendation', ja: '明確な推奨に格上げ' } },
-            { label: 'urgent', coef: 'threshold_urgent', meaning: { en: 'urgent — a strong proposal', ja: '緊急 — 強い提案' } },
-            { label: 'fire', coef: 'threshold_fire', meaning: { en: 'the proposal actually fires', ja: '提案が実際に発火する' } },
+            { label: 'fire', coef: 'threshold_fire', meaning: { en: 'the rest proposal fires — a single threshold, no ladder', ja: '休憩提案が発火 — 単一しきい値（段階なし）' } },
           ],
         },
       ],
@@ -460,34 +481,28 @@ const NRI_TEMPLATE: PackageFormulationTemplate = {
       title: 'fire-control',
       steps: [
         {
-          text: '1. Actionability guard — only propose a rest when a rest spot is close enough to act on:',
+          text: {
+            en: '1. Fire condition — a SINGLE threshold: the fatigue score raises the fire flag once it reaches the fire threshold. (No suggest/recommend/urgent ladder, persistence, cooldown, 30-min cap, or emergency override — that is the NRI design.)',
+            ja: '1. 発火条件 — 単一しきい値。疲労スコアが発火しきい値に達すると発火フラグが立ちます。（提案／推奨／緊急の段階、持続、クールダウン、30分上限、緊急オーバーライドはありません — これがNRIの設計です）',
+          },
           checks: [
-            { operand: { en: 'Minutes to the next rest spot', ja: '次の休憩地点までの分数' }, op: '≤', coef: 'rest_spot_eta_filter_min', outcome: { en: 'eligible to propose', ja: '提案の対象になる' } },
+            { operand: { en: 'Total Score', ja: '合計スコア' }, op: '≥', coef: 'threshold_fire', outcome: { en: 'fire flag raised', ja: '発火フラグが立つ' } },
           ],
         },
         {
-          text: '2. Persistence gate — Total Score must hold above the fire threshold for several ticks first:',
+          text: {
+            en: '2. Post-fire ETA filter — the only gate after the threshold: propose only when a rest spot is reachable (or none is ahead), else suppress. Fatigue-vs-rest-spot are kept separate by design.',
+            ja: '2. 発火後ETAフィルタ — しきい値後の唯一の条件。休憩地点に到達できる（または前方にない）場合のみ提案し、そうでなければ抑制します。疲労と休憩地点は設計上分離されています。',
+          },
           checks: [
-            { operand: { en: 'Total Score consecutive ticks above fire', ja: '合計スコアが発火しきい値を超えた連続ティック数' }, op: '≥', coef: 'persistence_ticks', outcome: { en: 'may fire', ja: '発火可能に' } },
+            { operand: { en: 'Minutes to the next rest spot (or none ahead)', ja: '次の休憩地点までの分数（または前方になし）' }, op: '≤', coef: 'rest_spot_eta_filter_min', outcome: { en: 'propose; otherwise suppress', ja: '提案。そうでなければ抑制' } },
           ],
         },
         {
-          text: '3. Emergency override — extreme urgency fires even while rate-limited:',
-          checks: [
-            { operand: { en: 'Total Score', ja: '合計スコア' }, op: '≥', coef: 'emergency_override_threshold', outcome: { en: 'fire regardless of cooldown or cap', ja: 'クールダウン・上限に関わらず発火' } },
-          ],
-        },
-        {
-          text: '4. Cooldown — a proposal too soon after the previous one is suppressed:',
-          checks: [
-            { operand: { en: 'Seconds since last proposal', ja: '前回の提案からの秒数' }, op: '<', coef: 'rest_cooldown_sec', outcome: { en: 'suppress', ja: '抑制' } },
-          ],
-        },
-        {
-          text: '5. Rate cap — never fire too many proposals in a rolling 30-minute window:',
-          checks: [
-            { operand: { en: 'Proposals in the last 30 minutes', ja: '直近30分の提案数' }, op: '≥', coef: 'max_proposals_per_30min', outcome: { en: 'suppress', ja: '抑制' } },
-          ],
+          text: {
+            en: '3. While the driver is resting (recovery active), firing is suppressed regardless of score.',
+            ja: '3. ドライバーが休憩中（回復中）は、スコアに関わらず発火を抑制します。',
+          },
         },
       ],
     },
