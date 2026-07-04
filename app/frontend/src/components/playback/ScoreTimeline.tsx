@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { timelineYDomain, type TimelineData } from './timelineData'
 
 // Colors mirror InstantResultStrip + MapSurface so a road reads the same everywhere.
@@ -75,7 +75,8 @@ export default function ScoreTimeline({
   const pts = (arr: { x: number; y: number }[]) =>
     arr.map((p) => `${(p.x * W).toFixed(1)},${yPix(p.y).toFixed(1)}`).join(' ')
 
-  const clipId = 'ttl-reveal'
+  const rawId = useId()
+  const clipId = `ttl-reveal-${rawId}`
   const trans = animated ? 'width 0.12s linear, transform 0.12s linear, left 0.12s linear' : undefined
 
   return (

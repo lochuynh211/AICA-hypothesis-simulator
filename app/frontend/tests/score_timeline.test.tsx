@@ -65,4 +65,19 @@ describe('ScoreTimeline', () => {
     expect(screen.getByTestId('fire-marker')).toBeInTheDocument()
     expect(screen.getByTestId('progress-rest-spot-marker')).toBeInTheDocument()
   })
+
+  it('gives each mounted instance a unique clipPath id', () => {
+    const { container } = render(
+      <>
+        <ScoreTimeline data={data} testIds={TID} />
+        <ScoreTimeline data={data} testIds={TID} />
+      </>,
+    )
+    const clipPaths = container.querySelectorAll('clipPath')
+    expect(clipPaths.length).toBe(2)
+    const [id1, id2] = Array.from(clipPaths).map((el) => el.getAttribute('id'))
+    expect(id1).toBeTruthy()
+    expect(id2).toBeTruthy()
+    expect(id1).not.toBe(id2)
+  })
 })
