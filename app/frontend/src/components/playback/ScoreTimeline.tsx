@@ -36,6 +36,8 @@ export type ScoreTimelineProps = {
   playheadAriaLabel?: string
   height?: number
   testIds?: ScoreTimelineTestIds
+  thresholdLabel?: string
+  monotonyThresholdLabel?: string
 }
 
 function useMeasuredWidth<T extends HTMLElement>(ref: React.RefObject<T>): number {
@@ -56,6 +58,7 @@ function useMeasuredWidth<T extends HTMLElement>(ref: React.RefObject<T>): numbe
 export default function ScoreTimeline({
   data, revealFraction = 1, ghostAhead = false, animated = false,
   showPlayhead = false, playheadAriaLabel, height = 92, testIds = {},
+  thresholdLabel, monotonyThresholdLabel,
 }: ScoreTimelineProps) {
   const ref = useRef<HTMLDivElement>(null)
   const measured = useMeasuredWidth(ref)
@@ -108,12 +111,26 @@ export default function ScoreTimeline({
         {/* Everything below is a "decision" → clipped to the revealed region */}
         <g clipPath={`url(#${clipId})`}>
           {data.restThreshold != null && (
-            <line data-testid={testIds.threshold} x1={0} x2={W} y1={yPix(data.restThreshold)}
-              y2={yPix(data.restThreshold)} stroke={TRIGGER_COLOR} strokeDasharray="4 3" strokeWidth={1} />
+            <g data-testid={testIds.threshold}>
+              <line x1={0} x2={W} y1={yPix(data.restThreshold)} y2={yPix(data.restThreshold)}
+                stroke={TRIGGER_COLOR} strokeDasharray="4 3" strokeWidth={1} />
+              {thresholdLabel != null && (
+                <text x={W - 4} y={yPix(data.restThreshold) - 3} fontSize="8" textAnchor="end" fill={TRIGGER_COLOR}>
+                  {thresholdLabel}
+                </text>
+              )}
+            </g>
           )}
           {data.monotonyThreshold != null && (
-            <line data-testid={testIds.monotonyThreshold} x1={0} x2={W} y1={yPix(data.monotonyThreshold)}
-              y2={yPix(data.monotonyThreshold)} stroke={MONOTONY_COLOR} strokeDasharray="4 3" strokeWidth={1} />
+            <g data-testid={testIds.monotonyThreshold}>
+              <line x1={0} x2={W} y1={yPix(data.monotonyThreshold)} y2={yPix(data.monotonyThreshold)}
+                stroke={MONOTONY_COLOR} strokeDasharray="4 3" strokeWidth={1} />
+              {monotonyThresholdLabel != null && (
+                <text x={4} y={yPix(data.monotonyThreshold) - 3} fontSize="8" textAnchor="start" fill={MONOTONY_COLOR}>
+                  {monotonyThresholdLabel}
+                </text>
+              )}
+            </g>
           )}
           {data.restScore.length > 0 && (
             <polyline data-testid={testIds.curve} points={pts(data.restScore)} fill="none"
@@ -145,6 +162,14 @@ export default function ScoreTimeline({
               {data.restDots.map((x, i) => (
                 <circle key={i} data-testid={testIds.restDot} cx={x * W} cy={BAND_MID} r={6}
                   fill={REST_SPOT_COLOR} stroke="#fff" strokeWidth={2} />
+              ))}
+            </g>
+          )}
+          {testIds.restOptionGroup != null && data.restDots.length > 0 && (
+            <g data-testid={testIds.restOptionGroup}>
+              {data.restDots.map((x, i) => (
+                <line key={i} x1={x * W} x2={x * W} y1={SEG_TOP} y2={SEG_BOTTOM}
+                  stroke="#7c3aed" strokeWidth={1.5} />
               ))}
             </g>
           )}

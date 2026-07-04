@@ -66,6 +66,50 @@ describe('ScoreTimeline', () => {
     expect(screen.getByTestId('progress-rest-spot-marker')).toBeInTheDocument()
   })
 
+  it('renders a threshold value label inside the threshold testid element when thresholdLabel is given', () => {
+    render(
+      <ScoreTimeline
+        data={data}
+        testIds={{ ...TID, threshold: 'ttl-threshold' }}
+        thresholdLabel="threshold 0.6"
+      />,
+    )
+    const thresholdEl = screen.getByTestId('ttl-threshold')
+    expect(thresholdEl.textContent).toContain('threshold 0.6')
+    expect(thresholdEl.querySelector('line')).not.toBeNull()
+  })
+
+  it('threshold testid element has empty textContent when no thresholdLabel is passed (Review timeline case)', () => {
+    render(<ScoreTimeline data={data} testIds={{ ...TID, threshold: 'ttl-threshold' }} />)
+    const thresholdEl = screen.getByTestId('ttl-threshold')
+    expect(thresholdEl.textContent).toBe('')
+    expect(thresholdEl.querySelector('line')).not.toBeNull()
+  })
+
+  it('renders a monotony threshold label when monotonyThresholdLabel is given', () => {
+    const withMonotony: TimelineData = { ...data, monotonyThreshold: 0.5 }
+    render(
+      <ScoreTimeline
+        data={withMonotony}
+        testIds={{ ...TID, monotonyThreshold: 'ttl-mono-threshold' }}
+        monotonyThresholdLabel="monotony 0.5"
+      />,
+    )
+    expect(screen.getByTestId('ttl-mono-threshold').textContent).toContain('monotony 0.5')
+  })
+
+  it('renders one thin line per restDots entry inside restOptionGroup when testIds.restOptionGroup is set', () => {
+    render(<ScoreTimeline data={data} testIds={{ ...TID, restOptionGroup: 'ttl-rest-option-group' }} />)
+    const group = screen.getByTestId('ttl-rest-option-group')
+    expect(group).toBeInTheDocument()
+    expect(group.querySelectorAll('line')).toHaveLength(data.restDots.length)
+  })
+
+  it('does NOT render a rest-option group when testIds.restOptionGroup is unset (Review timeline unaffected)', () => {
+    render(<ScoreTimeline data={data} testIds={TID} />)
+    expect(screen.queryByTestId('ttl-rest-option-group')).not.toBeInTheDocument()
+  })
+
   it('gives each mounted instance a unique clipPath id', () => {
     const { container } = render(
       <>

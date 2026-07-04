@@ -1,15 +1,10 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRunStore, selectOverridesDiff } from '../../state/runStore'
 import { getPackage, routesAnalyze, createRunPlan, createRun } from '../../api/client'
-import type {
-  InstantResult,
-  PackageManifest,
-  PreviewSegment,
-  ScoreSeriesPoint,
-  RouteFacts,
-  DisplayRoute,
-} from '../../api/types'
+import type { InstantResult, PackageManifest, RouteFacts, DisplayRoute } from '../../api/types'
 import ErrorNotice from '../common/ErrorNotice'
+import ScoreTimeline, { type ScoreTimelineTestIds } from '../playback/ScoreTimeline'
+import { instantResultToTimeline } from '../playback/timelineData'
 
 /**
  * InstantResultStrip (feature 009, FE4) — full-width bottom strip of the new
@@ -37,20 +32,17 @@ import ErrorNotice from '../common/ErrorNotice'
  *     auto-transitions viewMode → 'review'.
  *
  * Rendering notes:
- *   - Inline SVG only — no charting library, no new deps.
- *   - y-axis scale is derived PER RESULT from score_series + threshold
- *     together (never hardcoded 0–1): aica_transparent_hybrid_trigger_v1's
- *     scores are already 0–1, nri_fatigue_score_v1's are a raw points scale
- *     (see task-us1-report.md field notes) — score_series/threshold are
- *     always on the SAME scale as each other within one InstantResult, so
- *     computing the range from both together is sufficient (no cross-package
- *     normalization exists or is needed).
- *   - x-axis: score_series.t is a TICK index, while segments/rest_spot/
- *     rest_option/completed_min are in MINUTES. The tick engine runs on a
- *     fixed tick duration for the whole run, so the curve (plotted by tick,
- *     scaled to its own max tick) and the segment bands/markers (plotted by
- *     minute, scaled to completed_min) land at the same fractional position
- *     for the same instant — see xForTick/xForMin below.
+ *   - The timeline itself is the shared `ScoreTimeline` component (also used
+ *     by the Review screen's RouteTimeline) — no duplicated SVG drawing code
+ *     here. `instantResultToTimeline()` (components/playback/timelineData.ts)
+ *     normalizes an `InstantResult` (whole-run, tick/minute domains, a raw
+ *     0–1 or points-scale score axis) into the resolution-independent
+ *     `TimelineData` shape ScoreTimeline consumes; see that module's doc
+ *     comment for the tick-vs-minute and y-axis normalization details this
+ *     strip used to do inline. This component owns only: the testid mapping
+ *     (`STRIP_TEST_IDS`, preserving every legacy `instant-result-*` testid),
+ *     the threshold text labels, the legend, the error notice, and the
+ *     "Fired: …" result line.
  *   - The fire marker (and the "Fired: …" result line) is gated on
  *     `fired === true && fire != null` — never rendered from stale/error
  *     state, so an `error` result can never show a fabricated fire.
@@ -241,11 +233,12 @@ export default function InstantResultStrip() {
   )
 }
 
-// ── Timeline rendering (inline SVG) ─────────────────────────────────────────
+// ── Timeline rendering (shared ScoreTimeline component) ─────────────────────
 
 // Road-band colors — the saturated road classes (highway / normal / mountain /
 // scenic) match the Review-screen map (components/map/MapSurface.tsx ROAD_COLORS)
 // so the same road reads the same color in both places; non-road bands stay neutral.
+// (Kept here only for the legend swatches — ScoreTimeline owns the drawing colors.)
 const SEGMENT_COLORS: Record<string, string> = {
   start: '#e5e7eb',
   urban: '#dbeafe',
@@ -259,10 +252,6 @@ const SEGMENT_COLORS: Record<string, string> = {
   end: '#e5e7eb',
 }
 const DEFAULT_SEGMENT_COLOR = '#f3f4f6'
-// Trigger + rest-spot marker colors — mirror the Review timeline (RouteTimeline):
-// a red vertical line for each trigger, an orange dot for the auto rest spot.
-const TRIGGER_COLOR = '#dc2626'
-const REST_SPOT_COLOR = '#f59e0b'
 // Anomaly-spike marker — a small pink caret at the top of the curve area. Pink
 // keeps it distinct from the red rest-trigger line, teal monotony, and the amber
 // rest-spot dot, so a reviewer can point at a spike and see the curve step up.
@@ -285,69 +274,40 @@ const segLabel = (type: string | null | undefined) => (type ? SEGMENT_LABELS[typ
 
 // Score-curve colors — rest-propose (blue) vs monotony-prevention (teal). Chosen
 // to stay distinct from the red threshold and the pale amber/orange road bands.
+// (Legend swatches only — ScoreTimeline draws the actual curves.)
 const REST_COLOR = '#2563eb'
 const MONOTONY_COLOR = '#0d9488'
 
-// Fallback viewBox width (px) used before the container is measured / in tests
-// where layout is unavailable. At runtime the SVG viewBox is sized to the real
-// pixel width so 1 unit = 1px and text is never horizontally stretched.
-const W_FALLBACK = 760
-const H_FIXED = 92 // compact — keeps the strip thin like the Review progress bar
-
-/** Measures an element's live pixel size via ResizeObserver. Returns {0,0} until
- *  measured (and in jsdom/tests where layout is unavailable) → callers fall back
- *  to W_FALLBACK for width. Guards against environments without ResizeObserver. */
-function useMeasuredSize<T extends HTMLElement>(ref: React.RefObject<T>): { width: number; height: number } {
-  const [size, setSize] = useState({ width: 0, height: 0 })
-  useLayoutEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const measure = () => setSize({ width: el.clientWidth, height: el.clientHeight })
-    measure()
-    if (typeof ResizeObserver === 'undefined') return
-    const ro = new ResizeObserver(measure)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [ref])
-  return size
+// Maps every `instant-result-*` testid the strip's tests assert onto the
+// generic ScoreTimelineTestIds contract, so the shared component renders
+// under the SAME testids the strip always has (dedup, not a rename).
+const STRIP_TEST_IDS: ScoreTimelineTestIds = {
+  svg: 'instant-result-svg',
+  curve: 'instant-result-curve',
+  monotonyCurve: 'instant-result-monotony-curve',
+  threshold: 'instant-result-threshold',
+  monotonyThreshold: 'instant-result-monotony-threshold',
+  fireGroup: 'instant-result-fire-marker',
+  fire: 'instant-result-fire-line',
+  monotonyFire: 'instant-result-monotony-fire-line',
+  spikeGroup: 'instant-result-spike-marker',
+  spike: 'instant-result-spike',
+  restSpotGroup: 'instant-result-rest-spot-marker',
+  restDot: 'instant-result-rest-dot',
+  restOptionGroup: 'instant-result-rest-option-marker',
+  recoveryWindow: 'instant-result-recovery-window',
+  completion: 'instant-result-completion-marker',
+  segment: (i) => `instant-result-segment-${i}`,
 }
 
 function InstantResultTimeline({ result }: { result: InstantResult }) {
-  const { score_series, segments, threshold, fire, fired, rest_option, completed_min, error } = result
+  const { segments, threshold, error } = result
   // Second (monotony) curve — present only for the hybrid; NRI leaves it empty.
   const monotony_series = result.monotony_series ?? []
   const monotony_threshold = result.monotony_threshold ?? null
   const hasMonotony = monotony_series.length > 0
-  // Every trigger across the run (fall back to the single `fire` for old fixtures).
-  const fires = fired ? (result.fires && result.fires.length > 0 ? result.fires : fire != null ? [fire] : []) : []
-  // Rest stops taken — their recovery times (minutes). Prefer the full rest_options
-  // list; fall back to the single rest_option (old fixtures). Positioned at the
-  // recovery time, NOT the eta, so the dot lands where the rest actually happens.
-  const restOptions = result.rest_options && result.rest_options.length > 0
-    ? result.rest_options
-    : rest_option != null ? [rest_option] : []
-  const restStops = restOptions
-    .map((o) => o.recovery_from_min)
-    .filter((m): m is number => m != null)
-  // Anomaly spikes — plotted by tick (xForTick) so each caret sits exactly under
-  // its score-curve point. Empty for algorithms/scenarios without an anomaly signal.
+  // Anomaly spikes — empty for algorithms/scenarios without an anomaly signal.
   const spikes = result.spikes ?? []
-
-  // Measure only the pixel WIDTH so the viewBox is 1 unit = 1px (text never
-  // stretched). The height is a compact fixed value so the strip stays THIN like
-  // the Review progress bar — a slim score curve above a thin road band.
-  const containerRef = useRef<HTMLDivElement>(null)
-  const measured = useMeasuredSize(containerRef)
-  const W = measured.width > 0 ? measured.width : W_FALLBACK
-  const H = H_FIXED
-
-  // Thin fixed layout: a ~14px road band (like the progress bar) pinned to the
-  // bottom, the score curve filling the space above it.
-  const CURVE_TOP = 6
-  const SEG_BOTTOM = H - 4
-  const SEG_TOP = SEG_BOTTOM - 14
-  const CURVE_BOTTOM = SEG_TOP - 8
-  const BAND_MID = (SEG_TOP + SEG_BOTTOM) / 2
 
   // Distinct road-band types actually present, in first-appearance order — the
   // legend is built from THIS (not a hardcoded highway/normal-road pair), so it
@@ -364,224 +324,23 @@ function InstantResultTimeline({ result }: { result: InstantResult }) {
     return order
   }, [segments])
 
-  // ── x-axis domains ────────────────────────────────────────────────────────
-  const lastTick = Math.max(
-    score_series.length > 0 ? score_series[score_series.length - 1].t : 1,
-    monotony_series.length > 0 ? monotony_series[monotony_series.length - 1].t : 1,
-  )
-  const tickMax = Math.max(1, lastTick)
-  const minMax = Math.max(
-    1,
-    completed_min ?? (segments.length > 0 ? segments[segments.length - 1].to_min : tickMax),
-  )
-  const xForTick = (t: number) => (Math.min(t, tickMax) / tickMax) * W
-  const xForMin = (m: number) => (Math.min(m, minMax) / minMax) * W
-
-  // ── y-axis: fit BOTH curves and BOTH thresholds (never hardcode 0–1) ───────
-  const scoreValues = score_series.map((p: ScoreSeriesPoint) => p.score)
-  for (const p of monotony_series) scoreValues.push(p.score)
-  if (threshold != null) scoreValues.push(threshold)
-  if (monotony_threshold != null) scoreValues.push(monotony_threshold)
-  const rawMin = scoreValues.length > 0 ? Math.min(...scoreValues) : 0
-  const rawMax = scoreValues.length > 0 ? Math.max(...scoreValues) : 1
-  const pad = (rawMax - rawMin) * 0.1 || 0.1
-  const yMin = rawMin - pad
-  const yMax = rawMax + pad
-  const yToPixel = (v: number) => CURVE_BOTTOM - ((v - yMin) / (yMax - yMin)) * (CURVE_BOTTOM - CURVE_TOP)
-
-  const curvePoints = score_series.map((p) => `${xForTick(p.t).toFixed(1)},${yToPixel(p.score).toFixed(1)}`).join(' ')
-  const monotonyPoints = monotony_series
-    .map((p) => `${xForTick(p.t).toFixed(1)},${yToPixel(p.score).toFixed(1)}`)
-    .join(' ')
+  const timeline = useMemo(() => instantResultToTimeline(result), [result])
 
   return (
-    <div data-testid="instant-result-timeline" ref={containerRef}>
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        width="100%"
-        height={H}
-        role="img"
-        aria-label="Instant result timeline"
-        data-testid="instant-result-svg"
-      >
-        {/* Segment bands (background) */}
-        {segments.map((seg: PreviewSegment, idx: number) => {
-          const x1 = xForMin(seg.from_min)
-          const x2 = xForMin(seg.to_min)
-          const color = (seg.type && SEGMENT_COLORS[seg.type]) || DEFAULT_SEGMENT_COLOR
-          return (
-            <g key={idx} data-testid={`instant-result-segment-${idx}`}>
-              <rect x={x1} y={SEG_TOP} width={Math.max(0, x2 - x1)} height={SEG_BOTTOM - SEG_TOP} fill={color} />
-              {x2 - x1 > 28 && (
-                <text x={(x1 + x2) / 2} y={BAND_MID + 3} fontSize="9" textAnchor="middle" fill="#1f2937">
-                  {segLabel(seg.type)}
-                </text>
-              )}
-            </g>
-          )
-        })}
-
-        {/* Threshold line */}
-        {threshold != null && (
-          <g data-testid="instant-result-threshold">
-            <line
-              x1={0}
-              x2={W}
-              y1={yToPixel(threshold)}
-              y2={yToPixel(threshold)}
-              stroke="#dc2626"
-              strokeDasharray="4 3"
-              strokeWidth={1}
-            />
-            <text x={W - 4} y={yToPixel(threshold) - 3} fontSize="8" textAnchor="end" fill="#dc2626">
-              threshold {formatNum(threshold)}
-            </text>
-          </g>
-        )}
-
-        {/* Monotony threshold line (hybrid only) — teal to match its curve */}
-        {hasMonotony && monotony_threshold != null && (
-          <g data-testid="instant-result-monotony-threshold">
-            <line
-              x1={0}
-              x2={W}
-              y1={yToPixel(monotony_threshold)}
-              y2={yToPixel(monotony_threshold)}
-              stroke={MONOTONY_COLOR}
-              strokeDasharray="4 3"
-              strokeWidth={1}
-            />
-            <text x={4} y={yToPixel(monotony_threshold) - 3} fontSize="8" textAnchor="start" fill={MONOTONY_COLOR}>
-              monotony {formatNum(monotony_threshold)}
-            </text>
-          </g>
-        )}
-
-        {/* Score curve — rest-propose */}
-        {score_series.length > 0 && (
-          <polyline data-testid="instant-result-curve" points={curvePoints} fill="none" stroke={REST_COLOR} strokeWidth={2} />
-        )}
-
-        {/* Score curve — monotony-prevention (hybrid only) */}
-        {hasMonotony && (
-          <polyline
-            data-testid="instant-result-monotony-curve"
-            points={monotonyPoints}
-            fill="none"
-            stroke={MONOTONY_COLOR}
-            strokeWidth={2}
-          />
-        )}
-
-        {/* Recovery window band (from the auto-chosen rest option) */}
-        {rest_option && rest_option.recovery_from_min != null && rest_option.to_min != null && (
-          <rect
-            data-testid="instant-result-recovery-window"
-            x={xForMin(rest_option.recovery_from_min)}
-            y={SEG_TOP}
-            width={Math.max(0, xForMin(rest_option.to_min) - xForMin(rest_option.recovery_from_min))}
-            height={SEG_BOTTOM - SEG_TOP}
-            fill="#a78bfa"
-            opacity={0.35}
-          />
-        )}
-
-        {/* Anomaly-spike markers — a small pink caret at the top of the curve area
-            at each Poisson spike, pointing down at the curve so the eye follows from
-            the spike to where the rest-propose score steps up. Plotted by tick so it
-            lands exactly under its score point. */}
-        {spikes.length > 0 && (
-          <g data-testid="instant-result-spike-marker">
-            {spikes.map((s, i) => {
-              const x = xForTick(s.t)
-              return (
-                <polygon
-                  key={i}
-                  data-testid="instant-result-spike"
-                  points={`${(x - 3).toFixed(1)},${CURVE_TOP} ${(x + 3).toFixed(1)},${CURVE_TOP} ${x.toFixed(1)},${CURVE_TOP + 6}`}
-                  fill={SPIKE_COLOR}
-                />
-              )
-            })}
-          </g>
-        )}
-
-        {/* Trigger markers — one vertical line per trigger episode, like the Review
-            timeline. REST proposals are prominent solid red; MONOTONY reminders are
-            secondary (thin amber) so the "take a rest" triggers stand out from the
-            frequent monotony nudges on long monotonous routes. */}
-        {fires.length > 0 && (
-          <g data-testid="instant-result-fire-marker">
-            {fires.map((f, i) => {
-              const isRest = (f.category ?? '').startsWith('rest')
-              return (
-                <line
-                  key={i}
-                  data-testid={isRest ? 'instant-result-fire-line' : 'instant-result-monotony-fire-line'}
-                  x1={xForMin(f.time_min)}
-                  x2={xForMin(f.time_min)}
-                  y1={CURVE_TOP}
-                  y2={SEG_BOTTOM}
-                  stroke={isRest ? TRIGGER_COLOR : MONOTONY_COLOR}
-                  strokeWidth={isRest ? 2 : 1}
-                  strokeDasharray={isRest ? undefined : '2 3'}
-                  opacity={isRest ? 1 : 0.7}
-                />
-              )
-            })}
-          </g>
-        )}
-
-        {/* Auto-accepted rest stops — an orange dot on the road band per rest
-            taken, positioned at its recovery time (matches the Review timeline). */}
-        {restStops.length > 0 && (
-          <g data-testid="instant-result-rest-spot-marker">
-            {restStops.map((atMin, i) => (
-              <circle
-                key={i}
-                data-testid="instant-result-rest-dot"
-                cx={xForMin(atMin)}
-                cy={BAND_MID}
-                r={6}
-                fill={REST_SPOT_COLOR}
-                stroke="#fff"
-                strokeWidth={2}
-              />
-            ))}
-          </g>
-        )}
-
-        {/* Recovery windows (kept for parity/tests) — a thin marker per rest. */}
-        {restStops.length > 0 && (
-          <g data-testid="instant-result-rest-option-marker">
-            {restStops.map((atMin, i) => (
-              <line
-                key={i}
-                x1={xForMin(atMin)}
-                x2={xForMin(atMin)}
-                y1={SEG_TOP}
-                y2={SEG_BOTTOM}
-                stroke="#7c3aed"
-                strokeWidth={1.5}
-              />
-            ))}
-          </g>
-        )}
-
-        {/* Route end — a thin gray line at completion. */}
-        {completed_min != null && (
-          <g data-testid="instant-result-completion-marker">
-            <line
-              x1={xForMin(completed_min)}
-              x2={xForMin(completed_min)}
-              y1={SEG_TOP}
-              y2={SEG_BOTTOM}
-              stroke="#9ca3af"
-              strokeWidth={1.5}
-            />
-          </g>
-        )}
-      </svg>
+    <div data-testid="instant-result-timeline">
+      <ScoreTimeline
+        data={timeline}
+        revealFraction={1}
+        ghostAhead={false}
+        animated={false}
+        showPlayhead={false}
+        height={92}
+        testIds={STRIP_TEST_IDS}
+        thresholdLabel={threshold != null ? `threshold ${formatNum(threshold)}` : undefined}
+        monotonyThresholdLabel={
+          hasMonotony && monotony_threshold != null ? `monotony ${formatNum(monotony_threshold)}` : undefined
+        }
+      />
 
       {/* Legend — score lines + the road-type bands ("highway / normal road"). */}
       <div
