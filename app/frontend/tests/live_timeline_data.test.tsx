@@ -51,4 +51,38 @@ describe('useLiveTimelineData (live)', () => {
     expect(captured!.data.spikes).toEqual([]) // never available live
     expect(captured!.exactFraction).toBe(0.5)
   })
+
+  it('sources road bands from the SELECTED alternative route_facts.route_segments (same as the map), by distance fraction', async () => {
+    render(<RunStoreProvider><Dispatcher /><Probe /></RunStoreProvider>)
+    const envelope = {
+      route_source: 'maps' as const,
+      alternatives: [
+        {
+          route_id: 'alt-1',
+          summary: 'A',
+          display: null,
+          notices: [],
+          route_facts: {
+            total_route_distance_km: 100,
+            estimated_route_duration_min: 90,
+            rest_spot_positions: [],
+            route_progress_checkpoints: [],
+            route_segments: [
+              { segment_type: 'highway' as const, start_km: 0, length_km: 60 },
+              { segment_type: 'normal_road' as const, start_km: 60, length_km: 40 },
+            ],
+          },
+        },
+      ],
+    }
+    await act(async () => {
+      dispatch!({ type: 'SET_ALTERNATIVES', envelope })
+      dispatch!({ type: 'SELECT_ROUTE', routeId: 'alt-1' })
+    })
+    // Bands follow the Google route: highway 0–0.6, normal_road 0.6–1.0.
+    expect(captured!.data.segments).toEqual([
+      { fromX: 0, toX: 0.6, type: 'highway' },
+      { fromX: 0.6, toX: 1, type: 'normal_road' },
+    ])
+  })
 })

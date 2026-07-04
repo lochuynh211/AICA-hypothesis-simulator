@@ -22,13 +22,30 @@ export function useLiveTimelineData(replayTick?: ReplayTick | null): {
   const { state } = useRunStore()
   const progress = useRouteProgress()
 
-  // Full route bands are known upfront (geometry, not a decision) → ghosted ahead.
-  const sorted = [...progress.segments].sort((a, b) => a.at - b.at)
-  const segments: TimelineSegment[] = sorted.map((s, i) => ({
-    fromX: s.at,
-    toX: i + 1 < sorted.length ? sorted[i + 1].at : 1,
-    type: s.type ?? null,
-  }))
+  // Road bands — known geometry, ghosted ahead. Prefer the SELECTED alternative's
+  // route_facts.route_segments: that is the exact same data (segmentation + types)
+  // MapSurface draws the coloured route from, so the timeline follows the Google
+  // route 1:1. Fall back to the scenario's route_intent segments on the local
+  // no-Maps-key path (where route_segments is empty).
+  const selectedAlt = state.alternatives.find((a) => a.route_id === state.selectedRouteId)
+  const routeSegs = selectedAlt?.route_facts?.route_segments ?? []
+  const totalKm = selectedAlt?.route_facts?.total_route_distance_km ?? 0
+
+  let segments: TimelineSegment[]
+  if (routeSegs.length > 0 && totalKm > 0) {
+    segments = routeSegs.map((s) => ({
+      fromX: s.start_km / totalKm,
+      toX: (s.start_km + s.length_km) / totalKm,
+      type: s.segment_type,
+    }))
+  } else {
+    const sorted = [...progress.segments].sort((a, b) => a.at - b.at)
+    segments = sorted.map((s, i) => ({
+      fromX: s.at,
+      toX: i + 1 < sorted.length ? sorted[i + 1].at : 1,
+      type: s.type ?? null,
+    }))
+  }
 
   // Replay: reveal to the recorded tick; live: reveal to the latest evaluated fraction.
   const exactFraction = replayTick != null ? replayTick.route_fraction : progress.currentFraction

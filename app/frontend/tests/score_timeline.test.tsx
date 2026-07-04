@@ -134,4 +134,83 @@ describe('ScoreTimeline', () => {
     expect(id2).toBeTruthy()
     expect(id1).not.toBe(id2)
   })
+
+  it('draws the threshold and rest dots FORWARD (outside the reveal-clipped group), while the curve stays inside it', () => {
+    const { container } = render(
+      <ScoreTimeline data={data} testIds={{ ...TID, threshold: 'ttl-threshold' }} revealFraction={0.5} />,
+    )
+    // With ghostAhead off there is exactly one reveal-clipped group: the decisions group.
+    const clipGroup = container.querySelector('g[clip-path]') as SVGGElement | null
+    expect(clipGroup).not.toBeNull()
+    // The progressive curve is clipped (reveals over time)…
+    expect(clipGroup!.querySelector('[data-testid="ttl-curve"]')).not.toBeNull()
+    // …but the threshold and the chosen-rest dot are NOT clipped (drawn forward/immediately).
+    expect(clipGroup!.querySelector('[data-testid="ttl-threshold"]')).toBeNull()
+    expect(clipGroup!.querySelector('[data-testid="progress-rest-spot-marker"]')).toBeNull()
+    // They still exist in the tree.
+    expect(screen.getByTestId('ttl-threshold')).toBeInTheDocument()
+    expect(screen.getByTestId('progress-rest-spot-marker')).toBeInTheDocument()
+  })
+
+  it('ghostAhead renders a blurred base road layer plus a crisp reveal-clipped layer', () => {
+    const { container } = render(
+      <ScoreTimeline data={data} testIds={TID} ghostAhead revealFraction={0.5} />,
+    )
+    // A blur filter is defined and applied to the "ahead" base layer.
+    expect(container.querySelector('filter feGaussianBlur')).not.toBeNull()
+    const blurLayer = container.querySelector('g[filter]') as SVGGElement | null
+    expect(blurLayer).not.toBeNull()
+    expect(blurLayer!.querySelectorAll('rect').length).toBe(data.segments.length)
+    // The crisp segment rects (with testids) render exactly once — no duplicate testids.
+    expect(screen.getAllByTestId('ttl-seg-0')).toHaveLength(1)
+  })
+
+  it('colors urban green and highway cyan (matching the map), and draws no band or legend entry for start/end', () => {
+    const roads: TimelineData = {
+      ...data,
+      segments: [
+        { fromX: 0, toX: 0.1, type: 'start' },
+        { fromX: 0.1, toX: 0.5, type: 'urban' },
+        { fromX: 0.5, toX: 0.9, type: 'highway' },
+        { fromX: 0.9, toX: 1, type: 'end' },
+      ],
+    }
+    const { container } = render(
+      <ScoreTimeline data={roads} testIds={{ ...TID, legend: 'ttl-legend' }} showLegend />,
+    )
+    const fills = Array.from(container.querySelectorAll('rect'))
+      .map((r) => r.getAttribute('fill'))
+    // urban green + highway cyan present; the pale-blue urban (#dbeafe) is gone.
+    expect(fills).toContain('#22c55e') // urban → green
+    expect(fills).toContain('#06b6d4') // highway → cyan
+    expect(fills).not.toContain('#dbeafe')
+    // start/end draw no distinct grey band (#e5e7eb).
+    expect(fills).not.toContain('#e5e7eb')
+    // Legend names the roads present but not the start/end endpoints.
+    const legend = screen.getByTestId('ttl-legend').textContent ?? ''
+    expect(legend).toContain('urban')
+    expect(legend).toContain('highway')
+    expect(legend).not.toContain('start')
+    expect(legend).not.toContain('end')
+  })
+
+  it('renders a legend explaining the score/road colors only when showLegend is set', () => {
+    const withMonotony: TimelineData = {
+      ...data,
+      monotonyScore: [{ x: 0, y: 0.2 }, { x: 1, y: 0.4 }],
+    }
+    const { rerender } = render(
+      <ScoreTimeline data={withMonotony} testIds={{ ...TID, legend: 'ttl-legend' }} showLegend />,
+    )
+    const legend = screen.getByTestId('ttl-legend')
+    expect(legend.textContent).toContain('rest-propose score')
+    expect(legend.textContent).toContain('monotony score')
+    expect(legend.textContent).toContain('threshold')
+    expect(legend.textContent).toContain('highway')
+    expect(legend.textContent).toContain('chosen rest spot')
+
+    // Off by default (Setup strip owns its own legend, so ScoreTimeline must not add one).
+    rerender(<ScoreTimeline data={withMonotony} testIds={{ ...TID, legend: 'ttl-legend' }} />)
+    expect(screen.queryByTestId('ttl-legend')).not.toBeInTheDocument()
+  })
 })

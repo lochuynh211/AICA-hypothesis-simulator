@@ -8,11 +8,13 @@ import type { ReplayTick } from '../../replay/replaySource'
  * RouteTimeline — the Review-screen progress timeline (FR-016 display-only).
  *
  * Now a real-time, progressive-reveal version of the Setup screen's Instant
- * Result timeline: road bands ghost ahead (geometry is known), while the score
- * curve(s), fire lines, and rest dots reveal only behind the 🚗 playhead as the
- * run ticks. Built via the shared ScoreTimeline. The car aria-label reports the
- * EXACT evaluated route_fraction (matches the evidence log); only the on-screen
- * position is eased via useSmoothFraction. No store writes.
+ * Result timeline: the road ahead is blurred/dimmed and cleans up to full colour
+ * as the 🚗 playhead passes, and the score curve(s) + fire lines reveal only behind
+ * it as the run ticks. Constants known up front — the fire threshold and a chosen
+ * rest spot — are drawn forward (full width / immediately). Built via the shared
+ * ScoreTimeline, with a colour legend. The car aria-label reports the EXACT
+ * evaluated route_fraction (matches the evidence log); only the on-screen position
+ * is eased via useSmoothFraction. No store writes.
  */
 const REVIEW_TEST_IDS: ScoreTimelineTestIds = {
   root: 'route-timeline',
@@ -21,6 +23,7 @@ const REVIEW_TEST_IDS: ScoreTimelineTestIds = {
   monotonyFire: 'monotony-fire-marker',
   restDot: 'progress-rest-spot-marker',
   curve: 'progress-fill', // the growing rest-propose curve is the "fill" of the bar
+  legend: 'route-timeline-legend',
 }
 
 export default function RouteTimeline({ replayTick }: { replayTick?: ReplayTick | null } = {}) {
@@ -40,6 +43,7 @@ export default function RouteTimeline({ replayTick }: { replayTick?: ReplayTick 
         height={112}
         testIds={REVIEW_TEST_IDS}
         restDotAriaLabel="Chosen rest spot"
+        showLegend
       />
     </div>
   )

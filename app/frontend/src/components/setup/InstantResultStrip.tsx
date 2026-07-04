@@ -239,18 +239,20 @@ export default function InstantResultStrip() {
 // scenic) match the Review-screen map (components/map/MapSurface.tsx ROAD_COLORS)
 // so the same road reads the same color in both places; non-road bands stay neutral.
 // (Kept here only for the legend swatches — ScoreTimeline owns the drawing colors.)
+// Copied verbatim from MapSurface ROAD_COLORS (see ScoreTimeline) so band + legend
+// colors read identically to the Google map.
 const SEGMENT_COLORS: Record<string, string> = {
-  start: '#e5e7eb',
-  urban: '#dbeafe',
-  highway: '#06b6d4', // cyan — matches the map
+  highway: '#06b6d4', // cyan
+  normal_road: '#2563eb', // blue
+  mountain_road: '#f59e0b', // orange
+  sightseeing_road: '#22c55e', // green
+  urban: '#22c55e', // green (scenario route_intent type)
   national: '#38bdf8',
-  normal_road: '#22c55e', // green — matches the map
   residential: '#e5e7eb',
-  mountain_road: '#f59e0b', // orange — matches the map
-  sightseeing_road: '#16a34a', // scenic green (darker so it differs from normal_road)
   rest: '#c4b5fd',
-  end: '#e5e7eb',
 }
+// start / end are route endpoints, not road classes — no legend entry.
+const HIDDEN_SEGMENT_TYPES = new Set(['start', 'end'])
 const DEFAULT_SEGMENT_COLOR = '#f3f4f6'
 // Anomaly-spike marker — a small pink caret at the top of the curve area. Pink
 // keeps it distinct from the red rest-trigger line, teal monotony, and the amber
@@ -316,7 +318,7 @@ function InstantResultTimeline({ result }: { result: InstantResult }) {
     const seen = new Set<string>()
     const order: string[] = []
     for (const s of segments) {
-      if (s.type && !seen.has(s.type)) {
+      if (s.type && !HIDDEN_SEGMENT_TYPES.has(s.type) && !seen.has(s.type)) {
         seen.add(s.type)
         order.push(s.type)
       }
