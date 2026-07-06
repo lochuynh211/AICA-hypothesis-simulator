@@ -301,7 +301,17 @@ export default function SignalsPanel() {
 
       {scenario && (
         <>
-          <SignalGroup title="Fixed" testid="signal-group-fixed">
+          <SignalGroup
+            title={t({ en: 'Fixed conditions', ja: '固定条件' }, uiLanguage)}
+            testid="signal-group-fixed"
+            caption={t(
+              {
+                en: 'Set before the run and held constant throughout — edit these here.',
+                ja: '走行前に設定し、走行中は一定に保たれる条件（ここで編集）。',
+              },
+              uiLanguage,
+            )}
+          >
             <SignalRow
               signalKey="isNight"
               label={t(SIGNAL_LABELS.isNight, uiLanguage)}
@@ -402,7 +412,7 @@ export default function SignalsPanel() {
           </SignalGroup>
 
           <SignalGroup
-            title="Dynamic"
+            title={t({ en: 'Live route values', ja: 'ルート実測値' }, uiLanguage)}
             testid="signal-group-dynamic"
             caption={t(
               {
@@ -456,7 +466,17 @@ export default function SignalsPanel() {
 
           <SpeedProfileSection scenario={scenario} />
 
-          <SignalGroup title="Simulated (tier 3)" testid="signal-group-simulated">
+          <SignalGroup
+            title={t({ en: 'Simulated driver state', ja: 'シミュレート運転者状態' }, uiLanguage)}
+            testid="signal-group-simulated"
+            caption={t(
+              {
+                en: 'Generated tick-by-tick by the driver model as the drive plays out — drowsiness, fatigue, and driving anomalies.',
+                ja: 'ドライバーモデルが走行中にティックごとに生成する値 — 眠気・疲労・運転異常。',
+              },
+              uiLanguage,
+            )}
+          >
             <SimulatedSignal
               signalKey="drowsiness"
               label={t(SIGNAL_LABELS.drowsiness, uiLanguage)}

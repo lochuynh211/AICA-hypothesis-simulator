@@ -45,6 +45,13 @@ export const SIGNAL_LABELS: Record<string, BilingualLabel> = {
   recoveryPhase: { en: 'Recovery Phase', ja: '回復フェーズ' },
   segmentMotionJam: { en: 'Segment / Motion / Jam', ja: '区間・走行状態・渋滞' },
 
+  // ── Accumulated-minutes route quantities (env_load / S_env formula terms) ─
+  // Cumulative minutes spent in each condition while moving — derived from the
+  // isTrafficJam / segmentType signals; shown as minutes, not bare var names.
+  jam_minutes: { en: 'Traffic-Jam Minutes', ja: '渋滞時間（分）' },
+  highway_minutes: { en: 'Highway Minutes', ja: '高速道路時間（分）' },
+  monotonous_minutes: { en: 'Monotonous-Road Minutes', ja: '単調道路時間（分）' },
+
   // ── Simulated (tier 3) signals ─────────────────────────────────────────
   drowsiness: { en: 'Drowsiness', ja: '眠気' },
   fatigue: { en: 'Fatigue', ja: '疲労' },

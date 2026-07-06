@@ -390,7 +390,9 @@ describe('AlgorithmFormulationPanel — feature 009 FE3', () => {
 
     const env = await screen.findByTestId('formula-line-env_load')
     // env_load blends Traffic Jam + Highway(segmentType) + Weather Risk signals.
-    expect(within(env).getByTestId('formula-link-isTrafficJam')).toBeInTheDocument()
+    // Traffic Jam is referenced twice (the boolean gate and the jam-minutes term),
+    // so both wire to the isTrafficJam row.
+    expect(within(env).getAllByTestId('formula-link-isTrafficJam').length).toBeGreaterThanOrEqual(1)
     expect(within(env).getByTestId('formula-link-weatherRisk')).toBeInTheDocument()
     const mono = screen.getByTestId('formula-line-monotony')
     expect(within(mono).getByTestId('formula-link-isNight')).toBeInTheDocument()
