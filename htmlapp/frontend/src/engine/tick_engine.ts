@@ -28,14 +28,14 @@
  * because they cross the parity boundary.
  */
 
-import type { RestSpot, RecoveryOption, RecoveryStateT, RouteFacts } from '../api/types'
-import { binContext, buildFeatureGroups } from './binning'
+import type { RecoveryOption, RecoveryStateT, RouteFacts } from '../api/types'
+import { binContext, buildFeatureGroups, binDrowsinessLevel, binFatigueLevel } from './binning'
 import type { EventPlan, ScenarioDefM2 } from './event_plan'
 import { advanceRecovery, currentStage } from './recovery'
-import type { DriverModelProfile, DriverState } from './behavior/driver_model'
-import { advanceDriverState, applyRestRecovery } from './behavior/driver_model'
-import type { VehicleBehaviorProfile, VehicleEvent } from './behavior/vehicle_model'
-import { advanceVehicleState } from './behavior/vehicle_model'
+import type { DriverSignalParams, DriverState } from './behavior/driver_signals'
+import { advanceDriverState, applyRestRecovery } from './behavior/driver_signals'
+import type { AnomalySignalParams } from './behavior/anomaly_signal'
+import { advanceAnomaly } from './behavior/anomaly_signal'
 
 // ---------------------------------------------------------------------------
 // Public types (mirror aica_api.models.run — genuinely absent from api/types.ts)
@@ -44,6 +44,12 @@ import { advanceVehicleState } from './behavior/vehicle_model'
 export type FeatureGroups = {
   normalized: Record<string, number>
   ordinal: Record<string, string>
+}
+
+export type TieredSignals = {
+  fixed: Record<string, number | boolean | string>
+  dynamic: Record<string, number | boolean | string | null>
+  simulated: Record<string, number>
 }
 
 export type TickState = {
@@ -58,17 +64,17 @@ export type TickState = {
   rest_spot_eta: string
   completed: boolean
 
-  // M2 extensions
-  raw_state: Record<string, number | boolean | string>
+  // M2 (feature 009): tiered signals replace the flat raw_state.
+  signals: TieredSignals | Record<string, never>
   feature_groups: FeatureGroups
   distance_km: number | null
   continuous_driving_min: number | null
+  anomaly_events: number[]
+  above_weak_ticks: number
 
   // Extra fields (Python model_config extra="allow") — carried tick-to-tick
   // and/or surfaced for the evidence trace.
-  _vehicle_event_history?: VehicleEvent[]
   _driver_update?: Record<string, unknown>
-  _vehicle_update?: Record<string, unknown>
   _recovery_next?: RecoveryStateT
 }
 
@@ -88,6 +94,9 @@ export type AdvanceTickArgs = {
   routeFacts: RouteFacts
   scenario: ScenarioDefM2
   recovery?: RecoveryStateT | null
+  /** Feature 009: deterministic seed for the anomaly generator. Defaults to
+   * scenario.run_seed_default when not supplied. */
+  runSeed?: number | null
 }
 
 // ---------------------------------------------------------------------------
@@ -123,10 +132,12 @@ export function computeTickState(plan: EventPlan, tickIndex: number, scenario: S
       continuous_driving_time: driveTimeBand(elapsedSeconds),
       rest_spot_eta: 'none',
       completed: true,
-      raw_state: {},
+      signals: {},
       feature_groups: emptyFeatureGroups,
       distance_km: null,
       continuous_driving_min: null,
+      anomaly_events: [],
+      above_weak_ticks: 0,
     }
   }
 
@@ -148,10 +159,12 @@ export function computeTickState(plan: EventPlan, tickIndex: number, scenario: S
     continuous_driving_time: continuousDrivingTime,
     rest_spot_eta: entry.rest_spot_eta,
     completed: false,
-    raw_state: {},
+    signals: {},
     feature_groups: emptyFeatureGroups,
     distance_km: null,
     continuous_driving_min: null,
+    anomaly_events: [],
+    above_weak_ticks: 0,
   }
 }
 
@@ -166,19 +179,15 @@ export function computeTickState(plan: EventPlan, tickIndex: number, scenario: S
  * level for backward compat with declarative_rule's M1 code path).
  */
 export function buildAdapterContext(tickState: TickState): Record<string, unknown> {
-  const hasRawState = tickState.raw_state && Object.keys(tickState.raw_state).length > 0
-  const hasOrdinal = tickState.feature_groups.ordinal && Object.keys(tickState.feature_groups.ordinal).length > 0
-
-  if (hasRawState && hasOrdinal) {
-    const ordinal = tickState.feature_groups.ordinal
+  // Feature 009: if tiered signals are populated (M2 path), return the
+  // tiered-context shape exactly — no flattening, no removed keys.
+  if (tickState.signals && Object.keys(tickState.signals).length > 0) {
     return {
-      raw_state: tickState.raw_state,
+      signals: tickState.signals,
       feature_groups: {
         normalized: tickState.feature_groups.normalized,
-        ordinal,
+        ordinal: tickState.feature_groups.ordinal,
       },
-      // Flat ordinal keys at top level for algorithms that access context directly
-      ...ordinal,
     }
   }
 
@@ -197,10 +206,11 @@ export function buildAdapterContext(tickState: TickState): Record<string, unknow
 // ---------------------------------------------------------------------------
 
 /**
- * Advance the simulation by one tick using the M2 profile-driven model.
+ * Advance the simulation by one tick using the M2 tiered-signal model (feature 009).
  *
- * Returns a TickState with raw_state, feature_groups, distance_km,
- * continuous_driving_min, and M1 backward-compat ordinal fields.
+ * Returns a TickState with tiered `signals` ({fixed, dynamic, simulated}),
+ * feature_groups, distance_km, continuous_driving_min, anomaly_events,
+ * above_weak_ticks, and M1 backward-compat ordinal fields.
  * completed=True when distance_km >= total_route_distance_km.
  */
 export function advanceTick(args: AdvanceTickArgs): TickState {
@@ -208,34 +218,40 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
   const tickSeconds = eventPlan.tick_seconds
   const totalKm = routeFacts.total_route_distance_km || 120.0
   const sp = scenario.speed_profile as unknown as SpeedProfile | undefined
+  const scen = scenario as unknown as {
+    driver_signal_params?: DriverSignalParams | null
+    anomaly_signal_params?: AnomalySignalParams | null
+    weather_risk?: number
+    run_seed_default?: number
+  }
+  const driverParams = scen.driver_signal_params ?? null
+  const anomalyParams = scen.anomaly_signal_params ?? null
+  const seed = args.runSeed != null ? args.runSeed : (scen.run_seed_default ?? 42)
 
   // ── Get prior numeric values ──────────────────────────────────────────
   let drowsiness: number
   let fatigue: number
-  let attention: number
   let distanceKm: number
   let continuousDrivingMin: number
   let aboveWeak: number
-  let vehicleEventHistory: VehicleEvent[]
+  let anomalyEvents: number[]
 
-  if (priorState === null || isEmpty(priorState.raw_state)) {
+  if (priorState === null || isEmpty(priorState.signals)) {
     // Tick 0: initialize from scenario.initial_state
     drowsiness = initialDrowsiness(scenario.initial_state['drowsiness_level'] ?? 'none')
     fatigue = initialFatigue(scenario.initial_state['fatigue_level'] ?? 'low')
-    attention = 100.0
     distanceKm = 0.0
     continuousDrivingMin = 0.0
     aboveWeak = 0
-    vehicleEventHistory = []
+    anomalyEvents = []
   } else {
-    const raw = priorState.raw_state
-    drowsiness = Number(raw['drowsinessLevel'])
-    fatigue = Number(raw['fatigueLevel'])
-    attention = Number(raw['attentionLevel'])
+    const simulated = (priorState.signals as TieredSignals).simulated ?? {}
+    drowsiness = Number(simulated['drowsiness'] ?? 0.0)
+    fatigue = Number(simulated['fatigue'] ?? 0.0)
     distanceKm = priorState.distance_km ?? 0.0
     continuousDrivingMin = priorState.continuous_driving_min ?? 0.0
-    aboveWeak = Math.trunc(Number(raw['drowsinessAboveWeakTicks'] ?? 0))
-    vehicleEventHistory = priorState._vehicle_event_history ?? []
+    aboveWeak = priorState.above_weak_ticks
+    anomalyEvents = [...priorState.anomaly_events]
   }
 
   // ── Determine active segment type at current distance ─────────────────
@@ -271,14 +287,12 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
   let recoveryNext: RecoveryStateT | null = null
   let motionState = 'MOVING'
   let recoveryPhase: string | null = null
-  let activeContent: string | null = null
   if (recovery !== null && recovery.active) {
     const option: RecoveryOption | null =
       (scenario.recovery_options ?? []).find((o) => o.id === recovery.option_id) ?? null
     if (option !== null) {
       const stage = currentStage(recovery, option)
-      const restSpot: RestSpot | null = recovery.rest_spot
-      const spotFrac = restSpot ? restSpot.route_fraction : 1.0
+      const spotFrac = recovery.rest_spot ? recovery.rest_spot.route_fraction : 1.0
       const atSpot = newDistanceKm / totalKm >= spotFrac
       if (stage !== null && stage.motion === 'STOPPED') {
         // Hold position at the rest spot; do not advance distance.
@@ -288,20 +302,17 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
         motionState = 'STOPPED'
       }
       recoveryPhase = recovery.phase
-      activeContent = stage !== null ? stage.content : null
       recoveryNext = advanceRecovery(recovery, option, { atRestSpot: atSpot })
     }
   }
 
-  // ── Advance driver state ──────────────────────────────────────────────
+  // ── Advance driver signals (Tier 3a: drowsiness/fatigue) ───────────────
   let newDrowsiness: number
   let newFatigue: number
-  let newAttention: number
   let driverUpdateDict: Record<string, unknown> = {}
-  if (scenario.driver_profile) {
-    const profile = scenario.driver_profile as unknown as DriverModelProfile
-    const driverState: DriverState = { drowsiness, fatigue, attention }
-    const driverUpdate = advanceDriverState(profile, driverState, tickSeconds, {
+  if (driverParams) {
+    const driverState: DriverState = { drowsiness, fatigue }
+    const driverUpdate = advanceDriverState(driverParams, driverState, tickSeconds, {
       isNight,
       isMonotonous,
       isTrafficJam,
@@ -310,76 +321,61 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
     })
     newDrowsiness = driverUpdate.next.drowsiness
     newFatigue = driverUpdate.next.fatigue
-    newAttention = driverUpdate.next.attention
     driverUpdateDict = { previous: driverUpdate.previous, delta: driverUpdate.delta }
   } else {
     newDrowsiness = drowsiness
     newFatigue = fatigue
-    newAttention = attention
   }
 
-  // ── Recovery: apply rest recovery when STOPPED ────────────────────────
-  if (recovery !== null && recovery.active && motionState === 'STOPPED' && scenario.driver_profile) {
+  // ── Recovery: apply a rest activity's fixed recovery ONCE, on entry ────
+  // The first STOPPED tick of a stage is the one where stage_ticks_remaining
+  // still equals the stage's full `ticks` (decremented from this tick onward).
+  if (recovery !== null && recovery.active && motionState === 'STOPPED' && driverParams) {
     const recOption: RecoveryOption | null =
       (scenario.recovery_options ?? []).find((o) => o.id === recovery.option_id) ?? null
-    const restType = recOption && recOption.rest_type ? recOption.rest_type : 'short'
-    const recovered = applyRestRecovery(
-      scenario.driver_profile as unknown as DriverModelProfile,
-      { drowsiness, fatigue, attention },
-      restType,
-    )
-    newDrowsiness = recovered.drowsiness
-    newFatigue = recovered.fatigue
-    newAttention = recovered.attention
+    const stages = recOption?.stages ?? []
+    const stage = recOption && recovery.stage_index >= 0 && recovery.stage_index < stages.length
+      ? stages[recovery.stage_index]
+      : null
+    const isActivityEntry = stage !== null && recovery.stage_ticks_remaining === (stage.ticks ?? 0)
+    if (stage !== null && isActivityEntry) {
+      const recovered = applyRestRecovery(driverParams, { drowsiness: newDrowsiness, fatigue: newFatigue }, stage.content)
+      newDrowsiness = recovered.drowsiness
+      newFatigue = recovered.fatigue
+    }
   }
 
   // driver_update dict for the evidence trace uses the FINAL (possibly rest-
   // recovered) numbers for "next", matching Python's driver_update_dict.
-  if (scenario.driver_profile) {
+  if (driverParams) {
     driverUpdateDict = {
       ...driverUpdateDict,
-      next: { drowsiness: newDrowsiness, fatigue: newFatigue, attention: newAttention },
+      next: { drowsiness: newDrowsiness, fatigue: newFatigue },
     }
   }
 
   // ── Update drowsinessAboveWeakTicks counter ───────────────────────────
   const newAboveWeak = newDrowsiness >= 20.0 ? aboveWeak + 1 : 0
 
-  // ── Advance vehicle state ─────────────────────────────────────────────
-  let steering: number
-  let pedal: number
-  let laneDep: number
-  let adasWarn: number
-  let newVehicleHistory: VehicleEvent[]
-  if (scenario.vehicle_profile) {
-    const vProfile = scenario.vehicle_profile as unknown as VehicleBehaviorProfile
-    const vehicleState = advanceVehicleState(
-      vProfile,
-      newDrowsiness,
-      newFatigue,
-      segmentType,
-      isTrafficJam,
+  // ── Advance anomaly signal (Tier 3b) — the ONLY source of randomness ───
+  let anomalyRate: number
+  let newAnomalyEvents: number[]
+  if (anomalyParams) {
+    const anomalyUpdate = advanceAnomaly(anomalyParams, { events: anomalyEvents }, {
+      drowsiness: newDrowsiness,
       tickIndex,
       tickSeconds,
-      vehicleEventHistory,
-    )
-    steering = vehicleState.steering_instability_level
-    pedal = vehicleState.pedal_abnormality_level
-    laneDep = vehicleState.lane_departure_count
-    adasWarn = vehicleState.adas_warning_count
-    newVehicleHistory = vehicleState.event_history
+      runSeed: seed,
+      isMoving: motionState === 'MOVING',
+    })
+    anomalyRate = anomalyUpdate.anomaly_rate
+    newAnomalyEvents = anomalyUpdate.next.events
   } else {
-    steering = 0.0
-    pedal = 0.0
-    laneDep = 0
-    adasWarn = 0
-    newVehicleHistory = []
+    anomalyRate = 0
+    newAnomalyEvents = anomalyEvents
   }
 
   // ── Compute nextRestSpotMin ─────────────────────────────────────────────
-  // Minutes to the next rest opportunity ahead, using the current effective
-  // speed. Sentinel 9999.0 means no rest spot remains ahead (or speed == 0 —
-  // unreachable in zero time).
   const NO_REST_SENTINEL = 9999.0
   let nextRestMin = NO_REST_SENTINEL
   if (effectiveSpeed > 0) {
@@ -393,69 +389,61 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
     }
   }
 
-  // ── Build raw_state ───────────────────────────────────────────────────
-  const rawState: Record<string, number | boolean | string> = {
-    drowsinessLevel: newDrowsiness,
-    fatigueLevel: newFatigue,
-    attentionLevel: newAttention,
-    speedKph: effectiveSpeed,
-    steeringInstabilityLevel: steering,
-    pedalAbnormalityLevel: pedal,
-    laneDepartureCount: laneDep,
-    adasWarningCount: adasWarn,
-    nextRestSpotMin: nextRestMin,
-    routeFraction: routeFraction,
-    continuousDrivingMin: newContinuousMin,
-    isNight: isNight,
-    weatherRiskLevel: 0.0,
-    segmentType: segmentType,
-    drowsinessAboveWeakTicks: newAboveWeak,
-    motionState: motionState,
-    isTrafficJam: isTrafficJam,
-    childPassenger: scenario.child_passenger ?? false,
-    familiarRoute: scenario.familiar_route ?? false,
-  }
-  if (recoveryPhase !== null) {
-    rawState['recoveryPhase'] = recoveryPhase
-  }
-  if (activeContent !== null) {
-    rawState['activeContent'] = activeContent
+  // ── Build the tiered signals dict (feature 009 contract) ──────────────
+  const signals: TieredSignals = {
+    fixed: {
+      isNight: isNight,
+      familiarRoute: scenario.familiar_route ?? false,
+      childPassenger: scenario.child_passenger ?? false,
+      weatherRiskLevel: scen.weather_risk ?? 0.0,
+    },
+    dynamic: {
+      segmentType: segmentType,
+      motionState: motionState,
+      continuousDrivingMin: newContinuousMin,
+      speedKph: effectiveSpeed,
+      routeFraction: routeFraction,
+      nextRestSpotMin: nextRestMin,
+      isTrafficJam: isTrafficJam,
+      recoveryPhase: recoveryPhase,
+    },
+    simulated: {
+      drowsiness: newDrowsiness,
+      fatigue: newFatigue,
+      anomaly_rate: anomalyRate,
+    },
   }
 
-  // ── Build feature_groups ──────────────────────────────────────────────
-  const fgDict = buildFeatureGroups(rawState) as { normalized: Record<string, number>; ordinal: Record<string, string> }
+  // ── Build feature_groups (route/context ordinal bands only) ───────────
+  const fgDict = buildFeatureGroups({
+    continuousDrivingMin: newContinuousMin,
+    nextRestSpotMin: nextRestMin,
+    drowsinessAboveWeakTicks: newAboveWeak,
+  }) as { normalized: Record<string, number>; ordinal: Record<string, string> }
   const featureGroups: FeatureGroups = { normalized: fgDict.normalized, ordinal: fgDict.ordinal }
   const ordinal = fgDict.ordinal
 
   // ── Active segment ID (for M1 compat field) ───────────────────────────
   const activeSegmentId = activeSegmentIdAt(routeFraction, scenario)
 
-  // ── vehicle_update dict for the evidence trace ────────────────────────
-  const vehicleUpdateDict = {
-    steering_instability_level: steering,
-    pedal_abnormality_level: pedal,
-    lane_departure_count: laneDep,
-    adas_warning_count: adasWarn,
-  }
-
   const ts: TickState = {
     tick_index: tickIndex,
     elapsed_seconds: (tickIndex + 1) * tickSeconds,
     route_fraction: routeFraction,
     active_segment_id: activeSegmentId,
-    drowsiness_level: ordinal['drowsiness_level'],
-    fatigue_level: ordinal['fatigue_level'],
+    drowsiness_level: binDrowsinessLevel(newDrowsiness),
+    fatigue_level: binFatigueLevel(newFatigue),
     signal_duration: ordinal['signal_duration'],
     continuous_driving_time: ordinal['continuous_driving_time'],
     rest_spot_eta: ordinal['rest_spot_eta'],
     completed,
-    raw_state: rawState,
+    signals: signals,
     feature_groups: featureGroups,
     distance_km: newDistanceKm,
     continuous_driving_min: newContinuousMin,
-    _vehicle_event_history: newVehicleHistory,
+    anomaly_events: newAnomalyEvents,
+    above_weak_ticks: newAboveWeak,
     _driver_update: driverUpdateDict,
-    _vehicle_update: vehicleUpdateDict,
   }
   if (recoveryNext !== null) {
     ts._recovery_next = recoveryNext

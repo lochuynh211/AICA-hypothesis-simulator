@@ -166,11 +166,22 @@ function pyFloatJson(n: number): string {
  * compact form for everything else (strings, bools, lists). */
 function dumpProfileSubmodel(submodelKey: string, value: Record<string, unknown>): string {
   const intFields = PROFILE_SUBMODEL_INT_FIELDS[submodelKey] ?? new Set<string>()
+  return dumpFloatObj(value, intFields)
+}
+
+/** Recursively compact-dump an object as Python's `json.dumps(..., separators=(",",":"))`
+ * would, treating every numeric leaf as a `float` (`.0` when integral) except keys
+ * in `intFields` at THIS level. Feature 009: `recovery_model` is now a nested map
+ * `{activity: {drowsiness: float, fatigue: float}}`, so nested objects must recurse
+ * (all nested ActivityRecovery leaves are floats — no int fields). */
+function dumpFloatObj(value: Record<string, unknown>, intFields: Set<string>): string {
   const parts: string[] = []
   for (const [k, v] of Object.entries(value)) {
     let vs: string
     if (typeof v === 'number') {
       vs = intFields.has(k) ? String(v) : pyFloatJson(v)
+    } else if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+      vs = dumpFloatObj(v as Record<string, unknown>, new Set<string>())
     } else {
       vs = JSON.stringify(v)
     }

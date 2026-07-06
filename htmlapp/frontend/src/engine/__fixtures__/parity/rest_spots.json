@@ -1,144 +1,224 @@
 {
   "input": {
     "package": {
-      "id": "rest_rule_based_v0_1",
-      "version": "0.1.0",
+      "id": "nri_fatigue_score_v1",
+      "version": "0.1",
       "label": {
-        "ja": "\u30eb\u30fc\u30eb\u30d9\u30fc\u30b9\u4f11\u61a9\u63d0\u6848 v0.1",
-        "en": "Rule-Based Rest Proposal v0.1"
+        "ja": "疲労蓄積スコア v0.1",
+        "en": "Fatigue Accumulation Score v0.1"
       },
       "compatible_scenario_types": [
         "uc01_fatigue"
       ],
       "algorithm": {
-        "type": "declarative_rule",
-        "entrypoint": "rules"
+        "type": "python_module",
+        "entrypoint": "algorithm.py",
+        "tick_seconds": 180,
+        "error_mode": "blocking"
       },
       "features": [
         {
-          "key": "drowsiness_level",
-          "band_values": [
-            "none",
-            "weak",
-            "moderate",
-            "strong",
-            "severe"
-          ]
+          "key": "drowsiness",
+          "band_values": []
         },
         {
-          "key": "fatigue_level",
-          "band_values": [
-            "low",
-            "medium",
-            "high"
-          ]
+          "key": "fatigue",
+          "band_values": []
         },
         {
-          "key": "signal_duration",
-          "band_values": [
-            "transient",
-            "brief",
-            "sustained",
-            "persistent"
-          ]
+          "key": "driving_anomaly",
+          "band_values": []
         },
         {
-          "key": "continuous_driving_time",
-          "band_values": [
-            "short",
-            "moderate",
-            "long"
-          ]
+          "key": "future_fatigue",
+          "band_values": []
         },
         {
-          "key": "rest_spot_eta",
-          "band_values": [
-            "none",
-            "near",
-            "far"
-          ]
+          "key": "rest_window",
+          "band_values": []
+        },
+        {
+          "key": "rest_scarcity",
+          "band_values": []
+        },
+        {
+          "key": "monotony",
+          "band_values": []
+        },
+        {
+          "key": "familiar_route",
+          "band_values": []
+        },
+        {
+          "key": "attention_drop",
+          "band_values": []
+        },
+        {
+          "key": "traffic_jam",
+          "band_values": []
+        },
+        {
+          "key": "long_highway",
+          "band_values": []
         }
       ],
       "parameters": [],
       "hyperparameters": [
         {
-          "key": "trigger_sensitivity",
+          "key": "w_base",
           "label": {
-            "ja": "\u611f\u77e5\u611f\u5ea6",
-            "en": "Trigger Sensitivity"
+            "ja": "基本蓄積ペース (点/分)",
+            "en": "Base Accumulation Rate (pts/min)"
           },
-          "kind": "band",
-          "band_values": [
-            "low",
-            "medium",
-            "high"
-          ],
-          "default": "medium"
+          "kind": "numeric",
+          "default": 0.5,
+          "min": 0.1,
+          "max": 2.0,
+          "step": 0.05
         },
         {
-          "key": "proposal_threshold",
+          "key": "w_child",
           "label": {
-            "ja": "\u63d0\u6848\u95be\u5024",
-            "en": "Proposal Threshold"
+            "ja": "子供同乗オフセット (点)",
+            "en": "Child Passenger Offset (pts)"
           },
-          "kind": "band",
-          "band_values": [
-            "low",
-            "medium",
-            "high"
-          ],
-          "default": "medium"
+          "kind": "numeric",
+          "default": 20.0,
+          "min": 0.0,
+          "max": 50.0,
+          "step": 1.0
         },
         {
-          "key": "severe_threshold",
+          "key": "m_night",
           "label": {
-            "ja": "\u91cd\u5927\u95be\u5024",
-            "en": "Severe Threshold"
+            "ja": "夜間増幅係数",
+            "en": "Night Multiplier"
           },
-          "kind": "band",
-          "band_values": [
-            "low",
-            "medium",
-            "high"
-          ],
-          "default": "medium"
+          "kind": "numeric",
+          "default": 1.2,
+          "min": 1.0,
+          "max": 2.0,
+          "step": 0.05
         },
         {
-          "key": "persistence_requirement",
+          "key": "m_familiar",
           "label": {
-            "ja": "\u7d99\u7d9a\u8981\u4ef6",
-            "en": "Persistence Requirement"
+            "ja": "慣れた道増幅係数",
+            "en": "Familiar Route Multiplier"
           },
-          "kind": "band",
-          "band_values": [
-            "low",
-            "medium",
-            "high"
-          ],
-          "default": "medium"
+          "kind": "numeric",
+          "default": 1.2,
+          "min": 1.0,
+          "max": 2.0,
+          "step": 0.05
         },
         {
-          "key": "require_actionable",
+          "key": "w_jam",
           "label": {
-            "ja": "\u5b9f\u884c\u53ef\u80fd\u6027\u8981\u4ef6",
-            "en": "Require Actionable"
+            "ja": "渋滞追加重み (点/分)",
+            "en": "Traffic Jam Weight (pts/min)"
           },
-          "kind": "bool",
-          "default": true
+          "kind": "numeric",
+          "default": 0.8,
+          "min": 0.0,
+          "max": 3.0,
+          "step": 0.05
         },
         {
-          "key": "rest_spot_sensitivity",
+          "key": "w_highway",
           "label": {
-            "ja": "\u4f11\u61a9\u30b9\u30dd\u30c3\u30c8\u611f\u5ea6",
-            "en": "Rest Spot Sensitivity"
+            "ja": "高速追加重み (点/分)",
+            "en": "Highway Weight (pts/min)"
           },
-          "kind": "band",
-          "band_values": [
-            "low",
-            "medium",
-            "high"
-          ],
-          "default": "medium"
+          "kind": "numeric",
+          "default": 0.2,
+          "min": 0.0,
+          "max": 2.0,
+          "step": 0.05
+        },
+        {
+          "key": "w_monotonous",
+          "label": {
+            "ja": "単調道追加重み (点/分)",
+            "en": "Monotonous Road Weight (pts/min)"
+          },
+          "kind": "numeric",
+          "default": 0.3,
+          "min": 0.0,
+          "max": 2.0,
+          "step": 0.05
+        },
+        {
+          "key": "theta_sleep",
+          "label": {
+            "ja": "眠気不感帯しきい値",
+            "en": "Drowsiness Dead-zone Threshold"
+          },
+          "kind": "numeric",
+          "default": 60.0,
+          "min": 0.0,
+          "max": 100.0,
+          "step": 5.0
+        },
+        {
+          "key": "w_sleep",
+          "label": {
+            "ja": "眠気ペナルティ重み",
+            "en": "Drowsiness Penalty Weight"
+          },
+          "kind": "numeric",
+          "default": 1.5,
+          "min": 0.0,
+          "max": 5.0,
+          "step": 0.1
+        },
+        {
+          "key": "theta_fatigue",
+          "label": {
+            "ja": "疲労不感帯しきい値",
+            "en": "Fatigue Dead-zone Threshold"
+          },
+          "kind": "numeric",
+          "default": 60.0,
+          "min": 0.0,
+          "max": 100.0,
+          "step": 5.0
+        },
+        {
+          "key": "w_fatigue",
+          "label": {
+            "ja": "疲労ペナルティ重み",
+            "en": "Fatigue Penalty Weight"
+          },
+          "kind": "numeric",
+          "default": 1.5,
+          "min": 0.0,
+          "max": 5.0,
+          "step": 0.1
+        },
+        {
+          "key": "threshold_fire",
+          "label": {
+            "ja": "発火しきい値 (点)",
+            "en": "Fire Threshold (pts)"
+          },
+          "kind": "numeric",
+          "default": 80.0,
+          "min": 20.0,
+          "max": 200.0,
+          "step": 5.0
+        },
+        {
+          "key": "rest_spot_eta_filter_min",
+          "label": {
+            "ja": "休憩施設ETA上限 (分)",
+            "en": "Rest Spot ETA Filter (min)"
+          },
+          "kind": "numeric",
+          "default": 15.0,
+          "min": 1.0,
+          "max": 60.0,
+          "step": 1.0
         }
       ],
       "trigger_categories": [
@@ -147,57 +227,22 @@
           "priority": 1
         }
       ],
-      "rules": [
-        {
-          "id": "R1",
-          "name": "SEVERE_INTERVENTION",
-          "description": "Drowsiness is severe, or the damped fatigue/drowsiness blend reaches the severe cut-point.",
-          "condition": "drowsiness_level == 'severe' OR damped >= severeCut",
-          "action": "SEVERE_INTERVENTION"
-        },
-        {
-          "id": "R2",
-          "name": "NO_PRACTICAL_ACTION_FALLBACK",
-          "description": "Blend reaches the proposal cut-point but no actionable rest spot is reachable.",
-          "condition": "damped >= proposalCut AND NOT restReachable",
-          "action": "NO_PRACTICAL_ACTION_FALLBACK"
-        },
-        {
-          "id": "R3",
-          "name": "REST_PROPOSAL",
-          "description": "Blend reaches the proposal cut-point and a rest spot is reachable.",
-          "condition": "damped >= proposalCut AND restReachable",
-          "action": "REST_PROPOSAL"
-        },
-        {
-          "id": "R4",
-          "name": "SOFT_WARNING",
-          "description": "Blend reaches the reaction point but not the proposal cut-point.",
-          "condition": "damped >= reactionPoint",
-          "action": "SOFT_WARNING"
-        },
-        {
-          "id": "R5",
-          "name": "NO_TRIGGER",
-          "description": "Catch-all: blend is below the reaction point.",
-          "condition": "catch-all",
-          "action": "NO_TRIGGER"
-        }
-      ],
+      "rules": [],
       "fire_control": {
-        "threshold_source": "proposal_threshold",
+        "threshold_source": "threshold_fire",
         "actionability_guard": "rest_spot_reachable"
       },
       "proposals": [
         {
-          "id": "rest_guidance",
+          "id": "rest_required_proposal",
           "message": {
-            "ja": "\u9577\u6642\u9593\u306e\u904b\u8ee2\u304c\u7d9a\u3044\u3066\u3044\u307e\u3059\u3002\u8fd1\u304f\u306e\u4f11\u61a9\u65bd\u8a2d\u3067\u3054\u4f11\u61a9\u3092\u304a\u52e7\u3081\u3057\u307e\u3059\u3002",
-            "en": "You have been driving for a long time. We recommend resting at the nearby facility."
+            "ja": "疲労スコアが基準値を超えました。近くの休憩施設でのご休憩をお勧めします。",
+            "en": "Fatigue score has exceeded the threshold. We suggest resting at a nearby facility."
           },
           "options": [
             "accept_rest",
-            "postpone"
+            "postpone",
+            "decline"
           ]
         }
       ],
@@ -206,30 +251,26 @@
     },
     "scenario": {
       "_comment": [
-        "Scenario: UC-01 fatigue/drowsiness with staged recovery options (M7 Task 12).",
+        "Scenario: UC-01 fatigue/drowsiness with staged recovery options.",
         "",
-        "This scenario is derived from uc01_fatigue_friend_drive_v0_1 and adds a",
-        "recovery_options array so that accept_rest triggers a staged recovery sequence",
-        "instead of completing the run immediately (the pre-M7 back-compat path).",
+        "Feature 009 (signal-tier redesign): rewritten from the old",
+        "driver_profile/vehicle_profile shape to driver_signal_params +",
+        "anomaly_signal_params + run_seed_default (data-model.md §2). The vehicle",
+        "behaviour model (steering/pedal/lane/ADAS) is retired; the attention signal",
+        "is retired. Drowsiness/fatigue are deterministic Tier-3a signals;",
+        "anomaly_rate is the seeded-stochastic Tier-3b signal (the only randomness",
+        "in the simulation, seeded by run_seed).",
         "",
-        "Recovery options:",
-        "  nap_karaoke        \u2014 long rest: wakefulness (MOVING) \u2192 nap 3 ticks \u2192 karaoke 3 ticks",
-        "  convenience_stretch \u2014 short rest: wakefulness (MOVING) \u2192 stretch 2 ticks",
-        "  postpone           \u2014 postpone=true, no stages (acts as continue driving)",
+        "Recovery options (recovery_model gives each activity's fixed drowsiness/fatigue",
+        "recovery, applied once per activity — no short/long rest distinction):",
+        "  nap_karaoke        — wakefulness (MOVING) -> nap/sleep 3 ticks -> karaoke 3 ticks",
+        "  convenience_stretch — wakefulness (MOVING) -> stretch 2 ticks",
+        "  postpone           — postpone=true, no stages (acts as continue driving)",
         "",
-        "Proposal timeline (identical to friend_drive \u2014 same profile, route, presets):",
-        "  Tick ~29: declarative_rule fires REST_PROPOSAL (high fatigue + moderate drowsiness).",
-        "            rest spot at 60 km, ~30 min ahead.",
-        "  After accept_rest(nap_karaoke): wakefulness until 60 km \u2192 nap (3 ticks STOPPED) \u2192",
-        "            content (3 ticks STOPPED) \u2192 resuming \u2192 route completion.",
-        "",
-        "uc01_fatigue_friend_drive_v0_1 is left UNTOUCHED (no recovery_options) so that",
-        "existing tests that call accept_rest expecting immediate completion still pass.",
-        "",
-        "allowed_actions includes decline (M7 requirement) in addition to accept_rest/postpone."
+        "allowed_actions includes decline in addition to accept_rest/postpone."
       ],
       "id": "uc01_fatigue_recovery_v0_1",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "type": "uc01_fatigue",
       "persona": {
         "name": "Haruto Tanaka",
@@ -238,7 +279,7 @@
       "route_intent": {
         "rest_facility": {
           "label": {
-            "ja": "\u9053\u306e\u99c5 \u53cb\u597d",
+            "ja": "道の駅 友好",
             "en": "Yuuko Roadside Station"
           }
         },
@@ -246,7 +287,7 @@
           {
             "id": "seg_start",
             "name": {
-              "ja": "\u51fa\u767a\u5730\uff08\u4f4f\u5b85\u8857\uff09",
+              "ja": "出発地（住宅街）",
               "en": "Start (Residential)"
             },
             "type": "start",
@@ -258,7 +299,7 @@
           {
             "id": "seg_urban",
             "name": {
-              "ja": "\u5e02\u8857\u5730",
+              "ja": "市街地",
               "en": "Urban Zone"
             },
             "type": "urban",
@@ -270,7 +311,7 @@
           {
             "id": "seg_rest",
             "name": {
-              "ja": "\u9053\u306e\u99c5 \u53cb\u597d",
+              "ja": "道の駅 友好",
               "en": "Yuuko Roadside Station"
             },
             "type": "rest",
@@ -282,7 +323,7 @@
           {
             "id": "seg_highway",
             "name": {
-              "ja": "\u9ad8\u901f\u9053\u8def\u533a\u9593",
+              "ja": "高速道路区間",
               "en": "Highway Section"
             },
             "type": "highway",
@@ -294,7 +335,7 @@
           {
             "id": "seg_end",
             "name": {
-              "ja": "\u76ee\u7684\u5730\uff08\u53cb\u4eba\u5b85\uff09",
+              "ja": "目的地（友人宅）",
               "en": "Destination (Friend's Home)"
             },
             "type": "end",
@@ -309,7 +350,7 @@
         "drowsiness_level": 20,
         "fatigue_level": 20
       },
-      "driver_profile": {
+      "driver_signal_params": {
         "id": "friend_drive_driver_v1",
         "drowsiness_model": {
           "base_growth_per_min": 0.9,
@@ -323,48 +364,28 @@
           "mountain_road_add_per_min": 0.2,
           "traffic_jam_add_per_min": 0.05
         },
-        "attention_model": {
-          "base_recovery_per_min": 0.1,
-          "monotony_drop_per_min": 0.15,
-          "drowsiness_drop_factor": 0.3,
-          "active_content_recovery_per_min": 0.5
-        },
         "recovery_model": {
-          "short_rest_drowsiness_recovery": 20.0,
-          "short_rest_fatigue_recovery": 15.0,
-          "long_rest_drowsiness_recovery": 35.0,
-          "long_rest_fatigue_recovery": 30.0
+          "sleep": {
+            "drowsiness": 60.0,
+            "fatigue": 60.0
+          },
+          "audio_karaoke": {
+            "drowsiness": 25.0,
+            "fatigue": 25.0
+          },
+          "stretch": {
+            "drowsiness": 25.0,
+            "fatigue": 25.0
+          }
         }
       },
-      "vehicle_profile": {
-        "rolling_window_seconds": 300,
-        "steering_instability": {
-          "base_level": 5.0,
-          "drowsiness_factor": 0.25,
-          "fatigue_factor": 0.15,
-          "mountain_road_add": 8.0,
-          "traffic_jam_reduce": 4.0
-        },
-        "lane_departure": {
-          "enabled_on": [
-            "highway",
-            "normal_road"
-          ],
-          "drowsiness_threshold": 60.0,
-          "fatigue_threshold": 70.0,
-          "count_when_threshold_exceeded": 1
-        },
-        "pedal_abnormality": {
-          "base_level": 3.0,
-          "fatigue_factor": 0.12,
-          "traffic_jam_add": 10.0,
-          "mountain_road_add": 5.0
-        },
-        "adas_warning": {
-          "lane_departure_warning_threshold": 1.0,
-          "steering_instability_warning_threshold": 55.0
-        }
+      "anomaly_signal_params": {
+        "lambda_base": 0.02,
+        "lambda_gain": 0.5,
+        "theta": 60.0,
+        "window_min": 15.0
       },
+      "run_seed_default": 42,
       "speed_profile": {
         "normal_road_kph": 60,
         "highway_kph": 100,
@@ -375,6 +396,7 @@
       "is_night": false,
       "child_passenger": true,
       "familiar_route": true,
+      "weather_risk": 0,
       "presets": {
         "total_route_distance_km": 120,
         "traffic_events": [],
@@ -384,7 +406,7 @@
         "signal_duration_at_trigger": "persistent"
       },
       "total_duration_seconds": 7200,
-      "tick_seconds": 60,
+      "tick_seconds": 180,
       "allowed_actions": [
         "accept_rest",
         "postpone",
@@ -394,10 +416,9 @@
         {
           "id": "nap_karaoke",
           "label": {
-            "ja": "\u4eee\u7720\uff0b\u30ab\u30e9\u30aa\u30b1",
+            "ja": "仮眠＋カラオケ",
             "en": "Nap + Karaoke"
           },
-          "rest_type": "long",
           "stages": [
             {
               "phase": "wakefulness",
@@ -421,10 +442,9 @@
         {
           "id": "convenience_stretch",
           "label": {
-            "ja": "\u30b3\u30f3\u30d3\u30cb\u4f11\u61a9\uff0b\u30b9\u30c8\u30ec\u30c3\u30c1",
+            "ja": "コンビニ休憩＋ストレッチ",
             "en": "Convenience + Stretch"
           },
-          "rest_type": "short",
           "stages": [
             {
               "phase": "wakefulness",
@@ -442,7 +462,7 @@
         {
           "id": "postpone",
           "label": {
-            "ja": "\u5148\u5ef6\u3070\u3057",
+            "ja": "先延ばし",
             "en": "Postpone"
           },
           "postpone": true,
@@ -467,8 +487,8 @@
             "en": "Yuuko Roadside Station"
           },
           "route_fraction": 0.5,
-          "distance_km": 55.0,
-          "eta_min": 55.0,
+          "distance_km": 45.0,
+          "eta_min": 45.0,
           "reachable": true
         }
       ],
@@ -483,8 +503,8 @@
             "en": "Yuuko Roadside Station"
           },
           "route_fraction": 0.5,
-          "distance_km": 55.0,
-          "eta_min": 55.0,
+          "distance_km": 45.0,
+          "eta_min": 45.0,
           "reachable": false
         }
       ],

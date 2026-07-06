@@ -1,46 +1,44 @@
 {
   "id": "aica_transparent_hybrid_trigger_v1",
-  "version": "0.1",
+  "version": "0.2",
   "label": {
-    "ja": "透明ハイブリッド・トリガー v0.1",
-    "en": "Transparent Hybrid Trigger v0.1"
+    "ja": "透明ハイブリッド・トリガー v0.2（コンパクト9特徴量）",
+    "en": "Transparent Hybrid Trigger v0.2 (compact 9-feature)"
   },
   "compatible_scenario_types": ["uc01_fatigue"],
   "algorithm": {
     "type": "python_module",
     "entrypoint": "algorithm.py",
-    "tick_seconds": 30,
+    "tick_seconds": 180,
     "error_mode": "blocking"
   },
   "features": [
     { "key": "drowsiness", "band_values": [] },
     { "key": "fatigue", "band_values": [] },
     { "key": "driving_anomaly", "band_values": [] },
-    { "key": "future_fatigue", "band_values": [] },
+    { "key": "driving_time", "band_values": [] },
+    { "key": "env_load", "band_values": [] },
+    { "key": "monotony", "band_values": [] },
     { "key": "rest_window", "band_values": [] },
     { "key": "rest_scarcity", "band_values": [] },
-    { "key": "monotony", "band_values": [] },
-    { "key": "familiar_route", "band_values": [] },
-    { "key": "attention_drop", "band_values": [] },
-    { "key": "traffic_jam", "band_values": [] },
-    { "key": "long_highway", "band_values": [] }
+    { "key": "familiar_route", "band_values": [] }
   ],
   "parameters": [],
   "hyperparameters": [
     {
       "key": "smoothing_alpha",
       "label": { "ja": "平滑化係数 α", "en": "Smoothing Alpha" },
-      "kind": "numeric", "default": 0.35, "min": 0.05, "max": 1.0, "step": 0.05
+      "kind": "numeric", "default": 0.5, "min": 0.05, "max": 1.0, "step": 0.05
     },
     {
       "key": "w_drowsiness",
       "label": { "ja": "眠気スコア重み", "en": "Drowsiness Weight" },
-      "kind": "numeric", "default": 0.40, "min": 0.0, "max": 1.0, "step": 0.01
+      "kind": "numeric", "default": 0.30, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
       "key": "w_fatigue",
       "label": { "ja": "疲労スコア重み", "en": "Fatigue Weight" },
-      "kind": "numeric", "default": 0.25, "min": 0.0, "max": 1.0, "step": 0.01
+      "kind": "numeric", "default": 0.2, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
       "key": "w_driving_anomaly",
@@ -48,9 +46,24 @@
       "kind": "numeric", "default": 0.25, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
-      "key": "w_future_fatigue",
-      "label": { "ja": "将来疲労スコア重み", "en": "Future Fatigue Weight" },
+      "key": "w_driving_time",
+      "label": { "ja": "連続運転時間重み", "en": "Time-on-Task Weight" },
+      "kind": "numeric", "default": 0.15, "min": 0.0, "max": 1.0, "step": 0.01
+    },
+    {
+      "key": "w_env",
+      "label": { "ja": "環境負荷重み", "en": "Environment Load Weight" },
       "kind": "numeric", "default": 0.10, "min": 0.0, "max": 1.0, "step": 0.01
+    },
+    {
+      "key": "w_child_bonus",
+      "label": { "ja": "子供同乗ボーナス", "en": "Child-Passenger Rest Bonus" },
+      "kind": "numeric", "default": 0.05, "min": 0.0, "max": 1.0, "step": 0.01
+    },
+    {
+      "key": "K",
+      "label": { "ja": "異常率正規化係数 K", "en": "Anomaly-Rate Normalization K" },
+      "kind": "numeric", "default": 5, "min": 1, "max": 50, "step": 1
     },
     {
       "key": "minimum_risk_for_rest_bonus",
@@ -70,97 +83,87 @@
     {
       "key": "w_monotony",
       "label": { "ja": "単調性重み", "en": "Monotony Weight" },
+      "kind": "numeric", "default": 0.4, "min": 0.0, "max": 1.0, "step": 0.01
+    },
+    {
+      "key": "w_env_mono",
+      "label": { "ja": "単調性・環境負荷重み", "en": "Monotony Environment-Load Weight" },
       "kind": "numeric", "default": 0.30, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
-      "key": "w_familiar_route",
+      "key": "w_familiar",
       "label": { "ja": "慣れた道重み", "en": "Familiar Route Weight" },
-      "kind": "numeric", "default": 0.20, "min": 0.0, "max": 1.0, "step": 0.01
-    },
-    {
-      "key": "w_attention_drop",
-      "label": { "ja": "注意力低下重み", "en": "Attention Drop Weight" },
-      "kind": "numeric", "default": 0.25, "min": 0.0, "max": 1.0, "step": 0.01
-    },
-    {
-      "key": "w_traffic_jam",
-      "label": { "ja": "渋滞重み", "en": "Traffic Jam Weight" },
-      "kind": "numeric", "default": 0.15, "min": 0.0, "max": 1.0, "step": 0.01
-    },
-    {
-      "key": "w_long_highway",
-      "label": { "ja": "長距離高速重み", "en": "Long Highway Weight" },
-      "kind": "numeric", "default": 0.10, "min": 0.0, "max": 1.0, "step": 0.01
+      "kind": "numeric", "default": 0.2, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
       "key": "rest_watch_threshold",
       "label": { "ja": "休憩ウォッチ閾値", "en": "Rest Watch Threshold" },
-      "kind": "numeric", "default": 0.45, "min": 0.0, "max": 1.0, "step": 0.01
+      "kind": "numeric", "default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
       "key": "threshold_suggest",
       "label": { "ja": "休憩提案閾値", "en": "Rest Suggest Threshold" },
-      "kind": "numeric", "default": 0.58, "min": 0.0, "max": 1.0, "step": 0.01
+      "kind": "numeric", "default": 0.7, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
       "key": "threshold_recommend",
       "label": { "ja": "休憩推奨閾値", "en": "Rest Recommend Threshold" },
-      "kind": "numeric", "default": 0.76, "min": 0.0, "max": 1.0, "step": 0.01
+      "kind": "numeric", "default": 0.8, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
       "key": "threshold_urgent",
       "label": { "ja": "休憩緊急閾値", "en": "Rest Urgent Threshold" },
-      "kind": "numeric", "default": 0.88, "min": 0.0, "max": 1.0, "step": 0.01
+      "kind": "numeric", "default": 0.9, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
       "key": "monotony_watch_threshold",
       "label": { "ja": "単調性ウォッチ閾値", "en": "Monotony Watch Threshold" },
-      "kind": "numeric", "default": 0.40, "min": 0.0, "max": 1.0, "step": 0.01
+      "kind": "numeric", "default": 0.50, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
       "key": "monotony_suggest_threshold",
       "label": { "ja": "単調性提案閾値", "en": "Monotony Content-Suggest Threshold" },
-      "kind": "numeric", "default": 0.58, "min": 0.0, "max": 1.0, "step": 0.01
+      "kind": "numeric", "default": 0.7, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
       "key": "monotony_recommend_threshold",
       "label": { "ja": "単調性推奨閾値", "en": "Monotony Recommend Threshold" },
-      "kind": "numeric", "default": 0.72, "min": 0.0, "max": 1.0, "step": 0.01
+      "kind": "numeric", "default": 0.8, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
       "key": "monotony_urgent_threshold",
       "label": { "ja": "単調性緊急閾値", "en": "Monotony Urgent Threshold" },
-      "kind": "numeric", "default": 0.85, "min": 0.0, "max": 1.0, "step": 0.01
+      "kind": "numeric", "default": 0.9, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
       "key": "rest_persistence_ticks",
       "label": { "ja": "休憩持続ティック数", "en": "Rest Persistence Ticks" },
-      "kind": "numeric", "default": 2, "min": 1, "max": 10, "step": 1
+      "kind": "numeric", "default": 6, "min": 1, "max": 10, "step": 1
     },
     {
       "key": "monotony_persistence_ticks",
       "label": { "ja": "単調性持続ティック数", "en": "Monotony Persistence Ticks" },
-      "kind": "numeric", "default": 3, "min": 1, "max": 10, "step": 1
+      "kind": "numeric", "default": 6, "min": 1, "max": 10, "step": 1
     },
     {
       "key": "skip_if_score",
       "label": { "ja": "持続スキップ・スコア閾値", "en": "Skip-If Score Threshold" },
-      "kind": "numeric", "default": 0.88, "min": 0.0, "max": 1.0, "step": 0.01
+      "kind": "numeric", "default": 0.9, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
       "key": "skip_if_velocity",
       "label": { "ja": "持続スキップ・速度閾値", "en": "Skip-If Velocity Threshold" },
-      "kind": "numeric", "default": 0.08, "min": 0.0, "max": 1.0, "step": 0.01
+      "kind": "numeric", "default": 0.2, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
       "key": "emergency_override_threshold",
       "label": { "ja": "緊急オーバーライド閾値", "en": "Emergency Override Threshold" },
-      "kind": "numeric", "default": 0.88, "min": 0.0, "max": 1.0, "step": 0.01
+      "kind": "numeric", "default": 0.9, "min": 0.0, "max": 1.0, "step": 0.01
     },
     {
       "key": "rest_cooldown_sec",
       "label": { "ja": "休憩クールダウン秒", "en": "Rest Cooldown (sec)" },
-      "kind": "numeric", "default": 600.0, "min": 0.0, "max": 3600.0, "step": 30.0
+      "kind": "numeric", "default": 900.0, "min": 0.0, "max": 3600.0, "step": 30.0
     },
     {
       "key": "monotony_cooldown_sec",

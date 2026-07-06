@@ -1,6 +1,6 @@
 /**
  * nri_fatigue_score_v1 — TS port of the `python_module` package
- * `packages/nri_fatigue_score_v1/algorithm.py` (behavior-of-record, 420 LoC).
+ * `packages/nri_fatigue_score_v1/algorithm.py` (behavior-of-record).
  *
  * This is a TRUSTED builtin (bundled into the single-file offline app), NOT
  * the sandboxed-worker `js_module` path — see `../../../engine/algorithms/js_module.ts`
@@ -18,10 +18,17 @@
  * `evaluate()` here is therefore the pure, deterministic, synchronous port
  * of algorithm.py's `evaluate(context: dict) -> dict` ONLY — it assumes the
  * input already has the shape `python_module.dispatch()` builds as
- * `py_context` (simulation_time_sec, raw_state, feature_groups, parameters,
- * hyperparameters, proposal_history, user_action_history,
- * package_runtime_state). It performs NO context validation itself (neither
- * does algorithm.py — python_module.dispatch validates BEFORE calling it).
+ * `py_context`. Feature 009 (signal-tier redesign) reads from the TIERED
+ * `context["signals"]` contract (`specs/009-signal-tier-redesign/contracts/
+ * tiered-context.md`) instead of a flat `raw_state`:
+ *   - Tier 1 (fixed, scenario constants): `isNight`, `familiarRoute`, `childPassenger`.
+ *   - Tier 2 (dynamic): `isTrafficJam`, `segmentType`, `motionState`,
+ *     `nextRestSpotMin`, `recoveryPhase`.
+ *   - Tier 3a (simulated, latent): `drowsiness`, `fatigue` — feed `S_realtime`
+ *     as RAW 0-100 values (NOT divided by 100 — that's the Hybrid package's
+ *     convention, not NRI's).
+ * It performs NO context validation itself (neither does algorithm.py —
+ * python_module.dispatch validates BEFORE calling it).
  *
  * Implements the NRI proposal (20260630) cumulative fatigue accumulation
  * score:
@@ -34,24 +41,34 @@
  *   S_realtime = max(0, V_sleep - theta_sleep) * W_sleep
  *              + max(0, V_fatigue - theta_fatigue) * W_fatigue
  *
- * Fire condition: S_total >= threshold_fire (subject to persistence-ticks,
- * cooldown, 30-min rate limit, and rest-spot-ETA post-fire filter — or an
- * emergency_override_threshold bypass).
+ * Fire condition (design-aligned — a SINGLE threshold): fire ⇔
+ * S_total >= threshold_fire, then a post-fire filter (next rest spot ETA
+ * <= rest_spot_eta_filter_min, or no spot ahead). Recovery suppresses firing
+ * unconditionally. There is NO suggest/recommend/urgent ladder, persistence
+ * gate, cooldown, 30-min cap, or emergency override — those were Hybrid
+ * carry-overs removed to match the NRI spec.
  *
  * State carried across ticks (via package_runtime_state — see
  * `NriRuntimeState`):
  *   - cumulative_jam_min / cumulative_highway_min / cumulative_monotonous_min
  *   - driving_min_since_rest
- *   - persistence_counter
- *   - last_score / last_sim_time
+ *   - last_sim_time
  *   - was_in_recovery (drives the accumulator reset on recovery completion)
+ *
+ * Every hyperparameter is read via a STRICT `hp[key]` lookup — NO
+ * `hp.get(key, <hardcoded default>)` fallback, mirroring algorithm.py's
+ * direct `hp["key"]` dict indexing exactly: `context["hyperparameters"]` is
+ * guaranteed fully resolved (manifest defaults ⊕ overrides, every declared
+ * key present) by the adapter (FR-009); a missing key here is a real
+ * configuration bug and MUST surface as an error -> algorithm_error, never a
+ * silently-wrong default.
  *
  * Every threshold/coefficient/ordering below is preserved EXACTLY from
  * algorithm.py — this is the parity boundary (see
  * `../../../engine/__fixtures__/parity/nri_fatigue_score_v1.json`, captured
- * from a full run of the real Python package via the app/api venv, and
- * `tests/nri_port.test.ts`, which replays it threading the evolving
- * `next_package_runtime_state` exactly as `run_manager.tick` does).
+ * from a full run of the real Python package, and `tests/nri_port.test.ts`,
+ * which replays it threading the evolving `next_package_runtime_state`
+ * exactly as `run_manager.tick` does).
  *
  * Only the exported function identifier (`evaluate`) and local helper names
  * are camelCased; every DecisionResult key, ordinal/state/reason STRING
@@ -67,22 +84,21 @@ import type { PackageManifest } from '../../../api/types'
 export const manifest = nriManifestJson as unknown as PackageManifest
 
 // ---------------------------------------------------------------------------
-// Input shape — mirrors python_module.dispatch()'s `py_context` dict, which
-// is exactly what algorithm.py's `evaluate(context)` receives. NOT the same
-// shape as `../../../engine/algorithms/js_module.ts`'s `EvaluateInput`
-// (that one nests a separate `context`/`history` for the untrusted worker
-// contract) — nri's shape below is the trusted python_module contract.
+// Input shape — mirrors python_module.dispatch()'s tiered `py_context` dict
+// (feature 009), which is exactly what algorithm.py's `evaluate(context)`
+// receives. Same shape as `../index.ts`'s `BuiltinPyContext`.
 // ---------------------------------------------------------------------------
 
 export type NriEvaluateInput = {
   simulation_time_sec: number
-  raw_state: Record<string, unknown>
+  signals: Record<string, unknown>
   feature_groups: Record<string, unknown>
   parameters: Record<string, unknown>
   hyperparameters: Record<string, unknown>
   proposal_history: Record<string, unknown>
   user_action_history: unknown[]
   package_runtime_state: Record<string, unknown>
+  recovery_active?: boolean
 }
 
 /** The stateful accumulator carried in package_runtime_state across ticks. */
@@ -91,8 +107,6 @@ export type NriRuntimeState = {
   cumulative_highway_min: number
   cumulative_monotonous_min: number
   driving_min_since_rest: number
-  persistence_counter: number
-  last_score: number
   last_sim_time: number
   was_in_recovery: boolean
 }
@@ -100,7 +114,7 @@ export type NriRuntimeState = {
 export type EvaluateOutput = DecisionResult
 
 // ---------------------------------------------------------------------------
-// Small helpers — dict.get()-with-default semantics + numeric coercion.
+// Small helpers — dict.get()-with-default semantics + strict hp indexing.
 // ---------------------------------------------------------------------------
 
 /** Mirrors Python's `dict.get(key, default)`: only the ABSENT key falls back. */
@@ -109,14 +123,17 @@ function dget(obj: Record<string, unknown> | undefined | null, key: string, dflt
   return dflt
 }
 
-function numHp(hp: Record<string, unknown>, key: string, dflt: number): number {
-  const v = dget(hp, key, dflt)
-  const n = Number(v)
-  return Number.isNaN(n) ? dflt : n
-}
-
-function intHp(hp: Record<string, unknown>, key: string, dflt: number): number {
-  return Math.trunc(numHp(hp, key, dflt))
+/**
+ * Mirrors Python's direct `hp["key"]` indexing (no `.get` default): raises
+ * if the key is absent, since a missing declared hyperparameter is a real
+ * configuration bug that must surface as `algorithm_error`, never silently
+ * fall back to a hardcoded default.
+ */
+function reqNum(hp: Record<string, unknown>, key: string): number {
+  if (!hp || !Object.prototype.hasOwnProperty.call(hp, key)) {
+    throw new Error(`nri_fatigue_score_v1: missing required hyperparameter '${key}'`)
+  }
+  return Number(hp[key])
 }
 
 // ---------------------------------------------------------------------------
@@ -130,10 +147,10 @@ function computeBaseScore(
   familiarRoute: boolean,
   hp: Record<string, unknown>,
 ): number {
-  const wBase = numHp(hp, 'w_base', 0.5)
-  const wChild = numHp(hp, 'w_child', 20.0)
-  const mNight = isNight ? numHp(hp, 'm_night', 1.2) : 1.0
-  const mFamiliar = familiarRoute ? numHp(hp, 'm_familiar', 1.2) : 1.0
+  const wBase = reqNum(hp, 'w_base')
+  const wChild = reqNum(hp, 'w_child')
+  const mNight = isNight ? reqNum(hp, 'm_night') : 1.0
+  const mFamiliar = familiarRoute ? reqNum(hp, 'm_familiar') : 1.0
 
   const childOffset = childPassenger ? wChild : 0.0
   const timeDamage = continuousDrivingMin * wBase * mNight * mFamiliar
@@ -147,9 +164,9 @@ function computeEnvScore(
   cumulativeMonotonousMin: number,
   hp: Record<string, unknown>,
 ): number {
-  const wJam = numHp(hp, 'w_jam', 0.8)
-  const wHighway = numHp(hp, 'w_highway', 0.2)
-  const wMonotonous = numHp(hp, 'w_monotonous', 0.3)
+  const wJam = reqNum(hp, 'w_jam')
+  const wHighway = reqNum(hp, 'w_highway')
+  const wMonotonous = reqNum(hp, 'w_monotonous')
 
   return (
     cumulativeJamMin * wJam
@@ -163,10 +180,10 @@ function computeRealtimeScore(
   fatigueLevel: number,
   hp: Record<string, unknown>,
 ): number {
-  const thetaSleep = numHp(hp, 'theta_sleep', 60.0)
-  const wSleep = numHp(hp, 'w_sleep', 1.5)
-  const thetaFatigue = numHp(hp, 'theta_fatigue', 60.0)
-  const wFatigue = numHp(hp, 'w_fatigue', 1.5)
+  const thetaSleep = reqNum(hp, 'theta_sleep')
+  const wSleep = reqNum(hp, 'w_sleep')
+  const thetaFatigue = reqNum(hp, 'theta_fatigue')
+  const wFatigue = reqNum(hp, 'w_fatigue')
 
   const sleepPenalty = Math.max(0.0, drowsinessLevel - thetaSleep) * wSleep
   const fatiguePenalty = Math.max(0.0, fatigueLevel - thetaFatigue) * wFatigue
@@ -175,29 +192,14 @@ function computeRealtimeScore(
 }
 
 // ---------------------------------------------------------------------------
-// Strength mapping
+// State label — a single fire threshold (design-aligned; no suggest/recommend/
+// urgent ladder). REST_RECOVERY while resting, REST_FIRE at/above
+// threshold_fire, else REST_NORMAL.
 // ---------------------------------------------------------------------------
 
-function strengthOf(score: number, suggest: number, recommend: number, urgent: number): string | null {
-  if (score >= urgent) return 'strong'
-  if (score >= recommend) return 'clear'
-  if (score >= suggest) return 'gentle'
-  return null
-}
-
-// ---------------------------------------------------------------------------
-// State label
-// ---------------------------------------------------------------------------
-
-function stateLabel(score: number, recovered: boolean, hp: Record<string, unknown>): string {
+function stateLabel(score: number, recovered: boolean, thresholdFire: number): string {
   if (recovered) return 'REST_RECOVERY'
-  const suggest = numHp(hp, 'threshold_suggest', 60.0)
-  const recommend = numHp(hp, 'threshold_recommend', 80.0)
-  const urgent = numHp(hp, 'threshold_urgent', 100.0)
-  if (score >= urgent) return 'REST_URGENT'
-  if (score >= recommend) return 'REST_RECOMMEND'
-  if (score >= suggest) return 'REST_SUGGEST'
-  if (score >= suggest * 0.7) return 'REST_WATCH'
+  if (score >= thresholdFire) return 'REST_FIRE'
   return 'REST_NORMAL'
 }
 
@@ -242,40 +244,38 @@ function buildProposal(strengthLabel: string): Proposal {
  */
 export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   const hp = input.hyperparameters ?? {}
-  const params = input.parameters ?? {}
-  const raw = input.raw_state ?? {}
+  const signals = (input.signals ?? {}) as Record<string, unknown>
+  const fixed = (signals['fixed'] ?? {}) as Record<string, unknown>
+  const dynamic = (signals['dynamic'] ?? {}) as Record<string, unknown>
+  const simulated = (signals['simulated'] ?? {}) as Record<string, unknown>
   const featureGroups = (input.feature_groups ?? {}) as Record<string, unknown>
   const ordinal = (featureGroups['ordinal'] ?? {}) as Record<string, unknown>
   const prevState = (input.package_runtime_state ?? {}) as Record<string, unknown>
-  const proposalHistory = input.proposal_history ?? {}
   const simTime = Number(input.simulation_time_sec ?? 0.0)
 
-  // ── Extract parameters (setup-time, with raw_state fallback) ────────────
-  const childPassenger = Boolean(dget(params, 'child_passenger', dget(raw, 'childPassenger', false)))
-  const familiarRoute = Boolean(dget(params, 'familiar_route', dget(raw, 'familiarRoute', false)))
+  // ── Extract Tier-1 fixed signals (scenario constants) ───────────────────
+  const childPassenger = Boolean(dget(fixed, 'childPassenger', false))
+  const familiarRoute = Boolean(dget(fixed, 'familiarRoute', false))
+  const isNight = Boolean(dget(fixed, 'isNight', false))
 
-  // ── Extract raw_state values ──────────────────────────────────────────
-  const isNight = Boolean(dget(raw, 'isNight', false))
-  const isTrafficJam = Boolean(dget(raw, 'isTrafficJam', false))
-  const segmentType = String(dget(raw, 'segmentType', 'normal_road'))
-  const drowsinessLevel = Number(dget(raw, 'drowsinessLevel', 0.0))
-  const fatigueLevel = Number(dget(raw, 'fatigueLevel', 0.0))
-  const nextRestMin = Number(dget(raw, 'nextRestSpotMin', 9999.0))
-  const motionState = String(dget(raw, 'motionState', 'MOVING'))
+  // ── Extract Tier-2 dynamic signals ───────────────────────────────────────
+  const isTrafficJam = Boolean(dget(dynamic, 'isTrafficJam', false))
+  const segmentType = String(dget(dynamic, 'segmentType', 'normal_road'))
+  const nextRestMin = Number(dget(dynamic, 'nextRestSpotMin', 9999.0))
+  const motionState = String(dget(dynamic, 'motionState', 'MOVING'))
 
-  // ── Hyperparameters ──────────────────────────────────────────────────
-  const thresholdFire = numHp(hp, 'threshold_fire', 80.0)
-  const thresholdSuggest = numHp(hp, 'threshold_suggest', 60.0)
-  const thresholdRecommend = numHp(hp, 'threshold_recommend', 80.0)
-  const thresholdUrgent = numHp(hp, 'threshold_urgent', 100.0)
-  const restEtaFilter = numHp(hp, 'rest_spot_eta_filter_min', 15.0)
-  const restCooldown = numHp(hp, 'rest_cooldown_sec', 600.0)
-  const maxPer30min = intHp(hp, 'max_proposals_per_30min', 3)
-  const emergencyThreshold = numHp(hp, 'emergency_override_threshold', 100.0)
-  const persistenceRequired = intHp(hp, 'persistence_ticks', 2)
+  // ── Extract Tier-3a simulated signals (now live — feed S_realtime) ──────
+  const drowsinessLevel = Number(dget(simulated, 'drowsiness', 0.0))
+  const fatigueLevel = Number(dget(simulated, 'fatigue', 0.0))
 
-  // ── Recovery detection (early — needed before accumulation) ────────────
-  const recoveryPhase = dget(raw, 'recoveryPhase', null)
+  // ── Hyperparameters — a single fire threshold + post-fire ETA filter ────
+  const thresholdFire = reqNum(hp, 'threshold_fire')
+  const restEtaFilter = reqNum(hp, 'rest_spot_eta_filter_min')
+
+  // ── Recovery detection (early — needed before accumulation) ─────────────
+  // Detect recovery from dynamic.recoveryPhase (set by tick engine when a
+  // recovery sequence is active). No framework-level flag needed.
+  const recoveryPhase = dget(dynamic, 'recoveryPhase', null)
   const recoveryActive = recoveryPhase !== null && recoveryPhase !== undefined
   const wasInRecovery = Boolean(dget(prevState, 'was_in_recovery', false))
 
@@ -287,30 +287,26 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   // lastProposalResult which gets overwritten if a new proposal fires).
   const recovered = recoveryActive
 
-  // ── Retrieve cumulative state from previous tick ────────────────────────
+  // ── Retrieve cumulative state from previous tick ─────────────────────────
   let prevJamMin = Number(dget(prevState, 'cumulative_jam_min', 0.0))
   let prevHighwayMin = Number(dget(prevState, 'cumulative_highway_min', 0.0))
   let prevMonoMin = Number(dget(prevState, 'cumulative_monotonous_min', 0.0))
   let prevDrivingMin = Number(dget(prevState, 'driving_min_since_rest', 0.0))
-  let prevCounter = Math.trunc(Number(dget(prevState, 'persistence_counter', 0)))
-  let prevScore = Number(dget(prevState, 'last_score', 0.0))
 
-  // ── Reset accumulators after recovery completes ─────────────────────────
+  // ── Reset accumulators after recovery completes ──────────────────────────
   if (recoveryJustCompleted) {
     prevJamMin = 0.0
     prevHighwayMin = 0.0
     prevMonoMin = 0.0
     prevDrivingMin = 0.0
-    prevCounter = 0
-    prevScore = 0.0
   }
 
-  // ── Determine tick duration from simulation time ────────────────────────
+  // ── Determine tick duration from simulation time ─────────────────────────
   const prevSimTime = Number(dget(prevState, 'last_sim_time', 0.0))
   let tickDurationMin = prevSimTime > 0 ? (simTime - prevSimTime) / 60.0 : 1.0
   if (tickDurationMin <= 0) tickDurationMin = 1.0
 
-  // ── Only accumulate time when MOVING (not during rest stops) ────────────
+  // ── Only accumulate time when MOVING (not during rest stops) ─────────────
   const isMoving = motionState === 'MOVING'
 
   const cumulativeJamMin = prevJamMin + (isTrafficJam && isMoving ? tickDurationMin : 0.0)
@@ -319,75 +315,45 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   const cumulativeMonotonousMin = prevMonoMin + (isMonotonous && isMoving ? tickDurationMin : 0.0)
   const drivingMinSinceRest = prevDrivingMin + (isMoving ? tickDurationMin : 0.0)
 
-  // ── Compute scores ──────────────────────────────────────────────────────
+  // ── Compute scores ────────────────────────────────────────────────────────
   const sBase = computeBaseScore(drivingMinSinceRest, childPassenger, isNight, familiarRoute, hp)
   const sEnv = computeEnvScore(cumulativeJamMin, cumulativeHighwayMin, cumulativeMonotonousMin, hp)
   const sRealtime = computeRealtimeScore(drowsinessLevel, fatigueLevel, hp)
   const sTotal = sBase + sEnv + sRealtime
 
-  // ── Velocity ────────────────────────────────────────────────────────────
-  const velocity = sTotal - prevScore
+  // ── State label ───────────────────────────────────────────────────────────
+  const label = stateLabel(sTotal, recovered, thresholdFire)
 
-  // ── State label ─────────────────────────────────────────────────────────
-  const label = stateLabel(sTotal, recovered, hp)
+  // ── Fire-control — a SINGLE fire threshold, then the post-fire ETA filter.
+  // Order: recovery suppression (never propose while resting) -> below fire
+  // threshold (no candidate) -> ETA filter -> fire. No persistence gate,
+  // cooldown, 30-min cap, or emergency override (design: fire ⇔
+  // S_total >= threshold_fire).
+  const exists = sTotal >= thresholdFire
+  // Manifested-risk (drowsiness/fatigue past their theta dead-band) -> a
+  // stronger message; otherwise the accumulated-fatigue message. Uses only
+  // the existing theta thresholds — no extra fire-control hyperparameter.
+  const strengthLabel: string | null = exists ? (sRealtime > 0.0 ? 'strong' : 'clear') : null
 
-  // ── Candidate evaluation ────────────────────────────────────────────────
-  const exists = sTotal >= thresholdSuggest
-  const strengthLabel = strengthOf(sTotal, thresholdSuggest, thresholdRecommend, thresholdUrgent)
-  const newCounter = sTotal >= thresholdFire ? prevCounter + 1 : 0
-
-  // Fire-control logic
   let fired = false
   let suppressed = false
-  let override = false
-  let reason = 'below_fire_threshold'
+  const override = false
+  let reason: string
 
-  if (!exists) {
-    reason = 'below_suggest_threshold'
-  } else if (recovered) {
+  if (recovered) {
     suppressed = true
     reason = 'recovery_after_accept'
-  } else if (sTotal < thresholdFire) {
+  } else if (!exists) {
     reason = 'below_fire_threshold'
-  } else if (newCounter < persistenceRequired && sTotal < emergencyThreshold) {
-    suppressed = true
-    reason = 'persistence_gate'
-  } else if (sTotal >= emergencyThreshold) {
+  } else if (nextRestMin <= restEtaFilter || nextRestMin >= 9999.0) {
     fired = true
-    override = true
-    reason = 'emergency_override'
+    reason = 'fire_threshold_passed'
   } else {
-    // Check cooldown
-    const lastTimeRaw = dget(proposalHistory, 'lastProposalTimeSec', null)
-    const lastPropCat = dget(proposalHistory, 'lastProposalCategory', null)
-    const hasLastTime = lastTimeRaw !== null && lastTimeRaw !== undefined
-    if (
-      hasLastTime
-      && lastPropCat === 'rest_required'
-      && (simTime - Number(lastTimeRaw)) < restCooldown
-    ) {
-      suppressed = true
-      reason = 'cooldown_active'
-    } else {
-      // Check 30-min rate limit
-      const count30 = Math.trunc(Number(dget(proposalHistory, 'proposalCountLast30Min', 0)))
-      if (count30 >= maxPer30min) {
-        suppressed = true
-        reason = 'rate_limit_30min'
-      } else {
-        // Post-fire filter: rest spot ETA
-        if (nextRestMin <= restEtaFilter || nextRestMin >= 9999.0) {
-          fired = true
-          reason = 'threshold_passed_persisted'
-        } else {
-          suppressed = true
-          reason = 'rest_spot_too_far'
-        }
-      }
-    }
+    suppressed = true
+    reason = 'rest_spot_too_far'
   }
 
-  // ── Build candidate ──────────────────────────────────────────────────────
+  // ── Build candidate ────────────────────────────────────────────────────────
   const candidateFireControl: FireControl = { fired, suppressed, override, reason }
   const candidate: Candidate = {
     category: 'rest_required',
@@ -399,13 +365,13 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
   }
   const candidates: Candidate[] = [candidate]
 
-  // ── Result type ────────────────────────────────────────────────────────
+  // ── Result type ─────────────────────────────────────────────────────────
   const resultType = fired ? 'REST_PROPOSAL' : suppressed ? 'SUPPRESSED' : 'NO_PROPOSAL'
 
-  // ── Overall fire_control ──────────────────────────────────────────────
+  // ── Overall fire_control ──────────────────────────────────────────────────
   const overallFireControl: FireControl = { fired, suppressed, override, reason }
 
-  // ── Proposal + explanation ─────────────────────────────────────────────
+  // ── Proposal + explanation ─────────────────────────────────────────────────
   const proposal = fired && strengthLabel ? buildProposal(strengthLabel) : null
 
   const reasonInputs = [
@@ -428,14 +394,12 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
     },
   ]
 
-  // ── Next runtime state ──────────────────────────────────────────────────
+  // ── Next runtime state ─────────────────────────────────────────────────────
   const nextRuntimeState: NriRuntimeState = {
     cumulative_jam_min: cumulativeJamMin,
     cumulative_highway_min: cumulativeHighwayMin,
     cumulative_monotonous_min: cumulativeMonotonousMin,
     driving_min_since_rest: drivingMinSinceRest,
-    persistence_counter: newCounter,
-    last_score: sTotal,
     last_sim_time: simTime,
     was_in_recovery: recoveryActive,
   }
@@ -446,9 +410,16 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
     featuresOrdinal[k] = String(v)
   }
 
-  // ── Normalized score (0-1 range for UI compatibility) ──────────────────
-  const maxDisplay = Math.max(thresholdUrgent * 1.5, 150.0)
+  // ── Normalized score (0-1 range for UI compatibility) ───────────────────
+  const maxDisplay = Math.max(thresholdFire * 1.5, 150.0)
   const normalizedScore = maxDisplay > 0 ? Math.min(1.0, sTotal / maxDisplay) : 0.0
+  // The §11 `score`/`rest_required_score` is NORMALIZED to 0-1; the timeline
+  // plots that curve and its threshold line on the same axis. `threshold_fire`
+  // is on the RAW s_total scale (e.g. 80), so we also expose it normalized by
+  // the same divisor — otherwise the UI's y-domain stretches to ~80 and the
+  // 0-1 curve collapses to a flat line at the bottom (mirrors the hybrid's
+  // already-0-1 `threshold_suggest`).
+  const normalizedThreshold = maxDisplay > 0 ? Math.min(1.0, thresholdFire / maxDisplay) : 0.0
 
   return {
     result_type: resultType,
@@ -461,7 +432,6 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
       s_base: sBase,
       s_env: sEnv,
       s_realtime: sRealtime,
-      velocity,
       rest_required_score: normalizedScore,
     },
     states: {
@@ -469,11 +439,10 @@ export function evaluate(input: NriEvaluateInput): EvaluateOutput {
     },
     criteria: {
       threshold_fire: thresholdFire,
-      threshold_suggest: thresholdSuggest,
-      threshold_recommend: thresholdRecommend,
-      threshold_urgent: thresholdUrgent,
+      // threshold on the SAME 0-1 scale as rest_required_score (for the
+      // timeline threshold line); threshold_fire above stays raw (s_total scale).
+      rest_required_threshold: normalizedThreshold,
       rest_spot_eta_filter_min: restEtaFilter,
-      persistence_ticks: persistenceRequired,
     },
     candidates,
     fire_control: overallFireControl,

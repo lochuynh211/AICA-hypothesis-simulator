@@ -9,7 +9,7 @@
   "algorithm": {
     "type": "python_module",
     "entrypoint": "algorithm.py",
-    "tick_seconds": 60,
+    "tick_seconds": 180,
     "error_mode": "blocking"
   },
   "features": [
@@ -25,20 +25,7 @@
     { "key": "traffic_jam", "band_values": [] },
     { "key": "long_highway", "band_values": [] }
   ],
-  "parameters": [
-    {
-      "key": "child_passenger",
-      "label": { "ja": "子供同乗", "en": "Child Passenger" },
-      "kind": "bool",
-      "default": false
-    },
-    {
-      "key": "familiar_route",
-      "label": { "ja": "慣れた道", "en": "Familiar Route" },
-      "kind": "bool",
-      "default": false
-    }
-  ],
+  "parameters": [],
   "hyperparameters": [
     {
       "key": "w_base",
@@ -101,44 +88,9 @@
       "kind": "numeric", "default": 80.0, "min": 20.0, "max": 200.0, "step": 5.0
     },
     {
-      "key": "threshold_suggest",
-      "label": { "ja": "休憩提案閾値 (点)", "en": "Suggest Threshold (pts)" },
-      "kind": "numeric", "default": 60.0, "min": 10.0, "max": 150.0, "step": 5.0
-    },
-    {
-      "key": "threshold_recommend",
-      "label": { "ja": "休憩推奨閾値 (点)", "en": "Recommend Threshold (pts)" },
-      "kind": "numeric", "default": 80.0, "min": 20.0, "max": 180.0, "step": 5.0
-    },
-    {
-      "key": "threshold_urgent",
-      "label": { "ja": "休憩緊急閾値 (点)", "en": "Urgent Threshold (pts)" },
-      "kind": "numeric", "default": 100.0, "min": 40.0, "max": 200.0, "step": 5.0
-    },
-    {
       "key": "rest_spot_eta_filter_min",
       "label": { "ja": "休憩施設ETA上限 (分)", "en": "Rest Spot ETA Filter (min)" },
       "kind": "numeric", "default": 15.0, "min": 1.0, "max": 60.0, "step": 1.0
-    },
-    {
-      "key": "rest_cooldown_sec",
-      "label": { "ja": "休憩クールダウン秒", "en": "Rest Cooldown (sec)" },
-      "kind": "numeric", "default": 600.0, "min": 0.0, "max": 3600.0, "step": 30.0
-    },
-    {
-      "key": "max_proposals_per_30min",
-      "label": { "ja": "30分あたり最大提案数", "en": "Max Proposals per 30 min" },
-      "kind": "numeric", "default": 3, "min": 1, "max": 10, "step": 1
-    },
-    {
-      "key": "emergency_override_threshold",
-      "label": { "ja": "緊急オーバーライド閾値 (点)", "en": "Emergency Override Threshold (pts)" },
-      "kind": "numeric", "default": 100.0, "min": 40.0, "max": 200.0, "step": 5.0
-    },
-    {
-      "key": "persistence_ticks",
-      "label": { "ja": "持続ティック数", "en": "Persistence Ticks" },
-      "kind": "numeric", "default": 2, "min": 1, "max": 10, "step": 1
     }
   ],
   "trigger_categories": [

@@ -67,11 +67,13 @@ export type EventPlan = {
   traffic_events: TrafficEvent[]
   weather_events: WeatherEvent[]
   rest_opportunities: RestOpportunity[]
+  // Feature 009 — frozen run seed for the anomaly generator (Principle III).
+  run_seed: number
 }
 
 /** Pydantic EventPlan() field defaults — used for error-path drafts in run_plan.ts. */
 export function defaultEventPlan(): EventPlan {
-  return { ticks: [], tick_seconds: 60, traffic_events: [], weather_events: [], rest_opportunities: [] }
+  return { ticks: [], tick_seconds: 60, traffic_events: [], weather_events: [], rest_opportunities: [], run_seed: 42 }
 }
 
 /**
@@ -205,7 +207,7 @@ export function freezeEventPlan(scenario: ScenarioDefM2, _seed?: number): EventP
   // Python: EventPlan(ticks=ticks) — every other field takes its declared
   // model default (tick_seconds=60, empty event lists), regardless of the
   // scenario's own tick_seconds. Reproduced verbatim, not "fixed".
-  return { ticks, tick_seconds: 60, traffic_events: [], weather_events: [], rest_opportunities: [] }
+  return { ticks, tick_seconds: 60, traffic_events: [], weather_events: [], rest_opportunities: [], run_seed: 42 }
 }
 
 /**
@@ -221,6 +223,7 @@ export function buildEventPlan(
   routeFacts: RouteFacts,
   scenario: ScenarioDefM2,
   presets?: Record<string, unknown> | null,
+  runSeed?: number | null,
 ): EventPlan {
   const mergedPresets: Record<string, unknown> = { ...(scenario.presets ?? {}) }
   if (presets) {
@@ -240,12 +243,17 @@ export function buildEventPlan(
     route_position_km: posKm,
   }))
 
+  const frozenRunSeed = runSeed != null
+    ? runSeed
+    : (((scenario as unknown as Record<string, unknown>)['run_seed_default'] as number | undefined) ?? 42)
+
   return {
     ticks: [],
     tick_seconds: tickSeconds,
     traffic_events: trafficEvents,
     weather_events: weatherEvents,
     rest_opportunities: restOpportunities,
+    run_seed: frozenRunSeed,
   }
 }
 

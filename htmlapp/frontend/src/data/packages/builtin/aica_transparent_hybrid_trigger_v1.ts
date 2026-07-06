@@ -1,10 +1,11 @@
 /**
  * aica_transparent_hybrid_trigger_v1 — TS port of the `python_module` package
  * `packages/aica_transparent_hybrid_trigger_v1/algorithm.py` (behavior-of-record,
- * 717 LoC). The headline M3 deliverable: a faithful, STATEFUL transparent hybrid
- * trigger whose full decision basis is reviewable and whose runtime state
- * (smoothed features, smoothed category scores, persistence counters, and
- * state-machine labels) evolves tick-to-tick.
+ * 807 LoC, feature-009 signal-tier redesign). The headline M3/009 deliverable:
+ * a faithful, STATEFUL transparent hybrid trigger whose full decision basis is
+ * reviewable and whose runtime state (smoothed features, smoothed category
+ * scores, persistence counters, state-machine labels, and env/monotony/
+ * driving-time accumulators) evolves tick-to-tick.
  *
  * This is a TRUSTED builtin (bundled into the single-file offline app), NOT
  * the sandboxed-worker `js_module` path — see `../../../engine/algorithms/js_module.ts`
@@ -22,44 +23,56 @@
  *
  * `evaluate()` here is therefore the pure, deterministic, synchronous port
  * of algorithm.py's `evaluate(context: dict) -> dict` ONLY — it assumes the
- * input already has the shape `python_module.dispatch()` builds as
- * `py_context` (simulation_time_sec, raw_state, feature_groups, parameters,
- * hyperparameters, proposal_history, user_action_history,
- * package_runtime_state). It performs NO context validation itself (neither
- * does algorithm.py — python_module.dispatch validates BEFORE calling it).
+ * input already has the feature-009 tiered `py_context` shape (
+ * `simulation_time_sec`, `signals` ({fixed, dynamic, simulated}),
+ * `feature_groups`, `parameters`, `hyperparameters`, `proposal_history`,
+ * `user_action_history`, `package_runtime_state`, `recovery_active`). It
+ * performs NO context validation itself (neither does algorithm.py —
+ * python_module.dispatch validates BEFORE calling it).
  *
- * IMPORTANT parity note (verified against both `app/api/aica_api/algorithms/
- * python_module.py`'s `dispatch()` — which builds `py_context` from a FIXED
- * key list that does NOT include `context['recovery_active']` — and this
- * repo's `adapter.ts`'s `dispatchBuiltinJsModule()`, which documents the same
- * drop): `context.get("recovery_active", False)` in algorithm.py ALWAYS sees
- * `False` in production (run_manager.py sets `context["recovery_active"]`,
- * but `python_module.dispatch()` never forwards it into `py_context`). This
- * TS port reproduces that exactly by reading an always-absent field off
- * `input` (see `recoveryActive` below) — a faithful port of a real, existing
- * quirk of the behavior-of-record, not a bug introduced here.
- *
- * Pipeline (per tick, from `context` — see specs/.../contracts/transparent-hybrid.md):
- *   1. Feature extraction from raw_state (+ feature_groups.normalized); clamp 0-1;
- *      optional/absent inputs -> 0. Same formulas as the built-in weighted_score.
- *   2. Smoothing: smoothed_f[t] = alpha*f[t] + (1-alpha)*smoothed_f[t-1] (alpha=0.35),
- *      prev from package_runtime_state.smoothed_features (empty on tick 0 -> prev 0).
- *   3. Category scores from the SMOOTHED features (base_safety_risk; rest_required_score =
- *      base + gated bonus iff base >= 0.45; monotony_prevention_score) — same weights as
- *      weighted_score.
- *   4. Velocity = score - prev smoothed score; persistence counters (rest 2, monotony 3
- *      consecutive over-threshold ticks; skip-if score>0.88 OR velocity>0.08 bypasses).
- *   5. State machines: REST_NORMAL->WATCH(0.45)->SUGGEST->RECOMMEND->URGENT
- *      (->RECOVERY on an observed accept); MONOTONY_NORMAL->WATCH(0.40)->CONTENT_SUGGEST.
- *   6. Fire-control, in order: no-candidate -> emergency override -> cooldown (category-specific,
- *      using proposal_history.lastProposalTimeSec vs simulation_time_sec) -> 30-min count limit
- *      (proposal_history.proposalCountLast30Min) -> pass.
- *   7. Strength gentle/clear/strong; priority [rest_required, monotony_prevention] then score.
- *   8. Localized proposal {ja,en} + explanation {ja,en} reason lines + reason_inputs.
+ * Pipeline (per tick, from `context` — see algorithm.py's module docstring /
+ * `specs/009-signal-tier-redesign/contracts/tiered-context.md`):
+ *   1. Accumulate `jam_min` / `hw_min` / `mono_min` (runtime state) while
+ *      `signals.dynamic.motionState == "MOVING"`, using the elapsed minutes
+ *      since the previous tick (`simulation_time_sec` delta; 0 on the very
+ *      first tick).
+ *   2. Feature extraction from `context.signals` (fixed/dynamic/simulated
+ *      tiers) using the accumulators above; clamp 0-1. 9 features (no route
+ *      look-ahead; 1 stochastic signal `anomaly_rate`; `driving_time` =
+ *      banded time-on-task since last rest).
+ *   3. Smoothing: smoothed_f[t] = alpha*f[t] + (1-alpha)*smoothed_f[t-1]
+ *      (alpha=smoothing_alpha), prev from
+ *      package_runtime_state.smoothed_features (empty on tick 0 -> prev 0).
+ *   4. Category scores from the SMOOTHED features (base_safety_risk;
+ *      rest_required_score = base + gated bonus iff base >=
+ *      minimum_risk_for_rest_bonus, plus a child-passenger bonus;
+ *      monotony_prevention_score).
+ *   5. Velocity = score - prev smoothed score; persistence counters
+ *      (rest/monotony consecutive over-threshold ticks; skip-if
+ *      score/velocity bypasses persistence).
+ *   6. State machines: REST_NORMAL->WATCH->SUGGEST->RECOMMEND->URGENT
+ *      (->RECOVERY on an observed accept, scoped to `recovery_active`);
+ *      MONOTONY_NORMAL->WATCH->CONTENT_SUGGEST.
+ *   7. Fire-control, in order: no-candidate -> recovery -> persistence_gate
+ *      -> emergency override -> cooldown (category-specific, using
+ *      proposal_history.lastProposalTimeSec vs simulation_time_sec) ->
+ *      30-min count limit (proposal_history.proposalCountLast30Min) -> pass.
+ *   8. Strength gentle/clear/strong; priority [rest_required,
+ *      monotony_prevention] then score.
+ *   9. Localized proposal {ja,en} + explanation {ja,en} reason lines +
+ *      reason_inputs.
  *
  * Returned dict: the normalized §11 DecisionResult shape PLUS next_package_runtime_state.
  * result_type is one of REST_PROPOSAL / MONOTONY_PROPOSAL / SUPPRESSED / NO_PROPOSAL (verbatim).
  * Non-fired / suppressed candidates are RETAINED in `candidates`.
+ *
+ * Every hyperparameter is read via a strict `hpNum`/`hpInt` accessor that
+ * THROWS on a missing key — mirroring algorithm.py's direct `hp[key]`
+ * indexing (NO `hp.get(key, <hardcoded default>)` fallback). The tiered
+ * context's `hyperparameters` is guaranteed fully-resolved (manifest
+ * defaults ⊕ overrides, every declared key present) by the run engine; a
+ * missing key here is a real configuration bug and MUST surface as an error,
+ * never a silently-wrong default.
  *
  * Every threshold/coefficient/ordering below is preserved EXACTLY from
  * algorithm.py — this is the parity boundary (see
@@ -82,22 +95,23 @@ import type { PackageManifest } from '../../../api/types'
 export const manifest = hybridManifestJson as unknown as PackageManifest
 
 // ---------------------------------------------------------------------------
-// Input shape — mirrors python_module.dispatch()'s `py_context` dict, which
-// is exactly what algorithm.py's `evaluate(context)` receives. Same shape as
-// `nri_fatigue_score_v1.ts`'s `NriEvaluateInput` (both are the trusted
-// python_module contract) — NOT `../../../engine/algorithms/js_module.ts`'s
-// `EvaluateInput` (the untrusted worker contract).
+// Input shape — mirrors python_module.dispatch()'s feature-009 tiered
+// `py_context` dict, which is exactly what algorithm.py's
+// `evaluate(context)` receives. Same shape as `../index.ts`'s
+// `BuiltinPyContext` (redeclared locally, as `nri_fatigue_score_v1.ts` does
+// for its own input type, to avoid a circular import with `../index.ts`).
 // ---------------------------------------------------------------------------
 
 export type HybridEvaluateInput = {
   simulation_time_sec: number
-  raw_state: Record<string, unknown>
+  signals: Record<string, unknown>
   feature_groups: Record<string, unknown>
   parameters: Record<string, unknown>
   hyperparameters: Record<string, unknown>
   proposal_history: Record<string, unknown>
   user_action_history: unknown[]
   package_runtime_state: Record<string, unknown>
+  recovery_active: boolean
 }
 
 /** The stateful accumulator carried in package_runtime_state across ticks. */
@@ -106,6 +120,10 @@ export type HybridRuntimeState = {
   smoothed_scores: { rest_required_score: number; monotony_prevention_score: number }
   persistence_counters: { rest_required: number; monotony_prevention: number }
   states: { rest_state: string; monotony_state: string }
+  accumulators: { jam_min: number; hw_min: number; mono_min: number; drive_min_since_rest: number }
+  drive_min_baseline: number
+  accum_baseline: Record<string, number>
+  prev_sim_time_sec: number
 }
 
 export type EvaluateOutput = DecisionResult
@@ -120,14 +138,20 @@ function dget(obj: Record<string, unknown> | undefined | null, key: string, dflt
   return dflt
 }
 
-function numHp(hp: Record<string, unknown>, key: string, dflt: number): number {
-  const v = dget(hp, key, dflt)
-  const n = Number(v)
-  return Number.isNaN(n) ? dflt : n
+/**
+ * Mirrors algorithm.py's direct `hp[key]` indexing — NO hardcoded-default
+ * fallback. A missing hyperparameter is a real configuration bug and MUST
+ * surface as an error (Python: KeyError), never a silently-wrong default.
+ */
+function hpNum(hp: Record<string, unknown>, key: string): number {
+  if (!Object.prototype.hasOwnProperty.call(hp, key)) {
+    throw new Error(`KeyError: '${key}'`)
+  }
+  return Number(hp[key])
 }
 
-function intHp(hp: Record<string, unknown>, key: string, dflt: number): number {
-  return Math.trunc(numHp(hp, key, dflt))
+function hpInt(hp: Record<string, unknown>, key: string): number {
+  return Math.trunc(hpNum(hp, key))
 }
 
 function clamp(value: number, lo = 0.0, hi = 1.0): number {
@@ -135,9 +159,10 @@ function clamp(value: number, lo = 0.0, hi = 1.0): number {
 }
 
 // ---------------------------------------------------------------------------
-// Feature-level scoring (identical formulas to the built-in weighted_score)
+// Feature-level scoring helpers
 // ---------------------------------------------------------------------------
 
+/** Banded rest-window urgency (Principle IV — boundary-binned, not raw minutes). */
 function restWindowScore(nextRestMin: number): number {
   if (nextRestMin >= 9999.0) return 0.0
   if (nextRestMin <= 3.0) return 0.6
@@ -146,113 +171,159 @@ function restWindowScore(nextRestMin: number): number {
   return 0.2
 }
 
-function restScarcityScore(density: number): number {
-  if (density <= 0) return 1.0
-  if (density === 1) return 0.7
-  if (density === 2) return 0.4
-  return 0.1
+/** clamp((nextRestSpotMin - 10) / 50) — data-model §5. */
+function restScarcityScore(nextRestMin: number): number {
+  return clamp((nextRestMin - 10.0) / 50.0)
 }
 
-function trafficJamScore(aheadMin: number, lowSpeedMin: number): number {
-  let jam: number
-  if (aheadMin <= 0.0) jam = 0.0
-  else if (aheadMin < 10.0) jam = 0.3
-  else if (aheadMin < 30.0) jam = 0.6
-  else jam = 1.0
-  const low = clamp(lowSpeedMin / 20.0)
-  return Math.max(jam, low)
-}
-
-function longHighwayScore(highwayMin: number): number {
-  if (highwayMin < 10.0) return 0.0
-  if (highwayMin < 30.0) return 0.3
-  if (highwayMin < 60.0) return 0.6
+/**
+ * Banded time-on-task urgency (Principle IV — boundary-binned, not raw
+ * minutes). Input is minutes driven SINCE the last rest (the Hybrid
+ * rebaselines the monotonic `continuousDrivingMin` signal on recovery; see
+ * `evaluate`).
+ */
+function drivingTimeScore(driveMinSinceRest: number): number {
+  if (driveMinSinceRest < 60.0) return 0.0
+  if (driveMinSinceRest < 120.0) return 0.4
+  if (driveMinSinceRest < 180.0) return 0.7
   return 1.0
 }
 
-function weatherRiskScore(weatherLevel: number): number {
-  return clamp(weatherLevel / 100.0)
+/** clamp(0.5*(isTrafficJam?1:clamp(jam_min/20)) + 0.3*clamp(hw_min/60) + 0.2*(weather/100)). */
+function envLoadScore(isTrafficJam: boolean, jamMin: number, hwMin: number, weatherLevel: number): number {
+  const jamTerm = isTrafficJam ? 1.0 : clamp(jamMin / 20.0)
+  const hwTerm = clamp(hwMin / 60.0)
+  const weatherTerm = clamp(weatherLevel / 100.0)
+  return clamp(0.5 * jamTerm + 0.3 * hwTerm + 0.2 * weatherTerm)
 }
 
-function futureFatigueScore(tj: number, lh: number, wr: number): number {
-  return clamp(0.45 * tj + 0.35 * lh + 0.2 * wr)
+/** clamp(0.6*clamp(mono_min/30) + 0.4*(isNight?1:0)). */
+function monotonyScore(monoMin: number, isNight: boolean): number {
+  const monoTerm = clamp(monoMin / 30.0)
+  const nightTerm = isNight ? 1.0 : 0.0
+  return clamp(0.6 * monoTerm + 0.4 * nightTerm)
 }
 
-function monotonyQualityScore(
-  monotonousRoadMin: number,
-  tunnelMin: number,
-  isNight: boolean,
-  lowSpeedMin: number,
-): number {
-  const monotonousRoad = clamp(monotonousRoadMin / 30.0)
-  const tunnel = clamp(tunnelMin / 15.0)
-  const night = isNight ? 1.0 : 0.0
-  const lowSpeed = clamp(lowSpeedMin / 20.0)
-  return clamp(0.35 * monotonousRoad + 0.25 * tunnel + 0.2 * night + 0.2 * lowSpeed)
-}
+// ---------------------------------------------------------------------------
+// Runtime-state accumulators — jam_min / hw_min / mono_min (advance while MOVING)
+// ---------------------------------------------------------------------------
 
-function attentionDropScore(attentionNormalized: number): number {
-  return clamp(1.0 - attentionNormalized)
+// Segment types treated as "monotonous" for the accumulator — mirrors the
+// sibling NRI package's convention over the same simulator segment vocabulary.
+const MONOTONOUS_SEGMENT_TYPES = new Set(['highway', 'normal_road'])
+
+/**
+ * Advance jam_min/hw_min/mono_min while `motionState == MOVING`.
+ *
+ * Elapsed minutes since the previous tick are derived from the delta between
+ * this tick's `simulation_time_sec` and the previous tick's (stored in
+ * runtime state as `prev_sim_time_sec`). On the very first tick (no prior
+ * state) the delta is 0 — there is no elapsed exposure to attribute yet.
+ *
+ * Returns the NEW accumulated totals, ready to thread into
+ * `next_package_runtime_state`.
+ */
+function advanceAccumulators(
+  dynamic: Record<string, unknown>,
+  prevState: Record<string, unknown>,
+  simTime: number,
+): { jam_min: number; hw_min: number; mono_min: number } {
+  const prevAccumulators = (dget(prevState, 'accumulators', {}) ?? {}) as Record<string, unknown>
+  const prevJamMin = Number(dget(prevAccumulators, 'jam_min', 0.0))
+  const prevHwMin = Number(dget(prevAccumulators, 'hw_min', 0.0))
+  const prevMonoMin = Number(dget(prevAccumulators, 'mono_min', 0.0))
+
+  const prevSimTimeSec = dget(prevState, 'prev_sim_time_sec', null)
+  const tickDurationMin = prevSimTimeSec === null || prevSimTimeSec === undefined
+    ? 0.0
+    : Math.max(0.0, simTime - Number(prevSimTimeSec)) / 60.0
+
+  const isMoving = dget(dynamic, 'motionState', undefined) === 'MOVING'
+  const isTrafficJam = Boolean(dget(dynamic, 'isTrafficJam', false))
+  const segmentType = String(dget(dynamic, 'segmentType', 'normal_road'))
+  const isHighway = segmentType === 'highway'
+  const isMonotonous = MONOTONOUS_SEGMENT_TYPES.has(segmentType)
+
+  const advance = isMoving ? tickDurationMin : 0.0
+  return {
+    jam_min: prevJamMin + (isTrafficJam ? advance : 0.0),
+    hw_min: prevHwMin + (isHighway ? advance : 0.0),
+    mono_min: prevMonoMin + (isMonotonous ? advance : 0.0),
+  }
 }
 
 // ---------------------------------------------------------------------------
 // Feature extraction — pre-smoothing raw feature vector (0-1 each)
 // ---------------------------------------------------------------------------
 
-/** The 11 features that feed the category scores. All are clamped to [0, 1]. */
+/**
+ * The 9 compact features that feed the category scores (data-model §5). All
+ * are clamped to [0, 1]. No route look-ahead; only 1 stochastic signal
+ * (anomaly_rate).
+ */
 const FEATURE_KEYS = [
   'drowsiness',
   'fatigue',
   'driving_anomaly',
-  'future_fatigue',
+  'driving_time',
+  'env_load',
+  'monotony',
   'rest_window',
   'rest_scarcity',
-  'monotony',
   'familiar_route',
-  'attention_drop',
-  'traffic_jam',
-  'long_highway',
 ] as const
 
+/**
+ * Extract the pre-smoothing 0-1 feature vector from a tick's tiered signals.
+ *
+ * `accumulators` is this tick's advanced `{jam_min, hw_min, mono_min}` (see
+ * `advanceAccumulators`), plus `drive_min_since_rest` (minutes driven since
+ * the last rest, computed in `evaluate`).
+ */
 function extractFeatures(
-  rawState: Record<string, unknown>,
-  normalized: Record<string, unknown>,
+  signals: Record<string, unknown>,
+  accumulators: Record<string, unknown>,
+  hp: Record<string, unknown>,
 ): Record<string, number> {
-  const drowsiness = clamp(Number(dget(normalized, 'drowsiness_score', 0.0)))
-  const fatigue = clamp(Number(dget(normalized, 'fatigue_score', 0.0)))
-  const drivingAnomaly = clamp(Number(dget(normalized, 'driving_anomaly_score', 0.0)))
-  const attentionNorm = clamp(Number(dget(normalized, 'attention_score', 1.0)))
+  const fixed = (dget(signals, 'fixed', {}) ?? {}) as Record<string, unknown>
+  const dynamic = (dget(signals, 'dynamic', {}) ?? {}) as Record<string, unknown>
+  const simulated = (dget(signals, 'simulated', {}) ?? {}) as Record<string, unknown>
 
-  const nextRestMin = Number(dget(rawState, 'nextRestSpotMin', 9999.0))
-  const isNight = Boolean(dget(rawState, 'isNight', false))
-  const weatherLevel = Number(dget(rawState, 'weatherRiskLevel', 0.0))
-  const aheadMin = Number(dget(rawState, 'trafficJamAheadMin', 0.0))
-  const lowSpeedMin = Number(dget(rawState, 'lowSpeedDurationMin', 0.0))
-  const highwayMin = Number(dget(rawState, 'highwayRemainingMin', 0.0))
-  const monotonousRoadMin = Number(dget(rawState, 'monotonousRoadRemainingMin', 0.0))
-  const tunnelMin = Number(dget(rawState, 'tunnelRemainingMin', 0.0))
-  const familiarRatio = Number(dget(rawState, 'familiarRouteRatio', 0.0))
-  const restDensity = Math.trunc(Number(dget(rawState, 'restSpotDensityNext30Min', 999)))
+  const drowsiness = clamp(Number(dget(simulated, 'drowsiness', 0.0)) / 100.0)
+  const fatigue = clamp(Number(dget(simulated, 'fatigue', 0.0)) / 100.0)
+  const anomalyRate = Number(dget(simulated, 'anomaly_rate', 0.0))
+  const drivingAnomaly = clamp(anomalyRate / hpNum(hp, 'K'))
+  const drivingTime = drivingTimeScore(Number(dget(accumulators, 'drive_min_since_rest', 0.0)))
 
-  const tj = trafficJamScore(aheadMin, lowSpeedMin)
-  const lh = longHighwayScore(highwayMin)
-  const wr = weatherRiskScore(weatherLevel)
+  const isNight = Boolean(dget(fixed, 'isNight', false))
+  const familiarRoute = Boolean(dget(fixed, 'familiarRoute', false))
+  const weatherLevel = Number(dget(fixed, 'weatherRiskLevel', 0.0))
+
+  const isTrafficJam = Boolean(dget(dynamic, 'isTrafficJam', false))
+  const nextRestMin = Number(dget(dynamic, 'nextRestSpotMin', 9999.0))
+
+  const envLoad = envLoadScore(
+    isTrafficJam,
+    Number(dget(accumulators, 'jam_min', 0.0)),
+    Number(dget(accumulators, 'hw_min', 0.0)),
+    weatherLevel,
+  )
+  const monotony = monotonyScore(Number(dget(accumulators, 'mono_min', 0.0)), isNight)
 
   return {
     drowsiness,
     fatigue,
     driving_anomaly: drivingAnomaly,
-    future_fatigue: futureFatigueScore(tj, lh, wr),
+    driving_time: drivingTime,
+    env_load: envLoad,
+    monotony,
     rest_window: restWindowScore(nextRestMin),
-    rest_scarcity: restScarcityScore(restDensity),
-    monotony: monotonyQualityScore(monotonousRoadMin, tunnelMin, isNight, lowSpeedMin),
-    familiar_route: clamp(familiarRatio),
-    attention_drop: attentionDropScore(attentionNorm),
-    traffic_jam: tj,
-    long_highway: lh,
+    rest_scarcity: restScarcityScore(nextRestMin),
+    familiar_route: familiarRoute ? 1.0 : 0.0,
   }
 }
 
+/** Exponentially smooth each feature: alpha*raw + (1-alpha)*prev (prev 0 if absent). */
 function smoothFeatures(
   rawFeatures: Record<string, number>,
   prevSmoothed: Record<string, unknown>,
@@ -276,37 +347,39 @@ type CategoryScores = {
   monotony_prevention_score: number
 }
 
-function categoryScores(features: Record<string, number>, hp: Record<string, unknown>): CategoryScores {
-  const wD = numHp(hp, 'w_drowsiness', 0.4)
-  const wF = numHp(hp, 'w_fatigue', 0.25)
-  const wDa = numHp(hp, 'w_driving_anomaly', 0.25)
-  const wFf = numHp(hp, 'w_future_fatigue', 0.1)
+/**
+ * Compute base_safety_risk, rest_required_score and monotony_prevention_score.
+ *
+ * `childPassenger` is the raw (unsmoothed) `fixed.childPassenger` flag; when
+ * true it adds a fixed `w_child_bonus` to `rest_required_score` (only) — a
+ * conservatism dial that makes AICA propose a rest sooner with a child
+ * aboard. It is added AFTER the rest-spot bonus gate so it can never unlock
+ * that gate on its own, and it is deliberately kept out of
+ * `base_safety_risk` and monotony.
+ */
+function categoryScores(
+  features: Record<string, number>,
+  hp: Record<string, unknown>,
+  childPassenger: boolean,
+): CategoryScores {
   const baseSafetyRisk = clamp(
-    wD * features['drowsiness']
-    + wF * features['fatigue']
-    + wDa * features['driving_anomaly']
-    + wFf * features['future_fatigue'],
+    hpNum(hp, 'w_drowsiness') * features['drowsiness']
+    + hpNum(hp, 'w_fatigue') * features['fatigue']
+    + hpNum(hp, 'w_driving_anomaly') * features['driving_anomaly']
+    + hpNum(hp, 'w_driving_time') * features['driving_time']
+    + hpNum(hp, 'w_env') * features['env_load'],
   )
 
-  const minRisk = numHp(hp, 'minimum_risk_for_rest_bonus', 0.45)
-  const wRw = numHp(hp, 'w_rest_window', 0.1)
-  const wRs = numHp(hp, 'w_rest_scarcity', 0.08)
-  const restBonus = baseSafetyRisk >= minRisk
-    ? wRw * features['rest_window'] + wRs * features['rest_scarcity']
+  const restBonus = baseSafetyRisk >= hpNum(hp, 'minimum_risk_for_rest_bonus')
+    ? hpNum(hp, 'w_rest_window') * features['rest_window'] + hpNum(hp, 'w_rest_scarcity') * features['rest_scarcity']
     : 0.0
-  const restRequiredScore = clamp(baseSafetyRisk + restBonus)
+  const childBonus = childPassenger ? hpNum(hp, 'w_child_bonus') : 0.0
+  const restRequiredScore = clamp(baseSafetyRisk + restBonus + childBonus)
 
-  const wMono = numHp(hp, 'w_monotony', 0.3)
-  const wFr = numHp(hp, 'w_familiar_route', 0.2)
-  const wAd = numHp(hp, 'w_attention_drop', 0.25)
-  const wTj = numHp(hp, 'w_traffic_jam', 0.15)
-  const wLh = numHp(hp, 'w_long_highway', 0.1)
   const monotonyPreventionScore = clamp(
-    wMono * features['monotony']
-    + wFr * features['familiar_route']
-    + wAd * features['attention_drop']
-    + wTj * features['traffic_jam']
-    + wLh * features['long_highway'],
+    hpNum(hp, 'w_monotony') * features['monotony']
+    + hpNum(hp, 'w_env_mono') * features['env_load']
+    + hpNum(hp, 'w_familiar') * features['familiar_route'],
   )
 
   return {
@@ -323,10 +396,10 @@ function categoryScores(features: Record<string, number>, hp: Record<string, unk
 /** REST_NORMAL->WATCH->SUGGEST->RECOMMEND->URGENT (->RECOVERY on an accept). */
 function restStateLabel(score: number, accepted: boolean, hp: Record<string, unknown>): string {
   if (accepted) return 'REST_RECOVERY'
-  const watch = numHp(hp, 'rest_watch_threshold', 0.45)
-  const suggest = numHp(hp, 'threshold_suggest', 0.62)
-  const recommend = numHp(hp, 'threshold_recommend', 0.76)
-  const urgent = numHp(hp, 'threshold_urgent', 0.88)
+  const watch = hpNum(hp, 'rest_watch_threshold')
+  const suggest = hpNum(hp, 'threshold_suggest')
+  const recommend = hpNum(hp, 'threshold_recommend')
+  const urgent = hpNum(hp, 'threshold_urgent')
   if (score >= urgent) return 'REST_URGENT'
   if (score >= recommend) return 'REST_RECOMMEND'
   if (score >= suggest) return 'REST_SUGGEST'
@@ -336,8 +409,8 @@ function restStateLabel(score: number, accepted: boolean, hp: Record<string, unk
 
 /** MONOTONY_NORMAL->WATCH->CONTENT_SUGGEST. */
 function monotonyStateLabel(score: number, hp: Record<string, unknown>): string {
-  const watch = numHp(hp, 'monotony_watch_threshold', 0.4)
-  const suggest = numHp(hp, 'monotony_suggest_threshold', 0.58)
+  const watch = hpNum(hp, 'monotony_watch_threshold')
+  const suggest = hpNum(hp, 'monotony_suggest_threshold')
   if (score >= suggest) return 'MONOTONY_CONTENT_SUGGEST'
   if (score >= watch) return 'MONOTONY_WATCH'
   return 'MONOTONY_NORMAL'
@@ -381,7 +454,8 @@ type CandidateEvalArgs = {
 /**
  * Evaluate one trigger category; return (candidate, new_persistence_counter).
  *
- * Fire-control order: no-candidate -> emergency override -> cooldown -> 30-min count -> pass.
+ * Fire-control order: no-candidate -> recovery -> persistence_gate ->
+ * emergency override -> cooldown -> 30-min count -> pass.
  */
 function evaluateCandidate(args: CandidateEvalArgs): { candidate: Candidate; newCounter: number } {
   const {
@@ -534,7 +608,7 @@ function buildExplanation(
 
   if (selected.category === 'rest_required') {
     const reasonInputs = [
-      'drowsiness', 'fatigue', 'driving_anomaly', 'future_fatigue',
+      'drowsiness', 'fatigue', 'driving_anomaly', 'env_load',
       'base_safety_risk', 'rest_window', 'rest_scarcity', 'rest_required_score',
     ]
     const explanation = [
@@ -546,10 +620,7 @@ function buildExplanation(
     return { reasonInputs, explanation }
   }
 
-  const reasonInputs = [
-    'monotony', 'familiar_route', 'attention_drop', 'traffic_jam',
-    'long_highway', 'monotony_prevention_score',
-  ]
+  const reasonInputs = ['monotony', 'env_load', 'familiar_route', 'monotony_prevention_score']
   const explanation = [
     {
       ja: `単調性抑止(平滑化)=${mono.toFixed(3)} が閾値を超え、持続条件を満たしました。状態=${states.monotony}、強度=${selected.strength}。`,
@@ -572,41 +643,77 @@ function buildExplanation(
  */
 export function evaluate(input: HybridEvaluateInput): EvaluateOutput {
   const hp = input.hyperparameters ?? {}
-  const raw = (input.raw_state ?? {}) as Record<string, unknown>
+  const signals = (input.signals ?? {}) as Record<string, unknown>
+  const dynamic = (dget(signals, 'dynamic', {}) ?? {}) as Record<string, unknown>
   const featureGroups = (input.feature_groups ?? {}) as Record<string, unknown>
-  const norm = ((featureGroups['normalized'] ?? {}) as Record<string, unknown>)
-  const ordinal = ((featureGroups['ordinal'] ?? {}) as Record<string, unknown>)
+  const ordinal = (dget(featureGroups, 'ordinal', {}) ?? {}) as Record<string, unknown>
   const prevState = (input.package_runtime_state ?? {}) as Record<string, unknown>
   const proposalHistory = input.proposal_history ?? {}
   const simTime = Number(input.simulation_time_sec ?? 0.0)
 
-  const alpha = numHp(hp, 'smoothing_alpha', 0.35)
-  const suggest = numHp(hp, 'threshold_suggest', 0.62)
-  const recommend = numHp(hp, 'threshold_recommend', 0.76)
-  const urgent = numHp(hp, 'threshold_urgent', 0.88)
-  const monoSuggest = numHp(hp, 'monotony_suggest_threshold', 0.58)
-  const monoRecommend = numHp(hp, 'monotony_recommend_threshold', 0.72)
-  const monoUrgent = numHp(hp, 'monotony_urgent_threshold', 0.85)
-  const restPersistence = intHp(hp, 'rest_persistence_ticks', 2)
-  const monoPersistence = intHp(hp, 'monotony_persistence_ticks', 3)
-  const skipIfScore = numHp(hp, 'skip_if_score', 0.88)
-  const skipIfVelocity = numHp(hp, 'skip_if_velocity', 0.08)
-  const restCooldown = numHp(hp, 'rest_cooldown_sec', 600.0)
-  const monoCooldown = numHp(hp, 'monotony_cooldown_sec', 900.0)
-  const emergencyThreshold = numHp(hp, 'emergency_override_threshold', 0.88)
-  const maxPer30min = intHp(hp, 'max_proposals_per_30min', 3)
+  const alpha = hpNum(hp, 'smoothing_alpha')
+  const suggest = hpNum(hp, 'threshold_suggest')
+  const recommend = hpNum(hp, 'threshold_recommend')
+  const urgent = hpNum(hp, 'threshold_urgent')
+  const monoSuggest = hpNum(hp, 'monotony_suggest_threshold')
+  const monoRecommend = hpNum(hp, 'monotony_recommend_threshold')
+  const monoUrgent = hpNum(hp, 'monotony_urgent_threshold')
+  const restPersistence = hpInt(hp, 'rest_persistence_ticks')
+  const monoPersistence = hpInt(hp, 'monotony_persistence_ticks')
+  const skipIfScore = hpNum(hp, 'skip_if_score')
+  const skipIfVelocity = hpNum(hp, 'skip_if_velocity')
+  const restCooldown = hpNum(hp, 'rest_cooldown_sec')
+  const monoCooldown = hpNum(hp, 'monotony_cooldown_sec')
+  const emergencyThreshold = hpNum(hp, 'emergency_override_threshold')
+  const maxPer30min = hpInt(hp, 'max_proposals_per_30min')
 
-  // ── 1-2. extract + smooth features ─────────────────────────────────────
-  const rawFeatures = extractFeatures(raw, norm)
+  const recoveryActive = Boolean(input.recovery_active ?? false)
+  const childPassenger = Boolean(dget((dget(signals, 'fixed', {}) ?? {}) as Record<string, unknown>, 'childPassenger', false))
+
+  // ── 1. advance the env/monotony accumulators (MOVING-gated) ────────────
+  const accumulators = advanceAccumulators(dynamic, prevState, simTime) as unknown as Record<string, number>
+
+  // ── 1b. time-on-task since the last rest ───────────────────────────────
+  // `continuousDrivingMin` is monotonic (the engine never resets it), so the
+  // Hybrid keeps its own baseline: while the driver is resting we rebaseline
+  // it to the current value, making `drive_min_since_rest` drop to ~0 right
+  // after a rest. Threaded forward as `drive_min_baseline`.
+  const continuousDrivingMin = Number(dget(dynamic, 'continuousDrivingMin', 0.0))
+  const driveMinBaseline = recoveryActive
+    ? continuousDrivingMin
+    : Number(dget(prevState, 'drive_min_baseline', 0.0))
+  const driveMinSinceRest = Math.max(0.0, continuousDrivingMin - driveMinBaseline)
+  accumulators.drive_min_since_rest = driveMinSinceRest
+
+  // ── 1c. rebaseline env/monotony exposure on rest ───────────────────────
+  // The jam/highway/monotony accumulators (feeding env_load + monotony) are
+  // measured SINCE THE LAST REST, exactly like drive_min_since_rest: while
+  // the driver is resting we rebaseline them to the current cumulative
+  // totals, so a rest drops env_load AND monotony to ~0 and they rebuild
+  // afterwards. The cumulative `accumulators` are still threaded forward
+  // unchanged so advanceAccumulators keeps the running totals —
+  // `accum_baseline` is separate.
+  const accumBaseline: Record<string, number> = recoveryActive
+    ? { jam_min: accumulators.jam_min, hw_min: accumulators.hw_min, mono_min: accumulators.mono_min }
+    : ((dget(prevState, 'accum_baseline', {}) ?? {}) as Record<string, number>)
+  const sinceRestAccumulators: Record<string, number> = {
+    jam_min: Math.max(0.0, accumulators.jam_min - Number(dget(accumBaseline, 'jam_min', 0.0))),
+    hw_min: Math.max(0.0, accumulators.hw_min - Number(dget(accumBaseline, 'hw_min', 0.0))),
+    mono_min: Math.max(0.0, accumulators.mono_min - Number(dget(accumBaseline, 'mono_min', 0.0))),
+    drive_min_since_rest: driveMinSinceRest,
+  }
+
+  // ── 2-3. extract + smooth features (from the since-rest exposures) ──────
+  const rawFeatures = extractFeatures(signals, sinceRestAccumulators, hp)
   const prevSmoothedFeatures = (dget(prevState, 'smoothed_features', {}) ?? {}) as Record<string, unknown>
   const smoothedFeatures = smoothFeatures(rawFeatures, prevSmoothedFeatures, alpha)
 
-  // ── 3. category scores from the smoothed features ──────────────────────
-  const scores = categoryScores(smoothedFeatures, hp)
+  // ── 4. category scores from the smoothed features ──────────────────────
+  const scores = categoryScores(smoothedFeatures, hp, childPassenger)
   const restScore = scores.rest_required_score
   const monoScore = scores.monotony_prevention_score
 
-  // ── 4. velocity vs prev smoothed scores ────────────────────────────────
+  // ── 5. velocity vs prev smoothed scores ────────────────────────────────
   const prevScores = (dget(prevState, 'smoothed_scores', {}) ?? {}) as Record<string, unknown>
   const restVelocity = restScore - Number(dget(prevScores, 'rest_required_score', 0.0))
   const monoVelocity = monoScore - Number(dget(prevScores, 'monotony_prevention_score', 0.0))
@@ -615,30 +722,28 @@ export function evaluate(input: HybridEvaluateInput): EvaluateOutput {
   const prevRestCounter = Math.trunc(Number(dget(prevCounters, 'rest_required', 0)))
   const prevMonoCounter = Math.trunc(Number(dget(prevCounters, 'monotony_prevention', 0)))
 
-  // Recovery: an accept seen for this category (only rest is acceptable here).
-  // Scoped to the active rest sequence via `recovery_active` — see the
-  // IMPORTANT parity note in the file header: `dispatchBuiltinJsModule`
-  // (mirroring python_module.dispatch()) never forwards `recovery_active`
-  // into this function's input, so this ALWAYS reads as `false` in
-  // production. Ported verbatim (byte-for-byte lookup semantics) rather than
-  // hard-coded to `false`, so a future change to that upstream drop is
-  // automatically honored without touching this file.
+  // Recovery: an accept seen for this category (only rest is acceptable
+  // here). Scoped to the active rest sequence: recovery_active is true only
+  // while the driver is currently resting. Once the driver resumes,
+  // recovery_active is false and we leave REST_RECOVERY so a fresh proposal
+  // can fire when drowsiness rebuilds — without this gate rest_recovered
+  // would latch forever (lastProposalResult stays "accept_rest" because no
+  // later rest proposal is ever allowed to fire).
   const lastResult = dget(proposalHistory, 'lastProposalResult', null)
   const lastCat = dget(proposalHistory, 'lastProposalCategory', null)
-  const recoveryActive = Boolean(dget(input as unknown as Record<string, unknown>, 'recovery_active', false))
   const restRecovered = (
     recoveryActive
     && lastResult === 'accept_rest'
     && (lastCat === null || lastCat === undefined || lastCat === 'rest_required')
   )
 
-  // ── 5. state-machine labels (recorded output) ──────────────────────────
+  // ── 6. state-machine labels (recorded output) ───────────────────────────
   const states = {
     rest: restStateLabel(restScore, restRecovered, hp),
     monotony: monotonyStateLabel(monoScore, hp),
   }
 
-  // ── 6-7. candidates with persistence + fire-control ────────────────────
+  // ── 7. candidates with persistence + fire-control ───────────────────────
   const { candidate: restCand, newCounter: newRestCounter } = evaluateCandidate({
     category: 'rest_required',
     score: restScore,
@@ -739,6 +844,10 @@ export function evaluate(input: HybridEvaluateInput): EvaluateOutput {
       rest_state: states.rest,
       monotony_state: states.monotony,
     },
+    accumulators: accumulators as unknown as HybridRuntimeState['accumulators'],
+    drive_min_baseline: driveMinBaseline,
+    accum_baseline: accumBaseline,
+    prev_sim_time_sec: simTime,
   }
 
   // features field is dict[str, str]: the transparent ordinal view of the tick.

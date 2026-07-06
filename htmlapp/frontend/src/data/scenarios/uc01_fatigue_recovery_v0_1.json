@@ -1,29 +1,25 @@
 {
   "_comment": [
-    "Scenario: UC-01 fatigue/drowsiness with staged recovery options (M7 Task 12).",
+    "Scenario: UC-01 fatigue/drowsiness with staged recovery options.",
     "",
-    "This scenario is derived from uc01_fatigue_friend_drive_v0_1 and adds a",
-    "recovery_options array so that accept_rest triggers a staged recovery sequence",
-    "instead of completing the run immediately (the pre-M7 back-compat path).",
+    "Feature 009 (signal-tier redesign): rewritten from the old",
+    "driver_profile/vehicle_profile shape to driver_signal_params +",
+    "anomaly_signal_params + run_seed_default (data-model.md §2). The vehicle",
+    "behaviour model (steering/pedal/lane/ADAS) is retired; the attention signal",
+    "is retired. Drowsiness/fatigue are deterministic Tier-3a signals;",
+    "anomaly_rate is the seeded-stochastic Tier-3b signal (the only randomness",
+    "in the simulation, seeded by run_seed).",
     "",
-    "Recovery options:",
-    "  nap_karaoke        — long rest: wakefulness (MOVING) → nap 3 ticks → karaoke 3 ticks",
-    "  convenience_stretch — short rest: wakefulness (MOVING) → stretch 2 ticks",
+    "Recovery options (recovery_model gives each activity's fixed drowsiness/fatigue",
+    "recovery, applied once per activity — no short/long rest distinction):",
+    "  nap_karaoke        — wakefulness (MOVING) -> nap/sleep 3 ticks -> karaoke 3 ticks",
+    "  convenience_stretch — wakefulness (MOVING) -> stretch 2 ticks",
     "  postpone           — postpone=true, no stages (acts as continue driving)",
     "",
-    "Proposal timeline (identical to friend_drive — same profile, route, presets):",
-    "  Tick ~29: declarative_rule fires REST_PROPOSAL (high fatigue + moderate drowsiness).",
-    "            rest spot at 60 km, ~30 min ahead.",
-    "  After accept_rest(nap_karaoke): wakefulness until 60 km → nap (3 ticks STOPPED) →",
-    "            content (3 ticks STOPPED) → resuming → route completion.",
-    "",
-    "uc01_fatigue_friend_drive_v0_1 is left UNTOUCHED (no recovery_options) so that",
-    "existing tests that call accept_rest expecting immediate completion still pass.",
-    "",
-    "allowed_actions includes decline (M7 requirement) in addition to accept_rest/postpone."
+    "allowed_actions includes decline in addition to accept_rest/postpone."
   ],
   "id": "uc01_fatigue_recovery_v0_1",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "uc01_fatigue",
   "persona": {
     "name": "Haruto Tanaka",
@@ -88,7 +84,7 @@
     "drowsiness_level": 20,
     "fatigue_level": 20
   },
-  "driver_profile": {
+  "driver_signal_params": {
     "id": "friend_drive_driver_v1",
     "drowsiness_model": {
       "base_growth_per_min": 0.9,
@@ -102,45 +98,19 @@
       "mountain_road_add_per_min": 0.2,
       "traffic_jam_add_per_min": 0.05
     },
-    "attention_model": {
-      "base_recovery_per_min": 0.1,
-      "monotony_drop_per_min": 0.15,
-      "drowsiness_drop_factor": 0.3,
-      "active_content_recovery_per_min": 0.5
-    },
     "recovery_model": {
-      "short_rest_drowsiness_recovery": 20.0,
-      "short_rest_fatigue_recovery": 15.0,
-      "long_rest_drowsiness_recovery": 35.0,
-      "long_rest_fatigue_recovery": 30.0
+      "sleep": {"drowsiness": 60.0, "fatigue": 60.0},
+      "audio_karaoke": {"drowsiness": 25.0, "fatigue": 25.0},
+      "stretch": {"drowsiness": 25.0, "fatigue": 25.0}
     }
   },
-  "vehicle_profile": {
-    "rolling_window_seconds": 300,
-    "steering_instability": {
-      "base_level": 5.0,
-      "drowsiness_factor": 0.25,
-      "fatigue_factor": 0.15,
-      "mountain_road_add": 8.0,
-      "traffic_jam_reduce": 4.0
-    },
-    "lane_departure": {
-      "enabled_on": ["highway", "normal_road"],
-      "drowsiness_threshold": 60.0,
-      "fatigue_threshold": 70.0,
-      "count_when_threshold_exceeded": 1
-    },
-    "pedal_abnormality": {
-      "base_level": 3.0,
-      "fatigue_factor": 0.12,
-      "traffic_jam_add": 10.0,
-      "mountain_road_add": 5.0
-    },
-    "adas_warning": {
-      "lane_departure_warning_threshold": 1.0,
-      "steering_instability_warning_threshold": 55.0
-    }
+  "anomaly_signal_params": {
+    "lambda_base": 0.02,
+    "lambda_gain": 0.50,
+    "theta": 60.0,
+    "window_min": 15.0
   },
+  "run_seed_default": 42,
   "speed_profile": {
     "normal_road_kph": 60,
     "highway_kph": 100,
@@ -151,6 +121,7 @@
   "is_night": false,
   "child_passenger": true,
   "familiar_route": true,
+  "weather_risk": 0,
   "presets": {
     "total_route_distance_km": 120,
     "traffic_events": [],
@@ -160,13 +131,12 @@
     "signal_duration_at_trigger": "persistent"
   },
   "total_duration_seconds": 7200,
-  "tick_seconds": 60,
+  "tick_seconds": 180,
   "allowed_actions": ["accept_rest", "postpone", "decline"],
   "recovery_options": [
     {
       "id": "nap_karaoke",
       "label": {"ja": "仮眠＋カラオケ", "en": "Nap + Karaoke"},
-      "rest_type": "long",
       "stages": [
         {
           "phase": "wakefulness",
@@ -190,7 +160,6 @@
     {
       "id": "convenience_stretch",
       "label": {"ja": "コンビニ休憩＋ストレッチ", "en": "Convenience + Stretch"},
-      "rest_type": "short",
       "stages": [
         {
           "phase": "wakefulness",

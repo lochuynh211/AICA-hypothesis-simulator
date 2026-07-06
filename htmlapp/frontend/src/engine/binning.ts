@@ -67,7 +67,11 @@ function binRestEta(metres: number | null | undefined): string {
 //   rest_spot_eta:    none=nextRestSpotMin>=9999, near<=20min, far>20min
 //   continuous_driving_time: short<30min, moderate 30-90min, long>=90min
 
-function binDrowsiness(level: number): string {
+/**
+ * Feature 009: legacy display band for TickState.drowsiness_level ONLY.
+ * NOT part of build_feature_groups output — Tier-3 drowsiness is exposed raw.
+ */
+export function binDrowsinessLevel(level: number): string {
   if (level < 20.0) {
     return 'none'
   }
@@ -83,7 +87,11 @@ function binDrowsiness(level: number): string {
   return 'severe'
 }
 
-function binFatigue(level: number): string {
+/**
+ * Feature 009: legacy display band for TickState.fatigue_level ONLY.
+ * NOT part of build_feature_groups output — Tier-3 fatigue is exposed raw.
+ */
+export function binFatigueLevel(level: number): string {
   if (level < 30.0) {
     return 'low'
   }
@@ -136,35 +144,27 @@ function toNumber(value: unknown, fallback: number): number {
 /**
  * Derive {normalized, ordinal} feature groups from a tick raw_state dict.
  *
- * This is the single seam between simulator-internal numeric state and the
- * decision layer. Algorithms consume feature_groups; raw_state is available
- * for the evidence trace and weighted_score formula.
+ * Feature 009 (signal-tier redesign): Tier-3 simulated signals (drowsiness,
+ * fatigue, anomaly_rate) are NO LONGER banded here — they are exposed as raw
+ * numbers in context["signals"]["simulated"]; algorithms normalize themselves.
+ * Only the surviving route/context ordinal bands are produced. `normalized`
+ * is now permanently empty.
+ *
+ * Input keys still consumed: continuousDrivingMin, nextRestSpotMin,
+ * drowsinessAboveWeakTicks.
  */
 export function buildFeatureGroups(rawState: Record<string, unknown>): Record<string, unknown> {
-  const drowsiness = toNumber(rawState['drowsinessLevel'], 0.0)
-  const fatigue = toNumber(rawState['fatigueLevel'], 0.0)
-  const attention = toNumber(rawState['attentionLevel'], 100.0)
-  const steering = toNumber(rawState['steeringInstabilityLevel'], 0.0)
-  const pedal = toNumber(rawState['pedalAbnormalityLevel'], 0.0)
   const continuousMin = toNumber(rawState['continuousDrivingMin'], 0.0)
   const nextRestMin = toNumber(rawState['nextRestSpotMin'], 9999.0)
   const aboveWeak = Math.trunc(toNumber(rawState['drowsinessAboveWeakTicks'], 0))
 
   const ordinal = {
-    drowsiness_level: binDrowsiness(drowsiness),
-    fatigue_level: binFatigue(fatigue),
     signal_duration: binSignalDuration(aboveWeak),
     rest_spot_eta: binRestSpotEta(nextRestMin),
     continuous_driving_time: binContinuousDriving(continuousMin),
   }
 
-  const normalized = {
-    drowsiness_score: Math.min(1.0, Math.max(0.0, drowsiness / 100.0)),
-    fatigue_score: Math.min(1.0, Math.max(0.0, fatigue / 100.0)),
-    attention_score: Math.min(1.0, Math.max(0.0, attention / 100.0)),
-    driving_anomaly_score: Math.min(1.0, Math.max(0.0, steering / 100.0)),
-    pedal_anomaly_score: Math.min(1.0, Math.max(0.0, pedal / 100.0)),
-  }
+  const normalized: Record<string, number> = {}
 
   return { normalized, ordinal }
 }

@@ -44,7 +44,11 @@ export default function MapKeyAndRouteInput() {
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null)
 
   useEffect(() => {
-    listRoutePresets().then(res => setPresets(res.presets)).catch(() => {})
+    // Wrapped in Promise.resolve so a malformed/empty response (or a stubbed
+    // client that returns nothing) degrades to "no presets" instead of throwing.
+    Promise.resolve(listRoutePresets())
+      .then(res => setPresets(res?.presets ?? []))
+      .catch(() => {})
   }, [])
 
   // Sync the password field when the store's mapsKey is reset externally (e.g. RESET action).
@@ -66,12 +70,12 @@ export default function MapKeyAndRouteInput() {
   }
 
   async function handleAnalyze() {
-    if (!selectedScenarioId) return
     setAnalyzing(true)
     dispatch({ type: 'SET_MAPS_ERROR', error: null })
     try {
       const envelope = await routesAnalyze({
-        scenarioId: selectedScenarioId,
+        // Route-first (feature 009): a scenario is no longer required to search.
+        scenarioId: selectedScenarioId || undefined,
         mapsKey: mapsKey || undefined,
         start: mapsStart || undefined,
         end: mapsEnd || undefined,
@@ -134,10 +138,6 @@ export default function MapKeyAndRouteInput() {
     } finally {
       setLoadingPreset(false)
     }
-  }
-
-  function handleSwitchToManual() {
-    setSelectedPresetId(null)
   }
 
   const manualDisabled = selectedPresetId !== null
@@ -230,7 +230,7 @@ export default function MapKeyAndRouteInput() {
 
         <button
           onClick={handleAnalyze}
-          disabled={analyzing || !selectedScenarioId || manualDisabled}
+          disabled={analyzing || manualDisabled}
           style={{ width: '100%', padding: '6px', marginBottom: '6px' }}
         >
           {analyzing ? 'Analyzing…' : 'Analyze Route'}
