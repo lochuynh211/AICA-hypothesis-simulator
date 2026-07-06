@@ -2,30 +2,26 @@
   "input": {
     "scenario": {
       "_comment": [
-        "Scenario: UC-01 fatigue/drowsiness with staged recovery options (M7 Task 12).",
+        "Scenario: UC-01 fatigue/drowsiness with staged recovery options.",
         "",
-        "This scenario is derived from uc01_fatigue_friend_drive_v0_1 and adds a",
-        "recovery_options array so that accept_rest triggers a staged recovery sequence",
-        "instead of completing the run immediately (the pre-M7 back-compat path).",
+        "Feature 009 (signal-tier redesign): rewritten from the old",
+        "driver_profile/vehicle_profile shape to driver_signal_params +",
+        "anomaly_signal_params + run_seed_default (data-model.md §2). The vehicle",
+        "behaviour model (steering/pedal/lane/ADAS) is retired; the attention signal",
+        "is retired. Drowsiness/fatigue are deterministic Tier-3a signals;",
+        "anomaly_rate is the seeded-stochastic Tier-3b signal (the only randomness",
+        "in the simulation, seeded by run_seed).",
         "",
-        "Recovery options:",
-        "  nap_karaoke        \u2014 long rest: wakefulness (MOVING) \u2192 nap 3 ticks \u2192 karaoke 3 ticks",
-        "  convenience_stretch \u2014 short rest: wakefulness (MOVING) \u2192 stretch 2 ticks",
-        "  postpone           \u2014 postpone=true, no stages (acts as continue driving)",
+        "Recovery options (recovery_model gives each activity's fixed drowsiness/fatigue",
+        "recovery, applied once per activity — no short/long rest distinction):",
+        "  nap_karaoke        — wakefulness (MOVING) -> nap/sleep 3 ticks -> karaoke 3 ticks",
+        "  convenience_stretch — wakefulness (MOVING) -> stretch 2 ticks",
+        "  postpone           — postpone=true, no stages (acts as continue driving)",
         "",
-        "Proposal timeline (identical to friend_drive \u2014 same profile, route, presets):",
-        "  Tick ~29: declarative_rule fires REST_PROPOSAL (high fatigue + moderate drowsiness).",
-        "            rest spot at 60 km, ~30 min ahead.",
-        "  After accept_rest(nap_karaoke): wakefulness until 60 km \u2192 nap (3 ticks STOPPED) \u2192",
-        "            content (3 ticks STOPPED) \u2192 resuming \u2192 route completion.",
-        "",
-        "uc01_fatigue_friend_drive_v0_1 is left UNTOUCHED (no recovery_options) so that",
-        "existing tests that call accept_rest expecting immediate completion still pass.",
-        "",
-        "allowed_actions includes decline (M7 requirement) in addition to accept_rest/postpone."
+        "allowed_actions includes decline in addition to accept_rest/postpone."
       ],
       "id": "uc01_fatigue_recovery_v0_1",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "type": "uc01_fatigue",
       "persona": {
         "name": "Haruto Tanaka",
@@ -34,7 +30,7 @@
       "route_intent": {
         "rest_facility": {
           "label": {
-            "ja": "\u9053\u306e\u99c5 \u53cb\u597d",
+            "ja": "道の駅 友好",
             "en": "Yuuko Roadside Station"
           }
         },
@@ -42,7 +38,7 @@
           {
             "id": "seg_start",
             "name": {
-              "ja": "\u51fa\u767a\u5730\uff08\u4f4f\u5b85\u8857\uff09",
+              "ja": "出発地（住宅街）",
               "en": "Start (Residential)"
             },
             "type": "start",
@@ -54,7 +50,7 @@
           {
             "id": "seg_urban",
             "name": {
-              "ja": "\u5e02\u8857\u5730",
+              "ja": "市街地",
               "en": "Urban Zone"
             },
             "type": "urban",
@@ -66,7 +62,7 @@
           {
             "id": "seg_rest",
             "name": {
-              "ja": "\u9053\u306e\u99c5 \u53cb\u597d",
+              "ja": "道の駅 友好",
               "en": "Yuuko Roadside Station"
             },
             "type": "rest",
@@ -78,7 +74,7 @@
           {
             "id": "seg_highway",
             "name": {
-              "ja": "\u9ad8\u901f\u9053\u8def\u533a\u9593",
+              "ja": "高速道路区間",
               "en": "Highway Section"
             },
             "type": "highway",
@@ -90,7 +86,7 @@
           {
             "id": "seg_end",
             "name": {
-              "ja": "\u76ee\u7684\u5730\uff08\u53cb\u4eba\u5b85\uff09",
+              "ja": "目的地（友人宅）",
               "en": "Destination (Friend's Home)"
             },
             "type": "end",
@@ -105,7 +101,7 @@
         "drowsiness_level": 20,
         "fatigue_level": 20
       },
-      "driver_profile": {
+      "driver_signal_params": {
         "id": "friend_drive_driver_v1",
         "drowsiness_model": {
           "base_growth_per_min": 0.9,
@@ -119,48 +115,28 @@
           "mountain_road_add_per_min": 0.2,
           "traffic_jam_add_per_min": 0.05
         },
-        "attention_model": {
-          "base_recovery_per_min": 0.1,
-          "monotony_drop_per_min": 0.15,
-          "drowsiness_drop_factor": 0.3,
-          "active_content_recovery_per_min": 0.5
-        },
         "recovery_model": {
-          "short_rest_drowsiness_recovery": 20.0,
-          "short_rest_fatigue_recovery": 15.0,
-          "long_rest_drowsiness_recovery": 35.0,
-          "long_rest_fatigue_recovery": 30.0
+          "sleep": {
+            "drowsiness": 60.0,
+            "fatigue": 60.0
+          },
+          "audio_karaoke": {
+            "drowsiness": 25.0,
+            "fatigue": 25.0
+          },
+          "stretch": {
+            "drowsiness": 25.0,
+            "fatigue": 25.0
+          }
         }
       },
-      "vehicle_profile": {
-        "rolling_window_seconds": 300,
-        "steering_instability": {
-          "base_level": 5.0,
-          "drowsiness_factor": 0.25,
-          "fatigue_factor": 0.15,
-          "mountain_road_add": 8.0,
-          "traffic_jam_reduce": 4.0
-        },
-        "lane_departure": {
-          "enabled_on": [
-            "highway",
-            "normal_road"
-          ],
-          "drowsiness_threshold": 60.0,
-          "fatigue_threshold": 70.0,
-          "count_when_threshold_exceeded": 1
-        },
-        "pedal_abnormality": {
-          "base_level": 3.0,
-          "fatigue_factor": 0.12,
-          "traffic_jam_add": 10.0,
-          "mountain_road_add": 5.0
-        },
-        "adas_warning": {
-          "lane_departure_warning_threshold": 1.0,
-          "steering_instability_warning_threshold": 55.0
-        }
+      "anomaly_signal_params": {
+        "lambda_base": 0.02,
+        "lambda_gain": 0.5,
+        "theta": 60.0,
+        "window_min": 15.0
       },
+      "run_seed_default": 42,
       "speed_profile": {
         "normal_road_kph": 60,
         "highway_kph": 100,
@@ -171,6 +147,7 @@
       "is_night": false,
       "child_passenger": true,
       "familiar_route": true,
+      "weather_risk": 0,
       "presets": {
         "total_route_distance_km": 120,
         "traffic_events": [],
@@ -180,7 +157,7 @@
         "signal_duration_at_trigger": "persistent"
       },
       "total_duration_seconds": 7200,
-      "tick_seconds": 60,
+      "tick_seconds": 180,
       "allowed_actions": [
         "accept_rest",
         "postpone",
@@ -190,10 +167,9 @@
         {
           "id": "nap_karaoke",
           "label": {
-            "ja": "\u4eee\u7720\uff0b\u30ab\u30e9\u30aa\u30b1",
+            "ja": "仮眠＋カラオケ",
             "en": "Nap + Karaoke"
           },
-          "rest_type": "long",
           "stages": [
             {
               "phase": "wakefulness",
@@ -217,10 +193,9 @@
         {
           "id": "convenience_stretch",
           "label": {
-            "ja": "\u30b3\u30f3\u30d3\u30cb\u4f11\u61a9\uff0b\u30b9\u30c8\u30ec\u30c3\u30c1",
+            "ja": "コンビニ休憩＋ストレッチ",
             "en": "Convenience + Stretch"
           },
-          "rest_type": "short",
           "stages": [
             {
               "phase": "wakefulness",
@@ -238,7 +213,7 @@
         {
           "id": "postpone",
           "label": {
-            "ja": "\u5148\u5ef6\u3070\u3057",
+            "ja": "先延ばし",
             "en": "Postpone"
           },
           "postpone": true,
@@ -253,7 +228,7 @@
       {
         "id": "seg_start",
         "name": {
-          "ja": "\u51fa\u767a\u5730\uff08\u4f4f\u5b85\u8857\uff09",
+          "ja": "出発地（住宅街）",
           "en": "Start (Residential)"
         },
         "type": "start",
@@ -265,7 +240,7 @@
       {
         "id": "seg_urban",
         "name": {
-          "ja": "\u5e02\u8857\u5730",
+          "ja": "市街地",
           "en": "Urban Zone"
         },
         "type": "urban",
@@ -277,7 +252,7 @@
       {
         "id": "seg_rest",
         "name": {
-          "ja": "\u9053\u306e\u99c5 \u53cb\u597d",
+          "ja": "道の駅 友好",
           "en": "Yuuko Roadside Station"
         },
         "type": "rest",
@@ -289,7 +264,7 @@
       {
         "id": "seg_highway",
         "name": {
-          "ja": "\u9ad8\u901f\u9053\u8def\u533a\u9593",
+          "ja": "高速道路区間",
           "en": "Highway Section"
         },
         "type": "highway",
@@ -301,7 +276,7 @@
       {
         "id": "seg_end",
         "name": {
-          "ja": "\u76ee\u7684\u5730\uff08\u53cb\u4eba\u5b85\uff09",
+          "ja": "目的地（友人宅）",
           "en": "Destination (Friend's Home)"
         },
         "type": "end",

@@ -11,7 +11,9 @@ VALID_PACKAGE = {
     "version": "0.1.0",
     "label": {"ja": "ルールベース安静", "en": "Rule-based Rest"},
     "compatible_scenario_types": ["uc01_fatigue"],
-    "algorithm": {"type": "declarative_rule", "entrypoint": "aica_api.algorithms.declarative_rule"},
+    # Feature 009: declarative_rule/weighted_score are retired — python_module is
+    # the only Literal value AlgorithmDef.type accepts.
+    "algorithm": {"type": "python_module", "entrypoint": "algorithm.py"},
     "parameters": [
         {
             "key": "sensitivity",
@@ -56,7 +58,7 @@ def test_package_manifest_valid():
 
     m = PackageManifest(**VALID_PACKAGE)
     assert m.id == "rest_rule_based_v0_1"
-    assert m.algorithm.type == "declarative_rule"
+    assert m.algorithm.type == "python_module"
     assert len(m.parameters) == 1
     assert m.parameters[0].key == "sensitivity"
     assert m.trigger_categories[0].id == "rest_required"
@@ -627,16 +629,17 @@ def test_run_log_json_roundtrip():
 # ── Extended PackageManifest: weighted_score algorithm + numeric hyperparams ──
 
 
-def test_package_manifest_weighted_score_algorithm_accepted():
-    """algorithm.type = 'weighted_score' is now a valid Literal value."""
+def test_package_manifest_weighted_score_algorithm_rejected():
+    """Feature 009: weighted_score is retired — algorithm.type='weighted_score'
+    is no longer a valid Literal value (python_module is the only survivor)."""
     from aica_api.models.package import PackageManifest
 
     ws_pkg = {
         **VALID_PACKAGE,
         "algorithm": {"type": "weighted_score", "entrypoint": "aica_api.algorithms.weighted_score"},
     }
-    m = PackageManifest(**ws_pkg)
-    assert m.algorithm.type == "weighted_score"
+    with pytest.raises(ValidationError):
+        PackageManifest(**ws_pkg)
 
 
 def test_package_manifest_numeric_hyperparameter_accepted():
@@ -684,9 +687,9 @@ def test_package_manifest_numeric_hyperparameter_in_manifest():
     assert m.hyperparameters[1].kind == "numeric"
 
 
-# ── Extended ScenarioDef: profiles, is_night ──────────────────────────────────
+# ── Extended ScenarioDef: tiered-signal params, is_night (feature 009) ────────
 
-_DRIVER_PROFILE_DICT = {
+_DRIVER_SIGNAL_PARAMS_DICT = {
     "id": "default_driver",
     "drowsiness_model": {
         "base_growth_per_min": 0.1,
@@ -700,45 +703,17 @@ _DRIVER_PROFILE_DICT = {
         "mountain_road_add_per_min": 0.06,
         "traffic_jam_add_per_min": 0.02,
     },
-    "attention_model": {
-        "base_recovery_per_min": 0.0,
-        "monotony_drop_per_min": 0.01,
-        "drowsiness_drop_factor": 0.5,
-        "active_content_recovery_per_min": 0.1,
-    },
     "recovery_model": {
-        "short_rest_drowsiness_recovery": 30.0,
-        "short_rest_fatigue_recovery": 20.0,
-        "long_rest_drowsiness_recovery": 80.0,
-        "long_rest_fatigue_recovery": 60.0,
+        "sleep": {"drowsiness": 80.0, "fatigue": 60.0},
+        "audio_karaoke": {"drowsiness": 8.0, "fatigue": 5.0},
     },
 }
 
-_VEHICLE_PROFILE_DICT = {
-    "rolling_window_seconds": 300,
-    "steering_instability": {
-        "base_level": 0.1,
-        "drowsiness_factor": 0.3,
-        "fatigue_factor": 0.2,
-        "mountain_road_add": 0.05,
-        "traffic_jam_reduce": 0.02,
-    },
-    "lane_departure": {
-        "enabled_on": ["highway", "normal_road"],
-        "drowsiness_threshold": 60.0,
-        "fatigue_threshold": 70.0,
-        "count_when_threshold_exceeded": 2,
-    },
-    "pedal_abnormality": {
-        "base_level": 0.05,
-        "fatigue_factor": 0.2,
-        "traffic_jam_add": 0.1,
-        "mountain_road_add": 0.08,
-    },
-    "adas_warning": {
-        "lane_departure_warning_threshold": 80.0,
-        "steering_instability_warning_threshold": 75.0,
-    },
+_ANOMALY_SIGNAL_PARAMS_DICT = {
+    "lambda_base": 0.02,
+    "lambda_gain": 0.15,
+    "theta": 40.0,
+    "window_min": 5.0,
 }
 
 _SPEED_PROFILE_DICT = {
@@ -749,41 +724,117 @@ _SPEED_PROFILE_DICT = {
     "traffic_jam_kph": 10,
 }
 
-# Build a VALID_SCENARIO extended with M2 profiles
+# Build a VALID_SCENARIO extended with feature-009 tiered-signal params
 VALID_SCENARIO_M2 = {
     **{k: v for k, v in VALID_SCENARIO.items()},
-    "driver_profile": _DRIVER_PROFILE_DICT,
-    "vehicle_profile": _VEHICLE_PROFILE_DICT,
+    "driver_signal_params": _DRIVER_SIGNAL_PARAMS_DICT,
+    "anomaly_signal_params": _ANOMALY_SIGNAL_PARAMS_DICT,
+    "run_seed_default": 7,
     "speed_profile": _SPEED_PROFILE_DICT,
     "is_night": True,
     "presets": {"monotony": "highway"},
 }
 
 
-def test_scenario_def_with_m2_profiles_valid():
-    """ScenarioDef with full M2 profiles, is_night, and presets parses correctly."""
+def test_scenario_def_with_tiered_signal_params_valid():
+    """ScenarioDef with driver_signal_params/anomaly_signal_params, is_night, and
+    presets parses correctly (feature 009 — replaces driver_profile/vehicle_profile)."""
     from aica_api.models.scenario import ScenarioDef
 
     s = ScenarioDef(**VALID_SCENARIO_M2)
-    assert s.driver_profile is not None
-    assert s.driver_profile.id == "default_driver"
-    assert s.vehicle_profile is not None
-    assert s.vehicle_profile.rolling_window_seconds == 300
+    assert s.driver_signal_params is not None
+    assert s.driver_signal_params.id == "default_driver"
+    assert s.anomaly_signal_params is not None
+    assert s.anomaly_signal_params.lambda_base == 0.02
+    assert s.run_seed_default == 7
     assert s.speed_profile is not None
     assert s.speed_profile.highway_kph == 100
     assert s.is_night is True
     assert s.presets == {"monotony": "highway"}
 
 
-def test_scenario_def_without_profiles_valid():
-    """ScenarioDef without profiles still parses (profiles default to None)."""
+def test_scenario_def_without_tiered_signal_params_valid():
+    """ScenarioDef without driver_signal_params/anomaly_signal_params still parses
+    (they default to None; run_seed_default defaults to 42)."""
     from aica_api.models.scenario import ScenarioDef
 
     s = ScenarioDef(**VALID_SCENARIO)
-    assert s.driver_profile is None
-    assert s.vehicle_profile is None
+    assert s.driver_signal_params is None
+    assert s.anomaly_signal_params is None
+    assert s.run_seed_default == 42
     assert s.speed_profile is None
     assert s.is_night is False
+
+
+def test_scenario_def_requires_anomaly_signal_params_with_driver_signal_params():
+    """driver_signal_params without anomaly_signal_params is rejected — omitting
+    it would silently pin the anomaly signal at 0 (feature 009 spec-gap fix)."""
+    from aica_api.models.scenario import ScenarioDef
+
+    driver_only = {
+        **{k: v for k, v in VALID_SCENARIO.items()},
+        "driver_signal_params": _DRIVER_SIGNAL_PARAMS_DICT,
+    }
+    with pytest.raises(ValidationError) as exc_info:
+        ScenarioDef(**driver_only)
+    assert "anomaly_signal_params is required" in str(exc_info.value)
+
+
+def test_scenario_def_rejects_old_driver_profile_shape():
+    """A scenario dict still using the old driver_profile key is rejected with a
+    clear re-author error (feature 009 FR-017)."""
+    from aica_api.models.scenario import ScenarioDef
+
+    old_shape = {
+        **{k: v for k, v in VALID_SCENARIO.items()},
+        "driver_profile": _DRIVER_SIGNAL_PARAMS_DICT,
+    }
+    with pytest.raises(ValidationError) as exc_info:
+        ScenarioDef(**old_shape)
+    assert "driver_profile/vehicle_profile removed" in str(exc_info.value)
+
+
+def test_scenario_def_rejects_old_vehicle_profile_shape():
+    """A scenario dict still using the old vehicle_profile key is rejected with a
+    clear re-author error (feature 009 FR-017)."""
+    from aica_api.models.scenario import ScenarioDef
+
+    old_shape = {
+        **{k: v for k, v in VALID_SCENARIO.items()},
+        "vehicle_profile": {"rolling_window_seconds": 300},
+    }
+    with pytest.raises(ValidationError) as exc_info:
+        ScenarioDef(**old_shape)
+    assert "driver_profile/vehicle_profile removed" in str(exc_info.value)
+
+
+# ── weather_risk: editable scalar Fixed-tier context (UX-BE) ──────────────────
+
+
+def test_scenario_def_weather_risk_defaults_to_zero():
+    """weather_risk defaults to 0.0 when not authored on the scenario."""
+    from aica_api.models.scenario import ScenarioDef
+
+    s = ScenarioDef(**VALID_SCENARIO)
+    assert s.weather_risk == 0.0
+
+
+def test_scenario_def_weather_risk_editable():
+    """weather_risk is a plain editable scalar — any authored value in range parses."""
+    from aica_api.models.scenario import ScenarioDef
+
+    s = ScenarioDef(**{**VALID_SCENARIO, "weather_risk": 55.0})
+    assert s.weather_risk == 55.0
+
+
+@pytest.mark.parametrize("bad_value", [-1.0, 100.1, 500.0])
+def test_scenario_def_weather_risk_out_of_range_rejected(bad_value):
+    """weather_risk must be in [0, 100] — out-of-range values are rejected loudly."""
+    from aica_api.models.scenario import ScenarioDef
+
+    with pytest.raises(ValidationError) as exc_info:
+        ScenarioDef(**{**VALID_SCENARIO, "weather_risk": bad_value})
+    assert "weather_risk" in str(exc_info.value)
 
 
 # ── Extended DecisionResult: localized explanation ────────────────────────────
@@ -1050,7 +1101,7 @@ def test_algorithm_def_tick_seconds_defaults_none():
     """AlgorithmDef tick_seconds defaults to None when omitted (M3 T002)."""
     from aica_api.models.package import AlgorithmDef
 
-    algo = AlgorithmDef(type="declarative_rule", entrypoint="aica_api.algorithms.declarative_rule")
+    algo = AlgorithmDef(type="python_module", entrypoint="algorithm.py")
     assert algo.tick_seconds is None
 
 
@@ -1058,7 +1109,7 @@ def test_algorithm_def_error_mode_defaults_blocking():
     """AlgorithmDef error_mode defaults to 'blocking' when omitted (M3 T002)."""
     from aica_api.models.package import AlgorithmDef
 
-    algo = AlgorithmDef(type="declarative_rule", entrypoint="aica_api.algorithms.declarative_rule")
+    algo = AlgorithmDef(type="python_module", entrypoint="algorithm.py")
     assert algo.error_mode == "blocking"
 
 
@@ -1078,19 +1129,15 @@ def test_algorithm_def_error_mode_invalid_rejected():
         AlgorithmDef(type="python_module", entrypoint="algorithm.py", error_mode="silent")
 
 
-def test_algorithm_def_existing_types_backward_compat():
-    """Existing declarative_rule and weighted_score manifests still validate without new fields (M3 T002)."""
+def test_algorithm_def_rejects_retired_types():
+    """Feature 009: declarative_rule and weighted_score are retired — AlgorithmDef
+    only accepts type='python_module' now."""
     from aica_api.models.package import AlgorithmDef
 
-    dr = AlgorithmDef(type="declarative_rule", entrypoint="aica_api.algorithms.declarative_rule")
-    ws = AlgorithmDef(type="weighted_score", entrypoint="aica_api.algorithms.weighted_score")
-    assert dr.type == "declarative_rule"
-    assert ws.type == "weighted_score"
-    # Defaults apply when fields are absent
-    assert dr.tick_seconds is None
-    assert dr.error_mode == "blocking"
-    assert ws.tick_seconds is None
-    assert ws.error_mode == "blocking"
+    with pytest.raises(ValidationError):
+        AlgorithmDef(type="declarative_rule", entrypoint="aica_api.algorithms.declarative_rule")
+    with pytest.raises(ValidationError):
+        AlgorithmDef(type="weighted_score", entrypoint="aica_api.algorithms.weighted_score")
 
 
 def test_package_manifest_python_module_algorithm_accepted():
@@ -1476,7 +1523,6 @@ def test_recovery_option_parses_stages_and_postpone():
     opt = RecoveryOption(
         id="nap_karaoke",
         label={"ja": "仮眠後にカラオケ", "en": "Brief nap, then karaoke"},
-        rest_type="long",
         stages=[
             {"phase": "wakefulness", "content": "audio_karaoke", "motion": "MOVING"},
             {"phase": "nap", "content": "sleep", "motion": "STOPPED", "ticks": 3},

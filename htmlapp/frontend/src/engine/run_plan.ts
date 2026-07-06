@@ -300,6 +300,7 @@ type ProfileFieldSchema =
   | { kind: 'string' }
   | { kind: 'stringArray' }
   | { kind: 'object'; fields: Record<string, { schema: ProfileFieldSchema; required: boolean }> }
+  | { kind: 'record'; value: ProfileFieldSchema }
 
 /** A sub-model whose every declared field is a required, non-negative number. */
 function nonnegRateModel(fields: string[]): ProfileFieldSchema {
@@ -311,7 +312,9 @@ function nonnegRateModel(fields: string[]): ProfileFieldSchema {
   }
 }
 
-const DRIVER_MODEL_PROFILE_SCHEMA: ProfileFieldSchema = {
+// Feature 009: DriverSignalParams replaces DriverModelProfile (attention_model
+// retired; recovery_model is now a map of activity → ActivityRecovery).
+const DRIVER_SIGNAL_PARAMS_SCHEMA: ProfileFieldSchema = {
   kind: 'object',
   fields: {
     id: { schema: { kind: 'string' }, required: true },
@@ -328,61 +331,24 @@ const DRIVER_MODEL_PROFILE_SCHEMA: ProfileFieldSchema = {
       ]),
       required: true,
     },
-    attention_model: {
-      schema: nonnegRateModel([
-        'base_recovery_per_min',
-        'monotony_drop_per_min',
-        'drowsiness_drop_factor',
-        'active_content_recovery_per_min',
-      ]),
-      required: true,
-    },
     recovery_model: {
-      schema: nonnegRateModel([
-        'short_rest_drowsiness_recovery',
-        'short_rest_fatigue_recovery',
-        'long_rest_drowsiness_recovery',
-        'long_rest_fatigue_recovery',
-      ]),
+      schema: {
+        kind: 'record',
+        value: nonnegRateModel(['drowsiness', 'fatigue']),
+      },
       required: true,
     },
   },
 }
 
-const VEHICLE_BEHAVIOR_PROFILE_SCHEMA: ProfileFieldSchema = {
+// Feature 009: seeded-Poisson anomaly-signal generator params (Tier 3b).
+const ANOMALY_SIGNAL_PARAMS_SCHEMA: ProfileFieldSchema = {
   kind: 'object',
   fields: {
-    rolling_window_seconds: { schema: { kind: 'int' }, required: false },
-    steering_instability: {
-      schema: nonnegRateModel(['base_level', 'drowsiness_factor', 'fatigue_factor', 'mountain_road_add', 'traffic_jam_reduce']),
-      required: true,
-    },
-    lane_departure: {
-      schema: {
-        kind: 'object',
-        fields: {
-          enabled_on: { schema: { kind: 'stringArray' }, required: true },
-          drowsiness_threshold: { schema: { kind: 'number', range: [0, 100] }, required: true },
-          fatigue_threshold: { schema: { kind: 'number', range: [0, 100] }, required: true },
-          count_when_threshold_exceeded: { schema: { kind: 'int' }, required: true },
-        },
-      },
-      required: true,
-    },
-    pedal_abnormality: {
-      schema: nonnegRateModel(['base_level', 'fatigue_factor', 'traffic_jam_add', 'mountain_road_add']),
-      required: true,
-    },
-    adas_warning: {
-      schema: {
-        kind: 'object',
-        fields: {
-          lane_departure_warning_threshold: { schema: { kind: 'number', range: [0, 100] }, required: true },
-          steering_instability_warning_threshold: { schema: { kind: 'number', range: [0, 100] }, required: true },
-        },
-      },
-      required: true,
-    },
+    lambda_base: { schema: { kind: 'number', nonneg: true }, required: true },
+    lambda_gain: { schema: { kind: 'number', nonneg: true }, required: true },
+    theta: { schema: { kind: 'number', nonneg: true }, required: true },
+    window_min: { schema: { kind: 'number', nonneg: true }, required: true },
   },
 }
 
@@ -426,6 +392,17 @@ function validateProfileSchema(
       if (!(key in schema.fields)) {
         errors.push(profileFieldError(profileType, [...loc, key], 'Extra inputs are not permitted'))
       }
+    }
+    return
+  }
+
+  if (schema.kind === 'record') {
+    if (!isPlainObject(value)) {
+      errors.push(profileFieldError(profileType, loc, 'Input should be a valid object'))
+      return
+    }
+    for (const [key, v] of Object.entries(value)) {
+      validateProfileSchema(v, schema.value, [...loc, key], profileType, errors)
     }
     return
   }
@@ -483,20 +460,31 @@ function applyProfileOverrides(
   const errors: ValidationError[] = []
   const updates: Record<string, unknown> = {}
 
+  const scenAny = scenario as unknown as Record<string, unknown>
+
   const driverOverride = profiles['driver']
   if (isPlainObject(driverOverride)) {
-    const base = isPlainObject(scenario.driver_profile) ? scenario.driver_profile : {}
+    const base = isPlainObject(scenAny['driver_signal_params']) ? (scenAny['driver_signal_params'] as Record<string, unknown>) : {}
     const merged = deepMerge(base, driverOverride)
-    validateProfileSchema(merged, DRIVER_MODEL_PROFILE_SCHEMA, [], 'driver', errors)
-    updates['driver_profile'] = merged
+    validateProfileSchema(merged, DRIVER_SIGNAL_PARAMS_SCHEMA, [], 'driver', errors)
+    updates['driver_signal_params'] = merged
   }
 
-  const vehicleOverride = profiles['vehicle']
-  if (isPlainObject(vehicleOverride)) {
-    const base = isPlainObject(scenario.vehicle_profile) ? scenario.vehicle_profile : {}
-    const merged = deepMerge(base, vehicleOverride)
-    validateProfileSchema(merged, VEHICLE_BEHAVIOR_PROFILE_SCHEMA, [], 'vehicle', errors)
-    updates['vehicle_profile'] = merged
+  // Feature 009: anomaly-signal params override (Tier 3b).
+  const anomalyOverride = profiles['anomaly']
+  if (isPlainObject(anomalyOverride)) {
+    const base = isPlainObject(scenAny['anomaly_signal_params']) ? (scenAny['anomaly_signal_params'] as Record<string, unknown>) : {}
+    const merged = deepMerge(base, anomalyOverride)
+    validateProfileSchema(merged, ANOMALY_SIGNAL_PARAMS_SCHEMA, [], 'anomaly', errors)
+    updates['anomaly_signal_params'] = merged
+  }
+
+  // Feature 009: the vehicle behavior model was retired — reject explicitly.
+  if (isPlainObject(profiles['vehicle'])) {
+    errors.push({
+      field: 'profiles.vehicle',
+      message: 'vehicle profile overrides are no longer supported — the vehicle behavior model was retired in feature 009 (signal-tier redesign).',
+    })
   }
 
   const speedOverride = profiles['speed']
@@ -550,8 +538,11 @@ function buildEffectiveSetup(
     run_mode: runMode,
     parameters: effectiveParams,
     hyperparameters: effectiveHps,
-    driver_profile: scenario.driver_profile ?? null,
-    vehicle_profile: scenario.vehicle_profile ?? null,
+    // Feature 009: driver_profile carries driver_signal_params (name kept for
+    // compat); vehicle_profile retired (always null); anomaly_signal_params new.
+    driver_profile: (scenario as unknown as Record<string, unknown>)['driver_signal_params'] ?? null,
+    vehicle_profile: null,
+    anomaly_signal_params: (scenario as unknown as Record<string, unknown>)['anomaly_signal_params'] ?? null,
     speed_profile: scenario.speed_profile ?? null,
   }
 }

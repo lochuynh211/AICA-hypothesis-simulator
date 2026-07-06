@@ -209,13 +209,70 @@ def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any
     return result
 
 
+# ---------------------------------------------------------------------------
+# Context overrides (Fixed-tier scenario context: child_passenger,
+# familiar_route, weather_risk, is_night) — shared by routers/run_plans.py (a real
+# POST /api/run-plans) and services/preview.py (the ephemeral POST
+# /api/runs/preview), so both paths validate + apply identical inputs and a
+# preview is faithful to what "Open full run" would persist (UX-BE).
+# ---------------------------------------------------------------------------
+
+_VALID_CONTEXT_OVERRIDE_KEYS = {"child_passenger", "familiar_route", "weather_risk", "is_night"}
+
+
+def validate_context_overrides(context_overrides: dict[str, Any]) -> list[dict[str, str]]:
+    """Validate context_overrides keys/types.
+
+    ``child_passenger`` / ``familiar_route`` / ``is_night`` must be booleans; ``weather_risk``
+    (UX-BE) must be a number in [0, 100] — mirrors ScenarioDef.weather_risk's
+    own range validator so a bad override is caught here with a field-scoped
+    message rather than surfacing as a generic 500 from model_copy/validation
+    deeper in create_draft.
+
+    Returns a list of {"field", "message"} dicts (empty when valid) — the same
+    shape as RunPlanDraft.validation_errors, so callers can merge or 400 on it
+    directly.
+    """
+    errors: list[dict[str, str]] = []
+    for key, value in context_overrides.items():
+        if key not in _VALID_CONTEXT_OVERRIDE_KEYS:
+            errors.append({
+                "field": f"context_overrides.{key}",
+                "message": f"Unknown context key {key!r}. Valid keys: {sorted(_VALID_CONTEXT_OVERRIDE_KEYS)}",
+            })
+        elif key == "weather_risk":
+            if not isinstance(value, (int, float)) or isinstance(value, bool):
+                errors.append({
+                    "field": f"context_overrides.{key}",
+                    "message": f"context_overrides.{key} must be a number in [0, 100]; got {value!r}",
+                })
+            elif not (0 <= float(value) <= 100):
+                errors.append({
+                    "field": f"context_overrides.{key}",
+                    "message": f"context_overrides.{key} must be in [0, 100]; got {value!r}",
+                })
+        elif not isinstance(value, bool):
+            errors.append({
+                "field": f"context_overrides.{key}",
+                "message": f"context_overrides.{key} must be a boolean; got {value!r}",
+            })
+    return errors
+
+
 def _apply_profile_overrides(
     scenario: ScenarioDef,
     profiles: dict[str, Any],
 ) -> tuple[ScenarioDef, list[dict[str, str]]]:
     """Deep-merge profile override dicts onto scenario profiles and validate.
 
-    For each of driver / vehicle / speed provided in *profiles*:
+    Feature 009 (signal-tier redesign): ``driver_profile``/``vehicle_profile``
+    are retired from ``ScenarioDef`` — replaced by ``driver_signal_params``
+    (still overridable) and ``anomaly_signal_params`` (new override surface).
+    The vehicle behaviour model has no replacement; a ``"vehicle"`` override
+    key is rejected with a clear validation error rather than importing the
+    deleted ``VehicleBehaviorProfile`` class.
+
+    For each of driver / anomaly / speed provided in *profiles*:
       1. Take the scenario's existing profile as a dict (or empty if absent).
       2. Deep-merge the override dict onto it (unset fields keep scenario values).
       3. Validate the merged result against the typed profile model.
@@ -227,32 +284,52 @@ def _apply_profile_overrides(
     """
     from pydantic import ValidationError
 
-    from aica_api.models.profile import DriverModelProfile, SpeedProfile, VehicleBehaviorProfile
+    from aica_api.models.profile import AnomalySignalParams, DriverSignalParams, SpeedProfile
 
     errors: list[dict[str, str]] = []
     updates: dict[str, Any] = {}
 
     driver_override = profiles.get("driver")
     if driver_override is not None:
-        base = scenario.driver_profile.model_dump(mode="json") if scenario.driver_profile else {}
+        base = (
+            scenario.driver_signal_params.model_dump(mode="json")
+            if scenario.driver_signal_params
+            else {}
+        )
         merged = _deep_merge(base, driver_override)
         try:
-            updates["driver_profile"] = DriverModelProfile.model_validate(merged)
+            updates["driver_signal_params"] = DriverSignalParams.model_validate(merged)
         except ValidationError as exc:
             for e in exc.errors():
                 loc = ".".join(str(x) for x in e["loc"])
                 errors.append({"field": f"profiles.driver.{loc}", "message": e["msg"]})
 
-    vehicle_override = profiles.get("vehicle")
-    if vehicle_override is not None:
-        base = scenario.vehicle_profile.model_dump(mode="json") if scenario.vehicle_profile else {}
-        merged = _deep_merge(base, vehicle_override)
+    anomaly_override = profiles.get("anomaly")
+    if anomaly_override is not None:
+        base = (
+            scenario.anomaly_signal_params.model_dump(mode="json")
+            if scenario.anomaly_signal_params
+            else {}
+        )
+        merged = _deep_merge(base, anomaly_override)
         try:
-            updates["vehicle_profile"] = VehicleBehaviorProfile.model_validate(merged)
+            updates["anomaly_signal_params"] = AnomalySignalParams.model_validate(merged)
         except ValidationError as exc:
             for e in exc.errors():
                 loc = ".".join(str(x) for x in e["loc"])
-                errors.append({"field": f"profiles.vehicle.{loc}", "message": e["msg"]})
+                errors.append({"field": f"profiles.anomaly.{loc}", "message": e["msg"]})
+
+    # The vehicle behaviour model is retired (feature 009) — no replacement
+    # profile exists. Reject explicitly instead of importing a deleted class
+    # or silently dropping the override.
+    if profiles.get("vehicle") is not None:
+        errors.append({
+            "field": "profiles.vehicle",
+            "message": (
+                "vehicle profile overrides are no longer supported — the vehicle "
+                "behavior model was retired in feature 009 (signal-tier redesign)."
+            ),
+        })
 
     speed_override = profiles.get("speed")
     if speed_override is not None:
@@ -296,7 +373,14 @@ def _build_effective_setup(
     effective_hps: dict[str, Any],
     run_mode: str,
 ) -> dict[str, Any]:
-    """Build the effective_setup dict for the draft response."""
+    """Build the effective_setup dict for the draft response.
+
+    Feature 009 (signal-tier redesign): ``driver_profile`` keeps its evidence
+    field name for backward compatibility but now carries the
+    ``driver_signal_params`` dump (see run_manager.create_run's identical
+    convention). ``vehicle_profile`` is always ``None`` — the vehicle
+    behaviour model is retired. ``anomaly_signal_params`` is a new key.
+    """
     return {
         "package_id": package.id,
         "package_version": package.version,
@@ -306,13 +390,14 @@ def _build_effective_setup(
         "parameters": effective_params,
         "hyperparameters": effective_hps,
         "driver_profile": (
-            scenario.driver_profile.model_dump(mode="json")
-            if scenario.driver_profile is not None
+            scenario.driver_signal_params.model_dump(mode="json")
+            if scenario.driver_signal_params is not None
             else None
         ),
-        "vehicle_profile": (
-            scenario.vehicle_profile.model_dump(mode="json")
-            if scenario.vehicle_profile is not None
+        "vehicle_profile": None,
+        "anomaly_signal_params": (
+            scenario.anomaly_signal_params.model_dump(mode="json")
+            if scenario.anomaly_signal_params is not None
             else None
         ),
         "speed_profile": (
@@ -405,6 +490,7 @@ def create_draft(
     profiles: dict[str, Any] | None = None,
     initial_state: dict | None = None,
     context_overrides: dict | None = None,
+    run_seed: int | None = None,
 ) -> RunPlanDraft:
     """Create and register a draft run plan.
 
@@ -430,6 +516,15 @@ def create_draft(
                           "drowsiness_level" and/or "fatigue_level" as floats in [0, 100].
                           Merged onto effective_scenario.initial_state AFTER profile
                           overrides so the effective_scenario is already resolved.
+        run_seed:         Fix (whole-branch review, feature 009) — explicit run_seed
+                          override from the setup screen / preview.  None (default)
+                          leaves effective_scenario.run_seed_default untouched.  Baked
+                          into effective_scenario.run_seed_default so that BOTH the
+                          draft's frozen event_plan (build_event_plan defaults to
+                          scenario.run_seed_default) AND a later run_manager.create_run
+                          (which reads scenario.run_seed_default off this same
+                          registered effective_scenario) use the identical seed —
+                          no other call site needs to change.
 
     Returns:
         A RunPlanDraft.  Check validation_errors before using.
@@ -451,9 +546,18 @@ def create_draft(
         merged_initial = {**effective_scenario.initial_state, **initial_state}
         effective_scenario = effective_scenario.model_copy(update={"initial_state": merged_initial})
 
-    # Apply boolean context overrides (child_passenger, familiar_route).
+    # Apply boolean context overrides (child_passenger, familiar_route, is_night)
+    # plus numeric weather_risk. is_night flips the scenario day/night constant
+    # (Fixed-tier signal) so the setup screen can toggle it — model_copy applies
+    # it onto ScenarioDef.is_night directly.
     if context_overrides:
         effective_scenario = effective_scenario.model_copy(update=context_overrides)
+
+    # Apply explicit run_seed override (fix, whole-branch review, feature 009).
+    # None (default) leaves scenario.run_seed_default untouched — existing
+    # default-seed behavior is unchanged.
+    if run_seed is not None:
+        effective_scenario = effective_scenario.model_copy(update={"run_seed_default": run_seed})
 
     if validation_errors:
         # Return draft with errors but do NOT register it.

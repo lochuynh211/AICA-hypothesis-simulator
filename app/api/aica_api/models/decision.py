@@ -11,10 +11,15 @@ M3 extensions:
   Python packages (python_module type) may emit their own result category strings
   verbatim (e.g. "MONOTONY_PROPOSAL", "SUPPRESSED", "NO_PROPOSAL").  No alias
   map — the value is stored exactly as received.
-- ResultType is retained as the set of known built-in constants used by
-  declarative_rule / weighted_score.  Because ResultType is a str-subclass enum,
-  passing a ResultType member to a str field is valid and compares equal to its
-  string value (ResultType.REST_PROPOSAL == "REST_PROPOSAL").
+- ResultType is retained as a set of well-known result category constants.
+  Because ResultType is a str-subclass enum, passing a ResultType member to a
+  str field is valid and compares equal to its string value
+  (ResultType.REST_PROPOSAL == "REST_PROPOSAL").
+
+Feature 009 (signal-tier redesign): the built-in "declarative_rule" and
+"weighted_score" algorithm types have been retired; "python_module" is now
+the only supported package algorithm type. ResultType's values remain in use
+as a convenience for python_module packages that choose to emit them.
 """
 
 from __future__ import annotations
@@ -49,11 +54,11 @@ ExplanationType = Union[str, LocalizedText, list[ExplanationItem]]
 
 
 class ResultType(str, Enum):
-    """Known built-in result type constants for declarative_rule / weighted_score.
+    """Well-known result type constants for python_module packages.
 
-    M3: DecisionResult.result_type is now a plain str field, so Python packages
-    may emit custom category strings.  This enum is retained as the authoritative
-    set of built-in values; callers may compare against it via str equality
+    DecisionResult.result_type is a plain str field, so Python packages may
+    emit custom category strings.  This enum is retained as a convenience set
+    of common values; callers may compare against it via str equality
     (ResultType.REST_PROPOSAL == "REST_PROPOSAL" is True).
     """
 
@@ -96,16 +101,14 @@ class DecisionResult(BaseModel):
     """
     The §11 normalized algorithm output.
 
-    Every algorithm (built-in declarative_rule or future python_module) is
-    coerced to exactly this shape by the adapter.  Rule-only runs leave
-    hybrid-only fields (scores, states, next_package_runtime_state) empty.
+    Every algorithm (a python_module package) is coerced to exactly this
+    shape by the adapter.  Packages that don't populate the hybrid-only
+    fields (scores, states, next_package_runtime_state) leave them empty.
 
     M2: explanation accepts str | LocalizedText | list[str|LocalizedText].
     M3: result_type is a plain str — accepted verbatim, no alias map.
-        Built-in algorithms continue to pass ResultType members; Pydantic
-        coerces them to their string values.  Python packages may emit any
-        string (e.g. "MONOTONY_PROPOSAL").  ResultType remains the canonical
-        set of built-in constants.
+        Python packages may emit any string (e.g. "MONOTONY_PROPOSAL") or
+        pass a ResultType member, which Pydantic coerces to its string value.
     """
 
     result_type: str

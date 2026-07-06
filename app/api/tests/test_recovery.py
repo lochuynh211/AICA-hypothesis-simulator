@@ -3,7 +3,7 @@ from aica_api.models.run import RestSpot
 from aica_api.services.recovery import start_recovery, advance_recovery
 
 OPT = RecoveryOption(
-    id="nap_karaoke", label={"ja": "x", "en": "x"}, rest_type="long",
+    id="nap_karaoke", label={"ja": "x", "en": "x"},
     stages=[
         {"phase": "wakefulness", "content": "audio_karaoke", "motion": "MOVING"},
         {"phase": "nap", "content": "sleep", "motion": "STOPPED", "ticks": 2},

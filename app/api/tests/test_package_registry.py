@@ -36,7 +36,7 @@ def registry() -> PackageRegistry:
 def test_registry_loads_valid_package(registry):
     """The real fixture package loads without errors."""
     summaries = registry.list_summaries()
-    assert any(s["id"] == "rest_rule_based_v0_1" for s in summaries)
+    assert any(s["id"] == "aica_transparent_hybrid_trigger_v1" for s in summaries)
 
 
 def test_registry_no_errors_for_valid_fixture(registry):
@@ -67,8 +67,8 @@ def test_summary_has_required_keys(registry):
 
 def test_summary_id_matches_package_id(registry):
     summaries = registry.list_summaries()
-    s = next(s for s in summaries if s["id"] == "rest_rule_based_v0_1")
-    assert s["id"] == "rest_rule_based_v0_1"
+    s = next(s for s in summaries if s["id"] == "aica_transparent_hybrid_trigger_v1")
+    assert s["id"] == "aica_transparent_hybrid_trigger_v1"
 
 
 # ---------------------------------------------------------------------------
@@ -77,14 +77,14 @@ def test_summary_id_matches_package_id(registry):
 
 
 def test_get_returns_package_manifest(registry):
-    pkg = registry.get("rest_rule_based_v0_1")
+    pkg = registry.get("aica_transparent_hybrid_trigger_v1")
     assert isinstance(pkg, PackageManifest)
 
 
 def test_get_returns_correct_package(registry):
-    pkg = registry.get("rest_rule_based_v0_1")
-    assert pkg.id == "rest_rule_based_v0_1"
-    assert pkg.version == "0.1.0"
+    pkg = registry.get("aica_transparent_hybrid_trigger_v1")
+    assert pkg.id == "aica_transparent_hybrid_trigger_v1"
+    assert pkg.version == "0.2"
 
 
 def test_get_unknown_returns_none(registry):
@@ -92,19 +92,21 @@ def test_get_unknown_returns_none(registry):
     assert pkg is None
 
 
-def test_get_includes_rules(registry):
-    pkg = registry.get("rest_rule_based_v0_1")
-    assert len(pkg.rules) >= 1
+def test_get_rules_is_empty_for_python_module(registry):
+    """Feature 009: rules is a legacy declarative_rule-only field — python_module
+    is the only surviving algorithm type, and it never populates rules."""
+    pkg = registry.get("aica_transparent_hybrid_trigger_v1")
+    assert pkg.rules == []
 
 
 def test_get_includes_hyperparameters(registry):
-    pkg = registry.get("rest_rule_based_v0_1")
+    pkg = registry.get("aica_transparent_hybrid_trigger_v1")
     assert len(pkg.hyperparameters) >= 1
 
 
 def test_get_includes_proposals(registry):
-    pkg = registry.get("rest_rule_based_v0_1")
-    assert any(p.id == "rest_guidance" for p in pkg.proposals)
+    pkg = registry.get("aica_transparent_hybrid_trigger_v1")
+    assert any(p.id == "rest_required_proposal" for p in pkg.proposals)
 
 
 # ---------------------------------------------------------------------------
@@ -117,10 +119,10 @@ def test_is_compatible_matching_pair(registry):
     from aica_api.models.scenario import ScenarioDef
 
     scenario_data = json.loads(
-        (_SCENARIOS_DIR / "uc01_fatigue_friend_drive_v0_1.json").read_text(encoding="utf-8")
+        (_SCENARIOS_DIR / "uc01_fatigue_recovery_v0_1.json").read_text(encoding="utf-8")
     )
     scenario = ScenarioDef(**scenario_data)
-    pkg = registry.get("rest_rule_based_v0_1")
+    pkg = registry.get("aica_transparent_hybrid_trigger_v1")
 
     assert registry.is_compatible(pkg, scenario) is True
 
@@ -130,7 +132,7 @@ def test_is_compatible_mismatched_type(registry):
     from aica_api.models.scenario import ScenarioDef
 
     scenario_data = json.loads(
-        (_SCENARIOS_DIR / "uc01_fatigue_friend_drive_v0_1.json").read_text(encoding="utf-8")
+        (_SCENARIOS_DIR / "uc01_fatigue_recovery_v0_1.json").read_text(encoding="utf-8")
     )
     scenario = ScenarioDef(**scenario_data)
 
@@ -139,7 +141,7 @@ def test_is_compatible_mismatched_type(registry):
     scenario_data["type"] = "uc99_unknown_type"
     scenario_mismatched = ScenarioDef(**scenario_data)
 
-    pkg = registry.get("rest_rule_based_v0_1")
+    pkg = registry.get("aica_transparent_hybrid_trigger_v1")
     assert registry.is_compatible(pkg, scenario_mismatched) is False
 
 
@@ -162,36 +164,34 @@ def test_registry_reports_errors_for_invalid_package(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# T017 — Both packages listed in the registry
+# T017 — Both surviving packages listed in the registry
 # ---------------------------------------------------------------------------
+# Feature 009: rest_weighted_score_v0_1 (weighted_score) is retired — the only
+# surviving packages are both python_module: aica_transparent_hybrid_trigger_v1
+# and nri_fatigue_score_v1.
 
 
-def test_registry_lists_both_packages(registry):
-    """Registry lists both rest_rule_based_v0_1 and rest_weighted_score_v0_1."""
+def test_registry_lists_both_surviving_packages(registry):
+    """Registry lists both surviving packages."""
     summaries = registry.list_summaries()
     ids = [s["id"] for s in summaries]
-    assert "rest_rule_based_v0_1" in ids, f"rest_rule_based_v0_1 missing from: {ids}"
-    assert "rest_weighted_score_v0_1" in ids, f"rest_weighted_score_v0_1 missing from: {ids}"
+    assert "aica_transparent_hybrid_trigger_v1" in ids, f"missing from: {ids}"
+    assert "nri_fatigue_score_v1" in ids, f"missing from: {ids}"
 
 
-def test_weighted_score_package_loads_without_errors(registry):
-    """rest_weighted_score_v0_1 parses under PackageManifest with no errors."""
-    pkg = registry.get("rest_weighted_score_v0_1")
-    assert pkg is not None, "rest_weighted_score_v0_1 failed to load"
-    assert pkg.id == "rest_weighted_score_v0_1"
-    assert pkg.version == "0.1.0"
-    assert pkg.algorithm.type == "weighted_score"
-    assert len(pkg.trigger_categories) == 2
-    cats = [c.id for c in pkg.trigger_categories]
-    assert "rest_required" in cats
-    assert "monotony_prevention" in cats
+def test_nri_fatigue_score_package_loads_without_errors(registry):
+    """nri_fatigue_score_v1 parses under PackageManifest with no errors."""
+    pkg = registry.get("nri_fatigue_score_v1")
+    assert pkg is not None, "nri_fatigue_score_v1 failed to load"
+    assert pkg.id == "nri_fatigue_score_v1"
+    assert pkg.algorithm.type == "python_module"
     assert len(pkg.hyperparameters) >= 1
-    assert len(pkg.proposals) >= 1
+    assert any(p.id == "rest_required_proposal" for p in pkg.proposals)
     assert pkg.compatible_scenario_types == ["uc01_fatigue"]
 
 
-def test_registry_no_errors_for_weighted_score_package(registry):
-    """No registry errors are reported for rest_weighted_score_v0_1."""
+def test_registry_no_errors_for_real_packages(registry):
+    """No registry errors are reported for the real packages/ directory."""
     errors = registry.list_errors()
     assert len(errors) == 0, f"Unexpected registry errors: {errors}"
 
@@ -199,8 +199,8 @@ def test_registry_no_errors_for_weighted_score_package(registry):
 def test_registry_valid_package_not_contaminated_by_invalid(tmp_path):
     """A valid package alongside an invalid one still loads correctly."""
     # Copy the valid fixture
-    src = _PACKAGES_DIR / "rest_rule_based_v0_1"
-    dst = tmp_path / "rest_rule_based_v0_1"
+    src = _PACKAGES_DIR / "aica_transparent_hybrid_trigger_v1"
+    dst = tmp_path / "aica_transparent_hybrid_trigger_v1"
     shutil.copytree(src, dst)
 
     # Add an invalid one
@@ -209,6 +209,6 @@ def test_registry_valid_package_not_contaminated_by_invalid(tmp_path):
     (bad_dir / "package.json").write_text("{}", encoding="utf-8")
 
     reg = PackageRegistry(tmp_path)
-    pkg = reg.get("rest_rule_based_v0_1")
+    pkg = reg.get("aica_transparent_hybrid_trigger_v1")
     assert pkg is not None
     assert len(reg.list_errors()) == 1

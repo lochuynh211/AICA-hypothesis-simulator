@@ -1,6 +1,11 @@
 """T003 — Profile model tests. Written RED-first per TDD.
 
-Tests for DriverModelProfile, VehicleBehaviorProfile, SpeedProfile.
+Feature 009 (signal-tier redesign): DriverModelProfile is renamed to
+DriverSignalParams and loses its attention_model sub-model (the attention
+tick-output signal is retired — see aica_api.models.profile module docstring).
+VehicleBehaviorProfile (steering/pedal/lane/ADAS) is retired entirely — the
+vehicle behaviour model is gone, so its tests are deleted rather than
+repointed (there's nothing surviving to test). SpeedProfile is unaffected.
 """
 
 from __future__ import annotations
@@ -25,61 +30,16 @@ VALID_FATIGUE_MODEL = {
     "traffic_jam_add_per_min": 0.02,
 }
 
-VALID_ATTENTION_MODEL = {
-    "base_recovery_per_min": 0.0,
-    "monotony_drop_per_min": 0.01,
-    "drowsiness_drop_factor": 0.5,
-    "active_content_recovery_per_min": 0.1,
-}
-
 VALID_RECOVERY_MODEL = {
-    "short_rest_drowsiness_recovery": 30.0,
-    "short_rest_fatigue_recovery": 20.0,
-    "long_rest_drowsiness_recovery": 80.0,
-    "long_rest_fatigue_recovery": 60.0,
+    "sleep": {"drowsiness": 80.0, "fatigue": 60.0},
+    "stretch": {"drowsiness": 30.0, "fatigue": 20.0},
 }
 
-VALID_DRIVER_PROFILE = {
+VALID_DRIVER_SIGNAL_PARAMS = {
     "id": "default_driver",
     "drowsiness_model": VALID_DROWSINESS_MODEL,
     "fatigue_model": VALID_FATIGUE_MODEL,
-    "attention_model": VALID_ATTENTION_MODEL,
     "recovery_model": VALID_RECOVERY_MODEL,
-}
-
-VALID_STEERING_INSTABILITY = {
-    "base_level": 0.1,
-    "drowsiness_factor": 0.3,
-    "fatigue_factor": 0.2,
-    "mountain_road_add": 0.05,
-    "traffic_jam_reduce": 0.02,
-}
-
-VALID_LANE_DEPARTURE = {
-    "enabled_on": ["highway", "normal_road"],
-    "drowsiness_threshold": 60.0,
-    "fatigue_threshold": 70.0,
-    "count_when_threshold_exceeded": 2,
-}
-
-VALID_PEDAL_ABNORMALITY = {
-    "base_level": 0.05,
-    "fatigue_factor": 0.2,
-    "traffic_jam_add": 0.1,
-    "mountain_road_add": 0.08,
-}
-
-VALID_ADAS_WARNING = {
-    "lane_departure_warning_threshold": 80.0,
-    "steering_instability_warning_threshold": 75.0,
-}
-
-VALID_VEHICLE_PROFILE = {
-    "rolling_window_seconds": 300,
-    "steering_instability": VALID_STEERING_INSTABILITY,
-    "lane_departure": VALID_LANE_DEPARTURE,
-    "pedal_abnormality": VALID_PEDAL_ABNORMALITY,
-    "adas_warning": VALID_ADAS_WARNING,
 }
 
 VALID_SPEED_PROFILE = {
@@ -91,118 +51,65 @@ VALID_SPEED_PROFILE = {
 }
 
 
-# ─── DriverModelProfile ───────────────────────────────────────────────────────
+# ─── DriverSignalParams (renamed from DriverModelProfile; attention removed) ──
 
 
-def test_driver_profile_valid():
-    from aica_api.models.profile import DriverModelProfile
+def test_driver_signal_params_valid():
+    from aica_api.models.profile import DriverSignalParams
 
-    p = DriverModelProfile(**VALID_DRIVER_PROFILE)
+    p = DriverSignalParams(**VALID_DRIVER_SIGNAL_PARAMS)
     assert p.id == "default_driver"
     assert p.drowsiness_model.base_growth_per_min == 0.1
     assert p.fatigue_model.traffic_jam_add_per_min == 0.02
-    assert p.attention_model.drowsiness_drop_factor == 0.5
-    assert p.recovery_model.long_rest_drowsiness_recovery == 80.0
+    assert p.recovery_model["sleep"].drowsiness == 80.0
 
 
-def test_driver_profile_drowsiness_model_rate_negative_rejected():
-    from aica_api.models.profile import DriverModelProfile
+def test_driver_signal_params_has_no_attention_model():
+    """Feature 009: the attention sub-model is retired — DriverSignalParams has
+    no attention_model field at all (extra="forbid" would reject it if supplied)."""
+    from aica_api.models.profile import DriverSignalParams
 
-    bad = {**VALID_DRIVER_PROFILE, "drowsiness_model": {**VALID_DROWSINESS_MODEL, "base_growth_per_min": -0.1}}
+    assert not hasattr(DriverSignalParams, "attention_model")
     with pytest.raises(ValidationError):
-        DriverModelProfile(**bad)
+        DriverSignalParams(**{**VALID_DRIVER_SIGNAL_PARAMS, "attention_model": {
+            "base_recovery_per_min": 0.0,
+            "monotony_drop_per_min": 0.01,
+            "drowsiness_drop_factor": 0.5,
+            "active_content_recovery_per_min": 0.1,
+        }})
 
 
-def test_driver_profile_fatigue_model_rate_negative_rejected():
-    from aica_api.models.profile import DriverModelProfile
+def test_driver_signal_params_drowsiness_model_rate_negative_rejected():
+    from aica_api.models.profile import DriverSignalParams
 
-    bad = {**VALID_DRIVER_PROFILE, "fatigue_model": {**VALID_FATIGUE_MODEL, "mountain_road_add_per_min": -0.5}}
+    bad = {**VALID_DRIVER_SIGNAL_PARAMS, "drowsiness_model": {**VALID_DROWSINESS_MODEL, "base_growth_per_min": -0.1}}
     with pytest.raises(ValidationError):
-        DriverModelProfile(**bad)
+        DriverSignalParams(**bad)
 
 
-def test_driver_profile_attention_model_rate_negative_rejected():
-    from aica_api.models.profile import DriverModelProfile
+def test_driver_signal_params_fatigue_model_rate_negative_rejected():
+    from aica_api.models.profile import DriverSignalParams
 
-    bad = {**VALID_DRIVER_PROFILE, "attention_model": {**VALID_ATTENTION_MODEL, "monotony_drop_per_min": -1.0}}
+    bad = {**VALID_DRIVER_SIGNAL_PARAMS, "fatigue_model": {**VALID_FATIGUE_MODEL, "mountain_road_add_per_min": -0.5}}
     with pytest.raises(ValidationError):
-        DriverModelProfile(**bad)
+        DriverSignalParams(**bad)
 
 
-def test_driver_profile_recovery_model_rate_negative_rejected():
-    from aica_api.models.profile import DriverModelProfile
+def test_driver_signal_params_recovery_model_rate_negative_rejected():
+    from aica_api.models.profile import DriverSignalParams
 
-    bad = {**VALID_DRIVER_PROFILE, "recovery_model": {**VALID_RECOVERY_MODEL, "short_rest_drowsiness_recovery": -5.0}}
+    bad = {**VALID_DRIVER_SIGNAL_PARAMS, "recovery_model": {"sleep": {"drowsiness": -5.0, "fatigue": 10.0}}}
     with pytest.raises(ValidationError):
-        DriverModelProfile(**bad)
+        DriverSignalParams(**bad)
 
 
-def test_driver_profile_zero_rates_accepted():
+def test_driver_signal_params_zero_rates_accepted():
     """Zero is a valid rate (≥ 0 constraint)."""
-    from aica_api.models.profile import DriverModelProfile
+    from aica_api.models.profile import DriverSignalParams
 
     zero_drowsiness = {k: 0.0 for k in VALID_DROWSINESS_MODEL}
-    p = DriverModelProfile(**{**VALID_DRIVER_PROFILE, "drowsiness_model": zero_drowsiness})
+    p = DriverSignalParams(**{**VALID_DRIVER_SIGNAL_PARAMS, "drowsiness_model": zero_drowsiness})
     assert p.drowsiness_model.base_growth_per_min == 0.0
-
-
-# ─── VehicleBehaviorProfile ───────────────────────────────────────────────────
-
-
-def test_vehicle_profile_valid():
-    from aica_api.models.profile import VehicleBehaviorProfile
-
-    p = VehicleBehaviorProfile(**VALID_VEHICLE_PROFILE)
-    assert p.rolling_window_seconds == 300
-    assert p.steering_instability.drowsiness_factor == 0.3
-    assert p.lane_departure.drowsiness_threshold == 60.0
-    assert p.pedal_abnormality.base_level == 0.05
-    assert p.adas_warning.lane_departure_warning_threshold == 80.0
-
-
-def test_vehicle_profile_default_rolling_window():
-    """rolling_window_seconds defaults to 300 when not supplied."""
-    from aica_api.models.profile import VehicleBehaviorProfile
-
-    no_window = {k: v for k, v in VALID_VEHICLE_PROFILE.items() if k != "rolling_window_seconds"}
-    p = VehicleBehaviorProfile(**no_window)
-    assert p.rolling_window_seconds == 300
-
-
-def test_vehicle_profile_drowsiness_threshold_above_100_rejected():
-    from aica_api.models.profile import VehicleBehaviorProfile
-
-    bad_lane = {**VALID_LANE_DEPARTURE, "drowsiness_threshold": 101.0}
-    bad = {**VALID_VEHICLE_PROFILE, "lane_departure": bad_lane}
-    with pytest.raises(ValidationError):
-        VehicleBehaviorProfile(**bad)
-
-
-def test_vehicle_profile_fatigue_threshold_negative_rejected():
-    from aica_api.models.profile import VehicleBehaviorProfile
-
-    bad_lane = {**VALID_LANE_DEPARTURE, "fatigue_threshold": -1.0}
-    bad = {**VALID_VEHICLE_PROFILE, "lane_departure": bad_lane}
-    with pytest.raises(ValidationError):
-        VehicleBehaviorProfile(**bad)
-
-
-def test_vehicle_profile_adas_threshold_above_100_rejected():
-    from aica_api.models.profile import VehicleBehaviorProfile
-
-    bad_adas = {**VALID_ADAS_WARNING, "steering_instability_warning_threshold": 105.0}
-    bad = {**VALID_VEHICLE_PROFILE, "adas_warning": bad_adas}
-    with pytest.raises(ValidationError):
-        VehicleBehaviorProfile(**bad)
-
-
-def test_vehicle_profile_adas_threshold_zero_accepted():
-    """Threshold = 0 is valid (minimum of 0-100 range)."""
-    from aica_api.models.profile import VehicleBehaviorProfile
-
-    zero_adas = {k: 0.0 for k in VALID_ADAS_WARNING}
-    p = VehicleBehaviorProfile(**{**VALID_VEHICLE_PROFILE, "adas_warning": zero_adas})
-    assert p.adas_warning.lane_departure_warning_threshold == 0.0
 
 
 # ─── SpeedProfile ─────────────────────────────────────────────────────────────

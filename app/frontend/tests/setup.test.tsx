@@ -25,6 +25,8 @@ vi.mock('../src/api/client', () => ({
   createRunPlan: vi.fn(),
   regenerateRunPlan: vi.fn(),
   routesAnalyze: vi.fn(),
+  listRoutePresets: vi.fn(() => Promise.resolve({ presets: [] })),
+  loadRoutePreset: vi.fn(),
   actRun: vi.fn(),
   tickRun: vi.fn(),
   getPackage: vi.fn(),
@@ -402,27 +404,29 @@ describe('HyperparameterEditor + PlanPreview — T024', () => {
   })
 })
 
-// ── I1 regression (migrated M6): SetupScreen renders MapKeyAndRouteInput ─────
+// ── Feature 009: SetupScreen renders the new two-editor + strip skeleton ────
 //
-// Previously tested LeftContextPanel — re-pointed to SetupScreen after M6
-// relocated the setup editors. The Maps API key input lives on SetupScreen.
+// M6's "renders MapKeyAndRouteInput" regression is retired: the signal-tier
+// redesign (others/aica_setup_screen_uiux.md) replaces the old 3-column
+// layout with SignalsPanel / AlgorithmFormulationPanel / InstantResultStrip.
+// MapKeyAndRouteInput/PackageSelector/ScenarioSelector move inside
+// SignalsPanel once FE2 implements it — not part of this plumbing unit.
 
-describe('SetupScreen — I1 regression (M6 migration)', () => {
+describe('SetupScreen — feature 009 skeleton', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     vi.mocked(client.listPackages).mockResolvedValue({ packages: [], errors: [] })
     vi.mocked(client.listScenarios).mockResolvedValue({ scenarios: [], errors: [] })
   })
 
-  it('renders the Maps API key field on the Setup screen', async () => {
+  it('renders the three FE1 panel slots (SignalsPanel, AlgorithmFormulationPanel, InstantResultStrip)', async () => {
     render(
       <RunStoreProvider>
         <SetupScreen />
       </RunStoreProvider>,
     )
-    // The Maps API key password input is present — this would fail if
-    // MapKeyAndRouteInput were not rendered in SetupScreen.
-    // Use findByLabelText to let the async effects (listPackages/listScenarios) settle.
-    expect(await screen.findByLabelText(/maps api key/i)).toBeInTheDocument()
+    expect(await screen.findByTestId('signals-panel')).toBeInTheDocument()
+    expect(screen.getByTestId('algorithm-formulation-panel')).toBeInTheDocument()
+    expect(screen.getByTestId('instant-result-strip')).toBeInTheDocument()
   })
 })

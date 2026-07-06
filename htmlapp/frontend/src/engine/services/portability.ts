@@ -203,6 +203,14 @@ function validatePackageManifest(json: unknown): PackageManifest {
 function validateScenarioDef(json: unknown): ScenarioDef {
   if (!isPlainObject(json)) throw new Error('importScenario: expected a JSON object')
   const label = 'importScenario'
+  // Feature 009 (FR-017): reject old-shape scenarios rather than silently
+  // mis-reading them — driver_profile/vehicle_profile were retired in favor of
+  // driver_signal_params/anomaly_signal_params.
+  if ('driver_profile' in json || 'vehicle_profile' in json) {
+    throw new Error(
+      'importScenario: incompatible scenario shape — re-author: driver_profile/vehicle_profile removed (feature 009 signal-tier redesign).',
+    )
+  }
   requireString(json, 'id', label)
   requireString(json, 'version', label)
   requireString(json, 'type', label)
@@ -313,8 +321,12 @@ export async function exportScenario(id: string): Promise<ScenarioDef> {
     route_intent: d.route_intent,
     initial_state: d.initial_state,
     event_presets: d.event_presets,
-    driver_profile: d.driver_profile,
-    vehicle_profile: d.vehicle_profile,
+    // Feature 009: driver_signal_params + anomaly_signal_params replace the
+    // retired driver_profile/vehicle_profile.
+    driver_signal_params: d.driver_signal_params,
+    anomaly_signal_params: d.anomaly_signal_params,
+    run_seed_default: d.run_seed_default,
+    weather_risk: d.weather_risk,
     speed_profile: d.speed_profile,
     total_duration_seconds: d.total_duration_seconds,
     tick_seconds: d.tick_seconds,
@@ -323,6 +335,7 @@ export async function exportScenario(id: string): Promise<ScenarioDef> {
     recovery_options: d.recovery_options,
     child_passenger: d.child_passenger,
     familiar_route: d.familiar_route,
+    is_night: d.is_night,
   }
   assertNoSensitiveKeys(dump)
   return dump

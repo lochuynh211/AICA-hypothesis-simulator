@@ -40,7 +40,10 @@ _VALID_BASE_PACKAGE: dict = {
     "version": "0.1.0",
     "label": {"en": "Valid Test", "ja": "テスト有効"},
     "compatible_scenario_types": ["uc01_fatigue"],
-    "algorithm": {"type": "declarative_rule", "entrypoint": "rules"},
+    # Feature 009: declarative_rule is retired — python_module is the only
+    # supported algorithm type (this base dict is only ever used as a template
+    # for the deliberately-INVALID packages below, never registered directly).
+    "algorithm": {"type": "python_module", "entrypoint": "algorithm.py"},
     "parameters": [],
     "features": [],
     "hyperparameters": [],
@@ -266,8 +269,8 @@ class TestMixedValidAndInvalidPackages:
         packages_dir = tmp_path / "packages"
         packages_dir.mkdir()
         shutil.copytree(
-            _REAL_PACKAGES_DIR / "rest_rule_based_v0_1",
-            packages_dir / "rest_rule_based_v0_1",
+            _REAL_PACKAGES_DIR / "aica_transparent_hybrid_trigger_v1",
+            packages_dir / "aica_transparent_hybrid_trigger_v1",
         )
         _write_package(packages_dir, INVALID_PKG_BAD_ALGO_TYPE)
         monkeypatch.setenv("AICA_PACKAGES_DIR", str(packages_dir))
@@ -275,7 +278,7 @@ class TestMixedValidAndInvalidPackages:
 
     def test_valid_package_in_summaries(self, client):
         ids = [p["id"] for p in client.get("/api/packages").json()["packages"]]
-        assert "rest_rule_based_v0_1" in ids
+        assert "aica_transparent_hybrid_trigger_v1" in ids
 
     def test_invalid_package_not_in_summaries(self, client):
         ids = [p["id"] for p in client.get("/api/packages").json()["packages"]]
@@ -294,8 +297,8 @@ class TestMixedValidAndInvalidScenarios:
         scenarios_dir = tmp_path / "scenarios"
         scenarios_dir.mkdir()
         shutil.copy(
-            _REAL_SCENARIOS_DIR / "uc01_fatigue_friend_drive_v0_1.json",
-            scenarios_dir / "uc01_fatigue_friend_drive_v0_1.json",
+            _REAL_SCENARIOS_DIR / "uc01_fatigue_recovery_v0_1.json",
+            scenarios_dir / "uc01_fatigue_recovery_v0_1.json",
         )
         (scenarios_dir / "bad.json").write_text(
             '{"id": "bad_sc"}', encoding="utf-8"
@@ -305,7 +308,7 @@ class TestMixedValidAndInvalidScenarios:
 
     def test_valid_scenario_in_summaries(self, client):
         ids = [s["id"] for s in client.get("/api/scenarios").json()["scenarios"]]
-        assert "uc01_fatigue_friend_drive_v0_1" in ids
+        assert "uc01_fatigue_recovery_v0_1" in ids
 
     def test_invalid_scenario_not_in_summaries(self, client):
         ids = [s["id"] for s in client.get("/api/scenarios").json()["scenarios"]]
@@ -339,7 +342,7 @@ class TestIncompatiblePairing:
         resp = client.post(
             "/api/run-plans",
             json={
-                "package_id": "rest_rule_based_v0_1",
+                "package_id": "aica_transparent_hybrid_trigger_v1",
                 "scenario_id": "uc99_incompat_v0_1",
                 "parameters": {},
                 "hyperparameters": {},
@@ -352,7 +355,7 @@ class TestIncompatiblePairing:
         client.post(
             "/api/run-plans",
             json={
-                "package_id": "rest_rule_based_v0_1",
+                "package_id": "aica_transparent_hybrid_trigger_v1",
                 "scenario_id": "uc99_incompat_v0_1",
                 "parameters": {},
                 "hyperparameters": {},
@@ -365,7 +368,7 @@ class TestIncompatiblePairing:
         resp = client.post(
             "/api/run-plans",
             json={
-                "package_id": "rest_rule_based_v0_1",
+                "package_id": "aica_transparent_hybrid_trigger_v1",
                 "scenario_id": "uc99_incompat_v0_1",
                 "parameters": {},
                 "hyperparameters": {},
@@ -384,7 +387,7 @@ def test_is_compatible_returns_false_for_mismatched_type():
     from aica_api.models.scenario import ScenarioDef
 
     pkg_reg = PackageRegistry(_REAL_PACKAGES_DIR)
-    pkg = pkg_reg.get("rest_rule_based_v0_1")
+    pkg = pkg_reg.get("aica_transparent_hybrid_trigger_v1")
     assert pkg is not None
     assert "uc01_fatigue" in pkg.compatible_scenario_types
 
@@ -398,11 +401,11 @@ def test_is_compatible_returns_true_for_matched_type():
     from aica_api.models.scenario import ScenarioDef
 
     pkg_reg = PackageRegistry(_REAL_PACKAGES_DIR)
-    pkg = pkg_reg.get("rest_rule_based_v0_1")
+    pkg = pkg_reg.get("aica_transparent_hybrid_trigger_v1")
     assert pkg is not None
 
     scenario_data = json.loads(
-        (_REAL_SCENARIOS_DIR / "uc01_fatigue_friend_drive_v0_1.json").read_text(encoding="utf-8")
+        (_REAL_SCENARIOS_DIR / "uc01_fatigue_recovery_v0_1.json").read_text(encoding="utf-8")
     )
     sc = ScenarioDef(**scenario_data)
     assert pkg_reg.is_compatible(pkg, sc) is True

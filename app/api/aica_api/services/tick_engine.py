@@ -1,4 +1,5 @@
-"""Tick engine (T013 migration) — M1 and M2 tick advancement.
+"""Tick engine (T013 migration; feature 009 signal-tier redesign) — M1 and M2 tick
+advancement.
 
 Pure, deterministic, side-effect-free.  Same inputs → same outputs every call.
 
@@ -7,16 +8,25 @@ M1 API (stateless, reads from frozen per-tick plan):
   build_adapter_context(tick_state) -> dict
 
 M2 API (stateful, profile-driven, no pre-computed per-tick plan):
-  advance_tick(prior_state, tick_index, event_plan, route_facts, scenario) -> TickState
+  advance_tick(prior_state, tick_index, event_plan, route_facts, scenario,
+               *, recovery=None, run_seed=None) -> TickState
 
-M2 design:
+M2 design (feature 009):
   - Position: effective_speed_kph = traffic_jam_kph if jam else
     speed_profile[segment_type]; distance_km += effective_speed * tick_seconds / 3600.
-  - Driver: drowsiness/fatigue/attention advance from profile rate components; clamped.
-  - Vehicle: steeringInstabilityLevel/pedalAbnormalityLevel/laneDeparture/adasWarning.
-  - raw_state carries simulator-internal numerics (allowed — constitution IV bans only
-    external-service raw numerics, none exist until M4).
-  - feature_groups derived from raw_state via binning.build_feature_groups.
+  - Driver signals (Tier 3a): drowsiness/fatigue advance via
+    behavior.driver_signals.advance_driver_state.  The attention signal and the
+    whole vehicle model (steering/pedal/lane/ADAS) are retired.
+  - Anomaly signal (Tier 3b): behavior.anomaly_signal.advance_anomaly — the ONLY
+    source of randomness, seeded by (run_seed, tick_index, "anomaly").  Its rolling
+    window state is threaded via TickState.anomaly_events.
+  - TickState.signals carries the tiered {fixed, dynamic, simulated} dict (see
+    specs/009-signal-tier-redesign/contracts/tiered-context.md) — replaces the old
+    flat raw_state dict.  NONE of the removed signals (attentionLevel,
+    steeringInstabilityLevel, pedalAbnormalityLevel, laneDepartureCount,
+    adasWarningCount, *RemainingMin, restSpotDensityNext30Min) are emitted.
+  - feature_groups derived from route/context state via binning.build_feature_groups
+    (Principle IV route boundary-binning; unrelated to Tier-3 signals).
   - completed = True when distance_km >= total_route_distance_km.
 """
 
@@ -26,7 +36,12 @@ from typing import TYPE_CHECKING
 
 from aica_api.models.run import EventPlan, FeatureGroups, RecoveryState, RouteFacts, TickState
 from aica_api.models.scenario import ScenarioDef
-from aica_api.services.binning import bin_context, build_feature_groups
+from aica_api.services.binning import (
+    bin_context,
+    bin_drowsiness_level,
+    bin_fatigue_level,
+    build_feature_groups,
+)
 
 if TYPE_CHECKING:
     pass
@@ -102,31 +117,31 @@ def compute_tick_state(
 def build_adapter_context(tick_state: TickState) -> dict:
     """Build the adapter context dict from a TickState.
 
-    For M1 TickStates (no raw_state/feature_groups): returns dict with only
-    ordinal-band string values (qualitative discipline preserved).
+    For M1 TickStates (no signals — legacy compute_tick_state path): returns dict
+    with only ordinal-band string values (qualitative discipline preserved).
 
-    For M2 TickStates (has raw_state/feature_groups): returns dict with both
-    'raw_state' and 'feature_groups' (plus the flat ordinal keys at the top
-    level for backward compat with declarative_rule's M1 code path).
+    For M2 TickStates (feature 009: tiered signals present): returns
+    {"signals": {fixed, dynamic, simulated}, "feature_groups": {normalized, ordinal}}
+    per specs/009-signal-tier-redesign/contracts/tiered-context.md.  run_manager.tick()
+    layers simulation_time_sec / proposal_history / recovery_active /
+    hyperparameters / package_runtime_state on top of this dict.
 
     Args:
         tick_state: The computed TickState for the current tick.
 
     Returns:
         A context dict.  For M1: only flat ordinal bands.
-        For M2: {raw_state, feature_groups, + flat ordinal bands at top level}.
+        For M2: {"signals": {...}, "feature_groups": {...}}.
     """
-    # If the tick_state has feature_groups populated (M2 path), return full context
-    if tick_state.raw_state and tick_state.feature_groups.ordinal:
-        ordinal = tick_state.feature_groups.ordinal
+    # If the tick_state has tiered signals populated (M2 path), return the
+    # tiered-context shape exactly — no flattening, no removed keys.
+    if tick_state.signals:
         return {
-            "raw_state": tick_state.raw_state,
+            "signals": tick_state.signals,
             "feature_groups": {
                 "normalized": tick_state.feature_groups.normalized,
-                "ordinal": ordinal,
+                "ordinal": tick_state.feature_groups.ordinal,
             },
-            # Flat ordinal keys at top level for algorithms that access context directly
-            **ordinal,
         }
 
     # M1: flat ordinal bands only
@@ -152,46 +167,48 @@ def advance_tick(
     scenario: ScenarioDef,
     *,
     recovery: RecoveryState | None = None,
+    run_seed: int | None = None,
 ) -> TickState:
-    """Advance the simulation by one tick using the M2 profile-driven model.
+    """Advance the simulation by one tick using the M2 tiered-signal model.
 
     Args:
         prior_state: TickState from the previous tick (None for tick 0).
         tick_index:  Current tick index (0-based).
         event_plan:  Frozen M2 EventPlan (tick_seconds + event lists).
         route_facts: RouteFacts from analyze_route(scenario).
-        scenario:    Validated ScenarioDef with M2 profiles.
+        scenario:    Validated ScenarioDef with driver_signal_params /
+                     anomaly_signal_params.
+        recovery:    Current RecoveryState (None if not resting).
+        run_seed:    Deterministic seed for the anomaly generator.  Defaults to
+                     scenario.run_seed_default when not supplied.
 
     Returns:
-        TickState with raw_state, feature_groups, distance_km,
-        continuous_driving_min, and M1 backward-compat ordinal fields.
-        completed=True when distance_km >= total_route_distance_km.
+        TickState with signals (tiered {fixed, dynamic, simulated}), feature_groups,
+        distance_km, continuous_driving_min, anomaly_events, and M1 backward-compat
+        ordinal fields.  completed=True when distance_km >= total_route_distance_km.
     """
     tick_seconds = event_plan.tick_seconds
     total_km = route_facts.total_route_distance_km or 120.0
     sp = scenario.speed_profile
+    seed = run_seed if run_seed is not None else scenario.run_seed_default
 
     # ── Get prior numeric values ──────────────────────────────────────────
-    if prior_state is None or not prior_state.raw_state:
+    if prior_state is None or not prior_state.signals:
         # Tick 0: initialize from scenario.initial_state
         drowsiness = _initial_drowsiness(scenario.initial_state.get("drowsiness_level", "none"))
         fatigue = _initial_fatigue(scenario.initial_state.get("fatigue_level", "low"))
-        attention = 100.0
         distance_km = 0.0
         continuous_driving_min = 0.0
         above_weak = 0
-        vehicle_event_history: list = []
+        anomaly_events: list[int] = []
     else:
-        raw = prior_state.raw_state
-        drowsiness = float(raw["drowsinessLevel"])
-        fatigue = float(raw["fatigueLevel"])
-        attention = float(raw["attentionLevel"])
+        simulated = prior_state.signals.get("simulated", {})
+        drowsiness = float(simulated.get("drowsiness", 0.0))
+        fatigue = float(simulated.get("fatigue", 0.0))
         distance_km = prior_state.distance_km or 0.0
         continuous_driving_min = prior_state.continuous_driving_min or 0.0
-        above_weak = int(raw.get("drowsinessAboveWeakTicks", 0))
-        vehicle_event_history = (prior_state.model_extra or {}).get(
-            "_vehicle_event_history", []
-        )
+        above_weak = prior_state.above_weak_ticks
+        anomaly_events = list(prior_state.anomaly_events)
 
     # ── Determine active segment type at current distance ─────────────────
     segment_type = _segment_type_at(distance_km, route_facts)
@@ -225,7 +242,6 @@ def advance_tick(
     recovery_next = None
     motion_state = "MOVING"
     recovery_phase = None
-    active_content = None
     if recovery is not None and recovery.active:
         option = next((o for o in scenario.recovery_options if o.id == recovery.option_id), None)
         if option is not None:
@@ -239,17 +255,14 @@ def advance_tick(
                 completed = False
                 motion_state = "STOPPED"
             recovery_phase = recovery.phase
-            active_content = stage.content if stage is not None else None
             recovery_next = advance_recovery(recovery, option, at_rest_spot=at_spot)
 
-    # ── Advance driver state ──────────────────────────────────────────────
-    if scenario.driver_profile is not None:
-        from aica_api.services.behavior.driver_model import DriverState, advance_driver_state
-        driver_state = DriverState(
-            drowsiness=drowsiness, fatigue=fatigue, attention=attention
-        )
+    # ── Advance driver signals (Tier 3a: drowsiness/fatigue) ───────────────
+    if scenario.driver_signal_params is not None:
+        from aica_api.services.behavior.driver_signals import DriverState, advance_driver_state
+        driver_state = DriverState(drowsiness=drowsiness, fatigue=fatigue)
         driver_update = advance_driver_state(
-            scenario.driver_profile, driver_state, tick_seconds,
+            scenario.driver_signal_params, driver_state, tick_seconds,
             is_night=is_night,
             is_monotonous=is_monotonous,
             is_traffic_jam=is_traffic_jam,
@@ -258,54 +271,59 @@ def advance_tick(
         )
         new_drowsiness = driver_update.next.drowsiness
         new_fatigue = driver_update.next.fatigue
-        new_attention = driver_update.next.attention
     else:
+        driver_update = None
         new_drowsiness = drowsiness
         new_fatigue = fatigue
-        new_attention = attention
 
-    # ── Recovery: apply rest recovery when STOPPED ────────────────────────
-    if recovery is not None and recovery.active and motion_state == "STOPPED" and scenario.driver_profile is not None:
-        from aica_api.services.behavior.driver_model import DriverState, apply_rest_recovery
+    # ── Recovery: apply a rest activity's fixed recovery ONCE, on entry ────
+    # Feature 009 (UX iteration): recovery is applied a single time per activity
+    # (the first STOPPED tick of each recovery stage), keyed by the stage's
+    # ``content`` — NOT accumulated every tick. A stage's first dwell tick is the
+    # one where recovery.stage_ticks_remaining still equals the stage's full
+    # ``ticks`` (it is decremented by advance_recovery from this tick onward).
+    if (
+        recovery is not None
+        and recovery.active
+        and motion_state == "STOPPED"
+        and scenario.driver_signal_params is not None
+    ):
+        from aica_api.services.behavior.driver_signals import DriverState, apply_rest_recovery
         _rec_option = next((o for o in scenario.recovery_options if o.id == recovery.option_id), None)
-        rest_type = (_rec_option.rest_type if _rec_option and _rec_option.rest_type else "short")
-        recovered = apply_rest_recovery(
-            scenario.driver_profile,
-            DriverState(drowsiness=drowsiness, fatigue=fatigue, attention=attention),
-            rest_type,
+        _stage = (
+            _rec_option.stages[recovery.stage_index]
+            if _rec_option and 0 <= recovery.stage_index < len(_rec_option.stages)
+            else None
         )
-        new_drowsiness, new_fatigue, new_attention = recovered.drowsiness, recovered.fatigue, recovered.attention
+        _is_activity_entry = _stage is not None and recovery.stage_ticks_remaining == (_stage.ticks or 0)
+        if _stage is not None and _is_activity_entry:
+            recovered = apply_rest_recovery(
+                scenario.driver_signal_params,
+                DriverState(drowsiness=new_drowsiness, fatigue=new_fatigue),
+                _stage.content,
+            )
+            new_drowsiness, new_fatigue = recovered.drowsiness, recovered.fatigue
 
-    # ── Update drowsinessAboveWeakTicks counter ───────────────────────────
-    if new_drowsiness >= 20.0:
-        new_above_weak = above_weak + 1
-    else:
-        new_above_weak = 0
+    # ── Update drowsinessAboveWeakTicks counter (signal_duration ordinal) ──
+    new_above_weak = above_weak + 1 if new_drowsiness >= 20.0 else 0
 
-    # ── Advance vehicle state ─────────────────────────────────────────────
-    if scenario.vehicle_profile is not None:
-        from aica_api.services.behavior.vehicle_model import advance_vehicle_state
-        vehicle_state = advance_vehicle_state(
-            scenario.vehicle_profile,
+    # ── Advance anomaly signal (Tier 3b) — the ONLY source of randomness ───
+    if scenario.anomaly_signal_params is not None:
+        from aica_api.services.behavior.anomaly_signal import AnomalyState, advance_anomaly
+        anomaly_update = advance_anomaly(
+            params=scenario.anomaly_signal_params,
+            prev=AnomalyState(events=anomaly_events),
             drowsiness=new_drowsiness,
-            fatigue=new_fatigue,
-            segment_type=segment_type,
-            is_traffic_jam=is_traffic_jam,
             tick_index=tick_index,
             tick_seconds=tick_seconds,
-            event_history=vehicle_event_history,
+            run_seed=seed,
+            is_moving=(motion_state == "MOVING"),
         )
-        steering = vehicle_state.steering_instability_level
-        pedal = vehicle_state.pedal_abnormality_level
-        lane_dep = vehicle_state.lane_departure_count
-        adas_warn = vehicle_state.adas_warning_count
-        new_vehicle_history = vehicle_state.event_history
+        anomaly_rate = anomaly_update.anomaly_rate
+        new_anomaly_events = anomaly_update.next.events
     else:
-        steering = 0.0
-        pedal = 0.0
-        lane_dep = 0
-        adas_warn = 0
-        new_vehicle_history = []
+        anomaly_rate = 0
+        new_anomaly_events = anomaly_events
 
     # ── Compute nextRestSpotMin ───────────────────────────────────────────
     # Minutes to the next rest opportunity ahead, using the current effective speed.
@@ -321,35 +339,39 @@ def advance_tick(
                 break
     # If effective_speed == 0 or no rest spot ahead, next_rest_min stays at sentinel.
 
-    # ── Build raw_state ───────────────────────────────────────────────────
-    raw_state: dict = {
-        "drowsinessLevel": new_drowsiness,
-        "fatigueLevel": new_fatigue,
-        "attentionLevel": new_attention,
-        "speedKph": effective_speed,
-        "steeringInstabilityLevel": steering,
-        "pedalAbnormalityLevel": pedal,
-        "laneDepartureCount": lane_dep,
-        "adasWarningCount": adas_warn,
-        "nextRestSpotMin": next_rest_min,
-        "routeFraction": route_fraction,
-        "continuousDrivingMin": new_continuous_min,
-        "isNight": is_night,
-        "weatherRiskLevel": 0.0,
-        "segmentType": segment_type,
-        "drowsinessAboveWeakTicks": new_above_weak,
-        "motionState": motion_state,
-        "isTrafficJam": is_traffic_jam,
-        "childPassenger": scenario.child_passenger,
-        "familiarRoute": scenario.familiar_route,
+    # ── Build the tiered signals dict (feature 009 contract) ──────────────
+    signals: dict = {
+        "fixed": {
+            "isNight": is_night,
+            "familiarRoute": scenario.familiar_route,
+            "childPassenger": scenario.child_passenger,
+            "weatherRiskLevel": scenario.weather_risk,
+        },
+        "dynamic": {
+            "segmentType": segment_type,
+            "motionState": motion_state,
+            "continuousDrivingMin": new_continuous_min,
+            "speedKph": effective_speed,
+            "routeFraction": route_fraction,
+            "nextRestSpotMin": next_rest_min,
+            "isTrafficJam": is_traffic_jam,
+            "recoveryPhase": recovery_phase,
+        },
+        "simulated": {
+            "drowsiness": new_drowsiness,
+            "fatigue": new_fatigue,
+            "anomaly_rate": anomaly_rate,
+        },
     }
-    if recovery_phase is not None:
-        raw_state["recoveryPhase"] = recovery_phase
-    if active_content is not None:
-        raw_state["activeContent"] = active_content
 
-    # ── Build feature_groups ──────────────────────────────────────────────
-    fg_dict = build_feature_groups(raw_state)
+    # ── Build feature_groups (route/context ordinal bands only) ───────────
+    fg_dict = build_feature_groups(
+        {
+            "continuousDrivingMin": new_continuous_min,
+            "nextRestSpotMin": next_rest_min,
+            "drowsinessAboveWeakTicks": new_above_weak,
+        }
+    )
     feature_groups = FeatureGroups(
         normalized=fg_dict["normalized"],
         ordinal=fg_dict["ordinal"],
@@ -360,42 +382,35 @@ def advance_tick(
     active_segment_id = _active_segment_id(route_fraction, scenario)
 
     # ── Build driver_update dict for evidence trace ───────────────────────
-    if scenario.driver_profile is not None:
+    if driver_update is not None:
         import dataclasses as _dc
         driver_update_dict = {
             "previous": _dc.asdict(driver_update.previous),
             "delta": _dc.asdict(driver_update.delta),
-            "next": {"drowsiness": new_drowsiness, "fatigue": new_fatigue, "attention": new_attention},
+            "next": {"drowsiness": new_drowsiness, "fatigue": new_fatigue},
         }
     else:
         driver_update_dict = {}
-
-    vehicle_update_dict = {
-        "steering_instability_level": steering,
-        "pedal_abnormality_level": pedal,
-        "lane_departure_count": lane_dep,
-        "adas_warning_count": adas_warn,
-    }
 
     ts = TickState(
         tick_index=tick_index,
         elapsed_seconds=(tick_index + 1) * tick_seconds,
         route_fraction=route_fraction,
         active_segment_id=active_segment_id,
-        drowsiness_level=ordinal["drowsiness_level"],
-        fatigue_level=ordinal["fatigue_level"],
+        drowsiness_level=bin_drowsiness_level(new_drowsiness),
+        fatigue_level=bin_fatigue_level(new_fatigue),
         signal_duration=ordinal["signal_duration"],
         continuous_driving_time=ordinal["continuous_driving_time"],
         rest_spot_eta=ordinal["rest_spot_eta"],
         completed=completed,
-        raw_state=raw_state,
+        signals=signals,
         feature_groups=feature_groups,
         distance_km=new_distance_km,
         continuous_driving_min=new_continuous_min,
+        anomaly_events=new_anomaly_events,
+        above_weak_ticks=new_above_weak,
         # Pass state through extra fields (model_config extra=allow)
-        _vehicle_event_history=new_vehicle_history,
         _driver_update=driver_update_dict,
-        _vehicle_update=vehicle_update_dict,
     )
     if recovery_next is not None:
         ts.model_extra["_recovery_next"] = recovery_next

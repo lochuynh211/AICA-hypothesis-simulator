@@ -1,30 +1,46 @@
 """aica_transparent_hybrid_trigger_v1 — the faithful, STATEFUL transparent hybrid trigger.
 
-The headline M3 deliverable.  A driving-fatigue trigger whose full decision basis is
+The headline M3/009 deliverable.  A driving-fatigue trigger whose full decision basis is
 reviewable and whose runtime state (smoothed features, smoothed category scores, persistence
-counters, and state-machine labels) evolves tick-to-tick.
+counters, state-machine labels, and env/monotony accumulators) evolves tick-to-tick.
 
-Pipeline (per tick, from `context` — see specs/.../contracts/transparent-hybrid.md):
-  1. Feature extraction from raw_state (+ feature_groups.normalized); clamp 0-1;
-     optional/absent inputs -> 0.  Same formulas as the built-in weighted_score.
-  2. Smoothing:  smoothed_f[t] = alpha*f[t] + (1-alpha)*smoothed_f[t-1]   (alpha=0.35),
+Feature 009 (signal-tier redesign) — compact 9-feature form on the tiered signal contract
+(the 8-feature form plus `driving_time`, a banded time-on-task risk input derived from
+`continuousDrivingMin` and reset on rest; `childPassenger` adds a fixed rest-score bonus).
+See `specs/009-signal-tier-redesign/data-model.md` §5 and
+`others/aica_trigger_algorithms_math_comparison.md` Part 2 §2.3 for the authoritative math.
+
+Pipeline (per tick, from `context` — see `specs/009-signal-tier-redesign/contracts/tiered-context.md`):
+  1. Accumulate `jam_min` / `hw_min` / `mono_min` (runtime state) while
+     `signals.dynamic.motionState == "MOVING"`, using the elapsed minutes since the
+     previous tick (`simulation_time_sec` delta; 0 on the very first tick).
+  2. Feature extraction from `context["signals"]` (fixed/dynamic/simulated tiers) using the
+     accumulators above; clamp 0-1.  9 features (no route look-ahead; 1 stochastic
+     signal `anomaly_rate`; `driving_time` = banded time-on-task since last rest).
+  3. Smoothing:  smoothed_f[t] = alpha*f[t] + (1-alpha)*smoothed_f[t-1]   (alpha=smoothing_alpha),
      prev from package_runtime_state.smoothed_features (empty on tick 0 -> prev 0).
-  3. Category scores from the SMOOTHED features (base_safety_risk; rest_required_score =
-     base + gated bonus iff base >= 0.45; monotony_prevention_score) — same weights as
-     weighted_score.
-  4. Velocity = score - prev smoothed score; persistence counters (rest 2, monotony 3
-     consecutive over-threshold ticks; skip-if score>0.88 OR velocity>0.08 bypasses).
-  5. State machines: REST_NORMAL->WATCH(0.45)->SUGGEST(0.62)->RECOMMEND(0.76)->URGENT(0.88)
-     (->RECOVERY on an observed accept); MONOTONY_NORMAL->WATCH(0.40)->CONTENT_SUGGEST(0.58).
-  6. Fire-control, in order: no-candidate -> emergency override -> cooldown (category-specific,
+  4. Category scores from the SMOOTHED features (base_safety_risk; rest_required_score =
+     base + gated bonus iff base >= minimum_risk_for_rest_bonus; monotony_prevention_score) —
+     structure unchanged from the pre-009 version, only the feature inputs changed.
+  5. Velocity = score - prev smoothed score; persistence counters (rest/monotony consecutive
+     over-threshold ticks; skip-if score/velocity bypasses persistence).
+  6. State machines: REST_NORMAL->WATCH->SUGGEST->RECOMMEND->URGENT (->RECOVERY on an observed
+     accept, scoped to `recovery_active`); MONOTONY_NORMAL->WATCH->CONTENT_SUGGEST.
+  7. Fire-control, in order: no-candidate -> emergency override -> cooldown (category-specific,
      using proposal_history.lastProposalTimeSec vs simulation_time_sec) -> 30-min count limit
      (proposal_history.proposalCountLast30Min) -> pass.
-  7. Strength gentle/clear/strong; priority [rest_required, monotony_prevention] then score.
-  8. Localized proposal {ja,en} + explanation {ja,en} reason lines + reason_inputs.
+  8. Strength gentle/clear/strong; priority [rest_required, monotony_prevention] then score.
+  9. Localized proposal {ja,en} + explanation {ja,en} reason lines + reason_inputs.
 
 Returned dict: the normalized §11 DecisionResult shape PLUS next_package_runtime_state.
 result_type is one of REST_PROPOSAL / MONOTONY_PROPOSAL / SUPPRESSED / NO_PROPOSAL (verbatim).
 Non-fired / suppressed candidates are RETAINED in `candidates`.
+
+Every hyperparameter is read via direct `hp[key]` indexing — NO `hp.get(key, <hardcoded
+default>)` fallback.  `context["hyperparameters"]` is guaranteed fully resolved (manifest
+defaults ⊕ overrides, every declared key present) by the adapter/run_manager (FR-009); a
+missing key here is a real configuration bug and MUST surface as a KeyError -> algorithm_error,
+never a silently-wrong default.
 
 Pure & deterministic: no backend imports, no clocks, no randomness — all time comes from
 context["simulation_time_sec"].
@@ -43,11 +59,12 @@ def _clamp(value: float, lo: float = 0.0, hi: float = 1.0) -> float:
 
 
 # ---------------------------------------------------------------------------
-# Feature-level scoring (identical formulas to the built-in weighted_score)
+# Feature-level scoring helpers
 # ---------------------------------------------------------------------------
 
 
 def _rest_window_score(next_rest_min: float) -> float:
+    """Banded rest-window urgency (Principle IV — boundary-binned, not raw minutes)."""
     if next_rest_min >= 9999.0:
         return 0.0
     if next_rest_min <= 3.0:
@@ -59,128 +76,159 @@ def _rest_window_score(next_rest_min: float) -> float:
     return 0.2
 
 
-def _rest_scarcity_score(density: int) -> float:
-    if density <= 0:
-        return 1.0
-    if density == 1:
-        return 0.7
-    if density == 2:
-        return 0.4
-    return 0.1
+def _rest_scarcity_score(next_rest_min: float) -> float:
+    """clamp((nextRestSpotMin - 10) / 50) — data-model §5."""
+    return _clamp((next_rest_min - 10.0) / 50.0)
 
 
-def _traffic_jam_score(ahead_min: float, low_speed_min: float) -> float:
-    if ahead_min <= 0.0:
-        jam = 0.0
-    elif ahead_min < 10.0:
-        jam = 0.3
-    elif ahead_min < 30.0:
-        jam = 0.6
-    else:
-        jam = 1.0
-    low = _clamp(low_speed_min / 20.0)
-    return max(jam, low)
+def _driving_time_score(drive_min_since_rest: float) -> float:
+    """Banded time-on-task urgency (Principle IV — boundary-binned, not raw minutes).
 
-
-def _long_highway_score(highway_min: float) -> float:
-    if highway_min < 10.0:
+    Input is minutes driven SINCE the last rest (the Hybrid rebaselines the
+    monotonic `continuousDrivingMin` signal on recovery; see `evaluate`).
+    """
+    if drive_min_since_rest < 60.0:
         return 0.0
-    if highway_min < 30.0:
-        return 0.3
-    if highway_min < 60.0:
-        return 0.6
+    if drive_min_since_rest < 120.0:
+        return 0.4
+    if drive_min_since_rest < 180.0:
+        return 0.7
     return 1.0
 
 
-def _weather_risk_score(weather_level: float) -> float:
-    return _clamp(weather_level / 100.0)
-
-
-def _future_fatigue_score(tj: float, lh: float, wr: float) -> float:
-    return _clamp(0.45 * tj + 0.35 * lh + 0.20 * wr)
-
-
-def _monotony_quality_score(
-    monotonous_road_min: float,
-    tunnel_min: float,
-    is_night: bool,
-    low_speed_min: float,
+def _env_load_score(
+    is_traffic_jam: bool, jam_min: float, hw_min: float, weather_level: float
 ) -> float:
-    monotonous_road = _clamp(monotonous_road_min / 30.0)
-    tunnel = _clamp(tunnel_min / 15.0)
-    night = 1.0 if is_night else 0.0
-    low_speed = _clamp(low_speed_min / 20.0)
-    return _clamp(0.35 * monotonous_road + 0.25 * tunnel + 0.20 * night + 0.20 * low_speed)
+    """clamp(0.5*(isTrafficJam?1:clamp(jam_min/20)) + 0.3*clamp(hw_min/60) + 0.2*(weather/100))."""
+    jam_term = 1.0 if is_traffic_jam else _clamp(jam_min / 20.0)
+    hw_term = _clamp(hw_min / 60.0)
+    weather_term = _clamp(weather_level / 100.0)
+    return _clamp(0.5 * jam_term + 0.3 * hw_term + 0.2 * weather_term)
 
 
-def _attention_drop_score(attention_normalized: float) -> float:
-    return _clamp(1.0 - attention_normalized)
+def _monotony_score(mono_min: float, is_night: bool) -> float:
+    """clamp(0.6*clamp(mono_min/30) + 0.4*(isNight?1:0))."""
+    mono_term = _clamp(mono_min / 30.0)
+    night_term = 1.0 if is_night else 0.0
+    return _clamp(0.6 * mono_term + 0.4 * night_term)
+
+
+# ---------------------------------------------------------------------------
+# Runtime-state accumulators — jam_min / hw_min / mono_min (advance while MOVING)
+# ---------------------------------------------------------------------------
+
+# Segment types treated as "monotonous" for the accumulator — mirrors the sibling
+# NRI package's convention over the same simulator segment vocabulary.
+_MONOTONOUS_SEGMENT_TYPES = ("highway", "normal_road")
+
+
+def advance_accumulators(dynamic: dict, prev_state: dict, sim_time: float) -> dict:
+    """Advance jam_min/hw_min/mono_min while `motionState == MOVING`.
+
+    Elapsed minutes since the previous tick are derived from the delta between this
+    tick's `simulation_time_sec` and the previous tick's (stored in runtime state as
+    `prev_sim_time_sec`).  On the very first tick (no prior state) the delta is 0 —
+    there is no elapsed exposure to attribute yet.
+
+    Returns a dict with keys `jam_min`, `hw_min`, `mono_min` (the NEW accumulated
+    totals, ready to thread into `next_package_runtime_state`).
+    """
+    prev_accumulators = prev_state.get("accumulators", {}) or {}
+    prev_jam_min = float(prev_accumulators.get("jam_min", 0.0))
+    prev_hw_min = float(prev_accumulators.get("hw_min", 0.0))
+    prev_mono_min = float(prev_accumulators.get("mono_min", 0.0))
+
+    prev_sim_time_sec = prev_state.get("prev_sim_time_sec")
+    if prev_sim_time_sec is None:
+        tick_duration_min = 0.0
+    else:
+        tick_duration_min = max(0.0, sim_time - float(prev_sim_time_sec)) / 60.0
+
+    is_moving = dynamic.get("motionState") == "MOVING"
+    is_traffic_jam = bool(dynamic.get("isTrafficJam", False))
+    segment_type = dynamic.get("segmentType", "normal_road")
+    is_highway = segment_type == "highway"
+    is_monotonous = segment_type in _MONOTONOUS_SEGMENT_TYPES
+
+    advance = tick_duration_min if is_moving else 0.0
+    return {
+        "jam_min": prev_jam_min + (advance if is_traffic_jam else 0.0),
+        "hw_min": prev_hw_min + (advance if is_highway else 0.0),
+        "mono_min": prev_mono_min + (advance if is_monotonous else 0.0),
+    }
 
 
 # ---------------------------------------------------------------------------
 # Feature extraction — pre-smoothing raw feature vector (0-1 each)
 # ---------------------------------------------------------------------------
 
-# The 11 features that feed the category scores.  All are clamped to [0, 1].
+# The 8 compact features that feed the category scores (data-model §5).  All are
+# clamped to [0, 1].  No route look-ahead; only 1 stochastic signal (anomaly_rate).
 FEATURE_KEYS = (
     "drowsiness",
     "fatigue",
     "driving_anomaly",
-    "future_fatigue",
+    "driving_time",
+    "env_load",
+    "monotony",
     "rest_window",
     "rest_scarcity",
-    "monotony",
     "familiar_route",
-    "attention_drop",
-    "traffic_jam",
-    "long_highway",
 )
 
 
-def extract_features(raw_state: dict, normalized: dict) -> dict:
-    """Extract the pre-smoothing 0-1 feature vector from a tick's raw_state.
+def extract_features(signals: dict, accumulators: dict, hp: dict) -> dict:
+    """Extract the pre-smoothing 0-1 feature vector from a tick's tiered signals.
 
     Args:
-        raw_state:  camelCase numeric sensor dict (optional keys default to 0).
-        normalized: feature_groups.normalized (snake_case 0-1 scores from binning).
+        signals: `context["signals"]` — `{fixed, dynamic, simulated}`.
+        accumulators: this tick's advanced `{jam_min, hw_min, mono_min}` (see
+            `advance_accumulators`), plus `drive_min_since_rest` (minutes driven
+            since the last rest, computed in `evaluate`).  `drive_min_since_rest`
+            defaults to 0 when absent, so callers that pass only the three
+            MOVING-gated accumulators get `driving_time == 0`.
+        hp: fully-resolved hyperparameters (`K` divides `anomaly_rate`).
 
     Returns:
         Dict keyed by FEATURE_KEYS with clamped 0-1 floats.
     """
-    drowsiness = _clamp(float(normalized.get("drowsiness_score", 0.0)))
-    fatigue = _clamp(float(normalized.get("fatigue_score", 0.0)))
-    driving_anomaly = _clamp(float(normalized.get("driving_anomaly_score", 0.0)))
-    attention_norm = _clamp(float(normalized.get("attention_score", 1.0)))
+    fixed = signals.get("fixed", {}) or {}
+    dynamic = signals.get("dynamic", {}) or {}
+    simulated = signals.get("simulated", {}) or {}
 
-    next_rest_min = float(raw_state.get("nextRestSpotMin", 9999.0))
-    is_night = bool(raw_state.get("isNight", False))
-    weather_level = float(raw_state.get("weatherRiskLevel", 0.0))
-    ahead_min = float(raw_state.get("trafficJamAheadMin", 0.0))
-    low_speed_min = float(raw_state.get("lowSpeedDurationMin", 0.0))
-    highway_min = float(raw_state.get("highwayRemainingMin", 0.0))
-    monotonous_road_min = float(raw_state.get("monotonousRoadRemainingMin", 0.0))
-    tunnel_min = float(raw_state.get("tunnelRemainingMin", 0.0))
-    familiar_ratio = float(raw_state.get("familiarRouteRatio", 0.0))
-    rest_density = int(raw_state.get("restSpotDensityNext30Min", 999))
+    drowsiness = _clamp(float(simulated.get("drowsiness", 0.0)) / 100.0)
+    fatigue = _clamp(float(simulated.get("fatigue", 0.0)) / 100.0)
+    anomaly_rate = float(simulated.get("anomaly_rate", 0.0))
+    driving_anomaly = _clamp(anomaly_rate / float(hp["K"]))
+    driving_time = _driving_time_score(
+        float(accumulators.get("drive_min_since_rest", 0.0))
+    )
 
-    tj = _traffic_jam_score(ahead_min, low_speed_min)
-    lh = _long_highway_score(highway_min)
-    wr = _weather_risk_score(weather_level)
+    is_night = bool(fixed.get("isNight", False))
+    familiar_route = bool(fixed.get("familiarRoute", False))
+    weather_level = float(fixed.get("weatherRiskLevel", 0.0))
+
+    is_traffic_jam = bool(dynamic.get("isTrafficJam", False))
+    next_rest_min = float(dynamic.get("nextRestSpotMin", 9999.0))
+
+    env_load = _env_load_score(
+        is_traffic_jam,
+        float(accumulators.get("jam_min", 0.0)),
+        float(accumulators.get("hw_min", 0.0)),
+        weather_level,
+    )
+    monotony = _monotony_score(float(accumulators.get("mono_min", 0.0)), is_night)
 
     return {
         "drowsiness": drowsiness,
         "fatigue": fatigue,
         "driving_anomaly": driving_anomaly,
-        "future_fatigue": _future_fatigue_score(tj, lh, wr),
+        "driving_time": driving_time,
+        "env_load": env_load,
+        "monotony": monotony,
         "rest_window": _rest_window_score(next_rest_min),
-        "rest_scarcity": _rest_scarcity_score(rest_density),
-        "monotony": _monotony_quality_score(
-            monotonous_road_min, tunnel_min, is_night, low_speed_min
-        ),
-        "familiar_route": _clamp(familiar_ratio),
-        "attention_drop": _attention_drop_score(attention_norm),
-        "traffic_jam": tj,
-        "long_highway": lh,
+        "rest_scarcity": _rest_scarcity_score(next_rest_min),
+        "familiar_route": 1.0 if familiar_route else 0.0,
     }
 
 
@@ -198,42 +246,39 @@ def smooth_features(raw_features: dict, prev_smoothed: dict, alpha: float) -> di
 # ---------------------------------------------------------------------------
 
 
-def category_scores(features: dict, hp: dict) -> dict:
+def category_scores(features: dict, hp: dict, child_passenger: bool = False) -> dict:
     """Compute base_safety_risk, rest_required_score and monotony_prevention_score.
 
     `features` may be the raw or the smoothed feature vector — same formula.
+
+    `child_passenger` is the raw (unsmoothed) `fixed.childPassenger` flag; when
+    True it adds a fixed `w_child_bonus` to `rest_required_score` (only) — a
+    conservatism dial that makes AICA propose a rest sooner with a child aboard.
+    It is added AFTER the rest-spot bonus gate so it can never unlock that gate on
+    its own, and it is deliberately kept out of `base_safety_risk` and monotony.
     """
-    w_d = float(hp.get("w_drowsiness", 0.40))
-    w_f = float(hp.get("w_fatigue", 0.25))
-    w_da = float(hp.get("w_driving_anomaly", 0.25))
-    w_ff = float(hp.get("w_future_fatigue", 0.10))
     base_safety_risk = _clamp(
-        w_d * features["drowsiness"]
-        + w_f * features["fatigue"]
-        + w_da * features["driving_anomaly"]
-        + w_ff * features["future_fatigue"]
+        hp["w_drowsiness"] * features["drowsiness"]
+        + hp["w_fatigue"] * features["fatigue"]
+        + hp["w_driving_anomaly"] * features["driving_anomaly"]
+        + hp["w_driving_time"] * features["driving_time"]
+        + hp["w_env"] * features["env_load"]
     )
 
-    min_risk = float(hp.get("minimum_risk_for_rest_bonus", 0.45))
-    w_rw = float(hp.get("w_rest_window", 0.10))
-    w_rs = float(hp.get("w_rest_scarcity", 0.08))
-    if base_safety_risk >= min_risk:
-        rest_bonus = w_rw * features["rest_window"] + w_rs * features["rest_scarcity"]
+    if base_safety_risk >= hp["minimum_risk_for_rest_bonus"]:
+        rest_bonus = (
+            hp["w_rest_window"] * features["rest_window"]
+            + hp["w_rest_scarcity"] * features["rest_scarcity"]
+        )
     else:
         rest_bonus = 0.0
-    rest_required_score = _clamp(base_safety_risk + rest_bonus)
+    child_bonus = hp["w_child_bonus"] if child_passenger else 0.0
+    rest_required_score = _clamp(base_safety_risk + rest_bonus + child_bonus)
 
-    w_mono = float(hp.get("w_monotony", 0.30))
-    w_fr = float(hp.get("w_familiar_route", 0.20))
-    w_ad = float(hp.get("w_attention_drop", 0.25))
-    w_tj = float(hp.get("w_traffic_jam", 0.15))
-    w_lh = float(hp.get("w_long_highway", 0.10))
     monotony_prevention_score = _clamp(
-        w_mono * features["monotony"]
-        + w_fr * features["familiar_route"]
-        + w_ad * features["attention_drop"]
-        + w_tj * features["traffic_jam"]
-        + w_lh * features["long_highway"]
+        hp["w_monotony"] * features["monotony"]
+        + hp["w_env_mono"] * features["env_load"]
+        + hp["w_familiar"] * features["familiar_route"]
     )
 
     return {
@@ -252,10 +297,10 @@ def rest_state_label(score: float, accepted: bool, hp: dict) -> str:
     """REST_NORMAL->WATCH->SUGGEST->RECOMMEND->URGENT (->RECOVERY on an accept)."""
     if accepted:
         return "REST_RECOVERY"
-    watch = float(hp.get("rest_watch_threshold", 0.45))
-    suggest = float(hp.get("threshold_suggest", 0.62))
-    recommend = float(hp.get("threshold_recommend", 0.76))
-    urgent = float(hp.get("threshold_urgent", 0.88))
+    watch = hp["rest_watch_threshold"]
+    suggest = hp["threshold_suggest"]
+    recommend = hp["threshold_recommend"]
+    urgent = hp["threshold_urgent"]
     if score >= urgent:
         return "REST_URGENT"
     if score >= recommend:
@@ -269,8 +314,8 @@ def rest_state_label(score: float, accepted: bool, hp: dict) -> str:
 
 def monotony_state_label(score: float, hp: dict) -> str:
     """MONOTONY_NORMAL->WATCH->CONTENT_SUGGEST."""
-    watch = float(hp.get("monotony_watch_threshold", 0.40))
-    suggest = float(hp.get("monotony_suggest_threshold", 0.58))
+    watch = hp["monotony_watch_threshold"]
+    suggest = hp["monotony_suggest_threshold"]
     if score >= suggest:
         return "MONOTONY_CONTENT_SUGGEST"
     if score >= watch:
@@ -467,7 +512,7 @@ def _build_explanation(selected, scores: dict, states: dict) -> tuple[list, list
 
     if selected["category"] == "rest_required":
         reason_inputs = [
-            "drowsiness", "fatigue", "driving_anomaly", "future_fatigue",
+            "drowsiness", "fatigue", "driving_anomaly", "env_load",
             "base_safety_risk", "rest_window", "rest_scarcity", "rest_required_score",
         ]
         explanation = [
@@ -485,8 +530,7 @@ def _build_explanation(selected, scores: dict, states: dict) -> tuple[list, list
         ]
     else:
         reason_inputs = [
-            "monotony", "familiar_route", "attention_drop", "traffic_jam",
-            "long_highway", "monotony_prevention_score",
+            "monotony", "env_load", "familiar_route", "monotony_prevention_score",
         ]
         explanation = [
             {
@@ -513,42 +557,84 @@ def evaluate(context: dict) -> dict:
 
     See the module docstring for the full pipeline.  Pure & deterministic.
     """
-    hp = context.get("hyperparameters", {}) or {}
-    raw = context.get("raw_state", {}) or {}
+    hp = context["hyperparameters"]
+    signals = context.get("signals", {}) or {}
+    dynamic = signals.get("dynamic", {}) or {}
     feature_groups = context.get("feature_groups", {}) or {}
-    norm = feature_groups.get("normalized", {}) or {}
     ordinal = feature_groups.get("ordinal", {}) or {}
     prev_state = context.get("package_runtime_state", {}) or {}
     proposal_history = context.get("proposal_history", {}) or {}
     sim_time = float(context.get("simulation_time_sec", 0.0))
 
-    alpha = float(hp.get("smoothing_alpha", 0.35))
-    suggest = float(hp.get("threshold_suggest", 0.62))
-    recommend = float(hp.get("threshold_recommend", 0.76))
-    urgent = float(hp.get("threshold_urgent", 0.88))
-    mono_suggest = float(hp.get("monotony_suggest_threshold", 0.58))
-    mono_recommend = float(hp.get("monotony_recommend_threshold", 0.72))
-    mono_urgent = float(hp.get("monotony_urgent_threshold", 0.85))
-    rest_persistence = int(hp.get("rest_persistence_ticks", 2))
-    mono_persistence = int(hp.get("monotony_persistence_ticks", 3))
-    skip_if_score = float(hp.get("skip_if_score", 0.88))
-    skip_if_velocity = float(hp.get("skip_if_velocity", 0.08))
-    rest_cooldown = float(hp.get("rest_cooldown_sec", 600.0))
-    mono_cooldown = float(hp.get("monotony_cooldown_sec", 900.0))
-    emergency_threshold = float(hp.get("emergency_override_threshold", 0.88))
-    max_per_30min = int(hp.get("max_proposals_per_30min", 3))
+    alpha = hp["smoothing_alpha"]
+    suggest = hp["threshold_suggest"]
+    recommend = hp["threshold_recommend"]
+    urgent = hp["threshold_urgent"]
+    mono_suggest = hp["monotony_suggest_threshold"]
+    mono_recommend = hp["monotony_recommend_threshold"]
+    mono_urgent = hp["monotony_urgent_threshold"]
+    rest_persistence = int(hp["rest_persistence_ticks"])
+    mono_persistence = int(hp["monotony_persistence_ticks"])
+    skip_if_score = hp["skip_if_score"]
+    skip_if_velocity = hp["skip_if_velocity"]
+    rest_cooldown = hp["rest_cooldown_sec"]
+    mono_cooldown = hp["monotony_cooldown_sec"]
+    emergency_threshold = hp["emergency_override_threshold"]
+    max_per_30min = int(hp["max_proposals_per_30min"])
 
-    # ── 1-2. extract + smooth features ─────────────────────────────────────
-    raw_features = extract_features(raw, norm)
+    recovery_active = bool(context.get("recovery_active", False))
+    child_passenger = bool(signals.get("fixed", {}).get("childPassenger", False))
+
+    # ── 1. advance the env/monotony accumulators (MOVING-gated) ────────────
+    accumulators = advance_accumulators(dynamic, prev_state, sim_time)
+
+    # ── 1b. time-on-task since the last rest ───────────────────────────────
+    # `continuousDrivingMin` is monotonic (the engine never resets it), so the
+    # Hybrid keeps its own baseline: while the driver is resting we rebaseline it
+    # to the current value, making `drive_min_since_rest` drop to ~0 right after a
+    # rest.  Threaded forward as `drive_min_baseline`.
+    continuous_driving_min = float(dynamic.get("continuousDrivingMin", 0.0))
+    if recovery_active:
+        drive_min_baseline = continuous_driving_min
+    else:
+        drive_min_baseline = float(prev_state.get("drive_min_baseline", 0.0))
+    drive_min_since_rest = max(0.0, continuous_driving_min - drive_min_baseline)
+    accumulators["drive_min_since_rest"] = drive_min_since_rest
+
+    # ── 1c. rebaseline env/monotony exposure on rest ───────────────────────
+    # The jam/highway/monotony accumulators (feeding env_load + monotony) are
+    # measured SINCE THE LAST REST, exactly like drive_min_since_rest: while the
+    # driver is resting we rebaseline them to the current cumulative totals, so a
+    # rest drops env_load AND monotony to ~0 and they rebuild afterwards (a rest
+    # relieves monotony; without this monotony saturates and never falls). The
+    # cumulative `accumulators` are still threaded forward unchanged so
+    # advance_accumulators keeps the running totals — `accum_baseline` is separate.
+    if recovery_active:
+        accum_baseline = {
+            "jam_min": accumulators["jam_min"],
+            "hw_min": accumulators["hw_min"],
+            "mono_min": accumulators["mono_min"],
+        }
+    else:
+        accum_baseline = prev_state.get("accum_baseline", {}) or {}
+    since_rest_accumulators = {
+        "jam_min": max(0.0, accumulators["jam_min"] - float(accum_baseline.get("jam_min", 0.0))),
+        "hw_min": max(0.0, accumulators["hw_min"] - float(accum_baseline.get("hw_min", 0.0))),
+        "mono_min": max(0.0, accumulators["mono_min"] - float(accum_baseline.get("mono_min", 0.0))),
+        "drive_min_since_rest": drive_min_since_rest,
+    }
+
+    # ── 2-3. extract + smooth features (from the since-rest exposures) ──────
+    raw_features = extract_features(signals, since_rest_accumulators, hp)
     prev_smoothed_features = prev_state.get("smoothed_features", {}) or {}
     smoothed_features = smooth_features(raw_features, prev_smoothed_features, alpha)
 
-    # ── 3. category scores from the smoothed features ──────────────────────
-    scores = category_scores(smoothed_features, hp)
+    # ── 4. category scores from the smoothed features ──────────────────────
+    scores = category_scores(smoothed_features, hp, child_passenger=child_passenger)
     rest_score = scores["rest_required_score"]
     mono_score = scores["monotony_prevention_score"]
 
-    # ── 4. velocity vs prev smoothed scores ────────────────────────────────
+    # ── 5. velocity vs prev smoothed scores ────────────────────────────────
     prev_scores = prev_state.get("smoothed_scores", {}) or {}
     rest_velocity = rest_score - float(prev_scores.get("rest_required_score", 0.0))
     mono_velocity = mono_score - float(prev_scores.get("monotony_prevention_score", 0.0))
@@ -566,20 +652,19 @@ def evaluate(context: dict) -> dict:
     # because no later rest proposal is ever allowed to fire).
     last_result = proposal_history.get("lastProposalResult")
     last_cat = proposal_history.get("lastProposalCategory")
-    recovery_active = bool(context.get("recovery_active", False))
     rest_recovered = (
         recovery_active
         and (last_result == "accept_rest")
         and (last_cat in (None, "rest_required"))
     )
 
-    # ── 5. state-machine labels (recorded output) ──────────────────────────
+    # ── 6. state-machine labels (recorded output) ───────────────────────────
     states = {
         "rest": rest_state_label(rest_score, rest_recovered, hp),
         "monotony": monotony_state_label(mono_score, hp),
     }
 
-    # ── 6-7. candidates with persistence + fire-control ────────────────────
+    # ── 7. candidates with persistence + fire-control ───────────────────────
     rest_cand, new_rest_counter = _evaluate_candidate(
         category="rest_required",
         score=rest_score,
@@ -680,6 +765,10 @@ def evaluate(context: dict) -> dict:
             "rest_state": states["rest"],
             "monotony_state": states["monotony"],
         },
+        "accumulators": accumulators,
+        "drive_min_baseline": drive_min_baseline,
+        "accum_baseline": accum_baseline,
+        "prev_sim_time_sec": sim_time,
     }
 
     # features field is dict[str, str]: the transparent ordinal view of the tick.

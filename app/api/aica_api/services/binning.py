@@ -67,25 +67,41 @@ def _bin_rest_eta(metres: int | float | None) -> str:
 
 
 # ---------------------------------------------------------------------------
-# T011: build_feature_groups(raw_state) → {normalized, ordinal}
+# T011 / feature 009: build_feature_groups(raw_state) → {normalized, ordinal}
 # ---------------------------------------------------------------------------
 #
-# raw_state keys (camelCase, simulator-internal numerics):
-#   drowsinessLevel, fatigueLevel, attentionLevel, speedKph,
-#   steeringInstabilityLevel, pedalAbnormalityLevel, laneDepartureCount,
-#   adasWarningCount, nextRestSpotMin (9999 = no rest ahead), routeFraction,
-#   continuousDrivingMin, isNight, weatherRiskLevel, segmentType,
+# Feature 009 (signal-tier redesign): drowsiness/fatigue are now Tier-3 SIMULATED
+# signals exposed as raw numeric values directly in the adapter context
+# (context["signals"]["simulated"]) — algorithms normalize them themselves
+# (see data-model.md §5 Compact Hybrid: drowsiness = drowsiness/100).  They are
+# therefore NO LONGER banded here; build_feature_groups keeps ONLY the
+# route/context ordinal bands that survive the vehicle-model retirement:
+# rest_spot_eta, continuous_driving_time, signal_duration.  The
+# drowsiness_score/fatigue_score/attention_score/driving_anomaly_score/
+# pedal_anomaly_score normalized derivations are removed along with the
+# retired vehicle model and attention signal.
+#
+# bin_drowsiness_level / bin_fatigue_level remain as small public helpers for
+# ONLY the legacy top-level TickState.drowsiness_level/fatigue_level fields
+# (M1 display bands) — they are NOT part of the feature_groups output.
+#
+# Input keys (camelCase, simulator-internal numerics) still consumed here:
+#   nextRestSpotMin (9999 = no rest ahead), continuousDrivingMin,
 #   drowsinessAboveWeakTicks (consecutive ticks with drowsiness ≥ 20)
 #
 # Ordinal thresholds:
-#   drowsiness_level: none<20, weak 20–40, moderate 40–60, strong 60–80, severe≥80
-#   fatigue_level:    low<30, medium 30–60, high≥60
 #   signal_duration:  transient=0, brief=1, sustained 2–9, persistent≥10 (AboveWeakTicks)
 #   rest_spot_eta:    none=nextRestSpotMin≥9999, near≤20min, far>20min
 #   continuous_driving_time: short<30min, moderate 30–90min, long≥90min
 
 
-def _bin_drowsiness(level: float) -> str:
+def bin_drowsiness_level(level: float) -> str:
+    """Map a numeric drowsiness value to its legacy display band.
+
+    NOT part of build_feature_groups' output (Tier-3 drowsiness is exposed as a
+    raw number to algorithms) — used only for the legacy TickState.drowsiness_level
+    field.
+    """
     if level < 20.0:
         return "none"
     if level < 40.0:
@@ -97,7 +113,12 @@ def _bin_drowsiness(level: float) -> str:
     return "severe"
 
 
-def _bin_fatigue(level: float) -> str:
+def bin_fatigue_level(level: float) -> str:
+    """Map a numeric fatigue value to its legacy display band.
+
+    NOT part of build_feature_groups' output (Tier-3 fatigue is exposed as a raw
+    number to algorithms) — used only for the legacy TickState.fatigue_level field.
+    """
     if level < 30.0:
         return "low"
     if level < 60.0:
@@ -132,11 +153,14 @@ def _bin_continuous_driving(minutes: float) -> str:
 
 
 def build_feature_groups(raw_state: dict) -> dict:
-    """Derive {normalized, ordinal} feature groups from a tick raw_state dict.
+    """Derive {normalized, ordinal} feature groups from a tick's route/context state.
 
-    This is the single seam between simulator-internal numeric state and the
-    decision layer.  Algorithms consume feature_groups; raw_state is
-    available for the evidence trace and weighted_score formula.
+    This is the single seam between simulator-internal route/context numerics and
+    the decision layer (Principle IV boundary-binning).  Feature 009: Tier-3
+    simulated signals (drowsiness, fatigue, anomaly_rate) are NOT banded here —
+    they are exposed as raw numbers directly in context["signals"]["simulated"];
+    algorithms normalize them themselves.  Only the surviving route/context
+    ordinal bands are produced.
 
     Args:
         raw_state: Dict of camelCase simulator-internal numeric fields produced
@@ -144,33 +168,21 @@ def build_feature_groups(raw_state: dict) -> dict:
 
     Returns:
         Dict with two sub-dicts:
-        - ``normalized``: {feature_name: float in [0, 1]}
+        - ``normalized``: {feature_name: float in [0, 1]}  (currently empty —
+          no surviving normalized quantity)
         - ``ordinal``:    {feature_name: str band label}
     """
-    drowsiness = float(raw_state.get("drowsinessLevel", 0.0))
-    fatigue = float(raw_state.get("fatigueLevel", 0.0))
-    attention = float(raw_state.get("attentionLevel", 100.0))
-    steering = float(raw_state.get("steeringInstabilityLevel", 0.0))
-    pedal = float(raw_state.get("pedalAbnormalityLevel", 0.0))
     continuous_min = float(raw_state.get("continuousDrivingMin", 0.0))
     next_rest_min = float(raw_state.get("nextRestSpotMin", 9999.0))
     above_weak = int(raw_state.get("drowsinessAboveWeakTicks", 0))
 
     ordinal = {
-        "drowsiness_level": _bin_drowsiness(drowsiness),
-        "fatigue_level": _bin_fatigue(fatigue),
         "signal_duration": _bin_signal_duration(above_weak),
         "rest_spot_eta": _bin_rest_spot_eta(next_rest_min),
         "continuous_driving_time": _bin_continuous_driving(continuous_min),
     }
 
-    normalized = {
-        "drowsiness_score": min(1.0, max(0.0, drowsiness / 100.0)),
-        "fatigue_score": min(1.0, max(0.0, fatigue / 100.0)),
-        "attention_score": min(1.0, max(0.0, attention / 100.0)),
-        "driving_anomaly_score": min(1.0, max(0.0, steering / 100.0)),
-        "pedal_anomaly_score": min(1.0, max(0.0, pedal / 100.0)),
-    }
+    normalized: dict[str, float] = {}
 
     return {"normalized": normalized, "ordinal": ordinal}
 

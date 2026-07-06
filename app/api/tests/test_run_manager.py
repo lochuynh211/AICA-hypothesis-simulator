@@ -4,6 +4,23 @@ Tests for:
   create_run(plan_id, run_id, runs_dir) -> RunState
   tick(run_id) -> TickOutcome
   action(run_id, action) -> RunState
+
+Feature 009 (signal-tier redesign): repointed from the retired
+uc01_fatigue_friend_drive_v0_1 scenario + rest_rule_based_v0_1 (declarative_rule)
+package to the surviving uc01_fatigue_recovery_v0_1 scenario +
+aica_transparent_hybrid_trigger_v1 (python_module) package.  The package declares
+tick_seconds=30 (overriding the scenario's tick_seconds=60 — see
+run_plan._build_effective_setup's precedence), and the scenario has
+recovery_options (accept_rest now requires recovery_option_id + rest_spot instead
+of completing the run outright).  Tick budgets and REST_PROPOSAL counts below are
+regenerated from actual behavior (FR-018): with default hyperparameters and
+run_seed_default=42, the hybrid trigger fires exactly one REST_PROPOSAL at tick 111
+(~56km in) over the full 120km route — consistent with test_end_to_end_run.py's
+independently-verified e2e behavior.
+
+The overtime-scenario / weighted_score tests are deleted — uc01_overtime_driver_v0_1
+and rest_weighted_score_v0_1 are both retired (no declarative_rule/weighted_score
+built-in algorithms, no overtime scenario file survives feature 009).
 """
 
 from __future__ import annotations
@@ -16,7 +33,7 @@ import pytest
 from aica_api.models.decision import ResultType
 from aica_api.models.log import AlgorithmError, RunLog
 from aica_api.models.package import PackageManifest
-from aica_api.models.run import RunStatus
+from aica_api.models.run import RestSpot, RunStatus
 from aica_api.models.scenario import ScenarioDef
 from aica_api.services.run_manager import (
     ActionNotAllowedError,
@@ -29,10 +46,16 @@ from aica_api.services.run_manager import (
 from aica_api.services.run_plan import clear_draft_registry, create_draft
 
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
-_SCENARIO_PATH = _REPO_ROOT / "scenarios" / "uc01_fatigue_friend_drive_v0_1.json"
-_PACKAGE_PATH = _REPO_ROOT / "packages" / "rest_rule_based_v0_1" / "package.json"
-_OVERTIME_SCENARIO_PATH = _REPO_ROOT / "scenarios" / "uc01_overtime_driver_v0_1.json"
-_WEIGHTED_PACKAGE_PATH = _REPO_ROOT / "packages" / "rest_weighted_score_v0_1" / "package.json"
+_SCENARIO_PATH = _REPO_ROOT / "scenarios" / "uc01_fatigue_recovery_v0_1.json"
+_PACKAGE_PATH = _REPO_ROOT / "packages" / "aica_transparent_hybrid_trigger_v1" / "package.json"
+
+# Generous tick budget covering the full 120km route at the package's 30s cadence
+# (observed: REST_PROPOSAL fires once at tick 111; the full route completes well
+# within 400 — see test_end_to_end_run.py's independently-verified ~217-tick figure).
+_MAX_TICKS = 400
+
+# The scenario's one is_rest_facility segment sits at route_fraction 0.5.
+_REST_SPOT = RestSpot(id="p1", label={"ja": "SA", "en": "SA"}, route_fraction=0.5)
 
 
 # ---------------------------------------------------------------------------
@@ -53,24 +76,13 @@ def reset_registry():
 @pytest.fixture
 def uc01_scenario() -> ScenarioDef:
     data = json.loads(_SCENARIO_PATH.read_text(encoding="utf-8"))
+    data.pop("_comment", None)
     return ScenarioDef(**data)
 
 
 @pytest.fixture
 def uc01_package() -> PackageManifest:
     data = json.loads(_PACKAGE_PATH.read_text(encoding="utf-8"))
-    return PackageManifest(**data)
-
-
-@pytest.fixture
-def overtime_scenario() -> ScenarioDef:
-    data = json.loads(_OVERTIME_SCENARIO_PATH.read_text(encoding="utf-8"))
-    return ScenarioDef(**data)
-
-
-@pytest.fixture
-def weighted_package() -> PackageManifest:
-    data = json.loads(_WEIGHTED_PACKAGE_PATH.read_text(encoding="utf-8"))
     return PackageManifest(**data)
 
 
@@ -92,6 +104,14 @@ def _plan_and_run(package, scenario, run_id, tmp_path):
         run_mode="standard",
     )
     return create_run(plan_id, run_id, tmp_path)
+
+
+def _tick_to_proposal(run_id: str) -> None:
+    """Helper: tick until REST_PROPOSAL pauses the run (or completion, or budget exhausted)."""
+    for _ in range(_MAX_TICKS):
+        outcome = tick(run_id)
+        if outcome.paused or outcome.completed:
+            break
 
 
 # ---------------------------------------------------------------------------
@@ -130,8 +150,9 @@ def test_create_run_event_plan_frozen(tmp_path, uc01_package, uc01_scenario):
     state = _plan_and_run(uc01_package, uc01_scenario, "run_plan", tmp_path)
     # M2 scenario: build_event_plan returns no per-tick ticks[] (M2 uses advance_tick)
     assert len(state.event_plan.ticks) == 0
-    # M2 event plan carries tick_seconds and at least one rest opportunity
-    assert state.event_plan.tick_seconds == uc01_scenario.tick_seconds
+    # The package declares its own tick_seconds (30), which takes precedence over
+    # the scenario's (60) — see run_plan._build_effective_setup's precedence rule.
+    assert state.event_plan.tick_seconds == uc01_package.algorithm.tick_seconds
     assert len(state.event_plan.rest_opportunities) > 0
 
 
@@ -155,8 +176,12 @@ def test_create_run_route_facts_has_segments(tmp_path, uc01_package, uc01_scenar
 
 
 def test_create_run_route_facts_has_bands(tmp_path, uc01_package, uc01_scenario):
+    """route_facts.bands is populated from package.features (run_plan.create_draft),
+    keyed by the package's own feature keys — not the retired M1
+    "drowsiness_level"/"fatigue_level" band-parameter names."""
     state = _plan_and_run(uc01_package, uc01_scenario, "run_bands", tmp_path)
-    assert "drowsiness_level" in state.route_facts.bands
+    assert "drowsiness" in state.route_facts.bands
+    assert "fatigue" in state.route_facts.bands
 
 
 # ─── M5 T003 — create_run persists profiles into the RunLog ──────────────────
@@ -165,26 +190,26 @@ def test_create_run_route_facts_has_bands(tmp_path, uc01_package, uc01_scenario)
 def test_create_run_persists_driver_profile_in_log(tmp_path, uc01_package, uc01_scenario):
     """create_run writes driver_profile into the persisted RunLog (M5 T003).
 
-    uc01_fatigue_friend_drive_v0_1 has a driver_profile — confirm it is
+    uc01_fatigue_recovery_v0_1 has driver_signal_params — confirm it is
     threaded through into RunLog.driver_profile on disk.
     """
     _plan_and_run(uc01_package, uc01_scenario, "run_dp", tmp_path)
     data = json.loads((tmp_path / "run_dp.json").read_text(encoding="utf-8"))
     log = RunLog(**data)
-    # The uc01 scenario has a driver_profile — must be present in the log
+    # The uc01 scenario has driver_signal_params — must be present in the log
     assert log.driver_profile is not None
     assert isinstance(log.driver_profile, dict)
-    # Spot-check: the scenario's driver_profile has an "id" key
+    # Spot-check: DriverSignalParams has an "id" key
     assert "id" in log.driver_profile
 
 
-def test_create_run_persists_vehicle_profile_in_log(tmp_path, uc01_package, uc01_scenario):
-    """create_run writes vehicle_profile into the persisted RunLog (M5 T003)."""
+def test_create_run_vehicle_profile_always_none_in_log(tmp_path, uc01_package, uc01_scenario):
+    """Feature 009: the vehicle behaviour model is retired — vehicle_profile is
+    always None in the persisted RunLog, regardless of scenario content."""
     _plan_and_run(uc01_package, uc01_scenario, "run_vp", tmp_path)
     data = json.loads((tmp_path / "run_vp.json").read_text(encoding="utf-8"))
     log = RunLog(**data)
-    assert log.vehicle_profile is not None
-    assert isinstance(log.vehicle_profile, dict)
+    assert log.vehicle_profile is None
 
 
 def test_create_run_persists_speed_profile_in_log(tmp_path, uc01_package, uc01_scenario):
@@ -197,12 +222,21 @@ def test_create_run_persists_speed_profile_in_log(tmp_path, uc01_package, uc01_s
 
 
 def test_create_run_profiles_none_for_m1_scenario(tmp_path, uc01_package, uc01_scenario):
-    """A scenario without profiles produces None profile fields in the log (backward compat, M5 T003)."""
-    import copy
+    """A scenario without profiles produces None profile fields in the log (backward compat, M5 T003).
 
-    # Build a minimal M1-style scenario without profiles
+    Both surviving packages declare their own algorithm.tick_seconds, which
+    create_run only permits for M2 (driver_signal_params-bearing) scenarios — see
+    the "package-declared tick_seconds is only supported for M2" guard.  To
+    exercise the M1 legacy path here, use a package variant with tick_seconds
+    cleared (M1/M2 dispatch is driven by the SCENARIO, not the package identity).
+    """
     from aica_api.models.scenario import ScenarioDef
 
+    m1_package = uc01_package.model_copy(
+        update={"algorithm": uc01_package.algorithm.model_copy(update={"tick_seconds": None})}
+    )
+
+    # Build a minimal M1-style scenario without profiles
     m1_data = {
         "id": "uc01_fatigue_friend_drive_v0_1",
         "version": "0.1.0",
@@ -230,7 +264,7 @@ def test_create_run_profiles_none_for_m1_scenario(tmp_path, uc01_package, uc01_s
         "allowed_actions": ["accept_rest", "postpone"],
     }
     scenario_no_profiles = ScenarioDef(**m1_data)
-    _plan_and_run(uc01_package, scenario_no_profiles, "run_m1_no_prof", tmp_path)
+    _plan_and_run(m1_package, scenario_no_profiles, "run_m1_no_prof", tmp_path)
     data = json.loads((tmp_path / "run_m1_no_prof.json").read_text(encoding="utf-8"))
     log = RunLog(**data)
     assert log.driver_profile is None
@@ -278,7 +312,7 @@ def test_tick_no_algorithm_error_on_normal_run(tmp_path, uc01_package, uc01_scen
 
 
 def test_tick_not_paused_on_no_trigger(tmp_path, uc01_package, uc01_scenario):
-    """First tick (NO_TRIGGER) should not pause."""
+    """First tick (NO_PROPOSAL) should not pause."""
     _plan_and_run(uc01_package, uc01_scenario, "run_no_pause", tmp_path)
     outcome = tick("run_no_pause")
     assert outcome.paused is False
@@ -297,22 +331,10 @@ def test_tick_event_written_to_log(tmp_path, uc01_package, uc01_scenario):
 # ---------------------------------------------------------------------------
 
 
-def _tick_to_proposal(run_id: str, package: PackageManifest, scenario: ScenarioDef) -> None:
-    """Helper: tick until REST_PROPOSAL fires."""
-    n_ticks = scenario.total_duration_seconds // scenario.tick_seconds
-    for _ in range(n_ticks):
-        outcome = tick(run_id)
-        if outcome.paused or outcome.completed:
-            break
-
-
 def test_tick_pauses_on_rest_proposal(tmp_path, uc01_package, uc01_scenario):
     """At the trigger tick, the run pauses and pending_proposal is set."""
     _plan_and_run(uc01_package, uc01_scenario, "run_pause", tmp_path)
-    _tick_to_proposal("run_pause", uc01_package, uc01_scenario)
-    outcome = tick.__wrapped__("run_pause") if hasattr(tick, "__wrapped__") else None
-    # Re-check by reading state via separate tick after proposal
-    # We need to read state from registry — use get_run
+    _tick_to_proposal("run_pause")
     from aica_api.services.run_manager import get_run
     state = get_run("run_pause")
     assert state is not None
@@ -321,16 +343,19 @@ def test_tick_pauses_on_rest_proposal(tmp_path, uc01_package, uc01_scenario):
 
 
 def test_exactly_one_rest_proposal_in_full_run(tmp_path, uc01_package, uc01_scenario):
-    """The UC-01 fixture fires exactly one REST_PROPOSAL across the full run."""
+    """The uc01 recovery fixture fires exactly one REST_PROPOSAL across the full run.
+
+    Regenerated from actual behavior (FR-018): consistent with
+    test_end_to_end_run.py's independently-verified single-REST_PROPOSAL result.
+    """
     _plan_and_run(uc01_package, uc01_scenario, "run_one_r3", tmp_path)
-    n_ticks = uc01_scenario.total_duration_seconds // uc01_scenario.tick_seconds
     rest_proposals = 0
-    for _ in range(n_ticks):
+    for _ in range(_MAX_TICKS):
         outcome = tick("run_one_r3")
         if outcome.decision and outcome.decision.result_type == ResultType.REST_PROPOSAL:
             rest_proposals += 1
         if outcome.paused:
-            action("run_one_r3", "accept_rest")  # complete the run
+            action("run_one_r3", "accept_rest", recovery_option_id="nap_karaoke", rest_spot=_REST_SPOT)
             break
         if outcome.completed:
             break
@@ -343,14 +368,13 @@ def test_exactly_one_rest_proposal_in_full_run(tmp_path, uc01_package, uc01_scen
 
 
 def test_tick_past_end_returns_completed(tmp_path, uc01_package, uc01_scenario):
-    """Ticking past the last valid index returns completed=True."""
+    """Ticking all the way through (declining every proposal) reaches completed=True,
+    and a further tick() call after that is a no-op returning completed=True."""
     _plan_and_run(uc01_package, uc01_scenario, "run_completed", tmp_path)
-    n_ticks = uc01_scenario.total_duration_seconds // uc01_scenario.tick_seconds
-    # Tick all the way through, accepting any proposals
-    for _ in range(n_ticks + 5):
+    for _ in range(_MAX_TICKS):
         outcome = tick("run_completed")
         if outcome.paused:
-            action("run_completed", "accept_rest")
+            action("run_completed", "decline")
         if outcome.completed:
             break
     outcome = tick("run_completed")
@@ -388,7 +412,7 @@ def test_tick_adapter_failure_records_algorithm_error(tmp_path, uc01_scenario, m
 
     monkeypatch.setattr(adapter_mod, "evaluate", _raise)
 
-    # rest_rule_based_v0_1 uses default error_mode="blocking"
+    # aica_transparent_hybrid_trigger_v1 uses default error_mode="blocking"
     pkg_data = json.loads((_PACKAGE_PATH).read_text(encoding="utf-8"))
     package = PackageManifest(**pkg_data)
 
@@ -480,24 +504,33 @@ def test_tick_threads_package_runtime_state(tmp_path, uc01_package, uc01_scenari
 # ---------------------------------------------------------------------------
 
 
-def test_action_accept_rest_completes_run(tmp_path, uc01_package, uc01_scenario):
-    """accept_rest while paused transitions the run to completed."""
+def test_action_accept_rest_with_option_resumes_into_recovery(tmp_path, uc01_package, uc01_scenario):
+    """accept_rest with a valid recovery_option_id starts recovery (status=playing).
+
+    Feature 009: uc01_fatigue_recovery_v0_1 has recovery_options — accept_rest no
+    longer completes the run outright (that back-compat path only applies to
+    scenarios WITHOUT recovery_options; see test_action_when_not_paused_raises's
+    sibling coverage in test_run_manager_recovery.py).
+    """
     _plan_and_run(uc01_package, uc01_scenario, "run_accept", tmp_path)
-    _tick_to_proposal("run_accept", uc01_package, uc01_scenario)
+    _tick_to_proposal("run_accept")
 
     from aica_api.services.run_manager import get_run
     state_before = get_run("run_accept")
     assert state_before.status == RunStatus.paused
 
-    state_after = action("run_accept", "accept_rest")
-    assert state_after.status == RunStatus.completed
+    state_after = action(
+        "run_accept", "accept_rest", recovery_option_id="nap_karaoke", rest_spot=_REST_SPOT
+    )
+    assert state_after.status == RunStatus.playing
     assert state_after.pending_proposal is None
+    assert state_after.recovery is not None and state_after.recovery.active
 
 
 def test_action_postpone_resumes_run(tmp_path, uc01_package, uc01_scenario):
     """postpone while paused resumes the run (status back to playing)."""
     _plan_and_run(uc01_package, uc01_scenario, "run_postpone", tmp_path)
-    _tick_to_proposal("run_postpone", uc01_package, uc01_scenario)
+    _tick_to_proposal("run_postpone")
 
     state_after = action("run_postpone", "postpone")
     assert state_after.status == RunStatus.playing
@@ -506,15 +539,17 @@ def test_action_postpone_resumes_run(tmp_path, uc01_package, uc01_scenario):
 
 def test_action_appends_action_event_to_log(tmp_path, uc01_package, uc01_scenario):
     _plan_and_run(uc01_package, uc01_scenario, "run_act_log", tmp_path)
-    _tick_to_proposal("run_act_log", uc01_package, uc01_scenario)
+    _tick_to_proposal("run_act_log")
 
-    action("run_act_log", "accept_rest")
+    action("run_act_log", "accept_rest", recovery_option_id="nap_karaoke", rest_spot=_REST_SPOT)
 
     data = json.loads((tmp_path / "run_act_log.json").read_text(encoding="utf-8"))
     action_events = [e for e in data["events"] if e["kind"] == "action"]
     assert len(action_events) == 1
     assert action_events[0]["action"] == "accept_rest"
-    assert action_events[0]["resulting_status"] == "completed"
+    # uc01_fatigue_recovery_v0_1 has recovery_options — accept_rest starts a
+    # recovery sequence (status=playing), it does not complete the run outright.
+    assert action_events[0]["resulting_status"] == "playing"
 
 
 # ---------------------------------------------------------------------------
@@ -538,7 +573,7 @@ def test_action_unknown_run_raises(tmp_path):
 def test_action_invalid_action_raises(tmp_path, uc01_package, uc01_scenario):
     """An action not in scenario.allowed_actions raises ActionNotAllowedError."""
     _plan_and_run(uc01_package, uc01_scenario, "run_bad_act", tmp_path)
-    _tick_to_proposal("run_bad_act", uc01_package, uc01_scenario)
+    _tick_to_proposal("run_bad_act")
 
     with pytest.raises(ActionNotAllowedError):
         action("run_bad_act", "invalid_action_xyz")
@@ -644,73 +679,24 @@ def test_suppressed_candidate_persists_to_disk(tmp_path, uc01_package, uc01_scen
 
 
 # ---------------------------------------------------------------------------
-# T025 — overtime scenario parses and fires exactly one REST_PROPOSAL
-# ---------------------------------------------------------------------------
-
-
-def test_overtime_scenario_parses(overtime_scenario):
-    """T025: scenario file parses as a valid ScenarioDef."""
-    assert overtime_scenario.id == "uc01_overtime_driver_v0_1"
-    assert overtime_scenario.type == "uc01_fatigue"
-    assert overtime_scenario.is_night is True
-    assert "decline" in overtime_scenario.allowed_actions
-
-
-def test_overtime_scenario_fires_one_proposal_rule_package(
-    tmp_path, uc01_package, overtime_scenario
-):
-    """T025: rule package fires exactly one REST_PROPOSAL on overtime scenario."""
-    _plan_and_run(uc01_package, overtime_scenario, "run_ot_rule", tmp_path)
-    n_ticks = overtime_scenario.total_duration_seconds // overtime_scenario.tick_seconds
-    rest_proposals = 0
-    for _ in range(n_ticks + 5):
-        outcome = tick("run_ot_rule")
-        if outcome.decision and outcome.decision.result_type == ResultType.REST_PROPOSAL:
-            rest_proposals += 1
-        if outcome.paused:
-            action("run_ot_rule", "decline")
-        if outcome.completed:
-            break
-    assert rest_proposals == 1
-
-
-def test_overtime_scenario_fires_one_proposal_weighted_package(
-    tmp_path, weighted_package, overtime_scenario
-):
-    """T025: weighted package fires exactly one REST_PROPOSAL on overtime scenario."""
-    _plan_and_run(weighted_package, overtime_scenario, "run_ot_ws", tmp_path)
-    n_ticks = overtime_scenario.total_duration_seconds // overtime_scenario.tick_seconds
-    rest_proposals = 0
-    for _ in range(n_ticks + 5):
-        outcome = tick("run_ot_ws")
-        if outcome.decision and outcome.decision.result_type == ResultType.REST_PROPOSAL:
-            rest_proposals += 1
-        if outcome.paused:
-            action("run_ot_ws", "decline")
-        if outcome.completed:
-            break
-    assert rest_proposals == 1
-
-
-# ---------------------------------------------------------------------------
 # T026 — decline action
 # ---------------------------------------------------------------------------
 
 
-def test_action_decline_resumes_run(tmp_path, uc01_package, overtime_scenario):
+def test_action_decline_resumes_run(tmp_path, uc01_package, uc01_scenario):
     """decline while paused resumes the run (status -> playing)."""
-    _plan_and_run(uc01_package, overtime_scenario, "run_decline", tmp_path)
-    _tick_to_proposal("run_decline", uc01_package, overtime_scenario)
+    _plan_and_run(uc01_package, uc01_scenario, "run_decline", tmp_path)
+    _tick_to_proposal("run_decline")
 
     state_after = action("run_decline", "decline")
     assert state_after.status == RunStatus.playing
     assert state_after.pending_proposal is None
 
 
-def test_action_decline_appends_action_event(tmp_path, uc01_package, overtime_scenario):
+def test_action_decline_appends_action_event(tmp_path, uc01_package, uc01_scenario):
     """decline is persisted as an ActionEvent with action='decline' and resulting_status='playing'."""
-    _plan_and_run(uc01_package, overtime_scenario, "run_decline_log", tmp_path)
-    _tick_to_proposal("run_decline_log", uc01_package, overtime_scenario)
+    _plan_and_run(uc01_package, uc01_scenario, "run_decline_log", tmp_path)
+    _tick_to_proposal("run_decline_log")
 
     action("run_decline_log", "decline")
 
@@ -721,42 +707,54 @@ def test_action_decline_appends_action_event(tmp_path, uc01_package, overtime_sc
     assert action_events[0]["resulting_status"] == "playing"
 
 
-def test_decline_then_no_further_proposal(tmp_path, uc01_package, overtime_scenario):
-    """After decline, the run completes at route end with no further REST_PROPOSAL."""
-    _plan_and_run(uc01_package, overtime_scenario, "run_no_reprop", tmp_path)
-    n_ticks = overtime_scenario.total_duration_seconds // overtime_scenario.tick_seconds
+def test_decline_repeatedly_reaches_completion(tmp_path, uc01_package, uc01_scenario):
+    """Declining every REST_PROPOSAL never gets the run stuck — it keeps resuming
+    and eventually reaches completion at route end.
 
-    declined = False
+    Regenerated from actual behavior (FR-018): unlike the retired declarative_rule
+    package (which fired at most once per run), the hybrid trigger's persistence
+    counter + category-specific cooldown (rest_cooldown_sec=600s) let a REST_PROPOSAL
+    re-fire after the cooldown window elapses if drowsiness/fatigue are still high —
+    observed: 6 REST_PROPOSALs fire over the full 120km route (each declined),
+    completing at tick 216.  The invariant worth pinning is not "fires once" but
+    "decline always resumes the run, and it always reaches completion."
+    """
+    _plan_and_run(uc01_package, uc01_scenario, "run_no_reprop", tmp_path)
+
+    declined_count = 0
     rest_proposals = 0
-    for _ in range(n_ticks + 5):
+    for _ in range(_MAX_TICKS):
         outcome = tick("run_no_reprop")
         if outcome.decision and outcome.decision.result_type == ResultType.REST_PROPOSAL:
             rest_proposals += 1
-        if outcome.paused and not declined:
+        if outcome.paused:
             action("run_no_reprop", "decline")
-            declined = True
+            declined_count += 1
         if outcome.completed:
             break
 
     from aica_api.services.run_manager import get_run
     final_state = get_run("run_no_reprop")
-    assert declined is True
-    assert rest_proposals == 1
+    assert declined_count >= 1
+    assert rest_proposals >= 1
     assert final_state.status == RunStatus.completed
 
 
 def test_decline_rejected_when_not_in_allowed_actions(tmp_path, uc01_package, uc01_scenario):
     """decline is rejected (ActionNotAllowedError) when not in scenario.allowed_actions."""
-    _plan_and_run(uc01_package, uc01_scenario, "run_no_decline", tmp_path)
-    _tick_to_proposal("run_no_decline", uc01_package, uc01_scenario)
+    scenario_no_decline = uc01_scenario.model_copy(
+        update={"allowed_actions": ["accept_rest", "postpone"]}
+    )
+    _plan_and_run(uc01_package, scenario_no_decline, "run_no_decline", tmp_path)
+    _tick_to_proposal("run_no_decline")
 
     with pytest.raises(ActionNotAllowedError):
         action("run_no_decline", "decline")
 
 
-def test_run_state_has_allowed_actions(tmp_path, uc01_package, overtime_scenario):
+def test_run_state_has_allowed_actions(tmp_path, uc01_package, uc01_scenario):
     """RunState exposes allowed_actions from the scenario."""
-    state = _plan_and_run(uc01_package, overtime_scenario, "run_allowed", tmp_path)
+    state = _plan_and_run(uc01_package, uc01_scenario, "run_allowed", tmp_path)
     assert "decline" in state.allowed_actions
     assert "accept_rest" in state.allowed_actions
 
@@ -792,7 +790,7 @@ def test_create_run_local_m2_zero_rest_opportunities_raises(
     create_draft(
         plan_id=plan_id,
         package=uc01_package,
-        scenario=uc01_scenario,   # M2 scenario (has driver_profile)
+        scenario=uc01_scenario,   # M2 scenario (has driver_signal_params)
         presets={},
         parameters={},
         hyperparameters={},
@@ -812,10 +810,9 @@ def test_non_actionable_proposal_does_not_pause(
     """A fired proposal whose options have no overlap with scenario.allowed_actions
     must NOT pause the run.  The tick decision is still recorded in the trace.
 
-    uc01_scenario (friend_drive) has allowed_actions = ['accept_rest', 'postpone'].
+    uc01_scenario has allowed_actions = ['accept_rest', 'postpone', 'decline'].
     We inject a SOFT_WARNING with proposal.options = ['acknowledge'] — no overlap →
-    the run must stay 'playing' with pending_proposal=None.  The decision is still
-    carried in the TickOutcome and persisted to the evidence log.
+    the run must stay 'playing' with pending_proposal=None.
     """
     import aica_api.algorithms.adapter as adapter_mod
     from aica_api.models.decision import (
@@ -836,7 +833,7 @@ def test_non_actionable_proposal_does_not_pause(
     monotony_proposal = Proposal(
         id="monotony_sw_001",
         message={"en": "You have been driving monotonously for a while."},
-        options=["acknowledge"],  # NOT in ['accept_rest', 'postpone']
+        options=["acknowledge"],  # NOT in ['accept_rest', 'postpone', 'decline']
     )
     monotony_result = DecisionResult(
         result_type=ResultType.SOFT_WARNING,

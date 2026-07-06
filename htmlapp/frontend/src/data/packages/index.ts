@@ -37,16 +37,22 @@ export const DEFAULT_PACKAGES: PackageRecord[] = [record(nri), record(hybrid)]
 // see `./builtin/aica_transparent_hybrid_trigger_v1.ts` for its TS port.
 // ---------------------------------------------------------------------------
 
-/** Mirrors python_module.dispatch()'s `py_context` dict — the input every builtin_js_module evaluate fn receives. */
+/**
+ * Mirrors python_module.dispatch()'s `py_context` dict (feature 009 tiered
+ * shape) — the input every builtin_js_module evaluate fn receives. The flat
+ * `raw_state` is retired in favor of `signals` ({fixed, dynamic, simulated}),
+ * plus the top-level `recovery_active` flag.
+ */
 export type BuiltinPyContext = {
   simulation_time_sec: number
-  raw_state: Record<string, unknown>
+  signals: Record<string, unknown>
   feature_groups: Record<string, unknown>
   parameters: Record<string, unknown>
   hyperparameters: Record<string, unknown>
   proposal_history: Record<string, unknown>
   user_action_history: unknown[]
   package_runtime_state: Record<string, unknown>
+  recovery_active: boolean
 }
 
 export type BuiltinEvaluateFn = (input: BuiltinPyContext) => DecisionResult

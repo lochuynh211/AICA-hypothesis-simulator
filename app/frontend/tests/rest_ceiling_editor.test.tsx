@@ -40,7 +40,7 @@ describe('RestCeilingEditor', () => {
     expect(screen.getByTestId('rest-ceiling-editor')).toBeInTheDocument()
   })
 
-  it('clears the input when the selected scenario changes', () => {
+  it('re-seeds the input to the default ceiling when the selected scenario changes', () => {
     // Capture store dispatch via a sibling component in the same tree.
     let dispatchRef: ReturnType<typeof useRunStore>['dispatch'] | null = null
 
@@ -62,11 +62,12 @@ describe('RestCeilingEditor', () => {
     fireEvent.change(input, { target: { value: '120' } })
     expect((input as HTMLInputElement).value).toBe('120')
 
-    // Switch scenario — the store clears restDrowsinessCeiling; the input must clear too
+    // Switch scenario — the editor re-seeds the input to its default ceiling (150%),
+    // matching the value it dispatches into the store on scenario change.
     act(() => {
       dispatchRef!({ type: 'SELECT_SCENARIO', id: 'different-scenario' })
     })
 
-    expect((input as HTMLInputElement).value).toBe('')
+    expect((input as HTMLInputElement).value).toBe('150')
   })
 })

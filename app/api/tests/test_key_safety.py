@@ -31,8 +31,8 @@ from aica_api.services.run_plan import clear_draft_registry
 
 _FIXTURE_DIR = pathlib.Path(__file__).parent / "fixtures" / "maps"
 
-VALID_SCENARIO_ID = "uc01_fatigue_friend_drive_v0_1"
-VALID_PACKAGE_ID = "rest_rule_based_v0_1"
+VALID_SCENARIO_ID = "uc01_fatigue_recovery_v0_1"  # feature 009: friend_drive retired
+VALID_PACKAGE_ID = "aica_transparent_hybrid_trigger_v1"  # feature 009: rest_rule_based_v0_1 retired
 _SENTINEL = "SENTINEL_KEY_DO_NOT_LEAK"
 
 

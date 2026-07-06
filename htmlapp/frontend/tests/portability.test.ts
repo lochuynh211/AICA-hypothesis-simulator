@@ -130,4 +130,11 @@ describe('portability — scenarios', () => {
     await expect(importScenario({ id: 'x', version: '1', type: 'uc01' })).rejects.toThrow()
     await expect(importScenario(null)).rejects.toThrow()
   })
+
+  it('importScenario rejects legacy driver_profile/vehicle_profile shape (feature 009 FR-017)', async () => {
+    await expect(importScenario({ id: 'x', version: '1', type: 'uc01', driver_profile: {} }))
+      .rejects.toThrow(/incompatible scenario shape/)
+    await expect(importScenario({ id: 'x', version: '1', type: 'uc01', vehicle_profile: {} }))
+      .rejects.toThrow(/incompatible scenario shape/)
+  })
 })

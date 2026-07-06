@@ -1,9 +1,16 @@
 """Scenario domain models — ScenarioDef and supporting types.
 
-M2 extensions: driver_profile (DriverModelProfile), vehicle_profile (VehicleBehaviorProfile),
-speed_profile (SpeedProfile), is_night, presets.  The drowsiness_schedule field is removed
-from EventPreset (replaced by the M2 behavioral engine); it is accepted as extra data for
-backward compatibility while M1 fixture files are re-authored in a later unit.
+Feature 009 (signal-tier redesign): driver_profile / vehicle_profile are replaced by
+driver_signal_params (DriverSignalParams) and anomaly_signal_params (AnomalySignalParams);
+vehicle_profile is removed entirely (the vehicle behaviour model is retired).
+run_seed_default carries the seed suggested at setup time, frozen per run.  A scenario
+dict that still contains the old driver_profile/vehicle_profile keys is rejected with a
+clear "incompatible — re-author" error (FR-017).
+
+M2 extensions (still present): speed_profile (SpeedProfile), is_night, presets.  The
+drowsiness_schedule field is removed from EventPreset (replaced by the M2 behavioral
+engine); it is accepted as extra data for backward compatibility while M1 fixture files
+are re-authored in a later unit.
 """
 
 from __future__ import annotations
@@ -12,7 +19,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, field_validator, model_validator
 
-from aica_api.models.profile import DriverModelProfile, SpeedProfile, VehicleBehaviorProfile
+from aica_api.models.profile import AnomalySignalParams, DriverSignalParams, SpeedProfile
 
 
 class Persona(BaseModel):
@@ -102,7 +109,6 @@ class RecoveryStage(BaseModel):
 class RecoveryOption(BaseModel):
     id: str
     label: dict                                  # {ja, en}
-    rest_type: Literal["short", "long"] | None = None
     stages: list[RecoveryStage] = []
     postpone: bool = False
     model_config = {"extra": "allow"}
@@ -111,9 +117,11 @@ class RecoveryOption(BaseModel):
 class ScenarioDef(BaseModel):
     """Top-level scenario definition.
 
-    M2 additions: driver_profile, vehicle_profile, speed_profile (all optional
-    with None default so existing fixture files continue to parse), is_night,
-    presets.
+    Feature 009: driver_signal_params (DriverSignalParams) and anomaly_signal_params
+    (AnomalySignalParams) replace the old driver_profile/vehicle_profile pair.
+    run_seed_default is the seed suggested at setup (frozen per run).  speed_profile
+    is unaffected (all optional with None default so existing fixture files continue
+    to parse), is_night, presets.
     """
 
     id: str
@@ -129,16 +137,65 @@ class ScenarioDef(BaseModel):
     recovery_options: list[RecoveryOption] = []
     review_focus: str = ""
 
-    # M2 profile fields — optional so M1 fixture files still parse
-    driver_profile: DriverModelProfile | None = None
-    vehicle_profile: VehicleBehaviorProfile | None = None
+    # Feature 009: tiered-signal generator params — optional so M1 fixture files
+    # (route/segment validation tests etc.) still parse without them.
+    driver_signal_params: DriverSignalParams | None = None
+    anomaly_signal_params: AnomalySignalParams | None = None
+    run_seed_default: int = 42
+
     speed_profile: SpeedProfile | None = None
     is_night: bool = False
     child_passenger: bool = False
     familiar_route: bool = False
+
+    # UX-BE (feature 009 UX iteration): editable scalar weather-risk context
+    # (Fixed tier). Feeds signals.fixed.weatherRiskLevel in the tick engine
+    # (tick_engine.py), replacing the previously hardcoded 0.0. Editable at
+    # setup time the same way as child_passenger/familiar_route (see
+    # run_plan._VALID_CONTEXT_OVERRIDE_KEYS).
+    weather_risk: float = 0.0
+
     presets: dict[str, Any] = {}
 
     # M8 UC-01: safety ceiling for rest-spot reachability check (0–100+, percent).
     # Default 100.0 = full drowsiness scale; values above 100 allow "overload"
     # (driver may reach a distant spot even at high drowsiness).
     rest_drowsiness_ceiling: float = 100.0
+
+    @field_validator("weather_risk")
+    @classmethod
+    def _weather_risk_in_range(cls, v: float) -> float:
+        if not (0.0 <= v <= 100.0):
+            raise ValueError(f"weather_risk={v!r} must be in [0, 100]")
+        return v
+
+    @model_validator(mode="before")
+    @classmethod
+    def _reject_old_shape(cls, data: Any) -> Any:
+        """Reject scenario dicts still in the old driver_profile/vehicle_profile shape.
+
+        Feature 009 (FR-017): driver_profile and vehicle_profile are removed from the
+        scenario schema.  A scenario authored against the old shape must fail loudly
+        and clearly rather than silently dropping fields or half-parsing.
+        """
+        if isinstance(data, dict) and ("driver_profile" in data or "vehicle_profile" in data):
+            raise ValueError(
+                "incompatible scenario shape — re-author: driver_profile/vehicle_profile removed"
+            )
+        return data
+
+    @model_validator(mode="after")
+    def _require_anomaly_with_driver_signal_params(self) -> ScenarioDef:
+        """Reject driver_signal_params without a matching anomaly_signal_params.
+
+        The two are independently Optional, so a scenario could set
+        driver_signal_params but omit anomaly_signal_params and silently run with
+        the anomaly signal pinned at 0 (no anomaly events ever generated). Fail
+        loudly instead so gaps are caught at authoring time, not at run time.
+        """
+        if self.driver_signal_params is not None and self.anomaly_signal_params is None:
+            raise ValueError(
+                "anomaly_signal_params is required when driver_signal_params is set "
+                "— omitting it silently pins the anomaly signal at 0"
+            )
+        return self

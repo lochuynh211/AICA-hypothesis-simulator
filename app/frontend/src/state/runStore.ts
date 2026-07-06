@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer } from 'react'
+import React, { createContext, useContext, useEffect, useReducer } from 'react'
 import type {
   PackageSummary,
   ScenarioSummary,
@@ -13,8 +13,11 @@ import type {
   RouteEnvelope,
   MapsErrorBody,
   ProfileOverrides,
+  ContextOverrides,
   RestChoice,
+  InstantResult,
 } from '../api/types'
+import { runPreview as runPreviewClient } from '../api/client'
 
 // ── State ──────────────────────────────────────────────────────────────────
 
@@ -98,6 +101,19 @@ export type RunStoreState = {
    */
   profileOverrides: ProfileOverrides | null
 
+  // ── Feature 009 (UX-FE1): Fixed-tier scenario-context overrides ────────────
+  /**
+   * Sparse, changed-from-scenario-default Fixed-tier signal overrides
+   * (child_passenger, familiar_route, weather_risk). A key is present ONLY
+   * when its value differs from the scenario's own default — mirrors the
+   * editedHyperparameters/SET_HYPERPARAMETER revert-to-default convention
+   * (see SET_CONTEXT_OVERRIDE below). Sent as `context_overrides` in BOTH
+   * useRunPreview's POST /runs/preview body and the "Open full run"
+   * createRunPlan call, so preview and real run stay faithful to each other.
+   * Cleared on SELECT_SCENARIO and RESET (a new scenario has its own defaults).
+   */
+  contextOverrides: ContextOverrides
+
   // ── Tick seconds override (setup-time) ─────────────────────────────────────
   /**
    * User-set tick duration in seconds. Null means "use scenario default" —
@@ -151,7 +167,32 @@ export type RunStoreState = {
    * User-set starting fatigue (0–100). Null = use scenario default. Cleared on SELECT_SCENARIO and RESET.
    */
   initialFatigue: number | null
+
+  // ── Feature 009: setup-screen instant-result preview ───────────────────────
+  /**
+   * The run_seed used for the setup-screen preview (POST /runs/preview) and,
+   * eventually, the real run. Defaults to 42 (mirrors the backend ScenarioDef
+   * default); a SignalsPanel that has loaded the full ScenarioDef should
+   * dispatch SET_RUN_SEED with the scenario's actual run_seed_default once
+   * known. Reset to the default on SELECT_SCENARIO / RESET.
+   */
+  runSeed: number
+  /** Latest ephemeral InstantResult from POST /runs/preview; null before the first preview or after it errors. */
+  instantResult: InstantResult | null
+  /** True while a preview request is in flight (debounced — see useRunPreview). */
+  previewLoading: boolean
+  /** Error message from the most recent failed preview request; null when the last preview succeeded. */
+  previewError: string | null
+  /**
+   * The signal key currently cross-highlighted between SignalsPanel and
+   * AlgorithmFormulationPanel (hover/click a feature name ↔ its signal row).
+   * Null when nothing is highlighted.
+   */
+  highlightedSignalKey: string | null
 }
+
+/** The seed used before a scenario's real run_seed_default is known (mirrors the backend ScenarioDef default). */
+const DEFAULT_RUN_SEED = 42
 
 export const initialState: RunStoreState = {
   packages: [],
@@ -191,6 +232,8 @@ export const initialState: RunStoreState = {
   uiLanguage: 'en',
   // M6 T009 — no profile overrides initially
   profileOverrides: null,
+  // Feature 009 (UX-FE1) — no Fixed-tier context overrides initially
+  contextOverrides: {},
   // tick seconds — null means "use scenario default"
   tickSecondsOverride: null,
   // rest-spot reachability ceiling — null means "use scenario default"
@@ -204,6 +247,12 @@ export const initialState: RunStoreState = {
   // initial driver state overrides — null means "use scenario default"
   initialDrowsiness: null,
   initialFatigue: null,
+  // Feature 009 — setup-screen instant-result preview
+  runSeed: DEFAULT_RUN_SEED,
+  instantResult: null,
+  previewLoading: false,
+  previewError: null,
+  highlightedSignalKey: null,
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -263,7 +312,20 @@ export type RunStoreAction =
   | { type: 'SET_RUN_ERROR'; message: string | null }
   // ── Setup-draft actions (M2) ─────────────────────────────────────────────
   | { type: 'SET_PARAMETER'; key: string; value: SetupValue }
-  | { type: 'SET_HYPERPARAMETER'; key: string; value: SetupValue }
+  | {
+      type: 'SET_HYPERPARAMETER'
+      key: string
+      value: SetupValue
+      /**
+       * The hyperparameter's manifest default, when known to the caller.
+       * When `value` equals `default`, the reducer REMOVES `key` from
+       * `editedHyperparameters` instead of storing it — this is the fix for
+       * the FE3 "stale override" bug (see reducer case below). Callers that
+       * omit `default` keep the old always-set behavior (back-compat for
+       * call sites that don't have the manifest default at hand).
+       */
+      default?: SetupValue
+    }
   | {
       type: 'PLAN_DRAFTED'
       planId: string
@@ -293,6 +355,22 @@ export type RunStoreAction =
   // ── M6 T009: ProfileEditor overrides ─────────────────────────────────────
   /** Sparse profile overrides from ProfileEditor; null to clear. */
   | { type: 'SET_PROFILE_OVERRIDES'; overrides: ProfileOverrides | null }
+  // ── Feature 009 (UX-FE1): Fixed-tier scenario-context overrides ───────────
+  /**
+   * Set a single Fixed-tier context-override field (child_passenger,
+   * familiar_route, weather_risk). When `value` equals `default` (the
+   * scenario's own default for this key), the reducer REMOVES `key` from
+   * `contextOverrides` instead of storing it — same changed-from-default
+   * discipline as SET_HYPERPARAMETER (see its reducer case for the bug this
+   * pattern fixes: a stale override sitting around after a revert-to-default
+   * edit would otherwise still be sent to the preview/real run).
+   */
+  | {
+      type: 'SET_CONTEXT_OVERRIDE'
+      key: keyof ContextOverrides
+      value: SetupValue
+      default: SetupValue
+    }
   // ── Tick seconds override ─────────────────────────────────────────────────
   /** Set the tick duration override (positive integer), or null to clear (use scenario default). */
   | { type: 'SET_TICK_SECONDS'; seconds: number | null }
@@ -307,6 +385,19 @@ export type RunStoreAction =
   | { type: 'SET_INITIAL_DROWSINESS'; value: number | null }
   /** Set the starting fatigue (0–100), or null to clear (use scenario default). */
   | { type: 'SET_INITIAL_FATIGUE'; value: number | null }
+  // ── Feature 009: setup-screen instant-result preview ───────────────────────
+  /** Set the run_seed used for the preview (and eventually the real run). */
+  | { type: 'SET_RUN_SEED'; seed: number }
+  /** Draw a fresh random seed (re-rolls the anomaly_rate event pattern). */
+  | { type: 'REROLL_SEED' }
+  /** A debounced preview request has been sent; clears any previous error. */
+  | { type: 'PREVIEW_REQUESTED' }
+  /** The preview request succeeded; stores the InstantResult. */
+  | { type: 'PREVIEW_SUCCEEDED'; result: InstantResult }
+  /** The preview request failed; stores the error message. */
+  | { type: 'PREVIEW_FAILED'; message: string }
+  /** Cross-link highlight between SignalsPanel and AlgorithmFormulationPanel. */
+  | { type: 'SET_HIGHLIGHTED_SIGNAL'; key: string | null }
 
 // ── Reducer ────────────────────────────────────────────────────────────────
 
@@ -338,10 +429,18 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         effectiveSetup: null,
         validationErrors: [],
         setupError: null,
+        // A different algorithm invalidates the previous preview.
+        instantResult: null,
+        previewError: null,
       }
 
-    case 'SELECT_SCENARIO':
+    case 'SELECT_SCENARIO': {
       // Changing the scenario invalidates the draft (route facts change).
+      // A LOCALLY-analyzed route is scenario-derived, so it's cleared; a
+      // Maps/preset route is a real geographic route independent of the scenario,
+      // so it's PRESERVED (else picking route→scenario→package would silently drop
+      // the chosen preset and the preview would fall back to the local route).
+      const keepMapsRoute = state.routeSource === 'maps' && state.selectedRouteId != null
       return {
         ...state,
         selectedScenarioId: action.id,
@@ -349,13 +448,15 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         draftPlan: null,
         effectiveSetup: null,
         setupError: null,
-        // Changing scenario also invalidates the previously analyzed route.
-        alternatives: [],
-        selectedRouteId: null,
-        routeSource: 'local',
+        // Clear a locally-analyzed route; keep a maps/preset selection.
+        alternatives: keepMapsRoute ? state.alternatives : [],
+        selectedRouteId: keepMapsRoute ? state.selectedRouteId : null,
+        routeSource: keepMapsRoute ? 'maps' : 'local',
         mapsError: null,
         // T009: clear profile overrides — new scenario has its own defaults.
         profileOverrides: null,
+        // Feature 009 (UX-FE1): clear context overrides — new scenario has its own defaults.
+        contextOverrides: {},
         // Clear tick seconds override — new scenario has its own default.
         tickSecondsOverride: null,
         // Clear rest-spot ceiling override — new scenario has its own default.
@@ -367,7 +468,14 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         initialFatigue: null,
         // New scenario — discard any prior accepted-rest history.
         restHistory: [],
+        // Feature 009: new scenario invalidates the previous preview + seed
+        // (a SignalsPanel that loads the ScenarioDef should re-seed via
+        // SET_RUN_SEED with the scenario's own run_seed_default).
+        runSeed: DEFAULT_RUN_SEED,
+        instantResult: null,
+        previewError: null,
       }
+    }
 
     case 'SET_PARAMETER':
       // Editing a value invalidates the existing draft (must re-preview).
@@ -379,7 +487,28 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         effectiveSetup: null,
       }
 
-    case 'SET_HYPERPARAMETER':
+    case 'SET_HYPERPARAMETER': {
+      // Bug fix (feature 009 FE4): when the caller supplies the manifest
+      // default and the new value equals it, REMOVE the key from
+      // editedHyperparameters rather than storing it. Without this, reverting
+      // a previously-overridden value back to its default left a stale
+      // override sitting in editedHyperparameters — sent verbatim as
+      // hyperparameter_overrides to POST /runs/preview (via useRunPreview)
+      // and baked into a real run via PlanPreview → createRunPlan. The
+      // "N overrides" chip was also wrong (selectOverridesDiff compares
+      // against the SAME defaults, so a stale-but-equal-to-default entry
+      // would previously survive as a bogus override until the diff was
+      // rechecked externally).
+      if (action.default !== undefined && action.value === action.default) {
+        const { [action.key]: _removed, ...rest } = state.editedHyperparameters
+        return {
+          ...state,
+          editedHyperparameters: rest,
+          planId: null,
+          draftPlan: null,
+          effectiveSetup: null,
+        }
+      }
       return {
         ...state,
         editedHyperparameters: {
@@ -390,6 +519,7 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         draftPlan: null,
         effectiveSetup: null,
       }
+    }
 
     case 'PLAN_DRAFTED':
       return {
@@ -520,6 +650,18 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
     case 'SET_PROFILE_OVERRIDES':
       return { ...state, profileOverrides: action.overrides }
 
+    case 'SET_CONTEXT_OVERRIDE': {
+      if (action.value === action.default) {
+        const next = { ...state.contextOverrides }
+        delete next[action.key]
+        return { ...state, contextOverrides: next }
+      }
+      return {
+        ...state,
+        contextOverrides: { ...state.contextOverrides, [action.key]: action.value } as ContextOverrides,
+      }
+    }
+
     case 'SET_TICK_SECONDS':
       return { ...state, tickSecondsOverride: action.seconds }
 
@@ -534,6 +676,25 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
 
     case 'SET_INITIAL_FATIGUE':
       return { ...state, initialFatigue: action.value }
+
+    // ── Feature 009: setup-screen instant-result preview ────────────────────
+    case 'SET_RUN_SEED':
+      return { ...state, runSeed: action.seed }
+
+    case 'REROLL_SEED':
+      return { ...state, runSeed: Math.floor(Math.random() * 1_000_000) }
+
+    case 'PREVIEW_REQUESTED':
+      return { ...state, previewLoading: true, previewError: null }
+
+    case 'PREVIEW_SUCCEEDED':
+      return { ...state, previewLoading: false, instantResult: action.result, previewError: null }
+
+    case 'PREVIEW_FAILED':
+      return { ...state, previewLoading: false, previewError: action.message }
+
+    case 'SET_HIGHLIGHTED_SIGNAL':
+      return { ...state, highlightedSignalKey: action.key }
 
     case 'RESET':
       return {
@@ -565,6 +726,8 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         viewMode: 'setup',
         // T009: clear profile overrides on reset
         profileOverrides: null,
+        // Feature 009 (UX-FE1): clear context overrides on reset
+        contextOverrides: {},
         // Clear tick seconds override on reset
         tickSecondsOverride: null,
         // Clear rest-spot ceiling override on reset
@@ -578,6 +741,12 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         // Clear initial driver state overrides on reset
         initialDrowsiness: null,
         initialFatigue: null,
+        // Feature 009: clear the preview + seed on reset
+        runSeed: DEFAULT_RUN_SEED,
+        instantResult: null,
+        previewLoading: false,
+        previewError: null,
+        highlightedSignalKey: null,
       }
 
     default:
@@ -623,4 +792,118 @@ export function useRunStore(): RunStoreContextValue {
     throw new Error('useRunStore must be used within a RunStoreProvider')
   }
   return ctx
+}
+
+// ── Feature 009: overrides-diff selector + debounced preview hook ──────────
+
+/** One changed-from-manifest-default hyperparameter (mirrors InstantResult.overrides shape). */
+export type OverridesDiffEntry = { key: string; default: SetupValue; value: SetupValue }
+
+/**
+ * Pure selector: the subset of `edited` that actually differs from `defaults`
+ * (changed-from-manifest-default). `defaults` is keyed by hyperparameter key,
+ * e.g. built from a fetched PackageManifest's `hyperparameters[].default`.
+ * Keys absent from `defaults` (unknown to the current package) are ignored.
+ */
+export function selectOverridesDiff(
+  edited: Record<string, SetupValue>,
+  defaults: Record<string, SetupValue>,
+): OverridesDiffEntry[] {
+  return Object.entries(edited)
+    .filter(([key, value]) => key in defaults && value !== defaults[key])
+    .map(([key, value]) => ({ key, default: defaults[key], value }))
+}
+
+/** Debounce window (ms) for the setup-screen instant-result preview. */
+const PREVIEW_DEBOUNCE_MS = 400
+
+/**
+ * Fires a debounced POST /runs/preview whenever the setup changes (package,
+ * scenario, hyperparameter overrides, or run_seed), storing the resulting
+ * InstantResult (or error) back into the store. Call this ONCE from a
+ * top-level setup component (e.g. SetupScreen) — it reads/writes the shared
+ * store, so multiple call sites would fire duplicate requests.
+ *
+ * hyperparameter_overrides is sent as-is from `editedHyperparameters` — by
+ * convention that map holds changed-from-default values only (see
+ * RunStoreState.editedHyperparameters); callers that populate it should keep
+ * that invariant (use selectOverridesDiff against the package manifest before
+ * dispatching SET_HYPERPARAMETER for values equal to the default).
+ */
+export function useRunPreview(debounceMs: number = PREVIEW_DEBOUNCE_MS): void {
+  const { state, dispatch } = useRunStore()
+  const {
+    selectedPackageId,
+    selectedScenarioId,
+    editedHyperparameters,
+    runSeed,
+    profileOverrides,
+    contextOverrides,
+    alternatives,
+    selectedRouteId,
+    routeSource,
+  } = state
+
+  // Selected Maps/preset route (if any) — threaded into the preview so the strip
+  // reflects the chosen route, matching "Open full run". Null on the local path.
+  const selectedAlt =
+    routeSource === 'maps' && selectedRouteId != null
+      ? alternatives.find((a) => a.route_id === selectedRouteId) ?? null
+      : null
+
+  useEffect(() => {
+    if (!selectedPackageId || !selectedScenarioId) return
+
+    let cancelled = false
+    const timer = setTimeout(() => {
+      dispatch({ type: 'PREVIEW_REQUESTED' })
+      runPreviewClient({
+        package_id: selectedPackageId,
+        scenario_id: selectedScenarioId,
+        hyperparameter_overrides: editedHyperparameters,
+        run_seed: runSeed,
+        // Feature 009 (FE1): thread sparse profile/context overrides through
+        // so the preview stays faithful to the real run (createRunPlan
+        // already receives both — see InstantResultStrip's handleOpenFullRun).
+        ...(profileOverrides != null ? { profiles: profileOverrides } : {}),
+        ...(Object.keys(contextOverrides).length > 0 ? { context_overrides: contextOverrides } : {}),
+        // Selected Maps/preset route — so a chosen preset actually changes the strip.
+        ...(selectedAlt != null
+          ? {
+              route_source: 'maps',
+              route_id: selectedAlt.route_id,
+              route_facts: selectedAlt.route_facts,
+              display_route: selectedAlt.display,
+            }
+          : {}),
+      })
+        .then((result) => {
+          if (!cancelled) dispatch({ type: 'PREVIEW_SUCCEEDED', result })
+        })
+        .catch((err: unknown) => {
+          if (!cancelled) {
+            dispatch({
+              type: 'PREVIEW_FAILED',
+              message: err instanceof Error ? err.message : 'Preview request failed',
+            })
+          }
+        })
+    }, debounceMs)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    selectedPackageId,
+    selectedScenarioId,
+    editedHyperparameters,
+    runSeed,
+    profileOverrides,
+    contextOverrides,
+    selectedAlt,
+    debounceMs,
+    dispatch,
+  ])
 }

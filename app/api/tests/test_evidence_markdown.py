@@ -32,8 +32,8 @@ from aica_api.services.run_plan import clear_draft_registry
 
 # ── Fixtures identical to test_evidence_export to keep isolation ───────────────
 
-VALID_PACKAGE_ID = "rest_rule_based_v0_1"
-VALID_SCENARIO_ID = "uc01_fatigue_friend_drive_v0_1"
+VALID_PACKAGE_ID = "aica_transparent_hybrid_trigger_v1"  # feature 009: rest_rule_based_v0_1 retired
+VALID_SCENARIO_ID = "uc01_fatigue_recovery_v0_1"  # feature 009: friend_drive retired
 
 
 def _make_report(

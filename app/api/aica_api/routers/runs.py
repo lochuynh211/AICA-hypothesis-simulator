@@ -20,7 +20,8 @@ from pydantic import BaseModel
 from aica_api.config import settings
 from aica_api.models.feedback import FeedbackEvent, FeedbackTarget
 from aica_api.models.log import RunLog
-from aica_api.models.run import RestSpot, RunStatus
+from aica_api.models.profile import ProfileOverrides
+from aica_api.models.run import InstantResult, RestSpot, RunStatus
 from aica_api.services.evidence import build_evidence_report
 from aica_api.services.evidence_markdown import render_evidence_markdown
 from aica_api.services.feedback import (
@@ -30,6 +31,7 @@ from aica_api.services.feedback import (
     validate,
 )
 from aica_api.services.package_registry import PackageRegistry
+from aica_api.services.preview import PreviewValidationError, evaluate_preview
 from aica_api.services.run_manager import (
     ActionNotAllowedError,
     RunNotFoundError,
@@ -67,6 +69,42 @@ def _make_report_id() -> str:
 
 class CreateRunBody(BaseModel):
     plan_id: str
+
+
+class PreviewRunBody(BaseModel):
+    """RunConfig for POST /runs/preview (contracts/ephemeral-evaluate.md).
+
+    UX-BE (feature 009 UX iteration): ``profiles`` and ``context_overrides``
+    are the SAME shape accepted by ``CreateRunPlanBody`` (routers/run_plans.py)
+    — a preview computed with the same overrides as a subsequent "Open full
+    run" (``POST /api/run-plans`` with matching ``profiles``/
+    ``context_overrides``) is faithful to it:
+
+      profiles.driver / profiles.anomaly — partial DriverSignalParams /
+        AnomalySignalParams overrides, deep-merged onto the scenario's values
+        (same as a real run's profile override).
+      context_overrides — {"child_passenger": bool, "familiar_route": bool,
+        "weather_risk": float in [0, 100]}.
+
+    Both are optional and default to no override (unchanged preview behavior
+    when omitted).
+    """
+
+    package_id: str
+    scenario_id: str
+    hyperparameter_overrides: dict[str, Any] = {}
+    run_seed: int
+    rest_option_id: str | None = None
+    profiles: ProfileOverrides | None = None
+    context_overrides: dict[str, Any] | None = None
+    # UX fix: the selected Maps/preset route (same optional fields as
+    # CreateRunPlanBody). When route_source=="maps" the preview runs against the
+    # chosen route (distance/duration/segments/rest spots) instead of re-deriving
+    # the scenario's default local route. Omitted/local → unchanged behavior.
+    route_id: str | None = None
+    route_source: str = "local"
+    route_facts: Any = None
+    display_route: Any = None
 
 
 class ActionBody(BaseModel):
@@ -241,6 +279,44 @@ def create_run_endpoint(body: CreateRunBody):
     return run_state
 
 
+@router.post("/api/runs/preview", response_model=InstantResult)
+def preview_run_endpoint(body: PreviewRunBody):
+    """Ephemeral, non-persisting instant-result preview (feature 009, US1).
+
+    Runs the full tick loop for the given RunConfig through the SAME tick
+    engine + algorithm adapter as a persisted run (see services/preview.py),
+    but writes NOTHING to runs/ — the EvidenceRecorder is never invoked.
+
+    400 for an unknown/incompatible package or scenario, an old-shape
+    scenario (FR-017), invalid hyperparameter overrides, invalid profile
+    overrides, or invalid context overrides.
+    """
+    # Convert typed ProfileOverrides to a plain dict for the service layer
+    # (exclude_none so absent sub-objects are not passed as None entries) —
+    # identical conversion to routers/run_plans.py's CreateRunPlanBody.profiles.
+    profiles_dict: dict[str, Any] | None = (
+        body.profiles.model_dump(exclude_none=True) if body.profiles else None
+    )
+    try:
+        result = evaluate_preview(
+            package_id=body.package_id,
+            scenario_id=body.scenario_id,
+            hyperparameter_overrides=body.hyperparameter_overrides,
+            run_seed=body.run_seed,
+            rest_option_id=body.rest_option_id,
+            packages_dir=settings.packages_dir,
+            scenarios_dir=settings.scenarios_dir,
+            profiles=profiles_dict,
+            context_overrides=body.context_overrides,
+            route_source=body.route_source,
+            route_facts=body.route_facts,
+            display_route=body.display_route,
+        )
+    except PreviewValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return result
+
+
 @router.post("/api/runs/{run_id}/tick")
 def tick_endpoint(run_id: str):
     """Advance one simulation tick; 404 for unknown run."""
@@ -254,14 +330,17 @@ def tick_endpoint(run_id: str):
     ts = outcome.tick_state
     route_fraction = ts.route_fraction if ts is not None else None
     distance_km = ts.distance_km if ts is not None else None
-    # Collapse raw_state once — guards both the None-ts and missing-key cases.
-    raw = (ts.raw_state or {}) if ts is not None else {}
-    speed_kph = raw.get("speedKph")
-    motion_state = raw.get("motionState")
-    recovery_phase = raw.get("recoveryPhase")
-    active_content = raw.get("activeContent")
-    is_traffic_jam = raw.get("isTrafficJam")
-    segment_type = raw.get("segmentType")
+    # Collapse tiered signals once — guards both the None-ts and missing-key cases.
+    # Feature 009: raw_state was replaced by tiered signals {fixed, dynamic, simulated};
+    # the per-tick display fields below live in the "dynamic" tier.
+    signals = (ts.signals or {}) if ts is not None else {}
+    dynamic = signals.get("dynamic", {})
+    speed_kph = dynamic.get("speedKph")
+    motion_state = dynamic.get("motionState")
+    recovery_phase = dynamic.get("recoveryPhase")
+    active_content = dynamic.get("activeContent")
+    is_traffic_jam = dynamic.get("isTrafficJam")
+    segment_type = dynamic.get("segmentType")
 
     if outcome.algorithm_error is not None:
         return {
@@ -418,9 +497,9 @@ def rest_spots_endpoint(
     prior_tick = get_prior_tick_state(run_id)
     if prior_tick is not None:
         current_distance_km = prior_tick.distance_km or 0.0
-        raw = prior_tick.raw_state
-        current_drowsiness = float(raw.get("drowsinessLevel", 0.0))
-        current_speed_kph = float(raw.get("speedKph", 0.0))
+        signals = prior_tick.signals or {}
+        current_drowsiness = float(signals.get("simulated", {}).get("drowsiness", 0.0))
+        current_speed_kph = float(signals.get("dynamic", {}).get("speedKph", 0.0))
     else:
         current_distance_km = 0.0
         current_drowsiness = 0.0
@@ -436,8 +515,8 @@ def rest_spots_endpoint(
     # spot even with high drowsiness).  The query param drowsiness_ceiling
     # (if provided) overrides the scenario default.
     scenario = get_scenario(run_id)
-    if scenario is not None and scenario.driver_profile is not None:
-        base_growth_per_min = scenario.driver_profile.drowsiness_model.base_growth_per_min
+    if scenario is not None and scenario.driver_signal_params is not None:
+        base_growth_per_min = scenario.driver_signal_params.drowsiness_model.base_growth_per_min
         ceiling = drowsiness_ceiling if drowsiness_ceiling is not None else scenario.rest_drowsiness_ceiling
     else:
         base_growth_per_min = 0.0

@@ -1,16 +1,19 @@
 """Package domain models — PackageManifest and supporting types.
 
 M2 extensions:
-- AlgorithmDef.type Literal adds "weighted_score".
-- HyperparameterDef.kind adds "numeric" for weighted_score weight/threshold params.
+- HyperparameterDef.kind adds "numeric" for weight/threshold-style params.
 - Numeric hyperparameters carry optional min/max/step for range validation in UI.
 
 M3 extensions:
-- AlgorithmDef.type Literal adds "python_module".
 - AlgorithmDef.tick_seconds: optional package-declared evaluation cadence (int | None).
   When set, the tick engine prefers it over the scenario's (engine wiring is a later task).
 - AlgorithmDef.error_mode: "blocking" (default) or "non_blocking" — whether algorithm
   errors pause the run. The run_manager wiring is a later task.
+
+Feature 009 (signal-tier redesign):
+- AlgorithmDef.type narrowed to Literal["python_module"] — the built-in
+  "declarative_rule" and "weighted_score" algorithm types have been retired.
+  "python_module" is the only supported package algorithm type.
 """
 
 from __future__ import annotations
@@ -23,12 +26,14 @@ from pydantic import BaseModel, field_validator, model_validator
 class AlgorithmDef(BaseModel):
     """Algorithm specification embedded in a package manifest.
 
-    M3: type now also accepts "python_module" for locally-trusted Python packages.
+    type is "python_module" — the only supported algorithm type for
+    locally-trusted Python packages (declarative_rule and weighted_score
+    were retired in feature 009).
     tick_seconds overrides the scenario cadence when set (engine wiring: later task).
     error_mode controls whether algorithm errors pause the run (run_manager wiring: later task).
     """
 
-    type: Literal["declarative_rule", "weighted_score", "python_module"]
+    type: Literal["python_module"]
     entrypoint: str
     tick_seconds: int | None = None
     error_mode: Literal["blocking", "non_blocking"] = "blocking"
@@ -60,8 +65,8 @@ class HyperparameterDef(BaseModel):
     """A tuning hyperparameter definition.
 
     M1: kind ∈ band | bool.
-    M2: kind also accepts "numeric" for weighted_score category weights and
-        thresholds (suggest/recommend/urgent, minimum_risk_for_rest_bonus, etc.).
+    M2: kind also accepts "numeric" for category weights and thresholds
+        (suggest/recommend/urgent, minimum_risk_for_rest_bonus, etc.).
         Numeric params carry optional min/max/step for UI range hints.
     """
 

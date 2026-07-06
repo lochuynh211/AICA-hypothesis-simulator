@@ -19,7 +19,10 @@ import type {
   FeedbackEvent,
   EvidenceReport,
   ProfileOverrides,
+  ContextOverrides,
   RestSpot,
+  RunConfig,
+  InstantResult,
 } from './types'
 import { MapsError, FeedbackValidationError } from './types'
 
@@ -95,12 +98,15 @@ export async function loadRoutePreset(presetId: string): Promise<RouteEnvelope> 
 // The API key is never stored, logged, or echoed in any error.
 
 export async function routesAnalyze(args: {
-  scenarioId: string
+  // Optional (feature 009 route-first): a Maps search can run before a scenario
+  // is chosen. Omitted → the backend derives the route from Maps alone.
+  scenarioId?: string
   mapsKey?: string
   start?: string
   end?: string
 }): Promise<RouteEnvelope> {
-  const body: Record<string, string> = { scenario_id: args.scenarioId }
+  const body: Record<string, string> = {}
+  if (args.scenarioId) body.scenario_id = args.scenarioId
   if (args.mapsKey) body.maps_key = args.mapsKey
   if (args.start) body.start = args.start
   if (args.end) body.end = args.end
@@ -140,8 +146,12 @@ export async function createRunPlan(args: {
   profiles?: ProfileOverrides | null
   // Numeric starting driver-state override (omit to use scenario default)
   initialState?: { drowsiness_level?: number; fatigue_level?: number }
-  // Boolean scenario context overrides
-  contextOverrides?: { child_passenger?: boolean; familiar_route?: boolean }
+  // Fixed-tier scenario context overrides (child_passenger/familiar_route/weather_risk)
+  contextOverrides?: ContextOverrides
+  // Fix (whole-branch review, feature 009): explicit run_seed so "Open full
+  // run" persists under the SAME seed the preview/setup screen showed
+  // (omit to fall back to scenario.run_seed_default, unchanged behavior).
+  runSeed?: number
 }): Promise<RunPlanResponse> {
   const body: Record<string, unknown> = {
     package_id: args.packageId,
@@ -151,6 +161,7 @@ export async function createRunPlan(args: {
     presets: args.presets ?? {},
     run_mode: args.runMode ?? 'standard',
   }
+  if (args.runSeed !== undefined) body.run_seed = args.runSeed
   // Only include route selection fields when explicitly provided
   if (args.routeId !== undefined) body.route_id = args.routeId
   if (args.routeSource !== undefined) body.route_source = args.routeSource
@@ -196,6 +207,52 @@ export async function regenerateRunPlan(
 }
 
 // ── Runs ───────────────────────────────────────────────────────────────────
+
+/**
+ * Ephemeral, non-persisting instant-result preview (feature 009, US1).
+ *
+ * Runs the full tick loop for the given RunConfig through the SAME tick
+ * engine + algorithm adapter as a persisted run, but writes NOTHING to
+ * runs/ — safe to call on every setup-screen edit. `restOptionId` optionally
+ * pins which recovery option the preview auto-accepts on the first proposal
+ * (defaults to the scenario's first recovery option when omitted).
+ */
+export async function runPreview(
+  config: RunConfig,
+  restOptionId?: string | null,
+): Promise<InstantResult> {
+  const body: Record<string, unknown> = {
+    package_id: config.package_id,
+    scenario_id: config.scenario_id,
+    hyperparameter_overrides: config.hyperparameter_overrides,
+    run_seed: config.run_seed,
+  }
+  if (restOptionId !== undefined) body.rest_option_id = restOptionId
+  // Feature 009 (FE1): thread sparse profile/context overrides through to the
+  // preview — same shape as CreateRunPlanBody so a preview computed with the
+  // same overrides as a subsequent "Open full run" matches it exactly. Omit
+  // when empty (back-compat — every existing caller still works unchanged).
+  if (config.profiles != null && Object.keys(config.profiles).length > 0) {
+    body.profiles = config.profiles
+  }
+  if (config.context_overrides != null && Object.keys(config.context_overrides).length > 0) {
+    body.context_overrides = config.context_overrides
+  }
+  // UX fix: thread the selected Maps/preset route so the preview runs against it
+  // (distance/duration/segments/rest spots) instead of the scenario default.
+  // Only when route_source=="maps" with route_facts present (local path unchanged).
+  if (config.route_source === 'maps' && config.route_facts != null) {
+    body.route_source = 'maps'
+    if (config.route_id != null) body.route_id = config.route_id
+    body.route_facts = config.route_facts
+    if (config.display_route != null) body.display_route = config.display_route
+  }
+  return apiFetch('/api/runs/preview', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
 
 export async function createRun(planId: string): Promise<RunState> {
   return apiFetch('/api/runs', {

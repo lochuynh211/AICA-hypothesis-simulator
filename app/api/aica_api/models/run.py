@@ -109,6 +109,11 @@ class EventPlan(BaseModel):
     weather_events: list[WeatherEvent] = []
     rest_opportunities: list[RestOpportunity] = []
 
+    # Feature 009: the run's frozen seed (Principle III — determinism). Threaded
+    # into advance_tick's anomaly generator; frozen here alongside the rest of
+    # the deterministic event schedule.
+    run_seed: int = 42
+
     model_config = {"extra": "allow"}
 
 
@@ -210,7 +215,12 @@ class TickState(BaseModel):
     """Computed state at a single simulation tick.
 
     M1 fields: tick_index through completed.
-    M2 additions: raw_state, feature_groups, distance_km, continuous_driving_min.
+    M2 additions: feature_groups, distance_km, continuous_driving_min.
+    Feature 009 (signal-tier redesign): the flat M2 `raw_state` dict is replaced by
+    `signals` — the tiered {fixed, dynamic, simulated} dict (see
+    specs/009-signal-tier-redesign/contracts/tiered-context.md).  `anomaly_events`
+    and `above_weak_ticks` are carried-through numeric state the engine needs to
+    compute the NEXT tick (anomaly rolling window; signal_duration streak).
     """
 
     tick_index: int
@@ -225,12 +235,44 @@ class TickState(BaseModel):
     completed: bool
 
     # M2 extensions
-    raw_state: dict[str, float | int | bool | str] = {}
     feature_groups: FeatureGroups = FeatureGroups()
     distance_km: float | None = None
     continuous_driving_min: float | None = None
 
+    # Feature 009: tiered signals {fixed, dynamic, simulated} — replaces raw_state.
+    signals: dict[str, Any] = {}
+    # Carry-throughs the engine needs tick-to-tick (not part of the adapter context).
+    anomaly_events: list[int] = []
+    above_weak_ticks: int = 0
+
     model_config = {"extra": "allow"}
+
+
+# ─── RunConfig ────────────────────────────────────────────────────────────────
+
+
+class RunConfig(BaseModel):
+    """Setup-time run configuration (data-model.md §4).
+
+    package_id/scenario_id select the algorithm + scenario; hyperparameter_overrides
+    holds changed-from-default values only (resolved hyperparameters = manifest
+    defaults ⊕ overrides, injected into the adapter context by run_manager).
+    run_seed is frozen at run start into the event plan and drives anomaly_rate
+    (Principle III — determinism: same RunConfig → identical trace).
+
+    UX-BE (feature 009 UX iteration): profiles/context_overrides mirror
+    CreateRunPlanBody's fields of the same name (routers/run_plans.py) and
+    PreviewRunBody's (routers/runs.py) — same shape for a real run and for the
+    ephemeral preview, so both are faithful to each other.
+    """
+
+    package_id: str
+    scenario_id: str
+    hyperparameter_overrides: dict[str, Any] = {}
+    run_seed: int
+    expert_override: bool = False
+    profiles: dict[str, Any] | None = None
+    context_overrides: dict[str, Any] | None = None
 
 
 # ─── RunPlanDraft ─────────────────────────────────────────────────────────────
@@ -308,6 +350,11 @@ class RunState(BaseModel):
     run_mode: str = "standard"
     evidence_status: str = "standard"
 
+    # Feature 009: frozen run seed — sourced from scenario.run_seed_default at
+    # create_run time; threaded into advance_tick's anomaly generator so the same
+    # (scenario, run_seed) always reproduces the same anomaly_rate series.
+    run_seed: int = 42
+
     # Profile snapshots (set when profiles are selected at plan time)
     driver_profile: Any | None = None
     vehicle_profile: Any | None = None
@@ -339,3 +386,100 @@ class RunState(BaseModel):
     # M4: route provenance + display snapshot (optional; defaults preserve M1-M3 compat)
     route_source: Literal["maps", "local"] = "local"
     display_route: DisplayRoute | None = None
+
+
+# ─── InstantResult (feature 009, US1 — ephemeral preview) ────────────────────
+
+
+class FirePoint(BaseModel):
+    """The first actionable "rest_required" fire observed during a preview run."""
+
+    category: str | None = None
+    strength: str | None = None
+    tick: int
+    time_min: float
+
+
+class ScoreSeriesPoint(BaseModel):
+    """One rest_required_score sample (for the setup-screen preview curve)."""
+
+    t: int
+    score: float
+
+
+class SpikePoint(BaseModel):
+    """One anomaly-spike event (for the setup-screen preview timeline marker).
+
+    `t` is the tick index (aligns with score_series.t); `time_min` is the same
+    instant in minutes (aligns with segment bands / markers plotted by minute).
+    """
+
+    t: int
+    time_min: float
+
+
+class PreviewSegment(BaseModel):
+    """A contiguous run of one segment type over the previewed route."""
+
+    type: str | None = None
+    from_min: float
+    to_min: float
+
+
+class PreviewRestSpot(BaseModel):
+    """The rest spot the auto-chosen recovery stopped at."""
+
+    at_km: float
+    eta_min: float | None = None
+
+
+class PreviewRestOption(BaseModel):
+    """The recovery option auto-accepted when the first proposal fired."""
+
+    id: str
+    auto_chosen: bool = True
+    recovery_from_min: float | None = None
+    to_min: float | None = None
+
+
+class PreviewError(BaseModel):
+    """An algorithm/context error surfaced during the preview (never a faked decision)."""
+
+    tick_index: int
+    error_type: str
+    message: str
+
+
+class InstantResult(BaseModel):
+    """Ephemeral, non-persisting preview result (data-model.md §7).
+
+    Returned by POST /runs/preview. Never stored — the preview is a pure
+    computation over a RunConfig, never written to runs/.
+    """
+
+    fired: bool
+    fire: FirePoint | None = None
+    # Every actionable trigger across the run (first entry == `fire`) — lets the
+    # setup strip mark multiple triggers like the Review timeline. Empty on error.
+    fires: list[FirePoint] = []
+    peak_score: float
+    threshold: float | None = None
+    score_series: list[ScoreSeriesPoint] = []
+    # Second (monotony-prevention) curve — populated only by algorithms that emit
+    # a `monotony_prevention_score` (the transparent hybrid); empty for NRI, which
+    # has a single rest-required score. `monotony_threshold` is its trigger level.
+    monotony_series: list[ScoreSeriesPoint] = []
+    monotony_threshold: float | None = None
+    # Anomaly-spike events over the run — one marker per Poisson spike so the
+    # reviewer can see the rest-propose curve step up right after a spike.
+    spikes: list[SpikePoint] = []
+    segments: list[PreviewSegment] = []
+    rest_spot: PreviewRestSpot | None = None
+    rest_option: PreviewRestOption | None = None
+    # Every auto-accepted rest across the run (rest_spot/rest_option == first of each).
+    rest_spots: list[PreviewRestSpot] = []
+    rest_options: list[PreviewRestOption] = []
+    completed_min: float | None = None
+    seed: int
+    overrides: list[dict[str, Any]] = []
+    error: PreviewError | None = None

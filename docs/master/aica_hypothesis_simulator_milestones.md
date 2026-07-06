@@ -349,9 +349,68 @@ M6 is the V1 release candidate.
 
 ---
 
-## 9. Post-V1 Milestones
+## 9. M7 — UC-01 Rest & Recovery (delivered)
 
-Post-V1 should not block the first usable simulator.
+### Goal
+
+Deepen the UC-01 rest/recovery loop beyond the M6 stabilization baseline: a real recovery state machine,
+realtime-paced recovery beats, named rest spots, and setup-time recovery controls.
+
+### Scope (delivered)
+
+- Recovery state machine (nap / content / resume phases) driving post-rest driver-state recovery.
+- Realtime-paced recovery beats surfaced on the review timeline.
+- Named rest spots (persistent markers) carried through to the map surface and recovery log.
+- Setup-time recovery controls (rest spacing / rest ceiling editors) and a `REST_RECOVERY` re-arm fix.
+- Persistent rest markers + recovery log entries in the evidence record.
+
+### Release Meaning
+
+M7 shipped as a normal feature branch merge to `develop`; V1 scope (M0–M6) was unaffected.
+
+---
+
+## 10. M8 — Signal-Tier Redesign (feature `009-signal-tier-redesign`, delivered)
+
+### Goal
+
+Replace the undifferentiated driver/vehicle-profile raw-state model with a coherent, honest three-tier
+signal contract, and give the setup screen an instant *tune → observe* preview loop. Full detail:
+`specs/009-signal-tier-redesign/`; architecture/specification/runtime-workflow docs updated in place
+(see each doc's 2026-07-03 design-update note).
+
+### Scope (delivered)
+
+- **Tiered raw state**: every signal now belongs to exactly one of **Fixed / Dynamic / Simulated** tiers,
+  exposed in full to every algorithm.
+- **Honest simulated signals**: `drowsiness`/`fatigue` as deterministic *derived* signals (not pretend
+  sensors), plus a single seeded-Poisson `anomaly_rate` — the only source of randomness, reproducible via
+  a frozen `run_seed`.
+- **Retired with no V1 replacement**: the deterministic vehicle sensors (steering, pedal, lane-departure,
+  ADAS), the `attention` signal, and route look-ahead signals.
+- **Retired built-in algorithm types**: `declarative_rule` and `weighted_score` are gone; `python_module`
+  is the sole supported algorithm type (both shipped packages — the compact Hybrid trigger and NRI — are
+  `python_module`).
+- **Compact Hybrid**: the transparent hybrid trigger package re-defined to consume only the shared signal
+  set (8 features, no route look-ahead), scoring/state-machine/fire-control/priority structure preserved.
+- **Ephemeral instant-result preview**: `POST /api/runs/preview` runs the full tick loop headlessly for a
+  candidate setup and returns a static timeline — never persisted to `runs/`.
+- **Clean setup screen**: two editor panels (Scenario & Signals; Algorithm) + a full-width instant-result
+  strip, replacing the earlier three-equal-column layout.
+- Shipped scenarios rewritten in-place to the new signal-tier/parameter-group shape; the loader rejects an
+  old-shape scenario with a clear "incompatible — re-author" error (no migration tool).
+
+### Release Meaning
+
+M8 shipped as a normal feature branch; V1 (M0–M6) scope and release meaning are unaffected. This is a
+**deliberately behavior-changing** re-design — regenerated test baselines are expected, not a regression.
+
+---
+
+## 11. Post-V1 Milestones
+
+Post-V1 should not block the first usable simulator. The candidate list below predates the M7/M8 delivered
+above (§9, §10) and was not renumbered to match; read it as a backlog of ideas, not a committed sequence.
 
 Candidate post-V1 milestones:
 
@@ -406,7 +465,7 @@ Scope:
 
 ---
 
-## 10. V1 Boundary Summary
+## 12. V1 Boundary Summary
 
 V1 includes:
 

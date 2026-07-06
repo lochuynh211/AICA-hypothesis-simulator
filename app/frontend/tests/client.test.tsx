@@ -91,8 +91,7 @@ const scenarioDef: ScenarioDef = {
     drowsiness_schedule: [],
     signal_duration_at_trigger: 'sustained',
   },
-  driver_profile: {},
-  vehicle_profile: {},
+  run_seed_default: 42,
   total_duration_seconds: 3600,
   tick_seconds: 60,
   allowed_actions: ['accept_rest', 'postpone'],
@@ -260,6 +259,86 @@ describe('createRun', () => {
   })
 })
 
+// ── Feature 009 (UX-FE1): runPreview threads profiles/context_overrides ──────
+
+describe('runPreview', () => {
+  beforeEach(() => vi.resetAllMocks())
+
+  const previewResult = {
+    fired: false,
+    fire: null,
+    peak_score: 0.1,
+    threshold: 0.6,
+    score_series: [],
+    segments: [],
+    rest_spot: null,
+    rest_option: null,
+    completed_min: null,
+    seed: 42,
+    overrides: [],
+    error: null,
+  }
+
+  it('POSTs /api/runs/preview with only the base fields when profiles/context_overrides are omitted', async () => {
+    global.fetch = vi.fn().mockResolvedValue(mockOk(previewResult))
+    const { runPreview } = await import('../src/api/client')
+    await runPreview({
+      package_id: 'pkg',
+      scenario_id: 'scen',
+      hyperparameter_overrides: { w: 1 },
+      run_seed: 42,
+    })
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/runs/preview',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          package_id: 'pkg',
+          scenario_id: 'scen',
+          hyperparameter_overrides: { w: 1 },
+          run_seed: 42,
+        }),
+      }),
+    )
+  })
+
+  it('includes profiles and context_overrides in the body when provided', async () => {
+    global.fetch = vi.fn().mockResolvedValue(mockOk(previewResult))
+    const { runPreview } = await import('../src/api/client')
+    await runPreview({
+      package_id: 'pkg',
+      scenario_id: 'scen',
+      hyperparameter_overrides: {},
+      run_seed: 42,
+      profiles: { driver: { drowsiness_model: { base_growth_per_min: 1.1 } } },
+      context_overrides: { weather_risk: 65, child_passenger: true },
+    })
+    const sentBody = JSON.parse(
+      (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body as string,
+    )
+    expect(sentBody.profiles).toEqual({ driver: { drowsiness_model: { base_growth_per_min: 1.1 } } })
+    expect(sentBody.context_overrides).toEqual({ weather_risk: 65, child_passenger: true })
+  })
+
+  it('omits empty profiles/context_overrides objects (back-compat)', async () => {
+    global.fetch = vi.fn().mockResolvedValue(mockOk(previewResult))
+    const { runPreview } = await import('../src/api/client')
+    await runPreview({
+      package_id: 'pkg',
+      scenario_id: 'scen',
+      hyperparameter_overrides: {},
+      run_seed: 42,
+      profiles: {},
+      context_overrides: {},
+    })
+    const sentBody = JSON.parse(
+      (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body as string,
+    )
+    expect(sentBody.profiles).toBeUndefined()
+    expect(sentBody.context_overrides).toBeUndefined()
+  })
+})
+
 // ── M4 envelope fixture ───────────────────────────────────────────────────────
 
 const localEnvelope = {
@@ -414,6 +493,23 @@ describe('routesAnalyze / createRunPlan / regenerateRunPlan', () => {
     await expect(
       createRunPlan({ packageId: 'p', scenarioId: 's' }),
     ).rejects.toThrow('400')
+  })
+
+  // UX-FE1: contextOverrides now also accepts weather_risk alongside the
+  // existing child_passenger/familiar_route booleans.
+  it('createRunPlan includes weather_risk in context_overrides when provided', async () => {
+    const resp = { plan_id: 'plan_w', draft_plan: {}, effective_setup: {}, validation_errors: [] }
+    global.fetch = vi.fn().mockResolvedValue(mockOk(resp))
+    const { createRunPlan } = await import('../src/api/client')
+    await createRunPlan({
+      packageId: 'pkg',
+      scenarioId: 'scen',
+      contextOverrides: { weather_risk: 65, child_passenger: true },
+    })
+    const sentBody = JSON.parse(
+      (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body as string,
+    )
+    expect(sentBody.context_overrides).toEqual({ weather_risk: 65, child_passenger: true })
   })
 
   it('regenerateRunPlan POSTs /api/run-plans/{id}/regenerate', async () => {

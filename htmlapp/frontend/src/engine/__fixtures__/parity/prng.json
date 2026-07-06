@@ -1,0 +1,1711 @@
+{
+  "input": {
+    "cases": [
+      {
+        "run_seed": 0,
+        "tick": 0,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 0,
+        "tick": 0,
+        "channel": "x"
+      },
+      {
+        "run_seed": 0,
+        "tick": 0,
+        "channel": "other"
+      },
+      {
+        "run_seed": 0,
+        "tick": 1,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 0,
+        "tick": 1,
+        "channel": "x"
+      },
+      {
+        "run_seed": 0,
+        "tick": 1,
+        "channel": "other"
+      },
+      {
+        "run_seed": 0,
+        "tick": 2,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 0,
+        "tick": 2,
+        "channel": "x"
+      },
+      {
+        "run_seed": 0,
+        "tick": 2,
+        "channel": "other"
+      },
+      {
+        "run_seed": 0,
+        "tick": 5,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 0,
+        "tick": 5,
+        "channel": "x"
+      },
+      {
+        "run_seed": 0,
+        "tick": 5,
+        "channel": "other"
+      },
+      {
+        "run_seed": 0,
+        "tick": 17,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 0,
+        "tick": 17,
+        "channel": "x"
+      },
+      {
+        "run_seed": 0,
+        "tick": 17,
+        "channel": "other"
+      },
+      {
+        "run_seed": 0,
+        "tick": 107,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 0,
+        "tick": 107,
+        "channel": "x"
+      },
+      {
+        "run_seed": 0,
+        "tick": 107,
+        "channel": "other"
+      },
+      {
+        "run_seed": 0,
+        "tick": 500,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 0,
+        "tick": 500,
+        "channel": "x"
+      },
+      {
+        "run_seed": 0,
+        "tick": 500,
+        "channel": "other"
+      },
+      {
+        "run_seed": 1,
+        "tick": 0,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 1,
+        "tick": 0,
+        "channel": "x"
+      },
+      {
+        "run_seed": 1,
+        "tick": 0,
+        "channel": "other"
+      },
+      {
+        "run_seed": 1,
+        "tick": 1,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 1,
+        "tick": 1,
+        "channel": "x"
+      },
+      {
+        "run_seed": 1,
+        "tick": 1,
+        "channel": "other"
+      },
+      {
+        "run_seed": 1,
+        "tick": 2,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 1,
+        "tick": 2,
+        "channel": "x"
+      },
+      {
+        "run_seed": 1,
+        "tick": 2,
+        "channel": "other"
+      },
+      {
+        "run_seed": 1,
+        "tick": 5,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 1,
+        "tick": 5,
+        "channel": "x"
+      },
+      {
+        "run_seed": 1,
+        "tick": 5,
+        "channel": "other"
+      },
+      {
+        "run_seed": 1,
+        "tick": 17,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 1,
+        "tick": 17,
+        "channel": "x"
+      },
+      {
+        "run_seed": 1,
+        "tick": 17,
+        "channel": "other"
+      },
+      {
+        "run_seed": 1,
+        "tick": 107,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 1,
+        "tick": 107,
+        "channel": "x"
+      },
+      {
+        "run_seed": 1,
+        "tick": 107,
+        "channel": "other"
+      },
+      {
+        "run_seed": 1,
+        "tick": 500,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 1,
+        "tick": 500,
+        "channel": "x"
+      },
+      {
+        "run_seed": 1,
+        "tick": 500,
+        "channel": "other"
+      },
+      {
+        "run_seed": 7,
+        "tick": 0,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 7,
+        "tick": 0,
+        "channel": "x"
+      },
+      {
+        "run_seed": 7,
+        "tick": 0,
+        "channel": "other"
+      },
+      {
+        "run_seed": 7,
+        "tick": 1,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 7,
+        "tick": 1,
+        "channel": "x"
+      },
+      {
+        "run_seed": 7,
+        "tick": 1,
+        "channel": "other"
+      },
+      {
+        "run_seed": 7,
+        "tick": 2,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 7,
+        "tick": 2,
+        "channel": "x"
+      },
+      {
+        "run_seed": 7,
+        "tick": 2,
+        "channel": "other"
+      },
+      {
+        "run_seed": 7,
+        "tick": 5,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 7,
+        "tick": 5,
+        "channel": "x"
+      },
+      {
+        "run_seed": 7,
+        "tick": 5,
+        "channel": "other"
+      },
+      {
+        "run_seed": 7,
+        "tick": 17,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 7,
+        "tick": 17,
+        "channel": "x"
+      },
+      {
+        "run_seed": 7,
+        "tick": 17,
+        "channel": "other"
+      },
+      {
+        "run_seed": 7,
+        "tick": 107,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 7,
+        "tick": 107,
+        "channel": "x"
+      },
+      {
+        "run_seed": 7,
+        "tick": 107,
+        "channel": "other"
+      },
+      {
+        "run_seed": 7,
+        "tick": 500,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 7,
+        "tick": 500,
+        "channel": "x"
+      },
+      {
+        "run_seed": 7,
+        "tick": 500,
+        "channel": "other"
+      },
+      {
+        "run_seed": 42,
+        "tick": 0,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 42,
+        "tick": 0,
+        "channel": "x"
+      },
+      {
+        "run_seed": 42,
+        "tick": 0,
+        "channel": "other"
+      },
+      {
+        "run_seed": 42,
+        "tick": 1,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 42,
+        "tick": 1,
+        "channel": "x"
+      },
+      {
+        "run_seed": 42,
+        "tick": 1,
+        "channel": "other"
+      },
+      {
+        "run_seed": 42,
+        "tick": 2,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 42,
+        "tick": 2,
+        "channel": "x"
+      },
+      {
+        "run_seed": 42,
+        "tick": 2,
+        "channel": "other"
+      },
+      {
+        "run_seed": 42,
+        "tick": 5,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 42,
+        "tick": 5,
+        "channel": "x"
+      },
+      {
+        "run_seed": 42,
+        "tick": 5,
+        "channel": "other"
+      },
+      {
+        "run_seed": 42,
+        "tick": 17,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 42,
+        "tick": 17,
+        "channel": "x"
+      },
+      {
+        "run_seed": 42,
+        "tick": 17,
+        "channel": "other"
+      },
+      {
+        "run_seed": 42,
+        "tick": 107,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 42,
+        "tick": 107,
+        "channel": "x"
+      },
+      {
+        "run_seed": 42,
+        "tick": 107,
+        "channel": "other"
+      },
+      {
+        "run_seed": 42,
+        "tick": 500,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 42,
+        "tick": 500,
+        "channel": "x"
+      },
+      {
+        "run_seed": 42,
+        "tick": 500,
+        "channel": "other"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 0,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 0,
+        "channel": "x"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 0,
+        "channel": "other"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 1,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 1,
+        "channel": "x"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 1,
+        "channel": "other"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 2,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 2,
+        "channel": "x"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 2,
+        "channel": "other"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 5,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 5,
+        "channel": "x"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 5,
+        "channel": "other"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 17,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 17,
+        "channel": "x"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 17,
+        "channel": "other"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 107,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 107,
+        "channel": "x"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 107,
+        "channel": "other"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 500,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 500,
+        "channel": "x"
+      },
+      {
+        "run_seed": 123456789,
+        "tick": 500,
+        "channel": "other"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 0,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 0,
+        "channel": "x"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 0,
+        "channel": "other"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 1,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 1,
+        "channel": "x"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 1,
+        "channel": "other"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 2,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 2,
+        "channel": "x"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 2,
+        "channel": "other"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 5,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 5,
+        "channel": "x"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 5,
+        "channel": "other"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 17,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 17,
+        "channel": "x"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 17,
+        "channel": "other"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 107,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 107,
+        "channel": "x"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 107,
+        "channel": "other"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 500,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 500,
+        "channel": "x"
+      },
+      {
+        "run_seed": 2147483648,
+        "tick": 500,
+        "channel": "other"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 0,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 0,
+        "channel": "x"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 0,
+        "channel": "other"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 1,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 1,
+        "channel": "x"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 1,
+        "channel": "other"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 2,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 2,
+        "channel": "x"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 2,
+        "channel": "other"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 5,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 5,
+        "channel": "x"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 5,
+        "channel": "other"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 17,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 17,
+        "channel": "x"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 17,
+        "channel": "other"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 107,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 107,
+        "channel": "x"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 107,
+        "channel": "other"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 500,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 500,
+        "channel": "x"
+      },
+      {
+        "run_seed": 4294967296,
+        "tick": 500,
+        "channel": "other"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 0,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 0,
+        "channel": "x"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 0,
+        "channel": "other"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 1,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 1,
+        "channel": "x"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 1,
+        "channel": "other"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 2,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 2,
+        "channel": "x"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 2,
+        "channel": "other"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 5,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 5,
+        "channel": "x"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 5,
+        "channel": "other"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 17,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 17,
+        "channel": "x"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 17,
+        "channel": "other"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 107,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 107,
+        "channel": "x"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 107,
+        "channel": "other"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 500,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 500,
+        "channel": "x"
+      },
+      {
+        "run_seed": 1099511627781,
+        "tick": 500,
+        "channel": "other"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 0,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 0,
+        "channel": "x"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 0,
+        "channel": "other"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 1,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 1,
+        "channel": "x"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 1,
+        "channel": "other"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 2,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 2,
+        "channel": "x"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 2,
+        "channel": "other"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 5,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 5,
+        "channel": "x"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 5,
+        "channel": "other"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 17,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 17,
+        "channel": "x"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 17,
+        "channel": "other"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 107,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 107,
+        "channel": "x"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 107,
+        "channel": "other"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 500,
+        "channel": "anomaly"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 500,
+        "channel": "x"
+      },
+      {
+        "run_seed": 999999999999,
+        "tick": 500,
+        "channel": "other"
+      }
+    ]
+  },
+  "output": {
+    "results": [
+      {
+        "subseed": "7220440856603643307",
+        "uniform": 0.6257616005062342
+      },
+      {
+        "subseed": "10846685664798259773",
+        "uniform": 0.679279726685165
+      },
+      {
+        "subseed": "2163498366376101346",
+        "uniform": 0.33345240109889074
+      },
+      {
+        "subseed": "3911313381406362088",
+        "uniform": 0.049216746131215516
+      },
+      {
+        "subseed": "9559285439861192899",
+        "uniform": 0.786042731038812
+      },
+      {
+        "subseed": "15154637366670357144",
+        "uniform": 0.3106824732455815
+      },
+      {
+        "subseed": "12950114621270512698",
+        "uniform": 0.07568959296447442
+      },
+      {
+        "subseed": "1936574209607667903",
+        "uniform": 0.6642176770984836
+      },
+      {
+        "subseed": "11111090820546553218",
+        "uniform": 0.7804117929885138
+      },
+      {
+        "subseed": "6109748582557935211",
+        "uniform": 0.5694921464880981
+      },
+      {
+        "subseed": "7914569647584957805",
+        "uniform": 0.9257750024889021
+      },
+      {
+        "subseed": "755639198266752235",
+        "uniform": 0.8905269541038477
+      },
+      {
+        "subseed": "2984863845127082076",
+        "uniform": 0.5703826425808044
+      },
+      {
+        "subseed": "17458027469987618867",
+        "uniform": 0.05357316077127672
+      },
+      {
+        "subseed": "13967825700311651027",
+        "uniform": 0.16387889240541098
+      },
+      {
+        "subseed": "8488047390431809061",
+        "uniform": 0.05064841187869351
+      },
+      {
+        "subseed": "12348348404259739225",
+        "uniform": 0.5640996869785534
+      },
+      {
+        "subseed": "17528214921390039035",
+        "uniform": 0.40944240875231064
+      },
+      {
+        "subseed": "3168204127948235181",
+        "uniform": 0.9800858570878296
+      },
+      {
+        "subseed": "12389013989356763826",
+        "uniform": 0.9657926533250258
+      },
+      {
+        "subseed": "5259673781505902196",
+        "uniform": 0.5146110983437101
+      },
+      {
+        "subseed": "6121227522766289945",
+        "uniform": 0.6178853284746487
+      },
+      {
+        "subseed": "10180720564435624312",
+        "uniform": 0.4251269042218131
+      },
+      {
+        "subseed": "9063359327180629426",
+        "uniform": 0.48326915139615
+      },
+      {
+        "subseed": "8721824523705342791",
+        "uniform": 0.15590244730515845
+      },
+      {
+        "subseed": "16138791095994675956",
+        "uniform": 0.5564479240593029
+      },
+      {
+        "subseed": "12854543425901019969",
+        "uniform": 0.54404388478531
+      },
+      {
+        "subseed": "16575138797534210385",
+        "uniform": 0.7824719811323352
+      },
+      {
+        "subseed": "6881518849237252419",
+        "uniform": 0.45689156406959097
+      },
+      {
+        "subseed": "4967134943341053310",
+        "uniform": 0.5610427912779097
+      },
+      {
+        "subseed": "139197039409755085",
+        "uniform": 0.3013256961398255
+      },
+      {
+        "subseed": "186788939413330799",
+        "uniform": 0.24129758717072314
+      },
+      {
+        "subseed": "17282755983072517659",
+        "uniform": 0.224933086327198
+      },
+      {
+        "subseed": "17717289701692245071",
+        "uniform": 0.5067493350405358
+      },
+      {
+        "subseed": "18044392273778250133",
+        "uniform": 0.7479840269161583
+      },
+      {
+        "subseed": "13679611253990619236",
+        "uniform": 0.3708146418123299
+      },
+      {
+        "subseed": "7243163998065300889",
+        "uniform": 0.040473810353589657
+      },
+      {
+        "subseed": "17792101448993012471",
+        "uniform": 0.12447226413713508
+      },
+      {
+        "subseed": "9701066419897681415",
+        "uniform": 0.7984681387750732
+      },
+      {
+        "subseed": "6042449909230455365",
+        "uniform": 0.1597018566171462
+      },
+      {
+        "subseed": "5439102828017977816",
+        "uniform": 0.521797184525903
+      },
+      {
+        "subseed": "2672213738319310600",
+        "uniform": 0.37689637726761815
+      },
+      {
+        "subseed": "7137514445361200490",
+        "uniform": 0.4566872415412362
+      },
+      {
+        "subseed": "9746156274398418012",
+        "uniform": 0.3680495100583685
+      },
+      {
+        "subseed": "2274747964468460987",
+        "uniform": 0.20093348797945054
+      },
+      {
+        "subseed": "4211944982558667478",
+        "uniform": 0.46810244594058814
+      },
+      {
+        "subseed": "16189150252174109084",
+        "uniform": 0.7519050914782787
+      },
+      {
+        "subseed": "4450826101298067291",
+        "uniform": 0.3686847966834714
+      },
+      {
+        "subseed": "6722607927163242573",
+        "uniform": 0.5924793409150818
+      },
+      {
+        "subseed": "1551929230737520962",
+        "uniform": 0.4388661126243599
+      },
+      {
+        "subseed": "17704787487503288065",
+        "uniform": 0.9747268368918282
+      },
+      {
+        "subseed": "9167961878536086629",
+        "uniform": 0.6544474165531609
+      },
+      {
+        "subseed": "9286910637091086001",
+        "uniform": 0.482514803065474
+      },
+      {
+        "subseed": "2297562878965603809",
+        "uniform": 0.3519183989287583
+      },
+      {
+        "subseed": "16315267852694843826",
+        "uniform": 0.2971174887134248
+      },
+      {
+        "subseed": "16412739903527895219",
+        "uniform": 0.9545805478007942
+      },
+      {
+        "subseed": "8063659163933346272",
+        "uniform": 0.8052658735634386
+      },
+      {
+        "subseed": "6777574378086370398",
+        "uniform": 0.9194730134277581
+      },
+      {
+        "subseed": "13986340706296573371",
+        "uniform": 0.8805487598876276
+      },
+      {
+        "subseed": "7743392589499426365",
+        "uniform": 0.20710787145485698
+      },
+      {
+        "subseed": "13451869351980675752",
+        "uniform": 0.5357287040009572
+      },
+      {
+        "subseed": "8374599608512735394",
+        "uniform": 0.1853824228974188
+      },
+      {
+        "subseed": "11592596581523184811",
+        "uniform": 0.9357244592861363
+      },
+      {
+        "subseed": "8678003507132381832",
+        "uniform": 0.5995824970264738
+      },
+      {
+        "subseed": "13484098989371088221",
+        "uniform": 0.1876676101530389
+      },
+      {
+        "subseed": "8443343130582598440",
+        "uniform": 0.5523422119482398
+      },
+      {
+        "subseed": "8860609390551176817",
+        "uniform": 0.5498736456581339
+      },
+      {
+        "subseed": "7269671469270121680",
+        "uniform": 0.777940690448954
+      },
+      {
+        "subseed": "14473395450296653002",
+        "uniform": 0.8215400549383249
+      },
+      {
+        "subseed": "5517937984710244044",
+        "uniform": 0.030391387320485297
+      },
+      {
+        "subseed": "2476953358992035429",
+        "uniform": 0.8625067246289664
+      },
+      {
+        "subseed": "16551342498586988473",
+        "uniform": 0.7581224318993872
+      },
+      {
+        "subseed": "4635566548730941612",
+        "uniform": 0.7002773130427511
+      },
+      {
+        "subseed": "7368023000994999857",
+        "uniform": 0.33775216915836814
+      },
+      {
+        "subseed": "13387135253374824451",
+        "uniform": 0.6436585312830877
+      },
+      {
+        "subseed": "16253560764863304123",
+        "uniform": 0.927388590550322
+      },
+      {
+        "subseed": "9667267672737163194",
+        "uniform": 0.4674141112288682
+      },
+      {
+        "subseed": "14691471226483033918",
+        "uniform": 0.18988461461456319
+      },
+      {
+        "subseed": "2152436499296166797",
+        "uniform": 0.307601358619222
+      },
+      {
+        "subseed": "7874669922834521041",
+        "uniform": 0.8523286167351677
+      },
+      {
+        "subseed": "9217116209677292312",
+        "uniform": 0.22557457041108986
+      },
+      {
+        "subseed": "14466590728575552709",
+        "uniform": 0.027836675534054778
+      },
+      {
+        "subseed": "7361146217313202781",
+        "uniform": 0.3158653206917579
+      },
+      {
+        "subseed": "2212363659675667993",
+        "uniform": 0.4625748838966278
+      },
+      {
+        "subseed": "15386191644090414372",
+        "uniform": 0.07492842273144862
+      },
+      {
+        "subseed": "18433782279151927361",
+        "uniform": 0.28541788408038116
+      },
+      {
+        "subseed": "4445591573397482855",
+        "uniform": 0.2295855336846292
+      },
+      {
+        "subseed": "9202773071304671798",
+        "uniform": 0.11457963238825164
+      },
+      {
+        "subseed": "14619721076415482279",
+        "uniform": 0.7671709557103884
+      },
+      {
+        "subseed": "7173364039689049920",
+        "uniform": 0.08080182074812636
+      },
+      {
+        "subseed": "15009707854225237753",
+        "uniform": 0.6747878746132602
+      },
+      {
+        "subseed": "12120020732160653554",
+        "uniform": 0.12748415890916331
+      },
+      {
+        "subseed": "4363215774625602053",
+        "uniform": 0.5111610801198241
+      },
+      {
+        "subseed": "14225835072058965086",
+        "uniform": 0.48236686827136444
+      },
+      {
+        "subseed": "4700245941572634194",
+        "uniform": 0.8571925751096409
+      },
+      {
+        "subseed": "1457594074046186411",
+        "uniform": 0.6689350143469671
+      },
+      {
+        "subseed": "4399074588936885873",
+        "uniform": 0.577922918304195
+      },
+      {
+        "subseed": "5665699486939999919",
+        "uniform": 0.2894194862355798
+      },
+      {
+        "subseed": "17519935351276083341",
+        "uniform": 0.5938822044683605
+      },
+      {
+        "subseed": "10559837317019441630",
+        "uniform": 0.8628301365991193
+      },
+      {
+        "subseed": "11776842016420852273",
+        "uniform": 0.36622308959958105
+      },
+      {
+        "subseed": "16607368612356170819",
+        "uniform": 0.4180954643577284
+      },
+      {
+        "subseed": "14273801399341088685",
+        "uniform": 0.41247174660010144
+      },
+      {
+        "subseed": "7171676335867257442",
+        "uniform": 0.30664402987808814
+      },
+      {
+        "subseed": "3094773374869476610",
+        "uniform": 0.8564129642706532
+      },
+      {
+        "subseed": "3445158661114083203",
+        "uniform": 0.6050574575311979
+      },
+      {
+        "subseed": "1173835826732604379",
+        "uniform": 0.42033007895538943
+      },
+      {
+        "subseed": "4034274810081925569",
+        "uniform": 0.12483302855845557
+      },
+      {
+        "subseed": "304716451781557254",
+        "uniform": 0.05344775180085515
+      },
+      {
+        "subseed": "7323759751485132496",
+        "uniform": 0.8046109615568172
+      },
+      {
+        "subseed": "13882430355596504611",
+        "uniform": 0.05209214043032617
+      },
+      {
+        "subseed": "11857668392914271987",
+        "uniform": 0.8183407152225511
+      },
+      {
+        "subseed": "11045712015938994285",
+        "uniform": 0.9700687519062049
+      },
+      {
+        "subseed": "6769408748147941501",
+        "uniform": 0.4233983231903241
+      },
+      {
+        "subseed": "8929671272083975157",
+        "uniform": 0.16153065562811308
+      },
+      {
+        "subseed": "1035744531378462050",
+        "uniform": 0.9821391645619262
+      },
+      {
+        "subseed": "15227127059806801929",
+        "uniform": 0.3282057746127731
+      },
+      {
+        "subseed": "10782132562578098805",
+        "uniform": 0.64971553419297
+      },
+      {
+        "subseed": "8389605605717530692",
+        "uniform": 0.8642154463101084
+      },
+      {
+        "subseed": "12874899516005349708",
+        "uniform": 0.15245665661659136
+      },
+      {
+        "subseed": "17470918590324909844",
+        "uniform": 0.37557620237563927
+      },
+      {
+        "subseed": "14660925472995357322",
+        "uniform": 0.2979067011241453
+      },
+      {
+        "subseed": "7359355316522945329",
+        "uniform": 0.6106439258083888
+      },
+      {
+        "subseed": "13293097336840223907",
+        "uniform": 0.5908340199553944
+      },
+      {
+        "subseed": "16916237601038257435",
+        "uniform": 0.6537646541089578
+      },
+      {
+        "subseed": "12970100591105276199",
+        "uniform": 0.81216724219771
+      },
+      {
+        "subseed": "16714678483488394432",
+        "uniform": 0.3280730964539903
+      },
+      {
+        "subseed": "13168884989186075822",
+        "uniform": 0.8937621971519563
+      },
+      {
+        "subseed": "3599990416546970792",
+        "uniform": 0.07976552717089802
+      },
+      {
+        "subseed": "9955769135848066886",
+        "uniform": 0.6152238982165501
+      },
+      {
+        "subseed": "7926785822419547834",
+        "uniform": 0.13315950753474048
+      },
+      {
+        "subseed": "14671156928502493188",
+        "uniform": 0.761495304999662
+      },
+      {
+        "subseed": "1756897310779408642",
+        "uniform": 0.2720998278210177
+      },
+      {
+        "subseed": "5774606939646710042",
+        "uniform": 0.7387124385975001
+      },
+      {
+        "subseed": "7911418192064327133",
+        "uniform": 0.5553555513607448
+      },
+      {
+        "subseed": "9556663206907656928",
+        "uniform": 0.49440443506161447
+      },
+      {
+        "subseed": "7033702443607676859",
+        "uniform": 0.816088156655768
+      },
+      {
+        "subseed": "7856784716048874048",
+        "uniform": 0.3498677524310221
+      },
+      {
+        "subseed": "15119204108244663381",
+        "uniform": 0.5365422533394102
+      },
+      {
+        "subseed": "14777920312217248896",
+        "uniform": 0.5248420989165173
+      },
+      {
+        "subseed": "7730850595696232654",
+        "uniform": 0.09034164622144403
+      },
+      {
+        "subseed": "9669018841523187466",
+        "uniform": 0.2803906497952484
+      },
+      {
+        "subseed": "6034140934728039859",
+        "uniform": 0.6035630348719881
+      },
+      {
+        "subseed": "12229114936811661332",
+        "uniform": 0.46913709615369614
+      },
+      {
+        "subseed": "6615131521637849628",
+        "uniform": 0.7962751472509054
+      },
+      {
+        "subseed": "14811279727187348518",
+        "uniform": 0.4503472728550487
+      },
+      {
+        "subseed": "6427347437158078466",
+        "uniform": 0.8470590163364449
+      },
+      {
+        "subseed": "4092169786795185481",
+        "uniform": 0.668638270867552
+      },
+      {
+        "subseed": "393957810442944565",
+        "uniform": 0.12987408529482247
+      },
+      {
+        "subseed": "3265411014514863264",
+        "uniform": 0.030302695270013946
+      },
+      {
+        "subseed": "16322839008043459430",
+        "uniform": 0.8636368595865026
+      },
+      {
+        "subseed": "5634717026508204047",
+        "uniform": 0.12255491723846001
+      },
+      {
+        "subseed": "430858191740606905",
+        "uniform": 0.526148346511406
+      },
+      {
+        "subseed": "17265765225627739",
+        "uniform": 0.45976018846578426
+      },
+      {
+        "subseed": "2449467007422780147",
+        "uniform": 0.5324817107446672
+      },
+      {
+        "subseed": "3504407894889422602",
+        "uniform": 0.6878381133585856
+      },
+      {
+        "subseed": "17158478347485079276",
+        "uniform": 0.13964171746260812
+      },
+      {
+        "subseed": "6570697052788076029",
+        "uniform": 0.47318540309386925
+      },
+      {
+        "subseed": "7804700276647724948",
+        "uniform": 0.00843138089497908
+      },
+      {
+        "subseed": "15650157026442783218",
+        "uniform": 0.23033920793520968
+      },
+      {
+        "subseed": "12828626769062396789",
+        "uniform": 0.008405857162532171
+      },
+      {
+        "subseed": "72649334536686062",
+        "uniform": 0.11847778013042054
+      },
+      {
+        "subseed": "15041757681704575305",
+        "uniform": 0.48790358402823064
+      },
+      {
+        "subseed": "3923504979955708798",
+        "uniform": 0.7836966384804737
+      },
+      {
+        "subseed": "16559120670771501404",
+        "uniform": 0.05831287954305642
+      },
+      {
+        "subseed": "11363191597624288605",
+        "uniform": 0.6590888183905221
+      },
+      {
+        "subseed": "2877078226699381829",
+        "uniform": 0.5929908595328918
+      },
+      {
+        "subseed": "16174113765466798299",
+        "uniform": 0.8218825326525288
+      },
+      {
+        "subseed": "6844980977557734098",
+        "uniform": 0.03159809334510277
+      },
+      {
+        "subseed": "17725483925944409564",
+        "uniform": 0.24703720441286403
+      },
+      {
+        "subseed": "16554467668578629774",
+        "uniform": 0.21992849011397297
+      },
+      {
+        "subseed": "5984582282363330874",
+        "uniform": 0.2449286627303674
+      },
+      {
+        "subseed": "7780764414091890446",
+        "uniform": 0.39608878994009034
+      },
+      {
+        "subseed": "15788240636505867798",
+        "uniform": 0.1975781070727568
+      },
+      {
+        "subseed": "786218242180056173",
+        "uniform": 0.6448245954754878
+      },
+      {
+        "subseed": "11629025333704180230",
+        "uniform": 0.4929807834895905
+      },
+      {
+        "subseed": "1595952790605715888",
+        "uniform": 0.6170249014945862
+      },
+      {
+        "subseed": "2058840591953594270",
+        "uniform": 0.6847550808468261
+      },
+      {
+        "subseed": "11926533903097964400",
+        "uniform": 0.9381970644722781
+      },
+      {
+        "subseed": "1161486154665368990",
+        "uniform": 0.9663195803232671
+      },
+      {
+        "subseed": "18027368103512601516",
+        "uniform": 0.09192177959954673
+      },
+      {
+        "subseed": "16129899261633180643",
+        "uniform": 0.07347140147092701
+      },
+      {
+        "subseed": "1553906053784084012",
+        "uniform": 0.40742911048415487
+      },
+      {
+        "subseed": "6763447728956976789",
+        "uniform": 0.4847318688828781
+      },
+      {
+        "subseed": "5418248068386226897",
+        "uniform": 0.9330910682809794
+      },
+      {
+        "subseed": "14610392523745858646",
+        "uniform": 0.3720810793824745
+      },
+      {
+        "subseed": "18013888537539701273",
+        "uniform": 0.09856875394652564
+      },
+      {
+        "subseed": "2298325629396417646",
+        "uniform": 0.31378007074093595
+      },
+      {
+        "subseed": "10853516646489679935",
+        "uniform": 0.20558790779293112
+      }
+    ]
+  }
+}

@@ -1,0 +1,183 @@
+{
+  "input": {
+    "params": {
+      "id": "friend_drive_driver_v1",
+      "drowsiness_model": {
+        "base_growth_per_min": 0.9,
+        "night_add_per_min": 0.3,
+        "monotony_add_per_min": 0.3,
+        "traffic_jam_add_per_min": 0.1
+      },
+      "fatigue_model": {
+        "base_growth_per_min": 0.3,
+        "continuous_driving_add_per_min_after_60_min": 0.2,
+        "mountain_road_add_per_min": 0.2,
+        "traffic_jam_add_per_min": 0.05
+      },
+      "recovery_model": {
+        "sleep": {
+          "drowsiness": 60.0,
+          "fatigue": 60.0
+        },
+        "audio_karaoke": {
+          "drowsiness": 25.0,
+          "fatigue": 25.0
+        },
+        "stretch": {
+          "drowsiness": 25.0,
+          "fatigue": 25.0
+        }
+      }
+    },
+    "advance": [
+      {
+        "state": {
+          "drowsiness": 0.0,
+          "fatigue": 0.0
+        },
+        "tick_seconds": 180,
+        "isNight": false,
+        "isMonotonous": true,
+        "isTrafficJam": false,
+        "isMountainRoad": false,
+        "continuousDrivingMin": 0.0
+      },
+      {
+        "state": {
+          "drowsiness": 30.0,
+          "fatigue": 20.0
+        },
+        "tick_seconds": 180,
+        "isNight": true,
+        "isMonotonous": true,
+        "isTrafficJam": true,
+        "isMountainRoad": false,
+        "continuousDrivingMin": 65.0
+      },
+      {
+        "state": {
+          "drowsiness": 55.0,
+          "fatigue": 40.0
+        },
+        "tick_seconds": 60,
+        "isNight": false,
+        "isMonotonous": false,
+        "isTrafficJam": false,
+        "isMountainRoad": true,
+        "continuousDrivingMin": 90.0
+      }
+    ],
+    "recovery": [
+      {
+        "state": {
+          "drowsiness": 80.0,
+          "fatigue": 70.0
+        },
+        "activity": "sleep"
+      },
+      {
+        "state": {
+          "drowsiness": 40.0,
+          "fatigue": 30.0
+        },
+        "activity": "audio_karaoke"
+      },
+      {
+        "state": {
+          "drowsiness": 10.0,
+          "fatigue": 5.0
+        },
+        "activity": "stretch"
+      },
+      {
+        "state": {
+          "drowsiness": 50.0,
+          "fatigue": 50.0
+        },
+        "activity": "unknown_activity"
+      }
+    ]
+  },
+  "output": {
+    "advance": [
+      {
+        "previous": {
+          "drowsiness": 0.0,
+          "fatigue": 0.0
+        },
+        "delta": {
+          "drowsiness_base": 2.7,
+          "drowsiness_night": 0.0,
+          "drowsiness_monotony": 0.8999999999999999,
+          "drowsiness_jam": 0.0,
+          "fatigue_base": 0.8999999999999999,
+          "fatigue_continuous": 0.0,
+          "fatigue_mountain": 0.0,
+          "fatigue_jam": 0.0
+        },
+        "next": {
+          "drowsiness": 3.6,
+          "fatigue": 0.8999999999999999
+        }
+      },
+      {
+        "previous": {
+          "drowsiness": 30.0,
+          "fatigue": 20.0
+        },
+        "delta": {
+          "drowsiness_base": 2.7,
+          "drowsiness_night": 0.8999999999999999,
+          "drowsiness_monotony": 0.8999999999999999,
+          "drowsiness_jam": 0.30000000000000004,
+          "fatigue_base": 0.8999999999999999,
+          "fatigue_continuous": 0.6000000000000001,
+          "fatigue_mountain": 0.0,
+          "fatigue_jam": 0.15000000000000002
+        },
+        "next": {
+          "drowsiness": 34.8,
+          "fatigue": 21.65
+        }
+      },
+      {
+        "previous": {
+          "drowsiness": 55.0,
+          "fatigue": 40.0
+        },
+        "delta": {
+          "drowsiness_base": 0.9,
+          "drowsiness_night": 0.0,
+          "drowsiness_monotony": 0.0,
+          "drowsiness_jam": 0.0,
+          "fatigue_base": 0.3,
+          "fatigue_continuous": 0.2,
+          "fatigue_mountain": 0.2,
+          "fatigue_jam": 0.0
+        },
+        "next": {
+          "drowsiness": 55.9,
+          "fatigue": 40.7
+        }
+      }
+    ],
+    "recovery": [
+      {
+        "drowsiness": 20.0,
+        "fatigue": 10.0
+      },
+      {
+        "drowsiness": 15.0,
+        "fatigue": 5.0
+      },
+      {
+        "drowsiness": 0.0,
+        "fatigue": 0.0
+      },
+      {
+        "drowsiness": 50.0,
+        "fatigue": 50.0
+      }
+    ]
+  }
+}

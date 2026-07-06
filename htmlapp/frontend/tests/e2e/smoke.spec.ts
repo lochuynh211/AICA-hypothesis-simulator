@@ -107,24 +107,39 @@ test('offline bundle loads over file://, drives nri_fatigue_score_v1 to completi
   await expect(page.getByTestId('setup-screen')).toBeVisible()
   await expect(page.getByRole('heading', { name: /Run Setup/i })).toBeVisible()
 
-  // 2. Package + Scenario pickers populated from IndexedDB-seeded defaults.
-  //    Select by VALUE (the package/scenario id) rather than option index —
-  //    robust to registry ordering.
-  const packageSelect = page.locator('#package-select')
+  // 2. Feature 009 setup flow — forced order Route → Scenario → Package
+  //    (StepGate: scenario gated behind a selected route, package behind a
+  //    selected scenario). Select by VALUE, robust to registry ordering.
+
+  // 2a. Step 1 · Route — pick the first bundled route preset (local path,
+  //     never touches Google Maps).
+  const presetSelect = page.locator('#route-preset')
+  await expect(presetSelect).toBeVisible()
+  const presetValues = await presetSelect
+    .locator('option')
+    .evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value).filter(Boolean))
+  expect(presetValues.length, 'bundled route presets must be seeded').toBeGreaterThan(0)
+  await presetSelect.selectOption(presetValues[0])
+
+  // 2b. Step 2 · Scenario — unlocks once a route is selected.
   const scenarioSelect = page.locator('#scenario-select')
-  await expect(packageSelect).toBeEnabled()
-  await expect(scenarioSelect).toBeEnabled()
-  await packageSelect.selectOption('nri_fatigue_score_v1')
+  await expect(scenarioSelect).toBeEnabled({ timeout: 10_000 })
   await scenarioSelect.selectOption('uc01_fatigue_recovery_v0_1')
 
-  // 3. Preview Plan — now succeeds (routesAnalyze's local path is fully
-  //    implemented): plan-summary appears, no setup-error.
-  await page.getByRole('button', { name: 'Preview Plan' }).click()
-  await expect(page.getByTestId('plan-summary')).toBeVisible()
-  await expect(page.getByTestId('setup-error')).toHaveCount(0)
+  // 2c. Step 3 · Package — unlocks once a scenario is selected.
+  const packageSelect = page.locator('#package-select')
+  await expect(packageSelect).toBeEnabled({ timeout: 10_000 })
+  await packageSelect.selectOption('nri_fatigue_score_v1')
 
-  // 4. Start Run — auto-transitions to the Review screen (RUN_CREATED).
-  await page.getByRole('button', { name: 'Start Run' }).click()
+  // 3. Instant Result — the ephemeral, non-persisting preview recomputes
+  //    headlessly on every setup change (feature 009 US1). The strip renders a
+  //    real result (not the empty/error state) and enables "Open full run".
+  await expect(page.getByTestId('instant-result-strip')).toBeVisible()
+  await expect(page.getByTestId('instant-result-open-full-run')).toBeEnabled({ timeout: 10_000 })
+
+  // 4. Open full run — freezes exactly this setup into a persisted run and
+  //    transitions to the Review screen (RUN_CREATED).
+  await page.getByTestId('instant-result-open-full-run').click()
   await expect(page.getByTestId('review-screen')).toBeVisible()
 
   // 4a. FEEDBACK CAPTURE surface (S9.4): step once to produce the first

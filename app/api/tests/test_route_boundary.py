@@ -9,6 +9,16 @@ For a maps-sourced run, asserts that:
 
 This proves constitution IV: external raw numerics are barred from triggers,
 but simulator-owned derived numerics are fine.
+
+Feature 009 (signal-tier redesign): the old flat raw_state dict is replaced by
+the tiered signals dict {fixed, dynamic, simulated} (the TickEvent field name
+"raw_state" is kept for evidence back-compat, but its CONTENT is now tiered —
+see aica_api.services.run_manager.tick's "raw_state = tick_state.signals"
+line). drowsinessLevel/fatigueLevel are renamed drowsiness/fatigue and live
+under raw_state["simulated"]; nextRestSpotMin lives under raw_state["dynamic"].
+feature_groups.ordinal no longer carries drowsiness_level/fatigue_level bands
+(those were M1-only fields) — only signal_duration/rest_spot_eta/
+continuous_driving_time survive for the M2 tiered-signal path.
 """
 
 from __future__ import annotations
@@ -26,8 +36,8 @@ from aica_api.services.run_plan import clear_draft_registry
 
 _FIXTURE_DIR = pathlib.Path(__file__).parent / "fixtures" / "maps"
 
-VALID_SCENARIO_ID = "uc01_fatigue_friend_drive_v0_1"
-VALID_PACKAGE_ID = "rest_rule_based_v0_1"
+VALID_SCENARIO_ID = "uc01_fatigue_recovery_v0_1"  # feature 009: friend_drive retired
+VALID_PACKAGE_ID = "aica_transparent_hybrid_trigger_v1"  # feature 009: rest_rule_based_v0_1 retired
 _SENTINEL_KEY = "SENTINEL_API_KEY_MUST_NOT_LEAK"
 
 # Raw Google field names that must NEVER cross the boundary into algorithm context
@@ -35,11 +45,14 @@ _RAW_GOOGLE_KEYS = frozenset(
     {"distance_m", "duration_s", "encoded_polyline", "distance_along_route_m"}
 )
 
-# Simulator-owned fields that MUST be present in raw_state
-_EXPECTED_RAW_STATE_KEYS = {"nextRestSpotMin", "drowsinessLevel", "fatigueLevel"}
+# Simulator-owned fields that MUST be present in raw_state (tiered: {fixed,
+# dynamic, simulated} — feature 009).
+_EXPECTED_RAW_STATE_DYNAMIC_KEYS = {"nextRestSpotMin"}
+_EXPECTED_RAW_STATE_SIMULATED_KEYS = {"drowsiness", "fatigue"}
 
-# Ordinal fields that MUST be present in feature_groups.ordinal
-_EXPECTED_ORDINAL_KEYS = {"rest_spot_eta", "drowsiness_level", "fatigue_level"}
+# Ordinal fields that MUST be present in feature_groups.ordinal (M2 tiered path
+# — drowsiness_level/fatigue_level ordinal bands were M1-only and are retired).
+_EXPECTED_ORDINAL_KEYS = {"rest_spot_eta", "signal_duration", "continuous_driving_time"}
 
 
 def _fixture_bytes(name: str) -> bytes:
@@ -132,17 +145,24 @@ class TestTwoLayerBoundary:
     """Assert that only simulator-owned numerics (and ordinal bands) cross the algorithm boundary."""
 
     def test_raw_state_contains_simulator_owned_fields(self, client, tmp_path, monkeypatch):
-        """raw_state in tick events must have simulator-owned numeric fields."""
+        """raw_state (tiered signals) in tick events must have simulator-owned numeric fields."""
         log = _run_maps_and_get_log(client, tmp_path, monkeypatch)
         tick_events = [e for e in log["events"] if e["kind"] == "tick"]
         assert len(tick_events) >= 1, "Need at least one tick event"
 
         for ev in tick_events:
             raw_state = ev.get("raw_state", {})
-            for key in _EXPECTED_RAW_STATE_KEYS:
-                assert key in raw_state, (
-                    f"Simulator-owned raw_state field '{key}' missing from tick {ev['tick_index']}: "
-                    f"raw_state keys = {list(raw_state.keys())}"
+            dynamic = raw_state.get("dynamic", {})
+            simulated = raw_state.get("simulated", {})
+            for key in _EXPECTED_RAW_STATE_DYNAMIC_KEYS:
+                assert key in dynamic, (
+                    f"Simulator-owned raw_state.dynamic field '{key}' missing from tick "
+                    f"{ev['tick_index']}: dynamic keys = {list(dynamic.keys())}"
+                )
+            for key in _EXPECTED_RAW_STATE_SIMULATED_KEYS:
+                assert key in simulated, (
+                    f"Simulator-owned raw_state.simulated field '{key}' missing from tick "
+                    f"{ev['tick_index']}: simulated keys = {list(simulated.keys())}"
                 )
 
     def test_feature_groups_ordinal_contains_expected_fields(self, client, tmp_path, monkeypatch):

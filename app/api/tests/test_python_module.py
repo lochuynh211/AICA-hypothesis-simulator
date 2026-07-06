@@ -76,20 +76,35 @@ def _make_pm_package(tmp_path, entrypoint: str = "algorithm.py") -> PackageManif
     )
 
 
-# Minimal valid context for python_module (includes T005 injected fields).
+# Minimal valid context for python_module — feature 009 tiered signal shape
+# (context["signals"] = {fixed, dynamic, simulated}; no raw_state).
 _VALID_PM_CTX = {
     "simulation_time_sec": 120.0,
-    "raw_state": {
-        "drowsinessLevel": 40.0,
-        "fatigueLevel": 30.0,
-        "attentionLevel": 70.0,
-        "speedKph": 80.0,
+    "signals": {
+        "fixed": {
+            "isNight": False,
+            "familiarRoute": True,
+            "childPassenger": False,
+            "weatherRiskLevel": 0.0,
+        },
+        "dynamic": {
+            "isTrafficJam": False,
+            "segmentType": "normal_road",
+            "motionState": "MOVING",
+            "nextRestSpotMin": 15.0,
+        },
+        "simulated": {
+            "drowsiness": 40.0,
+            "fatigue": 30.0,
+            "anomaly_rate": 0.0,
+        },
     },
     "feature_groups": {
         "normalized": {
             "drowsiness_score": 0.4,
             "fatigue_score": 0.3,
-        }
+        },
+        "ordinal": {},
     },
     "proposal_history": {
         "lastProposalTimeSec": None,
@@ -208,7 +223,8 @@ def test_happy_path_context_received(pkg_dir, monkeypatch):
 
     assert received is not None
     assert "simulation_time_sec" in received
-    assert "raw_state" in received
+    assert "signals" in received
+    assert "raw_state" not in received  # feature 009: raw_state is retired
     assert "hyperparameters" in received
     assert "proposal_history" in received
     assert "package_runtime_state" in received
@@ -486,8 +502,8 @@ def test_evaluate_returns_invalid_shape_dict_raises(tmp_path, monkeypatch):
     assert exc_info.value.error_type == "invalid_result_shape"
 
 
-def test_context_missing_raw_state_raises_context_error(tmp_path, monkeypatch):
-    """Context without raw_state → context_error (NOT silent 0)."""
+def test_context_missing_signals_raises_context_error(tmp_path, monkeypatch):
+    """Context without signals → context_error (NOT silent 0)."""
     # Entrypoint doesn't matter — validation runs before module load.
     (tmp_path / _PKG_ID).mkdir()
     (tmp_path / _PKG_ID / "algorithm.py").write_text("def evaluate(ctx): pass\n")
@@ -495,7 +511,7 @@ def test_context_missing_raw_state_raises_context_error(tmp_path, monkeypatch):
     monkeypatch.setenv("AICA_PACKAGES_DIR", str(tmp_path))
     pkg = _make_pm_package(tmp_path)
 
-    bad_ctx = {k: v for k, v in _VALID_PM_CTX.items() if k != "raw_state"}
+    bad_ctx = {k: v for k, v in _VALID_PM_CTX.items() if k != "signals"}
 
     with pytest.raises(AlgorithmAdapterError) as exc_info:
         evaluate(
@@ -509,19 +525,46 @@ def test_context_missing_raw_state_raises_context_error(tmp_path, monkeypatch):
     assert exc_info.value.error_type == "context_error"
 
 
-def test_context_missing_required_sensor_field_raises_context_error(tmp_path, monkeypatch):
-    """raw_state missing a required core field → context_error."""
+@pytest.mark.parametrize("tier", ["fixed", "dynamic"])
+def test_context_missing_signal_tier_raises_context_error(tmp_path, monkeypatch, tier):
+    """signals missing the 'fixed' or 'dynamic' tier → context_error."""
     (tmp_path / _PKG_ID).mkdir()
     (tmp_path / _PKG_ID / "algorithm.py").write_text("def evaluate(ctx): pass\n")
 
     monkeypatch.setenv("AICA_PACKAGES_DIR", str(tmp_path))
     pkg = _make_pm_package(tmp_path)
 
-    # Drop speedKph — one of the 4 required core sensor fields.
-    raw_without_speed = {
-        k: v for k, v in _VALID_PM_CTX["raw_state"].items() if k != "speedKph"
+    signals_without_tier = {k: v for k, v in _VALID_PM_CTX["signals"].items() if k != tier}
+    bad_ctx = {**_VALID_PM_CTX, "signals": signals_without_tier}
+
+    with pytest.raises(AlgorithmAdapterError) as exc_info:
+        evaluate(
+            package=pkg,
+            context=bad_ctx,
+            parameters={},
+            hyperparameters={"w_test": 0.5},
+            history=[],
+            package_runtime_state={},
+        )
+    assert exc_info.value.error_type == "context_error"
+
+
+def test_context_missing_required_simulated_field_raises_context_error(tmp_path, monkeypatch):
+    """signals.simulated missing a required Tier-3a field → context_error."""
+    (tmp_path / _PKG_ID).mkdir()
+    (tmp_path / _PKG_ID / "algorithm.py").write_text("def evaluate(ctx): pass\n")
+
+    monkeypatch.setenv("AICA_PACKAGES_DIR", str(tmp_path))
+    pkg = _make_pm_package(tmp_path)
+
+    # Drop anomaly_rate — one of the 3 required Tier-3a simulated fields.
+    simulated_without_anomaly = {
+        k: v for k, v in _VALID_PM_CTX["signals"]["simulated"].items() if k != "anomaly_rate"
     }
-    bad_ctx = {**_VALID_PM_CTX, "raw_state": raw_without_speed}
+    bad_ctx = {
+        **_VALID_PM_CTX,
+        "signals": {**_VALID_PM_CTX["signals"], "simulated": simulated_without_anomaly},
+    }
 
     with pytest.raises(AlgorithmAdapterError) as exc_info:
         evaluate(
@@ -557,50 +600,27 @@ def test_context_missing_simulation_time_sec_raises_context_error(tmp_path, monk
     assert exc_info.value.error_type == "context_error"
 
 
-def test_context_missing_feature_groups_normalized_raises_context_error(tmp_path, monkeypatch):
-    """Context with feature_groups but no .normalized → context_error."""
-    (tmp_path / _PKG_ID).mkdir()
-    (tmp_path / _PKG_ID / "algorithm.py").write_text("def evaluate(ctx): pass\n")
+def test_context_missing_feature_groups_itself_does_not_raise(pkg_dir, monkeypatch):
+    """Context without feature_groups at all → NOT an error (feature 009: optional).
 
-    monkeypatch.setenv("AICA_PACKAGES_DIR", str(tmp_path))
-    pkg = _make_pm_package(tmp_path)
+    Both shipped packages default missing/absent ordinal features to an empty
+    dict for display purposes only — feature_groups never drives a decision,
+    so its absence must not surface as a context_error.
+    """
+    monkeypatch.setenv("AICA_PACKAGES_DIR", str(pkg_dir))
+    pkg = _make_pm_package(pkg_dir)
 
-    bad_ctx = {**_VALID_PM_CTX, "feature_groups": {"ordinal": {}}}  # no 'normalized'
+    ctx = {k: v for k, v in _VALID_PM_CTX.items() if k != "feature_groups"}
 
-    with pytest.raises(AlgorithmAdapterError) as exc_info:
-        evaluate(
-            package=pkg,
-            context=bad_ctx,
-            parameters={},
-            hyperparameters={"w_test": 0.5},
-            history=[],
-            package_runtime_state={},
-        )
-    assert exc_info.value.error_type == "context_error"
-
-
-def test_context_missing_feature_groups_itself_raises_context_error(tmp_path, monkeypatch):
-    """Context without feature_groups at all → context_error with precise message."""
-    (tmp_path / _PKG_ID).mkdir()
-    (tmp_path / _PKG_ID / "algorithm.py").write_text("def evaluate(ctx): pass\n")
-
-    monkeypatch.setenv("AICA_PACKAGES_DIR", str(tmp_path))
-    pkg = _make_pm_package(tmp_path)
-
-    bad_ctx = {k: v for k, v in _VALID_PM_CTX.items() if k != "feature_groups"}
-
-    with pytest.raises(AlgorithmAdapterError) as exc_info:
-        evaluate(
-            package=pkg,
-            context=bad_ctx,
-            parameters={},
-            hyperparameters={"w_test": 0.5},
-            history=[],
-            package_runtime_state={},
-        )
-    err = exc_info.value
-    assert err.error_type == "context_error"
-    assert err.message == "missing required field: 'feature_groups'"
+    result = evaluate(
+        package=pkg,
+        context=ctx,
+        parameters={},
+        hyperparameters={"w_test": 0.5},
+        history=[],
+        package_runtime_state={},
+    )
+    assert isinstance(result, DecisionResult)
 
 
 def test_context_missing_proposal_history_raises_context_error(tmp_path, monkeypatch):
@@ -677,19 +697,22 @@ def test_broken_module_import_raises_algorithm_exception(tmp_path, monkeypatch):
 
 
 def test_optional_sensor_fields_absent_does_not_raise(pkg_dir, monkeypatch):
-    """Optional enhancement fields (trafficJamAheadMin, etc.) may be absent — no error."""
+    """Optional enhancement fields (isTrafficJam, etc.) may be absent — no error."""
     monkeypatch.setenv("AICA_PACKAGES_DIR", str(pkg_dir))
     pkg = _make_pm_package(pkg_dir)
 
-    # Context has only the 4 required core fields in raw_state; no optional fields.
+    # signals.simulated has only the 3 required Tier-3a fields; fixed/dynamic
+    # have no optional enhancement fields (isTrafficJam, nextRestSpotMin, etc.).
     ctx = {
         **_VALID_PM_CTX,
-        "raw_state": {
-            "drowsinessLevel": 40.0,
-            "fatigueLevel": 30.0,
-            "attentionLevel": 70.0,
-            "speedKph": 80.0,
-            # no trafficJamAheadMin, restSpotDensityNext30Min, etc.
+        "signals": {
+            "fixed": {},
+            "dynamic": {},
+            "simulated": {
+                "drowsiness": 40.0,
+                "fatigue": 30.0,
+                "anomaly_rate": 0.0,
+            },
         },
     }
 

@@ -169,18 +169,33 @@ describe('createRunPlan profile-override validation', () => {
     }
   })
 
-  it('rejects an out-of-range threshold override (threshold-in-range constraint)', async () => {
+  it('rejects a vehicle profile override (retired in feature 009)', async () => {
     try {
       await createRunPlan({
         packageId: PKG,
         scenarioId: SCN,
-        profiles: { vehicle: { lane_departure: { drowsiness_threshold: 150 } } },
+        profiles: { vehicle: { lane_departure: { drowsiness_threshold: 150 } } } as unknown as { driver?: Record<string, unknown> },
       })
       expect.fail('expected rejection')
     } catch (err) {
       expect(err).toBeInstanceOf(RunPlanError)
       const ve = (err as RunPlanError).validationErrors
-      expect(ve.some((e) => e.field === 'profiles.vehicle.lane_departure.drowsiness_threshold')).toBe(true)
+      expect(ve.some((e) => e.field === 'profiles.vehicle')).toBe(true)
+    }
+  })
+
+  it('rejects an out-of-range anomaly-signal-param override (feature 009)', async () => {
+    try {
+      await createRunPlan({
+        packageId: PKG,
+        scenarioId: SCN,
+        profiles: { anomaly: { lambda_base: -1 } },
+      })
+      expect.fail('expected rejection')
+    } catch (err) {
+      expect(err).toBeInstanceOf(RunPlanError)
+      const ve = (err as RunPlanError).validationErrors
+      expect(ve.some((e) => e.field === 'profiles.anomaly.lambda_base')).toBe(true)
     }
   })
 

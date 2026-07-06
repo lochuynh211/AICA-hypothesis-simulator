@@ -1,8 +1,19 @@
 """Backend-only end-to-end API run-loop test (T029 / US3).
 
-M2 extension: covers all four pairings (both packages × both scenarios) via the
-plan_id flow (POST /api/run-plans → POST /api/runs{plan_id} → tick → action →
-GET /log), with full log-structure and determinism assertions.
+Feature 009 (signal-tier redesign): repointed from the retired
+rest_rule_based_v0_1/rest_weighted_score_v0_1 (declarative_rule/weighted_score) ×
+uc01_fatigue_friend_drive_v0_1/uc01_overtime_driver_v0_1 pairings to the surviving
+world: aica_transparent_hybrid_trigger_v1 + nri_fatigue_score_v1 (both
+python_module) × uc01_fatigue_recovery_v0_1.  The overtime scenario and the
+weighted_score package no longer exist — tests that exclusively exercised them
+(overtime decline loop, weighted-score strength) are deleted.
+
+uc01_fatigue_recovery_v0_1 has recovery_options, so accept_rest now requires
+recovery_option_id + rest_spot and resolves to status="playing" (recovery
+active) instead of completing the run outright — see
+test_run_manager_recovery.py for the dedicated recovery-sequence coverage.
+Tests below that only need to *resolve* a paused run (not exercise recovery
+itself) use "decline" instead, which is unaffected.
 
 M3 extension (T014): adds the transparent hybrid package to all pairings; guards
 hybrid-specific assertions (full trace + evolving per-tick runtime state) to that
@@ -16,23 +27,21 @@ absent from the entire log.  Asserts route_source='maps', DisplayRoute persisted
 exactly one REST_PROPOSAL, and Places-derived rest_spot_positions non-empty.
 
 Coverage:
-  1. Full loop   — POST /api/runs → tick to REST_PROPOSAL → accept_rest → GET /log
+  1. Full loop   — POST /api/runs → tick to REST_PROPOSAL → decline → GET /log
   2. Determinism — two independent runs produce identical decision-trace sequences
-  3. Past-end    — ticking after completion is idempotent (completed: true)
-  4. Overtime decline e2e — decline → resume → complete, no further proposal
-  5. All-pairings e2e (M2+M3, T029/T014) — five pairings (rule_based + weighted_score
-     × friend_drive + overtime, plus hybrid × friend_drive) via plan_id flow; asserts
-     exactly one REST_PROPOSAL, full log structure, and per-tick M2 fields.
-     Hybrid pairing additionally asserts: full decision trace (scores/states/candidates/
-     fire_control/explanation) and evolving per-tick package_runtime_state (M3 headline).
-  6. All-pairings determinism (M2+M3, T029/T014) — two runs → identical decision-trace
-  7. Weighted-score overtime strength (M2, T029/FR-013) — fired candidate strength is
-     "gentle" or "clear", never "strong".
-  8. Decline with no pending proposal → 409 (M2, T029)
-  9. Hybrid HTTP full-flow + evolving state (M3, T014) — analyze → run-plans → runs →
+  3. Past-end    — ticking to full completion (declining every proposal) is
+     idempotent once completed=True
+  4. All-pairings e2e (both surviving python_module packages × the recovery
+     scenario) via plan_id flow; asserts exactly one REST_PROPOSAL, full log
+     structure, and per-tick M2 fields.  Hybrid pairing additionally asserts:
+     full decision trace (scores/states/candidates/fire_control/explanation)
+     and evolving per-tick package_runtime_state (M3 headline).
+  5. All-pairings determinism — two runs → identical decision-trace
+  6. Decline with no pending proposal → 409
+  7. Hybrid HTTP full-flow + evolving state (M3, T014) — analyze → run-plans → runs →
      tick-loop → actions → log; asserts SUPPRESSED tick visible, full trace, non-empty
      evolving package_runtime_state in every persisted TickEvent.
- 10. Hybrid HTTP determinism (M3, T014) — two independent hybrid runs → same trace.
+  8. Hybrid HTTP determinism (M3, T014) — two independent hybrid runs → same trace.
 
 Isolation: runs dir is redirected to tmp_path via AICA_RUNS_DIR monkeypatch;
 the in-memory run registry is cleared before and after every test (autouse).
@@ -54,41 +63,32 @@ _MAPS_FIXTURE_DIR = pathlib.Path(__file__).parent / "fixtures" / "maps"
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
-VALID_PACKAGE_ID = "rest_rule_based_v0_1"
-VALID_SCENARIO_ID = "uc01_fatigue_friend_drive_v0_1"
-OVERTIME_SCENARIO_ID = "uc01_overtime_driver_v0_1"
-WEIGHTED_PACKAGE_ID = "rest_weighted_score_v0_1"
+VALID_PACKAGE_ID = "aica_transparent_hybrid_trigger_v1"
+VALID_SCENARIO_ID = "uc01_fatigue_recovery_v0_1"
 
 # M3: transparent hybrid package constants
 HYBRID_PACKAGE_ID = "aica_transparent_hybrid_trigger_v1"
-HYBRID_SCENARIO_ID = "uc01_fatigue_friend_drive_v0_1"  # fires exactly one REST_PROPOSAL at tick 100
+HYBRID_SCENARIO_ID = "uc01_fatigue_recovery_v0_1"
 
-# Safety cap: the fixture scenario has 120 ticks total; 200 is generous.
-# The hybrid fires at tick 100 (tick_seconds=30, 240-tick budget) — 250 is safe.
+# Second surviving python_module package (nri_fatigue_score_v1)
+NRI_PACKAGE_ID = "nri_fatigue_score_v1"
+
+# Safety cap: observed firing ticks are 111 (hybrid, tick_seconds=30) and 45
+# (nri, tick_seconds=60) on uc01_fatigue_recovery_v0_1 — 250 is generous.
 _MAX_TICKS = 250
 
-# M2+M3 pairings that fire exactly one REST_PROPOSAL: (package_id, scenario_id, resolve_action)
+# Both surviving python_module packages fire exactly one REST_PROPOSAL on the
+# recovery scenario; resolved via "decline" (accept_rest now requires
+# recovery_option_id + rest_spot since the scenario has recovery_options — see
+# test_run_manager_recovery.py for dedicated recovery-sequence coverage).
 _FIRING_PAIRINGS = [
     pytest.param(
-        "rest_rule_based_v0_1", "uc01_fatigue_friend_drive_v0_1", "accept_rest",
-        id="rule-friend",
+        HYBRID_PACKAGE_ID, HYBRID_SCENARIO_ID, "decline",
+        id="hybrid-recovery",
     ),
     pytest.param(
-        "rest_rule_based_v0_1", "uc01_overtime_driver_v0_1", "decline",
-        id="rule-overtime",
-    ),
-    pytest.param(
-        "rest_weighted_score_v0_1", "uc01_overtime_driver_v0_1", "decline",
-        id="ws-overtime",
-    ),
-    pytest.param(
-        "rest_weighted_score_v0_1", "uc01_fatigue_friend_drive_v0_1", "accept_rest",
-        id="ws-friend",
-    ),
-    # M3: transparent hybrid fires at tick 100 on friend-drive; accept_rest ∈ allowed_actions
-    pytest.param(
-        HYBRID_PACKAGE_ID, HYBRID_SCENARIO_ID, "accept_rest",
-        id="hybrid-friend",
+        NRI_PACKAGE_ID, VALID_SCENARIO_ID, "decline",
+        id="nri-recovery",
     ),
 ]
 
@@ -183,7 +183,13 @@ def _extract_trace(tick_bodies: list[dict]) -> list[dict]:
 
 
 def test_full_loop(client):
-    """Full M1 loop: create → tick to REST_PROPOSAL → accept_rest → verify log."""
+    """Full loop: create → tick to REST_PROPOSAL → decline → verify log.
+
+    Feature 009: uses "decline" (not "accept_rest") to resolve the proposal —
+    uc01_fatigue_recovery_v0_1 has recovery_options, so accept_rest now requires
+    recovery_option_id + rest_spot and starts a multi-tick recovery sequence
+    instead of completing the run outright (see test_run_manager_recovery.py).
+    """
 
     # ── 1a. Create run ────────────────────────────────────────────────────────
     run_id = _create_run(client)
@@ -210,25 +216,26 @@ def test_full_loop(client):
         f"Expected exactly one paused tick, got {len(paused_ticks)}"
     )
 
-    # All ticks before the proposal must be NO_TRIGGER or SOFT_WARNING (SC-002).
+    # All ticks before the proposal must be NO_PROPOSAL or SUPPRESSED (hybrid's
+    # non-firing result types — regenerated from actual behavior, FR-018).
     pre_proposal_bodies = all_bodies[:-1]
     for i, body in enumerate(pre_proposal_bodies):
         pre_decision = body.get("decision")
         if pre_decision is None:
             continue  # algorithm_error tick — allowed, not a proposal
-        assert pre_decision["result_type"] in ("NO_TRIGGER", "SOFT_WARNING"), (
-            f"Tick {i} before proposal should be NO_TRIGGER or SOFT_WARNING, "
+        assert pre_decision["result_type"] in ("NO_PROPOSAL", "SUPPRESSED"), (
+            f"Tick {i} before proposal should be NO_PROPOSAL or SUPPRESSED, "
             f"got {pre_decision['result_type']!r}"
         )
 
-    # ── 1c. Accept the rest proposal ─────────────────────────────────────────
+    # ── 1c. Decline the rest proposal ─────────────────────────────────────────
     action_resp = client.post(
         f"/api/runs/{run_id}/actions",
-        json={"action": "accept_rest"},
+        json={"action": "decline"},
     )
     assert action_resp.status_code == 200
     updated_state = action_resp.json()
-    assert updated_state["status"] == "completed"
+    assert updated_state["status"] == "playing"
     assert updated_state["pending_proposal"] is None
 
     # ── 1d. GET /log — must contain tick trace AND action event (SC-004) ──────
@@ -250,8 +257,8 @@ def test_full_loop(client):
 
     # Exactly one action event with the expected fields.
     assert len(action_events) == 1, "Log must contain exactly one action event"
-    assert action_events[0]["action"] == "accept_rest"
-    assert action_events[0]["resulting_status"] == "completed"
+    assert action_events[0]["action"] == "decline"
+    assert action_events[0]["resulting_status"] == "playing"
 
 
 # ── Test 2: Determinism (SC-003) ──────────────────────────────────────────────
@@ -294,18 +301,29 @@ def test_determinism(tmp_path, monkeypatch):
 
 
 def test_tick_past_end_is_idempotent(client):
-    """After accept_rest (status=completed), further ticks return completed=True idempotently."""
+    """After the run reaches completed=True, further ticks return completed=True
+    idempotently.
+
+    Feature 009: declines every proposal to reach completion (uc01_fatigue_recovery_v0_1
+    has recovery_options, so accept_rest no longer completes the run outright — see
+    test_run_manager_recovery.py for the dedicated recovery-sequence coverage).
+    """
 
     run_id = _create_run(client)
 
-    # Advance to proposal and resolve it.
-    _tick_until_paused(client, run_id)
-    action_resp = client.post(
-        f"/api/runs/{run_id}/actions",
-        json={"action": "accept_rest"},
-    )
-    assert action_resp.status_code == 200
-    assert action_resp.json()["status"] == "completed"
+    # Tick to full completion, declining every REST_PROPOSAL along the way.
+    completed = False
+    for _ in range(_MAX_TICKS):
+        resp = client.post(f"/api/runs/{run_id}/tick")
+        assert resp.status_code == 200
+        body = resp.json()
+        if body.get("paused"):
+            decline_resp = client.post(f"/api/runs/{run_id}/actions", json={"action": "decline"})
+            assert decline_resp.status_code == 200
+        if body.get("completed"):
+            completed = True
+            break
+    assert completed, f"Run did not complete within {_MAX_TICKS} ticks"
 
     # First tick after completion must return completed=True.
     resp1 = client.post(f"/api/runs/{run_id}/tick")
@@ -329,105 +347,12 @@ def test_tick_past_end_is_idempotent(client):
     )
 
 
-# ── Helpers for overtime tests ────────────────────────────────────────────────
-
-
-def _create_overtime_run(client: TestClient) -> str:
-    """Create a run with the overtime scenario + rule package."""
-    plan_resp = client.post(
-        "/api/run-plans",
-        json={
-            "package_id": VALID_PACKAGE_ID,
-            "scenario_id": OVERTIME_SCENARIO_ID,
-            "parameters": {},
-            "hyperparameters": {},
-            "run_mode": "standard",
-        },
-    )
-    assert plan_resp.status_code == 201, f"Plan creation failed: {plan_resp.json()}"
-    plan_id = plan_resp.json()["plan_id"]
-
-    resp = client.post("/api/runs", json={"plan_id": plan_id})
-    assert resp.status_code == 201, f"Run creation failed: {resp.json()}"
-    return resp.json()["run_id"]
-
-
-def _tick_to_completion(client: TestClient, run_id: str, max_ticks: int = 200) -> list[dict]:
-    """Tick until completed. Returns all tick response bodies."""
-    bodies = []
-    for _ in range(max_ticks):
-        resp = client.post(f"/api/runs/{run_id}/tick")
-        assert resp.status_code == 200
-        body = resp.json()
-        bodies.append(body)
-        if body.get("completed"):
-            return bodies
-    pytest.fail(f"Run {run_id!r} did not complete within {max_ticks} ticks.")
-
-
-# ── Test T028: overtime decline e2e ──────────────────────────────────────────
-
-
-def test_overtime_decline_loop(client):
-    """T028: overtime scenario — tick to proposal → decline → tick to end → completed.
-
-    Verifies:
-    - Exactly one REST_PROPOSAL in the run
-    - Decline is recorded in the log with resulting_status='playing'
-    - Run completes at route end (status=completed)
-    - No further REST_PROPOSAL after decline
-    """
-    run_id = _create_overtime_run(client)
-
-    # Tick until first proposal
-    all_pre, paused_body = _tick_until_paused(client, run_id)
-
-    decision = paused_body["decision"]
-    assert decision is not None
-    assert decision["result_type"] == "REST_PROPOSAL"
-
-    # Decline the proposal
-    decline_resp = client.post(
-        f"/api/runs/{run_id}/actions",
-        json={"action": "decline"},
-    )
-    assert decline_resp.status_code == 200
-    resumed_state = decline_resp.json()
-    assert resumed_state["status"] == "playing"
-    assert resumed_state["pending_proposal"] is None
-
-    # Tick to completion — no further pause expected
-    post_decline_bodies = _tick_to_completion(client, run_id)
-
-    # Must not pause again (no second proposal)
-    second_pauses = [b for b in post_decline_bodies if b.get("paused") is True]
-    assert len(second_pauses) == 0, (
-        f"Run paused again after decline — no further proposal expected; "
-        f"got {len(second_pauses)} pause(s)"
-    )
-
-    # Final state must be completed
-    assert post_decline_bodies[-1].get("completed") is True
-
-    # Verify log: exactly one REST_PROPOSAL, one decline action event
-    log_resp = client.get(f"/api/runs/{run_id}/log")
-    assert log_resp.status_code == 200
-    log = log_resp.json()
-
-    tick_events = [e for e in log["events"] if e.get("kind") == "tick"]
-    action_events = [e for e in log["events"] if e.get("kind") == "action"]
-
-    rest_proposals = [
-        e for e in tick_events
-        if e.get("trace", {}).get("decision_result", {}).get("result_type") == "REST_PROPOSAL"
-    ]
-    assert len(rest_proposals) == 1, (
-        f"Expected exactly 1 REST_PROPOSAL in log, got {len(rest_proposals)}"
-    )
-
-    assert len(action_events) == 1
-    assert action_events[0]["action"] == "decline"
-    assert action_events[0]["resulting_status"] == "playing"
+# Feature 009: the overtime-scenario decline e2e test (T028) exclusively
+# exercised the retired uc01_overtime_driver_v0_1 scenario — deleted rather
+# than repointed.  test_decline_repeatedly_reaches_completion in
+# test_run_manager.py and test_full_loop above cover the equivalent behavior
+# (decline resumes the run; the run keeps making progress toward completion)
+# on the surviving recovery scenario.
 
 
 # ── Helpers ── plan_id flow for arbitrary package/scenario ────────────────────
@@ -666,38 +591,10 @@ def test_all_pairings_determinism(tmp_path, monkeypatch, package_id, scenario_id
         )
 
 
-# ── T029 / FR-013: weighted-score overtime proposal strength ───────────────────
-
-
-def test_weighted_score_overtime_proposal_strength(client):
-    """FR-013: the firing REST_PROPOSAL for weighted-score + overtime must have
-    candidate strength 'gentle' or 'clear', never 'strong' (which maps to
-    SEVERE_INTERVENTION, not REST_PROPOSAL).
-    """
-    run_id = _create_run_for_pairing(
-        client, WEIGHTED_PACKAGE_ID, OVERTIME_SCENARIO_ID
-    )
-    all_bodies, paused_body = _tick_until_paused(client, run_id)
-
-    decision = paused_body["decision"]
-    assert decision["result_type"] == "REST_PROPOSAL", (
-        f"Expected REST_PROPOSAL for ws×overtime, got {decision['result_type']!r}"
-    )
-
-    # Find the fired candidate (fire_control.fired == True)
-    candidates = decision.get("candidates", [])
-    fired = [c for c in candidates if c.get("fire_control", {}).get("fired") is True]
-    assert len(fired) >= 1, (
-        "Expected at least one fired candidate in the REST_PROPOSAL decision"
-    )
-
-    for candidate in fired:
-        strength = candidate.get("strength")
-        assert strength in ("gentle", "clear"), (
-            f"FR-013 micro-rest requirement: fired candidate strength must be "
-            f"'gentle' or 'clear', got {strength!r}; "
-            f"'strong' maps to SEVERE_INTERVENTION, not REST_PROPOSAL"
-        )
+# Feature 009: the weighted-score overtime proposal-strength test (FR-013)
+# exclusively exercised the retired rest_weighted_score_v0_1 package and
+# uc01_overtime_driver_v0_1 scenario — deleted rather than repointed (neither
+# survives; there is nothing to repoint to that preserves the test's intent).
 
 
 # ── T029: decline with no pending proposal → 409 ──────────────────────────────
@@ -706,16 +603,15 @@ def test_weighted_score_overtime_proposal_strength(client):
 def test_decline_with_no_pending_proposal_is_409(client):
     """Decline when there is no pending proposal must return 409.
 
-    Uses the overtime scenario (where 'decline' IS in allowed_actions) but does
-    not advance to a proposal, ensuring the 409 is for 'no pending proposal' and
-    not for the disallowed-action case (which returns 400).
+    Uses uc01_fatigue_recovery_v0_1 (where 'decline' IS in allowed_actions) but
+    does not advance to a proposal, ensuring the 409 is for 'no pending
+    proposal' and not for the disallowed-action case (which returns 400).
     """
-    # Create an overtime run — 'decline' is in allowed_actions for this scenario
     plan_resp = client.post(
         "/api/run-plans",
         json={
             "package_id": VALID_PACKAGE_ID,
-            "scenario_id": OVERTIME_SCENARIO_ID,
+            "scenario_id": VALID_SCENARIO_ID,
             "parameters": {},
             "hyperparameters": {},
             "run_mode": "standard",
@@ -746,19 +642,27 @@ def test_hybrid_http_full_flow_evolving_state(client):
     """T014 (M3): transparent hybrid through the REAL HTTP plan flow with route analysis.
 
     Full flow: POST /api/routes/analyze → POST /api/run-plans → POST /api/runs →
-               POST /api/runs/{id}/tick (×~100) → POST /api/runs/{id}/actions →
+               POST /api/runs/{id}/tick (×~111) → POST /api/runs/{id}/actions →
                GET /api/runs/{id}/log.
 
     This is the M3 end-to-end headline test. It asserts:
-    - Exactly one REST_PROPOSAL at the paused tick (tick 100 for the hybrid on
-      uc01_fatigue_friend_drive_v0_1 with tick_seconds=30)
+    - Exactly one REST_PROPOSAL at the paused tick (tick 111 for the hybrid on
+      uc01_fatigue_recovery_v0_1 with tick_seconds=30 — regenerated from actual
+      behavior, FR-018)
     - Full decision trace present: scores, states, candidates (incl. the
-      persistence-gated SUPPRESSED candidate at tick 99), fire_control, explanation
-    - accept_rest resolves the proposal (status → completed)
+      persistence-gated SUPPRESSED candidates leading up to the fire), fire_control,
+      explanation
+    - accept_rest (with recovery_option_id + rest_spot) resolves the proposal
+      (status → playing, recovery active) — uc01_fatigue_recovery_v0_1 has
+      recovery_options, so accept_rest starts a recovery sequence instead of
+      completing the run outright (see test_run_manager_recovery.py)
     - The persisted per-tick package_runtime_state is non-empty for EVERY TickEvent
       AND changes across ticks (smoothed_scores and persistence_counters evolve) —
       the M3 headline: state is genuinely threaded forward in the evidence, not reset.
-    - SUPPRESSED tick visible in the log (persistence gate: counter 0→1 at tick 99)
+    - Exactly one REST_PROPOSAL, with no premature fire before it (with a child
+      aboard the child rest-bonus makes uc01 fire at the rest-bonus gate crossing
+      via the velocity skip-if bypass; the persistence gate is exercised directly
+      in test_transparent_hybrid.py).
     """
     # 1. Analyze route (warms route facts; included to cover the full HTTP surface)
     analyze_resp = client.post(
@@ -841,17 +745,25 @@ def test_hybrid_http_full_flow_evolving_state(client):
     )
     assert decision.get("explanation"), "hybrid decision must carry explanation lines"
 
-    # 5. Accept the rest proposal (accept_rest ∈ proposal.options ∩ allowed_actions)
+    # 5. Accept the rest proposal (accept_rest ∈ proposal.options ∩ allowed_actions).
+    # uc01_fatigue_recovery_v0_1 has recovery_options — accept_rest requires
+    # recovery_option_id + rest_spot and starts a recovery sequence (status →
+    # playing) rather than completing the run outright.
     action_resp = client.post(
         f"/api/runs/{run_id}/actions",
-        json={"action": "accept_rest"},
+        json={
+            "action": "accept_rest",
+            "recovery_option_id": "nap_karaoke",
+            "rest_spot": {"id": "p1", "label": {"ja": "SA", "en": "SA"}, "route_fraction": 0.5},
+        },
     )
     assert action_resp.status_code == 200, f"accept_rest failed: {action_resp.json()}"
     post_action = action_resp.json()
-    assert post_action["status"] == "completed", (
-        f"Expected completed after accept_rest, got {post_action['status']!r}"
+    assert post_action["status"] == "playing", (
+        f"Expected playing (recovery started) after accept_rest, got {post_action['status']!r}"
     )
     assert post_action["pending_proposal"] is None
+    assert post_action["recovery"] is not None and post_action["recovery"]["active"] is True
 
     # 6. GET /api/runs/{run_id}/log — verify full persisted evidence
     final_log = client.get(f"/api/runs/{run_id}/log").json()
@@ -868,21 +780,33 @@ def test_hybrid_http_full_flow_evolving_state(client):
         f"Expected exactly 1 REST_PROPOSAL in persisted log, got {len(rest_proposals_in_log)}"
     )
 
-    # SUPPRESSED tick visible — the persistence gate is observable end-to-end:
-    # tick 99 records SUPPRESSED (counter→1), tick 100 fires REST_PROPOSAL (counter→2).
-    suppressed_in_log = [
-        e for e in tick_events
-        if e.get("trace", {}).get("decision_result", {}).get("result_type") == "SUPPRESSED"
-    ]
-    assert len(suppressed_in_log) >= 1, (
-        "At least one SUPPRESSED tick must appear in the log "
-        "(persistence gate: score crosses threshold at tick 99 → SUPPRESSED, fires at tick 100)"
+    # No premature proposal — every tick before the single fire is a non-firing
+    # result. uc01 sets child_passenger=true, so the child rest-bonus lifts the
+    # score at the rest-bonus gate crossing above threshold_suggest; that gate
+    # step's velocity trips the skip-if bypass, so the proposal fires on the first
+    # over-suggest tick (reason threshold_passed_persisted / velocity skip-if)
+    # rather than after a run of persistence-gated SUPPRESSED ticks. The
+    # persistence gate itself is exercised directly in test_transparent_hybrid.py.
+    proposal_index = next(
+        i for i, e in enumerate(tick_events)
+        if e.get("trace", {}).get("decision_result", {}).get("result_type") == "REST_PROPOSAL"
+    )
+    pre_fire_types = {
+        e.get("trace", {}).get("decision_result", {}).get("result_type")
+        for e in tick_events[:proposal_index]
+    }
+    assert pre_fire_types <= {"NO_PROPOSAL", "SUPPRESSED"}, (
+        f"No premature REST_PROPOSAL before the single fire; pre-fire types were {pre_fire_types}"
+    )
+    fired_reason = tick_events[proposal_index]["trace"]["decision_result"]["fire_control"]["reason"]
+    assert fired_reason in {"threshold_passed_persisted", "emergency_override"}, (
+        f"REST_PROPOSAL fired for an unexpected reason: {fired_reason!r}"
     )
 
-    # Exactly one action event (the accept_rest)
+    # Exactly one action event (the accept_rest starting recovery)
     assert len(action_events) == 1, f"Expected 1 action event, got {len(action_events)}"
     assert action_events[0]["action"] == "accept_rest"
-    assert action_events[0]["resulting_status"] == "completed"
+    assert action_events[0]["resulting_status"] == "playing"
 
     # 7. M3 headline: per-tick package_runtime_state is non-empty AND evolves
     runtime_states = [e.get("package_runtime_state", {}) for e in tick_events]
@@ -1039,20 +963,22 @@ def test_maps_e2e_full_flow(tmp_path, monkeypatch):
     assert chosen["display"]["encoded_polyline"], "Display route must carry the encoded polyline"
 
     # ── Step 2: POST /api/run-plans ──────────────────────────────────────────
+    # Feature 009: python_module packages have no "require_actionable"
+    # hyperparameter (that was a declarative_rule-only actionability-guard
+    # concept, retired along with the built-in algorithm types) — the hybrid
+    # trigger fires from its own persisted score thresholds regardless of
+    # rest-spot position.
     plan_resp = client.post(
         "/api/run-plans",
         json={
-            "package_id": VALID_PACKAGE_ID,         # rest_rule_based_v0_1
-            "scenario_id": VALID_SCENARIO_ID,        # uc01_fatigue_friend_drive_v0_1
+            "package_id": VALID_PACKAGE_ID,
+            "scenario_id": VALID_SCENARIO_ID,
             "route_id": chosen["route_id"],
             "route_source": "maps",
             "route_facts": chosen["route_facts"],
             "display_route": chosen["display"],
             "parameters": {},
-            # require_actionable=False: REST_PROPOSAL fires regardless of rest_spot_eta
-            # (the polyline puts rest_spots at 0 km so the actionability gate would
-            # otherwise suppress the proposal after tick 0)
-            "hyperparameters": {"require_actionable": False},
+            "hyperparameters": {},
         },
     )
     assert plan_resp.status_code == 201, f"Plan creation failed: {plan_resp.json()}"
@@ -1072,30 +998,37 @@ def test_maps_e2e_full_flow(tmp_path, monkeypatch):
     assert dr_init is not None, "Initial log must carry display_route for maps run"
     assert dr_init["encoded_polyline"], "Initial log display_route.encoded_polyline must be set"
 
-    # ── Step 4: Tick loop to REST_PROPOSAL ──────────────────────────────────
+    # ── Step 4: Tick loop to a fired proposal ────────────────────────────────
+    # The hybrid trigger may fire REST_PROPOSAL or MONOTONY_PROPOSAL first,
+    # depending on the maps-derived route's segment mix — both are actionable
+    # (their options always include "decline"), so this Maps-plumbing test
+    # (key-safety, route_source, DisplayRoute persistence) doesn't need to pin
+    # which one fires.
     all_bodies, paused_body = _tick_until_paused(client, run_id)
 
     decision = paused_body["decision"]
     assert decision is not None
-    assert decision["result_type"] == "REST_PROPOSAL", (
-        f"Expected REST_PROPOSAL at paused tick, got {decision['result_type']!r}"
+    assert decision["result_type"] in ("REST_PROPOSAL", "MONOTONY_PROPOSAL"), (
+        f"Expected a fired proposal at paused tick, got {decision['result_type']!r}"
     )
     assert decision["proposal"] is not None
 
     # Exactly one paused tick across the entire run
     paused_ticks = [b for b in all_bodies if b.get("paused")]
     assert len(paused_ticks) == 1, (
-        f"Expected exactly one paused tick (one REST_PROPOSAL), "
+        f"Expected exactly one paused tick (one fired proposal), "
         f"got {len(paused_ticks)}"
     )
 
-    # ── Step 5: POST /api/runs/{id}/actions accept_rest ──────────────────────
+    # ── Step 5: POST /api/runs/{id}/actions decline ──────────────────────────
+    # "decline" resolves either proposal type without touching the
+    # recovery-options machinery (dedicated coverage: test_run_manager_recovery.py).
     action_resp = client.post(
         f"/api/runs/{run_id}/actions",
-        json={"action": "accept_rest"},
+        json={"action": "decline"},
     )
-    assert action_resp.status_code == 200, f"accept_rest failed: {action_resp.json()}"
-    assert action_resp.json()["status"] == "completed"
+    assert action_resp.status_code == 200, f"decline failed: {action_resp.json()}"
+    assert action_resp.json()["status"] == "playing"
     assert _SENTINEL_KEY not in action_resp.text, "Sentinel key in actions response"
 
     # ── Step 6: GET /api/runs/{id}/log — full evidence assertions ────────────
@@ -1134,21 +1067,22 @@ def test_maps_e2e_full_flow(tmp_path, monkeypatch):
         "(Places fixture provided 2 results)"
     )
 
-    # Exactly one REST_PROPOSAL in the tick events
+    # Exactly one fired proposal (REST_PROPOSAL or MONOTONY_PROPOSAL) in the tick events
     tick_events = [e for e in final_log["events"] if e.get("kind") == "tick"]
-    rest_proposals = [
+    fired_proposals = [
         e for e in tick_events
-        if e.get("trace", {}).get("decision_result", {}).get("result_type") == "REST_PROPOSAL"
+        if e.get("trace", {}).get("decision_result", {}).get("result_type")
+        in ("REST_PROPOSAL", "MONOTONY_PROPOSAL")
     ]
-    assert len(rest_proposals) == 1, (
-        f"Expected exactly 1 REST_PROPOSAL in persisted log, got {len(rest_proposals)}"
+    assert len(fired_proposals) == 1, (
+        f"Expected exactly 1 fired proposal in persisted log, got {len(fired_proposals)}"
     )
 
-    # Exactly one action event (accept_rest → completed)
+    # Exactly one action event (decline → playing)
     action_events = [e for e in final_log["events"] if e.get("kind") == "action"]
     assert len(action_events) == 1, f"Expected 1 action event, got {len(action_events)}"
-    assert action_events[0]["action"] == "accept_rest"
-    assert action_events[0]["resulting_status"] == "completed"
+    assert action_events[0]["action"] == "decline"
+    assert action_events[0]["resulting_status"] == "playing"
 
 
 # ── T013 (M5): feedback→evidence loop e2e ─────────────────────────────────────
@@ -1248,12 +1182,19 @@ def test_m5_feedback_evidence_e2e(client):
     assert proposal_fb_event["target"]["scope"] == "proposal"
 
     # ── 4. Accept the rest proposal ───────────────────────────────────────────
+    # uc01_fatigue_recovery_v0_1 has recovery_options — accept_rest requires
+    # recovery_option_id + rest_spot and starts a recovery sequence (status →
+    # playing) rather than completing the run outright.
     action_resp = client.post(
         f"/api/runs/{run_id}/actions",
-        json={"action": "accept_rest"},
+        json={
+            "action": "accept_rest",
+            "recovery_option_id": "nap_karaoke",
+            "rest_spot": {"id": "p1", "label": {"ja": "SA", "en": "SA"}, "route_fraction": 0.5},
+        },
     )
     assert action_resp.status_code == 200
-    assert action_resp.json()["status"] == "completed"
+    assert action_resp.json()["status"] == "playing"
 
     # ── 5. POST feedback at end-of-run ────────────────────────────────────────
     run_fb_resp = client.post(

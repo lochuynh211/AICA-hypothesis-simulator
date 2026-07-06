@@ -366,7 +366,9 @@ function fnv1aHash(payload: string): string {
  * `scenario.driver_profile is not None` — checked for null/undefined only,
  * NOT emptiness, exactly like Python's `is not None`). */
 function isM2Scenario(scenario: ScenarioDefM2): boolean {
-  return scenario.driver_profile !== null && scenario.driver_profile !== undefined
+  // Feature 009: M2 is now keyed on driver_signal_params (driver_profile retired).
+  const dsp = (scenario as Record<string, unknown>)['driver_signal_params']
+  return dsp !== null && dsp !== undefined
 }
 
 type ProposalHistory = {
@@ -572,8 +574,10 @@ export async function createRun(planId: string, runId: string): Promise<RunState
   const draftRouteSource = draft.route_source ?? 'local'
   const draftDisplayRoute = draft.display_route ?? null
 
-  const driverProfile = (scenario.driver_profile as Record<string, unknown> | null | undefined) ?? null
-  const vehicleProfile = (scenario.vehicle_profile as Record<string, unknown> | null | undefined) ?? null
+  // Feature 009: driver_profile RunLog field now carries driver_signal_params
+  // (schema field name kept for log back-compat); vehicle_profile is retired.
+  const driverProfile = ((scenario as Record<string, unknown>)['driver_signal_params'] as Record<string, unknown> | null | undefined) ?? null
+  const vehicleProfile = null
   const speedProfile = (scenario.speed_profile as Record<string, unknown> | null | undefined) ?? null
 
   const runState: RunStateM2 = {
@@ -702,6 +706,9 @@ export async function tick(runId: string): Promise<TickOutcome> {
       routeFacts: runState.route_facts as RouteFacts,
       scenario,
       recovery: runState.recovery ?? null,
+      // Feature 009: seed the anomaly generator. The effective scenario carries
+      // run_seed_default (baked by createDraft from any explicit setup seed).
+      runSeed: ((scenario as Record<string, unknown>)['run_seed_default'] as number | undefined) ?? 42,
     })
     // Thread _recovery_next back: advanceTick stashes the updated
     // RecoveryStateT on the returned TickState when recovery is active.
@@ -754,10 +761,17 @@ export async function tick(runId: string): Promise<TickOutcome> {
   context['recovery_active'] = Boolean(runState.recovery && runState.recovery.active)
 
   // Use current_parameters/hyperparameters (may be overridden in expert mode).
-  const hyperparameters = runState.current_hyperparameters
-    ?? Object.fromEntries(pkg.hyperparameters.map((hp) => [hp.key, hp.default]))
-  const parameters = runState.current_parameters
-    ?? Object.fromEntries(pkg.parameters.map((p) => [p.key, p.default]))
+  // Feature 009 (FR-009 / resolve_manifest_defaults): merge overrides onto the
+  // FULL manifest-default set per key, so every declared key is always present
+  // (the old `?? {defaults}` swapped the whole dict and could drop keys).
+  const hyperparameters = {
+    ...Object.fromEntries(pkg.hyperparameters.map((hp) => [hp.key, hp.default])),
+    ...(runState.current_hyperparameters ?? {}),
+  }
+  const parameters = {
+    ...Object.fromEntries(pkg.parameters.map((p) => [p.key, p.default])),
+    ...(runState.current_parameters ?? {}),
+  }
 
   let decisionResult: DecisionResult
   try {
@@ -841,10 +855,13 @@ export async function tick(runId: string): Promise<TickOutcome> {
   runState.package_runtime_state = decisionResult.next_package_runtime_state
 
   // ── Extract M2 tick evidence fields from tick_state ────────────────────
-  const rawState = tickState.raw_state ?? {}
+  // Feature 009: the evidence field name `raw_state` is kept for log
+  // back-compat, but it now carries the tiered `signals` dict. The vehicle
+  // model is retired, so vehicle_update is always {}.
+  const rawState = tickState.signals ?? {}
   const featureGroups = tickState.feature_groups
   const driverUpdate = tickState._driver_update ?? {}
-  const vehicleUpdate = tickState._vehicle_update ?? {}
+  const vehicleUpdate = {}
 
   // ── Append TickEvent with M2 fields ────────────────────────────────────
   const tickEvent: TickEventM2 = {

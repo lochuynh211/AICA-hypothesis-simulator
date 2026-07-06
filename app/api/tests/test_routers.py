@@ -41,8 +41,9 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
-VALID_PACKAGE_ID = "rest_rule_based_v0_1"
-VALID_SCENARIO_ID = "uc01_fatigue_friend_drive_v0_1"
+# Feature 009: rest_rule_based_v0_1 / uc01_fatigue_friend_drive_v0_1 are retired.
+VALID_PACKAGE_ID = "aica_transparent_hybrid_trigger_v1"
+VALID_SCENARIO_ID = "uc01_fatigue_recovery_v0_1"
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -500,8 +501,8 @@ def test_create_run_plan_incompatible_scenario_400(tmp_path, monkeypatch):
     runs_dir.mkdir()
 
     # Copy the standard valid scenario so the registry can load it
-    src = _REPO_ROOT / "scenarios" / "uc01_fatigue_friend_drive_v0_1.json"
-    shutil.copy(src, scenarios_dir / "uc01_fatigue_friend_drive_v0_1.json")
+    src = _REPO_ROOT / "scenarios" / "uc01_fatigue_recovery_v0_1.json"
+    shutil.copy(src, scenarios_dir / "uc01_fatigue_recovery_v0_1.json")
 
     # Write a minimal but valid ScenarioDef with an incompatible type
     incompat = {

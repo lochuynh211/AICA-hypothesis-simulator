@@ -28,8 +28,8 @@ from aica_api.services.run_plan import clear_draft_registry
 
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
 
-VALID_PACKAGE_ID = "rest_rule_based_v0_1"
-VALID_SCENARIO_ID = "uc01_fatigue_friend_drive_v0_1"
+VALID_PACKAGE_ID = "aica_transparent_hybrid_trigger_v1"
+VALID_SCENARIO_ID = "uc01_fatigue_recovery_v0_1"
 
 
 # ── Fixtures ───────────────────────────────────────────────────────────────────

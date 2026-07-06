@@ -112,16 +112,24 @@ def test_severe_intervention_still_pauses_during_recovery():
 
 
 def test_recovery_runs_to_resume_and_completes():
-    """Full recovery sequence: phases appear in raw_state and the run completes."""
+    """Full recovery sequence: phases appear in signals.dynamic and the run completes.
+
+    Feature 009: raw_state is replaced by signals={fixed,dynamic,simulated} —
+    recoveryPhase now lives under signals["dynamic"].  create_paused_rest_run()
+    pauses at tick 71 (nri_fatigue_score_v1, total_km=150); the remaining ~78km
+    of route plus the nap+content recovery stages complete in ~82 more ticks
+    (regenerated from actual behavior, FR-018 — was 40 under the retired
+    rest_rule_based_v0_1 package).
+    """
     run_id = create_paused_rest_run()
     spot = RestSpot(id="p1", label={"ja": "SA", "en": "SA"}, route_fraction=0.5)
     rm.action(run_id, "accept_rest", recovery_option_id="nap_karaoke", rest_spot=spot)
     phases = []
-    for _ in range(40):
+    for _ in range(120):
         out = rm.tick(run_id)
         ts = out.tick_state
-        if ts is not None and ts.raw_state.get("recoveryPhase"):
-            phases.append(ts.raw_state["recoveryPhase"])
+        if ts is not None and ts.signals.get("dynamic", {}).get("recoveryPhase"):
+            phases.append(ts.signals["dynamic"]["recoveryPhase"])
         if out.completed:
             break
     assert "nap" in phases and "content" in phases     # staged recovery happened

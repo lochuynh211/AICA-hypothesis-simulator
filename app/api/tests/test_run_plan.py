@@ -24,8 +24,9 @@ from aica_api.services.run_plan import (
 )
 
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
-_SCENARIO_PATH = _REPO_ROOT / "scenarios" / "uc01_fatigue_friend_drive_v0_1.json"
-_PACKAGE_PATH = _REPO_ROOT / "packages" / "rest_rule_based_v0_1" / "package.json"
+# Feature 009: uc01_fatigue_friend_drive_v0_1 / rest_rule_based_v0_1 are retired.
+_SCENARIO_PATH = _REPO_ROOT / "scenarios" / "uc01_fatigue_recovery_v0_1.json"
+_PACKAGE_PATH = _REPO_ROOT / "packages" / "aica_transparent_hybrid_trigger_v1" / "package.json"
 
 
 # ---------------------------------------------------------------------------
@@ -396,11 +397,14 @@ def test_synthetic_band_parameter_out_of_range_rejected(uc01_scenario):
         default="standard",
     )
     synth_package = PackageManifest(
-        id="rest_rule_based_v0_1",  # must match compatible_scenario_types lookup
+        id="synthetic_test_package_v1",
         version="0.0.1-test",
         label={"en": "Synthetic test package"},
         compatible_scenario_types=[uc01_scenario.type],
-        algorithm=AlgorithmDef(type="declarative_rule", entrypoint="rules"),
+        # Feature 009: declarative_rule is retired — python_module is the only
+        # supported algorithm type.  create_draft's parameter validation runs
+        # before any algorithm dispatch, so the entrypoint is never invoked here.
+        algorithm=AlgorithmDef(type="python_module", entrypoint="algorithm.py"),
         parameters=[synth_param],
         features=[
             FeatureDef(key="drowsiness_level", band_values=["none", "mild", "moderate", "strong"]),
@@ -476,7 +480,9 @@ def test_initial_state_numeric_override_e2e(uc01_package, uc01_scenario):
     assert effective_scenario.initial_state["fatigue_level"] == 30
 
     # advance_tick at tick 0 (prior_state=None) initializes from the numeric values.
-    # The returned raw_state reflects one driver-model step from those starting values.
+    # Feature 009: the old flat raw_state dict is replaced by signals={fixed,dynamic,
+    # simulated} — drowsinessLevel/fatigueLevel are renamed drowsiness/fatigue and now
+    # live under signals["simulated"].
     ts = advance_tick(
         prior_state=None,
         tick_index=0,
@@ -484,15 +490,20 @@ def test_initial_state_numeric_override_e2e(uc01_package, uc01_scenario):
         route_facts=draft.route_facts,
         scenario=effective_scenario,
     )
-    assert ts.raw_state is not None
+    assert ts.signals is not None
     # After one tick starting from 80 (driver model grows slightly), still well above 70.
-    assert ts.raw_state["drowsinessLevel"] > 70
+    assert ts.signals["simulated"]["drowsiness"] > 70
     # After one tick starting from 30, fatigue should remain in that ballpark.
-    assert ts.raw_state["fatigueLevel"] >= 25
+    assert ts.signals["simulated"]["fatigue"] >= 25
 
 
 def test_initial_state_no_override_uses_scenario_defaults(uc01_package, uc01_scenario):
-    """Without initial_state override, the scenario band-string init is used unchanged."""
+    """Without initial_state override, the scenario's own init values are used unchanged.
+
+    Feature 009: uc01_fatigue_recovery_v0_1 authors initial_state numerically
+    (drowsiness_level/fatigue_level as ints), not as band strings — confirm
+    create_draft passes those values through verbatim, whatever their type.
+    """
     draft = create_draft(
         plan_id="plan_no_init_override",
         package=uc01_package,
@@ -506,9 +517,14 @@ def test_initial_state_no_override_uses_scenario_defaults(uc01_package, uc01_sce
     entry = get_draft_entry("plan_no_init_override")
     assert entry is not None
     _, _, effective_scenario = entry
-    # initial_state should still be the scenario's original band strings
-    assert isinstance(effective_scenario.initial_state.get("drowsiness_level"), str)
-    assert isinstance(effective_scenario.initial_state.get("fatigue_level"), str)
+    assert (
+        effective_scenario.initial_state.get("drowsiness_level")
+        == uc01_scenario.initial_state.get("drowsiness_level")
+    )
+    assert (
+        effective_scenario.initial_state.get("fatigue_level")
+        == uc01_scenario.initial_state.get("fatigue_level")
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -527,8 +543,8 @@ def test_initial_state_http_out_of_range_returns_400(tmp_path, monkeypatch):
     resp = client.post(
         "/api/run-plans",
         json={
-            "package_id": "rest_rule_based_v0_1",
-            "scenario_id": "uc01_fatigue_friend_drive_v0_1",
+            "package_id": "aica_transparent_hybrid_trigger_v1",
+            "scenario_id": "uc01_fatigue_recovery_v0_1",
             "initial_state": {"drowsiness_level": 150},
         },
     )
@@ -551,8 +567,8 @@ def test_initial_state_http_unknown_key_returns_400(tmp_path, monkeypatch):
     resp = client.post(
         "/api/run-plans",
         json={
-            "package_id": "rest_rule_based_v0_1",
-            "scenario_id": "uc01_fatigue_friend_drive_v0_1",
+            "package_id": "aica_transparent_hybrid_trigger_v1",
+            "scenario_id": "uc01_fatigue_recovery_v0_1",
             "initial_state": {"bad_key": 50},
         },
     )
@@ -575,9 +591,195 @@ def test_initial_state_http_valid_returns_201(tmp_path, monkeypatch):
     resp = client.post(
         "/api/run-plans",
         json={
-            "package_id": "rest_rule_based_v0_1",
-            "scenario_id": "uc01_fatigue_friend_drive_v0_1",
+            "package_id": "aica_transparent_hybrid_trigger_v1",
+            "scenario_id": "uc01_fatigue_recovery_v0_1",
             "initial_state": {"drowsiness_level": 80, "fatigue_level": 30},
+        },
+    )
+    assert resp.status_code == 201
+
+
+# ---------------------------------------------------------------------------
+# UX-BE: weather_risk context override — service layer + HTTP validation
+# ---------------------------------------------------------------------------
+
+
+def test_context_override_weather_risk_e2e(uc01_package, uc01_scenario):
+    """create_draft with context_overrides={"weather_risk": ...} freezes it into
+    the effective scenario, and advance_tick's fixed-tier weatherRiskLevel
+    reflects it (not the scenario default)."""
+    from aica_api.services.tick_engine import advance_tick
+
+    assert uc01_scenario.weather_risk == 0.0  # scenario default, sanity check
+
+    draft = create_draft(
+        plan_id="plan_weather_risk_e2e",
+        package=uc01_package,
+        scenario=uc01_scenario,
+        presets={},
+        parameters={},
+        hyperparameters={},
+        run_mode="standard",
+        context_overrides={"weather_risk": 42.0},
+    )
+    assert not draft.validation_errors
+
+    entry = get_draft_entry("plan_weather_risk_e2e")
+    assert entry is not None
+    _, _, effective_scenario = entry
+    assert effective_scenario.weather_risk == 42.0
+
+    ts = advance_tick(
+        prior_state=None,
+        tick_index=0,
+        event_plan=draft.draft_event_plan,
+        route_facts=draft.route_facts,
+        scenario=effective_scenario,
+    )
+    assert ts.signals["fixed"]["weatherRiskLevel"] == 42.0
+
+
+def test_context_override_is_night_e2e(uc01_package, uc01_scenario):
+    """create_draft with context_overrides={"is_night": True} freezes it into the
+    effective scenario, and advance_tick's fixed-tier isNight reflects it (not the
+    scenario default) — so the setup screen can toggle day/night."""
+    from aica_api.services.tick_engine import advance_tick
+
+    assert uc01_scenario.is_night is False  # scenario default, sanity check
+
+    draft = create_draft(
+        plan_id="plan_is_night_e2e",
+        package=uc01_package,
+        scenario=uc01_scenario,
+        presets={},
+        parameters={},
+        hyperparameters={},
+        run_mode="standard",
+        context_overrides={"is_night": True},
+    )
+    assert not draft.validation_errors
+
+    entry = get_draft_entry("plan_is_night_e2e")
+    assert entry is not None
+    _, _, effective_scenario = entry
+    assert effective_scenario.is_night is True
+
+    ts = advance_tick(
+        prior_state=None,
+        tick_index=0,
+        event_plan=draft.draft_event_plan,
+        route_facts=draft.route_facts,
+        scenario=effective_scenario,
+    )
+    assert ts.signals["fixed"]["isNight"] is True
+
+
+def test_context_overrides_http_is_night_wrong_type_returns_400(tmp_path, monkeypatch):
+    """POST /api/run-plans with a non-boolean is_night → 400."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+
+    from fastapi.testclient import TestClient
+    from aica_api.main import app
+    client = TestClient(app)
+
+    resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": "aica_transparent_hybrid_trigger_v1",
+            "scenario_id": "uc01_fatigue_recovery_v0_1",
+            "context_overrides": {"is_night": "yes"},
+        },
+    )
+    assert resp.status_code == 400
+    body = resp.json()
+    detail = body.get("detail", body)
+    errors = detail["validation_errors"]
+    assert any("is_night" in e.get("field", "") for e in errors)
+
+
+def test_context_overrides_http_unknown_key_returns_400(tmp_path, monkeypatch):
+    """POST /api/run-plans with an unknown context_overrides key → 400."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+
+    from fastapi.testclient import TestClient
+    from aica_api.main import app
+    client = TestClient(app)
+
+    resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": "aica_transparent_hybrid_trigger_v1",
+            "scenario_id": "uc01_fatigue_recovery_v0_1",
+            "context_overrides": {"bad_key": True},
+        },
+    )
+    assert resp.status_code == 400
+    body = resp.json()
+    detail = body.get("detail", body)
+    errors = detail["validation_errors"]
+    assert any("bad_key" in e.get("field", "") for e in errors)
+
+
+def test_context_overrides_http_weather_risk_out_of_range_returns_400(tmp_path, monkeypatch):
+    """POST /api/run-plans with weather_risk > 100 → 400."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+
+    from fastapi.testclient import TestClient
+    from aica_api.main import app
+    client = TestClient(app)
+
+    resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": "aica_transparent_hybrid_trigger_v1",
+            "scenario_id": "uc01_fatigue_recovery_v0_1",
+            "context_overrides": {"weather_risk": 150},
+        },
+    )
+    assert resp.status_code == 400
+    body = resp.json()
+    detail = body.get("detail", body)
+    errors = detail["validation_errors"]
+    assert any("weather_risk" in e.get("field", "") for e in errors)
+
+
+def test_context_overrides_http_weather_risk_wrong_type_returns_400(tmp_path, monkeypatch):
+    """POST /api/run-plans with a non-numeric weather_risk → 400."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+
+    from fastapi.testclient import TestClient
+    from aica_api.main import app
+    client = TestClient(app)
+
+    resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": "aica_transparent_hybrid_trigger_v1",
+            "scenario_id": "uc01_fatigue_recovery_v0_1",
+            "context_overrides": {"weather_risk": "high"},
+        },
+    )
+    assert resp.status_code == 400
+    body = resp.json()
+    detail = body.get("detail", body)
+    errors = detail["validation_errors"]
+    assert any("weather_risk" in e.get("field", "") for e in errors)
+
+
+def test_context_overrides_http_valid_weather_risk_returns_201(tmp_path, monkeypatch):
+    """POST /api/run-plans with a valid weather_risk override → 201."""
+    monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
+
+    from fastapi.testclient import TestClient
+    from aica_api.main import app
+    client = TestClient(app)
+
+    resp = client.post(
+        "/api/run-plans",
+        json={
+            "package_id": "aica_transparent_hybrid_trigger_v1",
+            "scenario_id": "uc01_fatigue_recovery_v0_1",
+            "context_overrides": {"weather_risk": 65.0, "child_passenger": False},
         },
     )
     assert resp.status_code == 201

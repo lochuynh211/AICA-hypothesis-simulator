@@ -15,17 +15,12 @@ import tempfile
 
 from aica_api.models.package import PackageManifest
 from aica_api.models.profile import (
-    AdasWarningProfile,
-    AttentionModel,
+    ActivityRecovery,
+    AnomalySignalParams,
+    DriverSignalParams,
     DrowsinessModel,
-    DriverModelProfile,
     FatigueModel,
-    LaneDepartureProfile,
-    PedalAbnormalityProfile,
-    RecoveryModel,
     SpeedProfile,
-    SteeringInstabilityProfile,
-    VehicleBehaviorProfile,
 )
 from aica_api.models.run import EventPlan, NamedRestSpot, RouteFacts
 from aica_api.models.scenario import RecoveryOption, RecoveryStage, ScenarioDef
@@ -33,7 +28,12 @@ from aica_api.services.event_plan import build_event_plan
 from aica_api.services.route_analysis import analyze_route
 
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
-_PACKAGE_PATH = _REPO_ROOT / "packages" / "rest_rule_based_v0_1" / "package.json"
+# Feature 009: rest_rule_based_v0_1 (declarative_rule) is retired — the only
+# surviving packages are python_module.  Use nri_fatigue_score_v1: its
+# tick_seconds=60 cadence matches this fixture's original tick-budget
+# assumptions (the compact hybrid trigger overrides tick_seconds=30, which
+# would double every distance/time-based tick count below).
+_PACKAGE_PATH = _REPO_ROOT / "packages" / "nri_fatigue_score_v1" / "package.json"
 
 
 def m2_scenario_with_recovery(
@@ -43,18 +43,19 @@ def m2_scenario_with_recovery(
 ) -> ScenarioDef:
     """Minimal M2 ScenarioDef with recovery_model + nap_karaoke recovery option.
 
-    Driver profile has positive short/long rest recovery amounts so that
-    apply_rest_recovery() lowers drowsiness/fatigue on each STOPPED tick.
-    Route includes exactly one is_rest_facility segment at at=0.5.
+    Driver profile has positive per-activity recovery amounts (keyed by stage
+    content: "sleep", "karaoke") so apply_rest_recovery() lowers drowsiness/
+    fatigue once when each activity is entered. Route includes exactly one
+    is_rest_facility segment at at=0.5.
 
     Args:
         total_km:           Total route distance in km (default 120.0).
         initial_drowsiness: Starting drowsiness band ("none", "weak", etc.).
-                            "weak" makes REST_PROPOSAL fire sooner (~tick 29
-                            with total_km=64, which lets the recovery sequence
-                            complete within 40 ticks after acceptance).
+                            "weak" makes REST_PROPOSAL fire sooner (~tick 71
+                            with total_km=150, on nri_fatigue_score_v1's
+                            cumulative fatigue score — see create_paused_rest_run).
     """
-    driver_profile = DriverModelProfile(
+    driver_signal_params = DriverSignalParams(
         id="test_driver_recovery",
         drowsiness_model=DrowsinessModel(
             base_growth_per_min=0.5,
@@ -68,43 +69,18 @@ def m2_scenario_with_recovery(
             mountain_road_add_per_min=0.2,
             traffic_jam_add_per_min=0.05,
         ),
-        attention_model=AttentionModel(
-            base_recovery_per_min=0.1,
-            monotony_drop_per_min=0.15,
-            drowsiness_drop_factor=0.3,
-            active_content_recovery_per_min=0.5,
-        ),
-        recovery_model=RecoveryModel(
-            short_rest_drowsiness_recovery=20.0,
-            short_rest_fatigue_recovery=15.0,
-            long_rest_drowsiness_recovery=35.0,
-            long_rest_fatigue_recovery=30.0,
-        ),
-    )
-    vehicle_profile = VehicleBehaviorProfile(
-        rolling_window_seconds=300,
-        steering_instability=SteeringInstabilityProfile(
-            base_level=5.0, drowsiness_factor=0.2, fatigue_factor=0.1,
-            mountain_road_add=8.0, traffic_jam_reduce=3.0,
-        ),
-        lane_departure=LaneDepartureProfile(
-            enabled_on=["highway", "normal_road"],
-            drowsiness_threshold=60.0, fatigue_threshold=70.0,
-            count_when_threshold_exceeded=1,
-        ),
-        pedal_abnormality=PedalAbnormalityProfile(
-            base_level=3.0, fatigue_factor=0.1,
-            traffic_jam_add=8.0, mountain_road_add=5.0,
-        ),
-        adas_warning=AdasWarningProfile(
-            lane_departure_warning_threshold=1.0,
-            steering_instability_warning_threshold=55.0,
-        ),
+        recovery_model={
+            "sleep": ActivityRecovery(drowsiness=35.0, fatigue=30.0),
+            "karaoke": ActivityRecovery(drowsiness=8.0, fatigue=5.0),
+        },
     )
     speed_profile = SpeedProfile(
         normal_road_kph=60, highway_kph=100,
         mountain_road_kph=40, sightseeing_road_kph=30,
         traffic_jam_kph=20,
+    )
+    anomaly_signal_params = AnomalySignalParams(
+        lambda_base=0.02, lambda_gain=0.15, theta=40.0, window_min=5.0,
     )
 
     # nap_karaoke: stage 0 = wakefulness (MOVING, lasts until rest spot);
@@ -115,7 +91,6 @@ def m2_scenario_with_recovery(
     nap_karaoke = RecoveryOption(
         id="nap_karaoke",
         label={"ja": "仮眠＋カラオケ", "en": "Nap + Karaoke"},
-        rest_type="short",
         stages=[
             RecoveryStage(phase="wakefulness", content="audio_karaoke", motion="MOVING"),
             RecoveryStage(phase="nap", content="sleep", motion="STOPPED", ticks=3),
@@ -155,8 +130,8 @@ def m2_scenario_with_recovery(
         total_duration_seconds=7200,
         tick_seconds=60,
         allowed_actions=["accept_rest", "postpone"],
-        driver_profile=driver_profile,
-        vehicle_profile=vehicle_profile,
+        driver_signal_params=driver_signal_params,
+        anomaly_signal_params=anomaly_signal_params,
         speed_profile=speed_profile,
         presets={"total_route_distance_km": total_km},
         recovery_options=[nap_karaoke],
@@ -182,12 +157,17 @@ def create_paused_rest_run() -> str:
     """Create a run via run_manager for m2_scenario_with_recovery(), tick until
     a REST_PROPOSAL pauses it, and return the run_id.
 
-    Uses total_km=64.0 and initial_drowsiness="weak" so the REST_PROPOSAL fires
-    at approximately tick 29 (when drowsiness reaches 'moderate' and continuous
-    driving crosses the 30-min threshold with a persistent signal).  After
-    accepting recovery with the 3-stage nap_karaoke option, the full recovery
-    sequence plus remaining route completes in ~39 ticks — within the 40-tick
-    budget used by test_recovery_runs_to_resume_and_completes.
+    Feature 009: repointed from the retired rest_rule_based_v0_1 (declarative_rule)
+    package to nri_fatigue_score_v1 (python_module, tick_seconds=60 — matching this
+    fixture's original tick-cadence assumptions).  Its cumulative fatigue score
+    (S_total = S_base + S_env + S_realtime) is driven by elapsed driving time, not
+    by the old band-threshold rules, so the tick budget was regenerated from actual
+    behavior (FR-018): with total_km=150.0 and initial_drowsiness="weak", the score
+    crosses threshold_fire=80 and REST_PROPOSAL fires at tick 71 (~72km in, safely
+    before the route's midpoint rest spot at 75km, so the post-fire rest-spot-ETA
+    filter passes).  After accepting recovery with the 3-stage nap_karaoke option,
+    the full recovery sequence plus remaining route (~78km) completes in ~82 more
+    ticks — within the tick budget used by test_recovery_runs_to_resume_and_completes.
 
     The caller's autouse fixture must clear both run_manager and run_plan
     registries between tests (as test_run_manager_recovery.py does).
@@ -198,7 +178,7 @@ def create_paused_rest_run() -> str:
     from aica_api.services.run_manager import create_run, tick
     from aica_api.services.run_plan import create_draft
 
-    scenario = m2_scenario_with_recovery(total_km=64.0, initial_drowsiness="weak")
+    scenario = m2_scenario_with_recovery(total_km=150.0, initial_drowsiness="weak")
     package_data = json.loads(_PACKAGE_PATH.read_text(encoding="utf-8"))
     package = PackageManifest(**package_data)
 
@@ -217,7 +197,7 @@ def create_paused_rest_run() -> str:
     )
     create_run(plan_id, run_id, runs_dir)
 
-    # Tick until REST_PROPOSAL pauses the run (fires around tick 29).
+    # Tick until REST_PROPOSAL pauses the run (fires around tick 71).
     for _ in range(200):
         outcome = tick(run_id)
         if outcome.paused:
@@ -239,22 +219,29 @@ def create_paused_rest_run_multi_spots(
 ) -> str:
     """Create a paused rest run and seed multiple named rest spots on its route_facts.
 
-    Uses total_km=200.0 so spots can be spread across the full route.
-    The run pauses around tick 29 (drowsiness-driven; not position-driven).
+    Uses total_km=200.0 so spots can be spread across the full route.  Feature 009:
+    repointed to nri_fatigue_score_v1 (the retired rest_rule_based_v0_1 package is
+    gone).  Its cumulative fatigue score's post-fire rest-spot-ETA filter is
+    overridden (rest_spot_eta_filter_min=60.0, the hyperparameter's max) so the
+    proposal fires on the ordinary "threshold_passed_persisted" path instead of
+    waiting for the emergency-override threshold — this pins a deterministic,
+    reproducible pause at tick 71 / ~72 km (regenerated from actual behavior,
+    FR-018), well ahead of the scenario's own rest facility at 100 km.
 
     After the run is paused, this helper replaces route_facts.named_rest_spots
     in-memory so the rest-spots endpoint returns the supplied spots.  It also
     clears rest_spot_positions so the endpoint uses named_rest_spots exclusively.
 
-    Default named_spots (if None):
-      - "Behind SA"  at  20 km  (will be filtered by the AHEAD filter)
-      - "Near SA"    at  35 km  (taken first)
-      - "Close SA"   at  45 km  (within 20 km of 35 → skipped at default spacing)
-      - "Mid SA 1"   at  65 km
-      - "Mid SA 2"   at  85 km
+    Default named_spots (if None) — pause position is ~72 km, so spots at/under
+    65 km are behind the driver and filtered by the AHEAD filter:
+      - "Behind SA"  at  20 km  (behind — filtered)
+      - "Near SA"    at  35 km  (behind — filtered)
+      - "Close SA"   at  45 km  (behind — filtered)
+      - "Mid SA 1"   at  65 km  (behind — filtered)
+      - "Mid SA 2"   at  85 km  (taken first)
       - "Far SA 1"   at 105 km
       - "Far SA 2"   at 125 km
-      - "Far SA 3"   at 145 km  (beyond cap of 5 at default spacing=20)
+      - "Far SA 3"   at 145 km
 
     Args:
         named_spots: list of dicts accepted by NamedRestSpot (name, position_km,
@@ -292,12 +279,16 @@ def create_paused_rest_run_multi_spots(
         scenario=scenario,
         presets={},
         parameters={},
-        hyperparameters={},
+        # rest_spot_eta_filter_min at its max (60.0): the scenario's own rest
+        # facility is 100km out, far beyond the default 15-min ETA filter — this
+        # override lets the ordinary persisted-threshold path fire deterministically
+        # around tick 71 instead of waiting for the emergency-override threshold.
+        hyperparameters={"rest_spot_eta_filter_min": 60.0},
         run_mode="standard",
     )
     create_run(plan_id, run_id, runs_dir)
 
-    # Tick until REST_PROPOSAL pauses the run (~tick 29 with initial_drowsiness="weak").
+    # Tick until REST_PROPOSAL pauses the run (fires at tick 71, ~72 km in).
     for _ in range(200):
         outcome = tick(run_id)
         if outcome.paused:
