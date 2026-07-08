@@ -507,20 +507,28 @@ function scaleScenarioRestPositions(localFacts: RouteFactsFull, mapsTotalKm: num
 }
 
 export async function routesAnalyze(args: {
-  scenarioId: string
+  scenarioId?: string
   mapsKey?: string
   start?: string
   end?: string
 }): Promise<RouteEnvelope> {
   await ready()
 
-  // ── Validate scenario first (before any Maps call) — 404-equivalent ────────
-  const scenario = await scenarioRegistry.get(args.scenarioId)
-
   const key = args.mapsKey || (await resolvePersistedMapsKey())
   const useMaps = !!key && !!args.start && !!args.end
 
+  // ── Validate scenario only when supplied — route-first Maps search may run
+  // before scenario selection. If supplied, validate before any Maps call.
+  const scenario = args.scenarioId
+    ? await scenarioRegistry.get(args.scenarioId)
+    : null
+
   if (!useMaps) {
+    if (scenario === null) {
+      throw new Error(
+        'No route source: provide a Maps key with start/end, or select a preset route / scenario to derive a local route.',
+      )
+    }
     // ── Local path ─────────────────────────────────────────────────────────
     const routeFacts = analyzeRoute(scenario as unknown as ScenarioDefM2)
     return {
@@ -557,7 +565,8 @@ export async function routesAnalyze(args: {
 
   // Local fallback facts (pre-computed once for all alternatives) — mirrors
   // the router computing this once, not per failing Places alternative.
-  const localFallbackFacts = analyzeRoute(scenario as unknown as ScenarioDefM2)
+  const localFallbackFacts =
+    scenario !== null ? analyzeRoute(scenario as unknown as ScenarioDefM2) : null
 
   const placesByRoute: Record<string, RawPlace[]> = {}
   const noticesByRoute: Record<string, RouteNotice[]> = {}
@@ -572,8 +581,9 @@ export async function routesAnalyze(args: {
       // Places failure degrades gracefully to scenario-scaled fallback — never
       // surfaced as a MapsError (mirrors the router: only Directions failures
       // are fatal; Places failures degrade the notice instead).
-      const mapsTotalKm = raw.distance_m / 1000.0
-      const scaled = scaleScenarioRestPositions(localFallbackFacts, mapsTotalKm)
+      const scaled = localFallbackFacts
+        ? scaleScenarioRestPositions(localFallbackFacts, raw.distance_m / 1000.0)
+        : []
       placesByRoute[rid] = scaled
       noticesByRoute[rid] = scaled.length > 0 ? ['rest_data_degraded'] : ['rest_data_unavailable']
     }

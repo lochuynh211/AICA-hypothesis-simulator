@@ -421,6 +421,33 @@ describe('routesAnalyze / createRunPlan / regenerateRunPlan', () => {
     expect(result.route_source).toBe('maps')
   })
 
+  it('routesAnalyze supports route-first maps search without scenario_id', async () => {
+    const mapsEnv = {
+      route_source: 'maps' as const,
+      alternatives: [],
+    }
+    global.fetch = vi.fn().mockResolvedValue(mockOk(mapsEnv))
+    const { routesAnalyze } = await import('../src/api/client')
+
+    await routesAnalyze({
+      mapsKey: 'my-key',
+      start: 'Tokyo',
+      end: 'Osaka',
+    })
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/routes/analyze',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          maps_key: 'my-key',
+          start: 'Tokyo',
+          end: 'Osaka',
+        }),
+      }),
+    )
+  })
+
   it('routesAnalyze throws MapsError on 502', async () => {
     const errBody = { error_type: 'DIRECTIONS_ERROR', message: 'API failed', suggestion: 'Try local' }
     global.fetch = vi.fn().mockResolvedValue({

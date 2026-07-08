@@ -81,8 +81,9 @@ export default function MapKeyAndRouteInput() {
         end: mapsEnd || undefined,
       })
       dispatch({ type: 'SET_ALTERNATIVES', envelope })
-      // Auto-select the first alternative when there's only one (local path)
-      if (envelope.alternatives.length === 1) {
+      // Auto-select the first alternative so the route-first setup flow can
+      // advance immediately; the radio list still lets reviewers switch.
+      if (envelope.alternatives.length > 0) {
         dispatch({ type: 'SELECT_ROUTE', routeId: envelope.alternatives[0].route_id })
       }
     } catch (err: unknown) {

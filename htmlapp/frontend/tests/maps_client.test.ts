@@ -102,6 +102,66 @@ describe('routesAnalyze', () => {
     // Key safety: nothing in the envelope contains the key.
     expect(JSON.stringify(env)).not.toContain('SECRET')
   })
+
+  it('maps path supports route-first search without a scenario id', async () => {
+    vi.spyOn(maps, 'directions').mockResolvedValue([
+      {
+        route_id: 'route-0',
+        summary: 'Route First',
+        distance_m: 50_000,
+        duration_s: 2400,
+        encoded_polyline: 'routefirst',
+        segments: [{ road_class: 'LOCAL', distance_m: 50_000 }],
+      },
+    ])
+    vi.spyOn(maps, 'placesRestStops').mockResolvedValue([])
+
+    const env = await routesAnalyze({
+      mapsKey: 'SECRET',
+      start: 'Tokyo',
+      end: 'Osaka',
+    })
+
+    expect(maps.directions).toHaveBeenCalledWith('SECRET', 'Tokyo', 'Osaka')
+    expect(env.route_source).toBe('maps')
+    expect(env.alternatives[0].route_id).toBe('route-0')
+    expect(env.alternatives[0].notices).toEqual(['no_rest_stops_found'])
+    expect(JSON.stringify(env)).not.toContain('SECRET')
+  })
+
+  it('route-first maps path reports rest data unavailable when Places fails without scenario fallback', async () => {
+    vi.spyOn(maps, 'directions').mockResolvedValue([
+      {
+        route_id: 'route-0',
+        summary: 'Route First',
+        distance_m: 50_000,
+        duration_s: 2400,
+        encoded_polyline: 'routefirst',
+        segments: [{ road_class: 'LOCAL', distance_m: 50_000 }],
+      },
+    ])
+    vi.spyOn(maps, 'placesRestStops').mockRejectedValue(
+      new MapsError({ error_type: 'places_failure', message: 'Places failed', suggestion: 'Try later.' }),
+    )
+
+    const env = await routesAnalyze({
+      mapsKey: 'SECRET',
+      start: 'Tokyo',
+      end: 'Osaka',
+    })
+
+    expect(env.route_source).toBe('maps')
+    expect(env.alternatives[0].notices).toEqual(['rest_data_unavailable'])
+    expect(env.alternatives[0].route_facts.rest_spot_positions).toEqual([])
+  })
+
+  it('throws when neither scenario nor complete maps input is provided', async () => {
+    const directionsSpy = vi.spyOn(maps, 'directions')
+
+    await expect(routesAnalyze({})).rejects.toThrow(/No route source/)
+
+    expect(directionsSpy).not.toHaveBeenCalled()
+  })
 })
 
 // ── getRestSpots ─────────────────────────────────────────────────────────
