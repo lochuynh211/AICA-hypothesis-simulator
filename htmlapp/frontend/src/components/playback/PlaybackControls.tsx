@@ -55,9 +55,14 @@ export default function PlaybackControls() {
         setIsPlaying(false)
       }
     } else {
-      // Completed no-op (decision: null, tick_index: null) — just stop playing.
+      // Completed no-op (decision: null, tick_index: null).
+      // The run_manager returns this when the tick engine sees completed=true
+      // before evaluating the algorithm (M2 distance-based path).  TICK_APPENDED
+      // is never fired for this tick, so we dispatch RUN_COMPLETED to sync
+      // state.completed and let useRouteProgress clamp currentFraction to 1.
       if (resp.completed) {
         setIsPlaying(false)
+        dispatch({ type: 'RUN_COMPLETED', runState: resp.run_state })
       }
     }
   }, [runState, dispatch])

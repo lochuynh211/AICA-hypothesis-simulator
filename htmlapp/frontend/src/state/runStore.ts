@@ -263,6 +263,7 @@ export type RunStoreAction =
   | { type: 'SELECT_PACKAGE'; id: string }
   | { type: 'SELECT_SCENARIO'; id: string }
   | { type: 'RUN_CREATED'; runState: RunState }
+  | { type: 'RUN_COMPLETED'; runState: RunState }
   | {
       type: 'TICK_APPENDED'
       runState: RunState
@@ -558,6 +559,12 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
         // Fresh run — no rests accepted yet.
         restHistory: [],
       }
+
+    case 'RUN_COMPLETED':
+      // M2 (distance-based) runs complete via a no-op tick (decision: null) from
+      // the backend — TICK_APPENDED is never dispatched for that tick, so this
+      // action is the only way to set completed=true and update runState.
+      return { ...state, runState: action.runState, completed: true }
 
     case 'TICK_APPENDED': {
       const entry: TraceEntry = {
