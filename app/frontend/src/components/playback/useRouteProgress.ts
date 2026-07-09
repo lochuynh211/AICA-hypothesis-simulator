@@ -38,7 +38,7 @@ export type RouteProgress = {
 
 export function useRouteProgress(): RouteProgress {
   const { state } = useRunStore()
-  const { runState, trace, selectedScenarioId, tickSecondsOverride } = state
+  const { runState, trace, selectedScenarioId, tickSecondsOverride, completed } = state
   const [segments, setSegments] = useState<RouteSegment[]>([])
   const [totalDuration, setTotalDuration] = useState<number | null>(null)
 
@@ -94,10 +94,14 @@ export function useRouteProgress(): RouteProgress {
   }
 
   // Current position: prefer the latest trace entry's recorded fraction.
-  const currentFraction =
+  // Clamp to 1.0 on completion — the final tick may cover less than a full
+  // tick_seconds interval (e.g. vehicle reaches destination mid-tick), leaving
+  // route_fraction slightly below 1.0 on the last real tick response.
+  const rawFraction =
     typeof lastEntry?.route_fraction === 'number'
       ? lastEntry.route_fraction
       : fractionAtTick(tickIndex)
+  const currentFraction = completed ? 1 : rawFraction
 
   const proposalFractions = trace
     .filter((e: TraceEntry) => e.proposal !== null && e.proposal_paused === true)
