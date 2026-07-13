@@ -180,9 +180,9 @@ Selector packages receive only the neutral opportunity snapshot, including its e
 
 | Package family | Input focus | Output focus |
 |---|---|---|
-| Transparent service selector | Trigger purpose + lifecycle stage + stage-allowed services + CDC-SU service baseline + enabled service extensions | Up to 3 ranked services with factor contributions |
+| Transparent service selector | Trigger purpose + lifecycle stage + stage-allowed services + the complete independent Section 8 feature table | Up to 3 ranked services with factor contributions |
 | Constrained LLM service selector | Same neutral controls/facts/candidates | Up to 3 structured service judgments with cited fields |
-| Transparent content selector | Same controls + CDC-SU service baseline + enabled service extensions + CDC-SU content baseline + enabled content extensions + selected stage-allowed service/catalog | Up to 3 concrete plans with factor contributions |
+| Transparent content selector | Same controls + the complete independent Section 9 feature table + selected stage-allowed service/catalog | Up to 3 concrete plans with factor contributions |
 | Constrained LLM content selector | Same neutral controls/facts/catalog | Up to 3 structured concrete plans with cited fields/items |
 
 ### 5.2 Independence rule
@@ -356,114 +356,97 @@ The matrix is versioned and editable for hypothesis comparison, but a run freeze
 
 ---
 
-## 8. Feature Contract — Service Proposal, CDC-SU Baseline First
+## 8. Feature Contract — Service Proposal, One Independent Table
 
-### 8.1 Provenance and priority rules
+The service selector owns this complete feature contract. Rows follow the CDC-SU order—Situation, Preference, History—then place every simulator proposal at the end under Additional proposed. P0 is dominant safety/eligibility context, P1 primary situation, P2 contextual relevance, P3 personalization/history, and P4 weak novelty/tie-breaking.
 
-The authoritative baseline is CDC-SU Slides 66–67. An implementation field may normalize a source concept into a bounded value, but the document must distinguish that normalization from a genuinely new feature. Proposed simulator additions are isolated in Section 8.3.
-
-| Priority | Default interpretation |
-|---|---|
-| P0 | Dominant safety or immediate eligibility context |
-| P1 | Primary situation fit |
-| P2 | Contextual relevance |
-| P3 | Personalization or historical support |
-| P4 | Weak novelty/tie breaker |
-
-### 8.2 CDC-SU baseline service features
-
-| CDC-SU category/concept | Priority | Contract field | Value/use | Source |
-|---|---:|---|---|---|
-| Situation — current driver state | P0 | `drowsiness_level` | 0–100 normalized drowsiness; dominant situation/safety fit. | Slides 66–67 |
-| Situation — current driver state | P0 | `fatigue_level` | 0–100 normalized fatigue; dominant situation/safety fit. | Slides 66–67 |
-| Situation — driving environment: congestion | P1 | `traffic_state` | `normal`, `congested`; interaction-load and service fit. | Slides 66–67 |
-| Situation — driving environment: highway | P1 | `road_type` | `highway` is source-aligned; `local`, `mountain`, `parking` are normalization extensions in the same enum. | Slides 66–67 |
-| Situation — driving environment: night | P1 | `night_state` | `day`, `night`. | Slides 66–67 |
-| Situation — driving environment: monotonous road | P1 | `monotony_level` | 0–100 normalization. | Slides 66–67 |
-| Situation — characteristic route | P1/P2 | `route_tags` | Editable tags such as sea, mountain, city, night-view, or oshi-related. | Slides 66–67 |
-| Situation — characteristic destination | P1/P2 | `destination_tags` | Editable tags such as home, leisure, event, or oshi spot. | Slides 66–67 |
-| Situation — child passenger | P2 | `child_present` | Boolean presence; no child-state inference. | Slides 66–67 |
-| Situation — multiple passengers | P2 | `multiple_passengers` | Boolean group context. | Slides 66–67 |
-| Preference — oshi registration | P2/P3 | `oshi_registered` | Boolean. | Slides 66–67 |
-| Preference — oshi mode | P2/P3 | `oshi_mode` | `on`, `off`. | Slides 66–67 |
-| Preference — unused/long-unused service | P4 | `service_recency_state[service]` | `never`, `long_unused`, `recent`; weak novelty input. | Slides 66–67 |
-| Preference — overall usage frequency | P3 | `service_usage_level[service]` | `never`, `low`, `medium`, `high`. | Slides 66–67 |
-| Preference — scene-specific tendency | P3 | `scene_service_usage_level[scene][service]` | Service usage tendency in a comparable scene. | Slides 66–67 |
-| Past performance — proposal acceptance | P3 | `service_proposal_acceptance_rate[service]` | Editable 0–100 synthetic rate. | Slides 66–67 |
-| Past performance — recovery rate | P3 | `service_recovery_rate[service]` | Editable 0–100 synthetic indicator. | Slides 66–67 |
-
-### 8.3 Proposed additional service features
-
-| Proposed category | Priority | Contract field | Reason for addition | Default policy |
-|---|---:|---|---|---|
-| Driver/motion safety | P0 | `motion_state` | Applies driving/stopped service eligibility earlier. CDC-SU defines it for concrete-content selection, not Slides 66–67 service ordering. | Enabled as hard eligibility. |
-| Rest-route feasibility | P0/P1 | `estimated_min_until_rest_spot` | Tests whether proposed pre-rest content fits the remaining drive. | Enabled only for `rest_recommended`. |
-| Rest-route feasibility | P1/P2 | `rest_spot_type` | Distinguishes `sa_pa`, `convenience_store`, `parking`, `oshi_spot`, `other`, or unavailable. | Enabled only for `rest_recommended`. |
-| Current proposal session | P2/P3 | `active_service` | Prevents conflicts and supports continuation/switching. | Enabled. |
-| Current proposal session | P3 | `recent_service_rejections` | Prevents immediate repetition after rejection. | Enabled with configurable recency. |
-| Evidence reliability | P3 | `service_proposal_acceptance_confidence[service]` | Limits sparse/synthetic acceptance evidence. | Optional; neutral if unavailable. |
-| Evidence reliability | P3 | `service_recovery_confidence[service]` | Limits sparse/synthetic recovery evidence. | Optional; neutral if unavailable. |
-| Schedule promoted to service selection | P2 | `scheduled_event_type` | Allows an event to affect selection of live/radio/oshi-related services. CDC-SU defines schedule for concrete content. | Optional extension. |
-| Schedule promoted to service selection | P2 | `scheduled_event_timing` | `now`, `soon`, `later`, `unknown`. | Optional extension. |
-| Schedule promoted to service selection | P2 | `scheduled_event_tags` | Matches an event to a service. | Optional extension. |
+| Category | Subcategory | Feature name | Field and value type | Reason to use | Priority | Source |
+|---|---|---|---|---|---:|---|
+| Situation | Current driver state | Drowsiness level | `drowsiness_level` — number 0–100 | Rank services appropriate to current drowsiness and safety need. | P0 | Slides 66–67 |
+| Situation | Current driver state | Fatigue level | `fatigue_level` — number 0–100 | Rank services appropriate to fatigue and recovery need. | P0 | Slides 66–67 |
+| Situation | Driving environment | Traffic state | `traffic_state` — enum: `normal`, `congested` | Adjust service fit and interaction load in congestion. | P1 | Slides 66–67 |
+| Situation | Driving environment | Road type | `road_type` — enum: `highway`, `local`, `mountain`, `parking` | Represent the specified highway context and normalized simulator road contexts. | P1 | Slides 66–67; normalized enum |
+| Situation | Driving environment | Day/night state | `night_state` — enum: `day`, `night` | Adjust service fit for night driving. | P1 | Slides 66–67 |
+| Situation | Driving environment | Road monotony | `monotony_level` — number 0–100 | Increase fit of engaging services on monotonous roads. | P1 | Slides 66–67 |
+| Situation | Route and destination | Route characteristics | `route_tags` — string array | Match services to characteristic scenery, roads, or themes. | P1/P2 | Slides 66–67 |
+| Situation | Route and destination | Destination characteristics | `destination_tags` — string array | Match services to home, leisure, event, or oshi destinations. | P1/P2 | Slides 66–67 |
+| Situation | Passenger composition | Child present | `child_present` — boolean | Favor services suitable for a child passenger without inferring child state. | P2 | Slides 66–67 |
+| Situation | Passenger composition | Multiple passengers | `multiple_passengers` — boolean | Favor services suitable for shared participation. | P2 | Slides 66–67 |
+| Preference | Oshi information | Oshi registered | `oshi_registered` — boolean | Determine whether oshi-related services can be considered. | P2/P3 | Slides 66–67 |
+| Preference | Oshi information | Oshi mode | `oshi_mode` — enum: `on`, `off` | Apply the user’s explicit oshi personalization setting. | P2/P3 | Slides 66–67 |
+| Preference | Unused function | Service recency | `service_recency_state[service]` — map to `never`, `long_unused`, `recent` | Add a weak novelty signal for unused or long-unused services. | P4 | Slides 66–67 |
+| Preference | Overall usage frequency | Service usage level | `service_usage_level[service]` — map to `never`, `low`, `medium`, `high` | Represent how often the user chooses each in-car service. | P3 | Slides 66–67 |
+| Preference | Scene-specific tendency | Scene/service usage level | `scene_service_usage_level[scene][service]` — nested usage-level map | Represent service preference in comparable situations. | P3 | Slides 66–67 |
+| History | Proposal result | Service proposal acceptance rate | `service_proposal_acceptance_rate[service]` — map to number 0–100 | Favor service proposals previously accepted more often. | P3 | Slides 66–67 |
+| History | Recovery result | Service recovery rate | `service_recovery_rate[service]` — map to number 0–100 | Favor services associated with stronger synthetic recovery. | P3 | Slides 66–67 |
+| Additional proposed | Motion safety | Driving/stopped state | `motion_state` — enum: `driving`, `stopped` | Apply content presentation eligibility before service ranking. | P0 | Simulator proposal; concept from Slides 68–69 |
+| Additional proposed | Rest-route feasibility | Minutes until rest spot | `estimated_min_until_rest_spot` — nullable non-negative integer | Check whether a pre-rest service fits the remaining drive. | P0/P1 | Simulator proposal |
+| Additional proposed | Rest-route feasibility | Rest spot type | `rest_spot_type` — enum: `sa_pa`, `convenience_store`, `parking`, `oshi_spot`, `other`, `unknown` | Adapt the proposed rest journey to the available location. | P1/P2 | Simulator proposal |
+| Additional proposed | Current proposal session | Active service | `active_service` — nullable service ID | Avoid conflicts and support continuation or switching. | P2/P3 | Simulator proposal |
+| Additional proposed | Current proposal session | Recent service rejections | `recent_service_rejections` — timestamped service-ID array | Avoid immediately repeating a rejected proposal. | P3 | Simulator proposal |
+| Additional proposed | Evidence reliability | Service acceptance confidence | `service_proposal_acceptance_confidence[service]` — map to number 0–1 | Limit the influence of sparse synthetic acceptance history. | P3 | Simulator proposal |
+| Additional proposed | Evidence reliability | Service recovery confidence | `service_recovery_confidence[service]` — map to number 0–1 | Limit the influence of sparse synthetic recovery history. | P3 | Simulator proposal |
+| Additional proposed | Schedule promotion | Scheduled event type | `scheduled_event_type` — enum: `none`, `live_show`, `radio_program`, `concert`, `oshi_event`, `other` | Optionally let an event affect service choice. | P2 | Simulator proposal; concept from Slides 68–69 |
+| Additional proposed | Schedule promotion | Scheduled event timing | `scheduled_event_timing` — enum: `now`, `soon`, `later`, `unknown` | Represent whether event-relevant services are timely. | P2 | Simulator proposal; concept from Slides 68–69 |
+| Additional proposed | Schedule promotion | Scheduled event tags | `scheduled_event_tags` — string array | Match the event to live, radio, music, or oshi services. | P2 | Simulator proposal; concept from Slides 68–69 |
 
 ---
 
-## 9. Feature Contract — Concrete Content, CDC-SU Baseline First
+## 9. Feature Contract — Concrete Content Proposal, One Independent Table
 
-### 9.1 Inheritance contract
+The concrete-content selector owns the complete table below and can be reviewed without Section 8. Slide 68 says concrete-content selection analyzes the service-ordering information plus additional information; this table states every field directly. It uses the same columns and category order as the service table. Each service recipe still marks every field `used` or `available_but_not_used`.
 
-Slide 68 requires concrete content to reuse information already analyzed for service ordering. The actual contract is:
-
-```text
-ContentProposalFeatures
-  = CDC-SU baseline service features
-  + enabled proposed service additions
-  + CDC-SU content-specific baseline features
-  + proposed content-specific additions
-```
-
-`motion_state` and the three schedule fields are single stored fields. CDC-SU requires them for concrete-content consideration; their earlier use by the service selector is an optional Section 8.3 promotion, not duplicated data.
-
-The content selector receives the same `trigger_purpose`, `lifecycle_stage`, and frozen constraint context. Each recipe declares every available field as `used` or `available_but_not_used`; silent dropping is invalid.
-
-### 9.2 CDC-SU content-specific baseline features
-
-| CDC-SU category/concept | Priority | Contract field | Value/use | Source |
-|---|---:|---|---|---|
-| Situation — driving/stopped state | P0 | `motion_state` | `driving`, `stopped`; content-mode and presentation restriction. | Slides 68–70 |
-| Preference — UPro age | P3 | `age_band` | Editable age band. | Slides 68–69 |
-| Preference — UPro gender | P4/default 0 | `gender` | Optional; transparent default weight is zero because relevance is weak and bias risk is material. | Slides 68–69 |
-| Preference — UPro hobbies/interests | P3 | `hobby_interest_tags` | Editable tags for genre/theme matching. | Slides 68–69 |
-| Preference — unused/long-unused item | P4 | `catalog_item_recency_state[item]` | `never`, `long_unused`, `recent`; item-level normalization. | Slides 68–70 |
-| Preference — unused/long-unused theme | P4 | `content_tag_recency_state[tag]` | Tag-level normalization for sparse item history. | Slides 68–70 |
-| Preference — overall content usage | P3 | `content_tag_usage_level[tag]` | Genre/theme usage tendency. | Slides 68–70 |
-| Preference — overall item usage | P3 | `catalog_item_usage_level[item]` | Song/video/item usage tendency. | Slides 68–70 |
-| Preference — scene-specific tendency | P3 | `scene_content_tag_usage_level[scene][tag]` | Genre/theme usage in a comparable scene. | Slides 68–70 |
-| Playback/user operation — played | P3 | `played_items` | Ordered item IDs with recency. | Slides 69, 71, 72, 79 |
-| Playback/user operation — skipped | P2/P3 | `skipped_items` | Ordered item IDs with recency. | Slides 69, 71, 72, 79 |
-| Playback/user operation — cancelled | P2/P3 | `cancelled_content_plans` | Normalized record of cancelled proposed/active content. | Slides 68–69 |
-| Playback/user operation — changed | P2/P3 | `changed_from_items` | Item IDs replaced by the user. | Slides 69, 71, 72, 79 |
-| Past performance — schedule type | P2 | `scheduled_event_type` | `none`, `live_show`, `radio_program`, `concert`, `oshi_event`, `other`. | Slides 68–70 |
-| Past performance — schedule timing | P2 | `scheduled_event_timing` | `now`, `soon`, `later`, `unknown`. | Slides 68–70 |
-| Past performance — schedule tags | P2 | `scheduled_event_tags` | Event/content match. | Slides 68–70 |
-| Past performance — proposal acceptance | P3 | `content_proposal_acceptance_rate[key]` | 0–100 by item, tag, genre, or plan type. | Slides 68–70 |
-| Past performance — recovery rate | P3 | `content_recovery_rate[key]` | 0–100 synthetic indicator. | Slides 68–70 |
-
-Driver/environment context, route/destination, passenger composition, oshi registration/mode, unused-service state, service usage tendencies, and service-level past performance are inherited from Section 8.2. Enabled Section 8.3 extensions are also inherited for contract consistency.
-
-### 9.3 Proposed additional concrete-content features
-
-| Proposed category | Priority | Contract field | Reason for addition | Default policy |
-|---|---:|---|---|---|
-| Detailed oshi identity | P2/P3 | `oshi_id` | Concrete catalog matching requires an identity, not only registration/on/off. | Enabled when oshi setup and mode are active. |
-| Detailed oshi identity | P2/P3 | `oshi_type` | Distinguishes character, artist, group, franchise, and other relation types. | Enabled with detailed oshi setup. |
-| Detailed oshi identity | P2/P3 | `oshi_tags` | Matches works, themes, genres, routes, and events. | Enabled with detailed oshi setup. |
-| Granular operation history | P3 | `completed_items` | Distinguishes completion from playback start. | Optional. |
-| Granular operation history | P3 | `manually_selected_items` | Makes explicit user choice visible separately from passive playback. | Optional. |
-| Granular operation history | P3 | `repeated_items` | Captures deliberate repeats subject to repetition caps. | Optional. |
-| Evidence reliability | P3 | `content_proposal_acceptance_confidence[key]` | Limits sparse acceptance evidence. | Optional; neutral if unavailable. |
-| Evidence reliability | P3 | `content_recovery_confidence[key]` | Limits sparse recovery evidence. | Optional; neutral if unavailable. |
+| Category | Subcategory | Feature name | Field and value type | Reason to use | Priority | Source |
+|---|---|---|---|---|---:|---|
+| Situation | Current driver state | Drowsiness level | `drowsiness_level` — number 0–100 | Select appropriate genre, tempo, intensity, and content form. | P0 | Slides 68–69 |
+| Situation | Current driver state | Fatigue level | `fatigue_level` — number 0–100 | Select appropriate content intensity and duration. | P0 | Slides 68–69 |
+| Situation | Driving environment | Traffic state | `traffic_state` — enum: `normal`, `congested` | Adjust content energy, interaction load, and expected duration. | P1 | Slides 68–69 |
+| Situation | Driving environment | Road type | `road_type` — enum: `highway`, `local`, `mountain`, `parking` | Choose road-appropriate content while preserving the specified highway case. | P1 | Slides 68–69; normalized enum |
+| Situation | Driving environment | Day/night state | `night_state` — enum: `day`, `night` | Choose appropriate stimulation for night driving. | P1 | Slides 68–69 |
+| Situation | Driving environment | Road monotony | `monotony_level` — number 0–100 | Prefer engaging concrete content as monotony increases. | P1 | Slides 68–69 |
+| Situation | Route and destination | Route characteristics | `route_tags` — string array | Match songs, themes, and narratives to the route. | P1/P2 | Slides 68–69 |
+| Situation | Route and destination | Destination characteristics | `destination_tags` — string array | Match songs, themes, and oshi content to the destination. | P1/P2 | Slides 68–69 |
+| Situation | Passenger composition | Child present | `child_present` — boolean | Favor child-compatible genres and concrete items. | P2 | Slides 68–69 |
+| Situation | Passenger composition | Multiple passengers | `multiple_passengers` — boolean | Favor content suitable for shared participation. | P2 | Slides 68–69 |
+| Situation | Driving state | Driving/stopped state | `motion_state` — enum: `driving`, `stopped` | Apply content-mode and presentation restrictions. | P0 | Slides 68–70 |
+| Preference | Oshi information | Oshi registered | `oshi_registered` — boolean | Determine whether oshi-related content can be considered. | P2/P3 | Slides 68–69 |
+| Preference | Oshi information | Oshi mode | `oshi_mode` — enum: `on`, `off` | Apply the explicit oshi personalization setting. | P2/P3 | Slides 68–69 |
+| Preference | Unused function | Service recency | `service_recency_state[service]` — map to `never`, `long_unused`, `recent` | Retain the service-level novelty context used for the selected service. | P4 | Slides 68–69 |
+| Preference | Overall usage frequency | Service usage level | `service_usage_level[service]` — usage-level map | Retain the user’s overall service-use tendency. | P3 | Slides 68–69 |
+| Preference | Scene-specific tendency | Scene/service usage level | `scene_service_usage_level[scene][service]` — nested usage-level map | Retain service preference in a comparable situation. | P3 | Slides 68–69 |
+| Preference | UPro information | Age band | `age_band` — enum configured by simulator | Support era and genre matching without exact age. | P3 | Slides 68–69 |
+| Preference | UPro information | Gender | `gender` — enum plus `unknown` | Preserve the CDC-SU input; default transparent weight is zero. | P4/default 0 | Slides 68–69 |
+| Preference | UPro information | Hobbies and interests | `hobby_interest_tags` — string array | Match genres and themes to registered interests. | P3 | Slides 68–69 |
+| Preference | Unused content | Catalog item recency | `catalog_item_recency_state[item]` — map to `never`, `long_unused`, `recent` | Add weak item-level novelty. | P4 | Slides 68–70 |
+| Preference | Unused content | Content-tag recency | `content_tag_recency_state[tag]` — map to `never`, `long_unused`, `recent` | Add weak genre/theme novelty when item history is sparse. | P4 | Slides 68–70 |
+| Preference | Overall usage frequency | Content-tag usage level | `content_tag_usage_level[tag]` — usage-level map | Represent genre and theme preference. | P3 | Slides 68–70 |
+| Preference | Overall usage frequency | Catalog item usage level | `catalog_item_usage_level[item]` — usage-level map | Represent song, video, or item preference. | P3 | Slides 68–70 |
+| Preference | Scene-specific tendency | Scene/content-tag usage level | `scene_content_tag_usage_level[scene][tag]` — nested usage-level map | Represent genre/theme preference in comparable situations. | P3 | Slides 68–70 |
+| Preference | Playback and user operations | Played items | `played_items` — timestamped item-ID array | Use recent playback while controlling repetition. | P3 | Slides 69, 71, 72, 79 |
+| Preference | Playback and user operations | Skipped items | `skipped_items` — timestamped item-ID array | Avoid recently skipped or disliked items. | P2/P3 | Slides 69, 71, 72, 79 |
+| Preference | Playback and user operations | Cancelled content plans | `cancelled_content_plans` — timestamped plan record array | Avoid repeating cancelled plans. | P2/P3 | Slides 68–69 |
+| Preference | Playback and user operations | Changed-from items | `changed_from_items` — timestamped item-ID array | Learn from items the user replaced. | P2/P3 | Slides 69, 71, 72, 79 |
+| History | Proposal result | Service proposal acceptance rate | `service_proposal_acceptance_rate[service]` — map to number 0–100 | Keep service-level acceptance context visible to content selection. | P3 | Slides 68–69 |
+| History | Recovery result | Service recovery rate | `service_recovery_rate[service]` — map to number 0–100 | Keep service-level recovery context visible to content selection. | P3 | Slides 68–69 |
+| History | Schedule | Scheduled event type | `scheduled_event_type` — enum: `none`, `live_show`, `radio_program`, `concert`, `oshi_event`, `other` | Match concrete content to an upcoming event type. | P2 | Slides 68–70 |
+| History | Schedule | Scheduled event timing | `scheduled_event_timing` — enum: `now`, `soon`, `later`, `unknown` | Represent proximity of the event. | P2 | Slides 68–70 |
+| History | Schedule | Scheduled event tags | `scheduled_event_tags` — string array | Match content to the event, artist, theme, or franchise. | P2 | Slides 68–70 |
+| History | Proposal result | Content proposal acceptance rate | `content_proposal_acceptance_rate[key]` — map to number 0–100 | Favor item, tag, genre, or plan proposals accepted more often. | P3 | Slides 68–70 |
+| History | Recovery result | Content recovery rate | `content_recovery_rate[key]` — map to number 0–100 | Favor content associated with stronger synthetic recovery. | P3 | Slides 68–70 |
+| Additional proposed | Rest-route feasibility | Minutes until rest spot | `estimated_min_until_rest_spot` — nullable non-negative integer | Ensure the concrete plan fits before arrival. | P0/P1 | Simulator proposal |
+| Additional proposed | Rest-route feasibility | Rest spot type | `rest_spot_type` — rest-spot enum | Adapt concrete content to the upcoming stopped context. | P1/P2 | Simulator proposal |
+| Additional proposed | Current proposal session | Active service | `active_service` — nullable service ID | Keep the content plan compatible with the active service. | P2/P3 | Simulator proposal |
+| Additional proposed | Current proposal session | Recent service rejections | `recent_service_rejections` — timestamped service-ID array | Avoid content plans attached to a just-rejected service. | P3 | Simulator proposal |
+| Additional proposed | Evidence reliability | Service acceptance confidence | `service_proposal_acceptance_confidence[service]` — map to number 0–1 | Limit sparse service-level acceptance evidence. | P3 | Simulator proposal |
+| Additional proposed | Evidence reliability | Service recovery confidence | `service_recovery_confidence[service]` — map to number 0–1 | Limit sparse service-level recovery evidence. | P3 | Simulator proposal |
+| Additional proposed | Detailed oshi identity | Oshi ID | `oshi_id` — nullable catalog entity ID | Match the selected synthetic favorite to concrete catalog items. | P2/P3 | Simulator proposal |
+| Additional proposed | Detailed oshi identity | Oshi type | `oshi_type` — enum: character, artist, group, franchise, other | Distinguish different favorite-entity relationships. | P2/P3 | Simulator proposal |
+| Additional proposed | Detailed oshi identity | Oshi tags | `oshi_tags` — string array | Match works, themes, genres, routes, and events. | P2/P3 | Simulator proposal |
+| Additional proposed | Granular operations | Completed items | `completed_items` — timestamped item-ID array | Distinguish completion from playback start. | P3 | Simulator proposal |
+| Additional proposed | Granular operations | Manually selected items | `manually_selected_items` — timestamped item-ID array | Treat explicit choice as stronger evidence than passive playback. | P3 | Simulator proposal |
+| Additional proposed | Granular operations | Repeated items | `repeated_items` — timestamped item-ID array | Capture deliberate repeats while respecting repetition caps. | P3 | Simulator proposal |
+| Additional proposed | Evidence reliability | Content acceptance confidence | `content_proposal_acceptance_confidence[key]` — map to number 0–1 | Limit sparse content-level acceptance evidence. | P3 | Simulator proposal |
+| Additional proposed | Evidence reliability | Content recovery confidence | `content_recovery_confidence[key]` — map to number 0–1 | Limit sparse content-level recovery evidence. | P3 | Simulator proposal |
 
 ---
 
@@ -674,7 +657,7 @@ rationale
 
 For detailed music V1:
 
-- all CDC-SU service baseline fields and enabled service extensions remain in the input contract;
+- every field used by the content algorithm is stated directly in its independent Section 9 contract;
 - Slide 70 provides the default broad applicability baseline;
 - a detailed service slide may enable a field it explicitly lists;
 - the customer can edit applicability and compare both interpretations;
@@ -855,8 +838,8 @@ Transparent runs with identical inputs must reproduce exactly. LLM evidence pres
 ### 19.1 Feature correctness
 
 - Every proposal opportunity carries one valid `trigger_purpose`, a compatible `lifecycle_stage`, and a frozen purpose/stage constraint version.
-- Every service selector receives the CDC-SU Slides 66–67 baseline and only the explicitly enabled Section 8.3 extensions.
-- Every content selector receives the enabled service contract, the CDC-SU Slides 68–70 content baseline, and only the explicitly enabled Section 9.3 extensions.
+- Every service selector receives exactly the enabled rows in the independent Section 8 table.
+- Every content selector receives exactly the enabled rows in the independent Section 9 table; it does not depend on the Section 8 contract.
 - Evidence labels every field `cdc_su_baseline`, `normalized_cdc_su_concept`, or `proposed_addition`.
 - Preference, usage history, proposal history, runtime state, constraints, and configuration are visibly distinct.
 - `trigger_purpose` and `lifecycle_stage` control the flow/candidate set but are not treated as personal or situation feature scores.
@@ -922,7 +905,7 @@ Transparent runs with identical inputs must reproduce exactly. LLM evidence pres
 | Service descriptions and lighting | Slides 39–40 |
 | Playlist and humming interactions | Slides 41–44 |
 | Service ordering process/features | Slides 64–67 |
-| Concrete-content inheritance/additional data | Slide 68 |
+| Complete concrete-content input data | Slide 68 |
 | Concrete-content judgment features | Slide 69 |
 | Per-service applicability | Slide 70 |
 | Detailed playlist/humming/full-karaoke inputs | Slides 71, 72, 79 |
