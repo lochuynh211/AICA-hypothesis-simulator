@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AICA Proposal Simulator — Executive Overview / 提案シミュレーター概要</title>
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #5f6b7c;
+      --line: #dce3ec;
+      --soft: #f5f8fc;
+      --blue: #175cd3;
+      --blue-soft: #eaf2ff;
+      --green: #087a55;
+      --green-soft: #eaf8f2;
+      --amber: #9a5b00;
+      --amber-soft: #fff5df;
+      --purple: #7047a8;
+      --purple-soft: #f4effb;
+      --danger: #b42318;
+      --danger-soft: #fff0ee;
+      --radius: 14px;
+      --shadow: 0 10px 28px rgba(24, 43, 77, .08);
+      --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; color: var(--ink); background: #fff; font-family: var(--font); line-height: 1.65; }
+    header { background: linear-gradient(135deg, #102a56, #175cd3); color: #fff; padding: 56px 24px 48px; }
+    header .wrap, main, footer .wrap { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+    .eyebrow { font-size: .78rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; opacity: .82; }
+    h1 { margin: 10px 0 14px; max-width: 850px; font-size: clamp(2rem, 5vw, 3.55rem); line-height: 1.12; }
+    .hero-copy { max-width: 860px; margin: 0; font-size: clamp(1rem, 2vw, 1.25rem); opacity: .93; }
+    .lang-controls { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 8px; }
+    button { border: 1px solid rgba(255,255,255,.55); border-radius: 999px; color: #fff; background: rgba(255,255,255,.1); padding: 8px 14px; font: inherit; cursor: pointer; }
+    button.active { color: #123; background: #fff; }
+    main { padding: 36px 0 80px; }
+    nav { position: sticky; top: 0; z-index: 3; margin: -1px 0 34px; padding: 10px 0; background: rgba(255,255,255,.95); border-bottom: 1px solid var(--line); backdrop-filter: blur(8px); }
+    nav .links { width: min(1120px, calc(100% - 40px)); margin: 0 auto; display: flex; gap: 18px; overflow-x: auto; }
+    nav a { flex: none; color: var(--muted); text-decoration: none; font-size: .9rem; font-weight: 700; }
+    section { margin: 52px 0; scroll-margin-top: 64px; }
+    h2 { margin: 0 0 18px; font-size: clamp(1.55rem, 3vw, 2.15rem); line-height: 1.2; }
+    h3 { margin: 0 0 8px; font-size: 1.08rem; }
+    p { margin: 8px 0; }
+    .sub { color: var(--muted); max-width: 900px; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card { padding: 22px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; box-shadow: var(--shadow); }
+    .card.blue { border-top: 5px solid var(--blue); }
+    .card.green { border-top: 5px solid var(--green); }
+    .card.purple { border-top: 5px solid var(--purple); }
+    .callout { padding: 22px; border-radius: var(--radius); background: var(--blue-soft); border-left: 5px solid var(--blue); }
+    .callout.safety { background: var(--danger-soft); border-color: var(--danger); }
+    .callout.note { background: var(--amber-soft); border-color: var(--amber); }
+    .flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; align-items: stretch; }
+    .step { position: relative; padding: 18px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--soft); text-align: center; }
+    .step b { display: block; color: var(--blue); font-size: 1.25rem; }
+    .step:not(:last-child)::after { content: "→"; position: absolute; right: -11px; top: 42%; z-index: 2; color: var(--blue); font-weight: 900; }
+    .journey { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .phase { padding: 20px; border-radius: var(--radius); border: 1px solid var(--line); }
+    .phase.pre { background: var(--blue-soft); }
+    .phase.rest { background: var(--green-soft); }
+    .phase.post { background: var(--purple-soft); }
+    .tag { display: inline-block; margin: 3px 4px 3px 0; padding: 3px 9px; border-radius: 999px; background: #edf1f7; color: #3d4a5d; font-size: .78rem; font-weight: 700; }
+    .priority { display: inline-block; min-width: 31px; padding: 2px 7px; border-radius: 6px; color: #fff; font-size: .76rem; font-weight: 800; text-align: center; }
+    .p0 { background: var(--danger); }
+    .p1 { background: var(--amber); }
+    .p2 { background: var(--blue); }
+    .p3 { background: var(--green); }
+    .p4 { background: var(--purple); }
+    .table-wrap { margin-top: 16px; overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+    table { width: 100%; border-collapse: collapse; min-width: 860px; font-size: .9rem; }
+    th, td { padding: 12px 13px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { position: sticky; top: 0; background: #edf3fa; color: #29364a; }
+    tr:last-child td { border-bottom: 0; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .88em; color: #2d4c7c; word-break: break-word; }
+    ul { margin: 8px 0; padding-left: 20px; }
+    li { margin: 5px 0; }
+    .en, .ja { display: block; }
+    .en + .ja { margin-top: 5px; color: #34435a; }
+    body.lang-en .ja { display: none; }
+    body.lang-ja .en { display: none; }
+    body.lang-ja .en + .ja { margin-top: 0; }
+    footer { padding: 30px 0; color: var(--muted); background: var(--soft); border-top: 1px solid var(--line); }
+    @media (max-width: 860px) {
+      .grid, .grid.three, .journey { grid-template-columns: 1fr; }
+      .flow { grid-template-columns: 1fr; }
+      .step:not(:last-child)::after { content: "↓"; top: auto; bottom: -19px; right: 49%; }
+    }
+    @media print {
+      .lang-controls, nav { display: none; }
+      header { padding: 30px 20px; }
+      section { break-inside: avoid; }
+      .card { box-shadow: none; }
+    }
+  </style>
+</head>
+<body class="lang-ja">
+  <header>
+    <div class="wrap">
+      <div class="eyebrow">AICA proposal simulator / AICA提案シミュレーター</div>
+      <h1>
+        <span class="en">From “when to propose” to “what to propose next”</span>
+        <span class="ja">「いつ提案するか」から「次に何を提案するか」へ</span>
+      </h1>
+      <p class="hero-copy">
+        <span class="en">A customer-review simulator for choosing an in-car service and its concrete content across pre-rest, rest, and post-rest situations.</span>
+        <span class="ja">休憩前・休憩中・休憩後を通して、車内サービスと具体的なコンテンツの選び方をお客様が確認・調整するためのシミュレーターです。</span>
+      </p>
+      <div class="lang-controls" aria-label="Language display">
+        <button type="button" data-lang="ja" class="active">日本語</button>
+        <button type="button" data-lang="en">English</button>
+      </div>
+    </div>
+  </header>
+
+  <nav aria-label="Contents">
+    <div class="links">
+      <a href="#idea">Idea / 考え方</a>
+      <a href="#journey">Journey / 体験</a>
+      <a href="#algorithms">Algorithms / アルゴリズム</a>
+      <a href="#features">Features / 特徴量</a>
+      <a href="#simulator">Simulator / シミュレーター</a>
+      <a href="#delivery">Delivery / 実装</a>
+    </div>
+  </nav>
+
+  <main>
+    <section id="idea">
+      <h2>
+        <span class="en">1. The proposal idea</span>
+        <span class="ja">1. 提案の基本的な考え方</span>
+      </h2>
+      <div class="callout">
+        <p class="en"><strong>The trigger purpose is supplied explicitly.</strong> The proposal algorithm receives one of four purposes, the current lifecycle stage, and the services allowed in that stage. It then uses situation and personal features to rank only those permitted candidates.</p>
+        <p class="ja"><strong>発火目的は明示的に入力されます。</strong> 提案アルゴリズムは4つの目的のいずれか、現在のライフサイクル段階、その段階で利用可能なサービスを受け取ります。そのうえで状況・個人特徴量を使い、許可された候補だけを順位付けします。</p>
+      </div>
+
+      <div class="grid" style="margin-top:20px">
+        <article class="card blue">
+          <h3><span class="en">Four explicit trigger purposes</span><span class="ja">明示される4つの発火目的</span></h3>
+          <p><span class="tag">① <span class="en">Rest recommended</span><span class="ja">休憩推奨</span> — <code>rest_recommended</code></span>
+            <span class="tag">② <span class="en">Inattentive-driving prevention / recovery</span><span class="ja">漫然運転予防・疲労回復</span> — <code>inattentive_driving_prevention_recovery</code></span>
+            <span class="tag">③ <span class="en">Route-based music</span><span class="ja">ルートに応じた音楽</span> — <code>route_music</code></span>
+            <span class="tag">④ <span class="en">Child-passenger experience</span><span class="ja">子供同乗時体験</span> — <code>child_passenger_experience</code></span>
+          </p>
+        </article>
+        <article class="card green">
+          <h3><span class="en">Lifecycle constrains the services</span><span class="ja">ライフサイクルでサービスを制約</span></h3>
+          <p class="en">For purpose ①, the allowed choices change between driving to the rest spot, resting while stopped, and post-rest while stopped. Purposes ②–④ use the driving-content flow defined in Slide 65.</p>
+          <p class="ja">目的①では、「休憩所まで走行中」「停車して休憩中」「休憩後・再走行前」で選べるサービスが変わります。目的②～④はスライド65の走行中コンテンツフローを使用します。</p>
+        </article>
+      </div>
+
+      <div class="flow" style="margin-top:20px">
+        <div class="step"><b>1</b><span class="en">Purpose and lifecycle input</span><span class="ja">目的・段階を入力</span></div>
+        <div class="step"><b>2</b><span class="en">Constrain and rank services</span><span class="ja">サービスを制約・順位付け</span></div>
+        <div class="step"><b>3</b><span class="en">Driver chooses</span><span class="ja">ドライバーが選ぶ</span></div>
+        <div class="step"><b>4</b><span class="en">Choose concrete content</span><span class="ja">具体コンテンツを選ぶ</span></div>
+        <div class="step"><b>5</b><span class="en">Play, finish, or recalculate</span><span class="ja">提供・終了・再計算</span></div>
+      </div>
+
+      <h3 style="margin-top:28px"><span class="en">Default service constraints from Slides 64–65</span><span class="ja">スライド64・65に基づく初期サービス制約</span></h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th><span class="en">Purpose</span><span class="ja">発火目的</span></th><th><span class="en">Lifecycle stage</span><span class="ja">ライフサイクル段階</span></th><th><span class="en">Allowed proposals</span><span class="ja">許可される提案</span></th></tr></thead>
+          <tbody>
+            <tr><td>① <span class="en">Rest recommended</span><span class="ja">休憩推奨</span></td><td><span class="en">Before rest, driving to stop</span><span class="ja">休憩前・停止まで走行中</span><br><code>before_rest_until_stop</code></td><td><span class="en">Playlist, humming karaoke, quiz, ranking, radio-style, call-and-response</span><span class="ja">プレイリスト、鼻歌カラオケ、クイズ、ランキング、ラジオ風、合いの手</span></td></tr>
+            <tr><td>① <span class="en">Rest recommended</span><span class="ja">休憩推奨</span></td><td><span class="en">During rest, stopped</span><span class="ja">休憩中・停車中</span><br><code>during_rest_stopped</code></td><td><span class="en">Rest duration, rest method, seat adjustment, nap guidance, rest extension</span><span class="ja">休憩時間、休憩方法、シート調整、仮眠案内、休憩継続確認</span></td></tr>
+            <tr><td>① <span class="en">Rest recommended</span><span class="ja">休憩推奨</span></td><td><span class="en">After rest, before restart</span><span class="ja">休憩後・走行再開前</span><br><code>after_rest_before_restart</code></td><td><span class="en">Live viewing, stretch video, full karaoke, oshi reexperience</span><span class="ja">ライブビューイング、ストレッチ動画、フルカラオケ、推し追体験</span></td></tr>
+            <tr><td>②–④</td><td><span class="en">Active driving-content flow</span><span class="ja">走行中コンテンツフロー</span><br><code>active_driving_content</code></td><td><span class="en">Playlist, humming karaoke, quiz, ranking, radio-style, call-and-response</span><span class="ja">プレイリスト、鼻歌カラオケ、クイズ、ランキング、ラジオ風、合いの手</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid three" style="margin-top:20px">
+        <article class="card blue">
+          <h3><span class="en">Two decisions</span><span class="ja">2段階の意思決定</span></h3>
+          <p class="en">First choose the service, such as playlist or humming karaoke. Then choose the actual playlist, songs, mode, and presentation.</p>
+          <p class="ja">まずプレイリストや鼻歌カラオケなどのサービスを選び、その後に実際の曲・モード・演出を選びます。</p>
+        </article>
+        <article class="card green">
+          <h3><span class="en">Three candidates</span><span class="ja">3つの候補</span></h3>
+          <p class="en">Normally show three ranked service candidates and up to three concrete plans. The driver may reject or ask for alternatives.</p>
+          <p class="ja">通常はサービス候補を3件、具体案を最大3件提示します。拒否や別候補の要求も可能です。</p>
+        </article>
+        <article class="card purple">
+          <h3><span class="en">Recalculate at transitions</span><span class="ja">場面転換時に再計算</span></h3>
+          <p class="en">Preview the likely journey early, but commit only the next action. Recalculate after arrival, rest, motion change, or rejection.</p>
+          <p class="ja">将来の流れは早めに見せますが、確定するのは次の行動だけです。到着・休憩・走行状態変更・拒否の後に再計算します。</p>
+        </article>
+      </div>
+
+      <div class="callout safety" style="margin-top:20px">
+        <p class="en"><strong>Safety first, but advisory.</strong> Impermissible behavior is removed. Safety then receives overwhelming ranking priority. The driver still makes the final choice; AICA proposes and does not force.</p>
+        <p class="ja"><strong>安全最優先、ただし提案型。</strong> 許容できない提供方法は候補から除外し、そのうえで安全性に圧倒的に高い優先度を与えます。最終的な選択はドライバーにあり、AICAは強制しません。</p>
+      </div>
+    </section>
+
+    <section id="journey">
+      <h2><span class="en">2. One end-to-end rest journey</span><span class="ja">2. 休憩前から休憩後までの一例</span></h2>
+      <p class="sub en">This is a representative path from the use cases—not a fixed script. Each phase is confirmed again using the latest situation.</p>
+      <p class="sub ja">これはユースケースに基づく代表例であり、固定シナリオではありません。各フェーズで最新状況を使って再確認します。</p>
+      <div class="journey">
+        <article class="phase pre">
+          <h3><span class="en">Pre-rest: while driving</span><span class="ja">休憩前：走行中</span></h3>
+          <p class="en">Propose a practical rest spot and an audio-first option for the drive there, such as chorus-only humming karaoke.</p>
+          <p class="ja">現実的な休憩場所と、そこまでの走行中に使える「サビのみ鼻歌カラオケ」など音声中心の案を提案します。</p>
+        </article>
+        <article class="phase rest">
+          <h3><span class="en">Rest: after arrival</span><span class="ja">休憩中：到着後</span></h3>
+          <p class="en">The driver chooses the rest method and duration, for example a nap. The simulator applies an explicit post-rest state chosen by the reviewer.</p>
+          <p class="ja">仮眠などの休憩方法・時間をドライバーが選びます。休憩後の状態は、評価者が設定した明示的な値を反映します。</p>
+        </article>
+        <article class="phase post">
+          <h3><span class="en">Post-rest: while stopped</span><span class="ja">休憩後：停車中</span></h3>
+          <p class="en">Recalculate and offer stopped experiences such as full karaoke, live viewing, stretch, or an oshi-related experience.</p>
+          <p class="ja">再計算し、フルカラオケ、ライブ映像、ストレッチ、推し関連体験など停車中向けサービスを提案します。</p>
+        </article>
+      </div>
+      <div class="callout note" style="margin-top:20px">
+        <p class="en">Lighting is a presentation option, not a service by itself. It can accompany playlist, humming karaoke, call-and-response, live viewing, and full karaoke. It is not used for quiz, ranking, radio-style playback, stretch, or oshi reexperience.</p>
+        <p class="ja">ライティングは単独サービスではなく演出オプションです。プレイリスト、鼻歌カラオケ、合いの手、ライブビューイング、フルカラオケに利用できます。クイズ、ランキング、ラジオ風再生、ストレッチ、推し追体験では利用しません。</p>
+      </div>
+    </section>
+
+    <section id="algorithms">
+      <h2><span class="en">3. Four independent algorithm packages</span><span class="ja">3. 4つの独立したアルゴリズムパッケージ</span></h2>
+      <div class="grid">
+        <article class="card blue">
+          <h3><span class="en">Service proposal</span><span class="ja">サービス提案</span></h3>
+          <ul>
+            <li><span class="en">Transparent scoring package</span><span class="ja">透明なスコアリング方式</span></li>
+            <li><span class="en">Constrained LLM package</span><span class="ja">制約付きLLM方式</span></li>
+          </ul>
+          <p class="en">Returns up to three services from the set allowed by the explicit trigger purpose and lifecycle stage. It cannot add a service forbidden in that flow.</p>
+          <p class="ja">明示された発火目的とライフサイクル段階で許可されたサービス集合から最大3件を返します。そのフローで禁止されたサービスは追加できません。</p>
+        </article>
+        <article class="card purple">
+          <h3><span class="en">Concrete-content proposal</span><span class="ja">具体コンテンツ提案</span></h3>
+          <ul>
+            <li><span class="en">Transparent scoring package</span><span class="ja">透明なスコアリング方式</span></li>
+            <li><span class="en">Constrained LLM package</span><span class="ja">制約付きLLM方式</span></li>
+          </ul>
+          <p class="en">Returns actual plans: playlist items, humming mode, full karaoke song, duration, lighting, and ending behavior.</p>
+          <p class="ja">曲順、鼻歌モード、フルカラオケ曲、長さ、ライティング、終了方法などの具体案を返します。</p>
+        </article>
+      </div>
+      <div class="grid" style="margin-top:16px">
+        <article class="card">
+          <h3><span class="en">Transparent scoring</span><span class="ja">透明スコアリング</span></h3>
+          <p class="en">An expert-defined, customer-editable hypothesis. Every weight and contribution is visible. With no training data, the score is a fit hypothesis—not a probability or proof.</p>
+          <p class="ja">専門家が定義し、お客様が編集できる仮説です。重みと寄与をすべて表示します。学習データがないため、スコアは適合度の仮説であり、確率や正しさの証明ではありません。</p>
+        </article>
+        <article class="card">
+          <h3><span class="en">Constrained LLM</span><span class="ja">制約付きLLM</span></h3>
+          <p class="en">Uses the same facts and catalog, but makes an independent judgment. It must cite supplied fields and catalog IDs and may not invent songs, events, or user facts.</p>
+          <p class="ja">同じ事実とカタログを使いますが、独立して判断します。入力特徴量とカタログIDを根拠として示し、曲・イベント・ユーザー情報を創作してはいけません。</p>
+        </article>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h3><span class="en">Service coverage</span><span class="ja">サービス対象範囲</span></h3>
+        <p><strong><span class="en">Rest support:</span><span class="ja">休憩支援：</span></strong>
+          <span class="tag"><span class="en">rest journey</span><span class="ja">休憩ジャーニー</span></span>
+          <span class="tag"><span class="en">rest method/time</span><span class="ja">休憩方法・時間</span></span>
+          <span class="tag"><span class="en">nap and continuation</span><span class="ja">仮眠・継続確認</span></span>
+        </p>
+        <p><strong><span class="en">While driving:</span><span class="ja">走行中：</span></strong>
+          <span class="tag"><span class="en">playlist</span><span class="ja">プレイリスト</span></span>
+          <span class="tag"><span class="en">humming karaoke</span><span class="ja">鼻歌カラオケ</span></span>
+          <span class="tag"><span class="en">call-and-response</span><span class="ja">合いの手</span></span>
+          <span class="tag"><span class="en">quiz</span><span class="ja">クイズ</span></span>
+          <span class="tag"><span class="en">ranking</span><span class="ja">ランキング</span></span>
+          <span class="tag"><span class="en">radio-style</span><span class="ja">ラジオ風</span></span>
+          <span class="tag"><span class="en">conversation</span><span class="ja">おしゃべり</span></span>
+        </p>
+        <p><strong><span class="en">While stopped / post-rest:</span><span class="ja">停車中・休憩後：</span></strong>
+          <span class="tag"><span class="en">live viewing</span><span class="ja">ライブビューイング</span></span>
+          <span class="tag"><span class="en">stretch</span><span class="ja">ストレッチ</span></span>
+          <span class="tag"><span class="en">full karaoke</span><span class="ja">フルカラオケ</span></span>
+          <span class="tag"><span class="en">call-and-response video</span><span class="ja">合いの手動画</span></span>
+          <span class="tag"><span class="en">oshi reexperience</span><span class="ja">推し追体験</span></span>
+          <span class="tag"><span class="en">multisensory relaxation</span><span class="ja">多感覚リラックス</span></span>
+          <span class="tag"><span class="en">connected video recommendation</span><span class="ja">家電連携動画レコ</span></span>
+        </p>
+        <p class="sub"><span class="en">Playlist, humming karaoke, and full karaoke receive detailed V1 content generation. Other services are represented with editable review-level templates. Slide-26-only future options remain disabled by the default Slides 64–65 matrix until a versioned flow enables them.</span><span class="ja">V1ではプレイリスト、鼻歌カラオケ、フルカラオケを詳細設計し、その他は編集可能な評価用テンプレートで表現します。スライド26だけに記載された将来候補は、別のバージョン化フローで有効化されるまで、初期のスライド64・65制約では無効です。</span></p>
+      </div>
+      <p class="sub" style="margin-top:14px">
+        <span class="en"><strong>Important:</strong> packages share only neutral data formats and hard platform constraints. They never share scores or rankings.</span>
+        <span class="ja"><strong>重要：</strong>パッケージ間で共有するのは中立なデータ形式とプラットフォーム制約だけです。スコアやランキングは共有しません。</span>
+      </p>
+    </section>
+
+    <section id="features">
+      <h2><span class="en">4. Exact features used</span><span class="ja">4. 使用する特徴量の全体像</span></h2>
+      <p class="sub en">P0 is dominant safety/eligibility context; P1 is primary situation; P2 is contextual; P3 is personalization/history; P4 is a weak novelty or tie-breaker.</p>
+      <p class="sub ja">P0は安全・適格性に関わる最優先、P1は主要状況、P2は文脈、P3は個人化・履歴、P4は弱い新規性・同点調整です。</p>
+
+      <div class="callout note" style="margin-top:20px">
+        <p class="en"><strong>Source first:</strong> the CDC-SU features are the baseline. Features proposed by the simulator team are shown separately and are never presented as CDC-SU requirements.</p>
+        <p class="ja"><strong>CDC-SUを最優先：</strong>CDC-SU記載の特徴量を基準とし、シミュレーターチームの追加提案は別表に分け、CDC-SU要件として扱いません。</p>
+      </div>
+
+      <h3 style="margin-top:24px"><span class="en">A. CDC-SU baseline for service proposal — Slides 66–67</span><span class="ja">A. サービス提案のCDC-SU基準 — スライド66・67</span></h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Priority</th><th><span class="en">Category</span><span class="ja">カテゴリ</span></th><th><span class="en">Exact features</span><span class="ja">具体的な特徴量</span></th><th><span class="en">Why used</span><span class="ja">主な使い方</span></th></tr></thead>
+          <tbody>
+            <tr><td><span class="priority p0">P0</span></td><td><span class="en">Current driver state</span><span class="ja">現在のドライバー状態</span></td><td><code>drowsiness_level</code>, <code>fatigue_level</code></td><td><span class="en">Normalized drowsiness and fatigue.</span><span class="ja">眠気・疲労度を正規化して使用。</span></td></tr>
+            <tr><td><span class="priority p1">P1</span></td><td><span class="en">Driving environment</span><span class="ja">走行環境</span></td><td><code>traffic_state</code>, <code>road_type</code>, <code>night_state</code>, <code>monotony_level</code></td><td><span class="en">Traffic, road demand, night, and monotonous-road fit.</span><span class="ja">渋滞、道路種別、夜間、単調道路への適合。</span></td></tr>
+            <tr><td><span class="priority p2">P2</span></td><td><span class="en">Passengers</span><span class="ja">同乗者</span></td><td><code>child_present</code>, <code>multiple_passengers</code></td><td><span class="en">Child-compatible and group-friendly service fit.</span><span class="ja">子供対応・複数人向けサービスの適合。</span></td></tr>
+            <tr><td><span class="priority p1">P1–2</span></td><td><span class="en">Characteristic route/destination</span><span class="ja">特徴的なルート・目的地</span></td><td><code>route_tags</code>, <code>destination_tags</code></td><td><span class="en">Route and destination relevance.</span><span class="ja">ルート・目的地との関連性。</span></td></tr>
+            <tr><td><span class="priority p3">P2–4</span></td><td><span class="en">Personal service-use preference</span><span class="ja">個人のサービス利用傾向</span></td><td><code>oshi_registered</code>, <code>oshi_mode</code>, <code>service_recency_state[service]</code>, <code>service_usage_level[service]</code>, <code>scene_service_usage_level[scene][service]</code></td><td><span class="en">What car services the person usually uses, including scene-specific use.</span><span class="ja">普段使う車内サービスと、場面別の利用傾向。</span></td></tr>
+            <tr><td><span class="priority p3">P3</span></td><td><span class="en">Past service-proposal performance</span><span class="ja">過去のサービス提案実績</span></td><td><code>service_proposal_acceptance_rate[service]</code>, <code>service_recovery_rate[service]</code></td><td><span class="en">CDC-SU acceptance and recovery indicators.</span><span class="ja">CDC-SU記載の受諾率・回復率。</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="margin-top:30px"><span class="en">B. Proposed additions for service proposal</span><span class="ja">B. サービス提案への追加提案</span></h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Priority</th><th><span class="en">Proposed category</span><span class="ja">追加カテゴリ</span></th><th><span class="en">Exact features</span><span class="ja">具体的な特徴量</span></th><th><span class="en">Reason</span><span class="ja">追加理由</span></th></tr></thead>
+          <tbody>
+            <tr><td><span class="priority p0">P0</span></td><td><span class="en">Motion safety</span><span class="ja">走行状態・安全</span></td><td><code>motion_state</code></td><td><span class="en">Promotes a CDC-SU concrete-content constraint to earlier service eligibility.</span><span class="ja">具体コンテンツ側のCDC-SU走行制約を、サービス適格性にも早期適用。</span></td></tr>
+            <tr><td><span class="priority p1">P0–2</span></td><td><span class="en">Rest-route feasibility</span><span class="ja">休憩ルート実現性</span></td><td><code>estimated_min_until_rest_spot</code>, <code>rest_spot_type</code></td><td><span class="en">Tests whether pre-rest content is practical.</span><span class="ja">休憩前コンテンツが現実的かを確認。</span></td></tr>
+            <tr><td><span class="priority p3">P2–3</span></td><td><span class="en">Current proposal session</span><span class="ja">現在の提案セッション</span></td><td><code>active_service</code>, <code>recent_service_rejections</code></td><td><span class="en">Avoids conflicts and immediate repetition.</span><span class="ja">競合や拒否直後の繰り返しを回避。</span></td></tr>
+            <tr><td><span class="priority p3">P3</span></td><td><span class="en">Evidence confidence</span><span class="ja">データ信頼度</span></td><td><code>service_proposal_acceptance_confidence[service]</code>, <code>service_recovery_confidence[service]</code></td><td><span class="en">Limits sparse synthetic history.</span><span class="ja">少量の合成履歴の影響を制限。</span></td></tr>
+            <tr><td><span class="priority p2">P2</span></td><td><span class="en">Schedule promotion</span><span class="ja">スケジュールのサービス利用</span></td><td><code>scheduled_event_type</code>, <code>scheduled_event_timing</code>, <code>scheduled_event_tags</code></td><td><span class="en">Optional use of CDC-SU content schedule for service choice.</span><span class="ja">CDC-SUの具体コンテンツ用予定情報をサービス選択にも任意利用。</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="margin-top:30px"><span class="en">C. CDC-SU content-specific baseline — Slides 68–70</span><span class="ja">C. 具体コンテンツのCDC-SU追加基準 — スライド68～70</span></h3>
+      <div class="callout note">
+        <p class="en">Concrete content inherits the CDC-SU service baseline and any enabled service additions, then applies the CDC-SU content fields below.</p>
+        <p class="ja">具体コンテンツはCDC-SUサービス基準と有効なサービス追加提案を引き継ぎ、以下のCDC-SU具体コンテンツ特徴量を追加します。</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Priority</th><th><span class="en">CDC-SU category</span><span class="ja">CDC-SUカテゴリ</span></th><th><span class="en">Exact features</span><span class="ja">具体的な特徴量</span></th><th><span class="en">Use</span><span class="ja">用途</span></th></tr></thead>
+          <tbody>
+            <tr><td><span class="priority p0">P0</span></td><td><span class="en">Driving/stopped state</span><span class="ja">走行状態</span></td><td><code>motion_state</code></td><td><span class="en">Content-mode and presentation restrictions.</span><span class="ja">コンテンツモード・表示制約。</span></td></tr>
+            <tr><td><span class="priority p3">P3–4</span></td><td><span class="en">UPro personal setup</span><span class="ja">UPro個人設定</span></td><td><code>age_band</code>, <code>gender</code>, <code>hobby_interest_tags</code></td><td><span class="en">Registered interest/era context. Gender is available but has zero default transparent weight.</span><span class="ja">登録された趣味・年代の文脈。性別は利用可能ですが、透明方式の初期重みは0です。</span></td></tr>
+            <tr><td><span class="priority p3">P3</span></td><td><span class="en">Content-use preference</span><span class="ja">コンテンツ利用傾向</span></td><td><code>content_tag_usage_level[tag]</code>, <code>catalog_item_usage_level[item]</code>, <code>scene_content_tag_usage_level[scene][tag]</code></td><td><span class="en">Genre/item preference and scene-specific content use.</span><span class="ja">ジャンル・項目の好みと、場面別コンテンツ利用。</span></td></tr>
+            <tr><td><span class="priority p4">P4</span></td><td><span class="en">Content novelty</span><span class="ja">コンテンツ新規性</span></td><td><code>catalog_item_recency_state[item]</code>, <code>content_tag_recency_state[tag]</code></td><td><span class="en">Weak control for never-used, long-unused, or recent content.</span><span class="ja">未利用・久しぶり・最近利用した内容を弱く調整。</span></td></tr>
+            <tr><td><span class="priority p3">P2–3</span></td><td><span class="en">Playback and user operations</span><span class="ja">再生・ユーザー操作履歴</span></td><td><code>played_items</code>, <code>skipped_items</code>, <code>cancelled_content_plans</code>, <code>changed_from_items</code></td><td><span class="en">Reflects played, skipped, cancelled, and changed content.</span><span class="ja">再生・スキップ・キャンセル・変更を反映。</span></td></tr>
+            <tr><td><span class="priority p2">P2</span></td><td><span class="en">Schedule</span><span class="ja">スケジュール</span></td><td><code>scheduled_event_type</code>, <code>scheduled_event_timing</code>, <code>scheduled_event_tags</code></td><td><span class="en">Matches concrete content to upcoming events.</span><span class="ja">直近イベントに具体コンテンツを合わせる。</span></td></tr>
+            <tr><td><span class="priority p3">P3</span></td><td><span class="en">Past concrete-proposal performance</span><span class="ja">過去の具体提案実績</span></td><td><code>content_proposal_acceptance_rate[key]</code>, <code>content_recovery_rate[key]</code></td><td><span class="en">CDC-SU acceptance and recovery indicators.</span><span class="ja">CDC-SU記載の受諾率・回復率。</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="margin-top:30px"><span class="en">D. Proposed additions for concrete content</span><span class="ja">D. 具体コンテンツへの追加提案</span></h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Priority</th><th><span class="en">Proposed category</span><span class="ja">追加カテゴリ</span></th><th><span class="en">Exact features</span><span class="ja">具体的な特徴量</span></th><th><span class="en">Reason</span><span class="ja">追加理由</span></th></tr></thead>
+          <tbody>
+            <tr><td><span class="priority p2">P2–3</span></td><td><span class="en">Detailed oshi identity</span><span class="ja">詳細な推し情報</span></td><td><code>oshi_id</code>, <code>oshi_type</code>, <code>oshi_tags</code></td><td><span class="en">Required to match actual synthetic catalog items.</span><span class="ja">具体的な合成カタログ項目との照合に必要。</span></td></tr>
+            <tr><td><span class="priority p3">P3</span></td><td><span class="en">Granular operations</span><span class="ja">詳細な操作履歴</span></td><td><code>completed_items</code>, <code>manually_selected_items</code>, <code>repeated_items</code></td><td><span class="en">Separates completion, explicit choice, and deliberate repeat.</span><span class="ja">完了、明示選択、意図的な再生を分離。</span></td></tr>
+            <tr><td><span class="priority p3">P3</span></td><td><span class="en">Evidence confidence</span><span class="ja">データ信頼度</span></td><td><code>content_proposal_acceptance_confidence[key]</code>, <code>content_recovery_confidence[key]</code></td><td><span class="en">Limits sparse synthetic history.</span><span class="ja">少量の合成履歴の影響を制限。</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout" style="margin-top:20px">
+        <p class="en"><strong>Required control inputs, not scored features:</strong> trigger purpose, lifecycle stage, and stage-allowed services determine the flow and candidate set before ranking.</p>
+        <p class="ja"><strong>スコア特徴量ではない必須制御入力：</strong>発火目的、ライフサイクル段階、段階別許可サービスは、順位付けの前にフローと候補集合を決定します。</p>
+        <p class="en"><strong>Other non-features:</strong> service capability, content readiness, catalog records, UI page, algorithm weights, and quick/interactive mode are constraints, data, configuration, or UI behavior.</p>
+        <p class="ja"><strong>その他の非特徴量：</strong>サービス機能、コンテンツ準備状態、カタログ、UIページ、アルゴリズム重み、クイック/対話モードは、制約・データ・設定・UI動作です。</p>
+      </div>
+    </section>
+
+    <section id="simulator">
+      <h2><span class="en">5. What the customer can do in the simulator</span><span class="ja">5. お客様がシミュレーターでできること</span></h2>
+      <div class="grid three">
+        <article class="card blue">
+          <h3><span class="en">Edit the complete world</span><span class="ja">世界全体を編集</span></h3>
+          <p class="en">Edit trigger purpose, lifecycle stage, allowed-service matrix, every feature, schedule, oshi profile, catalog, event, parameter, and hyperparameter. Every feature is labeled CDC-SU baseline, normalized CDC-SU concept, or proposed addition.</p>
+          <p class="ja">発火目的、ライフサイクル段階、許可サービス表、すべての特徴量、予定、推しプロフィール、カタログ、イベント、パラメータ、ハイパーパラメータを編集できます。各特徴量には「CDC-SU基準」「CDC-SU概念の正規化」「追加提案」を表示します。</p>
+        </article>
+        <article class="card green">
+          <h3><span class="en">See cause and contrast</span><span class="ja">原因と差分を確認</span></h3>
+          <p class="en">Clone a seed, change one field, and see eligibility, rank, reason, and journey changes. This makes the proposal idea easy to explain.</p>
+          <p class="ja">シードを複製し、1項目だけ変更して、適格性・順位・理由・体験の変化を確認できます。提案の考え方を説明しやすくします。</p>
+        </article>
+        <article class="card purple">
+          <h3><span class="en">Review, not certify</span><span class="ja">検証ではなく評価</span></h3>
+          <p class="en">The customer judges whether the result feels appropriate, understandable, safe, useful, or intrusive. The simulator records that review separately.</p>
+          <p class="ja">結果が適切、理解可能、安全に感じる、有用、煩わしいかをお客様が評価します。シミュレーターはその評価を別の証跡として保存します。</p>
+        </article>
+      </div>
+      <div class="grid" style="margin-top:16px">
+        <article class="card">
+          <h3><span class="en">Interactive mode</span><span class="ja">対話モード</span></h3>
+          <p class="en">Choose, reject, edit, request alternatives, and manually progress through events.</p>
+          <p class="ja">選択、拒否、編集、別候補要求、イベント進行を手動で行います。</p>
+        </article>
+        <article class="card">
+          <h3><span class="en">Quick-check mode</span><span class="ja">クイック確認モード</span></h3>
+          <p class="en">Automatically take the top valid candidate to inspect the resulting journey quickly. It uses the same ranking as interactive mode.</p>
+          <p class="ja">最上位の有効候補を自動選択して、結果の流れを素早く確認します。対話モードと同じランキングを使用します。</p>
+        </article>
+      </div>
+      <div class="callout note" style="margin-top:20px">
+        <p class="en">V1 is discrete event-driven. In the standalone screen, the customer selects the trigger purpose and starting lifecycle stage. Later, the trigger simulator will supply its selected purpose and tick/journey state through the same proposal contract.</p>
+        <p class="ja">V1は離散イベント駆動です。単独画面ではお客様が発火目的と開始ライフサイクル段階を選びます。将来はトリガーシミュレーターが、選択した目的とtick・ジャーニー状態を同じ提案契約へ渡します。</p>
+      </div>
+    </section>
+
+    <section id="delivery">
+      <h2><span class="en">6. Delivery path</span><span class="ja">6. 実装の進め方</span></h2>
+      <div class="flow">
+        <div class="step"><b>1</b><span class="en">Separate screen and contracts</span><span class="ja">別画面と共通契約</span></div>
+        <div class="step"><b>2</b><span class="en">Synthetic world and constraints</span><span class="ja">合成世界と制約</span></div>
+        <div class="step"><b>3</b><span class="en">Transparent music journey</span><span class="ja">透明方式の音楽体験</span></div>
+        <div class="step"><b>4</b><span class="en">Independent LLM packages</span><span class="ja">独立LLM方式</span></div>
+        <div class="step"><b>5</b><span class="en">Comparison, all services, integration</span><span class="ja">比較・全サービス・統合</span></div>
+      </div>
+      <p class="sub" style="margin-top:22px">
+        <span class="en">The first customer-meaningful release is the transparent music vertical slice: editable data → service proposal → content proposal → pre-rest/rest/post-rest journey → evidence. LLM comparison follows on the same contracts.</span>
+        <span class="ja">最初にお客様へ価値を示せるリリースは、透明方式の音楽縦断体験です。編集可能データ → サービス提案 → 具体提案 → 休憩前/中/後 → 証跡までを実現し、その後、同じ契約上でLLM方式と比較します。</span>
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <p class="en">Design basis: CDC-SU music-planning specification, especially Slides 1–7, 26, 38–44, and 64–82. This page is an executive summary; the consolidated technical specification contains the detailed contracts and acceptance criteria.</p>
+      <p class="ja">設計根拠：CDC-SU音楽企画仕様書（主にスライド1–7、26、38–44、64–82）。本ページは経営・説明向け概要です。詳細な契約・受入条件は統合仕様書に記載しています。</p>
+    </div>
+  </footer>
+
+  <script>
+    const buttons = document.querySelectorAll('[data-lang]');
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        document.body.classList.remove('lang-en', 'lang-ja');
+        document.body.classList.add(`lang-${button.dataset.lang}`);
+        buttons.forEach((item) => item.classList.toggle('active', item === button));
+        document.documentElement.lang = button.dataset.lang === 'ja' ? 'ja' : 'en';
+      });
+    });
+  </script>
+</body>
+</html>
