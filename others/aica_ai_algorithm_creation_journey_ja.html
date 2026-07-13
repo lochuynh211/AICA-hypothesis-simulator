@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="チームとAIがAICAハイブリッド・トリガーを設計・実装・レビュー・改善したプロセスをまとめた再利用可能な事例。">
+  <title>プロジェクト知識から実装可能なアルゴリズムへ — AICA開発の歩み</title>
+  <style>
+    :root {
+      --ink: #f4f7fb;
+      --muted: #aebbd0;
+      --dim: #7889a5;
+      --navy: #07111f;
+      --navy-2: #0b182a;
+      --panel: rgba(17, 34, 56, .76);
+      --line: rgba(170, 197, 230, .16);
+      --cyan: #65e7e1;
+      --blue: #6fa8ff;
+      --amber: #ffc46b;
+      --green: #8de0ad;
+      --rose: #ff9eaa;
+      --shadow: 0 24px 70px rgba(0, 0, 0, .28);
+      --radius: 22px;
+      --max: 1180px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 15% 8%, rgba(53, 129, 185, .19), transparent 31rem),
+        radial-gradient(circle at 90% 28%, rgba(34, 184, 170, .11), transparent 28rem),
+        var(--navy);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+
+    a { color: inherit; }
+    button { font: inherit; }
+    .progress {
+      position: fixed; inset: 0 auto auto 0; width: 0; height: 3px;
+      z-index: 100; background: linear-gradient(90deg, var(--cyan), var(--blue), var(--amber));
+    }
+    .shell { width: min(calc(100% - 40px), var(--max)); margin-inline: auto; }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(7, 17, 31, .82); backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--line);
+    }
+    .topbar-inner { min-height: 66px; display: flex; align-items: center; gap: 24px; }
+    .brand { display: flex; align-items: center; gap: 11px; font-weight: 750; letter-spacing: -.02em; white-space: nowrap; }
+    .brand-mark { width: 29px; height: 29px; border-radius: 9px; display: grid; place-items: center; color: #061421; background: var(--cyan); font-size: 13px; font-weight: 900; }
+    nav { display: flex; margin-left: auto; gap: 5px; overflow-x: auto; scrollbar-width: none; }
+    nav a { padding: 8px 10px; border-radius: 9px; color: var(--muted); text-decoration: none; font-size: 13px; white-space: nowrap; }
+    nav a:hover, nav a.active { color: var(--ink); background: rgba(255,255,255,.07); }
+
+    section { padding: 108px 0; scroll-margin-top: 64px; border-bottom: 1px solid rgba(170,197,230,.08); }
+    .hero { min-height: calc(100vh - 66px); display: grid; align-items: center; padding: 86px 0; }
+    .eyebrow { color: var(--cyan); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .18em; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { max-width: 960px; margin: 19px 0 26px; font-size: clamp(48px, 7.7vw, 100px); line-height: .98; letter-spacing: -.061em; }
+    h1 em { color: var(--cyan); font-style: normal; }
+    h2 { margin-bottom: 18px; font-size: clamp(34px, 5vw, 61px); line-height: 1.04; letter-spacing: -.045em; }
+    h3 { font-size: 20px; letter-spacing: -.018em; }
+    .lede { max-width: 770px; color: var(--muted); font-size: clamp(18px, 2.1vw, 24px); }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 40px; }
+    .chip { display: inline-flex; align-items: center; gap: 8px; padding: 9px 13px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: rgba(255,255,255,.025); font-size: 13px; }
+    .chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 16px var(--cyan); }
+    .section-head { max-width: 800px; margin-bottom: 48px; }
+    .section-head p { color: var(--muted); font-size: 18px; }
+
+    .thesis {
+      margin-top: 60px; padding: 27px 30px; border-left: 3px solid var(--amber);
+      background: linear-gradient(90deg, rgba(255,196,107,.1), transparent);
+      color: #f7e3bd; font-size: clamp(19px, 2.3vw, 27px); font-weight: 620;
+    }
+
+    .cycle { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .cycle-card, .card {
+      position: relative; overflow: hidden; padding: 25px; border: 1px solid var(--line);
+      border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow);
+    }
+    .cycle-card::after { content: "→"; position: absolute; right: -13px; top: 21px; color: var(--cyan); font-size: 20px; z-index: 2; }
+    .cycle-card:nth-child(4)::after, .cycle-card:nth-child(8)::after { content: "↻"; right: 17px; opacity: .7; }
+    .num { color: var(--cyan); font: 800 15px ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .04em; }
+    .cycle-card h3 { margin: 0 0 10px; }
+    .cycle-card p, .card p { color: var(--muted); margin-bottom: 0; }
+
+    .split, .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+    .skills .card { min-height: 235px; }
+    .icon { width: 45px; height: 45px; display: grid; place-items: center; border-radius: 13px; margin-bottom: 25px; color: #07111f; background: var(--cyan); font-weight: 900; }
+    .skills .card:nth-child(2n) .icon { background: var(--blue); }
+    .skills .card:nth-child(3n) .icon { background: var(--amber); }
+    .skill-output { margin-top: 16px; padding-top: 15px; border-top: 1px solid var(--line); color: var(--green); font-size: 13px; }
+
+    .input-board { border: 1px solid var(--line); border-radius: 28px; background: rgba(10,25,43,.72); overflow: hidden; box-shadow: var(--shadow); }
+    .input-title { padding: 20px 25px; border-bottom: 1px solid var(--line); color: var(--muted); font: 700 12px ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase; }
+    .input-grid { display: grid; grid-template-columns: 1.1fr 1.9fr; }
+    .source-list { padding: 28px; border-right: 1px solid var(--line); }
+    .source { padding: 14px 0; border-bottom: 1px solid var(--line); }
+    .source:last-child { border-bottom: 0; }
+    .source b { display: block; margin-bottom: 3px; }
+    .source span { color: var(--muted); font-size: 13px; }
+    .usecases { display: grid; grid-template-columns: repeat(2, 1fr); gap: 13px; padding: 28px; }
+    .uc { padding: 20px; border: 1px solid var(--line); border-radius: 17px; background: rgba(255,255,255,.025); }
+    .uc-id { color: var(--amber); font: 800 11px ui-monospace, monospace; letter-spacing: .12em; }
+    .uc h3 { margin: 13px 0 7px; font-size: 17px; }
+    .uc p { margin: 0; color: var(--muted); font-size: 14px; }
+    .warning { margin-top: 21px; padding: 20px 24px; border: 1px solid rgba(255,196,107,.27); border-radius: 16px; color: #f9ddb0; background: rgba(255,196,107,.07); }
+
+    .handoff { display: grid; grid-template-columns: 1fr 68px 1fr; align-items: stretch; gap: 10px; }
+    .role { padding: 29px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+    .role-label { color: var(--cyan); font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .role.ai .role-label { color: var(--blue); }
+    .role ul { margin: 18px 0 0; padding-left: 18px; color: var(--muted); }
+    .connector { display: grid; place-items: center; color: var(--amber); font-size: 26px; }
+
+    .idea { position: relative; padding: clamp(27px, 5vw, 52px); border: 1px solid rgba(101,231,225,.25); border-radius: 28px; background: linear-gradient(135deg, rgba(23,61,80,.9), rgba(12,27,46,.85)); box-shadow: var(--shadow); }
+    .idea h3 { font-size: clamp(25px, 3.5vw, 40px); max-width: 850px; }
+    .formula { margin: 32px 0; padding: 23px; overflow-x: auto; border: 1px solid var(--line); border-radius: 16px; color: var(--cyan); background: rgba(3,12,22,.52); font: 650 clamp(14px, 2vw, 19px) ui-monospace, SFMono-Regular, Consolas, monospace; white-space: nowrap; }
+    .layers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .layer { padding: 16px; border-radius: 13px; background: rgba(255,255,255,.055); }
+    .layer b { display: block; margin-bottom: 5px; }
+    .layer span { color: var(--muted); font-size: 13px; }
+
+    .mapping { display: grid; gap: 10px; }
+    .map-row { display: grid; grid-template-columns: 1.1fr 40px 1.5fr; align-items: center; padding: 16px 19px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.025); }
+    .need { color: var(--muted); }
+    .arrow { color: var(--cyan); text-align: center; }
+    .choice { font-weight: 700; }
+
+    .spec-stack { counter-reset: spec; display: grid; gap: 10px; }
+    .spec-row { counter-increment: spec; display: grid; grid-template-columns: 45px 1fr auto; gap: 15px; align-items: center; padding: 17px 20px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.025); }
+    .spec-row::before { content: counter(spec, decimal-leading-zero); color: var(--cyan); font: 800 12px ui-monospace, monospace; }
+    .spec-row span { color: var(--muted); font-size: 13px; }
+    details { border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.025); }
+    summary { cursor: pointer; padding: 17px 20px; font-weight: 700; }
+    details > div { padding: 0 20px 19px; color: var(--muted); }
+    summary:focus-visible, nav a:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+
+    .pipeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 11px; }
+    .pipe { position: relative; padding: 21px 17px; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); }
+    .pipe:not(:last-child)::after { content: "›"; position: absolute; right: -9px; top: 35%; z-index: 2; color: var(--cyan); font-size: 24px; }
+    .pipe h3 { margin: 0 0 8px; font-size: 17px; }
+    .pipe h3 .step-num { color: var(--cyan); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 14px; }
+    .pipe span { color: var(--muted); font-size: 13px; }
+
+    .feedback-loop { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 18px; align-items: center; }
+    .feedback-loop .center { padding: 35px; border: 1px solid rgba(101,231,225,.3); border-radius: 50%; aspect-ratio: 1; display: grid; place-items: center; text-align: center; background: radial-gradient(circle, rgba(101,231,225,.12), transparent 70%); }
+    .feedback-list { display: grid; gap: 12px; }
+    .feedback-item { padding: 17px; border-left: 2px solid var(--blue); background: rgba(111,168,255,.06); }
+    .feedback-item b { display: block; }
+    .feedback-item span { color: var(--muted); font-size: 13px; }
+
+    .before-after { display: grid; grid-template-columns: 1fr 52px 1fr; gap: 14px; align-items: stretch; }
+    .version { padding: 27px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+    .version-label { display: inline-block; margin-bottom: 20px; color: var(--amber); font: 800 11px ui-monospace, monospace; text-transform: uppercase; letter-spacing: .12em; }
+    .version.after { border-color: rgba(101,231,225,.28); }
+    .version.after .version-label { color: var(--cyan); }
+    .version ul { padding-left: 19px; color: var(--muted); }
+    .delta { display: grid; place-items: center; color: var(--cyan); font-size: 25px; }
+
+    .playbook { display: grid; grid-template-columns: repeat(3, 1fr); gap: 17px; }
+    .playbook .card b { display: block; margin-bottom: 12px; color: var(--cyan); font: 800 11px ui-monospace, monospace; letter-spacing: .1em; }
+    .checklist { list-style: none; padding: 0; margin: 15px 0 0; }
+    .checklist li { position: relative; padding: 9px 0 9px 28px; border-bottom: 1px solid var(--line); color: var(--muted); }
+    .checklist li::before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 900; }
+
+    .closing { text-align: center; padding-block: 140px; }
+    .closing h2 { max-width: 900px; margin-inline: auto; }
+    .closing .lede { margin-inline: auto; }
+    .accountability { display: inline-flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 32px; }
+    footer { padding: 30px 0 50px; color: var(--dim); font-size: 12px; text-align: center; }
+    .evidence-note { margin-top: 33px; color: var(--dim); font-size: 12px; }
+
+    /* Light documentation layout — aligned with aica_hybrid_trigger_explained.html */
+    :root {
+      --ink: #1f2937; --muted: #4b5563; --dim: #6b7280;
+      --navy: #ffffff; --navy-2: #f8fafc; --panel: #ffffff;
+      --line: #e5e7eb; --cyan: #1d4ed8; --blue: #2563eb;
+      --amber: #b45309; --green: #047857; --rose: #dc2626;
+      --shadow: 0 1px 3px rgba(15, 23, 42, .07); --radius: 10px;
+    }
+    body { background: #fff; }
+    .shell { width: 100%; }
+    .topbar {
+      position: fixed; inset: 0 auto 0 0; width: 246px; z-index: 50;
+      overflow-y: auto; background: #f8fafc; border: 0; border-right: 1px solid var(--line);
+      backdrop-filter: none;
+    }
+    .topbar-inner { min-height: 100%; display: block; padding: 28px 16px 40px 24px; }
+    .brand { gap: 10px; font-weight: 800; letter-spacing: -.01em; white-space: normal; }
+    .brand-mark { flex: none; border-radius: 7px; color: #fff; background: var(--cyan); }
+    nav { display: flex; flex-direction: column; margin: 22px 0 0; gap: 2px; overflow: visible; }
+    nav a {
+      padding: 6px 10px; border-radius: 6px; border-left: 2px solid transparent;
+      color: var(--muted); font-size: 13px; line-height: 1.4; white-space: normal;
+    }
+    nav a:hover { color: var(--ink); background: #e2e8f0; }
+    nav a.active { color: var(--cyan); background: #eff6ff; border-left-color: var(--cyan); font-weight: 700; }
+    main, footer { margin-left: 246px; }
+    main { max-width: 1180px; padding: 0 48px 80px; }
+    section { padding: 64px 0; scroll-margin-top: 20px; border-bottom: 1px solid var(--line); }
+    .hero { min-height: auto; display: block; padding: 52px 0 48px; }
+    h1 { max-width: 900px; margin: 14px 0 18px; font-size: clamp(38px, 5.2vw, 64px); line-height: 1.08; letter-spacing: -.045em; }
+    h2 { margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); font-size: clamp(28px, 3.5vw, 42px); line-height: 1.15; letter-spacing: -.03em; }
+    .lede { font-size: clamp(17px, 1.8vw, 21px); }
+    .hero-meta { margin-top: 28px; }
+    .chip { padding: 7px 11px; border-color: #cbd5e1; background: #f8fafc; }
+    .chip::before { box-shadow: none; }
+    .section-head { margin-bottom: 32px; }
+    .section-head p { font-size: 17px; }
+    .thesis { margin-top: 32px; padding: 18px 22px; border-left: 4px solid var(--cyan); border-radius: 0 8px 8px 0; background: #eff6ff; color: var(--ink); font-size: clamp(17px, 2vw, 21px); }
+    .cycle-card, .card, .role, .version, .pipe { background: #fff; }
+    .cycle-card, .card { padding: 21px; }
+    .icon { width: 40px; height: 40px; margin-bottom: 18px; border-radius: 8px; color: #fff; }
+    .input-board { border-radius: var(--radius); background: #fff; }
+    .input-title { background: #f1f5f9; color: var(--ink); }
+    .uc { border-radius: 8px; background: #f8fafc; }
+    .warning { padding: 18px 22px; border-color: #fde68a; border-radius: 8px; color: #92400e; background: #fffbeb; }
+    .idea { padding: clamp(25px, 4vw, 40px); border-color: #bfdbfe; border-radius: var(--radius); background: #eff6ff; }
+    .formula { margin: 28px 0; padding: 18px; border-color: #cbd5e1; border-radius: 8px; background: #fff; }
+    .layer { border: 1px solid #dbeafe; border-radius: 8px; background: #fff; }
+    .map-row, .spec-row { border-radius: 8px; background: #fff; }
+    details { border-radius: 8px; background: #f8fafc; }
+    .feedback-loop .center { border-color: #bfdbfe; background: #eff6ff; }
+    .feedback-item { border-left: 3px solid var(--blue); background: #f8fafc; }
+    .version.after { border-color: #93c5fd; background: #eff6ff; }
+    .closing { text-align: left; padding-block: 80px; }
+    .closing h2, .closing .lede { margin-inline: 0; }
+    .accountability { justify-content: flex-start; }
+    footer { text-align: left; padding-inline: 48px; }
+
+    @media (max-width: 900px) {
+      .topbar { position: sticky; inset: auto; width: auto; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+      .topbar-inner { min-height: 62px; display: flex; align-items: center; padding: 12px 20px; }
+      nav { display: none; }
+      main, footer { margin-left: 0; }
+      main { padding: 0 28px 70px; }
+      .cycle, .grid-3, .playbook { grid-template-columns: repeat(2, 1fr); }
+      .layers { grid-template-columns: repeat(2, 1fr); }
+      .pipeline { grid-template-columns: repeat(2, 1fr); }
+      .pipe::after { display: none; }
+      .feedback-loop { grid-template-columns: 1fr; }
+      .feedback-loop .center { width: 230px; margin: 10px auto; }
+    }
+    @media (max-width: 640px) {
+      .shell { width: 100%; }
+      main { padding-inline: 18px; }
+      section { padding: 52px 0; }
+      h1 { font-size: clamp(36px, 12vw, 54px); }
+      .cycle, .grid-2, .grid-3, .playbook, .usecases, .pipeline { grid-template-columns: 1fr; }
+      .cycle-card::after { display: none; }
+      .input-grid { grid-template-columns: 1fr; }
+      .source-list { border-right: 0; border-bottom: 1px solid var(--line); }
+      .handoff, .before-after { grid-template-columns: 1fr; }
+      .connector, .delta { min-height: 40px; transform: rotate(90deg); }
+      .layers { grid-template-columns: 1fr; }
+      .map-row { grid-template-columns: 1fr; gap: 7px; }
+      .arrow { text-align: left; transform: rotate(90deg); transform-origin: left; }
+      .spec-row { grid-template-columns: 35px 1fr; }
+      .spec-row span { grid-column: 2; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+    @media print {
+      :root { --ink: #101828; --muted: #475467; --dim: #667085; --panel: #fff; --line: #d0d5dd; }
+      body { background: #fff; color: var(--ink); font-size: 10.5pt; }
+      .topbar, .progress { display: none; }
+      main, footer { margin-left: 0; }
+      main { max-width: none; padding: 0; }
+      section { padding: 34px 0; break-inside: avoid; border-bottom: 1px solid #ddd; }
+      .hero { min-height: auto; }
+      h1 { font-size: 47pt; }
+      h2 { font-size: 27pt; }
+      .cycle-card, .card, .idea, .role, .version, .pipe, .input-board { box-shadow: none; background: #fff; }
+      .cycle, .grid-3, .playbook { grid-template-columns: repeat(2, 1fr); }
+      details > div { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" id="progress" aria-hidden="true"></div>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <div class="brand"><span class="brand-mark">AI</span> AICA アルゴリズム開発</div>
+      <nav aria-label="Section navigation">
+        <a href="#top">概要</a>
+        <a href="#cycle">1. 作成サイクル</a>
+        <a href="#skills">2. 必要なスキル</a>
+        <a href="#inputs">3. 入力資料</a>
+        <a href="#understand">4. 課題の理解</a>
+        <a href="#idea">5. 最初のアルゴリズム案</a>
+        <a href="#rationale">6. 設計理由</a>
+        <a href="#specification">7. アルゴリズム仕様</a>
+        <a href="#build">8. 実装とテスト</a>
+        <a href="#feedback">9. フィードバックと改善</a>
+        <a href="#playbook">10. 再利用できる進め方</a>
+        <a href="#close">まとめ</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="top">
+      <div class="shell">
+        <div class="eyebrow">AICAハイブリッド・トリガー · 共同開発事例</div>
+        <h1><em>AICAハイブリッド・トリガー</em>をどう作ったか</h1>
+        <p class="lede">本資料では、AIに渡した入力資料、最初のアルゴリズム案、仕様化と実装、受けたフィードバック、その後に行った変更を順に示します。</p>
+      </div>
+    </section>
+
+    <section id="cycle">
+      <div class="shell">
+        <div class="section-head"><div class="eyebrow">進め方の全体像</div><h2>8段階の作成・改善サイクル</h2><p>各段階でレビューできる成果物を作り、内容を確認してから次へ進みました。</p></div>
+        <div class="cycle">
+          <article class="cycle-card"><h3><span class="num">1.</span> 収集</h3><p>事業背景とユースケースの情報を一つの入力資料群としてそろえます。</p></article>
+          <article class="cycle-card"><h3><span class="num">2.</span> 理解</h3><p>目的、登場人物、信号、制約、不足情報を整理し、共通理解を作ります。</p></article>
+          <article class="cycle-card"><h3><span class="num">3.</span> 提案</h3><p>最初のアルゴリズム案を作り、他の方式と比較します。</p></article>
+          <article class="cycle-card"><h3><span class="num">4.</span> 仕様化</h3><p>選んだ案を、判断条件が明確なアルゴリズム仕様にします。</p></article>
+          <article class="cycle-card"><h3><span class="num">5.</span> 実装</h3><p>承認したルールと状態を、実行可能なアルゴリズム・パッケージとして実装します。</p></article>
+          <article class="cycle-card"><h3><span class="num">6.</span> テスト</h3><p>通常、境界、回復、異常の各ケースを実行し、検証結果を残します。</p></article>
+          <article class="cycle-card"><h3><span class="num">7.</span> レビュー</h3><p>業務、製品、技術、利用者の観点から得たフィードバックを整理します。</p></article>
+          <article class="cycle-card"><h3><span class="num">8.</span> 改善</h3><p>前提、仕様、コード、説明を更新し、次のバージョンに反映します。</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="skills">
+      <div class="shell">
+        <div class="section-head"><div class="eyebrow">スキル構成</div><h2>アルゴリズム作成に必要なスキル</h2><p>AIは複数の観点をまとめられますが、結果が正しく有用かどうかは各分野の担当者が判断します。</p></div>
+        <div class="grid-3 skills">
+          <article class="card"><div class="icon">D</div><h3>ドメイン分析</h3><p>実際の業務、用語、リスク、運用ルールを理解します。</p><div class="skill-output">成果物：ドメインモデルと制約</div></article>
+          <article class="card"><div class="icon">U</div><h3>ユースケース分析</h3><p>登場人物、トリガー、期待結果、例外、ユースケース間の競合を整理します。</p><div class="skill-output">成果物：判断シナリオ</div></article>
+          <article class="card"><div class="icon">DS</div><h3>データサイエンス</h3><p>信号の意味、正規化、重み、不確実性、しきい値、測定可能な結果を検討します。</p><div class="skill-output">成果物：特徴量とスコア設計</div></article>
+          <article class="card"><div class="icon">A</div><h3>アルゴリズム設計</h3><p>課題に合うルール、スコア、状態、記憶、優先順位、安全策を選びます。</p><div class="skill-output">成果物：判断ロジック</div></article>
+          <article class="card"><div class="icon">SE</div><h3>ソフトウェアエンジニアリング</h3><p>仕様を実行可能、設定可能、観測可能、再現可能、保守可能な形にします。</p><div class="skill-output">成果物：テスト済み実装</div></article>
+          <article class="card"><div class="icon">V</div><h3>検証とファシリテーション</h3><p>レビュー項目を設計し、意見を整理し、前提を記録し、フィードバックを変更につなげます。</p><div class="skill-output">成果物：検証結果と決定事項</div></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="inputs">
+      <div class="shell">
+        <div class="section-head"><div class="eyebrow">ステージ01 · 収集</div><h2>AIに課題全体を渡す</h2><p>重要なのはファイル名ではなく、必要な情報がすべて含まれていることです。入力が不完全なら、生成されるアルゴリズムも不完全になります。</p></div>
+        <div class="input-board">
+          <div class="input-title">必須の入力資料 · アイデア作成前にそろえる</div>
+          <div class="input-grid">
+            <div class="source-list">
+              <div class="source"><b>プロジェクト全体概要</b><span>音楽企画全体概要</span></div>
+              <div class="source"><b>事業目的</b><span>誰に対して、どの結果を、なぜ変えるのか</span></div>
+              <div class="source"><b>信号とデータ</b><span>実際に何を、どの品質・頻度で観測できるか</span></div>
+              <div class="source"><b>制約</b><span>安全、タイミング、プライバシー、製品、運用上の制約</span></div>
+              <div class="source"><b>成功基準</b><span>動作が有用かどうかをレビュー担当者が判断する基準</span></div>
+            </div>
+            <div class="usecases">
+              <article class="uc"><span class="uc-id">ユースケース1</span><h3>身体的な疲労・眠気検知時の休憩提案</h3><p>身体的な疲労や眠気を検知し、適切な休憩を提案して休憩場所まで案内し、回復を支援します。</p></article>
+              <article class="uc"><span class="uc-id">ユースケース2</span><h3>子供同乗による不安定環境への車内回復提案</h3><p>子供の同乗を認識し、同意を得て後席コンテンツを再開することで、運転者のストレスと注意散漫を軽減します。</p></article>
+              <article class="uc"><span class="uc-id">ユースケース3</span><h3>単調・慣れによる漫然予兆への車内回復提案</h3><p>単調な運転や渋滞を検知し、安全で負担の少ない音楽・音声コンテンツを提案します。</p></article>
+              <article class="uc"><span class="uc-id">ユースケース4</span><h3>注意力低下の検知時の車内回復提案</h3><p>注意力低下を検知し、軽い会話や車内環境の調整によって運転への意識を穏やかに戻します。</p></article>
+            </div>
+          </div>
+        </div>
+        <div class="warning"><strong>必須入力：</strong> トリガー設計を依頼する前に、プロジェクト全体概要とレビュー済みの4ユースケースをAIに渡しました。これにより、実際のプロジェクト文脈に基づいて設計を進められました。</div>
+      </div>
+    </section>
+
+    <section id="understand">
+      <div class="shell">
+        <div class="section-head"><div class="eyebrow">ステージ02 · 理解</div><h2>数式を作る前に共通理解を作る</h2><p>最初にAIへ求めたのはコードではなく課題分析です。設計前の段階で、チームが内容を修正しました。</p></div>
+        <div class="handoff">
+          <article class="role"><div class="role-label">チームが提供したもの</div><ul><li>正しい情報源と事業上の意図</li><li>曖昧な用語の意味</li><li>許容できる結果と許容できない結果</li><li>既知の不足情報と現実の例外</li></ul></article>
+          <div class="connector" aria-hidden="true">⇄</div>
+          <article class="role ai"><div class="role-label">AIが整理したもの</div><ul><li>登場人物、イベント、入力、出力、状態</li><li>資料間の矛盾</li><li>確認が必要な前提</li><li>ユースケース横断の判断表</li></ul></article>
+        </div>
+        <div class="thesis"><strong>チームレビュー：</strong> アルゴリズム設計へ進む前に、抽出した目的、信号、制約、前提を確認しました。</div>
+      </div>
+    </section>
+
+    <section id="idea">
+      <div class="shell">
+        <div class="section-head"><div class="eyebrow">ステージ03 · 提案</div><h2>最初のAICAアルゴリズム案</h2><p>透明ハイブリッド方式を採用します。理解可能なルールで境界を決め、複数信号を重み付きで統合し、状態を持つ制御で時間経過に対する判断を安定させます。</p></div>
+        <div class="idea">
+          <h3>最初の案では、明示的なルールと重み付き信号スコアを組み合わせました。</h3>
+          <div class="formula">信号 → 正規化した特徴量 → 重み付きスコア → 状態 → 発火制御 → 提案</div>
+          <div class="layers">
+            <div class="layer"><b>ルール</b><span>明確な境界と条件</span></div>
+            <div class="layer"><b>スコア</b><span>複数の弱い信号を一つの強度に統合</span></div>
+            <div class="layer"><b>記憶</b><span>平滑化と継続判定で不安定な切り替えを抑制</span></div>
+            <div class="layer"><b>制御</b><span>クールダウン、抑制、オーバーライド、優先順位</span></div>
+          </div>
+        </div>
+        <p class="evidence-note">AICAの実装には、特徴量スコア、平滑化スコア、継続カウンター、判断状態、提案制御、検証用項目が含まれます。係数は固定的な正解ではなく、設定可能な値として管理します。</p>
+      </div>
+    </section>
+
+    <section id="rationale">
+      <div class="shell">
+        <div class="section-head"><div class="eyebrow">この方式を選んだ理由</div><h2>要件を設計判断に変換</h2><p>各主要要素が入力資料から得た具体的な要件に対応しているため、設計理由を説明できます。</p></div>
+        <div class="mapping">
+          <div class="map-row"><div class="need">提案が出た理由を関係者が理解できること</div><div class="arrow">→</div><div class="choice">透明な特徴量、しきい値、判断理由の入力</div></div>
+          <div class="map-row"><div class="need">一つの信号だけでは状況を判断できないこと</div><div class="arrow">→</div><div class="choice">複数信号の重み付きスコア</div></div>
+          <div class="map-row"><div class="need">センサー値とコンテキスト値が変動すること</div><div class="arrow">→</div><div class="choice">平滑化、状態バンド、継続判定</div></div>
+          <div class="map-row"><div class="need">提案の繰り返しが利用者の負担になること</div><div class="arrow">→</div><div class="choice">クールダウン、履歴、抑制</div></div>
+          <div class="map-row"><div class="need">緊急時は通常の判定待ちを避けること</div><div class="arrow">→</div><div class="choice">明示的なオーバーライドと優先順位制御</div></div>
+          <div class="map-row"><div class="need">シミュレーション結果から改善できること</div><div class="arrow">→</div><div class="choice">名前付き調整パラメータとティック単位の検証情報</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="specification">
+      <div class="shell">
+        <div class="section-head"><div class="eyebrow">ステージ04 · 仕様化</div><h2>アイデアを実装可能な仕様にする</h2><p>実装担当とレビュー担当が同じ解釈に到達できる精度でアルゴリズム仕様を記述します。</p></div>
+        <div class="spec-stack">
+          <div class="spec-row"><strong>入力と単位</strong><span>利用可能な信号、コンテキスト、履歴、初期値</span></div>
+          <div class="spec-row"><strong>特徴量変換</strong><span>正規化、バンド、蓄積、欠損データ</span></div>
+          <div class="spec-row"><strong>スコアと重み</strong><span>数式、範囲、意味、設定可能な係数</span></div>
+          <div class="spec-row"><strong>状態と遷移</strong><span>開始、継続、回復、リセットの動作</span></div>
+          <div class="spec-row"><strong>判断ルールと優先順位</strong><span>候補選択、抑制、オーバーライド</span></div>
+          <div class="spec-row"><strong>出力と説明</strong><span>提案、カテゴリ、スコア、理由、検証情報</span></div>
+          <div class="spec-row"><strong>境界ケースと異常時方針</strong><span>入力欠損、不正設定、動作なし</span></div>
+          <div class="spec-row"><strong>具体例と受け入れテスト</strong><span>期待結果を定義した具体的シナリオ</span></div>
+        </div>
+        <div style="margin-top:18px">
+          <details><summary>技術詳細：AICAハイブリッドが状態を持つ仕組み</summary><div>評価ティック間で、平滑化した特徴量とスコア、継続カウンター、現在の休憩・単調状態、時間累積値、基準値、前回のシミュレーション時刻を保持します。これにより、現在値だけでなく直近の推移を使って次の判断を行います。</div></details>
+        </div>
+      </div>
+    </section>
+
+    <section id="build">
+      <div class="shell">
+        <div class="section-head"><div class="eyebrow">ステージ05–06 · 実装とテスト</div><h2>仕様の各項目を観測可能にする</h2><p>シミュレーターを共通のレビュー画面として使用し、シナリオ実行、判断結果、理由、仕様との比較を行いました。</p></div>
+        <div class="pipeline">
+          <article class="pipe"><h3><span class="step-num">1.</span> 対応付け</h3><span>仕様の各項目を実行可能なロジックに対応付けます。</span></article>
+          <article class="pipe"><h3><span class="step-num">2.</span> 設定</h3><span>しきい値と重みを表示し、調整可能にします。</span></article>
+          <article class="pipe"><h3><span class="step-num">3.</span> シミュレーション</h3><span>ユースケースの状況を時系列信号として再現します。</span></article>
+          <article class="pipe"><h3><span class="step-num">4.</span> 確認</h3><span>特徴量、スコア、状態、理由、出力を記録します。</span></article>
+          <article class="pipe"><h3><span class="step-num">5.</span> 比較</h3><span>観測した動作を期待動作と比較します。</span></article>
+        </div>
+        <div class="grid-3" style="margin-top:20px">
+          <article class="card"><h3>通常ケース</h3><p>各ユースケースで、適切なタイミングに意図した提案が出るか。</p></article>
+          <article class="card"><h3>境界ケース</h3><p>各しきい値の直前、同値、直後で何が起こるか。</p></article>
+          <article class="card"><h3>時間経過ケース</h3><p>継続判定、クールダウン、回復、リセットが時間経過に沿って動作するか。</p></article>
+          <article class="card"><h3>競合ケース</h3><p>複数の要求が同時に有効な場合、どの候補が選ばれるか。</p></article>
+          <article class="card"><h3>欠損データケース</h3><p>コンテキストが利用できない場合に安全に失敗し、その状態が表示されるか。</p></article>
+          <article class="card"><h3>説明確認ケース</h3><p>発火した理由、または発火しなかった理由をレビュー担当者が理解できるか。</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="feedback">
+      <div class="shell">
+        <div class="section-head"><div class="eyebrow">ステージ07–08 · レビューと改善</div><h2>フィードバックによるアルゴリズム変更</h2><p>レビュー担当者が期待動作とシミュレーター結果を比較し、状況、期待結果、実際の結果、必要な変更を記録しました。</p></div>
+        <div class="feedback-loop">
+          <div class="feedback-list">
+            <div class="feedback-item"><b>ドメインレビュー</b><span>実際の利用場面で妥当な動作か。</span></div>
+            <div class="feedback-item"><b>ユースケースレビュー</b><span>4つのシナリオと優先順位を満たしているか。</span></div>
+            <div class="feedback-item"><b>製品レビュー</b><span>提案のタイミングとメッセージが利用者にとって有用か。</span></div>
+          </div>
+          <div class="center"><div><div class="eyebrow">検証サイクル</div><h3>実行 → 観測 → 説明 → 判断</h3><p style="color:var(--muted);margin:0">変更理由と影響を確認できた場合に変更を採用します。</p></div></div>
+          <div class="feedback-list">
+            <div class="feedback-item"><b>データレビュー</b><span>特徴量、重み、しきい値に根拠があるか。</span></div>
+            <div class="feedback-item"><b>エンジニアリングレビュー</b><span>コードが仕様に一致し、異常時の動作が明確か。</span></div>
+            <div class="feedback-item"><b>実行結果のフィードバック</b><span>レビュー担当者が承認、却下、または理解しにくいと判断した点は何か。</span></div>
+          </div>
+        </div>
+
+        <div class="before-after" style="margin-top:54px">
+          <article class="version"><span class="version-label">初期案</span><h3>広範な透明ハイブリッド</h3><ul><li>利用可能性のある多数の信号</li><li>初期のルール・スコア構造</li><li>状態を持つ提案制御</li><li>初期実装と説明</li></ul></article>
+          <div class="delta" aria-hidden="true">→</div>
+          <article class="version after"><span class="version-label">改善後のAICA</span><h3>コンパクトで明確なハイブリッド</h3><ul><li>階層化したコンパクトな特徴量セット</li><li>運転継続時間と回復処理</li><li>パラメータ初期値の一元管理</li><li>数式としきい値の意味を明確化</li><li>テストとUIの追跡可能性を強化</li></ul></article>
+        </div>
+        <p class="evidence-note">リポジトリで確認できる改善には、回復後の再発火修正、階層化信号によるコンパクト化、運転継続時間の追加、マニフェストによる初期値管理、数式説明の明確化、UI・文書の改善があります。これらは改善サイクルの実例であり、実環境での安全性検証を示すものではありません。</p>
+      </div>
+    </section>
+
+    <section id="playbook">
+      <div class="shell">
+        <div class="section-head"><div class="eyebrow">次のプロジェクトで再利用</div><h2>チームで使える実践手順</h2><p>AICA固有の内容を置き換え、各段階のレビュー条件を残します。各段階に入力、出力、レビュー担当を定義します。</p></div>
+        <div class="playbook">
+          <article class="card"><b>01 · 入力資料を提供</b><h3>実際のプロジェクト資料を読み込む</h3><p>プロジェクト全体概要、4ユースケース、信号定義、制約、成功基準を提供し、最初に矛盾と不足情報をAIに列挙させます。</p></article>
+          <article class="card"><b>02 · アイデアを比較</b><h3>複数方式を評価する</h3><p>候補アルゴリズムを透明性、必要データ、調整可能性、時間的安定性、失敗リスクで比較し、各要素を要件に対応付けます。</p></article>
+          <article class="card"><b>03 · 仕様を作成</b><h3>動作を明確に定義する</h3><p>入力、単位、変換、スコア、状態、遷移、判断、出力、パラメータ、境界ケース、説明項目、受け入れ例を文書化します。</p></article>
+          <article class="card"><b>04 · 実装</b><h3>コードの追跡可能性を保つ</h3><p>承認済み仕様を実装し、テストを判断ルールに対応付け、中間特徴量、スコア、状態、理由をシミュレーターに表示します。</p></article>
+          <article class="card"><b>05 · 実行結果をレビュー</b><h3>期待結果と実際の結果を比較する</h3><p>境界での失敗、提案の繰り返し、回復ロジック、説明できない判断、4ユースケースと一致しない動作を確認します。</p></article>
+          <article class="card"><b>06 · 更新</b><h3>検証結果に基づいて変更する</h3><p>フィードバックを原因別に整理し、最初に仕様を変更してから、影響するテストとコードを更新し、変更前後の動作を記録します。</p></article>
+        </div>
+
+        <div class="grid-2" style="margin-top:20px">
+          <article class="card"><h3>人によるレビュー条件</h3><ul class="checklist"><li>課題モデルが正しい</li><li>アルゴリズム案が事業要件に合う</li><li>仕様に曖昧さがない</li><li>観測動作が意図と一致する</li><li>フィードバックによる変更が承認されている</li></ul></article>
+          <article class="card"><h3>完了条件</h3><ul class="checklist"><li>すべての入力資料と4ユースケースを対象にしている</li><li>前提と不明点が明示されている</li><li>ルール、パラメータ、状態、異常時動作が定義されている</li><li>実装を仕様まで追跡できる</li><li>テストに時間経過、境界、回復が含まれている</li><li>判断理由をレビュー担当者へ説明できる</li></ul></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="closing" id="close">
+      <div class="shell">
+        <div class="eyebrow">プロジェクトのまとめ</div>
+        <h2>AIが行ったこととチームが行ったこと</h2>
+        <p class="lede">AIは資料分析、アルゴリズムの提案と文書化、実装支援、フィードバック整理を行いました。チームは資料を提供し、前提を修正し、シミュレーターの動作をレビューし、各変更を承認しました。</p>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="shell">AICAハイブリッド・トリガー · AI支援によるアルゴリズム作成の歩み · 日本語版</div></footer>
+
+  <script>
+    (() => {
+      const progress = document.getElementById('progress');
+      const links = [...document.querySelectorAll('nav a')];
+      const sections = links.map(link => document.querySelector(link.getAttribute('href'))).filter(Boolean);
+
+      const update = () => {
+        const max = document.documentElement.scrollHeight - innerHeight;
+        progress.style.width = `${max > 0 ? (scrollY / max) * 100 : 0}%`;
+        const marker = scrollY + innerHeight * 0.35;
+        let active = sections[0];
+        sections.forEach(section => { if (section.offsetTop <= marker) active = section; });
+        links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === `#${active?.id}`));
+      };
+
+      addEventListener('scroll', update, { passive: true });
+      addEventListener('resize', update);
+      update();
+    })();
+  </script>
+</body>
+</html>
+
