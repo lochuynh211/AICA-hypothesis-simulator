@@ -57,7 +57,8 @@ Initial `N = 5`.
 The design has these properties:
 
 - the service selector decides the service; the content selector does not reopen that decision;
-- the same signed factor model, hierarchical weights, purpose multipliers, and evidence conventions are used as the transparent service selector;
+- the same signed evidence × candidate-response model, hierarchical weights, purpose multipliers, and contribution conventions are used as the transparent service selector;
+- service candidate responses are human-configured profiles, while song candidate responses are derived continuously from the selected service's activation score;
 - provider metadata is never confused with simulator assumptions;
 - unsupported semantic relations are neutral, not guessed;
 - eligibility is evaluated independently from ranking;
@@ -165,12 +166,12 @@ An unsupported field is never mapped to a convenient but undocumented Spotify pr
 
 | Baseline feature | Playlist | Humming karaoke | Full karaoke | Spotify-only V1 reason |
 |---|---:|---:|---:|---|
-| Drowsiness level | S | S | S | Compare required stimulation with service-specific audio activation. |
-| Fatigue level | S | S | S | Compare required stimulation with service-specific audio activation. |
-| Traffic state | S | S | S | Adjust activation demand through normalized context evidence. |
-| Road type | S | S | S | Adjust activation demand; it is not matched to a song tag. |
-| Day/night state | S | S | S | Adjust activation demand. |
-| Road monotony | S | S | S | Favor higher activation as monotony increases. |
+| Drowsiness level | S | S | S | Signed evidence makes calm songs support low drowsiness and active songs support high drowsiness. |
+| Fatigue level | S | S | S | Uses the same initial signed calm-to-active hypothesis as drowsiness. |
+| Traffic state | S | S | S | Normal and congested resolve opposite signed activation evidence under the initial profile. |
+| Road type | S | S | S | Category-specific signed evidence selects calm, neutral, or active song response; it is not matched to a tag. |
+| Day/night state | S | S | S | Day and night resolve opposite signed activation evidence under the initial profile. |
+| Road monotony | S | S | S | Calm songs support low monotony and active songs support high monotony. |
 | Route characteristics | C | C | C | Track and Audio Features contain no route relation. |
 | Destination characteristics | C | C | C | Track and Audio Features contain no destination relation. |
 | Child present | C+E | C+E | C+E | Excludes `explicit: true`; no child-appeal ranking field exists. |
@@ -218,7 +219,8 @@ For baseline factor `i`, song `j`, selected service `s`, and purpose `p`:
 |---|---|---|---:|
 | `x_i` | `raw_value` | Raw baseline input | field-specific |
 | `e_i` | `normalized_evidence` | Normalized context/history evidence | `[-1,+1]` |
-| `r_i(j,s)` | `normalized_feature_response` | Song compatibility under the service recipe | `[-1,+1]` |
+| `a_i(j,s)` | `response_coefficient` | Candidate response profile; activation-derived for activation factors | `[-1,+1]` |
+| `r_i(j,s)` | `normalized_feature_response` | Evidence × candidate response | `[-1,+1]` |
 | `B_i` | `base_weight` | Flattened hierarchy weight | `[0,1]` |
 | `q_i(p,s)` | `effective_raw_weight` | Adjusted unnormalized active weight | `[0,+∞)` |
 | `w_i(p,s)` | `effective_weight` | Normalized active weight | `[0,1]`, sum `1` |
@@ -229,16 +231,27 @@ For baseline factor `i`, song `j`, selected service `s`, and purpose `p`:
 
 ### 6.2 Compatibility interface
 
+For every active factor, content scoring follows the same interface as service scoring:
+
 ```text
 r_i(song, service)
-  = compatibility_i(
-      normalized baseline evidence,
-      spotify_track,
-      spotify_audio_features,
-      direct item history,
-      service recipe
+  = clamp(
+      e_i
+      × a_i(song, service),
+      -1,
+      +1
     )
 ```
+
+For activation-responsive factors:
+
+```text
+a_i(song, service)
+  = activation_response_coefficient(song, service)
+  = 2 × service_activation(song) - 1
+```
+
+For identity, affinity, and history factors, the feature section explicitly defines which value is evidence and which is the response coefficient.
 
 Every function must:
 
@@ -450,12 +463,25 @@ full_karaoke_activation
   + 0.35 × full_karaoke_ease
 ```
 
-All activation and ease results are in `[0,1]`. Convert the selected service activation to a signed capability:
+All activation and ease results are in `[0,1]`. Convert the selected service activation into the song candidate's signed response coefficient:
 
 ```text
-signed_activation(service)
-  = 2 × service_activation - 1
+a_activation(song, service)
+  = activation_response_coefficient(song, service)
+  = 2 × service_activation(song) - 1
 ```
+
+Interpretation:
+
+| `a_activation` | Candidate response profile |
+|---:|---|
+| `-1` | very calm song |
+| `-0.5` | relatively calm song |
+| `0` | activation-neutral song |
+| `+0.5` | relatively active song |
+| `+1` | very active song |
+
+Unlike the service selector's human-configured candidate coefficients, this coefficient is calculated from the frozen Spotify-derived service activation. It is still evidence-visible and versioned.
 
 `simulation_flags` do not appear in these formulas.
 
@@ -465,33 +491,70 @@ signed_activation(service)
 
 ### 10.1 Driver state and environment
 
-Normalize 0–100 numeric evidence:
+#### 10.1.1 Signed continuous evidence
+
+Drowsiness, fatigue, and monotony are two-directional content evidence:
 
 ```text
-severity(value) = clamp(value / 100)
+signed_level(value)
+  = clamp(2 × (value / 100) - 1, -1, +1)
+
+e_drowsiness = signed_level(drowsiness_level)
+e_fatigue    = signed_level(fatigue_level)
+e_monotony   = signed_level(monotony_level)
 ```
 
-Initial enum intensities are versioned parameters:
+| Raw level | Normalized evidence | Meaning for activation response |
+|---:|---:|---|
+| `0` | `-1.0` | strongly favors calm songs |
+| `25` | `-0.5` | mildly favors calm songs |
+| `50` | `0.0` | activation-neutral |
+| `75` | `+0.5` | mildly favors active songs |
+| `100` | `+1.0` | strongly favors active songs |
 
-| Evidence | Intensity |
-|---|---:|
-| traffic normal | 0.20 |
-| traffic congested | 0.70 |
-| road local | 0.35 |
-| road highway | 0.60 |
-| road mountain | 0.80 |
-| road parking | 0.10 |
-| day | 0.20 |
-| night | 0.70 |
+A present value of `0` is valid negative evidence, not missing data. A missing field is recorded as `missing_neutral` and resolves to evidence `0` without pretending the raw value was `50`.
 
-For drowsiness, fatigue, monotony, traffic, road, and night:
+#### 10.1.2 Signed categorical evidence
+
+Initial categorical activation-evidence profiles are:
+
+| Feature state | Normalized evidence | Meaning |
+|---|---:|---|
+| traffic normal | `-1.0` | calm-song direction |
+| traffic congested | `+1.0` | active-song direction |
+| road highway | `+1.0` | active-song direction |
+| road local | `0.0` | activation-neutral |
+| road mountain | `-1.0` | calm-song direction to reduce load |
+| road parking | `0.0` | activation-neutral; motion eligibility is separate |
+| day | `-1.0` | calm-song direction |
+| night | `+1.0` | active-song direction |
+
+These mappings are editable content-response hypotheses. They are not Spotify metadata, empirical safety claims, or eligibility rules. They mirror the service selector's categorical candidate-response-profile pattern while deriving the song side from audio activation.
+
+#### 10.1.3 Candidate response and feature response
+
+For all six activation-responsive factors, the same service-specific song coefficient is reused:
 
 ```text
+a_i(song, service)
+  = a_activation(song, service)
+  = 2 × service_activation(song) - 1
+
 r_i(song, service)
-  = context_intensity_i × signed_activation(service)
+  = clamp(e_i × a_i(song, service), -1, +1)
 ```
 
-A high-activation song therefore supports a high-stimulation context. Neutral or absent context produces zero response. This is a recommendation hypothesis, not a safety guarantee.
+The sign agreement determines compatibility:
+
+| Evidence sign | Song coefficient sign | Response |
+|---:|---:|---|
+| negative/calm | negative/calm | positive match |
+| negative/calm | positive/active | negative mismatch |
+| positive/active | positive/active | positive match |
+| positive/active | negative/calm | negative mismatch |
+| either value | zero | neutral |
+
+Thus low drowsiness gives a calm song a larger response than an active song, while high drowsiness reverses that ordering. The same response structure applies to the approved signed mappings for fatigue, monotony, traffic, road, and day/night.
 
 ### 10.2 Route, destination, and passengers
 
@@ -506,7 +569,18 @@ Age uses only:
 - `world.driver.age_band`; and
 - the year derived from `spotify_track.album.release_date`.
 
-A versioned age/era affinity table returns a response in `[-1,+1]`. The table and its rationale are evidence-visible. Missing or year-precision-incompatible data returns `0`.
+A versioned age/era affinity table returns the candidate response coefficient:
+
+```text
+e_age = 1  when age band and usable release year are present
+      = 0  otherwise
+
+a_age(song) = age_era_affinity[age_band][release_era]
+
+r_age(song) = e_age × a_age(song)
+```
+
+The coefficient lies in `[-1,+1]`; the table and rationale are evidence-visible. Missing or year-precision-incompatible data produces missing-neutral evidence `0`.
 
 Gender has zero weight. Hobbies and interests are context-only because the selected V1 Track contract contains no matching genre or theme field.
 
@@ -521,43 +595,58 @@ and at least one oshi Spotify Artist ID exists
 ```
 
 ```text
-oshi_response(song)
+e_oshi = 1  when registration, mode, and Artist ID are present
+       = 0  otherwise
+
+a_oshi(song)
   = +1  if any spotify_track.artists[*].id exactly matches
   =  0  otherwise
+
+r_oshi(song) = e_oshi × a_oshi(song)
 ```
 
-Oshi mode off or an unregistered oshi returns response `0`; the leaf remains active and neutral so runtime evidence absence does not redistribute weight. V1 does not infer member, group, character, franchise, theme, or shared-tag relations.
+Oshi mode off or an unregistered oshi produces evidence `0`; the leaf remains active and neutral so runtime evidence absence does not redistribute weight. V1 does not infer member, group, character, franchise, theme, or shared-tag relations.
 
 ### 10.5 Direct item usage
 
-Only exact Track ID usage is scored:
+Only exact Track ID usage is scored. The lookup produces signed evidence; the candidate coefficient is `+1` because the history already belongs to the candidate Track:
 
-| Usage level | Response |
+| Usage level | Normalized evidence |
 |---|---:|
 | never | 0.00 |
 | low | -0.50 |
 | medium | +0.25 |
 | high | +1.00 |
 
+```text
+a_item_usage(song) = +1
+r_item_usage(song) = e_item_usage(song) × a_item_usage(song)
+```
+
 Tag and scene/tag usage are context-only.
 
 ### 10.6 Playlist item novelty
 
-Only playlist activates direct item novelty:
+Only playlist activates direct item novelty. The lookup produces signed evidence and uses coefficient `+1`:
 
-| Catalog item recency | Response |
+| Catalog item recency | Normalized evidence |
 |---|---:|
 | never | +1.00 |
 | long_unused | +0.50 |
 | recent | 0.00 |
 
+```text
+a_item_novelty(song) = +1
+r_item_novelty(song) = e_item_novelty(song) × a_item_novelty(song)
+```
+
 Humming and full karaoke mark novelty not applicable. No tag-recency fallback exists.
 
 ### 10.7 Playback and operations
 
-Played-item response:
+Played-item history resolves signed evidence:
 
-| Last played | Response |
+| Last played | Normalized evidence |
 |---|---:|
 | within 30 minutes | -1.00 |
 | earlier today | -0.50 |
@@ -573,16 +662,27 @@ older recorded skip          -> -0.50
 
 Changed-from inside its configured penalty window returns `-0.75`. A Track in a recently cancelled plan returns `-0.50`. Otherwise each response is `0`.
 
+For played, skipped, changed-from, and cancelled-plan factors:
+
+```text
+a_operation(song) = +1
+r_operation(song) = e_operation(song) × a_operation(song)
+```
+
 ### 10.8 Content acceptance and recovery
 
-Only exact Track ID rates are accepted. There is no tag, genre, artist, or plan-average fallback.
+Only exact Track ID rates are accepted. There is no tag, genre, artist, or plan-average fallback. The normalized rate is evidence and uses coefficient `+1`:
 
 ```text
 rate_response
   = 2 × rate / 100 - 1
+
+e_rate(song) = rate_response
+a_rate(song) = +1
+r_rate(song) = e_rate(song) × a_rate(song)
 ```
 
-| Rate | Response |
+| Rate | Normalized evidence/response |
 |---:|---:|
 | 80 | +0.60 |
 | 50 | 0.00 |
@@ -657,15 +757,16 @@ For one active service:
 5. calculate normalized tempo and loudness;
 6. calculate common audio activation;
 7. calculate the selected service ease and activation;
-8. resolve active baseline leaves from the applicability matrix;
+8. normalize world features into signed evidence and resolve active leaves;
 9. calculate and normalize effective weights once for the run;
 10. resolve each candidate's direct identity/history evidence;
-11. calculate factor responses and contributions in contract order;
-12. calculate `item_fit`;
-13. sort eligible candidates by full-precision score and stable ID;
-14. take the first configured `plan_item_count` candidates;
-15. build service-specific presentation fields; and
-16. persist plan-level and selected-item evidence.
+11. derive each song's selected-service activation response coefficient;
+12. calculate `normalized_feature_response = evidence × response_coefficient` for every active factor;
+13. calculate contributions and `item_fit` in contract order;
+14. sort eligible candidates by full-precision score and stable ID;
+15. take the first configured `plan_item_count` candidates;
+16. build service-specific presentation fields; and
+17. persist plan-level and selected-item evidence.
 
 The ranking result must not feed back into the synthetic catalog or world snapshot.
 
@@ -780,7 +881,9 @@ accepted_service_types: [string]
 required_catalog_namespaces: [string]
 eligibility_rules: [versioned_rule_id]
 scored_baseline_features: [field_id]
-compatibility_functions: [versioned_function_id]
+evidence_normalizers: [versioned_function_id]
+response_coefficient_functions: [versioned_function_id]
+feature_response_function: signed_evidence_times_candidate_response_v1
 activation_function: versioned_function_id
 plan_item_count_default: integer
 duration_policy: versioned_policy_id
@@ -800,11 +903,13 @@ The Spotify Audio Features endpoint is marked deprecated in the selected referen
 A missing scored baseline field:
 
 - remains active;
-- has response `0`;
+- has normalized evidence and response `0`;
 - retains its effective weight; and
 - is listed as `missing_neutral`.
 
 This prevents evidence absence from quietly redistributing influence.
+
+For signed 0–100 features, a present raw `0` maps to evidence `-1`; it is not treated as missing. The trace always distinguishes `missing_neutral` from a valid low endpoint.
 
 ### 16.2 Unsupported semantic evidence
 
@@ -825,6 +930,7 @@ Reject or exclude as appropriate:
 - invalid key, mode, duration, tempo, or time signature;
 - mismatched Track and Audio Features identity;
 - availability flags outside integer `{0,1}`;
+- signed evidence, response coefficient, or normalized feature response outside `[-1,+1]`;
 - unknown selected service;
 - invalid purpose or parameter version; and
 - zero active-weight denominator.
@@ -861,7 +967,7 @@ title: Afterglow Highway
 artists:
   - id: synthetic-artist-0001
     name: Aoi Meridian
-item_fit: 0.40449206517857134
+item_fit: 0.37576713988095228
 eligible: true
 derived_audio:
   normalized_tempo: 0.48509166666666664
@@ -869,12 +975,13 @@ derived_audio:
   audio_activation: 0.7173633333333334
   humming_ease: 0.880164
   humming_activation: 0.7580635
+  activation_response_coefficient: 0.516127
 contributions: []
 top_positive_reasons: []
 top_negative_reasons: []
 ```
 
-Every contribution includes factor ID, raw evidence, normalized evidence, catalog fields read, formula version, base weight, purpose multiplier, applicability mask, effective weight, response, and contribution.
+Every contribution includes factor ID, raw evidence, normalized evidence, catalog fields read, formula version, response coefficient and its provenance, base weight, purpose multiplier, applicability mask, effective weight, normalized feature response, and contribution.
 
 ### 18.2 Exclusion trace
 
@@ -896,6 +1003,7 @@ The plan records:
 - plan count setting;
 - catalog, world, algorithm, schema, and parameter hashes/versions;
 - active and context-only feature lists;
+- signed-evidence profile and activation-response formula versions;
 - normalized effective weights;
 - deterministic sort and tie-break rules;
 - expected duration and basis;
@@ -915,11 +1023,11 @@ service: humming_karaoke
 trigger_purpose: inattentive_driving_prevention_recovery
 drowsiness_level: 80
 fatigue_level: 70
-traffic_intensity: 0.70
-road_intensity: 0.60
-night_intensity: 0.70
-monotony: 90
-age_era_response: 0.50
+traffic_state: congested
+road_type: highway
+night_state: night
+monotony_level: 90
+age_era_affinity: 0.50
 oshi_mode: on
 oshi_artist_exact_match: true
 item_usage: medium
@@ -960,41 +1068,52 @@ tempo_ease             = 0.9087666666666667
 duration_ease          = 0.6831111111111111
 humming_ease           = 0.880164
 humming_activation     = 0.7580635
-signed_activation      = 0.516127
+activation_response_coefficient = 0.516127
 ```
 
 `duration_ease` is calculated for trace consistency but is not used by the humming formula.
+
+Activation-responsive evidence is:
+
+```text
+e_drowsiness = 2 × 0.80 - 1 = 0.60
+e_fatigue    = 2 × 0.70 - 1 = 0.40
+e_traffic    = congested     = 1.00
+e_road       = highway       = 1.00
+e_night      = night         = 1.00
+e_monotony   = 2 × 0.90 - 1 = 0.80
+```
 
 ### 19.3 Active weights
 
 After Spotify-only applicability and the inattentive/recovery purpose multipliers, the raw active-weight sum is `0.7938`.
 
-| Factor | Effective weight | Response | Contribution |
-|---|---:|---:|---:|
-| Drowsiness | 0.200066 | 0.412902 | 0.082608 |
-| Fatigue | 0.163690 | 0.361289 | 0.059140 |
-| Traffic | 0.043651 | 0.361289 | 0.015771 |
-| Road | 0.043651 | 0.309676 | 0.013518 |
-| Night | 0.058201 | 0.361289 | 0.021027 |
-| Monotony | 0.145503 | 0.464514 | 0.067588 |
-| Age/era | 0.010582 | 0.500000 | 0.005291 |
-| Exact oshi artist | 0.063492 | 1.000000 | 0.063492 |
-| Direct item usage | 0.039683 | 0.250000 | 0.009921 |
-| Played | 0.018896 | -0.250000 | -0.004724 |
-| Skipped | 0.026455 | 0.000000 | 0.000000 |
-| Changed-from | 0.015117 | 0.000000 | 0.000000 |
-| Cancelled plan | 0.015117 | 0.000000 | 0.000000 |
-| Content acceptance | 0.042517 | 0.600000 | 0.025510 |
-| Content recovery | 0.113379 | 0.400000 | 0.045351 |
+| Factor | Effective weight | Evidence `e` | Coefficient `a` | Response `r=e×a` | Contribution |
+|---|---:|---:|---:|---:|---:|
+| Drowsiness | 0.200066 | 0.600000 | 0.516127 | 0.309676 | 0.061956 |
+| Fatigue | 0.163690 | 0.400000 | 0.516127 | 0.206451 | 0.033794 |
+| Traffic | 0.043651 | 1.000000 | 0.516127 | 0.516127 | 0.022529 |
+| Road | 0.043651 | 1.000000 | 0.516127 | 0.516127 | 0.022529 |
+| Night | 0.058201 | 1.000000 | 0.516127 | 0.516127 | 0.030039 |
+| Monotony | 0.145503 | 0.800000 | 0.516127 | 0.412902 | 0.060078 |
+| Age/era | 0.010582 | 1.000000 | 0.500000 | 0.500000 | 0.005291 |
+| Exact oshi artist | 0.063492 | 1.000000 | 1.000000 | 1.000000 | 0.063492 |
+| Direct item usage | 0.039683 | 0.250000 | 1.000000 | 0.250000 | 0.009921 |
+| Played | 0.018896 | -0.250000 | 1.000000 | -0.250000 | -0.004724 |
+| Skipped | 0.026455 | 0.000000 | 1.000000 | 0.000000 | 0.000000 |
+| Changed-from | 0.015117 | 0.000000 | 1.000000 | 0.000000 | 0.000000 |
+| Cancelled plan | 0.015117 | 0.000000 | 1.000000 | 0.000000 | 0.000000 |
+| Content acceptance | 0.042517 | 0.600000 | 1.000000 | 0.600000 | 0.025510 |
+| Content recovery | 0.113379 | 0.400000 | 1.000000 | 0.400000 | 0.045351 |
 
 Using full-precision values:
 
 ```text
 item_fit = sum(contributions)
-         = 0.40449206517857134
+         = 0.37576713988095228
 ```
 
-This is the score shown for the chosen song in the plan. Its main positive reasons are exact oshi match, fit with the high-stimulation context, and positive recovery evidence. Recent playback contributes a small repetition penalty.
+This is the score shown for the chosen song in the plan. Its main positive reasons are exact oshi match, sign agreement between the active song and the high drowsiness/fatigue/monotony evidence, and positive recovery evidence. Recent playback contributes a small repetition penalty.
 
 ---
 
@@ -1012,16 +1131,19 @@ The comparison reports:
 
 Required V1 contrasts:
 
-1. low versus high drowsiness;
-2. day versus night;
-3. low versus high monotony;
-4. child absent versus present with an explicit candidate;
-5. exact oshi artist mode off versus on;
-6. no prior play versus recent play;
-7. low versus high direct item usage;
-8. low versus high exact-item recovery;
-9. driving versus stopped for full karaoke; and
-10. route A versus route B with an expected no-rank-change result.
+1. low versus high drowsiness, with calm/active song ordering reversed;
+2. low versus high fatigue, with calm/active song ordering reversed;
+3. normal versus congested traffic, with calm/active song ordering reversed;
+4. highway versus mountain road, with active/calm song ordering reversed;
+5. day versus night, with calm/active song ordering reversed;
+6. low versus high monotony, with calm/active song ordering reversed;
+7. child absent versus present with an explicit candidate;
+8. exact oshi artist mode off versus on;
+9. no prior play versus recent play;
+10. low versus high direct item usage;
+11. low versus high exact-item recovery;
+12. driving versus stopped for full karaoke; and
+13. route A versus route B with an expected no-rank-change result.
 
 Audio fixture contrasts freeze the world and change only declared Spotify Audio Features. Useful pairs include high energy/low valence, medium energy/high danceability, speech-forward, and instrumental-leaning variants.
 
@@ -1048,7 +1170,9 @@ The route no-change case demonstrates transparent restraint: V1 does not manufac
 
 - category, subgroup, and leaf weights;
 - trigger-purpose multipliers;
-- context enum intensities;
+- signed continuous-evidence transform;
+- categorical signed-evidence profiles for traffic, road, and day/night;
+- activation-to-response-coefficient transform;
 - tempo normalization bounds;
 - loudness normalization bounds;
 - audio-activation coefficients;
@@ -1073,16 +1197,18 @@ Recommended units:
 3. `RecipeRegistry`
 4. `EligibilityEvaluator`
 5. `AudioFeatureDeriver`
-6. `ApplicabilityResolver`
-7. `EffectiveWeightCalculator`
-8. `DirectHistoryResolver`
-9. `CompatibilityCalculator`
-10. `ItemScoreCalculator`
-11. `DeterministicPlanBuilder`
-12. `DurationPolicy`
-13. `PresentationPolicy`
-14. `EvidenceBuilder`
-15. `ContrastRunner`
+6. `SignedEvidenceNormalizer`
+7. `ActivationResponseProfileDeriver`
+8. `ApplicabilityResolver`
+9. `EffectiveWeightCalculator`
+10. `DirectHistoryResolver`
+11. `CompatibilityCalculator`
+12. `ItemScoreCalculator`
+13. `DeterministicPlanBuilder`
+14. `DurationPolicy`
+15. `PresentationPolicy`
+16. `EvidenceBuilder`
+17. `ContrastRunner`
 
 The implementation should keep data validation, eligibility, derived audio, ranking, plan construction, and presentation independently testable.
 
@@ -1095,10 +1221,12 @@ The implementation should keep data validation, eligibility, derived audio, rank
 - normalization boundary tests;
 - every coefficient family sums to `1`;
 - derived values remain in `[0,1]`;
+- signed evidence and response coefficients remain in `[-1,+1]`;
+- `normalized_feature_response` equals evidence × response coefficient;
 - responses remain in `[-1,+1]`;
 - effective weights sum to `1` within tolerance;
 - contributions sum to `item_fit`; and
-- worked example reproduces `0.40449206517857134`.
+- worked example reproduces `0.37576713988095228`.
 
 ### 23.2 Applicability
 
@@ -1111,6 +1239,8 @@ The implementation should keep data validation, eligibility, derived audio, rank
 ### 23.3 Spotify formula fields
 
 - every active formula reads only declared Audio Features;
+- each service activation in `[0,1]` maps to coefficient `2A-1` in `[-1,+1]`;
+- the same song may have different coefficients for playlist, humming, and full karaoke;
 - key, mode, time signature, acousticness, and liveness do not affect V1 score;
 - URL and identity fields do not affect score;
 - valence affects audio activation at exactly `0.05` coefficient;
@@ -1159,6 +1289,8 @@ The implementation should keep data validation, eligibility, derived audio, rank
 - same inputs, versions, and seed produce byte-equivalent result;
 - every selected score is reconstructable;
 - each one-variable contrast changes only its declared field;
+- low/high drowsiness reverses calm/active response ordering;
+- normal/congested, highway/mountain, day/night, and low/high monotony produce their declared signed-profile reversals;
 - expected rank/eligibility deltas occur; and
 - route-only contrast causes no rank change.
 
@@ -1174,6 +1306,8 @@ The algorithm is accepted when:
 - all song scoring uses only Spotify-compatible Track/Audio Features and exact-ID histories;
 - no enriched, semantic, audience, chorus, lyric, or vocal-analysis metadata is required;
 - the approved Spotify-derived formulas are implemented exactly;
+- activation-responsive factors follow `normalized_evidence × activation-derived response_coefficient`, matching the service selector's candidate-response structure;
+- low signed evidence favors calm songs and high signed evidence favors active songs;
 - both karaoke flags default to `1`, affect eligibility only, and are customer-editable;
 - explicit child policy and full-karaoke stopped policy are deterministic;
 - unsupported baseline relations are visibly context-only with zero scoring mask;
@@ -1214,9 +1348,11 @@ The Spotify-only V1 transparent content selector:
 2. validates Spotify-compatible Track and Audio Features data;
 3. applies playability, policy, and simulator availability gates;
 4. derives service activation from explicit Spotify fields;
-5. scores only operational baseline evidence and direct Track/Artist-ID history;
-6. leaves unsupported semantic inputs neutral and visible;
-7. orders candidates by a reconstructable signed score; and
-8. returns five songs by default, each with its score and reasons.
+5. converts activation into a signed song candidate-response coefficient;
+6. multiplies signed feature evidence by that coefficient, matching the service-proposal response structure;
+7. scores only operational baseline evidence and direct Track/Artist-ID history;
+8. leaves unsupported semantic inputs neutral and visible;
+9. orders candidates by a reconstructable signed score; and
+10. returns five songs by default, each with its score and reasons.
 
 This remains structurally coherent with the transparent service-proposal algorithm while being honest about what Spotify metadata can—and cannot—support.

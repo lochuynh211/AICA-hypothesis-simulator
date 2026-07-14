@@ -500,6 +500,7 @@ No singer-versus-artist distinction or detailed contributor graph is generated.
 
 The catalog must contain candidate pairs that expose actual Spotify-only trade-offs:
 
+- clearly calm versus clearly active songs for signed candidate-response reversal tests in every detailed service;
 - high energy with low valence versus moderate energy with high valence;
 - fast tempo with low danceability versus medium tempo with high danceability;
 - strong activation with high speechiness versus slightly lower activation with easy speech profile;
@@ -511,6 +512,8 @@ The catalog must contain candidate pairs that expose actual Spotify-only trade-o
 - explicit high-fit track excluded when a child is present.
 
 The dataset must not contain a hidden `recommended`, `best_for_world`, or target-rank field.
+
+It also does not store `normalized_evidence`, `response_coefficient`, or `normalized_feature_response` as song metadata. The content algorithm derives signed evidence from the world and the song response coefficient from the selected-service activation at decision time.
 
 ---
 
@@ -593,13 +596,18 @@ The demonstration tier includes at least these worlds:
 1. ordinary daytime commute;
 2. monotonous night highway with high drowsiness;
 3. same state with low drowsiness;
-4. family journey with a child present;
-5. exact oshi artist registered;
-6. same world with oshi mode disabled;
-7. recently played candidate;
-8. previously accepted candidate;
-9. previously skipped or cancelled candidate; and
-10. stopped post-rest full-karaoke state.
+4. otherwise-identical low/high fatigue pair;
+5. otherwise-identical normal/congested traffic pair;
+6. otherwise-identical highway/mountain-road pair;
+7. otherwise-identical day/night pair;
+8. otherwise-identical low/high monotony pair;
+9. family journey with a child present;
+10. exact oshi artist registered;
+11. same world with oshi mode disabled;
+12. recently played candidate;
+13. previously accepted candidate;
+14. previously skipped or cancelled candidate; and
+15. stopped post-rest full-karaoke state.
 
 A characteristic route/destination world may be retained to demonstrate the honest V1 limitation: changing route semantics alone does not change music rank because no Spotify song field supports that relation.
 
@@ -611,7 +619,12 @@ Every contrast pair changes one controlled input while freezing the catalog, see
 
 Required pairs include:
 
-- high versus low drowsiness;
+- low versus high drowsiness, expecting calm/active response ordering to reverse;
+- low versus high fatigue, expecting calm/active response ordering to reverse;
+- normal versus congested traffic, expecting calm/active response ordering to reverse;
+- highway versus mountain road, expecting active/calm response ordering to reverse;
+- day versus night, expecting calm/active response ordering to reverse;
+- low versus high monotony, expecting calm/active response ordering to reverse;
 - moving versus stopped for full-karaoke eligibility;
 - child absent versus present with an explicit candidate;
 - exact oshi artist enabled versus disabled;
@@ -634,6 +647,8 @@ same world + same algorithm version
 ```
 
 Only explicitly listed Audio Features may differ. The expected trace must identify the derived activation or karaoke-proxy change responsible for any rank change.
+
+For a calm/active pair, the fixture comparison also asserts the signed response behavior: negative feature evidence favors the lower activation coefficient, positive evidence favors the higher activation coefficient, and zero evidence makes the activation factor neutral.
 
 These are synthetic fixture variants. They are not live provider refreshes and are never silently swapped during a replay.
 
@@ -725,8 +740,8 @@ validator_version: 1.0.0
 random_seed: 1042
 world_id: world-night-highway-01
 world_hash: sha256:...
-algorithm_version: transparent-content-v1-spotify
-parameter_set_id: default-v1
+algorithm_version: transparent-content-v1.1-spotify-signed-response
+parameter_set_id: default-v1.1-signed-response
 ```
 
 The frozen, validated dataset—not an LLM rerun—is the replay boundary. Given the same dataset, world, algorithm version, parameters, and seed, the transparent result must be identical.
@@ -832,6 +847,8 @@ No extension may overwrite Spotify-compatible fields or `simulation_flags`.
 - direct history uses Track IDs;
 - exact oshi uses Spotify-compatible Artist IDs;
 - one-variable contrasts differ only in their declared field; and
+- signed low/high drowsiness and fatigue reverse calm/active candidate responses;
+- traffic, road, day/night, and monotony contrasts follow their declared signed-evidence profiles;
 - route-only contrast produces no Spotify-only content-rank change.
 
 ### 23.6 Repair and replay
@@ -856,6 +873,7 @@ This specification is satisfied when:
 - the LLM receives schema and fictional controls, not real Spotify content;
 - deterministic validators reject invalid or inconsistent objects;
 - the 36-song catalog covers approved audio trade-offs;
+- the catalog contains calm/active pairs suitable for signed candidate-response reversal tests;
 - worlds and histories remain separate from song metadata; and
 - dataset, world, algorithm, and parameter versions are sufficient for exact replay.
 

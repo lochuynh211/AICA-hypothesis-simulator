@@ -587,8 +587,8 @@ represented by artificial lower-fidelity content templates.
 3. Resolve its versioned recipe, ranking-applicability matrix, and eligibility rules.
 4. Validate the frozen Spotify-compatible Track, Audio Features, and simulator-flag catalog snapshot.
 5. Apply common and recipe-specific hard exclusions before scoring.
-6. Normalize scored evidence and activate purpose/recipe weights.
-7. Calculate transparent `item_fit` and feature contributions for every eligible item.
+6. Normalize scored context into signed evidence and activate purpose/recipe weights.
+7. Derive each song's selected-service response coefficient from its Spotify-based activation, then calculate transparent responses, contributions, and `item_fit`.
 8. Sort by `item_fit` descending, then stable item ID.
 9. Select the first N unique items in that same playback order.
 10. Return one complete plan or a typed insufficient/no-eligible result with full evidence.
@@ -598,11 +598,19 @@ represented by artificial lower-fidelity content templates.
 For catalog item j, selected service s, purpose p, and active baseline factor i:
 
 ```text
-r_i(j,s) = compatibility_i(normalized_evidence, frozen_item_metadata, recipe_s)
+e_i = normalize_feature_i(raw_value_i)
+a_i(j,s) = candidate_response_i(frozen_item_metadata_j, recipe_s)
+r_i(j,s) = clamp(e_i × a_i(j,s), -1, +1)
 q_i(p,s) = base_weight_i × purpose_multiplier[p][subgroup(i)] × scoring_applicability[i][s]
 w_i(p,s) = q_i(p,s) / sum(q_active)
 item_fit(j,s) = clamp(sum_i(w_i(p,s) × r_i(j,s)), -1, +1)
 ```
+
+This deliberately mirrors the transparent service selector. The difference is
+the origin of activation-responsive candidate profiles: service coefficients
+are human-configured heuristics, while a song coefficient is derived as
+`2 × selected_service_activation(song) - 1`. Low signed evidence therefore
+favors calm songs and high signed evidence favors active songs.
 
 Every response, weight, and signed contribution is shown. There is no
 aggregate score for the finished plan.
@@ -627,6 +635,12 @@ Spotify-only V1 has no song route, destination, event, child-appeal,
 group-appeal, lyric, chorus, or semantic fields. Baseline inputs requiring those
 relations remain visible but context-only with zero ranking mask. Exact oshi
 matching uses Spotify Artist IDs.
+
+For activation-responsive content factors, drowsiness, fatigue, and monotony
+use signed `0..100 -> -1..+1` normalization. Traffic, road, and day/night use
+versioned signed categorical profiles. Each normalized feature response is the
+signed evidence multiplied by the song's activation-derived response
+coefficient.
 
 All three may use playback/operation history. Compatible lighting is attached
 after song selection as presentation metadata and does not change `item_fit`.
@@ -681,6 +695,8 @@ For every service and baseline field, a versioned content recipe stores:
 ```text
 ranking_applicability = scored | context_only | not_applicable
 eligibility_role = true | false
+evidence_normalizer_version
+candidate_response_function_version
 source_reference
 rationale
 ```
@@ -743,6 +759,10 @@ destination, chorus, or singability metadata. Transparent activation and
 karaoke-ease proxies are derived at decision time from Audio Features and are
 not stored as provider facts.
 
+Signed world evidence, activation response coefficients, and normalized
+feature responses are also decision-time values. They are never generated or
+stored as song metadata.
+
 The approved generator is staged:
 
 1. stable fictional Track, Artist, and Album IDs are allocated;
@@ -773,6 +793,12 @@ The simulator supplies complete base worlds plus clone-and-change contrasts. The
 - changed journey preview.
 
 One-variable contrasts are preferred for explanation, while multi-variable worlds remain editable for realistic exploration.
+
+The detailed music contrast suite includes calm and active candidate songs.
+Low/high drowsiness, low/high fatigue, normal/congested traffic,
+highway/mountain road, day/night, and low/high monotony must demonstrate the
+declared reversal of signed activation responses rather than merely scaling the
+same song order.
 
 ### 15.4 No manufactured user truth
 
@@ -905,6 +931,8 @@ Transparent runs with identical inputs must reproduce exactly. LLM evidence pres
 - The transparent content selector supports detailed recipes only for playlist, humming karaoke, and full karaoke; another service returns `unsupported_recipe`.
 - The transparent content selector returns one ordered plan, never plan candidates or an aggregate plan score.
 - Each included music item exposes `item_fit` and reconstructable signed feature contributions.
+- Content traces expose normalized evidence, candidate response coefficient, normalized feature response, weight, and contribution using the same terms as the service selector.
+- Calm songs outrank active songs on an activation factor when its evidence is negative; active songs outrank calm songs when the evidence is positive.
 - All three detailed music recipes request five items by default; a customer setting can change the count.
 - Fewer eligible items than the configured count return `insufficient_eligible_items`; zero returns `no_proposal`.
 
