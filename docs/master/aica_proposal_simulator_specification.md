@@ -246,7 +246,7 @@ The content-selector output is intentionally different because it returns one
 plan, not ranked plan candidates:
 
 ```yaml
-decision_type: complete_plan | partial_plan | no_proposal | unsupported_recipe | invalid_request | invalid_catalog | invalid_configuration
+decision_type: complete_plan | no_proposal | insufficient_eligible_items | unsupported_recipe | invalid_request | invalid_catalog | invalid_configuration
 selected_service_id: string
 requested_item_count: integer
 returned_item_count: integer
@@ -336,7 +336,7 @@ The product wording describes consequences and rationale without claiming contro
 | ID | Service | Typical delivery | Lighting |
 |---|---|---|---|
 | `music_playlist` | Music playlist recommendation | Fixed-count streaming playlist | Compatible |
-| `humming_karaoke` | Chorus-focused humming karaoke | Audio-first, guide vocal, no driving lyrics screen | Compatible |
+| `humming_karaoke` | Simulated humming karaoke | Audio-first fixed humming segment, no driving lyrics screen | Compatible |
 | `call_response_driving` | Simple call-and-response practice | Audio/background music | Compatible |
 | `quiz` | Voice quiz set | Audio interaction | Not used |
 | `ranking_creation` | Two-choice ranking activity | Voice interaction, resulting playlist | Not used |
@@ -349,7 +349,7 @@ The product wording describes consequences and rationale without claiming contro
 |---|---|---|---|
 | `live_viewing` | Selected live video set | Screen while stopped; policy-controlled background on motion | Compatible |
 | `stretch_video` | One short in-car stretch video | Screen while stopped | Not used |
-| `full_karaoke` | Full karaoke song and optional queue | Lyrics/screen while stopped | Compatible |
+| `full_karaoke` | Simulated full-track karaoke | Stopped-only full-track interaction | Compatible |
 | `call_response_stopped` | Call-and-response video | Screen while stopped | Compatible |
 | `oshi_reexperience` | Oshi-related spot guide/episode | Navigation and spoken episode | Not used |
 | `relaxation_multisensory` | Multisensory relaxation | Editable stopped in-cabin template | Recipe-defined |
@@ -585,13 +585,13 @@ represented by artificial lower-fidelity content templates.
 1. Validate the controls and complete independent Section 9 baseline snapshot.
 2. Confirm the selected service is permitted by the frozen purpose/stage row.
 3. Resolve its versioned recipe, ranking-applicability matrix, and eligibility rules.
-4. Validate the frozen source and enriched catalog snapshots.
+4. Validate the frozen Spotify-compatible Track, Audio Features, and simulator-flag catalog snapshot.
 5. Apply common and recipe-specific hard exclusions before scoring.
 6. Normalize scored evidence and activate purpose/recipe weights.
 7. Calculate transparent `item_fit` and feature contributions for every eligible item.
 8. Sort by `item_fit` descending, then stable item ID.
 9. Select the first N unique items in that same playback order.
-10. Return one complete, partial, or no-proposal result with full evidence.
+10. Return one complete plan or a typed insufficient/no-eligible result with full evidence.
 
 ### 12.3 Item scoring
 
@@ -610,16 +610,23 @@ aggregate score for the finished plan.
 ### 12.4 Detailed music behavior
 
 All three recipes request five ordered songs by default. The customer can
-change `plan_item_count` in settings. One to four eligible songs produce
-`partial_plan`; zero produces `no_proposal`.
+change `plan_item_count` in settings. A successful plan contains exactly the
+configured number; too few eligible songs produce `insufficient_eligible_items`.
 
-- **Music playlist:** ordinary playable audio; uses route and destination
-  relevance and is the only V1 recipe that activates unused-item/tag novelty.
-- **Humming karaoke:** requires a valid chorus and guide-vocal-compatible,
-  driving-safe presentation; uses destination but not route relevance.
-- **Full karaoke:** requires the full karaoke and lyrics assets and stopped
-  motion for the active screen experience; uses destination but not route
-  relevance.
+- **Music playlist:** requires a playable Track and is the only V1 recipe that
+  activates direct item novelty.
+- **Humming karaoke:** requires the simulator
+  `humming_karaoke_available` flag, which defaults to `1`; its relative proxy
+  is derived from Spotify Audio Features and it uses a fixed simulated segment,
+  not a claimed provider chorus.
+- **Full karaoke:** requires the simulator `full_karaoke_available` flag, which
+  defaults to `1`, and stopped motion; its relative proxy is derived from
+  Spotify Audio Features and does not claim provider lyrics or karaoke assets.
+
+Spotify-only V1 has no song route, destination, event, child-appeal,
+group-appeal, lyric, chorus, or semantic fields. Baseline inputs requiring those
+relations remain visible but context-only with zero ranking mask. Exact oshi
+matching uses Spotify Artist IDs.
 
 All three may use playback/operation history. Compatible lighting is attached
 after song selection as presentation metadata and does not change `item_fit`.
@@ -720,28 +727,35 @@ The normative shared music-data and generation design is
 `docs/master/aica_synthetic_music_data_and_generation_specification.md`.
 It belongs to the whole simulator, not to either proposal algorithm package.
 
-Catalog records are synthetic, versioned, and editable. Music data has three
+Catalog records are synthetic, versioned, and editable. Each V1 song has these
 separate namespaces:
 
 | Namespace | Examples | Owner |
 |---|---|---|
-| `source_metadata` | song/title, album, credited artist, singer/performer, composers, duration, release, genre, rights and karaoke capabilities | Fictional provider-like catalog |
-| `enriched_metadata` | acoustic/structural measurements, semantic tags, audience-policy assessment, route/destination/event relations, entity relations, field provenance | Offline preprocessing |
+| `spotify_track` | exact Spotify-compatible Track fields: title, performing artists, album/release, duration, explicit/playability policy, IDs and links | Fictional Spotify-compatible catalog |
+| `spotify_audio_features` | exact pinned Audio Features fields including energy, tempo, danceability, loudness, valence, speechiness, and instrumentalness | Fictional Spotify-compatible catalog |
+| `simulation_flags` | `humming_karaoke_available: 1`, `full_karaoke_available: 1` | Explicit simulator assumptions; eligibility only |
 | world/history data | driver, route, passengers, UPro/oshi, usage, operations, schedule, proposal/recovery histories | Simulation scenario |
 
-Artists, persons/contributors, groups and members, albums, oshi entities, and
-events have stable IDs and explicit relations. Normalized scoring inputs such as
-activation capability are derived transparently from natural-unit metadata;
-opaque universal `singability` fields are not stored.
+Track, artist, and album identities have stable synthetic IDs. V1 does not
+invent separate singer, composer, lyricist, arranger, member, semantic, route,
+destination, chorus, or singability metadata. Transparent activation and
+karaoke-ease proxies are derived at decision time from Audio Features and are
+not stored as provider facts.
 
 The approved generator is staged:
 
-1. an LLM generates a fictional provider/entity source catalog;
-2. deterministic validation freezes that source artifact;
-3. an LLM or deterministic extractor enriches only validated source IDs;
-4. validation/review freezes the enriched artifact;
-5. an LLM generates complete worlds, histories, and controlled contrasts;
-6. validation freezes the simulator dataset.
+1. stable fictional Track, Artist, and Album IDs are allocated;
+2. an LLM generates fictional Spotify-compatible Track objects from the schema;
+3. an LLM generates synthetic Audio Features for assigned coverage cells;
+4. deterministic validation checks schema, range, identity, and coverage;
+5. a separate pass generates worlds, direct-ID histories, and contrasts; and
+6. validation freezes the complete simulator dataset.
+
+The generator receives schemas, field semantics, fictional controls, and a
+seed—not live Spotify content. Synthetic IDs are visibly marked and HTTP links
+use the reserved `.invalid` domain. The deprecated Audio Features contract is a
+pinned fixture schema and is not assumed to be available at runtime.
 
 No live LLM call occurs during a deterministic transparent simulation run. The
 demonstration tier contains 36 balanced fictional songs, plus smaller fixtures
@@ -892,7 +906,7 @@ Transparent runs with identical inputs must reproduce exactly. LLM evidence pres
 - The transparent content selector returns one ordered plan, never plan candidates or an aggregate plan score.
 - Each included music item exposes `item_fit` and reconstructable signed feature contributions.
 - All three detailed music recipes request five items by default; a customer setting can change the count.
-- Fewer eligible items return `partial_plan`; zero returns `no_proposal`.
+- Fewer eligible items than the configured count return `insufficient_eligible_items`; zero returns `no_proposal`.
 
 ### 19.3 Safety behavior
 
@@ -914,8 +928,10 @@ Transparent runs with identical inputs must reproduce exactly. LLM evidence pres
 ### 19.5 Simulation and evidence
 
 - All synthetic data is built in and editable.
-- Music data separates provider-like `source_metadata`, preprocessing-owned `enriched_metadata`, and runtime world/history evidence.
-- Every generated music/entity artifact is validated, versioned, frozen, and provenance-linked before a transparent run.
+- Music data separates Spotify-compatible Track and Audio Features objects, explicit simulator availability flags, and runtime world/history evidence.
+- Both karaoke flags default to `1`, remain customer-editable, and affect eligibility only.
+- No AICA/LLM-enriched song traits participate in Spotify-only V1 scoring.
+- Every generated music artifact is visibly synthetic, validated, versioned, frozen, and provenance-linked before a transparent run.
 - Contrast clones preserve unchanged fields and show diffs.
 - Transparent identical-input replay is deterministic.
 - Simulation facts, algorithm output, and human judgment are clearly separated.
@@ -952,6 +968,6 @@ Transparent runs with identical inputs must reproduce exactly. LLM evidence pres
 | End/continue/restore behavior | Slides 81–82 |
 | Stage-constrained/LLM proposal concepts | `aica_stage_constrained_llm_proposal_selector_spec.md` |
 | Transparent music item scoring, recipes, evidence, and tests | `aica_transparent_content_proposal_algorithm.md` |
-| Shared synthetic music/entity data and staged generation | `aica_synthetic_music_data_and_generation_specification.md` |
+| Shared synthetic Spotify-compatible music data and staged generation | `aica_synthetic_music_data_and_generation_specification.md` |
 
 Where this specification deliberately refines an ambiguous source concept, the decision and rationale are preserved in `aica_proposal_design_reference_draft.md`.

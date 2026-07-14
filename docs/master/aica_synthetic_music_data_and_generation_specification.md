@@ -1,1094 +1,777 @@
-# AICA Synthetic Music Data and Generation Specification
+# AICA Synthetic Spotify-Compatible Music Data and Generation Specification
 
-**Document status:** Shared simulator data design and generation specification, approved in design discussion<br>
-**Primary audience:** Product, simulation, data, algorithm, UX, and engineering reviewers<br>
-**Scope:** Synthetic source metadata, enriched metadata, entity catalogs, LLM preprocessing, histories, contrast worlds, validation, and versioning<br>
-**Date:** 2026-07-14
+Status: approved V1 design
+Scope: shared simulator catalog data, generation, validation, editing, and replay
+Last updated: 2026-07-14
 
 ## Related documents
 
-- [Consolidated proposal simulator specification](aica_proposal_simulator_specification.md)
-- [Transparent content-proposal algorithm](aica_transparent_content_proposal_algorithm.md)
-- [Transparent service-proposal algorithm](aica_transparent_service_proposal_algorithm.md)
-- [Proposal simulator milestones](aica_proposal_simulator_milestones.md)
-- [CDC-SU source transcription](../../others/CDC-SU_specplan.md)
+- [AICA proposal simulator specification](./aica_proposal_simulator_specification.md)
+- [AICA transparent content-proposal algorithm](./aica_transparent_content_proposal_algorithm.md)
+- [Spotify Track reference](https://developer.spotify.com/documentation/web-api/reference/get-track)
+- [Spotify Audio Features reference](https://developer.spotify.com/documentation/web-api/reference/get-audio-features)
 
 ---
 
 ## 1. Purpose
 
-This document defines the shared synthetic music data used across the AICA proposal simulator.
+This document defines the shared synthetic music dataset used by the AICA proposal simulator.
 
-It belongs to the simulator rather than to one content-selection algorithm because the same frozen data must support:
+V1 has one deliberately narrow metadata contract:
 
-- transparent content selection;
-- constrained LLM content selection;
-- future catalog-enrichment comparisons;
-- setup editing;
-- deterministic replay;
-- customer contrast experiments;
-- future service recipes.
+1. a Spotify-compatible Track object;
+2. a Spotify-compatible Audio Features object; and
+3. two simulator-only karaoke availability flags.
 
-The document answers:
+It does not invent semantic, audience, route, destination, lyric, vocal-range, chorus, or musicological metadata. Those may become separately sourced extensions later, but they are not part of V1 and must not influence a V1 recommendation.
 
-1. What provider-like source data exists?
-2. What AICA-enriched metadata exists?
-3. How are fictional artists, songs, credits, capabilities, and histories generated?
-4. How is LLM-generated data constrained and validated?
-5. How are complete worlds and one-variable contrasts built?
-6. What is frozen and versioned for a simulation run?
+The contract supports three detailed music services:
 
-This specification does not define item_fit, content weights, or recommendation ordering. Those belong to the selected content algorithm.
+- playlist;
+- humming karaoke; and
+- full karaoke.
+
+Every generated V1 song is assumed to be available to both karaoke services. Availability is represented by explicit simulator flags defaulted to `1`; it is not presented as Spotify data.
+
+The dataset is shared simulator infrastructure. It is not owned by the transparent content selector and may also be consumed by future selectors, screens, and experiments.
 
 ---
 
-## 2. Core boundary
+## 2. V1 boundary
 
-The catalog has two metadata categories:
+### 2.1 Included song namespaces
 
-1. source_metadata;
-2. enriched_metadata.
+Each song contains exactly these top-level namespaces:
 
-Their names describe their production role, not which tool created them.
+```yaml
+spotify_track: {}
+spotify_audio_features: {}
+simulation_flags:
+  humming_karaoke_available: 1
+  full_karaoke_available: 1
+```
 
-In the simulator, both categories may be authored by an LLM. In production:
+`spotify_track` and `spotify_audio_features` follow Spotify field names and value semantics. `simulation_flags` is an AICA simulator assumption and is kept visibly separate.
 
-- source_metadata would normally be supplied by a music, karaoke, rights, or entity provider;
-- enriched_metadata would normally be produced by audio analysis, deterministic joins, controlled LLMs, editorial review, or manual overrides.
+### 2.2 Excluded song metadata
 
-The full flow is:
+V1 does not add any of the following:
 
-~~~text
-generation specification
-→ synthetic provider/entity generation
-→ source_metadata validation
-→ enrichment preprocessing
-→ enriched_metadata validation and review
-→ user/world/history generation
-→ cross-reference and contrast validation
-→ immutable catalog/world snapshot
-→ proposal algorithms
-~~~
+- `enriched_metadata`;
+- genre inferred by AICA or an LLM;
+- route, destination, schedule, event, scene, mood, or audience tags;
+- child appeal or group appeal;
+- chorus start/end timestamps;
+- lyric availability, lyric density, language difficulty, or profanity inferred from lyrics;
+- vocal range, melody complexity, humming ease, or full-song singability as stored fields;
+- composer, lyricist, arranger, featured-member, or detailed credit records not supplied by the selected Spotify objects;
+- guide-vocal, microphone, display, or karaoke-asset capability claims; or
+- LLM-generated descriptions presented as provider facts.
 
-Proposal algorithms never call the generator during a run.
+The content algorithm may calculate transparent numeric proxies from Spotify Audio Features at decision time. Derived values are formula outputs, not stored provider metadata.
 
----
+### 2.3 Separate world and history data
 
-## 3. Data namespaces
+Driver state, road conditions, passengers, U-Pro settings, exact oshi artist identifiers, playback history, operations, acceptance, and recovery remain in the synthetic world fixture. They are not song metadata.
 
-### 3.1 Source metadata
-
-Source metadata preserves provider-like identity, credits, availability, and capability fields without changing their meaning.
-
-Examples:
-
-- stable provider item ID;
-- title;
-- credited artist text;
-- artist/person IDs and roles;
-- album and release information;
-- genre names supplied by the source;
-- language;
-- duration;
-- content rating;
-- lyrics availability;
-- market/playability;
-- karaoke asset availability;
-- guide-vocal and lyrics-screen capabilities.
-
-### 3.2 Enriched metadata
-
-Enriched metadata adds values created after source ingestion.
-
-Examples:
-
-- BPM and audio descriptors;
-- normalized genre taxonomy;
-- mood/theme tags;
-- chorus boundaries;
-- vocal range;
-- lyric density;
-- melody complexity;
-- audience-policy tags;
-- route/destination relations;
-- oshi and event relations;
-- enrichment explanations and evidence.
-
-### 3.3 World and history data
-
-User, context, schedule, and history are not catalog metadata. They live in a separate world snapshot and refer to catalog/entity IDs.
-
-Examples:
-
-- driver state;
-- road/environment;
-- UPro and oshi profile;
-- item/tag usage;
-- item/tag recency;
-- playback and operation history;
-- acceptance/recovery histories;
-- destination and schedule.
+This separation prevents a synthetic song generator from pre-encoding the recommendation outcome.
 
 ---
 
-## 4. Entity model
+## 3. Dataset envelope
 
-### 4.1 Why entities are explicit
+A frozen dataset uses this envelope:
 
-Artist name alone is insufficient for:
+```yaml
+dataset_manifest:
+  dataset_id: synthetic-spotify-compatible-v1-seed-1042
+  dataset_kind: synthetic_spotify_compatible
+  schema_version: 1.0.0
+  spotify_track_reference_version: pinned-2026-07-14
+  spotify_audio_features_reference_version: pinned-2026-07-14
+  generator_version: 1.0.0
+  prompt_template_version: 1.0.0
+  validation_rules_version: 1.0.0
+  random_seed: 1042
+  generated_at: 2026-07-14T00:00:00Z
+  synthetic_only: true
 
-- group versus member oshi relations;
-- featured vocalist matching;
-- character, voice actor, virtual artist, and franchise relations;
-- composer/lyricist preferences;
-- event participation;
-- correct customer explanations.
+songs: []
+worlds: []
+```
 
-All references use stable fictional IDs.
+The manifest label is mandatory. A synthetic record must never be mistaken for a live Spotify response.
 
-### 4.2 Artist
-
-~~~yaml
-artist_id: artist_aoi_horizon
-display_name: Aoi Horizon
-aliases: []
-artist_type: group
-member_person_ids:
-  - person_aoi
-  - person_ren
-source_genres:
-  - j_pop
-  - electronic
-oshi_entity_ids:
-  - oshi_aoi_horizon
-enabled: true
-~~~
-
-Allowed artist types:
-
-- solo;
-- group;
-- band;
-- virtual_artist;
-- character_unit;
-- instrumental_act;
-- other.
-
-### 4.3 Person/contributor
-
-~~~yaml
-person_id: person_aoi
-display_name: Aoi
-aliases: []
-credited_roles:
-  - vocalist
-enabled: true
-~~~
-
-Supported credit roles include:
-
-- primary_artist;
-- vocalist;
-- featured_artist;
-- composer;
-- lyricist;
-- arranger;
-- performer;
-- producer;
-- voice_actor;
-- character_performer.
-
-### 4.4 Album/release
-
-~~~yaml
-album_id: album_blue_horizon
-album_name: Blue Horizon
-primary_artist_ids:
-  - artist_aoi_horizon
-release_date: 2024-06-18
-label_id: label_02
-release_type: album
-enabled: true
-~~~
-
-### 4.5 Oshi entity
-
-~~~yaml
-oshi_id: oshi_aoi
-display_name: Aoi
-oshi_type: artist_member
-linked_entity_ids:
-  - person_aoi
-  - artist_aoi_horizon
-tags:
-  - summer
-  - coastal
-enabled: true
-~~~
-
-Oshi types include:
-
-- artist;
-- artist_member;
-- group;
-- character;
-- voice_actor;
-- franchise;
-- creator;
-- other.
-
-### 4.6 Event
-
-~~~yaml
-event_id: event_summer_live_01
-event_type: live_show
-display_name: Blue Horizon Summer Live
-participant_entity_ids:
-  - artist_aoi_horizon
-tags:
-  - summer_live
-  - seaside
-timing_class: soon
-enabled: true
-~~~
+The Audio Features endpoint is marked deprecated in Spotify's current reference. V1 therefore uses a pinned schema fixture and does not assume that the endpoint will be available at simulator runtime.
 
 ---
 
-## 5. Song source schema
+## 4. Spotify Track schema
 
-Conceptual record:
+### 4.1 Stored object
 
-~~~yaml
-item_id: song_017
-content_type: song
+The `spotify_track` namespace uses Spotify Track Object field names. The synthetic catalog stores the following V1 shape:
 
-source_metadata:
-  provider: synthetic_music_provider_v1
-  provider_item_id: provider_song_017
-  title: Coastal Signal
+```yaml
+spotify_track:
+  album:
+    album_type: album
+    total_tracks: 10
+    available_markets: [JP]
+    external_urls:
+      spotify: https://example.invalid/spotify/album/synthetic-album-0001
+    href: https://example.invalid/spotify/v1/albums/synthetic-album-0001
+    id: synthetic-album-0001
+    images:
+      - url: https://example.invalid/images/synthetic-album-0001-640.jpg
+        height: 640
+        width: 640
+    name: Midnight Compass
+    release_date: "2023-04-21"
+    release_date_precision: day
+    type: album
+    uri: spotify:album:synthetic-album-0001
+    artists:
+      - external_urls:
+          spotify: https://example.invalid/spotify/artist/synthetic-artist-0001
+        href: https://example.invalid/spotify/v1/artists/synthetic-artist-0001
+        id: synthetic-artist-0001
+        name: Aoi Meridian
+        type: artist
+        uri: spotify:artist:synthetic-artist-0001
+  artists:
+    - external_urls:
+        spotify: https://example.invalid/spotify/artist/synthetic-artist-0001
+      href: https://example.invalid/spotify/v1/artists/synthetic-artist-0001
+      id: synthetic-artist-0001
+      name: Aoi Meridian
+      type: artist
+      uri: spotify:artist:synthetic-artist-0001
+  available_markets: [JP]
+  disc_number: 1
+  duration_ms: 237040
+  explicit: false
+  external_ids:
+    isrc: SYNTH0000001
+  external_urls:
+    spotify: https://example.invalid/spotify/track/synthetic-track-0001
+  href: https://example.invalid/spotify/v1/tracks/synthetic-track-0001
+  id: synthetic-track-0001
+  is_local: false
+  is_playable: true
+  name: Afterglow Highway
+  popularity: 56
+  preview_url: null
+  track_number: 3
+  type: track
+  uri: spotify:track:synthetic-track-0001
+```
 
-  release:
-    album_id: album_blue_horizon
-    album_name: Blue Horizon
-    release_date: 2024-06-18
-    label_id: label_02
+Fields that Spotify documents as nullable, such as `preview_url`, may be `null`. Conditionally returned properties such as `is_playable`, `linked_from`, and `restrictions` follow their documented presence rules; absent optional properties are omitted rather than filled with invented values. Standard simulator fixtures include `is_playable` because eligibility needs it.
 
-  credits:
-    credited_artist_text: Aoi Horizon feat. Miku Sora
-    primary_artist_ids:
-      - artist_aoi_horizon
-    vocalist_ids:
-      - person_aoi
-      - person_miku
-    featured_artist_ids:
-      - artist_miku_sora
-    composer_ids:
-      - person_ren
-    lyricist_ids:
-      - person_hana
-    arranger_ids:
-      - person_kai
+The complete V1 Track field inventory is:
 
-  language_tags:
-    - ja
-  genre_names:
-    - pop
-    - electronic
-  duration_ms: 214000
-  content_rating: clean
-  has_lyrics: true
-  playable: true
-  enabled: true
+```text
+album, artists, available_markets, disc_number, duration_ms, explicit,
+external_ids, external_urls, href, id, is_local, is_playable, linked_from,
+name, popularity, preview_url, restrictions, track_number, type, uri
+```
 
-  availability:
-    markets:
-      - JP
-    playlist_available: true
-    chorus_available: true
-    full_karaoke_available: false
-    guide_vocal_available: true
-    lyrics_screen_available: true
-    lighting_compatible: true
-~~~
+Within `external_ids`, only identifiers actually represented by the fixture are present. V1 normally supplies a clearly synthetic `isrc`; it does not write null placeholders for absent `ean` or `upc` properties.
 
-### 5.1 Source invariants
+### 4.2 Identity and credits
 
-- item_id and provider_item_id are stable and unique in their namespace.
-- Every referenced artist, person, album, label, and entity exists.
-- duration_ms is positive.
-- content_rating is clean, explicit, unrated, or unknown.
-- Disabled items are never eligible.
-- full_karaoke_available requires has_lyrics and lyrics_screen_available.
-- Capability fields are provider/catalog facts, not recommendation scores.
+The V1 display identity is:
 
-At combined-snapshot publication, `chorus_available` additionally requires a
-valid enriched chorus structure. Pass 1 preserves the provider-like capability
-fact; Pass 2 supplies and validates its structural counterpart.
+```text
+song title  = spotify_track.name
+artists     = spotify_track.artists[*].name
+album       = spotify_track.album.name
+release     = spotify_track.album.release_date
+```
 
----
+Spotify's Track Object supplies performing artist references, not a guaranteed distinction between artist name and singer name. V1 therefore displays `artists` and does not invent separate `singer_name`, `composer`, `lyricist`, or `arranger` fields.
 
-## 6. Enriched song schema
+### 4.3 Track invariants
 
-~~~yaml
-enriched_metadata:
-  acoustic:
-    tempo_bpm: 160
-    energy: 0.80
-    valence: 0.70
-    key: A
-    mode: major
-
-  structure:
-    chorus_start_ms: 52000
-    chorus_end_ms: 81000
-    lyric_density_words_per_sec: 1.6
-
-  karaoke_difficulty:
-    vocal_low_midi: 58
-    vocal_high_midi: 71
-    melody_complexity: 0.30
-
-  semantic:
-    genre_tags:
-      - j_pop
-      - electronic_pop
-    mood_tags:
-      - uplifting
-      - energetic
-    theme_tags:
-      - summer
-      - travel
-
-  audience:
-    policy_tags:
-      - family_safe
-      - group_singalong
-    child_interest_tags:
-      - dance
-      - animation_style
-
-  relations:
-    route_tags:
-      - coastal
-    destination_tags:
-      - seaside
-      - festival
-    oshi_ids:
-      - oshi_aoi
-    event_ids:
-      - event_summer_live_01
-    event_tags:
-      - summer_live
-~~~
-
-### 6.1 Natural units first
-
-Store source-like values in their useful units:
-
-- tempo as BPM;
-- duration and boundaries as milliseconds;
-- vocal limits as MIDI pitch;
-- lyric density as words/second;
-- source ratings as their source enums.
-
-Recommendation algorithms normalize them through versioned formulas.
-
-### 6.2 No opaque universal singability
-
-The catalog must not supply an unexplained singability value as truth.
-
-It supplies components:
-
-- vocal range;
-- melody complexity;
-- lyric density;
-- chorus length;
-- karaoke asset/capability.
-
-A content recipe may combine these with user familiarity to calculate a service-specific compatibility.
-
-### 6.3 Audience fields
-
-Audience policy distinguishes:
-
-- hard policy eligibility;
-- child interest;
-- group participation.
-
-content_rating plus approved policy tags controls eligibility. Child/group-interest tags may support item ordering.
-
-LLM-generated policy-sensitive labels require approval before publication.
+- `type` is `track`.
+- `id` is unique within the dataset.
+- every artist reference resolves consistently by `id` and `name`.
+- `duration_ms` is a positive integer.
+- `explicit`, `is_local`, and `is_playable` are Boolean.
+- `popularity` is an integer from `0` through `100`.
+- `disc_number` and `track_number` are positive integers.
+- `release_date` matches its declared `release_date_precision`.
+- `available_markets` contains valid market codes or is an empty list.
+- a non-null restriction has a documented restriction reason.
 
 ---
 
-## 7. Field-level provenance
+## 5. Spotify Audio Features schema
 
-Every source and enriched field has provenance.
+### 5.1 Stored object
 
-Conceptual record:
+The `spotify_audio_features` namespace uses the exact Audio Features field names in the selected Spotify reference:
 
-~~~yaml
-field_path: enriched_metadata.semantic.theme_tags
-value_origin: synthetic_fixture
-method: llm
-pipeline_id: synthetic_music_enrichment_v1
-model_or_rule_version: model-and-prompt-version
-input_hash: sha256
-generated_at: 2026-07-14T00:00:00Z
-review_status: approved
-evidence_refs:
-  - source_metadata.title
-  - source_metadata.genre_names
-explanation: Controlled taxonomy assignment from supplied fictional profile.
-~~~
+```yaml
+spotify_audio_features:
+  acousticness: 0.00242
+  analysis_url: https://example.invalid/spotify/v1/audio-analysis/synthetic-track-0001
+  danceability: 0.585
+  duration_ms: 237040
+  energy: 0.842
+  id: synthetic-track-0001
+  instrumentalness: 0.00686
+  key: 9
+  liveness: 0.0866
+  loudness: -5.883
+  mode: 0
+  speechiness: 0.0556
+  tempo: 118.211
+  time_signature: 4
+  track_href: https://example.invalid/spotify/v1/tracks/synthetic-track-0001
+  type: audio_features
+  uri: spotify:track:synthetic-track-0001
+  valence: 0.428
+```
 
-Allowed method values:
+### 5.2 Value contract
 
-- provider;
-- llm;
-- audio_analysis;
-- deterministic_rule;
-- catalog_join;
-- editorial;
-- manual_override.
+| Field | Contract | V1 scoring role |
+|---|---|---|
+| `acousticness` | number in `[0,1]` | retained, not scored |
+| `analysis_url` | synthetic reserved URL | identity/provenance only |
+| `danceability` | number in `[0,1]` | activation and karaoke proxies |
+| `duration_ms` | positive integer | full-karaoke proxy and duration |
+| `energy` | number in `[0,1]` | activation |
+| `id` | exact Track ID match | identity/join |
+| `instrumentalness` | number in `[0,1]` | vocal-presence proxy |
+| `key` | integer `-1` or `0..11` | retained, not scored |
+| `liveness` | number in `[0,1]` | retained, not scored |
+| `loudness` | finite dB value | normalized activation |
+| `mode` | integer `0` or `1` | retained, not scored |
+| `speechiness` | number in `[0,1]` | karaoke proxies |
+| `tempo` | positive BPM | activation and karaoke proxies |
+| `time_signature` | integer `3..7` | retained, not scored |
+| `track_href` | synthetic reserved URL | identity/provenance only |
+| `type` | `audio_features` | schema discriminator |
+| `uri` | exact Track URI match | identity/join |
+| `valence` | number in `[0,1]` | activation and presentation |
 
-Allowed review states:
+The dataset preserves `key`, `mode`, `time_signature`, `acousticness`, and `liveness` even though the V1 selector does not force them into a recommendation formula. Storage does not imply scoring.
 
-- unreviewed;
-- approved;
-- rejected.
+### 5.3 Audio-feature invariants
 
-LLM confidence is provenance. In baseline-only transparent selection it is not a ranking feature.
+- all `[0,1]` fields are finite and in range;
+- `key` is `-1` when undetected or an integer from `0` through `11`;
+- `mode` is `0` or `1`;
+- `tempo` is finite and greater than `0`;
+- `loudness` is finite; synthetic generation targets the realistic reference interval `[-60,0]` dB;
+- `time_signature` is an integer from `3` through `7`;
+- Audio Features `id`, `uri`, and `duration_ms` equal their Track counterparts; and
+- `type` is `audio_features`.
 
-Unreviewed or rejected policy-sensitive values are unavailable to proposal algorithms.
+The narrower loudness and time-signature intervals are synthetic-generation targets, not claims that every provider record must be inside them.
 
 ---
 
-## 8. Enrichment preprocessing families
+## 6. Simulator availability flags
 
-### 8.1 Acoustic enrichment
+Each song has:
 
-Appropriate methods:
+```yaml
+simulation_flags:
+  humming_karaoke_available: 1
+  full_karaoke_available: 1
+```
 
-- audio signal analysis;
-- provider descriptors;
-- deterministic synthetic fixture generation.
+Rules:
 
-Fields:
+- both fields accept only integer `0` or `1`;
+- both default to `1` for every generated song;
+- `1` means the simulator permits the song in that detailed service;
+- the flags are eligibility gates only and never increase an item score;
+- a customer may change either default in simulator settings or edit an individual fixture; and
+- the flags do not claim that Spotify supplies karaoke rights, lyrics, timing, guide vocals, or any karaoke asset.
 
-- BPM;
-- energy;
-- loudness or related descriptors;
-- key/mode;
-- other approved acoustic descriptors.
+An instrumental-leaning song may still have both flags set to `1`. `instrumentalness` influences transparent ease proxies but does not override the approved simulator availability assumption.
 
-An LLM may author synthetic values under constraints, but production acoustic values should not be inferred from a title or artist name alone.
+---
 
-### 8.2 Structural enrichment
+## 7. Field provenance
 
-Fields:
+### 7.1 Synthetic fixture provenance
 
-- chorus boundaries;
-- lyric density;
-- vocal range;
-- melody complexity.
+Synthetic provenance is stored once in `dataset_manifest`:
 
-Appropriate methods:
+```yaml
+dataset_manifest:
+  dataset_kind: synthetic_spotify_compatible
+  synthetic_only: true
+  generator_pass: track_and_audio_features
+  generator_version: 1.0.0
+  prompt_template_version: 1.0.0
+  random_seed: 1042
+  validator_version: 1.0.0
+  reviewed: true
+```
 
-- karaoke provider;
-- lyrics/audio structure analysis;
-- constrained synthetic generation;
-- editorial review.
+It is not added as another song-metadata namespace. Every song in that frozen dataset inherits the manifest provenance.
 
-### 8.3 Semantic enrichment
+Synthetic identifiers must contain a visible `synthetic-` marker. Synthetic web links must use the reserved `.invalid` domain. They must not imitate a working Spotify API endpoint or resolve to a real track.
 
-Fields:
+### 7.2 Real provider data
 
-- normalized genre;
-- mood;
-- theme;
-- audience-interest tags.
+If a later environment imports real Spotify payloads:
 
-The LLM receives a closed taxonomy and returns only allowed identifiers.
+- the payload is stored as provider data;
+- it is not sent to an LLM for enrichment, rewriting, embedding, training, or ingestion;
+- licensing, policy, retention, and attribution are handled by that environment; and
+- missing karaoke flags are added only in the separate simulator namespace.
 
-### 8.4 Relation enrichment
+Spotify's current documentation warns that Spotify content may not be used to train or otherwise ingest into an AI model. The simulator's LLM generator therefore receives only the public schema, documented value meanings, and fictional generation controls—not real Spotify content.
 
-Fields:
+---
 
-- route/destination relations;
-- oshi relations;
-- event relations;
-- group/member/character relationships.
+## 8. No V1 metadata-enrichment preprocessing
 
-Prefer deterministic catalog joins for exact entity relations. An LLM may propose a relation candidate but cannot create an unknown entity ID.
+V1 has no song-enrichment stage.
 
-### 8.5 Policy enrichment
+The following flow is prohibited:
 
-Fields:
+```text
+provider track
+  -> LLM guesses chorus, audience, route, oshi, or singing traits
+  -> guessed fields treated as recommendation evidence
+```
 
-- family-safe;
-- child-interest;
-- group-singalong;
-- presentation warnings.
+The permitted flow is:
 
-Provider content rating is preserved. Policy enrichment requires deterministic validation and review.
+```text
+fictional generation controls
+  -> synthetic Spotify-compatible Track object
+  -> synthetic Spotify-compatible Audio Features object
+  -> deterministic validation
+  -> frozen dataset
+```
+
+At recommendation time, the transparent selector derives documented proxies from the stored Audio Features. It does not persist those proxies as provider facts.
+
+Future enrichment is an extension boundary. Any future source must have its own namespace, provenance, availability policy, applicability review, and customer approval before it can affect scoring.
 
 ---
 
 ## 9. LLM synthetic-generation algorithm
 
-### 9.1 Why generation is staged
+### 9.1 Inputs
 
-A single prompt that creates source metadata, enriched metadata, and user histories together risks:
+The LLM receives only:
 
-- circular data tailored to one recommendation result;
-- broken entity references;
-- implausible perfect correlations;
-- unclear source/enrichment provenance;
-- difficult comparison of enrichment versions.
+- the V1 JSON Schema;
+- Spotify-documented field definitions and ranges;
+- the catalog coverage matrix in Section 10;
+- fictional naming and locale instructions;
+- fixed entity IDs allocated before generation;
+- the random seed and generation pass ID; and
+- explicit instructions that all people, artists, albums, tracks, IDs, and URLs are fictional.
 
-Generation is therefore split into three passes.
+It does not receive live Spotify payloads or recommendation results.
 
-### 9.2 Pass 1: source catalog and entity graph
+### 9.2 Pass 1: fictional Track objects
 
-Inputs:
+The generator creates the artist, album, and track identities first.
 
-- strict JSON schema;
-- fictional-only naming requirement;
-- entity counts;
-- role/capability quotas;
-- allowed enums;
-- uniqueness constraints;
-- catalog balance contract.
+Requirements:
 
-Outputs:
+1. allocate stable synthetic artist, album, and track IDs;
+2. create fictional names and release data;
+3. use the same artist reference in album and track objects;
+4. create Track fields with exact V1 names and types;
+5. set playable synthetic records to `is_playable: true` unless the fixture intentionally tests exclusion;
+6. set `is_local: false` for the standard catalog; and
+7. use `.invalid` URLs and clearly synthetic IDs.
 
-- artists;
-- people/contributors;
-- albums/releases;
-- labels;
-- oshi entities;
-- events;
-- song source_metadata.
+The output is parsed as structured data. Free-form prose is rejected.
 
-The pass must not output enriched fields.
+### 9.3 Pass 2: Audio Features objects
 
-### 9.3 Source validation
+For every Track, the generator creates one Audio Features object.
 
-Deterministic validation checks:
+Generation is conditioned on an assigned audio-profile cell, not on a desired recommendation rank. Numeric fields should be mutually plausible without claiming scientific accuracy. Examples:
 
-- schema;
-- types and enums;
-- ID uniqueness;
-- all references;
-- capability consistency;
-- quotas;
-- fictional identity rules;
-- absence of enriched fields.
+- high-energy cells should usually combine higher `energy` with stronger `loudness` and/or tempo;
+- speech-forward cells should raise `speechiness`;
+- instrumental-leaning cells should raise `instrumentalness`;
+- danceable-vocal cells should raise `danceability` while retaining low instrumentalness; and
+- the catalog must include exceptions so that no single field determines the outcome.
 
-Invalid output is rejected or passed to a constrained repair request containing only validation errors and the invalid record set.
+The generator must copy Track `id`, `uri`, and `duration_ms` exactly.
 
-### 9.4 Pass 2: enrichment
+### 9.4 Pass 3: worlds and histories
 
-Inputs:
+After the catalog is frozen, a separate pass creates synthetic world and history fixtures. It references existing Track and Artist IDs but may not modify their metadata.
 
-- validated source snapshot;
-- linked entity profiles;
-- controlled taxonomies;
-- enrichment schema;
-- field methods and evidence requirements;
-- balance/counterexample requirements.
+World generation includes:
 
-Outputs:
+- driver and environment states;
+- passenger conditions;
+- exact oshi artist references where relevant;
+- direct item playback and operation histories;
+- direct item acceptance and recovery evidence; and
+- service lifecycle state.
 
-- acoustic fixture values;
-- structural values;
-- semantic tags;
-- audience tags;
-- route/destination relations;
-- oshi/event relations;
-- field-level provenance.
+Unsupported semantic inputs may be present as world context for UI demonstration, but they are marked `context_only` and must not affect Spotify-only V1 ranking.
 
-The enrichment pass cannot:
+### 9.5 Deterministic validator and repair loop
 
-- add or rename source identities;
-- change credits;
-- change provider availability;
-- invent an entity ID;
-- mark rights/capability without source support;
-- omit provenance.
+Each pass is followed by deterministic validation. On failure, the LLM receives only:
 
-### 9.5 Enrichment validation and review
+- the invalid record;
+- machine-readable validation errors; and
+- the original schema and cell assignment.
 
-Deterministic checks run first. Policy-sensitive and semantic outputs then receive review_status.
-
-An optional LLM critic may identify semantic inconsistencies, but it cannot approve data by itself. Publication requires the configured approval workflow.
-
-### 9.6 Pass 3: worlds and histories
-
-Inputs:
-
-- validated catalog/entity snapshots;
-- complete baseline world schema;
-- base-world definitions;
-- one-variable contrast declarations;
-- history distribution rules.
-
-Outputs:
-
-- complete UPro/oshi profiles;
-- driver/environment/passenger contexts;
-- item/tag usage and recency;
-- operation histories;
-- acceptance/recovery histories;
-- schedules/destinations;
-- contrast clones referencing valid IDs.
-
-The world generator cannot create catalog items or entities.
-
-### 9.7 Strict structured output
-
-Every pass uses:
-
-- versioned JSON Schema;
-- constrained structured output where supported;
-- no Markdown wrapper;
-- finite lists bounded by the generation contract;
-- explicit generation provenance.
+The repair prompt may change only invalid fields and directly dependent references. After two failed repairs, generation stops with `catalog_generation_failed`.
 
 ---
 
 ## 10. Demonstration catalog contract
 
-### 10.1 Size and balance
+### 10.1 Size and ordering
 
-The main demonstration catalog contains 36 fictional songs:
+The default demonstration catalog contains 36 songs. The customer-visible recommendation plan still contains exactly five ordered songs by default; plan size is a selector setting, not a catalog property.
 
-~~~text
-3 energy bands
-× 3 tempo bands
-× 4 semantic relation families
-= 36 songs
-~~~
+Catalog generation crosses:
 
-Initial bands:
+- 3 energy bands: low, medium, high;
+- 3 tempo bands: low, medium, high; and
+- 4 audio-profile families: balanced vocal, danceable vocal, speech forward, and instrumental leaning.
 
-| Axis | Values |
+This gives `3 × 3 × 4 = 36` primary coverage cells.
+
+### 10.2 Coverage bands
+
+Default generation bands are:
+
+| Dimension | Low | Medium | High |
+|---|---:|---:|---:|
+| `energy` | `0.10..0.35` | `0.40..0.65` | `0.70..0.95` |
+| `tempo` BPM | `60..95` | `96..130` | `131..180` |
+
+Profile-family guidance is:
+
+| Family | Primary constraints |
 |---|---|
-| Energy | 0.20, 0.50, 0.80 |
-| Tempo | 80, 120, 160 BPM |
-| Relation family | general, family/group, route/destination, oshi/event |
+| balanced vocal | `instrumentalness <= 0.20`, moderate danceability and speechiness |
+| danceable vocal | `instrumentalness <= 0.15`, `danceability >= 0.65` |
+| speech forward | `speechiness >= 0.40`, low-to-medium instrumentalness |
+| instrumental leaning | `instrumentalness >= 0.65` |
 
-This intentionally includes unusual but valid combinations such as high energy with slow tempo and low energy with fast tempo. Energy and tempo therefore do not become hidden proxies for each other.
+These are generation controls, not stored labels used by the recommendation algorithm.
 
-### 10.2 Identity and credit quotas
+### 10.3 Identity and releases
 
-- 12 fictional credited artists;
-- three songs per primary artist;
-- six solo vocalists;
-- three groups with explicit members;
-- two virtual/character units;
-- one instrumental act;
-- separate fictional composers, lyricists, and arrangers;
-- several featured collaborations;
-- group, member, character, and voice-actor oshi relationships;
-- consistent event participation.
+The default catalog has:
 
-### 10.3 Genre and era
+- 12 fictional Spotify artist identities;
+- three tracks per primary artist;
+- at least 12 fictional albums;
+- releases covering at least three eras for age-affinity tests; and
+- stable artist and track IDs for exact oshi and history fixtures.
 
-- Six normalized genre families;
-- three release-era bands;
-- each genre appears across energy and tempo bands;
-- each era appears across multiple genres and relation families.
+No singer-versus-artist distinction or detailed contributor graph is generated.
 
-### 10.4 Capabilities
+### 10.4 Availability and audience policy
 
-- all 36 are ordinary-playlist capable;
-- 24 are chorus capable;
-- 24 are full-karaoke capable;
-- 12 support both karaoke modes;
-- at least five normally eligible items remain for each implemented recipe after standard policy filtering.
+- all 36 standard songs have both karaoke availability flags equal to `1`;
+- at least six songs have `explicit: true` to test child-present exclusion;
+- at least four special negative fixtures have `is_playable: false` or a restriction and live outside the standard 36-song eligible catalog; and
+- every standard Audio Features object is complete and valid.
 
-### 10.5 Audience
+### 10.5 Duration and signatures
 
-- six explicit/adult-only items outside the family relation family;
-- family-safe items at multiple energy/tempo levels;
-- child-interest and group-singalong tags are independently varied;
-- policy eligibility and preference appeal are separate.
-
-### 10.6 Semantic relations
-
-- route/destination relations across multiple genres and activation bands;
-- oshi/event relations across multiple genres and activation bands;
-- unrelated controls within every energy/tempo band.
-
-### 10.7 Duration
-
-Songs include short, medium, and long durations. Duration is not perfectly correlated with genre, energy, tempo, artist, or karaoke availability.
+- Track durations cover short, medium, and long songs;
+- Track and Audio Features duration always agree;
+- time signatures include common `3`, `4`, and at least one other value; and
+- key includes at least one undetected `-1` fixture.
 
 ---
 
-## 11. Deliberate trade-offs
+## 11. Deliberate trade-off fixtures
 
-The catalog must contain records where evidence conflicts:
+The catalog must contain candidate pairs that expose actual Spotify-only trade-offs:
 
-| Archetype | Supporting evidence | Opposing evidence |
-|---|---|---|
-| Familiar favorite | High usage and acceptance | Recently played |
-| Oshi anthem | Exact oshi/event relation | Low recovery history |
-| New energizing song | High energy and playlist novelty | No preference history |
-| Family song | Strong child/group relation | Low personal genre affinity |
-| Easy humming song | Short chorus and low difficulty | Low activation |
-| Challenging favorite | Strong preference | Wide vocal range/high complexity |
-| Route-theme song | Exact destination relation | Recent skip |
+- high energy with low valence versus moderate energy with high valence;
+- fast tempo with low danceability versus medium tempo with high danceability;
+- strong activation with high speechiness versus slightly lower activation with easy speech profile;
+- a short moderate-energy song versus a long high-energy song for full karaoke;
+- exact oshi-artist match versus non-oshi higher activation;
+- recently played exact track versus fresh track;
+- accepted low-activation track versus untested high-activation track;
+- instrumental-leaning track whose availability flags are still `1`; and
+- explicit high-fit track excluded when a child is present.
 
-No catalog item may be intentionally configured to dominate every dimension.
+The dataset must not contain a hidden `recommended`, `best_for_world`, or target-rank field.
 
 ---
 
 ## 12. Dataset tiers
 
-| Dataset | Purpose | Size |
-|---|---|---:|
-| Focused fixtures | Unit tests for one formula, rule, or filter | 8–12 items per fixture |
-| Demonstration catalog | Customer-facing worlds and contrasts | 36 songs |
-| Stress catalog | Performance and deterministic-stability tests | At least 500 generated items |
+The simulator supports three tiers:
 
-Focused fixtures may deliberately omit unrelated diversity but must state their test purpose.
+| Tier | Purpose | Required content |
+|---|---|---|
+| smoke | schema and pipeline checks | 5 valid songs plus negative fixtures |
+| demonstration | stakeholder review | 36 balanced songs and approved worlds |
+| stress | performance and determinism | configurable catalog size with the same distributions |
 
-The stress catalog is generated offline, validated, frozen, and versioned. Runtime generation is prohibited.
+Every tier uses the same schema and validation rules.
 
 ---
 
-## 13. Synthetic world schema
+## 13. Synthetic world and history schema
 
-Catalog metadata and world evidence remain separate.
+World data remains separate from songs:
 
-Conceptual content-related world:
+```yaml
+world:
+  world_id: world-night-highway-01
+  current_time: 2026-07-14T22:10:00Z
+  trigger:
+    trigger_purpose: inattentive_driving_prevention_recovery
+    lifecycle_stage: active_driving_content
 
-~~~yaml
-world_id: world_night_highway_v1
+  driver:
+    age_band: 30s
+    drowsiness_level: 80
+    fatigue_level: 70
 
-driver:
-  drowsiness_level: 80
-  fatigue_level: 70
+  environment:
+    traffic_state: congested
+    road_type: highway
+    night_state: night
+    monotony_level: 90
+    motion_state: driving
+    route_tags: [highway]
+    destination_tags: [coast]
 
-environment:
-  traffic_state: congested
-  road_type: highway
-  night_state: night
-  monotony_level: 90
-  motion_state: driving
+  passengers:
+    child_present: false
+    multiple_passengers: false
 
-route:
-  route_tags:
-    - coastal
-  destination_tags:
-    - seaside
+  upro:
+    oshi_registered: true
+    oshi_mode: on
+    oshi_id: synthetic-artist-0001
+    oshi_type: artist
+    oshi_tags: []
 
-passengers:
-  child_present: false
-  multiple_passengers: false
+  direct_item_history:
+    synthetic-track-0001:
+      last_played_at: 2026-07-13T21:00:00Z
+      play_count_30d: 3
+      skipped_count_30d: 0
+      changed_count_30d: 0
+      cancelled_count_30d: 0
+      acceptance_rate: 0.80
+      recovery_rate: 0.70
 
-upro:
-  age_band: adult_30s
-  gender: unknown
-  hobby_interest_tags:
-    - electronic_pop
-    - travel
-  oshi_registered: true
-  oshi_mode: on
-  oshi_id: oshi_aoi
-  oshi_type: artist_member
-  oshi_tags:
-    - summer
-    - coastal
+  selected_service:
+    selected_service_id: humming_karaoke
+    lifecycle_state: active
+```
 
-service_context:
-  service_recency_state: {}
-  service_usage_level: {}
-  scene_service_usage_level: {}
-  service_proposal_acceptance_rate: {}
-  service_recovery_rate: {}
+`route_tags` and `destination_tags` may still be needed by other simulator packages. In Spotify-only V1 content ranking, they are context-only because songs have no matching fields.
 
-content_preferences:
-  catalog_item_recency_state: {}
-  content_tag_recency_state: {}
-  catalog_item_usage_level: {}
-  content_tag_usage_level: {}
-  scene_content_tag_usage_level: {}
-
-operation_history:
-  played_items: []
-  skipped_items: []
-  changed_from_items: []
-  cancelled_content_plans: []
-
-content_history:
-  content_proposal_acceptance_rate: {}
-  content_recovery_rate: {}
-
-schedule:
-  scheduled_event_type: live_show
-  scheduled_event_timing: soon
-  scheduled_event_tags:
-    - summer_live
-~~~
-
-Every demonstration world supplies every scalar and map entry needed by the enabled baseline contract. Missing-data tests are separate focused fixtures.
+History references exact synthetic Track IDs. Tag-level song histories are not generated for V1.
 
 ---
 
 ## 14. Base worlds
 
-### 14.1 Ordinary daytime commute
+The demonstration tier includes at least these worlds:
 
-- Low drowsiness/fatigue/monotony;
-- normal local road;
-- no special destination/event;
-- no child;
-- ordinary familiar genre and item histories.
+1. ordinary daytime commute;
+2. monotonous night highway with high drowsiness;
+3. same state with low drowsiness;
+4. family journey with a child present;
+5. exact oshi artist registered;
+6. same world with oshi mode disabled;
+7. recently played candidate;
+8. previously accepted candidate;
+9. previously skipped or cancelled candidate; and
+10. stopped post-rest full-karaoke state.
 
-Purpose: show preference/history behavior without strong situation evidence.
-
-### 14.2 Monotonous night highway
-
-- High drowsiness and fatigue;
-- night highway;
-- congestion and high monotony;
-- driving motion.
-
-Purpose: show high-activation ordering for playlist/humming.
-
-### 14.3 Characteristic coastal destination
-
-- Ordinary driver state;
-- coastal route and seaside/festival destination;
-- matching and unrelated content.
-
-Purpose: isolate route/destination contributions.
-
-### 14.4 Family group journey
-
-- Child present;
-- multiple passengers;
-- family/group and adult-only catalog alternatives.
-
-Purpose: show audience eligibility and passenger compatibility.
-
-### 14.5 Upcoming oshi event
-
-- Oshi registered and mode on;
-- linked event soon;
-- exact, related, and unrelated songs.
-
-Purpose: show entity and schedule relations.
-
-### 14.6 Post-rest stopped karaoke
-
-- Stopped motion;
-- full-karaoke service selected;
-- several vocal difficulty, preference, and recovery trade-offs.
-
-Purpose: show full-karaoke capability and item scoring.
+A characteristic route/destination world may be retained to demonstrate the honest V1 limitation: changing route semantics alone does not change music rank because no Spotify song field supports that relation.
 
 ---
 
 ## 15. One-variable contrasts
 
-| Contrast | Only changed input | Expected evidence surface |
-|---|---|---|
-| Low/high drowsiness | drowsiness_level | Activation contribution |
-| Day/night | night_state | Environment contribution |
-| Ordinary/monotonous | monotony_level | Activation contribution |
-| Child absent/present | child_present | Eligibility and child response |
-| Ordinary/special destination | destination_tags | Destination relation |
-| Oshi off/on | oshi_mode | Oshi response |
-| No event/upcoming event | schedule fields | Event response |
-| No skip/recent skip | skipped_items | Eligibility or skip response |
-| Low/high usage | one item/tag usage value | Preference response |
-| Low/high recovery | one item/tag recovery value | Recovery response |
-| Driving/stopped | motion_state | Recipe/presentation eligibility |
+Every contrast pair changes one controlled input while freezing the catalog, seed, trigger, and all other world fields.
 
-Contrast validation asserts that cloned worlds differ only in their declared fields and identity/version fields.
+Required pairs include:
+
+- high versus low drowsiness;
+- moving versus stopped for full-karaoke eligibility;
+- child absent versus present with an explicit candidate;
+- exact oshi artist enabled versus disabled;
+- recent play absent versus present;
+- acceptance evidence absent versus strong; and
+- route tag A versus route tag B, with an expected no-change assertion.
+
+The final pair is a transparency test, not a recommendation-quality target.
 
 ---
 
-## 16. Metadata preprocessing comparisons
+## 16. Audio-feature fixture comparisons
 
-A metadata comparison is different from a world contrast.
+To test preprocessing formulas without changing identity, the simulator may create versioned comparison fixtures for the same synthetic Track:
 
-It uses:
+```text
+same Track + Audio Features fixture A
+same Track + Audio Features fixture B
+same world + same algorithm version
+```
 
-- the same world;
-- the same source_metadata snapshot;
-- the same proposal algorithm/configuration;
-- two frozen enriched_metadata snapshots.
+Only explicitly listed Audio Features may differ. The expected trace must identify the derived activation or karaoke-proxy change responsible for any rank change.
 
-Examples:
-
-- energy descriptor changed by enrichment pipeline version;
-- new route relation approved;
-- chorus boundary corrected;
-- child policy tag rejected during review.
-
-The simulator labels the result as a preprocessing comparison so the customer does not confuse it with a context change.
+These are synthetic fixture variants. They are not live provider refreshes and are never silently swapped during a replay.
 
 ---
 
 ## 17. Deterministic validation
 
-### 17.1 Schema and type
+### 17.1 Schema and types
 
-- All required objects and fields exist.
-- Values match types and enums.
-- Numeric values are finite and in range.
-- No unknown property is accepted where the schema is closed.
+- exactly one Track object, one Audio Features object, and one flag object per song;
+- no unknown top-level song namespace;
+- required keys present;
+- JSON types exact; and
+- no `NaN`, infinity, or numeric string substitutions.
 
-### 17.2 References
+### 17.2 Cross-object identity
 
-- Every entity ID resolves.
-- Every history item/tag resolves.
-- Every album/credit/event/oshi relation resolves.
-- Deleted or disabled entities are not referenced by enabled records.
+- Track ID equals Audio Features ID;
+- Track URI equals Audio Features URI;
+- Track duration equals Audio Features duration;
+- artist references are internally consistent; and
+- IDs are unique at the correct entity level.
 
-### 17.3 Time and structure
+### 17.3 URLs and synthetic identity
 
-- Chorus start is non-negative.
-- Chorus end is greater than start.
-- Chorus end is not greater than duration.
-- Schedule timing and event state are consistent.
-- History timestamps are valid relative to the world reference time.
+- every synthetic ID visibly begins with `synthetic-`;
+- every HTTP(S) URL uses a `.invalid` host;
+- no URL points to `api.spotify.com` or `open.spotify.com`; and
+- no synthetic ISRC is represented as a real provider lookup result.
 
-### 17.4 Karaoke and presentation
+### 17.4 Spotify numeric fields
 
-- Chorus capability has valid chorus structure.
-- Full karaoke has lyrics and required asset capability.
-- Guide vocal is not enabled where unavailable.
-- Instrumental items are not full lyric karaoke unless an explicit special asset says so.
+- all normalized fields in `[0,1]`;
+- popularity in `0..100`;
+- key in `{-1,0..11}`;
+- mode in `{0,1}`;
+- positive duration and tempo;
+- finite loudness;
+- time signature in `3..7`; and
+- generation-cell constraints satisfied for the standard catalog.
 
-### 17.5 Audience
+### 17.5 Flags and policy
 
-- Explicit/adult-only cannot also be approved family_safe.
-- Child-interest tags cannot bypass content-rating policy.
-- Unreviewed/rejected policy fields are not publishable.
+- flags are integers in `{0,1}`;
+- all standard generated songs default to `1` for both flags;
+- `explicit` is Boolean; and
+- negative restriction fixtures are excluded from standard eligible counts.
 
-### 17.6 Balance and coverage
+### 17.6 Balance and recommendation independence
 
-- Catalog counts match the generation contract.
-- Controlled axes meet their quotas.
-- Capabilities remain sufficient for normal complete plans.
-- Relation families span energy/tempo/genre.
-- No intended one-variable contrast changes additional world fields.
-
-### 17.7 Recommendation independence
-
-Data validation must not call the transparent or LLM content selector to label a dataset good.
-
-It checks structural and declared coverage properties, not whether a particular recommendation wins.
+- all 36 coverage cells exist exactly once in the demonstration catalog;
+- artist and era quotas pass;
+- explicit and negative-fixture quotas pass;
+- no recommendation score or target rank appears in generation input/output; and
+- generation is completed before worlds are scored.
 
 ---
 
 ## 18. Repair policy
 
-Repair is explicit and bounded.
+Repairs are deterministic where possible:
 
-1. Validator produces machine-readable errors.
-2. Repair request receives only invalid records, relevant schema, and errors.
-3. Repair may change only fields named by the error dependency set.
-4. Re-run the complete validation suite.
-5. Preserve pre-repair and post-repair hashes.
-6. Reject after the configured maximum repair attempts.
+| Failure | Repair |
+|---|---|
+| decimal outside `[0,1]` by serialization noise | clamp only when within `1e-9`; otherwise regenerate |
+| Track/Audio Features ID mismatch | copy the allocated canonical Track ID |
+| duration mismatch | copy canonical Track duration |
+| non-`.invalid` synthetic URL | rebuild from the canonical synthetic ID |
+| missing default availability flag | set to `1` and record repair |
+| duplicate ID | allocate a new ID and update dependent references |
+| coverage quota failure | regenerate the failed coverage cell |
+| malformed release date | regenerate the album release fields |
 
-Manual overrides record:
-
-- previous value;
-- new value;
-- reason;
-- reviewer;
-- timestamp;
-- parent snapshot.
-
-No silent auto-correction is allowed.
+Every repair is recorded in the dataset build report. Silent manual edits are prohibited.
 
 ---
 
 ## 19. Versioning and reproducibility
 
-### 19.1 Generation provenance
+Each simulation result records:
 
-~~~yaml
-generator_id: synthetic_music_generator_v1
-source_schema_version: synthetic_source_schema_v1
-enrichment_schema_version: synthetic_enrichment_schema_v1
-world_schema_version: proposal_world_schema_v1
-source_prompt_version: source_prompt_v1
-enrichment_prompt_version: enrichment_prompt_v1
-world_prompt_version: world_prompt_v1
-model_id: string
-generation_parameters: {}
-source_output_hash: sha256
-enrichment_output_hash: sha256
-world_output_hash: sha256
-validation_report_hash: sha256
-approved_dataset_version: synthetic_music_catalog_v1
-~~~
+```yaml
+dataset_id: synthetic-spotify-compatible-v1-seed-1042
+dataset_hash: sha256:...
+schema_version: 1.0.0
+generator_version: 1.0.0
+prompt_template_version: 1.0.0
+validator_version: 1.0.0
+random_seed: 1042
+world_id: world-night-highway-01
+world_hash: sha256:...
+algorithm_version: transparent-content-v1-spotify
+parameter_set_id: default-v1
+```
 
-### 19.2 Frozen output is the replay boundary
-
-An LLM seed does not guarantee exact regeneration. Reproducibility comes from preserving the generated and validated artifacts.
-
-A simulation run records:
-
-- source snapshot ID/hash;
-- enriched snapshot ID/hash;
-- entity/event snapshot IDs;
-- world snapshot ID/hash;
-- generator and validation provenance.
-
-Regeneration creates a new dataset version. It never mutates a prior run's snapshot.
+The frozen, validated dataset—not an LLM rerun—is the replay boundary. Given the same dataset, world, algorithm version, parameters, and seed, the transparent result must be identical.
 
 ---
 
 ## 20. Customer editing
 
-The simulator shows source and enriched metadata separately.
+The settings UI exposes three clearly labeled groups:
 
-Recommended editing behavior:
+1. Spotify-compatible Track fields;
+2. Spotify-compatible Audio Features fields; and
+3. simulator availability assumptions.
 
-- Source fields are grouped as provider/catalog facts.
-- Enriched fields are grouped by acoustic, structural, semantic, audience, and relations.
-- Provenance and review state appear beside enriched fields.
-- Edits create a derived snapshot.
-- Revalidation is mandatory.
-- Comparison shows exactly which metadata fields changed.
+Customers may edit values only through schema-aware controls. Saving triggers full validation and produces a new dataset version and hash.
 
-Customer edits do not overwrite the original generated dataset.
+The default plan length is five songs. Customers may change plan length in selector settings; it is not stored per song.
+
+Changing either karaoke flag to `0` removes that song from the corresponding service after re-evaluation. It does not change the song's score in other services.
 
 ---
 
-## 21. Extension to future services
+## 21. Extension interface
 
-The shared base entity and catalog model supports future recipe-specific item schemas.
+Future metadata may be added only as a new, namespaced extension, for example:
 
-Possible extensions:
+```yaml
+extensions:
+  karaoke_provider_v1: {}
+  licensed_lyrics_analysis_v1: {}
+```
 
-- quiz sets and questions;
-- ranking topics/templates;
-- radio episode outlines;
-- live/stopped videos;
-- stretch routines;
-- call-and-response practice tracks;
-- oshi reexperience episodes and destinations.
+An extension must declare:
 
-Each extension:
+- authoritative source;
+- field-level provenance;
+- legal and policy basis;
+- missing-data behavior;
+- validation schema;
+- applicable services and factors;
+- scoring formulas and weights;
+- explanation text; and
+- fallback behavior when the extension is unavailable.
 
-- reuses stable entity/provenance/version contracts;
-- defines a service-specific source/enriched schema;
-- defines its own generation quotas and validators;
-- does not change the music schema implicitly.
-
-The transparent content algorithm's recipe registry consumes these schemas when implementations are added.
+No extension may overwrite Spotify-compatible fields or `simulation_flags`.
 
 ---
 
@@ -1096,125 +779,117 @@ The transparent content algorithm's recipe registry consumes these schemas when 
 
 | Error | Meaning |
 |---|---|
-| generation_schema_error | LLM output violates structured schema |
-| unresolved_reference | ID does not resolve |
-| invalid_capability | Source capabilities contradict required fields |
-| invalid_enrichment | Enriched field invalid or inconsistent |
-| unapproved_policy_metadata | Policy-sensitive value is not approved |
-| balance_contract_failure | Required coverage/quota missing |
-| contrast_integrity_failure | Contrast changes undeclared fields |
-| repair_exhausted | Bounded repair attempts failed |
-| snapshot_hash_mismatch | Persisted artifact differs from recorded hash |
-
-Errors block publication of the affected snapshot.
+| `catalog_generation_failed` | structured generation or repair did not produce a valid catalog |
+| `invalid_spotify_track_fixture` | Track object violates the pinned schema |
+| `invalid_audio_features_fixture` | Audio Features object violates the pinned schema |
+| `cross_object_identity_mismatch` | ID, URI, or duration does not agree |
+| `invalid_simulation_flags` | a flag is absent or outside `{0,1}` after repair |
+| `synthetic_identity_violation` | a synthetic record resembles or links to live provider data |
+| `coverage_contract_failed` | demonstration quotas are incomplete |
+| `world_reference_failed` | a world/history reference does not resolve |
+| `policy_boundary_violation` | real Spotify content was sent to an LLM or treated as synthetic input |
 
 ---
 
 ## 23. Required tests
 
-### 23.1 Source schema
+### 23.1 Track schema
 
-- Unique song/provider/entity IDs.
-- Complete role/credit references.
-- Valid albums/releases.
-- Valid content ratings and durations.
-- Valid provider/capability enums.
-- No enriched fields in source-only generation output.
+- required Track fields and nested types;
+- exact `track` discriminator;
+- artist/album reference consistency;
+- release date precision;
+- popularity, duration, and index ranges; and
+- conditional/null field behavior.
 
-### 23.2 Enrichment schema
+### 23.2 Audio Features schema
 
-- Valid acoustic ranges.
-- Valid chorus/duration relationships.
-- Valid vocal ranges and density.
-- Controlled taxonomy only.
-- Existing IDs only for relations.
-- Complete provenance.
-- Policy review gates enforced.
+- all exact field names;
+- normalized ranges;
+- key, mode, tempo, loudness, and signature validation;
+- exact `audio_features` discriminator; and
+- Track ID, URI, and duration equality.
 
-### 23.3 Generation contract
+### 23.3 Simulation flags
 
-- Exactly 36 demonstration songs.
-- Energy, tempo, relation-family quotas.
-- Artist and credit quotas.
-- Genre/era distribution.
-- Karaoke capability counts.
-- Audience-policy distribution.
-- Deliberate trade-off coverage.
+- default both flags to `1`;
+- accept explicit customer `0` or `1`;
+- reject Boolean, string, negative, or greater-than-one values; and
+- prove flags affect eligibility only.
 
-### 23.4 Worlds and histories
+### 23.4 Generation
 
-- Every demonstration world is complete.
-- Every history reference resolves.
-- Rate and usage ranges are valid.
-- Oshi/event relations resolve.
-- Contrast clones change only declared fields.
+- same seed and versions yield byte-identical frozen output;
+- all names and identities are fictional;
+- all URLs use `.invalid`;
+- no real provider payload enters the LLM path;
+- all 36 coverage cells are present; and
+- generation inputs contain no target rank.
 
-### 23.5 Snapshot behavior
+### 23.5 Worlds and contrasts
 
-- Same artifact hashes consistently.
-- Frozen snapshots are immutable.
-- Derived edits preserve parent links.
-- Old runs continue to resolve their exact snapshots.
-- Proposal evaluation performs no generation call.
+- every world reference resolves;
+- direct history uses Track IDs;
+- exact oshi uses Spotify-compatible Artist IDs;
+- one-variable contrasts differ only in their declared field; and
+- route-only contrast produces no Spotify-only content-rank change.
 
-### 23.6 Repair
+### 23.6 Repair and replay
 
-- Repair receives only permitted fields.
-- Pre/post hashes are retained.
-- Invalid repair is rejected.
-- Attempt limit is enforced.
+- each repair rule is deterministic and logged;
+- repair exhaustion produces a typed error;
+- edited data gets a new hash; and
+- frozen replay is independent of LLM availability.
 
 ---
 
 ## 24. Acceptance criteria
 
-The design is satisfied when:
+This specification is satisfied when:
 
-1. Source and enriched metadata are separate namespaces.
-2. Both may be LLM-generated in the simulator without losing their production-role distinction.
-3. Artist, singer, contributor, group/member, oshi, and event identities are explicit and stable.
-4. Source metadata preserves provider-like facts and capabilities.
-5. Enriched metadata has method, version, evidence, and review provenance.
-6. No opaque universal singability value is required.
-7. Generation uses staged source, enrichment, and world/history passes.
-8. Deterministic validators—not the LLM—decide structural validity.
-9. The 36-song catalog satisfies its balance and capability contract.
-10. Complete worlds and one-variable contrasts reference only existing data.
-11. Frozen output artifacts, not LLM seeds, provide reproducibility.
-12. Proposal algorithms never invoke generation during evaluation.
-13. Metadata preprocessing comparisons are distinguishable from world contrasts.
-14. Future service schemas can extend the shared entity/provenance model.
+- every song contains only the two Spotify-compatible objects and the separate simulator flag object;
+- all Spotify Audio Features fields listed in the selected reference are represented with exact names;
+- Track title, performing artists, album, release, IDs, playback policy, and duration are provider-compatible fields;
+- no AICA/LLM-enriched song traits participate in V1;
+- all generated songs default both karaoke availability flags to `1`;
+- synthetic records are unmistakably labeled and never use live Spotify links;
+- the LLM receives schema and fictional controls, not real Spotify content;
+- deterministic validators reject invalid or inconsistent objects;
+- the 36-song catalog covers approved audio trade-offs;
+- worlds and histories remain separate from song metadata; and
+- dataset, world, algorithm, and parameter versions are sufficient for exact replay.
 
 ---
 
 ## 25. Deferred production concerns
 
-- Real provider selection and contracts;
-- media/lyrics rights;
-- production audio-analysis pipeline;
-- privacy and retention for user histories;
-- empirical distribution calibration;
-- bias/fairness review of personalization taxonomies;
-- production human-review workflow;
-- multilingual semantic enrichment evaluation;
-- catalog import and synchronization;
-- model monitoring for enrichment drift.
+Before any production provider integration, separately resolve:
 
-These concerns are not represented as solved by synthetic generation.
+- Spotify endpoint availability and deprecation migration;
+- current Spotify Developer Policy and platform terms;
+- authorization, market, restriction, and relinking behavior;
+- storage, caching, retention, display, and attribution requirements;
+- whether Audio Features remain available to the intended application;
+- karaoke catalog rights and asset availability;
+- licensed lyrics and timing sources;
+- contributor/credit sources beyond the Track Object;
+- regional explicit-content policy; and
+- audit and deletion obligations.
+
+None of these are simulated as solved in V1.
 
 ---
 
 ## 26. Summary
 
-~~~text
-LLM-generated fictional provider/entity records
-→ validated source_metadata
-→ separately generated/derived enrichment
-→ validated and reviewed enriched_metadata
-→ separately generated complete worlds and histories
-→ cross-reference, balance, and contrast validation
-→ immutable versioned snapshots
-→ independent proposal algorithms
-~~~
+V1 uses a simple, auditable song record:
 
-The synthetic data is designed to be plausible, coherent, balanced, inspectable, and reproducible. LLM generation supplies breadth and semantic consistency; schemas, quotas, validators, review, and frozen artifacts supply trustworthiness for simulation.
+```text
+Spotify-compatible Track
++ Spotify-compatible Audio Features
++ two simulator karaoke availability flags, default 1
+```
+
+The LLM creates fictional Spotify-compatible fixtures from schema and coverage controls. Deterministic validation, explicit synthetic identity, frozen versions, and separate world/history data make the catalog reproducible and safe to use in the simulator.
+
+The transparent content selector derives only documented proxies from these fields. It does not pretend Spotify supplies chorus, lyric, vocal, audience, route, destination, or semantic recommendation metadata.
