@@ -5,6 +5,8 @@
 **Purpose:** Specify the proposal algorithms and their standalone-but-composable simulator from proposal opportunity through pre-rest, rest, and post-rest completion.  
 **Detailed decision record:** `docs/master/aica_proposal_design_reference_draft.md`  
 **Milestone plan:** `docs/master/aica_proposal_simulator_milestones.md`  
+**Transparent content algorithm:** `docs/master/aica_transparent_content_proposal_algorithm.md`<br>
+**Shared synthetic music data:** `docs/master/aica_synthetic_music_data_and_generation_specification.md`<br>
 **Source basis:** `others/CDC-SU_specplan.md` Slides 1–7, 26, 38–44, 64–82; `others/aica_stage_constrained_llm_proposal_selector_spec.md`.
 
 ---
@@ -23,7 +25,7 @@ Each question supports two independent algorithm approaches:
 - a transparent, customer-editable scoring hypothesis;
 - a constrained LLM proposal hypothesis.
 
-The detailed V1 content focus is music playlist, humming karaoke, full stopped karaoke, oshi setup, and compatible lighting. The service catalog represents all in-car candidates described in the source material, while the default selector can use only the candidates enabled by the current purpose/stage matrix.
+The detailed V1 content focus is music playlist, humming karaoke, and full stopped karaoke. Each detailed recipe returns one ordered plan of five songs by default; the customer can change the count in settings. Oshi data may influence item fit and compatible lighting may be attached as presentation metadata. The service catalog represents all in-car candidates described in the source material, while the default selector can use only the candidates enabled by the current purpose/stage matrix.
 
 The proposal screen has its own editable synthetic context and discrete-event simulation. Its proposal opportunity includes `trigger_purpose`, `lifecycle_stage`, the resolved stage-specific service constraints, and the approved feature snapshot. It shares the existing application and backend, and its contracts are designed so a future adapter can feed these values from the trigger and journey runtime.
 
@@ -86,8 +88,8 @@ Proposal opportunity
   → user choice or quick top-choice
   → hard content eligibility
   → content-selector package
-  → show up to 3 concrete plans
-  → user approve / reject / edit / request more
+  → show one ordered concrete-content plan
+  → user approve / reject / edit / recompute
   → deterministic journey/playback engine
   → completion or context transition event
   → recompute next immediate action when required
@@ -182,8 +184,8 @@ Selector packages receive only the neutral opportunity snapshot, including its e
 |---|---|---|
 | Transparent service selector | Trigger purpose + lifecycle stage + stage-allowed services + the complete independent Section 8 feature table | Up to 3 ranked services with factor contributions |
 | Constrained LLM service selector | Same neutral controls/facts/candidates | Up to 3 structured service judgments with cited fields |
-| Transparent content selector | Same controls + the complete independent Section 9 feature table + selected stage-allowed service/catalog | Up to 3 concrete plans with factor contributions |
-| Constrained LLM content selector | Same neutral controls/facts/catalog | Up to 3 structured concrete plans with cited fields/items |
+| Transparent content selector | Same controls + the complete independent Section 9 feature table + selected stage-allowed service/catalog | One ordered concrete plan with per-item fit and factor contributions |
+| Constrained LLM content selector | Same neutral controls/facts/catalog | One structured, catalog-grounded concrete plan with cited fields/items |
 
 ### 5.2 Independence rule
 
@@ -203,8 +205,7 @@ trigger_purpose: rest_recommended | inattentive_driving_prevention_recovery | ro
 lifecycle_stage: before_rest_until_stop | during_rest_stopped | after_rest_before_restart | active_driving_content
 allowed_service_ids: array
 feature_snapshot:
-  service_features: object
-  content_additional_features: object   # content selector only
+  package_feature_contract: object      # complete independent Section 8 or Section 9 snapshot
 feature_provenance:                     # field -> baseline/normalized/addition + source reference
   field_id: object
 enabled_feature_extensions: array
@@ -220,7 +221,9 @@ run_seed: string
 
 The platform resolves the Slides 64–65 purpose/stage constraints and supplies exclusions as facts; it does not pre-rank eligible candidates.
 
-### 5.4 Common selector output
+### 5.4 Neutral output contracts
+
+The service-selector output is:
 
 ```yaml
 decision_type: ranked_candidates | no_proposal
@@ -239,7 +242,35 @@ next_package_runtime_state: object
 algorithm_provenance: object
 ```
 
-Content candidates add concrete plan items, duration, mode, lighting configuration, approval policy, completion rule, and next-transition policy.
+The content-selector output is intentionally different because it returns one
+plan, not ranked plan candidates:
+
+```yaml
+decision_type: complete_plan | partial_plan | no_proposal | unsupported_recipe | invalid_request | invalid_catalog | invalid_configuration
+selected_service_id: string
+requested_item_count: integer
+returned_item_count: integer
+ordered_items:
+  - position: integer
+    item_id: string
+    item_fit: number                 # transparent package; null for LLM package
+    rationale: array
+    feature_contributions: array     # transparent package; empty for LLM package
+mode: object
+expected_duration_sec: integer
+lighting_configuration: object|null
+approval_policy: string
+completion_rule: string
+next_transition_policy: string
+excluded_items: array
+unused_available_features: array
+missing_features: array
+algorithm_provenance: object
+```
+
+There is no aggregate plan score and no content-plan candidate ranking. The
+detailed transparent semantics are defined in
+`aica_transparent_content_proposal_algorithm.md`.
 
 ---
 
@@ -339,7 +370,7 @@ These rest actions are executed by the journey engine and are not ranked as song
 
 ### 7.4 Source breadth policy
 
-Slides 38–40 provide detailed definitions for the principal media services. Slide 26 additionally names conversation, multisensory relaxation, and connected video recommendation. These Slide-26-only services remain lower-fidelity catalog entries so all source contexts are visible, but the default Slides 64–65 constraint matrix does not make them eligible until a separately versioned flow enables them. The simulator must label their UX/content recipes as provisional. Outdoor delivery is not introduced.
+Slides 38–40 provide detailed definitions for the principal media services. Slide 26 additionally names conversation, multisensory relaxation, and connected video recommendation. These Slide-26-only services remain lower-fidelity service-catalog entries so all source contexts are visible, but the default Slides 64–65 constraint matrix does not make them eligible until a separately versioned flow enables them. They have no transparent content recipe in V1 and therefore return `unsupported_recipe` if directly requested. Outdoor delivery is not introduced.
 
 ### 7.5 Default purpose/stage service matrix
 
@@ -394,7 +425,7 @@ The service selector owns this complete feature contract. Rows follow the CDC-SU
 
 ## 9. Feature Contract — Concrete Content Proposal, One Independent Table
 
-The concrete-content selector owns the complete table below and can be reviewed without Section 8. Slide 68 says concrete-content selection analyzes the service-ordering information plus additional information; this table states every field directly. It uses the same columns and category order as the service table. Each service recipe still marks every field `used` or `available_but_not_used`.
+The concrete-content selector owns the complete table below and can be reviewed without Section 8. Slide 68 says concrete-content selection analyzes the service-ordering information plus additional information; this table states every field directly. It uses the same columns and category order as the service table. Each service recipe independently records ranking applicability (`scored`, `context_only`, or `not_applicable`) and any hard-eligibility role.
 
 | Category | Subcategory | Feature name | Field and value type | Reason to use | Priority | Source |
 |---|---|---|---|---|---:|---|
@@ -411,6 +442,9 @@ The concrete-content selector owns the complete table below and can be reviewed 
 | Situation | Driving state | Driving/stopped state | `motion_state` — enum: `driving`, `stopped` | Apply content-mode and presentation restrictions. | P0 | Slides 68–70 |
 | Preference | Oshi information | Oshi registered | `oshi_registered` — boolean | Determine whether oshi-related content can be considered. | P2/P3 | Slides 68–69 |
 | Preference | Oshi information | Oshi mode | `oshi_mode` — enum: `on`, `off` | Apply the explicit oshi personalization setting. | P2/P3 | Slides 68–69 |
+| Preference | Oshi information | Oshi ID | `oshi_id` — nullable catalog entity ID | Match the registered favorite to concrete catalog items. | P2/P3 | Slides 68–72, 79; normalized UPro identity |
+| Preference | Oshi information | Oshi type | `oshi_type` — enum: `artist`, `artist_member`, `group`, `character`, `voice_actor`, `franchise`, `creator`, `other` | Interpret exact, member, group, character, and related-entity matches. | P2/P3 | Slides 68–72, 79; normalized UPro identity |
+| Preference | Oshi information | Oshi tags | `oshi_tags` — string array | Match controlled works, themes, genres, routes, and events. | P2/P3 | Slides 68–72, 79; normalized UPro identity |
 | Preference | Unused function | Service recency | `service_recency_state[service]` — map to `never`, `long_unused`, `recent` | Retain the service-level novelty context used for the selected service. | P4 | Slides 68–69 |
 | Preference | Overall usage frequency | Service usage level | `service_usage_level[service]` — usage-level map | Retain the user’s overall service-use tendency. | P3 | Slides 68–69 |
 | Preference | Scene-specific tendency | Scene/service usage level | `scene_service_usage_level[scene][service]` — nested usage-level map | Retain service preference in a comparable situation. | P3 | Slides 68–69 |
@@ -439,9 +473,6 @@ The concrete-content selector owns the complete table below and can be reviewed 
 | Additional proposed | Current proposal session | Recent service rejections | `recent_service_rejections` — timestamped service-ID array | Avoid content plans attached to a just-rejected service. | P3 | Simulator proposal |
 | Additional proposed | Evidence reliability | Service acceptance confidence | `service_proposal_acceptance_confidence[service]` — map to number 0–1 | Limit sparse service-level acceptance evidence. | P3 | Simulator proposal |
 | Additional proposed | Evidence reliability | Service recovery confidence | `service_recovery_confidence[service]` — map to number 0–1 | Limit sparse service-level recovery evidence. | P3 | Simulator proposal |
-| Additional proposed | Detailed oshi identity | Oshi ID | `oshi_id` — nullable catalog entity ID | Match the selected synthetic favorite to concrete catalog items. | P2/P3 | Simulator proposal |
-| Additional proposed | Detailed oshi identity | Oshi type | `oshi_type` — enum: character, artist, group, franchise, other | Distinguish different favorite-entity relationships. | P2/P3 | Simulator proposal |
-| Additional proposed | Detailed oshi identity | Oshi tags | `oshi_tags` — string array | Match works, themes, genres, routes, and events. | P2/P3 | Simulator proposal |
 | Additional proposed | Granular operations | Completed items | `completed_items` — timestamped item-ID array | Distinguish completion from playback start. | P3 | Simulator proposal |
 | Additional proposed | Granular operations | Manually selected items | `manually_selected_items` — timestamped item-ID array | Treat explicit choice as stronger evidence than passive playback. | P3 | Simulator proposal |
 | Additional proposed | Granular operations | Repeated items | `repeated_items` — timestamped item-ID array | Capture deliberate repeats while respecting repetition caps. | P3 | Simulator proposal |
@@ -529,75 +560,69 @@ This is a transparent hypothesis, not a statistical claim about the synthetic da
 
 ## 12. Transparent Concrete-Content Algorithm
 
-### 12.1 Pipeline
+The complete normative design is
+`docs/master/aica_transparent_content_proposal_algorithm.md`. This section is
+the simulator-level contract summary.
 
-1. Receive `trigger_purpose`, `lifecycle_stage`, the selected stage-allowed service, and the feature snapshot separated into CDC-SU baseline and enabled-extension provenance groups.
-2. Reject a request if the selected service is outside the frozen purpose/stage matrix.
-3. Load the service’s versioned recipe and applicability matrix.
-4. Accept platform-eligible synthetic catalog items.
-5. Generate a bounded set of candidate plans from catalog items and modes.
-6. Apply motion/content constraints.
-7. Score driver/environment/route/passenger fit where the recipe marks them used.
-8. Score UPro/oshi/content-use/history/schedule fit where used.
-9. Apply repetition, skip, rejection, and duration policies.
-10. Build lighting configuration only for compatible services.
-11. Rank within safety band and return up to three plans.
+### 12.1 Boundary and supported recipes
 
-### 12.2 Music plan scoring
+The content selector is independent of the service selector. It receives the
+already selected `selected_service_id` as a control fact, but never consumes a
+service score, rank, rationale, package state, or feature transformation.
 
-Conceptually:
+Baseline-mode V1 has detailed recipes only for:
+
+- `music_playlist` (Slide 71);
+- `humming_karaoke` (Slide 72);
+- `full_karaoke` (Slide 79).
+
+Other service IDs use the shared recipe-registry interface and return
+`unsupported_recipe` until a versioned recipe is implemented. They are not
+represented by artificial lower-fidelity content templates.
+
+### 12.2 Pipeline
+
+1. Validate the controls and complete independent Section 9 baseline snapshot.
+2. Confirm the selected service is permitted by the frozen purpose/stage row.
+3. Resolve its versioned recipe, ranking-applicability matrix, and eligibility rules.
+4. Validate the frozen source and enriched catalog snapshots.
+5. Apply common and recipe-specific hard exclusions before scoring.
+6. Normalize scored evidence and activate purpose/recipe weights.
+7. Calculate transparent `item_fit` and feature contributions for every eligible item.
+8. Sort by `item_fit` descending, then stable item ID.
+9. Select the first N unique items in that same playback order.
+10. Return one complete, partial, or no-proposal result with full evidence.
+
+### 12.3 Item scoring
+
+For catalog item j, selected service s, purpose p, and active baseline factor i:
 
 ```text
-utility_content(p) =
-    W_safety       × safety_fit(p)
-  + W_service_goal × selected_service_fit(p)
-  + W_situation    × situation_fit(p)
-  + W_route        × route_destination_fit(p)
-  + W_passenger    × passenger_fit(p)
-  + W_upro         × upro_fit(p)
-  + W_oshi         × oshi_fit(p)
-  + W_usage        × usage_fit(p)
-  + W_operations   × operation_history_fit(p)
-  + W_schedule     × schedule_fit(p)
-  + W_performance  × confidence_shrunk_performance(p)
-  + W_novelty      × novelty_fit(p)
+r_i(j,s) = compatibility_i(normalized_evidence, frozen_item_metadata, recipe_s)
+q_i(p,s) = base_weight_i × purpose_multiplier[p][subgroup(i)] × scoring_applicability[i][s]
+w_i(p,s) = q_i(p,s) / sum(q_active)
+item_fit(j,s) = clamp(sum_i(w_i(p,s) × r_i(j,s)), -1, +1)
 ```
 
-Candidate-plan attributes may include tempo/energy band, genre/tags, era, artist/oshi relation, child/group suitability, duration, chorus/full-song form, guide vocal, lyric-screen requirement, event relation, route relation, and lighting compatibility.
+Every response, weight, and signed contribution is shown. There is no
+aggregate score for the finished plan.
 
-### 12.3 Detailed V1 music behavior
+### 12.4 Detailed music behavior
 
-**Music playlist**
+All three recipes request five ordered songs by default. The customer can
+change `plan_item_count` in settings. One to four eligible songs produce
+`partial_plan`; zero produces `no_proposal`.
 
-- fixed, configurable item count;
-- generated from synthetic streaming catalog;
-- may use driver/environment/route/passenger/UPro/oshi/usage/history/schedule/recovery inputs according to recipe;
-- provides a short plan explanation;
-- allows customer/user adjustment before playback;
-- lighting may be enabled.
+- **Music playlist:** ordinary playable audio; uses route and destination
+  relevance and is the only V1 recipe that activates unused-item/tag novelty.
+- **Humming karaoke:** requires a valid chorus and guide-vocal-compatible,
+  driving-safe presentation; uses destination but not route relevance.
+- **Full karaoke:** requires the full karaoke and lyrics assets and stopped
+  motion for the active screen experience; uses destination but not route
+  relevance.
 
-**Humming karaoke**
-
-- chorus-focused plan while driving;
-- guide vocal enabled by default;
-- no lyrics screen while driving;
-- user approval required for the proposed plan;
-- item additions and guide-vocal changes may be simulated;
-- destination relevance can be enabled to reflect detailed Slide 72 despite the Slide 70 matrix discrepancy;
-- lighting may be enabled.
-
-**Full karaoke**
-
-- stopped-only for full lyrics/screen experience;
-- proposes one initial song for user approval;
-- user may reject and choose another or add a simulated queue;
-- movement transition applies the configured background/stop policy;
-- destination relevance can be enabled to reflect detailed Slide 79;
-- lighting may be enabled, with post-nap intensity explicitly reviewable.
-
-### 12.4 Other services
-
-V1 provides lower-fidelity, editable plan templates for quiz, ranking, radio-style, conversation, call-and-response, live viewing, stretch, oshi reexperience, multisensory relaxation, connected video recommendation, and the rest-support journey. They remain rankable service candidates but do not require the same catalog depth as the three detailed music services.
+All three may use playback/operation history. Compatible lighting is attached
+after song selection as presentation metadata and does not change `item_fit`.
 
 ---
 
@@ -609,7 +634,7 @@ The LLM service package receives only eligible service records, exclusions, appr
 
 ### 13.2 LLM content selector
 
-The LLM content package receives the selected service, eligible synthetic catalog records, full approved feature snapshot, and service recipe. It returns only catalog-grounded plans.
+The LLM content package receives the selected service, eligible synthetic catalog records, full approved feature snapshot, and service recipe. It returns one catalog-grounded ordered plan using the neutral content output contract; it does not return plan candidates or an aggregate plan score.
 
 ### 13.3 Required guardrails
 
@@ -631,7 +656,7 @@ The UI must let the customer compare:
 
 - transparent factor contributions;
 - LLM cited reasons;
-- candidate differences;
+- service-candidate or content-item differences;
 - fields ignored by each package;
 - validation and uncertainty;
 - resulting journey behavior.
@@ -644,13 +669,11 @@ No approach is labeled correct automatically.
 
 Slide 70 and detailed service Slides 71–80 are not perfectly consistent. The system must preserve this uncertainty explicitly.
 
-For every service and feature group, a versioned recipe stores:
+For every service and baseline field, a versioned content recipe stores:
 
 ```text
-used
-available_but_not_used
-required
-optional
+ranking_applicability = scored | context_only | not_applicable
+eligibility_role = true | false
 source_reference
 rationale
 ```
@@ -661,6 +684,7 @@ For detailed music V1:
 - Slide 70 provides the default broad applicability baseline;
 - a detailed service slide may enable a field it explicitly lists;
 - the customer can edit applicability and compare both interpretations;
+- eligibility never contributes a score and remains separately visible;
 - evidence states which recipe version produced the result.
 
 ---
@@ -692,27 +716,36 @@ The setup screen exposes:
 
 ### 15.2 Built-in synthetic media catalog
 
-Catalog records are synthetic and editable. No customer import is required.
+The normative shared music-data and generation design is
+`docs/master/aica_synthetic_music_data_and_generation_specification.md`.
+It belongs to the whole simulator, not to either proposal algorithm package.
 
-Minimum music-item attributes:
+Catalog records are synthetic, versioned, and editable. Music data has three
+separate namespaces:
 
-| Attribute | Purpose |
-|---|---|
-| `item_id`, `title`, `artist_id` | Stable synthetic identity |
-| `content_type` | Song, chorus karaoke, full karaoke, live video, etc. |
-| `genre_tags`, `theme_tags`, `era_band` | UPro/content preference match |
-| `energy_band`, `tempo_band` | Situation/recovery hypothesis |
-| `oshi_relation_ids/tags` | Oshi match |
-| `route_tags`, `destination_tags` | Context match |
-| `child_suitable`, `group_suitable` | Passenger match |
-| `duration_sec` | Journey feasibility |
-| `chorus_available`, `guide_vocal_available` | Humming mode generation |
-| `lyrics_screen_required` | Motion eligibility |
-| `lighting_compatible`, `lighting_patterns` | Presentation modifier |
-| `event_tags` | Schedule match |
-| `enabled` | Synthetic readiness |
+| Namespace | Examples | Owner |
+|---|---|---|
+| `source_metadata` | song/title, album, credited artist, singer/performer, composers, duration, release, genre, rights and karaoke capabilities | Fictional provider-like catalog |
+| `enriched_metadata` | acoustic/structural measurements, semantic tags, audience-policy assessment, route/destination/event relations, entity relations, field provenance | Offline preprocessing |
+| world/history data | driver, route, passengers, UPro/oshi, usage, operations, schedule, proposal/recovery histories | Simulation scenario |
 
-Service and other-content records use equivalent explicit metadata.
+Artists, persons/contributors, groups and members, albums, oshi entities, and
+events have stable IDs and explicit relations. Normalized scoring inputs such as
+activation capability are derived transparently from natural-unit metadata;
+opaque universal `singability` fields are not stored.
+
+The approved generator is staged:
+
+1. an LLM generates a fictional provider/entity source catalog;
+2. deterministic validation freezes that source artifact;
+3. an LLM or deterministic extractor enriches only validated source IDs;
+4. validation/review freezes the enriched artifact;
+5. an LLM generates complete worlds, histories, and controlled contrasts;
+6. validation freezes the simulator dataset.
+
+No live LLM call occurs during a deterministic transparent simulation run. The
+demonstration tier contains 36 balanced fictional songs, plus smaller fixtures
+and a future 500+ item stress tier.
 
 ### 15.3 Contrast data
 
@@ -721,8 +754,8 @@ The simulator supplies complete base worlds plus clone-and-change contrasts. The
 - changed input fields;
 - changed eligibility;
 - score/reason deltas;
-- rank deltas;
-- changed selected plan;
+- service-rank or content-item-order deltas;
+- changed ordered content plan;
 - changed journey preview.
 
 One-variable contrasts are preferred for explanation, while multi-variable worlds remain editable for realistic exploration.
@@ -744,7 +777,7 @@ Interactive decisions are entered by the customer. Quick mode simply selects ran
 | `SERVICE_SELECTED` | Persist choice and invoke content selector if required. |
 | `SERVICE_REJECTED` | Update session history and optionally show remaining/request-more candidates. |
 | `CONTENT_SELECTED` | Commit plan to journey engine. |
-| `CONTENT_REJECTED` | Update concrete rejection history and return to candidates. |
+| `CONTENT_REJECTED` | Update concrete rejection history and allow edit or recomputation of the single plan. |
 | `CONTENT_STARTED` | Set active content and playback state. |
 | `CONTENT_COMPLETED` | Apply completion policy and optionally open a new opportunity. |
 | `REST_SPOT_ARRIVED` | Set stopped motion and `lifecycle_stage=during_rest_stopped`. |
@@ -790,7 +823,7 @@ The system does not recompute on every simulated tick in V1.
 - Show the purpose/stage-allowed service set before feature-based ranking.
 - Show current committed action and non-binding future preview.
 - Show service candidates and user actions.
-- Show concrete plans and user actions.
+- Show the single ordered concrete plan and user actions.
 - Show content/rest progression and discrete events.
 - Allow recompute after edits when the run policy permits.
 
@@ -851,10 +884,15 @@ Transparent runs with identical inputs must reproduce exactly. LLM evidence pres
 - The selector cannot return a candidate outside the frozen Slides 64–65 purpose/stage constraint row.
 - All four package families can be selected independently.
 - Packages do not consume each other’s scores or rankings.
-- Both approaches conform to the same neutral output contracts.
+- Transparent and LLM approaches conform to the same neutral contract for their selector type.
 - Transparent outputs show contribution-level math.
 - LLM outputs are catalog-grounded, schema-valid, and cite supplied fields.
-- No valid candidate yields an explicit no-proposal result.
+- An empty eligible service-candidate or content-item set yields an explicit `no_proposal` result.
+- The transparent content selector supports detailed recipes only for playlist, humming karaoke, and full karaoke; another service returns `unsupported_recipe`.
+- The transparent content selector returns one ordered plan, never plan candidates or an aggregate plan score.
+- Each included music item exposes `item_fit` and reconstructable signed feature contributions.
+- All three detailed music recipes request five items by default; a customer setting can change the count.
+- Fewer eligible items return `partial_plan`; zero returns `no_proposal`.
 
 ### 19.3 Safety behavior
 
@@ -876,6 +914,8 @@ Transparent runs with identical inputs must reproduce exactly. LLM evidence pres
 ### 19.5 Simulation and evidence
 
 - All synthetic data is built in and editable.
+- Music data separates provider-like `source_metadata`, preprocessing-owned `enriched_metadata`, and runtime world/history evidence.
+- Every generated music/entity artifact is validated, versioned, frozen, and provenance-linked before a transparent run.
 - Contrast clones preserve unchanged fields and show diffs.
 - Transparent identical-input replay is deterministic.
 - Simulation facts, algorithm output, and human judgment are clearly separated.
@@ -911,5 +951,7 @@ Transparent runs with identical inputs must reproduce exactly. LLM evidence pres
 | Detailed playlist/humming/full-karaoke inputs | Slides 71, 72, 79 |
 | End/continue/restore behavior | Slides 81–82 |
 | Stage-constrained/LLM proposal concepts | `aica_stage_constrained_llm_proposal_selector_spec.md` |
+| Transparent music item scoring, recipes, evidence, and tests | `aica_transparent_content_proposal_algorithm.md` |
+| Shared synthetic music/entity data and staged generation | `aica_synthetic_music_data_and_generation_specification.md` |
 
 Where this specification deliberately refines an ambiguous source concept, the decision and rationale are preserved in `aica_proposal_design_reference_draft.md`.
