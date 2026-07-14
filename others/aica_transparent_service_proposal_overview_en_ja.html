@@ -161,6 +161,56 @@
       gap: 10px;
       align-items: stretch;
     }
+    .formula-chain {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 18px;
+    }
+    .chain-node {
+      position: relative;
+      min-width: 0;
+      padding: 15px 9px;
+      text-align: center;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-top: 4px solid var(--blue);
+      border-radius: 10px;
+    }
+    .chain-node:nth-child(3) { border-top-color: var(--purple); }
+    .chain-node:nth-child(5) { border-top-color: var(--amber); }
+    .chain-node:nth-child(6), .chain-node:nth-child(7) { border-top-color: var(--green); }
+    .chain-node:not(:last-child)::after {
+      position: absolute;
+      top: 39%;
+      right: -10px;
+      z-index: 2;
+      color: var(--blue);
+      font-weight: 900;
+      content: "→";
+    }
+    .symbol {
+      display: block;
+      margin-bottom: 5px;
+      color: #18345e;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 1.05rem;
+      font-weight: 850;
+    }
+    .component {
+      display: inline-block;
+      margin: 2px 2px 6px 0;
+      padding: 3px 8px;
+      color: #17407d;
+      background: #dceaff;
+      border-radius: 999px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .78rem;
+      font-weight: 850;
+    }
+    .component.purple { color: #60358f; background: var(--purple-soft); }
+    .component.amber { color: #7b4b00; background: var(--amber-soft); }
+    .component.green { color: #086345; background: var(--green-soft); }
     .step {
       position: relative;
       padding: 18px 13px;
@@ -339,6 +389,14 @@
         content: "↓";
       }
       .scale { grid-template-columns: 1fr; }
+      .formula-chain { grid-template-columns: 1fr; }
+      .chain-node:not(:last-child)::after {
+        top: auto;
+        right: 49%;
+        bottom: -17px;
+        content: "↓";
+      }
+      .formula { white-space: normal; overflow-wrap: anywhere; }
       .weight-bar { height: auto; flex-direction: column; }
       .weight-bar > div { width: 100%; min-height: 38px; }
     }
@@ -428,26 +486,54 @@
       <p class="sub en">The model is a deterministic weighted sum. There are no hidden bands, random choices, learned probabilities, or LLM judgments.</p>
       <p class="sub ja">このモデルは決定論的な加重和です。隠れたバンド、乱数、学習済み確率、LLMによる判断はありません。</p>
 
-      <div class="flow">
-        <div class="step"><b>1</b><span class="en">Normalize raw feature</span><span class="ja">生特徴量を正規化</span></div>
-        <div class="step"><b>2</b><span class="en">Resolve service response</span><span class="ja">サービス反応を決定</span></div>
-        <div class="step"><b>3</b><span class="en">Feature response</span><span class="ja">特徴量反応を計算</span></div>
-        <div class="step"><b>4</b><span class="en">Apply effective weight</span><span class="ja">有効重みを適用</span></div>
-        <div class="step"><b>5</b><span class="en">Sum service fit</span><span class="ja">適合度を合計</span></div>
+      <h3><span class="en">The complete formulation</span><span class="ja">完全な計算式の構成</span></h3>
+      <div class="formula-chain" aria-label="Complete formula chain">
+        <div class="chain-node"><span class="symbol">xᵢ(c)</span><span class="en">Raw input</span><span class="ja">生入力</span></div>
+        <div class="chain-node"><span class="symbol">eᵢ(c)</span><span class="en">Normalized evidence</span><span class="ja">正規化エビデンス</span></div>
+        <div class="chain-node"><span class="symbol">aᵢ(c)</span><span class="en">Candidate response coefficient</span><span class="ja">候補反応係数</span></div>
+        <div class="chain-node"><span class="symbol">rᵢ(c)</span><span class="en">Normalized feature response</span><span class="ja">正規化特徴量反応</span></div>
+        <div class="chain-node"><span class="symbol">wᵢ(p)</span><span class="en">Effective weight</span><span class="ja">有効重み</span></div>
+        <div class="chain-node"><span class="symbol">kᵢ(c)</span><span class="en">Feature contribution</span><span class="ja">特徴量寄与度</span></div>
+        <div class="chain-node"><span class="symbol">F(c)</span><span class="en">Service fit</span><span class="ja">サービス適合度</span></div>
+      </div>
+
+      <div class="formula" style="margin-top:20px">
+        eᵢ(c) = Nᵢ(xᵢ(c))<br>
+        aᵢ(c) = response_profile[c][i]<br>
+        rᵢ(c) = clamp(eᵢ(c) × aᵢ(c), -1, +1)<br>
+        Bᵢ = category_weight × subgroup_weight × leaf_weight<br>
+        qᵢ(p) = Bᵢ × purpose_multiplier[p][subgroup(i)]<br>
+        wᵢ(p) = qᵢ(p) ÷ Σⱼqⱼ(p)<br>
+        kᵢ(c) = wᵢ(p) × rᵢ(c)<br>
+        service_fit(c) = F(c) = clamp(Σᵢkᵢ(c), -1, +1)
+      </div>
+
+      <h3 style="margin-top:26px"><span class="en">Which section calculates each component?</span><span class="ja">各セクションが計算する要素</span></h3>
+      <div class="table-wrap">
+        <table id="formula-component-map">
+          <thead><tr><th><span class="en">Component</span><span class="ja">要素</span></th><th><span class="en">Calculated from</span><span class="ja">計算元</span></th><th><span class="en">Where explained</span><span class="ja">説明セクション</span></th><th><span class="en">Role in candidate scoring</span><span class="ja">候補スコア計算での役割</span></th></tr></thead>
+          <tbody>
+            <tr><td><span class="component">xᵢ(c)</span><br><span class="en">Raw input</span><span class="ja">生入力</span></td><td><span class="en">Current snapshot or candidate-specific map entry</span><span class="ja">現在スナップショットまたは候補別マップ値</span></td><td><a href="#features"><span class="en">Feature matrix</span><span class="ja">特徴量マトリクス</span></a></td><td><span class="en">Source value; never enters the sum without normalization.</span><span class="ja">元の値。正規化せずに合計へ入ることはありません。</span></td></tr>
+            <tr><td><span class="component">eᵢ(c)</span><br><span class="en">Evidence</span><span class="ja">エビデンス</span></td><td><code>Nᵢ(xᵢ(c))</code></td><td><a href="#features"><span class="en">Feature matrix</span><span class="ja">特徴量マトリクス</span></a></td><td><span class="en">Describes the normalized strength and direction of what is observed.</span><span class="ja">観測内容の強さと方向を正規化して表します。</span></td></tr>
+            <tr><td><span class="component purple">aᵢ(c)</span><br><span class="en">Response coefficient</span><span class="ja">反応係数</span></td><td><span class="en">Candidate × feature response-profile cell</span><span class="ja">候補×特徴量の反応プロファイルセル</span></td><td><a href="#responses"><span class="en">Response matrices</span><span class="ja">反応マトリクス</span></a></td><td><span class="en">Says whether candidate c supports, ignores, or conflicts with evidence i.</span><span class="ja">候補cがエビデンスiを支持・無視・反対するかを表します。</span></td></tr>
+            <tr><td><span class="component">rᵢ(c)</span><br><span class="en">Feature response</span><span class="ja">特徴量反応</span></td><td><code>eᵢ(c) × aᵢ(c)</code></td><td><span class="en">Formulation</span><span class="ja">計算式</span></td><td><span class="en">Candidate-specific signed response before importance is applied.</span><span class="ja">重要度適用前の、候補別の符号付き反応です。</span></td></tr>
+            <tr><td><span class="component amber">wᵢ(p)</span><br><span class="en">Effective weight</span><span class="ja">有効重み</span></td><td><span class="en">Hierarchy × purpose multiplier, then normalization</span><span class="ja">階層重み×目的別倍率を正規化</span></td><td><a href="#weights"><span class="en">Weight section</span><span class="ja">重みセクション</span></a></td><td><span class="en">Controls how much response i can influence the final fit.</span><span class="ja">反応iが最終適合度へ与えられる影響量を制御します。</span></td></tr>
+            <tr><td><span class="component green">kᵢ(c)</span><br><span class="en">Contribution</span><span class="ja">寄与度</span></td><td><code>wᵢ(p) × rᵢ(c)</code></td><td><a href="#example"><span class="en">Worked example</span><span class="ja">計算例</span></a></td><td><span class="en">The signed amount added to candidate c from feature i.</span><span class="ja">特徴量iから候補cへ加算する符号付き量です。</span></td></tr>
+            <tr><td><span class="component green">F(c)</span><br><span class="en">Service fit</span><span class="ja">サービス適合度</span></td><td><code>Σᵢkᵢ(c)</code></td><td><a href="#example"><span class="en">Worked example</span><span class="ja">計算例</span></a></td><td><span class="en">One independent fit value for each eligible candidate; candidates are ranked by it.</span><span class="ja">利用可能な候補ごとに独立して算出し、この値で順位付けします。</span></td></tr>
+          </tbody>
+        </table>
       </div>
 
       <div class="grid" style="margin-top:20px">
         <article class="card blue">
-          <h3><span class="en">Feature response</span><span class="ja">特徴量反応</span></h3>
-          <div class="formula">rᵢ(c) = evidenceᵢ(c) × response_coefficientᵢ(c)</div>
-          <p class="en">Evidence says what is happening. The response coefficient says whether candidate <em>c</em> is suitable for that evidence.</p>
-          <p class="ja">evidenceは「何が起きているか」、response coefficientは候補<em>c</em>がその状況に合うかを表します。</p>
+          <h3><span class="en">The loop runs separately for every service</span><span class="ja">サービスごとに独立してループ計算</span></h3>
+          <p class="en">For candidate <code>c</code>, calculate all 17 pairs of <code>eᵢ(c)</code> and <code>aᵢ(c)</code>, produce 17 contributions, and sum them into one <code>service_fit(c)</code>. Repeat for every eligible candidate.</p>
+          <p class="ja">候補<code>c</code>について17組の<code>eᵢ(c)</code>と<code>aᵢ(c)</code>を計算し、17個の寄与度を1つの<code>service_fit(c)</code>へ合計します。利用可能な全候補で繰り返します。</p>
         </article>
-        <article class="card green">
-          <h3><span class="en">Contribution and service fit</span><span class="ja">寄与度とサービス適合度</span></h3>
-          <div class="formula">kᵢ(c) = wᵢ × rᵢ(c)<br>service_fit(c) = Σ kᵢ(c)</div>
-          <p class="en">Every contribution is visible and the contributions add directly to the final fit.</p>
-          <p class="ja">各寄与度はすべて表示でき、その合計が最終適合度になります。</p>
+        <article class="card purple">
+          <h3><span class="en">What changes between candidates?</span><span class="ja">候補間で何が変わるか</span></h3>
+          <p class="en">The purpose and effective weights are shared in one opportunity. Candidate response coefficients and candidate-specific history evidence can differ, so each service obtains a different fit.</p>
+          <p class="ja">1つの提案機会では目的と有効重みを共有します。候補反応係数と候補別履歴エビデンスが異なるため、サービスごとに異なる適合度になります。</p>
         </article>
       </div>
 
@@ -467,35 +553,42 @@
       <h2><span class="en">3. Complete baseline feature matrix</span><span class="ja">3. 完全なベースライン特徴量マトリクス</span></h2>
       <p class="sub en">All 17 features are evaluated for every eligible candidate. Candidate-specific history maps select the current candidate's own value.</p>
       <p class="sub ja">利用可能な全候補について17特徴量をすべて評価します。候補別履歴マップでは、評価中候補自身の値を使用します。</p>
+      <div class="callout" style="margin-top:16px">
+        <p class="en"><span class="component">OUTPUT: eᵢ(c)</span></p>
+        <p class="ja"><span class="component">出力：eᵢ(c)</span></p>
+        <p class="en"><strong>This matrix calculates normalized evidence.</strong> Each row converts raw input <code>xᵢ(c)</code> into <code>eᵢ(c)</code>. It does not decide whether a service is suitable; the response matrix supplies that separate component.</p>
+        <p class="ja"><strong>このマトリクスは正規化エビデンスを計算します。</strong> 各行で生入力<code>xᵢ(c)</code>を<code>eᵢ(c)</code>へ変換します。サービス適合性はここでは決めず、別の反応マトリクスがその要素を供給します。</p>
+      </div>
       <div class="table-wrap">
-        <table id="feature-matrix">
+        <table id="feature-matrix" style="min-width:1180px">
           <thead>
             <tr>
               <th><span class="en">Category</span><span class="ja">カテゴリ</span></th>
               <th><span class="en">Feature</span><span class="ja">特徴量</span></th>
-              <th><span class="en">Raw input</span><span class="ja">生入力</span></th>
-              <th><span class="en">Normalization</span><span class="ja">正規化</span></th>
-              <th><span class="en">Meaning</span><span class="ja">意味</span></th>
+              <th><span class="en">Raw component xᵢ(c)</span><span class="ja">生入力要素 xᵢ(c)</span></th>
+              <th><span class="en">Normalization Nᵢ</span><span class="ja">正規化関数 Nᵢ</span></th>
+              <th><span class="en">Calculated component</span><span class="ja">計算される要素</span></th>
+              <th><span class="en">How that component is used</span><span class="ja">その要素の使われ方</span></th>
             </tr>
           </thead>
           <tbody>
-            <tr><td rowspan="10" class="group-cell"><span class="en">Situation</span><span class="ja">状況</span><br><code>0.80</code></td><td><span class="en">Drowsiness</span><span class="ja">眠気</span></td><td><code>0–100</code></td><td><code>(x/100)^γ</code> → <code>[0,1]</code></td><td><span class="en">Higher values activate services suited to the configured driver state.</span><span class="ja">値が高いほど、設定上その運転者状態に適したサービスを支持します。</span></td></tr>
-            <tr><td><span class="en">Fatigue</span><span class="ja">疲労</span></td><td><code>0–100</code></td><td><code>(x/100)^γ</code> → <code>[0,1]</code></td><td><span class="en">Independent current fatigue intensity.</span><span class="ja">現在の疲労強度を独立して表します。</span></td></tr>
-            <tr><td><span class="en">Traffic</span><span class="ja">交通状態</span></td><td><code>normal | congested</code></td><td><code>0 | 1</code></td><td><span class="en">Normal is neutral; congestion activates the candidate response.</span><span class="ja">通常は中立、渋滞時に候補の反応を有効化します。</span></td></tr>
-            <tr><td><span class="en">Road type</span><span class="ja">道路種別</span></td><td><code>highway | local | mountain | parking</code></td><td><span class="en">Selected road-response coefficient</span><span class="ja">道路別反応係数を選択</span></td><td><span class="en">The category directly selects a signed suitability response.</span><span class="ja">カテゴリから符号付き適合反応を直接選びます。</span></td></tr>
-            <tr><td><span class="en">Day / night</span><span class="ja">昼夜</span></td><td><code>day | night</code></td><td><code>0 | 1</code></td><td><span class="en">Day is neutral; night activates the night response.</span><span class="ja">昼は中立、夜に夜間反応を有効化します。</span></td></tr>
-            <tr><td><span class="en">Road monotony</span><span class="ja">道路単調度</span></td><td><code>0–100</code></td><td><code>(x/100)^γ</code> → <code>[0,1]</code></td><td><span class="en">Measures current monotonous-road intensity.</span><span class="ja">現在の道路の単調さを表します。</span></td></tr>
-            <tr><td><span class="en">Route characteristics</span><span class="ja">ルート特徴</span></td><td><span class="en">Recognized tags</span><span class="ja">認識済みタグ</span></td><td><code>min(1, unique_count / 2)</code></td><td><span class="en">Whether the service can adapt to a distinctive route.</span><span class="ja">特徴的なルートにサービスが適応できるかを評価します。</span></td></tr>
-            <tr><td><span class="en">Destination characteristics</span><span class="ja">目的地特徴</span></td><td><span class="en">Recognized tags</span><span class="ja">認識済みタグ</span></td><td><code>min(1, unique_count / 2)</code></td><td><span class="en">Destination relevance at service-selection level.</span><span class="ja">サービス選択レベルで目的地との関連を評価します。</span></td></tr>
-            <tr><td><span class="en">Child present</span><span class="ja">子供同乗</span></td><td><code>false | true</code></td><td><code>0 | 1</code></td><td><span class="en">True activates child-suitable responses; false is neutral.</span><span class="ja">trueで子供向け反応を有効化し、falseは中立です。</span></td></tr>
-            <tr><td><span class="en">Multiple passengers</span><span class="ja">複数同乗者</span></td><td><code>false | true</code></td><td><code>0 | 1</code></td><td><span class="en">Activates responses suited to shared participation.</span><span class="ja">複数人で参加しやすいサービスの反応を有効化します。</span></td></tr>
-            <tr><td rowspan="5" class="group-cell"><span class="en">Preference</span><span class="ja">嗜好</span><br><code>0.12</code></td><td><span class="en">Oshi registered</span><span class="ja">推し登録</span></td><td><code>false | true</code></td><td><code>0 | 1</code></td><td><span class="en">Whether oshi adaptation is available.</span><span class="ja">推し適応が利用可能かを表します。</span></td></tr>
-            <tr><td><span class="en">Oshi mode</span><span class="ja">推しモード</span></td><td><code>off | on</code></td><td><code>-1 | +1</code></td><td><span class="en">Off explicitly opposes oshi-focused adaptation.</span><span class="ja">offは推し中心の適応に明示的に反対します。</span></td></tr>
-            <tr><td><span class="en">Service recency</span><span class="ja">サービス利用時期</span></td><td><code>recent | long_unused | never</code></td><td><code>0 | +0.5 | +1</code></td><td><span class="en">A weak novelty bonus; recent use is neutral.</span><span class="ja">弱い新規性ボーナスで、最近利用は中立です。</span></td></tr>
-            <tr><td><span class="en">Overall service usage</span><span class="ja">全体利用度</span></td><td><code>never | low | medium | high</code></td><td><code>-1 | -0.5 | +0.25 | +1</code></td><td><span class="en">Candidate-specific long-term preference.</span><span class="ja">候補別の長期的な嗜好を表します。</span></td></tr>
-            <tr><td><span class="en">Scene-specific usage</span><span class="ja">シーン別利用度</span></td><td><span class="en">Matching scene records</span><span class="ja">一致シーン履歴</span></td><td><span class="en">Mean of normalized usage</span><span class="ja">正規化利用度の平均</span></td><td><span class="en">Preference in situations similar to the current scene.</span><span class="ja">現在と似たシーンでの嗜好を表します。</span></td></tr>
-            <tr><td rowspan="2" class="group-cell"><span class="en">History</span><span class="ja">履歴</span><br><code>0.08</code></td><td><span class="en">Proposal acceptance rate</span><span class="ja">提案採用率</span></td><td><code>0–100%</code></td><td><code>2x/100 - 1</code></td><td><span class="en">50% is neutral; synthetic configured history.</span><span class="ja">50%を中立とする、設定された合成履歴です。</span></td></tr>
-            <tr><td><span class="en">Recovery rate</span><span class="ja">回復率</span></td><td><code>0–100%</code></td><td><code>2x/100 - 1</code></td><td><span class="en">Candidate-specific synthetic recovery evidence, not a clinical claim.</span><span class="ja">候補別の合成回復エビデンスであり、医学的主張ではありません。</span></td></tr>
+            <tr><td rowspan="10" class="group-cell"><span class="en">Situation</span><span class="ja">状況</span><br><code>0.80</code></td><td><span class="en">Drowsiness</span><span class="ja">眠気</span></td><td><code>x_drowsiness = 0–100</code></td><td><code>(x/100)^γ</code></td><td><span class="component">e_drowsiness ∈ [0,1]</span></td><td><span class="en">Multiplied by each candidate's drowsiness coefficient to calculate <code>r_drowsiness(c)</code>.</span><span class="ja">候補ごとの眠気反応係数と掛けて<code>r_drowsiness(c)</code>を計算します。</span></td></tr>
+            <tr><td><span class="en">Fatigue</span><span class="ja">疲労</span></td><td><code>x_fatigue = 0–100</code></td><td><code>(x/100)^γ</code></td><td><span class="component">e_fatigue ∈ [0,1]</span></td><td><span class="en">Supplies fatigue intensity to <code>r_fatigue(c)</code>.</span><span class="ja"><code>r_fatigue(c)</code>へ疲労強度を供給します。</span></td></tr>
+            <tr><td><span class="en">Traffic</span><span class="ja">交通状態</span></td><td><code>normal | congested</code></td><td><code>normal→0; congested→1</code></td><td><span class="component">e_traffic ∈ {0,1}</span></td><td><span class="en">Activates or neutralizes the candidate's congestion response.</span><span class="ja">候補の渋滞反応を有効化または中立化します。</span></td></tr>
+            <tr><td><span class="en">Road type</span><span class="ja">道路種別</span></td><td><code>highway | local | mountain | parking</code></td><td><code>e_road=1</code>; <span class="en">retain selected category</span><span class="ja">選択カテゴリを保持</span></td><td><span class="component">e_road = 1</span><br><code>current_road_type</code></td><td><span class="en">The road category selects <code>a_road(c,type)</code> in the road-response matrix; then <code>r_road=a_road</code>.</span><span class="ja">道路カテゴリが道路反応表の<code>a_road(c,type)</code>を選び、<code>r_road=a_road</code>となります。</span></td></tr>
+            <tr><td><span class="en">Day / night</span><span class="ja">昼夜</span></td><td><code>day | night</code></td><td><code>day→0; night→1</code></td><td><span class="component">e_night ∈ {0,1}</span></td><td><span class="en">Activates the candidate's night coefficient only at night.</span><span class="ja">夜間のみ候補の夜間反応係数を有効化します。</span></td></tr>
+            <tr><td><span class="en">Road monotony</span><span class="ja">道路単調度</span></td><td><code>x_monotony = 0–100</code></td><td><code>(x/100)^γ</code></td><td><span class="component">e_monotony ∈ [0,1]</span></td><td><span class="en">Supplies monotony intensity to the candidate response.</span><span class="ja">候補反応へ単調度の強さを供給します。</span></td></tr>
+            <tr><td><span class="en">Route characteristics</span><span class="ja">ルート特徴</span></td><td><span class="en">Recognized unique tags</span><span class="ja">認識済み一意タグ</span></td><td><code>min(1, count / saturation)</code></td><td><span class="component">e_route ∈ [0,1]</span></td><td><span class="en">Combines with <code>a_route(c)</code>; it does not choose songs.</span><span class="ja"><code>a_route(c)</code>と結合します。曲自体は選びません。</span></td></tr>
+            <tr><td><span class="en">Destination characteristics</span><span class="ja">目的地特徴</span></td><td><span class="en">Recognized unique tags</span><span class="ja">認識済み一意タグ</span></td><td><code>min(1, count / saturation)</code></td><td><span class="component">e_destination ∈ [0,1]</span></td><td><span class="en">Combines with <code>a_destination(c)</code>.</span><span class="ja"><code>a_destination(c)</code>と結合します。</span></td></tr>
+            <tr><td><span class="en">Child present</span><span class="ja">子供同乗</span></td><td><code>false | true</code></td><td><code>false→0; true→1</code></td><td><span class="component">e_child ∈ {0,1}</span></td><td><span class="en">Activates each candidate's child-suitability coefficient.</span><span class="ja">候補ごとの子供適合反応係数を有効化します。</span></td></tr>
+            <tr><td><span class="en">Multiple passengers</span><span class="ja">複数同乗者</span></td><td><code>false | true</code></td><td><code>false→0; true→1</code></td><td><span class="component">e_group ∈ {0,1}</span></td><td><span class="en">Activates each candidate's shared-participation coefficient.</span><span class="ja">候補ごとの複数参加適合反応係数を有効化します。</span></td></tr>
+            <tr><td rowspan="5" class="group-cell"><span class="en">Preference</span><span class="ja">嗜好</span><br><code>0.12</code></td><td><span class="en">Oshi registered</span><span class="ja">推し登録</span></td><td><code>false | true</code></td><td><code>false→0; true→1</code></td><td><span class="component">e_oshi_registered</span></td><td><span class="en">Combines with each service's oshi-registration coefficient.</span><span class="ja">各サービスの推し登録反応係数と結合します。</span></td></tr>
+            <tr><td><span class="en">Oshi mode</span><span class="ja">推しモード</span></td><td><code>off | on</code></td><td><code>off→-1; on→+1</code></td><td><span class="component">e_oshi_mode ∈ {-1,+1}</span></td><td><span class="en">Carries explicit positive or negative direction before service response.</span><span class="ja">サービス反応前に明示的な正負方向を持ちます。</span></td></tr>
+            <tr><td><span class="en">Service recency</span><span class="ja">サービス利用時期</span></td><td><code>recent | long_unused | never</code></td><td><code>0 | +0.5 | +1</code></td><td><span class="component">e_recency(c)</span></td><td><span class="en">Candidate-specific evidence; fixed <code>a=+1</code>, so it passes directly into <code>r</code>.</span><span class="ja">候補別エビデンスです。<code>a=+1</code>固定なので<code>r</code>へ直接反映します。</span></td></tr>
+            <tr><td><span class="en">Overall service usage</span><span class="ja">全体利用度</span></td><td><code>never | low | medium | high</code></td><td><code>-1 | -0.5 | +0.25 | +1</code></td><td><span class="component">e_usage(c)</span></td><td><span class="en">Candidate-specific signed preference evidence with fixed <code>a=+1</code>.</span><span class="ja"><code>a=+1</code>固定の候補別符号付き嗜好エビデンスです。</span></td></tr>
+            <tr><td><span class="en">Scene-specific usage</span><span class="ja">シーン別利用度</span></td><td><span class="en">Candidate records for matching scenes</span><span class="ja">一致シーンの候補別履歴</span></td><td><span class="en">Mean normalized usage</span><span class="ja">正規化利用度の平均</span></td><td><span class="component">e_scene(c) ∈ [-1,+1]</span></td><td><span class="en">Candidate-specific contextual preference with fixed <code>a=+1</code>.</span><span class="ja"><code>a=+1</code>固定の候補別文脈嗜好です。</span></td></tr>
+            <tr><td rowspan="2" class="group-cell"><span class="en">History</span><span class="ja">履歴</span><br><code>0.08</code></td><td><span class="en">Proposal acceptance rate</span><span class="ja">提案採用率</span></td><td><code>x_acceptance(c) = 0–100%</code></td><td><code>2x/100 - 1</code></td><td><span class="component">e_acceptance(c)</span></td><td><span class="en">Candidate-specific signed history with fixed <code>a=+1</code>; 50% is neutral.</span><span class="ja"><code>a=+1</code>固定の候補別符号付き履歴で、50%が中立です。</span></td></tr>
+            <tr><td><span class="en">Recovery rate</span><span class="ja">回復率</span></td><td><code>x_recovery(c) = 0–100%</code></td><td><code>2x/100 - 1</code></td><td><span class="component">e_recovery(c)</span></td><td><span class="en">Candidate-specific signed synthetic recovery evidence with fixed <code>a=+1</code>.</span><span class="ja"><code>a=+1</code>固定の候補別符号付き合成回復エビデンスです。</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -503,8 +596,12 @@
 
     <section id="weights">
       <h2><span class="en">4. Weights express importance</span><span class="ja">4. 重みは重要度を表す</span></h2>
-      <p class="sub en">The default hierarchy makes current situation dominant while still allowing personalization and synthetic history to influence the order.</p>
-      <p class="sub ja">初期階層では現在状況を支配的にしつつ、個人嗜好と合成履歴も順位に影響できるようにします。</p>
+      <p class="sub en">This section calculates the effective normalized weight <code>wᵢ(p)</code> for every feature. A weight says how much that feature may influence the result for purpose <code>p</code>; it does not say whether a candidate is suitable.</p>
+      <p class="sub ja">このセクションでは、各特徴量の有効正規化重み<code>wᵢ(p)</code>を計算します。重みは目的<code>p</code>においてその特徴量が結果へ与えられる影響の大きさを表し、候補が適合するかどうかは表しません。</p>
+      <div class="callout note">
+        <p class="en"><span class="component purple">OUTPUT: wᵢ(p)</span> The weight calculation uses the configured hierarchy and trigger purpose. For one proposal opportunity, the resulting 17 weights are shared by every service candidate.</p>
+        <p class="ja"><span class="component purple">出力：wᵢ(p)</span> 設定された重み階層と発火目的から計算します。1回の提案機会では、計算された17個の重みをすべてのサービス候補で共通利用します。</p>
+      </div>
       <div class="weight-bar" aria-label="Top-level weights">
         <div class="situation"><span class="en">Situation 0.80</span><span class="ja">状況 0.80</span></div>
         <div class="preference"><span class="en">Preference .12</span><span class="ja">嗜好 .12</span></div>
@@ -512,20 +609,32 @@
       </div>
       <div class="grid">
         <article class="card blue">
-          <h3><span class="en">Hierarchy example: drowsiness</span><span class="ja">階層例：眠気</span></h3>
-          <div class="formula">0.80 Situation × 0.50 Driver state × 0.55 Drowsiness = 0.22</div>
-          <p class="en">Sibling values are normalized ratios. Customers can start at category level, then refine subgroups and leaves.</p>
-          <p class="ja">同階層の値は正規化される比率です。お客様はカテゴリから始め、サブグループ、個別特徴量の順に細かく調整できます。</p>
+          <h3><span class="en">Step 1 — base feature weight Bᵢ</span><span class="ja">手順1 — 特徴量の基本重み Bᵢ</span></h3>
+          <div class="formula">Bᵢ = Ccategory × Ssubgroup × Lleaf</div>
+          <p class="en"><code>C</code> is a top-level category ratio, <code>S</code> a subgroup ratio inside that category, and <code>L</code> a leaf ratio inside that subgroup. For drowsiness:</p>
+          <p class="ja"><code>C</code>は最上位カテゴリ比率、<code>S</code>はカテゴリ内サブグループ比率、<code>L</code>はサブグループ内の個別特徴量比率です。眠気の場合：</p>
+          <div class="formula">B<sub>drowsiness</sub> = 0.80 × 0.50 × 0.55 = 0.22</div>
+          <p class="en">Sibling values are ratios that sum to 1 at each level.</p>
+          <p class="ja">各階層の同階層値は合計1になる比率です。</p>
         </article>
         <article class="card purple">
-          <h3><span class="en">Purpose multiplier</span><span class="ja">目的別倍率</span></h3>
-          <div class="formula">effective_raw_weight = base_weight × purpose_multiplier</div>
-          <p class="en">The 17 adjusted weights are normalized again to sum to 1. Lifecycle stage changes candidates, not the weight set.</p>
-          <p class="ja">調整後の17重みを再正規化し、合計を1にします。ライフサイクル段階は候補を変えますが、重みセットは変えません。</p>
+          <h3><span class="en">Steps 2–3 — purpose adjustment and normalization</span><span class="ja">手順2〜3 — 目的調整と正規化</span></h3>
+          <div class="formula">qᵢ(p) = Bᵢ × Msubgroup(p)<br>Z(p) = Σⱼ qⱼ(p)<br>wᵢ(p) = qᵢ(p) ÷ Z(p)</div>
+          <p class="en"><code>M</code> emphasizes a subgroup for trigger purpose <code>p</code>. <code>q</code> is an intermediate adjusted weight, <code>Z</code> is the sum across all 17 features, and <code>w</code> is the final weight used in service fit.</p>
+          <p class="ja"><code>M</code>は発火目的<code>p</code>に応じてサブグループを強調します。<code>q</code>は調整途中の重み、<code>Z</code>は17特徴量すべての<code>q</code>の合計、<code>w</code>がサービス適合度で使用する最終重みです。</p>
         </article>
       </div>
 
-      <h3 style="margin-top:26px"><span class="en">Initial purpose multipliers</span><span class="ja">初期目的別倍率</span></h3>
+      <article class="card green" style="margin-top:18px">
+        <h3><span class="en">Complete drowsiness-weight calculation for inattentive-driving prevention</span><span class="ja">漫然運転予防における眠気重みの完全な計算</span></h3>
+        <div class="formula">B = 0.80 × 0.50 × 0.55 = 0.22<br>q = B × M = 0.22 × 1.50 = 0.33<br>Z = Σ q across 17 features = 1.2964<br>w<sub>drowsiness</sub>(inattentive) = 0.33 ÷ 1.2964 = 0.254551</div>
+        <p class="en">The result <code>0.254551</code> is not yet a candidate score. It is later multiplied by that candidate's normalized feature response <code>r_drowsiness(c)</code> to calculate contribution <code>k_drowsiness(c)</code>.</p>
+        <p class="ja">結果の<code>0.254551</code>は、まだ候補のスコアではありません。後で候補別の正規化特徴量反応<code>r_drowsiness(c)</code>と掛け、寄与度<code>k_drowsiness(c)</code>を計算します。</p>
+      </article>
+
+      <h3 style="margin-top:26px"><span class="en">Initial purpose multipliers Msubgroup(p)</span><span class="ja">初期目的別倍率 Msubgroup(p)</span></h3>
+      <p class="en">Each cell is an intermediate multiplier <code>M</code>, not the final weight. Select the column matching purpose <code>p</code>, apply its values to the 17 base weights, and normalize them together to obtain <code>wᵢ(p)</code>.</p>
+      <p class="ja">各セルは途中で使用する倍率<code>M</code>であり、最終重みではありません。目的<code>p</code>に一致する列を選び、17個の基本重みに適用した後、それらをまとめて正規化すると<code>wᵢ(p)</code>になります。</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th><span class="en">Subgroup</span><span class="ja">サブグループ</span></th><th><span class="en">Rest</span><span class="ja">休憩推奨</span></th><th><span class="en">Inattentive / recovery</span><span class="ja">漫然予防・回復</span></th><th><span class="en">Route music</span><span class="ja">ルート音楽</span></th><th><span class="en">Child experience</span><span class="ja">子供体験</span></th></tr></thead>
@@ -551,8 +660,12 @@
 
     <section id="responses">
       <h2><span class="en">5. Response matrices express service suitability</span><span class="ja">5. 反応マトリクスはサービス適合性を表す</span></h2>
-      <p class="sub en">The initial classes are intentionally coarse. Neutral is used whenever the source does not justify a direction; “not preferred” does not automatically mean opposition.</p>
-      <p class="sub ja">初期クラスは意図的に粗くしています。資料が方向を裏付けない場合は中立とし、「優先と書かれていない」ことを自動的に反対とはみなしません。</p>
+      <p class="sub en">This section supplies candidate-specific response coefficient <code>aᵢ(c)</code>. It converts the same normalized evidence into a different response for each service candidate.</p>
+      <p class="sub ja">このセクションは候補別反応係数<code>aᵢ(c)</code>を供給します。同じ正規化エビデンスを、サービス候補ごとに異なる反応へ変換します。</p>
+      <div class="callout note">
+        <p class="en"><span class="component amber">OUTPUT: aᵢ(c)</span> In every response matrix, a row identifies service candidate <code>c</code>, a column identifies feature <code>i</code>, and their cell is coefficient <code>aᵢ(c)</code>. A cell is not the feature response, contribution, or final service fit.</p>
+        <p class="ja"><span class="component amber">出力：aᵢ(c)</span> 各反応マトリクスでは、行がサービス候補<code>c</code>、列が特徴量<code>i</code>、交差するセルが反応係数<code>aᵢ(c)</code>です。セル自体は特徴量反応、寄与度、最終サービス適合度ではありません。</p>
+      </div>
       <div class="legend" aria-label="Response legend">
         <span class="resp-mm">-- = -1.0</span>
         <span class="resp-m">- = -0.5</span>
@@ -561,7 +674,21 @@
         <span class="resp-pp">++ = +1.0</span>
       </div>
 
-      <h3 style="margin-top:24px"><span class="en">Driving services</span><span class="ja">走行中サービス</span></h3>
+      <div class="grid" style="margin-top:18px">
+        <article class="card blue">
+          <h3><span class="en">How one matrix cell is used</span><span class="ja">1つのマトリクスセルの使い方</span></h3>
+          <div class="formula">rᵢ(c) = clamp(eᵢ(c) × aᵢ(c), −1, +1)</div>
+          <p class="en">If drowsiness evidence is <code>0.80</code>, the humming-karaoke cell <code>++</code> gives <code>a=+1.00</code>, so <code>r=+0.80</code>. The music-playlist cell <code>0</code> gives <code>a=0</code>, so <code>r=0</code>.</p>
+          <p class="ja">眠気エビデンスが<code>0.80</code>の場合、鼻歌カラオケのセル<code>++</code>は<code>a=+1.00</code>なので<code>r=+0.80</code>です。音楽プレイリストのセル<code>0</code>は<code>a=0</code>なので<code>r=0</code>です。</p>
+        </article>
+        <article class="card purple">
+          <h3><span class="en">Road type selects one coefficient</span><span class="ja">道路種別は1つの係数を選択</span></h3>
+          <p class="en">For the road feature, the current road type selects one cell <code>a<sub>road</sub>(c,type)</code>. On a mountain road, humming karaoke selects <code>−</code>, giving <code>a=−0.50</code> and <code>r<sub>road</sub>=−0.50</code>.</p>
+          <p class="ja">道路特徴量では、現在の道路種別が1つのセル<code>a<sub>road</sub>(c,type)</code>を選択します。山道で鼻歌カラオケの場合は<code>−</code>を選び、<code>a=−0.50</code>、<code>r<sub>road</sub>=−0.50</code>となります。</p>
+        </article>
+      </div>
+
+      <h3 style="margin-top:24px"><span class="en">Driving-service coefficients aᵢ(c)</span><span class="ja">走行中サービスの反応係数 aᵢ(c)</span></h3>
       <div class="table-wrap">
         <table class="matrix" id="driving-response-matrix">
           <thead><tr><th><span class="en">Candidate</span><span class="ja">候補</span></th><th><span class="en">Drowsy</span><span class="ja">眠気</span></th><th><span class="en">Fatigue</span><span class="ja">疲労</span></th><th><span class="en">Congested</span><span class="ja">渋滞</span></th><th><span class="en">Night</span><span class="ja">夜間</span></th><th><span class="en">Monotony</span><span class="ja">単調</span></th><th><span class="en">Route</span><span class="ja">ルート</span></th><th><span class="en">Destination</span><span class="ja">目的地</span></th><th><span class="en">Child</span><span class="ja">子供</span></th><th><span class="en">Group</span><span class="ja">複数人</span></th><th><span class="en">Oshi reg.</span><span class="ja">推し登録</span></th><th><span class="en">Oshi mode</span><span class="ja">推しモード</span></th></tr></thead>
@@ -644,13 +771,10 @@
       <p class="sub ja">目的：漫然運転予防・回復。候補：鼻歌カラオケ。この例では同目的の初期有効重みを使用します。</p>
       <div class="grid">
         <article class="card blue">
-          <h3><span class="en">One contribution</span><span class="ja">1つの寄与度</span></h3>
-          <p><span class="tag"><span class="en">Raw drowsiness</span><span class="ja">生の眠気</span>: 80</span>
-             <span class="tag"><span class="en">Evidence</span><span class="ja">エビデンス</span>: 0.80</span>
-             <span class="tag"><span class="en">Response coefficient</span><span class="ja">反応係数</span>: +1.00</span></p>
-          <div class="formula">0.254551 × 0.80 × 1.00 = +0.203641</div>
-          <p class="en">The sign explains direction; the magnitude explains influence.</p>
-          <p class="ja">符号が方向を、絶対値が影響の大きさを説明します。</p>
+          <h3><span class="en">Complete path for one feature: drowsiness</span><span class="ja">1特徴量の完全な経路：眠気</span></h3>
+          <div class="formula">x = 80<br>e = N(x) = 80 ÷ 100 = 0.80<br>a(humming) = ++ = +1.00<br>r = e × a = 0.80 × 1.00 = 0.80<br><br>B = 0.80 × 0.50 × 0.55 = 0.22<br>M(inattentive) = 1.50<br>q = B × M = 0.33<br>Z = 1.2964<br>w = q ÷ Z = 0.254551<br><br>k = w × r = 0.254551 × 0.80 = +0.203641</div>
+          <p class="en"><code>k</code> is this feature's contribution to this candidate. Its sign explains support or opposition; its magnitude explains influence.</p>
+          <p class="ja"><code>k</code>が、この候補に対するこの特徴量の寄与度です。符号が支持・反対の方向を、絶対値が影響の大きさを表します。</p>
         </article>
         <article class="card green">
           <h3><span class="en">Final service fit</span><span class="ja">最終サービス適合度</span></h3>
@@ -667,31 +791,38 @@
         <article class="card green"><span class="metric">+0.031</span><h3><span class="en">History</span><span class="ja">履歴</span></h3></article>
       </div>
       <div class="formula">+0.666981 + 0.080530 + 0.030855 = +0.778365</div>
+      <p class="en"><small>The algorithm calculates with full precision. Values in the detailed table are rounded to six decimal places individually, so manually adding the displayed rows gives 0.778367; the two-millionth difference is display rounding, not hidden logic.</small></p>
+      <p class="ja"><small>アルゴリズム内部では全精度で計算します。詳細表の各値は個別に小数第6位へ丸めているため、表示行だけを手計算すると0.778367になります。0.000002の差は表示丸めによるもので、隠れたロジックではありません。</small></p>
+
+      <div class="callout success" style="margin-top:18px">
+        <p class="en"><strong>How service_fit is calculated for every candidate:</strong> hold the purpose and its 17 weights fixed, select one candidate <code>c</code>, then loop through all 17 features. In each loop, calculate or retrieve <code>x → e → a → r → k</code>. Sum that candidate's 17 values of <code>k</code> to obtain <code>service_fit(c)</code>. Repeat the same loop for the next candidate; only candidate-specific evidence and response coefficients may change.</p>
+        <p class="ja"><strong>各候補のservice_fit計算方法：</strong>目的と17個の重みを固定し、候補<code>c</code>を1つ選んで全17特徴量を順番に処理します。各ループで<code>x → e → a → r → k</code>を計算または取得し、その候補の17個の<code>k</code>を合計して<code>service_fit(c)</code>を得ます。次の候補にも同じループを繰り返します。候補間で変わる可能性があるのは、候補別エビデンスと反応係数です。</p>
+      </div>
 
       <details>
-        <summary><span class="en">Show all 17 feature contributions</span><span class="ja">17特徴量の全寄与度を表示</span></summary>
+        <summary><span class="en">Show all components for all 17 feature contributions</span><span class="ja">17特徴量の全要素と寄与度を表示</span></summary>
         <div class="details-body">
           <div class="table-wrap">
-            <table id="worked-example-table">
-              <thead><tr><th><span class="en">Feature</span><span class="ja">特徴量</span></th><th><span class="en">Evidence</span><span class="ja">エビデンス</span></th><th><span class="en">Effective weight</span><span class="ja">有効重み</span></th><th><span class="en">Feature response</span><span class="ja">特徴量反応</span></th><th><span class="en">Contribution</span><span class="ja">寄与度</span></th></tr></thead>
+            <table id="worked-example-table" style="min-width:1500px">
+              <thead><tr><th><span class="en">Feature i</span><span class="ja">特徴量 i</span></th><th><span class="en">Raw xᵢ(c)</span><span class="ja">生入力 xᵢ(c)</span></th><th><span class="en">Evidence eᵢ(c)</span><span class="ja">エビデンス eᵢ(c)</span></th><th><span class="en">Coefficient aᵢ(c)</span><span class="ja">反応係数 aᵢ(c)</span></th><th><span class="en">Response rᵢ(c)</span><span class="ja">特徴量反応 rᵢ(c)</span></th><th><span class="en">Base Bᵢ</span><span class="ja">基本重み Bᵢ</span></th><th><span class="en">Multiplier M(p)</span><span class="ja">目的倍率 M(p)</span></th><th><span class="en">Weight wᵢ(p)</span><span class="ja">有効重み wᵢ(p)</span></th><th><span class="en">Contribution kᵢ(c)</span><span class="ja">寄与度 kᵢ(c)</span></th></tr></thead>
               <tbody>
-                <tr><td><span class="en">Drowsiness</span><span class="ja">眠気</span></td><td>.80</td><td>.254551</td><td>.80</td><td>+.203641</td></tr>
-                <tr><td><span class="en">Fatigue</span><span class="ja">疲労</span></td><td>.60</td><td>.208269</td><td>.60</td><td>+.124961</td></tr>
-                <tr><td><span class="en">Traffic</span><span class="ja">交通</span></td><td>1.00</td><td>.060475</td><td>1.00</td><td>+.060475</td></tr>
-                <tr><td><span class="en">Road / highway</span><span class="ja">道路／高速</span></td><td>1.00</td><td>.060475</td><td>1.00</td><td>+.060475</td></tr>
-                <tr><td><span class="en">Night</span><span class="ja">夜間</span></td><td>1.00</td><td>.060475</td><td>1.00</td><td>+.060475</td></tr>
-                <tr><td><span class="en">Monotony</span><span class="ja">単調度</span></td><td>.75</td><td>.120950</td><td>.75</td><td>+.090713</td></tr>
-                <tr><td><span class="en">Route</span><span class="ja">ルート</span></td><td>1.00</td><td>.019091</td><td>1.00</td><td>+.019091</td></tr>
-                <tr><td><span class="en">Destination</span><span class="ja">目的地</span></td><td>.50</td><td>.015620</td><td>.50</td><td>+.007810</td></tr>
-                <tr><td><span class="en">Child</span><span class="ja">子供</span></td><td>1.00</td><td>.025571</td><td>1.00</td><td>+.025571</td></tr>
-                <tr><td><span class="en">Group</span><span class="ja">複数人</span></td><td>1.00</td><td>.013769</td><td>1.00</td><td>+.013769</td></tr>
-                <tr><td><span class="en">Oshi registered</span><span class="ja">推し登録</span></td><td>1.00</td><td>.006479</td><td>.50</td><td>+.003240</td></tr>
-                <tr><td><span class="en">Oshi mode</span><span class="ja">推しモード</span></td><td>1.00</td><td>.012033</td><td>1.00</td><td>+.012033</td></tr>
-                <tr><td><span class="en">Recency</span><span class="ja">利用時期</span></td><td>.50</td><td>.007405</td><td>.50</td><td>+.003703</td></tr>
-                <tr><td><span class="en">Overall usage</span><span class="ja">全体利用度</span></td><td>1.00</td><td>.020827</td><td>1.00</td><td>+.020827</td></tr>
-                <tr><td><span class="en">Scene usage</span><span class="ja">シーン利用度</span></td><td>1.00</td><td>.040728</td><td>1.00</td><td>+.040728</td></tr>
-                <tr><td><span class="en">Acceptance</span><span class="ja">採用率</span></td><td>.50</td><td>.015427</td><td>.50</td><td>+.007714</td></tr>
-                <tr><td><span class="en">Recovery</span><span class="ja">回復率</span></td><td>.40</td><td>.057853</td><td>.40</td><td>+.023141</td></tr>
+                <tr><td><span class="en">Drowsiness</span><span class="ja">眠気</span></td><td>80</td><td>.80</td><td>+1.00</td><td>.80</td><td>.2200</td><td>1.50</td><td>.254551</td><td>+.203641</td></tr>
+                <tr><td><span class="en">Fatigue</span><span class="ja">疲労</span></td><td>60</td><td>.60</td><td>+1.00</td><td>.60</td><td>.1800</td><td>1.50</td><td>.208269</td><td>+.124961</td></tr>
+                <tr><td><span class="en">Traffic</span><span class="ja">交通</span></td><td><span class="en">congested</span><span class="ja">渋滞</span></td><td>1.00</td><td>+1.00</td><td>1.00</td><td>.0560</td><td>1.40</td><td>.060475</td><td>+.060475</td></tr>
+                <tr><td><span class="en">Road</span><span class="ja">道路</span></td><td><span class="en">highway</span><span class="ja">高速道路</span></td><td>1.00</td><td>+1.00</td><td>1.00</td><td>.0560</td><td>1.40</td><td>.060475</td><td>+.060475</td></tr>
+                <tr><td><span class="en">Night</span><span class="ja">夜間</span></td><td><span class="en">night</span><span class="ja">夜</span></td><td>1.00</td><td>+1.00</td><td>1.00</td><td>.0560</td><td>1.40</td><td>.060475</td><td>+.060475</td></tr>
+                <tr><td><span class="en">Monotony</span><span class="ja">単調度</span></td><td>75</td><td>.75</td><td>+1.00</td><td>.75</td><td>.1120</td><td>1.40</td><td>.120950</td><td>+.090713</td></tr>
+                <tr><td><span class="en">Route</span><span class="ja">ルート</span></td><td><span class="en">2 recognized tags</span><span class="ja">認識タグ2個</span></td><td>1.00</td><td>+1.00</td><td>1.00</td><td>.0330</td><td>.75</td><td>.019091</td><td>+.019091</td></tr>
+                <tr><td><span class="en">Destination</span><span class="ja">目的地</span></td><td><span class="en">1 recognized tag</span><span class="ja">認識タグ1個</span></td><td>.50</td><td>+1.00</td><td>.50</td><td>.0270</td><td>.75</td><td>.015620</td><td>+.007810</td></tr>
+                <tr><td><span class="en">Child</span><span class="ja">子供</span></td><td>true</td><td>1.00</td><td>+1.00</td><td>1.00</td><td>.0390</td><td>.85</td><td>.025571</td><td>+.025571</td></tr>
+                <tr><td><span class="en">Group</span><span class="ja">複数人</span></td><td>true</td><td>1.00</td><td>+1.00</td><td>1.00</td><td>.0210</td><td>.85</td><td>.013769</td><td>+.013769</td></tr>
+                <tr><td><span class="en">Oshi registered</span><span class="ja">推し登録</span></td><td>true</td><td>1.00</td><td>+.50</td><td>.50</td><td>.0105</td><td>.80</td><td>.006479</td><td>+.003240</td></tr>
+                <tr><td><span class="en">Oshi mode</span><span class="ja">推しモード</span></td><td>on</td><td>1.00</td><td>+1.00</td><td>1.00</td><td>.0195</td><td>.80</td><td>.012033</td><td>+.012033</td></tr>
+                <tr><td><span class="en">Recency</span><span class="ja">利用時期</span></td><td><span class="en">long unused</span><span class="ja">長期未利用</span></td><td>.50</td><td>+1.00</td><td>.50</td><td>.0120</td><td>.80</td><td>.007405</td><td>+.003703</td></tr>
+                <tr><td><span class="en">Overall usage</span><span class="ja">全体利用度</span></td><td>high</td><td>1.00</td><td>+1.00</td><td>1.00</td><td>.0300</td><td>.90</td><td>.020827</td><td>+.020827</td></tr>
+                <tr><td><span class="en">Scene usage</span><span class="ja">シーン利用度</span></td><td>high</td><td>1.00</td><td>+1.00</td><td>1.00</td><td>.0480</td><td>1.10</td><td>.040728</td><td>+.040728</td></tr>
+                <tr><td><span class="en">Acceptance</span><span class="ja">採用率</span></td><td>75%</td><td>.50</td><td>+1.00</td><td>.50</td><td>.0200</td><td>1.00</td><td>.015427</td><td>+.007714</td></tr>
+                <tr><td><span class="en">Recovery</span><span class="ja">回復率</span></td><td>70%</td><td>.40</td><td>+1.00</td><td>.40</td><td>.0600</td><td>1.25</td><td>.057853</td><td>+.023141</td></tr>
               </tbody>
             </table>
           </div>
