@@ -1,0 +1,808 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A beginner-friendly bilingual overview of the AICA transparent service-proposal algorithm.">
+  <title>AICA Transparent Service Proposal / AICA透明サービス提案</title>
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #5f6b7c;
+      --line: #dce3ec;
+      --soft: #f5f8fc;
+      --blue: #175cd3;
+      --blue-dark: #102a56;
+      --blue-soft: #eaf2ff;
+      --green: #087a55;
+      --green-soft: #eaf8f2;
+      --amber: #9a5b00;
+      --amber-soft: #fff5df;
+      --purple: #7047a8;
+      --purple-soft: #f4effb;
+      --danger: #b42318;
+      --danger-soft: #fff0ee;
+      --neutral: #667085;
+      --neutral-soft: #f1f3f6;
+      --radius: 14px;
+      --shadow: 0 10px 28px rgba(24, 43, 77, .08);
+      --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP",
+        Meiryo, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #fff;
+      font-family: var(--font);
+      line-height: 1.65;
+    }
+    header {
+      padding: 58px 24px 50px;
+      color: #fff;
+      background:
+        radial-gradient(circle at 86% 20%, rgba(255,255,255,.17), transparent 28%),
+        linear-gradient(135deg, var(--blue-dark), var(--blue));
+    }
+    header .wrap, main, footer .wrap {
+      width: min(1160px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+    .eyebrow {
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      opacity: .84;
+    }
+    h1 {
+      max-width: 930px;
+      margin: 10px 0 14px;
+      font-size: clamp(2rem, 5vw, 3.55rem);
+      line-height: 1.12;
+    }
+    .hero-copy {
+      max-width: 900px;
+      margin: 0;
+      font-size: clamp(1rem, 2vw, 1.22rem);
+      opacity: .94;
+    }
+    .lang-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 24px;
+    }
+    button {
+      padding: 8px 15px;
+      color: #fff;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.58);
+      border-radius: 999px;
+      font: inherit;
+      cursor: pointer;
+    }
+    button.active { color: #123; background: #fff; }
+    main { padding: 34px 0 80px; }
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      margin: -1px 0 34px;
+      padding: 10px 0;
+      background: rgba(255,255,255,.95);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(8px);
+    }
+    nav .links {
+      display: flex;
+      gap: 18px;
+      width: min(1160px, calc(100% - 40px));
+      margin: 0 auto;
+      overflow-x: auto;
+    }
+    nav a {
+      flex: none;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: .88rem;
+      font-weight: 750;
+    }
+    nav a:hover { color: var(--blue); }
+    section { margin: 54px 0; scroll-margin-top: 68px; }
+    h2 {
+      margin: 0 0 18px;
+      font-size: clamp(1.55rem, 3vw, 2.15rem);
+      line-height: 1.2;
+    }
+    h3 { margin: 0 0 8px; font-size: 1.08rem; }
+    p { margin: 8px 0; }
+    .sub { max-width: 920px; color: var(--muted); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .grid > * { min-width: 0; }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card {
+      padding: 22px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .card.blue { border-top: 5px solid var(--blue); }
+    .card.green { border-top: 5px solid var(--green); }
+    .card.purple { border-top: 5px solid var(--purple); }
+    .card.amber { border-top: 5px solid var(--amber); }
+    .metric {
+      display: block;
+      margin: 4px 0 2px;
+      color: var(--blue);
+      font-size: 2rem;
+      font-weight: 850;
+      line-height: 1.1;
+    }
+    .callout {
+      padding: 21px 22px;
+      background: var(--blue-soft);
+      border-left: 5px solid var(--blue);
+      border-radius: var(--radius);
+    }
+    .callout.safety { background: var(--danger-soft); border-color: var(--danger); }
+    .callout.note { background: var(--amber-soft); border-color: var(--amber); }
+    .callout.success { background: var(--green-soft); border-color: var(--green); }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      align-items: stretch;
+    }
+    .step {
+      position: relative;
+      padding: 18px 13px;
+      text-align: center;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    .step b {
+      display: block;
+      color: var(--blue);
+      font-size: 1.25rem;
+    }
+    .step:not(:last-child)::after {
+      position: absolute;
+      top: 42%;
+      right: -11px;
+      z-index: 2;
+      color: var(--blue);
+      font-weight: 900;
+      content: "→";
+    }
+    .formula {
+      margin: 14px 0 0;
+      padding: 17px 20px;
+      overflow-x: auto;
+      color: #18345e;
+      background: #f6f9fe;
+      border: 1px solid #cfdbef;
+      border-radius: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: clamp(.86rem, 2vw, 1rem);
+      white-space: nowrap;
+    }
+    .scale {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .scale > div {
+      padding: 16px;
+      text-align: center;
+      border: 1px solid var(--line);
+    }
+    .scale .negative { color: var(--danger); background: var(--danger-soft); }
+    .scale .zero { color: var(--neutral); background: var(--neutral-soft); }
+    .scale .positive { color: var(--green); background: var(--green-soft); }
+    .table-wrap {
+      margin-top: 16px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+    table {
+      width: 100%;
+      min-width: 900px;
+      border-collapse: collapse;
+      font-size: .88rem;
+    }
+    table.matrix { min-width: 1160px; font-size: .82rem; }
+    th, td {
+      padding: 11px 12px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--line);
+    }
+    th {
+      color: #29364a;
+      background: #edf3fa;
+      font-weight: 800;
+    }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover td { background: #fafcff; }
+    .matrix th:not(:first-child), .matrix td:not(:first-child) { text-align: center; }
+    .matrix th:first-child, .matrix td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      min-width: 180px;
+      background: #fff;
+      text-align: left;
+    }
+    .matrix thead th:first-child { z-index: 2; background: #edf3fa; }
+    .group-cell {
+      color: #31415a;
+      background: var(--soft);
+      font-weight: 800;
+    }
+    .resp-mm, .resp-m, .resp-zero, .resp-p, .resp-pp {
+      min-width: 48px;
+      font-weight: 850;
+    }
+    .resp-mm { color: #8b1b13; background: #ffd9d5; }
+    .resp-m { color: var(--danger); background: var(--danger-soft); }
+    .resp-zero { color: var(--neutral); background: var(--neutral-soft); }
+    .resp-p { color: #08704f; background: #dcf5e9; }
+    .resp-pp { color: #05603f; background: #bfead7; }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .legend span, .tag {
+      display: inline-block;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: .78rem;
+      font-weight: 800;
+    }
+    .tag { margin: 2px 3px 2px 0; color: #3d4a5d; background: #edf1f7; }
+    .weight-bar {
+      display: flex;
+      height: 48px;
+      margin: 16px 0;
+      overflow: hidden;
+      color: #fff;
+      border-radius: 10px;
+    }
+    .weight-bar > div {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 72px;
+      padding: 4px;
+      text-align: center;
+      font-size: .8rem;
+      font-weight: 800;
+    }
+    .situation { width: 80%; background: var(--blue); }
+    .preference { width: 12%; background: var(--purple); }
+    .history { width: 8%; background: var(--green); }
+    details {
+      margin-top: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+    summary {
+      padding: 15px 18px;
+      color: #263a59;
+      background: var(--soft);
+      border-radius: var(--radius);
+      font-weight: 800;
+      cursor: pointer;
+    }
+    details > .details-body { padding: 4px 16px 16px; }
+    code {
+      color: #2d4c7c;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .88em;
+      word-break: break-word;
+    }
+    ul, ol { margin: 8px 0; padding-left: 22px; }
+    li { margin: 5px 0; }
+    .en, .ja { display: block; }
+    .en + .ja { margin-top: 5px; color: #34435a; }
+    header .en + .ja { color: inherit; }
+    body.lang-en .ja { display: none; }
+    body.lang-ja .en { display: none; }
+    body.lang-ja .en + .ja { margin-top: 0; }
+    footer {
+      padding: 30px 0;
+      color: var(--muted);
+      background: var(--soft);
+      border-top: 1px solid var(--line);
+    }
+    @media (max-width: 860px) {
+      .grid, .grid.three { grid-template-columns: 1fr; }
+      .flow { grid-template-columns: 1fr; }
+      .step:not(:last-child)::after {
+        top: auto;
+        right: 49%;
+        bottom: -19px;
+        content: "↓";
+      }
+      .scale { grid-template-columns: 1fr; }
+      .weight-bar { height: auto; flex-direction: column; }
+      .weight-bar > div { width: 100%; min-height: 38px; }
+    }
+    @media print {
+      .lang-controls, nav { display: none; }
+      header { padding: 30px 20px; }
+      section, .card, details { break-inside: avoid; }
+      .card { box-shadow: none; }
+      details > .details-body { display: block; }
+    }
+  </style>
+</head>
+<body class="lang-ja">
+  <header>
+    <div class="wrap">
+      <div class="eyebrow">AICA transparent algorithm / AICA透明アルゴリズム</div>
+      <h1>
+        <span class="en">How AICA transparently ranks service proposals</span>
+        <span class="ja">AICAがサービス提案を透明に順位付けする仕組み</span>
+      </h1>
+      <p class="hero-copy en">A technical but approachable guide to the baseline-feature algorithm: what it evaluates, how each service responds, how customers can tune it, and how every result can be explained.</p>
+      <p class="hero-copy ja">ベースライン特徴量を使うアルゴリズムを、技術的かつ分かりやすく解説します。何を評価し、各サービスがどう反応し、お客様が何を調整でき、結果をどう説明できるかを示します。</p>
+      <div class="lang-controls" aria-label="Language display / 言語表示">
+        <button type="button" data-lang="ja" class="active" aria-pressed="true">日本語</button>
+        <button type="button" data-lang="en" aria-pressed="false">English</button>
+      </div>
+    </div>
+  </header>
+
+  <nav aria-label="Contents / 目次">
+    <div class="links">
+      <a href="#decision">Decision / 判断対象</a>
+      <a href="#calculation">Calculation / 計算</a>
+      <a href="#features">Features / 特徴量</a>
+      <a href="#weights">Weights / 重み</a>
+      <a href="#responses">Responses / 反応</a>
+      <a href="#example">Example / 例</a>
+      <a href="#tuning">Tuning / 調整</a>
+    </div>
+  </nav>
+
+  <main>
+    <section id="decision">
+      <h2><span class="en">1. What this algorithm decides</span><span class="ja">1. このアルゴリズムが決めること</span></h2>
+      <div class="callout">
+        <p class="en"><strong>It answers one question:</strong> among the services already allowed for the current purpose and lifecycle stage, which services best fit the current situation and configured customer hypothesis?</p>
+        <p class="ja"><strong>答える問いは1つです。</strong> 現在の発火目的とライフサイクル段階で既に許可されたサービスの中で、現在状況とお客様が設定した仮説に最も合うサービスはどれかを判断します。</p>
+      </div>
+
+      <div class="grid three" style="margin-top:20px">
+        <article class="card blue">
+          <span class="metric">≤ 3</span>
+          <h3><span class="en">Ranked services</span><span class="ja">順位付きサービス</span></h3>
+          <p class="en">The result contains up to three eligible service candidates.</p>
+          <p class="ja">利用可能なサービス候補を最大3件返します。</p>
+        </article>
+        <article class="card green">
+          <span class="metric">17</span>
+          <h3><span class="en">Baseline features</span><span class="ja">ベースライン特徴量</span></h3>
+          <p class="en">Every candidate is evaluated using the same complete feature contract.</p>
+          <p class="ja">全候補を同じ完全な特徴量契約で評価します。</p>
+        </article>
+        <article class="card purple">
+          <span class="metric">[-1,+1]</span>
+          <h3><span class="en">Normalized service fit</span><span class="ja">正規化サービス適合度</span></h3>
+          <p class="en">Zero is neutral; positive supports the candidate; negative opposes it.</p>
+          <p class="ja">0は中立、正は候補を支持、負は候補に反対する方向です。</p>
+        </article>
+      </div>
+
+      <div class="callout safety" style="margin-top:20px">
+        <p class="en"><strong>Safety and eligibility happen first.</strong> Motion state, screen restrictions, service availability, lifecycle rules, and catalog requirements remove impermissible candidates before ranking. No feature weight or high fit can restore an excluded service.</p>
+        <p class="ja"><strong>安全性と利用可否を先に判定します。</strong> 走行状態、画面制約、サービス提供可否、ライフサイクル規則、カタログ要件により、許可できない候補を順位付け前に除外します。どれほど重みや適合度が高くても、除外サービスは復活しません。</p>
+      </div>
+
+      <div class="flow" style="margin-top:20px">
+        <div class="step"><b>1</b><span class="en">Purpose and stage</span><span class="ja">目的・段階</span></div>
+        <div class="step"><b>2</b><span class="en">Hard eligibility</span><span class="ja">必須の利用可否</span></div>
+        <div class="step"><b>3</b><span class="en">Evaluate 17 features</span><span class="ja">17特徴量を評価</span></div>
+        <div class="step"><b>4</b><span class="en">Calculate service fit</span><span class="ja">適合度を計算</span></div>
+        <div class="step"><b>5</b><span class="en">Rank up to three</span><span class="ja">最大3件を順位付け</span></div>
+      </div>
+    </section>
+
+    <section id="calculation">
+      <h2><span class="en">2. One transparent calculation</span><span class="ja">2. 透明な計算の流れ</span></h2>
+      <p class="sub en">The model is a deterministic weighted sum. There are no hidden bands, random choices, learned probabilities, or LLM judgments.</p>
+      <p class="sub ja">このモデルは決定論的な加重和です。隠れたバンド、乱数、学習済み確率、LLMによる判断はありません。</p>
+
+      <div class="flow">
+        <div class="step"><b>1</b><span class="en">Normalize raw feature</span><span class="ja">生特徴量を正規化</span></div>
+        <div class="step"><b>2</b><span class="en">Resolve service response</span><span class="ja">サービス反応を決定</span></div>
+        <div class="step"><b>3</b><span class="en">Feature response</span><span class="ja">特徴量反応を計算</span></div>
+        <div class="step"><b>4</b><span class="en">Apply effective weight</span><span class="ja">有効重みを適用</span></div>
+        <div class="step"><b>5</b><span class="en">Sum service fit</span><span class="ja">適合度を合計</span></div>
+      </div>
+
+      <div class="grid" style="margin-top:20px">
+        <article class="card blue">
+          <h3><span class="en">Feature response</span><span class="ja">特徴量反応</span></h3>
+          <div class="formula">rᵢ(c) = evidenceᵢ(c) × response_coefficientᵢ(c)</div>
+          <p class="en">Evidence says what is happening. The response coefficient says whether candidate <em>c</em> is suitable for that evidence.</p>
+          <p class="ja">evidenceは「何が起きているか」、response coefficientは候補<em>c</em>がその状況に合うかを表します。</p>
+        </article>
+        <article class="card green">
+          <h3><span class="en">Contribution and service fit</span><span class="ja">寄与度とサービス適合度</span></h3>
+          <div class="formula">kᵢ(c) = wᵢ × rᵢ(c)<br>service_fit(c) = Σ kᵢ(c)</div>
+          <p class="en">Every contribution is visible and the contributions add directly to the final fit.</p>
+          <p class="ja">各寄与度はすべて表示でき、その合計が最終適合度になります。</p>
+        </article>
+      </div>
+
+      <h3 style="margin-top:26px"><span class="en">All scoring values stay normalized</span><span class="ja">スコアに関係する値はすべて正規化</span></h3>
+      <div class="scale">
+        <div class="negative"><strong>-1</strong><br><span class="en">Strongest opposition</span><span class="ja">最も強い反対</span></div>
+        <div class="zero"><strong>0</strong><br><span class="en">Neutral</span><span class="ja">中立</span></div>
+        <div class="positive"><strong>+1</strong><br><span class="en">Strongest support</span><span class="ja">最も強い支持</span></div>
+      </div>
+      <div class="callout note" style="margin-top:16px">
+        <p class="en"><strong>Raw values may use natural units.</strong> Drowsiness 80 is normalized to 0.80 before scoring. A rate such as 75% acceptance becomes +0.50 because 50% is defined as neutral. Endpoints are valid, so ranges use inclusive brackets.</p>
+        <p class="ja"><strong>生値は元の単位を保持できます。</strong> 眠気80は計算前に0.80へ正規化します。一方、採用率75%は50%を中立とするため+0.50になります。端点も有効なので範囲は角括弧で示します。</p>
+      </div>
+    </section>
+
+    <section id="features">
+      <h2><span class="en">3. Complete baseline feature matrix</span><span class="ja">3. 完全なベースライン特徴量マトリクス</span></h2>
+      <p class="sub en">All 17 features are evaluated for every eligible candidate. Candidate-specific history maps select the current candidate's own value.</p>
+      <p class="sub ja">利用可能な全候補について17特徴量をすべて評価します。候補別履歴マップでは、評価中候補自身の値を使用します。</p>
+      <div class="table-wrap">
+        <table id="feature-matrix">
+          <thead>
+            <tr>
+              <th><span class="en">Category</span><span class="ja">カテゴリ</span></th>
+              <th><span class="en">Feature</span><span class="ja">特徴量</span></th>
+              <th><span class="en">Raw input</span><span class="ja">生入力</span></th>
+              <th><span class="en">Normalization</span><span class="ja">正規化</span></th>
+              <th><span class="en">Meaning</span><span class="ja">意味</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td rowspan="10" class="group-cell"><span class="en">Situation</span><span class="ja">状況</span><br><code>0.80</code></td><td><span class="en">Drowsiness</span><span class="ja">眠気</span></td><td><code>0–100</code></td><td><code>(x/100)^γ</code> → <code>[0,1]</code></td><td><span class="en">Higher values activate services suited to the configured driver state.</span><span class="ja">値が高いほど、設定上その運転者状態に適したサービスを支持します。</span></td></tr>
+            <tr><td><span class="en">Fatigue</span><span class="ja">疲労</span></td><td><code>0–100</code></td><td><code>(x/100)^γ</code> → <code>[0,1]</code></td><td><span class="en">Independent current fatigue intensity.</span><span class="ja">現在の疲労強度を独立して表します。</span></td></tr>
+            <tr><td><span class="en">Traffic</span><span class="ja">交通状態</span></td><td><code>normal | congested</code></td><td><code>0 | 1</code></td><td><span class="en">Normal is neutral; congestion activates the candidate response.</span><span class="ja">通常は中立、渋滞時に候補の反応を有効化します。</span></td></tr>
+            <tr><td><span class="en">Road type</span><span class="ja">道路種別</span></td><td><code>highway | local | mountain | parking</code></td><td><span class="en">Selected road-response coefficient</span><span class="ja">道路別反応係数を選択</span></td><td><span class="en">The category directly selects a signed suitability response.</span><span class="ja">カテゴリから符号付き適合反応を直接選びます。</span></td></tr>
+            <tr><td><span class="en">Day / night</span><span class="ja">昼夜</span></td><td><code>day | night</code></td><td><code>0 | 1</code></td><td><span class="en">Day is neutral; night activates the night response.</span><span class="ja">昼は中立、夜に夜間反応を有効化します。</span></td></tr>
+            <tr><td><span class="en">Road monotony</span><span class="ja">道路単調度</span></td><td><code>0–100</code></td><td><code>(x/100)^γ</code> → <code>[0,1]</code></td><td><span class="en">Measures current monotonous-road intensity.</span><span class="ja">現在の道路の単調さを表します。</span></td></tr>
+            <tr><td><span class="en">Route characteristics</span><span class="ja">ルート特徴</span></td><td><span class="en">Recognized tags</span><span class="ja">認識済みタグ</span></td><td><code>min(1, unique_count / 2)</code></td><td><span class="en">Whether the service can adapt to a distinctive route.</span><span class="ja">特徴的なルートにサービスが適応できるかを評価します。</span></td></tr>
+            <tr><td><span class="en">Destination characteristics</span><span class="ja">目的地特徴</span></td><td><span class="en">Recognized tags</span><span class="ja">認識済みタグ</span></td><td><code>min(1, unique_count / 2)</code></td><td><span class="en">Destination relevance at service-selection level.</span><span class="ja">サービス選択レベルで目的地との関連を評価します。</span></td></tr>
+            <tr><td><span class="en">Child present</span><span class="ja">子供同乗</span></td><td><code>false | true</code></td><td><code>0 | 1</code></td><td><span class="en">True activates child-suitable responses; false is neutral.</span><span class="ja">trueで子供向け反応を有効化し、falseは中立です。</span></td></tr>
+            <tr><td><span class="en">Multiple passengers</span><span class="ja">複数同乗者</span></td><td><code>false | true</code></td><td><code>0 | 1</code></td><td><span class="en">Activates responses suited to shared participation.</span><span class="ja">複数人で参加しやすいサービスの反応を有効化します。</span></td></tr>
+            <tr><td rowspan="5" class="group-cell"><span class="en">Preference</span><span class="ja">嗜好</span><br><code>0.12</code></td><td><span class="en">Oshi registered</span><span class="ja">推し登録</span></td><td><code>false | true</code></td><td><code>0 | 1</code></td><td><span class="en">Whether oshi adaptation is available.</span><span class="ja">推し適応が利用可能かを表します。</span></td></tr>
+            <tr><td><span class="en">Oshi mode</span><span class="ja">推しモード</span></td><td><code>off | on</code></td><td><code>-1 | +1</code></td><td><span class="en">Off explicitly opposes oshi-focused adaptation.</span><span class="ja">offは推し中心の適応に明示的に反対します。</span></td></tr>
+            <tr><td><span class="en">Service recency</span><span class="ja">サービス利用時期</span></td><td><code>recent | long_unused | never</code></td><td><code>0 | +0.5 | +1</code></td><td><span class="en">A weak novelty bonus; recent use is neutral.</span><span class="ja">弱い新規性ボーナスで、最近利用は中立です。</span></td></tr>
+            <tr><td><span class="en">Overall service usage</span><span class="ja">全体利用度</span></td><td><code>never | low | medium | high</code></td><td><code>-1 | -0.5 | +0.25 | +1</code></td><td><span class="en">Candidate-specific long-term preference.</span><span class="ja">候補別の長期的な嗜好を表します。</span></td></tr>
+            <tr><td><span class="en">Scene-specific usage</span><span class="ja">シーン別利用度</span></td><td><span class="en">Matching scene records</span><span class="ja">一致シーン履歴</span></td><td><span class="en">Mean of normalized usage</span><span class="ja">正規化利用度の平均</span></td><td><span class="en">Preference in situations similar to the current scene.</span><span class="ja">現在と似たシーンでの嗜好を表します。</span></td></tr>
+            <tr><td rowspan="2" class="group-cell"><span class="en">History</span><span class="ja">履歴</span><br><code>0.08</code></td><td><span class="en">Proposal acceptance rate</span><span class="ja">提案採用率</span></td><td><code>0–100%</code></td><td><code>2x/100 - 1</code></td><td><span class="en">50% is neutral; synthetic configured history.</span><span class="ja">50%を中立とする、設定された合成履歴です。</span></td></tr>
+            <tr><td><span class="en">Recovery rate</span><span class="ja">回復率</span></td><td><code>0–100%</code></td><td><code>2x/100 - 1</code></td><td><span class="en">Candidate-specific synthetic recovery evidence, not a clinical claim.</span><span class="ja">候補別の合成回復エビデンスであり、医学的主張ではありません。</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="weights">
+      <h2><span class="en">4. Weights express importance</span><span class="ja">4. 重みは重要度を表す</span></h2>
+      <p class="sub en">The default hierarchy makes current situation dominant while still allowing personalization and synthetic history to influence the order.</p>
+      <p class="sub ja">初期階層では現在状況を支配的にしつつ、個人嗜好と合成履歴も順位に影響できるようにします。</p>
+      <div class="weight-bar" aria-label="Top-level weights">
+        <div class="situation"><span class="en">Situation 0.80</span><span class="ja">状況 0.80</span></div>
+        <div class="preference"><span class="en">Preference .12</span><span class="ja">嗜好 .12</span></div>
+        <div class="history"><span class="en">History .08</span><span class="ja">履歴 .08</span></div>
+      </div>
+      <div class="grid">
+        <article class="card blue">
+          <h3><span class="en">Hierarchy example: drowsiness</span><span class="ja">階層例：眠気</span></h3>
+          <div class="formula">0.80 Situation × 0.50 Driver state × 0.55 Drowsiness = 0.22</div>
+          <p class="en">Sibling values are normalized ratios. Customers can start at category level, then refine subgroups and leaves.</p>
+          <p class="ja">同階層の値は正規化される比率です。お客様はカテゴリから始め、サブグループ、個別特徴量の順に細かく調整できます。</p>
+        </article>
+        <article class="card purple">
+          <h3><span class="en">Purpose multiplier</span><span class="ja">目的別倍率</span></h3>
+          <div class="formula">effective_raw_weight = base_weight × purpose_multiplier</div>
+          <p class="en">The 17 adjusted weights are normalized again to sum to 1. Lifecycle stage changes candidates, not the weight set.</p>
+          <p class="ja">調整後の17重みを再正規化し、合計を1にします。ライフサイクル段階は候補を変えますが、重みセットは変えません。</p>
+        </article>
+      </div>
+
+      <h3 style="margin-top:26px"><span class="en">Initial purpose multipliers</span><span class="ja">初期目的別倍率</span></h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th><span class="en">Subgroup</span><span class="ja">サブグループ</span></th><th><span class="en">Rest</span><span class="ja">休憩推奨</span></th><th><span class="en">Inattentive / recovery</span><span class="ja">漫然予防・回復</span></th><th><span class="en">Route music</span><span class="ja">ルート音楽</span></th><th><span class="en">Child experience</span><span class="ja">子供体験</span></th></tr></thead>
+          <tbody>
+            <tr><td><span class="en">Driver state</span><span class="ja">運転者状態</span></td><td>1.40</td><td>1.50</td><td>1.20</td><td>1.20</td></tr>
+            <tr><td><span class="en">Driving environment</span><span class="ja">走行環境</span></td><td>1.10</td><td>1.40</td><td>1.00</td><td>1.00</td></tr>
+            <tr><td><span class="en">Route context</span><span class="ja">ルート文脈</span></td><td>1.00</td><td>0.75</td><td>2.00</td><td>0.75</td></tr>
+            <tr><td><span class="en">Passenger composition</span><span class="ja">同乗者構成</span></td><td>1.00</td><td>0.85</td><td>0.80</td><td>2.00</td></tr>
+            <tr><td><span class="en">Oshi preference</span><span class="ja">推し嗜好</span></td><td>1.00</td><td>0.80</td><td>1.10</td><td>0.75</td></tr>
+            <tr><td><span class="en">Novelty</span><span class="ja">新規性</span></td><td>0.80</td><td>0.80</td><td>0.80</td><td>0.80</td></tr>
+            <tr><td><span class="en">Overall usage</span><span class="ja">全体利用度</span></td><td>0.90</td><td>0.90</td><td>0.90</td><td>1.00</td></tr>
+            <tr><td><span class="en">Scene preference</span><span class="ja">シーン嗜好</span></td><td>1.00</td><td>1.10</td><td>1.10</td><td>1.20</td></tr>
+            <tr><td><span class="en">Proposal acceptance</span><span class="ja">提案採用</span></td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td></tr>
+            <tr><td><span class="en">Recovery</span><span class="ja">回復</span></td><td>1.30</td><td>1.25</td><td>1.00</td><td>1.00</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout success" style="margin-top:16px">
+        <p class="en"><strong>Weight and response are different.</strong> Weight asks “how important is this feature now?” Response asks “does this particular service suit the evidence?” Both are visible and customer-editable hypotheses.</p>
+        <p class="ja"><strong>重みと反応は別物です。</strong> 重みは「今この特徴量がどれほど重要か」、反応は「このサービスがそのエビデンスに合うか」を表します。どちらも可視化され、お客様が調整できる仮説です。</p>
+      </div>
+    </section>
+
+    <section id="responses">
+      <h2><span class="en">5. Response matrices express service suitability</span><span class="ja">5. 反応マトリクスはサービス適合性を表す</span></h2>
+      <p class="sub en">The initial classes are intentionally coarse. Neutral is used whenever the source does not justify a direction; “not preferred” does not automatically mean opposition.</p>
+      <p class="sub ja">初期クラスは意図的に粗くしています。資料が方向を裏付けない場合は中立とし、「優先と書かれていない」ことを自動的に反対とはみなしません。</p>
+      <div class="legend" aria-label="Response legend">
+        <span class="resp-mm">-- = -1.0</span>
+        <span class="resp-m">- = -0.5</span>
+        <span class="resp-zero">0 = 0.0</span>
+        <span class="resp-p">+ = +0.5</span>
+        <span class="resp-pp">++ = +1.0</span>
+      </div>
+
+      <h3 style="margin-top:24px"><span class="en">Driving services</span><span class="ja">走行中サービス</span></h3>
+      <div class="table-wrap">
+        <table class="matrix" id="driving-response-matrix">
+          <thead><tr><th><span class="en">Candidate</span><span class="ja">候補</span></th><th><span class="en">Drowsy</span><span class="ja">眠気</span></th><th><span class="en">Fatigue</span><span class="ja">疲労</span></th><th><span class="en">Congested</span><span class="ja">渋滞</span></th><th><span class="en">Night</span><span class="ja">夜間</span></th><th><span class="en">Monotony</span><span class="ja">単調</span></th><th><span class="en">Route</span><span class="ja">ルート</span></th><th><span class="en">Destination</span><span class="ja">目的地</span></th><th><span class="en">Child</span><span class="ja">子供</span></th><th><span class="en">Group</span><span class="ja">複数人</span></th><th><span class="en">Oshi reg.</span><span class="ja">推し登録</span></th><th><span class="en">Oshi mode</span><span class="ja">推しモード</span></th></tr></thead>
+          <tbody>
+            <tr><td><code>music_playlist</code><br><span class="ja">音楽プレイリスト</span></td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-p">+</td><td class="resp-p">+</td></tr>
+            <tr><td><code>humming_karaoke</code><br><span class="ja">鼻歌カラオケ</span></td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-p">+</td><td class="resp-pp">++</td></tr>
+            <tr><td><code>call_response_driving</code><br><span class="ja">合いの手</span></td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-p">+</td><td class="resp-p">+</td></tr>
+            <tr><td><code>quiz</code><br><span class="ja">クイズ</span></td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-p">+</td><td class="resp-p">+</td></tr>
+            <tr><td><code>ranking_creation</code><br><span class="ja">ランキング作成</span></td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-p">+</td><td class="resp-p">+</td></tr>
+            <tr><td><code>radio_style</code><br><span class="ja">ラジオ風</span></td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-pp">++</td><td class="resp-pp">++</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="margin-top:24px"><span class="en">Road-type response</span><span class="ja">道路種別反応</span></h3>
+      <div class="table-wrap">
+        <table class="matrix" style="min-width:760px">
+          <thead><tr><th><span class="en">Candidate</span><span class="ja">候補</span></th><th><span class="en">Highway</span><span class="ja">高速道路</span></th><th><span class="en">Local</span><span class="ja">一般道</span></th><th><span class="en">Mountain</span><span class="ja">山道</span></th><th><span class="en">Parking</span><span class="ja">駐車</span></th></tr></thead>
+          <tbody>
+            <tr><td><code>music_playlist</code></td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-p">+</td><td class="resp-zero">0</td></tr>
+            <tr><td><code>humming_karaoke</code></td><td class="resp-pp">++</td><td class="resp-zero">0</td><td class="resp-m">-</td><td class="resp-zero">0</td></tr>
+            <tr><td><code>call_response_driving</code></td><td class="resp-pp">++</td><td class="resp-zero">0</td><td class="resp-m">-</td><td class="resp-zero">0</td></tr>
+            <tr><td><code>quiz</code></td><td class="resp-pp">++</td><td class="resp-zero">0</td><td class="resp-mm">--</td><td class="resp-zero">0</td></tr>
+            <tr><td><code>ranking_creation</code></td><td class="resp-pp">++</td><td class="resp-zero">0</td><td class="resp-mm">--</td><td class="resp-zero">0</td></tr>
+            <tr><td><code>radio_style</code></td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-p">+</td><td class="resp-zero">0</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout note" style="margin-top:16px">
+        <p class="en">Mountain-road values are explicit safety-oriented hypotheses, not direct CDC-SU judgments. They reduce preference for demanding interaction while keeping every platform-eligible candidate available for evaluation.</p>
+        <p class="ja">山道の値はCDC-SUの直接判断ではなく、安全を意識した明示的仮説です。高い操作負荷を伴う候補の優先度を下げますが、プラットフォーム上利用可能な候補は評価対象に残します。</p>
+      </div>
+
+      <details>
+        <summary><span class="en">During-rest response matrix</span><span class="ja">休憩中の反応マトリクス</span></summary>
+        <div class="details-body">
+          <p class="en">These are expert rest-action hypotheses because the source does not provide a full action-by-feature matrix.</p>
+          <p class="ja">資料に完全なアクション×特徴量表がないため、専門家による休憩アクション仮説です。</p>
+          <div class="table-wrap">
+            <table class="matrix">
+              <thead><tr><th><span class="en">Candidate</span><span class="ja">候補</span></th><th><span class="en">Drowsy</span><span class="ja">眠気</span></th><th><span class="en">Fatigue</span><span class="ja">疲労</span></th><th><span class="en">Congested</span><span class="ja">渋滞</span></th><th><span class="en">Night</span><span class="ja">夜間</span></th><th><span class="en">Monotony</span><span class="ja">単調</span></th><th><span class="en">Route</span><span class="ja">ルート</span></th><th><span class="en">Destination</span><span class="ja">目的地</span></th><th><span class="en">Child</span><span class="ja">子供</span></th><th><span class="en">Group</span><span class="ja">複数人</span></th><th><span class="en">Oshi reg.</span><span class="ja">推し登録</span></th><th><span class="en">Oshi mode</span><span class="ja">推しモード</span></th></tr></thead>
+              <tbody>
+                <tr><td><code>rest_duration_suggestion</code></td><td class="resp-p">+</td><td class="resp-p">+</td><td class="resp-zero">0</td><td class="resp-p">+</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-p">+</td><td class="resp-p">+</td><td class="resp-zero">0</td><td class="resp-zero">0</td></tr>
+                <tr><td><code>rest_method_suggestion</code></td><td class="resp-p">+</td><td class="resp-pp">++</td><td class="resp-zero">0</td><td class="resp-p">+</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-pp">++</td><td class="resp-p">+</td><td class="resp-zero">0</td><td class="resp-zero">0</td></tr>
+                <tr><td><code>seat_adjustment</code></td><td class="resp-zero">0</td><td class="resp-p">+</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-p">+</td><td class="resp-p">+</td><td class="resp-zero">0</td><td class="resp-zero">0</td></tr>
+                <tr><td><code>nap_guidance</code></td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-zero">0</td><td class="resp-pp">++</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td></tr>
+                <tr><td><code>rest_extension_check</code></td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-zero">0</td><td class="resp-pp">++</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary><span class="en">Post-rest stopped-service response matrix</span><span class="ja">休憩後・停車中サービスの反応マトリクス</span></summary>
+        <div class="details-body">
+          <div class="table-wrap">
+            <table class="matrix">
+              <thead><tr><th><span class="en">Candidate</span><span class="ja">候補</span></th><th><span class="en">Drowsy</span><span class="ja">眠気</span></th><th><span class="en">Fatigue</span><span class="ja">疲労</span></th><th><span class="en">Congested</span><span class="ja">渋滞</span></th><th><span class="en">Night</span><span class="ja">夜間</span></th><th><span class="en">Monotony</span><span class="ja">単調</span></th><th><span class="en">Route</span><span class="ja">ルート</span></th><th><span class="en">Destination</span><span class="ja">目的地</span></th><th><span class="en">Child</span><span class="ja">子供</span></th><th><span class="en">Group</span><span class="ja">複数人</span></th><th><span class="en">Oshi reg.</span><span class="ja">推し登録</span></th><th><span class="en">Oshi mode</span><span class="ja">推しモード</span></th></tr></thead>
+              <tbody>
+                <tr><td><code>live_viewing</code></td><td class="resp-p">+</td><td class="resp-p">+</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-p">+</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-pp">++</td></tr>
+                <tr><td><code>stretch_video</code></td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-p">+</td><td class="resp-p">+</td><td class="resp-zero">0</td><td class="resp-zero">0</td></tr>
+                <tr><td><code>full_karaoke</code></td><td class="resp-p">+</td><td class="resp-p">+</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-p">+</td><td class="resp-p">+</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-p">+</td><td class="resp-pp">++</td></tr>
+                <tr><td><code>oshi_reexperience</code></td><td class="resp-p">+</td><td class="resp-p">+</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-zero">0</td><td class="resp-pp">++</td><td class="resp-pp">++</td><td class="resp-p">+</td><td class="resp-p">+</td><td class="resp-pp">++</td><td class="resp-pp">++</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <div class="callout" style="margin-top:18px">
+        <p class="en"><strong>Five candidate-specific features already carry direction:</strong> recency, overall usage, scene usage, proposal acceptance, and recovery always use response coefficient +1. Their normalized evidence supplies the positive, neutral, or negative direction.</p>
+        <p class="ja"><strong>候補別の5特徴量は値自身が方向を持ちます。</strong> 利用時期、全体利用度、シーン利用度、提案採用率、回復率の反応係数は常に+1で、正・中立・負の方向は正規化エビデンスが持ちます。</p>
+      </div>
+    </section>
+
+    <section id="example">
+      <h2><span class="en">6. Worked example: humming karaoke</span><span class="ja">6. 計算例：鼻歌カラオケ</span></h2>
+      <p class="sub en">Purpose: inattentive-driving prevention / recovery. Candidate: humming karaoke. The example uses the initial effective weights for that purpose.</p>
+      <p class="sub ja">目的：漫然運転予防・回復。候補：鼻歌カラオケ。この例では同目的の初期有効重みを使用します。</p>
+      <div class="grid">
+        <article class="card blue">
+          <h3><span class="en">One contribution</span><span class="ja">1つの寄与度</span></h3>
+          <p><span class="tag"><span class="en">Raw drowsiness</span><span class="ja">生の眠気</span>: 80</span>
+             <span class="tag"><span class="en">Evidence</span><span class="ja">エビデンス</span>: 0.80</span>
+             <span class="tag"><span class="en">Response coefficient</span><span class="ja">反応係数</span>: +1.00</span></p>
+          <div class="formula">0.254551 × 0.80 × 1.00 = +0.203641</div>
+          <p class="en">The sign explains direction; the magnitude explains influence.</p>
+          <p class="ja">符号が方向を、絶対値が影響の大きさを説明します。</p>
+        </article>
+        <article class="card green">
+          <h3><span class="en">Final service fit</span><span class="ja">最終サービス適合度</span></h3>
+          <span class="metric">+0.778</span>
+          <p class="en">Supporting evidence outweighs opposing evidence under the configured hypothesis.</p>
+          <p class="ja">設定された仮説のもとで、支持エビデンスが反対エビデンスを上回っています。</p>
+        </article>
+      </div>
+
+      <h3 style="margin-top:24px"><span class="en">Explainable subtotals</span><span class="ja">説明可能な小計</span></h3>
+      <div class="grid three">
+        <article class="card blue"><span class="metric">+0.667</span><h3><span class="en">Situation</span><span class="ja">状況</span></h3></article>
+        <article class="card purple"><span class="metric">+0.081</span><h3><span class="en">Preference</span><span class="ja">嗜好</span></h3></article>
+        <article class="card green"><span class="metric">+0.031</span><h3><span class="en">History</span><span class="ja">履歴</span></h3></article>
+      </div>
+      <div class="formula">+0.666981 + 0.080530 + 0.030855 = +0.778365</div>
+
+      <details>
+        <summary><span class="en">Show all 17 feature contributions</span><span class="ja">17特徴量の全寄与度を表示</span></summary>
+        <div class="details-body">
+          <div class="table-wrap">
+            <table id="worked-example-table">
+              <thead><tr><th><span class="en">Feature</span><span class="ja">特徴量</span></th><th><span class="en">Evidence</span><span class="ja">エビデンス</span></th><th><span class="en">Effective weight</span><span class="ja">有効重み</span></th><th><span class="en">Feature response</span><span class="ja">特徴量反応</span></th><th><span class="en">Contribution</span><span class="ja">寄与度</span></th></tr></thead>
+              <tbody>
+                <tr><td><span class="en">Drowsiness</span><span class="ja">眠気</span></td><td>.80</td><td>.254551</td><td>.80</td><td>+.203641</td></tr>
+                <tr><td><span class="en">Fatigue</span><span class="ja">疲労</span></td><td>.60</td><td>.208269</td><td>.60</td><td>+.124961</td></tr>
+                <tr><td><span class="en">Traffic</span><span class="ja">交通</span></td><td>1.00</td><td>.060475</td><td>1.00</td><td>+.060475</td></tr>
+                <tr><td><span class="en">Road / highway</span><span class="ja">道路／高速</span></td><td>1.00</td><td>.060475</td><td>1.00</td><td>+.060475</td></tr>
+                <tr><td><span class="en">Night</span><span class="ja">夜間</span></td><td>1.00</td><td>.060475</td><td>1.00</td><td>+.060475</td></tr>
+                <tr><td><span class="en">Monotony</span><span class="ja">単調度</span></td><td>.75</td><td>.120950</td><td>.75</td><td>+.090713</td></tr>
+                <tr><td><span class="en">Route</span><span class="ja">ルート</span></td><td>1.00</td><td>.019091</td><td>1.00</td><td>+.019091</td></tr>
+                <tr><td><span class="en">Destination</span><span class="ja">目的地</span></td><td>.50</td><td>.015620</td><td>.50</td><td>+.007810</td></tr>
+                <tr><td><span class="en">Child</span><span class="ja">子供</span></td><td>1.00</td><td>.025571</td><td>1.00</td><td>+.025571</td></tr>
+                <tr><td><span class="en">Group</span><span class="ja">複数人</span></td><td>1.00</td><td>.013769</td><td>1.00</td><td>+.013769</td></tr>
+                <tr><td><span class="en">Oshi registered</span><span class="ja">推し登録</span></td><td>1.00</td><td>.006479</td><td>.50</td><td>+.003240</td></tr>
+                <tr><td><span class="en">Oshi mode</span><span class="ja">推しモード</span></td><td>1.00</td><td>.012033</td><td>1.00</td><td>+.012033</td></tr>
+                <tr><td><span class="en">Recency</span><span class="ja">利用時期</span></td><td>.50</td><td>.007405</td><td>.50</td><td>+.003703</td></tr>
+                <tr><td><span class="en">Overall usage</span><span class="ja">全体利用度</span></td><td>1.00</td><td>.020827</td><td>1.00</td><td>+.020827</td></tr>
+                <tr><td><span class="en">Scene usage</span><span class="ja">シーン利用度</span></td><td>1.00</td><td>.040728</td><td>1.00</td><td>+.040728</td></tr>
+                <tr><td><span class="en">Acceptance</span><span class="ja">採用率</span></td><td>.50</td><td>.015427</td><td>.50</td><td>+.007714</td></tr>
+                <tr><td><span class="en">Recovery</span><span class="ja">回復率</span></td><td>.40</td><td>.057853</td><td>.40</td><td>+.023141</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section id="tuning">
+      <h2><span class="en">7. What customers can tune and evaluate</span><span class="ja">7. お客様が調整・評価できること</span></h2>
+      <div class="grid">
+        <article class="card blue">
+          <h3><span class="en">Recommended tuning order</span><span class="ja">推奨調整順序</span></h3>
+          <ol>
+            <li><span class="en">Confirm eligibility and candidate constraints.</span><span class="ja">利用可否と候補制約を確認する。</span></li>
+            <li><span class="en">Review candidate-response meanings.</span><span class="ja">候補反応の意味を確認する。</span></li>
+            <li><span class="en">Tune category and subgroup weights.</span><span class="ja">カテゴリとサブグループ重みを調整する。</span></li>
+            <li><span class="en">Tune purpose multipliers and leaf weights.</span><span class="ja">目的別倍率と個別重みを調整する。</span></li>
+            <li><span class="en">Tune curves or ordinal mappings only with a product reason.</span><span class="ja">製品上の理由がある場合のみ曲線・順序尺度を調整する。</span></li>
+          </ol>
+        </article>
+        <article class="card purple">
+          <h3><span class="en">Best evaluation method</span><span class="ja">最適な評価方法</span></h3>
+          <p class="en">Clone one complete scenario, change only one feature or hyperparameter, recompute, and compare effective weights, contributions, reasons, and rank movement.</p>
+          <p class="ja">完全なシナリオを複製し、特徴量またはハイパーパラメータを1つだけ変えて再計算し、有効重み、寄与度、理由、順位変化を比較します。</p>
+          <p><span class="tag">Drowsiness 30 ↔ 80</span><span class="tag">Local ↔ Mountain</span><span class="tag">Oshi on ↔ off</span><span class="tag">No child ↔ Child</span></p>
+        </article>
+      </div>
+
+      <h3 style="margin-top:26px"><span class="en">Editable hypothesis controls</span><span class="ja">編集可能な仮説コントロール</span></h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th><span class="en">Control</span><span class="ja">コントロール</span></th><th><span class="en">Initial / recommended</span><span class="ja">初期値／推奨</span></th><th><span class="en">Meaning</span><span class="ja">意味</span></th></tr></thead>
+          <tbody>
+            <tr><td><span class="en">Category, subgroup, leaf weights</span><span class="ja">カテゴリ・サブグループ・個別重み</span></td><td><span class="en">Non-negative ratios</span><span class="ja">非負の比率</span></td><td><span class="en">Relative importance; normalized automatically.</span><span class="ja">相対重要度。自動的に正規化されます。</span></td></tr>
+            <tr><td><span class="en">Purpose multipliers</span><span class="ja">目的別倍率</span></td><td><code>0.5–3</code> <span class="en">recommended</span><span class="ja">推奨</span></td><td><span class="en">Emphasize subgroups for one trigger purpose.</span><span class="ja">特定の発火目的でサブグループを強調します。</span></td></tr>
+            <tr><td><code>gamma_drowsiness</code>, <code>gamma_fatigue</code>, <code>gamma_monotony</code></td><td><code>1.0</code>; <code>0.5–3</code> <span class="en">recommended</span><span class="ja">推奨</span></td><td><span class="en">Shape how quickly moderate raw values become influential.</span><span class="ja">中程度の生値がどれだけ早く影響するかを調整します。</span></td></tr>
+            <tr><td><span class="en">Tag saturation</span><span class="ja">タグ飽和値</span></td><td><code>2</code>; <code>1–4</code> <span class="en">recommended</span><span class="ja">推奨</span></td><td><span class="en">Recognized tags needed for full route/destination evidence.</span><span class="ja">ルート／目的地エビデンスが最大になる認識タグ数です。</span></td></tr>
+            <tr><td><span class="en">Response coefficients</span><span class="ja">反応係数</span></td><td><code>[-1,+1]</code></td><td><span class="en">Advanced service-feature suitability hypothesis.</span><span class="ja">高度なサービス×特徴量適合性仮説です。</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid" style="margin-top:20px">
+        <article class="callout note">
+          <h3><span class="en">Warnings do not silently change results</span><span class="ja">警告は結果を自動変更しない</span></h3>
+          <p class="en">Examples: safety-context share below 40%, an unusually high multiplier, too much missing evidence, or a response contradicting source-explicit intent. The edited hypothesis remains visible and evaluable.</p>
+          <p class="ja">例：安全文脈比率が40%未満、異常に高い倍率、欠損エビデンス過多、資料で明示された意図と矛盾する反応。編集した仮説は可視化されたまま評価できます。</p>
+        </article>
+        <article class="callout safety">
+          <h3><span class="en">What service fit does not mean</span><span class="ja">サービス適合度が意味しないこと</span></h3>
+          <ul>
+            <li><span class="en">Not acceptance probability</span><span class="ja">採用確率ではない</span></li>
+            <li><span class="en">Not measured recovery effectiveness</span><span class="ja">実測された回復効果ではない</span></li>
+            <li><span class="en">Not clinical or safety certification</span><span class="ja">医学的・安全認証ではない</span></li>
+            <li><span class="en">Not permission to bypass eligibility</span><span class="ja">利用可否を迂回する許可ではない</span></li>
+          </ul>
+        </article>
+      </div>
+
+      <h3 style="margin-top:26px"><span class="en">Evidence retained for every decision</span><span class="ja">各判断で保存するエビデンス</span></h3>
+      <p>
+        <span class="tag">raw_value</span>
+        <span class="tag">normalized_evidence</span>
+        <span class="tag">response_coefficient</span>
+        <span class="tag">normalized_feature_response</span>
+        <span class="tag">effective_weight</span>
+        <span class="tag">feature_contribution</span>
+        <span class="tag">provenance</span>
+        <span class="tag">service_fit</span>
+      </p>
+      <p class="en">Missing baseline evidence is neutral and disclosed. Invalid values block evaluation. Identical inputs and configuration reproduce the same ranking, using candidate ID only to break an exact numerical tie.</p>
+      <p class="ja">欠損したベースラインエビデンスは中立として明示します。不正値は評価を停止します。同じ入力と設定から同じ順位を再現し、数値が完全に同点の場合のみ候補IDで順序を決めます。</p>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <p class="en"><strong>Source:</strong> AICA Transparent Service-Proposal Algorithm — baseline deterministic Approach 1. This page is a customer overview; the Markdown specification remains authoritative for implementation.</p>
+      <p class="ja"><strong>出典：</strong>AICA透明サービス提案アルゴリズム（ベースライン・決定論的アプローチ1）。本ページはお客様向け概要であり、実装の正式仕様はMarkdown文書を参照してください。</p>
+    </div>
+  </footer>
+
+  <script>
+    const buttons = document.querySelectorAll("[data-lang]");
+    buttons.forEach(function (button) {
+      button.addEventListener("click", function () {
+        const language = button.getAttribute("data-lang");
+        document.body.classList.remove("lang-en", "lang-ja");
+        document.body.classList.add("lang-" + language);
+        document.documentElement.lang = language;
+        buttons.forEach(function (item) {
+          const active = item === button;
+          item.classList.toggle("active", active);
+          item.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+      });
+    });
+
+    const disclosures = document.querySelectorAll("details");
+    window.addEventListener("beforeprint", function () {
+      disclosures.forEach(function (details) {
+        details.dataset.printWasOpen = details.open ? "true" : "false";
+        details.open = true;
+      });
+    });
+    window.addEventListener("afterprint", function () {
+      disclosures.forEach(function (details) {
+        details.open = details.dataset.printWasOpen === "true";
+        delete details.dataset.printWasOpen;
+      });
+    });
+  </script>
+</body>
+</html>
