@@ -23,7 +23,7 @@ The algorithm answers:
 
 > Given the current trigger purpose, lifecycle stage, eligible services, and all CDC-SU baseline service features, which services best fit the current synthetic context under an explicit customer-editable hypothesis?
 
-The output is up to three ranked services with complete feature-level arithmetic. The score is not a probability of acceptance, a measured recovery effect, or a safety certification.
+The output is up to three ranked services with complete feature-level arithmetic. The final score is expressed in presentation points on a 0–100 scale; it is not a probability of acceptance, a measured recovery effect, or a safety certification.
 
 ---
 
@@ -36,9 +36,9 @@ For each eligible candidate service, the algorithm:
 1. reads every CDC-SU baseline feature;
 2. normalizes the observed feature into evidence;
 3. resolves how the candidate responds to that evidence;
-4. multiplies the evidence, candidate response, and effective feature weight;
-5. adds the signed contribution to a neutral score of 50;
-6. ranks candidates by their final 0–100 scores.
+4. multiplies the evidence, candidate response, and effective feature weight to obtain a normalized weighted response;
+5. converts that response to signed contribution points and adds it to the neutral 50-point midpoint;
+6. ranks candidates by their final 0–100 point scores.
 
 There are no ranking bands and no minimum-fit threshold.
 
@@ -52,10 +52,12 @@ satisfied.
 
 The only ordering keys are:
 
-    final_score descending
+    final_score_points descending
     stable candidate_id ascending for an exact numerical tie
 
-Situation, Preference, and History subtotals are explanatory views of the same contributions. They are not additional sorting keys and are never counted twice.
+Situation, Preference, and History delta-point subtotals are explanatory views
+of the same contribution points. They are not additional sorting keys and are
+never counted twice.
 
 ---
 
@@ -68,7 +70,9 @@ Slides 64–66 distinguish:
 1. selecting and ordering a service; and
 2. selecting a concrete mode, genre, playlist, song, video, or plan within that service.
 
-This document covers only the first decision. A service score must not include concrete catalog-item scores produced by the later content selector.
+This document covers only the first decision. Final service score points must
+not include concrete catalog-item scores produced by the later content
+selector.
 
 ### 3.2 The trigger purpose is supplied, not inferred
 
@@ -148,11 +152,12 @@ Examples of hard exclusions include:
 - disabled or unavailable service content;
 - rest-extension checking before the journey engine says that check is applicable.
 
-No weight can reverse a hard exclusion. Excluded services receive no score and are reported with platform reasons.
+No weight can reverse a hard exclusion. Excluded services receive no final
+score points and are reported with platform reasons.
 
 Motion is not added as a ranking feature. It is a platform eligibility fact because the selected package is restricted to baseline ranking features.
 
-### 4.2 Situation and recovery dominate the default score
+### 4.2 Situation and recovery dominate the default final score
 
 Among eligible services, the initial hierarchy allocates:
 
@@ -164,7 +169,7 @@ Within History, recovery receives more weight than acceptance. Purpose multiplie
 
 These weights are expert hypotheses, not safety proof. Customers may edit them to evaluate alternatives. Every run records the edited values and the effective normalized weights.
 
-An implementation should display a non-blocking configuration warning when the combined effective share of Driver State, Driving Environment, and Recovery falls below 40%. This warning does not alter the score. It tells the reviewer that the edited configuration no longer follows the default safety-first intent.
+An implementation should display a non-blocking configuration warning when the combined effective share of Driver State, Driving Environment, and Recovery falls below 40%. This warning does not alter final score points. It tells the reviewer that the edited configuration no longer follows the default safety-first intent.
 
 With the initial purpose profiles, that combined share is approximately:
 
@@ -203,8 +208,8 @@ Let:
 
 Both P and Q are bounded to -1 through +1. For two candidates A and B:
 
-    score(A) - score(B)
-      = 50 * (
+    final_score_points(A) - final_score_points(B)
+      = score_half_range_points * (
           W_D * (P(A) - P(B))
           + W_L * (Q(A) - Q(B))
         )
@@ -230,7 +235,7 @@ Initial profiles:
 | Route music | .725407 | .274593 | .757073 | yes |
 | Child experience | .729083 | .270917 | .743171 | yes |
 
-This guarantee is continuous: it does not alter the score and creates no
+This guarantee is continuous: it does not alter the final score points and creates no
 threshold in candidate ordering. It says only that when A’s normalized
 Driver-State-plus-Driving-Environment-plus-Recovery response exceeds B’s by at
 least 1.00, even the most adverse possible remaining evidence cannot rank B
@@ -293,7 +298,7 @@ baseline change or proposed-addition feature.
 
 ### 5.3 Inputs that must not affect ranking
 
-The following must never enter the score:
+The following must never enter the final-score arithmetic:
 
 - candidate UI page or display position;
 - previous selector ranking;
@@ -308,18 +313,37 @@ The following must never enter the score:
 
 ## 6. Core Mathematical Model
 
-### 6.1 Terms
+### 6.1 Scale contract and terms
 
 For baseline feature <em>i</em> and candidate <em>c</em>:
 
-| Symbol | Meaning | Range |
-|---|---|---:|
-| <em>x</em><sub>i</sub> | Raw baseline input | Field-specific |
-| <em>e</em><sub>i</sub>(c) | Normalized evidence | -1 to +1 |
-| <em>a</em><sub>i</sub>(c) | Candidate response coefficient | -1 to +1 |
-| <em>r</em><sub>i</sub>(c) | Candidate response to current evidence | -1 to +1 |
-| <em>w</em><sub>i</sub> | Effective normalized weight | 0 to 1 |
-| <em>k</em><sub>i</sub>(c) | Signed score contribution | -50 to +50, bounded further by weight |
+| Symbol | Serialized name | Meaning | Unit/domain | Exact range |
+|---|---|---|---|---:|
+| <em>x</em><sub>i</sub> | <code>raw_value</code> | Raw baseline input | Feature-specific | Field-specific |
+| <em>e</em><sub>i</sub>(c) | <code>normalized_evidence</code> | Normalized evidence | Normalized | [-1, +1] |
+| <em>a</em><sub>i</sub>(c) | <code>response_coefficient</code> | Candidate response coefficient | Normalized | [-1, +1] |
+| <em>r</em><sub>i</sub>(c) | <code>normalized_feature_response</code> | Candidate response to current evidence | Normalized | [-1, +1] |
+| <em>w</em><sub>i</sub> | <code>effective_weight</code> | Effective normalized weight | Weight share | [0, 1], with sum = 1 |
+| <em>u</em><sub>i</sub>(c) | <code>weighted_response</code> | Weight-scaled feature response | Normalized | [-<em>w</em><sub>i</sub>, +<em>w</em><sub>i</sub>] |
+| <em>U</em>(c) | <code>total_normalized_response</code> | Sum of all weighted responses | Normalized | [-1, +1] |
+| <em>k</em><sub>i</sub>(c) | <code>contribution_points</code> | Signed feature contribution after point conversion | Points | [-50<em>w</em><sub>i</sub>, +50<em>w</em><sub>i</sub>] |
+| Δ(c) | <code>total_delta_points</code> | Sum of all feature contribution points | Points | [-50, +50] |
+| <em>S</em>(c) | <code>final_score_points</code> | Neutral midpoint plus total delta | Points | [0, 100] |
+
+The model uses two numeric domains and must not mix their names or units:
+
+- all evidence, response coefficients, feature responses, weighted responses,
+  and their total remain in the normalized domain;
+- multiplication by the fixed <code>score_half_range_points = 50</code> is the
+  only conversion from the normalized domain to the point domain;
+- every point-domain field has a <code>_points</code> suffix, except the common
+  selector-contract field <code>ranked_candidates[].score</code>, which is an
+  alias of <code>final_score_points</code> and therefore always lies in [0, 100].
+
+In particular, a single feature contribution is not generally in the full
+[-50, +50] range. Its tighter bound is [-50<em>w</em><sub>i</sub>,
++50<em>w</em><sub>i</sub>]. Only the sum across every feature can approach the
+full [-50, +50] delta range.
 
 ### 6.2 Feature response
 
@@ -360,25 +384,47 @@ All adjusted weights are normalized:
 
 The implementation must reject a configuration in which the denominator is zero.
 
-### 6.4 Contribution and final score
+### 6.4 Weighted response, point conversion, and final score
 
-Every candidate starts at the neutral midpoint:
+First calculate the normalized weighted response for each feature and its
+normalized total:
 
-    score(c) = 50 + sum_i(k_i(c))
+    u_i(c) = w_i(p) * r_i(c)
 
-where:
+    U(c) = sum_i(u_i(c))
 
-    k_i(c) = 50 * w_i(p) * r_i(c)
+Because the weights are non-negative and sum to one, <code>u_i(c)</code> is
+bounded to [-<code>w_i</code>, +<code>w_i</code>] and <code>U(c)</code> is
+bounded to [-1, +1].
 
-Finally:
+Then perform the one explicit conversion to point units:
 
-    final_score(c) = clamp(score(c), 0, 100)
+    k_i(c)
+      = score_half_range_points * u_i(c)
+      = 50 * u_i(c)
 
-Because effective weights sum to one and responses are bounded to -1 through +1, the unclamped result is already mathematically bounded to 0–100. The final clamp protects against floating-point drift.
+    total_delta_points(c)
+      = sum_i(k_i(c))
+      = 50 * U(c)
+
+Every candidate starts at the neutral 50-point midpoint:
+
+    final_score_points(c)
+      = clamp(
+          score_neutral_points + total_delta_points(c),
+          0,
+          100
+        )
+      = clamp(50 * (1 + U(c)), 0, 100)
+
+The unclamped result is already mathematically bounded to [0, 100]. The final
+clamp protects only against floating-point drift; it must not conceal an
+out-of-range intermediate value caused by invalid input or implementation
+error.
 
 ### 6.5 Interpretation
 
-| Score | Interpretation |
+| Final score points | Interpretation |
 |---:|---|
 | 50 | Overall neutral evidence |
 | Above 50 | Supporting evidence outweighs opposing evidence |
@@ -392,7 +438,8 @@ The number does not represent a probability.
 - Arithmetic uses IEEE-754 binary64 values.
 - Reject NaN, positive/negative infinity, and non-numeric configurable values.
 - Evaluate features in the fixed 17-feature contract order.
-- Sum sibling weights, effective weights, and contributions in that same
+- Sum sibling weights, effective weights, normalized weighted responses, and
+  contribution points in that same
   documented order.
 - Use full binary64 values for ranking; round only in presentation.
 - Normalize negative zero to positive zero before serialization.
@@ -528,7 +575,7 @@ Interpretation:
 - a multiplier of 1 leaves the base importance unchanged;
 - a value above 1 emphasizes that subgroup for the purpose;
 - a value below 1 de-emphasizes it;
-- a value of 0 disables its score influence but not its evidence trace.
+- a value of 0 disables its ranking influence but not its evidence trace.
 
 ### 8.3 Resulting normalized feature weights
 
@@ -962,7 +1009,7 @@ Traffic, road type, and monotony are neutral for all during-rest actions because
 the stopped snapshot resets those current-environment fields as specified in
 Section 5.2. Night remains current and can affect nap/rest suitability.
 
-The journey engine must not offer <code>rest_extension_check</code> until it is applicable. That is eligibility, not a score derived from baseline features.
+The journey engine must not offer <code>rest_extension_check</code> until it is applicable. That is eligibility, not final score points derived from baseline features.
 
 ### 11.3 Post-rest stopped services
 
@@ -1083,8 +1130,8 @@ Both are evidence-visible. Changing either creates a new decision configuration.
 
 | Parameter | Initial value | Meaning |
 |---|---|---|
-| <code>score_neutral</code> | 50 | Neutral starting score; contract constant |
-| <code>score_half_range</code> | 50 | Converts signed weighted response to 0–100; contract constant |
+| <code>score_neutral_points</code> | 50 | Neutral starting point value; contract constant |
+| <code>score_half_range_points</code> | 50 | Converts total normalized response to point units; contract constant |
 | <code>response_class_map</code> | -1, -.5, 0, .5, 1 | Coarse response semantics |
 | <code>service_response_profiles</code> | Section 11 | Candidate capabilities and source assumptions |
 | <code>road_response_profiles</code> | Section 11 | Road-category compatibility |
@@ -1097,7 +1144,9 @@ Both are evidence-visible. Changing either creates a new decision configuration.
 | <code>tie_breaker</code> | candidate ID ascending | Deterministic exact tie behavior |
 | <code>material_safety_gap</code> | 1.00 | Safety-response gap used only to prove the continuous default dominance invariant |
 
-The neutral score and half-range should not be exposed as ordinary tuning controls because changing them changes presentation scale rather than ranking behavior.
+The neutral point value and half-range point conversion must not be exposed as
+ordinary tuning controls because changing them changes the presentation scale
+rather than ranking behavior.
 
 ### 12.3 Weight hyperparameters
 
@@ -1170,6 +1219,13 @@ preserve these concepts:
       version: string
 
     parameters:
+      score_scale:
+        normalized_min: -1.0
+        normalized_max: 1.0
+        score_neutral_points: 50.0
+        score_half_range_points: 50.0
+        final_score_min_points: 0.0
+        final_score_max_points: 100.0
       response_class_map:
         strongly_opposes: -1.0
         opposes: -0.5
@@ -1248,52 +1304,70 @@ Candidate-indexed features are normalized inside the candidate loop using that c
 Pseudocode:
 
     for candidate in eligible_candidates:
-        score = 50
+        total_normalized_response = 0
+        total_delta_points = 0
         feature_rows = []
 
         for feature in BASELINE_FEATURES_IN_CONTRACT_ORDER:
             raw = read_raw_value(feature, candidate)
             evidence = normalize(feature, raw)
             coefficient = resolve_response(feature, candidate, raw)
-            response = clamp(evidence * coefficient, -1, 1)
+            normalized_feature_response = clamp(evidence * coefficient, -1, 1)
 
             if feature is road_type:
                 evidence = 1
                 coefficient = road_response[candidate][raw]
-                response = coefficient
+                normalized_feature_response = coefficient
 
-            contribution = 50 * effective_weight[feature] * response
-            score = score + contribution
+            weighted_response = (
+                effective_weight[feature]
+                * normalized_feature_response
+            )
+            contribution_points = (
+                SCORE_HALF_RANGE_POINTS
+                * weighted_response
+            )
+
+            total_normalized_response += weighted_response
+            total_delta_points += contribution_points
 
             feature_rows.append(full_evidence_record)
 
-        final_score = clamp(score, 0, 100)
+        assert total_normalized_response is in [-1, +1] within tolerance
+        assert total_delta_points is in [-50, +50] within tolerance
+        final_score_points = clamp(
+            SCORE_NEUTRAL_POINTS + total_delta_points,
+            FINAL_SCORE_MIN_POINTS,
+            FINAL_SCORE_MAX_POINTS
+        )
         emit candidate record
 
 The baseline feature order is fixed for stable evidence export; it does not affect arithmetic.
 
 ### Step 6 — Build explanatory subtotals
 
-Each subtotal is the sum of contributions belonging to that hierarchy node:
+Each subtotal is the sum of contribution points belonging to that hierarchy node:
 
-    situation_delta = sum Situation contributions
-    preference_delta = sum Preference contributions
-    history_delta = sum History contributions
+    situation_delta_points = sum Situation contribution_points
+    preference_delta_points = sum Preference contribution_points
+    history_delta_points = sum History contribution_points
 
 For display:
 
-    candidate score = 50
-                    + situation_delta
-                    + preference_delta
-                    + history_delta
+    final_score_points = 50
+                       + situation_delta_points
+                       + preference_delta_points
+                       + history_delta_points
 
-Subtotals are not separately normalized and do not change ranking.
+These subtotals are point-domain values. Each category subtotal is bounded by
+plus or minus 50 times that category's resolved effective weight share. They
+are not separately normalized and do not change ranking.
 
 ### Step 7 — Rank
 
 Sort:
 
-    (-final_score, candidate_id)
+    (-final_score_points, candidate_id)
 
 Use full-precision values for sorting. Round only for display.
 
@@ -1303,7 +1377,7 @@ Return the first three or all candidates when fewer than three exist.
 
 Return <code>no_proposal</code> only when the eligible candidate list is empty.
 
-A low score does not suppress a proposal because the upstream trigger already established the proposal opportunity.
+A low final-score-point value does not suppress a proposal because the upstream trigger already established the proposal opportunity.
 
 ---
 
@@ -1320,7 +1394,8 @@ A low score does not suppress a proposal because the upstream trigger already es
 Baseline-only mode has no missingness-confidence feature. It therefore uses neutral evidence:
 
     missing normalized evidence = 0
-    response contribution = 0
+    normalized feature response = 0
+    contribution points = 0
 
 The feature remains in the trace with status <code>missing_neutral</code>.
 
@@ -1353,22 +1428,23 @@ For every candidate and every baseline feature, record:
 | <code>response_class</code> | Candidate response class |
 | <code>response_coefficient</code> | <em>a</em> value |
 | <code>response_provenance</code> | Source/assumption/customer override |
-| <code>candidate_response</code> | <em>r</em> value |
+| <code>normalized_feature_response</code> | <em>r</em> value in [-1, +1] |
 | <code>hierarchy_path</code> | Category → subgroup → leaf |
 | <code>base_weight</code> | Flattened hierarchy weight |
 | <code>purpose_multiplier</code> | Applied multiplier |
 | <code>effective_weight</code> | Final normalized weight |
-| <code>contribution_points</code> | Signed score points |
+| <code>weighted_response</code> | <em>u</em> value in [-<em>w</em>, +<em>w</em>] |
+| <code>contribution_points</code> | Signed point value in [-50<em>w</em>, +50<em>w</em>] |
 | <code>status</code> | used, neutral, zero-weight, missing, or invalid |
 
 ### 15.2 Candidate explanation
 
 The candidate view must show:
 
-1. final score;
-2. Situation, Preference, and History deltas;
-3. strongest supporting contributions;
-4. strongest opposing contributions;
+1. final score points in [0, 100];
+2. Situation, Preference, and History delta points;
+3. strongest supporting contribution points;
+4. strongest opposing contribution points;
 5. neutral and zero-weight features;
 6. missing/unknown inputs;
 7. response-profile provenance;
@@ -1393,9 +1469,9 @@ Example:
 
 For adjacent candidates, expose:
 
-    score(candidate A) - score(candidate B)
+    final_score_points(candidate A) - final_score_points(candidate B)
 
-and the feature contribution deltas responsible for that gap.
+and the feature contribution-point deltas responsible for that point gap.
 
 This makes “why A above B?” answerable without reading the implementation.
 
@@ -1408,7 +1484,7 @@ Persist:
 - parameter and hyperparameter values;
 - resolved effective weights;
 - response profile versions;
-- full-precision contributions and scores;
+- full-precision weighted responses, contribution points, and final score points;
 - stable tie-break result.
 
 Identical inputs and configuration must reproduce semantically identical
@@ -1423,13 +1499,13 @@ evidence:
     ranked_candidates:
       - rank: integer
         candidate_id: string
-        score: number
+        score: number  # [0,100] points; common-contract alias of final_score_points
         rationale: array
         uncertainty: null
         subtotals:
-          situation_delta: number
-          preference_delta: number
-          history_delta: number
+          situation_delta_points: number
+          preference_delta_points: number
+          history_delta_points: number
         supporting_feature_ids: array
         opposing_feature_ids: array
         neutral_feature_ids: array
@@ -1439,10 +1515,11 @@ evidence:
             normalized_evidence: number
             response_class: string
             response_coefficient: number
-            candidate_response: number
+            normalized_feature_response: number  # [-1,+1]
             base_weight: number
             purpose_multiplier: number
             effective_weight: number
+            weighted_response: number
             contribution_points: number
             provenance: object
             status: string
@@ -1498,7 +1575,7 @@ Baseline snapshot:
 
 Using the initial inattentive-purpose effective weights:
 
-| Feature | Weight | Response | Contribution |
+| Feature | Effective weight | Normalized feature response | Contribution points |
 |---|---:|---:|---:|
 | Drowsiness | .254551 | .80 | +10.182 |
 | Fatigue | .208269 | .60 | +6.248 |
@@ -1518,9 +1595,9 @@ Using the initial inattentive-purpose effective weights:
 | Acceptance | .015427 | .50 | +.386 |
 | Recovery | .057853 | .40 | +1.157 |
 
-The final score is:
+The final score points are:
 
-    50 + sum(contributions)
+    50 + sum(contribution_points)
     = approximately 88.92
 
 The implementation retains full precision and may display 88.9.
@@ -1561,7 +1638,7 @@ Preferred evaluation method:
 - clone a complete seed;
 - change one feature, weight, multiplier, or response class;
 - recompute;
-- compare effective weights, contributions, and rank movement.
+- compare effective weights, contribution points, and rank movement.
 
 Useful contrasts include:
 
@@ -1605,7 +1682,7 @@ Recommended package-local components:
 | Scene resolver | Versioned current-scene IDs and aggregation |
 | Response resolver | Candidate and road response profiles |
 | Candidate scorer | Contribution arithmetic and subtotals |
-| Ranker | Full-precision score ordering and tie break |
+| Ranker | Full-precision final-score-point ordering and tie break |
 | Evidence builder | Complete feature/candidate/configuration trace |
 
 The selector must not call the content selector or consume another algorithm package’s score.
@@ -1617,9 +1694,20 @@ The selector must not call the content selector or consume another algorithm pac
 ### 19.1 Mathematical tests
 
 - Effective weights sum to one for every default purpose profile.
-- Every contribution equals <code>50 × weight × response</code>.
-- Every score remains within 0–100.
-- All-neutral evidence produces score 50 for every candidate.
+- Every normalized evidence value and response coefficient is within [-1, +1].
+- Every normalized feature response is within [-1, +1].
+- Every weighted response is within
+  [-<code>effective_weight</code>, +<code>effective_weight</code>].
+- Total normalized response is within [-1, +1].
+- Every contribution point value equals
+  <code>50 × effective_weight × normalized_feature_response</code> and is
+  within [-50<code>w_i</code>, +50<code>w_i</code>].
+- Total delta points equal <code>50 × total_normalized_response</code> and are
+  within [-50, +50].
+- Every final score point value equals <code>50 + total_delta_points</code> and
+  remains within [0, 100].
+- All-neutral evidence produces 0 total delta points and 50 final score points
+  for every candidate.
 - Identical inputs produce semantically equal numeric output within tolerance
   1e-12; same-runtime canonical replay is byte-equivalent.
 - Changing the common magnitude of all sibling weights does not change results.
@@ -1648,8 +1736,8 @@ The selector must not call the content selector or consume another algorithm pac
 - No excluded candidate is scored.
 - No candidate outside the purpose/stage row is accepted.
 - Empty eligibility returns <code>no_proposal</code>.
-- Low scores with eligible candidates still return ranked proposals.
-- Driving/stopped screen restrictions remain outside score arithmetic.
+- Low final-score-point values with eligible candidates still return ranked proposals.
+- Driving/stopped screen restrictions remain outside final-score-point arithmetic.
 
 ### 19.4 Response-profile tests
 
@@ -1663,10 +1751,10 @@ The selector must not call the content selector or consume another algorithm pac
 ### 19.5 Ranking and evidence tests
 
 - Rank uses full precision, not displayed rounding.
-- Exact score ties resolve by stable candidate ID.
-- Top three are returned in score order.
+- Exact final-score-point ties resolve by stable candidate ID.
+- Top three are returned in final-score-point order.
 - All 17 feature rows exist for every scored candidate.
-- Group subtotals exactly reconcile to the final score.
+- Group delta-point subtotals exactly reconcile to the final score points.
 - Customer overrides and source provenance are both present.
 - Every eligible candidate × feature × context cell has coefficient,
   provenance label, source reference/null, and rationale.
@@ -1697,7 +1785,7 @@ For every case, the corpus stores:
 - required ordering constraints, not an invented “correct probability”;
 - expected dominant supporting/opposing reasons;
 - expected invariant status;
-- allowed score tolerance;
+- allowed final-score-point tolerance;
 - product, UX, and safety-review comments.
 
 Required adversarial cases include:
@@ -1724,7 +1812,7 @@ Regression policy:
 
 - any eligibility change requires explicit review;
 - any built-in rank change updates a fixture only with written rationale;
-- score drift above 1e-12 with unchanged package/runtime is a failure;
+- final-score-point drift above 1e-12 with unchanged package/runtime is a failure;
 - human review does not convert the hypothesis into a validated production
   effect claim.
 
@@ -1736,15 +1824,15 @@ The implementation is acceptable when:
 
 1. only the 17 baseline features influence ranking;
 2. purpose, stage, eligibility, and catalog facts remain non-scoring controls;
-3. every eligible candidate receives one deterministic 0–100 score;
-4. every feature contribution can be reproduced from displayed arithmetic;
+3. every eligible candidate receives one deterministic final score in [0, 100] points;
+4. every normalized intermediate and every feature contribution point value can be reproduced from displayed arithmetic;
 5. default weights and response profiles follow the safety-first and service-priority intent of the source;
 6. every built-in default purpose profile passes the continuous dominance
    invariant in Section 4.3;
 7. customer-edited weights, multipliers, curves, and response classes are frozen and evidence-visible;
 8. all lifecycle-stage candidate families are supported;
-9. no score or weight can reverse a hard exclusion;
-10. no eligible candidate is suppressed merely for having a low score;
+9. no final score or weight can reverse a hard exclusion;
+10. no eligible candidate is suppressed merely for having low final score points;
 11. exact replay is deterministic under Section 6.6;
 12. output never describes the score as acceptance probability, recovery probability, or safety certification.
 
@@ -1754,7 +1842,7 @@ The implementation is acceptable when:
 
 A probabilistic uncertainty-ranking package is deferred.
 
-A future independent package may sample configured ranges around weights and response coefficients and report expected score, score interval, and probability of ranking first. Such probabilities would describe rank stability under configured uncertainty, not user acceptance or recovery probability.
+A future independent package may sample configured ranges around weights and response coefficients and report expected final score points, a final-score-point interval, and probability of ranking first. Such probabilities would describe rank stability under configured uncertainty, not user acceptance or recovery probability.
 
 The probabilistic package must receive the same neutral baseline snapshot and must not consume this deterministic package’s score or runtime state.
 
@@ -1778,29 +1866,39 @@ For each eligible service:
     evidence_i(c)
       = normalize_feature_i(raw_value_i, candidate c)
 
-    response_i(c)
+    normalized_feature_response_i(c)
       = clamp(
           evidence_i(c)
-          * candidate_response_i(c),
+          * response_coefficient_i(c),
           -1,
           +1
         )
 
-    contribution_i(c)
-      = 50
-      * effective_weight_i(p)
-      * response_i(c)
+    weighted_response_i(c)
+      = effective_weight_i(p)
+      * normalized_feature_response_i(c)
 
-    score(c)
+    total_normalized_response(c)
+      = sum_i(weighted_response_i(c))
+
+    contribution_points_i(c)
+      = score_half_range_points
+      * weighted_response_i(c)
+
+    total_delta_points(c)
+      = sum_i(contribution_points_i(c))
+      = score_half_range_points * total_normalized_response(c)
+
+    final_score_points(c)
       = clamp(
-          50 + sum_i(contribution_i(c)),
+          score_neutral_points + total_delta_points(c),
           0,
           100
         )
 
 Then:
 
-    rank by score descending
+    rank by final_score_points descending
     break exact ties by candidate ID
     return up to three candidates
 
