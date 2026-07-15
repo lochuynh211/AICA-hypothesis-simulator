@@ -75,7 +75,7 @@ different service.
 ### 2.4 Decision boundary
 
 **Control inputs** (constrain evaluation, never scored): `selected_service`,
-`trigger.purpose`, `trigger.stage`, time, market, motion state, frozen world
+`trigger_purpose`, `lifecycle_stage`, time, market, motion state, frozen world
 snapshot, frozen catalog, algorithm/parameter versions, `plan_item_count`
 (default 5).
 
