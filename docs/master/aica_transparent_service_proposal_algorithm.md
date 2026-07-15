@@ -1,535 +1,504 @@
-# AICA Transparent Service-Proposal Algorithm — Detailed Design and Implementation Specification
+# AICA Transparent Service-Proposal Algorithm
 
-**Document status:** Implementation-ready design for review
-**Selected approach:** Approach 1 — deterministic normalized hierarchical weighted response
-**Scope:** Service proposal only; concrete-content selection is a separate algorithm
-**Feature policy:** CDC-SU baseline service features only
-**Primary source:** <code>others/CDC-SU_specplan.md</code>, especially Slides 38–40 and 64–67
-**Parent specification:** <code>docs/master/aica_proposal_simulator_specification.md</code>
-**Date:** 2026-07-13
+Status: approved CDC-SU baseline V1 design (deterministic normalized hierarchical weighted response)
+Scope: transparent selector that ranks AICA **services**; concrete-content selection is a separate algorithm
+Last updated: 2026-07-15
 
 ---
 
-## 1. Purpose
+## 1. Related documents
 
-This document defines the transparent algorithm that ranks AICA service proposals after a proposal opportunity already exists.
-
-It is both:
-
-1. the long-form explanation used to present the hypothesis to product, safety, UX, and customer reviewers; and
-2. the detailed contract from which an implementation and its tests can be written.
-
-The algorithm answers:
-
-> Given the current trigger purpose, lifecycle stage, eligible services, and all CDC-SU baseline service features, which services best fit the current synthetic context under an explicit customer-editable hypothesis?
-
-The output is up to three ranked services with complete feature-level arithmetic. The canonical <code>service_fit</code> is a signed normalized value in [-1, +1]; it is not a probability of acceptance, a measured recovery effect, or a safety certification.
+- [AICA proposal simulator specification](./aica_proposal_simulator_specification.md)
+- [AICA transparent content-proposal algorithm](./aica_transparent_content_proposal_algorithm.md)
+- [AICA synthetic Spotify-compatible music data and generation specification](./aica_synthetic_music_data_and_generation_specification.md)
+- Primary source: `others/CDC-SU_specplan.md` — Slides 38–40 (service definitions), 64–66 (two-decision flow), **67** (the service-priority matrix — the sole response-coefficient source). Slides 68–73 (including 70) define the **content** selector's inputs and are **not** used for service ranking.
 
 ---
 
-## 2. Selected Design
+# Part I — Overview
 
-The selected design is a deterministic normalized weighted response model.
+## 2. Overview
 
-For each eligible candidate service, the algorithm:
+### 2.1 Purpose
 
-1. reads every CDC-SU baseline feature;
-2. normalizes the observed feature into evidence;
-3. resolves how the candidate responds to that evidence;
-4. multiplies the normalized feature response by its effective feature weight to obtain a signed normalized feature contribution;
-5. sums the feature contributions directly into <code>service_fit</code>;
-6. ranks candidates by their signed normalized service fit.
+After the trigger engine has established a **proposal opportunity** (a purpose and
+a lifecycle stage), this algorithm ranks the eligible **services** — which service
+to propose, in what order. It returns up to three ranked services, each shown with
+its selection score and complete feature-level arithmetic.
 
-There are no ranking bands and no minimum-fit threshold.
+The canonical output `service_fit` is a signed normalized value in `[-1,+1]`. It is
+**not** a probability of acceptance, a measured recovery effect, or a safety
+certification.
 
-This is an intentional refinement of the parent specification’s initial
-lexicographic-band proposal. In the selected Approach 1, absolute safety is
-owned by hard eligibility; relative suitability is expressed by visible,
-editable weights. The default weights also satisfy the continuous dominance
-invariant in Section 4.3. Customer overrides are evaluation hypotheses and are
-not silently prevented, but the evidence states whether the invariant remains
-satisfied.
+### 2.2 Selected design in one paragraph
 
-The only ordering keys are:
+Every feature contributes the same way: an **evidence** value `e_i` (how strongly
+the current world calls for something) times a **response coefficient** `a_i(c)`
+(how well *this candidate service* answers it). Evidence is read once from the
+world snapshot; the response coefficient is a **hand-authored property of the
+candidate service ID**, derived from Slide 67 and the service definitions
+(Slides 38–40). Each feature's signed response `r_i = e_i·a_i` is scaled by that
+feature's normalized hierarchical weight and summed into `service_fit`. Absolute
+safety lives in hard eligibility (before scoring); relative suitability lives in
+visible, editable weights and coefficients.
 
-    service_fit descending
-    stable candidate_id ascending for an exact numerical tie
+### 2.3 Relationship to the content selector
 
-Situation, Preference, and History fit subtotals are explanatory views of the
-same normalized feature contributions. They are not additional sorting keys
-and are never counted twice.
+| Concern | Service selector (this doc) | Content selector |
+|---|---|---|
+| Decision | Which service to propose | Which concrete items to place in it |
+| Candidate | A service | A Spotify-compatible Track (or mode/genre) |
+| Response `a_i` | **Hand-authored** per service ID | **Computed** from item audio traits / exact-ID metadata |
+| Output | Ranked services + lifecycle | Ordered item plan |
+| Source | Slides 66–67 (service priority) | Slides 68–73 (content inputs) |
 
----
+The two decisions are deliberately separate (Slides 64–66). Service fit must never
+include concrete catalog-item scores produced by the later content selector, and
+must never consume another package's score.
 
-## 3. Source Intent Preserved by the Algorithm
+### 2.4 Decision boundary
 
-### 3.1 Two decisions remain separate
+**Control inputs** (constrain evaluation, never scored): `trigger_purpose`,
+`lifecycle_stage`, `allowed_service_ids`, `eligible_candidates`,
+`excluded_candidates`, catalog/parameter/hyperparameter versions.
 
-Slides 64–66 distinguish:
+**Scored evidence:** only the **17 CDC-SU baseline service features** (§5.3).
 
-1. selecting and ordering a service; and
-2. selecting a concrete mode, genre, playlist, song, video, or plan within that service.
+**Non-scoring controls** (must never enter `service_fit`): candidate UI page or
+display position; a previous selector ranking; another package's score; LLM
+output; quick- vs interactive-mode; run identifier or random seed; proposal screen
+state; motion/capability/readiness eligibility; and the additional-simulator
+features this package disables (§5.6).
 
-This document covers only the first decision. Service fit must not include
-concrete catalog-item scores produced by the later content selector.
-
-### 3.2 The trigger purpose is supplied, not inferred
-
-The selector receives exactly one control value:
+The trigger **purpose** is supplied, not inferred — the algorithm must not
+reconstruct it from drowsiness, route tags, passenger state, or a scenario name:
 
 | Trigger purpose | Meaning |
 |---|---|
-| <code>rest_recommended</code> | A rest-support journey is active |
-| <code>inattentive_driving_prevention_recovery</code> | Driving content should help prevent inattentive driving or support recovery |
-| <code>route_music</code> | Route- or destination-relevant content is being proposed |
-| <code>child_passenger_experience</code> | Child-compatible shared content is being proposed |
+| `rest_recommended` ① | A rest-support journey is active |
+| `inattentive_driving_prevention_recovery` ② | Driving content should prevent inattentive driving / support recovery |
+| `route_music` ③ | Route- or destination-relevant content is being proposed |
+| `child_passenger_experience` ④ | Child-compatible shared content is being proposed |
 
-The algorithm must not reconstruct this purpose from drowsiness, route tags, passenger state, or a scenario name.
+The **lifecycle stage** selects the applicable service family (it is not a scoring
+feature). Per the versioned Slides 64–65 constraint matrix:
 
-### 3.3 Lifecycle stage constrains the choice
-
-The lifecycle stage selects the applicable service family. It is not a scoring feature.
-
-| Trigger purpose | Lifecycle stage | Default candidates |
+| Purpose | Lifecycle stage | Default candidate family |
 |---|---|---|
-| <code>rest_recommended</code> | <code>before_rest_until_stop</code> | Music playlist, humming karaoke, quiz, ranking creation, radio style, driving call-and-response |
-| <code>rest_recommended</code> | <code>during_rest_stopped</code> | Rest-duration suggestion, rest-method suggestion, seat adjustment, nap guidance, rest-extension check |
-| <code>rest_recommended</code> | <code>after_rest_before_restart</code> | Live viewing, stretch video, full karaoke, oshi reexperience |
-| <code>inattentive_driving_prevention_recovery</code> | <code>active_driving_content</code> | Music playlist, humming karaoke, quiz, ranking creation, radio style, driving call-and-response |
-| <code>route_music</code> | <code>active_driving_content</code> | The same six driving services |
-| <code>child_passenger_experience</code> | <code>active_driving_content</code> | The same six driving services |
+| `rest_recommended` | `before_rest_until_stop` | the six **driving** services |
+| `rest_recommended` | `during_rest_stopped` | the five **during-rest** actions |
+| `rest_recommended` | `after_rest_before_restart` | the five **post-rest** services |
+| ②/③/④ | `active_driving_content` | the six **driving** services |
 
-V1 intentionally follows the parent’s versioned Slides 64–65 constraint
-matrix. Slide 38/40 also describes stopped call-and-response, but the parent
-post-rest row omits it; that source discrepancy is deferred to a future matrix
-version rather than silently adding a fifth post-rest candidate here.
-
-### 3.4 All baseline features are evaluated
-
-The service selector evaluates these 17 baseline features:
-
-1. drowsiness level;
-2. fatigue level;
-3. traffic state;
-4. road type;
-5. day/night state;
-6. road monotony;
-7. route characteristics;
-8. destination characteristics;
-9. child present;
-10. multiple passengers;
-11. oshi registered;
-12. oshi mode;
-13. service recency;
-14. overall service usage;
-15. scene-specific service usage;
-16. service-proposal acceptance rate;
-17. service recovery rate.
-
-Simulator-proposed additions such as minutes until a rest spot, active service, recent rejection, confidence, and schedule are excluded from this package.
+Per Slides 38 and 40 the stopped 合いの手練習 (call-and-response) **is** a post-rest
+candidate (`call_response_stopped`, §5.2.4). The Slide 64 flow diagram omits it, but
+this design follows the service-definition slides and includes it — giving five
+post-rest candidates.
 
 ---
 
-## 4. Safety-First Structure
+# Part II — The scoring model
 
-Safety is implemented in two different layers.
+## 3. Core mathematical model
 
-### 4.1 Hard eligibility comes before scoring
+### 3.1 The symbol chain (one rule for every feature)
 
-The platform/orchestrator constructs:
+Every one of the 17 baseline features follows the **same** five steps. Only the way
+`a_i` is produced differs (§4), and §5 gives the per-feature wiring.
 
-    catalog services
-    intersect purpose/stage allowed services
-    intersect motion/capability/readiness eligibility
-    equals candidates visible to the selector
+| Step | Symbol | Serialized name | Meaning | Range |
+|---|---|---|---|---|
+| 1 | `x_i` | `raw_value` | world snapshot or candidate-map entry | field-specific |
+| 2 | `e_i(c)` | `normalized_evidence` | how strongly the context calls for something | `[0,1]` or signed `[-1,+1]` |
+| 3 | `a_i(c)` | `response_coefficient` | how well candidate `c` answers feature `i` (§4) | `[-1,+1]` |
+| 4 | `r_i(c)` | `normalized_feature_response` | `clamp(e_i · a_i, -1, +1)` | `[-1,+1]` |
+| 5 | `w_i` | `effective_weight` | this feature's normalized importance (§6) | `[0,1]`, `Σ = 1` |
+| — | `k_i(c)` | `feature_contribution` | `w_i · r_i(c)` | `[-w_i,+w_i]` |
+| — | `F(c)` | `service_fit` | `clamp( Σ_i k_i(c), -1, +1 )` — the score shown | `[-1,+1]` |
 
-Examples of hard exclusions include:
+`service_fit` is a comparative hypothesis score — **not** a probability, acceptance
+rate, or safety assurance. Situation / Preference / History subtotals are
+explanatory views of the same contributions; they are never additional sort keys
+and never counted twice.
 
-- screen-dependent full karaoke while driving;
-- a stopped-only stretch video while driving;
-- an oshi-specific action without the required catalog entity;
-- disabled or unavailable service content;
-- rest-extension checking before the journey engine says that check is applicable.
+### 3.2 Why every score stays in range (no hidden clamps)
 
-No weight can reverse a hard exclusion. Excluded services receive no service
-fit and are reported with platform reasons.
+- Each response coefficient satisfies `|a_i| ≤ 1` (by definition of the response
+  scale, §4.1). With `e_i` bounded to `[-1,+1]`, `r_i ∈ [-1,+1]`.
+- Weights are non-negative and sum to one, so `Σ k_i ∈ [-1,+1]`.
 
-Motion is not added as a ranking feature. It is a platform eligibility fact because the selected package is restricted to baseline ranking features.
+The `clamp` on `service_fit` therefore only guards floating-point drift; it must
+never conceal an out-of-range intermediate value caused by invalid input or an
+implementation error.
 
-### 4.2 Situation and recovery dominate the default service fit
+### 3.3 What "effective weight" means
 
-Among eligible services, the initial hierarchy allocates:
+A feature's weight is built in multiplicative steps, then normalized so the active
+set sums to one:
 
-- 80% to Situation;
-- 12% to Preference;
-- 8% to History.
+```text
+base_weight_i        = category_weight × subgroup_weight × leaf_weight            (§6.1)
+raw_weight_i(p)      = base_weight_i × purpose_multiplier[p][subgroup(i)]         (§6.2)
+w_i(p)               = raw_weight_i(p) / Σ_j raw_weight_j(p)
+```
 
-Within History, recovery receives more weight than acceptance. Purpose multipliers further emphasize driver state and environment for rest and inattentive-driving purposes.
+- `base_weight` — the feature's share of the whole tree.
+- `purpose_multiplier` — a per-trigger-purpose nudge on a whole subgroup.
+- the final divide is the only reason the numbers look uneven — it just rescales
+  the surviving features so they sum to one.
 
-These weights are expert hypotheses, not safety proof. Customers may edit them to evaluate alternatives. Every run records the edited values and the effective normalized weights.
+Lifecycle stage does **not** select another weight set: stage already controls the
+candidate family, and a candidate's response profile is a stable property of its ID
+(§4.3).
 
-An implementation should display a non-blocking configuration warning when the combined effective share of Driver State, Driving Environment, and Recovery falls below 40%. This warning does not alter service fit. It tells the reviewer that the edited configuration no longer follows the default safety-first intent.
+### 3.4 Numeric rules
 
-With the initial purpose profiles, that combined share is approximately:
-
-| Purpose | Driver + environment + recovery share |
-|---|---:|
-| Rest recommended | .788 |
-| Inattentive/recovery | .823 |
-| Route music | .725 |
-| Child experience | .729 |
-
-This table defines its share as Driver State + Driving Environment + Recovery.
-It is an explanatory safety-context indicator, distinct from the formal
-dominance set below.
-
-### 4.3 Continuous default dominance invariant
-
-Approach 1 does not use bands, but the default configuration must still prove
-that a material high-priority advantage cannot be overturned by all
-lower-priority evidence.
-
-Define the safety-response set:
-
-    D = Driver State + Driving Environment + Recovery
-
-and the lower-priority set:
-
-    L = every remaining feature
-
-Let:
-
-    W_D = sum of effective weights in D
-    W_L = 1 - W_D
-
-    P(c) = sum_i_in_D(w_i * r_i(c)) / W_D
-    Q(c) = sum_i_in_L(w_i * r_i(c)) / W_L
-
-Both P and Q are bounded to -1 through +1. For two candidates A and B:
-
-    service_fit(A) - service_fit(B)
-      = W_D * (P(A) - P(B))
-      + W_L * (Q(A) - Q(B))
-
-The worst possible lower-priority reversal is:
-
-    Q(A) - Q(B) = -2
-
-The package defines a material dominant-context gap:
-
-    material_safety_gap = 1.00
-
-Therefore the default profile has a mathematical non-reversal guarantee when:
-
-    W_D * material_safety_gap > 2 * W_L
-
-Initial profiles:
-
-| Purpose | W_D | W_L | Required gap 2W_L/W_D | Default 1.00 passes |
-|---|---:|---:|---:|---|
-| Rest recommended | .787939 | .212061 | .538266 | yes |
-| Inattentive/recovery | .823048 | .176952 | .429991 | yes |
-| Route music | .725407 | .274593 | .757073 | yes |
-| Child experience | .729083 | .270917 | .743171 | yes |
-
-This guarantee is continuous: it does not alter service fit and creates no
-threshold in candidate ordering. It says only that when A’s normalized
-Driver-State-plus-Driving-Environment-plus-Recovery response exceeds B’s by at
-least 1.00, even the most adverse possible remaining evidence cannot rank B
-above A.
-
-The 1.00 value is an explicit expert definition of “material,” not an empirical
-safety boundary or certification.
-
-Customer edits remain permitted. After every edit, the resolver recalculates
-the invariant:
-
-- satisfied: record <code>default_dominance_preserved</code>;
-- not satisfied: record <code>dominance_not_guaranteed</code> and show the
-  required gap;
-- never alter weights or candidate ranks silently.
-
-The initial built-in profiles must satisfy the invariant. A package release
-cannot change an initial profile to a failing configuration without an
-explicit versioned design decision.
+IEEE-754 binary64; reject NaN/±inf and non-numeric configurable values; fixed
+17-feature contract order for evaluation and for summing siblings/contributions;
+full-precision ranking, rounding only for display; `−0` serialized as `+0`; exact
+`service_fit` ties broken by ascending `candidate_id`; canonical export sorts keys
+lexicographically; cross-runtime tolerance `1e-12`. Canonical byte equality is
+required only when replaying through the same package/runtime and exporter.
 
 ---
 
-## 5. Inputs
+## 4. Candidate response coefficients — how the response is set
 
-### 5.1 Required controls and facts
+### 4.1 The response scale (real values, not codes)
 
-These inputs constrain evaluation but do not contribute to service fit:
+The response coefficient answers one question:
 
-| Input | Use |
+> When this evidence is present, does this candidate service respond
+> appropriately, remain neutral, or conflict with it?
+
+It is **not** learned from driver data. Default coefficients are drawn from a
+coarse five-value anchor set — but the parameter record and every table below store
+the **number directly**, never a class code:
+
+| Anchor | Coefficient | Meaning |
+|---|---:|---|
+| strongly opposes | **−1.0** | material mismatch among otherwise eligible candidates |
+| opposes | **−0.5** | relative mismatch |
+| neutral | **0.0** | no justified influence — the default when the source is silent |
+| supports | **+0.5** | useful response |
+| strongly supports | **+1.0** | explicitly preferred or strongly capable |
+
+Neutral `0.0` is the default when the source does not justify a direction. "Not
+listed as preferred" must **not** become negative. Customers may enter any
+continuous value in `[-1,+1]`; the UI labels it a configured hypothesis (§12).
+
+### 4.2 Provenance — every coefficient carries its source
+
+Each response cell stores one provenance label so a reviewer can see whether a
+number is sourced or assumed:
+
+| Label | Meaning |
 |---|---|
-| <code>trigger_purpose</code> | Select the purpose multiplier profile |
-| <code>lifecycle_stage</code> | Select the allowed service family |
-| <code>allowed_service_ids</code> | Frozen purpose/stage constraint result |
-| <code>eligible_candidates</code> | Platform-approved candidates |
-| <code>excluded_candidates</code> | Platform exclusions and reasons |
-| <code>catalog_version</code> | Reproduce candidate metadata |
-| <code>parameter_version</code> | Reproduce mappings and response profiles |
-| <code>hyperparameters</code> | Reproduce weights, multipliers, and curves |
+| `cdc_su_explicit` | Directly stated by Slide 67 |
+| `service_definition` | Derived from the Slide 38–40 service behavior |
+| `normalized_context_hypothesis` | Required for normalized simulator values (e.g. mountain road) |
+| `rest_action_hypothesis` | Expert default — Slide 67 gives no during-rest action matrix |
+| `post_rest_hypothesis` | Expert default beyond Slide 67's purpose-① row |
+| `cdc_su_direct_candidate_feature` | Direct `+1.0` history/usage feature (Slides 66–67) |
+| `neutral_source_silent` | Kept neutral because no direction is justified |
 
-### 5.2 Baseline feature snapshot
+Customer edits retain the original provenance and add `customer_override` with the
+changed value.
 
-The input fields and value types are those in Section 8 of the parent specification.
+### 4.3 How a coefficient is chosen — the three derivation rules
 
-Scalar situation fields should be present in a normal complete simulator run. Candidate-indexed maps may omit a candidate entry. Missing behavior is defined in Section 14.
-
-Every lifecycle transition creates a fresh current snapshot:
-
-- active-driving and before-rest opportunities use the current driving values;
-- at <code>during_rest_stopped</code>, the world sets traffic to
-  <code>normal</code>, road type to <code>parking</code>, and road monotony to
-  0; drowsiness, fatigue, and day/night remain current values;
-- at <code>after_rest_before_restart</code>, the world uses the explicit
-  post-rest drowsiness/fatigue values and the same stopped environment
-  semantics;
-- route/destination and passenger composition remain current trip facts.
-
-The selector must not retain pre-stop congestion, road, or monotony implicitly.
-If a future design needs prior-road burden, it requires an explicit versioned
-baseline change or proposed-addition feature.
-
-### 5.3 Inputs that must not affect ranking
-
-The following must never enter the service-fit arithmetic:
-
-- candidate UI page or display position;
-- previous selector ranking;
-- another package score;
-- LLM output;
-- quick-mode versus interactive-mode selection;
-- run identifier or random seed;
-- proposal screen state;
-- additional simulator features disabled by this package.
+1. **One profile per candidate ID.** A service's response to a feature is a stable
+   property of that service. It does **not** change with purpose or stage — purpose
+   changes only *weights* (via multipliers, §6.2), and stage only selects which
+   family is eligible. This is why the before-rest ① and active-driving ②–④ driving
+   services share **one** matrix (§5.2) instead of two.
+2. **Direction from Slide 67, magnitude from strength of source.** A service Slide 67
+   explicitly names as preferred for a feature gets `+1.0`; a service that is
+   plausibly capable but unnamed gets a mild `+0.5`; an unnamed/irrelevant service
+   gets `0.0`. Only normalized-context safety reasoning (mountain road) introduces
+   negatives.
+3. **Silence is neutral, not negative.** Where Slide 67 lists no preferred service
+   for a feature (e.g. the purpose-① driver/environment column is `ー`), the
+   coefficient is `0.0` with `neutral_source_silent`, unless a labeled hypothesis
+   justifies otherwise.
 
 ---
 
-## 6. Core Mathematical Model
+## 5. Feature compatibility — the complete wiring
 
-### 6.1 Scale contract and terms
+This is the heart of the algorithm: for **every** baseline feature, what world
+input it reads, how that becomes evidence, and which candidate response applies.
 
-For baseline feature <em>i</em> and candidate <em>c</em>:
+### 5.1 Evidence and response, one rule
 
-| Symbol | Serialized name | Meaning | Unit/domain | Exact range |
-|---|---|---|---|---:|
-| <em>x</em><sub>i</sub> | <code>raw_value</code> | Raw baseline input | Feature-specific | Field-specific |
-| <em>e</em><sub>i</sub>(c) | <code>normalized_evidence</code> | Normalized evidence | Normalized | [-1, +1] |
-| <em>a</em><sub>i</sub>(c) | <code>response_coefficient</code> | Candidate response coefficient | Normalized | [-1, +1] |
-| <em>r</em><sub>i</sub>(c) | <code>normalized_feature_response</code> | Candidate response to current evidence | Normalized | [-1, +1] |
-| <em>w</em><sub>i</sub> | <code>effective_weight</code> | Effective normalized weight | Weight share | [0, 1], with sum = 1 |
-| <em>k</em><sub>i</sub>(c) | <code>feature_contribution</code> | Weight-scaled signed feature response | Normalized | [-<em>w</em><sub>i</sub>, +<em>w</em><sub>i</sub>] |
-| <em>F</em>(c) | <code>service_fit</code> | Sum of all feature contributions | Normalized | [-1, +1] |
+```text
+r_i(c) = clamp( e_i(c) · a_i(c), -1, +1 )
+```
 
-The algorithm has one scoring domain: normalized signed values. It contains no
-point conversion, percentage score, neutral-point offset, or score-specific
-unit. The inherited common selector field <code>ranked_candidates[].score</code>
-serializes <code>service_fit</code> directly and therefore also lies in
-[-1, +1].
+Direction lives in the coefficient sign × the evidence sign. Two evidence shapes
+exist, both subsets of the normalized scoring domain:
 
-Raw source values may retain their natural input units. For example,
-drowsiness, fatigue, and monotony arrive in [0, 100], but their normalized
-evidence values are in [0, 1] before they enter the scoring formula. A
-one-directional feature uses [0, 1], where 0 means no active evidence. A
-two-directional feature may use the full [-1, +1] interval, where 0 is neutral.
-Both are subsets of the same normalized scoring domain.
+- **one-directional** `e ∈ [0,1]` — `0` means *no active evidence* (absence), not
+  evidence against the service. Used by drowsiness, fatigue, monotony, traffic,
+  night, route, destination, child, group, oshi-registered, recency.
+- **two-directional** `e ∈ [-1,+1]` — `0` is neutral, `±1` are opposed poles. Used
+  by oshi-mode, overall/scene usage, acceptance, recovery.
 
-### 6.2 Feature response
+For categorical **road type**, the category directly selects a signed response with
+`e_road = 1`, so `r_road(c) = a_road(c)` (no intensity multiplier).
 
-For continuous, boolean, and ordinal evidence:
+### 5.2 The candidate response matrices (real coefficients)
 
-    r_i(c) = clamp(e_i(c) * a_i(c), -1, +1)
+Three matrices, one per lifecycle family. Every cell is the **numeric coefficient**
+`a_i(c)`; the reason column explains the row. Environment features reset by the
+stopped snapshot (§8) are marked `—` (evidence is 0 there regardless).
 
-For categorical road type, the selected category already resolves a signed candidate response:
+**5.2.1 Driving services** — `before_rest_until_stop` ① and `active_driving_content` ②③④.
 
-    e_road = 1
-    a_road(c) = road_response[c][current_road_type]
-    r_road(c) = e_road * a_road(c)
+| Candidate | Drowsy | Fatigue | Congested | Night | Monotony | Route | Dest | Child | Group | Oshi-reg | Oshi-mode |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| `music_playlist` | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | **+1.0** | **+1.0** | 0.0 | 0.0 | +0.5 | +0.5 |
+| `humming_karaoke` | **+1.0** | **+1.0** | **+1.0** | **+1.0** | **+1.0** | **+1.0** | **+1.0** | **+1.0** | **+1.0** | +0.5 | +0.5 |
+| `call_response_driving` | **+1.0** | **+1.0** | **+1.0** | **+1.0** | **+1.0** | 0.0 | 0.0 | **+1.0** | **+1.0** | +0.5 | +0.5 |
+| `quiz` | **+1.0** | **+1.0** | **+1.0** | **+1.0** | **+1.0** | 0.0 | 0.0 | **+1.0** | **+1.0** | +0.5 | +0.5 |
+| `ranking_creation` | **+1.0** | **+1.0** | **+1.0** | **+1.0** | **+1.0** | 0.0 | 0.0 | **+1.0** | **+1.0** | +0.5 | +0.5 |
+| `radio_style` | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | **+1.0** | **+1.0** |
 
-For route and destination tag collections, the evidence intensity is multiplied by the candidate’s route or destination adaptability:
+Reasons and provenance:
+- **Drowsy/fatigue/congested/night/monotony → humming, call-response, quiz, ranking = `+1.0`** (`cdc_su_explicit`): Slide 67's driver-state + driving-environment rows name exactly these four as the ②–④ preferred content ("漫然運転リスク… 覚醒・眠気抑制"). `music_playlist` and `radio_style` are **not** named → `0.0`.
+- **Route/destination → `music_playlist`, `humming_karaoke` = `+1.0`** (`cdc_su_explicit`): Slide 67's route row names 音楽レコメンド + 鼻歌カラオケ. The interaction games (call-response/quiz/ranking) are not named → `0.0`.
+- **Child/group → humming, call-response, quiz, ranking = `+1.0`** (`cdc_su_explicit`): Slide 67 passenger row (②–④). `music_playlist` = `0.0` (not named).
+- **Oshi → the five non-radio driving services = `+0.5`, `radio_style` = `+1.0`** (`cdc_su_explicit` direction; magnitude from the service definitions): Slide 67 ②–④ oshi → "推しモードコンテンツ". Slide 39 defines `radio_style` as *the* oshi service — it replays summarized latest oshi information — so it responds **strongly** `+1.0`; the other five services can host an oshi-aware recipe under oshi mode but are not oshi-defined, so their magnitude is mild `+0.5`. Because oshi-mode evidence is signed, mode-`off` becomes a matching penalty (e.g. `−1.0` for radio, `−0.5` for the others).
+- **`radio_style` = `0.0` on every non-oshi feature** (`neutral_source_silent`): Slide 67 names radio in none of the driver-state, environment, route, or passenger rows. Radio's oshi availability is *additionally* gated by **eligibility** (Slide 39: radio appears only when new oshi information exists since last use) — that gate is complementary to, not a substitute for, its oshi ranking response above.
 
-    r_tags(c) = tag_evidence_intensity * a_tags(c)
+**Why the four activation services share `+1.0` on drowsiness / fatigue /
+environment.** Slide 67 places 眠気 (drowsiness) and 疲労度 (fatigue) in a *single*
+row and names 鼻歌カラオケ, 合いの手, クイズ, ランキング together for the combined goal
+("身体的活動による覚醒 or 知的負荷による眠気抑制"), with no ranking among them and no
+drowsy-vs-fatigue split. At the *service* level they are therefore equally preferred,
+and a uniform coefficient is the source-faithful choice — inventing per-service or
+per-signal differences would be an unsourced hypothesis. The four are **not** left
+indistinguishable overall: they already separate on route/destination (only
+`music_playlist`/`humming_karaoke`), on mountain road (interaction load, §5.2.2), and
+on the per-candidate preference/history features. The finer distinction — energize a
+drowsy driver, soothe a fatigued one — belongs to the **content** selector, where it
+is expressed as the arousal/valence *song* response (drowsiness `+0.80·A_s`, fatigue
+`−0.50·A_s`), not as a service choice.
 
-### 6.3 Effective weight
+Before-rest ① uses this same matrix (rule §4.3.1). Slide 67's purpose-① driver/
+environment column is `ー`; keeping the driving responses reflects the Slide 38
+intent to "support arousal/recovery until the driver reaches a rest stop," and the
+purpose-① multipliers (§6.2) already de-emphasize environment relative to ②.
 
-The base weight is the product of normalized weights along the feature hierarchy:
+**5.2.2 Road type** (a categorical sub-response of driving environment):
 
-    base_weight_i
-      = category_weight
-      * subgroup_weight
-      * leaf_weight
+| Candidate | Highway | Local | Mountain | Parking |
+|---|---:|---:|---:|---:|
+| `music_playlist` | 0.0 | 0.0 | +0.5 | 0.0 |
+| `humming_karaoke` | **+1.0** | 0.0 | −0.5 | 0.0 |
+| `call_response_driving` | **+1.0** | 0.0 | −0.5 | 0.0 |
+| `quiz` | **+1.0** | 0.0 | **−1.0** | 0.0 |
+| `ranking_creation` | **+1.0** | 0.0 | **−1.0** | 0.0 |
+| `radio_style` | 0.0 | 0.0 | +0.5 | 0.0 |
 
-The trigger purpose adjusts meaningful subgroups:
+- **Highway `+1.0`** for the four activation services (`cdc_su_explicit`, Slide 67 lists 高速道路 in the environment row). `music_playlist`/`radio_style` = `0.0`.
+- **Mountain** (`normalized_context_hypothesis`): a demanding road, so interactive cognitive load is reduced — low-interaction audio (`music_playlist`, `radio_style`) mildly supported `+0.5`; moderate-interaction (`humming`, `call-response`) `−0.5`; high-interaction (`quiz`, `ranking`) `−1.0`. These are safety hypotheses, not explicit CDC-SU judgments, and never remove an eligible service — they only reorder it.
+- **Local** neutral (source does not distinguish it). **Parking** neutral — driving/stopped permissibility belongs to eligibility.
 
-    effective_raw_weight_i(p)
-      = base_weight_i
-      * purpose_multiplier[p][subgroup(i)]
+**5.2.3 During-rest actions** — `during_rest_stopped`. Slide 67 gives no
+during-rest action matrix, so every non-zero cell is `rest_action_hypothesis`.
+Traffic, road, and monotony are reset by the stopped snapshot (`—`); route,
+destination, and oshi are `0.0`.
 
-All adjusted weights are normalized:
+| Candidate | Drowsy | Fatigue | Night | Child | Group |
+|---|---:|---:|---:|---:|---:|
+| `rest_duration_suggestion` | +0.5 | +0.5 | +0.5 | +0.5 | +0.5 |
+| `rest_method_suggestion` | +0.5 | **+1.0** | +0.5 | **+1.0** | +0.5 |
+| `seat_adjustment` | 0.0 | +0.5 | 0.0 | +0.5 | +0.5 |
+| `nap_guidance` | **+1.0** | **+1.0** | **+1.0** | 0.0 | 0.0 |
+| `rest_extension_check` | **+1.0** | **+1.0** | **+1.0** | 0.0 | 0.0 |
 
-    w_i(p)
-      = effective_raw_weight_i(p)
-      / sum_j(effective_raw_weight_j(p))
+Night stays current and raises nap/rest suitability. `rest_extension_check` must
+not be offered until the journey engine says it is applicable — that is eligibility,
+not service fit.
 
-The implementation must reject a configuration in which the denominator is zero.
+**5.2.4 Post-rest services** — `after_rest_before_restart`. Environment is reset
+(`—`); night `0.0`. Slide 67's purpose-① column supplies the passenger, oshi, and
+route rows.
 
-### 6.4 Feature contribution and service fit
+Five candidates (Slides 38, 40) — including the stopped `call_response_stopped`
+(合いの手練習, video), which the Slide 64 flow omits but the service-definition slides
+list (§2.4).
 
-Calculate each normalized signed feature contribution:
+| Candidate | Drowsy | Fatigue | Route | Dest | Child | Group | Oshi-reg | Oshi-mode |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `live_viewing` | +0.5 | +0.5 | 0.0 | 0.0 | **+1.0** | **+1.0** | **+1.0** | **+1.0** |
+| `stretch_video` | **+1.0** | **+1.0** | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 |
+| `full_karaoke` | +0.5 | +0.5 | 0.0 | 0.0 | **+1.0** | **+1.0** | **+1.0** | **+1.0** |
+| `call_response_stopped` | +0.5 | +0.5 | 0.0 | 0.0 | +0.5 | +0.5 | 0.0 | 0.0 |
+| `oshi_reexperience` | +0.5 | +0.5 | **+1.0** | **+1.0** | 0.0 | 0.0 | **+1.0** | **+1.0** |
 
-    k_i(c) = w_i(p) * r_i(c)
+- **Child/group → `live_viewing`, `full_karaoke` = `+1.0`** (`cdc_su_explicit`, Slide 67 ① passenger → ライブビューイング, カラオケ). `stretch_video`, `oshi_reexperience` = `0.0`.
+- **Oshi → `live_viewing`, `full_karaoke`, `oshi_reexperience` = `+1.0`** (`cdc_su_explicit`, Slide 67 ① oshi row → ライブビューイング, カラオケ, 推し追体験). `stretch_video = 0.0` (Slide 40 defines no oshi content and Slide 67 ① oshi row omits it).
+- **Route/destination → `oshi_reexperience` = `+1.0`** (`cdc_su_explicit`, Slide 67 ① route → 推し追体験). All other post-rest services `0.0` (Slide 67 ① route names only 推し追体験).
+- **`call_response_stopped` child/group `+0.5`, drowsy/fatigue `+0.5`** (`post_rest_hypothesis`): Slide 67 ① names 合いの手 in none of its columns, but Slide 40 defines it as a participatory 合いの手 video with lighting cues — a shared, group-friendly recovery activity — so it carries a mild shared-activity + engagement response. Its route/destination and oshi responses stay `0.0` (unnamed in Slide 67 ①), which is what distinguishes it from `full_karaoke`.
+- **Drowsy/fatigue** (`post_rest_hypothesis`, Slide 67 ① driver = `ー`): `stretch_video` `+1.0` (physical recovery); the rest mild `+0.5` (light engagement while recovering).
 
-Then sum the contributions directly:
+### 5.3 Complete baseline-feature contract
 
-    service_fit(c)
-      = F(c)
-      = clamp(sum_i(k_i(c)), -1, +1)
+The 17 CDC-SU baseline service features, in contract order. For each: the world
+input → evidence, and where the response coefficient comes from. All 17 are
+scored; features that are *evaluated elsewhere or excluded* are listed separately
+in §5.6.
 
-Because the weights are non-negative and sum to one, <code>k_i(c)</code> is
-bounded to [-<code>w_i</code>, +<code>w_i</code>] and the unclamped sum is
-mathematically bounded to [-1, +1]. The final clamp protects only against
-floating-point drift; it must not conceal an out-of-range intermediate value
-caused by invalid input or an implementation error.
+**Situation**
 
-### 6.5 Interpretation
+| # | Feature | World input `x_i` → evidence `e_i` | Response `a_i(c)` | Source |
+|---|---|---|---|---|
+| 1 | Drowsiness level | `drowsiness_level [0,100]` → `(x/100)^γ` ∈ `[0,1]` | §5.2 matrix column | Slide 67 driver row |
+| 2 | Fatigue level | `fatigue_level [0,100]` → `(x/100)^γ` ∈ `[0,1]` | §5.2 matrix | Slide 67 driver row |
+| 3 | Traffic state | `normal→0`, `congested→1` | §5.2 matrix (Congested) | Slide 67 env row |
+| 4 | Road type | categorical, `e=1` | §5.2.2 road matrix | Slide 67 env + normalized hypothesis |
+| 5 | Day/night state | `day→0`, `night→1` | §5.2 matrix (Night) | Slide 67 env row |
+| 6 | Road monotony | `monotony_level [0,100]` → `(x/100)^γ` | §5.2 matrix | Slide 67 env row |
+| 7 | Route characteristics | `min(1, recognized_route_tags / saturation)` | §5.2 matrix (Route) | Slide 67 route row |
+| 8 | Destination characteristics | `min(1, recognized_dest_tags / saturation)` | §5.2 matrix (Dest) | Slide 67 route row |
+| 9 | Child present | `false→0`, `true→1` | §5.2 matrix (Child) | Slide 67 passenger row |
+| 10 | Multiple passengers | `false→0`, `true→1` | §5.2 matrix (Group) | Slide 67 passenger row |
 
-| Service fit | Interpretation |
-|---:|---|
-| +1 | Theoretical strongest support under the configured hypothesis |
-| Between 0 and +1 | Supporting evidence outweighs opposing evidence |
-| 0 | Overall neutral evidence |
-| Between -1 and 0 | Opposing evidence outweighs supporting evidence |
-| -1 | Theoretical strongest opposition under the configured hypothesis |
+**Preference**
 
-The number does not represent a probability.
+| # | Feature | World input → evidence | Response `a_i(c)` | Source |
+|---|---|---|---|---|
+| 11 | Oshi registered | `false→0`, `true→1` | §5.2 matrix (Oshi-reg) | Slide 67 oshi row |
+| 12 | Oshi mode | `off→ −1`, `on→ +1` | §5.2 matrix (Oshi-mode) | Slide 67 oshi row |
+| 13 | Service recency | `service_recency_state[c]`: `recent→0 / long_unused→.5 / never→1` | **`+1.0`** direct (§5.4) | Slide 66 未使用機能 |
+| 14 | Overall service usage | `service_usage_level[c]`: `never −1 / low −.5 / medium +.25 / high +1` | **`+1.0`** direct | Slide 66 利用頻度 |
+| 15 | Scene-specific service usage | mean of usage-normalized values over current scene IDs (§5.7) | **`+1.0`** direct | Slide 66 場面別好み |
 
-### 6.6 Numeric and serialization semantics
+**History**
 
-- Arithmetic uses IEEE-754 binary64 values.
-- Reject NaN, positive/negative infinity, and non-numeric configurable values.
-- Evaluate features in the fixed 17-feature contract order.
-- Sum sibling weights, effective weights, and normalized feature contributions
-  in that same documented order.
-- Use full binary64 values for ranking; round only in presentation.
-- Normalize negative zero to positive zero before serialization.
-- Exact numeric ties use binary64 equality after the prescribed evaluation
-  order.
-- Candidate arrays are sorted by the ranking rule; feature-contribution arrays
-  stay in contract order.
-- Canonical evidence export sorts object keys lexicographically and uses the
-  platform’s shortest round-trip JSON representation for finite numbers.
+| # | Feature | World input → evidence | Response `a_i(c)` | Source |
+|---|---|---|---|---|
+| 16 | Service-proposal acceptance rate | `acceptance_rate[c] [0,100]` → `2·rate/100 − 1` | **`+1.0`** direct | Slide 67 受諾率 row |
+| 17 | Service recovery rate | `recovery_rate[c] [0,100]` → `2·rate/100 − 1` | **`+1.0`** direct | Slide 67 回復率 row |
 
-Semantic cross-implementation tests use absolute tolerance 1e-12 for numeric
-fields. Canonical byte equality is required only when replaying through the
-same package/runtime version and canonical exporter.
+### 5.4 Direct candidate-specific features
+
+Features 13–17 read a **candidate-indexed** raw value whose sign already carries
+the direction of evidence, so the response coefficient is fixed to **`+1.0`** for
+every candidate (`cdc_su_direct_candidate_feature`, Slides 66–67). Recency is
+one-directional (`+1.0` maps novelty to a bonus; recent use is neutral, never a
+penalty), so novelty stays a weak influence. Usage, acceptance, and recovery are
+two-directional. Because baseline-only mode has **no** confidence/sample-count
+feature, sparse rates cannot be shrunk — the inputs are described as synthetic
+configured rates, not reliable empirical estimates or clinical claims.
+
+### 5.5 Why the content slides (68–73) are not used here
+
+Slides 68–73 — including Slide 70 (具体コンテンツ選択材料対象) — define the **content**
+selector's inputs: which features drive concrete mode/genre/item selection *within*
+an already-chosen service. They are a different decision layer and play **no** role
+in service ranking. Every response coefficient in §5.2 is derived from **Slide 67
+alone**, with the service definitions in Slides 38–40 supplying magnitude. This
+separation matters because the two layers genuinely diverge — at the content level
+`humming_karaoke` does not consult route to pick songs, yet at the service level
+Slide 67 lists humming as route-preferred — so borrowing a content-level ○/× into
+service scoring would contradict Slide 67. The excluded content-level feature set is
+enumerated in §5.6.
+
+### 5.6 Features not used by the service selector
+
+The "reason of not use" for everything the selector deliberately ignores. Two
+groups: **content-level** features (they appear in Slides 68–70 but belong to the
+*content* selector, not service ranking) and **additional-simulator** features
+(disabled by the baseline package).
+
+| Feature | Group | Reason not scored here |
+|---|---|---|
+| Driving/stopped state (走行状態) | content-level | Appears only in the content inputs (Slides 69–70), not the Slide 66 service-input set; at service level motion is a **platform eligibility** fact (screen-restricted services excluded before scoring), not a ranking feature |
+| UPro info — age band / gender / hobbies | content-level | Introduced by Slide 68 for **content** genre/mode selection; not in the Slide 66 service-input set |
+| Playback & operation history (skip / cancel) | content-level | Slide 69 content-input; used to exclude concrete items, not to rank services |
+| Schedule (推しイベント等) | content-level | Slide 68/69 content-input; timing alone establishes no service-level affinity |
+| Content-tag novelty / per-item recency | content-level | Item-granularity; the service-level "unused function" is captured by Service recency (#13) |
+| Minutes until a rest spot | additional-simulator | Journey-engine timing; not a Slide 66/67 baseline feature |
+| Currently active service | additional-simulator | Not a baseline feature; would leak run state into ranking |
+| Recent rejection / confidence | additional-simulator | No baseline confidence feature exists (§5.4) |
+
+None of these may enter `service_fit`. Excluded content-level features are the
+content selector's responsibility; additional-simulator features are out of scope
+for baseline-only V1.
+
+### 5.7 Per-feature evidence normalization detail
+
+- **Drowsiness / fatigue / monotony** — `e = (level/100)^γ`, `γ` initial `1.0`,
+  recommended `0.50–3.00`, validation `0.25–4.00`. `γ<1` makes moderate values
+  influential sooner; `γ>1` reserves influence for high values. Raw `0` is a valid
+  low value, not missing.
+- **Route / destination tags** — `e = min(1, recognized_unique_tags / saturation)`,
+  `saturation` initial `2` (validation `1–10`). Unknown tags are ignored in the
+  count and reported (§8). An empty or wholly unknown set is neutral.
+- **Oshi mode** — `off→ −1`, `on→ +1`. Unlike absent registration (neutral), an
+  explicit `off` **opposes** oshi-focused adaptation. `oshi_registered=false ∧
+  oshi_mode=on` is invalid input.
+- **Overall / scene usage** — ordinal map `never −1 / low −.5 / medium +.25 /
+  high +1`. Scene IDs are derived from baseline situation features via the versioned
+  `scene_taxonomy`: `traffic:congested`; `road:{highway,local,mountain,parking}`;
+  `time:night`; `monotony:medium` (34–66) / `monotony:high` (67–100);
+  `passenger:{child,group}`; one `route:<tag>` / `destination:<tag>` per recognized
+  tag. Scene evidence is the mean of usage-normalized values over matching scenes
+  with a candidate record; no matching record → evidence `0`, reported unavailable.
+- **Acceptance / recovery** — `e = 2·rate/100 − 1` (so `0→−1`, `50→0`, `100→+1`).
 
 ---
 
-## 7. Hierarchical Weight Model and Initial Values
+## 6. Hierarchical weights
 
-### 7.1 Top-level categories
+### 6.1 Categories, subgroups, leaves
 
-| Category | Initial weight | Rationale |
-|---|---:|---|
-| Situation | 0.80 | Current driver and road context receive dominant emphasis |
-| Preference | 0.12 | Personalization remains useful but cannot dominate safety context |
-| History | 0.08 | Synthetic history is useful but unvalidated; recovery is emphasized within it |
+| Category (share) | Subgroup (share) | Leaves (sibling share) |
+|---|---|---|
+| **Situation 0.80** | Driver state 0.50 | drowsiness 0.55, fatigue 0.45 |
+| | Driving environment 0.35 | traffic 0.20, road 0.20, night 0.20, monotony 0.40 |
+| | Route context 0.075 | route 0.55, destination 0.45 |
+| | Passenger composition 0.075 | child 0.65, multiple 0.35 |
+| **Preference 0.12** | Oshi preference 0.25 | oshi-registered 0.35, oshi-mode 0.65 |
+| | Novelty 0.10 | service recency 1.00 |
+| | Overall usage 0.25 | overall usage 1.00 |
+| | Scene preference 0.40 | scene usage 1.00 |
+| **History 0.08** | Proposal acceptance 0.25 | acceptance rate 1.00 |
+| | Recovery 0.75 | recovery rate 1.00 |
 
-Top-level values must be non-negative and at least one must be positive. The evaluator normalizes siblings, so customers may enter ratios rather than values that sum exactly to one.
+Situation dominates because current driver/road context is the safety-relevant
+signal; Preference personalizes without dominating; History is useful but
+synthetic and unvalidated, with recovery emphasized over acceptance. Top-level and
+sibling values are **ratios** — customers may enter any non-negative numbers; the
+evaluator normalizes siblings, so they need not sum to one (a sibling group of all
+zeros is invalid).
 
-### 7.2 Situation subgroups
+**Flattened base weights** (before purpose multipliers; sum to 1):
 
-| Subgroup | Initial weight within Situation | Rationale |
-|---|---:|---|
-| Driver state | 0.50 | Drowsiness and fatigue are the most direct current-state inputs |
-| Driving environment | 0.35 | Slide 67 links congestion, highway, night, and monotony to inattentive-driving risk |
-| Route context | 0.075 | Route/destination relevance is raised by the route-purpose multiplier |
-| Passenger composition | 0.075 | Child/group relevance is raised by the child-purpose multiplier |
+| Feature | Base weight | Feature | Base weight |
+|---|---:|---|---:|
+| Drowsiness | 0.220000 | Oshi registered | 0.010500 |
+| Fatigue | 0.180000 | Oshi mode | 0.019500 |
+| Traffic | 0.056000 | Service recency | 0.012000 |
+| Road type | 0.056000 | Overall usage | 0.030000 |
+| Night | 0.056000 | Scene usage | 0.048000 |
+| Monotony | 0.112000 | Proposal acceptance | 0.020000 |
+| Route tags | 0.033000 | Recovery | 0.060000 |
+| Destination tags | 0.027000 | | |
+| Child present | 0.039000 | | |
+| Multiple passengers | 0.021000 | | |
 
-Leaf weights:
+### 6.2 Purpose multipliers (applied per subgroup before normalization)
 
-| Subgroup | Feature | Initial sibling weight |
-|---|---|---:|
-| Driver state | Drowsiness | 0.55 |
-| Driver state | Fatigue | 0.45 |
-| Driving environment | Traffic | 0.20 |
-| Driving environment | Road type | 0.20 |
-| Driving environment | Night | 0.20 |
-| Driving environment | Monotony | 0.40 |
-| Route context | Route tags | 0.55 |
-| Route context | Destination tags | 0.45 |
-| Passenger composition | Child present | 0.65 |
-| Passenger composition | Multiple passengers | 0.35 |
+The same six driving candidates serve purposes ②–④; a single global profile would
+make route and child purposes indistinguishable from inattentive-driving
+prevention. A small subgroup-level multiplier table keeps one understandable
+hierarchy instead of duplicating all 17 weights per purpose.
 
-### 7.3 Preference subgroups
-
-| Subgroup | Initial weight within Preference | Rationale |
-|---|---:|---|
-| Oshi preference | 0.25 | Explicit oshi settings can materially change personalization |
-| Novelty | 0.10 | CDC-SU includes unused functions, but novelty remains weak |
-| Overall usage | 0.25 | General service use is a direct preference signal |
-| Scene preference | 0.40 | Same-scene behavior is more context-specific than global use |
-
-Oshi leaf weights:
-
-| Feature | Initial sibling weight | Rationale |
-|---|---:|---|
-| Oshi registered | 0.35 | Registration makes oshi adaptation possible |
-| Oshi mode | 0.65 | Mode is an explicit current user setting |
-
-The remaining Preference subgroups each contain one leaf and therefore have an internal leaf weight of 1.
-
-### 7.4 History subgroups
-
-| Feature | Initial weight within History | Rationale |
-|---|---:|---|
-| Proposal acceptance rate | 0.25 | Represents prior proposal receptiveness |
-| Recovery rate | 0.75 | More directly reflects the stated recovery and safety purpose |
-
-### 7.5 Flattened base weights
-
-Before purpose multipliers, the hierarchy produces:
-
-| Feature | Base effective weight |
-|---|---:|
-| Drowsiness | 0.220000 |
-| Fatigue | 0.180000 |
-| Traffic | 0.056000 |
-| Road type | 0.056000 |
-| Night | 0.056000 |
-| Monotony | 0.112000 |
-| Route tags | 0.033000 |
-| Destination tags | 0.027000 |
-| Child present | 0.039000 |
-| Multiple passengers | 0.021000 |
-| Oshi registered | 0.010500 |
-| Oshi mode | 0.019500 |
-| Service recency | 0.012000 |
-| Overall service usage | 0.030000 |
-| Scene/service usage | 0.048000 |
-| Proposal acceptance | 0.020000 |
-| Recovery | 0.060000 |
-
-The values sum to 1.
-
----
-
-## 8. Trigger-Purpose Multipliers
-
-### 8.1 Why multipliers are used
-
-The same six driving candidates appear for purposes ②–④. A single global weight profile would make route and child purposes too similar to inattentive-driving prevention.
-
-The design therefore keeps one understandable global hierarchy and applies a small purpose-level multiplier table. It does not duplicate all 17 weights for every purpose.
-
-Lifecycle stage does not select another weight set. Stage already controls the candidate family. Candidate response profiles are stable properties of explicit candidate IDs.
-
-### 8.2 Initial multiplier values
-
-| Subgroup | Rest recommended | Inattentive/recovery | Route music | Child experience |
+| Subgroup | Rest ① | Inattentive ② | Route ③ | Child ④ |
 |---|---:|---:|---:|---:|
 | Driver state | 1.40 | 1.50 | 1.20 | 1.20 |
 | Driving environment | 1.10 | 1.40 | 1.00 | 1.00 |
@@ -542,18 +511,11 @@ Lifecycle stage does not select another weight set. Stage already controls the c
 | Proposal acceptance | 1.00 | 1.00 | 1.00 | 1.00 |
 | Recovery | 1.30 | 1.25 | 1.00 | 1.00 |
 
-Interpretation:
+`1` leaves importance unchanged; `>1` emphasizes; `<1` de-emphasizes; `0` disables
+ranking influence but not the evidence trace. **Resulting normalized weights** (the
+implementation computes these — they are not independently editable):
 
-- a multiplier of 1 leaves the base importance unchanged;
-- a value above 1 emphasizes that subgroup for the purpose;
-- a value below 1 de-emphasizes it;
-- a value of 0 disables its ranking influence but not its evidence trace.
-
-### 8.3 Resulting normalized feature weights
-
-The initial effective weights after multiplier application are:
-
-| Feature | Rest | Inattentive | Route | Child |
+| Feature | Rest ① | Inattentive ② | Route ③ | Child ④ |
 |---|---:|---:|---:|---:|
 | Drowsiness | .256538 | .254551 | .233546 | .234729 |
 | Fatigue | .209895 | .208269 | .191083 | .192051 |
@@ -568,1287 +530,344 @@ The initial effective weights after multiplier application are:
 | Oshi registered | .008746 | .006479 | .010218 | .007002 |
 | Oshi mode | .016242 | .012033 | .018976 | .013003 |
 | Service recency | .007996 | .007405 | .008493 | .008536 |
-| Overall service usage | .022489 | .020827 | .023885 | .026674 |
-| Scene/service usage | .039980 | .040728 | .046709 | .051214 |
+| Overall usage | .022489 | .020827 | .023885 | .026674 |
+| Scene usage | .039980 | .040728 | .046709 | .051214 |
 | Proposal acceptance | .016658 | .015427 | .017693 | .017783 |
 | Recovery | .064968 | .057853 | .053079 | .053348 |
 
-The implementation calculates these values; they should not be duplicated as independently editable configuration.
+### 6.3 Normalization
+
+After `base × purpose`, divide every leaf by the sum of all leaves so `Σ w_i = 1`.
+A zero or non-finite denominator is invalid.
+
+### 6.4 Continuous default dominance invariant
+
+This design uses no ranking bands or minimum-fit threshold, but the default
+configuration must still prove that a material high-priority advantage cannot be
+overturned by all lower-priority evidence. Define the safety-response set and its complement:
+
+```text
+D = Driver State + Driving Environment + Recovery ;   L = every remaining feature
+W_D = Σ_{i∈D} w_i ;   W_L = 1 − W_D
+P(c) = Σ_{i∈D} w_i·r_i(c) / W_D          Q(c) = Σ_{i∈L} w_i·r_i(c) / W_L      (both in [-1,+1])
+
+service_fit(A) − service_fit(B) = W_D·(P(A)−P(B)) + W_L·(Q(A)−Q(B))
+```
+
+The worst lower-priority reversal is `Q(A)−Q(B) = −2`. With the package's
+`material_safety_gap = 1.00`, a non-reversal guarantee holds when
+`W_D · 1.00 > 2 · W_L`:
+
+| Purpose | W_D | W_L | Required gap `2·W_L/W_D` | Default 1.00 passes |
+|---|---:|---:|---:|---|
+| Rest ① | .787939 | .212061 | .538266 | yes |
+| Inattentive ② | .823048 | .176952 | .429991 | yes |
+| Route ③ | .725407 | .274593 | .757073 | yes |
+| Child ④ | .729083 | .270917 | .743171 | yes |
+
+The guarantee is continuous — it alters no score and creates no ordering threshold.
+It says only that when A's normalized driver-state-plus-environment-plus-recovery
+response exceeds B's by at least `1.00`, even the most adverse remaining evidence
+cannot rank B above A. `1.00` is an explicit expert definition of "material," not an
+empirical boundary. After every customer edit the resolver recomputes it and
+records `default_dominance_preserved` or `dominance_not_guaranteed` (with the
+required gap) — it never silently alters weights or ranks. Built-in profiles must
+pass; a release cannot ship a failing built-in profile without an explicit
+versioned decision.
+
+A separate **non-blocking configuration warning** fires when the combined effective
+share of Driver State + Driving Environment + Recovery falls below
+`safety_share_warning_floor = 0.40`. With initial profiles that share is `.788` ①,
+`.823` ②, `.725` ③, `.729` ④. The warning is a reviewer signal, not a penalty.
 
 ---
 
-## 9. Candidate Response Coefficients
+# Part III — Eligibility and data handling
 
-### 9.1 Meaning
+## 7. Hard eligibility
 
-The candidate response coefficient answers:
+Eligibility runs **before** scoring and cannot be reversed by any score or weight.
+The platform/orchestrator constructs:
 
-> When this evidence is present, does this candidate respond appropriately, remain neutral, or conflict with it?
+```text
+candidates = catalog services
+           ∩ purpose/stage allowed services (Slides 64–65 matrix)
+           ∩ motion / capability / readiness eligibility
+```
 
-It is not learned from driver data.
+Examples of hard exclusion: screen-dependent full karaoke while driving; a
+stopped-only stretch video while driving; an oshi-specific action (e.g.
+`radio_style`, `oshi_reexperience`) without its required catalog entity; disabled or
+unavailable content; `rest_extension_check` before the journey engine says it is
+applicable. Motion is **not** a ranking feature — it is a platform eligibility fact,
+because the baseline package is restricted to ranking features. Excluded services
+receive no `service_fit` and are reported with platform reason codes; the algorithm
+may not reinstate them.
 
-### 9.2 Response classes
+## 8. Missing, unknown, and invalid data
 
-Initial response classes are deliberately coarse:
+- **Missing** (absent scalar field or candidate-map entry) → `e=0`, `r=0`,
+  `k=0`, weight retained, status `missing_neutral`. Absence never redistributes
+  weight and never invents positive or negative evidence.
+- **Present raw `0`** on a `[0,100]` feature is a valid low value, not missing.
+- **Unknown tag** (syntactically valid, not in the taxonomy) → does not contribute
+  to recognized-tag count; reported in `unused_available_features`.
+- **Stopped snapshot** — every lifecycle transition creates a fresh snapshot:
+  before-rest/active use current driving values; `during_rest_stopped` sets traffic
+  `normal`, road `parking`, monotony `0` (drowsiness/fatigue/day-night stay
+  current); `after_rest_before_restart` uses explicit post-rest drowsiness/fatigue
+  with the same stopped environment. Route/destination and passenger composition
+  remain current trip facts. The selector must not implicitly retain pre-stop
+  congestion, road, or monotony.
+- **Invalid** (wrong type, out-of-range number, unsupported enum, contradictory
+  oshi state, non-finite configurable, all-zero sibling group, zero active-weight
+  denominator) → **blocks** the evaluation with a typed error; never silently
+  coerced to neutral.
 
-| Class | Coefficient | Meaning |
-|---|---:|---|
-| <code>strongly_opposes</code> | -1.00 | Material mismatch among otherwise eligible candidates |
-| <code>opposes</code> | -0.50 | Relative mismatch |
-| <code>neutral</code> | 0.00 | No justified influence |
-| <code>supports</code> | +0.50 | Useful response |
-| <code>strongly_supports</code> | +1.00 | Explicitly preferred or strongly capable |
+---
 
-Neutral is the default when the source does not justify a direction. “Not listed as preferred” must not automatically become negative.
+# Part IV — Producing the ranking
 
-### 9.3 Provenance
+## 9. Evaluation pipeline
 
-Each response entry stores one provenance label:
+1. **Validate the opportunity** — contract/package versions; purpose; compatible
+   lifecycle stage; feature types/ranges; oshi consistency; hierarchy/multiplier
+   values; response-profile completeness for every eligible candidate. Any failure
+   is a blocking error, never a fabricated ranking.
+2. **Confirm candidate constraints** — every platform-eligible candidate belongs to
+   the frozen allowed-service row; copy platform exclusions through unchanged.
+3. **Resolve effective weights once** — normalize siblings, multiply down the
+   hierarchy to 17 base weights, apply purpose multipliers, renormalize; record
+   base, multiplier, raw, and final values (§6).
+4. **Build evidence** — normalize scalar/contextual features once; normalize
+   candidate-indexed features inside the candidate loop.
+5. **Score each eligible candidate** — for every feature `r_i = clamp(e_i·a_i)`
+   (road type uses `e=1`, `r=a_road`); `k_i = w_i·r_i`;
+   `service_fit = clamp(Σ k_i, -1, +1)`; assert the unclamped sum is in range within
+   tolerance.
+6. **Build subtotals** — `situation_fit`, `preference_fit`, `history_fit` reconstruct
+   the unclamped sum; explanatory only, never rescaled, never a sort key.
+7. **Rank** — sort by `(service_fit desc, candidate_id asc)` at full precision;
+   return the first three (or all if fewer).
+8. **No-proposal** — return `no_proposal` only when the eligible list is empty. A low
+   or negative `service_fit` never suppresses a proposal — the upstream trigger
+   already established the opportunity.
 
-| Label | Meaning |
+## 10. Worked example
+
+**Opportunity** `inattentive_driving_prevention_recovery` / `active_driving_content`;
+candidate `humming_karaoke`. **Snapshot** drowsiness 80, fatigue 60, congested,
+highway, night, monotony 75, two recognized route tags, one destination tag, child
+present, multiple passengers, oshi registered + mode on, service recency
+long_unused, overall usage high, scene usage high, acceptance 75, recovery 70.
+
+Using the inattentive② effective weights (§6.2) and the `humming_karaoke` responses
+(§5.2, all activation `+1.0`, oshi `+0.5`, direct features `+1.0`):
+
+| Feature | `e` | `a` | `r` | `w` | `k = w·r` |
+|---|---:|---:|---:|---:|---:|
+| Drowsiness | .80 | +1.0 | .80 | .254551 | +.203641 |
+| Fatigue | .60 | +1.0 | .60 | .208269 | +.124961 |
+| Traffic (congested) | 1.00 | +1.0 | 1.00 | .060475 | +.060475 |
+| Road (highway) | 1.00 | +1.0 | 1.00 | .060475 | +.060475 |
+| Night | 1.00 | +1.0 | 1.00 | .060475 | +.060475 |
+| Monotony | .75 | +1.0 | .75 | .120950 | +.090713 |
+| Route | 1.00 | +1.0 | 1.00 | .019091 | +.019091 |
+| Destination | .50 | +1.0 | .50 | .015620 | +.007810 |
+| Child | 1.00 | +1.0 | 1.00 | .025571 | +.025571 |
+| Group | 1.00 | +1.0 | 1.00 | .013769 | +.013769 |
+| Oshi registered | 1.00 | +0.5 | .50 | .006479 | +.003240 |
+| Oshi mode | +1.00 | +0.5 | .50 | .012033 | +.006017 |
+| Service recency | .50 | +1.0 | .50 | .007405 | +.003703 |
+| Overall usage | 1.00 | +1.0 | 1.00 | .020827 | +.020827 |
+| Scene usage | 1.00 | +1.0 | 1.00 | .040728 | +.040728 |
+| Acceptance | .50 | +1.0 | .50 | .015427 | +.007714 |
+| Recovery | .40 | +1.0 | .40 | .057853 | +.023141 |
+| **service_fit** | | | | | **+0.772349** |
+
+`humming_karaoke` scores **≈ +0.772** (display `+0.772`). For `music_playlist` in the
+same snapshot, the driver/environment activation responses are all `0.0`, so it
+gains only route/destination (`+.019091`, `+.007810`), the mild oshi responses, and
+the direct usage/history contributions — totalling **≈ +0.132**. Humming therefore
+ranks well above playlist here. Switch the purpose to `route_music` and the
+route/destination weights rise via the multiplier profile, narrowing the gap on the
+same raw snapshot and response profiles — a different, fully explained order.
+
+## 11. Contrast behavior
+
+Each contrast freezes catalog, purpose, config, and seed and changes one field,
+asserting the expected reorder:
+
+1–6. low↔high **drowsiness / fatigue / monotony**, and **normal↔congested /
+highway↔mountain / day↔night** — activation vs calm order shifts among driving
+services. 7. child absent↔present. 8. oshi mode off↔on — oshi-responsive candidates
+move. 9. recent↔long-unused service recency. 10. low↔high overall usage.
+11. low↔high recovery rate. 12. `route_music` vs `inattentive` purpose on the same
+snapshot — route/destination weight shift reorders music vs humming. 13. mountain
+vs highway — interaction-heavy services (quiz/ranking) drop on mountain.
+
+Every eligible candidate is always ranked (never suppressed by a low score); a hard
+exclusion is never reinstated.
+
+---
+
+# Part V — Engineering contract
+
+## 12. Parameters and hyperparameters
+
+A **parameter** defines model structure/mappings/semantics (versioned with the
+package); a **hyperparameter** is a customer-editable scalar that tunes the
+hypothesis without code. Both are evidence-visible; changing either creates a new
+decision configuration.
+
+**Structural parameters:** `service_response_profiles` (§5.2), `road_response_profiles`
+(§5.2.2), `response_anchor_map` (`-1,-.5,0,.5,1`), `usage_ordinal_map`
+(`-1,-.5,.25,1`), `recency_ordinal_map` (`0,.5,1`), `scene_taxonomy` (§5.7),
+`missing_policy` (`neutral_and_disclose`), `top_k` (3), `tie_breaker`
+(`candidate_id` ascending), `material_safety_gap` (1.00).
+
+**Numeric hyperparameters (frozen per run, in evidence):** all §6.1 hierarchy weights
+(as ratios); §6.2 purpose multipliers (range `0–5`, recommended `0.5–3`, step `0.05`,
+all-zero rejected); `γ_drowsiness` / `γ_fatigue` / `γ_monotony` (`1.0`, validation
+`0.25–4.0`); `route_tag_saturation` / `destination_tag_saturation` (`2`, `1–10`);
+`monotony_medium_min` (34) `< monotony_high_min` (67); `safety_share_warning_floor`
+(0.40); and any continuous response-coefficient overrides (finite, in `[-1,+1]` —
+out-of-range/NaN/inf are invalid, not clamped). Response classes should be edited in
+an advanced matrix, separate from weights: a weight asks *"how important is this
+evidence?"*, a response asks *"how does this service answer it?"*. Configuration is
+validated **before** scoring; the resolved normalized values are recorded beside the
+customer-entered ones.
+
+## 13. Result and error categories
+
+| Result | Meaning |
 |---|---|
-| <code>cdc_su_explicit</code> | Directly supported by Slide 67 |
-| <code>service_definition</code> | Derived from Slides 38–40 service behavior |
-| <code>normalized_context_hypothesis</code> | Required for normalized simulator values such as mountain roads |
-| <code>rest_action_hypothesis</code> | Expert default because Slide 67 does not detail during-rest actions |
-| <code>neutral_source_silent</code> | Kept neutral because no direction is justified |
-
-Customer edits retain the original provenance and add <code>customer_override</code> with the changed value.
-
----
-
-## 10. Feature Normalization and Response Functions
-
-This section defines how every baseline feature is evaluated. Raw values retain
-their source units only at the input boundary; no raw numeric value enters the
-service-fit formula. Every numeric, boolean, ordinal, or categorical feature is
-first converted to normalized evidence in [0, 1] or [-1, +1].
-
-### 10.1 Drowsiness level
-
-Input:
-
-    drowsiness_level in [0, 100]
-
-Evidence:
-
-    e_drowsiness = (drowsiness_level / 100) ^ gamma_drowsiness
-
-Therefore:
-
-    e_drowsiness in [0, 1]
-
-Initial hyperparameter:
-
-    gamma_drowsiness = 1.0
-
-Meaning:
-
-- zero drowsiness is absence of drowsiness evidence, not evidence against all activating services;
-- increasing drowsiness strengthens the configured service response;
-- gamma below 1 makes moderate values influential sooner;
-- gamma above 1 reserves stronger influence for high values.
-
-Recommended tuning range: 0.50–3.00. Implementation validation range: 0.25–4.00.
-
-### 10.2 Fatigue level
-
-Input:
-
-    fatigue_level in [0, 100]
-
-Evidence:
-
-    e_fatigue = (fatigue_level / 100) ^ gamma_fatigue
-
-Therefore:
-
-    e_fatigue in [0, 1]
-
-Initial hyperparameter:
-
-    gamma_fatigue = 1.0
-
-Recommended and validation ranges are the same as drowsiness.
-
-### 10.3 Traffic state
-
-Input:
-
-    normal | congested
-
-Evidence:
-
-    normal    -> 0
-    congested -> 1
-
-The candidate coefficient states whether it responds to congestion-related inattentive-driving risk. Normal traffic is neutral rather than an opposing signal.
-
-### 10.4 Road type
-
-Input:
-
-    highway | local | mountain | parking
-
-Road type directly selects a signed response coefficient:
-
-    e_road = 1
-    a_road(c) = road_response[c][road_type]
-    r_road(c) = e_road * a_road(c)
-
-The evidence trace therefore records numeric normalized evidence 1, the
-selected response class/coefficient, and the resulting response. There is no
-additional intensity multiplier. This preserves the categorical meaning while
-keeping the common evidence schema uniform.
-
-Highway preferences follow Slide 67. Mountain-road defaults are explicitly labeled safety-oriented normalized-context hypotheses: low-interaction audio is mildly supported, while demanding interactive services are relatively opposed. Parking is neutral because driving/stopped permissibility belongs to eligibility.
-
-### 10.5 Day/night state
-
-Input:
-
-    day | night
-
-Evidence:
-
-    day   -> 0
-    night -> 1
-
-Night activates the service’s night-response coefficient. Day is neutral.
-
-### 10.6 Road monotony
-
-Input:
-
-    monotony_level in [0, 100]
-
-Evidence:
-
-    e_monotony = (monotony_level / 100) ^ gamma_monotony
-
-Therefore:
-
-    e_monotony in [0, 1]
-
-Initial hyperparameter:
-
-    gamma_monotony = 1.0
-
-Recommended range: 0.50–3.00. Validation range: 0.25–4.00.
-
-### 10.7 Route characteristics
-
-Input:
-
-    route_tags: string array
-
-At service-selection level, the algorithm measures whether a distinctive route context exists and whether the service can adapt to it. Exact song/item matching remains the content selector’s responsibility.
-
-    recognized_count = count(unique recognized route_tags)
-
-    e_route
-      = min(1, recognized_count / route_tag_saturation)
-
-Initial hyperparameter:
-
-    route_tag_saturation = 2
-
-Then:
-
-    r_route(c) = e_route * route_response(c)
-
-Unknown tags are ignored in the calculation and reported. An empty or wholly unknown tag set is neutral.
-
-Recommended saturation range: 1–4. Validation range: 1–10.
-
-### 10.8 Destination characteristics
-
-The destination function is equivalent:
-
-    e_destination
-      = min(1, recognized_unique_destination_tags
-               / destination_tag_saturation)
-
-    r_destination(c)
-      = e_destination * destination_response(c)
-
-Initial hyperparameter:
-
-    destination_tag_saturation = 2
-
-### 10.9 Child present
-
-Input:
-
-    child_present: boolean
-
-Evidence:
-
-    false -> 0
-    true  -> 1
-
-A false value is neutral. It does not imply that child-incompatible adult content should be preferred.
-
-### 10.10 Multiple passengers
-
-Input:
-
-    multiple_passengers: boolean
-
-Evidence:
-
-    false -> 0
-    true  -> 1
-
-The response profile favors services suited to shared participation.
-
-### 10.11 Oshi registered
-
-Input:
-
-    oshi_registered: boolean
-
-Evidence:
-
-    false -> 0
-    true  -> 1
-
-No registration is neutral for generic services. Catalog eligibility separately removes an oshi-only candidate when its required entity is unavailable.
-
-### 10.12 Oshi mode
-
-Input:
-
-    on | off
-
-Evidence:
-
-    off -> -1
-    on  -> +1
-
-Unlike absence of registration, mode off is an explicit setting and therefore opposes oshi-focused adaptation.
-
-The combination <code>oshi_registered=false</code> and <code>oshi_mode=on</code> is invalid input.
-
-### 10.13 Service recency
-
-The current candidate selects its map entry:
-
-    service_recency_state[candidate_id]
-
-Normalization:
-
-    recent      -> 0.00
-    long_unused -> 0.50
-    never       -> 1.00
-
-The coefficient is fixed to +1. Recency creates only a novelty bonus. Recent use is neutral, not a penalty. This preserves novelty as a weak P4 influence and avoids aggressively rotating away from preferred services.
-
-### 10.14 Overall service usage
-
-The current candidate selects:
-
-    service_usage_level[candidate_id]
-
-Normalization:
-
-    never  -> -1.00
-    low    -> -0.50
-    medium -> +0.25
-    high   -> +1.00
-
-The coefficient is fixed to +1.
-
-These values make high usage strong supporting preference evidence, low/never usage opposing preference evidence, and medium usage mildly supportive. Novelty remains independently represented by service recency.
-
-### 10.15 Scene-specific service usage
-
-The algorithm derives a set of current scene IDs from baseline situation features:
-
-- <code>traffic:congested</code>;
-- <code>road:highway</code>, <code>road:local</code>, <code>road:mountain</code>, or <code>road:parking</code>;
-- <code>time:night</code>;
-- <code>monotony:medium</code> for 34–66;
-- <code>monotony:high</code> for 67–100;
-- <code>passenger:child</code>;
-- <code>passenger:group</code>;
-- one <code>route:&lt;tag&gt;</code> entry per recognized route tag;
-- one <code>destination:&lt;tag&gt;</code> entry per recognized destination tag.
-
-For each matching scene with a candidate entry, normalize its usage level with the overall-usage mapping. The evidence is the arithmetic mean:
-
-    e_scene(c)
-      = mean(normalized scene usage values for candidate c)
-
-If no matching scene has a candidate record, evidence is 0 and the field is reported as unavailable for that candidate.
-
-The coefficient is fixed to +1.
-
-The scene taxonomy and thresholds are versioned parameters. They are not hidden runtime inference.
-
-### 10.16 Service-proposal acceptance rate
-
-The current candidate selects:
-
-    service_proposal_acceptance_rate[candidate_id]
-
-Normalization:
-
-    e_acceptance(c)
-      = 2 * acceptance_rate(c) / 100 - 1
-
-Examples:
-
-| Rate | Evidence |
-|---:|---:|
-| 0 | -1.0 |
-| 25 | -0.5 |
-| 50 | 0.0 |
-| 75 | +0.5 |
-| 100 | +1.0 |
-
-The coefficient is fixed to +1.
-
-Because baseline-only mode contains no confidence/sample-count feature, the algorithm cannot shrink sparse rates. The input must therefore be described as a synthetic configured rate, not a reliable empirical estimate.
-
-### 10.17 Service recovery rate
-
-The current candidate selects:
-
-    service_recovery_rate[candidate_id]
-
-Normalization:
-
-    e_recovery(c)
-      = 2 * recovery_rate(c) / 100 - 1
-
-The coefficient is fixed to +1.
-
-The same no-confidence limitation applies. Recovery is synthetic evidence, not a clinical claim.
-
----
-
-## 11. Initial Candidate Response Profiles
-
-Abbreviations used in the following tables:
-
-| Code | Coefficient |
-|---|---:|
-| <code>--</code> | -1.0 |
-| <code>-</code> | -0.5 |
-| <code>0</code> | 0.0 |
-| <code>+</code> | +0.5 |
-| <code>++</code> | +1.0 |
-
-### 11.1 Driving services
-
-These defaults follow Slide 67:
-
-- high drowsiness/fatigue and risk-related environment favor humming karaoke, call-and-response, quiz, and ranking;
-- distinctive route/destination favors music playlist and humming karaoke;
-- child/group presence favors humming karaoke, call-and-response, quiz, and ranking;
-- radio-style oshi support follows Slide 39; other oshi-aware service variants
-  are explicitly labeled expert hypotheses.
-
-The Slide-67 driver/environment preference is explicit for purposes ②–④.
-When the same driving services are used before a recommended rest, the numeric
-response profile is an expert generalization about keeping the driver engaged
-until stopping, not a claim that Slide 67 explicitly prioritizes those services
-for purpose ①. Humming karaoke additionally appears in the source rest journey.
-The evidence provenance must therefore be context-sensitive even where the
-numeric coefficient is shared.
-
-| Candidate | Drowsy | Fatigue | Congested | Night | Monotony | Route | Destination | Child | Group | Oshi registered | Oshi mode |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| <code>music_playlist</code> | 0 | 0 | 0 | 0 | 0 | ++ | ++ | 0 | 0 | + | + |
-| <code>humming_karaoke</code> | ++ | ++ | ++ | ++ | ++ | ++ | ++ | ++ | ++ | + | ++ |
-| <code>call_response_driving</code> | ++ | ++ | ++ | ++ | ++ | 0 | 0 | ++ | ++ | + | + |
-| <code>quiz</code> | ++ | ++ | ++ | ++ | ++ | 0 | 0 | ++ | ++ | + | + |
-| <code>ranking_creation</code> | ++ | ++ | ++ | ++ | ++ | 0 | 0 | ++ | ++ | + | + |
-| <code>radio_style</code> | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | ++ | ++ |
-
-Road-type response:
-
-| Candidate | Highway | Local | Mountain | Parking |
-|---|---:|---:|---:|---:|
-| <code>music_playlist</code> | 0 | 0 | + | 0 |
-| <code>humming_karaoke</code> | ++ | 0 | - | 0 |
-| <code>call_response_driving</code> | ++ | 0 | - | 0 |
-| <code>quiz</code> | ++ | 0 | -- | 0 |
-| <code>ranking_creation</code> | ++ | 0 | -- | 0 |
-| <code>radio_style</code> | 0 | 0 | + | 0 |
-
-The mountain values are normalized-context safety hypotheses, not explicit CDC-SU judgments. They reduce interactive cognitive load on a demanding road while still leaving every platform-eligible service available for customer evaluation.
-
-### 11.2 During-rest actions
-
-Slide 67 does not provide an action-by-feature matrix for the during-rest stage. These defaults are explicitly labeled <code>rest_action_hypothesis</code>.
-
-| Candidate | Drowsy | Fatigue | Congested | Night | Monotony | Route | Destination | Child | Group | Oshi registered | Oshi mode |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| <code>rest_duration_suggestion</code> | + | + | 0 | + | 0 | 0 | 0 | + | + | 0 | 0 |
-| <code>rest_method_suggestion</code> | + | ++ | 0 | + | 0 | 0 | 0 | ++ | + | 0 | 0 |
-| <code>seat_adjustment</code> | 0 | + | 0 | 0 | 0 | 0 | 0 | + | + | 0 | 0 |
-| <code>nap_guidance</code> | ++ | ++ | 0 | ++ | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| <code>rest_extension_check</code> | ++ | ++ | 0 | ++ | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-
-Traffic, road type, and monotony are neutral for all during-rest actions because
-the stopped snapshot resets those current-environment fields as specified in
-Section 5.2. Night remains current and can affect nap/rest suitability.
-
-The journey engine must not offer <code>rest_extension_check</code> until it is applicable. That is eligibility, not service fit derived from baseline features.
-
-### 11.3 Post-rest stopped services
-
-| Candidate | Drowsy | Fatigue | Congested | Night | Monotony | Route | Destination | Child | Group | Oshi registered | Oshi mode |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| <code>live_viewing</code> | + | + | 0 | 0 | 0 | 0 | + | ++ | ++ | ++ | ++ |
-| <code>stretch_video</code> | ++ | ++ | 0 | 0 | 0 | 0 | 0 | + | + | 0 | 0 |
-| <code>full_karaoke</code> | + | + | 0 | 0 | 0 | + | + | ++ | ++ | + | ++ |
-| <code>oshi_reexperience</code> | + | + | 0 | 0 | 0 | ++ | ++ | + | + | ++ | ++ |
-
-Traffic, road type, and monotony are neutral for all post-rest stopped services.
-Screen eligibility is enforced by the stopped stage.
-
-### 11.4 Direct candidate-specific features
-
-For all candidates in all stages:
-
-| Feature | Candidate response coefficient |
-|---|---:|
-| Service recency | +1 |
-| Overall service usage | +1 |
-| Scene/service usage | +1 |
-| Proposal acceptance rate | +1 |
-| Recovery rate | +1 |
-
-The candidate-specific raw value already contains the direction of evidence.
-
-### 11.5 Machine-implementable per-cell provenance
-
-The numeric tables above are presentation views. The serialized parameter
-record must expand every candidate × feature × profile-context cell:
-
-    response_cell:
-      profile_context: string
-      candidate_id: string
-      feature_id: string
-      enum_value: string-or-null
-      response_class: string
-      coefficient: number
-      provenance_label: string
-      source_reference: string-or-null
-      rationale: string
-
-There is no runtime guess based on surrounding prose. Package build validation
-fails if an eligible candidate lacks any cell, including an explicit neutral
-cell.
-
-The default expansion rules are:
-
-#### Active-driving purposes ②–④
-
-| Cells | Provenance | Source |
-|---|---|---|
-| Positive drowsiness, fatigue, congestion, night, monotony, and highway responses for humming, driving call-and-response, quiz, and ranking | <code>cdc_su_explicit</code> | Slide 67 current-state/environment row |
-| Positive route/destination responses for music and humming | <code>cdc_su_explicit</code> | Slide 67 route/destination row |
-| Positive child/group responses for humming, driving call-and-response, quiz, and ranking | <code>cdc_su_explicit</code> | Slide 67 passenger row |
-| Radio-style nonzero oshi responses | <code>service_definition</code> | Slide 39 explicitly describes recent oshi information |
-| Other nonzero oshi responses | <code>active_oshi_hypothesis</code> | Expert assumption that the service can use an oshi-aware recipe |
-| Mountain-road nonzero responses | <code>normalized_context_hypothesis</code> | Normalized simulator road context |
-| Every remaining zero cell | <code>neutral_source_silent</code> | Source does not justify a direction |
-
-#### Before-rest driving context
-
-| Cells | Provenance | Source |
-|---|---|---|
-| Humming activation responses | <code>service_definition</code> | Pre-rest humming journey in Slides 1–7 and service definition |
-| Other nonzero driver/environment responses copied from the driving matrix | <code>pre_rest_generalization_hypothesis</code> | Expert hypothesis; Slide 67 column ① is silent |
-| Music/humming route/destination and shared-service passenger responses | <code>pre_rest_generalization_hypothesis</code> | Expert hypothesis for the constrained pre-rest candidate family |
-| Radio-style nonzero oshi responses | <code>service_definition</code> | Slide 39 explicitly describes recent oshi information |
-| Other nonzero oshi responses | <code>pre_rest_oshi_hypothesis</code> | Expert assumption for oshi-aware variants |
-| Mountain-road nonzero responses | <code>normalized_context_hypothesis</code> | Normalized simulator road context |
-| Every remaining zero cell | <code>neutral_source_silent</code> | Source does not justify a direction |
-
-#### During-rest context
-
-| Cells | Provenance | Source |
-|---|---|---|
-| Every nonzero response in Section 11.2 | <code>rest_action_hypothesis</code> | Expert interpretation of the rest flow |
-| Every zero response | <code>neutral_source_silent</code> | No baseline-based direction is asserted |
-
-#### Post-rest context
-
-| Cells | Provenance | Source |
-|---|---|---|
-| Drowsiness, fatigue, and night nonzero responses | <code>post_rest_hypothesis</code> | Expert recovery-content hypothesis |
-| Oshi-reexperience route/destination responses | <code>cdc_su_explicit</code> | Slide 67 purpose-① route row |
-| Live/full-karaoke child/group responses | <code>cdc_su_explicit</code> | Slide 67 purpose-① passenger row |
-| Live/full-karaoke/oshi oshi responses | <code>cdc_su_explicit</code> | Slide 67 purpose-① oshi row |
-| Other nonzero route, destination, passenger, or oshi responses | <code>post_rest_hypothesis</code> | Expert interpretation; not directly stated by the service definitions |
-| Every remaining zero cell | <code>neutral_source_silent</code> | Source does not justify a direction |
-
-#### Direct candidate-specific baseline features
-
-All coefficient-+1 cells for recency, usage, scene usage, acceptance, and
-recovery use:
-
-    provenance_label = cdc_su_direct_candidate_feature
-    source_reference = Slides 66–67
-
-The implementation repository should store the expanded records rather than
-reimplementing these prose rules. The rules above define how the initial data
-file is generated and reviewed.
-
----
-
-## 12. Parameters and Hyperparameters
-
-### 12.1 Distinction
-
-In this package:
-
-- a **parameter** defines the model’s structure, mappings, or service semantics and is versioned with the package/configuration;
-- a **hyperparameter** is a customer-editable scalar used to tune the selected hypothesis without changing code.
-
-Both are evidence-visible. Changing either creates a new decision configuration.
-
-### 12.2 Structural parameters
-
-| Parameter | Initial value | Meaning |
-|---|---|---|
-| <code>response_class_map</code> | -1, -.5, 0, .5, 1 | Coarse response semantics |
-| <code>service_response_profiles</code> | Section 11 | Candidate capabilities and source assumptions |
-| <code>road_response_profiles</code> | Section 11 | Road-category compatibility |
-| <code>scene_taxonomy</code> | Section 10.15 | Current-scene derivation |
-| <code>usage_ordinal_map</code> | -1, -.5, .25, 1 | Overall/scene usage normalization |
-| <code>recency_ordinal_map</code> | 0, .5, 1 | Novelty normalization |
-| <code>missing_numeric_evidence</code> | 0 | Neutral, disclosed |
-| <code>missing_candidate_map_evidence</code> | 0 | Neutral, disclosed |
-| <code>top_k</code> | 3 | Maximum returned candidates |
-| <code>tie_breaker</code> | candidate ID ascending | Deterministic exact tie behavior |
-| <code>material_safety_gap</code> | 1.00 | Safety-response gap used only to prove the continuous default dominance invariant |
-
-### 12.3 Weight hyperparameters
-
-All hierarchy values in Section 7 are editable finite, non-negative numeric
-hyperparameters.
-
-Recommended UI:
-
-- Basic: edit top categories and subgroups.
-- Advanced: edit leaf weights.
-- Always show the resulting effective 17-feature weights.
-
-Sibling values are ratios. They do not need to sum to one because the evaluator normalizes them. A sibling group containing only zeros is invalid.
-
-### 12.4 Purpose multiplier hyperparameters
-
-All values in Section 8.2 are editable in the range 0–5, with:
-
-- initial values as specified;
-- recommended customer range 0.5–3;
-- step 0.05;
-- all-zero effective configuration rejected.
-
-The UI should include:
-
-- reset purpose profile;
-- set all multipliers to 1;
-- clone a profile for comparison;
-- show before/after effective weights.
-
-### 12.5 Curve and saturation hyperparameters
-
-| Hyperparameter | Initial | Validation range | Meaning |
-|---|---:|---:|---|
-| <code>gamma_drowsiness</code> | 1.0 | 0.25–4.0 | Shape of drowsiness evidence |
-| <code>gamma_fatigue</code> | 1.0 | 0.25–4.0 | Shape of fatigue evidence |
-| <code>gamma_monotony</code> | 1.0 | 0.25–4.0 | Shape of monotony evidence |
-| <code>route_tag_saturation</code> | 2 | 1–10 | Recognized route tags required for full evidence |
-| <code>destination_tag_saturation</code> | 2 | 1–10 | Recognized destination tags required for full evidence |
-| <code>monotony_medium_min</code> | 34 | 0–100 | Scene taxonomy boundary |
-| <code>monotony_high_min</code> | 67 | 0–100 | Scene taxonomy boundary |
-| <code>safety_share_warning_floor</code> | 0.40 | 0–1 | Non-blocking configuration warning |
-
-Required relations:
-
-    monotony_medium_min < monotony_high_min
-
-### 12.6 Response-profile editing
-
-Response classes should be edited in an advanced matrix, not mixed with ordinary feature weights.
-
-Continuous customer overrides of response coefficients must be finite and
-within [-1, +1]. Values outside that range, NaN, and infinity are invalid
-rather than silently clamped.
-
-The distinction is important:
-
-- weight asks “How important is this evidence?”;
-- response asks “How does this service respond to the evidence?”
-
-Changing a weight affects all candidates with non-neutral responses. Changing a response profile affects a particular candidate-feature relationship.
-
-### 12.7 Conceptual configuration shape
-
-The implementation may use a different serialization format, but it must
-preserve these concepts:
-
-    package:
-      id: transparent_service_selector_baseline_v1
-      version: string
-
-    parameters:
-      service_fit_scale:
-        normalized_min: -1.0
-        normalized_max: 1.0
-        neutral: 0.0
-      response_class_map:
-        strongly_opposes: -1.0
-        opposes: -0.5
-        neutral: 0.0
-        supports: 0.5
-        strongly_supports: 1.0
-      ordinal_maps:
-        recency: object
-        usage: object
-      scene_taxonomy: object
-      service_response_profiles: object
-      road_response_profiles: object
-      missing_policy: neutral_and_disclose
-      top_k: 3
-      tie_breaker: candidate_id_ascending
-      material_safety_gap: 1.0
-
-    hyperparameters:
-      category_weights: object
-      subgroup_weights: object
-      leaf_weights: object
-      purpose_multipliers: object
-      gamma_drowsiness: 1.0
-      gamma_fatigue: 1.0
-      gamma_monotony: 1.0
-      route_tag_saturation: 2
-      destination_tag_saturation: 2
-      monotony_medium_min: 34
-      monotony_high_min: 67
-      safety_share_warning_floor: 0.40
-
-Configuration validation occurs before candidate scoring. The resolved,
-normalized configuration is recorded beside the original customer-entered
-values.
-
----
-
-## 13. Detailed Evaluation Pipeline
-
-### Step 1 — Validate the opportunity
-
-Validate:
-
-- contract and package versions;
-- trigger purpose;
-- compatible lifecycle stage;
-- feature value types and ranges;
-- oshi registration/mode consistency;
-- hierarchy and multiplier values;
-- response profile completeness for eligible candidates.
-
-Invalid types, out-of-range values, incompatible purpose/stage pairs, or all-zero weights produce a blocking algorithm error. They do not produce a fabricated ranking.
-
-### Step 2 — Confirm candidate constraints
-
-Verify that every platform-eligible candidate belongs to the frozen allowed-service row. If not, reject the request as a contract error.
-
-Copy platform exclusions into the output unchanged. The algorithm may not reinstate them.
-
-### Step 3 — Resolve effective weights
-
-1. Normalize sibling weights at every hierarchy node.
-2. Multiply down the hierarchy to obtain 17 base leaf weights.
-3. Apply the current trigger-purpose subgroup multipliers.
-4. Normalize the resulting 17 values.
-5. record base, multiplier, raw effective, and final normalized values.
-
-### Step 4 — Build normalized evidence
-
-Normalize scalar and common contextual features once.
-
-Candidate-indexed features are normalized inside the candidate loop using that candidate’s map entry.
-
-### Step 5 — Calculate service fit for each eligible candidate
-
-Pseudocode:
-
-    for candidate in eligible_candidates:
-        service_fit_unclamped = 0
-        feature_rows = []
-
-        for feature in BASELINE_FEATURES_IN_CONTRACT_ORDER:
-            raw = read_raw_value(feature, candidate)
-            evidence = normalize(feature, raw)
-            coefficient = resolve_response(feature, candidate, raw)
-            normalized_feature_response = clamp(evidence * coefficient, -1, 1)
-
-            if feature is road_type:
-                evidence = 1
-                coefficient = road_response[candidate][raw]
-                normalized_feature_response = coefficient
-
-            feature_contribution = (
-                effective_weight[feature]
-                * normalized_feature_response
-            )
-            service_fit_unclamped += feature_contribution
-
-            feature_rows.append(full_evidence_record)
-
-        assert service_fit_unclamped is in [-1, +1] within tolerance
-        service_fit = clamp(service_fit_unclamped, -1, +1)
-        emit candidate record
-
-The baseline feature order is fixed for stable evidence export; it does not affect arithmetic.
-
-### Step 6 — Build explanatory subtotals
-
-Each subtotal is the sum of normalized feature contributions belonging to that hierarchy node:
-
-    situation_fit = sum Situation feature_contribution
-    preference_fit = sum Preference feature_contribution
-    history_fit = sum History feature_contribution
-
-The subtotals reconstruct the unclamped value:
-
-    service_fit_unclamped = situation_fit
-                          + preference_fit
-                          + history_fit
-
-    service_fit = clamp(service_fit_unclamped, -1, +1)
-
-Each category subtotal is bounded by plus or minus that category's resolved
-effective weight share. The subtotals are not separately rescaled and do not
-change ranking.
-
-### Step 7 — Rank
-
-Sort:
-
-    (-service_fit, candidate_id)
-
-Use full-precision values for sorting. Round only for display.
-
-Return the first three or all candidates when fewer than three exist.
-
-### Step 8 — No-proposal behavior
-
-Return <code>no_proposal</code> only when the eligible candidate list is empty.
-
-A low or negative service fit does not suppress a proposal because the upstream trigger already established the proposal opportunity.
-
----
-
-## 14. Missing, Unknown, and Invalid Data
-
-### 14.1 Missing versus invalid
-
-- **Missing** means the field or candidate map entry is absent.
-- **Unknown** means a string tag is syntactically valid but not in the configured taxonomy.
-- **Invalid** means a wrong type, out-of-range number, unsupported enum, or contradictory state.
-
-### 14.2 Missing policy
-
-Baseline-only mode has no missingness-confidence feature. It therefore uses neutral evidence:
-
-    missing normalized evidence = 0
-    normalized feature response = 0
-    feature contribution = 0
-
-The feature remains in the trace with status <code>missing_neutral</code>.
-
-This policy avoids inventing either positive or negative evidence. A complete simulator seed should provide all scalar features and all candidate-indexed histories so missing values are normally exceptional.
-
-### 14.3 Unknown tags
-
-Unknown route/destination tags do not contribute to recognized tag count. They are listed in <code>unused_available_features</code> or a dedicated unknown-tag record.
-
-### 14.4 Invalid policy
-
-Invalid input blocks the evaluation. It must not silently become neutral.
-
----
-
-## 15. Explainability Contract
-
-### 15.1 Per-feature evidence row
-
-For every candidate and every baseline feature, record:
-
-| Field | Meaning |
-|---|---|
-| <code>feature_id</code> | Stable baseline feature ID |
-| <code>source_reference</code> | CDC-SU slide reference |
-| <code>raw_value</code> | Exact snapshot value or candidate map entry |
-| <code>normalization_function</code> | Named function and version |
-| <code>normalization_parameters</code> | Gamma, ordinal map, or saturation |
-| <code>normalized_evidence</code> | <em>e</em> value |
-| <code>response_class</code> | Candidate response class |
-| <code>response_coefficient</code> | <em>a</em> value |
-| <code>response_provenance</code> | Source/assumption/customer override |
-| <code>normalized_feature_response</code> | <em>r</em> value in [-1, +1] |
-| <code>hierarchy_path</code> | Category → subgroup → leaf |
-| <code>base_weight</code> | Flattened hierarchy weight |
-| <code>purpose_multiplier</code> | Applied multiplier |
-| <code>effective_weight</code> | Final normalized weight |
-| <code>feature_contribution</code> | <em>k</em> value in [-<em>w</em>, +<em>w</em>] |
-| <code>status</code> | used, neutral, zero-weight, missing, or invalid |
-
-### 15.2 Candidate explanation
-
-The candidate view must show:
-
-1. service fit in [-1, +1];
-2. Situation, Preference, and History fit subtotals;
-3. strongest supporting normalized contributions;
-4. strongest opposing normalized contributions;
-5. neutral and zero-weight features;
-6. missing/unknown inputs;
-7. response-profile provenance;
-8. configuration versions.
-
-Example:
-
-    Humming karaoke: service fit +0.778
-
-    Strongest support
-    +0.204 Drowsiness: raw 80, normalized evidence 0.80
-    +0.125 Fatigue: raw 60, normalized evidence 0.60
-    +0.091 Monotony: raw 75, normalized evidence 0.75
-
-    Opposition
-    none
-
-    Neutral
-    none from the current road/purpose profile
-
-### 15.3 Ranking explanation
-
-For adjacent candidates, expose:
-
-    service_fit(candidate A) - service_fit(candidate B)
-
-and the normalized feature-contribution differences responsible for that gap.
-
-This makes “why A above B?” answerable without reading the implementation.
-
-### 15.4 Exact reproducibility
-
-Persist:
-
-- immutable input snapshot;
-- candidate/exclusion lists;
-- parameter and hyperparameter values;
-- resolved effective weights;
-- response profile versions;
-- full-precision feature contributions and service fit;
-- stable tie-break result.
-
-Identical inputs and configuration must reproduce semantically identical
-output. Canonical byte equality follows the narrower rule in Section 6.6.
-
-### 15.5 Conceptual output shape
-
-The package output extends the common selector contract with transparent
-evidence:
-
-    decision_type: ranked_candidates | no_proposal
-    ranked_candidates:
-      - rank: integer
-        candidate_id: string
-        score: number  # service_fit in [-1,+1]
-        rationale: array
-        uncertainty: null
-        subtotals:
-          situation_fit: number
-          preference_fit: number
-          history_fit: number
-        supporting_feature_ids: array
-        opposing_feature_ids: array
-        neutral_feature_ids: array
-        feature_contributions:
-          - feature_id: string
-            raw_value: any
-            normalized_evidence: number
-            response_class: string
-            response_coefficient: number
-            normalized_feature_response: number  # [-1,+1]
-            base_weight: number
-            purpose_multiplier: number
-            effective_weight: number
-            feature_contribution: number
-            provenance: object
-            status: string
-    excluded_candidates: array
-    effective_weights: object
-    unused_available_features: array
-    missing_features: array
-    configuration_warnings: array
-    next_package_runtime_state: {}
-    algorithm_provenance: object
-
-The common rationale field should contain concise presentation text generated
-from the structured contribution rows. Structured evidence is authoritative;
-localized prose must not introduce reasons that are absent from the arithmetic.
-
-This deterministic stateless selector always returns
-<code>uncertainty=null</code> and <code>next_package_runtime_state={}</code>.
-It does not omit inherited common-contract fields.
-
----
-
-## 16. Worked Example
-
-### 16.1 Opportunity
-
-    trigger_purpose = inattentive_driving_prevention_recovery
-    lifecycle_stage = active_driving_content
-    candidate = humming_karaoke
-
-Baseline snapshot:
-
-| Feature | Value | Normalized evidence |
-|---|---|---:|
-| Drowsiness | 80 | .80 |
-| Fatigue | 60 | .60 |
-| Traffic | congested | 1.00 |
-| Road | highway | 1.00 |
-| Night | night | 1.00 |
-| Monotony | 75 | .75 |
-| Route tags | two recognized | 1.00 |
-| Destination tags | one recognized | .50 |
-| Child present | true | 1.00 |
-| Multiple passengers | true | 1.00 |
-| Oshi registered | true | 1.00 |
-| Oshi mode | on | 1.00 |
-| Service recency | long_unused | .50 |
-| Service usage | high | 1.00 |
-| Scene/service usage | high | 1.00 |
-| Acceptance rate | 75 | .50 |
-| Recovery rate | 70 | .40 |
-
-### 16.2 Contributions
-
-Using the initial inattentive-purpose effective weights:
-
-| Feature | Effective weight | Normalized feature response | Feature contribution |
-|---|---:|---:|---:|
-| Drowsiness | .254551 | .80 | +.203641 |
-| Fatigue | .208269 | .60 | +.124961 |
-| Traffic | .060475 | 1.00 | +.060475 |
-| Road/highway | .060475 | 1.00 | +.060475 |
-| Night | .060475 | 1.00 | +.060475 |
-| Monotony | .120950 | .75 | +.090713 |
-| Route | .019091 | 1.00 | +.019091 |
-| Destination | .015620 | .50 | +.007810 |
-| Child | .025571 | 1.00 | +.025571 |
-| Group | .013769 | 1.00 | +.013769 |
-| Oshi registered | .006479 | .50 | +.003240 |
-| Oshi mode | .012033 | 1.00 | +.012033 |
-| Recency | .007405 | .50 | +.003703 |
-| Overall usage | .020827 | 1.00 | +.020827 |
-| Scene usage | .040728 | 1.00 | +.040728 |
-| Acceptance | .015427 | .50 | +.007714 |
-| Recovery | .057853 | .40 | +.023141 |
-
-The service fit is:
-
-    sum(feature_contribution)
-    = approximately +0.778365
-
-The implementation retains full precision and may display +0.778.
-
-### 16.3 Comparison behavior
-
-For music playlist in the same snapshot:
-
-- drowsiness, fatigue, congestion, highway, night, and monotony responses are mostly neutral;
-- route/destination and personalized usage/history may support it;
-- it can therefore rank well for route relevance without receiving the activation-response contributions assigned to humming karaoke.
-
-For <code>route_music</code>, the route and destination weights rise automatically through the purpose multiplier profile. The exact same raw snapshot and service-response profiles can therefore produce a different, fully explained order.
-
----
-
-## 17. Customer Tuning Guidance
-
-### 17.1 Recommended tuning order
-
-Customers should tune in this order:
-
-1. inspect hard eligibility and purpose/stage candidate constraints;
-2. validate candidate response classes against product intent;
-3. tune top-level category weights;
-4. tune subgroup weights;
-5. tune purpose multipliers;
-6. tune individual leaf weights;
-7. tune continuous gamma and tag-saturation curves;
-8. change ordinal mappings only when there is a clear product reason.
-
-This order separates semantic disagreement from numeric tuning.
-
-### 17.2 One-variable contrasts
-
-Preferred evaluation method:
-
-- clone a complete seed;
-- change one feature, weight, multiplier, or response class;
-- recompute;
-- compare effective weights, normalized feature contributions, and rank movement.
-
-Useful contrasts include:
-
-- drowsiness 30 versus 80;
-- normal versus congested;
-- local versus mountain road;
-- no child versus child present;
-- route purpose versus inattentive purpose;
-- oshi mode on versus off;
-- high versus low scene usage;
-- 50% versus 80% recovery.
-
-### 17.3 Configuration warnings
-
-Warn, but do not silently correct, when:
-
-- safety-context effective share falls below 40%;
-- novelty exceeds overall usage or scene preference;
-- all response coefficients for a feature are neutral within the active candidate set;
-- a purpose multiplier is unusually high, such as above 3;
-- more than 25% of effective feature weight has missing evidence;
-- an edited response contradicts a source-explicit preference.
-
-Warnings are evidence for review, not algorithmic penalties.
-
-### 17.4 Avoid false precision
-
-Default response classes use coarse values. Customers may enter continuous coefficients, but the UI should label them as configured hypotheses. A change from .70 to .71 is not empirically meaningful without validation data.
-
----
-
-## 18. Implementation Components
-
-Recommended package-local components:
-
-| Component | Responsibility |
-|---|---|
-| Input validator | Contract, range, enum, and consistency checks |
-| Weight resolver | Hierarchical normalization and purpose multipliers |
-| Feature normalizer | All 17 baseline normalization functions |
-| Scene resolver | Versioned current-scene IDs and aggregation |
-| Response resolver | Candidate and road response profiles |
-| Candidate scorer | Contribution arithmetic and subtotals |
-| Ranker | Full-precision service-fit ordering and tie break |
-| Evidence builder | Complete feature/candidate/configuration trace |
-
-The selector must not call the content selector or consume another algorithm package’s score.
-
----
-
-## 19. Required Tests
-
-### 19.1 Mathematical tests
-
-- Effective weights sum to one for every default purpose profile.
-- Every normalized evidence value and response coefficient is within [-1, +1].
-- Every normalized feature response is within [-1, +1].
-- Every feature contribution equals
-  <code>effective_weight × normalized_feature_response</code> and is within
-  [-<code>effective_weight</code>, +<code>effective_weight</code>].
-- Unclamped service fit equals the ordered sum of all feature contributions;
-  the published service fit is its floating-point-safety clamp to [-1, +1].
-- All-neutral evidence produces service fit 0 for every candidate.
-- Identical inputs produce semantically equal numeric output within tolerance
-  1e-12; same-runtime canonical replay is byte-equivalent.
-- Changing the common magnitude of all sibling weights does not change results.
-- Every built-in purpose profile satisfies
-  <code>W_D × 1.00 &gt; 2 × W_L</code>, where D is Driver State + Driving
-  Environment + Recovery.
-- For each purpose, construct an adversarial pair with dominant-context gap
-  1.00 and maximally reversed lower-priority responses; the higher-safety
-  candidate must still rank first.
-- A customer profile that violates the invariant remains evaluable but emits
-  <code>dominance_not_guaranteed</code> with the calculated required gap.
-
-### 19.2 Feature tests
-
-- Boundary values 0 and 100 for drowsiness, fatigue, and monotony.
-- Gamma curves at validation boundaries.
-- Every enum and ordinal mapping.
-- Empty, duplicate, recognized, and unknown route/destination tags.
-- Every scene predicate and multi-scene average.
-- Oshi invalid-state rejection.
-- Missing candidate history produces neutral disclosed evidence.
-- Acceptance/recovery rates 0, 50, and 100 map to -1, 0, and +1.
-
-### 19.3 Eligibility tests
-
-- No excluded candidate is scored.
-- No candidate outside the purpose/stage row is accepted.
-- Empty eligibility returns <code>no_proposal</code>.
-- Low or negative service-fit values with eligible candidates still return ranked proposals.
-- Driving/stopped screen restrictions remain outside service-fit arithmetic.
-
-### 19.4 Response-profile tests
-
-- Slide-67-preferred driving services receive positive activation responses.
-- Route evidence supports music playlist and humming karaoke.
-- Passenger evidence supports the specified shared services.
-- Mountain road opposes the default high-interaction candidates.
-- Oshi mode off produces opposing evidence for oshi-responsive candidates.
-- Direct candidate-specific features always use coefficient +1.
-
-### 19.5 Ranking and evidence tests
-
-- Rank uses full precision, not displayed rounding.
-- Exact service-fit ties resolve by stable candidate ID.
-- Top three are returned in service-fit order.
-- All 17 feature rows exist for every scored candidate.
-- Group fit subtotals reconcile to service fit within the Section 6.6 numeric
-  tolerance.
-- Customer overrides and source provenance are both present.
-- Every eligible candidate × feature × context cell has coefficient,
-  provenance label, source reference/null, and rationale.
-- Non-finite weights/coefficients and coefficients outside [-1, +1] are
-  rejected.
-
-### 19.6 Hypothesis-validation and review protocol
-
-Algorithm tests establish conformance, not real-world efficacy. Before a
-built-in parameter/profile version is accepted, reviewers execute a versioned
-scenario corpus.
-
-Minimum corpus coverage:
-
-| Context | Required cases |
-|---|---|
-| Rest / before stop | low and high driver state; highway and mountain; with/without passengers |
-| Rest / during stopped | nap-oriented, fatigue-oriented, passenger-present, rest-extension eligible/ineligible |
-| Rest / after rest | residual high/low driver state; route/oshi; child/group |
-| Inattentive/recovery | each driving-environment factor independently and combined |
-| Route music | no tags, one tag, saturated tags, destination-only tags |
-| Child experience | child only, group only, both, neither |
-
-For every case, the corpus stores:
-
-- exact input/configuration;
-- eligibility and expected exclusions;
-- required ordering constraints, not an invented “correct probability”;
-- expected dominant supporting/opposing reasons;
-- expected invariant status;
-- allowed service-fit tolerance;
-- product, UX, and safety-review comments.
-
-Required adversarial cases include:
-
-- maximally favorable Preference/Acceptance evidence for a weaker
-  dominant-context candidate;
-- mountain-road interaction-load contrast;
-- oshi mode off with strong historical oshi usage;
-- novelty versus high recovery;
-- missing critical situation values;
-- customer overrides below the dominance guarantee.
-
-Release procedure:
-
-1. algorithm owner runs unit, property, golden, and adversarial fixtures;
-2. product reviewer confirms CDC-SU service-priority interpretation;
-3. safety reviewer confirms eligibility rules and reviews default
-   dominant-context constraints;
-4. UX reviewer confirms explanations do not overclaim;
-5. all accepted overrides include owner, reason, date, and affected fixtures;
-6. a profile version is frozen only after the above sign-offs are recorded.
-
-Regression policy:
-
-- any eligibility change requires explicit review;
-- any built-in rank change updates a fixture only with written rationale;
-- service-fit drift above 1e-12 with unchanged package/runtime is a failure;
-- human review does not convert the hypothesis into a validated production
-  effect claim.
-
----
-
-## 20. Acceptance Criteria
-
-The implementation is acceptable when:
-
-1. only the 17 baseline features influence ranking;
-2. purpose, stage, eligibility, and catalog facts remain non-scoring controls;
-3. every eligible candidate receives one deterministic service fit in [-1, +1];
-4. every normalized intermediate and every feature contribution can be reproduced from displayed arithmetic;
-5. default weights and response profiles follow the safety-first and service-priority intent of the source;
-6. every built-in default purpose profile passes the continuous dominance
-   invariant in Section 4.3;
-7. customer-edited weights, multipliers, curves, and response classes are frozen and evidence-visible;
-8. all lifecycle-stage candidate families are supported;
-9. no service fit or weight can reverse a hard exclusion;
-10. no eligible candidate is suppressed merely for having low or negative service fit;
-11. exact replay is deterministic under Section 6.6;
-12. output never describes service fit as acceptance probability, recovery probability, or safety certification.
-
----
-
-## 21. Deferred Improvement
-
-A probabilistic uncertainty-ranking package is deferred.
-
-A future independent package may sample configured ranges around weights and response coefficients and report expected service fit, a service-fit interval, and probability of ranking first. Such probabilities would describe rank stability under configured uncertainty, not user acceptance or recovery probability.
-
-The probabilistic package must receive the same neutral baseline snapshot and must not consume this deterministic package’s score or runtime state.
-
----
-
-## 22. Summary Formula
-
-For each eligible service:
-
-    base_weight_i
-      = normalized category weight
-      * normalized subgroup weight
-      * normalized leaf weight
-
-    effective_weight_i(p)
-      = normalize(
-          base_weight_i
-          * purpose_multiplier[p][subgroup(i)]
-        )
-
-    evidence_i(c)
-      = normalize_feature_i(raw_value_i, candidate c)
-
-    normalized_feature_response_i(c)
-      = clamp(
-          evidence_i(c)
-          * response_coefficient_i(c),
-          -1,
-          +1
-        )
-
-    feature_contribution_i(c)
-      = effective_weight_i(p)
-      * normalized_feature_response_i(c)
-
-    service_fit(c)
-      = clamp(
-          sum_i(feature_contribution_i(c)),
-          -1,
-          +1
-        )
-
-Then:
-
-    rank by service_fit descending
-    break exact ties by candidate ID
-    return up to three candidates
-
-This is the complete selected Approach 1 service-proposal hypothesis.
+| `ranked_candidates` | up to three eligible services in `service_fit` order |
+| `no_proposal` | the eligible candidate list is empty |
+| `invalid_request` | purpose, stage, or purpose/stage pair invalid |
+| `invalid_catalog` | a candidate outside the frozen allowed-service row |
+| `invalid_configuration` | weights, multipliers, response profiles, or versions invalid |
+
+Typed errors carry evidence and never trigger an undeclared fallback service or a
+fabricated ranking.
+
+## 14. Explainability contract
+
+**Per candidate × feature row:** `feature_id`, `source_reference`, `raw_value`,
+`normalization_function` + parameters, `normalized_evidence`, `response_class`/
+coefficient, `response_provenance` (source / hypothesis / customer override),
+`normalized_feature_response`, `hierarchy_path`, `base_weight`, `purpose_multiplier`,
+`effective_weight`, `feature_contribution`, `status` (used / neutral / zero-weight /
+missing / invalid).
+
+**Per candidate:** `service_fit ∈ [-1,+1]`; Situation/Preference/History subtotals;
+strongest supporting and opposing contributions; neutral and zero-weight features;
+missing/unknown inputs; response provenance; configuration versions.
+
+**Per ranking / adjacent pair:** `service_fit(A) − service_fit(B)` and the
+feature-contribution differences responsible for the gap, so "why A above B?" is
+answerable without reading the implementation.
+
+**Reproducibility:** persist the immutable input snapshot, candidate/exclusion
+lists, parameters + hyperparameters, resolved effective weights, response-profile
+versions, full-precision contributions + `service_fit`, and the tie-break result.
+Identical inputs + versions reproduce a semantically identical result (`1e-12`);
+same-runtime canonical replay is byte-equivalent. The output extends the common
+selector contract; structured evidence is authoritative and localized prose must
+introduce no reason absent from the arithmetic. This deterministic stateless
+selector always returns `uncertainty=null` and `next_package_runtime_state={}`.
+
+## 15. Implementation components
+
+`InputValidator` · `WeightResolver` (hierarchical normalization + purpose
+multipliers) · `FeatureNormalizer` (all 17 evidence functions) · `SceneResolver`
+(versioned scene IDs + aggregation) · `ResponseResolver` (candidate + road profiles)
+· `CandidateScorer` (`k = w·r`, subtotals) · `Ranker` (full-precision order +
+tie-break) · `EvidenceBuilder` (complete trace). The selector must not call the
+content selector or consume another package's score. Keep validation, weight
+resolution, normalization, response resolution, scoring, ranking, and evidence
+independently testable.
+
+## 16. Required tests
+
+**Math:** effective weights sum to 1 for every default purpose; every `e`, `a`, `r`
+in `[-1,+1]`; `k = w·r ∈ [-w,+w]`; unclamped `service_fit` = ordered sum of
+contributions; all-neutral world → `0` for every candidate; §10 reproduces
+`+0.772349` within tolerance; scaling all sibling weights by a constant changes
+nothing; every built-in profile satisfies `W_D·1.00 > 2·W_L`; an adversarial pair
+with dominant-gap `1.00` and maximally reversed lower-priority responses keeps the
+higher-safety candidate first; an invariant-violating customer profile stays
+evaluable but emits `dominance_not_guaranteed` + required gap.
+
+**Features:** boundary `0`/`100` for drowsiness/fatigue/monotony; `γ` at validation
+bounds; every enum/ordinal map; empty/duplicate/recognized/unknown route/destination
+tags; every scene predicate + multi-scene mean; oshi invalid-state rejection; missing
+candidate history → neutral disclosed; acceptance/recovery `0/50/100 → −1/0/+1`.
+
+**Response matrix:** Slide-67-preferred driving services get `+1.0` activation;
+route supports music + humming; passengers support the named shared services;
+mountain road opposes high-interaction candidates; `radio_style` responds only to
+oshi (strongly) and is neutral on every other feature; oshi mode off yields opposing
+evidence for oshi-responsive candidates; direct
+features always use `+1.0`; every eligible candidate × feature cell has a
+coefficient, provenance label, source reference/null, and rationale; non-finite or
+out-of-`[-1,+1]` coefficients are rejected.
+
+**Eligibility / ranking:** no excluded candidate scored; no candidate outside the
+purpose/stage row accepted; empty eligibility → `no_proposal`; low/negative fit
+still ranked; screen restrictions stay outside scoring; rank uses full precision;
+exact ties resolve by `candidate_id`; all 17 rows present per scored candidate;
+subtotals reconcile to `service_fit` within tolerance; overrides + source
+provenance both present.
+
+**Hypothesis review:** algorithm tests establish conformance, not efficacy. Before a
+built-in profile version is accepted, reviewers run a versioned scenario corpus
+(rest before/during/after stop; inattentive per-factor; route no/one/saturated
+tags; child/group combinations) with required ordering constraints — not invented
+"correct probabilities" — expected dominant reasons, expected invariant status,
+allowed fit tolerance, and product/UX/safety sign-offs. Any built-in rank change
+updates a fixture only with written rationale; fit drift above `1e-12` with
+unchanged package/runtime is a failure.
+
+## 17. Acceptance criteria
+
+1. Only the 17 baseline features influence ranking; purpose/stage/eligibility/
+   catalog remain non-scoring controls.
+2. Every eligible candidate gets one deterministic `service_fit ∈ [-1,+1]`, and every
+   intermediate is reproducible from displayed arithmetic.
+3. Every feature follows `r_i = clamp(e_i·a_i)`; response coefficients are shown as
+   real numbers with a reason and provenance, not class codes.
+4. One response profile per candidate ID; purpose changes only weights.
+5. Default weights and coefficients follow the Slide-67 service-priority and
+   safety-first intent; every built-in profile passes the §6.4 invariant.
+6. Every response coefficient derives from Slide 67 (magnitude from Slides 38–40);
+   the content slides 68–73 (including 70) play no role in service scoring.
+7. Features not used are listed with an explicit reason (§5.6).
+8. Bounds hold by construction: `|a_i| ≤ 1`, `Σ w_i = 1`.
+9. Hard eligibility, motion, and screen policy are deterministic and cannot be
+   reversed by score; no eligible candidate is suppressed for a low/negative fit.
+10. Identical frozen inputs and versions reproduce the same ranking; output never
+    describes `service_fit` as acceptance probability, recovery probability, or
+    safety certification.
+
+## 18. Cross-document impact
+
+`radio_style` responds strongly to oshi (§5.2.1) **and** is additionally
+eligibility-gated: the eligibility layer and world generator must expose a "new oshi
+information available" flag (Slide 39) that gates whether radio appears as a
+candidate at all, complementing — not replacing — its oshi ranking response. The
+content/service boundary (§5.5–§5.6) fixes which features belong to the
+[content-proposal algorithm](./aica_transparent_content_proposal_algorithm.md): it
+owns UPro age/gender/hobbies, playback/operation history, schedule, and item-level
+novelty (Slides 68–73), and its genre-pending (`🔧`) features cover the
+route/destination/child/hobbies relations excluded here.
+
+## 19. Deferred improvements
+
+A probabilistic uncertainty-ranking package is deferred: a future independent
+package may sample configured ranges around weights and response coefficients and
+report an expected fit, a fit interval, and probability of ranking first — describing
+rank stability under configured uncertainty, **not** user acceptance or recovery
+probability. It must receive the same neutral baseline snapshot and must not consume
+this deterministic package's score or runtime state. Also deferred: per-service oshi
+member/group graphs and confidence-weighted sparse history.
