@@ -1,1032 +1,511 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="A bilingual visual overview of the AICA transparent content-proposal algorithm for playlist, humming karaoke, and full karaoke.">
-  <title>AICA Transparent Content Proposal / AICA透明コンテンツ提案</title>
-  <style>
-    :root {
-      --ink: #172033;
-      --muted: #5f6b7c;
-      --line: #dce3ec;
-      --soft: #f5f8fc;
-      --blue: #175cd3;
-      --blue-dark: #102a56;
-      --blue-soft: #eaf2ff;
-      --green: #087a55;
-      --green-soft: #eaf8f2;
-      --amber: #9a5b00;
-      --amber-soft: #fff5df;
-      --purple: #7047a8;
-      --purple-soft: #f4effb;
-      --danger: #b42318;
-      --danger-soft: #fff0ee;
-      --neutral: #667085;
-      --neutral-soft: #f1f3f6;
-      --cyan: #087f8c;
-      --cyan-soft: #e8f8fa;
-      --radius: 14px;
-      --shadow: 0 10px 28px rgba(24, 43, 77, .08);
-      --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP",
-        Meiryo, sans-serif;
-    }
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      color: var(--ink);
-      background: #fff;
-      font-family: var(--font);
-      line-height: 1.65;
-    }
-    header {
-      padding: 58px 24px 50px;
-      color: #fff;
-      background:
-        radial-gradient(circle at 86% 20%, rgba(255,255,255,.17), transparent 28%),
-        linear-gradient(135deg, #102a56 0%, #175cd3 58%, #087f8c 100%);
-    }
-    header .wrap, main, footer .wrap {
-      width: min(1160px, calc(100% - 40px));
-      margin: 0 auto;
-    }
-    .eyebrow {
-      font-size: .78rem;
-      font-weight: 800;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-      opacity: .84;
-    }
-    h1 {
-      max-width: 980px;
-      margin: 10px 0 14px;
-      font-size: clamp(2rem, 5vw, 3.55rem);
-      line-height: 1.12;
-    }
-    .hero-copy {
-      max-width: 920px;
-      margin: 0;
-      font-size: clamp(1rem, 2vw, 1.22rem);
-      opacity: .94;
-    }
-    .lang-controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 24px;
-    }
-    button {
-      padding: 8px 15px;
-      color: #fff;
-      background: rgba(255,255,255,.1);
-      border: 1px solid rgba(255,255,255,.58);
-      border-radius: 999px;
-      font: inherit;
-      cursor: pointer;
-    }
-    button:hover { background: rgba(255,255,255,.2); }
-    button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visible {
-      outline: 3px solid #fdb022;
-      outline-offset: 3px;
-    }
-    button.active { color: #123; background: #fff; }
-    main { padding: 34px 0 80px; }
-    nav {
-      position: sticky;
-      top: 0;
-      z-index: 5;
-      margin: -1px 0 34px;
-      padding: 10px 0;
-      background: rgba(255,255,255,.95);
-      border-bottom: 1px solid var(--line);
-      backdrop-filter: blur(8px);
-    }
-    nav .links {
-      display: flex;
-      gap: 18px;
-      width: min(1160px, calc(100% - 40px));
-      margin: 0 auto;
-      overflow-x: auto;
-    }
-    nav a {
-      flex: none;
-      color: var(--muted);
-      text-decoration: none;
-      font-size: .88rem;
-      font-weight: 750;
-    }
-    nav a:hover { color: var(--blue); }
-    section { margin: 54px 0; scroll-margin-top: 68px; }
-    h2 {
-      margin: 0 0 18px;
-      font-size: clamp(1.55rem, 3vw, 2.15rem);
-      line-height: 1.2;
-    }
-    h3 { margin: 0 0 8px; font-size: 1.08rem; }
-    p { margin: 8px 0; }
-    .sub { max-width: 930px; color: var(--muted); }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-    }
-    .grid > * { min-width: 0; }
-    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .card {
-      padding: 22px;
-      background: #fff;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-    }
-    .card.blue { border-top: 5px solid var(--blue); }
-    .card.green { border-top: 5px solid var(--green); }
-    .card.purple { border-top: 5px solid var(--purple); }
-    .card.amber { border-top: 5px solid var(--amber); }
-    .card.cyan { border-top: 5px solid var(--cyan); }
-    .metric {
-      display: block;
-      margin: 4px 0 2px;
-      color: var(--blue);
-      font-size: 2rem;
-      font-weight: 850;
-      line-height: 1.1;
-    }
-    .callout {
-      padding: 21px 22px;
-      background: var(--blue-soft);
-      border-left: 5px solid var(--blue);
-      border-radius: var(--radius);
-    }
-    .callout.safety { background: var(--danger-soft); border-color: var(--danger); }
-    .callout.note { background: var(--amber-soft); border-color: var(--amber); }
-    .callout.success { background: var(--green-soft); border-color: var(--green); }
-    .callout.cyan { background: var(--cyan-soft); border-color: var(--cyan); }
-    .flow {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 10px;
-      align-items: stretch;
-    }
-    .step {
-      position: relative;
-      padding: 18px 13px;
-      text-align: center;
-      background: var(--soft);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-    }
-    .step b { display: block; color: var(--blue); font-size: 1.25rem; }
-    .step:not(:last-child)::after {
-      position: absolute;
-      top: 42%;
-      right: -11px;
-      z-index: 2;
-      color: var(--blue);
-      font-weight: 900;
-      content: "→";
-    }
-    .formula-chain {
-      display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
-      gap: 8px;
-      margin-top: 18px;
-    }
-    .chain-node {
-      position: relative;
-      min-width: 0;
-      padding: 15px 9px;
-      text-align: center;
-      background: #fff;
-      border: 1px solid var(--line);
-      border-top: 4px solid var(--blue);
-      border-radius: 10px;
-    }
-    .chain-node:nth-child(3) { border-top-color: var(--purple); }
-    .chain-node:nth-child(5) { border-top-color: var(--amber); }
-    .chain-node:nth-child(6), .chain-node:nth-child(7) { border-top-color: var(--green); }
-    .chain-node:not(:last-child)::after {
-      position: absolute;
-      top: 39%;
-      right: -10px;
-      z-index: 2;
-      color: var(--blue);
-      font-weight: 900;
-      content: "→";
-    }
-    .symbol {
-      display: block;
-      margin-bottom: 5px;
-      color: #18345e;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 1.05rem;
-      font-weight: 850;
-    }
-    .formula {
-      margin: 14px 0 0;
-      padding: 17px 20px;
-      overflow-x: auto;
-      color: #18345e;
-      background: #f6f9fe;
-      border: 1px solid #cfdbef;
-      border-radius: 12px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: clamp(.86rem, 2vw, 1rem);
-      white-space: nowrap;
-    }
-    .scale {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-top: 16px;
-    }
-    .scale > div { padding: 16px; text-align: center; border: 1px solid var(--line); }
-    .scale .negative { color: var(--danger); background: var(--danger-soft); }
-    .scale .zero { color: var(--neutral); background: var(--neutral-soft); }
-    .scale .positive { color: var(--green); background: var(--green-soft); }
-    .table-wrap {
-      margin-top: 16px;
-      overflow-x: auto;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-    }
-    table {
-      width: 100%;
-      min-width: 880px;
-      border-collapse: collapse;
-      font-size: .88rem;
-    }
-    table.matrix { min-width: 1050px; font-size: .82rem; }
-    th, td {
-      padding: 11px 12px;
-      text-align: left;
-      vertical-align: top;
-      border-bottom: 1px solid var(--line);
-    }
-    th { color: #29364a; background: #edf3fa; font-weight: 800; }
-    tbody tr:last-child td { border-bottom: 0; }
-    tbody tr:hover td { background: #fafcff; }
-    .matrix th:not(:first-child), .matrix td:not(:first-child) { text-align: center; }
-    .matrix th:first-child, .matrix td:first-child {
-      position: sticky;
-      left: 0;
-      z-index: 1;
-      min-width: 210px;
-      background: #fff;
-      text-align: left;
-    }
-    .matrix thead th:first-child { z-index: 2; background: #edf3fa; }
-    .group-cell { color: #31415a; background: var(--soft); font-weight: 800; }
-    .status {
-      display: inline-block;
-      min-width: 38px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      font-size: .76rem;
-      font-weight: 850;
-      text-align: center;
-    }
-    .status.s { color: #05603f; background: #d7f3e6; }
-    .status.c { color: #475467; background: #eef1f5; }
-    .status.e { color: #8b1b13; background: #ffe0dc; }
-    .status.n { color: #667085; background: #f2f4f7; }
-    .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-    .legend span, .tag {
-      display: inline-block;
-      padding: 4px 9px;
-      border-radius: 999px;
-      font-size: .78rem;
-      font-weight: 800;
-    }
-    .tag { margin: 2px 3px 2px 0; color: #3d4a5d; background: #edf1f7; }
-    .weight-bar {
-      display: flex;
-      height: 48px;
-      margin: 16px 0;
-      overflow: hidden;
-      color: #fff;
-      border-radius: 10px;
-    }
-    .weight-bar > div {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 72px;
-      padding: 4px;
-      text-align: center;
-      font-size: .8rem;
-      font-weight: 800;
-    }
-    .situation { width: 55%; background: var(--blue); }
-    .preference { width: 30%; background: var(--purple); }
-    .history { width: 15%; background: var(--green); }
-    .profile-lab {
-      display: grid;
-      grid-template-columns: minmax(0, 1.1fr) minmax(260px, .9fr);
-      gap: 18px;
-      margin-top: 20px;
-      padding: 22px;
-      background: linear-gradient(135deg, #f8fbff, #f0fbfa);
-      border: 1px solid #cdddec;
-      border-radius: var(--radius);
-    }
-    .control { margin: 12px 0 18px; }
-    .control label { display: flex; justify-content: space-between; gap: 12px; font-weight: 750; }
-    input[type="range"] { width: 100%; accent-color: var(--blue); }
-    .presets { display: flex; flex-wrap: wrap; gap: 8px; }
-    .presets button {
-      color: #26405f;
-      background: #fff;
-      border-color: #b8c7d9;
-      font-size: .82rem;
-    }
-    .profile-output {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
-    .output-box {
-      padding: 15px 8px;
-      text-align: center;
-      background: #fff;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-    }
-    .output-box strong {
-      display: block;
-      color: var(--blue);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 1.45rem;
-    }
-    .result-banner {
-      margin-top: 12px;
-      padding: 14px;
-      text-align: center;
-      border-radius: 10px;
-      font-weight: 850;
-    }
-    .result-banner.positive { color: var(--green); background: var(--green-soft); }
-    .result-banner.negative { color: var(--danger); background: var(--danger-soft); }
-    .result-banner.neutral { color: var(--neutral); background: var(--neutral-soft); }
-    .plan-list { display: grid; gap: 9px; margin-top: 16px; }
-    .plan-item {
-      display: grid;
-      grid-template-columns: 46px minmax(0, 1fr) auto;
-      gap: 12px;
-      align-items: center;
-      padding: 13px 15px;
-      background: #fff;
-      border: 1px solid var(--line);
-      border-radius: 11px;
-    }
-    .rank {
-      display: grid;
-      width: 36px;
-      height: 36px;
-      place-items: center;
-      color: #fff;
-      background: var(--blue);
-      border-radius: 50%;
-      font-weight: 850;
-    }
-    .song-title { font-weight: 850; }
-    .song-meta { color: var(--muted); font-size: .82rem; }
-    .fit { color: var(--green); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 850; }
-    details {
-      margin-top: 16px;
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      background: #fff;
-    }
-    summary {
-      padding: 15px 18px;
-      color: #263a59;
-      background: var(--soft);
-      border-radius: var(--radius);
-      font-weight: 800;
-      cursor: pointer;
-    }
-    details > .details-body { padding: 4px 16px 16px; }
-    code {
-      color: #2d4c7c;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: .88em;
-      word-break: break-word;
-    }
-    ul, ol { margin: 8px 0; padding-left: 22px; }
-    li { margin: 5px 0; }
-    a { color: var(--blue); }
-    .en, .ja { display: block; }
-    .en + .ja { margin-top: 5px; color: #34435a; }
-    header .en + .ja { color: inherit; }
-    body.lang-en .ja { display: none; }
-    body.lang-ja .en { display: none; }
-    body.lang-ja .en + .ja { margin-top: 0; }
-    footer {
-      padding: 30px 0;
-      color: var(--muted);
-      background: var(--soft);
-      border-top: 1px solid var(--line);
-    }
-    @media (max-width: 860px) {
-      .grid, .grid.three, .profile-lab { grid-template-columns: 1fr; }
-      .flow { grid-template-columns: 1fr; }
-      .step:not(:last-child)::after {
-        top: auto;
-        right: 49%;
-        bottom: -19px;
-        content: "↓";
-      }
-      .scale, .profile-output { grid-template-columns: 1fr; }
-      .formula-chain { grid-template-columns: 1fr; }
-      .chain-node:not(:last-child)::after {
-        top: auto;
-        right: 49%;
-        bottom: -17px;
-        content: "↓";
-      }
-      .formula { white-space: normal; overflow-wrap: anywhere; }
-      .weight-bar { height: auto; flex-direction: column; }
-      .weight-bar > div { width: 100%; min-height: 38px; }
-      .plan-item { grid-template-columns: 42px minmax(0, 1fr); }
-      .fit { grid-column: 2; }
-    }
-    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-    @media print {
-      .lang-controls, nav, .presets { display: none; }
-      header { padding: 30px 20px; }
-      section, .card, details, .profile-lab { break-inside: avoid; }
-      .card { box-shadow: none; }
-      details > .details-body { display: block; }
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Overview of the AICA transparent content-proposal algorithm (two-axis song-trait model) — bilingual JA/EN.">
+<title>AICA コンテンツ提案アルゴリズム 概要 / Content-Proposal Algorithm Overview</title>
+<style>
+  :root {
+    --bg: #ffffff; --bg-soft: #f8fafc; --bg-panel: #f1f5f9;
+    --ink: #1f2937; --ink-soft: #4b5563; --ink-muted: #6b7280;
+    --line: #e5e7eb; --line-strong: #cbd5e1;
+    --rest: #1d4ed8; --rest-bg: #eff6ff;
+    --mono: #7c3aed; --mono-bg: #f5f3ff;
+    --warn: #b45309; --warn-bg: #fffbeb;
+    --danger: #dc2626; --danger-bg: #fef2f2;
+    --ok: #047857; --ok-bg: #ecfdf5;
+    --coef-bg: #eef2ff; --coef-border: #c7d2fe;
+    --radius: 10px;
+    --mono-font: "SF Mono", "SFMono-Regular", "Consolas", "Menlo", "Roboto Mono", monospace;
+    --jp-font: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Meiryo", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; font-family: var(--jp-font); color: var(--ink); background: var(--bg); line-height: 1.8; font-size: 16px; -webkit-font-smoothing: antialiased; }
+  .layout { display: flex; align-items: flex-start; max-width: 1860px; margin: 0 auto; }
+
+  /* ── Sidebar TOC ── */
+  nav.toc { position: sticky; top: 0; align-self: flex-start; width: 268px; flex: none; height: 100vh; overflow-y: auto; padding: 26px 16px 40px 24px; border-right: 1px solid var(--line); font-size: 0.82em; background: var(--bg-soft); }
+  nav.toc .brand { font-weight: 800; font-size: 1.08em; letter-spacing: 0.01em; color: var(--ink); }
+  nav.toc .brand small { display: block; font-weight: 600; color: var(--ink-muted); font-size: 0.72em; margin-top: 3px; }
+  .lang { display: flex; gap: 6px; margin: 16px 0 4px; }
+  .lang button { flex: 1; font: inherit; font-size: 0.86em; padding: 5px 0; cursor: pointer; border: 1px solid var(--line-strong); background: #fff; border-radius: 6px; color: var(--ink-soft); }
+  .lang button.active { background: var(--mono); color: #fff; border-color: var(--mono); }
+  nav.toc ol { list-style: none; padding: 0; margin: 12px 0 0; counter-reset: toc; }
+  nav.toc li { margin: 2px 0; }
+  nav.toc a { display: block; padding: 5px 10px; border-radius: 6px; color: var(--ink-soft); text-decoration: none; border-left: 2px solid transparent; }
+  nav.toc a:hover { background: #e2e8f0; color: var(--ink); }
+  nav.toc a.step::before { counter-increment: toc; content: counter(toc) ". "; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+
+  /* ── Main ── */
+  main { flex: 1; min-width: 0; padding: 34px 44px 120px; }
+  .topline { margin: 0 0 6px; font-size: 0.78em; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--mono); }
+  .oneliner { margin: 8px 0 26px; padding: 16px 20px; background: var(--mono-bg); border: 1px solid var(--coef-border); border-radius: var(--radius); font-size: 1.0em; }
+  .oneliner b { color: var(--mono); }
+
+  section { margin: 40px 0 0; scroll-margin-top: 16px; }
+  section > h2 { font-size: 1.38em; margin: 0 0 8px; padding-bottom: 8px; letter-spacing: 0.01em; border-bottom: 1px solid var(--line); }
+  section > h2 .num { display: inline-block; min-width: 1.7em; color: var(--mono); font-variant-numeric: tabular-nums; }
+  h3 { font-size: 1.12em; margin: 28px 0 8px; }
+  h4 { font-size: 0.98em; margin: 18px 0 6px; color: var(--ink-soft); }
+  p { margin: 10px 0; }
+  .muted { color: var(--ink-muted); } .small { font-size: 0.88em; }
+  code.k, code { font-family: var(--mono-font); font-size: 0.86em; background: var(--bg-panel); padding: 1px 5px; border-radius: 4px; color: var(--ink-soft); }
+
+  /* ── bilingual toggle ── */
+  body.lang-en :lang(ja), body.lang-en .ja { display: none !important; }
+  body.lang-ja .en { display: none !important; }
+
+  /* ── callouts ── */
+  .why { margin: 14px 0; padding: 14px 18px; background: var(--bg-soft); border-left: 4px solid var(--rest); border-radius: 0 8px 8px 0; }
+  .why.mono { border-left-color: var(--mono); background: var(--mono-bg); }
+  .why.warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .why.safe { border-left-color: var(--danger); background: var(--danger-bg); }
+  .why.ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .why .lab { display: inline-block; font-weight: 800; font-size: 0.82em; letter-spacing: 0.05em; color: var(--rest); margin-bottom: 2px; }
+  .why.mono .lab { color: var(--mono); } .why.warn .lab { color: var(--warn); } .why.safe .lab { color: var(--danger); } .why.ok .lab { color: var(--ok); }
+  .why p { margin: 4px 0; }
+
+  /* ── formula block ── */
+  .formula { font-family: var(--mono-font); font-size: 0.9em; line-height: 1.95; background: var(--bg-panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; margin: 12px 0; overflow-x: auto; }
+  .formula.wrap { white-space: normal; }
+  .formula .lhs { font-weight: 700; color: var(--mono); }
+  .formula .op { color: var(--ink-muted); }
+  .coef { display: inline-block; font-family: var(--mono-font); font-size: 0.9em; background: var(--coef-bg); border: 1px solid var(--coef-border); color: #3730a3; border-radius: 5px; padding: 0 6px; margin: 0 1px; }
+
+  /* ── tables ── */
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 0.86em; }
+  .scroll-x { overflow-x: auto; }
+  th, td { text-align: left; padding: 7px 11px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th { background: var(--bg-panel); font-weight: 700; border-bottom: 2px solid var(--line-strong); white-space: nowrap; position: sticky; top: 0; }
+  tbody tr:hover { background: var(--bg-soft); }
+  td.num, th.num-c { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono-font); }
+  .catrow td { background: var(--mono-bg); font-weight: 800; color: var(--mono); letter-spacing: 0.02em; }
+
+  /* ── status pills ── */
+  .st { display: inline-block; min-width: 20px; padding: 1px 7px; border-radius: 5px; font-size: 0.74em; font-weight: 800; text-align: center; white-space: nowrap; }
+  .st.ok { background: var(--ok-bg); color: var(--ok); border: 1px solid #a7f3d0; }
+  .st.no { background: var(--bg-panel); color: var(--ink-muted); border: 1px solid var(--line); }
+  .st.tbd { background: var(--warn-bg); color: var(--warn); border: 1px solid #fde68a; }
+  .st.gate { background: var(--coef-bg); color: #3730a3; border: 1px solid var(--coef-border); }
+  .warnmark { color: var(--warn); font-weight: 800; }
+
+  /* ── pills / pipeline / cards ── */
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  .pill { font-size: 0.82em; padding: 4px 12px; border-radius: 999px; background: var(--bg-panel); border: 1px solid var(--line); }
+  .pipe { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 18px 0; }
+  .pipe .node { flex: 1 1 120px; min-width: 110px; border: 1px solid var(--line-strong); border-radius: 8px; padding: 10px 12px; background: var(--bg); }
+  .pipe .node .n { font-size: 0.70em; font-weight: 700; color: var(--mono); letter-spacing: 0.04em; }
+  .pipe .node .t { font-size: 0.9em; font-weight: 700; margin-top: 2px; font-family: var(--mono-font); }
+  .pipe .node .d { font-size: 0.74em; color: var(--ink-muted); margin-top: 3px; line-height: 1.5; }
+  .pipe .arrow { align-self: center; color: var(--line-strong); font-size: 1.3em; }
+  .fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; margin: 16px 0; }
+  .fcard { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; background: var(--bg); border-top: 4px solid var(--mono); }
+  .fcard h4 { margin: 0 0 6px; color: var(--ink); font-size: 1.0em; }
+  .fcard p { margin: 6px 0 0; font-size: 0.9em; color: var(--ink-soft); }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px 18px; margin: 10px 0; font-size: 0.86em; }
+  .legend span b { font-weight: 800; }
+
+  footer { margin: 60px 0 0; padding-top: 20px; border-top: 1px solid var(--line); font-size: 0.82em; color: var(--ink-muted); }
+
+  @media (max-width: 980px) { nav.toc { display: none; } main { padding: 26px 18px 100px; } }
+  @media print { nav.toc { display: none; } main { padding: 0; } }
+</style>
 </head>
 <body class="lang-ja">
-  <header>
-    <div class="wrap">
-      <div class="eyebrow">AICA transparent algorithm / AICA透明アルゴリズム</div>
-      <h1>
-        <span class="en">How AICA transparently builds a five-song content plan</span>
-        <span class="ja">AICAが5曲のコンテンツプランを透明に作る仕組み</span>
-      </h1>
-      <p class="hero-copy en">A bilingual visual guide to Spotify-compatible song data, service-specific activation, signed candidate-response profiles, deterministic scoring, and contrast simulation for playlist, humming karaoke, and full karaoke.</p>
-      <p class="hero-copy ja">Spotify互換の楽曲データ、サービス別アクティベーション、符号付き候補反応プロファイル、決定論的スコアリング、そしてプレイリスト・ハミングカラオケ・フルカラオケの比較シミュレーションを視覚的に説明します。</p>
-      <div class="lang-controls" aria-label="Language display / 言語表示">
-        <button type="button" data-lang="ja" class="active" aria-pressed="true">日本語</button>
-        <button type="button" data-lang="en" aria-pressed="false">English</button>
-      </div>
-    </div>
-  </header>
+<div class="layout">
 
-  <nav aria-label="Contents / 目次">
-    <div class="links">
-      <a href="#decision">Decision / 判断対象</a>
-      <a href="#calculation">Calculation / 計算</a>
-      <a href="#metadata">Metadata / メタデータ</a>
-      <a href="#services">Services / サービス</a>
-      <a href="#profiles">Profiles / 反応</a>
-      <a href="#applicability">Applicability / 適用性</a>
-      <a href="#example">Example / 例</a>
-      <a href="#simulation">Simulation / シミュレーション</a>
-      <a href="#tuning">Tuning / 調整</a>
+  <nav class="toc">
+    <div class="brand"><span class="ja">AICA コンテンツ提案</span><span class="en">AICA Content Proposal</span><small><span class="ja">2軸 楽曲トレイト・アルゴリズム 概要</span><span class="en">Two-axis song-trait algorithm — overview</span></small></div>
+    <div class="lang" aria-label="Language">
+      <button type="button" data-lang="ja" class="active">日本語</button>
+      <button type="button" data-lang="en">English</button>
     </div>
+    <ol>
+      <li><a class="step" href="#overview"><span class="ja">概要 ― 考え方</span><span class="en">Overview — the idea</span></a></li>
+      <li><a class="step" href="#model"><span class="ja">スコアの仕組み</span><span class="en">The scoring model</span></a></li>
+      <li><a class="step" href="#traits"><span class="ja">楽曲トレイト（4種）</span><span class="en">Song traits (four)</span></a></li>
+      <li><a class="step" href="#response"><span class="ja">文脈レスポンス（2軸）</span><span class="en">Context response (two axes)</span></a></li>
+      <li><a class="step" href="#contract"><span class="ja">特徴量の完全契約</span><span class="en">Complete feature contract</span></a></li>
+      <li><a class="step" href="#weights"><span class="ja">重み階層</span><span class="en">Weight hierarchy</span></a></li>
+      <li><a class="step" href="#eligibility"><span class="ja">適格性とデータ</span><span class="en">Eligibility &amp; data</span></a></li>
+      <li><a class="step" href="#plan"><span class="ja">プラン生成と計算例</span><span class="en">The plan &amp; worked example</span></a></li>
+      <li><a class="step" href="#pending"><span class="ja">保留事項と設計選択</span><span class="en">Pending &amp; open choices</span></a></li>
+    </ol>
   </nav>
 
   <main>
-    <section id="decision">
-      <h2><span class="en">1. What this algorithm decides</span><span class="ja">1. このアルゴリズムが決めること</span></h2>
-      <div class="callout">
-        <p class="en"><strong>It answers one question:</strong> after one detailed music service is accepted or active, which five eligible songs best fit the frozen world, direct history, and configured transparent hypothesis?</p>
-        <p class="ja"><strong>答える問いは1つです。</strong> 詳細音楽サービスが1つ採用または実行中になった後、利用可能な楽曲の中から、固定されたワールド、直接履歴、設定済みの透明な仮説に最も合う5曲を選びます。</p>
-      </div>
-
-      <div class="grid three" style="margin-top:20px">
-        <article class="card blue">
-          <span class="metric">5</span>
-          <h3><span class="en">Ordered songs by default</span><span class="ja">デフォルトの順序付き楽曲数</span></h3>
-          <p class="en">The customer may change the plan count in settings. A successful plan always contains exactly the configured count.</p>
-          <p class="ja">お客様は設定で曲数を変更できます。成功したプランは、必ず設定された曲数を含みます。</p>
-        </article>
-        <article class="card cyan">
-          <span class="metric">3</span>
-          <h3><span class="en">Detailed music recipes</span><span class="ja">詳細音楽レシピ</span></h3>
-          <p class="en">Music playlist, humming karaoke, and full karaoke each derive a different activation from the same song.</p>
-          <p class="ja">プレイリスト、ハミングカラオケ、フルカラオケは、同じ楽曲からそれぞれ異なるアクティベーションを算出します。</p>
-        </article>
-        <article class="card purple">
-          <span class="metric">[-1,+1]</span>
-          <h3><span class="en">Transparent item fit</span><span class="ja">透明な楽曲適合度</span></h3>
-          <p class="en">Every selected song shows its signed <code>item_fit</code>. There is no aggregate plan score.</p>
-          <p class="ja">選択された各曲は符号付き<code>item_fit</code>を表示します。プラン全体の集約スコアはありません。</p>
-        </article>
-      </div>
-
-      <div class="callout safety" style="margin-top:20px">
-        <p class="en"><strong>The service decision is not reopened.</strong> Playability, market restrictions, explicit-content policy, recent skip, motion state, and simulator karaoke flags are evaluated before ranking. No high score can restore an excluded song or switch the active service.</p>
-        <p class="ja"><strong>サービス選択をやり直すことはありません。</strong> 再生可否、市場制約、Explicitポリシー、直近スキップ、走行状態、シミュレータのカラオケフラグを順位付け前に判定します。高スコアでも除外曲を復活させたり、実行中サービスを切り替えたりできません。</p>
-      </div>
-
-      <div class="flow" style="margin-top:20px">
-        <div class="step"><b>1</b><span class="en">Accepted service</span><span class="ja">採用済みサービス</span></div>
-        <div class="step"><b>2</b><span class="en">Hard eligibility</span><span class="ja">必須の利用可否</span></div>
-        <div class="step"><b>3</b><span class="en">Score each song</span><span class="ja">各曲をスコアリング</span></div>
-        <div class="step"><b>4</b><span class="en">Deterministic sort</span><span class="ja">決定論的ソート</span></div>
-        <div class="step"><b>5</b><span class="en">Return exact N</span><span class="ja">正確にN曲を返す</span></div>
-      </div>
-    </section>
-
-    <section id="calculation">
-      <h2><span class="en">2. One scoring language shared with service proposal</span><span class="ja">2. サービス提案と共通のスコアリング言語</span></h2>
-      <p class="sub en">The content selector uses the same evidence × candidate-response × weight structure as the transparent service selector. The important difference is where the candidate response comes from.</p>
-      <p class="sub ja">コンテンツ選択は、透明サービス選択と同じ「エビデンス×候補反応×重み」の構造を使います。重要な違いは、候補反応の生成元です。</p>
-
-      <div class="formula-chain" aria-label="Complete formula chain">
-        <div class="chain-node"><span class="symbol">xᵢ</span><span class="en">Raw feature</span><span class="ja">生特徴量</span></div>
-        <div class="chain-node"><span class="symbol">eᵢ</span><span class="en">Signed evidence</span><span class="ja">符号付きエビデンス</span></div>
-        <div class="chain-node"><span class="symbol">aᵢ(j,s)</span><span class="en">Song response</span><span class="ja">楽曲反応係数</span></div>
-        <div class="chain-node"><span class="symbol">rᵢ(j,s)</span><span class="en">Feature response</span><span class="ja">特徴量反応</span></div>
-        <div class="chain-node"><span class="symbol">wᵢ(p,s)</span><span class="en">Effective weight</span><span class="ja">有効重み</span></div>
-        <div class="chain-node"><span class="symbol">kᵢ(j,s)</span><span class="en">Contribution</span><span class="ja">寄与度</span></div>
-        <div class="chain-node"><span class="symbol">F(j,s)</span><span class="en">Item fit</span><span class="ja">楽曲適合度</span></div>
-      </div>
-
-      <div class="formula" style="margin-top:20px">
-        eᵢ = normalize_feature_i(xᵢ) ∈ [-1,+1]<br>
-        a_activation(j,s) = 2 × service_activation(j,s) - 1<br>
-        rᵢ(j,s) = clamp(eᵢ × aᵢ(j,s), -1, +1)<br>
-        Bᵢ = category_weight × subgroup_weight × leaf_weight<br>
-        qᵢ(p,s) = Bᵢ × purpose_multiplier[p][subgroup(i)] × applicability[i][s]<br>
-        wᵢ(p,s) = qᵢ(p,s) ÷ Σq_active<br>
-        kᵢ(j,s) = wᵢ(p,s) × rᵢ(j,s)<br>
-        item_fit(j,s) = clamp(Σᵢkᵢ(j,s), -1, +1)
-      </div>
-
-      <div class="grid" style="margin-top:20px">
-        <article class="card purple">
-          <h3><span class="en">Service proposal</span><span class="ja">サービス提案</span></h3>
-          <p class="en">The candidate response coefficient is a human-configured heuristic profile for each service × feature relation.</p>
-          <p class="ja">候補反応係数は、サービス×特徴量の関係ごとに人が設定したヒューリスティックプロファイルです。</p>
-          <div class="formula">aᵢ(service) = configured_profile[service][feature]</div>
-        </article>
-        <article class="card cyan">
-          <h3><span class="en">Content proposal</span><span class="ja">コンテンツ提案</span></h3>
-          <p class="en">For activation-responsive factors, the candidate coefficient is calculated continuously from the selected-service song activation.</p>
-          <p class="ja">アクティベーションに反応する特徴量では、候補係数を選択中サービスの楽曲アクティベーションから連続的に計算します。</p>
-          <div class="formula">aᵢ(song,service) = 2A(song,service) - 1</div>
-        </article>
-      </div>
-
-      <h3 style="margin-top:26px"><span class="en">Weights express importance—not direction</span><span class="ja">重みは方向ではなく重要度を表す</span></h3>
-      <div class="weight-bar" aria-label="Top-level content weights">
-        <div class="situation"><span class="en">Situation 0.55</span><span class="ja">状況 0.55</span></div>
-        <div class="preference"><span class="en">Preference 0.30</span><span class="ja">嗜好 0.30</span></div>
-        <div class="history"><span class="en">History 0.15</span><span class="ja">履歴 0.15</span></div>
-      </div>
-      <p class="sub en">Purpose multipliers and service applicability modify these hierarchical base weights, then active weights are normalized to sum to 1. Missing scored evidence remains active with response 0.</p>
-      <p class="sub ja">目的別倍率とサービス適用性で階層基本重みを調整し、有効重みの合計が1になるよう正規化します。欠損したスコア対象エビデンスは有効のまま反応0になります。</p>
-    </section>
-
-    <section id="metadata">
-      <h2><span class="en">3. The V1 song metadata boundary</span><span class="ja">3. V1楽曲メタデータの境界</span></h2>
-      <p class="sub en">A song contains two Spotify-compatible objects and two explicit simulator flags. Derived evidence and responses are calculated during selection and are never stored as provider facts.</p>
-      <p class="sub ja">楽曲は2つのSpotify互換オブジェクトと2つの明示的なシミュレータフラグを持ちます。派生エビデンスと反応は選択時に計算し、プロバイダ事実として保存しません。</p>
-
-      <div class="grid three">
-        <article class="card blue">
-          <h3><code>spotify_track</code></h3>
-          <p class="en">Title, performing artists, album/release, duration, explicit and playback policy, market availability, IDs, URI, and links.</p>
-          <p class="ja">曲名、実演アーティスト、アルバム／発売情報、再生時間、Explicit・再生ポリシー、市場提供可否、ID、URI、リンク。</p>
-        </article>
-        <article class="card cyan">
-          <h3><code>spotify_audio_features</code></h3>
-          <p class="en">The pinned 18-field Spotify Audio Features shape. Eight fields participate in V1 activation or karaoke proxies.</p>
-          <p class="ja">固定された18フィールドのSpotify Audio Features形式。V1では8フィールドをアクティベーションまたはカラオケ代理指標に使用します。</p>
-        </article>
-        <article class="card amber">
-          <h3><code>simulation_flags</code></h3>
-          <p><code>humming_karaoke_available: 1</code><br><code>full_karaoke_available: 1</code></p>
-          <p class="en">Simulator eligibility assumptions only. Both default to 1 and never add score.</p>
-          <p class="ja">シミュレータの利用可否仮定のみです。両方の初期値は1で、スコアには加算しません。</p>
-        </article>
-      </div>
-
-      <div class="callout note" style="margin-top:20px">
-        <p class="en"><strong>No V1 enrichment namespace.</strong> The algorithm does not invent singer versus artist, composer, lyricist, chorus timing, vocal range, lyrics difficulty, child/group appeal, route/destination tags, mood tags, or universal singability.</p>
-        <p class="ja"><strong>V1には拡張メタデータ名前空間がありません。</strong> 歌手とアーティストの区別、作曲者、作詞者、サビ時刻、声域、歌詞難易度、子供／グループ適合度、ルート／目的地タグ、ムードタグ、汎用歌いやすさを推測生成しません。</p>
-      </div>
-
-      <details>
-        <summary><span class="en">Spotify-compatible Track field inventory</span><span class="ja">Spotify互換Trackフィールド一覧</span></summary>
-        <div class="details-body">
-          <p><code>album, artists, available_markets, disc_number, duration_ms, explicit, external_ids, external_urls, href, id, is_local, is_playable, linked_from, name, popularity, preview_url, restrictions, track_number, type, uri</code></p>
-          <p class="en"><code>artists</code> is the provider-compatible performer identity. V1 does not create a separate <code>singer_name</code>.</p>
-          <p class="ja"><code>artists</code>がプロバイダ互換の実演者IDです。V1では別の<code>singer_name</code>を生成しません。</p>
-        </div>
-      </details>
-
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th><span class="en">Audio Features field</span><span class="ja">Audio Featuresフィールド</span></th><th><span class="en">Contract</span><span class="ja">値契約</span></th><th><span class="en">V1 role</span><span class="ja">V1での役割</span></th></tr></thead>
-          <tbody>
-            <tr><td><code>energy</code></td><td><code>[0,1]</code></td><td><span class="en">Primary activation</span><span class="ja">主要アクティベーション</span></td></tr>
-            <tr><td><code>tempo</code></td><td><span class="en">BPM</span><span class="ja">BPM</span></td><td><span class="en">Activation and tempo ease</span><span class="ja">アクティベーションとテンポ容易度</span></td></tr>
-            <tr><td><code>danceability</code></td><td><code>[0,1]</code></td><td><span class="en">Activation and karaoke proxies</span><span class="ja">アクティベーションとカラオケ代理指標</span></td></tr>
-            <tr><td><code>loudness</code></td><td><span class="en">dB, finite</span><span class="ja">dB、有限値</span></td><td><span class="en">Normalized activation</span><span class="ja">正規化アクティベーション</span></td></tr>
-            <tr><td><code>valence</code></td><td><code>[0,1]</code></td><td><span class="en">Small activation share; optional lighting</span><span class="ja">小さいアクティベーション比率、任意照明</span></td></tr>
-            <tr><td><code>instrumentalness</code></td><td><code>[0,1]</code></td><td><span class="en">Vocal-presence proxy</span><span class="ja">ボーカル存在代理指標</span></td></tr>
-            <tr><td><code>speechiness</code></td><td><code>[0,1]</code></td><td><span class="en">Speech-ease proxy</span><span class="ja">発話容易度代理指標</span></td></tr>
-            <tr><td><code>duration_ms</code></td><td><span class="en">Positive integer</span><span class="ja">正の整数</span></td><td><span class="en">Full-karaoke ease and duration</span><span class="ja">フルカラオケ容易度と再生時間</span></td></tr>
-            <tr><td><code>acousticness, key, mode, time_signature, liveness</code></td><td><span class="en">Spotify-compatible ranges</span><span class="ja">Spotify互換範囲</span></td><td><span class="en">Retained, not scored in V1</span><span class="ja">保持するがV1では未スコア</span></td></tr>
-            <tr><td><code>id, uri, analysis_url, track_href, type</code></td><td><span class="en">Identity/provenance</span><span class="ja">ID／出典</span></td><td><span class="en">Join and validation only</span><span class="ja">結合と検証のみ</span></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section id="services">
-      <h2><span class="en">4. Three service-specific activation recipes</span><span class="ja">4. 3つのサービス別アクティベーションレシピ</span></h2>
-      <p class="sub en">The same song receives a different response coefficient depending on the active detailed service. Coefficients below are derived—not stored metadata.</p>
-      <p class="sub ja">同じ楽曲でも、実行中の詳細サービスによって異なる反応係数になります。以下の係数は保存メタデータではなく派生値です。</p>
-
-      <div class="formula">
-        normalized_tempo = clamp((tempo - 60) / 120)<br>
-        normalized_loudness = clamp((loudness + 60) / 60)<br>
-        audio_activation = .50energy + .20tempo_norm + .15danceability + .10loudness_norm + .05valence
-      </div>
-
-      <div class="grid three" style="margin-top:20px">
-        <article class="card blue">
-          <h3><span class="en">Music playlist</span><span class="ja">音楽プレイリスト</span></h3>
-          <div class="formula">A_playlist = audio_activation</div>
-          <span class="metric">0.717363</span>
-          <p><code>a = 2A - 1 = 0.434727</code></p>
-          <p class="en">Full-track playback. Direct item novelty is active only here.</p>
-          <p class="ja">フルトラック再生。直接楽曲の新規性はこのレシピだけで有効です。</p>
-        </article>
-        <article class="card cyan">
-          <h3><span class="en">Humming karaoke</span><span class="ja">ハミングカラオケ</span></h3>
-          <div class="formula">A_humming = .75A_audio + .25E_humming</div>
-          <span class="metric">0.758064</span>
-          <p><code>a = 2A - 1 = 0.516127</code></p>
-          <p class="en">Requires the humming flag = 1. Uses a fixed simulated 30-second segment, not a detected chorus.</p>
-          <p class="ja">ハミングフラグ=1が必要です。検出サビではなく固定30秒のシミュレーション区間を使います。</p>
-        </article>
-        <article class="card purple">
-          <h3><span class="en">Full karaoke</span><span class="ja">フルカラオケ</span></h3>
-          <div class="formula">A_full = .65A_audio + .35E_full</div>
-          <span class="metric">0.772352</span>
-          <p><code>a = 2A - 1 = 0.544704</code></p>
-          <p class="en">Requires the full-karaoke flag = 1 and stopped motion. Uses full Track duration.</p>
-          <p class="ja">フルカラオケフラグ=1と停車状態が必要です。Track全再生時間を使います。</p>
-        </article>
-      </div>
-
-      <details>
-        <summary><span class="en">Karaoke proxy formulas</span><span class="ja">カラオケ代理指標の式</span></summary>
-        <div class="details-body">
-          <div class="formula">
-            vocal_presence = 1 - instrumentalness<br>
-            speech_ease = 1 - clamp((speechiness - .33) / (.66 - .33))<br>
-            tempo_ease = 1 - clamp(abs(tempo - 110) / 90)<br>
-            duration_ease = 1 - clamp((duration_ms - 180000) / 180000)<br><br>
-            humming_ease = .35vocal_presence + .25speech_ease + .25danceability + .15tempo_ease<br>
-            full_karaoke_ease = .30vocal_presence + .25speech_ease + .15danceability + .15tempo_ease + .15duration_ease
-          </div>
-          <p class="en">These are transparent relative proxies. They do not prove lyrics, melody, chorus timing, karaoke assets, or commercial rights.</p>
-          <p class="ja">これらは透明な相対代理指標です。歌詞、メロディ、サビ時刻、カラオケ素材、商用権利の存在を証明しません。</p>
-        </div>
-      </details>
-    </section>
-
-    <section id="profiles">
-      <h2><span class="en">5. Signed song candidate-response profiles</span><span class="ja">5. 符号付き楽曲候補反応プロファイル</span></h2>
-      <div class="callout success">
-        <p class="en"><strong>The sign agreement creates the contrast.</strong> Low evidence and a calm song are both negative, so their product is positive. High evidence and an active song are both positive, so their product is also positive. A mismatch produces a negative response.</p>
-        <p class="ja"><strong>符号の一致が対比を作ります。</strong> 低いエビデンスと落ち着いた曲は両方負なので、積は正です。高いエビデンスと活動的な曲は両方正なので、積は正です。不一致の場合は負の反応になります。</p>
-      </div>
-
-      <div class="profile-lab">
-        <div>
-          <h3><span class="en">Try the drowsiness response</span><span class="ja">眠気反応を試す</span></h3>
-          <p class="sub en">The calculator uses the approved equations. The activation can represent playlist, humming, or full-karaoke activation.</p>
-          <p class="sub ja">承認済みの式を使う計算機です。アクティベーションはプレイリスト、ハミング、フルカラオケのいずれでも構いません。</p>
-          <div class="control">
-            <label for="drowsiness"><span><span class="en">Drowsiness level</span><span class="ja">眠気レベル</span></span><output id="drowsinessValue">20</output></label>
-            <input id="drowsiness" type="range" min="0" max="100" step="1" value="20">
-          </div>
-          <div class="control">
-            <label for="activation"><span><span class="en">Song service activation</span><span class="ja">楽曲サービスアクティベーション</span></span><output id="activationValue">0.20</output></label>
-            <input id="activation" type="range" min="0" max="1" step="0.01" value="0.20">
-          </div>
-          <div class="presets" aria-label="Response presets">
-            <button type="button" data-d="20" data-a="0.20"><span class="en">Low + calm</span><span class="ja">低眠気＋落ち着いた曲</span></button>
-            <button type="button" data-d="20" data-a="0.80"><span class="en">Low + active</span><span class="ja">低眠気＋活動的な曲</span></button>
-            <button type="button" data-d="80" data-a="0.20"><span class="en">High + calm</span><span class="ja">高眠気＋落ち着いた曲</span></button>
-            <button type="button" data-d="80" data-a="0.80"><span class="en">High + active</span><span class="ja">高眠気＋活動的な曲</span></button>
-          </div>
-        </div>
-        <div>
-          <div class="profile-output">
-            <div class="output-box"><span class="en">Evidence e</span><span class="ja">エビデンス e</span><strong id="evidenceOutput">-0.600</strong></div>
-            <div class="output-box"><span class="en">Coefficient a</span><span class="ja">反応係数 a</span><strong id="coefficientOutput">-0.600</strong></div>
-            <div class="output-box"><span class="en">Response r</span><span class="ja">反応 r</span><strong id="responseOutput">+0.360</strong></div>
-          </div>
-          <div class="formula">e = 2(D/100)-1<br>a = 2A-1<br>r = e × a</div>
-          <div id="resultBanner" class="result-banner positive" aria-live="polite">
-            <span id="resultEn" class="en">Positive match: calm context and calm song agree.</span>
-            <span id="resultJa" class="ja">正の一致：落ち着いた状況と落ち着いた曲が一致します。</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th><span class="en">Feature state</span><span class="ja">特徴量状態</span></th><th><code>e</code></th><th><span class="en">Activation direction</span><span class="ja">アクティベーション方向</span></th></tr></thead>
-          <tbody>
-            <tr><td><span class="en">Drowsiness / fatigue / monotony 0, 25, 50, 75, 100</span><span class="ja">眠気／疲労／単調度 0、25、50、75、100</span></td><td><code>-1, -.5, 0, +.5, +1</code></td><td><span class="en">Calm → neutral → active</span><span class="ja">落ち着き→中立→活動的</span></td></tr>
-            <tr><td><span class="en">Traffic normal / congested</span><span class="ja">通常交通／渋滞</span></td><td><code>-1 / +1</code></td><td><span class="en">Calm / active initial hypothesis</span><span class="ja">落ち着き／活動的という初期仮説</span></td></tr>
-            <tr><td><span class="en">Road highway / local / mountain / parking</span><span class="ja">高速／一般道／山道／駐車</span></td><td><code>+1 / 0 / -1 / 0</code></td><td><span class="en">Active / neutral / calm / neutral</span><span class="ja">活動的／中立／落ち着き／中立</span></td></tr>
-            <tr><td><span class="en">Day / night</span><span class="ja">昼／夜</span></td><td><code>-1 / +1</code></td><td><span class="en">Calm / active initial hypothesis</span><span class="ja">落ち着き／活動的という初期仮説</span></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="callout note" style="margin-top:16px">
-        <p class="en">These categorical mappings are editable content-response hypotheses—not Spotify metadata or empirical safety claims. Missing evidence is neutral <code>0</code>, while a present numeric value of <code>0</code> maps to signed evidence <code>-1</code>.</p>
-        <p class="ja">これらのカテゴリ対応は編集可能なコンテンツ反応仮説であり、Spotifyメタデータや実証済み安全主張ではありません。欠損エビデンスは中立<code>0</code>ですが、存在する数値<code>0</code>は符号付きエビデンス<code>-1</code>へ変換します。</p>
-      </div>
-    </section>
-
-    <section id="applicability">
-      <h2><span class="en">6. Which baseline features can actually compare songs?</span><span class="ja">6. どのベースライン特徴量が実際に楽曲を比較できるか</span></h2>
-      <p class="sub en">CDC-SU intent remains visible, but Spotify-only V1 scores a field only when the catalog or direct-ID history supports a transparent candidate comparison.</p>
-      <p class="sub ja">CDC-SUの意図は保持しますが、Spotify限定V1では、カタログまたは直接ID履歴が透明な候補比較を支えられる場合だけスコア化します。</p>
-      <div class="legend">
-        <span class="status s">S</span><span class="en">Scored</span><span class="ja">スコア対象</span>
-        <span class="status c">C</span><span class="en">Context only</span><span class="ja">文脈のみ</span>
-        <span class="status e">E</span><span class="en">Eligibility</span><span class="ja">利用可否</span>
-        <span class="status n">—</span><span class="en">Not applicable</span><span class="ja">非適用</span>
-      </div>
-
-      <div class="table-wrap">
-        <table class="matrix">
-          <thead><tr><th><span class="en">Baseline feature</span><span class="ja">ベースライン特徴量</span></th><th><span class="en">Playlist</span><span class="ja">プレイリスト</span></th><th><span class="en">Humming</span><span class="ja">ハミング</span></th><th><span class="en">Full karaoke</span><span class="ja">フルカラオケ</span></th><th><span class="en">Operational reason</span><span class="ja">運用上の理由</span></th></tr></thead>
-          <tbody>
-            <tr><td><span class="en">Drowsiness, fatigue, traffic, road, day/night, monotony</span><span class="ja">眠気、疲労、交通、道路、昼夜、単調度</span></td><td><span class="status s">S</span></td><td><span class="status s">S</span></td><td><span class="status s">S</span></td><td><span class="en">Signed evidence × service-specific song activation response.</span><span class="ja">符号付きエビデンス×サービス別楽曲アクティベーション反応。</span></td></tr>
-            <tr><td><span class="en">Route characteristics</span><span class="ja">ルート特徴</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="en">No Spotify route relation.</span><span class="ja">Spotifyにルート関係情報がありません。</span></td></tr>
-            <tr><td><span class="en">Destination characteristics</span><span class="ja">目的地特徴</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="en">No Spotify destination relation.</span><span class="ja">Spotifyに目的地関係情報がありません。</span></td></tr>
-            <tr><td><span class="en">Child present</span><span class="ja">子供同乗</span></td><td><span class="status e">C+E</span></td><td><span class="status e">C+E</span></td><td><span class="status e">C+E</span></td><td><span class="en">Explicit-content eligibility only.</span><span class="ja">Explicitコンテンツ利用可否のみ。</span></td></tr>
-            <tr><td><span class="en">Multiple passengers</span><span class="ja">複数同乗者</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="en">No group-appeal field.</span><span class="ja">グループ適合度フィールドがありません。</span></td></tr>
-            <tr><td><span class="en">Driving/stopped state</span><span class="ja">走行／停車状態</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="status e">C+E</span></td><td><span class="en">Full karaoke requires stopped.</span><span class="ja">フルカラオケは停車が必須です。</span></td></tr>
-            <tr><td><span class="en">Oshi registered and mode</span><span class="ja">推し登録・推しモード</span></td><td><span class="status s">S</span></td><td><span class="status s">S</span></td><td><span class="status s">S</span></td><td><span class="en">Gates exact Spotify Artist-ID response.</span><span class="ja">Spotify Artist ID完全一致反応を制御します。</span></td></tr>
-            <tr><td><span class="en">Oshi ID</span><span class="ja">推しID</span></td><td><span class="status s">S</span></td><td><span class="status s">S</span></td><td><span class="status s">S</span></td><td><span class="en">Exact <code>artists[*].id</code> match.</span><span class="ja"><code>artists[*].id</code>の完全一致。</span></td></tr>
-            <tr><td><span class="en">Oshi type and tags</span><span class="ja">推し種別・タグ</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="en">Only Spotify Artist identity is implemented.</span><span class="ja">Spotify Artist IDだけを実装します。</span></td></tr>
-            <tr><td><span class="en">Service recency/usage and scene-service usage</span><span class="ja">サービス利用時期・利用度・シーン別利用度</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="en">Same active-service value for every song.</span><span class="ja">全楽曲で同じ実行中サービス値です。</span></td></tr>
-            <tr><td><span class="en">Age band</span><span class="ja">年齢帯</span></td><td><span class="status s">S</span></td><td><span class="status s">S</span></td><td><span class="status s">S</span></td><td><span class="en">Versioned age × release-era affinity.</span><span class="ja">版管理された年齢×発売年代親和度。</span></td></tr>
-            <tr><td><span class="en">Gender</span><span class="ja">性別</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="en">Preserved with zero default weight.</span><span class="ja">保持しますが初期重みは0です。</span></td></tr>
-            <tr><td><span class="en">Hobbies and interests</span><span class="ja">趣味・関心</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="en">No selected Spotify genre/theme field.</span><span class="ja">選択Spotify契約にジャンル／テーマがありません。</span></td></tr>
-            <tr><td><span class="en">Catalog item recency</span><span class="ja">楽曲利用時期</span></td><td><span class="status s">S</span></td><td><span class="status n">—</span></td><td><span class="status n">—</span></td><td><span class="en">Direct Track novelty is playlist-only.</span><span class="ja">直接Track新規性はプレイリストのみです。</span></td></tr>
-            <tr><td><span class="en">Content-tag recency</span><span class="ja">コンテンツタグ利用時期</span></td><td><span class="status c">C</span></td><td><span class="status n">—</span></td><td><span class="status n">—</span></td><td><span class="en">No V1 song tags; retained only as playlist context.</span><span class="ja">V1楽曲タグはなく、プレイリスト文脈としてのみ保持します。</span></td></tr>
-            <tr><td><span class="en">Content-tag usage and scene/content-tag usage</span><span class="ja">コンテンツタグ利用度・シーン別コンテンツタグ利用度</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="en">No V1 song tags.</span><span class="ja">V1楽曲タグがありません。</span></td></tr>
-            <tr><td><span class="en">Catalog item usage</span><span class="ja">楽曲利用度</span></td><td><span class="status s">S</span></td><td><span class="status s">S</span></td><td><span class="status s">S</span></td><td><span class="en">Exact Track-ID history.</span><span class="ja">Track ID完全一致履歴。</span></td></tr>
-            <tr><td><span class="en">Played items</span><span class="ja">再生済み楽曲</span></td><td><span class="status s">S</span></td><td><span class="status s">S</span></td><td><span class="status s">S</span></td><td><span class="en">Timestamped Track-ID repetition response.</span><span class="ja">時刻付きTrack ID反復反応。</span></td></tr>
-            <tr><td><span class="en">Skipped items</span><span class="ja">スキップ楽曲</span></td><td><span class="status e">S+E</span></td><td><span class="status e">S+E</span></td><td><span class="status e">S+E</span></td><td><span class="en">Recent skip excludes; older skip penalizes.</span><span class="ja">直近スキップは除外、古いスキップは減点。</span></td></tr>
-            <tr><td><span class="en">Cancelled plans and changed-from items</span><span class="ja">キャンセルプラン・変更元楽曲</span></td><td><span class="status s">S</span></td><td><span class="status s">S</span></td><td><span class="status s">S</span></td><td><span class="en">Direct Track-ID operation penalties.</span><span class="ja">Track ID完全一致の操作減点。</span></td></tr>
-            <tr><td><span class="en">Service acceptance/recovery</span><span class="ja">サービス採用率／回復率</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="en">Same service-level value for every song.</span><span class="ja">全楽曲で同じサービスレベル値です。</span></td></tr>
-            <tr><td><span class="en">Scheduled event type/timing/tags</span><span class="ja">予定イベント種別／時期／タグ</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="status c">C</span></td><td><span class="en">No Spotify event relation.</span><span class="ja">Spotifyにイベント関係情報がありません。</span></td></tr>
-            <tr><td><span class="en">Content acceptance and recovery</span><span class="ja">コンテンツ採用率／回復率</span></td><td><span class="status s">S</span></td><td><span class="status s">S</span></td><td><span class="status s">S</span></td><td><span class="en">Exact Track-ID rate only.</span><span class="ja">Track ID完全一致率のみ。</span></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section id="example">
-      <h2><span class="en">7. Worked humming example and five-song output</span><span class="ja">7. ハミング計算例と5曲出力</span></h2>
-      <p class="sub en">This example uses the Spotify sample-like Audio Features from the specification and the inattentive-driving recovery purpose.</p>
-      <p class="sub ja">仕様書のSpotifyサンプル形式Audio Featuresと、漫然運転予防・疲労回復目的を使う例です。</p>
-
-      <div class="grid">
-        <article class="card blue">
-          <h3><span class="en">World evidence</span><span class="ja">ワールドエビデンス</span></h3>
-          <p><span class="tag">drowsiness 80 → e=.60</span><span class="tag">fatigue 70 → e=.40</span><span class="tag">congested → e=1</span><span class="tag">highway → e=1</span><span class="tag">night → e=1</span><span class="tag">monotony 90 → e=.80</span></p>
-          <p><span class="tag">exact oshi +1</span><span class="tag">usage +.25</span><span class="tag">played -.25</span><span class="tag">acceptance +.60</span><span class="tag">recovery +.40</span></p>
-        </article>
-        <article class="card cyan">
-          <h3><span class="en">Candidate response</span><span class="ja">候補反応</span></h3>
-          <p><code>humming_activation = 0.7580635</code></p>
-          <p><code>a_activation = 2A - 1 = 0.516127</code></p>
-          <p class="en">The active song agrees with every positive activation evidence in this world.</p>
-          <p class="ja">この活動的な曲は、ワールド内のすべての正のアクティベーションエビデンスと一致します。</p>
-        </article>
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th><span class="en">Factor</span><span class="ja">要因</span></th><th><code>w</code></th><th><code>e</code></th><th><code>a</code></th><th><code>r=e×a</code></th><th><code>k=w×r</code></th></tr></thead>
-          <tbody>
-            <tr><td><span class="en">Drowsiness</span><span class="ja">眠気</span></td><td>.200066</td><td>.600000</td><td>.516127</td><td>.309676</td><td>.061956</td></tr>
-            <tr><td><span class="en">Fatigue</span><span class="ja">疲労</span></td><td>.163690</td><td>.400000</td><td>.516127</td><td>.206451</td><td>.033794</td></tr>
-            <tr><td><span class="en">Traffic</span><span class="ja">交通</span></td><td>.043651</td><td>1</td><td>.516127</td><td>.516127</td><td>.022529</td></tr>
-            <tr><td><span class="en">Road</span><span class="ja">道路</span></td><td>.043651</td><td>1</td><td>.516127</td><td>.516127</td><td>.022529</td></tr>
-            <tr><td><span class="en">Night</span><span class="ja">夜間</span></td><td>.058201</td><td>1</td><td>.516127</td><td>.516127</td><td>.030039</td></tr>
-            <tr><td><span class="en">Monotony</span><span class="ja">単調度</span></td><td>.145503</td><td>.800000</td><td>.516127</td><td>.412902</td><td>.060078</td></tr>
-            <tr><td><span class="en">Age/era</span><span class="ja">年齢／年代</span></td><td>.010582</td><td>1</td><td>.500000</td><td>.500000</td><td>.005291</td></tr>
-            <tr><td><span class="en">Exact oshi artist</span><span class="ja">推しアーティスト完全一致</span></td><td>.063492</td><td>1</td><td>1</td><td>1</td><td>.063492</td></tr>
-            <tr><td><span class="en">Direct item usage</span><span class="ja">直接楽曲利用度</span></td><td>.039683</td><td>.250000</td><td>1</td><td>.250000</td><td>.009921</td></tr>
-            <tr><td><span class="en">Played</span><span class="ja">再生済み</span></td><td>.018896</td><td>-.250000</td><td>1</td><td>-.250000</td><td>-.004724</td></tr>
-            <tr><td><span class="en">Skipped</span><span class="ja">スキップ</span></td><td>.026455</td><td>0</td><td>1</td><td>0</td><td>0</td></tr>
-            <tr><td><span class="en">Changed/cancelled</span><span class="ja">変更／キャンセル</span></td><td>.030234</td><td>0</td><td>1</td><td>0</td><td>0</td></tr>
-            <tr><td><span class="en">Content acceptance</span><span class="ja">コンテンツ採用率</span></td><td>.042517</td><td>.600000</td><td>1</td><td>.600000</td><td>.025510</td></tr>
-            <tr><td><span class="en">Content recovery</span><span class="ja">コンテンツ回復率</span></td><td>.113379</td><td>.400000</td><td>1</td><td>.400000</td><td>.045351</td></tr>
-          </tbody>
-          <tfoot><tr><th colspan="5"><span class="en">Full-precision item fit</span><span class="ja">完全精度の楽曲適合度</span></th><th><code>0.37576713988095228</code></th></tr></tfoot>
-        </table>
-      </div>
-
-      <h3 style="margin-top:26px"><span class="en">Illustrative complete plan—selected songs only</span><span class="ja">選択曲だけを表示する完全プラン例</span></h3>
-      <p class="sub en">The first score is the exact worked result above. The remaining synthetic values illustrate the ordered output contract; the main view does not show every rejected candidate score.</p>
-      <p class="sub ja">1位のスコアは上記の正確な計算結果です。残りの合成値は順序付き出力契約の表示例です。メイン画面では全落選候補のスコアを表示しません。</p>
-      <div class="plan-list">
-        <div class="plan-item"><span class="rank">1</span><div><div class="song-title">Afterglow Highway</div><div class="song-meta">Aoi Meridian · Midnight Compass</div></div><span class="fit">0.375767</span></div>
-        <div class="plan-item"><span class="rank">2</span><div><div class="song-title">City Pulse</div><div class="song-meta">Lumen Parade · Crosswalk Echoes</div></div><span class="fit">0.341820</span></div>
-        <div class="plan-item"><span class="rank">3</span><div><div class="song-title">Lantern Drive</div><div class="song-meta">Northbound Bloom · Signal Garden</div></div><span class="fit">0.307104</span></div>
-        <div class="plan-item"><span class="rank">4</span><div><div class="song-title">Blue Meridian</div><div class="song-meta">Harbor Static · Tidal Lines</div></div><span class="fit">0.284551</span></div>
-        <div class="plan-item"><span class="rank">5</span><div><div class="song-title">Quiet Horizon</div><div class="song-meta">Sora Atlas · Dawn Coordinates</div></div><span class="fit">0.261009</span></div>
-      </div>
-      <div class="formula">sort: item_fit descending → exact ties: spotify_track.id ascending → take first configured N</div>
-    </section>
-
-    <section id="simulation">
-      <h2><span class="en">8. Synthetic catalog and contrast simulation</span><span class="ja">8. 合成カタログと比較シミュレーション</span></h2>
-      <div class="grid three">
-        <article class="card blue"><span class="metric">36</span><h3><span class="en">Demonstration songs</span><span class="ja">デモ楽曲</span></h3><p class="en">3 energy bands × 3 tempo bands × 4 audio-profile families.</p><p class="ja">3エネルギー帯×3テンポ帯×4音響プロファイル群。</p></article>
-        <article class="card purple"><span class="metric">12</span><h3><span class="en">Fictional artists</span><span class="ja">架空アーティスト</span></h3><p class="en">Stable synthetic Artist, Album, and Track IDs support direct matching.</p><p class="ja">安定した合成Artist／Album／Track IDで直接一致を支えます。</p></article>
-        <article class="card green"><span class="metric">1 seed</span><h3><span class="en">Frozen replay</span><span class="ja">固定リプレイ</span></h3><p class="en">Dataset, world, algorithm, parameters, and seed reproduce the same plan.</p><p class="ja">データセット、ワールド、アルゴリズム、パラメータ、シードから同じプランを再現します。</p></article>
-      </div>
-
-      <div class="flow" style="margin-top:20px">
-        <div class="step"><b>1</b><span class="en">Allocate fictional IDs</span><span class="ja">架空IDを割当</span></div>
-        <div class="step"><b>2</b><span class="en">Generate Track objects</span><span class="ja">Trackを生成</span></div>
-        <div class="step"><b>3</b><span class="en">Generate Audio Features</span><span class="ja">Audio Featuresを生成</span></div>
-        <div class="step"><b>4</b><span class="en">Deterministic validation</span><span class="ja">決定論的検証</span></div>
-        <div class="step"><b>5</b><span class="en">Freeze worlds and history</span><span class="ja">ワールド・履歴を固定</span></div>
-      </div>
-
-      <div class="callout safety" style="margin-top:20px">
-        <p class="en"><strong>Real Spotify payloads do not enter the LLM path.</strong> The generator receives the public schema, field meanings, fictional controls, and a seed. Synthetic IDs are visibly marked and web URLs use <code>.invalid</code>.</p>
-        <p class="ja"><strong>実SpotifyペイロードはLLM経路へ入りません。</strong> 生成器が受け取るのは公開スキーマ、フィールド意味、架空生成条件、シードです。合成IDは明示し、Web URLには<code>.invalid</code>を使います。</p>
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th><span class="en">One-variable contrast</span><span class="ja">単一変数比較</span></th><th><span class="en">Expected transparent result</span><span class="ja">期待する透明な結果</span></th></tr></thead>
-          <tbody>
-            <tr><td><span class="en">Low ↔ high drowsiness</span><span class="ja">低い眠気↔高い眠気</span></td><td><span class="en">Calm/active response ordering reverses.</span><span class="ja">落ち着いた曲／活動的な曲の反応順位が逆転します。</span></td></tr>
-            <tr><td><span class="en">Low ↔ high fatigue</span><span class="ja">低い疲労↔高い疲労</span></td><td><span class="en">Calm/active response ordering reverses.</span><span class="ja">落ち着いた曲／活動的な曲の反応順位が逆転します。</span></td></tr>
-            <tr><td><span class="en">Normal ↔ congested traffic</span><span class="ja">通常交通↔渋滞</span></td><td><span class="en">Signed categorical profile reverses the response.</span><span class="ja">符号付きカテゴリプロファイルが反応を逆転します。</span></td></tr>
-            <tr><td><span class="en">Highway ↔ mountain road</span><span class="ja">高速道路↔山道</span></td><td><span class="en">Active/calm response ordering reverses.</span><span class="ja">活動的な曲／落ち着いた曲の反応順位が逆転します。</span></td></tr>
-            <tr><td><span class="en">Day ↔ night</span><span class="ja">昼↔夜</span></td><td><span class="en">Calm/active response ordering reverses.</span><span class="ja">落ち着いた曲／活動的な曲の反応順位が逆転します。</span></td></tr>
-            <tr><td><span class="en">Child absent ↔ present</span><span class="ja">子供なし↔あり</span></td><td><span class="en">Explicit candidates leave or enter eligibility.</span><span class="ja">Explicit候補の利用可否が変化します。</span></td></tr>
-            <tr><td><span class="en">Oshi mode off ↔ on</span><span class="ja">推しモードOFF↔ON</span></td><td><span class="en">Exact Artist-ID contribution changes.</span><span class="ja">Artist ID完全一致の寄与が変化します。</span></td></tr>
-            <tr><td><span class="en">Route tag A ↔ B</span><span class="ja">ルートタグA↔B</span></td><td><span class="en">No rank change in Spotify-only V1.</span><span class="ja">Spotify限定V1では順位変化なし。</span></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section id="tuning">
-      <h2><span class="en">9. Customer tuning, evidence, and boundaries</span><span class="ja">9. お客様による調整、エビデンス、境界</span></h2>
-      <div class="grid three">
-        <article class="card blue">
-          <h3><span class="en">Editable settings</span><span class="ja">編集可能設定</span></h3>
-          <ul>
-            <li><span class="en">Plan count, default 5</span><span class="ja">プラン曲数、初期値5</span></li>
-            <li><span class="en">Weights and purpose multipliers</span><span class="ja">重みと目的別倍率</span></li>
-            <li><span class="en">Signed categorical evidence profiles</span><span class="ja">符号付きカテゴリエビデンスプロファイル</span></li>
-            <li><span class="en">Audio and karaoke proxy coefficients</span><span class="ja">音響・カラオケ代理係数</span></li>
-            <li><span class="en">History windows and mappings</span><span class="ja">履歴期間と対応表</span></li>
-            <li><span class="en">Two karaoke availability defaults</span><span class="ja">2つのカラオケ利用可否初期値</span></li>
-          </ul>
-        </article>
-        <article class="card green">
-          <h3><span class="en">Per-song evidence</span><span class="ja">楽曲別エビデンス</span></h3>
-          <ul>
-            <li><code>raw_value</code></li>
-            <li><code>normalized_evidence</code></li>
-            <li><code>response_coefficient</code> <span class="en">and provenance</span><span class="ja">と出典</span></li>
-            <li><code>normalized_feature_response</code></li>
-            <li><code>effective_weight</code></li>
-            <li><code>feature_contribution</code></li>
-            <li><code>item_fit</code></li>
-          </ul>
-        </article>
-        <article class="card amber">
-          <h3><span class="en">Explicit boundaries</span><span class="ja">明示的な境界</span></h3>
-          <ul>
-            <li><span class="en">No LLM ranking in transparent V1</span><span class="ja">透明V1ではLLM順位付けなし</span></li>
-            <li><span class="en">No hidden diversity reranker</span><span class="ja">隠れた多様性再順位付けなし</span></li>
-            <li><span class="en">No imputed Spotify score fields</span><span class="ja">Spotifyスコアフィールド補完なし</span></li>
-            <li><span class="en">No semantic relation guesses</span><span class="ja">意味関係の推測なし</span></li>
-            <li><span class="en">No safety or acceptance probability claim</span><span class="ja">安全性・採用確率の主張なし</span></li>
-          </ul>
-        </article>
-      </div>
-
-      <div class="callout cyan" style="margin-top:20px">
-        <p class="en"><strong>Deterministic replay contract:</strong> the same catalog hash, world hash, algorithm version, parameter set, and seed must reproduce the same eligibility, contributions, item order, and five-song plan.</p>
-        <p class="ja"><strong>決定論的リプレイ契約：</strong> 同じカタログハッシュ、ワールドハッシュ、アルゴリズム版、パラメータセット、シードから、同じ利用可否、寄与度、楽曲順、5曲プランを再現する必要があります。</p>
-      </div>
-
-      <details>
-        <summary><span class="en">Deferred extensions</span><span class="ja">将来拡張</span></summary>
-        <div class="details-body">
-          <p class="en">Licensed karaoke catalogs, lyrics/timing, chorus boundaries, vocal range, richer credits, child/group suitability, route/destination/event semantics, richer oshi graphs, a provider-independent replacement for deprecated Audio Features, learned ranking, and diversity constraints all require separate provenance and scoring approval.</p>
-          <p class="ja">ライセンス済みカラオケカタログ、歌詞／時刻、サビ境界、声域、詳細クレジット、子供／グループ適合性、ルート／目的地／イベント意味情報、詳細推しグラフ、非依存Audio Features代替、学習順位付け、多様性制約は、すべて別の出典・スコアリング承認が必要です。</p>
-        </div>
-      </details>
-
-      <p style="margin-top:22px">
-        <span class="en">Normative sources: </span><span class="ja">規範文書：</span>
-        <a href="aica_transparent_content_proposal_algorithm.md">Transparent content-proposal algorithm</a> ·
-        <a href="aica_synthetic_music_data_and_generation_specification.md">Synthetic music-data specification</a> ·
-        <a href="aica_proposal_simulator_specification.md">Consolidated simulator specification</a>
-      </p>
-    </section>
-  </main>
-
-  <footer>
-    <div class="wrap">
-      <p class="en">AICA Transparent Content Proposal — bilingual representation of the Spotify-only V1.1 signed-response design.</p>
-      <p class="ja">AICA透明コンテンツ提案 — Spotify限定V1.1符号付き反応設計の二言語表現資料。</p>
+    <p class="topline"><span class="ja">AICA 透明コンテンツ提案アルゴリズム — Spotify限定 V1</span><span class="en">AICA transparent content-proposal algorithm — Spotify-only V1</span></p>
+    <div class="oneliner">
+      <span class="ja"><b>一言で言うと：</b>サービス選択が「音楽サービス」を選んだ<b>後</b>に、具体的な<b>曲</b>を選ぶアルゴリズムです。各曲を音声特徴から<b>トレイト</b>（活性度＝arousal／明るさ＝valence／歌いやすさ）に要約し、現在の状況が求める<b>需要</b>と一致する曲を高く評価します。すべて Spotify 互換メタデータと正確なID履歴だけで、既定で5曲の順序付きプランを出します。</span>
+      <span class="en"><b>In one line:</b> <b>after</b> the service selector has chosen a music service, this picks the concrete <b>songs</b>. Each song is distilled from its audio into <b>traits</b> — energy (arousal), brightness (valence), and singability — and a song scores well when its traits answer what the current context <b>demands</b>. Everything uses only Spotify-compatible metadata and exact-ID history, returning an ordered five-song plan by default.</span>
     </div>
-  </footer>
 
-  <script>
-    (() => {
-      const languageButtons = document.querySelectorAll('[data-lang]');
-      const setLanguage = (language) => {
-        document.body.classList.remove('lang-en', 'lang-ja');
-        document.body.classList.add('lang-' + language);
-        document.documentElement.lang = language;
-        languageButtons.forEach((button) => {
-          const active = button.dataset.lang === language;
-          button.classList.toggle('active', active);
-          button.setAttribute('aria-pressed', String(active));
-        });
-      };
-      languageButtons.forEach((button) => button.addEventListener('click', () => setLanguage(button.dataset.lang)));
+    <!-- 1. Overview -->
+    <section id="overview">
+      <h2><span class="num">1</span><span class="ja">概要 ― 考え方</span><span class="en">Overview — the idea</span></h2>
+      <p>
+        <span class="ja">すべての採点特徴量は同じ形をとります：<b>evidence</b> <code>e_i</code>（現在の状況がどれだけ強く何かを求めているか）× <b>response coefficient</b> <code>a_i</code>（その曲がどれだけうまく応えるか）。新しいのは、6つのドライバー／環境特徴量で <code>a_i</code> をどう作るかだけです。</span>
+        <span class="en">Every scored feature takes the same shape: an <b>evidence</b> value <code>e_i</code> (how strongly the context calls for something) times a <b>response coefficient</b> <code>a_i</code> (how well the song answers it). The only novelty is how <code>a_i</code> is built for the six driver/environment features.</span>
+      </p>
+      <div class="why mono">
+        <span class="lab"><span class="ja">なぜ2軸か</span><span class="en">Why two axes</span></span>
+        <p>
+          <span class="ja">単一の「活性度」スカラーでは曲を「静か⇔激しい」でしか並べられません。<b>静かで明るい</b>曲と<b>静かで暗い</b>曲を区別できないのです。疲労・渋滞・夜間のドライバーは<b>穏やかで前向き</b>な曲を、眠気・単調路のドライバーは<b>元気な</b>曲を求めます。1軸ではこれらが同じ順位に潰れ、2軸なら分離できます。</span>
+          <span class="en">A single “activation” scalar can only order songs calm↔energetic; it cannot tell <b>calm-and-bright</b> from <b>calm-and-dark</b>. A fatigued/congested/night driver wants <b>calm and reassuring</b> music, while a drowsy driver on a monotonous road wants <b>energetic</b> music. One axis collapses these; two axes separate them.</span>
+        </p>
+      </div>
+      <h3><span class="ja">サービス選択との関係</span><span class="en">Relationship to the service selector</span></h3>
+      <div class="scroll-x"><table>
+        <thead><tr>
+          <th><span class="ja">論点</span><span class="en">Concern</span></th>
+          <th><span class="ja">サービス選択</span><span class="en">Service selector</span></th>
+          <th><span class="ja">コンテンツ選択（本書）</span><span class="en">Content selector (this doc)</span></th>
+        </tr></thead>
+        <tbody>
+          <tr><td><span class="ja">決定</span><span class="en">Decision</span></td><td><span class="ja">どのサービスを提案するか</span><span class="en">Which service to propose</span></td><td><span class="ja">どの曲を入れるか</span><span class="en">Which songs to place in it</span></td></tr>
+          <tr><td><span class="ja">候補</span><span class="en">Candidate</span></td><td><span class="ja">サービス</span><span class="en">A service</span></td><td><span class="ja">Spotify互換トラック</span><span class="en">A Spotify-compatible Track</span></td></tr>
+          <tr><td><span class="ja">レスポンス <code>a_i</code></span><span class="en">Response <code>a_i</code></span></td><td><span class="ja">人手で定義</span><span class="en">Hand-authored per service</span></td><td><span class="ja">音声トレイト／正確ID から算出</span><span class="en">Computed from audio traits / exact-ID metadata</span></td></tr>
+          <tr><td><span class="ja">出力</span><span class="en">Output</span></td><td><span class="ja">順位付きサービス＋状態</span><span class="en">Ranked services + lifecycle</span></td><td><span class="ja">順序付き5曲プラン</span><span class="en">Ordered five-song plan</span></td></tr>
+        </tbody>
+      </table></div>
+      <p class="small muted"><span class="ja">コンテンツ選択は、承認済み／実行中の音楽サービスを前提とし、サービス決定を再検討したり別サービスに置き換えたりしません。</span><span class="en">The content selector requires an accepted or active music service; it never re-opens the service decision or substitutes a different service.</span></p>
+    </section>
 
-      const drowsiness = document.getElementById('drowsiness');
-      const activation = document.getElementById('activation');
-      const drowsinessValue = document.getElementById('drowsinessValue');
-      const activationValue = document.getElementById('activationValue');
-      const evidenceOutput = document.getElementById('evidenceOutput');
-      const coefficientOutput = document.getElementById('coefficientOutput');
-      const responseOutput = document.getElementById('responseOutput');
-      const resultBanner = document.getElementById('resultBanner');
-      const resultEn = document.getElementById('resultEn');
-      const resultJa = document.getElementById('resultJa');
-      const signed = (value) => (value >= 0 ? '+' : '') + value.toFixed(3);
+    <!-- 2. Scoring model -->
+    <section id="model">
+      <h2><span class="num">2</span><span class="ja">スコアの仕組み</span><span class="en">The scoring model</span></h2>
+      <p><span class="ja">音声・同一性・履歴を問わず、すべての特徴量が同じ5ステップをたどります。<code>a_i</code> の作り方だけが異なります。</span><span class="en">Audio, identity, or history — every feature follows the same five steps. Only the way <code>a_i</code> is produced differs.</span></p>
+      <div class="pipe">
+        <div class="node"><div class="n">1 · x_i</div><div class="t">raw</div><div class="d"><span class="ja">世界／曲フィールド</span><span class="en">world / song field</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="n">2 · e_i</div><div class="t">evidence</div><div class="d"><span class="ja">状況の強さ [0,1]</span><span class="en">how strong the context is [0,1]</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="n">3 · a_i</div><div class="t">response</div><div class="d"><span class="ja">曲がどれだけ応えるか [-1,+1]</span><span class="en">how well the song answers [-1,+1]</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="n">4 · r_i</div><div class="t">= e_i·a_i</div><div class="d"><span class="ja">特徴量レスポンス</span><span class="en">feature_response</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="n">5 · k_i</div><div class="t">= w_i·r_i</div><div class="d"><span class="ja">重み付き寄与</span><span class="en">weighted contribution</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="n">Σ · F</div><div class="t">item_fit</div><div class="d"><span class="ja">clamp Σ k_i → [-1,+1]</span><span class="en">clamp Σ k_i → [-1,+1]</span></div></div>
+      </div>
+      <p class="small"><span class="ja"><code>item_fit</code> は比較のための仮説スコアであり、確率・受諾率・安全保証ではありません。</span><span class="en"><code>item_fit</code> is a comparative hypothesis score — not a probability, acceptance rate, or safety assurance.</span></p>
 
-      const updateProfile = () => {
-        const d = Number(drowsiness.value);
-        const A = Number(activation.value);
-        const e = 2 * (d / 100) - 1;
-        const a = 2 * A - 1;
-        const r = e * a;
-        drowsinessValue.textContent = d.toFixed(0);
-        activationValue.textContent = A.toFixed(2);
-        evidenceOutput.textContent = signed(e);
-        coefficientOutput.textContent = signed(a);
-        responseOutput.textContent = signed(r);
-        resultBanner.classList.remove('positive', 'negative', 'neutral');
-        if (r > 0.0005) {
-          resultBanner.classList.add('positive');
-          resultEn.textContent = 'Positive match: evidence and song activation agree.';
-          resultJa.textContent = '正の一致：エビデンスと楽曲アクティベーションが一致します。';
-        } else if (r < -0.0005) {
-          resultBanner.classList.add('negative');
-          resultEn.textContent = 'Negative mismatch: evidence and song activation oppose each other.';
-          resultJa.textContent = '負の不一致：エビデンスと楽曲アクティベーションの方向が反対です。';
-        } else {
-          resultBanner.classList.add('neutral');
-          resultEn.textContent = 'Neutral: this activation factor does not change the song score.';
-          resultJa.textContent = '中立：このアクティベーション要因は楽曲スコアを変えません。';
-        }
-      };
-      drowsiness.addEventListener('input', updateProfile);
-      activation.addEventListener('input', updateProfile);
-      document.querySelectorAll('[data-d][data-a]').forEach((button) => {
-        button.addEventListener('click', () => {
-          drowsiness.value = button.dataset.d;
-          activation.value = button.dataset.a;
-          updateProfile();
-        });
-      });
-      setLanguage('ja');
-      updateProfile();
-    })();
-  </script>
+      <div class="why ok">
+        <span class="lab"><span class="ja">範囲は構造で保証（隠れclampなし）</span><span class="en">Bounds hold by construction (no hidden clamp)</span></span>
+        <p><span class="ja">各レスポンス係数は <code>|a_i| ≤ 1</code>（音声特徴では <code>|α_i| + β_i ≤ 1</code>）。重みは非負で総和1。よって <code>r_i ∈ [-1,+1]</code>、<code>Σ k_i ∈ [-1,+1]</code>。<code>item_fit</code> の clamp は浮動小数の誤差対策のみです。</span>
+        <span class="en">Each coefficient satisfies <code>|a_i| ≤ 1</code> (for audio, because <code>|α_i| + β_i ≤ 1</code>); weights are non-negative and sum to one. So <code>r_i ∈ [-1,+1]</code> and <code>Σ k_i ∈ [-1,+1]</code>. The <code>item_fit</code> clamp guards only floating-point drift.</span></p>
+      </div>
+
+      <h3><span class="ja">「実効重み」とは（3行で）</span><span class="en">What “effective weight” means (three lines)</span></h3>
+      <div class="formula">
+        <span class="lhs">base_weight_i</span> <span class="op">=</span> category_weight <span class="op">×</span> subgroup_weight <span class="op">×</span> leaf_weight<br>
+        <span class="lhs">raw_weight_i</span>&nbsp; <span class="op">=</span> base_weight_i <span class="op">×</span> purpose_multiplier[purpose][subgroup] <span class="op">×</span> mask_i<br>
+        <span class="lhs">w_i</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="op">=</span> raw_weight_i <span class="op">/</span> Σ_j raw_weight_j
+      </div>
+      <p class="small muted"><span class="ja"><code>mask</code> は Spotify限定V1 で採点可能なら1、そうでなければ0（採点不可の関係はトレースに残る）。最後の割り算だけが数字を不均一に見せる正体で、生き残った特徴量を総和1に再スケールしているだけです。</span><span class="en"><code>mask</code> is 1 if scorable in Spotify-only V1, else 0 (unsupported relations still appear in the trace). The final divide is the only thing that makes the numbers look uneven — it just rescales the survivors to sum to one.</span></p>
+    </section>
+
+    <!-- 3. Song traits -->
+    <section id="traits">
+      <h2><span class="num">3</span><span class="ja">楽曲トレイト（4種）</span><span class="en">Song traits (four)</span></h2>
+      <p><span class="ja">各曲を音声から4つのトレイト（各 [0,1]）に要約します。arousal と valence は感情の円環モデル（活性度×快さ）の2軸で、曲を1次元の音量線ではなく2次元の気分平面に配置します。歌いやすさ2種はカラオケ<b>サービス</b>適合の判定にのみ使い、文脈判断には使いません。</span>
+      <span class="en">Each song is distilled from its audio into four traits (each in [0,1]). Arousal and valence are the two axes of the circumplex model of affect (energy × pleasantness), placing a song on a 2-D mood plane instead of a 1-D loudness line. The two ease traits judge only a song's fit for a karaoke <b>service</b>, never context.</span></p>
+      <div class="fgrid">
+        <div class="fcard"><h4>arousal <span class="small muted">— <span class="ja">活性度</span><span class="en">energy</span></span></h4><p><span class="ja">曲がどれだけ元気か。ランキングで全サービス共通。</span><span class="en">How energetic the song is. Used in ranking, all services.</span></p></div>
+        <div class="fcard"><h4>valence <span class="small muted">— <span class="ja">明るさ</span><span class="en">brightness</span></span></h4><p><span class="ja">曲がどれだけ明るい／前向きか。全サービス共通。</span><span class="en">How bright/positive the song is. All services.</span></p></div>
+        <div class="fcard"><h4>humming_ease <span class="small muted">— <span class="ja">鼻歌容易性</span><span class="en">hummability</span></span></h4><p><span class="ja">口ずさみやすさ。鼻歌カラオケのみ。</span><span class="en">How easy to hum. Humming karaoke only.</span></p></div>
+        <div class="fcard"><h4>full_karaoke_ease <span class="small muted">— <span class="ja">歌唱容易性</span><span class="en">singability</span></span></h4><p><span class="ja">1曲通して歌いやすいか。フルカラオケのみ。</span><span class="en">How easy to sing the whole song. Full karaoke only.</span></p></div>
+      </div>
+
+      <h3><span class="ja">表1 — トレイト構成マトリクス</span><span class="en">Table 1 — Trait Composition Matrix</span></h3>
+      <p class="small muted"><span class="ja">各トレイトは音声フィールドの加重和。列内の重みは総和1なので出力は必ず [0,1]。<code>(inv)</code> は反転使用（値が高いほどトレイトは低い）。</span><span class="en">Each trait is a weighted blend of audio fields; column weights sum to 1, so every output is in [0,1]. <code>(inv)</code> = used inverted (higher raw = less trait).</span></p>
+      <div class="scroll-x"><table>
+        <thead><tr>
+          <th><span class="ja">音声フィールド</span><span class="en">Audio field</span></th>
+          <th class="num-c">arousal</th><th class="num-c">valence</th><th class="num-c">humming_ease</th><th class="num-c">full_karaoke_ease</th>
+        </tr></thead>
+        <tbody>
+          <tr><td><code>energy</code></td><td class="num">0.30</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+          <tr><td><code>loudness</code></td><td class="num">0.25</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+          <tr><td><code>tempo</code></td><td class="num">0.25</td><td class="num">—</td><td class="num">0.20</td><td class="num">0.20</td></tr>
+          <tr><td><code>danceability</code></td><td class="num">0.15</td><td class="num">—</td><td class="num">0.20</td><td class="num">0.15</td></tr>
+          <tr><td><code>acousticness</code></td><td class="num">0.05 (inv)</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
+          <tr><td><code>valence</code></td><td class="num">—</td><td class="num">0.65</td><td class="num">—</td><td class="num">—</td></tr>
+          <tr><td><code>mode</code></td><td class="num">—</td><td class="num">0.35</td><td class="num">—</td><td class="num">—</td></tr>
+          <tr><td><code>instrumentalness</code></td><td class="num">—</td><td class="num">—</td><td class="num">0.35 (inv)</td><td class="num">0.30 (inv)</td></tr>
+          <tr><td><code>speechiness</code></td><td class="num">—</td><td class="num">—</td><td class="num">0.25 (inv)</td><td class="num">0.20 (inv)</td></tr>
+          <tr><td><code>duration_ms</code></td><td class="num">—</td><td class="num">—</td><td class="num">—</td><td class="num">0.15</td></tr>
+          <tr style="font-weight:800"><td><span class="ja">合計</span><span class="en">sum</span></td><td class="num">1.00</td><td class="num">1.00</td><td class="num">1.00</td><td class="num">1.00</td></tr>
+        </tbody>
+      </table></div>
+
+      <h4><span class="ja">フィールド別の根拠（抜粋）</span><span class="en">Per-field rationale (selected)</span></h4>
+      <ul class="small">
+        <li><span class="ja"><code>energy</code> は強度そのもの→arousal の主項。<code>loudness</code>/<code>tempo</code> は強い相関、<code>danceability</code> は部分的、<code>acousticness</code> は弱い反転（アコースティック＝穏やか）。</span><span class="en"><code>energy</code> is intensity itself → arousal's main term; <code>loudness</code>/<code>tempo</code> strong correlates, <code>danceability</code> partial, <code>acousticness</code> a weak inverse (acoustic = calmer).</span></li>
+        <li><span class="ja"><code>valence</code> は快さの直接指標、<code>mode</code>（長調=明／短調=暗）は粗いが実在の手がかり。</span><span class="en"><code>valence</code> is the direct positiveness measure; <code>mode</code> (major bright / minor dark) is a coarse but real cue.</span></li>
+        <li><span class="ja">歌いやすさは <code>instrumentalness</code>（反転＝ボーカルが必要）と <code>speechiness</code>（反転＝喋りは旋律にならない）が主。<code>tempo</code> は歌唱では中庸が最良（<code>tempo_ease</code>）。</span><span class="en">Singability is driven by <code>instrumentalness</code> (inverse — you need vocals) and <code>speechiness</code> (inverse — speech has no melody); <code>tempo</code> for singing prefers the middle (<code>tempo_ease</code>).</span></li>
+        <li><span class="ja">保持するが未採点：<code>key</code>, <code>time_signature</code>, <code>liveness</code>。</span><span class="en">Retained but never scored: <code>key</code>, <code>time_signature</code>, <code>liveness</code>.</span></li>
+      </ul>
+
+      <h4><span class="ja">トレイト式</span><span class="en">Trait formulas</span></h4>
+      <div class="formula">
+        norm_loudness <span class="op">=</span> clamp((loudness + 60) / 60)&nbsp;&nbsp; norm_tempo <span class="op">=</span> clamp((tempo − 60) / 120)<br>
+        tempo_ease <span class="op">=</span> 1 − clamp(|tempo − 110| / 90)&nbsp;&nbsp; speech_ease <span class="op">=</span> 1 − clamp((speechiness − 0.33)/0.33)<br>
+        duration_ease <span class="op">=</span> 1 − clamp((duration_ms − 180000)/180000)<br><br>
+        <span class="lhs">arousal</span>&nbsp;&nbsp;&nbsp; <span class="op">=</span> 0.30·energy <span class="op">+</span> 0.25·norm_loudness <span class="op">+</span> 0.25·norm_tempo <span class="op">+</span> 0.15·danceability <span class="op">+</span> 0.05·(1−acousticness)<br>
+        <span class="lhs">valence</span>&nbsp;&nbsp;&nbsp; <span class="op">=</span> 0.65·valence <span class="op">+</span> 0.35·mode<br>
+        <span class="lhs">humming</span>&nbsp;&nbsp;&nbsp; <span class="op">=</span> 0.35·(1−instrumentalness) <span class="op">+</span> 0.25·speech_ease <span class="op">+</span> 0.20·danceability <span class="op">+</span> 0.20·tempo_ease<br>
+        <span class="lhs">full_kar</span>&nbsp;&nbsp; <span class="op">=</span> 0.30·(1−instrumentalness) <span class="op">+</span> 0.20·speech_ease <span class="op">+</span> 0.20·tempo_ease <span class="op">+</span> 0.15·duration_ease <span class="op">+</span> 0.15·danceability
+      </div>
+      <p class="small muted"><span class="ja">署名付きトレイト：<code>A_s = 2·arousal − 1</code>、<code>V_s = 2·valence − 1</code>。<code>tempo</code> は arousal では単調（速い＝活性）、歌唱では中庸最良（<code>tempo_ease</code>）と、同じフィールドを2通りに正規化します。</span><span class="en">Signed traits: <code>A_s = 2·arousal − 1</code>, <code>V_s = 2·valence − 1</code>. <code>tempo</code> is normalized two ways: monotonic for arousal (faster = more energetic) and centered for singability (<code>tempo_ease</code>).</span></p>
+    </section>
+
+    <!-- 4. Context response -->
+    <section id="response">
+      <h2><span class="num">4</span><span class="ja">文脈レスポンス（2軸）</span><span class="en">Context response (two axes)</span></h2>
+      <p><span class="ja">6つのドライバー／環境特徴量は、曲のフィールドを直接読むのではなく<b>需要</b>を表明します：arousal 需要 <code>α</code> と valence 需要 <code>β</code>。曲は署名付きトレイトで応え、状況の強さで掛け合わされます。</span>
+      <span class="en">The six driver/environment features do not read song fields directly; they state a <b>demand</b>: <code>α</code> on arousal and <code>β</code> on valence. The song answers with its signed traits, scaled by how strongly the context is present.</span></p>
+      <div class="formula wrap">
+        <span class="lhs">feature_response</span>&nbsp; r_i(j) <span class="op">=</span> e_i <span class="op">·</span> ( <span class="coef">α_i</span> · A_s(j) <span class="op">+</span> <span class="coef">β_i</span> · V_s(j) )
+      </div>
+      <div class="why mono">
+        <span class="lab"><span class="ja">「符号は係数×トレイトに宿る」</span><span class="en">The sign lives in coefficient × trait</span></span>
+        <p><span class="ja">方向は evidence ではなく、係数の符号と曲トレイトの符号で決まります（evidence は常に強さ [0,1]）。例：疲労の係数は −0.50、穏やかな曲は −0.26 →「負×負＝正」で穏やかな曲を高評価。arousal は両側（活性⇔穏やか）、valence は片側（暗い曲は望まないので <code>β ≥ 0</code>）。</span>
+        <span class="en">Direction comes from the coefficient sign × the trait sign, not from evidence (always a magnitude [0,1]). E.g. fatigue's coefficient is −0.50 and a calm song is −0.26 → negative×negative = positive, rewarding the calm song. Arousal is two-sided (active↔calm); valence is one-sided (<code>β ≥ 0</code>) — a driver context never wants dark music.</span></p>
+      </div>
+
+      <h3><span class="ja">表2 — 文脈レスポンス・マトリクス</span><span class="en">Table 2 — Context Response Matrix</span></h3>
+      <p class="small muted"><span class="ja">各行は <code>|α| + β ≤ 1</code>（非中立状態では =1）に正規化され、<code>|a_i| ≤ 1</code> を保証。<span class="warnmark">⚠</span> は方向が仮説の行（§9）。</span><span class="en">Each row is row-normalized <code>|α| + β ≤ 1</code> (= 1 for every non-neutral state), guaranteeing <code>|a_i| ≤ 1</code>. <span class="warnmark">⚠</span> marks a directional hypothesis (§9).</span></p>
+      <div class="scroll-x"><table>
+        <thead><tr>
+          <th><span class="ja">特徴量</span><span class="en">Feature</span></th>
+          <th class="num-c">α (arousal)</th><th class="num-c">β (valence)</th>
+          <th><span class="ja">読み方</span><span class="en">Reading</span></th>
+        </tr></thead>
+        <tbody>
+          <tr><td><span class="ja">眠気 Drowsiness</span><span class="en">Drowsiness</span></td><td class="num">+0.80</td><td class="num">+0.20</td><td><span class="ja">元気づけ＋やや明るく</span><span class="en">energize, slightly brighten</span></td></tr>
+          <tr><td><span class="ja">疲労 Fatigue</span><span class="en">Fatigue</span> <span class="warnmark">⚠</span></td><td class="num">−0.50</td><td class="num">+0.50</td><td><span class="ja">和らげる＋明るく</span><span class="en">soothe + brighten</span></td></tr>
+          <tr><td><span class="ja">単調さ Monotony</span><span class="en">Monotony</span></td><td class="num">+0.90</td><td class="num">+0.10</td><td><span class="ja">退屈対策に刺激</span><span class="en">stimulate against boredom</span></td></tr>
+          <tr><td><span class="ja">渋滞 Traffic</span><span class="en">Traffic</span> <span class="warnmark">⚠</span></td><td class="num">−0.40</td><td class="num">+0.60</td><td><span class="ja">ストレス緩和＋明るく</span><span class="en">de-stress + brighten</span></td></tr>
+          <tr><td><span class="ja">夜間 Night</span><span class="en">Night</span> <span class="warnmark">⚠</span></td><td class="num">−0.50</td><td class="num">+0.50</td><td><span class="ja">穏やか＋暖かく</span><span class="en">calm + warm</span></td></tr>
+          <tr><td><span class="ja">道路種別 Road</span><span class="en">Road</span></td><td class="num">hwy +1.00 / local 0 / mtn −1.00 / park 0</td><td class="num">0.00</td><td><span class="ja">道路負荷に合わせる</span><span class="en">match road load</span></td></tr>
+        </tbody>
+      </table></div>
+      <p class="small"><span class="ja">valence 列が常に <code>≥ 0</code> なのは「気分は片側」の証。眠気(+)と疲労(−)が arousal で逆向きに引くのが、単一スカラーでは不可能だった分離です。</span><span class="en">The valence column is always <code>≥ 0</code> — mood is one-sided. Drowsiness (+) and fatigue (−) pulling opposite ways on arousal is the separation a single scalar could never express.</span></p>
+    </section>
+
+    <!-- 5. Feature contract -->
+    <section id="contract">
+      <h2><span class="num">5</span><span class="ja">特徴量の完全契約（表3）</span><span class="en">Complete feature contract (Table 3)</span></h2>
+      <p><span class="ja">親仕様書 §9 の正確なカテゴリ／サブカテゴリ／特徴量名を用いた全ベースライン特徴量。各特徴量：V1で採点するか／するなら 世界入力→evidence と 曲メタデータ→レスポンス係数／しないなら理由。カテゴリ型は enum 値に展開し、値ごとのレスポンスを明示。</span>
+      <span class="en">The full baseline feature set, using the exact category/subcategory/feature names from parent spec §9. For each: does V1 score it; if yes, world input → evidence and song metadata → response coefficient; if no, the reason. Categorical features are expanded to enum values so each value's response is explicit.</span></p>
+      <div class="legend">
+        <span><span class="st ok">✓</span> <b><span class="ja">採点</span><span class="en">scored</span></b></span>
+        <span><span class="st no">✗</span> <b><span class="ja">文脈のみ</span><span class="en">context-only</span></b></span>
+        <span><span class="st tbd">🔧</span> <b><span class="ja">genre 設計保留</span><span class="en">genre-pending</span></b></span>
+        <span><span class="st gate">gate</span> <b><span class="ja">ゲート</span><span class="en">gate</span></b></span>
+        <span><span class="warnmark">⚠</span> <b><span class="ja">方向は仮説</span><span class="en">directional hypothesis</span></b></span>
+      </div>
+
+      <div class="scroll-x"><table>
+        <thead><tr>
+          <th><span class="ja">サブカテゴリ</span><span class="en">Subcategory</span></th>
+          <th><span class="ja">特徴量・値</span><span class="en">Feature · value</span></th>
+          <th><span class="ja">採点</span><span class="en">Scored?</span></th>
+          <th><span class="ja">世界入力 → evidence</span><span class="en">World input → evidence</span></th>
+          <th><span class="ja">曲メタデータ → レスポンス <code>a_i</code></span><span class="en">Song metadata → response <code>a_i</code></span></th>
+          <th><span class="ja">未採点の理由</span><span class="en">Reason if not scored</span></th>
+        </tr></thead>
+        <tbody>
+          <tr class="catrow"><td colspan="6"><span class="ja">状況 Situation</span><span class="en">Situation</span></td></tr>
+          <tr><td><span class="ja">現在のドライバー状態</span><span class="en">Current driver state</span></td><td>Drowsiness</td><td><span class="st ok">✓</span></td><td><code>drowsiness_level → /100</code></td><td>traits → <code>+0.80·A_s + 0.20·V_s</code></td><td>—</td></tr>
+          <tr><td><span class="ja">現在のドライバー状態</span><span class="en">Current driver state</span></td><td>Fatigue <span class="warnmark">⚠</span></td><td><span class="st ok">✓</span></td><td><code>fatigue_level → /100</code></td><td>traits → <code>−0.50·A_s + 0.50·V_s</code></td><td>—</td></tr>
+          <tr><td><span class="ja">走行環境</span><span class="en">Driving environment</span></td><td>Traffic · <code>normal</code></td><td><span class="st ok">✓</span></td><td><code>e = 0</code></td><td><span class="ja">中立</span><span class="en">neutral</span> → <code>0</code></td><td>—</td></tr>
+          <tr><td><span class="ja">走行環境</span><span class="en">Driving environment</span></td><td>Traffic · <code>congested</code> <span class="warnmark">⚠</span></td><td><span class="st ok">✓</span></td><td><code>e = 1</code></td><td>traits → <code>−0.40·A_s + 0.60·V_s</code></td><td>—</td></tr>
+          <tr><td><span class="ja">走行環境</span><span class="en">Driving environment</span></td><td>Road · <code>highway</code></td><td><span class="st ok">✓</span></td><td><code>e = 1</code></td><td>traits → <code>+1.00·A_s</code></td><td>—</td></tr>
+          <tr><td><span class="ja">走行環境</span><span class="en">Driving environment</span></td><td>Road · <code>local</code></td><td><span class="st ok">✓</span></td><td><code>e = 1</code></td><td><span class="ja">中立</span><span class="en">neutral</span> → <code>0</code></td><td>—</td></tr>
+          <tr><td><span class="ja">走行環境</span><span class="en">Driving environment</span></td><td>Road · <code>mountain</code></td><td><span class="st ok">✓</span></td><td><code>e = 1</code></td><td>traits → <code>−1.00·A_s</code></td><td>—</td></tr>
+          <tr><td><span class="ja">走行環境</span><span class="en">Driving environment</span></td><td>Road · <code>parking</code></td><td><span class="st ok">✓</span></td><td><code>e = 1</code></td><td><span class="ja">中立</span><span class="en">neutral</span> → <code>0</code></td><td><span class="ja">motion は適格性で処理</span><span class="en">motion handled by eligibility</span></td></tr>
+          <tr><td><span class="ja">走行環境</span><span class="en">Driving environment</span></td><td>Day/night · <code>day</code></td><td><span class="st ok">✓</span></td><td><code>e = 0</code></td><td><span class="ja">中立</span><span class="en">neutral</span> → <code>0</code></td><td>—</td></tr>
+          <tr><td><span class="ja">走行環境</span><span class="en">Driving environment</span></td><td>Day/night · <code>night</code> <span class="warnmark">⚠</span></td><td><span class="st ok">✓</span></td><td><code>e = 1</code></td><td>traits → <code>−0.50·A_s + 0.50·V_s</code></td><td>—</td></tr>
+          <tr><td><span class="ja">走行環境</span><span class="en">Driving environment</span></td><td>Road monotony</td><td><span class="st ok">✓</span></td><td><code>monotony_level → /100</code></td><td>traits → <code>+0.90·A_s + 0.10·V_s</code></td><td>—</td></tr>
+          <tr><td><span class="ja">走行状態</span><span class="en">Driving state</span></td><td>Driving/stopped · <code>driving</code> <span class="warnmark">⚠</span></td><td><span class="st ok">✓</span></td><td><code>e = 1</code></td><td>traits → <code>α_drive·A_s</code> <span class="muted">(−0.30 placeholder)</span></td><td><span class="ja">眠気/単調と重複；方向は仮説</span><span class="en">overlaps drowsiness/monotony; hypothesis</span></td></tr>
+          <tr><td><span class="ja">走行状態</span><span class="en">Driving state</span></td><td>Driving/stopped · <code>stopped</code></td><td><span class="st ok">✓</span></td><td><code>e = 0</code></td><td><span class="ja">中立</span><span class="en">neutral</span> → <code>0</code></td><td><span class="ja">フルカラオケの適格ゲート</span><span class="en">also full-karaoke eligibility gate</span></td></tr>
+          <tr><td><span class="ja">ルート・目的地</span><span class="en">Route &amp; destination</span></td><td>Route characteristics</td><td><span class="st tbd">🔧</span></td><td><code>route_tags →</code> <span class="ja">認識タグ強度</span><span class="en">tag intensity</span></td><td><code>artist.genres →</code> route→genre <span class="muted">(TBD)</span></td><td><span class="ja">要 <code>artist.genres</code>＋route→genre 対応（緩い）</span><span class="en">needs <code>artist.genres</code> + route→genre map (loose)</span></td></tr>
+          <tr><td><span class="ja">ルート・目的地</span><span class="en">Route &amp; destination</span></td><td>Destination characteristics</td><td><span class="st tbd">🔧</span></td><td><code>destination_tags →</code> <span class="ja">強度</span><span class="en">intensity</span></td><td><code>artist.genres →</code> dest→genre <span class="muted">(TBD)</span></td><td><span class="ja">要 <code>artist.genres</code>＋dest→genre 対応</span><span class="en">needs <code>artist.genres</code> + dest→genre map</span></td></tr>
+          <tr><td><span class="ja">同乗者構成</span><span class="en">Passenger composition</span></td><td>Child present</td><td><span class="st tbd">🔧</span> <span class="ja">＋適格</span><span class="en">+elig.</span></td><td><code>child_present → 1 if true</code></td><td><code>artist.genres →</code> child-genre <span class="muted">(TBD)</span></td><td><span class="ja">要 <code>artist.genres</code>；明示的コンテンツ適格も担う(§7)</span><span class="en">needs <code>artist.genres</code>; also explicit-content eligibility (§7)</span></td></tr>
+          <tr><td><span class="ja">同乗者構成</span><span class="en">Passenger composition</span></td><td>Multiple passengers</td><td><span class="st no">✗</span></td><td>—</td><td>—</td><td><span class="ja">グループ嗜好の曲フィールドなし</span><span class="en">no group-appeal song field</span></td></tr>
+          <tr class="catrow"><td colspan="6"><span class="ja">好み Preference</span><span class="en">Preference</span></td></tr>
+          <tr><td><span class="ja">推し情報</span><span class="en">Oshi information</span></td><td>Oshi registered</td><td><span class="st gate">gate</span></td><td><span class="ja">推しゲートの一部</span><span class="en">part of oshi gate</span></td><td>—</td><td><span class="ja">Oshi ID を有効化（単独採点でない）</span><span class="en">enables Oshi ID; not a standalone score</span></td></tr>
+          <tr><td><span class="ja">推し情報</span><span class="en">Oshi information</span></td><td>Oshi mode · <code>on/off</code></td><td><span class="st gate">gate</span></td><td><code>off</code> → <span class="ja">ゲート0</span><span class="en">gate = 0</span></td><td>—</td><td><span class="ja">Oshi ID を有効化</span><span class="en">enables Oshi ID</span></td></tr>
+          <tr><td><span class="ja">推し情報</span><span class="en">Oshi information</span></td><td>Oshi ID</td><td><span class="st ok">✓</span></td><td><span class="ja">ゲート</span><span class="en">gate</span> <code>1 if reg ∧ on ∧ id</code></td><td><code>artists[*].id → +1 if match else 0</code></td><td>—</td></tr>
+          <tr><td><span class="ja">推し情報</span><span class="en">Oshi information</span></td><td>Oshi type</td><td><span class="st no">✗</span></td><td>—</td><td>—</td><td><span class="ja">V1は正確なArtist同一性のみ；メンバー/グループ/キャラのグラフなし</span><span class="en">V1 exact Artist identity only; no member/group/character graph</span></td></tr>
+          <tr><td><span class="ja">推し情報</span><span class="en">Oshi information</span></td><td>Oshi tags</td><td><span class="st no">✗</span></td><td>—</td><td>—</td><td><span class="ja">曲の意味タグなし</span><span class="en">no song semantic tags</span></td></tr>
+          <tr><td>UPro</td><td>Age band</td><td><span class="st ok">✓</span></td><td><code>age_band → 1 if band ∧ year</code></td><td><code>album.release_date →</code> era → <code>age_era_affinity[band][era]</code></td><td>—</td></tr>
+          <tr><td>UPro</td><td>Gender</td><td><span class="st no">✗</span></td><td>—</td><td>—</td><td><span class="ja">CDC-SU既定で透明重み0</span><span class="en">CDC-SU default transparent weight 0</span></td></tr>
+          <tr><td>UPro</td><td>Hobbies &amp; interests</td><td><span class="st tbd">🔧</span></td><td><code>hobby_interest_tags →</code> <span class="ja">一致強度</span><span class="en">match intensity</span></td><td><code>artist.genres →</code> hobby→genre <span class="muted">(TBD)</span></td><td><span class="ja">要 <code>artist.genres</code>＋hobby→genre 対応</span><span class="en">needs <code>artist.genres</code> + hobby→genre map</span></td></tr>
+          <tr><td><span class="ja">未使用機能</span><span class="en">Unused function</span></td><td>Service recency</td><td><span class="st no">✗</span></td><td>—</td><td>—</td><td><span class="ja">選択済サービスでは全候補同値</span><span class="en">same for every candidate in the selected service</span></td></tr>
+          <tr><td><span class="ja">利用頻度</span><span class="en">Overall usage</span></td><td>Service usage level</td><td><span class="st no">✗</span></td><td>—</td><td>—</td><td><span class="ja">サービス単位；全候補同値</span><span class="en">service-level; same across candidates</span></td></tr>
+          <tr><td><span class="ja">場面別傾向</span><span class="en">Scene tendency</span></td><td>Scene/service usage level</td><td><span class="st no">✗</span></td><td>—</td><td>—</td><td><span class="ja">サービス単位；全候補同値</span><span class="en">service-level; same across candidates</span></td></tr>
+          <tr><td><span class="ja">未使用コンテンツ</span><span class="en">Unused content</span></td><td>Catalog item recency</td><td><span class="st no">✗</span></td><td>—</td><td>—</td><td><span class="ja">CDC-SU コンテンツ入力に無し（スライド71–73に新規性行なし）</span><span class="en">not in CDC-SU content inputs (slides 71–73 have no novelty row)</span></td></tr>
+          <tr><td><span class="ja">未使用コンテンツ</span><span class="en">Unused content</span></td><td>Content-tag recency</td><td><span class="st no">✗</span></td><td>—</td><td>—</td><td><span class="ja">CDC-SU コンテンツ入力に無し（71–73）</span><span class="en">not in CDC-SU content inputs (71–73)</span></td></tr>
+          <tr><td><span class="ja">利用頻度</span><span class="en">Overall usage</span></td><td>Content-tag usage level</td><td><span class="st tbd">🔧</span></td><td><code>content_tag_usage_level[genre]</code></td><td><code>artist.genres</code> join <span class="muted">(TBD)</span></td><td><span class="ja">要 <code>artist.genres</code>＋genre単位の利用履歴</span><span class="en">needs <code>artist.genres</code> + per-genre usage history</span></td></tr>
+          <tr><td><span class="ja">利用頻度</span><span class="en">Overall usage</span></td><td>Catalog item usage level</td><td><span class="st ok">✓</span></td><td><code>catalog_item_usage_level[id] →</code> <code>never 0 / low −.5 / med +.25 / high +1</code></td><td><code>spotify_track.id → +1</code></td><td>—</td></tr>
+          <tr><td><span class="ja">場面別傾向</span><span class="en">Scene tendency</span></td><td>Scene/content-tag usage level</td><td><span class="st tbd">🔧</span></td><td><code>scene_content_tag_usage_level[scene][genre]</code></td><td><code>artist.genres</code> join <span class="muted">(TBD)</span></td><td><span class="ja">要 <code>artist.genres</code>＋scene×genre 履歴（最重）</span><span class="en">needs <code>artist.genres</code> + scene×genre history (heaviest)</span></td></tr>
+          <tr><td><span class="ja">再生・操作履歴</span><span class="en">Playback &amp; ops</span></td><td>Played items</td><td><span class="st ok">✓</span></td><td><code>played_items →</code> <code>≤30m −1 / today −.5 / ≤7d −.25 / else 0</code></td><td><code>spotify_track.id → +1</code></td><td>—</td></tr>
+          <tr><td><span class="ja">再生・操作履歴</span><span class="en">Playback &amp; ops</span></td><td>Skipped items</td><td><span class="st ok">✓</span> <span class="ja">＋適格</span><span class="en">+elig.</span></td><td><code>skipped_items →</code> <span class="ja">窓内は除外(§7)；旧は</span><span class="en">in window → exclude (§7); older</span> <code>−.5</code></td><td><code>spotify_track.id → +1</code></td><td>—</td></tr>
+          <tr><td><span class="ja">再生・操作履歴</span><span class="en">Playback &amp; ops</span></td><td>Changed-from items</td><td><span class="st ok">✓</span></td><td><code>changed_from_items → −.75 in window</code></td><td><code>spotify_track.id → +1</code></td><td>—</td></tr>
+          <tr><td><span class="ja">再生・操作履歴</span><span class="en">Playback &amp; ops</span></td><td>Cancelled content plans</td><td><span class="st no">✗</span></td><td>—</td><td>—</td><td><span class="ja">スライド71/72 の操作履歴に無し（再生/スキップ/曲変更のみ）</span><span class="en">not in slide 71/72 playback-ops list (only played / skip / change)</span></td></tr>
+          <tr class="catrow"><td colspan="6"><span class="ja">過去実績 History</span><span class="en">History</span></td></tr>
+          <tr><td><span class="ja">提案結果</span><span class="en">Proposal result</span></td><td>Service proposal acceptance rate</td><td><span class="st no">✗</span></td><td>—</td><td>—</td><td><span class="ja">サービス単位；全候補同値</span><span class="en">service-level; same across candidates</span></td></tr>
+          <tr><td><span class="ja">回復結果</span><span class="en">Recovery result</span></td><td>Service recovery rate</td><td><span class="st no">✗</span></td><td>—</td><td>—</td><td><span class="ja">サービス単位；全候補同値</span><span class="en">service-level; same across candidates</span></td></tr>
+          <tr><td><span class="ja">スケジュール</span><span class="en">Schedule</span></td><td>Scheduled event type</td><td><span class="st no">✗</span></td><td>—</td><td>—</td><td><span class="ja">曲とイベントの関係なし</span><span class="en">no song event relation</span></td></tr>
+          <tr><td><span class="ja">スケジュール</span><span class="en">Schedule</span></td><td>Scheduled event timing</td><td><span class="st no">✗</span></td><td>—</td><td>—</td><td><span class="ja">時間だけでは曲親和性を確立できない</span><span class="en">timing alone cannot establish item affinity</span></td></tr>
+          <tr><td><span class="ja">スケジュール</span><span class="en">Schedule</span></td><td>Scheduled event tags</td><td><span class="st no">✗</span></td><td>—</td><td>—</td><td><span class="ja">曲のイベントタグなし</span><span class="en">no song event tags</span></td></tr>
+          <tr><td><span class="ja">提案結果</span><span class="en">Proposal result</span></td><td>Content proposal acceptance rate</td><td><span class="st ok">✓</span></td><td><code>...acceptance_rate[track_id] → 2·rate/100 − 1</code></td><td><code>spotify_track.id → +1</code></td><td>—</td></tr>
+          <tr><td><span class="ja">回復結果</span><span class="en">Recovery result</span></td><td>Content recovery rate</td><td><span class="st ok">✓</span></td><td><code>...recovery_rate[track_id] → 2·rate/100 − 1</code></td><td><code>spotify_track.id → +1</code></td><td>—</td></tr>
+        </tbody>
+      </table></div>
+
+      <p class="small muted"><span class="ja"><b>合計：</b>38ベースライン特徴量（状況11・好み20・過去実績7）。<b>採点15</b>（状況7・好み6・過去実績2）／<b>🔧 genre保留6</b>／ゲート2／文脈のみ15。<code>Song singability</code>（歌いやすさ）は §9 に無い追加構成要素で、カラオケ時のみ状況カテゴリで採点します。§9「追加提案」11特徴量はベースライン限定V1の対象外。</span>
+      <span class="en"><b>Totals:</b> 38 baseline features (Situation 11 · Preference 20 · History 7). <b>15 scored</b> (Situation 7 · Preference 6 · History 2) · <b>6 🔧 genre-pending</b> · 2 gates · 15 context-only. <code>Song singability</code> is an added construct (not in §9), scored under Situation for karaoke only. The 11 “Additional proposed” §9 features are out of scope for baseline-only V1.</span></p>
+
+      <div class="why warn">
+        <span class="lab"><span class="ja">🔧 保留：genre ベースの特徴量（CDC-SU スライド69）</span><span class="en">🔧 Pending: genre-based features (CDC-SU slide 69)</span></span>
+        <p><span class="ja">スライド69は route/目的地・同乗者・趣味嗜好・利用頻度・場面別・回復を<b>ジャンル</b>で採点する想定。genre は Spotify の <b>Artist</b> オブジェクト（<code>artist.genres</code>）にあり、Track には無いため V1 では未使用。<code>artist.genres</code> を追加すれば6件の🔧特徴量が有効化されます。ただしジャンルは<b>アーティスト単位で粗い</b>点、route→genre 対応は<b>意味的に緩い</b>点、Tier2は<b>ジャンル別履歴フィクスチャ</b>が別途必要な点に留意。応答係数は後日設計（TBD）。</span>
+        <span class="en">Slide 69 intends route/destination, passengers, hobbies, usage-frequency, scene, and recovery to score against <b>genre</b>. Genre lives on Spotify's <b>Artist</b> object (<code>artist.genres</code>), not the Track — so V1 dropped it. Adding <code>artist.genres</code> unlocks the six 🔧 features. Caveats: genres are <b>artist-level and coarse</b>; route→genre is <b>semantically loose</b>; Tier-2 also needs new <b>per-genre history fixtures</b>. Response coefficients are TBD.</span></p>
+      </div>
+
+      <div class="why">
+        <span class="lab"><span class="ja">1つの表で足りる理由</span><span class="en">Why one table, not three</span></span>
+        <p><span class="ja">arousal/valence は<b>曲</b>の性質でサービスに依らないため3サービス共通。サービスで変わるのは <code>Song singability</code> 行だけ（鼻歌→humming_ease、カラオケ→full_karaoke_ease、プレイリストはmask0）。歌いにくい曲は鼻歌で<b>減点</b>されます。</span>
+        <span class="en">Arousal/valence describe the <b>song</b>, not the service, so they're identical across all three. Only the <code>Song singability</code> row swaps source (humming→humming_ease, karaoke→full_karaoke_ease, playlist masked 0). A hard-to-hum song is <b>penalized</b> for humming.</span></p>
+      </div>
+    </section>
+
+    <!-- 6. Weights -->
+    <section id="weights">
+      <h2><span class="num">6</span><span class="ja">重み階層</span><span class="en">Weight hierarchy</span></h2>
+      <div class="legend">
+        <span><span class="st ok">✓</span> <span class="ja">採点</span><span class="en">scored</span></span>
+        <span><span class="st no">✗</span> <span class="ja">文脈のみ</span><span class="en">context-only</span></span>
+        <span><span class="st tbd">🔧</span> <span class="ja">genre保留（現状mask0）</span><span class="en">genre-pending (mask 0 now)</span></span>
+        <span><span class="warnmark">⚠</span> <span class="ja">方向仮説</span><span class="en">directional hypothesis</span></span>
+      </div>
+      <div class="scroll-x"><table>
+        <thead><tr>
+          <th><span class="ja">カテゴリ（比率）</span><span class="en">Category (share)</span></th>
+          <th><span class="ja">サブグループ（比率）</span><span class="en">Subgroup (share)</span></th>
+          <th><span class="ja">リーフ（比率）— mask</span><span class="en">Leaves (share) — mask</span></th>
+        </tr></thead>
+        <tbody>
+          <tr><td rowspan="6"><b>Situation 0.55</b></td><td>Driver state 0.35</td><td>drowsiness 0.55 <span class="st ok">✓</span>, fatigue 0.45 <span class="st ok">✓</span></td></tr>
+          <tr><td>Driving environment 0.30</td><td>traffic 0.15 <span class="st ok">✓</span>, road 0.15 <span class="st ok">✓</span>, night 0.20 <span class="st ok">✓</span>, monotony 0.50 <span class="st ok">✓</span></td></tr>
+          <tr><td>Driving state 0.05</td><td>motion 1.00 <span class="st ok">✓</span><span class="warnmark">⚠</span> (driving→α·A_s, stopped→0)</td></tr>
+          <tr><td>Song singability 0.13</td><td><code>service_ease</code> 1.00 — <span class="st ok">✓</span> karaoke / <span class="st no">✗</span> playlist</td></tr>
+          <tr><td>Route/destination 0.09</td><td>route 0.5 <span class="st tbd">🔧</span>, destination 0.5 <span class="st tbd">🔧</span></td></tr>
+          <tr><td>Passengers 0.08</td><td>child 0.6 <span class="st tbd">🔧</span>, multiple 0.4 <span class="st no">✗</span></td></tr>
+          <tr><td rowspan="4"><b>Preference 0.30</b></td><td>UPro/oshi 0.35</td><td>oshi 0.60 <span class="st ok">✓</span>, age 0.10 <span class="st ok">✓</span>, hobbies 0.30 <span class="st tbd">🔧</span>, gender 0.00</td></tr>
+          <tr><td>Novelty 0.10</td><td>item recency 0.60 <span class="st no">✗</span>, tag recency 0.40 <span class="st no">✗</span> <span class="muted">(<span class="ja">全て不使用—71–73</span><span class="en">whole subgroup dropped — 71–73</span></span>)</td></tr>
+          <tr><td>Usage 0.35</td><td>item usage 0.40 <span class="st ok">✓</span>, genre usage 0.30 <span class="st tbd">🔧</span>, scene/genre 0.30 <span class="st tbd">🔧</span></td></tr>
+          <tr><td>Operations 0.20</td><td>played 0.25 <span class="st ok">✓</span>, skipped 0.35 <span class="st ok">✓</span>, changed 0.20 <span class="st ok">✓</span>, cancelled 0.20 <span class="st no">✗</span></td></tr>
+          <tr><td rowspan="3"><b>History 0.15</b></td><td>Schedule 0.30</td><td>schedule 1.00 <span class="st no">✗</span></td></tr>
+          <tr><td>Content acceptance 0.30</td><td>exact Track rate 1.00 <span class="st ok">✓</span></td></tr>
+          <tr><td>Content recovery 0.40</td><td>exact Track rate 1.00 <span class="st ok">✓</span></td></tr>
+        </tbody>
+      </table></div>
+      <p class="small muted"><span class="ja">🔧 リーフは現状 mask 0（今日の採点では ✗ と同じ）で、§5 の genre 設計が入ると有効化。Novelty サブグループは全不使用で正規化から消えます。目的別マルチプライヤ（発火目的ごとにサブグループを増減）と最終正規化 <code>Σ w_i = 1</code> は仕様書 §6 参照。</span>
+      <span class="en">🔧 leaves currently carry mask 0 (identical to ✗ for today's scoring) and switch on when §5's genre design lands. The Novelty subgroup is unused and renormalizes away. Purpose multipliers (per trigger purpose, per subgroup) and the final <code>Σ w_i = 1</code> normalization are in spec §6.</span></p>
+    </section>
+
+    <!-- 7. Eligibility & data -->
+    <section id="eligibility">
+      <h2><span class="num">7</span><span class="ja">適格性とデータ</span><span class="en">Eligibility &amp; data</span></h2>
+      <p><span class="ja">適格性は採点<b>前</b>に走り、明示的な理由コードを返します。スコアで除外を覆すことはできません。</span><span class="en">Eligibility runs <b>before</b> scoring and returns explicit reason codes. No score can reinstate an excluded song.</span></p>
+      <div class="scroll-x"><table>
+        <thead><tr>
+          <th><span class="ja">チェック</span><span class="en">Check</span></th><th><span class="ja">曲フィールド</span><span class="en">Song field</span></th><th><span class="ja">規則</span><span class="en">Rule</span></th>
+        </tr></thead>
+        <tbody>
+          <tr><td><span class="ja">同一性</span><span class="en">Identity</span></td><td>Track ↔ Audio-Features <code>id/uri/duration</code></td><td><span class="ja">一致必須</span><span class="en">must agree</span></td></tr>
+          <tr><td><span class="ja">再生可否</span><span class="en">Playable</span></td><td><code>is_playable</code></td><td><span class="ja"><code>true</code> 必須</span><span class="en">must be <code>true</code></span></td></tr>
+          <tr><td><span class="ja">市場</span><span class="en">Market</span></td><td><code>available_markets</code></td><td><span class="ja">現在の市場を含む</span><span class="en">must contain current market</span></td></tr>
+          <tr><td><span class="ja">制限</span><span class="en">Restriction</span></td><td><code>restrictions</code></td><td><span class="ja">現文脈でブロックしない</span><span class="en">must not block current context</span></td></tr>
+          <tr><td><span class="ja">露骨/子供</span><span class="en">Explicit/child</span></td><td><code>explicit</code></td><td><span class="ja">子供ポリシー下で <code>true</code> は除外</span><span class="en">excluded if <code>true</code> under child policy</span></td></tr>
+          <tr><td><span class="ja">直近スキップ</span><span class="en">Recent skip</span></td><td>skip window</td><td><span class="ja"><code>skip_exclusion_window</code> 内は除外</span><span class="en">excluded if within <code>skip_exclusion_window</code></span></td></tr>
+          <tr><td><span class="ja">鼻歌ゲート</span><span class="en">Humming gate</span></td><td><code>humming_karaoke_available</code></td><td><span class="ja">鼻歌では <code>1</code> 必須</span><span class="en">must be <code>1</code> for humming</span></td></tr>
+          <tr><td><span class="ja">カラオケゲート</span><span class="en">Full-karaoke gate</span></td><td><code>full_karaoke_available</code> + <code>motion_state</code></td><td><span class="ja"><code>1</code> かつ 停車</span><span class="en"><code>1</code> and stopped</span></td></tr>
+        </tbody>
+      </table></div>
+      <p class="small muted"><span class="ja">カラオケフラグは既定1・ゲートのみ・加点なし。欠損した採点フィールドは <code>e=0, a=0</code>（重みは保持し <code>missing_neutral</code>）。能動式に必要な音声フィールド欠損は <code>invalid_catalog</code> で除外（値の補完はしない）。不正値（NaN/∞・範囲外・同一性不一致・不明サービス等）はブロック。</span>
+      <span class="en">Karaoke flags default to 1, are gates only, add no score. A missing scored field → <code>e=0, a=0</code> (weight retained, <code>missing_neutral</code>). A missing audio field required by an active formula → <code>invalid_catalog</code>, excluded (no imputation). Invalid values (NaN/∞, out-of-range, identity mismatch, unknown service…) block.</span></p>
+    </section>
+
+    <!-- 8. Plan & worked example -->
+    <section id="plan">
+      <h2><span class="num">8</span><span class="ja">プラン生成と計算例</span><span class="en">The plan &amp; worked example</span></h2>
+      <div class="formula wrap">
+        plan <span class="op">=</span> <span class="ja">適格曲を</span><span class="en">eligible songs sorted by</span> ( item_fit <span class="op">desc</span>, spotify_track.id <span class="op">asc</span> ) <span class="op">→</span> <span class="ja">先頭</span><span class="en">first</span> plan_item_count <span class="op">(=5)</span>
+      </div>
+      <p class="small"><span class="ja">隠れた多様性再ランク・アーティスト上限・シャッフル・LLM再並べ替えは無し。適格曲が不足なら <code>insufficient_eligible_items</code>（黙って短縮しない）。プレイリスト/フルカラオケの長さは <code>duration_ms</code> 合計、鼻歌は固定30秒×曲数。</span>
+      <span class="en">No hidden diversity reranker, artist cap, shuffle, or LLM reorder. Too few eligible → <code>insufficient_eligible_items</code> (never silently shortened). Playlist/full-karaoke duration = sum of <code>duration_ms</code>; humming = fixed 30 s × count.</span></p>
+
+      <h3><span class="ja">計算例（再設計ブロック）</span><span class="en">Worked example (redesigned block)</span></h3>
+      <p class="small muted"><span class="ja">サービス <code>humming_karaoke</code>；世界：眠気80・疲労70・単調90・渋滞・高速・夜間。曲（元気で歌える）：<code>energy .842, tempo 118.2, loudness −5.9, danceability .585, acousticness .002, valence .428, mode 1, instrumentalness .007, speechiness .056</code>。例示用のブロック内重み <code>眠気.25 疲労.20 単調.20 渋滞.12 道路.11 夜間.12</code>。</span>
+      <span class="en">Service <code>humming_karaoke</code>; world drowsiness 80, fatigue 70, monotony 90, congested, highway, night. Song (energetic, singable): <code>energy .842, tempo 118.2, loudness −5.9, danceability .585, acousticness .002, valence .428, mode 1, instrumentalness .007, speechiness .056</code>. Illustrative block weights <code>drowsy .25 fatigue .20 monotony .20 traffic .12 road .11 night .12</code>.</span></p>
+      <div class="formula">arousal <span class="op">=</span> 0.737 → A_s <span class="op">=</span> +0.474&nbsp;&nbsp;&nbsp; valence <span class="op">=</span> 0.628 → V_s <span class="op">=</span> +0.256&nbsp;&nbsp;&nbsp; humming_ease <span class="op">=</span> 0.896</div>
+      <div class="scroll-x"><table>
+        <thead><tr>
+          <th><span class="ja">特徴量</span><span class="en">Feature</span></th><th class="num-c">e</th><th class="num-c">α</th><th class="num-c">β</th><th class="num-c">r_i = e·(α·A_s+β·V_s)</th><th class="num-c">w·r</th>
+        </tr></thead>
+        <tbody>
+          <tr><td>Drowsiness</td><td class="num">.80</td><td class="num">+.80</td><td class="num">+.20</td><td class="num">+0.344</td><td class="num">+0.086</td></tr>
+          <tr><td>Fatigue</td><td class="num">.70</td><td class="num">−.50</td><td class="num">+.50</td><td class="num">−0.076</td><td class="num">−0.015</td></tr>
+          <tr><td>Monotony</td><td class="num">.90</td><td class="num">+.90</td><td class="num">+.10</td><td class="num">+0.407</td><td class="num">+0.081</td></tr>
+          <tr><td>Traffic</td><td class="num">1.0</td><td class="num">−.40</td><td class="num">+.60</td><td class="num">−0.036</td><td class="num">−0.004</td></tr>
+          <tr><td>Road (hwy)</td><td class="num">1.0</td><td class="num">+1.0</td><td class="num">0</td><td class="num">+0.474</td><td class="num">+0.052</td></tr>
+          <tr><td>Night</td><td class="num">1.0</td><td class="num">−.50</td><td class="num">+.50</td><td class="num">−0.109</td><td class="num">−0.013</td></tr>
+          <tr style="font-weight:800"><td colspan="5"><span class="ja">ブロック合計</span><span class="en">block sum</span></td><td class="num">+0.187</td></tr>
+        </tbody>
+      </table></div>
+      <p class="small"><span class="ja">この世界は高活性需要が支配的なので、眠気・単調・高速の正が渋滞/夜間の穏やか方向を上回ります。歌いやすさリーフ(+0.793)と同一性/履歴の寄与を加えて最終 <code>item_fit</code> に。低眠気・渋滞・夜間の世界では穏やかで明るい曲が勝ちます — 同じ曲が文脈で並べ替わる、これが2軸の狙いです。</span>
+      <span class="en">This world is dominated by high-arousal demand, so the positives (drowsiness, monotony, highway) outweigh the calming pull of congested/night. Add the singability leaf (+0.793) and identity/history contributions for the final <code>item_fit</code>. In a low-drowsiness, congested, night world a calm-bright song wins instead — the same songs reorder by context, which is the whole point of two axes.</span></p>
+
+      <h3><span class="ja">対比テスト（一部）</span><span class="en">Contrast tests (selected)</span></h3>
+      <p class="small muted"><span class="ja">カタログ・サービス・設定・シードを固定し、1変数だけ変えて並べ替えを検証：低↔高 眠気/疲労/単調、通常↔渋滞、高速↔山道、昼↔夜（穏やか/活性の逆転）；子供在/不在（適格変化）；推しモード on/off；直近再生；直接利用度；回復率；走行↔停車（フルカラオケ適格）；<b>route A↔B は順位変化なし</b>（V1はルート-曲関係を作らない）。</span>
+      <span class="en">Freeze catalog/service/config/seed, change one field, assert the reorder: low↔high drowsiness/fatigue/monotony, normal↔congested, highway↔mountain, day↔night (calm/active reversal); child absent↔present (eligibility); oshi mode on/off; recent play; direct usage; recovery; driving↔stopped (full-karaoke eligibility); and <b>route A↔B = no rank change</b> (V1 manufactures no route–song relation).</span></p>
+    </section>
+
+    <!-- 9. Pending & open choices -->
+    <section id="pending">
+      <h2><span class="num">9</span><span class="ja">保留事項と設計選択</span><span class="en">Pending &amp; open choices</span></h2>
+      <div class="fgrid">
+        <div class="fcard"><h4>🔧 <span class="ja">genre ベース特徴量</span><span class="en">Genre-based features</span></h4><p><span class="ja">route・destination・child・hobbies・genre利用・scene/genre の6件。<code>artist.genres</code> 追加＋（Tier2は）ジャンル別履歴フィクスチャ＋対応表・応答係数の設計が必要。データ契約 v1.1 として別途仕様化。</span><span class="en">Six features (route, destination, child, hobbies, genre usage, scene/genre). Needs <code>artist.genres</code> + (Tier 2) per-genre history fixtures + affinity tables + response-coefficient design. To be specced as data-contract v1.1.</span></p></div>
+        <div class="fcard"><h4><span class="warnmark">⚠</span> <span class="ja">疲労/渋滞/夜間 の方向</span><span class="en">Fatigue/traffic/night direction</span></h4><p><span class="ja">本仕様は「和らげる（穏やか＋明るい）」方向を採用。代替の「覚醒維持（活性）」方向は該当3行の <code>α</code> 符号反転のみ。バージョン管理されたハイパーパラメータ。</span><span class="en">This spec adopts the “soothe (calm + bright)” direction; the alternative “keep-alert (active)” is just a sign flip on <code>α</code> for those three rows. A versioned hyperparameter.</span></p></div>
+        <div class="fcard"><h4><span class="warnmark">⚠</span> <span class="ja">走行状態のランキング</span><span class="en">Driving-state ranking</span></h4><p><span class="ja">走行→<code>α·A_s</code>（穏やか、暫定−0.30）、停車→0。眠気/単調と重複するため方向は製品判断待ち。適格ゲートとしての役割は不変。</span><span class="en">driving→<code>α·A_s</code> (calm, placeholder −0.30), stopped→0. Overlaps drowsiness/monotony, so the direction awaits a product call. Its eligibility-gate role is unchanged.</span></p></div>
+        <div class="fcard"><h4><span class="ja">スケジュール（要検討）</span><span class="en">Schedule (open)</span></h4><p><span class="ja">スライド71 はスケジュールを入力に挙げるが、曲との関係は緩い。<code>artist.genres</code>/Artist-ID があれば event→artist/genre 照合は部分的に可能。🔧 に昇格するか要判断。</span><span class="en">Slide 71 lists schedule as an input, but the song relation is loose. With <code>artist.genres</code>/Artist-ID, event→artist/genre matching is partially doable. Whether to promote it to 🔧 is an open call.</span></p></div>
+      </div>
+    </section>
+
+    <footer>
+      <p><span class="ja">設計根拠：<code class="k">docs/master/aica_transparent_content_proposal_algorithm.md</code>、<code class="k">aica_synthetic_music_data_and_generation_specification.md</code>、<code class="k">aica_proposal_simulator_specification.md</code> §9、CDC-SU 音楽企画仕様書 スライド 68–75。本ページは説明用概要で、実装詳細（コンポーネント・テスト・出力スキーマ）は仕様書本文に記載。<b>TBD</b> 項目は後日設計します。</span>
+      <span class="en">Design basis: <code class="k">docs/master/aica_transparent_content_proposal_algorithm.md</code>, <code class="k">aica_synthetic_music_data_and_generation_specification.md</code>, <code class="k">aica_proposal_simulator_specification.md</code> §9, and CDC-SU music-planning slides 68–75. This page is an explanatory overview; implementation details (components, tests, output schema) live in the spec. <b>TBD</b> items are to be designed later.</span></p>
+    </footer>
+  </main>
+</div>
+
+<script>
+  const buttons = document.querySelectorAll('[data-lang]');
+  buttons.forEach((button) => {
+    button.addEventListener('click', () => {
+      document.body.classList.remove('lang-en', 'lang-ja');
+      document.body.classList.add('lang-' + button.dataset.lang);
+      buttons.forEach((item) => item.classList.toggle('active', item === button));
+      document.documentElement.lang = button.dataset.lang === 'ja' ? 'ja' : 'en';
+    });
+  });
+</script>
 </body>
 </html>

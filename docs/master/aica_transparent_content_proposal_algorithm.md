@@ -1,10 +1,12 @@
 # AICA Transparent Content-Proposal Algorithm
 
-Status: approved Spotify-only V1 design
-Scope: baseline-feature transparent selector for detailed music content
-Last updated: 2026-07-14
+Status: approved Spotify-only V1 design (two-axis song-trait model)
+Scope: baseline-feature transparent selector for concrete music content
+Last updated: 2026-07-15
 
-## Related documents
+---
+
+## 1. Related documents
 
 - [AICA proposal simulator specification](./aica_proposal_simulator_specification.md)
 - [AICA synthetic Spotify-compatible music data and generation specification](./aica_synthetic_music_data_and_generation_specification.md)
@@ -14,73 +16,52 @@ Last updated: 2026-07-14
 
 ---
 
-## 1. Purpose
+# Part I — Overview
 
-This document defines the transparent algorithm that selects concrete songs after the service-proposal algorithm has selected one detailed music service:
+## 2. Overview
 
-- playlist;
-- humming karaoke; or
-- full karaoke.
+### 2.1 Purpose
 
-It produces one complete, ordered plan of five songs by default. The customer may change the plan length in settings.
+After the **service selector** has chosen one detailed *music* service, this
+algorithm chooses the concrete **songs** to place inside it. It returns one
+ordered plan of five songs by default, each shown with its selection score.
 
-The plan shows the selection score for each chosen song. The primary representation does not need to show scores for every rejected candidate, although full candidate traces may be retained for audit and testing.
+The three detailed music services it serves are `music_playlist`,
+`humming_karaoke`, and `full_karaoke`.
 
-V1 is intentionally limited to:
+Every song is scored from **only** Spotify-compatible metadata (Track + Audio
+Features) plus exact Track/Artist-ID history. No lyric, chorus, vocal-range,
+audience, genre, route, or LLM-enriched metadata is used or invented.
 
-- baseline context, preference, and history inputs;
-- Spotify-compatible Track fields;
-- Spotify-compatible Audio Features fields; and
-- two simulator availability flags for karaoke eligibility.
+### 2.2 Selected design in one paragraph
 
-It does not use AICA/LLM-enriched song tags or inferred karaoke metadata.
+Every scored feature contributes the same way: an **evidence** value `e_i` (how
+strongly the current world calls for something) times a **response coefficient**
+`a_i` (how well *this song* answers it). The novelty is only in how `a_i` is
+computed for the six driver/environment features: each song is reduced to two
+audio **traits** — how *energetic* it is (**arousal**) and how *bright* it is
+(**valence**) — and the feature's response is how well those traits match the
+context's demand. All other features (oshi, age, playback history, acceptance,
+recovery) compute `a_i` directly from exact-ID metadata, exactly as before.
 
----
+Why two audio axes instead of one "activation" number? A single scalar can only
+order songs from calm to energetic; it cannot tell *calm-but-bright* from
+*calm-but-dark*. A fatigued or stressed driver wants **calm and reassuring**
+music, while a drowsy driver on a monotonous road wants **energetic** music. One
+axis collapses these; two axes separate them.
 
-## 2. Selected design
+### 2.3 Relationship to the service selector
 
-The selector uses one deterministic pipeline:
-
-```text
-selected detailed service
-  -> validate world and frozen song catalog
-  -> apply hard eligibility
-  -> derive transparent Spotify audio proxies
-  -> calculate effective baseline-feature weights
-  -> score every eligible song
-  -> sort deterministically
-  -> return the first configured N songs
-```
-
-Initial `N = 5`.
-
-The design has these properties:
-
-- the service selector decides the service; the content selector does not reopen that decision;
-- the same signed evidence × candidate-response model, hierarchical weights, purpose multipliers, and contribution conventions are used as the transparent service selector;
-- service candidate responses are human-configured profiles, while song candidate responses are derived continuously from the selected service's activation score;
-- provider metadata is never confused with simulator assumptions;
-- unsupported semantic relations are neutral, not guessed;
-- eligibility is evaluated independently from ranking;
-- karaoke flags default to `1` but never increase ranking score;
-- all arithmetic and tie-breaking are deterministic; and
-- every selected item carries a reconstructable contribution trace.
-
----
-
-## 3. Relationship to the service selector
-
-The two transparent algorithms are coherent but operate at different levels:
-
-| Concern | Service proposal | Content proposal |
+| Concern | Service selector | Content selector (this doc) |
 |---|---|---|
-| Decision | Which service to propose | Which songs to place in the selected service |
-| Candidate | Service | Spotify-compatible Track |
-| Safety | Service-level driving/stopped restrictions | Item playability, explicit policy, skip policy, and karaoke flags |
-| Ranking evidence | Baseline context against service behavior | Baseline context/history against song audio and identity |
-| Output | Service proposal and lifecycle state | Ordered five-song plan by default |
+| Decision | Which service to propose | Which songs to place in it |
+| Candidate | A service | A Spotify-compatible Track |
+| Response `a_i` | **Hand-authored** per service | **Computed** from song audio traits / exact-ID metadata |
+| Output | Ranked services + lifecycle | Ordered five-song plan |
+| Safety | Service driving/stopped rules | Playability, explicit/child policy, skip policy, karaoke gates |
 
-The content selector requires an accepted or active detailed service input:
+The content selector requires an accepted or active detailed service and never
+re-opens the service decision:
 
 ```yaml
 selected_service:
@@ -88,1271 +69,651 @@ selected_service:
   lifecycle_state: accepted | active
 ```
 
-If this control is missing, rejected, or unsupported, content selection returns a typed error. It never substitutes another service.
+Missing, rejected, or unsupported → typed error (§13). It never substitutes a
+different service.
+
+### 2.4 Decision boundary
+
+**Control inputs** (constrain evaluation, never scored): `selected_service`,
+`trigger.purpose`, `trigger.stage`, time, market, motion state, frozen world
+snapshot, frozen catalog, algorithm/parameter versions, `plan_item_count`
+(default 5).
+
+**Scored evidence:** only the features in the §5.3 contract with an active
+weight mask.
+
+**Non-scoring controls:** motion state, child explicit-content policy,
+market/restrictions/playability, karaoke availability flags, skip-exclusion
+window, item count, humming segment duration, lighting, transition policy.
 
 ---
 
-## 4. Decision boundary
+# Part II — The scoring model
 
-### 4.1 Required control inputs
+## 3. Core mathematical model
 
-- `selected_service.selected_service_id`;
-- `selected_service.lifecycle_state`;
-- `trigger.purpose`;
-- `trigger.stage`;
-- current time and market;
-- current motion state;
-- frozen world snapshot;
-- frozen song catalog;
-- algorithm and parameter versions; and
-- `plan_item_count`, default `5`.
+### 3.1 The symbol chain (one rule for every feature)
 
-### 4.2 Ranking evidence
+Every feature — audio, identity, or history — follows the **same** five steps.
+Only the way `a_i` is produced differs, and §5 gives that per feature.
 
-Ranking may use only baseline fields marked `scored` in Section 5 and the catalog fields named by their response formulas.
+| Step | Symbol | Name | Meaning | Range |
+|---|---|---|---|---|
+| 1 | `x_i` | raw value | world snapshot or song field | field-specific |
+| 2 | `e_i` | **evidence** | how strongly the context calls for something | `[0,1]` or signed `[-1,+1]` |
+| 3 | `a_i(j)` | **response coefficient** | how well song `j` answers feature `i` (see §5) | `[-1,+1]` |
+| 4 | `r_i(j)` | **feature_response** | `e_i · a_i(j)` | `[-1,+1]` |
+| 5 | `w_i` | **effective weight** | this feature's normalized importance (§6) | `[0,1]`, `Σ = 1` |
+| — | `k_i(j)` | contribution | `w_i · r_i(j)` | `[-w_i,+w_i]` |
+| — | `F(j)` | **item_fit** | `clamp( Σ_i k_i(j), -1, +1 )` — the score shown | `[-1,+1]` |
 
-### 4.3 Catalog metadata
+`item_fit` is a comparative hypothesis score — **not** a probability, acceptance
+rate, or safety assurance.
 
-Each V1 candidate contains:
+Only the **six driver/environment features** build `a_i` from the two song
+traits (§4). Every other feature sets `a_i` directly (e.g. `+1`, or an exact-ID
+match). So "traits" and "arousal/valence demand" are a property of the six
+driver/environment features, not of the whole model.
 
-```yaml
-spotify_track: {}
-spotify_audio_features: {}
-simulation_flags:
-  humming_karaoke_available: 1
-  full_karaoke_available: 1
-```
+### 3.2 Why every score stays in range (no hidden clamps)
 
-There is no `enriched_metadata` input.
+- Each response coefficient satisfies `|a_i| ≤ 1` (for audio features because
+  `|α_i| + β_i ≤ 1`; for the rest by definition). With `e_i` bounded, `r_i ∈
+  [-1,+1]`.
+- Weights are non-negative and sum to one, so `Σ k_i ∈ [-1,+1]`.
 
-### 4.4 Non-ranking controls
+The `clamp` on `item_fit` therefore only guards floating-point drift.
 
-These may affect eligibility, execution, or presentation without receiving score weight:
+### 3.3 What "effective weight" means
 
-- motion state;
-- child-present explicit-content policy;
-- market, restrictions, and playability;
-- simulator karaoke availability flags;
-- configured skip exclusion window;
-- item count;
-- fixed humming-segment duration;
-- lighting presentation; and
-- transition policy.
-
-### 4.5 Lifecycle execution
-
-The selector creates a plan only after service acceptance or activation. Rejection and service change invalidate the plan. A new catalog version, relevant world change, or customer setting change triggers re-evaluation and produces a new evidence record.
-
----
-
-## 5. Detailed-service applicability
-
-### 5.1 Operational interpretation
-
-The CDC-SU baseline table expresses the intended evidence breadth. The Spotify-only V1 catalog cannot operationalize every intended relation.
-
-Each service cell uses:
-
-- `S`: scored;
-- `C`: retained as context but score mask is zero;
-- `E`: hard-eligibility role;
-- `—`: not applicable.
-
-Combined values such as `C+E` mean the field is visible and affects eligibility but not ranking.
-
-An unsupported field is never mapped to a convenient but undocumented Spotify property. Its base weight remains defined for traceability and future extension, while its active scoring mask is `0` in V1.
-
-### 5.2 Baseline detailed-music mapping
-
-| Baseline feature | Playlist | Humming karaoke | Full karaoke | Spotify-only V1 reason |
-|---|---:|---:|---:|---|
-| Drowsiness level | S | S | S | Signed evidence makes calm songs support low drowsiness and active songs support high drowsiness. |
-| Fatigue level | S | S | S | Uses the same initial signed calm-to-active hypothesis as drowsiness. |
-| Traffic state | S | S | S | Normal and congested resolve opposite signed activation evidence under the initial profile. |
-| Road type | S | S | S | Category-specific signed evidence selects calm, neutral, or active song response; it is not matched to a tag. |
-| Day/night state | S | S | S | Day and night resolve opposite signed activation evidence under the initial profile. |
-| Road monotony | S | S | S | Calm songs support low monotony and active songs support high monotony. |
-| Route characteristics | C | C | C | Track and Audio Features contain no route relation. |
-| Destination characteristics | C | C | C | Track and Audio Features contain no destination relation. |
-| Child present | C+E | C+E | C+E | Excludes `explicit: true`; no child-appeal ranking field exists. |
-| Multiple passengers | C | C | C | No supported group-appeal field exists. |
-| Driving/stopped state | C | C | C+E | Full karaoke requires stopped state. |
-| Oshi registered | S gate | S gate | S gate | Enables exact artist-ID response. |
-| Oshi mode | S gate | S gate | S gate | Enables exact artist-ID response. |
-| Oshi ID | S | S | S | Exact match against `spotify_track.artists[*].id`. |
-| Oshi type | C | C | C | V1 implements only Spotify Artist identity. |
-| Oshi tags | C | C | C | No song semantic tags exist. |
-| Service recency | C | C | C | Same selected-service value for every candidate. |
-| Service usage level | C | C | C | Same selected-service value for every candidate. |
-| Scene/service usage level | C | C | C | Same selected-service value for every candidate. |
-| Age band | S | S | S | Versioned era affinity uses album release date. |
-| Gender | C | C | C | Preserved with default zero weight. |
-| Hobbies and interests | C | C | C | No provider genre/theme field in the selected V1 Track contract. |
-| Catalog item recency | S | — | — | Weak direct-track novelty is playlist-specific. |
-| Content-tag recency | C | — | — | No content tags exist. |
-| Content-tag usage level | C | C | C | No content tags exist. |
-| Catalog item usage level | S | S | S | Exact Track ID history is available. |
-| Scene/content-tag usage | C | C | C | No content tags exist. |
-| Played items | S | S | S | Exact Track ID and timestamp. |
-| Skipped items | S+E | S+E | S+E | Recent skip may exclude; older skip may penalize. |
-| Cancelled content plans | S | S | S | Exact Track IDs from cancelled plans. |
-| Changed-from items | S | S | S | Exact Track ID and timestamp. |
-| Service proposal acceptance rate | C | C | C | Same selected-service context for every candidate. |
-| Service recovery rate | C | C | C | Same selected-service context for every candidate. |
-| Scheduled event type | C | C | C | No song event relation exists. |
-| Scheduled event timing | C | C | C | Timing alone cannot establish item affinity. |
-| Scheduled event tags | C | C | C | No song event tags exist. |
-| Content proposal acceptance rate | S | S | S | Exact Track ID rate only. |
-| Content recovery rate | S | S | S | Exact Track ID rate only. |
-
-The source feature is not deleted when marked `C`; the trace records that it was present but operationally unavailable for Spotify-only song comparison.
-
----
-
-## 6. Core mathematical model
-
-### 6.1 Scale contract
-
-For baseline factor `i`, song `j`, selected service `s`, and purpose `p`:
-
-| Symbol | Serialized name | Meaning | Range |
-|---|---|---|---:|
-| `x_i` | `raw_value` | Raw baseline input | field-specific |
-| `e_i` | `normalized_evidence` | Normalized context/history evidence | `[-1,+1]` |
-| `a_i(j,s)` | `response_coefficient` | Candidate response profile; activation-derived for activation factors | `[-1,+1]` |
-| `r_i(j,s)` | `normalized_feature_response` | Evidence × candidate response | `[-1,+1]` |
-| `B_i` | `base_weight` | Flattened hierarchy weight | `[0,1]` |
-| `q_i(p,s)` | `effective_raw_weight` | Adjusted unnormalized active weight | `[0,+∞)` |
-| `w_i(p,s)` | `effective_weight` | Normalized active weight | `[0,1]`, sum `1` |
-| `k_i(j,s)` | `feature_contribution` | Signed weighted response | `[-w_i,+w_i]` |
-| `F(j,s)` | `item_fit` | Final selection score shown in the plan | `[-1,+1]` |
-
-`item_fit` is a comparative hypothesis score. It is not a probability, safety assurance, or predicted acceptance percentage.
-
-### 6.2 Compatibility interface
-
-For every active factor, content scoring follows the same interface as service scoring:
+A feature's weight is built in three multiplicative steps, then normalized so the
+active set sums to one:
 
 ```text
-r_i(song, service)
-  = clamp(
-      e_i
-      × a_i(song, service),
-      -1,
-      +1
-    )
+base_weight_i = category_weight × subgroup_weight × leaf_weight          (§6.1)
+raw_weight_i  = base_weight_i × purpose_multiplier[purpose][subgroup] × mask_i
+w_i           = raw_weight_i / Σ_j raw_weight_j
 ```
 
-For activation-responsive factors:
+- `base_weight` — the feature's share of the whole tree.
+- `purpose_multiplier` — a per-trigger-purpose nudge on a whole subgroup (§6.2).
+- `mask` — `1` if scorable in Spotify-only V1, else `0` (unsupported relations
+  contribute nothing but stay visible).
+- the final divide is the only reason the numbers look uneven — it just rescales
+  whatever survived so the active features sum to one.
 
-```text
-a_i(song, service)
-  = activation_response_coefficient(song, service)
-  = 2 × service_activation(song) - 1
-```
+### 3.4 Numeric rules
 
-For identity, affinity, and history factors, the feature section explicitly defines which value is evidence and which is the response coefficient.
-
-Every function must:
-
-- return a finite number in `[-1,+1]`;
-- name every input field;
-- expose its formula or lookup version;
-- return zero for missing-neutral evidence; and
-- never read an undeclared extension.
-
-### 6.3 Effective weight
-
-```text
-B_i
-  = category_weight
-  × subgroup_weight
-  × leaf_weight
-
-q_i(p,s)
-  = B_i
-  × purpose_multiplier[p][subgroup(i)]
-  × scoring_applicability[i][s]
-
-w_i(p,s)
-  = q_i(p,s) / sum(q_active)
-```
-
-`scoring_applicability` is `1` only for scored factors. It is `0` for context-only and not-applicable factors. Eligibility never changes a weight.
-
-Missing scored evidence remains active with response zero; it does not cause weight redistribution. A zero or non-finite active-weight denominator is an invalid configuration.
-
-### 6.4 Contribution and score
-
-```text
-k_i(j,s) = w_i(p,s) × r_i(j,s)
-
-item_fit(j,s)
-  = clamp(sum(k_i(j,s)), -1, +1)
-```
-
-The unclamped result is already bounded because all active weights are non-negative and sum to one. The clamp protects against floating-point drift.
-
-### 6.5 Numeric semantics
-
-- IEEE-754 binary64 arithmetic;
-- fixed factor evaluation order;
-- full-precision ranking;
-- presentation rounding only;
-- negative zero serialized as positive zero;
-- exact score ties resolved by ascending Track ID; and
-- absolute cross-runtime test tolerance `1e-12`.
+IEEE-754 binary64; fixed feature order; full-precision ranking, rounding only for
+display; `−0` serialized as `+0`; exact score ties broken by ascending Track ID;
+cross-runtime tolerance `1e-12`.
 
 ---
 
-## 7. Hierarchical base weights
+## 4. Song traits — how the audio response coefficient is built
 
-The hierarchy is retained from the transparent service proposal so cross-algorithm review remains coherent. Spotify-only applicability masks unsupported leaves and renormalizes the remaining active leaves.
+### 4.1 The four traits and why they exist
 
-### 7.1 Top level
+Spotify audio fields carry no per-context meaning, but they do carry a few robust
+*musical* qualities. We distill each song into four **traits** in `[0,1]`, each
+with a specific job:
 
-| Category | Weight |
-|---|---:|
-| Situation | 0.55 |
-| Preference | 0.30 |
-| History | 0.15 |
+| Trait | Question | Used by |
+|---|---|---|
+| **arousal** | How energetic is the song? | ranking (all services) |
+| **valence** | How bright/positive is the song? | ranking (all services) |
+| **humming_ease** | How easy is it to hum along? | `humming_karaoke` only |
+| **full_karaoke_ease** | How easy is it to sing the whole song? | `full_karaoke` only |
 
-### 7.2 Situation
+Arousal and valence are the two axes of the **circumplex model of affect**
+(energy × pleasantness): together they place a song on a 2-D mood plane instead
+of a 1-D loudness line. The two ease traits are singability proxies used only to
+judge a song's fit for a karaoke *service* (§5.4), never to judge context.
 
-| Subgroup | Share | Leaves and shares |
-|---|---:|---|
-| Driver state | 0.35 | drowsiness `0.55`, fatigue `0.45` |
-| Driving environment | 0.30 | traffic `0.15`, road `0.15`, night `0.20`, monotony `0.50` |
-| Route/destination | 0.20 | route `0.50`, destination `0.50` |
-| Passengers | 0.15 | child `0.60`, multiple passengers `0.40` |
+### 4.2 Table 1 — Trait Composition Matrix
 
-Route/destination and passenger ranking leaves are masked in Spotify-only V1. Child and motion policy remain eligibility controls outside scoring.
+Each trait is a weighted blend of audio fields; weights within a trait sum to
+`1`, so every trait output is in `[0,1]` by construction. `(inv)` = the field is
+used inverted (`1 − field`) because a higher raw value means *less* of the trait.
 
-### 7.3 Preference
+| Audio field | arousal | valence | humming_ease | full_karaoke_ease |
+|---|---:|---:|---:|---:|
+| `energy` | 0.30 | — | — | — |
+| `loudness` | 0.25 | — | — | — |
+| `tempo` | 0.25 | — | 0.20 | 0.20 |
+| `danceability` | 0.15 | — | 0.20 | 0.15 |
+| `acousticness` | 0.05 `(inv)` | — | — | — |
+| `valence` | — | 0.65 | — | — |
+| `mode` | — | 0.35 | — | — |
+| `instrumentalness` | — | — | 0.35 `(inv)` | 0.30 `(inv)` |
+| `speechiness` | — | — | 0.25 `(inv)` | 0.20 `(inv)` |
+| `duration_ms` | — | — | — | 0.15 |
+| **sum** | **1.00** | **1.00** | **1.00** | **1.00** |
 
-| Subgroup | Share | Leaves and shares |
-|---|---:|---|
-| UPro/oshi | 0.35 | age `0.10`, hobbies `0.30`, oshi `0.60`, gender `0.00` |
-| Novelty | 0.10 | item recency `0.60`, tag recency `0.40` |
-| Usage | 0.35 | item usage `0.40`, tag usage `0.30`, scene/tag usage `0.30` |
-| Operations | 0.20 | played `0.25`, skipped `0.35`, changed-from `0.20`, cancelled `0.20` |
+### 4.3 Per-audio-field detail (what it measures, why it loads where)
 
-Hobbies, tag factors, and scene/tag factors are masked. Novelty is active only for playlist item recency.
+- **`energy`** `[0,1]` — Spotify's perceptual measure of intensity and activity
+  (fast, loud, noisy). It *is* arousal, so it is arousal's largest term (0.30).
+  It says nothing about mood or singability → 0 elsewhere.
+- **`loudness`** dB `[-60,0]` — overall track loudness; louder tracks read as
+  more aroused. Normalized to `[0,1]` and given 0.25 of arousal.
+- **`tempo`** BPM — speed. Appears in **two** traits with **different**
+  normalizations: `norm_tempo` (monotonic, faster = more aroused) → 0.25 of
+  arousal; `tempo_ease` (centered, ~110 BPM easiest to sing) → 0.20 of both ease
+  traits.
+- **`danceability`** `[0,1]` — how suitable for dancing (beat strength, rhythm
+  stability). A steady groove adds perceived energy (0.15 arousal) and makes a
+  song easier to sing along to (0.20 humming / 0.15 full).
+- **`acousticness`** `[0,1]` — confidence the track is acoustic. Acoustic tracks
+  tend to be calmer, so it is a small **inverse** arousal signal (0.05).
+- **`valence`** `[0,1]` — Spotify's musical positiveness (happy/cheerful vs
+  sad/angry). The direct mood measure → 0.65 of valence.
+- **`mode`** `{0,1}` — minor (0) vs major (1). Major reads brighter; a real but
+  coarse mood cue → 0.35 of valence.
+- **`instrumentalness`** `[0,1]` — likelihood of *no vocals*. You cannot hum or
+  sing a purely instrumental track, so it is the largest **inverse** term in
+  both ease traits (0.35 humming / 0.30 full).
+- **`speechiness`** `[0,1]` — presence of spoken words (rap, talk). Very speechy
+  tracks have no hummable melody → **inverse** via `speech_ease` (0.25 humming /
+  0.20 full).
+- **`duration_ms`** — track length. Only matters for **full** karaoke (a very
+  long track is harder to sing end-to-end) → 0.15 via `duration_ease`; humming
+  uses a fixed segment so length is irrelevant there. Also drives plan duration.
 
-### 7.4 History
+Retained but **never scored** in V1: `key`, `time_signature`, `liveness`
+(no reliable V1 use), and all identity/URL fields.
 
-| Subgroup | Share | Leaf |
-|---|---:|---|
-| Schedule | 0.30 | schedule relation `1.00` |
-| Content acceptance | 0.30 | exact Track ID rate `1.00` |
-| Content recovery | 0.40 | exact Track ID rate `1.00` |
+### 4.4 Trait formulas
 
-Schedule is masked in Spotify-only V1.
+```text
+norm_loudness = clamp((loudness + 60) / 60)        # -60 dB→0, 0 dB→1
+norm_tempo    = clamp((tempo - 60) / 120)          # 60→0, 180→1  (monotonic)
+tempo_ease    = 1 - clamp(|tempo - 110| / 90)      # centered: 110 BPM easiest
+speech_ease   = 1 - clamp((speechiness - 0.33) / 0.33)
+duration_ease = 1 - clamp((duration_ms - 180000) / 180000)
+clamp(z)      = min(max(z, 0), 1)
+
+arousal            = 0.30·energy + 0.25·norm_loudness + 0.25·norm_tempo
+                   + 0.15·danceability + 0.05·(1 - acousticness)
+valence            = 0.65·valence + 0.35·mode
+humming_ease       = 0.35·(1 - instrumentalness) + 0.25·speech_ease
+                   + 0.20·danceability + 0.20·tempo_ease
+full_karaoke_ease  = 0.30·(1 - instrumentalness) + 0.20·speech_ease
+                   + 0.20·tempo_ease + 0.15·duration_ease + 0.15·danceability
+```
+
+The table columns **are** the formula coefficients — matrix and formulas cannot
+drift apart. The signed traits used in scoring are `A_s = 2·arousal − 1` and
+`V_s = 2·valence − 1`.
 
 ---
 
-## 8. Trigger-purpose multipliers
+## 5. Feature compatibility — the complete wiring
+
+This is the heart of the algorithm: for **every** scored feature, what world
+input it reads, what Spotify field it compares against, its evidence, and its
+response coefficient. The audio-mood response (§5.1–5.2) covers just the six
+driver/environment features in §5.3.
+
+### 5.1 The response coefficient, and why arousal is two-sided but valence is one-sided
+
+For the six driver/environment features, the song answers with its two signed
+traits, weighted by the feature's **demand** — `α` on arousal, `β` on valence:
+
+```text
+a_i(song) = α_i · A_s(song) + β_i · V_s(song)
+r_i(song) = e_i · a_i(song)
+```
+
+Direction lives entirely in the coefficient sign × the trait sign — never in the
+evidence, which is a plain magnitude:
+
+| demand `α` | song arousal | product | meaning |
+|---|---|---|---|
+| `+` wants active | active `+` | `+` | reward energetic song |
+| `+` wants active | calm `−` | `−` | penalize calm song |
+| `−` wants calm | calm `−` | `+` | reward calm song |
+| `−` wants calm | active `+` | `−` | penalize energetic song |
+
+`α ∈ [-1,+1]` (some contexts want energy, some want calm). `β ∈ [0,+1]` only — a
+driver-support context never wants *dark* music, just more or less brightness:
+
+| context stress `e` | bright song `V_s=+1` | dark song `V_s=-1` |
+|---|---|---|
+| low (`e→0`) | ≈0 neutral | ≈0 neutral |
+| high (`e→1`) | `+β` reward bright | `−β` penalize dark |
+
+### 5.2 Table 2 — Context Response Matrix (the six audio-mood demands)
+
+Row-normalized: `|α| + β ≤ 1` (`= 1` for every non-neutral state), so
+`|a_i| ≤ 1`. `⚠` marks a directional hypothesis (see §5.6).
+
+| Feature | `α` (arousal) | `β` (valence) | reading |
+|---|---:|---:|---|
+| Drowsiness | **+0.80** | +0.20 | energize, slightly brighten |
+| Fatigue ⚠ | **−0.50** | +0.50 | soothe **+** brighten |
+| Monotony | **+0.90** | +0.10 | stimulate against boredom |
+| Traffic ⚠ | **−0.40** | +0.60 | de-stress **+** brighten |
+| Night ⚠ | **−0.50** | +0.50 | calm **+** warm |
+| Road | highway **+1.00** / local `0` / mountain **−1.00** / parking `0` | 0.00 | match road load |
+
+Drowsiness (`+`) and fatigue (`−`) pull in **opposite** arousal directions — the
+separation a single activation scalar could never express.
+
+### 5.3 Table 3 — Complete baseline-feature contract
+
+The full content-proposal baseline feature set, using the exact
+category / subcategory / feature names from parent specification **§9**. For each
+feature: does V1 score it; if yes, its world input → evidence and the song
+metadata → response coefficient; if no, the reason. Categorical features are
+expanded to their enum values so the response for **each value** is explicit.
+`r_i = e_i · a_i` throughout. `⚠` = directional hypothesis (§5.6). **🔧** = a
+feature that CDC-SU slide 69 intends to score via **genre**, flipped from
+context-only to scored but **pending response-coefficient + data design** — all
+blocked on adding `artist.genres` to the data contract (§5.7).
+
+**Situation**
+
+| Subcategory | Feature · value | Scored? | World input `x_i` → evidence `e_i` | Song metadata → response `a_i` | Reason if not scored |
+|---|---|---|---|---|---|
+| Current driver state | Drowsiness level | ✓ | `drowsiness_level` → `/100` | traits → `+0.80·A_s + 0.20·V_s` | — |
+| Current driver state | Fatigue level ⚠ | ✓ | `fatigue_level` → `/100` | traits → `−0.50·A_s + 0.50·V_s` | — |
+| Driving environment | Traffic state · `normal` | ✓ | `e = 0` | neutral → `0` | — |
+| Driving environment | Traffic state · `congested` ⚠ | ✓ | `e = 1` | traits → `−0.40·A_s + 0.60·V_s` | — |
+| Driving environment | Road type · `highway` | ✓ | `e = 1` | traits → `+1.00·A_s` | — |
+| Driving environment | Road type · `local` | ✓ | `e = 1` | neutral → `0` | — |
+| Driving environment | Road type · `mountain` | ✓ | `e = 1` | traits → `−1.00·A_s` | — |
+| Driving environment | Road type · `parking` | ✓ | `e = 1` | neutral → `0` | motion handled by eligibility, not score |
+| Driving environment | Day/night state · `day` | ✓ | `e = 0` | neutral → `0` | — |
+| Driving environment | Day/night state · `night` ⚠ | ✓ | `e = 1` | traits → `−0.50·A_s + 0.50·V_s` | — |
+| Driving environment | Road monotony | ✓ | `monotony_level` → `/100` | traits → `+0.90·A_s + 0.10·V_s` | — |
+| Route and destination | Route characteristics | 🔧 TBD | `route_tags` → recognized-tag intensity | `artist.genres` → route→genre affinity *(design TBD)* | Requires `artist.genres` + route→genre map (loose mapping) |
+| Route and destination | Destination characteristics | 🔧 TBD | `destination_tags` → intensity | `artist.genres` → destination→genre affinity *(design TBD)* | Requires `artist.genres` + destination→genre map (loose) |
+| Passenger composition | Child present | 🔧 TBD + ✓ elig. | `child_present` → `1 if true` | `artist.genres` → child-genre affinity *(design TBD)* | Requires `artist.genres` + child-genre set; also drives explicit eligibility (§7) |
+| Passenger composition | Multiple passengers | ✗ | — | — | No group-appeal song field |
+| Driving state | Driving/stopped · `driving` ⚠ | ✓ + elig. | `e = 1` | traits → `α_drive·A_s` (mild calm to reduce load, e.g. `−0.30` — placeholder) | overlaps drowsiness/monotony; direction is a hypothesis |
+| Driving state | Driving/stopped · `stopped` | ✓ + elig. | `e = 0` | neutral → `0` | also the full-karaoke eligibility gate (§7) |
+
+*Added construct (not a §9 baseline feature):* **Song singability** — scored
+under Situation for karaoke only. `selected_service.id` → `e = 1` karaoke / `0`
+playlist; `humming_ease` or `full_karaoke_ease` → `a = 2·ease − 1` (§5.4).
+
+**Preference**
+
+| Subcategory | Feature · value | Scored? | World input `x_i` → evidence `e_i` | Song metadata → response `a_i` | Reason if not scored |
+|---|---|---|---|---|---|
+| Oshi information | Oshi registered | gate | part of the oshi gate | — | enables Oshi ID; not a standalone score |
+| Oshi information | Oshi mode · `on`/`off` | gate | `off` forces oshi gate `= 0` | — | enables Oshi ID; not a standalone score |
+| Oshi information | Oshi ID | ✓ | gate `1 if registered ∧ on ∧ oshi_id` | `spotify_track.artists[*].id` → `+1 if any id matches else 0` | — |
+| Oshi information | Oshi type | ✗ | — | — | V1 does exact Artist identity only; no member/group/character graph |
+| Oshi information | Oshi tags | ✗ | — | — | No song semantic tags |
+| Unused function | Service recency | ✗ | — | — | Same value for every candidate in the selected service |
+| Overall usage frequency | Service usage level | ✗ | — | — | Service-level; same across candidates |
+| Scene-specific tendency | Scene/service usage level | ✗ | — | — | Service-level; same across candidates |
+| UPro information | Age band | ✓ | `age_band` → `1 if band ∧ year` | `album.release_date` → era → `age_era_affinity[band][era]` | — |
+| UPro information | Gender | ✗ | — | — | CDC-SU preserved at default transparent weight 0 |
+| UPro information | Hobbies and interests | 🔧 TBD | `hobby_interest_tags` → matched-tag intensity | `artist.genres` → hobby→genre affinity *(design TBD)* | Requires `artist.genres` + hobby→genre map |
+| Unused content | Catalog item recency | ✗ | — | — | Not in CDC-SU content inputs (slides 71–73 have no novelty/unused row) |
+| Unused content | Content-tag recency | ✗ | — | — | Not in CDC-SU content inputs (slides 71–73) |
+| Overall usage frequency | Content-tag usage level | 🔧 TBD | `content_tag_usage_level[genre]` → usage map | `artist.genres` join *(design TBD)* | Requires `artist.genres` + per-genre usage history |
+| Overall usage frequency | Catalog item usage level | ✓ | `catalog_item_usage_level[id]` → `never 0 / low −.5 / med +.25 / high +1` | `spotify_track.id` → `+1` | — |
+| Scene-specific tendency | Scene/content-tag usage level | 🔧 TBD | `scene_content_tag_usage_level[scene][genre]` → usage map | `artist.genres` join *(design TBD)* | Requires `artist.genres` + scene×genre history (heaviest) |
+| Playback and user operations | Played items | ✓ | `played_items` → `≤30m −1 / today −.5 / ≤7d −.25 / else 0` | `spotify_track.id` → `+1` | — |
+| Playback and user operations | Skipped items | ✓ + elig. | `skipped_items` → in window **exclude** (§7); older `−.5` | `spotify_track.id` → `+1` | — |
+| Playback and user operations | Cancelled content plans | ✗ | — | — | Not in slide 71/72 playback-ops list (only played / skip / change) |
+| Playback and user operations | Changed-from items | ✓ | `changed_from_items` → `−.75 in window` | `spotify_track.id` → `+1` | — |
+
+**History**
+
+| Subcategory | Feature · value | Scored? | World input `x_i` → evidence `e_i` | Song metadata → response `a_i` | Reason if not scored |
+|---|---|---|---|---|---|
+| Proposal result | Service proposal acceptance rate | ✗ | — | — | Service-level; same across all candidates |
+| Recovery result | Service recovery rate | ✗ | — | — | Service-level; same across all candidates |
+| Schedule | Scheduled event type | ✗ | — | — | No song event relation |
+| Schedule | Scheduled event timing | ✗ | — | — | Timing alone cannot establish item affinity |
+| Schedule | Scheduled event tags | ✗ | — | — | No song event tags |
+| Proposal result | Content proposal acceptance rate | ✓ | `content_proposal_acceptance_rate[track_id]` → `2·rate/100 − 1` | `spotify_track.id` → `+1` | — |
+| Recovery result | Content recovery rate | ✓ | `content_recovery_rate[track_id]` → `2·rate/100 − 1` | `spotify_track.id` → `+1` | — |
+
+**Totals:** 38 §9 baseline features (Situation 11 · Preference 20 · History 7),
+shown above with the categorical scored ones expanded to enum values. **15 are
+scored now** (Situation 7 · Preference 6 · History 2); **6 are 🔧 pending
+genre-based design** (route, destination, child, hobbies, content-tag usage,
+scene/content-tag usage — see §5.7); Oshi registered/mode are gates; the
+remaining 15 stay `context_only` (incl. novelty/unused-content and cancelled
+plans, dropped per CDC-SU slides 71–73). `Song singability` is an added
+construct. The 11 "Additional proposed" simulator features in §9 are out of scope
+for baseline-only V1.
+
+### 5.7 Pending genre-based features (CDC-SU slide 69)
+
+Slide 69's "content judgment axis" column shows that route/destination,
+passengers, UPro hobbies, usage-frequency, scene preference, and recovery were all
+meant to be scored against a song's **genre**. V1 dropped genre because it is not
+on the Spotify **Track** object — but it *is* available on the **Artist** object
+(`artist.genres`, fetched from `GET /artists`). Adding that one field to the data
+contract unlocks the six 🔧 features above. Two design tiers remain:
+
+| Tier | Features | Still needs (beyond `artist.genres`) |
+|---|---|---|
+| **1 — static affinity map** | hobbies, child, route, destination | a `tag → genre` affinity table per feature; a response coefficient (e.g. `+1` on genre-set membership, or an affinity in `[-1,+1]`) |
+| **2 — genre-level history** | content-tag usage, scene/genre usage | new **per-genre history fixtures** in the world (usage by genre, and scene×genre for the last) |
+
+Caveats to resolve during design: Spotify genres are **artist-level and coarse**
+("j-pop", "anime", "city pop"), so a song inherits its artists' genres; and the
+route/destination→genre mapping is **semantically loose** and should be treated
+as a low-weight hypothesis. Driver-state/environment features are deliberately
+**not** in this list — arousal/valence already render slide 69's "uptempo genre"
+intent more directly than genre would.
+
+### 5.4 One matrix, not three
+
+Because arousal and valence describe the *song*, not the service, they are
+identical for all three services. Only the **Song singability** row swaps its
+source — `humming_ease` for humming, `full_karaoke_ease` for full karaoke, masked
+to `0` for playlist. A hard-to-hum song is therefore *penalized* for humming, not
+merely un-bonused. That single swapping row is the only per-service difference,
+which is why one matrix suffices instead of three.
+
+### 5.6 The one open directional choice
+
+Fatigue, Traffic, and Night (`⚠`) have an arousal sign that is a product
+hypothesis. This spec adopts the **soothe/de-stress** direction. The alternative
+**keep-alert** direction is a one-line sign flip on `α` for those three rows and
+changes no other machinery. It is a versioned hyperparameter.
+
+---
+
+## 6. Hierarchical weights
+
+### 6.1 Categories, subgroups, leaves, masks
+
+Mask legend: **✓** scored · **✗** context-only · **🔧** genre-pending (mask `0`
+until designed, §5.7) · **⚠** directional hypothesis.
+
+| Category (share) | Subgroup (share) | Leaves (share) — mask |
+|---|---|---|
+| **Situation 0.55** | Driver state 0.35 | drowsiness 0.55 ✓, fatigue 0.45 ✓ |
+| | Driving environment 0.30 | traffic 0.15 ✓, road 0.15 ✓, night 0.20 ✓, monotony 0.50 ✓ |
+| | Driving state 0.05 | motion 1.00 ✓⚠ (driving→`α·A_s`, stopped→0) |
+| | Song singability 0.13 | `service_ease` 1.00 — ✓ karaoke / ✗ playlist |
+| | Route/destination 0.09 | route 0.5 🔧, destination 0.5 🔧 |
+| | Passengers 0.08 | child 0.6 🔧, multiple 0.4 ✗ |
+| **Preference 0.30** | UPro/oshi 0.35 | oshi 0.60 ✓, age 0.10 ✓, hobbies 0.30 🔧, gender 0.00 |
+| | Novelty 0.10 | item recency 0.60 ✗, tag recency 0.40 ✗ *(whole subgroup dropped — slides 71–73)* |
+| | Usage 0.35 | item usage 0.40 ✓, genre usage 0.30 🔧, scene/genre 0.30 🔧 |
+| | Operations 0.20 | played 0.25 ✓, skipped 0.35 ✓, changed 0.20 ✓, cancelled 0.20 ✗ |
+| **History 0.15** | Schedule 0.30 | schedule 1.00 ✗ |
+| | Content acceptance 0.30 | exact Track rate 1.00 ✓ |
+| | Content recovery 0.40 | exact Track rate 1.00 ✓ |
+
+Genre-pending (🔧) leaves currently carry mask `0` — identical to ✗ for today's
+scoring — and switch on only when §5.7's genre design lands. The Novelty subgroup
+is now entirely unused and renormalizes away.
+
+### 6.2 Purpose multipliers (applied per subgroup before normalization)
 
 | Subgroup | Rest recommended | Inattentive/recovery | Route music | Child experience |
 |---|---:|---:|---:|---:|
 | Driver state | 1.50 | 1.50 | 0.90 | 0.90 |
-| Environment | 1.25 | 1.40 | 0.80 | 0.80 |
-| Route/destination | 0.75 | 0.60 | 2.00 | 0.70 |
-| Passengers | 0.75 | 0.80 | 0.90 | 2.00 |
+| Driving environment | 1.25 | 1.40 | 0.80 | 0.80 |
+| Song singability | 1.00 | 1.00 | 1.00 | 1.00 |
 | UPro/oshi | 0.90 | 0.80 | 1.10 | 1.10 |
 | Novelty | 0.60 | 0.60 | 1.00 | 0.80 |
 | Usage | 0.80 | 0.75 | 1.10 | 1.00 |
 | Operations | 1.00 | 1.00 | 1.00 | 1.00 |
-| Schedule | 0.75 | 0.50 | 1.00 | 0.80 |
-| Acceptance | 0.80 | 0.75 | 1.00 | 1.00 |
-| Recovery | 1.40 | 1.50 | 0.80 | 0.80 |
+| Content acceptance | 0.80 | 0.75 | 1.00 | 1.00 |
+| Content recovery | 1.40 | 1.50 | 0.80 | 0.80 |
 
-A multiplier on a masked subgroup still produces zero active weight. For example, the route-music multiplier cannot create a route match without route-compatible song metadata. This is an explicit V1 limitation.
+### 6.3 Normalization
 
-Customers may set every multiplier to `1.0` for a global model. Hard eligibility remains unchanged.
-
----
-
-## 9. Spotify-derived service activation
-
-### 9.1 Field roles
-
-| Spotify Audio Features field | Derived use |
-|---|---|
-| `energy` | primary activation |
-| `tempo` | normalized activation and tempo-ease proxy |
-| `danceability` | activation and karaoke-ease proxies |
-| `loudness` | normalized activation |
-| `valence` | small activation contribution and optional lighting presentation |
-| `instrumentalness` | vocal-presence proxy |
-| `speechiness` | speech-ease proxy |
-| `duration_ms` | full-karaoke ease proxy and plan duration |
-
-`key`, `mode`, `time_signature`, `acousticness`, and `liveness` are preserved but not scored in V1. `analysis_url`, `track_href`, `type`, `uri`, and IDs are identity/provenance fields only.
-
-### 9.2 Normalization
-
-```text
-clamp(x) = min(max(x, 0), 1)
-
-normalized_tempo
-  = clamp((tempo - 60) / 120)
-
-normalized_loudness
-  = clamp((loudness + 60) / 60)
-```
-
-Tempo at or below `60 BPM` maps to `0`; tempo at or above `180 BPM` maps to `1`. Loudness at or below `-60 dB` maps to `0`; loudness at or above `0 dB` maps to `1`.
-
-### 9.3 Common audio activation
-
-```text
-audio_activation
-  = 0.50 × energy
-  + 0.20 × normalized_tempo
-  + 0.15 × danceability
-  + 0.10 × normalized_loudness
-  + 0.05 × valence
-```
-
-### 9.4 Transparent karaoke proxies
-
-Spotify does not provide chorus singability or full-song singability. V1 derives limited proxies instead:
-
-```text
-vocal_presence
-  = 1 - instrumentalness
-
-speech_ease
-  = 1 - clamp((speechiness - 0.33) / (0.66 - 0.33))
-
-tempo_ease
-  = 1 - clamp(abs(tempo - 110) / 90)
-
-duration_ease
-  = 1 - clamp((duration_ms - 180000) / 180000)
-
-humming_ease
-  = 0.35 × vocal_presence
-  + 0.25 × speech_ease
-  + 0.25 × danceability
-  + 0.15 × tempo_ease
-
-full_karaoke_ease
-  = 0.30 × vocal_presence
-  + 0.25 × speech_ease
-  + 0.15 × danceability
-  + 0.15 × tempo_ease
-  + 0.15 × duration_ease
-```
-
-These formulas estimate relative suitability only. They do not prove that lyrics, melody, a chorus segment, or karaoke assets exist.
-
-### 9.5 Service activation
-
-```text
-playlist_activation
-  = audio_activation
-
-humming_activation
-  = 0.75 × audio_activation
-  + 0.25 × humming_ease
-
-full_karaoke_activation
-  = 0.65 × audio_activation
-  + 0.35 × full_karaoke_ease
-```
-
-All activation and ease results are in `[0,1]`. Convert the selected service activation into the song candidate's signed response coefficient:
-
-```text
-a_activation(song, service)
-  = activation_response_coefficient(song, service)
-  = 2 × service_activation(song) - 1
-```
-
-Interpretation:
-
-| `a_activation` | Candidate response profile |
-|---:|---|
-| `-1` | very calm song |
-| `-0.5` | relatively calm song |
-| `0` | activation-neutral song |
-| `+0.5` | relatively active song |
-| `+1` | very active song |
-
-Unlike the service selector's human-configured candidate coefficients, this coefficient is calculated from the frozen Spotify-derived service activation. It is still evidence-visible and versioned.
-
-`simulation_flags` do not appear in these formulas.
+After `base × purpose × mask`, divide every surviving leaf by the sum of all
+surviving leaves so `Σ w_i = 1`. A zero or non-finite denominator is invalid.
 
 ---
 
-## 10. Compatibility functions
+# Part III — Eligibility and data handling
 
-### 10.1 Driver state and environment
+## 7. Hard eligibility
 
-#### 10.1.1 Signed continuous evidence
+Eligibility runs **before** scoring and returns explicit reason codes. No score
+can reinstate an excluded song. Eligibility reads these Spotify/simulator fields:
 
-Drowsiness, fatigue, and monotony are two-directional content evidence:
+| Check | Song field | Rule |
+|---|---|---|
+| Schema/identity | Track ↔ Audio-Features `id`/`uri`/`duration_ms` | must agree |
+| Playable | `spotify_track.is_playable` | must be `true` |
+| Market | `spotify_track.available_markets` | must contain current market |
+| Restriction | `spotify_track.restrictions` | must not block current context |
+| Explicit/child | `spotify_track.explicit` | excluded if `true` under child policy |
+| Recent skip | history skip window | excluded if skipped inside `skip_exclusion_window` |
+| Duplicate | `spotify_track.id` | one Track per plan |
+| Humming gate | `simulation_flags.humming_karaoke_available` | must be `1` for humming |
+| Full-karaoke gate | `simulation_flags.full_karaoke_available` **and** `motion_state` | flag `1` **and** stopped |
 
-```text
-signed_level(value)
-  = clamp(2 × (value / 100) - 1, -1, +1)
+Karaoke flags default to `1`, are gates only, and never add score. High
+`instrumentalness` lowers the ease traits but is **not** an exclusion.
 
-e_drowsiness = signed_level(drowsiness_level)
-e_fatigue    = signed_level(fatigue_level)
-e_monotony   = signed_level(monotony_level)
-```
+## 8. Missing, unknown, and invalid data
 
-| Raw level | Normalized evidence | Meaning for activation response |
-|---:|---:|---|
-| `0` | `-1.0` | strongly favors calm songs |
-| `25` | `-0.5` | mildly favors calm songs |
-| `50` | `0.0` | activation-neutral |
-| `75` | `+0.5` | mildly favors active songs |
-| `100` | `+1.0` | strongly favors active songs |
-
-A present value of `0` is valid negative evidence, not missing data. A missing field is recorded as `missing_neutral` and resolves to evidence `0` without pretending the raw value was `50`.
-
-#### 10.1.2 Signed categorical evidence
-
-Initial categorical activation-evidence profiles are:
-
-| Feature state | Normalized evidence | Meaning |
-|---|---:|---|
-| traffic normal | `-1.0` | calm-song direction |
-| traffic congested | `+1.0` | active-song direction |
-| road highway | `+1.0` | active-song direction |
-| road local | `0.0` | activation-neutral |
-| road mountain | `-1.0` | calm-song direction to reduce load |
-| road parking | `0.0` | activation-neutral; motion eligibility is separate |
-| day | `-1.0` | calm-song direction |
-| night | `+1.0` | active-song direction |
-
-These mappings are editable content-response hypotheses. They are not Spotify metadata, empirical safety claims, or eligibility rules. They mirror the service selector's categorical candidate-response-profile pattern while deriving the song side from audio activation.
-
-#### 10.1.3 Candidate response and feature response
-
-For all six activation-responsive factors, the same service-specific song coefficient is reused:
-
-```text
-a_i(song, service)
-  = a_activation(song, service)
-  = 2 × service_activation(song) - 1
-
-r_i(song, service)
-  = clamp(e_i × a_i(song, service), -1, +1)
-```
-
-The sign agreement determines compatibility:
-
-| Evidence sign | Song coefficient sign | Response |
-|---:|---:|---|
-| negative/calm | negative/calm | positive match |
-| negative/calm | positive/active | negative mismatch |
-| positive/active | positive/active | positive match |
-| positive/active | negative/calm | negative mismatch |
-| either value | zero | neutral |
-
-Thus low drowsiness gives a calm song a larger response than an active song, while high drowsiness reverses that ordering. The same response structure applies to the approved signed mappings for fatigue, monotony, traffic, road, and day/night.
-
-### 10.2 Route, destination, and passengers
-
-Route, destination, multiple-passenger, and group-suitability ranking responses are `0` in Spotify-only V1. No matching song metadata exists.
-
-Child presence also has ranking response `0`. It independently excludes explicit tracks under the configured child policy.
-
-### 10.3 Age and release era
-
-Age uses only:
-
-- `world.driver.age_band`; and
-- the year derived from `spotify_track.album.release_date`.
-
-A versioned age/era affinity table returns the candidate response coefficient:
-
-```text
-e_age = 1  when age band and usable release year are present
-      = 0  otherwise
-
-a_age(song) = age_era_affinity[age_band][release_era]
-
-r_age(song) = e_age × a_age(song)
-```
-
-The coefficient lies in `[-1,+1]`; the table and rationale are evidence-visible. Missing or year-precision-incompatible data produces missing-neutral evidence `0`.
-
-Gender has zero weight. Hobbies and interests are context-only because the selected V1 Track contract contains no matching genre or theme field.
-
-### 10.4 Exact oshi artist
-
-Oshi response is active only when:
-
-```text
-oshi_registered = true
-and oshi_mode = on
-and at least one oshi Spotify Artist ID exists
-```
-
-```text
-e_oshi = 1  when registration, mode, and Artist ID are present
-       = 0  otherwise
-
-a_oshi(song)
-  = +1  if any spotify_track.artists[*].id exactly matches
-  =  0  otherwise
-
-r_oshi(song) = e_oshi × a_oshi(song)
-```
-
-Oshi mode off or an unregistered oshi produces evidence `0`; the leaf remains active and neutral so runtime evidence absence does not redistribute weight. V1 does not infer member, group, character, franchise, theme, or shared-tag relations.
-
-### 10.5 Direct item usage
-
-Only exact Track ID usage is scored. The lookup produces signed evidence; the candidate coefficient is `+1` because the history already belongs to the candidate Track:
-
-| Usage level | Normalized evidence |
-|---|---:|
-| never | 0.00 |
-| low | -0.50 |
-| medium | +0.25 |
-| high | +1.00 |
-
-```text
-a_item_usage(song) = +1
-r_item_usage(song) = e_item_usage(song) × a_item_usage(song)
-```
-
-Tag and scene/tag usage are context-only.
-
-### 10.6 Playlist item novelty
-
-Only playlist activates direct item novelty. The lookup produces signed evidence and uses coefficient `+1`:
-
-| Catalog item recency | Normalized evidence |
-|---|---:|
-| never | +1.00 |
-| long_unused | +0.50 |
-| recent | 0.00 |
-
-```text
-a_item_novelty(song) = +1
-r_item_novelty(song) = e_item_novelty(song) × a_item_novelty(song)
-```
-
-Humming and full karaoke mark novelty not applicable. No tag-recency fallback exists.
-
-### 10.7 Playback and operations
-
-Played-item history resolves signed evidence:
-
-| Last played | Normalized evidence |
-|---|---:|
-| within 30 minutes | -1.00 |
-| earlier today | -0.50 |
-| within seven days | -0.25 |
-| older or never | 0.00 |
-
-Recent explicit skip:
-
-```text
-inside skip_exclusion_window -> hard exclusion
-older recorded skip          -> -0.50
-```
-
-Changed-from inside its configured penalty window returns `-0.75`. A Track in a recently cancelled plan returns `-0.50`. Otherwise each response is `0`.
-
-For played, skipped, changed-from, and cancelled-plan factors:
-
-```text
-a_operation(song) = +1
-r_operation(song) = e_operation(song) × a_operation(song)
-```
-
-### 10.8 Content acceptance and recovery
-
-Only exact Track ID rates are accepted. There is no tag, genre, artist, or plan-average fallback. The normalized rate is evidence and uses coefficient `+1`:
-
-```text
-rate_response
-  = 2 × rate / 100 - 1
-
-e_rate(song) = rate_response
-a_rate(song) = +1
-r_rate(song) = e_rate(song) × a_rate(song)
-```
-
-| Rate | Normalized evidence/response |
-|---:|---:|
-| 80 | +0.60 |
-| 50 | 0.00 |
-| 20 | -0.60 |
-
-Missing rate is neutral `0`. Acceptance and recovery remain separate factors.
-
-### 10.9 Schedule and service-level history
-
-Schedule type, timing, and tags are context-only because Spotify-only songs have no event relation. Service-level usage, acceptance, and recovery are also context-only because their value is identical across every candidate in the already selected service.
+- **Missing scored field** → `e=0`, `a=0`, weight retained, listed
+  `missing_neutral`. Absence never redistributes weight.
+- **Present raw `0`** on a `[0,100]` feature is a valid low value, not missing.
+- **Unsupported semantic** (route, tags, schedule, …) → `context_only`, mask `0`.
+- **Missing audio field required by an active trait formula** → `invalid_catalog`,
+  song excluded (V1 never imputes provider values).
+- **Invalid** (NaN/inf, out-of-range field, identity mismatch, flag ∉ {0,1},
+  unknown service, bad version, zero active-weight denominator) → reject/exclude;
+  never silently coerce to neutral.
 
 ---
 
-## 11. Hard eligibility
+# Part IV — Producing the plan
 
-Eligibility executes before scoring and returns explicit reason codes.
-
-### 11.1 Common exclusions
-
-A song is excluded when any of these is true:
-
-- Track or Audio Features schema is invalid;
-- Track ID, URI, or duration does not agree across the two objects;
-- `spotify_track.is_playable` is not `true`;
-- current market is absent from `spotify_track.available_markets` (including an empty list);
-- a Track restriction blocks playback in the current context;
-- `spotify_track.explicit` is `true` while the child-present policy prohibits explicit content;
-- the Track was skipped inside `skip_exclusion_window`; or
-- the same Track ID already occupies another plan position.
-
-### 11.2 Playlist
-
-No karaoke flag is required. The common exclusions are sufficient.
-
-### 11.3 Humming karaoke
-
-In addition to common eligibility:
-
-```text
-simulation_flags.humming_karaoke_available = 1
-```
-
-No chorus boundary, lyric, or guide-vocal field is required because V1 does not claim to execute a real karaoke asset.
-
-### 11.4 Full karaoke
-
-In addition to common eligibility:
-
-```text
-simulation_flags.full_karaoke_available = 1
-and motion_state = stopped
-```
-
-Full karaoke is unavailable while driving. The content selector returns the exclusion; it does not switch to humming or playlist.
-
-### 11.5 Approved default assumption
-
-Every generated standard song has both karaoke flags set to `1`. Customers can change the defaults or individual values in settings. Flags are gates only; `1` contributes no score.
-
-High `instrumentalness` is not a hard exclusion. It lowers the vocal-presence proxy while preserving the approved availability assumption.
-
----
-
-## 12. Evaluation pipeline
-
-For one active service:
+## 9. Evaluation pipeline and plan construction
 
 1. validate control inputs and lifecycle state;
-2. load the frozen Spotify-compatible catalog and manifest;
-3. validate every song object and cross-object identity;
-4. apply common and service-specific eligibility;
-5. calculate normalized tempo and loudness;
-6. calculate common audio activation;
-7. calculate the selected service ease and activation;
-8. normalize world features into signed evidence and resolve active leaves;
-9. calculate and normalize effective weights once for the run;
-10. resolve each candidate's direct identity/history evidence;
-11. derive each song's selected-service activation response coefficient;
-12. calculate `normalized_feature_response = evidence × response_coefficient` for every active factor;
-13. calculate contributions and `item_fit` in contract order;
-14. sort eligible candidates by full-precision score and stable ID;
-15. take the first configured `plan_item_count` candidates;
-16. build service-specific presentation fields; and
-17. persist plan-level and selected-item evidence.
-
-The ranking result must not feed back into the synthetic catalog or world snapshot.
-
----
-
-## 13. Plan construction
-
-### 13.1 Deterministic policy
+2. load the frozen catalog and manifest; validate each song and cross-object
+   identity;
+3. apply common + service eligibility (§7);
+4. derive the four traits per eligible song (§4.4);
+5. resolve effective weights once (§6);
+6. for each song, compute `r_i = e_i·a_i` for every feature (§5) and
+   `item_fit = clamp(Σ w_i·r_i, -1, +1)`;
+7. sort by `(item_fit desc, spotify_track.id asc)`;
+8. take the first `plan_item_count`;
+9. build presentation fields; persist plan + selected-item evidence.
 
 ```text
-ordered_candidates
-  = eligible candidates sorted by:
-      1. item_fit descending
-      2. spotify_track.id ascending
-
-plan
-  = first plan_item_count candidates
+plan = first plan_item_count of eligible songs sorted by (item_fit desc, id asc)
 ```
 
-There is no hidden diversity reranker, artist cap, random shuffle, or LLM reorder in V1. If such a constraint is added later, it must be a visible plan-construction rule with evidence.
+No hidden diversity reranker, artist cap, shuffle, or LLM reorder. Fewer eligible
+songs than the count → `insufficient_eligible_items`, never a silently shortened
+plan. Each plan item shows order, title, artists, album/release (optional),
+`item_fit`, and concise positive/negative reasons.
 
-### 13.2 Cardinality
+**Duration:** playlist and full karaoke sum `spotify_track.duration_ms`; humming
+uses `plan_item_count × fixed_humming_segment_sec` (default 30 s), labeled
+`simulated_fixed_segment`. **Lighting** (optional) may use `valence` as a
+presentation cue only; it never changes score or order.
 
-- default `plan_item_count = 5`;
-- customer may change it in settings;
-- success returns exactly that many unique songs; and
-- too few eligible songs returns `insufficient_eligible_items`, not a silently shortened complete plan.
+## 10. Worked example (redesigned block)
 
-### 13.3 Score display
+Isolates the six audio-mood features plus the ease leaf, using illustrative
+normalized block weights `drowsiness .25, fatigue .20, monotony .20, traffic .12,
+road .11, night .12`. The scored Preference/History features (§5.3) add on through
+the same `Σ w_i·r_i`.
 
-Each chosen plan item displays:
-
-- order;
-- title;
-- artist names;
-- album/release information when desired;
-- selected-service score `item_fit`; and
-- concise positive and negative reasons.
-
-The main plan view does not need a table of rejected candidates. Audit mode may expose their traces.
-
-### 13.4 Duration
-
-Playlist and full karaoke use provider duration:
+**Service** `humming_karaoke`; **world** drowsiness 80, fatigue 70, monotony 90,
+traffic congested, road highway, night. **Song** `energy .842, tempo 118.2,
+loudness -5.9, danceability .585, acousticness .002, valence .428, mode 1,
+instrumentalness .007, speechiness .056, duration 237040`.
 
 ```text
-expected_plan_duration_ms
-  = sum(spotify_track.duration_ms)
+arousal = 0.737 → A_s = +0.474 ;  valence = 0.628 → V_s = +0.256
+humming_ease = 0.896 → service-ease response = +0.793
 ```
 
-Spotify supplies no chorus boundary. Humming karaoke therefore uses a plan-level simulator parameter rather than invented song metadata:
+`r_i = e_i·(α·A_s + β·V_s)`:
 
-```text
-fixed_humming_segment_sec = 30  # initial default
+| Feature | `e` | `α` | `β` | `r_i` | `w·r` |
+|---|---:|---:|---:|---:|---:|
+| Drowsiness | .80 | +.80 | +.20 | +0.344 | +0.086 |
+| Fatigue | .70 | −.50 | +.50 | −0.076 | −0.015 |
+| Monotony | .90 | +.90 | +.10 | +0.407 | +0.081 |
+| Traffic | 1.0 | −.40 | +.60 | −0.036 | −0.004 |
+| Road (hwy) | 1.0 | +1.0 | 0 | +0.474 | +0.052 |
+| Night | 1.0 | −.50 | +.50 | −0.109 | −0.013 |
+| **block sum** | | | | | **+0.187** |
 
-expected_plan_duration_sec
-  = plan_item_count × fixed_humming_segment_sec
-```
+The strong positives (drowsiness, monotony, highway) outweigh the calming pull of
+congested/night because this world is dominated by high-arousal demand. Adding
+the humming ease leaf (`+0.793`, its own weight) and the identity/history
+contributions yields the final `item_fit`. In a low-drowsiness, congested, night
+world the calming features dominate and a calm-bright song wins instead — the
+same two songs reorder by context.
 
-The output labels this as `simulated_fixed_segment`, not provider duration or detected chorus duration.
+## 11. Contrast behavior
 
-### 13.5 Lighting presentation
+Each contrast freezes catalog, service, config, and seed and changes one world
+field, asserting the expected reorder:
 
-Optional lighting may use `valence` as a presentation cue. Lighting never changes score or order. The exact lookup is versioned and may be disabled independently.
+1–6. low↔high **drowsiness / fatigue / monotony**, and **normal↔congested /
+highway↔mountain / day↔night** — calm/active order reverses.
+7. child absent↔present with an explicit candidate — eligibility change.
+8. oshi mode off↔on. 9. no play↔recent play. 10. low↔high item usage.
+11. low↔high exact-item recovery. 12. driving↔stopped for full karaoke.
+13. route A↔route B — **expected no rank change** (V1 manufactures no route-song
+relation).
 
 ---
 
-## 14. Detailed recipe outputs
+# Part V — Engineering contract
 
-### 14.1 Playlist
+## 12. Parameters and hyperparameters
 
-```yaml
-recipe: music_playlist
-playback_unit: full_track
-plan_item_count: 5
-duration_basis: spotify_track.duration_ms
-```
+**Structural parameters:** `plan_item_count` (5), recipe registry, feature
+contract order, age/era affinity table, exact-oshi rule, history precedence,
+eligibility policy IDs, fixed humming segment, duration policy, lighting policy.
 
-### 14.2 Humming karaoke
+**Numeric hyperparameters (frozen per run, in evidence):** hierarchy weights
+(§6.1); purpose multipliers (§6.2); **Trait Composition Matrix** (§4.2); **Context
+Response Matrix** (§5.2, incl. the `⚠` sign choices); tempo/loudness bounds;
+tempo-ease center/span; speech-ease and duration-ease bounds;
+usage/novelty/operation mappings; lighting lookup. Editing any creates a new
+parameter-set version.
 
-```yaml
-recipe: humming_karaoke
-interaction_unit: simulated_humming_segment
-plan_item_count: 5
-segment_duration_sec: 30
-duration_basis: simulated_fixed_segment
-```
-
-The output does not claim a detected chorus, synchronized lyrics, or karaoke asset.
-
-### 14.3 Full karaoke
-
-```yaml
-recipe: full_karaoke
-interaction_unit: simulated_full_track_karaoke
-required_motion_state: stopped
-plan_item_count: 5
-duration_basis: spotify_track.duration_ms
-```
-
-The service is a simulator behavior. The availability flag is not evidence of commercial rights or real asset availability.
-
----
-
-## 15. Recipe extension interface
-
-A future recipe registers:
-
-```yaml
-recipe_id: string
-accepted_service_types: [string]
-required_catalog_namespaces: [string]
-eligibility_rules: [versioned_rule_id]
-scored_baseline_features: [field_id]
-evidence_normalizers: [versioned_function_id]
-response_coefficient_functions: [versioned_function_id]
-feature_response_function: signed_evidence_times_candidate_response_v1
-activation_function: versioned_function_id
-plan_item_count_default: integer
-duration_policy: versioned_policy_id
-presentation_policy: versioned_policy_id
-```
-
-New metadata namespaces default to disabled. A recipe cannot read them until source, provenance, validation, missing-data behavior, applicability, and scoring are all approved.
-
-The Spotify Audio Features endpoint is marked deprecated in the selected reference. The implementation depends on a pinned fixture schema, not live endpoint availability. A future provider migration must register a new catalog adapter/version without silently changing this algorithm.
-
----
-
-## 16. Missing, unknown, and invalid data
-
-### 16.1 Missing baseline evidence
-
-A missing scored baseline field:
-
-- remains active;
-- has normalized evidence and response `0`;
-- retains its effective weight; and
-- is listed as `missing_neutral`.
-
-This prevents evidence absence from quietly redistributing influence.
-
-For signed 0–100 features, a present raw `0` maps to evidence `-1`; it is not treated as missing. The trace always distinguishes `missing_neutral` from a valid low endpoint.
-
-### 16.2 Unsupported semantic evidence
-
-Route, destination, hobby, oshi-tag, content-tag, and schedule semantics are not “missing song data” in V1. They are declared `context_only_unsupported` and have scoring mask `0`.
-
-### 16.3 Missing Spotify score fields
-
-A candidate missing any Track or Audio Features field required by eligibility or an active formula is `invalid_catalog` and excluded. V1 does not impute provider values.
-
-Nullable provider fields that are not required by an active rule remain valid when their schema permits null.
-
-### 16.4 Invalid data
-
-Reject or exclude as appropriate:
-
-- NaN or infinity;
-- out-of-range normalized audio fields;
-- invalid key, mode, duration, tempo, or time signature;
-- mismatched Track and Audio Features identity;
-- availability flags outside integer `{0,1}`;
-- signed evidence, response coefficient, or normalized feature response outside `[-1,+1]`;
-- unknown selected service;
-- invalid purpose or parameter version; and
-- zero active-weight denominator.
-
----
-
-## 17. Result and error categories
+## 13. Result and error categories
 
 | Result | Meaning |
 |---|---|
-| `complete_plan` | exactly the configured number of songs selected |
+| `complete_plan` | exactly the configured number of songs |
 | `invalid_request` | service lifecycle, purpose, stage, or count invalid |
 | `unsupported_service` | no registered detailed recipe |
 | `invalid_catalog` | catalog or song schema invalid |
 | `no_proposal` | every candidate excluded |
-| `insufficient_eligible_items` | fewer eligible songs than configured plan count |
-| `invalid_configuration` | weights, multipliers, formulas, or versions invalid |
-| `full_karaoke_requires_stopped` | active full-karaoke service cannot run while moving |
-
-Typed errors include evidence and never trigger an undeclared fallback service.
-
----
-
-## 18. Explainability contract
-
-### 18.1 Selected-item trace
-
-Each chosen song records:
-
-```yaml
-position: 1
-track_id: synthetic-track-0001
-title: Afterglow Highway
-artists:
-  - id: synthetic-artist-0001
-    name: Aoi Meridian
-item_fit: 0.37576713988095228
-eligible: true
-derived_audio:
-  normalized_tempo: 0.48509166666666664
-  normalized_loudness: 0.90195
-  audio_activation: 0.7173633333333334
-  humming_ease: 0.880164
-  humming_activation: 0.7580635
-  activation_response_coefficient: 0.516127
-contributions: []
-top_positive_reasons: []
-top_negative_reasons: []
-```
-
-Every contribution includes factor ID, raw evidence, normalized evidence, catalog fields read, formula version, response coefficient and its provenance, base weight, purpose multiplier, applicability mask, effective weight, normalized feature response, and contribution.
-
-### 18.2 Exclusion trace
-
-An excluded item records only what is needed to explain exclusion:
-
-```yaml
-track_id: synthetic-track-0099
-eligible: false
-reason_codes:
-  - explicit_blocked_child_present
-```
-
-### 18.3 Plan-level trace
-
-The plan records:
-
-- selected service and lifecycle;
-- trigger purpose and stage;
-- plan count setting;
-- catalog, world, algorithm, schema, and parameter hashes/versions;
-- active and context-only feature lists;
-- signed-evidence profile and activation-response formula versions;
-- normalized effective weights;
-- deterministic sort and tie-break rules;
-- expected duration and basis;
-- lighting policy version if enabled; and
-- selected Track IDs in order.
-
----
-
-## 19. Worked humming example
-
-This example shows how a song's Spotify fields and world evidence produce the score shown inside the five-song plan.
-
-### 19.1 Context
-
-```yaml
-service: humming_karaoke
-trigger_purpose: inattentive_driving_prevention_recovery
-drowsiness_level: 80
-fatigue_level: 70
-traffic_state: congested
-road_type: highway
-night_state: night
-monotony_level: 90
-age_era_affinity: 0.50
-oshi_mode: on
-oshi_artist_exact_match: true
-item_usage: medium
-last_played: within_7_days
-skip: none
-changed_from: none
-cancelled_plan: none
-content_acceptance_rate: 80
-content_recovery_rate: 70
-```
-
-Route and destination may be present in the world but are context-only and do not enter the score.
-
-Candidate Audio Features:
-
-```yaml
-energy: 0.842
-tempo: 118.211
-danceability: 0.585
-loudness: -5.883
-valence: 0.428
-instrumentalness: 0.00686
-speechiness: 0.0556
-duration_ms: 237040
-```
-
-Both karaoke flags are `1`, so the song is eligible for the selected service.
-
-### 19.2 Derived audio values
-
-```text
-normalized_tempo       = 0.48509166666666664
-normalized_loudness    = 0.90195
-audio_activation       = 0.7173633333333334
-vocal_presence         = 0.99314
-speech_ease            = 1.0
-tempo_ease             = 0.9087666666666667
-duration_ease          = 0.6831111111111111
-humming_ease           = 0.880164
-humming_activation     = 0.7580635
-activation_response_coefficient = 0.516127
-```
-
-`duration_ease` is calculated for trace consistency but is not used by the humming formula.
-
-Activation-responsive evidence is:
-
-```text
-e_drowsiness = 2 × 0.80 - 1 = 0.60
-e_fatigue    = 2 × 0.70 - 1 = 0.40
-e_traffic    = congested     = 1.00
-e_road       = highway       = 1.00
-e_night      = night         = 1.00
-e_monotony   = 2 × 0.90 - 1 = 0.80
-```
-
-### 19.3 Active weights
-
-After Spotify-only applicability and the inattentive/recovery purpose multipliers, the raw active-weight sum is `0.7938`.
-
-| Factor | Effective weight | Evidence `e` | Coefficient `a` | Response `r=e×a` | Contribution |
-|---|---:|---:|---:|---:|---:|
-| Drowsiness | 0.200066 | 0.600000 | 0.516127 | 0.309676 | 0.061956 |
-| Fatigue | 0.163690 | 0.400000 | 0.516127 | 0.206451 | 0.033794 |
-| Traffic | 0.043651 | 1.000000 | 0.516127 | 0.516127 | 0.022529 |
-| Road | 0.043651 | 1.000000 | 0.516127 | 0.516127 | 0.022529 |
-| Night | 0.058201 | 1.000000 | 0.516127 | 0.516127 | 0.030039 |
-| Monotony | 0.145503 | 0.800000 | 0.516127 | 0.412902 | 0.060078 |
-| Age/era | 0.010582 | 1.000000 | 0.500000 | 0.500000 | 0.005291 |
-| Exact oshi artist | 0.063492 | 1.000000 | 1.000000 | 1.000000 | 0.063492 |
-| Direct item usage | 0.039683 | 0.250000 | 1.000000 | 0.250000 | 0.009921 |
-| Played | 0.018896 | -0.250000 | 1.000000 | -0.250000 | -0.004724 |
-| Skipped | 0.026455 | 0.000000 | 1.000000 | 0.000000 | 0.000000 |
-| Changed-from | 0.015117 | 0.000000 | 1.000000 | 0.000000 | 0.000000 |
-| Cancelled plan | 0.015117 | 0.000000 | 1.000000 | 0.000000 | 0.000000 |
-| Content acceptance | 0.042517 | 0.600000 | 1.000000 | 0.600000 | 0.025510 |
-| Content recovery | 0.113379 | 0.400000 | 1.000000 | 0.400000 | 0.045351 |
-
-Using full-precision values:
-
-```text
-item_fit = sum(contributions)
-         = 0.37576713988095228
-```
-
-This is the score shown for the chosen song in the plan. Its main positive reasons are exact oshi match, sign agreement between the active song and the high drowsiness/fatigue/monotony evidence, and positive recovery evidence. Recent playback contributes a small repetition penalty.
-
----
-
-## 20. Contrast behavior
-
-World contrasts use the same frozen catalog, selected service, configuration, and seed while changing one declared input.
-
-The comparison reports:
-
-- changed input;
-- eligibility changes;
-- songs entering or leaving the five-item plan;
-- position and `item_fit` changes; and
-- contribution deltas.
-
-Required V1 contrasts:
-
-1. low versus high drowsiness, with calm/active song ordering reversed;
-2. low versus high fatigue, with calm/active song ordering reversed;
-3. normal versus congested traffic, with calm/active song ordering reversed;
-4. highway versus mountain road, with active/calm song ordering reversed;
-5. day versus night, with calm/active song ordering reversed;
-6. low versus high monotony, with calm/active song ordering reversed;
-7. child absent versus present with an explicit candidate;
-8. exact oshi artist mode off versus on;
-9. no prior play versus recent play;
-10. low versus high direct item usage;
-11. low versus high exact-item recovery;
-12. driving versus stopped for full karaoke; and
-13. route A versus route B with an expected no-rank-change result.
-
-Audio fixture contrasts freeze the world and change only declared Spotify Audio Features. Useful pairs include high energy/low valence, medium energy/high danceability, speech-forward, and instrumental-leaning variants.
-
-The route no-change case demonstrates transparent restraint: V1 does not manufacture a route-song relationship.
-
----
-
-## 21. Parameters and hyperparameters
-
-### 21.1 Structural parameters
-
-- `plan_item_count`, default `5`;
-- recipe registry;
-- feature contract order;
-- age/era affinity table version;
-- exact oshi Artist-ID matching rule;
-- history resolution precedence;
-- eligibility policy IDs;
-- fixed humming segment duration;
-- duration policy; and
-- presentation/lighting policy.
-
-### 21.2 Numeric hyperparameters
-
-- category, subgroup, and leaf weights;
-- trigger-purpose multipliers;
-- signed continuous-evidence transform;
-- categorical signed-evidence profiles for traffic, road, and day/night;
-- activation-to-response-coefficient transform;
-- tempo normalization bounds;
-- loudness normalization bounds;
-- audio-activation coefficients;
-- humming/full-karaoke ease coefficients;
-- tempo-ease center and span;
-- speech-ease thresholds;
-- duration-ease bounds;
-- usage and novelty mappings;
-- playback, skip, changed-from, and cancellation windows/responses; and
-- lighting lookup if enabled.
-
-All configuration is frozen per run and included in evidence. Editing coefficients produces a new parameter-set version.
-
----
-
-## 22. Implementation components
-
-Recommended units:
-
-1. `ContentInputValidator`
-2. `SpotifyFixtureValidator`
-3. `RecipeRegistry`
-4. `EligibilityEvaluator`
-5. `AudioFeatureDeriver`
-6. `SignedEvidenceNormalizer`
-7. `ActivationResponseProfileDeriver`
-8. `ApplicabilityResolver`
-9. `EffectiveWeightCalculator`
-10. `DirectHistoryResolver`
-11. `CompatibilityCalculator`
-12. `ItemScoreCalculator`
-13. `DeterministicPlanBuilder`
-14. `DurationPolicy`
-15. `PresentationPolicy`
-16. `EvidenceBuilder`
-17. `ContrastRunner`
-
-The implementation should keep data validation, eligibility, derived audio, ranking, plan construction, and presentation independently testable.
-
----
-
-## 23. Required tests
-
-### 23.1 Mathematics
-
-- normalization boundary tests;
-- every coefficient family sums to `1`;
-- derived values remain in `[0,1]`;
-- signed evidence and response coefficients remain in `[-1,+1]`;
-- `normalized_feature_response` equals evidence × response coefficient;
-- responses remain in `[-1,+1]`;
-- effective weights sum to `1` within tolerance;
-- contributions sum to `item_fit`; and
-- worked example reproduces `0.37576713988095228`.
-
-### 23.2 Applicability
-
-- route, destination, passenger, hobby, tag, and schedule leaves have mask `0`;
-- item novelty is active only for playlist;
-- exact oshi Artist ID is active only with registration and mode on;
-- service-level context never changes candidate ordering; and
-- masked purpose multipliers cannot create active weight.
-
-### 23.3 Spotify formula fields
-
-- every active formula reads only declared Audio Features;
-- each service activation in `[0,1]` maps to coefficient `2A-1` in `[-1,+1]`;
-- the same song may have different coefficients for playlist, humming, and full karaoke;
-- key, mode, time signature, acousticness, and liveness do not affect V1 score;
-- URL and identity fields do not affect score;
-- valence affects audio activation at exactly `0.05` coefficient;
-- duration affects full-karaoke ease but not playlist or humming activation; and
-- instrumentalness affects proxies but never hard eligibility.
-
-### 23.4 Eligibility
-
-- playability, market, restriction, explicit/child, and recent-skip exclusions;
-- humming flag `0` versus `1`;
-- full-karaoke flag `0` versus `1`;
-- full karaoke moving versus stopped;
-- both generated defaults equal `1`; and
-- flags do not alter score when eligibility remains true.
-
-### 23.5 Preference and history
-
-- age uses album release year only;
-- exact oshi Artist ID match and non-match;
-- no member/tag oshi inference;
-- direct Track usage and novelty mappings;
-- played, skip, changed-from, and cancelled windows;
-- exact Track acceptance/recovery rates; and
-- missing direct rate is neutral with no tag fallback.
-
-### 23.6 Plan construction
-
-- exactly five songs by default;
-- customer-configured count;
-- descending full-precision score order;
-- Track-ID tie-break;
-- unique Track IDs;
-- insufficient eligible candidate error; and
-- selected plan displays score for each song.
-
-### 23.7 Duration and presentation
-
-- playlist/full duration sums Track durations;
-- humming duration uses configured fixed segments;
-- no chorus timestamp is read;
-- lighting does not change order; and
-- presentation does not mutate evidence.
-
-### 23.8 Determinism and contrast
-
-- same inputs, versions, and seed produce byte-equivalent result;
-- every selected score is reconstructable;
-- each one-variable contrast changes only its declared field;
-- low/high drowsiness reverses calm/active response ordering;
-- normal/congested, highway/mountain, day/night, and low/high monotony produce their declared signed-profile reversals;
-- expected rank/eligibility deltas occur; and
-- route-only contrast causes no rank change.
-
----
-
-## 24. Acceptance criteria
-
-The algorithm is accepted when:
-
-- it ranks concrete songs only after one detailed music service is active;
-- the default result is one ordered five-song plan;
-- every selected song shows its `item_fit` score;
-- all song scoring uses only Spotify-compatible Track/Audio Features and exact-ID histories;
-- no enriched, semantic, audience, chorus, lyric, or vocal-analysis metadata is required;
-- the approved Spotify-derived formulas are implemented exactly;
-- activation-responsive factors follow `normalized_evidence × activation-derived response_coefficient`, matching the service selector's candidate-response structure;
-- low signed evidence favors calm songs and high signed evidence favors active songs;
-- both karaoke flags default to `1`, affect eligibility only, and are customer-editable;
-- explicit child policy and full-karaoke stopped policy are deterministic;
-- unsupported baseline relations are visibly context-only with zero scoring mask;
-- ranking uses the same transparent weight/contribution conventions as the service selector;
-- exact oshi matching uses Spotify Artist IDs only;
-- all selected scores and reasons are reconstructable from frozen evidence; and
-- same frozen inputs and versions reproduce the same plan.
-
----
-
-## 25. Deferred improvements
-
-Not part of Spotify-only V1:
-
-- licensed karaoke-catalog integration;
-- lyrics and lyric timing;
-- chorus/section boundaries;
-- vocal range and melody analysis;
-- composer, lyricist, arranger, and richer credit sources;
-- child/group suitability metadata;
-- route, destination, event, scene, theme, genre, and hobby relations;
-- member/group/character/franchise oshi graph;
-- provider-independent replacement for deprecated Audio Features;
-- learned ranking or LLM ranking;
-- confidence-weighted sparse history;
-- diversity constraints and artist caps; and
-- probabilistic acceptance or recovery prediction.
-
-Each requires a separate source and provenance review before it can enter the algorithm.
-
----
-
-## 26. Summary
-
-The Spotify-only V1 transparent content selector:
-
-1. receives one selected detailed music service;
-2. validates Spotify-compatible Track and Audio Features data;
-3. applies playability, policy, and simulator availability gates;
-4. derives service activation from explicit Spotify fields;
-5. converts activation into a signed song candidate-response coefficient;
-6. multiplies signed feature evidence by that coefficient, matching the service-proposal response structure;
-7. scores only operational baseline evidence and direct Track/Artist-ID history;
-8. leaves unsupported semantic inputs neutral and visible;
-9. orders candidates by a reconstructable signed score; and
-10. returns five songs by default, each with its score and reasons.
-
-This remains structurally coherent with the transparent service-proposal algorithm while being honest about what Spotify metadata can—and cannot—support.
+| `insufficient_eligible_items` | fewer eligible songs than the plan count |
+| `invalid_configuration` | weights, matrices, formulas, or versions invalid |
+| `full_karaoke_requires_stopped` | full karaoke cannot run while moving |
+
+Typed errors carry evidence and never trigger an undeclared fallback service.
+
+## 14. Explainability contract
+
+**Per selected song:** position, track ID, title, artists, `item_fit`, the four
+trait values (and signed forms), and one row per scored feature with `e_i`, `a_i`
+(and its α/β or exact-match provenance), `r_i`, base weight, purpose multiplier,
+mask, effective weight, contribution, formula version.
+
+**Per excluded song:** track ID + reason codes only.
+
+**Per plan:** selected service + lifecycle; purpose + stage; plan count; catalog,
+world, algorithm, schema, parameter hashes/versions; active vs context-only
+feature lists; Trait Composition + Context Response matrix versions; normalized
+effective weights; sort/tie-break rules; expected duration + basis; selected
+Track IDs in order.
+
+Identical inputs + versions reproduce a semantically identical plan (`1e-12`);
+same-runtime canonical replay is byte-equivalent.
+
+## 15. Implementation components
+
+`ContentInputValidator` · `SpotifyFixtureValidator` · `RecipeRegistry` ·
+`EligibilityEvaluator` · `TraitDeriver` (Table 1) · `ResponseCoefficientResolver`
+(Table 3) · `ApplicabilityResolver` (masks) · `EffectiveWeightCalculator` ·
+`FeatureResponseCalculator` (`r = e·a`) · `ItemScoreCalculator` ·
+`DeterministicPlanBuilder` · `DurationPolicy` · `PresentationPolicy` ·
+`EvidenceBuilder` · `ContrastRunner`. Keep validation, eligibility, trait
+derivation, ranking, plan construction, and presentation independently testable.
+
+## 16. Required tests
+
+**Traits (§4):** each trait column sums to 1; every trait output in `[0,1]`;
+`tempo` uses `norm_tempo` for arousal but `tempo_ease` for singability;
+`key`/`time_signature`/`liveness` never affect score.
+
+**Compatibility (§5):** every audio row has `|α|+β ≤ 1` and `|a_i| ≤ 1`; valence
+coefficient never negative; oshi matches only exact `artists[*].id`; age uses
+release year only; each direct row uses coefficient `+1`; `⚠` signs match the
+configured choice.
+
+**Weights (§6):** effective weights sum to 1; masked leaves contribute 0 and
+renormalize; a purpose multiplier on a masked subgroup creates no active weight.
+
+**Math:** `r_i = e_i·a_i` for all rows; contributions sum to `item_fit ∈
+[-1,+1]`; §10 block reproduces `+0.187` within tolerance; all-neutral world →
+block 0.
+
+**Eligibility (§7):** playability/market/restriction/explicit-child/recent-skip;
+karaoke flags 0 vs 1; full karaoke moving vs stopped; flags never change score.
+
+**Determinism & contrast (§11):** same inputs/versions/seed → byte-equivalent;
+each contrast changes only its field; route-only contrast causes no rank change.
+
+## 17. Acceptance criteria
+
+1. Songs scored only after one detailed music service is active; default output
+   is one ordered five-song plan, each with its `item_fit`.
+2. Every feature follows `r_i = e_i·a_i`; only the six audio-mood rows build `a_i`
+   from traits, and Table 1 is exactly the trait formulas.
+3. Audio response is `α·A_s + β·V_s` with Table 2 coefficients; arousal
+   two-sided, valence one-sided; evidence `[0,1]`.
+4. Traits are shared across all three services; only the `service_ease` leaf
+   differs — one feature table, not three.
+5. Scoring uses only Spotify-compatible fields and exact-ID history; oshi matches
+   `artists[*].id`, age uses `album.release_date` — both explicit in §5.3.
+6. Unsupported relations are visibly `context_only`, mask 0.
+7. Bounds hold by construction: `|a_i| ≤ 1` and `Σ w_i = 1`.
+8. Weights, matrices, curves, and sign choices are frozen and evidence-visible.
+9. Hard eligibility, explicit-child, and full-karaoke stopped policy are
+   deterministic and cannot be reversed by score.
+10. Identical frozen inputs and versions reproduce the same plan.
+
+## 18. Cross-document impact
+
+This design **scores `valence`, `mode`, and `acousticness`**, which the current
+[synthetic music data spec](./aica_synthetic_music_data_and_generation_specification.md)
+lists as "retained, not scored." That spec's §5.2 scoring-role column and its
+trade-off/coverage fixtures should be updated so the demonstration catalog
+exercises bright/dark (`valence`, `mode`) and acoustic/electric (`acousticness`)
+contrasts, not only energy/tempo. No change to the Spotify field contract itself
+is required for these three.
+
+Separately, the seven **🔧 pending genre-based features** (§5.7) require adding
+**`artist.genres`** (Spotify Artist object) to the data contract, plus — for the
+Tier-2 features — new **per-genre history fixtures** in the world generator. This
+is a larger, opt-in extension: it changes the frozen catalog schema and the world
+fixtures, so it should be specced as its own follow-up (data-contract v1.1 +
+genre affinity tables + response-coefficient design) rather than folded into this
+algorithm's V1.
+
+## 19. Deferred improvements
+
+Licensed karaoke assets, lyrics/timing, chorus boundaries, vocal-range analysis,
+richer credits, child/group suitability metadata, route/destination/event/genre
+relations, an oshi member/group graph, a provider-independent replacement for the
+deprecated Audio Features endpoint, learned/LLM ranking, confidence-weighted
+sparse history, diversity constraints, and probabilistic acceptance/recovery
+prediction. Each needs its own source and provenance review before it can affect
+scoring.
