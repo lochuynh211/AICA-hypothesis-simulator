@@ -5,6 +5,7 @@
 **Purpose:** Specify the proposal algorithms and their standalone-but-composable simulator from proposal opportunity through pre-rest, rest, and post-rest completion.  
 **Detailed decision record:** `docs/master/aica_proposal_design_reference_draft.md`  
 **Milestone plan:** `docs/master/aica_proposal_simulator_milestones.md`  
+**Transparent service algorithm:** `docs/master/aica_transparent_service_proposal_algorithm.md`<br>
 **Transparent content algorithm:** `docs/master/aica_transparent_content_proposal_algorithm.md`<br>
 **Shared synthetic music data:** `docs/master/aica_synthetic_music_data_and_generation_specification.md`<br>
 **Source basis:** `others/CDC-SU_specplan.md` Slides 1–7, 26, 38–44, 64–82; `others/aica_stage_constrained_llm_proposal_selector_spec.md`.
@@ -501,6 +502,8 @@ Prohibited V1 fields include `child_state`, unexplained `service_preferences`, a
 ---
 
 ## 11. Transparent Service-Selector Algorithm
+
+The complete normative design is `docs/master/aica_transparent_service_proposal_algorithm.md`. This section is the simulator-level contract summary.
 
 ### 11.1 Pipeline
 
@@ -1015,6 +1018,7 @@ Transparent runs with identical inputs must reproduce exactly. LLM evidence pres
 | Detailed playlist/humming/full-karaoke inputs | Slides 71, 72, 79 |
 | End/continue/restore behavior | Slides 81–82 |
 | Stage-constrained/LLM proposal concepts | `aica_stage_constrained_llm_proposal_selector_spec.md` |
+| Transparent service scoring, weights, dominance, evidence, and tests | `aica_transparent_service_proposal_algorithm.md` |
 | Transparent music item scoring, recipes, evidence, and tests | `aica_transparent_content_proposal_algorithm.md` |
 | Shared synthetic Spotify-compatible music data and staged generation | `aica_synthetic_music_data_and_generation_specification.md` |
 

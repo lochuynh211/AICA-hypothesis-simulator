@@ -1,6 +1,6 @@
 # AICA Proposal Simulator — Milestone Implementation Session Prompt Template
 
-**How to use:** start a fresh implementation session, change only the `{{MILESTONE}}` value below to one milestone from `P1` through `P10`, then paste the block between the markers as the first message. Implement one milestone per session. `P0` is the approved design/feature-contract freeze and is not an implementation session.
+**How to use:** start a fresh implementation session, change only the `{{MILESTONE}}` value below to one milestone from `P1` through `P11`, then paste the block between the markers as the first message. Implement one milestone per session. `P0` is the approved design/feature-contract freeze and is not an implementation session.
 
 ===================== BEGIN PROMPT =====================
 
@@ -23,13 +23,16 @@ Before editing anything:
 1. Read the repository instructions (`AGENTS.md` when present, `CLAUDE.md`, and `.specify/memory/constitution.md`). Treat current code, current master documents, and the constitution as authoritative when older guidance is stale.
 2. Read the complete **{{MILESTONE}}** section in `docs/master/aica_proposal_simulator_milestones.md`, plus its cross-milestone quality gates and relevant Appendix A feature contract.
 3. Read the relevant parts of:
-   - `docs/master/aica_proposal_simulator_specification.md`;
-   - `docs/master/aica_proposal_design_reference_draft.md`;
+   - `docs/master/aica_proposal_simulator_specification.md` — the consolidated spec (product boundary, contracts, acceptance criteria);
+   - `docs/master/aica_transparent_service_proposal_algorithm.md` and `docs/master/aica_transparent_content_proposal_algorithm.md` — the **authoritative** transparent-scoring math, weights, gating, and explainability (they supersede the placeholder scoring in the design decision record);
+   - `docs/master/aica_synthetic_music_data_and_generation_specification.md` — the Spotify-compatible dataset, its staged generator, validation, tiers, base worlds, and contrasts;
+   - `docs/master/aica_proposal_overview_en_ja.html` — the approved 4-panel first-screen UI/UX;
+   - `docs/master/aica_proposal_design_reference_draft.md` — the design **decision record** (product/architecture rationale, the constrained-LLM package family, the full/raw feature inventory, non-feature exclusions); it is not the implementation contract;
    - `docs/master/aica_hypothesis_simulator_specification.md`;
    - `docs/master/aica_hypothesis_simulator_architecture.md`;
    - `docs/master/aica_hypothesis_simulator_runtime_workflow.md`;
    - the existing SpecKit feature artifacts under `specs/` that own code or contracts this milestone will extend.
-4. When source traceability matters, read the relevant slides in `others/CDC-SU_specplan.md` and the relevant rules in `others/aica_stage_constrained_llm_proposal_selector_spec.md`. Do not reinterpret the approved feature tables without raising the change in Step 2.
+4. When source traceability matters, read the relevant slides in `others/CDC-SU_specplan.md` and the relevant rules in `others/aica_stage_constrained_llm_proposal_selector_spec.md`. Do not reinterpret the approved feature tables without raising the change in Step 2. Check the milestone document's **§17 Open Source-Reconciliation Items** for known cross-document divergences that touch this milestone (e.g. the post-rest 4-vs-5 candidate count) and resolve them with written rationale before freezing a contract.
 5. Inspect the current implementation. If `.codegraph/` exists, use CodeGraph before text search when locating or understanding code. Identify the exact backend, frontend, package, persistence, and test seams this milestone changes. Determine whether `htmlapp/` synchronization is required; do not duplicate changes blindly.
 6. Verify that every prerequisite milestone is actually present and passing on the current `develop` baseline. Never emulate a missing dependency inside the new milestone.
 7. Check the worktree and create a dedicated branch from `develop` named `proposal-<milestone-lowercase>-<short-slug>` unless the user has already provided an appropriate branch/worktree.
@@ -136,17 +139,19 @@ Then stop. Do not merge or push until the user asks.
 ## Project invariants for every milestone
 
 - The backend remains the runtime and evidence authority; frontend calculations are display-only.
-- Proposal simulation uses a separate screen and simulation context on the same backend. It must remain composable with the trigger simulator later.
+- Proposal simulation uses a separate standalone **4-panel screen** (① Input · ② Setup · ③ Service proposal · ④ Content proposal) and simulation context on the same backend. It must remain composable with the trigger simulator later.
 - V1 proposal progression is discrete event-driven. A future tick adapter must not be required for standalone operation.
 - `trigger_purpose`, `lifecycle_stage`, and stage-allowed services are explicit control inputs, not inferred preference scores.
-- Safety and eligibility dominate ranking, but the system remains advisory: it proposes and never forces the driver.
+- Safety and eligibility dominate ranking (the continuous dominance invariant `W_D · material_safety_gap > 2·W_L`), but the system remains advisory: it proposes and never forces the driver.
 - Service selection and concrete-content selection are separate algorithms. Transparent and LLM implementations are separate packages. Packages share contracts and hard constraints, never scores or rankings.
-- The Section 8 service feature table and Section 9 content feature table are independent complete contracts. CDC-SU rows and `Additional proposed` rows retain visible provenance.
+- Transparent service scoring is `service_fit = clamp(Σ wᵢ·rᵢ, −1, +1)`; transparent content scoring is `item_fit = clamp(Σ wᵢ·eᵢ·aᵢ, −1, +1)` with the two-axis (arousal/valence) song-trait model. Song traits (arousal, valence, humming_ease, full_karaoke_ease) are derived at decision time from Spotify Audio Features and never stored as catalog metadata.
+- The Section 8 service feature table and Section 9 content feature table are independent complete contracts. CDC-SU rows and `Additional proposed` rows retain visible provenance. Every contract row is marked used, `context_only`, or `available_but_not_used` — never silently dropped.
 - LLM packages may select only supplied candidates/catalog records and must cite supplied evidence. They may not invent user facts, services, content, schedules, or safety claims.
-- V1 uses built-in synthetic catalogs and editable synthetic worlds only; no customer catalog import.
+- V1 uses a built-in, **frozen, versioned Spotify-compatible synthetic music dataset** produced by the staged offline generator (Pass 1 Tracks → Pass 2 Audio Features → Pass 3 worlds/histories → validate → freeze) plus editable synthetic worlds only; no customer catalog import. The frozen dataset (not a model rerun) is the replay boundary; **no live LLM/network call occurs during a transparent simulation run**.
+- Every synthetic record is visibly synthetic (`synthetic-` IDs, `.invalid` links), schema/range/identity/coverage-valid, versioned, and hash-stamped before use. The `genre_affinity_v1` extension is opt-in; with it off, the six genre-scored content features are `context_only` and reproduce the no-extension result exactly.
 - Evidence separates simulator facts from human review and does not claim customer validation as objective correctness.
 - Japanese and English are supported, with Japanese as the default presentation language.
-- Generated artifacts are changed through their generators, never edited directly.
+- Generated artifacts (including the synthetic dataset and any generated HTML/data) are changed through their generators/schema-aware editors, never edited directly.
 - Preserve unrelated work and never use destructive Git operations.
 
 ====================== END PROMPT ======================
@@ -154,5 +159,6 @@ Then stop. Do not merge or push until the user asks.
 ## Notes
 
 - Use one fresh session per milestone. Later milestones must verify earlier milestone outputs rather than reimplementing them.
-- This template intentionally stays short relative to the reference cycle template. The milestone document, master specification, constitution, SpecKit artifacts, and current code provide the details.
+- This template intentionally stays short relative to the reference cycle template. The milestone document, the consolidated specification, the two transparent-algorithm docs, the synthetic-data-and-generation spec, the overview UI/UX, the design decision record, the constitution, SpecKit artifacts, and current code provide the details.
+- P2 is the synthetic-music-dataset generation milestone: it delivers the offline generator + deterministic validator/repair loop that freezes the versioned dataset every later milestone consumes. Treat it as tooling that produces a committed, reproducible artifact, not a runtime feature.
 - The five-step structure is fixed; milestone-specific scope is derived during Step 1.
