@@ -34,24 +34,38 @@ simulation world
 The proposed sequence is:
 
 ```text
-P0  — Scope and feature-contract freeze
-P1  — Proposal screen (4-panel) and standalone run foundation
-P2  — Synthetic music dataset generation and validation
-P3  — Editable synthetic world, catalog, and contrast clones
-P4  — Eligibility and discrete journey engine
-P5  — Transparent service-selector package
-P6  — Transparent music content-selector package (two-axis trait model)
-P7  — End-to-end pre-rest/rest/post-rest vertical slice
-P8  — Constrained LLM service-selector package
-P9  — Constrained LLM content-selector package
-P10 — Comparison, evidence, and customer review completeness
-P11 — All-service breadth and stabilization
+P0    — Scope and feature-contract freeze
+P0.5  — Content contract and song-schema freeze (pulled from P1)
+P1    — Proposal screen (4-panel) and standalone run foundation
+P2    — Synthetic music dataset generation and validation
+P3    — Editable synthetic world, catalog, and contrast clones
+P4    — Eligibility and discrete journey engine
+P5    — Transparent service-selector package
+P6    — Transparent music content-selector package (two-axis trait model)
+P7    — End-to-end pre-rest/rest/post-rest vertical slice
+P8    — Constrained LLM service-selector package
+P9    — Constrained LLM content-selector package
+P10   — Comparison, evidence, and customer review completeness
+P11   — All-service breadth and stabilization
 Post-V1 — Trigger-tick composition and real-data research
 ```
 
-P0 is represented by the current specification set. Implementation starts at P1 only after review approval.
+The P-numbers above are stable **capability identifiers**, not a strict build sequence. The V1 build follows a **validation-first execution order**, so the content package and the contract it needs are produced before dataset generation:
+
+```text
+Execution order (validation-first):
+
+P0 → P0.5 → P6 (built as an independent package, fixture-tested)
+   → P2 (generate dataset; the P6 package validates contrast directions)
+   → P1 → P3 → P4 → P5 (wire the package into screen, world, journey, service path)
+   → P7 → P8 → P9 → P10 → P11 → Post-V1
+```
+
+P0 is represented by the current specification set. Implementation starts at P0.5 only after review approval.
 
 **Why P2 (generation) precedes P3 (editable world).** The transparent content selector scores concrete songs from Spotify-compatible `spotify_track` + `spotify_audio_features` records. Those records are produced by a staged, seed-pinned, LLM-assisted generator and then **frozen** as a validated, versioned dataset. The editable world, the catalogs the customer edits, and every contrast seed all reference that frozen dataset by ID. Generation is therefore its own reviewable capability that must exist and pass validation before any milestone consumes it. No transparent simulation run ever calls a live model; the frozen dataset is the replay boundary.
+
+**Why the content package and its contract now precede dataset generation.** The transparent content selector is a self-contained `python_module` package whose whole boundary is `evaluate(input) → complete_plan` (the repo's existing single dispatch path). Its logic depends only on a frozen input/output contract and the song schema — not on the screen (P1), editable world (P3), journey engine (P4), or service selector (P5), which are producers and consumers of its I/O. Building it first (P0.5 freeze → P6 package, unit-tested on hand-authored, **algorithm-blind** fixtures) yields an executable scorer that P2 then uses as its deterministic contrast-direction validator. **Firewall:** the generator stays conditioned only on coverage cells (energy/tempo/profile + the §10.2 valence/mode/acousticness spread); the package validates the frozen catalog *after* generation and never feeds a score, rank, or target back into generation input. Recommendation independence (data spec §11/§17.6) is preserved — the scorer proves the *algorithm's* response matrix on trait-separated fixtures, generation proves *coverage*, and neither depends on the other. Golden replay against the real 36-song catalog is the single part of P6 that closes only once P2's frozen dataset exists.
 
 ---
 
@@ -92,6 +106,40 @@ Turn the design discussion into an agreed implementation baseline.
 - `aica_proposal_design_reference_draft.md`
 - `aica_proposal_simulator_milestones.md`
 - `aica_proposal_overview_en_ja.html`
+
+---
+
+## 2.5 P0.5 — Content Contract And Song-Schema Freeze
+
+### Goal
+
+Freeze the exact contracts the content-selector package validates against, so it can be built and tested independently (P6) and then used to validate dataset generation (P2). This milestone pulls the contract-definition work forward from P1.
+
+### Scope
+
+- Pin the **common selector input contract** (`feature_snapshot`, `feature_provenance`, `enabled_feature_extensions`, `eligible_candidates`, `excluded_candidates`, `parameters`, `hyperparameters`, `package_runtime_state`, `catalog_version`) and `selected_service_id` as versioned Pydantic models.
+- Pin the **content-selector output contract** (`complete_plan`: `ordered_items` with per-item `item_fit`, trait values, per-feature contributions, and reasons; `mode`, `expected_duration_sec`, `lighting_configuration`, `approval_policy`, `completion_rule`, `next_transition_policy` — **no aggregate plan score**).
+- Pin the **song schema** (`spotify_track`, `spotify_audio_features`, `simulation_flags`) from data spec §4–6, plus the optional `genre_affinity_v1` extension shape (§21.1).
+- Declare the **eligibility split**: content hard-eligibility (playability, market, restriction, explicit/child, recent-skip, duplicate, karaoke gates) is owned by the package; platform/motion eligibility is P4's.
+- Resolve the §17 items that touch the content contract **before freezing**: control-input naming, `Additional proposed` content-row dispositions, and schedule-field ownership.
+- Version the contract (`schema_version`) and record it in the setup snapshot.
+
+### Acceptance criteria
+
+- The content package can be authored and validated against the frozen contract with no other milestone present.
+- The song schema validates a hand-authored smoke fixture and rejects malformed records.
+- Every Appendix A.2 row has a declared disposition (`scored` / `context_only` / `available_but_not_used`).
+- Control-input naming is normalized to `trigger_purpose` / `lifecycle_stage` across all documents.
+
+### Output
+
+Versioned contract + schema modules and a hand-authored fixtures directory (smoke songs; calm/active, bright/dark, and acoustic/electric pairs; world/feature snapshots) — all **algorithm-blind**.
+
+### Verification focus
+
+- Contract and song-schema validation tests (valid fixture accepted, malformed rejected).
+- Appendix A.2 disposition-completeness check.
+- Control-input naming consistency check across docs.
 
 ---
 
@@ -154,6 +202,8 @@ Produce the shared, Spotify-compatible synthetic music dataset — a **staged, s
 
 ### Scope
 
+**Validator and firewall.** Contrast-direction validation is performed by the P6 content package built in the prior step; generation input itself stays **score-free** — no score, rank, or target enters the generator (see the firewall in §1). The package is only a post-generation validator.
+
 - Implement the **offline generator tool** (a repository-defined command producing committed, versioned JSON) with the three staged passes from the data spec:
   - **PASS 1 — Fictional Track objects:** allocate stable synthetic Artist/Album/Track IDs (all prefixed `synthetic-`), fictional names/releases, consistent artist references, exact `spotify_track` field names/types, `.invalid` URLs, `is_playable: true` / `is_local: false` for standard records. Free-form prose rejected.
   - **PASS 2 — Audio Features objects:** one `spotify_audio_features` per Track, conditioned on an assigned audio-profile coverage cell (not a target rank), copying Track `id`/`uri`/`duration_ms` exactly.
@@ -171,7 +221,7 @@ Produce the shared, Spotify-compatible synthetic music dataset — a **staged, s
 
 - The generator, given the same `random_seed` and the same generator/prompt/validation/schema versions, produces **byte-identical frozen output**; the committed dataset — not a model rerun — is the replay boundary.
 - Every synthetic record is visibly synthetic (IDs prefixed `synthetic-`, links on `.invalid`), schema-valid, range-valid, identity-consistent, coverage-complete, versioned, and hash-stamped before it can be used by any run.
-- No recommendation score, target rank, or `best_for_world` field appears anywhere in generator input or output; generation completes before any world is scored.
+- No recommendation score, target rank, or `best_for_world` field appears anywhere in generator input or output; generation completes before any world is scored; the P6 package validates contrast directions only after the dataset is frozen.
 - The demonstration tier satisfies every coverage/quota rule; the deliberate contrastive song pairs exist and expose the arousal/valence trade-offs.
 - Two failed repairs on any record halt generation with `catalog_generation_failed` and a readable build report.
 - With `genre_affinity_v1` absent, the six genre-scored features are `context_only` and reproduce the no-extension result exactly.
@@ -183,7 +233,7 @@ Produce the shared, Spotify-compatible synthetic music dataset — a **staged, s
 - Generation determinism test (same seed/versions → byte-identical output).
 - Validator/repair unit tests including the two-failed-repair hard stop.
 - Coverage-cell, artist/era/explicit/negative-fixture quota tests.
-- Base-world and one-variable-contrast direction tests; audio-feature fixture A/B tests.
+- Base-world and one-variable-contrast direction tests **via the P6 package**; audio-feature fixture A/B tests.
 - `genre_affinity_v1` on/off equivalence and validation tests.
 
 ---
@@ -340,6 +390,8 @@ Generate and rank the ordered concrete plan for `music_playlist`, `humming_karao
 
 ### Scope
 
+**Independence and build order.** P6 is implemented as a standalone `python_module` package (`evaluate(input) → complete_plan`) against the frozen P0.5 contract and hand-authored, algorithm-blind fixtures — before P2 and without P1/P3/P4/P5. Content hard-eligibility is owned here; platform/motion eligibility is P4's. Only the contrast-seed **golden** rankings against the real frozen catalog defer until P2 exists; at that point the same package becomes P2's contrast-direction validator (§4).
+
 - Create versioned service recipes and applicability handling; validate that the selected service is permitted for the explicit purpose and lifecycle stage; consume `selected_service_id` as a control fact only (never a service score/rank/rationale).
 - Derive the four **song traits at decision time** from `spotify_audio_features` — **arousal**, **valence**, plus **humming_ease** and **full_karaoke_ease** — and never persist them as song metadata.
 - Score each song with the shared chain, where the six driver/environment features use `aᵢ(song) = αᵢ·A_s + βᵢ·V_s` (row-normalized `|α|+|β| ≤ 1`) and all other features set `aᵢ` directly (`+1` on exact-ID match; genre best-match under `genre_affinity_v1`); `item_fit = clamp(Σ wᵢ·eᵢ·aᵢ, −1, +1)`.
@@ -365,7 +417,7 @@ Generate and rank the ordered concrete plan for `music_playlist`, `humming_karao
 
 ### Verification focus
 
-- Trait-derivation and Trait/Context matrix tests; audio-feature fixture A/B tests.
+- Trait-derivation and Trait/Context matrix tests; audio-feature fixture A/B tests (fixture-based first; golden replay against the frozen 36-song catalog runs once P2 exists).
 - Recipe applicability tests; catalog grounding tests.
 - Playlist composition/order tests; motion/mode tests.
 - Oshi, schedule, history, and confidence contrast tests.
@@ -602,10 +654,10 @@ Every milestone after P1 must satisfy:
 These are known cross-document divergences discovered during v2 refinement. They do not block sequencing but must be resolved (with written rationale) before the affected milestone freezes its contract:
 
 - **Post-rest candidate count (4 vs 5).** The spec §7.5 matrix and Appendix A.0 list four `after_rest_before_restart` services (`live_viewing`, `stretch_video`, `full_karaoke`, `oshi_reexperience`). The **service algorithm doc (§2.4/§5.2.4) deliberately adds a fifth**, `call_response_stopped`, citing Slides 38 and 40. Reconcile the matrix (adopt 5 with rationale, or record the exclusion) before **P4/P5** freeze.
-- **Schedule-field ownership.** The service doc delegates `scheduled_event_*` to the content selector, but the content doc marks all three schedule fields not-scored. Decide the owner before **P5/P6**.
-- **Content `Additional proposed` coverage.** Appendix A.2 lists ~14 `Additional proposed` fields the content package must consume or mark; the content algorithm doc's scored subset omits the category (only `oshi_id` survives, relocated to Preference). Confirm each field's disposition (`context_only`/`available_but_not_used`) before **P6**.
+- **Schedule-field ownership.** The service doc delegates `scheduled_event_*` to the content selector, but the content doc marks all three schedule fields not-scored. Decide the owner before the **P0.5 contract freeze** (was P5/P6).
+- **Content `Additional proposed` coverage.** Appendix A.2 lists ~14 `Additional proposed` fields the content package must consume or mark; the content algorithm doc's scored subset omits the category (only `oshi_id` survives, relocated to Preference). Confirm each field's disposition (`context_only`/`available_but_not_used`) before the **P0.5 contract freeze** (was P6).
 - **Content-doc field renames.** Under `genre_affinity_v1`, the content doc wires `content_tag_usage_level`/`scene_content_tag_usage_level` to `usage_by_genre`/`scene_genre_usage`. Keep Appendix A.2 and the data spec's world fields aligned.
-- **Control-input naming.** The content doc uses `trigger.purpose`/`trigger.stage`; every other doc uses `trigger_purpose`/`lifecycle_stage`. Normalize before **P6**.
+- **Control-input naming.** The content doc uses `trigger.purpose`/`trigger.stage`; every other doc uses `trigger_purpose`/`lifecycle_stage`. Normalize before the **P0.5 contract freeze** (was P6).
 - **Missing spec cross-reference.** The consolidated spec cross-references the content algorithm doc but not the service algorithm doc; add the reference so §11 points to its normative source.
 
 ---
@@ -623,6 +675,8 @@ Mapped to the overview's five-stage delivery path (Screen & contracts → Synthe
 | Combined Simulator | Post-V1 composition | — | Trigger timing and proposal selection operate in one run through an adapter. |
 
 The transparent music vertical slice is the first meaningful customer demonstration. It should not wait for the LLM packages, because it establishes the contracts, the frozen dataset, the features, the journey behavior, and the evidence that the LLM approach must also respect.
+
+> **Build vs. release order.** Build/execution order is **validation-first** (§1) and differs from the release grouping above; the release table is unchanged. The content contract (P0.5), the content package (P6), and the validated dataset (P2) are produced first as an internal capability, ahead of the screen and journey wiring.
 
 ---
 
