@@ -307,10 +307,11 @@ category / subcategory / feature names from parent specification **§9**. For ea
 feature: does V1 score it; if yes, its world input → evidence and the song
 metadata → response coefficient; if no, the reason. Categorical features are
 expanded to their enum values so the response for **each value** is explicit.
-`r_i = e_i · a_i` throughout. `⚠` = directional hypothesis (§5.6). **🔧** = a
-feature that CDC-SU slide 69 intends to score via **genre**, flipped from
-context-only to scored but **pending response-coefficient + data design** — all
-blocked on adding `artist.genres` to the data contract (§5.7).
+`r_i = e_i · a_i` throughout. `⚠` = directional hypothesis (§5.6). **`genre‡`** =
+scored via the **`genre_affinity_v1`** data-contract extension (§5.7): mask `1`
+when the extension is enabled, mask `0` (context-only — today's Spotify-only
+behavior) when it is not. These six features implement CDC-SU slide 69's
+genre-scored intent.
 
 **Situation**
 
@@ -327,11 +328,11 @@ blocked on adding `artist.genres` to the data contract (§5.7).
 | Driving environment | Day/night state · `day` | ✓ | `e = 0` | neutral → `0` | — |
 | Driving environment | Day/night state · `night` ⚠ | ✓ | `e = 1` | traits → `−0.50·A_s + 0.50·V_s` | — |
 | Driving environment | Road monotony | ✓ | `monotony_level` → `/100` | traits → `+0.90·A_s + 0.10·V_s` | — |
-| Route and destination | Route characteristics | 🔧 TBD | `route_tags` → recognized-tag intensity | `artist.genres` → route→genre affinity *(design TBD)* | Requires `artist.genres` + route→genre map (loose mapping) |
-| Route and destination | Destination characteristics | 🔧 TBD | `destination_tags` → intensity | `artist.genres` → destination→genre affinity *(design TBD)* | Requires `artist.genres` + destination→genre map (loose) |
-| Passenger composition | Child present | 🔧 TBD + ✓ elig. | `child_present` → `1 if true` | `artist.genres` → child-genre affinity *(design TBD)* | Requires `artist.genres` + child-genre set; also drives explicit eligibility (§7) |
+| Route and destination | Route characteristics ⚠ | ✓ `genre‡` | `route_tags` → recognized-tag intensity | `G_song` best-match on the `route→genre` map (§5.7) → `a ∈ [−1,+1]` | loose mapping; low-weight hypothesis |
+| Route and destination | Destination characteristics ⚠ | ✓ `genre‡` | `destination_tags` → intensity | `G_song` best-match on the `destination→genre` map (§5.7) | loose mapping; low-weight hypothesis |
+| Passenger composition | Child present | ✓ `genre‡` + ✓ elig. | `child_present` → `1 if true` | `G_song` best-match on the child-friendly genre map (§5.7) | also drives explicit eligibility (§7) |
 | Passenger composition | Multiple passengers | ✗ | — | — | No group-appeal song field |
-| Driving state | Driving/stopped · `driving` ⚠ | ✓ + elig. | `e = 1` | traits → `α_drive·A_s` (mild calm to reduce load, e.g. `−0.30` — placeholder) | overlaps drowsiness/monotony; direction is a hypothesis |
+| Driving state | Driving/stopped · `driving` ⚠ | ✓ + elig. | `e = 1` | traits → `α_drive·A_s`, with `α_drive = −0.30` (mild calm to reduce load; versioned §5.6) | overlaps drowsiness/monotony; direction is a hypothesis |
 | Driving state | Driving/stopped · `stopped` | ✓ + elig. | `e = 0` | neutral → `0` | also the full-karaoke eligibility gate (§7) |
 
 *Added construct (not a §9 baseline feature):* **Song singability** — scored
@@ -352,12 +353,12 @@ playlist; `humming_ease` or `full_karaoke_ease` → `a = 2·ease − 1` (§5.4).
 | Scene-specific tendency | Scene/service usage level | ✗ | — | — | Service-level; same across candidates |
 | UPro information | Age band | ✓ | `age_band` → `1 if band ∧ year` | `album.release_date` → era → `age_era_affinity[band][era]` | — |
 | UPro information | Gender | ✗ | — | — | CDC-SU preserved at default transparent weight 0 |
-| UPro information | Hobbies and interests | 🔧 TBD | `hobby_interest_tags` → matched-tag intensity | `artist.genres` → hobby→genre affinity *(design TBD)* | Requires `artist.genres` + hobby→genre map |
+| UPro information | Hobbies and interests | ✓ `genre‡` | `hobby_interest_tags` → matched-tag intensity | `G_song` best-match on the `hobby→genre` map (§5.7) | via `genre_affinity_v1` |
 | Unused content | Catalog item recency | ✗ | — | — | Not in CDC-SU content inputs (slides 71–73 have no novelty/unused row) |
 | Unused content | Content-tag recency | ✗ | — | — | Not in CDC-SU content inputs (slides 71–73) |
-| Overall usage frequency | Content-tag usage level | 🔧 TBD | `content_tag_usage_level[genre]` → usage map | `artist.genres` join *(design TBD)* | Requires `artist.genres` + per-genre usage history |
+| Overall usage frequency | Content-tag usage level | ✓ `genre‡` | `e = 1` if `usage_by_genre` fixture present | `G_song` best-match on the `usage_by_genre` curve (§5.7) | Tier-2: needs per-genre usage fixture |
 | Overall usage frequency | Catalog item usage level | ✓ | `catalog_item_usage_level[id]` → `never 0 / low −.5 / med +.25 / high +1` | `spotify_track.id` → `+1` | — |
-| Scene-specific tendency | Scene/content-tag usage level | 🔧 TBD | `scene_content_tag_usage_level[scene][genre]` → usage map | `artist.genres` join *(design TBD)* | Requires `artist.genres` + scene×genre history (heaviest) |
+| Scene-specific tendency | Scene/content-tag usage level | ✓ `genre‡` | `e = 1` if `scene_genre_usage` fixture present | `G_song` best-match on the `scene_genre_usage[scene]` curve (§5.7) | Tier-2: needs scene×genre fixture |
 | Playback and user operations | Played items | ✓ | `played_items` → `≤30m −1 / today −.5 / ≤7d −.25 / else 0` | `spotify_track.id` → `+1` | — |
 | Playback and user operations | Skipped items | ✓ + elig. | `skipped_items` → in window **exclude** (§7); older `−.5` | `spotify_track.id` → `+1` | — |
 | Playback and user operations | Cancelled content plans | ✗ | — | — | Not in slide 71/72 playback-ops list (only played / skip / change) |
@@ -377,34 +378,104 @@ playlist; `humming_ease` or `full_karaoke_ease` → `a = 2·ease − 1` (§5.4).
 
 **Totals:** 38 §9 baseline features (Situation 11 · Preference 20 · History 7),
 shown above with the categorical scored ones expanded to enum values. **15 are
-scored now** (Situation 7 · Preference 6 · History 2); **6 are 🔧 pending
-genre-based design** (route, destination, child, hobbies, content-tag usage,
-scene/content-tag usage — see §5.7); Oshi registered/mode are gates; the
-remaining 15 stay `context_only` (incl. novelty/unused-content and cancelled
-plans, dropped per CDC-SU slides 71–73). `Song singability` is an added
-construct. The 11 "Additional proposed" simulator features in §9 are out of scope
-for baseline-only V1.
+scored in Spotify-only V1** (Situation 7 · Preference 6 · History 2); **6 more are
+`genre‡`** (route, destination, child, hobbies, content-tag usage,
+scene/content-tag usage), scored when the `genre_affinity_v1` extension is enabled
+and context-only otherwise (§5.7) — so **21 scorable with the extension on**. Oshi
+registered/mode are gates; the remaining 15 stay `context_only` (incl.
+novelty/unused-content and cancelled plans, dropped per CDC-SU slides 71–73).
+`Song singability` is an added construct. The 11 "Additional proposed" simulator
+features in §9 are out of scope for baseline-only V1.
 
-### 5.7 Pending genre-based features (CDC-SU slide 69)
+### 5.7 The `genre_affinity_v1` extension (CDC-SU slide 69)
 
 Slide 69's "content judgment axis" column shows that route/destination,
-passengers, UPro hobbies, usage-frequency, scene preference, and recovery were all
-meant to be scored against a song's **genre**. V1 dropped genre because it is not
-on the Spotify **Track** object — but it *is* available on the **Artist** object
-(`artist.genres`, fetched from `GET /artists`). Adding that one field to the data
-contract unlocks the six 🔧 features above. Two design tiers remain:
+passengers (child), UPro hobbies, usage-frequency, and scene preference were all
+meant to be scored against a song's **genre**. Genre is not on the Spotify
+**Track** object — but it *is* on the **Artist** object (`genres`, from
+`GET /artists`). V1 keeps it out of the Spotify-only Track/Audio-Features contract
+and instead defines it as one **opt-in, namespaced data-contract extension**,
+`genre_affinity_v1` (music-data spec §21). When the extension is enabled the six
+`genre‡` features above carry mask `1`; when it is not, they carry mask `0` and
+behave exactly as `context_only` — today's Spotify-only behavior, unchanged. This
+section is that extension's scoring design; the data side lives in the music-data
+spec.
 
-| Tier | Features | Still needs (beyond `artist.genres`) |
+**Genre source and the song's genre set.** The extension supplies a namespaced
+artist-genre lookup keyed by Artist ID (modeling `GET /artists`; it does **not**
+overwrite the Spotify-compatible inline `track.artists[]`, per music-data §21).
+A song's genre set is the union over its artists:
+
+```text
+G_song = ⋃ over a ∈ spotify_track.artists[*] of  artist_genres[a.id]
+```
+
+Genres come from a **fixed controlled vocabulary** (music-data §21):
+
+```text
+j-pop · j-rock · city pop · anime · vocaloid · enka ·
+children's music · classical · jazz · ambient · electronic · japanese folk
+```
+
+They are **artist-level and coarse** by construction, so a song inherits its
+artists' genres and no per-song genre precision is claimed.
+
+**Coefficient (uniform across all six `genre‡` features).** Each feature defines a
+signed target genre-weight vector `g_target` in `[−1,+1]` (context-derived for
+Tier 1, history-derived for Tier 2). The song answers with its **best-matching
+genre**:
+
+```text
+a_i(song) = clamp( max over g ∈ G_song of g_target[g],  −1, +1 )
+r_i       = e_i · a_i
+```
+
+If no song genre appears in the table, `a_i = 0` (neutral). `max` rewards the
+song's best available match; a genre the context mildly rejects (negative weight)
+only bites when the song offers nothing better. This is a deliberately loose,
+low-weight hypothesis — child *safety* is unaffected, still enforced by the
+explicit-content eligibility gate (§7), not by this soft score.
+
+**Tier 1 — static affinity maps.** `e_i` = the intensity with which the context
+calls for a genre lean (recognized-tag count/strength, normalized to `[0,1]`;
+`child_present → 1`). `g_target` is a designed `tag → {genre: weight}` table,
+unioned and clamped over the active tags. Reference tables (the versioned
+defaults; loose by design):
+
+| Feature | `route_tags` / `destination_tags` / etc. → `g_target` |
+|---|---|
+| **Route** ⚠ | `coastal → {city pop:+.8, jazz:+.5, ambient:+.4, enka:−.3}` · `mountain → {japanese folk:+.7, enka:+.6, ambient:+.4, classical:+.3}` · `highway → {j-rock:+.7, electronic:+.6, j-pop:+.3}` · `urban → {city pop:+.6, j-pop:+.5, electronic:+.5}` |
+| **Destination** ⚠ | `resort → {city pop:+.7, j-pop:+.5}` · `nature → {ambient:+.6, japanese folk:+.5, classical:+.4}` · `event → {j-rock:+.6, anime:+.4, vocaloid:+.4}` · `home → {jazz:+.3, j-pop:+.3}` |
+| **Child** | `{anime:+1, children's music:+1, vocaloid:+.6, j-pop:+.3, j-rock:−.4}` |
+| **Hobbies** | `anime-fan → {anime:+.9, vocaloid:+.8, j-pop:+.4}` · `fitness → {j-rock:+.7, electronic:+.6}` · `wellness → {ambient:+.7, jazz:+.6, classical:+.5}` · `idol/live → {j-pop:+.6, j-rock:+.5}` · `tradition → {enka:+.7, japanese folk:+.6, classical:+.4}` |
+
+Route and destination carry the **⚠ loose-mapping** mark; their tree shares (§6.1)
+are already small, so they act as low-weight nudges. The tag strings above are the
+versioned reference vocabulary; a `route_tag`/`destination_tag`/`hobby` not present
+in a feature's table simply contributes nothing to `g_target` (no error), so the
+tables may stay partial.
+
+**Tier 2 — genre-level history.** Requires new per-genre history fixtures in the
+world (music-data §13): `usage_by_genre[genre]` and `scene_genre_usage[scene][genre]`,
+each a level in `{never, low, med, high}`. These are converted to `g_target` by the
+same curve the exact-item usage feature uses (§5.3): `never / absent → 0`,
+`low → −.5`, `med → +.25`, `high → +1`. Then §5.7's best-match rule applies.
+
+| Feature | `g_target[g]` | `e_i` |
 |---|---|---|
-| **1 — static affinity map** | hobbies, child, route, destination | a `tag → genre` affinity table per feature; a response coefficient (e.g. `+1` on genre-set membership, or an affinity in `[-1,+1]`) |
-| **2 — genre-level history** | content-tag usage, scene/genre usage | new **per-genre history fixtures** in the world (usage by genre, and scene×genre for the last) |
+| **Content-tag usage** | `curve( usage_by_genre[g] )` | `1` if the `usage_by_genre` fixture is present, else `0` |
+| **Scene/genre usage** | `curve( scene_genre_usage[current_scene][g] )` | `1` if the `scene_genre_usage` fixture is present, else `0` |
 
-Caveats to resolve during design: Spotify genres are **artist-level and coarse**
-("j-pop", "anime", "city pop"), so a song inherits its artists' genres; and the
-route/destination→genre mapping is **semantically loose** and should be treated
-as a low-weight hypothesis. Driver-state/environment features are deliberately
-**not** in this list — arousal/valence already render slide 69's "uptempo genre"
-intent more directly than genre would.
+**Weights, missing data, fallback.** Enabling the extension only flips these six
+leaves' masks `0→1`; the tree shares in §6.1 are unchanged and normalization
+redistributes automatically. A song with an empty `G_song` (no artist genres)
+scores `a_i = 0` on every `genre‡` feature and is listed `missing_neutral` (no
+weight redistribution, per §8). With the extension **absent**, all six stay mask
+`0` — bit-identical to today's Spotify-only V1.
+
+Driver-state/environment features are deliberately **not** genre-scored:
+arousal/valence already render slide 69's "uptempo genre" intent more directly
+than a coarse genre label would.
 
 ### 5.4 One matrix, not three
 
@@ -428,8 +499,9 @@ changes no other machinery. It is a versioned hyperparameter.
 
 ### 6.1 Categories, subgroups, leaves, masks
 
-Mask legend: **✓** scored · **✗** context-only · **🔧** genre-pending (mask `0`
-until designed, §5.7) · **⚠** directional hypothesis.
+Mask legend: **✓** scored · **✗** context-only · **`genre‡`** scored via the
+`genre_affinity_v1` extension (mask `1` when enabled, else `0`; §5.7) · **⚠**
+directional hypothesis.
 
 | Category (share) | Subgroup (share) | Leaves (share) — mask |
 |---|---|---|
@@ -437,19 +509,20 @@ until designed, §5.7) · **⚠** directional hypothesis.
 | | Driving environment 0.30 | traffic 0.15 ✓, road 0.15 ✓, night 0.20 ✓, monotony 0.50 ✓ |
 | | Driving state 0.05 | motion 1.00 ✓⚠ (driving→`α·A_s`, stopped→0) |
 | | Song singability 0.13 | `service_ease` 1.00 — ✓ karaoke / ✗ playlist |
-| | Route/destination 0.09 | route 0.5 🔧, destination 0.5 🔧 |
-| | Passengers 0.08 | child 0.6 🔧, multiple 0.4 ✗ |
-| **Preference 0.30** | UPro/oshi 0.35 | oshi 0.60 ✓, age 0.10 ✓, hobbies 0.30 🔧, gender 0.00 |
+| | Route/destination 0.09 | route 0.5 `genre‡`⚠, destination 0.5 `genre‡`⚠ |
+| | Passengers 0.08 | child 0.6 `genre‡`, multiple 0.4 ✗ |
+| **Preference 0.30** | UPro/oshi 0.35 | oshi 0.60 ✓, age 0.10 ✓, hobbies 0.30 `genre‡`, gender 0.00 |
 | | Novelty 0.10 | item recency 0.60 ✗, tag recency 0.40 ✗ *(whole subgroup dropped — slides 71–73)* |
-| | Usage 0.35 | item usage 0.40 ✓, genre usage 0.30 🔧, scene/genre 0.30 🔧 |
+| | Usage 0.35 | item usage 0.40 ✓, genre usage 0.30 `genre‡`, scene/genre 0.30 `genre‡` |
 | | Operations 0.20 | played 0.25 ✓, skipped 0.35 ✓, changed 0.20 ✓, cancelled 0.20 ✗ |
 | **History 0.15** | Schedule 0.30 | schedule 1.00 ✗ |
 | | Content acceptance 0.30 | exact Track rate 1.00 ✓ |
 | | Content recovery 0.40 | exact Track rate 1.00 ✓ |
 
-Genre-pending (🔧) leaves currently carry mask `0` — identical to ✗ for today's
-scoring — and switch on only when §5.7's genre design lands. The Novelty subgroup
-is now entirely unused and renormalizes away.
+`genre‡` leaves carry mask `0` in Spotify-only V1 — identical to ✗ — and switch to
+mask `1` when the `genre_affinity_v1` extension is enabled (§5.7); the tree shares
+above are unchanged either way, so enabling the extension only flips masks and
+renormalizes. The Novelty subgroup is entirely unused and renormalizes away.
 
 ### 6.2 Purpose multipliers (applied per subgroup before normalization)
 
@@ -700,19 +773,21 @@ exercises bright/dark (`valence`, `mode`) and acoustic/electric (`acousticness`)
 contrasts, not only energy/tempo. No change to the Spotify field contract itself
 is required for these three.
 
-Separately, the seven **🔧 pending genre-based features** (§5.7) require adding
-**`artist.genres`** (Spotify Artist object) to the data contract, plus — for the
-Tier-2 features — new **per-genre history fixtures** in the world generator. This
-is a larger, opt-in extension: it changes the frozen catalog schema and the world
-fixtures, so it should be specced as its own follow-up (data-contract v1.1 +
-genre affinity tables + response-coefficient design) rather than folded into this
-algorithm's V1.
+Separately, the six **`genre‡` features** (§5.7) are scored through the opt-in
+**`genre_affinity_v1`** extension, whose scoring design (vocabulary, affinity maps,
+best-match coefficient, Tier-2 usage curves) is fixed in §5.7 and whose data side —
+a namespaced artist-genre lookup plus the two Tier-2 per-genre history fixtures —
+is specified in the [music-data spec](./aica_synthetic_music_data_and_generation_specification.md)
+§21. The extension changes the frozen-catalog data contract and world fixtures, so
+it is enabled per run; with it disabled, these six features are `context_only` and
+this algorithm's Spotify-only V1 behavior is unchanged.
 
 ## 19. Deferred improvements
 
 Licensed karaoke assets, lyrics/timing, chorus boundaries, vocal-range analysis,
-richer credits, child/group suitability metadata, route/destination/event/genre
-relations, an oshi member/group graph, a provider-independent replacement for the
+richer credits, group-suitability metadata, event/schedule relations (route,
+destination, child, and genre relations are now the `genre_affinity_v1` extension,
+§5.7), an oshi member/group graph, a provider-independent replacement for the
 deprecated Audio Features endpoint, learned/LLM ranking, confidence-weighted
 sparse history, diversity constraints, and probabilistic acceptance/recovery
 prediction. Each needs its own source and provenance review before it can affect

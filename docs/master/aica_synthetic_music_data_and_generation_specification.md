@@ -71,7 +71,7 @@ V1 does not add any of the following:
 
 The content algorithm may calculate transparent numeric proxies from Spotify Audio Features at decision time. Derived values are formula outputs, not stored provider metadata.
 
-The exclusion above is *AICA/LLM-inferred* genre. It is separate from Spotify's own artist-level `artist.genres` field (from the Artist object, `GET /artists`), which the content algorithm identifies as the sole real-provider path for its **genre-pending (`🔧`) features** — route, destination, child, hobbies, and per-genre usage (that document's §5.7). `artist.genres` is deliberately **not** in the V1 Track/Audio-Features contract; adding it is a separately specced, opt-in data-contract extension (§21, §25), not part of Spotify-only V1.
+The exclusion above is *AICA/LLM-inferred* genre. It is separate from Spotify's own artist-level `genres` field (from the Artist object, `GET /artists`), which the content algorithm identifies as the sole real-provider path for its **`genre‡` features** — route, destination, child, hobbies, and per-genre usage (that document's §5.7). Artist genre is deliberately **not** in the Spotify-only V1 Track/Audio-Features contract; it is supplied by the opt-in, namespaced **`genre_affinity_v1`** data-contract extension (§21.1), enabled per run. With the extension off, those features are `context_only` and V1 ranking is unchanged.
 
 ### 2.3 Separate world and history data
 
@@ -507,6 +507,13 @@ The default catalog has:
 
 No singer-versus-artist distinction or detailed contributor graph is generated.
 
+When the `genre_affinity_v1` extension (§21.1) is active, its `artist_genres`
+lookup assigns each of the 12 artists **one to three** genres from the controlled
+vocabulary, spread so that every vocabulary genre is carried by at least one
+artist and both child-friendly (`anime`, `vocaloid`, `children's music`) and
+route/hobby-relevant genres appear. Assignment is part of catalog generation, is
+frozen with the catalog, and never encodes a target recommendation rank (§17.6).
+
 ### 10.4 Availability and audience policy
 
 - all 36 standard songs have both karaoke availability flags equal to `1`;
@@ -622,9 +629,21 @@ world:
     lifecycle_state: active
 ```
 
-`route_tags` and `destination_tags` may still be needed by other simulator packages. In Spotify-only V1 content ranking, they are context-only because songs have no matching fields.
+`route_tags` and `destination_tags` are context-only in Spotify-only V1 (songs have no matching fields). When the `genre_affinity_v1` extension (§21.1) is enabled, they — together with `child_present`, `hobby_interest_tags`, and the current scene — drive the six `genre‡` features via the artist-genre lookup, and the world additionally carries **Tier-2 per-genre history fixtures**:
 
-History references exact synthetic Track IDs. Tag-level song histories are not generated for V1.
+```yaml
+  # present only when extensions.genre_affinity_v1 is active
+  usage_by_genre:            # overall content-tag usage, per vocabulary genre
+    city pop: high
+    j-pop: med
+    enka: never
+  scene_genre_usage:         # scene × genre usage; current scene selects the row
+    active_driving_content:
+      city pop: high
+      j-rock: low
+```
+
+Each level is one of `{never, low, med, high}` over the §21.1 controlled vocabulary; genres absent from a map are treated as `never`. History references exact synthetic Track IDs; apart from these opt-in Tier-2 genre fixtures, no tag-level song histories are generated for V1.
 
 ---
 
@@ -648,7 +667,7 @@ The demonstration tier includes at least these worlds:
 14. previously skipped or cancelled candidate; and
 15. stopped post-rest full-karaoke state.
 
-A characteristic route/destination world may be retained to demonstrate the honest V1 limitation: changing route semantics alone does not change music rank because no Spotify song field supports that relation.
+A characteristic route/destination world may be retained to demonstrate the honest Spotify-only V1 limitation: with `genre_affinity_v1` **off**, changing route semantics alone does not change music rank because no Spotify song field supports that relation. With the extension **on**, the same world instead demonstrates the genre-mediated route effect (§21.1).
 
 ---
 
@@ -669,9 +688,10 @@ Required pairs include:
 - exact oshi artist enabled versus disabled;
 - recent play absent versus present;
 - acceptance evidence absent versus strong; and
-- route tag A versus route tag B, with an expected no-change assertion.
+- route tag A versus route tag B, with an expected **no-change** assertion when `genre_affinity_v1` is **off**; and
+- the same route tag A versus B with `genre_affinity_v1` **on**, expecting the genre-mediated ordering to shift (§21.1).
 
-The final pair is a transparency test, not a recommendation-quality target.
+The first route pair is a transparency test, not a recommendation-quality target; the second proves the extension is the only thing that makes route semantics bite.
 
 ---
 
@@ -744,7 +764,13 @@ These are synthetic fixture variants. They are not live provider refreshes and a
 - no recommendation score or target rank appears in generation input/output; and
 - generation is completed before worlds are scored.
 
----
+### 17.7 `genre_affinity_v1` extension (validated only when present)
+
+- every string in `artist_genres[*]`, `usage_by_genre`, and `scene_genre_usage[*]` is a member of the §21.1 controlled vocabulary;
+- every `artist_genres` key resolves to a generated Artist ID; each artist carries one to three genres, and every vocabulary genre is carried by at least one artist (§10.3);
+- every Tier-2 usage level is one of `{never, low, med, high}`;
+- the extension adds no key inside `spotify_track`, `spotify_audio_features`, or `simulation_flags` (§21 no-overwrite rule); and
+- with the extension absent, scoring of the six `genre‡` features is `context_only`, reproducing the no-extension ranking exactly (fallback assertion).
 
 ## 18. Repair policy
 
@@ -809,6 +835,7 @@ Future metadata may be added only as a new, namespaced extension, for example:
 
 ```yaml
 extensions:
+  genre_affinity_v1: {}
   karaoke_provider_v1: {}
   licensed_lyrics_analysis_v1: {}
 ```
@@ -827,6 +854,53 @@ An extension must declare:
 
 No extension may overwrite Spotify-compatible fields or `simulation_flags`.
 
+### 21.1 `genre_affinity_v1` (defined)
+
+This extension supplies artist-level **genre** so the content selector can score
+its six `genre‡` features (route, destination, child, hobbies, content-tag usage,
+scene/genre usage). It is the sole real-provider path for slide 69's genre-scored
+intent. Genre is **not** on the Spotify Track object; on the platform it comes from
+the full Artist object (`GET /artists`). The extension therefore adds a
+**namespaced artist-genre lookup** — it does *not* mutate the Spotify-compatible
+inline `spotify_track.artists[]` (which is the simplified artist object and carries
+no `genres`):
+
+```yaml
+extensions:
+  genre_affinity_v1:
+    artist_genres:
+      synthetic-artist-0001: [city pop, j-pop]
+      synthetic-artist-0002: [anime, vocaloid]
+```
+
+A song's genre set is `G_song = ⋃` `artist_genres[id]` over `spotify_track.artists[*].id`.
+
+**Controlled vocabulary** (the only permitted genre strings; lowercase, coarse,
+artist-level):
+
+```text
+j-pop · j-rock · city pop · anime · vocaloid · enka ·
+children's music · classical · jazz · ambient · electronic · japanese folk
+```
+
+**Tier-2 world/history fixtures** (present only when this extension is active; see
+§13): `usage_by_genre[genre]` and `scene_genre_usage[scene][genre]`, each a level
+in `{never, low, med, high}` over the same vocabulary.
+
+Required declarations for this extension:
+
+| Declaration | Value |
+|---|---|
+| authoritative source | platform Artist object `genres` (`GET /artists`); synthetic fixtures model it |
+| field-level provenance | `artist_genres` = synthetic per-artist assignment from the fixed vocabulary; Tier-2 usage = synthetic history fixture |
+| legal/policy basis | no live provider data; synthetic identities only (§17.3); genre is not derived from lyrics or audio |
+| missing-data behavior | absent `artist_genres[id]` → that artist contributes no genres; empty `G_song` → every `genre‡` feature scores `a_i = 0` (`missing_neutral`, no weight redistribution) |
+| validation schema | §17.7 |
+| applicable services/factors | all three content services; the six `genre‡` features only (content algo §5.7) |
+| scoring formulas/weights | content algo §5.7 (best-match `a_i`); tree shares unchanged, masks flip `0→1` (content algo §6.1) |
+| explanation text | per feature: "context wants `<genre>`; this song is `<matched genre>` → `a_i`" |
+| fallback when unavailable | all six `genre‡` features revert to `context_only` (mask `0`); Spotify-only V1 ranking is bit-identical to no extension |
+
 ---
 
 ## 22. Error categories
@@ -842,6 +916,7 @@ No extension may overwrite Spotify-compatible fields or `simulation_flags`.
 | `coverage_contract_failed` | demonstration quotas are incomplete |
 | `world_reference_failed` | a world/history reference does not resolve |
 | `policy_boundary_violation` | real Spotify content was sent to an LLM or treated as synthetic input |
+| `invalid_genre_extension` | `genre_affinity_v1` uses an out-of-vocabulary genre, an unresolved artist ID, a bad usage level, or overwrites a Spotify-compatible field (§17.7) |
 
 ---
 
@@ -889,7 +964,7 @@ No extension may overwrite Spotify-compatible fields or `simulation_flags`.
 - low/high drowsiness and monotony reverse the arousal ordering of calm/active candidates;
 - traffic, road, day/night, and fatigue contrasts follow their declared arousal/valence demand profiles (a bright-favoring context reorders the bright/dark pair);
 - a bright/dark fixture pair exercises the valence axis (`valence`/`mode`) and an acoustic/electric pair exercises acousticness's inverse-arousal contribution; and
-- route-only contrast produces no Spotify-only content-rank change.
+- route-only contrast produces no content-rank change with `genre_affinity_v1` off.
 
 ### 23.6 Repair and replay
 
@@ -897,6 +972,14 @@ No extension may overwrite Spotify-compatible fields or `simulation_flags`.
 - repair exhaustion produces a typed error;
 - edited data gets a new hash; and
 - frozen replay is independent of LLM availability.
+
+### 23.7 `genre_affinity_v1` extension
+
+- `artist_genres`, `usage_by_genre`, and `scene_genre_usage` accept only vocabulary genres and resolvable artist IDs; out-of-vocabulary or unresolved entries raise `invalid_genre_extension` (§17.7);
+- Tier-2 usage levels accept only `{never, low, med, high}`;
+- the extension adds no key inside the Spotify-compatible or flag objects;
+- with the extension **off**, ranking is byte-identical to a catalog with no extension (fallback); and
+- with the extension **on**, the route tag A/B contrast reorders candidates through the genre-mediated path (§21.1), and an empty-`G_song` song scores `a_i = 0` on every `genre‡` feature.
 
 ---
 

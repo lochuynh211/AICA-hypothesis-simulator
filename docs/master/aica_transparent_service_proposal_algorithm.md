@@ -859,7 +859,8 @@ candidate at all, complementing — not replacing — its oshi ranking response.
 content/service boundary (§5.5–§5.6) fixes which features belong to the
 [content-proposal algorithm](./aica_transparent_content_proposal_algorithm.md): it
 owns UPro age/gender/hobbies, playback/operation history, schedule, and item-level
-novelty (Slides 68–73), and its genre-pending (`🔧`) features cover the
+novelty (Slides 68–73), and its `genre‡` features — scored through the opt-in
+`genre_affinity_v1` extension (content algo §5.7) — cover the
 route/destination/child/hobbies relations excluded here.
 
 ## 19. Deferred improvements

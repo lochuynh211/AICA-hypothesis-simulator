@@ -645,11 +645,12 @@ configured number; too few eligible songs produce `insufficient_eligible_items`.
 
 Spotify-only V1 has no song route, destination, event, child-appeal,
 group-appeal, lyric, chorus, or semantic fields. Baseline inputs requiring those
-relations remain visible but context-only with zero ranking mask. (The content
-algorithm's §5.7 identifies a genre-based path for the route/destination/child/
-hobbies relations via Spotify's `artist.genres`, but it stays mask-0 in V1 until
-that opt-in data-contract extension is specced.) Exact oshi matching uses Spotify
-Artist IDs.
+relations remain visible but context-only with zero ranking mask in Spotify-only
+V1. (The content algorithm's §5.7 defines a genre-based path for the
+route/destination/child/hobbies and per-genre usage relations, scored through the
+opt-in `genre_affinity_v1` data-contract extension; those features carry mask `0`
+when the extension is off and mask `1` when it is enabled per run.) Exact oshi
+matching uses Spotify Artist IDs.
 
 For the six audio-mood content factors, evidence is a **magnitude**, not a signed
 value: drowsiness, fatigue, and monotony use `level/100 -> [0,1]`, and traffic,
