@@ -587,8 +587,8 @@ represented by artificial lower-fidelity content templates.
 3. Resolve its versioned recipe, ranking-applicability matrix, and eligibility rules.
 4. Validate the frozen Spotify-compatible Track, Audio Features, and simulator-flag catalog snapshot.
 5. Apply common and recipe-specific hard exclusions before scoring.
-6. Normalize scored context into signed evidence and activate purpose/recipe weights.
-7. Derive each song's selected-service response coefficient from its Spotify-based activation, then calculate transparent responses, contributions, and `item_fit`.
+6. Normalize scored context into magnitude/signed evidence and activate purpose/recipe weights.
+7. Derive each song's two audio traits (arousal, valence) from its Spotify Audio Features, then its response coefficient (`α·A_s + β·V_s` for the six driver/environment features, exact-ID metadata for the rest), then calculate transparent responses, contributions, and `item_fit`.
 8. Sort by `item_fit` descending, then stable item ID.
 9. Select the first N unique items in that same playback order.
 10. Return one complete plan or a typed insufficient/no-eligible result with full evidence.
@@ -598,22 +598,34 @@ represented by artificial lower-fidelity content templates.
 For catalog item j, selected service s, purpose p, and active baseline factor i:
 
 ```text
-e_i = normalize_feature_i(raw_value_i)
+e_i = normalize_feature_i(raw_value_i)                      # magnitude in [0,1] (or signed for exact-ID history)
 a_i(j,s) = candidate_response_i(frozen_item_metadata_j, recipe_s)
-r_i(j,s) = clamp(e_i × a_i(j,s), -1, +1)
+           # six driver/environment features: α_i·A_s(j) + β_i·V_s(j)   (arousal/valence traits)
+           # all other features:              direct exact-ID coefficient (e.g. +1 on match)
+r_i(j,s) = e_i × a_i(j,s)                                   # in [-1,+1] by construction (|a_i| ≤ 1)
 q_i(p,s) = base_weight_i × purpose_multiplier[p][subgroup(i)] × scoring_applicability[i][s]
 w_i(p,s) = q_i(p,s) / sum(q_active)
 item_fit(j,s) = clamp(sum_i(w_i(p,s) × r_i(j,s)), -1, +1)
 ```
 
-This deliberately mirrors the transparent service selector. The difference is
-the origin of activation-responsive candidate profiles: service coefficients
-are human-configured heuristics, while a song coefficient is derived as
-`2 × selected_service_activation(song) - 1`. Low signed evidence therefore
-favors calm songs and high signed evidence favors active songs.
+This deliberately mirrors the transparent service selector. The difference is the
+origin of the candidate response coefficient. Service coefficients are
+human-configured heuristics. A song coefficient is **computed from the song's audio
+traits**: the algorithm distils each song into two signed traits — **arousal** `A_s`
+(energetic↔calm) and **valence** `V_s` (bright↔dark) — and for the six
+driver/environment features answers with `a_i(song) = α_i·A_s + β_i·V_s`, where the
+demand pair `(α_i, β_i)` is the feature's arousal/valence pull. Arousal is two-sided
+(`α ∈ [-1,+1]` — some contexts want energy, some want calm) and valence is one-sided
+(`β ∈ [0,+1]` — a support context asks only for more brightness, never for dark). All
+other features (oshi, age, playback history, acceptance, recovery) set `a_i` directly
+from exact-ID metadata. Direction lives in the coefficient × trait sign, so evidence
+`e_i` stays a plain magnitude. This two-axis trait model supersedes the earlier
+single `2 × activation − 1` scalar, which could not separate calm-but-bright from
+calm-but-dark.
 
-Every response, weight, and signed contribution is shown. There is no
-aggregate score for the finished plan.
+Every response (including the α/β arousal/valence demand for audio-mood features),
+weight, and signed contribution is shown. There is no aggregate score for the
+finished plan.
 
 ### 12.4 Detailed music behavior
 
@@ -633,14 +645,21 @@ configured number; too few eligible songs produce `insufficient_eligible_items`.
 
 Spotify-only V1 has no song route, destination, event, child-appeal,
 group-appeal, lyric, chorus, or semantic fields. Baseline inputs requiring those
-relations remain visible but context-only with zero ranking mask. Exact oshi
-matching uses Spotify Artist IDs.
+relations remain visible but context-only with zero ranking mask. (The content
+algorithm's §5.7 identifies a genre-based path for the route/destination/child/
+hobbies relations via Spotify's `artist.genres`, but it stays mask-0 in V1 until
+that opt-in data-contract extension is specced.) Exact oshi matching uses Spotify
+Artist IDs.
 
-For activation-responsive content factors, drowsiness, fatigue, and monotony
-use signed `0..100 -> -1..+1` normalization. Traffic, road, and day/night use
-versioned signed categorical profiles. Each normalized feature response is the
-signed evidence multiplied by the song's activation-derived response
-coefficient.
+For the six audio-mood content factors, evidence is a **magnitude**, not a signed
+value: drowsiness, fatigue, and monotony use `level/100 -> [0,1]`, and traffic,
+road, and day/night contribute `e = 1` when active. The **direction** lives in each
+feature's arousal/valence demand `(α, β)` (drowsiness `+0.80·A_s`, fatigue
+`−0.50·A_s + 0.50·V_s`, and so on), not in the evidence. Each normalized feature
+response is that magnitude multiplied by the song's trait-derived coefficient
+`α·A_s + β·V_s`, so a positive-`α` context favors higher-arousal songs and a
+negative-`α` context favors calm ones, while a rising valence demand favors brighter
+songs.
 
 All three may use playback/operation history. Compatible lighting is attached
 after song selection as presentation metadata and does not change `item_fit`.
@@ -749,17 +768,17 @@ separate namespaces:
 | Namespace | Examples | Owner |
 |---|---|---|
 | `spotify_track` | exact Spotify-compatible Track fields: title, performing artists, album/release, duration, explicit/playability policy, IDs and links | Fictional Spotify-compatible catalog |
-| `spotify_audio_features` | exact pinned Audio Features fields including energy, tempo, danceability, loudness, valence, speechiness, and instrumentalness | Fictional Spotify-compatible catalog |
+| `spotify_audio_features` | exact pinned Audio Features fields including energy, tempo, danceability, loudness, acousticness (arousal traits), valence and mode (valence trait), speechiness, and instrumentalness | Fictional Spotify-compatible catalog |
 | `simulation_flags` | `humming_karaoke_available: 1`, `full_karaoke_available: 1` | Explicit simulator assumptions; eligibility only |
 | world/history data | driver, route, passengers, UPro/oshi, usage, operations, schedule, proposal/recovery histories | Simulation scenario |
 
 Track, artist, and album identities have stable synthetic IDs. V1 does not
 invent separate singer, composer, lyricist, arranger, member, semantic, route,
-destination, chorus, or singability metadata. Transparent activation and
-karaoke-ease proxies are derived at decision time from Audio Features and are
-not stored as provider facts.
+destination, chorus, or singability metadata. Transparent trait proxies —
+**arousal**, **valence**, and karaoke-ease — are derived at decision time from
+Audio Features and are not stored as provider facts.
 
-Signed world evidence, activation response coefficients, and normalized
+World evidence magnitudes, arousal/valence response coefficients, and normalized
 feature responses are also decision-time values. They are never generated or
 stored as song metadata.
 
@@ -794,11 +813,11 @@ The simulator supplies complete base worlds plus clone-and-change contrasts. The
 
 One-variable contrasts are preferred for explanation, while multi-variable worlds remain editable for realistic exploration.
 
-The detailed music contrast suite includes calm and active candidate songs.
-Low/high drowsiness, low/high fatigue, normal/congested traffic,
-highway/mountain road, day/night, and low/high monotony must demonstrate the
-declared reversal of signed activation responses rather than merely scaling the
-same song order.
+The detailed music contrast suite includes calm/active candidate songs (arousal
+axis) and bright/dark candidate songs (valence axis). Low/high drowsiness, low/high
+fatigue, normal/congested traffic, highway/mountain road, day/night, and low/high
+monotony must demonstrate the declared reversal of the signed arousal/valence trait
+responses rather than merely scaling the same song order.
 
 ### 15.4 No manufactured user truth
 
@@ -931,8 +950,8 @@ Transparent runs with identical inputs must reproduce exactly. LLM evidence pres
 - The transparent content selector supports detailed recipes only for playlist, humming karaoke, and full karaoke; another service returns `unsupported_recipe`.
 - The transparent content selector returns one ordered plan, never plan candidates or an aggregate plan score.
 - Each included music item exposes `item_fit` and reconstructable signed feature contributions.
-- Content traces expose normalized evidence, candidate response coefficient, normalized feature response, weight, and contribution using the same terms as the service selector.
-- Calm songs outrank active songs on an activation factor when its evidence is negative; active songs outrank calm songs when the evidence is positive.
+- Content traces expose normalized evidence, candidate response coefficient (including the α/β arousal/valence demand for the six audio-mood features), normalized feature response, weight, and contribution using the same terms as the service selector.
+- On an audio-mood factor, songs whose arousal trait matches the context's demanded direction outrank those that oppose it — energetic songs win under positive-`α` demand (drowsiness, monotony) and calm songs win under negative-`α` demand (the soothe direction of fatigue); on the one-sided valence axis, brighter songs win as a stress context's brightness demand rises.
 - All three detailed music recipes request five items by default; a customer setting can change the count.
 - Fewer eligible items than the configured count return `insufficient_eligible_items`; zero returns `no_proposal`.
 

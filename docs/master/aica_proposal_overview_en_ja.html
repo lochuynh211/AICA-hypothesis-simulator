@@ -50,11 +50,21 @@
   nav.toc .brand { font-weight: 800; font-size: 1.12em; letter-spacing: 0.01em; color: var(--ink); }
   nav.toc .brand small { display: block; font-weight: 600; color: var(--ink-muted); font-size: 0.72em; margin-top: 3px; }
   .lang { display: flex; gap: 6px; margin: 16px 0 4px; }
-  .lang button {
-    flex: 1; font: inherit; font-size: 0.86em; padding: 5px 0; cursor: pointer;
-    border: 1px solid var(--line-strong); background: #fff; border-radius: 6px; color: var(--ink-soft);
+  .lang label, .lang-fixed label {
+    flex: 1; font: inherit; font-size: 0.86em; padding: 5px 8px; cursor: pointer; text-align: center;
+    border: 1px solid var(--line-strong); background: #fff; border-radius: 6px; color: var(--ink-soft); user-select: none;
   }
-  .lang button.active { background: var(--rest); color: #fff; border-color: var(--rest); }
+  /* always-visible language switcher (works when the sidebar is hidden) */
+  .lang-fixed {
+    position: fixed; top: 10px; right: 12px; z-index: 60; display: flex; gap: 6px;
+    background: rgba(255,255,255,.92); padding: 5px; border: 1px solid var(--line-strong);
+    border-radius: 9px; box-shadow: 0 2px 8px rgba(0,0,0,.10);
+  }
+  .lang-fixed label { flex: none; font-size: 0.78em; padding: 4px 11px; }
+  /* active-language highlight, driven purely by the checked radio */
+  body:has(#ui-lang-ja:checked) label[for="ui-lang-ja"],
+  body:has(#ui-lang-en:checked) label[for="ui-lang-en"] { background: var(--rest); color: #fff; border-color: var(--rest); }
+  @media print { .lang-fixed { display: none; } }
   nav.toc ol { list-style: none; padding: 0; margin: 12px 0 0; counter-reset: toc; }
   nav.toc li { margin: 2px 0; }
   nav.toc a {
@@ -93,9 +103,11 @@
   .small { font-size: 0.88em; }
   code.k, code { font-family: var(--mono-font); font-size: 0.86em; background: var(--bg-panel); padding: 1px 5px; border-radius: 4px; color: var(--ink-soft); }
 
-  /* ── bilingual toggle ── */
-  body.lang-en :lang(ja), body.lang-en .ja { display: none !important; }
-  body.lang-ja .en { display: none !important; }
+  /* ── bilingual toggle (pure CSS; default = Japanese, no body class needed) ── */
+  input.lang-switch { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; margin: 0; }
+  .en { display: none; }                                   /* English hidden by default → Japanese only */
+  body:has(#ui-lang-en:checked) .ja { display: none; }     /* switch to English */
+  body:has(#ui-lang-en:checked) .en { display: inline; }
 
   /* ── why callout ── */
   .why { margin: 14px 0; padding: 14px 18px; background: var(--bg-soft); border-left: 4px solid var(--rest); border-radius: 0 8px 8px 0; }
@@ -126,7 +138,6 @@
   th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
   thead th { background: var(--bg-panel); font-weight: 700; border-bottom: 2px solid var(--line-strong); white-space: nowrap; position: sticky; top: 0; }
   tbody tr:hover { background: var(--bg-soft); }
-  td .en, td .ja { display: block; }
 
   /* ── priority pills ── */
   .priority { display: inline-block; min-width: 30px; padding: 1px 7px; border-radius: 5px; color: #fff; font-size: 0.72em; font-weight: 800; text-align: center; }
@@ -213,14 +224,21 @@
   @media print { nav.toc { display: none; } main { padding: 0; } }
 </style>
 </head>
-<body class="lang-ja">
+<body>
+<!-- Language state: pure-CSS radios (no JS, no body class needed). #ui-lang-ja is the default. -->
+<input type="radio" name="uilang" id="ui-lang-ja" class="lang-switch" checked>
+<input type="radio" name="uilang" id="ui-lang-en" class="lang-switch">
+<div class="lang-fixed" role="radiogroup" aria-label="Language / 言語">
+  <label for="ui-lang-ja">日本語</label>
+  <label for="ui-lang-en">English</label>
+</div>
 <div class="layout">
 
   <nav class="toc">
     <div class="brand">AICA 提案シミュレーター<small>Proposal Simulator — Executive Overview</small></div>
     <div class="lang" aria-label="Language">
-      <button type="button" data-lang="ja" class="active">日本語</button>
-      <button type="button" data-lang="en">English</button>
+      <label for="ui-lang-ja">日本語</label>
+      <label for="ui-lang-en">English</label>
     </div>
     <ol>
       <li><a class="step" href="#overview"><span class="ja">概要 ― 提案の考え方</span><span class="en">Overview — the idea</span></a></li>
@@ -397,19 +415,39 @@
       </div>
       <p class="small muted"><span class="ja">出典：<code class="k">aica_transparent_service_proposal_algorithm.md</code> §4・§6。走行/停車（motion）は<b>ランキング特徴量ではなく</b>、適格性の事実として扱われます。</span><span class="en">Source: <code class="k">aica_transparent_service_proposal_algorithm.md</code> §4, §6. Motion is an eligibility fact, <b>not</b> a ranking feature.</span></p>
 
-      <h3><span class="ja">コンテンツ提案 ― 同じ文法、曲の「活性度」を応答に</span><span class="en">Content proposal — same grammar, the song’s activation is the response</span></h3>
+      <h3><span class="ja">コンテンツ提案 ― 同じ文法、曲を「2つの軸」で捉える</span><span class="en">Content proposal — same grammar, the song on two axes</span></h3>
       <p>
-        <span class="ja">具体コンテンツ提案も<b>同じ数式文法</b>で、独立パッケージです（<code>service_fit</code>やサービス順位を<b>一切参照しません</b>）。各曲の <b>item_fit</b>（−1〜+1）は、要素ごとの応答 <code>r = e × a</code> を重み付き合計したものです ―― <code>e</code> は世界側の符号付き証拠（例：眠気が高い＝+）、<code>a</code> は<b>その曲の符号付き応答係数</b>です。</span>
-        <span class="en">Content selection uses the <b>same grammar</b> and is a fully independent package (it <b>never consumes</b> <code>service_fit</code> or service rank). Each song’s <b>item_fit</b> (−1…+1) is a weighted sum of per-factor responses <code>r = e × a</code>, where <code>e</code> is signed world evidence (e.g. high drowsiness = +) and <code>a</code> is <b>the song’s signed response coefficient</b>.</span>
+        <span class="ja">具体コンテンツ提案も<b>同じ数式文法</b>で、独立パッケージです（<code>service_fit</code>やサービス順位を<b>一切参照しません</b>）。各曲の <b>item_fit</b>（−1〜+1）は、要素ごとの応答 <code>r = e × a</code> を重み付き合計したものです。新しいのは <code>a</code>（応答係数）の作り方だけです ―― ドライバー状態・環境の6要素では、曲を<b>2つのオーディオ特性</b>に還元します：どれだけ<b>元気か（覚醒度 arousal）</b>と、どれだけ<b>明るいか（明るさ valence）</b>。<code>e</code>（証拠）は「状況がどれだけ強くそれを求めるか」という<b>大きさ（0〜1）</b>だけを表し、＋/−の<b>向きは要素側の「需要」</b>が持ちます。</span>
+        <span class="en">Content selection uses the <b>same grammar</b> and is a fully independent package (it <b>never consumes</b> <code>service_fit</code> or service rank). Each song’s <b>item_fit</b> (−1…+1) is a weighted sum of per-factor responses <code>r = e × a</code>. Only the way <code>a</code> is built is new: for the six driver/environment factors, the song is reduced to <b>two audio traits</b> — how <b>energetic</b> it is (<b>arousal</b>) and how <b>bright</b> it is (<b>valence</b>). Here <code>e</code> is just a <b>magnitude</b> (0…1 — how strongly the context calls for something); the +/− <b>direction lives in the factor’s demand</b>.</span>
       </p>
       <div class="formula wrap">
         <span class="lhs">item_fit</span> = clamp( <span class="op">Σ<sub>i</sub></span> <span class="coef">w<sub>i</sub></span> <span class="op">·</span> <span class="feat">e<sub>i</sub></span> <span class="op">·</span> <span class="feat">a<sub>i</sub></span> , −1, +1 )
-        &nbsp;&nbsp;<span class="op">|</span>&nbsp;&nbsp; <span class="feat">a</span><sub>activation</sub> = 2 <span class="op">·</span> <span class="ja">サービス活性度</span><span class="en">service_activation</span> <span class="op">−</span> 1
+        &nbsp;&nbsp;<span class="op">|</span>&nbsp;&nbsp; <span class="feat">a</span><sub>song</sub> = <span class="coef">α</span> <span class="op">·</span> A<sub>s</sub> <span class="op">+</span> <span class="coef">β</span> <span class="op">·</span> V<sub>s</sub>
+        &nbsp;&nbsp;<span class="op">(<span class="ja">覚醒</span><span class="en">arousal</span> A<sub>s</sub>, <span class="ja">明るさ</span><span class="en">valence</span> V<sub>s</sub> ∈ −1…+1)</span>
       </div>
       <div class="why mono">
-        <span class="lab"><span class="ja">曲の活性度はSpotify特徴量から導出（不透明値なし）</span><span class="en">Activation is derived from Spotify features (no opaque value)</span></span>
-        <p><span class="ja">曲の応答係数は、凍結された<b>Spotifyオーディオ特徴量</b>（energy・tempo・danceability・loudness・valence…）から計算した「活性度」を <code>2×活性度−1</code> で符号化したものです。だから<b>活発な曲は眠気・単調が高いときに＋、穏やかな曲は−</b>になります。鼻歌・フルカラオケの「歌いやすさ」も、Spotify特徴量から導く<b>透明な代理指標</b>（vocal_presence・speech_ease・tempo_ease…）で、カタログに保存された値ではありません。</span><span class="en">A song’s response comes from an “activation” computed from its frozen <b>Spotify audio features</b> (energy, tempo, danceability, loudness, valence…), signed as <code>2×activation−1</code>. So an <b>active song scores + when drowsiness/monotony are high, a calm song scores −</b>. Humming/full-karaoke “ease” is likewise a <b>transparent proxy</b> (vocal_presence, speech_ease, tempo_ease…) derived from Spotify features — not a value stored in the catalog.</span></p>
+        <span class="lab"><span class="ja">なぜ1つの「活性度」ではなく2軸なのか</span><span class="en">Why two axes instead of one “activation”</span></span>
+        <p><span class="ja">1つの数値では「穏やかで明るい」曲と「穏やかで暗い」曲を区別できません。<b>眠い</b>ドライバーには<b>元気な</b>曲を、<b>疲れて</b>いる・<b>渋滞</b>や<b>夜間</b>で張り詰めたドライバーには<b>穏やかで安心できる（明るい）</b>曲を ―― この違いは覚醒度と明るさの2軸で初めて表せます。覚醒度の需要 <code>α</code> は<b>両方向</b>（元気がほしい＝＋／落ち着きたい＝−）、明るさの需要 <code>β</code> は<b>片方向</b>（明るさは足すだけで、暗さを求めることはない）。曲の2特性も、鼻歌・フルカラオケの「歌いやすさ」も、凍結した<b>Spotifyオーディオ特徴量</b>から決定時に導く<b>透明な指標</b>で、カタログには保存しません。</span><span class="en">A single number can’t tell a <b>calm-but-bright</b> song from a <b>calm-but-dark</b> one. A <b>drowsy</b> driver wants an <b>energetic</b> song; a <b>fatigued</b> driver — or one tensed by <b>congestion</b> or <b>night</b> — wants <b>calm, reassuring (bright)</b> music. Only two axes separate these. The arousal demand <code>α</code> is <b>two-sided</b> (want energy = +, want calm = −); the valence demand <code>β</code> is <b>one-sided</b> (brightness is only ever added, darkness is never requested). Both traits — and the humming/full-karaoke “ease” proxies — are <b>transparent values</b> derived from frozen <b>Spotify audio features</b> at decision time, never stored in the catalog.</span></p>
       </div>
+      <div class="scroll-x">
+        <table>
+          <thead><tr>
+            <th><span class="ja">状況（要素）</span><span class="en">Context factor</span></th>
+            <th><span class="ja">何を求めるか</span><span class="en">What it wants</span></th>
+            <th><span class="ja">覚醒 α</span><span class="en">Arousal α</span></th>
+            <th><span class="ja">明るさ β</span><span class="en">Valence β</span></th>
+          </tr></thead>
+          <tbody>
+            <tr><td><span class="ja">眠気</span><span class="en">Drowsiness</span></td><td><span class="ja">元気づける</span><span class="en">energize</span></td><td><b>+0.80</b></td><td>+0.20</td></tr>
+            <tr><td><span class="ja">疲労</span><span class="en">Fatigue</span></td><td><span class="ja">なだめて明るく</span><span class="en">soothe + brighten</span></td><td><b>−0.50</b></td><td>+0.50</td></tr>
+            <tr><td><span class="ja">単調</span><span class="en">Monotony</span></td><td><span class="ja">刺激を与える</span><span class="en">stimulate</span></td><td><b>+0.90</b></td><td>+0.10</td></tr>
+            <tr><td><span class="ja">渋滞</span><span class="en">Congested traffic</span></td><td><span class="ja">緊張をほぐし明るく</span><span class="en">de-stress + brighten</span></td><td><b>−0.40</b></td><td>+0.60</td></tr>
+            <tr><td><span class="ja">夜間</span><span class="en">Night</span></td><td><span class="ja">落ち着かせ和ませる</span><span class="en">calm + warm</span></td><td><b>−0.50</b></td><td>+0.50</td></tr>
+            <tr><td><span class="ja">道路種別</span><span class="en">Road type</span></td><td><span class="ja">負荷に合わせる</span><span class="en">match road load</span></td><td><span class="ja">高速<b>+1.0</b>／山道<b>−1.0</b></span><span class="en">highway <b>+1.0</b> / mountain <b>−1.0</b></span></td><td>0</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted"><span class="ja">眠気（＋）と疲労（−）は覚醒度で<b>逆向き</b>に引きます ―― 1つの活性度では表せない分離です。オシ・年代・再生履歴・受諾・回復などその他の要素は、2軸ではなく<b>完全一致メタデータ</b>から直接 <code>a</code> を決めます（例：Track/Artist ID一致で +1）。⚠付き（疲労・渋滞・夜間）の向きはバージョン管理されたハイパーパラメータで、反転も可能です。</span><span class="en">Drowsiness (+) and fatigue (−) pull in <b>opposite</b> arousal directions — a separation one “activation” number can’t express. Every other factor (oshi, age, playback history, acceptance, recovery) sets <code>a</code> directly from <b>exact-ID metadata</b> instead of traits (e.g. +1 on a Track/Artist-ID match). The ⚠ directions (fatigue, congestion, night) are versioned hyperparameters and can be flipped.</span></p>
       <div class="pill-row">
         <span class="pill"><b>Situation <span class="ja">状況</span></b> — .55</span>
         <span class="pill"><b>Preference <span class="ja">好み</span></b> — .30</span>
@@ -560,7 +598,7 @@
         </div>
         <div class="fcard green">
           <h4><code>spotify_audio_features</code></h4>
-          <p><span class="ja">Audio Features：<code>energy</code>・<code>tempo</code>・<code>danceability</code>・<code>loudness</code>・<code>valence</code>・<code>instrumentalness</code>・<code>speechiness</code>・<code>duration_ms</code>（スコアで使用）。<code>key</code>・<code>mode</code>・<code>time_signature</code>・<code>acousticness</code>・<code>liveness</code> は<b>保持するがV1では非スコア</b>。</span><span class="en">Audio Features: <code>energy</code>, <code>tempo</code>, <code>danceability</code>, <code>loudness</code>, <code>valence</code>, <code>instrumentalness</code>, <code>speechiness</code>, <code>duration_ms</code> (used in scoring). <code>key</code>, <code>mode</code>, <code>time_signature</code>, <code>acousticness</code>, <code>liveness</code> are <b>kept but not scored</b> in V1.</span></p>
+          <p><span class="ja">Audio Features は3つの指標に寄与：<b>覚醒度</b>（<code>energy</code>・<code>loudness</code>・<code>tempo</code>・<code>danceability</code>・<code>acousticness</code>逆）、<b>明るさ</b>（<code>valence</code>・<code>mode</code>）、<b>歌いやすさ</b>（<code>instrumentalness</code>逆・<code>speechiness</code>逆・<code>tempo</code>・<code>danceability</code>・<code>duration_ms</code>）。<code>key</code>・<code>time_signature</code>・<code>liveness</code> <b>のみ</b>V1では<b>非スコア</b>（保持のみ）。</span><span class="en">Audio Features feed three proxies: <b>arousal</b> (<code>energy</code>, <code>loudness</code>, <code>tempo</code>, <code>danceability</code>, <code>acousticness</code>-inv), <b>valence</b> (<code>valence</code>, <code>mode</code>), and <b>karaoke-ease</b> (<code>instrumentalness</code>-inv, <code>speechiness</code>-inv, <code>tempo</code>, <code>danceability</code>, <code>duration_ms</code>). <b>Only</b> <code>key</code>, <code>time_signature</code>, <code>liveness</code> are <b>kept but not scored</b> in V1.</span></p>
         </div>
         <div class="fcard mono">
           <h4><code>simulation_flags</code></h4>
@@ -569,7 +607,7 @@
       </div>
       <div class="why warn">
         <span class="lab"><span class="ja">V1にエンリッチ（加工）工程はない</span><span class="en">V1 has no enrichment stage</span></span>
-        <p><span class="ja">「プロバイダのTrack → LLMがサビ・客層・ルート・歌いやすさを推測 → それを推薦根拠に使う」という流れは<b>禁止</b>です。カタログはジャンル/ルート/推し/ムード/客層タグ、サビ位置、歌詞・音域・メロディ複雑度・歌いやすさを<b>保存しません</b>。透明セレクターが<b>決定時に</b>Spotify特徴量から代理指標（活性度・歌いやすさ）を導出しますが、それを事実として保存しません。</span><span class="en">The flow “provider Track → LLM guesses chorus, audience, route, or singability → use as recommendation evidence” is <b>prohibited</b>. The catalog stores <b>no</b> genre/route/oshi/mood/audience tags, no chorus timestamps, and no lyric/vocal-range/melody/singability fields. The transparent selector derives proxies (activation, ease) from Spotify features <b>at decision time</b> and does not persist them as facts.</span></p>
+        <p><span class="ja">「プロバイダのTrack → LLMがサビ・客層・ルート・歌いやすさを推測 → それを推薦根拠に使う」という流れは<b>禁止</b>です。カタログはジャンル/ルート/推し/ムード/客層タグ、サビ位置、歌詞・音域・メロディ複雑度・歌いやすさを<b>保存しません</b>。透明セレクターが<b>決定時に</b>Spotify特徴量から代理指標（覚醒度・明るさ・歌いやすさ）を導出しますが、それを事実として保存しません。</span><span class="en">The flow “provider Track → LLM guesses chorus, audience, route, or singability → use as recommendation evidence” is <b>prohibited</b>. The catalog stores <b>no</b> genre/route/oshi/mood/audience tags, no chorus timestamps, and no lyric/vocal-range/melody/singability fields. The transparent selector derives proxies (arousal, valence, ease) from Spotify features <b>at decision time</b> and does not persist them as facts.</span></p>
       </div>
 
       <h3><span class="ja">C. 生成方法 ― 3パスのLLM生成 → 検証 → 凍結</span><span class="en">C. How it is generated — 3-pass LLM → validate → freeze</span></h3>
@@ -593,7 +631,7 @@
       </div>
       <div class="why">
         <span class="lab"><span class="ja">わざと「証拠が対立する」曲を入れる</span><span class="en">Deliberate conflicting-evidence fixtures</span></span>
-        <p><span class="ja">どの曲も全次元で支配的にならないよう、対立する証拠を持つ組を必ず含めます（例：穏やかな曲↔活発な曲＝符号反転の検証／推し一致↔非推しだが高活性／最近再生済み↔新鮮／受諾済み低活性↔未検証高活性／子供同乗時にexplicitを除外）。<b>隠れた<code>recommended</code>や目標順位フィールドは持たず</b>、<code>normalized_evidence</code>や応答係数もカタログに保存しません（決定時に導出）。</span><span class="en">So no song dominates every dimension, the catalog always includes conflicting pairs (calm ↔ active for signed-reversal tests; oshi match ↔ non-oshi but higher activation; recently played ↔ fresh; accepted low-activation ↔ untested high-activation; explicit excluded when a child is present). It stores <b>no hidden <code>recommended</code> or target-rank field</b>, and no <code>normalized_evidence</code> or response coefficients (derived at decision time).</span></p>
+        <p><span class="ja">どの曲も全次元で支配的にならないよう、対立する証拠を持つ組を必ず含めます（例：穏やか↔活発＝<b>覚醒軸</b>の反転／明るい↔暗い＝<b>明るさ軸</b>（valence・mode）／アコースティック↔電子＝<b>覚醒への逆寄与</b>（acousticness）／推し一致↔非推しだが高覚醒／最近再生済み↔新鮮／受諾済み低覚醒↔未検証高覚醒／子供同乗時にexplicitを除外）。<b>隠れた<code>recommended</code>や目標順位フィールドは持たず</b>、<code>normalized_evidence</code>や応答係数もカタログに保存しません（決定時に導出）。</span><span class="en">So no song dominates every dimension, the catalog always includes conflicting pairs (calm ↔ active for the <b>arousal axis</b>; bright ↔ dark for the <b>valence axis</b> (valence, mode); acoustic ↔ electric for <b>acousticness’s inverse-arousal</b> effect; oshi match ↔ non-oshi but higher arousal; recently played ↔ fresh; accepted low-arousal ↔ untested high-arousal; explicit excluded when a child is present). It stores <b>no hidden <code>recommended</code> or target-rank field</b>, and no <code>normalized_evidence</code> or response coefficients (derived at decision time).</span></p>
       </div>
       <p class="small muted"><span class="ja">基本世界（例：単調な夜間高速、海沿い目的地、家族同乗、推しイベント、休憩後停車カラオケ）と1変数対比が同梱されます。ルート・目的地・予定などSpotify非対応の入力は世界には存在しますが、V1のスコアには入らず <code>context_only</code> として扱われます。</span><span class="en">Base worlds (e.g. monotonous night highway, coastal destination, family group, upcoming oshi event, post-rest stopped karaoke) and one-variable contrasts are shipped. Spotify-unsupported inputs (route, destination, schedule) may exist in the world but are marked <code>context_only</code> and do not enter V1 scoring.</span></p>
       <div class="why safe">
@@ -611,7 +649,7 @@
       </p>
       <div class="why">
         <span class="lab"><span class="ja">④コンテンツ提案は設計済み（数値は説明用の例）</span><span class="en">④ Content proposal is designed (numbers are illustrative)</span></span>
-        <p><span class="ja">具体コンテンツ提案アルゴリズムは設計済みです（<code class="k">aica_transparent_content_proposal_algorithm.md</code>）。各プレイリスト項目に <b>item_fit（−1〜+1）と選定理由</b>を添えて表示します。下の数値は説明用の例で、実行時は凍結したSpotifyオーディオ特徴量から算出される曲の活性度に基づきます。</span><span class="en">The concrete-content algorithm is designed (<code class="k">aica_transparent_content_proposal_algorithm.md</code>). Each playlist item is shown with its <b>item_fit (−1…+1) and the reason it was chosen</b>. The numbers below are illustrative; at run time they follow from each song’s activation derived from its frozen Spotify audio features.</span></p>
+        <p><span class="ja">具体コンテンツ提案アルゴリズムは設計済みです（<code class="k">aica_transparent_content_proposal_algorithm.md</code>）。各プレイリスト項目に <b>item_fit（−1〜+1）と選定理由</b>を添えて表示します。下の数値は説明用の例で、実行時は凍結したSpotifyオーディオ特徴量から算出される曲の<b>2軸特性（覚醒度・明るさ）</b>に基づきます。</span><span class="en">The concrete-content algorithm is designed (<code class="k">aica_transparent_content_proposal_algorithm.md</code>). Each playlist item is shown with its <b>item_fit (−1…+1) and the reason it was chosen</b>. The numbers below are illustrative; at run time they follow from each song’s <b>two audio traits (arousal, valence)</b> derived from its frozen Spotify audio features.</span></p>
       </div>
 
       <div class="mock" role="img" aria-label="Wireframe of the input / setup / service-proposal / content-proposal screen">
@@ -670,23 +708,23 @@
               <ol class="plist">
                 <li>
                   <div class="top"><span class="rk">1</span><span class="nm">synthetic-track-0001 — “Afterglow Highway”</span><span class="sc">+0.38</span></div>
-                  <p class="rz"><span class="ja">活発な曲（活性度→a=+0.52）が、高い眠気・疲労・単調（e=+）と符号一致＝加点。推しアーティスト完全一致＋回復実績が後押し。今週再生済みで小さく減点。</span><span class="en">Active song (activation → a=+0.52) agrees in sign with high drowsiness/fatigue/monotony (e=+) → positive. Exact oshi-artist match and recovery history add lift; a play this week is a small penalty.</span></p>
+                  <p class="rz"><span class="ja">元気な曲（高覚醒→a=+0.52）が、眠気・単調の「元気づけ」需要（α＝＋）と一致＝加点。推しアーティスト完全一致＋回復実績が後押し。今週再生済みで小さく減点。</span><span class="en">Energetic song (high arousal → a=+0.52) matches the energize demand of drowsiness/monotony (α=+) → positive. Exact oshi-artist match and recovery history add lift; a play this week is a small penalty.</span></p>
                 </li>
                 <li>
                   <div class="top"><span class="rk">2</span><span class="nm">synthetic-track-0014 — “Neon Corridor”</span><span class="sc">+0.29</span></div>
-                  <p class="rz"><span class="ja">中〜高エネルギー・高danceabilityで活性度が高い。推し一致はないが受諾実績あり。</span><span class="en">Mid-high energy and high danceability give strong activation; no oshi match but positive acceptance history.</span></p>
+                  <p class="rz"><span class="ja">中〜高エネルギー・高danceabilityで覚醒度が高い。推し一致はないが受諾実績あり。</span><span class="en">Mid-high energy and high danceability give strong arousal; no oshi match but positive acceptance history.</span></p>
                 </li>
                 <li>
                   <div class="top"><span class="rk">3</span><span class="nm">synthetic-track-0022 — “Midnight Compass”</span><span class="sc">+0.17</span></div>
-                  <p class="rz"><span class="ja">テンポが鼻歌に向く（tempo_ease高）が、valence低め・利用履歴が薄く中立寄り。</span><span class="en">Tempo suits humming (high tempo_ease), but lower valence and thin usage history keep it modest.</span></p>
+                  <p class="rz"><span class="ja">テンポが鼻歌に向く（tempo_ease高）が、明るさ（valence）低め・利用履歴が薄く中立寄り。</span><span class="en">Tempo suits humming (high tempo_ease), but lower brightness (valence) and thin usage history keep it modest.</span></p>
                 </li>
                 <li>
                   <div class="top"><span class="rk">4</span><span class="nm">synthetic-track-0007 — “Open Meridian”</span><span class="sc">+0.06</span></div>
-                  <p class="rz"><span class="ja">プレイリスト新規性はプラスだが、活性度がほぼ中立で覚醒維持への寄与は小さい。</span><span class="en">Playlist novelty helps, but near-neutral activation contributes little to staying alert.</span></p>
+                  <p class="rz"><span class="ja">プレイリスト新規性はプラスだが、覚醒度がほぼ中立で覚醒維持への寄与は小さい。</span><span class="en">Playlist novelty helps, but near-neutral arousal contributes little to staying alert.</span></p>
                 </li>
                 <li>
                   <div class="top"><span class="rk">5</span><span class="nm">synthetic-track-0031 — “Quiet Harbor”</span><span class="sc">−0.12</span></div>
-                  <p class="rz"><span class="ja">穏やかな曲（活性度→a=−0.4）は、高い眠気・単調（e=+）と符号が逆＝減点。ただし除外はされない。</span><span class="en">A calm song (activation → a=−0.4) opposes the high drowsiness/monotony evidence (e=+) → negative, but it is not excluded.</span></p>
+                  <p class="rz"><span class="ja">穏やかな曲（低覚醒→a=−0.4）は、眠気・単調の「元気づけ」需要（α＝＋）と逆＝減点。ただし除外はされない。</span><span class="en">A calm song (low arousal → a=−0.4) opposes the energize demand of drowsiness/monotony (α=+) → negative, but it is not excluded.</span></p>
                 </li>
               </ol>
               <div class="field"><span class="k"><span class="ja">除外例</span><span class="en">Excluded</span></span><span class="chips"><span class="chip no">synthetic-track-0009 — <span class="ja">humming_karaoke_available: 0</span><span class="en">flag 0</span></span><span class="chip no"><span class="ja">explicit＋子供同乗</span><span class="en">explicit + child present</span></span></span></div>
@@ -751,17 +789,5 @@
     </footer>
   </main>
 </div>
-
-<script>
-  const buttons = document.querySelectorAll('[data-lang]');
-  buttons.forEach((button) => {
-    button.addEventListener('click', () => {
-      document.body.classList.remove('lang-en', 'lang-ja');
-      document.body.classList.add('lang-' + button.dataset.lang);
-      buttons.forEach((item) => item.classList.toggle('active', item === button));
-      document.documentElement.lang = button.dataset.lang === 'ja' ? 'ja' : 'en';
-    });
-  });
-</script>
 </body>
 </html>

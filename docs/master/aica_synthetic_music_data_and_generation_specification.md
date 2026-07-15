@@ -2,12 +2,13 @@
 
 Status: approved V1 design
 Scope: shared simulator catalog data, generation, validation, editing, and replay
-Last updated: 2026-07-14
+Last updated: 2026-07-15
 
 ## Related documents
 
 - [AICA proposal simulator specification](./aica_proposal_simulator_specification.md)
 - [AICA transparent content-proposal algorithm](./aica_transparent_content_proposal_algorithm.md)
+- [AICA transparent service-proposal algorithm](./aica_transparent_service_proposal_algorithm.md)
 - [Spotify Track reference](https://developer.spotify.com/documentation/web-api/reference/get-track)
 - [Spotify Audio Features reference](https://developer.spotify.com/documentation/web-api/reference/get-audio-features)
 
@@ -69,6 +70,8 @@ V1 does not add any of the following:
 - LLM-generated descriptions presented as provider facts.
 
 The content algorithm may calculate transparent numeric proxies from Spotify Audio Features at decision time. Derived values are formula outputs, not stored provider metadata.
+
+The exclusion above is *AICA/LLM-inferred* genre. It is separate from Spotify's own artist-level `artist.genres` field (from the Artist object, `GET /artists`), which the content algorithm identifies as the sole real-provider path for its **genre-pending (`🔧`) features** — route, destination, child, hobbies, and per-genre usage (that document's §5.7). `artist.genres` is deliberately **not** in the V1 Track/Audio-Features contract; adding it is a separately specced, opt-in data-contract extension (§21, §25), not part of Spotify-only V1.
 
 ### 2.3 Separate world and history data
 
@@ -237,28 +240,40 @@ spotify_audio_features:
 
 ### 5.2 Value contract
 
+The scoring roles below match the content algorithm's **Trait Composition Matrix**
+(that document's §4.2). The V1 selector distills each song into two signed audio
+**traits** — **arousal** (how energetic) and **valence** (how bright) — plus two
+karaoke **ease** proxies (`humming_ease`, `full_karaoke_ease`). "arousal proxy" and
+"valence proxy" name the trait a field feeds; `(inv)` means the field is used
+inverted.
+
 | Field | Contract | V1 scoring role |
 |---|---|---|
-| `acousticness` | number in `[0,1]` | retained, not scored |
+| `acousticness` | number in `[0,1]` | arousal proxy `(inv)` |
 | `analysis_url` | synthetic reserved URL | identity/provenance only |
-| `danceability` | number in `[0,1]` | activation and karaoke proxies |
-| `duration_ms` | positive integer | full-karaoke proxy and duration |
-| `energy` | number in `[0,1]` | activation |
+| `danceability` | number in `[0,1]` | arousal and karaoke-ease proxy |
+| `duration_ms` | positive integer | full-karaoke-ease proxy and duration |
+| `energy` | number in `[0,1]` | arousal proxy |
 | `id` | exact Track ID match | identity/join |
-| `instrumentalness` | number in `[0,1]` | vocal-presence proxy |
+| `instrumentalness` | number in `[0,1]` | karaoke-ease proxy `(inv)` (vocal presence) |
 | `key` | integer `-1` or `0..11` | retained, not scored |
 | `liveness` | number in `[0,1]` | retained, not scored |
-| `loudness` | finite dB value | normalized activation |
-| `mode` | integer `0` or `1` | retained, not scored |
-| `speechiness` | number in `[0,1]` | karaoke proxies |
-| `tempo` | positive BPM | activation and karaoke proxies |
+| `loudness` | finite dB value | normalized arousal proxy |
+| `mode` | integer `0` or `1` | valence proxy |
+| `speechiness` | number in `[0,1]` | karaoke-ease proxy `(inv)` |
+| `tempo` | positive BPM | arousal and karaoke-ease proxy |
 | `time_signature` | integer `3..7` | retained, not scored |
 | `track_href` | synthetic reserved URL | identity/provenance only |
 | `type` | `audio_features` | schema discriminator |
 | `uri` | exact Track URI match | identity/join |
-| `valence` | number in `[0,1]` | activation and presentation |
+| `valence` | number in `[0,1]` | valence proxy and presentation |
 
-The dataset preserves `key`, `mode`, `time_signature`, `acousticness`, and `liveness` even though the V1 selector does not force them into a recommendation formula. Storage does not imply scoring.
+The dataset preserves `key`, `time_signature`, and `liveness` even though the V1
+selector never scores them (they are the content algorithm's §4.3 non-scored list).
+Storage does not imply scoring. Conversely, `valence`, `mode`, and `acousticness`
+**are** scored in V1 — earlier drafts listed them as retained-not-scored, but the
+two-axis trait model uses `valence`/`mode` for the valence axis and `acousticness`
+(inverted) for the arousal axis.
 
 ### 5.3 Audio-feature invariants
 
@@ -468,6 +483,18 @@ Profile-family guidance is:
 
 These are generation controls, not stored labels used by the recommendation algorithm.
 
+Because the two-axis trait model scores **valence** (`valence`, `mode`) and the
+**inverse-arousal** contribution of `acousticness`, the primary energy × tempo grid
+is not enough on its own. Across the 36 cells, generation must also spread these
+secondary dimensions so the catalog exercises both axes, not only energy/tempo:
+
+- `valence` spans low, mid, and high, decorrelated from `energy` (so bright-calm and
+  dark-energetic songs both exist);
+- `mode` includes both minor (`0`) and major (`1`) at comparable valence, so the
+  major/minor valence cue is testable in isolation; and
+- `acousticness` spans acoustic-leaning and electric-leaning at comparable energy and
+  tempo, so its inverse-arousal effect is observable independently.
+
 ### 10.3 Identity and releases
 
 The default catalog has:
@@ -498,22 +525,34 @@ No singer-versus-artist distinction or detailed contributor graph is generated.
 
 ## 11. Deliberate trade-off fixtures
 
-The catalog must contain candidate pairs that expose actual Spotify-only trade-offs:
+The catalog must contain candidate pairs that expose actual Spotify-only trade-offs
+across **both** trait axes — arousal (energetic↔calm) and valence (bright↔dark) — not
+only energy/tempo:
 
-- clearly calm versus clearly active songs for signed candidate-response reversal tests in every detailed service;
-- high energy with low valence versus moderate energy with high valence;
+- clearly calm (low-arousal) versus clearly active (high-arousal) songs for
+  arousal-response reversal tests in every detailed service;
+- **bright versus dark at matched arousal** — high `valence` + major `mode` versus low
+  `valence` + minor `mode` — so the valence axis reorders when a context demands
+  brightness (fatigue, congestion, night);
+- high energy with low valence versus moderate energy with high valence, so arousal
+  and valence pull in opposite directions;
+- **acoustic-leaning versus electric-leaning at matched energy and tempo** (high vs
+  low `acousticness`), isolating acousticness's inverse-arousal contribution;
+- minor-mode versus major-mode at otherwise matched features, isolating the `mode`
+  valence cue;
 - fast tempo with low danceability versus medium tempo with high danceability;
-- strong activation with high speechiness versus slightly lower activation with easy speech profile;
+- strong arousal with high speechiness versus slightly lower arousal with an easy
+  speech profile (karaoke-ease trade-off);
 - a short moderate-energy song versus a long high-energy song for full karaoke;
-- exact oshi-artist match versus non-oshi higher activation;
+- exact oshi-artist match versus non-oshi higher arousal;
 - recently played exact track versus fresh track;
-- accepted low-activation track versus untested high-activation track;
+- accepted low-arousal track versus untested high-arousal track;
 - instrumental-leaning track whose availability flags are still `1`; and
 - explicit high-fit track excluded when a child is present.
 
 The dataset must not contain a hidden `recommended`, `best_for_world`, or target-rank field.
 
-It also does not store `normalized_evidence`, `response_coefficient`, or `normalized_feature_response` as song metadata. The content algorithm derives signed evidence from the world and the song response coefficient from the selected-service activation at decision time.
+It also does not store `normalized_evidence`, `response_coefficient`, or `normalized_feature_response` as song metadata. The content algorithm derives evidence from the world (a magnitude for driver/environment features, signed for exact-ID history) and the song response coefficient from the song's two audio traits (arousal, valence) and exact-ID metadata at decision time.
 
 ---
 
@@ -646,9 +685,9 @@ same Track + Audio Features fixture B
 same world + same algorithm version
 ```
 
-Only explicitly listed Audio Features may differ. The expected trace must identify the derived activation or karaoke-proxy change responsible for any rank change.
+Only explicitly listed Audio Features may differ. The expected trace must identify the derived **arousal**, **valence**, or karaoke-ease-proxy change responsible for any rank change.
 
-For a calm/active pair, the fixture comparison also asserts the signed response behavior: negative feature evidence favors the lower activation coefficient, positive evidence favors the higher activation coefficient, and zero evidence makes the activation factor neutral.
+For an arousal pair (calm/active), the fixture comparison asserts the signed response behavior: because evidence is a plain magnitude and direction lives in the feature's arousal demand `α`, a positive-`α` context (e.g. drowsiness, monotony) favors the higher-arousal song, a negative-`α` context (e.g. the soothe direction of fatigue) favors the lower-arousal song, and zero evidence makes the arousal contribution neutral. For a bright/dark pair (differing `valence`/`mode`), it asserts the valence behavior: because the valence demand `β` is one-sided, a stress context (fatigue, congestion, night) favors the brighter song and never rewards a darker one.
 
 These are synthetic fixture variants. They are not live provider refreshes and are never silently swapped during a replay.
 
@@ -740,8 +779,8 @@ validator_version: 1.0.0
 random_seed: 1042
 world_id: world-night-highway-01
 world_hash: sha256:...
-algorithm_version: transparent-content-v1.1-spotify-signed-response
-parameter_set_id: default-v1.1-signed-response
+algorithm_version: transparent-content-v1.2-two-axis-trait
+parameter_set_id: default-v1.2-two-axis-trait
 ```
 
 The frozen, validated dataset—not an LLM rerun—is the replay boundary. Given the same dataset, world, algorithm version, parameters, and seed, the transparent result must be identical.
@@ -846,9 +885,10 @@ No extension may overwrite Spotify-compatible fields or `simulation_flags`.
 - every world reference resolves;
 - direct history uses Track IDs;
 - exact oshi uses Spotify-compatible Artist IDs;
-- one-variable contrasts differ only in their declared field; and
-- signed low/high drowsiness and fatigue reverse calm/active candidate responses;
-- traffic, road, day/night, and monotony contrasts follow their declared signed-evidence profiles;
+- one-variable contrasts differ only in their declared field;
+- low/high drowsiness and monotony reverse the arousal ordering of calm/active candidates;
+- traffic, road, day/night, and fatigue contrasts follow their declared arousal/valence demand profiles (a bright-favoring context reorders the bright/dark pair);
+- a bright/dark fixture pair exercises the valence axis (`valence`/`mode`) and an acoustic/electric pair exercises acousticness's inverse-arousal contribution; and
 - route-only contrast produces no Spotify-only content-rank change.
 
 ### 23.6 Repair and replay
@@ -872,8 +912,8 @@ This specification is satisfied when:
 - synthetic records are unmistakably labeled and never use live Spotify links;
 - the LLM receives schema and fictional controls, not real Spotify content;
 - deterministic validators reject invalid or inconsistent objects;
-- the 36-song catalog covers approved audio trade-offs;
-- the catalog contains calm/active pairs suitable for signed candidate-response reversal tests;
+- the 36-song catalog covers approved audio trade-offs across both trait axes;
+- the catalog contains calm/active pairs for arousal-reversal tests **and** bright/dark (`valence`/`mode`) and acoustic/electric (`acousticness`) pairs for the valence and inverse-arousal contributions;
 - worlds and histories remain separate from song metadata; and
 - dataset, world, algorithm, and parameter versions are sufficient for exact replay.
 
