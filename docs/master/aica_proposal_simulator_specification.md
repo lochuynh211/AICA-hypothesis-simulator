@@ -804,8 +804,8 @@ No live LLM call occurs during a deterministic transparent simulation run. The
 demonstration tier contains 36 balanced fictional songs, plus smaller fixtures
 and a future 500+ item stress tier.
 
-> **P2 amendment (2026-07-16) — Soundcharts grounding.** The staged generator above
-> is now realized by grounding the catalog in real data from the **Soundcharts API**
+> **Soundcharts-grounded generation.** The staged generator above
+> is realized by grounding the catalog in real data from the **Soundcharts API**
 > and mapping it into the schema (S0–S9 pipeline). **Real song/artist names and
 > verbatim real audio are kept** for reviewer trust; only IDs and URLs stay synthetic
 > (`synthetic-` / `.invalid`, still enforced). The generator LLM additionally plans

@@ -2,52 +2,46 @@
 
 Status: approved V1 design
 Scope: shared simulator catalog data, generation, validation, editing, and replay
-Last updated: 2026-07-15
-Amended: 2026-07-16 (P2 Soundcharts grounding — see §0)
+Last updated: 2026-07-16
 
-## 0. P2 amendment — Soundcharts-grounded generation (2026-07-16)
+## 0. Data source: Soundcharts-grounded generation
 
-This specification was written for a **fully synthetic** catalog. The approved **P2
-design** (`docs/master/p2-soundcharts-grounded-data-generation-design.md`) grounds
-the catalog in real data harvested from the **Soundcharts API** (the customer has no
-Spotify access) and maps it into this schema. The clauses below are amended; the
-design doc is authoritative on detail. The parts of the firewall that protect
-algorithm-verification integrity are **unchanged**.
+The catalog is produced by grounding it in real song data harvested from the
+**Soundcharts API** (the customer has no Spotify access) and mapping that data into
+the schema defined below. The full pipeline and rationale are in
+`docs/master/p2-soundcharts-grounded-data-generation-design.md`.
 
-- **Real names kept (D1).** Real song and artist names are retained for reviewer
-  trust. This overrides "all names/identities are fictional" (§9.2, §23.4, §24). IDs
-  and URLs stay synthetic (`synthetic-` / `.invalid`) and are still enforced.
-- **Verbatim real audio (D2).** `spotify_audio_features` values are copied from
-  Soundcharts (`timeSignature`→`time_signature`), wrapped with synthetic identity
-  fields. The catalog therefore stores real, Spotify-derived measurements.
-- **Manifest (D3).** `dataset_kind: soundcharts_grounded_spotify_compatible`,
-  `synthetic_only: false`, plus a provenance/licensing note. A record is honestly
-  labeled real-grounded and still must never be mistaken for a *live* Spotify response
-  (IDs/URLs are synthetic).
-- **Identity rules (D4/D6).** `synthetic-` ID and `.invalid` URL rules stand (§17.3);
-  the "must not resemble live provider data" intent is relaxed for **names** and the
-  **real ISRC** only.
-- **Determinism re-scoped (D5).** "Same seed → byte-identical regeneration" (§19,
-  §23.4) cannot hold with a live API + LLM. Instead the harvest is cached and the LLM
-  plans are frozen, so the **transform** (raw cache → catalog) is byte-identical and
-  re-runnable. The committed dataset stays the replay boundary; no live network/LLM
-  call occurs during a transparent simulation *run*.
-- **Genre dual-representation (D7).** Soundcharts genre text is used for search,
-  display, and lineage; a `real→controlled-vocabulary` map feeds **only**
-  `genre_affinity_v1` scoring (§21.1). Unmapped → `genre_unmappable_to_vocabulary`
-  (`missing_neutral`). The controlled vocabulary stays frozen.
-- **LLM role (D8).** The generator LLM now (a) plans Soundcharts searches, (b) narrows
-  candidates to save quota, and (c) judges expected **test-case labels** *blind*, with
-  the P6 score as a cross-check. It therefore **does** see real Soundcharts metadata
-  during search/narrowing/judging — overriding §9.1's "does not receive live Spotify
-  payloads" — but it never enriches stored song fields and never selects catalog songs
-  by score.
-- **Recommendation independence preserved (unchanged).** Catalog selection stays
-  coverage-driven (audio binned to cells), never score-driven; the frozen catalog
-  carries no `recommended`/`best_for_world`/`target_rank` (§11, §17.6).
-- **New artifact.** A labeled **test-case set** `(world, candidate, expected label)`
-  with LLM-judge provenance is produced alongside the catalog; the catalog itself
-  stays label-free.
+What is real and what is synthetic:
+
+- **Real, kept for reviewer trust:** song and artist **names**, all
+  `spotify_audio_features` **values** (copied verbatim; `timeSignature` is renamed to
+  `time_signature`), release data, and the **ISRC**.
+- **Synthetic, always:** every ID (`synthetic-` prefix) and every URL (`.invalid`
+  host), enforced by the validator (§17.3).
+- **Manifest:** `dataset_kind: soundcharts_grounded_spotify_compatible`,
+  `synthetic_only: false`, with a provenance/licensing note. A record is honestly
+  labeled real-grounded and must never be mistaken for a *live* Spotify response.
+
+Genre uses two representations: the real Soundcharts genre text (for search, display,
+and lineage) and a `real → controlled-vocabulary` map that feeds only the
+`genre_affinity_v1` scoring extension (§21.1); an unmapped genre yields
+`genre_unmappable_to_vocabulary` and scores `missing_neutral`.
+
+The generator LLM plans Soundcharts searches, narrows candidates to conserve quota,
+and judges expected **test-case labels** blind (with the P6 algorithm score as a
+cross-check). It sees real Soundcharts metadata for those tasks but never enriches
+stored song fields and never selects catalog songs by score.
+
+**Integrity.** Catalog selection is coverage-driven — a song enters because its real
+audio bins into a needed coverage cell, never because of any score or rank — and the
+frozen catalog carries no `recommended` / `best_for_world` / `target_rank` field
+(§11, §17.6). A separate labeled **test-case set** `(world, candidate, expected
+label)` is produced alongside the label-free catalog.
+
+**Reproducibility.** The one-time live harvest is cached and the LLM plans are frozen,
+so the deterministic transform (raw cache → catalog) is byte-identical and re-runnable.
+The committed frozen dataset — not a rerun of the harvest — is the replay boundary, and
+no live network or LLM call occurs during a transparent simulation run.
 
 ## Related documents
 
@@ -132,8 +126,8 @@ A frozen dataset uses this envelope:
 
 ```yaml
 dataset_manifest:
-  dataset_id: synthetic-spotify-compatible-v1-seed-1042
-  dataset_kind: synthetic_spotify_compatible
+  dataset_id: soundcharts-grounded-v1-seed-1042
+  dataset_kind: soundcharts_grounded_spotify_compatible
   schema_version: 1.0.0
   spotify_track_reference_version: pinned-2026-07-14
   spotify_audio_features_reference_version: pinned-2026-07-14
@@ -142,13 +136,14 @@ dataset_manifest:
   validation_rules_version: 1.0.0
   random_seed: 1042
   generated_at: 2026-07-14T00:00:00Z
-  synthetic_only: true
+  synthetic_only: false
+  provenance_note: "Names and audio harvested from Soundcharts; IDs and URLs synthetic."
 
 songs: []
 worlds: []
 ```
 
-The manifest label is mandatory. A synthetic record must never be mistaken for a live Spotify response. **(P2 amendment §0/D3:** under Soundcharts grounding `dataset_kind: soundcharts_grounded_spotify_compatible` and `synthetic_only: false`, with a provenance/licensing note; names and audio are real, IDs/URLs synthetic.)
+The manifest label is mandatory. A record must never be mistaken for a *live* Spotify response: `dataset_kind` is `soundcharts_grounded_spotify_compatible`, `synthetic_only` is `false`, and the provenance note records that names and audio are real while IDs and URLs are synthetic.
 
 The Audio Features endpoint is marked deprecated in Spotify's current reference. V1 therefore uses a pinned schema fixture and does not assume that the endpoint will be available at simulator runtime.
 
@@ -366,8 +361,8 @@ Synthetic provenance is stored once in `dataset_manifest`:
 
 ```yaml
 dataset_manifest:
-  dataset_kind: synthetic_spotify_compatible
-  synthetic_only: true
+  dataset_kind: soundcharts_grounded_spotify_compatible
+  synthetic_only: false
   generator_pass: track_and_audio_features
   generator_version: 1.0.0
   prompt_template_version: 1.0.0
@@ -408,9 +403,9 @@ provider track
 The permitted flow is:
 
 ```text
-fictional generation controls
-  -> synthetic Spotify-compatible Track object
-  -> synthetic Spotify-compatible Audio Features object
+coverage controls + Soundcharts harvest of real songs
+  -> Spotify-compatible Track object (real names, synthetic IDs/URLs)
+  -> Spotify-compatible Audio Features object (real values, verbatim)
   -> deterministic validation
   -> frozen dataset
 ```
@@ -425,26 +420,26 @@ Future enrichment is an extension boundary. Any future source must have its own 
 
 ### 9.1 Inputs
 
-The LLM receives only:
+The LLM receives:
 
 - the V1 JSON Schema;
 - Spotify-documented field definitions and ranges;
 - the catalog coverage matrix in Section 10;
-- fictional naming and locale instructions;
+- Soundcharts search results and real song metadata for the songs under consideration;
 - fixed entity IDs allocated before generation;
 - the random seed and generation pass ID; and
-- explicit instructions that all people, artists, albums, tracks, IDs, and URLs are fictional.
+- explicit instructions that all IDs and URLs are synthetic (`synthetic-` / `.invalid`), while real names, audio, release data, and ISRC are retained from the Soundcharts source.
 
-It does not receive live Spotify payloads or recommendation results. **(P2 amendment §0/D8:** under Soundcharts grounding the generator LLM does see real Soundcharts metadata for search-strategy, candidate narrowing, and blind test-case label judging — but never for enriching stored song fields, and never to select catalog songs by score.)
+For search-strategy, candidate narrowing, and blind test-case label judging the LLM does receive real Soundcharts metadata, but never to enrich stored song fields and never to select catalog songs by score. It does not receive recommendation results.
 
-### 9.2 Pass 1: fictional Track objects
+### 9.2 Pass 1: Track objects
 
 The generator creates the artist, album, and track identities first.
 
 Requirements:
 
 1. allocate stable synthetic artist, album, and track IDs;
-2. create fictional names and release data; **(P2 amendment §0/D1:** real song/artist names and real release data are kept from Soundcharts; only IDs/URLs are synthetic)
+2. keep the real song/artist names and release data from the Soundcharts source;
 3. use the same artist reference in album and track objects;
 4. create Track fields with exact V1 names and types;
 5. set playable synthetic records to `is_playable: true` unless the fixture intentionally tests exclusion;
@@ -540,12 +535,12 @@ secondary dimensions so the catalog exercises both axes, not only energy/tempo:
 - `acousticness` spans acoustic-leaning and electric-leaning at comparable energy and
   tempo, so its inverse-arousal effect is observable independently.
 
-**(P2 amendment §0):** because the content selector also scores `humming_ease` and
-`full_karaoke_ease` (§5.2), generation must additionally spread these across the 36
-cells — both easy-to-hum and hard-to-hum, and both easy and hard full-karaoke songs —
-plus genre (Soundcharts taxonomy). These are **required secondary spreads + contrast
-pairs layered onto the 36-cell grid**, not extra multiplicative cell axes (a full
-`36 × ease × genre` cross-product is infeasible on limited Soundcharts quota).
+Because the content selector also scores `humming_ease` and `full_karaoke_ease`
+(§5.2), generation must additionally spread these across the 36 cells — both
+easy-to-hum and hard-to-hum, and both easy and hard full-karaoke songs — plus genre.
+These are required secondary spreads and contrast pairs layered onto the 36-cell grid,
+not extra multiplicative cell axes (a full `36 × ease × genre` cross-product is
+infeasible on limited Soundcharts quota).
 
 ### 10.3 Identity and releases
 
@@ -785,7 +780,7 @@ These are synthetic fixture variants. They are not live provider refreshes and a
 
 ### 17.3 URLs and synthetic identity
 
-**(P2 amendment §0/D4/D6:** ID and URL rules below are unchanged and still enforced; the "no real provider data" intent is relaxed only for real **names** and the real **ISRC**, which are kept for realism/lineage.)**
+The ID and URL rules below are strictly enforced. Real names and the real ISRC are kept for realism and lineage; only IDs and URLs are synthetic.
 
 - every synthetic ID visibly begins with `synthetic-`;
 - every HTTP(S) URL uses a `.invalid` host;
@@ -971,10 +966,10 @@ Required declarations for this extension:
 | `world_reference_failed` | a world/history reference does not resolve |
 | `policy_boundary_violation` | real Spotify content was sent to an LLM or treated as synthetic input |
 | `invalid_genre_extension` | `genre_affinity_v1` uses an out-of-vocabulary genre, an unresolved artist ID, a bad usage level, or overwrites a Spotify-compatible field (§17.7) |
-| `soundcharts_harvest_failed` | *(P2 §0)* Soundcharts search/metadata call failed or quota exhausted |
-| `cell_unfillable_from_source` | *(P2 §0)* no real song found to fill a required coverage cell after re-harvest |
-| `genre_unmappable_to_vocabulary` | *(P2 §0/D7)* a real Soundcharts genre has no controlled-vocabulary mapping (→ `missing_neutral`) |
-| `lineage_integrity_failed` | *(P2 §0)* a synthetic ID lacks a resolvable lineage entry to its Soundcharts source |
+| `soundcharts_harvest_failed` | Soundcharts search/metadata call failed or quota exhausted |
+| `cell_unfillable_from_source` | no real song found to fill a required coverage cell after re-harvest |
+| `genre_unmappable_to_vocabulary` | a real Soundcharts genre has no controlled-vocabulary mapping (→ `missing_neutral`) |
+| `lineage_integrity_failed` | a synthetic ID lacks a resolvable lineage entry to its Soundcharts source |
 
 ---
 
@@ -1006,10 +1001,10 @@ Required declarations for this extension:
 
 ### 23.4 Generation
 
-- same seed and versions yield byte-identical frozen output; **(P2 amendment §0/D5:** re-scoped — the live harvest is cached and LLM plans frozen, so the deterministic *transform* raw-cache→catalog is byte-identical and re-runnable; the live harvest itself is not)
-- all names and identities are fictional; **(P2 amendment §0/D1:** real names kept; IDs/URLs synthetic)
+- the deterministic transform (cached harvest + frozen LLM plans → catalog) yields byte-identical frozen output;
+- IDs and URLs are synthetic; real names, audio, and ISRC are kept from Soundcharts;
 - all URLs use `.invalid`;
-- no real provider payload enters the LLM path; **(P2 amendment §0/D8:** the generator LLM sees real Soundcharts metadata for search/narrowing/blind judging, but never enriches stored fields or selects by score)
+- no real provider payload enriches a stored song field, and the LLM never selects catalog songs by score;
 - all 36 coverage cells are present; and
 - generation inputs contain no target rank.
 
@@ -1050,8 +1045,8 @@ This specification is satisfied when:
 - Track title, performing artists, album, release, IDs, playback policy, and duration are provider-compatible fields;
 - no AICA/LLM-enriched song traits participate in V1;
 - all generated songs default both karaoke availability flags to `1`;
-- synthetic records are unmistakably labeled and never use live Spotify links;
-- the LLM receives schema and fictional controls, not real Spotify content; **(P2 amendment §0/D8:** under Soundcharts grounding the LLM also receives real Soundcharts metadata for search-strategy, narrowing, and blind label judging — not for enriching stored song fields)
+- records are unmistakably labeled real-grounded (synthetic IDs, `.invalid` links) and never use live Spotify links;
+- the LLM receives schema, coverage controls, and real Soundcharts metadata (for search, narrowing, and blind label judging), never to enrich stored song fields;
 - deterministic validators reject invalid or inconsistent objects;
 - the 36-song catalog covers approved audio trade-offs across both trait axes;
 - the catalog contains calm/active pairs for arousal-reversal tests **and** bright/dark (`valence`/`mode`) and acoustic/electric (`acousticness`) pairs for the valence and inverse-arousal contributions;
