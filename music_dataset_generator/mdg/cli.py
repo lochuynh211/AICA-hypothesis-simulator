@@ -246,8 +246,55 @@ def _cmd_transform(args: argparse.Namespace) -> None:
     }, ensure_ascii=False))
 
 
+def _catalog_ids_from_dataset(dataset_dir):
+    """Load track + artist IDs from the frozen catalog under dataset_dir (post-freeze)."""
+    from pathlib import Path
+
+    catalogs = sorted(Path(dataset_dir).glob("*/catalog.json"))
+    if not catalogs:
+        print(f"mdg: no frozen catalog under {dataset_dir} — run `transform` first",
+              file=sys.stderr)
+        raise SystemExit(1)
+    catalog = json.loads(catalogs[-1].read_text(encoding="utf-8"))
+    track_ids, artist_ids = set(), set()
+    for song in catalog:
+        track_ids.add(song["spotify_track"]["id"])
+        for artist in song["spotify_track"].get("artists") or []:
+            artist_ids.add(artist["id"])
+    return sorted(track_ids), sorted(artist_ids)
+
+
 def _cmd_worlds(args: argparse.Namespace) -> None:
-    _not_implemented("worlds")
+    """S7: build base worlds + contrast pairs against the frozen catalog (post-freeze)."""
+    from mdg.worlds import (
+        build_base_worlds,
+        build_contrast_pairs,
+        validate_world_references,
+    )
+
+    workspace, dataset_dir = _paths(args)
+    track_ids, artist_ids = _catalog_ids_from_dataset(dataset_dir)
+
+    if args.write_input:
+        payload = {"track_ids": track_ids, "artist_ids": artist_ids,
+                   "instructions": "Compose coherent histories/oshi grounded to these IDs."}
+        out = workspace / "handoff" / "s7_input.json"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(json.dumps({"wrote": str(out), "tracks": len(track_ids)}))
+        return
+
+    worlds = build_base_worlds(track_ids=track_ids, artist_ids=artist_ids)
+    bundle = build_contrast_pairs(track_ids=track_ids, artist_ids=artist_ids)
+    track_set, artist_set = set(track_ids), set(artist_ids)
+    for world in worlds + bundle["worlds"]:
+        validate_world_references(world, track_ids=track_set, artist_ids=artist_set)
+
+    (workspace / "worlds.json").write_text(
+        json.dumps(worlds, ensure_ascii=False, indent=2), encoding="utf-8")
+    (workspace / "contrast_pairs.json").write_text(
+        json.dumps(bundle, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps({"base_worlds": len(worlds), "contrast_pairs": len(bundle["pairs"])}))
 
 
 def _cmd_judge(args: argparse.Namespace) -> None:
