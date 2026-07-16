@@ -13,6 +13,7 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi==0.115.6",
     "uvicorn[standard]==0.32.1",
+    "music-dataset-generator",
 ]
 
 [dependency-groups]
@@ -20,6 +21,9 @@ dev = [
     "pytest==8.3.4",
     "httpx==0.28.1",
 ]
+
+[tool.uv.sources]
+music-dataset-generator = { path = "../../music_dataset_generator", editable = true }
 
 [tool.hatch.build.targets.wheel]
 packages = ["aica_api"]
