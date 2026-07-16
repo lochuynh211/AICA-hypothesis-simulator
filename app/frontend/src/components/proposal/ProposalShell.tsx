@@ -1,9 +1,10 @@
 /**
- * ProposalShell (P1 T029) — the Proposal Simulator's own shell.
+ * ProposalShell (P1 T029, Runs screen wired in T036) — the Proposal
+ * Simulator's own shell.
  *
  * Sub-nav [ Screen | Runs ]: "Screen" renders the 3-panel ProposalScreen;
- * "Runs" is a placeholder for now (the real ProposalRunsScreen is a later
- * task, per tasks.md T036). Also hosts a JA/EN language toggle (T030) that
+ * "Runs" renders `ProposalRunsScreen` (list / reopen / delete persisted
+ * proposal runs, T032-T036). Also hosts a JA/EN language toggle (T030) that
  * dispatches SET_LANGUAGE on the isolated `proposalStore` — distinct from
  * the trigger app's own `LanguageToggle` (which dispatches to `runStore`).
  *
@@ -14,16 +15,13 @@ import { useState } from 'react'
 import { t } from '../../i18n/t'
 import { useProposalStore } from '../../state/proposalStore'
 import ProposalScreen from './ProposalScreen'
+import ProposalRunsScreen from './ProposalRunsScreen'
 
 type SubView = 'screen' | 'runs'
 
 const LABELS = {
   screen: { ja: '画面', en: 'Screen' },
   runs: { ja: '実行履歴', en: 'Runs' },
-  runsPlaceholder: {
-    ja: '提案の実行履歴（一覧・再表示・削除）はこれから実装されます。',
-    en: 'Proposal run history (list / reopen / delete) is not implemented yet.',
-  },
   mockBadge: { ja: 'モックデータ（P1土台）', en: 'MOCK DATA (P1 foundation)' },
 }
 
@@ -129,13 +127,7 @@ export default function ProposalShell() {
       </header>
 
       <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        {subView === 'screen' ? (
-          <ProposalScreen />
-        ) : (
-          <div data-testid="proposal-runs-placeholder" style={{ padding: '20px', color: '#6b7280' }}>
-            {t(LABELS.runsPlaceholder, lang)}
-          </div>
-        )}
+        {subView === 'screen' ? <ProposalScreen /> : <ProposalRunsScreen />}
       </div>
     </div>
   )

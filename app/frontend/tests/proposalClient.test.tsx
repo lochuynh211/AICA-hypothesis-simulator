@@ -5,6 +5,9 @@ import {
   getPackages,
   createRun,
   selectService,
+  listRuns,
+  getRun,
+  deleteRun,
   pickRationale,
 } from '../src/api/proposalClient'
 
@@ -72,6 +75,50 @@ describe('proposalClient', () => {
       body: JSON.stringify({ selected_service_id: 'music_playlist' }),
     })
     expect(result).toEqual(runLog)
+  })
+
+  it('listRuns() calls GET /api/proposal/runs and returns the summaries', async () => {
+    const summaries = [{ run_id: 'prun_x', status: 'created' }]
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => summaries })
+
+    const result = await listRuns()
+
+    expect(global.fetch).toHaveBeenCalledWith('/api/proposal/runs', { method: 'GET' })
+    expect(result).toEqual(summaries)
+  })
+
+  it('getRun() calls GET /api/proposal/runs/{id} and returns the full log', async () => {
+    const runLog = { run_id: 'prun_x', status: 'content_selected' }
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => runLog })
+
+    const result = await getRun('prun_x')
+
+    expect(global.fetch).toHaveBeenCalledWith('/api/proposal/runs/prun_x', { method: 'GET' })
+    expect(result).toEqual(runLog)
+  })
+
+  it('getRun() throws with a 404 status on an unknown run', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: async () => ({ detail: "Proposal run 'prun_x' not found" }),
+    })
+
+    await expect(getRun('prun_x')).rejects.toThrow(/404/)
+  })
+
+  it('deleteRun() calls DELETE /api/proposal/runs/{id}', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 204, json: async () => ({}) })
+
+    await deleteRun('prun_x')
+
+    expect(global.fetch).toHaveBeenCalledWith('/api/proposal/runs/prun_x', { method: 'DELETE' })
+  })
+
+  it('deleteRun() throws with the status on a non-OK response', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404, json: async () => ({}) })
+
+    await expect(deleteRun('prun_x')).rejects.toThrow(/404/)
   })
 
   it('throws a descriptive error (including the response detail) on a non-OK response', async () => {

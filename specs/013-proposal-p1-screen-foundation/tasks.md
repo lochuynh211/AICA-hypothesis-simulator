@@ -93,14 +93,14 @@ description: "Task list — P1 Proposal Screen (3-Panel) & Standalone Run Founda
 
 ### Backend (TDD)
 
-- [ ] T032 [P] [US2] Test `GET /api/proposal/runs` (list summaries from `proposal_runs/*.json` + active) in `app/api/tests/proposal/test_ep_list_runs.py`, then implement.
-- [ ] T033 [P] [US2] Test `GET /api/proposal/runs/{id}` (full log from disk; renders without recomputing selectors) in `app/api/tests/proposal/test_ep_get_run.py`, then implement.
-- [ ] T034 [US2] Test `DELETE /api/proposal/runs/{id}` (removes only `proposal_runs/<id>.json`; 404 unknown; no trigger run affected) in `app/api/tests/proposal/test_ep_delete_run.py`, then implement.
-- [ ] T035 [US2] Persistence round-trip + determinism test `app/api/tests/proposal/test_us2_persistence.py`: create → file exists under `proposal_runs/` → reopen deep-equals the recorded evidence; identical create+select reproduces identical mock output (SC-004, Determinism gate).
+- [x] T032 [P] [US2] Test `GET /api/proposal/runs` (list summaries from `proposal_runs/*.json` + active) in `app/api/tests/proposal/test_ep_list_runs.py`, then implement.
+- [x] T033 [P] [US2] Test `GET /api/proposal/runs/{id}` (full log from disk; renders without recomputing selectors) in `app/api/tests/proposal/test_ep_get_run.py`, then implement.
+- [x] T034 [US2] Test `DELETE /api/proposal/runs/{id}` (removes only `proposal_runs/<id>.json`; 404 unknown; no trigger run affected) in `app/api/tests/proposal/test_ep_delete_run.py`, then implement.
+- [x] T035 [US2] Persistence round-trip + determinism test `app/api/tests/proposal/test_us2_persistence.py`: create → file exists under `proposal_runs/` → reopen deep-equals the recorded evidence; identical create+select reproduces identical mock output (SC-004, Determinism gate).
 
 ### Frontend (TDD)
 
-- [ ] T036 [US2] `ProposalRunsScreen.tsx` (+ test): list runs, reopen (renders recorded evidence read-only, no recompute), delete; wire the `[ Screen | Runs ]` sub-nav in `ProposalShell`.
+- [x] T036 [US2] `ProposalRunsScreen.tsx` (+ test): list runs, reopen (renders recorded evidence read-only, no recompute), delete; wire the `[ Screen | Runs ]` sub-nav in `ProposalShell`.
 
 **Checkpoint**: US2 independently demoable — persistence lifecycle works, isolated from trigger runs.
 

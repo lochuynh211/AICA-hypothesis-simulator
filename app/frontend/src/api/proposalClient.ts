@@ -333,6 +333,39 @@ export async function selectService(runId: string, serviceId: string): Promise<P
   })
 }
 
+// ── GET /api/proposal/runs — list summaries (P1 T036) ───────────────────────
+
+/** Summary shape for run listings (mirrors backend `ProposalRun`). */
+export type ProposalRunSummary = {
+  run_id: string
+  status: ProposalRunStatus
+  opportunity_id: string
+  created_at: string
+  service_package_id: string
+  content_package_id: string | null
+}
+
+export async function listRuns(): Promise<ProposalRunSummary[]> {
+  return apiFetch('/runs', { method: 'GET' })
+}
+
+// ── GET /api/proposal/runs/{run_id} — full log, no recompute (P1 T036) ─────
+
+export async function getRun(runId: string): Promise<ProposalRunLog> {
+  return apiFetch(`/runs/${encodeURIComponent(runId)}`, { method: 'GET' })
+}
+
+// ── DELETE /api/proposal/runs/{run_id} (P1 T036) ────────────────────────────
+
+export async function deleteRun(runId: string): Promise<void> {
+  const response = await fetch(`${PROPOSAL_API_BASE}/runs/${encodeURIComponent(runId)}`, {
+    method: 'DELETE',
+  })
+  if (!response.ok) {
+    throw new Error(`Proposal API error: ${response.status}`)
+  }
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 /**

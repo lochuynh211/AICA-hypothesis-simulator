@@ -10,6 +10,7 @@ vi.mock('../src/api/proposalClient', async () => {
     ...actual,
     getPackages: vi.fn().mockResolvedValue({ slots: [], packages: [], errors: [] }),
     getMatrix: vi.fn().mockResolvedValue({ matrix_version: 'v1', rows: [] }),
+    listRuns: vi.fn().mockResolvedValue([]),
   }
 })
 
@@ -59,7 +60,7 @@ describe('ProposalShell', () => {
     await waitFor(() => expect(getPackages).toHaveBeenCalled())
     fireEvent.click(screen.getByTestId('proposal-subnav-runs'))
     expect(screen.queryByTestId('world-panel')).not.toBeInTheDocument()
-    expect(screen.getByTestId('proposal-runs-placeholder')).toBeInTheDocument()
+    expect(screen.getByTestId('proposal-runs-screen')).toBeInTheDocument()
 
     fireEvent.click(screen.getByTestId('proposal-subnav-screen'))
     await waitFor(() => expect(screen.getByTestId('world-panel')).toBeInTheDocument())

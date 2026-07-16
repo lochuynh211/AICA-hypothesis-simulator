@@ -3,10 +3,13 @@
 Implements the Proposal Simulator surface described in
 specs/013-proposal-p1-screen-foundation/contracts/proposal-api.md:
 
-  GET  /api/proposal/matrix                       (T020)
-  GET  /api/proposal/packages                      (T021)
-  POST /api/proposal/runs                          (T022 — create + STEP 1 service)
-  POST /api/proposal/runs/{run_id}/select-service   (T023 — STEP 2 content)
+  GET    /api/proposal/matrix                        (T020)
+  GET    /api/proposal/packages                       (T021)
+  POST   /api/proposal/runs                          (T022 — create + STEP 1 service)
+  POST   /api/proposal/runs/{run_id}/select-service    (T023 — STEP 2 content)
+  GET    /api/proposal/runs                          (T032 — list summaries)
+  GET    /api/proposal/runs/{run_id}                   (T033 — full log, no recompute)
+  DELETE /api/proposal/runs/{run_id}                   (T034 — remove persisted log)
 
 Follows the same convention as the sibling trigger routers
 (``routers/packages.py`` et al.): a bare ``APIRouter()`` with full-path
@@ -33,7 +36,7 @@ import os
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 from pydantic import BaseModel, ValidationError
 
 from aica_api.config import settings
@@ -51,7 +54,7 @@ from aica_api.models.proposal.journey import JourneyState
 from aica_api.models.proposal.matrix import MatrixResolutionError, PurposeStageServiceMatrix
 from aica_api.models.proposal.opportunity import ProposalOpportunity
 from aica_api.models.proposal.package_manifest import ProposalPackageManifest
-from aica_api.models.proposal.proposal_run import ProposalRunLog
+from aica_api.models.proposal.proposal_run import ProposalRun, ProposalRunLog
 from aica_api.services import proposal_run_manager as prm
 from aica_api.services.proposal_package_registry import ProposalPackageRegistry
 from aica_api.services.proposal_selector import dispatch_selector
@@ -457,3 +460,50 @@ def select_service(run_id: str, body: SelectServiceBody) -> ProposalRunLog:
         journey_state=new_journey_state,
     )
     return run_log
+
+
+# ---------------------------------------------------------------------------
+# GET /api/proposal/runs — T032 (list summaries; US2)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/proposal/runs")
+def list_proposal_runs() -> list[ProposalRun]:
+    """Return summaries for every persisted proposal run.
+
+    Sourced entirely from ``proposal_runs/*.json`` on disk (P1 has no
+    in-process run registry yet — see ``proposal_run_manager.list_runs``).
+    """
+    return prm.list_runs(settings.proposal_runs_dir)
+
+
+# ---------------------------------------------------------------------------
+# GET /api/proposal/runs/{run_id} — T033 (full log, no recompute; US2)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/proposal/runs/{run_id}")
+def get_proposal_run(run_id: str) -> ProposalRunLog:
+    """Return the full persisted ``ProposalRunLog`` for ``run_id``.
+
+    Reopen renders the log exactly as recorded — no selector is ever
+    re-invoked here (mirrors ``proposal_run_manager.get_run``'s contract).
+    """
+    run_log = prm.get_run(run_id, settings.proposal_runs_dir)
+    if run_log is None:
+        raise HTTPException(status_code=404, detail=f"Proposal run {run_id!r} not found")
+    return run_log
+
+
+# ---------------------------------------------------------------------------
+# DELETE /api/proposal/runs/{run_id} — T034 (US2)
+# ---------------------------------------------------------------------------
+
+
+@router.delete("/api/proposal/runs/{run_id}", status_code=204)
+def delete_proposal_run(run_id: str) -> Response:
+    """Remove ``proposal_runs/<run_id>.json``. Never touches trigger ``runs/``."""
+    deleted = prm.delete_run(run_id, settings.proposal_runs_dir)
+    if not deleted:
+        raise HTTPException(status_code=404, detail=f"Proposal run {run_id!r} not found")
+    return Response(status_code=204)
