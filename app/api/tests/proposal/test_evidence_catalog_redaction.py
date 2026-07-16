@@ -131,7 +131,15 @@ def test_evidence_size_shrinks_dramatically_after_redaction(tmp_path):
     # The full frozen catalog is ~300 songs; persisting it in full would push
     # a single run well past a few hundred KB. Redacted, the whole run log
     # (world snapshot + both evidence entries + plan) should stay small.
-    assert len(persisted_bytes) < 200_000, (
+    # P5 Unit A (feature 016, contracts/service_output_extension.md) adds ~11
+    # optional §14 explainability fields to FeatureContribution and ~6 to
+    # RankedCandidate; `mock_service_selector_v1` leaves them all `None`, but
+    # they still round-trip through JSON as explicit null keys on every
+    # feature/candidate row in the STEP-1 service evidence, adding a small
+    # (~10 KB), bounded amount that is unrelated to catalog redaction — the
+    # threshold below is bumped accordingly, well short of the "hundreds of
+    # KB" an un-redacted catalog would add.
+    assert len(persisted_bytes) < 230_000, (
         f"persisted run is {len(persisted_bytes)} bytes — catalog redaction appears not to be applied"
     )
 
