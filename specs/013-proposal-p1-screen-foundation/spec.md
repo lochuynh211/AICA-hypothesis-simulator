@@ -12,8 +12,8 @@
 
 The simulator today lets a reviewer study *when* the in-car assistant fires a trigger. This
 feature adds the foundation for studying *what it proposes next*: a separate **Proposal
-Simulator** workflow with its own standalone **4-panel screen** (① Input · ② Setup ·
-③ Service proposal · ④ Content proposal) and its own persisted runs, living inside the same
+Simulator** workflow with its own standalone **3-panel screen** (① World/input ·
+② Service proposal · ③ Content proposal — each selector panel owning its own setup) and its own persisted runs, living inside the same
 application and backend as the existing Trigger Simulator.
 
 This is a **foundation** milestone. It establishes the neutral contracts, the package model,
@@ -29,23 +29,25 @@ boundaries without reshaping them.
 ### Session 2026-07-16
 
 - Q: In P1, does the Setup panel let the reviewer edit package parameters/hyperparameters, or only select packages/mode? → A: Selection-only — purpose, stage, service package, content package, and mode are selectable; category weights / multipliers / safety-dominance are read-only display readouts; parameter/hyperparameter editing is deferred to a later milestone.
-- Q: What do the mock content plan's items reference — real frozen-dataset track IDs or invented placeholder IDs? → A: Real track IDs from the committed P2 demonstration catalog (read-only lookup for display), so ④ shows real song/artist names; no catalog editing is introduced.
+- Q: What do the mock content plan's items reference — real frozen-dataset track IDs or invented placeholder IDs? → A: Real track IDs from the committed P2 demonstration catalog (read-only lookup for display), so the content panel shows real song/artist names; no catalog editing is introduced.
+- UI restructure (approved via `ui-mockup.html`, **supersedes Q1**): the screen is **three panels** — ① World (input) / ② Service proposal / ③ Content proposal — with the setup merged into each selector panel. Package **parameters and hyperparameters are editable** in P1 (rendered from the package manifest, matrices behind a collapsed disclosure); editing has no effect on the mock results. Each candidate/item exposes a **reason breakdown** = signed feature contributions + supporting/opposing features + rationale. The ① World panel is organised as Trigger signal → Car state (`lifecycle_stage` + `motion_state`) → World·situation (editable init values) → Preference & history (loaded from a driver profile) → Driver profile.
 
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Open the standalone proposal screen and run a mock proposal (Priority: P1)
 
 A reviewer opens the application, switches to the **Proposal** workspace, and — without creating
-any trigger run — sees the 4-panel proposal screen in Japanese. In the **Setup** panel they choose
-a trigger purpose (e.g. "rest recommended"), a compatible lifecycle stage, and a mock service
-package and mock content package. The **Input** panel shows the synthetic-world summary. They start
-a run: the **Service proposal** panel shows up to three ranked candidate services drawn only from
-the purpose/stage-allowed set, with the top candidate's contributing factors and provenance labels.
-They choose one service, and the **Content proposal** panel shows a single ordered concrete plan
-(items, mode, duration, lighting where applicable, and policies). The whole two-step
-service→content pipeline is visible and explicit.
+any trigger run — sees the 3-panel proposal screen in Japanese. In the **① World** panel they set the
+trigger signal (e.g. "rest recommended"), the car state (a compatible lifecycle stage + motion), the
+world/situation feature values, and a driver profile. In the **② Service proposal** panel they pick a
+mock service package and edit its parameters/hyperparameters, then start a run: the panel shows up to
+three ranked candidate services drawn only from the purpose/stage-allowed set, each with a reason
+breakdown (contributing factors) and provenance labels. They choose one service, and the **③ Content
+proposal** panel (with its own mock content package and editable parameters) shows a single ordered
+concrete plan (items with real song names, mode, duration, lighting where applicable, and policies).
+The whole two-step service→content pipeline is visible and explicit.
 
-**Why this priority**: This is the milestone's core customer-visible outcome — the 4-panel screen
+**Why this priority**: This is the milestone's core customer-visible outcome — the 3-panel screen
 and the end-to-end mock proposal flow. Without it there is no reviewable proposal experience.
 
 **Independent Test**: Launch the app, switch to the Proposal workspace, run the mock flow end to
@@ -55,7 +57,7 @@ results coming through their respective boundaries.
 **Acceptance Scenarios**:
 
 1. **Given** the application is open and no trigger run exists, **When** the reviewer switches to the
-   Proposal workspace, **Then** the 4-panel proposal screen appears in Japanese without requiring any
+   Proposal workspace, **Then** the 3-panel proposal screen appears in Japanese without requiring any
    trigger run to be created.
 2. **Given** a trigger purpose and a compatible lifecycle stage are selected in Setup, **When** the
    reviewer starts a run, **Then** the Service proposal panel shows up to three ranked candidate
@@ -156,15 +158,25 @@ mock selector surfaces an explicit error record rather than a fabricated proposa
 
 - **FR-001**: The system MUST provide a Proposal workspace that is selectable from the application without
   creating or affecting any trigger run, presented by default in Japanese.
-- **FR-002**: The system MUST present a standalone 4-panel proposal screen — ① Input (synthetic-world
-  summary), ② Setup (purpose/stage, service package, content package, and mode **selection**, plus
-  **read-only** category-weight / multiplier / safety-dominance readouts), ③ Service proposal
-  (allowed-service chips, ranked candidates, rank-1 contributions, selected-service hand-off), and
-  ④ Content proposal (ordered plan with per-item fit and reasons, excluded examples, actions).
-  Editing of package parameters/hyperparameters is out of scope for P1.
-- **FR-003**: The system MUST render the decision as an explicit two-step pipeline: STEP 1 selects a
-  service, then STEP 2 selects concrete content for the chosen service, with a visible choose-then-recompute
-  step between them.
+- **FR-002**: The system MUST present a standalone **3-panel** proposal screen — ① World/input (trigger
+  signal, car state, editable world/situation feature values, and profile-loaded preference/history),
+  ② Service proposal, and ③ Content proposal. Each selector panel (② and ③) MUST contain its own setup
+  (package + mode selection, **editable** parameters and hyperparameters rendered from the package
+  manifest, with matrix/table hyperparameters available in a collapsible section), a formulation/explanation
+  block, and its result.
+- **FR-002a**: The system MUST let the reviewer **edit** the selected package's parameters and
+  hyperparameters (including matrix/table hyperparameters) in panels ② and ③; edits are carried in the
+  frozen setup for the run. (Editing has no effect on the mock selectors' fixed results in P1.)
+- **FR-002b**: The ③ Content panel MUST present exactly one ordered plan for the service chosen in ②,
+  with each item exposing a reason breakdown; the ② Service panel MUST present up to three ranked
+  candidates, each exposing a reason breakdown.
+- **FR-003**: The system MUST render the decision as an explicit two-step pipeline across the panels:
+  STEP 1 (② Service) selects a service, then STEP 2 (③ Content) selects concrete content for the chosen
+  service, with a visible choose-then-recompute step between them.
+- **FR-003a**: For each ranked service candidate and each content item, the system MUST present a
+  **reason breakdown** — the signed per-feature contributions (feature, its value, response coefficient,
+  weight, and resulting contribution), the supporting and opposing feature sets, and a bilingual
+  rationale — using the same presentation grammar for both selectors.
 - **FR-004**: Every panel and every label MUST exist in both Japanese (default) and English, and the reviewer
   MUST be able to switch the proposal-screen language without affecting the trigger workspace.
 - **FR-005**: The system MUST label each displayed feature field with its provenance (baseline concept,
@@ -280,10 +292,14 @@ mock selector surfaces an explicit error record rather than a fabricated proposa
 
 - The real transparent content selector (delivered in a prior milestone) remains registered and independently
   tested, but is intentionally **not executed** in the P1 flow; both selectors used on-screen are mocks.
-- Real ranking math, eligibility narrowing beyond the matrix, the editable synthetic world/catalog, and the
-  discrete-event journey engine are **out of scope** for P1 and handled by later milestones (P3–P9). The Input
-  panel shows a static synthetic-world summary; setup readouts (category weights, multipliers, safety-dominance)
-  are display stubs.
+- Real ranking math, eligibility narrowing beyond the matrix, the full editable synthetic world/catalog, and the
+  discrete-event journey engine are **out of scope** for P1 and handled by later milestones (P3–P9). The ① World
+  panel provides an **editable feature snapshot** (world/situation values) plus profile-loaded preference/history —
+  not the full P3 world editor. Parameters/hyperparameters are editable and rendered from the package manifest;
+  the mock selectors ignore the edited values and return fixed results.
+- The mock package manifests carry a **representative full parameter/hyperparameter set** so the editable setup UI
+  shows the real density: the mock content manifest mirrors the real P6 manifest's hyperparameters; the mock service
+  manifest is derived from the service algorithm doc (P5 will later freeze the authoritative service manifest).
 - The frozen music dataset and content contracts from prior milestones are available and are referenced by
   version; P1 introduces no new dataset.
 - Proposal runs reuse the existing atomic file-persistence approach used by trigger runs, but in a separate
