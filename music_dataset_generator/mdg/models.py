@@ -219,6 +219,8 @@ class DatasetManifest(BaseModel):
 class TestCase(BaseModel):
     """A single test case produced by the blind judge (S8) and certify step (S9)."""
 
+    __test__ = False  # prevent pytest from collecting this Pydantic model as a test class
+
     model_config = ConfigDict(extra="forbid")
 
     test_case_id: str

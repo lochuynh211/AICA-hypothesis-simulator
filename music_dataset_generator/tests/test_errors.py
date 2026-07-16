@@ -51,11 +51,11 @@ EXPECTED_MISS = {
 class TestAllCodesPresent:
     def test_fatal_codes_all_present(self):
         for code in EXPECTED_FATAL:
-            assert code in ErrorCode.__members__ or ErrorCode(code), f"Missing fatal code: {code}"
+            assert code in ErrorCode.__members__, f"Missing fatal code: {code}"
 
     def test_miss_codes_all_present(self):
         for code in EXPECTED_MISS:
-            assert code in ErrorCode.__members__ or ErrorCode(code), f"Missing miss code: {code}"
+            assert code in ErrorCode.__members__, f"Missing miss code: {code}"
 
     def test_judge_disagreement_present(self):
         """judge_disagreement must be a code value, not an exception."""
