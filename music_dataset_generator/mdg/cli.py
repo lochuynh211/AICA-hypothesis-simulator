@@ -5,6 +5,7 @@ that raise NotImplementedError until implemented in later slices.
 """
 
 import argparse
+import json
 import sys
 from typing import Optional
 
@@ -57,7 +58,40 @@ def _cmd_harvest(args: argparse.Namespace) -> None:
 
 
 def _cmd_transform(args: argparse.Namespace) -> None:
-    _not_implemented("transform")
+    """S3–S6: transform the accumulated raw cache into a frozen catalog + manifest.
+
+    Deterministic: no network, no LLM, no wall-clock. `--generated-at` is supplied by the
+    operator so the core stays wall-clock-free; it defaults to a fixed sentinel when
+    omitted for a local reproducibility run.
+    """
+    from pathlib import Path
+
+    from mdg import config
+    from mdg.transform import run_transform, write_dataset
+
+    workspace = Path(args.workspace) if args.workspace else config.workspace_dir()
+    dataset_dir = Path(args.dataset_dir) if args.dataset_dir else config.dataset_dir()
+    cache_dir = workspace / "cache"
+    if not cache_dir.is_dir():
+        print(f"mdg transform: no cache directory at {cache_dir}", file=sys.stderr)
+        raise SystemExit(1)
+
+    seed = args.seed if args.seed is not None else 0
+    result = run_transform(
+        cache_dir,
+        seed=seed,
+        tier=args.tier,
+        candidate_source=args.candidate_source,
+        generated_at=args.generated_at,
+    )
+    out_dir = write_dataset(result, dataset_dir)
+    print(json.dumps({
+        "dataset_id": result.manifest["dataset_id"],
+        "dataset_hash": result.manifest["dataset_hash"],
+        "songs": len(result.catalog),
+        "repairs": len(result.repairs),
+        "output_dir": str(out_dir),
+    }, ensure_ascii=False))
 
 
 def _cmd_worlds(args: argparse.Namespace) -> None:
@@ -176,7 +210,28 @@ def main(argv: Optional[list[str]] = None) -> int:
         type=int,
         metavar="N",
         default=None,
-        help="Random seed for deterministic shuffling.",
+        help="Random seed pinning ID allocation + synthesized fields (FR-029).",
+    )
+    p_transform.add_argument(
+        "--tier",
+        choices=["smoke", "demonstration", "stress"],
+        default="demonstration",
+        help="Dataset tier recorded in the manifest.",
+    )
+    p_transform.add_argument(
+        "--candidate-source",
+        choices=["isrc_resolved", "soundcharts_search"],
+        default="isrc_resolved",
+        help="Provenance of the cached candidates (recorded in the manifest).",
+    )
+    p_transform.add_argument(
+        "--generated-at",
+        metavar="ISO8601",
+        default="1970-01-01T00:00:00Z",
+        help=(
+            "Externally-supplied freeze timestamp (the deterministic core never reads "
+            "the wall clock). Defaults to a fixed sentinel for reproducibility runs."
+        ),
     )
     p_transform.set_defaults(func=_cmd_transform)
 
