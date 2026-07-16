@@ -290,6 +290,7 @@ def _cmd_transform(args: argparse.Namespace) -> None:
         "dataset_hash": result.manifest["dataset_hash"],
         "songs": len(result.catalog),
         "repairs": len(result.repairs),
+        "dropped": len(result.dropped),
         "output_dir": str(out_dir),
     }, ensure_ascii=False))
 

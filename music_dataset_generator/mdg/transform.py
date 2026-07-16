@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from mdg.binner import bin_song
+from mdg.errors import MdgFatalError
 from mdg.freeze import build_manifest
 from mdg.mapper import CatalogMapper
 from mdg.repair import validate_and_repair
@@ -36,6 +37,7 @@ class TransformResult:
     cells: dict[str, list[str]] = field(default_factory=dict)
     repairs: list[dict] = field(default_factory=list)
     skipped: list[dict] = field(default_factory=list)
+    dropped: list[dict] = field(default_factory=list)  # irreparable real records, logged
     genre_extension: dict | None = None  # opt-in genre_affinity_v1 (None when disabled)
 
 
@@ -91,16 +93,27 @@ def run_transform(
     mapper = CatalogMapper(seed=seed)
     catalog: list[dict] = []
     repairs: list[dict] = []
+    dropped: list[dict] = []
+    accepted_after_drop: list[dict] = []
     for cand in selection["accepted"]:
         payload = cand["payload"]
         isrc = cand["identity"]["isrc"]
         song = mapper.map_song(payload, negative_fixture=isrc in negative_isrcs)
-        repaired, log = validate_and_repair(song)
+        try:
+            repaired, log = validate_and_repair(song)
+        except MdgFatalError as exc:
+            # A single real record that cannot be mapped to a valid Song (e.g. Soundcharts
+            # time_signature=1, outside the schema's 3..7) must not kill the whole freeze.
+            # Drop it and record the drop — the failure stays visible, never fabricated.
+            dropped.append({"isrc": isrc, "name": payload.get("name"),
+                            "code": exc.code.value, "detail": exc.detail})
+            continue
         for record in log:
             repairs.append({"isrc": isrc, **record})
         catalog.append(repaired)
+        accepted_after_drop.append(cand)
 
-    covered_cells = {c["coords"]["cell_id"] for c in selection["accepted"]}
+    covered_cells = {c["coords"]["cell_id"] for c in accepted_after_drop}
     if required_cells is not None:
         # Enforced freeze: cell coverage + the §10.3/§10.4 quotas.
         from mdg.coverage.plan import build_coverage_plan
@@ -131,6 +144,7 @@ def run_transform(
         cells=selection["cells"],
         repairs=repairs,
         skipped=selection["skipped"],
+        dropped=dropped,
         genre_extension=genre_extension,
     )
 
