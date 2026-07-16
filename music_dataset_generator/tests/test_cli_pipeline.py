@@ -30,6 +30,22 @@ def _run(ws, ds, *args):
     return main([*args, "--workspace", str(ws), "--dataset-dir", str(ds)])
 
 
+def test_transform_includes_cached_songs_despite_populated_ledger(workspace, tmp_path) -> None:
+    # Regression: after a harvest, the ledger records the cached songs as `accepted`.
+    # The transform must still freeze them — it must NOT treat ledger-accepted identities
+    # as duplicates to skip (that would empty the catalog). Simulate the post-harvest state.
+    ws, ds = workspace, tmp_path / "ds"
+    ledger = [{"keys": {"isrc": p.stem, "normalized_name": f"{p.stem}|x"},
+               "outcome": "accepted", "miss_reason": None,
+               "cell": "E-hi_T-hi_P-bv", "loop": 1}
+              for p in (ws / "cache").glob("*.json")]
+    (ws / "ledger.json").write_text(json.dumps(ledger))
+    assert _run(ws, ds, "transform", "--seed", "1", "--tier", "demonstration",
+                "--generated-at", "2026-07-16T00:00:00Z") == 0
+    catalog = json.loads(next(ds.glob("*/catalog.json")).read_text())
+    assert len(catalog) == len(list((ws / "cache").glob("*.json")))  # all cached songs frozen
+
+
 def test_transform_worlds_judge_certify_report_pipeline(workspace, tmp_path) -> None:
     ws, ds = workspace, tmp_path / "ds"
 

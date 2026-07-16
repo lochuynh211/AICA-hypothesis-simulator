@@ -246,7 +246,6 @@ def _cmd_transform(args: argparse.Namespace) -> None:
     omitted for a local reproducibility run.
     """
     from mdg.harvest.cache import backfill_lineage_ids
-    from mdg.ledger import load_ledger
     from mdg.transform import run_transform, write_dataset
 
     workspace, dataset_dir = _paths(args)
@@ -255,10 +254,11 @@ def _cmd_transform(args: argparse.Namespace) -> None:
         print(f"mdg transform: no cache directory at {cache_dir}", file=sys.stderr)
         raise SystemExit(1)
 
-    # Ledger exclusion at the transform boundary too: never emit a ledger-known
-    # duplicate identity into the catalog (defence in depth with the harvest skip).
-    ledger = load_ledger(workspace / "ledger.json")
-    ledger_keys = [e.get("keys", {}) for e in ledger] or None
+    # NOTE: the transform does NOT apply ledger dedup. The raw cache contains only accepted
+    # songs (harvest never caches a miss), keyed by ISRC (so duplicates overwrite, never
+    # double-count). Cross-loop dedup happens at HARVEST time (_cmd_harvest skips
+    # ledger-known identities before spending quota); excluding ledger-accepted identities
+    # here would wrongly drop the very songs the accumulated cache is meant to freeze.
 
     # §17.6 coverage gate is OPT-IN: intermediate-loop freezes are legitimately partial
     # (§4.13), so enforcement is off by default and the operator enables it for the final
@@ -277,7 +277,6 @@ def _cmd_transform(args: argparse.Namespace) -> None:
         tier=args.tier,
         candidate_source=args.candidate_source,
         generated_at=args.generated_at,
-        ledger_keys=ledger_keys,
         required_cells=required_cells,
     )
     out_dir = write_dataset(result, dataset_dir)
