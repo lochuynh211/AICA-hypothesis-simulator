@@ -107,7 +107,7 @@ def _cmd_name(args: argparse.Namespace) -> None:
 def _cmd_resolve(args: argparse.Namespace) -> None:
     """S2b: resolve candidate names to ordered candidate ISRCs (MusicBrainz + Deezer)."""
     from mdg.errors import MdgMissSignal
-    from mdg.ledger import load_ledger
+    from mdg.ledger import append_entry, is_known, load_ledger
     from mdg.sources.deezer import DeezerClient
     from mdg.sources.musicbrainz import MusicBrainzClient
     from mdg.sources.resolver import ISRCResolver
@@ -115,24 +115,32 @@ def _cmd_resolve(args: argparse.Namespace) -> None:
 
     workspace, _ = _paths(args)
     candidates = json.loads((workspace / "candidate_names.json").read_text(encoding="utf-8"))
-    ledger = load_ledger(workspace / "ledger.json")
-    resolved_names = {e.get("keys", {}).get("normalized_name") for e in (ledger or [])}
+    ledger_path = workspace / "ledger.json"
+    ledger = load_ledger(ledger_path)
+    loop = _current_loop(ledger)
     resolver = ISRCResolver(MusicBrainzClient(), DeezerClient())
 
     out = []
     for cand in candidates:
         norm = normalized_name(cand["title"], cand["artist"])
-        if norm in resolved_names:
-            continue  # ledger exclusion — never re-resolve
+        if is_known(ledger, {"normalized_name": norm}):
+            continue  # ledger exclusion — never re-resolve a known name (accepted or miss)
         try:
             isrcs = resolver.resolve(cand["title"], cand["artist"], cand.get("release_year"))
         except MdgMissSignal as miss:
+            # Ledger the miss so later loops never re-propose/re-resolve this name (SC-007).
+            entry = {"keys": {"normalized_name": norm}, "outcome": "miss",
+                     "miss_reason": miss.code.value, "cell": None, "loop": loop}
+            append_entry(ledger_path, entry)
+            ledger.append(entry)
             out.append({**cand, "candidate_isrcs": [], "miss": miss.code.value})
             continue
         out.append({**cand, "candidate_isrcs": isrcs})
     dest = workspace / "resolved_candidates.json"
     dest.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps({"resolved": len(out), "wrote": str(dest)}))
+    print(json.dumps({"resolved": sum(1 for c in out if c["candidate_isrcs"]),
+                      "misses": sum(1 for c in out if not c["candidate_isrcs"]),
+                      "wrote": str(dest)}))
 
 
 def _cmd_probe(args: argparse.Namespace) -> None:
@@ -145,7 +153,11 @@ def _cmd_probe(args: argparse.Namespace) -> None:
     if isinstance(isrcs, dict):
         isrcs = isrcs.get("isrcs", [])
     sc = _require_soundcharts()
+    workspace, _ = _paths(args)
     result = run_probe(sc, isrcs)
+    # Persist for the build report (run_probe raises before this on gate failure).
+    (workspace / "probe_result.json").write_text(
+        json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(result))
 
 
@@ -204,10 +216,15 @@ def _cmd_harvest(args: argparse.Namespace) -> None:
             }
         append_entry(ledger_path, entry)
         ledger.append(entry)  # keep in-memory ledger current for later candidates this loop
-    print(json.dumps({
-        "accepted": accepted, "skipped_known": skipped_known,
-        "soundcharts_calls": sc.quota_used,
-    }))
+    stats = {"accepted": accepted, "skipped_known": skipped_known,
+             "soundcharts_calls": sc.quota_used, "loop": loop}
+    # Persist for the build report (accumulate quota across loops).
+    prev = json.loads((workspace / "harvest_stats.json").read_text(encoding="utf-8")) \
+        if (workspace / "harvest_stats.json").exists() else {"soundcharts_calls": 0}
+    stats["soundcharts_calls"] += prev.get("soundcharts_calls", 0)
+    (workspace / "harvest_stats.json").write_text(
+        json.dumps(stats, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps(stats))
 
 
 def _current_loop(ledger) -> int:
@@ -260,6 +277,9 @@ def _cmd_transform(args: argparse.Namespace) -> None:
     out_dir = write_dataset(result, dataset_dir)
     # Backfill lineage synthetic_id ↔ isrc now that IDs are allocated (audit integrity).
     backfill_lineage_ids(workspace / "lineage.json", result.catalog)
+    # Persist the repair log for the build report.
+    (workspace / "repairs.json").write_text(
+        json.dumps(result.repairs, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({
         "dataset_id": result.manifest["dataset_id"],
         "dataset_hash": result.manifest["dataset_hash"],
@@ -269,16 +289,26 @@ def _cmd_transform(args: argparse.Namespace) -> None:
     }, ensure_ascii=False))
 
 
-def _catalog_ids_from_dataset(dataset_dir):
-    """Load track + artist IDs from the frozen catalog under dataset_dir (post-freeze)."""
+def _load_frozen_catalog(dataset_dir):
+    """Load the most-recently-frozen catalog under dataset_dir (post-freeze).
+
+    Selects by file mtime (newest freeze wins) — NOT lexicographic dataset_id sort, which
+    misorders bare integer seeds (e.g. seed-100 < seed-42, seed-7 > seed-42).
+    """
     from pathlib import Path
 
-    catalogs = sorted(Path(dataset_dir).glob("*/catalog.json"))
+    catalogs = list(Path(dataset_dir).glob("*/catalog.json"))
     if not catalogs:
         print(f"mdg: no frozen catalog under {dataset_dir} — run `transform` first",
               file=sys.stderr)
         raise SystemExit(1)
-    catalog = json.loads(catalogs[-1].read_text(encoding="utf-8"))
+    newest = max(catalogs, key=lambda p: p.stat().st_mtime)
+    return json.loads(newest.read_text(encoding="utf-8"))
+
+
+def _catalog_ids_from_dataset(dataset_dir):
+    """Return sorted (track_ids, artist_ids) from the frozen catalog."""
+    catalog = _load_frozen_catalog(dataset_dir)
     track_ids, artist_ids = set(), set()
     for song in catalog:
         track_ids.add(song["spotify_track"]["id"])
@@ -290,6 +320,7 @@ def _catalog_ids_from_dataset(dataset_dir):
 def _cmd_worlds(args: argparse.Namespace) -> None:
     """S7: build base worlds + contrast pairs against the frozen catalog (post-freeze)."""
     from mdg.worlds import (
+        apply_profiles,
         build_base_worlds,
         build_contrast_pairs,
         validate_world_references,
@@ -309,6 +340,15 @@ def _cmd_worlds(args: argparse.Namespace) -> None:
 
     worlds = build_base_worlds(track_ids=track_ids, artist_ids=artist_ids)
     bundle = build_contrast_pairs(track_ids=track_ids, artist_ids=artist_ids)
+
+    # Merge the S7 agent's composed histories/oshi (if present) into the base worlds.
+    s7_output = workspace / "handoff" / "s7_output.json"
+    merged_profiles = 0
+    if s7_output.exists():
+        profiles = json.loads(s7_output.read_text(encoding="utf-8"))
+        worlds = apply_profiles(worlds, profiles)
+        merged_profiles = sum(1 for w in worlds if w["world_id"] in profiles)
+
     track_set, artist_set = set(track_ids), set(artist_ids)
     for world in worlds + bundle["worlds"]:
         validate_world_references(world, track_ids=track_set, artist_ids=artist_set)
@@ -317,7 +357,8 @@ def _cmd_worlds(args: argparse.Namespace) -> None:
         json.dumps(worlds, ensure_ascii=False, indent=2), encoding="utf-8")
     (workspace / "contrast_pairs.json").write_text(
         json.dumps(bundle, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps({"base_worlds": len(worlds), "contrast_pairs": len(bundle["pairs"])}))
+    print(json.dumps({"base_worlds": len(worlds), "contrast_pairs": len(bundle["pairs"]),
+                      "merged_profiles": merged_profiles}))
 
 
 def _cmd_judge(args: argparse.Namespace) -> None:
@@ -337,17 +378,29 @@ def _cmd_judge(args: argparse.Namespace) -> None:
         print(json.dumps({"wrote": str(out)}))
         return
 
+    from pathlib import Path
+
+    from mdg.certify import load_evaluate
+    from mdg.p6_adapter import score_song
+
     labels = read_blind_labels(
         json.loads((handoff_dir / "s8_output.json").read_text(encoding="utf-8"))
     )
-    scores = json.loads((workspace / "p6_scores.json").read_text(encoding="utf-8"))
+    # Reveal the P6 score AFTER reading the blind labels (SC-009): compute it here from the
+    # real P6 evaluate over the frozen catalog + the label's world — never an external file.
+    workspace, dataset_dir = _paths(args)
+    catalog = _load_frozen_catalog(dataset_dir)
+    worlds = {w["world_id"]: w
+              for w in json.loads((workspace / "worlds.json").read_text(encoding="utf-8"))}
+    evaluate = load_evaluate(_p6_package_path(args))
+    scores = {
+        lbl["test_case_id"]: score_song(
+            evaluate, worlds[lbl["world_ref"]], catalog, lbl["candidate_song_ref"])
+        for lbl in labels
+    }
     cases = finalize_test_cases(labels, scores)
-    _, dataset_dir = _paths(args)
-    from mdg import config
-    from pathlib import Path
 
-    tc_dir = Path(config.dataset_dir()).parent / "test_cases" if not args.dataset_dir \
-        else Path(args.dataset_dir).parent / "test_cases"
+    tc_dir = Path(dataset_dir).parent / "test_cases"
     tc_dir.mkdir(parents=True, exist_ok=True)
     (tc_dir / "test_cases.json").write_text(
         json.dumps(cases, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -356,23 +409,61 @@ def _cmd_judge(args: argparse.Namespace) -> None:
                       "disagree": len(cases) - agree}))
 
 
-def _cmd_certify(args: argparse.Namespace) -> None:
-    """S9: certify the 12 contrast reversals with the P6 evaluate over the frozen catalog.
+_DEFAULT_P6_PACKAGE = "packages/aica_transparent_content_selector_v1"
 
-    The reversal check requires a rank_fn backed by the real P6 evaluate + frozen catalog;
-    this CLI loads evaluate and the contrast pairs, and reports which pairs still need a
-    per-pair contrast-song assignment (supplied by the operator's live certify).
+
+def _p6_package_path(args) -> "Path":
+    """Resolve the P6 package path relative to the repo root (not the CWD).
+
+    Uses --p6-package when the subcommand defines it (certify); judge falls back to the
+    default location.
     """
-    from mdg.certify import load_evaluate
+    from pathlib import Path
 
-    workspace, _ = _paths(args)
-    p6_path = args.p6_package
-    evaluate = load_evaluate(p6_path)
-    pairs = json.loads((workspace / "contrast_pairs.json").read_text(encoding="utf-8"))
+    from mdg import config
+
+    rel = getattr(args, "p6_package", None) or _DEFAULT_P6_PACKAGE
+    p = Path(rel)
+    if p.is_absolute() or p.exists():
+        return p
+    return config.workspace_dir().parent / rel  # repo-root-relative (config now fixed)
+
+
+def _pick_contrast_songs(catalog: list[dict]) -> tuple[str, str]:
+    """Pick the highest- and lowest-arousal catalog songs as the default contrast pair."""
+    by_energy = sorted(catalog, key=lambda s: s["spotify_audio_features"]["energy"])
+    return by_energy[-1]["spotify_track"]["id"], by_energy[0]["spotify_track"]["id"]
+
+
+def _cmd_certify(args: argparse.Namespace) -> None:
+    """S9: certify contrast reversals with the real P6 evaluate over the frozen catalog."""
+    from pathlib import Path
+
+    from mdg.certify import certify_reversals, load_evaluate
+    from mdg.p6_adapter import make_rank_fn
+
+    workspace, dataset_dir = _paths(args)
+    catalog = _load_frozen_catalog(dataset_dir)
+    evaluate = load_evaluate(_p6_package_path(args))
+    bundle = json.loads((workspace / "contrast_pairs.json").read_text(encoding="utf-8"))
+    worlds = {w["world_id"]: w for w in bundle["worlds"]}
+
+    # Default per-pair contrast songs: highest- vs lowest-arousal catalog song. (The
+    # operator may override per pair for non-arousal contrasts.)
+    song_hi, song_lo = _pick_contrast_songs(catalog)
+    pairs = [{**p, "song_hi": song_hi, "song_lo": song_lo} for p in bundle["pairs"]]
+
+    rank_fn = make_rank_fn(evaluate, catalog)
+    report = certify_reversals(rank_fn, pairs, worlds)
+
+    out_dir = Path(dataset_dir).parent / "build_reports"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "certification_report.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({
-        "p6_evaluate_loaded": callable(evaluate),
-        "contrast_pairs": len(pairs.get("pairs", [])),
-        "note": "supply per-pair contrast songs + frozen catalog to run reversals (live)",
+        "certified": len(report["certified"]),
+        "re_harvest_signals": len(report["re_harvest_signals"]),
+        "all_reversed": report["all_reversed"],
     }))
 
 
@@ -624,11 +715,23 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     args = parser.parse_args(argv)
     from mdg.errors import MdgFatalError
+    from mdg.handoff import HandoffValidationError
+    from mdg.judge import BlindOrderingError
 
     try:
         args.func(args)
     except MdgFatalError as exc:
         # Taxonomy contract: print {"error": code, "detail": …} and exit non-zero.
         print(json.dumps({"error": exc.code.value, "detail": exc.detail}), file=sys.stderr)
+        return 1
+    except HandoffValidationError as exc:
+        # FR-005 firewall breach in an LLM handoff → clean envelope, not a traceback.
+        print(json.dumps({"error": "handoff_validation_failed",
+                          "detail": f"[{exc.stage}] {exc.reason}"}), file=sys.stderr)
+        return 1
+    except BlindOrderingError as exc:
+        # SC-009 blind-order breach → clean envelope.
+        print(json.dumps({"error": "blind_ordering_violation", "detail": str(exc)}),
+              file=sys.stderr)
         return 1
     return 0

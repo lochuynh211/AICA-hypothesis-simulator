@@ -7,7 +7,7 @@ Resolves file-system paths for generator data directories and credentials:
 Soundcharts credentials are read from environment ONLY and never written anywhere.
 
 The repo root is derived from this file's location:
-  music_dataset_generator/mdg/config.py  →  parents[3]  →  repo root
+  music_dataset_generator/mdg/config.py  →  parents[2]  →  repo root
 """
 
 import os
@@ -18,11 +18,12 @@ from typing import Optional
 def _repo_root() -> Path:
     """Best-effort repo root for the default data-dir locations.
 
-    Host layout: ``<repo>/music_dataset_generator/mdg/config.py`` → ``parents[3]`` = repo root.
-    Guard the index so importing this module never raises in unexpected layouts.
+    Host layout ``<repo>/music_dataset_generator/mdg/config.py``: parents[0]=mdg,
+    parents[1]=music_dataset_generator, ``parents[2]`` = repo root. Guard the index so
+    importing this module never raises in unexpected layouts.
     """
     parents = Path(__file__).resolve().parents
-    return parents[3] if len(parents) > 3 else parents[-1]
+    return parents[2] if len(parents) > 2 else parents[-1]
 
 
 def _resolve(env_var: str, default_name: str) -> Path:

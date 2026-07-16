@@ -34,11 +34,14 @@ def test_no_required_cells_allows_partial_freeze(fixtures_dir) -> None:
     assert result.catalog  # succeeds, partial
 
 
-def test_covered_cells_pass(fixtures_dir) -> None:
-    # Require only cells the fixture cache actually covers → passes.
-    result = run_transform(
-        fixtures_dir / "cache", seed=1, tier="demonstration",
-        candidate_source="isrc_resolved", generated_at="2026-07-16T00:00:00Z",
-        required_cells={"E-hi_T-hi_P-bv"},  # Night Runner covers this
-    )
-    assert result.catalog
+def test_enforcing_also_gates_quotas(fixtures_dir) -> None:
+    # Even when the required cells are covered, the enforced path also checks §10.3/§10.4
+    # quotas — the 11-song fixture cannot meet them, so the freeze fails (coupled §17.6).
+    with pytest.raises(MdgFatalError) as exc:
+        run_transform(
+            fixtures_dir / "cache", seed=1, tier="demonstration",
+            candidate_source="isrc_resolved", generated_at="2026-07-16T00:00:00Z",
+            required_cells={"E-hi_T-hi_P-bv"},  # Night Runner covers this cell
+        )
+    assert exc.value.code == ErrorCode.coverage_contract_failed
+    assert "checks failed" in exc.value.detail  # quota failure, not just cells

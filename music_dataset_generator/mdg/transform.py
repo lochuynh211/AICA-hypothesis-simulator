@@ -102,7 +102,16 @@ def run_transform(
 
     covered_cells = {c["coords"]["cell_id"] for c in selection["accepted"]}
     if required_cells is not None:
-        validate_coverage(covered_cells=covered_cells, required_cells=required_cells)
+        # Enforced freeze: cell coverage + the §10.3/§10.4 quotas.
+        from mdg.coverage.plan import build_coverage_plan
+        from mdg.coverage.quota import compute_quota_checks
+
+        quotas = build_coverage_plan(tier, ledger=None).quotas
+        extra_checks = compute_quota_checks(catalog, quotas)
+        validate_coverage(
+            covered_cells=covered_cells, required_cells=required_cells,
+            extra_checks=extra_checks,
+        )
 
     manifest = build_manifest(
         catalog,

@@ -203,6 +203,30 @@ def validate_world_references(
         )
 
 
+def apply_profiles(worlds: list[dict], profiles: dict) -> list[dict]:
+    """Merge the S7 agent's composed profiles into the deterministic base worlds.
+
+    `profiles` maps `world_id → {direct_item_history?, upro?, usage_by_genre?,
+    scene_genre_usage?}`. Only history/oshi/genre-usage blocks are merged; the
+    deterministic driver/environment/night fields are never overwritten. Worlds without a
+    composed profile keep the base template. The caller re-runs
+    `validate_world_references` afterwards so any dangling reference the agent introduced
+    fails loudly.
+    """
+    merged = []
+    for world in worlds:
+        profile = profiles.get(world["world_id"])
+        if not profile:
+            merged.append(world)
+            continue
+        world = copy.deepcopy(world)
+        for block in ("direct_item_history", "upro", "usage_by_genre", "scene_genre_usage"):
+            if block in profile:
+                world[block] = profile[block]
+        merged.append(world)
+    return merged
+
+
 def save_world(world: dict, path: Path) -> None:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     Path(path).write_text(
