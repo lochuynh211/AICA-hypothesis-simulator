@@ -310,11 +310,59 @@ def _cmd_worlds(args: argparse.Namespace) -> None:
 
 
 def _cmd_judge(args: argparse.Namespace) -> None:
-    _not_implemented("judge")
+    """S8: write the blind-judge handoff input, or finalize test cases after reveal."""
+    from mdg.judge import finalize_test_cases, read_blind_labels
+
+    workspace, _ = _paths(args)
+    handoff_dir = workspace / "handoff"
+    if args.write_input:
+        # Input pairs (world, candidate song) WITHOUT any P6 score (blind).
+        worlds = json.loads((workspace / "worlds.json").read_text(encoding="utf-8"))
+        payload = {"worlds": [w["world_id"] for w in worlds],
+                   "instructions": "Assign positive/negative/neutral BLIND; never include a score."}
+        out = handoff_dir / "s8_input.json"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(json.dumps({"wrote": str(out)}))
+        return
+
+    labels = read_blind_labels(
+        json.loads((handoff_dir / "s8_output.json").read_text(encoding="utf-8"))
+    )
+    scores = json.loads((workspace / "p6_scores.json").read_text(encoding="utf-8"))
+    cases = finalize_test_cases(labels, scores)
+    _, dataset_dir = _paths(args)
+    from mdg import config
+    from pathlib import Path
+
+    tc_dir = Path(config.dataset_dir()).parent / "test_cases" if not args.dataset_dir \
+        else Path(args.dataset_dir).parent / "test_cases"
+    tc_dir.mkdir(parents=True, exist_ok=True)
+    (tc_dir / "test_cases.json").write_text(
+        json.dumps(cases, ensure_ascii=False, indent=2), encoding="utf-8")
+    agree = sum(1 for c in cases if c["agreement"] == "agree")
+    print(json.dumps({"test_cases": len(cases), "agree": agree,
+                      "disagree": len(cases) - agree}))
 
 
 def _cmd_certify(args: argparse.Namespace) -> None:
-    _not_implemented("certify")
+    """S9: certify the 12 contrast reversals with the P6 evaluate over the frozen catalog.
+
+    The reversal check requires a rank_fn backed by the real P6 evaluate + frozen catalog;
+    this CLI loads evaluate and the contrast pairs, and reports which pairs still need a
+    per-pair contrast-song assignment (supplied by the operator's live certify).
+    """
+    from mdg.certify import load_evaluate
+
+    workspace, _ = _paths(args)
+    p6_path = args.p6_package
+    evaluate = load_evaluate(p6_path)
+    pairs = json.loads((workspace / "contrast_pairs.json").read_text(encoding="utf-8"))
+    print(json.dumps({
+        "p6_evaluate_loaded": callable(evaluate),
+        "contrast_pairs": len(pairs.get("pairs", [])),
+        "note": "supply per-pair contrast songs + frozen catalog to run reversals (live)",
+    }))
 
 
 def _cmd_report(args: argparse.Namespace) -> None:
@@ -496,6 +544,12 @@ def main(argv: Optional[list[str]] = None) -> int:
         help="S9: Run reversal assertions against test cases.",
     )
     _add_common_args(p_certify)
+    p_certify.add_argument(
+        "--p6-package",
+        metavar="DIR",
+        default="packages/aica_transparent_content_selector_v1",
+        help="Path to the P6 content-selector package (loads evaluate by file path).",
+    )
     p_certify.set_defaults(func=_cmd_certify)
 
     # --- report ---
