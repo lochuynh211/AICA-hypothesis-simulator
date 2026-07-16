@@ -33,6 +33,17 @@ UPDATE (P4, US5, T029-T030): a second journey endpoint is deliberately
 added — ``GET /api/proposal/runs/{run_id}/journey/preview`` (the read-only,
 non-binding rolling-horizon preview; spec.md FR-017/SC-007). Allow-listed
 below alongside ``journey/action`` for the same reason.
+
+UPDATE (P5 Unit A, feature 016 "Transparent Service-Selector Package"): P5
+deliberately introduces a REAL ``service_selector`` package
+(``aica_transparent_service_selector_v1``) — the very thing FR-021 forbade
+for P3's scope. Per this module's own instruction above, the guard below has
+been updated deliberately (not silently): the two "no real service
+selector" tests are renamed/relaxed to a closed allow-list (mocks + the two
+now-known real packages) so they still catch any *unexpected* third package,
+while no longer failing on the specific, intentional P5 addition. The
+eligibility/journey-endpoint guard below is untouched — P5 Unit A adds no
+new route surface.
 """
 from __future__ import annotations
 
@@ -47,34 +58,41 @@ from aica_api.services.proposal_package_registry import ProposalPackageRegistry
 client = TestClient(app)
 
 _KNOWN_MOCK_PACKAGE_IDS = {"mock_service_selector_v1", "mock_content_selector_v1"}
-_KNOWN_REAL_PACKAGE_IDS = {"aica_transparent_content_selector_v1"}
+# P5 Unit A (feature 016): a real service_selector package now deliberately
+# exists alongside the real content_selector package (P3c).
+_KNOWN_REAL_PACKAGE_IDS = {"aica_transparent_content_selector_v1", "aica_transparent_service_selector_v1"}
 
 
 # ---------------------------------------------------------------------------
-# No real service ranking — only the mock service selector is registered.
+# Only known packages are registered — no UNEXPECTED real package appears.
 # ---------------------------------------------------------------------------
 
 
-def test_no_real_service_selector_package_is_registered():
-    """FR-021: only a MOCK ``service_selector`` package exists — no real one."""
+def test_only_known_service_selector_packages_are_registered():
+    """Closed allow-list: every registered ``service_selector`` package is
+    either a known mock or the known real P5 package — never a surprise
+    third one (FR-021's original intent, relaxed for the deliberate P5
+    addition; see module docstring UPDATE)."""
     registry = ProposalPackageRegistry(settings.packages_dir)
     service_packages = [p for p in registry.list_summaries() if p["family"] == "service_selector"]
     assert service_packages, "expected at least the mock service selector to be registered"
+    known = _KNOWN_MOCK_PACKAGE_IDS | _KNOWN_REAL_PACKAGE_IDS
     for pkg in service_packages:
-        assert pkg["id"] in _KNOWN_MOCK_PACKAGE_IDS, (
-            f"FR-021 violation: a non-mock service_selector package is registered: {pkg['id']!r}"
+        assert pkg["id"] in known, (
+            f"Unexpected service_selector package is registered: {pkg['id']!r}"
         )
 
 
-def test_the_only_real_proposal_package_anywhere_is_the_content_selector():
-    """Sanity: the only REAL (non-mock) proposal package anywhere is the
-    content selector — never a service selector."""
+def test_the_only_real_proposal_packages_anywhere_are_the_known_p3_and_p5_selectors():
+    """Sanity: the only REAL (non-mock) proposal packages anywhere are the
+    known content selector (P3c) and service selector (P5 Unit A) — never
+    an unexpected third real package."""
     registry = ProposalPackageRegistry(settings.packages_dir)
     all_ids = {p["id"] for p in registry.list_summaries()}
     real_ids = all_ids - _KNOWN_MOCK_PACKAGE_IDS
     assert real_ids == _KNOWN_REAL_PACKAGE_IDS, (
         f"Unexpected real (non-mock) proposal package(s): {sorted(real_ids - _KNOWN_REAL_PACKAGE_IDS)}. "
-        "FR-021 permits only the transparent CONTENT selector to be real in P3."
+        "Only the known content selector (P3c) and service selector (P5 Unit A) may be real."
     )
 
 

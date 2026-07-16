@@ -1,0 +1,36 @@
+{
+  "id": "aica_transparent_service_selector_v1",
+  "version": "1.0.0",
+  "label": {
+    "ja": "透明サービス選定 v1.0（階層重み付けモデル）",
+    "en": "Transparent Service Selector v1.0 (hierarchical weighted model)"
+  },
+  "kind": "service_selector",
+  "family": "service_selector",
+  "approach": "transparent",
+  "contract_version": "1.0.0",
+  "schema_version": "1.0.0",
+  "algorithm": {
+    "type": "python_module",
+    "entrypoint": "algorithm.py",
+    "error_mode": "blocking"
+  },
+  "supported_services": [
+    "music_playlist",
+    "humming_karaoke",
+    "call_response_driving",
+    "quiz",
+    "ranking_creation",
+    "radio_style",
+    "conversation_audio",
+    "live_viewing",
+    "stretch_video",
+    "full_karaoke",
+    "call_response_stopped",
+    "oshi_reexperience",
+    "relaxation_multisensory",
+    "linked_video_recommendation"
+  ],
+  "parameters": {},
+  "hyperparameters": []
+}

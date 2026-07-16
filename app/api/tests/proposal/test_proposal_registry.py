@@ -54,11 +54,12 @@ def test_no_errors_for_real_packages_dir(real_registry):
 
 def test_slots_map_mocks_to_transparent_slots(real_registry):
     slots = {(s["family"], s["approach"]): s["package_id"] for s in real_registry.list_slots()}
-    assert slots[("service_selector", "transparent")] == "mock_service_selector_v1"
-    # P3c (feature 014, T032): the REAL content selector now also declares
-    # family/approach and sorts before the mock alphabetically, so it (not
-    # the mock) fills the content_selector/transparent slot — this is the
-    # intended "real package becomes the default" behavior.
+    # P5 Unit A (feature 016, T001/T003): the REAL service selector now also
+    # declares family/approach and sorts before the mock alphabetically, so
+    # it (not the mock) fills the service_selector/transparent slot — the
+    # same "real package becomes the default" behavior already established
+    # below for the content selector (P3c, feature 014, T032).
+    assert slots[("service_selector", "transparent")] == "aica_transparent_service_selector_v1"
     assert slots[("content_selector", "transparent")] == "aica_transparent_content_selector_v1"
 
 
