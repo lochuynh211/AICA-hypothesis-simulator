@@ -52,4 +52,11 @@ def test_new_package_manifest_shape():
     assert pkg.approach.value == "transparent"
     assert pkg.algorithm.type == "python_module"
     assert pkg.algorithm.entrypoint == "algorithm.py"
-    assert len(pkg.supported_services) == 14
+    # The 11 ServiceIds the frozen purpose/stage matrix actually produces:
+    # 6 driving (§5.2.1) + 5 post-rest (§5.2.4). The during-rest stage
+    # resolves to [] in the frozen v1 matrix and its §5.2.3 actions are not
+    # ServiceId members, so they are not supported candidates. The 3 unused
+    # enum members (conversation_audio, relaxation_multisensory,
+    # linked_video_recommendation) appear in no matrix row / response profile.
+    assert len(pkg.supported_services) == 11
+    assert "conversation_audio" not in pkg.supported_services

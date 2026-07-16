@@ -22,14 +22,11 @@
     "quiz",
     "ranking_creation",
     "radio_style",
-    "conversation_audio",
     "live_viewing",
     "stretch_video",
     "full_karaoke",
     "call_response_stopped",
-    "oshi_reexperience",
-    "relaxation_multisensory",
-    "linked_video_recommendation"
+    "oshi_reexperience"
   ],
   "parameters": {},
   "hyperparameters": []
