@@ -36,6 +36,7 @@ class TransformResult:
     cells: dict[str, list[str]] = field(default_factory=dict)
     repairs: list[dict] = field(default_factory=list)
     skipped: list[dict] = field(default_factory=list)
+    genre_extension: dict | None = None  # opt-in genre_affinity_v1 (None when disabled)
 
 
 def normalized_name(title: str, artist: str) -> str:
@@ -78,6 +79,7 @@ def run_transform(
     required_cells: set[str] | None = None,
     ledger_keys: list[dict] | None = None,
     negative_isrcs: set[str] | None = None,
+    genre_affinity_v1: bool = False,
 ) -> TransformResult:
     """Run S3→S6 over the raw cache and return the frozen catalog + manifest."""
     negative_isrcs = negative_isrcs or set()
@@ -110,12 +112,17 @@ def run_transform(
         generated_at=generated_at,
     )
 
+    # The genre_affinity_v1 extension is a SEPARATE opt-in artifact; the catalog above is
+    # byte-identical whether or not it is emitted (SC-005).
+    genre_extension = mapper.genre_extension() if genre_affinity_v1 else None
+
     return TransformResult(
         catalog=catalog,
         manifest=manifest,
         cells=selection["cells"],
         repairs=repairs,
         skipped=selection["skipped"],
+        genre_extension=genre_extension,
     )
 
 

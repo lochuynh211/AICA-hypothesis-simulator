@@ -22,6 +22,8 @@ import hashlib
 import random
 from typing import Any
 
+from mdg.genre_map import resolve_artist_genres
+
 _API = "https://api.synthetic.invalid"
 _OPEN = "https://open.synthetic.invalid"
 
@@ -57,6 +59,8 @@ class CatalogMapper:
         self._album_seq = 0
         self._artist_seq = 0
         self._artist_ids: dict[str, str] = {}  # real artist name -> synthetic-artist id
+        # synthetic-artist id -> ordered vocab genres (the opt-in genre_affinity_v1 map).
+        self._artist_genres: dict[str, list[str]] = {}
 
     # -- ID allocation ------------------------------------------------------
 
@@ -92,6 +96,31 @@ class CatalogMapper:
             })
         return out
 
+    def _accumulate_genres(self, artists: list[dict], genres: list[dict]) -> None:
+        """Union the song's resolved vocab genres into each of its artists (§4.7, D7).
+
+        Accumulated for the opt-in genre_affinity_v1 extension only — never written into
+        the frozen Song, so the catalog is byte-identical whether or not the extension is
+        later emitted (SC-005).
+        """
+        song_terms = resolve_artist_genres(genres)
+        if not song_terms:
+            return
+        for artist in artists:
+            bucket = self._artist_genres.setdefault(artist["id"], [])
+            for term in song_terms:
+                if term not in bucket:
+                    bucket.append(term)
+
+    def genre_extension(self) -> dict[str, Any]:
+        """Return the accumulated `genre_affinity_v1` extension (`{artist_genres: {...}}`).
+
+        A separate opt-in artifact keyed by synthetic-artist ID; validates against
+        aica_api's GenreAffinityV1 shape. Empty artists (all-neutral genres) are omitted.
+        """
+        return {"artist_genres": {aid: list(terms)
+                                  for aid, terms in self._artist_genres.items() if terms}}
+
     def map_song(self, payload: dict, *, negative_fixture: bool = False) -> dict[str, Any]:
         """Map one raw payload to a `Song` dict."""
         isrc = payload["isrc"]["value"]
@@ -105,6 +134,7 @@ class CatalogMapper:
         release_date = payload.get("releaseDate") or "2000-01-01"
 
         artists = self._map_artists(payload)
+        self._accumulate_genres(artists, payload.get("genres") or [])
 
         # Deterministic synthesized fields.
         popularity = rng.randint(0, 100)
