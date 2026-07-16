@@ -1,0 +1,100 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/acf8df96-963f-40ee-9ff3-5a58c9fbec76/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/miku-hatsune/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/d/8/4df468ae-b8d6-11e8-8634-525400009efb.jpg",
+      "name": "Hatsune Miku",
+      "slug": "miku-hatsune",
+      "uuid": "4df468ae-b8d6-11e8-8634-525400009efb"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/veluche/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/9/3/9b1c849a-3392-11e9-ba3f-549f35141000.jpg",
+      "name": "Veluche",
+      "slug": "veluche",
+      "uuid": "9b1c849a-3392-11e9-ba3f-549f35141000"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.19,
+    "danceability": 0.65,
+    "energy": 0.66,
+    "instrumentalness": 0,
+    "key": 11,
+    "liveness": 0.13,
+    "loudness": -6.29,
+    "mode": 0,
+    "speechiness": 0.02,
+    "tempo": 108.95,
+    "timeSignature": 4,
+    "valence": 0.51
+  },
+  "composers": [
+    "Veluche"
+  ],
+  "copyright": "2025 HK WORKS MUSIC",
+  "creditName": "Veluche & Hatsune Miku",
+  "credits": [
+    {
+      "name": "veluche",
+      "roles": [
+        "composer",
+        "lyricist",
+        "arranger"
+      ],
+      "uuid": "5d4cfae7-074b-4997-9e2e-a3011f559d95"
+    }
+  ],
+  "distributor": "massenext",
+  "duration": 249,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    },
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/f/3/6/acf8df96-963f-40ee-9ff3-5a58c9fbec76.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPW462590103"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "HK WORKS MUSIC",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/miku-hatsune/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/d/8/4df468ae-b8d6-11e8-8634-525400009efb.jpg",
+      "name": "Hatsune Miku",
+      "slug": "miku-hatsune",
+      "uuid": "4df468ae-b8d6-11e8-8634-525400009efb"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/veluche/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/9/3/9b1c849a-3392-11e9-ba3f-549f35141000.jpg",
+      "name": "Veluche",
+      "slug": "veluche",
+      "uuid": "9b1c849a-3392-11e9-ba3f-549f35141000"
+    }
+  ],
+  "name": "your world is mine",
+  "producers": [],
+  "releaseDate": "2025-06-10T00:00:00+00:00",
+  "uuid": "acf8df96-963f-40ee-9ff3-5a58c9fbec76"
+}

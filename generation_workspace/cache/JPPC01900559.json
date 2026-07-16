@@ -1,0 +1,72 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/fae9db34-7bea-11e9-8ee9-801844edfa71/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/official-hige-dandism/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/4/4/11e83feb-6442-3f96-955d-a0369fe50396.jpg",
+      "name": "Official HIGE DANdism",
+      "slug": "official-hige-dandism",
+      "uuid": "11e83feb-6442-3f96-955d-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.18,
+    "danceability": 0.55,
+    "energy": 0.8,
+    "instrumentalness": 0,
+    "key": 8,
+    "liveness": 0.08,
+    "loudness": -6.73,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 89.96,
+    "timeSignature": 4,
+    "valence": 0.41
+  },
+  "composers": [
+    "Satoshi Fujihara"
+  ],
+  "copyright": "2019 PONY CANYON INC.",
+  "creditName": "Official HIGE DANdism",
+  "credits": [],
+  "distributor": "Pony Canyon",
+  "duration": 223,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/a/e/b/fae9db34-7bea-11e9-8ee9-801844edfa71.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPC01900559"
+  },
+  "iswcs": [
+    "T9290055913"
+  ],
+  "labels": [
+    {
+      "name": "PONY CANYON",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/official-hige-dandism/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/4/4/11e83feb-6442-3f96-955d-a0369fe50396.jpg",
+      "name": "Official HIGE DANdism",
+      "slug": "official-hige-dandism",
+      "uuid": "11e83feb-6442-3f96-955d-a0369fe50396"
+    }
+  ],
+  "name": "Pretender (Acoustic Ver)",
+  "producers": [],
+  "releaseDate": "2019-04-30T00:00:00+00:00",
+  "uuid": "fae9db34-7bea-11e9-8ee9-801844edfa71"
+}

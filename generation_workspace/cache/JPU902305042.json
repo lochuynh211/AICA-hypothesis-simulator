@@ -1,0 +1,110 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/0e7c02b1-f8ed-4fc7-839b-a6dcedc2666b/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/creepy-nuts/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/2/3/11e81bc7-532a-996c-9615-a0369fe50396.jpg",
+      "name": "Creepy Nuts",
+      "slug": "creepy-nuts",
+      "uuid": "11e81bc7-532a-996c-9615-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.08,
+    "danceability": 0.85,
+    "energy": 0.82,
+    "instrumentalness": 0.01,
+    "key": 6,
+    "liveness": 0.17,
+    "loudness": -6.84,
+    "mode": 0,
+    "speechiness": 0.25,
+    "tempo": 157.01,
+    "timeSignature": 4,
+    "valence": 0.75
+  },
+  "composers": [
+    "DJ Matsunaga"
+  ],
+  "copyright": "(P) 2024 Sony Music Labels Inc.",
+  "creditName": "Creepy Nuts",
+  "credits": [
+    {
+      "name": "Mike Bozzi",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "52318d94-2904-4ce6-9fa5-55a2c5413b9d"
+    },
+    {
+      "name": "Masahito Komori",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "831a6169-2c27-4da7-a010-4f0a2d9b89eb"
+    },
+    {
+      "name": "DJ Matsunaga",
+      "roles": [
+        "composer",
+        "arranger"
+      ],
+      "uuid": "2a7480ad-90dd-4a02-ad29-72b27c5310bc"
+    },
+    {
+      "name": "R-shitei",
+      "roles": [
+        "lyricist",
+        "vocals"
+      ],
+      "uuid": "030a17e5-3a7d-42f0-9685-aff5710cbdb2"
+    },
+    {
+      "name": "R-shitei",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "32baf63c-9add-43f1-aabc-0c376623427c"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 169,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/d/e/8/0e7c02b1-f8ed-4fc7-839b-a6dcedc2666b.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU902305042"
+  },
+  "iswcs": [
+    "T3238245524"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/creepy-nuts/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/2/3/11e81bc7-532a-996c-9615-a0369fe50396.jpg",
+      "name": "Creepy Nuts",
+      "slug": "creepy-nuts",
+      "uuid": "11e81bc7-532a-996c-9615-a0369fe50396"
+    }
+  ],
+  "name": "Bling-Bang-Bang-Born",
+  "producers": [],
+  "releaseDate": "2024-03-20T00:00:00+00:00",
+  "uuid": "0e7c02b1-f8ed-4fc7-839b-a6dcedc2666b"
+}

@@ -1,0 +1,84 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/b8625397-a5b9-4b27-9a7c-01cfa99ec6dd/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/vaundy/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/f/1/9c67d4e8-11f0-11ea-af30-e4434b16cb78.jpg",
+      "name": "Vaundy",
+      "slug": "vaundy",
+      "uuid": "9c67d4e8-11f0-11ea-af30-e4434b16cb78"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.85,
+    "danceability": 0.72,
+    "energy": 0.48,
+    "instrumentalness": 0.79,
+    "key": 7,
+    "liveness": 0.11,
+    "loudness": -11.47,
+    "mode": 1,
+    "speechiness": 0.06,
+    "tempo": 157.03,
+    "timeSignature": 4,
+    "valence": 0.68
+  },
+  "composers": [
+    "Vaundy"
+  ],
+  "copyright": "(P) 2021 SDR Inc.",
+  "creditName": "Vaundy",
+  "credits": [
+    {
+      "name": "Vaundy",
+      "roles": [
+        "composer",
+        "lead vocals",
+        "lyricist",
+        "arranger"
+      ],
+      "uuid": "14b48c74-6785-4377-b3ca-2efcec7ebd74"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 229,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock",
+        "rock & roll/rockabilly"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/9/b/5/b8625397-a5b9-4b27-9a7c-01cfa99ec6dd.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPR652100061"
+  },
+  "iswcs": [
+    "T3088032699"
+  ],
+  "labels": [
+    {
+      "name": "SDR",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/vaundy/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/f/1/9c67d4e8-11f0-11ea-af30-e4434b16cb78.jpg",
+      "name": "Vaundy",
+      "slug": "vaundy",
+      "uuid": "9c67d4e8-11f0-11ea-af30-e4434b16cb78"
+    }
+  ],
+  "name": "odoriko",
+  "producers": [],
+  "releaseDate": "2021-11-17T00:00:00+00:00",
+  "uuid": "b8625397-a5b9-4b27-9a7c-01cfa99ec6dd"
+}

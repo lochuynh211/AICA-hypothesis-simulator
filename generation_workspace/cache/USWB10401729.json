@@ -1,0 +1,111 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/a03109cc-4cca-11ea-a5cb-549f35141000/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/van-halen/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/5/2/11e81bbb-8259-2da4-9bc5-a0369fe50396.jpg",
+      "name": "Van Halen",
+      "slug": "van-halen",
+      "uuid": "11e81bbb-8259-2da4-9bc5-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.51,
+    "danceability": 0.08,
+    "energy": 0.86,
+    "instrumentalness": 0.13,
+    "key": 8,
+    "liveness": 0.15,
+    "loudness": -6.55,
+    "mode": 1,
+    "speechiness": 0.06,
+    "tempo": 175.01,
+    "timeSignature": 5,
+    "valence": 0.44
+  },
+  "composers": [
+    "Alex Van Halen",
+    "David Lee Roth",
+    "Eddie Van Halen",
+    "Michael Anthony"
+  ],
+  "copyright": "",
+  "creditName": "Van Halen",
+  "credits": [
+    {
+      "name": "Ted Templeman",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "2f9bbcc8-0eab-43d9-b362-fb8a86a9f98b"
+    },
+    {
+      "name": "Michael Anthony",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "8ffd8dd8-5d5c-4125-bbdb-bcf65a1e6d7d"
+    },
+    {
+      "name": "David Lee Roth",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "c97b4fd2-116e-437e-a084-d961f240151a"
+    },
+    {
+      "name": "Alex Van Halen",
+      "roles": [
+        "drums",
+        "writer"
+      ],
+      "uuid": "c92cf135-0cb1-41f4-b69c-6a737d9fced0"
+    },
+    {
+      "name": "Eddie Van Halen",
+      "roles": [
+        "guitar",
+        "writer"
+      ],
+      "uuid": "904a3798-407c-4063-8157-0f642d67c677"
+    }
+  ],
+  "distributor": "Warner",
+  "duration": 101,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "hard rock",
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/a/c/c/a03109cc-4cca-11ea-a5cb-549f35141000.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USWB10401729"
+  },
+  "iswcs": [
+    "T0700508377"
+  ],
+  "labels": [],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/van-halen/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/5/2/11e81bbb-8259-2da4-9bc5-a0369fe50396.jpg",
+      "name": "Van Halen",
+      "slug": "van-halen",
+      "uuid": "11e81bbb-8259-2da4-9bc5-a0369fe50396"
+    }
+  ],
+  "name": "Eruption - Remastered",
+  "producers": [
+    "Ted Templeman"
+  ],
+  "releaseDate": "2007-05-14T00:00:00+00:00",
+  "uuid": "a03109cc-4cca-11ea-a5cb-549f35141000"
+}

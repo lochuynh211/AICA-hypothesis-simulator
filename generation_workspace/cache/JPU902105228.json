@@ -1,0 +1,119 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/0331e156-987e-4ce0-b640-ebfbfede2b98/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/king-gnu/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/5/b/11e83fec-4b5b-29ba-9bd8-aa1c026db3d8.jpg",
+      "name": "King Gnu",
+      "slug": "king-gnu",
+      "uuid": "11e83fec-4b5b-29ba-9bd8-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.01,
+    "danceability": 0.5,
+    "energy": 0.96,
+    "instrumentalness": 0,
+    "key": 2,
+    "liveness": 0.06,
+    "loudness": -4.19,
+    "mode": 1,
+    "speechiness": 0.12,
+    "tempo": 159.97,
+    "timeSignature": 4,
+    "valence": 0.66
+  },
+  "composers": [
+    "Daiki Tsuneta"
+  ],
+  "copyright": "(P) 2021 Sony Music Labels Inc.",
+  "creditName": "King Gnu",
+  "credits": [
+    {
+      "name": "King Gnu",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "b0c18f6a-36fc-4c72-8124-95b5600d582b"
+    },
+    {
+      "name": "Daiki Tsuneta",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "00aeea47-e34b-4601-a43b-8fe79a209bcc"
+    },
+    {
+      "name": "常田大希",
+      "roles": [
+        "producer",
+        "lead vocals",
+        "electric guitar"
+      ],
+      "uuid": "dc8f532f-125d-47e2-85eb-809d764842d6"
+    },
+    {
+      "name": "新井和輝",
+      "roles": [
+        "bass guitar"
+      ],
+      "uuid": "8c4cf861-2bbc-4bb9-bf32-1c5537805883"
+    },
+    {
+      "name": "井口理",
+      "roles": [
+        "backing vocals",
+        "keyboard"
+      ],
+      "uuid": "dfbbc727-0ce7-4928-9ac3-79cb2ea5f8f1"
+    },
+    {
+      "name": "勢喜遊",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "fecc4736-5680-4d95-a957-31e59033ed76"
+    }
+  ],
+  "distributor": "",
+  "duration": 191,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/e/7/8/0331e156-987e-4ce0-b640-ebfbfede2b98.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU902105228"
+  },
+  "iswcs": [
+    "T3087987502"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/king-gnu/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/5/b/11e83fec-4b5b-29ba-9bd8-aa1c026db3d8.jpg",
+      "name": "King Gnu",
+      "slug": "king-gnu",
+      "uuid": "11e83fec-4b5b-29ba-9bd8-aa1c026db3d8"
+    }
+  ],
+  "name": "一途",
+  "producers": [],
+  "releaseDate": "2021-12-10T00:00:00+00:00",
+  "uuid": "0331e156-987e-4ce0-b640-ebfbfede2b98"
+}

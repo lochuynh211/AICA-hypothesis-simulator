@@ -1,0 +1,70 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/71232a06-4d9d-11ea-87e9-549f35161576/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/the-edgar-winter-group/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/a/3/11e81bd1-13ae-3816-b3f8-a0369fe50396.jpg",
+      "name": "The Edgar Winter Group",
+      "slug": "the-edgar-winter-group",
+      "uuid": "11e81bd1-13ae-3816-b3f8-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.51,
+    "energy": 0.89,
+    "instrumentalness": 0.52,
+    "key": 5,
+    "liveness": 0.21,
+    "loudness": -9.7,
+    "mode": 1,
+    "speechiness": 0.18,
+    "tempo": 95.73,
+    "timeSignature": 4,
+    "valence": 0.29
+  },
+  "composers": [
+    "Edgar Winter"
+  ],
+  "copyright": "",
+  "creditName": "The Edgar Winter Group",
+  "credits": [
+    {
+      "name": "Edgar Winter",
+      "roles": [
+        "writer",
+        "composer"
+      ],
+      "uuid": "3068ed72-20f3-4037-af08-4897cfd4fa76"
+    },
+    {
+      "name": "Rick Derringer",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "86f0412c-953e-4014-84dc-9f0ed5d293c2"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 206,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/d/9/d/71232a06-4d9d-11ea-87e9-549f35161576.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USSM17200446"
+  },
+  "iswcs": [
+    "T0708814941"
+  ],
+  "labels": [],
+  "languageCode": "en",
+  "mainArtists": [],
+  "name": "Frankenstein - Single Version",
+  "producers": [
+    "Rick Derringer"
+  ],
+  "releaseDate": "2010-02-26T00:00:00+00:00",
+  "uuid": "71232a06-4d9d-11ea-87e9-549f35161576"
+}

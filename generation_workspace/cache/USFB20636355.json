@@ -1,0 +1,56 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e840af-042e-0e68-aab8-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ary-barroso/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/3/5/11e81bbf-d53b-9bca-93ae-a0369fe50396.jpg",
+      "name": "Ary Barroso",
+      "slug": "ary-barroso",
+      "uuid": "11e81bbf-d53b-9bca-93ae-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.75,
+    "danceability": 0.78,
+    "energy": 0.6,
+    "instrumentalness": 0.72,
+    "key": 6,
+    "liveness": 0.11,
+    "loudness": -13.22,
+    "mode": 0,
+    "speechiness": 0.06,
+    "tempo": 102,
+    "timeSignature": 4,
+    "valence": 0.7
+  },
+  "composers": [],
+  "copyright": "",
+  "creditName": "Ary Barroso",
+  "credits": [],
+  "distributor": "Sony",
+  "duration": 242,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/e/2/4/11e840af-042e-0e68-aab8-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USFB20636355"
+  },
+  "iswcs": [],
+  "labels": [],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ary-barroso/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/3/5/11e81bbf-d53b-9bca-93ae-a0369fe50396.jpg",
+      "name": "Ary Barroso",
+      "slug": "ary-barroso",
+      "uuid": "11e81bbf-d53b-9bca-93ae-a0369fe50396"
+    }
+  ],
+  "name": "Aguarela Do Brazil - Sound-a-like Cover",
+  "producers": [],
+  "releaseDate": null,
+  "uuid": "11e840af-042e-0e68-aab8-a0369fe50396"
+}

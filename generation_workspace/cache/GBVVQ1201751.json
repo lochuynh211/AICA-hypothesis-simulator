@@ -1,0 +1,62 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/9f55fd77-d1f7-406a-b481-345e21c77d5b/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/deadmau5/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/9/b/11e81bbc-cb93-b45c-98ce-a0369fe50396.jpg",
+      "name": "deadmau5",
+      "slug": "deadmau5",
+      "uuid": "11e81bbc-cb93-b45c-98ce-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.8,
+    "energy": 0.44,
+    "instrumentalness": 0.86,
+    "key": 8,
+    "liveness": 0.43,
+    "loudness": -5.59,
+    "mode": 1,
+    "speechiness": 0.15,
+    "tempo": 128.04,
+    "timeSignature": 3,
+    "valence": 0.71
+  },
+  "composers": [
+    "deadmau5"
+  ],
+  "copyright": "",
+  "creditName": "deadmau5",
+  "credits": [],
+  "distributor": "",
+  "duration": 372,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/7/f/1/9f55fd77-d1f7-406a-b481-345e21c77d5b.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBVVQ1201751"
+  },
+  "iswcs": [
+    "T9035297702"
+  ],
+  "labels": [],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/deadmau5/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/9/b/11e81bbc-cb93-b45c-98ce-a0369fe50396.jpg",
+      "name": "deadmau5",
+      "slug": "deadmau5",
+      "uuid": "11e81bbc-cb93-b45c-98ce-a0369fe50396"
+    }
+  ],
+  "name": "Ghosts N Stuff",
+  "producers": [
+    "deadmau5"
+  ],
+  "releaseDate": null,
+  "uuid": "9f55fd77-d1f7-406a-b481-345e21c77d5b"
+}

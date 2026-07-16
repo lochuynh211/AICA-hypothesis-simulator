@@ -1,0 +1,190 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e840cd-a39c-b670-ba87-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/masego/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/e/5/11e81bc2-85e5-feaa-822f-a0369fe50396.jpg",
+      "name": "Masego",
+      "slug": "masego",
+      "uuid": "11e81bc2-85e5-feaa-822f-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/fkj/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/0/a/11e81bd1-1a04-2248-b8ba-a0369fe50396.jpg",
+      "name": "FKJ",
+      "slug": "fkj",
+      "uuid": "11e81bd1-1a04-2248-b8ba-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.67,
+    "danceability": 0.71,
+    "energy": 0.49,
+    "instrumentalness": 0,
+    "key": 9,
+    "liveness": 0.11,
+    "loudness": -6.41,
+    "mode": 0,
+    "speechiness": 0.06,
+    "tempo": 121.73,
+    "timeSignature": 4,
+    "valence": 0.31
+  },
+  "composers": [
+    "Micah Davis",
+    "Vincent Fenton"
+  ],
+  "copyright": "℗ 2018 EQT Recordings",
+  "creditName": "Masego & FKJ",
+  "credits": [
+    {
+      "name": "Vincent Fenton",
+      "roles": [
+        "songwriter",
+        "producer",
+        "lead vocals"
+      ],
+      "uuid": "c3a0d5e7-7e1c-4fce-8dad-36775d8baa2f"
+    },
+    {
+      "name": "LAWRENCE GARY YOUNG",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "0de34dbf-e925-4560-9b4a-4847e29db9c6"
+    },
+    {
+      "name": "Micah Davis",
+      "roles": [
+        "songwriter",
+        "lead vocals",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "2f984e82-18ba-4f3c-b2c6-7d33d57b0bec"
+    },
+    {
+      "name": "Masego",
+      "roles": [
+        "producer",
+        "writer",
+        "vocals",
+        "drums",
+        "saxophone"
+      ],
+      "uuid": "1a561123-2440-4601-93db-dd1fcb05b340"
+    },
+    {
+      "name": "FKJ",
+      "roles": [
+        "writer",
+        "vocals"
+      ],
+      "uuid": "e253c739-606f-456a-97c1-4a397974dd30"
+    },
+    {
+      "name": "Joe LaPorta",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "db9404f9-8a0f-47b7-a433-7b23ce31c852"
+    },
+    {
+      "name": "Eric Lau",
+      "roles": [
+        "mix",
+        "studio personnel"
+      ],
+      "uuid": "64e044e6-0d4b-47d6-a4b7-b5f93e89e00d"
+    },
+    {
+      "name": "Jose Padilla",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "8f03fb24-25b7-41ce-bfb1-d72f40cc2fc2"
+    },
+    {
+      "name": "Ingmar Hansch",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "76a27ca2-bdf1-4da9-ae4f-2f939fa30fb9"
+    },
+    {
+      "name": "Ingmar Haensch",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "7476084a-3239-448c-aca7-7330b6671a19"
+    },
+    {
+      "name": "Arian Behesti",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "de6d9138-844d-444f-b7b5-6ec0abc428ae"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 301,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "electro",
+      "sub": [
+        "electronic"
+      ]
+    },
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b",
+        "r&b, funk & soul"
+      ]
+    },
+    {
+      "root": "soul",
+      "sub": [
+        "soul"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/c/9/3/11e840cd-a39c-b670-ba87-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "QM24S1703810"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "EQT",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/masego/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/e/5/11e81bc2-85e5-feaa-822f-a0369fe50396.jpg",
+      "name": "Masego",
+      "slug": "masego",
+      "uuid": "11e81bc2-85e5-feaa-822f-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/fkj/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/0/a/11e81bd1-1a04-2248-b8ba-a0369fe50396.jpg",
+      "name": "FKJ",
+      "slug": "fkj",
+      "uuid": "11e81bd1-1a04-2248-b8ba-a0369fe50396"
+    }
+  ],
+  "name": "Tadow",
+  "producers": [
+    "Micah Davis",
+    "Vincent Fenton"
+  ],
+  "releaseDate": "2018-09-07T00:00:00+00:00",
+  "uuid": "11e840cd-a39c-b670-ba87-a0369fe50396"
+}

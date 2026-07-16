@@ -1,0 +1,120 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82630-4dae-2cba-a28a-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/a-tribe-called-quest/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/5/3/11e81bbe-6356-cf30-9c9b-a0369fe50396.jpg",
+      "name": "A Tribe Called Quest",
+      "slug": "a-tribe-called-quest",
+      "uuid": "11e81bbe-6356-cf30-9c9b-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.25,
+    "danceability": 0.85,
+    "energy": 0.42,
+    "instrumentalness": 0.35,
+    "key": 11,
+    "liveness": 0.13,
+    "loudness": -12.82,
+    "mode": 1,
+    "speechiness": 0.42,
+    "tempo": 98.24,
+    "timeSignature": 4,
+    "valence": 0.65
+  },
+  "composers": [
+    "Kamaal Fareed",
+    "Ali Shaheed Muhammad",
+    "Malik Taylor",
+    "Ronnie Foster"
+  ],
+  "copyright": "℗ 1993 Zomba Recording LLC",
+  "creditName": "A Tribe Called Quest",
+  "credits": [
+    {
+      "name": "John Davis",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "5fc129ce-f7b4-48ba-b09d-9b3cc85ed90e"
+    },
+    {
+      "name": "A Tribe Called Quest",
+      "roles": [
+        "producer",
+        "mix",
+        "recording",
+        "associated performer"
+      ],
+      "uuid": "3efc6415-4e83-43bc-9a31-2735463540be"
+    },
+    {
+      "name": "James Taylor",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "df091355-0aeb-40d7-bcf8-a430db5e8508"
+    },
+    {
+      "name": "Bob Power",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "78a3a593-f3d4-4628-a7aa-8f3b5c5208fa"
+    },
+    {
+      "name": "A. Muhammad",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "0f5e0d04-710f-4dfe-bd77-687eb9b1656e"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 226,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/e/a/d/11e82630-4dae-2cba-a28a-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USJI10300397"
+  },
+  "iswcs": [
+    "T0700524373"
+  ],
+  "labels": [
+    {
+      "name": "Zomba",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/a-tribe-called-quest/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/5/3/11e81bbe-6356-cf30-9c9b-a0369fe50396.jpg",
+      "name": "A Tribe Called Quest",
+      "slug": "a-tribe-called-quest",
+      "uuid": "11e81bbe-6356-cf30-9c9b-a0369fe50396"
+    }
+  ],
+  "name": "Electric Relaxation",
+  "producers": [
+    "A Tribe Called Quest"
+  ],
+  "releaseDate": "1993-11-09T00:00:00+00:00",
+  "uuid": "11e82630-4dae-2cba-a28a-aa1c026db3d8"
+}

@@ -1,0 +1,278 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82741-00d4-3d14-8ac1-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/cardi-b/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/0/a/11e81bd0-5a02-b2d4-a988-a0369fe50396.jpg",
+      "name": "Cardi B",
+      "slug": "cardi-b",
+      "uuid": "11e81bd0-5a02-b2d4-a988-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.07,
+    "danceability": 0.93,
+    "energy": 0.7,
+    "instrumentalness": 0,
+    "key": 11,
+    "liveness": 0.23,
+    "loudness": -6.34,
+    "mode": 0,
+    "speechiness": 0.1,
+    "tempo": 125.02,
+    "timeSignature": 4,
+    "valence": 0.49
+  },
+  "composers": [
+    "ANTHONY GERMAINE WHITE",
+    "Belcalis Almanzar",
+    "Jordan Thorpe",
+    "Klenord Raphael",
+    "Dieuson Octave",
+    "Laquan Green"
+  ],
+  "copyright": "℗ 2017 Atlantic Recording Corporation for the United States and WEA International Inc. for the world outside of the United States. A Warner Music Group Company",
+  "creditName": "Cardi B",
+  "credits": [
+    {
+      "name": "Anthony Germaine White",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "26b3f413-2e06-4bf6-93c6-2f76bec42719"
+    },
+    {
+      "name": "Belcalis Almanzar",
+      "roles": [
+        "songwriter",
+        "writer"
+      ],
+      "uuid": "04d1c809-dc81-4644-aca6-70c5b7c68f0c"
+    },
+    {
+      "name": "Klenord Raphael",
+      "roles": [
+        "songwriter",
+        "writer"
+      ],
+      "uuid": "a739fe8a-a2a9-42bd-b95d-c026debabae2"
+    },
+    {
+      "name": "Jordan Thorpe",
+      "roles": [
+        "songwriter",
+        "writer"
+      ],
+      "uuid": "7346139b-c673-43ca-9d47-60b4a5c68f0c"
+    },
+    {
+      "name": "Laquan Green",
+      "roles": [
+        "producer",
+        "co-producer",
+        "writer"
+      ],
+      "uuid": "460e4b16-e34a-4e86-8d14-4b10c857af1e"
+    },
+    {
+      "name": "Colin Leonard",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "7e0b1a78-c53a-4773-9391-dc602da96a86"
+    },
+    {
+      "name": "Craig Kallman",
+      "roles": [
+        "executive producer"
+      ],
+      "uuid": "b87a23e0-9714-46f6-8278-486a10bb19a6"
+    },
+    {
+      "name": "Kodak Black",
+      "roles": [
+        "writer",
+        "sampled artist"
+      ],
+      "uuid": "ff16f662-6640-499d-95cc-e2e5261ff933"
+    },
+    {
+      "name": "Cardi B",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "77b10b0f-62ff-48f3-b44f-d32066e8675f"
+    },
+    {
+      "name": "White Anthony G",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "824f9b21-444d-409b-9fa2-3d85ccf0c1b0"
+    },
+    {
+      "name": "Brooklyn Johnny",
+      "roles": [
+        "executive producer"
+      ],
+      "uuid": "0506ccf4-3bc7-4df6-adaf-376d9cc2fcf0"
+    },
+    {
+      "name": "Darrale Jones",
+      "roles": [
+        "executive producer"
+      ],
+      "uuid": "f20e8754-5fa3-4689-b6eb-5dd0e9f47f93"
+    },
+    {
+      "name": "Evan LaRay",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "d95e5357-1af3-4e16-b10a-0208f5039604"
+    },
+    {
+      "name": "Dieuson Octave",
+      "roles": [
+        "songwriter",
+        "writer"
+      ],
+      "uuid": "3902a48d-2d05-4af4-99cb-e1cd8c052f1a"
+    },
+    {
+      "name": "Leslie Brathwaite",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "c3f01118-3ce4-4d47-92d5-f132a04b20a2"
+    },
+    {
+      "name": "Picture Perfect",
+      "roles": [
+        "video director"
+      ],
+      "uuid": "fb2cc7d6-c42d-41c2-85b2-9c5d09d6b656"
+    },
+    {
+      "name": "Kenoe",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "d4d343cd-1c29-480d-8848-57624bbaba91"
+    },
+    {
+      "name": "Messiah",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "76d71b4e-6bce-4c60-8323-81b29d02d305"
+    },
+    {
+      "name": "Stefan Redjimi",
+      "roles": [
+        "video camera operator"
+      ],
+      "uuid": "6ee1a935-0486-4909-89d0-917fa85fac72"
+    },
+    {
+      "name": "Redjimi Pictures",
+      "roles": [
+        "video camera operator"
+      ],
+      "uuid": "b4082f43-8e5b-4ac1-b950-d218a45b73e5"
+    },
+    {
+      "name": "Michael Ashby",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "cd08552b-3f53-4706-8e5c-8a98b452a43f"
+    },
+    {
+      "name": "Pardison Fontaine",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "faf6f2d0-3058-44ba-a4ec-8494dbf7c477"
+    },
+    {
+      "name": "J. White Did It",
+      "roles": [
+        "producer",
+        "writer",
+        "programming"
+      ],
+      "uuid": "ea429778-cb33-4c46-b112-0d917b169458"
+    },
+    {
+      "name": "Freak Nasty",
+      "roles": [
+        "sampled artist"
+      ],
+      "uuid": "1a82a86c-61df-440e-bf2f-7bc42de41f45"
+    },
+    {
+      "name": "Co-produced by Laquan Green for Toxic Productions",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "4fa0ccb3-ff6d-483a-9c04-3067dbe568d6"
+    },
+    {
+      "name": "Evan LaRay Brunson",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "b34762f6-091d-4888-a7f7-fb1628cfdbb0"
+    }
+  ],
+  "distributor": "Warner",
+  "duration": 223,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/4/d/0/11e82741-00d4-3d14-8ac1-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USAT21701762"
+  },
+  "iswcs": [
+    "T9224423669",
+    "T9219777589"
+  ],
+  "labels": [
+    {
+      "name": "Atlantic",
+      "type": "Warner"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/cardi-b/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/0/a/11e81bd0-5a02-b2d4-a988-a0369fe50396.jpg",
+      "name": "Cardi B",
+      "slug": "cardi-b",
+      "uuid": "11e81bd0-5a02-b2d4-a988-a0369fe50396"
+    }
+  ],
+  "name": "Bodak Yellow (Money Moves)",
+  "producers": [
+    "J. White Did It"
+  ],
+  "releaseDate": "2017-06-16T00:00:00+00:00",
+  "uuid": "11e82741-00d4-3d14-8ac1-a0369fe50396"
+}

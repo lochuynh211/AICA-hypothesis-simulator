@@ -1,0 +1,301 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8409e-1388-5fc8-8d73-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kendrick-lamar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/0/6/11e81bbc-c601-d802-bca1-a0369fe50396.jpg",
+      "name": "Kendrick Lamar",
+      "slug": "kendrick-lamar",
+      "uuid": "11e81bbc-c601-d802-bca1-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/dr-dre/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/b/7/11e81bc3-07ba-3702-979f-a0369fe50396.jpg",
+      "name": "Dr. Dre",
+      "slug": "dr-dre",
+      "uuid": "11e81bc3-07ba-3702-979f-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.76,
+    "energy": 0.78,
+    "instrumentalness": 0,
+    "key": 11,
+    "liveness": 0.35,
+    "loudness": -6.98,
+    "mode": 0,
+    "speechiness": 0.07,
+    "tempo": 131.04,
+    "timeSignature": 4,
+    "valence": 0.51
+  },
+  "composers": [
+    "Kendrick Lamar",
+    "A. Hernandez",
+    "Elijah Molina",
+    "B. Ujueta",
+    "E. Cardona",
+    "G. D'Amico",
+    "U. Gupta"
+  ],
+  "copyright": "℗ 2013 Aftermath/Interscope Records",
+  "creditName": "Kendrick Lamar & Dr. Dre",
+  "credits": [
+    {
+      "name": "ERIC MICHAEL CARDONA",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "20f9632d-98f9-463e-aded-90833f1c908f"
+    },
+    {
+      "name": "BRYAN MATTHEW UJUETA",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "800b18b0-aca2-4a09-ba50-7f507daddfe3"
+    },
+    {
+      "name": "Andre Romell Young",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "df392932-5399-424f-aceb-a29596007ead"
+    },
+    {
+      "name": "Brian Gardner",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "ac72e2bb-63d0-4bf6-9b94-84cfed34fb42"
+    },
+    {
+      "name": "Mike Bozzi",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "52318d94-2904-4ce6-9fa5-55a2c5413b9d"
+    },
+    {
+      "name": "Dr. Dre",
+      "roles": [
+        "vocals",
+        "mix"
+      ],
+      "uuid": "1293f6fa-d81a-4492-8be9-5b609d9b4a08"
+    },
+    {
+      "name": "Quentin Gilkey",
+      "roles": [
+        "assistant recording engineer"
+      ],
+      "uuid": "73c3e28c-e3eb-4314-8c2f-1a7c144d4005"
+    },
+    {
+      "name": "Scoop DeVille",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "17c190ba-78bf-4af8-a68e-8bd509094a7b"
+    },
+    {
+      "name": "Robert Reyes",
+      "roles": [
+        "assistant recording engineer"
+      ],
+      "uuid": "0702e1fd-9978-4cdf-a9af-0f0b54bab969"
+    },
+    {
+      "name": "Kendrick Lamar Duckworth",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "28c0f3c3-7653-4b36-90b3-d7d5b407d3ed"
+    },
+    {
+      "name": "Andre Brissett",
+      "roles": [
+        "keyboard"
+      ],
+      "uuid": "bfa75af6-8025-4715-b6db-061753c24942"
+    },
+    {
+      "name": "Udbhav Gupta",
+      "roles": [
+        "composer",
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "e20c04d6-90e4-47e2-96ea-713a340a019b"
+    },
+    {
+      "name": "A. Hernandez",
+      "roles": [
+        "composer",
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "a7533f5e-ce76-4db0-8505-a2afc9909b7e"
+    },
+    {
+      "name": "Eric Hudson",
+      "roles": [
+        "keyboard"
+      ],
+      "uuid": "a16face9-ba90-480b-9e08-1e9df0c6f04b"
+    },
+    {
+      "name": "Kendrick Duckworth",
+      "roles": [
+        "vocals",
+        "lyricist"
+      ],
+      "uuid": "a03bc7a5-7d52-4cdf-ad50-a13ae2d7be0c"
+    },
+    {
+      "name": "Derek \"MixedByAli\" Ali",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "1505964d-63af-4141-bc82-e64f5d09106a"
+    },
+    {
+      "name": "Sly Jordan",
+      "roles": [
+        "additional vocals"
+      ],
+      "uuid": "ba4c9966-c91b-4d6d-b705-ad868065d614"
+    },
+    {
+      "name": "Guido D'Amico",
+      "roles": [
+        "composer",
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "953408df-4977-44f9-9320-8013793b1101"
+    },
+    {
+      "name": "Gabby Jayne",
+      "roles": [
+        "additional vocals"
+      ],
+      "uuid": "17391166-9dd8-4740-ada9-a7030be5b7b7"
+    },
+    {
+      "name": "Travor Lawrence",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "25de19af-ccd0-4b8e-94aa-b482705e6600"
+    },
+    {
+      "name": "Drew Adams",
+      "roles": [
+        "assistant recording engineer"
+      ],
+      "uuid": "ac3f2a61-8133-419c-b252-36ec17329e51"
+    },
+    {
+      "name": "Mauricio “Veto” Iragorri",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "982eacab-19ff-4b80-a981-ad32b1df2691"
+    },
+    {
+      "name": "Andrew Clifton",
+      "roles": [
+        "keyboard"
+      ],
+      "uuid": "fcff209a-9054-4ebc-bca5-ab6c9fdaf821"
+    },
+    {
+      "name": "Mr Twin Sister",
+      "roles": [
+        "sampled artist"
+      ],
+      "uuid": "9a46b2cd-608a-478b-b601-37f31a85a532"
+    },
+    {
+      "name": "Elijah Molina",
+      "roles": [
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "e0e042c8-6ac0-491f-9f70-f895df479885"
+    },
+    {
+      "name": "B. Ujueta",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "6bca97d1-736b-4b59-bdeb-b9f77e8fa098"
+    },
+    {
+      "name": "E. Cardona",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "2be045dd-e57e-44b9-b0a8-97224ad35171"
+    },
+    {
+      "name": "Kendrick Lamar",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "9de5b02b-7e11-4dc9-be7c-2c71a4860e40"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 352,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/8/3/11e8409e-1388-5fc8-8d73-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USUM71203149"
+  },
+  "iswcs": [
+    "T9129017874",
+    "T3064164194"
+  ],
+  "labels": [
+    {
+      "name": "Aftermath",
+      "type": "Universal"
+    },
+    {
+      "name": "Interscope",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kendrick-lamar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/0/6/11e81bbc-c601-d802-bca1-a0369fe50396.jpg",
+      "name": "Kendrick Lamar",
+      "slug": "kendrick-lamar",
+      "uuid": "11e81bbc-c601-d802-bca1-a0369fe50396"
+    }
+  ],
+  "name": "The Recipe - Bonus Track",
+  "producers": [
+    "Scoop Deville"
+  ],
+  "releaseDate": "2012-01-01T00:00:00+00:00",
+  "uuid": "11e8409e-1388-5fc8-8d73-aa1c026db3d8"
+}

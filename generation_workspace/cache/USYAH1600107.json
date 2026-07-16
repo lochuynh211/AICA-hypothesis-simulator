@@ -1,0 +1,222 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8269c-c9e4-a0ae-bdaa-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/childish-gambino/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/d/c/11e81bc6-dcd3-4796-8752-a0369fe50396.jpg",
+      "name": "Childish Gambino",
+      "slug": "childish-gambino",
+      "uuid": "11e81bc6-dcd3-4796-8752-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.2,
+    "danceability": 0.75,
+    "energy": 0.38,
+    "instrumentalness": 0.02,
+    "key": 1,
+    "liveness": 0.12,
+    "loudness": -10.45,
+    "mode": 1,
+    "speechiness": 0.11,
+    "tempo": 160.05,
+    "timeSignature": 4,
+    "valence": 0.57
+  },
+  "composers": [
+    "Donald Glover",
+    "Ludwig Goransson"
+  ],
+  "copyright": "℗ 2016 McDJ Entertainment under exclusive license to Glassnote Entertainment Group LLC",
+  "creditName": "Childish Gambino",
+  "credits": [
+    {
+      "name": "William Earl Collins",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "9523cd13-ce4e-4b1b-9d55-c67174008787"
+    },
+    {
+      "name": "GARY LEE COOPER",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "0f4a7930-14cf-41ce-b6fa-d6697e9f6004"
+    },
+    {
+      "name": "Mustard",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "46a343e3-b5b1-47de-9117-c5cfa584fb33"
+    },
+    {
+      "name": "Bernie Grundman",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "ccdb5936-bec4-4230-b511-6c389ed52622"
+    },
+    {
+      "name": "Bootsy Collins",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "02c1dc82-67a0-4546-aaad-1d1ad3a14c3b"
+    },
+    {
+      "name": "Donald Glover",
+      "roles": [
+        "writer",
+        "mix",
+        "composer"
+      ],
+      "uuid": "8cd6ad1e-e5e7-4a2a-a9af-4b781e57dd92"
+    },
+    {
+      "name": "Ludwig Göransson",
+      "roles": [
+        "producer",
+        "writer",
+        "mix",
+        "guitar",
+        "bass guitar",
+        "synthesizer",
+        "banjo",
+        "rhodes piano",
+        "wurlitzer",
+        "additional mixing",
+        "composer",
+        "lyricist",
+        "studio personnel",
+        "mix  engineer"
+      ],
+      "uuid": "4dacfc1c-abf8-49ec-a6fc-e08c2734711d"
+    },
+    {
+      "name": "Ruben Rivera",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "1c2280ab-c438-41e5-b1f4-cc1dfc08c9af"
+    },
+    {
+      "name": "Riley Mackin",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "2e85bdbb-b4b2-4d7c-b670-d591db2e3575"
+    },
+    {
+      "name": "Gary Mudbone Cooper",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "c35f384d-dd3e-49d8-b289-a46599f0e045"
+    },
+    {
+      "name": "George Clinton",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "0b1b3f73-0ec9-4713-adfe-5594792b12e6"
+    },
+    {
+      "name": "Gary Cooper",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "531e058b-7051-4783-941f-4f163d36a714"
+    },
+    {
+      "name": "Childish Gambino",
+      "roles": [
+        "producer",
+        "writer",
+        "vocals",
+        "drums",
+        "glockenspiel"
+      ],
+      "uuid": "9036002b-0f3a-4f0c-a5f7-311282d689ef"
+    },
+    {
+      "name": "Gary Cooper",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "1798ae2e-ffae-4fd1-9fa6-0e4204c31892"
+    },
+    {
+      "name": "Childish Gambino",
+      "roles": [
+        "Performer"
+      ],
+      "uuid": "33843d4c-3005-4d50-bc3c-9fa1a185b64e"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 326,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    },
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b",
+        "r&b, funk & soul"
+      ]
+    },
+    {
+      "root": "soul",
+      "sub": [
+        "soul"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/4/e/9/11e8269c-c9e4-a0ae-bdaa-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USYAH1600107"
+  },
+  "iswcs": [
+    "T9203370643"
+  ],
+  "labels": [
+    {
+      "name": "Glassnote Entertainment Group",
+      "type": "Other independent labels: \"Indie\""
+    },
+    {
+      "name": "McDJ",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/childish-gambino/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/d/c/11e81bc6-dcd3-4796-8752-a0369fe50396.jpg",
+      "name": "Childish Gambino",
+      "slug": "childish-gambino",
+      "uuid": "11e81bc6-dcd3-4796-8752-a0369fe50396"
+    }
+  ],
+  "name": "Redbone",
+  "producers": [
+    "Ludwig Göransson",
+    "Donald Glover"
+  ],
+  "releaseDate": "2016-12-02T00:00:00+00:00",
+  "uuid": "11e8269c-c9e4-a0ae-bdaa-a0369fe50396"
+}

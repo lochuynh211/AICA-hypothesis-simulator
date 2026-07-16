@@ -1,0 +1,208 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8263d-48e2-d6a6-8766-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/future/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/e/2/11e81bba-82e1-2372-a5b4-a0369fe50396.jpg",
+      "name": "Future",
+      "slug": "future",
+      "uuid": "11e81bba-82e1-2372-a5b4-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.01,
+    "danceability": 0.83,
+    "energy": 0.43,
+    "instrumentalness": 0.02,
+    "key": 2,
+    "liveness": 0.17,
+    "loudness": -8.8,
+    "mode": 1,
+    "speechiness": 0.43,
+    "tempo": 150.06,
+    "timeSignature": 4,
+    "valence": 0.28
+  },
+  "composers": [
+    "Leland Wayne",
+    "Nayvadius Wilburn",
+    "Tommy Butler"
+  ],
+  "copyright": "(P) 2017 Epic Records, a division of Sony Music Entertainment with A1 / Freebandz",
+  "creditName": "Future",
+  "credits": [
+    {
+      "name": "Future",
+      "roles": [
+        "writer",
+        "lyricist",
+        "associated performer"
+      ],
+      "uuid": "fc085f7f-4e8b-407b-b812-e785a49bb6ea"
+    },
+    {
+      "name": "Nayvadius Wilburn",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "71fedfe2-0174-4d02-b125-4c93232fd6f4"
+    },
+    {
+      "name": "Eric Manco",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "3cf3348d-018f-4c13-809f-9a125309bc26"
+    },
+    {
+      "name": "Leland Wayne",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "16d117c6-a891-4d32-b895-88bfe4f7ec89"
+    },
+    {
+      "name": "Metro Boomin",
+      "roles": [
+        "producer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "b8f17dad-9008-4d5c-a2fa-11cdd46e1c97"
+    },
+    {
+      "name": "André Benjamin",
+      "roles": [
+        "flute"
+      ],
+      "uuid": "c9d2c08e-6aec-44d1-ab87-c84e244cfdf7"
+    },
+    {
+      "name": "Colin Tilley",
+      "roles": [
+        "video director"
+      ],
+      "uuid": "a4f6ebde-26aa-4e7a-9273-fb5017a18357"
+    },
+    {
+      "name": "Joshua Sellers",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "48048713-87c2-47b2-92b6-c6d545985290"
+    },
+    {
+      "name": "Seth Firkins",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "034f94f5-8a62-4e51-9a4c-086956915925"
+    },
+    {
+      "name": "DJ ESCO",
+      "roles": [
+        "writer",
+        "mix"
+      ],
+      "uuid": "48791e13-011c-4294-a78c-418e4ddd16ed"
+    },
+    {
+      "name": "Tommy Butler",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "77eb36c2-026a-484b-9b8f-b4fbc2bd749d"
+    },
+    {
+      "name": "Glenn Schick",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "ff1edce4-0fd5-43c1-bfca-d9b859babd05"
+    },
+    {
+      "name": "Mike Synphony",
+      "roles": [
+        "assistant mix engineer",
+        "assistant engineer"
+      ],
+      "uuid": "b49bc3bc-1389-4948-8bf3-4fbecbeebf39"
+    },
+    {
+      "name": "Phillip \"Big Dockz\" Cromwell",
+      "roles": [
+        "assistant mix engineer",
+        "assistant engineer"
+      ],
+      "uuid": "1bf737d0-1b9b-4a37-be5d-fe3452bbfa98"
+    },
+    {
+      "name": "Nayvadius Wilburn",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "be8e441e-5333-4ac6-af32-15935c3707d2"
+    },
+    {
+      "name": "Leland Wayne",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "49a36365-443a-4c68-91a0-635215ad624d"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 204,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/2/e/8/11e8263d-48e2-d6a6-8766-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USSM11701444"
+  },
+  "iswcs": [
+    "T9231229917",
+    "T9243425527",
+    "T9269878457"
+  ],
+  "labels": [
+    {
+      "name": "Epic",
+      "type": "Sony"
+    },
+    {
+      "name": "Freebandz",
+      "type": "Other independent labels: \"Indie\""
+    },
+    {
+      "name": "A1",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/future/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/e/2/11e81bba-82e1-2372-a5b4-a0369fe50396.jpg",
+      "name": "Future",
+      "slug": "future",
+      "uuid": "11e81bba-82e1-2372-a5b4-a0369fe50396"
+    }
+  ],
+  "name": "Mask Off",
+  "producers": [
+    "Metro Boomin"
+  ],
+  "releaseDate": "2017-06-30T00:00:00+00:00",
+  "uuid": "11e8263d-48e2-d6a6-8766-aa1c026db3d8"
+}

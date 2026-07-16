@@ -1,0 +1,380 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82613-24d3-6890-8bf8-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/daft-punk/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/4/4/11e81bc3-f441-f3bc-b34a-a0369fe50396.jpg",
+      "name": "Daft Punk",
+      "slug": "daft-punk",
+      "uuid": "11e81bc3-f441-f3bc-b34a-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/pharrell-williams/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/4/9/11e81bc7-d947-1b74-a655-a0369fe50396.jpg",
+      "name": "Pharrell Williams",
+      "slug": "pharrell-williams",
+      "uuid": "11e81bc7-d947-1b74-a655-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/nile-rodgers/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/1/e/11e81bd1-7e12-c51e-8140-a0369fe50396.jpg",
+      "name": "Nile Rodgers",
+      "slug": "nile-rodgers",
+      "uuid": "11e81bd1-7e12-c51e-8140-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.04,
+    "danceability": 0.81,
+    "energy": 0.79,
+    "instrumentalness": 0,
+    "key": 6,
+    "liveness": 0.07,
+    "loudness": -9.4,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 116.05,
+    "timeSignature": 4,
+    "valence": 0.86
+  },
+  "composers": [
+    "Pharrell Williams",
+    "Nile Rodgers",
+    "Guy-Manuel de Homem-Christo",
+    "Thomas Bangalter"
+  ],
+  "copyright": "(P) 2013 Daft Life Limited under exclusive license to Columbia Records, a Division of Sony Music Entertainment",
+  "creditName": "Daft Punk & Pharrell Williams & Nile Rodgers",
+  "credits": [
+    {
+      "name": "Alana Da Fonseca",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "8b201ca7-41e8-4ecd-b56b-ce89a74bee08"
+    },
+    {
+      "name": "Thomas Bangalter",
+      "roles": [
+        "arranger",
+        "producer",
+        "writer"
+      ],
+      "uuid": "ab6e9ae3-bc09-42b5-8f60-5f78cba73b21"
+    },
+    {
+      "name": "Eric Weaver",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "5a90ecd3-12a6-4d36-8440-1b4ca0bc573d"
+    },
+    {
+      "name": "Pitbull",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "f83d5777-bad8-4b93-8dd0-c2c75702a37e"
+    },
+    {
+      "name": "Bill Rahko",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "d38a8f78-d9f4-4453-8625-a7627d007bfb"
+    },
+    {
+      "name": "Bob Ludwig",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "cf8d7d78-edea-4728-818a-48953f721d29"
+    },
+    {
+      "name": "Guy-Manuel de Homem-Christo",
+      "roles": [
+        "arranger",
+        "producer",
+        "writer"
+      ],
+      "uuid": "0fc6f888-ad16-4137-8f69-683cd80f2591"
+    },
+    {
+      "name": "Mick Guzauski",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "2f3eff8e-eb03-4a36-91d0-b9fc2acab26b"
+    },
+    {
+      "name": "Cory Bice",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "3fc01b36-38cc-4bd7-8bcf-edd09e9ffe35"
+    },
+    {
+      "name": "Jean-Pierre Janiaud",
+      "roles": [
+        "consultant"
+      ],
+      "uuid": "7311c8b7-3d7c-4200-9149-357c2049fc2a"
+    },
+    {
+      "name": "Florian Lagatta",
+      "roles": [
+        "recording",
+        "remixing"
+      ],
+      "uuid": "1b5de539-57b2-4d60-97d4-03b7ec272ab9"
+    },
+    {
+      "name": "Chab",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "b9cc7b47-a1af-4fd0-8b53-346bfd222f27"
+    },
+    {
+      "name": "Nile Rodgers",
+      "roles": [
+        "producer",
+        "writer",
+        "guitar"
+      ],
+      "uuid": "94054143-7595-4faa-a211-7d3dc915bafc"
+    },
+    {
+      "name": "Mike Larson",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "1179b3c5-0acf-4958-827a-738f58db47a2"
+    },
+    {
+      "name": "Studio Translab",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "8c819610-8be1-4aa1-8525-18bd57dc5dc7"
+    },
+    {
+      "name": "Phil Joly",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "103464e9-e53f-411b-8382-062501a979c7"
+    },
+    {
+      "name": "Gateway Mastering",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "b5902f70-65dd-4a83-8378-64812ef58b11"
+    },
+    {
+      "name": "Eric Eylands",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "778c298d-f33b-494f-8dd7-d8c369435146"
+    },
+    {
+      "name": "Nicolas Essig",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "2b387efc-7552-4788-a7d4-85a4a80ad2ca"
+    },
+    {
+      "name": "Nathan East",
+      "roles": [
+        "bass"
+      ],
+      "uuid": "8dc7bbe7-ca8b-4e2b-87a1-494ac30f0e54"
+    },
+    {
+      "name": "Seth Waldmann",
+      "roles": [
+        "assistant mix engineer",
+        "assistant engineer"
+      ],
+      "uuid": "2e4b8c24-8f82-4020-9834-eca8c348fa80"
+    },
+    {
+      "name": "Omar Hakim",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "7af13a1b-da15-47cb-bcc2-7cf0c51fefa4"
+    },
+    {
+      "name": "Paul Jackson, Jr.",
+      "roles": [
+        "guitar"
+      ],
+      "uuid": "380f11e8-8e7c-4649-b0a2-b75dad8e35e0"
+    },
+    {
+      "name": "Pharrell Williams",
+      "roles": [
+        "writer",
+        "vocals"
+      ],
+      "uuid": "f97ab527-31e0-4e2d-b9a8-5f11e94bae75"
+    },
+    {
+      "name": "Miguel Lara",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "02336cc6-8cb4-4976-9110-4089554ebc1f"
+    },
+    {
+      "name": "Kyle Stevens",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "86f7a7ae-bf59-450a-8db3-df493b63fd23"
+    },
+    {
+      "name": "Charlie Paakkari",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "8515ae0b-145d-4cbd-9629-789e1b29ca07"
+    },
+    {
+      "name": "Antoine Chabert",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "ea91c5d9-4c1e-4e5d-a5a1-70146e51840c"
+    },
+    {
+      "name": "Daft Punk",
+      "roles": [
+        "arranger",
+        "producer",
+        "writer",
+        "synthesizer",
+        "vocoder",
+        "vocals"
+      ],
+      "uuid": "ff273d36-b173-46ff-ae86-1027d88373d5"
+    },
+    {
+      "name": "Kevin Mills",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "a65c5458-010f-4583-9a1b-a97a86e6499f"
+    },
+    {
+      "name": "Peter Franco",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "27e4e1a0-2386-49ef-ac48-47e87031dac2"
+    },
+    {
+      "name": "Derek Karlquist",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "c5f6f5a9-51c0-43e7-bf12-048f94695325"
+    },
+    {
+      "name": "Doug Tyo",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "d0d29a04-09bf-4662-aeac-92e2da2f7b14"
+    },
+    {
+      "name": "Chris Caswell",
+      "roles": [
+        "keyboard"
+      ],
+      "uuid": "f6ddef8c-949b-451a-b07a-38ec27f28adc"
+    },
+    {
+      "name": "Daniel Lerner",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "00454c26-18b1-4371-a4b5-e27e0e03cf1a"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 369,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "electro",
+      "sub": [
+        "dance",
+        "electronic"
+      ]
+    },
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/d/4/11e82613-24d3-6890-8bf8-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USQX91300108"
+  },
+  "iswcs": [
+    "T9101212275"
+  ],
+  "labels": [
+    {
+      "name": "Daft Life",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/daft-punk/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/4/4/11e81bc3-f441-f3bc-b34a-a0369fe50396.jpg",
+      "name": "Daft Punk",
+      "slug": "daft-punk",
+      "uuid": "11e81bc3-f441-f3bc-b34a-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/pharrell-williams/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/4/9/11e81bc7-d947-1b74-a655-a0369fe50396.jpg",
+      "name": "Pharrell Williams",
+      "slug": "pharrell-williams",
+      "uuid": "11e81bc7-d947-1b74-a655-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/nile-rodgers/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/1/e/11e81bd1-7e12-c51e-8140-a0369fe50396.jpg",
+      "name": "Nile Rodgers",
+      "slug": "nile-rodgers",
+      "uuid": "11e81bd1-7e12-c51e-8140-a0369fe50396"
+    }
+  ],
+  "name": "Get Lucky",
+  "producers": [
+    "Thomas Bangalter",
+    "Guy-Manuel de Homem-Christo"
+  ],
+  "releaseDate": "2013-05-20T00:00:00+00:00",
+  "uuid": "11e82613-24d3-6890-8bf8-a0369fe50396"
+}

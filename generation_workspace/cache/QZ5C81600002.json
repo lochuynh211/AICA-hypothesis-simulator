@@ -1,0 +1,131 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826b6-9b03-a9fa-804b-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/frank-ocean/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/3/c/11e81bcc-fc3d-6b6a-9a6b-a0369fe50396.jpg",
+      "name": "Frank Ocean",
+      "slug": "frank-ocean",
+      "uuid": "11e81bcc-fc3d-6b6a-9a6b-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.79,
+    "danceability": 0.58,
+    "energy": 0.39,
+    "instrumentalness": 0,
+    "key": 9,
+    "liveness": 0.23,
+    "loudness": -9.58,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 116.41,
+    "timeSignature": 4,
+    "valence": 0.47
+  },
+  "composers": [
+    "Jamie Smith",
+    "James Ryan Wuihun Ho",
+    "Ommas Keith-Graham",
+    "Charles Christopher Breaux",
+    "Rostam Batamaglij"
+  ],
+  "copyright": "2016 Boys Don't Cry",
+  "creditName": "Frank Ocean",
+  "credits": [
+    {
+      "name": "Om'Mas Keith",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "93d02ff7-9963-49df-b60c-02b5c0328752"
+    },
+    {
+      "name": "Jeff Ellis",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "70bb3762-aff7-44a9-81e3-993e279ed9bb"
+    },
+    {
+      "name": "Malay",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "b0df1d4a-f409-4431-be16-880087959875"
+    },
+    {
+      "name": "Frank Ocean",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "27120da8-7e18-43af-b579-94d935d4de29"
+    },
+    {
+      "name": "Rostam",
+      "roles": [
+        "arranger",
+        "producer"
+      ],
+      "uuid": "090db859-05bb-411d-8af5-9e2469180fb2"
+    },
+    {
+      "name": "Fish",
+      "roles": [
+        "guitar"
+      ],
+      "uuid": "f7ad1b33-28f3-42c2-924b-1b989c795d94"
+    }
+  ],
+  "distributor": "",
+  "duration": 249,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b, funk & soul"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/0/b/11e826b6-9b03-a9fa-804b-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "QZ5C81600002"
+  },
+  "iswcs": [
+    "T9198929634"
+  ],
+  "labels": [
+    {
+      "name": "Boys Don't Cry",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/frank-ocean/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/3/c/11e81bcc-fc3d-6b6a-9a6b-a0369fe50396.jpg",
+      "name": "Frank Ocean",
+      "slug": "frank-ocean",
+      "uuid": "11e81bcc-fc3d-6b6a-9a6b-a0369fe50396"
+    }
+  ],
+  "name": "Ivy",
+  "producers": [
+    "Frank Ocean",
+    "Rostam",
+    "Om’Mas Keith"
+  ],
+  "releaseDate": "2016-08-20T00:00:00+00:00",
+  "uuid": "11e826b6-9b03-a9fa-804b-a0369fe50396"
+}

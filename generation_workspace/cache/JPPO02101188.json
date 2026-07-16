@@ -1,0 +1,59 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/02e0ed65-a51a-4c6a-8b59-3fad84e097d2/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ayaka-hirahara/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/8/c/11e83fe4-2c89-3c6e-be50-a0369fe50396.jpg",
+      "name": "Ayaka Hirahara",
+      "slug": "ayaka-hirahara",
+      "uuid": "11e83fe4-2c89-3c6e-be50-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.19,
+    "danceability": 0.18,
+    "energy": 0.74,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.87,
+    "loudness": -3.85,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 177.36,
+    "timeSignature": 4,
+    "valence": 0.33
+  },
+  "composers": [
+    "Gustav Holst",
+    "Yumi Yoshimoto"
+  ],
+  "copyright": "",
+  "creditName": "Ayaka Hirahara",
+  "credits": [],
+  "distributor": "Universal",
+  "duration": 356,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/a/1/5/02e0ed65-a51a-4c6a-8b59-3fad84e097d2.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO02101188"
+  },
+  "iswcs": [],
+  "labels": [],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ayaka-hirahara/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/8/c/11e83fe4-2c89-3c6e-be50-a0369fe50396.jpg",
+      "name": "Ayaka Hirahara",
+      "slug": "ayaka-hirahara",
+      "uuid": "11e83fe4-2c89-3c6e-be50-a0369fe50396"
+    }
+  ],
+  "name": "Jupiter - Live Tour 2018 Ver.",
+  "producers": [],
+  "releaseDate": "2021-06-02T00:00:00+00:00",
+  "uuid": "02e0ed65-a51a-4c6a-8b59-3fad84e097d2"
+}

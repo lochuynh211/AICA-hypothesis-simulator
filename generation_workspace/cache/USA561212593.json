@@ -1,0 +1,126 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/7e6f0d46-c59b-11e8-9277-549f35141000/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/average-white-band/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/a/3/11e81bd0-53ae-1df6-abfc-a0369fe50396.jpg",
+      "name": "Average White Band",
+      "slug": "average-white-band",
+      "uuid": "11e81bd0-53ae-1df6-abfc-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.03,
+    "danceability": 0.83,
+    "energy": 0.65,
+    "instrumentalness": 0.82,
+    "key": 8,
+    "liveness": 0.06,
+    "loudness": -7.15,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 106.97,
+    "timeSignature": 4,
+    "valence": 0.82
+  },
+  "composers": [
+    "Alan Gorrie",
+    "Roger Ball",
+    "Hamish Stuart",
+    "Owen McIntyre",
+    "Robert McIntosh",
+    "Malcom Duncan"
+  ],
+  "copyright": "℗ 2012 Goldenlane Records",
+  "creditName": "Average White Band",
+  "credits": [
+    {
+      "name": "Alan Gorrie",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "c962d9dc-3af8-4793-9272-53f0c7b7a433"
+    },
+    {
+      "name": "Roger Ball",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "14f65b97-3241-4b66-9b4a-a975b7d45da8"
+    },
+    {
+      "name": "Hamish Stuart",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "8f809159-ca7a-42b2-b37e-6bc6ef1f91a9"
+    },
+    {
+      "name": "Fred Briggs",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "fba0eac5-870e-4178-b41d-f5275cd62163"
+    },
+    {
+      "name": "Malcom Duncan",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "ecd171d4-8721-46d1-a41e-a5049a502b07"
+    },
+    {
+      "name": "Robert McIntosh",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "3670c6df-5009-4b76-9bbe-efe18d1aa5e6"
+    },
+    {
+      "name": "Owen McIntyre",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "828d8662-97fa-4188-84f1-00b4f259cb06"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 241,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b, funk & soul"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/9/5/7e6f0d46-c59b-11e8-9277-549f35141000.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USA561212593"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Goldenlane",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/average-white-band/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/a/3/11e81bd0-53ae-1df6-abfc-a0369fe50396.jpg",
+      "name": "Average White Band",
+      "slug": "average-white-band",
+      "uuid": "11e81bd0-53ae-1df6-abfc-a0369fe50396"
+    }
+  ],
+  "name": "Pick Up the Pieces (Single) [Re-Recorded]",
+  "producers": [],
+  "releaseDate": "2012-06-01T00:00:00+00:00",
+  "uuid": "7e6f0d46-c59b-11e8-9277-549f35141000"
+}

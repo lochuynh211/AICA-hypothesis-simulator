@@ -1,0 +1,94 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82709-776d-d54e-ad79-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/suchmos/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/a/5/11e81bd1-b5a9-78c4-9a0c-a0369fe50396.jpg",
+      "name": "Suchmos",
+      "slug": "suchmos",
+      "uuid": "11e81bd1-b5a9-78c4-9a0c-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.03,
+    "danceability": 0.68,
+    "energy": 0.94,
+    "instrumentalness": 0,
+    "key": 5,
+    "liveness": 0.06,
+    "loudness": -4.25,
+    "mode": 1,
+    "speechiness": 0.06,
+    "tempo": 123,
+    "timeSignature": 4,
+    "valence": 0.6
+  },
+  "composers": [
+    "Hsu",
+    "Suchmos",
+    "YONCE"
+  ],
+  "copyright": "2016 SPACE SHOWER MUSIC",
+  "creditName": "Suchmos",
+  "credits": [
+    {
+      "name": "Hsu",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "d66ddabb-8a15-45ab-8a8b-5e2f63039f9a"
+    },
+    {
+      "name": "Yoncé",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "87072e01-1f85-42b2-8919-bc1348bf9489"
+    },
+    {
+      "name": "Suchmos",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "67e523fb-7706-4ad7-88b0-87937f8ad81c"
+    }
+  ],
+  "distributor": "Space Shower Network",
+  "duration": 298,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/d/6/7/11e82709-776d-d54e-ad79-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPJ901514430"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "SPACE SHOWER MUSIC",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/suchmos/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/a/5/11e81bd1-b5a9-78c4-9a0c-a0369fe50396.jpg",
+      "name": "Suchmos",
+      "slug": "suchmos",
+      "uuid": "11e81bd1-b5a9-78c4-9a0c-a0369fe50396"
+    }
+  ],
+  "name": "STAY TUNE",
+  "producers": [],
+  "releaseDate": "2016-01-13T00:00:00+00:00",
+  "uuid": "11e82709-776d-d54e-ad79-a0369fe50396"
+}

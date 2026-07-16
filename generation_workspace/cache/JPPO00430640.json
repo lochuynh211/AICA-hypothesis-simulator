@@ -1,0 +1,128 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8261c-ddfb-a36a-9add-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/joe-hisaishi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/c/8/ecb51a50-b8cd-11e8-b753-525400009efb.jpg",
+      "name": "Joe Hisaishi",
+      "slug": "joe-hisaishi",
+      "uuid": "ecb51a50-b8cd-11e8-b753-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.88,
+    "danceability": 0.24,
+    "energy": 0.29,
+    "instrumentalness": 0.64,
+    "key": 7,
+    "liveness": 0.12,
+    "loudness": -12.57,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 71.61,
+    "timeSignature": 3,
+    "valence": 0.19
+  },
+  "composers": [
+    "Joe Hisaishi",
+    "覚和歌子"
+  ],
+  "copyright": "A Decca Gold release; ℗ 2005 UNIVERSAL MUSIC LLC",
+  "creditName": "Joe Hisaishi",
+  "credits": [
+    {
+      "name": "Masayoshi Furukawa",
+      "roles": [
+        "guitar"
+      ],
+      "uuid": "5e1b5c4a-671f-4d47-820c-fc6123368a4f"
+    },
+    {
+      "name": "Joe Hisaishi",
+      "roles": [
+        "composer",
+        "arranger",
+        "producer",
+        "piano",
+        "melodica"
+      ],
+      "uuid": "aef45dc0-147b-428c-816a-5ac58b217715"
+    },
+    {
+      "name": "Yasue Sawako",
+      "roles": [
+        "percussions"
+      ],
+      "uuid": "bddc83c2-8265-42a2-9ff8-6ca71d958988"
+    },
+    {
+      "name": "Koji Kyotani",
+      "roles": [
+        "bandoneon"
+      ],
+      "uuid": "3d9af966-39f5-412e-8395-7ba265a30518"
+    },
+    {
+      "name": "Angèle Dubeau",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "3f3986a1-388c-49cf-8e77-719674d5e528"
+    },
+    {
+      "name": "La Pietà",
+      "roles": [
+        "string ensemble"
+      ],
+      "uuid": "526b23bc-2c16-4092-bcae-28498461523a"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 311,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    },
+    {
+      "root": "soundtrack",
+      "sub": [
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/f/d/11e8261c-ddfb-a36a-9add-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO00430640"
+  },
+  "iswcs": [
+    "T1017759305"
+  ],
+  "labels": [
+    {
+      "name": "Decca Gold",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/joe-hisaishi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/c/8/ecb51a50-b8cd-11e8-b753-525400009efb.jpg",
+      "name": "Joe Hisaishi",
+      "slug": "joe-hisaishi",
+      "uuid": "ecb51a50-b8cd-11e8-b753-525400009efb"
+    }
+  ],
+  "name": "人生のメリーゴーランド",
+  "producers": [
+    "Joe Hisaishi"
+  ],
+  "releaseDate": "2005-01-01T00:00:00+00:00",
+  "uuid": "11e8261c-ddfb-a36a-9add-a0369fe50396"
+}

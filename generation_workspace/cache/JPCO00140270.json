@@ -1,0 +1,95 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82638-4593-3ff4-bdad-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/bing-chuan-kiyosi-with-koketukozu/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/1/4/11e83fea-8415-5bc4-9889-aa1c026db3d8.jpg",
+      "name": "Kiyoshi Hikawa",
+      "slug": "bing-chuan-kiyosi-with-koketukozu",
+      "uuid": "11e83fea-8415-5bc4-9889-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.74,
+    "danceability": 0.78,
+    "energy": 0.62,
+    "instrumentalness": 0,
+    "key": 3,
+    "liveness": 0.23,
+    "loudness": -4.82,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 106.11,
+    "timeSignature": 4,
+    "valence": 0.9
+  },
+  "composers": [
+    "水森英夫",
+    "松井由利夫"
+  ],
+  "copyright": "2002 Nippon Columbia Co., Ltd.",
+  "creditName": "Kiyoshi Hikawa",
+  "credits": [
+    {
+      "name": "Hideo Mizumori",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "52edb065-ca4e-4b2f-bc9e-2f98a5830929"
+    },
+    {
+      "name": "Norio Ido",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "e0820628-14e9-4f55-8d6f-e7af254a8b8d"
+    },
+    {
+      "name": "YURIO MATSUI",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "2274c731-a292-4788-a2ef-d4c124c0ed83"
+    }
+  ],
+  "distributor": "Nippon Columbia",
+  "duration": 220,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/9/5/11e82638-4593-3ff4-bdad-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPCO00140270"
+  },
+  "iswcs": [
+    "T9162107622"
+  ],
+  "labels": [
+    {
+      "name": "Nippon Columbia",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/bing-chuan-kiyosi-with-koketukozu/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/1/4/11e83fea-8415-5bc4-9889-aa1c026db3d8.jpg",
+      "name": "Kiyoshi Hikawa",
+      "slug": "bing-chuan-kiyosi-with-koketukozu",
+      "uuid": "11e83fea-8415-5bc4-9889-aa1c026db3d8"
+    }
+  ],
+  "name": "きよしのズンドコ節",
+  "producers": [],
+  "releaseDate": "2002-02-06T00:00:00+00:00",
+  "uuid": "11e82638-4593-3ff4-bdad-aa1c026db3d8"
+}

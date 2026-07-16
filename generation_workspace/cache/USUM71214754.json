@@ -1,0 +1,202 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82650-dea5-3bc6-a387-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/rihanna/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/c/a/11e81bc8-1ac0-2bc2-a381-a0369fe50396.jpg",
+      "name": "Rihanna",
+      "slug": "rihanna",
+      "uuid": "11e81bc8-1ac0-2bc2-a381-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mikky-ekko/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/7/1/11e81bd2-a176-4ffc-8337-a0369fe50396.jpg",
+      "name": "Mikky Ekko",
+      "slug": "mikky-ekko",
+      "uuid": "11e81bd2-a176-4ffc-8337-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.95,
+    "danceability": 0.62,
+    "energy": 0.31,
+    "instrumentalness": 0,
+    "key": 9,
+    "liveness": 0.12,
+    "loudness": -10.16,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 111.88,
+    "timeSignature": 4,
+    "valence": 0.13
+  },
+  "composers": [
+    "Justin Parker",
+    "Mikky Ekko"
+  ],
+  "copyright": "℗ 2012 The Island Def Jam Music Group",
+  "creditName": "Rihanna & Mikky Ekko",
+  "credits": [
+    {
+      "name": "Daniel Rivera",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "fcbb8b22-c613-42fc-a632-fecb5053ca50"
+    },
+    {
+      "name": "Kuk Harrell",
+      "roles": [
+        "producer",
+        "recording"
+      ],
+      "uuid": "5858fd80-d171-467e-97ff-13e76e58a8b2"
+    },
+    {
+      "name": "Phil Tan",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "11f75f42-40e7-4a8f-9880-a194c9674d03"
+    },
+    {
+      "name": "Marcos Tovar",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "39043f14-4c07-4883-b8bf-9f22c6efa641"
+    },
+    {
+      "name": "Mike Gaydusek",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "b3cbd6df-f131-4d80-b886-503a15a2fe61"
+    },
+    {
+      "name": "Seth Firkins",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "034f94f5-8a62-4e51-9a4c-086956915925"
+    },
+    {
+      "name": "Blake Mares",
+      "roles": [
+        "recording",
+        "second engineer"
+      ],
+      "uuid": "ff3be12f-bece-4d3c-9ef1-8ead71d0d072"
+    },
+    {
+      "name": "Robert Cohen",
+      "roles": [
+        "recording",
+        "second engineer"
+      ],
+      "uuid": "a0d64634-33cf-4152-8c28-79178647746b"
+    },
+    {
+      "name": "Elof Loelv",
+      "roles": [
+        "producer",
+        "writer",
+        "additional production"
+      ],
+      "uuid": "aa151749-c3e5-4f5b-a806-ad3f4d2077d5"
+    },
+    {
+      "name": "Mikky Ekko",
+      "roles": [
+        "producer",
+        "writer",
+        "recording arranger",
+        "lyricist"
+      ],
+      "uuid": "58923841-603d-40a2-9536-d71e8c79ee59"
+    },
+    {
+      "name": "J. Parker",
+      "roles": [
+        "producer",
+        "writer",
+        "recording arranger"
+      ],
+      "uuid": "37d11473-fd54-435e-946d-363263f175da"
+    },
+    {
+      "name": "Justin Parker",
+      "roles": [
+        "producer",
+        "piano",
+        "composer",
+        "lyricist",
+        "recording arranger"
+      ],
+      "uuid": "1631305d-8099-4a8f-aec1-2777e3eea81f"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 240,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "electro",
+      "sub": [
+        "dance"
+      ]
+    },
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b, funk & soul"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/5/a/e/11e82650-dea5-3bc6-a387-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USUM71214754"
+  },
+  "iswcs": [
+    "T9069081523"
+  ],
+  "labels": [
+    {
+      "name": "The  Music Group",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/rihanna/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/c/a/11e81bc8-1ac0-2bc2-a381-a0369fe50396.jpg",
+      "name": "Rihanna",
+      "slug": "rihanna",
+      "uuid": "11e81bc8-1ac0-2bc2-a381-a0369fe50396"
+    }
+  ],
+  "name": "Stay (album version)",
+  "producers": [
+    "Kuk Harrell",
+    "Elof Loelv",
+    "Justin Parker",
+    "Mikky Ekko"
+  ],
+  "releaseDate": "2012-12-11T00:00:00+00:00",
+  "uuid": "11e82650-dea5-3bc6-a387-aa1c026db3d8"
+}

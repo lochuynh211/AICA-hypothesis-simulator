@@ -1,0 +1,89 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/465bc56a-36a3-11e9-b45e-549f35161576/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/king-gnu/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/5/b/11e83fec-4b5b-29ba-9bd8-aa1c026db3d8.jpg",
+      "name": "King Gnu",
+      "slug": "king-gnu",
+      "uuid": "11e83fec-4b5b-29ba-9bd8-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.67,
+    "danceability": 0.61,
+    "energy": 0.9,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.29,
+    "loudness": -2.56,
+    "mode": 1,
+    "speechiness": 0.11,
+    "tempo": 93,
+    "timeSignature": 4,
+    "valence": 0.76
+  },
+  "composers": [
+    "Daiki Tsuneta"
+  ],
+  "copyright": "(P)2019 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "King Gnu",
+  "credits": [
+    {
+      "name": "King Gnu",
+      "roles": [
+        "arranger",
+        "associated performer"
+      ],
+      "uuid": "b0c18f6a-36fc-4c72-8124-95b5600d582b"
+    },
+    {
+      "name": "Daiki Tsuneta",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "00aeea47-e34b-4601-a43b-8fe79a209bcc"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 274,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/a/6/465bc56a-36a3-11e9-b45e-549f35161576.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU901900431"
+  },
+  "iswcs": [
+    "T9281413590"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/king-gnu/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/5/b/11e83fec-4b5b-29ba-9bd8-aa1c026db3d8.jpg",
+      "name": "King Gnu",
+      "slug": "king-gnu",
+      "uuid": "11e83fec-4b5b-29ba-9bd8-aa1c026db3d8"
+    }
+  ],
+  "name": "白日",
+  "producers": [],
+  "releaseDate": "2019-02-22T00:00:00+00:00",
+  "uuid": "465bc56a-36a3-11e9-b45e-549f35161576"
+}

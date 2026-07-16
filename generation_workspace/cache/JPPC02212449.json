@@ -1,0 +1,137 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/abf01290-236c-4335-bb9d-f1bbc90b837b/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/official-hige-dandism/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/4/4/11e83feb-6442-3f96-955d-a0369fe50396.jpg",
+      "name": "Official HIGE DANdism",
+      "slug": "official-hige-dandism",
+      "uuid": "11e83feb-6442-3f96-955d-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.03,
+    "danceability": 0.65,
+    "energy": 0.68,
+    "instrumentalness": 0,
+    "key": 6,
+    "liveness": 0.12,
+    "loudness": -6.49,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 130,
+    "timeSignature": 4,
+    "valence": 0.38
+  },
+  "composers": [
+    "Satoshi Fujihara"
+  ],
+  "copyright": "2022 PONY CANYON / IRORI Records",
+  "creditName": "Official HIGE DANdism",
+  "credits": [
+    {
+      "name": "Daisuke Ozasa",
+      "roles": [
+        "backing vocals",
+        "guitar"
+      ],
+      "uuid": "8642a436-aa7e-4b7d-8b10-92de866c36de"
+    },
+    {
+      "name": "Satoshi Fujihara",
+      "roles": [
+        "composer",
+        "lyricist",
+        "keyboard"
+      ],
+      "uuid": "f7aede31-4a73-4718-959a-f112ee273286"
+    },
+    {
+      "name": "Makoto Narazaki",
+      "roles": [
+        "backing vocals",
+        "bass"
+      ],
+      "uuid": "e3ce66e3-8c65-42d6-b1f0-ef7e4afded63"
+    },
+    {
+      "name": "Masaki Matsuura",
+      "roles": [
+        "drums",
+        "backing vocals"
+      ],
+      "uuid": "09b495e3-700c-4cbe-a2a5-07c79846e478"
+    },
+    {
+      "name": "Official HIGE DANdism",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "e2f9e42d-c76f-414f-950f-872a3ec3688e"
+    },
+    {
+      "name": "藤原聡",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "d33eccf4-fb9d-4f43-b97e-9aa06bcf8c25"
+    },
+    {
+      "name": "Official髭男dism",
+      "roles": [
+        "arranger",
+        "main  artist"
+      ],
+      "uuid": "5b398da6-d850-4495-987c-96d294dfa5a9"
+    }
+  ],
+  "distributor": "Pony Canyon",
+  "duration": 305,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    },
+    {
+      "root": "j-pop",
+      "sub": [
+        "j-pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/c/6/3/abf01290-236c-4335-bb9d-f1bbc90b837b.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPC02212449"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "PONY CANYON",
+      "type": "unknown"
+    },
+    {
+      "name": "IRORI",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/official-hige-dandism/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/4/4/11e83feb-6442-3f96-955d-a0369fe50396.jpg",
+      "name": "Official HIGE DANdism",
+      "slug": "official-hige-dandism",
+      "uuid": "11e83feb-6442-3f96-955d-a0369fe50396"
+    }
+  ],
+  "name": "Subtitle",
+  "producers": [],
+  "releaseDate": "2022-10-12T00:00:00+00:00",
+  "uuid": "abf01290-236c-4335-bb9d-f1bbc90b837b"
+}

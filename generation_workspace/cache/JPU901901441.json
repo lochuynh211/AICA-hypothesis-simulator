@@ -1,0 +1,103 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/5b7b2892-9da4-11e9-b659-549f35161576/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/lisa-9/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/4/9/11e81bc7-7946-3110-9d08-a0369fe50396.jpg",
+      "name": "LiSA",
+      "slug": "lisa-9",
+      "uuid": "11e81bc7-7946-3110-9d08-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.06,
+    "danceability": 0.56,
+    "energy": 0.97,
+    "instrumentalness": 0,
+    "key": 4,
+    "liveness": 0.56,
+    "loudness": -3.39,
+    "mode": 0,
+    "speechiness": 0.09,
+    "tempo": 135.01,
+    "timeSignature": 4,
+    "valence": 0.63
+  },
+  "composers": [
+    "LiSA",
+    "草野華余子"
+  ],
+  "copyright": "(P)2019 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "LiSA",
+  "credits": [
+    {
+      "name": "Kayoko Kusano",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "c86e0084-206a-4590-b279-28b41518c3f7"
+    },
+    {
+      "name": "Lisa",
+      "roles": [
+        "lyricist",
+        "associated performer"
+      ],
+      "uuid": "0286d72f-0610-4bf2-ba2c-92e026176072"
+    },
+    {
+      "name": "Ryo Eguchi",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "604a49ea-cbbd-4e4a-87e1-230bf9306946"
+    },
+    {
+      "name": "Yuji Chinone",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "6a287a50-6fdb-4de3-9c39-4b85e80cda49"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 92,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "soundtrack",
+      "sub": [
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/4/a/d/5b7b2892-9da4-11e9-b659-549f35161576.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU901901441"
+  },
+  "iswcs": [
+    "T9284595966"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/lisa-9/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/4/9/11e81bc7-7946-3110-9d08-a0369fe50396.jpg",
+      "name": "LiSA",
+      "slug": "lisa-9",
+      "uuid": "11e81bc7-7946-3110-9d08-a0369fe50396"
+    }
+  ],
+  "name": "紅蓮華 -TV ver.-",
+  "producers": [],
+  "releaseDate": "2019-07-03T00:00:00+00:00",
+  "uuid": "5b7b2892-9da4-11e9-b659-549f35161576"
+}

@@ -1,0 +1,113 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8261e-45f2-bafc-a9aa-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/brian-eno/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/b/f/11e81bbe-0fba-38a8-b0ff-a0369fe50396.jpg",
+      "name": "Brian Eno",
+      "slug": "brian-eno",
+      "uuid": "11e81bbe-0fba-38a8-b0ff-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.93,
+    "danceability": 0.26,
+    "energy": 0.09,
+    "instrumentalness": 0.99,
+    "key": 8,
+    "liveness": 0.08,
+    "loudness": -25.38,
+    "mode": 1,
+    "speechiness": 0.07,
+    "tempo": 67.46,
+    "timeSignature": 3,
+    "valence": 0.05
+  },
+  "composers": [
+    "Brian Eno"
+  ],
+  "copyright": "℗ 2005 Virgin Records Limited",
+  "creditName": "Brian Eno",
+  "credits": [
+    {
+      "name": "Greg Calbi",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "45ba67d8-a753-45fb-aa8c-b4e6c14a48ae"
+    },
+    {
+      "name": "Brian Eno",
+      "roles": [
+        "producer",
+        "sound effects",
+        "music production"
+      ],
+      "uuid": "5f39669d-fb61-476e-9e70-baa393604195"
+    },
+    {
+      "name": "Daniel Lanois",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "635f03b0-e3c1-4667-8d71-d4ddce6c4712"
+    },
+    {
+      "name": "Simon Heyworth",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "89ff796e-ea6b-486a-a586-6c940638b4a4"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 266,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    },
+    {
+      "root": "electro",
+      "sub": [
+        "electronic"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/2/f/5/11e8261e-45f2-bafc-a9aa-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBAAA0500103"
+  },
+  "iswcs": [
+    "T0114608104",
+    "T3142653489"
+  ],
+  "labels": [
+    {
+      "name": "Virgin",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/brian-eno/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/b/f/11e81bbe-0fba-38a8-b0ff-a0369fe50396.jpg",
+      "name": "Brian Eno",
+      "slug": "brian-eno",
+      "uuid": "11e81bbe-0fba-38a8-b0ff-a0369fe50396"
+    }
+  ],
+  "name": "An Ending (Ascent) - Remastered 2005",
+  "producers": [
+    "Brian Eno",
+    "Daniel Lanois"
+  ],
+  "releaseDate": "1983-07-01T00:00:00+00:00",
+  "uuid": "11e8261e-45f2-bafc-a9aa-aa1c026db3d8"
+}

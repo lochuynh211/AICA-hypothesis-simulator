@@ -1,0 +1,167 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8261b-206a-b634-bd03-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/utada-hikaru/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/d/8/39187ec8-b8d3-11e8-856b-525400009efb.jpg",
+      "name": "Hikaru Utada",
+      "slug": "utada-hikaru",
+      "uuid": "39187ec8-b8d3-11e8-856b-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.12,
+    "danceability": 0.44,
+    "energy": 0.43,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.15,
+    "loudness": -8.37,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 179.91,
+    "timeSignature": 4,
+    "valence": 0.2
+  },
+  "composers": [
+    "Hikaru Utada"
+  ],
+  "copyright": "A Virgin Music release; ℗ 1999 UNIVERSAL MUSIC LLC",
+  "creditName": "Hikaru Utada",
+  "credits": [
+    {
+      "name": "Hikaru Utada",
+      "roles": [
+        "writer",
+        "vocals"
+      ],
+      "uuid": "ea89c60d-1e29-4744-8887-0f025ef87036"
+    },
+    {
+      "name": "三宅 彰",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "be403d81-0a1d-4531-b2dc-d0931ac88af0"
+    },
+    {
+      "name": "Yuichiro Goto Strings",
+      "roles": [
+        "strings"
+      ],
+      "uuid": "24946572-33ac-411c-98b1-053ad78a56e1"
+    },
+    {
+      "name": "Hironori Akiyama",
+      "roles": [
+        "guitar"
+      ],
+      "uuid": "dccb9d40-1909-4374-975f-567b3dd69187"
+    },
+    {
+      "name": "Masayuki Momo",
+      "roles": [
+        "programming"
+      ],
+      "uuid": "57dfaf2e-2856-43d9-ab42-cf27b7bdfca7"
+    },
+    {
+      "name": "Akira Miyake",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "8d5dec09-bf72-4291-93d9-7b094ed6128c"
+    },
+    {
+      "name": "Utada Sking Teruzane",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "31fa7a2a-9bc1-4c47-9bf8-d5adbcb5a532"
+    },
+    {
+      "name": "宇多田ヒカル",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "0d455fad-9e76-440d-a0df-c644110c4b69"
+    },
+    {
+      "name": "宇多田 Sking 照實",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "f4ea8fd8-a7ff-45e5-bdd8-b6c89127b308"
+    },
+    {
+      "name": "KEI KAWANO",
+      "roles": [
+        "recording arranger",
+        "keyboard",
+        "programming"
+      ],
+      "uuid": "c2ac9983-f95c-40f0-a7f4-a2daab567889"
+    },
+    {
+      "name": "Takahiro Iida",
+      "roles": [
+        "programming"
+      ],
+      "uuid": "47712e5a-8c21-4767-bb72-d2e5309407d4"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 257,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "asian",
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/a/6/0/11e8261b-206a-b634-bd03-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPTO09901670"
+  },
+  "iswcs": [
+    "T0100303998"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    },
+    {
+      "name": "Virgin",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/utada-hikaru/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/d/8/39187ec8-b8d3-11e8-856b-525400009efb.jpg",
+      "name": "Hikaru Utada",
+      "slug": "utada-hikaru",
+      "uuid": "39187ec8-b8d3-11e8-856b-525400009efb"
+    }
+  ],
+  "name": "First Love",
+  "producers": [
+    "三宅 彰",
+    "宇多田 Sking 照實"
+  ],
+  "releaseDate": "1999-04-28T00:00:00+00:00",
+  "uuid": "11e8261b-206a-b634-bd03-a0369fe50396"
+}

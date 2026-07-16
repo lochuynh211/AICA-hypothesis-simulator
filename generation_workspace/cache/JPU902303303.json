@@ -1,0 +1,88 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/f4cf9a0e-49eb-4600-bd70-5790e506c52f/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/king-gnu/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/5/b/11e83fec-4b5b-29ba-9bd8-aa1c026db3d8.jpg",
+      "name": "King Gnu",
+      "slug": "king-gnu",
+      "uuid": "11e83fec-4b5b-29ba-9bd8-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.07,
+    "danceability": 0.57,
+    "energy": 0.85,
+    "instrumentalness": 0,
+    "key": 6,
+    "liveness": 0.32,
+    "loudness": -4.43,
+    "mode": 0,
+    "speechiness": 0.06,
+    "tempo": 117.05,
+    "timeSignature": 4,
+    "valence": 0.72
+  },
+  "composers": [
+    "Daiki Tsuneta"
+  ],
+  "copyright": "(P) 2023 Sony Music Labels Inc.",
+  "creditName": "King Gnu",
+  "credits": [
+    {
+      "name": "King Gnu",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "b0c18f6a-36fc-4c72-8124-95b5600d582b"
+    },
+    {
+      "name": "Daiki Tsuneta",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "00aeea47-e34b-4601-a43b-8fe79a209bcc"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 238,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/e/9/f4cf9a0e-49eb-4600-bd70-5790e506c52f.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU902303303"
+  },
+  "iswcs": [
+    "T3218081933"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/king-gnu/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/5/b/11e83fec-4b5b-29ba-9bd8-aa1c026db3d8.jpg",
+      "name": "King Gnu",
+      "slug": "king-gnu",
+      "uuid": "11e83fec-4b5b-29ba-9bd8-aa1c026db3d8"
+    }
+  ],
+  "name": "SPECIALZ",
+  "producers": [],
+  "releaseDate": "2023-09-01T00:00:00+00:00",
+  "uuid": "f4cf9a0e-49eb-4600-bd70-5790e506c52f"
+}

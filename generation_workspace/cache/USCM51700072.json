@@ -1,0 +1,165 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/248bccb4-3cd9-4f34-8e35-ff7c63dcbceb/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/drake-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/c/d/11e81bbf-8dca-ff1a-af94-a0369fe50396.jpg",
+      "name": "Drake",
+      "slug": "drake-1",
+      "uuid": "11e81bbf-8dca-ff1a-af94-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.26,
+    "danceability": 0.81,
+    "energy": 0.46,
+    "instrumentalness": 0.09,
+    "key": 11,
+    "liveness": 0.11,
+    "loudness": -11.38,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 111.98,
+    "timeSignature": 4,
+    "valence": 0.36
+  },
+  "composers": [
+    "Aubrey Graham",
+    "Nana Rogues",
+    "N. Shebib"
+  ],
+  "copyright": "℗ 2017 Young Money Entertainment/Cash Money Records",
+  "creditName": "Drake",
+  "credits": [
+    {
+      "name": "Aubrey Drake Graham",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "1bd4cec9-291d-468a-adbb-d8c63b290867"
+    },
+    {
+      "name": "Noah \"40\" Shebib",
+      "roles": [
+        "composer",
+        "recording",
+        "lyricist"
+      ],
+      "uuid": "bd587429-7d7b-4031-bfe4-09a09ad15b0c"
+    },
+    {
+      "name": "40",
+      "roles": [
+        "writer",
+        "recording"
+      ],
+      "uuid": "b4b56735-bea8-4dcc-b749-6f1aa81afb92"
+    },
+    {
+      "name": "Noel Cadastre",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "f1c3516d-3a69-495a-b028-c6eb900571f6"
+    },
+    {
+      "name": "Drake",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "45534015-63a9-4f0d-814f-03fdfb110bdd"
+    },
+    {
+      "name": "Greg Moffett",
+      "roles": [
+        "assistant recording engineer",
+        "second engineer"
+      ],
+      "uuid": "7a56cc8c-df64-4030-af40-ef192fc80143"
+    },
+    {
+      "name": "Dennis Graham",
+      "roles": [
+        "additional vocals"
+      ],
+      "uuid": "0ea8692b-3665-4143-a6d1-93a4f6c24715"
+    },
+    {
+      "name": "Zoë Kravitz",
+      "roles": [
+        "additional vocals"
+      ],
+      "uuid": "ec9552fe-0454-4225-aa96-7734e7bdd1c8"
+    },
+    {
+      "name": "Moodymann",
+      "roles": [
+        "additional vocals"
+      ],
+      "uuid": "7def49b7-34b0-44b5-b58d-9e0add7f5985"
+    },
+    {
+      "name": "Nana Rogues",
+      "roles": [
+        "producer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "5a3f8496-07bf-4f67-8270-dcf847c20e87"
+    },
+    {
+      "name": "Noel \"Gadget\" Campbell",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "70a86336-98dd-4937-b221-fe3bbd9aed85"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 298,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/9/d/c/248bccb4-3cd9-4f34-8e35-ff7c63dcbceb.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USCM51700072"
+  },
+  "iswcs": [
+    "T9212874141"
+  ],
+  "labels": [
+    {
+      "name": "Young Money",
+      "type": "Other independent labels: \"Indie\""
+    },
+    {
+      "name": "Cash Money",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/drake-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/c/d/11e81bbf-8dca-ff1a-af94-a0369fe50396.jpg",
+      "name": "Drake",
+      "slug": "drake-1",
+      "uuid": "11e81bbf-8dca-ff1a-af94-a0369fe50396"
+    }
+  ],
+  "name": "Passionfruit (Explicit)",
+  "producers": [
+    "Nana Rogues"
+  ],
+  "releaseDate": "2017-03-18T00:00:00+00:00",
+  "uuid": "248bccb4-3cd9-4f34-8e35-ff7c63dcbceb"
+}

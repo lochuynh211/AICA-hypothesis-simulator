@@ -1,0 +1,73 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8263f-c804-ff3e-ae24-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/anri-9/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/5/6/a877d89d-565d-462a-ae33-ecebae092930.jpg",
+      "name": "Anri",
+      "slug": "anri-9",
+      "uuid": "a877d89d-565d-462a-ae33-ecebae092930"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.18,
+    "danceability": 0.65,
+    "energy": 0.76,
+    "instrumentalness": 0,
+    "key": 2,
+    "liveness": 0.17,
+    "loudness": -5.04,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 106.95,
+    "timeSignature": 4,
+    "valence": 0.84
+  },
+  "composers": [
+    "角松敏生"
+  ],
+  "copyright": "℗ 1983 FOR LIFE MUSIC ENTERTAINMENT, INC.",
+  "creditName": "Anri",
+  "credits": [],
+  "distributor": "",
+  "duration": 246,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "folk",
+      "sub": [
+        "folk"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/4/0/8/11e8263f-c804-ff3e-ae24-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPFL08310240"
+  },
+  "iswcs": [
+    "T1016204718"
+  ],
+  "labels": [],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/anri-9/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/5/6/a877d89d-565d-462a-ae33-ecebae092930.jpg",
+      "name": "Anri",
+      "slug": "anri-9",
+      "uuid": "a877d89d-565d-462a-ae33-ecebae092930"
+    }
+  ],
+  "name": "WINDY SUMMER",
+  "producers": [],
+  "releaseDate": "1983-12-05T00:00:00+00:00",
+  "uuid": "11e8263f-c804-ff3e-ae24-a0369fe50396"
+}

@@ -1,0 +1,271 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826ad-c880-46a8-a827-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kendrick-lamar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/0/6/11e81bbc-c601-d802-bca1-a0369fe50396.jpg",
+      "name": "Kendrick Lamar",
+      "slug": "kendrick-lamar",
+      "uuid": "11e81bbc-c601-d802-bca1-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mc-eiht/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/0/8/11e81bd3-480b-4444-bfdb-a0369fe50396.jpg",
+      "name": "MC Eiht",
+      "slug": "mc-eiht",
+      "uuid": "11e81bd3-480b-4444-bfdb-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.05,
+    "danceability": 0.49,
+    "energy": 0.73,
+    "instrumentalness": 0,
+    "key": 2,
+    "liveness": 0.44,
+    "loudness": -6.82,
+    "mode": 1,
+    "speechiness": 0.27,
+    "tempo": 91.05,
+    "timeSignature": 4,
+    "valence": 0.22
+  },
+  "composers": [
+    "Kendrick Lamar",
+    "Axel Morgan",
+    "Ricci Riera",
+    "M. Spears",
+    "A. Tyler"
+  ],
+  "copyright": "℗ 2013 Aftermath/Interscope Records",
+  "creditName": "Kendrick Lamar & MC Eiht",
+  "credits": [
+    {
+      "name": "Terrace Martin",
+      "roles": [
+        "producer",
+        "writer",
+        "additional production"
+      ],
+      "uuid": "e31a84ff-6152-44fe-9d67-d6f6a29ecc59"
+    },
+    {
+      "name": "Ricci Riera",
+      "roles": [
+        "songwriter",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "5fefe081-1f73-4e02-84e9-86e93297fec8"
+    },
+    {
+      "name": "Axel Morgan",
+      "roles": [
+        "songwriter",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "f031726e-8e82-4b12-ae71-7dc9034b28f0"
+    },
+    {
+      "name": "AARON TYLER",
+      "roles": [
+        "writer",
+        "vocals"
+      ],
+      "uuid": "159584d8-da9a-4296-8db9-942e2482eca6"
+    },
+    {
+      "name": "Brian Gardner",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "ac72e2bb-63d0-4bf6-9b94-84cfed34fb42"
+    },
+    {
+      "name": "Mike Bozzi",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "52318d94-2904-4ce6-9fa5-55a2c5413b9d"
+    },
+    {
+      "name": "Marlon Williams",
+      "roles": [
+        "guitar",
+        "bass guitar"
+      ],
+      "uuid": "9acbc70d-1601-453a-af63-987b8ca83a98"
+    },
+    {
+      "name": "Sounwave",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "120e4d7d-638a-4bd9-b161-2c33df9ee954"
+    },
+    {
+      "name": "Mixed by Ali",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "e5de17a8-fe9f-4d64-bf8c-24097014c784"
+    },
+    {
+      "name": "ScHoolboy Q",
+      "roles": [
+        "additional vocals"
+      ],
+      "uuid": "31813f83-44c9-44e0-8cfa-35c6c1154a05"
+    },
+    {
+      "name": "Mary Keating",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "b57ac2cf-d242-412a-b481-80a7abce4690"
+    },
+    {
+      "name": "Mark Spears",
+      "roles": [
+        "composer",
+        "songwriter",
+        "producer",
+        "lyricist"
+      ],
+      "uuid": "86f3fa60-aafd-4a80-9361-8cb8a64daa35"
+    },
+    {
+      "name": "Kendrick Lamar Duckworth",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "28c0f3c3-7653-4b36-90b3-d7d5b407d3ed"
+    },
+    {
+      "name": "James Hunt",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "76b50f99-3da3-4d11-80c4-e30c2036cbda"
+    },
+    {
+      "name": "Kendrick Duckworth",
+      "roles": [
+        "writer",
+        "vocals",
+        "lyricist"
+      ],
+      "uuid": "a03bc7a5-7d52-4cdf-ad50-a13ae2d7be0c"
+    },
+    {
+      "name": "Derek \"MixedByAli\" Ali",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "1505964d-63af-4141-bc82-e64f5d09106a"
+    },
+    {
+      "name": "THC",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "6ff1d5b5-781c-4bfa-ab37-fbe407086110"
+    },
+    {
+      "name": "A Tyler",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "72fbbfa1-c223-41c0-b083-a5aa1cd28912"
+    },
+    {
+      "name": "Aaron Bernard Tyler",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "5461b56f-53cd-4028-a862-a6d98bf83252"
+    },
+    {
+      "name": "Axlfolie",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "3654e524-bc06-4e56-91a2-c1dd27d33a58"
+    },
+    {
+      "name": "Kendrick Lamar",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "9de5b02b-7e11-4dc9-be7c-2c71a4860e40"
+    },
+    {
+      "name": "M. Spears",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "a29b23c3-eef9-4509-9c0a-63d64555bd03"
+    },
+    {
+      "name": "A. Tyler",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "d5a37815-3e76-41e5-8429-df8bb5610621"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 350,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/8/8/11e826ad-c880-46a8-a827-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USUM71210784"
+  },
+  "iswcs": [
+    "T9127336350"
+  ],
+  "labels": [
+    {
+      "name": "Aftermath",
+      "type": "Universal"
+    },
+    {
+      "name": "Interscope",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kendrick-lamar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/0/6/11e81bbc-c601-d802-bca1-a0369fe50396.jpg",
+      "name": "Kendrick Lamar",
+      "slug": "kendrick-lamar",
+      "uuid": "11e81bbc-c601-d802-bca1-a0369fe50396"
+    }
+  ],
+  "name": "m.A.A.d city",
+  "producers": [
+    "Sounwave"
+  ],
+  "releaseDate": "2012-01-01T00:00:00+00:00",
+  "uuid": "11e826ad-c880-46a8-a827-a0369fe50396"
+}

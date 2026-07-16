@@ -1,0 +1,80 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/9d5feb60-f57b-4679-8a4f-5f8491fdbca7/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mariya-takeuchi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/6/5/11e81bd3-0562-4566-a22f-a0369fe50396.jpg",
+      "name": "Mariya Takeuchi",
+      "slug": "mariya-takeuchi",
+      "uuid": "11e81bd3-0562-4566-a22f-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.02,
+    "danceability": 0.76,
+    "energy": 0.82,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.29,
+    "loudness": -5.32,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 102.65,
+    "timeSignature": 4,
+    "valence": 0.8
+  },
+  "composers": [
+    "Mariya Takeuchi"
+  ],
+  "copyright": "℗ 1984(Tr.1-11), 2014(Tr.12-18) TENDERBERRY & HARVEST INC. UNDER EXCLUSIVE LICENSE TO WARNER MUSIC JAPAN INC.",
+  "creditName": "Mariya Takeuchi",
+  "credits": [],
+  "distributor": "Warner",
+  "duration": 295,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/7/5/9d5feb60-f57b-4679-8a4f-5f8491fdbca7.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPWP01471249"
+  },
+  "iswcs": [
+    "T1015229793"
+  ],
+  "labels": [
+    {
+      "name": "Tr.1-11",
+      "type": "unknown"
+    },
+    {
+      "name": "Tr.12-18",
+      "type": "unknown"
+    },
+    {
+      "name": "TENDERBERRY & HARVEST",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mariya-takeuchi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/6/5/11e81bd3-0562-4566-a22f-a0369fe50396.jpg",
+      "name": "Mariya Takeuchi",
+      "slug": "mariya-takeuchi",
+      "uuid": "11e81bd3-0562-4566-a22f-a0369fe50396"
+    }
+  ],
+  "name": "プラスティック・ラヴ - 12\" Original Length ReMix",
+  "producers": [],
+  "releaseDate": "1984-04-25T00:00:00+00:00",
+  "uuid": "9d5feb60-f57b-4679-8a4f-5f8491fdbca7"
+}

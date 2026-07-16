@@ -1,0 +1,156 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82677-2a90-e1fe-beae-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/herbert-von-karajan/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/2/2/11e81bbb-3226-e416-b773-a0369fe50396.jpg",
+      "name": "Herbert von Karajan",
+      "slug": "herbert-von-karajan",
+      "uuid": "11e81bbb-3226-e416-b773-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/berliner-philharmoniker/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/c/6/11e81bc8-c6c4-822e-b565-a0369fe50396.jpg",
+      "name": "Berliner Philharmoniker",
+      "slug": "berliner-philharmoniker",
+      "uuid": "11e81bc8-c6c4-822e-b565-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/richard-strauss/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/f/d/11e81bcc-bdf2-4196-b813-a0369fe50396.jpg",
+      "name": "Richard Strauss",
+      "slug": "richard-strauss",
+      "uuid": "11e81bcc-bdf2-4196-b813-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.92,
+    "danceability": 0.17,
+    "energy": 0.11,
+    "instrumentalness": 0.89,
+    "key": 7,
+    "liveness": 0.66,
+    "loudness": -16.11,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 104.99,
+    "timeSignature": 4,
+    "valence": 0.04
+  },
+  "composers": [
+    "Richard Strauss"
+  ],
+  "copyright": "℗ 1995 Deutsche Grammophon GmbH, Berlin",
+  "creditName": "Herbert von Karajan & Berliner Philharmoniker & Richard Strauss",
+  "credits": [
+    {
+      "name": "Hans Weber",
+      "roles": [
+        "producer",
+        "recording"
+      ],
+      "uuid": "8999a8ca-e71b-4967-a4c9-ac1618f8a4e8"
+    },
+    {
+      "name": "Günter Hermanns",
+      "roles": [
+        "balance engineer"
+      ],
+      "uuid": "623463d2-12fa-4efc-91ad-ba4f7fda6d67"
+    },
+    {
+      "name": "Dr. Hans Hirsch",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "78580cb3-bc9b-4463-abec-6543f88a284c"
+    },
+    {
+      "name": "Berlin Philharmonic",
+      "roles": [
+        "orchestra"
+      ],
+      "uuid": "72d1a10d-c064-4a0f-aee2-b6d1cea8c250"
+    },
+    {
+      "name": "Herbert von Karajan",
+      "roles": [
+        "conductor"
+      ],
+      "uuid": "09091a70-2762-4a76-b90b-348173df17aa"
+    },
+    {
+      "name": "Christa Conrad",
+      "roles": [
+        "editing"
+      ],
+      "uuid": "43c6e1f7-d2db-4ad9-a558-ac51f5511451"
+    },
+    {
+      "name": "Volker Martin",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "075f75d5-4d4d-41ab-9de1-3770fbe3a52f"
+    },
+    {
+      "name": "Richard Strauss",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "1004a263-ecd9-42b6-9558-59b1aa2b7e99"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 127,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/9/a/11e82677-2a90-e1fe-beae-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "DE",
+    "countryName": "Germany",
+    "value": "DEF057301704"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Berlin",
+      "type": "Other independent labels: \"Indie\""
+    },
+    {
+      "name": "Deutsche Grammophon",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/herbert-von-karajan/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/2/2/11e81bbb-3226-e416-b773-a0369fe50396.jpg",
+      "name": "Herbert von Karajan",
+      "slug": "herbert-von-karajan",
+      "uuid": "11e81bbb-3226-e416-b773-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/berliner-philharmoniker/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/c/6/11e81bc8-c6c4-822e-b565-a0369fe50396.jpg",
+      "name": "Berliner Philharmoniker",
+      "slug": "berliner-philharmoniker",
+      "uuid": "11e81bc8-c6c4-822e-b565-a0369fe50396"
+    }
+  ],
+  "name": "Also sprach Zarathustra, op. 30: III. Von der großen Sehnsucht",
+  "producers": [
+    "Hans Weber",
+    "Dr. Hans Hirsch"
+  ],
+  "releaseDate": "1995-01-01T00:00:00+00:00",
+  "uuid": "11e82677-2a90-e1fe-beae-aa1c026db3d8"
+}

@@ -1,0 +1,106 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/47630463-54b5-4378-80ec-0153b6e20022/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/official-hige-dandism/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/4/4/11e83feb-6442-3f96-955d-a0369fe50396.jpg",
+      "name": "Official HIGE DANdism",
+      "slug": "official-hige-dandism",
+      "uuid": "11e83feb-6442-3f96-955d-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.01,
+    "danceability": 0.32,
+    "energy": 0.9,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.39,
+    "loudness": -4.61,
+    "mode": 1,
+    "speechiness": 0.13,
+    "tempo": 199.84,
+    "timeSignature": 4,
+    "valence": 0.44
+  },
+  "composers": [
+    "Satoshi Fujihara"
+  ],
+  "copyright": "2021 PONYCANYON/IRORI RECORDS",
+  "creditName": "Official HIGE DANdism",
+  "credits": [
+    {
+      "name": "東京リベンジャーズ (Tokyo Revengers)",
+      "roles": [
+        "tie-in"
+      ],
+      "uuid": "9bacc33f-6645-4b57-b652-551822f889cf"
+    },
+    {
+      "name": "藤原聡",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "d33eccf4-fb9d-4f43-b97e-9aa06bcf8c25"
+    },
+    {
+      "name": "Official髭男dism",
+      "roles": [
+        "arranger",
+        "main  artist"
+      ],
+      "uuid": "5b398da6-d850-4495-987c-96d294dfa5a9"
+    }
+  ],
+  "distributor": "Pony Canyon",
+  "duration": 241,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/5/b/4/47630463-54b5-4378-80ec-0153b6e20022.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPC02100463"
+  },
+  "iswcs": [
+    "T3050486614"
+  ],
+  "labels": [
+    {
+      "name": "PONYCANYON",
+      "type": "unknown"
+    },
+    {
+      "name": "IRORI",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/official-hige-dandism/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/4/4/11e83feb-6442-3f96-955d-a0369fe50396.jpg",
+      "name": "Official HIGE DANdism",
+      "slug": "official-hige-dandism",
+      "uuid": "11e83feb-6442-3f96-955d-a0369fe50396"
+    }
+  ],
+  "name": "Cry Baby",
+  "producers": [],
+  "releaseDate": "2021-05-07T00:00:00+00:00",
+  "uuid": "47630463-54b5-4378-80ec-0153b6e20022"
+}

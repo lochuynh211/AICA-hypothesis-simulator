@@ -1,0 +1,74 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/674bc220-7467-41b5-8862-cdcbe2d5f346/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/official-hige-dandism/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/4/4/11e83feb-6442-3f96-955d-a0369fe50396.jpg",
+      "name": "Official HIGE DANdism",
+      "slug": "official-hige-dandism",
+      "uuid": "11e83feb-6442-3f96-955d-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.04,
+    "danceability": 0.49,
+    "energy": 0.86,
+    "instrumentalness": 0.73,
+    "key": 1,
+    "liveness": 0.14,
+    "loudness": -8.26,
+    "mode": 1,
+    "speechiness": 0.06,
+    "tempo": 186.1,
+    "timeSignature": 4,
+    "valence": 0.51
+  },
+  "composers": [
+    "Satoshi Fujihara"
+  ],
+  "copyright": "2021 PONYCANYON/IRORI RECORDS",
+  "creditName": "Official HIGE DANdism",
+  "credits": [],
+  "distributor": "Pony Canyon",
+  "duration": 286,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/7/6/4/674bc220-7467-41b5-8862-cdcbe2d5f346.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPC02100003"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "PONYCANYON",
+      "type": "unknown"
+    },
+    {
+      "name": "IRORI",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/official-hige-dandism/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/4/4/11e83feb-6442-3f96-955d-a0369fe50396.jpg",
+      "name": "Official HIGE DANdism",
+      "slug": "official-hige-dandism",
+      "uuid": "11e83feb-6442-3f96-955d-a0369fe50396"
+    }
+  ],
+  "name": "Universe (Instrumental)",
+  "producers": [],
+  "releaseDate": "2021-02-24T00:00:00+00:00",
+  "uuid": "674bc220-7467-41b5-8862-cdcbe2d5f346"
+}

@@ -1,0 +1,176 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/7dc1815c-5365-4903-b3bc-a3d1d08c4a40/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/the-meters/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/8/0/11e81bbd-108d-aab8-9de5-a0369fe50396.jpg",
+      "name": "The Meters",
+      "slug": "the-meters",
+      "uuid": "11e81bbd-108d-aab8-9de5-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.11,
+    "danceability": 0.52,
+    "energy": 0.8,
+    "instrumentalness": 0.73,
+    "key": 0,
+    "liveness": 0.33,
+    "loudness": -11.99,
+    "mode": 1,
+    "speechiness": 0.1,
+    "tempo": 175.92,
+    "timeSignature": 4,
+    "valence": 0.71
+  },
+  "composers": [
+    "Arthur Neville",
+    "George Porter",
+    "Joseph Modeliste",
+    "Leo Nocentelli",
+    "The Meters"
+  ],
+  "copyright": "℗ 2005 Atlantic Recording Corp. Manufactured & Marketed by Warner Strategic Marketing.",
+  "creditName": "The Meters",
+  "credits": [
+    {
+      "name": "Arthur Neville",
+      "roles": [
+        "songwriter",
+        "writer",
+        "keyboard",
+        "lyricist"
+      ],
+      "uuid": "ef4bcfa2-1b9e-41b5-bb2b-98b3c4c88602"
+    },
+    {
+      "name": "Marshall Sehorn",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "6b86f925-a672-41c8-8a79-9c6fec0e0971"
+    },
+    {
+      "name": "Art Neville",
+      "roles": [
+        "keyboard"
+      ],
+      "uuid": "90490965-ea9c-4281-8fd6-9c90b25ba800"
+    },
+    {
+      "name": "Joseph Modeliste",
+      "roles": [
+        "songwriter",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "3730e2c0-d76b-4beb-aff4-5f6b29b9ac1e"
+    },
+    {
+      "name": "Allen Toussaint",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "01a59fd8-21b7-4e1d-ad4b-38259a45188c"
+    },
+    {
+      "name": "Leo Nocentelli",
+      "roles": [
+        "songwriter",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "02d236dd-c678-44dc-8da7-d875669078ba"
+    },
+    {
+      "name": "The Meters",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "5981cea2-6b3b-46ed-904a-b7ed7b9e9312"
+    },
+    {
+      "name": "George Porter",
+      "roles": [
+        "songwriter",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "15d86281-b7cd-425b-9a5e-1337e5abc25d"
+    },
+    {
+      "name": "Allen Toussaint",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "a91d10c5-aed5-4429-81a2-f9973640ab1e"
+    },
+    {
+      "name": "Marshall E. Sehorn",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "70c265c3-da74-4991-aa7d-b6cef7883536"
+    },
+    {
+      "name": "The Meters",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "da62a14b-ab9d-4c86-ae51-c884f8a2ecb4"
+    }
+  ],
+  "distributor": "Warner",
+  "duration": 186,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b, funk & soul"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/5/6/3/7dc1815c-5365-4903-b3bc-a3d1d08c4a40.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USRH10125719"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Atlantic",
+      "type": "Warner"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/the-meters/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/8/0/11e81bbd-108d-aab8-9de5-a0369fe50396.jpg",
+      "name": "The Meters",
+      "slug": "the-meters",
+      "uuid": "11e81bbd-108d-aab8-9de5-a0369fe50396"
+    }
+  ],
+  "name": "Cissy Strut",
+  "producers": [
+    "Allen Toussaint",
+    "Marshall E. Sehorn"
+  ],
+  "releaseDate": "1995-01-01T00:00:00+00:00",
+  "uuid": "7dc1815c-5365-4903-b3bc-a3d1d08c4a40"
+}

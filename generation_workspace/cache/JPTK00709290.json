@@ -1,0 +1,84 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8265e-f1e3-c276-9291-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/perfume-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/7/c/11e81bc8-9c76-05f6-8db0-a0369fe50396.jpg",
+      "name": "Perfume",
+      "slug": "perfume-1",
+      "uuid": "11e81bc8-9c76-05f6-8db0-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.54,
+    "energy": 0.95,
+    "instrumentalness": 0,
+    "key": 0,
+    "liveness": 0.34,
+    "loudness": -1.42,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 128,
+    "timeSignature": 4,
+    "valence": 0.8
+  },
+  "composers": [
+    "Yasutaka Nakata"
+  ],
+  "copyright": "℗ 2007 TOKUMA JAPAN COMMUNICATIONS",
+  "creditName": "Perfume",
+  "credits": [
+    {
+      "name": "Yasutaka Nakata",
+      "roles": [
+        "producer",
+        "writer",
+        "recording arranger"
+      ],
+      "uuid": "eee0186c-4d0b-48a1-b3e4-3e2424f3a8d9"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 249,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "electro",
+      "sub": [
+        "electronic"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/e/1/11e8265e-f1e3-c276-9291-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPTK00709290"
+  },
+  "iswcs": [
+    "T1019947012"
+  ],
+  "labels": [
+    {
+      "name": "TOKUMA JAPAN COMMUNICATIONS",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/perfume-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/7/c/11e81bc8-9c76-05f6-8db0-a0369fe50396.jpg",
+      "name": "Perfume",
+      "slug": "perfume-1",
+      "uuid": "11e81bc8-9c76-05f6-8db0-a0369fe50396"
+    }
+  ],
+  "name": "ポリリズム",
+  "producers": [
+    "Yasutaka Nakata"
+  ],
+  "releaseDate": "2007-09-12T00:00:00+00:00",
+  "uuid": "11e8265e-f1e3-c276-9291-aa1c026db3d8"
+}

@@ -1,0 +1,253 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/edcd7515-862a-4acd-ba18-e5f820cb0492/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/back-number/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/b/d/11e81bbe-ddb6-6dbc-8d84-a0369fe50396.jpg",
+      "name": "back number",
+      "slug": "back-number",
+      "uuid": "11e81bbe-ddb6-6dbc-8d84-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.01,
+    "danceability": 0.42,
+    "energy": 0.75,
+    "instrumentalness": 0,
+    "key": 10,
+    "liveness": 0.16,
+    "loudness": -3.55,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 145.87,
+    "timeSignature": 4,
+    "valence": 0.44
+  },
+  "composers": [
+    "清水依与吏"
+  ],
+  "copyright": "℗ 2021 UNIVERSAL MUSIC LLC",
+  "creditName": "back number",
+  "credits": [
+    {
+      "name": "Iyori Shimizu",
+      "roles": [
+        "vocals",
+        "backing vocals",
+        "guitar",
+        "tambourine",
+        "lyricist"
+      ],
+      "uuid": "148991bc-f72f-4e8d-9790-9830d0fbdb9c"
+    },
+    {
+      "name": "Koichiro Muroya Strings",
+      "roles": [
+        "strings"
+      ],
+      "uuid": "634129ba-126e-4691-b71d-3b8c070ce3ed"
+    },
+    {
+      "name": "Tomomi Tokunaga",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "8224c038-731e-4dd9-b122-9fb4d0e6957c"
+    },
+    {
+      "name": "Masami Horisawa",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "2a1279ae-4286-40bc-9be4-3b77f5da7ebf"
+    },
+    {
+      "name": "Kazuya Kojima",
+      "roles": [
+        "bass guitar"
+      ],
+      "uuid": "850120d6-cbb5-455a-9ae9-691cff1430ec"
+    },
+    {
+      "name": "Hisashi Kurihara",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "ea97d6ee-abf0-4b27-95d8-5730df12439b"
+    },
+    {
+      "name": "Masanori Shimada",
+      "roles": [
+        "producer",
+        "piano",
+        "strings arranger"
+      ],
+      "uuid": "d6a91eb2-e25a-436a-90f1-76c20bade1d4"
+    },
+    {
+      "name": "Yuya Yanagihara",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "de90add4-31d0-449a-8c3d-de8b0738fbb3"
+    },
+    {
+      "name": "Mika Naramura",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "0aad58cd-6b8c-491f-a512-0ab470832aaf"
+    },
+    {
+      "name": "Shoko Mabuchi",
+      "roles": [
+        "viola"
+      ],
+      "uuid": "8f066b84-0a25-4e55-bdde-538d59eeacf1"
+    },
+    {
+      "name": "Kintaro Hagiya",
+      "roles": [
+        "viola"
+      ],
+      "uuid": "775de1f1-5f35-4ab8-ba9f-a501156ecbff"
+    },
+    {
+      "name": "Sohei Birmann",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "3f546212-6d6b-47c9-aaba-1a6867ef5bb3"
+    },
+    {
+      "name": "Hanako Uesato",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "7791818f-08be-4704-be43-d54c1fcd3eb4"
+    },
+    {
+      "name": "Eai-Sung Shin",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "6ffe6ec8-fd37-4a6e-b067-0c18ffd1d011"
+    },
+    {
+      "name": "Koichiro Muroya",
+      "roles": [
+        "violin",
+        "strings"
+      ],
+      "uuid": "a2e4c80d-6ad9-42b5-b28a-08b139a595dc"
+    },
+    {
+      "name": "​back number",
+      "roles": [
+        "arranger",
+        "producer",
+        "recording arranger"
+      ],
+      "uuid": "86aaa44c-7e31-4d14-ba4f-703763c11f28"
+    },
+    {
+      "name": "Sohei Birmann",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "a2c891a9-bf34-4240-9104-afb4484c620f"
+    },
+    {
+      "name": "Yuki Mizuno",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "af7877ff-6708-4713-b124-979d8624fad3"
+    },
+    {
+      "name": "Rina Odera",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "a6df5f4f-7f74-48aa-a11a-41311191fc30"
+    },
+    {
+      "name": "Tomomi Tokunaga",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "6cdee538-a9b4-4100-97e5-900ac369b724"
+    },
+    {
+      "name": "Koichiro Muroya",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "5ccdf99f-e746-4c8e-9c4a-bcff4f1a3419"
+    },
+    {
+      "name": "Rina Odera",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "42da6b5d-cd0a-4e1d-a10b-79cf6461f54f"
+    },
+    {
+      "name": "Masanori Shimada",
+      "roles": [
+        "producer",
+        "recording arranger"
+      ],
+      "uuid": "6a364f0d-8250-4a07-a7db-eb02dcc17592"
+    },
+    {
+      "name": "Yuki Mizuno",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "2922ee21-7967-40ca-a1b4-0c37c099806e"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 285,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/a/2/6/edcd7515-862a-4acd-ba18-e5f820cb0492.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO02100907"
+  },
+  "iswcs": [
+    "T3024233549"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/back-number/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/b/d/11e81bbe-ddb6-6dbc-8d84-a0369fe50396.jpg",
+      "name": "back number",
+      "slug": "back-number",
+      "uuid": "11e81bbe-ddb6-6dbc-8d84-a0369fe50396"
+    }
+  ],
+  "name": "Suiheisen",
+  "producers": [
+    "島田昌典"
+  ],
+  "releaseDate": "2021-08-13T00:00:00+00:00",
+  "uuid": "edcd7515-862a-4acd-ba18-e5f820cb0492"
+}

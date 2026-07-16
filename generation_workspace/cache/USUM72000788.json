@@ -1,0 +1,392 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/145b936e-38e7-11ea-8ca1-549f35141000/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/eminem/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/d/e/11e81bc7-3ed6-f0f0-9e74-a0369fe50396.jpg",
+      "name": "Eminem",
+      "slug": "eminem",
+      "uuid": "11e81bc7-3ed6-f0f0-9e74-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/juice-wrld-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/c/e/11e83fee-eec2-cbd8-be5a-aa1c026db3d8.jpg",
+      "name": "Juice WRLD",
+      "slug": "juice-wrld-1",
+      "uuid": "11e83fee-eec2-cbd8-be5a-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.15,
+    "danceability": 0.81,
+    "energy": 0.75,
+    "instrumentalness": 0,
+    "key": 10,
+    "liveness": 0.29,
+    "loudness": -5.26,
+    "mode": 0,
+    "speechiness": 0.34,
+    "tempo": 166,
+    "timeSignature": 4,
+    "valence": 0.83
+  },
+  "composers": [
+    "L. Resto",
+    "M Mathers",
+    "D. Doman",
+    "A. Villasana",
+    "J.Higgins"
+  ],
+  "copyright": "℗ 2022 Marshall B. Mathers III",
+  "creditName": "Eminem & Juice WRLD",
+  "credits": [
+    {
+      "name": "Cole Bennett",
+      "roles": [
+        "video director",
+        "video editor"
+      ],
+      "uuid": "c6185007-df1d-4335-b269-75a24c6cc486"
+    },
+    {
+      "name": "Jake Wilson",
+      "roles": [
+        "video executive producer"
+      ],
+      "uuid": "36b844cc-9f61-4147-b021-85c3c88bae10"
+    },
+    {
+      "name": "Marshall Mathers",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "2e54d090-9ca4-4f00-a01b-2412a0738a8a"
+    },
+    {
+      "name": "Brian Gardner",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "ac72e2bb-63d0-4bf6-9b94-84cfed34fb42"
+    },
+    {
+      "name": "Bashir Taylor",
+      "roles": [
+        "video assistant director"
+      ],
+      "uuid": "43746a54-e501-4e63-b42f-1b433b18edf4"
+    },
+    {
+      "name": "Mike Strange",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "9ad7265d-b146-4138-8d15-ac4790585fb4"
+    },
+    {
+      "name": "Luis Resto",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist",
+        "additional keyboards"
+      ],
+      "uuid": "07664857-ace9-4984-843c-daf10c95a385"
+    },
+    {
+      "name": "Kathy Angstadt",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "24151cc9-ea5b-4204-9d48-52d4b957e733"
+    },
+    {
+      "name": "Joe Strange",
+      "roles": [
+        "assistant recording engineer",
+        "recording",
+        "second engineer"
+      ],
+      "uuid": "f57c9d9b-2c09-41af-a081-e4c191ccccd6"
+    },
+    {
+      "name": "Tony Campana",
+      "roles": [
+        "assistant recording engineer",
+        "recording",
+        "second engineer"
+      ],
+      "uuid": "3e4a8bfe-ac3f-4598-a792-50b797ea443c"
+    },
+    {
+      "name": "Victor Luevanos",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "6929d4b2-5bfb-4180-8b65-0697ba43609f"
+    },
+    {
+      "name": "Adrienne “AeB” Byrne",
+      "roles": [
+        "additional programming"
+      ],
+      "uuid": "e0203526-d5e5-403e-af51-4a26d275c78c"
+    },
+    {
+      "name": "Bernard Niyonzima",
+      "roles": [
+        "video executive producer"
+      ],
+      "uuid": "9107b273-4cff-4cd1-a8c0-6fca2e2ac2da"
+    },
+    {
+      "name": "Salvatore Tarantino",
+      "roles": [
+        "video executive producer"
+      ],
+      "uuid": "58476f86-cdc8-479f-9469-5682f7bc2d19"
+    },
+    {
+      "name": "Kelo Thompson",
+      "roles": [
+        "video assistant director"
+      ],
+      "uuid": "d58a41fd-aa4c-4ef6-9196-3edd9cf6a8ea"
+    },
+    {
+      "name": "Rasheeda Ameera",
+      "roles": [
+        "video wardrobe stylist"
+      ],
+      "uuid": "7e0d9c39-128e-4bdb-9889-ad9a17a07226"
+    },
+    {
+      "name": "Henri Coleman",
+      "roles": [
+        "video unit production manager"
+      ],
+      "uuid": "c5e38e73-11de-4451-b741-6d6ae33a69c6"
+    },
+    {
+      "name": "Angela McBride",
+      "roles": [
+        "video costume assistant"
+      ],
+      "uuid": "699c5c59-9642-43a9-96a0-830724cbe015"
+    },
+    {
+      "name": "Dawn Boony-Achlito",
+      "roles": [
+        "video costume assistant"
+      ],
+      "uuid": "a4e73b31-2e31-461f-b7b7-2accb301b880"
+    },
+    {
+      "name": "Rashi Jean",
+      "roles": [
+        "video art director"
+      ],
+      "uuid": "c76be916-8730-4f5f-8613-1d3a332723eb"
+    },
+    {
+      "name": "Cody Fusina",
+      "roles": [
+        "video production designer"
+      ],
+      "uuid": "199466e3-6936-4052-8bb4-8825d53f1393"
+    },
+    {
+      "name": "7th Light Entertainment",
+      "roles": [
+        "video gaffer"
+      ],
+      "uuid": "19f28def-dabd-4802-8ec3-981670a9baaa"
+    },
+    {
+      "name": "Ronnie Gotch",
+      "roles": [
+        "video gaffer"
+      ],
+      "uuid": "d368a6a7-c403-4872-96ef-6abe32307dce"
+    },
+    {
+      "name": "Krista Worby",
+      "roles": [
+        "video line producer"
+      ],
+      "uuid": "4b9fb0e5-8cde-4ce8-97ca-f70e4eb0d8a6"
+    },
+    {
+      "name": "Jay Tauzin",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "d80014d7-87a2-453a-8fde-a689e56c5ee1"
+    },
+    {
+      "name": "Renard Cheren",
+      "roles": [
+        "video steadicam operator"
+      ],
+      "uuid": "b3e4e965-8978-46a3-88d4-32aa369d7607"
+    },
+    {
+      "name": "Taylor Randall",
+      "roles": [
+        "video director of photography"
+      ],
+      "uuid": "53e872e8-7773-4b55-927f-434d5a634aad"
+    },
+    {
+      "name": "Scissor Films",
+      "roles": [
+        "video visual effects artist"
+      ],
+      "uuid": "d1309f08-b636-45ac-9b50-3e1d3d864842"
+    },
+    {
+      "name": "Julio Ulloa",
+      "roles": [
+        "assistant recording engineer",
+        "recording",
+        "second engineer"
+      ],
+      "uuid": "24cfe38c-dbba-4128-a2b4-7d45a08ef6d0"
+    },
+    {
+      "name": "d.a. got that dope",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "776559e3-07dc-4a35-9499-fb3e13e0cafd"
+    },
+    {
+      "name": "Alex Villasana",
+      "roles": [
+        "composer",
+        "songwriter",
+        "producer",
+        "writer",
+        "programming",
+        "lyricist"
+      ],
+      "uuid": "5dadf1aa-3fbe-4258-a3f1-7429c1ffa5e1"
+    },
+    {
+      "name": "Juice WRLD",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "cb2903a9-f332-4b0e-83f6-7249193fe8de"
+    },
+    {
+      "name": "Jarad Higgins",
+      "roles": [
+        "composer",
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "cbb194f3-f80e-4531-adb7-48678052f72c"
+    },
+    {
+      "name": "Eminem",
+      "roles": [
+        "composer",
+        "producer",
+        "writer",
+        "lyricist",
+        "additional production"
+      ],
+      "uuid": "6c3b36cf-415c-46c4-94a6-4374b8e04b8c"
+    },
+    {
+      "name": "David Doman",
+      "roles": [
+        "composer",
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "97a10cd0-b889-4331-bfa4-94fa79b5934b"
+    },
+    {
+      "name": "Brian Gardner Mastering",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "78ed4951-81b1-42b2-9575-9c1f6badcf17"
+    },
+    {
+      "name": "d.a. got that dope for Guaranteed Millions",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "ce9bccd5-5921-4a93-8d4b-b14a515cc0fc"
+    },
+    {
+      "name": "Vic Luevanos",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "85680b9e-37e9-47e7-b7e0-01daaf299275"
+    },
+    {
+      "name": "Paul Rosenberg",
+      "roles": [
+        "video executive producer"
+      ],
+      "uuid": "5292fa54-8937-43de-a8b1-d4a58304a682"
+    },
+    {
+      "name": "Record One",
+      "roles": [
+        "engineered at"
+      ],
+      "uuid": "1bcc2803-a127-4205-b26f-9b26bc6d48d4"
+    }
+  ],
+  "distributor": "United Masters",
+  "duration": 210,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/7/e/8/145b936e-38e7-11ea-8ca1-549f35141000.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USUM72000788"
+  },
+  "iswcs": [
+    "T9314358742"
+  ],
+  "labels": [
+    {
+      "name": "Marshall B. Mathers III",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/eminem/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/d/e/11e81bc7-3ed6-f0f0-9e74-a0369fe50396.jpg",
+      "name": "Eminem",
+      "slug": "eminem",
+      "uuid": "11e81bc7-3ed6-f0f0-9e74-a0369fe50396"
+    }
+  ],
+  "name": "Godzilla (feat. Juice WRLD)",
+  "producers": [
+    "Eminem",
+    "d.a. got that dope for Guaranteed Millions"
+  ],
+  "releaseDate": "2022-08-05T00:00:00+00:00",
+  "uuid": "145b936e-38e7-11ea-8ca1-549f35141000"
+}

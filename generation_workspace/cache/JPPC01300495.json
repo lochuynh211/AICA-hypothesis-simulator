@@ -1,0 +1,68 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/894a7afe-c5a8-11e8-875e-549f35141000/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/linked-horizon/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/9/d/11e81bcd-ad91-d856-8c63-a0369fe50396.jpg",
+      "name": "Linked Horizon",
+      "slug": "linked-horizon",
+      "uuid": "11e81bcd-ad91-d856-8c63-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.56,
+    "danceability": 0.49,
+    "energy": 0.91,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.11,
+    "loudness": -6.02,
+    "mode": 0,
+    "speechiness": 0.05,
+    "tempo": 90.45,
+    "timeSignature": 4,
+    "valence": 0.51
+  },
+  "composers": [
+    "REVO"
+  ],
+  "copyright": "℗ 2013 Pony Canyon Inc.",
+  "creditName": "Linked Horizon",
+  "credits": [],
+  "distributor": "Pony Canyon",
+  "duration": 94,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/a/5/894a7afe-c5a8-11e8-875e-549f35141000.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPC01300495"
+  },
+  "iswcs": [
+    "T9257543332",
+    "T9107448704"
+  ],
+  "labels": [],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/linked-horizon/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/9/d/11e81bcd-ad91-d856-8c63-a0369fe50396.jpg",
+      "name": "Linked Horizon",
+      "slug": "linked-horizon",
+      "uuid": "11e81bcd-ad91-d856-8c63-a0369fe50396"
+    }
+  ],
+  "name": "紅蓮の弓矢 - TVサイズver.",
+  "producers": [],
+  "releaseDate": "2019-12-25T00:00:00+00:00",
+  "uuid": "894a7afe-c5a8-11e8-875e-549f35141000"
+}

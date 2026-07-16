@@ -1,0 +1,163 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/33b53fc8-1623-444a-9409-1e4d7b0ae725/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/lisa-116/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/4/1/9df38cba-7145-4e9c-af24-d39b67a151da.jpg",
+      "name": "LISA",
+      "slug": "lisa-116",
+      "uuid": "9df38cba-7145-4e9c-af24-d39b67a151da"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.49,
+    "energy": 0.89,
+    "instrumentalness": 0,
+    "key": 11,
+    "liveness": 0.37,
+    "loudness": -3.33,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 142.98,
+    "timeSignature": 4,
+    "valence": 0.28
+  },
+  "composers": [
+    "Yuki Kajiura"
+  ],
+  "copyright": "(P) 2021 Sony Music Labels Inc.",
+  "creditName": "LISA",
+  "credits": [
+    {
+      "name": "Yuki Kajiura",
+      "roles": [
+        "composer",
+        "arranger",
+        "lyricist",
+        "programming",
+        "keyboard"
+      ],
+      "uuid": "db5048c6-7bcf-4b4b-a53c-aebd53bdce4a"
+    },
+    {
+      "name": "Nobuyuki Murakami",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "1108db48-8f1d-4cad-9a77-898dbab8e204"
+    },
+    {
+      "name": "Hitoshi Konno Strings",
+      "roles": [
+        "string ensemble"
+      ],
+      "uuid": "1523a89e-55f3-4135-9d58-52e59c636321"
+    },
+    {
+      "name": "Kyoichi Sato",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "e7bdfe07-a240-4a40-a440-44e3155a74a5"
+    },
+    {
+      "name": "Shuhei Kita",
+      "roles": [
+        "backing vocals"
+      ],
+      "uuid": "e9f51bee-0156-4e16-81d4-210653829d52"
+    },
+    {
+      "name": "Oda Kaori",
+      "roles": [
+        "backing vocals"
+      ],
+      "uuid": "bb054543-ac56-4916-9a9b-90bc7f80d562"
+    },
+    {
+      "name": "高橋 Jr. 知治",
+      "roles": [
+        "bass"
+      ],
+      "uuid": "474b7a81-4ce1-4805-8ef2-7fedcb66cbf5"
+    },
+    {
+      "name": "Kanta Sato",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "188aa559-3535-488f-8ffa-2622cc303849"
+    },
+    {
+      "name": "Yasunori Mori",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "323d91ec-a826-4cf8-b624-ccc2fbf4464a"
+    },
+    {
+      "name": "平井美桜",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "26652602-93d8-4463-8e24-b46eba945690"
+    },
+    {
+      "name": "Lisa",
+      "roles": [
+        "lead vocals"
+      ],
+      "uuid": "0286d72f-0610-4bf2-ba2c-92e026176072"
+    },
+    {
+      "name": "Takashi Koiwa",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "7d2b3aef-0faf-46a8-902b-38c275f52d38"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 264,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "soundtrack",
+      "sub": [
+        "anime",
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/2/6/33b53fc8-1623-444a-9409-1e4d7b0ae725.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU902104519"
+  },
+  "iswcs": [
+    "T3077521478"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/lisa-116/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/4/1/9df38cba-7145-4e9c-af24-d39b67a151da.jpg",
+      "name": "LISA",
+      "slug": "lisa-116",
+      "uuid": "9df38cba-7145-4e9c-af24-d39b67a151da"
+    }
+  ],
+  "name": "白銀",
+  "producers": [],
+  "releaseDate": "2021-11-15T00:00:00+00:00",
+  "uuid": "33b53fc8-1623-444a-9409-1e4d7b0ae725"
+}

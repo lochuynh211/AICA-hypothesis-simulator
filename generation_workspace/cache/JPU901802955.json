@@ -1,0 +1,82 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/a997511e-cdd8-11e8-a86b-549f35161576/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/tk-from-ling-tosite-sigure/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/2/9/11e83fe6-e92f-26e2-9968-aa1c026db3d8.jpg",
+      "name": "TK from Ling tosite sigure",
+      "slug": "tk-from-ling-tosite-sigure",
+      "uuid": "11e83fe6-e92f-26e2-9968-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.22,
+    "danceability": 0.66,
+    "energy": 0.71,
+    "instrumentalness": 0,
+    "key": 8,
+    "liveness": 0.23,
+    "loudness": -4.05,
+    "mode": 1,
+    "speechiness": 0.16,
+    "tempo": 144.05,
+    "timeSignature": 4,
+    "valence": 0.44
+  },
+  "composers": [
+    "TK"
+  ],
+  "copyright": "(P)2018 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "TK from Ling tosite sigure",
+  "credits": [
+    {
+      "name": "TK from 凛として時雨",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "e13a4de1-8023-4ab5-87c3-ce45f41315bb"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 93,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/d/d/a997511e-cdd8-11e8-a86b-549f35161576.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU901802955"
+  },
+  "iswcs": [
+    "T9275551661",
+    "T8025848050"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/tk-from-ling-tosite-sigure/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/2/9/11e83fe6-e92f-26e2-9968-aa1c026db3d8.jpg",
+      "name": "TK from Ling tosite sigure",
+      "slug": "tk-from-ling-tosite-sigure",
+      "uuid": "11e83fe6-e92f-26e2-9968-aa1c026db3d8"
+    }
+  ],
+  "name": "katharsis (TV edit)",
+  "producers": [],
+  "releaseDate": "2018-10-10T00:00:00+00:00",
+  "uuid": "a997511e-cdd8-11e8-a86b-549f35161576"
+}

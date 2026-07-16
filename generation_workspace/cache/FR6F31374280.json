@@ -1,0 +1,64 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/d84b2a76-6791-4d62-9a1f-fa0f0abe1b74/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/m83/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/f/b/11e81bc8-ebf5-753a-843c-a0369fe50396.jpg",
+      "name": "M83",
+      "slug": "m83",
+      "uuid": "11e81bc8-ebf5-753a-843c-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.05,
+    "danceability": 0.48,
+    "energy": 0.73,
+    "instrumentalness": 0,
+    "key": 11,
+    "liveness": 0.06,
+    "loudness": -4.66,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 104.91,
+    "timeSignature": 4,
+    "valence": 0.28
+  },
+  "composers": [
+    "Anthony Gonzales",
+    "Morgan Kibby",
+    "Johnsen",
+    "Justin Meldal"
+  ],
+  "copyright": "",
+  "creditName": "M83",
+  "credits": [],
+  "distributor": "Wagram",
+  "duration": 242,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/1/9/7/d84b2a76-6791-4d62-9a1f-fa0f0abe1b74.jpg",
+  "isrc": {
+    "countryCode": "FR",
+    "countryName": "France",
+    "value": "FR6F31374280"
+  },
+  "iswcs": [
+    "T9111120333",
+    "T9122890555"
+  ],
+  "labels": [],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/m83/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/f/b/11e81bc8-ebf5-753a-843c-a0369fe50396.jpg",
+      "name": "M83",
+      "slug": "m83",
+      "uuid": "11e81bc8-ebf5-753a-843c-a0369fe50396"
+    }
+  ],
+  "name": "Midnight City",
+  "producers": [],
+  "releaseDate": null,
+  "uuid": "d84b2a76-6791-4d62-9a1f-fa0f0abe1b74"
+}

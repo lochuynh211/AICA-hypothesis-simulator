@@ -1,0 +1,534 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/4153b2b9-1571-4631-a66f-2c3bbeb13b87/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mrs-green-apple/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/9/5/11e81bc3-f595-7572-858f-a0369fe50396.jpg",
+      "name": "Mrs. GREEN APPLE",
+      "slug": "mrs-green-apple",
+      "uuid": "11e81bc3-f595-7572-858f-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.06,
+    "danceability": 0.48,
+    "energy": 0.66,
+    "instrumentalness": 0,
+    "key": 5,
+    "liveness": 0.14,
+    "loudness": -5.2,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 156.06,
+    "timeSignature": 4,
+    "valence": 0.41
+  },
+  "composers": [
+    "Motoki Ohmori"
+  ],
+  "copyright": "An EMI Records release; ℗ 2022 UNIVERSAL MUSIC LLC",
+  "creditName": "Mrs. GREEN APPLE",
+  "credits": [
+    {
+      "name": "Chris Gehringer",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "09925f38-1606-4918-9c39-a5be4a5de704"
+    },
+    {
+      "name": "Motoki Ohmori",
+      "roles": [
+        "arranger",
+        "songwriter",
+        "producer",
+        "programming",
+        "acoustic guitar",
+        "lead vocals",
+        "backing vocals",
+        "electric guitar",
+        "vocals",
+        "lyricist"
+      ],
+      "uuid": "2c895966-5b4b-4614-a506-c48c46e6994f"
+    },
+    {
+      "name": "大森元貴",
+      "roles": [
+        "composer",
+        "arranger",
+        "producer",
+        "writer",
+        "acoustic guitar",
+        "vocals",
+        "lead vocals",
+        "electric guitar",
+        "programming",
+        "chorus vocals"
+      ],
+      "uuid": "8f2d5b08-ca27-4a0d-99c6-2f884020b796"
+    },
+    {
+      "name": "Gregory Germain",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "37b4b735-3ff6-4f6e-9778-0bdafa9496de"
+    },
+    {
+      "name": "林田順平 (Junpei Hayashida)",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "78604e00-384f-428f-b306-401b8d1c4004"
+    },
+    {
+      "name": "佐藤帆乃佳 (Honoka Sato)",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "fe759ec2-dd8a-4ce2-9aa8-9b0a9d2e0371"
+    },
+    {
+      "name": "若井滉斗 (Hiloto Wakai)",
+      "roles": [
+        "electric guitar"
+      ],
+      "uuid": "abdab76e-2814-451c-8243-55991b4d7b8e"
+    },
+    {
+      "name": "藤澤涼架 (Fujisawa Ryoka)",
+      "roles": [
+        "piano",
+        "keyboard"
+      ],
+      "uuid": "e13f44ed-268a-4e93-b7c8-2b8e03bd4d62"
+    },
+    {
+      "name": "森夏彦 (Natsuhiko Mori)",
+      "roles": [
+        "bass guitar",
+        "electric bass"
+      ],
+      "uuid": "126bfe31-25a8-4947-b58a-a3880a50143b"
+    },
+    {
+      "name": "Hiloto Wakai",
+      "roles": [
+        "electric guitar"
+      ],
+      "uuid": "30c4c784-d7b9-4c8c-8300-71e087738cf8"
+    },
+    {
+      "name": "Ryoka Fujisawa",
+      "roles": [
+        "piano",
+        "piccolo flute"
+      ],
+      "uuid": "ae79b30d-7a8c-4f20-89be-a03b72b6728d"
+    },
+    {
+      "name": "Yochi Masago",
+      "roles": [
+        "trumpet"
+      ],
+      "uuid": "5d69e4b4-21e3-4f24-b5ff-7f43cedd527f"
+    },
+    {
+      "name": "SHU KANEMATSU",
+      "roles": [
+        "keyboard"
+      ],
+      "uuid": "a7d6740d-a640-47da-8ff4-53f41944252a"
+    },
+    {
+      "name": "Hideyuki Kurakazu",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "3bffa902-c093-4c70-8b52-867707f0fed3"
+    },
+    {
+      "name": "Natsuhiko Mori",
+      "roles": [
+        "bass guitar"
+      ],
+      "uuid": "0e44a208-7e85-4aec-aaab-e5b6d9678e5d"
+    },
+    {
+      "name": "Kon Shirasu",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "67d0b650-04c1-485f-9355-52d4cf7ea830"
+    },
+    {
+      "name": "Mei Mishina",
+      "roles": [
+        "viola"
+      ],
+      "uuid": "02d33d98-f043-4b29-b484-a73831a7580c"
+    },
+    {
+      "name": "Sumire Segawa",
+      "roles": [
+        "viola"
+      ],
+      "uuid": "0503c8a0-d4f6-4d7d-bf8d-491ab270f559"
+    },
+    {
+      "name": "Kento Takasugi",
+      "roles": [
+        "bass",
+        "double bass"
+      ],
+      "uuid": "5720b355-7b80-4339-b928-e1050a85c376"
+    },
+    {
+      "name": "Honoka Sato(aluto)",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "8f1b44f6-f034-42eb-9be9-b7873f53caed"
+    },
+    {
+      "name": "Ryo Kanda",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "4649f747-f12f-46d8-b5db-a7d6ebef9b63"
+    },
+    {
+      "name": "Mika Shirasawa",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "9c04dfd6-1f2b-4250-8e2d-d9d90714a073"
+    },
+    {
+      "name": "Chiharu Tadokoro",
+      "roles": [
+        "backing vocals",
+        "choir"
+      ],
+      "uuid": "96a9b80b-4d31-4426-8071-69b8b74a8987"
+    },
+    {
+      "name": "Maki Takimoto",
+      "roles": [
+        "backing vocals",
+        "choir"
+      ],
+      "uuid": "dd9d72e6-0ee3-4271-b791-84fd59e341d4"
+    },
+    {
+      "name": "Shiori Hongou",
+      "roles": [
+        "backing vocals",
+        "choir"
+      ],
+      "uuid": "5b63cc02-e945-488f-88da-1d0f855364d6"
+    },
+    {
+      "name": "Hiromi Matsuoka",
+      "roles": [
+        "backing vocals",
+        "choir"
+      ],
+      "uuid": "5374f541-fc20-4ad4-b27b-23fed67e3ba2"
+    },
+    {
+      "name": "Yosuke Kawano",
+      "roles": [
+        "backing vocals",
+        "choir"
+      ],
+      "uuid": "882c138c-f870-4992-a9f6-9a4c3a6d5fc1"
+    },
+    {
+      "name": "Ryuho Ichikawa",
+      "roles": [
+        "assistant recording engineer",
+        "second engineer"
+      ],
+      "uuid": "e0d5d6e8-9e0c-4206-908d-f138d0a5ee65"
+    },
+    {
+      "name": "SHUHEI ITO",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "88489765-23f5-47d6-893e-898937a0c0cb"
+    },
+    {
+      "name": "Miz",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "ef8361a6-8c90-467e-885e-b02c6cff9e6d"
+    },
+    {
+      "name": "須原杏",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "cda4c053-1bc8-4ad6-88e0-d75c98b8c477"
+    },
+    {
+      "name": "市川竜帆 (Ryuho Ichikawa)",
+      "roles": [
+        "assistant recording engineer",
+        "assistant engineer"
+      ],
+      "uuid": "4846cc59-3e2f-4509-9b1f-70ff220d5275"
+    },
+    {
+      "name": "三國茉莉 (Matsuri Mikuni)",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "4cfe9ce4-3e0e-4bb4-8e10-fda70b690037"
+    },
+    {
+      "name": "吉田篤貴",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "ffe83a5a-bb2b-4ac5-a672-298d54a5ad10"
+    },
+    {
+      "name": "クラカズヒデユキ",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "a9d5107e-de74-445c-8681-b75b81302c57"
+    },
+    {
+      "name": "Ryo Konishi",
+      "roles": [
+        "clarinet",
+        "alto saxophone"
+      ],
+      "uuid": "f1622a71-6427-49b9-b81c-3f6b5c434474"
+    },
+    {
+      "name": "三品芽生",
+      "roles": [
+        "viola"
+      ],
+      "uuid": "a98924b1-fd83-4ac4-9463-97b36d58af39"
+    },
+    {
+      "name": "EFFY (FirstCall)",
+      "roles": [
+        "arranger",
+        "programming",
+        "strings arranger"
+      ],
+      "uuid": "9e7bdd20-5735-4c65-9141-ba167c81f9e2"
+    },
+    {
+      "name": "Anzu Suhara",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "f1015105-e05e-426a-bb48-31bd7a89b220"
+    },
+    {
+      "name": "Chiharu Uchida",
+      "roles": [
+        "backing vocals"
+      ],
+      "uuid": "541cf11b-75f8-4024-9be2-4acd6bc0b5e1"
+    },
+    {
+      "name": "伊藤修平",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "a1a3a8ac-0517-4cf7-894f-328b2ac63bff"
+    },
+    {
+      "name": "Atsuki Yoshida",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "35459797-fad3-4978-9d01-dd60776b4639"
+    },
+    {
+      "name": "世川すみれ (Sumire Segawa)",
+      "roles": [
+        "viola"
+      ],
+      "uuid": "6ff000c4-ae3f-49ac-a756-1a5f7532a75e"
+    },
+    {
+      "name": "白須今",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "4eaae6b5-9ac1-44c0-a4a1-6f766aeb11ca"
+    },
+    {
+      "name": "高杉健人",
+      "roles": [
+        "contrabassoon"
+      ],
+      "uuid": "b55b8a8f-9a86-4f32-91aa-9d6ff03a5d98"
+    },
+    {
+      "name": "本郷詩織",
+      "roles": [
+        "choir vocals"
+      ],
+      "uuid": "79547583-f146-40cc-82ab-0a3bfd386cb5"
+    },
+    {
+      "name": "河野陽介",
+      "roles": [
+        "choir vocals"
+      ],
+      "uuid": "41f3383c-cfbc-4d38-a4e4-be960a699700"
+    },
+    {
+      "name": "松岡大海",
+      "roles": [
+        "choir vocals"
+      ],
+      "uuid": "f0aa1edb-c983-4965-af23-2ead7c1eaba7"
+    },
+    {
+      "name": "瀧本真己",
+      "roles": [
+        "choir vocals"
+      ],
+      "uuid": "a4c01aa8-f65c-49f3-80c0-ccbdb909bf77"
+    },
+    {
+      "name": "内田千陽",
+      "roles": [
+        "choir vocals"
+      ],
+      "uuid": "5cf4e301-8203-48dd-89b6-ed0edcddf98a"
+    },
+    {
+      "name": "KOCHO",
+      "roles": [
+        "backing vocals",
+        "choir",
+        "choir vocals"
+      ],
+      "uuid": "f052b030-c6a3-41af-b209-8f3a15516c59"
+    },
+    {
+      "name": "Junpei Hayashida",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "392bd25e-9eae-4918-9247-87ab86100f7a"
+    },
+    {
+      "name": "Matsuri Mikuni",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "e39ea179-e75b-4c77-b48f-b257577640f8"
+    },
+    {
+      "name": "伊藤祥平 (Shohei Itou)",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "301af735-c182-479e-8a45-0d6e837e21bd"
+    },
+    {
+      "name": "白澤美佳 (Mika Shirasawa)",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "cd87d271-762d-4c90-847d-f039c358776f"
+    },
+    {
+      "name": "クラカズヒデユキ (Hideyuki Kurakazu)",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "816700ec-1d40-4fd9-9b67-a604389bd9a1"
+    },
+    {
+      "name": "Miz",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "2c37aea1-571f-4682-bcbd-c4d2fea2899e"
+    },
+    {
+      "name": "Sumire Segawa",
+      "roles": [
+        "viola"
+      ],
+      "uuid": "666721c8-b9f5-40e3-83aa-82982003c549"
+    },
+    {
+      "name": "Kon Shirasu",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "872632ba-1232-49a4-b47a-9e6f8bbeb696"
+    },
+    {
+      "name": "Honoka Sato",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "fd598fa5-9f78-4686-84a0-08b958edcb32"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 343,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/1/7/5/4153b2b9-1571-4631-a66f-2c3bbeb13b87.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO02203986"
+  },
+  "iswcs": [
+    "T3175196002"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    },
+    {
+      "name": "EMI",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mrs-green-apple/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/9/5/11e81bc3-f595-7572-858f-a0369fe50396.jpg",
+      "name": "Mrs. GREEN APPLE",
+      "slug": "mrs-green-apple",
+      "uuid": "11e81bc3-f595-7572-858f-a0369fe50396"
+    }
+  ],
+  "name": "Soranji",
+  "producers": [
+    "大森元貴"
+  ],
+  "releaseDate": "2022-10-18T00:00:00+00:00",
+  "uuid": "4153b2b9-1571-4631-a66f-2c3bbeb13b87"
+}

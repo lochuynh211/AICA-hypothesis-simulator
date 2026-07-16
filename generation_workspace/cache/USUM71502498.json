@@ -1,0 +1,239 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826ad-c776-98c0-93ff-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kendrick-lamar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/0/6/11e81bbc-c601-d802-bca1-a0369fe50396.jpg",
+      "name": "Kendrick Lamar",
+      "slug": "kendrick-lamar",
+      "uuid": "11e81bbc-c601-d802-bca1-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.07,
+    "danceability": 0.8,
+    "energy": 0.77,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.08,
+    "loudness": -5.97,
+    "mode": 1,
+    "speechiness": 0.24,
+    "tempo": 110.03,
+    "timeSignature": 4,
+    "valence": 0.56
+  },
+  "composers": [
+    "Kendrick Lamar",
+    "P. Williams",
+    "M. Spears"
+  ],
+  "copyright": "(P) 2024 Focus Features LLC, under exclusive license to Columbia Records, a Division of Sony Music Entertainment",
+  "creditName": "Kendrick Lamar",
+  "credits": [
+    {
+      "name": "Terrace Martin",
+      "roles": [
+        "alto saxophone"
+      ],
+      "uuid": "e31a84ff-6152-44fe-9d67-d6f6a29ecc59"
+    },
+    {
+      "name": "Kawan Prather",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "3e00411b-6155-41d7-a857-7971888ef320"
+    },
+    {
+      "name": "Sounwave",
+      "roles": [
+        "producer",
+        "writer",
+        "additional production"
+      ],
+      "uuid": "120e4d7d-638a-4bd9-b161-2c33df9ee954"
+    },
+    {
+      "name": "Dave Free",
+      "roles": [
+        "associate producer"
+      ],
+      "uuid": "042d603f-7680-4ce4-bc8f-78d5f45a7da4"
+    },
+    {
+      "name": "Mixed by Ali",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "e5de17a8-fe9f-4d64-bf8c-24097014c784"
+    },
+    {
+      "name": "Thundercat",
+      "roles": [
+        "backing vocals"
+      ],
+      "uuid": "7bca9f92-12f4-4dd2-b53e-6e4f45dffb71"
+    },
+    {
+      "name": "Mike Larson",
+      "roles": [
+        "additional engineer"
+      ],
+      "uuid": "1179b3c5-0acf-4958-827a-738f58db47a2"
+    },
+    {
+      "name": "Bernie Grundman Mastering",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "aa9df1f4-808d-4210-a48d-01d6a3070ef6"
+    },
+    {
+      "name": "Top Dawg",
+      "roles": [
+        "executive producer"
+      ],
+      "uuid": "c2b6ae99-fffe-4684-8c26-f1b34290c5c6"
+    },
+    {
+      "name": "Dr. Dre",
+      "roles": [
+        "executive producer"
+      ],
+      "uuid": "1293f6fa-d81a-4492-8be9-5b609d9b4a08"
+    },
+    {
+      "name": "Hart Gunther",
+      "roles": [
+        "additional engineer"
+      ],
+      "uuid": "b17af487-0578-4f0a-8ba4-3537c4ee2d42"
+    },
+    {
+      "name": "Candace Wakefield",
+      "roles": [
+        "backing vocals"
+      ],
+      "uuid": "9972f55a-d919-4e25-a1a2-30ca070ad2d2"
+    },
+    {
+      "name": "Mark Spears",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "86f3fa60-aafd-4a80-9361-8cb8a64daa35"
+    },
+    {
+      "name": "Andrew Coleman",
+      "roles": [
+        "additional engineer"
+      ],
+      "uuid": "9eff7ac3-2b0e-4d5c-9a7e-25b084406dc8"
+    },
+    {
+      "name": "Pharrell Williams",
+      "roles": [
+        "composer",
+        "producer",
+        "writer",
+        "backing vocals",
+        "lyricist"
+      ],
+      "uuid": "f97ab527-31e0-4e2d-b9a8-5f11e94bae75"
+    },
+    {
+      "name": "James Hunt",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "76b50f99-3da3-4d11-80c4-e30c2036cbda"
+    },
+    {
+      "name": "Kendrick Duckworth",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "a03bc7a5-7d52-4cdf-ad50-a13ae2d7be0c"
+    },
+    {
+      "name": "P. Williams",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "fab0abf5-8212-4eb2-af0f-0a92ec14b933"
+    },
+    {
+      "name": "Kendrick Lamar",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "9de5b02b-7e11-4dc9-be7c-2c71a4860e40"
+    },
+    {
+      "name": "M. Spears",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "a29b23c3-eef9-4509-9c0a-63d64555bd03"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 219,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    },
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/6/7/7/11e826ad-c776-98c0-93ff-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USUM71502498"
+  },
+  "iswcs": [
+    "T9167724698"
+  ],
+  "labels": [
+    {
+      "name": "Columbia",
+      "type": "Sony"
+    },
+    {
+      "name": "Focus Features",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kendrick-lamar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/0/6/11e81bbc-c601-d802-bca1-a0369fe50396.jpg",
+      "name": "Kendrick Lamar",
+      "slug": "kendrick-lamar",
+      "uuid": "11e81bbc-c601-d802-bca1-a0369fe50396"
+    }
+  ],
+  "name": "Alright",
+  "producers": [
+    "Pharrell Williams",
+    "Sounwave"
+  ],
+  "releaseDate": "2024-10-11T00:00:00+00:00",
+  "uuid": "11e826ad-c776-98c0-93ff-a0369fe50396"
+}

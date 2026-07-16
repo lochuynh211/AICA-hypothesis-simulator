@@ -1,0 +1,72 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/2332915e-bc77-11e9-a084-549f35141000/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mi-jin-xuan-shi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/d/a/11e81bcc-dadf-925e-af6a-a0369fe50396.jpg",
+      "name": "Kenshi Yonezu",
+      "slug": "mi-jin-xuan-shi",
+      "uuid": "11e81bcc-dadf-925e-af6a-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.1,
+    "danceability": 0.64,
+    "energy": 0.45,
+    "instrumentalness": 0,
+    "key": 3,
+    "liveness": 0.29,
+    "loudness": -6.41,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 91.02,
+    "timeSignature": 4,
+    "valence": 0.68
+  },
+  "composers": [
+    "Kenshi Yonezu"
+  ],
+  "copyright": "(P)2019 Sony Music Labels Inc.",
+  "creditName": "Kenshi Yonezu",
+  "credits": [],
+  "distributor": "Sony",
+  "duration": 265,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/7/7/c/2332915e-bc77-11e9-a084-549f35141000.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU901902002"
+  },
+  "iswcs": [
+    "T9303411258"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mi-jin-xuan-shi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/d/a/11e81bcc-dadf-925e-af6a-a0369fe50396.jpg",
+      "name": "Kenshi Yonezu",
+      "slug": "mi-jin-xuan-shi",
+      "uuid": "11e81bcc-dadf-925e-af6a-a0369fe50396"
+    }
+  ],
+  "name": "馬と鹿",
+  "producers": [],
+  "releaseDate": "2019-09-11T00:00:00+00:00",
+  "uuid": "2332915e-bc77-11e9-a084-549f35141000"
+}

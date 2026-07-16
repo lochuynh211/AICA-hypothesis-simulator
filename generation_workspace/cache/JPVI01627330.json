@@ -1,0 +1,229 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826be-a60b-b2ae-8fe4-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/xing-ye-yuan/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/b/9/11e81bbd-29ba-ee38-b61e-a0369fe50396.jpg",
+      "name": "Gen Hoshino",
+      "slug": "xing-ye-yuan",
+      "uuid": "11e81bbd-29ba-ee38-b61e-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.62,
+    "energy": 0.8,
+    "instrumentalness": 0,
+    "key": 9,
+    "liveness": 0.15,
+    "loudness": -3.22,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 157.99,
+    "timeSignature": 4,
+    "valence": 0.91
+  },
+  "composers": [
+    "Gen Hoshino"
+  ],
+  "copyright": "2016 JVCKENWOOD Victor Entertainment",
+  "creditName": "Gen Hoshino",
+  "credits": [
+    {
+      "name": "Eiko Ishibashi",
+      "roles": [
+        "choir",
+        "analog synthesizer"
+      ],
+      "uuid": "34f60f0c-f778-463a-9fe6-b6eb11623fc1"
+    },
+    {
+      "name": "菊地幹代 (Mikiyo Kikuchi)",
+      "roles": [
+        "viola"
+      ],
+      "uuid": "7aa5974e-93fe-4ebe-8702-611e1a424f04"
+    },
+    {
+      "name": "舘泉礼一 (Reiichi Tateizumi)",
+      "roles": [
+        "viola"
+      ],
+      "uuid": "68d20b7b-0507-44d6-9e46-dd631f0b1282"
+    },
+    {
+      "name": "笠原あやの (Ayano Kasahara)",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "3cec0170-176a-432e-8044-0fba6975361d"
+    },
+    {
+      "name": "星野源",
+      "roles": [
+        "composer",
+        "arranger",
+        "producer",
+        "writer",
+        "piano",
+        "vocals",
+        "guitar",
+        "bass",
+        "choir",
+        "marimba",
+        "strings arranger",
+        "handclaps",
+        "lyricist",
+        "analog synthesizer"
+      ],
+      "uuid": "c4ba101b-df7c-4957-bc6d-692e20951646"
+    },
+    {
+      "name": "河村智康 (Noriyasu Kawamura)",
+      "roles": [
+        "drums",
+        "percussions",
+        "handclaps"
+      ],
+      "uuid": "b5e6a9eb-7274-4f32-a5bd-70903a3db9fc"
+    },
+    {
+      "name": "岡村美央 (Mio Okamura)",
+      "roles": [
+        "first violin",
+        "strings arranger"
+      ],
+      "uuid": "06051787-4711-4a02-bf59-f40ea04f78b5"
+    },
+    {
+      "name": "伊能修 (Osamu Iyoku)",
+      "roles": [
+        "first violin"
+      ],
+      "uuid": "f51e89e4-b9ee-4120-b694-1c087985ce6d"
+    },
+    {
+      "name": "加藤玲名 (Rena Katou)",
+      "roles": [
+        "first violin"
+      ],
+      "uuid": "f6110b90-9b21-49fe-9171-4d4dcaa14f64"
+    },
+    {
+      "name": "城戸喜代 (Kiyo Kido)",
+      "roles": [
+        "first violin"
+      ],
+      "uuid": "4067a0db-4527-40c4-8474-56caf22c4869"
+    },
+    {
+      "name": "下川美帆 (Miho Shimokawa)",
+      "roles": [
+        "second violin"
+      ],
+      "uuid": "bf2f9bfd-f174-4e1e-a3cc-a927cc6b3952"
+    },
+    {
+      "name": "杉野裕 (Yu Sugino)",
+      "roles": [
+        "second violin"
+      ],
+      "uuid": "2c113699-c481-4426-b962-0a05bd0a28cc"
+    },
+    {
+      "name": "村中俊之 (Toshiyuki Muranaka)",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "7cbf7c5d-9229-4f2f-9e77-fad1d79da57e"
+    },
+    {
+      "name": "増本麻理 (Mari Masumoto)",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "cef728b3-6f06-4756-9df2-94b07c0b9504"
+    },
+    {
+      "name": "賈鵬芳(Jia Peng fang)",
+      "roles": [
+        "erhu"
+      ],
+      "uuid": "c1cbefe3-1833-49da-87b5-3808d030a2a6"
+    },
+    {
+      "name": "長岡亮介 (Ryosuke Nagaoka)",
+      "roles": [
+        "guitar",
+        "choir"
+      ],
+      "uuid": "60b6576b-92bd-4679-b583-667110cbad3c"
+    },
+    {
+      "name": "ハマ・オカモト (Hama Okamoto)",
+      "roles": [
+        "bass",
+        "handclaps"
+      ],
+      "uuid": "e3e6c7b2-a697-45a8-8e01-68fc8d797265"
+    },
+    {
+      "name": "伊賀 航 (Wataru Iga)",
+      "roles": [
+        "bass",
+        "handclaps"
+      ],
+      "uuid": "5f4a077f-9585-4b6a-818c-cad9d5f3dd1d"
+    },
+    {
+      "name": "小林創(Hajime Kobayashi)",
+      "roles": [
+        "piano"
+      ],
+      "uuid": "a3081d1d-1f54-4709-9ca2-f24c87e4b755"
+    }
+  ],
+  "distributor": "Victor Entertainment",
+  "duration": 253,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian",
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/0/6/11e826be-a60b-b2ae-8fe4-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPVI01627330"
+  },
+  "iswcs": [
+    "T9207384223"
+  ],
+  "labels": [
+    {
+      "name": "JVCKENWOOD Victor",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/xing-ye-yuan/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/b/9/11e81bbd-29ba-ee38-b61e-a0369fe50396.jpg",
+      "name": "Gen Hoshino",
+      "slug": "xing-ye-yuan",
+      "uuid": "11e81bbd-29ba-ee38-b61e-a0369fe50396"
+    }
+  ],
+  "name": "恋",
+  "producers": [
+    "星野源 (Gen Hoshino)"
+  ],
+  "releaseDate": "2016-10-05T00:00:00+00:00",
+  "uuid": "11e826be-a60b-b2ae-8fe4-a0369fe50396"
+}

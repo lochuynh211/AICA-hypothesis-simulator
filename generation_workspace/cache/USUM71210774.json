@@ -1,0 +1,311 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826ad-c794-aba8-b167-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kendrick-lamar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/0/6/11e81bbc-c601-d802-bca1-a0369fe50396.jpg",
+      "name": "Kendrick Lamar",
+      "slug": "kendrick-lamar",
+      "uuid": "11e81bbc-c601-d802-bca1-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.02,
+    "danceability": 0.59,
+    "energy": 0.7,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.44,
+    "loudness": -8.95,
+    "mode": 1,
+    "speechiness": 0.09,
+    "tempo": 133.95,
+    "timeSignature": 4,
+    "valence": 0.1
+  },
+  "composers": [
+    "Kendrick Lamar",
+    "M. Spears",
+    "Braun",
+    "Liv Lykke Schmidt",
+    "Vindahl Friis"
+  ],
+  "copyright": "℗ 2013 Aftermath/Interscope Records",
+  "creditName": "Kendrick Lamar",
+  "credits": [
+    {
+      "name": "Margaux Whitney",
+      "roles": [
+        "violin",
+        "strings arranger"
+      ],
+      "uuid": "90be6116-56db-4c6d-81c2-ff2ffec04c42"
+    },
+    {
+      "name": "Liv Lykke Schmidt",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "9e6f8e3f-812e-4faf-9133-ab305fa7f1b3"
+    },
+    {
+      "name": "Brian Gardner",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "ac72e2bb-63d0-4bf6-9b94-84cfed34fb42"
+    },
+    {
+      "name": "Mike Bozzi",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "52318d94-2904-4ce6-9fa5-55a2c5413b9d"
+    },
+    {
+      "name": "Marlon Williams",
+      "roles": [
+        "guitar"
+      ],
+      "uuid": "9acbc70d-1601-453a-af63-987b8ca83a98"
+    },
+    {
+      "name": "André Benjamin",
+      "roles": [
+        "additional vocals"
+      ],
+      "uuid": "c9d2c08e-6aec-44d1-ab87-c84e244cfdf7"
+    },
+    {
+      "name": "Robin Hannibal",
+      "roles": [
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "08130be5-8b03-488c-9728-b6ad94e558e4"
+    },
+    {
+      "name": "Sounwave",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "120e4d7d-638a-4bd9-b161-2c33df9ee954"
+    },
+    {
+      "name": "Mixed by Ali",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "e5de17a8-fe9f-4d64-bf8c-24097014c784"
+    },
+    {
+      "name": "Anna Wise",
+      "roles": [
+        "backing vocals"
+      ],
+      "uuid": "16c5df8d-9bc8-4d11-9c18-ec64f5fc33d1"
+    },
+    {
+      "name": "Mary Keating",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "b57ac2cf-d242-412a-b481-80a7abce4690"
+    },
+    {
+      "name": "JMSN",
+      "roles": [
+        "additional vocals"
+      ],
+      "uuid": "6876b2ae-8ce3-4a67-88bf-52bc18e9aca8"
+    },
+    {
+      "name": "Dr. Dre",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "1293f6fa-d81a-4492-8be9-5b609d9b4a08"
+    },
+    {
+      "name": "Mauricio Iragorri",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "3a1247a7-23ef-45b5-a752-a5fbe2826388"
+    },
+    {
+      "name": "Mark Spears",
+      "roles": [
+        "songwriter",
+        "producer"
+      ],
+      "uuid": "86f3fa60-aafd-4a80-9361-8cb8a64daa35"
+    },
+    {
+      "name": "Kendrick Lamar Duckworth",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "28c0f3c3-7653-4b36-90b3-d7d5b407d3ed"
+    },
+    {
+      "name": "Vaiyeh",
+      "roles": [
+        "guitar"
+      ],
+      "uuid": "867aa0db-277d-46d9-9814-0d8b9c7e5c78"
+    },
+    {
+      "name": "Ronni Vindahl",
+      "roles": [
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "c1e29b94-8f9d-457a-a099-e8c1b5bf67c0"
+    },
+    {
+      "name": "Lykke Schmidt",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "c994505c-541d-4ac9-8362-abca83c17d87"
+    },
+    {
+      "name": "Vindahl Friis",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "64c2f247-16f0-4f1d-90f3-eb3dcbaafa9f"
+    },
+    {
+      "name": "Kendrick Duckworth",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "a03bc7a5-7d52-4cdf-ad50-a13ae2d7be0c"
+    },
+    {
+      "name": "Derek \"MixedByAli\" Ali",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "1505964d-63af-4141-bc82-e64f5d09106a"
+    },
+    {
+      "name": "Jasminfire",
+      "roles": [
+        "viola",
+        "strings arranger"
+      ],
+      "uuid": "75f78100-1ec5-478f-b0cf-4a2c0e43c633"
+    },
+    {
+      "name": "JAY‐Z",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "a0a4cc69-e35c-472f-8c32-2f8514c178c0"
+    },
+    {
+      "name": "Boom Clap Bachelors",
+      "roles": [
+        "sampled artist"
+      ],
+      "uuid": "db39f961-e617-429f-b670-1b7300d795ac"
+    },
+    {
+      "name": "Mauricio “Veto” Iragorri",
+      "roles": [
+        "assistant mix engineer"
+      ],
+      "uuid": "982eacab-19ff-4b80-a981-ad32b1df2691"
+    },
+    {
+      "name": "J. Valle",
+      "roles": [
+        "guitar"
+      ],
+      "uuid": "4b77c26c-78e3-4a88-be8c-128a4f2560cc"
+    },
+    {
+      "name": "Charly and Margaux",
+      "roles": [
+        "strings"
+      ],
+      "uuid": "aed185c6-6b4d-43a7-9042-45ebb3848458"
+    },
+    {
+      "name": "Kendrick Lamar",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "9de5b02b-7e11-4dc9-be7c-2c71a4860e40"
+    },
+    {
+      "name": "M. Spears",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "a29b23c3-eef9-4509-9c0a-63d64555bd03"
+    },
+    {
+      "name": "Liv Lykke",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "85eb133c-fa19-4c2c-8bd2-8dffbcd87fd5"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 310,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/4/9/7/11e826ad-c794-aba8-b167-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USUM71210774"
+  },
+  "iswcs": [
+    "T9092015311"
+  ],
+  "labels": [
+    {
+      "name": "Aftermath",
+      "type": "Universal"
+    },
+    {
+      "name": "Interscope",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kendrick-lamar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/0/6/11e81bbc-c601-d802-bca1-a0369fe50396.jpg",
+      "name": "Kendrick Lamar",
+      "slug": "kendrick-lamar",
+      "uuid": "11e81bbc-c601-d802-bca1-a0369fe50396"
+    }
+  ],
+  "name": "Bitch, Don't Kill My Vibe",
+  "producers": [
+    "Sounwave"
+  ],
+  "releaseDate": "2012-01-01T00:00:00+00:00",
+  "uuid": "11e826ad-c794-aba8-b167-a0369fe50396"
+}

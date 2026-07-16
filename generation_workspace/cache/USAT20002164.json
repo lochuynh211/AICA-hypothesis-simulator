@@ -1,0 +1,131 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/96730a4f-5afd-4697-b7ad-f29a0c4ce09c/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/john-coltrane/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/a/8/11e81bc8-68a6-bc16-bc55-a0369fe50396.jpg",
+      "name": "John Coltrane",
+      "slug": "john-coltrane",
+      "uuid": "11e81bc8-68a6-bc16-bc55-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.44,
+    "danceability": 0.43,
+    "energy": 0.49,
+    "instrumentalness": 0,
+    "key": 0,
+    "liveness": 0.13,
+    "loudness": -10.75,
+    "mode": 0,
+    "speechiness": 0.06,
+    "tempo": 148.24,
+    "timeSignature": 4,
+    "valence": 0.58
+  },
+  "composers": [
+    "John Coltrane"
+  ],
+  "copyright": "This Compilation ℗ 2002 UMG Recordings, Inc.",
+  "creditName": "John Coltrane",
+  "credits": [
+    {
+      "name": "John Coltrane",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "c8d9ee15-eee7-4bcc-b121-6ddc9224ba69"
+    },
+    {
+      "name": "Nesuhi Ertegün",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "bf36b223-c621-4ae9-896f-ee18e4b87f57"
+    },
+    {
+      "name": "Tommy Flanagan",
+      "roles": [
+        "piano"
+      ],
+      "uuid": "99428ab8-6429-4f68-9033-54b6445e42bc"
+    },
+    {
+      "name": "Paul Chambers",
+      "roles": [
+        "bass"
+      ],
+      "uuid": "76dedba6-3fd6-402f-accc-e43628389530"
+    },
+    {
+      "name": "Tom Dowd",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "1f24a1f7-e97c-4600-bfc1-6e04dd07aa9f"
+    },
+    {
+      "name": "Art Taylor",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "f1357071-d79c-4b48-9081-378215c94666"
+    },
+    {
+      "name": "Phil Iehle",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "58e9b467-6a7f-4fba-9bdb-bc1851821288"
+    }
+  ],
+  "distributor": "Warner",
+  "duration": 287,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz"
+      ]
+    },
+    {
+      "root": "soundtrack",
+      "sub": [
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/d/f/a/96730a4f-5afd-4697-b7ad-f29a0c4ce09c.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USAT20002164"
+  },
+  "iswcs": [
+    "T0702342173",
+    "T3118984837"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/john-coltrane/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/a/8/11e81bc8-68a6-bc16-bc55-a0369fe50396.jpg",
+      "name": "John Coltrane",
+      "slug": "john-coltrane",
+      "uuid": "11e81bc8-68a6-bc16-bc55-a0369fe50396"
+    }
+  ],
+  "name": "Giant Steps",
+  "producers": [
+    "Nesuhi Ertegun"
+  ],
+  "releaseDate": "2002-09-10T00:00:00+00:00",
+  "uuid": "96730a4f-5afd-4697-b7ad-f29a0c4ce09c"
+}

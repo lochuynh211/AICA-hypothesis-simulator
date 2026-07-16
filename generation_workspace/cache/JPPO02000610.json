@@ -1,0 +1,106 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/5b504276-dc1d-438b-bb54-fea736adc325/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/fujii-kaze-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/1/a1ec9e8b-f11f-426c-8930-a82f86ac3d84.jpg",
+      "name": "Fujii Kaze",
+      "slug": "fujii-kaze-1",
+      "uuid": "a1ec9e8b-f11f-426c-8930-a82f86ac3d84"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.17,
+    "danceability": 0.6,
+    "energy": 0.76,
+    "instrumentalness": 0,
+    "key": 6,
+    "liveness": 0.19,
+    "loudness": -6.12,
+    "mode": 0,
+    "speechiness": 0.05,
+    "tempo": 158.08,
+    "timeSignature": 4,
+    "valence": 0.52
+  },
+  "composers": [
+    "Fujii Kaze"
+  ],
+  "copyright": "A UNIVERSAL SIGMA / HEHN RECORDS release; ℗ 2020 UNIVERSAL MUSIC LLC",
+  "creditName": "Fujii Kaze",
+  "credits": [
+    {
+      "name": "Masahito Komori",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "831a6169-2c27-4da7-a010-4f0a2d9b89eb"
+    },
+    {
+      "name": "Yaffle",
+      "roles": [
+        "producer",
+        "programming"
+      ],
+      "uuid": "8e6deba3-fbe9-47c2-9933-de1832085b74"
+    },
+    {
+      "name": "藤井 風 (Fujii Kaze)",
+      "roles": [
+        "songwriter",
+        "piano",
+        "vocals"
+      ],
+      "uuid": "6523426b-ed5f-495f-808e-07d056388e1b"
+    },
+    {
+      "name": "Yoshimasa Wakui",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "dddac2f5-3e4a-4169-87b3-309fa2b0d2f0"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 185,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/d/1/c/5b504276-dc1d-438b-bb54-fea736adc325.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO02000610"
+  },
+  "iswcs": [
+    "T3044124605"
+  ],
+  "labels": [
+    {
+      "name": "HEHN",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/fujii-kaze-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/1/a1ec9e8b-f11f-426c-8930-a82f86ac3d84.jpg",
+      "name": "Fujii Kaze",
+      "slug": "fujii-kaze-1",
+      "uuid": "a1ec9e8b-f11f-426c-8930-a82f86ac3d84"
+    }
+  ],
+  "name": "死ぬのがいいわ",
+  "producers": [
+    "Yaffle"
+  ],
+  "releaseDate": "2020-05-20T00:00:00+00:00",
+  "uuid": "5b504276-dc1d-438b-bb54-fea736adc325"
+}

@@ -1,0 +1,150 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/09c32083-69b7-47f3-9fe3-f1cc4517cec1/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kat-tun/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/4/0/11e81bd2-e04d-270a-9490-a0369fe50396.jpg",
+      "name": "KAT-TUN",
+      "slug": "kat-tun",
+      "uuid": "11e81bd2-e04d-270a-9490-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.02,
+    "danceability": 0.49,
+    "energy": 0.83,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.06,
+    "loudness": -5.05,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 140,
+    "timeSignature": 4,
+    "valence": 0.62
+  },
+  "composers": [
+    "Takahiro Matsumoto"
+  ],
+  "copyright": "(P) 2006 Storm Labels Inc.",
+  "creditName": "KAT-TUN",
+  "credits": [
+    {
+      "name": "Kazuya Kamenashi",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "6fa4a51d-7aef-4cb4-9cbe-5330f0370fa3"
+    },
+    {
+      "name": "Chokkaku",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "6cfb0359-fabd-47d2-9a48-e5d5259cf907"
+    },
+    {
+      "name": "Shikao Suga",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "19a54afe-fd78-4aea-a596-327f6a391d22"
+    },
+    {
+      "name": "Joker",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "adbc9166-7c64-47a3-81f0-13d0abb5d217"
+    },
+    {
+      "name": "Jin Akanishi",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "75983ad3-0c75-45af-aa2e-f56093e90aa2"
+    },
+    {
+      "name": "TATSUYA UEDA",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "f198a97f-2641-4d44-8cf4-81dada517cc9"
+    },
+    {
+      "name": "Yūichi Nakamaru",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "7832c86b-6c52-4c53-a2ee-6dff0e672dc8"
+    },
+    {
+      "name": "Junnosuke Taguchi",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "f1c3f41d-1323-4245-866b-6074cff6ace3"
+    },
+    {
+      "name": "Takahiro Matsumoto",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "a58c11cf-6eee-4d59-9a71-0fe2be52e948"
+    },
+    {
+      "name": "Hidekazu Sakai",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "96b73012-0485-42df-b82c-2cf6fca37064"
+    },
+    {
+      "name": "KOKI TANAKA",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "56715cb6-a338-442e-9f3a-7454aee1ba27"
+    }
+  ],
+  "distributor": "",
+  "duration": 310,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/7/b/9/09c32083-69b7-47f3-9fe3-f1cc4517cec1.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPQ400600150"
+  },
+  "iswcs": [
+    "T1018193263"
+  ],
+  "labels": [
+    {
+      "name": "Storm Labels",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kat-tun/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/4/0/11e81bd2-e04d-270a-9490-a0369fe50396.jpg",
+      "name": "KAT-TUN",
+      "slug": "kat-tun",
+      "uuid": "11e81bd2-e04d-270a-9490-a0369fe50396"
+    }
+  ],
+  "name": "Real Face",
+  "producers": [],
+  "releaseDate": "2006-03-22T00:00:00+00:00",
+  "uuid": "09c32083-69b7-47f3-9fe3-f1cc4517cec1"
+}

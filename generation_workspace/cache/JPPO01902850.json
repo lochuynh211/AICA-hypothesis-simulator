@@ -1,0 +1,136 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/f5b03964-a8c8-11e9-89cf-549f35161576/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mrs-green-apple/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/9/5/11e81bc3-f595-7572-858f-a0369fe50396.jpg",
+      "name": "Mrs. GREEN APPLE",
+      "slug": "mrs-green-apple",
+      "uuid": "11e81bc3-f595-7572-858f-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.01,
+    "danceability": 0.53,
+    "energy": 0.93,
+    "instrumentalness": 0,
+    "key": 4,
+    "liveness": 0.47,
+    "loudness": -1.54,
+    "mode": 1,
+    "speechiness": 0.06,
+    "tempo": 92.47,
+    "timeSignature": 4,
+    "valence": 0.7
+  },
+  "composers": [
+    "大森元貴"
+  ],
+  "copyright": "An EMI Records release; ℗ 2019 UNIVERSAL MUSIC LLC",
+  "creditName": "Mrs. GREEN APPLE",
+  "credits": [
+    {
+      "name": "Motoki Ohmori",
+      "roles": [
+        "arranger",
+        "songwriter",
+        "programming",
+        "vocals",
+        "backing vocals",
+        "electric guitar"
+      ],
+      "uuid": "2c895966-5b4b-4614-a506-c48c46e6994f"
+    },
+    {
+      "name": "大森元貴",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "8f2d5b08-ca27-4a0d-99c6-2f884020b796"
+    },
+    {
+      "name": "Hiloto Wakai",
+      "roles": [
+        "electric guitar"
+      ],
+      "uuid": "30c4c784-d7b9-4c8c-8300-71e087738cf8"
+    },
+    {
+      "name": "Ryoka Fujisawa",
+      "roles": [
+        "programming",
+        "piano"
+      ],
+      "uuid": "ae79b30d-7a8c-4f20-89be-a03b72b6728d"
+    },
+    {
+      "name": "Ayaka Yamanaka",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "f7278d41-a6f9-4fe4-8a3d-b20da6b1646a"
+    },
+    {
+      "name": "Kiyokazu Takano",
+      "roles": [
+        "bass guitar",
+        "electric bass"
+      ],
+      "uuid": "9f21bf73-6e4a-46ff-bf47-0559cfaab812"
+    },
+    {
+      "name": "Mrs. GREEN APPLE",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "d4d0126f-e398-40cb-ad0c-6798ba25601b"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 212,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/c/8/f5b03964-a8c8-11e9-89cf-549f35161576.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO01902850"
+  },
+  "iswcs": [
+    "T9296457562",
+    "T9303410108"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    },
+    {
+      "name": "EMI",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mrs-green-apple/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/9/5/11e81bc3-f595-7572-858f-a0369fe50396.jpg",
+      "name": "Mrs. GREEN APPLE",
+      "slug": "mrs-green-apple",
+      "uuid": "11e81bc3-f595-7572-858f-a0369fe50396"
+    }
+  ],
+  "name": "インフェルノ",
+  "producers": [
+    "Mrs. GREEN APPLE"
+  ],
+  "releaseDate": "2019-07-18T00:00:00+00:00",
+  "uuid": "f5b03964-a8c8-11e9-89cf-549f35161576"
+}

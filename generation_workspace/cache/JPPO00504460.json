@@ -1,0 +1,153 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82644-fc28-c458-91b4-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ai-2/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/f/3/11e81bbc-53f2-e38c-b74c-a0369fe50396.jpg",
+      "name": "AI",
+      "slug": "ai-2",
+      "uuid": "11e81bbc-53f2-e38c-b74c-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.43,
+    "danceability": 0.59,
+    "energy": 0.63,
+    "instrumentalness": 0,
+    "key": 0,
+    "liveness": 0.11,
+    "loudness": -4.71,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 125.94,
+    "timeSignature": 4,
+    "valence": 0.39
+  },
+  "composers": [
+    "AI",
+    "2 SOUL for 2 SOUL MUSIC,inc"
+  ],
+  "copyright": "℗ 2005 UNIVERSAL SIGMA, a division of UNIVERSAL MUSIC LLC",
+  "creditName": "AI",
+  "credits": [
+    {
+      "name": "Vindell Smith",
+      "roles": [
+        "recording arranger"
+      ],
+      "uuid": "7c7b3205-b702-4fae-aced-d1a86affd23d"
+    },
+    {
+      "name": "Gerald Haddon",
+      "roles": [
+        "recording arranger",
+        "producer"
+      ],
+      "uuid": "9732fb2a-bc43-4b8d-9d4a-393d8c5016ff"
+    },
+    {
+      "name": "Ai Carina Uemura (aka Ai)",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "7aa30264-488d-4b42-801b-2a0e3e86e29f"
+    },
+    {
+      "name": "2 Soul For 2 Soul Music,Inc.",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "1e78de7f-880b-43eb-bcd4-1119a8f37cf5"
+    },
+    {
+      "name": "2Soul",
+      "roles": [
+        "composer",
+        "arranger",
+        "producer"
+      ],
+      "uuid": "71d57889-354b-4201-9133-87ccdd416fa2"
+    },
+    {
+      "name": "Ai",
+      "roles": [
+        "vocals",
+        "lyricist"
+      ],
+      "uuid": "88bbf4d3-1bc6-47f2-98d0-9424c76774a7"
+    },
+    {
+      "name": "Joseph \"Joe\" Pryor",
+      "roles": [
+        "recording arranger"
+      ],
+      "uuid": "9267d730-df46-455f-bcc7-79417031bc15"
+    },
+    {
+      "name": "2 Soul",
+      "roles": [
+        "producer",
+        "composer",
+        "recording arranger"
+      ],
+      "uuid": "b427d25c-49c3-49f4-9cb5-101508e204c7"
+    }
+  ],
+  "distributor": "",
+  "duration": 288,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b",
+        "r&b, funk & soul"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "worldwide",
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/2/c/11e82644-fc28-c458-91b4-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO00504460"
+  },
+  "iswcs": [
+    "T3106897450"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ai-2/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/f/3/11e81bbc-53f2-e38c-b74c-a0369fe50396.jpg",
+      "name": "AI",
+      "slug": "ai-2",
+      "uuid": "11e81bbc-53f2-e38c-b74c-a0369fe50396"
+    }
+  ],
+  "name": "Story",
+  "producers": [
+    "2 SOUL"
+  ],
+  "releaseDate": "2005-01-01T00:00:00+00:00",
+  "uuid": "11e82644-fc28-c458-91b4-a0369fe50396"
+}

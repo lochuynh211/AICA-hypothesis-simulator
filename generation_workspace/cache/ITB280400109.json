@@ -1,0 +1,105 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/561c985e-b7a8-11e9-b1e9-549f35161576/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ludovico-einaudi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/1/4/11e81bc9-7412-91b4-9853-a0369fe50396.jpg",
+      "name": "Ludovico Einaudi",
+      "slug": "ludovico-einaudi",
+      "uuid": "11e81bc9-7412-91b4-9853-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.96,
+    "danceability": 0.19,
+    "energy": 0.06,
+    "instrumentalness": 0.89,
+    "key": 8,
+    "liveness": 0.09,
+    "loudness": -25.4,
+    "mode": 1,
+    "speechiness": 0.06,
+    "tempo": 132.61,
+    "timeSignature": 1,
+    "valence": 0.05
+  },
+  "composers": [
+    "Ludovico Einaudi"
+  ],
+  "copyright": "℗ 2004 Ludovico Einaudi",
+  "creditName": "Ludovico Einaudi",
+  "credits": [
+    {
+      "name": "Stefano Barzan",
+      "roles": [
+        "mastering",
+        "studio personnel"
+      ],
+      "uuid": "bc58d6d5-ca52-4cef-8e6b-0c514765d6e8"
+    },
+    {
+      "name": "Michael Seberich",
+      "roles": [
+        "mix",
+        "recording",
+        "studio personnel"
+      ],
+      "uuid": "26845971-8b6e-4d82-ae54-385a589bab74"
+    },
+    {
+      "name": "Ludovico Einaudi",
+      "roles": [
+        "composer",
+        "producer",
+        "writer",
+        "piano",
+        "recording",
+        "recording producer"
+      ],
+      "uuid": "6802ca49-dd43-40b5-be8c-43e8c967857b"
+    }
+  ],
+  "distributor": "",
+  "duration": 357,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/a/7/561c985e-b7a8-11e9-b1e9-549f35161576.jpg",
+  "isrc": {
+    "countryCode": "IT",
+    "countryName": "Italy",
+    "value": "ITB280400109"
+  },
+  "iswcs": [
+    "T3042530412",
+    "T9012989923"
+  ],
+  "labels": [
+    {
+      "name": "Ludovico Einaudi",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "it",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ludovico-einaudi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/1/4/11e81bc9-7412-91b4-9853-a0369fe50396.jpg",
+      "name": "Ludovico Einaudi",
+      "slug": "ludovico-einaudi",
+      "uuid": "11e81bc9-7412-91b4-9853-a0369fe50396"
+    }
+  ],
+  "name": "Nuvole Bianche",
+  "producers": [
+    "Ludovico Einaudi"
+  ],
+  "releaseDate": "2004-01-01T00:00:00+00:00",
+  "uuid": "561c985e-b7a8-11e9-b1e9-549f35161576"
+}

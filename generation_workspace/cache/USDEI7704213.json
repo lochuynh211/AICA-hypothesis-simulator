@@ -1,0 +1,89 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/76e9c2de-4d8d-11ea-8faa-549f35161576/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/duane-eddy/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/e/9/11e81bbb-19e0-f7d4-a0a3-a0369fe50396.jpg",
+      "name": "Duane Eddy",
+      "slug": "duane-eddy",
+      "uuid": "11e81bbb-19e0-f7d4-a0a3-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.16,
+    "danceability": 0.67,
+    "energy": 0.65,
+    "instrumentalness": 0.86,
+    "key": 0,
+    "liveness": 0.29,
+    "loudness": -10.42,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 105.82,
+    "timeSignature": 4,
+    "valence": 0.94
+  },
+  "composers": [
+    "Duane Eddy"
+  ],
+  "copyright": "",
+  "creditName": "Duane Eddy",
+  "credits": [
+    {
+      "name": "Lee Hazlewood",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "1dd1db45-f86b-4654-b968-657d2d55956d"
+    },
+    {
+      "name": "Duane Eddy",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "6f2ae3af-e5dc-4ba7-9d43-f4baa15c0579"
+    }
+  ],
+  "distributor": "",
+  "duration": 134,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock",
+        "rock & roll/rockabilly"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/d/8/d/76e9c2de-4d8d-11ea-8faa-549f35161576.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USDEI7704213"
+  },
+  "iswcs": [],
+  "labels": [],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/duane-eddy/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/e/9/11e81bbb-19e0-f7d4-a0a3-a0369fe50396.jpg",
+      "name": "Duane Eddy",
+      "slug": "duane-eddy",
+      "uuid": "11e81bbb-19e0-f7d4-a0a3-a0369fe50396"
+    }
+  ],
+  "name": "Rebel Rouser - Re-Recording",
+  "producers": [],
+  "releaseDate": "2008-03-29T00:00:00+00:00",
+  "uuid": "76e9c2de-4d8d-11ea-8faa-549f35161576"
+}

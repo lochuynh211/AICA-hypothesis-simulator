@@ -1,0 +1,88 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8261f-164c-5ce4-a370-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/larc-en-ciel/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/4/5/11e81bbf-3543-9dca-846d-a0369fe50396.jpg",
+      "name": "L'Arc-en-Ciel",
+      "slug": "larc-en-ciel",
+      "uuid": "11e81bbf-3543-9dca-846d-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.49,
+    "energy": 0.82,
+    "instrumentalness": 0,
+    "key": 2,
+    "liveness": 0.06,
+    "loudness": -7.23,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 96.05,
+    "timeSignature": 4,
+    "valence": 0.55
+  },
+  "composers": [
+    "Hyde",
+    "TETSUYA"
+  ],
+  "copyright": "1994 Sony Music Labels Inc.",
+  "creditName": "L'Arc-en-Ciel",
+  "credits": [
+    {
+      "name": "TETSUYA",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "ee551d10-2c64-4cfb-b6cf-f17d3fe46dcc"
+    },
+    {
+      "name": "Hyde",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "7bd6dff2-7ab9-4bc5-a927-110d3a91afd7"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 260,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/c/4/6/11e8261f-164c-5ce4-a370-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPKS09400134"
+  },
+  "iswcs": [
+    "T9159143143"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/larc-en-ciel/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/4/5/11e81bbf-3543-9dca-846d-a0369fe50396.jpg",
+      "name": "L'Arc-en-Ciel",
+      "slug": "larc-en-ciel",
+      "uuid": "11e81bbf-3543-9dca-846d-a0369fe50396"
+    }
+  ],
+  "name": "Blurry Eyes",
+  "producers": [],
+  "releaseDate": "1994-10-21T00:00:00+00:00",
+  "uuid": "11e8261f-164c-5ce4-a370-a0369fe50396"
+}

@@ -1,0 +1,71 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/989dfdf8-4d9e-11ea-b248-801844ee83a6/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yumi-arai/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/d/1/c1a8633a-c1d8-11e8-8b44-525400009efb.jpg",
+      "name": "Yumi Arai",
+      "slug": "yumi-arai",
+      "uuid": "c1a8633a-c1d8-11e8-8b44-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.5,
+    "danceability": 0.49,
+    "energy": 0.72,
+    "instrumentalness": 0.37,
+    "key": 3,
+    "liveness": 0.41,
+    "loudness": -8.88,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 153.3,
+    "timeSignature": 4,
+    "valence": 0.84
+  },
+  "composers": [
+    "Yumi Arai"
+  ],
+  "copyright": "An EMI Records release; ℗ 1975 UNIVERSAL MUSIC LLC",
+  "creditName": "Yumi Arai",
+  "credits": [],
+  "distributor": "Universal",
+  "duration": 182,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian",
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/e/9/d/989dfdf8-4d9e-11ea-b248-801844ee83a6.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPTO07511800"
+  },
+  "iswcs": [
+    "T1015865220"
+  ],
+  "labels": [],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yumi-arai/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/d/1/c1a8633a-c1d8-11e8-8b44-525400009efb.jpg",
+      "name": "Yumi Arai",
+      "slug": "yumi-arai",
+      "uuid": "c1a8633a-c1d8-11e8-8b44-525400009efb"
+    }
+  ],
+  "name": "Lipstick Message/Rouge No Dengon",
+  "producers": [
+    "Kunihiko Murai",
+    "川添象郎"
+  ],
+  "releaseDate": "2018-09-24T00:00:00+00:00",
+  "uuid": "989dfdf8-4d9e-11ea-b248-801844ee83a6"
+}

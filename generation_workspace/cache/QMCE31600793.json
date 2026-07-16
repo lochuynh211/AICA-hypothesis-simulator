@@ -1,0 +1,78 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/d6596f5d-93cb-4535-b867-8920281aae44/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/lil-uzi-vert/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/5/5/11e81bbc-8551-43d8-9120-a0369fe50396.jpg",
+      "name": "Lil Uzi Vert",
+      "slug": "lil-uzi-vert",
+      "uuid": "11e81bbc-8551-43d8-9120-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/migos/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/c/1/11e81bbe-d1c4-0f28-9fdf-a0369fe50396.jpg",
+      "name": "Migos",
+      "slug": "migos",
+      "uuid": "11e81bbe-d1c4-0f28-9fdf-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.05,
+    "danceability": 0.91,
+    "energy": 0.65,
+    "instrumentalness": 0,
+    "key": 11,
+    "liveness": 0.12,
+    "loudness": -6.27,
+    "mode": 1,
+    "speechiness": 0.25,
+    "tempo": 127.04,
+    "timeSignature": 4,
+    "valence": 0.2
+  },
+  "composers": [
+    "Quavious Marshall",
+    "Leland Wayne",
+    "Symere Woods",
+    "Kiari Cephus",
+    "Robert Mandell",
+    "Kirsnick Ball"
+  ],
+  "copyright": "2016 Quality Control Music Exclusively Distributed by 300 Entertainment",
+  "creditName": "Lil Uzi Vert & Migos",
+  "credits": [
+    {
+      "name": "G Koop",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "d49dd996-b0fd-4a76-8576-c5eaf70fca73"
+    }
+  ],
+  "distributor": "Warner",
+  "duration": 332,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/b/c/3/d6596f5d-93cb-4535-b867-8920281aae44.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "QMCE31600793"
+  },
+  "iswcs": [],
+  "labels": [],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/migos/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/c/1/11e81bbe-d1c4-0f28-9fdf-a0369fe50396.jpg",
+      "name": "Migos",
+      "slug": "migos",
+      "uuid": "11e81bbe-d1c4-0f28-9fdf-a0369fe50396"
+    }
+  ],
+  "name": "Bad and Boujee (feat. Lil Uzi Vert)",
+  "producers": [],
+  "releaseDate": "2016-10-28T00:00:00+00:00",
+  "uuid": "d6596f5d-93cb-4535-b867-8920281aae44"
+}

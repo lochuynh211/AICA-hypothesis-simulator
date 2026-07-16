@@ -1,0 +1,133 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82640-2f90-5270-9f96-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/nujabes/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/4/6/11e81bd1-864b-a656-8067-a0369fe50396.jpg",
+      "name": "Nujabes",
+      "slug": "nujabes",
+      "uuid": "11e81bd1-864b-a656-8067-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/akin-7/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/c/1/09520b8e-c1cd-11e8-a970-525400009efb.jpg",
+      "name": "Akin",
+      "slug": "akin-7",
+      "uuid": "09520b8e-c1cd-11e8-a970-525400009efb"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/cise-starr-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/5/e/9c663583-de50-489d-93ed-29a1e1b56670.jpg",
+      "name": "Cise Starr",
+      "slug": "cise-starr-1",
+      "uuid": "9c663583-de50-489d-93ed-29a1e1b56670"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.66,
+    "danceability": 0.57,
+    "energy": 0.75,
+    "instrumentalness": 0.43,
+    "key": 10,
+    "liveness": 0.11,
+    "loudness": -6.63,
+    "mode": 0,
+    "speechiness": 0.08,
+    "tempo": 180.6,
+    "timeSignature": 4,
+    "valence": 0.88
+  },
+  "composers": [
+    "Nujabes"
+  ],
+  "copyright": "Hydeout Productions",
+  "creditName": "Nujabes & Cise Starr & Akin",
+  "credits": [
+    {
+      "name": "Cise Starr",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "2dbe9f66-d940-4c67-8348-67cb20cd2500"
+    },
+    {
+      "name": "Nujabes",
+      "roles": [
+        "producer",
+        "writer",
+        "composer",
+        "arranger"
+      ],
+      "uuid": "da6c078d-e0a4-487d-a2b3-78768ecd9f9b"
+    },
+    {
+      "name": "Akin Yai",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "c94a485c-0e8f-4b15-baa4-15a547e6deda"
+    },
+    {
+      "name": "C.graham",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "b23fc470-ff2e-4eae-ac89-d3d86d7701b0"
+    },
+    {
+      "name": "A.Yai",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "23282594-fbcc-404b-b6d9-30a5cbe1c294"
+    }
+  ],
+  "distributor": "",
+  "duration": 175,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    },
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b, funk & soul"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/9/f/11e82640-2f90-5270-9f96-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPH491605000"
+  },
+  "iswcs": [
+    "T9214523087"
+  ],
+  "labels": [
+    {
+      "name": "Hydeout Productions",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/nujabes/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/4/6/11e81bd1-864b-a656-8067-a0369fe50396.jpg",
+      "name": "Nujabes",
+      "slug": "nujabes",
+      "uuid": "11e81bd1-864b-a656-8067-a0369fe50396"
+    }
+  ],
+  "name": "Feather",
+  "producers": [
+    "Nujabes"
+  ],
+  "releaseDate": "2005-11-11T00:00:00+00:00",
+  "uuid": "11e82640-2f90-5270-9f96-aa1c026db3d8"
+}

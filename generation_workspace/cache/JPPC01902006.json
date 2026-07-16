@@ -1,0 +1,124 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/54a8503c-36f9-11ea-91be-549f35161576/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/official-hige-dandism/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/4/4/11e83feb-6442-3f96-955d-a0369fe50396.jpg",
+      "name": "Official HIGE DANdism",
+      "slug": "official-hige-dandism",
+      "uuid": "11e83feb-6442-3f96-955d-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.02,
+    "danceability": 0.54,
+    "energy": 0.71,
+    "instrumentalness": 0,
+    "key": 9,
+    "liveness": 0.23,
+    "loudness": -5.24,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 172.02,
+    "timeSignature": 4,
+    "valence": 0.39
+  },
+  "composers": [
+    "Satoshi Fujihara"
+  ],
+  "copyright": "2020 PONY CANYON INC.",
+  "creditName": "Official HIGE DANdism",
+  "credits": [
+    {
+      "name": "小森雅仁 (Masahito Komori)",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "9f9fff96-db5b-4c0b-8e06-32b46d491826"
+    },
+    {
+      "name": "飯場大志 (Daishi Iiba)",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "de169dc0-4965-4c65-9385-cc2e42b3b06d"
+    },
+    {
+      "name": "湯本淳希",
+      "roles": [
+        "trumpet"
+      ],
+      "uuid": "f1d0ce37-cf46-43a5-924c-49064a9f9624"
+    },
+    {
+      "name": "藤原聡",
+      "roles": [
+        "programming"
+      ],
+      "uuid": "c3ea6a62-9e88-46b5-a25f-02b9649cf42e"
+    },
+    {
+      "name": "Official HIGE DANdism",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "e2f9e42d-c76f-414f-950f-872a3ec3688e"
+    },
+    {
+      "name": "藤原聡",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "d33eccf4-fb9d-4f43-b97e-9aa06bcf8c25"
+    },
+    {
+      "name": "Official髭男dism",
+      "roles": [
+        "arranger",
+        "main  artist"
+      ],
+      "uuid": "5b398da6-d850-4495-987c-96d294dfa5a9"
+    }
+  ],
+  "distributor": "Pony Canyon",
+  "duration": 282,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/9/f/6/54a8503c-36f9-11ea-91be-549f35161576.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPC01902006"
+  },
+  "iswcs": [
+    "T9329105513"
+  ],
+  "labels": [
+    {
+      "name": "PONY CANYON",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/official-hige-dandism/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/4/4/11e83feb-6442-3f96-955d-a0369fe50396.jpg",
+      "name": "Official HIGE DANdism",
+      "slug": "official-hige-dandism",
+      "uuid": "11e83feb-6442-3f96-955d-a0369fe50396"
+    }
+  ],
+  "name": "I LOVE...",
+  "producers": [],
+  "releaseDate": "2019-12-31T00:00:00+00:00",
+  "uuid": "54a8503c-36f9-11ea-91be-549f35161576"
+}

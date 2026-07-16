@@ -1,0 +1,336 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e84116-8840-7de6-af5a-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/h-e-r-2/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/d/e/11e81bc8-9ed6-4c02-ad29-a0369fe50396.jpg",
+      "name": "H.E.R.",
+      "slug": "h-e-r-2",
+      "uuid": "11e81bc8-9ed6-4c02-ad29-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/daniel-caesar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/5/5/11e81bc9-c55f-3518-87ed-a0369fe50396.jpg",
+      "name": "Daniel Caesar",
+      "slug": "daniel-caesar",
+      "uuid": "11e81bc9-c55f-3518-87ed-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.79,
+    "danceability": 0.47,
+    "energy": 0.37,
+    "instrumentalness": 0,
+    "key": 4,
+    "liveness": 0.11,
+    "loudness": -10.22,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 75.21,
+    "timeSignature": 4,
+    "valence": 0.41
+  },
+  "composers": [
+    "H.E.R.",
+    "Jordan Evans",
+    "Ashton Simmonds",
+    "Matthew Burnett",
+    "Riley Bell"
+  ],
+  "copyright": "2017 Golden Child Recordings",
+  "creditName": "Daniel Caesar & H.E.R.",
+  "credits": [
+    {
+      "name": "Sean Brown",
+      "roles": [
+        "video director"
+      ],
+      "uuid": "6d45be81-baa8-4e21-8628-df72a8204f8f"
+    },
+    {
+      "name": "Jordan Evans",
+      "roles": [
+        "producer",
+        "writer",
+        "programming",
+        "lyricist"
+      ],
+      "uuid": "2382908b-3ee4-42a7-ac22-8ce0e02151aa"
+    },
+    {
+      "name": "Keavan Yazdani",
+      "roles": [
+        "video director"
+      ],
+      "uuid": "8dc76219-293d-47a9-b78e-400d826b11bb"
+    },
+    {
+      "name": "Her",
+      "roles": [
+        "writer",
+        "featured artist",
+        "producer",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "808c0783-33d5-4c95-89e7-4acd9859dfdd"
+    },
+    {
+      "name": "Laura McMillan",
+      "roles": [
+        "video editor"
+      ],
+      "uuid": "77d6bb53-eb29-4656-9665-6568b6c68591"
+    },
+    {
+      "name": "Paolo Arriola",
+      "roles": [
+        "video focus puller"
+      ],
+      "uuid": "869b52cc-c086-4cd6-9a5f-d711973bb410"
+    },
+    {
+      "name": "Daniel Caesar",
+      "roles": [
+        "composer",
+        "writer",
+        "programming",
+        "lyricist",
+        "associated performer"
+      ],
+      "uuid": "fce5007c-4eda-454a-9370-6549df7ba962"
+    },
+    {
+      "name": "Tanisha Scott",
+      "roles": [
+        "video choreographer"
+      ],
+      "uuid": "f0a8c5d2-a088-4e6c-a4b7-19ab518ba947"
+    },
+    {
+      "name": "Wouri Vice",
+      "roles": [
+        "video wardrobe stylist"
+      ],
+      "uuid": "a03f922c-de28-4aca-858c-ea65e5f72721"
+    },
+    {
+      "name": "Matt Power",
+      "roles": [
+        "video executive producer"
+      ],
+      "uuid": "5ed8f0ff-093c-4c4f-b28b-5d00e587cd29"
+    },
+    {
+      "name": "Marissa Vossen",
+      "roles": [
+        "video makeup artist"
+      ],
+      "uuid": "17c98780-aa97-4c71-9de4-376fdbbb028d"
+    },
+    {
+      "name": "Wren Witting",
+      "roles": [
+        "video makeup artist"
+      ],
+      "uuid": "2755b894-9165-4b73-92e2-e2e3b4cd876b"
+    },
+    {
+      "name": "Queen Wink",
+      "roles": [
+        "video hair stylist"
+      ],
+      "uuid": "193ade19-ba44-456a-97f9-4948d819979b"
+    },
+    {
+      "name": "Morgan Henshaw",
+      "roles": [
+        "video production assistant"
+      ],
+      "uuid": "2b6c7025-9904-4d41-b1a2-8b90f5b4b776"
+    },
+    {
+      "name": "Christopher Hamil",
+      "roles": [
+        "video production assistant"
+      ],
+      "uuid": "4aa44a78-9a9d-4d11-8ee1-52d55be8f905"
+    },
+    {
+      "name": "Dustin Gelman",
+      "roles": [
+        "video production assistant"
+      ],
+      "uuid": "afe720ef-0fcd-43ba-81c8-766026ce6997"
+    },
+    {
+      "name": "Spenser Stewart",
+      "roles": [
+        "video clapper loader"
+      ],
+      "uuid": "490bc49b-b725-4391-b309-a4125070e728"
+    },
+    {
+      "name": "Bradley Wilder",
+      "roles": [
+        "video focus puller"
+      ],
+      "uuid": "6942dbf0-9fa0-4bf4-8c88-3418a7eb295c"
+    },
+    {
+      "name": "Drew Allen Weaver",
+      "roles": [
+        "video steadicam operator"
+      ],
+      "uuid": "3701ccfc-5865-4186-b51b-f649e8597f27"
+    },
+    {
+      "name": "Roslyn Di Sisto",
+      "roles": [
+        "video colorist"
+      ],
+      "uuid": "4ab1899e-44c0-4e9b-b721-1bbd00ddb90d"
+    },
+    {
+      "name": "Iva Golubovic",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "a6007c80-c1a9-40fa-a289-ff91c878d7b3"
+    },
+    {
+      "name": "Molly Ortiz",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "b51c2bd7-1e8d-458d-8a7d-9fa46673f350"
+    },
+    {
+      "name": "Jeremy Nichols",
+      "roles": [
+        "recording",
+        "engineer"
+      ],
+      "uuid": "374abbd0-72c8-4b33-a68a-1c689f5c739e"
+    },
+    {
+      "name": "Riley Bell",
+      "roles": [
+        "writer",
+        "mix",
+        "mastering",
+        "recording",
+        "programming",
+        "lyricist",
+        "mixing  engineer"
+      ],
+      "uuid": "461f381f-f6fa-4284-9a9a-8ae35944af8c"
+    },
+    {
+      "name": "Matthew Burnett",
+      "roles": [
+        "producer",
+        "writer",
+        "programming",
+        "lyricist"
+      ],
+      "uuid": "6ab9e1a6-d2be-464d-ae18-9b1c3a18c486"
+    },
+    {
+      "name": "Robert Pierce",
+      "roles": [
+        "video assistant wardrobe stylist"
+      ],
+      "uuid": "3611f0f6-f93e-4208-a97d-17e57384edf7"
+    },
+    {
+      "name": "Cole Graham",
+      "roles": [
+        "video director of photography"
+      ],
+      "uuid": "c9c1dbfd-980d-4daf-ac42-9d954b4d25c0"
+    },
+    {
+      "name": "Daniel Caesar",
+      "roles": [
+        "producer",
+        "lyricist"
+      ],
+      "uuid": "f378806c-2127-4221-9990-4412f8e69199"
+    },
+    {
+      "name": "M. Burnett",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "21cb3a37-e004-438a-9828-36ca899b792f"
+    },
+    {
+      "name": "Gabriella Wilson",
+      "roles": [
+        "composer",
+        "lyricist",
+        "songwriter"
+      ],
+      "uuid": "d782db16-f0c8-44b4-8102-3b6dac38496a"
+    },
+    {
+      "name": "Ashton Simmonds",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "a73f4da6-4f35-4d31-aec4-8be6164dfd88"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 209,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    },
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b",
+        "r&b, funk & soul"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/4/8/11e84116-8840-7de6-af5a-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "CA",
+    "countryName": "Canada",
+    "value": "CADDS1700022"
+  },
+  "iswcs": [
+    "T9236706233"
+  ],
+  "labels": [
+    {
+      "name": "Golden Child",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/daniel-caesar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/5/5/11e81bc9-c55f-3518-87ed-a0369fe50396.jpg",
+      "name": "Daniel Caesar",
+      "slug": "daniel-caesar",
+      "uuid": "11e81bc9-c55f-3518-87ed-a0369fe50396"
+    }
+  ],
+  "name": "Best Part",
+  "producers": [
+    "Matthew Burnett",
+    "Jordan Evans"
+  ],
+  "releaseDate": "2017-08-25T00:00:00+00:00",
+  "uuid": "11e84116-8840-7de6-af5a-aa1c026db3d8"
+}

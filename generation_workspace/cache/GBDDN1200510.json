@@ -1,0 +1,92 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82644-3b9a-05a8-8bb8-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/marconi-union/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/d/2/11e81bc0-d2d1-0fcc-a203-a0369fe50396.jpg",
+      "name": "Marconi Union",
+      "slug": "marconi-union",
+      "uuid": "11e81bc0-d2d1-0fcc-a203-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.86,
+    "danceability": 0.14,
+    "energy": 0.22,
+    "instrumentalness": 0.83,
+    "key": 2,
+    "liveness": 0.17,
+    "loudness": -19.97,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 71.43,
+    "timeSignature": 5,
+    "valence": 0.08
+  },
+  "composers": [
+    "Ari Rudsten"
+  ],
+  "copyright": "2012 Just Another Company Ltd t/a Just Music",
+  "creditName": "Marconi Union",
+  "credits": [
+    {
+      "name": "Marconi Union",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "ea9fc29a-3ebb-4522-8905-9dd5136b12eb"
+    }
+  ],
+  "distributor": "",
+  "duration": 486,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "electro",
+      "sub": [
+        "electronic"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/a/9/b/11e82644-3b9a-05a8-8bb8-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBDDN1200510"
+  },
+  "iswcs": [
+    "T9126162570"
+  ],
+  "labels": [
+    {
+      "name": "Just Music",
+      "type": "Self released"
+    },
+    {
+      "name": "Just Another Company",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/marconi-union/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/d/2/11e81bc0-d2d1-0fcc-a203-a0369fe50396.jpg",
+      "name": "Marconi Union",
+      "slug": "marconi-union",
+      "uuid": "11e81bc0-d2d1-0fcc-a203-a0369fe50396"
+    }
+  ],
+  "name": "Weightless",
+  "producers": [
+    "Marconi Union"
+  ],
+  "releaseDate": "2011-10-14T00:00:00+00:00",
+  "uuid": "11e82644-3b9a-05a8-8bb8-a0369fe50396"
+}

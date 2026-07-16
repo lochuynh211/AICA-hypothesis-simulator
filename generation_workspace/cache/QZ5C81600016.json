@@ -1,0 +1,158 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826b6-9af0-6c78-bbe2-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/frank-ocean/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/3/c/11e81bcc-fc3d-6b6a-9a6b-a0369fe50396.jpg",
+      "name": "Frank Ocean",
+      "slug": "frank-ocean",
+      "uuid": "11e81bcc-fc3d-6b6a-9a6b-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.93,
+    "danceability": 0.4,
+    "energy": 0.1,
+    "instrumentalness": 0,
+    "key": 6,
+    "liveness": 0.12,
+    "loudness": -12.58,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 109.54,
+    "timeSignature": 4,
+    "valence": 0.08
+  },
+  "composers": [
+    "Christopher Breaux",
+    "James Ryan Wuihun Ho"
+  ],
+  "copyright": "2016 Boys Don't Cry",
+  "creditName": "Frank Ocean",
+  "credits": [
+    {
+      "name": "James Blake",
+      "roles": [
+        "arranger",
+        "producer",
+        "keyboard"
+      ],
+      "uuid": "a346375b-ee29-4e37-b775-e06602f95511"
+    },
+    {
+      "name": "Om'Mas Keith",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "93d02ff7-9963-49df-b60c-02b5c0328752"
+    },
+    {
+      "name": "Jeff Ellis",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "70bb3762-aff7-44a9-81e3-993e279ed9bb"
+    },
+    {
+      "name": "SebastiAn",
+      "roles": [
+        "arranger",
+        "strings",
+        "strings arranger"
+      ],
+      "uuid": "0e37b9f8-8baf-44ff-9e9b-f81edb8effeb"
+    },
+    {
+      "name": "Yung Lean",
+      "roles": [
+        "additional vocals"
+      ],
+      "uuid": "59bb04c6-2304-4f11-91cb-6a17abc96864"
+    },
+    {
+      "name": "Malay",
+      "roles": [
+        "producer",
+        "writer",
+        "keyboard"
+      ],
+      "uuid": "b0df1d4a-f409-4431-be16-880087959875"
+    },
+    {
+      "name": "Frank Ocean",
+      "roles": [
+        "arranger",
+        "producer",
+        "writer",
+        "choir",
+        "additional programming"
+      ],
+      "uuid": "27120da8-7e18-43af-b579-94d935d4de29"
+    },
+    {
+      "name": "Kim Burrell",
+      "roles": [
+        "additional vocals"
+      ],
+      "uuid": "4915073e-f484-4af2-aa4a-0fe9dc32ab28"
+    },
+    {
+      "name": "MyGuyMars",
+      "roles": [
+        "keyboard"
+      ],
+      "uuid": "3cc27782-ef8f-4f1e-9a74-592a0d506dde"
+    }
+  ],
+  "distributor": "",
+  "duration": 177,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b, funk & soul"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/f/a/11e826b6-9af0-6c78-bbe2-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "QZ5C81600016"
+  },
+  "iswcs": [
+    "T9198819408"
+  ],
+  "labels": [
+    {
+      "name": "Boys Don't Cry",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/frank-ocean/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/3/c/11e81bcc-fc3d-6b6a-9a6b-a0369fe50396.jpg",
+      "name": "Frank Ocean",
+      "slug": "frank-ocean",
+      "uuid": "11e81bcc-fc3d-6b6a-9a6b-a0369fe50396"
+    }
+  ],
+  "name": "Godspeed",
+  "producers": [
+    "James Blake",
+    "Malay",
+    "Frank Ocean",
+    "Om’Mas Keith"
+  ],
+  "releaseDate": "2016-08-20T00:00:00+00:00",
+  "uuid": "11e826b6-9af0-6c78-bbe2-a0369fe50396"
+}

@@ -1,0 +1,66 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/38b2d562-66bd-11e9-b155-801844edfa71/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/night-tempo/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/4/4/11e81bbd-b44a-bede-95d2-a0369fe50396.jpg",
+      "name": "Night Tempo",
+      "slug": "night-tempo",
+      "uuid": "11e81bbd-b44a-bede-95d2-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/wink-30/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/f/2/5a20ad92-12f2-4339-b940-b5dbd3f2f30e.jpg",
+      "name": "Wink",
+      "slug": "wink-30",
+      "uuid": "5a20ad92-12f2-4339-b940-b5dbd3f2f30e"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.67,
+    "energy": 0.85,
+    "instrumentalness": 0,
+    "key": 10,
+    "liveness": 0.1,
+    "loudness": -5.77,
+    "mode": 0,
+    "speechiness": 0.12,
+    "tempo": 124.01,
+    "timeSignature": 4,
+    "valence": 0.9
+  },
+  "composers": [
+    "及川 眠子",
+    "尾関 昌也",
+    "Night Tempo"
+  ],
+  "copyright": "2019 Polystar Co.,Ltd.",
+  "creditName": "Night Tempo & Wink",
+  "credits": [],
+  "distributor": "Space Shower Network",
+  "duration": 236,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/d/b/6/38b2d562-66bd-11e9-b155-801844edfa71.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPP901900010"
+  },
+  "iswcs": [
+    "T1012735236"
+  ],
+  "labels": [
+    {
+      "name": "Polystar",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [],
+  "name": "淋しい熱帯魚 (Night Tempo Showa Groove Mix)",
+  "producers": [],
+  "releaseDate": "2019-04-24T00:00:00+00:00",
+  "uuid": "38b2d562-66bd-11e9-b155-801844edfa71"
+}

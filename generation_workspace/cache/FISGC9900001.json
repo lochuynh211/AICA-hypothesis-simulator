@@ -1,0 +1,150 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8261a-857d-eab0-8f2c-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/darude/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/e/6/11e81bbf-46ea-b6f8-9921-a0369fe50396.jpg",
+      "name": "Darude",
+      "slug": "darude",
+      "uuid": "11e81bbf-46ea-b6f8-9921-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.14,
+    "danceability": 0.53,
+    "energy": 0.97,
+    "instrumentalness": 0.99,
+    "key": 11,
+    "liveness": 0.08,
+    "loudness": -7.98,
+    "mode": 0,
+    "speechiness": 0.05,
+    "tempo": 136.07,
+    "timeSignature": 4,
+    "valence": 0.59
+  },
+  "composers": [
+    "Jaakko Salovaara",
+    "Ville Virtanen"
+  ],
+  "copyright": "(P) 1999 16 Inch Records",
+  "creditName": "Darude",
+  "credits": [
+    {
+      "name": "Juuso Syrjä",
+      "roles": [
+        "video director"
+      ],
+      "uuid": "1e532064-f89f-40cc-add5-95609920df13"
+    },
+    {
+      "name": "Jaakko Salovaara",
+      "roles": [
+        "composer",
+        "producer",
+        "arranger",
+        "remixing"
+      ],
+      "uuid": "2e89d8a1-fbc6-43b8-8517-7ed34646a527"
+    },
+    {
+      "name": "Darude",
+      "roles": [
+        "arranger",
+        "writer",
+        "artist"
+      ],
+      "uuid": "7a924663-6d15-49d3-a888-ae2c594ce88e"
+    },
+    {
+      "name": "Ville Virtanen",
+      "roles": [
+        "composer",
+        "producer",
+        "writer"
+      ],
+      "uuid": "22363ac1-e347-430b-bc32-d096820e815f"
+    },
+    {
+      "name": "Terpsichord",
+      "roles": [
+        "remixing"
+      ],
+      "uuid": "ced105f2-08f5-4015-a0e3-acc2c6be32b4"
+    },
+    {
+      "name": "Ville Virtanen",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "2af841b0-04e2-4885-b249-e16dce1997ff"
+    },
+    {
+      "name": "Jaakko Salovaara",
+      "roles": [
+        "producer",
+        "composer",
+        "arranger"
+      ],
+      "uuid": "bb844ab3-a63c-4f53-b9c5-1a70c8ee453d"
+    },
+    {
+      "name": "JS16",
+      "roles": [
+        "producer",
+        "lyricist"
+      ],
+      "uuid": "e314c8cd-062b-4395-bc37-6c26845a793d"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 226,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "electro",
+      "sub": [
+        "dance",
+        "electronic"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/d/7/5/11e8261a-857d-eab0-8f2c-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "FI",
+    "countryName": "Finland",
+    "value": "FISGC9900001"
+  },
+  "iswcs": [
+    "T9055035400"
+  ],
+  "labels": [
+    {
+      "name": "16 Inch",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/darude/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/e/6/11e81bbf-46ea-b6f8-9921-a0369fe50396.jpg",
+      "name": "Darude",
+      "slug": "darude",
+      "uuid": "11e81bbf-46ea-b6f8-9921-a0369fe50396"
+    }
+  ],
+  "name": "sandstorm",
+  "producers": [
+    "JS16"
+  ],
+  "releaseDate": "1999-01-01T00:00:00+00:00",
+  "uuid": "11e8261a-857d-eab0-8f2c-aa1c026db3d8"
+}

@@ -1,0 +1,215 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826ad-c8d4-4d7a-a9a3-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kendrick-lamar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/0/6/11e81bbc-c601-d802-bca1-a0369fe50396.jpg",
+      "name": "Kendrick Lamar",
+      "slug": "kendrick-lamar",
+      "uuid": "11e81bbc-c601-d802-bca1-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/drake-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/c/d/11e81bbf-8dca-ff1a-af94-a0369fe50396.jpg",
+      "name": "Drake",
+      "slug": "drake-1",
+      "uuid": "11e81bbf-8dca-ff1a-af94-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.16,
+    "danceability": 0.78,
+    "energy": 0.57,
+    "instrumentalness": 0,
+    "key": 6,
+    "liveness": 0.25,
+    "loudness": -9.99,
+    "mode": 0,
+    "speechiness": 0.38,
+    "tempo": 135.96,
+    "timeSignature": 4,
+    "valence": 0.65
+  },
+  "composers": [
+    "Kendrick Lamar",
+    "graham.",
+    "T. Lewis",
+    "J. Harris",
+    "J.Jackson",
+    "E. Molina"
+  ],
+  "copyright": "℗ 2013 Aftermath/Interscope Records",
+  "creditName": "Kendrick Lamar & Drake",
+  "credits": [
+    {
+      "name": "Janet Jackson",
+      "roles": [
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "b6f67ede-64aa-43bd-870b-9c763992b07a"
+    },
+    {
+      "name": "Aubrey Drake Graham",
+      "roles": [
+        "composer",
+        "songwriter",
+        "lyricist",
+        "featured artist"
+      ],
+      "uuid": "1bd4cec9-291d-468a-adbb-d8c63b290867"
+    },
+    {
+      "name": "Terry Lewis",
+      "roles": [
+        "composer",
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "aef08da8-8e3e-43b5-aca6-30cb4a303487"
+    },
+    {
+      "name": "Calvin Harris",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "56406830-bb4c-4ef3-bf41-e9e53b72c1d2"
+    },
+    {
+      "name": "Brian Gardner",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "ac72e2bb-63d0-4bf6-9b94-84cfed34fb42"
+    },
+    {
+      "name": "Mike Bozzi",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "52318d94-2904-4ce6-9fa5-55a2c5413b9d"
+    },
+    {
+      "name": "Sounwave",
+      "roles": [
+        "additional production"
+      ],
+      "uuid": "120e4d7d-638a-4bd9-b161-2c33df9ee954"
+    },
+    {
+      "name": "Drake",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "45534015-63a9-4f0d-814f-03fdfb110bdd"
+    },
+    {
+      "name": "Dr. Dre",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "1293f6fa-d81a-4492-8be9-5b609d9b4a08"
+    },
+    {
+      "name": "Scoop DeVille",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "17c190ba-78bf-4af8-a68e-8bd509094a7b"
+    },
+    {
+      "name": "Kendrick Lamar Duckworth",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "28c0f3c3-7653-4b36-90b3-d7d5b407d3ed"
+    },
+    {
+      "name": "James Harris",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "7ceae4d1-27b6-4e24-81d2-ed577a0293b8"
+    },
+    {
+      "name": "Kendrick Duckworth",
+      "roles": [
+        "vocals",
+        "lyricist"
+      ],
+      "uuid": "a03bc7a5-7d52-4cdf-ad50-a13ae2d7be0c"
+    },
+    {
+      "name": "Derek \"MixedByAli\" Ali",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "1505964d-63af-4141-bc82-e64f5d09106a"
+    },
+    {
+      "name": "Mauricio “Veto” Iragorri",
+      "roles": [
+        "assistant mix engineer"
+      ],
+      "uuid": "982eacab-19ff-4b80-a981-ad32b1df2691"
+    },
+    {
+      "name": "Elijah Molina",
+      "roles": [
+        "composer",
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "e0e042c8-6ac0-491f-9f70-f895df479885"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 300,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/4/d/8/11e826ad-c8d4-4d7a-a9a3-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USUM71211004"
+  },
+  "iswcs": [
+    "T9144595095",
+    "T9092079748"
+  ],
+  "labels": [
+    {
+      "name": "Aftermath",
+      "type": "Universal"
+    },
+    {
+      "name": "Interscope",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kendrick-lamar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/0/6/11e81bbc-c601-d802-bca1-a0369fe50396.jpg",
+      "name": "Kendrick Lamar",
+      "slug": "kendrick-lamar",
+      "uuid": "11e81bbc-c601-d802-bca1-a0369fe50396"
+    }
+  ],
+  "name": "Poetic Justice",
+  "producers": [
+    "Scoop Deville"
+  ],
+  "releaseDate": "2012-01-01T00:00:00+00:00",
+  "uuid": "11e826ad-c8d4-4d7a-a9a3-a0369fe50396"
+}

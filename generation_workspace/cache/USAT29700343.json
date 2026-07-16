@@ -1,0 +1,65 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/66ad12e2-d021-4c20-a8e8-6caeeacbb4f5/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/rush-2/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/5/9/11e81bc1-8957-e360-a0c9-a0369fe50396.jpg",
+      "name": "Rush",
+      "slug": "rush-2",
+      "uuid": "11e81bc1-8957-e360-a0c9-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.21,
+    "energy": 0.99,
+    "instrumentalness": 0.84,
+    "key": 0,
+    "liveness": 0.97,
+    "loudness": -7.32,
+    "mode": 1,
+    "speechiness": 0.19,
+    "tempo": 139.31,
+    "timeSignature": 4,
+    "valence": 0.09
+  },
+  "composers": [
+    "Geddy Lee",
+    "Alex Lifeson",
+    "Neil Peart"
+  ],
+  "copyright": "",
+  "creditName": "Rush",
+  "credits": [],
+  "distributor": "Warner",
+  "duration": 325,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/1/2/0/66ad12e2-d021-4c20-a8e8-6caeeacbb4f5.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USAT29700343"
+  },
+  "iswcs": [
+    "T0715144265"
+  ],
+  "labels": [],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/rush-2/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/5/9/11e81bc1-8957-e360-a0c9-a0369fe50396.jpg",
+      "name": "Rush",
+      "slug": "rush-2",
+      "uuid": "11e81bc1-8957-e360-a0c9-a0369fe50396"
+    }
+  ],
+  "name": "YYZ - Live",
+  "producers": [
+    "Paul Northfield",
+    "Geddy Lee"
+  ],
+  "releaseDate": "1998-11-10T00:00:00+00:00",
+  "uuid": "66ad12e2-d021-4c20-a8e8-6caeeacbb4f5"
+}

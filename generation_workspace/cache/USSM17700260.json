@@ -1,0 +1,225 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82620-7a05-0456-8fc3-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/weather-report/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/c/4/1/11e81bbd-714c-9f80-810b-a0369fe50396.jpg",
+      "name": "Weather Report",
+      "slug": "weather-report",
+      "uuid": "11e81bbd-714c-9f80-810b-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.42,
+    "danceability": 0.59,
+    "energy": 0.53,
+    "instrumentalness": 0,
+    "key": 0,
+    "liveness": 0.08,
+    "loudness": -12.02,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 156.44,
+    "timeSignature": 4,
+    "valence": 0.53
+  },
+  "composers": [
+    "J. Zawinul"
+  ],
+  "copyright": "(P) 1977 Sony Music Entertainment Inc. WARNING: All rights reserved. Unauthorized duplication is a violation of applicable laws.",
+  "creditName": "Weather Report",
+  "credits": [
+    {
+      "name": "Wayne Shorter",
+      "roles": [
+        "tenor saxophone",
+        "soprano vocals",
+        "assistant  producer"
+      ],
+      "uuid": "aac7c35f-d417-442b-9ad7-267adac9816b"
+    },
+    {
+      "name": "MANUEL ANDRES BADRENA",
+      "roles": [
+        "tambourine"
+      ],
+      "uuid": "175d78b9-0ec2-47c0-baca-69059b585601"
+    },
+    {
+      "name": "Jaco Pastorius",
+      "roles": [
+        "co-producer",
+        "mandolin",
+        "fretless bass",
+        "mandocello",
+        "vocals",
+        "co- producer"
+      ],
+      "uuid": "f0dac027-5316-4ebc-afbc-066bbe824667"
+    },
+    {
+      "name": "Mark Wilder",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "749ded91-f1e9-4c8e-ae9c-98d21df546aa"
+    },
+    {
+      "name": "Manolo Badrena",
+      "roles": [
+        "tambourine"
+      ],
+      "uuid": "e2d4c8c7-b307-4306-a79f-92c2b991438f"
+    },
+    {
+      "name": "Alex Acuña",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "02327ab1-bc94-4ba9-a805-e026603e26d8"
+    },
+    {
+      "name": "Joe Zawinul",
+      "roles": [
+        "producer",
+        "writer",
+        "vocals",
+        "synthesizer",
+        "orchestration",
+        "melodica",
+        "arp synthesizer"
+      ],
+      "uuid": "8b034256-3c74-49e1-8a4f-bfcd567f90f7"
+    },
+    {
+      "name": "Jerry Hudgins",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "6d460825-2b54-46c6-abd0-c22234defc65"
+    },
+    {
+      "name": "Steven Berkowitz",
+      "roles": [
+        "compilation producer"
+      ],
+      "uuid": "514e1b81-e91a-4751-b048-441bfad9c001"
+    },
+    {
+      "name": "Kevin Gore",
+      "roles": [
+        "compilation producer"
+      ],
+      "uuid": "a0aaf883-b34c-4d33-819d-5baea0da1762"
+    },
+    {
+      "name": "Mike Berniker",
+      "roles": [
+        "compilation producer"
+      ],
+      "uuid": "e4d304e7-bfa0-4287-91d6-f853ff9b33ca"
+    },
+    {
+      "name": "Ron Malo",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "acb93b9b-387d-4cdd-b6d5-1dd80e68905f"
+    },
+    {
+      "name": "Josef Zawinul",
+      "roles": [
+        "composer",
+        "lyricist",
+        "vocals"
+      ],
+      "uuid": "0bda43bc-04d1-4d0c-8b42-06d0b9c61e6a"
+    },
+    {
+      "name": "Cozbi Sanchez-Cabrera",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "62ab4072-c3df-452c-b869-93f12387f678"
+    },
+    {
+      "name": "Brian Risner",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "d2ae7a49-1e40-4474-8d75-e717c3698a18"
+    },
+    {
+      "name": "Joe Zawinul",
+      "roles": [
+        "producer",
+        "vocals"
+      ],
+      "uuid": "2ab527ca-2c90-47df-97fa-d1cb05be8acb"
+    },
+    {
+      "name": "J. Zawinul",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "2c44753d-4d52-4544-9fe5-ff50cd039a28"
+    },
+    {
+      "name": "Manolo Badrena",
+      "roles": [
+        "tambourine"
+      ],
+      "uuid": "12047470-fbaa-483a-abfe-8df51746f1e9"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 356,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/5/0/a/11e82620-7a05-0456-8fc3-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USSM17700260"
+  },
+  "iswcs": [
+    "T0102129510",
+    "T0700156633"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/weather-report/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/c/4/1/11e81bbd-714c-9f80-810b-a0369fe50396.jpg",
+      "name": "Weather Report",
+      "slug": "weather-report",
+      "uuid": "11e81bbd-714c-9f80-810b-a0369fe50396"
+    }
+  ],
+  "name": "Birdland",
+  "producers": [
+    "Joe Zawinul"
+  ],
+  "releaseDate": "1977-03-01T00:00:00+00:00",
+  "uuid": "11e82620-7a05-0456-8fc3-aa1c026db3d8"
+}

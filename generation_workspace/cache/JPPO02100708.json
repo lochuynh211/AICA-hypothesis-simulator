@@ -1,0 +1,105 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/a2640d4a-ddb9-4c67-8932-b533a78308ca/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ado-20/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/6/f/55443f99-af6f-4329-bd55-64f7dba4fb36.jpg",
+      "name": "Ado",
+      "slug": "ado-20",
+      "uuid": "55443f99-af6f-4329-bd55-64f7dba4fb36"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.15,
+    "danceability": 0.71,
+    "energy": 0.97,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.73,
+    "loudness": -0.74,
+    "mode": 1,
+    "speechiness": 0.11,
+    "tempo": 128,
+    "timeSignature": 4,
+    "valence": 0.78
+  },
+  "composers": [
+    "TeddyLoid",
+    "Giga",
+    "DECO*27"
+  ],
+  "copyright": "A Virgin Music release; ℗ 2021 UNIVERSAL MUSIC LLC",
+  "creditName": "Ado",
+  "credits": [
+    {
+      "name": "TeddyLoid",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "92b840bd-54b7-4830-8a31-8a71e4948128"
+    },
+    {
+      "name": "Giga",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "061ff661-0732-455d-ae4b-b69cd662948a"
+    },
+    {
+      "name": "Deco 27",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "f85c2de4-8f75-425e-a30a-8676fc2e8899"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 210,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/9/b/d/a2640d4a-ddb9-4c67-8932-b533a78308ca.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO02100708"
+  },
+  "iswcs": [
+    "T3116568873"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    },
+    {
+      "name": "Virgin",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ado-20/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/6/f/55443f99-af6f-4329-bd55-64f7dba4fb36.jpg",
+      "name": "Ado",
+      "slug": "ado-20",
+      "uuid": "55443f99-af6f-4329-bd55-64f7dba4fb36"
+    }
+  ],
+  "name": "踊",
+  "producers": [
+    "Giga",
+    "TeddyLoid"
+  ],
+  "releaseDate": "2021-04-27T00:00:00+00:00",
+  "uuid": "a2640d4a-ddb9-4c67-8932-b533a78308ca"
+}

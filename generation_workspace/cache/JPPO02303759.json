@@ -1,0 +1,63 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/3ff8f6af-7d66-44aa-8f1e-687dfb13b14f/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/fujii-kaze-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/1/a1ec9e8b-f11f-426c-8930-a82f86ac3d84.jpg",
+      "name": "Fujii Kaze",
+      "slug": "fujii-kaze-1",
+      "uuid": "a1ec9e8b-f11f-426c-8930-a82f86ac3d84"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.89,
+    "danceability": 0.68,
+    "energy": 0.32,
+    "instrumentalness": 0,
+    "key": 3,
+    "liveness": 0.11,
+    "loudness": -10.59,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 122.99,
+    "timeSignature": 4,
+    "valence": 0.41
+  },
+  "composers": [
+    "Fujii Kaze"
+  ],
+  "copyright": "℗ 2023 UNIVERSAL MUSIC LLC",
+  "creditName": "Fujii Kaze",
+  "credits": [],
+  "distributor": "Universal",
+  "duration": 247,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/6/6/d/3ff8f6af-7d66-44aa-8f1e-687dfb13b14f.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO02303759"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/fujii-kaze-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/1/a1ec9e8b-f11f-426c-8930-a82f86ac3d84.jpg",
+      "name": "Fujii Kaze",
+      "slug": "fujii-kaze-1",
+      "uuid": "a1ec9e8b-f11f-426c-8930-a82f86ac3d84"
+    }
+  ],
+  "name": "Hana - Ballad",
+  "producers": [],
+  "releaseDate": "2023-11-02T00:00:00+00:00",
+  "uuid": "3ff8f6af-7d66-44aa-8f1e-687dfb13b14f"
+}

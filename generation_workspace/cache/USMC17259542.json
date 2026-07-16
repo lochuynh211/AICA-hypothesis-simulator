@@ -1,0 +1,78 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/b64f7b8e-beeb-4667-9814-541c76d3c53d/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/antonio-carlos-jobim/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/7/9/11e81bc2-e977-7a02-ba45-a0369fe50396.jpg",
+      "name": "Antônio Carlos Jobim",
+      "slug": "antonio-carlos-jobim",
+      "uuid": "11e81bc2-e977-7a02-ba45-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.48,
+    "danceability": 0.71,
+    "energy": 0.4,
+    "instrumentalness": 0,
+    "key": 11,
+    "liveness": 0.11,
+    "loudness": -10.19,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 127.64,
+    "timeSignature": 4,
+    "valence": 0.96
+  },
+  "composers": [
+    "Antônio Carlos Jobim"
+  ],
+  "copyright": "This Compilation ℗ 1973 UMG Recordings, Inc.",
+  "creditName": "Antônio Carlos Jobim",
+  "credits": [],
+  "distributor": "Universal",
+  "duration": 235,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/e/e/b64f7b8e-beeb-4667-9814-541c76d3c53d.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USMC17259542"
+  },
+  "iswcs": [
+    "T0702476901"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "pt-BR",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/antonio-carlos-jobim/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/7/9/11e81bc2-e977-7a02-ba45-a0369fe50396.jpg",
+      "name": "Antônio Carlos Jobim",
+      "slug": "antonio-carlos-jobim",
+      "uuid": "11e81bc2-e977-7a02-ba45-a0369fe50396"
+    }
+  ],
+  "name": "Aguas De Marco",
+  "producers": [],
+  "releaseDate": "1973-01-01T00:00:00+00:00",
+  "uuid": "b64f7b8e-beeb-4667-9814-541c76d3c53d"
+}

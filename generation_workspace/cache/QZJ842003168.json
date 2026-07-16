@@ -1,0 +1,88 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/86d6327d-11d0-4c92-8160-2b128ee242f7/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/surfaces/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/f/6/11e81bcd-56f6-ac74-93a0-a0369fe50396.jpg",
+      "name": "Surfaces",
+      "slug": "surfaces",
+      "uuid": "11e81bcd-56f6-ac74-93a0-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/10x/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/b/e/7085ce96-3eb3-41d9-bc9a-05f79ba5e770.jpg",
+      "name": "10x",
+      "slug": "10x",
+      "uuid": "7085ce96-3eb3-41d9-bc9a-05f79ba5e770"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.1,
+    "danceability": 0.87,
+    "energy": 0.67,
+    "instrumentalness": 0,
+    "key": 8,
+    "liveness": 0.06,
+    "loudness": -6.69,
+    "mode": 1,
+    "speechiness": 0.1,
+    "tempo": 132.26,
+    "timeSignature": 4,
+    "valence": 0.78
+  },
+  "composers": [
+    "Forrest Frank",
+    "Colin Padalecki"
+  ],
+  "copyright": "℗ 2023 10X",
+  "creditName": "Surfaces & 10x",
+  "credits": [],
+  "distributor": "",
+  "duration": 135,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/d/1/86d6327d-11d0-4c92-8160-2b128ee242f7.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "QZJ842003168"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "10X",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/surfaces/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/f/6/11e81bcd-56f6-ac74-93a0-a0369fe50396.jpg",
+      "name": "Surfaces",
+      "slug": "surfaces",
+      "uuid": "11e81bcd-56f6-ac74-93a0-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/10x/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/b/e/7085ce96-3eb3-41d9-bc9a-05f79ba5e770.jpg",
+      "name": "10x",
+      "slug": "10x",
+      "uuid": "7085ce96-3eb3-41d9-bc9a-05f79ba5e770"
+    }
+  ],
+  "name": "Sunday Best - Sped Up",
+  "producers": [
+    "Forrest Frank",
+    "Colin Padalecki"
+  ],
+  "releaseDate": "2019-01-06T00:00:00+00:00",
+  "uuid": "86d6327d-11d0-4c92-8160-2b128ee242f7"
+}

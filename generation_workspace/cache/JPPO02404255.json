@@ -1,0 +1,70 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/446eaf66-5ab9-4615-a646-45319c335253/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mrs-green-apple/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/9/5/11e81bc3-f595-7572-858f-a0369fe50396.jpg",
+      "name": "Mrs. GREEN APPLE",
+      "slug": "mrs-green-apple",
+      "uuid": "11e81bc3-f595-7572-858f-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.21,
+    "danceability": 0.46,
+    "energy": 0.92,
+    "instrumentalness": 0,
+    "key": 2,
+    "liveness": 0.64,
+    "loudness": -4.32,
+    "mode": 1,
+    "speechiness": 0.36,
+    "tempo": 109.59,
+    "timeSignature": 4,
+    "valence": 0.52
+  },
+  "composers": [
+    "Motoki Ohmori"
+  ],
+  "copyright": "℗ 2024 UNIVERSAL MUSIC LLC",
+  "creditName": "Mrs. GREEN APPLE",
+  "credits": [],
+  "distributor": "Universal",
+  "duration": 233,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/9/b/a/446eaf66-5ab9-4615-a646-45319c335253.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO02404255"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mrs-green-apple/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/9/5/11e81bc3-f595-7572-858f-a0369fe50396.jpg",
+      "name": "Mrs. GREEN APPLE",
+      "slug": "mrs-green-apple",
+      "uuid": "11e81bc3-f595-7572-858f-a0369fe50396"
+    }
+  ],
+  "name": "ダンスホール - ~The White Lounge Version~ / Live",
+  "producers": [],
+  "releaseDate": "2024-09-22T00:00:00+00:00",
+  "uuid": "446eaf66-5ab9-4615-a646-45319c335253"
+}

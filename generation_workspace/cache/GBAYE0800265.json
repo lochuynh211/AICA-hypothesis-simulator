@@ -1,0 +1,391 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82615-cc98-da40-a988-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/coldplay/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/3/f/11e81bd2-0f3a-705a-837c-a0369fe50396.jpg",
+      "name": "Coldplay",
+      "slug": "coldplay",
+      "uuid": "11e81bd2-0f3a-705a-837c-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.1,
+    "danceability": 0.49,
+    "energy": 0.62,
+    "instrumentalness": 0,
+    "key": 5,
+    "liveness": 0.11,
+    "loudness": -7.12,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 138.02,
+    "timeSignature": 4,
+    "valence": 0.42
+  },
+  "composers": [
+    "Chris Martin",
+    "Guy Berryman",
+    "Will Champion",
+    "Jonny Buckland"
+  ],
+  "copyright": "℗ 2008 Parlophone Records Ltd, a Warner Music Group Company",
+  "creditName": "Coldplay",
+  "credits": [
+    {
+      "name": "Guy Berryman",
+      "roles": [
+        "songwriter",
+        "writer",
+        "backing vocals",
+        "bass guitar",
+        "synthesizer",
+        "composer",
+        "lyricist",
+        "bass"
+      ],
+      "uuid": "d82502e8-073a-4187-acbd-421371f61d26"
+    },
+    {
+      "name": "Jonny Buckland",
+      "roles": [
+        "songwriter",
+        "writer",
+        "backing vocals",
+        "electric guitar",
+        "guitarra",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "254f6969-1e83-4c43-bde8-9b3d3e336178"
+    },
+    {
+      "name": "Davide Rossi",
+      "roles": [
+        "strings",
+        "strings arranger"
+      ],
+      "uuid": "0489bd17-4a06-4f97-bc4c-0dbb6cf34a8e"
+    },
+    {
+      "name": "Bob Ludwig",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "cf8d7d78-edea-4728-818a-48953f721d29"
+    },
+    {
+      "name": "Emily Lazar",
+      "roles": [
+        "mastering",
+        "engineer"
+      ],
+      "uuid": "fb9e0863-6a28-472b-b1bd-47916332f9fe"
+    },
+    {
+      "name": "Andy Wallace",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "3d78c6ce-ff37-43cb-897f-c9808518e8b4"
+    },
+    {
+      "name": "Rik Simpson",
+      "roles": [
+        "producer",
+        "mix",
+        "engineer &  mixer"
+      ],
+      "uuid": "48e84dc9-f418-4a3e-ad5c-2056de513074"
+    },
+    {
+      "name": "Olga Fitzroy",
+      "roles": [
+        "programming",
+        "recording technician",
+        "studio technician",
+        "studio  technician"
+      ],
+      "uuid": "d93a28f3-af90-4538-8bcc-4cdd4fae285f"
+    },
+    {
+      "name": "Will Hensley",
+      "roles": [
+        "mix",
+        "assistant mix engineer",
+        "engineer &  mixer"
+      ],
+      "uuid": "0af311ff-1df0-4a7f-a842-d8aabbf11d6f"
+    },
+    {
+      "name": "Chris Martin",
+      "roles": [
+        "songwriter",
+        "writer",
+        "acoustic guitar",
+        "piano",
+        "lead vocals",
+        "guitar",
+        "keyboard"
+      ],
+      "uuid": "ec5b4133-5fdf-423b-88fb-6b8e02eda684"
+    },
+    {
+      "name": "Michael Brauer",
+      "roles": [
+        "mix",
+        "engineer &  mixer"
+      ],
+      "uuid": "c6a2a5ba-7bd3-4106-9e00-3f78fb41f8cb"
+    },
+    {
+      "name": "Brian Eno",
+      "roles": [
+        "producer",
+        "sound effects",
+        "sound  effects ( s f x)"
+      ],
+      "uuid": "5f39669d-fb61-476e-9e70-baa393604195"
+    },
+    {
+      "name": "Will Champion",
+      "roles": [
+        "songwriter",
+        "writer",
+        "piano",
+        "drums",
+        "backing vocals",
+        "percussions"
+      ],
+      "uuid": "4de2ad26-2a85-4598-be1f-74d6a42ea18d"
+    },
+    {
+      "name": "François Chevallier",
+      "roles": [
+        "programming"
+      ],
+      "uuid": "5334af8e-1277-47a8-a5b9-076a33b9f1af"
+    },
+    {
+      "name": "Markus Dravs",
+      "roles": [
+        "producer",
+        "mix"
+      ],
+      "uuid": "6decd8dc-aefe-4a25-bf81-9e60181aae38"
+    },
+    {
+      "name": "Vanessa Parr",
+      "roles": [
+        "engineer",
+        "assistant engineer",
+        "recording technician"
+      ],
+      "uuid": "8c7806fb-9ba0-4680-978e-eb2cc3ceb7d2"
+    },
+    {
+      "name": "Daniel Green",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "aebbed72-50e4-4bf9-a419-23355c5359e4"
+    },
+    {
+      "name": "Chris Allgood",
+      "roles": [
+        "engineer",
+        "assistant engineer"
+      ],
+      "uuid": "8bbd2de4-c712-4a7d-be3b-60b9958d0dfd"
+    },
+    {
+      "name": "Brian Thorn",
+      "roles": [
+        "assistant engineer",
+        "recording technician"
+      ],
+      "uuid": "322f818b-ee0b-4b68-bf82-ee97714d7f7c"
+    },
+    {
+      "name": "Andy Rugg",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "bb8a4b91-5815-41e2-8d50-3d462ae5993f"
+    },
+    {
+      "name": "Michael Trepagnier",
+      "roles": [
+        "recording technician",
+        "studio technician",
+        "technician",
+        "studio  technician"
+      ],
+      "uuid": "89f58a6d-ea0f-4923-81a4-6a1db700891b"
+    },
+    {
+      "name": "Mike Kezner",
+      "roles": [
+        "sitar"
+      ],
+      "uuid": "be14ec54-5788-4abb-b2da-235083bdaff1"
+    },
+    {
+      "name": "Andrew Rugg",
+      "roles": [
+        "assistant engineer",
+        "recording technician"
+      ],
+      "uuid": "9116313f-21e5-435e-941f-18b9429318e8"
+    },
+    {
+      "name": "Jon Hopkins",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "cd91d0f7-3e72-4d3d-a32f-0c67420bdc92"
+    },
+    {
+      "name": "William \"Will\" Hensley",
+      "roles": [
+        "assistant mix engineer"
+      ],
+      "uuid": "2eab1fe6-c22b-47a7-8938-8dc3ce86fff3"
+    },
+    {
+      "name": "Jonathan Buckland",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "2738f530-beb1-4bb4-9cf1-117c928bb865"
+    },
+    {
+      "name": "Chris Martin",
+      "roles": [
+        "guitarra",
+        "writer",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "bee18cc3-8f52-4616-82d8-5af1c235aa17"
+    },
+    {
+      "name": "Jonathan Buckland",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "e5d6cfa1-c313-474d-b058-b164e17d1d45"
+    },
+    {
+      "name": "Will Champion",
+      "roles": [
+        "drums",
+        "writer",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "088539f6-a217-4248-acf2-d38484a575b7"
+    },
+    {
+      "name": "Markus Dravs",
+      "roles": [
+        "producer",
+        "mix"
+      ],
+      "uuid": "910dbe7f-b869-4a5c-9b38-1061a4d8bd90"
+    },
+    {
+      "name": "Jon Buckland",
+      "roles": [
+        "guitarra",
+        "guitar"
+      ],
+      "uuid": "db2a4053-1ea6-4302-a246-2fda9a917d46"
+    },
+    {
+      "name": "Andy Rugg",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "da821bf0-fb6c-4c76-99ae-5ff71f62a757"
+    },
+    {
+      "name": "Francois Chevallier",
+      "roles": [
+        "programming"
+      ],
+      "uuid": "e500c88c-6ed0-4416-8d2f-7bbcc88876dd"
+    },
+    {
+      "name": "The Church, London",
+      "roles": [
+        "engineered at"
+      ],
+      "uuid": "dba5d561-4507-4b0c-be13-a817196180e4"
+    },
+    {
+      "name": "The Bakery Studios, London",
+      "roles": [
+        "engineered at"
+      ],
+      "uuid": "9514720a-5038-4db7-8cfe-f3fa8b5cc79d"
+    },
+    {
+      "name": "The Magic Shop",
+      "roles": [
+        "engineered at"
+      ],
+      "uuid": "8cc5329a-c1a7-454c-99bd-a3dad6fae66c"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 242,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/9/c/11e82615-cc98-da40-a988-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBAYE0800265"
+  },
+  "iswcs": [
+    "T9011034369"
+  ],
+  "labels": [
+    {
+      "name": "Parlophone",
+      "type": "Warner"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/coldplay/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/3/f/11e81bd2-0f3a-705a-837c-a0369fe50396.jpg",
+      "name": "Coldplay",
+      "slug": "coldplay",
+      "uuid": "11e81bd2-0f3a-705a-837c-a0369fe50396"
+    }
+  ],
+  "name": "Viva la Vida",
+  "producers": [
+    "Markus Dravs",
+    "Brian Eno",
+    "Rik Simpson"
+  ],
+  "releaseDate": "2008-06-06T00:00:00+00:00",
+  "uuid": "11e82615-cc98-da40-a988-a0369fe50396"
+}

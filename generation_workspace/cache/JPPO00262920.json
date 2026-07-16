@@ -1,0 +1,90 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/6d1d0638-c654-11e8-b9e7-549f35141000/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/spitz/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/d/8/9d508b08-b8d1-11e8-9bed-525400009efb.jpg",
+      "name": "SPITZ",
+      "slug": "spitz",
+      "uuid": "9d508b08-b8d1-11e8-9bed-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.43,
+    "danceability": 0.62,
+    "energy": 0.79,
+    "instrumentalness": 0,
+    "key": 6,
+    "liveness": 0.16,
+    "loudness": -4.34,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 111.18,
+    "timeSignature": 4,
+    "valence": 0.59
+  },
+  "composers": [
+    "Masamune Kusano"
+  ],
+  "copyright": "℗ 2025 UMG Recordings, Inc. FP",
+  "creditName": "SPITZ",
+  "credits": [
+    {
+      "name": " SASAJI MASANORI",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "f81fcba2-0ce7-4f88-988e-15c08db73193"
+    },
+    {
+      "name": "Masamune Kusano",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "1071b50e-3ad3-412e-9b44-d730b59402d1"
+    },
+    {
+      "name": "Spitz",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "0d512b7c-0a20-4163-896d-4733bb7351cb"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 260,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/4/5/6/6d1d0638-c654-11e8-b9e7-549f35141000.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO00262920"
+  },
+  "iswcs": [
+    "T1012260476"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/spitz/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/d/8/9d508b08-b8d1-11e8-9bed-525400009efb.jpg",
+      "name": "SPITZ",
+      "slug": "spitz",
+      "uuid": "9d508b08-b8d1-11e8-9bed-525400009efb"
+    }
+  ],
+  "name": "ロビンソン",
+  "producers": [
+    "笹路正徳",
+    "SPITZ"
+  ],
+  "releaseDate": "2025-04-05T00:00:00+00:00",
+  "uuid": "6d1d0638-c654-11e8-b9e7-549f35141000"
+}

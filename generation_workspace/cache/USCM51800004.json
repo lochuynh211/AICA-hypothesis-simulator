@@ -1,0 +1,532 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8268b-9910-c5e0-8b99-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/drake-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/c/d/11e81bbf-8dca-ff1a-af94-a0369fe50396.jpg",
+      "name": "Drake",
+      "slug": "drake-1",
+      "uuid": "11e81bbf-8dca-ff1a-af94-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.03,
+    "danceability": 0.75,
+    "energy": 0.45,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.55,
+    "loudness": -9.21,
+    "mode": 1,
+    "speechiness": 0.11,
+    "tempo": 77.17,
+    "timeSignature": 4,
+    "valence": 0.36
+  },
+  "composers": [
+    "Aubrey Graham",
+    "Matthew Samuels",
+    "Ronald LaTour",
+    "Daveon Jackson",
+    "Brock Korsan",
+    "N. Shebib"
+  ],
+  "copyright": "℗ 2018 Young Money/Cash Money Records",
+  "creditName": "Drake",
+  "credits": [
+    {
+      "name": "Ronald LaTour",
+      "roles": [
+        "composer",
+        "lyricist",
+        "drums"
+      ],
+      "uuid": "1775b045-6aa4-477e-ae46-a75813056b36"
+    },
+    {
+      "name": "Matthew Samuels",
+      "roles": [
+        "composer",
+        "producer",
+        "lyricist"
+      ],
+      "uuid": "b688c1d9-43a3-48df-afea-30284c1dc810"
+    },
+    {
+      "name": "Harley Arsenault",
+      "roles": [
+        "assistant mix engineer",
+        "second engineer"
+      ],
+      "uuid": "57afe059-1ddf-45aa-8132-0fa902d598f3"
+    },
+    {
+      "name": "Andres Ramirez",
+      "roles": [
+        "video focus puller"
+      ],
+      "uuid": "055aaa51-1ba5-43ac-b65e-c5c0b1f0f4b1"
+    },
+    {
+      "name": "Aubrey Drake Graham",
+      "roles": [
+        "composer",
+        "lyricist",
+        "vocals"
+      ],
+      "uuid": "1bd4cec9-291d-468a-adbb-d8c63b290867"
+    },
+    {
+      "name": "Chris Athens",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "76cd03ae-2c7f-43b9-a748-9987883bbc29"
+    },
+    {
+      "name": "Noah \"40\" Shebib",
+      "roles": [
+        "composer",
+        "recording",
+        "lyricist",
+        "keyboard",
+        "additional production"
+      ],
+      "uuid": "bd587429-7d7b-4031-bfe4-09a09ad15b0c"
+    },
+    {
+      "name": "Boi-1da",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "248fc46a-8bf1-4fef-a374-541e5a1e98ff"
+    },
+    {
+      "name": "Cardo Got Wings",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "880fbf9e-b5e7-4745-bdd0-d40a7a1e4e6b"
+    },
+    {
+      "name": "40",
+      "roles": [
+        "producer",
+        "writer",
+        "recording",
+        "keyboard",
+        "additional production"
+      ],
+      "uuid": "b4b56735-bea8-4dcc-b749-6f1aa81afb92"
+    },
+    {
+      "name": "Jordan Oram",
+      "roles": [
+        "video director of photography"
+      ],
+      "uuid": "b092bb68-4f32-4ff8-bb50-5568ceeec475"
+    },
+    {
+      "name": "Stefan Woronko",
+      "roles": [
+        "video graphic designer"
+      ],
+      "uuid": "ac12594e-35a8-4e3c-aee8-419a2a6730ba"
+    },
+    {
+      "name": "Raj Ramnauth",
+      "roles": [
+        "video editor"
+      ],
+      "uuid": "1378eb84-ee0f-4459-a177-c2a1b3dc4231"
+    },
+    {
+      "name": "Fuliane Petikyan",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "e131bd7d-d1bd-473a-bc53-2f63161b2032"
+    },
+    {
+      "name": "Taj Critchlow",
+      "roles": [
+        "video executive producer"
+      ],
+      "uuid": "ef279724-6f78-433d-ab8a-96e9f7fb708c"
+    },
+    {
+      "name": "Director X",
+      "roles": [
+        "video executive producer"
+      ],
+      "uuid": "20c5b195-b973-4c83-ae06-f7304a885433"
+    },
+    {
+      "name": "Noel Cadastre",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "f1c3516d-3a69-495a-b028-c6eb900571f6"
+    },
+    {
+      "name": "Drake",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "45534015-63a9-4f0d-814f-03fdfb110bdd"
+    },
+    {
+      "name": "Dean Rosen",
+      "roles": [
+        "video production assistant"
+      ],
+      "uuid": "b09b51c7-3d16-4cb0-a7c4-0cf06b5e2035"
+    },
+    {
+      "name": "Greg Moffett",
+      "roles": [
+        "assistant mix engineer",
+        "second engineer",
+        "mix"
+      ],
+      "uuid": "7a56cc8c-df64-4030-af40-ef192fc80143"
+    },
+    {
+      "name": "Evrard “Ev” Salomon",
+      "roles": [
+        "video 1st assistant director"
+      ],
+      "uuid": "d611902b-e718-4a96-8b1c-7e4d745ca2b5"
+    },
+    {
+      "name": "Barbara Breves",
+      "roles": [
+        "video location scout"
+      ],
+      "uuid": "f2b674ef-119d-47e5-aaec-f2314f091883"
+    },
+    {
+      "name": "Juliana Zanon",
+      "roles": [
+        "video location manager"
+      ],
+      "uuid": "d8556edd-29e5-40e0-9269-402e7093f1c7"
+    },
+    {
+      "name": "Adam Palmer",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "3189fb04-ff94-4fec-9378-aceace809abc"
+    },
+    {
+      "name": "Ronald Moonoo",
+      "roles": [
+        "assistant mix engineer",
+        "second engineer"
+      ],
+      "uuid": "8a8f3c1c-66d2-473b-a2d7-2a689b4e7432"
+    },
+    {
+      "name": "Robbie Meza",
+      "roles": [
+        "assistant recording engineer",
+        "second engineer"
+      ],
+      "uuid": "4a31b50c-a195-4289-9014-c777656a8f0b"
+    },
+    {
+      "name": "Kassi Bellamy",
+      "roles": [
+        "video colorist"
+      ],
+      "uuid": "3b89c340-3e06-43a5-a8bb-52dde91d6d8a"
+    },
+    {
+      "name": "Laura Noonan",
+      "roles": [
+        "video colorist"
+      ],
+      "uuid": "2fa63230-2596-4c7b-bb70-dcec71304f0b"
+    },
+    {
+      "name": "Emily Buller",
+      "roles": [
+        "video colorist"
+      ],
+      "uuid": "e8b4b4ac-a359-4e85-a803-9df740a0778a"
+    },
+    {
+      "name": "Nick Yumul",
+      "roles": [
+        "video assistant editor"
+      ],
+      "uuid": "40f2b152-fa1c-4da2-8c49-96cb81f74ebc"
+    },
+    {
+      "name": "Mike Versanne",
+      "roles": [
+        "video production assistant"
+      ],
+      "uuid": "293dd940-0f0f-4b45-acc7-e166064c18c9"
+    },
+    {
+      "name": "Ryan Otero",
+      "roles": [
+        "video production assistant"
+      ],
+      "uuid": "838b43ae-e6fb-4f57-a417-1bee81b07464"
+    },
+    {
+      "name": "Gerin “J-Dash” Versanne",
+      "roles": [
+        "video production assistant"
+      ],
+      "uuid": "3c1ce965-72eb-4166-b2af-e291c40dd13c"
+    },
+    {
+      "name": "Sandra Portales",
+      "roles": [
+        "video production assistant"
+      ],
+      "uuid": "bd8ac350-f8d3-4610-aa89-32764244dbd3"
+    },
+    {
+      "name": "Jason Vanbuuren",
+      "roles": [
+        "video production assistant"
+      ],
+      "uuid": "c05721c0-d966-4c66-9abf-e7a2991ca4e1"
+    },
+    {
+      "name": "Eric Newcomer",
+      "roles": [
+        "video production assistant"
+      ],
+      "uuid": "e2044b3e-f6ae-43df-b941-cd1020f3256e"
+    },
+    {
+      "name": "Marco Sroka",
+      "roles": [
+        "video production assistant"
+      ],
+      "uuid": "7c4557ba-fbc7-4af0-be46-8cf01fd57c12"
+    },
+    {
+      "name": "Maximo Upia",
+      "roles": [
+        "video art production assistant"
+      ],
+      "uuid": "584e2f1a-c660-4ba3-b146-ebcd961c9d48"
+    },
+    {
+      "name": "Luis Roman",
+      "roles": [
+        "video art production assistant"
+      ],
+      "uuid": "a1e98d6b-2e2b-4a1b-a363-b0e0a79557f3"
+    },
+    {
+      "name": "Damian Fyffe",
+      "roles": [
+        "video art director"
+      ],
+      "uuid": "361a0508-a5ed-4025-a507-c4a2075a514b"
+    },
+    {
+      "name": "Johnny Gibbson",
+      "roles": [
+        "video best boy electric"
+      ],
+      "uuid": "74c114d2-b3ca-4ed0-bd67-9fd849086542"
+    },
+    {
+      "name": "Dwane Coote",
+      "roles": [
+        "video gaffer"
+      ],
+      "uuid": "59bfec4d-af37-41e5-8e5e-2fe1f4545241"
+    },
+    {
+      "name": "Osvaldo Silvera",
+      "roles": [
+        "video steadicam operator"
+      ],
+      "uuid": "d0e8f91b-4afc-4964-9d9b-19931e2c35b3"
+    },
+    {
+      "name": "Sean Lunski",
+      "roles": [
+        "video clapper loader"
+      ],
+      "uuid": "bdc57534-5a56-4fd0-a4a0-c86d1e45f228"
+    },
+    {
+      "name": "Daniel Guarino",
+      "roles": [
+        "video clapper loader"
+      ],
+      "uuid": "2ab98024-aa53-4391-90ef-726ec3b84699"
+    },
+    {
+      "name": "Alex Somarriba",
+      "roles": [
+        "video focus puller"
+      ],
+      "uuid": "42da4430-fe41-413c-943b-c7c7a2c97583"
+    },
+    {
+      "name": "Cesar Chacon",
+      "roles": [
+        "video director of photography"
+      ],
+      "uuid": "895b49c5-9851-4f6a-ab41-27e89511cba0"
+    },
+    {
+      "name": "Susan Marinello",
+      "roles": [
+        "video production coordinator"
+      ],
+      "uuid": "e3fdd935-7287-4425-a859-75113a705fa2"
+    },
+    {
+      "name": "Liz Gonzalez",
+      "roles": [
+        "video unit production manager"
+      ],
+      "uuid": "b3b342e6-6ccb-4bd7-bfcc-80646a807625"
+    },
+    {
+      "name": "Karena Evans",
+      "roles": [
+        "video director"
+      ],
+      "uuid": "dd9e0039-7e0a-4438-b7f6-d2ed9a68071f"
+    },
+    {
+      "name": "Yung Exclusive",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "a80afdaa-f543-4d69-8dc9-505631b35d4c"
+    },
+    {
+      "name": "Brock Korsan",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "e84719a2-b101-4279-891d-35c9ff129f97"
+    },
+    {
+      "name": "A-Lex",
+      "roles": [
+        "video production assistant"
+      ],
+      "uuid": "f69facdb-1344-411d-aed3-1e68efefd994"
+    },
+    {
+      "name": "Ron LaTour",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "540deaf6-2aa9-4db8-8302-791b1d41c2bc"
+    },
+    {
+      "name": "Cardo",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "78acb1aa-f87e-47e0-a5cf-b490313675ec"
+    },
+    {
+      "name": "Daveon Jackson",
+      "roles": [
+        "composer",
+        "lyricist",
+        "drums"
+      ],
+      "uuid": "e0a89b91-e0f9-40d0-9e50-dd4f8f3fba1c"
+    },
+    {
+      "name": "QUAZ",
+      "roles": [
+        "assistant recording engineer",
+        "second engineer"
+      ],
+      "uuid": "fac78be4-d30d-4d74-b3a6-298b94b9c2ee"
+    },
+    {
+      "name": "Noel \"Gadget\" Campbell",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "70a86336-98dd-4937-b221-fe3bbd9aed85"
+    },
+    {
+      "name": "Danny Garcia",
+      "roles": [
+        "video digital imaging technician"
+      ],
+      "uuid": "aee47735-8ea9-42ad-9fc7-1b928a8b1b18"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 198,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    },
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b, funk & soul"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/1/9/11e8268b-9910-c5e0-8b99-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USCM51800004"
+  },
+  "iswcs": [
+    "T9249727342"
+  ],
+  "labels": [
+    {
+      "name": "Young Money",
+      "type": "Other independent labels: \"Indie\""
+    },
+    {
+      "name": "Cash Money",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/drake-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/c/d/11e81bbf-8dca-ff1a-af94-a0369fe50396.jpg",
+      "name": "Drake",
+      "slug": "drake-1",
+      "uuid": "11e81bbf-8dca-ff1a-af94-a0369fe50396"
+    }
+  ],
+  "name": "God's Plan",
+  "producers": [
+    "Boi-1da",
+    "Noah \"40\" Shebib",
+    "Cardo",
+    "Yung Exclusive"
+  ],
+  "releaseDate": "2018-06-29T00:00:00+00:00",
+  "uuid": "11e8268b-9910-c5e0-8b99-aa1c026db3d8"
+}

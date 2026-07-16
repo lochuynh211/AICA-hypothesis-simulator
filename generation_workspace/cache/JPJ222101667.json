@@ -1,0 +1,85 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/6211d065-e113-42f2-8424-22fe4deba879/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/saucy-dog/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/a/b/11e83feb-bba7-8fb6-bc0b-a0369fe50396.jpg",
+      "name": "Saucy Dog",
+      "slug": "saucy-dog",
+      "uuid": "11e83feb-bba7-8fb6-bc0b-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.07,
+    "danceability": 0.6,
+    "energy": 0.74,
+    "instrumentalness": 0,
+    "key": 9,
+    "liveness": 0.27,
+    "loudness": -6.36,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 108.11,
+    "timeSignature": 4,
+    "valence": 0.52
+  },
+  "composers": [
+    "Saucy Dog"
+  ],
+  "copyright": "℗ 2021 A-Sketch Inc.",
+  "creditName": "Saucy Dog",
+  "credits": [
+    {
+      "name": "石原 慎也",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "70e6438f-d3b8-4867-adce-7e4a6d71d42f"
+    },
+    {
+      "name": "Saucy Dog",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "c5c3ce5b-6c6f-4e8e-89ee-63af2e44b66e"
+    }
+  ],
+  "distributor": "A-Sketch",
+  "duration": 234,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/1/1/6211d065-e113-42f2-8424-22fe4deba879.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPJ222101667"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "A-Sketch",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/saucy-dog/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/a/b/11e83feb-bba7-8fb6-bc0b-a0369fe50396.jpg",
+      "name": "Saucy Dog",
+      "slug": "saucy-dog",
+      "uuid": "11e83feb-bba7-8fb6-bc0b-a0369fe50396"
+    }
+  ],
+  "name": "シンデレラボーイ",
+  "producers": [],
+  "releaseDate": "2021-08-25T00:00:00+00:00",
+  "uuid": "6211d065-e113-42f2-8424-22fe4deba879"
+}

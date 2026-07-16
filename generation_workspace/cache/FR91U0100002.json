@@ -1,0 +1,112 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82616-b436-077e-806b-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yann-tiersen/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/f/2/11e81bc9-d2f5-8c18-938c-a0369fe50396.jpg",
+      "name": "Yann Tiersen",
+      "slug": "yann-tiersen",
+      "uuid": "11e81bc9-d2f5-8c18-938c-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.99,
+    "danceability": 0.47,
+    "energy": 0.19,
+    "instrumentalness": 0.91,
+    "key": 2,
+    "liveness": 0.11,
+    "loudness": -15.38,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 99.98,
+    "timeSignature": 4,
+    "valence": 0.06
+  },
+  "composers": [
+    "Yann Tiersen"
+  ],
+  "copyright": "Distribution exclusive Warner Music France / ADA France, ℗ 2001 UGC image. Édition 2021",
+  "creditName": "Yann Tiersen",
+  "credits": [
+    {
+      "name": "Yann Tiersen",
+      "roles": [
+        "composer",
+        "writer",
+        "piano"
+      ],
+      "uuid": "c34c917f-fe33-4cbf-b691-95bf0ed3355e"
+    },
+    {
+      "name": "Stephan Kraemer",
+      "roles": [
+        "producer",
+        "recording"
+      ],
+      "uuid": "82260795-8f9c-474c-9236-245225cfeed4"
+    },
+    {
+      "name": "Uwe Teichert",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "dc4f71b7-d5c1-4030-8c88-9acfaf36d18c"
+    },
+    {
+      "name": "Fabrice Laureau",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "1dd124ab-f175-4ee6-a20d-170fcaecd67c"
+    }
+  ],
+  "distributor": "Warner",
+  "duration": 140,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "soundtrack",
+      "sub": [
+        "film ost",
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/6/3/4/11e82616-b436-077e-806b-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "FR",
+    "countryName": "France",
+    "value": "FR91U0100002"
+  },
+  "iswcs": [
+    "T0042244165"
+  ],
+  "labels": [
+    {
+      "name": "ADA",
+      "type": "Warner"
+    },
+    {
+      "name": "UGC image. Édition",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yann-tiersen/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/f/2/11e81bc9-d2f5-8c18-938c-a0369fe50396.jpg",
+      "name": "Yann Tiersen",
+      "slug": "yann-tiersen",
+      "uuid": "11e81bc9-d2f5-8c18-938c-a0369fe50396"
+    }
+  ],
+  "name": "Comptine d'un autre été : L'Après-midi",
+  "producers": [
+    "Yann Tiersen",
+    "Stephan Kraemer"
+  ],
+  "releaseDate": "2001-04-23T00:00:00+00:00",
+  "uuid": "11e82616-b436-077e-806b-aa1c026db3d8"
+}

@@ -1,0 +1,405 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/afd60966-cd97-11e9-9449-549f35161576/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/hans-zimmer/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/5/4/11e81bc8-6452-211e-9dde-a0369fe50396.jpg",
+      "name": "Hans Zimmer",
+      "slug": "hans-zimmer",
+      "uuid": "11e81bc8-6452-211e-9dde-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.18,
+    "danceability": 0.29,
+    "energy": 0.1,
+    "instrumentalness": 0.7,
+    "key": 7,
+    "liveness": 0.09,
+    "loudness": -16.81,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 62.88,
+    "timeSignature": 4,
+    "valence": 0.04
+  },
+  "composers": [
+    "Hans Zimmer"
+  ],
+  "copyright": "℗ 2010 WarnerBros. Entertainment Inc.",
+  "creditName": "Hans Zimmer",
+  "credits": [
+    {
+      "name": "Ryan Romeyn Rubin",
+      "roles": [
+        "editing",
+        "music editor"
+      ],
+      "uuid": "a2e432dd-2cbb-4601-ade4-fc0e4ab44bfd"
+    },
+    {
+      "name": "Kevin Kaska",
+      "roles": [
+        "orchestration"
+      ],
+      "uuid": "1f57b0a6-11a9-47ab-b080-d3193782710a"
+    },
+    {
+      "name": "Hans Zimmer",
+      "roles": [
+        "composer",
+        "synthesizer",
+        "synthesizer programming"
+      ],
+      "uuid": "8ec0688b-6f98-44bd-8b72-6c7113cb09a3"
+    },
+    {
+      "name": "Johnny Marr",
+      "roles": [
+        "guitar"
+      ],
+      "uuid": "00e05f8b-9801-4445-aa95-00a32cec6017"
+    },
+    {
+      "name": "Mel Wesson",
+      "roles": [
+        "sound design",
+        "design"
+      ],
+      "uuid": "9fec19c1-bcc0-492e-8faf-e1462003377c"
+    },
+    {
+      "name": "Jacob Shea",
+      "roles": [
+        "additional programming"
+      ],
+      "uuid": "09b1b4b6-be96-4263-acb7-6acd43155108"
+    },
+    {
+      "name": "Ed Neumeister",
+      "roles": [
+        "orchestration"
+      ],
+      "uuid": "df69317d-90b2-4e0c-bfb5-a4064098cd75"
+    },
+    {
+      "name": "Thomas Broderick",
+      "roles": [
+        "technician",
+        "technical engineer"
+      ],
+      "uuid": "eec37faa-8d4f-4ad0-bd97-53a5ab430fac"
+    },
+    {
+      "name": "Lorne Balfe",
+      "roles": [
+        "producer",
+        "additional music"
+      ],
+      "uuid": "682d3ddb-59d0-42fb-85fa-5c121d967ecd"
+    },
+    {
+      "name": "Perry Montague-Mason",
+      "roles": [
+        "violin",
+        "lead violin"
+      ],
+      "uuid": "ed8a91e9-5902-422d-b560-6911e85591e6"
+    },
+    {
+      "name": "Peter Lale",
+      "roles": [
+        "viola"
+      ],
+      "uuid": "939e084a-38d4-4013-a98b-234711fbe149"
+    },
+    {
+      "name": "Anthony Pleeth",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "fe6ba20e-8961-4b54-ad1a-8f6a29273557"
+    },
+    {
+      "name": "Geoff Foster",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "dc4907e8-d5d3-41f4-941a-f237fcddcc1f"
+    },
+    {
+      "name": "Owen Slade",
+      "roles": [
+        "tuba"
+      ],
+      "uuid": "7d8a415f-3309-4214-9ec6-c7bdd8a147b0"
+    },
+    {
+      "name": "Pat Sullivan",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "95941ede-9f53-4b48-a2a1-c1d9f6002c3b"
+    },
+    {
+      "name": "Patricia Sullivan",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "5c746f2f-0555-4209-9770-9387886c40ae"
+    },
+    {
+      "name": "Bruce Fowler",
+      "roles": [
+        "orchestration"
+      ],
+      "uuid": "a2dd0f98-9e8f-4efe-ab97-fad3237fd8b1"
+    },
+    {
+      "name": "Isobel Griffiths",
+      "roles": [
+        "contractor",
+        "orchestral contractor"
+      ],
+      "uuid": "26d36e08-dd04-45bb-92ad-cad6283123c6"
+    },
+    {
+      "name": "Chris Barrett",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "20aa266f-a640-4876-826a-445863856116"
+    },
+    {
+      "name": "Richard Watkins",
+      "roles": [
+        "french horn"
+      ],
+      "uuid": "27ba5002-6149-4ab0-8010-d5713e620456"
+    },
+    {
+      "name": "Alex Gibson",
+      "roles": [
+        "producer",
+        "editing",
+        "music editor"
+      ],
+      "uuid": "9237f986-b979-4793-80ff-c64a8c1f96ae"
+    },
+    {
+      "name": "Alan Meyerson",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "bcd09054-539c-471f-8e40-93c786f922e1"
+    },
+    {
+      "name": "Mark Wherry",
+      "roles": [
+        "programming"
+      ],
+      "uuid": "68803574-25de-440e-b63a-b6002d73083e"
+    },
+    {
+      "name": "Rick Giovinazzo",
+      "roles": [
+        "orchestration"
+      ],
+      "uuid": "cffd7e58-6785-49d5-9f72-152c12b50702"
+    },
+    {
+      "name": "Chuck Choi",
+      "roles": [
+        "technician",
+        "technical engineer"
+      ],
+      "uuid": "0c2ea72b-b911-4adc-9680-30e07d2985f0"
+    },
+    {
+      "name": "Howard Scarr",
+      "roles": [
+        "synthesizer programming"
+      ],
+      "uuid": "89d80df4-32a2-4f41-aa56-fdf4560baf4f"
+    },
+    {
+      "name": "Mary Scully",
+      "roles": [
+        "bass",
+        "double bass"
+      ],
+      "uuid": "677dc4b3-77ae-4fec-b5ed-5fbfb9698474"
+    },
+    {
+      "name": "Daniel Kresco",
+      "roles": [
+        "assistant mix engineer"
+      ],
+      "uuid": "df1ccb59-a03b-4f7a-a8a4-803df7bf5d0a"
+    },
+    {
+      "name": "Andrew Kawczynski",
+      "roles": [
+        "additional programming"
+      ],
+      "uuid": "ba82129e-7962-4907-adb8-5460d46c967b"
+    },
+    {
+      "name": "Nick Delaplane",
+      "roles": [
+        "additional programming"
+      ],
+      "uuid": "2856ec38-6745-4ed6-a10f-6a39e1cc6755"
+    },
+    {
+      "name": "David A. Stewart",
+      "roles": [
+        "bass trombone"
+      ],
+      "uuid": "441c7bd2-6e20-4f26-b297-1abf1f820078"
+    },
+    {
+      "name": "Dave Stewart",
+      "roles": [
+        "trombone"
+      ],
+      "uuid": "56b79f5f-97ca-4331-a844-9bdb7cd00468"
+    },
+    {
+      "name": "Peter Oso Snell",
+      "roles": [
+        "assistant engineer",
+        "assistant editing engineer"
+      ],
+      "uuid": "79f23015-e8ea-480c-8c39-a5e3268b90b7"
+    },
+    {
+      "name": "Matt Dunkley",
+      "roles": [
+        "conductor"
+      ],
+      "uuid": "00ccaeed-0f7d-4898-a01c-3227c48c6ef9"
+    },
+    {
+      "name": "Suzette Moriarty",
+      "roles": [
+        "orchestration"
+      ],
+      "uuid": "47257a79-74ca-4333-a0f3-905750f71cf0"
+    },
+    {
+      "name": "Carl Rydlund",
+      "roles": [
+        "orchestration"
+      ],
+      "uuid": "6a17c0c5-fa68-4cfc-97ad-e595d9ca4495"
+    },
+    {
+      "name": "Margot & the Nuclear So and So’s",
+      "roles": [
+        "trombone",
+        "tenor trombone"
+      ],
+      "uuid": "ccc8ad29-3a52-4b26-abd2-d339adacc4a6"
+    },
+    {
+      "name": "Mike Higham",
+      "roles": [
+        "assistant engineer",
+        "assistant editing engineer"
+      ],
+      "uuid": "15e2307a-5139-4ddd-9596-14fc2f68f503"
+    },
+    {
+      "name": "Elizabeth Finch",
+      "roles": [
+        "orchestration"
+      ],
+      "uuid": "9a7f9d2d-4829-4d5f-8a65-14d60f6ed191"
+    },
+    {
+      "name": "Walter Fowler",
+      "roles": [
+        "orchestration"
+      ],
+      "uuid": "305e1143-316c-40de-bb3c-0709d02d7dba"
+    },
+    {
+      "name": "Christopher Nolan",
+      "roles": [
+        "producer",
+        "executive producer"
+      ],
+      "uuid": "45a18c1b-4ccb-4a47-8739-ec4060066501"
+    },
+    {
+      "name": "Bruce L. Fowler",
+      "roles": [
+        "orchestration"
+      ],
+      "uuid": "2dacd640-e1fe-4aa2-9cad-b75de0d51296"
+    }
+  ],
+  "distributor": "Warner",
+  "duration": 275,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    },
+    {
+      "root": "soundtrack",
+      "sub": [
+        "film ost",
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/7/9/d/afd60966-cd97-11e9-9449-549f35161576.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USRE11000577"
+  },
+  "iswcs": [
+    "T0727016821",
+    "T9275972651",
+    "T3129786289",
+    "T9144173853",
+    "T9111110555",
+    "T9286473447",
+    "T9091221840",
+    "T3090045191",
+    "T3217953765",
+    "T3204749753",
+    "T9189557413",
+    "T9054673119"
+  ],
+  "labels": [
+    {
+      "name": "WarnerBros",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/hans-zimmer/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/5/4/11e81bc8-6452-211e-9dde-a0369fe50396.jpg",
+      "name": "Hans Zimmer",
+      "slug": "hans-zimmer",
+      "uuid": "11e81bc8-6452-211e-9dde-a0369fe50396"
+    }
+  ],
+  "name": "Time",
+  "producers": [
+    "Hans Zimmer",
+    "Lorne Balfe",
+    "Alex Gibson"
+  ],
+  "releaseDate": "2010-07-09T00:00:00+00:00",
+  "uuid": "afd60966-cd97-11e9-9449-549f35161576"
+}

@@ -1,0 +1,79 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e84082-756b-8cea-8f9c-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/black-sabbath/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/c/0/11e81bc9-20ca-b16c-a5c5-a0369fe50396.jpg",
+      "name": "Black Sabbath",
+      "slug": "black-sabbath",
+      "uuid": "11e81bc9-20ca-b16c-a5c5-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.28,
+    "energy": 0.88,
+    "instrumentalness": 0.05,
+    "key": 8,
+    "liveness": 0.68,
+    "loudness": -9.67,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 130.24,
+    "timeSignature": 4,
+    "valence": 0.44
+  },
+  "composers": [
+    "Ozzy Osbourne",
+    "Tony Iommi",
+    "Bill Ward",
+    "Geezer Butler"
+  ],
+  "copyright": "2010 Sanctuary Records Group Ltd., a BMG Company",
+  "creditName": "Black Sabbath",
+  "credits": [],
+  "distributor": "Universal",
+  "duration": 353,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "metal",
+      "sub": [
+        "metal"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/6/5/11e84082-756b-8cea-8f9c-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GB2DY1000030"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Sanctuary Records Group",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/black-sabbath/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/c/0/11e81bc9-20ca-b16c-a5c5-a0369fe50396.jpg",
+      "name": "Black Sabbath",
+      "slug": "black-sabbath",
+      "uuid": "11e81bc9-20ca-b16c-a5c5-a0369fe50396"
+    }
+  ],
+  "name": "Iron Man (Live At the Hammersmith Odeon)",
+  "producers": [],
+  "releaseDate": "1981-11-04T00:00:00+00:00",
+  "uuid": "11e84082-756b-8cea-8f9c-aa1c026db3d8"
+}
