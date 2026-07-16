@@ -290,6 +290,13 @@ catalog services
 = candidates visible to the selector
 ```
 
+The per-service platform metadata driving the motion/capability step (screen-dependence,
+stopped-only, lighting compatibility, and any required catalog entity) is frozen as a
+versioned artifact — `proposal_contracts/service_capabilities/service_capabilities.v1.json`
+(introduced in **P4**) — mirroring the versioned purpose/stage matrix. The narrowing itself
+is performed by the platform/journey layer before any selector runs; excluded services are
+retained with platform reason codes and never reinstated by a score.
+
 ### 6.2 Hard exclusions
 
 Hard exclusions apply only to impermissible or unavailable behavior. Examples:
