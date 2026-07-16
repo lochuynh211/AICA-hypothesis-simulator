@@ -68,6 +68,15 @@ from aica_api.models.proposal.song_schema import (  # noqa: F401
     LinkedFrom,
 )
 
+# ---------------------------------------------------------------------------
+# Re-exports — feature-disposition registry (T018 / T019)
+# ---------------------------------------------------------------------------
+from aica_api.models.proposal.dispositions import (  # noqa: F401
+    DispositionEntry,
+    CONTENT_FEATURE_DISPOSITIONS,
+    registry_version,
+)
+
 __all__ = [
     "CONTRACT_VERSION",
     "SCHEMA_VERSION",
@@ -108,4 +117,8 @@ __all__ = [
     "Image",
     "Restrictions",
     "LinkedFrom",
+    # feature-disposition registry
+    "DispositionEntry",
+    "CONTENT_FEATURE_DISPOSITIONS",
+    "registry_version",
 ]
