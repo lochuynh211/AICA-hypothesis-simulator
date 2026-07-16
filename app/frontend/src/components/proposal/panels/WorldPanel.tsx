@@ -35,6 +35,7 @@ import type {
 import {
   getDatasets,
   getCatalog,
+  validateWorld,
   GENRE_VOCABULARY,
   SERVICE_ID_OPTIONS,
   type DatasetProvenance,
@@ -42,6 +43,7 @@ import {
   type DriverProfile,
   type GenreLiteralValue,
   type UsageLevelValue,
+  type WorldValidationIssue,
 } from '../../../api/proposalClient'
 import ProvenanceBadge, { type ProvenanceKind } from '../ProvenanceBadge'
 import SeedPicker from '../SeedPicker'
@@ -57,6 +59,15 @@ import {
   ItemListEditor,
   GenreUsageTable,
 } from '../fieldEditors'
+
+// Debounce delay (ms) between a `world` edit and the inline
+// `POST /worlds/validate` call (MF1 / US1 AC#3, SC-002) — short enough to
+// feel live, long enough not to fire once per keystroke.
+const WORLD_VALIDATE_DEBOUNCE_MS = 300
+
+function issuesForPath(issues: WorldValidationIssue[], path: string): WorldValidationIssue[] {
+  return issues.filter((issue) => issue.path === path)
+}
 
 // ── Static option/field metadata (bilingual) ────────────────────────────────
 
@@ -460,16 +471,19 @@ function FieldRow({
   value,
   onChange,
   lang,
+  issues,
 }: {
   def: WorldFieldDef
   value: unknown
   onChange: (value: unknown) => void
   lang: UiLanguage
+  issues?: WorldValidationIssue[]
 }) {
   const testId = `feature-field-${def.key}`
   const isCompact = ['number', 'select', 'text', 'boolean', 'nullable_number', 'nullable_text', 'nullable_select'].includes(
     def.kind,
   )
+  const fieldIssues = issues ?? []
   return (
     <div
       data-world-field={def.key}
@@ -488,6 +502,15 @@ function FieldRow({
         <ProvenanceBadge provenance={def.provenance} lang={lang} />
       </span>
       {renderFieldControl(def, value, onChange, testId)}
+      {fieldIssues.length > 0 && (
+        <p
+          role="alert"
+          data-testid={`${testId}-issue`}
+          style={{ gridColumn: isCompact ? '1 / -1' : undefined, margin: '2px 0 0', color: '#dc2626', fontSize: '0.75em' }}
+        >
+          {fieldIssues.map((issue) => issue.message).join(' ')}
+        </p>
+      )}
     </div>
   )
 }
@@ -536,6 +559,34 @@ export default function WorldPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [world.control_inputs.dataset_id])
 
+  // MF1 (US1 AC#3 / SC-002): inline world validation. Debounced on every
+  // `world` edit — `Promise.resolve().then(...)` defers the call itself into
+  // the chain so a non-Promise-returning/undefined mock (or a real fetch
+  // rejection in a test environment with no network) never throws
+  // synchronously; it is simply swallowed by `.catch()` below, which is the
+  // correct "best-effort" behavior for a live inline check that must never
+  // crash the editor.
+  useEffect(() => {
+    let cancelled = false
+    const handle = setTimeout(() => {
+      Promise.resolve()
+        .then(() => validateWorld(world))
+        .then((result) => {
+          if (!cancelled && result) {
+            dispatch({ type: 'SET_WORLD_VALIDATION_ISSUES', issues: result.issues })
+          }
+        })
+        .catch(() => {
+          /* best-effort — a failed validate call leaves prior issues as-is */
+        })
+    }, WORLD_VALIDATE_DEBOUNCE_MS)
+    return () => {
+      cancelled = true
+      clearTimeout(handle)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [world])
+
   function setSituationField(key: keyof Situation, value: unknown) {
     dispatch({ type: 'SET_SITUATION_FIELD', key, value })
   }
@@ -562,6 +613,39 @@ export default function WorldPanel() {
         {'①'} <span>{t({ ja: '入力・世界', en: 'Input · World' }, lang)}</span>
       </h3>
       <div style={{ padding: '12px 14px' }}>
+        {/* Inline world validation (MF1 / US1 AC#3, SC-002) — a general,
+            always-accurate summary of every {path, code, message} issue
+            returned by POST /worlds/validate, in addition to the per-field
+            inline messages rendered next to each offending field below. */}
+        {state.worldValidationIssues.length > 0 && (
+          <div
+            data-testid="world-validation-issues"
+            role="alert"
+            style={{
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: '6px',
+              padding: '8px 10px',
+              margin: '0 0 10px',
+            }}
+          >
+            <div style={{ fontSize: '0.78em', fontWeight: 700, color: '#991b1b' }}>
+              {t({ ja: '検証エラー', en: 'Validation issues' }, lang)}
+            </div>
+            <ul style={{ margin: '4px 0 0', paddingLeft: '18px' }}>
+              {state.worldValidationIssues.map((issue) => (
+                <li
+                  key={`${issue.path}-${issue.code}`}
+                  data-testid={`world-validation-issue-${issue.path}`}
+                  style={{ fontSize: '0.78em', color: '#b91c1c' }}
+                >
+                  {issue.message}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Quick full-world load — above section 1, since it replaces every
             group at once (control_inputs + situation + driver_profile). */}
         <div style={{ fontSize: '0.68em', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 800, color: '#6b7280', margin: '0 0 6px' }}>
@@ -692,6 +776,7 @@ export default function WorldPanel() {
             value={(situation as unknown as Record<string, unknown>)[def.key]}
             onChange={(value) => setSituationField(def.key as keyof Situation, value)}
             lang={lang}
+            issues={issuesForPath(state.worldValidationIssues, `situation.${def.key}`)}
           />
         ))}
 
@@ -711,6 +796,7 @@ export default function WorldPanel() {
                 value={(driverProfile as unknown as Record<string, unknown>)[def.key]}
                 onChange={(value) => setProfileField(def.key as keyof DriverProfile, value)}
                 lang={lang}
+                issues={issuesForPath(state.worldValidationIssues, `driver_profile.${def.key}`)}
               />
             ))}
           </div>

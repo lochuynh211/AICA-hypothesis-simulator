@@ -144,6 +144,7 @@ def dispatch_selector(
     matrix_version: str,
     used_feature_ids: list[str] | None = None,
     allowed_service_ids: list[str] | None = None,
+    evidence_input_snapshot: dict | None = None,
 ) -> AlgorithmEvidence:
     """Load ``package``'s ``algorithm.py``, call ``evaluate(context)``, and
     validate the result into the neutral contract for ``package.family``.
@@ -167,6 +168,15 @@ def dispatch_selector(
                              persisted/shown as a legitimate recommendation.
                              ``None`` skips the check (non-service families,
                              or callers that don't yet have the allowed set).
+        evidence_input_snapshot: MF2 (P3 POLISH unit) — the dict recorded as
+                             the evidence's ``input_snapshot`` field, if given;
+                             ``evaluate(context)`` is ALWAYS called with the
+                             full, un-redacted ``context`` regardless of this
+                             argument. Callers use this to redact bulky
+                             read-only reference data (e.g. the full frozen
+                             catalog) from the PERSISTED evidence without
+                             changing runtime behavior. ``None`` (the default)
+                             falls back to ``context`` itself, unchanged.
 
     Returns:
         An ``AlgorithmEvidence``. On ANY failure (missing entrypoint, load
@@ -178,12 +188,13 @@ def dispatch_selector(
     used = list(used_feature_ids) if used_feature_ids else []
     step = _step_for_family(package.family)
     model_cls = _output_model_for_family(package.family)
+    persisted_snapshot = context if evidence_input_snapshot is None else evidence_input_snapshot
 
     try:
         fn = _load_evaluate(package, packages_dir)
     except _SelectorLoadError as exc:
         return _error_evidence(
-            step=step, package=package, matrix_version=matrix_version, context=context,
+            step=step, package=package, matrix_version=matrix_version, context=persisted_snapshot,
             category=exc.category, message=exc.message, used_feature_ids=used,
         )
 
@@ -191,13 +202,13 @@ def dispatch_selector(
         raw_result = fn(context)
     except Exception as exc:  # noqa: BLE001
         return _error_evidence(
-            step=step, package=package, matrix_version=matrix_version, context=context,
+            step=step, package=package, matrix_version=matrix_version, context=persisted_snapshot,
             category="algorithm_exception", message=str(exc), used_feature_ids=used,
         )
 
     if not isinstance(raw_result, dict):
         return _error_evidence(
-            step=step, package=package, matrix_version=matrix_version, context=context,
+            step=step, package=package, matrix_version=matrix_version, context=persisted_snapshot,
             category="invalid_result_shape",
             message=(
                 f"evaluate() returned {type(raw_result).__name__!r}; expected a dict "
@@ -210,7 +221,7 @@ def dispatch_selector(
         validated = model_cls(**raw_result)
     except (ValidationError, TypeError) as exc:
         return _error_evidence(
-            step=step, package=package, matrix_version=matrix_version, context=context,
+            step=step, package=package, matrix_version=matrix_version, context=persisted_snapshot,
             category="invalid_result_shape",
             message=f"evaluate() returned an invalid {model_cls.__name__} shape: {exc}",
             used_feature_ids=used,
@@ -230,7 +241,7 @@ def dispatch_selector(
         ]
         if offending:
             return _error_evidence(
-                step=step, package=package, matrix_version=matrix_version, context=context,
+                step=step, package=package, matrix_version=matrix_version, context=persisted_snapshot,
                 category="candidate_outside_allowed_set",
                 message=(
                     f"evaluate() returned candidate_id(s) {offending!r} not in the "
@@ -245,7 +256,7 @@ def dispatch_selector(
         contract_version=package.contract_version,
         schema_version=SCHEMA_VERSION,
         matrix_version=matrix_version,
-        input_snapshot=context,
+        input_snapshot=persisted_snapshot,
         output=validated.model_dump(mode="json"),
         error=None,
         used_feature_ids=used,

@@ -38,6 +38,7 @@ import {
   getProfile,
   saveProfile,
   deleteProfile,
+  validateWorld,
 } from '../src/api/proposalClient'
 
 const DATASET_PROVENANCE = {
@@ -158,6 +159,7 @@ function setupDefaultMocks() {
     builtin: true,
     profile: baseDriverProfile(),
   })
+  vi.mocked(validateWorld).mockResolvedValue({ valid: true, issues: [] })
 }
 
 function renderWithStore() {

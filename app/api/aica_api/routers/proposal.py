@@ -32,6 +32,7 @@ timestamp for a NEW record is ``_make_opportunity_id``/``_now_iso`` below (the
 """
 from __future__ import annotations
 
+import copy
 import os
 from datetime import datetime, timezone
 from typing import Any
@@ -342,6 +343,35 @@ def _build_real_content_context(
         "catalog_version": setup_snapshot.dataset_hash,
         "run_seed": run_log.opportunity.run_seed,
     }
+
+
+def _redact_catalog_for_evidence(context: dict, *, dataset_id: str) -> dict:
+    """Return a deep-copied ``context`` with ``feature_snapshot.catalog``
+    replaced by a compact dataset-reference marker (MF2 / P3 POLISH unit).
+
+    The real content selector's ``feature_snapshot["catalog"]`` embeds the
+    FULL frozen catalog (up to ~300 songs, ~1.5 MB) — necessary at RUNTIME
+    for ``evaluate()`` to score every candidate, but wasteful (and largely
+    redundant, since the catalog is already identified by
+    ``SetupSnapshot.dataset_id``/``dataset_hash``) to persist verbatim inside
+    every run's ``AlgorithmEvidence.input_snapshot``. This function is used
+    ONLY to build the value passed as ``dispatch_selector``'s
+    ``evidence_input_snapshot`` — the full, un-redacted ``context`` is always
+    what ``evaluate()`` itself receives (dispatch_selector's ``context`` arg
+    is untouched by this call).
+
+    Returns ``context`` deep-copied so the caller's original dict (the one
+    actually passed to ``evaluate()``) is never mutated by reference.
+    """
+    redacted = copy.deepcopy(context)
+    feature_snapshot = redacted.get("feature_snapshot")
+    if isinstance(feature_snapshot, dict):
+        catalog = feature_snapshot.get("catalog")
+        if isinstance(catalog, dict):
+            feature_snapshot["catalog"] = {
+                "_redacted_catalog": {"dataset_id": dataset_id, "song_count": len(catalog)}
+            }
+    return redacted
 
 
 # ---------------------------------------------------------------------------
@@ -957,6 +987,7 @@ def select_service(run_id: str, body: SelectServiceBody) -> ProposalRunLog:
     # world_snapshot-only run has no dataset_id to resolve a catalog from, so
     # it keeps the P1 mock-path context builder (mirrors the mock package's
     # own behavior — never a crash, just an unusable/empty catalog).
+    evidence_input_snapshot: dict | None = None
     if content_pkg.id == _REAL_CONTENT_PACKAGE_ID and run_log.setup_snapshot is not None:
         context = _build_real_content_context(
             package=content_pkg,
@@ -964,6 +995,12 @@ def select_service(run_id: str, body: SelectServiceBody) -> ProposalRunLog:
             selected_service_id=selected_service_id,
             content_parameters=content_parameters,
             content_hyperparameters=content_hyperparameters,
+        )
+        # MF2 (P3 POLISH unit): the real content selector's context embeds
+        # the full frozen catalog — redact it for the PERSISTED evidence
+        # only; evaluate() below still receives the full `context`.
+        evidence_input_snapshot = _redact_catalog_for_evidence(
+            context, dataset_id=run_log.setup_snapshot.dataset_id
         )
     else:
         context = _build_content_context(
@@ -980,6 +1017,7 @@ def select_service(run_id: str, body: SelectServiceBody) -> ProposalRunLog:
         settings.packages_dir,
         matrix_version=run_log.matrix_version,
         used_feature_ids=list(context["feature_snapshot"].keys()),
+        evidence_input_snapshot=evidence_input_snapshot,
     )
 
     at = _now_iso()
