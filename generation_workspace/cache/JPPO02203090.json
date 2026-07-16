@@ -1,0 +1,164 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/5aac8371-48aa-4854-80e2-6f587fbcf501/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/fujii-kaze-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/1/a1ec9e8b-f11f-426c-8930-a82f86ac3d84.jpg",
+      "name": "Fujii Kaze",
+      "slug": "fujii-kaze-1",
+      "uuid": "a1ec9e8b-f11f-426c-8930-a82f86ac3d84"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.08,
+    "danceability": 0.67,
+    "energy": 0.69,
+    "instrumentalness": 0.03,
+    "key": 7,
+    "liveness": 0.32,
+    "loudness": -8.77,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 108.97,
+    "timeSignature": 4,
+    "valence": 0.64
+  },
+  "composers": [
+    "Fujii Kaze"
+  ],
+  "copyright": "A UNIVERSAL SIGMA / HEHN RECORDS release; ℗ 2022 UNIVERSAL MUSIC LLC",
+  "creditName": "Fujii Kaze",
+  "credits": [
+    {
+      "name": "Yaffle",
+      "roles": [
+        "arranger",
+        "producer",
+        "recording arranger"
+      ],
+      "uuid": "8e6deba3-fbe9-47c2-9933-de1832085b74"
+    },
+    {
+      "name": "藤井 風 (Fujii Kaze)",
+      "roles": [
+        "songwriter",
+        "vocals",
+        "synthesizer",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "6523426b-ed5f-495f-808e-07d056388e1b"
+    },
+    {
+      "name": "Mikiyo Kikuchi",
+      "roles": [
+        "viola"
+      ],
+      "uuid": "e55ad654-4fe1-4a62-b11d-9aff80d8b913"
+    },
+    {
+      "name": "Sayuri Yano",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "822f4886-7d54-49f4-9616-f99dfce0e632"
+    },
+    {
+      "name": "Shuta Nishida",
+      "roles": [
+        "guitar"
+      ],
+      "uuid": "c7ebc496-d9b6-48c3-9438-254f7256068f"
+    },
+    {
+      "name": "Yuki Mizuno",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "af7877ff-6708-4713-b124-979d8624fad3"
+    },
+    {
+      "name": "Rina Odera",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "a6df5f4f-7f74-48aa-a11a-41311191fc30"
+    },
+    {
+      "name": "Fujii Kaze",
+      "roles": [
+        "vocals",
+        "synthesizer",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "94c63015-e846-48ce-a8a7-3b02f48ffdb3"
+    },
+    {
+      "name": "Mikiyo Kikuchi",
+      "roles": [
+        "viola"
+      ],
+      "uuid": "b0a64e15-a2bc-4e61-be39-6bb1c0abc855"
+    },
+    {
+      "name": "Rina Odera",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "42da6b5d-cd0a-4e1d-a10b-79cf6461f54f"
+    },
+    {
+      "name": "Shuta Nishida",
+      "roles": [
+        "guitar"
+      ],
+      "uuid": "aa5634bd-d313-42c8-8bad-168d7c62108b"
+    },
+    {
+      "name": "Yuki Mizuno",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "2922ee21-7967-40ca-a1b4-0c37c099806e"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 289,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/a/a/8/5aac8371-48aa-4854-80e2-6f587fbcf501.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO02203090"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "HEHN",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/fujii-kaze-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/1/a1ec9e8b-f11f-426c-8930-a82f86ac3d84.jpg",
+      "name": "Fujii Kaze",
+      "slug": "fujii-kaze-1",
+      "uuid": "a1ec9e8b-f11f-426c-8930-a82f86ac3d84"
+    }
+  ],
+  "name": "grace",
+  "producers": [],
+  "releaseDate": "2022-10-09T00:00:00+00:00",
+  "uuid": "5aac8371-48aa-4854-80e2-6f587fbcf501"
+}

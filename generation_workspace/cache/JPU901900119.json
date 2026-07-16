@@ -1,0 +1,90 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/d564e996-2ac1-11e9-aa5d-00163ec5a2fb/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/milet/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/0/0/11e81bc8-800d-c53e-ac71-a0369fe50396.jpg",
+      "name": "Milet",
+      "slug": "milet",
+      "uuid": "11e81bc8-800d-c53e-ac71-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.01,
+    "danceability": 0.47,
+    "energy": 0.66,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.08,
+    "loudness": -4.25,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 149.96,
+    "timeSignature": 4,
+    "valence": 0.29
+  },
+  "composers": [
+    "milet",
+    "Toru"
+  ],
+  "copyright": "(P)2019 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "Milet",
+  "credits": [
+    {
+      "name": "‌milet",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "8cae6892-1ce6-4ac1-9b2a-e88acef91666"
+    },
+    {
+      "name": "Toru",
+      "roles": [
+        "composer",
+        "arranger"
+      ],
+      "uuid": "57db4fb9-cf56-4dde-bd7e-286e8d8dfa2f"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 222,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/1/c/a/d564e996-2ac1-11e9-aa5d-00163ec5a2fb.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU901900119"
+  },
+  "iswcs": [
+    "T9295089995"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/milet/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/0/0/11e81bc8-800d-c53e-ac71-a0369fe50396.jpg",
+      "name": "Milet",
+      "slug": "milet",
+      "uuid": "11e81bc8-800d-c53e-ac71-a0369fe50396"
+    }
+  ],
+  "name": "inside you",
+  "producers": [],
+  "releaseDate": "2019-03-04T00:00:00+00:00",
+  "uuid": "d564e996-2ac1-11e9-aa5d-00163ec5a2fb"
+}

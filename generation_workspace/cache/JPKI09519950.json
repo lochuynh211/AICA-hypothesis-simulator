@@ -1,0 +1,88 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8262d-2385-ca36-9b8d-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yoko-takahashi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/d/8/1c108afe-b8d4-11e8-9083-525400009efb.jpg",
+      "name": "Yoko Takahashi",
+      "slug": "yoko-takahashi",
+      "uuid": "1c108afe-b8d4-11e8-9083-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.02,
+    "danceability": 0.7,
+    "energy": 0.63,
+    "instrumentalness": 0,
+    "key": 0,
+    "liveness": 0.09,
+    "loudness": -10.37,
+    "mode": 0,
+    "speechiness": 0.05,
+    "tempo": 128.19,
+    "timeSignature": 4,
+    "valence": 0.54
+  },
+  "composers": [
+    "Oikawa Neko",
+    "Sato Hidetoshi"
+  ],
+  "copyright": "1995 King Record Co.,Ltd",
+  "creditName": "Yoko Takahashi",
+  "credits": [
+    {
+      "name": "及川眠子",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "39d9d621-0412-40de-859c-d00da0e0373f"
+    },
+    {
+      "name": "佐藤英敏",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "e9cda2b9-d2b4-4cad-a01f-acdeca0fbe63"
+    }
+  ],
+  "distributor": "",
+  "duration": 245,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "soundtrack",
+      "sub": [
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/5/8/3/11e8262d-2385-ca36-9b8d-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPKI09519950"
+  },
+  "iswcs": [
+    "T1012616383"
+  ],
+  "labels": [
+    {
+      "name": "King Record",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yoko-takahashi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/d/8/1c108afe-b8d4-11e8-9083-525400009efb.jpg",
+      "name": "Yoko Takahashi",
+      "slug": "yoko-takahashi",
+      "uuid": "1c108afe-b8d4-11e8-9083-525400009efb"
+    }
+  ],
+  "name": "残酷な天使のテーゼ",
+  "producers": [],
+  "releaseDate": "1995-10-25T00:00:00+00:00",
+  "uuid": "11e8262d-2385-ca36-9b8d-a0369fe50396"
+}

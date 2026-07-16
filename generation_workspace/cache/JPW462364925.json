@@ -1,0 +1,70 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/4b8434f9-285f-4bb4-8b95-1918f16107ac/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/tuki-9/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/b/2/6b77288c-92be-44b2-b7a2-bc046b278fbd.jpg",
+      "name": "tuki.",
+      "slug": "tuki-9",
+      "uuid": "6b77288c-92be-44b2-b7a2-bc046b278fbd"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.43,
+    "danceability": 0.65,
+    "energy": 0.64,
+    "instrumentalness": 0,
+    "key": 8,
+    "liveness": 0.11,
+    "loudness": -4.67,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 102.98,
+    "timeSignature": 4,
+    "valence": 0.63
+  },
+  "composers": [
+    "tuki."
+  ],
+  "copyright": "2025 月面着陸計画",
+  "creditName": "tuki.",
+  "credits": [],
+  "distributor": "Eggs",
+  "duration": 215,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/f/5/8/4b8434f9-285f-4bb4-8b95-1918f16107ac.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPW462364925"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "月面着陸計画",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/tuki-9/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/b/2/6b77288c-92be-44b2-b7a2-bc046b278fbd.jpg",
+      "name": "tuki.",
+      "slug": "tuki-9",
+      "uuid": "6b77288c-92be-44b2-b7a2-bc046b278fbd"
+    }
+  ],
+  "name": "晩餐歌",
+  "producers": [],
+  "releaseDate": "2025-01-08T00:00:00+00:00",
+  "uuid": "4b8434f9-285f-4bb4-8b95-1918f16107ac"
+}

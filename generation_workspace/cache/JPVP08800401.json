@@ -1,0 +1,119 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/a214d5f4-b8e0-11e8-8b63-525400009efb/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/dreaming-24/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/f/c/c33c7f18-5cf1-4ceb-8cfd-90fce279b8e4.jpg",
+      "name": "Dreaming",
+      "slug": "dreaming-24",
+      "uuid": "c33c7f18-5cf1-4ceb-8cfd-90fce279b8e4"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.64,
+    "danceability": 0.81,
+    "energy": 0.75,
+    "instrumentalness": 0,
+    "key": 8,
+    "liveness": 0.33,
+    "loudness": -5.07,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 96.23,
+    "timeSignature": 4,
+    "valence": 0.96
+  },
+  "composers": [
+    "Takashi Miki",
+    "やなせたかし"
+  ],
+  "copyright": "2012 VAP INC.",
+  "creditName": "Dreaming",
+  "credits": [
+    {
+      "name": "Takashi Yanase",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "0251836d-8c2d-4146-9b54-d3fb2af45084"
+    },
+    {
+      "name": "Takashi Miki",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "09895748-f2b4-481f-af0d-b4a235982aa2"
+    },
+    {
+      "name": "Kazuo Otani",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "9763bab9-24de-48ee-8029-b3b2c2b2efac"
+    },
+    {
+      "name": "VAP INC.",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "e597c260-cdb9-4d29-a282-185521549d92"
+    },
+    {
+      "name": "Nippon Television Music Corporation",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "c42bc885-2604-4e72-bb06-324e1d63f0b8"
+    }
+  ],
+  "distributor": "VAP",
+  "duration": 169,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "kids",
+      "sub": [
+        "children's music"
+      ]
+    },
+    {
+      "root": "soundtrack",
+      "sub": [
+        "film ost",
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/e/8/a214d5f4-b8e0-11e8-8b63-525400009efb.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPVP08800401"
+  },
+  "iswcs": [
+    "T1010161825"
+  ],
+  "labels": [
+    {
+      "name": "VAP",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/dreaming-24/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/f/c/c33c7f18-5cf1-4ceb-8cfd-90fce279b8e4.jpg",
+      "name": "Dreaming",
+      "slug": "dreaming-24",
+      "uuid": "c33c7f18-5cf1-4ceb-8cfd-90fce279b8e4"
+    }
+  ],
+  "name": "アンパンマンのマーチ",
+  "producers": [
+    "Vap Inc.",
+    "NIPPON TELEVISION MUSIC CORPORATION"
+  ],
+  "releaseDate": "2012-12-12T00:00:00+00:00",
+  "uuid": "a214d5f4-b8e0-11e8-8b63-525400009efb"
+}

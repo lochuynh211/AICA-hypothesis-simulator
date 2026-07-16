@@ -1,0 +1,73 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/f12d0923-4d58-4c80-9bd5-7dd84dd6c475/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ichiko-aoba/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/e/8/ed78eafa-b8e3-11e8-92df-525400009efb.jpg",
+      "name": "Ichiko Aoba",
+      "slug": "ichiko-aoba",
+      "uuid": "ed78eafa-b8e3-11e8-92df-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.96,
+    "danceability": 0.54,
+    "energy": 0.22,
+    "instrumentalness": 0.54,
+    "key": 6,
+    "liveness": 0.12,
+    "loudness": -15.88,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 109.98,
+    "timeSignature": 4,
+    "valence": 0.2
+  },
+  "composers": [
+    "Ichiko Aoba",
+    "Taro Umebayashi"
+  ],
+  "copyright": "2020 hermine",
+  "creditName": "Ichiko Aoba",
+  "credits": [],
+  "distributor": "",
+  "duration": 285,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/5/d/f12d0923-4d58-4c80-9bd5-7dd84dd6c475.jpg",
+  "isrc": {
+    "countryCode": "",
+    "countryName": "",
+    "value": "TCJPM2079804"
+  },
+  "iswcs": [
+    "T3030075420"
+  ],
+  "labels": [
+    {
+      "name": "Hermine",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ichiko-aoba/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/e/8/ed78eafa-b8e3-11e8-92df-525400009efb.jpg",
+      "name": "Ichiko Aoba",
+      "slug": "ichiko-aoba",
+      "uuid": "ed78eafa-b8e3-11e8-92df-525400009efb"
+    }
+  ],
+  "name": "Dawn in the Adan",
+  "producers": [],
+  "releaseDate": "2020-12-02T00:00:00+00:00",
+  "uuid": "f12d0923-4d58-4c80-9bd5-7dd84dd6c475"
+}

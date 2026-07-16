@@ -1,0 +1,72 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/d79aa9a0-b8f0-11e8-876c-525400009efb/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/foorin/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/f/8/d7aa6138-b8f0-11e8-bd38-525400009efb.jpg",
+      "name": "Foorin",
+      "slug": "foorin",
+      "uuid": "d7aa6138-b8f0-11e8-bd38-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.14,
+    "danceability": 0.75,
+    "energy": 0.77,
+    "instrumentalness": 0,
+    "key": 11,
+    "liveness": 0.77,
+    "loudness": -5.04,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 100.99,
+    "timeSignature": 4,
+    "valence": 0.73
+  },
+  "composers": [
+    "Kenshi Yonezu"
+  ],
+  "copyright": "(P)2018 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "Foorin",
+  "credits": [],
+  "distributor": "Sony",
+  "duration": 208,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/f/8/d79aa9a0-b8f0-11e8-876c-525400009efb.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU901802326"
+  },
+  "iswcs": [
+    "T9269628093"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/foorin/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/f/8/d7aa6138-b8f0-11e8-bd38-525400009efb.jpg",
+      "name": "Foorin",
+      "slug": "foorin",
+      "uuid": "d7aa6138-b8f0-11e8-bd38-525400009efb"
+    }
+  ],
+  "name": "パプリカ",
+  "producers": [],
+  "releaseDate": "2018-08-13T00:00:00+00:00",
+  "uuid": "d79aa9a0-b8f0-11e8-876c-525400009efb"
+}

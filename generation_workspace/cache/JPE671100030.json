@@ -1,0 +1,79 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/48dc1c8e-c23d-11e8-b51c-525400009efb/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/golden-bomber/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/7/7/e6592128-b77f-11e8-bd09-525400009efb.jpg",
+      "name": "Golden Bomber",
+      "slug": "golden-bomber",
+      "uuid": "e6592128-b77f-11e8-bd09-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.01,
+    "danceability": 0.51,
+    "energy": 0.99,
+    "instrumentalness": 0,
+    "key": 6,
+    "liveness": 0.76,
+    "loudness": -3.31,
+    "mode": 1,
+    "speechiness": 0.16,
+    "tempo": 143.13,
+    "timeSignature": 4,
+    "valence": 0.57
+  },
+  "composers": [
+    "Sho Kiryuuin"
+  ],
+  "copyright": "2012 euclid music publishing inc.",
+  "creditName": "GOLDEN BOMBER",
+  "credits": [
+    {
+      "name": "Sho Kiryuuin",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "98638a4e-c326-4ecd-9a8d-f048c3c507ce"
+    }
+  ],
+  "distributor": "",
+  "duration": 248,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/d/3/2/48dc1c8e-c23d-11e8-b51c-525400009efb.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPE671100030"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "euclid music publishing",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/golden-bomber/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/7/7/e6592128-b77f-11e8-bd09-525400009efb.jpg",
+      "name": "Golden Bomber",
+      "slug": "golden-bomber",
+      "uuid": "e6592128-b77f-11e8-bd09-525400009efb"
+    }
+  ],
+  "name": "女々しくて - K-POPバージョン",
+  "producers": [],
+  "releaseDate": "2012-01-11T00:00:00+00:00",
+  "uuid": "48dc1c8e-c23d-11e8-b51c-525400009efb"
+}

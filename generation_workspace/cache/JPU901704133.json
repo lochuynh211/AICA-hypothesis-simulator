@@ -1,0 +1,125 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e840d6-697c-96fa-bee3-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aimer/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/9/4/11e81bbc-b492-c5b8-b4b7-a0369fe50396.jpg",
+      "name": "Aimer",
+      "slug": "aimer",
+      "uuid": "11e81bbc-b492-c5b8-b4b7-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.03,
+    "danceability": 0.47,
+    "energy": 0.67,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.09,
+    "loudness": -4.3,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 77.98,
+    "timeSignature": 4,
+    "valence": 0.31
+  },
+  "composers": [
+    "Masahiro Tobinai"
+  ],
+  "copyright": "(P)2018 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "Aimer",
+  "credits": [
+    {
+      "name": "Masahiro Tobinai",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "376b5629-1e97-497c-ae3f-45abf193d0fc"
+    },
+    {
+      "name": "Aimer",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "24111e11-0daf-41a2-a708-817d5cc1a079"
+    },
+    {
+      "name": "Kenji Tamai",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "ca398a9b-e382-452b-aea4-45d93113270c"
+    },
+    {
+      "name": "Aimerrhythm",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "b1b5d6d2-f610-42e7-aee1-0de249f02d9e"
+    },
+    {
+      "name": "Yuji Chinone",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "6a287a50-6fdb-4de3-9c39-4b85e80cda49"
+    },
+    {
+      "name": "Kenji Tamai",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "e4dce0ad-63f3-4cfe-a782-d35b61d9a5c9"
+    },
+    {
+      "name": "Masahiro Tobinai",
+      "roles": [
+        "composer",
+        "arranger"
+      ],
+      "uuid": "1671baba-6a10-4765-a66f-0558c430d66d"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 289,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/c/7/9/11e840d6-697c-96fa-bee3-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU901704133"
+  },
+  "iswcs": [
+    "T9243898319"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aimer/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/9/4/11e81bbc-b492-c5b8-b4b7-a0369fe50396.jpg",
+      "name": "Aimer",
+      "slug": "aimer",
+      "uuid": "11e81bbc-b492-c5b8-b4b7-a0369fe50396"
+    }
+  ],
+  "name": "Ref:rain",
+  "producers": [
+    "玉井健二 (Kenji Tamai)"
+  ],
+  "releaseDate": "2018-02-21T00:00:00+00:00",
+  "uuid": "11e840d6-697c-96fa-bee3-aa1c026db3d8"
+}

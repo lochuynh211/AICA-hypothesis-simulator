@@ -1,0 +1,88 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826bd-33d7-3f92-b57a-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aimer-3/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/a/2/6b7a794e-12aa-11e9-b993-549f35141000.jpg",
+      "name": "Aimer",
+      "slug": "aimer-3",
+      "uuid": "6b7a794e-12aa-11e9-b993-549f35141000"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.78,
+    "danceability": 0.62,
+    "energy": 0.53,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.33,
+    "loudness": -5.97,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 96.98,
+    "timeSignature": 4,
+    "valence": 0.79
+  },
+  "composers": [
+    "Takahito Uchisawa"
+  ],
+  "copyright": "(P) 2016 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "Aimer",
+  "credits": [
+    {
+      "name": "Takahito Uchisawa",
+      "roles": [
+        "composer",
+        "lyricist",
+        "arranger"
+      ],
+      "uuid": "45d5ad26-dc93-4297-8167-2b1f5d054f53"
+    },
+    {
+      "name": "Masahiro Tobinai",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "376b5629-1e97-497c-ae3f-45abf193d0fc"
+    },
+    {
+      "name": "Kenji Tamai",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "ca398a9b-e382-452b-aea4-45d93113270c"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 30,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/7/d/3/11e826bd-33d7-3f92-b57a-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU901602293"
+  },
+  "iswcs": [
+    "T9201984909"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [],
+  "name": "カタオモイ",
+  "producers": [],
+  "releaseDate": "2016-09-21T00:00:00+00:00",
+  "uuid": "11e826bd-33d7-3f92-b57a-a0369fe50396"
+}

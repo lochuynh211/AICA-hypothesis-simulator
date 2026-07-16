@@ -1,0 +1,90 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/3863e159-f55b-4c47-a5c6-97c19ac42451/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yuuri-2/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/0/d/d406fd1f-cd06-4af6-91bf-e6ffd5d61dda.jpg",
+      "name": "Yuuri",
+      "slug": "yuuri-2",
+      "uuid": "d406fd1f-cd06-4af6-91bf-e6ffd5d61dda"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.2,
+    "danceability": 0.43,
+    "energy": 0.68,
+    "instrumentalness": 0,
+    "key": 5,
+    "liveness": 0.48,
+    "loudness": -4.84,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 180,
+    "timeSignature": 4,
+    "valence": 0.69
+  },
+  "composers": [
+    "優里"
+  ],
+  "copyright": "(P) 2021 Sony Music Labels Inc.",
+  "creditName": "Yuuri",
+  "credits": [
+    {
+      "name": "Yuuri",
+      "roles": [
+        "songwriter",
+        "producer",
+        "vocals",
+        "lyricist"
+      ],
+      "uuid": "d47cef06-a419-41d7-a7d7-bd19b0c8ee29"
+    },
+    {
+      "name": "CHIMERAZ",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "e6939c3a-7a62-48c8-911e-8ea84567330b"
+    }
+  ],
+  "distributor": "",
+  "duration": 230,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/5/5/3863e159-f55b-4c47-a5c6-97c19ac42451.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU902104201"
+  },
+  "iswcs": [
+    "T3088042273"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yuuri-2/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/0/d/d406fd1f-cd06-4af6-91bf-e6ffd5d61dda.jpg",
+      "name": "Yuuri",
+      "slug": "yuuri-2",
+      "uuid": "d406fd1f-cd06-4af6-91bf-e6ffd5d61dda"
+    }
+  ],
+  "name": "Betelgeuse",
+  "producers": [],
+  "releaseDate": "2021-11-04T00:00:00+00:00",
+  "uuid": "3863e159-f55b-4c47-a5c6-97c19ac42451"
+}

@@ -1,0 +1,133 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/5385459c-2c6b-4702-aa51-d854e9dd8701/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mi-jin-xuan-shi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/d/a/11e81bcc-dadf-925e-af6a-a0369fe50396.jpg",
+      "name": "Kenshi Yonezu",
+      "slug": "mi-jin-xuan-shi",
+      "uuid": "11e81bcc-dadf-925e-af6a-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.21,
+    "danceability": 0.69,
+    "energy": 0.46,
+    "instrumentalness": 0,
+    "key": 2,
+    "liveness": 0.41,
+    "loudness": -8.64,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 87.99,
+    "timeSignature": 4,
+    "valence": 0.45
+  },
+  "composers": [
+    "Kenshi Yonezu"
+  ],
+  "copyright": "(P) 2021 Sony Music Labels Inc.",
+  "creditName": "Kenshi Yonezu",
+  "credits": [
+    {
+      "name": "Kenshi Yonezu",
+      "roles": [
+        "composer",
+        "arranger",
+        "lyricist",
+        "associated performer"
+      ],
+      "uuid": "e3ad260e-ef18-4b95-8652-44ffceffd6e9"
+    },
+    {
+      "name": "米津玄師 (Kenshi Yonezu)",
+      "roles": [
+        "composer",
+        "producer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "38643bd5-30ef-4cc9-9c0c-66bff2d70aa8"
+    },
+    {
+      "name": "高山宏司 (Koji Takayama)",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "43d6ad66-a557-4270-97dd-88df5c2c8d41"
+    },
+    {
+      "name": "山田智和 (Tomokazu Yamada)",
+      "roles": [
+        "video director",
+        "video editor"
+      ],
+      "uuid": "52ba0044-fd66-4a46-a3ac-04321ca35559"
+    },
+    {
+      "name": "米津玄師",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "b10c3204-9cac-47d5-a268-15f1991ce8c6"
+    },
+    {
+      "name": "坂東祐大",
+      "roles": [
+        "arranger",
+        "producer"
+      ],
+      "uuid": "ee6f857a-8812-43a5-be51-c6b0d19eca16"
+    },
+    {
+      "name": "Yuta Bandoh",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "b98a085e-35a4-42bb-ae51-4ebc57f87181"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 296,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/6/c/5385459c-2c6b-4702-aa51-d854e9dd8701.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU902101078"
+  },
+  "iswcs": [
+    "T3060037987"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mi-jin-xuan-shi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/d/a/11e81bcc-dadf-925e-af6a-a0369fe50396.jpg",
+      "name": "Kenshi Yonezu",
+      "slug": "mi-jin-xuan-shi",
+      "uuid": "11e81bcc-dadf-925e-af6a-a0369fe50396"
+    }
+  ],
+  "name": "Pale Blue",
+  "producers": [
+    "坂東祐大 (Yuta Bandoh)",
+    "米津玄師 (Kenshi Yonezu)"
+  ],
+  "releaseDate": "2021-05-31T00:00:00+00:00",
+  "uuid": "5385459c-2c6b-4702-aa51-d854e9dd8701"
+}

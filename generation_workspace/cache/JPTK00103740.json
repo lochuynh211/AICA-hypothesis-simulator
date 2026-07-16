@@ -1,0 +1,92 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82643-fd38-583c-9a13-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yumi-kimura/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/c/5/e/cc432dda-ce5c-11e8-a53f-549f35141000.jpg",
+      "name": "Yumi Kimura",
+      "slug": "yumi-kimura",
+      "uuid": "cc432dda-ce5c-11e8-a53f-549f35141000"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.99,
+    "danceability": 0.44,
+    "energy": 0.04,
+    "instrumentalness": 0,
+    "key": 5,
+    "liveness": 0.08,
+    "loudness": -19.58,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 144.53,
+    "timeSignature": 4,
+    "valence": 0.69
+  },
+  "composers": [
+    "Yumi Kimura",
+    "覚和歌子"
+  ],
+  "copyright": "2000 Norn Music",
+  "creditName": "Yumi Kimura",
+  "credits": [],
+  "distributor": "Tokuma Japan Communications",
+  "duration": 215,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "soundtrack",
+      "sub": [
+        "film ost",
+        "ost"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/3/d/11e82643-fd38-583c-9a13-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPTK00103740"
+  },
+  "iswcs": [
+    "T1016879277"
+  ],
+  "labels": [
+    {
+      "name": "Norn Music",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yumi-kimura/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/c/5/e/cc432dda-ce5c-11e8-a53f-549f35141000.jpg",
+      "name": "Yumi Kimura",
+      "slug": "yumi-kimura",
+      "uuid": "cc432dda-ce5c-11e8-a53f-549f35141000"
+    }
+  ],
+  "name": "いつも何度でも (千と千尋の神隠し)",
+  "producers": [],
+  "releaseDate": "2000-01-01T00:00:00+00:00",
+  "uuid": "11e82643-fd38-583c-9a13-aa1c026db3d8"
+}

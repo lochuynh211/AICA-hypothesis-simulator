@@ -1,0 +1,97 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82642-b3cd-1314-a1be-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/azumi-inoue/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/d/8/0ec8b7dc-b8dd-11e8-9759-525400009efb.jpg",
+      "name": "Azumi Inoue",
+      "slug": "azumi-inoue",
+      "uuid": "0ec8b7dc-b8dd-11e8-9759-525400009efb"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/suginami-children-s-choir/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/7/f/a2f21726-df70-4e58-b225-d20a42fcb5eb.jpg",
+      "name": "Suginami Children's Choir",
+      "slug": "suginami-children-s-choir",
+      "uuid": "a2f21726-df70-4e58-b225-d20a42fcb5eb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.72,
+    "danceability": 0.66,
+    "energy": 0.58,
+    "instrumentalness": 0,
+    "key": 0,
+    "liveness": 0.18,
+    "loudness": -9.7,
+    "mode": 1,
+    "speechiness": 0.14,
+    "tempo": 180.3,
+    "timeSignature": 3,
+    "valence": 0.79
+  },
+  "composers": [
+    "Joe Hisaishi",
+    "中川李枝子"
+  ],
+  "copyright": "(P) 1987 Studio Ghibli",
+  "creditName": "Azumi Inoue & Suginami Children's Choir",
+  "credits": [
+    {
+      "name": "Joe Hisaishi",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "aef45dc0-147b-428c-816a-5ac58b217715"
+    },
+    {
+      "name": "Rieko Nakagawa",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "7e5982e9-6f35-4d45-8e47-eff7602bbdd6"
+    }
+  ],
+  "distributor": "Tokuma Japan Communications",
+  "duration": 165,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "soundtrack",
+      "sub": [
+        "anime",
+        "film ost",
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/d/c/3/11e82642-b3cd-1314-a1be-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPTK08780803"
+  },
+  "iswcs": [
+    "T1012727352"
+  ],
+  "labels": [
+    {
+      "name": "Studio Ghibli",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/azumi-inoue/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/d/8/0ec8b7dc-b8dd-11e8-9759-525400009efb.jpg",
+      "name": "Azumi Inoue",
+      "slug": "azumi-inoue",
+      "uuid": "0ec8b7dc-b8dd-11e8-9759-525400009efb"
+    }
+  ],
+  "name": "さんぽ",
+  "producers": [],
+  "releaseDate": "1987-01-01T00:00:00+00:00",
+  "uuid": "11e82642-b3cd-1314-a1be-a0369fe50396"
+}

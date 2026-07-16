@@ -1,0 +1,120 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82640-fa77-6de8-9424-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ai-otsuka/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/c/8/b54d0036-b8ce-11e8-be37-525400009efb.jpg",
+      "name": "Ai Otsuka",
+      "slug": "ai-otsuka",
+      "uuid": "b54d0036-b8ce-11e8-be37-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.16,
+    "danceability": 0.51,
+    "energy": 0.84,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.32,
+    "loudness": -3.52,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 170,
+    "timeSignature": 4,
+    "valence": 0.7
+  },
+  "composers": [
+    "愛"
+  ],
+  "copyright": "Avex Music Creative Inc.",
+  "creditName": "Ai Otsuka",
+  "credits": [
+    {
+      "name": "牧祐介",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "f0429663-81e2-4a3c-b3bc-441a220b9c53"
+    },
+    {
+      "name": "YOSHINARI TAKEGAMI",
+      "roles": [
+        "saxophone"
+      ],
+      "uuid": "abc64510-4742-4bc5-8d35-3c2dcbc937f4"
+    },
+    {
+      "name": "Ai Otsuka",
+      "roles": [
+        "arranger",
+        "songwriter",
+        "vocals"
+      ],
+      "uuid": "83657c6c-0db7-4ed0-819e-b991276c7200"
+    },
+    {
+      "name": "Yokan",
+      "roles": [
+        "trumpet",
+        "brass arranger"
+      ],
+      "uuid": "da727eaf-05a0-46f0-a256-aa9fa73b9f99"
+    },
+    {
+      "name": "Ikoman",
+      "roles": [
+        "arranger",
+        "programming",
+        "guitar"
+      ],
+      "uuid": "09a590a4-b6ad-4ca2-afa3-ea8b34a6e01b"
+    },
+    {
+      "name": "Noboru Inoue",
+      "roles": [
+        "trombone"
+      ],
+      "uuid": "ff47e81e-4d3f-47e5-963b-dcf30c57bac3"
+    },
+    {
+      "name": "小豆沢 \"Azzey\" 達郎",
+      "roles": [
+        "bass guitar"
+      ],
+      "uuid": "c58c2404-2503-4fe4-821d-4ec03bae812c"
+    }
+  ],
+  "distributor": "Avex",
+  "duration": 233,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian",
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/7/7/a/11e82640-fa77-6de8-9424-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPB600367001"
+  },
+  "iswcs": [
+    "T1017438332"
+  ],
+  "labels": [
+    {
+      "name": "Avex Music Creative",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [],
+  "name": "さくらんぼ",
+  "producers": [],
+  "releaseDate": "2003-12-17T00:00:00+00:00",
+  "uuid": "11e82640-fa77-6de8-9424-a0369fe50396"
+}

@@ -1,0 +1,88 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/81f951ce-041f-443c-b0cf-11ced7e0c8f8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ichiko-aoba/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/e/8/ed78eafa-b8e3-11e8-92df-525400009efb.jpg",
+      "name": "Ichiko Aoba",
+      "slug": "ichiko-aoba",
+      "uuid": "ed78eafa-b8e3-11e8-92df-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.83,
+    "danceability": 0.42,
+    "energy": 0.31,
+    "instrumentalness": 0.38,
+    "key": 7,
+    "liveness": 0.12,
+    "loudness": -13.72,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 139.99,
+    "timeSignature": 3,
+    "valence": 0.07
+  },
+  "composers": [
+    "Ichiko Aoba",
+    "Taro Umebayashi"
+  ],
+  "copyright": "2020 hermine",
+  "creditName": "Ichiko Aoba",
+  "credits": [
+    {
+      "name": "Taro Umebayashi",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "fe85f241-5580-499b-b98a-f55e767d4092"
+    },
+    {
+      "name": "Ichiko Aoba",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "1a34d756-56b1-4702-bcf7-56af8b133b41"
+    }
+  ],
+  "distributor": "",
+  "duration": 269,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/f/1/4/81f951ce-041f-443c-b0cf-11ced7e0c8f8.jpg",
+  "isrc": {
+    "countryCode": "",
+    "countryName": "",
+    "value": "TCJPM2079791"
+  },
+  "iswcs": [
+    "T3030076252"
+  ],
+  "labels": [
+    {
+      "name": "Hermine",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ichiko-aoba/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/e/8/ed78eafa-b8e3-11e8-92df-525400009efb.jpg",
+      "name": "Ichiko Aoba",
+      "slug": "ichiko-aoba",
+      "uuid": "ed78eafa-b8e3-11e8-92df-525400009efb"
+    }
+  ],
+  "name": "Porcelain",
+  "producers": [],
+  "releaseDate": "2020-10-30T00:00:00+00:00",
+  "uuid": "81f951ce-041f-443c-b0cf-11ced7e0c8f8"
+}

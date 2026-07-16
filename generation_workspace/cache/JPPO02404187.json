@@ -1,0 +1,88 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/5977d61a-4e84-4e2a-9093-7a31ee87f6cf/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/akasaki/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/4/3/5c288d85-834e-471e-9d2b-66fe2bb42516.jpg",
+      "name": "AKASAKI",
+      "slug": "akasaki",
+      "uuid": "5c288d85-834e-471e-9d2b-66fe2bb42516"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.73,
+    "energy": 0.68,
+    "instrumentalness": 0,
+    "key": 5,
+    "liveness": 0.2,
+    "loudness": -8.73,
+    "mode": 0,
+    "speechiness": 0.06,
+    "tempo": 159.93,
+    "timeSignature": 4,
+    "valence": 0.68
+  },
+  "composers": [
+    "AKASAKI"
+  ],
+  "copyright": "℗ 2024 AKASAKI",
+  "creditName": "AKASAKI",
+  "credits": [
+    {
+      "name": "Akasaki",
+      "roles": [
+        "vocals",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "9aeaf591-c597-4e3e-947d-085f0fbc627e"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 217,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    },
+    {
+      "root": "j-pop",
+      "sub": [
+        "j-pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/4/8/e/5977d61a-4e84-4e2a-9093-7a31ee87f6cf.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO02404187"
+  },
+  "iswcs": [
+    "T3320166885"
+  ],
+  "labels": [
+    {
+      "name": "AKASAKI",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/akasaki/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/4/3/5c288d85-834e-471e-9d2b-66fe2bb42516.jpg",
+      "name": "AKASAKI",
+      "slug": "akasaki",
+      "uuid": "5c288d85-834e-471e-9d2b-66fe2bb42516"
+    }
+  ],
+  "name": "Bunny Girl",
+  "producers": [],
+  "releaseDate": "2024-10-02T00:00:00+00:00",
+  "uuid": "5977d61a-4e84-4e2a-9093-7a31ee87f6cf"
+}

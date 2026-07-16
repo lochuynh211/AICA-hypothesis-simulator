@@ -1,0 +1,82 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8407b-8ac8-93b4-9efb-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/dream5/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/4/6/11e81bbb-9649-da20-84ad-a0369fe50396.jpg",
+      "name": "Dream5",
+      "slug": "dream5",
+      "uuid": "11e81bbb-9649-da20-84ad-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.13,
+    "danceability": 0.76,
+    "energy": 0.83,
+    "instrumentalness": 0,
+    "key": 6,
+    "liveness": 0.08,
+    "loudness": -5.71,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 124.98,
+    "timeSignature": 4,
+    "valence": 0.8
+  },
+  "composers": [
+    "菊谷知樹",
+    "高木貴司",
+    "ラッキィ池田"
+  ],
+  "copyright": "Avex Music Creative Inc.",
+  "creditName": "Dream5",
+  "credits": [
+    {
+      "name": "Tomoki Kikuya",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "8ac6bd8f-69f4-4487-ae4f-1fc078086da4"
+    },
+    {
+      "name": "ラッキィ池田&高木貴司",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "19b3128c-de9b-40fb-a454-32ac29282788"
+    }
+  ],
+  "distributor": "Avex",
+  "duration": 239,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/8/c/a/11e8407b-8ac8-93b4-9efb-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPB601401310"
+  },
+  "iswcs": [
+    "T9137759252"
+  ],
+  "labels": [
+    {
+      "name": "Avex Music Creative",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/dream5/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/4/6/11e81bbb-9649-da20-84ad-a0369fe50396.jpg",
+      "name": "Dream5",
+      "slug": "dream5",
+      "uuid": "11e81bbb-9649-da20-84ad-a0369fe50396"
+    }
+  ],
+  "name": "ようかい体操第一",
+  "producers": [],
+  "releaseDate": "2015-02-11T00:00:00+00:00",
+  "uuid": "11e8407b-8ac8-93b4-9efb-aa1c026db3d8"
+}

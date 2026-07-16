@@ -1,0 +1,75 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82669-3f25-7750-8e9e-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/da-shan-jiu-mei-zi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/e/3/11e81bcd-83e4-aaba-a3fc-a0369fe50396.jpg",
+      "name": "大杉久美子",
+      "slug": "da-shan-jiu-mei-zi",
+      "uuid": "11e81bcd-83e4-aaba-a3fc-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/doraemon-cv-da-shannobu-dai/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/3/3/5f4dbfed-a332-4ec4-9a02-a7ea0aff91a2.jpg",
+      "name": "ドラえもん (CV: 大山のぶ代)",
+      "slug": "doraemon-cv-da-shannobu-dai",
+      "uuid": "5f4dbfed-a332-4ec4-9a02-a7ea0aff91a2"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.77,
+    "danceability": 0.8,
+    "energy": 0.52,
+    "instrumentalness": 0,
+    "key": 2,
+    "liveness": 0.12,
+    "loudness": -4.42,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 123.07,
+    "timeSignature": 4,
+    "valence": 0.85
+  },
+  "composers": [
+    "Shunsuke Kikuchi",
+    "楠部工"
+  ],
+  "copyright": "",
+  "creditName": "大杉久美子 & ドラえもん (CV: 大山のぶ代)",
+  "credits": [],
+  "distributor": "Nippon Columbia",
+  "duration": 176,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/5/2/f/11e82669-3f25-7750-8e9e-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPCO07909740"
+  },
+  "iswcs": [
+    "T1014111567"
+  ],
+  "labels": [],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/da-shan-jiu-mei-zi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/e/3/11e81bcd-83e4-aaba-a3fc-a0369fe50396.jpg",
+      "name": "大杉久美子",
+      "slug": "da-shan-jiu-mei-zi",
+      "uuid": "11e81bcd-83e4-aaba-a3fc-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/doraemon-cv-da-shannobu-dai/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/3/3/5f4dbfed-a332-4ec4-9a02-a7ea0aff91a2.jpg",
+      "name": "ドラえもん (CV: 大山のぶ代)",
+      "slug": "doraemon-cv-da-shannobu-dai",
+      "uuid": "5f4dbfed-a332-4ec4-9a02-a7ea0aff91a2"
+    }
+  ],
+  "name": "ドラえもんのうた",
+  "producers": [],
+  "releaseDate": "1999-05-21T00:00:00+00:00",
+  "uuid": "11e82669-3f25-7750-8e9e-aa1c026db3d8"
+}

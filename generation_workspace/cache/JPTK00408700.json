@@ -1,0 +1,52 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82644-4b06-0b40-898c-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/chieko-baisho/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/e/b/11e81bce-3be6-91d2-8bd5-a0369fe50396.jpg",
+      "name": "Chieko Baisho",
+      "slug": "chieko-baisho",
+      "uuid": "11e81bce-3be6-91d2-8bd5-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.97,
+    "danceability": 0.35,
+    "energy": 0.17,
+    "instrumentalness": 0,
+    "key": 0,
+    "liveness": 0.1,
+    "loudness": -12.59,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 106.37,
+    "timeSignature": 3,
+    "valence": 0.15
+  },
+  "composers": [
+    "Kimura Yumi"
+  ],
+  "copyright": "",
+  "creditName": "Chieko Baisho",
+  "credits": [],
+  "distributor": "Tokuma Japan Communications",
+  "duration": 261,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/6/0/b/11e82644-4b06-0b40-898c-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPTK00408700"
+  },
+  "iswcs": [
+    "T1017488423"
+  ],
+  "labels": [],
+  "languageCode": "ja",
+  "mainArtists": [],
+  "name": "世界の約束 (ハウルの動く城)",
+  "producers": [],
+  "releaseDate": null,
+  "uuid": "11e82644-4b06-0b40-898c-a0369fe50396"
+}

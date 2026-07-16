@@ -1,0 +1,70 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/e024ef99-42d8-45b7-949a-3c2f7ce7d866/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ichiko-aoba/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/e/8/ed78eafa-b8e3-11e8-92df-525400009efb.jpg",
+      "name": "Ichiko Aoba",
+      "slug": "ichiko-aoba",
+      "uuid": "ed78eafa-b8e3-11e8-92df-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.98,
+    "danceability": 0.45,
+    "energy": 0.03,
+    "instrumentalness": 0.05,
+    "key": 0,
+    "liveness": 0.1,
+    "loudness": -19.93,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 123.99,
+    "timeSignature": 4,
+    "valence": 0.15
+  },
+  "composers": [
+    "Ichiko Aoba"
+  ],
+  "copyright": "2021 hermine",
+  "creditName": "Ichiko Aoba",
+  "credits": [],
+  "distributor": "",
+  "duration": 306,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/d/2/e024ef99-42d8-45b7-949a-3c2f7ce7d866.jpg",
+  "isrc": {
+    "countryCode": "",
+    "countryName": "",
+    "value": "TCJPN2174507"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Hermine",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ichiko-aoba/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/e/8/ed78eafa-b8e3-11e8-92df-525400009efb.jpg",
+      "name": "Ichiko Aoba",
+      "slug": "ichiko-aoba",
+      "uuid": "ed78eafa-b8e3-11e8-92df-525400009efb"
+    }
+  ],
+  "name": "アンディーヴと眠って",
+  "producers": [],
+  "releaseDate": "2021-02-03T00:00:00+00:00",
+  "uuid": "e024ef99-42d8-45b7-949a-3c2f7ce7d866"
+}

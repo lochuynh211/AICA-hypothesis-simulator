@@ -1,0 +1,140 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/60fff807-7726-480e-bced-ba24398ae2e4/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/imase/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/b/c/497843e1-3cbd-4906-bad8-37f9aee5d903.jpg",
+      "name": "imase",
+      "slug": "imase",
+      "uuid": "497843e1-3cbd-4906-bad8-37f9aee5d903"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.09,
+    "danceability": 0.91,
+    "energy": 0.59,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.13,
+    "loudness": -8.08,
+    "mode": 0,
+    "speechiness": 0.07,
+    "tempo": 117.06,
+    "timeSignature": 4,
+    "valence": 0.85
+  },
+  "composers": [
+    "imase"
+  ],
+  "copyright": "℗ 2024 UNIVERSAL MUSIC LLC",
+  "creditName": "imase",
+  "credits": [
+    {
+      "name": "MORI ESME",
+      "roles": [
+        "arranger",
+        "producer",
+        "recording arranger"
+      ],
+      "uuid": "fe6e4f97-20a3-426c-b071-baf7f7d1c3a1"
+    },
+    {
+      "name": "Matt Cab",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "fb6d67ce-3451-4ca1-80ee-448e316a84db"
+    },
+    {
+      "name": "IMASE IMASE",
+      "roles": [
+        "composer",
+        "songwriter",
+        "producer",
+        "writer",
+        "vocals",
+        "lyricist",
+        "author"
+      ],
+      "uuid": "6e44d367-764d-48f7-96c3-099a3784f552"
+    },
+    {
+      "name": "Masahito Komori",
+      "roles": [
+        "mix",
+        "studio personnel"
+      ],
+      "uuid": "831a6169-2c27-4da7-a010-4f0a2d9b89eb"
+    },
+    {
+      "name": "小森雅仁 (Masahito Komori)",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "9f9fff96-db5b-4c0b-8e06-32b46d491826"
+    },
+    {
+      "name": "Daishi Iiba",
+      "roles": [
+        "recording",
+        "studio personnel"
+      ],
+      "uuid": "4a418bfa-f5fa-4f27-b70b-aa6efaac7e4e"
+    },
+    {
+      "name": "スーパーの裏でヤニ吸うふたり (Smoking Behind the Supermarket with You)",
+      "roles": [
+        "tie-in"
+      ],
+      "uuid": "ed88e590-3714-41b2-a584-c1343c77629c"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 210,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    },
+    {
+      "root": "j-pop",
+      "sub": [
+        "j-pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/6/2/7/60fff807-7726-480e-bced-ba24398ae2e4.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO02202918"
+  },
+  "iswcs": [
+    "T3167218788"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/imase/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/b/c/497843e1-3cbd-4906-bad8-37f9aee5d903.jpg",
+      "name": "imase",
+      "slug": "imase",
+      "uuid": "497843e1-3cbd-4906-bad8-37f9aee5d903"
+    }
+  ],
+  "name": "NIGHT DANCER",
+  "producers": [
+    "ESME MORI"
+  ],
+  "releaseDate": "2024-05-15T00:00:00+00:00",
+  "uuid": "60fff807-7726-480e-bced-ba24398ae2e4"
+}

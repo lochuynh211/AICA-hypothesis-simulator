@@ -1,0 +1,176 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/8230bd9c-eeb5-4f0d-8865-aa0044af8b35/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/fujii-kaze-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/1/a1ec9e8b-f11f-426c-8930-a82f86ac3d84.jpg",
+      "name": "Fujii Kaze",
+      "slug": "fujii-kaze-1",
+      "uuid": "a1ec9e8b-f11f-426c-8930-a82f86ac3d84"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.71,
+    "energy": 0.76,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.12,
+    "loudness": -7.96,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 129.98,
+    "timeSignature": 4,
+    "valence": 0.65
+  },
+  "composers": [
+    "Fujii Kaze"
+  ],
+  "copyright": "A UNIVERSAL SIGMA / HEHN RECORDS release; ℗ 2022 UNIVERSAL MUSIC LLC",
+  "creditName": "Fujii Kaze",
+  "credits": [
+    {
+      "name": "Shunsuke Uehara",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "02ad7d7c-1a46-4edb-852a-fec4d6d7d021"
+    },
+    {
+      "name": "Masahito Komori",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "831a6169-2c27-4da7-a010-4f0a2d9b89eb"
+    },
+    {
+      "name": "Yaffle",
+      "roles": [
+        "producer",
+        "recording arranger",
+        "keyboard"
+      ],
+      "uuid": "8e6deba3-fbe9-47c2-9933-de1832085b74"
+    },
+    {
+      "name": "藤井 風 (Fujii Kaze)",
+      "roles": [
+        "songwriter",
+        "wurlitzer",
+        "vocals",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "6523426b-ed5f-495f-808e-07d056388e1b"
+    },
+    {
+      "name": "Takumi Katsuya",
+      "roles": [
+        "double bass"
+      ],
+      "uuid": "354b8a13-547f-4644-88f3-07d2d7249255"
+    },
+    {
+      "name": "Norihide Saji",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "a1e754fa-3ba6-4554-b136-16b763d833d1"
+    },
+    {
+      "name": "TAIKING",
+      "roles": [
+        "guitar"
+      ],
+      "uuid": "d9a84b86-3002-4625-8462-c9ae4bb072ae"
+    },
+    {
+      "name": "Emoh Les",
+      "roles": [
+        "backing vocals"
+      ],
+      "uuid": "77cfb30f-4958-4ca6-801f-6cc7cf192e46"
+    },
+    {
+      "name": "Sho Ogawa",
+      "roles": [
+        "electric guitar"
+      ],
+      "uuid": "1ddc928e-b92b-4705-9f03-b5737aba4759"
+    },
+    {
+      "name": "Ariwa",
+      "roles": [
+        "backing vocals"
+      ],
+      "uuid": "00d09a92-ba5f-4583-9e21-b3e90c22a043"
+    },
+    {
+      "name": "Naoki Kobayashi",
+      "roles": [
+        "bass guitar"
+      ],
+      "uuid": "b6740107-91cb-47b5-8029-7afdce025e9b"
+    },
+    {
+      "name": "Takashi Fukuoka",
+      "roles": [
+        "percussions"
+      ],
+      "uuid": "4db8bd17-a215-4d0a-894f-2cf1bba33d89"
+    },
+    {
+      "name": "Fujii Kaze",
+      "roles": [
+        "vocals",
+        "composer",
+        "lyricist",
+        "wurlitzer"
+      ],
+      "uuid": "94c63015-e846-48ce-a8a7-3b02f48ffdb3"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 259,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/5/b/e/8230bd9c-eeb5-4f0d-8865-aa0044af8b35.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO02200424"
+  },
+  "iswcs": [
+    "T3117953836"
+  ],
+  "labels": [
+    {
+      "name": "HEHN",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/fujii-kaze-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/1/a1ec9e8b-f11f-426c-8930-a82f86ac3d84.jpg",
+      "name": "Fujii Kaze",
+      "slug": "fujii-kaze-1",
+      "uuid": "a1ec9e8b-f11f-426c-8930-a82f86ac3d84"
+    }
+  ],
+  "name": "damn",
+  "producers": [
+    "Yaffle"
+  ],
+  "releaseDate": "2022-03-23T00:00:00+00:00",
+  "uuid": "8230bd9c-eeb5-4f0d-8865-aa0044af8b35"
+}
