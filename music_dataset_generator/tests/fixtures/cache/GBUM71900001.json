@@ -1,0 +1,49 @@
+{
+  "name": "Lazy Sunday Afternoon",
+  "isrc": {
+    "value": "GBUM71900001",
+    "countryCode": "GB",
+    "countryName": "United Kingdom"
+  },
+  "iswcs": [],
+  "duration": 176,
+  "explicit": true,
+  "releaseDate": "2019-09-08",
+  "languageCode": "en",
+  "genres": [
+    {
+      "root": "pop",
+      "sub": []
+    }
+  ],
+  "artists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000011",
+      "name": "Britpop Icons"
+    }
+  ],
+  "mainArtists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000011",
+      "name": "Britpop Icons"
+    }
+  ],
+  "labels": [],
+  "composers": [],
+  "producers": [],
+  "credits": [],
+  "audio": {
+    "acousticness": 0.32,
+    "danceability": 0.44,
+    "energy": 0.29,
+    "instrumentalness": 0.0,
+    "key": 8,
+    "liveness": 0.09,
+    "loudness": -12.3,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 108.0,
+    "timeSignature": 4,
+    "valence": 0.55
+  }
+}

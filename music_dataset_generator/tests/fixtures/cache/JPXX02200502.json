@@ -1,0 +1,49 @@
+{
+  "name": "Orchestral Horizon",
+  "isrc": {
+    "value": "JPXX02200502",
+    "countryCode": "JP",
+    "countryName": "Japan"
+  },
+  "iswcs": [],
+  "duration": 342,
+  "explicit": false,
+  "releaseDate": "2022-01-20",
+  "languageCode": "ja",
+  "genres": [
+    {
+      "root": "classical",
+      "sub": []
+    }
+  ],
+  "artists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000009",
+      "name": "Symphonic Project"
+    }
+  ],
+  "mainArtists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000009",
+      "name": "Symphonic Project"
+    }
+  ],
+  "labels": [],
+  "composers": [],
+  "producers": [],
+  "credits": [],
+  "audio": {
+    "acousticness": 0.78,
+    "danceability": 0.20,
+    "energy": 0.45,
+    "instrumentalness": 0.82,
+    "key": -1,
+    "liveness": 0.05,
+    "loudness": -11.5,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 124.0,
+    "timeSignature": 3,
+    "valence": 0.30
+  }
+}

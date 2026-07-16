@@ -1,0 +1,49 @@
+{
+  "name": "Sunrise Drive",
+  "isrc": {
+    "value": "JPXX01800301",
+    "countryCode": "JP",
+    "countryName": "Japan"
+  },
+  "iswcs": [],
+  "duration": 230,
+  "explicit": false,
+  "releaseDate": "2018-04-20",
+  "languageCode": "ja",
+  "genres": [
+    {
+      "root": "j-pop",
+      "sub": ["city pop"]
+    }
+  ],
+  "artists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000004",
+      "name": "Bright Horizon"
+    }
+  ],
+  "mainArtists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000004",
+      "name": "Bright Horizon"
+    }
+  ],
+  "labels": [],
+  "composers": [],
+  "producers": [],
+  "credits": [],
+  "audio": {
+    "acousticness": 0.05,
+    "danceability": 0.65,
+    "energy": 0.82,
+    "instrumentalness": 0.0,
+    "key": 5,
+    "liveness": 0.10,
+    "loudness": -5.3,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 138.0,
+    "timeSignature": 4,
+    "valence": 0.88
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "name": "Night Runner",
+  "isrc": {
+    "value": "JPXX01900123",
+    "countryCode": "JP",
+    "countryName": "Japan"
+  },
+  "iswcs": [],
+  "duration": 218,
+  "explicit": false,
+  "releaseDate": "2019-06-01",
+  "languageCode": "ja",
+  "genres": [
+    {
+      "root": "j-pop",
+      "sub": ["j-rock"]
+    }
+  ],
+  "artists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000001",
+      "name": "Real Band"
+    }
+  ],
+  "mainArtists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000001",
+      "name": "Real Band"
+    }
+  ],
+  "labels": [],
+  "composers": [],
+  "producers": [],
+  "credits": [],
+  "audio": {
+    "acousticness": 0.03,
+    "danceability": 0.62,
+    "energy": 0.86,
+    "instrumentalness": 0.0,
+    "key": 7,
+    "liveness": 0.11,
+    "loudness": -4.2,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 148.0,
+    "timeSignature": 4,
+    "valence": 0.55
+  }
+}

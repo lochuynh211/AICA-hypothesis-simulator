@@ -1,0 +1,49 @@
+{
+  "name": "Highway To Glory",
+  "isrc": {
+    "value": "USAT22003425",
+    "countryCode": "US",
+    "countryName": "United States"
+  },
+  "iswcs": [],
+  "duration": 207,
+  "explicit": false,
+  "releaseDate": "2022-08-19",
+  "languageCode": "en",
+  "genres": [
+    {
+      "root": "rock",
+      "sub": []
+    }
+  ],
+  "artists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000010",
+      "name": "Road Kings"
+    }
+  ],
+  "mainArtists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000010",
+      "name": "Road Kings"
+    }
+  ],
+  "labels": [],
+  "composers": [],
+  "producers": [],
+  "credits": [],
+  "audio": {
+    "acousticness": 0.04,
+    "danceability": 0.58,
+    "energy": 0.91,
+    "instrumentalness": 0.0,
+    "key": 0,
+    "liveness": 0.14,
+    "loudness": -3.8,
+    "mode": 1,
+    "speechiness": 0.06,
+    "tempo": 155.0,
+    "timeSignature": 4,
+    "valence": 0.67
+  }
+}

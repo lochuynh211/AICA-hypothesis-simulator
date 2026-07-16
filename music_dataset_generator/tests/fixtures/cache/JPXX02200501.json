@@ -1,0 +1,49 @@
+{
+  "name": "Talk Show Anthem",
+  "isrc": {
+    "value": "JPXX02200501",
+    "countryCode": "JP",
+    "countryName": "Japan"
+  },
+  "iswcs": [],
+  "duration": 185,
+  "explicit": true,
+  "releaseDate": "2022-05-11",
+  "languageCode": "ja",
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": []
+    }
+  ],
+  "artists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000008",
+      "name": "Verbal Storm"
+    }
+  ],
+  "mainArtists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000008",
+      "name": "Verbal Storm"
+    }
+  ],
+  "labels": [],
+  "composers": [],
+  "producers": [],
+  "credits": [],
+  "audio": {
+    "acousticness": 0.06,
+    "danceability": 0.55,
+    "energy": 0.63,
+    "instrumentalness": 0.0,
+    "key": 3,
+    "liveness": 0.15,
+    "loudness": -9.0,
+    "mode": 0,
+    "speechiness": 0.58,
+    "tempo": 98.0,
+    "timeSignature": 4,
+    "valence": 0.35
+  }
+}
