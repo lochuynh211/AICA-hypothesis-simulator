@@ -10,8 +10,13 @@ network or an LLM. The deterministic transform runs with no agent present.
 ## Prerequisites
 
 - Python 3.12 + `uv`. From `music_dataset_generator/`.
-- Live harvest only: `export SOUNDCHARTS_APP_ID=… SOUNDCHARTS_API_KEY=…` (env-only, never
-  committed/logged). MusicBrainz + Deezer need no credentials.
+- Live harvest only — Soundcharts credentials, two options (never committed/logged):
+  - **Env var:** `export SOUNDCHARTS_APP_ID=… SOUNDCHARTS_API_KEY=…`, or
+  - **Local file:** put them in `generation_workspace/soundcharts.env` (KEY=VALUE lines;
+    the whole `generation_workspace/` tree is gitignored so it can never be committed).
+    Copy `music_dataset_generator/soundcharts.env.example` as a starting point. The CLI
+    reads this file into the environment automatically; an explicit `export` overrides it.
+  - MusicBrainz + Deezer need no credentials.
 - Default `candidate_source` is `isrc_resolved` (the `soundcharts_search` search-by-metric
   endpoint is unavailable on the current subscription → `strategy_unavailable`).
 

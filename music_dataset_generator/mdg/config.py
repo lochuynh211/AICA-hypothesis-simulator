@@ -44,11 +44,49 @@ def dataset_dir() -> Path:
     return _resolve("AICA_PROPOSAL_DATASET_DIR", "proposal_contracts/dataset")
 
 
-def soundcharts_credentials() -> Optional[tuple[str, str]]:
-    """Return (app_id, api_key) from env vars, or None if either is unset.
+def secrets_file() -> Path:
+    """Path to the operator's local, gitignored Soundcharts credential file.
 
-    Credentials are NEVER written to any file — only read from the environment.
+    Default: ``<repo-root>/generation_workspace/soundcharts.env`` (the whole
+    ``generation_workspace/`` tree is gitignored, so this file can never be committed).
+    Override with ``AICA_SOUNDCHARTS_ENV_FILE``. The tool only ever *reads* this file into
+    the process environment; it never writes credentials to it or anywhere else.
     """
+    override = os.environ.get("AICA_SOUNDCHARTS_ENV_FILE")
+    if override:
+        return Path(override)
+    return _repo_root() / "generation_workspace" / "soundcharts.env"
+
+
+def load_secrets_file(path: Optional[Path] = None) -> None:
+    """Load ``KEY=VALUE`` lines from the local secrets file into ``os.environ``.
+
+    Best-effort and idempotent: missing file is a no-op; an already-set environment
+    variable always wins (so an explicit ``export`` overrides the file). Lines that are
+    blank or start with ``#`` are ignored. Values are never logged.
+    """
+    path = Path(path) if path else secrets_file()
+    if not path.exists():
+        return
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+def soundcharts_credentials() -> Optional[tuple[str, str]]:
+    """Return (app_id, api_key) from the environment, or None if either is unset.
+
+    Credentials are read from the environment only. As a convenience for the operator, a
+    local gitignored ``soundcharts.env`` file (if present) is loaded into the environment
+    first — it is never written to, committed, or logged (FR-011).
+    """
+    load_secrets_file()
     app_id = os.environ.get("SOUNDCHARTS_APP_ID")
     api_key = os.environ.get("SOUNDCHARTS_API_KEY")
     if app_id and api_key:
