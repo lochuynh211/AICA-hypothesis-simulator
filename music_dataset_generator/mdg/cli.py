@@ -88,7 +88,7 @@ def _cmd_name(args: argparse.Namespace) -> None:
         from mdg.ledger import load_ledger
 
         ledger = load_ledger(workspace / "ledger.json")
-        plan = build_coverage_plan("demonstration", ledger=ledger)
+        plan = build_coverage_plan(args.tier, ledger=ledger)
         payload = {
             "remaining_cells": plan.remaining.get("cells", []),
             "language_targets": plan.language_targets,
@@ -139,7 +139,9 @@ def _cmd_probe(args: argparse.Namespace) -> None:
     """S2c pre-flight: probe ISRCs and enforce the 60% populated-audio gate."""
     from mdg.harvest.probe import run_probe
 
-    isrcs = json.loads(open(args.isrcs, encoding="utf-8").read())
+    from pathlib import Path
+
+    isrcs = json.loads(Path(args.isrcs).read_text(encoding="utf-8"))
     if isinstance(isrcs, dict):
         isrcs = isrcs.get("isrcs", [])
     sc = _require_soundcharts()
@@ -153,9 +155,11 @@ def _cmd_harvest(args: argparse.Namespace) -> None:
         # Live search-by-metric is off-subscription; surface the typed error.
         _require_soundcharts().search(query="")
 
+    from mdg.binner import bin_song
     from mdg.harvest.by_isrc import harvest_by_isrc
     from mdg.harvest.cache import store_accepted
-    from mdg.ledger import append_entry, load_ledger
+    from mdg.ledger import append_entry, is_known, load_ledger
+    from mdg.transform import normalized_name
 
     workspace, _ = _paths(args)
     resolved = json.loads((workspace / "resolved_candidates.json").read_text(encoding="utf-8"))
@@ -163,45 +167,47 @@ def _cmd_harvest(args: argparse.Namespace) -> None:
     cache_dir = workspace / "cache"
     lineage_path = workspace / "lineage.json"
     ledger_path = workspace / "ledger.json"
-    loop = _current_loop(load_ledger(ledger_path))
+    ledger = load_ledger(ledger_path)
+    loop = _current_loop(ledger)
 
-    accepted = 0
-    seq = _existing_track_count(cache_dir)
+    accepted = skipped_known = 0
     for cand in resolved:
         isrcs = cand.get("candidate_isrcs") or []
         if not isrcs:
             continue
+        norm = normalized_name(cand["title"], cand["artist"])
+        # Ledger exclusion before spending quota: skip a name or any candidate ISRC
+        # already processed (accepted or a known miss) in a prior loop (§4.13).
+        if is_known(ledger, {"normalized_name": norm}) or any(
+            is_known(ledger, {"isrc": i}) for i in isrcs
+        ):
+            skipped_known += 1
+            continue
         target_language = cand.get("expected_language")
         outcome = harvest_by_isrc(sc, isrcs, target_language=target_language)
-        from mdg.transform import normalized_name
-        norm = normalized_name(cand["title"], cand["artist"])
         if outcome.status == "accepted":
-            seq += 1
-            synthetic_id = f"synthetic-track-{seq:04d}"
+            cell = bin_song(outcome.song)["cell_id"]  # real binned cell (firewall)
             store_accepted(
                 outcome.song, cache_dir=cache_dir, lineage_path=lineage_path,
-                synthetic_id=synthetic_id,
                 soundcharts_uuid=outcome.song.get("uuid", outcome.isrc),
                 resolved_isrc=outcome.isrc, candidate_isrcs=isrcs, loop=loop,
             )
-            append_entry(ledger_path, {
+            entry = {
                 "keys": {"isrc": outcome.isrc, "normalized_name": norm},
-                "outcome": "accepted", "miss_reason": None, "cell": None, "loop": loop,
-            })
+                "outcome": "accepted", "miss_reason": None, "cell": cell, "loop": loop,
+            }
             accepted += 1
         else:
-            append_entry(ledger_path, {
+            entry = {
                 "keys": {"normalized_name": norm},
                 "outcome": "miss", "miss_reason": outcome.status, "cell": None, "loop": loop,
-            })
-    print(json.dumps({"accepted": accepted, "soundcharts_calls": sc.quota_used}))
-
-
-def _existing_track_count(cache_dir) -> int:
-    from pathlib import Path
-
-    cache_dir = Path(cache_dir)
-    return len(list(cache_dir.glob("*.json"))) if cache_dir.is_dir() else 0
+            }
+        append_entry(ledger_path, entry)
+        ledger.append(entry)  # keep in-memory ledger current for later candidates this loop
+    print(json.dumps({
+        "accepted": accepted, "skipped_known": skipped_known,
+        "soundcharts_calls": sc.quota_used,
+    }))
 
 
 def _current_loop(ledger) -> int:
@@ -216,17 +222,20 @@ def _cmd_transform(args: argparse.Namespace) -> None:
     operator so the core stays wall-clock-free; it defaults to a fixed sentinel when
     omitted for a local reproducibility run.
     """
-    from pathlib import Path
-
-    from mdg import config
+    from mdg.harvest.cache import backfill_lineage_ids
+    from mdg.ledger import load_ledger
     from mdg.transform import run_transform, write_dataset
 
-    workspace = Path(args.workspace) if args.workspace else config.workspace_dir()
-    dataset_dir = Path(args.dataset_dir) if args.dataset_dir else config.dataset_dir()
+    workspace, dataset_dir = _paths(args)
     cache_dir = workspace / "cache"
     if not cache_dir.is_dir():
         print(f"mdg transform: no cache directory at {cache_dir}", file=sys.stderr)
         raise SystemExit(1)
+
+    # Ledger exclusion at the transform boundary too: never emit a ledger-known
+    # duplicate identity into the catalog (defence in depth with the harvest skip).
+    ledger = load_ledger(workspace / "ledger.json")
+    ledger_keys = [e.get("keys", {}) for e in ledger] or None
 
     seed = args.seed if args.seed is not None else 0
     result = run_transform(
@@ -235,8 +244,11 @@ def _cmd_transform(args: argparse.Namespace) -> None:
         tier=args.tier,
         candidate_source=args.candidate_source,
         generated_at=args.generated_at,
+        ledger_keys=ledger_keys,
     )
     out_dir = write_dataset(result, dataset_dir)
+    # Backfill lineage synthetic_id ↔ isrc now that IDs are allocated (audit integrity).
+    backfill_lineage_ids(workspace / "lineage.json", result.catalog)
     print(json.dumps({
         "dataset_id": result.manifest["dataset_id"],
         "dataset_hash": result.manifest["dataset_hash"],
@@ -349,6 +361,12 @@ def main(argv: Optional[list[str]] = None) -> int:
         help="S1b: Prepare or ingest LLM-assisted candidate names.",
     )
     _add_common_args(p_name)
+    p_name.add_argument(
+        "--tier",
+        choices=["smoke", "demonstration", "stress"],
+        default="demonstration",
+        help="Tier whose coverage targets drive the naming handoff (must match `plan`).",
+    )
     name_group = p_name.add_mutually_exclusive_group(required=True)
     name_group.add_argument(
         "--write-input",

@@ -115,11 +115,13 @@ def _repair_schema(song: dict) -> dict | None:
     return None
 
 
+# A "flag" category has no §18 repair (pydantic defaults a missing flag to 1, so only an
+# out-of-domain literal like 2 can fail — and §18 defines no repair for that): it is
+# intentionally absent here so a flag violation escalates via the "no repairer" path.
 _REPAIRERS = {
     "identity": _repair_identity,
     "url": _repair_url,
     "schema": _repair_schema,
-    "flag": _repair_schema,
 }
 
 

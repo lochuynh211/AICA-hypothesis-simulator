@@ -49,18 +49,23 @@ def store_accepted(
     *,
     cache_dir: Path,
     lineage_path: Path,
-    synthetic_id: str,
     soundcharts_uuid: str,
     resolved_isrc: str,
     candidate_isrcs: list[str],
     loop: int,
 ) -> None:
-    """Store an accepted harvested song to the cache and append its lineage entry."""
+    """Store an accepted harvested song to the cache and append its lineage entry.
+
+    The frozen `synthetic_id` is **not** known at harvest time (the mapper allocates IDs
+    at transform, in ISRC-sorted order), so lineage is keyed by the real ISRC and
+    `synthetic_id` is left null here; `backfill_lineage_ids` fills it from the frozen
+    catalog after freeze.
+    """
     store_cache_entry(cache_dir, resolved_isrc, song)
     genres = song.get("genres") or []
     first_genre = genres[0] if genres else {}
     append_lineage(lineage_path, {
-        "synthetic_id": synthetic_id,
+        "synthetic_id": None,
         "soundcharts_uuid": soundcharts_uuid,
         "real_name": song.get("name"),
         "real_genre_text": {
@@ -71,3 +76,27 @@ def store_accepted(
         "candidate_isrcs": list(candidate_isrcs),
         "loop": loop,
     })
+
+
+def backfill_lineage_ids(lineage_path: Path, catalog: list[dict]) -> None:
+    """Set each lineage entry's `synthetic_id` by joining on ISRC with the frozen catalog.
+
+    Called after freeze so the audit trail's `synthetic_id` matches the actual
+    `spotify_track.id` (design LineageEntry integrity).
+    """
+    path = Path(lineage_path)
+    if not path.exists():
+        return
+    isrc_to_id = {
+        (song.get("spotify_track", {}).get("external_ids") or {}).get("isrc"):
+            song["spotify_track"]["id"]
+        for song in catalog
+    }
+    lineage = load_lineage(path)
+    for entry in lineage.get("entries", []):
+        synthetic_id = isrc_to_id.get(entry.get("resolved_isrc"))
+        if synthetic_id is not None:
+            entry["synthetic_id"] = synthetic_id
+    path.write_text(
+        json.dumps(lineage, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )

@@ -12,7 +12,12 @@ from __future__ import annotations
 import json
 
 from mdg.harvest.by_isrc import harvest_by_isrc
-from mdg.harvest.cache import load_cache_entry, load_lineage, store_accepted
+from mdg.harvest.cache import (
+    backfill_lineage_ids,
+    load_cache_entry,
+    load_lineage,
+    store_accepted,
+)
 
 
 def _song(isrc="JPXX01900123", lang="ja", audio=True):
@@ -74,10 +79,19 @@ def test_language_mismatch_discards_never_relabels() -> None:
     assert outcome.song is None  # discarded, not relabeled
 
 
-def test_all_candidates_miss() -> None:
-    sc = FakeSC({"A": None, "B": _song(isrc="B", audio=False)})
+def test_all_candidates_404_is_isrc_not_in_soundcharts() -> None:
+    sc = FakeSC({"A": None, "B": None})
     outcome = harvest_by_isrc(sc, ["A", "B"], target_language="ja")
     assert outcome.status == "isrc_not_in_soundcharts"
+    assert outcome.song is None
+
+
+def test_all_candidates_found_but_audio_missing_is_audio_unavailable() -> None:
+    # Every candidate exists (no 404s) but has null audio → audio_unavailable, not
+    # the isrc_not_in_soundcharts fallback (miss-code correctness).
+    sc = FakeSC({"A": _song(isrc="A", audio=False), "B": _song(isrc="B", audio=False)})
+    outcome = harvest_by_isrc(sc, ["A", "B"], target_language="ja")
+    assert outcome.status == "audio_unavailable"
     assert outcome.song is None
 
 
@@ -93,13 +107,27 @@ def test_store_accepted_writes_cache_and_lineage(tmp_path) -> None:
     lineage_path = tmp_path / "lineage.json"
     store_accepted(
         song, cache_dir=cache_dir, lineage_path=lineage_path,
-        synthetic_id="synthetic-track-0001", soundcharts_uuid="uuid-good",
+        soundcharts_uuid="uuid-good",
         resolved_isrc="GOOD", candidate_isrcs=["GOOD", "OTHER"], loop=1,
     )
     cached = load_cache_entry(cache_dir, "GOOD")
     assert cached["name"] == "Night Runner"
     lineage = load_lineage(lineage_path)
     entry = lineage["entries"][0]
-    assert entry["synthetic_id"] == "synthetic-track-0001"
+    assert entry["synthetic_id"] is None  # deferred until transform-time backfill
     assert entry["resolved_isrc"] == "GOOD"
     assert entry["candidate_isrcs"] == ["GOOD", "OTHER"]
+
+
+def test_backfill_lineage_ids_joins_on_isrc(tmp_path) -> None:
+    lineage_path = tmp_path / "lineage.json"
+    store_accepted(
+        _song(isrc="GOOD"), cache_dir=tmp_path / "cache", lineage_path=lineage_path,
+        soundcharts_uuid="uuid-good", resolved_isrc="GOOD",
+        candidate_isrcs=["GOOD"], loop=1,
+    )
+    catalog = [{"spotify_track": {"id": "synthetic-track-0042",
+                                  "external_ids": {"isrc": "GOOD"}}}]
+    backfill_lineage_ids(lineage_path, catalog)
+    entry = load_lineage(lineage_path)["entries"][0]
+    assert entry["synthetic_id"] == "synthetic-track-0042"  # matches frozen catalog id

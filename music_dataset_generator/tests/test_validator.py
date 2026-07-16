@@ -71,7 +71,7 @@ def test_flag_violation(fixtures_dir: Path) -> None:
     song["simulation_flags"]["humming_karaoke_available"] = 2
     with pytest.raises(SongViolation) as exc:
         validate_song(song)
-    assert exc.value.category in ("flag", "schema")
+    assert exc.value.category == "flag"  # simulation_flags loc → "flag" category
 
 
 def test_coverage_contract_failed_on_unmet_cell() -> None:

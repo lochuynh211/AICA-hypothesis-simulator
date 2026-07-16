@@ -40,16 +40,21 @@ def audio_complete(audio: dict | None) -> bool:
 def harvest_by_isrc(sc, candidate_isrcs, *, target_language: str | None) -> HarvestOutcome:
     """Walk candidate ISRCs; return the first populated, language-matching song."""
     tried: list[str] = []
+    saw_incomplete_audio = False  # at least one candidate existed but had null/partial audio
     for isrc in candidate_isrcs:
         tried.append(isrc)
         song = sc.by_isrc(isrc)
         if song is None:
             continue  # isrc_not_in_soundcharts — try next candidate
         if not audio_complete(song.get("audio")):
+            saw_incomplete_audio = True
             continue  # audio_unavailable — try next candidate
         language = song.get("languageCode")
         if target_language is not None and language != target_language:
             # Discard the whole named song — never relabel to a different cell/language.
             return HarvestOutcome("language_mismatch", isrc=isrc, tried=tried)
         return HarvestOutcome("accepted", song=song, isrc=isrc, tried=tried)
-    return HarvestOutcome("isrc_not_in_soundcharts", tried=tried)
+    # Distinguish the two exhaustion causes: a real record with unusable audio is an
+    # audio_unavailable miss, not "ISRC not in Soundcharts".
+    status = "audio_unavailable" if saw_incomplete_audio else "isrc_not_in_soundcharts"
+    return HarvestOutcome(status, tried=tried)

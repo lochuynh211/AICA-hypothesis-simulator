@@ -67,11 +67,26 @@ def test_two_repairs_then_pass(fixtures_dir: Path) -> None:
     assert len(log) == 2
 
 
-def test_two_failed_repairs_halts(fixtures_dir: Path) -> None:
-    # An out-of-[0,1] audio value beyond serialization noise cannot be repaired
-    # deterministically; the 2-strike budget is exhausted → catalog_generation_failed.
+def test_unrepairable_violation_halts_immediately(fixtures_dir: Path) -> None:
+    # An out-of-[0,1] audio value beyond serialization noise has no deterministic repair
+    # rule → immediate catalog_generation_failed (0 repairs applied).
     song = _valid_song(fixtures_dir)
     song["spotify_audio_features"]["energy"] = 1.5
+    with pytest.raises(MdgFatalError) as exc:
+        validate_and_repair(song)
+    assert exc.value.code == ErrorCode.catalog_generation_failed
+
+
+def test_budget_exhausted_after_two_repairs_halts(fixtures_dir: Path) -> None:
+    # Three simultaneous individually-repairable identity mismatches (id, uri, duration):
+    # repair fixes id (strike 1) then uri (strike 2); the 3rd validation still fails on
+    # duration with the budget exhausted → catalog_generation_failed. Exercises the
+    # len(log) >= _MAX_REPAIRS branch specifically.
+    song = _valid_song(fixtures_dir)
+    af = song["spotify_audio_features"]
+    af["id"] = "synthetic-track-9999"
+    af["uri"] = "spotify:track:synthetic-track-9999"
+    af["duration_ms"] = af["duration_ms"] + 1
     with pytest.raises(MdgFatalError) as exc:
         validate_and_repair(song)
     assert exc.value.code == ErrorCode.catalog_generation_failed
