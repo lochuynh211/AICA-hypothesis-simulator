@@ -574,10 +574,19 @@ Profile-family guidance is:
 |---|---|
 | balanced vocal | `instrumentalness <= 0.20`, moderate danceability and speechiness |
 | danceable vocal | `instrumentalness <= 0.15`, `danceability >= 0.65` |
-| speech forward | `speechiness >= 0.40`, low-to-medium instrumentalness |
+| speech forward | `speechiness >= 0.33`, low-to-medium instrumentalness |
 | instrumental leaning | `instrumentalness >= 0.65` |
 
 These are generation controls, not stored labels used by the recommendation algorithm.
+
+> **P2 Soundcharts-grounded amendment (speech-forward threshold).** The original guidance
+> used `speechiness >= 0.40`. The T062 live harvest established that Soundcharts-grounded
+> `speechiness` is compressed — it tops out around **0.38** even for the most rap-heavy
+> tracks — so `0.40` left the entire `speech forward` column unfillable
+> (`cell_unfillable_from_source`). The threshold is therefore **`0.33`**, Spotify's own
+> documented boundary for "music **and** speech" (values `0.33–0.66` are tracks that may
+> contain both, i.e. rap). This is a binning/coverage control only; it changes no Song
+> field, no algorithm, and no `dataset_hash` (the hash is over Song records, not cells).
 
 Because the two-axis trait model scores **valence** (`valence`, `mode`) and the
 **inverse-arousal** contribution of `acousticness`, the primary energy × tempo grid

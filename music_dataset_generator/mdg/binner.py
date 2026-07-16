@@ -45,6 +45,14 @@ _ACOUSTIC_MIN = 0.50
 # ease composite threshold
 _EASE_HIGH_MIN = 0.50
 
+# speech_forward profile threshold. Data-spec §10.2 guidance says speechiness >= 0.40, but
+# Soundcharts-grounded audio has compressed speechiness (rap tops out ~0.38 — even the most
+# rap-heavy tracks), so 0.40 is unreachable and the whole P-sf column is unfillable. We use
+# Spotify's own documented "music + speech" boundary of 0.33 (values 0.33–0.66 = tracks that
+# may contain both music and speech, i.e. rap), which is the principled threshold for this
+# data source. See the T062 build report / data-spec §10.2 amendment.
+_SPEECH_FORWARD_MIN = 0.33
+
 # Short cell-id codes (must match coverage/plan.py)
 _ENERGY_CODE = {"low": "lo", "medium": "md", "high": "hi"}
 _TEMPO_CODE = {"low": "lo", "medium": "md", "high": "hi"}
@@ -84,7 +92,7 @@ def _profile_family(audio: dict) -> str:
 
     if instrumentalness >= 0.65:
         return "instrumental_leaning"
-    if speechiness >= 0.40:
+    if speechiness >= _SPEECH_FORWARD_MIN:
         return "speech_forward"
     if danceability >= 0.65 and instrumentalness <= 0.15:
         return "danceable_vocal"

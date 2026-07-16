@@ -97,6 +97,19 @@ def test_profile_families(fixtures_dir: Path, isrc: str, expected: str) -> None:
     assert bin_song(_load(fixtures_dir, isrc))["profile_family"] == expected
 
 
+def test_speech_forward_boundary_is_0_33() -> None:
+    # Soundcharts-grounded threshold (Spotify's music+speech boundary): 0.33, not 0.40.
+    from mdg.binner import _profile_family
+
+    base = {"instrumentalness": 0.0, "danceability": 0.5, "speechiness": 0.33}
+    assert _profile_family(base) == "speech_forward"           # at the boundary
+    assert _profile_family({**base, "speechiness": 0.32}) == "balanced_vocal"  # just below
+    assert _profile_family({**base, "speechiness": 0.38}) == "speech_forward"  # rap ceiling
+    # instrumental still wins over speech.
+    assert _profile_family({**base, "speechiness": 0.5, "instrumentalness": 0.7}) \
+        == "instrumental_leaning"
+
+
 # ---------------------------------------------------------------------------
 # Secondary spreads: valence / acousticness (contrast fixtures)
 # ---------------------------------------------------------------------------
