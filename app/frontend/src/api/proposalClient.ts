@@ -264,11 +264,22 @@ export type DiscreteEvent = {
   payload: Record<string, unknown>
 }
 
+export type PlaybackStateValue = 'idle' | 'active' | 'backgrounded' | 'paused' | 'completed' | 'stopped'
+
+export type PreviousContent = { service_id: string | null; plan_ref: string | null }
+
 export type JourneyState = {
   lifecycle_stage: LifecycleStage
   motion_state: MotionState
   active_service_id: string | null
   active_plan_id: string | null
+  // P4 additions (data-model.md "JourneyState (extend journey.py)") — optional
+  // here so pre-P4 test fixtures/fixture literals built without them still
+  // type-check; the backend defaults them the same way.
+  playback_state?: PlaybackStateValue
+  current_plan_ref?: string | null
+  previous_content?: PreviousContent | null
+  rejected_service_ids?: string[]
 }
 
 export type ProposalOpportunity = {
@@ -280,7 +291,15 @@ export type ProposalOpportunity = {
   run_seed: string
 }
 
-export type ProposalRunStatus = 'created' | 'service_selected' | 'content_selected' | 'error'
+export type ProposalRunStatus =
+  | 'created'
+  | 'service_selected'
+  | 'content_selected'
+  | 'error'
+  // P4 additions (enums.py ProposalRunStatus — new members)
+  | 'content_started'
+  | 'content_completed'
+  | 'content_stopped'
 
 export type ProposalRunLog = {
   run_id: string
@@ -694,6 +713,49 @@ export async function selectService(
       hyperparameters: overrides.hyperparameters ?? {},
     }),
   })
+}
+
+// ── POST /api/proposal/runs/{run_id}/journey/action (P4 T031) ──────────────
+
+/** Journey action kinds surfaced in the run-area action bar (US5). The
+ * backend accepts a few additional rest-lifecycle actions
+ * (`rest_spot_arrived`/`rest_started`/`rest_completed`) not exposed as
+ * buttons here (spec P4 assumption: automatic post-rest supply is P7) — kept
+ * as a plain `string` param below so the client stays forward-compatible. */
+export type JourneyActionType =
+  | 'accept'
+  | 'reject'
+  | 'postpone'
+  | 'choose_another'
+  | 'request_more'
+  | 'complete'
+  | 'continue'
+  | 'stop'
+  | 'motion_change'
+  | 'rest_spot_arrived'
+  | 'rest_started'
+  | 'rest_completed'
+
+export async function journeyAction(
+  runId: string,
+  actionType: string,
+  payload: Record<string, unknown> = {},
+): Promise<ProposalRunLog> {
+  return apiFetch(`/runs/${encodeURIComponent(runId)}/journey/action`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action_type: actionType, payload }),
+  })
+}
+
+// ── GET /api/proposal/runs/{run_id}/journey/preview (P4 T031) ───────────────
+
+export type JourneyPreviewStep = { label: string; lifecycle_stage: string; note: string | null }
+
+export type JourneyPreviewResponse = { binding: boolean; steps: JourneyPreviewStep[] }
+
+export async function journeyPreview(runId: string): Promise<JourneyPreviewResponse> {
+  return apiFetch(`/runs/${encodeURIComponent(runId)}/journey/preview`, { method: 'GET' })
 }
 
 // ── GET /api/proposal/runs — list summaries (P1 T036) ───────────────────────

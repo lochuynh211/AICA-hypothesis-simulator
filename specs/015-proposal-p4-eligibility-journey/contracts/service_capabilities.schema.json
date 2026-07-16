@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aica.local/proposal_contracts/service_capabilities.schema.json",
+  "title": "Service Capabilities Contract (P4)",
+  "description": "Frozen, versioned per-service platform capability facts driving the motion/capability eligibility step. Authored from spec §7.1/§7.2. Every ServiceId must be present.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["capabilities_version", "services"],
+  "properties": {
+    "capabilities_version": { "type": "string", "pattern": "^v[0-9]+$" },
+    "services": {
+      "type": "array",
+      "minItems": 14,
+      "items": { "$ref": "#/definitions/serviceCapability" }
+    }
+  },
+  "definitions": {
+    "serviceCapability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "service_id",
+        "driving_capable",
+        "screen_dependent",
+        "stopped_only",
+        "background_on_motion",
+        "lighting_compatible",
+        "requires_entity"
+      ],
+      "properties": {
+        "service_id": {
+          "type": "string",
+          "enum": [
+            "music_playlist", "humming_karaoke", "call_response_driving", "quiz",
+            "ranking_creation", "radio_style", "conversation_audio", "live_viewing",
+            "stretch_video", "full_karaoke", "call_response_stopped", "oshi_reexperience",
+            "relaxation_multisensory", "linked_video_recommendation"
+          ]
+        },
+        "driving_capable": { "type": "boolean" },
+        "screen_dependent": { "type": "boolean" },
+        "stopped_only": { "type": "boolean" },
+        "background_on_motion": {
+          "type": "boolean",
+          "description": "When true the service is eligible while driving with screen suppressed (audio/background). Requires screen_dependent=true."
+        },
+        "lighting_compatible": {
+          "description": "true/false, or the string 'recipe' for recipe-defined lighting (Slide-26-only services).",
+          "oneOf": [
+            { "type": "boolean" },
+            { "type": "string", "enum": ["recipe"] }
+          ]
+        },
+        "requires_entity": {
+          "type": ["string", "null"],
+          "description": "Name of a required catalog entity (e.g. 'oshi'), or null."
+        }
+      }
+    }
+  }
+}

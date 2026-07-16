@@ -52,10 +52,13 @@ from aica_api.models.proposal.enums import (
 )
 from aica_api.models.proposal.events import DiscreteEvent
 from aica_api.models.proposal.journey import JourneyState
+from aica_api.models.proposal.journey_action import JourneyAction
+from aica_api.models.proposal.journey_preview import JourneyPreview
 from aica_api.models.proposal.matrix import MatrixResolutionError, PurposeStageServiceMatrix
 from aica_api.models.proposal.opportunity import ProposalOpportunity
 from aica_api.models.proposal.package_manifest import BilingualLabel, ProposalPackageManifest
 from aica_api.models.proposal.proposal_run import ProposalRun, ProposalRunLog
+from aica_api.models.proposal.service_capabilities import ServiceCapabilities
 from aica_api.models.proposal.world import (
     DriverProfile,
     DriverProfileRecord,
@@ -73,6 +76,9 @@ from aica_api.services.driver_profile_store import (
     DriverProfileNotFoundError,
     DriverProfileStore,
 )
+from aica_api.services.proposal_eligibility import derive_registered_entities, resolve_eligibility
+from aica_api.services.proposal_journey import apply_action
+from aica_api.services.proposal_journey_preview import preview as build_journey_preview
 from aica_api.services.proposal_package_registry import ProposalPackageRegistry
 from aica_api.services.proposal_selector import dispatch_selector
 from aica_api.services.world_clone_store import InvalidOverrideError, WorldCloneStore
@@ -106,6 +112,15 @@ def _matrix_path():
 def _get_registry() -> ProposalPackageRegistry:
     """Instantiate a ProposalPackageRegistry from the configured packages directory."""
     return ProposalPackageRegistry(settings.packages_dir)
+
+
+def _service_capabilities_path():
+    return settings.proposal_contracts_dir / "service_capabilities" / "service_capabilities.v1.json"
+
+
+def _get_service_capabilities() -> ServiceCapabilities:
+    """Load the frozen v1 service-capability artifact (US1/T015 — eligibility)."""
+    return ServiceCapabilities.load(_service_capabilities_path())
 
 
 def _get_dataset_registry() -> DatasetCatalogRegistry:
@@ -152,8 +167,19 @@ def _build_service_context(
     enabled_feature_extensions: list[str],
     parameters: dict,
     hyperparameters: dict,
+    eligible_service_ids: list[ServiceId],
+    excluded_candidates: list[dict],
 ) -> dict:
-    """Assemble a SelectorInput-shaped context dict for the SERVICE selector."""
+    """Assemble a SelectorInput-shaped context dict for the SERVICE selector.
+
+    US1 (P4 eligibility, research.md D1): ``allowed_service_ids`` here — the
+    id list actually handed to ``evaluate()`` — is the ELIGIBLE subset of the
+    opportunity's frozen row, never the full row. Eligibility runs BEFORE
+    ranking, so a package (the mock_service_selector_v1 draws its candidates
+    straight from this field) physically cannot rank an excluded service
+    (SC-003, FR-005). ``opportunity.allowed_service_ids`` itself is untouched
+    — it remains the frozen matrix row for the run's own record.
+    """
     feature_snapshot = dict(world_snapshot.get("feature_snapshot") or {})
     feature_provenance = dict(world_snapshot.get("feature_provenance") or {})
     return {
@@ -162,15 +188,13 @@ def _build_service_context(
         "simulation_time": opportunity.simulation_time,
         "trigger_purpose": opportunity.trigger_purpose.value,
         "lifecycle_stage": opportunity.lifecycle_stage.value,
-        "allowed_service_ids": [s.value for s in opportunity.allowed_service_ids],
+        "allowed_service_ids": [s.value for s in eligible_service_ids],
         "feature_snapshot": feature_snapshot,
         "feature_provenance": feature_provenance,
         "enabled_feature_extensions": list(enabled_feature_extensions),
         "selected_service_id": None,
-        "eligible_candidates": [
-            {"candidate_id": s.value} for s in opportunity.allowed_service_ids
-        ],
-        "excluded_candidates": [],
+        "eligible_candidates": [{"candidate_id": s.value} for s in eligible_service_ids],
+        "excluded_candidates": excluded_candidates,
         "parameters": parameters,
         "hyperparameters": hyperparameters,
         "package_runtime_state": {},
@@ -837,23 +861,26 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
             service_hyperparameters=hyperparameters,
         )
 
-    context = _build_service_context(
-        package=service_pkg,
-        opportunity=opportunity,
-        world_snapshot=world_snapshot,
-        enabled_feature_extensions=body.enabled_feature_extensions,
-        parameters=parameters,
-        hyperparameters=hyperparameters,
+    # -----------------------------------------------------------------
+    # US1 (P4) — eligibility narrows the allowed row BEFORE ranking
+    # (research.md D1). Excluded services are RETAINED with reason codes,
+    # never dropped; they carry no score (FR-003/FR-004).
+    # -----------------------------------------------------------------
+    capabilities = _get_service_capabilities()
+    registered_entities = derive_registered_entities(world_snapshot)
+    eligibility_result = resolve_eligibility(
+        allowed_service_ids,
+        motion_state,
+        capabilities,
+        registered_entities=registered_entities,
     )
-
-    evidence = dispatch_selector(
-        service_pkg,
-        context,
-        settings.packages_dir,
-        matrix_version=matrix.matrix_version,
-        used_feature_ids=list(context["feature_snapshot"].keys()),
-        allowed_service_ids=[s.value for s in opportunity.allowed_service_ids],
-    )
+    excluded_candidates_ctx = [
+        {
+            "candidate_id": excl.service_id.value,
+            "platform_reason": ",".join(rc.value for rc in excl.reason_codes),
+        }
+        for excl in eligibility_result.excluded
+    ]
 
     at = opportunity.simulation_time
     events: list[DiscreteEvent] = [
@@ -867,6 +894,68 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
             },
         )
     ]
+
+    if not eligibility_result.eligible:
+        # T017a — every allowed service was excluded (a non-empty allowed row
+        # narrowed to zero). Never dispatch a selector — there is nothing to
+        # rank, and no evaluate() call happened, so no AlgorithmEvidence is
+        # fabricated to pretend one did (Constitution Principle V).
+        events.append(
+            DiscreteEvent(
+                event_type=DiscreteEventType.NO_ELIGIBLE_CANDIDATE,
+                at=at,
+                payload={
+                    "excluded": [
+                        {
+                            "service_id": excl.service_id.value,
+                            "reason_codes": [rc.value for rc in excl.reason_codes],
+                        }
+                        for excl in eligibility_result.excluded
+                    ],
+                },
+            )
+        )
+        journey_state = JourneyState(
+            lifecycle_stage=lifecycle_stage,
+            motion_state=motion_state,
+            active_service_id=None,
+            active_plan_id=None,
+        )
+        return prm.create_run(
+            opportunity=opportunity,
+            matrix_version=matrix.matrix_version,
+            world_snapshot=world_snapshot,
+            service_package_id=body.service_package_id,
+            content_package_id=body.content_package_id,
+            parameters=parameters,
+            hyperparameters=hyperparameters,
+            journey_state=journey_state,
+            events=events,
+            evidence=[],
+            status=ProposalRunStatus.service_selected,
+            setup_snapshot=setup_snapshot,
+            runs_dir=settings.proposal_runs_dir,
+        )
+
+    context = _build_service_context(
+        package=service_pkg,
+        opportunity=opportunity,
+        world_snapshot=world_snapshot,
+        enabled_feature_extensions=body.enabled_feature_extensions,
+        parameters=parameters,
+        hyperparameters=hyperparameters,
+        eligible_service_ids=eligibility_result.eligible,
+        excluded_candidates=excluded_candidates_ctx,
+    )
+
+    evidence = dispatch_selector(
+        service_pkg,
+        context,
+        settings.packages_dir,
+        matrix_version=matrix.matrix_version,
+        used_feature_ids=list(context["feature_snapshot"].keys()),
+        allowed_service_ids=[s.value for s in eligibility_result.eligible],
+    )
 
     selected_service_id: str | None = None
     if evidence.error is not None:
@@ -954,6 +1043,41 @@ def select_service(run_id: str, body: SelectServiceBody) -> ProposalRunLog:
                 f"{selected_service_id.value!r} is not in the opportunity's "
                 "allowed_service_ids"
             ),
+        )
+
+    # FIX (whole-branch review Critical / SC-002 / FR-002): the check above
+    # only confirms membership in the FULL frozen row — it does NOT confirm
+    # the service is still ELIGIBLE. Re-resolve eligibility against the
+    # CURRENT motion state (a `motion_change` journey action may have fired
+    # since create) and reject an excluded selection here, before it can ever
+    # reach `accept` and become active driving content (e.g. `full_karaoke`
+    # while `motion_state=driving`).
+    capabilities = _get_service_capabilities()
+    eligibility = resolve_eligibility(
+        run_log.opportunity.allowed_service_ids,
+        run_log.journey_state.motion_state,
+        capabilities,
+        registered_entities=derive_registered_entities(run_log.world_snapshot),
+    )
+    if selected_service_id not in eligibility.eligible:
+        reasons = next(
+            (
+                excl.reason_codes
+                for excl in eligibility.excluded
+                if excl.service_id == selected_service_id
+            ),
+            [],
+        )
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "service_not_eligible",
+                "message": (
+                    f"{selected_service_id.value!r} is not currently eligible / "
+                    f"{selected_service_id.value!r} は現在選択できません"
+                ),
+                "reason_codes": [rc.value for rc in reasons],
+            },
         )
 
     registry = _get_registry()
@@ -1131,3 +1255,78 @@ def delete_proposal_run(run_id: str) -> Response:
     if not deleted:
         raise HTTPException(status_code=404, detail=f"Proposal run {run_id!r} not found")
     return Response(status_code=204)
+
+
+# ---------------------------------------------------------------------------
+# POST /api/proposal/runs/{run_id}/journey/action — T012 (P4 engine scaffold)
+# ---------------------------------------------------------------------------
+
+
+@router.post("/api/proposal/runs/{run_id}/journey/action")
+def apply_journey_action(run_id: str, action: JourneyAction) -> ProposalRunLog:
+    """Apply one journey action via the PURE ``proposal_journey.apply_action``
+    engine (data-model.md §"JourneyAction"; contracts/journey-api.md).
+
+    ``action`` is parsed directly as a ``JourneyAction`` — an unrecognized
+    ``action_type`` string fails FastAPI/pydantic request validation (422)
+    before this handler ever runs, since ``JourneyActionType`` is a closed
+    enum; that is distinct from the engine's OWN structured 422 (below), which
+    covers a *valid* ``action_type`` rejected for a precondition the current
+    run state doesn't satisfy.
+
+    This router owns the ONLY two side-effecting responsibilities the engine
+    itself must never perform: minting the timestamp (``_now_iso()``) and
+    persisting the result (append-only, via ``proposal_run_manager``). A
+    ``rejected`` transition raises a structured 422 — never a silent no-op;
+    a ``NO_ELIGIBLE_CANDIDATE`` end-state (later units) is a 200 success, not
+    an error, per the contract.
+    """
+    run_log = prm.get_run(run_id, settings.proposal_runs_dir)
+    if run_log is None:
+        raise HTTPException(status_code=404, detail=f"Proposal run {run_id!r} not found")
+
+    transition = apply_action(
+        run_log, action, now=_now_iso(), capabilities=_get_service_capabilities()
+    )
+
+    if transition.rejected is not None:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": transition.rejected.code,
+                "message": transition.rejected.message,
+            },
+        )
+
+    for event in transition.events:
+        prm.append_event(run_id, event, settings.proposal_runs_dir)
+
+    run_log = prm.update_state(
+        run_id,
+        settings.proposal_runs_dir,
+        status=transition.new_status,
+        journey_state=transition.new_journey_state,
+    )
+    return run_log
+
+
+# ---------------------------------------------------------------------------
+# GET /api/proposal/runs/{run_id}/journey/preview — T029-T030 (US5, P4)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/proposal/runs/{run_id}/journey/preview")
+def get_journey_preview(run_id: str) -> JourneyPreview:
+    """Non-binding rolling-horizon preview (spec.md User Story 5; FR-017;
+    SC-007; contracts/journey-api.md §"GET .../journey/preview").
+
+    PURE READ: loads the persisted run and projects the preview via
+    ``proposal_journey_preview.preview`` — no selector is invoked, and this
+    handler never appends an event/evidence or calls ``update_state``. The
+    run's on-disk file and ``GET /runs/{id}`` response are byte-identical
+    before and after this call.
+    """
+    run_log = prm.get_run(run_id, settings.proposal_runs_dir)
+    if run_log is None:
+        raise HTTPException(status_code=404, detail=f"Proposal run {run_id!r} not found")
+    return build_journey_preview(run_log)

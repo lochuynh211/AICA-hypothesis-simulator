@@ -17,9 +17,12 @@ import {
   selectService,
   type ProposalPackageSummary,
   type RankedCandidate,
+  type ExcludedCandidate,
 } from '../../../api/proposalClient'
 import HyperparamMatrix from '../HyperparamMatrix'
 import ReasonBreakdown, { type ReasonRow } from '../ReasonBreakdown'
+import JourneyActionBar from '../JourneyActionBar'
+import EventTimeline from '../EventTimeline'
 
 const LABELS = {
   title: { ja: 'サービス提案', en: 'Service proposal' },
@@ -46,6 +49,20 @@ const LABELS = {
   // longer applies to ContentProposalPanel (see ProposalShell — the badge
   // used to live in the shared header for both panels).
   mockBadge: { ja: 'モックデータ（P1土台）', en: 'MOCK DATA (P1 foundation)' },
+  // P4 (US5, FR-022) — eligibility lists from the STEP-1 input_snapshot.
+  eligibleTitle: { ja: '適格サービス', en: 'Eligible services' },
+  excludedTitle: { ja: '除外サービス（理由コード）', en: 'Excluded services (reason codes)' },
+  noneExcluded: { ja: 'なし', en: 'None' },
+}
+
+/** The subset of the STEP-1 evidence `input_snapshot` this panel reads (P4
+ * contracts/journey-api.md "Eligibility"). The full snapshot is a plain
+ * `Record<string, unknown>` (frozen `SelectorInput` shape) — this panel
+ * never computes eligibility itself, only renders what the backend put in
+ * the snapshot (Constitution I). */
+type ServiceInputSnapshot = {
+  eligible_candidates?: string[]
+  excluded_candidates?: ExcludedCandidate[]
 }
 
 function serviceRows(candidate: RankedCandidate): ReasonRow[] {
@@ -191,6 +208,13 @@ export default function ServiceProposalPanel() {
     | undefined
   const activeServiceId = state.runLog?.journey_state.active_service_id ?? null
 
+  // P4 (US5) — eligible/excluded candidate lists from the frozen
+  // input_snapshot; the platform reason code is rendered verbatim and no
+  // score is ever shown alongside an exclusion.
+  const inputSnapshot = (serviceEvidence?.input_snapshot ?? {}) as ServiceInputSnapshot
+  const eligibleCandidates = inputSnapshot.eligible_candidates ?? []
+  const excludedCandidates = inputSnapshot.excluded_candidates ?? []
+
   return (
     <section
       data-testid="service-panel"
@@ -318,6 +342,32 @@ export default function ServiceProposalPanel() {
           </p>
         )}
 
+        {serviceEvidence && (
+          <>
+            <div style={sectionLabelStyle}>{t(LABELS.eligibleTitle, lang)}</div>
+            <ul data-testid="eligible-list" style={eligibilityListStyle}>
+              {eligibleCandidates.map((candidateId) => (
+                <li key={candidateId} data-testid={`eligible-${candidateId}`}>
+                  {candidateId}
+                </li>
+              ))}
+            </ul>
+
+            <div style={sectionLabelStyle}>{t(LABELS.excludedTitle, lang)}</div>
+            {excludedCandidates.length === 0 ? (
+              <p style={{ fontSize: '0.82em', color: '#6b7280' }}>{t(LABELS.noneExcluded, lang)}</p>
+            ) : (
+              <ul data-testid="excluded-list" style={eligibilityListStyle}>
+                {excludedCandidates.map((excluded) => (
+                  <li key={excluded.candidate_id} data-testid={`excluded-${excluded.candidate_id}`}>
+                    {excluded.candidate_id} — <code>{excluded.platform_reason}</code>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+
         {output && (
           <>
             <div style={sectionLabelStyle}>{t(LABELS.recommended, lang)}</div>
@@ -422,6 +472,16 @@ export default function ServiceProposalPanel() {
             {t(LABELS.algorithmError, lang)}: {serviceEvidence.error.message}
           </p>
         )}
+
+        {/* P4 (US5, FR-022) — the journey action bar + discrete-event
+            timeline render the whole run's journey state/events, not just
+            the STEP-1 candidates above; shown once a run exists. */}
+        {state.runLog && (
+          <>
+            <JourneyActionBar />
+            <EventTimeline />
+          </>
+        )}
       </div>
     </section>
   )
@@ -439,6 +499,13 @@ const sectionLabelStyle: React.CSSProperties = {
 }
 
 const grid2Style: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 14px' }
+
+const eligibilityListStyle: React.CSSProperties = {
+  margin: '0 0 8px',
+  padding: '0 0 0 18px',
+  fontSize: '0.82em',
+  color: '#4b5563',
+}
 
 const fieldLabelStyle: React.CSSProperties = {
   display: 'flex',

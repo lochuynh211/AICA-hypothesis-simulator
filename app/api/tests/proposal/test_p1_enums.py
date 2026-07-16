@@ -73,7 +73,7 @@ class TestServiceDecisionType:
 
 
 # ---------------------------------------------------------------------------
-# DiscreteEventType — 8 members
+# DiscreteEventType — 18 members (8 P1 + 10 P4 additions)
 # ---------------------------------------------------------------------------
 class TestDiscreteEventType:
     EXPECTED = {
@@ -85,23 +85,43 @@ class TestDiscreteEventType:
         "REST_COMPLETED",
         "CONTENT_COMPLETED",
         "ALGORITHM_ERROR",
+        # P4 additions (data-model.md "DiscreteEventType — new members")
+        "SERVICE_REJECTED",
+        "CONTENT_STARTED",
+        "MOTION_CHANGED",
+        "CONTINUE_REQUESTED",
+        "RETURN_TO_PREVIOUS_CONTENT",
+        "REST_STARTED",
+        "POSTPONED",
+        "CHOOSE_ANOTHER",
+        "REQUEST_MORE",
+        "NO_ELIGIBLE_CANDIDATE",
     }
 
     def test_member_count(self):
-        assert len(DiscreteEventType) == 8
+        assert len(DiscreteEventType) == 18
 
     def test_exact_members(self):
         assert {m.value for m in DiscreteEventType} == self.EXPECTED
 
 
 # ---------------------------------------------------------------------------
-# ProposalRunStatus — 4 members
+# ProposalRunStatus — 7 members (4 P1 + 3 P4 additions)
 # ---------------------------------------------------------------------------
 class TestProposalRunStatus:
-    EXPECTED = {"created", "service_selected", "content_selected", "error"}
+    EXPECTED = {
+        "created",
+        "service_selected",
+        "content_selected",
+        "error",
+        # P4 additions (data-model.md "ProposalRunStatus — new members")
+        "content_started",
+        "content_completed",
+        "content_stopped",
+    }
 
     def test_member_count(self):
-        assert len(ProposalRunStatus) == 4
+        assert len(ProposalRunStatus) == 7
 
     def test_exact_members(self):
         assert {m.value for m in ProposalRunStatus} == self.EXPECTED

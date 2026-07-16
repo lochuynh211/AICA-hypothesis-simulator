@@ -1,0 +1,131 @@
+{
+  "capabilities_version": "v1",
+  "services": [
+    {
+      "service_id": "music_playlist",
+      "driving_capable": true,
+      "screen_dependent": false,
+      "stopped_only": false,
+      "background_on_motion": false,
+      "lighting_compatible": true,
+      "requires_entity": null
+    },
+    {
+      "service_id": "humming_karaoke",
+      "driving_capable": true,
+      "screen_dependent": false,
+      "stopped_only": false,
+      "background_on_motion": false,
+      "lighting_compatible": true,
+      "requires_entity": null
+    },
+    {
+      "service_id": "call_response_driving",
+      "driving_capable": true,
+      "screen_dependent": false,
+      "stopped_only": false,
+      "background_on_motion": false,
+      "lighting_compatible": false,
+      "requires_entity": null
+    },
+    {
+      "service_id": "quiz",
+      "driving_capable": true,
+      "screen_dependent": false,
+      "stopped_only": false,
+      "background_on_motion": false,
+      "lighting_compatible": false,
+      "requires_entity": null
+    },
+    {
+      "service_id": "ranking_creation",
+      "driving_capable": true,
+      "screen_dependent": false,
+      "stopped_only": false,
+      "background_on_motion": false,
+      "lighting_compatible": false,
+      "requires_entity": null
+    },
+    {
+      "service_id": "radio_style",
+      "driving_capable": true,
+      "screen_dependent": false,
+      "stopped_only": false,
+      "background_on_motion": false,
+      "lighting_compatible": false,
+      "requires_entity": null
+    },
+    {
+      "service_id": "conversation_audio",
+      "driving_capable": true,
+      "screen_dependent": false,
+      "stopped_only": false,
+      "background_on_motion": false,
+      "lighting_compatible": false,
+      "requires_entity": null
+    },
+    {
+      "service_id": "live_viewing",
+      "driving_capable": true,
+      "screen_dependent": true,
+      "stopped_only": false,
+      "background_on_motion": true,
+      "lighting_compatible": true,
+      "requires_entity": null
+    },
+    {
+      "service_id": "stretch_video",
+      "driving_capable": false,
+      "screen_dependent": true,
+      "stopped_only": true,
+      "background_on_motion": false,
+      "lighting_compatible": false,
+      "requires_entity": null
+    },
+    {
+      "service_id": "full_karaoke",
+      "driving_capable": false,
+      "screen_dependent": true,
+      "stopped_only": true,
+      "background_on_motion": false,
+      "lighting_compatible": true,
+      "requires_entity": null
+    },
+    {
+      "service_id": "call_response_stopped",
+      "driving_capable": false,
+      "screen_dependent": true,
+      "stopped_only": true,
+      "background_on_motion": false,
+      "lighting_compatible": true,
+      "requires_entity": null
+    },
+    {
+      "service_id": "oshi_reexperience",
+      "driving_capable": false,
+      "screen_dependent": false,
+      "stopped_only": true,
+      "background_on_motion": false,
+      "lighting_compatible": false,
+      "requires_entity": "oshi"
+    },
+    {
+      "service_id": "relaxation_multisensory",
+      "driving_capable": false,
+      "screen_dependent": false,
+      "stopped_only": true,
+      "background_on_motion": false,
+      "lighting_compatible": "recipe",
+      "requires_entity": null
+    },
+    {
+      "service_id": "linked_video_recommendation",
+      "driving_capable": false,
+      "screen_dependent": true,
+      "stopped_only": true,
+      "background_on_motion": false,
+      "lighting_compatible": "recipe",
+      "requires_entity": null
+    }
+  ]
+}

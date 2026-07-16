@@ -9,6 +9,8 @@ import {
   getRun,
   deleteRun,
   pickRationale,
+  journeyAction,
+  journeyPreview,
 } from '../src/api/proposalClient'
 
 describe('proposalClient', () => {
@@ -163,5 +165,55 @@ describe('proposalClient', () => {
     expect(pickRationale(undefined, 'ja')).toBe('')
     expect(pickRationale([], 'en')).toBe('')
     expect(pickRationale(['only-one'], 'en')).toBe('only-one')
+  })
+
+  it('journeyAction() POSTs {action_type, payload} to /runs/{id}/journey/action and returns the run log (P4 T031)', async () => {
+    const runLog = { run_id: 'prun_x', status: 'content_started' }
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => runLog })
+
+    const result = await journeyAction('prun_x', 'accept', { note: 'go' })
+
+    expect(global.fetch).toHaveBeenCalledWith('/api/proposal/runs/prun_x/journey/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action_type: 'accept', payload: { note: 'go' } }),
+    })
+    expect(result).toEqual(runLog)
+  })
+
+  it('journeyAction() defaults payload to {} when omitted', async () => {
+    const runLog = { run_id: 'prun_x', status: 'content_stopped' }
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => runLog })
+
+    await journeyAction('prun_x', 'stop')
+
+    expect(global.fetch).toHaveBeenCalledWith('/api/proposal/runs/prun_x/journey/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action_type: 'stop', payload: {} }),
+    })
+  })
+
+  it('journeyAction() surfaces a structured 422 rejection as a descriptive error', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 422,
+      json: async () => ({ detail: { code: 'invalid_precondition', message: 'nothing selected' } }),
+    })
+
+    await expect(journeyAction('prun_x', 'accept')).rejects.toThrow(/422/)
+  })
+
+  it('journeyPreview() calls GET /runs/{id}/journey/preview and returns the non-binding preview (P4 T031)', async () => {
+    const preview = {
+      binding: false,
+      steps: [{ label: 'Now — guide to rest spot', lifecycle_stage: 'before_rest_until_stop', note: null }],
+    }
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => preview })
+
+    const result = await journeyPreview('prun_x')
+
+    expect(global.fetch).toHaveBeenCalledWith('/api/proposal/runs/prun_x/journey/preview', { method: 'GET' })
+    expect(result).toEqual(preview)
   })
 })

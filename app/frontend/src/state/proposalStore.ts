@@ -273,6 +273,10 @@ export type ProposalStoreAction =
   | { type: 'SET_CONTENT_HYPERPARAMETER'; key: string; value: unknown }
   | { type: 'RUN_CREATED'; runLog: ProposalRunLog }
   | { type: 'CONTENT_SELECTED'; runLog: ProposalRunLog }
+  /** A journey action (accept/reject/.../motion_change) was applied and the
+   * backend returned the updated run log (P4 T031) — mirrors how
+   * CONTENT_SELECTED refreshes `runLog` after `selectService`. */
+  | { type: 'JOURNEY_ACTION_APPLIED'; runLog: ProposalRunLog }
   | { type: 'SET_ERROR'; message: string | null }
   | { type: 'RESET_RUN' }
 
@@ -509,6 +513,9 @@ export function proposalReducer(
       return { ...state, runLog: action.runLog, error: null }
 
     case 'CONTENT_SELECTED':
+      return { ...state, runLog: action.runLog, error: null }
+
+    case 'JOURNEY_ACTION_APPLIED':
       return { ...state, runLog: action.runLog, error: null }
 
     case 'SET_ERROR':

@@ -165,6 +165,17 @@ class DiscreteEventType(str, Enum):
     REST_COMPLETED = "REST_COMPLETED"
     CONTENT_COMPLETED = "CONTENT_COMPLETED"
     ALGORITHM_ERROR = "ALGORITHM_ERROR"
+    # P4 additions (data-model.md §"DiscreteEventType — new members")
+    SERVICE_REJECTED = "SERVICE_REJECTED"
+    CONTENT_STARTED = "CONTENT_STARTED"
+    MOTION_CHANGED = "MOTION_CHANGED"
+    CONTINUE_REQUESTED = "CONTINUE_REQUESTED"
+    RETURN_TO_PREVIOUS_CONTENT = "RETURN_TO_PREVIOUS_CONTENT"
+    REST_STARTED = "REST_STARTED"
+    POSTPONED = "POSTPONED"
+    CHOOSE_ANOTHER = "CHOOSE_ANOTHER"
+    REQUEST_MORE = "REQUEST_MORE"
+    NO_ELIGIBLE_CANDIDATE = "NO_ELIGIBLE_CANDIDATE"
 
 
 class ProposalRunStatus(str, Enum):
@@ -173,6 +184,10 @@ class ProposalRunStatus(str, Enum):
     service_selected = "service_selected"
     content_selected = "content_selected"
     error = "error"
+    # P4 additions (data-model.md §"ProposalRunStatus — new members")
+    content_started = "content_started"
+    content_completed = "content_completed"
+    content_stopped = "content_stopped"
 
 
 # ---------------------------------------------------------------------------
@@ -258,3 +273,54 @@ class ScheduledEventTiming(str, Enum):
     soon = "soon"
     later = "later"
     unknown = "unknown"
+
+
+# ---------------------------------------------------------------------------
+# P4 enums (data-model.md §"New enums (enums.py)", [new])
+# ---------------------------------------------------------------------------
+
+class JourneyActionType(str, Enum):
+    """Discrete journey actions accepted by the P4 journey engine (data-model.md).
+
+    NOTE: ``continue`` is a Python keyword, so the member is named
+    ``continue_`` with value ``"continue"``. Downstream code must reference
+    it as ``JourneyActionType.continue_`` or construct it via
+    ``JourneyActionType("continue")``.
+    """
+    accept = "accept"
+    reject = "reject"
+    postpone = "postpone"
+    choose_another = "choose_another"
+    request_more = "request_more"
+    complete = "complete"
+    continue_ = "continue"
+    stop = "stop"
+    motion_change = "motion_change"
+    rest_spot_arrived = "rest_spot_arrived"
+    rest_started = "rest_started"
+    rest_completed = "rest_completed"
+
+
+class PlaybackState(str, Enum):
+    """Playback state of the currently active content plan (data-model.md)."""
+    idle = "idle"
+    active = "active"
+    backgrounded = "backgrounded"
+    paused = "paused"
+    completed = "completed"
+    stopped = "stopped"
+
+
+class EligibilityReasonCode(str, Enum):
+    """Closed vocabulary of score-free eligibility exclusion reasons (research.md D3)."""
+    screen_dependent_while_driving = "screen_dependent_while_driving"
+    stopped_only_while_driving = "stopped_only_while_driving"
+    full_karaoke_requires_stopped = "full_karaoke_requires_stopped"
+    missing_required_entity = "missing_required_entity"
+    catalog_item_unavailable = "catalog_item_unavailable"
+    # Reserved/defensive: never produced by ``resolve_eligibility``, which only
+    # ever iterates the row's OWN ``allowed_service_ids`` (a service outside
+    # the row can't appear as a candidate to exclude in the first place).
+    # Kept in the vocabulary for callers that need to represent that case
+    # explicitly (e.g. future defensive checks).
+    not_in_allowed_row = "not_in_allowed_row"
