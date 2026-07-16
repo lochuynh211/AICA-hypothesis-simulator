@@ -1,15 +1,24 @@
 /**
- * ContentProposalPanel (P1 T028) — panel ③ Content proposal, STEP 2.
+ * ContentProposalPanel (P1 T028; wired to the REAL content selector in P3c
+ * T035) — panel ③ Content proposal, STEP 2.
  *
  * Mirrors ServiceProposalPanel's structure for the chosen service: content
  * package + editable params/hyperparameters -> item_fit formulation -> the
  * SINGLE ordered plan (real P2 track ids; the real song title surfaces
- * inside each item's bilingual rationale sentence, not as a separate field
- * — see `packages/mock_content_selector_v1/algorithm.py`) with per-item
- * ReasonBreakdown, plan metadata, and excluded examples.
+ * inside each item's bilingual rationale sentence, not as a separate field)
+ * with per-item ReasonBreakdown, plan metadata, and excluded examples. STEP 2
+ * now dispatches the REAL `packages/aica_transparent_content_selector_v1`
+ * package by default (routers/proposal.py T034) — a different driver
+ * profile/situation therefore yields a visibly different plan; the P1 mock
+ * package (`packages/mock_content_selector_v1`) remains selectable but is no
+ * longer the default, and this panel renders whichever `CompletePlan` comes
+ * back generically (it does not know or care which package produced it).
  *
  * CRITICAL INVARIANT (data-model.md): no aggregate plan score is ever
  * rendered here — exactly one ordered plan, never a ranked/scored plan list.
+ * Every non-`complete_plan` outcome (`algorithm_error`, `unsupported_service`,
+ * `no_proposal`, `insufficient_eligible_items`, ...) is rendered as an
+ * explicit message — never a blank panel, never a fabricated plan.
  *
  * Purely reactive to `proposalStore.runLog` — STEP 2 is triggered by
  * ServiceProposalPanel's "Choose" action, not by a button in this panel.
@@ -46,7 +55,44 @@ const LABELS = {
     en: 'No content plan is available for the selected service (unsupported service).',
   },
   selectFailed: { ja: 'サービス選択に失敗しました', en: 'Could not select this service' },
+  // Honest non-complete_plan outcomes from the real transparent selector
+  // (never a fabricated plan — Constitution II/V) — each decision_type is
+  // shown as its own explicit, non-blank message instead of a silent gap.
+  noProposal: {
+    ja: '提案できるコンテンツがありません（no_proposal：全候補が除外されました）。',
+    en: 'No content proposal is possible (no_proposal: every candidate was excluded).',
+  },
+  insufficientEligibleItems: {
+    ja: '適格な候補が要求件数に満たないため、プランを生成できません。',
+    en: 'Not enough eligible candidates to fill the requested plan size.',
+  },
+  invalidCatalog: {
+    ja: 'カタログが不正です（invalid_catalog）。',
+    en: 'The catalog is invalid for this request (invalid_catalog).',
+  },
+  invalidConfiguration: {
+    ja: 'パッケージ設定が不正です（invalid_configuration）。',
+    en: 'The package configuration is invalid (invalid_configuration).',
+  },
+  fullKaraokeRequiresStopped: {
+    ja: 'フルカラオケは停止中のみ利用できます。',
+    en: 'Full karaoke is only available while stopped.',
+  },
+  otherDecision: {
+    ja: 'このリクエストに対するプランはありません。',
+    en: 'No plan is available for this request.',
+  },
 };
+
+const _NON_PLAN_DECISION_LABELS: Record<string, { ja: string; en: string }> = {
+  no_proposal: LABELS.noProposal,
+  insufficient_eligible_items: LABELS.insufficientEligibleItems,
+  invalid_catalog: LABELS.invalidCatalog,
+  invalid_configuration: LABELS.invalidConfiguration,
+  full_karaoke_requires_stopped: LABELS.fullKaraokeRequiresStopped,
+  invalid_request: LABELS.otherDecision,
+  unsupported_recipe: LABELS.otherDecision,
+}
 
 function contentRows(item: OrderedItem): ReasonRow[] {
   return item.feature_contributions.map((fc) => ({
@@ -197,7 +243,19 @@ export default function ContentProposalPanel() {
         )}
 
         {plan && plan.decision_type === 'unsupported_service' && (
-          <p style={{ fontSize: '0.82em', color: '#b45309' }}>{t(LABELS.unsupported, lang)}</p>
+          <p data-testid="content-unsupported" style={{ fontSize: '0.82em', color: '#b45309' }}>
+            {t(LABELS.unsupported, lang)}
+          </p>
+        )}
+
+        {/* Every other honest non-complete_plan outcome (no_proposal,
+            insufficient_eligible_items, invalid_catalog, invalid_configuration,
+            full_karaoke_requires_stopped, ...) from the REAL content selector —
+            never silently blank, never a fabricated plan. */}
+        {plan && plan.decision_type !== 'unsupported_service' && plan.decision_type !== 'complete_plan' && (
+          <p data-testid="content-no-plan" style={{ fontSize: '0.82em', color: '#b45309' }}>
+            {t(_NON_PLAN_DECISION_LABELS[plan.decision_type] ?? LABELS.otherDecision, lang)}
+          </p>
         )}
 
         {plan && plan.ordered_items.length > 0 && (

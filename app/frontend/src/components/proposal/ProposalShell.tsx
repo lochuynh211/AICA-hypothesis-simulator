@@ -22,7 +22,6 @@ type SubView = 'screen' | 'runs'
 const LABELS = {
   screen: { ja: '画面', en: 'Screen' },
   runs: { ja: '実行履歴', en: 'Runs' },
-  mockBadge: { ja: 'モックデータ（P1土台）', en: 'MOCK DATA (P1 foundation)' },
 }
 
 function ProposalLanguageToggle() {
@@ -109,20 +108,6 @@ export default function ProposalShell() {
             {t(LABELS.runs, lang)}
           </button>
         </nav>
-        <span
-          style={{
-            fontSize: '0.66em',
-            fontWeight: 800,
-            letterSpacing: '0.05em',
-            background: '#fffbeb',
-            color: '#b45309',
-            border: '1px solid #fcd34d',
-            borderRadius: '999px',
-            padding: '2px 9px',
-          }}
-        >
-          {t(LABELS.mockBadge, lang)}
-        </span>
         <ProposalLanguageToggle />
       </header>
 

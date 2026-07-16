@@ -77,8 +77,14 @@ from aica_api.services.proposal_selector import dispatch_selector
 from aica_api.services.world_clone_store import InvalidOverrideError, WorldCloneStore
 from aica_api.services.world_seed_store import WorldSeedStore
 from aica_api.services.world_validation import ValidationIssue, validate_world
+from aica_api.storage.file_store import read_json
 
 router = APIRouter()
+
+# The one REAL (non-mock) content-selector package this router knows how to
+# wire the frozen catalog into (T034 / P3c). Any other content package
+# (including the P1 mock) keeps using ``_build_content_context`` unchanged.
+_REAL_CONTENT_PACKAGE_ID = "aica_transparent_content_selector_v1"
 
 
 @router.get("/api/proposal/_meta")
@@ -224,6 +230,116 @@ def _build_content_context(
         "hyperparameters": content_hyperparameters,
         "package_runtime_state": package_runtime_state,
         "catalog_version": world_snapshot.get("catalog_version", "n/a"),
+        "run_seed": run_log.opportunity.run_seed,
+    }
+
+
+def _catalog_map_for_dataset(dataset_id: str) -> dict[str, dict] | None:
+    """Build the ``{track_id: Song-dict}`` map the real content selector's
+    ``feature_snapshot["catalog"]`` expects, from the frozen P2 dataset.
+
+    Returns ``None`` if ``dataset_id`` is unknown/quarantined. The FULL frozen
+    catalog is used — no eligibility narrowing (motion/catalog/schedule) is
+    added here or anywhere else in P3 (FR-021).
+    """
+    songs = _get_dataset_registry().get_catalog(dataset_id)
+    if songs is None:
+        return None
+    return {song.spotify_track.id: song.model_dump(mode="json") for song in songs}
+
+
+def _genre_affinity_artist_genres(dataset_id: str) -> dict:
+    """Read-only load of the dataset's catalog-derived ``artist_genres`` map
+    (``proposal_contracts/dataset/<id>/genre_affinity_v1.json``).
+
+    ``artist_genres`` is catalog-derived, never world-owned (see
+    ``models/proposal/world.py`` module docstring) — the caller merges it in
+    alongside the World-owned ``usage_by_genre``/``scene_genre_usage`` fields
+    when the genre extension is enabled. Missing/unreadable file -> ``{}``
+    (no artist-genre data), never an exception.
+    """
+    path = settings.proposal_dataset_dir / dataset_id / "genre_affinity_v1.json"
+    if not path.exists():
+        return {}
+    try:
+        data = read_json(str(path))
+    except Exception:
+        return {}
+    return {"artist_genres": data.get("artist_genres", {})}
+
+
+def _build_real_content_context(
+    *,
+    package: ProposalPackageManifest,
+    run_log: ProposalRunLog,
+    selected_service_id: ServiceId,
+    content_parameters: dict,
+    content_hyperparameters: dict,
+) -> dict:
+    """Assemble the CONTENT context for the REAL transparent content selector
+    (``aica_transparent_content_selector_v1``) — T034 / P3c.
+
+    Unlike ``_build_content_context`` (the P1 mock path, still used for the
+    mock content package and for legacy ``world_snapshot``-only runs), this:
+
+      - merges in the FULL frozen dataset catalog (``{track_id: Song}``,
+        keyed by ``DatasetCatalogRegistry.get_catalog`` — no eligibility
+        narrowing, per FR-021) as ``feature_snapshot["catalog"]``;
+      - derives ``enabled_feature_extensions`` from the world's own
+        ``feature_snapshot["_genre_extension_enabled"]`` flag (P1's mock path
+        hardcoded this to ``[]``) and, when on, merges the dataset's
+        catalog-derived ``artist_genres`` into ``feature_snapshot["genre_affinity_v1"]``
+        alongside the World-owned ``usage_by_genre``/``scene_genre_usage``.
+
+    Only called when ``run_log.setup_snapshot`` is populated (a typed-World
+    run, per US1) — the caller falls back to ``_build_content_context`` for
+    legacy ``world_snapshot``-only runs, which have no ``dataset_id`` to
+    resolve a catalog from.
+    """
+    setup_snapshot = run_log.setup_snapshot
+    assert setup_snapshot is not None  # only invoked for typed-world runs
+
+    world_snapshot = run_log.world_snapshot or {}
+    feature_snapshot = dict(world_snapshot.get("feature_snapshot") or {})
+    feature_provenance = dict(world_snapshot.get("feature_provenance") or {})
+
+    catalog_map = _catalog_map_for_dataset(setup_snapshot.dataset_id) or {}
+
+    enabled_feature_extensions: list[str] = []
+    if feature_snapshot.get("_genre_extension_enabled"):
+        enabled_feature_extensions.append("genre_affinity_v1")
+        gav1 = dict(feature_snapshot.get("genre_affinity_v1") or {})
+        gav1.update(_genre_affinity_artist_genres(setup_snapshot.dataset_id))
+        feature_snapshot["genre_affinity_v1"] = gav1
+
+    feature_snapshot["catalog"] = catalog_map
+    feature_snapshot["_service_id"] = selected_service_id.value
+
+    eligible_candidates = [{"candidate_id": tid} for tid in catalog_map]
+
+    package_runtime_state: dict = {}
+    for ev in run_log.evidence:
+        if ev.step == "service" and ev.output:
+            package_runtime_state = ev.output.get("next_package_runtime_state") or {}
+            break
+
+    return {
+        "contract_version": package.contract_version,
+        "opportunity_id": run_log.opportunity.opportunity_id,
+        "simulation_time": run_log.opportunity.simulation_time,
+        "trigger_purpose": run_log.opportunity.trigger_purpose.value,
+        "lifecycle_stage": run_log.opportunity.lifecycle_stage.value,
+        "allowed_service_ids": [s.value for s in run_log.opportunity.allowed_service_ids],
+        "selected_service_id": selected_service_id.value,
+        "feature_snapshot": feature_snapshot,
+        "feature_provenance": feature_provenance,
+        "enabled_feature_extensions": enabled_feature_extensions,
+        "eligible_candidates": eligible_candidates,
+        "excluded_candidates": [],
+        "parameters": content_parameters,
+        "hyperparameters": content_hyperparameters,
+        "package_runtime_state": package_runtime_state,
+        "catalog_version": setup_snapshot.dataset_hash,
         "run_seed": run_log.opportunity.run_seed,
     }
 
@@ -835,13 +951,28 @@ def select_service(run_id: str, body: SelectServiceBody) -> ProposalRunLog:
         hp.key: hp.default for hp in content_pkg.hyperparameters
     }
 
-    context = _build_content_context(
-        package=content_pkg,
-        run_log=run_log,
-        selected_service_id=selected_service_id,
-        content_parameters=content_parameters,
-        content_hyperparameters=content_hyperparameters,
-    )
+    # T034 (P3c): the REAL transparent content package gets the frozen-catalog
+    # context (full catalog, no eligibility narrowing) whenever the run was
+    # created from a typed World (setup_snapshot present). A legacy
+    # world_snapshot-only run has no dataset_id to resolve a catalog from, so
+    # it keeps the P1 mock-path context builder (mirrors the mock package's
+    # own behavior — never a crash, just an unusable/empty catalog).
+    if content_pkg.id == _REAL_CONTENT_PACKAGE_ID and run_log.setup_snapshot is not None:
+        context = _build_real_content_context(
+            package=content_pkg,
+            run_log=run_log,
+            selected_service_id=selected_service_id,
+            content_parameters=content_parameters,
+            content_hyperparameters=content_hyperparameters,
+        )
+    else:
+        context = _build_content_context(
+            package=content_pkg,
+            run_log=run_log,
+            selected_service_id=selected_service_id,
+            content_parameters=content_parameters,
+            content_hyperparameters=content_hyperparameters,
+        )
 
     evidence = dispatch_selector(
         content_pkg,

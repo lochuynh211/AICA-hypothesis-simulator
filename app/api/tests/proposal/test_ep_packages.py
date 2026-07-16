@@ -1,8 +1,13 @@
 """TDD: GET /api/proposal/packages — T021.
 
 Covers:
-  - The 4 canonical (family, approach) slots, with the two mock packages
-    filling the transparent slots and the two constrained_llm slots null.
+  - The 4 canonical (family, approach) slots. The service_selector transparent
+    slot is filled by the mock (no real transparent service selector exists
+    yet); the content_selector transparent slot is filled by the REAL
+    ``aica_transparent_content_selector_v1`` (P3c, feature 014) now that it
+    declares family/approach — it sorts before the mock alphabetically, which
+    is also how the P3c demo picks up the real package as its default. The
+    two constrained_llm slots remain null.
   - The loaded package summaries (id/family/approach/label/supported_services/
     parameters/hyperparameters).
   - The errors list is present (even if empty against the real packages_dir).
@@ -24,7 +29,7 @@ def test_get_packages_returns_four_slots_with_mocks_in_transparent_slots():
 
     by_key = {(s["family"], s["approach"]): s["package_id"] for s in body["slots"]}
     assert by_key[("service_selector", "transparent")] == "mock_service_selector_v1"
-    assert by_key[("content_selector", "transparent")] == "mock_content_selector_v1"
+    assert by_key[("content_selector", "transparent")] == "aica_transparent_content_selector_v1"
     assert by_key[("service_selector", "constrained_llm")] is None
     assert by_key[("content_selector", "constrained_llm")] is None
 
