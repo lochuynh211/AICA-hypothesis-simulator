@@ -53,11 +53,27 @@ from aica_api.models.proposal.events import DiscreteEvent
 from aica_api.models.proposal.journey import JourneyState
 from aica_api.models.proposal.matrix import MatrixResolutionError, PurposeStageServiceMatrix
 from aica_api.models.proposal.opportunity import ProposalOpportunity
-from aica_api.models.proposal.package_manifest import ProposalPackageManifest
+from aica_api.models.proposal.package_manifest import BilingualLabel, ProposalPackageManifest
 from aica_api.models.proposal.proposal_run import ProposalRun, ProposalRunLog
+from aica_api.models.proposal.world import (
+    DriverProfile,
+    DriverProfileRecord,
+    SeedWorld,
+    SetupSnapshot,
+    SetupSnapshotOrigin,
+    World,
+)
 from aica_api.services import proposal_run_manager as prm
+from aica_api.services.dataset_catalog_registry import DatasetCatalogRegistry
+from aica_api.services.driver_profile_store import (
+    DriverProfileConflictError,
+    DriverProfileNotFoundError,
+    DriverProfileStore,
+)
 from aica_api.services.proposal_package_registry import ProposalPackageRegistry
 from aica_api.services.proposal_selector import dispatch_selector
+from aica_api.services.world_seed_store import WorldSeedStore
+from aica_api.services.world_validation import ValidationIssue, validate_world
 
 router = APIRouter()
 
@@ -80,6 +96,21 @@ def _matrix_path():
 def _get_registry() -> ProposalPackageRegistry:
     """Instantiate a ProposalPackageRegistry from the configured packages directory."""
     return ProposalPackageRegistry(settings.packages_dir)
+
+
+def _get_dataset_registry() -> DatasetCatalogRegistry:
+    """Instantiate a DatasetCatalogRegistry from the configured dataset directory."""
+    return DatasetCatalogRegistry(settings.proposal_dataset_dir)
+
+
+def _get_seed_store() -> WorldSeedStore:
+    """Instantiate a WorldSeedStore from the configured seeds directory."""
+    return WorldSeedStore(settings.proposal_seeds_dir)
+
+
+def _get_profile_store() -> DriverProfileStore:
+    """Instantiate a DriverProfileStore from the configured user-profiles directory."""
+    return DriverProfileStore(settings.proposal_profiles_dir)
 
 
 def _make_opportunity_id() -> str:
@@ -228,17 +259,191 @@ def get_packages() -> dict:
 
 
 # ---------------------------------------------------------------------------
+# GET /api/proposal/datasets — T021/T022 (P3 — read-only dataset catalog)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/proposal/datasets")
+def get_datasets() -> dict:
+    """List loadable datasets + provenance; quarantined datasets appear in errors.
+
+    READ-ONLY: no edit/import route exists anywhere in this router — the
+    frozen dataset changes only by re-running the P2 generator.
+    """
+    registry = _get_dataset_registry()
+    return {"datasets": registry.list_datasets(), "errors": registry.list_errors()}
+
+
+@router.get("/api/proposal/datasets/{dataset_id}/catalog")
+def get_dataset_catalog(dataset_id: str, offset: int = 0, limit: int | None = None) -> dict:
+    """Read-only paginated catalog songs + provenance for one dataset.
+
+    ``offset``/``limit`` are optional; omitting ``limit`` returns every song
+    from ``offset`` onward (the full catalog when both are omitted).
+    """
+    registry = _get_dataset_registry()
+    catalog = registry.get_catalog(dataset_id)
+    if catalog is None:
+        raise HTTPException(status_code=404, detail=f"Unknown dataset_id: {dataset_id!r}")
+
+    provenance = registry.get_provenance(dataset_id)
+    assert provenance is not None  # a loaded catalog always has provenance
+
+    end = None if limit is None else offset + limit
+    page = catalog[offset:end]
+
+    return {
+        "provenance": {
+            "dataset_id": provenance.dataset_id,
+            "dataset_version": provenance.dataset_version.model_dump(),
+            "dataset_hash": provenance.dataset_hash,
+            "tier": provenance.tier,
+            "provenance_note": provenance.provenance_note,
+        },
+        "total": len(catalog),
+        "songs": [song.model_dump(mode="json") for song in page],
+    }
+
+
+# ---------------------------------------------------------------------------
+# GET /api/proposal/seeds — T021/T022 (P3 — base-seed store)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/proposal/seeds")
+def get_seeds() -> dict:
+    """List the committed base-seed worlds ({seed_id, label, description})."""
+    store = _get_seed_store()
+    return {"seeds": store.list_seeds()}
+
+
+@router.get("/api/proposal/seeds/{seed_id}")
+def get_seed(seed_id: str) -> SeedWorld:
+    """Return the full, complete SeedWorld for seed_id."""
+    store = _get_seed_store()
+    seed = store.get_seed(seed_id)
+    if seed is None:
+        raise HTTPException(status_code=404, detail=f"Unknown seed_id: {seed_id!r}")
+    return seed
+
+
+# ---------------------------------------------------------------------------
+# Driver-profile CRUD — T021/T022 (P3 — built-in + user profile store)
+# ---------------------------------------------------------------------------
+
+
+class SaveDriverProfileBody(BaseModel):
+    """Request body for ``POST /api/proposal/profiles``."""
+
+    label: BilingualLabel
+    profile: DriverProfile
+
+
+@router.get("/api/proposal/profiles")
+def get_profiles() -> dict:
+    """List built-in + user driver profiles ({profile_id, label, builtin})."""
+    store = _get_profile_store()
+    return {"profiles": store.list_profiles()}
+
+
+@router.get("/api/proposal/profiles/{profile_id}")
+def get_profile(profile_id: str) -> DriverProfileRecord:
+    """Return the full DriverProfileRecord for profile_id."""
+    store = _get_profile_store()
+    record = store.get_profile(profile_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Unknown profile_id: {profile_id!r}")
+    return record
+
+
+@router.post("/api/proposal/profiles", status_code=201)
+def create_profile(body: SaveDriverProfileBody) -> DriverProfileRecord:
+    """Validate and save a NEW user driver profile (``builtin=False``)."""
+    store = _get_profile_store()
+    try:
+        return store.save_profile(body.label, body.profile)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.errors()) from exc
+
+
+@router.delete("/api/proposal/profiles/{profile_id}", status_code=204)
+def delete_profile(profile_id: str) -> Response:
+    """Delete a user driver profile. Built-in profiles are not deletable (409)."""
+    store = _get_profile_store()
+    try:
+        store.delete_profile(profile_id)
+    except DriverProfileConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except DriverProfileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return Response(status_code=204)
+
+
+# ---------------------------------------------------------------------------
+# POST /api/proposal/worlds/validate — T021/T022 (P3)
+# ---------------------------------------------------------------------------
+
+
+class ValidateWorldBody(BaseModel):
+    """Request body for ``POST /api/proposal/worlds/validate``."""
+
+    world: World
+
+
+@router.post("/api/proposal/worlds/validate")
+def validate_world_endpoint(body: ValidateWorldBody) -> dict:
+    """Validate a typed World against enum/range/purpose-stage/catalog rules.
+
+    An unknown ``control_inputs.dataset_id`` surfaces as a field-level issue
+    (``valid: false``) rather than a 500 — the dataset simply can't be
+    resolved to check catalog references against, which is itself a
+    reportable problem with the world, not a server error.
+    """
+    registry = _get_dataset_registry()
+    catalog = registry.get_catalog(body.world.control_inputs.dataset_id)
+    if catalog is None:
+        issue = ValidationIssue(
+            path="control_inputs.dataset_id",
+            code="unknown_dataset",
+            message=(
+                f"control_inputs.dataset_id: unknown dataset '{body.world.control_inputs.dataset_id}'. / "
+                f"control_inputs.dataset_id: 不明なデータセット '{body.world.control_inputs.dataset_id}' です。"
+            ),
+        )
+        return {"valid": False, "issues": [issue.model_dump()]}
+
+    issues = validate_world(body.world, catalog)
+    return {"valid": not issues, "issues": [issue.model_dump() for issue in issues]}
+
+
+# ---------------------------------------------------------------------------
 # POST /api/proposal/runs — T022 (create + STEP 1 service)
 # ---------------------------------------------------------------------------
 
 
 class CreateProposalRunBody(BaseModel):
-    """Request body for ``POST /api/proposal/runs`` (contracts/proposal-api.md)."""
+    """Request body for ``POST /api/proposal/runs`` (contracts/proposal-api.md).
 
-    trigger_purpose: TriggerPurpose
-    lifecycle_stage: LifecycleStage
-    motion_state: MotionState
+    P3 (feature 014) additively accepts a typed ``world: World`` alongside the
+    legacy opaque ``world_snapshot: dict`` (P1 back-compat) — ``world`` wins
+    when both are present. ``trigger_purpose``/``lifecycle_stage``/
+    ``motion_state`` are optional at the top level so the typed-world path can
+    derive them from ``world.control_inputs`` instead; they remain effectively
+    required (enforced in the handler, not by pydantic) on the legacy
+    ``world_snapshot`` path, where no ``World`` exists to derive them from.
+    ``origin_seed_id``/``origin_clone_id``/``origin_profile_id`` are optional
+    hints recording which committed artifact(s) the typed world was built
+    from, frozen verbatim into ``SetupSnapshot.origin``.
+    """
+
+    trigger_purpose: TriggerPurpose | None = None
+    lifecycle_stage: LifecycleStage | None = None
+    motion_state: MotionState | None = None
+    world: World | None = None
     world_snapshot: dict[str, Any] = {}
+    origin_seed_id: str | None = None
+    origin_clone_id: str | None = None
+    origin_profile_id: str | None = None
     service_package_id: str
     content_package_id: str
     mode: str = "interactive"
@@ -247,6 +452,104 @@ class CreateProposalRunBody(BaseModel):
     hyperparameters: dict[str, Any] = {}
     run_seed: str
     simulation_time: str | int
+
+
+def _resolve_run_setup(
+    body: CreateProposalRunBody,
+) -> tuple[TriggerPurpose, LifecycleStage, MotionState]:
+    """Resolve the effective (trigger_purpose, lifecycle_stage, motion_state).
+
+    Typed-world path: derived from ``body.world.control_inputs`` (the single
+    source of truth once a typed world is supplied) unless the caller also
+    passed explicit top-level overrides. Legacy path: the three top-level
+    fields are required (raises 422 if any is missing — pydantic can't
+    enforce "required unless `world` is set" declaratively).
+    """
+    if body.world is not None:
+        ci = body.world.control_inputs
+        return (
+            body.trigger_purpose or ci.trigger_purpose,
+            body.lifecycle_stage or ci.lifecycle_stage,
+            body.motion_state or ci.motion_state,
+        )
+    if body.trigger_purpose is None or body.lifecycle_stage is None or body.motion_state is None:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "trigger_purpose, lifecycle_stage, and motion_state are required "
+                "when 'world' is not supplied."
+            ),
+        )
+    return body.trigger_purpose, body.lifecycle_stage, body.motion_state
+
+
+def _freeze_setup_snapshot(
+    body: CreateProposalRunBody,
+    *,
+    world: World,
+    matrix_version: str,
+    service_pkg: ProposalPackageManifest,
+    content_pkg: ProposalPackageManifest,
+    service_hyperparameters: dict,
+) -> tuple[dict, SetupSnapshot]:
+    """Validate the typed world and build (world_snapshot dict, SetupSnapshot).
+
+    Raises HTTPException(422, detail=[{path, code, message}, ...]) if the
+    dataset_id is unknown or the world fails ``validate_world`` — never a
+    fabricated snapshot for an invalid world.
+    """
+    dataset_registry = _get_dataset_registry()
+    catalog = dataset_registry.get_catalog(world.control_inputs.dataset_id)
+    if catalog is None:
+        raise HTTPException(
+            status_code=422,
+            detail=[
+                {
+                    "path": "control_inputs.dataset_id",
+                    "code": "unknown_dataset",
+                    "message": f"Unknown dataset_id: {world.control_inputs.dataset_id!r}",
+                }
+            ],
+        )
+
+    issues = validate_world(world, catalog)
+    if issues:
+        raise HTTPException(status_code=422, detail=[issue.model_dump() for issue in issues])
+
+    feature_snapshot, feature_provenance = world.project()
+    world_snapshot_dict = {
+        "feature_snapshot": feature_snapshot,
+        "feature_provenance": {k: v.model_dump(mode="json") for k, v in feature_provenance.items()},
+        "catalog_version": world.catalog_ref.dataset_hash,
+    }
+
+    dataset_provenance = dataset_registry.get_provenance(world.control_inputs.dataset_id)
+    assert dataset_provenance is not None  # a resolved catalog always has provenance
+
+    content_default_hyperparameters = {hp.key: hp.default for hp in content_pkg.hyperparameters}
+
+    setup_snapshot = SetupSnapshot(
+        origin=SetupSnapshotOrigin(
+            seed_id=body.origin_seed_id,
+            clone_id=body.origin_clone_id,
+            profile_id=body.origin_profile_id,
+        ),
+        matrix_version=matrix_version,
+        dataset_id=world.control_inputs.dataset_id,
+        dataset_hash=dataset_provenance.dataset_hash,
+        service_package_id=service_pkg.id,
+        service_contract_version=service_pkg.contract_version,
+        content_package_id=content_pkg.id,
+        content_contract_version=content_pkg.contract_version,
+        service_parameter_set_version=service_hyperparameters.get(
+            "parameter_set_version", service_pkg.version
+        ),
+        content_parameter_set_version=content_default_hyperparameters.get(
+            "parameter_set_version", content_pkg.version
+        ),
+        feature_provenance=feature_provenance,
+    )
+    return world_snapshot_dict, setup_snapshot
 
 
 @router.post("/api/proposal/runs", status_code=201)
@@ -267,9 +570,17 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
             detail=f"Unknown or mis-slotted content_package_id: {body.content_package_id!r}",
         )
 
+    if body.world is None and not body.world_snapshot:
+        raise HTTPException(
+            status_code=422,
+            detail="Request must include either a typed 'world' or a non-empty 'world_snapshot'.",
+        )
+
+    trigger_purpose, lifecycle_stage, motion_state = _resolve_run_setup(body)
+
     matrix = PurposeStageServiceMatrix.load(_matrix_path())
     try:
-        allowed_service_ids = matrix.resolve(body.trigger_purpose, body.lifecycle_stage)
+        allowed_service_ids = matrix.resolve(trigger_purpose, lifecycle_stage)
     except MatrixResolutionError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
@@ -277,8 +588,8 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
     try:
         opportunity = ProposalOpportunity(
             opportunity_id=opportunity_id,
-            trigger_purpose=body.trigger_purpose,
-            lifecycle_stage=body.lifecycle_stage,
+            trigger_purpose=trigger_purpose,
+            lifecycle_stage=lifecycle_stage,
             allowed_service_ids=allowed_service_ids,
             simulation_time=body.simulation_time,
             run_seed=body.run_seed,
@@ -291,10 +602,26 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
         hp.key: hp.default for hp in service_pkg.hyperparameters
     }
 
+    # P3 typed-world path: validate + project + freeze a SetupSnapshot; the
+    # resulting world_snapshot dict replaces body.world_snapshot for the
+    # service-selector context and the persisted log (world wins over
+    # world_snapshot when both are given).
+    setup_snapshot: SetupSnapshot | None = None
+    world_snapshot = body.world_snapshot
+    if body.world is not None:
+        world_snapshot, setup_snapshot = _freeze_setup_snapshot(
+            body,
+            world=body.world,
+            matrix_version=matrix.matrix_version,
+            service_pkg=service_pkg,
+            content_pkg=content_pkg,
+            service_hyperparameters=hyperparameters,
+        )
+
     context = _build_service_context(
         package=service_pkg,
         opportunity=opportunity,
-        world_snapshot=body.world_snapshot,
+        world_snapshot=world_snapshot,
         enabled_feature_extensions=body.enabled_feature_extensions,
         parameters=parameters,
         hyperparameters=hyperparameters,
@@ -316,8 +643,8 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
             at=at,
             payload={
                 "opportunity_id": opportunity_id,
-                "trigger_purpose": body.trigger_purpose.value,
-                "lifecycle_stage": body.lifecycle_stage.value,
+                "trigger_purpose": trigger_purpose.value,
+                "lifecycle_stage": lifecycle_stage.value,
             },
         )
     ]
@@ -350,8 +677,8 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
         status = ProposalRunStatus.service_selected
 
     journey_state = JourneyState(
-        lifecycle_stage=body.lifecycle_stage,
-        motion_state=body.motion_state,
+        lifecycle_stage=lifecycle_stage,
+        motion_state=motion_state,
         active_service_id=selected_service_id,
         active_plan_id=None,
     )
@@ -359,7 +686,7 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
     run_log = prm.create_run(
         opportunity=opportunity,
         matrix_version=matrix.matrix_version,
-        world_snapshot=body.world_snapshot,
+        world_snapshot=world_snapshot,
         service_package_id=body.service_package_id,
         content_package_id=body.content_package_id,
         parameters=parameters,
@@ -368,6 +695,7 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
         events=events,
         evidence=[evidence],
         status=status,
+        setup_snapshot=setup_snapshot,
         runs_dir=settings.proposal_runs_dir,
     )
     return run_log

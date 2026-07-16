@@ -42,6 +42,7 @@ from aica_api.models.proposal.evidence import AlgorithmEvidence
 from aica_api.models.proposal.journey import JourneyState
 from aica_api.models.proposal.opportunity import ProposalOpportunity
 from aica_api.models.proposal.proposal_run import ProposalRun, ProposalRunLog
+from aica_api.models.proposal.world import SetupSnapshot
 from aica_api.storage.file_store import read_json, write_json_atomic
 
 __all__ = [
@@ -105,6 +106,7 @@ def create_run(
     events: list[DiscreteEvent] | None = None,
     evidence: list[AlgorithmEvidence] | None = None,
     status: ProposalRunStatus = ProposalRunStatus.created,
+    setup_snapshot: SetupSnapshot | None = None,
     runs_dir: pathlib.Path,
 ) -> ProposalRunLog:
     """Build a ``ProposalRunLog``, append any provided events/evidence, and
@@ -132,6 +134,9 @@ def create_run(
                                ``OPPORTUNITY_OPENED``/``SERVICE_SELECTED``).
         evidence:              Initial algorithm evidence entries.
         status:                Initial ``ProposalRunStatus``.
+        setup_snapshot:        Frozen P3 ``SetupSnapshot`` (typed-world path
+                               only) — ``None`` for the legacy opaque
+                               ``world_snapshot`` path (P1 back-compat).
         runs_dir:              Directory for persisting ``<run_id>.json``
                                (``settings.proposal_runs_dir`` in production
                                — NEVER the trigger ``runs_dir``).
@@ -146,6 +151,7 @@ def create_run(
         opportunity=opportunity,
         matrix_version=matrix_version,
         world_snapshot=copy.deepcopy(world_snapshot),
+        setup_snapshot=setup_snapshot,
         service_package_id=service_package_id,
         content_package_id=content_package_id,
         parameters=copy.deepcopy(parameters),

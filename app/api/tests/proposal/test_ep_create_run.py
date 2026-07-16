@@ -15,6 +15,7 @@ Covers:
 """
 from __future__ import annotations
 
+import copy
 import json
 
 import pytest
@@ -24,6 +25,15 @@ from aica_api.config import settings
 from aica_api.main import app
 
 client = TestClient(app)
+
+_DATASET_ID = "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
+_DATASET_HASH = "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd"
+_SEED_ID = "seed-night-highway-oshi"
+
+
+def _load_seed_world_dict(seed_id: str = _SEED_ID) -> dict:
+    path = settings.proposal_contracts_dir / "seeds" / f"{seed_id}.json"
+    return json.loads(path.read_text(encoding="utf-8"))["world"]
 
 
 @pytest.fixture(autouse=True)
@@ -349,3 +359,113 @@ def test_create_run_honest_mock_unaffected_by_allowed_set_enforcement():
     body = resp.json()
     assert body["status"] == "service_selected"
     assert body["evidence"][0]["error"] is None
+
+
+# ---------------------------------------------------------------------------
+# T023 — typed World path: freezes a SetupSnapshot (P3)
+# ---------------------------------------------------------------------------
+
+
+def _typed_world_body(**overrides) -> dict:
+    body = {
+        "world": _load_seed_world_dict(),
+        "service_package_id": "mock_service_selector_v1",
+        "content_package_id": "mock_content_selector_v1",
+        "mode": "interactive",
+        "run_seed": "seed-1",
+        "simulation_time": "2026-07-16T10:00:00Z",
+    }
+    body.update(overrides)
+    return body
+
+
+def test_create_run_typed_world_201_freezes_setup_snapshot():
+    resp = client.post("/api/proposal/runs", json=_typed_world_body())
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["status"] == "service_selected"
+
+    snap = body["setup_snapshot"]
+    assert snap is not None
+    assert snap["dataset_id"] == _DATASET_ID
+    assert snap["dataset_hash"] == _DATASET_HASH
+    assert snap["matrix_version"] == "v1"
+    assert snap["service_package_id"] == "mock_service_selector_v1"
+    assert snap["service_contract_version"] == "1.0.0"
+    assert snap["content_package_id"] == "mock_content_selector_v1"
+    assert snap["content_contract_version"] == "1.0.0"
+    assert snap["service_parameter_set_version"]
+    assert snap["content_parameter_set_version"]
+    assert snap["feature_provenance"]  # non-empty: every A.1/A.2 field has provenance
+    assert snap["origin"] == {"seed_id": None, "clone_id": None, "profile_id": None}
+
+
+def test_create_run_typed_world_derives_purpose_stage_motion_from_world():
+    resp = client.post("/api/proposal/runs", json=_typed_world_body())
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["opportunity"]["trigger_purpose"] == "rest_recommended"
+    assert body["opportunity"]["lifecycle_stage"] == "before_rest_until_stop"
+    assert set(body["opportunity"]["allowed_service_ids"]) == {
+        "music_playlist",
+        "humming_karaoke",
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "call_response_driving",
+    }
+
+
+def test_create_run_typed_world_records_origin_hints_when_supplied():
+    resp = client.post(
+        "/api/proposal/runs",
+        json=_typed_world_body(origin_seed_id=_SEED_ID, origin_profile_id="profile-neutral-default"),
+    )
+    assert resp.status_code == 201
+    snap = resp.json()["setup_snapshot"]
+    assert snap["origin"] == {
+        "seed_id": _SEED_ID,
+        "clone_id": None,
+        "profile_id": "profile-neutral-default",
+    }
+
+
+def test_create_run_typed_world_persisted_run_reopens_with_setup_snapshot(tmp_path):
+    resp = client.post("/api/proposal/runs", json=_typed_world_body())
+    run_id = resp.json()["run_id"]
+
+    reopened = client.get(f"/api/proposal/runs/{run_id}")
+    assert reopened.status_code == 200
+    assert reopened.json()["setup_snapshot"]["dataset_id"] == _DATASET_ID
+
+
+def test_create_run_world_snapshot_backcompat_has_no_setup_snapshot():
+    resp = client.post("/api/proposal/runs", json=_valid_body())
+    assert resp.status_code == 201
+    assert resp.json()["setup_snapshot"] is None
+
+
+def test_create_run_typed_world_422_field_level_on_invalid_world():
+    world = copy.deepcopy(_load_seed_world_dict())
+    world["driver_profile"]["oshi_id"] = "synthetic-artist-DOES-NOT-EXIST"
+    resp = client.post("/api/proposal/runs", json=_typed_world_body(world=world))
+    assert resp.status_code == 422
+    detail = resp.json()["detail"]
+    assert any(
+        isinstance(issue, dict) and issue.get("code") == "unknown_catalog_reference"
+        for issue in detail
+    )
+
+
+def test_create_run_422_neither_world_nor_world_snapshot():
+    body = _typed_world_body()
+    del body["world"]
+    resp = client.post("/api/proposal/runs", json=body)
+    assert resp.status_code == 422
+
+
+def test_create_run_world_takes_precedence_over_world_snapshot_when_both_given():
+    body = _typed_world_body(world_snapshot={"feature_snapshot": {"ignored": True}, "feature_provenance": {}})
+    resp = client.post("/api/proposal/runs", json=body)
+    assert resp.status_code == 201
+    assert resp.json()["setup_snapshot"] is not None
