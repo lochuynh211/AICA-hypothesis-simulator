@@ -33,6 +33,18 @@ from aica_api.models.proposal.enums import (  # noqa: F401
     DiscreteEventType,
     ProposalRunStatus,
 )
+from aica_api.models.proposal.enums import (  # noqa: F401
+    TrafficState,
+    RoadType,
+    NightState,
+    OshiMode,
+    OshiType,
+    AgeBand,
+    Gender,
+    RecencyState,
+    ScheduledEventType,
+    ScheduledEventTiming,
+)
 
 # ---------------------------------------------------------------------------
 # Re-exports — selector input (T009 / T011)
@@ -141,6 +153,24 @@ from aica_api.models.proposal.package_manifest import (  # noqa: F401
     ProposalPackageManifest,
 )
 
+# ---------------------------------------------------------------------------
+# Re-exports — P3 typed World model (T007/T008/T009/T010)
+# ---------------------------------------------------------------------------
+from aica_api.models.proposal.world import (  # noqa: F401
+    ControlInputs,
+    Situation,
+    DriverProfile,
+    World,
+    PlayedItem,
+    SkippedItem,
+    ChangedFromItem,
+    CompletedItem,
+    ManuallySelectedItem,
+    RepeatedItem,
+    CancelledContentPlan,
+    ServiceRejection,
+)
+
 __all__ = [
     "CONTRACT_VERSION",
     "SCHEMA_VERSION",
@@ -162,6 +192,17 @@ __all__ = [
     "ServiceDecisionType",
     "DiscreteEventType",
     "ProposalRunStatus",
+    # enums (P3)
+    "TrafficState",
+    "RoadType",
+    "NightState",
+    "OshiMode",
+    "OshiType",
+    "AgeBand",
+    "Gender",
+    "RecencyState",
+    "ScheduledEventType",
+    "ScheduledEventTiming",
     # selector input
     "SelectorInput",
     "FeatureProvenanceEntry",
@@ -215,4 +256,17 @@ __all__ = [
     "AlgorithmSpec",
     "HyperparameterDef",
     "ProposalPackageManifest",
+    # typed World (P3)
+    "ControlInputs",
+    "Situation",
+    "DriverProfile",
+    "World",
+    "PlayedItem",
+    "SkippedItem",
+    "ChangedFromItem",
+    "CompletedItem",
+    "ManuallySelectedItem",
+    "RepeatedItem",
+    "CancelledContentPlan",
+    "ServiceRejection",
 ]

@@ -1,10 +1,15 @@
-"""Isolation-guard test (T011) — no module under models/proposal/ may import
-``aica_api.models`` (the trigger package).
+"""Isolation-guard test (T011, extended for P3 feature 014 T011) — no module
+under models/proposal/ may import ``aica_api.models`` (the trigger package).
 
 Scans every ``.py`` source file's AST for ``import``/``from ... import``
 statements. Imports of ``aica_api.models.proposal`` (this subpackage itself)
 are allowed; any other ``aica_api.models*`` import is a violation of the
 HARD ISOLATION RULE (CLAUDE.md / data-model.md preamble).
+
+The scan is directory-glob-based (``*.py`` under ``models/proposal/``), so new
+P3 modules — ``dataset.py`` (T003/T004) and ``world.py`` (T007/T008/T009/T010)
+— are automatically covered; ``test_source_files_discovered`` additionally
+asserts they are present so the coverage is explicit, not just incidental.
 """
 from __future__ import annotations
 
@@ -64,6 +69,8 @@ class TestModelsProposalIsolation:
         assert "evidence.py" in names
         assert "proposal_run.py" in names
         assert "package_manifest.py" in names
+        assert "dataset.py" in names
+        assert "world.py" in names
         assert len(files) >= 8
 
     def test_no_module_imports_trigger_models(self):
