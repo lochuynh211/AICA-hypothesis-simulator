@@ -61,7 +61,6 @@
     "content_recovery_confidence": "low"
   },
   "genre_affinity_v1": {
-    "_comment": "Sibling namespace — never inside spotify_track, spotify_audio_features, or simulation_flags.",
     "artist_genres": {
       "synthetic-artist-0001": ["j-pop", "city pop"],
       "synthetic-artist-0002": ["anime", "j-rock"],

@@ -12,6 +12,8 @@ Tests:
 """
 from __future__ import annotations
 
+import json
+import pathlib
 from typing import Any
 
 import pytest
@@ -103,6 +105,28 @@ class TestValidExtension:
         )
         assert obj.usage_by_genre is not None
         assert len(obj.usage_by_genre) == 4
+
+    def test_fixture_genre_affinity_v1_validates_directly(self) -> None:
+        """The on-disk fixture's genre_affinity_v1 sub-object validates with NO key stripping.
+
+        This guards against the fixture containing keys (e.g. _comment) that would
+        cause GenreAffinityV1.model_validate to raise ValidationError due to extra='forbid'.
+        """
+        fixture_path = (
+            pathlib.Path(__file__).parents[4]
+            / "proposal_contracts"
+            / "fixtures"
+            / "worlds"
+            / "night-highway-genre-affinity-v1.json"
+        )
+        with fixture_path.open(encoding="utf-8") as fh:
+            fixture = json.load(fh)
+        # Validate the real sub-object directly — no key stripping allowed.
+        ga_sub = fixture["genre_affinity_v1"]
+        obj = GenreAffinityV1.model_validate(ga_sub)
+        assert obj.artist_genres is not None
+        assert obj.usage_by_genre is not None
+        assert obj.scene_genre_usage is not None
 
 
 # ---------------------------------------------------------------------------
@@ -223,6 +247,10 @@ class TestNoOverwriteGuard:
         assert len(errors) >= 1, (
             f"Expected ValidationError for namespace '{namespace}', got none"
         )
+        locs = [str(err["loc"]) for err in errors]
+        assert any(namespace in loc for loc in locs), (
+            f"Expected namespace '{namespace}' in error locs, got: {locs}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -255,6 +283,10 @@ class TestOffByDefaultEquivalence:
         # The test encodes the off-by-default semantics: absent extension =>
         # these six entries are the genre-gated set, and their feature_ids
         # are the documented set.
+        assert all(e.disposition == FeatureDisposition.scored for e in genre_gated_entries), (
+            f"Expected all genre-gated entries to have disposition=scored, got: "
+            f"{[(e.feature_id, e.disposition) for e in genre_gated_entries if e.disposition != FeatureDisposition.scored]}"
+        )
         expected_feature_ids = {
             "route_tags",
             "destination_tags",
