@@ -195,8 +195,10 @@ proposal.
 - **FR-006**: The `genre_affinity_v1` fields MUST be an opt-in driver-profile extension; when disabled they
   are carried as context-only and marked not-scored; when enabled they become active inputs used by the
   content selector only. Toggling MUST NOT discard previously entered values.
-- **FR-007**: The world MUST project deterministically to the flat selector feature snapshot the existing
-  selector contract consumes, with per-field provenance, without changing that selector contract.
+- **FR-007**: The world MUST project deterministically to the grouped feature-snapshot structure the
+  existing selector contract consumes (situation / preference / history + catalog + genre-affinity + the
+  chosen service), with per-field provenance, without changing that selector contract. The projection MUST
+  match the shape the content selector package was already tested against.
 - **FR-008**: The system MUST validate world edits on entry and worlds on load — enum membership, numeric
   ranges, id formats, purpose/stage compatibility, and references to catalog items — and MUST reject
   invalid input with a message that names the offending field and the reason.
