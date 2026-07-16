@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import App from '../src/App'
+import App, { AppModeToggle } from '../src/App'
+import { AppModeProvider } from '../src/state/appMode'
 
 // Route fetch by URL so App/AppShell's health + registry effects don't reject.
 function mockFetchByUrl(healthBody: unknown) {
@@ -48,5 +49,34 @@ describe('appMode toggle', () => {
 
     expect(await screen.findByText('Backend: ok — aica-api')).toBeInTheDocument()
     expect(screen.queryByTestId('proposal-shell')).not.toBeInTheDocument()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// FR-004 bilingual labels — the toggle previously hardcoded English strings
+// ('Trigger'/'Proposal') directly rather than resolving them via the shared
+// t() helper. Covers both the (unchanged) default rendering and the
+// previously-impossible Japanese rendering.
+// ---------------------------------------------------------------------------
+
+describe('AppModeToggle bilingual labels', () => {
+  it('renders the English labels by default (t() resolving {ja,en} via the "en" default)', () => {
+    render(
+      <AppModeProvider>
+        <AppModeToggle />
+      </AppModeProvider>,
+    )
+    expect(screen.getByRole('button', { name: 'Trigger' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Proposal' })).toBeInTheDocument()
+  })
+
+  it('renders the Japanese labels when passed lang="ja"', () => {
+    render(
+      <AppModeProvider>
+        <AppModeToggle lang="ja" />
+      </AppModeProvider>,
+    )
+    expect(screen.getByRole('button', { name: 'トリガー' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '提案' })).toBeInTheDocument()
   })
 })

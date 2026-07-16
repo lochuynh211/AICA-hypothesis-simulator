@@ -143,24 +143,37 @@ def dispatch_selector(
     *,
     matrix_version: str,
     used_feature_ids: list[str] | None = None,
+    allowed_service_ids: list[str] | None = None,
 ) -> AlgorithmEvidence:
     """Load ``package``'s ``algorithm.py``, call ``evaluate(context)``, and
     validate the result into the neutral contract for ``package.family``.
 
     Args:
-        package:          A validated ``ProposalPackageManifest``.
-        context:          The selector-input dict delivered to ``evaluate()``.
-        packages_dir:     Directory containing ``<package.id>/<entrypoint>``.
-        matrix_version:   The frozen matrix version to record on the evidence.
-        used_feature_ids: Feature ids the caller knows were used (optional;
-                           defaults to an empty list — the endpoint layer
-                           that has full context populates this).
+        package:             A validated ``ProposalPackageManifest``.
+        context:             The selector-input dict delivered to ``evaluate()``.
+        packages_dir:        Directory containing ``<package.id>/<entrypoint>``.
+        matrix_version:      The frozen matrix version to record on the evidence.
+        used_feature_ids:    Feature ids the caller knows were used (optional;
+                             defaults to an empty list — the endpoint layer
+                             that has full context populates this).
+        allowed_service_ids: The opportunity's frozen allowed set (FR-013,
+                             SC-002), service-family calls only. When given,
+                             every ``candidate_id`` in a valid
+                             ``ServiceSelectorOutput``'s ``ranked_candidates``
+                             and ``excluded_candidates`` MUST be a member of
+                             this set — otherwise the result is downgraded to
+                             an ``algorithm_error`` (category
+                             ``candidate_outside_allowed_set``) rather than
+                             persisted/shown as a legitimate recommendation.
+                             ``None`` skips the check (non-service families,
+                             or callers that don't yet have the allowed set).
 
     Returns:
         An ``AlgorithmEvidence``. On ANY failure (missing entrypoint, load
-        exception, ``evaluate()`` exception, non-dict return, or
-        schema-invalid return) ``.error`` is set and ``.output`` is None —
-        never a fabricated result (Constitution Principle V).
+        exception, ``evaluate()`` exception, non-dict return, schema-invalid
+        return, or a candidate outside ``allowed_service_ids``) ``.error`` is
+        set and ``.output`` is None — never a fabricated result (Constitution
+        Principle V).
     """
     used = list(used_feature_ids) if used_feature_ids else []
     step = _step_for_family(package.family)
@@ -202,6 +215,29 @@ def dispatch_selector(
             message=f"evaluate() returned an invalid {model_cls.__name__} shape: {exc}",
             used_feature_ids=used,
         )
+
+    if allowed_service_ids is not None and model_cls is ServiceSelectorOutput:
+        allowed_set = set(allowed_service_ids)
+        offending = [
+            cand.candidate_id.value
+            for cand in validated.ranked_candidates
+            if cand.candidate_id.value not in allowed_set
+        ]
+        offending += [
+            excl.candidate_id
+            for excl in validated.excluded_candidates
+            if excl.candidate_id not in allowed_set
+        ]
+        if offending:
+            return _error_evidence(
+                step=step, package=package, matrix_version=matrix_version, context=context,
+                category="candidate_outside_allowed_set",
+                message=(
+                    f"evaluate() returned candidate_id(s) {offending!r} not in the "
+                    f"opportunity's frozen allowed_service_ids {sorted(allowed_set)!r}."
+                ),
+                used_feature_ids=used,
+            )
 
     return AlgorithmEvidence(
         step=step,

@@ -52,6 +52,8 @@ class ProposalRunLog(BaseModel):
     content_package_id: str | None
     parameters: dict
     hyperparameters: dict
+    content_parameters: dict = {}
+    content_hyperparameters: dict = {}
     journey_state: JourneyState
     events: list[DiscreteEvent]
     evidence: list[AlgorithmEvidence]

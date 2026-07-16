@@ -310,6 +310,12 @@
   },
   "description": "Full append-only record persisted to ``proposal_runs/<run_id>.json``.\n\nRules (enforced by the run manager, not this model): append-only;\npersisted atomically after each event; reopen renders from this log\nwithout recomputation; created/edited entirely within ``proposal_runs/``\n(never touches trigger ``runs/``).",
   "properties": {
+    "content_hyperparameters": {
+      "additionalProperties": true,
+      "default": {},
+      "title": "Content Hyperparameters",
+      "type": "object"
+    },
     "content_package_id": {
       "anyOf": [
         {
@@ -320,6 +326,12 @@
         }
       ],
       "title": "Content Package Id"
+    },
+    "content_parameters": {
+      "additionalProperties": true,
+      "default": {},
+      "title": "Content Parameters",
+      "type": "object"
     },
     "created_at": {
       "title": "Created At",

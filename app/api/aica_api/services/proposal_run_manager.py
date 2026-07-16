@@ -26,7 +26,8 @@ Public API:
   delete_run(run_id, runs_dir) -> bool
   append_event(run_id, event, runs_dir) -> ProposalRunLog
   append_evidence(run_id, evidence, runs_dir) -> ProposalRunLog
-  update_state(run_id, runs_dir, *, status=None, journey_state=None) -> ProposalRunLog
+  update_state(run_id, runs_dir, *, status=None, journey_state=None,
+               content_parameters=None, content_hyperparameters=None) -> ProposalRunLog
 """
 from __future__ import annotations
 
@@ -111,7 +112,11 @@ def create_run(
 
     Setup-time-only discipline: ``parameters``/``hyperparameters`` are
     deep-copied here so the persisted log is frozen at creation and immune
-    to later mutation of the caller's dicts.
+    to later mutation of the caller's dicts. ``content_parameters``/
+    ``content_hyperparameters`` always start empty at creation (STEP 1) —
+    they are frozen separately at STEP 2 by ``update_state`` once the
+    reviewer has chosen a service and content package (see
+    ``routers/proposal.py::select_service``).
 
     Args:
         opportunity:          The resolved ``ProposalOpportunity``.
@@ -145,6 +150,8 @@ def create_run(
         content_package_id=content_package_id,
         parameters=copy.deepcopy(parameters),
         hyperparameters=copy.deepcopy(hyperparameters),
+        content_parameters={},
+        content_hyperparameters={},
         journey_state=journey_state,
         events=list(events) if events else [],
         evidence=list(evidence) if evidence else [],
@@ -249,14 +256,23 @@ def update_state(
     *,
     status: ProposalRunStatus | None = None,
     journey_state: JourneyState | None = None,
+    content_parameters: dict | None = None,
+    content_hyperparameters: dict | None = None,
 ) -> ProposalRunLog:
-    """Update ``status`` and/or ``journey_state`` on an existing run and re-persist.
+    """Update ``status``/``journey_state``/content overrides on an existing
+    run and re-persist.
 
-    Neither field is mutated by ``append_event``/``append_evidence`` (which only
-    ever append to their respective lists), so a STEP-2-style transition
-    (e.g. ``content_selected`` + a newly-confirmed ``active_service_id``) needs
-    this small, additive counterpart. Omitted (``None``) fields are left
-    unchanged.
+    None of these fields is mutated by ``append_event``/``append_evidence``
+    (which only ever append to their respective lists), so a STEP-2-style
+    transition (e.g. ``content_selected`` + a newly-confirmed
+    ``active_service_id`` + the content package's frozen parameter/
+    hyperparameter overrides — FR-002a) needs this small, additive
+    counterpart. Omitted (``None``) fields are left unchanged.
+
+    ``content_parameters``/``content_hyperparameters`` are deep-copied here
+    (mirroring ``create_run``'s ``parameters``/``hyperparameters`` freezing)
+    so the persisted log is immune to later mutation of the caller's dicts —
+    once set at STEP 2 they are setup-time-frozen, matching the service side.
 
     Raises:
         ProposalRunNotFoundError: If run_id has no persisted log.
@@ -268,5 +284,9 @@ def update_state(
         run_log.status = status
     if journey_state is not None:
         run_log.journey_state = journey_state
+    if content_parameters is not None:
+        run_log.content_parameters = copy.deepcopy(content_parameters)
+    if content_hyperparameters is not None:
+        run_log.content_hyperparameters = copy.deepcopy(content_hyperparameters)
     _persist(run_log, pathlib.Path(runs_dir))
     return run_log

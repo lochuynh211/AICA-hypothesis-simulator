@@ -153,7 +153,8 @@ service_package_id, content_package_id|None }`.
 | `matrix_version` | str |
 | `world_snapshot` | dict (feature snapshot + provenance + profile ref) |
 | `service_package_id` / `content_package_id` | str / str\|None |
-| `parameters` / `hyperparameters` | dict (frozen at run start — setup-time-only) |
+| `parameters` / `hyperparameters` | dict (SERVICE package overrides, frozen at run start — setup-time-only) |
+| `content_parameters` / `content_hyperparameters` | dict (CONTENT package overrides; `{}` until STEP 2, then frozen by `select-service` — setup-time-only, FR-002a) |
 | `journey_state` | JourneyState |
 | `events` | list[DiscreteEvent] (append-only) |
 | `evidence` | list[AlgorithmEvidence] (append-only) |

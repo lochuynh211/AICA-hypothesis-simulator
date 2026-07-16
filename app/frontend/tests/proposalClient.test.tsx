@@ -63,7 +63,7 @@ describe('proposalClient', () => {
     expect(result).toEqual(runLog)
   })
 
-  it('selectService() POSTs selected_service_id to /runs/{id}/select-service', async () => {
+  it('selectService() POSTs selected_service_id (with empty content overrides by default) to /runs/{id}/select-service', async () => {
     const runLog = { run_id: 'prun_x', status: 'content_selected' }
     global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => runLog })
 
@@ -72,7 +72,28 @@ describe('proposalClient', () => {
     expect(global.fetch).toHaveBeenCalledWith('/api/proposal/runs/prun_x/select-service', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ selected_service_id: 'music_playlist' }),
+      body: JSON.stringify({ selected_service_id: 'music_playlist', parameters: {}, hyperparameters: {} }),
+    })
+    expect(result).toEqual(runLog)
+  })
+
+  it('selectService() threads content parameter/hyperparameter overrides through to the request body (FR-002a)', async () => {
+    const runLog = { run_id: 'prun_x', status: 'content_selected' }
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => runLog })
+
+    const result = await selectService('prun_x', 'full_karaoke', {
+      parameters: { lighting_compatible_services: ['full_karaoke'] },
+      hyperparameters: { plan_item_count: 3 },
+    })
+
+    expect(global.fetch).toHaveBeenCalledWith('/api/proposal/runs/prun_x/select-service', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        selected_service_id: 'full_karaoke',
+        parameters: { lighting_compatible_services: ['full_karaoke'] },
+        hyperparameters: { plan_item_count: 3 },
+      }),
     })
     expect(result).toEqual(runLog)
   })

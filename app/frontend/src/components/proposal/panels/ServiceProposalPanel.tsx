@@ -139,7 +139,29 @@ export default function ServiceProposalPanel() {
     setChoosingId(serviceId)
     setLocalError(null)
     try {
-      const runLog = await selectService(state.runLog.run_id, serviceId)
+      // Resolve the CONTENT package's setup-time overrides (FR-002a) exactly
+      // like handleRun resolves the service package's — the reviewer's edits
+      // in ContentProposalPanel must actually be sent, not silently dropped.
+      const contentManifest =
+        contentPackages.find((p) => p.id === state.contentPackageId) ?? contentPackages[0]
+      const contentParameters: Record<string, unknown> = {}
+      if (contentManifest) {
+        for (const [key, value] of Object.entries(contentManifest.parameters)) {
+          if (key === 'note') continue
+          contentParameters[key] = state.contentParameterOverrides[key] ?? value
+        }
+      }
+      const contentHyperparameters: Record<string, unknown> = {}
+      if (contentManifest) {
+        for (const hp of contentManifest.hyperparameters) {
+          contentHyperparameters[hp.key] = state.contentHyperparameterOverrides[hp.key] ?? hp.default
+        }
+      }
+
+      const runLog = await selectService(state.runLog.run_id, serviceId, {
+        parameters: contentParameters,
+        hyperparameters: contentHyperparameters,
+      })
       if (runLog) {
         dispatch({ type: 'CONTENT_SELECTED', runLog })
       }

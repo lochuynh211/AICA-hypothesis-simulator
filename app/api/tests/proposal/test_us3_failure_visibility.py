@@ -17,6 +17,12 @@ meaning and none of them a substitute for the others:
       -> the content mock's own ``unsupported_service`` decision_type — again
       a valid non-error outcome, never a fabricated plan for a service the
       package cannot honestly support.
+  (d) A syntactically valid ``ServiceSelectorOutput`` whose ``candidate_id``
+      falls OUTSIDE the opportunity's frozen ``allowed_service_ids`` (FR-013,
+      SC-002) -> an explicit ``algorithm_error`` with category
+      ``candidate_outside_allowed_set`` — a buggy/future/LLM package must
+      never have an out-of-set candidate silently persisted and shown as a
+      legitimate recommendation.
 
 (a)/(b)/(c) are exercised directly against ``dispatch_selector`` (the
 dispatch boundary itself); the endpoint-level counterpart is confirmed by
@@ -138,6 +144,79 @@ def test_missing_entrypoint_yields_algorithm_error_not_a_fabricated_proposal(tmp
     assert evidence.error is not None
     assert evidence.output is None
     assert evidence.error.category == "missing_evaluate"
+
+
+# ---------------------------------------------------------------------------
+# (d) Candidate outside the frozen allowed_service_ids -> algorithm_error
+#     (FR-013, SC-002), never a fabricated/persisted proposal.
+# ---------------------------------------------------------------------------
+
+
+def test_candidate_outside_allowed_set_yields_algorithm_error_not_a_fabricated_proposal(tmp_path):
+    """A syntactically-valid ServiceSelectorOutput naming a candidate_id NOT
+    in the allowed_service_ids passed to dispatch_selector must be rejected
+    as an algorithm_error — the core FR-013 boundary this foundation exists
+    to enforce."""
+    pkg_dir = tmp_path / "throwaway_out_of_set"
+    pkg = _write_package(
+        pkg_dir,
+        {**_MINIMAL_SERVICE_MANIFEST, "id": "throwaway_out_of_set"},
+        "def evaluate(context):\n"
+        "    return {\n"
+        "        'decision_type': 'ranked_candidates',\n"
+        "        'ranked_candidates': [{\n"
+        "            'rank': 1,\n"
+        "            'candidate_id': 'music_playlist',\n"
+        "            'score': 0.9,\n"
+        "            'rationale': ['x'],\n"
+        "            'supporting_feature_ids': [],\n"
+        "            'opposing_feature_ids': [],\n"
+        "            'uncertainty': None,\n"
+        "            'feature_contributions': [],\n"
+        "        }],\n"
+        "        'excluded_candidates': [],\n"
+        "        'unused_available_features': [],\n"
+        "        'missing_features': [],\n"
+        "        'next_package_runtime_state': {},\n"
+        "        'algorithm_provenance': {},\n"
+        "    }\n",
+    )
+
+    # music_playlist is NOT in this allowed set.
+    evidence = dispatch_selector(
+        pkg,
+        {},
+        tmp_path,
+        matrix_version=_MATRIX_VERSION,
+        allowed_service_ids=["live_viewing", "stretch_video"],
+    )
+
+    assert evidence.error is not None
+    assert evidence.output is None
+    assert evidence.error.category == "candidate_outside_allowed_set"
+    assert "music_playlist" in evidence.error.message
+
+
+def test_candidate_inside_allowed_set_still_passes_when_allowed_set_is_checked(tmp_path):
+    """Sanity check: passing allowed_service_ids doesn't break an honest
+    package whose candidates are all in-set (mirrors the real mock's
+    behavior swept in test_us3_allowed_set.py)."""
+    manifest = ProposalPackageManifest(
+        **json.loads((settings.packages_dir / "mock_service_selector_v1" / "package.json").read_text())
+    )
+
+    evidence = dispatch_selector(
+        manifest,
+        {"allowed_service_ids": ["music_playlist", "humming_karaoke"]},
+        settings.packages_dir,
+        matrix_version=_MATRIX_VERSION,
+        allowed_service_ids=["music_playlist", "humming_karaoke"],
+    )
+
+    assert evidence.error is None
+    assert evidence.output is not None
+    for cand in evidence.output["ranked_candidates"]:
+        assert cand["candidate_id"] in {"music_playlist", "humming_karaoke"}
 
 
 # ---------------------------------------------------------------------------

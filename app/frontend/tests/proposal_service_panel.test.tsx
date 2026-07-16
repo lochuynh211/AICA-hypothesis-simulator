@@ -222,7 +222,10 @@ describe('ServiceProposalPanel', () => {
     fireEvent.click(screen.getByTestId('choose-candidate-stretch_video'))
 
     await waitFor(() =>
-      expect(selectService).toHaveBeenCalledWith('prun_20260716-000000_abcdef', 'stretch_video'),
+      expect(selectService).toHaveBeenCalledWith('prun_20260716-000000_abcdef', 'stretch_video', {
+        parameters: {},
+        hyperparameters: {},
+      }),
     )
   })
 

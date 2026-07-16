@@ -166,6 +166,59 @@ def test_select_service_404_on_unknown_run():
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Content parameter/hyperparameter overrides (FR-002a symmetry with the
+# service side) — accepted by the request body, frozen into the run log at
+# STEP 2, and unaffected by later reopen (setup-time-frozen, no recompute).
+# ---------------------------------------------------------------------------
+
+
+def test_select_service_accepts_and_persists_content_overrides():
+    run = _create_run()
+    resp = client.post(
+        f"/api/proposal/runs/{run['run_id']}/select-service",
+        json={
+            "selected_service_id": "full_karaoke",
+            "parameters": {"lighting_compatible_services": ["full_karaoke"]},
+            "hyperparameters": {"plan_item_count": 3},
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+
+    assert body["content_parameters"] == {"lighting_compatible_services": ["full_karaoke"]}
+    assert body["content_hyperparameters"] == {"plan_item_count": 3}
+
+    # Frozen: reopening the run (no recompute) returns exactly what was persisted.
+    reopened = client.get(f"/api/proposal/runs/{run['run_id']}").json()
+    assert reopened["content_parameters"] == {"lighting_compatible_services": ["full_karaoke"]}
+    assert reopened["content_hyperparameters"] == {"plan_item_count": 3}
+
+
+def test_select_service_defaults_content_overrides_from_package_when_omitted():
+    run = _create_run()
+    resp = client.post(
+        f"/api/proposal/runs/{run['run_id']}/select-service",
+        json={"selected_service_id": "full_karaoke"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+
+    # No overrides supplied -> content_parameters/hyperparameters default from
+    # the content package's own manifest (mirrors the service-side convention
+    # in create_proposal_run).
+    assert "recipe_registry" in body["content_parameters"]
+    assert body["content_hyperparameters"]["plan_item_count"] == 5
+
+
+def test_create_run_starts_with_empty_content_overrides():
+    """STEP 1 (create) never has content overrides yet -- they're frozen only
+    at STEP 2 (select-service)."""
+    run = _create_run()
+    assert run["content_parameters"] == {}
+    assert run["content_hyperparameters"] == {}
+
+
 def test_create_and_select_are_deterministic_across_runs():
     run1 = _create_run()
     run2 = _create_run()

@@ -292,6 +292,9 @@ export type ProposalRunLog = {
   content_package_id: string | null
   parameters: Record<string, unknown>
   hyperparameters: Record<string, unknown>
+  /** Content package's frozen setup-time overrides (FR-002a); {} until STEP 2. */
+  content_parameters?: Record<string, unknown>
+  content_hyperparameters?: Record<string, unknown>
   journey_state: JourneyState
   events: DiscreteEvent[]
   evidence: AlgorithmEvidence[]
@@ -325,11 +328,19 @@ export async function createRun(body: CreateProposalRunBody): Promise<ProposalRu
 
 // ── POST /api/proposal/runs/{run_id}/select-service — STEP 2 ───────────────
 
-export async function selectService(runId: string, serviceId: string): Promise<ProposalRunLog> {
+export async function selectService(
+  runId: string,
+  serviceId: string,
+  overrides: { parameters?: Record<string, unknown>; hyperparameters?: Record<string, unknown> } = {},
+): Promise<ProposalRunLog> {
   return apiFetch(`/runs/${encodeURIComponent(runId)}/select-service`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ selected_service_id: serviceId }),
+    body: JSON.stringify({
+      selected_service_id: serviceId,
+      parameters: overrides.parameters ?? {},
+      hyperparameters: overrides.hyperparameters ?? {},
+    }),
   })
 }
 

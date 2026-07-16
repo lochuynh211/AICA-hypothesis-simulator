@@ -65,9 +65,21 @@ Freeze setup → resolve the opportunity → run the mock **service** selector �
 
 Run the mock **content** selector for the chosen service and append its evidence.
 
-- **Request**: `{ "selected_service_id": "music_playlist" }` (must be in `opportunity.allowed_service_ids`).
+- **Request**:
+  ```json
+  {
+    "selected_service_id": "music_playlist",   // must be in opportunity.allowed_service_ids
+    "parameters": {…},          // CONTENT package param overrides (setup-time only); default {} -> package defaults
+    "hyperparameters": {…}      // CONTENT package hyperparameter overrides; default {} -> package defaults
+  }
+  ```
+  `parameters`/`hyperparameters` are symmetric with the service-side overrides accepted by
+  `POST /api/proposal/runs` (FR-002a): an omitted/empty dict falls back to the content package's own
+  manifest defaults.
 - **200** → updated `ProposalRunLog` with `status: "content_selected"`, a `CONTENT_SELECTED` (or
-  `ALGORITHM_ERROR`) event, and the `CompletePlan` in the appended `evidence` entry.
+  `ALGORITHM_ERROR`) event, the `CompletePlan` in the appended `evidence` entry, and the resolved
+  `content_parameters`/`content_hyperparameters` frozen onto the log (mirrors `parameters`/
+  `hyperparameters` frozen at create-run — never mutated after this call).
 - **422** → `selected_service_id` not in the allowed set, or the content package does not support it
   (`unsupported_service`); **not found** if the run does not exist.
 - Content items reference real frozen-P2 track IDs. Failure semantics identical to create.

@@ -59,7 +59,7 @@ function contentRows(item: OrderedItem): ReasonRow[] {
 }
 
 export default function ContentProposalPanel() {
-  const { state } = useProposalStore()
+  const { state, dispatch } = useProposalStore()
   const { uiLanguage: lang } = state
   const [contentPackages, setContentPackages] = useState<ProposalPackageSummary[]>([])
 
@@ -118,18 +118,28 @@ export default function ContentProposalPanel() {
 
             <div style={sectionLabelStyle}>{t(LABELS.parameters, lang)}</div>
             <div style={grid2Style}>
-              {Object.entries(manifest.parameters).map(([key, defaultValue]) => {
-                if (typeof defaultValue === 'object') return null
-                return (
-                  <label key={key} style={fieldLabelStyle}>
-                    <code>{key}</code>
-                    <input
-                      type={typeof defaultValue === 'number' ? 'number' : 'text'}
-                      defaultValue={String(defaultValue)}
-                    />
-                  </label>
-                )
-              })}
+              {Object.entries(manifest.parameters)
+                .filter(([key]) => key !== 'note')
+                .map(([key, defaultValue]) => {
+                  if (typeof defaultValue === 'object') return null
+                  const value = state.contentParameterOverrides[key] ?? defaultValue
+                  return (
+                    <label key={key} style={fieldLabelStyle}>
+                      <code>{key}</code>
+                      <input
+                        type={typeof defaultValue === 'number' ? 'number' : 'text'}
+                        value={String(value)}
+                        onChange={(e) =>
+                          dispatch({
+                            type: 'SET_CONTENT_PARAMETER',
+                            key,
+                            value: typeof defaultValue === 'number' ? Number(e.target.value) : e.target.value,
+                          })
+                        }
+                      />
+                    </label>
+                  )
+                })}
             </div>
 
             {manifest.hyperparameters.length > 0 && (
@@ -139,7 +149,13 @@ export default function ContentProposalPanel() {
                 </summary>
                 <div style={{ padding: '4px 11px 11px' }}>
                   {manifest.hyperparameters.map((hp) => (
-                    <HyperparamMatrix key={hp.key} def={hp} value={undefined} onChange={() => {}} lang={lang} />
+                    <HyperparamMatrix
+                      key={hp.key}
+                      def={hp}
+                      value={state.contentHyperparameterOverrides[hp.key]}
+                      onChange={(value) => dispatch({ type: 'SET_CONTENT_HYPERPARAMETER', key: hp.key, value })}
+                      lang={lang}
+                    />
                   ))}
                 </div>
               </details>

@@ -250,3 +250,102 @@ def test_create_run_algorithm_error_on_raising_service_package(tmp_path, monkeyp
     assert "SERVICE_SELECTED" not in event_types
 
     assert body["journey_state"]["active_service_id"] is None
+
+
+def test_create_run_algorithm_error_on_candidate_outside_allowed_set(tmp_path, monkeypatch):
+    """FR-013/SC-002: a service-selector package that returns a candidate_id
+    OUTSIDE the opportunity's frozen allowed_service_ids must never be
+    persisted as a legitimate recommendation — it must surface as
+    status "error" with an algorithm_error evidence entry."""
+    pkgs_dir = tmp_path / "pkgs"
+    pkgs_dir.mkdir()
+
+    import shutil
+
+    shutil.copytree(
+        settings.packages_dir / "mock_content_selector_v1",
+        pkgs_dir / "mock_content_selector_v1",
+    )
+
+    cheating_dir = pkgs_dir / "cheating_service_selector"
+    cheating_dir.mkdir()
+    (cheating_dir / "package.json").write_text(
+        json.dumps(
+            {
+                "id": "cheating_service_selector",
+                "version": "1.0.0",
+                "label": {"ja": "x", "en": "x"},
+                "kind": "service_selector",
+                "family": "service_selector",
+                "approach": "transparent",
+                "contract_version": "1.0.0",
+                "algorithm": {
+                    "type": "python_module",
+                    "entrypoint": "algorithm.py",
+                    "error_mode": "blocking",
+                },
+                "supported_services": [],
+                "parameters": {},
+                "hyperparameters": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    # rest_recommended/after_rest_before_restart's allowed set does NOT
+    # include music_playlist -> this candidate is outside the frozen set.
+    (cheating_dir / "algorithm.py").write_text(
+        "def evaluate(context):\n"
+        "    return {\n"
+        "        'decision_type': 'ranked_candidates',\n"
+        "        'ranked_candidates': [{\n"
+        "            'rank': 1,\n"
+        "            'candidate_id': 'music_playlist',\n"
+        "            'score': 0.9,\n"
+        "            'rationale': ['x'],\n"
+        "            'supporting_feature_ids': [],\n"
+        "            'opposing_feature_ids': [],\n"
+        "            'uncertainty': None,\n"
+        "            'feature_contributions': [],\n"
+        "        }],\n"
+        "        'excluded_candidates': [],\n"
+        "        'unused_available_features': [],\n"
+        "        'missing_features': [],\n"
+        "        'next_package_runtime_state': {},\n"
+        "        'algorithm_provenance': {},\n"
+        "    }\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setenv("AICA_PACKAGES_DIR", str(pkgs_dir))
+
+    resp = client.post(
+        "/api/proposal/runs",
+        json=_valid_body(
+            service_package_id="cheating_service_selector",
+            content_package_id="mock_content_selector_v1",
+        ),
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+
+    assert body["status"] == "error"
+    assert len(body["evidence"]) == 1
+    assert body["evidence"][0]["error"] is not None
+    assert body["evidence"][0]["error"]["category"] == "candidate_outside_allowed_set"
+    assert body["evidence"][0]["output"] is None
+
+    event_types = [e["event_type"] for e in body["events"]]
+    assert "ALGORITHM_ERROR" in event_types
+    assert "SERVICE_SELECTED" not in event_types
+    assert body["journey_state"]["active_service_id"] is None
+
+
+def test_create_run_honest_mock_unaffected_by_allowed_set_enforcement():
+    """The real mock service selector's candidates are always in-set, so
+    enabling FR-013 enforcement must not change its 201/service_selected
+    behavior."""
+    resp = client.post("/api/proposal/runs", json=_valid_body())
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["status"] == "service_selected"
+    assert body["evidence"][0]["error"] is None

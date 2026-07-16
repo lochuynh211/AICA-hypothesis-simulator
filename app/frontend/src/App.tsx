@@ -5,16 +5,29 @@ import { AppModeProvider, useAppMode } from './state/appMode'
 import { ProposalStoreProvider } from './state/proposalStore'
 import AppShell from './components/layout/AppShell'
 import ProposalShell from './components/proposal/ProposalShell'
+import { t, type UiLanguage } from './i18n/t'
 
 type State =
   | { phase: 'loading' }
   | { phase: 'ok'; data: HealthStatus }
   | { phase: 'error' }
 
+const APP_MODE_LABELS = {
+  trigger: { ja: 'トリガー', en: 'Trigger' },
+  proposal: { ja: '提案', en: 'Proposal' },
+}
+
 /** Header toggle — switches the top-level appMode between the Trigger
  *  Simulator and the (placeholder, for now) Proposal Simulator. Additive:
- *  does not alter AppShell's own header/nav. */
-function AppModeToggle() {
+ *  does not alter AppShell's own header/nav.
+ *
+ *  Bilingual via the shared `t()` helper. This toggle renders ABOVE both
+ *  the trigger `runStore` and the proposal `proposalStore` (it decides
+ *  which one even mounts), so it cannot read either store's `uiLanguage`
+ *  without breaking their provider isolation — `lang` defaults to `'en'`
+ *  (the trigger shell's own default) as the "sensible shared default";
+ *  callers with a language available may pass it explicitly. */
+export function AppModeToggle({ lang = 'en' }: { lang?: UiLanguage } = {}) {
   const { appMode, setAppMode } = useAppMode()
   const buttonStyle = (active: boolean): React.CSSProperties => ({
     padding: '4px 14px',
@@ -41,14 +54,14 @@ function AppModeToggle() {
         aria-current={appMode === 'trigger' ? 'page' : undefined}
         style={buttonStyle(appMode === 'trigger')}
       >
-        Trigger
+        {t(APP_MODE_LABELS.trigger, lang)}
       </button>
       <button
         onClick={() => setAppMode('proposal')}
         aria-current={appMode === 'proposal' ? 'page' : undefined}
         style={buttonStyle(appMode === 'proposal')}
       >
-        Proposal
+        {t(APP_MODE_LABELS.proposal, lang)}
       </button>
     </nav>
   )

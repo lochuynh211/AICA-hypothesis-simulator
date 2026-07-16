@@ -305,6 +305,96 @@ describe('ContentProposalPanel', () => {
     expect(screen.getByText('コンテンツカテゴリ重み')).toBeInTheDocument()
   })
 
+  // ---------------------------------------------------------------------
+  // FR-002a: editing content params/hyperparameters must actually update
+  // the store (previously: <input defaultValue> + no onChange, and
+  // HyperparamMatrix wired to a no-op onChange — edits were silently
+  // discarded). Symmetric with ServiceProposalPanel's SET_SERVICE_PARAMETER
+  // / SET_SERVICE_HYPERPARAMETER wiring.
+  // ---------------------------------------------------------------------
+
+  it('excludes the manifest "note" string from the editable parameter grid', async () => {
+    const packagesWithNote = {
+      ...packagesResponse(),
+      packages: [{ ...CONTENT_PACKAGE, parameters: { plan_item_count: 5, note: 'ignored by evaluate()' } }, SERVICE_PACKAGE],
+    }
+    vi.mocked(getPackages).mockResolvedValue(packagesWithNote as never)
+
+    render(
+      <ProposalStoreProvider>
+        <ContentProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByLabelText('plan_item_count')
+    expect(screen.queryByLabelText('note')).not.toBeInTheDocument()
+  })
+
+  it('editing a content parameter dispatches SET_CONTENT_PARAMETER and updates the store override', async () => {
+    function StoreSnapshot() {
+      const { state } = useProposalStore()
+      return <div data-testid="param-override-snapshot">{JSON.stringify(state.contentParameterOverrides)}</div>
+    }
+    render(
+      <ProposalStoreProvider>
+        <ContentProposalPanel />
+        <StoreSnapshot />
+      </ProposalStoreProvider>,
+    )
+    const input = await screen.findByLabelText('plan_item_count')
+    fireEvent.change(input, { target: { value: '7' } })
+
+    await waitFor(() =>
+      expect(screen.getByTestId('param-override-snapshot')).toHaveTextContent('{"plan_item_count":7}'),
+    )
+  })
+
+  it('editing a content hyperparameter dispatches SET_CONTENT_HYPERPARAMETER and updates the store override', async () => {
+    function StoreSnapshot() {
+      const { state } = useProposalStore()
+      return <div data-testid="hp-override-snapshot">{JSON.stringify(state.contentHyperparameterOverrides)}</div>
+    }
+    render(
+      <ProposalStoreProvider>
+        <ContentProposalPanel />
+        <StoreSnapshot />
+      </ProposalStoreProvider>,
+    )
+    const situationInput = await screen.findByDisplayValue('0.55')
+    fireEvent.change(situationInput, { target: { value: '0.7' } })
+
+    await waitFor(() =>
+      expect(screen.getByTestId('hp-override-snapshot')).toHaveTextContent(
+        '{"content_category_weights":{"Situation":0.7,"Preference":0.3,"History":0.15}}',
+      ),
+    )
+  })
+
+  it('editing a content parameter is captured and sent as an override when Choose is clicked', async () => {
+    vi.mocked(createRun).mockResolvedValue(runLogServiceSelectedWithUnsupportedCandidate() as never)
+    vi.mocked(selectService).mockResolvedValue({ ...runLogWithPlan(), status: 'content_selected' } as never)
+
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+        <ContentProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await waitFor(() => expect(getPackages).toHaveBeenCalled())
+    fireEvent.click(screen.getByTestId('service-run-button'))
+    await screen.findByText('live_viewing')
+
+    const input = await screen.findByLabelText('plan_item_count')
+    fireEvent.change(input, { target: { value: '7' } })
+
+    fireEvent.click(screen.getByTestId('choose-candidate-live_viewing'))
+
+    await waitFor(() => expect(selectService).toHaveBeenCalled())
+    expect(selectService).toHaveBeenCalledWith('prun_unsupported_test', 'live_viewing', {
+      parameters: { plan_item_count: 7 },
+      hyperparameters: { content_category_weights: { Situation: 0.55, Preference: 0.3, History: 0.15 } },
+    })
+  })
+
   it('shows the algorithm_error message when the content evidence recorded an error', async () => {
     function Setup() {
       const { dispatch } = useProposalStore()

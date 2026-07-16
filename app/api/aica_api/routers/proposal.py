@@ -138,12 +138,20 @@ def _build_content_context(
     package: ProposalPackageManifest,
     run_log: ProposalRunLog,
     selected_service_id: ServiceId,
+    content_parameters: dict,
+    content_hyperparameters: dict,
 ) -> dict:
     """Assemble a SelectorInput-shaped context dict for the CONTENT selector.
 
     Aligned with ``tests/proposal/conftest.py::build_content_context``: a
     plain dict carrying every ``SelectorInput`` field, with the catalog (if
     any is present in the world snapshot) used to derive ``eligible_candidates``.
+
+    ``content_parameters``/``content_hyperparameters`` are the CONTENT
+    package's own resolved setup-time overrides (FR-002a) — distinct from
+    ``run_log.parameters``/``run_log.hyperparameters``, which are the
+    SERVICE package's frozen STEP-1 overrides and must never be forwarded
+    here as if they were the content package's own.
     """
     world_snapshot = run_log.world_snapshot or {}
     feature_snapshot = dict(world_snapshot.get("feature_snapshot") or {})
@@ -173,8 +181,8 @@ def _build_content_context(
         "enabled_feature_extensions": [],
         "eligible_candidates": eligible_candidates,
         "excluded_candidates": [],
-        "parameters": run_log.parameters,
-        "hyperparameters": run_log.hyperparameters,
+        "parameters": content_parameters,
+        "hyperparameters": content_hyperparameters,
         "package_runtime_state": package_runtime_state,
         "catalog_version": world_snapshot.get("catalog_version", "n/a"),
         "run_seed": run_log.opportunity.run_seed,
@@ -298,6 +306,7 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
         settings.packages_dir,
         matrix_version=matrix.matrix_version,
         used_feature_ids=list(context["feature_snapshot"].keys()),
+        allowed_service_ids=[s.value for s in opportunity.allowed_service_ids],
     )
 
     at = opportunity.simulation_time
@@ -370,9 +379,18 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
 
 
 class SelectServiceBody(BaseModel):
-    """Request body for ``POST /api/proposal/runs/{run_id}/select-service``."""
+    """Request body for ``POST /api/proposal/runs/{run_id}/select-service``.
+
+    ``parameters``/``hyperparameters`` are the CONTENT package's setup-time
+    overrides (FR-002a) — symmetric with ``CreateProposalRunBody``'s
+    service-side ``parameters``/``hyperparameters``. Empty (the default)
+    falls back to the content package's own manifest defaults, exactly like
+    the service side does at create-run.
+    """
 
     selected_service_id: ServiceId
+    parameters: dict[str, Any] = {}
+    hyperparameters: dict[str, Any] = {}
 
 
 @router.post("/api/proposal/runs/{run_id}/select-service")
@@ -408,10 +426,20 @@ def select_service(run_id: str, body: SelectServiceBody) -> ProposalRunLog:
             ),
         )
 
+    # Resolve the content package's setup-time overrides (FR-002a) — mirrors
+    # create_proposal_run's service-side convention: an empty request body
+    # falls back to the content package's own manifest defaults.
+    content_parameters = body.parameters or dict(content_pkg.parameters)
+    content_hyperparameters = body.hyperparameters or {
+        hp.key: hp.default for hp in content_pkg.hyperparameters
+    }
+
     context = _build_content_context(
         package=content_pkg,
         run_log=run_log,
         selected_service_id=selected_service_id,
+        content_parameters=content_parameters,
+        content_hyperparameters=content_hyperparameters,
     )
 
     evidence = dispatch_selector(
@@ -458,6 +486,8 @@ def select_service(run_id: str, body: SelectServiceBody) -> ProposalRunLog:
         settings.proposal_runs_dir,
         status=new_status,
         journey_state=new_journey_state,
+        content_parameters=content_parameters,
+        content_hyperparameters=content_hyperparameters,
     )
     return run_log
 
