@@ -1,0 +1,261 @@
+{
+  "id": "mock_content_selector_v1",
+  "version": "1.0.0",
+  "label": {
+    "ja": "モック・コンテンツ選定 v1.0（P1 開発用固定出力）",
+    "en": "Mock Content Selector v1.0 (P1 fixed-output stand-in)"
+  },
+  "kind": "content_selector",
+  "family": "content_selector",
+  "approach": "transparent",
+  "contract_version": "1.0.0",
+  "algorithm": {
+    "type": "python_module",
+    "entrypoint": "algorithm.py",
+    "error_mode": "blocking"
+  },
+  "supported_services": ["music_playlist", "humming_karaoke", "full_karaoke"],
+  "parameters": {
+    "recipe_registry": {
+      "music_playlist": { "mode_kind": "playlist", "lighting": false },
+      "humming_karaoke": { "mode_kind": "humming", "lighting": true },
+      "full_karaoke": { "mode_kind": "full_karaoke", "lighting": true }
+    },
+    "lighting_compatible_services": ["humming_karaoke", "full_karaoke"],
+    "note": "evaluate() ignores parameters/hyperparameters and returns a FIXED plan over 5 real frozen-P2 catalog tracks; this block mirrors packages/aica_transparent_content_selector_v1/package.json's parameters + hyperparameters so the editable setup UI renders the real density. When the mock is superseded by a real package, this manifest's shape stays compatible."
+  },
+  "hyperparameters": [
+    {
+      "key": "trait_composition_matrix",
+      "kind": "matrix",
+      "label": { "ja": "トレイト構成行列（表1）", "en": "Trait Composition Matrix (Table 1)" },
+      "default": {
+        "arousal": { "energy": 0.30, "norm_loudness": 0.25, "norm_tempo": 0.25, "danceability": 0.15, "acousticness_inv": 0.05 },
+        "valence": { "valence": 0.65, "mode": 0.35 },
+        "humming_ease": { "instrumentalness_inv": 0.35, "speech_ease": 0.25, "danceability": 0.20, "tempo_ease": 0.20 },
+        "full_karaoke_ease": { "instrumentalness_inv": 0.30, "speech_ease": 0.20, "tempo_ease": 0.20, "duration_ease": 0.15, "danceability": 0.15 }
+      }
+    },
+    {
+      "key": "context_response_matrix",
+      "kind": "matrix",
+      "label": { "ja": "コンテキスト応答行列（表2）", "en": "Context Response Matrix (Table 2)" },
+      "default": {
+        "drowsiness": { "alpha": 0.80, "beta": 0.20, "directional": false },
+        "fatigue": { "alpha": -0.50, "beta": 0.50, "directional": true },
+        "monotony": { "alpha": 0.90, "beta": 0.10, "directional": false },
+        "traffic_congested": { "alpha": -0.40, "beta": 0.60, "directional": true },
+        "night": { "alpha": -0.50, "beta": 0.50, "directional": true },
+        "road": {
+          "highway": { "alpha": 1.00, "beta": 0.00 },
+          "local": { "alpha": 0.00, "beta": 0.00 },
+          "mountain": { "alpha": -1.00, "beta": 0.00 },
+          "parking": { "alpha": 0.00, "beta": 0.00 }
+        },
+        "motion_driving": { "alpha": -0.30, "beta": 0.00, "directional": false }
+      }
+    },
+    {
+      "key": "content_category_weights",
+      "kind": "table",
+      "label": { "ja": "コンテンツカテゴリ重み", "en": "Content Category Weights" },
+      "default": { "Situation": 0.55, "Preference": 0.30, "History": 0.15 }
+    },
+    {
+      "key": "hierarchy_weights",
+      "kind": "matrix",
+      "label": { "ja": "階層重み（§6.1）", "en": "Hierarchy Weights (§6.1)" },
+      "default": {
+        "Situation": {
+          "driver_state": { "share": 0.35, "leaves": {
+            "drowsiness": { "share": 0.55, "mask": 1, "feature_id": "drowsiness_level" },
+            "fatigue": { "share": 0.45, "mask": 1, "feature_id": "fatigue_level" }
+          }},
+          "driving_environment": { "share": 0.30, "leaves": {
+            "traffic": { "share": 0.15, "mask": 1, "feature_id": "traffic_state" },
+            "road": { "share": 0.15, "mask": 1, "feature_id": "road_type" },
+            "night": { "share": 0.20, "mask": 1, "feature_id": "night_state" },
+            "monotony": { "share": 0.50, "mask": 1, "feature_id": "monotony_level" }
+          }},
+          "driving_state": { "share": 0.05, "leaves": {
+            "motion": { "share": 1.00, "mask": 1, "feature_id": "motion_state" }
+          }},
+          "song_singability": { "share": 0.13, "leaves": {
+            "service_ease": { "share": 1.00, "mask": 1, "feature_id": "song_singability", "karaoke_only": true }
+          }},
+          "route_destination": { "share": 0.09, "leaves": {
+            "route": { "share": 0.5, "mask": 0, "genre_gated": true, "feature_id": "route_tags" },
+            "destination": { "share": 0.5, "mask": 0, "genre_gated": true, "feature_id": "destination_tags" }
+          }},
+          "passengers": { "share": 0.08, "leaves": {
+            "child": { "share": 0.6, "mask": 0, "genre_gated": true, "feature_id": "child_present" },
+            "multiple": { "share": 0.4, "mask": 0, "feature_id": "multiple_passengers" }
+          }}
+        },
+        "Preference": {
+          "upro_oshi": { "share": 0.35, "leaves": {
+            "oshi": { "share": 0.60, "mask": 1, "feature_id": "oshi_id" },
+            "age": { "share": 0.10, "mask": 1, "feature_id": "age_band" },
+            "hobbies": { "share": 0.30, "mask": 0, "genre_gated": true, "feature_id": "hobby_interest_tags" },
+            "gender": { "share": 0.00, "mask": 0, "feature_id": "gender" }
+          }},
+          "novelty": { "share": 0.10, "leaves": {
+            "item_recency": { "share": 0.60, "mask": 0, "feature_id": "catalog_item_recency_state" },
+            "tag_recency": { "share": 0.40, "mask": 0, "feature_id": "content_tag_recency_state" }
+          }},
+          "usage": { "share": 0.35, "leaves": {
+            "item_usage": { "share": 0.40, "mask": 1, "feature_id": "catalog_item_usage_level" },
+            "genre_usage": { "share": 0.30, "mask": 0, "genre_gated": true, "feature_id": "content_tag_usage_level" },
+            "scene_genre": { "share": 0.30, "mask": 0, "genre_gated": true, "feature_id": "scene_content_tag_usage_level" }
+          }},
+          "operations": { "share": 0.20, "leaves": {
+            "played": { "share": 0.25, "mask": 1, "feature_id": "played_items" },
+            "skipped": { "share": 0.35, "mask": 1, "feature_id": "skipped_items" },
+            "changed": { "share": 0.20, "mask": 1, "feature_id": "changed_from_items" },
+            "cancelled": { "share": 0.20, "mask": 0, "feature_id": "cancelled_content_plans" }
+          }}
+        },
+        "History": {
+          "schedule": { "share": 0.30, "leaves": {
+            "schedule": { "share": 1.00, "mask": 0, "feature_id": "scheduled_event_type" }
+          }},
+          "content_acceptance": { "share": 0.30, "leaves": {
+            "acceptance": { "share": 1.00, "mask": 1, "feature_id": "content_proposal_acceptance_rate" }
+          }},
+          "content_recovery": { "share": 0.40, "leaves": {
+            "recovery": { "share": 1.00, "mask": 1, "feature_id": "content_recovery_rate" }
+          }}
+        }
+      }
+    },
+    {
+      "key": "purpose_multipliers",
+      "kind": "table",
+      "label": { "ja": "目的別乗数（§6.2）", "en": "Purpose Multipliers (§6.2)" },
+      "default": {
+        "driver_state": { "rest_recommended": 1.50, "inattentive_driving_prevention_recovery": 1.50, "route_music": 0.90, "child_passenger_experience": 0.90 },
+        "driving_environment": { "rest_recommended": 1.25, "inattentive_driving_prevention_recovery": 1.40, "route_music": 0.80, "child_passenger_experience": 0.80 },
+        "song_singability": { "rest_recommended": 1.00, "inattentive_driving_prevention_recovery": 1.00, "route_music": 1.00, "child_passenger_experience": 1.00 },
+        "upro_oshi": { "rest_recommended": 0.90, "inattentive_driving_prevention_recovery": 0.80, "route_music": 1.10, "child_passenger_experience": 1.10 },
+        "novelty": { "rest_recommended": 0.60, "inattentive_driving_prevention_recovery": 0.60, "route_music": 1.00, "child_passenger_experience": 0.80 },
+        "usage": { "rest_recommended": 0.80, "inattentive_driving_prevention_recovery": 0.75, "route_music": 1.10, "child_passenger_experience": 1.00 },
+        "operations": { "rest_recommended": 1.00, "inattentive_driving_prevention_recovery": 1.00, "route_music": 1.00, "child_passenger_experience": 1.00 },
+        "content_acceptance": { "rest_recommended": 0.80, "inattentive_driving_prevention_recovery": 0.75, "route_music": 1.00, "child_passenger_experience": 1.00 },
+        "content_recovery": { "rest_recommended": 1.40, "inattentive_driving_prevention_recovery": 1.50, "route_music": 0.80, "child_passenger_experience": 0.80 }
+      }
+    },
+    {
+      "key": "genre_affinity_maps",
+      "kind": "map",
+      "label": { "ja": "ジャンル親和マップ（§5.7）", "en": "Genre Affinity Maps (§5.7)" },
+      "default": {
+        "route": {
+          "coastal": { "city pop": 0.8, "jazz": 0.5, "ambient": 0.4, "enka": -0.3 },
+          "mountain": { "japanese folk": 0.7, "enka": 0.6, "ambient": 0.4, "classical": 0.3 },
+          "highway": { "j-rock": 0.7, "electronic": 0.6, "j-pop": 0.3 },
+          "urban": { "city pop": 0.6, "j-pop": 0.5, "electronic": 0.5 }
+        },
+        "destination": {
+          "resort": { "city pop": 0.7, "j-pop": 0.5 },
+          "nature": { "ambient": 0.6, "japanese folk": 0.5, "classical": 0.4 },
+          "event": { "j-rock": 0.6, "anime": 0.4, "vocaloid": 0.4 },
+          "home": { "jazz": 0.3, "j-pop": 0.3 }
+        },
+        "child": { "anime": 1.0, "children's music": 1.0, "vocaloid": 0.6, "j-pop": 0.3, "j-rock": -0.4 },
+        "hobby": {
+          "anime-fan": { "anime": 0.9, "vocaloid": 0.8, "j-pop": 0.4 },
+          "fitness": { "j-rock": 0.7, "electronic": 0.6 },
+          "wellness": { "ambient": 0.7, "jazz": 0.6, "classical": 0.5 },
+          "idol/live": { "j-pop": 0.6, "j-rock": 0.5 },
+          "tradition": { "enka": 0.7, "japanese folk": 0.6, "classical": 0.4 }
+        },
+        "usage_curve": { "never": 0.0, "low": -0.5, "med": 0.25, "high": 1.0 },
+        "vocabulary": ["j-pop", "j-rock", "city pop", "anime", "vocaloid", "enka", "children's music", "classical", "jazz", "ambient", "electronic", "japanese folk"]
+      }
+    },
+    {
+      "key": "age_era_affinity",
+      "kind": "table",
+      "label": { "ja": "年代・時代親和表（§5.5）", "en": "Age/Era Affinity (§5.5)" },
+      "default": {
+        "teens": { "pre1980": -0.6, "1980s": -0.4, "1990s": -0.2, "2000s": 0.0, "2010s": 0.5, "2020s": 1.0 },
+        "20s": { "pre1980": -0.5, "1980s": -0.3, "1990s": 0.0, "2000s": 0.6, "2010s": 1.0, "2020s": 0.6 },
+        "30s": { "pre1980": -0.3, "1980s": 0.0, "1990s": 0.6, "2000s": 1.0, "2010s": 0.6, "2020s": 0.0 },
+        "40s": { "pre1980": 0.0, "1980s": 0.6, "1990s": 1.0, "2000s": 0.6, "2010s": 0.0, "2020s": -0.3 },
+        "50s": { "pre1980": 0.6, "1980s": 1.0, "1990s": 0.6, "2000s": 0.0, "2010s": -0.3, "2020s": -0.5 },
+        "60plus": { "pre1980": 1.0, "1980s": 0.6, "1990s": 0.0, "2000s": -0.3, "2010s": -0.5, "2020s": -0.6 }
+      }
+    },
+    {
+      "key": "norm_bounds",
+      "kind": "table",
+      "label": { "ja": "正規化境界", "en": "Normalization Bounds" },
+      "default": {
+        "loudness_min": -60.0, "loudness_range": 60.0,
+        "tempo_min": 60.0, "tempo_range": 120.0,
+        "tempo_ease_center": 110.0, "tempo_ease_span": 90.0,
+        "speech_ease_threshold": 0.33, "speech_ease_span": 0.33,
+        "duration_ease_center": 180000.0, "duration_ease_span": 180000.0
+      }
+    },
+    {
+      "key": "history_curves",
+      "kind": "table",
+      "label": { "ja": "履歴・操作マッピング", "en": "History/Operation Curves" },
+      "default": {
+        "played": { "le_30m": -1.0, "today": -0.5, "le_7d": -0.25, "else": 0.0 },
+        "changed_in_window": -0.75,
+        "skipped_older": -0.5,
+        "item_usage": { "never": 0.0, "low": -0.5, "med": 0.25, "high": 1.0 },
+        "rate_scale": 100.0
+      }
+    },
+    {
+      "key": "lighting_lookup",
+      "kind": "map",
+      "label": { "ja": "ライティング参照", "en": "Lighting Lookup" },
+      "default": {
+        "cue_basis": "valence",
+        "high_threshold": 0.66, "low_threshold": 0.33,
+        "high_cue": "warm_bright", "mid_cue": "neutral", "low_cue": "cool_calm"
+      }
+    },
+    {
+      "key": "plan_item_count",
+      "kind": "numeric",
+      "label": { "ja": "プラン曲数", "en": "Plan Item Count" },
+      "default": 5, "min": 1, "max": 20, "step": 1
+    },
+    {
+      "key": "fixed_humming_segment_sec",
+      "kind": "numeric",
+      "label": { "ja": "ハミング固定セグメント秒", "en": "Fixed Humming Segment (sec)" },
+      "default": 30, "min": 5, "max": 120, "step": 5
+    },
+    {
+      "key": "directional_hypothesis",
+      "kind": "enum",
+      "label": { "ja": "方向性仮説（§5.6）", "en": "Directional Hypothesis (§5.6)" },
+      "default": "soothe_destress",
+      "values": ["soothe_destress", "keep_alert"]
+    },
+    {
+      "key": "skip_exclusion_window_sec",
+      "kind": "numeric",
+      "label": { "ja": "スキップ除外ウィンドウ秒", "en": "Skip Exclusion Window (sec)" },
+      "default": 1800, "min": 0, "max": 86400, "step": 60
+    },
+    {
+      "key": "parameter_set_version",
+      "kind": "string",
+      "label": { "ja": "パラメータセット版", "en": "Parameter Set Version" },
+      "default": "1.0.0"
+    },
+    {
+      "key": "formula_version",
+      "kind": "string",
+      "label": { "ja": "計算式版", "en": "Formula Version" },
+      "default": "1.0.0"
+    }
+  ]
+}
