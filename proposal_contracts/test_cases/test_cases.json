@@ -2,11 +2,11 @@
   {
     "test_case_id": "tc-01",
     "world_ref": "world-night-highway-high-drowsiness",
-    "candidate_song_ref": "synthetic-track-0086",
+    "candidate_song_ref": "synthetic-track-0129",
     "expected_label": "positive",
     "judge_folds": {
-      "context_need": "drowsy → high-energy raises alertness",
-      "mood_genre_fit": "blind on real song",
+      "context_need": "drowsy→high energy",
+      "mood_genre_fit": "blind",
       "era_cultural_fit": "n/a",
       "coherence": "ok",
       "web_evidence": "known"
@@ -19,11 +19,11 @@
   {
     "test_case_id": "tc-02",
     "world_ref": "world-night-highway-high-drowsiness",
-    "candidate_song_ref": "synthetic-track-0040",
+    "candidate_song_ref": "synthetic-track-0050",
     "expected_label": "positive",
     "judge_folds": {
-      "context_need": "drowsy → energetic helps",
-      "mood_genre_fit": "blind on real song",
+      "context_need": "drowsy→energetic",
+      "mood_genre_fit": "blind",
       "era_cultural_fit": "n/a",
       "coherence": "ok",
       "web_evidence": "known"
@@ -39,8 +39,8 @@
     "candidate_song_ref": "synthetic-track-0017",
     "expected_label": "negative",
     "judge_folds": {
-      "context_need": "drowsy → calm deepens drowsiness",
-      "mood_genre_fit": "blind on real song",
+      "context_need": "drowsy→calm bad",
+      "mood_genre_fit": "blind",
       "era_cultural_fit": "n/a",
       "coherence": "ok",
       "web_evidence": "known"
@@ -56,8 +56,8 @@
     "candidate_song_ref": "synthetic-track-0001",
     "expected_label": "negative",
     "judge_folds": {
-      "context_need": "drowsy → too soothing, unsafe",
-      "mood_genre_fit": "blind on real song",
+      "context_need": "drowsy→soothing bad",
+      "mood_genre_fit": "blind",
       "era_cultural_fit": "n/a",
       "coherence": "ok",
       "web_evidence": "known"
@@ -73,8 +73,8 @@
     "candidate_song_ref": "synthetic-track-0017",
     "expected_label": "positive",
     "judge_folds": {
-      "context_need": "relaxed daytime → gentle fits",
-      "mood_genre_fit": "blind on real song",
+      "context_need": "calm→gentle fits",
+      "mood_genre_fit": "blind",
       "era_cultural_fit": "n/a",
       "coherence": "ok",
       "web_evidence": "known"
@@ -90,8 +90,8 @@
     "candidate_song_ref": "synthetic-track-0001",
     "expected_label": "neutral",
     "judge_folds": {
-      "context_need": "calm, unremarkable for commute",
-      "mood_genre_fit": "blind on real song",
+      "context_need": "calm unremarkable",
+      "mood_genre_fit": "blind",
       "era_cultural_fit": "n/a",
       "coherence": "ok",
       "web_evidence": "known"
@@ -104,11 +104,11 @@
   {
     "test_case_id": "tc-07",
     "world_ref": "world-daytime-commute",
-    "candidate_song_ref": "synthetic-track-0086",
+    "candidate_song_ref": "synthetic-track-0129",
     "expected_label": "negative",
     "judge_folds": {
-      "context_need": "relaxed → aggressive is jarring",
-      "mood_genre_fit": "blind on real song",
+      "context_need": "calm→jarring",
+      "mood_genre_fit": "blind",
       "era_cultural_fit": "n/a",
       "coherence": "ok",
       "web_evidence": "known"
@@ -121,11 +121,11 @@
   {
     "test_case_id": "tc-08",
     "world_ref": "world-daytime-commute",
-    "candidate_song_ref": "synthetic-track-0040",
+    "candidate_song_ref": "synthetic-track-0050",
     "expected_label": "neutral",
     "judge_folds": {
-      "context_need": "energetic but acceptable bg",
-      "mood_genre_fit": "blind on real song",
+      "context_need": "energetic ok",
+      "mood_genre_fit": "blind",
       "era_cultural_fit": "n/a",
       "coherence": "ok",
       "web_evidence": "known"

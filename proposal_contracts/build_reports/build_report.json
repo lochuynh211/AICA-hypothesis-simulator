@@ -1,9 +1,9 @@
 {
   "candidate_source": "isrc_resolved",
-  "loop": 11,
+  "loop": 15,
   "new_vs_skipped": {
-    "accepted": 135,
-    "miss": 44,
+    "accepted": 178,
+    "miss": 74,
     "by_loop": {
       "loop1:miss": 11,
       "loop2:accepted": 29,
@@ -19,24 +19,28 @@
       "loop9:miss": 1,
       "loop10:miss": 1,
       "loop11:accepted": 18,
-      "loop11:miss": 1
+      "loop11:miss": 1,
+      "loop12:miss": 13,
+      "loop13:accepted": 24,
+      "loop13:miss": 2,
+      "loop14:miss": 10,
+      "loop15:accepted": 19,
+      "loop15:miss": 5
     }
   },
-  "soundcharts_calls": 157,
+  "soundcharts_calls": 208,
   "probe_result": {},
   "repairs": [],
   "coverage_checklist": {
     "required": 36,
-    "covered": 27,
+    "covered": 29,
     "unmet": [
       "E-hi_T-hi_P-sf",
       "E-hi_T-lo_P-dv",
       "E-hi_T-lo_P-sf",
-      "E-hi_T-md_P-sf",
       "E-lo_T-hi_P-dv",
       "E-lo_T-hi_P-sf",
       "E-lo_T-lo_P-sf",
-      "E-lo_T-md_P-dv",
       "E-lo_T-md_P-sf"
     ],
     "passed": false
@@ -59,11 +63,11 @@
     },
     {
       "code": "language_mismatch",
-      "count": 12
+      "count": 19
     },
     {
       "code": "song_not_found_in_sources",
-      "count": 31
+      "count": 54
     }
   ]
 }
