@@ -1,16 +1,17 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
 import { ProposalStoreProvider, useProposalStore } from '../src/state/proposalStore'
 import ContentProposalPanel from '../src/components/proposal/panels/ContentProposalPanel'
+import ServiceProposalPanel from '../src/components/proposal/panels/ServiceProposalPanel'
 import type { ProposalRunLog } from '../src/api/proposalClient'
 
 vi.mock('../src/api/proposalClient', async () => {
   const actual = await vi.importActual<typeof import('../src/api/proposalClient')>('../src/api/proposalClient')
-  return { ...actual, getPackages: vi.fn() }
+  return { ...actual, getPackages: vi.fn(), createRun: vi.fn(), selectService: vi.fn() }
 })
 
-import { getPackages } from '../src/api/proposalClient'
+import { getPackages, createRun, selectService } from '../src/api/proposalClient'
 
 const CONTENT_PACKAGE = {
   id: 'mock_content_selector_v1',
@@ -31,11 +32,93 @@ const CONTENT_PACKAGE = {
   ],
 }
 
+const SERVICE_PACKAGE = {
+  id: 'mock_service_selector_v1',
+  version: '1.0.0',
+  label: { ja: 'モック・サービス選定 v1.0', en: 'Mock Service Selector v1.0' },
+  family: 'service_selector' as const,
+  approach: 'transparent' as const,
+  contract_version: '1.0.0',
+  supported_services: [],
+  parameters: { top_k: 3 },
+  hyperparameters: [],
+}
+
 function packagesResponse() {
   return {
-    slots: [],
-    packages: [CONTENT_PACKAGE],
+    slots: [
+      { family: 'service_selector', approach: 'transparent', package_id: 'mock_service_selector_v1' },
+      { family: 'content_selector', approach: 'transparent', package_id: 'mock_content_selector_v1' },
+    ],
+    packages: [CONTENT_PACKAGE, SERVICE_PACKAGE],
     errors: [],
+  }
+}
+
+/** A service-selected run whose ranked candidates include `live_viewing` — in
+ * the after-rest allowed set, but NOT in the mock content selector's
+ * `supported_services` (music-only). Mirrors the real backend fixture used
+ * by `app/api/tests/proposal/test_ep_select_service.py`. */
+function runLogServiceSelectedWithUnsupportedCandidate(): ProposalRunLog {
+  return {
+    run_id: 'prun_unsupported_test',
+    created_at: '2026-07-16T00:00:00Z',
+    opportunity: {
+      opportunity_id: 'op_1',
+      trigger_purpose: 'rest_recommended',
+      lifecycle_stage: 'after_rest_before_restart',
+      allowed_service_ids: ['live_viewing', 'stretch_video', 'full_karaoke'],
+      simulation_time: '2026-07-16T00:00:00Z',
+      run_seed: 'seed-1',
+    },
+    matrix_version: 'v1',
+    world_snapshot: {},
+    service_package_id: 'mock_service_selector_v1',
+    content_package_id: 'mock_content_selector_v1',
+    parameters: {},
+    hyperparameters: {},
+    journey_state: {
+      lifecycle_stage: 'after_rest_before_restart',
+      motion_state: 'stopped',
+      active_service_id: 'live_viewing',
+      active_plan_id: null,
+    },
+    events: [],
+    evidence: [
+      {
+        step: 'service',
+        package_id: 'mock_service_selector_v1',
+        contract_version: '1.0.0',
+        schema_version: '1.0.0',
+        matrix_version: 'v1',
+        input_snapshot: {},
+        output: {
+          decision_type: 'ranked_candidates',
+          ranked_candidates: [
+            {
+              rank: 1,
+              candidate_id: 'live_viewing',
+              score: 0.77,
+              rationale: ['一位の理由', 'Top rank rationale'],
+              supporting_feature_ids: [],
+              opposing_feature_ids: [],
+              uncertainty: null,
+              feature_contributions: [],
+            },
+          ],
+          excluded_candidates: [],
+          unused_available_features: [],
+          missing_features: [],
+          next_package_runtime_state: {},
+          algorithm_provenance: {},
+        },
+        error: null,
+        used_feature_ids: [],
+        unused_available_features: [],
+        missing_features: [],
+      },
+    ],
+    status: 'service_selected',
   }
 }
 
@@ -256,5 +339,90 @@ describe('ContentProposalPanel', () => {
       </ProposalStoreProvider>,
     )
     expect(await screen.findByRole('alert')).toHaveTextContent('boom')
+  })
+
+  // ---------------------------------------------------------------------
+  // Unsupported-service handling (edge case: "Content plan requested for an
+  // unsupported service -> explicit unsupported outcome rather than an
+  // empty plan"). The mock content selector is MUSIC-ONLY
+  // (music_playlist/humming_karaoke/full_karaoke) -- choosing a non-music
+  // candidate (e.g. post-rest live_viewing) makes the real
+  // POST /select-service endpoint reject with 422 unsupported_service
+  // BEFORE dispatch_selector ever runs (see routers/proposal.py's
+  // supported_services pre-check) -- so `runLog`/`contentEvidence` never
+  // change. ContentProposalPanel must still show an explicit message, not a
+  // blank/broken panel.
+  // ---------------------------------------------------------------------
+
+  it('shows an explicit unsupported-service message (not a blank/broken plan) when the store records an unsupported_service select-service error', async () => {
+    function Setup() {
+      const { dispatch } = useProposalStore()
+      React.useEffect(() => {
+        dispatch({ type: 'RUN_CREATED', runLog: runLogServiceSelectedWithUnsupportedCandidate() })
+        dispatch({
+          type: 'SET_ERROR',
+          message:
+            "Proposal API error: 422 — Content package 'mock_content_selector_v1' does not support service 'live_viewing' (unsupported_service)",
+        })
+      }, [dispatch])
+      return null
+    }
+    render(
+      <ProposalStoreProvider initialLanguage="en">
+        <Setup />
+        <ContentProposalPanel />
+      </ProposalStoreProvider>,
+    )
+
+    const message = await screen.findByTestId('content-select-error')
+    expect(message).toHaveTextContent(/unsupported/i)
+    // Never a broken/empty plan section rendered alongside it.
+    expect(screen.queryByTestId('plan-metadata')).not.toBeInTheDocument()
+  })
+
+  it('does not show the unsupported-service message once a real content plan is present (error cleared by CONTENT_SELECTED)', async () => {
+    function Setup() {
+      const { dispatch } = useProposalStore()
+      React.useEffect(() => {
+        dispatch({ type: 'RUN_CREATED', runLog: runLogServiceSelectedWithUnsupportedCandidate() })
+        dispatch({ type: 'SET_ERROR', message: 'unsupported_service: live_viewing' })
+        dispatch({ type: 'CONTENT_SELECTED', runLog: runLogWithPlan() })
+      }, [dispatch])
+      return null
+    }
+    render(
+      <ProposalStoreProvider>
+        <Setup />
+        <ContentProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('synthetic-track-0001')
+    expect(screen.queryByTestId('content-select-error')).not.toBeInTheDocument()
+  })
+
+  it('end-to-end: choosing an unsupported service in ServiceProposalPanel surfaces the graceful unsupported message in ContentProposalPanel (never blank)', async () => {
+    vi.mocked(createRun).mockResolvedValue(runLogServiceSelectedWithUnsupportedCandidate() as never)
+    vi.mocked(selectService).mockRejectedValue(
+      new Error(
+        "Proposal API error: 422 — Content package 'mock_content_selector_v1' does not support service 'live_viewing' (unsupported_service)",
+      ),
+    )
+
+    render(
+      <ProposalStoreProvider initialLanguage="en">
+        <ServiceProposalPanel />
+        <ContentProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await waitFor(() => expect(getPackages).toHaveBeenCalled())
+    fireEvent.click(screen.getByTestId('service-run-button'))
+    await screen.findByText('live_viewing')
+
+    fireEvent.click(screen.getByTestId('choose-candidate-live_viewing'))
+
+    await waitFor(() => expect(selectService).toHaveBeenCalled())
+    const message = await screen.findByTestId('content-select-error')
+    expect(message).toHaveTextContent(/unsupported/i)
+    expect(screen.queryByTestId('plan-metadata')).not.toBeInTheDocument()
   })
 })

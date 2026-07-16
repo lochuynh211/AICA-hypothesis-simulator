@@ -41,6 +41,11 @@ const LABELS = {
   excluded: { ja: '除外例', en: 'Excluded examples' },
   algorithmError: { ja: 'アルゴリズムエラー', en: 'Algorithm error' },
   unsupported: { ja: '未対応サービス', en: 'Unsupported service' },
+  selectUnsupported: {
+    ja: '選択したサービス向けのコンテンツプランはありません（未対応のサービスです）。',
+    en: 'No content plan is available for the selected service (unsupported service).',
+  },
+  selectFailed: { ja: 'サービス選択に失敗しました', en: 'Could not select this service' },
 };
 
 function contentRows(item: OrderedItem): ReasonRow[] {
@@ -157,6 +162,21 @@ export default function ContentProposalPanel() {
         {contentEvidence?.error && (
           <p role="alert" style={{ color: '#dc2626', fontSize: '0.82em' }}>
             {t(LABELS.algorithmError, lang)}: {contentEvidence.error.message}
+          </p>
+        )}
+
+        {/* A STEP-2 select-service attempt that the backend rejected (e.g. HTTP
+            422 unsupported_service, thrown before dispatch_selector ever runs —
+            see routers/proposal.py's supported_services pre-check) never
+            updates `runLog`, so this is surfaced via the shared store's
+            `error` field (set by ServiceProposalPanel's handleChoose catch)
+            rather than via `contentEvidence`. Rendered explicitly here so this
+            panel never falls silent/blank on an unsupported-service request. */}
+        {!contentEvidence?.error && state.error && (
+          <p data-testid="content-select-error" role="alert" style={{ color: '#b45309', fontSize: '0.82em' }}>
+            {state.error.toLowerCase().includes('unsupported_service')
+              ? t(LABELS.selectUnsupported, lang)
+              : `${t(LABELS.selectFailed, lang)}: ${state.error}`}
           </p>
         )}
 

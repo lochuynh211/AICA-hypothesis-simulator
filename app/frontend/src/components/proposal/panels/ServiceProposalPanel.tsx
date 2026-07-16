@@ -144,7 +144,14 @@ export default function ServiceProposalPanel() {
         dispatch({ type: 'CONTENT_SELECTED', runLog })
       }
     } catch (e) {
-      setLocalError(e instanceof Error ? e.message : String(e))
+      const message = e instanceof Error ? e.message : String(e)
+      setLocalError(message)
+      // Also surface the failure on the shared store (RUN_CREATED/
+      // CONTENT_SELECTED both clear it): a failed choose() never updates
+      // `runLog` (the request never reached STEP 2), so ContentProposalPanel
+      // has no other way to learn the attempt failed — see
+      // `proposal_content_panel.test.tsx` (unsupported-service handling).
+      dispatch({ type: 'SET_ERROR', message })
     } finally {
       setChoosingId(null)
     }
