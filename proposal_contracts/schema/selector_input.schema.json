@@ -158,10 +158,12 @@
       "type": "object"
     },
     "feature_snapshot": {
+      "additionalProperties": true,
       "title": "Feature Snapshot",
       "type": "object"
     },
     "hyperparameters": {
+      "additionalProperties": true,
       "title": "Hyperparameters",
       "type": "object"
     },
@@ -173,10 +175,12 @@
       "type": "string"
     },
     "package_runtime_state": {
+      "additionalProperties": true,
       "title": "Package Runtime State",
       "type": "object"
     },
     "parameters": {
+      "additionalProperties": true,
       "title": "Parameters",
       "type": "object"
     },

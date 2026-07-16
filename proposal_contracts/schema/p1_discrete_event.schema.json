@@ -1,0 +1,48 @@
+{
+  "$defs": {
+    "DiscreteEventType": {
+      "description": "Discrete event kinds appended to a ``ProposalRunLog`` (shape/enum only in\nP1; only ``OPPORTUNITY_OPENED``, ``SERVICE_SELECTED``, ``CONTENT_SELECTED``,\nand ``ALGORITHM_ERROR`` are actually emitted by the P1 mock flow).",
+      "enum": [
+        "OPPORTUNITY_OPENED",
+        "SERVICE_SELECTED",
+        "CONTENT_SELECTED",
+        "TRIGGER_PURPOSE_CHANGED",
+        "REST_SPOT_ARRIVED",
+        "REST_COMPLETED",
+        "CONTENT_COMPLETED",
+        "ALGORITHM_ERROR"
+      ],
+      "title": "DiscreteEventType",
+      "type": "string"
+    }
+  },
+  "description": "A single discrete event appended to a ``ProposalRunLog`` (append-only\nin usage; this model just holds the shape).",
+  "properties": {
+    "at": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        }
+      ],
+      "title": "At"
+    },
+    "event_type": {
+      "$ref": "#/$defs/DiscreteEventType"
+    },
+    "payload": {
+      "additionalProperties": true,
+      "title": "Payload",
+      "type": "object"
+    }
+  },
+  "required": [
+    "event_type",
+    "at",
+    "payload"
+  ],
+  "title": "DiscreteEvent",
+  "type": "object"
+}

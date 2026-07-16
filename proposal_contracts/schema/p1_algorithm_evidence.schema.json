@@ -1,0 +1,113 @@
+{
+  "$defs": {
+    "EvidenceError": {
+      "description": "Structured error detail recorded when an ``evaluate()`` call raises or\nreturns an invalid result.",
+      "properties": {
+        "category": {
+          "title": "Category",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "category",
+        "message"
+      ],
+      "title": "EvidenceError",
+      "type": "object"
+    }
+  },
+  "description": "Per-evaluation evidence appended to a ``ProposalRunLog``.",
+  "properties": {
+    "contract_version": {
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "error": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EvidenceError"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "input_snapshot": {
+      "additionalProperties": true,
+      "title": "Input Snapshot",
+      "type": "object"
+    },
+    "matrix_version": {
+      "title": "Matrix Version",
+      "type": "string"
+    },
+    "missing_features": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Missing Features",
+      "type": "array"
+    },
+    "output": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Output"
+    },
+    "package_id": {
+      "title": "Package Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "step": {
+      "enum": [
+        "service",
+        "content"
+      ],
+      "title": "Step",
+      "type": "string"
+    },
+    "unused_available_features": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Unused Available Features",
+      "type": "array"
+    },
+    "used_feature_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Used Feature Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "step",
+    "package_id",
+    "contract_version",
+    "schema_version",
+    "matrix_version",
+    "input_snapshot",
+    "output",
+    "error",
+    "used_feature_ids",
+    "unused_available_features",
+    "missing_features"
+  ],
+  "title": "AlgorithmEvidence",
+  "type": "object"
+}

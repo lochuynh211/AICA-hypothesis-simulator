@@ -379,7 +379,7 @@ Slides 38–40 provide detailed definitions for the principal media services. Sl
 |---|---|---|---|
 | `rest_recommended` | `before_rest_until_stop` | `music_playlist`, `humming_karaoke`, `quiz`, `ranking_creation`, `radio_style`, `call_response_driving` | Slide 64, driving content |
 | `rest_recommended` | `during_rest_stopped` | `rest_duration_suggestion`, `rest_method_suggestion`, `seat_adjustment`, `nap_guidance`, `rest_extension_check` | Slide 2 and related rest flow |
-| `rest_recommended` | `after_rest_before_restart` | `live_viewing`, `stretch_video`, `full_karaoke`, `oshi_reexperience` | Slide 64, stopped content |
+| `rest_recommended` | `after_rest_before_restart` | `live_viewing`, `stretch_video`, `full_karaoke`, `oshi_reexperience`, `call_response_stopped` | Slide 64 stopped content; `call_response_stopped` per the service algorithm doc §2.4/§5.2.4 (Slides 38, 40) — §17 post-rest 4→5 resolved in P1 |
 | `inattentive_driving_prevention_recovery` | `active_driving_content` | `music_playlist`, `humming_karaoke`, `quiz`, `ranking_creation`, `radio_style`, `call_response_driving` | Slide 65 |
 | `route_music` | `active_driving_content` | `music_playlist`, `humming_karaoke`, `quiz`, `ranking_creation`, `radio_style`, `call_response_driving` | Slide 65 |
 | `child_passenger_experience` | `active_driving_content` | `music_playlist`, `humming_karaoke`, `quiz`, `ranking_creation`, `radio_style`, `call_response_driving` | Slide 65 |

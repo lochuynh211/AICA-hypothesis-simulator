@@ -76,6 +76,12 @@ class PackageRegistry:
                 continue
             try:
                 data = read_json(str(manifest_path))
+                # Proposal-family packages (they declare `kind`/`family`, e.g. the
+                # transparent content selector) are owned by the separate proposal
+                # package registry, not the trigger registry. Skip them silently —
+                # they are not trigger packages and must not surface as errors here.
+                if data.get("kind") is not None or data.get("family") is not None:
+                    continue
                 manifest = PackageManifest(**data)
                 self._packages[manifest.id] = manifest
             except (ValidationError, Exception) as exc:

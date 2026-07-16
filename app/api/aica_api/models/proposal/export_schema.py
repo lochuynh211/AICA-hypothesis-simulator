@@ -58,6 +58,35 @@ def _schema_artifacts() -> dict[str, Any]:
         "schema/content_output.schema.json": CompletePlan.model_json_schema(),
         "schema/song.schema.json": Song.model_json_schema(),
         "schema/genre_affinity_v1.schema.json": GenreAffinityV1.model_json_schema(),
+        **_p1_schema_artifacts(),
+    }
+
+
+def _p1_schema_artifacts() -> dict[str, Any]:
+    """P1 (013-proposal-p1-screen-foundation) contract schemas (T019).
+
+    Freezes the top-level contracts worth guarding against drift: the
+    opportunity/matrix/package-manifest inputs, the service-selector output,
+    and the run-log + its nested shapes (events/journey/evidence).
+    """
+    from aica_api.models.proposal.opportunity import ProposalOpportunity
+    from aica_api.models.proposal.service_output import ServiceSelectorOutput
+    from aica_api.models.proposal.matrix import PurposeStageServiceMatrix
+    from aica_api.models.proposal.package_manifest import ProposalPackageManifest
+    from aica_api.models.proposal.events import DiscreteEvent
+    from aica_api.models.proposal.journey import JourneyState
+    from aica_api.models.proposal.evidence import AlgorithmEvidence
+    from aica_api.models.proposal.proposal_run import ProposalRunLog
+
+    return {
+        "schema/p1_opportunity.schema.json": ProposalOpportunity.model_json_schema(),
+        "schema/p1_service_output.schema.json": ServiceSelectorOutput.model_json_schema(),
+        "schema/p1_matrix.schema.json": PurposeStageServiceMatrix.model_json_schema(),
+        "schema/p1_package_manifest.schema.json": ProposalPackageManifest.model_json_schema(),
+        "schema/p1_discrete_event.schema.json": DiscreteEvent.model_json_schema(),
+        "schema/p1_journey_state.schema.json": JourneyState.model_json_schema(),
+        "schema/p1_algorithm_evidence.schema.json": AlgorithmEvidence.model_json_schema(),
+        "schema/p1_proposal_run_log.schema.json": ProposalRunLog.model_json_schema(),
     }
 
 

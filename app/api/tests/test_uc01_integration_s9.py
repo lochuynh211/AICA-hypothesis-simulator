@@ -807,11 +807,19 @@ def test_profile_override_visible_in_evidence(client):
     SC-006: "an edited profile drives its run."
 
     Runs TWO runs from the same scenario:
-      - DEFAULT:  no profile override (base_growth_per_min = 0.9 per scenario)
-      - OVERRIDE: 10× faster drowsiness growth (base_growth_per_min = 9.0)
+      - DEFAULT:  no profile override (drowsiness/fatigue base_growth_per_min =
+        0.9 / 0.3 per scenario)
+      - OVERRIDE: 10× faster drowsiness AND fatigue growth (base_growth_per_min
+        = 9.0 / 3.0)
 
     Proves BEHAVIORAL effect: the override run reaches REST_PROPOSAL at a
     LOWER tick index than the default run (faster growth → earlier trigger).
+    Under the current tuning (tick_seconds=180, threshold_suggest=0.7) a
+    drowsiness-only override saturates the drowsiness feature (band-clamped
+    to 1.0) well before the persistence-gated threshold crossing, so the
+    fire tick becomes fatigue-paced; overriding both signals together (a
+    faithful "driver is a lot more fatigue-prone" profile edit) is required
+    to produce a measurable, robust difference.
 
     Also proves recording fidelity:
     - GET /log shows the overridden driver_profile with the override rate
@@ -822,8 +830,9 @@ def test_profile_override_visible_in_evidence(client):
     - Profile overrides are not threaded into the run log or evidence.
     - The override does not measurably change when the proposal fires.
     """
-    DEFAULT_RATE = 0.9   # scenario default base_growth_per_min
+    DEFAULT_RATE = 0.9   # scenario default drowsiness base_growth_per_min
     OVERRIDE_RATE = 9.0  # 10× default — unambiguously faster drowsiness growth
+    OVERRIDE_FATIGUE_RATE = 3.0  # 10× scenario default fatigue base_growth_per_min (0.3)
 
     # ── DEFAULT run (no profile override) ────────────────────────────────────
     default_run_id = _plan_and_run(client, HYBRID_PKG, RECOVERY_SCENARIO)
@@ -831,10 +840,11 @@ def test_profile_override_visible_in_evidence(client):
     _decline(client, default_run_id)
     default_proposal_tick = default_paused_body["tick_index"]
 
-    # ── OVERRIDE run (10× drowsiness growth rate) ────────────────────────────
+    # ── OVERRIDE run (10× drowsiness AND fatigue growth rate) ────────────────
     override_profiles = {
         "driver": {
-            "drowsiness_model": {"base_growth_per_min": OVERRIDE_RATE}
+            "drowsiness_model": {"base_growth_per_min": OVERRIDE_RATE},
+            "fatigue_model": {"base_growth_per_min": OVERRIDE_FATIGUE_RATE},
         }
     }
     run_id = _plan_and_run(
@@ -955,6 +965,22 @@ def test_maps_sentinel_key_absent_from_log(tmp_path, monkeypatch):
     assert len(alts) >= 1
     chosen = alts[0]
 
+    # The maps fixture route is short (~150 km / ~90 min): at the current
+    # tick_seconds=180 cadence that's only ~30 ticks total, which the
+    # rest_persistence_ticks=6 gate (first threshold crossing observed at
+    # tick ~26) cannot clear before the route completes. Scale up the route
+    # length/duration (test-local copy of route_facts; the underlying maps
+    # fixture and analyze response are untouched) so the run has enough
+    # runway to actually fire REST_PROPOSAL — this test's purpose is proving
+    # the sentinel key never leaks through the maps-mocked run loop, which
+    # requires ticking through a real fire+action, not exercising a
+    # razor-thin route-length edge case.
+    route_facts = dict(chosen["route_facts"])
+    route_facts["total_route_distance_km"] = route_facts["total_route_distance_km"] * 3
+    route_facts["estimated_route_duration_min"] = (
+        route_facts["estimated_route_duration_min"] * 3
+    )
+
     # Create run plan with maps route.  Feature 009: python_module packages have
     # no "require_actionable" hyperparameter (that was a declarative_rule-only
     # actionability-guard concept, retired along with the built-in algorithm
@@ -967,7 +993,7 @@ def test_maps_sentinel_key_absent_from_log(tmp_path, monkeypatch):
             "scenario_id": RECOVERY_SCENARIO,
             "route_id": chosen["route_id"],
             "route_source": "maps",
-            "route_facts": chosen["route_facts"],
+            "route_facts": route_facts,
             "display_route": chosen["display"],
             "parameters": {},
             "hyperparameters": {},

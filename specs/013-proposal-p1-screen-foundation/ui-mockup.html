@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="P1 proposal 3-panel screen — layout mockup (JA default / EN toggle). Illustrative mock data.">
+<title>P1 提案シミュレーター 3パネル モックアップ / Proposal 3-Panel Mockup</title>
+<style>
+  :root{
+    --bg:#fff; --bg-soft:#f8fafc; --bg-panel:#f1f5f9;
+    --ink:#1f2937; --ink-soft:#4b5563; --ink-muted:#6b7280;
+    --line:#e5e7eb; --line-strong:#cbd5e1;
+    --rest:#1d4ed8; --rest-bg:#eff6ff; --mono:#7c3aed; --mono-bg:#f5f3ff;
+    --warn:#b45309; --warn-bg:#fffbeb; --danger:#dc2626; --danger-bg:#fef2f2;
+    --ok:#047857; --ok-bg:#ecfdf5; --coef-bg:#eef2ff; --coef-border:#c7d2fe;
+    --radius:10px;
+    --mono-font:"SF Mono","SFMono-Regular","Consolas","Menlo","Roboto Mono",monospace;
+    --jp-font:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP","Meiryo",sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--jp-font);color:var(--ink);background:var(--bg-soft);line-height:1.7;font-size:15px;-webkit-font-smoothing:antialiased;}
+
+  /* bilingual: JA default, EN hidden until toggled */
+  input.lang-switch{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;margin:0;}
+  .en{display:none;}
+  body:has(#lang-en:checked) .ja{display:none;}
+  body:has(#lang-en:checked) .en{display:inline;}
+
+  /* ── app header ── */
+  header.app{display:flex;align-items:center;gap:12px;padding:8px 18px;background:#111827;color:#e5e7eb;border-bottom:1px solid #000;position:sticky;top:0;z-index:20;}
+  .appswitch{display:flex;gap:4px;background:#1f2937;border:1px solid #374151;border-radius:8px;padding:3px;}
+  .appswitch button{font:inherit;font-size:0.8em;padding:4px 14px;border-radius:6px;border:0;cursor:pointer;background:transparent;color:#9ca3af;}
+  .appswitch button.on{background:var(--rest);color:#fff;font-weight:700;}
+  header.app .ttl{font-weight:800;font-size:0.98em;letter-spacing:.01em;}
+  header.app .spacer{margin-left:auto;}
+  .mockbadge{font-size:0.66em;font-weight:800;letter-spacing:.05em;background:var(--warn-bg);color:var(--warn);border:1px solid #fcd34d;border-radius:999px;padding:2px 9px;}
+  .lang{display:flex;gap:5px;}
+  .lang label{font:inherit;font-size:0.76em;padding:4px 11px;cursor:pointer;border:1px solid #374151;background:#1f2937;color:#9ca3af;border-radius:6px;user-select:none;}
+  body:has(#lang-ja:checked) label[for="lang-ja"],
+  body:has(#lang-en:checked) label[for="lang-en"]{background:var(--rest);color:#fff;border-color:var(--rest);}
+
+  /* ── pipeline strip ── */
+  .pipe{display:flex;align-items:center;gap:8px;padding:9px 18px;background:#fff;border-bottom:1px solid var(--line);font-size:0.82em;}
+  .pipe .step{display:flex;align-items:center;gap:7px;padding:3px 10px;border:1px solid var(--line-strong);border-radius:999px;background:var(--bg-soft);}
+  .pipe .step .n{width:17px;height:17px;border-radius:50%;background:var(--line-strong);color:#fff;font-size:0.7em;font-weight:800;display:grid;place-items:center;}
+  .pipe .step.done .n{background:var(--ok);} .pipe .step.active .n{background:var(--rest);}
+  .pipe .step.active{border-color:var(--rest);background:var(--rest-bg);font-weight:700;}
+  .pipe .arr{color:var(--line-strong);font-size:1.1em;}
+  .pipe .hint{margin-left:auto;color:var(--ink-muted);font-size:0.92em;}
+
+  /* ── 3-column screen ── */
+  .screen{display:grid;grid-template-columns:minmax(180px,0.8fr) minmax(360px,2.1fr) minmax(360px,2.1fr);gap:12px;padding:14px;width:100%;margin:0;align-items:start;}
+  @media (max-width:1180px){ .screen{grid-template-columns:1fr;} }
+  .panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+  .panel > h3{margin:0;padding:11px 14px;font-size:0.9em;letter-spacing:.02em;background:var(--bg-soft);border-bottom:1px solid var(--line);color:var(--rest);display:flex;align-items:center;gap:8px;}
+  .panel.content > h3{color:var(--mono);background:var(--mono-bg);}
+  .panel .body{padding:12px 14px;}
+  .sub{color:var(--ink-muted);font-weight:500;font-size:0.9em;}
+
+  /* section label inside a panel */
+  .slab{font-size:0.68em;text-transform:uppercase;letter-spacing:.05em;font-weight:800;color:var(--ink-muted);margin:16px 0 6px;display:flex;align-items:center;gap:8px;}
+  .slab:first-child{margin-top:2px;}
+  .slab .rule{flex:1;height:1px;background:var(--line);}
+
+  /* provenance badges */
+  .prov{font-size:0.6em;font-weight:800;padding:1px 6px;border-radius:999px;letter-spacing:.02em;white-space:nowrap;}
+  .prov.base{background:var(--rest-bg);color:var(--rest);border:1px solid var(--coef-border);}
+  .prov.norm{background:var(--ok-bg);color:var(--ok);border:1px solid #a7f3d0;}
+  .prov.add{background:var(--mono-bg);color:var(--mono);border:1px solid #ddd6fe;}
+  .prov.prof{background:#f3f4f6;color:#6b7280;border:1px solid #d1d5db;}
+  /* selectable option group (radio-like chips) */
+  .opts{display:flex;flex-wrap:wrap;gap:5px;margin:3px 0 2px;}
+  .opt{font-size:0.74em;padding:3px 10px;border-radius:7px;border:1px solid var(--line-strong);background:#fff;color:var(--ink-soft);cursor:pointer;}
+  .opt.sel{background:var(--rest);color:#fff;border-color:var(--rest);font-weight:700;}
+  .opt .mn{opacity:.7;font-size:0.86em;}
+
+  /* form fields */
+  .fld{display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px 10px;padding:6px 0;border-bottom:1px dashed var(--line);}
+  .fld .lb{font-size:0.82em;color:var(--ink-soft);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .fld .lb code{font-family:var(--mono-font);font-size:0.82em;color:var(--ink-muted);background:var(--bg-panel);padding:0 4px;border-radius:4px;}
+  input[type=number],input[type=text],select{font:inherit;font-size:0.82em;padding:3px 7px;border:1px solid var(--line-strong);border-radius:6px;background:#fff;color:var(--ink);}
+  input[type=number]{width:66px;text-align:right;}
+  select{max-width:170px;}
+  input[type=range]{width:120px;vertical-align:middle;}
+  .rdonly{font-family:var(--mono-font);font-size:0.82em;color:var(--ink-soft);background:var(--bg-panel);border:1px solid var(--line);border-radius:6px;padding:2px 8px;}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;}
+  @media (max-width:1400px){ .grid2{grid-template-columns:1fr;} }
+
+  /* preset loader */
+  .preset{display:flex;gap:8px;align-items:center;background:var(--rest-bg);border:1px solid var(--coef-border);border-radius:8px;padding:8px 10px;font-size:0.82em;margin-bottom:6px;}
+  .preset select{flex:1;max-width:none;}
+  .btn{font:inherit;font-size:0.8em;font-weight:700;padding:5px 12px;border-radius:7px;border:1px solid var(--rest);background:var(--rest);color:#fff;cursor:pointer;}
+  .btn.ghost{background:#fff;color:var(--rest);}
+  .btn.run{width:100%;margin:12px 0 4px;padding:8px;font-size:0.86em;}
+  .btn.mono{border-color:var(--mono);background:var(--mono);}
+  .btn.mono.ghost{background:#fff;color:var(--mono);}
+
+  /* disclosure for heavy hyperparams / matrices */
+  details.disc{border:1px solid var(--line);border-radius:8px;margin:8px 0;background:var(--bg-soft);}
+  details.disc>summary{cursor:pointer;padding:7px 11px;font-size:0.8em;font-weight:700;color:var(--ink-soft);list-style:none;display:flex;align-items:center;gap:7px;}
+  details.disc>summary::before{content:"▸";color:var(--ink-muted);}
+  details.disc[open]>summary::before{content:"▾";}
+  details.disc .dbody{padding:4px 11px 11px;}
+  details.disc details.disc{margin:6px 0;background:#fff;}
+  .subslab{font-size:0.66em;text-transform:uppercase;letter-spacing:.04em;font-weight:800;color:var(--ink-muted);margin:11px 0 3px;display:flex;gap:7px;align-items:center;}
+  .subslab code{font-family:var(--mono-font);font-size:1.05em;color:var(--ink-soft);background:var(--bg-panel);padding:0 4px;border-radius:4px;text-transform:none;letter-spacing:0;}
+  .kind{font-size:0.85em;font-weight:700;color:#fff;background:var(--line-strong);border-radius:4px;padding:0 5px;}
+  .cnt{font-size:0.92em;font-weight:800;color:var(--rest);}
+  .panel.content .cnt{color:var(--mono);}
+
+  /* matrix table (editable-looking) */
+  .scroll-x{overflow-x:auto;}
+  table.mtx{border-collapse:collapse;width:100%;font-size:0.76em;margin:4px 0;}
+  table.mtx th,table.mtx td{border:1px solid var(--line);padding:3px 6px;text-align:center;white-space:nowrap;}
+  table.mtx thead th{background:var(--bg-panel);position:sticky;top:0;font-weight:700;}
+  table.mtx td:first-child,table.mtx th:first-child{text-align:left;background:var(--bg-soft);font-weight:600;color:var(--ink-soft);}
+  table.mtx input{width:46px;text-align:center;padding:1px 3px;font-size:0.94em;border:1px solid transparent;background:transparent;border-radius:4px;}
+  table.mtx input:hover{border-color:var(--line-strong);background:#fff;}
+  .pos{color:var(--ok);} .neg{color:var(--danger);}
+
+  /* formulation */
+  .formula{font-family:var(--mono-font);font-size:0.82em;line-height:1.9;background:var(--bg-panel);border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin:8px 0;overflow-x:auto;white-space:nowrap;}
+  .coef{display:inline-block;font-family:var(--mono-font);font-size:0.92em;background:var(--coef-bg);border:1px solid var(--coef-border);color:#3730a3;border-radius:4px;padding:0 5px;margin:0 1px;}
+  .feat{color:var(--rest);} .op{color:var(--ink-muted);}
+  .why{margin:8px 0;padding:9px 12px;background:var(--bg-soft);border-left:3px solid var(--rest);border-radius:0 7px 7px 0;font-size:0.8em;color:var(--ink-soft);}
+  .why.mono{border-left-color:var(--mono);}
+  .why b{color:var(--rest);} .why.mono b{color:var(--mono);}
+
+  /* allowed-service chips */
+  .chips{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0;}
+  .chip{font-size:0.72em;padding:2px 9px;border-radius:999px;background:var(--bg-panel);border:1px solid var(--line);color:var(--ink-soft);}
+  .chip.sel{background:var(--rest);color:#fff;border-color:var(--rest);}
+  .chip.sel.mono{background:var(--mono);border-color:var(--mono);}
+  .chip.no{background:var(--danger-bg);color:var(--danger);border-color:#fecaca;text-decoration:line-through;}
+
+  /* result candidate cards */
+  .cand{border:1px solid var(--line);border-radius:9px;margin:8px 0;background:#fff;overflow:hidden;}
+  .cand.top{border-color:var(--rest);box-shadow:0 0 0 1px var(--rest) inset;}
+  .cand.content.top{border-color:var(--mono);box-shadow:0 0 0 1px var(--mono) inset;}
+  .cand .hd{display:flex;align-items:center;gap:9px;padding:8px 10px;}
+  .cand .rk{flex:none;width:20px;height:20px;border-radius:6px;background:var(--rest);color:#fff;font-size:0.72em;font-weight:800;display:grid;place-items:center;}
+  .cand.content .rk{background:var(--mono);}
+  .cand .nm{font-weight:700;font-size:0.86em;}
+  .cand .nm small{font-weight:500;color:var(--ink-muted);}
+  .cand .fit{margin-left:auto;font-family:var(--mono-font);font-size:0.82em;font-weight:800;color:var(--rest);min-width:52px;text-align:right;}
+  .cand.content .fit{color:var(--mono);}
+  .cand .bar{height:5px;background:var(--bg-panel);}
+  .cand .bar>span{display:block;height:100%;background:var(--rest);}
+  .cand.content .bar>span{background:var(--mono);}
+  .cand .act{display:flex;gap:7px;align-items:center;padding:7px 10px;border-top:1px solid var(--line);background:var(--bg-soft);}
+
+  /* reason (score explanation) */
+  details.reason{border-top:1px solid var(--line);}
+  details.reason>summary{cursor:pointer;list-style:none;padding:6px 10px;font-size:0.76em;font-weight:700;color:var(--rest);display:flex;align-items:center;gap:6px;}
+  .cand.content details.reason>summary{color:var(--mono);}
+  details.reason>summary::before{content:"▸ ";}
+  details.reason[open]>summary::before{content:"▾ ";}
+  table.contrib{border-collapse:collapse;width:100%;font-size:0.74em;margin:2px 0 6px;}
+  table.contrib th,table.contrib td{padding:3px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;}
+  table.contrib th{background:var(--bg-panel);font-weight:700;color:var(--ink-soft);}
+  table.contrib td:first-child,table.contrib th:first-child{text-align:left;}
+  table.contrib .mono{font-family:var(--mono-font);}
+  .supopp{padding:2px 10px 8px;font-size:0.74em;color:var(--ink-muted);}
+  .supopp .tag{display:inline-block;font-size:0.92em;padding:1px 7px;border-radius:999px;margin:2px 3px 0 0;}
+  .supopp .tag.up{background:var(--ok-bg);color:var(--ok);border:1px solid #a7f3d0;}
+  .supopp .tag.dn{background:var(--danger-bg);color:var(--danger);border:1px solid #fecaca;}
+  .rat{padding:0 10px 9px;font-size:0.78em;color:var(--ink-soft);font-style:italic;}
+
+  /* content plan items reuse cand styles; excluded list */
+  .excl{font-size:0.76em;color:var(--ink-muted);margin-top:8px;}
+  .selsvc{font-size:0.8em;background:var(--rest-bg);border:1px solid var(--coef-border);border-radius:7px;padding:6px 10px;margin-bottom:4px;}
+  .selsvc b{color:var(--rest);}
+
+  footer{margin:6px 0 30px;padding:12px 16px;color:var(--ink-muted);font-size:0.78em;}
+  footer code{font-family:var(--mono-font);background:var(--bg-panel);padding:0 4px;border-radius:4px;}
+</style>
+</head>
+<body>
+<input class="lang-switch" type="radio" name="uilang" id="lang-ja" checked>
+<input class="lang-switch" type="radio" name="uilang" id="lang-en">
+
+<header class="app">
+  <div class="appswitch">
+    <button><span class="ja">トリガー</span><span class="en">Trigger</span></button>
+    <button class="on"><span class="ja">提案</span><span class="en">Proposal</span></button>
+  </div>
+  <span class="ttl"><span class="ja">提案シミュレーター</span><span class="en">Proposal Simulator</span></span>
+  <span class="mockbadge"><span class="ja">モックデータ（P1土台）</span><span class="en">MOCK DATA (P1 foundation)</span></span>
+  <span class="spacer"></span>
+  <div class="lang">
+    <label for="lang-ja">日本語</label>
+    <label for="lang-en">EN</label>
+  </div>
+</header>
+
+<div class="pipe">
+  <span class="step done"><span class="n">1</span><span class="ja">世界</span><span class="en">World</span></span>
+  <span class="arr">→</span>
+  <span class="step active"><span class="n">2</span><span class="ja">サービス提案</span><span class="en">Service</span></span>
+  <span class="arr">→</span>
+  <span class="step"><span class="n">3</span><span class="ja">コンテンツ提案</span><span class="en">Content</span></span>
+  <span class="hint"><span class="ja">STEP 1 でサービスを選ぶと STEP 2 が再計算されます</span><span class="en">Choosing a service in STEP 1 recomputes STEP 2</span></span>
+</div>
+
+<div class="screen">
+
+  <!-- ───────────────── ① WORLD ───────────────── -->
+  <section class="panel">
+    <h3>① <span class="ja">入力・世界</span><span class="en">Input · World</span></h3>
+    <div class="body">
+
+      <div class="slab"><span class="ja">発火シグナル（4つ）</span><span class="en">Trigger signal (4)</span><span class="rule"></span></div>
+      <div class="opts">
+        <span class="opt sel">rest_recommended</span>
+        <span class="opt">inattentive…recovery</span>
+        <span class="opt">route_music</span>
+        <span class="opt">child_passenger_experience</span>
+      </div>
+      <p class="sub" style="margin:2px 0 0;font-size:0.78em"><span class="ja"><code>trigger_purpose</code> — 制御入力（スコア対象外）。許可サービス集合を決めます。</span><span class="en"><code>trigger_purpose</code> — control input (not scored); fixes the allowed-service set.</span></p>
+
+      <div class="slab"><span class="ja">車両状態（現在状況）</span><span class="en">Car state (current status)</span><span class="rule"></span></div>
+      <div class="opts">
+        <span class="opt"><span class="ja">スポットへ向かう</span><span class="en">heading to spot</span> <span class="mn">before_rest_until_stop</span></span>
+        <span class="opt"><span class="ja">スポットで停車</span><span class="en">stopped at spot</span> <span class="mn">during_rest_stopped</span></span>
+        <span class="opt sel"><span class="ja">休憩後・再開前</span><span class="en">after spot</span> <span class="mn">after_rest_before_restart</span></span>
+        <span class="opt"><span class="ja">走行中</span><span class="en">driving</span> <span class="mn">active_driving_content</span></span>
+      </div>
+      <div class="fld"><span class="lb"><code>motion_state</code> <span class="ja">走行/停車</span><span class="en">Motion</span> <span class="prov add">added</span></span><select><option>stopped</option><option>driving</option></select></div>
+      <p class="sub" style="margin:2px 0 0;font-size:0.78em"><span class="ja"><code>lifecycle_stage</code> — 制御入力。休憩ジャーニーの位置。</span><span class="en"><code>lifecycle_stage</code> — control input; position in the rest journey.</span></p>
+
+      <div class="slab"><span class="ja">世界・状況（初期値・編集可）</span><span class="en">World · situation (init values, editable)</span><span class="rule"></span></div>
+      <div class="fld"><span class="lb"><code>drowsiness_level</code> <span class="ja">眠気</span><span class="en">Drowsiness</span> <span class="prov base">CDC-SU</span></span><input type="number" value="62"></div>
+      <div class="fld"><span class="lb"><code>fatigue_level</code> <span class="ja">疲労</span><span class="en">Fatigue</span> <span class="prov base">CDC-SU</span></span><input type="number" value="48"></div>
+      <div class="fld"><span class="lb"><code>monotony_level</code> <span class="ja">単調さ</span><span class="en">Monotony</span> <span class="prov base">CDC-SU</span></span><input type="number" value="70"></div>
+      <div class="fld"><span class="lb"><code>traffic_state</code> <span class="ja">交通</span><span class="en">Traffic</span> <span class="prov base">CDC-SU</span></span><select><option>normal</option><option>congested</option></select></div>
+      <div class="fld"><span class="lb"><code>road_type</code> <span class="ja">道路</span><span class="en">Road</span> <span class="prov norm">norm.</span></span><select><option>highway</option><option>local</option><option>mountain</option><option>parking</option></select></div>
+      <div class="fld"><span class="lb"><code>night_state</code> <span class="ja">昼夜</span><span class="en">Day/Night</span> <span class="prov base">CDC-SU</span></span><select><option>night</option><option>day</option></select></div>
+      <div class="fld"><span class="lb"><code>route_tags</code> <span class="ja">ルート特徴</span><span class="en">Route</span> <span class="prov base">CDC-SU</span></span><input type="text" value="coastal, night" style="width:120px"></div>
+      <div class="fld"><span class="lb"><code>destination_tags</code> <span class="ja">目的地</span><span class="en">Destination</span> <span class="prov base">CDC-SU</span></span><input type="text" value="resort" style="width:120px"></div>
+      <div class="fld"><span class="lb"><code>child_present</code> <span class="ja">子ども同乗</span><span class="en">Child present</span> <span class="prov base">CDC-SU</span></span><select><option>false</option><option>true</option></select></div>
+      <div class="fld"><span class="lb"><code>multiple_passengers</code> <span class="ja">複数同乗</span><span class="en">Multiple</span> <span class="prov base">CDC-SU</span></span><select><option>false</option><option>true</option></select></div>
+
+      <div class="slab"><span class="ja">好み・履歴</span><span class="en">Preference &amp; history</span> <span class="prov prof"><span class="ja">プロファイルから読込</span><span class="en">from profile</span></span><span class="rule"></span></div>
+      <div class="fld"><span class="lb"><code>age_band</code> <span class="ja">年代</span><span class="en">Age</span> <span class="prov base">CDC-SU</span></span><select><option>30s</option><option>teens</option><option>20s</option><option>40s</option><option>50s</option><option>60plus</option></select></div>
+      <div class="fld"><span class="lb"><code>gender</code> <span class="ja">性別</span><span class="en">Gender</span> <span class="prov base">CDC-SU</span></span><select><option>unspecified</option><option>female</option><option>male</option></select></div>
+      <div class="fld"><span class="lb"><code>oshi_registered</code> <span class="ja">推し登録</span><span class="en">Oshi reg.</span></span><select><option>true</option><option>false</option></select></div>
+      <div class="fld"><span class="lb"><code>oshi_mode</code> <span class="ja">推しモード</span><span class="en">Oshi mode</span></span><select><option>on</option><option>off</option></select></div>
+      <div class="fld"><span class="lb"><code>service_usage_level[·]</code> <span class="ja">サービス利用度</span><span class="en">usage</span></span><span class="rdonly">music:high · quiz:low …</span></div>
+      <div class="fld"><span class="lb"><code>service_proposal_acceptance_rate[·]</code></span><span class="rdonly">music:72 · humming:55 …</span></div>
+      <div class="fld"><span class="lb"><code>service_recovery_rate[·]</code></span><span class="rdonly">music:64 · radio:48 …</span></div>
+      <div class="fld"><span class="lb"><code>usage_by_genre[·]</code> <span class="ja">（genre_affinity_v1時）</span><span class="en">(under genre ext)</span></span><span class="rdonly">j-pop:high · enka:never …</span></div>
+      <p class="sub" style="margin:2px 0 0;font-size:0.78em"><span class="ja">上のプロファイル選択で自動読込。編集も可（gender は初期重み0）。</span><span class="en">Auto-loaded from the profile below; still editable (gender default weight 0).</span></p>
+
+      <div class="slab"><span class="ja">ドライバープロファイル</span><span class="en">Driver profile</span><span class="rule"></span></div>
+      <div class="fld"><span class="lb"><span class="ja">プロファイル</span><span class="en">Profile</span></span><select><option>30代・推しあり / 30s · oshi</option><option>60代・演歌 / 60s · enka</option><option>20代・アニメ好き / 20s · anime</option><option>40代・家族 / 40s · family</option></select></div>
+      <p class="sub" style="margin:2px 0 0;font-size:0.78em"><span class="ja">選択すると上の「好み・履歴」を読込みます。</span><span class="en">Selecting a profile loads the "Preference &amp; history" values above.</span></p>
+    </div>
+  </section>
+
+  <!-- ───────────────── ② SERVICE ───────────────── -->
+  <section class="panel">
+    <h3>② <span class="ja">サービス提案</span><span class="en">Service proposal</span> <span class="sub">— STEP 1</span></h3>
+    <div class="body">
+
+      <div class="slab"><span class="ja">パッケージ・モード</span><span class="en">Package · Mode</span><span class="rule"></span></div>
+      <div class="grid2">
+        <div class="fld"><span class="lb"><span class="ja">サービスPKG</span><span class="en">Service pkg</span></span><select><option>mock_service_selector_v1</option></select></div>
+        <div class="fld"><span class="lb"><span class="ja">方式</span><span class="en">Approach</span></span><span class="rdonly">transparent</span></div>
+        <div class="fld"><span class="lb"><span class="ja">モード</span><span class="en">Mode</span></span><select><option>interactive</option><option>quick</option></select></div>
+        <div class="fld"><span class="lb"><span class="ja">安全支配</span><span class="en">Safety dominance</span></span><span class="rdonly pos">W_D·gap &gt; 2·W_L ✓</span></div>
+      </div>
+
+      <div class="slab"><span class="ja">パラメータ（編集可）</span><span class="en">Parameters (editable)</span><span class="rule"></span></div>
+      <div class="grid2">
+        <div class="fld"><span class="lb"><code>max_candidates</code></span><input type="number" value="3"></div>
+        <div class="fld"><span class="lb"><code>confidence_shrinkage</code></span><input type="number" step="0.05" value="0.20"></div>
+        <div class="fld"><span class="lb"><code>gamma_evidence</code> <span class="ja">証拠曲率γ</span><span class="en">evidence γ</span></span><input type="number" step="0.1" value="1.0"></div>
+        <div class="fld"><span class="lb"><code>route_tag_saturation</code></span><input type="number" value="3"></div>
+        <div class="fld"><span class="lb"><code>parameter_set_version</code></span><input type="text" value="1.0.0" style="width:70px"></div>
+        <div class="fld"><span class="lb"><code>formula_version</code></span><input type="text" value="1.0.0" style="width:70px"></div>
+      </div>
+
+      <details class="disc" open>
+        <summary><span class="ja">ハイパーパラメータ</span><span class="en">Hyperparameters</span> <span class="cnt">7</span> <span class="ja">（重み・行列・乗数）</span><span class="en">(weights · matrices · multipliers)</span></summary>
+        <div class="dbody">
+
+          <div class="subslab"><span class="kind">matrix</span> <code>response_matrix</code> <span class="ja">応答係数（§5.2）</span><span class="en">response coefficients</span></div>
+          <div class="scroll-x"><table class="mtx">
+            <thead><tr><th>feature ＼ service</th><th>music_playlist</th><th>humming</th><th>radio</th><th>quiz</th><th>ranking</th><th>call_resp</th></tr></thead>
+            <tbody>
+              <tr><td>drowsiness</td><td><input value="0.8"></td><td><input value="0.7"></td><td><input value="0.5"></td><td><input value="0.6"></td><td><input value="0.4"></td><td><input value="0.5"></td></tr>
+              <tr><td>fatigue</td><td><input value="0.4"></td><td><input value="0.3"></td><td><input value="0.5"></td><td><input value="0.2"></td><td><input value="0.2"></td><td><input value="0.3"></td></tr>
+              <tr><td>traffic_congested</td><td><input value="0.3"></td><td><input value="-0.2"></td><td><input value="0.6"></td><td><input value="-0.3"></td><td><input value="0.1"></td><td><input value="0.2"></td></tr>
+              <tr><td>road (hwy/local/mtn)</td><td><input value="0.5"></td><td><input value="0.4"></td><td><input value="0.3"></td><td><input value="0.2"></td><td><input value="0.2"></td><td><input value="0.3"></td></tr>
+              <tr><td>night</td><td><input value="0.2"></td><td><input value="0.1"></td><td><input value="0.3"></td><td><input value="0.0"></td><td><input value="0.0"></td><td><input value="0.1"></td></tr>
+              <tr><td>monotony</td><td><input value="0.7"></td><td><input value="0.8"></td><td><input value="0.4"></td><td><input value="0.7"></td><td><input value="0.6"></td><td><input value="0.6"></td></tr>
+              <tr><td>route_tags</td><td><input value="0.4"></td><td><input value="0.2"></td><td><input value="0.5"></td><td><input value="0.3"></td><td><input value="0.3"></td><td><input value="0.1"></td></tr>
+              <tr><td>destination_tags</td><td><input value="0.3"></td><td><input value="0.2"></td><td><input value="0.4"></td><td><input value="0.3"></td><td><input value="0.3"></td><td><input value="0.1"></td></tr>
+              <tr><td>child_present</td><td><input value="0.2"></td><td><input value="0.4"></td><td><input value="0.1"></td><td><input value="0.6"></td><td><input value="0.5"></td><td><input value="0.5"></td></tr>
+              <tr><td>multiple_passengers</td><td><input value="0.2"></td><td><input value="0.5"></td><td><input value="0.1"></td><td><input value="0.6"></td><td><input value="0.6"></td><td><input value="0.5"></td></tr>
+              <tr><td>oshi_registered</td><td><input value="0.3"></td><td><input value="0.2"></td><td><input value="0.2"></td><td><input value="0.2"></td><td><input value="0.3"></td><td><input value="0.1"></td></tr>
+              <tr><td>oshi_mode (±)</td><td><input value="0.3"></td><td><input value="0.2"></td><td><input value="0.2"></td><td><input value="0.1"></td><td><input value="0.2"></td><td><input value="0.0"></td></tr>
+            </tbody>
+          </table></div>
+
+          <div class="subslab"><span class="kind">table</span> <code>category_weights</code> <span class="ja">カテゴリ重み</span><span class="en">category weights</span></div>
+          <div class="scroll-x"><table class="mtx"><thead><tr><th>Situation</th><th>Preference</th><th>History</th></tr></thead>
+            <tbody><tr><td><input value="0.55"></td><td><input value="0.30"></td><td><input value="0.15"></td></tr></tbody></table></div>
+
+          <div class="subslab"><span class="kind">table</span> <code>hierarchy_weights</code> <span class="ja">階層（サブ群×リーフ基礎重み, §6.1）</span><span class="en">subgroup × leaf base weights</span></div>
+          <div class="scroll-x"><table class="mtx"><thead><tr><th>subgroup</th><th>share</th><th>leaves</th></tr></thead>
+            <tbody>
+              <tr><td>driver_state</td><td><input value="0.35"></td><td>drowsiness .55 / fatigue .45</td></tr>
+              <tr><td>driving_environment</td><td><input value="0.30"></td><td>traffic .15 / road .15 / night .20 / monotony .50</td></tr>
+              <tr><td>route_destination</td><td><input value="0.12"></td><td>route .5 / dest .5</td></tr>
+              <tr><td>passengers</td><td><input value="0.08"></td><td>child .6 / multiple .4</td></tr>
+              <tr><td>oshi</td><td><input value="0.10"></td><td>registered .4 / mode .6</td></tr>
+              <tr><td>usage / history</td><td><input value="0.05"></td><td>acceptance / recovery / recency</td></tr>
+            </tbody></table></div>
+
+          <div class="subslab"><span class="kind">table</span> <code>purpose_multipliers</code> <span class="ja">目的別乗数（§6.2）</span><span class="en">per-purpose subgroup nudge</span></div>
+          <div class="scroll-x"><table class="mtx">
+            <thead><tr><th>subgroup ＼ purpose</th><th>rest</th><th>inattentive</th><th>route_music</th><th>child</th></tr></thead>
+            <tbody>
+              <tr><td>driver_state</td><td><input value="1.50"></td><td><input value="1.50"></td><td><input value="0.90"></td><td><input value="0.90"></td></tr>
+              <tr><td>driving_environment</td><td><input value="1.25"></td><td><input value="1.40"></td><td><input value="0.80"></td><td><input value="0.80"></td></tr>
+              <tr><td>oshi</td><td><input value="0.90"></td><td><input value="0.80"></td><td><input value="1.10"></td><td><input value="1.10"></td></tr>
+              <tr><td>usage/history</td><td><input value="0.80"></td><td><input value="0.75"></td><td><input value="1.10"></td><td><input value="1.00"></td></tr>
+            </tbody></table></div>
+
+          <div class="subslab"><span class="kind">table</span> <code>evidence_normalization</code> <span class="ja">証拠正規化（§5.7）</span><span class="en">evidence normalization</span></div>
+          <div class="scroll-x"><table class="mtx"><thead><tr><th>gamma γ</th><th>route_saturation</th><th>dest_saturation</th></tr></thead>
+            <tbody><tr><td><input value="1.0"></td><td><input value="3"></td><td><input value="3"></td></tr></tbody></table></div>
+
+          <div class="subslab"><span class="kind">table</span> <code>safety_dominance</code> <span class="ja">安全支配（連続支配不変条件）</span><span class="en">safety dominance invariant</span></div>
+          <div class="scroll-x"><table class="mtx"><thead><tr><th>W_D <span class="ja">安全</span></th><th>W_L <span class="ja">新規性</span></th><th>rule</th></tr></thead>
+            <tbody><tr><td><input value="0.35"></td><td><input value="0.10"></td><td class="pos">W_D·gap &gt; 2·W_L</td></tr></tbody></table></div>
+
+          <div class="subslab"><span class="kind">numeric</span> <code>confidence_shrinkage</code> <span class="ja">= 0.20（上でも編集可）</span><span class="en">= 0.20 (also editable above)</span></div>
+
+        </div>
+      </details>
+
+      <div class="slab"><span class="ja">数式・説明</span><span class="en">Formulation</span><span class="rule"></span></div>
+      <div class="formula"><span class="feat">service_fit</span> <span class="op">=</span> clamp( Σ <span class="coef">wᵢ</span>·<span class="coef">rᵢ</span> , −1, +1 )</div>
+      <p class="why"><span class="ja">各サービスの適合度は、<b>重み wᵢ</b> と <b>応答 rᵢ</b>（左の世界特徴量から算出）の重み付き総和。安全・適格が順位を支配します。</span><span class="en">Each service's fit is the weighted sum of <b>weight wᵢ</b> and <b>response rᵢ</b> (derived from the world features at left). Safety/eligibility dominates ranking.</span></p>
+
+      <div class="slab"><span class="ja">許可サービス（行列 v1 → 動作/適格で絞込）</span><span class="en">Allowed services (matrix v1 → motion/readiness)</span><span class="rule"></span></div>
+      <div class="chips">
+        <span class="chip sel">music_playlist</span><span class="chip">humming_karaoke</span><span class="chip">radio_style</span>
+        <span class="chip">quiz</span><span class="chip">ranking_creation</span><span class="chip">call_response_driving</span>
+        <span class="chip no">full_karaoke <span class="ja">走行中不可</span><span class="en">driving</span></span>
+      </div>
+
+      <div class="slab"><span class="ja">推奨サービス（最大3件）</span><span class="en">Recommended (≤3)</span><span class="rule"></span></div>
+
+      <div class="cand top">
+        <div class="hd"><span class="rk">1</span><span class="nm">music_playlist <small><span class="ja">音楽プレイリスト</span><span class="en">Music playlist</span></small></span><span class="fit">+0.72</span></div>
+        <div class="bar"><span style="width:86%"></span></div>
+        <details class="reason" open>
+          <summary><span class="ja">この候補の理由（スコア内訳）</span><span class="en">Why this candidate (score breakdown)</span></summary>
+          <div class="scroll-x">
+          <table class="contrib">
+            <thead><tr><th><span class="ja">特徴量</span><span class="en">Feature</span></th><th><span class="ja">世界値</span><span class="en">Value</span></th><th>r (a)</th><th>w</th><th><span class="ja">寄与</span><span class="en">Contribution</span></th></tr></thead>
+            <tbody>
+              <tr><td>monotony</td><td class="mono">70</td><td class="mono">+0.70</td><td class="mono">0.30</td><td class="mono pos">+0.210</td></tr>
+              <tr><td>drowsiness</td><td class="mono">62</td><td class="mono">+0.80</td><td class="mono">0.22</td><td class="mono pos">+0.176</td></tr>
+              <tr><td>oshi_mode=on</td><td class="mono">on</td><td class="mono">+0.30</td><td class="mono">0.18</td><td class="mono pos">+0.054</td></tr>
+              <tr><td>fatigue</td><td class="mono">48</td><td class="mono">+0.40</td><td class="mono">0.15</td><td class="mono pos">+0.060</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <div class="supopp"><b><span class="ja">支持:</span><span class="en">Supported by:</span></b> <span class="tag up">monotony</span><span class="tag up">drowsiness</span> &nbsp; <b><span class="ja">反対:</span><span class="en">Opposed by:</span></b> <span class="tag dn">—</span></div>
+          <p class="rat"><span class="ja">「単調な夜間走行で眠気があり、覚醒維持に適した聴取サービス。」</span><span class="en">"Monotonous night drive with drowsiness — a listening service well-suited to keeping alert."</span></p>
+        </details>
+        <div class="act"><span class="chip sel"><span class="ja">選択中 → STEP 2 へ</span><span class="en">Selected → to STEP 2</span></span></div>
+      </div>
+
+      <div class="cand">
+        <div class="hd"><span class="rk">2</span><span class="nm">humming_karaoke <small><span class="ja">ハミングカラオケ</span><span class="en">Humming karaoke</span></small></span><span class="fit">+0.61</span></div>
+        <div class="bar"><span style="width:76%"></span></div>
+        <details class="reason"><summary><span class="ja">この候補の理由</span><span class="en">Why this candidate</span></summary>
+          <div class="scroll-x"><table class="contrib"><thead><tr><th>Feature</th><th>Value</th><th>r</th><th>w</th><th>Contribution</th></tr></thead>
+          <tbody><tr><td>monotony</td><td class="mono">70</td><td class="mono">+0.80</td><td class="mono">0.30</td><td class="mono pos">+0.240</td></tr>
+          <tr><td>drowsiness</td><td class="mono">62</td><td class="mono">+0.70</td><td class="mono">0.22</td><td class="mono pos">+0.154</td></tr></tbody></table></div>
+          <p class="rat"><span class="ja">「参加型で覚醒に有効。ただし推し連動は弱め。」</span><span class="en">"Participatory and alerting; weaker oshi linkage."</span></p>
+        </details>
+        <div class="act"><button class="btn ghost"><span class="ja">これを選ぶ</span><span class="en">Choose</span></button></div>
+      </div>
+
+      <div class="cand">
+        <div class="hd"><span class="rk">3</span><span class="nm">radio_style <small><span class="ja">ラジオ風</span><span class="en">Radio style</span></small></span><span class="fit">+0.44</span></div>
+        <div class="bar"><span style="width:60%"></span></div>
+        <details class="reason"><summary><span class="ja">この候補の理由</span><span class="en">Why this candidate</span></summary>
+          <p class="rat"><span class="ja">「疲労にやや適合するが、単調さへの効果は中程度。」</span><span class="en">"Somewhat fits fatigue; moderate effect on monotony."</span></p>
+        </details>
+        <div class="act"><button class="btn ghost"><span class="ja">これを選ぶ</span><span class="en">Choose</span></button></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ───────────────── ③ CONTENT ───────────────── -->
+  <section class="panel content">
+    <h3>③ <span class="ja">コンテンツ提案</span><span class="en">Content proposal</span> <span class="sub">— STEP 2</span></h3>
+    <div class="body">
+      <div class="selsvc"><span class="ja">選択サービス</span><span class="en">Selected service</span>: <b>music_playlist</b> — <span class="ja">この許可サービスに対してのみ具体化</span><span class="en">concrete content only for this allowed service</span></div>
+
+      <div class="slab"><span class="ja">パッケージ・モード</span><span class="en">Package · Mode</span><span class="rule"></span></div>
+      <div class="grid2">
+        <div class="fld"><span class="lb"><span class="ja">コンテンツPKG</span><span class="en">Content pkg</span></span><select><option>mock_content_selector_v1</option></select></div>
+        <div class="fld"><span class="lb"><span class="ja">方式</span><span class="en">Approach</span></span><span class="rdonly">transparent</span></div>
+      </div>
+
+      <div class="slab"><span class="ja">パラメータ（編集可）</span><span class="en">Parameters (editable)</span><span class="rule"></span></div>
+      <div class="grid2">
+        <div class="fld"><span class="lb"><code>plan_item_count</code></span><input type="number" value="5"></div>
+        <div class="fld"><span class="lb"><code>fixed_humming_segment_sec</code></span><input type="number" value="30"></div>
+        <div class="fld"><span class="lb"><code>directional_hypothesis</code></span><select><option>keep_alert</option><option>soothe_destress</option></select></div>
+        <div class="fld"><span class="lb"><code>skip_exclusion_window_sec</code></span><input type="number" value="1800"></div>
+        <div class="fld"><span class="lb"><code>genre_affinity_v1</code> <span class="ja">拡張</span><span class="en">ext</span></span><select><option>off</option><option>on</option></select></div>
+        <div class="fld"><span class="lb"><code>parameter_set_version</code></span><input type="text" value="1.0.0" style="width:70px"></div>
+        <div class="fld"><span class="lb"><code>formula_version</code></span><input type="text" value="1.0.0" style="width:70px"></div>
+        <div class="fld"><span class="lb"><code>lighting_compatible_services</code></span><span class="rdonly">humming, full_karaoke</span></div>
+      </div>
+      <div class="fld"><span class="lb"><code>recipe_registry</code> <span class="ja">（パラメータ・マップ）</span><span class="en">(param map)</span></span><span class="rdonly">playlist · humming(+light) · full_karaoke(+light)</span></div>
+
+      <details class="disc" open>
+        <summary><span class="ja">ハイパーパラメータ</span><span class="en">Hyperparameters</span> <span class="cnt">16</span> <span class="ja">（下記10=行列/表/マップ ＋ 上記6=スカラー）</span><span class="en">(10 matrices/tables/maps below + 6 scalars above)</span></summary>
+        <div class="dbody">
+
+          <div class="subslab"><span class="kind">matrix</span> <code>trait_composition_matrix</code> <span class="ja">曲トレイト構成（表1）</span><span class="en">song-trait composition</span></div>
+          <div class="scroll-x"><table class="mtx">
+            <thead><tr><th>trait ＼ audio</th><th>energy</th><th>loud</th><th>tempo</th><th>dance</th><th>acous⁻¹</th><th>instr⁻¹</th><th>speech</th><th>valence</th><th>mode</th><th>dur</th></tr></thead>
+            <tbody>
+              <tr><td>arousal</td><td><input value="0.30"></td><td><input value="0.25"></td><td><input value="0.25"></td><td><input value="0.15"></td><td><input value="0.05"></td><td>·</td><td>·</td><td>·</td><td>·</td><td>·</td></tr>
+              <tr><td>valence</td><td>·</td><td>·</td><td>·</td><td>·</td><td>·</td><td>·</td><td>·</td><td><input value="0.65"></td><td><input value="0.35"></td><td>·</td></tr>
+              <tr><td>humming_ease</td><td>·</td><td>·</td><td><input value="0.20"></td><td><input value="0.20"></td><td>·</td><td><input value="0.35"></td><td><input value="0.25"></td><td>·</td><td>·</td><td>·</td></tr>
+              <tr><td>full_karaoke_ease</td><td>·</td><td>·</td><td><input value="0.20"></td><td><input value="0.15"></td><td>·</td><td><input value="0.30"></td><td><input value="0.20"></td><td>·</td><td>·</td><td><input value="0.15"></td></tr>
+            </tbody>
+          </table></div>
+
+          <div class="subslab"><span class="kind">matrix</span> <code>context_response_matrix</code> <span class="ja">コンテキスト応答（α向き / β大きさ / 表2）</span><span class="en">context response</span></div>
+          <div class="scroll-x"><table class="mtx">
+            <thead><tr><th>context</th><th>α</th><th>β</th><th>directional</th></tr></thead>
+            <tbody>
+              <tr><td>drowsiness</td><td><input value="0.80"></td><td><input value="0.20"></td><td>false</td></tr>
+              <tr><td>fatigue</td><td><input value="-0.50"></td><td><input value="0.50"></td><td>true</td></tr>
+              <tr><td>monotony</td><td><input value="0.90"></td><td><input value="0.10"></td><td>false</td></tr>
+              <tr><td>traffic_congested</td><td><input value="-0.40"></td><td><input value="0.60"></td><td>true</td></tr>
+              <tr><td>night</td><td><input value="-0.50"></td><td><input value="0.50"></td><td>true</td></tr>
+              <tr><td>road(hwy/local/mtn/park)</td><td><input value="1.0/0/-1/0"></td><td><input value="0"></td><td>—</td></tr>
+              <tr><td>motion_driving</td><td><input value="-0.30"></td><td><input value="0.00"></td><td>false</td></tr>
+            </tbody>
+          </table></div>
+
+          <div class="subslab"><span class="kind">table</span> <code>content_category_weights</code></div>
+          <div class="scroll-x"><table class="mtx"><thead><tr><th>Situation</th><th>Preference</th><th>History</th></tr></thead>
+            <tbody><tr><td><input value="0.55"></td><td><input value="0.30"></td><td><input value="0.15"></td></tr></tbody></table></div>
+
+          <div class="subslab"><span class="kind">table</span> <code>hierarchy_weights</code> <span class="ja">（サブ群×リーフ, mask/genre_gated 付き）</span><span class="en">subgroup × leaf (with mask / genre_gated)</span></div>
+          <div class="scroll-x"><table class="mtx"><thead><tr><th>subgroup</th><th>share</th><th>leaves (share · mask)</th></tr></thead>
+            <tbody>
+              <tr><td>Situation·driver_state</td><td><input value="0.35"></td><td>drowsiness .55·1 / fatigue .45·1</td></tr>
+              <tr><td>Situation·driving_env</td><td><input value="0.30"></td><td>traffic .15 / road .15 / night .20 / monotony .50</td></tr>
+              <tr><td>Situation·song_singability</td><td><input value="0.13"></td><td>service_ease 1.0 (karaoke_only)</td></tr>
+              <tr><td>Situation·route_dest</td><td><input value="0.09"></td><td>route .5·0 / dest .5·0 (genre_gated)</td></tr>
+              <tr><td>Situation·passengers</td><td><input value="0.08"></td><td>child .6·0 / multiple .4·0</td></tr>
+              <tr><td>Preference·upro_oshi</td><td><input value="0.35"></td><td>oshi .60·1 / age .10·1 / hobbies .30·0 / gender .00</td></tr>
+              <tr><td>Preference·usage</td><td><input value="0.35"></td><td>item .40·1 / genre .30·0 / scene_genre .30·0</td></tr>
+              <tr><td>Preference·operations</td><td><input value="0.20"></td><td>played/skipped/changed/cancelled</td></tr>
+              <tr><td>Preference·novelty</td><td><input value="0.10"></td><td>item_recency .60 / tag_recency .40</td></tr>
+              <tr><td>History·recovery/accept/sched</td><td><input value="1.00"></td><td>recovery .40 / acceptance .30 / schedule .30·0</td></tr>
+            </tbody></table></div>
+
+          <div class="subslab"><span class="kind">table</span> <code>purpose_multipliers</code> <span class="ja">（§6.2, 9サブ群 × 4目的）</span><span class="en">9 subgroups × 4 purposes</span></div>
+          <div class="scroll-x"><table class="mtx">
+            <thead><tr><th>subgroup ＼ purpose</th><th>rest</th><th>inattentive</th><th>route_music</th><th>child</th></tr></thead>
+            <tbody>
+              <tr><td>driver_state</td><td><input value="1.50"></td><td><input value="1.50"></td><td><input value="0.90"></td><td><input value="0.90"></td></tr>
+              <tr><td>driving_environment</td><td><input value="1.25"></td><td><input value="1.40"></td><td><input value="0.80"></td><td><input value="0.80"></td></tr>
+              <tr><td>upro_oshi</td><td><input value="0.90"></td><td><input value="0.80"></td><td><input value="1.10"></td><td><input value="1.10"></td></tr>
+              <tr><td>usage</td><td><input value="0.80"></td><td><input value="0.75"></td><td><input value="1.10"></td><td><input value="1.00"></td></tr>
+              <tr><td>content_recovery</td><td><input value="1.40"></td><td><input value="1.50"></td><td><input value="0.80"></td><td><input value="0.80"></td></tr>
+              <tr><td>novelty</td><td><input value="0.60"></td><td><input value="0.60"></td><td><input value="1.00"></td><td><input value="0.80"></td></tr>
+            </tbody></table></div>
+
+          <details class="disc"><summary><span class="ja">残り4つ（マップ・曲線）を表示</span><span class="en">Show remaining 4 (maps · curves)</span></summary><div class="dbody">
+            <div class="subslab"><span class="kind">map</span> <code>genre_affinity_maps</code> <span class="ja">（route/dest/child/hobby + 12語彙, genre_affinity_v1 時のみ採点）</span><span class="en">(scored only under genre_affinity_v1)</span></div>
+            <div class="scroll-x"><table class="mtx"><thead><tr><th>axis</th><th>example → genre : weight</th></tr></thead>
+              <tbody>
+                <tr><td>route.coastal</td><td>city pop .8 / jazz .5 / ambient .4 / enka −.3</td></tr>
+                <tr><td>child</td><td>anime 1.0 / children's 1.0 / vocaloid .6 / j-rock −.4</td></tr>
+                <tr><td>hobby.anime-fan</td><td>anime .9 / vocaloid .8 / j-pop .4</td></tr>
+                <tr><td>vocabulary (12)</td><td>j-pop, j-rock, city pop, anime, vocaloid, enka, children's, classical, jazz, ambient, electronic, japanese folk</td></tr>
+              </tbody></table></div>
+
+            <div class="subslab"><span class="kind">table</span> <code>age_era_affinity</code> <span class="ja">（年代×時代, §5.5）</span><span class="en">age × era</span></div>
+            <div class="scroll-x"><table class="mtx"><thead><tr><th>age ＼ era</th><th>pre1980</th><th>80s</th><th>90s</th><th>00s</th><th>10s</th><th>20s</th></tr></thead>
+              <tbody>
+                <tr><td>30s</td><td><input value="-0.3"></td><td><input value="0.0"></td><td><input value="0.6"></td><td><input value="1.0"></td><td><input value="0.6"></td><td><input value="0.0"></td></tr>
+                <tr><td>60plus</td><td><input value="1.0"></td><td><input value="0.6"></td><td><input value="0.0"></td><td><input value="-0.3"></td><td><input value="-0.5"></td><td><input value="-0.6"></td></tr>
+              </tbody></table></div>
+
+            <div class="subslab"><span class="kind">table</span> <code>norm_bounds</code> ・ <code>history_curves</code></div>
+            <div class="scroll-x"><table class="mtx"><thead><tr><th>norm_bounds</th><th>value</th><th>history_curves</th><th>value</th></tr></thead>
+              <tbody>
+                <tr><td>loudness_min / range</td><td class="mono">−60 / 60</td><td>played ≤30m</td><td class="mono">−1.0</td></tr>
+                <tr><td>tempo_min / range</td><td class="mono">60 / 120</td><td>changed_in_window</td><td class="mono">−0.75</td></tr>
+                <tr><td>tempo_ease center/span</td><td class="mono">110 / 90</td><td>skipped_older</td><td class="mono">−0.5</td></tr>
+                <tr><td>duration_ease center/span</td><td class="mono">180k / 180k</td><td>item_usage high</td><td class="mono">+1.0</td></tr>
+              </tbody></table></div>
+
+            <div class="subslab"><span class="kind">map</span> <code>lighting_lookup</code> <span class="ja">（valence基準の演出キュー）</span><span class="en">valence-based cue</span></div>
+            <div class="scroll-x"><table class="mtx"><thead><tr><th>basis</th><th>high ≥.66</th><th>mid</th><th>low ≤.33</th></tr></thead>
+              <tbody><tr><td>valence</td><td>warm_bright</td><td>neutral</td><td>cool_calm</td></tr></tbody></table></div>
+          </div></details>
+
+        </div>
+      </details>
+
+      <div class="slab"><span class="ja">数式・説明</span><span class="en">Formulation</span><span class="rule"></span></div>
+      <div class="formula"><span class="feat">item_fit</span> <span class="op">=</span> clamp( Σ <span class="coef">wᵢ</span>·<span class="coef">eᵢ</span>·<span class="coef">aᵢ</span> , −1, +1 )</div>
+      <p class="why mono"><span class="ja">各曲の適合度は、要素ごとの <b>証拠 eᵢ</b>（0〜1の大きさ）× <b>応答係数 aᵢ</b>（±の向き＝需要）の重み付き総和。曲は<b>覚醒</b>と<b>明るさ</b>の二軸に還元されます。<b>集計スコアや順位付きプランはありません</b>——順序付きプラン1件のみ。</span><span class="en">Each song's fit is the weighted sum of per-factor <b>evidence eᵢ</b> (0–1 magnitude) × <b>response aᵢ</b> (± direction = demand). Songs reduce to two axes — <b>arousal</b> &amp; <b>valence</b>. <b>No aggregate score, no ranked plans</b> — exactly one ordered plan.</span></p>
+
+      <div class="slab"><span class="ja">プラン（順序付き・5曲）</span><span class="en">Ordered plan (5 items)</span><span class="rule"></span></div>
+
+      <div class="cand content top">
+        <div class="hd"><span class="rk">1</span><span class="nm">Pretender <small>— Official髭男dism</small></span><span class="fit">+0.68</span></div>
+        <div class="bar"><span style="width:84%"></span></div>
+        <details class="reason" open><summary><span class="ja">この曲の理由（item_fit 内訳）</span><span class="en">Why this item (item_fit breakdown)</span></summary>
+          <div class="scroll-x"><table class="contrib">
+            <thead><tr><th><span class="ja">要素</span><span class="en">Factor</span></th><th>e</th><th>a</th><th>w</th><th><span class="ja">寄与</span><span class="en">Contribution</span></th></tr></thead>
+            <tbody>
+              <tr><td><span class="ja">覚醒×眠気需要</span><span class="en">arousal×drowsiness</span></td><td class="mono">0.72</td><td class="mono">+0.80</td><td class="mono">0.34</td><td class="mono pos">+0.196</td></tr>
+              <tr><td><span class="ja">覚醒×単調需要</span><span class="en">arousal×monotony</span></td><td class="mono">0.72</td><td class="mono">+0.90</td><td class="mono">0.30</td><td class="mono pos">+0.194</td></tr>
+              <tr><td><span class="ja">明るさ×夜間</span><span class="en">valence×night</span></td><td class="mono">0.61</td><td class="mono">-0.50</td><td class="mono">0.20</td><td class="mono neg">-0.061</td></tr>
+            </tbody>
+          </table></div>
+          <div class="supopp"><b><span class="ja">支持:</span><span class="en">Supported:</span></b> <span class="tag up">arousal</span> &nbsp; <b><span class="ja">反対:</span><span class="en">Opposed:</span></b> <span class="tag dn">valence(night)</span></div>
+          <p class="rat"><span class="ja">「高覚醒の曲。眠気・単調な状況の覚醒維持需要に強く適合。」</span><span class="en">"High-arousal track; strongly matches the alertness demand of a drowsy, monotonous context."</span></p>
+        </details>
+      </div>
+
+      <div class="cand content">
+        <div class="hd"><span class="rk">2</span><span class="nm">怪獣の花唄 <small>— Vaundy</small></span><span class="fit">+0.63</span></div>
+        <div class="bar"><span style="width:80%"></span></div>
+        <details class="reason"><summary><span class="ja">この曲の理由</span><span class="en">Why this item</span></summary>
+          <p class="rat"><span class="ja">「アップテンポで覚醒に有効、明るさも中程度。」</span><span class="en">"Up-tempo, alerting, moderately bright."</span></p></details>
+      </div>
+      <div class="cand content">
+        <div class="hd"><span class="rk">3</span><span class="nm">アイドル <small>— YOASOBI</small></span><span class="fit">+0.59</span></div>
+        <div class="bar"><span style="width:75%"></span></div>
+        <details class="reason"><summary><span class="ja">この曲の理由</span><span class="en">Why this item</span></summary>
+          <p class="rat"><span class="ja">「高エネルギーで覚醒需要に適合。」</span><span class="en">"High energy; fits the alertness demand."</span></p></details>
+      </div>
+      <div class="cand content">
+        <div class="hd"><span class="rk">4</span><span class="nm">ドライフラワー <small>— 優里</small></span><span class="fit">+0.34</span></div>
+        <div class="bar"><span style="width:56%"></span></div>
+      </div>
+      <div class="cand content">
+        <div class="hd"><span class="rk">5</span><span class="nm">シルエット <small>— KANA-BOON</small></span><span class="fit">+0.41</span></div>
+        <div class="bar"><span style="width:62%"></span></div>
+      </div>
+
+      <p class="excl"><b><span class="ja">除外例</span><span class="en">Excluded examples</span>:</b> <span class="chip no">Lemon <span class="ja">低覚醒</span><span class="en">low arousal</span></span> <span class="chip no">香水 <span class="ja">需要と逆</span><span class="en">opposes demand</span></span></p>
+      <div class="why mono" style="margin-top:10px"><b>plan</b>: mode=playlist · duration≈18min · lighting=n/a · approval=auto · completion_rule=play_through</div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <span class="ja">モックアップ（P1土台・イラスト用の擬似データ）。3パネル: ① 世界 → ② サービス提案 → ③ コンテンツ提案。パラメータ/ハイパーパラメータは編集可、行列は折りたたみ。結果はモック（説明UIは実契約に準拠、後で実アルゴリズムに差替）。日本語デフォルト＋EN切替。</span>
+  <span class="en">Mockup (P1 foundation, illustrative pseudo-data). Three panels: ① World → ② Service → ③ Content. Parameters/hyperparameters editable, matrices collapsible. Results are mock (the explanation UI follows the real contract; real algorithms swap in later). JA default with EN toggle.</span>
+  <br><span class="ja">参照</span><span class="en">Ref</span>: <code>docs/master/aica_proposal_overview_en_ja.html</code>
+</footer>
+</body>
+</html>

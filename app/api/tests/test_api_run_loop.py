@@ -962,6 +962,21 @@ def test_maps_e2e_full_flow(tmp_path, monkeypatch):
     assert chosen["display"] is not None
     assert chosen["display"]["encoded_polyline"], "Display route must carry the encoded polyline"
 
+    # The maps fixture route is short (~150 km / ~90 min): at the current
+    # tick_seconds=180 cadence that's only ~30-36 ticks total, which the
+    # rest_persistence_ticks=6 gate can't reliably clear before the route
+    # completes. Scale up the route length/duration (test-local copy of
+    # route_facts; the underlying maps fixture and analyze response are
+    # untouched) so the run has enough runway to actually fire a proposal —
+    # this test is about the Maps HTTP plumbing (key-safety, route_source,
+    # DisplayRoute persistence), not about exercising a razor-thin
+    # route-length edge case.
+    route_facts = dict(chosen["route_facts"])
+    route_facts["total_route_distance_km"] = route_facts["total_route_distance_km"] * 3
+    route_facts["estimated_route_duration_min"] = (
+        route_facts["estimated_route_duration_min"] * 3
+    )
+
     # ── Step 2: POST /api/run-plans ──────────────────────────────────────────
     # Feature 009: python_module packages have no "require_actionable"
     # hyperparameter (that was a declarative_rule-only actionability-guard
@@ -975,7 +990,7 @@ def test_maps_e2e_full_flow(tmp_path, monkeypatch):
             "scenario_id": VALID_SCENARIO_ID,
             "route_id": chosen["route_id"],
             "route_source": "maps",
-            "route_facts": chosen["route_facts"],
+            "route_facts": route_facts,
             "display_route": chosen["display"],
             "parameters": {},
             "hyperparameters": {},

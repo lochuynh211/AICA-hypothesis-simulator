@@ -275,7 +275,15 @@ def test_create_run_plan_explicit_run_seed_threads_into_persisted_run(monkeypatc
     monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
     client = TestClient(app)
     package_id = _HYBRID_PKG_ID
-    explicit_seed = 999  # non-default; scenario.run_seed_default == 42
+    # non-default; scenario.run_seed_default == 42. Must be a seed whose anomaly
+    # sequence lets the hybrid trigger's rest_required_score clear
+    # rest_persistence_ticks=6 consecutive over-threshold ticks before the
+    # route completes (~35 ticks total under tick_seconds=180) — some seeds'
+    # stochastic anomaly_rate dips the score below threshold_suggest just
+    # before persistence completes, so the run finishes without ever firing.
+    # Verified: seed=100 fires (paused) at tick 26, well within the ~35-tick
+    # route budget.
+    explicit_seed = 100
 
     def _run_to_first_pause_or_completion(run_id: str) -> dict:
         for _ in range(400):
@@ -321,10 +329,10 @@ def test_create_run_plan_explicit_run_seed_threads_into_persisted_run(monkeypatc
 
     # The two seeds must actually drive DIFFERENT anomaly sequences — otherwise
     # this test wouldn't discriminate the bug (the anomaly generator is seeded
-    # per (run_seed, tick, "anomaly"); 999 != 42 must change the fire tick).
+    # per (run_seed, tick, "anomaly"); explicit_seed != 42 must change the fire tick).
     assert explicit_seed_fire_tick != default_seed_fire_tick, (
-        "explicit run_seed=999 and default run_seed=42 produced the SAME fire "
-        "tick — this test fixture can't discriminate the seed-threading bug"
+        f"explicit run_seed={explicit_seed} and default run_seed=42 produced the SAME "
+        "fire tick — this test fixture can't discriminate the seed-threading bug"
     )
 
     # ── /preview with the SAME explicit seed must match the persisted run ──
@@ -475,13 +483,26 @@ def _run_to_first_pause_or_completion(client: TestClient, run_id: str) -> dict:
 
 
 def test_preview_driver_signal_params_override_faithful_and_differs(monkeypatch, tmp_path):
-    """A driver_signal_params override (profiles.driver, higher drowsiness
-    base_growth) must (a) change the preview's fire tick vs. the default, and
-    (b) match a persisted run created with the SAME profiles.driver override."""
+    """A driver_signal_params override (profiles.driver, higher drowsiness AND
+    fatigue base_growth) must (a) change the preview's fire tick vs. the
+    default, and (b) match a persisted run created with the SAME
+    profiles.driver override.
+
+    Note: under the current tuning (tick_seconds=180, threshold_suggest=0.7)
+    a drowsiness-ONLY override saturates the drowsiness feature (band-clamped
+    to 1.0) within a handful of ticks — well before the persistence-gated
+    threshold crossing — so the fire tick becomes fatigue-paced and a
+    drowsiness-only override no longer discriminates from the default.
+    Overriding both signals (a faithful "driver is a lot more fatigue-prone"
+    profile edit) is required to produce a measurable difference.
+    """
     monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path))
     client = TestClient(app)
     package_id = _HYBRID_PKG_ID
-    driver_override = {"drowsiness_model": {"base_growth_per_min": 5.0}}
+    driver_override = {
+        "drowsiness_model": {"base_growth_per_min": 5.0},
+        "fatigue_model": {"base_growth_per_min": 3.0},
+    }
 
     # ── Persisted run WITH the override ────────────────────────────────────
     plan_resp = client.post(

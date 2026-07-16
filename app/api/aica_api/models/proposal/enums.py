@@ -123,3 +123,53 @@ class UsageLevel(str, Enum):
     low = "low"
     med = "med"
     high = "high"
+
+
+# ---------------------------------------------------------------------------
+# P1 enums (data-model.md §Enums, [new])
+# ---------------------------------------------------------------------------
+
+class MotionState(str, Enum):
+    """Vehicle motion state at proposal time (P1 journey-state snapshot)."""
+    driving = "driving"
+    stopped = "stopped"
+
+
+class ProposalPackageFamily(str, Enum):
+    """Which half of the two-step proposal a package fills."""
+    service_selector = "service_selector"
+    content_selector = "content_selector"
+
+
+class ProposalPackageApproach(str, Enum):
+    """Algorithmic approach a package implements."""
+    transparent = "transparent"
+    constrained_llm = "constrained_llm"
+
+
+class ServiceDecisionType(str, Enum):
+    """Outcome category returned by the service selector (spec §5.4 service side)."""
+    ranked_candidates = "ranked_candidates"
+    no_proposal = "no_proposal"
+
+
+class DiscreteEventType(str, Enum):
+    """Discrete event kinds appended to a ``ProposalRunLog`` (shape/enum only in
+    P1; only ``OPPORTUNITY_OPENED``, ``SERVICE_SELECTED``, ``CONTENT_SELECTED``,
+    and ``ALGORITHM_ERROR`` are actually emitted by the P1 mock flow)."""
+    OPPORTUNITY_OPENED = "OPPORTUNITY_OPENED"
+    SERVICE_SELECTED = "SERVICE_SELECTED"
+    CONTENT_SELECTED = "CONTENT_SELECTED"
+    TRIGGER_PURPOSE_CHANGED = "TRIGGER_PURPOSE_CHANGED"
+    REST_SPOT_ARRIVED = "REST_SPOT_ARRIVED"
+    REST_COMPLETED = "REST_COMPLETED"
+    CONTENT_COMPLETED = "CONTENT_COMPLETED"
+    ALGORITHM_ERROR = "ALGORITHM_ERROR"
+
+
+class ProposalRunStatus(str, Enum):
+    """Lifecycle status of a ``ProposalRun``."""
+    created = "created"
+    service_selected = "service_selected"
+    content_selected = "content_selected"
+    error = "error"

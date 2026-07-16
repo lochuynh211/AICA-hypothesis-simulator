@@ -409,6 +409,7 @@
   "description": "Complete content-selector output (C2).\n\nRepresents either a transparent (scored) plan or an LLM-shaped plan.\nThe two shapes differ only in whether ``item_fit`` is populated and\nwhether ``feature_contributions`` is non-empty — the outer structure\nis identical.\n\nINVARIANT: This model and every nested model must contain NO field\nnamed ``plan_score``, ``aggregate_score``, or ``plan_fit``.",
   "properties": {
     "algorithm_provenance": {
+      "additionalProperties": true,
       "title": "Algorithm Provenance",
       "type": "object"
     },
