@@ -67,6 +67,15 @@ EligibilityResult:
 **Invariant (test-enforced)**: no field named `score`, `fit`, `weight`, or `utility` appears on
 `EligibilityExclusion`/`EligibilityResult`.
 
+**Mapping to the frozen selector-input contract**: `EligibilityResult` is the internal engine
+type. When building the service context, `eligible` → `SelectorInput.eligible_candidates`
+(`CandidateRef`) and each `EligibilityExclusion` → `SelectorInput.excluded_candidates`
+(`ExcludedCandidate{candidate_id, platform_reason}`) with `platform_reason` = the reason code(s)
+(join multiple with `","`). No change to the frozen `selector_input.py` shapes. An empty `eligible`
+set (e.g. the empty `during_rest_stopped` matrix row — `SelectorInput.allowed_service_ids` is
+non-empty-validated) short-circuits to a `NO_ELIGIBLE_CANDIDATE` outcome without dispatching a
+selector.
+
 ## JourneyState (extend `journey.py`)
 
 ```

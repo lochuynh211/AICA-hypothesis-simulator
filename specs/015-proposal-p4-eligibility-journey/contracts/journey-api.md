@@ -7,21 +7,28 @@ existing route's response shape is broken; the two selector responses gain reaso
 ## Eligibility (folded into existing STEP-1)
 
 `POST /api/proposal/runs` (existing) — unchanged request. **Behavior change**: the service
-context's `eligible_candidates` is now the motion/capability-narrowed set, and the STEP-1
-`AlgorithmEvidence.excluded_candidates` carries reason-coded exclusions:
+**input context** (persisted verbatim as the STEP-1 evidence `input_snapshot`) now carries the
+motion/capability-narrowed `eligible_candidates` and a reason-coded `excluded_candidates`.
+
+The existing frozen shape is `SelectorInput.excluded_candidates: list[ExcludedCandidate]` where
+`ExcludedCandidate = {candidate_id: str, platform_reason: str}`. P4 populates one entry per
+excluded service; `platform_reason` is a `EligibilityReasonCode` string (join with `","` if more
+than one applies — the internal `EligibilityExclusion.reason_codes` list is mapped down to this
+frozen single-string field). Example `input_snapshot.excluded_candidates`:
 
 ```json
-{
-  "excluded_candidates": [
-    {"candidate_id": "full_karaoke", "reason_codes": ["full_karaoke_requires_stopped"]},
-    {"candidate_id": "stretch_video", "reason_codes": ["stopped_only_while_driving"]},
-    {"candidate_id": "oshi_reexperience", "reason_codes": ["missing_required_entity"]}
-  ]
-}
+[
+  {"candidate_id": "full_karaoke", "platform_reason": "full_karaoke_requires_stopped"},
+  {"candidate_id": "stretch_video", "platform_reason": "stopped_only_while_driving"},
+  {"candidate_id": "oshi_reexperience", "platform_reason": "missing_required_entity"}
+]
 ```
 
-Invariant: no exclusion carries a score/fit/weight. A `background_on_motion` service (e.g.
-`live_viewing`) is **not** excluded while driving — it appears in `eligible_candidates`.
+Invariant: no exclusion carries a score/fit/weight (only `candidate_id` + `platform_reason`). A
+`background_on_motion` service (e.g. `live_viewing`) is **not** excluded while driving — it appears
+in `eligible_candidates`. NOTE: `SelectorInput.allowed_service_ids` has a non-empty validator, so
+an empty allowed row (e.g. `rest_recommended`/`during_rest_stopped`) resolves to a
+`NO_ELIGIBLE_CANDIDATE` outcome at the orchestrator level rather than constructing a `SelectorInput`.
 
 ## POST /api/proposal/runs/{run_id}/journey/action
 
