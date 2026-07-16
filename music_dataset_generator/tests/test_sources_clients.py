@@ -33,7 +33,11 @@ class FakeSession:
         self.calls = []
 
     def get(self, url, *, params=None, headers=None, timeout=None):
-        self.calls.append({"url": url, "params": params, "headers": headers})
+        self.calls.append({"method": "GET", "url": url, "params": params, "headers": headers})
+        return self._responses.pop(0)
+
+    def post(self, url, *, data=None, headers=None, timeout=None):
+        self.calls.append({"method": "POST", "url": url, "data": data, "headers": headers})
         return self._responses.pop(0)
 
 
@@ -94,6 +98,47 @@ def test_soundcharts_search_is_strategy_unavailable() -> None:
     with pytest.raises(MdgFatalError) as exc:
         client.search(query="anything")
     assert exc.value.code == ErrorCode.strategy_unavailable
+
+
+# ---------------------------------------------------------------------------
+# Soundcharts OAuth client-credentials
+# ---------------------------------------------------------------------------
+
+_TOKEN_RESPONSE = {"access_token": "tok-abc", "token_type": "bearer", "expires_in": 900}
+
+
+def test_oauth_fetches_token_then_sends_bearer() -> None:
+    session = FakeSession([FakeResponse(_TOKEN_RESPONSE), FakeResponse(_SC_BY_ISRC)])
+    client = SoundchartsClient(client_id="cid", client_secret="secret", session=session)
+    song = client.by_isrc("JPXX01900123")
+    assert song["name"] == "Night Runner"
+    # first call is the token POST, second is the Bearer GET
+    assert session.calls[0]["method"] == "POST"
+    assert "oauth/token" in session.calls[0]["url"]
+    assert session.calls[1]["headers"]["Authorization"] == "Bearer tok-abc"
+
+
+def test_oauth_token_is_cached_across_calls() -> None:
+    session = FakeSession([FakeResponse(_TOKEN_RESPONSE),
+                           FakeResponse(_SC_BY_ISRC), FakeResponse(_SC_BY_ISRC)])
+    client = SoundchartsClient(client_id="cid", client_secret="secret", session=session)
+    client.by_isrc("JPXX01900123")
+    client.by_isrc("JPXX01900123")
+    posts = [c for c in session.calls if c["method"] == "POST"]
+    assert len(posts) == 1  # token fetched once, reused
+
+
+def test_oauth_token_failure_raises() -> None:
+    session = FakeSession([FakeResponse({"error": "invalid_client"}, status_code=401)])
+    client = SoundchartsClient(client_id="cid", client_secret="bad", session=session)
+    with pytest.raises(MdgFatalError) as exc:
+        client.by_isrc("JPXX01900123")
+    assert exc.value.code == ErrorCode.soundcharts_harvest_failed
+
+
+def test_requires_some_credentials() -> None:
+    with pytest.raises(ValueError):
+        SoundchartsClient(session=FakeSession([]))
 
 
 # ---------------------------------------------------------------------------

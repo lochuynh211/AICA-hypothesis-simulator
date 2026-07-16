@@ -80,15 +80,42 @@ def load_secrets_file(path: Optional[Path] = None) -> None:
 
 
 def soundcharts_credentials() -> Optional[tuple[str, str]]:
-    """Return (app_id, api_key) from the environment, or None if either is unset.
+    """Return (app_id, api_key) legacy credentials from the environment, or None.
 
-    Credentials are read from the environment only. As a convenience for the operator, a
-    local gitignored ``soundcharts.env`` file (if present) is loaded into the environment
-    first — it is never written to, committed, or logged (FR-011).
+    Kept for the legacy scheme and the public sandbox. Prefer :func:`soundcharts_auth`.
     """
     load_secrets_file()
     app_id = os.environ.get("SOUNDCHARTS_APP_ID")
     api_key = os.environ.get("SOUNDCHARTS_API_KEY")
     if app_id and api_key:
         return (app_id, api_key)
+    return None
+
+
+def soundcharts_auth() -> Optional[dict]:
+    """Resolve Soundcharts auth from the environment, preferring OAuth.
+
+    Returns one of:
+    - ``{"mode": "oauth", "client_id", "client_secret", "team_id"?}`` when
+      ``SOUNDCHARTS_CLIENT_ID`` + ``SOUNDCHARTS_CLIENT_SECRET`` are set (recommended), or
+    - ``{"mode": "legacy", "app_id", "api_key"}`` when ``SOUNDCHARTS_APP_ID`` +
+      ``SOUNDCHARTS_API_KEY`` are set (also the public sandbox), or
+    - ``None`` when neither pair is present.
+
+    Credentials are read from the environment only (the local gitignored secrets file is
+    loaded first); never written, committed, or logged (FR-011).
+    """
+    load_secrets_file()
+    client_id = os.environ.get("SOUNDCHARTS_CLIENT_ID")
+    client_secret = os.environ.get("SOUNDCHARTS_CLIENT_SECRET")
+    if client_id and client_secret:
+        auth = {"mode": "oauth", "client_id": client_id, "client_secret": client_secret}
+        team_id = os.environ.get("SOUNDCHARTS_TEAM_ID")
+        if team_id:
+            auth["team_id"] = team_id
+        return auth
+    app_id = os.environ.get("SOUNDCHARTS_APP_ID")
+    api_key = os.environ.get("SOUNDCHARTS_API_KEY")
+    if app_id and api_key:
+        return {"mode": "legacy", "app_id": app_id, "api_key": api_key}
     return None

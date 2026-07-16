@@ -21,6 +21,9 @@ class Session(Protocol):
     def get(self, url: str, *, params: Any = None, headers: Any = None,
             timeout: Any = None) -> Response: ...
 
+    def post(self, url: str, *, data: Any = None, headers: Any = None,
+             timeout: Any = None) -> Response: ...
+
 
 def default_session() -> Session:
     """Create a real httpx-backed session (imported lazily; live use only)."""

@@ -50,17 +50,23 @@ def _paths(args: argparse.Namespace):
 
 def _require_soundcharts():
     from mdg import config
+    from mdg.sources.soundcharts import SoundchartsClient
 
-    creds = config.soundcharts_credentials()
-    if creds is None:
+    auth = config.soundcharts_auth()
+    if auth is None:
         print(
-            "mdg: SOUNDCHARTS_APP_ID / SOUNDCHARTS_API_KEY not set in the environment",
+            "mdg: no Soundcharts credentials — set SOUNDCHARTS_CLIENT_ID + "
+            "SOUNDCHARTS_CLIENT_SECRET (OAuth) or SOUNDCHARTS_APP_ID + SOUNDCHARTS_API_KEY "
+            "(legacy) in the environment or generation_workspace/soundcharts.env",
             file=sys.stderr,
         )
         raise SystemExit(2)
-    from mdg.sources.soundcharts import SoundchartsClient
-
-    return SoundchartsClient(app_id=creds[0], api_key=creds[1])
+    if auth["mode"] == "oauth":
+        return SoundchartsClient(
+            client_id=auth["client_id"], client_secret=auth["client_secret"],
+            team_id=auth.get("team_id"),
+        )
+    return SoundchartsClient(app_id=auth["app_id"], api_key=auth["api_key"])
 
 
 def _cmd_plan(args: argparse.Namespace) -> None:

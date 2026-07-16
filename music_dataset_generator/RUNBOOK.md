@@ -10,12 +10,15 @@ network or an LLM. The deterministic transform runs with no agent present.
 ## Prerequisites
 
 - Python 3.12 + `uv`. From `music_dataset_generator/`.
-- Live harvest only — Soundcharts credentials, two options (never committed/logged):
-  - **Env var:** `export SOUNDCHARTS_APP_ID=… SOUNDCHARTS_API_KEY=…`, or
-  - **Local file:** put them in `generation_workspace/soundcharts.env` (KEY=VALUE lines;
-    the whole `generation_workspace/` tree is gitignored so it can never be committed).
-    Copy `music_dataset_generator/soundcharts.env.example` as a starting point. The CLI
-    reads this file into the environment automatically; an explicit `export` overrides it.
+- Live harvest only — Soundcharts credentials (never committed/logged). Two auth schemes:
+  - **OAuth (recommended):** `SOUNDCHARTS_CLIENT_ID` + `SOUNDCHARTS_CLIENT_SECRET`
+    (+ optional `SOUNDCHARTS_TEAM_ID`). The client exchanges these for a short-lived
+    Bearer token (`account.soundcharts.com/oauth/token`) and refreshes it automatically.
+  - **Legacy:** `SOUNDCHARTS_APP_ID` + `SOUNDCHARTS_API_KEY` (also the public sandbox
+    `soundcharts`/`soundcharts`).
+  - Supply either via `export …` or a gitignored `generation_workspace/soundcharts.env`
+    (KEY=VALUE lines; copy `music_dataset_generator/soundcharts.env.example`). The CLI
+    reads the file automatically; an explicit `export` overrides it.
   - MusicBrainz + Deezer need no credentials.
 - Default `candidate_source` is `isrc_resolved` (the `soundcharts_search` search-by-metric
   endpoint is unavailable on the current subscription → `strategy_unavailable`).
