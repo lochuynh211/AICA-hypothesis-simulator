@@ -28,6 +28,11 @@ specific, now-in-scope endpoint family while continuing to forbid the
 others (motion/catalog/schedule eligibility-narrowing endpoints, which still
 do not exist as dedicated routes — eligibility narrowing rides the existing
 STEP-1 ``POST /api/proposal/runs`` response per contracts/journey-api.md).
+
+UPDATE (P4, US5, T029-T030): a second journey endpoint is deliberately
+added — ``GET /api/proposal/runs/{run_id}/journey/preview`` (the read-only,
+non-binding rolling-horizon preview; spec.md FR-017/SC-007). Allow-listed
+below alongside ``journey/action`` for the same reason.
 """
 from __future__ import annotations
 
@@ -117,6 +122,7 @@ def test_no_eligibility_narrowing_or_journey_progression_endpoints_exist():
     # P4 (feature 015) deliberately-added journey endpoints (allow-listed).
     _known_journey_paths = {
         "/api/proposal/runs/{run_id}/journey/action",
+        "/api/proposal/runs/{run_id}/journey/preview",
     }
 
     forbidden_substrings = (

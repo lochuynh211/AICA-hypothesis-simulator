@@ -53,6 +53,7 @@ from aica_api.models.proposal.enums import (
 from aica_api.models.proposal.events import DiscreteEvent
 from aica_api.models.proposal.journey import JourneyState
 from aica_api.models.proposal.journey_action import JourneyAction
+from aica_api.models.proposal.journey_preview import JourneyPreview
 from aica_api.models.proposal.matrix import MatrixResolutionError, PurposeStageServiceMatrix
 from aica_api.models.proposal.opportunity import ProposalOpportunity
 from aica_api.models.proposal.package_manifest import BilingualLabel, ProposalPackageManifest
@@ -77,6 +78,7 @@ from aica_api.services.driver_profile_store import (
 )
 from aica_api.services.proposal_eligibility import derive_registered_entities, resolve_eligibility
 from aica_api.services.proposal_journey import apply_action
+from aica_api.services.proposal_journey_preview import preview as build_journey_preview
 from aica_api.services.proposal_package_registry import ProposalPackageRegistry
 from aica_api.services.proposal_selector import dispatch_selector
 from aica_api.services.world_clone_store import InvalidOverrideError, WorldCloneStore
@@ -1271,3 +1273,25 @@ def apply_journey_action(run_id: str, action: JourneyAction) -> ProposalRunLog:
         journey_state=transition.new_journey_state,
     )
     return run_log
+
+
+# ---------------------------------------------------------------------------
+# GET /api/proposal/runs/{run_id}/journey/preview — T029-T030 (US5, P4)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/proposal/runs/{run_id}/journey/preview")
+def get_journey_preview(run_id: str) -> JourneyPreview:
+    """Non-binding rolling-horizon preview (spec.md User Story 5; FR-017;
+    SC-007; contracts/journey-api.md §"GET .../journey/preview").
+
+    PURE READ: loads the persisted run and projects the preview via
+    ``proposal_journey_preview.preview`` — no selector is invoked, and this
+    handler never appends an event/evidence or calls ``update_state``. The
+    run's on-disk file and ``GET /runs/{id}`` response are byte-identical
+    before and after this call.
+    """
+    run_log = prm.get_run(run_id, settings.proposal_runs_dir)
+    if run_log is None:
+        raise HTTPException(status_code=404, detail=f"Proposal run {run_id!r} not found")
+    return build_journey_preview(run_log)
