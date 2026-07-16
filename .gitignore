@@ -45,3 +45,6 @@ proposal_worlds/
 generation_workspace/soundcharts.env
 generation_workspace/*.env
 generation_workspace/**/*.env
+
+# SpecKit implementation-scratch subagent reports + review packages
+specs/*/.reports/
