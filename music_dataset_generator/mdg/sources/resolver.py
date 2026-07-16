@@ -20,6 +20,16 @@ def _year(date: str | None) -> int | None:
         return None
 
 
+def _coerce_year(year) -> int | None:
+    """Coerce a release_year (int or numeric string) to int; None if unparseable."""
+    if year is None:
+        return None
+    try:
+        return int(str(year)[:4])
+    except (ValueError, TypeError):
+        return None
+
+
 class ISRCResolver:
     def __init__(self, musicbrainz, deezer) -> None:
         self._mb = musicbrainz
@@ -27,6 +37,7 @@ class ISRCResolver:
 
     def resolve(self, title: str, artist: str, year: int | None) -> list[str]:
         """Return an ordered, deduped candidate-ISRC list; raise if none found."""
+        year = _coerce_year(year)  # tolerate a string release_year from the handoff
         # (isrc -> earliest known release date) so dedup keeps the original release.
         best_date: dict[str, str | None] = {}
 
