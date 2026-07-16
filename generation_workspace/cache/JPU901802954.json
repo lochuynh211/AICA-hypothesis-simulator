@@ -1,5 +1,5 @@
 {
-  "appUrl": "https://app.soundcharts.com/app/song/a997511e-cdd8-11e8-a86b-549f35161576/overview",
+  "appUrl": "https://app.soundcharts.com/app/song/f48ad968-ed48-11e8-805d-549f35141000/overview",
   "artists": [
     {
       "appUrl": "https://app.soundcharts.com/app/artist/tk-from-ling-tosite-sigure/overview",
@@ -10,18 +10,18 @@
     }
   ],
   "audio": {
-    "acousticness": 0.22,
-    "danceability": 0.66,
-    "energy": 0.71,
+    "acousticness": 0.04,
+    "danceability": 0.56,
+    "energy": 0.83,
     "instrumentalness": 0,
     "key": 8,
-    "liveness": 0.23,
-    "loudness": -4.05,
+    "liveness": 0.16,
+    "loudness": -3.19,
     "mode": 1,
-    "speechiness": 0.16,
-    "tempo": 144.05,
+    "speechiness": 0.15,
+    "tempo": 144.28,
     "timeSignature": 4,
-    "valence": 0.44
+    "valence": 0.39
   },
   "composers": [
     "TK"
@@ -36,10 +36,18 @@
         "lyricist"
       ],
       "uuid": "e13a4de1-8023-4ab5-87c3-ce45f41315bb"
+    },
+    {
+      "name": "TK",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "c436efe8-b54a-43ea-a9ae-7cde5358a550"
     }
   ],
   "distributor": "Sony",
-  "duration": 93,
+  "duration": 266,
   "explicit": false,
   "genres": [
     {
@@ -49,11 +57,11 @@
       ]
     }
   ],
-  "imageUrl": "https://assets.soundcharts.com/song/8/d/d/a997511e-cdd8-11e8-a86b-549f35161576.jpg",
+  "imageUrl": "https://assets.soundcharts.com/song/8/4/d/f48ad968-ed48-11e8-805d-549f35141000.jpg",
   "isrc": {
     "countryCode": "JP",
     "countryName": "Japan",
-    "value": "JPU901802955"
+    "value": "JPU901802954"
   },
   "iswcs": [
     "T9275551661",
@@ -75,8 +83,8 @@
       "uuid": "11e83fe6-e92f-26e2-9968-aa1c026db3d8"
     }
   ],
-  "name": "katharsis (TV edit)",
+  "name": "katharsis",
   "producers": [],
-  "releaseDate": "2018-10-10T00:00:00+00:00",
-  "uuid": "a997511e-cdd8-11e8-a86b-549f35161576"
+  "releaseDate": "2018-11-21T00:00:00+00:00",
+  "uuid": "f48ad968-ed48-11e8-805d-549f35141000"
 }

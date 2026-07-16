@@ -2,16 +2,16 @@
   {
     "test_case_id": "tc-01",
     "world_ref": "world-night-highway-high-drowsiness",
-    "candidate_song_ref": "synthetic-track-0129",
+    "candidate_song_ref": "synthetic-track-0021",
     "expected_label": "positive",
     "judge_folds": {
-      "context_need": "drowsy→high energy",
+      "context_need": "drowsy→energy",
       "mood_genre_fit": "blind",
       "era_cultural_fit": "n/a",
       "coherence": "ok",
       "web_evidence": "known"
     },
-    "algorithm_score": 0.06221872557688743,
+    "algorithm_score": 0.02387700539818362,
     "agreement": "disagree",
     "contrast_partner": null,
     "expected_direction": null
@@ -19,10 +19,10 @@
   {
     "test_case_id": "tc-02",
     "world_ref": "world-night-highway-high-drowsiness",
-    "candidate_song_ref": "synthetic-track-0050",
+    "candidate_song_ref": "synthetic-track-0051",
     "expected_label": "positive",
     "judge_folds": {
-      "context_need": "drowsy→energetic",
+      "context_need": "drowsy→energy",
       "mood_genre_fit": "blind",
       "era_cultural_fit": "n/a",
       "coherence": "ok",
@@ -53,17 +53,17 @@
   {
     "test_case_id": "tc-04",
     "world_ref": "world-night-highway-high-drowsiness",
-    "candidate_song_ref": "synthetic-track-0001",
+    "candidate_song_ref": "synthetic-track-0002",
     "expected_label": "negative",
     "judge_folds": {
-      "context_need": "drowsy→soothing bad",
+      "context_need": "drowsy→calm bad",
       "mood_genre_fit": "blind",
       "era_cultural_fit": "n/a",
       "coherence": "ok",
       "web_evidence": "known"
     },
-    "algorithm_score": -0.13096115315704931,
-    "agreement": "agree",
+    "algorithm_score": -0.0425514163474608,
+    "agreement": "disagree",
     "contrast_partner": null,
     "expected_direction": null
   },
@@ -73,7 +73,7 @@
     "candidate_song_ref": "synthetic-track-0017",
     "expected_label": "positive",
     "judge_folds": {
-      "context_need": "calm→gentle fits",
+      "context_need": "calm fits",
       "mood_genre_fit": "blind",
       "era_cultural_fit": "n/a",
       "coherence": "ok",
@@ -87,33 +87,33 @@
   {
     "test_case_id": "tc-06",
     "world_ref": "world-daytime-commute",
-    "candidate_song_ref": "synthetic-track-0001",
+    "candidate_song_ref": "synthetic-track-0002",
     "expected_label": "neutral",
     "judge_folds": {
-      "context_need": "calm unremarkable",
+      "context_need": "unremarkable",
       "mood_genre_fit": "blind",
       "era_cultural_fit": "n/a",
       "coherence": "ok",
       "web_evidence": "known"
     },
-    "algorithm_score": -0.12008560484369207,
-    "agreement": "disagree",
+    "algorithm_score": -0.03167586803410355,
+    "agreement": "agree",
     "contrast_partner": null,
     "expected_direction": null
   },
   {
     "test_case_id": "tc-07",
     "world_ref": "world-daytime-commute",
-    "candidate_song_ref": "synthetic-track-0129",
+    "candidate_song_ref": "synthetic-track-0021",
     "expected_label": "negative",
     "judge_folds": {
-      "context_need": "calm→jarring",
+      "context_need": "jarring",
       "mood_genre_fit": "blind",
       "era_cultural_fit": "n/a",
       "coherence": "ok",
       "web_evidence": "known"
     },
-    "algorithm_score": 0.04037845379494624,
+    "algorithm_score": 0.02679713680032126,
     "agreement": "disagree",
     "contrast_partner": null,
     "expected_direction": null
@@ -121,10 +121,10 @@
   {
     "test_case_id": "tc-08",
     "world_ref": "world-daytime-commute",
-    "candidate_song_ref": "synthetic-track-0050",
+    "candidate_song_ref": "synthetic-track-0051",
     "expected_label": "neutral",
     "judge_folds": {
-      "context_need": "energetic ok",
+      "context_need": "ok bg",
       "mood_genre_fit": "blind",
       "era_cultural_fit": "n/a",
       "coherence": "ok",

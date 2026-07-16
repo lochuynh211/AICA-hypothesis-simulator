@@ -69,6 +69,20 @@ def test_real_isrc_kept(fixtures_dir: Path) -> None:
     assert song["spotify_track"]["external_ids"]["isrc"] == "JPXX01900123"
 
 
+def test_language_code_stored_and_song_still_valid(fixtures_dir: Path) -> None:
+    song = CatalogMapper(seed=1042).map_song(_load(fixtures_dir, "JPXX01900123"))
+    assert song["spotify_track"]["language"] == "ja"  # real Soundcharts languageCode
+    Song.model_validate(song)  # extra field in spotify_track validates cleanly (extra=ignore)
+
+
+def test_language_none_for_instrumental(fixtures_dir: Path) -> None:
+    payload = _load(fixtures_dir, "JPXX01900123")
+    payload["languageCode"] = None  # instrumental — no lyrics
+    song = CatalogMapper(seed=1042).map_song(payload)
+    assert song["spotify_track"]["language"] is None
+    Song.model_validate(song)
+
+
 def test_synthesized_fields_present(fixtures_dir: Path) -> None:
     song = CatalogMapper(seed=1042).map_song(_load(fixtures_dir, "JPXX01900123"))
     track = song["spotify_track"]

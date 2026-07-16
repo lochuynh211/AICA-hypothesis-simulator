@@ -1,0 +1,82 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/9eca1290-20b5-4123-a3f8-1c824e372feb/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mariya-takeuchi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/6/5/11e81bd3-0562-4566-a22f-a0369fe50396.jpg",
+      "name": "Mariya Takeuchi",
+      "slug": "mariya-takeuchi",
+      "uuid": "11e81bd3-0562-4566-a22f-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.07,
+    "danceability": 0.65,
+    "energy": 0.88,
+    "instrumentalness": 0,
+    "key": 2,
+    "liveness": 0.2,
+    "loudness": -5.14,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 102.52,
+    "timeSignature": 4,
+    "valence": 0.86
+  },
+  "composers": [
+    "Mariya Takeuchi"
+  ],
+  "copyright": "℗ 2008 This Compilation 2008 Warner Music Japan inc.",
+  "creditName": "Mariya Takeuchi",
+  "credits": [
+    {
+      "name": "Tatsuro Yamashita",
+      "roles": [
+        "producer",
+        "arranger"
+      ],
+      "uuid": "a0fca245-33bc-4a31-b307-dd938d5a4b17"
+    },
+    {
+      "name": "竹内まりや",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "5a2ba99f-246e-4596-a509-8893b88fad93"
+    }
+  ],
+  "distributor": "Warner",
+  "duration": 294,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/5/b/0/9eca1290-20b5-4123-a3f8-1c824e372feb.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPWP01801549"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Warner",
+      "type": "Warner"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mariya-takeuchi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/6/5/11e81bd3-0562-4566-a22f-a0369fe50396.jpg",
+      "name": "Mariya Takeuchi",
+      "slug": "mariya-takeuchi",
+      "uuid": "11e81bd3-0562-4566-a22f-a0369fe50396"
+    }
+  ],
+  "name": "プラスティック・ラヴ",
+  "producers": [
+    "Tatsuro Yamashita"
+  ],
+  "releaseDate": "2008-05-21T00:00:00+00:00",
+  "uuid": "9eca1290-20b5-4123-a3f8-1c824e372feb"
+}

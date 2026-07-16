@@ -1,218 +1,110 @@
 [
   {
+    "title": "Experience",
+    "artist": "Ludovico Einaudi",
+    "release_year": 2013,
+    "expected_language": null,
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
+    "web_evidence": []
+  },
+  {
+    "title": "Kawa no Nagare no Yo ni",
+    "artist": "Hibari Misora",
+    "release_year": 1989,
+    "expected_language": "ja",
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
+    "web_evidence": []
+  },
+  {
+    "title": "Iron Man",
+    "artist": "Black Sabbath",
+    "release_year": 1970,
+    "expected_language": "en",
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
+    "web_evidence": []
+  },
+  {
+    "title": "Hocus Pocus",
+    "artist": "Focus",
+    "release_year": 1971,
+    "expected_language": null,
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
+    "web_evidence": []
+  },
+  {
+    "title": "Pick Up the Pieces",
+    "artist": "Average White Band",
+    "release_year": 1974,
+    "expected_language": null,
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
+    "web_evidence": []
+  },
+  {
+    "title": "Que Sera Sera",
+    "artist": "Mrs. GREEN APPLE",
+    "release_year": 2023,
+    "expected_language": "ja",
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
+    "web_evidence": []
+  },
+  {
+    "title": "Gurenge",
+    "artist": "LiSA",
+    "release_year": 2019,
+    "expected_language": "ja",
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
+    "web_evidence": []
+  },
+  {
+    "title": "The Girl from Ipanema",
+    "artist": "Stan Getz",
+    "release_year": 1964,
+    "expected_language": "en",
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
+    "web_evidence": []
+  },
+  {
+    "title": "Dance Hall",
+    "artist": "Mrs. GREEN APPLE",
+    "release_year": 2023,
+    "expected_language": "ja",
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
+    "web_evidence": []
+  },
+  {
+    "title": "YYZ",
+    "artist": "Rush",
+    "release_year": 1981,
+    "expected_language": null,
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
+    "web_evidence": []
+  },
+  {
     "title": "Pretender",
     "artist": "Official HIGE DANdism",
     "release_year": 2019,
     "expected_language": "ja",
-    "target_cell_id": "E-hi_T-md_P-bv",
-    "why_fits_cell": "already? diff take",
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
     "web_evidence": []
   },
   {
-    "title": "Yura Yura",
-    "artist": "Hitomitoi",
-    "release_year": 2011,
+    "title": "Plastic Love",
+    "artist": "Mariya Takeuchi",
+    "release_year": 1984,
     "expected_language": "ja",
-    "target_cell_id": "E-lo_T-md_P-dv",
-    "why_fits_cell": "city pop revival",
-    "web_evidence": []
-  },
-  {
-    "title": "Night Tempo",
-    "artist": "Night Tempo",
-    "release_year": 2020,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-dv",
-    "why_fits_cell": "future funk",
-    "web_evidence": []
-  },
-  {
-    "title": "Sweet Memories",
-    "artist": "Seiko Matsuda",
-    "release_year": 1983,
-    "expected_language": "ja",
-    "target_cell_id": "E-lo_T-lo_P-bv",
-    "why_fits_cell": "showa pop",
-    "web_evidence": []
-  },
-  {
-    "title": "Aoi Sangosho",
-    "artist": "Seiko Matsuda",
-    "release_year": 1980,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "showa idol",
-    "web_evidence": []
-  },
-  {
-    "title": "Rouge no Dengon",
-    "artist": "Yumi Matsutoya",
-    "release_year": 1975,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic",
-    "web_evidence": []
-  },
-  {
-    "title": "Hikoukigumo",
-    "artist": "Yumi Arai",
-    "release_year": 1973,
-    "expected_language": "ja",
-    "target_cell_id": "E-lo_T-lo_P-bv",
-    "why_fits_cell": "classic ballad",
-    "web_evidence": []
-  },
-  {
-    "title": "Sweetest Coffee",
-    "artist": "Suchmos",
-    "release_year": 2016,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-dv",
-    "why_fits_cell": "jazzy pop",
-    "web_evidence": []
-  },
-  {
-    "title": "Stay Tune",
-    "artist": "Suchmos",
-    "release_year": 2016,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-dv",
-    "why_fits_cell": "jazz funk",
-    "web_evidence": []
-  },
-  {
-    "title": "Pretender",
-    "artist": "Gen Hoshino",
-    "release_year": 2018,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-dv",
-    "why_fits_cell": "funk",
-    "web_evidence": []
-  },
-  {
-    "title": "Same Thing",
-    "artist": "Gen Hoshino",
-    "release_year": 2019,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-dv",
-    "why_fits_cell": "funk",
-    "web_evidence": []
-  },
-  {
-    "title": "Fushigi",
-    "artist": "Gen Hoshino",
-    "release_year": 2021,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-dv",
-    "why_fits_cell": "funk pop",
-    "web_evidence": []
-  },
-  {
-    "title": "Dramatic",
-    "artist": "Maki Ohguro",
-    "release_year": 1994,
-    "expected_language": "ja",
-    "target_cell_id": "E-hi_T-md_P-bv",
-    "why_fits_cell": "90s pop",
-    "web_evidence": []
-  },
-  {
-    "title": "Robinson",
-    "artist": "Spitz",
-    "release_year": 1995,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "rock classic",
-    "web_evidence": []
-  },
-  {
-    "title": "Cherry",
-    "artist": "Spitz",
-    "release_year": 1996,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "rock",
-    "web_evidence": []
-  },
-  {
-    "title": "Sekai ni Hitotsu Dake no Hana",
-    "artist": "SMAP",
-    "release_year": 2003,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-lo_P-bv",
-    "why_fits_cell": "pop ballad",
-    "web_evidence": []
-  },
-  {
-    "title": "Tsunami",
-    "artist": "Southern All Stars",
-    "release_year": 2000,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "rock ballad",
-    "web_evidence": []
-  },
-  {
-    "title": "Ah, Ii Musume",
-    "artist": "Southern All Stars",
-    "release_year": 2013,
-    "expected_language": "ja",
-    "target_cell_id": "E-hi_T-md_P-bv",
-    "why_fits_cell": "rock",
-    "web_evidence": []
-  },
-  {
-    "title": "Secret Base",
-    "artist": "ZONE",
-    "release_year": 2001,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "pop",
-    "web_evidence": []
-  },
-  {
-    "title": "Sobakasu",
-    "artist": "Judy and Mary",
-    "release_year": 1996,
-    "expected_language": "ja",
-    "target_cell_id": "E-hi_T-hi_P-bv",
-    "why_fits_cell": "anime rock",
-    "web_evidence": []
-  },
-  {
-    "title": "Ready Steady Go",
-    "artist": "L'Arc-en-Ciel",
-    "release_year": 2004,
-    "expected_language": "ja",
-    "target_cell_id": "E-hi_T-hi_P-bv",
-    "why_fits_cell": "anime rock",
-    "web_evidence": []
-  },
-  {
-    "title": "Blurry Eyes",
-    "artist": "L'Arc-en-Ciel",
-    "release_year": 1994,
-    "expected_language": "ja",
-    "target_cell_id": "E-hi_T-md_P-bv",
-    "why_fits_cell": "rock",
-    "web_evidence": []
-  },
-  {
-    "title": "The Everlasting Guilty Crown",
-    "artist": "EGOIST",
-    "release_year": 2013,
-    "expected_language": "ja",
-    "target_cell_id": "E-hi_T-hi_P-bv",
-    "why_fits_cell": "anime",
-    "web_evidence": []
-  },
-  {
-    "title": "Departures",
-    "artist": "Ayaka Hirahara",
-    "release_year": 2005,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-lo_P-bv",
-    "why_fits_cell": "ballad",
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
     "web_evidence": []
   },
   {
@@ -220,44 +112,44 @@
     "artist": "Ayaka Hirahara",
     "release_year": 2003,
     "expected_language": "ja",
-    "target_cell_id": "E-lo_T-lo_P-bv",
-    "why_fits_cell": "classical crossover",
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
     "web_evidence": []
   },
   {
-    "title": "Story",
-    "artist": "AI",
-    "release_year": 2005,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-lo_P-bv",
-    "why_fits_cell": "rnb ballad",
+    "title": "The Trooper",
+    "artist": "Iron Maiden",
+    "release_year": 1983,
+    "expected_language": "en",
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
     "web_evidence": []
   },
   {
-    "title": "Real Face",
-    "artist": "KAT-TUN",
-    "release_year": 2006,
-    "expected_language": "ja",
-    "target_cell_id": "E-hi_T-md_P-bv",
-    "why_fits_cell": "pop rock",
+    "title": "Cliffs of Dover",
+    "artist": "Eric Johnson",
+    "release_year": 1990,
+    "expected_language": null,
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
     "web_evidence": []
   },
   {
-    "title": "Sugar Song to Bitter Step",
-    "artist": "UNISON SQUARE GARDEN",
-    "release_year": 2015,
-    "expected_language": "ja",
-    "target_cell_id": "E-hi_T-hi_P-bv",
-    "why_fits_cell": "anime rock",
+    "title": "Jessica",
+    "artist": "The Allman Brothers Band",
+    "release_year": 1973,
+    "expected_language": null,
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
     "web_evidence": []
   },
   {
-    "title": "Silhouette",
-    "artist": "KANA-BOON",
-    "release_year": 2014,
-    "expected_language": "ja",
-    "target_cell_id": "E-hi_T-hi_P-bv",
-    "why_fits_cell": "anime rock",
+    "title": "Cantaloupe Island",
+    "artist": "Herbie Hancock",
+    "release_year": 1964,
+    "expected_language": null,
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
     "web_evidence": []
   },
   {
@@ -265,62 +157,44 @@
     "artist": "Linked Horizon",
     "release_year": 2013,
     "expected_language": "ja",
-    "target_cell_id": "E-hi_T-md_P-bv",
-    "why_fits_cell": "anime",
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
     "web_evidence": []
   },
   {
-    "title": "SICKO MODE",
-    "artist": "Travis Scott",
-    "release_year": 2018,
-    "expected_language": "en",
-    "target_cell_id": "E-hi_T-lo_P-sf",
-    "why_fits_cell": "half-time trap",
+    "title": "Aquarela do Brasil",
+    "artist": "Ary Barroso",
+    "release_year": 1939,
+    "expected_language": null,
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
     "web_evidence": []
   },
   {
-    "title": "The Box",
-    "artist": "Roddy Ricch",
-    "release_year": 2019,
-    "expected_language": "en",
-    "target_cell_id": "E-hi_T-lo_P-sf",
-    "why_fits_cell": "trap",
-    "web_evidence": []
-  },
-  {
-    "title": "Slow Dancing in the Dark",
-    "artist": "Joji",
-    "release_year": 2018,
-    "expected_language": "en",
-    "target_cell_id": "E-lo_T-md_P-dv",
-    "why_fits_cell": "chill",
-    "web_evidence": []
-  },
-  {
-    "title": "Glimpse of Us",
-    "artist": "Joji",
-    "release_year": 2022,
+    "title": "Universe",
+    "artist": "Official HIGE DANdism",
+    "release_year": 2021,
     "expected_language": "ja",
-    "target_cell_id": "E-lo_T-lo_P-bv",
-    "why_fits_cell": "ballad",
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
     "web_evidence": []
   },
   {
-    "title": "The Girl from Ipanema",
-    "artist": "Astrud Gilberto",
-    "release_year": 1963,
-    "expected_language": "pt",
-    "target_cell_id": "E-lo_T-hi_P-dv",
-    "why_fits_cell": "bossa vocal",
+    "title": "Katharsis",
+    "artist": "TK from Ling Tosite Sigure",
+    "release_year": 2019,
+    "expected_language": "ja",
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
     "web_evidence": []
   },
   {
-    "title": "Agua de Beber",
-    "artist": "Astrud Gilberto",
-    "release_year": 1965,
-    "expected_language": "en",
-    "target_cell_id": "E-lo_T-hi_P-dv",
-    "why_fits_cell": "bossa",
+    "title": "Sobakasu",
+    "artist": "JUDY AND MARY",
+    "release_year": 1996,
+    "expected_language": "ja",
+    "target_cell_id": "",
+    "why_fits_cell": "studio re-harvest",
     "web_evidence": []
   }
 ]

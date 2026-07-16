@@ -64,6 +64,30 @@ def test_deezer_only_source_works() -> None:
     assert resolver.resolve("X", "Y", 2020) == ["DZONLY"]
 
 
+def test_variant_editions_ranked_after_studio_original() -> None:
+    # Studio original + a karaoke edition, both year-matching. Studio must rank first so
+    # the harvester tries the canonical version before the karaoke one.
+    mb = FakeMB([
+        {"isrcs": ["KARAOKE1"], "first_release_date": "2019-01-01",
+         "title": "Night Runner (Karaoke)"},
+        {"isrcs": ["STUDIO1"], "first_release_date": "2019-06-01",
+         "title": "Night Runner"},
+    ])
+    resolver = ISRCResolver(mb, FakeDZ([]))
+    isrcs = resolver.resolve("Night Runner", "Real Band", 2019)
+    assert isrcs[0] == "STUDIO1"       # studio original first
+    assert isrcs[-1] == "KARAOKE1"     # variant last
+
+
+def test_japanese_variant_markers_downranked() -> None:
+    mb = FakeMB([
+        {"isrcs": ["LIVE1"], "first_release_date": "2019-01-01", "title": "そばかす -Live-"},
+        {"isrcs": ["STUDIO2"], "first_release_date": "2019-02-01", "title": "そばかす"},
+    ])
+    resolver = ISRCResolver(mb, FakeDZ([]))
+    assert resolver.resolve("Sobakasu", "Judy and Mary", 2019)[0] == "STUDIO2"
+
+
 def test_all_candidate_isrcs_deduped() -> None:
     mb = FakeMB([{"isrcs": ["A", "B", "A"], "first_release_date": "2018-01-01"}])
     dz = FakeDZ([{"isrc": "B", "release_date": "2018-01-01"}])

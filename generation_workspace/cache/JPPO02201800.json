@@ -1,0 +1,229 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/db73f2ce-ae6e-4117-a4fa-689444559caf/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mrs-green-apple/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/9/5/11e81bc3-f595-7572-858f-a0369fe50396.jpg",
+      "name": "Mrs. GREEN APPLE",
+      "slug": "mrs-green-apple",
+      "uuid": "11e81bc3-f595-7572-858f-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.02,
+    "danceability": 0.74,
+    "energy": 0.7,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.05,
+    "loudness": -3.87,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 109.98,
+    "timeSignature": 4,
+    "valence": 0.78
+  },
+  "composers": [
+    "Motoki Ohmori"
+  ],
+  "copyright": "℗ 2022 UNIVERSAL MUSIC LLC",
+  "creditName": "Mrs. GREEN APPLE",
+  "credits": [
+    {
+      "name": "Chris Gehringer",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "09925f38-1606-4918-9c39-a5be4a5de704"
+    },
+    {
+      "name": "Motoki Ohmori",
+      "roles": [
+        "arranger",
+        "songwriter",
+        "producer",
+        "programming",
+        "vocals",
+        "backing vocals",
+        "electric guitar",
+        "lyricist"
+      ],
+      "uuid": "2c895966-5b4b-4614-a506-c48c46e6994f"
+    },
+    {
+      "name": "Singo Kubota",
+      "roles": [
+        "arranger",
+        "programming",
+        "recording arranger"
+      ],
+      "uuid": "60fee0af-b7c3-4520-8128-85c731b1bcf0"
+    },
+    {
+      "name": "大森元貴",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "8f2d5b08-ca27-4a0d-99c6-2f884020b796"
+    },
+    {
+      "name": "Hiloto Wakai",
+      "roles": [
+        "electric guitar"
+      ],
+      "uuid": "30c4c784-d7b9-4c8c-8300-71e087738cf8"
+    },
+    {
+      "name": "Ryoka Fujisawa",
+      "roles": [
+        "flute",
+        "keyboard"
+      ],
+      "uuid": "ae79b30d-7a8c-4f20-89be-a03b72b6728d"
+    },
+    {
+      "name": "Yoshinori Adachi",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "d9c3dceb-9002-4172-bd26-ca05cd982d49"
+    },
+    {
+      "name": "Tatsuhiko Yoshizawa",
+      "roles": [
+        "trumpet"
+      ],
+      "uuid": "96b010a4-b96f-41ff-a1fe-782824c2ceba"
+    },
+    {
+      "name": "Yochi Masago",
+      "roles": [
+        "trumpet"
+      ],
+      "uuid": "5d69e4b4-21e3-4f24-b5ff-7f43cedd527f"
+    },
+    {
+      "name": "Kazuya Hashimoto",
+      "roles": [
+        "saxophone",
+        "tenor saxophone"
+      ],
+      "uuid": "9173c001-cb37-4185-b37f-fd030d327535"
+    },
+    {
+      "name": "SHU KANEMATSU",
+      "roles": [
+        "keyboard"
+      ],
+      "uuid": "a7d6740d-a640-47da-8ff4-53f41944252a"
+    },
+    {
+      "name": "Hideyuki Kurakazu",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "3bffa902-c093-4c70-8b52-867707f0fed3"
+    },
+    {
+      "name": "Natsuhiko Mori",
+      "roles": [
+        "bass guitar"
+      ],
+      "uuid": "0e44a208-7e85-4aec-aaab-e5b6d9678e5d"
+    },
+    {
+      "name": "Ryo Kanda",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "4649f747-f12f-46d8-b5db-a7d6ebef9b63"
+    },
+    {
+      "name": "Ryuho Ichikawa",
+      "roles": [
+        "second engineer",
+        "recording"
+      ],
+      "uuid": "e0d5d6e8-9e0c-4206-908d-f138d0a5ee65"
+    },
+    {
+      "name": "Nobuhide Handa",
+      "roles": [
+        "trombone"
+      ],
+      "uuid": "aee7cb48-370c-473e-bffe-8b155e56340f"
+    },
+    {
+      "name": "Ryo Konishi",
+      "roles": [
+        "recording arranger",
+        "baritone saxophone"
+      ],
+      "uuid": "f1622a71-6427-49b9-b81c-3f6b5c434474"
+    },
+    {
+      "name": "Anzu Suhara",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "f1015105-e05e-426a-bb48-31bd7a89b220"
+    },
+    {
+      "name": "Junpei Hayashida",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "392bd25e-9eae-4918-9247-87ab86100f7a"
+    },
+    {
+      "name": "Tatsuhiko Yoshizawa",
+      "roles": [
+        "trumpet"
+      ],
+      "uuid": "8393fdef-5cca-4363-8f99-6cb40908440b"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 203,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/e/6/e/db73f2ce-ae6e-4117-a4fa-689444559caf.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO02201800"
+  },
+  "iswcs": [
+    "T3104290504"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mrs-green-apple/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/9/5/11e81bc3-f595-7572-858f-a0369fe50396.jpg",
+      "name": "Mrs. GREEN APPLE",
+      "slug": "mrs-green-apple",
+      "uuid": "11e81bc3-f595-7572-858f-a0369fe50396"
+    }
+  ],
+  "name": "Dance Hall",
+  "producers": [
+    "大森元貴"
+  ],
+  "releaseDate": "2022-05-23T00:00:00+00:00",
+  "uuid": "db73f2ce-ae6e-4117-a4fa-689444559caf"
+}

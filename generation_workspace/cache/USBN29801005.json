@@ -1,0 +1,116 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e84080-8ba8-491e-8c12-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/herbie-hancock/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/6/9/11e81bd1-f96e-615a-b5e4-a0369fe50396.jpg",
+      "name": "Herbie Hancock",
+      "slug": "herbie-hancock",
+      "uuid": "11e81bd1-f96e-615a-b5e4-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.75,
+    "danceability": 0.52,
+    "energy": 0.58,
+    "instrumentalness": 0,
+    "key": 0,
+    "liveness": 0.12,
+    "loudness": -8.18,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 116.11,
+    "timeSignature": 4,
+    "valence": 0.41
+  },
+  "composers": [
+    "Herbie Hancock"
+  ],
+  "copyright": "",
+  "creditName": "Herbie Hancock",
+  "credits": [
+    {
+      "name": "Herbie Hancock",
+      "roles": [
+        "composer",
+        "piano",
+        "lyricist"
+      ],
+      "uuid": "dcaf4761-4981-4248-98f1-2fe8db6e6126"
+    },
+    {
+      "name": "Ron Carter",
+      "roles": [
+        "bass vocals"
+      ],
+      "uuid": "dac17e37-e393-4aed-adff-206a06f98ad7"
+    },
+    {
+      "name": "Alfred Lion",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "b8fc1c63-1164-48d0-979a-ce0b46df3bb2"
+    },
+    {
+      "name": "Rudy Van Gelder",
+      "roles": [
+        "mastering",
+        "recording"
+      ],
+      "uuid": "32d69da2-7445-4bd2-8e8e-3050257af4a9"
+    },
+    {
+      "name": "Freddie Hubbard",
+      "roles": [
+        "flugelhorn",
+        "cornett"
+      ],
+      "uuid": "c40850c8-e004-41c1-ba15-485fe093b982"
+    },
+    {
+      "name": "Tony Williams",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "26d56a78-8ff1-4acf-ac89-d0f4e33f318e"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 324,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/a/b/11e84080-8ba8-491e-8c12-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USBN29801005"
+  },
+  "iswcs": [
+    "T7000047054"
+  ],
+  "labels": [],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/herbie-hancock/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/6/9/11e81bd1-f96e-615a-b5e4-a0369fe50396.jpg",
+      "name": "Herbie Hancock",
+      "slug": "herbie-hancock",
+      "uuid": "11e81bd1-f96e-615a-b5e4-a0369fe50396"
+    }
+  ],
+  "name": "Cantaloupe Island - Remastered 1999/Rudy Van Gelder Edition",
+  "producers": [
+    "Alfred Lion"
+  ],
+  "releaseDate": "1999-03-23T00:00:00+00:00",
+  "uuid": "11e84080-8ba8-491e-8c12-a0369fe50396"
+}

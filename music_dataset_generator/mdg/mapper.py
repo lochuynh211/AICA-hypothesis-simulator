@@ -170,6 +170,7 @@ class CatalogMapper:
             "id": track_id,
             "is_local": False,
             "is_playable": not negative_fixture,
+            "language": language,  # real Soundcharts languageCode (ja/en/null-instrumental)
             "name": payload["name"],  # real name kept (D1)
             "popularity": popularity,
             "track_number": track_number,

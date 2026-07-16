@@ -1,5 +1,5 @@
 {
-  "appUrl": "https://app.soundcharts.com/app/song/fae9db34-7bea-11e9-8ee9-801844edfa71/overview",
+  "appUrl": "https://app.soundcharts.com/app/song/1b3d9cee-60df-11e9-b1e3-549f35141000/overview",
   "artists": [
     {
       "appUrl": "https://app.soundcharts.com/app/artist/official-hige-dandism/overview",
@@ -10,18 +10,18 @@
     }
   ],
   "audio": {
-    "acousticness": 0.18,
-    "danceability": 0.55,
-    "energy": 0.8,
+    "acousticness": 0.04,
+    "danceability": 0.53,
+    "energy": 0.86,
     "instrumentalness": 0,
     "key": 8,
-    "liveness": 0.08,
-    "loudness": -6.73,
+    "liveness": 0.13,
+    "loudness": -3.37,
     "mode": 1,
     "speechiness": 0.03,
-    "tempo": 89.96,
+    "tempo": 91.96,
     "timeSignature": 4,
-    "valence": 0.41
+    "valence": 0.4
   },
   "composers": [
     "Satoshi Fujihara"
@@ -30,7 +30,7 @@
   "creditName": "Official HIGE DANdism",
   "credits": [],
   "distributor": "Pony Canyon",
-  "duration": 223,
+  "duration": 326,
   "explicit": false,
   "genres": [
     {
@@ -40,11 +40,11 @@
       ]
     }
   ],
-  "imageUrl": "https://assets.soundcharts.com/song/a/e/b/fae9db34-7bea-11e9-8ee9-801844edfa71.jpg",
+  "imageUrl": "https://assets.soundcharts.com/song/f/d/0/1b3d9cee-60df-11e9-b1e3-549f35141000.jpg",
   "isrc": {
     "countryCode": "JP",
     "countryName": "Japan",
-    "value": "JPPC01900559"
+    "value": "JPPC01900265"
   },
   "iswcs": [
     "T9290055913"
@@ -65,8 +65,8 @@
       "uuid": "11e83feb-6442-3f96-955d-a0369fe50396"
     }
   ],
-  "name": "Pretender (Acoustic Ver)",
+  "name": "Pretender",
   "producers": [],
-  "releaseDate": "2019-04-30T00:00:00+00:00",
-  "uuid": "fae9db34-7bea-11e9-8ee9-801844edfa71"
+  "releaseDate": "2019-01-31T00:00:00+00:00",
+  "uuid": "1b3d9cee-60df-11e9-b1e3-549f35141000"
 }

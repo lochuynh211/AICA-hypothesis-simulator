@@ -1,0 +1,127 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8261f-05c6-1612-b281-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/judy-and-mary/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/0/f/11e81bc2-4f05-6042-9218-a0369fe50396.jpg",
+      "name": "JUDY AND MARY",
+      "slug": "judy-and-mary",
+      "uuid": "11e81bc2-4f05-6042-9218-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.06,
+    "danceability": 0.48,
+    "energy": 0.82,
+    "instrumentalness": 0,
+    "key": 9,
+    "liveness": 0.39,
+    "loudness": -3.43,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 169.93,
+    "timeSignature": 4,
+    "valence": 0.57
+  },
+  "composers": [
+    "Yuki",
+    "恩田快人"
+  ],
+  "copyright": "(P) 1993(20),1994(8,9,12,17,22,26,28),1995(1,6,7,15,23,30),1996(3,14,16),1997(5,13,19,24,25),1998(10,11,18,21),2000(2,4,27,29) Sony Music Entertainment (Japan) Inc.",
+  "creditName": "JUDY AND MARY",
+  "credits": [
+    {
+      "name": "Unknown",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "04232fb1-1e52-4017-a13d-13f4be77e1fd"
+    },
+    {
+      "name": "Yuki",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "0d27953d-82b5-440b-98fb-95430eb1a14b"
+    },
+    {
+      "name": "Masahide Sakuma",
+      "roles": [
+        "producer",
+        "keyboard"
+      ],
+      "uuid": "197c6bb5-07c1-470f-8075-08f774c598af"
+    },
+    {
+      "name": "takuya",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "e5f7596f-3ac5-41c8-95a9-bacbe3ae28f6"
+    },
+    {
+      "name": "恩田快人",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "c24c0819-a526-4694-99dd-7893cc77f2e7"
+    },
+    {
+      "name": "内海“うっちぃ”幸雄",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "8c98c899-41c9-462a-90fe-5bd387205a7a"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 255,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    },
+    {
+      "root": "j-pop",
+      "sub": [
+        "j-pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/6/c/5/11e8261f-05c6-1612-b281-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPES09500952"
+  },
+  "iswcs": [
+    "T1012821951",
+    "T9023078571"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/judy-and-mary/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/0/f/11e81bc2-4f05-6042-9218-a0369fe50396.jpg",
+      "name": "JUDY AND MARY",
+      "slug": "judy-and-mary",
+      "uuid": "11e81bc2-4f05-6042-9218-a0369fe50396"
+    }
+  ],
+  "name": "そばかす",
+  "producers": [
+    "Unknown"
+  ],
+  "releaseDate": "2001-05-23T00:00:00+00:00",
+  "uuid": "11e8261f-05c6-1612-b281-aa1c026db3d8"
+}

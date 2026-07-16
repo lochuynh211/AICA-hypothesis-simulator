@@ -1,5 +1,5 @@
 {
-  "appUrl": "https://app.soundcharts.com/app/song/894a7afe-c5a8-11e8-875e-549f35141000/overview",
+  "appUrl": "https://app.soundcharts.com/app/song/11e826d6-f1f9-7846-844b-a0369fe50396/overview",
   "artists": [
     {
       "appUrl": "https://app.soundcharts.com/app/artist/linked-horizon/overview",
@@ -10,47 +10,57 @@
     }
   ],
   "audio": {
-    "acousticness": 0.56,
-    "danceability": 0.49,
-    "energy": 0.91,
+    "acousticness": 0.07,
+    "danceability": 0.32,
+    "energy": 0.99,
     "instrumentalness": 0,
     "key": 1,
-    "liveness": 0.11,
-    "loudness": -6.02,
+    "liveness": 0.63,
+    "loudness": -3.86,
     "mode": 0,
-    "speechiness": 0.05,
-    "tempo": 90.45,
+    "speechiness": 0.27,
+    "tempo": 180.64,
     "timeSignature": 4,
-    "valence": 0.51
+    "valence": 0.07
   },
   "composers": [
     "REVO"
   ],
-  "copyright": "℗ 2013 Pony Canyon Inc.",
+  "copyright": "PONY CANYON, RAP-PRODUCTS, INC.",
   "creditName": "Linked Horizon",
-  "credits": [],
-  "distributor": "Pony Canyon",
-  "duration": 94,
-  "explicit": false,
-  "genres": [
+  "credits": [
     {
-      "root": "traditional",
-      "sub": [
-        "asian"
-      ]
+      "name": "進撃の巨人 (Attack on Titan)",
+      "roles": [
+        "tie-in"
+      ],
+      "uuid": "7b31b5a6-fa8f-434e-a75a-7a9259a22d79"
     }
   ],
-  "imageUrl": "https://assets.soundcharts.com/song/8/a/5/894a7afe-c5a8-11e8-875e-549f35141000.jpg",
+  "distributor": "Pony Canyon",
+  "duration": 317,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/9/f/1/11e826d6-f1f9-7846-844b-a0369fe50396.jpg",
   "isrc": {
     "countryCode": "JP",
     "countryName": "Japan",
-    "value": "JPPC01300495"
+    "value": "JPPC01300723"
   },
   "iswcs": [
     "T9257543332",
     "T9107448704"
   ],
-  "labels": [],
+  "labels": [
+    {
+      "name": "RAP-PRODUCTS",
+      "type": "unknown"
+    },
+    {
+      "name": "PONY CANYON",
+      "type": "unknown"
+    }
+  ],
   "languageCode": "ja",
   "mainArtists": [
     {
@@ -61,8 +71,8 @@
       "uuid": "11e81bcd-ad91-d856-8c63-a0369fe50396"
     }
   ],
-  "name": "紅蓮の弓矢 - TVサイズver.",
+  "name": "Guren No Yumiya",
   "producers": [],
-  "releaseDate": "2019-12-25T00:00:00+00:00",
-  "uuid": "894a7afe-c5a8-11e8-875e-549f35141000"
+  "releaseDate": "2013-07-10T00:00:00+00:00",
+  "uuid": "11e826d6-f1f9-7846-844b-a0369fe50396"
 }

@@ -1,43 +1,47 @@
 {
   "candidate_source": "isrc_resolved",
-  "loop": 15,
+  "loop": 17,
   "new_vs_skipped": {
-    "accepted": 178,
-    "miss": 74,
+    "accepted": 175,
+    "miss": 77,
     "by_loop": {
       "loop1:miss": 11,
-      "loop2:accepted": 29,
+      "loop2:accepted": 25,
       "loop2:miss": 10,
       "loop3:miss": 16,
-      "loop4:accepted": 21,
+      "loop4:accepted": 19,
       "loop5:miss": 2,
       "loop6:accepted": 24,
       "loop7:miss": 1,
-      "loop8:accepted": 21,
+      "loop8:accepted": 16,
       "loop8:miss": 1,
-      "loop9:accepted": 22,
+      "loop9:accepted": 20,
       "loop9:miss": 1,
       "loop10:miss": 1,
-      "loop11:accepted": 18,
+      "loop11:accepted": 16,
       "loop11:miss": 1,
       "loop12:miss": 13,
-      "loop13:accepted": 24,
+      "loop13:accepted": 20,
       "loop13:miss": 2,
       "loop14:miss": 10,
-      "loop15:accepted": 19,
-      "loop15:miss": 5
+      "loop15:accepted": 16,
+      "loop15:miss": 5,
+      "loop16:miss": 1,
+      "loop17:accepted": 19,
+      "loop17:miss": 2
     }
   },
-  "soundcharts_calls": 208,
+  "soundcharts_calls": 233,
   "probe_result": {},
   "repairs": [],
   "coverage_checklist": {
     "required": 36,
-    "covered": 29,
+    "covered": 28,
     "unmet": [
       "E-hi_T-hi_P-sf",
       "E-hi_T-lo_P-dv",
       "E-hi_T-lo_P-sf",
+      "E-hi_T-md_P-sf",
       "E-lo_T-hi_P-dv",
       "E-lo_T-hi_P-sf",
       "E-lo_T-lo_P-sf",
@@ -51,8 +55,8 @@
     "disagreements": [
       "tc-01",
       "tc-03",
+      "tc-04",
       "tc-05",
-      "tc-06",
       "tc-07"
     ]
   },
@@ -63,11 +67,11 @@
     },
     {
       "code": "language_mismatch",
-      "count": 19
+      "count": 21
     },
     {
       "code": "song_not_found_in_sources",
-      "count": 54
+      "count": 55
     }
   ]
 }

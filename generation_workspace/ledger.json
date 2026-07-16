@@ -120,16 +120,6 @@
   },
   {
     "keys": {
-      "isrc": "JPU901901441",
-      "normalized_name": "gurenge|lisa"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-hi_T-hi_P-bv",
-    "loop": 2
-  },
-  {
-    "keys": {
       "isrc": "JPTK00709290",
       "normalized_name": "polyrhythm|perfume"
     },
@@ -175,16 +165,6 @@
     "outcome": "accepted",
     "miss_reason": null,
     "cell": "E-hi_T-hi_P-bv",
-    "loop": 2
-  },
-  {
-    "keys": {
-      "isrc": "JPPC01900559",
-      "normalized_name": "pretender|official hige dandism"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-hi_T-lo_P-bv",
     "loop": 2
   },
   {
@@ -251,16 +231,6 @@
     "keys": {
       "isrc": "JPPO02201022",
       "normalized_name": "habit|sekai no owari"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-hi_T-md_P-dv",
-    "loop": 2
-  },
-  {
-    "keys": {
-      "isrc": "JPWP01471249",
-      "normalized_name": "plastic love|mariya takeuchi"
     },
     "outcome": "accepted",
     "miss_reason": null,
@@ -370,16 +340,6 @@
     "outcome": "miss",
     "miss_reason": "language_mismatch",
     "cell": null,
-    "loop": 2
-  },
-  {
-    "keys": {
-      "isrc": "JPCO08851399",
-      "normalized_name": "kawa no nagare no you ni|hibari misora"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-md_T-lo_P-il",
     "loop": 2
   },
   {
@@ -644,16 +604,6 @@
   },
   {
     "keys": {
-      "isrc": "ITB281300091",
-      "normalized_name": "experience|ludovico einaudi"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-md_T-lo_P-il",
-    "loop": 4
-  },
-  {
-    "keys": {
       "isrc": "FR91U0100002",
       "normalized_name": "comptine d'un autre ete|yann tiersen"
     },
@@ -690,16 +640,6 @@
     "outcome": "accepted",
     "miss_reason": null,
     "cell": "E-lo_T-hi_P-il",
-    "loop": 4
-  },
-  {
-    "keys": {
-      "isrc": "USC4R1605720",
-      "normalized_name": "cantaloupe island|herbie hancock"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-md_T-md_P-il",
     "loop": 4
   },
   {
@@ -1230,52 +1170,12 @@
   },
   {
     "keys": {
-      "isrc": "USAT29700343",
-      "normalized_name": "yyz|rush"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-hi_T-hi_P-il",
-    "loop": 8
-  },
-  {
-    "keys": {
-      "isrc": "US27Q0508410",
-      "normalized_name": "cliffs of dover|eric johnson"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-hi_T-hi_P-bv",
-    "loop": 8
-  },
-  {
-    "keys": {
-      "isrc": "USSM19503896",
-      "normalized_name": "jessica|the allman brothers band"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-hi_T-md_P-bv",
-    "loop": 8
-  },
-  {
-    "keys": {
       "isrc": "USWB10401729",
       "normalized_name": "eruption|van halen"
     },
     "outcome": "accepted",
     "miss_reason": null,
     "cell": "E-hi_T-hi_P-bv",
-    "loop": 8
-  },
-  {
-    "keys": {
-      "isrc": "GBCHB0910454",
-      "normalized_name": "the trooper|iron maiden"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-hi_T-lo_P-bv",
     "loop": 8
   },
   {
@@ -1306,16 +1206,6 @@
     "outcome": "accepted",
     "miss_reason": null,
     "cell": "E-md_T-md_P-dv",
-    "loop": 8
-  },
-  {
-    "keys": {
-      "isrc": "USPR36407096",
-      "normalized_name": "the girl from ipanema|stan getz"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-lo_T-md_P-bv",
     "loop": 8
   },
   {
@@ -1459,16 +1349,6 @@
   },
   {
     "keys": {
-      "isrc": "GB2DY1000030",
-      "normalized_name": "iron man|black sabbath"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-hi_T-md_P-bv",
-    "loop": 9
-  },
-  {
-    "keys": {
       "isrc": "BRPUI0400549",
       "normalized_name": "corcovado|antonio carlos jobim"
     },
@@ -1531,16 +1411,6 @@
     "keys": {
       "isrc": "USDEI7704213",
       "normalized_name": "rebel rouser|duane eddy"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-md_T-md_P-il",
-    "loop": 9
-  },
-  {
-    "keys": {
-      "isrc": "USA561212593",
-      "normalized_name": "pick up the pieces|average white band"
     },
     "outcome": "accepted",
     "miss_reason": null,
@@ -1637,16 +1507,6 @@
   },
   {
     "keys": {
-      "isrc": "USFB20636355",
-      "normalized_name": "brazil|ary barroso"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-md_T-md_P-il",
-    "loop": 11
-  },
-  {
-    "keys": {
       "isrc": "USGR10200894",
       "normalized_name": "so danco samba|antonio carlos jobim"
     },
@@ -1703,16 +1563,6 @@
     "outcome": "accepted",
     "miss_reason": null,
     "cell": "E-hi_T-hi_P-il",
-    "loop": 11
-  },
-  {
-    "keys": {
-      "isrc": "NLC287300046",
-      "normalized_name": "hocus pocus|focus"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-hi_T-md_P-il",
     "loop": 11
   },
   {
@@ -1943,32 +1793,12 @@
   },
   {
     "keys": {
-      "isrc": "JPU901802955",
-      "normalized_name": "katharsis|tk from ling tosite sigure"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-hi_T-hi_P-dv",
-    "loop": 13
-  },
-  {
-    "keys": {
       "isrc": "JPPC01902006",
       "normalized_name": "i love...|official hige dandism"
     },
     "outcome": "accepted",
     "miss_reason": null,
     "cell": "E-hi_T-hi_P-bv",
-    "loop": 13
-  },
-  {
-    "keys": {
-      "isrc": "JPPC02100003",
-      "normalized_name": "universe|official hige dandism"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-hi_T-hi_P-il",
     "loop": 13
   },
   {
@@ -2038,26 +1868,6 @@
     "outcome": "miss",
     "miss_reason": "language_mismatch",
     "cell": null,
-    "loop": 13
-  },
-  {
-    "keys": {
-      "isrc": "JPPO02404255",
-      "normalized_name": "dance hall|mrs. green apple"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-hi_T-md_P-sf",
-    "loop": 13
-  },
-  {
-    "keys": {
-      "isrc": "JPPO02404264",
-      "normalized_name": "que sera sera|mrs. green apple"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-md_T-md_P-bv",
     "loop": 13
   },
   {
@@ -2311,16 +2121,6 @@
   },
   {
     "keys": {
-      "isrc": "JPES09900224",
-      "normalized_name": "sobakasu|judy and mary"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-hi_T-hi_P-bv",
-    "loop": 15
-  },
-  {
-    "keys": {
       "isrc": "JPKS00301961",
       "normalized_name": "ready steady go|l'arc-en-ciel"
     },
@@ -2351,16 +2151,6 @@
   },
   {
     "keys": {
-      "isrc": "JPPO02101188",
-      "normalized_name": "jupiter|ayaka hirahara"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-hi_T-hi_P-bv",
-    "loop": 15
-  },
-  {
-    "keys": {
       "isrc": "JPPO00504460",
       "normalized_name": "story|ai"
     },
@@ -2383,16 +2173,6 @@
     "keys": {
       "isrc": "JPU901401691",
       "normalized_name": "silhouette|kana-boon"
-    },
-    "outcome": "accepted",
-    "miss_reason": null,
-    "cell": "E-hi_T-lo_P-bv",
-    "loop": 15
-  },
-  {
-    "keys": {
-      "isrc": "JPPC01300495",
-      "normalized_name": "guren no yumiya|linked horizon"
     },
     "outcome": "accepted",
     "miss_reason": null,
@@ -2444,5 +2224,222 @@
     "miss_reason": "language_mismatch",
     "cell": null,
     "loop": 15
+  },
+  {
+    "keys": {
+      "normalized_name": "kawa no nagare no yo ni|hibari misora"
+    },
+    "outcome": "miss",
+    "miss_reason": "song_not_found_in_sources",
+    "cell": null,
+    "loop": 16
+  },
+  {
+    "keys": {
+      "isrc": "ITB281300091",
+      "normalized_name": "experience|ludovico einaudi"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-lo_P-il",
+    "loop": 17
+  },
+  {
+    "keys": {
+      "normalized_name": "iron man|black sabbath"
+    },
+    "outcome": "miss",
+    "miss_reason": "language_mismatch",
+    "cell": null,
+    "loop": 17
+  },
+  {
+    "keys": {
+      "isrc": "NLC287100111",
+      "normalized_name": "hocus pocus|focus"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-il",
+    "loop": 17
+  },
+  {
+    "keys": {
+      "isrc": "GBBLG7400071",
+      "normalized_name": "pick up the pieces|average white band"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-md_P-il",
+    "loop": 17
+  },
+  {
+    "keys": {
+      "isrc": "JPPO02301108",
+      "normalized_name": "que sera sera|mrs. green apple"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-md_P-dv",
+    "loop": 17
+  },
+  {
+    "keys": {
+      "isrc": "JPU901900905",
+      "normalized_name": "gurenge|lisa"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 17
+  },
+  {
+    "keys": {
+      "normalized_name": "the girl from ipanema|stan getz"
+    },
+    "outcome": "miss",
+    "miss_reason": "language_mismatch",
+    "cell": null,
+    "loop": 17
+  },
+  {
+    "keys": {
+      "isrc": "JPPO02201800",
+      "normalized_name": "dance hall|mrs. green apple"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-md_P-dv",
+    "loop": 17
+  },
+  {
+    "keys": {
+      "isrc": "USAT20801519",
+      "normalized_name": "yyz|rush"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-il",
+    "loop": 17
+  },
+  {
+    "keys": {
+      "isrc": "JPPC01900265",
+      "normalized_name": "pretender|official hige dandism"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-lo_P-bv",
+    "loop": 17
+  },
+  {
+    "keys": {
+      "isrc": "JPWP01801549",
+      "normalized_name": "plastic love|mariya takeuchi"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-md_P-dv",
+    "loop": 17
+  },
+  {
+    "keys": {
+      "isrc": "JPPO02101188",
+      "normalized_name": "jupiter|ayaka hirahara"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 17
+  },
+  {
+    "keys": {
+      "isrc": "GBCHB9810044",
+      "normalized_name": "the trooper|iron maiden"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-lo_P-bv",
+    "loop": 17
+  },
+  {
+    "keys": {
+      "isrc": "NLB931400811",
+      "normalized_name": "cliffs of dover|eric johnson"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-md_P-il",
+    "loop": 17
+  },
+  {
+    "keys": {
+      "isrc": "AUATC0972259",
+      "normalized_name": "jessica|the allman brothers band"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-md_P-il",
+    "loop": 17
+  },
+  {
+    "keys": {
+      "isrc": "USBN29801005",
+      "normalized_name": "cantaloupe island|herbie hancock"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-md_P-bv",
+    "loop": 17
+  },
+  {
+    "keys": {
+      "isrc": "JPPC01300723",
+      "normalized_name": "guren no yumiya|linked horizon"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 17
+  },
+  {
+    "keys": {
+      "isrc": "GRHR10956006",
+      "normalized_name": "aquarela do brasil|ary barroso"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-lo_P-bv",
+    "loop": 17
+  },
+  {
+    "keys": {
+      "isrc": "JPPC02001869",
+      "normalized_name": "universe|official hige dandism"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 17
+  },
+  {
+    "keys": {
+      "isrc": "JPU901802954",
+      "normalized_name": "katharsis|tk from ling tosite sigure"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 17
+  },
+  {
+    "keys": {
+      "isrc": "JPES09500952",
+      "normalized_name": "sobakasu|judy and mary"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 17
   }
 ]
