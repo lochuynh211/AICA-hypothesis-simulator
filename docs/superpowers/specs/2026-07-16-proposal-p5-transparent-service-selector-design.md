@@ -169,8 +169,13 @@ confidence-weighted sparse history (§19).
 **Resolution (owner-approved): add it now, as an opt-in extension that is OFF by
 default**, mirroring the content selector's `genre_affinity_v1`:
 
-- Extension id `confidence_shrinkage_v1`, surfaced via
-  `enabled_feature_extensions`. Default **off**.
+- Extension id `confidence_shrinkage_v1`, controlled by a **boolean
+  hyperparameter** of the transparent service package (edited in the Panel ③
+  algorithm-parameter surface, persisted with the run's resolved
+  hyperparameters). It is deliberately **not** an `enabled_feature_extensions`
+  entry nor a driver-profile/World field: confidence shrinkage is algorithm
+  behavior, not a property of the world (clarify decision 2026-07-16). The
+  World / driver-profile contract is unchanged. Default **off**.
 - **Off** ⇒ the two confidence fields stay `available_but_not_used`; the package
   reproduces the frozen doc **byte-for-byte** — the §10 worked example
   (`+0.772349`) and the §6.4 dominance table are unchanged.
