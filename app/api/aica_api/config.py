@@ -1,9 +1,10 @@
 """AICA API runtime configuration.
 
-Resolves file-system paths for the three data directories:
-  packages_dir  — AICA_PACKAGES_DIR  (default: <repo-root>/packages)
-  scenarios_dir — AICA_SCENARIOS_DIR (default: <repo-root>/scenarios)
-  runs_dir      — AICA_RUNS_DIR      (default: <repo-root>/runs)
+Resolves file-system paths for the four data directories:
+  packages_dir          — AICA_PACKAGES_DIR           (default: <repo-root>/packages)
+  scenarios_dir         — AICA_SCENARIOS_DIR          (default: <repo-root>/scenarios)
+  runs_dir              — AICA_RUNS_DIR               (default: <repo-root>/runs)
+  proposal_contracts_dir — AICA_PROPOSAL_CONTRACTS_DIR (default: <repo-root>/proposal_contracts)
 
 The repo root is derived from this file's location:
   app/api/aica_api/config.py  →  parents[3]  →  repo root
@@ -51,6 +52,10 @@ class Settings:
     @property
     def routes_dir(self) -> Path:
         return _resolve("AICA_ROUTES_DIR", "routes")
+
+    @property
+    def proposal_contracts_dir(self) -> Path:
+        return _resolve("AICA_PROPOSAL_CONTRACTS_DIR", "proposal_contracts")
 
 
 settings = Settings()
