@@ -1045,6 +1045,41 @@ def select_service(run_id: str, body: SelectServiceBody) -> ProposalRunLog:
             ),
         )
 
+    # FIX (whole-branch review Critical / SC-002 / FR-002): the check above
+    # only confirms membership in the FULL frozen row — it does NOT confirm
+    # the service is still ELIGIBLE. Re-resolve eligibility against the
+    # CURRENT motion state (a `motion_change` journey action may have fired
+    # since create) and reject an excluded selection here, before it can ever
+    # reach `accept` and become active driving content (e.g. `full_karaoke`
+    # while `motion_state=driving`).
+    capabilities = _get_service_capabilities()
+    eligibility = resolve_eligibility(
+        run_log.opportunity.allowed_service_ids,
+        run_log.journey_state.motion_state,
+        capabilities,
+        registered_entities=derive_registered_entities(run_log.world_snapshot),
+    )
+    if selected_service_id not in eligibility.eligible:
+        reasons = next(
+            (
+                excl.reason_codes
+                for excl in eligibility.excluded
+                if excl.service_id == selected_service_id
+            ),
+            [],
+        )
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "service_not_eligible",
+                "message": (
+                    f"{selected_service_id.value!r} is not currently eligible / "
+                    f"{selected_service_id.value!r} は現在選択できません"
+                ),
+                "reason_codes": [rc.value for rc in reasons],
+            },
+        )
+
     registry = _get_registry()
     content_pkg = registry.get(run_log.content_package_id) if run_log.content_package_id else None
     if content_pkg is None or content_pkg.family != ProposalPackageFamily.content_selector:

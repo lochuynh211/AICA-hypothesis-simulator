@@ -318,4 +318,9 @@ class EligibilityReasonCode(str, Enum):
     full_karaoke_requires_stopped = "full_karaoke_requires_stopped"
     missing_required_entity = "missing_required_entity"
     catalog_item_unavailable = "catalog_item_unavailable"
+    # Reserved/defensive: never produced by ``resolve_eligibility``, which only
+    # ever iterates the row's OWN ``allowed_service_ids`` (a service outside
+    # the row can't appear as a candidate to exclude in the first place).
+    # Kept in the vocabulary for callers that need to represent that case
+    # explicitly (e.g. future defensive checks).
     not_in_allowed_row = "not_in_allowed_row"

@@ -447,6 +447,10 @@ def _accept(
     js = run_log.journey_state
     # Capture the pre-accept snapshot (whatever was active/plan-referenced
     # before this accept, if anything) so `stop` can restore it later.
+    # NOTE: in P4 no path mutates `active_service_id` between STEP-2
+    # selection and this accept, so `previous_content.service_id` always
+    # equals the just-accepted service — this field is scaffolding for a
+    # future flow (P7) where a genuinely distinct prior service can exist.
     previous_content = PreviousContent(
         service_id=js.active_service_id, plan_ref=js.current_plan_ref
     )
