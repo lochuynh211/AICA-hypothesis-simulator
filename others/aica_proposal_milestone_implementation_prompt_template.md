@@ -4,7 +4,7 @@
 
 ===================== BEGIN PROMPT =====================
 
-**PARAMETER — change only this value:** `{{MILESTONE}}` = `P1`
+**PARAMETER — change only this value:** `{{MILESTONE}}` = `P2`
 
 You are implementing milestone **{{MILESTONE}}** from `docs/master/aica_proposal_simulator_milestones.md` in the AICA Hypothesis Simulator repository.
 
@@ -87,7 +87,7 @@ The plan must map every milestone acceptance criterion to at least one implement
 
 Commit the clean specification and plan, then continue to Step 4.
 
-## Step 4 — Implement the milestone
+## Step 4 — Using Superpowers /subagent-driven-development with TDD style to implement the milestone
 
 Execute the approved tasks one at a time using superpowers subagent-driven implementation with TDD development:
 
