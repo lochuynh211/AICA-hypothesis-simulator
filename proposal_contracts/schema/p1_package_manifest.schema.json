@@ -1,0 +1,187 @@
+{
+  "$defs": {
+    "AlgorithmSpec": {
+      "description": "Algorithm binding for a manifest. ``type`` is fixed to ``python_module``\n(the sole supported algorithm type per Constitution Principle V).",
+      "properties": {
+        "entrypoint": {
+          "title": "Entrypoint",
+          "type": "string"
+        },
+        "error_mode": {
+          "default": "blocking",
+          "enum": [
+            "blocking",
+            "non_blocking"
+          ],
+          "title": "Error Mode",
+          "type": "string"
+        },
+        "type": {
+          "const": "python_module",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "entrypoint"
+      ],
+      "title": "AlgorithmSpec",
+      "type": "object"
+    },
+    "BilingualLabel": {
+      "description": "A ``{ja, en}`` bilingual label (data-model.md, FR-004).",
+      "properties": {
+        "en": {
+          "title": "En",
+          "type": "string"
+        },
+        "ja": {
+          "title": "Ja",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ja",
+        "en"
+      ],
+      "title": "BilingualLabel",
+      "type": "object"
+    },
+    "HyperparameterDef": {
+      "additionalProperties": true,
+      "description": "A single hyperparameter definition rendered as an editable control.\n\n``extra=\"allow\"`` because each ``kind`` carries kind-specific extra\nfields (e.g. ``rows``/``columns`` for ``matrix``, ``options`` for\n``enum``) that data-model.md leaves open-ended (\"…\").",
+      "properties": {
+        "default": {
+          "title": "Default"
+        },
+        "key": {
+          "title": "Key",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "matrix",
+            "table",
+            "map",
+            "numeric",
+            "enum",
+            "string"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "$ref": "#/$defs/BilingualLabel"
+        }
+      },
+      "required": [
+        "key",
+        "kind",
+        "label",
+        "default"
+      ],
+      "title": "HyperparameterDef",
+      "type": "object"
+    },
+    "ProposalPackageApproach": {
+      "description": "Algorithmic approach a package implements.",
+      "enum": [
+        "transparent",
+        "constrained_llm"
+      ],
+      "title": "ProposalPackageApproach",
+      "type": "string"
+    },
+    "ProposalPackageFamily": {
+      "description": "Which half of the two-step proposal a package fills.",
+      "enum": [
+        "service_selector",
+        "content_selector"
+      ],
+      "title": "ProposalPackageFamily",
+      "type": "string"
+    },
+    "ServiceId": {
+      "description": "Catalog service identifiers (spec §7.1–7.2, 14 services).",
+      "enum": [
+        "music_playlist",
+        "humming_karaoke",
+        "call_response_driving",
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "conversation_audio",
+        "live_viewing",
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped",
+        "oshi_reexperience",
+        "relaxation_multisensory",
+        "linked_video_recommendation"
+      ],
+      "title": "ServiceId",
+      "type": "string"
+    }
+  },
+  "description": "A proposal package's manifest (``package.json``).\n\nValidator: ``family == content_selector`` REQUIRES a non-empty\n``supported_services``; ``family == service_selector`` does not require\nit (may be empty).",
+  "properties": {
+    "algorithm": {
+      "$ref": "#/$defs/AlgorithmSpec"
+    },
+    "approach": {
+      "$ref": "#/$defs/ProposalPackageApproach"
+    },
+    "contract_version": {
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "family": {
+      "$ref": "#/$defs/ProposalPackageFamily"
+    },
+    "hyperparameters": {
+      "items": {
+        "$ref": "#/$defs/HyperparameterDef"
+      },
+      "title": "Hyperparameters",
+      "type": "array"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "label": {
+      "$ref": "#/$defs/BilingualLabel"
+    },
+    "parameters": {
+      "additionalProperties": true,
+      "title": "Parameters",
+      "type": "object"
+    },
+    "supported_services": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ServiceId"
+      },
+      "title": "Supported Services",
+      "type": "array"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "version",
+    "label",
+    "family",
+    "approach",
+    "contract_version",
+    "algorithm",
+    "parameters",
+    "hyperparameters"
+  ],
+  "title": "ProposalPackageManifest",
+  "type": "object"
+}

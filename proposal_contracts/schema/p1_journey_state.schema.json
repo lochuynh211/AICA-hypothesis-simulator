@@ -1,0 +1,83 @@
+{
+  "$defs": {
+    "LifecycleStage": {
+      "description": "Driving lifecycle stage at the time of proposal (spec §7).",
+      "enum": [
+        "before_rest_until_stop",
+        "during_rest_stopped",
+        "after_rest_before_restart",
+        "active_driving_content"
+      ],
+      "title": "LifecycleStage",
+      "type": "string"
+    },
+    "MotionState": {
+      "description": "Vehicle motion state at proposal time (P1 journey-state snapshot).",
+      "enum": [
+        "driving",
+        "stopped"
+      ],
+      "title": "MotionState",
+      "type": "string"
+    },
+    "ServiceId": {
+      "description": "Catalog service identifiers (spec §7.1–7.2, 14 services).",
+      "enum": [
+        "music_playlist",
+        "humming_karaoke",
+        "call_response_driving",
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "conversation_audio",
+        "live_viewing",
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped",
+        "oshi_reexperience",
+        "relaxation_multisensory",
+        "linked_video_recommendation"
+      ],
+      "title": "ServiceId",
+      "type": "string"
+    }
+  },
+  "description": "A snapshot of the journey at a point in the proposal run.",
+  "properties": {
+    "active_plan_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Active Plan Id"
+    },
+    "active_service_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ServiceId"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "lifecycle_stage": {
+      "$ref": "#/$defs/LifecycleStage"
+    },
+    "motion_state": {
+      "$ref": "#/$defs/MotionState"
+    }
+  },
+  "required": [
+    "lifecycle_stage",
+    "motion_state",
+    "active_service_id",
+    "active_plan_id"
+  ],
+  "title": "JourneyState",
+  "type": "object"
+}

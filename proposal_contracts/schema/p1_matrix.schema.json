@@ -1,0 +1,92 @@
+{
+  "$defs": {
+    "LifecycleStage": {
+      "description": "Driving lifecycle stage at the time of proposal (spec §7).",
+      "enum": [
+        "before_rest_until_stop",
+        "during_rest_stopped",
+        "after_rest_before_restart",
+        "active_driving_content"
+      ],
+      "title": "LifecycleStage",
+      "type": "string"
+    },
+    "MatrixRow": {
+      "description": "One row of the purpose/stage/allowed-services matrix.\n\n``allowed_service_ids`` may legitimately be empty (the\n``during_rest_stopped`` row). Extra keys (e.g. the frozen JSON's ``_note``\nexplanatory field) are tolerated and discarded — pydantic's default\n``extra=\"ignore\"`` behavior.",
+      "properties": {
+        "allowed_service_ids": {
+          "items": {
+            "$ref": "#/$defs/ServiceId"
+          },
+          "title": "Allowed Service Ids",
+          "type": "array"
+        },
+        "lifecycle_stage": {
+          "$ref": "#/$defs/LifecycleStage"
+        },
+        "trigger_purpose": {
+          "$ref": "#/$defs/TriggerPurpose"
+        }
+      },
+      "required": [
+        "trigger_purpose",
+        "lifecycle_stage",
+        "allowed_service_ids"
+      ],
+      "title": "MatrixRow",
+      "type": "object"
+    },
+    "ServiceId": {
+      "description": "Catalog service identifiers (spec §7.1–7.2, 14 services).",
+      "enum": [
+        "music_playlist",
+        "humming_karaoke",
+        "call_response_driving",
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "conversation_audio",
+        "live_viewing",
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped",
+        "oshi_reexperience",
+        "relaxation_multisensory",
+        "linked_video_recommendation"
+      ],
+      "title": "ServiceId",
+      "type": "string"
+    },
+    "TriggerPurpose": {
+      "description": "The high-level intent of the proposal trigger (spec §7).",
+      "enum": [
+        "rest_recommended",
+        "inattentive_driving_prevention_recovery",
+        "route_music",
+        "child_passenger_experience"
+      ],
+      "title": "TriggerPurpose",
+      "type": "string"
+    }
+  },
+  "description": "The frozen purpose/stage/allowed-services matrix (data-model.md).\n\nValidators\n----------\n1. Exactly 6 rows (spec §7.5).\n2. The ``after_rest_before_restart`` (post-rest) row lists exactly the 5\n   expected services incl. ``call_response_stopped``.\n3. Every ``allowed_service_ids`` entry is a valid ``ServiceId`` — enforced\n   structurally by ``MatrixRow``'s field type.",
+  "properties": {
+    "matrix_version": {
+      "title": "Matrix Version",
+      "type": "string"
+    },
+    "rows": {
+      "items": {
+        "$ref": "#/$defs/MatrixRow"
+      },
+      "title": "Rows",
+      "type": "array"
+    }
+  },
+  "required": [
+    "matrix_version",
+    "rows"
+  ],
+  "title": "PurposeStageServiceMatrix",
+  "type": "object"
+}

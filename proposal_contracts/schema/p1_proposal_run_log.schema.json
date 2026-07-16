@@ -1,0 +1,396 @@
+{
+  "$defs": {
+    "AlgorithmEvidence": {
+      "description": "Per-evaluation evidence appended to a ``ProposalRunLog``.",
+      "properties": {
+        "contract_version": {
+          "title": "Contract Version",
+          "type": "string"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EvidenceError"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "input_snapshot": {
+          "additionalProperties": true,
+          "title": "Input Snapshot",
+          "type": "object"
+        },
+        "matrix_version": {
+          "title": "Matrix Version",
+          "type": "string"
+        },
+        "missing_features": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Missing Features",
+          "type": "array"
+        },
+        "output": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Output"
+        },
+        "package_id": {
+          "title": "Package Id",
+          "type": "string"
+        },
+        "schema_version": {
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "step": {
+          "enum": [
+            "service",
+            "content"
+          ],
+          "title": "Step",
+          "type": "string"
+        },
+        "unused_available_features": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Unused Available Features",
+          "type": "array"
+        },
+        "used_feature_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Used Feature Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "step",
+        "package_id",
+        "contract_version",
+        "schema_version",
+        "matrix_version",
+        "input_snapshot",
+        "output",
+        "error",
+        "used_feature_ids",
+        "unused_available_features",
+        "missing_features"
+      ],
+      "title": "AlgorithmEvidence",
+      "type": "object"
+    },
+    "DiscreteEvent": {
+      "description": "A single discrete event appended to a ``ProposalRunLog`` (append-only\nin usage; this model just holds the shape).",
+      "properties": {
+        "at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "At"
+        },
+        "event_type": {
+          "$ref": "#/$defs/DiscreteEventType"
+        },
+        "payload": {
+          "additionalProperties": true,
+          "title": "Payload",
+          "type": "object"
+        }
+      },
+      "required": [
+        "event_type",
+        "at",
+        "payload"
+      ],
+      "title": "DiscreteEvent",
+      "type": "object"
+    },
+    "DiscreteEventType": {
+      "description": "Discrete event kinds appended to a ``ProposalRunLog`` (shape/enum only in\nP1; only ``OPPORTUNITY_OPENED``, ``SERVICE_SELECTED``, ``CONTENT_SELECTED``,\nand ``ALGORITHM_ERROR`` are actually emitted by the P1 mock flow).",
+      "enum": [
+        "OPPORTUNITY_OPENED",
+        "SERVICE_SELECTED",
+        "CONTENT_SELECTED",
+        "TRIGGER_PURPOSE_CHANGED",
+        "REST_SPOT_ARRIVED",
+        "REST_COMPLETED",
+        "CONTENT_COMPLETED",
+        "ALGORITHM_ERROR"
+      ],
+      "title": "DiscreteEventType",
+      "type": "string"
+    },
+    "EvidenceError": {
+      "description": "Structured error detail recorded when an ``evaluate()`` call raises or\nreturns an invalid result.",
+      "properties": {
+        "category": {
+          "title": "Category",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "category",
+        "message"
+      ],
+      "title": "EvidenceError",
+      "type": "object"
+    },
+    "JourneyState": {
+      "description": "A snapshot of the journey at a point in the proposal run.",
+      "properties": {
+        "active_plan_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Active Plan Id"
+        },
+        "active_service_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ServiceId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lifecycle_stage": {
+          "$ref": "#/$defs/LifecycleStage"
+        },
+        "motion_state": {
+          "$ref": "#/$defs/MotionState"
+        }
+      },
+      "required": [
+        "lifecycle_stage",
+        "motion_state",
+        "active_service_id",
+        "active_plan_id"
+      ],
+      "title": "JourneyState",
+      "type": "object"
+    },
+    "LifecycleStage": {
+      "description": "Driving lifecycle stage at the time of proposal (spec §7).",
+      "enum": [
+        "before_rest_until_stop",
+        "during_rest_stopped",
+        "after_rest_before_restart",
+        "active_driving_content"
+      ],
+      "title": "LifecycleStage",
+      "type": "string"
+    },
+    "MotionState": {
+      "description": "Vehicle motion state at proposal time (P1 journey-state snapshot).",
+      "enum": [
+        "driving",
+        "stopped"
+      ],
+      "title": "MotionState",
+      "type": "string"
+    },
+    "ProposalOpportunity": {
+      "description": "The neutral start-of-proposal record (data-model.md §ProposalOpportunity).\n\nValidators\n----------\n1. Purpose / stage must be compatible (rest stages only with\n   ``rest_recommended``; ``active_driving_content`` only with the three\n   non-rest purposes) — mirrors ``SelectorInput``'s rule.\n2. ``allowed_service_ids`` must be non-empty. Note: P1's matrix resolves\n   an EMPTY allowed set for ``during_rest_stopped`` (journey-engine-owned\n   rest actions have no ``ServiceId`` members), so such an opportunity\n   would fail this validator — EXPECTED, since P1 never constructs one.",
+      "properties": {
+        "allowed_service_ids": {
+          "items": {
+            "$ref": "#/$defs/ServiceId"
+          },
+          "title": "Allowed Service Ids",
+          "type": "array"
+        },
+        "lifecycle_stage": {
+          "$ref": "#/$defs/LifecycleStage"
+        },
+        "opportunity_id": {
+          "title": "Opportunity Id",
+          "type": "string"
+        },
+        "run_seed": {
+          "title": "Run Seed",
+          "type": "string"
+        },
+        "simulation_time": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Simulation Time"
+        },
+        "trigger_purpose": {
+          "$ref": "#/$defs/TriggerPurpose"
+        }
+      },
+      "required": [
+        "opportunity_id",
+        "trigger_purpose",
+        "lifecycle_stage",
+        "allowed_service_ids",
+        "simulation_time",
+        "run_seed"
+      ],
+      "title": "ProposalOpportunity",
+      "type": "object"
+    },
+    "ProposalRunStatus": {
+      "description": "Lifecycle status of a ``ProposalRun``.",
+      "enum": [
+        "created",
+        "service_selected",
+        "content_selected",
+        "error"
+      ],
+      "title": "ProposalRunStatus",
+      "type": "string"
+    },
+    "ServiceId": {
+      "description": "Catalog service identifiers (spec §7.1–7.2, 14 services).",
+      "enum": [
+        "music_playlist",
+        "humming_karaoke",
+        "call_response_driving",
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "conversation_audio",
+        "live_viewing",
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped",
+        "oshi_reexperience",
+        "relaxation_multisensory",
+        "linked_video_recommendation"
+      ],
+      "title": "ServiceId",
+      "type": "string"
+    },
+    "TriggerPurpose": {
+      "description": "The high-level intent of the proposal trigger (spec §7).",
+      "enum": [
+        "rest_recommended",
+        "inattentive_driving_prevention_recovery",
+        "route_music",
+        "child_passenger_experience"
+      ],
+      "title": "TriggerPurpose",
+      "type": "string"
+    }
+  },
+  "description": "Full append-only record persisted to ``proposal_runs/<run_id>.json``.\n\nRules (enforced by the run manager, not this model): append-only;\npersisted atomically after each event; reopen renders from this log\nwithout recomputation; created/edited entirely within ``proposal_runs/``\n(never touches trigger ``runs/``).",
+  "properties": {
+    "content_package_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Content Package Id"
+    },
+    "created_at": {
+      "title": "Created At",
+      "type": "string"
+    },
+    "events": {
+      "items": {
+        "$ref": "#/$defs/DiscreteEvent"
+      },
+      "title": "Events",
+      "type": "array"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/AlgorithmEvidence"
+      },
+      "title": "Evidence",
+      "type": "array"
+    },
+    "hyperparameters": {
+      "additionalProperties": true,
+      "title": "Hyperparameters",
+      "type": "object"
+    },
+    "journey_state": {
+      "$ref": "#/$defs/JourneyState"
+    },
+    "matrix_version": {
+      "title": "Matrix Version",
+      "type": "string"
+    },
+    "opportunity": {
+      "$ref": "#/$defs/ProposalOpportunity"
+    },
+    "parameters": {
+      "additionalProperties": true,
+      "title": "Parameters",
+      "type": "object"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "service_package_id": {
+      "title": "Service Package Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/ProposalRunStatus"
+    },
+    "world_snapshot": {
+      "additionalProperties": true,
+      "title": "World Snapshot",
+      "type": "object"
+    }
+  },
+  "required": [
+    "run_id",
+    "created_at",
+    "opportunity",
+    "matrix_version",
+    "world_snapshot",
+    "service_package_id",
+    "content_package_id",
+    "parameters",
+    "hyperparameters",
+    "journey_state",
+    "events",
+    "evidence",
+    "status"
+  ],
+  "title": "ProposalRunLog",
+  "type": "object"
+}

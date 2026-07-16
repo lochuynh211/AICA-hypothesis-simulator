@@ -1,0 +1,92 @@
+{
+  "$defs": {
+    "LifecycleStage": {
+      "description": "Driving lifecycle stage at the time of proposal (spec §7).",
+      "enum": [
+        "before_rest_until_stop",
+        "during_rest_stopped",
+        "after_rest_before_restart",
+        "active_driving_content"
+      ],
+      "title": "LifecycleStage",
+      "type": "string"
+    },
+    "ServiceId": {
+      "description": "Catalog service identifiers (spec §7.1–7.2, 14 services).",
+      "enum": [
+        "music_playlist",
+        "humming_karaoke",
+        "call_response_driving",
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "conversation_audio",
+        "live_viewing",
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped",
+        "oshi_reexperience",
+        "relaxation_multisensory",
+        "linked_video_recommendation"
+      ],
+      "title": "ServiceId",
+      "type": "string"
+    },
+    "TriggerPurpose": {
+      "description": "The high-level intent of the proposal trigger (spec §7).",
+      "enum": [
+        "rest_recommended",
+        "inattentive_driving_prevention_recovery",
+        "route_music",
+        "child_passenger_experience"
+      ],
+      "title": "TriggerPurpose",
+      "type": "string"
+    }
+  },
+  "description": "The neutral start-of-proposal record (data-model.md §ProposalOpportunity).\n\nValidators\n----------\n1. Purpose / stage must be compatible (rest stages only with\n   ``rest_recommended``; ``active_driving_content`` only with the three\n   non-rest purposes) — mirrors ``SelectorInput``'s rule.\n2. ``allowed_service_ids`` must be non-empty. Note: P1's matrix resolves\n   an EMPTY allowed set for ``during_rest_stopped`` (journey-engine-owned\n   rest actions have no ``ServiceId`` members), so such an opportunity\n   would fail this validator — EXPECTED, since P1 never constructs one.",
+  "properties": {
+    "allowed_service_ids": {
+      "items": {
+        "$ref": "#/$defs/ServiceId"
+      },
+      "title": "Allowed Service Ids",
+      "type": "array"
+    },
+    "lifecycle_stage": {
+      "$ref": "#/$defs/LifecycleStage"
+    },
+    "opportunity_id": {
+      "title": "Opportunity Id",
+      "type": "string"
+    },
+    "run_seed": {
+      "title": "Run Seed",
+      "type": "string"
+    },
+    "simulation_time": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        }
+      ],
+      "title": "Simulation Time"
+    },
+    "trigger_purpose": {
+      "$ref": "#/$defs/TriggerPurpose"
+    }
+  },
+  "required": [
+    "opportunity_id",
+    "trigger_purpose",
+    "lifecycle_stage",
+    "allowed_service_ids",
+    "simulation_time",
+    "run_seed"
+  ],
+  "title": "ProposalOpportunity",
+  "type": "object"
+}

@@ -1,0 +1,226 @@
+{
+  "$defs": {
+    "ExcludedCandidate": {
+      "description": "A candidate excluded before algorithm evaluation, with a platform reason.",
+      "properties": {
+        "candidate_id": {
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "platform_reason": {
+          "title": "Platform Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate_id",
+        "platform_reason"
+      ],
+      "title": "ExcludedCandidate",
+      "type": "object"
+    },
+    "FeatureContribution": {
+      "description": "A single feature's contribution row within a ranked candidate's\nreason breakdown.",
+      "properties": {
+        "contribution": {
+          "title": "Contribution",
+          "type": "number"
+        },
+        "feature_id": {
+          "title": "Feature Id",
+          "type": "string"
+        },
+        "feature_value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Feature Value"
+        },
+        "response_coefficient": {
+          "title": "Response Coefficient",
+          "type": "number"
+        },
+        "weight": {
+          "title": "Weight",
+          "type": "number"
+        }
+      },
+      "required": [
+        "feature_id",
+        "feature_value",
+        "response_coefficient",
+        "weight",
+        "contribution"
+      ],
+      "title": "FeatureContribution",
+      "type": "object"
+    },
+    "RankedCandidate": {
+      "description": "A single ranked service candidate (1-based rank, unique, ≤3 total).",
+      "properties": {
+        "candidate_id": {
+          "$ref": "#/$defs/ServiceId"
+        },
+        "feature_contributions": {
+          "items": {
+            "$ref": "#/$defs/FeatureContribution"
+          },
+          "title": "Feature Contributions",
+          "type": "array"
+        },
+        "opposing_feature_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Opposing Feature Ids",
+          "type": "array"
+        },
+        "rank": {
+          "title": "Rank",
+          "type": "integer"
+        },
+        "rationale": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Rationale",
+          "type": "array"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Score"
+        },
+        "supporting_feature_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Supporting Feature Ids",
+          "type": "array"
+        },
+        "uncertainty": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Uncertainty"
+        }
+      },
+      "required": [
+        "rank",
+        "candidate_id",
+        "score",
+        "rationale",
+        "supporting_feature_ids",
+        "opposing_feature_ids",
+        "uncertainty",
+        "feature_contributions"
+      ],
+      "title": "RankedCandidate",
+      "type": "object"
+    },
+    "ServiceDecisionType": {
+      "description": "Outcome category returned by the service selector (spec §5.4 service side).",
+      "enum": [
+        "ranked_candidates",
+        "no_proposal"
+      ],
+      "title": "ServiceDecisionType",
+      "type": "string"
+    },
+    "ServiceId": {
+      "description": "Catalog service identifiers (spec §7.1–7.2, 14 services).",
+      "enum": [
+        "music_playlist",
+        "humming_karaoke",
+        "call_response_driving",
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "conversation_audio",
+        "live_viewing",
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped",
+        "oshi_reexperience",
+        "relaxation_multisensory",
+        "linked_video_recommendation"
+      ],
+      "title": "ServiceId",
+      "type": "string"
+    }
+  },
+  "description": "Neutral service-selector result (data-model.md §\"ServiceSelectorOutput\").\n\nValidators\n----------\n1. ``len(ranked_candidates) <= 3``.\n2. Ranks are contiguous from 1 (no gaps, no duplicates).\n3. ``decision_type == no_proposal`` ⇒ ``ranked_candidates`` is empty.",
+  "properties": {
+    "algorithm_provenance": {
+      "additionalProperties": true,
+      "title": "Algorithm Provenance",
+      "type": "object"
+    },
+    "decision_type": {
+      "$ref": "#/$defs/ServiceDecisionType"
+    },
+    "excluded_candidates": {
+      "items": {
+        "$ref": "#/$defs/ExcludedCandidate"
+      },
+      "title": "Excluded Candidates",
+      "type": "array"
+    },
+    "missing_features": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Missing Features",
+      "type": "array"
+    },
+    "next_package_runtime_state": {
+      "additionalProperties": true,
+      "title": "Next Package Runtime State",
+      "type": "object"
+    },
+    "ranked_candidates": {
+      "items": {
+        "$ref": "#/$defs/RankedCandidate"
+      },
+      "title": "Ranked Candidates",
+      "type": "array"
+    },
+    "unused_available_features": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Unused Available Features",
+      "type": "array"
+    }
+  },
+  "required": [
+    "decision_type",
+    "ranked_candidates",
+    "excluded_candidates",
+    "unused_available_features",
+    "missing_features",
+    "next_package_runtime_state",
+    "algorithm_provenance"
+  ],
+  "title": "ServiceSelectorOutput",
+  "type": "object"
+}

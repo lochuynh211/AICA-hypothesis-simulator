@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 
-from aica_api.routers import packages, route_presets, run_plans, runs, scenarios
+from aica_api.routers import packages, proposal, route_presets, run_plans, runs, scenarios
 from aica_api.routers import routes as routes_router
 
 app = FastAPI()
@@ -21,3 +21,4 @@ app.include_router(routes_router.router)
 app.include_router(route_presets.router)
 app.include_router(run_plans.router)
 app.include_router(runs.router)
+app.include_router(proposal.router)
