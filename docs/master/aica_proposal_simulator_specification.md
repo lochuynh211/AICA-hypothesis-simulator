@@ -804,6 +804,19 @@ No live LLM call occurs during a deterministic transparent simulation run. The
 demonstration tier contains 36 balanced fictional songs, plus smaller fixtures
 and a future 500+ item stress tier.
 
+> **Soundcharts-grounded generation.** The staged generator above
+> is realized by grounding the catalog in real data from the **Soundcharts API**
+> and mapping it into the schema (S0–S9 pipeline). **Real song/artist names and
+> verbatim real audio are kept** for reviewer trust; only IDs and URLs stay synthetic
+> (`synthetic-` / `.invalid`, still enforced). The generator LLM additionally plans
+> Soundcharts searches, narrows candidates, and judges expected **test-case labels**
+> blind (P6 score as cross-check), so it *does* see real Soundcharts metadata — but
+> never enriches stored fields and never selects catalog songs by score (selection is
+> coverage-driven). Determinism is re-scoped: the one-time harvest is cached and the
+> transform is byte-identical; the frozen dataset remains the replay boundary and no
+> live call occurs during a transparent run. Authoritative detail:
+> `docs/master/p2-soundcharts-grounded-data-generation-design.md`; data spec §0.
+
 ### 15.3 Contrast data
 
 The simulator supplies complete base worlds plus clone-and-change contrasts. The comparison screen shows:

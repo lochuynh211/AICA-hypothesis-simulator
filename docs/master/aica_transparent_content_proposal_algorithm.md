@@ -486,6 +486,30 @@ to `0` for playlist. A hard-to-hum song is therefore *penalized* for humming, no
 merely un-bonused. That single swapping row is the only per-service difference,
 which is why one matrix suffices instead of three.
 
+### 5.5 Age/era affinity table (default)
+
+The `Age band` feature (§5.3) reads `album.release_date` → release **era** and answers with
+`age_era_affinity[band][era]`. The table is a **structural parameter** (§12); its default
+values are frozen here (loose, low-weight by design — it rewards the era each band was
+roughly 15–25 years old and tapers to mild negatives on distant eras). Evidence
+`e = 1` when `age_band` is present and a release year parses, else `0` (`missing_neutral`).
+
+- `age_band ∈ { teens, 20s, 30s, 40s, 50s, 60plus }`.
+- era bucket from release year → `{ pre1980, 1980s, 1990s, 2000s, 2010s, 2020s }`.
+
+| band \ era | pre1980 | 1980s | 1990s | 2000s | 2010s | 2020s |
+|---|---:|---:|---:|---:|---:|---:|
+| teens  | −0.6 | −0.4 | −0.2 |  0.0 | +0.5 | +1.0 |
+| 20s    | −0.5 | −0.3 |  0.0 | +0.6 | +1.0 | +0.6 |
+| 30s    | −0.3 |  0.0 | +0.6 | +1.0 | +0.6 |  0.0 |
+| 40s    |  0.0 | +0.6 | +1.0 | +0.6 |  0.0 | −0.3 |
+| 50s    | +0.6 | +1.0 | +0.6 |  0.0 | −0.3 | −0.5 |
+| 60plus | +1.0 | +0.6 |  0.0 | −0.3 | −0.5 | −0.6 |
+
+Like the genre maps (§5.7), this is a designed default vector, not a learned model; editing
+it creates a new parameter-set version. Values are clamped to `[−1,+1]`; an unknown band or
+unparseable date yields `e = 0` (no error).
+
 ### 5.6 The one open directional choice
 
 Fatigue, Traffic, and Night (`⚠`) have an arousal sign that is a product
@@ -667,8 +691,15 @@ relation).
 ## 12. Parameters and hyperparameters
 
 **Structural parameters:** `plan_item_count` (5), recipe registry, feature
-contract order, age/era affinity table, exact-oshi rule, history precedence,
-eligibility policy IDs, fixed humming segment, duration policy, lighting policy.
+contract order, age/era affinity table (default in §5.5), exact-oshi rule, history
+precedence, eligibility policy IDs, fixed humming segment, duration policy, lighting
+policy.
+
+**Evidence input form.** Driver/environment magnitudes (`drowsiness_level`,
+`fatigue_level`, `monotony_level`) are numeric `[0,100]` and reduced by `/100`
+(§5.3), matching the world schema in the [music-data spec](./aica_synthetic_music_data_and_generation_specification.md)
+§13. Categorical situation/environment fields stay enum-valued with the per-enum
+evidence tabulated in §5.3.
 
 **Numeric hyperparameters (frozen per run, in evidence):** hierarchy weights
 (§6.1); purpose multipliers (§6.2); **Trait Composition Matrix** (§4.2); **Context
