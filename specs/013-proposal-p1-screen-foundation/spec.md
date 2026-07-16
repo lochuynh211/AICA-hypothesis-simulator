@@ -24,6 +24,13 @@ of this milestone is to prove the **boundaries and the screen** work and are cle
 from the Trigger Simulator, so later milestones can drop real algorithms behind the same
 boundaries without reshaping them.
 
+## Clarifications
+
+### Session 2026-07-16
+
+- Q: In P1, does the Setup panel let the reviewer edit package parameters/hyperparameters, or only select packages/mode? → A: Selection-only — purpose, stage, service package, content package, and mode are selectable; category weights / multipliers / safety-dominance are read-only display readouts; parameter/hyperparameter editing is deferred to a later milestone.
+- Q: What do the mock content plan's items reference — real frozen-dataset track IDs or invented placeholder IDs? → A: Real track IDs from the committed P2 demonstration catalog (read-only lookup for display), so ④ shows real song/artist names; no catalog editing is introduced.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Open the standalone proposal screen and run a mock proposal (Priority: P1)
@@ -150,9 +157,11 @@ mock selector surfaces an explicit error record rather than a fabricated proposa
 - **FR-001**: The system MUST provide a Proposal workspace that is selectable from the application without
   creating or affecting any trigger run, presented by default in Japanese.
 - **FR-002**: The system MUST present a standalone 4-panel proposal screen — ① Input (synthetic-world
-  summary), ② Setup (purpose/stage, package and mode selection, and setup readouts), ③ Service proposal
+  summary), ② Setup (purpose/stage, service package, content package, and mode **selection**, plus
+  **read-only** category-weight / multiplier / safety-dominance readouts), ③ Service proposal
   (allowed-service chips, ranked candidates, rank-1 contributions, selected-service hand-off), and
   ④ Content proposal (ordered plan with per-item fit and reasons, excluded examples, actions).
+  Editing of package parameters/hyperparameters is out of scope for P1.
 - **FR-003**: The system MUST render the decision as an explicit two-step pipeline: STEP 1 selects a
   service, then STEP 2 selects concrete content for the chosen service, with a visible choose-then-recompute
   step between them.
@@ -201,7 +210,10 @@ mock selector surfaces an explicit error record rather than a fabricated proposa
 **Mock selectors & evaluation boundary**
 
 - **FR-018**: The system MUST provide a mock service-selector package and a mock content-selector package that
-  return fixed valid results conforming to their neutral contracts.
+  return fixed valid results conforming to their neutral contracts. The mock content plan's items MUST
+  reference real track identifiers that exist in the committed frozen P2 demonstration catalog (a read-only
+  lookup for display), so the content panel shows real song/artist names; the mock introduces no catalog
+  editing and depends on no live data.
 - **FR-019**: The system MUST route each selector evaluation through a boundary that validates the returned result
   against the neutral contract; a selector failure or invalid result MUST be recorded as an explicit selector-error
   entry and MUST NOT be presented as a normal proposal.
@@ -282,3 +294,6 @@ mock selector surfaces an explicit error record rather than a fabricated proposa
 - The purpose/stage matrix is editable/versioned for later hypothesis comparison, but P1 ships and freezes a
   single v1 version.
 - "Mode" (interactive vs quick) is carried as a setup selection; both modes present the same mock result in P1.
+- The two constrained-LLM package slots exist in the four-slot model but have no package in P1; the Setup
+  package pickers list only the packages actually available for each kind (the mocks). Empty LLM slots are not
+  surfaced as selectable options.
