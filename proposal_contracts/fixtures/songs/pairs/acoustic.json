@@ -1,0 +1,94 @@
+{
+  "spotify_track": {
+    "album": {
+      "album_type": "album",
+      "total_tracks": 7,
+      "available_markets": ["JP"],
+      "external_urls": {
+        "spotify": "https://example.invalid/spotify/album/synthetic-album-0014"
+      },
+      "href": "https://example.invalid/spotify/v1/albums/synthetic-album-0014",
+      "id": "synthetic-album-0014",
+      "images": [
+        {
+          "url": "https://example.invalid/images/synthetic-album-0014-640.jpg",
+          "height": 640,
+          "width": 640
+        }
+      ],
+      "name": "Unplugged Pathways",
+      "release_date": "2021-09-22",
+      "release_date_precision": "day",
+      "type": "album",
+      "uri": "spotify:album:synthetic-album-0014",
+      "artists": [
+        {
+          "external_urls": {
+            "spotify": "https://example.invalid/spotify/artist/synthetic-artist-0014"
+          },
+          "href": "https://example.invalid/spotify/v1/artists/synthetic-artist-0014",
+          "id": "synthetic-artist-0014",
+          "name": "Sota Iwamura",
+          "type": "artist",
+          "uri": "spotify:artist:synthetic-artist-0014"
+        }
+      ]
+    },
+    "artists": [
+      {
+        "external_urls": {
+          "spotify": "https://example.invalid/spotify/artist/synthetic-artist-0014"
+        },
+        "href": "https://example.invalid/spotify/v1/artists/synthetic-artist-0014",
+        "id": "synthetic-artist-0014",
+        "name": "Sota Iwamura",
+        "type": "artist",
+        "uri": "spotify:artist:synthetic-artist-0014"
+      }
+    ],
+    "available_markets": ["JP"],
+    "disc_number": 1,
+    "duration_ms": 242000,
+    "explicit": false,
+    "external_ids": {
+      "isrc": "SYNTH0000014"
+    },
+    "external_urls": {
+      "spotify": "https://example.invalid/spotify/track/synthetic-track-0014"
+    },
+    "href": "https://example.invalid/spotify/v1/tracks/synthetic-track-0014",
+    "id": "synthetic-track-0014",
+    "is_local": false,
+    "is_playable": true,
+    "name": "Wooden Heart",
+    "popularity": 55,
+    "preview_url": null,
+    "track_number": 3,
+    "type": "track",
+    "uri": "spotify:track:synthetic-track-0014"
+  },
+  "spotify_audio_features": {
+    "acousticness": 0.920,
+    "analysis_url": "https://example.invalid/spotify/v1/audio-analysis/synthetic-track-0014",
+    "danceability": 0.490,
+    "duration_ms": 242000,
+    "energy": 0.450,
+    "id": "synthetic-track-0014",
+    "instrumentalness": 0.009,
+    "key": 3,
+    "liveness": 0.073,
+    "loudness": -10.500,
+    "mode": 1,
+    "speechiness": 0.040,
+    "tempo": 96.000,
+    "time_signature": 4,
+    "track_href": "https://example.invalid/spotify/v1/tracks/synthetic-track-0014",
+    "type": "audio_features",
+    "uri": "spotify:track:synthetic-track-0014",
+    "valence": 0.480
+  },
+  "simulation_flags": {
+    "humming_karaoke_available": 1,
+    "full_karaoke_available": 1
+  }
+}

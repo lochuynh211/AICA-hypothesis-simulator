@@ -51,6 +51,23 @@ from aica_api.models.proposal.content_output import (  # noqa: F401
     ExcludedItem,
 )
 
+# ---------------------------------------------------------------------------
+# Re-exports — song schema (T015 / T016)
+# ---------------------------------------------------------------------------
+from aica_api.models.proposal.song_schema import (  # noqa: F401
+    Song,
+    SpotifyTrack,
+    SpotifyAudioFeatures,
+    SimulationFlags,
+    Album,
+    ArtistRef,
+    ExternalIds,
+    ExternalUrls,
+    Image,
+    Restrictions,
+    LinkedFrom,
+)
+
 __all__ = [
     "CONTRACT_VERSION",
     "SCHEMA_VERSION",
@@ -79,4 +96,16 @@ __all__ = [
     "PlanMode",
     "LightingConfiguration",
     "ExcludedItem",
+    # song schema
+    "Song",
+    "SpotifyTrack",
+    "SpotifyAudioFeatures",
+    "SimulationFlags",
+    "Album",
+    "ArtistRef",
+    "ExternalIds",
+    "ExternalUrls",
+    "Image",
+    "Restrictions",
+    "LinkedFrom",
 ]

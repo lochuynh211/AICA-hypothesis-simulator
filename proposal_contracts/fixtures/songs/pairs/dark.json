@@ -1,0 +1,94 @@
+{
+  "spotify_track": {
+    "album": {
+      "album_type": "album",
+      "total_tracks": 11,
+      "available_markets": ["JP"],
+      "external_urls": {
+        "spotify": "https://example.invalid/spotify/album/synthetic-album-0012"
+      },
+      "href": "https://example.invalid/spotify/v1/albums/synthetic-album-0012",
+      "id": "synthetic-album-0012",
+      "images": [
+        {
+          "url": "https://example.invalid/images/synthetic-album-0012-640.jpg",
+          "height": 640,
+          "width": 640
+        }
+      ],
+      "name": "Sunlit Stories",
+      "release_date": "2023-07-01",
+      "release_date_precision": "day",
+      "type": "album",
+      "uri": "spotify:album:synthetic-album-0012",
+      "artists": [
+        {
+          "external_urls": {
+            "spotify": "https://example.invalid/spotify/artist/synthetic-artist-0012"
+          },
+          "href": "https://example.invalid/spotify/v1/artists/synthetic-artist-0012",
+          "id": "synthetic-artist-0012",
+          "name": "Natsuki Shimura",
+          "type": "artist",
+          "uri": "spotify:artist:synthetic-artist-0012"
+        }
+      ]
+    },
+    "artists": [
+      {
+        "external_urls": {
+          "spotify": "https://example.invalid/spotify/artist/synthetic-artist-0012"
+        },
+        "href": "https://example.invalid/spotify/v1/artists/synthetic-artist-0012",
+        "id": "synthetic-artist-0012",
+        "name": "Natsuki Shimura",
+        "type": "artist",
+        "uri": "spotify:artist:synthetic-artist-0012"
+      }
+    ],
+    "available_markets": ["JP"],
+    "disc_number": 1,
+    "duration_ms": 225600,
+    "explicit": false,
+    "external_ids": {
+      "isrc": "SYNTH0000013"
+    },
+    "external_urls": {
+      "spotify": "https://example.invalid/spotify/track/synthetic-track-0013"
+    },
+    "href": "https://example.invalid/spotify/v1/tracks/synthetic-track-0013",
+    "id": "synthetic-track-0013",
+    "is_local": false,
+    "is_playable": true,
+    "name": "Shadow Between Hours",
+    "popularity": 52,
+    "preview_url": null,
+    "track_number": 8,
+    "type": "track",
+    "uri": "spotify:track:synthetic-track-0013"
+  },
+  "spotify_audio_features": {
+    "acousticness": 0.165,
+    "analysis_url": "https://example.invalid/spotify/v1/audio-analysis/synthetic-track-0013",
+    "danceability": 0.590,
+    "duration_ms": 225600,
+    "energy": 0.530,
+    "id": "synthetic-track-0013",
+    "instrumentalness": 0.003,
+    "key": 8,
+    "liveness": 0.102,
+    "loudness": -8.900,
+    "mode": 0,
+    "speechiness": 0.051,
+    "tempo": 108.000,
+    "time_signature": 4,
+    "track_href": "https://example.invalid/spotify/v1/tracks/synthetic-track-0013",
+    "type": "audio_features",
+    "uri": "spotify:track:synthetic-track-0013",
+    "valence": 0.115
+  },
+  "simulation_flags": {
+    "humming_karaoke_available": 1,
+    "full_karaoke_available": 1
+  }
+}
