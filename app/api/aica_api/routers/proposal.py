@@ -52,6 +52,7 @@ from aica_api.models.proposal.enums import (
 )
 from aica_api.models.proposal.events import DiscreteEvent
 from aica_api.models.proposal.journey import JourneyState
+from aica_api.models.proposal.journey_action import JourneyAction
 from aica_api.models.proposal.matrix import MatrixResolutionError, PurposeStageServiceMatrix
 from aica_api.models.proposal.opportunity import ProposalOpportunity
 from aica_api.models.proposal.package_manifest import BilingualLabel, ProposalPackageManifest
@@ -73,6 +74,7 @@ from aica_api.services.driver_profile_store import (
     DriverProfileNotFoundError,
     DriverProfileStore,
 )
+from aica_api.services.proposal_journey import apply_action
 from aica_api.services.proposal_package_registry import ProposalPackageRegistry
 from aica_api.services.proposal_selector import dispatch_selector
 from aica_api.services.world_clone_store import InvalidOverrideError, WorldCloneStore
@@ -1131,3 +1133,54 @@ def delete_proposal_run(run_id: str) -> Response:
     if not deleted:
         raise HTTPException(status_code=404, detail=f"Proposal run {run_id!r} not found")
     return Response(status_code=204)
+
+
+# ---------------------------------------------------------------------------
+# POST /api/proposal/runs/{run_id}/journey/action — T012 (P4 engine scaffold)
+# ---------------------------------------------------------------------------
+
+
+@router.post("/api/proposal/runs/{run_id}/journey/action")
+def apply_journey_action(run_id: str, action: JourneyAction) -> ProposalRunLog:
+    """Apply one journey action via the PURE ``proposal_journey.apply_action``
+    engine (data-model.md §"JourneyAction"; contracts/journey-api.md).
+
+    ``action`` is parsed directly as a ``JourneyAction`` — an unrecognized
+    ``action_type`` string fails FastAPI/pydantic request validation (422)
+    before this handler ever runs, since ``JourneyActionType`` is a closed
+    enum; that is distinct from the engine's OWN structured 422 (below), which
+    covers a *valid* ``action_type`` rejected for a precondition the current
+    run state doesn't satisfy.
+
+    This router owns the ONLY two side-effecting responsibilities the engine
+    itself must never perform: minting the timestamp (``_now_iso()``) and
+    persisting the result (append-only, via ``proposal_run_manager``). A
+    ``rejected`` transition raises a structured 422 — never a silent no-op;
+    a ``NO_ELIGIBLE_CANDIDATE`` end-state (later units) is a 200 success, not
+    an error, per the contract.
+    """
+    run_log = prm.get_run(run_id, settings.proposal_runs_dir)
+    if run_log is None:
+        raise HTTPException(status_code=404, detail=f"Proposal run {run_id!r} not found")
+
+    transition = apply_action(run_log, action, now=_now_iso())
+
+    if transition.rejected is not None:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": transition.rejected.code,
+                "message": transition.rejected.message,
+            },
+        )
+
+    for event in transition.events:
+        prm.append_event(run_id, event, settings.proposal_runs_dir)
+
+    run_log = prm.update_state(
+        run_id,
+        settings.proposal_runs_dir,
+        status=transition.new_status,
+        journey_state=transition.new_journey_state,
+    )
+    return run_log

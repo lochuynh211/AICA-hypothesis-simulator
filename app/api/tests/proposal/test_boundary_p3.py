@@ -18,6 +18,16 @@ This is a regression guard, not new functionality: if a future unit
 introduces a real service selector or any of the above endpoint families,
 this test must be updated deliberately — it is not meant to silently pass
 once that happens.
+
+UPDATE (P4, feature 015 "Eligibility And Discrete Journey Engine"): P4
+deliberately introduces a journey-progression endpoint
+(``POST /api/proposal/runs/{run_id}/journey/action``, T012) — the very thing
+this guard forbade for P3's scope. Per this module's own instruction above,
+the guard below has been updated deliberately (not silently) to allow that
+specific, now-in-scope endpoint family while continuing to forbid the
+others (motion/catalog/schedule eligibility-narrowing endpoints, which still
+do not exist as dedicated routes — eligibility narrowing rides the existing
+STEP-1 ``POST /api/proposal/runs`` response per contracts/journey-api.md).
 """
 from __future__ import annotations
 
@@ -95,11 +105,19 @@ def test_step1_create_run_dispatches_the_mock_service_selector(tmp_path, monkeyp
 
 
 def test_no_eligibility_narrowing_or_journey_progression_endpoints_exist():
-    """FR-021: no motion/catalog/schedule eligibility-narrowing endpoint, and
-    no journey-progression endpoint, exists anywhere under ``/api/proposal``."""
+    """FR-021: no motion/catalog/schedule eligibility-narrowing endpoint
+    exists anywhere under ``/api/proposal``. Journey-progression endpoints ARE
+    now permitted (P4, T012) — but ONLY the specific, known ones; any other
+    "journey"/"progress"/"advance"-named route is still an unexpected
+    scope-violating surface."""
     proposal_paths = sorted(
         {route.path for route in app.routes if getattr(route, "path", "").startswith("/api/proposal")}
     )
+
+    # P4 (feature 015) deliberately-added journey endpoints (allow-listed).
+    _known_journey_paths = {
+        "/api/proposal/runs/{run_id}/journey/action",
+    }
 
     forbidden_substrings = (
         "eligibility",
@@ -113,7 +131,8 @@ def test_no_eligibility_narrowing_or_journey_progression_endpoints_exist():
     offenders = [
         path
         for path in proposal_paths
-        if any(term in path.replace("_", "-").lower() for term in forbidden_substrings)
+        if path not in _known_journey_paths
+        and any(term in path.replace("_", "-").lower() for term in forbidden_substrings)
     ]
     assert not offenders, f"Unexpected P3-scope-violating endpoint(s): {offenders}"
 
@@ -122,4 +141,5 @@ def test_no_eligibility_narrowing_or_journey_progression_endpoints_exist():
     assert "/api/proposal/runs" in proposal_paths
     assert "/api/proposal/runs/{run_id}/select-service" in proposal_paths
     assert "/api/proposal/worlds/validate" in proposal_paths
+    assert "/api/proposal/runs/{run_id}/journey/action" in proposal_paths
     assert len(proposal_paths) >= 10

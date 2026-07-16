@@ -20,6 +20,49 @@
       "title": "MotionState",
       "type": "string"
     },
+    "PlaybackState": {
+      "description": "Playback state of the currently active content plan (data-model.md).",
+      "enum": [
+        "idle",
+        "active",
+        "backgrounded",
+        "paused",
+        "completed",
+        "stopped"
+      ],
+      "title": "PlaybackState",
+      "type": "string"
+    },
+    "PreviousContent": {
+      "description": "The service/plan that was active before the current one (P4) — used to\nrestore playback when a ``stop`` action returns to prior content.",
+      "properties": {
+        "plan_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Plan Ref"
+        },
+        "service_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ServiceId"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "PreviousContent",
+      "type": "object"
+    },
     "ServiceId": {
       "description": "Catalog service identifiers (spec §7.1–7.2, 14 services).",
       "enum": [
@@ -65,11 +108,45 @@
         }
       ]
     },
+    "current_plan_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Current Plan Ref"
+    },
     "lifecycle_stage": {
       "$ref": "#/$defs/LifecycleStage"
     },
     "motion_state": {
       "$ref": "#/$defs/MotionState"
+    },
+    "playback_state": {
+      "$ref": "#/$defs/PlaybackState",
+      "default": "idle"
+    },
+    "previous_content": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PreviousContent"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "rejected_service_ids": {
+      "items": {
+        "$ref": "#/$defs/ServiceId"
+      },
+      "title": "Rejected Service Ids",
+      "type": "array"
     }
   },
   "required": [

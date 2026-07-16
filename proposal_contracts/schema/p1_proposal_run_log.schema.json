@@ -219,11 +219,45 @@
             }
           ]
         },
+        "current_plan_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Current Plan Ref"
+        },
         "lifecycle_stage": {
           "$ref": "#/$defs/LifecycleStage"
         },
         "motion_state": {
           "$ref": "#/$defs/MotionState"
+        },
+        "playback_state": {
+          "$ref": "#/$defs/PlaybackState",
+          "default": "idle"
+        },
+        "previous_content": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PreviousContent"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "rejected_service_ids": {
+          "items": {
+            "$ref": "#/$defs/ServiceId"
+          },
+          "title": "Rejected Service Ids",
+          "type": "array"
         }
       },
       "required": [
@@ -254,6 +288,49 @@
       ],
       "title": "MotionState",
       "type": "string"
+    },
+    "PlaybackState": {
+      "description": "Playback state of the currently active content plan (data-model.md).",
+      "enum": [
+        "idle",
+        "active",
+        "backgrounded",
+        "paused",
+        "completed",
+        "stopped"
+      ],
+      "title": "PlaybackState",
+      "type": "string"
+    },
+    "PreviousContent": {
+      "description": "The service/plan that was active before the current one (P4) — used to\nrestore playback when a ``stop`` action returns to prior content.",
+      "properties": {
+        "plan_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Plan Ref"
+        },
+        "service_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ServiceId"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "PreviousContent",
+      "type": "object"
     },
     "ProposalOpportunity": {
       "description": "The neutral start-of-proposal record (data-model.md §ProposalOpportunity).\n\nValidators\n----------\n1. Purpose / stage must be compatible (rest stages only with\n   ``rest_recommended``; ``active_driving_content`` only with the three\n   non-rest purposes) — mirrors ``SelectorInput``'s rule.\n2. ``allowed_service_ids`` must be non-empty. Note: P1's matrix resolves\n   an EMPTY allowed set for ``during_rest_stopped`` (journey-engine-owned\n   rest actions have no ``ServiceId`` members), so such an opportunity\n   would fail this validator — EXPECTED, since P1 never constructs one.",
