@@ -2,7 +2,7 @@
   {
     "test_case_id": "tc-01",
     "world_ref": "world-night-highway-high-drowsiness",
-    "candidate_song_ref": "synthetic-track-0022",
+    "candidate_song_ref": "synthetic-track-0090",
     "expected_label": "positive",
     "judge_folds": {
       "context_need": "x",
@@ -11,15 +11,15 @@
       "coherence": "x",
       "web_evidence": "x"
     },
-    "algorithm_score": 0.02387700539818362,
-    "agreement": "disagree",
+    "algorithm_score": 0.13717681638452986,
+    "agreement": "agree",
     "contrast_partner": null,
     "expected_direction": null
   },
   {
     "test_case_id": "tc-02",
     "world_ref": "world-night-highway-high-drowsiness",
-    "candidate_song_ref": "synthetic-track-0076",
+    "candidate_song_ref": "synthetic-track-0091",
     "expected_label": "positive",
     "judge_folds": {
       "context_need": "x",
@@ -53,7 +53,7 @@
   {
     "test_case_id": "tc-04",
     "world_ref": "world-night-highway-high-drowsiness",
-    "candidate_song_ref": "synthetic-track-0198",
+    "candidate_song_ref": "synthetic-track-0223",
     "expected_label": "negative",
     "judge_folds": {
       "context_need": "x",
@@ -87,7 +87,7 @@
   {
     "test_case_id": "tc-06",
     "world_ref": "world-daytime-commute",
-    "candidate_song_ref": "synthetic-track-0198",
+    "candidate_song_ref": "synthetic-track-0223",
     "expected_label": "neutral",
     "judge_folds": {
       "context_need": "x",
@@ -104,7 +104,7 @@
   {
     "test_case_id": "tc-07",
     "world_ref": "world-daytime-commute",
-    "candidate_song_ref": "synthetic-track-0022",
+    "candidate_song_ref": "synthetic-track-0090",
     "expected_label": "negative",
     "judge_folds": {
       "context_need": "x",
@@ -113,7 +113,7 @@
       "coherence": "x",
       "web_evidence": "x"
     },
-    "algorithm_score": 0.02679713680032126,
+    "algorithm_score": 0.06066942419374769,
     "agreement": "disagree",
     "contrast_partner": null,
     "expected_direction": null
@@ -121,7 +121,7 @@
   {
     "test_case_id": "tc-08",
     "world_ref": "world-daytime-commute",
-    "candidate_song_ref": "synthetic-track-0076",
+    "candidate_song_ref": "synthetic-track-0091",
     "expected_label": "neutral",
     "judge_folds": {
       "context_need": "x",

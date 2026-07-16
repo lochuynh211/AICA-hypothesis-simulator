@@ -1,0 +1,90 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/faef6064-d6f3-11e8-8e95-525400009efb/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/radwimps/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/0/4/11e81bbd-540e-8cbc-b264-a0369fe50396.jpg",
+      "name": "RADWIMPS",
+      "slug": "radwimps",
+      "uuid": "11e81bbd-540e-8cbc-b264-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.32,
+    "energy": 0.91,
+    "instrumentalness": 0,
+    "key": 11,
+    "liveness": 0.09,
+    "loudness": -3.97,
+    "mode": 1,
+    "speechiness": 0.14,
+    "tempo": 189.78,
+    "timeSignature": 4,
+    "valence": 0.64
+  },
+  "composers": [
+    "Yojiro Noda"
+  ],
+  "copyright": "℗ 2016 EMI Records, a division of UNIVERSAL MUSIC LLC.",
+  "creditName": "RADWIMPS",
+  "credits": [],
+  "distributor": "Universal",
+  "duration": 285,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "soundtrack",
+      "sub": [
+        "ost"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/f/6/faef6064-d6f3-11e8-8e95-525400009efb.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO01617097"
+  },
+  "iswcs": [
+    "T9201957746"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    },
+    {
+      "name": "EMI",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/radwimps/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/0/4/11e81bbd-540e-8cbc-b264-a0369fe50396.jpg",
+      "name": "RADWIMPS",
+      "slug": "radwimps",
+      "uuid": "11e81bbd-540e-8cbc-b264-a0369fe50396"
+    }
+  ],
+  "name": "Zenzenzense - English Ver.",
+  "producers": [
+    "Yojiro Noda"
+  ],
+  "releaseDate": "2016-08-24T00:00:00+00:00",
+  "uuid": "faef6064-d6f3-11e8-8e95-525400009efb"
+}

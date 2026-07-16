@@ -1,0 +1,116 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82665-66fe-db4e-b2f2-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/fripside/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/f/5/11e81bbc-a5f4-e388-b0db-a0369fe50396.jpg",
+      "name": "fripSide",
+      "slug": "fripside",
+      "uuid": "11e81bbc-a5f4-e388-b0db-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.59,
+    "danceability": 0.57,
+    "energy": 1,
+    "instrumentalness": 0.27,
+    "key": 6,
+    "liveness": 0.32,
+    "loudness": -1.37,
+    "mode": 1,
+    "speechiness": 0.16,
+    "tempo": 143.06,
+    "timeSignature": 4,
+    "valence": 0.36
+  },
+  "composers": [
+    "八木沼悟志",
+    "yuki-ka/八木沼悟志"
+  ],
+  "copyright": "℗ 2020 NBCUniversal Entertainment",
+  "creditName": "fripSide",
+  "credits": [
+    {
+      "name": "Satoshi Yaginuma",
+      "roles": [
+        "arranger",
+        "songwriter"
+      ],
+      "uuid": "23d86a37-122e-46cf-9fae-8af5798df5c8"
+    },
+    {
+      "name": "八木沼悟志 (Satoshi Yaginuma)",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "6c52b8b7-1d9c-4146-bd5c-8a514456277e"
+    },
+    {
+      "name": "Shinya Saito",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "76a60906-e5f9-4934-8976-2fef38b1f466"
+    },
+    {
+      "name": "YUKI-KA YUKI-KA",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "78f64204-3950-4c71-abd8-b01b07cc7e99"
+    },
+    {
+      "name": "Shinya Saito",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "f4f904f3-27e1-44d9-99ee-db2ea114c142"
+    }
+  ],
+  "distributor": "",
+  "duration": 254,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "soundtrack",
+      "sub": [
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/e/f/6/11e82665-66fe-db4e-b2f2-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPI00963400"
+  },
+  "iswcs": [
+    "T1019780584"
+  ],
+  "labels": [
+    {
+      "name": "NBCUniversal",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/fripside/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/f/5/11e81bbc-a5f4-e388-b0db-a0369fe50396.jpg",
+      "name": "fripSide",
+      "slug": "fripside",
+      "uuid": "11e81bbc-a5f4-e388-b0db-a0369fe50396"
+    }
+  ],
+  "name": "only my railgun",
+  "producers": [],
+  "releaseDate": "2020-11-04T00:00:00+00:00",
+  "uuid": "11e82665-66fe-db4e-b2f2-aa1c026db3d8"
+}

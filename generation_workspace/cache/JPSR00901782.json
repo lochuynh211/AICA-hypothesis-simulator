@@ -1,0 +1,74 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8265c-a8b1-4472-b806-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/supercell/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/6/b/11e81bba-6b64-c258-8a6c-a0369fe50396.jpg",
+      "name": "supercell",
+      "slug": "supercell",
+      "uuid": "11e81bba-6b64-c258-8a6c-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.01,
+    "danceability": 0.42,
+    "energy": 0.91,
+    "instrumentalness": 0,
+    "key": 9,
+    "liveness": 0.1,
+    "loudness": -2.73,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 164.95,
+    "timeSignature": 4,
+    "valence": 0.47
+  },
+  "composers": [
+    "龍 -RYO-"
+  ],
+  "copyright": "(P)2009 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "supercell",
+  "credits": [],
+  "distributor": "",
+  "duration": 30,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "soundtrack",
+      "sub": [
+        "ost",
+        "anime",
+        "film ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/1/b/8/11e8265c-a8b1-4472-b806-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPSR00901782"
+  },
+  "iswcs": [
+    "T9037693928"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/supercell/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/6/b/11e81bba-6b64-c258-8a6c-a0369fe50396.jpg",
+      "name": "supercell",
+      "slug": "supercell",
+      "uuid": "11e81bba-6b64-c258-8a6c-a0369fe50396"
+    }
+  ],
+  "name": "君の知らない物語",
+  "producers": [],
+  "releaseDate": "2009-08-12T00:00:00+00:00",
+  "uuid": "11e8265c-a8b1-4472-b806-aa1c026db3d8"
+}

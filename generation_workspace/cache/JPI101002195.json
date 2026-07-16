@@ -1,0 +1,164 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826e5-f769-63fe-bfde-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ms-3/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/6/8/11e81bcc-8865-1f9e-804b-a0369fe50396.jpg",
+      "name": "μ's",
+      "slug": "ms-3",
+      "uuid": "11e81bcc-8865-1f9e-804b-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.1,
+    "danceability": 0.38,
+    "energy": 0.93,
+    "instrumentalness": 0,
+    "key": 9,
+    "liveness": 0.09,
+    "loudness": -3.84,
+    "mode": 1,
+    "speechiness": 0.09,
+    "tempo": 172.88,
+    "timeSignature": 4,
+    "valence": 0.26
+  },
+  "composers": [
+    "Takahiro Yamada",
+    "畑 亜貴"
+  ],
+  "copyright": "Lantis",
+  "creditName": "μ's",
+  "credits": [
+    {
+      "name": "Aki Hata",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "71e57795-200f-4c31-ab34-9e2994e8136c"
+    },
+    {
+      "name": "Takahiro Yamada",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "33a9d4d0-a57b-4107-9e70-c661057eefba"
+    },
+    {
+      "name": "Ryosuke Nakanishi",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "28ee9f8e-e59e-445a-818f-db9557d6ac72"
+    },
+    {
+      "name": "Eli Ayase (CV: Yoshino Nanjo)",
+      "roles": [
+        "voices"
+      ],
+      "uuid": "9d5864ce-8f92-4393-9618-56cf1f5305ac"
+    },
+    {
+      "name": "Rin Hoshizora (CV: Riho Iida)",
+      "roles": [
+        "voices"
+      ],
+      "uuid": "42f46a7b-6e7c-4118-8a14-6f962c6d08ae"
+    },
+    {
+      "name": "Hanayo Koizumi (CV: Yurika Kubo)",
+      "roles": [
+        "voices"
+      ],
+      "uuid": "4d829a75-0073-4c44-9492-6f95e1d78753"
+    },
+    {
+      "name": "Umi Sonoda (CV: Suzuko Mimori)",
+      "roles": [
+        "voices"
+      ],
+      "uuid": "caf135d0-c986-47ab-a458-e750a030590b"
+    },
+    {
+      "name": "Kotori Minami (CV: Aya Uchida)",
+      "roles": [
+        "voices"
+      ],
+      "uuid": "f47f97fe-bfb9-45a9-8944-8b8c0e5e126c"
+    },
+    {
+      "name": "Honoka Kosaka (CV: Emi Nitta)",
+      "roles": [
+        "voices"
+      ],
+      "uuid": "6631c3f4-b211-4e7e-a154-868b50835398"
+    },
+    {
+      "name": "Nozomi Tojo (CV: Aina Kusuda)",
+      "roles": [
+        "voices"
+      ],
+      "uuid": "6dfb5d04-eb01-4d26-9903-00832bdfd604"
+    },
+    {
+      "name": "Nico Yazawa (CV: Sora Tokui)",
+      "roles": [
+        "voices"
+      ],
+      "uuid": "371cbd17-8d3b-4244-8a50-a4452f90f1a4"
+    },
+    {
+      "name": "Maki Nishikino (CV: Pile)",
+      "roles": [
+        "voices"
+      ],
+      "uuid": "9a29e2e9-b93a-481d-9a15-21c18034a5e4"
+    }
+  ],
+  "distributor": "Bandai Namco",
+  "duration": 258,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "soundtrack",
+      "sub": [
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/9/6/7/11e826e5-f769-63fe-bfde-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPI101002195"
+  },
+  "iswcs": [
+    "T1020099425"
+  ],
+  "labels": [
+    {
+      "name": "Lantis",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ms-3/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/6/8/11e81bcc-8865-1f9e-804b-a0369fe50396.jpg",
+      "name": "μ's",
+      "slug": "ms-3",
+      "uuid": "11e81bcc-8865-1f9e-804b-a0369fe50396"
+    }
+  ],
+  "name": "Snow halation",
+  "producers": [],
+  "releaseDate": "2010-12-22T00:00:00+00:00",
+  "uuid": "11e826e5-f769-63fe-bfde-a0369fe50396"
+}

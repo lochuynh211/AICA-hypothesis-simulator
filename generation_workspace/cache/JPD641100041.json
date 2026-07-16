@@ -1,0 +1,112 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8265c-0730-ce42-8a6b-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/itoukanako-3/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/d/c/d94b580b-9cd9-4d4b-9a26-e27aa191ee20.jpg",
+      "name": "いとうかなこ",
+      "slug": "itoukanako-3",
+      "uuid": "d94b580b-9cd9-4d4b-9a26-e27aa191ee20"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.02,
+    "danceability": 0.5,
+    "energy": 0.99,
+    "instrumentalness": 0,
+    "key": 0,
+    "liveness": 0.35,
+    "loudness": -2.5,
+    "mode": 1,
+    "speechiness": 0.12,
+    "tempo": 160.96,
+    "timeSignature": 4,
+    "valence": 0.49
+  },
+  "composers": [
+    "志倉千代丸"
+  ],
+  "copyright": "2011 Frontier Works/5pb.",
+  "creditName": "いとうかなこ",
+  "credits": [
+    {
+      "name": "Dyan Cannon",
+      "roles": [
+        "songwriter",
+        "producer",
+        "dj"
+      ],
+      "uuid": "6daa1b63-8548-4b3f-9ba4-a5c38f8fda6b"
+    },
+    {
+      "name": "磯江俊道",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "9c1542be-3675-4129-85e5-6e6807e64eac"
+    },
+    {
+      "name": "志倉千代丸 (Chiyomaru Shikura)",
+      "roles": [
+        "composer",
+        "producer",
+        "writer"
+      ],
+      "uuid": "c796441a-3381-43f4-abac-18e5581f131d"
+    },
+    {
+      "name": "志倉千代丸",
+      "roles": [
+        "writer",
+        "composer"
+      ],
+      "uuid": "1914ce43-7de5-4fae-b02d-067e60ffd902"
+    }
+  ],
+  "distributor": "",
+  "duration": 256,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "soundtrack",
+      "sub": [
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/3/7/11e8265c-0730-ce42-8a6b-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPD641100041"
+  },
+  "iswcs": [
+    "T1020189700"
+  ],
+  "labels": [
+    {
+      "name": "5pb",
+      "type": "unknown"
+    },
+    {
+      "name": "Frontier Works",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/itoukanako-3/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/d/c/d94b580b-9cd9-4d4b-9a26-e27aa191ee20.jpg",
+      "name": "いとうかなこ",
+      "slug": "itoukanako-3",
+      "uuid": "d94b580b-9cd9-4d4b-9a26-e27aa191ee20"
+    }
+  ],
+  "name": "Hacking to the Gate",
+  "producers": [
+    "Dyan Cannon"
+  ],
+  "releaseDate": "2011-04-20T00:00:00+00:00",
+  "uuid": "11e8265c-0730-ce42-8a6b-aa1c026db3d8"
+}

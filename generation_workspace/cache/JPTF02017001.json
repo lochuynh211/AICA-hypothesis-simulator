@@ -1,0 +1,81 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/f6782f32-ca55-4c81-ba92-91919a2b98df/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/eve-12/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/d/e/11e81bcd-0ed6-a052-9c1f-a0369fe50396.jpg",
+      "name": "Eve",
+      "slug": "eve-12",
+      "uuid": "11e81bcd-0ed6-a052-9c1f-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.01,
+    "danceability": 0.58,
+    "energy": 0.91,
+    "instrumentalness": 0,
+    "key": 5,
+    "liveness": 0.12,
+    "loudness": -3.52,
+    "mode": 0,
+    "speechiness": 0.09,
+    "tempo": 92.5,
+    "timeSignature": 4,
+    "valence": 0.61
+  },
+  "composers": [
+    "Eve"
+  ],
+  "copyright": "(P) 2020 TOY'S FACTORY",
+  "creditName": "Eve",
+  "credits": [
+    {
+      "name": "Eve",
+      "roles": [
+        "composer",
+        "lead vocals"
+      ],
+      "uuid": "8e06aa90-9b28-4556-81e1-ede3477f7d21"
+    }
+  ],
+  "distributor": "TOY'S FACTORY",
+  "duration": 221,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/5/5/a/f6782f32-ca55-4c81-ba92-91919a2b98df.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPTF02017001"
+  },
+  "iswcs": [
+    "T3029963933"
+  ],
+  "labels": [
+    {
+      "name": "TOY'S FACTORY",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/eve-12/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/d/e/11e81bcd-0ed6-a052-9c1f-a0369fe50396.jpg",
+      "name": "Eve",
+      "slug": "eve-12",
+      "uuid": "11e81bcd-0ed6-a052-9c1f-a0369fe50396"
+    }
+  ],
+  "name": "廻廻奇譚",
+  "producers": [],
+  "releaseDate": "2020-10-03T00:00:00+00:00",
+  "uuid": "f6782f32-ca55-4c81-ba92-91919a2b98df"
+}

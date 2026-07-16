@@ -1,0 +1,79 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82690-e4a3-22f0-ac1a-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/liang-gongharuhi-cv-ping-ye-ling/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/1/5/e6bb11eb-8518-4225-8135-34b7932d9069.jpg",
+      "name": "涼宮ハルヒ (CV.平野 綾)",
+      "slug": "liang-gongharuhi-cv-ping-ye-ling",
+      "uuid": "e6bb11eb-8518-4225-8135-34b7932d9069"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.46,
+    "energy": 0.96,
+    "instrumentalness": 0,
+    "key": 11,
+    "liveness": 0.35,
+    "loudness": -2.23,
+    "mode": 1,
+    "speechiness": 0.13,
+    "tempo": 150.01,
+    "timeSignature": 4,
+    "valence": 0.41
+  },
+  "composers": [
+    "畑 亜貴",
+    "神前 暁"
+  ],
+  "copyright": "Lantis",
+  "creditName": "涼宮ハルヒ (CV.平野 綾)",
+  "credits": [],
+  "distributor": "Bandai Namco",
+  "duration": 279,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "soundtrack",
+      "sub": [
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/a/4/11e82690-e4a3-22f0-ac1a-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPI100601012"
+  },
+  "iswcs": [
+    "T9097254132"
+  ],
+  "labels": [
+    {
+      "name": "Lantis",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/liang-gongharuhi-cv-ping-ye-ling/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/1/5/e6bb11eb-8518-4225-8135-34b7932d9069.jpg",
+      "name": "涼宮ハルヒ (CV.平野 綾)",
+      "slug": "liang-gongharuhi-cv-ping-ye-ling",
+      "uuid": "e6bb11eb-8518-4225-8135-34b7932d9069"
+    }
+  ],
+  "name": "God knows…",
+  "producers": [],
+  "releaseDate": "2006-06-21T00:00:00+00:00",
+  "uuid": "11e82690-e4a3-22f0-ac1a-a0369fe50396"
+}

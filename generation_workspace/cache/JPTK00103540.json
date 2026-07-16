@@ -1,0 +1,111 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8261c-dc4d-78b8-a490-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/joe-hisaishi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/c/8/ecb51a50-b8cd-11e8-b753-525400009efb.jpg",
+      "name": "Joe Hisaishi",
+      "slug": "joe-hisaishi",
+      "uuid": "ecb51a50-b8cd-11e8-b753-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.95,
+    "danceability": 0.3,
+    "energy": 0.19,
+    "instrumentalness": 0.88,
+    "key": 0,
+    "liveness": 0.1,
+    "loudness": -16,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 158.25,
+    "timeSignature": 4,
+    "valence": 0.05
+  },
+  "composers": [
+    "Joe Hisaishi"
+  ],
+  "copyright": "2001 STUDIO GHIBLI RECORDS",
+  "creditName": "Joe Hisaishi",
+  "credits": [
+    {
+      "name": "Joe Hisaishi",
+      "roles": [
+        "composer",
+        "arranger",
+        "producer",
+        "writer"
+      ],
+      "uuid": "aef45dc0-147b-428c-816a-5ac58b217715"
+    },
+    {
+      "name": "新日本フィル・ワールド・ドリーム・オーケストラ",
+      "roles": [
+        "orchestra"
+      ],
+      "uuid": "c650417f-03c6-48a5-b0cf-d59a29ed46b8"
+    }
+  ],
+  "distributor": "Tokuma Japan Communications",
+  "duration": 189,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "soundtrack",
+      "sub": [
+        "film ost",
+        "ost"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/d/4/c/11e8261c-dc4d-78b8-a490-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPTK00103540"
+  },
+  "iswcs": [
+    "T1016908011"
+  ],
+  "labels": [
+    {
+      "name": "STUDIO GHIBLI",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/joe-hisaishi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/c/8/ecb51a50-b8cd-11e8-b753-525400009efb.jpg",
+      "name": "Joe Hisaishi",
+      "slug": "joe-hisaishi",
+      "uuid": "ecb51a50-b8cd-11e8-b753-525400009efb"
+    }
+  ],
+  "name": "あの夏へ",
+  "producers": [
+    "久石譲 (Joe Hisaishi)"
+  ],
+  "releaseDate": "2001-07-18T00:00:00+00:00",
+  "uuid": "11e8261c-dc4d-78b8-a490-aa1c026db3d8"
+}

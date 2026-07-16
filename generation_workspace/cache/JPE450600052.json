@@ -1,0 +1,103 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/9bc81c10-8a5d-4780-ac7f-be4a6aa7a965/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/lia-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/1/f/11e81bc7-bf16-486a-977b-a0369fe50396.jpg",
+      "name": "Lia",
+      "slug": "lia-1",
+      "uuid": "11e81bc7-bf16-486a-977b-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/visual-arts-key-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/c/1/2/ad246543-121c-45b5-b04b-daa6c919d8f5.jpg",
+      "name": "VISUAL ARTS / Key",
+      "slug": "visual-arts-key-1",
+      "uuid": "ad246543-121c-45b5-b04b-daa6c919d8f5"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.06,
+    "danceability": 0.59,
+    "energy": 0.89,
+    "instrumentalness": 0,
+    "key": 11,
+    "liveness": 0.1,
+    "loudness": -6.56,
+    "mode": 0,
+    "speechiness": 0.05,
+    "tempo": 122.1,
+    "timeSignature": 4,
+    "valence": 0.33
+  },
+  "composers": [
+    "折戸伸治"
+  ],
+  "copyright": "(P) 2002 VISUAL ARTS / Key Sounds Label",
+  "creditName": "Lia & VISUAL ARTS / Key",
+  "credits": [
+    {
+      "name": "Shinji Orito",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "82faddc5-3702-428a-a25c-5680cd9bed45"
+    },
+    {
+      "name": "Jun Maeda",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "99c888ac-657b-4a31-9e83-14b2cf02bf59"
+    }
+  ],
+  "distributor": "Believe",
+  "duration": 189,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "electro",
+      "sub": [
+        "electronic"
+      ]
+    },
+    {
+      "root": "soundtrack",
+      "sub": [
+        "anime",
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/d/5/a/9bc81c10-8a5d-4780-ac7f-be4a6aa7a965.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPE450600052"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Key Sounds Label",
+      "type": "unknown"
+    },
+    {
+      "name": "VISUAL ARTS",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/visual-arts-key-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/c/1/2/ad246543-121c-45b5-b04b-daa6c919d8f5.jpg",
+      "name": "VISUAL ARTS / Key",
+      "slug": "visual-arts-key-1",
+      "uuid": "ad246543-121c-45b5-b04b-daa6c919d8f5"
+    }
+  ],
+  "name": "Torinouta (Short Ver.)",
+  "producers": [],
+  "releaseDate": "2002-09-27T00:00:00+00:00",
+  "uuid": "9bc81c10-8a5d-4780-ac7f-be4a6aa7a965"
+}

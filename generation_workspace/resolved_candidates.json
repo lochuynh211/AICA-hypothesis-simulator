@@ -1,571 +1,555 @@
 [
   {
-    "title": "ブルー・ライト・ヨコハマ",
-    "artist": "いしだあゆみ",
-    "release_year": 1968,
+    "title": "残響散歌",
+    "artist": "Aimer",
+    "release_year": 2021,
     "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPCO06910280",
-      "JPCO06806620"
+      "JPU902104729",
+      "JPU902202877",
+      "JPU902203943",
+      "JPU902305213",
+      "JPU902400369",
+      "JPU902104731",
+      "JPU902104733"
     ]
   },
   {
-    "title": "神田川",
-    "artist": "かぐや姫",
-    "release_year": 1973,
+    "title": "廻廻奇譚",
+    "artist": "Eve",
+    "release_year": 2020,
     "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPCR07300420",
-      "JPCR07300320",
-      "JPCR07400930",
-      "JPCR07803450"
+      "JPTF02017001",
+      "JPTF02021601"
     ]
   },
   {
-    "title": "なごり雪",
-    "artist": "イルカ",
-    "release_year": 1975,
+    "title": "unravel",
+    "artist": "TK from Ling Tosite Sigure",
+    "release_year": 2014,
     "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPCR07500330",
-      "JPCR02104780"
+      "JPU901400608",
+      "JPU902001555",
+      "JPU901501444"
     ]
   },
   {
-    "title": "木綿のハンカチーフ",
-    "artist": "太田裕美",
-    "release_year": 1975,
+    "title": "君の知らない物語",
+    "artist": "supercell",
+    "release_year": 2009,
     "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPSR07522730",
-      "JPSR07522870",
-      "JPPO00868140",
-      "JPP401900209",
-      "JPSR07522871",
-      "JPPO00873030"
+      "JPSR00901782",
+      "JPSR80901341",
+      "JPSR80901381",
+      "JPSR00904545",
+      "JPSR00904646",
+      "JPE380902348",
+      "JPU901900784",
+      "JPU902101850",
+      "JPSR00901841",
+      "JPSR00902103"
     ]
   },
   {
-    "title": "勝手にしやがれ",
-    "artist": "沢田研二",
-    "release_year": 1977,
+    "title": "only my railgun",
+    "artist": "fripSide",
+    "release_year": 2009,
     "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPPO07700650"
+      "JPPI00906070",
+      "JPPI00963400",
+      "JPPI02000090",
+      "JPPI02500180",
+      "JPPI00963403",
+      "JPPI02451870",
+      "JPPI02500190",
+      "JPPI02500210",
+      "JPPI00963409",
+      "JPPI00963401",
+      "JPPI02451871",
+      "JPPI02451872",
+      "JPPI02500280",
+      "JPPI02500350",
+      "JPPI01054572",
+      "JPPI02500340"
     ]
   },
   {
-    "title": "UFO",
-    "artist": "ピンク・レディー",
-    "release_year": 1977,
+    "title": "God knows...",
+    "artist": "平野綾",
+    "release_year": 2006,
     "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPVI07700040",
-      "JPVI07710190",
-      "JPVI00604280",
-      "JPVI07802070",
-      "JPVI07801780",
-      "JPVI00635810",
-      "JPVI07801940",
-      "JPVI07901800",
-      "JPVI01030860",
-      "JPVI07704110"
+      "JPI100601012",
+      "JPI100901035",
+      "JPI100901742",
+      "JPI100602358"
     ]
   },
   {
-    "title": "いい日旅立ち",
-    "artist": "山口百恵",
-    "release_year": 1978,
+    "title": "Blue Bird",
+    "artist": "いきものがかり",
+    "release_year": 2008,
     "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPSR07821120",
-      "JPSR09216750",
-      "JPSR07924460",
-      "JPSR08030301",
-      "JPSR07821121",
-      "JPSR09250861"
-    ]
-  },
-  {
-    "title": "関白宣言",
-    "artist": "さだまさし",
-    "release_year": 1979,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPB709109490",
-      "JPPO00270170",
-      "JPTE09115080",
-      "JPWP09109490",
-      "JPB708600320",
-      "JPPO00508200",
-      "JPVI02100132"
-    ]
-  },
-  {
-    "title": "魅せられて",
-    "artist": "ジュディ・オング",
-    "release_year": 1979,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPSR07900430",
-      "JPSR07927520",
-      "JPSR07927810",
-      "JPSR07900431"
-    ]
-  },
-  {
-    "title": "22才の別れ",
-    "artist": "風",
-    "release_year": 1975,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPCR07400520"
-    ]
-  },
-  {
-    "title": "時代",
-    "artist": "中島みゆき",
-    "release_year": 1975,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPPC07500030",
-      "JPI807600012",
-      "JPPC09102360",
-      "JPPC09323370",
-      "JPPC09323820",
-      "JPPC09323840",
-      "JPPC09625980",
-      "JPPC09323380",
-      "JPI801200168",
-      "JPI801800131"
-    ]
-  },
-  {
-    "title": "氷雨",
-    "artist": "佳山明生",
-    "release_year": 1977,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPCO07711850"
-    ]
-  },
-  {
-    "title": "ルビーの指環",
-    "artist": "寺尾聰",
-    "release_year": 1981,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPTO08122000",
-      "JPTO08817200",
-      "JPB600664105"
-    ]
-  },
-  {
-    "title": "待つわ",
-    "artist": "あみん",
-    "release_year": 1982,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPPH08250001",
-      "JPT208200010"
-    ]
-  },
-  {
-    "title": "赤いスイートピー",
-    "artist": "松田聖子",
-    "release_year": 1982,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPSR08119700",
-      "JPSR08204860",
-      "JPSR80901027"
-    ]
-  },
-  {
-    "title": "クリスマス・イブ",
-    "artist": "山下達郎",
-    "release_year": 1983,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPAM08605100",
-      "JPAM09502650"
-    ]
-  },
-  {
-    "title": "恋におちて",
-    "artist": "小林明子",
-    "release_year": 1985,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPFH08500130",
-      "JPFH09001750",
-      "JPFH08500180",
-      "JPTE01305180",
-      "JPPO01402442",
-      "JPFH08520003",
-      "JPU902202313"
-    ]
-  },
-  {
-    "title": "難破船",
-    "artist": "中森明菜",
-    "release_year": 1987,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPWP00970345",
-      "JPWP01270537",
-      "JPWP01270863",
-      "JPWP02071295",
-      "JPWP08700710",
-      "JPWP09202520",
-      "JPWP02270142",
-      "JPWP08900850",
-      "JPWP02170534",
-      "JPWP09106280",
-      "JPMV09502190",
-      "JPWP09803080",
-      "JPWP02270550",
-      "JPPO00706900",
-      "JPWP02570360",
-      "JPWP01470467"
-    ]
-  },
-  {
-    "title": "川の流れのように",
-    "artist": "美空ひばり",
-    "release_year": 1989,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPCO08880690",
-      "FRX452012084",
-      "JPCO08824810",
-      "JPCO08828410",
-      "JPCO08851390",
-      "JPCO08851399"
-    ]
-  },
-  {
-    "title": "卒業",
-    "artist": "斉藤由貴",
-    "release_year": 1985,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPPC08501960",
-      "JPPC08510329",
-      "JPPC08510330",
-      "JPPC08510437",
-      "JPPC00800707",
-      "JPPC00901534",
-      "JPVI01517750",
-      "JPPC02000525",
-      "JPVI02003053",
-      "JPVI02404018",
-      "JPVI02404028"
-    ]
-  },
-  {
-    "title": "木枯しに抱かれて",
-    "artist": "小泉今日子",
-    "release_year": 1986,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPVI08601300",
-      "JPVI08701470",
-      "JPVI08818680",
-      "JPVI01226010"
-    ]
-  },
-  {
-    "title": "フレンズ",
-    "artist": "レベッカ",
-    "release_year": 1985,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPU901600903",
-      "JPP401700191",
-      "JPSR08520070"
-    ]
-  },
-  {
-    "title": "どんなときも。",
-    "artist": "槇原敬之",
-    "release_year": 1991,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPWM09100510",
-      "JPWP09112400",
-      "JPWM09112390",
-      "JPWP00001010",
-      "JPWP00001020",
-      "JPWP00203150",
-      "JPTO00401732",
-      "JPTO00503494",
-      "JPB600741302",
-      "JPB600741304",
-      "JPB600962708",
-      "JPZ921202994",
-      "JPWP01271631",
-      "JPWP01271521",
-      "JPWP09112390",
-      "JPWM09100511"
-    ]
-  },
-  {
-    "title": "SAY YES",
-    "artist": "CHAGE and ASKA",
-    "release_year": 1991,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPCC09101990",
-      "JPPC09101990",
-      "JPPC09625740",
-      "JPKT00204160"
-    ]
-  },
-  {
-    "title": "ロード",
-    "artist": "THE 虎舞竜",
-    "release_year": 1993,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPME09300701",
-      "JPME09300703"
-    ]
-  },
-  {
-    "title": "innocent world",
-    "artist": "Mr.Children",
-    "release_year": 1994,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPTF09402001",
-      "JPTFO9402001",
-      "JPTF09909008",
-      "JPTF02202501",
-      "JPTF09402003"
-    ]
-  },
-  {
-    "title": "TOMORROW",
-    "artist": "岡本真夜",
-    "release_year": 1995,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPTK09541201",
-      "JPTK09501110",
-      "JPTK09541101",
-      "JPTK00303500",
-      "JPTK09541103"
-    ]
-  },
-  {
-    "title": "LOVE LOVE LOVE",
-    "artist": "DREAMS COME TRUE",
-    "release_year": 1995,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPES09500265",
-      "JPES09600140",
-      "JPES09602584",
-      "JPPO00401760",
-      "JPPO21004060",
-      "JPES09502847",
-      "JPPO02002935",
-      "JPU902002970",
-      "UK6821903110"
-    ]
-  },
-  {
-    "title": "CAN YOU CELEBRATE?",
-    "artist": "安室奈美恵",
-    "release_year": 1997,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPB609623401",
-      "JPB609623402",
-      "JPB609623403",
-      "JPB609714510",
-      "JPB609734201",
-      "JPB609734203",
-      "JPB609818301",
-      "JPB600345023",
-      "JPB601401921",
-      "JPB601703241",
-      "JPB601901953",
-      "JPB609734204"
-    ]
-  },
-  {
-    "title": "Automatic",
-    "artist": "宇多田ヒカル",
-    "release_year": 1998,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPTO09831500",
-      "JPTO00400346",
-      "JPPO01400526",
-      "JPPO01400549",
-      "JPPO02400213",
-      "JPU902403908",
-      "JPTO09831509",
-      "JPPO01400151",
-      "JPPO01400536",
-      "JPTO09901640",
-      "JPTO09901750"
-    ]
-  },
-  {
-    "title": "空も飛べるはず",
-    "artist": "スピッツ",
-    "release_year": 1994,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPP094000810",
-      "JPPO04000810",
-      "JPPO09400810",
-      "JPPO01702921",
-      "JPPO09404600",
-      "JPPO09404601",
-      "JPPO00262760",
-      "JPPO00601020",
-      "JPPO00603350"
-    ]
-  },
-  {
-    "title": "マイフレンド",
-    "artist": "ZARD",
-    "release_year": 1996,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
     "web_evidence": [],
     "candidate_isrcs": [],
     "miss": "song_not_found_in_sources"
   },
   {
-    "title": "接吻",
-    "artist": "ORIGINAL LOVE",
-    "release_year": 1993,
+    "title": "GO!!!",
+    "artist": "FLOW",
+    "release_year": 2004,
     "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPTO09326920",
-      "JPTO09326890",
-      "JPZ921211667",
-      "JPVI02101848",
-      "JPVI82102820",
-      "JPVI02203415",
-      "JPVI82202986",
-      "JPPC00101590"
+      "JPKS00300325",
+      "JPKS00400421",
+      "JPKS00400424",
+      "JPKS00400426",
+      "JPKS00402241",
+      "JPKS00402424",
+      "JPU901701596",
+      "JPU901701597",
+      "JPKS00402426",
+      "JPU981900673",
+      "JPU902200133",
+      "JPU902201273",
+      "JPU902304163",
+      "JPU902305190",
+      "QT6F62610103",
+      "QT6F72625862",
+      "JPU902201276"
     ]
   },
   {
-    "title": "YAH YAH YAH",
-    "artist": "CHAGE and ASKA",
-    "release_year": 1993,
+    "title": "Colors",
+    "artist": "FLOW",
+    "release_year": 2006,
     "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "classic/showa JA for age-affinity",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPPC09304890",
-      "JPPC09322340",
-      "JPKT00204180"
+      "JPKS00601721",
+      "JPKS00601724",
+      "JPKS00601725",
+      "JPKS00800065",
+      "JPX480800215",
+      "JPX480800216",
+      "JPKS01101843",
+      "JPU981900655",
+      "JPU902101843",
+      "JPU902104875",
+      "JPR562300370",
+      "QT6F62694150",
+      "DEH741513107",
+      "JPU902001393",
+      "JPU902203280",
+      "JPU902203281",
+      "JPU902203282",
+      "JPU902200188"
     ]
+  },
+  {
+    "title": "コネクト",
+    "artist": "ClariS",
+    "release_year": 2011,
+    "expected_language": "ja",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPU901001861",
+      "JPU901001866",
+      "JPU981000961",
+      "JPU981200303",
+      "JPU901603090",
+      "JPU901002185",
+      "JPU901701570",
+      "JPU901900771",
+      "JPU902101849",
+      "JPU902205105",
+      "JPU902305202",
+      "JPU902503430",
+      "JPU901001864",
+      "JPU901201366"
+    ]
+  },
+  {
+    "title": "Butter-Fly",
+    "artist": "和田光司",
+    "release_year": 1999,
+    "expected_language": "ja",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPE209900601",
+      "JPE200000103",
+      "JPE200902201",
+      "JPE201502501",
+      "JPE201700601",
+      "JPE201800401",
+      "JPE209900603",
+      "JPE209901101",
+      "JPE209901132",
+      "JPE209903526",
+      "JPE200101804",
+      "JPE200902203",
+      "JPE201502502"
+    ]
+  },
+  {
+    "title": "鳥の詩",
+    "artist": "Lia",
+    "release_year": 2000,
+    "expected_language": "ja",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPE450600052",
+      "JPE450600028",
+      "JPE451300309",
+      "JPE451300569",
+      "JPE451200007",
+      "JPE451800011",
+      "JPE451900114",
+      "JPE451300811",
+      "JPE451300830",
+      "JPE450600237",
+      "JPE451300329"
+    ]
+  },
+  {
+    "title": "この世界の片隅に",
+    "artist": "コトリンゴ",
+    "release_year": 2016,
+    "expected_language": "ja",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [],
+    "miss": "song_not_found_in_sources"
+  },
+  {
+    "title": "HACKING TO THE GATE",
+    "artist": "いとうかなこ",
+    "release_year": 2011,
+    "expected_language": "ja",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPD641100041",
+      "JPK631104415",
+      "JPK631303809",
+      "JPD641100043",
+      "JPK631303811"
+    ]
+  },
+  {
+    "title": "Crossing Field",
+    "artist": "LiSA",
+    "release_year": 2012,
+    "expected_language": "ja",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPE301201741",
+      "JPE381202408",
+      "JPE381302183",
+      "JPE381302184",
+      "JPE301401154",
+      "JPE301204090",
+      "JPE302301214",
+      "JPE301201903",
+      "JPE301201907",
+      "JPU902104811",
+      "JPU902301014",
+      "JPU902301019",
+      "JPU902301087"
+    ]
+  },
+  {
+    "title": "花の唄",
+    "artist": "Aimer",
+    "release_year": 2017,
+    "expected_language": "ja",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPU901702650",
+      "JPU901702654",
+      "JPU981703743",
+      "JPU981900589",
+      "JPU902000153",
+      "JPU902202881"
+    ]
+  },
+  {
+    "title": "Again",
+    "artist": "YUI",
+    "release_year": 2009,
+    "expected_language": "ja",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPSR00900821",
+      "JPSR80900901",
+      "JPU902305196",
+      "JPWP02570491",
+      "JPSR00901085",
+      "JPSR00902761",
+      "JPSR00900822"
+    ]
+  },
+  {
+    "title": "ライオン",
+    "artist": "May'n",
+    "release_year": 2008,
+    "expected_language": "ja",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPG750800369",
+      "JPG750800371",
+      "JPG750800842",
+      "JPVI01440060",
+      "JPVI82103284"
+    ]
+  },
+  {
+    "title": "RPG",
+    "artist": "SEKAI NO OWARI",
+    "release_year": 2013,
+    "expected_language": "ja",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPTF01304201"
+    ]
+  },
+  {
+    "title": "前前前世",
+    "artist": "RADWIMPS",
+    "release_year": 2016,
+    "expected_language": "ja",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPPO01617097",
+      "JPPO01621591",
+      "JPZ921710257"
+    ]
+  },
+  {
+    "title": "This game",
+    "artist": "鈴木このみ",
+    "release_year": 2014,
+    "expected_language": "ja",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPD731400352",
+      "GBSMU6419083",
+      "JPD731400355",
+      "JPD731501521"
+    ]
+  },
+  {
+    "title": "シルエット",
+    "artist": "KANA-BOON",
+    "release_year": 2014,
+    "expected_language": "ja",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPU901401691",
+      "JPU981701606",
+      "JPU982104130",
+      "JPU902201306"
+    ]
+  },
+  {
+    "title": "インフェルノ",
+    "artist": "Mrs. GREEN APPLE",
+    "release_year": 2019,
+    "expected_language": "ja",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPPO01902850",
+      "JPPO02000701",
+      "JPPO02003950"
+    ]
+  },
+  {
+    "title": "風の通り道",
+    "artist": "久石譲",
+    "release_year": 1988,
+    "expected_language": null,
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [],
+    "miss": "song_not_found_in_sources"
+  },
+  {
+    "title": "あの夏へ",
+    "artist": "久石譲",
+    "release_year": 2001,
+    "expected_language": null,
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPTK00103540",
+      "JPT900200001"
+    ]
+  },
+  {
+    "title": "Aerith's Theme",
+    "artist": "植松伸夫",
+    "release_year": 1997,
+    "expected_language": null,
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [],
+    "miss": "song_not_found_in_sources"
+  },
+  {
+    "title": "Life Will Change",
+    "artist": "目黒将司",
+    "release_year": 2016,
+    "expected_language": null,
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPK651601417",
+      "JPK651800313"
+    ]
+  },
+  {
+    "title": "Beneath the Mask",
+    "artist": "目黒将司",
+    "release_year": 2016,
+    "expected_language": null,
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPVI02001280",
+      "JPK651600708",
+      "JPK651601601",
+      "JPVI02001273"
+    ]
+  },
+  {
+    "title": "Snow halation",
+    "artist": "μ's",
+    "release_year": 2010,
+    "expected_language": "ja",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPI101002195",
+      "JPI101102458",
+      "JPI101401641",
+      "JPI101002197",
+      "JPI101401598"
+    ]
+  },
+  {
+    "title": "BURNING",
+    "artist": "Hiroyuki Sawano",
+    "release_year": 2019,
+    "expected_language": null,
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPE301900533"
+    ]
+  },
+  {
+    "title": "あんなに一緒だったのに",
+    "artist": "See-Saw",
+    "release_year": 2004,
+    "expected_language": "ja",
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPG750900838",
+      "JPVI00234550",
+      "JPVI00241210",
+      "JPVI00247040",
+      "JPVI00649380",
+      "JPG751100665",
+      "JPVI00234570",
+      "JPVI02305051"
+    ]
+  },
+  {
+    "title": "Blumenkranz",
+    "artist": "Hiroyuki Sawano",
+    "release_year": 2013,
+    "expected_language": null,
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPE301302908",
+      "JPE301302977"
+    ]
+  },
+  {
+    "title": "HERO",
+    "artist": "安藤裕子",
+    "release_year": 2011,
+    "expected_language": null,
+    "target_cell_id": "E-hi_T-hi_P-bv",
+    "why_fits_cell": "anime/OST JA",
+    "web_evidence": [],
+    "candidate_isrcs": [],
+    "miss": "song_not_found_in_sources"
   }
 ]

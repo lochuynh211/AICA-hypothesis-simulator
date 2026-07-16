@@ -3616,5 +3616,309 @@
     "miss_reason": null,
     "cell": "E-hi_T-md_P-bv",
     "loop": 25
+  },
+  {
+    "keys": {
+      "normalized_name": "blue bird|いきものがかり"
+    },
+    "outcome": "miss",
+    "miss_reason": "song_not_found_in_sources",
+    "cell": null,
+    "loop": 26
+  },
+  {
+    "keys": {
+      "normalized_name": "この世界の片隅に|コトリンゴ"
+    },
+    "outcome": "miss",
+    "miss_reason": "song_not_found_in_sources",
+    "cell": null,
+    "loop": 26
+  },
+  {
+    "keys": {
+      "normalized_name": "風の通り道|久石譲"
+    },
+    "outcome": "miss",
+    "miss_reason": "song_not_found_in_sources",
+    "cell": null,
+    "loop": 26
+  },
+  {
+    "keys": {
+      "normalized_name": "aerith's theme|植松伸夫"
+    },
+    "outcome": "miss",
+    "miss_reason": "song_not_found_in_sources",
+    "cell": null,
+    "loop": 26
+  },
+  {
+    "keys": {
+      "normalized_name": "hero|安藤裕子"
+    },
+    "outcome": "miss",
+    "miss_reason": "song_not_found_in_sources",
+    "cell": null,
+    "loop": 26
+  },
+  {
+    "keys": {
+      "isrc": "JPU902104729",
+      "normalized_name": "残響散歌|aimer"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPTF02017001",
+      "normalized_name": "廻廻奇譚|eve"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-lo_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPU901400608",
+      "normalized_name": "unravel|tk from ling tosite sigure"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPSR00901782",
+      "normalized_name": "君の知らない物語|supercell"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPPI00963400",
+      "normalized_name": "only my railgun|fripside"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPI100601012",
+      "normalized_name": "god knows...|平野綾"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPKS00300325",
+      "normalized_name": "go!!!|flow"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-lo_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPKS00601721",
+      "normalized_name": "colors|flow"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPU901001861",
+      "normalized_name": "コネクト|claris"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-lo_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "normalized_name": "butter-fly|和田光司"
+    },
+    "outcome": "miss",
+    "miss_reason": "audio_unavailable",
+    "cell": null,
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPE450600052",
+      "normalized_name": "鳥の詩|lia"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-md_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPD641100041",
+      "normalized_name": "hacking to the gate|いとうかなこ"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPE301201741",
+      "normalized_name": "crossing field|lisa"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPU901702650",
+      "normalized_name": "花の唄|aimer"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-lo_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPSR00900821",
+      "normalized_name": "again|yui"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPG750800369",
+      "normalized_name": "ライオン|may'n"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPTF01304201",
+      "normalized_name": "rpg|sekai no owari"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPPO01617097",
+      "normalized_name": "前前前世|radwimps"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPD731400352",
+      "normalized_name": "this game|鈴木このみ"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPTK00103540",
+      "normalized_name": "あの夏へ|久石譲"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-hi_P-il",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPK651601417",
+      "normalized_name": "life will change|目黒将司"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-il",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPK651600708",
+      "normalized_name": "beneath the mask|目黒将司"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-hi_P-il",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPI101002195",
+      "normalized_name": "snow halation|μ's"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPE301900533",
+      "normalized_name": "burning|hiroyuki sawano"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-md_P-il",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPG750900838",
+      "normalized_name": "あんなに一緒だったのに|see-saw"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-md_P-bv",
+    "loop": 27
+  },
+  {
+    "keys": {
+      "isrc": "JPE301302908",
+      "normalized_name": "blumenkranz|hiroyuki sawano"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-hi_P-bv",
+    "loop": 27
   }
 ]

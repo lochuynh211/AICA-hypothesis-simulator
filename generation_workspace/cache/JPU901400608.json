@@ -1,0 +1,140 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8407b-8a6c-50a4-b6e5-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/tk-from-ling-tosite-sigure/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/2/9/11e83fe6-e92f-26e2-9968-aa1c026db3d8.jpg",
+      "name": "TK from Ling tosite sigure",
+      "slug": "tk-from-ling-tosite-sigure",
+      "uuid": "11e83fe6-e92f-26e2-9968-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.05,
+    "danceability": 0.51,
+    "energy": 0.89,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.1,
+    "loudness": -2.76,
+    "mode": 0,
+    "speechiness": 0.09,
+    "tempo": 135.01,
+    "timeSignature": 4,
+    "valence": 0.33
+  },
+  "composers": [
+    "北嶋徹"
+  ],
+  "copyright": "(P)2014 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "TK from Ling tosite sigure",
+  "credits": [
+    {
+      "name": "東京喰種トーキョーグール (Tokyo Ghoul)",
+      "roles": [
+        "tie-in"
+      ],
+      "uuid": "6cf1a9a9-e23a-4e03-97f4-398b7d65063f"
+    },
+    {
+      "name": "佐藤帆乃佳 (Honoka Sato)",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "fe759ec2-dd8a-4ce2-9aa8-9b0a9d2e0371"
+    },
+    {
+      "name": "TK from 凛として時雨",
+      "roles": [
+        "producer",
+        "writer",
+        "vocals",
+        "guitar",
+        "composer",
+        "lyricist",
+        "arranger"
+      ],
+      "uuid": "e13a4de1-8023-4ab5-87c3-ce45f41315bb"
+    },
+    {
+      "name": "TK",
+      "roles": [
+        "composer",
+        "lyricist",
+        "arranger"
+      ],
+      "uuid": "c436efe8-b54a-43ea-a9ae-7cde5358a550"
+    },
+    {
+      "name": "Hidekazu Hinata",
+      "roles": [
+        "bass"
+      ],
+      "uuid": "d74d0678-82f2-4a3a-83d1-3e0182dcbdca"
+    },
+    {
+      "name": "Mamiko Hirai",
+      "roles": [
+        "piano"
+      ],
+      "uuid": "d24b413a-43c8-4ab2-a2b9-a280c03bfc26"
+    },
+    {
+      "name": "BOBO (JPN)",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "92e661b3-028a-464c-b76b-9abe373b620b"
+    },
+    {
+      "name": "Shuichi Banba",
+      "roles": [
+        "video director"
+      ],
+      "uuid": "d1412270-923c-4628-b1b1-c88bab7eaac6"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 240,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/c/6/a/11e8407b-8a6c-50a4-b6e5-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU901400608"
+  },
+  "iswcs": [
+    "T9157601984",
+    "T7036472898"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/tk-from-ling-tosite-sigure/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/2/9/11e83fe6-e92f-26e2-9968-aa1c026db3d8.jpg",
+      "name": "TK from Ling tosite sigure",
+      "slug": "tk-from-ling-tosite-sigure",
+      "uuid": "11e83fe6-e92f-26e2-9968-aa1c026db3d8"
+    }
+  ],
+  "name": "unravel",
+  "producers": [
+    "TK from 凛として時雨"
+  ],
+  "releaseDate": "2014-07-23T00:00:00+00:00",
+  "uuid": "11e8407b-8a6c-50a4-b6e5-aa1c026db3d8"
+}

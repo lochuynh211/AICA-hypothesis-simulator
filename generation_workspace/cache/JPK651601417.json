@@ -1,0 +1,67 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8634c-8df0-95a2-8ec0-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/atorasusaundotimu/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/c/3/f137504a-c3c0-11e8-b514-525400009efb.jpg",
+      "name": "ATLUS Sound Team",
+      "slug": "atorasusaundotimu",
+      "uuid": "f137504a-c3c0-11e8-b514-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.63,
+    "energy": 0.88,
+    "instrumentalness": 0.82,
+    "key": 6,
+    "liveness": 0.05,
+    "loudness": -6.45,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 132.02,
+    "timeSignature": 4,
+    "valence": 0.8
+  },
+  "composers": [
+    "Benjamin Franklin",
+    "目黒将司"
+  ],
+  "copyright": "ATLUS /SEGA All rights reserved.",
+  "creditName": "ATLUS Sound Team",
+  "credits": [],
+  "distributor": "",
+  "duration": 150,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "soundtrack",
+      "sub": [
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/f/d/11e8634c-8df0-95a2-8ec0-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPK651601417"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "SEGA",
+      "type": "Self released"
+    },
+    {
+      "name": "ATLUS",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [],
+  "name": "Life Will Change - instrumental version",
+  "producers": [],
+  "releaseDate": "2017-01-17T00:00:00+00:00",
+  "uuid": "11e8634c-8df0-95a2-8ec0-a0369fe50396"
+}

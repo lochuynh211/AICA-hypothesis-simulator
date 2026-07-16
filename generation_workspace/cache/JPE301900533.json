@@ -1,0 +1,77 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/8f773f84-80ab-11e9-8c44-549f35141000/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ze-ye-hong-zhi-kohta-yamamoto/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/1/b/11e83feb-bb1e-611e-8571-aa1c026db3d8.jpg",
+      "name": "Sawano Hiroyuki",
+      "slug": "ze-ye-hong-zhi-kohta-yamamoto",
+      "uuid": "11e83feb-bb1e-611e-8571-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.44,
+    "energy": 0.9,
+    "instrumentalness": 0.91,
+    "key": 1,
+    "liveness": 0.16,
+    "loudness": -8.58,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 114.89,
+    "timeSignature": 4,
+    "valence": 0.45
+  },
+  "composers": [
+    "Hiroyuki Sawano"
+  ],
+  "copyright": "",
+  "creditName": "Sawano Hiroyuki",
+  "credits": [
+    {
+      "name": "Hiroyuki Sawano",
+      "roles": [
+        "composer",
+        "arranger"
+      ],
+      "uuid": "97d4be21-4425-4e84-840e-095203d7b19e"
+    }
+  ],
+  "distributor": "",
+  "duration": 129,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "soundtrack",
+      "sub": [
+        "film ost",
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/a/0/8f773f84-80ab-11e9-8c44-549f35141000.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPE301900533"
+  },
+  "iswcs": [
+    "T9295047971"
+  ],
+  "labels": [],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ze-ye-hong-zhi-kohta-yamamoto/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/1/b/11e83feb-bb1e-611e-8571-aa1c026db3d8.jpg",
+      "name": "Sawano Hiroyuki",
+      "slug": "ze-ye-hong-zhi-kohta-yamamoto",
+      "uuid": "11e83feb-bb1e-611e-8571-aa1c026db3d8"
+    }
+  ],
+  "name": "燃焼ING-RES9",
+  "producers": [],
+  "releaseDate": "2019-05-24T00:00:00+00:00",
+  "uuid": "8f773f84-80ab-11e9-8c44-549f35141000"
+}
