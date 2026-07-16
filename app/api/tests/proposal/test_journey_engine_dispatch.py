@@ -93,33 +93,25 @@ def test_valid_action_wrong_precondition_is_rejected_no_op():
     assert transition.new_status == run_log.status
 
 
-def test_every_action_type_stub_rejects_for_now():
-    """Every JourneyActionType with NO real handler yet still rejects
-    unconditionally on this generic fixture. US2 (accept/complete/continue_/
-    stop — test_us2_plan_lifecycle.py) and US3 (reject/choose_another/
-    request_more/postpone — test_us3_advisory_actions.py) now have real
-    handlers with their own precondition-behavior coverage, so only the
-    still-stubbed US4 action types (motion_change/rest_*) are asserted
-    here."""
+def test_every_action_type_now_has_a_real_handler():
+    """US2 (accept/complete/continue_/stop — test_us2_plan_lifecycle.py), US3
+    (reject/choose_another/request_more/postpone —
+    test_us3_advisory_actions.py), and US4 (motion_change/rest_spot_arrived/
+    rest_started/rest_completed — test_us4_motion_change.py /
+    test_us4_rest_transitions.py) each have their own dedicated
+    precondition-behavior coverage, so this scaffold test's job (T011) is
+    reduced to documenting that every `JourneyActionType` member is now
+    implemented -- none is left dispatching to the generic
+    `_not_yet_implemented` stub. Concretely: applying every action type to
+    this fixture must NOT produce the stub's exact bilingual "not yet
+    implemented" message (individual real handlers may still reject for
+    their own precondition reasons, with their own messages)."""
     run_log = _make_run_log()
-    implemented = {
-        JourneyActionType.accept,
-        JourneyActionType.complete,
-        JourneyActionType.continue_,
-        JourneyActionType.stop,
-        JourneyActionType.reject,
-        JourneyActionType.choose_another,
-        JourneyActionType.request_more,
-        JourneyActionType.postpone,
-    }
     for action_type in JourneyActionType:
-        if action_type in implemented:
-            continue
         action = JourneyAction(action_type=action_type, payload={})
         transition = apply_action(run_log, action, now="2026-07-16T10:05:00Z")
-        assert transition.rejected is not None, action_type
-        assert transition.rejected.code == "invalid_precondition"
-        assert transition.events == []
+        if transition.rejected is not None:
+            assert "is not yet implemented" not in transition.rejected.message, action_type
 
 
 def test_apply_action_is_pure_wrt_now():

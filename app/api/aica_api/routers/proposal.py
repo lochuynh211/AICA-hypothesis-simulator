@@ -1248,7 +1248,9 @@ def apply_journey_action(run_id: str, action: JourneyAction) -> ProposalRunLog:
     if run_log is None:
         raise HTTPException(status_code=404, detail=f"Proposal run {run_id!r} not found")
 
-    transition = apply_action(run_log, action, now=_now_iso())
+    transition = apply_action(
+        run_log, action, now=_now_iso(), capabilities=_get_service_capabilities()
+    )
 
     if transition.rejected is not None:
         raise HTTPException(
