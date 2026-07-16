@@ -22,15 +22,39 @@ What is real and what is synthetic:
   `synthetic_only: false`, with a provenance/licensing note. A record is honestly
   labeled real-grounded and must never be mistaken for a *live* Spotify response.
 
-Genre uses two representations: the real Soundcharts genre text (for search, display,
-and lineage) and a `real → controlled-vocabulary` map that feeds only the
-`genre_affinity_v1` scoring extension (§21.1); an unmapped genre yields
-`genre_unmappable_to_vocabulary` and scores `missing_neutral`.
+Genre uses two representations: the real Soundcharts genre text `{root, sub[]}` (for
+search, display, and lineage) and a deterministic **sub-first** `real → controlled-vocabulary`
+map that feeds only the `genre_affinity_v1` scoring extension (§21.1); an unmapped genre
+yields `genre_unmappable_to_vocabulary` and scores `missing_neutral`. The controlled
+vocabulary is **unchanged** (the frozen 12 terms of §21.1); the map is sub-aware because
+several vocab terms are Soundcharts *subs* under generic roots (full table in P2 design
+§13).
 
-The generator LLM plans Soundcharts searches, narrows candidates to conserve quota,
-and judges expected **test-case labels** blind (with the P6 algorithm score as a
-cross-check). It sees real Soundcharts metadata for those tasks but never enriches
-stored song fields and never selects catalog songs by score.
+**Candidate-acquisition strategies (selectable by a `candidate_source` flag).** Real
+songs reach the harvester by one of two interchangeable front-halves; both terminate at
+the same raw-response cache + lineage, and everything downstream (bin → select → map →
+validate → freeze) is strategy-agnostic:
+
+- `soundcharts_search` — the generator LLM plans Soundcharts searches and narrows
+  candidates to conserve quota (the original approach; **unavailable on the current
+  Soundcharts subscription**, retained as a fallback).
+- `isrc_resolved` — a **web-search-grounded LLM names real songs** per coverage cell
+  (existence-verified, never emitting an ISRC or audio number); a deterministic resolver
+  turns each `(title, artist, year)` into an **ordered candidate-ISRC list via
+  MusicBrainz + Deezer** (reconciled); the harvester fetches `/api/v2.25/song/by-isrc/{isrc}`
+  down that list until one returns a populated `audio` block.
+
+Under both, the LLM only *proposes*; the real audio + deterministic binning decide the
+cell, and the real `languageCode` decides language. The LLM also judges expected
+**test-case labels** blind (with the P6 algorithm score as a cross-check). It never
+enriches stored song fields and never selects catalog songs by score.
+
+**Language priority.** Catalog composition targets **Japanese as the primary language**
+(JA-market product focus), English as fallback, other languages edge-only — enforced by
+weighted coverage quotas and confirmed deterministically against the real `languageCode`
+returned by Soundcharts (a song whose real language disagrees with its cell is discarded,
+never relabeled). `language` and `era` (from `releaseDate`) are first-class, reported
+coverage dimensions.
 
 **Integrity.** Catalog selection is coverage-driven — a song enters because its real
 audio bins into a needed coverage cell, never because of any score or rank — and the
@@ -38,10 +62,33 @@ frozen catalog carries no `recommended` / `best_for_world` / `target_rank` field
 (§11, §17.6). A separate labeled **test-case set** `(world, candidate, expected
 label)` is produced alongside the label-free catalog.
 
-**Reproducibility.** The one-time live harvest is cached and the LLM plans are frozen,
-so the deterministic transform (raw cache → catalog) is byte-identical and re-runnable.
-The committed frozen dataset — not a rerun of the harvest — is the replay boundary, and
-no live network or LLM call occurs during a transparent simulation run.
+**Loopable, resumable, additive generation.** Generation runs as a sequence of loops:
+each loop is a full pass, the operator inspects the output, and later loops **continue
+without redoing prior work**. A persistent, generation-side **carry-over ledger**
+(gitignored) records every song identity ever touched — by ISRC, Soundcharts UUID, and
+normalized `(title, artist)` — with its outcome, so no name is re-proposed and no
+ISRC/UUID is re-resolved or re-fetched, and known misses are never retried. Loops never
+remove; they fill still-empty cells **and may add further songs to already-covered cells
+to enrich them** (multiple songs per cell, still admitted purely by coverage pigeonhole).
+The ledger keys and exclusion are identity-based only — never a score — so resumability
+adds no selection pressure the firewall would object to.
+
+**Execution model (no LLM API).** The generator does **not** call any OpenAI / Anthropic /
+other LLM API — there are no LLM API keys. Deterministic stages (coverage plan, harvest +
+ISRC resolution, bin/select, map, validate/repair, freeze, certify, ledger) are
+**standalone Python CLIs** doing only non-LLM work (Soundcharts/MusicBrainz/Deezer HTTP —
+data-source APIs, not LLM — plus binning, validation, file I/O). LLM stages (web-research,
+song search/naming, narrowing, profile composition, blind judging) are performed by an
+**interactive LLM in the Claude Code terminal**, via a **file handoff** (input-context file
+→ prompt → schema-checked structured-output file). A Claude Code skill drives end-to-end;
+the deterministic CLIs also run in a bare terminal with no agent present. Full detail: P2
+design §14.
+
+**Reproducibility.** The live harvest is cached and the LLM outputs are frozen files, so the
+deterministic transform (accumulated raw cache → catalog) is byte-identical and
+re-runnable across however many loops built the cache — with no LLM or agent in the loop.
+The committed frozen dataset — not a rerun of the harvest — is the replay boundary, and no
+live network or LLM call occurs during a transparent simulation run.
 
 ## Related documents
 
@@ -418,19 +465,28 @@ Future enrichment is an extension boundary. Any future source must have its own 
 
 ## 9. LLM synthetic-generation algorithm
 
+**Execution (no API).** The "LLM" here is an **interactive agent in the Claude Code
+terminal**, not a programmatic API call (§0, P2 design §14). Each LLM step reads a
+schema-checked input-context file and writes a schema-checked structured-output file; a
+Claude Code skill drives the deterministic CLIs and these LLM steps in turn. Malformed
+LLM output is repaired by **re-running the prompt** interactively, not by an API retry.
+
 ### 9.1 Inputs
 
 The LLM receives:
 
 - the V1 JSON Schema;
 - Spotify-documented field definitions and ranges;
-- the catalog coverage matrix in Section 10;
-- Soundcharts search results and real song metadata for the songs under consideration;
+- the catalog coverage matrix in Section 10 (including the language/era axes and the
+  still-unfilled/enrichment targets computed against the carry-over ledger);
+- under `soundcharts_search`: Soundcharts search results and real song metadata for the
+  songs under consideration; under `isrc_resolved`: the coverage cells to name real songs
+  for (web-grounded), plus the carry-over ledger's exclusion list;
 - fixed entity IDs allocated before generation;
 - the random seed and generation pass ID; and
 - explicit instructions that all IDs and URLs are synthetic (`synthetic-` / `.invalid`), while real names, audio, release data, and ISRC are retained from the Soundcharts source.
 
-For search-strategy, candidate narrowing, and blind test-case label judging the LLM does receive real Soundcharts metadata, but never to enrich stored song fields and never to select catalog songs by score. It does not receive recommendation results.
+For search-strategy, candidate narrowing/naming, and blind test-case label judging the LLM does receive real Soundcharts (and, under `isrc_resolved`, web-grounding) metadata, but never to enrich stored song fields and never to select catalog songs by score. It does not receive recommendation results. Under `isrc_resolved` the LLM **never emits an ISRC or an audio-feature value** — ISRCs come only from the deterministic MusicBrainz/Deezer resolver.
 
 ### 9.2 Pass 1: Track objects
 
@@ -537,10 +593,18 @@ secondary dimensions so the catalog exercises both axes, not only energy/tempo:
 
 Because the content selector also scores `humming_ease` and `full_karaoke_ease`
 (§5.2), generation must additionally spread these across the 36 cells — both
-easy-to-hum and hard-to-hum, and both easy and hard full-karaoke songs — plus genre.
-These are required secondary spreads and contrast pairs layered onto the 36-cell grid,
-not extra multiplicative cell axes (a full `36 × ease × genre` cross-product is
-infeasible on limited Soundcharts quota).
+easy-to-hum and hard-to-hum, and both easy and hard full-karaoke songs — plus genre,
+**language, and era**. `language` (from the real `languageCode`) is targeted with a
+**Japanese-primary priority** (English fallback, other languages edge-only); `era` is
+derived from `releaseDate`. These are required secondary spreads, contrast pairs, and
+reported dimensions layered onto the 36-cell grid, not extra multiplicative cell axes (a
+full `36 × ease × genre × language × era` cross-product is infeasible on limited
+Soundcharts quota).
+
+Under the loopable generation model (§0), a cell may hold **more than one song**: each
+loop fills still-empty cells first, then may add further songs to already-covered cells
+to enrich the catalog. Every admission is by coverage pigeonhole, never by score, and the
+carry-over ledger prevents any song from being processed twice across loops.
 
 ### 10.3 Identity and releases
 
@@ -860,6 +924,8 @@ parameter_set_id: default-v1.2-two-axis-trait
 
 The frozen, validated dataset—not an LLM rerun—is the replay boundary. Given the same dataset, world, algorithm version, parameters, and seed, the transparent result must be identical.
 
+Because generation is loopable (§0), the reproducibility target is the deterministic transform over the **accumulated** raw-response cache (the union of all loops' cached responses) plus the carry-over ledger: the same accumulated cache reproduces the same catalog regardless of how many loops built it. Freezing after a later loop supersedes the prior snapshot; the ledger and raw cache persist across freezes as the resumable state.
+
 ---
 
 ## 20. Customer editing
@@ -966,10 +1032,15 @@ Required declarations for this extension:
 | `world_reference_failed` | a world/history reference does not resolve |
 | `policy_boundary_violation` | real Spotify content was sent to an LLM or treated as synthetic input |
 | `invalid_genre_extension` | `genre_affinity_v1` uses an out-of-vocabulary genre, an unresolved artist ID, a bad usage level, or overwrites a Spotify-compatible field (§17.7) |
-| `soundcharts_harvest_failed` | Soundcharts search/metadata call failed or quota exhausted |
-| `cell_unfillable_from_source` | no real song found to fill a required coverage cell after re-harvest |
+| `soundcharts_harvest_failed` | Soundcharts search/metadata/`by-isrc` call failed or quota exhausted |
+| `cell_unfillable_from_source` | no real song found to fill a required coverage cell after re-harvest / *N* fill rounds |
 | `genre_unmappable_to_vocabulary` | a real Soundcharts genre has no controlled-vocabulary mapping (→ `missing_neutral`) |
 | `lineage_integrity_failed` | a synthetic ID lacks a resolvable lineage entry to its Soundcharts source |
+| `song_not_found_in_sources` | (`isrc_resolved`) MusicBrainz + Deezer returned no ISRC for the named song — per-candidate miss, drives the fill loop |
+| `isrc_not_in_soundcharts` | (`isrc_resolved`) all candidate ISRCs 404 on `by-isrc` — per-candidate miss |
+| `audio_unavailable` | (`isrc_resolved`) the Soundcharts record for the ISRC has a null/partial `audio` block — per-candidate miss |
+| `language_mismatch` | (`isrc_resolved`) the real `languageCode` disagrees with the cell's target language — song discarded, never relabeled |
+| `isrc_probe_gate_failed` | (`isrc_resolved`) the step-zero audio-coverage probe did not meet the minimum populated-audio threshold; the strategy halts before the run |
 
 ---
 

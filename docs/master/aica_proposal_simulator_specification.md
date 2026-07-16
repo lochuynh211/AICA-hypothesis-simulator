@@ -808,13 +808,19 @@ and a future 500+ item stress tier.
 > is realized by grounding the catalog in real data from the **Soundcharts API**
 > and mapping it into the schema (S0–S9 pipeline). **Real song/artist names and
 > verbatim real audio are kept** for reviewer trust; only IDs and URLs stay synthetic
-> (`synthetic-` / `.invalid`, still enforced). The generator LLM additionally plans
-> Soundcharts searches, narrows candidates, and judges expected **test-case labels**
-> blind (P6 score as cross-check), so it *does* see real Soundcharts metadata — but
-> never enriches stored fields and never selects catalog songs by score (selection is
-> coverage-driven). Determinism is re-scoped: the one-time harvest is cached and the
-> transform is byte-identical; the frozen dataset remains the replay boundary and no
-> live call occurs during a transparent run. Authoritative detail:
+> (`synthetic-` / `.invalid`, still enforced). The front-half has **two selectable
+> candidate strategies** (`candidate_source`): `soundcharts_search` (LLM-planned search;
+> unavailable on the current subscription, kept as fallback) and `isrc_resolved`
+> (web-grounded LLM song-naming → MusicBrainz+Deezer ISRC resolution → `by-isrc` fetch),
+> both converging on the same deterministic backbone. The generator LLM judges expected
+> **test-case labels** blind (P6 score as cross-check) and, per strategy, proposes
+> searches or names — so it *does* see real Soundcharts/web metadata — but never enriches
+> stored fields and never selects catalog songs by score (selection is coverage-driven;
+> composition is **Japanese-primary**). Generation is **loopable/resumable and additive**
+> (a carry-over ledger prevents redoing work; cells may hold multiple songs). Determinism
+> is re-scoped: the accumulated harvest is cached and the transform is byte-identical; the
+> frozen dataset remains the replay boundary and no live call occurs during a transparent
+> run. Authoritative detail:
 > `docs/master/p2-soundcharts-grounded-data-generation-design.md`; data spec §0.
 
 ### 15.3 Contrast data
