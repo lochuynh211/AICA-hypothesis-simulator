@@ -68,6 +68,7 @@ from aica_api.models.proposal.enums import (
     TriggerPurpose,
     UsageLevel,
 )
+from aica_api.models.proposal.package_manifest import BilingualLabel
 from aica_api.models.proposal.selector_input import FeatureProvenanceEntry
 
 __all__ = [
@@ -83,6 +84,7 @@ __all__ = [
     "Situation",
     "DriverProfile",
     "World",
+    "SeedWorld",
 ]
 
 # ---------------------------------------------------------------------------
@@ -480,3 +482,38 @@ class World(BaseModel):
             }
 
         return feature_snapshot, feature_provenance
+
+
+# ---------------------------------------------------------------------------
+# SeedWorld — a committed, COMPLETE base-seed world (data-model.md §SeedWorld)
+# ---------------------------------------------------------------------------
+
+
+class SeedWorld(BaseModel):
+    """A committed, ready-made "base seed" world reviewers can load and edit.
+
+    Loaded read-only from ``proposal_contracts/seeds/*.json`` by
+    ``services/world_seed_store.py`` (T013). Seeds are promoted, one-time,
+    from ``generation_workspace/worlds.json`` by ``scripts/promote_seeds.py``
+    (T014) and then committed — the generator workspace itself is a build
+    area and is never read at runtime.
+
+    ``world`` is always a COMPLETE, valid ``World`` (every A.1/A.2 field
+    initialized) — the promotion script's job is exactly to complete it, not
+    this model's (this model only shapes/validates what a seed *is*: an id
+    plus a bilingual label/description plus the embedded world).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    seed_id: str
+    label: BilingualLabel
+    description: BilingualLabel
+    world: World
+
+    @field_validator("seed_id")
+    @classmethod
+    def seed_id_non_empty(cls, v: str) -> str:
+        if not v:
+            raise ValueError("seed_id must not be empty.")
+        return v

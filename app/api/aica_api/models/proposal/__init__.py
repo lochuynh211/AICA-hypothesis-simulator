@@ -169,6 +169,7 @@ from aica_api.models.proposal.world import (  # noqa: F401
     RepeatedItem,
     CancelledContentPlan,
     ServiceRejection,
+    SeedWorld,
 )
 
 __all__ = [
@@ -269,4 +270,5 @@ __all__ = [
     "RepeatedItem",
     "CancelledContentPlan",
     "ServiceRejection",
+    "SeedWorld",
 ]

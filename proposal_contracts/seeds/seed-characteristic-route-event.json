@@ -1,0 +1,102 @@
+{
+  "description": {
+    "en": "A scenic mountain route heading to an oshi-related event venue, with a concert scheduled soon.",
+    "ja": "景観の良い山道を走行し、目的地はオシ関連の会場でのコンサート。イベントが近日中に予定されている。"
+  },
+  "label": {
+    "en": "Characteristic route and event destination",
+    "ja": "特徴的なルートとイベント目的地"
+  },
+  "seed_id": "seed-characteristic-route-event",
+  "world": {
+    "catalog_ref": {
+      "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "dataset_version": {
+        "schema_version": "1.0.0",
+        "spotify_audio_features_reference_version": "1.0.0",
+        "spotify_track_reference_version": "1.0.0"
+      }
+    },
+    "control_inputs": {
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "lifecycle_stage": "active_driving_content",
+      "matrix_version": "v1",
+      "motion_state": "driving",
+      "trigger_purpose": "route_music"
+    },
+    "driver_profile": {
+      "age_band": "30s",
+      "cancelled_content_plans": [],
+      "catalog_item_recency_state": {},
+      "catalog_item_usage_level": {},
+      "changed_from_items": [],
+      "completed_items": [],
+      "content_proposal_acceptance_confidence": {},
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0001": 80.0
+      },
+      "content_recovery_confidence": {},
+      "content_recovery_rate": {
+        "synthetic-track-0001": 70.0
+      },
+      "content_tag_recency_state": {},
+      "content_tag_usage_level": {},
+      "gender": "unspecified",
+      "genre_affinity_v1_enabled": false,
+      "hobby_interest_tags": [],
+      "manually_selected_items": [],
+      "oshi_id": "synthetic-artist-0001",
+      "oshi_mode": "on",
+      "oshi_registered": true,
+      "oshi_tags": [],
+      "oshi_type": "artist",
+      "played_items": [
+        {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "track_id": "synthetic-track-0001"
+        }
+      ],
+      "repeated_items": [],
+      "scene_content_tag_usage_level": {},
+      "scene_genre_usage": null,
+      "scene_service_usage_level": {},
+      "scheduled_event_tags": [
+        "oshi_concert"
+      ],
+      "scheduled_event_timing": "soon",
+      "scheduled_event_type": "concert",
+      "service_proposal_acceptance_confidence": {},
+      "service_proposal_acceptance_rate": {},
+      "service_recency_state": {},
+      "service_recovery_confidence": {},
+      "service_recovery_rate": {},
+      "service_usage_level": {},
+      "skipped_items": [],
+      "usage_by_genre": null
+    },
+    "situation": {
+      "active_service": "humming_karaoke",
+      "child_present": false,
+      "destination_tags": [
+        "oshi_venue",
+        "event_hall"
+      ],
+      "drowsiness_level": 80,
+      "estimated_min_until_rest_spot": null,
+      "fatigue_level": 70,
+      "monotony_level": 90,
+      "motion_state": "driving",
+      "multiple_passengers": false,
+      "night_state": "night",
+      "recent_service_rejections": [],
+      "rest_spot_type": "unknown",
+      "road_type": "mountain",
+      "route_tags": [
+        "mountain",
+        "scenic_byway"
+      ],
+      "traffic_state": "congested"
+    }
+  }
+}
