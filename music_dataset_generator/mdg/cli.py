@@ -278,8 +278,15 @@ def _cmd_transform(args: argparse.Namespace) -> None:
         candidate_source=args.candidate_source,
         generated_at=args.generated_at,
         required_cells=required_cells,
+        genre_affinity_v1=True,  # compute the opt-in extension as a SEPARATE artifact
     )
     out_dir = write_dataset(result, dataset_dir)
+    # Emit the genre_affinity_v1 extension as a separate committed artifact for visibility.
+    # The catalog stays extension-free and byte-identical either way (SC-005).
+    if result.genre_extension is not None:
+        (out_dir / "genre_affinity_v1.json").write_text(
+            json.dumps(result.genre_extension, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8")
     # Backfill lineage synthetic_id ↔ isrc now that IDs are allocated (audit integrity).
     backfill_lineage_ids(workspace / "lineage.json", result.catalog)
     # Persist the repair log for the build report.

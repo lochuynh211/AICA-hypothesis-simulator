@@ -1,0 +1,345 @@
+{
+  "artist_genres": {
+    "synthetic-artist-0002": [
+      "jazz"
+    ],
+    "synthetic-artist-0003": [
+      "jazz"
+    ],
+    "synthetic-artist-0006": [
+      "classical"
+    ],
+    "synthetic-artist-0007": [
+      "classical"
+    ],
+    "synthetic-artist-0008": [
+      "classical"
+    ],
+    "synthetic-artist-0009": [
+      "classical"
+    ],
+    "synthetic-artist-0010": [
+      "classical"
+    ],
+    "synthetic-artist-0011": [
+      "classical"
+    ],
+    "synthetic-artist-0012": [
+      "classical"
+    ],
+    "synthetic-artist-0013": [
+      "electronic"
+    ],
+    "synthetic-artist-0014": [
+      "electronic"
+    ],
+    "synthetic-artist-0015": [
+      "electronic"
+    ],
+    "synthetic-artist-0016": [
+      "electronic"
+    ],
+    "synthetic-artist-0019": [
+      "classical",
+      "electronic"
+    ],
+    "synthetic-artist-0020": [
+      "jazz",
+      "electronic"
+    ],
+    "synthetic-artist-0021": [
+      "jazz",
+      "electronic"
+    ],
+    "synthetic-artist-0024": [
+      "classical"
+    ],
+    "synthetic-artist-0029": [
+      "electronic"
+    ],
+    "synthetic-artist-0030": [
+      "classical"
+    ],
+    "synthetic-artist-0031": [
+      "classical"
+    ],
+    "synthetic-artist-0032": [
+      "electronic"
+    ],
+    "synthetic-artist-0034": [
+      "classical",
+      "electronic"
+    ],
+    "synthetic-artist-0036": [
+      "j-pop"
+    ],
+    "synthetic-artist-0039": [
+      "j-pop"
+    ],
+    "synthetic-artist-0042": [
+      "anime",
+      "j-pop"
+    ],
+    "synthetic-artist-0043": [
+      "anime"
+    ],
+    "synthetic-artist-0044": [
+      "j-pop"
+    ],
+    "synthetic-artist-0045": [
+      "j-pop"
+    ],
+    "synthetic-artist-0046": [
+      "j-rock"
+    ],
+    "synthetic-artist-0047": [
+      "japanese folk",
+      "j-pop"
+    ],
+    "synthetic-artist-0052": [
+      "j-pop",
+      "classical"
+    ],
+    "synthetic-artist-0053": [
+      "j-rock"
+    ],
+    "synthetic-artist-0054": [
+      "j-rock"
+    ],
+    "synthetic-artist-0055": [
+      "children's music"
+    ],
+    "synthetic-artist-0057": [
+      "anime"
+    ],
+    "synthetic-artist-0058": [
+      "j-rock",
+      "anime"
+    ],
+    "synthetic-artist-0059": [
+      "j-rock"
+    ],
+    "synthetic-artist-0063": [
+      "j-pop",
+      "j-rock"
+    ],
+    "synthetic-artist-0064": [
+      "jazz",
+      "j-pop"
+    ],
+    "synthetic-artist-0065": [
+      "jazz",
+      "j-pop"
+    ],
+    "synthetic-artist-0066": [
+      "j-pop"
+    ],
+    "synthetic-artist-0067": [
+      "j-rock",
+      "j-pop"
+    ],
+    "synthetic-artist-0068": [
+      "j-pop"
+    ],
+    "synthetic-artist-0069": [
+      "j-rock",
+      "j-pop"
+    ],
+    "synthetic-artist-0070": [
+      "j-rock",
+      "j-pop"
+    ],
+    "synthetic-artist-0071": [
+      "j-rock"
+    ],
+    "synthetic-artist-0072": [
+      "j-pop"
+    ],
+    "synthetic-artist-0073": [
+      "j-pop"
+    ],
+    "synthetic-artist-0075": [
+      "j-pop"
+    ],
+    "synthetic-artist-0076": [
+      "j-pop"
+    ],
+    "synthetic-artist-0077": [
+      "j-pop"
+    ],
+    "synthetic-artist-0078": [
+      "j-pop"
+    ],
+    "synthetic-artist-0079": [
+      "j-pop"
+    ],
+    "synthetic-artist-0080": [
+      "j-pop"
+    ],
+    "synthetic-artist-0081": [
+      "jazz",
+      "j-pop"
+    ],
+    "synthetic-artist-0082": [
+      "j-pop"
+    ],
+    "synthetic-artist-0083": [
+      "j-rock",
+      "j-pop"
+    ],
+    "synthetic-artist-0084": [
+      "classical",
+      "j-rock",
+      "anime",
+      "j-pop"
+    ],
+    "synthetic-artist-0086": [
+      "electronic"
+    ],
+    "synthetic-artist-0087": [
+      "anime"
+    ],
+    "synthetic-artist-0088": [
+      "anime"
+    ],
+    "synthetic-artist-0089": [
+      "j-pop"
+    ],
+    "synthetic-artist-0091": [
+      "j-rock",
+      "j-pop"
+    ],
+    "synthetic-artist-0092": [
+      "j-rock",
+      "j-pop"
+    ],
+    "synthetic-artist-0093": [
+      "j-rock"
+    ],
+    "synthetic-artist-0094": [
+      "j-pop"
+    ],
+    "synthetic-artist-0095": [
+      "j-pop",
+      "j-rock"
+    ],
+    "synthetic-artist-0096": [
+      "j-pop"
+    ],
+    "synthetic-artist-0097": [
+      "j-pop"
+    ],
+    "synthetic-artist-0098": [
+      "j-pop"
+    ],
+    "synthetic-artist-0099": [
+      "j-rock"
+    ],
+    "synthetic-artist-0100": [
+      "j-rock",
+      "j-pop"
+    ],
+    "synthetic-artist-0101": [
+      "j-rock"
+    ],
+    "synthetic-artist-0102": [
+      "anime"
+    ],
+    "synthetic-artist-0103": [
+      "j-pop"
+    ],
+    "synthetic-artist-0104": [
+      "j-pop"
+    ],
+    "synthetic-artist-0105": [
+      "j-rock"
+    ],
+    "synthetic-artist-0108": [
+      "j-pop"
+    ],
+    "synthetic-artist-0109": [
+      "children's music",
+      "anime"
+    ],
+    "synthetic-artist-0110": [
+      "j-pop"
+    ],
+    "synthetic-artist-0111": [
+      "j-rock",
+      "j-pop"
+    ],
+    "synthetic-artist-0112": [
+      "j-rock",
+      "j-pop"
+    ],
+    "synthetic-artist-0114": [
+      "j-pop"
+    ],
+    "synthetic-artist-0116": [
+      "jazz"
+    ],
+    "synthetic-artist-0118": [
+      "electronic"
+    ],
+    "synthetic-artist-0119": [
+      "electronic"
+    ],
+    "synthetic-artist-0125": [
+      "electronic"
+    ],
+    "synthetic-artist-0127": [
+      "j-pop"
+    ],
+    "synthetic-artist-0128": [
+      "j-pop"
+    ],
+    "synthetic-artist-0129": [
+      "j-rock"
+    ],
+    "synthetic-artist-0130": [
+      "j-rock"
+    ],
+    "synthetic-artist-0132": [
+      "jazz"
+    ],
+    "synthetic-artist-0139": [
+      "jazz"
+    ],
+    "synthetic-artist-0140": [
+      "jazz"
+    ],
+    "synthetic-artist-0147": [
+      "electronic"
+    ],
+    "synthetic-artist-0148": [
+      "electronic"
+    ],
+    "synthetic-artist-0149": [
+      "electronic"
+    ],
+    "synthetic-artist-0151": [
+      "classical"
+    ],
+    "synthetic-artist-0154": [
+      "electronic"
+    ],
+    "synthetic-artist-0160": [
+      "jazz"
+    ],
+    "synthetic-artist-0162": [
+      "jazz"
+    ],
+    "synthetic-artist-0167": [
+      "electronic"
+    ],
+    "synthetic-artist-0168": [
+      "electronic"
+    ],
+    "synthetic-artist-0173": [
+      "electronic"
+    ],
+    "synthetic-artist-0174": [
+      "electronic"
+    ]
+  }
+}

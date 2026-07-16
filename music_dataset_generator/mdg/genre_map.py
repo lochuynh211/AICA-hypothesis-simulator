@@ -40,7 +40,7 @@ _SUB_OVERRIDES: dict[str, str] = {
     "japanese traditional": "japanese folk",
 }
 
-# §13.2 — root-fallback for the 34 Soundcharts roots (only these six map; rest neutral).
+# §13.2 — root-fallback for the 34 Soundcharts roots (universal, language-blind).
 _ROOT_FALLBACK: dict[str, str] = {
     "j-pop": "j-pop",
     "classical": "classical",
@@ -50,9 +50,32 @@ _ROOT_FALLBACK: dict[str, str] = {
     "kids": "children's music",
 }
 
+# §13.2 (P2 amendment) — Japanese-context root broadening, applied ONLY when the song's
+# real languageCode is "ja". Soundcharts encodes mainstream Japanese music with generic
+# roots — "traditional" (sub "asian"), "rock", "alternative", "pop", "soundtrack" — rather
+# than the "j-pop"/"j-rock" the §13 map originally assumed. For a JA song these broad roots
+# resolve to the Japanese vocab; for any non-JA song they stay missing_neutral so a Western
+# rock/pop track is never mislabeled j-rock/j-pop. Universal terms (classical/jazz/ambient/
+# electronic/children's) already map above regardless of language.
+_JA_ROOT_BROADEN: dict[str, str] = {
+    "traditional": "j-pop",
+    "pop": "j-pop",
+    "rock": "j-rock",
+    "alternative": "j-rock",
+    "metal": "j-rock",
+    "punk": "j-rock",
+    "soundtrack": "anime",
+    "folk": "japanese folk",
+}
 
-def map_genre_text(genre: dict) -> str | Any:
-    """Map one `{root, sub[]}` to a vocab term, or MISSING_NEUTRAL if unmapped."""
+
+def map_genre_text(genre: dict, language: str | None = None) -> str | Any:
+    """Map one `{root, sub[]}` to a vocab term, or MISSING_NEUTRAL if unmapped.
+
+    Resolution order: sub-override → universal root-fallback → (JA only) root broadening →
+    MISSING_NEUTRAL. `language` is the song's real Soundcharts languageCode; the JA
+    broadening applies only when it is "ja".
+    """
     subs = genre.get("sub") or []
     for sub in subs:
         override = _SUB_OVERRIDES.get(str(sub).strip().lower())
@@ -62,17 +85,22 @@ def map_genre_text(genre: dict) -> str | Any:
     fallback = _ROOT_FALLBACK.get(root)
     if fallback is not None:
         return fallback
+    if language == "ja":
+        broadened = _JA_ROOT_BROADEN.get(root)
+        if broadened is not None:
+            return broadened
     return MISSING_NEUTRAL
 
 
-def resolve_artist_genres(genres: list[dict]) -> list[str]:
+def resolve_artist_genres(genres: list[dict], language: str | None = None) -> list[str]:
     """Union an artist's genre entries into deduped, order-stable vocab terms.
 
-    Unmapped entries (MISSING_NEUTRAL) contribute nothing.
+    Unmapped entries (MISSING_NEUTRAL) contribute nothing. `language` enables the JA-context
+    root broadening for Japanese songs.
     """
     out: list[str] = []
     for genre in genres or []:
-        term = map_genre_text(genre)
+        term = map_genre_text(genre, language=language)
         if term is not MISSING_NEUTRAL and term not in out:
             out.append(term)
     return out

@@ -65,6 +65,33 @@ def test_unmapped_root_is_missing_neutral() -> None:
         assert map_genre_text({"root": root, "sub": []}) is MISSING_NEUTRAL
 
 
+def test_ja_root_broadening() -> None:
+    # For a Japanese song, Soundcharts' generic roots resolve to the Japanese vocab.
+    assert map_genre_text({"root": "traditional", "sub": ["asian"]}, language="ja") == "j-pop"
+    assert map_genre_text({"root": "pop", "sub": []}, language="ja") == "j-pop"
+    assert map_genre_text({"root": "rock", "sub": []}, language="ja") == "j-rock"
+    assert map_genre_text({"root": "alternative", "sub": []}, language="ja") == "j-rock"
+    assert map_genre_text({"root": "metal", "sub": []}, language="ja") == "j-rock"
+    assert map_genre_text({"root": "soundtrack", "sub": []}, language="ja") == "anime"
+    assert map_genre_text({"root": "folk", "sub": []}, language="ja") == "japanese folk"
+
+
+def test_ja_broadening_does_not_apply_to_non_japanese() -> None:
+    # A Western rock/pop song must NOT become j-rock/j-pop.
+    assert map_genre_text({"root": "rock", "sub": []}, language="en") is MISSING_NEUTRAL
+    assert map_genre_text({"root": "pop", "sub": []}, language="en") is MISSING_NEUTRAL
+    assert map_genre_text({"root": "traditional", "sub": ["asian"]}, language="en") is MISSING_NEUTRAL
+    assert map_genre_text({"root": "rock", "sub": []}) is MISSING_NEUTRAL  # no language given
+
+
+def test_universal_terms_map_regardless_of_language() -> None:
+    for lang in (None, "ja", "en"):
+        assert map_genre_text({"root": "jazz", "sub": []}, language=lang) == "jazz"
+        assert map_genre_text({"root": "classical", "sub": []}, language=lang) == "classical"
+    # sub-override still wins even for a non-JA song (Japanese sub tags are JA-specific).
+    assert map_genre_text({"root": "j-pop", "sub": ["city pop"]}, language="en") == "city pop"
+
+
 def test_idol_falls_through_to_j_pop_root() -> None:
     # idol/shibuya-kei/japanese pop carry no sub-override → j-pop root-fallback (§13.1).
     assert map_genre_text({"root": "j-pop", "sub": ["idol"]}) == "j-pop"

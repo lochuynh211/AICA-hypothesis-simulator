@@ -96,14 +96,15 @@ class CatalogMapper:
             })
         return out
 
-    def _accumulate_genres(self, artists: list[dict], genres: list[dict]) -> None:
+    def _accumulate_genres(self, artists: list[dict], genres: list[dict],
+                           language: str | None = None) -> None:
         """Union the song's resolved vocab genres into each of its artists (§4.7, D7).
 
         Accumulated for the opt-in genre_affinity_v1 extension only — never written into
         the frozen Song, so the catalog is byte-identical whether or not the extension is
-        later emitted (SC-005).
+        later emitted (SC-005). `language` enables the JA-context genre broadening.
         """
-        song_terms = resolve_artist_genres(genres)
+        song_terms = resolve_artist_genres(genres, language=language)
         if not song_terms:
             return
         for artist in artists:
@@ -134,7 +135,7 @@ class CatalogMapper:
         release_date = payload.get("releaseDate") or "2000-01-01"
 
         artists = self._map_artists(payload)
-        self._accumulate_genres(artists, payload.get("genres") or [])
+        self._accumulate_genres(artists, payload.get("genres") or [], language)
 
         # Deterministic synthesized fields.
         popularity = rng.randint(0, 100)
