@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { getHealth, HealthStatus } from './api/client'
 import { RunStoreProvider } from './state/runStore'
 import { AppModeProvider, useAppMode } from './state/appMode'
+import { ProposalStoreProvider } from './state/proposalStore'
 import AppShell from './components/layout/AppShell'
+import ProposalShell from './components/proposal/ProposalShell'
 
 type State =
   | { phase: 'loading' }
@@ -53,8 +55,10 @@ function AppModeToggle() {
 }
 
 /** Renders the shell for the current appMode. 'trigger' renders the existing,
- *  unmodified Trigger Simulator (RunStoreProvider + AppShell); 'proposal' is a
- *  placeholder until the real ProposalShell (a later task) lands. */
+ *  unmodified Trigger Simulator (RunStoreProvider + AppShell); 'proposal'
+ *  renders the standalone Proposal Simulator (ProposalStoreProvider + the
+ *  real 3-panel ProposalShell, P1 T029) — isolated from the trigger's
+ *  RunStoreProvider/AppShell. */
 function AppBody({ healthStatus }: { healthStatus?: string }) {
   const { appMode } = useAppMode()
   return (
@@ -66,7 +70,9 @@ function AppBody({ healthStatus }: { healthStatus?: string }) {
             <AppShell healthStatus={healthStatus} />
           </RunStoreProvider>
         ) : (
-          <div>Proposal (coming soon)</div>
+          <ProposalStoreProvider>
+            <ProposalShell />
+          </ProposalStoreProvider>
         )}
       </div>
     </div>

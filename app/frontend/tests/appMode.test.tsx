@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import App from '../src/App'
 
@@ -13,6 +13,12 @@ function mockFetchByUrl(healthBody: unknown) {
     }
     if (url === '/api/scenarios') {
       return { ok: true, json: async () => ({ scenarios: [], errors: [] }) }
+    }
+    if (url === '/api/proposal/packages') {
+      return { ok: true, json: async () => ({ slots: [], packages: [], errors: [] }) }
+    }
+    if (url === '/api/proposal/matrix') {
+      return { ok: true, json: async () => ({ matrix_version: 'v1', rows: [] }) }
     }
     return { ok: false, status: 404 }
   })
@@ -30,16 +36,17 @@ describe('appMode toggle', () => {
 
     // Trigger shell renders by default (health status is an AppShell-only string).
     expect(await screen.findByText('Backend: ok — aica-api')).toBeInTheDocument()
-    expect(screen.queryByText('Proposal (coming soon)')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('proposal-shell')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Proposal' }))
 
-    expect(screen.getByText('Proposal (coming soon)')).toBeInTheDocument()
+    expect(screen.getByTestId('proposal-shell')).toBeInTheDocument()
     expect(screen.queryByText('Backend: ok — aica-api')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.getByTestId('world-panel')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Trigger' }))
 
     expect(await screen.findByText('Backend: ok — aica-api')).toBeInTheDocument()
-    expect(screen.queryByText('Proposal (coming soon)')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('proposal-shell')).not.toBeInTheDocument()
   })
 })
