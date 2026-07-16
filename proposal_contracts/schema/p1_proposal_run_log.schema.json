@@ -133,7 +133,17 @@
         "REST_SPOT_ARRIVED",
         "REST_COMPLETED",
         "CONTENT_COMPLETED",
-        "ALGORITHM_ERROR"
+        "ALGORITHM_ERROR",
+        "SERVICE_REJECTED",
+        "CONTENT_STARTED",
+        "MOTION_CHANGED",
+        "CONTINUE_REQUESTED",
+        "RETURN_TO_PREVIOUS_CONTENT",
+        "REST_STARTED",
+        "POSTPONED",
+        "CHOOSE_ANOTHER",
+        "REQUEST_MORE",
+        "NO_ELIGIBLE_CANDIDATE"
       ],
       "title": "DiscreteEventType",
       "type": "string"
@@ -298,7 +308,10 @@
         "created",
         "service_selected",
         "content_selected",
-        "error"
+        "error",
+        "content_started",
+        "content_completed",
+        "content_stopped"
       ],
       "title": "ProposalRunStatus",
       "type": "string"
