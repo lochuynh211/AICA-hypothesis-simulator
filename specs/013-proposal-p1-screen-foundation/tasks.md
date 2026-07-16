@@ -115,7 +115,8 @@ description: "Task list — P1 Proposal Screen (3-Panel) & Standalone Run Founda
 - [ ] T039 [P] [US3] Failure-visibility test `app/api/tests/proposal/test_us3_failure_visibility.py`: a raising/invalid mock selector ⇒ explicit `algorithm_error` record (not a fabricated proposal); empty allowed/eligible set ⇒ `no_proposal`; unsupported service ⇒ `unsupported_service` (FR-019/020/021, SC-008).
 - [ ] T040 [P] [US3] Matrix-freeze/allowed-set test `app/api/tests/proposal/test_us3_allowed_set.py`: every ranked candidate ∈ frozen allowed set; run records `matrix_version`; post-rest resolves 5 incl. `call_response_stopped` (FR-011/012/013, SC-002, SC-009).
 - [ ] T041 [P] [US3] Frontend isolation test `app/frontend/src/state/__tests__/proposalStore.isolation.test.ts`: dispatching proposal-store edits does not mutate `runStore` state (FR-025).
-- [ ] T042 [US3] Provenance-label test (backend emits `{ja,en}` + `FeatureOriginProvenance`; frontend renders a badge for every world feature) verifying FR-005.
+- [ ] T042 [P] [US3] Backend provenance test `app/api/tests/proposal/test_us3_provenance.py`: the selector input / world snapshot carries a `FeatureOriginProvenance` (`cdc_su_baseline`/`normalized_cdc_su_concept`/`proposed_addition`) for every world feature, with `{ja,en}` labels (FR-005).
+- [ ] T043b [P] [US3] Frontend provenance test `app/frontend/src/components/proposal/__tests__/ProvenanceBadge.render.test.tsx`: `WorldPanel` renders a provenance badge for every world feature field (FR-005).
 
 **Checkpoint**: all trust invariants covered by dedicated tests.
 
@@ -168,6 +169,6 @@ Phase 1 (Setup) ─▶ Phase 2 (Foundational) ─▶ Phase 3 US1 (MVP) ─▶ Ph
 | SC-007 JA-default bilingual | T030, T047 |
 | SC-008 failure/empty explicit | T016, T039 |
 | SC-009 post-rest 5 incl. call_response_stopped | T002, T012, T040, T044 |
-| FR-005 provenance labels | T025, T026, T042 |
+| FR-005 provenance labels | T025, T026, T042, T043b |
 | Editable params/matrices (D8/FR-002a) | T013, T014, T025, T027, T028 |
 | Reason breakdown (D9/FR-003a) | T025, T027, T028 |
