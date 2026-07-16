@@ -173,3 +173,88 @@ class ProposalRunStatus(str, Enum):
     service_selected = "service_selected"
     content_selected = "content_selected"
     error = "error"
+
+
+# ---------------------------------------------------------------------------
+# P3 enums (data-model.md §Situation / §DriverProfile, [new])
+# ---------------------------------------------------------------------------
+
+class TrafficState(str, Enum):
+    """Traffic condition (spec §8/§9 content feature table)."""
+    normal = "normal"
+    congested = "congested"
+
+
+class RoadType(str, Enum):
+    """Normalized road-type context (spec §8/§9)."""
+    highway = "highway"
+    local = "local"
+    mountain = "mountain"
+    parking = "parking"
+
+
+class NightState(str, Enum):
+    """Day/night driving state (spec §8/§9)."""
+    day = "day"
+    night = "night"
+
+
+class OshiMode(str, Enum):
+    """Whether oshi (favorite-artist) personalization is explicitly enabled."""
+    on = "on"
+    off = "off"
+
+
+class OshiType(str, Enum):
+    """Kind of oshi entity the driver has registered (spec §9, normalized UPro identity)."""
+    artist = "artist"
+    artist_member = "artist_member"
+    group = "group"
+    character = "character"
+    voice_actor = "voice_actor"
+    franchise = "franchise"
+    creator = "creator"
+    other = "other"
+
+
+class AgeBand(str, Enum):
+    """Driver age band (spec §9; keys mirror the content selector's age_era_affinity table)."""
+    teens = "teens"
+    twenties = "20s"
+    thirties = "30s"
+    forties = "40s"
+    fifties = "50s"
+    sixty_plus = "60plus"
+
+
+class Gender(str, Enum):
+    """Driver gender (spec §9: "enum plus unknown"; default transparent weight is zero)."""
+    male = "male"
+    female = "female"
+    non_binary = "non_binary"
+    unspecified = "unspecified"
+
+
+class RecencyState(str, Enum):
+    """Service/item/tag recency band (spec §8/§9: "map to never, long_unused, recent")."""
+    never = "never"
+    long_unused = "long_unused"
+    recent = "recent"
+
+
+class ScheduledEventType(str, Enum):
+    """Kind of upcoming scheduled event (spec §8/§9, simulator proposal)."""
+    none = "none"
+    live_show = "live_show"
+    radio_program = "radio_program"
+    concert = "concert"
+    oshi_event = "oshi_event"
+    other = "other"
+
+
+class ScheduledEventTiming(str, Enum):
+    """Proximity of a scheduled event (spec §8/§9, simulator proposal)."""
+    now = "now"
+    soon = "soon"
+    later = "later"
+    unknown = "unknown"

@@ -1,34 +1,28 @@
 /**
- * T043b — WorldPanel renders a ProvenanceBadge for every world feature field
- * (FR-005). Complements `proposal_provenance_badge.test.tsx` (ProvenanceBadge
- * in isolation) and `proposal_world_panel.test.tsx`'s loose ">5" badge-count
- * check with an EXPLICIT per-field assertion: every `feature-field-<key>`
- * control WorldPanel renders has its own adjacent provenance badge, and the
- * total badge count matches the full field set exactly (no field silently
- * missing a badge, and no stray/duplicate badges).
+ * T043b (updated P3 T026) — WorldPanel renders a ProvenanceBadge for every
+ * world feature field (FR-005). P3 rebuilt WorldPanel into a real editor over
+ * the typed `World`, with far more `Situation`/`DriverProfile` fields than
+ * the P1 subset this test used to hardcode — rather than re-mirroring a
+ * long, fragile key list, this asserts the INVARIANT directly against the
+ * rendered DOM: every `feature-field-*` control has exactly one adjacent
+ * provenance badge, no field is silently missing one, and no stray/duplicate
+ * badges are attached to a single field's row.
  */
 import { render, screen } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ProposalStoreProvider } from '../src/state/proposalStore'
 import WorldPanel from '../src/components/proposal/panels/WorldPanel'
 
-// Mirrors WorldPanel.tsx's WORLD_SITUATION_FIELDS + PREFERENCE_FIELDS keys.
-const WORLD_SITUATION_FIELD_KEYS = [
-  'drowsiness_level',
-  'fatigue_level',
-  'monotony_level',
-  'traffic_state',
-  'road_type',
-  'night_state',
-  'route_tags',
-  'destination_tags',
-  'child_present',
-  'multiple_passengers',
-]
-
-const PREFERENCE_FIELD_KEYS = ['age_band', 'gender']
-
-const ALL_FIELD_KEYS = [...WORLD_SITUATION_FIELD_KEYS, ...PREFERENCE_FIELD_KEYS]
+vi.mock('../src/api/proposalClient', async () => {
+  const actual = await vi.importActual<typeof import('../src/api/proposalClient')>('../src/api/proposalClient')
+  return {
+    ...actual,
+    getDatasets: vi.fn().mockResolvedValue({ datasets: [], errors: [] }),
+    getCatalog: vi.fn().mockRejectedValue(new Error('no fetch in this test')),
+    getSeeds: vi.fn().mockResolvedValue({ seeds: [] }),
+    listProfiles: vi.fn().mockResolvedValue({ profiles: [] }),
+  }
+})
 
 function renderWithStore() {
   return render(
@@ -39,28 +33,24 @@ function renderWithStore() {
 }
 
 describe('WorldPanel provenance badge coverage (FR-005, T043b)', () => {
-  it.each(ALL_FIELD_KEYS)('field "%s" has an adjacent provenance badge', (key) => {
-    renderWithStore()
-    const field = screen.getByTestId(`feature-field-${key}`)
-    const row = field.parentElement
-    expect(row).not.toBeNull()
-    const badge = row!.querySelector('[data-testid="provenance-badge"]')
-    expect(badge).not.toBeNull()
-    expect(badge?.textContent).toBeTruthy()
+  beforeEach(() => {
+    vi.clearAllMocks()
   })
 
-  it('renders exactly one provenance badge per world/situation + preference field, plus the motion_state and section-level badges', () => {
-    renderWithStore()
-    // One badge per Field() row (world/situation + preference) ...
-    for (const key of ALL_FIELD_KEYS) {
-      const field = screen.getByTestId(`feature-field-${key}`)
-      const badgesInRow = field.parentElement!.querySelectorAll('[data-testid="provenance-badge"]')
-      expect(badgesInRow.length).toBe(1)
-    }
-    // ... plus motion_state's own badge and the "Preference & history"
-    // section-level "from profile" badge (both outside the Field() rows).
-    const totalBadges = screen.getAllByTestId('provenance-badge')
-    expect(totalBadges.length).toBe(ALL_FIELD_KEYS.length + 2)
+  it('every world-field row has exactly one adjacent provenance badge', () => {
+    // `data-world-field` marks each FieldRow's own row wrapper (distinct from
+    // the `feature-field-<key>` testid, which some complex editors — record
+    // maps, item lists — also apply to their OWN internal sub-controls, e.g.
+    // `feature-field-recent_service_rejections-add`; querying by that prefix
+    // would over-match into rows with no badge of their own).
+    const { container } = renderWithStore()
+    const rows = container.querySelectorAll('[data-world-field]')
+    expect(rows.length).toBeGreaterThan(20) // situation (14) + driver-profile (~34)
+    rows.forEach((row) => {
+      const badges = row.querySelectorAll('[data-testid="provenance-badge"]')
+      expect(badges.length).toBe(1)
+      expect(badges[0].textContent).toBeTruthy()
+    })
   })
 
   it('road_type is badged normalized_cdc_su_concept, distinct from the cdc_su_baseline fields', () => {
@@ -71,5 +61,12 @@ describe('WorldPanel provenance badge coverage (FR-005, T043b)', () => {
     const drowsinessBadge = drowsinessRow.querySelector('[data-testid="provenance-badge"]')
 
     expect(roadTypeBadge?.getAttribute('title')).not.toBe(drowsinessBadge?.getAttribute('title'))
+  })
+
+  it('the motion_state control (outside the Field-row loop) also carries its own provenance badge', () => {
+    renderWithStore()
+    const motionSelect = screen.getByTestId('motion-state-select')
+    const row = motionSelect.parentElement!
+    expect(row.querySelectorAll('[data-testid="provenance-badge"]').length).toBe(1)
   })
 })

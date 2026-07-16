@@ -157,6 +157,34 @@
       "title": "EvidenceError",
       "type": "object"
     },
+    "FeatureOriginProvenance": {
+      "description": "Provenance of a feature's origin (distinct from response-coefficient provenance — FR-020).",
+      "enum": [
+        "cdc_su_baseline",
+        "normalized_cdc_su_concept",
+        "proposed_addition"
+      ],
+      "title": "FeatureOriginProvenance",
+      "type": "string"
+    },
+    "FeatureProvenanceEntry": {
+      "description": "Provenance for a single feature entry in the feature_provenance map.",
+      "properties": {
+        "feature_origin": {
+          "$ref": "#/$defs/FeatureOriginProvenance"
+        },
+        "source_reference": {
+          "title": "Source Reference",
+          "type": "string"
+        }
+      },
+      "required": [
+        "feature_origin",
+        "source_reference"
+      ],
+      "title": "FeatureProvenanceEntry",
+      "type": "object"
+    },
     "JourneyState": {
       "description": "A snapshot of the journey at a point in the proposal run.",
       "properties": {
@@ -296,6 +324,137 @@
       "title": "ServiceId",
       "type": "string"
     },
+    "SetupSnapshot": {
+      "additionalProperties": false,
+      "description": "Frozen provenance of what produced a run (data-model.md §SetupSnapshot).\n\nEmbedded into ``ProposalRunLog`` at run-create time (replacing the opaque\n``world_snapshot`` dict — the router migration to populate this field is a\nlater P3 task; this model only defines the shape). Reopening a run renders\nthis snapshot as-is, without recomputation.",
+      "properties": {
+        "content_contract_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content Contract Version"
+        },
+        "content_package_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content Package Id"
+        },
+        "content_parameter_set_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content Parameter Set Version"
+        },
+        "dataset_hash": {
+          "title": "Dataset Hash",
+          "type": "string"
+        },
+        "dataset_id": {
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "feature_provenance": {
+          "additionalProperties": {
+            "$ref": "#/$defs/FeatureProvenanceEntry"
+          },
+          "title": "Feature Provenance",
+          "type": "object"
+        },
+        "matrix_version": {
+          "title": "Matrix Version",
+          "type": "string"
+        },
+        "origin": {
+          "$ref": "#/$defs/SetupSnapshotOrigin"
+        },
+        "service_contract_version": {
+          "title": "Service Contract Version",
+          "type": "string"
+        },
+        "service_package_id": {
+          "title": "Service Package Id",
+          "type": "string"
+        },
+        "service_parameter_set_version": {
+          "title": "Service Parameter Set Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin",
+        "matrix_version",
+        "dataset_id",
+        "dataset_hash",
+        "service_package_id",
+        "service_contract_version",
+        "service_parameter_set_version"
+      ],
+      "title": "SetupSnapshot",
+      "type": "object"
+    },
+    "SetupSnapshotOrigin": {
+      "additionalProperties": false,
+      "description": "Which committed artifact(s) the run's world was assembled from.\n\nAt most a run typically has one of ``seed_id``/``clone_id`` set (which\nbase the world started from) plus, independently, ``profile_id`` if a\nreusable ``DriverProfileRecord`` was loaded into it — all three are\noptional and independent because a reviewer may also hand-edit a world\nfrom scratch (all three ``None``) or load a profile into a hand-edited\nworld (only ``profile_id`` set).",
+      "properties": {
+        "clone_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Clone Id"
+        },
+        "profile_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Profile Id"
+        },
+        "seed_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed Id"
+        }
+      },
+      "title": "SetupSnapshotOrigin",
+      "type": "object"
+    },
     "TriggerPurpose": {
       "description": "The high-level intent of the proposal trigger (spec §7).",
       "enum": [
@@ -308,7 +467,7 @@
       "type": "string"
     }
   },
-  "description": "Full append-only record persisted to ``proposal_runs/<run_id>.json``.\n\nRules (enforced by the run manager, not this model): append-only;\npersisted atomically after each event; reopen renders from this log\nwithout recomputation; created/edited entirely within ``proposal_runs/``\n(never touches trigger ``runs/``).",
+  "description": "Full append-only record persisted to ``proposal_runs/<run_id>.json``.\n\nRules (enforced by the run manager, not this model): append-only;\npersisted atomically after each event; reopen renders from this log\nwithout recomputation; created/edited entirely within ``proposal_runs/``\n(never touches trigger ``runs/``).\n\n``setup_snapshot`` (P3, feature 014) is an ADDITIVE field: it freezes the\ntyped provenance of what produced the run (data-model.md §SetupSnapshot,\nresearch.md §R6). It is optional and defaults to ``None`` so that\nexisting runs persisted before P3 (which only ever populated the opaque\n``world_snapshot`` dict) still load unchanged. The run-create ENDPOINT\nmigration to actually populate ``setup_snapshot`` (and eventually retire\n``world_snapshot``) is a later P3 task — this model only adds the shape.",
   "properties": {
     "content_hyperparameters": {
       "additionalProperties": true,
@@ -378,6 +537,17 @@
     "service_package_id": {
       "title": "Service Package Id",
       "type": "string"
+    },
+    "setup_snapshot": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SetupSnapshot"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "status": {
       "$ref": "#/$defs/ProposalRunStatus"

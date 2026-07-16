@@ -6,6 +6,8 @@
     "en": "Transparent Music Content Selector v1.0 (two-axis trait model)"
   },
   "kind": "content_selector",
+  "family": "content_selector",
+  "approach": "transparent",
   "compatible_scenario_types": ["proposal_content"],
   "contract_version": "1.0.0",
   "schema_version": "1.0.0",

@@ -1,0 +1,13 @@
+{
+  "profile_id": "profile-neutral-default",
+  "label": { "ja": "標準（未設定）", "en": "Neutral (default)" },
+  "builtin": true,
+  "profile": {
+    "oshi_registered": false,
+    "oshi_mode": "off",
+    "age_band": "30s",
+    "gender": "unspecified",
+    "hobby_interest_tags": [],
+    "genre_affinity_v1_enabled": false
+  }
+}

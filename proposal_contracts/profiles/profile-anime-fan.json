@@ -1,0 +1,18 @@
+{
+  "profile_id": "profile-anime-fan",
+  "label": { "ja": "アニメ推し", "en": "Anime Fan" },
+  "builtin": true,
+  "profile": {
+    "oshi_registered": true,
+    "oshi_mode": "on",
+    "oshi_id": "synthetic-artist-0068",
+    "oshi_type": "artist",
+    "oshi_tags": ["anime"],
+    "age_band": "20s",
+    "gender": "unspecified",
+    "hobby_interest_tags": ["anime-fan"],
+    "service_usage_level": { "music_playlist": "high", "full_karaoke": "med" },
+    "genre_affinity_v1_enabled": true,
+    "usage_by_genre": { "anime": "high", "vocaloid": "high", "j-pop": "med" }
+  }
+}

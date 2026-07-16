@@ -19,6 +19,7 @@ from aica_api.models.proposal.events import DiscreteEvent
 from aica_api.models.proposal.evidence import AlgorithmEvidence
 from aica_api.models.proposal.journey import JourneyState
 from aica_api.models.proposal.opportunity import ProposalOpportunity
+from aica_api.models.proposal.world import SetupSnapshot
 
 __all__ = ["ProposalRun", "ProposalRunLog"]
 
@@ -41,6 +42,14 @@ class ProposalRunLog(BaseModel):
     persisted atomically after each event; reopen renders from this log
     without recomputation; created/edited entirely within ``proposal_runs/``
     (never touches trigger ``runs/``).
+
+    ``setup_snapshot`` (P3, feature 014) is an ADDITIVE field: it freezes the
+    typed provenance of what produced the run (data-model.md §SetupSnapshot,
+    research.md §R6). It is optional and defaults to ``None`` so that
+    existing runs persisted before P3 (which only ever populated the opaque
+    ``world_snapshot`` dict) still load unchanged. The run-create ENDPOINT
+    migration to actually populate ``setup_snapshot`` (and eventually retire
+    ``world_snapshot``) is a later P3 task — this model only adds the shape.
     """
 
     run_id: str
@@ -48,6 +57,7 @@ class ProposalRunLog(BaseModel):
     opportunity: ProposalOpportunity
     matrix_version: str
     world_snapshot: dict
+    setup_snapshot: SetupSnapshot | None = None
     service_package_id: str
     content_package_id: str | None
     parameters: dict

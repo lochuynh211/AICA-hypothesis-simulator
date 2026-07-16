@@ -1,0 +1,172 @@
+/**
+ * DriverProfilePicker (P3 T026) — list built-in + user driver profiles, load
+ * one into `world.driver_profile`, save the CURRENT driver profile as a new
+ * named (user) profile, and delete a user profile (built-ins are not
+ * deletable — the backend returns 409, surfaced here as an inline error).
+ */
+import { useEffect, useState } from 'react'
+import { t } from '../../i18n/t'
+import { useProposalStore } from '../../state/proposalStore'
+import { listProfiles, getProfile, saveProfile, deleteProfile } from '../../api/proposalClient'
+
+const LABELS = {
+  profile: { ja: 'プロファイル', en: 'Profile' },
+  load: { ja: '読み込む', en: 'Load' },
+  delete: { ja: '削除', en: 'Delete' },
+  saveAs: { ja: '現在の内容を名前を付けて保存', en: 'Save current as named profile' },
+  labelJa: { ja: 'ラベル（日本語）', en: 'Label (Japanese)' },
+  labelEn: { ja: 'ラベル（英語）', en: 'Label (English)' },
+  save: { ja: '保存', en: 'Save' },
+  builtin: { ja: '（組み込み）', en: '(built-in)' },
+}
+
+export default function DriverProfilePicker() {
+  const { state, dispatch } = useProposalStore()
+  const { uiLanguage: lang } = state
+  const [selected, setSelected] = useState('')
+  const [labelJa, setLabelJa] = useState('')
+  const [labelEn, setLabelEn] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  function refreshProfiles() {
+    return listProfiles().then((resp) => {
+      dispatch({ type: 'SET_PROFILES', profiles: resp.profiles })
+      return resp.profiles
+    })
+  }
+
+  useEffect(() => {
+    let cancelled = false
+    refreshProfiles()
+      .then((profiles) => {
+        if (cancelled) return
+        if (profiles.length > 0) setSelected((prev) => prev || profiles[0].profile_id)
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : String(e))
+      })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const selectedSummary = state.profiles.find((p) => p.profile_id === selected)
+
+  async function handleLoad() {
+    if (!selected) return
+    setBusy(true)
+    setError(null)
+    try {
+      const record = await getProfile(selected)
+      dispatch({ type: 'LOAD_PROFILE', profileId: record.profile_id, profile: record.profile })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleSave() {
+    if (!labelJa.trim() && !labelEn.trim()) return
+    setBusy(true)
+    setError(null)
+    try {
+      const record = await saveProfile(
+        { ja: labelJa.trim() || labelEn.trim(), en: labelEn.trim() || labelJa.trim() },
+        state.world.driver_profile,
+      )
+      await refreshProfiles()
+      setSelected(record.profile_id)
+      dispatch({ type: 'LOAD_PROFILE', profileId: record.profile_id, profile: record.profile })
+      setLabelJa('')
+      setLabelEn('')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!selected || selectedSummary?.builtin) return
+    setBusy(true)
+    setError(null)
+    try {
+      await deleteProfile(selected)
+      const profiles = await refreshProfiles()
+      setSelected(profiles[0]?.profile_id ?? '')
+      if (state.selectedProfileId === selected) {
+        dispatch({ type: 'CLEAR_SELECTED_PROFILE' })
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '6px 8px', alignItems: 'center' }}>
+        <label style={{ fontSize: '0.82em', color: '#4b5563', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          {t(LABELS.profile, lang)}
+          <select
+            data-testid="profile-picker-select"
+            value={selected}
+            onChange={(e) => setSelected(e.target.value)}
+          >
+            {state.profiles.map((p) => (
+              <option key={p.profile_id} value={p.profile_id}>
+                {t(p.label, lang)}
+                {p.builtin ? ` ${t(LABELS.builtin, lang)}` : ''}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="button" data-testid="profile-picker-load" disabled={busy || !selected} onClick={handleLoad}>
+          {t(LABELS.load, lang)}
+        </button>
+        <button
+          type="button"
+          data-testid="profile-picker-delete"
+          disabled={busy || !selected || selectedSummary?.builtin}
+          onClick={handleDelete}
+        >
+          {t(LABELS.delete, lang)}
+        </button>
+      </div>
+
+      <div style={{ fontSize: '0.78em', color: '#6b7280', margin: '6px 0 2px' }}>{t(LABELS.saveAs, lang)}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '6px 8px' }}>
+        <input
+          data-testid="profile-picker-label-ja"
+          placeholder={t(LABELS.labelJa, lang)}
+          value={labelJa}
+          onChange={(e) => setLabelJa(e.target.value)}
+        />
+        <input
+          data-testid="profile-picker-label-en"
+          placeholder={t(LABELS.labelEn, lang)}
+          value={labelEn}
+          onChange={(e) => setLabelEn(e.target.value)}
+        />
+        <button
+          type="button"
+          data-testid="profile-picker-save"
+          disabled={busy || (!labelJa.trim() && !labelEn.trim())}
+          onClick={handleSave}
+        >
+          {t(LABELS.save, lang)}
+        </button>
+      </div>
+
+      {error && (
+        <p role="alert" style={{ fontSize: '0.76em', color: '#dc2626', margin: '4px 0 0' }}>
+          {error}
+        </p>
+      )}
+    </div>
+  )
+}

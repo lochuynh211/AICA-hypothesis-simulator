@@ -27,7 +27,8 @@ Public API:
   append_event(run_id, event, runs_dir) -> ProposalRunLog
   append_evidence(run_id, evidence, runs_dir) -> ProposalRunLog
   update_state(run_id, runs_dir, *, status=None, journey_state=None,
-               content_parameters=None, content_hyperparameters=None) -> ProposalRunLog
+               content_parameters=None, content_hyperparameters=None,
+               setup_snapshot=None) -> ProposalRunLog
 """
 from __future__ import annotations
 
@@ -42,6 +43,7 @@ from aica_api.models.proposal.evidence import AlgorithmEvidence
 from aica_api.models.proposal.journey import JourneyState
 from aica_api.models.proposal.opportunity import ProposalOpportunity
 from aica_api.models.proposal.proposal_run import ProposalRun, ProposalRunLog
+from aica_api.models.proposal.world import SetupSnapshot
 from aica_api.storage.file_store import read_json, write_json_atomic
 
 __all__ = [
@@ -105,6 +107,7 @@ def create_run(
     events: list[DiscreteEvent] | None = None,
     evidence: list[AlgorithmEvidence] | None = None,
     status: ProposalRunStatus = ProposalRunStatus.created,
+    setup_snapshot: SetupSnapshot | None = None,
     runs_dir: pathlib.Path,
 ) -> ProposalRunLog:
     """Build a ``ProposalRunLog``, append any provided events/evidence, and
@@ -132,6 +135,9 @@ def create_run(
                                ``OPPORTUNITY_OPENED``/``SERVICE_SELECTED``).
         evidence:              Initial algorithm evidence entries.
         status:                Initial ``ProposalRunStatus``.
+        setup_snapshot:        Frozen P3 ``SetupSnapshot`` (typed-world path
+                               only) — ``None`` for the legacy opaque
+                               ``world_snapshot`` path (P1 back-compat).
         runs_dir:              Directory for persisting ``<run_id>.json``
                                (``settings.proposal_runs_dir`` in production
                                — NEVER the trigger ``runs_dir``).
@@ -146,6 +152,7 @@ def create_run(
         opportunity=opportunity,
         matrix_version=matrix_version,
         world_snapshot=copy.deepcopy(world_snapshot),
+        setup_snapshot=setup_snapshot,
         service_package_id=service_package_id,
         content_package_id=content_package_id,
         parameters=copy.deepcopy(parameters),
@@ -258,6 +265,7 @@ def update_state(
     journey_state: JourneyState | None = None,
     content_parameters: dict | None = None,
     content_hyperparameters: dict | None = None,
+    setup_snapshot: SetupSnapshot | None = None,
 ) -> ProposalRunLog:
     """Update ``status``/``journey_state``/content overrides on an existing
     run and re-persist.
@@ -274,6 +282,15 @@ def update_state(
     so the persisted log is immune to later mutation of the caller's dicts —
     once set at STEP 2 they are setup-time-frozen, matching the service side.
 
+    ``setup_snapshot``, when supplied, REPLACES ``run_log.setup_snapshot``
+    wholesale (whole-branch review FIX 2) — used by
+    ``routers/proposal.py::select_service`` to re-freeze
+    ``SetupSnapshot.content_parameter_set_version`` (and
+    ``content_contract_version``) to the CONTENT parameter set actually used
+    at STEP 2, so the persisted snapshot never misrepresents what produced
+    the run (FR-011/SC-008). This never changes what ``evaluate()`` receives
+    or the returned plan — only persisted metadata.
+
     Raises:
         ProposalRunNotFoundError: If run_id has no persisted log.
     """
@@ -288,5 +305,7 @@ def update_state(
         run_log.content_parameters = copy.deepcopy(content_parameters)
     if content_hyperparameters is not None:
         run_log.content_hyperparameters = copy.deepcopy(content_hyperparameters)
+    if setup_snapshot is not None:
+        run_log.setup_snapshot = setup_snapshot
     _persist(run_log, pathlib.Path(runs_dir))
     return run_log

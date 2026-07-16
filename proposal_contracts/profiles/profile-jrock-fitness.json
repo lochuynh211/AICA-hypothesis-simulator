@@ -1,0 +1,18 @@
+{
+  "profile_id": "profile-jrock-fitness",
+  "label": { "ja": "J-ROCK・フィットネス", "en": "J-Rock / Fitness" },
+  "builtin": true,
+  "profile": {
+    "oshi_registered": true,
+    "oshi_mode": "on",
+    "oshi_id": "synthetic-artist-0079",
+    "oshi_type": "artist",
+    "oshi_tags": ["j-rock"],
+    "age_band": "30s",
+    "gender": "male",
+    "hobby_interest_tags": ["fitness"],
+    "service_usage_level": { "music_playlist": "high" },
+    "genre_affinity_v1_enabled": true,
+    "usage_by_genre": { "j-rock": "high", "electronic": "med" }
+  }
+}

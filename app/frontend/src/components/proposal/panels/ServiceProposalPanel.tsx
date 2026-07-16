@@ -40,6 +40,12 @@ const LABELS = {
   selected: { ja: '選択中 → STEP 2 へ', en: 'Selected → to STEP 2' },
   noProposal: { ja: '候補なし（no_proposal）', en: 'No candidates (no_proposal)' },
   algorithmError: { ja: 'アルゴリズムエラー', en: 'Algorithm error' },
+  // The service selector is still the P1 mock (real service ranking is a
+  // later milestone) — P3c wires up the REAL content selector for STEP 2,
+  // so this "mock data" marker is scoped to the service panel only; it no
+  // longer applies to ContentProposalPanel (see ProposalShell — the badge
+  // used to live in the shared header for both panels).
+  mockBadge: { ja: 'モックデータ（P1土台）', en: 'MOCK DATA (P1 foundation)' },
 }
 
 function serviceRows(candidate: RankedCandidate): ReasonRow[] {
@@ -114,10 +120,10 @@ export default function ServiceProposalPanel() {
         trigger_purpose: state.triggerPurpose,
         lifecycle_stage: state.lifecycleStage,
         motion_state: state.motionState,
-        world_snapshot: {
-          feature_snapshot: state.featureSnapshot,
-          profile_id: state.selectedProfileId,
-        },
+        world: state.world,
+        origin_seed_id: state.selectedSeedId,
+        origin_clone_id: state.selectedCloneId,
+        origin_profile_id: state.selectedProfileId,
         service_package_id: manifest.id,
         content_package_id: contentPackageId,
         mode: state.mode,
@@ -201,7 +207,23 @@ export default function ServiceProposalPanel() {
         }}
       >
         {'②'} <span>{t(LABELS.title, lang)}</span>{' '}
-        <span style={{ color: '#6b7280', fontWeight: 500 }}>— {LABELS.step1}</span>
+        <span style={{ color: '#6b7280', fontWeight: 500 }}>— {LABELS.step1}</span>{' '}
+        <span
+          data-testid="service-mock-badge"
+          style={{
+            fontSize: '0.66em',
+            fontWeight: 800,
+            letterSpacing: '0.05em',
+            background: '#fffbeb',
+            color: '#b45309',
+            border: '1px solid #fcd34d',
+            borderRadius: '999px',
+            padding: '2px 9px',
+            marginLeft: '6px',
+          }}
+        >
+          {t(LABELS.mockBadge, lang)}
+        </span>
       </h3>
       <div style={{ padding: '12px 14px' }}>
         <div style={sectionLabelStyle}>{t(LABELS.packageMode, lang)}</div>
