@@ -326,23 +326,17 @@ def build_coverage_plan(
         remaining = _build_remaining_for_null_ledger(cells)
         enrichment_priority: list[str] = []
     else:
-        # Ledger-relative logic: subtract accepted entries.
-        # Full implementation is a later slice; hook is here for extension.
-        accepted_cells = set(
-            entry.get("cell")
-            for entry in (ledger or [])
-            if entry.get("outcome") == "accepted" and entry.get("cell")
-        )
-        remaining_cell_ids = sorted(
-            c.cell_id for c in cells if c.cell_id not in accepted_cells
-        )
+        # Ledger-relative logic (design §4.1/§4.13): subtract cells already filled by
+        # accepted ledger entries → remaining; already-covered cells → enrichment.
+        from mdg.ledger import accepted_cells as _accepted_cells
+
+        covered = set(_accepted_cells(ledger))
         remaining = {
-            "cells": remaining_cell_ids,
+            "cells": sorted(c.cell_id for c in cells if c.cell_id not in covered),
             "quotas_met": {},
         }
-        # Enrichment: already-covered cells that could be deepened
         enrichment_priority = sorted(
-            c.cell_id for c in cells if c.cell_id in accepted_cells
+            c.cell_id for c in cells if c.cell_id in covered
         )
 
     return CoveragePlan(
