@@ -301,13 +301,325 @@ export type ProposalRunLog = {
   status: ProposalRunStatus
 }
 
+// ── P3 (feature 014): typed World / seeds / profiles / datasets ────────────
+//
+// Mirrors `app/api/aica_api/models/proposal/{world,dataset,enums}.py`. Field
+// names and nesting are verbatim from the backend Pydantic models so that a
+// `World` object built here round-trips through `POST /worlds/validate` and
+// `POST /runs` unchanged. See `specs/014-proposal-p3-editable-world/`
+// `contracts/proposal-p3-api.md` and `data-model.md`.
+
+export type TrafficStateValue = 'normal' | 'congested'
+export type RoadTypeValue = 'highway' | 'local' | 'mountain' | 'parking'
+export type NightStateValue = 'day' | 'night'
+export type RestSpotTypeValue = 'sa_pa' | 'convenience_store' | 'parking' | 'oshi_spot' | 'other' | 'unknown'
+export type OshiModeValue = 'on' | 'off'
+export type OshiTypeValue =
+  | 'artist'
+  | 'artist_member'
+  | 'group'
+  | 'character'
+  | 'voice_actor'
+  | 'franchise'
+  | 'creator'
+  | 'other'
+export type AgeBandValue = 'teens' | '20s' | '30s' | '40s' | '50s' | '60plus'
+export type GenderValue = 'male' | 'female' | 'non_binary' | 'unspecified'
+export type RecencyStateValue = 'never' | 'long_unused' | 'recent'
+export type ScheduledEventTypeValue = 'none' | 'live_show' | 'radio_program' | 'concert' | 'oshi_event' | 'other'
+export type ScheduledEventTimingValue = 'now' | 'soon' | 'later' | 'unknown'
+export type UsageLevelValue = 'never' | 'low' | 'med' | 'high'
+export type GenreLiteralValue =
+  | 'j-pop'
+  | 'j-rock'
+  | 'city pop'
+  | 'anime'
+  | 'vocaloid'
+  | 'enka'
+  | "children's music"
+  | 'classical'
+  | 'jazz'
+  | 'ambient'
+  | 'electronic'
+  | 'japanese folk'
+
+/** The 14 catalog service identifiers (spec §7.1-7.2). Kept as a plain
+ * string here (not reusing a narrower literal) since map keys/values in
+ * driver-profile fields are validated server-side; the UI only needs a
+ * stable option list (see `WorldPanel`'s `SERVICE_ID_OPTIONS`). */
+export type ServiceIdValue = string
+
+export const GENRE_VOCABULARY: GenreLiteralValue[] = [
+  'j-pop',
+  'j-rock',
+  'city pop',
+  'anime',
+  'vocaloid',
+  'enka',
+  "children's music",
+  'classical',
+  'jazz',
+  'ambient',
+  'electronic',
+  'japanese folk',
+]
+
+export const SERVICE_ID_OPTIONS: ServiceIdValue[] = [
+  'music_playlist',
+  'humming_karaoke',
+  'call_response_driving',
+  'quiz',
+  'ranking_creation',
+  'radio_style',
+  'conversation_audio',
+  'live_viewing',
+  'stretch_video',
+  'full_karaoke',
+  'call_response_stopped',
+  'oshi_reexperience',
+  'relaxation_multisensory',
+  'linked_video_recommendation',
+]
+
+// ── Timestamped item/event sub-shapes (data-model.md) ───────────────────────
+
+export type PlayedItem = { track_id: string; last_played_at: string }
+export type SkippedItem = { track_id: string; skipped_at: string }
+export type ChangedFromItem = { track_id: string; changed_at: string }
+export type CompletedItem = { track_id: string; completed_at: string }
+export type ManuallySelectedItem = { track_id: string; selected_at: string }
+export type RepeatedItem = { track_id: string; repeated_at: string }
+export type CancelledContentPlan = { plan_id: string; cancelled_at: string }
+export type ServiceRejection = { service_id: ServiceIdValue; rejected_at: string }
+
+// ── ControlInputs / Situation / DriverProfile / World ───────────────────────
+
+export type ControlInputs = {
+  trigger_purpose: TriggerPurpose
+  lifecycle_stage: LifecycleStage
+  motion_state: MotionState
+  matrix_version: string
+  dataset_id: string
+}
+
+export type Situation = {
+  drowsiness_level: number
+  fatigue_level: number
+  traffic_state: TrafficStateValue
+  road_type: RoadTypeValue
+  night_state: NightStateValue
+  monotony_level: number
+  route_tags: string[]
+  destination_tags: string[]
+  child_present: boolean
+  multiple_passengers: boolean
+  motion_state: MotionState
+  estimated_min_until_rest_spot: number | null
+  rest_spot_type: RestSpotTypeValue
+  active_service: ServiceIdValue | null
+  recent_service_rejections: ServiceRejection[]
+}
+
+export type DriverProfile = {
+  // Oshi information
+  oshi_registered: boolean
+  oshi_mode: OshiModeValue
+  oshi_id: string | null
+  oshi_type: OshiTypeValue | null
+  oshi_tags: string[]
+  // UPro information
+  age_band: AgeBandValue
+  gender: GenderValue
+  hobby_interest_tags: string[]
+  // Usage / recency / scene tendency
+  service_usage_level: Record<string, UsageLevelValue>
+  service_recency_state: Record<string, RecencyStateValue>
+  scene_service_usage_level: Record<string, Record<string, UsageLevelValue>>
+  catalog_item_usage_level: Record<string, UsageLevelValue>
+  catalog_item_recency_state: Record<string, RecencyStateValue>
+  content_tag_usage_level: Record<string, UsageLevelValue>
+  content_tag_recency_state: Record<string, RecencyStateValue>
+  scene_content_tag_usage_level: Record<string, Record<string, UsageLevelValue>>
+  // Playback and user operations
+  played_items: PlayedItem[]
+  skipped_items: SkippedItem[]
+  changed_from_items: ChangedFromItem[]
+  cancelled_content_plans: CancelledContentPlan[]
+  // Granular operations (Additional proposed)
+  completed_items: CompletedItem[]
+  manually_selected_items: ManuallySelectedItem[]
+  repeated_items: RepeatedItem[]
+  // History: proposal / recovery results
+  service_proposal_acceptance_rate: Record<string, number>
+  service_recovery_rate: Record<string, number>
+  content_proposal_acceptance_rate: Record<string, number>
+  content_recovery_rate: Record<string, number>
+  // History: evidence reliability (Additional proposed)
+  service_proposal_acceptance_confidence: Record<string, number>
+  service_recovery_confidence: Record<string, number>
+  content_proposal_acceptance_confidence: Record<string, number>
+  content_recovery_confidence: Record<string, number>
+  // History: schedule promotion
+  scheduled_event_type: ScheduledEventTypeValue | null
+  scheduled_event_timing: ScheduledEventTimingValue | null
+  scheduled_event_tags: string[]
+  // Genre extension (opt-in)
+  genre_affinity_v1_enabled: boolean
+  usage_by_genre: Partial<Record<GenreLiteralValue, UsageLevelValue>> | null
+  scene_genre_usage: Record<string, Partial<Record<GenreLiteralValue, UsageLevelValue>>> | null
+}
+
+export type DatasetVersion = {
+  schema_version: string
+  spotify_track_reference_version: string
+  spotify_audio_features_reference_version: string
+}
+
+export type CatalogRef = {
+  dataset_id: string
+  dataset_version: DatasetVersion
+  dataset_hash: string
+}
+
+export type DatasetProvenance = {
+  dataset_id: string
+  dataset_version: DatasetVersion
+  dataset_hash: string
+  tier: string
+  provenance_note: string
+}
+
+export type DatasetSummary = {
+  dataset_id: string
+  dataset_version: DatasetVersion
+  dataset_hash: string
+  tier: string
+  synthetic_only: boolean
+  song_count: number
+}
+
+export type World = {
+  control_inputs: ControlInputs
+  situation: Situation
+  driver_profile: DriverProfile
+  catalog_ref: CatalogRef
+}
+
+export type SeedSummary = { seed_id: string; label: BilingualLabel; description: BilingualLabel }
+
+export type SeedWorld = {
+  seed_id: string
+  label: BilingualLabel
+  description: BilingualLabel
+  world: World
+}
+
+export type ProfileSummary = { profile_id: string; label: BilingualLabel; builtin: boolean }
+
+export type DriverProfileRecord = {
+  profile_id: string
+  label: BilingualLabel
+  builtin: boolean
+  profile: DriverProfile
+}
+
+export type WorldValidationIssue = { path: string; code: string; message: string }
+
+/** Minimal shape read by `CatalogView` — the real `Song` model has many more
+ * fields (see `app/api/aica_api/models/proposal/song_schema.py`); the UI is
+ * read-only and only ever displays identity + a couple of descriptive
+ * fields, never edits them. */
+export type CatalogSongSummary = {
+  spotify_track: {
+    id: string
+    name: string
+    artists?: { id: string; name: string }[] | null
+  }
+}
+
+// ── GET /api/proposal/datasets (read-only) ──────────────────────────────────
+
+export async function getDatasets(): Promise<{
+  datasets: DatasetSummary[]
+  errors: { dataset_id: string; message: string }[]
+}> {
+  return apiFetch('/datasets', { method: 'GET' })
+}
+
+// ── GET /api/proposal/datasets/{id}/catalog (read-only) ─────────────────────
+
+export async function getCatalog(
+  datasetId: string,
+  offset = 0,
+  limit?: number,
+): Promise<{ provenance: DatasetProvenance; total: number; songs: CatalogSongSummary[] }> {
+  const params = new URLSearchParams()
+  params.set('offset', String(offset))
+  if (limit !== undefined) params.set('limit', String(limit))
+  return apiFetch(`/datasets/${encodeURIComponent(datasetId)}/catalog?${params.toString()}`, { method: 'GET' })
+}
+
+// ── GET /api/proposal/seeds[/{id}] ──────────────────────────────────────────
+
+export async function getSeeds(): Promise<{ seeds: SeedSummary[] }> {
+  return apiFetch('/seeds', { method: 'GET' })
+}
+
+export async function getSeed(seedId: string): Promise<SeedWorld> {
+  return apiFetch(`/seeds/${encodeURIComponent(seedId)}`, { method: 'GET' })
+}
+
+// ── Driver-profile CRUD ──────────────────────────────────────────────────────
+
+export async function listProfiles(): Promise<{ profiles: ProfileSummary[] }> {
+  return apiFetch('/profiles', { method: 'GET' })
+}
+
+export async function getProfile(profileId: string): Promise<DriverProfileRecord> {
+  return apiFetch(`/profiles/${encodeURIComponent(profileId)}`, { method: 'GET' })
+}
+
+export async function saveProfile(label: BilingualLabel, profile: DriverProfile): Promise<DriverProfileRecord> {
+  return apiFetch('/profiles', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ label, profile }),
+  })
+}
+
+export async function deleteProfile(profileId: string): Promise<void> {
+  const response = await fetch(`${PROPOSAL_API_BASE}/profiles/${encodeURIComponent(profileId)}`, {
+    method: 'DELETE',
+  })
+  if (!response.ok) {
+    throw new Error(`Proposal API error: ${response.status}`)
+  }
+}
+
+// ── POST /api/proposal/worlds/validate ──────────────────────────────────────
+
+export async function validateWorld(world: World): Promise<{ valid: boolean; issues: WorldValidationIssue[] }> {
+  return apiFetch('/worlds/validate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ world }),
+  })
+}
+
 // ── POST /api/proposal/runs — create + STEP 1 ───────────────────────────────
 
 export type CreateProposalRunBody = {
   trigger_purpose: TriggerPurpose
   lifecycle_stage: LifecycleStage
   motion_state: MotionState
+  /** Typed world (P3) — wins over `world_snapshot` when both are present. */
+  world?: World
   world_snapshot?: Record<string, unknown>
+  /** Which committed artifact(s) the typed world was assembled from — frozen
+   * verbatim into the run's `SetupSnapshot.origin` (data-model.md). */
+  origin_seed_id?: string | null
+  origin_clone_id?: string | null
+  origin_profile_id?: string | null
   service_package_id: string
   content_package_id: string
   mode?: string

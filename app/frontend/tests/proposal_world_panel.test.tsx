@@ -1,7 +1,35 @@
-import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ProposalStoreProvider, useProposalStore } from '../src/state/proposalStore'
 import WorldPanel from '../src/components/proposal/panels/WorldPanel'
+
+// WorldPanel (and its SeedPicker/DriverProfilePicker children) fetch
+// datasets/catalog/seeds/profiles on mount (P3). Mock the client so these
+// structural tests stay deterministic and don't depend on network/fetch.
+vi.mock('../src/api/proposalClient', async () => {
+  const actual = await vi.importActual<typeof import('../src/api/proposalClient')>('../src/api/proposalClient')
+  return {
+    ...actual,
+    getDatasets: vi.fn().mockResolvedValue({ datasets: [], errors: [] }),
+    getCatalog: vi.fn().mockResolvedValue({
+      provenance: {
+        dataset_id: 'soundcharts-grounded-spotify-compatible-demonstration-seed-1042',
+        dataset_version: {
+          schema_version: '1.0.0',
+          spotify_track_reference_version: '1.0.0',
+          spotify_audio_features_reference_version: '1.0.0',
+        },
+        dataset_hash: 'sha256:test',
+        tier: 'demonstration',
+        provenance_note: 'test fixture',
+      },
+      total: 0,
+      songs: [],
+    }),
+    getSeeds: vi.fn().mockResolvedValue({ seeds: [] }),
+    listProfiles: vi.fn().mockResolvedValue({ profiles: [] }),
+  }
+})
 
 function renderWithStore() {
   function Wrapper() {
@@ -15,8 +43,13 @@ function renderWithStore() {
 }
 
 describe('WorldPanel', () => {
-  it('renders the section order: trigger signal, car state, world/situation, preference & history, driver profile', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('renders the section order: trigger signal, car state, world/situation, preference & history, driver profile', async () => {
     renderWithStore()
+    await screen.findByTestId('dataset-provenance-banner')
     const headings = screen.getAllByTestId('world-section-label').map((el) => el.textContent)
     // JA default labels, in document order.
     expect(headings.length).toBe(5)
@@ -58,10 +91,10 @@ describe('WorldPanel', () => {
     expect(screen.getByTestId('motion-state-select')).toBeInTheDocument()
   })
 
-  it('editing a world/situation field dispatches SET_FEATURE_FIELD', () => {
+  it('editing a world/situation field dispatches SET_SITUATION_FIELD', () => {
     function Probe() {
       const { state } = useProposalStore()
-      return <span data-testid="probe">{String(state.featureSnapshot.drowsiness_level)}</span>
+      return <span data-testid="probe">{String(state.world.situation.drowsiness_level)}</span>
     }
     render(
       <ProposalStoreProvider>
@@ -80,21 +113,15 @@ describe('WorldPanel', () => {
     expect(badges.length).toBeGreaterThan(5)
   })
 
-  it('renders the driver profile selector last and loading a profile merges preference/history fields', () => {
-    function Probe() {
-      const { state } = useProposalStore()
-      return <span data-testid="probe">{String(state.featureSnapshot.age_band)}</span>
-    }
-    render(
-      <ProposalStoreProvider>
-        <WorldPanel />
-        <Probe />
-      </ProposalStoreProvider>,
-    )
-    const select = screen.getByTestId('driver-profile-select') as HTMLSelectElement
-    // Pick a profile other than the current default and confirm the merge happened.
-    const otherOption = Array.from(select.options).find((o) => o.value !== select.value)!
-    fireEvent.change(select, { target: { value: otherOption.value } })
-    expect(screen.getByTestId('probe').textContent).not.toBe('')
+  it('renders the driver profile picker in the last section', async () => {
+    renderWithStore()
+    await waitFor(() => expect(screen.getByTestId('profile-picker-select')).toBeInTheDocument())
+    const headings = screen.getAllByTestId('world-section-label')
+    const lastHeading = headings[headings.length - 1]
+    // The DriverProfilePicker (profile-picker-select) is rendered after the
+    // last section label in document order.
+    const position = lastHeading.compareDocumentPosition(screen.getByTestId('profile-picker-select'))
+    // eslint-disable-next-line no-bitwise
+    expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 })

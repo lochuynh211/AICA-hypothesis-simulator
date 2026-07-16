@@ -114,10 +114,9 @@ export default function ServiceProposalPanel() {
         trigger_purpose: state.triggerPurpose,
         lifecycle_stage: state.lifecycleStage,
         motion_state: state.motionState,
-        world_snapshot: {
-          feature_snapshot: state.featureSnapshot,
-          profile_id: state.selectedProfileId,
-        },
+        world: state.world,
+        origin_seed_id: state.selectedSeedId,
+        origin_profile_id: state.selectedProfileId,
         service_package_id: manifest.id,
         content_package_id: contentPackageId,
         mode: state.mode,
