@@ -119,7 +119,22 @@ def _create_maps_run(client, alt: dict) -> str:
     concept, retired along with the built-in algorithm types) — the hybrid
     trigger fires from its own persisted score thresholds regardless of
     rest-spot position.
+
+    The maps fixture route is short (~150 km / ~90 min): at the current
+    tick_seconds=180 cadence that's only ~30-36 ticks total, which the
+    rest_persistence_ticks=6 gate can't reliably clear before the route
+    completes. Scale up the route length/duration (test-local copy of
+    route_facts; the underlying maps fixture and analyze response are
+    untouched) so every run built from this helper has enough runway to
+    actually fire a proposal — these tests are about Maps-call isolation
+    and cross-run determinism, not about exercising a razor-thin
+    route-length edge case.
     """
+    route_facts = dict(alt["route_facts"])
+    route_facts["total_route_distance_km"] = route_facts["total_route_distance_km"] * 3
+    route_facts["estimated_route_duration_min"] = (
+        route_facts["estimated_route_duration_min"] * 3
+    )
     plan_resp = client.post(
         "/api/run-plans",
         json={
@@ -127,7 +142,7 @@ def _create_maps_run(client, alt: dict) -> str:
             "scenario_id": VALID_SCENARIO_ID,
             "route_id": alt["route_id"],
             "route_source": "maps",
-            "route_facts": alt["route_facts"],
+            "route_facts": route_facts,
             "display_route": alt["display"],
             "parameters": {},
             "hyperparameters": {},

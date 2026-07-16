@@ -159,20 +159,26 @@ def _steady_state(signals, hp=None, counter_rest=0, counter_mono=0, vel_rest=0.0
 
 # Crafted tiered signals ------------------------------------------------------
 
-# rest_required in (0.58, 0.88) — fires REST_PROPOSAL once persistence clears.
+# rest_required = 0.775, in (threshold_suggest=0.7, threshold_urgent=0.9) — fires
+# REST_PROPOSAL once persistence clears (single-shot, fresh accumulators).
 _HIGH_SIGNALS = _signals(
-    drowsiness=70.0, fatigue=70.0, anomaly_rate=2.0, next_rest_spot_min=10.0,
+    drowsiness=85.0, fatigue=85.0, anomaly_rate=6.0, next_rest_spot_min=10.0,
 )
 
-# rest_required = 1.0 (> 0.88) — skip-if (score) bypasses persistence; strength strong.
+# rest_required ~= 0.975-1.0 (> skip_if_score=0.9) — skip-if (score) bypasses
+# persistence; strength strong. continuousDrivingMin=200 (>=180 min band) plus a
+# traffic jam push driving_time/env_load to their top bands alongside maxed
+# drowsiness/fatigue/anomaly, since the bare (100,100,25) signal alone only
+# reaches rest_required=0.85 under the new tuning (below skip_if_score).
 _MAX_SIGNALS = _signals(
     drowsiness=100.0, fatigue=100.0, anomaly_rate=25.0, next_rest_spot_min=10.0,
+    continuous_driving_min=200.0, is_traffic_jam=True,
 )
 
 # Both rest and monotony over their suggest thresholds (env_load + monotony pushed
 # up via traffic jam / highway segment / night / monotony accumulators).
 _BOTH_SIGNALS = _signals(
-    drowsiness=70.0, fatigue=70.0, anomaly_rate=2.0, next_rest_spot_min=10.0,
+    drowsiness=85.0, fatigue=85.0, anomaly_rate=6.0, next_rest_spot_min=10.0,
     is_night=True, familiar_route=True, is_traffic_jam=True, segment_type="highway",
 )
 _BOTH_ACCUMULATORS = {"jam_min": 20.0, "hw_min": 60.0, "mono_min": 30.0}
@@ -488,15 +494,15 @@ def test_smoothing_damps_one_tick_spike():
     res = mod.evaluate(_ctx(spike_signals, prev_state=prev))
 
     smoothed_after = res["next_package_runtime_state"]["smoothed_features"]
-    # alpha=0.35: smoothed drowsiness = 0.35*1.0 + 0.65*low, never near the raw spike.
-    assert smoothed_after["drowsiness"] < 0.5
+    # alpha=0.5: smoothed drowsiness = 0.5*1.0 + 0.5*low (0.525), never near the raw spike (1.0).
+    assert smoothed_after["drowsiness"] < 0.6
     assert smoothed_after["drowsiness"] > low_feats["drowsiness"]
 
-    # The smoothed rest score is far below the UNSMOOTHED spike score.
+    # The smoothed rest score is meaningfully below the UNSMOOTHED spike score.
     unsmoothed = mod.category_scores(
         mod.extract_features(spike_signals, accumulators, HP), HP
     )
-    assert res["scores"]["rest_required_score"] < unsmoothed["rest_required_score"] - 0.15
+    assert res["scores"]["rest_required_score"] < unsmoothed["rest_required_score"] - 0.1
     # A single spike never fires.
     assert res["result_type"] in ("NO_PROPOSAL", "SUPPRESSED")
 
@@ -508,18 +514,23 @@ def test_smoothing_damps_one_tick_spike():
 
 def test_persistence_gates_firing():
     """A single over-threshold tick does NOT fire until the counter clears."""
-    prev = _steady_state(_HIGH_SIGNALS, counter_rest=0, vel_rest=0.02)
+    rest_persistence = int(HP["rest_persistence_ticks"])
+    prev = _steady_state(_HIGH_SIGNALS, counter_rest=rest_persistence - 2, vel_rest=0.02)
 
     r1 = mod.evaluate(_ctx(_HIGH_SIGNALS, prev_state=prev))
     assert r1["result_type"] == "SUPPRESSED", r1["result_type"]
-    assert r1["next_package_runtime_state"]["persistence_counters"]["rest_required"] == 1
+    assert (
+        r1["next_package_runtime_state"]["persistence_counters"]["rest_required"]
+        == rest_persistence - 1
+    )
     # The rest candidate is retained and marked suppressed by the persistence gate.
     rest_cand = next(c for c in r1["candidates"] if c["category"] == "rest_required")
     assert rest_cand["exists"] is True
     assert rest_cand["fire_control"]["fired"] is False
     assert rest_cand["fire_control"]["suppressed"] is True
 
-    # Thread the returned state: the 2nd consecutive over-threshold tick fires.
+    # Thread the returned state: the next consecutive over-threshold tick (reaching
+    # rest_persistence_ticks) fires.
     r2 = mod.evaluate(_ctx(_HIGH_SIGNALS, prev_state=r1["next_package_runtime_state"]))
     assert r2["result_type"] == "REST_PROPOSAL", r2["result_type"]
     assert r2["selected_category"] == "rest_required"
@@ -527,7 +538,7 @@ def test_persistence_gates_firing():
 
 
 def test_skip_if_score_bypasses_persistence():
-    """score > 0.88 fires on the first over-threshold tick (skip-if)."""
+    """score > skip_if_score (0.9) fires on the first over-threshold tick (skip-if)."""
     prev = _steady_state(_MAX_SIGNALS, counter_rest=0, vel_rest=0.0)
     r1 = mod.evaluate(_ctx(_MAX_SIGNALS, prev_state=prev))
     assert r1["result_type"] == "REST_PROPOSAL"
@@ -535,8 +546,8 @@ def test_skip_if_score_bypasses_persistence():
 
 
 def test_skip_if_velocity_bypasses_persistence():
-    """velocity > 0.08 fires on the first over-threshold tick (skip-if)."""
-    prev = _steady_state(_HIGH_SIGNALS, counter_rest=0, vel_rest=0.20)
+    """velocity > skip_if_velocity (0.2) fires on the first over-threshold tick (skip-if)."""
+    prev = _steady_state(_HIGH_SIGNALS, counter_rest=0, vel_rest=0.25)
     r1 = mod.evaluate(_ctx(_HIGH_SIGNALS, prev_state=prev))
     assert r1["result_type"] == "REST_PROPOSAL"
 
@@ -547,19 +558,23 @@ def test_skip_if_velocity_bypasses_persistence():
 
 
 def test_rest_state_machine_bands():
+    # Bands (new tuning): watch=0.5, suggest=0.7, recommend=0.8, urgent=0.9.
+    # Inputs sit clearly inside each band, away from the boundaries.
     assert mod.rest_state_label(0.30, False, HP) == "REST_NORMAL"
-    assert mod.rest_state_label(0.50, False, HP) == "REST_WATCH"
-    assert mod.rest_state_label(0.65, False, HP) == "REST_SUGGEST"
-    assert mod.rest_state_label(0.80, False, HP) == "REST_RECOMMEND"
-    assert mod.rest_state_label(0.92, False, HP) == "REST_URGENT"
+    assert mod.rest_state_label(0.55, False, HP) == "REST_WATCH"
+    assert mod.rest_state_label(0.75, False, HP) == "REST_SUGGEST"
+    assert mod.rest_state_label(0.85, False, HP) == "REST_RECOMMEND"
+    assert mod.rest_state_label(0.95, False, HP) == "REST_URGENT"
     # ->RECOVERY when an accept has been observed.
-    assert mod.rest_state_label(0.92, True, HP) == "REST_RECOVERY"
+    assert mod.rest_state_label(0.95, True, HP) == "REST_RECOVERY"
 
 
 def test_monotony_state_machine_bands():
+    # Bands (new tuning): watch=0.5, suggest=0.7. Inputs sit clearly inside each
+    # band, away from the boundaries.
     assert mod.monotony_state_label(0.30, HP) == "MONOTONY_NORMAL"
-    assert mod.monotony_state_label(0.45, HP) == "MONOTONY_WATCH"
-    assert mod.monotony_state_label(0.60, HP) == "MONOTONY_CONTENT_SUGGEST"
+    assert mod.monotony_state_label(0.55, HP) == "MONOTONY_WATCH"
+    assert mod.monotony_state_label(0.75, HP) == "MONOTONY_CONTENT_SUGGEST"
 
 
 def test_state_machine_advances_with_rising_score():
@@ -596,7 +611,9 @@ def test_state_machine_advances_with_rising_score():
 
 def test_fire_control_cooldown_suppresses_too_soon():
     """A too-soon second proposal is suppressed via proposal_history cooldown."""
-    prev = _steady_state(_HIGH_SIGNALS, counter_rest=2, vel_rest=0.0)
+    prev = _steady_state(
+        _HIGH_SIGNALS, counter_rest=int(HP["rest_persistence_ticks"]) - 1, vel_rest=0.0
+    )
 
     too_soon = {
         "lastProposalTimeSec": 3600.0 - 10.0,
@@ -626,7 +643,9 @@ def test_recovery_after_accept_suppresses_only_while_recovery_active():
     subsequent proposal with recovery_after_accept.  It must now depend on the
     adapter's recovery_active flag: True only while the driver is still resting.
     """
-    prev = _steady_state(_HIGH_SIGNALS, counter_rest=2, vel_rest=0.0)
+    prev = _steady_state(
+        _HIGH_SIGNALS, counter_rest=int(HP["rest_persistence_ticks"]) - 1, vel_rest=0.0
+    )
     accepted = {
         "lastProposalTimeSec": 10.0,  # long ago -> cooldown elapsed
         "lastProposalCategory": "rest_required",
@@ -659,7 +678,9 @@ def test_recovery_after_accept_suppresses_only_while_recovery_active():
 
 def test_fire_control_count_limit_suppresses():
     """The 30-min count limit suppresses once the cap is reached."""
-    prev = _steady_state(_HIGH_SIGNALS, counter_rest=2, vel_rest=0.0)
+    prev = _steady_state(
+        _HIGH_SIGNALS, counter_rest=int(HP["rest_persistence_ticks"]) - 1, vel_rest=0.0
+    )
     capped = dict(
         _EMPTY_PH,
         proposalCountLast30Min=int(HP["max_proposals_per_30min"]),
@@ -684,7 +705,10 @@ def test_priority_rest_over_monotony_suppressed_retained():
     assert scores["monotony_prevention_score"] >= HP["monotony_suggest_threshold"]
 
     prev = _steady_state(
-        _BOTH_SIGNALS, counter_rest=2, counter_mono=3, vel_rest=0.0, vel_mono=0.0,
+        _BOTH_SIGNALS,
+        counter_rest=int(HP["rest_persistence_ticks"]) - 1,
+        counter_mono=int(HP["monotony_persistence_ticks"]) - 1,
+        vel_rest=0.0, vel_mono=0.0,
         accumulators=_BOTH_ACCUMULATORS,
     )
     r = mod.evaluate(_ctx(_BOTH_SIGNALS, prev_state=prev))

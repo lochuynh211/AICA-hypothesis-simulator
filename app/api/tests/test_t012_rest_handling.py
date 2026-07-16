@@ -411,6 +411,21 @@ class TestEndToEndEmptyRestRun:
         assert alt0["route_facts"]["rest_spot_positions"] == []
         assert "no_rest_stops_found" in alt0["notices"]
 
+        # The maps fixture route is short (~150 km / ~90 min): at the current
+        # tick_seconds=180 cadence that's only ~30-36 ticks total, which the
+        # rest_persistence_ticks=6 gate can't reliably clear before the route
+        # completes. Scale up the route length/duration (test-local copy of
+        # route_facts; the underlying maps fixture and analyze response are
+        # untouched) so the run has enough runway to actually fire
+        # REST_PROPOSAL — this test's purpose is proving REST_PROPOSAL still
+        # fires with empty rest_spot_positions, which requires ticking through
+        # a real fire, not exercising a razor-thin route-length edge case.
+        route_facts = dict(alt0["route_facts"])
+        route_facts["total_route_distance_km"] = route_facts["total_route_distance_km"] * 3
+        route_facts["estimated_route_duration_min"] = (
+            route_facts["estimated_route_duration_min"] * 3
+        )
+
         # Create a run plan using the maps route with empty rest spots
         plan_resp = client.post(
             "/api/run-plans",
@@ -419,7 +434,7 @@ class TestEndToEndEmptyRestRun:
                 "scenario_id": VALID_SCENARIO_ID,
                 "route_id": alt0["route_id"],
                 "route_source": "maps",
-                "route_facts": alt0["route_facts"],
+                "route_facts": route_facts,
                 "display_route": alt0["display"],
                 "parameters": {},
                 "hyperparameters": {},
