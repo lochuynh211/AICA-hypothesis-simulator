@@ -100,12 +100,19 @@ def build_context(
     service_id: str = "music_playlist",
     dispositions: list[dict] | None = None,
     manifest: dict | None = None,
+    plan_item_count: int | None = None,
 ) -> dict:
-    """Assemble a full P6 `context` for `evaluate`, ranking the whole catalog."""
+    """Assemble a P6 `context` for `evaluate`.
+
+    `plan_item_count` defaults to the catalog size (rank every song); callers use the
+    two-pass `_evaluate_ranked` below to shrink it to the eligible count when the catalog
+    contains ineligible songs (negative fixtures, child+explicit), so P6 returns a real
+    ranking instead of `insufficient_eligible_items`.
+    """
     manifest = manifest or load_manifest()
     dispositions = dispositions if dispositions is not None else load_dispositions()
     hp = dict(manifest_hyperparameters(manifest))
-    hp["plan_item_count"] = max(1, len(catalog))  # rank every song so all appear
+    hp["plan_item_count"] = plan_item_count if plan_item_count is not None else max(1, len(catalog))
     cmap = catalog_map(catalog)
     trigger = world.get("trigger", {})
     return {
@@ -130,16 +137,37 @@ def build_context(
     }
 
 
+def _evaluate_ranked(evaluate: Callable, world: dict, catalog: list[dict],
+                     **ctx_kwargs) -> dict:
+    """Run P6 evaluate ranking ALL eligible songs, adapting plan_item_count.
+
+    P6 returns `insufficient_eligible_items` (0 items) when eligible < plan_item_count. A
+    quota-compliant catalog always has ineligible songs (negatives, child+explicit), so we
+    retry with plan_item_count = eligible_count = len(catalog) − len(excluded_items). The
+    returned ordered_items then cover every genuinely-eligible song with its real item_fit;
+    only truly-excluded songs are absent (and get the exclusion sentinel downstream).
+    """
+    result = evaluate(build_context(world, catalog, **ctx_kwargs))
+    if result.get("ordered_items"):
+        return result
+    if result.get("decision_type") == "insufficient_eligible_items":
+        eligible = len(catalog) - len(result.get("excluded_items", []))
+        if eligible >= 1:
+            return evaluate(build_context(
+                world, catalog, plan_item_count=eligible, **ctx_kwargs))
+    return result  # no_proposal / all excluded → 0 items (all songs get the sentinel)
+
+
 def make_rank_fn(
     evaluate: Callable, catalog: list[dict], **ctx_kwargs
 ) -> Callable[[dict], dict[str, int]]:
     """Return rank_fn(world) -> {track_id: position} backed by the real P6 evaluate."""
     def rank_fn(world: dict) -> dict[str, int]:
-        result = evaluate(build_context(world, catalog, **ctx_kwargs))
+        result = _evaluate_ranked(evaluate, world, catalog, **ctx_kwargs)
         ranks = {it["item_id"]: it["position"] for it in result.get("ordered_items", [])}
         # Excluded songs get a position after all ranked ones (deterministic, by id).
-        # P6 positions are 1-indexed, so start past the current max.
-        nxt = (max(ranks.values()) + 1) if ranks else 0
+        # P6 positions are 1-indexed, so start past the current max (1 when none ranked).
+        nxt = (max(ranks.values()) + 1) if ranks else 1
         for tid in sorted(t["spotify_track"]["id"] for t in catalog):
             if tid not in ranks:
                 ranks[tid] = nxt
@@ -150,8 +178,13 @@ def make_rank_fn(
 
 def score_song(evaluate: Callable, world: dict, catalog: list[dict], track_id: str,
                **ctx_kwargs) -> float:
-    """Return the signed item_fit the P6 selector assigns `track_id` in `world`."""
-    result = evaluate(build_context(world, catalog, **ctx_kwargs))
+    """Return the signed item_fit the P6 selector assigns `track_id` in `world`.
+
+    An eligible song returns its real item_fit ∈ [−1, +1]; a song excluded by eligibility
+    (e.g. an explicit track when a child is present) returns the exclusion sentinel −2.0,
+    which is semantically "must not be proposed" — not a fabricated fit.
+    """
+    result = _evaluate_ranked(evaluate, world, catalog, **ctx_kwargs)
     for item in result.get("ordered_items", []):
         if item["item_id"] == track_id:
             return float(item.get("item_fit", 0.0))

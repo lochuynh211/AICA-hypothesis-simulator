@@ -413,20 +413,22 @@ _DEFAULT_P6_PACKAGE = "packages/aica_transparent_content_selector_v1"
 
 
 def _p6_package_path(args) -> "Path":
-    """Resolve the P6 package path relative to the repo root (not the CWD).
+    """Resolve the P6 package path relative to the repo root (not the CWD or env dirs).
 
     Uses --p6-package when the subcommand defines it (certify); judge falls back to the
-    default location.
+    default location. Repo root is derived from the package file location, NOT from
+    config.workspace_dir() (which honors AICA_GENERATION_WORKSPACE_DIR and would point
+    elsewhere).
     """
     from pathlib import Path
 
-    from mdg import config
+    from mdg.p6_adapter import _repo_root
 
     rel = getattr(args, "p6_package", None) or _DEFAULT_P6_PACKAGE
     p = Path(rel)
     if p.is_absolute() or p.exists():
         return p
-    return config.workspace_dir().parent / rel  # repo-root-relative (config now fixed)
+    return _repo_root() / rel  # repo-root-relative, env-independent
 
 
 def _pick_contrast_songs(catalog: list[dict]) -> tuple[str, str]:

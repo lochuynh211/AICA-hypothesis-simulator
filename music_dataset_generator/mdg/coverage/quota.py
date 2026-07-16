@@ -7,6 +7,7 @@ freeze path so a demonstration freeze fails loudly on an unmet quota — never s
 """
 from __future__ import annotations
 
+from collections import Counter
 from typing import Any
 
 from mdg.binner import era_bucket
@@ -24,6 +25,7 @@ def _duration_band(duration_ms: int) -> str:
 def compute_quota_checks(catalog: list[dict], quotas: dict[str, Any]) -> dict[str, bool]:
     """Return per-quota pass/fail booleans computed from the frozen catalog."""
     artist_ids: set[str] = set()
+    artist_track_counts: Counter = Counter()
     album_ids: set[str] = set()
     eras: set[str] = set()
     duration_bands: set[str] = set()
@@ -37,6 +39,7 @@ def compute_quota_checks(catalog: list[dict], quotas: dict[str, Any]) -> dict[st
         af = song["spotify_audio_features"]
         for artist in track.get("artists") or []:
             artist_ids.add(artist["id"])
+            artist_track_counts[artist["id"]] += 1
         album = track.get("album") or {}
         if album.get("id"):
             album_ids.add(album["id"])
@@ -54,8 +57,12 @@ def compute_quota_checks(catalog: list[dict], quotas: dict[str, Any]) -> dict[st
     ts_required = set(ts_spread.get("required_values", [3, 4]))
     ts_others = time_signatures - ts_required
 
+    tracks_per_artist = quotas.get("tracks_per_artist", 3)
+    artists_at_depth = sum(1 for n in artist_track_counts.values()
+                           if n >= tracks_per_artist)
     return {
         "artists_count": len(artist_ids) >= quotas.get("artists_count", 12),
+        "tracks_per_artist": artists_at_depth >= quotas.get("artists_count", 12),
         "min_albums": len(album_ids) >= quotas.get("min_albums", 12),
         "min_eras": len(eras) >= quotas.get("min_eras", 3),
         "min_explicit": explicit >= quotas.get("min_explicit", 6),

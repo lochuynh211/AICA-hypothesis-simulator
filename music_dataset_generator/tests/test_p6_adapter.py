@@ -66,6 +66,41 @@ def test_score_song_returns_signed_item_fit() -> None:
     assert -1.0 <= score <= 1.0
 
 
+def test_two_pass_ranks_eligible_songs_when_catalog_has_ineligibles() -> None:
+    # Regression: a quota-compliant catalog has ineligible songs (negatives / child+
+    # explicit). Forcing plan_item_count = len(catalog) makes P6 return
+    # insufficient_eligible_items (0 items) → every song would get the -2.0 sentinel.
+    # The two-pass must re-rank the eligible songs with REAL item_fit.
+    catalog = _catalog()
+    catalog[0]["spotify_track"]["is_playable"] = False  # one hard-ineligible negative
+    evaluate = load_evaluate(_P6)
+    excluded_id = catalog[0]["spotify_track"]["id"]
+
+    scores = [score_song(evaluate, _world(drowsy=90, monotony=90), catalog,
+                         s["spotify_track"]["id"]) for s in catalog[1:5]]
+    assert all(-1.0 <= s <= 1.0 for s in scores), scores  # real fits, not the sentinel
+    # The excluded song still returns the exclusion sentinel and ranks last.
+    assert score_song(evaluate, _world(drowsy=90, monotony=90), catalog, excluded_id) == -2.0
+    ranks = make_rank_fn(evaluate, catalog)(_world(drowsy=90, monotony=90))
+    assert ranks[excluded_id] == max(ranks.values())
+
+
+def test_child_present_explicit_exclusion_is_real() -> None:
+    # A child-present world must exclude explicit songs — and still return real scores for
+    # the rest (not collapse to all-sentinel).
+    catalog = _catalog()
+    catalog[0]["spotify_track"]["explicit"] = True
+    evaluate = load_evaluate(_P6)
+    world = {"world_id": "w", "driver": {"drowsiness_level": 50, "fatigue_level": 0},
+             "environment": {"monotony_level": 50, "traffic_state": "normal",
+                             "road_type": "local", "night_state": "day",
+                             "motion_state": "stopped"},
+             "passengers": {"child_present": True}}
+    assert score_song(evaluate, world, catalog, catalog[0]["spotify_track"]["id"]) == -2.0
+    other = score_song(evaluate, world, catalog, catalog[1]["spotify_track"]["id"])
+    assert -1.0 <= other <= 1.0  # eligible song scored for real
+
+
 def test_context_has_required_p6_keys() -> None:
     ctx = build_context(_world(), _catalog())
     for key in ("hyperparameters", "feature_dispositions", "feature_snapshot",

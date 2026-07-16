@@ -18,14 +18,14 @@ def _song(track_id, artist_id, album_id, *, release="2019-01-01", explicit=False
 
 def test_all_quotas_met():
     catalog = []
-    for i in range(12):  # 12 artists, 12 albums
-        catalog.append(_song(f"synthetic-track-{i:04d}", f"synthetic-artist-{i:04d}",
-                             f"synthetic-album-{i:04d}",
+    for i in range(36):  # 12 artists × 3 tracks, 12 albums
+        catalog.append(_song(f"synthetic-track-{i:04d}", f"synthetic-artist-{i // 3:04d}",
+                             f"synthetic-album-{i // 3:04d}",
                              release=["1998", "2008", "2020"][i % 3] + "-01-01",
                              explicit=(i < 6), key=(-1 if i == 0 else 5),
                              ts=[3, 4, 5][i % 3],
                              duration_ms=[150_000, 240_000, 320_000][i % 3],
-                             is_playable=(i >= 8)))  # 4 negatives
+                             is_playable=(i >= 4)))  # 4 negatives
     checks = compute_quota_checks(catalog, {})
     assert all(checks.values()), checks
 
