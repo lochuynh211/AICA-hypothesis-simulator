@@ -37,24 +37,176 @@ def _add_common_args(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def _paths(args: argparse.Namespace):
+    """Resolve (workspace, dataset_dir) honoring flags then config defaults."""
+    from pathlib import Path
+
+    from mdg import config
+
+    workspace = Path(args.workspace) if args.workspace else config.workspace_dir()
+    dataset_dir = Path(args.dataset_dir) if args.dataset_dir else config.dataset_dir()
+    return workspace, dataset_dir
+
+
+def _require_soundcharts():
+    from mdg import config
+
+    creds = config.soundcharts_credentials()
+    if creds is None:
+        print(
+            "mdg: SOUNDCHARTS_APP_ID / SOUNDCHARTS_API_KEY not set in the environment",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+    from mdg.sources.soundcharts import SoundchartsClient
+
+    return SoundchartsClient(app_id=creds[0], api_key=creds[1])
+
+
 def _cmd_plan(args: argparse.Namespace) -> None:
-    _not_implemented("plan")
+    """S0: write coverage_plan.json for the tier (deterministic, ledger-relative)."""
+    from mdg.coverage.plan import build_coverage_plan
+    from mdg.ledger import load_ledger
+
+    workspace, _ = _paths(args)
+    ledger = load_ledger(workspace / "ledger.json")
+    plan = build_coverage_plan(args.tier, ledger=ledger)
+    out = workspace / "coverage_plan.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(plan.model_dump_json(indent=2), encoding="utf-8")
+    print(json.dumps({"coverage_plan": str(out), "cells": len(plan.cells)}))
 
 
 def _cmd_name(args: argparse.Namespace) -> None:
-    _not_implemented("name")
+    """S1b: write the naming handoff input, or validate the agent's output."""
+    from mdg import handoff
+
+    workspace, _ = _paths(args)
+    handoff_dir = workspace / "handoff"
+    if args.write_input:
+        from mdg.coverage.plan import build_coverage_plan
+        from mdg.ledger import load_ledger
+
+        ledger = load_ledger(workspace / "ledger.json")
+        plan = build_coverage_plan("demonstration", ledger=ledger)
+        payload = {
+            "remaining_cells": plan.remaining.get("cells", []),
+            "language_targets": plan.language_targets,
+            "already_named": [e.get("keys", {}).get("normalized_name") for e in (ledger or [])],
+            "instructions": "Propose real songs per remaining cell; NEVER emit isrc/audio.",
+        }
+        handoff.write_input("s1b_naming", payload, handoff_dir / "s1b_input.json")
+        print(json.dumps({"wrote": str(handoff_dir / "s1b_input.json")}))
+    else:
+        candidates = handoff.read_output("s1b_naming", handoff_dir / "s1b_output.json")
+        out = workspace / "candidate_names.json"
+        out.write_text(json.dumps(candidates, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(json.dumps({"validated_candidates": len(candidates), "wrote": str(out)}))
 
 
 def _cmd_resolve(args: argparse.Namespace) -> None:
-    _not_implemented("resolve")
+    """S2b: resolve candidate names to ordered candidate ISRCs (MusicBrainz + Deezer)."""
+    from mdg.errors import MdgMissSignal
+    from mdg.ledger import load_ledger
+    from mdg.sources.deezer import DeezerClient
+    from mdg.sources.musicbrainz import MusicBrainzClient
+    from mdg.sources.resolver import ISRCResolver
+    from mdg.transform import normalized_name
+
+    workspace, _ = _paths(args)
+    candidates = json.loads((workspace / "candidate_names.json").read_text(encoding="utf-8"))
+    ledger = load_ledger(workspace / "ledger.json")
+    resolved_names = {e.get("keys", {}).get("normalized_name") for e in (ledger or [])}
+    resolver = ISRCResolver(MusicBrainzClient(), DeezerClient())
+
+    out = []
+    for cand in candidates:
+        norm = normalized_name(cand["title"], cand["artist"])
+        if norm in resolved_names:
+            continue  # ledger exclusion — never re-resolve
+        try:
+            isrcs = resolver.resolve(cand["title"], cand["artist"], cand.get("release_year"))
+        except MdgMissSignal as miss:
+            out.append({**cand, "candidate_isrcs": [], "miss": miss.code.value})
+            continue
+        out.append({**cand, "candidate_isrcs": isrcs})
+    dest = workspace / "resolved_candidates.json"
+    dest.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps({"resolved": len(out), "wrote": str(dest)}))
 
 
 def _cmd_probe(args: argparse.Namespace) -> None:
-    _not_implemented("probe")
+    """S2c pre-flight: probe ISRCs and enforce the 60% populated-audio gate."""
+    from mdg.harvest.probe import run_probe
+
+    isrcs = json.loads(open(args.isrcs, encoding="utf-8").read())
+    if isinstance(isrcs, dict):
+        isrcs = isrcs.get("isrcs", [])
+    sc = _require_soundcharts()
+    result = run_probe(sc, isrcs)
+    print(json.dumps(result))
 
 
 def _cmd_harvest(args: argparse.Namespace) -> None:
-    _not_implemented("harvest")
+    """S2a/S2c: fetch raw Soundcharts data for resolved candidates into cache + lineage."""
+    if args.candidate_source == "soundcharts_search":
+        # Live search-by-metric is off-subscription; surface the typed error.
+        _require_soundcharts().search(query="")
+
+    from mdg.harvest.by_isrc import harvest_by_isrc
+    from mdg.harvest.cache import store_accepted
+    from mdg.ledger import append_entry, load_ledger
+
+    workspace, _ = _paths(args)
+    resolved = json.loads((workspace / "resolved_candidates.json").read_text(encoding="utf-8"))
+    sc = _require_soundcharts()
+    cache_dir = workspace / "cache"
+    lineage_path = workspace / "lineage.json"
+    ledger_path = workspace / "ledger.json"
+    loop = _current_loop(load_ledger(ledger_path))
+
+    accepted = 0
+    seq = _existing_track_count(cache_dir)
+    for cand in resolved:
+        isrcs = cand.get("candidate_isrcs") or []
+        if not isrcs:
+            continue
+        target_language = cand.get("expected_language")
+        outcome = harvest_by_isrc(sc, isrcs, target_language=target_language)
+        from mdg.transform import normalized_name
+        norm = normalized_name(cand["title"], cand["artist"])
+        if outcome.status == "accepted":
+            seq += 1
+            synthetic_id = f"synthetic-track-{seq:04d}"
+            store_accepted(
+                outcome.song, cache_dir=cache_dir, lineage_path=lineage_path,
+                synthetic_id=synthetic_id,
+                soundcharts_uuid=outcome.song.get("uuid", outcome.isrc),
+                resolved_isrc=outcome.isrc, candidate_isrcs=isrcs, loop=loop,
+            )
+            append_entry(ledger_path, {
+                "keys": {"isrc": outcome.isrc, "normalized_name": norm},
+                "outcome": "accepted", "miss_reason": None, "cell": None, "loop": loop,
+            })
+            accepted += 1
+        else:
+            append_entry(ledger_path, {
+                "keys": {"normalized_name": norm},
+                "outcome": "miss", "miss_reason": outcome.status, "cell": None, "loop": loop,
+            })
+    print(json.dumps({"accepted": accepted, "soundcharts_calls": sc.quota_used}))
+
+
+def _existing_track_count(cache_dir) -> int:
+    from pathlib import Path
+
+    cache_dir = Path(cache_dir)
+    return len(list(cache_dir.glob("*.json"))) if cache_dir.is_dir() else 0
+
+
+def _current_loop(ledger) -> int:
+    loops = [e.get("loop", 0) for e in (ledger or [])]
+    return (max(loops) + 1) if loops else 1
 
 
 def _cmd_transform(args: argparse.Namespace) -> None:
@@ -290,5 +442,12 @@ def main(argv: Optional[list[str]] = None) -> int:
     p_report.set_defaults(func=_cmd_report)
 
     args = parser.parse_args(argv)
-    args.func(args)
+    from mdg.errors import MdgFatalError
+
+    try:
+        args.func(args)
+    except MdgFatalError as exc:
+        # Taxonomy contract: print {"error": code, "detail": …} and exit non-zero.
+        print(json.dumps({"error": exc.code.value, "detail": exc.detail}), file=sys.stderr)
+        return 1
     return 0
