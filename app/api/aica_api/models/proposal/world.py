@@ -85,6 +85,7 @@ __all__ = [
     "DriverProfile",
     "World",
     "SeedWorld",
+    "DriverProfileRecord",
 ]
 
 # ---------------------------------------------------------------------------
@@ -516,4 +517,37 @@ class SeedWorld(BaseModel):
     def seed_id_non_empty(cls, v: str) -> str:
         if not v:
             raise ValueError("seed_id must not be empty.")
+        return v
+
+
+# ---------------------------------------------------------------------------
+# DriverProfileRecord — a stored, named driver profile (data-model.md
+# §DriverProfileRecord)
+# ---------------------------------------------------------------------------
+
+
+class DriverProfileRecord(BaseModel):
+    """A named, stored ``DriverProfile`` (data-model.md §DriverProfileRecord).
+
+    Loaded/persisted by ``services/driver_profile_store.py`` (T015/T016).
+    ``builtin=True`` records ship read-only under
+    ``proposal_contracts/profiles/``; ``builtin=False`` records are
+    reviewer-saved and persist under ``settings.proposal_profiles_dir``
+    (git-ignored). Either kind embeds a fully-validated ``DriverProfile`` that
+    can be loaded into any ``World`` (subject to that world's catalog
+    reference validation).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    profile_id: str
+    label: BilingualLabel
+    builtin: bool
+    profile: DriverProfile
+
+    @field_validator("profile_id")
+    @classmethod
+    def profile_id_non_empty(cls, v: str) -> str:
+        if not v:
+            raise ValueError("profile_id must not be empty.")
         return v

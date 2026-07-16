@@ -1,0 +1,15 @@
+{
+  "profile_id": "profile-wellness-calm",
+  "label": { "ja": "ウェルネス・リラックス", "en": "Wellness / Calm" },
+  "builtin": true,
+  "profile": {
+    "oshi_registered": false,
+    "oshi_mode": "off",
+    "age_band": "40s",
+    "gender": "female",
+    "hobby_interest_tags": ["wellness"],
+    "service_usage_level": { "relaxation_multisensory": "high" },
+    "genre_affinity_v1_enabled": true,
+    "usage_by_genre": { "ambient": "high", "jazz": "high", "classical": "med" }
+  }
+}
