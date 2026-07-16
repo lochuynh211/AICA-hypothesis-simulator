@@ -26,6 +26,7 @@ Public API:
   delete_run(run_id, runs_dir) -> bool
   append_event(run_id, event, runs_dir) -> ProposalRunLog
   append_evidence(run_id, evidence, runs_dir) -> ProposalRunLog
+  update_state(run_id, runs_dir, *, status=None, journey_state=None) -> ProposalRunLog
 """
 from __future__ import annotations
 
@@ -50,6 +51,7 @@ __all__ = [
     "delete_run",
     "append_event",
     "append_evidence",
+    "update_state",
 ]
 
 
@@ -237,5 +239,34 @@ def append_evidence(run_id: str, evidence: AlgorithmEvidence, runs_dir: pathlib.
     if run_log is None:
         raise ProposalRunNotFoundError(f"Unknown proposal run_id: {run_id!r}")
     run_log.evidence.append(evidence)
+    _persist(run_log, pathlib.Path(runs_dir))
+    return run_log
+
+
+def update_state(
+    run_id: str,
+    runs_dir: pathlib.Path,
+    *,
+    status: ProposalRunStatus | None = None,
+    journey_state: JourneyState | None = None,
+) -> ProposalRunLog:
+    """Update ``status`` and/or ``journey_state`` on an existing run and re-persist.
+
+    Neither field is mutated by ``append_event``/``append_evidence`` (which only
+    ever append to their respective lists), so a STEP-2-style transition
+    (e.g. ``content_selected`` + a newly-confirmed ``active_service_id``) needs
+    this small, additive counterpart. Omitted (``None``) fields are left
+    unchanged.
+
+    Raises:
+        ProposalRunNotFoundError: If run_id has no persisted log.
+    """
+    run_log = get_run(run_id, runs_dir)
+    if run_log is None:
+        raise ProposalRunNotFoundError(f"Unknown proposal run_id: {run_id!r}")
+    if status is not None:
+        run_log.status = status
+    if journey_state is not None:
+        run_log.journey_state = journey_state
     _persist(run_log, pathlib.Path(runs_dir))
     return run_log
