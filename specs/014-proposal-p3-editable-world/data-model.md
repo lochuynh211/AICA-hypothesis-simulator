@@ -52,7 +52,7 @@ Owns preference + history + profile-side additional-proposed fields + genre exte
   `usage_by_genre` (map GenreLiteral→UsageLevel), `scene_genre_usage` (nested). Toggling off retains values
   (carried context-only).
 *Validation*: enums/ranges structural (Pydantic); catalog references (`oshi_id`, item-history keys)
-validated against the world's catalog on load via `mdg.worlds.validate_world_references`.
+validated against the world's catalog on load via direct set-membership in `services/world_validation.py` (NOT `mdg` — that runtime dependency was removed).
 
 ### DriverProfileRecord (store entity)
 | Field | Type | Rules |
@@ -104,7 +104,7 @@ Run ─freezes→ SetupSnapshot ─references→ {seed/clone/profile, dataset, a
 1. Enum membership + numeric ranges (Pydantic) on every world/profile field.
 2. Purpose/stage compatibility (shared rule) on ControlInputs.
 3. Catalog reference existence (`dataset_id`, `oshi_id`, item-history/played/skipped keys, `active_service`)
-   against the loaded catalog — `mdg.worlds.validate_world_references`.
+   against the loaded catalog — direct set-membership in `services/world_validation.py` (no `mdg`).
 4. Dataset load: every song validates against `Song`; else the dataset is quarantined (errors list).
 5. Clone diff: exactly the overridden path(s) differ; deterministic.
 

@@ -60,9 +60,13 @@ conventions); keeping the mock and faking contrast (violates the demo's purpose 
 versions, no `catalog_editor` service, no `proposal_datasets_dir` (all withdrawn in the Scope Revision).
 
 **Reuse**: On load, validate each song against the frozen `Song` model (`models/proposal/song_schema.py`)
-— the same model `mdg.validator.validate_song` uses — so an invalid dataset is quarantined with an error
-rather than partially used. `mdg` is imported only for this read-side validation; no hashing/derivation is
-needed. The `dataset_hash` for provenance display is read from the committed `dataset_manifest.json`.
+— the same model `mdg.validator.validate_song` merely wraps — so an invalid dataset is quarantined with an
+error rather than partially used. **Implementation note (revised during build):** validation uses
+`Song.model_validate` directly and does **not** import `mdg` at runtime — adding `mdg` as an `aica-api`
+dependency created a cyclic `aica-api`↔`mdg` coupling (mdg depends on `aica-api` for `Song`) and its
+editable install collided on the `tests` package, so the redundant `mdg` call was removed with identical
+validation behavior. The `dataset_hash` for provenance display is read from the committed
+`dataset_manifest.json`.
 
 **Alternatives rejected**: catalog editing + derived versions — explicitly cut by the owner (catalog is
 changed only by re-running P2).
@@ -78,6 +82,10 @@ genre extension). Loading a profile into a world validates its references agains
 **Rationale**: The owner elevated profiles to first-class (clarify Q3). Reuses the proven per-file atomic
 persistence pattern of `proposal_run_manager` / the planned `world_seed_store`.
 
+> **Reference validation is done directly against the loaded catalog** (set-membership of track/artist
+> ids), NOT via `mdg.worlds.validate_world_references` — the `mdg` runtime dependency was removed (see R3);
+> `services/world_validation.py` implements the membership check in-repo.
+
 **Alternatives rejected**: profile as an embedded, non-saveable block (owner chose the full store).
 
 ## R5 — Seeds & clones storage
@@ -90,6 +98,8 @@ git-ignored `proposal_worlds/` dir (`AICA_PROPOSAL_WORLDS_DIR`). Reference valid
 
 **Rationale**: Seeds are review fixtures (committed, deterministic, golden-tested); clones are ephemeral
 user work (local, isolated, like runs). The generator workspace is a build area not read at runtime.
+Clone/world reference validation reuses `services/world_validation.py` (direct catalog membership), not
+`mdg`.
 
 **Scope**: ship the **5 representative** seeds named in §5; offer the §5 one-variable contrast changes as
 clone presets.
