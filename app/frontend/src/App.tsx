@@ -1,12 +1,77 @@
 import { useEffect, useState } from 'react'
 import { getHealth, HealthStatus } from './api/client'
 import { RunStoreProvider } from './state/runStore'
+import { AppModeProvider, useAppMode } from './state/appMode'
 import AppShell from './components/layout/AppShell'
 
 type State =
   | { phase: 'loading' }
   | { phase: 'ok'; data: HealthStatus }
   | { phase: 'error' }
+
+/** Header toggle — switches the top-level appMode between the Trigger
+ *  Simulator and the (placeholder, for now) Proposal Simulator. Additive:
+ *  does not alter AppShell's own header/nav. */
+function AppModeToggle() {
+  const { appMode, setAppMode } = useAppMode()
+  const buttonStyle = (active: boolean): React.CSSProperties => ({
+    padding: '4px 14px',
+    fontSize: '0.82em',
+    fontWeight: active ? 700 : 400,
+    background: active ? '#2563eb' : 'transparent',
+    color: active ? '#fff' : '#94a3b8',
+    border: active ? '1px solid #1d4ed8' : '1px solid transparent',
+    borderRadius: '4px',
+    cursor: 'pointer',
+  })
+  return (
+    <nav
+      style={{
+        display: 'flex',
+        gap: '4px',
+        padding: '4px 16px',
+        background: '#0f0f1e',
+        borderBottom: '1px solid #2a2a4a',
+      }}
+    >
+      <button
+        onClick={() => setAppMode('trigger')}
+        aria-current={appMode === 'trigger' ? 'page' : undefined}
+        style={buttonStyle(appMode === 'trigger')}
+      >
+        Trigger
+      </button>
+      <button
+        onClick={() => setAppMode('proposal')}
+        aria-current={appMode === 'proposal' ? 'page' : undefined}
+        style={buttonStyle(appMode === 'proposal')}
+      >
+        Proposal
+      </button>
+    </nav>
+  )
+}
+
+/** Renders the shell for the current appMode. 'trigger' renders the existing,
+ *  unmodified Trigger Simulator (RunStoreProvider + AppShell); 'proposal' is a
+ *  placeholder until the real ProposalShell (a later task) lands. */
+function AppBody({ healthStatus }: { healthStatus?: string }) {
+  const { appMode } = useAppMode()
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      <AppModeToggle />
+      <div style={{ flex: 1, minHeight: 0 }}>
+        {appMode === 'trigger' ? (
+          <RunStoreProvider>
+            <AppShell healthStatus={healthStatus} />
+          </RunStoreProvider>
+        ) : (
+          <div>Proposal (coming soon)</div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 export default function App() {
   const [state, setState] = useState<State>({ phase: 'loading' })
@@ -28,8 +93,8 @@ export default function App() {
   const healthStatus = `Backend: ${state.data.status} — ${state.data.service}`
 
   return (
-    <RunStoreProvider>
-      <AppShell healthStatus={healthStatus} />
-    </RunStoreProvider>
+    <AppModeProvider>
+      <AppBody healthStatus={healthStatus} />
+    </AppModeProvider>
   )
 }

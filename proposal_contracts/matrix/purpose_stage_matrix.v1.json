@@ -1,0 +1,70 @@
+{
+  "matrix_version": "v1",
+  "rows": [
+    {
+      "trigger_purpose": "rest_recommended",
+      "lifecycle_stage": "before_rest_until_stop",
+      "allowed_service_ids": [
+        "music_playlist",
+        "humming_karaoke",
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "call_response_driving"
+      ]
+    },
+    {
+      "trigger_purpose": "rest_recommended",
+      "lifecycle_stage": "during_rest_stopped",
+      "allowed_service_ids": [],
+      "_note": "Spec §7.5 lists five during-rest actions (rest_duration_suggestion, rest_method_suggestion, seat_adjustment, nap_guidance, rest_extension_check). These are journey-engine-owned rest actions, not song/media catalog services, and have no ServiceId enum members (spec §7.5 lead-in: 'these rest actions are executed by the journey engine and are not ranked as song/media catalog items'). The proposal-service catalog resolves to an empty allowed set at this stage in P1; the journey engine (a later milestone) owns during-rest actions directly."
+    },
+    {
+      "trigger_purpose": "rest_recommended",
+      "lifecycle_stage": "after_rest_before_restart",
+      "allowed_service_ids": [
+        "live_viewing",
+        "stretch_video",
+        "full_karaoke",
+        "oshi_reexperience",
+        "call_response_stopped"
+      ]
+    },
+    {
+      "trigger_purpose": "inattentive_driving_prevention_recovery",
+      "lifecycle_stage": "active_driving_content",
+      "allowed_service_ids": [
+        "music_playlist",
+        "humming_karaoke",
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "call_response_driving"
+      ]
+    },
+    {
+      "trigger_purpose": "route_music",
+      "lifecycle_stage": "active_driving_content",
+      "allowed_service_ids": [
+        "music_playlist",
+        "humming_karaoke",
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "call_response_driving"
+      ]
+    },
+    {
+      "trigger_purpose": "child_passenger_experience",
+      "lifecycle_stage": "active_driving_content",
+      "allowed_service_ids": [
+        "music_playlist",
+        "humming_karaoke",
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "call_response_driving"
+      ]
+    }
+  ]
+}

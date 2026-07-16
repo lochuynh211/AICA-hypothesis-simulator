@@ -7,6 +7,7 @@ Resolves file-system paths for the six data directories:
   proposal_contracts_dir    — AICA_PROPOSAL_CONTRACTS_DIR        (default: <repo-root>/proposal_contracts)
   generation_workspace_dir  — AICA_GENERATION_WORKSPACE_DIR      (default: <repo-root>/generation_workspace)
   proposal_dataset_dir      — AICA_PROPOSAL_DATASET_DIR          (default: <repo-root>/proposal_contracts/dataset)
+  proposal_runs_dir         — AICA_PROPOSAL_RUNS_DIR             (default: <repo-root>/proposal_runs)
 
 The repo root is derived from this file's location:
   app/api/aica_api/config.py  →  parents[3]  →  repo root
@@ -66,6 +67,10 @@ class Settings:
     @property
     def proposal_dataset_dir(self) -> Path:
         return _resolve("AICA_PROPOSAL_DATASET_DIR", "proposal_contracts/dataset")
+
+    @property
+    def proposal_runs_dir(self) -> Path:
+        return _resolve("AICA_PROPOSAL_RUNS_DIR", "proposal_runs")
 
 
 settings = Settings()
