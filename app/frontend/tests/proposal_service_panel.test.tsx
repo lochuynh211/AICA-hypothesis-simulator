@@ -151,7 +151,7 @@ function packagesResponse() {
   }
 }
 
-function runLogWithCandidates() {
+function runLogWithCandidates(inputSnapshot: Record<string, unknown> = {}) {
   return {
     run_id: 'prun_20260716-000000_abcdef',
     created_at: '2026-07-16T00:00:00Z',
@@ -183,7 +183,7 @@ function runLogWithCandidates() {
         contract_version: '1.0.0',
         schema_version: '1.0.0',
         matrix_version: 'v1',
-        input_snapshot: {},
+        input_snapshot: inputSnapshot,
         output: {
           decision_type: 'ranked_candidates',
           ranked_candidates: [
@@ -370,5 +370,75 @@ describe('ServiceProposalPanel', () => {
     const body = vi.mocked(createRun).mock.calls[0][0]
     expect(body.origin_clone_id).toBe('wclone_20260716-100000_abcdef')
     expect(body.origin_seed_id).toBe('seed-night-highway-oshi')
+  })
+
+  // P4 (US5, FR-022): eligible/excluded lists from the STEP-1 input_snapshot.
+  it('renders the eligible list and the excluded list with reason codes, and no score on exclusions', async () => {
+    vi.mocked(createRun).mockResolvedValue(
+      runLogWithCandidates({
+        eligible_candidates: ['live_viewing', 'stretch_video'],
+        excluded_candidates: [
+          { candidate_id: 'full_karaoke', platform_reason: 'full_karaoke_requires_stopped' },
+          { candidate_id: 'oshi_reexperience', platform_reason: 'missing_required_entity' },
+        ],
+      }) as never,
+    )
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('mock_service_selector_v1')
+    fireEvent.click(screen.getByTestId('service-run-button'))
+    await waitFor(() => expect(createRun).toHaveBeenCalled())
+
+    const eligibleList = await screen.findByTestId('eligible-list')
+    expect(eligibleList).toHaveTextContent('live_viewing')
+    expect(eligibleList).toHaveTextContent('stretch_video')
+
+    const excludedList = screen.getByTestId('excluded-list')
+    expect(excludedList).toHaveTextContent('full_karaoke')
+    expect(excludedList).toHaveTextContent('full_karaoke_requires_stopped')
+    expect(excludedList).toHaveTextContent('oshi_reexperience')
+    expect(excludedList).toHaveTextContent('missing_required_entity')
+    // No score anywhere in the excluded rows (contract invariant).
+    expect(excludedList.textContent).not.toMatch(/score|\+\d|0\.\d/)
+  })
+
+  it('renders a "none excluded" message when excluded_candidates is empty', async () => {
+    vi.mocked(createRun).mockResolvedValue(
+      runLogWithCandidates({
+        eligible_candidates: ['live_viewing', 'stretch_video'],
+        excluded_candidates: [],
+      }) as never,
+    )
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('mock_service_selector_v1')
+    fireEvent.click(screen.getByTestId('service-run-button'))
+    await waitFor(() => expect(createRun).toHaveBeenCalled())
+
+    await screen.findByTestId('eligible-list')
+    expect(screen.queryByTestId('excluded-list')).not.toBeInTheDocument()
+  })
+
+  it('renders the JourneyActionBar and EventTimeline once a run exists', async () => {
+    vi.mocked(createRun).mockResolvedValue(runLogWithCandidates() as never)
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('mock_service_selector_v1')
+    expect(screen.queryByTestId('journey-action-bar')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('service-run-button'))
+    await waitFor(() => expect(createRun).toHaveBeenCalled())
+
+    expect(await screen.findByTestId('journey-action-bar')).toBeInTheDocument()
+    expect(screen.getByTestId('event-timeline')).toBeInTheDocument()
   })
 })
