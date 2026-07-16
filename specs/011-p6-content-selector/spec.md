@@ -8,6 +8,14 @@
 
 **Input**: User description: "P6 — Transparent Music Content-Selector Package (two-axis arousal/valence trait model). Build a standalone python_module package that consumes the frozen P0.5 SelectorInput contract and returns the frozen CompletePlan contract (no aggregate plan score). Authoritative math: docs/master/aica_transparent_content_proposal_algorithm.md. Approved decisions: numeric 0-100 driver/environment evidence (/100); all algorithm tables externalized as structured package.json hyperparameters; single-file package layout."
 
+## Clarifications
+
+### Session 2026-07-16
+
+- Q: How does P6 confirm a service is accepted/active before scoring, given SelectorInput has no lifecycle_state field? → A: Presence = go-ahead. A present + supported `selected_service_id` is the go-ahead (P6 never re-opens the service decision); `None`/missing → `invalid_request`; a non-music service → `unsupported_recipe`. No extra lifecycle field is required.
+- Q: Where do the full frozen Song records enter the selector, and may P6 read them from disk? → A: The song database is one JSON file on disk (a P6 fixture; the P2 frozen dataset later). A separate harness/loader reads it and injects the records as `feature_snapshot["catalog"]` (map keyed by Track ID); `eligible_candidates` names the Track IDs to rank. **The package `evaluate()` MUST NOT open any file** — it is pure (data in, plan out), so it stays deterministic and byte-replayable.
+- Q: What form should per-item rationale/reasons take in the plan evidence? → A: Bilingual `{ja, en}` prose (Japanese default), matching the trigger package's evidence style, so the P1 screen needs no text backfill. The structured per-feature contribution numbers are always present regardless.
+
 ## User Scenarios & Testing *(mandatory)*
 
 The user is an **algorithm reviewer / package author** for the AICA proposal simulator.
@@ -191,6 +199,15 @@ evidence.
 - **FR-003**: The selector MUST support exactly the three detailed music services
   `music_playlist`, `humming_karaoke`, `full_karaoke`, and MUST return a typed
   unsupported-recipe/service outcome for any other service without substitution.
+- **FR-003a**: The selector MUST treat a present, supported `selected_service_id` as the
+  authorization to score (it never re-opens the service decision); a `None`/missing
+  `selected_service_id` MUST yield `invalid_request`, and a valid non-music service MUST yield
+  `unsupported_recipe`. No separate service `lifecycle_state` input is required.
+- **FR-003b**: The selector's `evaluate()` MUST be a pure function that receives the eligible
+  song records already loaded in its input (as `feature_snapshot["catalog"]`, a map keyed by
+  Track ID) and MUST NOT open, read, or resolve any file, catalog path, network, or external
+  resource itself; `eligible_candidates` names the Track IDs to rank and each MUST resolve to
+  a record in that catalog map.
 - **FR-004**: The selector MUST derive four song traits — arousal, valence, humming_ease,
   full_karaoke_ease — at decision time from Spotify Audio Features, and MUST NOT read or
   persist any stored/enriched song trait.
@@ -240,7 +257,10 @@ evidence.
   `item_fit`, the four trait values and signed forms, and one row per scored feature with its
   evidence, response coefficient (with α/β or exact-match provenance), feature response, base
   weight, purpose multiplier, mask, effective weight, contribution, and formula version; and
-  per excluded song: Track ID plus reason codes.
+  per excluded song: Track ID plus reason codes. Per-item human-readable reasons/rationale
+  MUST be bilingual `{ja, en}` (Japanese default), consistent with the existing package
+  evidence style; the structured per-feature numbers above are always present regardless of
+  language.
 - **FR-017**: The selector MUST record per plan: selected service and lifecycle, purpose and
   stage, plan count, catalog/world/algorithm/schema/parameter versions, active vs context-only
   feature lists, matrix versions, normalized effective weights, sort/tie-break rule, expected
@@ -269,6 +289,13 @@ evidence.
   `genre_affinity_v1` namespace, configuration/versions, and the selected music service.
 - **Song**: a frozen Spotify-compatible record (Track + Audio Features + simulation flags)
   from which the four traits are derived at decision time; identified by a synthetic Track ID.
+- **Song catalog**: the one JSON song database on disk (a hand-authored P6 fixture; the P2
+  frozen dataset later). A harness/loader reads it and injects it into the selector input as
+  a Track-ID-keyed map; the package itself never reads the file.
+- **Eligible candidates**: the list of Track IDs the orchestrator asks the algorithm to rank
+  (already past platform pre-filtering); its sibling excluded-candidates list carries items
+  the platform dropped with a platform reason. Distinct from the algorithm's own §7 hard
+  eligibility, which may further exclude candidates into the plan's excluded-items list.
 - **Song traits**: arousal, valence, humming_ease, full_karaoke_ease (each in [0,1]) plus
   their signed forms; computed, never stored.
 - **Complete plan**: the ordered output — decision type, selected service and mode, requested
