@@ -57,6 +57,7 @@ from aica_api.models.proposal.matrix import MatrixResolutionError, PurposeStageS
 from aica_api.models.proposal.opportunity import ProposalOpportunity
 from aica_api.models.proposal.package_manifest import BilingualLabel, ProposalPackageManifest
 from aica_api.models.proposal.proposal_run import ProposalRun, ProposalRunLog
+from aica_api.models.proposal.service_capabilities import ServiceCapabilities
 from aica_api.models.proposal.world import (
     DriverProfile,
     DriverProfileRecord,
@@ -74,6 +75,7 @@ from aica_api.services.driver_profile_store import (
     DriverProfileNotFoundError,
     DriverProfileStore,
 )
+from aica_api.services.proposal_eligibility import derive_registered_entities, resolve_eligibility
 from aica_api.services.proposal_journey import apply_action
 from aica_api.services.proposal_package_registry import ProposalPackageRegistry
 from aica_api.services.proposal_selector import dispatch_selector
@@ -108,6 +110,15 @@ def _matrix_path():
 def _get_registry() -> ProposalPackageRegistry:
     """Instantiate a ProposalPackageRegistry from the configured packages directory."""
     return ProposalPackageRegistry(settings.packages_dir)
+
+
+def _service_capabilities_path():
+    return settings.proposal_contracts_dir / "service_capabilities" / "service_capabilities.v1.json"
+
+
+def _get_service_capabilities() -> ServiceCapabilities:
+    """Load the frozen v1 service-capability artifact (US1/T015 — eligibility)."""
+    return ServiceCapabilities.load(_service_capabilities_path())
 
 
 def _get_dataset_registry() -> DatasetCatalogRegistry:
@@ -154,8 +165,19 @@ def _build_service_context(
     enabled_feature_extensions: list[str],
     parameters: dict,
     hyperparameters: dict,
+    eligible_service_ids: list[ServiceId],
+    excluded_candidates: list[dict],
 ) -> dict:
-    """Assemble a SelectorInput-shaped context dict for the SERVICE selector."""
+    """Assemble a SelectorInput-shaped context dict for the SERVICE selector.
+
+    US1 (P4 eligibility, research.md D1): ``allowed_service_ids`` here — the
+    id list actually handed to ``evaluate()`` — is the ELIGIBLE subset of the
+    opportunity's frozen row, never the full row. Eligibility runs BEFORE
+    ranking, so a package (the mock_service_selector_v1 draws its candidates
+    straight from this field) physically cannot rank an excluded service
+    (SC-003, FR-005). ``opportunity.allowed_service_ids`` itself is untouched
+    — it remains the frozen matrix row for the run's own record.
+    """
     feature_snapshot = dict(world_snapshot.get("feature_snapshot") or {})
     feature_provenance = dict(world_snapshot.get("feature_provenance") or {})
     return {
@@ -164,15 +186,13 @@ def _build_service_context(
         "simulation_time": opportunity.simulation_time,
         "trigger_purpose": opportunity.trigger_purpose.value,
         "lifecycle_stage": opportunity.lifecycle_stage.value,
-        "allowed_service_ids": [s.value for s in opportunity.allowed_service_ids],
+        "allowed_service_ids": [s.value for s in eligible_service_ids],
         "feature_snapshot": feature_snapshot,
         "feature_provenance": feature_provenance,
         "enabled_feature_extensions": list(enabled_feature_extensions),
         "selected_service_id": None,
-        "eligible_candidates": [
-            {"candidate_id": s.value} for s in opportunity.allowed_service_ids
-        ],
-        "excluded_candidates": [],
+        "eligible_candidates": [{"candidate_id": s.value} for s in eligible_service_ids],
+        "excluded_candidates": excluded_candidates,
         "parameters": parameters,
         "hyperparameters": hyperparameters,
         "package_runtime_state": {},
@@ -839,23 +859,26 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
             service_hyperparameters=hyperparameters,
         )
 
-    context = _build_service_context(
-        package=service_pkg,
-        opportunity=opportunity,
-        world_snapshot=world_snapshot,
-        enabled_feature_extensions=body.enabled_feature_extensions,
-        parameters=parameters,
-        hyperparameters=hyperparameters,
+    # -----------------------------------------------------------------
+    # US1 (P4) — eligibility narrows the allowed row BEFORE ranking
+    # (research.md D1). Excluded services are RETAINED with reason codes,
+    # never dropped; they carry no score (FR-003/FR-004).
+    # -----------------------------------------------------------------
+    capabilities = _get_service_capabilities()
+    registered_entities = derive_registered_entities(world_snapshot)
+    eligibility_result = resolve_eligibility(
+        allowed_service_ids,
+        motion_state,
+        capabilities,
+        registered_entities=registered_entities,
     )
-
-    evidence = dispatch_selector(
-        service_pkg,
-        context,
-        settings.packages_dir,
-        matrix_version=matrix.matrix_version,
-        used_feature_ids=list(context["feature_snapshot"].keys()),
-        allowed_service_ids=[s.value for s in opportunity.allowed_service_ids],
-    )
+    excluded_candidates_ctx = [
+        {
+            "candidate_id": excl.service_id.value,
+            "platform_reason": ",".join(rc.value for rc in excl.reason_codes),
+        }
+        for excl in eligibility_result.excluded
+    ]
 
     at = opportunity.simulation_time
     events: list[DiscreteEvent] = [
@@ -869,6 +892,68 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
             },
         )
     ]
+
+    if not eligibility_result.eligible:
+        # T017a — every allowed service was excluded (a non-empty allowed row
+        # narrowed to zero). Never dispatch a selector — there is nothing to
+        # rank, and no evaluate() call happened, so no AlgorithmEvidence is
+        # fabricated to pretend one did (Constitution Principle V).
+        events.append(
+            DiscreteEvent(
+                event_type=DiscreteEventType.NO_ELIGIBLE_CANDIDATE,
+                at=at,
+                payload={
+                    "excluded": [
+                        {
+                            "service_id": excl.service_id.value,
+                            "reason_codes": [rc.value for rc in excl.reason_codes],
+                        }
+                        for excl in eligibility_result.excluded
+                    ],
+                },
+            )
+        )
+        journey_state = JourneyState(
+            lifecycle_stage=lifecycle_stage,
+            motion_state=motion_state,
+            active_service_id=None,
+            active_plan_id=None,
+        )
+        return prm.create_run(
+            opportunity=opportunity,
+            matrix_version=matrix.matrix_version,
+            world_snapshot=world_snapshot,
+            service_package_id=body.service_package_id,
+            content_package_id=body.content_package_id,
+            parameters=parameters,
+            hyperparameters=hyperparameters,
+            journey_state=journey_state,
+            events=events,
+            evidence=[],
+            status=ProposalRunStatus.service_selected,
+            setup_snapshot=setup_snapshot,
+            runs_dir=settings.proposal_runs_dir,
+        )
+
+    context = _build_service_context(
+        package=service_pkg,
+        opportunity=opportunity,
+        world_snapshot=world_snapshot,
+        enabled_feature_extensions=body.enabled_feature_extensions,
+        parameters=parameters,
+        hyperparameters=hyperparameters,
+        eligible_service_ids=eligibility_result.eligible,
+        excluded_candidates=excluded_candidates_ctx,
+    )
+
+    evidence = dispatch_selector(
+        service_pkg,
+        context,
+        settings.packages_dir,
+        matrix_version=matrix.matrix_version,
+        used_feature_ids=list(context["feature_snapshot"].keys()),
+        allowed_service_ids=[s.value for s in eligibility_result.eligible],
+    )
 
     selected_service_id: str | None = None
     if evidence.error is not None:
