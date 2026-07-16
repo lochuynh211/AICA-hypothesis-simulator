@@ -237,6 +237,16 @@ def _cmd_transform(args: argparse.Namespace) -> None:
     ledger = load_ledger(workspace / "ledger.json")
     ledger_keys = [e.get("keys", {}) for e in ledger] or None
 
+    # §17.6 coverage gate is OPT-IN: intermediate-loop freezes are legitimately partial
+    # (§4.13), so enforcement is off by default and the operator enables it for the final
+    # demonstration freeze. When on, all cells the tier's plan targets must be covered.
+    required_cells = None
+    if args.enforce_coverage:
+        from mdg.coverage.plan import build_coverage_plan
+
+        plan = build_coverage_plan(args.tier, ledger=None)
+        required_cells = {c.cell_id for c in plan.cells}
+
     seed = args.seed if args.seed is not None else 0
     result = run_transform(
         cache_dir,
@@ -245,6 +255,7 @@ def _cmd_transform(args: argparse.Namespace) -> None:
         candidate_source=args.candidate_source,
         generated_at=args.generated_at,
         ledger_keys=ledger_keys,
+        required_cells=required_cells,
     )
     out_dir = write_dataset(result, dataset_dir)
     # Backfill lineage synthetic_id ↔ isrc now that IDs are allocated (audit integrity).
@@ -531,6 +542,15 @@ def main(argv: Optional[list[str]] = None) -> int:
         help=(
             "Externally-supplied freeze timestamp (the deterministic core never reads "
             "the wall clock). Defaults to a fixed sentinel for reproducibility runs."
+        ),
+    )
+    p_transform.add_argument(
+        "--enforce-coverage",
+        action="store_true",
+        help=(
+            "Enforce the §17.6 coverage contract (all tier-planned cells covered) at "
+            "freeze. Off by default so intermediate-loop freezes may be partial; enable "
+            "for the final demonstration freeze."
         ),
     )
     p_transform.set_defaults(func=_cmd_transform)

@@ -42,6 +42,14 @@ Inspect the output, then run **another loop**: `plan` re-reads the ledger and ta
 remaining/enrichment cells; harvest skips ledger-known identities and misses (no rework,
 no wasted quota). Loops are additive; freezing a later loop supersedes the prior snapshot.
 
+Intermediate-loop freezes may be partial. For the **final demonstration freeze**, add
+`--enforce-coverage` to `transform` so the §17.6 coverage contract is enforced (all 36
+cells covered, else `coverage_contract_failed`):
+
+```bash
+uv run python -m mdg transform --seed 42 --tier demonstration --enforce-coverage
+```
+
 ## The reproducibility path (no network, no agent)
 
 ```bash
