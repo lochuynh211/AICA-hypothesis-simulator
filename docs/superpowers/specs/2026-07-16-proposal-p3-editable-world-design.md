@@ -195,10 +195,14 @@ seeds validate and round-trip. Seeds are committed artifacts.
 - `POST /api/proposal/worlds/clone` — clone-and-change a seed → clone + field-level diff.
   `GET/DELETE` clones under `/api/proposal/worlds/…`.
 - `POST /api/proposal/worlds/validate` — validate a world against its catalog → issue list.
-- **`POST /api/proposal/runs`** — request body's `world_snapshot: dict` becomes a typed **`World`**
-  (validated); the router `project()`s it to the flat `feature_snapshot` for the selector context and
-  freezes a `SetupSnapshot` into the run. Backward-compat: reject un-typed/unknown-shape worlds with a
-  clear 422 (there is no persisted P1 production data to migrate; proposal is pre-release).
+- **`POST /api/proposal/runs`** — the request body gains a typed **`World`** path: when `world` is
+  supplied it is validated, `project()`ed to the grouped `feature_snapshot` for the selector context, and
+  a `SetupSnapshot` is frozen into the run. **As implemented, the endpoint keeps a dual path:** the legacy
+  `world_snapshot: dict` body remains a supported alternate (the P1 mock flow + inherited P1 tests still
+  use it), and the typed `world` path is preferred when present; a body with neither a valid `world` nor a
+  `world_snapshot` is rejected with a clear 422. (The original design intent was to reject all untyped
+  worlds outright, but the dual path was kept to avoid a breaking migration of the green P1 suite; the
+  legacy `world_snapshot` path is a fast-follow retirement candidate.)
 
 New config: `proposal_datasets_dir` (`AICA_PROPOSAL_DATASETS_DIR`, default `<repo>/proposal_datasets/`)
 and `proposal_worlds_dir` (`AICA_PROPOSAL_WORLDS_DIR`, default `<repo>/proposal_worlds/`), both
