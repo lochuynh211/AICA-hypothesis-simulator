@@ -14,7 +14,7 @@
 
 - Q: How does P6 confirm a service is accepted/active before scoring, given SelectorInput has no lifecycle_state field? → A: Presence = go-ahead. A present + supported `selected_service_id` is the go-ahead (P6 never re-opens the service decision); `None`/missing → `invalid_request`; a non-music service → `unsupported_recipe`. No extra lifecycle field is required.
 - Q: Where do the full frozen Song records enter the selector, and may P6 read them from disk? → A: The song database is one JSON file on disk (a P6 fixture; the P2 frozen dataset later). A separate harness/loader reads it and injects the records as `feature_snapshot["catalog"]` (map keyed by Track ID); `eligible_candidates` names the Track IDs to rank. **The package `evaluate()` MUST NOT open any file** — it is pure (data in, plan out), so it stays deterministic and byte-replayable.
-- Q: What form should per-item rationale/reasons take in the plan evidence? → A: Bilingual `{ja, en}` prose (Japanese default), matching the trigger package's evidence style, so the P1 screen needs no text backfill. The structured per-feature contribution numbers are always present regardless.
+- Q: What form should per-item rationale/reasons take in the plan evidence? → A: Bilingual prose (Japanese default), matching the trigger package's evidence style, so the P1 screen needs no text backfill. Serialized per the frozen contract as a `list[str]` of JA-first combined lines (`"<ja> / <en>"`). The structured per-feature contribution numbers are always present regardless.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -258,9 +258,9 @@ evidence.
   evidence, response coefficient (with α/β or exact-match provenance), feature response, base
   weight, purpose multiplier, mask, effective weight, contribution, and formula version; and
   per excluded song: Track ID plus reason codes. Per-item human-readable reasons/rationale
-  MUST be bilingual `{ja, en}` (Japanese default), consistent with the existing package
-  evidence style; the structured per-feature numbers above are always present regardless of
-  language.
+  MUST be bilingual (Japanese default), serialized per the frozen contract as a `list[str]`
+  of JA-first combined lines (`"<ja> / <en>"`), consistent with the existing package evidence
+  style; the structured per-feature numbers above are always present regardless of language.
 - **FR-017**: The selector MUST record per plan: selected service and lifecycle, purpose and
   stage, plan count, catalog/world/algorithm/schema/parameter versions, active vs context-only
   feature lists, matrix versions, normalized effective weights, sort/tie-break rule, expected

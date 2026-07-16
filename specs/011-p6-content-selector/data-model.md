@@ -28,6 +28,7 @@ in later milestones). Keys:
 | `parameters` | dict | manifest/params | structural params (recipe/eligibility policy IDs, etc.) |
 | `hyperparameters` | dict | manifest ⊕ overrides | **fully resolved** (§3); read by direct `hp[key]` |
 | `package_runtime_state` | dict | SelectorInput | unused in V1 content selection (stateless); passed through |
+| `feature_dispositions` | list | frozen registry (harness-injected) | the `content_feature_dispositions.v1.json` entries; drives the full active/context_only/missing_neutral coverage in `algorithm_provenance` (package never opens the file) |
 | `catalog_version` | str | SelectorInput | echoed into evidence |
 | `run_seed` | str | SelectorInput | echoed; not used for randomness (none exists) |
 
@@ -126,7 +127,7 @@ never a silent default.
 | `ordered_items[]` | sorted `(item_fit desc, track_id asc)`, first N |
 | `ordered_items[].trait_values` | `SongTraitValues` (4 traits + signed) |
 | `ordered_items[].feature_contributions[]` | one `ItemFeatureContribution` per scored feature |
-| `ordered_items[].rationale` | bilingual `{ja,en}` reason lines (R6) — serialized per contract |
+| `ordered_items[].rationale` | bilingual reason lines (R6) — frozen contract `list[str]`, JA-first `"<ja> / <en>"` |
 | `mode` | `PlanMode` (playlist / humming / full_karaoke fields) |
 | `expected_duration_sec` | summed durations (playlist/full) or `count × fixed_segment` (humming) |
 | `lighting_configuration` | present only for lighting-compatible services |
