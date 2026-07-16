@@ -425,6 +425,71 @@ describe('ServiceProposalPanel', () => {
     expect(screen.queryByTestId('excluded-list')).not.toBeInTheDocument()
   })
 
+  // P5 Unit A (T008, contracts/service_output_extension.md): the optional
+  // §14 explainability fields are additive — a "real-shaped" output (every
+  // new field populated) must type-check and render without crashing, using
+  // the SAME lean fallback rendering the mock-shaped output above already
+  // exercises (Panel ③'s enriched explainability rendering is a later P5
+  // unit, T024 — this only proves the new fields are safe to receive).
+  it('renders a real-shaped candidate (all P5 §14 optional fields populated) without crashing', async () => {
+    const realShapedRunLog = runLogWithCandidates()
+    const [firstCandidate] = realShapedRunLog.evidence[0].output.ranked_candidates
+    firstCandidate.feature_contributions = [
+      {
+        feature_id: 'drowsiness_level',
+        feature_value: 80,
+        response_coefficient: 1.0,
+        weight: 0.254551,
+        contribution: 0.203641,
+        source_reference: 'Slide 67 driver row',
+        raw_value: 80,
+        normalization_function: '(x/100)^gamma',
+        normalized_evidence: 0.8,
+        response_provenance: 'cdc_su_explicit',
+        normalized_feature_response: 0.8,
+        hierarchy_path: 'Situation/Driver state/drowsiness',
+        base_weight: 0.22,
+        purpose_multiplier: 1.5,
+        effective_weight: 0.254551,
+        status: 'used',
+      },
+    ]
+    firstCandidate.situation_fit = 0.6
+    firstCandidate.preference_fit = 0.1
+    firstCandidate.history_fit = 0.072349
+    firstCandidate.strongest_support = { feature_id: 'drowsiness_level', contribution: 0.203641 }
+    firstCandidate.strongest_oppose = null
+    firstCandidate.dominance = {
+      status: 'default_dominance_preserved',
+      w_d: 0.85,
+      w_l: 0.15,
+      required_gap: 0.35,
+      material_safety_gap: 1.0,
+      safety_share: 0.85,
+      safety_share_warning: false,
+    }
+    realShapedRunLog.evidence[0].output.dominance = firstCandidate.dominance
+    realShapedRunLog.evidence[0].output.effective_weights = { drowsiness_level: 0.254551 }
+    realShapedRunLog.evidence[0].output.resolved_config_versions = {
+      parameter_set_version: '1.0.0',
+      formula_version: '1.0.0',
+    }
+
+    vi.mocked(createRun).mockResolvedValue(realShapedRunLog as never)
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('mock_service_selector_v1')
+    fireEvent.click(screen.getByTestId('service-run-button'))
+
+    await waitFor(() => expect(createRun).toHaveBeenCalled())
+    expect(await screen.findByText('live_viewing')).toBeInTheDocument()
+    expect(screen.getByText('stretch_video')).toBeInTheDocument()
+    expect(screen.getAllByTestId('reason-breakdown').length).toBe(2)
+  })
+
   it('renders the JourneyActionBar and EventTimeline once a run exists', async () => {
     vi.mocked(createRun).mockResolvedValue(runLogWithCandidates() as never)
     render(

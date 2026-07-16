@@ -134,12 +134,46 @@ export async function getPackages(): Promise<ProposalPackagesResponse> {
 
 // ── Shared: selector output shapes ──────────────────────────────────────────
 
+/**
+ * P5 Unit A (specs/016-proposal-p5-transparent-service-selector,
+ * contracts/service_output_extension.md) — the §14 optional explainability
+ * extension. Every field is optional (`?:`); `mock_service_selector_v1`
+ * emits none of them, and the panel falls back to the current lean
+ * rendering when they're absent.
+ */
 export type FeatureContribution = {
   feature_id: string
   feature_value: string | number
   response_coefficient: number
   weight: number
   contribution: number
+  // --- P5 §14 optional extension ---
+  source_reference?: string | null
+  raw_value?: string | number | null
+  normalization_function?: string | null
+  normalized_evidence?: number | null
+  response_provenance?: string | null
+  normalized_feature_response?: number | null
+  hierarchy_path?: string | null
+  base_weight?: number | null
+  purpose_multiplier?: number | null
+  effective_weight?: number | null
+  status?: string | null
+}
+
+/**
+ * Per-candidate and/or run-level safety-dominance configuration readout
+ * (data-model.md §2 / algorithm doc §6.4). Every field is required WITHIN
+ * this object — the object itself is optional on its parents.
+ */
+export type DominanceReadout = {
+  status: string
+  w_d: number
+  w_l: number
+  required_gap: number
+  material_safety_gap: number
+  safety_share: number
+  safety_share_warning: boolean
 }
 
 /**
@@ -156,6 +190,13 @@ export type RankedCandidate = {
   opposing_feature_ids: string[]
   uncertainty: string | null
   feature_contributions: FeatureContribution[]
+  // --- P5 §14 optional extension ---
+  situation_fit?: number | null
+  preference_fit?: number | null
+  history_fit?: number | null
+  strongest_support?: { feature_id: string; contribution: number } | null
+  strongest_oppose?: { feature_id: string; contribution: number } | null
+  dominance?: DominanceReadout | null
 }
 
 export type ExcludedCandidate = {
@@ -171,6 +212,10 @@ export type ServiceSelectorOutput = {
   missing_features: string[]
   next_package_runtime_state: Record<string, unknown>
   algorithm_provenance: Record<string, unknown>
+  // --- P5 §14 optional extension ---
+  dominance?: DominanceReadout | null
+  effective_weights?: Record<string, number> | null
+  resolved_config_versions?: Record<string, unknown> | null
 }
 
 export type ItemFeatureContribution = {
