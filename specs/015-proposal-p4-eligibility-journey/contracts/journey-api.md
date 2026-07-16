@@ -30,6 +30,22 @@ in `eligible_candidates`. NOTE: `SelectorInput.allowed_service_ids` has a non-em
 an empty allowed row (e.g. `rest_recommended`/`during_rest_stopped`) resolves to a
 `NO_ELIGIBLE_CANDIDATE` outcome at the orchestrator level rather than constructing a `SelectorInput`.
 
+## POST /api/proposal/runs/{run_id}/select-service — eligibility gate
+
+The STEP-2 selection endpoint re-checks eligibility against the run's **current** motion state
+(`journey_state.motion_state`) so the manual-selection path enforces the same guarantee as the
+automatic ranking path (SC-002/FR-002). A `selected_service_id` that is in the frozen row but **not
+in the current eligible set** is rejected with `422`:
+
+```json
+{ "detail": { "code": "service_not_eligible",
+              "message": "'full_karaoke' is not currently eligible / 'full_karaoke' は現在選択できません",
+              "reason_codes": ["full_karaoke_requires_stopped"] } }
+```
+
+The run does not advance to `content_selected`; no excluded service can ever become active content
+(added by the P4 whole-branch review fix, commit `2878c14`).
+
 ## POST /api/proposal/runs/{run_id}/journey/action
 
 Apply one journey action. Body:

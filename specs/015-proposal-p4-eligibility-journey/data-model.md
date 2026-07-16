@@ -99,9 +99,14 @@ Additive: all new fields have defaults so existing persisted runs deserialize un
 
 ## JourneyAction (request) / JourneyTransition (engine output)
 
+The pure engine entry point is `apply_action(run_log, action, *, now, capabilities=None)
+-> JourneyTransition` — `now` is the router-minted timestamp and `capabilities` is the loaded
+`ServiceCapabilities` (required by `motion_change` for the background/stop decision and re-eligibility;
+other actions ignore it). The engine performs no clock/IO/randomness.
+
 ```
 JourneyAction:                              # request body → engine input
-  action_type: JourneyActionType
+  action_type: JourneyActionType            # note: the "continue" member is named continue_ (value "continue")
   payload: dict = {}                        # e.g. {"motion_state": "driving"},
                                             #      {"selected_service_id": "..."},
                                             #      {"post_rest": {"drowsiness_level": .., "fatigue_level": ..}}
