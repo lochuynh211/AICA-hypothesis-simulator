@@ -77,6 +77,14 @@ from aica_api.models.proposal.dispositions import (  # noqa: F401
     registry_version,
 )
 
+# ---------------------------------------------------------------------------
+# Re-exports — genre extension (T022 / T023)
+# ---------------------------------------------------------------------------
+from aica_api.models.proposal.genre_extension import (  # noqa: F401
+    GenreAffinityV1,
+    GENRE_VOCABULARY,
+)
+
 __all__ = [
     "CONTRACT_VERSION",
     "SCHEMA_VERSION",
@@ -121,4 +129,7 @@ __all__ = [
     "DispositionEntry",
     "CONTENT_FEATURE_DISPOSITIONS",
     "registry_version",
+    # genre extension
+    "GenreAffinityV1",
+    "GENRE_VOCABULARY",
 ]
