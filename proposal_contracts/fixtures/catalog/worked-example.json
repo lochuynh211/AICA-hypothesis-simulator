@@ -1,0 +1,24 @@
+{
+  "spotify_track": {
+    "album": {
+      "album_type": "album", "total_tracks": 10, "available_markets": ["JP"],
+      "id": "synthetic-album-9001", "name": "Worked Example", "release_date": "2015-06-01",
+      "release_date_precision": "day", "type": "album", "uri": "spotify:album:synthetic-album-9001"
+    },
+    "artists": [
+      { "id": "synthetic-artist-9001", "name": "Example Artist", "type": "artist", "uri": "spotify:artist:synthetic-artist-9001" }
+    ],
+    "available_markets": ["JP"],
+    "disc_number": 1, "duration_ms": 237040, "explicit": false,
+    "id": "synthetic-track-9001", "is_local": false, "is_playable": true,
+    "name": "Worked Example Song", "popularity": 50, "track_number": 1,
+    "type": "track", "uri": "spotify:track:synthetic-track-9001"
+  },
+  "spotify_audio_features": {
+    "acousticness": 0.002, "danceability": 0.585, "duration_ms": 237040, "energy": 0.842,
+    "id": "synthetic-track-9001", "instrumentalness": 0.007, "key": 5, "liveness": 0.1,
+    "loudness": -5.9, "mode": 1, "speechiness": 0.056, "tempo": 118.2, "time_signature": 4,
+    "type": "audio_features", "uri": "spotify:track:synthetic-track-9001", "valence": 0.428
+  },
+  "simulation_flags": { "humming_karaoke_available": 1, "full_karaoke_available": 1 }
+}
