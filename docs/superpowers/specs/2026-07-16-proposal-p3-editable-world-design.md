@@ -3,7 +3,38 @@
 **Date:** 2026-07-16
 **Milestone:** P3 (per `docs/master/aica_proposal_simulator_milestones.md` §5)
 **Branch:** `proposal-p3-editable-world` (off `develop`)
-**Status:** Approved design → SpecKit chain (Step 3)
+**Status:** Approved design → **re-scoped during `/speckit-clarify` (2026-07-16)** — see the Scope Revision
+below. The SpecKit spec `specs/014-proposal-p3-editable-world/spec.md` is authoritative where this record
+and it differ.
+
+## Scope Revision (2026-07-16 clarification — owner decision)
+
+Two owner decisions during clarification changed P3's scope from this record's original form. **The net
+P3 scope is:**
+
+1. **Catalog is READ-ONLY.** The song catalog is built and frozen in P2; it is changed only by re-running
+   P2, never edited in-app. **In-app catalog editing is CUT from P3** — decisions **D3/D6/D7** below about
+   catalog editing, derived-dataset versioning, and the `catalog_editor` service / `proposal_datasets_dir`
+   are **withdrawn**. The catalog is loaded read-only with provenance. (Milestones §5's catalog-editing
+   acceptance criterion is deferred; recorded in the milestone §17 reconciliation.)
+2. **Driver profiles are a first-class store** (create / save / list / load / delete; a few built-in named
+   profiles) — strengthening **D2**.
+3. **The real transparent CONTENT selector is wired in** so a different driver profile yields a *visibly
+   different* content proposal over the frozen catalog (the demonstration of algorithmic effectiveness that
+   motivates the editable world). The **service** selector stays the P1 mock. The content selector runs
+   over the frozen catalog as candidates with **no P4 eligibility narrowing yet**. This intentionally pulls
+   the "wire the real content package" work forward from the later P6-wiring milestone; it does **not** add
+   real service ranking, eligibility, or the journey engine.
+
+**Revised three vertical slices:** **P3a** typed World + driver-profile store + dataset/catalog read-only
+loader + base seeds + full editable feature surface + validation + setup snapshot → **P3b** contrast clones
++ field-level diff → **P3c** wire the real transparent content selector (STEP 2) so profile/situation
+changes change the content proposal; service selector stays mock.
+
+Sections below are the original record; where they describe catalog editing (D3/D6/D7, the `catalog_editor`
+service, `proposal_datasets_dir`, the `POST …/catalog-edit` route, US2 catalog editing) they are
+**superseded** by this revision. Everything about the typed World, projector, seeds, clones, driver
+profile, validation, setup snapshot, and P1-UI-preservation stands.
 
 Prerequisites **P0.5** (415a99b), **P6** (5151ed4), **P2** (5ebec22), **P1** (75c0ac9) are all merged
 into `develop` and green (`uv run pytest tests/proposal` → 456 passed; full suite documented green at
