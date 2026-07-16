@@ -48,6 +48,8 @@ import SeedPicker from '../SeedPicker'
 import DriverProfilePicker from '../DriverProfilePicker'
 import DatasetProvenanceBanner from '../DatasetProvenanceBanner'
 import CatalogView from '../CatalogView'
+import WorldClonePicker from '../WorldClonePicker'
+import WorldDiffView from '../WorldDiffView'
 import {
   TextListEditor,
   RecordEditor,
@@ -298,6 +300,7 @@ const LABELS = {
   motion: { ja: '走行/停車', en: 'Motion' },
   dataset: { ja: 'データセット', en: 'Dataset' },
   seed: { ja: 'シード（一括読み込み）', en: 'Seed (bulk load)' },
+  clone: { ja: '対比クローン（1変数変更）', en: 'Contrast clone (change one variable)' },
   genreExtension: { ja: 'ジャンル選好（genre_affinity_v1）', en: 'Genre affinity (genre_affinity_v1)' },
   scenes: { ja: 'シーン別ジャンル利用', en: 'Scene genre usage' },
 }
@@ -565,6 +568,14 @@ export default function WorldPanel() {
           {t(LABELS.seed, lang)}
         </div>
         <SeedPicker />
+
+        {/* Contrast clone — clone the base seed above and change ONE
+            variable (data-model.md §WorldClone); the diff renders below. */}
+        <div style={{ fontSize: '0.68em', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 800, color: '#6b7280', margin: '12px 0 6px' }}>
+          {t(LABELS.clone, lang)}
+        </div>
+        <WorldClonePicker />
+        <WorldDiffView />
 
         {/* 1. Trigger signal */}
         <SectionLabel>{t(LABELS.triggerSignal, lang)}</SectionLabel>

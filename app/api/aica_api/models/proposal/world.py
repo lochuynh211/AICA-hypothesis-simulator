@@ -86,6 +86,9 @@ __all__ = [
     "World",
     "SeedWorld",
     "DriverProfileRecord",
+    "FieldOverride",
+    "FieldDiff",
+    "WorldClone",
     "SetupSnapshotOrigin",
     "SetupSnapshot",
 ]
@@ -552,6 +555,80 @@ class DriverProfileRecord(BaseModel):
     def profile_id_non_empty(cls, v: str) -> str:
         if not v:
             raise ValueError("profile_id must not be empty.")
+        return v
+
+
+# ---------------------------------------------------------------------------
+# WorldClone — clone-and-change-one-variable contrast (data-model.md
+# §WorldClone / research.md §R5, T028-T031)
+# ---------------------------------------------------------------------------
+
+
+class FieldOverride(BaseModel):
+    """One requested change: set the field at ``path`` (dotted, e.g.
+    ``"situation.drowsiness_level"``, ``"driver_profile.oshi_mode"``,
+    optionally bracketed with a list index, e.g.
+    ``"driver_profile.played_items[0].track_id"``) to ``value``.
+
+    Applying/validating overrides is a service concern
+    (``services/world_clone_store.py``) — this model only shapes the
+    request, it does not itself walk the path.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    path: str
+    value: Any
+
+    @field_validator("path")
+    @classmethod
+    def path_non_empty(cls, v: str) -> str:
+        if not v:
+            raise ValueError("Override path must not be empty.")
+        return v
+
+
+class FieldDiff(BaseModel):
+    """One field-level before/after difference produced by a clone.
+
+    ``path`` matches the ``FieldOverride.path`` it came from; ``before``/
+    ``after`` are the plain (JSON-mode) values at that path in the base and
+    cloned world respectively.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    path: str
+    before: Any
+    after: Any
+
+
+class WorldClone(BaseModel):
+    """A user-created "clone the base seed and change ONE variable" contrast
+    (data-model.md §WorldClone).
+
+    ``world`` is the base seed's world with every override in ``overrides``
+    applied — a COMPLETE, valid ``World`` (never a partial one). ``diff`` is
+    computed deterministically as EXACTLY the overridden path(s) with their
+    before/after values — nothing unchanged ever appears in it. Built and
+    persisted by ``services/world_clone_store.py`` (T029) under
+    ``settings.proposal_worlds_dir`` (git-ignored, unlike the committed
+    ``SeedWorld``s it is based on).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    clone_id: str
+    base_seed_id: str
+    overrides: list[FieldOverride]
+    world: World
+    diff: list[FieldDiff]
+
+    @field_validator("clone_id", "base_seed_id")
+    @classmethod
+    def _non_empty(cls, v: str) -> str:
+        if not v:
+            raise ValueError("clone_id/base_seed_id must not be empty.")
         return v
 
 

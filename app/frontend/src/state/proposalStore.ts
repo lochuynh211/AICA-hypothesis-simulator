@@ -38,6 +38,8 @@ import type {
   WorldValidationIssue,
   GenreLiteralValue,
   UsageLevelValue,
+  WorldClone,
+  WorldCloneSummary,
 } from '../api/proposalClient'
 
 // ── State ────────────────────────────────────────────────────────────────
@@ -154,10 +156,11 @@ export type ProposalStoreState = {
 
   // ── World panel — the typed editable world (P3) ─────────────────────────
   world: World
-  /** Which committed seed/profile the current world was loaded from, if any
-   * (frozen into the run's SetupSnapshot.origin at create-run time). */
+  /** Which committed seed/profile/clone the current world was loaded from,
+   * if any (frozen into the run's SetupSnapshot.origin at create-run time). */
   selectedSeedId: string | null
   selectedProfileId: string | null
+  selectedCloneId: string | null
   worldValidationIssues: WorldValidationIssue[]
 
   // ── World panel — read-only reference caches (fetched by pickers) ──────
@@ -167,6 +170,11 @@ export type ProposalStoreState = {
   /** The active dataset's catalog page, for `CatalogView` / provenance. */
   catalog: CatalogSongSummary[]
   catalogTotal: number
+
+  // ── World panel — contrast clones (P3 / feature 014, T028-T031) ────────
+  clones: WorldCloneSummary[]
+  /** The most recently created/loaded clone — drives `WorldDiffView`. */
+  activeClone: WorldClone | null
 
   // ── Service panel (STEP 1) setup ─────────────────────────────────────────
   servicePackageId: string | null
@@ -192,12 +200,15 @@ const initialState: ProposalStoreState = {
   world: DEFAULT_WORLD,
   selectedSeedId: null,
   selectedProfileId: null,
+  selectedCloneId: null,
   worldValidationIssues: [],
   datasets: [],
   seeds: [],
   profiles: [],
   catalog: [],
   catalogTotal: 0,
+  clones: [],
+  activeClone: null,
   servicePackageId: null,
   mode: 'interactive',
   serviceParameterOverrides: {},
@@ -245,6 +256,14 @@ export type ProposalStoreAction =
   | { type: 'SET_PROFILES'; profiles: ProfileSummary[] }
   | { type: 'SET_CATALOG'; catalog: CatalogSongSummary[]; total: number }
   | { type: 'SET_WORLD_VALIDATION_ISSUES'; issues: WorldValidationIssue[] }
+  /** Cache of persisted clone summaries ({clone_id, base_seed_id}). */
+  | { type: 'SET_CLONES'; clones: WorldCloneSummary[] }
+  /** A clone was created (or reloaded): replaces the entire editable world
+   * with the clone's world and sets `activeClone` for `WorldDiffView`. */
+  | { type: 'CLONE_CREATED'; clone: WorldClone }
+  /** Clears the active clone's diff display without touching the world
+   * (e.g. after the diff banner is dismissed). */
+  | { type: 'CLEAR_ACTIVE_CLONE' }
   | { type: 'SET_SERVICE_PACKAGE'; packageId: string }
   | { type: 'SET_MODE'; mode: string }
   | { type: 'SET_SERVICE_PARAMETER'; key: string; value: unknown }
@@ -432,6 +451,26 @@ export function proposalReducer(
 
     case 'SET_WORLD_VALIDATION_ISSUES':
       return { ...state, worldValidationIssues: action.issues }
+
+    case 'SET_CLONES':
+      return { ...state, clones: action.clones }
+
+    case 'CLONE_CREATED':
+      return {
+        ...state,
+        world: action.clone.world,
+        selectedSeedId: action.clone.base_seed_id,
+        selectedCloneId: action.clone.clone_id,
+        selectedProfileId: null,
+        activeClone: action.clone,
+        triggerPurpose: action.clone.world.control_inputs.trigger_purpose,
+        lifecycleStage: action.clone.world.control_inputs.lifecycle_stage,
+        motionState: action.clone.world.control_inputs.motion_state,
+        worldValidationIssues: [],
+      }
+
+    case 'CLEAR_ACTIVE_CLONE':
+      return { ...state, activeClone: null }
 
     case 'SET_SERVICE_PACKAGE':
       return { ...state, servicePackageId: action.packageId }

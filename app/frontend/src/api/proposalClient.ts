@@ -596,6 +596,46 @@ export async function deleteProfile(profileId: string): Promise<void> {
   }
 }
 
+// ── Worlds: clone & diff (P3 / feature 014, T028-T031) ──────────────────────
+
+export type FieldOverride = { path: string; value: unknown }
+export type FieldDiff = { path: string; before: unknown; after: unknown }
+
+export type WorldClone = {
+  clone_id: string
+  base_seed_id: string
+  overrides: FieldOverride[]
+  world: World
+  diff: FieldDiff[]
+}
+
+export type WorldCloneSummary = { clone_id: string; base_seed_id: string }
+
+export async function cloneWorld(baseSeedId: string, overrides: FieldOverride[]): Promise<WorldClone> {
+  return apiFetch('/worlds/clone', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ base_seed_id: baseSeedId, overrides }),
+  })
+}
+
+export async function listClones(): Promise<{ clones: WorldCloneSummary[] }> {
+  return apiFetch('/worlds/clones', { method: 'GET' })
+}
+
+export async function getClone(cloneId: string): Promise<WorldClone> {
+  return apiFetch(`/worlds/clones/${encodeURIComponent(cloneId)}`, { method: 'GET' })
+}
+
+export async function deleteClone(cloneId: string): Promise<void> {
+  const response = await fetch(`${PROPOSAL_API_BASE}/worlds/clones/${encodeURIComponent(cloneId)}`, {
+    method: 'DELETE',
+  })
+  if (!response.ok) {
+    throw new Error(`Proposal API error: ${response.status}`)
+  }
+}
+
 // ── POST /api/proposal/worlds/validate ──────────────────────────────────────
 
 export async function validateWorld(world: World): Promise<{ valid: boolean; issues: WorldValidationIssue[] }> {

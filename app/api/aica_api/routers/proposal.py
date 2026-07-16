@@ -58,10 +58,12 @@ from aica_api.models.proposal.proposal_run import ProposalRun, ProposalRunLog
 from aica_api.models.proposal.world import (
     DriverProfile,
     DriverProfileRecord,
+    FieldOverride,
     SeedWorld,
     SetupSnapshot,
     SetupSnapshotOrigin,
     World,
+    WorldClone,
 )
 from aica_api.services import proposal_run_manager as prm
 from aica_api.services.dataset_catalog_registry import DatasetCatalogRegistry
@@ -72,6 +74,7 @@ from aica_api.services.driver_profile_store import (
 )
 from aica_api.services.proposal_package_registry import ProposalPackageRegistry
 from aica_api.services.proposal_selector import dispatch_selector
+from aica_api.services.world_clone_store import InvalidOverrideError, WorldCloneStore
 from aica_api.services.world_seed_store import WorldSeedStore
 from aica_api.services.world_validation import ValidationIssue, validate_world
 
@@ -111,6 +114,11 @@ def _get_seed_store() -> WorldSeedStore:
 def _get_profile_store() -> DriverProfileStore:
     """Instantiate a DriverProfileStore from the configured user-profiles directory."""
     return DriverProfileStore(settings.proposal_profiles_dir)
+
+
+def _get_clone_store() -> WorldCloneStore:
+    """Instantiate a WorldCloneStore from the configured user-worlds directory."""
+    return WorldCloneStore(settings.proposal_worlds_dir)
 
 
 def _make_opportunity_id() -> str:
@@ -325,6 +333,71 @@ def get_seed(seed_id: str) -> SeedWorld:
     if seed is None:
         raise HTTPException(status_code=404, detail=f"Unknown seed_id: {seed_id!r}")
     return seed
+
+
+# ---------------------------------------------------------------------------
+# Worlds: clone & diff — T030 (P3 — contrast clones)
+# ---------------------------------------------------------------------------
+
+
+class CreateWorldCloneBody(BaseModel):
+    """Request body for ``POST /api/proposal/worlds/clone``."""
+
+    base_seed_id: str
+    overrides: list[FieldOverride]
+
+
+@router.post("/api/proposal/worlds/clone", status_code=201)
+def create_world_clone(body: CreateWorldCloneBody) -> WorldClone:
+    """Clone a base seed with one (typically one) field override applied.
+
+    Returns the complete, valid cloned ``World`` plus a deterministic
+    field-level ``diff`` listing exactly the overridden path(s). 422 on an
+    unknown/malformed override path, an invalid value, or a dangling catalog
+    reference — never a fabricated clone.
+    """
+    seed_store = _get_seed_store()
+    seed = seed_store.get_seed(body.base_seed_id)
+    if seed is None:
+        raise HTTPException(status_code=404, detail=f"Unknown base_seed_id: {body.base_seed_id!r}")
+
+    dataset_registry = _get_dataset_registry()
+    catalog = dataset_registry.get_catalog(seed.world.control_inputs.dataset_id)
+
+    clone_store = _get_clone_store()
+    try:
+        return clone_store.create_clone(
+            base_world=seed.world,
+            base_seed_id=body.base_seed_id,
+            overrides=body.overrides,
+            catalog=catalog,
+        )
+    except InvalidOverrideError as exc:
+        raise HTTPException(status_code=422, detail=[issue.model_dump() for issue in exc.issues]) from exc
+
+
+@router.get("/api/proposal/worlds/clones")
+def list_world_clones() -> dict:
+    """List persisted world clones ({clone_id, base_seed_id} summaries)."""
+    return {"clones": _get_clone_store().list_clones()}
+
+
+@router.get("/api/proposal/worlds/clones/{clone_id}")
+def get_world_clone(clone_id: str) -> WorldClone:
+    """Return the full WorldClone (world + diff) for clone_id."""
+    clone = _get_clone_store().get_clone(clone_id)
+    if clone is None:
+        raise HTTPException(status_code=404, detail=f"Unknown clone_id: {clone_id!r}")
+    return clone
+
+
+@router.delete("/api/proposal/worlds/clones/{clone_id}", status_code=204)
+def delete_world_clone(clone_id: str) -> Response:
+    """Delete a persisted world clone."""
+    deleted = _get_clone_store().delete_clone(clone_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail=f"Unknown clone_id: {clone_id!r}")
+    return Response(status_code=204)
 
 
 # ---------------------------------------------------------------------------
