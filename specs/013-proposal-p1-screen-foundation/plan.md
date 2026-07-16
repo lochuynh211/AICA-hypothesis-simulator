@@ -1,113 +1,135 @@
-# Implementation Plan: [FEATURE]
+# Implementation Plan: Proposal Screen (3-Panel) & Standalone Run Foundation
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
+**Branch**: `proposal-p1-screen-foundation` | **Date**: 2026-07-16 | **Spec**: [spec.md](./spec.md)
 
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
-
-**Note**: This template is filled in by the `/speckit-plan` command. See `.specify/templates/plan-template.md` for the execution workflow.
+**Input**: Feature specification from `specs/013-proposal-p1-screen-foundation/spec.md`; approved design `docs/superpowers/specs/2026-07-16-proposal-p1-screen-foundation-design.md`; approved UI mockup `specs/013-proposal-p1-screen-foundation/ui-mockup.html`.
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+Add a standalone **Proposal Simulator** workflow — a top-level `appMode` sibling to the existing
+Trigger Simulator — with a **3-panel screen** (① World/input · ② Service proposal · ③ Content
+proposal, each selector panel owning its own editable setup), neutral versioned contracts, a
+four-slot proposal package model, **mock** service and content selectors, and a separate persisted
+proposal-run namespace. No real ranking, journey engine, or editable world yet: the milestone proves
+the boundaries and the screen are cleanly isolated from the Trigger Simulator so later milestones drop
+real algorithms behind the same contracts. Backend is the runtime/evidence authority; the frontend is
+review-only. All new proposal code stays in the isolated `models/proposal/` namespace and a parallel
+registry/run path — the trigger `PackageManifest`/`PackageRegistry`/`run_manager` are untouched.
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
+**Language/Version**: Python 3.12 (backend), TypeScript 5 / React 18 (frontend).
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]
+**Primary Dependencies**: FastAPI + Pydantic v2 (backend); React + Vite + Vitest (frontend). Stdlib-only
+persistence (atomic `file_store`). No new runtime dependencies (Constitution: supply-chain caution).
 
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]
+**Storage**: File-based. New `proposal_runs/<run_id>.json` namespace (separate from trigger `runs/`);
+frozen matrix artifact `proposal_contracts/matrix/purpose_stage_matrix.v1.json`; mock packages under
+`packages/mock_*`. Reuses the frozen P2 dataset (read-only, by version) for content-plan track names.
 
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
+**Testing**: `pytest` (backend contract/unit/integration incl. `app/api/tests/proposal/`); Vitest
+(frontend). Contract surfaces (selector I/O, matrix resolver, run log, registry) carry the strongest
+tests per Constitution.
 
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]
+**Target Platform**: Local containerized app (`docker compose up`), single user, offline-capable.
 
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
+**Project Type**: Web application (FastAPI backend + React frontend), already scaffolded under `app/`.
 
-**Project Type**: [e.g., library/cli/web-service/mobile-app/compiler/desktop-app or NEEDS CLARIFICATION]
+**Performance Goals**: N/A (local single-user review tool). Screen interactions are display-only; the
+backend performs one mock evaluation per selector step.
 
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]
+**Constraints**: Offline; no live LLM/network in any run; JA-default bilingual; proposal state fully
+isolated from trigger state; failures surfaced as explicit `algorithm_error` evidence, never faked
+results; setup-time-only mutation (params/hyperparameters frozen at run start).
 
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]
-
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Scale/Scope**: ~8 new backend model modules, 3 new services, 1 router, 2 mock packages, 1 matrix
+artifact; ~8 new frontend components + 1 store + appMode context. No change to existing trigger scope.
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+| Principle | Status | How this plan satisfies it |
+|---|---|---|
+| **I. Backend is source of truth** | PASS | Opportunity resolution, matrix resolution, selector dispatch, and evidence all originate in the backend. The frontend renders results and computes only display state (panel layout, disclosure open/closed, language). |
+| **II. Append-only evidence, failures visible** | PASS | `ProposalRunLog` is append-only, persisted via atomic `file_store` after each event. A selector raise/invalid return becomes an `algorithm_error` evidence event via `proposal_selector.py` — never a faked result. |
+| **III. Deterministic, replayable** | PASS | Mock outputs are fixed; opportunity carries a `run_seed`. Reopen renders from the stored log **without** recomputing selectors. No live LLM/network in any run. |
+| **IV. Qualitative trigger discipline** | PASS (N/A-leaning) | P1 introduces no external-service numerics; world/situation values are reviewer-set inputs. No raw map/geometry enters a decision. |
+| **V. One generic adapter contract** | PASS | Mock selectors are `python_module` packages exposing `def evaluate(context: dict) -> dict`; `proposal_selector.py` validates/normalizes into the neutral proposal contracts (parallel to, and consistent with, the trigger adapter's single-contract rule). No new algorithm *type* is introduced. |
+| **VI. Local-first simplicity (YAGNI)** | PASS | Smallest vertical slice: mock selectors, file-based proposal runs, one frozen matrix version. No DB, accounts, cloud, or queue. Reuses existing `file_store`. |
+| **Security & Safety Boundaries** | PASS | No external keys. Local trusted mock packages. Setup-time-only mutation: params/hyperparameters freeze at run start. Invalid package → visible error, never partially used. |
+| **Development Workflow & Quality Gates** | PASS | Spec-Kit cycle followed; contract surfaces tested first (TDD); milestone leaves the app runnable; the frozen matrix artifact and mock manifests are source inputs (not hand-edited generated output). |
+
+**Result: PASS — no violations. Complexity Tracking table not required.**
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```text
-specs/[###-feature]/
-├── plan.md              # This file (/speckit-plan command output)
-├── research.md          # Phase 0 output (/speckit-plan command)
-├── data-model.md        # Phase 1 output (/speckit-plan command)
-├── quickstart.md        # Phase 1 output (/speckit-plan command)
-├── contracts/           # Phase 1 output (/speckit-plan command)
-└── tasks.md             # Phase 2 output (/speckit-tasks command - NOT created by /speckit-plan)
+specs/013-proposal-p1-screen-foundation/
+├── plan.md              # This file
+├── research.md          # Phase 0 output
+├── data-model.md        # Phase 1 output
+├── quickstart.md        # Phase 1 output
+├── contracts/           # Phase 1 output (JSON Schemas + endpoint contracts)
+├── ui-mockup.html       # Approved UI/UX reference (committed)
+├── checklists/
+│   └── requirements.md
+└── tasks.md             # Phase 2 output (/speckit-tasks — not created here)
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
+app/api/aica_api/
+├── models/proposal/                 # ISOLATED — must not import trigger models
+│   ├── opportunity.py               # ProposalOpportunity (+ purpose/stage validator)   [NEW]
+│   ├── service_output.py            # ServiceSelectorOutput, RankedCandidate            [NEW]
+│   ├── matrix.py                    # PurposeStageServiceMatrix + resolver              [NEW]
+│   ├── events.py                    # DiscreteEvent + event-type enum (shape only)      [NEW]
+│   ├── journey.py                   # JourneyState (shape only)                         [NEW]
+│   ├── evidence.py                  # AlgorithmEvidence                                 [NEW]
+│   ├── proposal_run.py              # ProposalRun, ProposalRunLog (append-only)         [NEW]
+│   ├── package_manifest.py          # ProposalPackageManifest, ProposalPackageFamilySlot[NEW]
+│   ├── enums.py selector_input.py content_output.py …   # P0.5/P6 — reused, unchanged
 ├── services/
-├── cli/
-└── lib/
+│   ├── proposal_package_registry.py # scans packages/ for proposal families             [NEW]
+│   ├── proposal_selector.py         # load algorithm.py → evaluate → validate/normalize  [NEW]
+│   └── proposal_run_manager.py      # create/get/list/delete + append-only persistence   [NEW]
+├── routers/proposal.py              # /api/proposal/*                                     [NEW]
+├── config.py                        # + proposal_runs_dir                                [EDIT additive]
+└── main.py                          # + include proposal router                          [EDIT additive]
 
-tests/
-├── contract/
-├── integration/
-└── unit/
+packages/
+├── mock_service_selector_v1/        # package.json (full repr. manifest) + algorithm.py   [NEW]
+└── mock_content_selector_v1/        # package.json (mirrors P6 manifest) + algorithm.py    [NEW]
 
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
+proposal_contracts/matrix/
+└── purpose_stage_matrix.v1.json     # frozen versioned artifact (6 rows; post-rest = 5)    [NEW]
 
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
+app/frontend/src/
+├── App.tsx                          # wrap in AppModeProvider + top toggle                [EDIT additive]
+├── state/
+│   ├── appMode.tsx                  # 'trigger' | 'proposal' context                       [NEW]
+│   └── proposalStore.ts             # isolated store (JA default)                          [NEW]
+├── api/proposalClient.ts            # proposal endpoints                                   [NEW]
+└── components/proposal/
+    ├── ProposalShell.tsx            # toggle + sub-nav [Screen | Runs]                     [NEW]
+    ├── ProposalScreen.tsx           # 3-column 16/42/42 layout                             [NEW]
+    ├── ProposalRunsScreen.tsx       # list / reopen / delete                              [NEW]
+    ├── ProvenanceBadge.tsx  ReasonBreakdown.tsx  HyperparamMatrix.tsx                     [NEW]
+    └── panels/{WorldPanel,ServiceProposalPanel,ContentProposalPanel}.tsx                  [NEW]
 
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+app/api/tests/proposal/…  app/frontend/src/**/__tests__/…    # new tests per layer          [NEW]
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Existing **web application** layout (`app/api` + `app/frontend`). P1 extends it
+additively: all new backend contracts live in the isolated `models/proposal/` subpackage with parallel
+services/router; the frontend gains a top-level `appMode` and an isolated proposal store + components.
+The trigger backend and frontend are not modified except three additive edits (`config.py`, `main.py`,
+`App.tsx`).
 
 ## Complexity Tracking
 
-> **Fill ONLY if Constitution Check has violations that must be justified**
-
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+> Not required — Constitution Check passed with no violations.
