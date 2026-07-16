@@ -94,8 +94,27 @@ def test_valid_action_wrong_precondition_is_rejected_no_op():
 
 
 def test_every_action_type_stub_rejects_for_now():
+    """Every JourneyActionType with NO real handler yet still rejects
+    unconditionally on this generic fixture. US2 (accept/complete/continue_/
+    stop — test_us2_plan_lifecycle.py) and US3 (reject/choose_another/
+    request_more/postpone — test_us3_advisory_actions.py) now have real
+    handlers with their own precondition-behavior coverage, so only the
+    still-stubbed US4 action types (motion_change/rest_*) are asserted
+    here."""
     run_log = _make_run_log()
+    implemented = {
+        JourneyActionType.accept,
+        JourneyActionType.complete,
+        JourneyActionType.continue_,
+        JourneyActionType.stop,
+        JourneyActionType.reject,
+        JourneyActionType.choose_another,
+        JourneyActionType.request_more,
+        JourneyActionType.postpone,
+    }
     for action_type in JourneyActionType:
+        if action_type in implemented:
+            continue
         action = JourneyAction(action_type=action_type, payload={})
         transition = apply_action(run_log, action, now="2026-07-16T10:05:00Z")
         assert transition.rejected is not None, action_type

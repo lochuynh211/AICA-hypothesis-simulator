@@ -12,11 +12,14 @@ endpoint) and threaded in as a parameter; persisting the transition's result
 ``services/proposal_run_manager``. This module never imports that manager,
 and never reads/writes a file.
 
-US2 (this unit) implements the real ``accept``/``complete``/``continue_``/
-``stop`` handlers — the mocked-accepted-plan lifecycle (spec.md User Story
-2; FR-008..FR-010, FR-012, SC-004). The remaining action types (reject/
-postpone/choose_another/request_more/motion_change/rest_*) are implemented
-by later P4 units (US3/US4); those units replace the remaining
+US2 implements the real ``accept``/``complete``/``continue_``/``stop``
+handlers — the mocked-accepted-plan lifecycle (spec.md User Story 2;
+FR-008..FR-010, FR-012, SC-004). US3 (this unit) implements the real
+``reject``/``choose_another``/``request_more``/``postpone`` handlers — the
+advisory service-stage actions that must never dead-end the run (spec.md
+User Story 3; FR-007, FR-011..FR-013, SC-005). The remaining action types
+(motion_change/rest_spot_arrived/rest_started/rest_completed) are
+implemented by the later P4 US4 unit; that unit replaces the remaining
 ``_HANDLERS`` entries in place — `apply_action` itself, and the rejection
 shape, are the stable seam and need no restructuring.
 
@@ -33,8 +36,10 @@ from aica_api.models.proposal.enums import (
     JourneyActionType,
     PlaybackState,
     ProposalRunStatus,
+    ServiceId,
 )
 from aica_api.models.proposal.events import DiscreteEvent
+from aica_api.models.proposal.evidence import AlgorithmEvidence
 from aica_api.models.proposal.journey import PreviousContent
 from aica_api.models.proposal.journey_action import (
     JourneyAction,
@@ -66,10 +71,9 @@ def _not_yet_implemented(
 ) -> JourneyTransition:
     """Shared stub for every ``JourneyActionType`` not yet implemented.
 
-    # TODO(US3/US4): replace this stub in `_HANDLERS` with the real
-    # reject / postpone / choose_another / request_more / motion_change /
-    # rest_spot_arrived / rest_started / rest_completed handler for each
-    # action. Each real handler has this same signature
+    # TODO(US4): replace this stub in `_HANDLERS` with the real
+    # motion_change / rest_spot_arrived / rest_started / rest_completed
+    # handler for each action. Each real handler has this same signature
     # `(run_log, action, now) -> JourneyTransition` and must stay pure (no
     # clock/random/IO) — `now` is the only timestamp source.
     """
@@ -97,6 +101,248 @@ def _committed_plan(run_log: ProposalRunLog) -> dict | None:
         if evidence.step == "content" and evidence.error is None:
             return evidence.output
     return None
+
+
+def _service_evidence(run_log: ProposalRunLog) -> AlgorithmEvidence | None:
+    """Return the last committed (non-error) SERVICE-step evidence — its
+    ``.output`` is the ``ServiceSelectorOutput`` dict (``ranked_candidates``)
+    and its ``.input_snapshot`` carries the frozen US1 eligible set
+    (``eligible_candidates``) — or ``None`` if the run has no such evidence
+    yet (mirrors ``_committed_plan`` above, one step earlier in the flow)."""
+    for evidence in reversed(run_log.evidence):
+        if evidence.step == "service" and evidence.error is None:
+            return evidence
+    return None
+
+
+def _eligible_pool(run_log: ProposalRunLog) -> list[str]:
+    """The ordered pool of eligible service-candidate ids that US3's
+    advisory actions (reject/choose_another/request_more) draw from: the
+    SERVICE evidence's ``input_snapshot['eligible_candidates']`` ids (US1's
+    frozen eligible set — data-model.md §"Relationships & lifecycle"),
+    ordered by the service output's ``ranked_candidates`` rank first, then
+    any remaining eligible ids in their original eligible-set order.
+
+    No re-scoring: this reads the EXISTING service evidence only — it never
+    dispatches a selector. Returns ``[]`` if there is no committed SERVICE
+    evidence (e.g. a bare/synthetic ``ProposalRunLog`` in a unit test)."""
+    evidence = _service_evidence(run_log)
+    if evidence is None:
+        return []
+    eligible_ids = [
+        candidate["candidate_id"]
+        for candidate in evidence.input_snapshot.get("eligible_candidates", [])
+    ]
+    ranked = evidence.output.get("ranked_candidates", []) if evidence.output else []
+    ranked_ids = [
+        candidate["candidate_id"]
+        for candidate in sorted(ranked, key=lambda c: c["rank"])
+        if candidate["candidate_id"] in eligible_ids
+    ]
+    remaining_ids = [cid for cid in eligible_ids if cid not in ranked_ids]
+    return ranked_ids + remaining_ids
+
+
+# ---------------------------------------------------------------------------
+# US3 handlers — reject / choose_another / request_more / postpone (spec.md
+# User Story 3; FR-007, FR-011..FR-013, SC-005): advisory service actions
+# never dead-end the run. ``rejected_service_ids`` drives non-re-offer;
+# rejecting never dead-ends the run while an eligible candidate remains, and
+# when the pool is fully exhausted an explicit ``NO_ELIGIBLE_CANDIDATE``
+# event is emitted — a success end-state, never a crash/error.
+# ``choose_another``/``request_more`` reuse the EXISTING ``_eligible_pool``
+# ranking/order — neither ever dispatches a selector or adds a new
+# ``AlgorithmEvidence`` (no re-scoring).
+# ---------------------------------------------------------------------------
+
+
+def _reject_service(run_log: ProposalRunLog, action: JourneyAction, now: str) -> JourneyTransition:
+    """FR-011/FR-013: reject the currently-offered service.
+
+    The offered service is ``journey_state.active_service_id`` unless the
+    caller names a different one via ``payload["selected_service_id"]``.
+    Recorded into ``rejected_service_ids`` (never re-offered — FR-011) and
+    ``active_service_id`` is cleared. If the eligible pool still has an
+    id not yet rejected, the run stays open at ``service_selected`` (SC-005
+    — not dead-ended). If NONE remain, an explicit ``NO_ELIGIBLE_CANDIDATE``
+    event is ALSO emitted alongside ``SERVICE_REJECTED`` — a success
+    end-state, not an error/crash (FR-013)."""
+    if run_log.status != ProposalRunStatus.service_selected:
+        return _reject(
+            run_log,
+            "invalid_precondition",
+            (
+                "reject requires a service_selected run / "
+                "rejectはservice_selected状態のランでのみ有効です"
+            ),
+        )
+    js = run_log.journey_state
+    payload_service_id = action.payload.get("selected_service_id")
+    offered = ServiceId(payload_service_id) if payload_service_id is not None else js.active_service_id
+    if offered is None:
+        return _reject(
+            run_log,
+            "invalid_precondition",
+            (
+                "No offered service to reject / "
+                "拒否する提示中のサービスがありません"
+            ),
+        )
+
+    rejected_ids: list[ServiceId] = list(js.rejected_service_ids)
+    if offered not in rejected_ids:
+        rejected_ids.append(offered)
+
+    events = [
+        DiscreteEvent(
+            event_type=DiscreteEventType.SERVICE_REJECTED,
+            at=now,
+            payload={"rejected_service_id": offered.value},
+        )
+    ]
+
+    pool = _eligible_pool(run_log)
+    remaining = [cid for cid in pool if cid not in rejected_ids]
+    if not remaining:
+        events.append(
+            DiscreteEvent(
+                event_type=DiscreteEventType.NO_ELIGIBLE_CANDIDATE,
+                at=now,
+                payload={"rejected_service_ids": [sid.value for sid in rejected_ids]},
+            )
+        )
+
+    new_journey_state = js.model_copy(
+        update={"active_service_id": None, "rejected_service_ids": rejected_ids}
+    )
+    return JourneyTransition(
+        events=events,
+        new_journey_state=new_journey_state,
+        new_status=ProposalRunStatus.service_selected,
+    )
+
+
+def _choose_another(run_log: ProposalRunLog, action: JourneyAction, now: str) -> JourneyTransition:
+    """FR-011: advance to the next eligible, non-rejected candidate — reuses
+    the EXISTING ``_eligible_pool`` order (no re-scoring, no new
+    ``AlgorithmEvidence``). When no further candidate remains, a structured
+    ``TransitionRejection(code="no_eligible_candidate")`` is returned
+    (FR-012) — distinct from ``reject``'s success-shaped
+    ``NO_ELIGIBLE_CANDIDATE`` event: there is nothing left to switch TO, so
+    no state change is applied."""
+    if run_log.status != ProposalRunStatus.service_selected:
+        return _reject(
+            run_log,
+            "invalid_precondition",
+            (
+                "choose_another requires a service_selected run / "
+                "choose_anotherはservice_selected状態のランでのみ有効です"
+            ),
+        )
+    js = run_log.journey_state
+    pool = _eligible_pool(run_log)
+    next_id = next(
+        (
+            cid
+            for cid in pool
+            if cid not in js.rejected_service_ids and cid != js.active_service_id
+        ),
+        None,
+    )
+    if next_id is None:
+        return _reject(
+            run_log,
+            "no_eligible_candidate",
+            (
+                "No further eligible candidate to switch to / "
+                "切り替え可能な適格候補がこれ以上ありません"
+            ),
+        )
+
+    next_service_id = ServiceId(next_id)
+    rank: int | None = None
+    evidence = _service_evidence(run_log)
+    if evidence is not None and evidence.output:
+        for candidate in evidence.output.get("ranked_candidates", []):
+            if candidate["candidate_id"] == next_id:
+                rank = candidate["rank"]
+                break
+
+    selected_payload: dict = {"selected_service_id": next_id}
+    if rank is not None:
+        selected_payload["rank"] = rank
+
+    events = [
+        DiscreteEvent(
+            event_type=DiscreteEventType.CHOOSE_ANOTHER,
+            at=now,
+            payload={"selected_service_id": next_id},
+        ),
+        DiscreteEvent(
+            event_type=DiscreteEventType.SERVICE_SELECTED,
+            at=now,
+            payload=selected_payload,
+        ),
+    ]
+    new_journey_state = js.model_copy(update={"active_service_id": next_service_id})
+    return JourneyTransition(
+        events=events,
+        new_journey_state=new_journey_state,
+        new_status=ProposalRunStatus.service_selected,
+    )
+
+
+def _request_more(run_log: ProposalRunLog, action: JourneyAction, now: str) -> JourneyTransition:
+    """FR-011: surface the remaining eligible candidates WITHOUT producing
+    any new score — reuses ``_eligible_pool`` (no selector dispatch, no new
+    ``AlgorithmEvidence``). State is unchanged otherwise."""
+    if run_log.status != ProposalRunStatus.service_selected:
+        return _reject(
+            run_log,
+            "invalid_precondition",
+            (
+                "request_more requires a service_selected run / "
+                "request_moreはservice_selected状態のランでのみ有効です"
+            ),
+        )
+    js = run_log.journey_state
+    pool = _eligible_pool(run_log)
+    remaining = [cid for cid in pool if cid not in js.rejected_service_ids]
+    event = DiscreteEvent(
+        event_type=DiscreteEventType.REQUEST_MORE,
+        at=now,
+        payload={"remaining_candidate_ids": remaining},
+    )
+    return JourneyTransition(
+        events=[event],
+        new_journey_state=js,
+        new_status=run_log.status,
+    )
+
+
+def _postpone(run_log: ProposalRunLog, action: JourneyAction, now: str) -> JourneyTransition:
+    """FR-011: postpone the current proposal — the opportunity returns to an
+    open state. Kept minimal: ``active_service_id`` is left as-is and
+    ``status`` moves to (or stays at) ``service_selected`` so a later action
+    remains reachable, even when postponing away from ``content_selected``."""
+    if run_log.status not in (
+        ProposalRunStatus.service_selected,
+        ProposalRunStatus.content_selected,
+    ):
+        return _reject(
+            run_log,
+            "invalid_precondition",
+            (
+                "postpone requires a service_selected or content_selected run / "
+                "postponeはservice_selectedまたはcontent_selected状態のランでのみ有効です"
+            ),
+        )
+    event = DiscreteEvent(event_type=DiscreteEventType.POSTPONED, at=now, payload={})
+    return JourneyTransition(
+        events=[event],
+        new_journey_state=run_log.journey_state,
+        new_status=ProposalRunStatus.service_selected,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -290,6 +536,10 @@ _HANDLERS[JourneyActionType.accept] = _accept
 _HANDLERS[JourneyActionType.complete] = _complete
 _HANDLERS[JourneyActionType.continue_] = _continue
 _HANDLERS[JourneyActionType.stop] = _stop
+_HANDLERS[JourneyActionType.reject] = _reject_service
+_HANDLERS[JourneyActionType.choose_another] = _choose_another
+_HANDLERS[JourneyActionType.request_more] = _request_more
+_HANDLERS[JourneyActionType.postpone] = _postpone
 
 
 def apply_action(
