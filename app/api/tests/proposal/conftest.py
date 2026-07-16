@@ -85,6 +85,16 @@ def manifest_hyperparameters() -> dict:
     return {h["key"]: h["default"] for h in manifest["hyperparameters"]}
 
 
+def load_dispositions() -> list:
+    """Load the frozen content-feature disposition registry entries.
+
+    File I/O lives in the harness (the runtime adapter injects this the same way);
+    the pure package never opens the registry itself.
+    """
+    data = load_fixture("dispositions/content_feature_dispositions.v1.json")
+    return data["entries"]
+
+
 def load_catalog(relative_path: str) -> dict:
     """Load a song-DB JSON fixture and return a ``{track_id: Song}`` map.
 
@@ -138,6 +148,7 @@ def build_content_context(
         "parameters": parameters if parameters is not None else manifest.get("parameters", {}),
         "hyperparameters": hyperparameters or manifest_hyperparameters(),
         "package_runtime_state": {},
+        "feature_dispositions": load_dispositions(),
         "catalog_version": catalog_version,
         "run_seed": "seed-test",
     }

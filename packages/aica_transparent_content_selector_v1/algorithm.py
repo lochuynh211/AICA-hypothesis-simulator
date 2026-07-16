@@ -748,9 +748,66 @@ def evaluate(context: dict) -> dict:
     top_valence = chosen[0]["traits"]["valence"]
     lighting = _lighting(service_id, hp, params, top_valence)
 
-    # context-only / genre-gated-off / missing lists
-    unused_available = sorted({e["feature_id"] for k, e in weights.items() if e["mask"] == 0})
-    active_features = sorted({e["feature_id"] for e in scored_leaves.values()})
+    # ---- disposition-driven provenance over the full frozen registry (§9 / A.2) ----
+    # Every registry row is classified active / context_only / missing_neutral so the
+    # plan accounts for the selector's entire feature surface, not just its scored leaves.
+    registry = context.get("feature_dispositions") or []
+    reg_by_id = {r["feature_id"]: r for r in registry}
+
+    scored_fids = {e["feature_id"] for e in scored_leaves.values()}
+    all_leaf_fids = {e["feature_id"] for e in weights.values()}
+    masked_fids = all_leaf_fids - scored_fids  # leaves present but effective mask 0
+
+    # A scored feature is "present" when it carried evidence for any chosen song.
+    present_fids: set = set()
+    resp_prov_by_fid: dict = {}
+    for s in chosen:
+        for c in s["contributions"]:
+            fid = c["feature_id"]
+            resp_prov_by_fid.setdefault(fid, c["response_provenance"])
+            if c["e_i"] != 0.0 or c["a_i"] != 0.0:
+                present_fids.add(fid)
+
+    eff_weight_by_fid = {e["feature_id"]: e["effective_weight"] for e in scored_leaves.values()}
+
+    def _effective(fid):
+        if fid in scored_fids:
+            return "active" if fid in present_fids else "missing_neutral"
+        return "context_only"
+
+    report_ids = list(reg_by_id.keys())
+    for fid in sorted(all_leaf_fids):  # added constructs (e.g. song_singability) not in registry
+        if fid not in reg_by_id:
+            report_ids.append(fid)
+
+    feature_dispositions = []
+    active_features, context_only_features, missing_features = [], [], []
+    for fid in report_ids:
+        reg = reg_by_id.get(fid)
+        eff = _effective(fid)
+        feature_dispositions.append({
+            "feature_id": fid,
+            "category": reg["category"] if reg else "Added construct",
+            "feature_origin": reg["feature_origin"] if reg else "added_construct",
+            "registry_disposition": reg["disposition"] if reg else "scored",
+            "response_provenance": (
+                resp_prov_by_fid.get(fid)
+                or (reg.get("response_provenance") if reg else None)
+                or "context_only"),
+            "effective_disposition": eff,
+            "effective_weight": eff_weight_by_fid.get(fid),
+        })
+        if eff == "active":
+            active_features.append(fid)
+        elif eff == "missing_neutral":
+            missing_features.append(fid)
+        else:
+            context_only_features.append(fid)
+
+    active_features = sorted(set(active_features))
+    context_only_features = sorted(set(context_only_features))
+    missing_features = sorted(set(missing_features))
+    unused_available = context_only_features
 
     provenance = {
         "selected_service_id": service_id,
@@ -764,7 +821,9 @@ def evaluate(context: dict) -> dict:
         "genre_affinity_v1_enabled": genre_on,
         "directional_hypothesis": hp["directional_hypothesis"],
         "active_features": active_features,
-        "context_only_features": unused_available,
+        "context_only_features": context_only_features,
+        "missing_features": missing_features,
+        "feature_dispositions": feature_dispositions,
         "normalized_effective_weights": {e["feature_id"]: e["effective_weight"] for e in scored_leaves.values()},
         "sort_rule": "item_fit desc, track_id asc",
         "duration_basis": duration_basis,
@@ -785,6 +844,6 @@ def evaluate(context: dict) -> dict:
         "next_transition_policy": "await_user",
         "excluded_items": excluded_items,
         "unused_available_features": unused_available,
-        "missing_features": [],
+        "missing_features": missing_features,
         "algorithm_provenance": provenance,
     }
