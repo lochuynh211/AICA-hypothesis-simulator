@@ -1,0 +1,122 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826c6-21fa-ce52-bdb7-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/hiroshi-yoshimura/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/2/a4fcfa73-f21f-4705-a0c8-5a756243eb7b.jpg",
+      "name": "Hiroshi Yoshimura",
+      "slug": "hiroshi-yoshimura",
+      "uuid": "a4fcfa73-f21f-4705-a0c8-5a756243eb7b"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.98,
+    "danceability": 0.36,
+    "energy": 0.06,
+    "instrumentalness": 0.92,
+    "key": 0,
+    "liveness": 0.08,
+    "loudness": -19.13,
+    "mode": 1,
+    "speechiness": 0.06,
+    "tempo": 68.55,
+    "timeSignature": 5,
+    "valence": 0.34
+  },
+  "composers": [
+    "Hiroshi Yoshimura"
+  ],
+  "copyright": "2026 Nuvola / Yoko Yoshimura",
+  "creditName": "Hiroshi Yoshimura",
+  "credits": [
+    {
+      "name": "Hiroshi Yoshimura",
+      "roles": [
+        "publisher",
+        "producer",
+        "composer",
+        "author"
+      ],
+      "uuid": "9e54dd55-512b-4435-bd8d-92e3138f979c"
+    },
+    {
+      "name": "吉村弘",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "60b6b9fd-3d6f-4cea-99e5-5866e01d1fb6"
+    },
+    {
+      "name": "Michinori Yamazaki",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "38e04c27-e559-4783-b636-0cef528a0940"
+    },
+    {
+      "name": "Satoshi Ashikawa",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "8702fed4-de7b-40f6-a1a4-dda42fb15cd3"
+    }
+  ],
+  "distributor": "",
+  "duration": 282,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "electro",
+      "sub": [
+        "electronic"
+      ]
+    },
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/a/f/1/11e826c6-21fa-ce52-bdb7-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USDEA1759903"
+  },
+  "iswcs": [
+    "T1012815802"
+  ],
+  "labels": [
+    {
+      "name": "Nuvola",
+      "type": "Self released"
+    },
+    {
+      "name": "Yoko Yoshimura",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/hiroshi-yoshimura/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/2/a4fcfa73-f21f-4705-a0c8-5a756243eb7b.jpg",
+      "name": "Hiroshi Yoshimura",
+      "slug": "hiroshi-yoshimura",
+      "uuid": "a4fcfa73-f21f-4705-a0c8-5a756243eb7b"
+    }
+  ],
+  "name": "Blink",
+  "producers": [
+    "Satoshi Ashikawa"
+  ],
+  "releaseDate": "1982-01-01T00:00:00+00:00",
+  "uuid": "11e826c6-21fa-ce52-bdb7-a0369fe50396"
+}

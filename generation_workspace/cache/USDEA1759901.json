@@ -1,0 +1,107 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826c6-2262-fa04-a0a5-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/hiroshi-yoshimura/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/2/a4fcfa73-f21f-4705-a0c8-5a756243eb7b.jpg",
+      "name": "Hiroshi Yoshimura",
+      "slug": "hiroshi-yoshimura",
+      "uuid": "a4fcfa73-f21f-4705-a0c8-5a756243eb7b"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.95,
+    "danceability": 0.23,
+    "energy": 0,
+    "instrumentalness": 0.92,
+    "key": 1,
+    "liveness": 0.09,
+    "loudness": -27.27,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 107.78,
+    "timeSignature": 4,
+    "valence": 0.43
+  },
+  "composers": [
+    "Hiroshi Yoshimura"
+  ],
+  "copyright": "2026 Nuvola / Yoko Yoshimura",
+  "creditName": "Hiroshi Yoshimura",
+  "credits": [
+    {
+      "name": "Hiroshi Yoshimura",
+      "roles": [
+        "writer",
+        "producer",
+        "composer"
+      ],
+      "uuid": "9e54dd55-512b-4435-bd8d-92e3138f979c"
+    },
+    {
+      "name": "Satoshi Ashikawa",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "8702fed4-de7b-40f6-a1a4-dda42fb15cd3"
+    }
+  ],
+  "distributor": "",
+  "duration": 371,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "electro",
+      "sub": [
+        "electronic"
+      ]
+    },
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/2/6/2/11e826c6-2262-fa04-a0a5-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USDEA1759901"
+  },
+  "iswcs": [
+    "T1012815777"
+  ],
+  "labels": [
+    {
+      "name": "Nuvola",
+      "type": "Self released"
+    },
+    {
+      "name": "Yoko Yoshimura",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/hiroshi-yoshimura/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/2/a4fcfa73-f21f-4705-a0c8-5a756243eb7b.jpg",
+      "name": "Hiroshi Yoshimura",
+      "slug": "hiroshi-yoshimura",
+      "uuid": "a4fcfa73-f21f-4705-a0c8-5a756243eb7b"
+    }
+  ],
+  "name": "Water Copy",
+  "producers": [
+    "Hiroshi Yoshimura"
+  ],
+  "releaseDate": "1982-01-01T00:00:00+00:00",
+  "uuid": "11e826c6-2262-fa04-a0a5-a0369fe50396"
+}

@@ -1,0 +1,105 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82628-a6f0-5c38-9b38-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/jon-hopkins/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/f/a/11e81bca-eaf8-228e-8848-a0369fe50396.jpg",
+      "name": "Jon Hopkins",
+      "slug": "jon-hopkins",
+      "uuid": "11e81bca-eaf8-228e-8848-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.89,
+    "danceability": 0.44,
+    "energy": 0.31,
+    "instrumentalness": 0.92,
+    "key": 7,
+    "liveness": 0.11,
+    "loudness": -18.22,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 139.93,
+    "timeSignature": 4,
+    "valence": 0.06
+  },
+  "composers": [
+    "Jon Hopkins",
+    "Kenny Anderson"
+  ],
+  "copyright": "℗ 2014 Domino Recording Co Ltd",
+  "creditName": "Jon Hopkins",
+  "credits": [
+    {
+      "name": "Jon Hopkins",
+      "roles": [
+        "mix",
+        "producer",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "cd91d0f7-3e72-4d3d-a32f-0c67420bdc92"
+    },
+    {
+      "name": "Kenny Anderson",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "b27a33bc-f7c6-4e86-8698-59058a8ae0f7"
+    }
+  ],
+  "distributor": "Domino",
+  "duration": 596,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz"
+      ]
+    },
+    {
+      "root": "electro",
+      "sub": [
+        "dance",
+        "electronic"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/f/6/11e82628-a6f0-5c38-9b38-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBCEL1300090"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Domino",
+      "type": "Domino"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/jon-hopkins/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/f/a/11e81bca-eaf8-228e-8848-a0369fe50396.jpg",
+      "name": "Jon Hopkins",
+      "slug": "jon-hopkins",
+      "uuid": "11e81bca-eaf8-228e-8848-a0369fe50396"
+    }
+  ],
+  "name": "Immunity",
+  "producers": [
+    "Jon Hopkins"
+  ],
+  "releaseDate": "2013-06-03T00:00:00+00:00",
+  "uuid": "11e82628-a6f0-5c38-9b38-aa1c026db3d8"
+}

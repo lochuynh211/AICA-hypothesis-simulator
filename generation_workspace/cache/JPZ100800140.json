@@ -1,0 +1,85 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/4c25aae1-f278-4305-9a28-51fb8dd8ca00/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mono-627/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/4/c/5b1eee10-ec46-4ebb-a578-e78856d9ead7.jpg",
+      "name": "MONO",
+      "slug": "mono-627",
+      "uuid": "5b1eee10-ec46-4ebb-a578-e78856d9ead7"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.15,
+    "danceability": 0.17,
+    "energy": 0.53,
+    "instrumentalness": 0.83,
+    "key": 9,
+    "liveness": 0.1,
+    "loudness": -10.62,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 150.41,
+    "timeSignature": 4,
+    "valence": 0.17
+  },
+  "composers": [
+    "Takaakira Goto"
+  ],
+  "copyright": "2009 Human Highway Records",
+  "creditName": "MONO",
+  "credits": [
+    {
+      "name": "Steve Albini",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "f8587aa6-2aa0-4641-a765-9444d3f6fbb0"
+    }
+  ],
+  "distributor": "",
+  "duration": 705,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/7/2/4c25aae1-f278-4305-9a28-51fb8dd8ca00.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPZ100800140"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Human Highway",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mono-627/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/4/c/5b1eee10-ec46-4ebb-a578-e78856d9ead7.jpg",
+      "name": "MONO",
+      "slug": "mono-627",
+      "uuid": "5b1eee10-ec46-4ebb-a578-e78856d9ead7"
+    }
+  ],
+  "name": "Ashes In The Snow",
+  "producers": [],
+  "releaseDate": "2009-03-04T00:00:00+00:00",
+  "uuid": "4c25aae1-f278-4305-9a28-51fb8dd8ca00"
+}

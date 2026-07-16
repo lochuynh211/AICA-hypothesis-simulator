@@ -1,0 +1,102 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82612-f02e-86b0-a5f2-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aphex-twin/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/1/4/11e81bc8-6416-6ce6-9d45-a0369fe50396.jpg",
+      "name": "Aphex Twin",
+      "slug": "aphex-twin",
+      "uuid": "11e81bc8-6416-6ce6-9d45-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 1,
+    "danceability": 0.59,
+    "energy": 0.03,
+    "instrumentalness": 0.9,
+    "key": 5,
+    "liveness": 0.09,
+    "loudness": -29.99,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 78.99,
+    "timeSignature": 4,
+    "valence": 0.39
+  },
+  "composers": [
+    "Richard James"
+  ],
+  "copyright": "2001 Warp Records Limited",
+  "creditName": "Aphex Twin",
+  "credits": [
+    {
+      "name": "Richard James",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "5e457c74-aadc-40ab-ae09-a869097bb522"
+    },
+    {
+      "name": "Aphex Twin",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "66f1b6dc-45c4-4b24-af8b-be13bcf0babc"
+    }
+  ],
+  "distributor": "",
+  "duration": 125,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    },
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz"
+      ]
+    },
+    {
+      "root": "electro",
+      "sub": [
+        "dance",
+        "electronic"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/e/2/0/11e82612-f02e-86b0-a5f2-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBBPW0100148"
+  },
+  "iswcs": [
+    "T0100428225"
+  ],
+  "labels": [
+    {
+      "name": "Warp",
+      "type": "WARP"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aphex-twin/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/1/4/11e81bc8-6416-6ce6-9d45-a0369fe50396.jpg",
+      "name": "Aphex Twin",
+      "slug": "aphex-twin",
+      "uuid": "11e81bc8-6416-6ce6-9d45-a0369fe50396"
+    }
+  ],
+  "name": "Avril 14th",
+  "producers": [
+    "Aphex Twin"
+  ],
+  "releaseDate": "2001-10-22T00:00:00+00:00",
+  "uuid": "11e82612-f02e-86b0-a5f2-aa1c026db3d8"
+}

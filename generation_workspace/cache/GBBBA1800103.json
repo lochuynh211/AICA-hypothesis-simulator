@@ -1,0 +1,115 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8a9fe-36d3-b4f4-b51a-525400009efb/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/olafur-arnalds/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/d/5/11e81bba-d5df-3866-81ba-a0369fe50396.jpg",
+      "name": "Ólafur Arnalds",
+      "slug": "olafur-arnalds",
+      "uuid": "11e81bba-d5df-3866-81ba-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.99,
+    "danceability": 0.58,
+    "energy": 0.02,
+    "instrumentalness": 0.85,
+    "key": 0,
+    "liveness": 0.1,
+    "loudness": -32.24,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 108.74,
+    "timeSignature": 4,
+    "valence": 0.43
+  },
+  "composers": [
+    "Ólafur Arnalds"
+  ],
+  "copyright": "℗ 2018 Ólafur Arnalds, under exclusive license to Mercury KX, a division of Decca Music Group limited",
+  "creditName": "Ólafur Arnalds",
+  "credits": [
+    {
+      "name": "Ólafur Arnalds",
+      "roles": [
+        "producer",
+        "piano",
+        "mix",
+        "composer",
+        "studio personnel"
+      ],
+      "uuid": "02a8580f-cf2a-4805-a139-eb4c86d0a9e6"
+    },
+    {
+      "name": "Zino Mikorey",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "c47b19ec-01e0-4ba7-ba59-c708010edd6f"
+    },
+    {
+      "name": "Bergur Þórisson",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "d3fb03c1-e02d-4182-8e53-4c1b7fa477bc"
+    },
+    {
+      "name": "Kjartan Holm",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "0ed3118e-3315-49b6-87ab-7f029f01ef44"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 131,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/d/6/11e8a9fe-36d3-b4f4-b51a-525400009efb.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBBBA1800103"
+  },
+  "iswcs": [
+    "T9252632863"
+  ],
+  "labels": [
+    {
+      "name": "Decca",
+      "type": "Universal"
+    },
+    {
+      "name": "Mercury KX",
+      "type": "Universal"
+    },
+    {
+      "name": "Ólafur Arnalds",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/olafur-arnalds/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/d/5/11e81bba-d5df-3866-81ba-a0369fe50396.jpg",
+      "name": "Ólafur Arnalds",
+      "slug": "olafur-arnalds",
+      "uuid": "11e81bba-d5df-3866-81ba-a0369fe50396"
+    }
+  ],
+  "name": "saman",
+  "producers": [
+    "Ólafur Arnalds"
+  ],
+  "releaseDate": "2018-08-24T00:00:00+00:00",
+  "uuid": "11e8a9fe-36d3-b4f4-b51a-525400009efb"
+}

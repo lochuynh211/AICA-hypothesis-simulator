@@ -1,0 +1,93 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/c11d8431-21d4-4cbd-884b-98a6007dcc34/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/nils-frahm/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/f/f/11e81bc1-2ffa-f65e-bbd6-a0369fe50396.jpg",
+      "name": "Nils Frahm",
+      "slug": "nils-frahm",
+      "uuid": "11e81bc1-2ffa-f65e-bbd6-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.99,
+    "danceability": 0.41,
+    "energy": 0.05,
+    "instrumentalness": 0.94,
+    "key": 1,
+    "liveness": 0.12,
+    "loudness": -25.61,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 145.83,
+    "timeSignature": 3,
+    "valence": 0.34
+  },
+  "composers": [
+    "Nils Frahm",
+    "Frahm, Nils"
+  ],
+  "copyright": "2009 Erased Tapes Records Ltd.",
+  "creditName": "Nils Frahm",
+  "credits": [
+    {
+      "name": "Nils Oliver Frahm",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "5b7b13f0-8b25-4dbb-ad60-8c0bbefbcc9d"
+    }
+  ],
+  "distributor": "",
+  "duration": 227,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    },
+    {
+      "root": "electro",
+      "sub": [
+        "electronic"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/4/d/1/c11d8431-21d4-4cbd-884b-98a6007dcc34.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBWZD0901801"
+  },
+  "iswcs": [
+    "T0044451208"
+  ],
+  "labels": [
+    {
+      "name": "Erased Tapes",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/nils-frahm/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/f/f/11e81bc1-2ffa-f65e-bbd6-a0369fe50396.jpg",
+      "name": "Nils Frahm",
+      "slug": "nils-frahm",
+      "uuid": "11e81bc1-2ffa-f65e-bbd6-a0369fe50396"
+    }
+  ],
+  "name": "Ambre",
+  "producers": [],
+  "releaseDate": "2009-12-07T00:00:00+00:00",
+  "uuid": "c11d8431-21d4-4cbd-884b-98a6007dcc34"
+}

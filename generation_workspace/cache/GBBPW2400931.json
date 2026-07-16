@@ -1,0 +1,94 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/0bc29b99-aa98-4cfd-8620-990fcf7c2519/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aphex-twin/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/1/4/11e81bc8-6416-6ce6-9d45-a0369fe50396.jpg",
+      "name": "Aphex Twin",
+      "slug": "aphex-twin",
+      "uuid": "11e81bc8-6416-6ce6-9d45-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.89,
+    "danceability": 0.2,
+    "energy": 0.15,
+    "instrumentalness": 0.83,
+    "key": 6,
+    "liveness": 0.11,
+    "loudness": -22.58,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 139.07,
+    "timeSignature": 5,
+    "valence": 0.07
+  },
+  "composers": [
+    "Richard D. James"
+  ],
+  "copyright": "2024 Warp Records",
+  "creditName": "Aphex Twin",
+  "credits": [
+    {
+      "name": "Aphex Twin",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "66f1b6dc-45c4-4b24-af8b-be13bcf0babc"
+    },
+    {
+      "name": "Richard D. James",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "3437da1b-5fd5-4dcd-932f-0b2334ac3bc9"
+    }
+  ],
+  "distributor": "",
+  "duration": 464,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz"
+      ]
+    },
+    {
+      "root": "electro",
+      "sub": [
+        "electronic",
+        "dance"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/9/a/0bc29b99-aa98-4cfd-8620-990fcf7c2519.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBBPW2400931"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Warp",
+      "type": "WARP"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aphex-twin/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/1/4/11e81bc8-6416-6ce6-9d45-a0369fe50396.jpg",
+      "name": "Aphex Twin",
+      "slug": "aphex-twin",
+      "uuid": "11e81bc8-6416-6ce6-9d45-a0369fe50396"
+    }
+  ],
+  "name": "#3",
+  "producers": [
+    "Aphex Twin"
+  ],
+  "releaseDate": "2024-10-01T00:00:00+00:00",
+  "uuid": "0bc29b99-aa98-4cfd-8620-990fcf7c2519"
+}

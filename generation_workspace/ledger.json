@@ -3920,5 +3920,326 @@
     "miss_reason": null,
     "cell": "E-md_T-hi_P-bv",
     "loop": 27
+  },
+  {
+    "keys": {
+      "normalized_name": "through the looking glass|midori takada"
+    },
+    "outcome": "miss",
+    "miss_reason": "song_not_found_in_sources",
+    "cell": null,
+    "loop": 28
+  },
+  {
+    "keys": {
+      "normalized_name": "mr. henri rousseau's dream|midori takada"
+    },
+    "outcome": "miss",
+    "miss_reason": "song_not_found_in_sources",
+    "cell": null,
+    "loop": 28
+  },
+  {
+    "keys": {
+      "normalized_name": "ekaki uta|yasuaki shimizu"
+    },
+    "outcome": "miss",
+    "miss_reason": "song_not_found_in_sources",
+    "cell": null,
+    "loop": 28
+  },
+  {
+    "keys": {
+      "normalized_name": "pop ostinato|inoyama land"
+    },
+    "outcome": "miss",
+    "miss_reason": "song_not_found_in_sources",
+    "cell": null,
+    "loop": 28
+  },
+  {
+    "keys": {
+      "normalized_name": "sonata|nujabes"
+    },
+    "outcome": "miss",
+    "miss_reason": "song_not_found_in_sources",
+    "cell": null,
+    "loop": 28
+  },
+  {
+    "keys": {
+      "normalized_name": "flowers|dj okawari"
+    },
+    "outcome": "miss",
+    "miss_reason": "song_not_found_in_sources",
+    "cell": null,
+    "loop": 28
+  },
+  {
+    "keys": {
+      "normalized_name": "reckoner|brian eno"
+    },
+    "outcome": "miss",
+    "miss_reason": "song_not_found_in_sources",
+    "cell": null,
+    "loop": 28
+  },
+  {
+    "keys": {
+      "normalized_name": "dallas|nils frahm"
+    },
+    "outcome": "miss",
+    "miss_reason": "song_not_found_in_sources",
+    "cell": null,
+    "loop": 28
+  },
+  {
+    "keys": {
+      "normalized_name": "the cinema show|stars of the lid"
+    },
+    "outcome": "miss",
+    "miss_reason": "song_not_found_in_sources",
+    "cell": null,
+    "loop": 28
+  },
+  {
+    "keys": {
+      "isrc": "USDEA1759901",
+      "normalized_name": "water copy|hiroshi yoshimura"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-md_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "USDEA1759903",
+      "normalized_name": "blink|hiroshi yoshimura"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-lo_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "USDEA2019202",
+      "normalized_name": "feel|hiroshi yoshimura"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-md_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "JPZ921702692",
+      "normalized_name": "glass chattering|yoshio ojima"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-lo_P-bv",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "JPZ100800140",
+      "normalized_name": "ashes|mono"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-hi_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "JPZ100500071",
+      "normalized_name": "yearning|mono"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-hi_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "JPZ920911820",
+      "normalized_name": "two moons|toe"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-hi_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "GBDCA0300279",
+      "normalized_name": "on the nature of daylight|max richter"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-lo_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "DEN962238018",
+      "normalized_name": "sleep|max richter"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-lo_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "GBWZD1305502",
+      "normalized_name": "says|nils frahm"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-hi_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "DEX260990338",
+      "normalized_name": "re|nils frahm"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-md_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "GBWZD1103702",
+      "normalized_name": "near light|olafur arnalds"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-md_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "GBBBA1800103",
+      "normalized_name": "saman|olafur arnalds"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-md_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "ITB280600002",
+      "normalized_name": "divenire|ludovico einaudi"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-lo_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "GBDCA0300288",
+      "normalized_name": "written on the sky|max richter"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-md_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "GBWZD0901801",
+      "normalized_name": "ambre|nils frahm"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-hi_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "BEZ350800022",
+      "normalized_name": "xtal|aphex twin"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-md_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "GBBPW2400931",
+      "normalized_name": "rhubarb|aphex twin"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-hi_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "GBAAA0500105",
+      "normalized_name": "deep blue day|brian eno"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-hi_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "GBBPW9800019",
+      "normalized_name": "roygbiv|boards of canada"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-lo_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "GBBPW0500098",
+      "normalized_name": "dayvan cowboy|boards of canada"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-hi_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "GBCEL1300090",
+      "normalized_name": "immunity|jon hopkins"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-hi_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "GBDDN0800296",
+      "normalized_name": "small memory|jon hopkins"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-hi_P-il",
+    "loop": 29
+  },
+  {
+    "keys": {
+      "isrc": "GBBPW0100148",
+      "normalized_name": "avril 14th|aphex twin"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-lo_P-il",
+    "loop": 29
   }
 ]

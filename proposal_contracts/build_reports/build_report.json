@@ -1,9 +1,9 @@
 {
   "candidate_source": "isrc_resolved",
-  "loop": 27,
+  "loop": 29,
   "new_vs_skipped": {
-    "accepted": 277,
-    "miss": 128,
+    "accepted": 301,
+    "miss": 137,
     "by_loop": {
       "loop1:miss": 11,
       "loop2:accepted": 25,
@@ -43,10 +43,12 @@
       "loop25:miss": 5,
       "loop26:miss": 5,
       "loop27:accepted": 25,
-      "loop27:miss": 1
+      "loop27:miss": 1,
+      "loop28:miss": 9,
+      "loop29:accepted": 24
     }
   },
-  "soundcharts_calls": 379,
+  "soundcharts_calls": 403,
   "probe_result": {},
   "repairs": [],
   "coverage_checklist": {
@@ -64,10 +66,11 @@
     "passed": false
   },
   "agreement_stats": {
-    "agree": 5,
-    "disagree": 3,
+    "agree": 4,
+    "disagree": 4,
     "disagreements": [
       "tc-03",
+      "tc-04",
       "tc-05",
       "tc-07"
     ]
@@ -83,7 +86,7 @@
     },
     {
       "code": "song_not_found_in_sources",
-      "count": 95
+      "count": 104
     }
   ]
 }

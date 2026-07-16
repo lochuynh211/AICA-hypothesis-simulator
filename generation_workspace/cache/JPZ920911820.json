@@ -1,0 +1,132 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8262b-2c91-7a82-933f-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/toe/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/2/b/11e81bc9-7b27-d9be-a67a-a0369fe50396.jpg",
+      "name": "toe",
+      "slug": "toe",
+      "uuid": "11e81bc9-7b27-d9be-a67a-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.79,
+    "danceability": 0.34,
+    "energy": 0.46,
+    "instrumentalness": 0.73,
+    "key": 11,
+    "liveness": 0.09,
+    "loudness": -11.21,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 141.02,
+    "timeSignature": 4,
+    "valence": 0.47
+  },
+  "composers": [
+    "toe"
+  ],
+  "copyright": "2009 Machupicchu Industrias",
+  "creditName": "toe",
+  "credits": [
+    {
+      "name": "中村圭作 (Nakamura Keisaku)",
+      "roles": [
+        "keyboard"
+      ],
+      "uuid": "2c3e088a-e115-46d0-844b-de9c2c7fd60d"
+    },
+    {
+      "name": "柏倉隆史 (Kashikura Takashi)",
+      "roles": [
+        "writer",
+        "drums"
+      ],
+      "uuid": "f3f4866b-0a77-4cec-a917-6daf8028109b"
+    },
+    {
+      "name": "山根さとし (Yamane Satoshi)",
+      "roles": [
+        "writer",
+        "bass guitar"
+      ],
+      "uuid": "909278e3-1bda-4649-a20a-e4f74f3708f8"
+    },
+    {
+      "name": "美濃隆章 (Mino Takaaki)",
+      "roles": [
+        "producer",
+        "writer",
+        "guitar"
+      ],
+      "uuid": "8ee032fa-bac5-4ec7-8603-5a63f22525f8"
+    },
+    {
+      "name": "toe",
+      "roles": [
+        "writer",
+        "guitar",
+        "composer"
+      ],
+      "uuid": "bc808e19-92d0-44dc-be37-510727e2cedb"
+    }
+  ],
+  "distributor": "",
+  "duration": 250,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    },
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/1/9/c/11e8262b-2c91-7a82-933f-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPZ920911820"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Machupicchu Industrias",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/toe/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/2/b/11e81bc9-7b27-d9be-a67a-a0369fe50396.jpg",
+      "name": "toe",
+      "slug": "toe",
+      "uuid": "11e81bc9-7b27-d9be-a67a-a0369fe50396"
+    }
+  ],
+  "name": "Two Moons",
+  "producers": [
+    "美濃隆章 (Mino Takaaki)"
+  ],
+  "releaseDate": "2009-12-09T00:00:00+00:00",
+  "uuid": "11e8262b-2c91-7a82-933f-aa1c026db3d8"
+}

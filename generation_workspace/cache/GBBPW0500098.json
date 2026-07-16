@@ -1,0 +1,106 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8261c-0109-e62e-850d-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/boards-of-canada/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/8/e/11e81bcc-ae8e-1d10-9e23-a0369fe50396.jpg",
+      "name": "Boards of Canada",
+      "slug": "boards-of-canada",
+      "uuid": "11e81bcc-ae8e-1d10-9e23-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.51,
+    "danceability": 0.32,
+    "energy": 0.62,
+    "instrumentalness": 0.82,
+    "key": 11,
+    "liveness": 0.07,
+    "loudness": -10.77,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 167.95,
+    "timeSignature": 4,
+    "valence": 0.04
+  },
+  "composers": [
+    "Marcus Eoin",
+    "Michael Sandison"
+  ],
+  "copyright": "2005 Warp Records",
+  "creditName": "Boards of Canada",
+  "credits": [
+    {
+      "name": "Sandison",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "5025ee17-00b5-4749-b391-b80a4ca0c6d4"
+    },
+    {
+      "name": "Eoin",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "a9677030-5db9-423a-8ddb-0dbf38b5e15a"
+    }
+  ],
+  "distributor": "",
+  "duration": 300,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    },
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz"
+      ]
+    },
+    {
+      "root": "electro",
+      "sub": [
+        "dance",
+        "electronic"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/9/0/1/11e8261c-0109-e62e-850d-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBBPW0500098"
+  },
+  "iswcs": [
+    "T0116124072"
+  ],
+  "labels": [
+    {
+      "name": "Warp",
+      "type": "WARP"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/boards-of-canada/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/8/e/11e81bcc-ae8e-1d10-9e23-a0369fe50396.jpg",
+      "name": "Boards of Canada",
+      "slug": "boards-of-canada",
+      "uuid": "11e81bcc-ae8e-1d10-9e23-a0369fe50396"
+    }
+  ],
+  "name": "Dayvan Cowboy",
+  "producers": [
+    "Michael Sandison",
+    "Marcus Eoin"
+  ],
+  "releaseDate": "2005-10-17T00:00:00+00:00",
+  "uuid": "11e8261c-0109-e62e-850d-a0369fe50396"
+}

@@ -1,0 +1,104 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/9f46e18c-b5d0-421b-afb2-09be7ac528a3/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/hiroshi-yoshimura/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/2/a4fcfa73-f21f-4705-a0c8-5a756243eb7b.jpg",
+      "name": "Hiroshi Yoshimura",
+      "slug": "hiroshi-yoshimura",
+      "uuid": "a4fcfa73-f21f-4705-a0c8-5a756243eb7b"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.98,
+    "danceability": 0.2,
+    "energy": 0.14,
+    "instrumentalness": 0.97,
+    "key": 7,
+    "liveness": 0.09,
+    "loudness": -21.48,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 112.05,
+    "timeSignature": 4,
+    "valence": 0.03
+  },
+  "composers": [
+    "Hiroshi Yoshimura"
+  ],
+  "copyright": "1986 Light In The Attic Records",
+  "creditName": "Hiroshi Yoshimura",
+  "credits": [
+    {
+      "name": "Hiroshi Yoshimura",
+      "roles": [
+        "producer",
+        "writer",
+        "composer"
+      ],
+      "uuid": "9e54dd55-512b-4435-bd8d-92e3138f979c"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 267,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "electro",
+      "sub": [
+        "electronic"
+      ]
+    },
+    {
+      "root": "pop",
+      "sub": [
+        "international pop",
+        "pop"
+      ]
+    },
+    {
+      "root": "folk",
+      "sub": [
+        "international folklore"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "asian",
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/d/5/9f46e18c-b5d0-421b-afb2-09be7ac528a3.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USDEA2019202"
+  },
+  "iswcs": [
+    "T1015470161"
+  ],
+  "labels": [
+    {
+      "name": "Light In The Attic",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/hiroshi-yoshimura/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/2/a4fcfa73-f21f-4705-a0c8-5a756243eb7b.jpg",
+      "name": "Hiroshi Yoshimura",
+      "slug": "hiroshi-yoshimura",
+      "uuid": "a4fcfa73-f21f-4705-a0c8-5a756243eb7b"
+    }
+  ],
+  "name": "Feel",
+  "producers": [
+    "Hiroshi Yoshimura"
+  ],
+  "releaseDate": "1986-03-03T00:00:00+00:00",
+  "uuid": "9f46e18c-b5d0-421b-afb2-09be7ac528a3"
+}
