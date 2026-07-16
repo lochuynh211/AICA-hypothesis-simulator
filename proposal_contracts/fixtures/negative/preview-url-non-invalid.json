@@ -1,0 +1,94 @@
+{
+  "spotify_track": {
+    "album": {
+      "album_type": "album",
+      "total_tracks": 10,
+      "available_markets": ["JP"],
+      "external_urls": {
+        "spotify": "https://example.invalid/spotify/album/synthetic-album-neg-07"
+      },
+      "href": "https://example.invalid/spotify/v1/albums/synthetic-album-neg-07",
+      "id": "synthetic-album-neg-07",
+      "images": [
+        {
+          "url": "https://example.invalid/images/synthetic-album-neg-07-640.jpg",
+          "height": 640,
+          "width": 640
+        }
+      ],
+      "name": "Negative Test Album",
+      "release_date": "2023-01-01",
+      "release_date_precision": "day",
+      "type": "album",
+      "uri": "spotify:album:synthetic-album-neg-07",
+      "artists": [
+        {
+          "external_urls": {
+            "spotify": "https://example.invalid/spotify/artist/synthetic-artist-neg-07"
+          },
+          "href": "https://example.invalid/spotify/v1/artists/synthetic-artist-neg-07",
+          "id": "synthetic-artist-neg-07",
+          "name": "Negative Artist Seven",
+          "type": "artist",
+          "uri": "spotify:artist:synthetic-artist-neg-07"
+        }
+      ]
+    },
+    "artists": [
+      {
+        "external_urls": {
+          "spotify": "https://example.invalid/spotify/artist/synthetic-artist-neg-07"
+        },
+        "href": "https://example.invalid/spotify/v1/artists/synthetic-artist-neg-07",
+        "id": "synthetic-artist-neg-07",
+        "name": "Negative Artist Seven",
+        "type": "artist",
+        "uri": "spotify:artist:synthetic-artist-neg-07"
+      }
+    ],
+    "available_markets": ["JP"],
+    "disc_number": 1,
+    "duration_ms": 210000,
+    "explicit": false,
+    "external_ids": {
+      "isrc": "SYNTHN00007"
+    },
+    "external_urls": {
+      "spotify": "https://example.invalid/spotify/track/synthetic-track-neg-07"
+    },
+    "href": "https://example.invalid/spotify/v1/tracks/synthetic-track-neg-07",
+    "id": "synthetic-track-neg-07",
+    "is_local": false,
+    "is_playable": true,
+    "name": "Preview URL Non-Invalid Song",
+    "popularity": 50,
+    "preview_url": "https://cdn.example.com/previews/synthetic-track-neg-07-30s.mp3",
+    "track_number": 1,
+    "type": "track",
+    "uri": "spotify:track:synthetic-track-neg-07"
+  },
+  "spotify_audio_features": {
+    "acousticness": 0.200,
+    "analysis_url": "https://example.invalid/spotify/v1/audio-analysis/synthetic-track-neg-07",
+    "danceability": 0.500,
+    "duration_ms": 210000,
+    "energy": 0.600,
+    "id": "synthetic-track-neg-07",
+    "instrumentalness": 0.010,
+    "key": 5,
+    "liveness": 0.080,
+    "loudness": -8.000,
+    "mode": 0,
+    "speechiness": 0.040,
+    "tempo": 100.000,
+    "time_signature": 4,
+    "track_href": "https://example.invalid/spotify/v1/tracks/synthetic-track-neg-07",
+    "type": "audio_features",
+    "uri": "spotify:track:synthetic-track-neg-07",
+    "valence": 0.500
+  },
+  "simulation_flags": {
+    "humming_karaoke_available": 1,
+    "full_karaoke_available": 1
+  }
+}

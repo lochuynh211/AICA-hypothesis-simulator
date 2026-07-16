@@ -1,0 +1,506 @@
+{
+  "$defs": {
+    "ContentDecisionType": {
+      "description": "Outcome category returned by the content selector (spec §5.4).",
+      "enum": [
+        "complete_plan",
+        "no_proposal",
+        "insufficient_eligible_items",
+        "unsupported_service",
+        "unsupported_recipe",
+        "invalid_request",
+        "invalid_catalog",
+        "invalid_configuration",
+        "full_karaoke_requires_stopped"
+      ],
+      "title": "ContentDecisionType",
+      "type": "string"
+    },
+    "ExcludedItem": {
+      "description": "An item excluded from the plan, with structured reason codes.",
+      "properties": {
+        "item_id": {
+          "title": "Item Id",
+          "type": "string"
+        },
+        "reason_codes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reason Codes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "item_id",
+        "reason_codes"
+      ],
+      "title": "ExcludedItem",
+      "type": "object"
+    },
+    "ItemFeatureContribution": {
+      "description": "Per-feature contribution detail for a single ordered item.\n\nAll numeric fields are as defined in the transparent content algorithm\nspecification §14.  ``alpha``, ``beta``, ``exact_match``, and\n``response_provenance`` may be None for features that do not use them.",
+      "properties": {
+        "a_i": {
+          "title": "A I",
+          "type": "number"
+        },
+        "alpha": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Alpha"
+        },
+        "base_weight": {
+          "title": "Base Weight",
+          "type": "number"
+        },
+        "beta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Beta"
+        },
+        "contribution": {
+          "title": "Contribution",
+          "type": "number"
+        },
+        "e_i": {
+          "title": "E I",
+          "type": "number"
+        },
+        "effective_weight": {
+          "title": "Effective Weight",
+          "type": "number"
+        },
+        "exact_match": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Exact Match"
+        },
+        "feature_id": {
+          "title": "Feature Id",
+          "type": "string"
+        },
+        "formula_version": {
+          "title": "Formula Version",
+          "type": "string"
+        },
+        "mask": {
+          "title": "Mask",
+          "type": "integer"
+        },
+        "purpose_multiplier": {
+          "title": "Purpose Multiplier",
+          "type": "number"
+        },
+        "r_i": {
+          "title": "R I",
+          "type": "number"
+        },
+        "response_provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ResponseCoefficientProvenance"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "feature_id",
+        "e_i",
+        "a_i",
+        "alpha",
+        "beta",
+        "exact_match",
+        "response_provenance",
+        "r_i",
+        "base_weight",
+        "purpose_multiplier",
+        "mask",
+        "effective_weight",
+        "contribution",
+        "formula_version"
+      ],
+      "title": "ItemFeatureContribution",
+      "type": "object"
+    },
+    "LightingConfiguration": {
+      "description": "Optional lighting cue configuration.\n\nPresent only for lighting-compatible services.\n``enabled=False`` suppresses cues without removing the object.\nThe lighting configuration NEVER affects ``item_fit``.",
+      "properties": {
+        "cue_basis": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cue Basis"
+        },
+        "enabled": {
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Notes"
+        }
+      },
+      "required": [
+        "enabled",
+        "cue_basis",
+        "notes"
+      ],
+      "title": "LightingConfiguration",
+      "type": "object"
+    },
+    "OrderedItem": {
+      "description": "A single item in the ordered plan returned by the content selector.\n\n``item_fit`` is ``None`` for LLM-shaped plans (no numeric fit score).\n``feature_contributions`` is empty for LLM-shaped plans.\n``trait_values`` is ``None`` when no song-trait computation was performed.",
+      "properties": {
+        "feature_contributions": {
+          "items": {
+            "$ref": "#/$defs/ItemFeatureContribution"
+          },
+          "title": "Feature Contributions",
+          "type": "array"
+        },
+        "item_fit": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Item Fit"
+        },
+        "item_id": {
+          "title": "Item Id",
+          "type": "string"
+        },
+        "position": {
+          "title": "Position",
+          "type": "integer"
+        },
+        "rationale": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Rationale",
+          "type": "array"
+        },
+        "trait_values": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SongTraitValues"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "position",
+        "item_id",
+        "item_fit",
+        "trait_values",
+        "feature_contributions",
+        "rationale"
+      ],
+      "title": "OrderedItem",
+      "type": "object"
+    },
+    "PlanMode": {
+      "description": "Playback mode descriptor for the selected service.\n\nThe ``mode_kind`` discriminates playlist / humming / full-karaoke shapes.\nFields not applicable to the current mode_kind are ``None``.",
+      "properties": {
+        "chorus_only": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Chorus Only"
+        },
+        "driving_lyrics": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Driving Lyrics"
+        },
+        "fixed_segment_sec": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Fixed Segment Sec"
+        },
+        "guide_vocal": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Guide Vocal"
+        },
+        "mode_kind": {
+          "enum": [
+            "playlist",
+            "humming",
+            "full_karaoke"
+          ],
+          "title": "Mode Kind",
+          "type": "string"
+        },
+        "service_id": {
+          "$ref": "#/$defs/ServiceId"
+        },
+        "simulated_queue": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Simulated Queue"
+        },
+        "stopped_only": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Stopped Only"
+        }
+      },
+      "required": [
+        "service_id",
+        "mode_kind",
+        "chorus_only",
+        "guide_vocal",
+        "driving_lyrics",
+        "fixed_segment_sec",
+        "stopped_only",
+        "simulated_queue"
+      ],
+      "title": "PlanMode",
+      "type": "object"
+    },
+    "ResponseCoefficientProvenance": {
+      "description": "Provenance of a response coefficient (distinct from feature-origin provenance — FR-020).",
+      "enum": [
+        "cdc_su_explicit",
+        "service_definition",
+        "normalized_context_hypothesis"
+      ],
+      "title": "ResponseCoefficientProvenance",
+      "type": "string"
+    },
+    "ServiceId": {
+      "description": "Catalog service identifiers (spec §7.1–7.2, 14 services).",
+      "enum": [
+        "music_playlist",
+        "humming_karaoke",
+        "call_response_driving",
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "conversation_audio",
+        "live_viewing",
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped",
+        "oshi_reexperience",
+        "relaxation_multisensory",
+        "linked_video_recommendation"
+      ],
+      "title": "ServiceId",
+      "type": "string"
+    },
+    "SongTraitValues": {
+      "description": "Decision-time song trait values (never stored as catalog metadata).\n\nAll six values are required; they are computed at content-selection time\nfrom audio features and never persist in the song catalog.",
+      "properties": {
+        "arousal": {
+          "title": "Arousal",
+          "type": "number"
+        },
+        "arousal_signed": {
+          "title": "Arousal Signed",
+          "type": "number"
+        },
+        "full_karaoke_ease": {
+          "title": "Full Karaoke Ease",
+          "type": "number"
+        },
+        "humming_ease": {
+          "title": "Humming Ease",
+          "type": "number"
+        },
+        "valence": {
+          "title": "Valence",
+          "type": "number"
+        },
+        "valence_signed": {
+          "title": "Valence Signed",
+          "type": "number"
+        }
+      },
+      "required": [
+        "arousal",
+        "valence",
+        "humming_ease",
+        "full_karaoke_ease",
+        "arousal_signed",
+        "valence_signed"
+      ],
+      "title": "SongTraitValues",
+      "type": "object"
+    }
+  },
+  "description": "Complete content-selector output (C2).\n\nRepresents either a transparent (scored) plan or an LLM-shaped plan.\nThe two shapes differ only in whether ``item_fit`` is populated and\nwhether ``feature_contributions`` is non-empty — the outer structure\nis identical.\n\nINVARIANT: This model and every nested model must contain NO field\nnamed ``plan_score``, ``aggregate_score``, or ``plan_fit``.",
+  "properties": {
+    "algorithm_provenance": {
+      "title": "Algorithm Provenance",
+      "type": "object"
+    },
+    "approval_policy": {
+      "title": "Approval Policy",
+      "type": "string"
+    },
+    "completion_rule": {
+      "title": "Completion Rule",
+      "type": "string"
+    },
+    "decision_type": {
+      "$ref": "#/$defs/ContentDecisionType"
+    },
+    "excluded_items": {
+      "items": {
+        "$ref": "#/$defs/ExcludedItem"
+      },
+      "title": "Excluded Items",
+      "type": "array"
+    },
+    "expected_duration_sec": {
+      "title": "Expected Duration Sec",
+      "type": "integer"
+    },
+    "lighting_configuration": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/LightingConfiguration"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "missing_features": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Missing Features",
+      "type": "array"
+    },
+    "mode": {
+      "$ref": "#/$defs/PlanMode"
+    },
+    "next_transition_policy": {
+      "title": "Next Transition Policy",
+      "type": "string"
+    },
+    "ordered_items": {
+      "items": {
+        "$ref": "#/$defs/OrderedItem"
+      },
+      "title": "Ordered Items",
+      "type": "array"
+    },
+    "requested_item_count": {
+      "default": 5,
+      "title": "Requested Item Count",
+      "type": "integer"
+    },
+    "returned_item_count": {
+      "title": "Returned Item Count",
+      "type": "integer"
+    },
+    "selected_service_id": {
+      "$ref": "#/$defs/ServiceId"
+    },
+    "unused_available_features": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Unused Available Features",
+      "type": "array"
+    }
+  },
+  "required": [
+    "decision_type",
+    "selected_service_id",
+    "returned_item_count",
+    "ordered_items",
+    "mode",
+    "expected_duration_sec",
+    "approval_policy",
+    "completion_rule",
+    "next_transition_policy",
+    "excluded_items",
+    "unused_available_features",
+    "missing_features",
+    "algorithm_provenance"
+  ],
+  "title": "CompletePlan",
+  "type": "object"
+}

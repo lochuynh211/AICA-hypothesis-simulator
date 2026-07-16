@@ -1,0 +1,99 @@
+{
+  "spotify_track": {
+    "album": {
+      "album_type": "single",
+      "total_tracks": 2,
+      "available_markets": ["JP"],
+      "external_urls": {
+        "spotify": "https://example.invalid/spotify/album/synthetic-album-0002"
+      },
+      "href": "https://example.invalid/spotify/v1/albums/synthetic-album-0002",
+      "id": "synthetic-album-0002",
+      "images": [
+        {
+          "url": "https://example.invalid/images/synthetic-album-0002-640.jpg",
+          "height": 640,
+          "width": 640
+        },
+        {
+          "url": "https://example.invalid/images/synthetic-album-0002-300.jpg",
+          "height": 300,
+          "width": 300
+        }
+      ],
+      "name": "Sakura Signal",
+      "release_date": "2021-03-15",
+      "release_date_precision": "day",
+      "type": "album",
+      "uri": "spotify:album:synthetic-album-0002",
+      "artists": [
+        {
+          "external_urls": {
+            "spotify": "https://example.invalid/spotify/artist/synthetic-artist-0002"
+          },
+          "href": "https://example.invalid/spotify/v1/artists/synthetic-artist-0002",
+          "id": "synthetic-artist-0002",
+          "name": "Hana Kitazawa",
+          "type": "artist",
+          "uri": "spotify:artist:synthetic-artist-0002"
+        }
+      ]
+    },
+    "artists": [
+      {
+        "external_urls": {
+          "spotify": "https://example.invalid/spotify/artist/synthetic-artist-0002"
+        },
+        "href": "https://example.invalid/spotify/v1/artists/synthetic-artist-0002",
+        "id": "synthetic-artist-0002",
+        "name": "Hana Kitazawa",
+        "type": "artist",
+        "uri": "spotify:artist:synthetic-artist-0002"
+      }
+    ],
+    "available_markets": ["JP"],
+    "disc_number": 1,
+    "duration_ms": 198560,
+    "explicit": false,
+    "external_ids": {
+      "isrc": "SYNTH0000002"
+    },
+    "external_urls": {
+      "spotify": "https://example.invalid/spotify/track/synthetic-track-0002"
+    },
+    "href": "https://example.invalid/spotify/v1/tracks/synthetic-track-0002",
+    "id": "synthetic-track-0002",
+    "is_local": false,
+    "is_playable": true,
+    "name": "Sakura Signal",
+    "popularity": 72,
+    "preview_url": null,
+    "track_number": 1,
+    "type": "track",
+    "uri": "spotify:track:synthetic-track-0002"
+  },
+  "spotify_audio_features": {
+    "acousticness": 0.312,
+    "analysis_url": "https://example.invalid/spotify/v1/audio-analysis/synthetic-track-0002",
+    "danceability": 0.710,
+    "duration_ms": 198560,
+    "energy": 0.650,
+    "id": "synthetic-track-0002",
+    "instrumentalness": 0.0,
+    "key": 5,
+    "liveness": 0.118,
+    "loudness": -7.241,
+    "mode": 1,
+    "speechiness": 0.042,
+    "tempo": 128.004,
+    "time_signature": 4,
+    "track_href": "https://example.invalid/spotify/v1/tracks/synthetic-track-0002",
+    "type": "audio_features",
+    "uri": "spotify:track:synthetic-track-0002",
+    "valence": 0.768
+  },
+  "simulation_flags": {
+    "humming_karaoke_available": 1,
+    "full_karaoke_available": 1
+  }
+}

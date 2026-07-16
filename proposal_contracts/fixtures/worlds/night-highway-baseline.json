@@ -1,0 +1,62 @@
+{
+  "_comment": "Baseline night-highway world/feature snapshot — no genre extension. Algorithm-blind.",
+  "_fixture_kind": "feature_snapshot",
+  "_genre_extension_enabled": false,
+  "situation": {
+    "drowsiness_level": "med",
+    "fatigue_level": "low",
+    "traffic_state": "normal",
+    "road_type": "highway",
+    "night_state": "night",
+    "monotony_level": "high",
+    "route_tags": ["highway", "long_distance"],
+    "destination_tags": ["urban"],
+    "child_present": false,
+    "multiple_passengers": false,
+    "motion_state": "driving"
+  },
+  "preference": {
+    "oshi_registered": false,
+    "oshi_mode": "off",
+    "oshi_id": null,
+    "oshi_type": null,
+    "oshi_tags": [],
+    "service_recency_state": "recent",
+    "service_usage_level": "med",
+    "scene_service_usage_level": "low",
+    "age_band": "30s",
+    "gender": "unspecified",
+    "hobby_interest_tags": ["music", "driving"],
+    "catalog_item_recency_state": "unknown",
+    "content_tag_recency_state": "unknown",
+    "content_tag_usage_level": "med",
+    "catalog_item_usage_level": "med",
+    "scene_content_tag_usage_level": "low",
+    "played_items": [],
+    "skipped_items": [],
+    "cancelled_content_plans": [],
+    "changed_from_items": []
+  },
+  "history": {
+    "service_proposal_acceptance_rate": 0.65,
+    "service_recovery_rate": 0.70,
+    "scheduled_event_type": null,
+    "scheduled_event_timing": null,
+    "scheduled_event_tags": [],
+    "content_proposal_acceptance_rate": 0.60,
+    "content_recovery_rate": 0.55
+  },
+  "additional_proposed": {
+    "estimated_min_until_rest_spot": 25,
+    "rest_spot_type": "sa_pa",
+    "active_service": null,
+    "recent_service_rejections": [],
+    "service_proposal_acceptance_confidence": "med",
+    "service_recovery_confidence": "med",
+    "completed_items": [],
+    "manually_selected_items": [],
+    "repeated_items": [],
+    "content_proposal_acceptance_confidence": "low",
+    "content_recovery_confidence": "low"
+  }
+}

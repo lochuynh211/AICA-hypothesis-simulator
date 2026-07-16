@@ -1,0 +1,233 @@
+{
+  "$defs": {
+    "CandidateRef": {
+      "description": "A reference to a candidate item — service ID for the service selector,\nTrack ID (str) for the content selector.",
+      "properties": {
+        "candidate_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ServiceId"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Candidate Id"
+        }
+      },
+      "required": [
+        "candidate_id"
+      ],
+      "title": "CandidateRef",
+      "type": "object"
+    },
+    "ExcludedCandidate": {
+      "description": "A candidate excluded before algorithm evaluation, with a platform reason.",
+      "properties": {
+        "candidate_id": {
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "platform_reason": {
+          "title": "Platform Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate_id",
+        "platform_reason"
+      ],
+      "title": "ExcludedCandidate",
+      "type": "object"
+    },
+    "FeatureOriginProvenance": {
+      "description": "Provenance of a feature's origin (distinct from response-coefficient provenance — FR-020).",
+      "enum": [
+        "cdc_su_baseline",
+        "normalized_cdc_su_concept",
+        "proposed_addition"
+      ],
+      "title": "FeatureOriginProvenance",
+      "type": "string"
+    },
+    "FeatureProvenanceEntry": {
+      "description": "Provenance for a single feature entry in the feature_provenance map.",
+      "properties": {
+        "feature_origin": {
+          "$ref": "#/$defs/FeatureOriginProvenance"
+        },
+        "source_reference": {
+          "title": "Source Reference",
+          "type": "string"
+        }
+      },
+      "required": [
+        "feature_origin",
+        "source_reference"
+      ],
+      "title": "FeatureProvenanceEntry",
+      "type": "object"
+    },
+    "LifecycleStage": {
+      "description": "Driving lifecycle stage at the time of proposal (spec §7).",
+      "enum": [
+        "before_rest_until_stop",
+        "during_rest_stopped",
+        "after_rest_before_restart",
+        "active_driving_content"
+      ],
+      "title": "LifecycleStage",
+      "type": "string"
+    },
+    "ServiceId": {
+      "description": "Catalog service identifiers (spec §7.1–7.2, 14 services).",
+      "enum": [
+        "music_playlist",
+        "humming_karaoke",
+        "call_response_driving",
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "conversation_audio",
+        "live_viewing",
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped",
+        "oshi_reexperience",
+        "relaxation_multisensory",
+        "linked_video_recommendation"
+      ],
+      "title": "ServiceId",
+      "type": "string"
+    },
+    "TriggerPurpose": {
+      "description": "The high-level intent of the proposal trigger (spec §7).",
+      "enum": [
+        "rest_recommended",
+        "inattentive_driving_prevention_recovery",
+        "route_music",
+        "child_passenger_experience"
+      ],
+      "title": "TriggerPurpose",
+      "type": "string"
+    }
+  },
+  "description": "Common selector input (C1).\n\nCarries trigger purpose, lifecycle stage, the feature snapshot, and\nthe candidate lists to a service or content selector package.\n\nValidators\n----------\n1. ``allowed_service_ids`` must be non-empty.\n2. Purpose / stage must be compatible (rest stages only with\n   ``rest_recommended``; ``active_driving_content`` only with the three\n   non-rest purposes).",
+  "properties": {
+    "allowed_service_ids": {
+      "items": {
+        "$ref": "#/$defs/ServiceId"
+      },
+      "title": "Allowed Service Ids",
+      "type": "array"
+    },
+    "catalog_version": {
+      "title": "Catalog Version",
+      "type": "string"
+    },
+    "contract_version": {
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "eligible_candidates": {
+      "items": {
+        "$ref": "#/$defs/CandidateRef"
+      },
+      "title": "Eligible Candidates",
+      "type": "array"
+    },
+    "enabled_feature_extensions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Enabled Feature Extensions",
+      "type": "array"
+    },
+    "excluded_candidates": {
+      "items": {
+        "$ref": "#/$defs/ExcludedCandidate"
+      },
+      "title": "Excluded Candidates",
+      "type": "array"
+    },
+    "feature_provenance": {
+      "additionalProperties": {
+        "$ref": "#/$defs/FeatureProvenanceEntry"
+      },
+      "title": "Feature Provenance",
+      "type": "object"
+    },
+    "feature_snapshot": {
+      "title": "Feature Snapshot",
+      "type": "object"
+    },
+    "hyperparameters": {
+      "title": "Hyperparameters",
+      "type": "object"
+    },
+    "lifecycle_stage": {
+      "$ref": "#/$defs/LifecycleStage"
+    },
+    "opportunity_id": {
+      "title": "Opportunity Id",
+      "type": "string"
+    },
+    "package_runtime_state": {
+      "title": "Package Runtime State",
+      "type": "object"
+    },
+    "parameters": {
+      "title": "Parameters",
+      "type": "object"
+    },
+    "run_seed": {
+      "title": "Run Seed",
+      "type": "string"
+    },
+    "selected_service_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ServiceId"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "simulation_time": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        }
+      ],
+      "title": "Simulation Time"
+    },
+    "trigger_purpose": {
+      "$ref": "#/$defs/TriggerPurpose"
+    }
+  },
+  "required": [
+    "contract_version",
+    "opportunity_id",
+    "simulation_time",
+    "trigger_purpose",
+    "lifecycle_stage",
+    "allowed_service_ids",
+    "feature_snapshot",
+    "feature_provenance",
+    "enabled_feature_extensions",
+    "eligible_candidates",
+    "excluded_candidates",
+    "parameters",
+    "hyperparameters",
+    "package_runtime_state",
+    "catalog_version",
+    "run_seed"
+  ],
+  "title": "SelectorInput",
+  "type": "object"
+}

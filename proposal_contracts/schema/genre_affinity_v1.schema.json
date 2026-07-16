@@ -1,0 +1,86 @@
+{
+  "$defs": {
+    "GenreLiteral": {
+      "description": "Controlled vocabulary of 12 Japanese-market music genres.",
+      "enum": [
+        "j-pop",
+        "j-rock",
+        "city pop",
+        "anime",
+        "vocaloid",
+        "enka",
+        "children's music",
+        "classical",
+        "jazz",
+        "ambient",
+        "electronic",
+        "japanese folk"
+      ],
+      "title": "GenreLiteral",
+      "type": "string"
+    },
+    "UsageLevel": {
+      "description": "Ordinal usage-frequency level for genre-affinity extension.",
+      "enum": [
+        "never",
+        "low",
+        "med",
+        "high"
+      ],
+      "title": "UsageLevel",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Optional ``genre_affinity_v1`` extension shape.\n\nThis model is a **sibling namespace** added alongside (never inside) the\nthree core song namespaces when the genre-affinity extension is enabled.\n\nFields\n------\nartist_genres:\n    Maps artist IDs to their genre list. Each genre must be a member of\n    the 12-term vocabulary (enforced by ``GenreLiteral`` typing).\nusage_by_genre:\n    Optional overall usage-level per genre (ordinal band from\n    ``UsageLevel``). Absence means no genre usage data is available.\nscene_genre_usage:\n    Optional per-scene usage-level per genre. Each scene key maps to a\n    ``dict[GenreLiteral, UsageLevel]``. Absence means no scene-level data.\n\nNo-overwrite guarantee\n----------------------\n``extra=\"forbid\"`` ensures that any attempt to pass a key named\n``spotify_track``, ``spotify_audio_features``, or ``simulation_flags``\n(the three core song namespaces) raises a ``ValidationError`` immediately,\nbecause those names are not declared fields and extra keys are disallowed.",
+  "properties": {
+    "artist_genres": {
+      "additionalProperties": {
+        "items": {
+          "$ref": "#/$defs/GenreLiteral"
+        },
+        "type": "array"
+      },
+      "title": "Artist Genres",
+      "type": "object"
+    },
+    "scene_genre_usage": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "additionalProperties": {
+              "$ref": "#/$defs/UsageLevel"
+            },
+            "type": "object"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Scene Genre Usage"
+    },
+    "usage_by_genre": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/UsageLevel"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Usage By Genre"
+    }
+  },
+  "required": [
+    "artist_genres"
+  ],
+  "title": "GenreAffinityV1",
+  "type": "object"
+}

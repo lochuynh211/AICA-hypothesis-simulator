@@ -1,0 +1,711 @@
+{
+  "$defs": {
+    "Album": {
+      "description": "Spotify Album object (simplified — tracks the V1 stored fields).",
+      "properties": {
+        "album_type": {
+          "title": "Album Type",
+          "type": "string"
+        },
+        "artists": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ArtistRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artists"
+        },
+        "available_markets": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Available Markets"
+        },
+        "external_urls": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalUrls"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "href": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Href"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "images": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Image"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Images"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "release_date": {
+          "title": "Release Date",
+          "type": "string"
+        },
+        "release_date_precision": {
+          "title": "Release Date Precision",
+          "type": "string"
+        },
+        "restrictions": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Restrictions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "total_tracks": {
+          "title": "Total Tracks",
+          "type": "integer"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        },
+        "uri": {
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "album_type",
+        "total_tracks",
+        "id",
+        "name",
+        "release_date",
+        "release_date_precision",
+        "type",
+        "uri"
+      ],
+      "title": "Album",
+      "type": "object"
+    },
+    "ArtistRef": {
+      "description": "Spotify artist reference (trimmed — not the full Artist object).",
+      "properties": {
+        "external_urls": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalUrls"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "href": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Href"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        },
+        "uri": {
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "type",
+        "uri"
+      ],
+      "title": "ArtistRef",
+      "type": "object"
+    },
+    "ExternalIds": {
+      "description": "Spotify external_ids object.",
+      "properties": {
+        "ean": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ean"
+        },
+        "isrc": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Isrc"
+        },
+        "upc": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Upc"
+        }
+      },
+      "title": "ExternalIds",
+      "type": "object"
+    },
+    "ExternalUrls": {
+      "description": "Spotify external_urls object.",
+      "properties": {
+        "spotify": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Spotify"
+        }
+      },
+      "title": "ExternalUrls",
+      "type": "object"
+    },
+    "Image": {
+      "description": "Spotify Image object.",
+      "properties": {
+        "height": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Height"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Width"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "Image",
+      "type": "object"
+    },
+    "LinkedFrom": {
+      "description": "Spotify LinkedFrom object (track relinking).",
+      "properties": {
+        "external_urls": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalUrls"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "href": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Href"
+        },
+        "id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Type"
+        },
+        "uri": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uri"
+        }
+      },
+      "title": "LinkedFrom",
+      "type": "object"
+    },
+    "Restrictions": {
+      "description": "Spotify Restrictions object.",
+      "properties": {
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reason"
+      ],
+      "title": "Restrictions",
+      "type": "object"
+    },
+    "SimulationFlags": {
+      "additionalProperties": false,
+      "description": "Simulator availability flags.\n\nextra=\"forbid\" — only the two gate fields are allowed; no extra keys.\nValues are Literal[0, 1] only (no other integers, not booleans).\nBoth default to 1 per §6.",
+      "properties": {
+        "full_karaoke_available": {
+          "default": 1,
+          "enum": [
+            0,
+            1
+          ],
+          "title": "Full Karaoke Available",
+          "type": "integer"
+        },
+        "humming_karaoke_available": {
+          "default": 1,
+          "enum": [
+            0,
+            1
+          ],
+          "title": "Humming Karaoke Available",
+          "type": "integer"
+        }
+      },
+      "title": "SimulationFlags",
+      "type": "object"
+    },
+    "SpotifyAudioFeatures": {
+      "description": "Spotify Audio Features object (§5.1, 18 fields).\n\nextra=\"ignore\" per spec D3 (lenient inside Spotify objects).\nRange invariants per §5.3.",
+      "properties": {
+        "acousticness": {
+          "title": "Acousticness",
+          "type": "number"
+        },
+        "analysis_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Analysis Url"
+        },
+        "danceability": {
+          "title": "Danceability",
+          "type": "number"
+        },
+        "duration_ms": {
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "energy": {
+          "title": "Energy",
+          "type": "number"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "instrumentalness": {
+          "title": "Instrumentalness",
+          "type": "number"
+        },
+        "key": {
+          "title": "Key",
+          "type": "integer"
+        },
+        "liveness": {
+          "title": "Liveness",
+          "type": "number"
+        },
+        "loudness": {
+          "title": "Loudness",
+          "type": "number"
+        },
+        "mode": {
+          "title": "Mode",
+          "type": "integer"
+        },
+        "speechiness": {
+          "title": "Speechiness",
+          "type": "number"
+        },
+        "tempo": {
+          "title": "Tempo",
+          "type": "number"
+        },
+        "time_signature": {
+          "title": "Time Signature",
+          "type": "integer"
+        },
+        "track_href": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Track Href"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        },
+        "uri": {
+          "title": "Uri",
+          "type": "string"
+        },
+        "valence": {
+          "title": "Valence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "acousticness",
+        "danceability",
+        "duration_ms",
+        "energy",
+        "id",
+        "instrumentalness",
+        "key",
+        "liveness",
+        "loudness",
+        "mode",
+        "speechiness",
+        "tempo",
+        "time_signature",
+        "type",
+        "uri",
+        "valence"
+      ],
+      "title": "SpotifyAudioFeatures",
+      "type": "object"
+    },
+    "SpotifyTrack": {
+      "description": "Spotify Track object (V1 stored shape — §4.1).\n\nextra=\"ignore\" so that future provider-added fields do not break validation.\nSynthetic-identity invariants are enforced here.",
+      "properties": {
+        "album": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Album"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "artists": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ArtistRef"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artists"
+        },
+        "available_markets": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Available Markets"
+        },
+        "disc_number": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Disc Number"
+        },
+        "duration_ms": {
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "explicit": {
+          "title": "Explicit",
+          "type": "boolean"
+        },
+        "external_ids": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalIds"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "external_urls": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExternalUrls"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "href": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Href"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "is_local": {
+          "title": "Is Local",
+          "type": "boolean"
+        },
+        "is_playable": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Is Playable"
+        },
+        "linked_from": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LinkedFrom"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "popularity": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Popularity",
+          "type": "integer"
+        },
+        "preview_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Preview Url"
+        },
+        "restrictions": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Restrictions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "track_number": {
+          "title": "Track Number",
+          "type": "integer"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        },
+        "uri": {
+          "title": "Uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "duration_ms",
+        "explicit",
+        "id",
+        "is_local",
+        "name",
+        "popularity",
+        "track_number",
+        "type",
+        "uri"
+      ],
+      "title": "SpotifyTrack",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Top-level song wrapper.\n\nExactly three namespaces: spotify_track, spotify_audio_features, simulation_flags.\nextra=\"forbid\" — unknown top-level namespaces are rejected (namespace-strict).\n\nCross-object identity (model_validator):\n- track.id == audio_features.id\n- track.uri == audio_features.uri\n- track.duration_ms == audio_features.duration_ms",
+  "properties": {
+    "simulation_flags": {
+      "$ref": "#/$defs/SimulationFlags"
+    },
+    "spotify_audio_features": {
+      "$ref": "#/$defs/SpotifyAudioFeatures"
+    },
+    "spotify_track": {
+      "$ref": "#/$defs/SpotifyTrack"
+    }
+  },
+  "required": [
+    "spotify_track",
+    "spotify_audio_features"
+  ],
+  "title": "Song",
+  "type": "object"
+}
