@@ -86,6 +86,8 @@ __all__ = [
     "World",
     "SeedWorld",
     "DriverProfileRecord",
+    "SetupSnapshotOrigin",
+    "SetupSnapshot",
 ]
 
 # ---------------------------------------------------------------------------
@@ -551,3 +553,51 @@ class DriverProfileRecord(BaseModel):
         if not v:
             raise ValueError("profile_id must not be empty.")
         return v
+
+
+# ---------------------------------------------------------------------------
+# SetupSnapshot — frozen provenance of what produced a run (data-model.md
+# §SetupSnapshot / research.md §R6)
+# ---------------------------------------------------------------------------
+
+
+class SetupSnapshotOrigin(BaseModel):
+    """Which committed artifact(s) the run's world was assembled from.
+
+    At most a run typically has one of ``seed_id``/``clone_id`` set (which
+    base the world started from) plus, independently, ``profile_id`` if a
+    reusable ``DriverProfileRecord`` was loaded into it — all three are
+    optional and independent because a reviewer may also hand-edit a world
+    from scratch (all three ``None``) or load a profile into a hand-edited
+    world (only ``profile_id`` set).
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    seed_id: str | None = None
+    clone_id: str | None = None
+    profile_id: str | None = None
+
+
+class SetupSnapshot(BaseModel):
+    """Frozen provenance of what produced a run (data-model.md §SetupSnapshot).
+
+    Embedded into ``ProposalRunLog`` at run-create time (replacing the opaque
+    ``world_snapshot`` dict — the router migration to populate this field is a
+    later P3 task; this model only defines the shape). Reopening a run renders
+    this snapshot as-is, without recomputation.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    origin: SetupSnapshotOrigin
+    matrix_version: str
+    dataset_id: str
+    dataset_hash: str
+    service_package_id: str
+    service_contract_version: str
+    content_package_id: str | None = None
+    content_contract_version: str | None = None
+    service_parameter_set_version: str
+    content_parameter_set_version: str | None = None
+    feature_provenance: dict[str, FeatureProvenanceEntry] = Field(default_factory=dict)
