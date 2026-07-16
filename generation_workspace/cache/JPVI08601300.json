@@ -1,0 +1,65 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82667-c979-b33c-990e-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kyoko-koizumi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/c/2/11e81bbe-52cb-d8c2-9c7a-a0369fe50396.jpg",
+      "name": "Kyoko Koizumi",
+      "slug": "kyoko-koizumi",
+      "uuid": "11e81bbe-52cb-d8c2-9c7a-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.2,
+    "danceability": 0.69,
+    "energy": 0.68,
+    "instrumentalness": 0,
+    "key": 2,
+    "liveness": 0.12,
+    "loudness": -8.84,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 115.05,
+    "timeSignature": 4,
+    "valence": 0.55
+  },
+  "composers": [
+    "Toshihiko Takamizawa"
+  ],
+  "copyright": "JVCKENWOOD Victor Entertainment",
+  "creditName": "Kyoko Koizumi",
+  "credits": [],
+  "distributor": "Victor Entertainment",
+  "duration": 223,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/9/7/9/11e82667-c979-b33c-990e-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPVI08601300"
+  },
+  "iswcs": [
+    "T1012098789"
+  ],
+  "labels": [
+    {
+      "name": "JVCKENWOOD Victor",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kyoko-koizumi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/c/2/11e81bbe-52cb-d8c2-9c7a-a0369fe50396.jpg",
+      "name": "Kyoko Koizumi",
+      "slug": "kyoko-koizumi",
+      "uuid": "11e81bbe-52cb-d8c2-9c7a-a0369fe50396"
+    }
+  ],
+  "name": "木枯しに抱かれて",
+  "producers": [],
+  "releaseDate": "1992-03-21T00:00:00+00:00",
+  "uuid": "11e82667-c979-b33c-990e-aa1c026db3d8"
+}

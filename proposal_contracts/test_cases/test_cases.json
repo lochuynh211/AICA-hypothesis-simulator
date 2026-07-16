@@ -19,7 +19,7 @@
   {
     "test_case_id": "tc-02",
     "world_ref": "world-night-highway-high-drowsiness",
-    "candidate_song_ref": "synthetic-track-0064",
+    "candidate_song_ref": "synthetic-track-0076",
     "expected_label": "positive",
     "judge_folds": {
       "context_need": "x",
@@ -53,7 +53,7 @@
   {
     "test_case_id": "tc-04",
     "world_ref": "world-night-highway-high-drowsiness",
-    "candidate_song_ref": "synthetic-track-0170",
+    "candidate_song_ref": "synthetic-track-0198",
     "expected_label": "negative",
     "judge_folds": {
       "context_need": "x",
@@ -87,7 +87,7 @@
   {
     "test_case_id": "tc-06",
     "world_ref": "world-daytime-commute",
-    "candidate_song_ref": "synthetic-track-0170",
+    "candidate_song_ref": "synthetic-track-0198",
     "expected_label": "neutral",
     "judge_folds": {
       "context_need": "x",
@@ -121,7 +121,7 @@
   {
     "test_case_id": "tc-08",
     "world_ref": "world-daytime-commute",
-    "candidate_song_ref": "synthetic-track-0064",
+    "candidate_song_ref": "synthetic-track-0076",
     "expected_label": "neutral",
     "judge_folds": {
       "context_need": "x",

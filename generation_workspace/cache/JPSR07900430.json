@@ -1,0 +1,61 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/0b78204a-4db0-11ea-b5de-e4434b2a4898/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/judy-ongg/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/c/6/f/11e81bc8-df6c-ab80-892b-a0369fe50396.jpg",
+      "name": "Judy Ongg",
+      "slug": "judy-ongg",
+      "uuid": "11e81bc8-df6c-ab80-892b-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.77,
+    "danceability": 0.62,
+    "energy": 0.72,
+    "instrumentalness": 0,
+    "key": 9,
+    "liveness": 0.11,
+    "loudness": -7.43,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 100.38,
+    "timeSignature": 4,
+    "valence": 0.76
+  },
+  "composers": [
+    "Yoko Aki",
+    "Kyohei Tsutsumi"
+  ],
+  "copyright": "℗ 1975(2),1979(1) Sony Music Entertainment (Japan) Inc.",
+  "creditName": "Judy Ongg",
+  "credits": [],
+  "distributor": "",
+  "duration": 219,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/0/b/d/0b78204a-4db0-11ea-b5de-e4434b2a4898.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPSR07900430"
+  },
+  "iswcs": [
+    "T1015605419"
+  ],
+  "labels": [],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/judy-ongg/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/c/6/f/11e81bc8-df6c-ab80-892b-a0369fe50396.jpg",
+      "name": "Judy Ongg",
+      "slug": "judy-ongg",
+      "uuid": "11e81bc8-df6c-ab80-892b-a0369fe50396"
+    }
+  ],
+  "name": "魅せられて ~エーゲ海のテーマ~",
+  "producers": [],
+  "releaseDate": "2017-09-20T00:00:00+00:00",
+  "uuid": "0b78204a-4db0-11ea-b5de-e4434b2a4898"
+}

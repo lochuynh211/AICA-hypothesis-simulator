@@ -3282,5 +3282,339 @@
     "miss_reason": null,
     "cell": "E-md_T-lo_P-bv",
     "loop": 23
+  },
+  {
+    "keys": {
+      "normalized_name": "マイフレンド|zard"
+    },
+    "outcome": "miss",
+    "miss_reason": "song_not_found_in_sources",
+    "cell": null,
+    "loop": 24
+  },
+  {
+    "keys": {
+      "isrc": "JPCO06910280",
+      "normalized_name": "ブルー・ライト・ヨコハマ|いしだあゆみ"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-md_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "normalized_name": "神田川|かぐや姫"
+    },
+    "outcome": "miss",
+    "miss_reason": "language_mismatch",
+    "cell": null,
+    "loop": 25
+  },
+  {
+    "keys": {
+      "normalized_name": "なごり雪|イルカ"
+    },
+    "outcome": "miss",
+    "miss_reason": "language_mismatch",
+    "cell": null,
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPSR07522730",
+      "normalized_name": "木綿のハンカチーフ|太田裕美"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-dv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPPO07700650",
+      "normalized_name": "勝手にしやがれ|沢田研二"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPVI07700040",
+      "normalized_name": "ufo|ピンク・レディー"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPSR07821120",
+      "normalized_name": "いい日旅立ち|山口百恵"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-md_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPPO00270170",
+      "normalized_name": "関白宣言|さだまさし"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-md_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPSR07900430",
+      "normalized_name": "魅せられて|ジュディ・オング"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-md_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPCR07400520",
+      "normalized_name": "22才の別れ|風"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-hi_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPPC09323820",
+      "normalized_name": "時代|中島みゆき"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-md_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPCO07711850",
+      "normalized_name": "氷雨|佳山明生"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-md_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPTO08122000",
+      "normalized_name": "ルビーの指環|寺尾聰"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-lo_T-md_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPT208200010",
+      "normalized_name": "待つわ|あみん"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-hi_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPSR08119700",
+      "normalized_name": "赤いスイートピー|松田聖子"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-lo_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "normalized_name": "クリスマス・イブ|山下達郎"
+    },
+    "outcome": "miss",
+    "miss_reason": "audio_unavailable",
+    "cell": null,
+    "loop": 25
+  },
+  {
+    "keys": {
+      "normalized_name": "恋におちて|小林明子"
+    },
+    "outcome": "miss",
+    "miss_reason": "language_mismatch",
+    "cell": null,
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPWP01270537",
+      "normalized_name": "難破船|中森明菜"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-lo_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPCO08828410",
+      "normalized_name": "川の流れのように|美空ひばり"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-hi_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPPC08501960",
+      "normalized_name": "卒業|斉藤由貴"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-md_P-dv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPVI08601300",
+      "normalized_name": "木枯しに抱かれて|小泉今日子"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-md_P-dv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPSR08520070",
+      "normalized_name": "フレンズ|レベッカ"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPWM09100510",
+      "normalized_name": "どんなときも。|槇原敬之"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-md_P-dv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPPC09101990",
+      "normalized_name": "say yes|chage and aska"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-lo_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPME09300701",
+      "normalized_name": "ロード|the 虎舞竜"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-md_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPTF09402001",
+      "normalized_name": "innocent world|mr.children"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-md_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "normalized_name": "tomorrow|岡本真夜"
+    },
+    "outcome": "miss",
+    "miss_reason": "language_mismatch",
+    "cell": null,
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPES09500265",
+      "normalized_name": "love love love|dreams come true"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-md_T-lo_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPB609623401",
+      "normalized_name": "can you celebrate?|安室奈美恵"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-hi_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPTO09831500",
+      "normalized_name": "automatic|宇多田ヒカル"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-lo_P-dv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPP094000810",
+      "normalized_name": "空も飛べるはず|スピッツ"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-md_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPTO09326920",
+      "normalized_name": "接吻|original love"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-md_P-bv",
+    "loop": 25
+  },
+  {
+    "keys": {
+      "isrc": "JPPC09304890",
+      "normalized_name": "yah yah yah|chage and aska"
+    },
+    "outcome": "accepted",
+    "miss_reason": null,
+    "cell": "E-hi_T-md_P-bv",
+    "loop": 25
   }
 ]

@@ -1,0 +1,67 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8261c-9446-e7d4-805f-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/rezspawn/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/0/1/e0ac1574-3107-4f64-8f3d-e7fcd735321c.jpg",
+      "name": "rezspawn",
+      "slug": "rezspawn",
+      "uuid": "e0ac1574-3107-4f64-8f3d-e7fcd735321c"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.24,
+    "danceability": 0.38,
+    "energy": 0.74,
+    "instrumentalness": 0,
+    "key": 0,
+    "liveness": 0.38,
+    "loudness": -6.77,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 167.87,
+    "timeSignature": 4,
+    "valence": 0.22
+  },
+  "composers": [
+    "Tetsuya Komuro"
+  ],
+  "copyright": "",
+  "creditName": "rezspawn",
+  "credits": [],
+  "distributor": "Avex",
+  "duration": 376,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/6/4/4/11e8261c-9446-e7d4-805f-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPB609623401"
+  },
+  "iswcs": [
+    "T0710119122"
+  ],
+  "labels": [],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/rezspawn/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/0/1/e0ac1574-3107-4f64-8f3d-e7fcd735321c.jpg",
+      "name": "rezspawn",
+      "slug": "rezspawn",
+      "uuid": "e0ac1574-3107-4f64-8f3d-e7fcd735321c"
+    }
+  ],
+  "name": "CAN YOU CELEBRATE?",
+  "producers": [],
+  "releaseDate": "2016-01-06T00:00:00+00:00",
+  "uuid": "11e8261c-9446-e7d4-805f-aa1c026db3d8"
+}

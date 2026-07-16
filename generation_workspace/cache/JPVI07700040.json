@@ -1,0 +1,109 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82661-a56b-102c-867c-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/pinkuredei/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/a/c/11e81bd2-ccad-62c8-9150-a0369fe50396.jpg",
+      "name": "Pink Lady",
+      "slug": "pinkuredei",
+      "uuid": "11e81bd2-ccad-62c8-9150-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.19,
+    "danceability": 0.49,
+    "energy": 0.7,
+    "instrumentalness": 0,
+    "key": 9,
+    "liveness": 0.07,
+    "loudness": -8.66,
+    "mode": 0,
+    "speechiness": 0.07,
+    "tempo": 162.84,
+    "timeSignature": 4,
+    "valence": 0.67
+  },
+  "composers": [
+    "Yu Aku",
+    "Shunichi Tokura"
+  ],
+  "copyright": "1977 Victor Entertainment",
+  "creditName": "Pink Lady",
+  "credits": [
+    {
+      "name": "Shunichi Tokura",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "98fd114c-56fd-4312-b355-c725af9ee906"
+    },
+    {
+      "name": "Yu Aku",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "1b5e6b57-8b91-4738-bad5-de424ade701d"
+    },
+    {
+      "name": "都倉俊一",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "77a9bac8-edef-4ad2-8935-fd6db92cbc4b"
+    },
+    {
+      "name": "阿久悠",
+      "roles": [
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "d92c5c18-39e0-4ac1-9cb4-b45dda2d0b78"
+    },
+    {
+      "name": "阿久　悠",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "d91205ab-918b-47d5-a538-9357b898ed6b"
+    },
+    {
+      "name": "都倉　俊一",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "ebb6ddf4-3e6c-4f16-b4d5-dbec6e411feb"
+    }
+  ],
+  "distributor": "Victor Entertainment",
+  "duration": 194,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/6/5/11e82661-a56b-102c-867c-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPVI07700040"
+  },
+  "iswcs": [
+    "T1015749343"
+  ],
+  "labels": [
+    {
+      "name": "Victor",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [],
+  "name": "UFO",
+  "producers": [],
+  "releaseDate": "1977-01-01T00:00:00+00:00",
+  "uuid": "11e82661-a56b-102c-867c-aa1c026db3d8"
+}

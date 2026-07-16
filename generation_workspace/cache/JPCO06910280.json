@@ -1,0 +1,118 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8268d-c7dd-6b38-b24d-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/isidaayumi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/9/6/11e81bd2-d69f-2f8c-9bde-a0369fe50396.jpg",
+      "name": "Ayumi Ishida",
+      "slug": "isidaayumi",
+      "uuid": "11e81bd2-d69f-2f8c-9bde-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.39,
+    "danceability": 0.6,
+    "energy": 0.43,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.18,
+    "loudness": -8.15,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 107.6,
+    "timeSignature": 4,
+    "valence": 0.45
+  },
+  "composers": [
+    "Kyohei Tsutsumi",
+    "Atsushi Hashimoto"
+  ],
+  "copyright": "1969 Nippon Columbia Co., Ltd.",
+  "creditName": "Ayumi Ishida",
+  "credits": [
+    {
+      "name": "筒美京平",
+      "roles": [
+        "arranger",
+        "writer"
+      ],
+      "uuid": "a0d12bca-349e-4333-95a1-4eb980345131"
+    },
+    {
+      "name": "橋本 淳",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "9ca180f5-38e7-4c93-adfe-019825aea5ce"
+    },
+    {
+      "name": "Maki Tomioka",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "be005957-14bf-4f8a-b292-c042603a229a"
+    },
+    {
+      "name": "Jun Hashimoto",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "612b5577-b2de-42d2-aa01-4168bf066b76"
+    },
+    {
+      "name": "Ayumi Ishida",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "d9929b37-2f5a-46fa-82cf-0312f7ffa3f1"
+    },
+    {
+      "name": "Kyouhei Tsutsumi",
+      "roles": [
+        "composer",
+        "arranger"
+      ],
+      "uuid": "69a94a3e-ddb2-4131-84d9-98462924ada3"
+    }
+  ],
+  "distributor": "Nippon Columbia",
+  "duration": 184,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/d/d/7/11e8268d-c7dd-6b38-b24d-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPCO06910280"
+  },
+  "iswcs": [
+    "T1015189076"
+  ],
+  "labels": [
+    {
+      "name": "Nippon Columbia",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/isidaayumi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/9/6/11e81bd2-d69f-2f8c-9bde-a0369fe50396.jpg",
+      "name": "Ayumi Ishida",
+      "slug": "isidaayumi",
+      "uuid": "11e81bd2-d69f-2f8c-9bde-a0369fe50396"
+    }
+  ],
+  "name": "ブルー・ライト・ヨコハマ",
+  "producers": [],
+  "releaseDate": "1969-04-25T00:00:00+00:00",
+  "uuid": "11e8268d-c7dd-6b38-b24d-a0369fe50396"
+}

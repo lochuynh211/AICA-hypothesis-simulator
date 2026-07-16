@@ -1,0 +1,65 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82643-0f6b-9cfe-828e-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/hiromi-ota/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/f/8/36f3194e-b8f8-11e8-a936-525400009efb.jpg",
+      "name": "Hiromi Ota",
+      "slug": "hiromi-ota",
+      "uuid": "36f3194e-b8f8-11e8-a936-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.28,
+    "danceability": 0.78,
+    "energy": 0.83,
+    "instrumentalness": 0.02,
+    "key": 9,
+    "liveness": 0.4,
+    "loudness": -7.77,
+    "mode": 1,
+    "speechiness": 0.07,
+    "tempo": 142.99,
+    "timeSignature": 4,
+    "valence": 0.85
+  },
+  "composers": [
+    "Takashi Matsumoto",
+    "Kyohei Tsutsumi"
+  ],
+  "copyright": "(P)1975 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "Hiromi Ota",
+  "credits": [],
+  "distributor": "Sony",
+  "duration": 249,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/6/f/11e82643-0f6b-9cfe-828e-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPSR07522730"
+  },
+  "iswcs": [
+    "T1015683324"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [],
+  "name": "木綿のハンカチーフ",
+  "producers": [],
+  "releaseDate": "1975-01-01T00:00:00+00:00",
+  "uuid": "11e82643-0f6b-9cfe-828e-aa1c026db3d8"
+}

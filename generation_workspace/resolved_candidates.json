@@ -1,408 +1,571 @@
 [
   {
-    "title": "パプリカ",
-    "artist": "Foorin",
-    "release_year": 2018,
+    "title": "ブルー・ライト・ヨコハマ",
+    "artist": "いしだあゆみ",
+    "release_year": 1968,
     "expected_language": "ja",
     "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
+    "why_fits_cell": "classic/showa JA for age-affinity",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPU901802326",
-      "JPU901802327"
+      "JPCO06910280",
+      "JPCO06806620"
     ]
   },
   {
-    "title": "ドラえもん",
-    "artist": "Gen Hoshino",
-    "release_year": 2018,
+    "title": "神田川",
+    "artist": "かぐや姫",
+    "release_year": 1973,
     "expected_language": "ja",
     "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
-    "web_evidence": [],
-    "candidate_isrcs": [],
-    "miss": "song_not_found_in_sources"
-  },
-  {
-    "title": "さんぽ",
-    "artist": "井上あずみ",
-    "release_year": 1988,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
+    "why_fits_cell": "classic/showa JA for age-affinity",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPTK08780803",
-      "JPTK08880501",
-      "JPTK08880520",
-      "JPTK09283303",
-      "JPTK08700250",
-      "JPKI00304601",
-      "JPPO01036440",
-      "JPU261901204",
-      "JPTK08700350"
+      "JPCR07300420",
+      "JPCR07300320",
+      "JPCR07400930",
+      "JPCR07803450"
     ]
   },
   {
-    "title": "となりのトトロ",
-    "artist": "井上あずみ",
-    "release_year": 1988,
+    "title": "なごり雪",
+    "artist": "イルカ",
+    "release_year": 1975,
     "expected_language": "ja",
     "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
+    "why_fits_cell": "classic/showa JA for age-affinity",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPTK08700230",
-      "JPTK08780801",
-      "JPTK08880519",
-      "JPTK09283307",
-      "JPKI00304650",
-      "JPV200800481",
-      "JPPO01036360",
-      "JPPO01036440",
-      "JPU261901195",
-      "JPTK08700330"
+      "JPCR07500330",
+      "JPCR02104780"
     ]
   },
   {
-    "title": "おどるポンポコリン",
-    "artist": "B.B.クイーンズ",
-    "release_year": 1990,
+    "title": "木綿のハンカチーフ",
+    "artist": "太田裕美",
+    "release_year": 1975,
     "expected_language": "ja",
     "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
-    "web_evidence": [],
-    "candidate_isrcs": [],
-    "miss": "song_not_found_in_sources"
-  },
-  {
-    "title": "崖の上のポニョ",
-    "artist": "藤岡藤巻と大橋のぞみ",
-    "release_year": 2008,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
+    "why_fits_cell": "classic/showa JA for age-affinity",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPI800700180",
-      "JPI800700182"
+      "JPSR07522730",
+      "JPSR07522870",
+      "JPPO00868140",
+      "JPP401900209",
+      "JPSR07522871",
+      "JPPO00873030"
     ]
   },
   {
-    "title": "勇気100%",
-    "artist": "光GENJI",
-    "release_year": 1993,
+    "title": "勝手にしやがれ",
+    "artist": "沢田研二",
+    "release_year": 1977,
     "expected_language": "ja",
     "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
+    "why_fits_cell": "classic/showa JA for age-affinity",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPPC09309150",
-      "JPPC09309170"
+      "JPPO07700650"
     ]
   },
   {
-    "title": "ようかい体操第一",
-    "artist": "Dream5",
-    "release_year": 2014,
+    "title": "UFO",
+    "artist": "ピンク・レディー",
+    "release_year": 1977,
     "expected_language": "ja",
     "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
+    "why_fits_cell": "classic/showa JA for age-affinity",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPB601401310",
-      "JPB601401479"
+      "JPVI07700040",
+      "JPVI07710190",
+      "JPVI00604280",
+      "JPVI07802070",
+      "JPVI07801780",
+      "JPVI00635810",
+      "JPVI07801940",
+      "JPVI07901800",
+      "JPVI01030860",
+      "JPVI07704110"
     ]
   },
   {
-    "title": "アンパンマンのマーチ",
-    "artist": "ドリーミング",
-    "release_year": 1988,
+    "title": "いい日旅立ち",
+    "artist": "山口百恵",
+    "release_year": 1978,
     "expected_language": "ja",
     "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
+    "why_fits_cell": "classic/showa JA for age-affinity",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPVP08800401"
+      "JPSR07821120",
+      "JPSR09216750",
+      "JPSR07924460",
+      "JPSR08030301",
+      "JPSR07821121",
+      "JPSR09250861"
     ]
   },
   {
-    "title": "ドラえもんのうた",
-    "artist": "大杉久美子",
+    "title": "関白宣言",
+    "artist": "さだまさし",
     "release_year": 1979,
     "expected_language": "ja",
     "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
+    "why_fits_cell": "classic/showa JA for age-affinity",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPCO07909740",
-      "JPCO07919370"
+      "JPB709109490",
+      "JPPO00270170",
+      "JPTE09115080",
+      "JPWP09109490",
+      "JPB708600320",
+      "JPPO00508200",
+      "JPVI02100132"
     ]
   },
   {
-    "title": "いつも何度でも",
-    "artist": "木村弓",
-    "release_year": 2001,
+    "title": "魅せられて",
+    "artist": "ジュディ・オング",
+    "release_year": 1979,
     "expected_language": "ja",
     "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
+    "why_fits_cell": "classic/showa JA for age-affinity",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPTK00103740",
-      "JPTK00508490"
+      "JPSR07900430",
+      "JPSR07927520",
+      "JPSR07927810",
+      "JPSR07900431"
     ]
   },
   {
-    "title": "世界の約束",
-    "artist": "倍賞千恵子",
-    "release_year": 2004,
+    "title": "22才の別れ",
+    "artist": "風",
+    "release_year": 1975,
     "expected_language": "ja",
     "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
+    "why_fits_cell": "classic/showa JA for age-affinity",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPTK00408700",
-      "JPTK00408720"
+      "JPCR07400520"
     ]
   },
   {
-    "title": "となりのトトロ",
-    "artist": "Joe Hisaishi",
-    "release_year": 1988,
+    "title": "時代",
+    "artist": "中島みゆき",
+    "release_year": 1975,
     "expected_language": "ja",
     "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
+    "why_fits_cell": "classic/showa JA for age-affinity",
     "web_evidence": [],
-    "candidate_isrcs": [],
-    "miss": "song_not_found_in_sources"
+    "candidate_isrcs": [
+      "JPPC07500030",
+      "JPI807600012",
+      "JPPC09102360",
+      "JPPC09323370",
+      "JPPC09323820",
+      "JPPC09323840",
+      "JPPC09625980",
+      "JPPC09323380",
+      "JPI801200168",
+      "JPI801800131"
+    ]
   },
   {
-    "title": "ミッキーマウス・マーチ",
-    "artist": "ヤング・フレッシュ",
+    "title": "氷雨",
+    "artist": "佳山明生",
+    "release_year": 1977,
+    "expected_language": "ja",
+    "target_cell_id": "E-md_T-md_P-bv",
+    "why_fits_cell": "classic/showa JA for age-affinity",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPCO07711850"
+    ]
+  },
+  {
+    "title": "ルビーの指環",
+    "artist": "寺尾聰",
+    "release_year": 1981,
+    "expected_language": "ja",
+    "target_cell_id": "E-md_T-md_P-bv",
+    "why_fits_cell": "classic/showa JA for age-affinity",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPTO08122000",
+      "JPTO08817200",
+      "JPB600664105"
+    ]
+  },
+  {
+    "title": "待つわ",
+    "artist": "あみん",
+    "release_year": 1982,
+    "expected_language": "ja",
+    "target_cell_id": "E-md_T-md_P-bv",
+    "why_fits_cell": "classic/showa JA for age-affinity",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPPH08250001",
+      "JPT208200010"
+    ]
+  },
+  {
+    "title": "赤いスイートピー",
+    "artist": "松田聖子",
+    "release_year": 1982,
+    "expected_language": "ja",
+    "target_cell_id": "E-md_T-md_P-bv",
+    "why_fits_cell": "classic/showa JA for age-affinity",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPSR08119700",
+      "JPSR08204860",
+      "JPSR80901027"
+    ]
+  },
+  {
+    "title": "クリスマス・イブ",
+    "artist": "山下達郎",
+    "release_year": 1983,
+    "expected_language": "ja",
+    "target_cell_id": "E-md_T-md_P-bv",
+    "why_fits_cell": "classic/showa JA for age-affinity",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPAM08605100",
+      "JPAM09502650"
+    ]
+  },
+  {
+    "title": "恋におちて",
+    "artist": "小林明子",
     "release_year": 1985,
     "expected_language": "ja",
     "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
-    "web_evidence": [],
-    "candidate_isrcs": [],
-    "miss": "song_not_found_in_sources"
-  },
-  {
-    "title": "手のひらを太陽に",
-    "artist": "ボニージャックス",
-    "release_year": 1962,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
+    "why_fits_cell": "classic/showa JA for age-affinity",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPKI06427520"
+      "JPFH08500130",
+      "JPFH09001750",
+      "JPFH08500180",
+      "JPTE01305180",
+      "JPPO01402442",
+      "JPFH08520003",
+      "JPU902202313"
     ]
   },
   {
-    "title": "にじ",
-    "artist": "新沢としひこ",
+    "title": "難破船",
+    "artist": "中森明菜",
+    "release_year": 1987,
+    "expected_language": "ja",
+    "target_cell_id": "E-md_T-md_P-bv",
+    "why_fits_cell": "classic/showa JA for age-affinity",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPWP00970345",
+      "JPWP01270537",
+      "JPWP01270863",
+      "JPWP02071295",
+      "JPWP08700710",
+      "JPWP09202520",
+      "JPWP02270142",
+      "JPWP08900850",
+      "JPWP02170534",
+      "JPWP09106280",
+      "JPMV09502190",
+      "JPWP09803080",
+      "JPWP02270550",
+      "JPPO00706900",
+      "JPWP02570360",
+      "JPWP01470467"
+    ]
+  },
+  {
+    "title": "川の流れのように",
+    "artist": "美空ひばり",
+    "release_year": 1989,
+    "expected_language": "ja",
+    "target_cell_id": "E-md_T-md_P-bv",
+    "why_fits_cell": "classic/showa JA for age-affinity",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPCO08880690",
+      "FRX452012084",
+      "JPCO08824810",
+      "JPCO08828410",
+      "JPCO08851390",
+      "JPCO08851399"
+    ]
+  },
+  {
+    "title": "卒業",
+    "artist": "斉藤由貴",
+    "release_year": 1985,
+    "expected_language": "ja",
+    "target_cell_id": "E-md_T-md_P-bv",
+    "why_fits_cell": "classic/showa JA for age-affinity",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPPC08501960",
+      "JPPC08510329",
+      "JPPC08510330",
+      "JPPC08510437",
+      "JPPC00800707",
+      "JPPC00901534",
+      "JPVI01517750",
+      "JPPC02000525",
+      "JPVI02003053",
+      "JPVI02404018",
+      "JPVI02404028"
+    ]
+  },
+  {
+    "title": "木枯しに抱かれて",
+    "artist": "小泉今日子",
+    "release_year": 1986,
+    "expected_language": "ja",
+    "target_cell_id": "E-md_T-md_P-bv",
+    "why_fits_cell": "classic/showa JA for age-affinity",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPVI08601300",
+      "JPVI08701470",
+      "JPVI08818680",
+      "JPVI01226010"
+    ]
+  },
+  {
+    "title": "フレンズ",
+    "artist": "レベッカ",
+    "release_year": 1985,
+    "expected_language": "ja",
+    "target_cell_id": "E-md_T-md_P-bv",
+    "why_fits_cell": "classic/showa JA for age-affinity",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPU901600903",
+      "JPP401700191",
+      "JPSR08520070"
+    ]
+  },
+  {
+    "title": "どんなときも。",
+    "artist": "槇原敬之",
+    "release_year": 1991,
+    "expected_language": "ja",
+    "target_cell_id": "E-md_T-md_P-bv",
+    "why_fits_cell": "classic/showa JA for age-affinity",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPWM09100510",
+      "JPWP09112400",
+      "JPWM09112390",
+      "JPWP00001010",
+      "JPWP00001020",
+      "JPWP00203150",
+      "JPTO00401732",
+      "JPTO00503494",
+      "JPB600741302",
+      "JPB600741304",
+      "JPB600962708",
+      "JPZ921202994",
+      "JPWP01271631",
+      "JPWP01271521",
+      "JPWP09112390",
+      "JPWM09100511"
+    ]
+  },
+  {
+    "title": "SAY YES",
+    "artist": "CHAGE and ASKA",
+    "release_year": 1991,
+    "expected_language": "ja",
+    "target_cell_id": "E-md_T-md_P-bv",
+    "why_fits_cell": "classic/showa JA for age-affinity",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPCC09101990",
+      "JPPC09101990",
+      "JPPC09625740",
+      "JPKT00204160"
+    ]
+  },
+  {
+    "title": "ロード",
+    "artist": "THE 虎舞竜",
     "release_year": 1993,
     "expected_language": "ja",
     "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
+    "why_fits_cell": "classic/showa JA for age-affinity",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPKI00918098"
+      "JPME09300701",
+      "JPME09300703"
     ]
   },
   {
-    "title": "ぼよよん行進曲",
-    "artist": "中西圭三",
-    "release_year": 2004,
+    "title": "innocent world",
+    "artist": "Mr.Children",
+    "release_year": 1994,
     "expected_language": "ja",
     "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
-    "web_evidence": [],
-    "candidate_isrcs": [],
-    "miss": "song_not_found_in_sources"
-  },
-  {
-    "title": "ハッピージャムジャム",
-    "artist": "しまじろう",
-    "release_year": 2008,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
-    "web_evidence": [],
-    "candidate_isrcs": [],
-    "miss": "song_not_found_in_sources"
-  },
-  {
-    "title": "香水",
-    "artist": "瑛人",
-    "release_year": 2020,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
+    "why_fits_cell": "classic/showa JA for age-affinity",
     "web_evidence": [],
     "candidate_isrcs": [
-      "TCJPI1992829"
+      "JPTF09402001",
+      "JPTFO9402001",
+      "JPTF09909008",
+      "JPTF02202501",
+      "JPTF09402003"
     ]
   },
   {
-    "title": "乾杯",
-    "artist": "長渕剛",
-    "release_year": 1980,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPTO00501969",
-      "JPTO00501982",
-      "JPTO08810010",
-      "JPTO00502071",
-      "JPTO00502096",
-      "JPTO09010200",
-      "JPFL09902240",
-      "JPTO08121330",
-      "JPFL00402280",
-      "JPTO00502028",
-      "JPTO00503294",
-      "JPT201400031"
-    ]
-  },
-  {
-    "title": "上を向いて歩こう",
-    "artist": "坂本九",
-    "release_year": 1961,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPTO07614700",
-      "USNO11401295",
-      "JPTO00701390",
-      "JPTE01276170",
-      "JPTO09400629"
-    ]
-  },
-  {
-    "title": "残酷な天使のテーゼ",
-    "artist": "高橋洋子",
+    "title": "TOMORROW",
+    "artist": "岡本真夜",
     "release_year": 1995,
     "expected_language": "ja",
     "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
+    "why_fits_cell": "classic/showa JA for age-affinity",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPKI09519950",
-      "JPKI00409160",
-      "JPKI09718920",
-      "JPKT09703301",
-      "JPC900303679",
-      "JPKI00507913",
-      "JPC909700907",
-      "JPKI00910702",
-      "JPKI01512168",
-      "JPPO01616694",
-      "JPKI01913561",
-      "JPKI09519959",
-      "JPKI09522450",
-      "JPKI00910707",
-      "JPKI01913562"
+      "JPTK09541201",
+      "JPTK09501110",
+      "JPTK09541101",
+      "JPTK00303500",
+      "JPTK09541103"
     ]
   },
   {
-    "title": "HANABI",
-    "artist": "Mr.Children",
-    "release_year": 2008,
+    "title": "LOVE LOVE LOVE",
+    "artist": "DREAMS COME TRUE",
+    "release_year": 1995,
     "expected_language": "ja",
     "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
+    "why_fits_cell": "classic/showa JA for age-affinity",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPTF00804901",
-      "JPTF02202609"
+      "JPES09500265",
+      "JPES09600140",
+      "JPES09602584",
+      "JPPO00401760",
+      "JPPO21004060",
+      "JPES09502847",
+      "JPPO02002935",
+      "JPU902002970",
+      "UK6821903110"
     ]
   },
   {
-    "title": "負けないで",
+    "title": "CAN YOU CELEBRATE?",
+    "artist": "安室奈美恵",
+    "release_year": 1997,
+    "expected_language": "ja",
+    "target_cell_id": "E-md_T-md_P-bv",
+    "why_fits_cell": "classic/showa JA for age-affinity",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPB609623401",
+      "JPB609623402",
+      "JPB609623403",
+      "JPB609714510",
+      "JPB609734201",
+      "JPB609734203",
+      "JPB609818301",
+      "JPB600345023",
+      "JPB601401921",
+      "JPB601703241",
+      "JPB601901953",
+      "JPB609734204"
+    ]
+  },
+  {
+    "title": "Automatic",
+    "artist": "宇多田ヒカル",
+    "release_year": 1998,
+    "expected_language": "ja",
+    "target_cell_id": "E-md_T-md_P-bv",
+    "why_fits_cell": "classic/showa JA for age-affinity",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPTO09831500",
+      "JPTO00400346",
+      "JPPO01400526",
+      "JPPO01400549",
+      "JPPO02400213",
+      "JPU902403908",
+      "JPTO09831509",
+      "JPPO01400151",
+      "JPPO01400536",
+      "JPTO09901640",
+      "JPTO09901750"
+    ]
+  },
+  {
+    "title": "空も飛べるはず",
+    "artist": "スピッツ",
+    "release_year": 1994,
+    "expected_language": "ja",
+    "target_cell_id": "E-md_T-md_P-bv",
+    "why_fits_cell": "classic/showa JA for age-affinity",
+    "web_evidence": [],
+    "candidate_isrcs": [
+      "JPP094000810",
+      "JPPO04000810",
+      "JPPO09400810",
+      "JPPO01702921",
+      "JPPO09404600",
+      "JPPO09404601",
+      "JPPO00262760",
+      "JPPO00601020",
+      "JPPO00603350"
+    ]
+  },
+  {
+    "title": "マイフレンド",
     "artist": "ZARD",
+    "release_year": 1996,
+    "expected_language": "ja",
+    "target_cell_id": "E-md_T-md_P-bv",
+    "why_fits_cell": "classic/showa JA for age-affinity",
+    "web_evidence": [],
+    "candidate_isrcs": [],
+    "miss": "song_not_found_in_sources"
+  },
+  {
+    "title": "接吻",
+    "artist": "ORIGINAL LOVE",
     "release_year": 1993,
     "expected_language": "ja",
     "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
+    "why_fits_cell": "classic/showa JA for age-affinity",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPC400601115",
-      "JPC409301101",
-      "JPC409701142",
-      "JPC409901121"
+      "JPTO09326920",
+      "JPTO09326890",
+      "JPZ921211667",
+      "JPVI02101848",
+      "JPVI82102820",
+      "JPVI02203415",
+      "JPVI82202986",
+      "JPPC00101590"
     ]
   },
   {
-    "title": "366日",
-    "artist": "HY",
-    "release_year": 2008,
+    "title": "YAH YAH YAH",
+    "artist": "CHAGE and ASKA",
+    "release_year": 1993,
     "expected_language": "ja",
     "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
+    "why_fits_cell": "classic/showa JA for age-affinity",
     "web_evidence": [],
     "candidate_isrcs": [
-      "JPF700250112",
-      "JPF780800209",
-      "JPF780800211",
-      "JPSR01202801",
-      "JPF700801921",
-      "JPPO01802891",
-      "JPPO02402288"
-    ]
-  },
-  {
-    "title": "さくらんぼ",
-    "artist": "大塚愛",
-    "release_year": 2003,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPB600367001",
-      "JPB601803660",
-      "JPB601305124",
-      "JPB601504533",
-      "JPB601603795",
-      "JPB601803915",
-      "JPB602402674",
-      "JPB600374903",
-      "JPB600412802",
-      "JPB601504377",
-      "JPB602100176"
-    ]
-  },
-  {
-    "title": "女々しくて",
-    "artist": "ゴールデンボンバー",
-    "release_year": 2009,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPE671100030",
-      "JPE670900039"
-    ]
-  },
-  {
-    "title": "ひまわりの約束",
-    "artist": "秦基博",
-    "release_year": 2014,
-    "expected_language": "ja",
-    "target_cell_id": "E-md_T-md_P-bv",
-    "why_fits_cell": "child-friendly / karaoke JA",
-    "web_evidence": [],
-    "candidate_isrcs": [
-      "JPU901400745",
-      "JPU901400748",
-      "JPU901401694"
+      "JPPC09304890",
+      "JPPC09322340",
+      "JPKT00204180"
     ]
   }
 ]

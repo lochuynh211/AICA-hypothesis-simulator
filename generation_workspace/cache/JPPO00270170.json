@@ -1,0 +1,100 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82680-3ba4-b868-8f04-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/masashi-sada-3/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/4/5/11e81bc0-a542-6466-8130-a0369fe50396.jpg",
+      "name": "Masashi Sada",
+      "slug": "masashi-sada-3",
+      "uuid": "11e81bc0-a542-6466-8130-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.33,
+    "danceability": 0.38,
+    "energy": 0.52,
+    "instrumentalness": 0,
+    "key": 9,
+    "liveness": 0.07,
+    "loudness": -7.48,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 98.57,
+    "timeSignature": 4,
+    "valence": 0.68
+  },
+  "composers": [
+    "Masashi Sada",
+    "藤田大土"
+  ],
+  "copyright": "2021 U-CAN",
+  "creditName": "Masashi Sada",
+  "credits": [
+    {
+      "name": "Toshiyuki Watanabe",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "432d95ce-8cb9-4cc2-adb7-b74904662f47"
+    },
+    {
+      "name": "Masashi Sada",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "69755ed4-ebaa-4e15-a98b-0df09e2530f2"
+    }
+  ],
+  "distributor": "Space Shower FUGA",
+  "duration": 354,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "folk",
+      "sub": [
+        "folk"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/4/a/b/11e82680-3ba4-b868-8f04-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO00270170"
+  },
+  "iswcs": [
+    "T1011417368"
+  ],
+  "labels": [
+    {
+      "name": "U-CAN",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/masashi-sada-3/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/4/5/11e81bc0-a542-6466-8130-a0369fe50396.jpg",
+      "name": "Masashi Sada",
+      "slug": "masashi-sada-3",
+      "uuid": "11e81bc0-a542-6466-8130-a0369fe50396"
+    }
+  ],
+  "name": "関白宣言",
+  "producers": [],
+  "releaseDate": "1981-11-18T00:00:00+00:00",
+  "uuid": "11e82680-3ba4-b868-8f04-aa1c026db3d8"
+}

@@ -1,0 +1,71 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82661-a47f-6262-aa9a-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/amin-22/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/4/2/1329a7c7-3248-41ec-99f5-a994d7f288e9.jpg",
+      "name": "あみん",
+      "slug": "amin-22",
+      "uuid": "1329a7c7-3248-41ec-99f5-a994d7f288e9"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.29,
+    "danceability": 0.52,
+    "energy": 0.63,
+    "instrumentalness": 0,
+    "key": 5,
+    "liveness": 0.35,
+    "loudness": -6.79,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 136.51,
+    "timeSignature": 4,
+    "valence": 0.53
+  },
+  "composers": [
+    "Takako Okamura"
+  ],
+  "copyright": "Yamaha Music Entertainment Holdings, Inc.",
+  "creditName": "あみん",
+  "credits": [],
+  "distributor": "NexTone",
+  "duration": 267,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "j-pop",
+      "sub": [
+        "j-pop",
+        "kayokyoku"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/f/7/4/11e82661-a47f-6262-aa9a-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPT208200010"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Yamaha Music Entertainment Holdings",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/amin-22/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/4/2/1329a7c7-3248-41ec-99f5-a994d7f288e9.jpg",
+      "name": "あみん",
+      "slug": "amin-22",
+      "uuid": "1329a7c7-3248-41ec-99f5-a994d7f288e9"
+    }
+  ],
+  "name": "待つわ",
+  "producers": [],
+  "releaseDate": "1982-07-21T00:00:00+00:00",
+  "uuid": "11e82661-a47f-6262-aa9a-aa1c026db3d8"
+}

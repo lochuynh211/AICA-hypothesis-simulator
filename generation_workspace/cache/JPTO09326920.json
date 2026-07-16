@@ -1,0 +1,67 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/1cca36fe-b8dc-11e8-a47e-525400009efb/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/original-love/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/8/d/11e81bc9-8d8a-f5d2-93c7-a0369fe50396.jpg",
+      "name": "ORIGINAL LOVE",
+      "slug": "original-love",
+      "uuid": "11e81bc9-8d8a-f5d2-93c7-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.14,
+    "danceability": 0.6,
+    "energy": 0.82,
+    "instrumentalness": 0,
+    "key": 4,
+    "liveness": 0.14,
+    "loudness": -7.65,
+    "mode": 0,
+    "speechiness": 0.05,
+    "tempo": 96.03,
+    "timeSignature": 4,
+    "valence": 0.65
+  },
+  "composers": [
+    "Takao Tajima"
+  ],
+  "copyright": "This Compilation ℗ 1993 EMI Music Japan Inc.",
+  "creditName": "ORIGINAL LOVE",
+  "credits": [],
+  "distributor": "Universal",
+  "duration": 280,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian",
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/c/d/8/1cca36fe-b8dc-11e8-a47e-525400009efb.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPTO09326920"
+  },
+  "iswcs": [
+    "T1011574982"
+  ],
+  "labels": [
+    {
+      "name": "EMI",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [],
+  "name": "æŽ¥å» kiss",
+  "producers": [
+    "田島貴男"
+  ],
+  "releaseDate": "1993-12-08T00:00:00+00:00",
+  "uuid": "1cca36fe-b8dc-11e8-a47e-525400009efb"
+}

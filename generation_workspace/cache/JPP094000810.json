@@ -1,0 +1,61 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82622-02ea-700c-a270-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/spitz/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/d/8/9d508b08-b8d1-11e8-9bed-525400009efb.jpg",
+      "name": "SPITZ",
+      "slug": "spitz",
+      "uuid": "9d508b08-b8d1-11e8-9bed-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.04,
+    "danceability": 0.59,
+    "energy": 0.81,
+    "instrumentalness": 0,
+    "key": 0,
+    "liveness": 0.12,
+    "loudness": -4.39,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 114.94,
+    "timeSignature": 4,
+    "valence": 0.67
+  },
+  "composers": [
+    "Masamune Kusano"
+  ],
+  "copyright": "This Compilation ℗ 2017 UNIVERSAL J, a division of UNIVERSAL MUSIC LLC",
+  "creditName": "SPITZ",
+  "credits": [],
+  "distributor": "",
+  "duration": 271,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/a/e/2/11e82622-02ea-700c-a270-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPP094000810"
+  },
+  "iswcs": [],
+  "labels": [],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/spitz/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/d/8/9d508b08-b8d1-11e8-9bed-525400009efb.jpg",
+      "name": "SPITZ",
+      "slug": "spitz",
+      "uuid": "9d508b08-b8d1-11e8-9bed-525400009efb"
+    }
+  ],
+  "name": "空も飛べるはず",
+  "producers": [
+    "SPITZ",
+    "土方隆行"
+  ],
+  "releaseDate": "2005-07-01T00:00:00+00:00",
+  "uuid": "11e82622-02ea-700c-a270-aa1c026db3d8"
+}
