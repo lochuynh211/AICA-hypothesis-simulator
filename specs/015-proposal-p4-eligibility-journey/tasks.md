@@ -43,6 +43,7 @@ Paths are repo-relative. `[P]` = parallelizable (different files, no incomplete 
 - [ ] T015 [US1] Test `app/api/tests/proposal/test_us1_eligibility_wiring.py`: `POST /api/proposal/runs` narrows `eligible_candidates` and populates STEP-1 evidence `excluded_candidates` with reason codes; mock selector ranks only eligible; a candidate outside the frozen row is impossible (SC-003).
 - [ ] T016 [US1] Wire `resolve_eligibility` into `create_proposal_run` (`routers/proposal.py`): compute eligibility after matrix resolve, pass eligible set to `_build_service_context`, thread `excluded` (reason-coded) into `dispatch_selector`'s excluded output. Pass T015.
 - [ ] T017 [US1] Test + implement the readiness/entity resolver helper (`missing_required_entity`, `catalog_item_unavailable`) for both typed-world (`SetupSnapshot`) and legacy `world_snapshot` runs (legacy with no catalog → entity-dependent services excluded, never crash) — research.md D8. File: extend `test_eligibility_resolver.py` + `proposal_eligibility.py`.
+- [ ] T017a [US1] Test in `test_us1_eligibility_wiring.py`: a run created directly at a stage whose matrix row narrows to an **empty eligible set** (e.g. `rest_recommended`/`during_rest_stopped`, empty row) yields an explicit `NO_ELIGIBLE_CANDIDATE` outcome at create-time, not a fabricated candidate or crash (spec Edge Cases / FR-013).
 
 **Checkpoint**: US1 independently demonstrable via API; eligibility safe and score-free.
 
