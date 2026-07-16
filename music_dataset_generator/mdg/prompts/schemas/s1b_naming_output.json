@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "S1b naming stage output schema",
+  "description": "Array of CandidateName objects output by the LLM naming stage (S1b). No ISRC or audio-feature keys allowed (FR-005).",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["title", "artist", "release_year", "expected_language", "target_cell_id", "why_fits_cell"],
+    "properties": {
+      "title": { "type": "string", "minLength": 1 },
+      "artist": { "type": "string", "minLength": 1 },
+      "release_year": { "type": "integer" },
+      "expected_language": { "type": "string" },
+      "target_cell_id": { "type": "string" },
+      "why_fits_cell": { "type": "string" },
+      "web_evidence": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "additionalProperties": false
+  }
+}
