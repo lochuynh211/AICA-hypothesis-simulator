@@ -1,0 +1,18 @@
+{
+  "build_report_ref": "build_report.json",
+  "candidate_source": "isrc_resolved",
+  "dataset_hash": "sha256:204c381c34a94215a45777397f9d9c603b9977b3e4e39a1c6625c28abc1328dc",
+  "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+  "dataset_kind": "soundcharts_grounded_spotify_compatible",
+  "generated_at": "2026-07-16T00:00:00Z",
+  "generator_version": "1.0.0",
+  "prompt_template_version": "1.0.0",
+  "provenance_note": "Soundcharts-grounded, Spotify-compatible synthetic dataset. Real song/artist names and verbatim real audio features are retained for reviewer realism; all IDs are synthetic- and all URLs use .invalid hosts. Not a live Spotify response. Audio measurements are Spotify-derived via Soundcharts; use is limited to local internal algorithm review.",
+  "random_seed": 1042,
+  "schema_version": "1.0.0",
+  "spotify_audio_features_reference_version": "1.0.0",
+  "spotify_track_reference_version": "1.0.0",
+  "synthetic_only": false,
+  "tier": "demonstration",
+  "validation_rules_version": "1.0.0"
+}

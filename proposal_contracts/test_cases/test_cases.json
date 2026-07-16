@@ -1,0 +1,138 @@
+[
+  {
+    "test_case_id": "tc-01",
+    "world_ref": "world-night-highway-high-drowsiness",
+    "candidate_song_ref": "synthetic-track-0033",
+    "expected_label": "positive",
+    "judge_folds": {
+      "context_need": "drowsy+monotonous → high-energy song helps alertness",
+      "mood_genre_fit": "blind judgment on real song",
+      "era_cultural_fit": "n/a",
+      "coherence": "ok",
+      "web_evidence": "known track"
+    },
+    "algorithm_score": 0.15052003564036823,
+    "agreement": "agree",
+    "contrast_partner": null,
+    "expected_direction": null
+  },
+  {
+    "test_case_id": "tc-02",
+    "world_ref": "world-night-highway-high-drowsiness",
+    "candidate_song_ref": "synthetic-track-0025",
+    "expected_label": "positive",
+    "judge_folds": {
+      "context_need": "drowsy → energetic vocaloid raises arousal",
+      "mood_genre_fit": "blind judgment on real song",
+      "era_cultural_fit": "n/a",
+      "coherence": "ok",
+      "web_evidence": "known track"
+    },
+    "algorithm_score": 0.13310062969155445,
+    "agreement": "agree",
+    "contrast_partner": null,
+    "expected_direction": null
+  },
+  {
+    "test_case_id": "tc-03",
+    "world_ref": "world-night-highway-high-drowsiness",
+    "candidate_song_ref": "synthetic-track-0009",
+    "expected_label": "negative",
+    "judge_folds": {
+      "context_need": "drowsy → calm classical would deepen drowsiness",
+      "mood_genre_fit": "blind judgment on real song",
+      "era_cultural_fit": "n/a",
+      "coherence": "ok",
+      "web_evidence": "known track"
+    },
+    "algorithm_score": -0.08221945489157298,
+    "agreement": "disagree",
+    "contrast_partner": null,
+    "expected_direction": null
+  },
+  {
+    "test_case_id": "tc-04",
+    "world_ref": "world-night-highway-high-drowsiness",
+    "candidate_song_ref": "synthetic-track-0007",
+    "expected_label": "negative",
+    "judge_folds": {
+      "context_need": "drowsy → ambient too soothing, unsafe",
+      "mood_genre_fit": "blind judgment on real song",
+      "era_cultural_fit": "n/a",
+      "coherence": "ok",
+      "web_evidence": "known track"
+    },
+    "algorithm_score": -0.12944215467842582,
+    "agreement": "agree",
+    "contrast_partner": null,
+    "expected_direction": null
+  },
+  {
+    "test_case_id": "tc-05",
+    "world_ref": "world-daytime-commute",
+    "candidate_song_ref": "synthetic-track-0009",
+    "expected_label": "positive",
+    "judge_folds": {
+      "context_need": "relaxed daytime → gentle classical fits",
+      "mood_genre_fit": "blind judgment on real song",
+      "era_cultural_fit": "n/a",
+      "coherence": "ok",
+      "web_evidence": "known track"
+    },
+    "algorithm_score": -0.032924526210923025,
+    "agreement": "disagree",
+    "contrast_partner": null,
+    "expected_direction": null
+  },
+  {
+    "test_case_id": "tc-06",
+    "world_ref": "world-daytime-commute",
+    "candidate_song_ref": "synthetic-track-0007",
+    "expected_label": "neutral",
+    "judge_folds": {
+      "context_need": "calm ambient pleasant but unremarkable for a commute",
+      "mood_genre_fit": "blind judgment on real song",
+      "era_cultural_fit": "n/a",
+      "coherence": "ok",
+      "web_evidence": "known track"
+    },
+    "algorithm_score": -0.05345420386445076,
+    "agreement": "agree",
+    "contrast_partner": null,
+    "expected_direction": null
+  },
+  {
+    "test_case_id": "tc-07",
+    "world_ref": "world-daytime-commute",
+    "candidate_song_ref": "synthetic-track-0033",
+    "expected_label": "negative",
+    "judge_folds": {
+      "context_need": "relaxed commute → aggressive metal is jarring",
+      "mood_genre_fit": "blind judgment on real song",
+      "era_cultural_fit": "n/a",
+      "coherence": "ok",
+      "web_evidence": "known track"
+    },
+    "algorithm_score": 0.05899617763808229,
+    "agreement": "disagree",
+    "contrast_partner": null,
+    "expected_direction": null
+  },
+  {
+    "test_case_id": "tc-08",
+    "world_ref": "world-daytime-commute",
+    "candidate_song_ref": "synthetic-track-0025",
+    "expected_label": "neutral",
+    "judge_folds": {
+      "context_need": "energetic but acceptable background",
+      "mood_genre_fit": "blind judgment on real song",
+      "era_cultural_fit": "n/a",
+      "coherence": "ok",
+      "web_evidence": "known track"
+    },
+    "algorithm_score": 0.065615047147226,
+    "agreement": "agree",
+    "contrast_partner": null,
+    "expected_direction": null
+  }
+]
