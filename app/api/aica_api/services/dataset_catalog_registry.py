@@ -3,8 +3,11 @@
 Scans ``settings.proposal_dataset_dir`` for frozen P2 datasets: each dataset
 is a subdirectory containing ``dataset_manifest.json`` (provenance) and
 ``catalog.json`` (a JSON list of Song records). Every song is validated
-against the frozen ``Song`` model by reusing ``mdg.validator.validate_song``
-(never re-implemented) — a dataset with even one invalid song is quarantined
+against the frozen ``Song`` model (``Song.model_validate``) — the same model
+``mdg.validator.validate_song`` wraps, so validation is identical without
+importing ``mdg`` (avoids a cyclic ``aica-api`` <-> ``mdg`` runtime
+dependency, since ``mdg`` already depends on ``aica-api`` for ``Song``). A
+dataset with even one invalid song is quarantined
 into ``list_errors()`` and is NEVER partially available via
 ``get_catalog``/``get_provenance``/``list_datasets`` (research.md R3,
 data-model.md validation rule 4).
@@ -20,8 +23,8 @@ The frozen dataset changes only by re-running the P2 generator.
 
 Isolation (HARD ISOLATION RULE / CLAUDE.md, enforced by the import-guard
 test): this module imports only ``aica_api.models.proposal.*``,
-``aica_api.config``, ``aica_api.storage.file_store``, stdlib, and ``mdg``
-(read-side validation only) — never the trigger ``aica_api.models`` package.
+``aica_api.config``, ``aica_api.storage.file_store``, and stdlib — never the
+trigger ``aica_api.models`` package, and (deliberately) never ``mdg``.
 
 Public API:
   DatasetCatalogRegistry(dataset_dir: Path)
@@ -38,8 +41,6 @@ from typing import Any
 from aica_api.models.proposal.dataset import DatasetProvenance
 from aica_api.models.proposal.song_schema import Song
 from aica_api.storage.file_store import read_json
-
-from mdg.validator import validate_song
 
 
 class DatasetCatalogRegistry:
@@ -122,13 +123,13 @@ class DatasetCatalogRegistry:
         """Validate every song against the frozen Song model.
 
         Raises on the first invalid song (the caller quarantines the whole
-        dataset — never partially returned). Reuses
-        ``mdg.validator.validate_song`` rather than re-implementing
-        validation; ``Song.model_validate`` then builds the typed record for
-        entries that already passed.
+        dataset — never partially returned). ``Song.model_validate`` enforces
+        the full frozen-schema contract (synthetic-id prefixes, ``.invalid``
+        hosts, numeric ranges, cross-object identity) — the same checks
+        ``mdg.validator.validate_song`` performs, since it wraps this very
+        model.
         """
         songs: list[Song] = []
         for song_dict in catalog_data:
-            validate_song(song_dict)
             songs.append(Song.model_validate(song_dict))
         return songs
