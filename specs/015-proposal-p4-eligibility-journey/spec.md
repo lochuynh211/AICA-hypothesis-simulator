@@ -16,6 +16,12 @@ P4 adds the **orchestration layer that surrounds the still-mock selectors**: a d
 
 Ranking logic itself is **not** part of P4 (that is P5 for services, P6 for content). The selectors stay mock; P4 proves the constraints and journey behavior that any real selector must later respect.
 
+## Clarifications
+
+### Session 2026-07-16
+
+- Q: How should P4 handle a screen service that can degrade to audio-only background while driving (`live_viewing`, per spec §7.2 "policy-controlled background on motion"), vs. hard stopped-only services (`full_karaoke`, `stretch_video`)? → A: Model a per-service `background_on_motion` capability. A service with `background_on_motion=true` is **eligible while driving** but its screen is suppressed (audio/background only), and on a motion change to `driving` an active such plan is **backgrounded, not stopped**. Hard stopped-only / screen-dependent-without-background services remain excluded while driving and are stopped on the transition.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Eligibility narrowing with visible reasons before ranking (Priority: P1)
@@ -28,7 +34,7 @@ A reviewer starts a proposal run in a specific world. The purpose/stage matrix p
 
 **Acceptance Scenarios**:
 
-1. **Given** a run whose stage is `after_rest_before_restart` and motion is `driving`, **When** the run opens, **Then** `full_karaoke` and any stopped-only/screen-dependent service are in the excluded set with a reason code (e.g. `full_karaoke_requires_stopped`, `screen_dependent_while_driving`) and carry no `service_fit`/score, and the mock selector ranks only the remaining eligible services.
+1. **Given** a run whose stage is `after_rest_before_restart` and motion is `driving`, **When** the run opens, **Then** `full_karaoke` and any hard stopped-only / non-backgroundable screen-dependent service are in the excluded set with a reason code (e.g. `full_karaoke_requires_stopped`, `screen_dependent_while_driving`) and carry no `service_fit`/score, while a `background_on_motion` service (e.g. `live_viewing`) stays eligible with its screen suppressed; the mock selector ranks only the eligible services.
 2. **Given** the same run but motion `stopped`, **When** the run opens, **Then** those services are eligible (their motion reason no longer applies).
 3. **Given** a world with no registered oshi entity, **When** a run opens whose allowed row includes `oshi_reexperience`, **Then** `oshi_reexperience` is excluded with `missing_required_entity`, not ranked.
 4. **Given** any run, **When** the service selector returns candidates, **Then** every candidate is a member of the frozen purpose/stage row (a candidate outside the row is impossible).
@@ -82,7 +88,7 @@ The reviewer changes the vehicle's motion (e.g. driving → stopped) or advances
 
 **Acceptance Scenarios**:
 
-1. **Given** an active stopped-only or screen-dependent plan and motion `stopped`, **When** motion changes to `driving`, **Then** a `MOTION_CHANGED` event is recorded and the plan is stopped/backgrounded per its mode, and eligibility is re-evaluated.
+1. **Given** an active plan and motion `stopped`, **When** motion changes to `driving`, **Then** a `MOTION_CHANGED` event is recorded and the plan is **backgrounded** if its service is `background_on_motion` (e.g. `live_viewing`) or **stopped** if it is hard stopped-only / non-backgroundable screen-dependent (e.g. `full_karaoke`, `stretch_video`), and eligibility is re-evaluated.
 2. **Given** identical run state, **When** the same motion change is applied, **Then** the resulting events and journey state are identical every time (deterministic).
 3. **Given** a `rest_recommended` run, **When** the vehicle arrives at a rest spot, **Then** a `REST_SPOT_ARRIVED` event sets motion `stopped` and lifecycle stage `during_rest_stopped`.
 4. **Given** a `during_rest_stopped` run, **When** rest completes, **Then** a `REST_COMPLETED` event applies the supplied explicit post-rest driver-state values, sets lifecycle stage `after_rest_before_restart`, and opens a new proposal opportunity.
@@ -122,11 +128,11 @@ The reviewer inspects a non-binding rolling-horizon preview of the upcoming jour
 **Eligibility (before ranking)**
 
 - **FR-001**: The system MUST resolve the visible candidate set as `catalog services ∩ purpose/stage allowed services ∩ motion/capability/readiness availability`, computed **before** any ranking, for every proposal opportunity.
-- **FR-002**: The system MUST exclude, while motion is `driving`: screen-dependent services, stopped-only services, and full-screen karaoke; and MUST exclude any service whose required catalog entity (e.g. a registered oshi) is absent, and any service whose catalog item is disabled or unavailable.
+- **FR-002**: The system MUST exclude, while motion is `driving`: hard stopped-only services, screen-dependent services that cannot background, and full-screen karaoke; and MUST exclude any service whose required catalog entity (e.g. a registered oshi) is absent, and any service whose catalog item is disabled or unavailable. A screen-dependent service marked `background_on_motion` MUST instead remain **eligible** while driving with its screen suppressed (audio/background only) — it is not a hard exclusion.
 - **FR-003**: Each excluded service MUST carry one or more plain reason codes and MUST NOT carry any utility/fit score; eligibility reasons MUST be recorded and shown independently of algorithm rationale.
 - **FR-004**: Excluded services MUST be retained in the run record as excluded (never silently dropped) and MUST NOT be reinstated by any score or weight.
 - **FR-005**: The service selector MUST only ever rank services in the eligible set; it MUST be impossible for a returned candidate to fall outside the frozen purpose/stage row.
-- **FR-006**: The per-service platform capability facts (screen-dependence, stopped-only, driving-capability, lighting compatibility, required entity) MUST come from a frozen, versioned capability contract; lighting MUST be treated as a presentation modifier and MUST NEVER appear as a ranked candidate.
+- **FR-006**: The per-service platform capability facts (screen-dependence, stopped-only, `background_on_motion`, driving-capability, lighting compatibility, required entity) MUST come from a frozen, versioned capability contract; lighting MUST be treated as a presentation modifier and MUST NEVER appear as a ranked candidate.
 - **FR-007**: `trigger_purpose` and `lifecycle_stage` MUST be consumed as control/routing inputs to gate eligibility and journey transitions and MUST NOT be converted into preference or utility feature scores.
 
 **Journey engine — lifecycle & actions**
@@ -140,7 +146,7 @@ The reviewer inspects a non-binding rolling-horizon preview of the upcoming jour
 
 **Journey engine — motion & rest transitions**
 
-- **FR-014**: A motion change MUST record a motion-changed event and deterministically apply screen/background/stop behavior to the active plan (a stopped-only/screen-dependent plan is stopped or backgrounded when motion becomes driving) and MUST re-evaluate eligibility.
+- **FR-014**: A motion change MUST record a motion-changed event and deterministically apply screen/background/stop behavior to the active plan and MUST re-evaluate eligibility. Specifically, when motion becomes `driving`: an active plan whose service is `background_on_motion` MUST be **backgrounded** (screen suppressed, playback continues); an active plan whose service is hard stopped-only or screen-dependent-without-background MUST be **stopped**.
 - **FR-015**: The rest-stage transitions MUST be supported as journey events: arriving at a rest spot sets motion `stopped` and stage `during_rest_stopped`; rest completion applies supplied explicit post-rest driver-state values, sets stage `after_rest_before_restart`, and opens a new opportunity.
 - **FR-016**: The five named during-rest actions MUST remain journey-orchestration events and MUST NOT be ranked as service or content candidates.
 
@@ -158,7 +164,7 @@ The reviewer inspects a non-binding rolling-horizon preview of the upcoming jour
 
 ### Key Entities
 
-- **Service capability record**: per-service platform facts — whether the service is screen-dependent, stopped-only, driving-capable, lighting-compatible, and any required catalog entity. Frozen and versioned; the source of the motion/capability narrowing step.
+- **Service capability record**: per-service platform facts — whether the service is screen-dependent, stopped-only, `background_on_motion` (screen suppresses to audio/background while driving rather than being excluded), driving-capable, lighting-compatible, and any required catalog entity. Frozen and versioned; the source of the motion/capability narrowing step.
 - **Eligibility result**: the eligible service set plus the excluded set, each excluded entry carrying reason codes and no score.
 - **Journey state**: the current lifecycle stage and motion, current content, previously-playing content, playback state, and the session's rejected services.
 - **Discrete event**: a single append-only record of an opportunity, selection, action, motion change, rest transition, or error, with its effect on journey state.
