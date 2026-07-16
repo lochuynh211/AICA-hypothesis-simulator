@@ -81,7 +81,7 @@ workaround.
 
 ## Commit
 
-`8a5029b` — `feat(p3): T017-T020 world validation + setup snapshot (additive)`
+`53bda71` — `feat(p3): T017-T020 world validation + setup snapshot (additive)`
 
 Files changed:
 - `app/api/aica_api/services/world_validation.py` (new)
