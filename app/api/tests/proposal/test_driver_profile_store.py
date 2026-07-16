@@ -233,3 +233,49 @@ def test_nonexistent_profiles_dir_yields_only_builtins(tmp_path):
 
 def test_get_profile_unknown_id_returns_none(store: DriverProfileStore):
     assert store.get_profile("no-such-profile-at-all") is None
+
+
+# ---------------------------------------------------------------------------
+# FIX 4 (whole-branch review) — a malformed built-in profile file is
+# quarantined (surfaced in list_errors()), never fatal to store construction.
+# ---------------------------------------------------------------------------
+
+
+def test_malformed_builtin_profile_is_quarantined_not_fatal(tmp_path):
+    builtin_dir = tmp_path / "builtins"
+    builtin_dir.mkdir()
+
+    # One well-formed built-in profile...
+    good = {
+        "profile_id": "profile-good",
+        "label": {"ja": "良好", "en": "Good"},
+        "builtin": True,
+        "profile": _valid_profile_dict(),
+    }
+    (builtin_dir / "profile-good.json").write_text(json.dumps(good), encoding="utf-8")
+
+    # ...and one deliberately malformed one (invalid age_band enum member).
+    bad = {
+        "profile_id": "profile-bad",
+        "label": {"ja": "不良", "en": "Bad"},
+        "builtin": True,
+        "profile": _valid_profile_dict(age_band="not-a-real-age-band"),
+    }
+    (builtin_dir / "profile-bad.json").write_text(json.dumps(bad), encoding="utf-8")
+
+    # Also a file that isn't even valid JSON, for good measure.
+    (builtin_dir / "profile-not-json.json").write_text("{not valid json", encoding="utf-8")
+
+    # Construction must NOT raise -- the bad files are quarantined.
+    quarantined_store = DriverProfileStore(profiles_dir=tmp_path / "users", builtin_dir=builtin_dir)
+
+    summaries = quarantined_store.list_profiles()
+    ids = {s["profile_id"] for s in summaries}
+    assert "profile-good" in ids
+    assert "profile-bad" not in ids
+
+    errors = quarantined_store.list_errors()
+    error_files = {e["file"] for e in errors}
+    assert "profile-bad.json" in error_files
+    assert "profile-not-json.json" in error_files
+    assert len(errors) == 2

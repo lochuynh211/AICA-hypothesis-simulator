@@ -35,6 +35,7 @@ never ``mdg``.
 Public API:
   DriverProfileStore(profiles_dir: Path, builtin_dir: Path | None = None)
     .list_profiles()                    -> list[dict]   — {profile_id, label, builtin} summaries
+    .list_errors()                      -> list[dict]   — {file, message} for quarantined built-ins
     .get_profile(profile_id)            -> DriverProfileRecord | None
     .save_profile(label, profile)       -> DriverProfileRecord — persists a NEW user profile
     .delete_profile(profile_id)         -> None          — raises on unknown/built-in
@@ -87,6 +88,7 @@ class DriverProfileStore:
     def __init__(self, profiles_dir: pathlib.Path, builtin_dir: pathlib.Path | None = None) -> None:
         self._profiles_dir = pathlib.Path(profiles_dir)
         self._builtin_dir = pathlib.Path(builtin_dir) if builtin_dir is not None else _default_builtin_dir()
+        self._errors: list[dict[str, Any]] = []
         self._builtins: dict[str, DriverProfileRecord] = self._load_builtins(self._builtin_dir)
 
     # ── Public API ─────────────────────────────────────────────────────────
@@ -96,6 +98,12 @@ class DriverProfileStore:
         summaries = [self._summarize(record) for record in self._builtins.values()]
         summaries.extend(self._summarize(record) for record in self._scan_user_profiles().values())
         return summaries
+
+    def list_errors(self) -> list[dict[str, Any]]:
+        """Return {file, message} entries for built-in profile files that failed
+        to validate (quarantined — mirrors ``WorldSeedStore.list_errors``/
+        ``DatasetCatalogRegistry.list_errors``)."""
+        return list(self._errors)
 
     def get_profile(self, profile_id: str) -> DriverProfileRecord | None:
         """Return the full DriverProfileRecord for profile_id, checking built-ins first."""
@@ -147,14 +155,24 @@ class DriverProfileStore:
             "builtin": record.builtin,
         }
 
-    @staticmethod
-    def _load_builtins(builtin_dir: pathlib.Path) -> dict[str, DriverProfileRecord]:
+    def _load_builtins(self, builtin_dir: pathlib.Path) -> dict[str, DriverProfileRecord]:
+        """Load every ``*.json`` built-in profile file, quarantining (never
+        raising for) any file that fails to parse/validate — mirrors
+        ``WorldSeedStore._scan``/``DatasetCatalogRegistry._scan``: one
+        malformed built-in profile must not crash store construction, and a
+        quarantined file is simply absent from ``self._builtins`` (never
+        partially exposed) while being recorded in ``self._errors``.
+        """
         builtins: dict[str, DriverProfileRecord] = {}
         if not builtin_dir.exists():
             return builtins
         for path in sorted(builtin_dir.glob("*.json")):
-            data = read_json(str(path))
-            record = DriverProfileRecord.model_validate(data)
+            try:
+                data = read_json(str(path))
+                record = DriverProfileRecord.model_validate(data)
+            except Exception as exc:
+                self._errors.append({"file": path.name, "message": str(exc)})
+                continue
             builtins[record.profile_id] = record
         return builtins
 

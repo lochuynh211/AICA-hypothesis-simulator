@@ -17,10 +17,17 @@ The models/proposal/ scan is directory-glob-based (``*.py`` under
 ``test_source_files_discovered`` additionally asserts they are present so the
 coverage is explicit, not just incidental.
 
-The services/ scan (MF3) is an explicit filename allowlist of the
-proposal-scoped service modules (as opposed to directory-glob, since
-``services/`` also holds the TRIGGER's own service modules, e.g.
-``run_manager.py``/``tick_engine.py``, which are out of scope here).
+The services/ scan (MF3, extended by whole-branch review FIX 6) is now a
+GLOB over ``services/*.py`` — since ``services/`` also holds the TRIGGER's
+own service modules (e.g. ``run_manager.py``/``tick_engine.py``, which
+legitimately import the trigger ``aica_api.models`` and are out of scope
+here), a module is auto-classified as "proposal-scoped" by whether IT ITSELF
+imports ``aica_api.models.proposal`` (the same self-identifying signal every
+existing proposal service already exhibits — every one of them works with
+proposal models). This closes the gap where a new proposal service module
+could silently escape the check simply by someone forgetting to add its
+filename to a hand-maintained allowlist: the previous explicit allowlist is
+gone, so this now scales automatically as proposal services are added.
 """
 from __future__ import annotations
 
@@ -33,19 +40,6 @@ import aica_api.services as services_pkg
 PROPOSAL_MODELS_DIR = Path(proposal_pkg.__file__).resolve().parent
 SERVICES_DIR = Path(services_pkg.__file__).resolve().parent
 
-# Proposal-scoped service modules (MF3) — explicit allowlist, NOT a glob,
-# since services/ also contains the trigger's own modules.
-PROPOSAL_SERVICE_MODULES: tuple[str, ...] = (
-    "dataset_catalog_registry.py",
-    "world_seed_store.py",
-    "world_clone_store.py",
-    "driver_profile_store.py",
-    "world_validation.py",
-    "proposal_selector.py",
-    "proposal_run_manager.py",
-    "proposal_package_registry.py",
-)
-
 
 def _iter_source_files() -> list[Path]:
     return sorted(
@@ -53,8 +47,53 @@ def _iter_source_files() -> list[Path]:
     )
 
 
+def _imports_proposal_models(source: str, filename: str) -> bool:
+    """Return True if *source* imports ``aica_api.models.proposal`` (or any
+    submodule of it) anywhere — the self-identifying signal used to classify
+    a ``services/*.py`` module as proposal-scoped (FIX 6)."""
+    tree = ast.parse(source, filename=filename)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            if any(_is_proposal_models_path(alias.name) for alias in node.names):
+                return True
+        elif isinstance(node, ast.ImportFrom):
+            if _is_proposal_models_path(node.module or ""):
+                return True
+    return False
+
+
+def _is_proposal_models_path(module_path: str) -> bool:
+    return module_path == "aica_api.models.proposal" or module_path.startswith(
+        "aica_api.models.proposal."
+    )
+
+
 def _iter_proposal_service_files() -> list[Path]:
-    return [SERVICES_DIR / name for name in PROPOSAL_SERVICE_MODULES]
+    """GLOB every ``services/*.py`` file and keep only the ones that
+    self-identify as proposal-scoped (import ``aica_api.models.proposal``) —
+    a future proposal service is picked up automatically, without needing to
+    be hand-added to an allowlist."""
+    candidates = sorted(p for p in SERVICES_DIR.glob("*.py") if p.name != "__init__.py")
+    proposal_files = [
+        p for p in candidates if _imports_proposal_models(p.read_text(encoding="utf-8"), str(p))
+    ]
+    return proposal_files
+
+
+# Proposal-scoped service modules expected to be discovered by the glob above
+# (sanity check only — NOT used to scope the isolation check itself).
+_EXPECTED_PROPOSAL_SERVICE_MODULES: frozenset[str] = frozenset(
+    {
+        "dataset_catalog_registry.py",
+        "world_seed_store.py",
+        "world_clone_store.py",
+        "driver_profile_store.py",
+        "world_validation.py",
+        "proposal_selector.py",
+        "proposal_run_manager.py",
+        "proposal_package_registry.py",
+    }
+)
 
 
 def _forbidden_imports(source: str, filename: str) -> list[str]:

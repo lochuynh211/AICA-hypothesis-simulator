@@ -1,0 +1,70 @@
+{
+  "$defs": {
+    "DatasetVersion": {
+      "additionalProperties": false,
+      "description": "Schema / track / audio-feature reference versions for a dataset.\n\nRead-only, immutable — mirrors the corresponding ``dataset_manifest.json``\nfields verbatim.",
+      "properties": {
+        "schema_version": {
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "spotify_audio_features_reference_version": {
+          "title": "Spotify Audio Features Reference Version",
+          "type": "string"
+        },
+        "spotify_track_reference_version": {
+          "title": "Spotify Track Reference Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "spotify_track_reference_version",
+        "spotify_audio_features_reference_version"
+      ],
+      "title": "DatasetVersion",
+      "type": "object"
+    }
+  },
+  "description": "Read-only provenance summary for one frozen dataset.\n\nMirrors the committed ``dataset_manifest.json`` (P2 Soundcharts-grounded\ndataset). Immutable: no field may be reassigned after construction (raises\n``pydantic.ValidationError``/``frozen_instance``), and this model exposes\nno edit/mutate method of any kind — the catalog is changed only by\nre-running the P2 generator.\n\n``model_config`` uses ``extra=\"ignore\"`` so that manifest fields not\nsurfaced here (e.g. ``generated_at``, ``random_seed``,\n``validation_rules_version``) do not break construction from the raw\nmanifest dict — the same forward-compatible posture as the Spotify\nsub-objects in ``song_schema.py``.",
+  "properties": {
+    "dataset_hash": {
+      "title": "Dataset Hash",
+      "type": "string"
+    },
+    "dataset_id": {
+      "title": "Dataset Id",
+      "type": "string"
+    },
+    "dataset_version": {
+      "$ref": "#/$defs/DatasetVersion"
+    },
+    "generator_version": {
+      "title": "Generator Version",
+      "type": "string"
+    },
+    "provenance_note": {
+      "title": "Provenance Note",
+      "type": "string"
+    },
+    "synthetic_only": {
+      "title": "Synthetic Only",
+      "type": "boolean"
+    },
+    "tier": {
+      "title": "Tier",
+      "type": "string"
+    }
+  },
+  "required": [
+    "dataset_id",
+    "dataset_version",
+    "dataset_hash",
+    "tier",
+    "synthetic_only",
+    "provenance_note",
+    "generator_version"
+  ],
+  "title": "DatasetProvenance",
+  "type": "object"
+}

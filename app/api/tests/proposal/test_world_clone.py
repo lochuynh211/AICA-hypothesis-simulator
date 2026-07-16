@@ -56,11 +56,14 @@ def store(tmp_path) -> WorldCloneStore:
 # ---------------------------------------------------------------------------
 
 
-def test_clone_with_one_override_yields_complete_valid_world(store: WorldCloneStore, base_world: World):
+def test_clone_with_one_override_yields_complete_valid_world(
+    store: WorldCloneStore, base_world: World, catalog: list[Song]
+):
     clone = store.create_clone(
         base_world=base_world,
         base_seed_id=_BASE_SEED_ID,
         overrides=[FieldOverride(path="situation.drowsiness_level", value=10)],
+        catalog=catalog,
     )
     assert isinstance(clone, WorldClone)
     assert clone.base_seed_id == _BASE_SEED_ID
@@ -70,11 +73,14 @@ def test_clone_with_one_override_yields_complete_valid_world(store: WorldCloneSt
     assert clone.world.situation.drowsiness_level == 10
 
 
-def test_clone_diff_lists_exactly_the_overridden_path_and_nothing_else(store: WorldCloneStore, base_world: World):
+def test_clone_diff_lists_exactly_the_overridden_path_and_nothing_else(
+    store: WorldCloneStore, base_world: World, catalog: list[Song]
+):
     clone = store.create_clone(
         base_world=base_world,
         base_seed_id=_BASE_SEED_ID,
         overrides=[FieldOverride(path="situation.drowsiness_level", value=10)],
+        catalog=catalog,
     )
     assert len(clone.diff) == 1
     entry = clone.diff[0]
@@ -90,7 +96,9 @@ def test_clone_diff_lists_exactly_the_overridden_path_and_nothing_else(store: Wo
     assert clone_dump == base_dump
 
 
-def test_clone_with_two_overrides_diff_lists_exactly_those_two(store: WorldCloneStore, base_world: World):
+def test_clone_with_two_overrides_diff_lists_exactly_those_two(
+    store: WorldCloneStore, base_world: World, catalog: list[Song]
+):
     clone = store.create_clone(
         base_world=base_world,
         base_seed_id=_BASE_SEED_ID,
@@ -98,6 +106,7 @@ def test_clone_with_two_overrides_diff_lists_exactly_those_two(store: WorldClone
             FieldOverride(path="situation.drowsiness_level", value=5),
             FieldOverride(path="driver_profile.oshi_mode", value="off"),
         ],
+        catalog=catalog,
     )
     paths = {d.path for d in clone.diff}
     assert paths == {"situation.drowsiness_level", "driver_profile.oshi_mode"}
@@ -108,10 +117,10 @@ def test_clone_with_two_overrides_diff_lists_exactly_those_two(store: WorldClone
 # ---------------------------------------------------------------------------
 
 
-def test_clone_is_deterministic_on_repeat(store: WorldCloneStore, base_world: World):
+def test_clone_is_deterministic_on_repeat(store: WorldCloneStore, base_world: World, catalog: list[Song]):
     overrides = [FieldOverride(path="situation.fatigue_level", value=15)]
-    first = store.create_clone(base_world=base_world, base_seed_id=_BASE_SEED_ID, overrides=overrides)
-    second = store.create_clone(base_world=base_world, base_seed_id=_BASE_SEED_ID, overrides=overrides)
+    first = store.create_clone(base_world=base_world, base_seed_id=_BASE_SEED_ID, overrides=overrides, catalog=catalog)
+    second = store.create_clone(base_world=base_world, base_seed_id=_BASE_SEED_ID, overrides=overrides, catalog=catalog)
 
     assert first.clone_id != second.clone_id  # each clone gets its own id
     assert first.world.model_dump(mode="json") == second.world.model_dump(mode="json")
@@ -174,17 +183,80 @@ def test_clone_dangling_catalog_reference_raises_when_catalog_supplied(
     assert any(issue.code == "unknown_catalog_reference" for issue in exc_info.value.issues)
 
 
-def test_clone_dangling_catalog_reference_not_checked_when_no_catalog_supplied(
+def test_clone_unresolvable_catalog_raises_when_world_has_catalog_references(
     store: WorldCloneStore, base_world: World
 ):
-    # Without a catalog, only structural validation applies (documented
-    # behaviour — the router always supplies the resolved catalog).
-    clone = store.create_clone(
-        base_world=base_world,
-        base_seed_id=_BASE_SEED_ID,
-        overrides=[FieldOverride(path="driver_profile.oshi_id", value="synthetic-artist-DOES-NOT-EXIST")],
+    """Whole-branch review FIX 5: an unresolvable/None catalog for a world
+    that HAS catalog references (here: the overridden ``oshi_id`` itself) is
+    now a validation error — never silently skipped. (Previously this exact
+    call succeeded with a dangling reference left unchecked — that
+    contradictory behaviour is precisely what FIX 5 closes; the router always
+    supplies the resolved catalog for the one frozen dataset in production,
+    so this only fires for a genuinely unresolvable/quarantined dataset.)
+    """
+    with pytest.raises(InvalidOverrideError) as exc_info:
+        store.create_clone(
+            base_world=base_world,
+            base_seed_id=_BASE_SEED_ID,
+            overrides=[FieldOverride(path="driver_profile.oshi_id", value="synthetic-artist-DOES-NOT-EXIST")],
+        )
+    assert any(issue.code == "unresolvable_catalog" for issue in exc_info.value.issues)
+
+
+def test_clone_unresolvable_catalog_not_raised_when_world_has_no_catalog_references(store: WorldCloneStore):
+    """A world with NO catalog references at all (oshi off, no history) is
+    safe to clone without a catalog — nothing would need to be checked."""
+    from aica_api.models.proposal.world import ControlInputs, DriverProfile, Situation
+    from aica_api.models.proposal.dataset import CatalogRef, DatasetVersion
+
+    bare_world = World(
+        control_inputs=ControlInputs(
+            trigger_purpose="rest_recommended",
+            lifecycle_stage="before_rest_until_stop",
+            motion_state="driving",
+            matrix_version="v1",
+            dataset_id="soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+        ),
+        situation=Situation(
+            drowsiness_level=50,
+            fatigue_level=50,
+            traffic_state="normal",
+            road_type="highway",
+            night_state="day",
+            monotony_level=50,
+            route_tags=[],
+            destination_tags=[],
+            child_present=False,
+            multiple_passengers=False,
+            motion_state="driving",
+            estimated_min_until_rest_spot=10,
+            rest_spot_type="sa_pa",
+            active_service=None,
+            recent_service_rejections=[],
+        ),
+        driver_profile=DriverProfile(
+            oshi_registered=False,
+            oshi_mode="off",
+            age_band="30s",
+            gender="unspecified",
+        ),
+        catalog_ref=CatalogRef(
+            dataset_id="soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+            dataset_version=DatasetVersion(
+                schema_version="1.0.0",
+                spotify_track_reference_version="1.0.0",
+                spotify_audio_features_reference_version="1.0.0",
+            ),
+            dataset_hash="sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+        ),
     )
-    assert clone.world.driver_profile.oshi_id == "synthetic-artist-DOES-NOT-EXIST"
+
+    clone = store.create_clone(
+        base_world=bare_world,
+        base_seed_id=_BASE_SEED_ID,
+        overrides=[FieldOverride(path="situation.drowsiness_level", value=10)],
+    )
+    assert clone.world.situation.drowsiness_level == 10
 
 
 def test_clone_requires_at_least_one_override(store: WorldCloneStore, base_world: World):
@@ -212,19 +284,20 @@ def test_clone_requires_at_least_one_override(store: WorldCloneStore, base_world
     ],
 )
 def test_preset_one_variable_change_yields_single_field_diff(
-    store: WorldCloneStore, base_world: World, path: str, value
+    store: WorldCloneStore, base_world: World, catalog: list[Song], path: str, value
 ):
     clone = store.create_clone(
         base_world=base_world,
         base_seed_id=_BASE_SEED_ID,
         overrides=[FieldOverride(path=path, value=value)],
+        catalog=catalog,
     )
     assert len(clone.diff) == 1
     assert clone.diff[0].path == path
     assert clone.diff[0].after == value
 
 
-def test_preset_recent_service_rejection_vs_none(store: WorldCloneStore, base_world: World):
+def test_preset_recent_service_rejection_vs_none(store: WorldCloneStore, base_world: World, catalog: list[Song]):
     clone = store.create_clone(
         base_world=base_world,
         base_seed_id=_BASE_SEED_ID,
@@ -234,6 +307,7 @@ def test_preset_recent_service_rejection_vs_none(store: WorldCloneStore, base_wo
                 value=[{"service_id": "music_playlist", "rejected_at": "2026-07-16T09:00:00Z"}],
             )
         ],
+        catalog=catalog,
     )
     assert len(clone.diff) == 1
     assert clone.diff[0].path == "situation.recent_service_rejections"
@@ -241,7 +315,7 @@ def test_preset_recent_service_rejection_vs_none(store: WorldCloneStore, base_wo
     assert clone.diff[0].after == [{"service_id": "music_playlist", "rejected_at": "2026-07-16T09:00:00Z"}]
 
 
-def test_preset_acceptance_confidence_change(store: WorldCloneStore, base_world: World):
+def test_preset_acceptance_confidence_change(store: WorldCloneStore, base_world: World, catalog: list[Song]):
     clone = store.create_clone(
         base_world=base_world,
         base_seed_id=_BASE_SEED_ID,
@@ -251,6 +325,7 @@ def test_preset_acceptance_confidence_change(store: WorldCloneStore, base_world:
                 value={"synthetic-track-0001": 0.1},
             )
         ],
+        catalog=catalog,
     )
     assert len(clone.diff) == 1
     assert clone.diff[0].path == "driver_profile.content_proposal_acceptance_confidence"
@@ -262,11 +337,12 @@ def test_preset_acceptance_confidence_change(store: WorldCloneStore, base_world:
 # ---------------------------------------------------------------------------
 
 
-def test_list_get_delete_round_trip(store: WorldCloneStore, base_world: World):
+def test_list_get_delete_round_trip(store: WorldCloneStore, base_world: World, catalog: list[Song]):
     clone = store.create_clone(
         base_world=base_world,
         base_seed_id=_BASE_SEED_ID,
         overrides=[FieldOverride(path="situation.drowsiness_level", value=42)],
+        catalog=catalog,
     )
 
     summaries = store.list_clones()
@@ -285,12 +361,13 @@ def test_get_unknown_clone_returns_none(store: WorldCloneStore):
     assert store.get_clone("no-such-clone") is None
 
 
-def test_persisted_clone_visible_from_a_new_store_instance(tmp_path, base_world: World):
+def test_persisted_clone_visible_from_a_new_store_instance(tmp_path, base_world: World, catalog: list[Song]):
     store_a = WorldCloneStore(tmp_path)
     clone = store_a.create_clone(
         base_world=base_world,
         base_seed_id=_BASE_SEED_ID,
         overrides=[FieldOverride(path="situation.drowsiness_level", value=33)],
+        catalog=catalog,
     )
 
     store_b = WorldCloneStore(tmp_path)

@@ -122,6 +122,7 @@ export default function ServiceProposalPanel() {
         motion_state: state.motionState,
         world: state.world,
         origin_seed_id: state.selectedSeedId,
+        origin_clone_id: state.selectedCloneId,
         origin_profile_id: state.selectedProfileId,
         service_package_id: manifest.id,
         content_package_id: contentPackageId,

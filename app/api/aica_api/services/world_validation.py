@@ -45,7 +45,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 from aica_api.models.proposal.song_schema import Song
 from aica_api.models.proposal.world import World
 
-__all__ = ["ValidationIssue", "validate_world"]
+__all__ = ["ValidationIssue", "validate_world", "has_catalog_references"]
 
 
 # ---------------------------------------------------------------------------
@@ -207,6 +207,29 @@ def _catalog_reference_issues(world: World, catalog: list[Song]) -> list[Validat
         )
 
     return issues
+
+
+def has_catalog_references(world: World) -> bool:
+    """Return True if ``world`` references the catalog in ANY way: a non-None
+    ``driver_profile.oshi_id``, or any track-id list/map field
+    (``_TRACK_ID_LIST_FIELDS``/``_TRACK_ID_MAP_FIELDS``) that is non-empty.
+
+    Used by callers (e.g. ``world_clone_store.create_clone`` — whole-branch
+    review FIX 5) that must decide whether an unresolvable/missing catalog is
+    safe to skip reference validation against (a world with NO catalog
+    references at all), or must be treated as an error because there IS
+    something in the world that would need checking but can't be.
+    """
+    profile = world.driver_profile
+    if profile.oshi_id is not None:
+        return True
+    for list_field in _TRACK_ID_LIST_FIELDS:
+        if getattr(profile, list_field):
+            return True
+    for map_field in _TRACK_ID_MAP_FIELDS:
+        if getattr(profile, map_field):
+            return True
+    return False
 
 
 # ---------------------------------------------------------------------------

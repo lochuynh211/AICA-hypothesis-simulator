@@ -1051,6 +1051,29 @@ def select_service(run_id: str, body: SelectServiceBody) -> ProposalRunLog:
         active_service_id=new_active_service_id,
         active_plan_id=run_log.journey_state.active_plan_id,
     )
+
+    # FIX 2 (whole-branch review): re-freeze the persisted setup_snapshot's
+    # content_parameter_set_version (+ content_contract_version) to the
+    # CONTENT parameter set ACTUALLY used at STEP 2, mirroring exactly how
+    # STEP 1 (`_freeze_setup_snapshot`) derives it from the resolved
+    # hyperparameters -- STEP 1 only ever freezes the manifest DEFAULTS,
+    # which misrepresents the run whenever the reviewer overrides content
+    # hyperparameters at STEP 2 (FR-011/SC-008). Only the persisted metadata
+    # changes here -- `context`/`evidence` above (what evaluate() received
+    # and returned) are already fixed by this point, untouched by this block.
+    updated_setup_snapshot = None
+    if run_log.setup_snapshot is not None:
+        used_content_parameter_set_version = content_hyperparameters.get(
+            "parameter_set_version", content_pkg.version
+        )
+        updated_setup_snapshot = run_log.setup_snapshot.model_copy(
+            update={
+                "content_package_id": content_pkg.id,
+                "content_contract_version": content_pkg.contract_version,
+                "content_parameter_set_version": used_content_parameter_set_version,
+            }
+        )
+
     run_log = prm.update_state(
         run_id,
         settings.proposal_runs_dir,
@@ -1058,6 +1081,7 @@ def select_service(run_id: str, body: SelectServiceBody) -> ProposalRunLog:
         journey_state=new_journey_state,
         content_parameters=content_parameters,
         content_hyperparameters=content_hyperparameters,
+        setup_snapshot=updated_setup_snapshot,
     )
     return run_log
 

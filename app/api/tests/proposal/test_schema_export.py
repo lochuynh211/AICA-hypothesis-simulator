@@ -47,6 +47,16 @@ def _fresh_genre_affinity_schema() -> str:
     return render_json(GenreAffinityV1.model_json_schema())
 
 
+def _fresh_world_schema() -> str:
+    from aica_api.models.proposal.world import World
+    return render_json(World.model_json_schema())
+
+
+def _fresh_dataset_schema() -> str:
+    from aica_api.models.proposal.dataset import DatasetProvenance
+    return render_json(DatasetProvenance.model_json_schema())
+
+
 def _fresh_dispositions() -> str:
     from aica_api.models.proposal.dispositions import (
         CONTENT_FEATURE_DISPOSITIONS,
@@ -69,6 +79,9 @@ _DRIFT_CASES = [
     ("schema/content_output.schema.json", _fresh_content_output_schema),
     ("schema/song.schema.json", _fresh_song_schema),
     ("schema/genre_affinity_v1.schema.json", _fresh_genre_affinity_schema),
+    # P3 (014-proposal-p3-editable-world) additions -- whole-branch review FIX 3.
+    ("schema/world.schema.json", _fresh_world_schema),
+    ("schema/dataset.schema.json", _fresh_dataset_schema),
     ("dispositions/content_feature_dispositions.v1.json", _fresh_dispositions),
 ]
 

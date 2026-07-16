@@ -59,6 +59,7 @@ def _schema_artifacts() -> dict[str, Any]:
         "schema/song.schema.json": Song.model_json_schema(),
         "schema/genre_affinity_v1.schema.json": GenreAffinityV1.model_json_schema(),
         **_p1_schema_artifacts(),
+        **_p3_schema_artifacts(),
     }
 
 
@@ -87,6 +88,26 @@ def _p1_schema_artifacts() -> dict[str, Any]:
         "schema/p1_journey_state.schema.json": JourneyState.model_json_schema(),
         "schema/p1_algorithm_evidence.schema.json": AlgorithmEvidence.model_json_schema(),
         "schema/p1_proposal_run_log.schema.json": ProposalRunLog.model_json_schema(),
+    }
+
+
+def _p3_schema_artifacts() -> dict[str, Any]:
+    """P3 (014-proposal-p3-editable-world) contract schemas (whole-branch
+    review FIX 3 / T037 completeness).
+
+    Freezes the typed ``World`` (the editable-world surface itself) and the
+    frozen dataset's ``DatasetProvenance`` shape (the catalog/dataset model
+    referenced by ``World.catalog_ref``/``SetupSnapshot`` -- the raw
+    ``Song`` catalog list itself is already covered by
+    ``schema/song.schema.json`` above) against drift, mirroring
+    ``_p1_schema_artifacts``.
+    """
+    from aica_api.models.proposal.world import World
+    from aica_api.models.proposal.dataset import DatasetProvenance
+
+    return {
+        "schema/world.schema.json": World.model_json_schema(),
+        "schema/dataset.schema.json": DatasetProvenance.model_json_schema(),
     }
 
 

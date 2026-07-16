@@ -9,9 +9,15 @@ Given a base ``World`` (typically loaded from a committed ``SeedWorld`` via
      of the base world's JSON-mode dump,
   2. re-validates the result as a complete ``World`` (structural — enum/range/
      purpose-stage — via the model itself),
-  3. optionally re-validates catalog references via the existing
-     ``services/world_validation.validate_world`` (reused unchanged, per the
-     unit brief — **NOT** via ``mdg``),
+  3. re-validates catalog references via the existing
+     ``services/world_validation.validate_world`` whenever ``catalog`` is
+     supplied (reused unchanged, per the unit brief — **NOT** via ``mdg``).
+     If ``catalog`` is ``None`` (unresolvable/quarantined dataset) AND the
+     cloned world actually references the catalog in any way
+     (``world_validation.has_catalog_references``), this is now a validation
+     error (``unresolvable_catalog``) rather than a silent skip — whole-branch
+     review FIX 5. A world with NO catalog references at all is still safe to
+     clone without a catalog (nothing would need checking).
   4. computes a deterministic ``diff``: EXACTLY the overridden path(s) with
      their before/after values (never a spurious diff from re-serialization,
      since we only read the same paths back out of the base/clone dumps —
@@ -46,7 +52,7 @@ from pydantic import ValidationError
 
 from aica_api.models.proposal.song_schema import Song
 from aica_api.models.proposal.world import FieldDiff, FieldOverride, World, WorldClone
-from aica_api.services.world_validation import ValidationIssue, validate_world
+from aica_api.services.world_validation import ValidationIssue, has_catalog_references, validate_world
 from aica_api.storage.file_store import read_json, write_json_atomic
 
 __all__ = [
@@ -216,6 +222,30 @@ class WorldCloneStore:
             issues = validate_world(cloned_world, catalog)
             if issues:
                 raise InvalidOverrideError(issues)
+        elif has_catalog_references(cloned_world):
+            # Whole-branch review FIX 5: an unresolvable/missing catalog used
+            # to silently skip reference validation entirely -- even for a
+            # world that DOES reference the catalog (e.g. `oshi_id`, played/
+            # skipped items, acceptance-rate maps). That let a clone with a
+            # dangling catalog reference be created/persisted unchecked. Now:
+            # if there's nothing to check (a bare world with no references at
+            # all), skipping is still safe and cheap; otherwise, the caller
+            # must supply the resolved catalog, or this is treated as a
+            # validation error -- never a silent pass-through.
+            raise InvalidOverrideError(
+                [
+                    _issue(
+                        path="control_inputs.dataset_id",
+                        code="unresolvable_catalog",
+                        message=(
+                            f"Cannot validate catalog references for dataset "
+                            f"{cloned_world.control_inputs.dataset_id!r}: no catalog was "
+                            "supplied (unknown/quarantined dataset), but the world "
+                            "contains catalog references that would need checking."
+                        ),
+                    )
+                ]
+            )
 
         clone = WorldClone(
             clone_id=_make_clone_id(),
