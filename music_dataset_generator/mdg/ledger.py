@@ -56,6 +56,11 @@ def is_known(ledger: list[dict], keys: dict) -> bool:
     return bool(_tokens(keys) & known_identity_tokens(ledger))
 
 
+def current_loop_number(ledger: list[dict]) -> int:
+    """The highest loop number present in the ledger (0 for an empty ledger)."""
+    return max((e.get("loop", 0) for e in (ledger or [])), default=0)
+
+
 def accepted_cells(ledger: list[dict]) -> list[str]:
     """Cells filled by accepted entries (for ledger-relative coverage)."""
     return [

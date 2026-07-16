@@ -366,7 +366,42 @@ def _cmd_certify(args: argparse.Namespace) -> None:
 
 
 def _cmd_report(args: argparse.Namespace) -> None:
-    _not_implemented("report")
+    """Assemble the committed build_report.json from generation-side state."""
+    from pathlib import Path
+
+    from mdg.coverage.plan import build_coverage_plan
+    from mdg.ledger import load_ledger
+    from mdg.report import build_report
+
+    workspace, dataset_dir = _paths(args)
+    ledger = load_ledger(workspace / "ledger.json")
+
+    def _load(name):
+        path = workspace / name
+        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+
+    plan = build_coverage_plan(args.tier, ledger=ledger)
+    required_cells = {c.cell_id for c in plan.cells}
+    test_cases = None
+    tc_path = Path(dataset_dir).parent / "test_cases" / "test_cases.json"
+    if tc_path.exists():
+        test_cases = json.loads(tc_path.read_text(encoding="utf-8"))
+
+    report = build_report(
+        candidate_source=args.candidate_source,
+        ledger=ledger,
+        required_cells=required_cells,
+        soundcharts_calls=(_load("harvest_stats.json") or {}).get("soundcharts_calls", 0),
+        probe_result=_load("probe_result.json"),
+        repairs=_load("repairs.json"),
+        test_cases=test_cases,
+    )
+    out_dir = Path(dataset_dir).parent / "build_reports"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "build_report.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps({"wrote": str(out_dir / "build_report.json"),
+                      "coverage_passed": report["coverage_checklist"]["passed"]}))
 
 
 def main(argv: Optional[list[str]] = None) -> int:
@@ -558,6 +593,13 @@ def main(argv: Optional[list[str]] = None) -> int:
         help="Generate build_report.json from current run state.",
     )
     _add_common_args(p_report)
+    p_report.add_argument("--tier", choices=["smoke", "demonstration", "stress"],
+                          default="demonstration",
+                          help="Tier whose coverage checklist the report evaluates.")
+    p_report.add_argument("--candidate-source",
+                          choices=["isrc_resolved", "soundcharts_search"],
+                          default="isrc_resolved",
+                          help="Strategy recorded in the report.")
     p_report.set_defaults(func=_cmd_report)
 
     args = parser.parse_args(argv)
