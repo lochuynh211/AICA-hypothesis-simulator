@@ -1,0 +1,254 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e840c6-8dde-625e-88cd-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kali-uchis/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/5/3/11e81bc1-8353-6b56-8c3e-a0369fe50396.jpg",
+      "name": "Kali Uchis",
+      "slug": "kali-uchis",
+      "uuid": "11e81bc1-8353-6b56-8c3e-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/daniel-caesar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/5/5/11e81bc9-c55f-3518-87ed-a0369fe50396.jpg",
+      "name": "Daniel Caesar",
+      "slug": "daniel-caesar",
+      "uuid": "11e81bc9-c55f-3518-87ed-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.42,
+    "danceability": 0.66,
+    "energy": 0.29,
+    "instrumentalness": 0,
+    "key": 4,
+    "liveness": 0.07,
+    "loudness": -8.53,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 74.04,
+    "timeSignature": 4,
+    "valence": 0.36
+  },
+  "composers": [
+    "Matthew Tavares"
+  ],
+  "copyright": "2016 Daniel Caesar",
+  "creditName": "Daniel Caesar & Kali Uchis",
+  "credits": [
+    {
+      "name": "Alexander Sowinski",
+      "roles": [
+        "drums",
+        "drum programmer"
+      ],
+      "uuid": "d251fd61-c311-4645-9a60-a71cff63b7ab"
+    },
+    {
+      "name": "Leland Whitty",
+      "roles": [
+        "composer",
+        "lyricist",
+        "songwriter"
+      ],
+      "uuid": "77aab5a3-f7a8-4147-b4ee-3a1bfb20f615"
+    },
+    {
+      "name": "Jordan Evans",
+      "roles": [
+        "producer",
+        "writer",
+        "mix",
+        "drums",
+        "engineer",
+        "drum programmer",
+        "lyricist"
+      ],
+      "uuid": "2382908b-3ee4-42a7-ac22-8ce0e02151aa"
+    },
+    {
+      "name": "Matthew Tavares",
+      "roles": [
+        "writer",
+        "mix",
+        "engineer",
+        "additional production",
+        "lyricist"
+      ],
+      "uuid": "f6bfa1a9-e960-47de-9f61-fd0e9eb4c4af"
+    },
+    {
+      "name": "Kali Uchis",
+      "roles": [
+        "writer",
+        "vocals"
+      ],
+      "uuid": "70e79840-cbde-4a61-af52-0b40bdb404ac"
+    },
+    {
+      "name": "Daniel Caesar",
+      "roles": [
+        "writer",
+        "vocals"
+      ],
+      "uuid": "fce5007c-4eda-454a-9370-6549df7ba962"
+    },
+    {
+      "name": "Badbadnotgood",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "5b8f1fcb-c548-4e57-a251-fda859c2345e"
+    },
+    {
+      "name": "Wes Allen",
+      "roles": [
+        "bass guitar"
+      ],
+      "uuid": "804f8c5b-ebe7-487c-b1fb-43f8a1013272"
+    },
+    {
+      "name": "Riley Bell",
+      "roles": [
+        "mix",
+        "mastering",
+        "engineer"
+      ],
+      "uuid": "461f381f-f6fa-4284-9a9a-8ae35944af8c"
+    },
+    {
+      "name": "Matthew Burnett",
+      "roles": [
+        "producer",
+        "writer",
+        "keyboard"
+      ],
+      "uuid": "6ab9e1a6-d2be-464d-ae18-9b1c3a18c486"
+    },
+    {
+      "name": "Chester Hansen",
+      "roles": [
+        "keyboard",
+        "lyricist"
+      ],
+      "uuid": "34d512ae-40f0-40b5-9759-473c030442de"
+    },
+    {
+      "name": "Ian Cully",
+      "roles": [
+        "guitar"
+      ],
+      "uuid": "22ae4a48-589e-4001-8bdc-223c0f52e3cb"
+    },
+    {
+      "name": "Wesley Allen",
+      "roles": [
+        "composer",
+        "lyricist",
+        "songwriter"
+      ],
+      "uuid": "9db82557-7d1e-44ae-86cf-0944d10f8d24"
+    },
+    {
+      "name": "M. Burnett",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "21cb3a37-e004-438a-9828-36ca899b792f"
+    },
+    {
+      "name": "Badbadnotgood",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "ffe03572-6423-4862-a559-eb8dfb2f45d5"
+    },
+    {
+      "name": "Ashton Simmonds",
+      "roles": [
+        "composer",
+        "lyricist",
+        "songwriter"
+      ],
+      "uuid": "a73f4da6-4f35-4d31-aec4-8be6164dfd88"
+    },
+    {
+      "name": "Alexander Sowinkski",
+      "roles": [
+        "composer",
+        "lyricist",
+        "songwriter"
+      ],
+      "uuid": "1842d033-9058-44ed-b511-f7059678195d"
+    },
+    {
+      "name": "Ian Culley",
+      "roles": [
+        "composer",
+        "lyricist",
+        "songwriter"
+      ],
+      "uuid": "0dc0f6bc-7f21-44c3-9022-7ba22ea45d04"
+    },
+    {
+      "name": "Karly Loiza",
+      "roles": [
+        "composer",
+        "lyricist",
+        "songwriter"
+      ],
+      "uuid": "bc90c888-c0b6-4257-8690-5d4af0cd2dcb"
+    }
+  ],
+  "distributor": "",
+  "duration": 278,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    },
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b",
+        "r&b, funk & soul"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/e/d/d/11e840c6-8dde-625e-88cd-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "",
+    "countryName": "",
+    "value": "TCACR1690004"
+  },
+  "iswcs": [
+    "T9217242676"
+  ],
+  "labels": [
+    {
+      "name": "Daniel Caesar",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/daniel-caesar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/5/5/11e81bc9-c55f-3518-87ed-a0369fe50396.jpg",
+      "name": "Daniel Caesar",
+      "slug": "daniel-caesar",
+      "uuid": "11e81bc9-c55f-3518-87ed-a0369fe50396"
+    }
+  ],
+  "name": "Get You",
+  "producers": [
+    "BADBADNOTGOOD",
+    "Matthew Burnett",
+    "Jordan Evans"
+  ],
+  "releaseDate": "2016-10-21T00:00:00+00:00",
+  "uuid": "11e840c6-8dde-625e-88cd-a0369fe50396"
+}

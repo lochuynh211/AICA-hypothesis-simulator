@@ -1,0 +1,210 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/8475156c-d6d7-11e8-a15a-525400009efb/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/swae-lee/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/6/a/11e81bd0-7a67-d07c-8ed0-a0369fe50396.jpg",
+      "name": "Swae Lee",
+      "slug": "swae-lee",
+      "uuid": "11e81bd0-7a67-d07c-8ed0-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/post-malone/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/a/a/11e81bd3-1aa8-e9ac-949d-a0369fe50396.jpg",
+      "name": "Post Malone",
+      "slug": "post-malone",
+      "uuid": "11e81bd3-1aa8-e9ac-949d-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.53,
+    "danceability": 0.76,
+    "energy": 0.52,
+    "instrumentalness": 0,
+    "key": 2,
+    "liveness": 0.07,
+    "loudness": -4.37,
+    "mode": 1,
+    "speechiness": 0.06,
+    "tempo": 89.96,
+    "timeSignature": 4,
+    "valence": 0.93
+  },
+  "composers": [
+    "Louis Bell",
+    "William Walsh",
+    "Carl Rosen",
+    "Austin Richard Post",
+    "Carter Lang",
+    "Khalif Malik Ibin Shaman Brown",
+    "Louis Russel Bell"
+  ],
+  "copyright": "℗ 2019 Republic Records, a division of UMG Recordings, Inc.",
+  "creditName": "Post Malone & Swae Lee",
+  "credits": [
+    {
+      "name": "William Walsh",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "be8857b4-1300-459b-a726-00293401339a"
+    },
+    {
+      "name": "Louis Bell",
+      "roles": [
+        "producer",
+        "writer",
+        "recording"
+      ],
+      "uuid": "d0e6384b-233d-47a7-a781-c4f8febd3a6a"
+    },
+    {
+      "name": "Billy Walsh",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "586f0096-cbaf-4ddc-af56-362ec07c9029"
+    },
+    {
+      "name": "Chris Galland",
+      "roles": [
+        "remixing second engineer"
+      ],
+      "uuid": "da97aa03-6742-425b-84ff-7ebca62db71a"
+    },
+    {
+      "name": "Manny Marroquin",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "57995644-dae9-41a3-97b2-502ed827ff4f"
+    },
+    {
+      "name": "Robin Florent",
+      "roles": [
+        "remixing second engineer"
+      ],
+      "uuid": "0b6a6fce-099f-4cb8-ab18-6e0bca845ac2"
+    },
+    {
+      "name": "Scott Desmarais",
+      "roles": [
+        "remixing second engineer"
+      ],
+      "uuid": "674e5040-363d-4fae-83e3-e6f05ecc21fe"
+    },
+    {
+      "name": "Bernie Grundman",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "ccdb5936-bec4-4230-b511-6c389ed52622"
+    },
+    {
+      "name": "Mike Bozzi",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "52318d94-2904-4ce6-9fa5-55a2c5413b9d"
+    },
+    {
+      "name": "Carl Rosen",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "04d6ea3c-887e-4805-9015-979a15d23d6c"
+    },
+    {
+      "name": "Swae Lee",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "4703db92-899a-4f3e-ad25-ef1260f97dad"
+    },
+    {
+      "name": "Carter Lang",
+      "roles": [
+        "producer",
+        "writer",
+        "programming"
+      ],
+      "uuid": "586e075b-14f4-4941-8b39-51b1d32c21eb"
+    },
+    {
+      "name": "Austin Post",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "afedd13c-893c-453e-a6a1-ec696cc8d9e8"
+    },
+    {
+      "name": "Louis Russell Bell",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "96553a8a-4148-4308-b391-f781bf6a2c9c"
+    },
+    {
+      "name": "Michael \"DJ Mike D\" Adachi",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "72a2c078-58d0-408f-9924-afd9b4c2dc3b"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 158,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/7/d/6/8475156c-d6d7-11e8-a15a-525400009efb.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USUM71814888"
+  },
+  "iswcs": [
+    "T9267907095"
+  ],
+  "labels": [
+    {
+      "name": "Republic",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/swae-lee/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/6/a/11e81bd0-7a67-d07c-8ed0-a0369fe50396.jpg",
+      "name": "Swae Lee",
+      "slug": "swae-lee",
+      "uuid": "11e81bd0-7a67-d07c-8ed0-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/post-malone/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/a/a/11e81bd3-1aa8-e9ac-949d-a0369fe50396.jpg",
+      "name": "Post Malone",
+      "slug": "post-malone",
+      "uuid": "11e81bd3-1aa8-e9ac-949d-a0369fe50396"
+    }
+  ],
+  "name": "Sunflower (Spider-Man: Into the Spider-Verse)",
+  "producers": [
+    "Louis Bell",
+    "Carter Lang"
+  ],
+  "releaseDate": "2019-09-06T00:00:00+00:00",
+  "uuid": "8475156c-d6d7-11e8-a15a-525400009efb"
+}

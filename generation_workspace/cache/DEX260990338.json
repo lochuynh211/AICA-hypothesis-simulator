@@ -1,0 +1,90 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/5fa338e0-5662-4ee7-a853-e365d96def65/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/f-s-blumm/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/8/5/11e81bbd-a581-c8c0-872c-a0369fe50396.jpg",
+      "name": "F.S.Blumm",
+      "slug": "f-s-blumm",
+      "uuid": "11e81bbd-a581-c8c0-872c-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/nils-frahm/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/f/f/11e81bc1-2ffa-f65e-bbd6-a0369fe50396.jpg",
+      "name": "Nils Frahm",
+      "slug": "nils-frahm",
+      "uuid": "11e81bc1-2ffa-f65e-bbd6-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.86,
+    "danceability": 0.37,
+    "energy": 0.12,
+    "instrumentalness": 0.83,
+    "key": 9,
+    "liveness": 0.18,
+    "loudness": -17.42,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 120.56,
+    "timeSignature": 4,
+    "valence": 0.13
+  },
+  "composers": [
+    "Nils Frahm",
+    "Frank Schültge"
+  ],
+  "copyright": "℗ 2010 Sonic Pieces",
+  "creditName": "F.S.Blumm & Nils Frahm",
+  "credits": [],
+  "distributor": "",
+  "duration": 230,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    },
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/2/6/6/5fa338e0-5662-4ee7-a853-e365d96def65.jpg",
+  "isrc": {
+    "countryCode": "DE",
+    "countryName": "Germany",
+    "value": "DEX260990338"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Sonic Pieces",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/nils-frahm/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/f/f/11e81bc1-2ffa-f65e-bbd6-a0369fe50396.jpg",
+      "name": "Nils Frahm",
+      "slug": "nils-frahm",
+      "uuid": "11e81bc1-2ffa-f65e-bbd6-a0369fe50396"
+    }
+  ],
+  "name": "Rone Re",
+  "producers": [],
+  "releaseDate": "2010-06-18T00:00:00+00:00",
+  "uuid": "5fa338e0-5662-4ee7-a853-e365d96def65"
+}

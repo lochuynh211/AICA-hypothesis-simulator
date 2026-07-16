@@ -1,0 +1,72 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/afcab366-b8eb-11e8-9912-525400009efb/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aimyon/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/0/5/11e83feb-8507-cea8-91a7-aa1c026db3d8.jpg",
+      "name": "Aimyon",
+      "slug": "aimyon",
+      "uuid": "11e83feb-8507-cea8-91a7-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.05,
+    "danceability": 0.55,
+    "energy": 0.75,
+    "instrumentalness": 0,
+    "key": 2,
+    "liveness": 0.09,
+    "loudness": -3.1,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 106.09,
+    "timeSignature": 4,
+    "valence": 0.41
+  },
+  "composers": [
+    "Aimyon"
+  ],
+  "copyright": "2018 WARNER MUSIC JAPAN INC.",
+  "creditName": "Aimyon",
+  "credits": [],
+  "distributor": "Warner",
+  "duration": 308,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/e/8/afcab366-b8eb-11e8-9912-525400009efb.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPWP01870687"
+  },
+  "iswcs": [
+    "T9275429771"
+  ],
+  "labels": [
+    {
+      "name": "Warner",
+      "type": "Warner"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aimyon/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/0/5/11e83feb-8507-cea8-91a7-aa1c026db3d8.jpg",
+      "name": "Aimyon",
+      "slug": "aimyon",
+      "uuid": "11e83feb-8507-cea8-91a7-aa1c026db3d8"
+    }
+  ],
+  "name": "マリーゴールド",
+  "producers": [],
+  "releaseDate": "2018-07-18T00:00:00+00:00",
+  "uuid": "afcab366-b8eb-11e8-9912-525400009efb"
+}

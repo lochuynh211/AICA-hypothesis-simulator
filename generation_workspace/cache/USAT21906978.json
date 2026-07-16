@@ -1,0 +1,651 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/e056a0dc-17e3-11ea-9e1c-801844edfa71/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/roddy-ricch/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/6/4/11e83fee-1469-bdfc-86ec-aa1c026db3d8.jpg",
+      "name": "Roddy Ricch",
+      "slug": "roddy-ricch",
+      "uuid": "11e83fee-1469-bdfc-86ec-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.1,
+    "danceability": 0.9,
+    "energy": 0.59,
+    "instrumentalness": 0,
+    "key": 10,
+    "liveness": 0.79,
+    "loudness": -6.69,
+    "mode": 0,
+    "speechiness": 0.06,
+    "tempo": 116.97,
+    "timeSignature": 4,
+    "valence": 0.64
+  },
+  "composers": [
+    "Larrance Dopson",
+    "Rodrick Moore",
+    "Samuel Gloade",
+    "Adarius Moragne",
+    "Aqeel Qadir Tate",
+    "Khirye Anthony Tyler"
+  ],
+  "copyright": "℗ 2019 Atlantic Recording Corporation for the United States and WEA International Inc. for the world outside of the United States. A Warner Music Group Company",
+  "creditName": "Roddy Ricch",
+  "credits": [
+    {
+      "name": "KHIRYE ANTHONY TYLER",
+      "roles": [
+        "songwriter",
+        "writer"
+      ],
+      "uuid": "214e0607-4776-4159-85fb-c5ec9985d171"
+    },
+    {
+      "name": "Adarius Moragne",
+      "roles": [
+        "songwriter",
+        "writer"
+      ],
+      "uuid": "a5eb9b89-50cf-4125-b4d6-91325a3dbf84"
+    },
+    {
+      "name": "Rodrick Moore",
+      "roles": [
+        "songwriter",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "65043107-2e30-4c0a-9bf4-61d0646a4dd0"
+    },
+    {
+      "name": "Dylan Del Olmo",
+      "roles": [
+        "recording",
+        "engineer"
+      ],
+      "uuid": "cdf33513-b087-49f1-95c9-d60c4e029441"
+    },
+    {
+      "name": "Nicolas De Porcel",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "cf551014-24b3-4615-afd7-3f117592d518"
+    },
+    {
+      "name": "Larrance \"Rance\" Dopson",
+      "roles": [
+        "bass",
+        "keyboard"
+      ],
+      "uuid": "c79ac72d-61fc-4181-aa6a-134a0d427f89"
+    },
+    {
+      "name": "Larrance Dopson",
+      "roles": [
+        "songwriter",
+        "producer",
+        "writer",
+        "lyricist",
+        "additional  production"
+      ],
+      "uuid": "00c4b66d-35e9-42f2-8dc7-ca6ee6221455"
+    },
+    {
+      "name": "30 Roc",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "e8eb698b-7f04-42c5-b5d4-780a3f75cb69"
+    },
+    {
+      "name": "Curtis “Sircut” Bye",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "21239daf-c83e-45e5-8e0e-2ab9b66f19dd"
+    },
+    {
+      "name": "Mixed by Ali",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "e5de17a8-fe9f-4d64-bf8c-24097014c784"
+    },
+    {
+      "name": "Ya Boy N.O.I.S.",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "ba455f08-d414-4cc6-934d-eb8242f4df66"
+    },
+    {
+      "name": "Zachary Acosta",
+      "roles": [
+        "recording",
+        "assistant engineer"
+      ],
+      "uuid": "32afcbeb-4a4d-4901-9457-ef60f42f2098"
+    },
+    {
+      "name": "Ann-Marie Hoang",
+      "roles": [
+        "video wardrobe stylist"
+      ],
+      "uuid": "46d8367e-5e29-4aef-9a02-9a07471f3755"
+    },
+    {
+      "name": "Cameo FX",
+      "roles": [
+        "video visual effects artist"
+      ],
+      "uuid": "f83d80f1-cd1b-4cb1-8f51-4cf91b086303"
+    },
+    {
+      "name": "Company 3",
+      "roles": [
+        "video colorist"
+      ],
+      "uuid": "feab110c-7c8d-4793-869f-6f8feaccd2fb"
+    },
+    {
+      "name": "Jonas Morales",
+      "roles": [
+        "video 1st assistant director"
+      ],
+      "uuid": "10a80088-2a22-4c7b-a452-7411c373372a"
+    },
+    {
+      "name": "Bryan Smaller",
+      "roles": [
+        "video colorist"
+      ],
+      "uuid": "85ebe92c-1c76-460e-b82c-4acab6dd7dfc"
+    },
+    {
+      "name": "Christian Breslauer",
+      "roles": [
+        "video director",
+        "video executive producer"
+      ],
+      "uuid": "3aca6bd7-9634-4e50-8360-f8c13508c859"
+    },
+    {
+      "name": "Sarah-May Levy",
+      "roles": [
+        "video casting director"
+      ],
+      "uuid": "852a5906-86a2-42a4-8d84-ce2508236fad"
+    },
+    {
+      "name": "Roddy Ricch",
+      "roles": [
+        "writer",
+        "vocals"
+      ],
+      "uuid": "37a539b5-2073-4323-bff5-8633448facfc"
+    },
+    {
+      "name": "Chris Dennis",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "136f8998-5f20-41bf-9721-f0d29792aff8"
+    },
+    {
+      "name": "Rance",
+      "roles": [
+        "writer",
+        "bass",
+        "keyboard",
+        "additional production"
+      ],
+      "uuid": "20811d8c-9123-45dc-b9f2-8de5ba6b1eac"
+    },
+    {
+      "name": "Sergii Mashevskyi",
+      "roles": [
+        "video visual effects artist",
+        "video visual effects supervisor"
+      ],
+      "uuid": "a31a3474-1c3e-4984-ad80-28e992713b54"
+    },
+    {
+      "name": "Babak Mansouri",
+      "roles": [
+        "video camera crew"
+      ],
+      "uuid": "52f44d4d-2476-4c98-b407-871b965b9327"
+    },
+    {
+      "name": "Greg Arch",
+      "roles": [
+        "video director of photography"
+      ],
+      "uuid": "6576249a-0e9e-4562-8924-a705de8b11a3"
+    },
+    {
+      "name": "Taylor Huddleson",
+      "roles": [
+        "video best boy electric"
+      ],
+      "uuid": "5181f74b-3d94-4411-9cb7-4f65e2e05fb6"
+    },
+    {
+      "name": "Morgan Tyler Andersen",
+      "roles": [
+        "video makeup artist",
+        "video hair stylist"
+      ],
+      "uuid": "e54608a9-4f61-41d4-8b1b-fd25adba22b2"
+    },
+    {
+      "name": "Philip Collins (Key Grip)",
+      "roles": [
+        "video key grip"
+      ],
+      "uuid": "96245029-e91d-471d-8d37-b40e62ab4efd"
+    },
+    {
+      "name": "ZenTachi",
+      "roles": [
+        "producer",
+        "writer",
+        "additional production",
+        "additional  production"
+      ],
+      "uuid": "2e925cf2-c058-4347-8d33-ee5824ecc8fd"
+    },
+    {
+      "name": "Damon Limbrick",
+      "roles": [
+        "video 2nd assistant director"
+      ],
+      "uuid": "8950ff68-04a0-4709-8da6-67158abfd729"
+    },
+    {
+      "name": "Sara Hendrix",
+      "roles": [
+        "video 2nd assistant director"
+      ],
+      "uuid": "db6d9b2a-0021-4249-838c-0e4f2d7413a0"
+    },
+    {
+      "name": "Min Min Tsai",
+      "roles": [
+        "video clapper loader"
+      ],
+      "uuid": "0397e110-9c1f-48a2-9c44-8547df6ba3f8"
+    },
+    {
+      "name": "Yugeniy Zhuk",
+      "roles": [
+        "video focus puller"
+      ],
+      "uuid": "b50a0e73-710c-477a-82c4-f26423d2fdbb"
+    },
+    {
+      "name": "Edgar Esteves",
+      "roles": [
+        "video executive producer"
+      ],
+      "uuid": "f3602953-f8d6-4927-b06c-9d38c2f11806"
+    },
+    {
+      "name": "Elias Talbot",
+      "roles": [
+        "video director of photography"
+      ],
+      "uuid": "5142f675-73ab-4630-b92a-652530df1636"
+    },
+    {
+      "name": "Austin McCracken",
+      "roles": [
+        "video digital imaging technician"
+      ],
+      "uuid": "51fea6f6-e4f9-4bcb-b223-6bcd6b7ae556"
+    },
+    {
+      "name": "Joshua Deocariza",
+      "roles": [
+        "video art production assistant"
+      ],
+      "uuid": "a3854581-c05f-48be-9522-3bcfe013870b"
+    },
+    {
+      "name": "Richie Almshouse",
+      "roles": [
+        "video production assistant"
+      ],
+      "uuid": "5316be5b-213b-4ec4-a7ab-f3ef00abc74f"
+    },
+    {
+      "name": "Carlos Hernandez-Reyes",
+      "roles": [
+        "video production assistant"
+      ],
+      "uuid": "af0cbbe9-1e0f-4e3f-9101-f338f3893ced"
+    },
+    {
+      "name": "Darryl Miana",
+      "roles": [
+        "video production assistant"
+      ],
+      "uuid": "94c3b4c2-c4e7-44f3-8c9d-bced8576dafb"
+    },
+    {
+      "name": "Lexus Macon",
+      "roles": [
+        "video production assistant"
+      ],
+      "uuid": "d47a4d2b-3999-4071-9784-dc48bd4f4078"
+    },
+    {
+      "name": "Cerra Mendez",
+      "roles": [
+        "video set medic"
+      ],
+      "uuid": "1975f045-6523-40f0-a400-1b41dbdcf6be"
+    },
+    {
+      "name": "Kim Quyen",
+      "roles": [
+        "video assistant wardrobe stylist"
+      ],
+      "uuid": "9e1e56a1-78d4-47e6-92e6-c64c3d186a10"
+    },
+    {
+      "name": "951hellgato",
+      "roles": [
+        "video camera crew"
+      ],
+      "uuid": "80b1ae14-a859-45a4-95e5-d26af7d8079e"
+    },
+    {
+      "name": "Robert Meeks",
+      "roles": [
+        "video camera crew"
+      ],
+      "uuid": "6ac56340-cba1-47a9-9357-4f80bdbb6f9e"
+    },
+    {
+      "name": "Julian Vazquez",
+      "roles": [
+        "video art department"
+      ],
+      "uuid": "2f9c1e7a-164d-46fb-a488-e22d19bc7551"
+    },
+    {
+      "name": "Bro_gado",
+      "roles": [
+        "video art director"
+      ],
+      "uuid": "9f334415-104f-4293-818a-5b46dcfca84b"
+    },
+    {
+      "name": "Sinistermanus",
+      "roles": [
+        "video production designer"
+      ],
+      "uuid": "ca2e7ef3-ba9b-487a-8332-5f676a890b0d"
+    },
+    {
+      "name": "Sean McQueen",
+      "roles": [
+        "video grip"
+      ],
+      "uuid": "e17c4d6e-4d0e-4498-9693-0282f0518686"
+    },
+    {
+      "name": "Matt Cole",
+      "roles": [
+        "video grip"
+      ],
+      "uuid": "d4cc3bfb-abf1-442f-b481-3ff046dbefb2"
+    },
+    {
+      "name": "Edward Rodriguez",
+      "roles": [
+        "video best boy grip"
+      ],
+      "uuid": "f9776818-8442-4eb7-b5d8-1228551db04b"
+    },
+    {
+      "name": "Archgon_the_lighting_bear",
+      "roles": [
+        "video electrician"
+      ],
+      "uuid": "1fc6054e-c038-4fcb-a47f-19de208d0bc7"
+    },
+    {
+      "name": "Kelvin Yel Rim Cho",
+      "roles": [
+        "video electrician"
+      ],
+      "uuid": "0f55d765-9b37-4b9a-9079-03e838976c87"
+    },
+    {
+      "name": "Zachary Perez",
+      "roles": [
+        "video electrician"
+      ],
+      "uuid": "be719eb9-af12-49c9-9527-4af29195ac5c"
+    },
+    {
+      "name": "Daniel Kagle",
+      "roles": [
+        "video gaffer"
+      ],
+      "uuid": "56a551c8-46f5-4fdb-98b6-284dd9d29bc1"
+    },
+    {
+      "name": "Joan Pabon",
+      "roles": [
+        "video editor",
+        "video unit production manager"
+      ],
+      "uuid": "13b1ea55-2c68-4d2f-b2f7-78191d45b446"
+    },
+    {
+      "name": "Cory DeMeyers",
+      "roles": [
+        "video stunt coordinator"
+      ],
+      "uuid": "1ce9e4df-0d30-4e88-8af8-bdecc9e98f27"
+    },
+    {
+      "name": "Alan Yip",
+      "roles": [
+        "video production coordinator"
+      ],
+      "uuid": "a5981d9e-8d88-4b06-845f-cd317554c15d"
+    },
+    {
+      "name": "Gaby LaRosa",
+      "roles": [
+        "video line producer"
+      ],
+      "uuid": "61fda1c9-d7db-4ec7-ad5e-3eb86457d007"
+    },
+    {
+      "name": "Mike Breslauer",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "0f85d013-3be5-4694-a3da-726948d775c8"
+    },
+    {
+      "name": "Khirye Tyler",
+      "roles": [
+        "producer",
+        "writer",
+        "programming",
+        "bass",
+        "keyboard",
+        "additional production"
+      ],
+      "uuid": "b6d3ed6d-d111-4530-a207-bf46f5e7d788"
+    },
+    {
+      "name": "Asad Khan",
+      "roles": [
+        "video production assistant"
+      ],
+      "uuid": "b48116aa-e723-46ca-9659-b31b82afafd1"
+    },
+    {
+      "name": "Mario Castro",
+      "roles": [
+        "video colorist"
+      ],
+      "uuid": "e889ed95-c451-478e-8f9b-e5e3945e0943"
+    },
+    {
+      "name": "Derek \"MixedByAli\" Ali",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "1505964d-63af-4141-bc82-e64f5d09106a"
+    },
+    {
+      "name": "Datboisqueeze",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "0555f566-4979-4ed3-bd33-9e9158f4695f"
+    },
+    {
+      "name": "Million Dollar Snare",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "fdaa3a59-cef0-4dc5-a10d-961a9de81e15"
+    },
+    {
+      "name": "AQEEL QADIR TATE",
+      "roles": [
+        "songwriter",
+        "writer"
+      ],
+      "uuid": "c93ece04-a942-4f76-9ea9-ac7317ad1a2e"
+    },
+    {
+      "name": "Cyrus Massoud Taghipour",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "dbb3c64c-9b38-48e7-a19f-2d612dc406d7"
+    },
+    {
+      "name": "Cyrus \"NOIS\" Taghipour",
+      "roles": [
+        "assistant engineer",
+        "mix"
+      ],
+      "uuid": "6c3835ab-09d5-4555-8d35-fb384d34e5f8"
+    },
+    {
+      "name": "Khirye Taylor",
+      "roles": [
+        "additional production",
+        "additional  production"
+      ],
+      "uuid": "30badfe9-347b-4887-8fdc-cba38f42deb5"
+    },
+    {
+      "name": "John Connor",
+      "roles": [
+        "video production assistant"
+      ],
+      "uuid": "8c1ae60e-2dce-477b-8edb-2441503d03a4"
+    },
+    {
+      "name": "Samuel Gloade",
+      "roles": [
+        "writer",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "837d11d4-2b35-4089-a45d-7e5c5c84748e"
+    },
+    {
+      "name": "Larrance \"Rance\" Dopson",
+      "roles": [
+        "bass",
+        "keyboard"
+      ],
+      "uuid": "7eab5cd1-036d-4a90-a3d1-d2a7f635a790"
+    },
+    {
+      "name": "Khirye Anthony Tyler",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "12b896d9-990a-45fb-9587-78f82c48bc97"
+    },
+    {
+      "name": "Adarius Moragne",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "5a225f4b-c314-4714-9bb2-75e7437f7301"
+    },
+    {
+      "name": "Aqeel Qadir Tate",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "c0cf6f37-219a-4871-adf6-d4f01868a75d"
+    }
+  ],
+  "distributor": "Warner",
+  "duration": 196,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/e/7/e056a0dc-17e3-11ea-9e1c-801844edfa71.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USAT21906978"
+  },
+  "iswcs": [
+    "T9313558359"
+  ],
+  "labels": [
+    {
+      "name": "Atlantic",
+      "type": "Warner"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/roddy-ricch/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/6/4/11e83fee-1469-bdfc-86ec-aa1c026db3d8.jpg",
+      "name": "Roddy Ricch",
+      "slug": "roddy-ricch",
+      "uuid": "11e83fee-1469-bdfc-86ec-aa1c026db3d8"
+    }
+  ],
+  "name": "The Box",
+  "producers": [
+    "30 Roc",
+    "Datboisqueeze"
+  ],
+  "releaseDate": "2019-12-06T00:00:00+00:00",
+  "uuid": "e056a0dc-17e3-11ea-9e1c-801844edfa71"
+}

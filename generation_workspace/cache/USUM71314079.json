@@ -1,0 +1,330 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82613-d932-9b80-8c45-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/eminem/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/d/e/11e81bc7-3ed6-f0f0-9e74-a0369fe50396.jpg",
+      "name": "Eminem",
+      "slug": "eminem",
+      "uuid": "11e81bc7-3ed6-f0f0-9e74-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.4,
+    "danceability": 0.71,
+    "energy": 0.84,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.8,
+    "loudness": -2.66,
+    "mode": 1,
+    "speechiness": 0.31,
+    "tempo": 148.14,
+    "timeSignature": 4,
+    "valence": 0.63
+  },
+  "composers": [
+    "Marshall Mathers",
+    "S. Hacker",
+    "B. Zayas Jr",
+    "D. Davis",
+    "D.Birks",
+    "F. Shaheed",
+    "J Lee",
+    "J. Burns",
+    "K. Nazel",
+    "L. Walters",
+    "M. Delgiorno"
+  ],
+  "copyright": "℗ 2013 Aftermath Records",
+  "creditName": "Eminem",
+  "credits": [
+    {
+      "name": "David Davis",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "bcde4d7e-1162-4010-a318-81de1bab1058"
+    },
+    {
+      "name": "Marshall Mathers",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "2e54d090-9ca4-4f00-a01b-2412a0738a8a"
+    },
+    {
+      "name": "F1lthy",
+      "roles": [
+        "co-producer",
+        "writer"
+      ],
+      "uuid": "ea799573-103e-41ed-8af9-018b59b3ddc4"
+    },
+    {
+      "name": "Brian Gardner",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "ac72e2bb-63d0-4bf6-9b94-84cfed34fb42"
+    },
+    {
+      "name": "Bernie Grundman Mastering",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "aa9df1f4-808d-4210-a48d-01d6a3070ef6"
+    },
+    {
+      "name": "Mike Strange",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "9ad7265d-b146-4138-8d15-ac4790585fb4"
+    },
+    {
+      "name": "Justin Diener",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "320f7348-f0a2-4701-910c-a5a0a28f8656"
+    },
+    {
+      "name": "Kathy Angstadt",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "24151cc9-ea5b-4204-9d48-52d4b957e733"
+    },
+    {
+      "name": "Joe Strange",
+      "roles": [
+        "programming",
+        "recording",
+        "additional keyboards",
+        "additional programming"
+      ],
+      "uuid": "f57c9d9b-2c09-41af-a081-e4c191ccccd6"
+    },
+    {
+      "name": "Tony Campana",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "3e4a8bfe-ac3f-4598-a792-50b797ea443c"
+    },
+    {
+      "name": "DVLP",
+      "roles": [
+        "producer",
+        "writer",
+        "instruments"
+      ],
+      "uuid": "fa4d262e-6076-4af7-bca0-38450282ca4c"
+    },
+    {
+      "name": "Doug E. Fresh",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "a3b813e2-9732-405f-a22c-769637fb808f"
+    },
+    {
+      "name": "MC JB",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "fde63806-28d9-444a-b445-01836e825297"
+    },
+    {
+      "name": "Crazy J",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "2478379e-2396-481c-a817-1129979bd26b"
+    },
+    {
+      "name": "Ransom",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "18d96749-22bf-4c51-a3b1-4b527e71285e"
+    },
+    {
+      "name": "Baby D (J.J. Fad)",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "ac669819-4333-496f-b2ac-887f5f2bdbb8"
+    },
+    {
+      "name": "B. Zayas Jr",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "03b1c5f9-a9b3-4557-ab02-ddd260c0bf8e"
+    },
+    {
+      "name": "Stephen Hacker",
+      "roles": [
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "4efaef7a-d0f6-40d7-8cb6-59c65ce90872"
+    },
+    {
+      "name": "F. Shaheed",
+      "roles": [
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "e6ff4537-9378-48e9-aa74-5737a088a418"
+    },
+    {
+      "name": "K. Nazel",
+      "roles": [
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "bda717bf-b59d-4cf2-b9ee-52208764d7fd"
+    },
+    {
+      "name": "Bigram Zayas",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "dbacb266-c4a3-41e9-832b-b0275e7b79e7"
+    },
+    {
+      "name": "Ricky M.L. Walters",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "d85ee449-3819-492c-bf05-e60acb89f6dd"
+    },
+    {
+      "name": "Eminem",
+      "roles": [
+        "writer",
+        "mix",
+        "lyricist"
+      ],
+      "uuid": "6c3b36cf-415c-46c4-94a6-4374b8e04b8c"
+    },
+    {
+      "name": "Matthew Del Giorno",
+      "roles": [
+        "songwriter",
+        "co-producer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "8336fa45-0c88-4dad-9714-2dc7cf680cbf"
+    },
+    {
+      "name": "OG Rocker",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "1a613c70-213c-47f5-a338-b94ab96501e1"
+    },
+    {
+      "name": "D. Birks",
+      "roles": [
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "139a02a7-3aed-4c87-bd5a-451065d7c25c"
+    },
+    {
+      "name": "Juana Michelle Burns",
+      "roles": [
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "099de5a3-f225-412c-b48d-c398cd38af28"
+    },
+    {
+      "name": "Slick Rick",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "94785b26-3f53-42d1-b6f3-dfdd7a8b70a9"
+    },
+    {
+      "name": "Arabian Prince",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "3747dd82-37ae-4a84-a6cb-b97d47f1c10b"
+    },
+    {
+      "name": "J Lee",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "ac8deff2-f981-4e8c-9e9a-c1f92d733db4"
+    },
+    {
+      "name": "Rich Lee",
+      "roles": [
+        "video director"
+      ],
+      "uuid": "3c185453-b426-4e03-be36-aceeba14087b"
+    },
+    {
+      "name": "DVLP",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "fff33413-4567-408d-9776-0890688f0375"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 363,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/2/3/9/11e82613-d932-9b80-8c45-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USUM71314079"
+  },
+  "iswcs": [
+    "T9131837917"
+  ],
+  "labels": [
+    {
+      "name": "Aftermath",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/eminem/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/d/e/11e81bc7-3ed6-f0f0-9e74-a0369fe50396.jpg",
+      "name": "Eminem",
+      "slug": "eminem",
+      "uuid": "11e81bc7-3ed6-f0f0-9e74-a0369fe50396"
+    }
+  ],
+  "name": "Rap God",
+  "producers": [
+    "DVLP"
+  ],
+  "releaseDate": "2013-01-01T00:00:00+00:00",
+  "uuid": "11e82613-d932-9b80-8c45-a0369fe50396"
+}

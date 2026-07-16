@@ -1,0 +1,155 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/a57c8c4a-8296-4903-928b-8bb9c5da7cb7/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/jie-shubando/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/a/7/e8071655-e7a9-490f-bf58-1a7cf67423cc.jpg",
+      "name": "kessoku band",
+      "slug": "jie-shubando",
+      "uuid": "e8071655-e7a9-490f-bf58-1a7cf67423cc"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.53,
+    "energy": 0.95,
+    "instrumentalness": 0,
+    "key": 4,
+    "liveness": 0.12,
+    "loudness": -2.61,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 95.03,
+    "timeSignature": 4,
+    "valence": 0.53
+  },
+  "composers": [
+    "Ikkyu Nakajima"
+  ],
+  "copyright": "(P) 2022 Aniplex Inc.",
+  "creditName": "kessoku band",
+  "credits": [
+    {
+      "name": "​akkin",
+      "roles": [
+        "producer",
+        "electric guitar"
+      ],
+      "uuid": "54d63e8b-8bbe-4b36-952c-ae4a72b8396c"
+    },
+    {
+      "name": "Masaharu Yamanouchi",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "064cfa45-9911-47cb-8805-acfe5edde41a"
+    },
+    {
+      "name": "Yuichi Takama",
+      "roles": [
+        "bass"
+      ],
+      "uuid": "1b1394e5-4ecf-4d5c-9cb5-95f219b55a80"
+    },
+    {
+      "name": "Gen Okamura",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "65948aad-7ea6-446a-8fe9-165d370b5247"
+    },
+    {
+      "name": "Saku Mizuno",
+      "roles": [
+        "lead vocals"
+      ],
+      "uuid": "c56a6253-e0fa-4059-bdff-b90beac00a74"
+    },
+    {
+      "name": "Ritsuo Mitsui",
+      "roles": [
+        "arranger",
+        "electric guitar"
+      ],
+      "uuid": "2e66605f-fee1-4835-bff8-1d05b5d93767"
+    },
+    {
+      "name": "中嶋イッキュウ",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "52087f85-8c15-4e97-98ba-0e9ade975f6f"
+    },
+    {
+      "name": "Osamu Hidai",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "1ae39b4f-4134-4bc3-9005-700de0cc6612"
+    },
+    {
+      "name": "Mitsuyasu Abe",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "57a8a881-e5ca-4446-bbd3-c29c30337576"
+    },
+    {
+      "name": "Ritsuo Mitsui",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "d6ee726f-4c56-4447-bce1-7e09b8b24713"
+    },
+    {
+      "name": "Nakajima Ikkyuu",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "33db1650-7bc8-4054-9c92-6bcb65340d46"
+    }
+  ],
+  "distributor": "",
+  "duration": 264,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "soundtrack",
+      "sub": [
+        "anime",
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/6/9/2/a57c8c4a-8296-4903-928b-8bb9c5da7cb7.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPE302201019"
+  },
+  "iswcs": [
+    "T3175192282"
+  ],
+  "labels": [
+    {
+      "name": "Aniplex",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/jie-shubando/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/a/7/e8071655-e7a9-490f-bf58-1a7cf67423cc.jpg",
+      "name": "kessoku band",
+      "slug": "jie-shubando",
+      "uuid": "e8071655-e7a9-490f-bf58-1a7cf67423cc"
+    }
+  ],
+  "name": "Karakara",
+  "producers": [],
+  "releaseDate": "2022-10-30T00:00:00+00:00",
+  "uuid": "a57c8c4a-8296-4903-928b-8bb9c5da7cb7"
+}

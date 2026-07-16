@@ -1,0 +1,49 @@
+{
+  "name": "Dance With Me Tonight",
+  "isrc": {
+    "value": "JPXX02000201",
+    "countryCode": "JP",
+    "countryName": "Japan"
+  },
+  "iswcs": [],
+  "duration": 198,
+  "explicit": false,
+  "releaseDate": "2020-09-12",
+  "languageCode": "ja",
+  "genres": [
+    {
+      "root": "j-pop",
+      "sub": ["city pop"]
+    }
+  ],
+  "artists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000003",
+      "name": "City Pop Collective"
+    }
+  ],
+  "mainArtists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000003",
+      "name": "City Pop Collective"
+    }
+  ],
+  "labels": [],
+  "composers": [],
+  "producers": [],
+  "credits": [],
+  "audio": {
+    "acousticness": 0.08,
+    "danceability": 0.78,
+    "energy": 0.54,
+    "instrumentalness": 0.01,
+    "key": 9,
+    "liveness": 0.09,
+    "loudness": -7.1,
+    "mode": 1,
+    "speechiness": 0.06,
+    "tempo": 112.0,
+    "timeSignature": 4,
+    "valence": 0.72
+  }
+}

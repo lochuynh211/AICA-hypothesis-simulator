@@ -1,0 +1,94 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82677-06ff-3876-9cde-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/rebecca-2/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/8/0/11e81bc0-9083-6bb0-99a4-a0369fe50396.jpg",
+      "name": "REBECCA",
+      "slug": "rebecca-2",
+      "uuid": "11e81bc0-9083-6bb0-99a4-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.19,
+    "danceability": 0.54,
+    "energy": 0.92,
+    "instrumentalness": 0.05,
+    "key": 7,
+    "liveness": 0.25,
+    "loudness": -8.98,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 157.05,
+    "timeSignature": 4,
+    "valence": 0.94
+  },
+  "composers": [
+    "Akio Dobashi",
+    "NOKKO"
+  ],
+  "copyright": "(P)1984 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "REBECCA",
+  "credits": [
+    {
+      "name": "Akio Dobashi",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "15b446e8-0dbb-4f9f-9355-465da0e4b8e0"
+    },
+    {
+      "name": "NOKKO",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "f0be4a32-f947-433c-87c9-e69ba9c84b63"
+    },
+    {
+      "name": "Rebecca",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "b8c326f9-af7a-4938-bbb3-8abe1c348986"
+    },
+    {
+      "name": "Nokko",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "93b3b040-020b-4a83-8f43-28a5861eec58"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 272,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/f/f/6/11e82677-06ff-3876-9cde-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPSR08520070"
+  },
+  "iswcs": [
+    "T1015237826"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [],
+  "name": "フレンズ",
+  "producers": [],
+  "releaseDate": "1984-01-01T00:00:00+00:00",
+  "uuid": "11e82677-06ff-3876-9cde-aa1c026db3d8"
+}

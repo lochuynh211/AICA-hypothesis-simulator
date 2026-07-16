@@ -1,0 +1,119 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/35b95e9c-460e-4c6c-9e87-653a3877662e/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aimer/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/9/4/11e81bbc-b492-c5b8-b4b7-a0369fe50396.jpg",
+      "name": "Aimer",
+      "slug": "aimer",
+      "uuid": "11e81bbc-b492-c5b8-b4b7-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.37,
+    "energy": 0.9,
+    "instrumentalness": 0,
+    "key": 11,
+    "liveness": 0.21,
+    "loudness": -4,
+    "mode": 1,
+    "speechiness": 0.09,
+    "tempo": 170.86,
+    "timeSignature": 4,
+    "valence": 0.38
+  },
+  "composers": [
+    "Masahiro Tobinai"
+  ],
+  "copyright": "(P) 2021 Sony Music Labels Inc.",
+  "creditName": "Aimer",
+  "credits": [
+    {
+      "name": "Masahiro Tobinai",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "376b5629-1e97-497c-ae3f-45abf193d0fc"
+    },
+    {
+      "name": "Kenji Tamai",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "ca398a9b-e382-452b-aea4-45d93113270c"
+    },
+    {
+      "name": "Aimerrhythm",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "b1b5d6d2-f610-42e7-aee1-0de249f02d9e"
+    },
+    {
+      "name": "Kenji Tamai",
+      "roles": [
+        "producer",
+        "arranger"
+      ],
+      "uuid": "e4dce0ad-63f3-4cfe-a782-d35b61d9a5c9"
+    },
+    {
+      "name": "Masahiro Tobinai",
+      "roles": [
+        "composer",
+        "arranger"
+      ],
+      "uuid": "1671baba-6a10-4765-a66f-0558c430d66d"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 184,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    },
+    {
+      "root": "j-pop",
+      "sub": [
+        "j-pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/e/0/6/35b95e9c-460e-4c6c-9e87-653a3877662e.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU902104729"
+  },
+  "iswcs": [
+    "T3087980089",
+    "T3103336632"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aimer/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/9/4/11e81bbc-b492-c5b8-b4b7-a0369fe50396.jpg",
+      "name": "Aimer",
+      "slug": "aimer",
+      "uuid": "11e81bbc-b492-c5b8-b4b7-a0369fe50396"
+    }
+  ],
+  "name": "Zankyosanka",
+  "producers": [
+    "玉井健二"
+  ],
+  "releaseDate": "2021-12-06T00:00:00+00:00",
+  "uuid": "35b95e9c-460e-4c6c-9e87-653a3877662e"
+}

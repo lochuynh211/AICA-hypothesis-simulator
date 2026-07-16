@@ -1,0 +1,81 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/0fea825b-a6ee-443c-9f4f-51c2aabd9b4e/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ichiko-aoba/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/e/8/ed78eafa-b8e3-11e8-92df-525400009efb.jpg",
+      "name": "Ichiko Aoba",
+      "slug": "ichiko-aoba",
+      "uuid": "ed78eafa-b8e3-11e8-92df-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.99,
+    "danceability": 0.56,
+    "energy": 0.1,
+    "instrumentalness": 0.77,
+    "key": 3,
+    "liveness": 0.1,
+    "loudness": -20.83,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 157.35,
+    "timeSignature": 4,
+    "valence": 0.16
+  },
+  "composers": [
+    "Ichiko Aoba"
+  ],
+  "copyright": "2020 hermine",
+  "creditName": "Ichiko Aoba",
+  "credits": [
+    {
+      "name": "Ichiko Aoba",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "1a34d756-56b1-4702-bcf7-56af8b133b41"
+    }
+  ],
+  "distributor": "",
+  "duration": 237,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/e/e/6/0fea825b-a6ee-443c-9f4f-51c2aabd9b4e.jpg",
+  "isrc": {
+    "countryCode": "",
+    "countryName": "",
+    "value": "TCJPM2079800"
+  },
+  "iswcs": [
+    "T3030076069"
+  ],
+  "labels": [
+    {
+      "name": "Hermine",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ichiko-aoba/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/e/8/ed78eafa-b8e3-11e8-92df-525400009efb.jpg",
+      "name": "Ichiko Aoba",
+      "slug": "ichiko-aoba",
+      "uuid": "ed78eafa-b8e3-11e8-92df-525400009efb"
+    }
+  ],
+  "name": "Sagu Palm's Song",
+  "producers": [],
+  "releaseDate": "2020-12-02T00:00:00+00:00",
+  "uuid": "0fea825b-a6ee-443c-9f4f-51c2aabd9b4e"
+}

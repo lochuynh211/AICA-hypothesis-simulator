@@ -1,0 +1,314 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/209f48cf-5962-40dd-86c0-8d87e72ae8c7/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/21-savage/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/b/d/11e81bc3-1db8-3a72-a563-a0369fe50396.jpg",
+      "name": "21 Savage",
+      "slug": "21-savage",
+      "uuid": "11e81bc3-1db8-3a72-a563-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/post-malone/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/a/a/11e81bd3-1aa8-e9ac-949d-a0369fe50396.jpg",
+      "name": "Post Malone",
+      "slug": "post-malone",
+      "uuid": "11e81bd3-1aa8-e9ac-949d-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.12,
+    "danceability": 0.59,
+    "energy": 0.52,
+    "instrumentalness": 0,
+    "key": 5,
+    "liveness": 0.13,
+    "loudness": -6.14,
+    "mode": 0,
+    "speechiness": 0.07,
+    "tempo": 159.8,
+    "timeSignature": 4,
+    "valence": 0.13
+  },
+  "composers": [
+    "Louis Bell",
+    "Austin Post",
+    "Sheyaa Bin Abraham-Joseph",
+    "Carl Austin Rosen",
+    "Jo-Vaughn Virginie",
+    "Olufunmibi Awoshiley"
+  ],
+  "copyright": "℗ 2018 Republic Records, a division of UMG Recordings, Inc.",
+  "creditName": "Post Malone & 21 Savage",
+  "credits": [
+    {
+      "name": "Olufunmibi Awoshiley",
+      "roles": [
+        "composer",
+        "lyricist",
+        "writer"
+      ],
+      "uuid": "ed2867d4-291e-422d-b3a8-8c1701a7f6da"
+    },
+    {
+      "name": "Louis Bell",
+      "roles": [
+        "writer",
+        "recording",
+        "lyricist"
+      ],
+      "uuid": "d0e6384b-233d-47a7-a781-c4f8febd3a6a"
+    },
+    {
+      "name": "Vicente Saavedra",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "e4d75350-be54-46a1-bb33-6c5a806eb184"
+    },
+    {
+      "name": "Shéyaa Bin Abraham-Joseph",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "db845c6c-1dc1-4429-babc-b290ad117f0b"
+    },
+    {
+      "name": "Ethan Stevens",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "b9db5553-e156-44ae-b235-b5ecb91d6d90"
+    },
+    {
+      "name": "21 Savage",
+      "roles": [
+        "writer",
+        "vocals",
+        "rap vocals"
+      ],
+      "uuid": "8530d1c1-4e0b-475b-a487-172b25009aa4"
+    },
+    {
+      "name": "Manny Marroquin",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "57995644-dae9-41a3-97b2-502ed827ff4f"
+    },
+    {
+      "name": "Post Malone",
+      "roles": [
+        "writer",
+        "vocals"
+      ],
+      "uuid": "7a22daf0-9089-4a09-ae4d-caab6bc53464"
+    },
+    {
+      "name": "Mike Bozzi",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "52318d94-2904-4ce6-9fa5-55a2c5413b9d"
+    },
+    {
+      "name": "Carl Rosen",
+      "roles": [
+        "composer",
+        "writer"
+      ],
+      "uuid": "04d6ea3c-887e-4805-9015-979a15d23d6c"
+    },
+    {
+      "name": "Ozuna",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "cb4e64e9-be2c-4a5f-ab71-070b0f781b79"
+    },
+    {
+      "name": "Darío Alva",
+      "roles": [
+        "artwork"
+      ],
+      "uuid": "6c10da0c-85e8-4d4b-a345-8c66ed3c6e99"
+    },
+    {
+      "name": "Bryan Rivera",
+      "roles": [
+        "artwork"
+      ],
+      "uuid": "8ab0728c-f336-4624-87e2-6e9c20afa63d"
+    },
+    {
+      "name": "Travis Brothers",
+      "roles": [
+        "artwork"
+      ],
+      "uuid": "d9f5aff3-c4e0-4b7a-bc57-dffd0a1e158d"
+    },
+    {
+      "name": "Emil Nava",
+      "roles": [
+        "video director"
+      ],
+      "uuid": "b71727c5-ec40-430e-b34e-06c4c3f150a0"
+    },
+    {
+      "name": "Joey Bada$$",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "6c9bbb7d-2c20-4c7d-9ce2-1bbec6ce15af"
+    },
+    {
+      "name": "Lorenzo Cardona",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "42be3c33-fe76-4500-a0ba-951ef5be11ae"
+    },
+    {
+      "name": "Alex Killer",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "d3915280-089f-47fe-8869-995ebe6ca170"
+    },
+    {
+      "name": "Juan Diego Medina",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "6d20a78f-ebb5-4237-b552-a6162daaacbc"
+    },
+    {
+      "name": "Nicky Jam",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "429d89c7-94ed-4f16-aca4-d6174341572f"
+    },
+    {
+      "name": "Tank God",
+      "roles": [
+        "producer",
+        "writer",
+        "programming"
+      ],
+      "uuid": "556e3c25-d55c-4db1-a24b-2be79c487a2d"
+    },
+    {
+      "name": "Austin Post",
+      "roles": [
+        "composer",
+        "lyricist",
+        "vocals"
+      ],
+      "uuid": "afedd13c-893c-453e-a6a1-ec696cc8d9e8"
+    },
+    {
+      "name": "Jo-Vaughn Virginie",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "6de7ab98-2cb4-46d0-a6f4-50eb585d5ff6"
+    },
+    {
+      "name": "Carl Austin Rosen",
+      "roles": [
+        "composer",
+        "lyricist",
+        "writer"
+      ],
+      "uuid": "7b8f4439-b2d4-4694-a204-42191cb7b0bb"
+    },
+    {
+      "name": "Kramer Morgenthau",
+      "roles": [
+        "video director of photography"
+      ],
+      "uuid": "4ad04574-1fcb-46ca-9a3c-5092e7cb7869"
+    },
+    {
+      "name": "Post Malone",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "11d2d3bd-418d-42a1-b6e8-d83f984b1174"
+    },
+    {
+      "name": "21 Savage",
+      "roles": [
+        "rap vocals",
+        "vocals"
+      ],
+      "uuid": "8ed278ec-f5ac-4cb8-9d78-e8726bd2f392"
+    },
+    {
+      "name": "Sheyaa Bin Abraham-Joseph",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "67b3c656-5852-4029-aebd-16c9cb21349d"
+    },
+    {
+      "name": "Shayaa Bin Abraham-Joseph",
+      "roles": [
+        "writer",
+        "composer"
+      ],
+      "uuid": "847480b8-b5bf-431f-85fc-3ad0c9c9226a"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 218,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/2/6/9/209f48cf-5962-40dd-86c0-8d87e72ae8c7.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USUM71710087"
+  },
+  "iswcs": [
+    "T9281804715",
+    "T9284159042",
+    "T9228552521"
+  ],
+  "labels": [
+    {
+      "name": "Republic",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/post-malone/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/a/a/11e81bd3-1aa8-e9ac-949d-a0369fe50396.jpg",
+      "name": "Post Malone",
+      "slug": "post-malone",
+      "uuid": "11e81bd3-1aa8-e9ac-949d-a0369fe50396"
+    }
+  ],
+  "name": "rockstar (feat. 21 Savage)",
+  "producers": [
+    "Louis Bell",
+    "Tank God"
+  ],
+  "releaseDate": "2018-04-27T00:00:00+00:00",
+  "uuid": "209f48cf-5962-40dd-86c0-8d87e72ae8c7"
+}

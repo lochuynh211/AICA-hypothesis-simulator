@@ -1,0 +1,168 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/194e1f36-9a62-11ea-81f3-549f35141000/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/fujii-kaze-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/1/a1ec9e8b-f11f-426c-8930-a82f86ac3d84.jpg",
+      "name": "Fujii Kaze",
+      "slug": "fujii-kaze-1",
+      "uuid": "a1ec9e8b-f11f-426c-8930-a82f86ac3d84"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.3,
+    "danceability": 0.59,
+    "energy": 0.62,
+    "instrumentalness": 0,
+    "key": 9,
+    "liveness": 0.13,
+    "loudness": -5.93,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 91.89,
+    "timeSignature": 4,
+    "valence": 0.34
+  },
+  "composers": [
+    "Fujii Kaze"
+  ],
+  "copyright": "A UNIVERSAL SIGMA / HEHN RECORDS release; ℗ 2020 UNIVERSAL MUSIC LLC",
+  "creditName": "Fujii Kaze",
+  "credits": [
+    {
+      "name": "Masahito Komori",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "831a6169-2c27-4da7-a010-4f0a2d9b89eb"
+    },
+    {
+      "name": "Yaffle",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "8e6deba3-fbe9-47c2-9933-de1832085b74"
+    },
+    {
+      "name": "藤井 風 (Fujii Kaze)",
+      "roles": [
+        "songwriter",
+        "piano",
+        "vocals"
+      ],
+      "uuid": "6523426b-ed5f-495f-808e-07d056388e1b"
+    },
+    {
+      "name": "Leon Yuki",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "436a1897-2c93-48fd-817c-e34f9a1a9f9d"
+    },
+    {
+      "name": "Mikiyo Kikuchi",
+      "roles": [
+        "viola"
+      ],
+      "uuid": "e55ad654-4fe1-4a62-b11d-9aff80d8b913"
+    },
+    {
+      "name": "Naoki Kobayashi",
+      "roles": [
+        "bass guitar"
+      ],
+      "uuid": "b6740107-91cb-47b5-8029-7afdce025e9b"
+    },
+    {
+      "name": "Yuki Mizuno",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "af7877ff-6708-4713-b124-979d8624fad3"
+    },
+    {
+      "name": "Takashi Fukuoka",
+      "roles": [
+        "percussions"
+      ],
+      "uuid": "4db8bd17-a215-4d0a-894f-2cf1bba33d89"
+    },
+    {
+      "name": "Daishi Iiba",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "4a418bfa-f5fa-4f27-b70b-aa6efaac7e4e"
+    },
+    {
+      "name": "Yoshimasa Wakui",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "dddac2f5-3e4a-4169-87b3-309fa2b0d2f0"
+    },
+    {
+      "name": "Reiichi Tateizumi",
+      "roles": [
+        "viola"
+      ],
+      "uuid": "af819c2c-453d-4580-9162-23e0d2711421"
+    },
+    {
+      "name": "Rina Odera",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "a6df5f4f-7f74-48aa-a11a-41311191fc30"
+    },
+    {
+      "name": "Natsue Kameda",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "ecdd3b96-9c88-4645-a86e-0459a1c0b23b"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 284,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/2/6/a/194e1f36-9a62-11ea-81f3-549f35141000.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO02000613"
+  },
+  "iswcs": [
+    "T3044125186"
+  ],
+  "labels": [
+    {
+      "name": "HEHN",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/fujii-kaze-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/1/a1ec9e8b-f11f-426c-8930-a82f86ac3d84.jpg",
+      "name": "Fujii Kaze",
+      "slug": "fujii-kaze-1",
+      "uuid": "a1ec9e8b-f11f-426c-8930-a82f86ac3d84"
+    }
+  ],
+  "name": "帰ろう",
+  "producers": [
+    "Yaffle"
+  ],
+  "releaseDate": "2020-05-20T00:00:00+00:00",
+  "uuid": "194e1f36-9a62-11ea-81f3-549f35141000"
+}

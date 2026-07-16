@@ -1,0 +1,121 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826cd-38fb-13c6-9b45-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/babymetal/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/8/2/11e81bbf-d289-16c8-bf55-a0369fe50396.jpg",
+      "name": "BABYMETAL",
+      "slug": "babymetal",
+      "uuid": "11e81bbf-d289-16c8-bf55-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.63,
+    "energy": 0.98,
+    "instrumentalness": 0,
+    "key": 11,
+    "liveness": 0.24,
+    "loudness": -1.56,
+    "mode": 1,
+    "speechiness": 0.08,
+    "tempo": 109.98,
+    "timeSignature": 4,
+    "valence": 0.49
+  },
+  "composers": [
+    "Kitsune"
+  ],
+  "copyright": "2013 TOY'S FACTORY INC./ AMUSE INC.",
+  "creditName": "BABYMETAL",
+  "credits": [
+    {
+      "name": "TAKESHI UEDA",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "5898200b-f03a-4110-8624-1f7bcb4c0076"
+    },
+    {
+      "name": "MK-METAL",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "0f0424ff-d984-493b-a804-eeba12e39485"
+    },
+    {
+      "name": "KITSUNE of METAL GOD",
+      "roles": [
+        "vocals",
+        "composer"
+      ],
+      "uuid": "2075e4c9-7e40-478d-b620-fc3ca7aa7714"
+    },
+    {
+      "name": "KxBxMETAL",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "b2e18854-186a-469e-b09d-a3f7146a4e78"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 230,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "hard rock",
+        "rock",
+        "rock & roll/rockabilly"
+      ]
+    },
+    {
+      "root": "metal",
+      "sub": [
+        "metal"
+      ]
+    },
+    {
+      "root": "j-pop",
+      "sub": [
+        "j-pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/f/8/11e826cd-38fb-13c6-9b45-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPTF01401401"
+  },
+  "iswcs": [
+    "T9142132249",
+    "T3034005119"
+  ],
+  "labels": [
+    {
+      "name": "TOY'S FACTORY",
+      "type": "unknown"
+    },
+    {
+      "name": "Amuse",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/babymetal/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/8/2/11e81bbf-d289-16c8-bf55-a0369fe50396.jpg",
+      "name": "BABYMETAL",
+      "slug": "babymetal",
+      "uuid": "11e81bbf-d289-16c8-bf55-a0369fe50396"
+    }
+  ],
+  "name": "Gimme Chocolate!!",
+  "producers": [],
+  "releaseDate": "2014-02-26T00:00:00+00:00",
+  "uuid": "11e826cd-38fb-13c6-9b45-a0369fe50396"
+}

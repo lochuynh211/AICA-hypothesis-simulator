@@ -1,0 +1,66 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8407b-a4f8-6f48-857c-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/zone-13/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/2/e/11e81bcd-3e2b-9d44-9309-a0369fe50396.jpg",
+      "name": "ZONE",
+      "slug": "zone-13",
+      "uuid": "11e81bcd-3e2b-9d44-9309-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.34,
+    "danceability": 0.48,
+    "energy": 0.85,
+    "instrumentalness": 0,
+    "key": 6,
+    "liveness": 0.14,
+    "loudness": -4.08,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 144.75,
+    "timeSignature": 4,
+    "valence": 0.48
+  },
+  "composers": [
+    "町田紀彦"
+  ],
+  "copyright": "(P)2001 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "ZONE",
+  "credits": [],
+  "distributor": "Sony",
+  "duration": 295,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/f/4/11e8407b-a4f8-6f48-857c-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPSR00103464"
+  },
+  "iswcs": [
+    "T9096721356"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [],
+  "name": "secret base ~君がくれたもの~",
+  "producers": [
+    "Unknown"
+  ],
+  "releaseDate": "2001-01-01T00:00:00+00:00",
+  "uuid": "11e8407b-a4f8-6f48-857c-a0369fe50396"
+}

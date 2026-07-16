@@ -1,0 +1,160 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8261b-1fef-0eb2-abd0-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/utada-hikaru/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/d/8/39187ec8-b8d3-11e8-856b-525400009efb.jpg",
+      "name": "Hikaru Utada",
+      "slug": "utada-hikaru",
+      "uuid": "39187ec8-b8d3-11e8-856b-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.06,
+    "danceability": 0.72,
+    "energy": 0.88,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.13,
+    "loudness": -3.97,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 94.85,
+    "timeSignature": 4,
+    "valence": 0.73
+  },
+  "composers": [
+    "Hikaru Utada"
+  ],
+  "copyright": "A Virgin Music release; ℗ 1998 UNIVERSAL MUSIC LLC",
+  "creditName": "Hikaru Utada",
+  "credits": [
+    {
+      "name": "Hikaru Utada",
+      "roles": [
+        "producer",
+        "lyricist",
+        "vocals"
+      ],
+      "uuid": "ea89c60d-1e29-4744-8887-0f025ef87036"
+    },
+    {
+      "name": "Tsuyoshi Kon",
+      "roles": [
+        "guitar"
+      ],
+      "uuid": "023aad1e-e98a-481b-9655-6e290932b861"
+    },
+    {
+      "name": "Johnny Vicious",
+      "roles": [
+        "recording arranger",
+        "remixing"
+      ],
+      "uuid": "3b006921-ad13-402e-a948-650334b09842"
+    },
+    {
+      "name": "Akira Nishihira",
+      "roles": [
+        "arranger",
+        "recording arranger"
+      ],
+      "uuid": "fa1ae2f0-26ca-46dc-be4c-59b4d8aa6b1b"
+    },
+    {
+      "name": "Taka & Speedy",
+      "roles": [
+        "arranger",
+        "recording arranger"
+      ],
+      "uuid": "d0584586-cf00-44c6-b92d-dd8b8cc09ddf"
+    },
+    {
+      "name": "Nobuhiko Nakayama",
+      "roles": [
+        "dj"
+      ],
+      "uuid": "5ffadd20-ddc4-4907-8cea-a41577716fa9"
+    },
+    {
+      "name": "Akira Miyake",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "8d5dec09-bf72-4291-93d9-7b094ed6128c"
+    },
+    {
+      "name": "Utada Sking Teruzane",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "31fa7a2a-9bc1-4c47-9bf8-d5adbcb5a532"
+    },
+    {
+      "name": "宇多田ヒカル",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "0d455fad-9e76-440d-a0df-c644110c4b69"
+    },
+    {
+      "name": "KEI KAWANO",
+      "roles": [
+        "arranger",
+        "recording arranger"
+      ],
+      "uuid": "c2ac9983-f95c-40f0-a7f4-a2daab567889"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 328,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "asian",
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/f/e/f/11e8261b-1fef-0eb2-abd0-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPTO09831500"
+  },
+  "iswcs": [
+    "T9029100741"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    },
+    {
+      "name": "Virgin",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/utada-hikaru/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/d/8/39187ec8-b8d3-11e8-856b-525400009efb.jpg",
+      "name": "Hikaru Utada",
+      "slug": "utada-hikaru",
+      "uuid": "39187ec8-b8d3-11e8-856b-525400009efb"
+    }
+  ],
+  "name": "Automatic",
+  "producers": [],
+  "releaseDate": "1998-12-09T00:00:00+00:00",
+  "uuid": "11e8261b-1fef-0eb2-abd0-aa1c026db3d8"
+}

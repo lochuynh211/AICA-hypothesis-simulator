@@ -1,0 +1,49 @@
+{
+  "name": "Electric Current",
+  "isrc": {
+    "value": "JPXX02100402",
+    "countryCode": "JP",
+    "countryName": "Japan"
+  },
+  "iswcs": [],
+  "duration": 212,
+  "explicit": false,
+  "releaseDate": "2021-07-28",
+  "languageCode": "ja",
+  "genres": [
+    {
+      "root": "electro",
+      "sub": []
+    }
+  ],
+  "artists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000007",
+      "name": "Synth Circuit"
+    }
+  ],
+  "mainArtists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000007",
+      "name": "Synth Circuit"
+    }
+  ],
+  "labels": [],
+  "composers": [],
+  "producers": [],
+  "credits": [],
+  "audio": {
+    "acousticness": 0.02,
+    "danceability": 0.58,
+    "energy": 0.61,
+    "instrumentalness": 0.12,
+    "key": 6,
+    "liveness": 0.07,
+    "loudness": -8.2,
+    "mode": 0,
+    "speechiness": 0.05,
+    "tempo": 88.0,
+    "timeSignature": 4,
+    "valence": 0.40
+  }
+}

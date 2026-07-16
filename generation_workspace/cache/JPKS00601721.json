@@ -1,0 +1,118 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8265d-16f1-2628-a540-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/flow-12/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/9/1/11e81bce-f198-8620-939a-a0369fe50396.jpg",
+      "name": "FLOW",
+      "slug": "flow-12",
+      "uuid": "11e81bce-f198-8620-939a-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.04,
+    "danceability": 0.46,
+    "energy": 0.88,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.11,
+    "loudness": -4.23,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 136.03,
+    "timeSignature": 4,
+    "valence": 0.39
+  },
+  "composers": [
+    "Kohshi Asakawa",
+    "Takeshi Asakawa",
+    "KEIGO HAYASHI"
+  ],
+  "copyright": "(P) 2011 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "FLOW",
+  "credits": [
+    {
+      "name": "Kohshi Asakawa",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "26816f9e-cc3c-4925-af53-33eed9c40e9b"
+    },
+    {
+      "name": "Keigo Hayashi",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "eb444e78-0ee8-4d92-ab8c-5ad6cb5c86f7"
+    },
+    {
+      "name": "Takeshi Asakawa",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "9871288c-e2fb-4b80-a9ff-c793d7edc1f5"
+    },
+    {
+      "name": "FLOW",
+      "roles": [
+        "arranger",
+        "vocals"
+      ],
+      "uuid": "5558c7c3-b901-417e-a8f9-9472aaeaa453"
+    },
+    {
+      "name": "Koichi Tsutaya",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "7154dc6c-bd39-4ec1-99b3-5046de0263f5"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 219,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/1/f/6/11e8265d-16f1-2628-a540-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPKS00601721"
+  },
+  "iswcs": [
+    "T3212569723",
+    "T8024951256",
+    "T8024951392",
+    "T9280693245",
+    "T1018450401"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/flow-12/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/9/1/11e81bce-f198-8620-939a-a0369fe50396.jpg",
+      "name": "FLOW",
+      "slug": "flow-12",
+      "uuid": "11e81bce-f198-8620-939a-a0369fe50396"
+    }
+  ],
+  "name": "COLORS",
+  "producers": [
+    "Flow",
+    "Koichi Tatsuya"
+  ],
+  "releaseDate": "2012-11-07T00:00:00+00:00",
+  "uuid": "11e8265d-16f1-2628-a540-aa1c026db3d8"
+}

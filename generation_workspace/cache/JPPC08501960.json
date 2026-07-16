@@ -1,0 +1,57 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82625-3b9c-afc0-871b-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yuki-saito/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/0/8/11e83fea-9800-0738-bb14-aa1c026db3d8.jpg",
+      "name": "Yuki Saito",
+      "slug": "yuki-saito",
+      "uuid": "11e83fea-9800-0738-bb14-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.41,
+    "danceability": 0.67,
+    "energy": 0.53,
+    "instrumentalness": 0,
+    "key": 2,
+    "liveness": 0.18,
+    "loudness": -11.62,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 97.88,
+    "timeSignature": 4,
+    "valence": 0.42
+  },
+  "composers": [
+    "Kyohei Tsutsumi"
+  ],
+  "copyright": "1988 PONY CANYON INC.",
+  "creditName": "Yuki Saito",
+  "credits": [],
+  "distributor": "Pony Canyon",
+  "duration": 296,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/c/9/b/11e82625-3b9c-afc0-871b-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPC08501960"
+  },
+  "iswcs": [
+    "T1013319598"
+  ],
+  "labels": [
+    {
+      "name": "PONY CANYON",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [],
+  "name": "卒業",
+  "producers": [],
+  "releaseDate": "1988-01-01T00:00:00+00:00",
+  "uuid": "11e82625-3b9c-afc0-871b-a0369fe50396"
+}

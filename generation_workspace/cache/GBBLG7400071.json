@@ -1,0 +1,264 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82616-9433-89e2-9678-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/average-white-band/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/a/3/11e81bd0-53ae-1df6-abfc-a0369fe50396.jpg",
+      "name": "Average White Band",
+      "slug": "average-white-band",
+      "uuid": "11e81bd0-53ae-1df6-abfc-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.01,
+    "danceability": 0.77,
+    "energy": 0.86,
+    "instrumentalness": 0.69,
+    "key": 10,
+    "liveness": 0.03,
+    "loudness": -7.09,
+    "mode": 0,
+    "speechiness": 0.05,
+    "tempo": 109.88,
+    "timeSignature": 4,
+    "valence": 0.76
+  },
+  "composers": [
+    "Duncan",
+    "McIntosh",
+    "Ball",
+    "Stuart",
+    "Gorrie",
+    "Mcintyre",
+    "Brown, Levine",
+    "Ball, Duncan, Gorrie, McIntosh, McIntyre, Stuart",
+    "Ball, Stuart, Gorrie, McIntosh, Duncan, McIntyre",
+    "Gorrie, Ball, Stuart, McIntosh, Duncan, McIntyre"
+  ],
+  "copyright": "(P) 2009 Demon Music Group Ltd.",
+  "creditName": "Average White Band",
+  "credits": [
+    {
+      "name": "Alan Gorrie",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "c962d9dc-3af8-4793-9272-53f0c7b7a433"
+    },
+    {
+      "name": "Roger Ball",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "14f65b97-3241-4b66-9b4a-a975b7d45da8"
+    },
+    {
+      "name": "Arif Mardin",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "3ade895b-5b8c-41cc-860b-7060759214fa"
+    },
+    {
+      "name": "Robbie McIntosh",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "fd048699-0aed-49ff-a653-284d8e793b90"
+    },
+    {
+      "name": "Hamish Stuart",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "8f809159-ca7a-42b2-b37e-6bc6ef1f91a9"
+    },
+    {
+      "name": "Malcolm Duncan",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "3134317e-c741-43d4-bbcf-f898150cc110"
+    },
+    {
+      "name": "Duncan",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "d0d68e9a-2f57-472f-ad0c-2a31d74bdf10"
+    },
+    {
+      "name": "Gorrie",
+      "roles": [
+        "writer",
+        "composer"
+      ],
+      "uuid": "df4b8c8e-95d4-4669-83c1-4a9962138f6d"
+    },
+    {
+      "name": "McIntyre",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "995ba810-17c3-44a1-a5ed-a20f57be6516"
+    },
+    {
+      "name": "Rob Macintosh",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "42b15588-928c-4849-858c-ce1b4e470d72"
+    },
+    {
+      "name": "Molly Duncan",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "0f2a6c9d-08f6-49d6-8349-51c96b7a8445"
+    },
+    {
+      "name": "Average White Band",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "8028d671-69de-42d5-9479-a5efd6bf9742"
+    },
+    {
+      "name": "Macintosh",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "33895bd9-1173-464d-b377-7e6e67f6b7f9"
+    },
+    {
+      "name": "J Stuart",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "855ccc86-39a2-49ab-92d4-4fb1c79280aa"
+    },
+    {
+      "name": "Owen McIntyre",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "3f4ea44d-e01d-4ee7-b5fc-7632dc815bec"
+    },
+    {
+      "name": "Ball",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "90ab87b1-0813-457e-90a9-b0677c7be6cb"
+    },
+    {
+      "name": "McIntosh",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "5bf4ee3c-925d-4792-b57e-7da7f3ae203d"
+    },
+    {
+      "name": "McIntyre",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "ba10ca2e-21d9-43a3-aabe-7cf144b56eec"
+    },
+    {
+      "name": "Ball",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "f3495411-d7b8-45b4-98a3-49e7d43d3a4f"
+    },
+    {
+      "name": "Duncan",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "dc446275-0b40-41e0-8526-fc399bcb00aa"
+    },
+    {
+      "name": "Stuart",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "714d26a4-aba9-4837-9e22-e8d73f5555c1"
+    },
+    {
+      "name": "Roger Dale Ball",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "7081426a-df96-4810-b298-c0ee5301a0a2"
+    },
+    {
+      "name": "Owen McIntyre",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "828d8662-97fa-4188-84f1-00b4f259cb06"
+    }
+  ],
+  "distributor": "",
+  "duration": 234,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b",
+        "r&b, funk & soul"
+      ]
+    },
+    {
+      "root": "soul",
+      "sub": [
+        "soul"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/3/4/11e82616-9433-89e2-9678-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBBLG7400071"
+  },
+  "iswcs": [
+    "T0113428924"
+  ],
+  "labels": [
+    {
+      "name": "Demon Music Group",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/average-white-band/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/a/3/11e81bd0-53ae-1df6-abfc-a0369fe50396.jpg",
+      "name": "Average White Band",
+      "slug": "average-white-band",
+      "uuid": "11e81bd0-53ae-1df6-abfc-a0369fe50396"
+    }
+  ],
+  "name": "Pick Up the Pieces",
+  "producers": [
+    "Arif Mardin"
+  ],
+  "releaseDate": "1995-10-04T00:00:00+00:00",
+  "uuid": "11e82616-9433-89e2-9678-a0369fe50396"
+}

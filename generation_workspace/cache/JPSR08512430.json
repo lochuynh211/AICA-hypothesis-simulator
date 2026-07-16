@@ -1,0 +1,104 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/cb093655-9a5c-44af-b618-7f1d10f33892/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/seiko-matsuda/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/d/8/d6c290e0-b8d4-11e8-842a-525400009efb.jpg",
+      "name": "Seiko Matsuda",
+      "slug": "seiko-matsuda",
+      "uuid": "d6c290e0-b8d4-11e8-842a-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.55,
+    "danceability": 0.59,
+    "energy": 0.4,
+    "instrumentalness": 0,
+    "key": 3,
+    "liveness": 0.09,
+    "loudness": -11.02,
+    "mode": 1,
+    "speechiness": 0.02,
+    "tempo": 100.99,
+    "timeSignature": 3,
+    "valence": 0.29
+  },
+  "composers": [
+    "Takashi Matsumoto",
+    "大村雅朗"
+  ],
+  "copyright": "(P) 1985 Sony Music Entertainment(Japan)Inc.",
+  "creditName": "Seiko Matsuda",
+  "credits": [
+    {
+      "name": "Takashi Matsumoto",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "c9b162d4-27b5-4684-aec1-b063978c5bc1"
+    },
+    {
+      "name": "Masaaki Ohmura",
+      "roles": [
+        "composer",
+        "arranger"
+      ],
+      "uuid": "89f630fb-62e3-4690-a63f-3f38c151f074"
+    },
+    {
+      "name": "Masaaki Omura",
+      "roles": [
+        "composer",
+        "arranger"
+      ],
+      "uuid": "455ad203-e62a-496a-aaae-feee9bf08fc4"
+    },
+    {
+      "name": "Takashi  Matsumoto",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "f496f37b-7cd9-4d90-9b12-2a371c51d8b9"
+    }
+  ],
+  "distributor": "",
+  "duration": 274,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/c/5/a/cb093655-9a5c-44af-b618-7f1d10f33892.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPSR08512430"
+  },
+  "iswcs": [
+    "T1016193114"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/seiko-matsuda/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/d/8/d6c290e0-b8d4-11e8-842a-525400009efb.jpg",
+      "name": "Seiko Matsuda",
+      "slug": "seiko-matsuda",
+      "uuid": "d6c290e0-b8d4-11e8-842a-525400009efb"
+    }
+  ],
+  "name": "SWEET MEMORIES (Re-Mix Version)",
+  "producers": [],
+  "releaseDate": "1985-06-21T00:00:00+00:00",
+  "uuid": "cb093655-9a5c-44af-b618-7f1d10f33892"
+}

@@ -1,0 +1,110 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8409a-5ec1-2046-aa47-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/nujabes/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/4/6/11e81bd1-864b-a656-8067-a0369fe50396.jpg",
+      "name": "Nujabes",
+      "slug": "nujabes",
+      "uuid": "11e81bd1-864b-a656-8067-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/shing02/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/8/a/11e81bd3-4a85-b7d6-833d-a0369fe50396.jpg",
+      "name": "Shing02",
+      "slug": "shing02",
+      "uuid": "11e81bd3-4a85-b7d6-833d-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.73,
+    "danceability": 0.87,
+    "energy": 0.69,
+    "instrumentalness": 0.5,
+    "key": 5,
+    "liveness": 0.07,
+    "loudness": -4.37,
+    "mode": 0,
+    "speechiness": 0.05,
+    "tempo": 95,
+    "timeSignature": 4,
+    "valence": 0.87
+  },
+  "composers": [
+    "Shing02",
+    "Nujabes"
+  ],
+  "copyright": "Hydeout Productions",
+  "creditName": "Nujabes & Shing02",
+  "credits": [
+    {
+      "name": "Nujabes",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "da6c078d-e0a4-487d-a2b3-78768ecd9f9b"
+    },
+    {
+      "name": "Shingo Annen",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "cdcf02e7-fa45-438e-9d55-b5a89c547bb4"
+    },
+    {
+      "name": "Shingo Annen",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "0ee1ada7-a94c-4df5-b3a3-7b960d4b1740"
+    }
+  ],
+  "distributor": "",
+  "duration": 337,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    },
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b, funk & soul"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/1/c/e/11e8409a-5ec1-2046-aa47-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPH491605003"
+  },
+  "iswcs": [
+    "T9257513250"
+  ],
+  "labels": [
+    {
+      "name": "Hydeout Productions",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/nujabes/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/4/6/11e81bd1-864b-a656-8067-a0369fe50396.jpg",
+      "name": "Nujabes",
+      "slug": "nujabes",
+      "uuid": "11e81bd1-864b-a656-8067-a0369fe50396"
+    }
+  ],
+  "name": "Luv(sic.) pt3",
+  "producers": [
+    "Nujabes"
+  ],
+  "releaseDate": "2005-11-11T00:00:00+00:00",
+  "uuid": "11e8409a-5ec1-2046-aa47-aa1c026db3d8"
+}

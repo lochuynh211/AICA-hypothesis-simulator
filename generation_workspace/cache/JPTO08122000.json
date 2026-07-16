@@ -1,0 +1,87 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82658-38e3-671e-b7b2-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/akira-terao/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/3/6/11e81bbc-7639-ebde-a67a-a0369fe50396.jpg",
+      "name": "Akira Terao",
+      "slug": "akira-terao",
+      "uuid": "11e81bbc-7639-ebde-a67a-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.7,
+    "danceability": 0.57,
+    "energy": 0.34,
+    "instrumentalness": 0,
+    "key": 3,
+    "liveness": 0.14,
+    "loudness": -13.34,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 95.69,
+    "timeSignature": 4,
+    "valence": 0.66
+  },
+  "composers": [
+    "Takashi Matsumoto",
+    "Akira Terao"
+  ],
+  "copyright": "",
+  "creditName": "Akira Terao",
+  "credits": [
+    {
+      "name": "Takashi Matsumoto",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "c9b162d4-27b5-4684-aec1-b063978c5bc1"
+    },
+    {
+      "name": "Akira Terao",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "fe856a1a-a94b-4cb2-958a-5b8085a5a116"
+    },
+    {
+      "name": "武藤敏史",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "2411687c-8835-4d6e-93a9-d999d93f5abe"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 258,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/3/e/8/11e82658-38e3-671e-b7b2-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPTO08122000"
+  },
+  "iswcs": [
+    "T1015862005"
+  ],
+  "labels": [],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/akira-terao/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/3/6/11e81bbc-7639-ebde-a67a-a0369fe50396.jpg",
+      "name": "Akira Terao",
+      "slug": "akira-terao",
+      "uuid": "11e81bbc-7639-ebde-a67a-a0369fe50396"
+    }
+  ],
+  "name": "ルビーの指環",
+  "producers": [
+    "武藤敏史",
+    "Akira Terao"
+  ],
+  "releaseDate": "1981-04-05T00:00:00+00:00",
+  "uuid": "11e82658-38e3-671e-b7b2-aa1c026db3d8"
+}

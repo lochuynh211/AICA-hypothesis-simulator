@@ -1,0 +1,78 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82663-90dc-04a2-b81a-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/hy/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/c/f/11e81bcb-6fc3-85bc-9fa6-a0369fe50396.jpg",
+      "name": "HY",
+      "slug": "hy",
+      "uuid": "11e81bcb-6fc3-85bc-9fa6-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.65,
+    "danceability": 0.36,
+    "energy": 0.41,
+    "instrumentalness": 0,
+    "key": 8,
+    "liveness": 0.21,
+    "loudness": -8.53,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 151.32,
+    "timeSignature": 4,
+    "valence": 0.19
+  },
+  "composers": [
+    "Izumi Nakasone"
+  ],
+  "copyright": "2008 TV ASAHI MUSIC CO.,LTD.",
+  "creditName": "HY",
+  "credits": [],
+  "distributor": "",
+  "duration": 354,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    },
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b, funk & soul"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/c/d/0/11e82663-90dc-04a2-b81a-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPF700250112"
+  },
+  "iswcs": [
+    "T1018963227"
+  ],
+  "labels": [
+    {
+      "name": "TV ASAHI MUSIC",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [],
+  "name": "366日",
+  "producers": [
+    "仲宗根泉 (Izumi Nakasone)"
+  ],
+  "releaseDate": "2008-04-16T00:00:00+00:00",
+  "uuid": "11e82663-90dc-04a2-b81a-a0369fe50396"
+}

@@ -1,0 +1,106 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8265d-16f9-f3f2-801b-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/flow-12/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/9/1/11e81bce-f198-8620-939a-a0369fe50396.jpg",
+      "name": "FLOW",
+      "slug": "flow-12",
+      "uuid": "11e81bce-f198-8620-939a-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.63,
+    "energy": 0.68,
+    "instrumentalness": 0,
+    "key": 2,
+    "liveness": 0.17,
+    "loudness": -3.81,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 77.51,
+    "timeSignature": 4,
+    "valence": 0.63
+  },
+  "composers": [
+    "Take",
+    "Kohshi",
+    "Keigo"
+  ],
+  "copyright": "(P) 2003(1-3,5-7,9,10,12) Ki/oon Music",
+  "creditName": "FLOW",
+  "credits": [
+    {
+      "name": "Take",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "4285ddf3-61b4-48ef-840e-de137473b6f3"
+    },
+    {
+      "name": "keigo",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "ff037fcb-3c3e-432a-9b87-53d11c4150b3"
+    },
+    {
+      "name": "FLOW",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "5558c7c3-b901-417e-a8f9-9472aaeaa453"
+    },
+    {
+      "name": "KOHSHI",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "e67f9e2c-efec-4037-8aa2-7c333d83660d"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 331,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian",
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/9/f/6/11e8265d-16f9-f3f2-801b-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPKS00300325"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Ki",
+      "type": "Other independent labels: \"Indie\""
+    },
+    {
+      "name": "oon Music",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/flow-12/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/9/1/11e81bce-f198-8620-939a-a0369fe50396.jpg",
+      "name": "FLOW",
+      "slug": "flow-12",
+      "uuid": "11e81bce-f198-8620-939a-a0369fe50396"
+    }
+  ],
+  "name": "Go Places",
+  "producers": [],
+  "releaseDate": "2003-05-21T00:00:00+00:00",
+  "uuid": "11e8265d-16f9-f3f2-801b-aa1c026db3d8"
+}

@@ -1,0 +1,94 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/acfc8122-2b97-11e9-83c8-549f35141000/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/uru-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/e/5/11e81bcd-f5e7-a3b0-bc6b-a0369fe50396.jpg",
+      "name": "Uru",
+      "slug": "uru-1",
+      "uuid": "11e81bcd-f5e7-a3b0-bc6b-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.48,
+    "danceability": 0.44,
+    "energy": 0.69,
+    "instrumentalness": 0,
+    "key": 0,
+    "liveness": 0.09,
+    "loudness": -5.14,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 170.13,
+    "timeSignature": 4,
+    "valence": 0.32
+  },
+  "composers": [
+    "Uru"
+  ],
+  "copyright": "(P) 2018(8),2019(3),2020(1-2,4-7) Sony Music Labels Inc.",
+  "creditName": "Uru",
+  "credits": [
+    {
+      "name": "Uru",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "4b5f7015-c386-43f8-9066-f74fe8c86619"
+    },
+    {
+      "name": "Tomi Yo",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "47211a4b-5088-470f-bcb1-7ad14b2621d7"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 302,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    },
+    {
+      "root": "j-pop",
+      "sub": [
+        "j-pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/7/9/b/acfc8122-2b97-11e9-83c8-549f35141000.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU901803358"
+  },
+  "iswcs": [
+    "T9275553565"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/uru-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/e/5/11e81bcd-f5e7-a3b0-bc6b-a0369fe50396.jpg",
+      "name": "Uru",
+      "slug": "uru-1",
+      "uuid": "11e81bcd-f5e7-a3b0-bc6b-a0369fe50396"
+    }
+  ],
+  "name": "Prologue",
+  "producers": [],
+  "releaseDate": "2018-01-01T00:00:00+00:00",
+  "uuid": "acfc8122-2b97-11e9-83c8-549f35141000"
+}

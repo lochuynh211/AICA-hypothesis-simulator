@@ -1,0 +1,128 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e840a5-8c2e-5836-827b-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aimyon/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/0/5/11e83feb-8507-cea8-91a7-aa1c026db3d8.jpg",
+      "name": "Aimyon",
+      "slug": "aimyon",
+      "uuid": "11e83feb-8507-cea8-91a7-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.52,
+    "energy": 0.69,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.17,
+    "loudness": -4.04,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 99.92,
+    "timeSignature": 4,
+    "valence": 0.62
+  },
+  "composers": [
+    "Aimyon"
+  ],
+  "copyright": "2017 WARNER MUSIC JAPAN INC.",
+  "creditName": "Aimyon",
+  "credits": [
+    {
+      "name": "Akira Tsuneoka",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "9b5d7196-c471-4687-a9c4-0fadf589af71"
+    },
+    {
+      "name": "Yoshiyuki Yatsuhashi",
+      "roles": [
+        "electric  guitar"
+      ],
+      "uuid": "68a69519-6430-4bc2-becf-fe1fb7234be6"
+    },
+    {
+      "name": "aimyon",
+      "roles": [
+        "vocals",
+        "composer",
+        "lyricist",
+        "acoustic  guitar"
+      ],
+      "uuid": "f184b32b-ed66-4885-beca-c11ab42ac875"
+    },
+    {
+      "name": "Kiyoshi Takakuwa",
+      "roles": [
+        "bass"
+      ],
+      "uuid": "029ba7d6-2e64-4a90-aee0-639de3dc5f29"
+    },
+    {
+      "name": "Yusuke Tanaka",
+      "roles": [
+        "producer",
+        "arranger",
+        "programming"
+      ],
+      "uuid": "f9b7b40f-5aca-46d1-b211-51c19f9fbb74"
+    },
+    {
+      "name": "Yusuke Tatsuzaki",
+      "roles": [
+        "arranger",
+        "programming"
+      ],
+      "uuid": "92f187a3-e297-4e98-abc8-2d13e0332d1f"
+    }
+  ],
+  "distributor": "Warner",
+  "duration": 246,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "worldwide",
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/e/2/c/11e840a5-8c2e-5836-827b-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPWP01771557"
+  },
+  "iswcs": [
+    "T9257556802"
+  ],
+  "labels": [
+    {
+      "name": "Warner",
+      "type": "Warner"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aimyon/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/0/5/11e83feb-8507-cea8-91a7-aa1c026db3d8.jpg",
+      "name": "Aimyon",
+      "slug": "aimyon",
+      "uuid": "11e83feb-8507-cea8-91a7-aa1c026db3d8"
+    }
+  ],
+  "name": "Kimi Wa Rock Wo Kikanai",
+  "producers": [],
+  "releaseDate": "2017-08-01T00:00:00+00:00",
+  "uuid": "11e840a5-8c2e-5836-827b-aa1c026db3d8"
+}

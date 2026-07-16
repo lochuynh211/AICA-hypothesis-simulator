@@ -1,0 +1,103 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/a68c1398-01b3-426d-94fe-41fa1d64db92/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mi-jin-xuan-shi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/d/a/11e81bcc-dadf-925e-af6a-a0369fe50396.jpg",
+      "name": "Kenshi Yonezu",
+      "slug": "mi-jin-xuan-shi",
+      "uuid": "11e81bcc-dadf-925e-af6a-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.08,
+    "danceability": 0.45,
+    "energy": 0.85,
+    "instrumentalness": 0,
+    "key": 11,
+    "liveness": 0.07,
+    "loudness": -5.66,
+    "mode": 0,
+    "speechiness": 0.16,
+    "tempo": 88.75,
+    "timeSignature": 3,
+    "valence": 0.79
+  },
+  "composers": [
+    "Kenshi Yonezu"
+  ],
+  "copyright": "(P)2020 Sony Music Labels Inc.",
+  "creditName": "Kenshi Yonezu",
+  "credits": [
+    {
+      "name": "Kenshi Yonezu",
+      "roles": [
+        "composer",
+        "lyricist",
+        "arranger"
+      ],
+      "uuid": "e3ad260e-ef18-4b95-8652-44ffceffd6e9"
+    },
+    {
+      "name": "米津玄師",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "b10c3204-9cac-47d5-a268-15f1991ce8c6"
+    },
+    {
+      "name": "坂東祐大",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "ee6f857a-8812-43a5-be51-c6b0d19eca16"
+    },
+    {
+      "name": "Yuta Bandoh",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "b98a085e-35a4-42bb-ae51-4ebc57f87181"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 235,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/b/1/a68c1398-01b3-426d-94fe-41fa1d64db92.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU902001654"
+  },
+  "iswcs": [
+    "T3024494364"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mi-jin-xuan-shi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/d/a/11e81bcc-dadf-925e-af6a-a0369fe50396.jpg",
+      "name": "Kenshi Yonezu",
+      "slug": "mi-jin-xuan-shi",
+      "uuid": "11e81bcc-dadf-925e-af6a-a0369fe50396"
+    }
+  ],
+  "name": "カムパネルラ",
+  "producers": [],
+  "releaseDate": "2020-08-05T00:00:00+00:00",
+  "uuid": "a68c1398-01b3-426d-94fe-41fa1d64db92"
+}

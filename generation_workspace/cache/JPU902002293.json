@@ -1,0 +1,78 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/01a73798-287b-486b-8ab8-8db36e7073f3/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/lisa-9/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/4/9/11e81bc7-7946-3110-9d08-a0369fe50396.jpg",
+      "name": "LiSA",
+      "slug": "lisa-9",
+      "uuid": "11e81bc7-7946-3110-9d08-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.52,
+    "energy": 0.58,
+    "instrumentalness": 0.96,
+    "key": 2,
+    "liveness": 0.34,
+    "loudness": -7.93,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 76,
+    "timeSignature": 4,
+    "valence": 0.25
+  },
+  "composers": [
+    "LiSA",
+    "梶浦 由記"
+  ],
+  "copyright": "℗ 2020 Sony Music Labels Inc.",
+  "creditName": "LiSA",
+  "credits": [
+    {
+      "name": "Yuki Kajiura",
+      "roles": [
+        "composer",
+        "lyricist",
+        "arranger"
+      ],
+      "uuid": "db5048c6-7bcf-4b4b-a53c-aebd53bdce4a"
+    },
+    {
+      "name": "Lisa",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "0286d72f-0610-4bf2-ba2c-92e026176072"
+    }
+  ],
+  "distributor": "",
+  "duration": 274,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/b/7/8/01a73798-287b-486b-8ab8-8db36e7073f3.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU902002293"
+  },
+  "iswcs": [
+    "T3019726917"
+  ],
+  "labels": [],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/lisa-9/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/4/9/11e81bc7-7946-3110-9d08-a0369fe50396.jpg",
+      "name": "LiSA",
+      "slug": "lisa-9",
+      "uuid": "11e81bc7-7946-3110-9d08-a0369fe50396"
+    }
+  ],
+  "name": "homura",
+  "producers": [],
+  "releaseDate": "2020-10-12T00:00:00+00:00",
+  "uuid": "01a73798-287b-486b-8ab8-8db36e7073f3"
+}

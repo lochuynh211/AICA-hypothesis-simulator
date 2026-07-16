@@ -1,0 +1,109 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/e7899427-adb6-40a2-9ff4-5b7da6d136d0/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/spitz/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/d/8/9d508b08-b8d1-11e8-9bed-525400009efb.jpg",
+      "name": "SPITZ",
+      "slug": "spitz",
+      "uuid": "9d508b08-b8d1-11e8-9bed-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.23,
+    "danceability": 0.65,
+    "energy": 0.81,
+    "instrumentalness": 0,
+    "key": 0,
+    "liveness": 0.09,
+    "loudness": -3.42,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 97.2,
+    "timeSignature": 4,
+    "valence": 0.75
+  },
+  "composers": [
+    "Masamune Kusano"
+  ],
+  "copyright": "℗ 1996 UNIVERSAL J, a division of UNIVERSAL MUSIC LLC",
+  "creditName": "SPITZ",
+  "credits": [
+    {
+      "name": "Spitz",
+      "roles": [
+        "producer",
+        "recording arranger"
+      ],
+      "uuid": "0d512b7c-0a20-4163-896d-4733bb7351cb"
+    },
+    {
+      "name": "Tetsuya Miwa",
+      "roles": [
+        "guitar"
+      ],
+      "uuid": "896980e5-cca8-466c-8162-3d1663d0d8b8"
+    },
+    {
+      "name": "Masamune Kusano",
+      "roles": [
+        "vocals",
+        "guitar",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "c6cfe0eb-0e14-422e-9a75-ef836bd545c0"
+    },
+    {
+      "name": "masanori sasaji",
+      "roles": [
+        "producer",
+        "recording arranger"
+      ],
+      "uuid": "7521c28a-ef7d-4061-a8be-f81935d2cc02"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 259,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/6/b/d/e7899427-adb6-40a2-9ff4-5b7da6d136d0.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO00263070"
+  },
+  "iswcs": [
+    "T9053831600"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/spitz/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/d/8/9d508b08-b8d1-11e8-9bed-525400009efb.jpg",
+      "name": "SPITZ",
+      "slug": "spitz",
+      "uuid": "9d508b08-b8d1-11e8-9bed-525400009efb"
+    }
+  ],
+  "name": "Cherry",
+  "producers": [
+    "笹路正徳",
+    "SPITZ"
+  ],
+  "releaseDate": "1996-01-01T00:00:00+00:00",
+  "uuid": "e7899427-adb6-40a2-9ff4-5b7da6d136d0"
+}

@@ -1,0 +1,74 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82615-dfb0-b6f2-ad3e-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/chick-corea-hiromi-2/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/f/d/d7111e31-ddfe-4aae-b7fa-6b6068d0da9c.jpg",
+      "name": "Chick Corea & Hiromi",
+      "slug": "chick-corea-hiromi-2",
+      "uuid": "d7111e31-ddfe-4aae-b7fa-6b6068d0da9c"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.97,
+    "danceability": 0.33,
+    "energy": 0.34,
+    "instrumentalness": 0.91,
+    "key": 11,
+    "liveness": 0.96,
+    "loudness": -17.34,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 141.93,
+    "timeSignature": 4,
+    "valence": 0.25
+  },
+  "composers": [
+    "Chick Corea"
+  ],
+  "copyright": "℗ 2008 Chick Corea Productions, Inc., Issued under exclusive license to Concord Music Group, Inc.",
+  "creditName": "Chick Corea & Hiromi",
+  "credits": [],
+  "distributor": "Concord",
+  "duration": 731,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz",
+        "jazz instrumental"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/b/f/11e82615-dfb0-b6f2-ad3e-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USC4R0816027"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Concord",
+      "type": "Concord"
+    },
+    {
+      "name": "Issued",
+      "type": "unknown"
+    },
+    {
+      "name": "Chick Corea Productions",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [],
+  "name": "Concierto de Aranjuez / Spain",
+  "producers": [
+    "Béla Fleck",
+    "Chick Corea"
+  ],
+  "releaseDate": "2008-01-01T00:00:00+00:00",
+  "uuid": "11e82615-dfb0-b6f2-ad3e-aa1c026db3d8"
+}

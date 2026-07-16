@@ -1,0 +1,135 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8263c-8dbb-86f2-bd13-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/max-richter/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/d/0/11e81bc3-50d8-4b9a-a443-a0369fe50396.jpg",
+      "name": "Max Richter",
+      "slug": "max-richter",
+      "uuid": "11e81bc3-50d8-4b9a-a443-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.99,
+    "danceability": 0.38,
+    "energy": 0.18,
+    "instrumentalness": 0.92,
+    "key": 10,
+    "liveness": 0.1,
+    "loudness": -20.99,
+    "mode": 0,
+    "speechiness": 0.05,
+    "tempo": 125.33,
+    "timeSignature": 3,
+    "valence": 0.18
+  },
+  "composers": [
+    "Max Richter"
+  ],
+  "copyright": "℗ 2025 Deutsche Grammophon GmbH, Berlin",
+  "creditName": "Max Richter",
+  "credits": [
+    {
+      "name": "Max Richter",
+      "roles": [
+        "composer",
+        "producer",
+        "piano",
+        "mix"
+      ],
+      "uuid": "2988256c-30eb-430e-8629-f5743f9655bd"
+    },
+    {
+      "name": "Philip Bagenal",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "77ccac05-e969-4d69-8e1a-ce1fa168ff60"
+    },
+    {
+      "name": "Mandy Parnell",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "1e8cd7d2-c58f-48a1-8add-a2f3dd275501"
+    },
+    {
+      "name": "Steve Parr",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "640b13df-9385-4db5-b764-5d9b1c3b67d6"
+    },
+    {
+      "name": "Mandy Parnell",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "dbf716f8-761f-43d5-92f4-70c077c9c9fb"
+    }
+  ],
+  "distributor": "",
+  "duration": 100,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    },
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz"
+      ]
+    },
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    },
+    {
+      "root": "electro",
+      "sub": [
+        "electronic"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/b/d/11e8263c-8dbb-86f2-bd13-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBDCA0300288"
+  },
+  "iswcs": [
+    "T0101488203"
+  ],
+  "labels": [
+    {
+      "name": "Berlin",
+      "type": "Other independent labels: \"Indie\""
+    },
+    {
+      "name": "Deutsche Grammophon",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/max-richter/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/d/0/11e81bc3-50d8-4b9a-a443-a0369fe50396.jpg",
+      "name": "Max Richter",
+      "slug": "max-richter",
+      "uuid": "11e81bc3-50d8-4b9a-a443-a0369fe50396"
+    }
+  ],
+  "name": "Written on the Sky",
+  "producers": [
+    "Max Richter"
+  ],
+  "releaseDate": "2025-01-31T00:00:00+00:00",
+  "uuid": "11e8263c-8dbb-86f2-bd13-aa1c026db3d8"
+}

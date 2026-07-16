@@ -1,0 +1,138 @@
+[
+  {
+    "test_case_id": "tc-01",
+    "world_ref": "world-night-highway-high-drowsiness",
+    "candidate_song_ref": "synthetic-track-0107",
+    "expected_label": "positive",
+    "judge_folds": {
+      "context_need": "x",
+      "mood_genre_fit": "x",
+      "era_cultural_fit": "x",
+      "coherence": "x",
+      "web_evidence": "x"
+    },
+    "algorithm_score": 0.13717681638452986,
+    "agreement": "agree",
+    "contrast_partner": null,
+    "expected_direction": null
+  },
+  {
+    "test_case_id": "tc-02",
+    "world_ref": "world-night-highway-high-drowsiness",
+    "candidate_song_ref": "synthetic-track-0108",
+    "expected_label": "positive",
+    "judge_folds": {
+      "context_need": "x",
+      "mood_genre_fit": "x",
+      "era_cultural_fit": "x",
+      "coherence": "x",
+      "web_evidence": "x"
+    },
+    "algorithm_score": 0.13310062969155445,
+    "agreement": "agree",
+    "contrast_partner": null,
+    "expected_direction": null
+  },
+  {
+    "test_case_id": "tc-03",
+    "world_ref": "world-night-highway-high-drowsiness",
+    "candidate_song_ref": "synthetic-track-0022",
+    "expected_label": "negative",
+    "judge_folds": {
+      "context_need": "x",
+      "mood_genre_fit": "x",
+      "era_cultural_fit": "x",
+      "coherence": "x",
+      "web_evidence": "x"
+    },
+    "algorithm_score": -0.08221945489157298,
+    "agreement": "disagree",
+    "contrast_partner": null,
+    "expected_direction": null
+  },
+  {
+    "test_case_id": "tc-04",
+    "world_ref": "world-night-highway-high-drowsiness",
+    "candidate_song_ref": "synthetic-track-0259",
+    "expected_label": "negative",
+    "judge_folds": {
+      "context_need": "x",
+      "mood_genre_fit": "x",
+      "era_cultural_fit": "x",
+      "coherence": "x",
+      "web_evidence": "x"
+    },
+    "algorithm_score": -0.0380335780149512,
+    "agreement": "disagree",
+    "contrast_partner": null,
+    "expected_direction": null
+  },
+  {
+    "test_case_id": "tc-05",
+    "world_ref": "world-daytime-commute",
+    "candidate_song_ref": "synthetic-track-0022",
+    "expected_label": "positive",
+    "judge_folds": {
+      "context_need": "x",
+      "mood_genre_fit": "x",
+      "era_cultural_fit": "x",
+      "coherence": "x",
+      "web_evidence": "x"
+    },
+    "algorithm_score": -0.032924526210923025,
+    "agreement": "disagree",
+    "contrast_partner": null,
+    "expected_direction": null
+  },
+  {
+    "test_case_id": "tc-06",
+    "world_ref": "world-daytime-commute",
+    "candidate_song_ref": "synthetic-track-0259",
+    "expected_label": "neutral",
+    "judge_folds": {
+      "context_need": "x",
+      "mood_genre_fit": "x",
+      "era_cultural_fit": "x",
+      "coherence": "x",
+      "web_evidence": "x"
+    },
+    "algorithm_score": -0.03198334440257012,
+    "agreement": "agree",
+    "contrast_partner": null,
+    "expected_direction": null
+  },
+  {
+    "test_case_id": "tc-07",
+    "world_ref": "world-daytime-commute",
+    "candidate_song_ref": "synthetic-track-0107",
+    "expected_label": "negative",
+    "judge_folds": {
+      "context_need": "x",
+      "mood_genre_fit": "x",
+      "era_cultural_fit": "x",
+      "coherence": "x",
+      "web_evidence": "x"
+    },
+    "algorithm_score": 0.06066942419374769,
+    "agreement": "disagree",
+    "contrast_partner": null,
+    "expected_direction": null
+  },
+  {
+    "test_case_id": "tc-08",
+    "world_ref": "world-daytime-commute",
+    "candidate_song_ref": "synthetic-track-0108",
+    "expected_label": "neutral",
+    "judge_folds": {
+      "context_need": "x",
+      "mood_genre_fit": "x",
+      "era_cultural_fit": "x",
+      "coherence": "x",
+      "web_evidence": "x"
+    },
+    "algorithm_score": 0.065615047147226,
+    "agreement": "agree",
+    "contrast_partner": null,
+    "expected_direction": null
+  }
+]

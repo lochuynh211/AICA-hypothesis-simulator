@@ -1,0 +1,163 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826b6-9b0d-24da-9a18-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/frank-ocean/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/3/c/11e81bcc-fc3d-6b6a-9a6b-a0369fe50396.jpg",
+      "name": "Frank Ocean",
+      "slug": "frank-ocean",
+      "uuid": "11e81bcc-fc3d-6b6a-9a6b-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.69,
+    "danceability": 0.63,
+    "energy": 0.4,
+    "instrumentalness": 0,
+    "key": 8,
+    "liveness": 0.11,
+    "loudness": -9.64,
+    "mode": 1,
+    "speechiness": 0.09,
+    "tempo": 138.02,
+    "timeSignature": 4,
+    "valence": 0.12
+  },
+  "composers": [
+    "James Ryan Ho",
+    "James Blake Litherland",
+    "Harry Palmer",
+    "Christopher Edwin Breaux",
+    "Jeff Palmer",
+    "Ommas Keith-Graham",
+    "Carl Palmer"
+  ],
+  "copyright": "2016 Boys Don't Cry",
+  "creditName": "Frank Ocean",
+  "credits": [
+    {
+      "name": "James Blake",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "a346375b-ee29-4e37-b775-e06602f95511"
+    },
+    {
+      "name": "Mike Dean",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "6c575874-9ec0-445e-92d2-6872fa726578"
+    },
+    {
+      "name": "Om'Mas Keith",
+      "roles": [
+        "arranger",
+        "producer",
+        "programming",
+        "drum programmer"
+      ],
+      "uuid": "93d02ff7-9963-49df-b60c-02b5c0328752"
+    },
+    {
+      "name": "Jeff Ellis",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "70bb3762-aff7-44a9-81e3-993e279ed9bb"
+    },
+    {
+      "name": "Amber Coffman",
+      "roles": [
+        "additional vocals"
+      ],
+      "uuid": "176144b8-9e93-4284-a739-69756c06553e"
+    },
+    {
+      "name": "Malay",
+      "roles": [
+        "arranger",
+        "producer",
+        "programming",
+        "mellotron",
+        "drum programmer"
+      ],
+      "uuid": "b0df1d4a-f409-4431-be16-880087959875"
+    },
+    {
+      "name": "Frank Ocean",
+      "roles": [
+        "arranger",
+        "producer",
+        "writer",
+        "programming",
+        "additional programming"
+      ],
+      "uuid": "27120da8-7e18-43af-b579-94d935d4de29"
+    },
+    {
+      "name": "Loota",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "e7bfad8f-3464-445e-aed4-face8da54809"
+    },
+    {
+      "name": "Kohh",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "03614552-9006-4413-a8f8-d2916cd166b5"
+    }
+  ],
+  "distributor": "",
+  "duration": 314,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b, funk & soul"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/d/0/b/11e826b6-9b0d-24da-9a18-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "QZ5C81600001"
+  },
+  "iswcs": [
+    "T9198680589"
+  ],
+  "labels": [
+    {
+      "name": "Boys Don't Cry",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/frank-ocean/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/3/c/11e81bcc-fc3d-6b6a-9a6b-a0369fe50396.jpg",
+      "name": "Frank Ocean",
+      "slug": "frank-ocean",
+      "uuid": "11e81bcc-fc3d-6b6a-9a6b-a0369fe50396"
+    }
+  ],
+  "name": "Nikes",
+  "producers": [
+    "Malay",
+    "Frank Ocean",
+    "Om’Mas Keith"
+  ],
+  "releaseDate": "2016-08-20T00:00:00+00:00",
+  "uuid": "11e826b6-9b0d-24da-9a18-a0369fe50396"
+}

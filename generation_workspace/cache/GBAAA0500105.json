@@ -1,0 +1,126 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8261e-4658-590c-8a58-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/brian-eno/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/b/f/11e81bbe-0fba-38a8-b0ff-a0369fe50396.jpg",
+      "name": "Brian Eno",
+      "slug": "brian-eno",
+      "uuid": "11e81bbe-0fba-38a8-b0ff-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.82,
+    "danceability": 0.19,
+    "energy": 0.34,
+    "instrumentalness": 0.92,
+    "key": 4,
+    "liveness": 0.09,
+    "loudness": -20.31,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 141.66,
+    "timeSignature": 4,
+    "valence": 0.08
+  },
+  "composers": [
+    "Brian Eno",
+    "Roger Eno",
+    "Daniel Lanois"
+  ],
+  "copyright": "℗ 2005 Virgin Records Limited",
+  "creditName": "Brian Eno",
+  "credits": [
+    {
+      "name": "Roger Eno",
+      "roles": [
+        "composer",
+        "sound effects"
+      ],
+      "uuid": "e1777064-8089-4d2f-aac5-a10ac1e53160"
+    },
+    {
+      "name": "Greg Calbi",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "45ba67d8-a753-45fb-aa8c-b4e6c14a48ae"
+    },
+    {
+      "name": "Brian Eno",
+      "roles": [
+        "producer",
+        "sound effects",
+        "music production"
+      ],
+      "uuid": "5f39669d-fb61-476e-9e70-baa393604195"
+    },
+    {
+      "name": "Daniel Lanois",
+      "roles": [
+        "composer",
+        "producer",
+        "synthesizer",
+        "sound effects",
+        "pedal steel guitar"
+      ],
+      "uuid": "635f03b0-e3c1-4667-8d71-d4ddce6c4712"
+    },
+    {
+      "name": "Simon Heyworth",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "89ff796e-ea6b-486a-a586-6c940638b4a4"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 238,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    },
+    {
+      "root": "electro",
+      "sub": [
+        "electronic"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/5/6/11e8261e-4658-590c-8a58-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBAAA0500105"
+  },
+  "iswcs": [
+    "T0708900746"
+  ],
+  "labels": [
+    {
+      "name": "Virgin",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/brian-eno/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/b/f/11e81bbe-0fba-38a8-b0ff-a0369fe50396.jpg",
+      "name": "Brian Eno",
+      "slug": "brian-eno",
+      "uuid": "11e81bbe-0fba-38a8-b0ff-a0369fe50396"
+    }
+  ],
+  "name": "Deep Blue Day",
+  "producers": [
+    "Brian Eno",
+    "Daniel Lanois"
+  ],
+  "releaseDate": "1983-07-01T00:00:00+00:00",
+  "uuid": "11e8261e-4658-590c-8a58-a0369fe50396"
+}

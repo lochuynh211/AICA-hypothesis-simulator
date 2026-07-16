@@ -1,0 +1,72 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e840a8-7940-e13c-8c4f-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/masaki-suda/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/1/5/11e83feb-1511-6604-b9f7-aa1c026db3d8.jpg",
+      "name": "SUDA MASAKI",
+      "slug": "masaki-suda",
+      "uuid": "11e83feb-1511-6604-b9f7-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.46,
+    "energy": 0.94,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.15,
+    "loudness": -2.63,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 154.96,
+    "timeSignature": 4,
+    "valence": 0.64
+  },
+  "composers": [
+    "Huwie Ishizaki"
+  ],
+  "copyright": "(P)2018 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "SUDA MASAKI",
+  "credits": [],
+  "distributor": "Sony",
+  "duration": 258,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/4/9/11e840a8-7940-e13c-8c4f-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU901704009"
+  },
+  "iswcs": [
+    "T9243896959"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/masaki-suda/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/1/5/11e83feb-1511-6604-b9f7-aa1c026db3d8.jpg",
+      "name": "SUDA MASAKI",
+      "slug": "masaki-suda",
+      "uuid": "11e83feb-1511-6604-b9f7-aa1c026db3d8"
+    }
+  ],
+  "name": "さよならエレジー",
+  "producers": [],
+  "releaseDate": "2018-01-07T00:00:00+00:00",
+  "uuid": "11e840a8-7940-e13c-8c4f-aa1c026db3d8"
+}

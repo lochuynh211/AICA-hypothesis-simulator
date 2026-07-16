@@ -1,0 +1,84 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/e841f1ef-ca13-48f2-9b9c-c60bf0e126ea/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/junko-ohashi-6/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/c/9/11e81bc6-e9c1-d238-a2b8-a0369fe50396.jpg",
+      "name": "JUNKO OHASHI",
+      "slug": "junko-ohashi-6",
+      "uuid": "11e81bc6-e9c1-d238-a2b8-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/jill-decoy-association/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/a/f/11e81bc8-3fa8-c480-876f-a0369fe50396.jpg",
+      "name": "JiLL-Decoy association",
+      "slug": "jill-decoy-association",
+      "uuid": "11e81bc8-3fa8-c480-876f-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.46,
+    "danceability": 0.59,
+    "energy": 0.61,
+    "instrumentalness": 0,
+    "key": 5,
+    "liveness": 0.14,
+    "loudness": -5.28,
+    "mode": 1,
+    "speechiness": 0.02,
+    "tempo": 97.1,
+    "timeSignature": 4,
+    "valence": 0.52
+  },
+  "composers": [
+    "Yoshiko Miura",
+    "Ken Sato"
+  ],
+  "copyright": "2021 PONY CANYON INC.",
+  "creditName": "JUNKO OHASHI & JiLL-Decoy association",
+  "credits": [],
+  "distributor": "Pony Canyon",
+  "duration": 265,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/1/a/e841f1ef-ca13-48f2-9b9c-c60bf0e126ea.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPC02111157"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "PONY CANYON",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/jill-decoy-association/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/a/f/11e81bc8-3fa8-c480-876f-a0369fe50396.jpg",
+      "name": "JiLL-Decoy association",
+      "slug": "jill-decoy-association",
+      "uuid": "11e81bc8-3fa8-c480-876f-a0369fe50396"
+    }
+  ],
+  "name": "Telephone Number",
+  "producers": [],
+  "releaseDate": "2021-11-03T00:00:00+00:00",
+  "uuid": "e841f1ef-ca13-48f2-9b9c-c60bf0e126ea"
+}

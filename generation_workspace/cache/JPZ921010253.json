@@ -1,0 +1,82 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82685-9fb0-9a2a-a527-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/dj-okawari/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/c/4/11e81bc1-d4c1-8d9c-afdb-a0369fe50396.jpg",
+      "name": "DJ OKAWARI",
+      "slug": "dj-okawari",
+      "uuid": "11e81bc1-d4c1-8d9c-afdb-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.61,
+    "danceability": 0.55,
+    "energy": 0.53,
+    "instrumentalness": 0.07,
+    "key": 8,
+    "liveness": 0.09,
+    "loudness": -9.05,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 100.02,
+    "timeSignature": 4,
+    "valence": 0.7
+  },
+  "composers": [
+    "DJ Okawari",
+    "tabeyellow*"
+  ],
+  "copyright": "2010 Libyus Music",
+  "creditName": "DJ OKAWARI",
+  "credits": [
+    {
+      "name": "DJ OKAWARI",
+      "roles": [
+        "composer",
+        "arranger"
+      ],
+      "uuid": "0afae5b1-325d-4b14-8df9-a33b8696d565"
+    }
+  ],
+  "distributor": "Space Shower Network",
+  "duration": 265,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/b/f/11e82685-9fb0-9a2a-a527-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPZ921010253"
+  },
+  "iswcs": [
+    "T1020325635"
+  ],
+  "labels": [
+    {
+      "name": "Libyus Music",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/dj-okawari/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/c/4/11e81bc1-d4c1-8d9c-afdb-a0369fe50396.jpg",
+      "name": "DJ OKAWARI",
+      "slug": "dj-okawari",
+      "uuid": "11e81bc1-d4c1-8d9c-afdb-a0369fe50396"
+    }
+  ],
+  "name": "Flower Dance",
+  "producers": [],
+  "releaseDate": "2010-09-29T00:00:00+00:00",
+  "uuid": "11e82685-9fb0-9a2a-a527-aa1c026db3d8"
+}

@@ -1,0 +1,140 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/10b89539-9edb-4780-925e-9a2653cdf212/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ryokuoushoku-shakai-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/5/6/11e81bc0-8656-f878-a670-a0369fe50396.jpg",
+      "name": "Ryokuoushoku Shakai",
+      "slug": "ryokuoushoku-shakai-1",
+      "uuid": "11e81bc0-8656-f878-a670-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.04,
+    "danceability": 0.62,
+    "energy": 0.94,
+    "instrumentalness": 0,
+    "key": 8,
+    "liveness": 0.32,
+    "loudness": -1.62,
+    "mode": 1,
+    "speechiness": 0.06,
+    "tempo": 137.97,
+    "timeSignature": 4,
+    "valence": 0.62
+  },
+  "composers": [
+    "長屋晴子",
+    "peppe",
+    "穴見真吾",
+    "小林壱誓"
+  ],
+  "copyright": "(P)2020 Sony Music Labels Inc.",
+  "creditName": "Ryokuoushoku Shakai",
+  "credits": [
+    {
+      "name": "Haruko Nagaya",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "99270b10-e4fb-4ebe-8bb6-b17e526c6e6f"
+    },
+    {
+      "name": "Shingo Anami",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "108cbdf9-3125-465e-9e4c-4476a33d4c57"
+    },
+    {
+      "name": "peppe",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "e33202a6-2062-4007-aeae-cd4939aa9e48"
+    },
+    {
+      "name": "Issei Kobayashi",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "460b70b9-246a-4492-b9da-b890cf08d7d0"
+    },
+    {
+      "name": "緑黄色社会",
+      "roles": [
+        "arranger",
+        "associated performer"
+      ],
+      "uuid": "4336083b-f128-41e4-b7f7-a41765896cd5"
+    },
+    {
+      "name": "Hiroaki Yokoyama",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "82f2be84-b0bd-4174-b8c3-feac9021b8aa"
+    },
+    {
+      "name": "Peppe",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "179c80a1-68bc-4488-84aa-788bda8e19cd"
+    },
+    {
+      "name": "Issei Kobayashi",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "7c20265f-4d4e-4882-8c29-103d6b6f3b42"
+    },
+    {
+      "name": "Hiroaki Yokoyama",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "c8f53147-68b7-4c34-8a42-8b81b4d8c9b0"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 242,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/d/e/10b89539-9edb-4780-925e-9a2653cdf212.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU902000634"
+  },
+  "iswcs": [
+    "T3009482042"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ryokuoushoku-shakai-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/5/6/11e81bc0-8656-f878-a670-a0369fe50396.jpg",
+      "name": "Ryokuoushoku Shakai",
+      "slug": "ryokuoushoku-shakai-1",
+      "uuid": "11e81bc0-8656-f878-a670-a0369fe50396"
+    }
+  ],
+  "name": "Mela!",
+  "producers": [],
+  "releaseDate": "2020-04-13T00:00:00+00:00",
+  "uuid": "10b89539-9edb-4780-925e-9a2653cdf212"
+}

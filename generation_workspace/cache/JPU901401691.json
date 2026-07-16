@@ -1,0 +1,88 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e840f9-4aa1-c6d8-ae71-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kana-boon/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/b/7/11e81bc9-a7bb-6270-9828-a0369fe50396.jpg",
+      "name": "KANA-BOON",
+      "slug": "kana-boon",
+      "uuid": "11e81bc9-a7bb-6270-9828-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.44,
+    "energy": 0.93,
+    "instrumentalness": 0.14,
+    "key": 2,
+    "liveness": 0.32,
+    "loudness": -2.69,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 91.48,
+    "timeSignature": 4,
+    "valence": 0.38
+  },
+  "composers": [
+    "谷口鮪"
+  ],
+  "copyright": "(P)2014 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "KANA-BOON",
+  "credits": [
+    {
+      "name": "Maguro Taniguchi",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "e3f03e2d-128d-4796-9532-fa9d0d20335c"
+    },
+    {
+      "name": "KANA-BOON",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "ebd118f6-dc17-4a2c-8a60-15d14941a05b"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 240,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/1/a/a/11e840f9-4aa1-c6d8-ae71-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU901401691"
+  },
+  "iswcs": [
+    "T9161961826"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kana-boon/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/b/7/11e81bc9-a7bb-6270-9828-a0369fe50396.jpg",
+      "name": "KANA-BOON",
+      "slug": "kana-boon",
+      "uuid": "11e81bc9-a7bb-6270-9828-a0369fe50396"
+    }
+  ],
+  "name": "Silhouette",
+  "producers": [],
+  "releaseDate": "2014-11-26T00:00:00+00:00",
+  "uuid": "11e840f9-4aa1-c6d8-ae71-a0369fe50396"
+}

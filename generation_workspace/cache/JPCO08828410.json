@@ -1,0 +1,77 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/e7b2a5d4-0bf8-430c-8e92-c97eae31188a/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/hibari-misora/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/c/1/11e83fe3-31cb-9b00-89cf-a0369fe50396.jpg",
+      "name": "Hibari Misora",
+      "slug": "hibari-misora",
+      "uuid": "11e83fe3-31cb-9b00-89cf-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.4,
+    "danceability": 0.2,
+    "energy": 0.45,
+    "instrumentalness": 0,
+    "key": 2,
+    "liveness": 0.15,
+    "loudness": -9,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 181.83,
+    "timeSignature": 4,
+    "valence": 0.15
+  },
+  "composers": [
+    "Yasushi Akimoto",
+    "Akira Mitake"
+  ],
+  "copyright": "℗ 2022 Nippon Columbia Co., Ltd./NIPPONOPHONE",
+  "creditName": "Hibari Misora",
+  "credits": [],
+  "distributor": "Nippon Columbia",
+  "duration": 296,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/f/b/e7b2a5d4-0bf8-430c-8e92-c97eae31188a.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPCO08828410"
+  },
+  "iswcs": [
+    "T1011481960"
+  ],
+  "labels": [
+    {
+      "name": "NIPPONOPHONE",
+      "type": "unknown"
+    },
+    {
+      "name": "Nippon Columbia",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/hibari-misora/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/c/1/11e83fe3-31cb-9b00-89cf-a0369fe50396.jpg",
+      "name": "Hibari Misora",
+      "slug": "hibari-misora",
+      "uuid": "11e83fe3-31cb-9b00-89cf-a0369fe50396"
+    }
+  ],
+  "name": "Kawa No Nagare No Youni",
+  "producers": [],
+  "releaseDate": "2022-11-23T00:00:00+00:00",
+  "uuid": "e7b2a5d4-0bf8-430c-8e92-c97eae31188a"
+}

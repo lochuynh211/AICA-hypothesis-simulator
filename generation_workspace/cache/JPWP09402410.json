@@ -1,0 +1,95 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8268f-dbad-a77a-a926-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/tomoko-aran/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/3/4/133a9c4a-c436-11e8-b966-525400009efb.jpg",
+      "name": "Tomoko Aran",
+      "slug": "tomoko-aran",
+      "uuid": "133a9c4a-c436-11e8-b966-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.2,
+    "danceability": 0.76,
+    "energy": 0.34,
+    "instrumentalness": 0,
+    "key": 0,
+    "liveness": 0.07,
+    "loudness": -14.94,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 92.86,
+    "timeSignature": 4,
+    "valence": 0.56
+  },
+  "composers": [
+    "Tetsuro Oda",
+    "Tomoko Aran"
+  ],
+  "copyright": "1983 WARNER MUSIC JAPAN INC.",
+  "creditName": "Tomoko Aran",
+  "credits": [
+    {
+      "name": "MASATOSHI NISHIMURA",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "1406c62b-d65c-492a-9728-5700700c48d1"
+    },
+    {
+      "name": "Tomoko Aran",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "7245141a-9cf7-4a35-a0a4-2521c9388172"
+    },
+    {
+      "name": "Tetsuro Oda",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "2b3f447c-76ff-43f2-a180-82710312b40d"
+    }
+  ],
+  "distributor": "Warner",
+  "duration": 345,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/d/a/b/11e8268f-dbad-a77a-a926-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPWP09402410"
+  },
+  "iswcs": [
+    "T1016185285"
+  ],
+  "labels": [
+    {
+      "name": "Warner",
+      "type": "Warner"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/tomoko-aran/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/3/4/133a9c4a-c436-11e8-b966-525400009efb.jpg",
+      "name": "Tomoko Aran",
+      "slug": "tomoko-aran",
+      "uuid": "133a9c4a-c436-11e8-b966-525400009efb"
+    }
+  ],
+  "name": "MIDNIGHT PRETENDERS",
+  "producers": [],
+  "releaseDate": "1983-01-01T00:00:00+00:00",
+  "uuid": "11e8268f-dbad-a77a-a926-aa1c026db3d8"
+}

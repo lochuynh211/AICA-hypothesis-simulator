@@ -1,0 +1,123 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82612-f432-bccc-a5a4-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aphex-twin/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/1/4/11e81bc8-6416-6ce6-9d45-a0369fe50396.jpg",
+      "name": "Aphex Twin",
+      "slug": "aphex-twin",
+      "uuid": "11e81bc8-6416-6ce6-9d45-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.34,
+    "danceability": 0.51,
+    "energy": 0.51,
+    "instrumentalness": 0.96,
+    "key": 9,
+    "liveness": 0.12,
+    "loudness": -13.05,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 114.53,
+    "timeSignature": 4,
+    "valence": 0.32
+  },
+  "composers": [
+    "RR"
+  ],
+  "copyright": "1992 R&S Records",
+  "creditName": "Aphex Twin",
+  "credits": [
+    {
+      "name": "Aphex Twin",
+      "roles": [
+        "producer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "66f1b6dc-45c4-4b24-af8b-be13bcf0babc"
+    },
+    {
+      "name": "Steve Jeffries",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "46443d44-df68-4d86-848e-3873a172423b"
+    },
+    {
+      "name": "Donald Greig",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "878ffa03-85cf-4539-97c8-578ce8e18303"
+    },
+    {
+      "name": "Mary Carewe",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "c0196291-82c6-4631-9474-9ca24f810f71"
+    },
+    {
+      "name": "Donald Grieg",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "c2d37313-c59f-4cfb-a72f-3a1d08a4bb18"
+    }
+  ],
+  "distributor": "",
+  "duration": 293,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz"
+      ]
+    },
+    {
+      "root": "electro",
+      "sub": [
+        "dance",
+        "electronic"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/2/3/4/11e82612-f432-bccc-a5a4-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "BE",
+    "countryName": "Belgium",
+    "value": "BEZ350800022"
+  },
+  "iswcs": [
+    "T0101592657",
+    "T9011253433"
+  ],
+  "labels": [
+    {
+      "name": "R&S",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aphex-twin/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/1/4/11e81bc8-6416-6ce6-9d45-a0369fe50396.jpg",
+      "name": "Aphex Twin",
+      "slug": "aphex-twin",
+      "uuid": "11e81bc8-6416-6ce6-9d45-a0369fe50396"
+    }
+  ],
+  "name": "Xtal",
+  "producers": [
+    "Aphex Twin"
+  ],
+  "releaseDate": "1992-02-10T00:00:00+00:00",
+  "uuid": "11e82612-f432-bccc-a5a4-aa1c026db3d8"
+}

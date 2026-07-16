@@ -1,0 +1,126 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8265e-7e2f-bf1a-bd21-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/justice-7/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/5/0/11e81bc7-4052-8e9e-a266-a0369fe50396.jpg",
+      "name": "Justice",
+      "slug": "justice-7",
+      "uuid": "11e81bc7-4052-8e9e-a266-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.02,
+    "danceability": 0.69,
+    "energy": 0.79,
+    "instrumentalness": 0.37,
+    "key": 9,
+    "liveness": 0.1,
+    "loudness": -5.13,
+    "mode": 1,
+    "speechiness": 0.38,
+    "tempo": 117.06,
+    "timeSignature": 4,
+    "valence": 0.28
+  },
+  "composers": [
+    "Gaspard Augé",
+    "Xavier de Rosnay",
+    "Justice"
+  ],
+  "copyright": "2007 Ed Banger Records under exclusive license to Because Music",
+  "creditName": "Justice",
+  "credits": [
+    {
+      "name": "Xavier de Rosnay",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "f21f52c2-66a8-4bf9-8844-96901550c34b"
+    },
+    {
+      "name": "Gaspard Augé",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "b003270d-da62-4d4d-8ae6-dad6df3716ac"
+    },
+    {
+      "name": "Nilesh “Nilz” Patel",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "6da27b5c-d2af-4161-a37a-eb8e3afb1fee"
+    },
+    {
+      "name": "Justice",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "f1ecb134-ca97-4e7c-875a-425685fa69b0"
+    }
+  ],
+  "distributor": "Because",
+  "duration": 234,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    },
+    {
+      "root": "electro",
+      "sub": [
+        "dance",
+        "electronic"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/f/2/e/11e8265e-7e2f-bf1a-bd21-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "FR",
+    "countryName": "France",
+    "value": "FR0NT0700300"
+  },
+  "iswcs": [
+    "T7020651054"
+  ],
+  "labels": [
+    {
+      "name": "Ed Banger",
+      "type": "Other independent labels: \"Indie\""
+    },
+    {
+      "name": "Because",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/justice-7/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/5/0/11e81bc7-4052-8e9e-a266-a0369fe50396.jpg",
+      "name": "Justice",
+      "slug": "justice-7",
+      "uuid": "11e81bc7-4052-8e9e-a266-a0369fe50396"
+    }
+  ],
+  "name": "Genesis",
+  "producers": [
+    "Gaspard Augé",
+    "Xavier de Rosnay"
+  ],
+  "releaseDate": "2007-06-11T00:00:00+00:00",
+  "uuid": "11e8265e-7e2f-bf1a-bd21-aa1c026db3d8"
+}

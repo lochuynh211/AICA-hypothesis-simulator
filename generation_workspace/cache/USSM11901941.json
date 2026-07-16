@@ -1,0 +1,174 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/1dc18891-3d23-4296-bbe9-76b069f4b0f3/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/lil-nas-x/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/f/5/158d5cb2-c5fd-11e8-8b8c-549f35141000.jpg",
+      "name": "Lil Nas X",
+      "slug": "lil-nas-x",
+      "uuid": "158d5cb2-c5fd-11e8-8b8c-549f35141000"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.04,
+    "danceability": 0.91,
+    "energy": 0.52,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.09,
+    "loudness": -6.06,
+    "mode": 1,
+    "speechiness": 0.13,
+    "tempo": 136.02,
+    "timeSignature": 4,
+    "valence": 0.47
+  },
+  "composers": [
+    "Montero Lamar Hill",
+    "Kiowa Roukema",
+    "Atticus Matthew Ross",
+    "Michael Trent Reznor"
+  ],
+  "copyright": "(P) 2019 Columbia Records, a Division of Sony Music Entertainment",
+  "creditName": "Lil Nas X",
+  "credits": [
+    {
+      "name": "Atticus Matthew Ross",
+      "roles": [
+        "composer",
+        "producer",
+        "programming",
+        "lyricist"
+      ],
+      "uuid": "a797d431-98bb-4221-bf75-6176b6ecde8b"
+    },
+    {
+      "name": "Kiowa Roukema",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "bb017e1c-4e49-451f-9b43-34ec6de5fa53"
+    },
+    {
+      "name": "Atticus Ross",
+      "roles": [
+        "producer",
+        "co-producer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "1806eb6a-0392-4523-8f5e-edb1314916d7"
+    },
+    {
+      "name": "YoungKio",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "b863fe6b-0a4b-4b69-acdd-36b810406ee7"
+    },
+    {
+      "name": "Lil Nas X",
+      "roles": [
+        "writer",
+        "associated performer"
+      ],
+      "uuid": "72c0671b-d11c-4994-ab43-a5b993b8a8a2"
+    },
+    {
+      "name": "Cinco",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "08ce96d2-80b3-48c4-a85f-e319286387ce"
+    },
+    {
+      "name": "Montero Lamar Hill",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "dc006d4c-0b8a-40ec-8419-d8c1a9f68f46"
+    },
+    {
+      "name": "Nine Inch Nails",
+      "roles": [
+        "producer",
+        "co-producer",
+        "writer"
+      ],
+      "uuid": "a35f255c-7ba6-474d-ab13-1c7f79ce8b9b"
+    },
+    {
+      "name": "YoungKio",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "428af3fe-051d-4776-b97c-d44efa23ff79"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 113,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "country",
+      "sub": [
+        "country"
+      ]
+    },
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    },
+    {
+      "root": "pop",
+      "sub": [
+        "international pop",
+        "pop"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/2/d/1dc18891-3d23-4296-bbe9-76b069f4b0f3.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USSM11901941"
+  },
+  "iswcs": [
+    "T9290437104"
+  ],
+  "labels": [
+    {
+      "name": "Columbia",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/lil-nas-x/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/f/5/158d5cb2-c5fd-11e8-8b8c-549f35141000.jpg",
+      "name": "Lil Nas X",
+      "slug": "lil-nas-x",
+      "uuid": "158d5cb2-c5fd-11e8-8b8c-549f35141000"
+    }
+  ],
+  "name": "Old Town Road",
+  "producers": [
+    "YoungKio",
+    "Michael Trent Reznor",
+    "Atticus Matthew Ross"
+  ],
+  "releaseDate": "2019-03-14T00:00:00+00:00",
+  "uuid": "1dc18891-3d23-4296-bbe9-76b069f4b0f3"
+}

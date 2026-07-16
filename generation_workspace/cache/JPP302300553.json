@@ -1,0 +1,82 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/dc39641c-d7a3-4210-932f-19672e24ca04/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/vaundy/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/f/1/9c67d4e8-11f0-11ea-af30-e4434b16cb78.jpg",
+      "name": "Vaundy",
+      "slug": "vaundy",
+      "uuid": "9c67d4e8-11f0-11ea-af30-e4434b16cb78"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.03,
+    "danceability": 0.46,
+    "energy": 0.95,
+    "instrumentalness": 0,
+    "key": 2,
+    "liveness": 0.22,
+    "loudness": -3.01,
+    "mode": 1,
+    "speechiness": 0.1,
+    "tempo": 149.9,
+    "timeSignature": 4,
+    "valence": 0.53
+  },
+  "composers": [
+    "Vaundy"
+  ],
+  "copyright": "(P) 2020(2),2021(3-9),2022(10-17),2023(1,18-20) SDR Inc./(P) 2023 SDR Inc.",
+  "creditName": "Vaundy",
+  "credits": [
+    {
+      "name": "Vaundy",
+      "roles": [
+        "composer",
+        "lyricist",
+        "arranger"
+      ],
+      "uuid": "14b48c74-6785-4377-b3ca-2efcec7ebd74"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 222,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/a/7/dc39641c-d7a3-4210-932f-19672e24ca04.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPP302300553"
+  },
+  "iswcs": [
+    "T3018447597"
+  ],
+  "labels": [
+    {
+      "name": "SDR",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/vaundy/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/f/1/9c67d4e8-11f0-11ea-af30-e4434b16cb78.jpg",
+      "name": "Vaundy",
+      "slug": "vaundy",
+      "uuid": "9c67d4e8-11f0-11ea-af30-e4434b16cb78"
+    }
+  ],
+  "name": "Kaiju no Hanauta - replica -",
+  "producers": [],
+  "releaseDate": "2023-11-15T00:00:00+00:00",
+  "uuid": "dc39641c-d7a3-4210-932f-19672e24ca04"
+}

@@ -1,0 +1,94 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/acb0a59e-1294-4f60-848b-95a21b3941f7/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/eric-johnson-7/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/7/4/b95fac6e-0473-11e9-8ddc-549f35141000.jpg",
+      "name": "Eric Johnson",
+      "slug": "eric-johnson-7",
+      "uuid": "b95fac6e-0473-11e9-8ddc-549f35141000"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.49,
+    "danceability": 0.35,
+    "energy": 0.87,
+    "instrumentalness": 0.91,
+    "key": 7,
+    "liveness": 0.89,
+    "loudness": -7.19,
+    "mode": 1,
+    "speechiness": 0.08,
+    "tempo": 102.74,
+    "timeSignature": 4,
+    "valence": 0.63
+  },
+  "composers": [
+    "Eric Johnson"
+  ],
+  "copyright": "2014 Mascot Label Group/Provogue",
+  "creditName": "Eric Johnson",
+  "credits": [],
+  "distributor": "Warner",
+  "duration": 339,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz"
+      ]
+    },
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "blues",
+      "sub": [
+        "blues"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/4/9/2/acb0a59e-1294-4f60-848b-95a21b3941f7.jpg",
+  "isrc": {
+    "countryCode": "NL",
+    "countryName": "Netherlands",
+    "value": "NLB931400811"
+  },
+  "iswcs": [
+    "T0702333796"
+  ],
+  "labels": [
+    {
+      "name": "Provogue",
+      "type": "Other independent labels: \"Indie\""
+    },
+    {
+      "name": "Mascot Label",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/eric-johnson-7/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/7/4/b95fac6e-0473-11e9-8ddc-549f35141000.jpg",
+      "name": "Eric Johnson",
+      "slug": "eric-johnson-7",
+      "uuid": "b95fac6e-0473-11e9-8ddc-549f35141000"
+    }
+  ],
+  "name": "Cliffs Of Dover",
+  "producers": [],
+  "releaseDate": "2014-06-23T00:00:00+00:00",
+  "uuid": "acb0a59e-1294-4f60-848b-95a21b3941f7"
+}

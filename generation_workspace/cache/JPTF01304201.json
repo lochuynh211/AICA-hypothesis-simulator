@@ -1,0 +1,127 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826bf-564a-eb26-afd7-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/sekai-no-owari/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/0/7/11e81bca-670b-7200-9e64-a0369fe50396.jpg",
+      "name": "SEKAI NO OWARI",
+      "slug": "sekai-no-owari",
+      "uuid": "11e81bca-670b-7200-9e64-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.03,
+    "danceability": 0.49,
+    "energy": 0.94,
+    "instrumentalness": 0.02,
+    "key": 4,
+    "liveness": 0.19,
+    "loudness": -3.5,
+    "mode": 1,
+    "speechiness": 0.06,
+    "tempo": 134.98,
+    "timeSignature": 4,
+    "valence": 0.46
+  },
+  "composers": [
+    "FUKASE",
+    "Saori"
+  ],
+  "copyright": "2013 TOY'S FACTORY",
+  "creditName": "SEKAI NO OWARI",
+  "credits": [
+    {
+      "name": "Saori",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "a72e0b95-af45-4d4a-bdc7-fe5346af203e"
+    },
+    {
+      "name": "Fukase",
+      "roles": [
+        "writer",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "044821b7-4b1e-4910-9eeb-1b4e45e13e41"
+    },
+    {
+      "name": "SEKAI NO OWARI",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "91b6db0c-71ea-4f24-b90f-68f425ac4020"
+    },
+    {
+      "name": "CHRYSANTHEMUM BRIDGE",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "c6a02a08-a7e3-4382-aec4-9c025a4a8b9b"
+    },
+    {
+      "name": "クレヨンしんちゃん (Crayon Shin-chan)",
+      "roles": [
+        "tie-in"
+      ],
+      "uuid": "3fc60254-f521-4a38-82d5-b5f73348102c"
+    },
+    {
+      "name": "Saori",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "143869d0-7bf1-4984-b356-7beed7184c09"
+    }
+  ],
+  "distributor": "TOY'S FACTORY",
+  "duration": 286,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/a/4/6/11e826bf-564a-eb26-afd7-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPTF01304201"
+  },
+  "iswcs": [
+    "T9178146991"
+  ],
+  "labels": [
+    {
+      "name": "TOY'S FACTORY",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/sekai-no-owari/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/0/7/11e81bca-670b-7200-9e64-a0369fe50396.jpg",
+      "name": "SEKAI NO OWARI",
+      "slug": "sekai-no-owari",
+      "uuid": "11e81bca-670b-7200-9e64-a0369fe50396"
+    }
+  ],
+  "name": "RPG",
+  "producers": [
+    "ＦＵＫＡＳＥ"
+  ],
+  "releaseDate": "2013-05-01T00:00:00+00:00",
+  "uuid": "11e826bf-564a-eb26-afd7-a0369fe50396"
+}

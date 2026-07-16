@@ -1,0 +1,284 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/36d9cc33-b535-4058-a33e-9e47258d3863/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/dua-lipa/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/e/4/11e81bcd-e4e1-abec-b679-a0369fe50396.jpg",
+      "name": "Dua Lipa",
+      "slug": "dua-lipa",
+      "uuid": "11e81bcd-e4e1-abec-b679-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.06,
+    "danceability": 0.7,
+    "energy": 0.88,
+    "instrumentalness": 0,
+    "key": 6,
+    "liveness": 0.21,
+    "loudness": -2.28,
+    "mode": 0,
+    "speechiness": 0.08,
+    "tempo": 103.01,
+    "timeSignature": 4,
+    "valence": 0.91
+  },
+  "composers": [
+    "Clarence Coffee Jr.",
+    "Dua Lipa",
+    "Sarah Hudson",
+    "Stephen Kozmeniuk"
+  ],
+  "copyright": "℗ 2020 Dua Lipa Limited under exclusive license to Warner Records UK, a division of Warner Music UK Limited, with the exception of track 1 & 2 2019 Dua Lipa Limited under exclusive license to Warner Records UK, a division of Warner Music UK Limited",
+  "creditName": "Dua Lipa",
+  "credits": [
+    {
+      "name": "Graham Russell",
+      "roles": [
+        "keyboard"
+      ],
+      "uuid": "3cf9134f-2559-4fad-a0bb-6c83dd4af88a"
+    },
+    {
+      "name": "Dua Lipa",
+      "roles": [
+        "songwriter",
+        "writer",
+        "vocals",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "69480af5-a612-456c-90a6-2944efbce4ad"
+    },
+    {
+      "name": "Todd Clark",
+      "roles": [
+        "backing vocals"
+      ],
+      "uuid": "1dfec637-438e-41b8-b438-095382796065"
+    },
+    {
+      "name": "Josh Gudwin",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "e8704467-f29b-4a9c-b86d-968b900b8180"
+    },
+    {
+      "name": "Chris Gehringer",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "09925f38-1606-4918-9c39-a5be4a5de704"
+    },
+    {
+      "name": "Cameron Gower Poole",
+      "roles": [
+        "vocal engineer"
+      ],
+      "uuid": "2cc9effc-57da-4157-b2ed-99448d0ab7cf"
+    },
+    {
+      "name": "Cameron Poole",
+      "roles": [
+        "vocal recording engineer"
+      ],
+      "uuid": "dfe15384-f72c-458b-81ca-f76e54786833"
+    },
+    {
+      "name": "Sean Price",
+      "roles": [
+        "producer",
+        "programming",
+        "bass guitar",
+        "keyboard"
+      ],
+      "uuid": "962389df-4736-4966-a90b-ad9c3a6b7e22"
+    },
+    {
+      "name": "Stephen Kozmeniuk",
+      "roles": [
+        "songwriter",
+        "writer",
+        "drums",
+        "guitar",
+        "bass guitar",
+        "synthesizer",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "108da50f-b1f9-4513-9e54-ca7ee043ebe9"
+    },
+    {
+      "name": "Paul Phamous",
+      "roles": [
+        "backing vocals",
+        "backing  vocals"
+      ],
+      "uuid": "006e4b43-1b84-4725-88ef-bc95fdb6183c"
+    },
+    {
+      "name": "Lorna Blackwood",
+      "roles": [
+        "programming",
+        "vocal recording engineer",
+        "additional  vocal  recording  engineer"
+      ],
+      "uuid": "e7a97b9e-65d9-42ae-a632-c4d722b983bf"
+    },
+    {
+      "name": "Matt Snell",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "e5a797e5-3a22-4361-b173-42fc52d5dedb"
+    },
+    {
+      "name": "Phil Hotz",
+      "roles": [
+        "assistant recording engineer",
+        "assistant engineer"
+      ],
+      "uuid": "00bab4e7-e498-4bd3-8c7f-9b0f7aa0386a"
+    },
+    {
+      "name": "Sarah Hudson",
+      "roles": [
+        "songwriter",
+        "writer",
+        "backing vocals",
+        "composer",
+        "lyricist",
+        "backing  vocals"
+      ],
+      "uuid": "63a80212-897d-4644-88dd-c4bf75f2abe3"
+    },
+    {
+      "name": "Homer Steinweiss",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "04b0652b-778b-4466-98e4-d130164760f6"
+    },
+    {
+      "name": "Clarence Coffee Jr.",
+      "roles": [
+        "songwriter",
+        "writer",
+        "backing vocals",
+        "composer",
+        "lyricist",
+        "backing  vocals"
+      ],
+      "uuid": "6ea4b90b-748b-4271-aad2-a2925758f1bd"
+    },
+    {
+      "name": "Koz",
+      "roles": [
+        "vocal production",
+        "producer"
+      ],
+      "uuid": "f72b275d-da77-42d1-af5a-c24b0e18fd7d"
+    },
+    {
+      "name": "Bosko Kante",
+      "roles": [
+        "vocals",
+        "talkbox"
+      ],
+      "uuid": "a263a646-ff68-430a-b0d2-1b1edebb88af"
+    },
+    {
+      "name": "Stephen \"Koz\" Kozmeniuk",
+      "roles": [
+        "producer",
+        "vocal production"
+      ],
+      "uuid": "22be315b-c12e-4ffb-87e2-6b3dccb52dba"
+    },
+    {
+      "name": "Matthew Snell",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "23a058c0-14fd-46ad-9623-9a058c5b637a"
+    },
+    {
+      "name": "Elijah Marrett-Hitch",
+      "roles": [
+        "assistant mix engineer",
+        "mix assistant",
+        "assistant  mixer"
+      ],
+      "uuid": "c3cd4400-55c1-4ddf-bb0a-28d980eb6622"
+    },
+    {
+      "name": "Bosko Elecrospit Kante",
+      "roles": [
+        "talkbox"
+      ],
+      "uuid": "98b5007c-a94d-4182-adce-eea761c54518"
+    },
+    {
+      "name": "Todd Clark",
+      "roles": [
+        "backing  vocals"
+      ],
+      "uuid": "fb4eb399-b1e0-4e36-a744-e898cc5bf178"
+    },
+    {
+      "name": "Clarence Coffee Jr.",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "ee248f4e-ba8a-4ae3-8fd9-3e9489661ff0"
+    }
+  ],
+  "distributor": "Warner",
+  "duration": 203,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/5/3/5/36d9cc33-b535-4058-a33e-9e47258d3863.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBAHT1901299"
+  },
+  "iswcs": [
+    "T3036254583"
+  ],
+  "labels": [
+    {
+      "name": "2",
+      "type": "Self released"
+    },
+    {
+      "name": "Dua Lipa",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/dua-lipa/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/e/4/11e81bcd-e4e1-abec-b679-a0369fe50396.jpg",
+      "name": "Dua Lipa",
+      "slug": "dua-lipa",
+      "uuid": "11e81bcd-e4e1-abec-b679-a0369fe50396"
+    }
+  ],
+  "name": "Levitating",
+  "producers": [
+    "Stuart Price",
+    "Koz"
+  ],
+  "releaseDate": "2020-03-27T00:00:00+00:00",
+  "uuid": "36d9cc33-b535-4058-a33e-9e47258d3863"
+}

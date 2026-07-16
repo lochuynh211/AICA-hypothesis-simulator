@@ -1,0 +1,159 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8261d-b303-48b0-9fae-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/booker-t-the-m-g-s/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/1/b/11e83fdf-bb13-c698-b30e-aa1c026db3d8.jpg",
+      "name": "Booker T. & The M.G.'s",
+      "slug": "booker-t-the-m-g-s",
+      "uuid": "11e83fdf-bb13-c698-b30e-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.77,
+    "danceability": 0.82,
+    "energy": 0.51,
+    "instrumentalness": 0.95,
+    "key": 10,
+    "liveness": 0.09,
+    "loudness": -8.74,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 136.84,
+    "timeSignature": 4,
+    "valence": 0.91
+  },
+  "composers": [
+    "Steve Cropper",
+    "Booker T. Jones",
+    "Lewie Steinberg",
+    "Al Jackson Jr."
+  ],
+  "copyright": "2013 Marylebone Records",
+  "creditName": "Booker T. & The M.G.'s",
+  "credits": [
+    {
+      "name": "Steve Cropper",
+      "roles": [
+        "producer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "a36134d5-b514-4c42-a989-2bbd2370bc59"
+    },
+    {
+      "name": "Al Jackson Jr.",
+      "roles": [
+        "songwriter",
+        "producer",
+        "writer",
+        "drums"
+      ],
+      "uuid": "e6b76fc8-9a99-4153-a709-bd1f6cb39234"
+    },
+    {
+      "name": "Booker T. Jones",
+      "roles": [
+        "producer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "7da3e2df-ae08-4177-8be4-3b2120ea6ae4"
+    },
+    {
+      "name": "Jim Stewart",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "105e9ebb-b352-4acc-952a-511aa05a2bc6"
+    },
+    {
+      "name": "Lewie Steinberg",
+      "roles": [
+        "producer",
+        "writer",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "ceb8e956-7ed9-41f6-b456-0476a81ddb6e"
+    },
+    {
+      "name": "S. Cropper",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "e037a49f-4f07-4524-9803-05eec7521738"
+    }
+  ],
+  "distributor": "",
+  "duration": 176,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b",
+        "r&b, funk & soul"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "soundtrack",
+      "sub": [
+        "film ost",
+        "ost"
+      ]
+    },
+    {
+      "root": "soul",
+      "sub": [
+        "soul"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/0/3/11e8261d-b303-48b0-9fae-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USAT20000736"
+  },
+  "iswcs": [
+    "T0702343585"
+  ],
+  "labels": [
+    {
+      "name": "Marylebone",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/booker-t-the-m-g-s/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/1/b/11e83fdf-bb13-c698-b30e-aa1c026db3d8.jpg",
+      "name": "Booker T. & The M.G.'s",
+      "slug": "booker-t-the-m-g-s",
+      "uuid": "11e83fdf-bb13-c698-b30e-aa1c026db3d8"
+    }
+  ],
+  "name": "Green Onions",
+  "producers": [
+    "Steve Cropper",
+    "Al Jackson Jr.",
+    "Lewie Steinberg",
+    "Booker T. Jones"
+  ],
+  "releaseDate": "2013-07-29T00:00:00+00:00",
+  "uuid": "11e8261d-b303-48b0-9fae-a0369fe50396"
+}

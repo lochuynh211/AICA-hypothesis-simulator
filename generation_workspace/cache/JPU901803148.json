@@ -1,0 +1,89 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/4801cbe0-46f1-11e9-8abe-549f35141000/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mi-jin-xuan-shi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/d/a/11e81bcc-dadf-925e-af6a-a0369fe50396.jpg",
+      "name": "Kenshi Yonezu",
+      "slug": "mi-jin-xuan-shi",
+      "uuid": "11e81bcc-dadf-925e-af6a-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.14,
+    "danceability": 0.77,
+    "energy": 0.66,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.1,
+    "loudness": -6.45,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 114.05,
+    "timeSignature": 4,
+    "valence": 0.92
+  },
+  "composers": [
+    "Kenshi Yonezu"
+  ],
+  "copyright": "(P)2018 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "Kenshi Yonezu",
+  "credits": [
+    {
+      "name": "Kenshi Yonezu",
+      "roles": [
+        "composer",
+        "lyricist",
+        "arranger"
+      ],
+      "uuid": "e3ad260e-ef18-4b95-8652-44ffceffd6e9"
+    },
+    {
+      "name": "米津玄師",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "b10c3204-9cac-47d5-a268-15f1991ce8c6"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 196,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/1/f/6/4801cbe0-46f1-11e9-8abe-549f35141000.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU901803148"
+  },
+  "iswcs": [
+    "T9275555958"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mi-jin-xuan-shi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/d/a/11e81bcc-dadf-925e-af6a-a0369fe50396.jpg",
+      "name": "Kenshi Yonezu",
+      "slug": "mi-jin-xuan-shi",
+      "uuid": "11e81bcc-dadf-925e-af6a-a0369fe50396"
+    }
+  ],
+  "name": "Flamingo",
+  "producers": [],
+  "releaseDate": "2018-10-31T00:00:00+00:00",
+  "uuid": "4801cbe0-46f1-11e9-8abe-549f35141000"
+}

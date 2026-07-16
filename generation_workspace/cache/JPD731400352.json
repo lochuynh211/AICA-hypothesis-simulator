@@ -1,0 +1,96 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826d0-4a83-a290-93a5-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/konomi-suzuki-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/c/c/1/4fa784a2-c1cc-11e8-a11a-525400009efb.jpg",
+      "name": "Konomi Suzuki",
+      "slug": "konomi-suzuki-1",
+      "uuid": "4fa784a2-c1cc-11e8-a11a-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.05,
+    "danceability": 0.48,
+    "energy": 0.92,
+    "instrumentalness": 0,
+    "key": 11,
+    "liveness": 0.06,
+    "loudness": -3,
+    "mode": 0,
+    "speechiness": 0.08,
+    "tempo": 146.96,
+    "timeSignature": 4,
+    "valence": 0.27
+  },
+  "composers": [
+    "若林充",
+    "深青結希"
+  ],
+  "copyright": "2014 KADOKAWA CORPORATION",
+  "creditName": "Konomi Suzuki",
+  "credits": [
+    {
+      "name": "Mitsuru Wakabayashi",
+      "roles": [
+        "composer",
+        "writer"
+      ],
+      "uuid": "0e92932b-3031-4420-868f-923caca81ee9"
+    },
+    {
+      "name": "eba",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "730e553c-1029-49c5-b4c0-48d868116503"
+    },
+    {
+      "name": "若林充",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "f5990a9e-878d-4379-8a63-c580d8cde17e"
+    },
+    {
+      "name": "深青結希 (Yu-ki Misao)",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "1ae842d8-ef5f-42de-b04b-f40d464e3eff"
+    }
+  ],
+  "distributor": "NexTone",
+  "duration": 281,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/3/8/a/11e826d0-4a83-a290-93a5-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPD731400352"
+  },
+  "iswcs": [
+    "T9152412049"
+  ],
+  "labels": [
+    {
+      "name": "KADOKAWA CORPORATION",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/konomi-suzuki-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/c/c/1/4fa784a2-c1cc-11e8-a11a-525400009efb.jpg",
+      "name": "Konomi Suzuki",
+      "slug": "konomi-suzuki-1",
+      "uuid": "4fa784a2-c1cc-11e8-a11a-525400009efb"
+    }
+  ],
+  "name": "This game",
+  "producers": [],
+  "releaseDate": "2014-05-21T00:00:00+00:00",
+  "uuid": "11e826d0-4a83-a290-93a5-a0369fe50396"
+}

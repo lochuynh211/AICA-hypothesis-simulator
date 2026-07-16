@@ -1,0 +1,70 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/d9b04ce6-c5b0-11e8-878b-549f35141000/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/walter-gieseking/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/6/e/11e81bca-7e66-3264-88f6-a0369fe50396.jpg",
+      "name": "Walter Gieseking",
+      "slug": "walter-gieseking",
+      "uuid": "11e81bca-7e66-3264-88f6-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.99,
+    "danceability": 0.41,
+    "energy": 0,
+    "instrumentalness": 0.82,
+    "key": 1,
+    "liveness": 0.09,
+    "loudness": -30.88,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 133.94,
+    "timeSignature": 3,
+    "valence": 0.1
+  },
+  "composers": [
+    "Claude Debussy"
+  ],
+  "copyright": "This compilation (P) 2004 by EMI Records Ltd.",
+  "creditName": "Walter Gieseking",
+  "credits": [],
+  "distributor": "Universal",
+  "duration": 311,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/b/5/d9b04ce6-c5b0-11e8-878b-549f35141000.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBAYC9501446"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "by",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/walter-gieseking/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/6/e/11e81bca-7e66-3264-88f6-a0369fe50396.jpg",
+      "name": "Walter Gieseking",
+      "slug": "walter-gieseking",
+      "uuid": "11e81bca-7e66-3264-88f6-a0369fe50396"
+    }
+  ],
+  "name": "Suite bergamasque (1995 Digital Remaster): Clair de lune",
+  "producers": [],
+  "releaseDate": "2005-11-28T00:00:00+00:00",
+  "uuid": "d9b04ce6-c5b0-11e8-878b-549f35141000"
+}

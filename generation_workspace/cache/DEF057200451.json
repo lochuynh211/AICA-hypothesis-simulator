@@ -1,0 +1,249 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/de7a65c8-5515-11e9-884b-549f35141000/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/herbert-von-karajan/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/2/2/11e81bbb-3226-e416-b773-a0369fe50396.jpg",
+      "name": "Herbert von Karajan",
+      "slug": "herbert-von-karajan",
+      "uuid": "11e81bbb-3226-e416-b773-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/eberhard-finke/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/1/5/11e81bbd-6515-fa22-94c8-a0369fe50396.jpg",
+      "name": "Eberhard Finke",
+      "slug": "eberhard-finke",
+      "uuid": "11e81bbd-6515-fa22-94c8-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/berliner-philharmoniker/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/c/6/11e81bc8-c6c4-822e-b565-a0369fe50396.jpg",
+      "name": "Berliner Philharmoniker",
+      "slug": "berliner-philharmoniker",
+      "uuid": "11e81bc8-c6c4-822e-b565-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/antonio-vivaldi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/9/3/11e83fe0-d39f-86c4-99a1-aa1c026db3d8.jpg",
+      "name": "Antonio Vivaldi",
+      "slug": "antonio-vivaldi",
+      "uuid": "11e83fe0-d39f-86c4-99a1-aa1c026db3d8"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/michel-schwalbe-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/c/1/3245c092-c1ca-11e8-8acf-525400009efb.jpg",
+      "name": "Michel Schwalbé",
+      "slug": "michel-schwalbe-1",
+      "uuid": "3245c092-c1ca-11e8-8acf-525400009efb"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/horst-goebel/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/5/6/ff66787e-c656-11e8-836b-549f35141000.jpg",
+      "name": "Horst Goebel",
+      "slug": "horst-goebel",
+      "uuid": "ff66787e-c656-11e8-836b-549f35141000"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.83,
+    "danceability": 0.45,
+    "energy": 0.11,
+    "instrumentalness": 0.85,
+    "key": 4,
+    "liveness": 0.12,
+    "loudness": -17.2,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 101.56,
+    "timeSignature": 4,
+    "valence": 0.2
+  },
+  "composers": [
+    "Antonio Vivaldi"
+  ],
+  "copyright": "℗ 2003 Deutsche Grammophon GmbH, Berlin",
+  "creditName": "Herbert von Karajan & Eberhard Finke & Berliner Philharmoniker & Antonio Vivaldi & Michel Schwalbé & Horst Goebel",
+  "credits": [
+    {
+      "name": "Antonio Vivaldi",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "4055e0c1-e465-45cb-bf60-652451d7605e"
+    },
+    {
+      "name": "Ruth Gipps",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "0c6e62b2-e914-4f16-b332-e2fa301461a0"
+    },
+    {
+      "name": "Hans Weber",
+      "roles": [
+        "producer",
+        "recording"
+      ],
+      "uuid": "8999a8ca-e71b-4967-a4c9-ac1618f8a4e8"
+    },
+    {
+      "name": "Günter Hermanns",
+      "roles": [
+        "balance engineer"
+      ],
+      "uuid": "623463d2-12fa-4efc-91ad-ba4f7fda6d67"
+    },
+    {
+      "name": "Jobst Eberhardt",
+      "roles": [
+        "editing"
+      ],
+      "uuid": "e55c81ec-495d-40ea-95f8-f51e5a830607"
+    },
+    {
+      "name": "Dr. Hans Hirsch",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "78580cb3-bc9b-4463-abec-6543f88a284c"
+    },
+    {
+      "name": "Berlin Philharmonic",
+      "roles": [
+        "orchestra"
+      ],
+      "uuid": "72d1a10d-c064-4a0f-aee2-b6d1cea8c250"
+    },
+    {
+      "name": "Herbert von Karajan",
+      "roles": [
+        "conductor"
+      ],
+      "uuid": "09091a70-2762-4a76-b90b-348173df17aa"
+    },
+    {
+      "name": "Berlin Philharmonic Orchestra",
+      "roles": [
+        "orchestra"
+      ],
+      "uuid": "98533154-a507-48b9-830a-39105ca04214"
+    },
+    {
+      "name": "Hans Ludwig Hirsch",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "1bf6531e-3456-4597-9a23-4e832b6d39f6"
+    },
+    {
+      "name": "Eberhard Finke",
+      "roles": [
+        "cello",
+        "continuo"
+      ],
+      "uuid": "5f242869-9260-43a9-9963-4d7b248c061a"
+    },
+    {
+      "name": "Christa Conrad",
+      "roles": [
+        "editing"
+      ],
+      "uuid": "43c6e1f7-d2db-4ad9-a558-ac51f5511451"
+    },
+    {
+      "name": "Volker Martin",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "075f75d5-4d4d-41ab-9de1-3770fbe3a52f"
+    },
+    {
+      "name": "Horst Göbel",
+      "roles": [
+        "harpsichord",
+        "continuo"
+      ],
+      "uuid": "dea6324c-c3e2-4a0c-8662-1e343631b4c8"
+    },
+    {
+      "name": "Michel Schwalbé",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "514573ec-4cdb-4af3-8e03-16163f345b25"
+    }
+  ],
+  "distributor": "",
+  "duration": 205,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/5/1/5/de7a65c8-5515-11e9-884b-549f35141000.jpg",
+  "isrc": {
+    "countryCode": "DE",
+    "countryName": "Germany",
+    "value": "DEF057200451"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Berlin",
+      "type": "Other independent labels: \"Indie\""
+    },
+    {
+      "name": "Deutsche Grammophon",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/herbert-von-karajan/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/2/2/11e81bbb-3226-e416-b773-a0369fe50396.jpg",
+      "name": "Herbert von Karajan",
+      "slug": "herbert-von-karajan",
+      "uuid": "11e81bbb-3226-e416-b773-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/eberhard-finke/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/1/5/11e81bbd-6515-fa22-94c8-a0369fe50396.jpg",
+      "name": "Eberhard Finke",
+      "slug": "eberhard-finke",
+      "uuid": "11e81bbd-6515-fa22-94c8-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/berliner-philharmoniker/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/c/6/11e81bc8-c6c4-822e-b565-a0369fe50396.jpg",
+      "name": "Berliner Philharmoniker",
+      "slug": "berliner-philharmoniker",
+      "uuid": "11e81bc8-c6c4-822e-b565-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/michel-schwalbe-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/c/1/3245c092-c1ca-11e8-8acf-525400009efb.jpg",
+      "name": "Michel Schwalbé",
+      "slug": "michel-schwalbe-1",
+      "uuid": "3245c092-c1ca-11e8-8acf-525400009efb"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/horst-goebel/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/5/6/ff66787e-c656-11e8-836b-549f35141000.jpg",
+      "name": "Horst Goebel",
+      "slug": "horst-goebel",
+      "uuid": "ff66787e-c656-11e8-836b-549f35141000"
+    }
+  ],
+  "name": "Concerto for Violin and Strings in E, Op. 8, No. 1, R. 269 \"La Primavera\": I. Allegro",
+  "producers": [
+    "Hans Weber",
+    "Dr. Hans Hirsch"
+  ],
+  "releaseDate": "2003-01-01T00:00:00+00:00",
+  "uuid": "de7a65c8-5515-11e9-884b-549f35141000"
+}

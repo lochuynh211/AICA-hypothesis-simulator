@@ -1,0 +1,204 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8268b-98ef-dd94-8f73-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/drake-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/c/d/11e81bbf-8dca-ff1a-af94-a0369fe50396.jpg",
+      "name": "Drake",
+      "slug": "drake-1",
+      "uuid": "11e81bbf-8dca-ff1a-af94-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.03,
+    "danceability": 0.58,
+    "energy": 0.68,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.12,
+    "loudness": -7.08,
+    "mode": 1,
+    "speechiness": 0.17,
+    "tempo": 193.82,
+    "timeSignature": 4,
+    "valence": 0.21
+  },
+  "composers": [
+    "Aubrey Graham",
+    "N. Wilburn",
+    "J. Ullman",
+    "Anne Dudley",
+    "Malcolm McLaren",
+    "N. Shebib"
+  ],
+  "copyright": "℗ 2016 Young Money Entertainment/Cash Money Records",
+  "creditName": "Drake",
+  "credits": [
+    {
+      "name": "Michael Brooks",
+      "roles": [
+        "assistant mix engineer"
+      ],
+      "uuid": "6dc22173-47bf-40c9-a88b-c1b0f68fbf03"
+    },
+    {
+      "name": "Jordan Ullman",
+      "roles": [
+        "composer",
+        "producer",
+        "lyricist"
+      ],
+      "uuid": "7b610a86-20ff-440f-8723-aba760396ac8"
+    },
+    {
+      "name": "Harley Arsenault",
+      "roles": [
+        "assistant recording engineer",
+        "second engineer"
+      ],
+      "uuid": "57afe059-1ddf-45aa-8132-0fa902d598f3"
+    },
+    {
+      "name": "Future",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "fc085f7f-4e8b-407b-b812-e785a49bb6ea"
+    },
+    {
+      "name": "Aubrey Drake Graham",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "1bd4cec9-291d-468a-adbb-d8c63b290867"
+    },
+    {
+      "name": "Kanye West",
+      "roles": [
+        "additional production"
+      ],
+      "uuid": "b1069008-9f63-4728-9649-5f8897168421"
+    },
+    {
+      "name": "Noah \"40\" Shebib",
+      "roles": [
+        "composer",
+        "recording",
+        "lyricist",
+        "additional production"
+      ],
+      "uuid": "bd587429-7d7b-4031-bfe4-09a09ad15b0c"
+    },
+    {
+      "name": "Lindsay Warner",
+      "roles": [
+        "second engineer",
+        "mix"
+      ],
+      "uuid": "370c0a2e-3897-46c6-bc1d-7bdccd15db2c"
+    },
+    {
+      "name": "40",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "b4b56735-bea8-4dcc-b749-6f1aa81afb92"
+    },
+    {
+      "name": "Noel Cadastre",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "f1c3516d-3a69-495a-b028-c6eb900571f6"
+    },
+    {
+      "name": "Anne Dudley",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "0ff54576-03d2-4b58-b9d6-f7158083c919"
+    },
+    {
+      "name": "Greg Moffett",
+      "roles": [
+        "assistant recording engineer",
+        "second engineer"
+      ],
+      "uuid": "7a56cc8c-df64-4030-af40-ef192fc80143"
+    },
+    {
+      "name": "Malcolm McLaren",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "d87f00ba-d520-47ff-8360-5b2ae686e93a"
+    },
+    {
+      "name": "Daniel Daley",
+      "roles": [
+        "backing vocals"
+      ],
+      "uuid": "81004b8d-a466-4292-a497-d5be87c3f5df"
+    },
+    {
+      "name": "Michael Peter Olson",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "b7f7676c-ea70-4649-8dc4-73934cbb6588"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 240,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/f/e/8/11e8268b-98ef-dd94-8f73-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USCM51600067"
+  },
+  "iswcs": [
+    "T9191057973"
+  ],
+  "labels": [
+    {
+      "name": "Young Money",
+      "type": "Other independent labels: \"Indie\""
+    },
+    {
+      "name": "Cash Money",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/drake-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/c/d/11e81bbf-8dca-ff1a-af94-a0369fe50396.jpg",
+      "name": "Drake",
+      "slug": "drake-1",
+      "uuid": "11e81bbf-8dca-ff1a-af94-a0369fe50396"
+    }
+  ],
+  "name": "Feel No Ways",
+  "producers": [
+    "Noah \"40\" Shebib",
+    "Kanye West",
+    "Jordan Ullman"
+  ],
+  "releaseDate": "2016-05-06T00:00:00+00:00",
+  "uuid": "11e8268b-98ef-dd94-8f73-aa1c026db3d8"
+}

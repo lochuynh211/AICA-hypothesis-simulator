@@ -1,0 +1,63 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8265d-824e-397e-b2dd-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/lyn-8/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/d/e/11e83feb-5ed2-b52c-9bd0-a0369fe50396.jpg",
+      "name": "Lyn",
+      "slug": "lyn-8",
+      "uuid": "11e83feb-5ed2-b52c-9bd0-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.53,
+    "danceability": 0.68,
+    "energy": 0.44,
+    "instrumentalness": 0.82,
+    "key": 5,
+    "liveness": 0.18,
+    "loudness": -11.86,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 147.96,
+    "timeSignature": 4,
+    "valence": 0.71
+  },
+  "composers": [
+    "目黒将司",
+    "Rike Schmalz"
+  ],
+  "copyright": "ATLUS SEGA All rights reserved.",
+  "creditName": "Lyn",
+  "credits": [],
+  "distributor": "",
+  "duration": 281,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "soundtrack",
+      "sub": [
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/e/4/2/11e8265d-824e-397e-b2dd-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPK651600708"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "ATLUS SEGA",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [],
+  "name": "Beneath the Mask -instrumental version-",
+  "producers": [],
+  "releaseDate": "2017-01-17T00:00:00+00:00",
+  "uuid": "11e8265d-824e-397e-b2dd-aa1c026db3d8"
+}

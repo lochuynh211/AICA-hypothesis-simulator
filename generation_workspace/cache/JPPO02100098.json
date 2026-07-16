@@ -1,0 +1,87 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/bc109e6f-64f2-4ec2-aa44-cd409cbb750c/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ado-20/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/6/f/55443f99-af6f-4329-bd55-64f7dba4fb36.jpg",
+      "name": "Ado",
+      "slug": "ado-20",
+      "uuid": "55443f99-af6f-4329-bd55-64f7dba4fb36"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.05,
+    "danceability": 0.65,
+    "energy": 0.86,
+    "instrumentalness": 0,
+    "key": 2,
+    "liveness": 0.09,
+    "loudness": -4.13,
+    "mode": 1,
+    "speechiness": 0.06,
+    "tempo": 96.01,
+    "timeSignature": 4,
+    "valence": 0.73
+  },
+  "composers": [
+    "Teniwoha"
+  ],
+  "copyright": "A Virgin Music release; ℗ 2021 UNIVERSAL MUSIC LLC",
+  "creditName": "Ado",
+  "credits": [
+    {
+      "name": "Teniwoha",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "d442aa70-f4c1-460a-9b0b-b7b054614430"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 276,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/2/f/4/bc109e6f-64f2-4ec2-aa44-cd409cbb750c.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO02100098"
+  },
+  "iswcs": [
+    "T3044012666"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    },
+    {
+      "name": "Virgin",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ado-20/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/6/f/55443f99-af6f-4329-bd55-64f7dba4fb36.jpg",
+      "name": "Ado",
+      "slug": "ado-20",
+      "uuid": "55443f99-af6f-4329-bd55-64f7dba4fb36"
+    }
+  ],
+  "name": "ギラギラ",
+  "producers": [
+    "Teniwoha"
+  ],
+  "releaseDate": "2021-02-14T00:00:00+00:00",
+  "uuid": "bc109e6f-64f2-4ec2-aa44-cd409cbb750c"
+}

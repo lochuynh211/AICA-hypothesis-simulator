@@ -1,0 +1,68 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/e720ea09-9c19-43b5-8528-0e8cd585008b/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yoshio-ojima/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/f/8/5c308126-b8f6-11e8-80c8-525400009efb.jpg",
+      "name": "Yoshio Ojima",
+      "slug": "yoshio-ojima",
+      "uuid": "5c308126-b8f6-11e8-80c8-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.98,
+    "danceability": 0.34,
+    "energy": 0.13,
+    "instrumentalness": 0.48,
+    "key": 3,
+    "liveness": 0.1,
+    "loudness": -21.03,
+    "mode": 0,
+    "speechiness": 0.06,
+    "tempo": 73.65,
+    "timeSignature": 3,
+    "valence": 0.08
+  },
+  "composers": [
+    "Yoshio Ojima"
+  ],
+  "copyright": "",
+  "creditName": "Yoshio Ojima",
+  "credits": [
+    {
+      "name": "Yoshio Ojima",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "ef8998e4-e7e5-411f-9bf7-d75c9d9b2d02"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 354,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/9/1/c/e720ea09-9c19-43b5-8528-0e8cd585008b.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPZ921702692"
+  },
+  "iswcs": [
+    "T1015473682"
+  ],
+  "labels": [],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yoshio-ojima/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/f/8/5c308126-b8f6-11e8-80c8-525400009efb.jpg",
+      "name": "Yoshio Ojima",
+      "slug": "yoshio-ojima",
+      "uuid": "5c308126-b8f6-11e8-80c8-525400009efb"
+    }
+  ],
+  "name": "Glass Chattering",
+  "producers": [],
+  "releaseDate": null,
+  "uuid": "e720ea09-9c19-43b5-8528-0e8cd585008b"
+}

@@ -1,0 +1,97 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82681-b1f2-7aae-ae14-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ze-ye-hong-zhi-kohta-yamamoto/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/1/b/11e83feb-bb1e-611e-8571-aa1c026db3d8.jpg",
+      "name": "Sawano Hiroyuki",
+      "slug": "ze-ye-hong-zhi-kohta-yamamoto",
+      "uuid": "11e83feb-bb1e-611e-8571-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.03,
+    "danceability": 0.63,
+    "energy": 0.67,
+    "instrumentalness": 0,
+    "key": 5,
+    "liveness": 0.37,
+    "loudness": -7.43,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 159.97,
+    "timeSignature": 4,
+    "valence": 0.61
+  },
+  "composers": [
+    "Hiroyuki Sawano",
+    "Rie"
+  ],
+  "copyright": "(P) 2013(1-18),2014(19-46) Aniplex Inc.",
+  "creditName": "Sawano Hiroyuki",
+  "credits": [
+    {
+      "name": "Hiroyuki Sawano",
+      "roles": [
+        "composer",
+        "arranger"
+      ],
+      "uuid": "97d4be21-4425-4e84-840e-095203d7b19e"
+    },
+    {
+      "name": "Rie",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "6c850bcc-e7cb-49be-8ab4-cf0bbd87d258"
+    },
+    {
+      "name": "Hiroyuki Sawano",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "80d593e6-61d3-456e-8b82-1fcd546e407e"
+    }
+  ],
+  "distributor": "",
+  "duration": 258,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "soundtrack",
+      "sub": [
+        "film ost",
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/2/f/1/11e82681-b1f2-7aae-ae14-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPE301302908"
+  },
+  "iswcs": [
+    "T9137682872"
+  ],
+  "labels": [
+    {
+      "name": "Aniplex",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "de",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ze-ye-hong-zhi-kohta-yamamoto/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/1/b/11e83feb-bb1e-611e-8571-aa1c026db3d8.jpg",
+      "name": "Sawano Hiroyuki",
+      "slug": "ze-ye-hong-zhi-kohta-yamamoto",
+      "uuid": "11e83feb-bb1e-611e-8571-aa1c026db3d8"
+    }
+  ],
+  "name": "Blumenkranz",
+  "producers": [],
+  "releaseDate": "2013-01-01T00:00:00+00:00",
+  "uuid": "11e82681-b1f2-7aae-ae14-aa1c026db3d8"
+}

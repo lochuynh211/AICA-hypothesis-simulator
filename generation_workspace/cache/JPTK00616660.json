@@ -1,0 +1,100 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8265e-f1e0-111c-b71b-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/perfume-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/7/c/11e81bc8-9c76-05f6-8db0-a0369fe50396.jpg",
+      "name": "Perfume",
+      "slug": "perfume-1",
+      "uuid": "11e81bc8-9c76-05f6-8db0-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.07,
+    "danceability": 0.55,
+    "energy": 0.98,
+    "instrumentalness": 0.05,
+    "key": 8,
+    "liveness": 0.06,
+    "loudness": -1.02,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 128.02,
+    "timeSignature": 4,
+    "valence": 0.88
+  },
+  "composers": [
+    "Yasutaka Nakata"
+  ],
+  "copyright": "(P)Tokuma Japan C.",
+  "creditName": "Perfume",
+  "credits": [
+    {
+      "name": "Yasutaka Nakata",
+      "roles": [
+        "composer",
+        "producer",
+        "lyricist",
+        "recording arranger"
+      ],
+      "uuid": "eee0186c-4d0b-48a1-b3e4-3e2424f3a8d9"
+    },
+    {
+      "name": "中田ヤスタカ (Yasutaka Nakata)",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "3b3c6f9a-92bb-455d-add4-d8183d9a9a3b"
+    },
+    {
+      "name": "Perfume",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "1f836748-2ef8-43da-8fb4-9881f68fed72"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 30,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "electro",
+      "sub": [
+        "electronic"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/e/1/11e8265e-f1e0-111c-b71b-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPTK00616660"
+  },
+  "iswcs": [
+    "T1018715778",
+    "T9158314228"
+  ],
+  "labels": [
+    {
+      "name": "Tokuma Japan C",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/perfume-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/7/c/11e81bc8-9c76-05f6-8db0-a0369fe50396.jpg",
+      "name": "Perfume",
+      "slug": "perfume-1",
+      "uuid": "11e81bc8-9c76-05f6-8db0-a0369fe50396"
+    }
+  ],
+  "name": "チョコレイト・ディスコ",
+  "producers": [
+    "Yasutaka Nakata"
+  ],
+  "releaseDate": "2007-02-14T00:00:00+00:00",
+  "uuid": "11e8265e-f1e0-111c-b71b-a0369fe50396"
+}

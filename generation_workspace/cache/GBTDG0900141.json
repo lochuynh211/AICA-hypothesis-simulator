@@ -1,0 +1,95 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/62613dbc-47f1-11e9-8cb6-e4434b16cb7a/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/deadmau5/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/9/b/11e81bbc-cb93-b45c-98ce-a0369fe50396.jpg",
+      "name": "deadmau5",
+      "slug": "deadmau5",
+      "uuid": "11e81bbc-cb93-b45c-98ce-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.01,
+    "danceability": 0.44,
+    "energy": 0.45,
+    "instrumentalness": 0.93,
+    "key": 8,
+    "liveness": 0.12,
+    "loudness": -10.54,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 128.03,
+    "timeSignature": 4,
+    "valence": 0.04
+  },
+  "composers": [
+    "Joel Zimmerman"
+  ],
+  "copyright": "℗ 2009 mau5trap Recordings Ltd, under exclusive license to Hussle Recordings, a division of Ministry of Sound Australia Pty Ltd",
+  "creditName": "deadmau5",
+  "credits": [
+    {
+      "name": "deadmau5",
+      "roles": [
+        "producer",
+        "writer",
+        "programming"
+      ],
+      "uuid": "ba9f60d5-c61a-4d3a-94b6-fde6e7381d96"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 634,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "electro",
+      "sub": [
+        "dance",
+        "electronic"
+      ]
+    },
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/1/f/7/62613dbc-47f1-11e9-8cb6-e4434b16cb7a.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBTDG0900141"
+  },
+  "iswcs": [
+    "T3316364731"
+  ],
+  "labels": [
+    {
+      "name": "mau5trap",
+      "type": "Other independent labels: \"Indie\""
+    },
+    {
+      "name": "Hussle",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/deadmau5/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/9/b/11e81bbc-cb93-b45c-98ce-a0369fe50396.jpg",
+      "name": "deadmau5",
+      "slug": "deadmau5",
+      "uuid": "11e81bbc-cb93-b45c-98ce-a0369fe50396"
+    }
+  ],
+  "name": "Strobe - Original Mix",
+  "producers": [
+    "Not Documented"
+  ],
+  "releaseDate": "2009-01-01T00:00:00+00:00",
+  "uuid": "62613dbc-47f1-11e9-8cb6-e4434b16cb7a"
+}

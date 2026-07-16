@@ -1,0 +1,711 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8a7a8-40ee-9e84-8a3c-525400009efb/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/fouretin/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/5/6/0ce6c92e-5653-478b-bc34-c5d905af296b.jpg",
+      "name": "Fouretin",
+      "slug": "fouretin",
+      "uuid": "0ce6c92e-5653-478b-bc34-c5d905af296b"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.01,
+    "danceability": 0.83,
+    "energy": 0.73,
+    "instrumentalness": 0,
+    "key": 8,
+    "liveness": 0.12,
+    "loudness": -3.71,
+    "mode": 1,
+    "speechiness": 0.22,
+    "tempo": 155.01,
+    "timeSignature": 4,
+    "valence": 0.45
+  },
+  "composers": [
+    "Mike Dean",
+    "Chauncey Hollis",
+    "Kamaal Fareed",
+    "Christopher Wallace",
+    "Ozan Yildirim",
+    "Jacques Webster",
+    "Khalif Brown",
+    "Aubrey Graham",
+    "Christopher Martin",
+    "Kevin Gomringer",
+    "Tim Gomringer",
+    "Malik Taylor",
+    "Rogét Chahayed",
+    "Cydel Young",
+    "Trevor Smith",
+    "Mirsad Dervic",
+    "JOHN EDWARD HAWKINS",
+    "Luther Campbell",
+    "Keith Elam",
+    "Kirk Jones",
+    "Tyrone Taylor",
+    "Osten Harvey",
+    "Harry Wayne Casey",
+    "Ali Shaheed Jones-Muhammad",
+    "Bryan Higgins",
+    "Brytavious Chambers",
+    "Chylow Parker",
+    "Fred Scruggs",
+    "James Jackson",
+    "Richard Finch"
+  ],
+  "copyright": "(P) 2018 Cactus Jack Records, LLC under exclusive licensed to Epic Records, a division of Sony Music Entertainment",
+  "creditName": "Fouretin",
+  "credits": [
+    {
+      "name": "Ozan Yildirim",
+      "roles": [
+        "composer",
+        "producer",
+        "lyricist"
+      ],
+      "uuid": "5bc424fa-100a-467e-81ff-a96c6d7fe0fb"
+    },
+    {
+      "name": "Kirk Jones",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "af72151d-6aa9-4dd4-bb62-29bd9120bd43"
+    },
+    {
+      "name": "John Edward Hawkins",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "2d7804d4-c811-4600-8688-595c8f8538f5"
+    },
+    {
+      "name": "Ali Shaheed Jones-Muhammad",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "a1a43984-0612-41e6-8f65-278eb15b93a9"
+    },
+    {
+      "name": "Cydel Charles Young",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "452ef8aa-ecd3-413c-a414-e3b018c69e94"
+    },
+    {
+      "name": "Malik Taylor",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "8dbcec13-64a6-45aa-b16b-073bc20e279f"
+    },
+    {
+      "name": "Richard Finch",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "394bcbda-0cc7-4d1a-97bd-6e18758b6475"
+    },
+    {
+      "name": "Keith Elam",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "47d7b6a8-3f69-4d52-8661-5c31b7392e3b"
+    },
+    {
+      "name": "Trevor Smith",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "5ca87270-2aa0-4467-a4ee-07637cf9f9ba"
+    },
+    {
+      "name": "Tyrone Taylor",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "4aa7c115-f692-4309-984b-5433c4c312b7"
+    },
+    {
+      "name": "Aubrey Drake Graham",
+      "roles": [
+        "composer",
+        "lyricist",
+        "vocals"
+      ],
+      "uuid": "1bd4cec9-291d-468a-adbb-d8c63b290867"
+    },
+    {
+      "name": "Mike Dean",
+      "roles": [
+        "composer",
+        "producer",
+        "writer",
+        "mix",
+        "mastering",
+        "lyricist",
+        "additional production"
+      ],
+      "uuid": "6c575874-9ec0-445e-92d2-6872fa726578"
+    },
+    {
+      "name": "Busta Rhymes",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "1121adf4-b596-4f8d-913b-63a9a699adb5"
+    },
+    {
+      "name": "The Notorious B.I.G.",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "cbf46ea3-f9b1-4259-bee5-dab853b011dd"
+    },
+    {
+      "name": "Christopher Wallace",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "5be6809f-8d3a-4037-a994-784660fd02b8"
+    },
+    {
+      "name": "Tim Gomringer",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "8390dd85-73c3-450b-8f98-44245859562b"
+    },
+    {
+      "name": "Tay Keith",
+      "roles": [
+        "composer",
+        "producer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "57a81152-143a-415a-b547-1c65a60ddc09"
+    },
+    {
+      "name": "Ben Sedano",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "0ce911c2-8e55-45aa-b840-2599e9dac585"
+    },
+    {
+      "name": "Chauncey Hollis",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "2ed6fc64-6234-4696-b3fe-8e69d7ccd09e"
+    },
+    {
+      "name": "Nathan Scherrer",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "04820ccf-3f29-40e5-ade2-092c291c44a4"
+    },
+    {
+      "name": "Sam Lecca",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "7cc0bd5f-4cc5-4995-ab0e-c3dc4fbadebf"
+    },
+    {
+      "name": "Drake",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "45534015-63a9-4f0d-814f-03fdfb110bdd"
+    },
+    {
+      "name": "Travis Scott",
+      "roles": [
+        "composer",
+        "writer",
+        "mix",
+        "recording",
+        "video director",
+        "lyricist",
+        "vocals",
+        "recording  engineer"
+      ],
+      "uuid": "d2b6584c-3a1e-4655-bd77-a254d34f9d2d"
+    },
+    {
+      "name": "Jon Sher",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "d8f3b5df-b564-4787-9323-d240bb427834"
+    },
+    {
+      "name": "Guru",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "7a843fd8-06a6-4b38-814b-c9f05026fd7a"
+    },
+    {
+      "name": "DJ Premier",
+      "roles": [
+        "composer",
+        "writer"
+      ],
+      "uuid": "8d239cdc-9047-47a2-b4b8-8eddc214d21c"
+    },
+    {
+      "name": "Dave Meyers",
+      "roles": [
+        "video director"
+      ],
+      "uuid": "54a8905a-7c62-4b1e-a77b-c822e30bab3b"
+    },
+    {
+      "name": "Fredro Starr",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "3fe29d1b-6f4a-4769-a9e4-e735ce71999f"
+    },
+    {
+      "name": "Harry Wayne Casey",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "d07005bf-f4d1-42d1-85be-32f3554ef26e"
+    },
+    {
+      "name": "James Jackson",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "f112ceeb-1adf-408c-be3b-dee6a0796fa1"
+    },
+    {
+      "name": "Swae Lee",
+      "roles": [
+        "composer",
+        "writer",
+        "additional vocals",
+        "lyricist",
+        "vocals"
+      ],
+      "uuid": "4703db92-899a-4f3e-ad25-ef1260f97dad"
+    },
+    {
+      "name": "Sticky Fingaz",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "30ddcb78-e563-432e-9280-e45fecde3b17"
+    },
+    {
+      "name": "Phife Dawg",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "0ce8a755-1994-47e6-bd71-778f45a7616a"
+    },
+    {
+      "name": "Sonny Seeza",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "f8652154-4092-4497-9e8a-69cf2457c168"
+    },
+    {
+      "name": "Ca$Hpassion",
+      "roles": [
+        "assistant mix engineer"
+      ],
+      "uuid": "7894003d-e0ce-406b-954d-2097f981859a"
+    },
+    {
+      "name": "CuBeatz",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "83a4d17d-183b-42f9-8544-40bbab54083c"
+    },
+    {
+      "name": "Dinco D",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "ecec0b3f-4c18-4113-ba2e-5fbcdf59db34"
+    },
+    {
+      "name": "Sean Solymar",
+      "roles": [
+        "assistant mix engineer",
+        "assistant engineer"
+      ],
+      "uuid": "15982d63-ab14-45bf-a81e-f33152a73e5c"
+    },
+    {
+      "name": "Brian Higgins",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "275c23ae-a15f-421e-bce3-46f51cbb45d3"
+    },
+    {
+      "name": "Charlie Parker",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "7fe16429-75b3-4dba-86f5-24701573f188"
+    },
+    {
+      "name": "Chyskillz",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "bbbc3d3c-4362-4677-9f8b-d58790254e43"
+    },
+    {
+      "name": "Kevin Gomringer",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "002cdf87-4045-458e-b8b5-d638d6a526f8"
+    },
+    {
+      "name": "Rick Ross",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "5a03b243-4a41-4b29-8793-29d56bdd14ef"
+    },
+    {
+      "name": "Oz",
+      "roles": [
+        "composer",
+        "producer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "2dc888f0-f94e-40bf-8a3b-4236902a6e75"
+    },
+    {
+      "name": "Christopher Martin",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "62a3c7d5-a7a7-4072-9fd2-cfd8b5e40f85"
+    },
+    {
+      "name": "Osten Harvey",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "b137cef7-f0ec-418f-b070-faf5e8a33e17"
+    },
+    {
+      "name": "Charlie Brown",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "5a6d496b-0296-4477-83e8-23d6d65548a7"
+    },
+    {
+      "name": "Cydel Young",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "2921ba76-16c3-4c03-b8bf-f7e5a128d460"
+    },
+    {
+      "name": "Rogét Chahayed",
+      "roles": [
+        "composer",
+        "producer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "39946938-ffa0-40ee-99ff-0b59b38ea724"
+    },
+    {
+      "name": "Fred Scruggs",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "7f836ad4-ef26-4d1b-bcf9-870367d535a0"
+    },
+    {
+      "name": "Luther Campbell",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "b7de2735-b1fd-43b4-b740-b05d0b6c93d0"
+    },
+    {
+      "name": "Luke",
+      "roles": [
+        "composer",
+        "writer",
+        "additional vocals",
+        "lyricist"
+      ],
+      "uuid": "3b4761e1-1956-4c46-ad9f-a7a58625337c"
+    },
+    {
+      "name": "Q‐Tip",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "863be52e-f437-4bd1-8e10-67a30b169901"
+    },
+    {
+      "name": "Easy Mo Bee",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "76d0c79d-316a-4312-9440-1b3baac727c4"
+    },
+    {
+      "name": "Hit‐Boy",
+      "roles": [
+        "composer",
+        "producer",
+        "writer",
+        "percussions",
+        "bass",
+        "lyricist"
+      ],
+      "uuid": "cf464e62-dbfb-4538-b1a2-627cd4e2970c"
+    },
+    {
+      "name": "Hawk",
+      "roles": [
+        "composer",
+        "writer",
+        "additional vocals",
+        "lyricist"
+      ],
+      "uuid": "f3fdb9cb-0462-48a9-b93f-74354b69a1a1"
+    },
+    {
+      "name": "MD Beats",
+      "roles": [
+        "composer",
+        "producer",
+        "writer",
+        "programming",
+        "lyricist",
+        "additional production"
+      ],
+      "uuid": "b857935f-8f5c-433b-a712-8fcfe6ffb024"
+    },
+    {
+      "name": "Ben \"Bengineer\" Sedano",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "21a7f8e2-e36b-44f9-b463-40d3b871f9d3"
+    },
+    {
+      "name": "Jimmy Cash",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "d08efab1-8e22-4fbc-8a72-3232419d4640"
+    },
+    {
+      "name": "Mirsad Dervic",
+      "roles": [
+        "composer",
+        "programming",
+        "lyricist"
+      ],
+      "uuid": "ebb11827-66cf-4ebf-a2c2-6329134547c3"
+    },
+    {
+      "name": "Big Hawk",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "3a034674-9e55-44e9-ba60-5f58835730a6"
+    },
+    {
+      "name": "Aubrey Graham",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "14447c61-2eac-49b2-81f1-3197975d4cf0"
+    },
+    {
+      "name": "Cubeatz",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "8d066a8b-f026-44cf-8b31-8031bb5a5e25"
+    },
+    {
+      "name": "Kamaal Fareed",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "f610e5c1-1118-4fed-bcbd-09d66ff417ce"
+    },
+    {
+      "name": "Khalif Brown",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "85ba371f-4645-4e58-9ae3-61183011dd06"
+    },
+    {
+      "name": "Malik Taylor",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "43de865e-7c28-4178-9ba8-91bfd16f047f"
+    },
+    {
+      "name": "Ozan Yildirim",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "bc1ffac1-3457-49f4-8603-c639e686862e"
+    },
+    {
+      "name": "Brytavious Chambers",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "593927ab-d227-4e61-ba96-a3fc5a28392e"
+    },
+    {
+      "name": "Bryan Higgins",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "7807861f-f626-45f8-8b57-f2c302dffd91"
+    },
+    {
+      "name": "Chylow Parker",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "c7082398-f5f5-4a76-b1d3-4936de9c1705"
+    },
+    {
+      "name": "Mirsad Dervic",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "d75371a6-750b-4fa2-ad4e-e6d431fd2bbb"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 117,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/e/e/0/11e8a7a8-40ee-9e84-8a3c-525400009efb.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USSM11806660"
+  },
+  "iswcs": [
+    "T9294752979",
+    "T9257296290"
+  ],
+  "labels": [
+    {
+      "name": "Epic",
+      "type": "Sony"
+    },
+    {
+      "name": "Cactus Jack",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [],
+  "name": "SICKO MODE",
+  "producers": [
+    "OZ",
+    "Hit-Boy",
+    "Tay Keith",
+    "Rogét Chahayed",
+    "Cubeatz"
+  ],
+  "releaseDate": "2018-08-03T00:00:00+00:00",
+  "uuid": "11e8a7a8-40ee-9e84-8a3c-525400009efb"
+}

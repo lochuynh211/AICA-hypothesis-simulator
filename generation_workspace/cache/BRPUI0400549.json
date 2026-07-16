@@ -1,0 +1,84 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/e6742afa-c458-11e8-a32a-525400009efb/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/antonio-carlos-jobim/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/7/9/11e81bc2-e977-7a02-ba45-a0369fe50396.jpg",
+      "name": "Antônio Carlos Jobim",
+      "slug": "antonio-carlos-jobim",
+      "uuid": "11e81bc2-e977-7a02-ba45-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.95,
+    "danceability": 0.37,
+    "energy": 0.26,
+    "instrumentalness": 0.01,
+    "key": 2,
+    "liveness": 0.58,
+    "loudness": -22.18,
+    "mode": 0,
+    "speechiness": 0.15,
+    "tempo": 92.04,
+    "timeSignature": 4,
+    "valence": 0.29
+  },
+  "composers": [
+    "Antônio Carlos Jobim"
+  ],
+  "copyright": "2006 DRG RECORDS",
+  "creditName": "Antônio Carlos Jobim",
+  "credits": [],
+  "distributor": "Sony",
+  "duration": 176,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz"
+      ]
+    },
+    {
+      "root": "latin",
+      "sub": [
+        "brasilian music"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/5/4/e6742afa-c458-11e8-a32a-525400009efb.jpg",
+  "isrc": {
+    "countryCode": "BR",
+    "countryName": "Brazil",
+    "value": "BRPUI0400549"
+  },
+  "iswcs": [
+    "T9021179340"
+  ],
+  "labels": [
+    {
+      "name": "DRG",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "pt-BR",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/antonio-carlos-jobim/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/7/9/11e81bc2-e977-7a02-ba45-a0369fe50396.jpg",
+      "name": "Antônio Carlos Jobim",
+      "slug": "antonio-carlos-jobim",
+      "uuid": "11e81bc2-e977-7a02-ba45-a0369fe50396"
+    }
+  ],
+  "name": "Corcovado",
+  "producers": [],
+  "releaseDate": "2006-08-22T00:00:00+00:00",
+  "uuid": "e6742afa-c458-11e8-a32a-525400009efb"
+}

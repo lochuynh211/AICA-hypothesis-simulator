@@ -1,0 +1,169 @@
+"""S3→S6 — Deterministic transform: raw cache → frozen catalog + manifest + hash.
+
+`run_transform(cache_dir, ...)` orchestrates the deterministic core:
+
+    S3 bin + select → S4 map → S5 validate + repair → S6 freeze
+
+over the accumulated raw-response cache. It does **no network I/O, no LLM call, and no
+wall-clock read** (`generated_at` is supplied by the caller). Given the same accumulated
+cache + seed it produces a **byte-identical** catalog + manifest + hash (SC-001):
+payloads are consumed in filename-sorted (ISRC) order and all synthesized fields are
+seed-pinned.
+
+The firewall lives here: the coverage cell of every song is decided by `bin_song` on the
+real audio, never by an LLM guess or a score.
+"""
+from __future__ import annotations
+
+import json
+import unicodedata
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
+
+from mdg.binner import bin_song
+from mdg.errors import MdgFatalError
+from mdg.freeze import build_manifest
+from mdg.mapper import CatalogMapper
+from mdg.repair import validate_and_repair
+from mdg.selector import select_catalog
+from mdg.validator import validate_coverage
+
+
+@dataclass
+class TransformResult:
+    catalog: list[dict]
+    manifest: dict
+    cells: dict[str, list[str]] = field(default_factory=dict)
+    repairs: list[dict] = field(default_factory=list)
+    skipped: list[dict] = field(default_factory=list)
+    dropped: list[dict] = field(default_factory=list)  # irreparable real records, logged
+    genre_extension: dict | None = None  # opt-in genre_affinity_v1 (None when disabled)
+
+
+def normalized_name(title: str, artist: str) -> str:
+    """The ledger normalized-name key: nfkc(lower(strip(title)))|nfkc(...artist)."""
+    def norm(s: str) -> str:
+        return unicodedata.normalize("NFKC", (s or "").strip().lower())
+    return f"{norm(title)}|{norm(artist)}"
+
+
+def _load_payloads(cache_dir: Path) -> list[dict]:
+    """Load all cached raw payloads in deterministic (filename-sorted) order."""
+    payloads = []
+    for path in sorted(cache_dir.glob("*.json")):
+        payloads.append(json.loads(path.read_text(encoding="utf-8")))
+    return payloads
+
+
+def _candidate(payload: dict) -> dict:
+    """Build a selector candidate (identity + binned coords) from a raw payload."""
+    artists = payload.get("artists") or payload.get("mainArtists") or []
+    artist_name = artists[0]["name"] if artists else ""
+    isrc = (payload.get("isrc") or {}).get("value")
+    return {
+        "identity": {
+            "isrc": isrc,
+            "normalized_name": normalized_name(payload.get("name", ""), artist_name),
+        },
+        "coords": bin_song(payload),
+        "payload": payload,
+    }
+
+
+def run_transform(
+    cache_dir: Path,
+    *,
+    seed: int,
+    tier: str,
+    candidate_source: str,
+    generated_at: str,
+    required_cells: set[str] | None = None,
+    ledger_keys: list[dict] | None = None,
+    negative_isrcs: set[str] | None = None,
+    genre_affinity_v1: bool = False,
+) -> TransformResult:
+    """Run S3→S6 over the raw cache and return the frozen catalog + manifest."""
+    negative_isrcs = negative_isrcs or set()
+    payloads = _load_payloads(Path(cache_dir))
+    candidates = [_candidate(p) for p in payloads]
+
+    selection = select_catalog(candidates, ledger_keys=ledger_keys)
+
+    mapper = CatalogMapper(seed=seed)
+    catalog: list[dict] = []
+    repairs: list[dict] = []
+    dropped: list[dict] = []
+    accepted_after_drop: list[dict] = []
+    for cand in selection["accepted"]:
+        payload = cand["payload"]
+        isrc = cand["identity"]["isrc"]
+        song = mapper.map_song(payload, negative_fixture=isrc in negative_isrcs)
+        try:
+            repaired, log = validate_and_repair(song)
+        except MdgFatalError as exc:
+            # A single real record that cannot be mapped to a valid Song (e.g. Soundcharts
+            # time_signature=1, outside the schema's 3..7) must not kill the whole freeze.
+            # Drop it and record the drop — the failure stays visible, never fabricated.
+            dropped.append({"isrc": isrc, "name": payload.get("name"),
+                            "code": exc.code.value, "detail": exc.detail})
+            continue
+        for record in log:
+            repairs.append({"isrc": isrc, **record})
+        catalog.append(repaired)
+        accepted_after_drop.append(cand)
+
+    covered_cells = {c["coords"]["cell_id"] for c in accepted_after_drop}
+    if required_cells is not None:
+        # Enforced freeze: cell coverage + the §10.3/§10.4 quotas.
+        from mdg.coverage.plan import build_coverage_plan
+        from mdg.coverage.quota import compute_quota_checks
+
+        quotas = build_coverage_plan(tier, ledger=None).quotas
+        extra_checks = compute_quota_checks(catalog, quotas)
+        validate_coverage(
+            covered_cells=covered_cells, required_cells=required_cells,
+            extra_checks=extra_checks,
+        )
+
+    manifest = build_manifest(
+        catalog,
+        seed=seed,
+        tier=tier,
+        candidate_source=candidate_source,
+        generated_at=generated_at,
+    )
+
+    # The genre_affinity_v1 extension is a SEPARATE opt-in artifact; the catalog above is
+    # byte-identical whether or not it is emitted (SC-005).
+    genre_extension = mapper.genre_extension() if genre_affinity_v1 else None
+
+    return TransformResult(
+        catalog=catalog,
+        manifest=manifest,
+        cells=selection["cells"],
+        repairs=repairs,
+        skipped=selection["skipped"],
+        dropped=dropped,
+        genre_extension=genre_extension,
+    )
+
+
+def write_dataset(result: TransformResult, dataset_dir: Path) -> Path:
+    """Write catalog.json + dataset_manifest.json under dataset_dir/<dataset_id>/.
+
+    Uses sorted-key, newline-terminated JSON so the on-disk bytes are reproducible.
+    Returns the dataset directory written.
+    """
+    out_dir = Path(dataset_dir) / result.manifest["dataset_id"]
+    out_dir.mkdir(parents=True, exist_ok=True)
+    _write_json(out_dir / "catalog.json", result.catalog)
+    _write_json(out_dir / "dataset_manifest.json", result.manifest)
+    return out_dir
+
+
+def _write_json(path: Path, obj: Any) -> None:
+    path.write_text(
+        json.dumps(obj, sort_keys=True, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )

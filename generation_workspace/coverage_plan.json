@@ -1,0 +1,477 @@
+{
+  "cells": [
+    {
+      "cell_id": "E-hi_T-hi_P-bv",
+      "energy_band": "high",
+      "tempo_band": "high",
+      "profile_family": "balanced_vocal"
+    },
+    {
+      "cell_id": "E-hi_T-hi_P-dv",
+      "energy_band": "high",
+      "tempo_band": "high",
+      "profile_family": "danceable_vocal"
+    },
+    {
+      "cell_id": "E-hi_T-hi_P-il",
+      "energy_band": "high",
+      "tempo_band": "high",
+      "profile_family": "instrumental_leaning"
+    },
+    {
+      "cell_id": "E-hi_T-hi_P-sf",
+      "energy_band": "high",
+      "tempo_band": "high",
+      "profile_family": "speech_forward"
+    },
+    {
+      "cell_id": "E-hi_T-lo_P-bv",
+      "energy_band": "high",
+      "tempo_band": "low",
+      "profile_family": "balanced_vocal"
+    },
+    {
+      "cell_id": "E-hi_T-lo_P-dv",
+      "energy_band": "high",
+      "tempo_band": "low",
+      "profile_family": "danceable_vocal"
+    },
+    {
+      "cell_id": "E-hi_T-lo_P-il",
+      "energy_band": "high",
+      "tempo_band": "low",
+      "profile_family": "instrumental_leaning"
+    },
+    {
+      "cell_id": "E-hi_T-lo_P-sf",
+      "energy_band": "high",
+      "tempo_band": "low",
+      "profile_family": "speech_forward"
+    },
+    {
+      "cell_id": "E-hi_T-md_P-bv",
+      "energy_band": "high",
+      "tempo_band": "medium",
+      "profile_family": "balanced_vocal"
+    },
+    {
+      "cell_id": "E-hi_T-md_P-dv",
+      "energy_band": "high",
+      "tempo_band": "medium",
+      "profile_family": "danceable_vocal"
+    },
+    {
+      "cell_id": "E-hi_T-md_P-il",
+      "energy_band": "high",
+      "tempo_band": "medium",
+      "profile_family": "instrumental_leaning"
+    },
+    {
+      "cell_id": "E-hi_T-md_P-sf",
+      "energy_band": "high",
+      "tempo_band": "medium",
+      "profile_family": "speech_forward"
+    },
+    {
+      "cell_id": "E-lo_T-hi_P-bv",
+      "energy_band": "low",
+      "tempo_band": "high",
+      "profile_family": "balanced_vocal"
+    },
+    {
+      "cell_id": "E-lo_T-hi_P-dv",
+      "energy_band": "low",
+      "tempo_band": "high",
+      "profile_family": "danceable_vocal"
+    },
+    {
+      "cell_id": "E-lo_T-hi_P-il",
+      "energy_band": "low",
+      "tempo_band": "high",
+      "profile_family": "instrumental_leaning"
+    },
+    {
+      "cell_id": "E-lo_T-hi_P-sf",
+      "energy_band": "low",
+      "tempo_band": "high",
+      "profile_family": "speech_forward"
+    },
+    {
+      "cell_id": "E-lo_T-lo_P-bv",
+      "energy_band": "low",
+      "tempo_band": "low",
+      "profile_family": "balanced_vocal"
+    },
+    {
+      "cell_id": "E-lo_T-lo_P-dv",
+      "energy_band": "low",
+      "tempo_band": "low",
+      "profile_family": "danceable_vocal"
+    },
+    {
+      "cell_id": "E-lo_T-lo_P-il",
+      "energy_band": "low",
+      "tempo_band": "low",
+      "profile_family": "instrumental_leaning"
+    },
+    {
+      "cell_id": "E-lo_T-lo_P-sf",
+      "energy_band": "low",
+      "tempo_band": "low",
+      "profile_family": "speech_forward"
+    },
+    {
+      "cell_id": "E-lo_T-md_P-bv",
+      "energy_band": "low",
+      "tempo_band": "medium",
+      "profile_family": "balanced_vocal"
+    },
+    {
+      "cell_id": "E-lo_T-md_P-dv",
+      "energy_band": "low",
+      "tempo_band": "medium",
+      "profile_family": "danceable_vocal"
+    },
+    {
+      "cell_id": "E-lo_T-md_P-il",
+      "energy_band": "low",
+      "tempo_band": "medium",
+      "profile_family": "instrumental_leaning"
+    },
+    {
+      "cell_id": "E-lo_T-md_P-sf",
+      "energy_band": "low",
+      "tempo_band": "medium",
+      "profile_family": "speech_forward"
+    },
+    {
+      "cell_id": "E-md_T-hi_P-bv",
+      "energy_band": "medium",
+      "tempo_band": "high",
+      "profile_family": "balanced_vocal"
+    },
+    {
+      "cell_id": "E-md_T-hi_P-dv",
+      "energy_band": "medium",
+      "tempo_band": "high",
+      "profile_family": "danceable_vocal"
+    },
+    {
+      "cell_id": "E-md_T-hi_P-il",
+      "energy_band": "medium",
+      "tempo_band": "high",
+      "profile_family": "instrumental_leaning"
+    },
+    {
+      "cell_id": "E-md_T-hi_P-sf",
+      "energy_band": "medium",
+      "tempo_band": "high",
+      "profile_family": "speech_forward"
+    },
+    {
+      "cell_id": "E-md_T-lo_P-bv",
+      "energy_band": "medium",
+      "tempo_band": "low",
+      "profile_family": "balanced_vocal"
+    },
+    {
+      "cell_id": "E-md_T-lo_P-dv",
+      "energy_band": "medium",
+      "tempo_band": "low",
+      "profile_family": "danceable_vocal"
+    },
+    {
+      "cell_id": "E-md_T-lo_P-il",
+      "energy_band": "medium",
+      "tempo_band": "low",
+      "profile_family": "instrumental_leaning"
+    },
+    {
+      "cell_id": "E-md_T-lo_P-sf",
+      "energy_band": "medium",
+      "tempo_band": "low",
+      "profile_family": "speech_forward"
+    },
+    {
+      "cell_id": "E-md_T-md_P-bv",
+      "energy_band": "medium",
+      "tempo_band": "medium",
+      "profile_family": "balanced_vocal"
+    },
+    {
+      "cell_id": "E-md_T-md_P-dv",
+      "energy_band": "medium",
+      "tempo_band": "medium",
+      "profile_family": "danceable_vocal"
+    },
+    {
+      "cell_id": "E-md_T-md_P-il",
+      "energy_band": "medium",
+      "tempo_band": "medium",
+      "profile_family": "instrumental_leaning"
+    },
+    {
+      "cell_id": "E-md_T-md_P-sf",
+      "energy_band": "medium",
+      "tempo_band": "medium",
+      "profile_family": "speech_forward"
+    }
+  ],
+  "secondary_spreads": {
+    "band_ranges": {
+      "energy": {
+        "low": [
+          0.1,
+          0.35
+        ],
+        "medium": [
+          0.4,
+          0.65
+        ],
+        "high": [
+          0.7,
+          0.95
+        ]
+      },
+      "tempo": {
+        "low": [
+          60,
+          95
+        ],
+        "medium": [
+          96,
+          130
+        ],
+        "high": [
+          131,
+          180
+        ]
+      }
+    },
+    "valence": {
+      "description": "Spread low/mid/high valence across 36 cells, decorrelated from energy",
+      "required_bands": [
+        "low",
+        "mid",
+        "high"
+      ]
+    },
+    "mode": {
+      "description": "Both minor (0) and major (1) at comparable valence",
+      "required_values": [
+        0,
+        1
+      ]
+    },
+    "acousticness": {
+      "description": "Acoustic-leaning and electric-leaning at comparable energy/tempo",
+      "required_bands": [
+        "acoustic",
+        "electric"
+      ]
+    },
+    "humming_ease": {
+      "description": "Easy-to-hum and hard-to-hum songs (danceability/instrumentalness/speechiness proxy)",
+      "required_bands": [
+        "low",
+        "high"
+      ]
+    },
+    "full_karaoke_ease": {
+      "description": "Easy and hard full-karaoke songs (danceability/speechiness/duration/energy proxy)",
+      "required_bands": [
+        "low",
+        "high"
+      ]
+    },
+    "genre": {
+      "description": "All 12 genre_affinity_v1 vocabulary terms represented by >=1 artist",
+      "vocabulary": [
+        "j-pop",
+        "j-rock",
+        "city pop",
+        "anime",
+        "vocaloid",
+        "enka",
+        "children's music",
+        "classical",
+        "jazz",
+        "ambient",
+        "electronic",
+        "japanese folk"
+      ]
+    }
+  },
+  "quotas": {
+    "artists_count": 12,
+    "tracks_per_artist": 3,
+    "min_albums": 12,
+    "min_eras": 3,
+    "min_explicit": 6,
+    "min_negatives_outside_36": 4,
+    "min_key_minus_one": 1,
+    "duration_spread": {
+      "description": "Short (<180s), medium (180-300s), long (>300s) tracks",
+      "required_bands": [
+        "short",
+        "medium",
+        "long"
+      ]
+    },
+    "time_signature_spread": {
+      "description": "At least time signatures 3, 4, and one other value",
+      "required_values": [
+        3,
+        4
+      ],
+      "min_others": 1
+    }
+  },
+  "language_targets": {
+    "ja": 30,
+    "en": 6,
+    "other": 0
+  },
+  "era_targets": {
+    "classic": {
+      "description": "Pre-2000 releases",
+      "min_tracks": 3
+    },
+    "modern": {
+      "description": "2000-2015 releases",
+      "min_tracks": 6
+    },
+    "recent": {
+      "description": "2016+ releases",
+      "min_tracks": 6
+    }
+  },
+  "contrast_pairs": [
+    {
+      "pair_id": "pair-01-drowsiness",
+      "variable": "drowsiness_level",
+      "world_a_ref": "world-low-drowsiness",
+      "world_b_ref": "world-high-drowsiness",
+      "expected_direction": "reversal_calm_active"
+    },
+    {
+      "pair_id": "pair-02-fatigue",
+      "variable": "fatigue_level",
+      "world_a_ref": "world-low-fatigue",
+      "world_b_ref": "world-high-fatigue",
+      "expected_direction": "reversal_calm_active"
+    },
+    {
+      "pair_id": "pair-03-traffic",
+      "variable": "traffic_state",
+      "world_a_ref": "world-normal-traffic",
+      "world_b_ref": "world-congested-traffic",
+      "expected_direction": "reversal_calm_active"
+    },
+    {
+      "pair_id": "pair-04-road-type",
+      "variable": "road_type",
+      "world_a_ref": "world-highway",
+      "world_b_ref": "world-mountain-road",
+      "expected_direction": "reversal_active_calm"
+    },
+    {
+      "pair_id": "pair-05-valence-mode",
+      "variable": "valence_mode",
+      "world_a_ref": "world-fatigue-stress",
+      "world_b_ref": "world-fatigue-stress",
+      "expected_direction": "bright_preferred_over_dark"
+    },
+    {
+      "pair_id": "pair-06-acousticness",
+      "variable": "acousticness",
+      "world_a_ref": "world-high-arousal",
+      "world_b_ref": "world-high-arousal",
+      "expected_direction": "electric_higher_arousal_contribution"
+    },
+    {
+      "pair_id": "pair-07-humming-ease",
+      "variable": "humming_ease",
+      "world_a_ref": "world-humming-karaoke",
+      "world_b_ref": "world-humming-karaoke",
+      "expected_direction": "easy_hum_preferred"
+    },
+    {
+      "pair_id": "pair-08-full-karaoke-ease-duration",
+      "variable": "full_karaoke_ease_duration",
+      "world_a_ref": "world-full-karaoke-stopped",
+      "world_b_ref": "world-full-karaoke-stopped",
+      "expected_direction": "short_moderate_vs_long_high_energy"
+    },
+    {
+      "pair_id": "pair-09-motion-state",
+      "variable": "motion_state",
+      "world_a_ref": "world-driving",
+      "world_b_ref": "world-stopped",
+      "expected_direction": "full_karaoke_eligibility_change"
+    },
+    {
+      "pair_id": "pair-10-child-present",
+      "variable": "child_present",
+      "world_a_ref": "world-no-child",
+      "world_b_ref": "world-child-present",
+      "expected_direction": "explicit_excluded_when_child_present"
+    },
+    {
+      "pair_id": "pair-11-oshi-mode",
+      "variable": "oshi_mode",
+      "world_a_ref": "world-oshi-enabled",
+      "world_b_ref": "world-oshi-disabled",
+      "expected_direction": "oshi_boost_removed"
+    },
+    {
+      "pair_id": "pair-12-recent-play",
+      "variable": "recent_play",
+      "world_a_ref": "world-no-recent-play",
+      "world_b_ref": "world-recent-play-present",
+      "expected_direction": "recency_suppression"
+    }
+  ],
+  "remaining": {
+    "cells": [
+      "E-hi_T-hi_P-bv",
+      "E-hi_T-hi_P-dv",
+      "E-hi_T-hi_P-il",
+      "E-hi_T-hi_P-sf",
+      "E-hi_T-lo_P-bv",
+      "E-hi_T-lo_P-dv",
+      "E-hi_T-lo_P-il",
+      "E-hi_T-lo_P-sf",
+      "E-hi_T-md_P-bv",
+      "E-hi_T-md_P-dv",
+      "E-hi_T-md_P-il",
+      "E-hi_T-md_P-sf",
+      "E-lo_T-hi_P-bv",
+      "E-lo_T-hi_P-dv",
+      "E-lo_T-hi_P-il",
+      "E-lo_T-hi_P-sf",
+      "E-lo_T-lo_P-bv",
+      "E-lo_T-lo_P-dv",
+      "E-lo_T-lo_P-il",
+      "E-lo_T-lo_P-sf",
+      "E-lo_T-md_P-bv",
+      "E-lo_T-md_P-dv",
+      "E-lo_T-md_P-il",
+      "E-lo_T-md_P-sf",
+      "E-md_T-hi_P-bv",
+      "E-md_T-hi_P-dv",
+      "E-md_T-hi_P-il",
+      "E-md_T-hi_P-sf",
+      "E-md_T-lo_P-bv",
+      "E-md_T-lo_P-dv",
+      "E-md_T-lo_P-il",
+      "E-md_T-lo_P-sf",
+      "E-md_T-md_P-bv",
+      "E-md_T-md_P-dv",
+      "E-md_T-md_P-il",
+      "E-md_T-md_P-sf"
+    ],
+    "quotas_met": {}
+  },
+  "enrichment_priority": []
+}

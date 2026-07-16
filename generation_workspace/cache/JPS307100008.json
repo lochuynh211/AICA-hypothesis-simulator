@@ -1,0 +1,71 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82638-1d94-a3d0-a977-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/hatupiiendo/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/2/4/11e81bba-7421-eefc-b832-a0369fe50396.jpg",
+      "name": "Happy End",
+      "slug": "hatupiiendo",
+      "uuid": "11e81bba-7421-eefc-b832-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.72,
+    "danceability": 0.75,
+    "energy": 0.38,
+    "instrumentalness": 0,
+    "key": 4,
+    "liveness": 0.12,
+    "loudness": -9.77,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 92.1,
+    "timeSignature": 4,
+    "valence": 0.84
+  },
+  "composers": [
+    "Haruomi Hosono",
+    "松本 隆"
+  ],
+  "copyright": "1973 King Record Co.,Ltd",
+  "creditName": "Happy End",
+  "credits": [],
+  "distributor": "",
+  "duration": 246,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/4/9/d/11e82638-1d94-a3d0-a977-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPS307100008"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "King Record",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/hatupiiendo/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/2/4/11e81bba-7421-eefc-b832-a0369fe50396.jpg",
+      "name": "Happy End",
+      "slug": "hatupiiendo",
+      "uuid": "11e81bba-7421-eefc-b832-a0369fe50396"
+    }
+  ],
+  "name": "風をあつめて",
+  "producers": [],
+  "releaseDate": "1973-09-01T00:00:00+00:00",
+  "uuid": "11e82638-1d94-a3d0-a977-aa1c026db3d8"
+}

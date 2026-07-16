@@ -1,0 +1,106 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8a9fe-2e20-6d7a-8950-525400009efb/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/childish-gambino/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/d/c/11e81bc6-dcd3-4796-8752-a0369fe50396.jpg",
+      "name": "Childish Gambino",
+      "slug": "childish-gambino",
+      "uuid": "11e81bc6-dcd3-4796-8752-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.16,
+    "danceability": 0.55,
+    "energy": 0.6,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.08,
+    "loudness": -8.21,
+    "mode": 1,
+    "speechiness": 0.13,
+    "tempo": 165.74,
+    "timeSignature": 4,
+    "valence": 0.25
+  },
+  "composers": [
+    "Donald Glover",
+    "Ludwig Goransson"
+  ],
+  "copyright": "(P) 2018 mcDJ Recording, under license to RCA Records, a division of Sony Music Entertainment",
+  "creditName": "Childish Gambino",
+  "credits": [
+    {
+      "name": "Donald Glover",
+      "roles": [
+        "composer",
+        "producer",
+        "mix",
+        "lyricist"
+      ],
+      "uuid": "8cd6ad1e-e5e7-4a2a-a9af-4b781e57dd92"
+    },
+    {
+      "name": "Ludwig Göransson",
+      "roles": [
+        "composer",
+        "producer",
+        "writer"
+      ],
+      "uuid": "4dacfc1c-abf8-49ec-a6fc-e08c2734711d"
+    },
+    {
+      "name": "Riley Mackin",
+      "roles": [
+        "mix",
+        "mastering",
+        "recording"
+      ],
+      "uuid": "2e85bdbb-b4b2-4d7c-b670-d591db2e3575"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 297,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b",
+        "r&b, funk & soul"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/2/e/11e8a9fe-2e20-6d7a-8950-525400009efb.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USRC11802773"
+  },
+  "iswcs": [
+    "T9258967134"
+  ],
+  "labels": [
+    {
+      "name": "mcDJ",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/childish-gambino/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/d/c/11e81bc6-dcd3-4796-8752-a0369fe50396.jpg",
+      "name": "Childish Gambino",
+      "slug": "childish-gambino",
+      "uuid": "11e81bc6-dcd3-4796-8752-a0369fe50396"
+    }
+  ],
+  "name": "Feels Like Summer",
+  "producers": [
+    "Ludwig Göransson",
+    "Donald Glover"
+  ],
+  "releaseDate": "2018-07-11T00:00:00+00:00",
+  "uuid": "11e8a9fe-2e20-6d7a-8950-525400009efb"
+}

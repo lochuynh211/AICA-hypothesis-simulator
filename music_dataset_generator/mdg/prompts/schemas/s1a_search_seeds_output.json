@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "S0.5/S1a search-seeds stage output schema (Strategy A)",
+  "description": "Array of per-cell Soundcharts search seeds (query terms + candidate seed names). No ISRC or audio-feature keys allowed (FR-005). Executing the search is off-subscription (strategy_unavailable) — this seed file is retained for the fallback path.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["target_cell_id", "queries"],
+    "properties": {
+      "target_cell_id": { "type": "string" },
+      "queries": {
+        "type": "array",
+        "items": { "type": "string", "minLength": 1 },
+        "minItems": 1
+      },
+      "candidate_seed_names": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "why_fits_cell": { "type": "string" }
+    },
+    "additionalProperties": false
+  }
+}

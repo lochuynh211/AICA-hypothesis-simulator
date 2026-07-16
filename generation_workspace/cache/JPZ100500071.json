@@ -1,0 +1,82 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/68226a28-2d35-446a-95e0-f2d8a7c53af7/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mono-627/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/4/c/5b1eee10-ec46-4ebb-a578-e78856d9ead7.jpg",
+      "name": "MONO",
+      "slug": "mono-627",
+      "uuid": "5b1eee10-ec46-4ebb-a578-e78856d9ead7"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.03,
+    "danceability": 0.22,
+    "energy": 0.43,
+    "instrumentalness": 0.86,
+    "key": 11,
+    "liveness": 0.19,
+    "loudness": -11.9,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 132.15,
+    "timeSignature": 3,
+    "valence": 0.19
+  },
+  "composers": [
+    "Takaakira Goto"
+  ],
+  "copyright": "2006 Human Highway Records",
+  "creditName": "MONO",
+  "credits": [],
+  "distributor": "",
+  "duration": 938,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/5/3/d/68226a28-2d35-446a-95e0-f2d8a7c53af7.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPZ100500071"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Human Highway",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mono-627/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/4/c/5b1eee10-ec46-4ebb-a578-e78856d9ead7.jpg",
+      "name": "MONO",
+      "slug": "mono-627",
+      "uuid": "5b1eee10-ec46-4ebb-a578-e78856d9ead7"
+    }
+  ],
+  "name": "Yearning",
+  "producers": [],
+  "releaseDate": "2006-03-29T00:00:00+00:00",
+  "uuid": "68226a28-2d35-446a-95e0-f2d8a7c53af7"
+}

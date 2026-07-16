@@ -1,0 +1,186 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82659-6469-4d94-98d1-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mgmt/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/d/5/11e81bca-65db-957c-92f0-a0369fe50396.jpg",
+      "name": "MGMT",
+      "slug": "mgmt",
+      "uuid": "11e81bca-65db-957c-92f0-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.07,
+    "danceability": 0.76,
+    "energy": 0.8,
+    "instrumentalness": 0.29,
+    "key": 1,
+    "liveness": 0.35,
+    "loudness": -3.71,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 103.04,
+    "timeSignature": 3,
+    "valence": 0.56
+  },
+  "composers": [
+    "Andrew VanWyngarden",
+    "Ben Goldwasser",
+    "Will Berman"
+  ],
+  "copyright": "(P) 2007 SONY BMG MUSIC ENTERTAINMENT",
+  "creditName": "MGMT",
+  "credits": [
+    {
+      "name": "Greg Calbi",
+      "roles": [
+        "mastering",
+        "mastering  engineer"
+      ],
+      "uuid": "45ba67d8-a753-45fb-aa8c-b4e6c14a48ae"
+    },
+    {
+      "name": "Ben Goldwasser",
+      "roles": [
+        "arranger",
+        "songwriter",
+        "programming",
+        "backing vocals",
+        "keyboard",
+        "sampling",
+        "lyricist"
+      ],
+      "uuid": "78d04b10-4cb9-49e8-9a28-0fbe58b4a3e3"
+    },
+    {
+      "name": "Andrew VanWyngarden",
+      "roles": [
+        "lead vocals",
+        "drums",
+        "bass guitar",
+        "percussions",
+        "synthesizer",
+        "lead guitar",
+        "lyricist"
+      ],
+      "uuid": "6d0512d2-5337-4e31-be19-57593c51f24f"
+    },
+    {
+      "name": "Dave Fridmann",
+      "roles": [
+        "producer",
+        "mix",
+        "recording",
+        "engineer",
+        "mixing  engineer"
+      ],
+      "uuid": "2536b2ad-99c0-4483-b427-6c6055fc0906"
+    },
+    {
+      "name": "MGMT",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "2579a398-72d6-4aa8-b49f-72e419361f67"
+    },
+    {
+      "name": "Will Berman",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "7ffd6188-99cd-4d4d-846b-a1f3b07a227a"
+    },
+    {
+      "name": "Ben Goldwasser",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "9aeea932-e69a-4a1b-b021-7b801c461786"
+    },
+    {
+      "name": "Justice",
+      "roles": [
+        "re- mixer"
+      ],
+      "uuid": "f037f167-5436-45ae-bd97-cb20b4d6a0e3"
+    },
+    {
+      "name": "Andrew VanWyngarden",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "7016df0d-f142-465f-8b80-482364535d55"
+    },
+    {
+      "name": "Will Berman",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "bf2ca34d-6183-4ef0-8213-66e72c0351ca"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 229,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    },
+    {
+      "root": "electro",
+      "sub": [
+        "electronic"
+      ]
+    },
+    {
+      "root": "pop",
+      "sub": [
+        "pop",
+        "international pop"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/9/6/4/11e82659-6469-4d94-98d1-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USSM10702131"
+  },
+  "iswcs": [
+    "T3064047667",
+    "T9035801297"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mgmt/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/d/5/11e81bca-65db-957c-92f0-a0369fe50396.jpg",
+      "name": "MGMT",
+      "slug": "mgmt",
+      "uuid": "11e81bca-65db-957c-92f0-a0369fe50396"
+    }
+  ],
+  "name": "Electric Feel",
+  "producers": [
+    "Dave Fridmann",
+    "MGMT"
+  ],
+  "releaseDate": "2007-12-14T00:00:00+00:00",
+  "uuid": "11e82659-6469-4d94-98d1-a0369fe50396"
+}

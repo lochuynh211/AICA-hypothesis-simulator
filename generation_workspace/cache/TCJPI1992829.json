@@ -1,0 +1,62 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/8cd19400-7584-11e9-a84e-e4434b2a4898/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ying-ren-6/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/2/4/6726b68d-7427-45a1-ac1b-504bbc6dfdfa.jpg",
+      "name": "瑛人",
+      "slug": "ying-ren-6",
+      "uuid": "6726b68d-7427-45a1-ac1b-504bbc6dfdfa"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.82,
+    "danceability": 0.85,
+    "energy": 0.35,
+    "instrumentalness": 0,
+    "key": 3,
+    "liveness": 0.09,
+    "loudness": -6.84,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 121.83,
+    "timeSignature": 4,
+    "valence": 0.78
+  },
+  "composers": [
+    "8s"
+  ],
+  "copyright": "2019 Eito",
+  "creditName": "瑛人",
+  "credits": [],
+  "distributor": "Avex",
+  "duration": 252,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/4/8/5/8cd19400-7584-11e9-a84e-e4434b2a4898.jpg",
+  "isrc": {
+    "countryCode": "",
+    "countryName": "",
+    "value": "TCJPI1992829"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Eito",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [],
+  "name": "香水",
+  "producers": [],
+  "releaseDate": "2019-04-21T00:00:00+00:00",
+  "uuid": "8cd19400-7584-11e9-a84e-e4434b2a4898"
+}

@@ -1,0 +1,286 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82614-c703-10c4-9f3e-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/cody-chesnutt/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/2/9/11e81bbb-e92b-d11c-ae64-a0369fe50396.jpg",
+      "name": "Cody ChesnuTT",
+      "slug": "cody-chesnutt",
+      "uuid": "11e81bbb-e92b-d11c-ae64-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/the-roots/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/c/2/11e81bbe-02cd-0b02-be2a-a0369fe50396.jpg",
+      "name": "The Roots",
+      "slug": "the-roots",
+      "uuid": "11e81bbe-02cd-0b02-be2a-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.04,
+    "danceability": 0.76,
+    "energy": 0.96,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.13,
+    "loudness": -2.28,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 111.12,
+    "timeSignature": 4,
+    "valence": 0.97
+  },
+  "composers": [
+    "Tariq Trotter",
+    "Cody Chesnutt"
+  ],
+  "copyright": "A Geffen Records Release; ℗ 2011 UMG Recordings, Inc.",
+  "creditName": "Cody ChesnuTT & The Roots",
+  "credits": [
+    {
+      "name": "Leonard Hubbard",
+      "roles": [
+        "bass"
+      ],
+      "uuid": "49c2b39d-f3d1-4c18-81c2-a6476deb56fe"
+    },
+    {
+      "name": "Chris Gehringer",
+      "roles": [
+        "mastering",
+        "studio personnel"
+      ],
+      "uuid": "09925f38-1606-4918-9c39-a5be4a5de704"
+    },
+    {
+      "name": "Tom Coyne",
+      "roles": [
+        "mastering",
+        "studio personnel"
+      ],
+      "uuid": "08ba3872-ba6b-4392-9ea9-bfa2a15b9e30"
+    },
+    {
+      "name": "Jesse Shatkin",
+      "roles": [
+        "assistant recording engineer",
+        "studio personnel",
+        "second engineer"
+      ],
+      "uuid": "abf1e98d-8d4b-40d2-8cd8-d4093770c179"
+    },
+    {
+      "name": "Carlos Martinez",
+      "roles": [
+        "recording",
+        "studio personnel"
+      ],
+      "uuid": "e151deea-3717-4459-a583-2bd2263dc265"
+    },
+    {
+      "name": "Jon Smeltz",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "d7edf009-168e-44f4-b9d6-a8706e578c0b"
+    },
+    {
+      "name": "Black Thought",
+      "roles": [
+        "writer",
+        "vocals"
+      ],
+      "uuid": "3d56acaa-ea71-423d-9a3e-e0d4459adb92"
+    },
+    {
+      "name": "?uestlove",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "3413c466-c9bc-4d0e-a16e-92fcc04c8a77"
+    },
+    {
+      "name": "Russell Elevado",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "0df3c27d-d066-4721-9235-2140fd026254"
+    },
+    {
+      "name": "Jef Lee Johnson",
+      "roles": [
+        "guitar"
+      ],
+      "uuid": "d19634c8-8dfe-4d93-a87f-101c66de58de"
+    },
+    {
+      "name": "Kamal Gray",
+      "roles": [
+        "keyboard"
+      ],
+      "uuid": "a31d10b3-cedb-4b91-b1e3-f29ab5be7fa3"
+    },
+    {
+      "name": "Cody ChesnuTT",
+      "roles": [
+        "producer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "1deafbc1-1a87-4c63-acba-cb0aaac031c8"
+    },
+    {
+      "name": "Leonard “Hub” Hubbard",
+      "roles": [
+        "bass"
+      ],
+      "uuid": "08c4c52e-16ff-451f-919e-6180d3e30f5b"
+    },
+    {
+      "name": "Ben Kenney",
+      "roles": [
+        "electric guitar"
+      ],
+      "uuid": "a41e30a6-d1aa-419a-89c2-02a939468c83"
+    },
+    {
+      "name": "Steve Mandel",
+      "roles": [
+        "assistant mix engineer",
+        "studio personnel",
+        "mix assistant",
+        "second engineer"
+      ],
+      "uuid": "03ff3d49-d33e-4660-872c-5cb207762858"
+    },
+    {
+      "name": "Tariq Trotter",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "dc0da2c5-ef6e-4258-a1ec-d99352a518f7"
+    },
+    {
+      "name": "Antonious Bernard Thomas",
+      "roles": [
+        "composer",
+        "songwriter"
+      ],
+      "uuid": "d879200e-04bd-4176-9193-5e4a92141d16"
+    },
+    {
+      "name": "Kurt Nepogoda",
+      "roles": [
+        "assistant recording engineer",
+        "studio personnel",
+        "second engineer"
+      ],
+      "uuid": "477b4790-e377-49bb-b3b0-179efcee6f9b"
+    },
+    {
+      "name": "Ray Wilson",
+      "roles": [
+        "assistant recording engineer",
+        "studio personnel",
+        "second engineer"
+      ],
+      "uuid": "16045bf4-b67e-48ea-a5d5-085eaf87a712"
+    },
+    {
+      "name": "Russell \"The Dragon\" Elevado",
+      "roles": [
+        "mix",
+        "recording",
+        "studio personnel"
+      ],
+      "uuid": "9188b81b-9df0-4599-8bf1-0d87beddf793"
+    },
+    {
+      "name": "Ahmir Thompson",
+      "roles": [
+        "mix",
+        "studio personnel"
+      ],
+      "uuid": "f8a85ecf-228b-4577-9ce4-033cb65b9cba"
+    },
+    {
+      "name": "Steef van de Gevel",
+      "roles": [
+        "assistant mix engineer",
+        "studio personnel",
+        "second engineer"
+      ],
+      "uuid": "819ca7de-36f4-4206-8d95-deba8f029eff"
+    },
+    {
+      "name": "Jesse Peretz",
+      "roles": [
+        "video director"
+      ],
+      "uuid": "1dbe6774-6674-4792-a439-d6b3a4d51a3c"
+    },
+    {
+      "name": "Joseph Uliano",
+      "roles": [
+        "video executive producer"
+      ],
+      "uuid": "c4808ce8-ee7d-44e0-96bf-166a21eb6ea9"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 267,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    },
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/0/7/11e82614-c703-10c4-9f3e-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USMC10201424"
+  },
+  "iswcs": [
+    "T9012850236"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    },
+    {
+      "name": "Geffen",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/the-roots/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/c/2/11e81bbe-02cd-0b02-be2a-a0369fe50396.jpg",
+      "name": "The Roots",
+      "slug": "the-roots",
+      "uuid": "11e81bbe-02cd-0b02-be2a-a0369fe50396"
+    }
+  ],
+  "name": "The Seed (2.0)",
+  "producers": [
+    "?uestlove",
+    "Cody Chesnutt"
+  ],
+  "releaseDate": "2002-01-01T00:00:00+00:00",
+  "uuid": "11e82614-c703-10c4-9f3e-aa1c026db3d8"
+}

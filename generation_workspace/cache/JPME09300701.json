@@ -1,0 +1,72 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e840e1-39a6-ed58-9eb5-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/the-trabryu/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/8/1/66405db2-4181-11e9-85ec-549f35141000.jpg",
+      "name": "THE TRABRYU",
+      "slug": "the-trabryu",
+      "uuid": "66405db2-4181-11e9-85ec-549f35141000"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/jun-irie/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/b/9/afa97ef9-29b3-4214-8885-89be066072cd.jpg",
+      "name": "Jun Irie",
+      "slug": "jun-irie",
+      "uuid": "afa97ef9-29b3-4214-8885-89be066072cd"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.8,
+    "danceability": 0.61,
+    "energy": 0.44,
+    "instrumentalness": 0,
+    "key": 4,
+    "liveness": 0.34,
+    "loudness": -6.33,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 122.59,
+    "timeSignature": 4,
+    "valence": 0.55
+  },
+  "composers": [
+    "George Takahashi"
+  ],
+  "copyright": "(P)Tokuma Japan C.",
+  "creditName": "THE TRABRYU & Jun Irie",
+  "credits": [],
+  "distributor": "Tokuma Japan Communications",
+  "duration": 269,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/6/a/9/11e840e1-39a6-ed58-9eb5-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPME09300701"
+  },
+  "iswcs": [
+    "T1010673864"
+  ],
+  "labels": [
+    {
+      "name": "Tokuma Japan C",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/the-trabryu/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/8/1/66405db2-4181-11e9-85ec-549f35141000.jpg",
+      "name": "THE TRABRYU",
+      "slug": "the-trabryu",
+      "uuid": "66405db2-4181-11e9-85ec-549f35141000"
+    }
+  ],
+  "name": "Road",
+  "producers": [],
+  "releaseDate": "2006-08-23T00:00:00+00:00",
+  "uuid": "11e840e1-39a6-ed58-9eb5-aa1c026db3d8"
+}

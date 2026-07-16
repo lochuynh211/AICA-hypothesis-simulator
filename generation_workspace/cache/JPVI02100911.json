@@ -1,0 +1,72 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/da7e9309-c128-4a0d-b81a-231a2656172d/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/xing-ye-yuan/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/b/9/11e81bbd-29ba-ee38-b61e-a0369fe50396.jpg",
+      "name": "Gen Hoshino",
+      "slug": "xing-ye-yuan",
+      "uuid": "11e81bbd-29ba-ee38-b61e-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.05,
+    "danceability": 0.75,
+    "energy": 0.57,
+    "instrumentalness": 0,
+    "key": 3,
+    "liveness": 0.14,
+    "loudness": -4.57,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 89.02,
+    "timeSignature": 4,
+    "valence": 0.53
+  },
+  "composers": [
+    "Gen Hoshino"
+  ],
+  "copyright": "Victor Entertainment",
+  "creditName": "Gen Hoshino",
+  "credits": [],
+  "distributor": "Victor Entertainment",
+  "duration": 290,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/2/1/da7e9309-c128-4a0d-b81a-231a2656172d.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPVI02100911"
+  },
+  "iswcs": [
+    "T3062608004"
+  ],
+  "labels": [
+    {
+      "name": "Victor",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/xing-ye-yuan/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/b/9/11e81bbd-29ba-ee38-b61e-a0369fe50396.jpg",
+      "name": "Gen Hoshino",
+      "slug": "xing-ye-yuan",
+      "uuid": "11e81bbd-29ba-ee38-b61e-a0369fe50396"
+    }
+  ],
+  "name": "Fushigi",
+  "producers": [],
+  "releaseDate": "2021-04-27T00:00:00+00:00",
+  "uuid": "da7e9309-c128-4a0d-b81a-231a2656172d"
+}

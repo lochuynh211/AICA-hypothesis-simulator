@@ -1,0 +1,289 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826ad-c88b-6fec-ac37-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kendrick-lamar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/0/6/11e81bbc-c601-d802-bca1-a0369fe50396.jpg",
+      "name": "Kendrick Lamar",
+      "slug": "kendrick-lamar",
+      "uuid": "11e81bbc-c601-d802-bca1-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/jay-rock-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/5/5/11e81bce-2558-d4a2-acaf-a0369fe50396.jpg",
+      "name": "Jay Rock",
+      "slug": "jay-rock-1",
+      "uuid": "11e81bce-2558-d4a2-acaf-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.07,
+    "danceability": 0.72,
+    "energy": 0.53,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.22,
+    "loudness": -7.36,
+    "mode": 1,
+    "speechiness": 0.12,
+    "tempo": 71.99,
+    "timeSignature": 4,
+    "valence": 0.34
+  },
+  "composers": [
+    "Kendrick Lamar",
+    "D. Natche",
+    "Hit-Boy",
+    "Johnny McKinzie",
+    "A. Legrand",
+    "A. Scally",
+    "V. Garance"
+  ],
+  "copyright": "℗ 2013 Aftermath/Interscope Records",
+  "creditName": "Kendrick Lamar & Jay Rock",
+  "credits": [
+    {
+      "name": "JOHNNY MCKINZIE",
+      "roles": [
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "f89159b9-a271-466c-8136-e9a403f76e67"
+    },
+    {
+      "name": "Alex Kristian Scally",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "9cea5311-fead-40f4-8371-46358f5c82e2"
+    },
+    {
+      "name": "Victoria Garance Alixe Legrand",
+      "roles": [
+        "songwriter",
+        "writer"
+      ],
+      "uuid": "b627b40a-3fbe-419d-9d8f-7821ead8c291"
+    },
+    {
+      "name": "Brian Gardner",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "ac72e2bb-63d0-4bf6-9b94-84cfed34fb42"
+    },
+    {
+      "name": "Mike Bozzi",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "52318d94-2904-4ce6-9fa5-55a2c5413b9d"
+    },
+    {
+      "name": "Fabian Marasciullo",
+      "roles": [
+        "additional engineer"
+      ],
+      "uuid": "96eb9266-60cd-4dc6-acf5-57affefefeb5"
+    },
+    {
+      "name": "Dacoury Natche",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "9e418a3f-8533-4f7d-aa30-0d253d4a6d22"
+    },
+    {
+      "name": "Dahi",
+      "roles": [
+        "composer",
+        "producer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "58e47606-89cd-4b29-bbed-3a875145035c"
+    },
+    {
+      "name": "DJ Dahi",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "85b75ed0-fe05-4c13-b6bb-8b8c8afb0023"
+    },
+    {
+      "name": "Mixed by Ali",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "e5de17a8-fe9f-4d64-bf8c-24097014c784"
+    },
+    {
+      "name": "Jared Scott",
+      "roles": [
+        "additional engineer"
+      ],
+      "uuid": "808568f4-0b22-453d-b680-f55ef5b256f2"
+    },
+    {
+      "name": "Anna Wise",
+      "roles": [
+        "writer",
+        "backing vocals"
+      ],
+      "uuid": "16c5df8d-9bc8-4d11-9c18-ec64f5fc33d1"
+    },
+    {
+      "name": "Jay Rock",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "6d3df1b9-9203-4038-9fce-d54e9d285bea"
+    },
+    {
+      "name": "Kendrick Lamar Duckworth",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "28c0f3c3-7653-4b36-90b3-d7d5b407d3ed"
+    },
+    {
+      "name": "Chauncey Hollis Jr.",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "d5646072-b4f2-4c36-a0d5-3357e9c78e97"
+    },
+    {
+      "name": "James Hunt",
+      "roles": [
+        "additional engineer"
+      ],
+      "uuid": "76b50f99-3da3-4d11-80c4-e30c2036cbda"
+    },
+    {
+      "name": "Kendrick Duckworth",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "a03bc7a5-7d52-4cdf-ad50-a13ae2d7be0c"
+    },
+    {
+      "name": "Derek \"MixedByAli\" Ali",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "1505964d-63af-4141-bc82-e64f5d09106a"
+    },
+    {
+      "name": "Hit‐Boy",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "cf464e62-dbfb-4538-b1a2-627cd4e2970c"
+    },
+    {
+      "name": "Beach House",
+      "roles": [
+        "sampled artist"
+      ],
+      "uuid": "fc166560-0aba-45a6-8b23-98876579b2a3"
+    },
+    {
+      "name": "A. Legrand",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "a2be6f08-635b-4b23-a768-32eff535409f"
+    },
+    {
+      "name": "A. Scally",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "220e4b16-ad2a-4c01-b377-12e54f476da6"
+    },
+    {
+      "name": "V. Garance",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "e18b2f2a-af28-4b83-9b50-899dab2ddbc4"
+    },
+    {
+      "name": "Johnny McKinzie",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "781690df-b43f-46da-9b10-51884d73f9a1"
+    },
+    {
+      "name": "Kendrick Lamar",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "9de5b02b-7e11-4dc9-be7c-2c71a4860e40"
+    },
+    {
+      "name": "D. Natche",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "cf041529-4ad6-4ce3-b9b0-eee4824563ed"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 386,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/8/8/11e826ad-c88b-6fec-ac37-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USUM71210785"
+  },
+  "iswcs": [
+    "T9092040410"
+  ],
+  "labels": [
+    {
+      "name": "Aftermath",
+      "type": "Universal"
+    },
+    {
+      "name": "Interscope",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kendrick-lamar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/0/6/11e81bbc-c601-d802-bca1-a0369fe50396.jpg",
+      "name": "Kendrick Lamar",
+      "slug": "kendrick-lamar",
+      "uuid": "11e81bbc-c601-d802-bca1-a0369fe50396"
+    }
+  ],
+  "name": "Money Trees",
+  "producers": [
+    "Dahi"
+  ],
+  "releaseDate": "2012-01-01T00:00:00+00:00",
+  "uuid": "11e826ad-c88b-6fec-ac37-a0369fe50396"
+}

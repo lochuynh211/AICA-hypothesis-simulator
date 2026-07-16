@@ -1,0 +1,96 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826ac-5e56-05d4-bd52-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/claris-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/f/3/11e81bca-d3ff-af70-9e15-a0369fe50396.jpg",
+      "name": "ClariS",
+      "slug": "claris-1",
+      "uuid": "11e81bca-d3ff-af70-9e15-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.05,
+    "danceability": 0.56,
+    "energy": 0.92,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.19,
+    "loudness": -3.09,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 87.54,
+    "timeSignature": 4,
+    "valence": 0.75
+  },
+  "composers": [
+    "渡辺 翔"
+  ],
+  "copyright": "(P)2011 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "ClariS",
+  "credits": [
+    {
+      "name": "SHOU WATANABE",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "7b064e29-b8ee-4299-9eaf-87326e26bc05"
+    },
+    {
+      "name": "Atsushi Yuasa",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "d48dea75-5fab-437e-aae9-746b09fb3811"
+    },
+    {
+      "name": "Sho Watanabe",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "e2b731e3-ef58-414b-8729-d4c440b67a05"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 30,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/6/5/e/11e826ac-5e56-05d4-bd52-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU901001861"
+  },
+  "iswcs": [
+    "T9242685489",
+    "T9098148233"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/claris-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/f/3/11e81bca-d3ff-af70-9e15-a0369fe50396.jpg",
+      "name": "ClariS",
+      "slug": "claris-1",
+      "uuid": "11e81bca-d3ff-af70-9e15-a0369fe50396"
+    }
+  ],
+  "name": "コネクト",
+  "producers": [],
+  "releaseDate": "2011-02-02T00:00:00+00:00",
+  "uuid": "11e826ac-5e56-05d4-bd52-a0369fe50396"
+}

@@ -1,0 +1,72 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82621-dbf2-0d2a-8280-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/miyuki-nakajima-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/a/6/11e81bc0-f6ab-fba0-8035-a0369fe50396.jpg",
+      "name": "Miyuki Nakajima",
+      "slug": "miyuki-nakajima-1",
+      "uuid": "11e81bc0-f6ab-fba0-8035-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.25,
+    "danceability": 0.45,
+    "energy": 0.3,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.1,
+    "loudness": -12,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 113.76,
+    "timeSignature": 3,
+    "valence": 0.19
+  },
+  "composers": [
+    "中島みゆき"
+  ],
+  "copyright": "Yamaha Music Entertainment Holdings Inc.",
+  "creditName": "Miyuki Nakajima",
+  "credits": [],
+  "distributor": "",
+  "duration": 273,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "j-pop",
+      "sub": [
+        "j-pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/2/f/b/11e82621-dbf2-0d2a-8280-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPC09323820"
+  },
+  "iswcs": [
+    "T1012909918"
+  ],
+  "labels": [
+    {
+      "name": "Yamaha Music Entertainment Holdings",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/miyuki-nakajima-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/a/6/11e81bc0-f6ab-fba0-8035-a0369fe50396.jpg",
+      "name": "Miyuki Nakajima",
+      "slug": "miyuki-nakajima-1",
+      "uuid": "11e81bc0-f6ab-fba0-8035-a0369fe50396"
+    }
+  ],
+  "name": "時代 ('93 シングル・バージョン)",
+  "producers": [],
+  "releaseDate": "1993-12-01T00:00:00+00:00",
+  "uuid": "11e82621-dbf2-0d2a-8280-a0369fe50396"
+}

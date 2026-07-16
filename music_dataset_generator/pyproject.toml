@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "music-dataset-generator"
+version = "1.0.0"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2",
+    "httpx",
+    "aica-api",
+]
+
+[project.scripts]
+mdg = "mdg.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest==8.3.4",
+]
+
+[tool.uv.sources]
+aica-api = { path = "../app/api", editable = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["mdg"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "live: end-to-end tests hitting real network/agent (run with --run-live)",
+]

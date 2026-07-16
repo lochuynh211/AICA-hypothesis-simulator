@@ -1,0 +1,141 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/437e8a1e-b8ed-11e8-8552-525400009efb/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/antonio-carlos-jobim/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/7/9/11e81bc2-e977-7a02-ba45-a0369fe50396.jpg",
+      "name": "Antônio Carlos Jobim",
+      "slug": "antonio-carlos-jobim",
+      "uuid": "11e81bc2-e977-7a02-ba45-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.71,
+    "danceability": 0.67,
+    "energy": 0.25,
+    "instrumentalness": 0.82,
+    "key": 11,
+    "liveness": 0.12,
+    "loudness": -20.89,
+    "mode": 0,
+    "speechiness": 0.07,
+    "tempo": 151.19,
+    "timeSignature": 4,
+    "valence": 0.67
+  },
+  "composers": [
+    "Antônio Carlos Jobim",
+    "Vinícius de Moraes"
+  ],
+  "copyright": "℗ 1963 UMG Recordings, Inc.",
+  "creditName": "Antônio Carlos Jobim",
+  "credits": [
+    {
+      "name": "Antônio Carlos Jobim",
+      "roles": [
+        "piano",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "190f6199-d31a-41f2-ad18-3b4e8be3122c"
+    },
+    {
+      "name": "Phil Ramone",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "2de18369-0e6c-4e77-a8c8-a89056086739"
+    },
+    {
+      "name": "Creed Taylor",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "8bcda9c9-da45-4896-aca8-5e1dd29bc44c"
+    },
+    {
+      "name": "George Duvivier",
+      "roles": [
+        "double bass"
+      ],
+      "uuid": "5ad33fa4-41e3-4524-8403-63d6a0c2ab82"
+    },
+    {
+      "name": "Vinicius de Moraes",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "812c34be-edd0-45f3-b4b6-bd0e060f3103"
+    },
+    {
+      "name": "Val Valentin",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "839b9903-1672-49b4-b69f-5ae4dfc2bb64"
+    },
+    {
+      "name": "Leo Wright",
+      "roles": [
+        "flute"
+      ],
+      "uuid": "35d13904-79df-4c09-aed1-9a3b27f2df02"
+    }
+  ],
+  "distributor": "",
+  "duration": 141,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz"
+      ]
+    },
+    {
+      "root": "latin",
+      "sub": [
+        "brasilian music",
+        "latin"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/d/e/8/437e8a1e-b8ed-11e8-8552-525400009efb.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USGR10200894"
+  },
+  "iswcs": [
+    "T0416453149"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "pt-BR",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/antonio-carlos-jobim/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/7/9/11e81bc2-e977-7a02-ba45-a0369fe50396.jpg",
+      "name": "Antônio Carlos Jobim",
+      "slug": "antonio-carlos-jobim",
+      "uuid": "11e81bc2-e977-7a02-ba45-a0369fe50396"
+    }
+  ],
+  "name": "So Danco Samba (Jazz Samba)",
+  "producers": [
+    "Creed Taylor"
+  ],
+  "releaseDate": "1963-08-01T00:00:00+00:00",
+  "uuid": "437e8a1e-b8ed-11e8-8552-525400009efb"
+}

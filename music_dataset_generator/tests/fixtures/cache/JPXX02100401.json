@@ -1,0 +1,49 @@
+{
+  "name": "Acoustic Reverie",
+  "isrc": {
+    "value": "JPXX02100401",
+    "countryCode": "JP",
+    "countryName": "Japan"
+  },
+  "iswcs": [],
+  "duration": 248,
+  "explicit": false,
+  "releaseDate": "2021-02-14",
+  "languageCode": "ja",
+  "genres": [
+    {
+      "root": "j-pop",
+      "sub": ["japanese folk"]
+    }
+  ],
+  "artists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000006",
+      "name": "Folk Wanderer"
+    }
+  ],
+  "mainArtists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000006",
+      "name": "Folk Wanderer"
+    }
+  ],
+  "labels": [],
+  "composers": [],
+  "producers": [],
+  "credits": [],
+  "audio": {
+    "acousticness": 0.85,
+    "danceability": 0.35,
+    "energy": 0.42,
+    "instrumentalness": 0.03,
+    "key": 4,
+    "liveness": 0.08,
+    "loudness": -13.0,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 80.0,
+    "timeSignature": 3,
+    "valence": 0.48
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "name": "Midnight Monolith",
+  "isrc": {
+    "value": "JPXX01800302",
+    "countryCode": "JP",
+    "countryName": "Japan"
+  },
+  "iswcs": [],
+  "duration": 225,
+  "explicit": false,
+  "releaseDate": "2018-11-05",
+  "languageCode": "ja",
+  "genres": [
+    {
+      "root": "j-pop",
+      "sub": ["j-rock"]
+    }
+  ],
+  "artists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000005",
+      "name": "Dark Matter"
+    }
+  ],
+  "mainArtists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000005",
+      "name": "Dark Matter"
+    }
+  ],
+  "labels": [],
+  "composers": [],
+  "producers": [],
+  "credits": [],
+  "audio": {
+    "acousticness": 0.04,
+    "danceability": 0.47,
+    "energy": 0.79,
+    "instrumentalness": 0.01,
+    "key": 1,
+    "liveness": 0.13,
+    "loudness": -6.8,
+    "mode": 0,
+    "speechiness": 0.07,
+    "tempo": 142.0,
+    "timeSignature": 4,
+    "valence": 0.15
+  }
+}

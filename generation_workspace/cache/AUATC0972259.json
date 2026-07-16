@@ -1,0 +1,98 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8261b-4e4e-4386-a96b-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/the-allman-brothers-band/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/5/e/11e81bc0-1e52-f678-bbb0-a0369fe50396.jpg",
+      "name": "Allman Brothers Band",
+      "slug": "the-allman-brothers-band",
+      "uuid": "11e81bc0-1e52-f678-bbb0-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.05,
+    "danceability": 0.32,
+    "energy": 0.9,
+    "instrumentalness": 0.94,
+    "key": 2,
+    "liveness": 0.28,
+    "loudness": -6.79,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 104.38,
+    "timeSignature": 4,
+    "valence": 0.9
+  },
+  "composers": [
+    "Richard Betts"
+  ],
+  "copyright": "A Mercury Records release; This Compilation ℗ 2019 UMG Recordings, Inc.",
+  "creditName": "Allman Brothers Band",
+  "credits": [
+    {
+      "name": "The Allman Brothers Band",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "90167081-e5d3-411d-8642-c279abe4bf69"
+    },
+    {
+      "name": "Johnny Sandlin",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "6e43afc8-8a3f-44ca-8852-a4daec12aa65"
+    },
+    {
+      "name": "Richard Betts",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "a04f9a06-3692-445f-b6e7-2ebbd483ed9e"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 448,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "blues",
+      "sub": [
+        "blues"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/e/4/e/11e8261b-4e4e-4386-a96b-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "AU",
+    "countryName": "Australia",
+    "value": "AUATC0972259"
+  },
+  "iswcs": [
+    "T0702413486"
+  ],
+  "labels": [],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/the-allman-brothers-band/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/5/e/11e81bc0-1e52-f678-bbb0-a0369fe50396.jpg",
+      "name": "Allman Brothers Band",
+      "slug": "the-allman-brothers-band",
+      "uuid": "11e81bc0-1e52-f678-bbb0-a0369fe50396"
+    }
+  ],
+  "name": "Jessica",
+  "producers": [
+    "Allman Brothers Band",
+    "Johnny Sandlin"
+  ],
+  "releaseDate": "2013-03-18T00:00:00+00:00",
+  "uuid": "11e8261b-4e4e-4386-a96b-a0369fe50396"
+}

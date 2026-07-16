@@ -1,0 +1,161 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/e3a91436-41c4-11e9-b454-549f35161576/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/iron-maiden/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/8/d/11e81bc3-ad82-9904-9a53-a0369fe50396.jpg",
+      "name": "Iron Maiden",
+      "slug": "iron-maiden",
+      "uuid": "11e81bc3-ad82-9904-9a53-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.37,
+    "energy": 1,
+    "instrumentalness": 0.01,
+    "key": 4,
+    "liveness": 0.97,
+    "loudness": -3.4,
+    "mode": 0,
+    "speechiness": 0.07,
+    "tempo": 89.82,
+    "timeSignature": 4,
+    "valence": 0.54
+  },
+  "composers": [
+    "Steve Harris"
+  ],
+  "copyright": "1998 Iron Maiden Holdings Ltd. under exclusive license to Sanctuary Records Group Ltd., a BMG Company",
+  "creditName": "Iron Maiden",
+  "credits": [
+    {
+      "name": "Janick Gers",
+      "roles": [
+        "electric guitar"
+      ],
+      "uuid": "c11df3cd-7166-4ed4-8944-a46fad937810"
+    },
+    {
+      "name": "Bruce Dickinson",
+      "roles": [
+        "lead vocals"
+      ],
+      "uuid": "ec7722be-c126-4929-8868-c22ab3391c58"
+    },
+    {
+      "name": "Tim Young",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "1b18b75a-61f9-4715-8d96-dc173c0ca3cd"
+    },
+    {
+      "name": "Steve Harris",
+      "roles": [
+        "producer",
+        "mix",
+        "backing vocals",
+        "bass guitar",
+        "writer"
+      ],
+      "uuid": "f9a8426e-8434-4ce6-b86d-00d22f4cb1dd"
+    },
+    {
+      "name": "Nicko McBrain",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "0e1f20da-37f6-413d-903e-2a19af2337ef"
+    },
+    {
+      "name": "Dave Murray",
+      "roles": [
+        "electric guitar"
+      ],
+      "uuid": "1d8e15f0-13b7-4b51-8fd6-3689f54e129f"
+    },
+    {
+      "name": "Mick McKenna",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "73734466-ea79-44ff-a646-cc40045d5708"
+    },
+    {
+      "name": "Simon Heyworth",
+      "roles": [
+        "engineer",
+        "digital  remastering  masterer"
+      ],
+      "uuid": "89ff796e-ea6b-486a-a586-6c940638b4a4"
+    },
+    {
+      "name": "Stephen Percy Harris",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "7b045473-8d14-4146-b77f-1defc8060dfc"
+    },
+    {
+      "name": "Michael Kenney",
+      "roles": [
+        "keyboard"
+      ],
+      "uuid": "e7008265-b01d-43d4-8d97-e662a42bed28"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 235,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "metal",
+      "sub": [
+        "metal"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/4/c/1/e3a91436-41c4-11e9-b454-549f35161576.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBCHB9810044"
+  },
+  "iswcs": [
+    "T0103030654"
+  ],
+  "labels": [
+    {
+      "name": "Sanctuary Records Group",
+      "type": "unknown"
+    },
+    {
+      "name": "Iron Maiden Holdings",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/iron-maiden/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/8/d/11e81bc3-ad82-9904-9a53-a0369fe50396.jpg",
+      "name": "Iron Maiden",
+      "slug": "iron-maiden",
+      "uuid": "11e81bc3-ad82-9904-9a53-a0369fe50396"
+    }
+  ],
+  "name": "The Trooper - Live; 1998 Remastered Version",
+  "producers": [
+    "Steve Harris"
+  ],
+  "releaseDate": "1993-03-23T00:00:00+00:00",
+  "uuid": "e3a91436-41c4-11e9-b454-549f35161576"
+}

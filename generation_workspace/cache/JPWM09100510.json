@@ -1,0 +1,92 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e84117-cb3c-4b42-b6f7-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/dian-yuan-jing-zhi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/2/5/11e81bcd-b525-5b2e-aed0-a0369fe50396.jpg",
+      "name": "Noriyuki Makihara",
+      "slug": "dian-yuan-jing-zhi",
+      "uuid": "11e81bcd-b525-5b2e-aed0-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.34,
+    "danceability": 0.69,
+    "energy": 0.81,
+    "instrumentalness": 0,
+    "key": 6,
+    "liveness": 0.09,
+    "loudness": -7.42,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 123.83,
+    "timeSignature": 4,
+    "valence": 0.92
+  },
+  "composers": [
+    "Noriyuki Makihara"
+  ],
+  "copyright": "℗ 1999 WARNER MUSIC JAPAN INC.",
+  "creditName": "Noriyuki Makihara",
+  "credits": [
+    {
+      "name": "Noriyuki Makihara",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "fddf914a-eb7e-4a45-8600-a33190dd38f1"
+    }
+  ],
+  "distributor": "Warner",
+  "duration": 304,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    },
+    {
+      "root": "j-pop",
+      "sub": [
+        "j-pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/c/3/b/11e84117-cb3c-4b42-b6f7-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPWM09100510"
+  },
+  "iswcs": [
+    "T1014167327"
+  ],
+  "labels": [
+    {
+      "name": "Warner",
+      "type": "Warner"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/dian-yuan-jing-zhi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/2/5/11e81bcd-b525-5b2e-aed0-a0369fe50396.jpg",
+      "name": "Noriyuki Makihara",
+      "slug": "dian-yuan-jing-zhi",
+      "uuid": "11e81bcd-b525-5b2e-aed0-a0369fe50396"
+    }
+  ],
+  "name": "どんなときも。",
+  "producers": [],
+  "releaseDate": "1999-02-24T00:00:00+00:00",
+  "uuid": "11e84117-cb3c-4b42-b6f7-aa1c026db3d8"
+}

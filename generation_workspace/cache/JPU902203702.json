@@ -1,0 +1,176 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/9d6ced28-9f11-4851-9e11-5b85f07ad41d/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mi-jin-xuan-shi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/d/a/11e81bcc-dadf-925e-af6a-a0369fe50396.jpg",
+      "name": "Kenshi Yonezu",
+      "slug": "mi-jin-xuan-shi",
+      "uuid": "11e81bcc-dadf-925e-af6a-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.58,
+    "energy": 0.94,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.09,
+    "loudness": -5.17,
+    "mode": 1,
+    "speechiness": 0.11,
+    "tempo": 101.92,
+    "timeSignature": 4,
+    "valence": 0.29
+  },
+  "composers": [
+    "Kenshi Yonezu",
+    "Tsunku"
+  ],
+  "copyright": "(P) 2022 Sony Music Labels Inc.",
+  "creditName": "Kenshi Yonezu",
+  "credits": [
+    {
+      "name": "Kenshi Yonezu",
+      "roles": [
+        "arranger",
+        "songwriter",
+        "producer",
+        "vocals"
+      ],
+      "uuid": "e3ad260e-ef18-4b95-8652-44ffceffd6e9"
+    },
+    {
+      "name": "Masahito Komori",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "831a6169-2c27-4da7-a010-4f0a2d9b89eb"
+    },
+    {
+      "name": "Daiki Tsuneta",
+      "roles": [
+        "producer",
+        "bass guitar",
+        "arranger"
+      ],
+      "uuid": "00aeea47-e34b-4601-a43b-8fe79a209bcc"
+    },
+    {
+      "name": "Shuntaro Tsuneta",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "01a341cd-f7d7-41fd-9c4f-efcd1f7a37d7"
+    },
+    {
+      "name": "放生多加男",
+      "roles": [
+        "instruments"
+      ],
+      "uuid": "49476b47-b396-41f2-8725-924c7a009863"
+    },
+    {
+      "name": "石川猛",
+      "roles": [
+        "instruments"
+      ],
+      "uuid": "6b2bd313-fae4-4f98-aee3-40ddb801a456"
+    },
+    {
+      "name": "Ryuma Annaka",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "3bedcc3d-b810-4ba7-880b-1e467d1599a5"
+    },
+    {
+      "name": "北村優一",
+      "roles": [
+        "drum technician"
+      ],
+      "uuid": "5b872c6b-611a-4461-95e8-37c24ff97c73"
+    },
+    {
+      "name": "米津玄師",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "b10c3204-9cac-47d5-a268-15f1991ce8c6"
+    },
+    {
+      "name": "石若駿",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "c657005c-9585-4e10-b008-a325e687bced"
+    },
+    {
+      "name": "halca",
+      "roles": [
+        "backing vocals"
+      ],
+      "uuid": "8274fa71-6957-4e9c-a725-2f5e17a06e41"
+    },
+    {
+      "name": "Jun Miyakawa",
+      "roles": [
+        "organ"
+      ],
+      "uuid": "59814419-eed9-4960-8c06-76fef3d45003"
+    },
+    {
+      "name": "Sonoko Muraoka",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "f437193e-c6c8-439c-a95e-b03f9bd3411f"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 194,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    },
+    {
+      "root": "j-pop",
+      "sub": [
+        "j-pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/1/1/f/9d6ced28-9f11-4851-9e11-5b85f07ad41d.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU902203702"
+  },
+  "iswcs": [
+    "T3134460230"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mi-jin-xuan-shi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/d/a/11e81bcc-dadf-925e-af6a-a0369fe50396.jpg",
+      "name": "Kenshi Yonezu",
+      "slug": "mi-jin-xuan-shi",
+      "uuid": "11e81bcc-dadf-925e-af6a-a0369fe50396"
+    }
+  ],
+  "name": "KICK BACK",
+  "producers": [],
+  "releaseDate": "2022-10-12T00:00:00+00:00",
+  "uuid": "9d6ced28-9f11-4851-9e11-5b85f07ad41d"
+}

@@ -1,0 +1,65 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8269f-ad45-7c22-ac92-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/feng-3/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/a/f/11e81bc9-cfa4-878a-8470-a0369fe50396.jpg",
+      "name": "Kaze",
+      "slug": "feng-3",
+      "uuid": "11e81bc9-cfa4-878a-8470-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.8,
+    "danceability": 0.57,
+    "energy": 0.45,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.1,
+    "loudness": -8.87,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 135.27,
+    "timeSignature": 4,
+    "valence": 0.53
+  },
+  "composers": [
+    "Shozo Ise"
+  ],
+  "copyright": "(P)2010 NIPPON CROWN Co.,Ltd.",
+  "creditName": "Kaze",
+  "credits": [],
+  "distributor": "",
+  "duration": 191,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/5/4/d/11e8269f-ad45-7c22-ac92-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPCR07400520"
+  },
+  "iswcs": [
+    "T1014719221"
+  ],
+  "labels": [
+    {
+      "name": "NIPPON CROWN",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/feng-3/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/a/f/11e81bc9-cfa4-878a-8470-a0369fe50396.jpg",
+      "name": "Kaze",
+      "slug": "feng-3",
+      "uuid": "11e81bc9-cfa4-878a-8470-a0369fe50396"
+    }
+  ],
+  "name": "22才の別れ",
+  "producers": [],
+  "releaseDate": "2010-01-01T00:00:00+00:00",
+  "uuid": "11e8269f-ad45-7c22-ac92-a0369fe50396"
+}

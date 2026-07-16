@@ -1,0 +1,49 @@
+{
+  "name": "Quiet Mountain Path",
+  "isrc": {
+    "value": "JPXX01900124",
+    "countryCode": "JP",
+    "countryName": "Japan"
+  },
+  "iswcs": [],
+  "duration": 264,
+  "explicit": false,
+  "releaseDate": "2019-03-15",
+  "languageCode": "ja",
+  "genres": [
+    {
+      "root": "j-pop",
+      "sub": ["japanese folk"]
+    }
+  ],
+  "artists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000002",
+      "name": "Calm Songstress"
+    }
+  ],
+  "mainArtists": [
+    {
+      "uuid": "4b1a2c3d-0001-0000-0000-000000000002",
+      "name": "Calm Songstress"
+    }
+  ],
+  "labels": [],
+  "composers": [],
+  "producers": [],
+  "credits": [],
+  "audio": {
+    "acousticness": 0.71,
+    "danceability": 0.31,
+    "energy": 0.18,
+    "instrumentalness": 0.02,
+    "key": 2,
+    "liveness": 0.06,
+    "loudness": -14.5,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 72.0,
+    "timeSignature": 4,
+    "valence": 0.22
+  }
+}

@@ -1,0 +1,232 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/99524ef4-043c-4f85-8a3e-9f9eed5554a2/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/lil-uzi-vert/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/5/5/11e81bbc-8551-43d8-9120-a0369fe50396.jpg",
+      "name": "Lil Uzi Vert",
+      "slug": "lil-uzi-vert",
+      "uuid": "11e81bbc-8551-43d8-9120-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.73,
+    "energy": 0.75,
+    "instrumentalness": 0,
+    "key": 11,
+    "liveness": 0.11,
+    "loudness": -6.37,
+    "mode": 0,
+    "speechiness": 0.23,
+    "tempo": 155.1,
+    "timeSignature": 4,
+    "valence": 0.41
+  },
+  "composers": [
+    "Bryan Lamar Simmons",
+    "Bryan Simmons",
+    "Lil Uzi Vert"
+  ],
+  "copyright": "℗ 2017 Atlantic Recording Corporation for the United States and WEA International Inc. for the world outside the United States. A Warner Music Group Company",
+  "creditName": "Lil Uzi Vert",
+  "credits": [
+    {
+      "name": "Bryan Lamar Simmons",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "34255a37-8867-45c8-a946-f294e18a3a28"
+    },
+    {
+      "name": "Bryan Simmons",
+      "roles": [
+        "songwriter",
+        "writer"
+      ],
+      "uuid": "4132fdd8-1f30-474d-8e74-153443b94537"
+    },
+    {
+      "name": "John Wesley Lucas",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "27f5bbca-44ab-440b-991d-fbef102d9ae6"
+    },
+    {
+      "name": "The Weeknd",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "989c0878-1ece-4cf4-bc86-ab936a3741e6"
+    },
+    {
+      "name": "Mustard",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "46a343e3-b5b1-47de-9117-c5cfa584fb33"
+    },
+    {
+      "name": "Colin Leonard",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "7e0b1a78-c53a-4773-9391-dc602da96a86"
+    },
+    {
+      "name": "Kesha \"K. Lee\" Lee",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "cb3e38d2-2f5a-4883-b0f7-c1bd21fdfd1f"
+    },
+    {
+      "name": "Leslie Brathwaite",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "c3f01118-3ce4-4d47-92d5-f132a04b20a2"
+    },
+    {
+      "name": "Tm88",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "52f98cb1-1598-4087-9a7a-fbb3934fb084"
+    },
+    {
+      "name": "Virgil Abloh",
+      "roles": [
+        "video director"
+      ],
+      "uuid": "eeff4661-e08c-495e-9120-f9a992976d65"
+    },
+    {
+      "name": "Michael Piroli",
+      "roles": [
+        "assistant mix engineer"
+      ],
+      "uuid": "4e8ebf49-4f44-4199-9910-31b976b8bc2c"
+    },
+    {
+      "name": "Emmanuelle Cuny-Diop",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "33af5ee1-9313-44ad-9ed9-85da043d9096"
+    },
+    {
+      "name": "Lucas Prevost",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "c3895191-ef54-4cc3-841a-f5fb99f09339"
+    },
+    {
+      "name": "NO TEXT Azienda",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "fcd2a8be-a8d6-404f-b5c3-9f590ef23357"
+    },
+    {
+      "name": "Kesha Lee",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "2620951a-c30b-41f5-bf82-0f9165e41a56"
+    },
+    {
+      "name": "JW Lucas",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "03bce547-6f3c-413e-be5e-b8073fd473b4"
+    },
+    {
+      "name": "Lil Uzi Vert",
+      "roles": [
+        "writer",
+        "lead vocals",
+        "lyricist"
+      ],
+      "uuid": "2b205ef2-43b2-4a6b-bbe4-9416323bbb2d"
+    },
+    {
+      "name": "Symere Woods",
+      "roles": [
+        "songwriter",
+        "writer"
+      ],
+      "uuid": "a3595255-8d79-4bfe-ab64-1ac5b94c482d"
+    },
+    {
+      "name": "Bryan Simmons",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "371bf568-48fb-44cc-ba07-a2da2bf93d0e"
+    },
+    {
+      "name": "JW Lucas",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "cc0b699a-9462-48e2-b765-0f84e201d88e"
+    },
+    {
+      "name": "TM88",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "fc9cf81c-468f-4f6d-9384-25e1df625042"
+    }
+  ],
+  "distributor": "Warner",
+  "duration": 182,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/c/3/4/99524ef4-043c-4f85-8a3e-9f9eed5554a2.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USAT21700684"
+  },
+  "iswcs": [
+    "T9219575914"
+  ],
+  "labels": [
+    {
+      "name": "Atlantic",
+      "type": "Warner"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/lil-uzi-vert/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/5/5/11e81bbc-8551-43d8-9120-a0369fe50396.jpg",
+      "name": "Lil Uzi Vert",
+      "slug": "lil-uzi-vert",
+      "uuid": "11e81bbc-8551-43d8-9120-a0369fe50396"
+    }
+  ],
+  "name": "XO Tour Llif3",
+  "producers": [
+    "Tm88",
+    "JW Lucas"
+  ],
+  "releaseDate": "2017-08-25T00:00:00+00:00",
+  "uuid": "99524ef4-043c-4f85-8a3e-9f9eed5554a2"
+}

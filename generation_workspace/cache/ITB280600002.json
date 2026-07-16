@@ -1,0 +1,127 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/f0978700-790e-4ff2-8122-a9524a1f8cf0/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/royal-philharmonic-orchestra/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/5/0/11e81bc6-f05a-bf10-b8c6-a0369fe50396.jpg",
+      "name": "Royal Philharmonic Orchestra",
+      "slug": "royal-philharmonic-orchestra",
+      "uuid": "11e81bc6-f05a-bf10-b8c6-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ludovico-einaudi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/1/4/11e81bc9-7412-91b4-9853-a0369fe50396.jpg",
+      "name": "Ludovico Einaudi",
+      "slug": "ludovico-einaudi",
+      "uuid": "11e81bc9-7412-91b4-9853-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/robert-ziegler-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/f/6/11e81bcb-56f5-1ba4-8abd-a0369fe50396.jpg",
+      "name": "Robert Ziegler",
+      "slug": "robert-ziegler-1",
+      "uuid": "11e81bcb-56f5-1ba4-8abd-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.91,
+    "danceability": 0.14,
+    "energy": 0.22,
+    "instrumentalness": 0.86,
+    "key": 7,
+    "liveness": 0.07,
+    "loudness": -15.3,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 88.38,
+    "timeSignature": 4,
+    "valence": 0.08
+  },
+  "composers": [
+    "Ludovico Einaudi"
+  ],
+  "copyright": "℗ 2006 Decca Music Group Limited",
+  "creditName": "Ludovico Einaudi & Robert Ziegler & Royal Philharmonic Orchestra",
+  "credits": [
+    {
+      "name": "Gioachino Rossini",
+      "roles": [
+        "orchestra"
+      ],
+      "uuid": "16d2bcbd-f777-424f-a43d-7a12f2226c63"
+    },
+    {
+      "name": "Michael Seberich",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "26845971-8b6e-4d82-ae54-385a589bab74"
+    },
+    {
+      "name": "Ludovico Einaudi",
+      "roles": [
+        "producer",
+        "writer",
+        "piano",
+        "instrument arranger",
+        "phonographic copyright"
+      ],
+      "uuid": "6802ca49-dd43-40b5-be8c-43e8c967857b"
+    },
+    {
+      "name": "Royal Liverpool Philharmonic Orchestra",
+      "roles": [
+        "performing orchestra"
+      ],
+      "uuid": "7b05d1ac-fc42-4870-bbe6-75fbaafb7bb1"
+    },
+    {
+      "name": "Robert Ziegler",
+      "roles": [
+        "conductor"
+      ],
+      "uuid": "87a68273-187b-4c61-bcc1-15f02e0c6b53"
+    }
+  ],
+  "distributor": "",
+  "duration": 402,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/e/0/9/f0978700-790e-4ff2-8122-a9524a1f8cf0.jpg",
+  "isrc": {
+    "countryCode": "IT",
+    "countryName": "Italy",
+    "value": "ITB280600002"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Decca",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ludovico-einaudi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/1/4/11e81bc9-7412-91b4-9853-a0369fe50396.jpg",
+      "name": "Ludovico Einaudi",
+      "slug": "ludovico-einaudi",
+      "uuid": "11e81bc9-7412-91b4-9853-a0369fe50396"
+    }
+  ],
+  "name": "Divenire",
+  "producers": [
+    "Ludovico Einaudi"
+  ],
+  "releaseDate": "2006-01-01T00:00:00+00:00",
+  "uuid": "f0978700-790e-4ff2-8122-a9524a1f8cf0"
+}

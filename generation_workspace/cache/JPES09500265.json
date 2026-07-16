@@ -1,0 +1,117 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8261b-297e-2a9e-b9f5-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/dreams-come-true/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/2/0/11e81bd1-502d-c1c6-bc6f-a0369fe50396.jpg",
+      "name": "DREAMS COME TRUE",
+      "slug": "dreams-come-true",
+      "uuid": "11e81bd1-502d-c1c6-bc6f-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.47,
+    "danceability": 0.45,
+    "energy": 0.38,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.11,
+    "loudness": -10.62,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 83.93,
+    "timeSignature": 4,
+    "valence": 0.28
+  },
+  "composers": [
+    "Miwa Yoshida",
+    "Masato Nakamura"
+  ],
+  "copyright": "(P)1995 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "DREAMS COME TRUE",
+  "credits": [
+    {
+      "name": "Nakamura Masato",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "bacf8260-dce0-4b56-9e50-30221e27d78e"
+    },
+    {
+      "name": "Miwa Yoshida",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "db510b84-58f0-4b03-a78a-a09ff2462e06"
+    },
+    {
+      "name": "中村正人 (Masato Nakamura)",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "842ccad1-2c47-4739-92d8-dafc11073b44"
+    },
+    {
+      "name": "Masato Nakamura",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "671980b7-3015-4307-a752-83369af31d05"
+    },
+    {
+      "name": "Miwa Yoshida",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "9f5dc209-0ceb-47af-bedf-a46845e71bcb"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 204,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    },
+    {
+      "root": "j-pop",
+      "sub": [
+        "j-pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/e/7/9/11e8261b-297e-2a9e-b9f5-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPES09500265"
+  },
+  "iswcs": [
+    "T1012498950",
+    "T1015521250",
+    "T9056587918"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/dreams-come-true/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/2/0/11e81bd1-502d-c1c6-bc6f-a0369fe50396.jpg",
+      "name": "DREAMS COME TRUE",
+      "slug": "dreams-come-true",
+      "uuid": "11e81bd1-502d-c1c6-bc6f-a0369fe50396"
+    }
+  ],
+  "name": "Love Love Love",
+  "producers": [],
+  "releaseDate": "1989-03-21T00:00:00+00:00",
+  "uuid": "11e8261b-297e-2a9e-b9f5-aa1c026db3d8"
+}

@@ -1,0 +1,113 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8267f-3910-35a6-9e68-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/motohiro-hata/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/8/3/11e83fe2-6382-b2ce-96de-aa1c026db3d8.jpg",
+      "name": "Motohiro Hata",
+      "slug": "motohiro-hata",
+      "uuid": "11e83fe2-6382-b2ce-96de-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.26,
+    "danceability": 0.53,
+    "energy": 0.45,
+    "instrumentalness": 0,
+    "key": 10,
+    "liveness": 0.13,
+    "loudness": -5.16,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 78.97,
+    "timeSignature": 4,
+    "valence": 0.34
+  },
+  "composers": [
+    "Motohiro Hata"
+  ],
+  "copyright": "℗ 2014 AUGUSTA RECORDS, a division of UNIVERSAL MUSIC LLC",
+  "creditName": "Motohiro Hata",
+  "credits": [
+    {
+      "name": "Hata Motohiro",
+      "roles": [
+        "songwriter",
+        "producer"
+      ],
+      "uuid": "fc26d7e3-72f2-4601-83b2-96c8b81f4e94"
+    },
+    {
+      "name": "Makoto Minagawa",
+      "roles": [
+        "arranger",
+        "producer"
+      ],
+      "uuid": "ce0dd442-610d-40c1-a11d-84bb4149aa33"
+    },
+    {
+      "name": "秦基博",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "4d655914-c070-41f7-b728-e07816c8e42d"
+    },
+    {
+      "name": "皆川真人",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "20d0edf3-c1fc-4fdc-84a7-2cbdedc81167"
+    },
+    {
+      "name": "Masato Minagawa",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "36db15e8-dc95-40b9-b517-65884381bdef"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 314,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "asian",
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/1/9/11e8267f-3910-35a6-9e68-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU901400745"
+  },
+  "iswcs": [
+    "T9152379163"
+  ],
+  "labels": [
+    {
+      "name": "Augusta",
+      "type": "BMG"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [],
+  "name": "ひまわりの約束",
+  "producers": [
+    "Motohiro Hata",
+    "Makoto Minagawa"
+  ],
+  "releaseDate": "2014-08-06T00:00:00+00:00",
+  "uuid": "11e8267f-3910-35a6-9e68-aa1c026db3d8"
+}

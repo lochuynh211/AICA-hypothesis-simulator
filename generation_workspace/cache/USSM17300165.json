@@ -1,0 +1,229 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82615-d644-5a7e-9e58-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/herbie-hancock/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/6/9/11e81bd1-f96e-615a-b5e4-a0369fe50396.jpg",
+      "name": "Herbie Hancock",
+      "slug": "herbie-hancock",
+      "uuid": "11e81bd1-f96e-615a-b5e4-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.1,
+    "danceability": 0.58,
+    "energy": 0.67,
+    "instrumentalness": 0.86,
+    "key": 8,
+    "liveness": 0.05,
+    "loudness": -8.28,
+    "mode": 1,
+    "speechiness": 0.06,
+    "tempo": 111.15,
+    "timeSignature": 4,
+    "valence": 0.81
+  },
+  "composers": [
+    "P. Jackson",
+    "H. Hancock",
+    "H. Mason",
+    "B. Maupin"
+  ],
+  "copyright": "(P) 1973 Sony Music Entertainment Inc.",
+  "creditName": "Herbie Hancock",
+  "credits": [
+    {
+      "name": "Bernie Taupin",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "308bee12-91cd-4cab-b543-ad4e940754d6"
+    },
+    {
+      "name": "Bennie Maupin",
+      "roles": [
+        "composer",
+        "writer",
+        "flute",
+        "tenor saxophone",
+        "lyricist"
+      ],
+      "uuid": "b81db47f-326d-48c0-8ac7-4148d5f3a0b7"
+    },
+    {
+      "name": "Paul Jackson",
+      "roles": [
+        "writer",
+        "bass guitar",
+        "bass"
+      ],
+      "uuid": "3882411f-bda8-4f44-90ba-c7e75c95cfda"
+    },
+    {
+      "name": "Harvey Mason",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "1d7953a2-ac04-4b11-8ab4-308bd9e4cb8e"
+    },
+    {
+      "name": "Jake Mason",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "f808adf0-faf0-496d-a1f2-340e4a8ea060"
+    },
+    {
+      "name": "Herbie Hancock",
+      "roles": [
+        "producer",
+        "writer",
+        "keyboard"
+      ],
+      "uuid": "dcaf4761-4981-4248-98f1-2fe8db6e6126"
+    },
+    {
+      "name": "John Hancock",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "0ea510b0-5756-4228-9d77-6650c6d7b2db"
+    },
+    {
+      "name": "Elton John",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "44bd78bb-c96e-4d7e-bcdb-c440d20c8f9c"
+    },
+    {
+      "name": "Bill Summers",
+      "roles": [
+        "percussions"
+      ],
+      "uuid": "da15c769-6a50-4478-8cc4-79b2b1bcb094"
+    },
+    {
+      "name": "Harvey William Mason",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "727ac975-1fab-45ec-ae67-04788cb5bb92"
+    },
+    {
+      "name": "Harvey Mason Jr.",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "472d69d2-2c0f-43ba-9485-adb62d34621b"
+    },
+    {
+      "name": "David Rubinson",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "05da792d-20df-4f94-ac2e-d865723fdbe8"
+    },
+    {
+      "name": "Jeremy Zatkin",
+      "roles": [
+        "recording",
+        "engineer"
+      ],
+      "uuid": "56cf1ffd-015b-4be2-972c-6a08f70c622e"
+    },
+    {
+      "name": "Dane Butcher",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "13a2501f-3ac1-44c7-b0a7-6727dace96eb"
+    },
+    {
+      "name": "Peter Jackson",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "0d4009b5-5ed2-4997-ad29-f9cc69e45e69"
+    },
+    {
+      "name": "Fred Catero",
+      "roles": [
+        "recording",
+        "engineer"
+      ],
+      "uuid": "f500bfc6-4ac9-4cc8-8ab8-a099f20279d7"
+    },
+    {
+      "name": "John Vieira",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "8bc2a65b-4b97-4e9b-add0-2c0f71a9739e"
+    },
+    {
+      "name": "David Rubinson/Herbie Hancock for David Rubinson and Friends, Inc.",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "3d3d4d2a-02c1-41ab-9c0a-c37c147b2ab6"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 944,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz"
+      ]
+    },
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b, funk & soul"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/4/4/6/11e82615-d644-5a7e-9e58-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USSM17300165"
+  },
+  "iswcs": [
+    "T0700282901"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/herbie-hancock/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/6/9/11e81bd1-f96e-615a-b5e4-a0369fe50396.jpg",
+      "name": "Herbie Hancock",
+      "slug": "herbie-hancock",
+      "uuid": "11e81bd1-f96e-615a-b5e4-a0369fe50396"
+    }
+  ],
+  "name": "Chameleon",
+  "producers": [
+    "David Rubinson/Herbie Hancock for David Rubinson and Friends, Inc."
+  ],
+  "releaseDate": "1973-10-26T00:00:00+00:00",
+  "uuid": "11e82615-d644-5a7e-9e58-aa1c026db3d8"
+}

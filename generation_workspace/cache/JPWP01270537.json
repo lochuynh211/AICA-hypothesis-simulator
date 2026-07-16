@@ -1,0 +1,67 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82637-7499-a3de-9b7d-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/akina-nakamori/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/c/d/8/1da7c8a2-b8dc-11e8-9a2c-525400009efb.jpg",
+      "name": "Akina Nakamori",
+      "slug": "akina-nakamori",
+      "uuid": "1da7c8a2-b8dc-11e8-9a2c-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.68,
+    "danceability": 0.37,
+    "energy": 0.46,
+    "instrumentalness": 0.18,
+    "key": 10,
+    "liveness": 0.07,
+    "loudness": -7.39,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 93.95,
+    "timeSignature": 4,
+    "valence": 0.29
+  },
+  "composers": [
+    "Tokiko Kato"
+  ],
+  "copyright": "",
+  "creditName": "Akina Nakamori",
+  "credits": [],
+  "distributor": "",
+  "duration": 267,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/9/9/4/11e82637-7499-a3de-9b7d-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPWP01270537"
+  },
+  "iswcs": [
+    "T1014446672"
+  ],
+  "labels": [],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/akina-nakamori/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/c/d/8/1da7c8a2-b8dc-11e8-9a2c-525400009efb.jpg",
+      "name": "Akina Nakamori",
+      "slug": "akina-nakamori",
+      "uuid": "1da7c8a2-b8dc-11e8-9a2c-525400009efb"
+    }
+  ],
+  "name": "難破船",
+  "producers": [],
+  "releaseDate": "2012-07-11T00:00:00+00:00",
+  "uuid": "11e82637-7499-a3de-9b7d-aa1c026db3d8"
+}

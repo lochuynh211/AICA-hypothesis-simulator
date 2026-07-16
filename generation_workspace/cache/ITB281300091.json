@@ -1,0 +1,80 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8407b-1447-a32e-b255-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ludovico-einaudi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/1/4/11e81bc9-7412-91b4-9853-a0369fe50396.jpg",
+      "name": "Ludovico Einaudi",
+      "slug": "ludovico-einaudi",
+      "uuid": "11e81bc9-7412-91b4-9853-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.44,
+    "danceability": 0.28,
+    "energy": 0.47,
+    "instrumentalness": 0.86,
+    "key": 2,
+    "liveness": 0.94,
+    "loudness": -14.47,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 92.35,
+    "timeSignature": 4,
+    "valence": 0.04
+  },
+  "composers": [
+    "Ludovico Einaudi"
+  ],
+  "copyright": "℗ 2013 Ludovico Einaudi, under exclusive licence to Decca, a division of Universal Music Operations Ltd",
+  "creditName": "Ludovico Einaudi",
+  "credits": [],
+  "distributor": "Universal",
+  "duration": 418,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    },
+    {
+      "root": "electro",
+      "sub": [
+        "electronic"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/7/4/4/11e8407b-1447-a32e-b255-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "IT",
+    "countryName": "Italy",
+    "value": "ITB281300091"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Decca",
+      "type": "Universal"
+    },
+    {
+      "name": "Ludovico Einaudi",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ludovico-einaudi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/1/4/11e81bc9-7412-91b4-9853-a0369fe50396.jpg",
+      "name": "Ludovico Einaudi",
+      "slug": "ludovico-einaudi",
+      "uuid": "11e81bc9-7412-91b4-9853-a0369fe50396"
+    }
+  ],
+  "name": "Experience (Live)",
+  "producers": [],
+  "releaseDate": "2013-01-01T00:00:00+00:00",
+  "uuid": "11e8407b-1447-a32e-b255-aa1c026db3d8"
+}

@@ -1,0 +1,79 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/fd78331e-55de-11e9-8aa1-549f35141000/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aimyon/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/0/5/11e83feb-8507-cea8-91a7-aa1c026db3d8.jpg",
+      "name": "Aimyon",
+      "slug": "aimyon",
+      "uuid": "11e83feb-8507-cea8-91a7-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.26,
+    "danceability": 0.59,
+    "energy": 0.67,
+    "instrumentalness": 0,
+    "key": 9,
+    "liveness": 0.11,
+    "loudness": -2.45,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 106.95,
+    "timeSignature": 4,
+    "valence": 0.52
+  },
+  "composers": [
+    "Aimyon"
+  ],
+  "copyright": "℗ 2019 WARNER MUSIC JAPAN INC.",
+  "creditName": "Aimyon",
+  "credits": [],
+  "distributor": "Warner",
+  "duration": 326,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "asian",
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/e/d/5/fd78331e-55de-11e9-8aa1-549f35141000.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPWP01970073"
+  },
+  "iswcs": [
+    "T9281419485"
+  ],
+  "labels": [
+    {
+      "name": "Warner",
+      "type": "Warner"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aimyon/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/0/5/11e83feb-8507-cea8-91a7-aa1c026db3d8.jpg",
+      "name": "Aimyon",
+      "slug": "aimyon",
+      "uuid": "11e83feb-8507-cea8-91a7-aa1c026db3d8"
+    }
+  ],
+  "name": "ハルノヒ",
+  "producers": [],
+  "releaseDate": "2019-04-17T00:00:00+00:00",
+  "uuid": "fd78331e-55de-11e9-8aa1-549f35141000"
+}

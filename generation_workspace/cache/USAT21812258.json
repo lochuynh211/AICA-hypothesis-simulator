@@ -1,0 +1,206 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/26335824-25e2-11e9-b792-00163ec5a2fb/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/clairo/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/4/d/11e81bc2-6d4b-427e-ae88-a0369fe50396.jpg",
+      "name": "Clairo",
+      "slug": "clairo",
+      "uuid": "11e81bc2-6d4b-427e-ae88-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/wallows/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/3/a/11e81bc8-ba34-762c-9108-a0369fe50396.jpg",
+      "name": "Wallows",
+      "slug": "wallows",
+      "uuid": "11e81bc8-ba34-762c-9108-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.16,
+    "danceability": 0.68,
+    "energy": 0.68,
+    "instrumentalness": 0,
+    "key": 8,
+    "liveness": 0.27,
+    "loudness": -6.44,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 120.03,
+    "timeSignature": 4,
+    "valence": 0.64
+  },
+  "composers": [
+    "Braeden Lemasters",
+    "Cole Preston",
+    "Dylan Minnette",
+    "Claire Cottrill"
+  ],
+  "copyright": "℗ 2019 Atlantic Recording Corporation for the United States and WEA International Inc. for the world outside the United States. A Warner Music Group Company",
+  "creditName": "Wallows & Clairo",
+  "credits": [
+    {
+      "name": "Sean Cook",
+      "roles": [
+        "additional engineer"
+      ],
+      "uuid": "077b9102-0e0c-4c8f-8284-35e105d6dca9"
+    },
+    {
+      "name": "Braeden Lemasters",
+      "roles": [
+        "songwriter",
+        "writer"
+      ],
+      "uuid": "c1c896ed-ac13-4bdf-bfbd-4a3e0ca475c8"
+    },
+    {
+      "name": "Cole Preston",
+      "roles": [
+        "songwriter",
+        "writer"
+      ],
+      "uuid": "1b63d5c9-033c-421b-b7d9-c4bf5cc7d868"
+    },
+    {
+      "name": "John Congleton",
+      "roles": [
+        "producer",
+        "engineer",
+        "drum  programmer"
+      ],
+      "uuid": "7dbfbce3-c7c7-4282-8fb9-d776a1376f16"
+    },
+    {
+      "name": "Tchad Blake",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "efce0bb0-0727-4a00-984f-e54414a8de23"
+    },
+    {
+      "name": "Joe LaPorta",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "db9404f9-8a0f-47b7-a433-7b23ce31c852"
+    },
+    {
+      "name": "Claire Cottrill",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "4989d76b-1d66-4683-b6ea-1fee2c2c8c5c"
+    },
+    {
+      "name": "Clairo",
+      "roles": [
+        "songwriter",
+        "writer"
+      ],
+      "uuid": "07e5fc38-bf54-4320-93d2-d83784be1c5d"
+    },
+    {
+      "name": "Ashwin Torke",
+      "roles": [
+        "additional engineer"
+      ],
+      "uuid": "5b31e678-2ef2-4355-a9e5-0b24a5516a0a"
+    },
+    {
+      "name": "Dylan Minnette",
+      "roles": [
+        "songwriter",
+        "writer"
+      ],
+      "uuid": "2bc99eb9-5bca-452b-a424-65151bcc0b4e"
+    },
+    {
+      "name": "Stefan Mac",
+      "roles": [
+        "additional engineer"
+      ],
+      "uuid": "cb91bc1d-d755-4e24-95d1-2e2d5c4f0337"
+    },
+    {
+      "name": "Clairo",
+      "roles": [
+        "featured  vocals"
+      ],
+      "uuid": "78ed51c8-6123-4f9f-a4cf-f50a09f7602e"
+    },
+    {
+      "name": "Dylan Minnette",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "50895155-cc13-4a9e-ab8f-1c8504c4b517"
+    },
+    {
+      "name": "Braeden Lemasters",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "0e769df4-1d1a-46e4-b50c-fa63b05c3a13"
+    },
+    {
+      "name": "Cole Preston",
+      "roles": [
+        "writer",
+        "lyricist",
+        "mellotron"
+      ],
+      "uuid": "57a7d930-29d1-49c5-8475-6435a7112a89"
+    }
+  ],
+  "distributor": "Warner",
+  "duration": 178,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/2/e/5/26335824-25e2-11e9-b792-00163ec5a2fb.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USAT21812258"
+  },
+  "iswcs": [
+    "T9280876075"
+  ],
+  "labels": [
+    {
+      "name": "Atlantic",
+      "type": "Warner"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/wallows/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/3/a/11e81bc8-ba34-762c-9108-a0369fe50396.jpg",
+      "name": "Wallows",
+      "slug": "wallows",
+      "uuid": "11e81bc8-ba34-762c-9108-a0369fe50396"
+    }
+  ],
+  "name": "Are You Bored Yet? (feat. Clairo)",
+  "producers": [
+    "John Congleton"
+  ],
+  "releaseDate": "2019-02-18T00:00:00+00:00",
+  "uuid": "26335824-25e2-11e9-b792-00163ec5a2fb"
+}

@@ -1,0 +1,94 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/aac4afdf-8d9a-4eba-8672-242dfd1c9d4a/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yama-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/6/6/11e81bc2-766a-b0c4-b199-a0369fe50396.jpg",
+      "name": "Yama",
+      "slug": "yama-1",
+      "uuid": "11e81bc2-766a-b0c4-b199-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.04,
+    "danceability": 0.55,
+    "energy": 0.87,
+    "instrumentalness": 0,
+    "key": 11,
+    "liveness": 0.36,
+    "loudness": -5.38,
+    "mode": 1,
+    "speechiness": 0.12,
+    "tempo": 120.01,
+    "timeSignature": 4,
+    "valence": 0.49
+  },
+  "composers": [
+    "whaledontsleep"
+  ],
+  "copyright": "℗ 2020 yama",
+  "creditName": "Yama",
+  "credits": [
+    {
+      "name": "Kujira",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "cef13dcf-0d7d-448d-b369-97c9d814e84a"
+    }
+  ],
+  "distributor": "",
+  "duration": 196,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b",
+        "r&b, funk & soul"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    },
+    {
+      "root": "soul",
+      "sub": [
+        "soul"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/a/9/d/aac4afdf-8d9a-4eba-8672-242dfd1c9d4a.jpg",
+  "isrc": {
+    "countryCode": "",
+    "countryName": "",
+    "value": "TCJPK2087568"
+  },
+  "iswcs": [
+    "T3009388896"
+  ],
+  "labels": [
+    {
+      "name": "Yama",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yama-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/6/6/11e81bc2-766a-b0c4-b199-a0369fe50396.jpg",
+      "name": "Yama",
+      "slug": "yama-1",
+      "uuid": "11e81bc2-766a-b0c4-b199-a0369fe50396"
+    }
+  ],
+  "name": "Haru wo Tsugeru",
+  "producers": [],
+  "releaseDate": "2020-04-17T00:00:00+00:00",
+  "uuid": "aac4afdf-8d9a-4eba-8672-242dfd1c9d4a"
+}

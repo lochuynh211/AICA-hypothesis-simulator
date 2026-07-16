@@ -1,0 +1,1338 @@
+{
+  "worlds": [
+    {
+      "world_id": "cp01-a",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 20,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp01-b",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 90,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp02-a",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 20
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp02-b",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 90
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp03-a",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "normal",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp03-b",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp04-a",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp04-b",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "mountain",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp05-a",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "day",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp05-b",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp06-a",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 20,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp06-b",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp07-a",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp07-b",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "stopped",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp08-a",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp08-b",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": true,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp09-a",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp09-b",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "off",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp10-a",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 0,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp10-b",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 5,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp11-a",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.0,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp11-b",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.95,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp12-a",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    },
+    {
+      "world_id": "cp12-b",
+      "current_time": "2026-07-14T22:10:00Z",
+      "trigger": {
+        "trigger_purpose": "inattentive_driving_prevention_recovery",
+        "lifecycle_stage": "active_driving_content"
+      },
+      "driver": {
+        "age_band": "30s",
+        "drowsiness_level": 80,
+        "fatigue_level": 70
+      },
+      "environment": {
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "motion_state": "driving",
+        "route_tags": [
+          "mountain"
+        ],
+        "destination_tags": [
+          "coast"
+        ]
+      },
+      "passengers": {
+        "child_present": false,
+        "multiple_passengers": false
+      },
+      "upro": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": []
+      },
+      "direct_item_history": {
+        "synthetic-track-0001": {
+          "last_played_at": "2026-07-13T21:00:00Z",
+          "play_count_30d": 3,
+          "skipped_count_30d": 0,
+          "changed_count_30d": 0,
+          "cancelled_count_30d": 0,
+          "acceptance_rate": 0.8,
+          "recovery_rate": 0.7
+        }
+      },
+      "selected_service": {
+        "selected_service_id": "humming_karaoke",
+        "lifecycle_state": "active"
+      }
+    }
+  ],
+  "pairs": [
+    {
+      "pair_id": "pair-01-drowsiness",
+      "variable": "drowsiness_level",
+      "expected_direction": "reversal_calm_active",
+      "world_a_ref": "cp01-a",
+      "world_b_ref": "cp01-b"
+    },
+    {
+      "pair_id": "pair-02-fatigue",
+      "variable": "fatigue_level",
+      "expected_direction": "reversal_calm_active",
+      "world_a_ref": "cp02-a",
+      "world_b_ref": "cp02-b"
+    },
+    {
+      "pair_id": "pair-03-traffic",
+      "variable": "traffic_state",
+      "expected_direction": "reversal_calm_active",
+      "world_a_ref": "cp03-a",
+      "world_b_ref": "cp03-b"
+    },
+    {
+      "pair_id": "pair-04-road-type",
+      "variable": "road_type",
+      "expected_direction": "reversal_active_calm",
+      "world_a_ref": "cp04-a",
+      "world_b_ref": "cp04-b"
+    },
+    {
+      "pair_id": "pair-05-day-night",
+      "variable": "night_state",
+      "expected_direction": "reversal_calm_active",
+      "world_a_ref": "cp05-a",
+      "world_b_ref": "cp05-b"
+    },
+    {
+      "pair_id": "pair-06-monotony",
+      "variable": "monotony_level",
+      "expected_direction": "reversal_calm_active",
+      "world_a_ref": "cp06-a",
+      "world_b_ref": "cp06-b"
+    },
+    {
+      "pair_id": "pair-07-motion",
+      "variable": "motion_state",
+      "expected_direction": "full_karaoke_eligibility_change",
+      "world_a_ref": "cp07-a",
+      "world_b_ref": "cp07-b"
+    },
+    {
+      "pair_id": "pair-08-child-present",
+      "variable": "child_present",
+      "expected_direction": "explicit_excluded_when_child_present",
+      "world_a_ref": "cp08-a",
+      "world_b_ref": "cp08-b"
+    },
+    {
+      "pair_id": "pair-09-oshi-mode",
+      "variable": "oshi_mode",
+      "expected_direction": "oshi_boost_removed",
+      "world_a_ref": "cp09-a",
+      "world_b_ref": "cp09-b"
+    },
+    {
+      "pair_id": "pair-10-recent-play",
+      "variable": "play_count_30d",
+      "expected_direction": "recency_suppression",
+      "world_a_ref": "cp10-a",
+      "world_b_ref": "cp10-b"
+    },
+    {
+      "pair_id": "pair-11-acceptance",
+      "variable": "acceptance_rate",
+      "expected_direction": "acceptance_boost",
+      "world_a_ref": "cp11-a",
+      "world_b_ref": "cp11-b"
+    },
+    {
+      "pair_id": "pair-12-route-tag",
+      "variable": "route_tags",
+      "expected_direction": "no_change_when_genre_off",
+      "world_a_ref": "cp12-a",
+      "world_b_ref": "cp12-b"
+    }
+  ]
+}

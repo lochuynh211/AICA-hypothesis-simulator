@@ -1,0 +1,73 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82642-b3c3-d934-b30a-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/azumi-inoue/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/d/8/0ec8b7dc-b8dd-11e8-9759-525400009efb.jpg",
+      "name": "Azumi Inoue",
+      "slug": "azumi-inoue",
+      "uuid": "0ec8b7dc-b8dd-11e8-9759-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.56,
+    "danceability": 0.7,
+    "energy": 0.71,
+    "instrumentalness": 0,
+    "key": 5,
+    "liveness": 0.08,
+    "loudness": -7.89,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 129.19,
+    "timeSignature": 4,
+    "valence": 0.93
+  },
+  "composers": [
+    "Joe Hisaishi",
+    "宮崎駿"
+  ],
+  "copyright": "2004 STUDIO GHIBLI RECORDS",
+  "creditName": "Azumi Inoue",
+  "credits": [],
+  "distributor": "Tokuma Japan Communications",
+  "duration": 258,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "soundtrack",
+      "sub": [
+        "anime",
+        "film ost",
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/c/3/11e82642-b3c3-d934-b30a-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPTK08780801"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "STUDIO GHIBLI",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/azumi-inoue/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/d/8/0ec8b7dc-b8dd-11e8-9759-525400009efb.jpg",
+      "name": "Azumi Inoue",
+      "slug": "azumi-inoue",
+      "uuid": "0ec8b7dc-b8dd-11e8-9759-525400009efb"
+    }
+  ],
+  "name": "となりのトトロ",
+  "producers": [],
+  "releaseDate": "2004-08-25T00:00:00+00:00",
+  "uuid": "11e82642-b3c3-d934-b30a-aa1c026db3d8"
+}

@@ -1,0 +1,118 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/097eb652-01db-47c2-a256-c21286a04ccd/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/joao-gilberto/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/0/a/11e81bce-9a05-b752-a834-a0369fe50396.jpg",
+      "name": "João Gilberto",
+      "slug": "joao-gilberto",
+      "uuid": "11e81bce-9a05-b752-a834-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.95,
+    "danceability": 0.46,
+    "energy": 0.04,
+    "instrumentalness": 0.05,
+    "key": 2,
+    "liveness": 0.11,
+    "loudness": -24.53,
+    "mode": 1,
+    "speechiness": 0.08,
+    "tempo": 84.9,
+    "timeSignature": 4,
+    "valence": 0.39
+  },
+  "composers": [
+    "Antônio Carlos Jobim",
+    "Newton Ferreira de Mendonca"
+  ],
+  "copyright": "℗ 1999 Universal Music International",
+  "creditName": "João Gilberto",
+  "credits": [
+    {
+      "name": "Antônio Carlos Jobim",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "190f6199-d31a-41f2-ad18-3b4e8be3122c"
+    },
+    {
+      "name": "Newton Ferreira de Mendonça",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "e2cc8a55-09b0-4cca-b818-187c44dd3bf0"
+    },
+    {
+      "name": "Caetano Veloso",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "3369c8f2-2f0c-4cc4-a71f-034cdac1ef57"
+    },
+    {
+      "name": "João Gilberto",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "fd5ce002-5cf7-44dd-82ce-8ff58d11f01b"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 248,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz"
+      ]
+    },
+    {
+      "root": "latin",
+      "sub": [
+        "brasilian music"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/d/1/097eb652-01db-47c2-a256-c21286a04ccd.jpg",
+  "isrc": {
+    "countryCode": "BR",
+    "countryName": "Brazil",
+    "value": "BRPGD9900844"
+  },
+  "iswcs": [
+    "T0390267670"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "pt",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/joao-gilberto/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/0/a/11e81bce-9a05-b752-a834-a0369fe50396.jpg",
+      "name": "João Gilberto",
+      "slug": "joao-gilberto",
+      "uuid": "11e81bce-9a05-b752-a834-a0369fe50396"
+    }
+  ],
+  "name": "Desafinado",
+  "producers": [
+    "Caetano Veloso"
+  ],
+  "releaseDate": "1999-03-03T00:00:00+00:00",
+  "uuid": "097eb652-01db-47c2-a256-c21286a04ccd"
+}

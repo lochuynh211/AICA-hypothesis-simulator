@@ -1,0 +1,187 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/8f492cde-36cd-11e9-b8d3-549f35141000/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/back-number/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/b/d/11e81bbe-ddb6-6dbc-8d84-a0369fe50396.jpg",
+      "name": "back number",
+      "slug": "back-number",
+      "uuid": "11e81bbe-ddb6-6dbc-8d84-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.07,
+    "danceability": 0.48,
+    "energy": 0.6,
+    "instrumentalness": 0,
+    "key": 11,
+    "liveness": 0.07,
+    "loudness": -4.37,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 145.99,
+    "timeSignature": 4,
+    "valence": 0.54
+  },
+  "composers": [
+    "清水依与吏"
+  ],
+  "copyright": "℗ 2019 UNIVERSAL MUSIC LLC",
+  "creditName": "back number",
+  "credits": [
+    {
+      "name": "Iyori Shimizu",
+      "roles": [
+        "backing vocals",
+        "vocals",
+        "guitar",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "148991bc-f72f-4e8d-9790-9830d0fbdb9c"
+    },
+    {
+      "name": "Takeshi Kobayashi",
+      "roles": [
+        "producer",
+        "keyboard",
+        "recording arranger",
+        "strings arranger"
+      ],
+      "uuid": "d7490344-d3a6-4121-a52f-d30c75107b17"
+    },
+    {
+      "name": "Rieko Kohno",
+      "roles": [
+        "viola"
+      ],
+      "uuid": "89b717df-b1ca-45bf-a2c8-fc6e70ce98a7"
+    },
+    {
+      "name": "清水依与吏 (Iyori Shimizu)",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "24d9b310-6679-493a-8113-cea3eaf1c6c6"
+    },
+    {
+      "name": "​back number",
+      "roles": [
+        "recording arranger"
+      ],
+      "uuid": "86aaa44c-7e31-4d14-ba4f-703763c11f28"
+    },
+    {
+      "name": "Yuki Nanjo",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "54999077-cedb-47bc-8b8a-bb9c28893d16"
+    },
+    {
+      "name": "Miho Shimokawa",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "f4e32fee-9ba3-47d3-aec6-bdc7ade8d33c"
+    },
+    {
+      "name": "Junko Suzuki",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "5961c15b-9924-46cb-a57c-83a6d471000e"
+    },
+    {
+      "name": "Moemi Harada",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "709a4e8d-9951-44be-9e81-1d5fe4c6bb51"
+    },
+    {
+      "name": "Keiko Shiga",
+      "roles": [
+        "viola"
+      ],
+      "uuid": "7f1163e2-c7de-4a91-833a-8ba77935c5be"
+    },
+    {
+      "name": "Udai Shika Strings",
+      "roles": [
+        "strings"
+      ],
+      "uuid": "e8f9f8f6-a586-4636-95d4-0e89e5d55b64"
+    },
+    {
+      "name": "Mikiko Ise",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "40152d07-eb18-40ee-bf2d-5124e0991654"
+    },
+    {
+      "name": "Shoko Oki",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "67a78008-ff9e-488d-a5f7-5b452719d987"
+    },
+    {
+      "name": "ShikaUdai",
+      "roles": [
+        "cello",
+        "strings arranger"
+      ],
+      "uuid": "5aa34efd-a320-400f-b382-74a530eaf342"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 258,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    },
+    {
+      "root": "j-pop",
+      "sub": [
+        "j-pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/d/c/6/8f492cde-36cd-11e9-b8d3-549f35141000.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO01806756"
+  },
+  "iswcs": [
+    "T9284616860"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/back-number/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/b/d/11e81bbe-ddb6-6dbc-8d84-a0369fe50396.jpg",
+      "name": "back number",
+      "slug": "back-number",
+      "uuid": "11e81bbe-ddb6-6dbc-8d84-a0369fe50396"
+    }
+  ],
+  "name": "Happy Birthday",
+  "producers": [
+    "Takeshi Kobayashi"
+  ],
+  "releaseDate": "2019-02-27T00:00:00+00:00",
+  "uuid": "8f492cde-36cd-11e9-b8d3-549f35141000"
+}

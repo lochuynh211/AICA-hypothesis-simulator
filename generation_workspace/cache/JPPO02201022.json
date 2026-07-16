@@ -1,0 +1,164 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/9d31ef95-4f35-4765-8bb7-e95a95158851/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/sekai-no-owari/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/0/7/11e81bca-670b-7200-9e64-a0369fe50396.jpg",
+      "name": "SEKAI NO OWARI",
+      "slug": "sekai-no-owari",
+      "uuid": "11e81bca-670b-7200-9e64-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.2,
+    "danceability": 0.75,
+    "energy": 0.85,
+    "instrumentalness": 0,
+    "key": 10,
+    "liveness": 0.18,
+    "loudness": -5.39,
+    "mode": 0,
+    "speechiness": 0.13,
+    "tempo": 117.97,
+    "timeSignature": 4,
+    "valence": 0.91
+  },
+  "composers": [
+    "FUKASE",
+    "Nakajin"
+  ],
+  "copyright": "A Virgin Music release; ℗ 2022 UNIVERSAL MUSIC LLC",
+  "creditName": "SEKAI NO OWARI",
+  "credits": [
+    {
+      "name": "Chris Gehringer",
+      "roles": [
+        "mastering",
+        "studio personnel"
+      ],
+      "uuid": "09925f38-1606-4918-9c39-a5be4a5de704"
+    },
+    {
+      "name": "Kazuya Maeda",
+      "roles": [
+        "mix",
+        "recording",
+        "studio personnel"
+      ],
+      "uuid": "181a4a7a-2104-4f15-becc-9d67c538ca43"
+    },
+    {
+      "name": "中島真一 (Shinichi Nakashima)",
+      "roles": [
+        "producer",
+        "guitar",
+        "composer",
+        "bass",
+        "programming"
+      ],
+      "uuid": "d4ee3f3d-b73f-461f-9ac5-526a4aa8c2e5"
+    },
+    {
+      "name": "Saori",
+      "roles": [
+        "piano"
+      ],
+      "uuid": "a72e0b95-af45-4d4a-bdc7-fe5346af203e"
+    },
+    {
+      "name": "Fukase",
+      "roles": [
+        "writer",
+        "vocals",
+        "lyricist"
+      ],
+      "uuid": "044821b7-4b1e-4910-9eeb-1b4e45e13e41"
+    },
+    {
+      "name": "DJ Love",
+      "roles": [
+        "dj"
+      ],
+      "uuid": "a9ecc076-0ce5-4829-8a17-285e518a3ebe"
+    },
+    {
+      "name": "SEKAI NO OWARI",
+      "roles": [
+        "producer",
+        "recording arranger"
+      ],
+      "uuid": "91b6db0c-71ea-4f24-b90f-68f425ac4020"
+    },
+    {
+      "name": "Mike Marrington",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "72e25738-e5fb-44e2-9030-e094b361ff59"
+    },
+    {
+      "name": "Saori",
+      "roles": [
+        "piano"
+      ],
+      "uuid": "143869d0-7bf1-4984-b356-7beed7184c09"
+    },
+    {
+      "name": "Nakajin",
+      "roles": [
+        "guitar",
+        "composer",
+        "bass",
+        "programming"
+      ],
+      "uuid": "5f895edd-4a9e-4858-86c8-083405319d68"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 253,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/5/3/f/9d31ef95-4f35-4765-8bb7-e95a95158851.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO02201022"
+  },
+  "iswcs": [
+    "T3104641950",
+    "T3103361140"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    },
+    {
+      "name": "Virgin",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/sekai-no-owari/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/0/7/11e81bca-670b-7200-9e64-a0369fe50396.jpg",
+      "name": "SEKAI NO OWARI",
+      "slug": "sekai-no-owari",
+      "uuid": "11e81bca-670b-7200-9e64-a0369fe50396"
+    }
+  ],
+  "name": "Habit",
+  "producers": [
+    "SEKAI NO OWARI"
+  ],
+  "releaseDate": "2022-04-28T00:00:00+00:00",
+  "uuid": "9d31ef95-4f35-4765-8bb7-e95a95158851"
+}

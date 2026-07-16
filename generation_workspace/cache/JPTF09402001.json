@@ -1,0 +1,95 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8261a-dfff-58c0-88be-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mr-children/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/9/1/11e81bcb-7190-89e4-bcb4-a0369fe50396.jpg",
+      "name": "Mr.Children",
+      "slug": "mr-children",
+      "uuid": "11e81bcb-7190-89e4-bcb4-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.16,
+    "danceability": 0.61,
+    "energy": 0.66,
+    "instrumentalness": 0,
+    "key": 4,
+    "liveness": 0.28,
+    "loudness": -6.53,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 119.82,
+    "timeSignature": 4,
+    "valence": 0.66
+  },
+  "composers": [
+    "Kazutoshi Sakurai"
+  ],
+  "copyright": "(P) 1994 TOY'S FACTORY",
+  "creditName": "Mr.Children",
+  "credits": [
+    {
+      "name": "Takeshi Kobayashi",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "d7490344-d3a6-4121-a52f-d30c75107b17"
+    },
+    {
+      "name": "Mr.Children",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "95b33fa9-0977-4837-b7d0-023f9958d17c"
+    },
+    {
+      "name": "平沼浩司",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "69010b34-f19f-4fa7-8100-377214477f9b"
+    }
+  ],
+  "distributor": "",
+  "duration": 344,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/f/f/f/11e8261a-dfff-58c0-88be-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPTF09402001"
+  },
+  "iswcs": [
+    "T1011862465"
+  ],
+  "labels": [
+    {
+      "name": "TOY'S FACTORY",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mr-children/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/9/1/11e81bcb-7190-89e4-bcb4-a0369fe50396.jpg",
+      "name": "Mr.Children",
+      "slug": "mr-children",
+      "uuid": "11e81bcb-7190-89e4-bcb4-a0369fe50396"
+    }
+  ],
+  "name": "innocent world",
+  "producers": [],
+  "releaseDate": "1994-06-01T00:00:00+00:00",
+  "uuid": "11e8261a-dfff-58c0-88be-aa1c026db3d8"
+}

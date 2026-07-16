@@ -1,0 +1,196 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/3aa207de-aa25-11e9-8b38-549f35141000/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/the-dave-brubeck-quartet/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/e/8/11e81bc2-f8ea-0b1c-bcb8-a0369fe50396.jpg",
+      "name": "The Dave Brubeck Quartet",
+      "slug": "the-dave-brubeck-quartet",
+      "uuid": "11e81bc2-f8ea-0b1c-bcb8-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.54,
+    "danceability": 0.45,
+    "energy": 0.26,
+    "instrumentalness": 0,
+    "key": 8,
+    "liveness": 0.07,
+    "loudness": -13.19,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 174.32,
+    "timeSignature": 5,
+    "valence": 0.6
+  },
+  "composers": [
+    "Paul Desmond"
+  ],
+  "copyright": "℗ 2024 Blue Ocean Record",
+  "creditName": "The Dave Brubeck Quartet",
+  "credits": [
+    {
+      "name": "Teo Macero",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "e146789f-514f-4eb0-898f-af1a1ec25ba9"
+    },
+    {
+      "name": "Mark Wilder",
+      "roles": [
+        "mix",
+        "mastering"
+      ],
+      "uuid": "749ded91-f1e9-4c8e-ae9c-98d21df546aa"
+    },
+    {
+      "name": "Paul Desmond",
+      "roles": [
+        "composer",
+        "writer",
+        "alto saxophone"
+      ],
+      "uuid": "ba74fd00-b6fc-401c-9515-ae10bfef58f0"
+    },
+    {
+      "name": "Brubeck Dave",
+      "roles": [
+        "piano",
+        "executive producer"
+      ],
+      "uuid": "c963b9bd-9445-4295-bc6a-3ac3f9184370"
+    },
+    {
+      "name": "Eugene Wright",
+      "roles": [
+        "bass"
+      ],
+      "uuid": "c0e18230-50b7-47b4-8fe0-6e71fb061f78"
+    },
+    {
+      "name": "Joe Morello",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "c5c8de20-067e-492c-bbfa-a42a8e21499e"
+    },
+    {
+      "name": "Teo Macero and His Orchestra",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "8f1ff2bf-aa2d-4bfe-8999-3f98496a490f"
+    },
+    {
+      "name": "George Avakian",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "b4643fd8-ff49-4759-91df-e648bf9e3eaa"
+    },
+    {
+      "name": "Gene Wright",
+      "roles": [
+        "bass"
+      ],
+      "uuid": "fa8b2ddb-69f1-46f8-9984-cc4afc49788f"
+    },
+    {
+      "name": "Rob Schwarz",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "8eef375a-955a-405c-b41d-1416a4f4ba34"
+    },
+    {
+      "name": "Nedra Olds-Neal",
+      "roles": [
+        "reissue producer"
+      ],
+      "uuid": "61a95cda-1caa-4fa5-b1ac-48f491287287"
+    },
+    {
+      "name": "Dave Brubeck",
+      "roles": [
+        "piano"
+      ],
+      "uuid": "21f057d0-42be-4821-b664-088848735578"
+    },
+    {
+      "name": "Paul Desmond",
+      "roles": [
+        "composer",
+        "alto  saxophone"
+      ],
+      "uuid": "54a83248-e7a5-423f-919c-cbb34af9d33b"
+    },
+    {
+      "name": "Eugene Wright",
+      "roles": [
+        "bass"
+      ],
+      "uuid": "a187f28f-a56b-4243-9363-9a300ba17873"
+    }
+  ],
+  "distributor": "Believe",
+  "duration": 325,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz"
+      ]
+    },
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "blues",
+      "sub": [
+        "blues"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/5/2/a/3aa207de-aa25-11e9-8b38-549f35141000.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USSM15900108"
+  },
+  "iswcs": [
+    "T9036059184"
+  ],
+  "labels": [
+    {
+      "name": "Blue Ocean Record",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/the-dave-brubeck-quartet/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/e/8/11e81bc2-f8ea-0b1c-bcb8-a0369fe50396.jpg",
+      "name": "The Dave Brubeck Quartet",
+      "slug": "the-dave-brubeck-quartet",
+      "uuid": "11e81bc2-f8ea-0b1c-bcb8-a0369fe50396"
+    }
+  ],
+  "name": "Take Five",
+  "producers": [
+    "Teo Macero"
+  ],
+  "releaseDate": "2024-01-26T00:00:00+00:00",
+  "uuid": "3aa207de-aa25-11e9-8b38-549f35141000"
+}

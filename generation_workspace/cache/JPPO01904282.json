@@ -1,0 +1,74 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/0fae6550-0a0a-11ea-a7f9-549f35141000/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/fujii-kaze-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/1/a1ec9e8b-f11f-426c-8930-a82f86ac3d84.jpg",
+      "name": "Fujii Kaze",
+      "slug": "fujii-kaze-1",
+      "uuid": "a1ec9e8b-f11f-426c-8930-a82f86ac3d84"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.36,
+    "danceability": 0.64,
+    "energy": 0.71,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.17,
+    "loudness": -7.23,
+    "mode": 1,
+    "speechiness": 0.12,
+    "tempo": 89.98,
+    "timeSignature": 4,
+    "valence": 0.69
+  },
+  "composers": [
+    "Fujii Kaze"
+  ],
+  "copyright": "A UNIVERSAL SIGMA / HEHN RECORDS release; ℗ 2019 UNIVERSAL MUSIC LLC",
+  "creditName": "Fujii Kaze",
+  "credits": [],
+  "distributor": "Universal",
+  "duration": 320,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/a/0/a/0fae6550-0a0a-11ea-a7f9-549f35141000.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO01904282"
+  },
+  "iswcs": [
+    "T3000238433"
+  ],
+  "labels": [
+    {
+      "name": "HEHN",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/fujii-kaze-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/1/a1ec9e8b-f11f-426c-8930-a82f86ac3d84.jpg",
+      "name": "Fujii Kaze",
+      "slug": "fujii-kaze-1",
+      "uuid": "a1ec9e8b-f11f-426c-8930-a82f86ac3d84"
+    }
+  ],
+  "name": "何なんw",
+  "producers": [
+    "Yaffle"
+  ],
+  "releaseDate": "2019-11-18T00:00:00+00:00",
+  "uuid": "0fae6550-0a0a-11ea-a7f9-549f35141000"
+}

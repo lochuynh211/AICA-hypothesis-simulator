@@ -1,0 +1,212 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/f49f434d-a705-4d1c-98f7-b3c293edd45c/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/creepy-nuts/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/2/3/11e81bc7-532a-996c-9615-a0369fe50396.jpg",
+      "name": "Creepy Nuts",
+      "slug": "creepy-nuts",
+      "uuid": "11e81bc7-532a-996c-9615-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.06,
+    "danceability": 0.52,
+    "energy": 0.84,
+    "instrumentalness": 0.06,
+    "key": 1,
+    "liveness": 0.16,
+    "loudness": -6.91,
+    "mode": 1,
+    "speechiness": 0.35,
+    "tempo": 169.75,
+    "timeSignature": 4,
+    "valence": 0.64
+  },
+  "composers": [
+    "R-shitei",
+    "DJ Matsunaga"
+  ],
+  "copyright": "(P) 2023(3),2024(6,11-12),2025(1-2,4-5,7-10,13-15) Sony Music Labels Inc.",
+  "creditName": "Creepy Nuts",
+  "credits": [
+    {
+      "name": "Mike Bozzi",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "52318d94-2904-4ce6-9fa5-55a2c5413b9d"
+    },
+    {
+      "name": "Masahito Komori",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "831a6169-2c27-4da7-a010-4f0a2d9b89eb"
+    },
+    {
+      "name": "小森雅仁 (Masahito Komori)",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "9f9fff96-db5b-4c0b-8e06-32b46d491826"
+    },
+    {
+      "name": "DJ Matsunaga",
+      "roles": [
+        "composer",
+        "arranger",
+        "producer"
+      ],
+      "uuid": "2a7480ad-90dd-4a02-ad29-72b27c5310bc"
+    },
+    {
+      "name": "R-shitei",
+      "roles": [
+        "lyricist",
+        "vocals"
+      ],
+      "uuid": "030a17e5-3a7d-42f0-9685-aff5710cbdb2"
+    },
+    {
+      "name": "山崎翼 (Tsubasa Yamazaki)",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "2c54dc62-0dd7-445d-8903-77da3fd704bb"
+    },
+    {
+      "name": "Masaki Watanabe",
+      "roles": [
+        "video director"
+      ],
+      "uuid": "e9d83dd1-a5ad-44c3-b44b-e913c36b1822"
+    },
+    {
+      "name": "高根晋作 (Shinsaku Takane)",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "7beec78b-9615-4519-84f6-0f6908cf4300"
+    },
+    {
+      "name": "R-指定 (R-Shitei)",
+      "roles": [
+        "writer",
+        "vocals"
+      ],
+      "uuid": "07018bcc-dc4f-42d2-a1f3-4ca74e4c2c5e"
+    },
+    {
+      "name": "Mao Suzuki",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "914d11aa-1ca2-422d-aff8-dc4222839bc6"
+    },
+    {
+      "name": "磯貝一樹 (Kazuki Isogai)",
+      "roles": [
+        "guitar",
+        "guitar arranger"
+      ],
+      "uuid": "377ccfc8-7e62-4c06-bbbd-fcbfb94eeb9c"
+    },
+    {
+      "name": "ダンダダン (DAN DA DAN)",
+      "roles": [
+        "tie-in"
+      ],
+      "uuid": "58318a7a-16da-41c5-8356-0bb85d077ea2"
+    },
+    {
+      "name": "Koichi Iwamoto",
+      "roles": [
+        "video production supervisor"
+      ],
+      "uuid": "0ae91ee8-4efa-4cd6-874d-eb5be3aeed21"
+    },
+    {
+      "name": "Billy Murray",
+      "roles": [
+        "vocal samples"
+      ],
+      "uuid": "270d3bed-5fdd-4fa5-9585-a5ab2c1942a6"
+    },
+    {
+      "name": "Takuma Saeki",
+      "roles": [
+        "video lighting"
+      ],
+      "uuid": "a2cf6de1-5476-4ce8-adf0-e3c4b8bc2831"
+    },
+    {
+      "name": "Shuho Teramura",
+      "roles": [
+        "video director of photography"
+      ],
+      "uuid": "44d8c680-80e3-472a-a271-529dd326ce31"
+    },
+    {
+      "name": "河島遼太郎 (Ryotaro Kawashima)",
+      "roles": [
+        "art direction"
+      ],
+      "uuid": "2a028836-6fee-4a27-a54c-170b25183868"
+    },
+    {
+      "name": "Science SARU",
+      "roles": [
+        "video animator"
+      ],
+      "uuid": "9f36fa0b-9671-456b-b311-c0df4289594b"
+    },
+    {
+      "name": "R-shitei",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "32baf63c-9add-43f1-aabc-0c376623427c"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 186,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/5/0/7/f49f434d-a705-4d1c-98f7-b3c293edd45c.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU902402594"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/creepy-nuts/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/2/3/11e81bc7-532a-996c-9615-a0369fe50396.jpg",
+      "name": "Creepy Nuts",
+      "slug": "creepy-nuts",
+      "uuid": "11e81bc7-532a-996c-9615-a0369fe50396"
+    }
+  ],
+  "name": "Otonoke",
+  "producers": [
+    "DJ松永 (DJ Matsunaga)"
+  ],
+  "releaseDate": "2025-02-05T00:00:00+00:00",
+  "uuid": "f49f434d-a705-4d1c-98f7-b3c293edd45c"
+}

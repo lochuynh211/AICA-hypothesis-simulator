@@ -1,0 +1,75 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82671-da5a-7a10-b179-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/joe-hisaishi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/c/8/ecb51a50-b8cd-11e8-b753-525400009efb.jpg",
+      "name": "Joe Hisaishi",
+      "slug": "joe-hisaishi",
+      "uuid": "ecb51a50-b8cd-11e8-b753-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.39,
+    "danceability": 0.82,
+    "energy": 0.4,
+    "instrumentalness": 0,
+    "key": 5,
+    "liveness": 0.1,
+    "loudness": -8.35,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 120.05,
+    "timeSignature": 4,
+    "valence": 0.78
+  },
+  "composers": [
+    "Joe Hisaishi",
+    "近藤勝也",
+    "宮崎駿（補作詞）"
+  ],
+  "copyright": "2007 Studio Ghibli Inc.",
+  "creditName": "Joe Hisaishi",
+  "credits": [],
+  "distributor": "Tokuma Japan Communications",
+  "duration": 166,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/a/5/a/11e82671-da5a-7a10-b179-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPI800700180"
+  },
+  "iswcs": [
+    "T9097460769",
+    "T1019094541"
+  ],
+  "labels": [
+    {
+      "name": "Studio Ghibli",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/joe-hisaishi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/c/8/ecb51a50-b8cd-11e8-b753-525400009efb.jpg",
+      "name": "Joe Hisaishi",
+      "slug": "joe-hisaishi",
+      "uuid": "ecb51a50-b8cd-11e8-b753-525400009efb"
+    }
+  ],
+  "name": "崖の上のポニョ",
+  "producers": [],
+  "releaseDate": "2007-12-05T00:00:00+00:00",
+  "uuid": "11e82671-da5a-7a10-b179-aa1c026db3d8"
+}

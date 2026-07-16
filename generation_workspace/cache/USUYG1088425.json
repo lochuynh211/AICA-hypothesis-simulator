@@ -1,0 +1,194 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/e2596420-e84d-44df-bb27-d27f4b7d77ae/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/anderson-paak/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/0/6/11e81bd3-560d-fc80-ac27-a0369fe50396.jpg",
+      "name": "Anderson .Paak",
+      "slug": "anderson-paak",
+      "uuid": "11e81bd3-560d-fc80-ac27-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.27,
+    "danceability": 0.84,
+    "energy": 0.9,
+    "instrumentalness": 0.02,
+    "key": 8,
+    "liveness": 0.3,
+    "loudness": -7.14,
+    "mode": 1,
+    "speechiness": 0.1,
+    "tempo": 98.4,
+    "timeSignature": 4,
+    "valence": 0.93
+  },
+  "composers": [
+    "Anderson .Paak",
+    "Cottrell Tony Louis"
+  ],
+  "copyright": "2016 OBE / Apeshit, Inc / EMPIRE",
+  "creditName": "Anderson .Paak",
+  "credits": [
+    {
+      "name": "Brandon Paak Anderson",
+      "roles": [
+        "songwriter",
+        "producer"
+      ],
+      "uuid": "e1452a64-1b1e-4997-9c45-91eb6ead50a3"
+    },
+    {
+      "name": "Tony Louis Cottrell",
+      "roles": [
+        "producer",
+        "writer",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "01220557-88b1-404b-ba05-047553ed101b"
+    },
+    {
+      "name": "Tony Cottrell",
+      "roles": [
+        "songwriter",
+        "producer"
+      ],
+      "uuid": "faddfdaa-0dd8-4b87-81a4-09c9539a1a05"
+    },
+    {
+      "name": "Anderson .Paak",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "4c9882a6-8334-4ea0-95ba-3ba48d98cd4a"
+    },
+    {
+      "name": "Nima Etminan",
+      "roles": [
+        "product manager"
+      ],
+      "uuid": "38988017-b3aa-4739-a782-acd68a2b1ef2"
+    },
+    {
+      "name": "Lola Romero",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "301cb0b2-5c30-448c-a865-9e2fe76910a9"
+    },
+    {
+      "name": "Cameron Brown",
+      "roles": [
+        "producer",
+        "guitar"
+      ],
+      "uuid": "0686ac8a-0944-4f0c-9252-77bc989eeca5"
+    },
+    {
+      "name": "Brian Cockerham",
+      "roles": [
+        "producer",
+        "alto vocals"
+      ],
+      "uuid": "526d403c-e848-4ab3-90b8-3c0680f841ba"
+    },
+    {
+      "name": "Hi-Tek",
+      "roles": [
+        "producer",
+        "writer",
+        "mix"
+      ],
+      "uuid": "374198bc-6412-496e-9a36-d05d8f31df51"
+    },
+    {
+      "name": "Cameron Brown",
+      "roles": [
+        "guitar"
+      ],
+      "uuid": "2711fce8-01a6-4203-8e3f-68ed4cad01df"
+    },
+    {
+      "name": "Brian Cockerham",
+      "roles": [
+        "bass"
+      ],
+      "uuid": "3d4a59ca-3a32-4ae0-a7af-31537550bb37"
+    }
+  ],
+  "distributor": "Empire",
+  "duration": 168,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    },
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b",
+        "r&b, funk & soul"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "soul",
+      "sub": [
+        "contemporary soul",
+        "soul"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/d/4/8/e2596420-e84d-44df-bb27-d27f4b7d77ae.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USUYG1088425"
+  },
+  "iswcs": [
+    "T9187866520"
+  ],
+  "labels": [
+    {
+      "name": "EMPIRE",
+      "type": "Other independent labels: \"Indie\""
+    },
+    {
+      "name": "OBE",
+      "type": "Self released"
+    },
+    {
+      "name": "Apeshit",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/anderson-paak/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/0/6/11e81bd3-560d-fc80-ac27-a0369fe50396.jpg",
+      "name": "Anderson .Paak",
+      "slug": "anderson-paak",
+      "uuid": "11e81bd3-560d-fc80-ac27-a0369fe50396"
+    }
+  ],
+  "name": "Come Down",
+  "producers": [
+    "B. Anderson Paak",
+    "T. Cottrell",
+    "C. Brown",
+    "B. Cockerham"
+  ],
+  "releaseDate": "2016-01-15T00:00:00+00:00",
+  "uuid": "e2596420-e84d-44df-bb27-d27f4b7d77ae"
+}

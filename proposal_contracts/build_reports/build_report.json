@@ -1,0 +1,92 @@
+{
+  "candidate_source": "isrc_resolved",
+  "loop": 29,
+  "new_vs_skipped": {
+    "accepted": 301,
+    "miss": 137,
+    "by_loop": {
+      "loop1:miss": 11,
+      "loop2:accepted": 25,
+      "loop2:miss": 10,
+      "loop3:miss": 16,
+      "loop4:accepted": 19,
+      "loop5:miss": 2,
+      "loop6:accepted": 24,
+      "loop7:miss": 1,
+      "loop8:accepted": 16,
+      "loop8:miss": 1,
+      "loop9:accepted": 20,
+      "loop9:miss": 1,
+      "loop10:miss": 1,
+      "loop11:accepted": 16,
+      "loop11:miss": 1,
+      "loop12:miss": 13,
+      "loop13:accepted": 20,
+      "loop13:miss": 2,
+      "loop14:miss": 10,
+      "loop15:accepted": 16,
+      "loop15:miss": 5,
+      "loop16:miss": 1,
+      "loop17:accepted": 19,
+      "loop17:miss": 2,
+      "loop18:miss": 14,
+      "loop19:accepted": 17,
+      "loop19:miss": 1,
+      "loop20:miss": 14,
+      "loop21:accepted": 12,
+      "loop21:miss": 2,
+      "loop22:miss": 6,
+      "loop23:accepted": 20,
+      "loop23:miss": 2,
+      "loop24:miss": 1,
+      "loop25:accepted": 28,
+      "loop25:miss": 5,
+      "loop26:miss": 5,
+      "loop27:accepted": 25,
+      "loop27:miss": 1,
+      "loop28:miss": 9,
+      "loop29:accepted": 24
+    }
+  },
+  "soundcharts_calls": 403,
+  "probe_result": {},
+  "repairs": [],
+  "coverage_checklist": {
+    "required": 36,
+    "covered": 29,
+    "unmet": [
+      "E-hi_T-hi_P-sf",
+      "E-hi_T-lo_P-sf",
+      "E-hi_T-md_P-sf",
+      "E-lo_T-hi_P-dv",
+      "E-lo_T-hi_P-sf",
+      "E-lo_T-lo_P-sf",
+      "E-lo_T-md_P-sf"
+    ],
+    "passed": false
+  },
+  "agreement_stats": {
+    "agree": 4,
+    "disagree": 4,
+    "disagreements": [
+      "tc-03",
+      "tc-04",
+      "tc-05",
+      "tc-07"
+    ]
+  },
+  "errors": [
+    {
+      "code": "audio_unavailable",
+      "count": 4
+    },
+    {
+      "code": "language_mismatch",
+      "count": 29
+    },
+    {
+      "code": "song_not_found_in_sources",
+      "count": 104
+    }
+  ]
+}

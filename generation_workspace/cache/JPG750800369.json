@@ -1,0 +1,91 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8267d-3b07-abf2-9493-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/may-n/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/c/5/11e81bd0-c5c0-7bc8-a191-a0369fe50396.jpg",
+      "name": "May'n",
+      "slug": "may-n",
+      "uuid": "11e81bd0-c5c0-7bc8-a191-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/megumi-nakajima-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/5/6/d2090fb4-c655-11e8-8bb7-549f35161576.jpg",
+      "name": "Megumi Nakajima",
+      "slug": "megumi-nakajima-1",
+      "uuid": "d2090fb4-c655-11e8-8bb7-549f35161576"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.01,
+    "danceability": 0.48,
+    "energy": 0.88,
+    "instrumentalness": 0,
+    "key": 9,
+    "liveness": 0.09,
+    "loudness": -4.17,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 145,
+    "timeSignature": 4,
+    "valence": 0.49
+  },
+  "composers": [
+    "Yoko Kanno",
+    "Gabriela Robin"
+  ],
+  "copyright": "FlyingDog, Inc.",
+  "creditName": "May'n & Megumi Nakajima",
+  "credits": [
+    {
+      "name": "Yoko Kanno",
+      "roles": [
+        "composer",
+        "arranger",
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "9dcc957c-cf3d-4be1-8643-82daa61ffcd9"
+    },
+    {
+      "name": "Gabriela Robin",
+      "roles": [
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "a48c3038-ad89-41df-80ed-dcf733d8f8a6"
+    }
+  ],
+  "distributor": "",
+  "duration": 303,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/7/0/b/11e8267d-3b07-abf2-9493-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPG750800369"
+  },
+  "iswcs": [
+    "T1019149825"
+  ],
+  "labels": [
+    {
+      "name": "FlyingDog",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [],
+  "name": "ライオン",
+  "producers": [],
+  "releaseDate": "2008-08-20T00:00:00+00:00",
+  "uuid": "11e8267d-3b07-abf2-9493-aa1c026db3d8"
+}

@@ -1,0 +1,91 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82629-9116-03da-9947-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/seiko-matsuda/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/d/8/d6c290e0-b8d4-11e8-842a-525400009efb.jpg",
+      "name": "Seiko Matsuda",
+      "slug": "seiko-matsuda",
+      "uuid": "d6c290e0-b8d4-11e8-842a-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.73,
+    "danceability": 0.59,
+    "energy": 0.4,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.12,
+    "loudness": -8.51,
+    "mode": 1,
+    "speechiness": 0.02,
+    "tempo": 83.6,
+    "timeSignature": 4,
+    "valence": 0.44
+  },
+  "composers": [
+    "Karuho Kureta",
+    "Takashi Matsumoto"
+  ],
+  "copyright": "(P)1980 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "Seiko Matsuda",
+  "credits": [
+    {
+      "name": "Karuho Kureta",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "3f6835a4-ce0d-4031-93fc-7e4ab2699985"
+    },
+    {
+      "name": "Takashi Matsumoto",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "c9b162d4-27b5-4684-aec1-b063978c5bc1"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 218,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian",
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/6/1/1/11e82629-9116-03da-9947-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPSR08119700"
+  },
+  "iswcs": [
+    "T1010086958"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/seiko-matsuda/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/d/8/d6c290e0-b8d4-11e8-842a-525400009efb.jpg",
+      "name": "Seiko Matsuda",
+      "slug": "seiko-matsuda",
+      "uuid": "d6c290e0-b8d4-11e8-842a-525400009efb"
+    }
+  ],
+  "name": "赤いスイートピー",
+  "producers": [
+    "Unknown (For Japan Use)"
+  ],
+  "releaseDate": "1980-01-01T00:00:00+00:00",
+  "uuid": "11e82629-9116-03da-9947-a0369fe50396"
+}

@@ -1,0 +1,72 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826bd-3419-b02a-8894-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aimer/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/9/4/11e81bbc-b492-c5b8-b4b7-a0369fe50396.jpg",
+      "name": "Aimer",
+      "slug": "aimer",
+      "uuid": "11e81bbc-b492-c5b8-b4b7-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.06,
+    "danceability": 0.35,
+    "energy": 0.69,
+    "instrumentalness": 0,
+    "key": 5,
+    "liveness": 0.06,
+    "loudness": -4.51,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 80.15,
+    "timeSignature": 4,
+    "valence": 0.18
+  },
+  "composers": [
+    "梶浦由記"
+  ],
+  "copyright": "(P) 2019 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "Aimer",
+  "credits": [],
+  "distributor": "Sony",
+  "duration": 371,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/9/1/4/11e826bd-3419-b02a-8894-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU901702650"
+  },
+  "iswcs": [
+    "T9234091920"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aimer/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/9/4/11e81bbc-b492-c5b8-b4b7-a0369fe50396.jpg",
+      "name": "Aimer",
+      "slug": "aimer",
+      "uuid": "11e81bbc-b492-c5b8-b4b7-a0369fe50396"
+    }
+  ],
+  "name": "花の唄",
+  "producers": [],
+  "releaseDate": "2019-04-09T00:00:00+00:00",
+  "uuid": "11e826bd-3419-b02a-8894-a0369fe50396"
+}

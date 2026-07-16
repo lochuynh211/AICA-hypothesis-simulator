@@ -1,0 +1,103 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e84108-7cfd-340a-9606-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/uru-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/e/5/11e81bcd-f5e7-a3b0-bc6b-a0369fe50396.jpg",
+      "name": "Uru",
+      "slug": "uru-1",
+      "uuid": "11e81bcd-f5e7-a3b0-bc6b-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.58,
+    "danceability": 0.43,
+    "energy": 0.63,
+    "instrumentalness": 0,
+    "key": 9,
+    "liveness": 0.11,
+    "loudness": -5.28,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 147.86,
+    "timeSignature": 4,
+    "valence": 0.34
+  },
+  "composers": [
+    "Uru",
+    "岩見直明"
+  ],
+  "copyright": "(P)2017 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "Uru",
+  "credits": [
+    {
+      "name": "Uru",
+      "roles": [
+        "lyricist",
+        "arranger"
+      ],
+      "uuid": "4b5f7015-c386-43f8-9066-f74fe8c86619"
+    },
+    {
+      "name": "Tomi Yo",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "47211a4b-5088-470f-bcb1-7ad14b2621d7"
+    },
+    {
+      "name": "Hidenori",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "fe5eb3e5-79bb-4ab9-aae3-e378ed3d95f2"
+    },
+    {
+      "name": "Naoaki Iwami",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "64571908-a4e6-42aa-bd2e-7bc353d79260"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 336,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/d/f/c/11e84108-7cfd-340a-9606-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU901700058"
+  },
+  "iswcs": [
+    "T9214672250"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/uru-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/e/5/11e81bcd-f5e7-a3b0-bc6b-a0369fe50396.jpg",
+      "name": "Uru",
+      "slug": "uru-1",
+      "uuid": "11e81bcd-f5e7-a3b0-bc6b-a0369fe50396"
+    }
+  ],
+  "name": "Freesia",
+  "producers": [],
+  "releaseDate": "2017-02-15T00:00:00+00:00",
+  "uuid": "11e84108-7cfd-340a-9606-aa1c026db3d8"
+}

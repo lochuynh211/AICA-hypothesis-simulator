@@ -1,0 +1,78 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826d6-f1f9-7846-844b-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/linked-horizon/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/9/d/11e81bcd-ad91-d856-8c63-a0369fe50396.jpg",
+      "name": "Linked Horizon",
+      "slug": "linked-horizon",
+      "uuid": "11e81bcd-ad91-d856-8c63-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.07,
+    "danceability": 0.32,
+    "energy": 0.99,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.63,
+    "loudness": -3.86,
+    "mode": 0,
+    "speechiness": 0.27,
+    "tempo": 180.64,
+    "timeSignature": 4,
+    "valence": 0.07
+  },
+  "composers": [
+    "REVO"
+  ],
+  "copyright": "PONY CANYON, RAP-PRODUCTS, INC.",
+  "creditName": "Linked Horizon",
+  "credits": [
+    {
+      "name": "進撃の巨人 (Attack on Titan)",
+      "roles": [
+        "tie-in"
+      ],
+      "uuid": "7b31b5a6-fa8f-434e-a75a-7a9259a22d79"
+    }
+  ],
+  "distributor": "Pony Canyon",
+  "duration": 317,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/9/f/1/11e826d6-f1f9-7846-844b-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPC01300723"
+  },
+  "iswcs": [
+    "T9257543332",
+    "T9107448704"
+  ],
+  "labels": [
+    {
+      "name": "RAP-PRODUCTS",
+      "type": "unknown"
+    },
+    {
+      "name": "PONY CANYON",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/linked-horizon/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/9/d/11e81bcd-ad91-d856-8c63-a0369fe50396.jpg",
+      "name": "Linked Horizon",
+      "slug": "linked-horizon",
+      "uuid": "11e81bcd-ad91-d856-8c63-a0369fe50396"
+    }
+  ],
+  "name": "Guren No Yumiya",
+  "producers": [],
+  "releaseDate": "2013-07-10T00:00:00+00:00",
+  "uuid": "11e826d6-f1f9-7846-844b-a0369fe50396"
+}

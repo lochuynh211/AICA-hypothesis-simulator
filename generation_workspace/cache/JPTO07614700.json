@@ -1,0 +1,84 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/1582ec79-d9ad-4e85-a390-ae4abd86a8be/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kyu-sakamoto/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/d/8/f5bb2bf0-b8d5-11e8-905c-525400009efb.jpg",
+      "name": "Kyu Sakamoto",
+      "slug": "kyu-sakamoto",
+      "uuid": "f5bb2bf0-b8d5-11e8-905c-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.8,
+    "danceability": 0.47,
+    "energy": 0.28,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.11,
+    "loudness": -10.86,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 144.88,
+    "timeSignature": 4,
+    "valence": 0.54
+  },
+  "composers": [
+    "Rokusuke Ei",
+    "Hachidai Nakamura"
+  ],
+  "copyright": "A USM JAPAN release; This Compilation ℗ 2011 UNIVERSAL MUSIC LLC",
+  "creditName": "Kyu Sakamoto",
+  "credits": [
+    {
+      "name": "Rokusuke Ei",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "5282c7fa-3fb2-4081-8a0a-629ea05d309b"
+    },
+    {
+      "name": "Hachidai Nakamura",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "bff96391-0560-4b9b-9b72-b90113a5fd4c"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 188,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/d/a/9/1582ec79-d9ad-4e85-a390-ae4abd86a8be.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPTO07614700"
+  },
+  "iswcs": [
+    "T0112273989",
+    "T1010728137"
+  ],
+  "labels": [
+    {
+      "name": "Usm",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kyu-sakamoto/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/d/8/f5bb2bf0-b8d5-11e8-905c-525400009efb.jpg",
+      "name": "Kyu Sakamoto",
+      "slug": "kyu-sakamoto",
+      "uuid": "f5bb2bf0-b8d5-11e8-905c-525400009efb"
+    }
+  ],
+  "name": "上を向いて歩こう",
+  "producers": [
+    "Koji Kusano"
+  ],
+  "releaseDate": "2011-07-13T00:00:00+00:00",
+  "uuid": "1582ec79-d9ad-4e85-a390-ae4abd86a8be"
+}

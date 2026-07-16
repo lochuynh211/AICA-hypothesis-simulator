@@ -1,0 +1,169 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/9df8bac6-651b-494c-8921-fe51dd7ff093/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/fujii-kaze-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/1/a1ec9e8b-f11f-426c-8930-a82f86ac3d84.jpg",
+      "name": "Fujii Kaze",
+      "slug": "fujii-kaze-1",
+      "uuid": "a1ec9e8b-f11f-426c-8930-a82f86ac3d84"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.01,
+    "danceability": 0.75,
+    "energy": 0.76,
+    "instrumentalness": 0,
+    "key": 2,
+    "liveness": 0.36,
+    "loudness": -6.83,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 116.98,
+    "timeSignature": 4,
+    "valence": 0.7
+  },
+  "composers": [
+    "Fujii Kaze"
+  ],
+  "copyright": "A UNIVERSAL SIGMA / HEHN RECORDS release; ℗ 2021 UNIVERSAL MUSIC LLC",
+  "creditName": "Fujii Kaze",
+  "credits": [
+    {
+      "name": "Masahito Komori",
+      "roles": [
+        "mix",
+        "recording"
+      ],
+      "uuid": "831a6169-2c27-4da7-a010-4f0a2d9b89eb"
+    },
+    {
+      "name": "Yaffle",
+      "roles": [
+        "producer",
+        "recording arranger",
+        "keyboard"
+      ],
+      "uuid": "8e6deba3-fbe9-47c2-9933-de1832085b74"
+    },
+    {
+      "name": "藤井 風 (Fujii Kaze)",
+      "roles": [
+        "songwriter",
+        "synthesizer",
+        "vocals",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "6523426b-ed5f-495f-808e-07d056388e1b"
+    },
+    {
+      "name": "Tsubasa Yamazaki",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "358ee53b-5bdf-41ff-8d2b-5c0b4fa1bce4"
+    },
+    {
+      "name": "Bunta Otsuki",
+      "roles": [
+        "electric guitar"
+      ],
+      "uuid": "11c5495d-433e-44ef-88aa-ca9a61b3e1ef"
+    },
+    {
+      "name": "Norihide Saji",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "a1e754fa-3ba6-4554-b136-16b763d833d1"
+    },
+    {
+      "name": "TAIKING",
+      "roles": [
+        "guitar"
+      ],
+      "uuid": "d9a84b86-3002-4625-8462-c9ae4bb072ae"
+    },
+    {
+      "name": "Emoh Les",
+      "roles": [
+        "backing vocals"
+      ],
+      "uuid": "77cfb30f-4958-4ca6-801f-6cc7cf192e46"
+    },
+    {
+      "name": "Ariwa",
+      "roles": [
+        "backing vocals"
+      ],
+      "uuid": "00d09a92-ba5f-4583-9e21-b3e90c22a043"
+    },
+    {
+      "name": "Naoki Kobayashi",
+      "roles": [
+        "bass guitar"
+      ],
+      "uuid": "b6740107-91cb-47b5-8029-7afdce025e9b"
+    },
+    {
+      "name": "Takashi Fukuoka",
+      "roles": [
+        "percussions"
+      ],
+      "uuid": "4db8bd17-a215-4d0a-894f-2cf1bba33d89"
+    },
+    {
+      "name": "Fujii Kaze",
+      "roles": [
+        "vocals",
+        "synthesizer",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "94c63015-e846-48ce-a8a7-3b02f48ffdb3"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 227,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/1/5/9df8bac6-651b-494c-8921-fe51dd7ff093.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO02100710"
+  },
+  "iswcs": [
+    "T3062604911"
+  ],
+  "labels": [
+    {
+      "name": "HEHN",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/fujii-kaze-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/1/a1ec9e8b-f11f-426c-8930-a82f86ac3d84.jpg",
+      "name": "Fujii Kaze",
+      "slug": "fujii-kaze-1",
+      "uuid": "a1ec9e8b-f11f-426c-8930-a82f86ac3d84"
+    }
+  ],
+  "name": "Kirari",
+  "producers": [
+    "Yaffle"
+  ],
+  "releaseDate": "2021-05-03T00:00:00+00:00",
+  "uuid": "9df8bac6-651b-494c-8921-fe51dd7ff093"
+}

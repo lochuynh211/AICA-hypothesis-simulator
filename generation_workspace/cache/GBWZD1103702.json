@@ -1,0 +1,92 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/351a6724-277c-43dd-a3c8-a1e155f6e8a7/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/olafur-arnalds/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/d/5/11e81bba-d5df-3866-81ba-a0369fe50396.jpg",
+      "name": "Ólafur Arnalds",
+      "slug": "olafur-arnalds",
+      "uuid": "11e81bba-d5df-3866-81ba-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.96,
+    "danceability": 0.48,
+    "energy": 0.32,
+    "instrumentalness": 0.9,
+    "key": 2,
+    "liveness": 0.1,
+    "loudness": -14.38,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 117.96,
+    "timeSignature": 4,
+    "valence": 0.08
+  },
+  "composers": [
+    "Ólafur Arnalds"
+  ],
+  "copyright": "2011 Erased Tapes Records Ltd.",
+  "creditName": "Ólafur Arnalds",
+  "credits": [
+    {
+      "name": "Ólafur Arnalds",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "02a8580f-cf2a-4805-a139-eb4c86d0a9e6"
+    }
+  ],
+  "distributor": "",
+  "duration": 208,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    },
+    {
+      "root": "electro",
+      "sub": [
+        "electronic"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/c/7/7/351a6724-277c-43dd-a3c8-a1e155f6e8a7.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBWZD1103702"
+  },
+  "iswcs": [
+    "T9114845022"
+  ],
+  "labels": [
+    {
+      "name": "Erased Tapes",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/olafur-arnalds/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/d/5/11e81bba-d5df-3866-81ba-a0369fe50396.jpg",
+      "name": "Ólafur Arnalds",
+      "slug": "olafur-arnalds",
+      "uuid": "11e81bba-d5df-3866-81ba-a0369fe50396"
+    }
+  ],
+  "name": "Near Light",
+  "producers": [],
+  "releaseDate": "2011-12-05T00:00:00+00:00",
+  "uuid": "351a6724-277c-43dd-a3c8-a1e155f6e8a7"
+}

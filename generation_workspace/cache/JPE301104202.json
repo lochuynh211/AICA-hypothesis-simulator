@@ -1,0 +1,89 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8262a-71d1-f91a-a5b8-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/egoist/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/a/7/11e81bc2-a7a9-d3ae-9735-a0369fe50396.jpg",
+      "name": "EGOIST",
+      "slug": "egoist",
+      "uuid": "11e81bc2-a7a9-d3ae-9735-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.01,
+    "danceability": 0.35,
+    "energy": 0.94,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.34,
+    "loudness": -4.37,
+    "mode": 0,
+    "speechiness": 0.09,
+    "tempo": 171.99,
+    "timeSignature": 4,
+    "valence": 0.33
+  },
+  "composers": [
+    "龍 -RYO-"
+  ],
+  "copyright": "(P)2012 Aniplex Inc.",
+  "creditName": "EGOIST",
+  "credits": [
+    {
+      "name": "Ryo",
+      "roles": [
+        "composer",
+        "arranger",
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "9d5baf60-b0c2-461a-abfa-960353c5ef0b"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 326,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "soundtrack",
+      "sub": [
+        "anime"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/1/d/1/11e8262a-71d1-f91a-a5b8-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPE301104202"
+  },
+  "iswcs": [
+    "T9098161218"
+  ],
+  "labels": [
+    {
+      "name": "Aniplex",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/egoist/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/a/7/11e81bc2-a7a9-d3ae-9735-a0369fe50396.jpg",
+      "name": "EGOIST",
+      "slug": "egoist",
+      "uuid": "11e81bc2-a7a9-d3ae-9735-a0369fe50396"
+    }
+  ],
+  "name": "The Everlasting Guilty Crown",
+  "producers": [],
+  "releaseDate": "2012-03-07T00:00:00+00:00",
+  "uuid": "11e8262a-71d1-f91a-a5b8-aa1c026db3d8"
+}

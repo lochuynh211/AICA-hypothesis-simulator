@@ -1,0 +1,73 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/ece6e100-4db1-11ea-8327-e4434b2a4898/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/miki-matsubara/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/c/c/8/b85f1cac-b8cc-11e8-828d-525400009efb.jpg",
+      "name": "Miki Matsubara",
+      "slug": "miki-matsubara",
+      "uuid": "b85f1cac-b8cc-11e8-828d-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.18,
+    "danceability": 0.66,
+    "energy": 0.75,
+    "instrumentalness": 0,
+    "key": 5,
+    "liveness": 0.08,
+    "loudness": -6.62,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 108.26,
+    "timeSignature": 4,
+    "valence": 0.79
+  },
+  "composers": [
+    "Noriko Miura",
+    "Tetuji Hayashi"
+  ],
+  "copyright": "2008 Pony Canyon Inc.",
+  "creditName": "Miki Matsubara",
+  "credits": [],
+  "distributor": "Pony Canyon",
+  "duration": 312,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/1/b/d/ece6e100-4db1-11ea-8327-e4434b2a4898.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPC07950030"
+  },
+  "iswcs": [
+    "T1015361212"
+  ],
+  "labels": [
+    {
+      "name": "Pony Canyon",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/miki-matsubara/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/c/c/8/b85f1cac-b8cc-11e8-828d-525400009efb.jpg",
+      "name": "Miki Matsubara",
+      "slug": "miki-matsubara",
+      "uuid": "b85f1cac-b8cc-11e8-828d-525400009efb"
+    }
+  ],
+  "name": "Mayonaka no Door / Stay With Me",
+  "producers": [],
+  "releaseDate": "2008-01-01T00:00:00+00:00",
+  "uuid": "ece6e100-4db1-11ea-8327-e4434b2a4898"
+}

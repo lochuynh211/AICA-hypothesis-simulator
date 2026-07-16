@@ -1,0 +1,72 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82640-1c99-ad24-af90-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/momoe-yamaguchi/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/9/2/9/c8cbe442-3929-4b44-9146-69496d0ffca8.jpg",
+      "name": "Momoe Yamaguchi",
+      "slug": "momoe-yamaguchi",
+      "uuid": "c8cbe442-3929-4b44-9146-69496d0ffca8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.57,
+    "danceability": 0.62,
+    "energy": 0.48,
+    "instrumentalness": 0,
+    "key": 10,
+    "liveness": 0.18,
+    "loudness": -8.7,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 101.97,
+    "timeSignature": 4,
+    "valence": 0.42
+  },
+  "composers": [
+    "Shinji Tanimura"
+  ],
+  "copyright": "(P)2004 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "Momoe Yamaguchi",
+  "credits": [
+    {
+      "name": "Shinji Tanimura",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "09ce2db8-f535-4776-b79b-9f9dd6cf57d5"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 314,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "j-pop",
+      "sub": [
+        "kayokyoku"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/9/9/c/11e82640-1c99-ad24-af90-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPSR07821120"
+  },
+  "iswcs": [
+    "T1010515258"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [],
+  "name": "いい日 旅立ち",
+  "producers": [],
+  "releaseDate": "2004-07-22T00:00:00+00:00",
+  "uuid": "11e82640-1c99-ad24-af90-a0369fe50396"
+}

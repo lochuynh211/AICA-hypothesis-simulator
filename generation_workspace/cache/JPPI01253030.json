@@ -1,0 +1,55 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/97e5e7a4-1ff6-4edd-9372-42995eb67bba/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/miku-hatsune/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/d/8/4df468ae-b8d6-11e8-8634-525400009efb.jpg",
+      "name": "Hatsune Miku",
+      "slug": "miku-hatsune",
+      "uuid": "4df468ae-b8d6-11e8-8634-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.02,
+    "danceability": 0.52,
+    "energy": 1,
+    "instrumentalness": 0,
+    "key": 9,
+    "liveness": 0.05,
+    "loudness": 0.07,
+    "mode": 0,
+    "speechiness": 0.06,
+    "tempo": 154.99,
+    "timeSignature": 4,
+    "valence": 0.79
+  },
+  "composers": [
+    "KuroUsa"
+  ],
+  "copyright": "2012 GENEON UNIVERSAL ENTERTAINMENT",
+  "creditName": "Hatsune Miku",
+  "credits": [],
+  "distributor": "",
+  "duration": 256,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/6/f/f/97e5e7a4-1ff6-4edd-9372-42995eb67bba.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPI01253030"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "GENEON UNIVERSAL",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [],
+  "name": "千本桜",
+  "producers": [],
+  "releaseDate": "2012-11-07T00:00:00+00:00",
+  "uuid": "97e5e7a4-1ff6-4edd-9372-42995eb67bba"
+}

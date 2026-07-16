@@ -1,0 +1,176 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/6f27c72f-a588-47e9-af61-03efd8f74365/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/clarice-jensen/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/d/3/11e81bc2-13dd-28e2-892d-a0369fe50396.jpg",
+      "name": "Clarice Jensen",
+      "slug": "clarice-jensen",
+      "uuid": "11e81bc2-13dd-28e2-892d-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/max-richter/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/d/0/11e81bc3-50d8-4b9a-a443-a0369fe50396.jpg",
+      "name": "Max Richter",
+      "slug": "max-richter",
+      "uuid": "11e81bc3-50d8-4b9a-a443-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/brian-snow/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/c/3/e/11e81bcd-ee3c-3400-8996-a0369fe50396.jpg",
+      "name": "Brian Snow",
+      "slug": "brian-snow",
+      "uuid": "11e81bcd-ee3c-3400-8996-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/alva-noto/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/9/b/11e81bd0-ab97-fd3e-9083-a0369fe50396.jpg",
+      "name": "Alva Noto",
+      "slug": "alva-noto",
+      "uuid": "11e81bd0-ab97-fd3e-9083-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/grace-davidson/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/1/3/11e81bd1-2310-c724-89d3-a0369fe50396.jpg",
+      "name": "Grace Davidson",
+      "slug": "grace-davidson",
+      "uuid": "11e81bd1-2310-c724-89d3-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/caleb-burhans/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/7/d/11e81bd2-0d74-cdc4-b2d7-a0369fe50396.jpg",
+      "name": "Caleb Burhans",
+      "slug": "caleb-burhans",
+      "uuid": "11e81bd2-0d74-cdc4-b2d7-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ben-russell-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/c/5/6/b5819b16-c65c-11e8-8a99-549f35161576.jpg",
+      "name": "Ben Russell",
+      "slug": "ben-russell-1",
+      "uuid": "b5819b16-c65c-11e8-8a99-549f35161576"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yuki-numata-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/d/2/ae20059c-32d0-11ea-ad8c-549f35161576.jpg",
+      "name": "Yuki Numata",
+      "slug": "yuki-numata-1",
+      "uuid": "ae20059c-32d0-11ea-ad8c-549f35161576"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.15,
+    "danceability": 0.14,
+    "energy": 0.22,
+    "instrumentalness": 0.9,
+    "key": 5,
+    "liveness": 0.4,
+    "loudness": -19.94,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 68.43,
+    "timeSignature": 4,
+    "valence": 0.04
+  },
+  "composers": [
+    "Max Richter"
+  ],
+  "copyright": "℗ 2023 Deutsche Grammophon GmbH, Berlin",
+  "creditName": "Clarice Jensen & Max Richter & Brian Snow & Alva Noto & Grace Davidson & Caleb Burhans & Ben Russell & Yuki Numata",
+  "credits": [
+    {
+      "name": "Alva Noto",
+      "roles": [
+        "remixing"
+      ],
+      "uuid": "d333e755-5162-400d-9457-c07e5528dac6"
+    }
+  ],
+  "distributor": "",
+  "duration": 349,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/8/5/6f27c72f-a588-47e9-af61-03efd8f74365.jpg",
+  "isrc": {
+    "countryCode": "DE",
+    "countryName": "Germany",
+    "value": "DEN962238018"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Berlin",
+      "type": "Other independent labels: \"Indie\""
+    },
+    {
+      "name": "Deutsche Grammophon",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/clarice-jensen/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/d/3/11e81bc2-13dd-28e2-892d-a0369fe50396.jpg",
+      "name": "Clarice Jensen",
+      "slug": "clarice-jensen",
+      "uuid": "11e81bc2-13dd-28e2-892d-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/max-richter/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/d/0/11e81bc3-50d8-4b9a-a443-a0369fe50396.jpg",
+      "name": "Max Richter",
+      "slug": "max-richter",
+      "uuid": "11e81bc3-50d8-4b9a-a443-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/brian-snow/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/c/3/e/11e81bcd-ee3c-3400-8996-a0369fe50396.jpg",
+      "name": "Brian Snow",
+      "slug": "brian-snow",
+      "uuid": "11e81bcd-ee3c-3400-8996-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/alva-noto/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/9/b/11e81bd0-ab97-fd3e-9083-a0369fe50396.jpg",
+      "name": "Alva Noto",
+      "slug": "alva-noto",
+      "uuid": "11e81bd0-ab97-fd3e-9083-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/grace-davidson/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/1/3/11e81bd1-2310-c724-89d3-a0369fe50396.jpg",
+      "name": "Grace Davidson",
+      "slug": "grace-davidson",
+      "uuid": "11e81bd1-2310-c724-89d3-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/caleb-burhans/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/7/d/11e81bd2-0d74-cdc4-b2d7-a0369fe50396.jpg",
+      "name": "Caleb Burhans",
+      "slug": "caleb-burhans",
+      "uuid": "11e81bd2-0d74-cdc4-b2d7-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yuki-numata-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/d/2/ae20059c-32d0-11ea-ad8c-549f35161576.jpg",
+      "name": "Yuki Numata",
+      "slug": "yuki-numata-1",
+      "uuid": "ae20059c-32d0-11ea-ad8c-549f35161576"
+    }
+  ],
+  "name": "SLEEP: Tranquility Base (Alva Noto Remodel)",
+  "producers": [
+    "Max Richter",
+    "Carsten Nicolai"
+  ],
+  "releaseDate": "2023-05-05T00:00:00+00:00",
+  "uuid": "6f27c72f-a588-47e9-af61-03efd8f74365"
+}

@@ -816,6 +816,28 @@ sub-override and fall through to the `j-pop` root-fallback.)
 | `kids` | `children's music` |
 | `alternative`, `blues`, `c-pop`, `country`, `experimental`, `folk`, `funk`, `hip hop`, `holiday`, `indian pop`, `k-pop`, `latin`, `metal`, `others`, `pop`, `punk`, `r&b`, `reggae`, `religious`, `rock`, `ska`, `soul`, `soundtrack`, `spoken`, `sports`, `traditional` | `missing_neutral` |
 
+#### 13.2a Japanese-context root broadening (P2 T062 amendment, language-aware)
+
+The live harvest established that **Soundcharts does not tag Japanese music with `j-pop`/
+`j-rock` roots** — it encodes mainstream Japanese songs as root `traditional` (sub `asian`),
+and Japanese rock/alt as `rock`/`alternative`. So §13.2 as written sent almost the entire
+JA-primary catalog to `missing_neutral`. The map is therefore **language-aware**: when a
+song's real `languageCode` is `ja`, these generic roots resolve to the Japanese vocab
+(applied only after the universal §13.2 terms, and **never** for non-JA songs, so a Western
+`rock`/`pop` track is never mislabeled):
+
+| Soundcharts `root` (JA songs only) | → vocab term |
+|---|---|
+| `traditional`, `pop` | `j-pop` |
+| `rock`, `alternative`, `metal`, `punk` | `j-rock` |
+| `soundtrack` | `anime` |
+| `folk` | `japanese folk` |
+
+Effect on the T062 catalog: `missing_neutral` 185→109; populated vocab terms 6→8 (j-pop,
+j-rock, anime, japanese folk, classical, jazz, electronic, children's music). **`city pop`,
+`vocaloid`, `enka`, `ambient` remain 0** — Soundcharts does not emit those sub/root tags at
+all, so they are un-sourceable from Soundcharts genre data (documented, not faked).
+
 ### 13.3 Consequences (by design, not a gap)
 
 - Only six roots (`j-pop`, `classical`, `jazz`, `ambient`, `electro`/`edm`/`disco`,

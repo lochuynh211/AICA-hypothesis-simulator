@@ -1,0 +1,191 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8264f-02f1-b286-9e5b-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/arctic-monkeys/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/c/a/11e81bcd-cac3-5a30-bad2-a0369fe50396.jpg",
+      "name": "Arctic Monkeys",
+      "slug": "arctic-monkeys",
+      "uuid": "11e81bcd-cac3-5a30-bad2-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.52,
+    "energy": 0.85,
+    "instrumentalness": 0,
+    "key": 0,
+    "liveness": 0.07,
+    "loudness": -5.87,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 140.27,
+    "timeSignature": 4,
+    "valence": 0.23
+  },
+  "composers": [
+    "Alex Turner",
+    "Jamie Cook",
+    "Matt Helders",
+    "Nick O'Malley"
+  ],
+  "copyright": "℗ 2007 Domino Recording Company Ltd. under exclusive license to Warner Records Inc. for the United States, and WEA International Inc. for Canada.",
+  "creditName": "Arctic Monkeys",
+  "credits": [
+    {
+      "name": "Alan Moulder",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "cec651bd-c52d-44af-b3cc-6900fa0448ce"
+    },
+    {
+      "name": "Jamie Cook",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "656a1ccb-2925-4c75-905f-993b4f785ba2"
+    },
+    {
+      "name": "George Marino",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "f99b5234-9441-4d53-815f-d997d1a50d89"
+    },
+    {
+      "name": "Robyn",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "f71e6d97-0cdf-491d-ad9b-a9c760246244"
+    },
+    {
+      "name": "Mike Crossey",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "f74bc330-4b39-4253-a61a-79c9b5c3e036"
+    },
+    {
+      "name": "Nick O’Malley",
+      "roles": [
+        "writer",
+        "bass guitar",
+        "bass  guitar"
+      ],
+      "uuid": "2cfd33cf-1357-4a30-8293-13435e59c2cd"
+    },
+    {
+      "name": "Alex Turner",
+      "roles": [
+        "writer",
+        "lead vocals",
+        "organ",
+        "rhythm guitar"
+      ],
+      "uuid": "022fa00c-6a57-4ce5-8544-e3653efdd87e"
+    },
+    {
+      "name": "James Ford",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "69442694-1b59-430c-bf3f-ce68c41c0738"
+    },
+    {
+      "name": "Sterling Sound Studio",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "106a0574-c3fd-4499-9711-0f2b4e48e5ce"
+    },
+    {
+      "name": "Miles Kane",
+      "roles": [
+        "additional guitar",
+        "additional"
+      ],
+      "uuid": "30baa94d-1e3e-4452-b962-055982157fb6"
+    },
+    {
+      "name": "Matt Helders",
+      "roles": [
+        "writer",
+        "drums"
+      ],
+      "uuid": "dd9d48bc-fa17-4dfe-89ff-2517fe650b97"
+    },
+    {
+      "name": "Miles Kane",
+      "roles": [
+        "additional  guitar"
+      ],
+      "uuid": "10365479-1c61-48de-abc2-91b3e04d2976"
+    },
+    {
+      "name": "Alex Turner",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "23e4a88b-630b-489f-b905-8942afbe41b9"
+    }
+  ],
+  "distributor": "Warner",
+  "duration": 253,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/1/f/2/11e8264f-02f1-b286-9e5b-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBCEL0700074"
+  },
+  "iswcs": [
+    "T9002095365"
+  ],
+  "labels": [
+    {
+      "name": "for the",
+      "type": "unknown"
+    },
+    {
+      "name": "for",
+      "type": "unknown"
+    },
+    {
+      "name": "Domino",
+      "type": "Domino"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/arctic-monkeys/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/c/a/11e81bcd-cac3-5a30-bad2-a0369fe50396.jpg",
+      "name": "Arctic Monkeys",
+      "slug": "arctic-monkeys",
+      "uuid": "11e81bcd-cac3-5a30-bad2-a0369fe50396"
+    }
+  ],
+  "name": "505",
+  "producers": [
+    "Mike Crossey",
+    "James Ford"
+  ],
+  "releaseDate": "2007-04-24T00:00:00+00:00",
+  "uuid": "11e8264f-02f1-b286-9e5b-aa1c026db3d8"
+}

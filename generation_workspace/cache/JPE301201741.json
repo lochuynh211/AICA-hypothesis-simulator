@@ -1,0 +1,118 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826a4-5d3c-1a10-9612-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/lisa-9/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/4/9/11e81bc7-7946-3110-9d08-a0369fe50396.jpg",
+      "name": "LiSA",
+      "slug": "lisa-9",
+      "uuid": "11e81bc7-7946-3110-9d08-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.02,
+    "danceability": 0.45,
+    "energy": 0.98,
+    "instrumentalness": 0,
+    "key": 5,
+    "liveness": 0.27,
+    "loudness": -2.25,
+    "mode": 1,
+    "speechiness": 0.28,
+    "tempo": 179.04,
+    "timeSignature": 4,
+    "valence": 0.31
+  },
+  "composers": [
+    "渡辺 翔"
+  ],
+  "copyright": "℗ 2012 Aniplex Inc.",
+  "creditName": "LiSA",
+  "credits": [
+    {
+      "name": "SHOU WATANABE",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "7b064e29-b8ee-4299-9eaf-87326e26bc05"
+    },
+    {
+      "name": "渡辺翔 (Sho Watanabe)",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "16ba118a-39f2-491d-b9dd-df36743bda80"
+    },
+    {
+      "name": "toku",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "a88f7863-991a-4a3d-9146-4c592503e492"
+    },
+    {
+      "name": "ソードアート・オンライン (Sword Art Online)",
+      "roles": [
+        "tie-in"
+      ],
+      "uuid": "a61c051d-4d46-46c3-a5ef-32e1d405aa45"
+    },
+    {
+      "name": "本山清治 (Seiji Motoyama)",
+      "roles": [
+        "translator",
+        "writer"
+      ],
+      "uuid": "b58a56c4-4514-41a5-a238-0f14dde2fd0b"
+    },
+    {
+      "name": "Sho Watanabe",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "e2b731e3-ef58-414b-8729-d4c440b67a05"
+    }
+  ],
+  "distributor": "",
+  "duration": 248,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "soundtrack",
+      "sub": [
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/c/3/d/11e826a4-5d3c-1a10-9612-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPE301201741"
+  },
+  "iswcs": [
+    "T9098172602"
+  ],
+  "labels": [
+    {
+      "name": "Aniplex",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/lisa-9/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/4/9/11e81bc7-7946-3110-9d08-a0369fe50396.jpg",
+      "name": "LiSA",
+      "slug": "lisa-9",
+      "uuid": "11e81bc7-7946-3110-9d08-a0369fe50396"
+    }
+  ],
+  "name": "crossing field",
+  "producers": [],
+  "releaseDate": "2012-08-08T00:00:00+00:00",
+  "uuid": "11e826a4-5d3c-1a10-9612-a0369fe50396"
+}

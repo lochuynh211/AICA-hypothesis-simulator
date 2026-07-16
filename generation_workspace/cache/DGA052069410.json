@@ -1,0 +1,82 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/cc8f49b5-b62a-4459-ac5a-61176ad0c276/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/haruka-nakamura/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/4/f/11e81bc1-ef4d-caa4-9a0f-a0369fe50396.jpg",
+      "name": "haruka nakamura",
+      "slug": "haruka-nakamura",
+      "uuid": "11e81bc1-ef4d-caa4-9a0f-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.92,
+    "danceability": 0.57,
+    "energy": 0.22,
+    "instrumentalness": 0.94,
+    "key": 4,
+    "liveness": 0.08,
+    "loudness": -18.44,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 115.03,
+    "timeSignature": 3,
+    "valence": 0.19
+  },
+  "composers": [
+    "haruka nakamura"
+  ],
+  "copyright": "2010 Kitchen. Label",
+  "creditName": "haruka nakamura",
+  "credits": [
+    {
+      "name": "Haruka Nakamura",
+      "roles": [
+        "composer",
+        "author",
+        "lyricist"
+      ],
+      "uuid": "8d0ce3ac-9297-4147-8578-26dd98372023"
+    }
+  ],
+  "distributor": "Believe",
+  "duration": 520,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "electro",
+      "sub": [
+        "electronic"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/a/2/6/cc8f49b5-b62a-4459-ac5a-61176ad0c276.jpg",
+  "isrc": {
+    "countryCode": "",
+    "countryName": "",
+    "value": "DGA052069410"
+  },
+  "iswcs": [
+    "T9103225054"
+  ],
+  "labels": [
+    {
+      "name": "Kitchen. Label",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/haruka-nakamura/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/4/f/11e81bc1-ef4d-caa4-9a0f-a0369fe50396.jpg",
+      "name": "haruka nakamura",
+      "slug": "haruka-nakamura",
+      "uuid": "11e81bc1-ef4d-caa4-9a0f-a0369fe50396"
+    }
+  ],
+  "name": "twilight",
+  "producers": [],
+  "releaseDate": "2010-01-01T00:00:00+00:00",
+  "uuid": "cc8f49b5-b62a-4459-ac5a-61176ad0c276"
+}

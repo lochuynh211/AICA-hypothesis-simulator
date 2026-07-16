@@ -1,0 +1,212 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/7d534228-5165-11e9-9375-549f35161576/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aykich/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/2/b/0050fca3-9b2d-486d-9ab8-5f7850df6e09.jpg",
+      "name": "aykich",
+      "slug": "aykich",
+      "uuid": "0050fca3-9b2d-486d-9ab8-5f7850df6e09"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ricalz/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/6/a6c3707c-061f-4897-9ffb-93400e0819b7.jpg",
+      "name": "RicalZ",
+      "slug": "ricalz",
+      "uuid": "a6c3707c-061f-4897-9ffb-93400e0819b7"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.33,
+    "danceability": 0.7,
+    "energy": 0.43,
+    "instrumentalness": 0.13,
+    "key": 7,
+    "liveness": 0.1,
+    "loudness": -10.97,
+    "mode": 1,
+    "speechiness": 0.38,
+    "tempo": 135.13,
+    "timeSignature": 4,
+    "valence": 0.56
+  },
+  "composers": [
+    "Finneas O'Connell",
+    "Billie Eilish O'Connell"
+  ],
+  "copyright": "℗ 2019 Darkroom/Interscope Records",
+  "creditName": "aykich & RicalZ",
+  "credits": [
+    {
+      "name": "Finneas O'Connell",
+      "roles": [
+        "composer",
+        "producer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "e818774d-4be3-484b-a72f-45efa8177123"
+    },
+    {
+      "name": "Billie Eilish O'Connell",
+      "roles": [
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "5fdd592e-3cdf-4acf-a33b-adb13740541b"
+    },
+    {
+      "name": "Finneas Baird O'Connell",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "ed723fb5-69f2-4d2c-8fda-7a0b5d3ddd19"
+    },
+    {
+      "name": "John Greenham",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "f9e4a207-5e5f-4cea-bf23-0a4e8682486d"
+    },
+    {
+      "name": "Rob Kinelski",
+      "roles": [
+        "mix",
+        "studio personnel"
+      ],
+      "uuid": "2306706d-fd9e-4648-a573-31ba1aa614eb"
+    },
+    {
+      "name": "Casey Cuayo",
+      "roles": [
+        "assistant mix engineer",
+        "second engineer",
+        "studio personnel"
+      ],
+      "uuid": "8b265cd0-1427-4e4a-8063-1a0f9264eb77"
+    },
+    {
+      "name": "Dave Meyers",
+      "roles": [
+        "video director"
+      ],
+      "uuid": "54a8905a-7c62-4b1e-a77b-c822e30bab3b"
+    },
+    {
+      "name": "Joe Perez",
+      "roles": [
+        "graphic design"
+      ],
+      "uuid": "ff2b6245-4926-4ba4-8243-85a7c23416d7"
+    },
+    {
+      "name": "Ingenuity Studios",
+      "roles": [
+        "video visual effects department"
+      ],
+      "uuid": "e248896b-c271-4e05-8822-9a018e0fcaa0"
+    },
+    {
+      "name": "Scott Cunningham (Director)",
+      "roles": [
+        "video director of photography"
+      ],
+      "uuid": "2a23fd98-10d3-4c7d-abcb-bb43c9d1cb26"
+    },
+    {
+      "name": "Toxic L9",
+      "roles": [
+        "composer",
+        "lyricist",
+        "songwriter"
+      ],
+      "uuid": "2c852563-459e-4fc4-88d4-e1ff1450cd46"
+    },
+    {
+      "name": "Billie Eilish",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist",
+        "additional production",
+        "lead  vocals"
+      ],
+      "uuid": "87614bd2-2007-4d3c-8142-a1490d50674b"
+    },
+    {
+      "name": "AY YOLA",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "efd40af1-7fd5-4f2c-9c6a-cb8d666aeee5"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 194,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    },
+    {
+      "root": "electro",
+      "sub": [
+        "electronic",
+        "dance"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/5/6/1/7d534228-5165-11e9-9375-549f35161576.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USUM71900764"
+  },
+  "iswcs": [
+    "T9297983938",
+    "T9280410915"
+  ],
+  "labels": [
+    {
+      "name": "Interscope",
+      "type": "Universal"
+    },
+    {
+      "name": "Darkroom",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aykich/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/2/b/0050fca3-9b2d-486d-9ab8-5f7850df6e09.jpg",
+      "name": "aykich",
+      "slug": "aykich",
+      "uuid": "0050fca3-9b2d-486d-9ab8-5f7850df6e09"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ricalz/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/1/6/a6c3707c-061f-4897-9ffb-93400e0819b7.jpg",
+      "name": "RicalZ",
+      "slug": "ricalz",
+      "uuid": "a6c3707c-061f-4897-9ffb-93400e0819b7"
+    }
+  ],
+  "name": "bad guy",
+  "producers": [
+    "Finneas O'Connell"
+  ],
+  "releaseDate": "2019-03-29T00:00:00+00:00",
+  "uuid": "7d534228-5165-11e9-9375-549f35161576"
+}

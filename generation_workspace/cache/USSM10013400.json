@@ -1,0 +1,214 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8263f-e736-0aba-abc0-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/santana-3/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/1/2/11e81bd1-121e-d38e-bdea-a0369fe50396.jpg",
+      "name": "Santana",
+      "slug": "santana-3",
+      "uuid": "11e81bd1-121e-d38e-bdea-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.03,
+    "danceability": 0.31,
+    "energy": 0.54,
+    "instrumentalness": 0.91,
+    "key": 0,
+    "liveness": 0.17,
+    "loudness": -9.68,
+    "mode": 0,
+    "speechiness": 0.05,
+    "tempo": 74.95,
+    "timeSignature": 4,
+    "valence": 0.74
+  },
+  "composers": [
+    "T. Coster",
+    "C. Santana"
+  ],
+  "copyright": "(P) 1976 Columbia Records, a division of Sony Music Entertainment",
+  "creditName": "Santana",
+  "credits": [
+    {
+      "name": "Carlos Santana",
+      "roles": [
+        "writer",
+        "guitar",
+        "composer",
+        "lyricist",
+        "vocals"
+      ],
+      "uuid": "63d1bb75-8ff7-43b5-8d76-64db37aafdbe"
+    },
+    {
+      "name": "David Brown",
+      "roles": [
+        "bass"
+      ],
+      "uuid": "5a61775d-b688-47f0-af2b-c68cc5c02d6e"
+    },
+    {
+      "name": "Leon Patillo",
+      "roles": [
+        "piano",
+        "vocals"
+      ],
+      "uuid": "ccd20829-4ae1-43db-be48-bb3bec8cfe75"
+    },
+    {
+      "name": "Buddy Miles",
+      "roles": [
+        "guitar",
+        "vocals"
+      ],
+      "uuid": "8462af75-f287-454f-ab38-33428ae4c8aa"
+    },
+    {
+      "name": "Tom Coster",
+      "roles": [
+        "writer",
+        "composer",
+        "lyricist",
+        "keyboard"
+      ],
+      "uuid": "0965160e-c2b3-4271-bf5d-6ee3b9674dd8"
+    },
+    {
+      "name": "DAVID BROWN",
+      "roles": [
+        "bass"
+      ],
+      "uuid": "43e921e5-e817-4494-904c-60af7880ece7"
+    },
+    {
+      "name": "Leon “Ndugu” Chancler",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "212d64eb-db20-4038-9353-db1e15a20849"
+    },
+    {
+      "name": "ARMANDO PERAZA",
+      "roles": [
+        "percussions",
+        "conga"
+      ],
+      "uuid": "7f297a45-bbce-4910-8ec9-e2215614b7d1"
+    },
+    {
+      "name": "Michael Shrieve",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "615fb441-8571-4e80-9d3c-58390195c77f"
+    },
+    {
+      "name": "Jules Broussard",
+      "roles": [
+        "saxophone"
+      ],
+      "uuid": "0b2ebf45-9817-49ee-888a-d2eae6111c8b"
+    },
+    {
+      "name": "David Mitson",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "510db98e-ac1e-4974-bb26-62f104b83016"
+    },
+    {
+      "name": "David Rubinson",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "05da792d-20df-4f94-ac2e-d865723fdbe8"
+    },
+    {
+      "name": "Jules Broussard",
+      "roles": [
+        "saxophone"
+      ],
+      "uuid": "688ffb43-933c-4d64-be2d-e317496ce01e"
+    },
+    {
+      "name": "Chepito Areas",
+      "roles": [
+        "percussions"
+      ],
+      "uuid": "2cf0421a-2c0b-4dee-a0a2-dfc5e516da15"
+    },
+    {
+      "name": "Laurence Cohn",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "fe50b4c8-eeb3-4a97-a968-c4ad17c712c6"
+    },
+    {
+      "name": "Greg Walker",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "21c95923-006d-4b0a-887c-63be5beaa818"
+    },
+    {
+      "name": "Armando Peraza",
+      "roles": [
+        "percussions",
+        "conga"
+      ],
+      "uuid": "88484b2d-3b03-4e88-8013-4f2bf0c1b174"
+    },
+    {
+      "name": "T. COSTER",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "dadac8ac-39f0-4803-8361-e37844b83a00"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 302,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/6/3/7/11e8263f-e736-0aba-abc0-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USSM10013400"
+  },
+  "iswcs": [
+    "T0702338995"
+  ],
+  "labels": [
+    {
+      "name": "Columbia",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/santana-3/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/1/2/11e81bd1-121e-d38e-bdea-a0369fe50396.jpg",
+      "name": "Santana",
+      "slug": "santana-3",
+      "uuid": "11e81bd1-121e-d38e-bdea-a0369fe50396"
+    }
+  ],
+  "name": "Europa (Earth's Cry Heaven's Smile)",
+  "producers": [
+    "David Rubinson"
+  ],
+  "releaseDate": "1976-03-26T00:00:00+00:00",
+  "uuid": "11e8263f-e736-0aba-abc0-aa1c026db3d8"
+}

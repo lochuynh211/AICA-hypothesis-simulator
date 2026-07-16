@@ -1,0 +1,117 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8261c-0139-0f4e-b995-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/boards-of-canada/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/8/e/11e81bcc-ae8e-1d10-9e23-a0369fe50396.jpg",
+      "name": "Boards of Canada",
+      "slug": "boards-of-canada",
+      "uuid": "11e81bcc-ae8e-1d10-9e23-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.02,
+    "danceability": 0.63,
+    "energy": 0.52,
+    "instrumentalness": 0.92,
+    "key": 4,
+    "liveness": 0.1,
+    "loudness": -10.31,
+    "mode": 0,
+    "speechiness": 0.06,
+    "tempo": 84.03,
+    "timeSignature": 4,
+    "valence": 0.12
+  },
+  "composers": [
+    "Marcus Eoin",
+    "Michael Sandison"
+  ],
+  "copyright": "1998 Warp Records",
+  "creditName": "Boards of Canada",
+  "credits": [
+    {
+      "name": "Boards of Canada",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "c0311e51-9396-49ac-a583-0673b9058ffe"
+    },
+    {
+      "name": "Sandison",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "5025ee17-00b5-4749-b391-b80a4ca0c6d4"
+    },
+    {
+      "name": "Eoin",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "a9677030-5db9-423a-8ddb-0dbf38b5e15a"
+    }
+  ],
+  "distributor": "",
+  "duration": 149,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    },
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz"
+      ]
+    },
+    {
+      "root": "electro",
+      "sub": [
+        "dance",
+        "electronic"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/9/3/1/11e8261c-0139-0f4e-b995-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBBPW9800019"
+  },
+  "iswcs": [
+    "T0108903736"
+  ],
+  "labels": [
+    {
+      "name": "Warp",
+      "type": "WARP"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/boards-of-canada/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/e/8/e/11e81bcc-ae8e-1d10-9e23-a0369fe50396.jpg",
+      "name": "Boards of Canada",
+      "slug": "boards-of-canada",
+      "uuid": "11e81bcc-ae8e-1d10-9e23-a0369fe50396"
+    }
+  ],
+  "name": "Roygbiv",
+  "producers": [
+    "Michael Sandison",
+    "Marcus Eoin"
+  ],
+  "releaseDate": "1998-04-20T00:00:00+00:00",
+  "uuid": "11e8261c-0139-0f4e-b995-aa1c026db3d8"
+}

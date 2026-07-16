@@ -1,0 +1,81 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82643-7e00-b9e2-b36d-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/bonijakkusu/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/6/a/11e81bbb-5a68-172e-b495-a0369fe50396.jpg",
+      "name": "ボニージャックス",
+      "slug": "bonijakkusu",
+      "uuid": "11e81bbb-5a68-172e-b495-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.82,
+    "danceability": 0.75,
+    "energy": 0.27,
+    "instrumentalness": 0,
+    "key": 5,
+    "liveness": 0.07,
+    "loudness": -14.2,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 123.16,
+    "timeSignature": 4,
+    "valence": 0.92
+  },
+  "composers": [
+    "Taku Izumi",
+    "やなせたかし"
+  ],
+  "copyright": "1969 King Record Co.,Ltd",
+  "creditName": "ボニージャックス",
+  "credits": [
+    {
+      "name": "Taku Izumi",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "6ddbc1f7-2c9f-450c-be79-cd2a953dac18"
+    },
+    {
+      "name": "Takashi Yanase",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "0251836d-8c2d-4146-9b54-d3fb2af45084"
+    },
+    {
+      "name": "いずみたく",
+      "roles": [
+        "arranger",
+        "writer"
+      ],
+      "uuid": "a49304bb-c69a-49a5-8041-693a35795ba3"
+    }
+  ],
+  "distributor": "King Record",
+  "duration": 153,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/0/0/e/11e82643-7e00-b9e2-b36d-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPKI06427520"
+  },
+  "iswcs": [
+    "T1014015860"
+  ],
+  "labels": [
+    {
+      "name": "King Record",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [],
+  "name": "手のひらを太陽に",
+  "producers": [],
+  "releaseDate": "1969-12-01T00:00:00+00:00",
+  "uuid": "11e82643-7e00-b9e2-b36d-aa1c026db3d8"
+}

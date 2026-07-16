@@ -1,0 +1,244 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826d1-5555-c81e-bfcb-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kendrick-lamar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/0/6/11e81bbc-c601-d802-bca1-a0369fe50396.jpg",
+      "name": "Kendrick Lamar",
+      "slug": "kendrick-lamar",
+      "uuid": "11e81bbc-c601-d802-bca1-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/travis-scott/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/4/8/11e81bc3-b843-a3b0-b531-a0369fe50396.jpg",
+      "name": "Travis Scott",
+      "slug": "travis-scott",
+      "uuid": "11e81bc3-b843-a3b0-b531-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.08,
+    "danceability": 0.84,
+    "energy": 0.73,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.15,
+    "loudness": -3.37,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 130.05,
+    "timeSignature": 4,
+    "valence": 0.43
+  },
+  "composers": [
+    "Jacques Webster",
+    "Kevin Gomringer",
+    "Tim Gomringer",
+    "Ronald LaTour",
+    "Kendrick Duckworth",
+    "Daveon Jackson",
+    "Brock Korsan"
+  ],
+  "copyright": "(P) 2016 Cactus Jack Records, LLC under exclusive license to Epic Records, a division of Sony Music Entertainment",
+  "creditName": "Travis Scott & Kendrick Lamar",
+  "credits": [
+    {
+      "name": "Ronald LaTour",
+      "roles": [
+        "writer",
+        "drums",
+        "lyricist"
+      ],
+      "uuid": "1775b045-6aa4-477e-ae46-a75813056b36"
+    },
+    {
+      "name": "Mike Dean",
+      "roles": [
+        "producer",
+        "mix"
+      ],
+      "uuid": "6c575874-9ec0-445e-92d2-6872fa726578"
+    },
+    {
+      "name": "Tim Gomringer",
+      "roles": [
+        "writer",
+        "synthesizer",
+        "lyricist"
+      ],
+      "uuid": "8390dd85-73c3-450b-8f98-44245859562b"
+    },
+    {
+      "name": "Cardo Got Wings",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "880fbf9e-b5e7-4745-bdd0-d40a7a1e4e6b"
+    },
+    {
+      "name": "Tristan Bott",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "c25f0cdc-0206-4f57-a998-a0cc3bc12508"
+    },
+    {
+      "name": "Travis Scott",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "d2b6584c-3a1e-4655-bd77-a254d34f9d2d"
+    },
+    {
+      "name": "CuBeatz",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "83a4d17d-183b-42f9-8544-40bbab54083c"
+    },
+    {
+      "name": "Kez Khou",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "5064df6f-c23d-45f0-a848-e8849d866cf1"
+    },
+    {
+      "name": "Yung Exclusive",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "a80afdaa-f543-4d69-8dc9-505631b35d4c"
+    },
+    {
+      "name": "Brock Korsan",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "e84719a2-b101-4279-891d-35c9ff129f97"
+    },
+    {
+      "name": "Kevin Gomringer",
+      "roles": [
+        "writer",
+        "synthesizer",
+        "lyricist"
+      ],
+      "uuid": "002cdf87-4045-458e-b8b5-d638d6a526f8"
+    },
+    {
+      "name": "Ron LaTour",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "540deaf6-2aa9-4db8-8302-791b1d41c2bc"
+    },
+    {
+      "name": "Cardo",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "78acb1aa-f87e-47e0-a5cf-b490313675ec"
+    },
+    {
+      "name": "Daveon Jackson",
+      "roles": [
+        "composer",
+        "drums",
+        "lyricist"
+      ],
+      "uuid": "e0a89b91-e0f9-40d0-9e50-dd4f8f3fba1c"
+    },
+    {
+      "name": "Blake Harden",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "faf80105-826b-4507-8853-2c36cd426819"
+    },
+    {
+      "name": "Kendrick Duckworth",
+      "roles": [
+        "composer",
+        "writer",
+        "lyricist",
+        "vocals"
+      ],
+      "uuid": "a03bc7a5-7d52-4cdf-ad50-a13ae2d7be0c"
+    },
+    {
+      "name": "YeX",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "f54ea977-fee0-4b0d-acc4-9c0fde54f0cc"
+    },
+    {
+      "name": "Jordan Lewis",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "97bd8d02-19b2-4952-aa33-64abaff15ace"
+    },
+    {
+      "name": "Kendrick Lamar",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "9de5b02b-7e11-4dc9-be7c-2c71a4860e40"
+    },
+    {
+      "name": "Cubeatz",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "8d066a8b-f026-44cf-8b31-8031bb5a5e25"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 243,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/5/5/5/11e826d1-5555-c81e-bfcb-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USSM11607555"
+  },
+  "iswcs": [
+    "T3194298341",
+    "T9198300435"
+  ],
+  "labels": [
+    {
+      "name": "Epic",
+      "type": "Sony"
+    },
+    {
+      "name": "Cactus Jack",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [],
+  "name": "goosebumps",
+  "producers": [
+    "Cardo",
+    "Cubeatz",
+    "YeX"
+  ],
+  "releaseDate": "2016-09-16T00:00:00+00:00",
+  "uuid": "11e826d1-5555-c81e-bfcb-a0369fe50396"
+}

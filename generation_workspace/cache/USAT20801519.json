@@ -1,0 +1,64 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/6aa71634-4d6a-11ea-b945-801844edfa71/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/rush-2/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/5/9/11e81bc1-8957-e360-a0c9-a0369fe50396.jpg",
+      "name": "Rush",
+      "slug": "rush-2",
+      "uuid": "11e81bc1-8957-e360-a0c9-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.3,
+    "energy": 0.98,
+    "instrumentalness": 0.74,
+    "key": 7,
+    "liveness": 0.99,
+    "loudness": -4.66,
+    "mode": 1,
+    "speechiness": 0.1,
+    "tempo": 133.87,
+    "timeSignature": 4,
+    "valence": 0.29
+  },
+  "composers": [
+    "Geddy Lee",
+    "Alex Lifeson",
+    "Neil Peart"
+  ],
+  "copyright": "",
+  "creditName": "Rush",
+  "credits": [],
+  "distributor": "",
+  "duration": 317,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/a/6/d/6aa71634-4d6a-11ea-b945-801844edfa71.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USAT20801519"
+  },
+  "iswcs": [
+    "T0715144265"
+  ],
+  "labels": [],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/rush-2/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/5/9/11e81bc1-8957-e360-a0c9-a0369fe50396.jpg",
+      "name": "Rush",
+      "slug": "rush-2",
+      "uuid": "11e81bc1-8957-e360-a0c9-a0369fe50396"
+    }
+  ],
+  "name": "YYZ - Snakes & Arrows Live Version",
+  "producers": [
+    "Rush"
+  ],
+  "releaseDate": null,
+  "uuid": "6aa71634-4d6a-11ea-b945-801844edfa71"
+}

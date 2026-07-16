@@ -1,0 +1,129 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8261f-168a-be44-9f88-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/larc-en-ciel/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/4/5/11e81bbf-3543-9dca-846d-a0369fe50396.jpg",
+      "name": "L'Arc-en-Ciel",
+      "slug": "larc-en-ciel",
+      "uuid": "11e81bbf-3543-9dca-846d-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.53,
+    "energy": 0.97,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.29,
+    "loudness": -4.14,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 144.02,
+    "timeSignature": 4,
+    "valence": 0.87
+  },
+  "composers": [
+    "Hyde",
+    "TETSUYA"
+  ],
+  "copyright": "(P)2004 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "L'Arc-en-Ciel",
+  "credits": [
+    {
+      "name": "TETSUYA",
+      "roles": [
+        "composer",
+        "writer"
+      ],
+      "uuid": "ee551d10-2c64-4cfb-b6cf-f17d3fe46dcc"
+    },
+    {
+      "name": "L’Arc〜en〜Ciel",
+      "roles": [
+        "producer",
+        "associated performer"
+      ],
+      "uuid": "c0b400c0-6da5-4b6d-9f71-c23e41384fdc"
+    },
+    {
+      "name": "岡野ハジメ (Hajime Okano)",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "21547a41-6966-4c4f-9e55-d09effef0a81"
+    },
+    {
+      "name": "Hyde",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "7bd6dff2-7ab9-4bc5-a927-110d3a91afd7"
+    },
+    {
+      "name": "L'Arc-en-Ciel & Hajime Okano",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "ff90eb1e-1093-44c7-9e29-8b8226f18ef4"
+    },
+    {
+      "name": "Tetsuya",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "2bc7b02e-06eb-438c-9884-7ee3c9f23518"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 227,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "soundtrack",
+      "sub": [
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/a/8/6/11e8261f-168a-be44-9f88-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPKS00301961"
+  },
+  "iswcs": [
+    "T9297942995",
+    "T9269611190"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/larc-en-ciel/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/4/5/11e81bbf-3543-9dca-846d-a0369fe50396.jpg",
+      "name": "L'Arc-en-Ciel",
+      "slug": "larc-en-ciel",
+      "uuid": "11e81bbf-3543-9dca-846d-a0369fe50396"
+    }
+  ],
+  "name": "READY STEADY GO",
+  "producers": [
+    "岡野ハジメ (Hajime Okano)",
+    "L’Arc〜en〜Ciel"
+  ],
+  "releaseDate": "2004-02-04T00:00:00+00:00",
+  "uuid": "11e8261f-168a-be44-9f88-a0369fe50396"
+}

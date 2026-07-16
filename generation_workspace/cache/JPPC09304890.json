@@ -1,0 +1,65 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/fcfb7302-f8e5-4977-ad3e-9411c2345ad9/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/chage-and-aska-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/d/d/11e83fed-4ddb-bc12-80f3-aa1c026db3d8.jpg",
+      "name": "CHAGE and ASKA",
+      "slug": "chage-and-aska-1",
+      "uuid": "11e83fed-4ddb-bc12-80f3-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.23,
+    "danceability": 0.58,
+    "energy": 0.8,
+    "instrumentalness": 0,
+    "key": 5,
+    "liveness": 0.38,
+    "loudness": -7.88,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 113.02,
+    "timeSignature": 4,
+    "valence": 0.53
+  },
+  "composers": [
+    "Asuka Ryo"
+  ],
+  "copyright": "Yamaha Music Entertainment Holdings, Inc.",
+  "creditName": "CHAGE and ASKA",
+  "credits": [],
+  "distributor": "NexTone",
+  "duration": 292,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/5/e/8/fcfb7302-f8e5-4977-ad3e-9411c2345ad9.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPC09304890"
+  },
+  "iswcs": [
+    "T1011188784"
+  ],
+  "labels": [
+    {
+      "name": "Yamaha Music Entertainment Holdings",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/chage-and-aska-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/d/d/11e83fed-4ddb-bc12-80f3-aa1c026db3d8.jpg",
+      "name": "CHAGE and ASKA",
+      "slug": "chage-and-aska-1",
+      "uuid": "11e83fed-4ddb-bc12-80f3-aa1c026db3d8"
+    }
+  ],
+  "name": "YAH YAH YAH",
+  "producers": [],
+  "releaseDate": "1993-03-03T00:00:00+00:00",
+  "uuid": "fcfb7302-f8e5-4977-ad3e-9411c2345ad9"
+}

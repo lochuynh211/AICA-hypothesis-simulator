@@ -1,0 +1,120 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/66a7a183-eecf-41b6-aa84-144727fc3ed7/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ado-20/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/6/f/55443f99-af6f-4329-bd55-64f7dba4fb36.jpg",
+      "name": "Ado",
+      "slug": "ado-20",
+      "uuid": "55443f99-af6f-4329-bd55-64f7dba4fb36"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.17,
+    "danceability": 0.62,
+    "energy": 0.98,
+    "instrumentalness": 0,
+    "key": 10,
+    "liveness": 0.14,
+    "loudness": -0.43,
+    "mode": 0,
+    "speechiness": 0.21,
+    "tempo": 132.05,
+    "timeSignature": 4,
+    "valence": 0.74
+  },
+  "composers": [
+    "TeddyLoid",
+    "Giga",
+    "TOPHAMHAT-KYO"
+  ],
+  "copyright": "℗ 2023 UNIVERSAL MUSIC LLC",
+  "creditName": "Ado",
+  "credits": [
+    {
+      "name": "TeddyLoid",
+      "roles": [
+        "producer",
+        "writer",
+        "recording arranger",
+        "composer"
+      ],
+      "uuid": "92b840bd-54b7-4830-8a31-8a71e4948128"
+    },
+    {
+      "name": "TOPHAMHAT-KYO",
+      "roles": [
+        "writer",
+        "author",
+        "lyricist"
+      ],
+      "uuid": "9ca7314d-68f7-4115-8ccb-fd30e61b87ac"
+    },
+    {
+      "name": "Giga",
+      "roles": [
+        "producer",
+        "writer",
+        "recording arranger",
+        "composer"
+      ],
+      "uuid": "061ff661-0732-455d-ae4b-b69cd662948a"
+    },
+    {
+      "name": "Ado",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "63c4ecea-6961-4b98-8d21-f6b9c7127410"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 192,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    },
+    {
+      "root": "j-pop",
+      "sub": [
+        "j-pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/f/c/e/66a7a183-eecf-41b6-aa84-144727fc3ed7.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO02302806"
+  },
+  "iswcs": [
+    "T3272116840"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ado-20/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/6/f/55443f99-af6f-4329-bd55-64f7dba4fb36.jpg",
+      "name": "Ado",
+      "slug": "ado-20",
+      "uuid": "55443f99-af6f-4329-bd55-64f7dba4fb36"
+    }
+  ],
+  "name": "Show",
+  "producers": [
+    "Giga",
+    "TeddyLoid"
+  ],
+  "releaseDate": "2023-09-06T00:00:00+00:00",
+  "uuid": "66a7a183-eecf-41b6-aa84-144727fc3ed7"
+}

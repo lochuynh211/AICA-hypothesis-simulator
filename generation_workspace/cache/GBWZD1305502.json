@@ -1,0 +1,129 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82688-5df8-78d4-bf82-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/nils-frahm/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/f/f/11e81bc1-2ffa-f65e-bbd6-a0369fe50396.jpg",
+      "name": "Nils Frahm",
+      "slug": "nils-frahm",
+      "uuid": "11e81bc1-2ffa-f65e-bbd6-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.86,
+    "danceability": 0.22,
+    "energy": 0.23,
+    "instrumentalness": 0.9,
+    "key": 0,
+    "liveness": 0.73,
+    "loudness": -12.79,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 149.76,
+    "timeSignature": 4,
+    "valence": 0.07
+  },
+  "composers": [
+    "Nils Oliver Frahm"
+  ],
+  "copyright": "2013 Erased Tapes Records Ltd.",
+  "creditName": "Nils Frahm",
+  "credits": [
+    {
+      "name": "Nils Oliver Frahm",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "5b7b13f0-8b25-4dbb-ad60-8c0bbefbcc9d"
+    },
+    {
+      "name": "Nils Frahm",
+      "roles": [
+        "composer",
+        "producer",
+        "mix",
+        "synthesizer"
+      ],
+      "uuid": "32d4b7a0-2609-4869-9141-72dfc58d9678"
+    },
+    {
+      "name": "Mandy Parnell",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "1e8cd7d2-c58f-48a1-8add-a2f3dd275501"
+    },
+    {
+      "name": "Matthias H. Franz Hahn",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "f1b9b1ea-ed46-4b22-8776-0a56a1e528ce"
+    },
+    {
+      "name": "Terence Goodchild",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "4534403c-d2cf-4de9-b570-ed98b5ba003c"
+    },
+    {
+      "name": "Martyn Heyne",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "7e43f6b1-eb01-4972-b30e-7c26ebe8f7a4"
+    },
+    {
+      "name": "Nils Frahm",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "916f60d4-3ebc-49bc-bdf6-a0ddec31a444"
+    }
+  ],
+  "distributor": "Absolute",
+  "duration": 498,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    },
+    {
+      "root": "electro",
+      "sub": [
+        "electronic"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/8/f/d/11e82688-5df8-78d4-bf82-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBWZD1305502"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Erased Tapes",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/nils-frahm/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/f/f/11e81bc1-2ffa-f65e-bbd6-a0369fe50396.jpg",
+      "name": "Nils Frahm",
+      "slug": "nils-frahm",
+      "uuid": "11e81bc1-2ffa-f65e-bbd6-a0369fe50396"
+    }
+  ],
+  "name": "Says",
+  "producers": [],
+  "releaseDate": "2013-11-18T00:00:00+00:00",
+  "uuid": "11e82688-5df8-78d4-bf82-aa1c026db3d8"
+}

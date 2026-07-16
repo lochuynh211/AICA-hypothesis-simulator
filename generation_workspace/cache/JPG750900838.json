@@ -1,0 +1,79 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8262b-484b-95f0-8318-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/see-saw-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/d/e/11e81bc0-0edd-009e-9e39-a0369fe50396.jpg",
+      "name": "See-Saw",
+      "slug": "see-saw-1",
+      "uuid": "11e81bc0-0edd-009e-9e39-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.47,
+    "energy": 0.85,
+    "instrumentalness": 0,
+    "key": 4,
+    "liveness": 0.2,
+    "loudness": -4.71,
+    "mode": 0,
+    "speechiness": 0.06,
+    "tempo": 122.92,
+    "timeSignature": 4,
+    "valence": 0.11
+  },
+  "composers": [
+    "梶浦由記",
+    "石川千亜紀"
+  ],
+  "copyright": "(P) 2020 Bandai Namco Music Live Inc.",
+  "creditName": "See-Saw",
+  "credits": [],
+  "distributor": "",
+  "duration": 288,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "j-pop",
+      "sub": [
+        "j-pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/4/8/11e8262b-484b-95f0-8318-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPG750900838"
+  },
+  "iswcs": [
+    "T9096841177"
+  ],
+  "labels": [
+    {
+      "name": "Bandai Namco Music Live",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/see-saw-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/d/e/11e81bc0-0edd-009e-9e39-a0369fe50396.jpg",
+      "name": "See-Saw",
+      "slug": "see-saw-1",
+      "uuid": "11e81bc0-0edd-009e-9e39-a0369fe50396"
+    }
+  ],
+  "name": "あんなに一緒だったのに",
+  "producers": [],
+  "releaseDate": "2020-02-02T00:00:00+00:00",
+  "uuid": "11e8262b-484b-95f0-8318-aa1c026db3d8"
+}

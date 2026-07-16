@@ -1,0 +1,197 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/409e24aa-3415-11e9-a46b-549f35141000/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/louisa-fuller/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/3/0/11e81bbe-b032-8916-bd95-a0369fe50396.jpg",
+      "name": "Louisa Fuller",
+      "slug": "louisa-fuller",
+      "uuid": "11e81bbe-b032-8916-bd95-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/philip-sheppard/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/7/0/11e81bc1-4070-8e22-a3e2-a0369fe50396.jpg",
+      "name": "Philip Sheppard",
+      "slug": "philip-sheppard",
+      "uuid": "11e81bc1-4070-8e22-a3e2-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/max-richter/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/d/0/11e81bc3-50d8-4b9a-a443-a0369fe50396.jpg",
+      "name": "Max Richter",
+      "slug": "max-richter",
+      "uuid": "11e81bc3-50d8-4b9a-a443-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/john-metcalfe/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/1/7/11e81bcb-8714-f246-942b-a0369fe50396.jpg",
+      "name": "John Metcalfe",
+      "slug": "john-metcalfe",
+      "uuid": "11e81bcb-8714-f246-942b-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/chris-worsey-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/a/5/e8262e1a-c5a8-11e8-9f60-549f35141000.jpg",
+      "name": "Chris Worsey",
+      "slug": "chris-worsey-1",
+      "uuid": "e8262e1a-c5a8-11e8-9f60-549f35141000"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/natalia-bonner-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/b/0/1037e9f6-20b8-11e9-8eea-549f35141000.jpg",
+      "name": "Natalia Bonner",
+      "slug": "natalia-bonner-1",
+      "uuid": "1037e9f6-20b8-11e9-8eea-549f35141000"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.15,
+    "danceability": 0.07,
+    "energy": 0.34,
+    "instrumentalness": 0.86,
+    "key": 10,
+    "liveness": 0.11,
+    "loudness": -12.74,
+    "mode": 0,
+    "speechiness": 0.05,
+    "tempo": 65.6,
+    "timeSignature": 4,
+    "valence": 0.03
+  },
+  "composers": [
+    "Max Richter"
+  ],
+  "copyright": "This Compilation ℗ 2019 Deutsche Grammophon GmbH, Berlin",
+  "creditName": "Louisa Fuller & Philip Sheppard & Max Richter & John Metcalfe & Chris Worsey & Natalia Bonner",
+  "credits": [
+    {
+      "name": "Max Richter",
+      "roles": [
+        "producer",
+        "writer",
+        "composer"
+      ],
+      "uuid": "2988256c-30eb-430e-8629-f5743f9655bd"
+    },
+    {
+      "name": "Louisa Fuller",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "09185c1d-7f06-4230-9bd7-16240fce0e97"
+    },
+    {
+      "name": "John Metcalfe",
+      "roles": [
+        "viola"
+      ],
+      "uuid": "aa4b05da-b68a-4c03-bd79-088f0244704e"
+    },
+    {
+      "name": "Chris Worsey",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "2dc9b0e8-d31e-4bac-b06f-e65fcd2cd4eb"
+    },
+    {
+      "name": "Natalia Bonner",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "cfe6049b-0bc8-4caa-8cc4-d92e9af60f6d"
+    },
+    {
+      "name": "Philip Sheppard",
+      "roles": [
+        "cello"
+      ],
+      "uuid": "d68e3f62-658a-418b-8aa6-8bc24e8881e5"
+    }
+  ],
+  "distributor": "",
+  "duration": 371,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    },
+    {
+      "root": "electro",
+      "sub": [
+        "electronic"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/5/1/4/409e24aa-3415-11e9-a46b-549f35141000.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBDCA0300279"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Berlin",
+      "type": "Other independent labels: \"Indie\""
+    },
+    {
+      "name": "Deutsche Grammophon",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/louisa-fuller/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/3/0/11e81bbe-b032-8916-bd95-a0369fe50396.jpg",
+      "name": "Louisa Fuller",
+      "slug": "louisa-fuller",
+      "uuid": "11e81bbe-b032-8916-bd95-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/philip-sheppard/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/7/0/11e81bc1-4070-8e22-a3e2-a0369fe50396.jpg",
+      "name": "Philip Sheppard",
+      "slug": "philip-sheppard",
+      "uuid": "11e81bc1-4070-8e22-a3e2-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/max-richter/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/d/0/11e81bc3-50d8-4b9a-a443-a0369fe50396.jpg",
+      "name": "Max Richter",
+      "slug": "max-richter",
+      "uuid": "11e81bc3-50d8-4b9a-a443-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/john-metcalfe/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/1/7/11e81bcb-8714-f246-942b-a0369fe50396.jpg",
+      "name": "John Metcalfe",
+      "slug": "john-metcalfe",
+      "uuid": "11e81bcb-8714-f246-942b-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/chris-worsey-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/a/5/e8262e1a-c5a8-11e8-9f60-549f35141000.jpg",
+      "name": "Chris Worsey",
+      "slug": "chris-worsey-1",
+      "uuid": "e8262e1a-c5a8-11e8-9f60-549f35141000"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/natalia-bonner-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/b/0/1037e9f6-20b8-11e9-8eea-549f35141000.jpg",
+      "name": "Natalia Bonner",
+      "slug": "natalia-bonner-1",
+      "uuid": "1037e9f6-20b8-11e9-8eea-549f35141000"
+    }
+  ],
+  "name": "On the Nature of Daylight",
+  "producers": [
+    "Max Richter"
+  ],
+  "releaseDate": "2019-10-04T00:00:00+00:00",
+  "uuid": "409e24aa-3415-11e9-a46b-549f35141000"
+}

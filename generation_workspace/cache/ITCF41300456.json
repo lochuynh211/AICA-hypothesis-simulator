@@ -1,0 +1,63 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/09162e7c-d3c2-40c4-8d6e-b18c09e5296b/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/dick-dale/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/6/9/11e81bbe-6963-0556-a876-a0369fe50396.jpg",
+      "name": "Dick Dale",
+      "slug": "dick-dale",
+      "uuid": "11e81bbe-6963-0556-a876-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.08,
+    "danceability": 0.43,
+    "energy": 0.92,
+    "instrumentalness": 0.56,
+    "key": 4,
+    "liveness": 0.48,
+    "loudness": -7.69,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 98.82,
+    "timeSignature": 4,
+    "valence": 0.69
+  },
+  "composers": [
+    "Tauber Wise Leeds Rubanis"
+  ],
+  "copyright": "J. Joes J. Edizioni Musicali",
+  "creditName": "Dick Dale",
+  "credits": [],
+  "distributor": "Believe",
+  "duration": 158,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/2/c/3/09162e7c-d3c2-40c4-8d6e-b18c09e5296b.jpg",
+  "isrc": {
+    "countryCode": "IT",
+    "countryName": "Italy",
+    "value": "ITCF41300456"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "J. Joes J. Edizioni Musicali",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/dick-dale/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/3/6/9/11e81bbe-6963-0556-a876-a0369fe50396.jpg",
+      "name": "Dick Dale",
+      "slug": "dick-dale",
+      "uuid": "11e81bbe-6963-0556-a876-a0369fe50396"
+    }
+  ],
+  "name": "Misirlou (Original Soundtrack from \"Pulp fiction\" - Remastered)",
+  "producers": [],
+  "releaseDate": "2013-11-22T00:00:00+00:00",
+  "uuid": "09162e7c-d3c2-40c4-8d6e-b18c09e5296b"
+}

@@ -1,0 +1,68 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/5eb2a373-6837-43ee-ad90-e9c6b69a5cd2/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/v-a-94/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/3/5/4d3eeaab-153d-40e6-b8db-53ac36e22cb8.jpg",
+      "name": "V.A.",
+      "slug": "v-a-94",
+      "uuid": "4d3eeaab-153d-40e6-b8db-53ac36e22cb8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.56,
+    "danceability": 0.61,
+    "energy": 0.45,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.08,
+    "loudness": -8.48,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 127.61,
+    "timeSignature": 3,
+    "valence": 0.39
+  },
+  "composers": [
+    "Hirotaka Nakagawa",
+    "新沢としひこ"
+  ],
+  "copyright": "",
+  "creditName": "V.A.",
+  "credits": [],
+  "distributor": "King Record",
+  "duration": 187,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "kids",
+      "sub": [
+        "children's music"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/7/3/8/5eb2a373-6837-43ee-ad90-e9c6b69a5cd2.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPKI00918098"
+  },
+  "iswcs": [
+    "T1010197916"
+  ],
+  "labels": [],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/v-a-94/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/3/5/4d3eeaab-153d-40e6-b8db-53ac36e22cb8.jpg",
+      "name": "V.A.",
+      "slug": "v-a-94",
+      "uuid": "4d3eeaab-153d-40e6-b8db-53ac36e22cb8"
+    }
+  ],
+  "name": "にじ<スマイルキッズ>",
+  "producers": [],
+  "releaseDate": "2016-03-09T00:00:00+00:00",
+  "uuid": "5eb2a373-6837-43ee-ad90-e9c6b69a5cd2"
+}

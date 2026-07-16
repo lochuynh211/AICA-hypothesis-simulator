@@ -1,0 +1,133 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/217f3279-c063-4c54-852a-b6c366763f06/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/wiener-philharmoniker/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/0/0/11e81bd0-7007-ab5c-bb42-a0369fe50396.jpg",
+      "name": "Wiener Philharmoniker",
+      "slug": "wiener-philharmoniker",
+      "uuid": "11e81bd0-7007-ab5c-bb42-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aram-khachaturian-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/d/8/10279bc8-b8d5-11e8-9f13-525400009efb.jpg",
+      "name": "Aram Khachaturian",
+      "slug": "aram-khachaturian-1",
+      "uuid": "10279bc8-b8d5-11e8-9f13-525400009efb"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.7,
+    "danceability": 0.47,
+    "energy": 0.83,
+    "instrumentalness": 0.9,
+    "key": 0,
+    "liveness": 0.17,
+    "loudness": -11.84,
+    "mode": 1,
+    "speechiness": 0.07,
+    "tempo": 90.38,
+    "timeSignature": 4,
+    "valence": 0.3
+  },
+  "composers": [
+    "Aram Khachaturian"
+  ],
+  "copyright": "℗ 1989 Decca Music Group Limited",
+  "creditName": "Wiener Philharmoniker & Aram Khachaturian",
+  "credits": [
+    {
+      "name": "James Brown",
+      "roles": [
+        "engineer",
+        "balance engineer"
+      ],
+      "uuid": "89be16f7-2e4d-4809-b416-f4b0d52794e1"
+    },
+    {
+      "name": "Aram Khachaturian",
+      "roles": [
+        "composer",
+        "conductor"
+      ],
+      "uuid": "f83867d4-6a7c-46ea-8826-afdd027672cc"
+    },
+    {
+      "name": "Vienna Philharmonic",
+      "roles": [
+        "orchestra"
+      ],
+      "uuid": "b8789063-1a87-4782-9423-db0799d3c37d"
+    },
+    {
+      "name": "Erik Smith",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "3162618a-7738-4046-81f7-b43ebaaa35a2"
+    },
+    {
+      "name": "Gordon Parry",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "e45d89a3-f9ea-471f-a577-53e2dbb1f7ac"
+    },
+    {
+      "name": "Wiener Philharmoniker",
+      "roles": [
+        "orchestra"
+      ],
+      "uuid": "b70b83f9-2196-4767-a935-d3c8908f040d"
+    }
+  ],
+  "distributor": "",
+  "duration": 142,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "classical",
+      "sub": [
+        "classical"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/3/6/0/217f3279-c063-4c54-852a-b6c366763f06.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBF076210131"
+  },
+  "iswcs": [
+    "T8010255252"
+  ],
+  "labels": [
+    {
+      "name": "Decca",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/wiener-philharmoniker/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/7/0/0/11e81bd0-7007-ab5c-bb42-a0369fe50396.jpg",
+      "name": "Wiener Philharmoniker",
+      "slug": "wiener-philharmoniker",
+      "uuid": "11e81bd0-7007-ab5c-bb42-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/aram-khachaturian-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/5/d/8/10279bc8-b8d5-11e8-9f13-525400009efb.jpg",
+      "name": "Aram Khachaturian",
+      "slug": "aram-khachaturian-1",
+      "uuid": "10279bc8-b8d5-11e8-9f13-525400009efb"
+    }
+  ],
+  "name": "Khachaturian: Gayaneh - Sabre Dance",
+  "producers": [
+    "Erik Smith"
+  ],
+  "releaseDate": "1989-01-01T00:00:00+00:00",
+  "uuid": "217f3279-c063-4c54-852a-b6c366763f06"
+}

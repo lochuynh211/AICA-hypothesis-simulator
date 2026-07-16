@@ -1,0 +1,358 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8a9ff-0ed1-1cf2-9918-525400009efb/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mac-miller/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/2/7/11e81bd0-6726-daf8-a2d2-a0369fe50396.jpg",
+      "name": "Mac Miller",
+      "slug": "mac-miller",
+      "uuid": "11e81bd0-6726-daf8-a2d2-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.37,
+    "danceability": 0.52,
+    "energy": 0.54,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.12,
+    "loudness": -8.11,
+    "mode": 1,
+    "speechiness": 0.21,
+    "tempo": 141.89,
+    "timeSignature": 4,
+    "valence": 0.18
+  },
+  "composers": [
+    "Dacoury Natche",
+    "Erica Wright",
+    "Peter Mudge",
+    "Destin Route",
+    "Tyler Mason",
+    "Devonté Hynes",
+    "Malcolm McCormick",
+    "Jahmal Cantero",
+    "E. Dan"
+  ],
+  "copyright": "℗ 2018 Warner Records Inc.",
+  "creditName": "Mac Miller",
+  "credits": [
+    {
+      "name": "Erica Wright",
+      "roles": [
+        "songwriter",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "c23b1143-0696-40f8-8f44-7b8c3b651d33"
+    },
+    {
+      "name": "Dev Hynes",
+      "roles": [
+        "additional vocals"
+      ],
+      "uuid": "116bd39f-95a7-48f6-82c2-01cafd6b4a92"
+    },
+    {
+      "name": "Vic Wainstein",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "4392d560-9090-4bbc-8bfa-8c77d4ed6108"
+    },
+    {
+      "name": "Chris Galland",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "da97aa03-6742-425b-84ff-7ebca62db71a"
+    },
+    {
+      "name": "Manny Marroquin",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "57995644-dae9-41a3-97b2-502ed827ff4f"
+    },
+    {
+      "name": "Robin Florent",
+      "roles": [
+        "assistant mix engineer"
+      ],
+      "uuid": "0b6a6fce-099f-4cb8-ab18-6e0bca845ac2"
+    },
+    {
+      "name": "Scott Desmarais",
+      "roles": [
+        "assistant mix engineer"
+      ],
+      "uuid": "674e5040-363d-4fae-83e3-e6f05ecc21fe"
+    },
+    {
+      "name": "Mike Bozzi",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "52318d94-2904-4ce6-9fa5-55a2c5413b9d"
+    },
+    {
+      "name": "JID",
+      "roles": [
+        "writer",
+        "additional vocals"
+      ],
+      "uuid": "0cc50512-e7cb-4066-85df-1c1d53592149"
+    },
+    {
+      "name": "Ben Sedano",
+      "roles": [
+        "assistant recording engineer"
+      ],
+      "uuid": "0ce911c2-8e55-45aa-b840-2599e9dac585"
+    },
+    {
+      "name": "Dacoury Natche",
+      "roles": [
+        "songwriter",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "9e418a3f-8533-4f7d-aa30-0d253d4a6d22"
+    },
+    {
+      "name": "Dahi",
+      "roles": [
+        "producer",
+        "writer",
+        "programming"
+      ],
+      "uuid": "58e47606-89cd-4b29-bbed-3a875145035c"
+    },
+    {
+      "name": "DJ Dahi",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "85b75ed0-fe05-4c13-b6bb-8b8c8afb0023"
+    },
+    {
+      "name": "Bernie Grundman Mastering",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "aa9df1f4-808d-4210-a48d-01d6a3070ef6"
+    },
+    {
+      "name": "Devonté Hynes",
+      "roles": [
+        "songwriter",
+        "writer",
+        "additional vocals"
+      ],
+      "uuid": "ed8f43a2-991e-4e8f-a568-39ea2f7b5973"
+    },
+    {
+      "name": "Mac Miller",
+      "roles": [
+        "songwriter",
+        "writer",
+        "vocals"
+      ],
+      "uuid": "ce5ed083-2dd4-48e2-b1d1-b08278274a43"
+    },
+    {
+      "name": "John Armstrong",
+      "roles": [
+        "assistant recording engineer"
+      ],
+      "uuid": "daed9da0-d830-4f58-ac22-7773e6203335"
+    },
+    {
+      "name": "E. Dan",
+      "roles": [
+        "writer",
+        "recording",
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "a716a146-04f7-44f6-98a4-1e65a247b693"
+    },
+    {
+      "name": "Nice Rec",
+      "roles": [
+        "writer",
+        "programming",
+        "additional production",
+        "additional  production"
+      ],
+      "uuid": "3ed9badc-1596-43ed-b83a-e2479fb29a8f"
+    },
+    {
+      "name": "Nostxlgic",
+      "roles": [
+        "producer",
+        "writer",
+        "programming"
+      ],
+      "uuid": "38779420-068b-4de0-a18c-6003cdb8fa0b"
+    },
+    {
+      "name": "ID Labs",
+      "roles": [
+        "producer",
+        "programming"
+      ],
+      "uuid": "d5be5ceb-fc7c-43e0-bd2c-550cd900fc76"
+    },
+    {
+      "name": "Erykah Badu",
+      "roles": [
+        "writer",
+        "sampled artist"
+      ],
+      "uuid": "bfa9dc13-a647-4905-8634-21e97703187b"
+    },
+    {
+      "name": "JaBorn Jamal",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "42db397f-1274-4bbb-96b8-324aaed467e3"
+    },
+    {
+      "name": "Jahmal Cantero",
+      "roles": [
+        "songwriter",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "d96cbaa4-d6cc-4854-b0de-41057002d8f8"
+    },
+    {
+      "name": "Peter Mudge",
+      "roles": [
+        "songwriter",
+        "additional production"
+      ],
+      "uuid": "05217c3a-00af-4ee5-b931-8d094c12de27"
+    },
+    {
+      "name": "Nostxglic",
+      "roles": [
+        "producer",
+        "programming"
+      ],
+      "uuid": "1a05a8ad-5b96-4bd8-9870-29d90ea2fc1d"
+    },
+    {
+      "name": "Tyler Mason",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "6ea5139e-3d5c-45f3-8f03-7637a90b41eb"
+    },
+    {
+      "name": "Destin DiCaprio",
+      "roles": [
+        "additional vocals"
+      ],
+      "uuid": "53e9a236-a83b-429f-9d52-6ca11853846a"
+    },
+    {
+      "name": "Dicaprio",
+      "roles": [
+        "additional  vocals"
+      ],
+      "uuid": "106ae15a-2d1e-422b-8259-06f25010817c"
+    },
+    {
+      "name": "Ben \"Bengineer\" Sedano",
+      "roles": [
+        "assistant recording engineer"
+      ],
+      "uuid": "21a7f8e2-e36b-44f9-b463-40d3b871f9d3"
+    },
+    {
+      "name": "Destin Route",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "c5bd27c7-195f-443a-9cb7-c49f61f9e38d"
+    },
+    {
+      "name": "E. Dan",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "9f14663b-6ac0-45da-b412-c8f3508c4732"
+    },
+    {
+      "name": "Destin Route",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "43ad78fc-c1fe-4e64-81e2-4b9ef729649c"
+    },
+    {
+      "name": "Mac Miller",
+      "roles": [
+        "lead  vocals"
+      ],
+      "uuid": "37accaff-edd7-4983-896d-1158f89cf429"
+    },
+    {
+      "name": "Peter Mudge",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "598c60dd-13af-45ce-8aff-d779f75e1adc"
+    }
+  ],
+  "distributor": "Warner",
+  "duration": 345,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/1/d/e/11e8a9ff-0ed1-1cf2-9918-525400009efb.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USWB11801215"
+  },
+  "iswcs": [
+    "T9276523627",
+    "T3091447682"
+  ],
+  "labels": [
+    {
+      "name": "Warner",
+      "type": "Warner"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/mac-miller/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/2/7/11e81bd0-6726-daf8-a2d2-a0369fe50396.jpg",
+      "name": "Mac Miller",
+      "slug": "mac-miller",
+      "uuid": "11e81bd0-6726-daf8-a2d2-a0369fe50396"
+    }
+  ],
+  "name": "Self Care",
+  "producers": [
+    "ID Labs",
+    "Dahi",
+    "Nostxglic"
+  ],
+  "releaseDate": "2018-07-13T00:00:00+00:00",
+  "uuid": "11e8a9ff-0ed1-1cf2-9918-525400009efb"
+}

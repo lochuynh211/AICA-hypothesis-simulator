@@ -1,0 +1,78 @@
+{
+  "certified": [],
+  "re_harvest_signals": [
+    {
+      "pair_id": "pair-01-drowsiness",
+      "cell": null,
+      "signal": "re_harvest_cell",
+      "reason": "contrast pair did not reverse; harvest a different real song for this cell (never tune numbers, FR-027)"
+    },
+    {
+      "pair_id": "pair-02-fatigue",
+      "cell": null,
+      "signal": "re_harvest_cell",
+      "reason": "contrast pair did not reverse; harvest a different real song for this cell (never tune numbers, FR-027)"
+    },
+    {
+      "pair_id": "pair-03-traffic",
+      "cell": null,
+      "signal": "re_harvest_cell",
+      "reason": "contrast pair did not reverse; harvest a different real song for this cell (never tune numbers, FR-027)"
+    },
+    {
+      "pair_id": "pair-04-road-type",
+      "cell": null,
+      "signal": "re_harvest_cell",
+      "reason": "contrast pair did not reverse; harvest a different real song for this cell (never tune numbers, FR-027)"
+    },
+    {
+      "pair_id": "pair-05-day-night",
+      "cell": null,
+      "signal": "re_harvest_cell",
+      "reason": "contrast pair did not reverse; harvest a different real song for this cell (never tune numbers, FR-027)"
+    },
+    {
+      "pair_id": "pair-06-monotony",
+      "cell": null,
+      "signal": "re_harvest_cell",
+      "reason": "contrast pair did not reverse; harvest a different real song for this cell (never tune numbers, FR-027)"
+    },
+    {
+      "pair_id": "pair-07-motion",
+      "cell": null,
+      "signal": "re_harvest_cell",
+      "reason": "contrast pair did not reverse; harvest a different real song for this cell (never tune numbers, FR-027)"
+    },
+    {
+      "pair_id": "pair-08-child-present",
+      "cell": null,
+      "signal": "re_harvest_cell",
+      "reason": "contrast pair did not reverse; harvest a different real song for this cell (never tune numbers, FR-027)"
+    },
+    {
+      "pair_id": "pair-09-oshi-mode",
+      "cell": null,
+      "signal": "re_harvest_cell",
+      "reason": "contrast pair did not reverse; harvest a different real song for this cell (never tune numbers, FR-027)"
+    },
+    {
+      "pair_id": "pair-10-recent-play",
+      "cell": null,
+      "signal": "re_harvest_cell",
+      "reason": "contrast pair did not reverse; harvest a different real song for this cell (never tune numbers, FR-027)"
+    },
+    {
+      "pair_id": "pair-11-acceptance",
+      "cell": null,
+      "signal": "re_harvest_cell",
+      "reason": "contrast pair did not reverse; harvest a different real song for this cell (never tune numbers, FR-027)"
+    },
+    {
+      "pair_id": "pair-12-route-tag",
+      "cell": null,
+      "signal": "re_harvest_cell",
+      "reason": "contrast pair did not reverse; harvest a different real song for this cell (never tune numbers, FR-027)"
+    }
+  ],
+  "all_reversed": false
+}

@@ -1,0 +1,419 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/b6ac0f7e-112b-11ea-8a46-a81e84f2a475/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/the-weeknd/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/3/b/11e81bd0-fb3f-6e08-8b7f-a0369fe50396.jpg",
+      "name": "The Weeknd",
+      "slug": "the-weeknd",
+      "uuid": "11e81bd0-fb3f-6e08-8b7f-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.52,
+    "energy": 0.73,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.09,
+    "loudness": -5.93,
+    "mode": 1,
+    "speechiness": 0.06,
+    "tempo": 171,
+    "timeSignature": 4,
+    "valence": 0.34
+  },
+  "composers": [
+    "Abel \"The Weeknd\" Tesfaye",
+    "Ahmad Balshe",
+    "Jason \"DaHeala\" Quenneville",
+    "Max Martin",
+    "Oscar Holter",
+    "DaHeala"
+  ],
+  "copyright": "℗ 2019 The Weeknd XO, Inc., manufactured and marketed by Republic Records, a division of UMG Recordings, Inc.",
+  "creditName": "The Weeknd",
+  "credits": [
+    {
+      "name": "Abel Tesfaye",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "0421350d-b533-42f1-b8a9-6d0cc82313ca"
+    },
+    {
+      "name": "Dave Kutch",
+      "roles": [
+        "mastering",
+        "studio personnel"
+      ],
+      "uuid": "58e780e8-8a17-4fba-afa7-21136229c2f2"
+    },
+    {
+      "name": "Oscar Holter",
+      "roles": [
+        "producer",
+        "writer",
+        "programming",
+        "drums",
+        "guitar",
+        "bass",
+        "keyboard",
+        "lyricist"
+      ],
+      "uuid": "27e8d273-643a-416b-a833-df65f9b01d8c"
+    },
+    {
+      "name": "Șerban Ghenea",
+      "roles": [
+        "mix",
+        "studio personnel"
+      ],
+      "uuid": "6d99085c-8bd6-43d8-8d42-82b6bb84a67a"
+    },
+    {
+      "name": "The Weeknd",
+      "roles": [
+        "composer",
+        "producer",
+        "writer",
+        "programming",
+        "lead vocals",
+        "drums",
+        "backing vocals",
+        "guitar",
+        "bass",
+        "keyboard",
+        "lyricist"
+      ],
+      "uuid": "989c0878-1ece-4cf4-bc86-ab936a3741e6"
+    },
+    {
+      "name": "Sam Holland",
+      "roles": [
+        "engineer",
+        "studio personnel"
+      ],
+      "uuid": "a044c736-df88-4273-9a36-e3a684d48a9d"
+    },
+    {
+      "name": "John Hanes",
+      "roles": [
+        "mix",
+        "recording",
+        "studio personnel"
+      ],
+      "uuid": "54f4ce58-37ed-4530-9da9-3ec4b41e7cd7"
+    },
+    {
+      "name": "Michael Ilbert",
+      "roles": [
+        "engineer",
+        "studio personnel"
+      ],
+      "uuid": "3ccb8e94-465f-4bcc-b163-f8fa8d00f533"
+    },
+    {
+      "name": "Cory Bice",
+      "roles": [
+        "assistant recording engineer",
+        "studio personnel",
+        "second engineer"
+      ],
+      "uuid": "3fc01b36-38cc-4bd7-8bcf-edd09e9ffe35"
+    },
+    {
+      "name": "Jason 'Daheala' Quenneville",
+      "roles": [
+        "composer",
+        "songwriter",
+        "lyricist"
+      ],
+      "uuid": "576809f4-8f7d-410a-84cd-357f76deec5f"
+    },
+    {
+      "name": "Karl Martin Sandberg",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "8fa66085-dcdf-4082-8b63-c740ea8d1eb7"
+    },
+    {
+      "name": "Kevin Peterson",
+      "roles": [
+        "mastering",
+        "studio personnel"
+      ],
+      "uuid": "a4b972a1-817a-4a9a-94a3-ee3aff6c89ae"
+    },
+    {
+      "name": "Kenneth Taylor",
+      "roles": [
+        "video 1st assistant director"
+      ],
+      "uuid": "bb72b06d-8b76-4794-bbdd-dd3fd977a4ab"
+    },
+    {
+      "name": "DaHeala",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "0a1fc7af-4b41-4abe-94b7-747bb286e0e4"
+    },
+    {
+      "name": "Shin Kamiyama",
+      "roles": [
+        "engineer",
+        "studio personnel"
+      ],
+      "uuid": "33d9dca5-3c76-4685-8419-d4b78ca490f9"
+    },
+    {
+      "name": "Sean Klein",
+      "roles": [
+        "assistant recording engineer",
+        "studio personnel",
+        "second engineer"
+      ],
+      "uuid": "6db27f38-ccd6-4967-9276-dafe232d4973"
+    },
+    {
+      "name": "Mathematic",
+      "roles": [
+        "video special effects department"
+      ],
+      "uuid": "ad230c95-ba6c-4c19-9add-54a6a0dcd35f"
+    },
+    {
+      "name": "Niels Lindelien",
+      "roles": [
+        "video steadicam operator"
+      ],
+      "uuid": "7b99911b-edcf-48e3-b9b2-052ee321c622"
+    },
+    {
+      "name": "Aleksi Tammi",
+      "roles": [
+        "video graphic designer"
+      ],
+      "uuid": "96cd009d-de1b-4b43-8a81-162f683aaccc"
+    },
+    {
+      "name": "Oscar Böckerman",
+      "roles": [
+        "video 3d team"
+      ],
+      "uuid": "2dd25c30-fc33-486d-9afc-36f86ab8104b"
+    },
+    {
+      "name": "Akseli Soini",
+      "roles": [
+        "video sound designer"
+      ],
+      "uuid": "d3465eef-77ca-4f36-9f86-d24ecf52f0a4"
+    },
+    {
+      "name": "Nicke Jacobsson",
+      "roles": [
+        "video colorist"
+      ],
+      "uuid": "2820afa5-5df4-4bfe-b2d7-77611baffde7"
+    },
+    {
+      "name": "Alex Ernst",
+      "roles": [
+        "video post-production supervisor"
+      ],
+      "uuid": "0c1a4a15-245d-4bd0-b7b3-9112ba872d9e"
+    },
+    {
+      "name": "Tim Montana",
+      "roles": [
+        "video editor"
+      ],
+      "uuid": "0f7fb064-be62-40e2-86af-3686e0fc6c16"
+    },
+    {
+      "name": "Janne Vartia",
+      "roles": [
+        "video editor"
+      ],
+      "uuid": "55e726bd-9080-47fc-9049-5d7b1cef9521"
+    },
+    {
+      "name": "Adam William Wilson",
+      "roles": [
+        "video production designer"
+      ],
+      "uuid": "d4845019-6865-4a4a-a58f-ce5475038ee0"
+    },
+    {
+      "name": "Marlow Nunez",
+      "roles": [
+        "video key grip"
+      ],
+      "uuid": "cb253c3a-6d1a-4901-b431-9b0eab3f7e90"
+    },
+    {
+      "name": "Nizar Najm",
+      "roles": [
+        "video gaffer"
+      ],
+      "uuid": "b1012264-36fa-4c4d-84b6-d8770b29fe5b"
+    },
+    {
+      "name": "Devin “Daddy” Karringten",
+      "roles": [
+        "video director of photography"
+      ],
+      "uuid": "e081f365-23ac-42b8-aa3a-c5d2855d2d87"
+    },
+    {
+      "name": "Oliver Miller",
+      "roles": [
+        "video director of photography"
+      ],
+      "uuid": "4099e068-f683-4028-9b10-39aba2373622"
+    },
+    {
+      "name": "Sarah Park",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "a5d15c30-db4f-444a-ac1d-c7c5608d3a2d"
+    },
+    {
+      "name": "Saskia Whinney",
+      "roles": [
+        "video executive producer"
+      ],
+      "uuid": "a921a0e7-dfb8-4ece-b136-34d1414fcc98"
+    },
+    {
+      "name": "Anton Tammi",
+      "roles": [
+        "video director"
+      ],
+      "uuid": "e22bf311-36c7-4a99-ae3c-b949492a2a08"
+    },
+    {
+      "name": "The Mastering Palace, NYC",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "56742b6d-9709-4a9f-a174-44eaac5135c6"
+    },
+    {
+      "name": "Jeremy Lertola",
+      "roles": [
+        "assistant recording engineer",
+        "studio personnel",
+        "second engineer"
+      ],
+      "uuid": "7a84f5e6-6751-4d94-88e4-8a7a50de71e2"
+    },
+    {
+      "name": "Max Martin",
+      "roles": [
+        "producer",
+        "writer",
+        "programming",
+        "drums",
+        "guitar",
+        "bass",
+        "keyboard",
+        "lyricist"
+      ],
+      "uuid": "681e1483-fa98-48ba-ba8a-c55c05f97db4"
+    },
+    {
+      "name": "Belly",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "8ebb63e1-9ade-4c05-98e9-83d362258e7b"
+    },
+    {
+      "name": "Ahmad Balshe",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "4553f876-3264-4245-a107-c1b0e3d0b44c"
+    },
+    {
+      "name": "J. Quenneville",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "bed8dd8b-f4f6-4ae9-b4ea-a02beb4d34f4"
+    },
+    {
+      "name": "The Weeknd",
+      "roles": [
+        "drums",
+        "bass vocalist"
+      ],
+      "uuid": "3ef7a5d3-4500-4165-a436-98fbe5cfbf8d"
+    },
+    {
+      "name": "Abel \"The Weeknd\" Tesfaye",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "f8015679-fc01-4b72-bc53-200fc34c450f"
+    }
+  ],
+  "distributor": "Fuga",
+  "duration": 200,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b",
+        "r&b, funk & soul"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/2/1/b6ac0f7e-112b-11ea-8a46-a81e84f2a475.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USUG11904206"
+  },
+  "iswcs": [
+    "T9297449117",
+    "T3035257462"
+  ],
+  "labels": [
+    {
+      "name": "Republic",
+      "type": "Universal"
+    },
+    {
+      "name": "XO",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/the-weeknd/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/f/3/b/11e81bd0-fb3f-6e08-8b7f-a0369fe50396.jpg",
+      "name": "The Weeknd",
+      "slug": "the-weeknd",
+      "uuid": "11e81bd0-fb3f-6e08-8b7f-a0369fe50396"
+    }
+  ],
+  "name": "Blinding Lights",
+  "producers": [
+    "Max Martin",
+    "Oscar Holter",
+    "The Weeknd"
+  ],
+  "releaseDate": "2019-11-29T00:00:00+00:00",
+  "uuid": "b6ac0f7e-112b-11ea-8a46-a81e84f2a475"
+}

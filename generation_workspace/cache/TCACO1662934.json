@@ -1,0 +1,259 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82762-10ab-1142-9c8b-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/khalid-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/3/0/11e81bce-6036-db1e-9734-a0369fe50396.jpg",
+      "name": "Khalid",
+      "slug": "khalid-1",
+      "uuid": "11e81bce-6036-db1e-9734-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.33,
+    "danceability": 0.74,
+    "energy": 0.45,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.09,
+    "loudness": -11.46,
+    "mode": 0,
+    "speechiness": 0.43,
+    "tempo": 80.13,
+    "timeSignature": 4,
+    "valence": 0.33
+  },
+  "composers": [
+    "Khalid Robinson",
+    "Alfredo Emmanuel Gonzalez",
+    "Bajram Kurti",
+    "Christopher McClenney",
+    "Joshua Scruggs",
+    "Olatunji Ige",
+    "Samuel David Jiminez"
+  ],
+  "copyright": "(P) 2017 RCA Records, a division of Sony Music Entertainment",
+  "creditName": "Khalid",
+  "credits": [
+    {
+      "name": "Samuel David Jimenez",
+      "roles": [
+        "arranger",
+        "songwriter",
+        "lyricist",
+        "composer"
+      ],
+      "uuid": "7f1905c4-39d7-4bdc-b5aa-e435afa600e9"
+    },
+    {
+      "name": "Olatunji Ige",
+      "roles": [
+        "arranger",
+        "producer",
+        "lyricist"
+      ],
+      "uuid": "71085401-ef6d-460e-ba26-71cb98e8bc27"
+    },
+    {
+      "name": "Bajram Kurti",
+      "roles": [
+        "songwriter",
+        "producer",
+        "lyricist"
+      ],
+      "uuid": "ebeb46c6-0c27-4d79-8bcb-e131992b0207"
+    },
+    {
+      "name": "Dave Kutch",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "58e780e8-8a17-4fba-afa7-21136229c2f2"
+    },
+    {
+      "name": "Khalid Robinson",
+      "roles": [
+        "arranger",
+        "songwriter"
+      ],
+      "uuid": "26ba7de0-f113-47dd-870c-743e5d6b4b12"
+    },
+    {
+      "name": "Khalid",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "a8703346-2541-463d-b40e-d115983de12b"
+    },
+    {
+      "name": "Erik Madrid",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "d59ef48d-8cc3-4800-aedb-a701a6d14267"
+    },
+    {
+      "name": "Tunji Ige",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "78d63d5a-38a3-44f3-af9f-1b422dcf7be7"
+    },
+    {
+      "name": "Syk Sense",
+      "roles": [
+        "producer",
+        "programming"
+      ],
+      "uuid": "ddf4c07b-ce90-41d9-b40d-70cea1b16c3c"
+    },
+    {
+      "name": "Jorge Gutierrez",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "8da4a803-5228-486e-bdb8-a19b5b0eb41c"
+    },
+    {
+      "name": "Smash David",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "81d72232-0967-4e97-b723-b31c11a42ef5"
+    },
+    {
+      "name": "Orlando Gomez",
+      "roles": [
+        "assistant engineer"
+      ],
+      "uuid": "4eb02689-b961-40f4-842c-6901249a01d5"
+    },
+    {
+      "name": "Joshua Scruggs",
+      "roles": [
+        "arranger",
+        "lyricist"
+      ],
+      "uuid": "37113a12-4a0c-4c6b-a268-40f9f7813118"
+    },
+    {
+      "name": "Alfredo Emmanuel Gonzalez",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "3fc96293-be03-41ee-9921-52d156e9a04c"
+    },
+    {
+      "name": "McClenney",
+      "roles": [
+        "arranger",
+        "songwriter",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "d625205c-fa55-4019-946a-20ed6b0974dc"
+    },
+    {
+      "name": "Alfredo Gonzalez",
+      "roles": [
+        "arranger",
+        "songwriter",
+        "producer",
+        "recording"
+      ],
+      "uuid": "05054aca-a3a5-4ccf-b9d0-257c42b7b4ad"
+    },
+    {
+      "name": "Alfredo Emmanuel Gonzalez",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "9688a787-36a3-45b4-8beb-976d0ba77226"
+    },
+    {
+      "name": "Christopher McClenney",
+      "roles": [
+        "producer",
+        "composer",
+        "lyricist",
+        "programming"
+      ],
+      "uuid": "83bd1e1a-0311-48f9-9b2a-c007d941d0da"
+    },
+    {
+      "name": "Tunji Ige",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "29143b95-2b51-4ac7-846d-49d2025929e0"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 219,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "electro",
+      "sub": [
+        "electronic"
+      ]
+    },
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    },
+    {
+      "root": "r&b",
+      "sub": [
+        "r&b",
+        "r&b, funk & soul",
+        "contemporary r&b"
+      ]
+    },
+    {
+      "root": "soul",
+      "sub": [
+        "soul"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/a/0/11e82762-10ab-1142-9c8b-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "",
+    "countryName": "",
+    "value": "TCACO1662934"
+  },
+  "iswcs": [
+    "T9219798171"
+  ],
+  "labels": [
+    {
+      "name": "RCA",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/khalid-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/3/0/11e81bce-6036-db1e-9734-a0369fe50396.jpg",
+      "name": "Khalid",
+      "slug": "khalid-1",
+      "uuid": "11e81bce-6036-db1e-9734-a0369fe50396"
+    }
+  ],
+  "name": "Location",
+  "producers": [
+    "Smash David",
+    "Tunji Ige",
+    "SykSense",
+    "Christopher McClenney",
+    "Bajram Kurti"
+  ],
+  "releaseDate": "2017-04-27T00:00:00+00:00",
+  "uuid": "11e82762-10ab-1142-9c8b-a0369fe50396"
+}

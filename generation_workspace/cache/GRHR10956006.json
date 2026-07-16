@@ -1,0 +1,75 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/6cb42176-7221-4262-8db7-58b1913988ac/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ary-barroso/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/3/5/11e81bbf-d53b-9bca-93ae-a0369fe50396.jpg",
+      "name": "Ary Barroso",
+      "slug": "ary-barroso",
+      "uuid": "11e81bbf-d53b-9bca-93ae-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.99,
+    "danceability": 0.6,
+    "energy": 0.04,
+    "instrumentalness": 0.22,
+    "key": 5,
+    "liveness": 0.1,
+    "loudness": -23.46,
+    "mode": 0,
+    "speechiness": 0.07,
+    "tempo": 85.89,
+    "timeSignature": 4,
+    "valence": 0.44
+  },
+  "composers": [],
+  "copyright": "℗ 2009 Black Round Records",
+  "creditName": "Ary Barroso",
+  "credits": [],
+  "distributor": "",
+  "duration": 321,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "latin",
+      "sub": [
+        "brasilian music",
+        "latin"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/1/2/2/6cb42176-7221-4262-8db7-58b1913988ac.jpg",
+  "isrc": {
+    "countryCode": "GR",
+    "countryName": "Greece",
+    "value": "GRHR10956006"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Black Round",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/ary-barroso/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/3/5/11e81bbf-d53b-9bca-93ae-a0369fe50396.jpg",
+      "name": "Ary Barroso",
+      "slug": "ary-barroso",
+      "uuid": "11e81bbf-d53b-9bca-93ae-a0369fe50396"
+    }
+  ],
+  "name": "Nem Ela - Aquarela do Brasil",
+  "producers": [],
+  "releaseDate": "2009-08-19T00:00:00+00:00",
+  "uuid": "6cb42176-7221-4262-8db7-58b1913988ac"
+}

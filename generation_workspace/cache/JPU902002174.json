@@ -1,0 +1,64 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/a2d23096-4022-482e-8043-ba85f963e9c8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yuri-38/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/6/f/76d4b0bd-7f68-4435-bc7a-5a91e19ae65a.jpg",
+      "name": "Yuuri",
+      "slug": "yuri-38",
+      "uuid": "76d4b0bd-7f68-4435-bc7a-5a91e19ae65a"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.8,
+    "danceability": 0.65,
+    "energy": 0.25,
+    "instrumentalness": 0,
+    "key": 9,
+    "liveness": 0.32,
+    "loudness": -9.45,
+    "mode": 1,
+    "speechiness": 0.07,
+    "tempo": 77.95,
+    "timeSignature": 4,
+    "valence": 0.54
+  },
+  "composers": [
+    "優里"
+  ],
+  "copyright": "(P)2020 Sony Music Labels Inc.",
+  "creditName": "Yuuri",
+  "credits": [],
+  "distributor": "",
+  "duration": 296,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/2/2/0/a2d23096-4022-482e-8043-ba85f963e9c8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU902002174"
+  },
+  "iswcs": [
+    "T3018511865"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [],
+  "name": "かくれんぼ - From THE FIRST TAKE",
+  "producers": [],
+  "releaseDate": "2020-10-25T00:00:00+00:00",
+  "uuid": "a2d23096-4022-482e-8043-ba85f963e9c8"
+}

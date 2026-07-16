@@ -1,0 +1,137 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8409a-7425-3aee-a1ab-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kendrick-lamar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/0/6/11e81bbc-c601-d802-bca1-a0369fe50396.jpg",
+      "name": "Kendrick Lamar",
+      "slug": "kendrick-lamar",
+      "uuid": "11e81bbc-c601-d802-bca1-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.34,
+    "danceability": 0.67,
+    "energy": 0.51,
+    "instrumentalness": 0,
+    "key": 5,
+    "liveness": 0.64,
+    "loudness": -10.34,
+    "mode": 1,
+    "speechiness": 0.45,
+    "tempo": 89.44,
+    "timeSignature": 3,
+    "valence": 0.09
+  },
+  "composers": [
+    "Kendrick Lamar"
+  ],
+  "copyright": "℗ 2016 Aftermath/Interscope (Top Dawg Entertainment)",
+  "creditName": "Kendrick Lamar",
+  "credits": [
+    {
+      "name": "Terrace Martin",
+      "roles": [
+        "keyboard",
+        "saxophone"
+      ],
+      "uuid": "e31a84ff-6152-44fe-9d67-d6f6a29ecc59"
+    },
+    {
+      "name": "Cardo Got Wings",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "880fbf9e-b5e7-4745-bdd0-d40a7a1e4e6b"
+    },
+    {
+      "name": "Thundercat",
+      "roles": [
+        "writer",
+        "bass",
+        "additional production"
+      ],
+      "uuid": "7bca9f92-12f4-4dd2-b53e-6e4f45dffb71"
+    },
+    {
+      "name": "Yung Exclusive",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "a80afdaa-f543-4d69-8dc9-505631b35d4c"
+    },
+    {
+      "name": "Brock Korsan",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "e84719a2-b101-4279-891d-35c9ff129f97"
+    },
+    {
+      "name": "Kendrick Duckworth",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "a03bc7a5-7d52-4cdf-ad50-a13ae2d7be0c"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 258,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/5/2/4/11e8409a-7425-3aee-a1ab-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USUM71601674"
+  },
+  "iswcs": [
+    "T9194859206"
+  ],
+  "labels": [
+    {
+      "name": "Aftermath",
+      "type": "Universal"
+    },
+    {
+      "name": "Interscope",
+      "type": "Universal"
+    },
+    {
+      "name": "Top Dawg",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kendrick-lamar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/0/6/11e81bbc-c601-d802-bca1-a0369fe50396.jpg",
+      "name": "Kendrick Lamar",
+      "slug": "kendrick-lamar",
+      "uuid": "11e81bbc-c601-d802-bca1-a0369fe50396"
+    }
+  ],
+  "name": "untitled 02 l 06.23.2014.",
+  "producers": [
+    "Yung Exclusive",
+    "Cardo Got Wings"
+  ],
+  "releaseDate": "2016-03-04T00:00:00+00:00",
+  "uuid": "11e8409a-7425-3aee-a1ab-a0369fe50396"
+}

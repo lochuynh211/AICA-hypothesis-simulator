@@ -1,0 +1,90 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8265a-d034-6b2a-bc0d-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yui-2/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/1/8/11e81bd3-081b-42bc-b244-a0369fe50396.jpg",
+      "name": "YUI",
+      "slug": "yui-2",
+      "uuid": "11e81bd3-081b-42bc-b244-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.13,
+    "danceability": 0.59,
+    "energy": 0.83,
+    "instrumentalness": 0,
+    "key": 4,
+    "liveness": 0.38,
+    "loudness": -2.94,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 140.08,
+    "timeSignature": 4,
+    "valence": 0.53
+  },
+  "composers": [
+    "Yui"
+  ],
+  "copyright": "(P)2009 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "YUI",
+  "credits": [
+    {
+      "name": "yui",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "7462a6b6-619a-4810-a0f2-13cb5b445cc4"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 254,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "asian",
+        "worldwide"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/4/3/0/11e8265a-d034-6b2a-bc0d-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPSR00900821"
+  },
+  "iswcs": [
+    "T9097754955",
+    "T9097616450"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/yui-2/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/1/8/11e81bd3-081b-42bc-b244-a0369fe50396.jpg",
+      "name": "YUI",
+      "slug": "yui-2",
+      "uuid": "11e81bd3-081b-42bc-b244-a0369fe50396"
+    }
+  ],
+  "name": "again",
+  "producers": [
+    "近藤ひさし (Hisashi Kondo)"
+  ],
+  "releaseDate": "2009-06-03T00:00:00+00:00",
+  "uuid": "11e8265a-d034-6b2a-bc0d-aa1c026db3d8"
+}

@@ -1,0 +1,222 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e826ad-c7c2-3438-85f1-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kendrick-lamar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/0/6/11e81bbc-c601-d802-bca1-a0369fe50396.jpg",
+      "name": "Kendrick Lamar",
+      "slug": "kendrick-lamar",
+      "uuid": "11e81bbc-c601-d802-bca1-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0,
+    "danceability": 0.64,
+    "energy": 0.52,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.08,
+    "loudness": -6.66,
+    "mode": 1,
+    "speechiness": 0.36,
+    "tempo": 139.91,
+    "timeSignature": 4,
+    "valence": 0.42
+  },
+  "composers": [
+    "Kendrick Lamar",
+    "Michael L Williams II"
+  ],
+  "copyright": "℗ 2017 Aftermath/Interscope (Top Dawg Entertainment)",
+  "creditName": "Kendrick Lamar",
+  "credits": [
+    {
+      "name": "Matt Schaeffer",
+      "roles": [
+        "guitar"
+      ],
+      "uuid": "364d3963-eab7-4a0d-9850-e2ed18b07de6"
+    },
+    {
+      "name": "Michael L Williams II",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "d77e860b-c741-4aef-a248-5068b2334f7e"
+    },
+    {
+      "name": "Mike WiLL Made-It",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "2fa6a766-2361-43dd-8cf5-81b319d2d74f"
+    },
+    {
+      "name": "Mike Bozzi",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "52318d94-2904-4ce6-9fa5-55a2c5413b9d"
+    },
+    {
+      "name": "Dave Free",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "042d603f-7680-4ce4-bc8f-78d5f45a7da4"
+    },
+    {
+      "name": "Mixed by Ali",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "e5de17a8-fe9f-4d64-bf8c-24097014c784"
+    },
+    {
+      "name": "Ya Boy N.O.I.S.",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "ba455f08-d414-4cc6-934d-eb8242f4df66"
+    },
+    {
+      "name": "Bernie Grundman Mastering",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "aa9df1f4-808d-4210-a48d-01d6a3070ef6"
+    },
+    {
+      "name": "Top Dawg",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "c2b6ae99-fffe-4684-8c26-f1b34290c5c6"
+    },
+    {
+      "name": "The Little Homies",
+      "roles": [
+        "video director"
+      ],
+      "uuid": "0e4c98fd-c9e4-433a-a12e-f5f85889684d"
+    },
+    {
+      "name": "TDE Films",
+      "roles": [
+        "production manager"
+      ],
+      "uuid": "24cc15f0-6fac-4e51-b043-afd7ea243456"
+    },
+    {
+      "name": "AJR Films",
+      "roles": [
+        "production manager"
+      ],
+      "uuid": "d5e61ae1-5642-4691-9241-c01245650625"
+    },
+    {
+      "name": "Angel Rosa",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "d54ced99-a71c-4b44-b003-ff2b92c60abc"
+    },
+    {
+      "name": "Nabil Elderkin",
+      "roles": [
+        "video director"
+      ],
+      "uuid": "5710eb69-981d-4ec8-b7fd-e612d24a1c98"
+    },
+    {
+      "name": "Kendrick Duckworth",
+      "roles": [
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "a03bc7a5-7d52-4cdf-ad50-a13ae2d7be0c"
+    },
+    {
+      "name": "M. Williams II",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "6c208001-6656-4be7-9d86-9098248979e5"
+    },
+    {
+      "name": "Tyler Page",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "68495083-2bce-4564-9719-da0e057c9d1f"
+    },
+    {
+      "name": "Michael L. Williams II",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "65edfb1d-4c52-47c9-aa4f-777f361eb55c"
+    },
+    {
+      "name": "Kendrick Lamar",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "9de5b02b-7e11-4dc9-be7c-2c71a4860e40"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 185,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/2/c/7/11e826ad-c7c2-3438-85f1-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USUM71703079"
+  },
+  "iswcs": [
+    "T9216915230",
+    "T9315339538"
+  ],
+  "labels": [
+    {
+      "name": "Aftermath",
+      "type": "Universal"
+    },
+    {
+      "name": "Interscope",
+      "type": "Universal"
+    },
+    {
+      "name": "Top Dawg",
+      "type": "Other independent labels: \"Indie\""
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kendrick-lamar/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/0/6/11e81bbc-c601-d802-bca1-a0369fe50396.jpg",
+      "name": "Kendrick Lamar",
+      "slug": "kendrick-lamar",
+      "uuid": "11e81bbc-c601-d802-bca1-a0369fe50396"
+    }
+  ],
+  "name": "DNA.",
+  "producers": [
+    "Mike WiLL Made-It"
+  ],
+  "releaseDate": "2017-04-14T00:00:00+00:00",
+  "uuid": "11e826ad-c7c2-3438-85f1-a0369fe50396"
+}

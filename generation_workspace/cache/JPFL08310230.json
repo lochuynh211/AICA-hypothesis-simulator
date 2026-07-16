@@ -1,0 +1,78 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8263f-c7d4-e2b8-9b0e-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/anri-9/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/5/6/a877d89d-565d-462a-ae33-ecebae092930.jpg",
+      "name": "Anri",
+      "slug": "anri-9",
+      "uuid": "a877d89d-565d-462a-ae33-ecebae092930"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.36,
+    "danceability": 0.64,
+    "energy": 0.67,
+    "instrumentalness": 0,
+    "key": 4,
+    "liveness": 0.08,
+    "loudness": -5,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 96.69,
+    "timeSignature": 4,
+    "valence": 0.77
+  },
+  "composers": [
+    "角松敏生"
+  ],
+  "copyright": "1983 FOR LIFE MUSIC ENTERTAINMENT, INC.",
+  "creditName": "Anri",
+  "credits": [],
+  "distributor": "",
+  "duration": 295,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "folk",
+      "sub": [
+        "folk"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/4/d/7/11e8263f-c7d4-e2b8-9b0e-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPFL08310230"
+  },
+  "iswcs": [
+    "T1016201173"
+  ],
+  "labels": [
+    {
+      "name": "FOR LIFE MUSIC",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/anri-9/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/d/5/6/a877d89d-565d-462a-ae33-ecebae092930.jpg",
+      "name": "Anri",
+      "slug": "anri-9",
+      "uuid": "a877d89d-565d-462a-ae33-ecebae092930"
+    }
+  ],
+  "name": "Remember Summer Days",
+  "producers": [],
+  "releaseDate": "1983-01-01T00:00:00+00:00",
+  "uuid": "11e8263f-c7d4-e2b8-9b0e-aa1c026db3d8"
+}

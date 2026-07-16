@@ -1,0 +1,66 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82616-7ac7-3166-a974-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/zard-7/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/1/3/59b8c98d-e31a-4da6-a95b-bd4e036efcc6.jpg",
+      "name": "ZARD",
+      "slug": "zard-7",
+      "uuid": "59b8c98d-e31a-4da6-a95b-bd4e036efcc6"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.34,
+    "danceability": 0.61,
+    "energy": 0.91,
+    "instrumentalness": 0,
+    "key": 7,
+    "liveness": 0.09,
+    "loudness": -2.96,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 125.79,
+    "timeSignature": 3,
+    "valence": 0.37
+  },
+  "composers": [
+    "Tetsuro Oda",
+    "坂井泉水"
+  ],
+  "copyright": "Being, INC.",
+  "creditName": "ZARD",
+  "credits": [],
+  "distributor": "",
+  "duration": 224,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/7/c/a/11e82616-7ac7-3166-a974-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPC400601115"
+  },
+  "iswcs": [
+    "T1011164499"
+  ],
+  "labels": [
+    {
+      "name": "Being",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/zard-7/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/a/1/3/59b8c98d-e31a-4da6-a95b-bd4e036efcc6.jpg",
+      "name": "ZARD",
+      "slug": "zard-7",
+      "uuid": "59b8c98d-e31a-4da6-a95b-bd4e036efcc6"
+    }
+  ],
+  "name": "負けないで",
+  "producers": [],
+  "releaseDate": "2006-10-25T00:00:00+00:00",
+  "uuid": "11e82616-7ac7-3166-a974-aa1c026db3d8"
+}

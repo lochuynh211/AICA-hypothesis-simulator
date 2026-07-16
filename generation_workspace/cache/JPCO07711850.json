@@ -1,0 +1,75 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82680-eec2-3d58-ad7a-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/jia-shan-ming-sheng/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/6/5/11e81bbe-a562-0caa-9bb0-a0369fe50396.jpg",
+      "name": "佳山明生",
+      "slug": "jia-shan-ming-sheng",
+      "uuid": "11e81bbe-a562-0caa-9bb0-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.49,
+    "danceability": 0.58,
+    "energy": 0.64,
+    "instrumentalness": 0,
+    "key": 4,
+    "liveness": 0.21,
+    "loudness": -3.47,
+    "mode": 0,
+    "speechiness": 0.03,
+    "tempo": 126.47,
+    "timeSignature": 3,
+    "valence": 0.43
+  },
+  "composers": [
+    "とまりれん"
+  ],
+  "copyright": "",
+  "creditName": "佳山明生",
+  "credits": [
+    {
+      "name": "竜崎孝路",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "b6ae3d49-e514-453b-a994-7d13a8c184b7"
+    },
+    {
+      "name": "とまりれん",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "9bed883f-0c88-4af2-8150-8837ec1c1035"
+    }
+  ],
+  "distributor": "Nippon Columbia",
+  "duration": 228,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/2/c/e/11e82680-eec2-3d58-ad7a-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPCO07711850"
+  },
+  "iswcs": [
+    "T1015131425"
+  ],
+  "labels": [],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/jia-shan-ming-sheng/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/6/5/11e81bbe-a562-0caa-9bb0-a0369fe50396.jpg",
+      "name": "佳山明生",
+      "slug": "jia-shan-ming-sheng",
+      "uuid": "11e81bbe-a562-0caa-9bb0-a0369fe50396"
+    }
+  ],
+  "name": "氷雨",
+  "producers": [],
+  "releaseDate": "2014-05-28T00:00:00+00:00",
+  "uuid": "11e82680-eec2-3d58-ad7a-a0369fe50396"
+}

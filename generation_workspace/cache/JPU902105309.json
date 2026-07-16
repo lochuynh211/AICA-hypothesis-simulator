@@ -1,0 +1,88 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/b5ef7314-cc9b-464d-ae38-039e9f952447/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/king-gnu/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/5/b/11e83fec-4b5b-29ba-9bd8-aa1c026db3d8.jpg",
+      "name": "King Gnu",
+      "slug": "king-gnu",
+      "uuid": "11e83fec-4b5b-29ba-9bd8-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.44,
+    "danceability": 0.2,
+    "energy": 0.71,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.32,
+    "loudness": -5.43,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 83.44,
+    "timeSignature": 4,
+    "valence": 0.28
+  },
+  "composers": [
+    "Daiki Tsuneta"
+  ],
+  "copyright": "(P) 2021 Sony Music Labels Inc.",
+  "creditName": "King Gnu",
+  "credits": [
+    {
+      "name": "King Gnu",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "b0c18f6a-36fc-4c72-8124-95b5600d582b"
+    },
+    {
+      "name": "Daiki Tsuneta",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "00aeea47-e34b-4601-a43b-8fe79a209bcc"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 308,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/b/9/c/b5ef7314-cc9b-464d-ae38-039e9f952447.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU902105309"
+  },
+  "iswcs": [
+    "T3088034980"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/king-gnu/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/5/b/11e83fec-4b5b-29ba-9bd8-aa1c026db3d8.jpg",
+      "name": "King Gnu",
+      "slug": "king-gnu",
+      "uuid": "11e83fec-4b5b-29ba-9bd8-aa1c026db3d8"
+    }
+  ],
+  "name": "逆夢",
+  "producers": [],
+  "releaseDate": "2021-12-24T00:00:00+00:00",
+  "uuid": "b5ef7314-cc9b-464d-ae38-039e9f952447"
+}

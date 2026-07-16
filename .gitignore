@@ -34,3 +34,10 @@ key.local.js
 # Run evidence logs (only .gitkeep is tracked)
 runs/*.json
 corporate-proxy.crt
+
+# Music dataset generator workspace.
+# Committed for cross-machine resume (raw cache + ledger + lineage are the resumable
+# state, design §4.13) — BUT credentials are NEVER committed.
+generation_workspace/soundcharts.env
+generation_workspace/*.env
+generation_workspace/**/*.env

@@ -1,0 +1,377 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/c2e491e0-2f84-4920-9115-e9a59fe60939/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/cardi-b/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/0/a/11e81bd0-5a02-b2d4-a988-a0369fe50396.jpg",
+      "name": "Cardi B",
+      "slug": "cardi-b",
+      "uuid": "11e81bd0-5a02-b2d4-a988-a0369fe50396"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/megan-thee-stallion/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/4/7/7/11e83fec-e774-7662-9d84-a0369fe50396.jpg",
+      "name": "Megan Thee Stallion",
+      "slug": "megan-thee-stallion",
+      "uuid": "11e83fec-e774-7662-9d84-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.02,
+    "danceability": 0.94,
+    "energy": 0.45,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.08,
+    "loudness": -7.51,
+    "mode": 1,
+    "speechiness": 0.38,
+    "tempo": 133.07,
+    "timeSignature": 4,
+    "valence": 0.36
+  },
+  "composers": [
+    "Megan Pete",
+    "Austin Owens",
+    "Belcalis Almanzar",
+    "Frank Rodriguez",
+    "James Foye iii",
+    "Jordan Thorpe"
+  ],
+  "copyright": "℗ 2020 Atlantic Recording Corporation",
+  "creditName": "Cardi B & Megan Thee Stallion",
+  "credits": [
+    {
+      "name": "Belcalis Almanzar",
+      "roles": [
+        "songwriter"
+      ],
+      "uuid": "04d1c809-dc81-4644-aca6-70c5b7c68f0c"
+    },
+    {
+      "name": "Frank Rodriguez",
+      "roles": [
+        "songwriter",
+        "writer"
+      ],
+      "uuid": "f8e24410-bc71-464c-9aff-85b07857dc74"
+    },
+    {
+      "name": "Jordan Thorpe",
+      "roles": [
+        "songwriter",
+        "writer"
+      ],
+      "uuid": "7346139b-c673-43ca-9d47-60b4a5c68f0c"
+    },
+    {
+      "name": "Austin Owens",
+      "roles": [
+        "songwriter",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "46b9d407-34bc-4a65-8e74-cbe7e84fec48"
+    },
+    {
+      "name": "Colin Leonard",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "7e0b1a78-c53a-4773-9391-dc602da96a86"
+    },
+    {
+      "name": "Keyz",
+      "roles": [
+        "producer",
+        "writer",
+        "programming"
+      ],
+      "uuid": "8ef1d5c2-2888-478d-9e19-26dda6faf5c7"
+    },
+    {
+      "name": "Cardi B",
+      "roles": [
+        "writer",
+        "vocals"
+      ],
+      "uuid": "77b10b0f-62ff-48f3-b44f-d32066e8675f"
+    },
+    {
+      "name": "Evan LaRay",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "d95e5357-1af3-4e16-b10a-0208f5039604"
+    },
+    {
+      "name": "Kareem Johnson",
+      "roles": [
+        "video commissioner"
+      ],
+      "uuid": "49bb3a39-8ad6-4c21-bdbe-0c5de88a4423"
+    },
+    {
+      "name": "Leslie Brathwaite",
+      "roles": [
+        "mix"
+      ],
+      "uuid": "c3f01118-3ce4-4d47-92d5-f132a04b20a2"
+    },
+    {
+      "name": "Kollin Carter",
+      "roles": [
+        "video production designer"
+      ],
+      "uuid": "a139a95f-b5e9-4b5a-a330-c36583545e2e"
+    },
+    {
+      "name": "Whitney Jackson",
+      "roles": [
+        "video production"
+      ],
+      "uuid": "68bc9651-da2b-4d1e-8006-7cd7fae223ec"
+    },
+    {
+      "name": "Shawn “Source” Jarrett",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "c51fe1c5-8ba2-4435-b4a4-6a1f265dd255"
+    },
+    {
+      "name": "Megan Thee Stallion",
+      "roles": [
+        "writer",
+        "vocals",
+        "video makeup artist",
+        "featured artist"
+      ],
+      "uuid": "73f7e150-d8e5-4e4b-ba23-9d113d0b54d5"
+    },
+    {
+      "name": "Vinnie Hobbs",
+      "roles": [
+        "video editor"
+      ],
+      "uuid": "99828e0f-cc4a-4ca4-946a-3a04c10178ab"
+    },
+    {
+      "name": "Jenna Andrews",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "bd2dfee1-f625-40e0-9040-df581528d7da"
+    },
+    {
+      "name": "Colin Tilley",
+      "roles": [
+        "video director"
+      ],
+      "uuid": "a4f6ebde-26aa-4e7a-9273-fb5017a18357"
+    },
+    {
+      "name": "Tokyo Stylez",
+      "roles": [
+        "video hair stylist"
+      ],
+      "uuid": "473e6d00-7297-4faa-82e5-de52dba27f19"
+    },
+    {
+      "name": "Jamee Ranta",
+      "roles": [
+        "video executive producer"
+      ],
+      "uuid": "b309587f-987b-4dbf-adb0-8b3767118dc7"
+    },
+    {
+      "name": "Elias Talbot",
+      "roles": [
+        "video director of photography"
+      ],
+      "uuid": "5142f675-73ab-4630-b92a-652530df1636"
+    },
+    {
+      "name": "Ev Salomon",
+      "roles": [
+        "video 1st assistant director"
+      ],
+      "uuid": "7b5e073f-2d46-4a5f-8773-470925205f09"
+    },
+    {
+      "name": "Erika Roman",
+      "roles": [
+        "video makeup artist"
+      ],
+      "uuid": "d3026939-8625-4fc7-a73a-3412d7f1f117"
+    },
+    {
+      "name": "Kellon Deryck",
+      "roles": [
+        "video hair stylist"
+      ],
+      "uuid": "e1cd3b83-8847-4bb8-8d08-d5cf523aa1b7"
+    },
+    {
+      "name": "J.K. Creatives, Inc.",
+      "roles": [
+        "video choreographer"
+      ],
+      "uuid": "6ac73ffe-001d-4f1f-a836-f8d92809281f"
+    },
+    {
+      "name": "Jaquel Knight",
+      "roles": [
+        "video choreographer"
+      ],
+      "uuid": "68743828-7144-4cca-a608-34189ffd9b48"
+    },
+    {
+      "name": "Patientce Foster",
+      "roles": [
+        "video production designer"
+      ],
+      "uuid": "aca0f21d-7b2a-468a-81d9-96150e40cf92"
+    },
+    {
+      "name": "Ayo & Keyz",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "32f9f6cd-4122-49f1-8677-b44c0d2706e0"
+    },
+    {
+      "name": "Ayo The Producer",
+      "roles": [
+        "producer",
+        "writer"
+      ],
+      "uuid": "fdc2de7e-7e4f-4e56-bb85-8246a322273e"
+    },
+    {
+      "name": "Pardison Fontaine",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "faf6f2d0-3058-44ba-a4ec-8494dbf7c477"
+    },
+    {
+      "name": "Megan Pete",
+      "roles": [
+        "songwriter",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "88bd49f7-ee24-4604-9289-11c8ae940846"
+    },
+    {
+      "name": "Stephen Kirk",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "82a67e2c-f65c-4482-b70e-012a3aea0169"
+    },
+    {
+      "name": "Ayọ",
+      "roles": [
+        "programming"
+      ],
+      "uuid": "035e6ffb-858c-4172-b233-137cfd0d573c"
+    },
+    {
+      "name": "James Foye III",
+      "roles": [
+        "songwriter",
+        "writer",
+        "lyricist"
+      ],
+      "uuid": "7737217b-1f79-4859-93e9-bedb7a1fad71"
+    },
+    {
+      "name": "Frank Ski",
+      "roles": [
+        "sampled artist"
+      ],
+      "uuid": "6f73ef60-171d-485e-9158-5b19c21600d2"
+    },
+    {
+      "name": "Evan LaRay Brunson",
+      "roles": [
+        "engineer"
+      ],
+      "uuid": "b34762f6-091d-4888-a7f7-fb1628cfdbb0"
+    },
+    {
+      "name": "Ayo",
+      "roles": [
+        "producer",
+        "programming"
+      ],
+      "uuid": "3179acca-a10d-4217-967e-b0193634f63b"
+    },
+    {
+      "name": "Belcalis Almanzar",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "e0039572-3c76-4cb5-b643-c9569c3d4539"
+    },
+    {
+      "name": "Jordan Thorpe",
+      "roles": [
+        "lyricist"
+      ],
+      "uuid": "ea159e67-763d-4000-8b94-4892976a0ec4"
+    },
+    {
+      "name": "Cardi B",
+      "roles": [
+        "vocals"
+      ],
+      "uuid": "ac97c29c-d09d-418f-bae5-dd95e0c30b62"
+    }
+  ],
+  "distributor": "Warner",
+  "duration": 187,
+  "explicit": true,
+  "genres": [
+    {
+      "root": "hip hop",
+      "sub": [
+        "hip-hop & rap"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/4/8/f/c2e491e0-2f84-4920-9115-e9a59fe60939.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USAT22005111"
+  },
+  "iswcs": [
+    "T3004934463"
+  ],
+  "labels": [
+    {
+      "name": "Atlantic",
+      "type": "Warner"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/cardi-b/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/0/a/11e81bd0-5a02-b2d4-a988-a0369fe50396.jpg",
+      "name": "Cardi B",
+      "slug": "cardi-b",
+      "uuid": "11e81bd0-5a02-b2d4-a988-a0369fe50396"
+    }
+  ],
+  "name": "WAP (feat. Megan Thee Stallion)",
+  "producers": [
+    "Keyz",
+    "Ayo~"
+  ],
+  "releaseDate": "2020-08-07T00:00:00+00:00",
+  "uuid": "c2e491e0-2f84-4920-9115-e9a59fe60939"
+}

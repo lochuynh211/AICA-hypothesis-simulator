@@ -1,0 +1,197 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82694-7500-deac-86c4-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/back-number/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/b/d/11e81bbe-ddb6-6dbc-8d84-a0369fe50396.jpg",
+      "name": "back number",
+      "slug": "back-number",
+      "uuid": "11e81bbe-ddb6-6dbc-8d84-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.13,
+    "danceability": 0.4,
+    "energy": 0.71,
+    "instrumentalness": 0,
+    "key": 4,
+    "liveness": 0.12,
+    "loudness": -3.32,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 154.02,
+    "timeSignature": 4,
+    "valence": 0.42
+  },
+  "composers": [
+    "清水依与吏"
+  ],
+  "copyright": "℗ 2015 UNIVERSAL SIGMA, a division of UNIVERSAL MUSIC LLC",
+  "creditName": "back number",
+  "credits": [
+    {
+      "name": "Iyori Shimizu",
+      "roles": [
+        "songwriter",
+        "vocals"
+      ],
+      "uuid": "148991bc-f72f-4e8d-9790-9830d0fbdb9c"
+    },
+    {
+      "name": "Takeshi Kobayashi",
+      "roles": [
+        "producer",
+        "keyboard",
+        "strings arranger"
+      ],
+      "uuid": "d7490344-d3a6-4121-a52f-d30c75107b17"
+    },
+    {
+      "name": "Kazuya Kojima",
+      "roles": [
+        "bass"
+      ],
+      "uuid": "850120d6-cbb5-455a-9ae9-691cff1430ec"
+    },
+    {
+      "name": "Hisashi Kurihara",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "ea97d6ee-abf0-4b27-95d8-5730df12439b"
+    },
+    {
+      "name": "Udai Shika",
+      "roles": [
+        "cello",
+        "strings arranger"
+      ],
+      "uuid": "ddc41901-65cd-40f0-a1d3-88e73a523282"
+    },
+    {
+      "name": "Junko Suzuki",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "cfe7fbe0-1176-4b00-8d24-b87a4a3bef8d"
+    },
+    {
+      "name": "Mikiyo Kikuchi",
+      "roles": [
+        "viola"
+      ],
+      "uuid": "e55ad654-4fe1-4a62-b11d-9aff80d8b913"
+    },
+    {
+      "name": "Shoko Oki",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "cf1183d1-5117-453e-b07f-bb0592aaa794"
+    },
+    {
+      "name": "Shizuka Kawaguchi",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "60e63493-7588-444b-829c-7ea3c6e0f214"
+    },
+    {
+      "name": "Moemi Harada",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "48e04568-72ce-4942-96fe-ed631529e473"
+    },
+    {
+      "name": "Mikiyo Ichikawa",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "bfe948ab-7c66-46c6-bb48-f0b9187da360"
+    },
+    {
+      "name": "Fumiko Aoki",
+      "roles": [
+        "viola"
+      ],
+      "uuid": "346464d0-7757-408d-8e13-9e13e204e937"
+    },
+    {
+      "name": "​back number",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "86aaa44c-7e31-4d14-ba4f-703763c11f28"
+    },
+    {
+      "name": "Udai Shika Strings",
+      "roles": [
+        "string instrument",
+        "string ensemble"
+      ],
+      "uuid": "07f4c7bf-0681-4ec3-94b0-0ae3bcaa9f01"
+    },
+    {
+      "name": "Yuki Nanjo",
+      "roles": [
+        "violin"
+      ],
+      "uuid": "54999077-cedb-47bc-8b8a-bb9c28893d16"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 340,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    },
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    },
+    {
+      "root": "j-pop",
+      "sub": [
+        "j-pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/0/0/5/11e82694-7500-deac-86c4-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO01509647"
+  },
+  "iswcs": [
+    "T9188358829"
+  ],
+  "labels": [
+    {
+      "name": "Universal",
+      "type": "Universal"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/back-number/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/b/d/11e81bbe-ddb6-6dbc-8d84-a0369fe50396.jpg",
+      "name": "back number",
+      "slug": "back-number",
+      "uuid": "11e81bbe-ddb6-6dbc-8d84-a0369fe50396"
+    }
+  ],
+  "name": "クリスマスソング",
+  "producers": [
+    "Takeshi Kobayashi"
+  ],
+  "releaseDate": "2015-11-18T00:00:00+00:00",
+  "uuid": "11e82694-7500-deac-86c4-aa1c026db3d8"
+}

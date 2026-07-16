@@ -1,0 +1,64 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/86ee41bc-7617-11e9-ad0b-549f35141000/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/jian-tian-jiang-hui-9/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/d/8/99798cac-c8db-4e70-8097-847cde655538.jpg",
+      "name": "菅田將暉",
+      "slug": "jian-tian-jiang-hui-9",
+      "uuid": "99798cac-c8db-4e70-8097-847cde655538"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.52,
+    "danceability": 0.53,
+    "energy": 0.64,
+    "instrumentalness": 0,
+    "key": 2,
+    "liveness": 0.39,
+    "loudness": -5.57,
+    "mode": 1,
+    "speechiness": 0.04,
+    "tempo": 155.92,
+    "timeSignature": 4,
+    "valence": 0.44
+  },
+  "composers": [
+    "Kenshi Yonezu"
+  ],
+  "copyright": "(P)2019 Sony Music Entertainment (Japan) Inc.",
+  "creditName": "菅田將暉",
+  "credits": [],
+  "distributor": "Sony",
+  "duration": 30,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "traditional",
+      "sub": [
+        "asian"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/7/1/6/86ee41bc-7617-11e9-ad0b-549f35141000.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPU901901148"
+  },
+  "iswcs": [
+    "T9290117736"
+  ],
+  "labels": [
+    {
+      "name": "Sony",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [],
+  "name": "まちがいさがし",
+  "producers": [],
+  "releaseDate": "2019-05-14T00:00:00+00:00",
+  "uuid": "86ee41bc-7617-11e9-ad0b-549f35141000"
+}

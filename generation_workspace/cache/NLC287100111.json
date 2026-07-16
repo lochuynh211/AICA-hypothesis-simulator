@@ -1,0 +1,160 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/9be56318-4d6a-11ea-b066-549f35161576/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/focus-2/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/a/6/11e81bbe-06a0-d178-b420-a0369fe50396.jpg",
+      "name": "Focus",
+      "slug": "focus-2",
+      "uuid": "11e81bbe-06a0-d178-b420-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.01,
+    "danceability": 0.27,
+    "energy": 0.72,
+    "instrumentalness": 0.89,
+    "key": 2,
+    "liveness": 0.35,
+    "loudness": -7.34,
+    "mode": 1,
+    "speechiness": 0.1,
+    "tempo": 184.09,
+    "timeSignature": 4,
+    "valence": 0.35
+  },
+  "composers": [
+    "-",
+    "Jan Akkerman",
+    "Thijs van Leer"
+  ],
+  "copyright": "1971 Red Bullet",
+  "creditName": "Focus",
+  "credits": [
+    {
+      "name": "Mike Vernon",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "ad320f86-0593-4bd3-9f82-e2f73bef71f5"
+    },
+    {
+      "name": "Jerry Boys",
+      "roles": [
+        "recording"
+      ],
+      "uuid": "d65fa8aa-422b-4aa5-a538-0dcc63f43b0d"
+    },
+    {
+      "name": "Pierre van der Linden",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "b57fe0c3-895a-458a-821e-37256bcb7986"
+    },
+    {
+      "name": "Cyril Havermans",
+      "roles": [
+        "bass"
+      ],
+      "uuid": "46a23ca5-ca91-4b00-9b8a-7887b4f882fb"
+    },
+    {
+      "name": "Jan Akkerman",
+      "roles": [
+        "songwriter",
+        "guitar",
+        "composer"
+      ],
+      "uuid": "be189caa-58c1-4c70-9fe4-c8cf9fb7ca2e"
+    },
+    {
+      "name": "Pierre van der Linden",
+      "roles": [
+        "drums"
+      ],
+      "uuid": "037cb122-3982-4db0-bc33-7c60a8739664"
+    },
+    {
+      "name": "Ian Gillespie",
+      "roles": [
+        "mastering"
+      ],
+      "uuid": "e8fd64fb-fed1-4a81-b709-17baf64e8cd5"
+    },
+    {
+      "name": "Focus",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "33788379-b421-4923-a18d-60b667a546dc"
+    },
+    {
+      "name": "Thijs Van Leer",
+      "roles": [
+        "songwriter",
+        "vocals",
+        "flute",
+        "voices",
+        "composer"
+      ],
+      "uuid": "5d7041eb-dd2f-4d19-bc96-6579917c46ed"
+    },
+    {
+      "name": "Cyril Havermans",
+      "roles": [
+        "voices"
+      ],
+      "uuid": "ef0f86c5-a296-4c22-bbd9-4a6fd31885c4"
+    }
+  ],
+  "distributor": "",
+  "duration": 402,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "pop",
+      "sub": [
+        "pop"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/a/6/d/9be56318-4d6a-11ea-b066-549f35161576.jpg",
+  "isrc": {
+    "countryCode": "NL",
+    "countryName": "Netherlands",
+    "value": "NLC287100111"
+  },
+  "iswcs": [
+    "T0710716292"
+  ],
+  "labels": [
+    {
+      "name": "Red Bullet",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/focus-2/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/0/a/6/11e81bbe-06a0-d178-b420-a0369fe50396.jpg",
+      "name": "Focus",
+      "slug": "focus-2",
+      "uuid": "11e81bbe-06a0-d178-b420-a0369fe50396"
+    }
+  ],
+  "name": "Hocus Pocus - Extended Version",
+  "producers": [
+    "Mike Vernon",
+    "FOCUS"
+  ],
+  "releaseDate": "2012-10-15T00:00:00+00:00",
+  "uuid": "9be56318-4d6a-11ea-b066-549f35161576"
+}

@@ -1,0 +1,77 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/3085e5cd-d52e-40ac-923a-39f40a1d9ae3/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/miku-hatsune/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/d/8/4df468ae-b8d6-11e8-8634-525400009efb.jpg",
+      "name": "Hatsune Miku",
+      "slug": "miku-hatsune",
+      "uuid": "4df468ae-b8d6-11e8-8634-525400009efb"
+    },
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/bcno/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/e/0/ce9a5eae-c0e6-11ea-86bc-549f35141000.jpg",
+      "name": "BCNO",
+      "slug": "bcno",
+      "uuid": "ce9a5eae-c0e6-11ea-86bc-549f35141000"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.01,
+    "danceability": 0.66,
+    "energy": 0.62,
+    "instrumentalness": 0,
+    "key": 1,
+    "liveness": 0.07,
+    "loudness": -5,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 150.98,
+    "timeSignature": 4,
+    "valence": 0.81
+  },
+  "composers": [
+    "BCNO"
+  ],
+  "copyright": "(P) 2020 My Ship",
+  "creditName": "Hatsune Miku & BCNO",
+  "credits": [],
+  "distributor": "",
+  "duration": 219,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/e/2/5/3085e5cd-d52e-40ac-923a-39f40a1d9ae3.jpg",
+  "isrc": {
+    "countryCode": "",
+    "countryName": "",
+    "value": "TCJPM2063093"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "My Ship",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/bcno/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/6/e/0/ce9a5eae-c0e6-11ea-86bc-549f35141000.jpg",
+      "name": "BCNO",
+      "slug": "bcno",
+      "uuid": "ce9a5eae-c0e6-11ea-86bc-549f35141000"
+    }
+  ],
+  "name": "夜に融ける",
+  "producers": [],
+  "releaseDate": "2020-10-04T00:00:00+00:00",
+  "uuid": "3085e5cd-d52e-40ac-923a-39f40a1d9ae3"
+}

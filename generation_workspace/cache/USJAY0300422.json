@@ -1,0 +1,124 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e8262c-0a49-60d8-89e1-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/maroon-5/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/6/b/11e81bc7-1b61-cf28-899b-a0369fe50396.jpg",
+      "name": "Maroon 5",
+      "slug": "maroon-5",
+      "uuid": "11e81bc7-1b61-cf28-899b-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.08,
+    "danceability": 0.4,
+    "energy": 0.75,
+    "instrumentalness": 0,
+    "key": 0,
+    "liveness": 0.12,
+    "loudness": -6.4,
+    "mode": 1,
+    "speechiness": 0.09,
+    "tempo": 86.99,
+    "timeSignature": 4,
+    "valence": 0.73
+  },
+  "composers": [
+    "Adam Levine",
+    "James Valentine",
+    "Mickey Madden",
+    "Jesse Carmichael",
+    "Ryan Dusick"
+  ],
+  "copyright": "(P) 2003 J Records, a unit of BMG",
+  "creditName": "Maroon 5",
+  "credits": [
+    {
+      "name": "Adam Levine",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "7c04cf60-ce9b-43dd-ba5c-fc18cf7b448c"
+    },
+    {
+      "name": "James Valentine",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "9e996df2-b9fd-46bb-8c9f-a612fc6ee117"
+    },
+    {
+      "name": "Matt Wallace",
+      "roles": [
+        "producer",
+        "mixing  engineer"
+      ],
+      "uuid": "38b92146-2ec4-49df-bd74-086df4135281"
+    },
+    {
+      "name": "Ryan Dusick",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "0c7be8bc-5a64-4508-9866-a674a35f2d04"
+    },
+    {
+      "name": "Mickey Madden",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "4997caed-fd2d-44cb-ac9e-7c6ce5d1901f"
+    },
+    {
+      "name": "JESSE CARMICHAEL",
+      "roles": [
+        "composer",
+        "lyricist"
+      ],
+      "uuid": "23028684-5832-4148-bd24-4915e2042f03"
+    }
+  ],
+  "distributor": "Sony",
+  "duration": 344,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "soundtrack",
+      "sub": [
+        "film ost",
+        "ost"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/9/4/a/11e8262c-0a49-60d8-89e1-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "US",
+    "countryName": "United States",
+    "value": "USJAY0300422"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "J",
+      "type": "Sony"
+    }
+  ],
+  "languageCode": "en",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/maroon-5/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/1/6/b/11e81bc7-1b61-cf28-899b-a0369fe50396.jpg",
+      "name": "Maroon 5",
+      "slug": "maroon-5",
+      "uuid": "11e81bc7-1b61-cf28-899b-a0369fe50396"
+    }
+  ],
+  "name": "Sweetest Goodbye / Sunday Morning",
+  "producers": [],
+  "releaseDate": "2003-09-03T00:00:00+00:00",
+  "uuid": "11e8262c-0a49-60d8-89e1-aa1c026db3d8"
+}

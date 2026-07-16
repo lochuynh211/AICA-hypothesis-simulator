@@ -1,0 +1,97 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82734-860c-486c-ae80-aa1c026db3d8/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/petit-biscuit/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/c/3/6/11e81bc7-063c-1a54-ac9b-a0369fe50396.jpg",
+      "name": "Petit Biscuit",
+      "slug": "petit-biscuit",
+      "uuid": "11e81bc7-063c-1a54-ac9b-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.73,
+    "danceability": 0.78,
+    "energy": 0.47,
+    "instrumentalness": 0.81,
+    "key": 6,
+    "liveness": 0.11,
+    "loudness": -9.47,
+    "mode": 1,
+    "speechiness": 0.05,
+    "tempo": 90.84,
+    "timeSignature": 4,
+    "valence": 0.24
+  },
+  "composers": [
+    "Petit Biscuit"
+  ],
+  "copyright": "1999 Écurie",
+  "creditName": "Petit Biscuit",
+  "credits": [
+    {
+      "name": "Mehdi Benjelloun",
+      "roles": [
+        "writer",
+        "composer"
+      ],
+      "uuid": "5b9a4f60-53f6-4d2e-9581-3ab8767dc8dd"
+    },
+    {
+      "name": "Petit Biscuit",
+      "roles": [
+        "producer",
+        "writer",
+        "phonographic copyright"
+      ],
+      "uuid": "9ac8968e-a2da-44f2-bfda-af5d5f6e71dc"
+    }
+  ],
+  "distributor": "Believe",
+  "duration": 238,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "electro",
+      "sub": [
+        "dance",
+        "electronic"
+      ]
+    },
+    {
+      "root": "rock",
+      "sub": [
+        "rock"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/c/0/6/11e82734-860c-486c-ae80-aa1c026db3d8.jpg",
+  "isrc": {
+    "countryCode": "FR",
+    "countryName": "France",
+    "value": "FR2X41643669"
+  },
+  "iswcs": [
+    "T7036315398"
+  ],
+  "labels": [
+    {
+      "name": "Écurie",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/petit-biscuit/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/c/3/6/11e81bc7-063c-1a54-ac9b-a0369fe50396.jpg",
+      "name": "Petit Biscuit",
+      "slug": "petit-biscuit",
+      "uuid": "11e81bc7-063c-1a54-ac9b-a0369fe50396"
+    }
+  ],
+  "name": "Sunset Lover",
+  "producers": [],
+  "releaseDate": "1999-11-10T00:00:00+00:00",
+  "uuid": "11e82734-860c-486c-ae80-aa1c026db3d8"
+}

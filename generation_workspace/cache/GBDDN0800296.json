@@ -1,0 +1,100 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82628-a70d-dad8-9a66-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/jon-hopkins/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/f/a/11e81bca-eaf8-228e-8848-a0369fe50396.jpg",
+      "name": "Jon Hopkins",
+      "slug": "jon-hopkins",
+      "uuid": "11e81bca-eaf8-228e-8848-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.99,
+    "danceability": 0.54,
+    "energy": 0.01,
+    "instrumentalness": 0.98,
+    "key": 1,
+    "liveness": 0.11,
+    "loudness": -23.04,
+    "mode": 1,
+    "speechiness": 0.1,
+    "tempo": 131.28,
+    "timeSignature": 4,
+    "valence": 0.52
+  },
+  "composers": [
+    "Jon Hopkins"
+  ],
+  "copyright": "2009 Just Music",
+  "creditName": "Jon Hopkins",
+  "credits": [
+    {
+      "name": "Jon Hopkins",
+      "roles": [
+        "composer"
+      ],
+      "uuid": "cd91d0f7-3e72-4d3d-a32f-0c67420bdc92"
+    },
+    {
+      "name": "Tunng",
+      "roles": [
+        "remixing"
+      ],
+      "uuid": "9af70aaa-0d62-43d5-b769-bfcf1f197346"
+    }
+  ],
+  "distributor": "Universal",
+  "duration": 100,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "alternative",
+      "sub": [
+        "alternative"
+      ]
+    },
+    {
+      "root": "jazz",
+      "sub": [
+        "jazz"
+      ]
+    },
+    {
+      "root": "electro",
+      "sub": [
+        "dance",
+        "electronic"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/d/0/7/11e82628-a70d-dad8-9a66-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "GB",
+    "countryName": "United Kingdom",
+    "value": "GBDDN0800296"
+  },
+  "iswcs": [],
+  "labels": [
+    {
+      "name": "Just Music",
+      "type": "Self released"
+    }
+  ],
+  "languageCode": "",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/jon-hopkins/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/8/f/a/11e81bca-eaf8-228e-8848-a0369fe50396.jpg",
+      "name": "Jon Hopkins",
+      "slug": "jon-hopkins",
+      "uuid": "11e81bca-eaf8-228e-8848-a0369fe50396"
+    }
+  ],
+  "name": "Small Memory",
+  "producers": [
+    "Jon Hopkins"
+  ],
+  "releaseDate": "2009-05-03T00:00:00+00:00",
+  "uuid": "11e82628-a70d-dad8-9a66-a0369fe50396"
+}

@@ -1,0 +1,105 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/11e82629-1e9f-86a0-9017-a0369fe50396/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/chage-and-aska-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/d/d/11e83fed-4ddb-bc12-80f3-aa1c026db3d8.jpg",
+      "name": "CHAGE and ASKA",
+      "slug": "chage-and-aska-1",
+      "uuid": "11e83fed-4ddb-bc12-80f3-aa1c026db3d8"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.32,
+    "danceability": 0.51,
+    "energy": 0.67,
+    "instrumentalness": 0,
+    "key": 3,
+    "liveness": 0.09,
+    "loudness": -5.86,
+    "mode": 1,
+    "speechiness": 0.03,
+    "tempo": 83.98,
+    "timeSignature": 4,
+    "valence": 0.22
+  },
+  "composers": [
+    "ASKA"
+  ],
+  "copyright": "Yamaha Music Entertainment Holdings, Inc.",
+  "creditName": "CHAGE and ASKA",
+  "credits": [
+    {
+      "name": "CHAGE CHAGE",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "79606559-bfa8-4bdd-9dc8-a7829f705eaf"
+    },
+    {
+      "name": "Aska",
+      "roles": [
+        "writer"
+      ],
+      "uuid": "947c3458-cd01-47ae-91c2-1fb8b82757cd"
+    },
+    {
+      "name": "山里剛 (Go Yamazato)",
+      "roles": [
+        "producer"
+      ],
+      "uuid": "0fe135bb-1f52-4619-9d92-cbc8f46b990f"
+    },
+    {
+      "name": "十川ともじ (Tomoji Sogawa)",
+      "roles": [
+        "arranger"
+      ],
+      "uuid": "d7b28b91-1d86-42d6-ba6e-9e60c9fe062c"
+    }
+  ],
+  "distributor": "",
+  "duration": 283,
+  "explicit": false,
+  "genres": [
+    {
+      "root": "j-pop",
+      "sub": [
+        "j-pop"
+      ]
+    }
+  ],
+  "imageUrl": "https://assets.soundcharts.com/song/f/9/e/11e82629-1e9f-86a0-9017-a0369fe50396.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPC09101990"
+  },
+  "iswcs": [
+    "T1010263939"
+  ],
+  "labels": [
+    {
+      "name": "Yamaha Music Entertainment Holdings",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/chage-and-aska-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/b/d/d/11e83fed-4ddb-bc12-80f3-aa1c026db3d8.jpg",
+      "name": "CHAGE and ASKA",
+      "slug": "chage-and-aska-1",
+      "uuid": "11e83fed-4ddb-bc12-80f3-aa1c026db3d8"
+    }
+  ],
+  "name": "SAY YES",
+  "producers": [
+    "Chage",
+    "ASKA",
+    "山里剛 (Go Yamazato)"
+  ],
+  "releaseDate": "1991-07-24T00:00:00+00:00",
+  "uuid": "11e82629-1e9f-86a0-9017-a0369fe50396"
+}

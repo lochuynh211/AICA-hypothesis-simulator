@@ -1,0 +1,66 @@
+{
+  "appUrl": "https://app.soundcharts.com/app/song/22fd1342-9b90-11e9-8c35-549f35141000/overview",
+  "artists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kenji-sawada-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/4/5/11e81bcd-0542-6760-a163-a0369fe50396.jpg",
+      "name": "Kenji Sawada",
+      "slug": "kenji-sawada-1",
+      "uuid": "11e81bcd-0542-6760-a163-a0369fe50396"
+    }
+  ],
+  "audio": {
+    "acousticness": 0.12,
+    "danceability": 0.55,
+    "energy": 0.77,
+    "instrumentalness": 0,
+    "key": 9,
+    "liveness": 0.36,
+    "loudness": -5.73,
+    "mode": 0,
+    "speechiness": 0.04,
+    "tempo": 141.11,
+    "timeSignature": 4,
+    "valence": 0.65
+  },
+  "composers": [
+    "Yu Aku",
+    "Katsuo Ohno"
+  ],
+  "copyright": "℗ 1977 WATANABE MUSIC PUBLISHING CO.,LTD.",
+  "creditName": "Kenji Sawada",
+  "credits": [],
+  "distributor": "",
+  "duration": 209,
+  "explicit": false,
+  "genres": [],
+  "imageUrl": "https://assets.soundcharts.com/song/0/9/b/22fd1342-9b90-11e9-8c35-549f35141000.jpg",
+  "isrc": {
+    "countryCode": "JP",
+    "countryName": "Japan",
+    "value": "JPPO07700650"
+  },
+  "iswcs": [
+    "T1011401515"
+  ],
+  "labels": [
+    {
+      "name": "WATANABE MUSIC PUBLISHING",
+      "type": "unknown"
+    }
+  ],
+  "languageCode": "ja",
+  "mainArtists": [
+    {
+      "appUrl": "https://app.soundcharts.com/app/artist/kenji-sawada-1/overview",
+      "imageUrl": "https://assets.soundcharts.com/artist/2/4/5/11e81bcd-0542-6760-a163-a0369fe50396.jpg",
+      "name": "Kenji Sawada",
+      "slug": "kenji-sawada-1",
+      "uuid": "11e81bcd-0542-6760-a163-a0369fe50396"
+    }
+  ],
+  "name": "勝手にしやがれ",
+  "producers": [],
+  "releaseDate": "1977-05-21T00:00:00+00:00",
+  "uuid": "22fd1342-9b90-11e9-8c35-549f35141000"
+}
