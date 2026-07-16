@@ -54,10 +54,10 @@ Paths are repo-relative. `[P]` = parallelizable (different files, no incomplete 
 **Goal**: accept → start, complete, continue, stop → restore previous content; each a discrete event; replay renders identically.
 **Independent test**: from a `content_selected` run apply accept/complete/continue/stop and assert event sequence, journey state, and no-recompute reopen.
 
-- [ ] T018 [P] [US2] Test `app/api/tests/proposal/test_us2_plan_lifecycle.py`: accept→`CONTENT_STARTED` (playback active, current_plan_ref set, previous_content captured); complete→`CONTENT_COMPLETED`; continue→`CONTINUE_REQUESTED` (uses plan `next_transition_policy`); stop→`RETURN_TO_PREVIOUS_CONTENT` (previous restored, playback stopped); invalid preconditions → 422.
-- [ ] T019 [US2] Implement `accept`, `complete`, `continue`, `stop` handlers in `services/proposal_journey.py` (read committed `CompletePlan` policy fields from the run's content evidence) to pass T018.
-- [ ] T020 [US2] Test `app/api/tests/proposal/test_us2_replay_no_recompute.py`: after the full action sequence, `GET /runs/{id}` renders the identical log with no selector re-invoked (Principle III / SC-004).
-- [ ] T021 [US2] Ensure the action endpoint persists lifecycle events/state via append-only manager and that reopen path is unchanged; adjust `routers/proposal.py` if needed to pass T020.
+- [x] T018 [P] [US2] Test `app/api/tests/proposal/test_us2_plan_lifecycle.py`: accept→`CONTENT_STARTED` (playback active, current_plan_ref set, previous_content captured); complete→`CONTENT_COMPLETED`; continue→`CONTINUE_REQUESTED` (uses plan `next_transition_policy`); stop→`RETURN_TO_PREVIOUS_CONTENT` (previous restored, playback stopped); invalid preconditions → 422.
+- [x] T019 [US2] Implement `accept`, `complete`, `continue`, `stop` handlers in `services/proposal_journey.py` (read committed `CompletePlan` policy fields from the run's content evidence) to pass T018.
+- [x] T020 [US2] Test `app/api/tests/proposal/test_us2_replay_no_recompute.py`: after the full action sequence, `GET /runs/{id}` renders the identical log with no selector re-invoked (Principle III / SC-004).
+- [x] T021 [US2] Ensure the action endpoint persists lifecycle events/state via append-only manager and that reopen path is unchanged; adjust `routers/proposal.py` if needed to pass T020.
 
 **Checkpoint**: a mocked accepted plan advances start→complete→continue→restore, replayable.
 
