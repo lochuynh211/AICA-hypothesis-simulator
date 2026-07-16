@@ -13,23 +13,70 @@ SCHEMA_VERSION: str = "1.0.0"
 GENRE_EXTENSION_VERSION: str = "genre_affinity_v1"
 
 # ---------------------------------------------------------------------------
-# Re-exports (populated as each module is added in later tasks)
+# Re-exports — enums (T006)
 # ---------------------------------------------------------------------------
-# from aica_api.models.proposal.enums import (  # noqa: F401  — T006
-#     TriggerPurpose,
-#     LifecycleStage,
-#     ServiceId,
-#     RestSpotType,
-#     ContentDecisionType,
-#     FeatureDisposition,
-#     FeatureOriginProvenance,
-#     ResponseCoefficientProvenance,
-#     GenreLiteral,
-#     UsageLevel,
-# )
+from aica_api.models.proposal.enums import (  # noqa: F401
+    TriggerPurpose,
+    LifecycleStage,
+    ServiceId,
+    RestSpotType,
+    ContentDecisionType,
+    FeatureDisposition,
+    FeatureOriginProvenance,
+    ResponseCoefficientProvenance,
+    GenreLiteral,
+    UsageLevel,
+)
+
+# ---------------------------------------------------------------------------
+# Re-exports — selector input (T009 / T011)
+# ---------------------------------------------------------------------------
+from aica_api.models.proposal.selector_input import (  # noqa: F401
+    SelectorInput,
+    FeatureProvenanceEntry,
+    CandidateRef,
+    ExcludedCandidate,
+)
+
+# ---------------------------------------------------------------------------
+# Re-exports — content output (T010 / T011)
+# ---------------------------------------------------------------------------
+from aica_api.models.proposal.content_output import (  # noqa: F401
+    CompletePlan,
+    OrderedItem,
+    ItemFeatureContribution,
+    SongTraitValues,
+    PlanMode,
+    LightingConfiguration,
+    ExcludedItem,
+)
 
 __all__ = [
     "CONTRACT_VERSION",
     "SCHEMA_VERSION",
     "GENRE_EXTENSION_VERSION",
+    # enums
+    "TriggerPurpose",
+    "LifecycleStage",
+    "ServiceId",
+    "RestSpotType",
+    "ContentDecisionType",
+    "FeatureDisposition",
+    "FeatureOriginProvenance",
+    "ResponseCoefficientProvenance",
+    "GenreLiteral",
+    "UsageLevel",
+    # selector input
+    "SelectorInput",
+    "FeatureProvenanceEntry",
+    "CandidateRef",
+    "ExcludedCandidate",
+    # content output
+    "CompletePlan",
+    "OrderedItem",
+    "ItemFeatureContribution",
+    "SongTraitValues",
+    "PlanMode",
+    "LightingConfiguration",
+    "ExcludedItem",
 ]
