@@ -35,6 +35,10 @@ key.local.js
 runs/*.json
 corporate-proxy.crt
 
+# Proposal-simulator local user artifacts (P3) — never committed
+proposal_profiles/
+proposal_worlds/
+
 # Music dataset generator workspace.
 # Committed for cross-machine resume (raw cache + ledger + lineage are the resumable
 # state, design §4.13) — BUT credentials are NEVER committed.

@@ -72,5 +72,21 @@ class Settings:
     def proposal_runs_dir(self) -> Path:
         return _resolve("AICA_PROPOSAL_RUNS_DIR", "proposal_runs")
 
+    @property
+    def proposal_profiles_dir(self) -> Path:
+        # User-saved driver profiles (P3). Built-in profiles ship under
+        # proposal_contracts/; user profiles persist here (git-ignored).
+        return _resolve("AICA_PROPOSAL_PROFILES_DIR", "proposal_profiles")
+
+    @property
+    def proposal_worlds_dir(self) -> Path:
+        # User-created world clones (P3), git-ignored local artifacts.
+        return _resolve("AICA_PROPOSAL_WORLDS_DIR", "proposal_worlds")
+
+    @property
+    def proposal_seeds_dir(self) -> Path:
+        # Committed base-seed worlds (P3) promoted from the generator workspace.
+        return _resolve("AICA_PROPOSAL_SEEDS_DIR", "proposal_contracts/seeds")
+
 
 settings = Settings()
