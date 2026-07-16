@@ -242,6 +242,13 @@ class SpotifyTrack(BaseModel):
             _assert_invalid_domain(v, "track.href")
         return v
 
+    @field_validator("preview_url", mode="after")
+    @classmethod
+    def _preview_url_must_be_invalid(cls, v: str | None) -> str | None:
+        if v is not None:
+            _assert_invalid_domain(v, "track.preview_url")
+        return v
+
     @field_validator("duration_ms", mode="after")
     @classmethod
     def _duration_must_be_positive(cls, v: int) -> int:

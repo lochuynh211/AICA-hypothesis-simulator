@@ -152,11 +152,13 @@ def test_non_invalid_url_rejected() -> None:
     data = _load_song("fixtures/negative/non-invalid-url.json")
     with pytest.raises(ValidationError) as exc_info:
         Song.model_validate(data)
-    errors = exc_info.value.errors()
-    error_texts = [str(err) for err in errors]
-    assert any("invalid" in t.lower() or "url" in t.lower() or "synthetic" in t.lower()
-               for t in error_texts), (
-        f"Expected URL synthetic-identity error, got: {errors}"
+    locs = [err["loc"] for err in exc_info.value.errors()]
+    # The offending field is external_urls.spotify inside spotify_track
+    assert any(
+        loc == ("spotify_track", "external_urls", "spotify")
+        for loc in locs
+    ), (
+        f"Expected loc ('spotify_track', 'external_urls', 'spotify') in error locs, got: {locs}"
     )
 
 
@@ -168,10 +170,31 @@ def test_id_missing_synthetic_prefix_rejected() -> None:
     data = _load_song("fixtures/negative/id-missing-synthetic-prefix.json")
     with pytest.raises(ValidationError) as exc_info:
         Song.model_validate(data)
-    errors = exc_info.value.errors()
-    error_texts = [str(err) for err in errors]
-    assert any("synthetic" in t.lower() or "id" in t.lower() for t in error_texts), (
-        f"Expected synthetic-identity ID error, got: {errors}"
+    locs = [err["loc"] for err in exc_info.value.errors()]
+    # The offending field is id inside spotify_track
+    assert any(
+        loc == ("spotify_track", "id")
+        for loc in locs
+    ), (
+        f"Expected loc ('spotify_track', 'id') in error locs, got: {locs}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# T014-14: Negative — preview_url on non-.invalid host
+# ---------------------------------------------------------------------------
+
+def test_preview_url_non_invalid_rejected() -> None:
+    data = _load_song("fixtures/negative/preview-url-non-invalid.json")
+    with pytest.raises(ValidationError) as exc_info:
+        Song.model_validate(data)
+    locs = [err["loc"] for err in exc_info.value.errors()]
+    # The offending field is preview_url inside spotify_track
+    assert any(
+        loc == ("spotify_track", "preview_url")
+        for loc in locs
+    ), (
+        f"Expected loc ('spotify_track', 'preview_url') in error locs, got: {locs}"
     )
 
 
