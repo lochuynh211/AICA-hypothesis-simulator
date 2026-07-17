@@ -92,6 +92,14 @@ class OrderedItem(BaseModel):
     trait_values: SongTraitValues | None
     feature_contributions: list[ItemFeatureContribution]   # empty for LLM
     rationale: list[str]
+    # §14 explainability roll-up (mirrors service RankedCandidate): category
+    # subtotals + the single strongest supporting / opposing feature. Optional
+    # so LLM-shaped plans and pre-existing evidence stay valid (default None).
+    situation_fit: float | None = None
+    preference_fit: float | None = None
+    history_fit: float | None = None
+    strongest_support: dict | None = None   # {feature_id, contribution} | None
+    strongest_oppose: dict | None = None    # {feature_id, contribution} | None
 
 
 # ---------------------------------------------------------------------------

@@ -242,6 +242,12 @@ export type OrderedItem = {
   trait_values: Record<string, number> | null
   feature_contributions: ItemFeatureContribution[]
   rationale: string[]
+  // §14 explainability roll-up (mirrors service RankedCandidate) — optional.
+  situation_fit?: number | null
+  preference_fit?: number | null
+  history_fit?: number | null
+  strongest_support?: { feature_id: string; contribution: number } | null
+  strongest_oppose?: { feature_id: string; contribution: number } | null
 }
 
 export type PlanMode = {
@@ -662,6 +668,14 @@ export async function getSeeds(): Promise<{ seeds: SeedSummary[] }> {
 
 export async function getSeed(seedId: string): Promise<SeedWorld> {
   return apiFetch(`/seeds/${encodeURIComponent(seedId)}`, { method: 'GET' })
+}
+
+/** A catalog song (subset the content panel needs — id → display name). */
+export type CatalogSong = { id: string; name: string }
+
+/** Read-only full song catalog for a dataset (used to resolve item_id → name). */
+export async function getDatasetCatalog(datasetId: string): Promise<{ total: number; songs: CatalogSong[] }> {
+  return apiFetch(`/datasets/${encodeURIComponent(datasetId)}/catalog`, { method: 'GET' })
 }
 
 // ── Driver-profile CRUD ──────────────────────────────────────────────────────

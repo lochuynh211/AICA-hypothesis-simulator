@@ -676,11 +676,16 @@ def evaluate(context: dict) -> dict:
             traits = derive_traits(af, hp)
             contributions = []
             item_fit_sum = 0.0
+            # §14 roll-up: subtotal contributions by top-level category.
+            cat_subtotals = {"situation": 0.0, "preference": 0.0, "history": 0.0}
             for leaf, entry in scored_leaves.items():
                 e_i, a_i, meta = _feature_e_a(leaf, entry, snap, track, traits, hp, sim_dt, genre_on, gav1, scene)
                 r_i = e_i * a_i
                 contribution = entry["effective_weight"] * r_i
                 item_fit_sum += contribution
+                _cat = str(entry.get("category", "")).lower()
+                if _cat in cat_subtotals:
+                    cat_subtotals[_cat] += contribution
                 contributions.append({
                     "leaf": leaf,
                     "feature_id": entry["feature_id"],
@@ -697,9 +702,27 @@ def evaluate(context: dict) -> dict:
                     "formula_version": hp["formula_version"],
                 })
             item_fit = _norm0(_clamp(item_fit_sum, -1.0, 1.0))
+            # Strongest supporting (max positive) / opposing (min negative) feature.
+            _support = max(contributions, key=lambda c: c["contribution"], default=None)
+            _oppose = min(contributions, key=lambda c: c["contribution"], default=None)
+            strongest_support = (
+                {"feature_id": _support["feature_id"], "contribution": _support["contribution"]}
+                if _support is not None and _support["contribution"] > 0
+                else None
+            )
+            strongest_oppose = (
+                {"feature_id": _oppose["feature_id"], "contribution": _oppose["contribution"]}
+                if _oppose is not None and _oppose["contribution"] < 0
+                else None
+            )
             scored_songs.append({
                 "track": track, "traits": traits, "item_fit": item_fit,
                 "contributions": contributions,
+                "situation_fit": _norm0(cat_subtotals["situation"]),
+                "preference_fit": _norm0(cat_subtotals["preference"]),
+                "history_fit": _norm0(cat_subtotals["history"]),
+                "strongest_support": strongest_support,
+                "strongest_oppose": strongest_oppose,
             })
     except _CatalogError as exc:
         return _error("invalid_catalog", service_id, hp, str(exc))
@@ -734,6 +757,11 @@ def evaluate(context: dict) -> dict:
             },
             "feature_contributions": [{k: v for k, v in c.items() if k != "leaf"} for c in s["contributions"]],
             "rationale": _build_reasons(s["contributions"]),
+            "situation_fit": s["situation_fit"],
+            "preference_fit": s["preference_fit"],
+            "history_fit": s["history_fit"],
+            "strongest_support": s["strongest_support"],
+            "strongest_oppose": s["strongest_oppose"],
         })
 
     mode = _plan_mode(service_id)

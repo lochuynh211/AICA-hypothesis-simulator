@@ -192,6 +192,18 @@
           "title": "Feature Contributions",
           "type": "array"
         },
+        "history_fit": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "History Fit"
+        },
         "item_fit": {
           "anyOf": [
             {
@@ -211,12 +223,62 @@
           "title": "Position",
           "type": "integer"
         },
+        "preference_fit": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Preference Fit"
+        },
         "rationale": {
           "items": {
             "type": "string"
           },
           "title": "Rationale",
           "type": "array"
+        },
+        "situation_fit": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Situation Fit"
+        },
+        "strongest_oppose": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Strongest Oppose"
+        },
+        "strongest_support": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Strongest Support"
         },
         "trait_values": {
           "anyOf": [

@@ -21,8 +21,14 @@ const CONTENT_PACKAGE = {
   approach: 'transparent' as const,
   contract_version: '1.0.0',
   supported_services: ['music_playlist', 'humming_karaoke', 'full_karaoke'],
-  parameters: { plan_item_count: 5 },
+  parameters: {},
   hyperparameters: [
+    {
+      key: 'plan_item_count',
+      kind: 'numeric' as const,
+      label: { ja: 'プラン曲数', en: 'Plan Item Count' },
+      default: 5,
+    },
     {
       key: 'content_category_weights',
       kind: 'table' as const,
@@ -298,13 +304,15 @@ describe('ContentProposalPanel', () => {
     expect(screen.getByTestId('content-formulation')).toHaveTextContent('item_fit')
   })
 
-  it('renders editable parameters and hyperparameter matrices from the content manifest', async () => {
+  it('renders grouped setup: Setting (plan_item_count) + a Weights matrix from the content manifest', async () => {
     render(
       <ProposalStoreProvider>
         <ContentProposalPanel />
       </ProposalStoreProvider>,
     )
-    expect(await screen.findByLabelText('plan_item_count')).toBeInTheDocument()
+    // plan_item_count is a Setting hyperparameter (labelled by its label text).
+    expect(await screen.findByLabelText('Plan Item Count')).toBeInTheDocument()
+    // content_category_weights renders under the Weights group (subslab header).
     expect(screen.getByText('Content Category Weights')).toBeInTheDocument()
   })
 
@@ -316,39 +324,25 @@ describe('ContentProposalPanel', () => {
   // / SET_SERVICE_HYPERPARAMETER wiring.
   // ---------------------------------------------------------------------
 
-  it('excludes the manifest "note" string from the editable parameter grid', async () => {
-    const packagesWithNote = {
+  it('does not render object/array manifest parameters (recipe_registry etc.) as editable fields', async () => {
+    const packagesWithObjParam = {
       ...packagesResponse(),
-      packages: [{ ...CONTENT_PACKAGE, parameters: { plan_item_count: 5, note: 'ignored by evaluate()' } }, SERVICE_PACKAGE],
+      packages: [
+        { ...CONTENT_PACKAGE, parameters: { recipe_registry: { music_playlist: {} }, note: 'ignored by evaluate()' } },
+        SERVICE_PACKAGE,
+      ],
     }
-    vi.mocked(getPackages).mockResolvedValue(packagesWithNote as never)
+    vi.mocked(getPackages).mockResolvedValue(packagesWithObjParam as never)
 
     render(
       <ProposalStoreProvider>
         <ContentProposalPanel />
       </ProposalStoreProvider>,
     )
-    await screen.findByLabelText('plan_item_count')
+    await screen.findByLabelText('Plan Item Count')
+    // object/array params + the manifest note are never surfaced as controls.
     expect(screen.queryByLabelText('note')).not.toBeInTheDocument()
-  })
-
-  it('editing a content parameter dispatches SET_CONTENT_PARAMETER and updates the store override', async () => {
-    function StoreSnapshot() {
-      const { state } = useProposalStore()
-      return <div data-testid="param-override-snapshot">{JSON.stringify(state.contentParameterOverrides)}</div>
-    }
-    render(
-      <ProposalStoreProvider>
-        <ContentProposalPanel />
-        <StoreSnapshot />
-      </ProposalStoreProvider>,
-    )
-    const input = await screen.findByLabelText('plan_item_count')
-    fireEvent.change(input, { target: { value: '7' } })
-
-    await waitFor(() =>
-      expect(screen.getByTestId('param-override-snapshot')).toHaveTextContent('{"plan_item_count":7}'),
-    )
+    expect(screen.queryByLabelText('recipe_registry')).not.toBeInTheDocument()
   })
 
   it('editing a content hyperparameter dispatches SET_CONTENT_HYPERPARAMETER and updates the store override', async () => {
@@ -372,12 +366,10 @@ describe('ContentProposalPanel', () => {
     )
   })
 
-  it('editing a content parameter is captured and sent as an override when Choose is clicked', async () => {
-    // Task 5 (Choose scope-gate): this test is about parameter-override
-    // capture, not unsupported-service handling — use a content-backed
-    // candidate (`full_karaoke`) so the Choose button is actually enabled
-    // and the click fires (the unsupported-service scenario is covered
-    // separately below, without going through a disabled button).
+  it('editing a content hyperparameter is captured and sent as an override when Choose is clicked', async () => {
+    // Task 5 (Choose scope-gate): this test is about override capture, not
+    // unsupported-service handling — use a content-backed candidate
+    // (`full_karaoke`) so the Choose button is enabled and the click fires.
     vi.mocked(createRun).mockResolvedValue(runLogServiceSelectedWithUnsupportedCandidate('full_karaoke') as never)
     vi.mocked(selectService).mockResolvedValue({ ...runLogWithPlan(), status: 'content_selected' } as never)
 
@@ -391,15 +383,20 @@ describe('ContentProposalPanel', () => {
     fireEvent.click(screen.getByTestId('service-run-button'))
     await screen.findByText('full_karaoke')
 
-    const input = await screen.findByLabelText('plan_item_count')
+    // plan_item_count is now a Setting hyperparameter — editing it flows through
+    // contentHyperparameterOverrides and is sent on select-service.
+    const input = await screen.findByLabelText('Plan Item Count')
     fireEvent.change(input, { target: { value: '7' } })
 
     fireEvent.click(screen.getByTestId('choose-candidate-full_karaoke'))
 
     await waitFor(() => expect(selectService).toHaveBeenCalled())
     expect(selectService).toHaveBeenCalledWith('prun_unsupported_test', 'full_karaoke', {
-      parameters: { plan_item_count: 7 },
-      hyperparameters: { content_category_weights: { Situation: 0.55, Preference: 0.3, History: 0.15 } },
+      parameters: {},
+      hyperparameters: {
+        plan_item_count: 7,
+        content_category_weights: { Situation: 0.55, Preference: 0.3, History: 0.15 },
+      },
     })
   })
 

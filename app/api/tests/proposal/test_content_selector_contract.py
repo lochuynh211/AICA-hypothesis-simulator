@@ -72,6 +72,29 @@ def test_exact_count_and_ordering():
     assert [it["position"] for it in result["ordered_items"]] == list(range(1, HP["plan_item_count"] + 1))
 
 
+def test_ordered_items_carry_category_subtotals_and_strongest_features():
+    """§14 roll-up: every ordered item exposes situation/preference/history
+    subtotals and the single strongest supporting / opposing feature — the
+    content-side mirror of the service RankedCandidate fields."""
+    result = CS.evaluate(_world())
+    assert result["decision_type"] == "complete_plan"
+    for it in result["ordered_items"]:
+        # subtotals present and numeric
+        for key in ("situation_fit", "preference_fit", "history_fit"):
+            assert isinstance(it[key], (int, float)), f"{key} missing/non-numeric"
+        # subtotals reconstruct item_fit (pre-clamp) within rounding tolerance
+        subtotal_sum = it["situation_fit"] + it["preference_fit"] + it["history_fit"]
+        assert abs(subtotal_sum - it["item_fit"]) < 0.05
+        # strongest_support (if any) is a positive-contribution feature; oppose is negative
+        if it["strongest_support"] is not None:
+            assert it["strongest_support"]["contribution"] > 0
+            assert "feature_id" in it["strongest_support"]
+        if it["strongest_oppose"] is not None:
+            assert it["strongest_oppose"]["contribution"] < 0
+    # the model accepts the enriched shape
+    CompletePlan.model_validate(result)
+
+
 def test_no_aggregate_plan_score_anywhere():
     result = CS.evaluate(_world())
     _scan_forbidden(result)

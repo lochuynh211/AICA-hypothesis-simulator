@@ -35,6 +35,7 @@ import { t } from '../../../i18n/t'
 import { useProposalStore } from '../../../state/proposalStore'
 import {
   getPackages,
+  getDatasetCatalog,
   journeyPreview,
   type ProposalPackageSummary,
   type OrderedItem,
@@ -43,6 +44,15 @@ import {
 } from '../../../api/proposalClient'
 import HyperparamMatrix from '../HyperparamMatrix'
 import ReasonBreakdown, { type ReasonRow } from '../ReasonBreakdown'
+import ContentExplainability, { hasContentExplainability } from '../ContentExplainability'
+
+// Setup-section grouping (mirrors the service panel). Keys not listed anywhere
+// fall to a collapsed "Advanced" disclosure; the removed keys are dropped.
+const CONTENT_SETTING_KEYS = ['plan_item_count', 'fixed_humming_segment_sec', 'directional_hypothesis']
+const CONTENT_PREPROCESSING_KEYS = ['norm_bounds', 'history_curves', 'age_era_affinity']
+const CONTENT_RESPONSE_KEYS = ['trait_composition_matrix', 'context_response_matrix']
+const CONTENT_WEIGHT_KEYS = ['content_category_weights', 'hierarchy_weights', 'purpose_multipliers']
+const CONTENT_REMOVED_KEYS = ['parameter_set_version', 'formula_version', 'skip_exclusion_window_sec']
 
 const LABELS = {
   title: { ja: 'コンテンツ提案', en: 'Content proposal' },
@@ -55,6 +65,11 @@ const LABELS = {
   contentPkg: { ja: 'コンテンツPKG', en: 'Content pkg' },
   parameters: { ja: 'パラメータ（編集可）', en: 'Parameters (editable)' },
   hyperparameters: { ja: 'ハイパーパラメータ', en: 'Hyperparameters' },
+  settingSection: { ja: '設定', en: 'Setting' },
+  preprocessingSection: { ja: '入力前処理・正規化', en: 'Input preprocessing / normalization' },
+  responseSection: { ja: '応答係数', en: 'Response coefficients' },
+  weightsSection: { ja: '重み', en: 'Weights' },
+  advancedSection: { ja: '詳細設定', en: 'Advanced' },
   formulation: { ja: '数式・説明', en: 'Formulation' },
   formulationWhy: {
     ja: '各曲の適合度は、証拠 eᵢ × 応答係数 aᵢ の重み付き総和。集計スコアや順位付きプランはありません——順序付きプラン1件のみ。',
@@ -134,6 +149,27 @@ export default function ContentProposalPanel() {
   const [previewSteps, setPreviewSteps] = useState<JourneyPreviewStep[] | null>(null)
   const [previewPending, setPreviewPending] = useState(false)
   const [previewError, setPreviewError] = useState<string | null>(null)
+  // item_id → song display name (issue #2). Fetched from the dataset catalog.
+  const [songNames, setSongNames] = useState<Record<string, string>>({})
+
+  const datasetId = state.world?.catalog_ref?.dataset_id
+  useEffect(() => {
+    if (!datasetId) return
+    let cancelled = false
+    getDatasetCatalog(datasetId)
+      .then((resp) => {
+        if (cancelled) return
+        const map: Record<string, string> = {}
+        for (const song of resp.songs) map[song.id] = song.name
+        setSongNames(map)
+      })
+      .catch(() => {
+        if (!cancelled) setSongNames({})
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [datasetId])
 
   async function handlePreview() {
     if (!state.runLog) return
@@ -178,6 +214,41 @@ export default function ContentProposalPanel() {
 
   const contentEvidence = state.runLog?.evidence.filter((ev) => ev.step === 'content').slice(-1)[0]
   const plan = contentEvidence?.output as CompletePlan | undefined
+
+  // Setup grouping (mirrors the service panel): Setting / Preprocessing /
+  // Response coefficients / Weights, with an Advanced disclosure for the rest.
+  const hpByKeys = (keys: string[]) => (manifest ? manifest.hyperparameters.filter((h) => keys.includes(h.key)) : [])
+  const settingHps = hpByKeys(CONTENT_SETTING_KEYS)
+  const preprocessingHps = hpByKeys(CONTENT_PREPROCESSING_KEYS)
+  const responseHps = hpByKeys(CONTENT_RESPONSE_KEYS)
+  const weightHps = hpByKeys(CONTENT_WEIGHT_KEYS)
+  const _groupedKeys = new Set([
+    ...CONTENT_SETTING_KEYS,
+    ...CONTENT_PREPROCESSING_KEYS,
+    ...CONTENT_RESPONSE_KEYS,
+    ...CONTENT_WEIGHT_KEYS,
+    ...CONTENT_REMOVED_KEYS,
+  ])
+  const advancedHps = manifest ? manifest.hyperparameters.filter((h) => !_groupedKeys.has(h.key)) : []
+
+  const renderSubslabGroup = (hps: ProposalPackageSummary['hyperparameters']) =>
+    hps.map((hp) => (
+      <div key={hp.key} style={{ margin: '10px 0 4px' }}>
+        <div style={subslabStyle}>
+          <span data-testid="content-hp-kind-badge" style={kindBadgeStyle}>
+            {hp.kind}
+          </span>{' '}
+          <code>{hp.key}</code> <span style={{ color: '#6b7280' }}>{t(hp.label, lang)}</span>
+        </div>
+        <HyperparamMatrix
+          def={hp}
+          value={state.contentHyperparameterOverrides[hp.key]}
+          onChange={(value) => dispatch({ type: 'SET_CONTENT_HYPERPARAMETER', key: hp.key, value })}
+          lang={lang}
+          hideLabel
+        />
+      </div>
+    ))
 
   return (
     <section
@@ -288,7 +359,14 @@ export default function ContentProposalPanel() {
                   >
                     {item.position}
                   </span>
-                  <span style={{ fontWeight: 700, fontSize: '0.86em' }}>{item.item_id}</span>
+                  {/* Issue #2: song name first, id in brackets (id only when
+                      the catalog hasn't resolved a name yet). */}
+                  <span style={{ fontWeight: 700, fontSize: '0.86em' }}>
+                    {songNames[item.item_id] ?? item.item_id}
+                  </span>
+                  {songNames[item.item_id] && (
+                    <code style={{ fontSize: '0.72em', color: '#9ca3af' }}>({item.item_id})</code>
+                  )}
                   {item.item_fit !== null && (
                     <span style={{ marginLeft: 'auto', fontFamily: 'monospace', fontWeight: 800, color: '#7c3aed' }}>
                       {item.item_fit >= 0 ? '+' : ''}
@@ -303,7 +381,9 @@ export default function ContentProposalPanel() {
                   rationale={item.rationale}
                   lang={lang}
                   variant="content"
+                  showTable={!hasContentExplainability(item)}
                 />
+                <ContentExplainability item={item} lang={lang} />
               </div>
             ))}
 
@@ -372,39 +452,12 @@ export default function ContentProposalPanel() {
             show first; parameters → hyperparameters → formulation follow. */}
         {manifest && (
           <>
-            <div style={sectionLabelStyle}>{t(LABELS.parameters, lang)}</div>
-            <div style={grid2Style}>
-              {Object.entries(manifest.parameters)
-                .filter(([key]) => key !== 'note')
-                .map(([key, defaultValue]) => {
-                  if (typeof defaultValue === 'object') return null
-                  const value = state.contentParameterOverrides[key] ?? defaultValue
-                  return (
-                    <label key={key} style={fieldLabelStyle}>
-                      <code>{key}</code>
-                      <input
-                        type={typeof defaultValue === 'number' ? 'number' : 'text'}
-                        value={String(value)}
-                        onChange={(e) =>
-                          dispatch({
-                            type: 'SET_CONTENT_PARAMETER',
-                            key,
-                            value: typeof defaultValue === 'number' ? Number(e.target.value) : e.target.value,
-                          })
-                        }
-                      />
-                    </label>
-                  )
-                })}
-            </div>
-
-            {manifest.hyperparameters.length > 0 && (
-              <details style={disclosureStyle}>
-                <summary style={summaryStyle}>
-                  {t(LABELS.hyperparameters, lang)} <span>{manifest.hyperparameters.length}</span>
-                </summary>
-                <div style={{ padding: '4px 11px 11px' }}>
-                  {manifest.hyperparameters.map((hp) => (
+            {/* 1. Setting */}
+            {settingHps.length > 0 && (
+              <>
+                <div style={sectionLabelStyle}>{t(LABELS.settingSection, lang)}</div>
+                <div style={grid2Style}>
+                  {settingHps.map((hp) => (
                     <HyperparamMatrix
                       key={hp.key}
                       def={hp}
@@ -414,6 +467,41 @@ export default function ContentProposalPanel() {
                     />
                   ))}
                 </div>
+              </>
+            )}
+
+            {/* 2. Input preprocessing / normalization */}
+            {preprocessingHps.length > 0 && (
+              <>
+                <div style={sectionLabelStyle}>{t(LABELS.preprocessingSection, lang)}</div>
+                {renderSubslabGroup(preprocessingHps)}
+              </>
+            )}
+
+            {/* 3. Response coefficients */}
+            {responseHps.length > 0 && (
+              <>
+                <div style={sectionLabelStyle}>{t(LABELS.responseSection, lang)}</div>
+                {renderSubslabGroup(responseHps)}
+              </>
+            )}
+
+            {/* 4. Weights */}
+            {weightHps.length > 0 && (
+              <>
+                <div style={sectionLabelStyle}>{t(LABELS.weightsSection, lang)}</div>
+                {renderSubslabGroup(weightHps)}
+              </>
+            )}
+
+            {/* Advanced — leftover knobs (e.g. genre_affinity_maps, lighting_lookup);
+                parameter_set_version / formula_version / skip_exclusion_window_sec dropped. */}
+            {advancedHps.length > 0 && (
+              <details data-testid="content-advanced-hyperparameters" style={disclosureStyle}>
+                <summary style={summaryStyle}>
+                  {t(LABELS.advancedSection, lang)} <span>{advancedHps.length}</span>
+                </summary>
+                <div style={{ padding: '4px 11px 11px' }}>{renderSubslabGroup(advancedHps)}</div>
               </details>
             )}
           </>
@@ -465,6 +553,31 @@ const disclosureStyle: React.CSSProperties = {
   borderRadius: '8px',
   margin: '8px 0',
   background: '#f5f3ff',
+}
+
+const subslabStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  flexWrap: 'wrap',
+  fontSize: '0.78em',
+  fontWeight: 700,
+  color: '#4b5563',
+  borderTop: '1px dashed #e5e7eb',
+  paddingTop: '6px',
+  marginBottom: '4px',
+}
+
+const kindBadgeStyle: React.CSSProperties = {
+  fontSize: '0.68em',
+  fontWeight: 800,
+  textTransform: 'uppercase',
+  letterSpacing: '0.04em',
+  background: '#f5f3ff',
+  color: '#7c3aed',
+  border: '1px solid #ddd6fe',
+  borderRadius: '999px',
+  padding: '1px 7px',
 }
 
 const summaryStyle: React.CSSProperties = {

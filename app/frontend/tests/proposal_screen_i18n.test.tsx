@@ -78,10 +78,10 @@ describe('ProposalScreen bilingual (EN default / JA toggle / back to EN)', () =>
 
     // A section label from each panel + a hyperparameter label from the manifest.
     expect(screen.getByText('Trigger signal (4)')).toBeInTheDocument()
-    // Service panel now groups setup under "Setting"; the content panel still
-    // uses "Parameters (editable)".
+    // Both panels group setup under labeled sections now; the service panel's
+    // "Setting" header is present (this fixture's content package has no
+    // hyperparameters, so the content panel renders no setup sections).
     expect(screen.getByText('Setting')).toBeInTheDocument()
-    expect(screen.getByText('Parameters (editable)')).toBeInTheDocument()
     // Fix (duplicate-label review finding): HyperparamMatrix is rendered with
     // `hideLabel` in the service subslab, and this fixture's CONTENT_PACKAGE
     // has no hyperparameters, so "Category Weights" renders exactly once
@@ -108,7 +108,6 @@ describe('ProposalScreen bilingual (EN default / JA toggle / back to EN)', () =>
     expect(screen.getByText('コンテンツ提案')).toBeInTheDocument()
     expect(screen.getByText('発火シグナル（4つ）')).toBeInTheDocument()
     expect(screen.getByText('設定')).toBeInTheDocument()
-    expect(screen.getByText('パラメータ（編集可）')).toBeInTheDocument()
     // Fix (duplicate-label review finding): single match — see EN-default case above.
     expect(screen.getByText('カテゴリ重み')).toBeInTheDocument()
     expect(screen.queryByText('Category Weights')).not.toBeInTheDocument()
