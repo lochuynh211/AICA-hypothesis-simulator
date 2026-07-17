@@ -1,0 +1,160 @@
+{
+  "algorithm_config_overrides": null,
+  "brief": {
+    "en": "Three tracks that would otherwise score well were just played minutes ago. The recency/novelty penalty pushes them down, demonstrating that the algorithm avoids immediately repeating songs.",
+    "ja": "本来は上位のはずの3曲を数分前に再生済み。新鮮さペナルティで順位が下がり、直近曲の繰り返しを避ける挙動を示す。"
+  },
+  "contrast_with": null,
+  "expectation": {
+    "expected_service": {
+      "top_should_be_in": [
+        "music_playlist",
+        "humming_karaoke",
+        "radio_style"
+      ]
+    },
+    "expected_top": {
+      "genre": "j-pop"
+    },
+    "gradient": "none",
+    "hypothesis": "just-played tracks are demoted below other strong matches",
+    "override_required": false,
+    "should_rank_below": [
+      {
+        "track_id": "synthetic-track-0130"
+      },
+      {
+        "track_id": "synthetic-track-0108"
+      },
+      {
+        "track_id": "synthetic-track-0097"
+      }
+    ],
+    "top_fit_min": 0.22
+  },
+  "family": "history_mechanics",
+  "label": {
+    "en": "Recently played — novelty penalty",
+    "ja": "直近再生 — 新鮮さペナルティ"
+  },
+  "preset_id": "preset-recently-played-fatigue",
+  "schema_version": "1.0.0",
+  "world": {
+    "catalog_ref": {
+      "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "dataset_version": {
+        "schema_version": "1.0.0",
+        "spotify_audio_features_reference_version": "1.0.0",
+        "spotify_track_reference_version": "1.0.0"
+      }
+    },
+    "control_inputs": {
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "lifecycle_stage": "before_rest_until_stop",
+      "matrix_version": "v1",
+      "motion_state": "driving",
+      "trigger_purpose": "rest_recommended"
+    },
+    "driver_profile": {
+      "age_band": "30s",
+      "cancelled_content_plans": [],
+      "catalog_item_recency_state": {},
+      "catalog_item_usage_level": {
+        "synthetic-track-0060": "high",
+        "synthetic-track-0077": "high",
+        "synthetic-track-0097": "high",
+        "synthetic-track-0098": "high",
+        "synthetic-track-0108": "high",
+        "synthetic-track-0115": "high",
+        "synthetic-track-0130": "high",
+        "synthetic-track-0202": "high"
+      },
+      "changed_from_items": [],
+      "completed_items": [],
+      "content_proposal_acceptance_confidence": {},
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0060": 90.0,
+        "synthetic-track-0077": 90.0,
+        "synthetic-track-0097": 90.0,
+        "synthetic-track-0098": 90.0,
+        "synthetic-track-0108": 90.0,
+        "synthetic-track-0115": 90.0,
+        "synthetic-track-0130": 90.0,
+        "synthetic-track-0202": 90.0
+      },
+      "content_recovery_confidence": {},
+      "content_recovery_rate": {
+        "synthetic-track-0060": 85.0,
+        "synthetic-track-0077": 85.0,
+        "synthetic-track-0097": 85.0,
+        "synthetic-track-0098": 85.0,
+        "synthetic-track-0108": 85.0,
+        "synthetic-track-0115": 85.0,
+        "synthetic-track-0130": 85.0,
+        "synthetic-track-0202": 85.0
+      },
+      "content_tag_recency_state": {},
+      "content_tag_usage_level": {},
+      "gender": "unspecified",
+      "genre_affinity_v1_enabled": true,
+      "hobby_interest_tags": [],
+      "manually_selected_items": [],
+      "oshi_id": null,
+      "oshi_mode": "off",
+      "oshi_registered": false,
+      "oshi_tags": [],
+      "oshi_type": null,
+      "played_items": [
+        {
+          "last_played_at": "2026-07-17T11:45:00Z",
+          "track_id": "synthetic-track-0130"
+        },
+        {
+          "last_played_at": "2026-07-17T11:45:00Z",
+          "track_id": "synthetic-track-0108"
+        },
+        {
+          "last_played_at": "2026-07-17T11:45:00Z",
+          "track_id": "synthetic-track-0097"
+        }
+      ],
+      "repeated_items": [],
+      "scene_content_tag_usage_level": {},
+      "scene_genre_usage": null,
+      "scene_service_usage_level": {},
+      "scheduled_event_tags": [],
+      "scheduled_event_timing": null,
+      "scheduled_event_type": null,
+      "service_proposal_acceptance_confidence": {},
+      "service_proposal_acceptance_rate": {},
+      "service_recency_state": {},
+      "service_recovery_confidence": {},
+      "service_recovery_rate": {},
+      "service_usage_level": {},
+      "skipped_items": [],
+      "usage_by_genre": {
+        "j-pop": "high"
+      }
+    },
+    "situation": {
+      "active_service": null,
+      "child_present": false,
+      "destination_tags": [],
+      "drowsiness_level": 45,
+      "estimated_min_until_rest_spot": null,
+      "fatigue_level": 45,
+      "monotony_level": 55,
+      "motion_state": "driving",
+      "multiple_passengers": false,
+      "night_state": "day",
+      "recent_service_rejections": [],
+      "rest_spot_type": "unknown",
+      "road_type": "highway",
+      "route_tags": [
+        "highway"
+      ],
+      "traffic_state": "normal"
+    }
+  }
+}

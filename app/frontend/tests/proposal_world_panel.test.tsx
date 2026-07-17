@@ -133,15 +133,12 @@ describe('WorldPanel', () => {
     expect(badges.length).toBeGreaterThan(5)
   })
 
-  it('renders the driver profile picker as the first control in the last (Preference & history) section', async () => {
+  it('is preset-first: the Preset picker is present and the old Seed / Driver-Profile pickers are gone', async () => {
     renderWithStore()
-    await waitFor(() => expect(screen.getByTestId('profile-picker-select')).toBeInTheDocument())
-    const headings = screen.getAllByTestId('world-section-label')
-    const lastHeading = headings[headings.length - 1]
-    // The DriverProfilePicker (profile-picker-select) is rendered after the
-    // last section label in document order.
-    const position = lastHeading.compareDocumentPosition(screen.getByTestId('profile-picker-select'))
-    // eslint-disable-next-line no-bitwise
-    expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    await waitFor(() => expect(screen.getByTestId('preset-picker-select')).toBeInTheDocument())
+    // The standalone Seed and Driver-Profile pickers were removed from the
+    // panel in favor of the parent Preset selector (feature 018).
+    expect(screen.queryByTestId('seed-picker-select')).toBeNull()
+    expect(screen.queryByTestId('profile-picker-select')).toBeNull()
   })
 })

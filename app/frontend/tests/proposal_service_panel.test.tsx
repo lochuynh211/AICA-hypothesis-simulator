@@ -884,6 +884,34 @@ describe('ServiceProposalPanel', () => {
     }
   })
 
+  // Live recompute is keyed on EVERY editable input — so editing a
+  // hyperparameter (not just the max_candidates parameter) also re-runs.
+  it('editing a hyperparameter (Drowsiness Gamma) after a run triggers a debounced re-run', async () => {
+    vi.mocked(createRun).mockResolvedValue(runLogWithCandidates() as never)
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('mock_service_selector_v1')
+    fireEvent.click(screen.getByTestId('service-run-button'))
+    await waitFor(() => expect(createRun).toHaveBeenCalledTimes(1))
+    await screen.findByText('live_viewing')
+
+    vi.useFakeTimers()
+    try {
+      vi.mocked(createRun).mockClear()
+      fireEvent.change(screen.getByLabelText('Drowsiness Gamma'), { target: { value: '1.5' } })
+      expect(createRun).not.toHaveBeenCalled() // debounced, not yet
+      await act(async () => {
+        vi.advanceTimersByTime(450)
+      })
+      expect(createRun).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   // Task 9 — the initial run (whether from the Run button or autoInit) must
   // not itself be mistaken for an edit and spuriously trigger a recompute.
   it('the initial run alone does not trigger an auto-recompute', async () => {

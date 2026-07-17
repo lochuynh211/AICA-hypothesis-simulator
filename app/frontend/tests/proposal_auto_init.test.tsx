@@ -1,10 +1,10 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ProposalStoreProvider } from '../src/state/proposalStore'
 import ProposalScreen from '../src/components/proposal/ProposalScreen'
 
-// Mock the client so the panels never hit the network. getSeed/createRun are
-// the two auto-init calls we assert on.
+// Mock the client so the panels never hit the network. getPreset/createRun are
+// the two auto-init calls we assert on (the panel is preset-first — feature 018).
 vi.mock('../src/api/proposalClient', async () => {
   const actual = await vi.importActual<typeof import('../src/api/proposalClient')>('../src/api/proposalClient')
   return {
@@ -14,7 +14,8 @@ vi.mock('../src/api/proposalClient', async () => {
     getDatasets: vi.fn(),
     getCatalog: vi.fn(),
     getSeeds: vi.fn(),
-    getSeed: vi.fn(),
+    getPresets: vi.fn(),
+    getPreset: vi.fn(),
     listProfiles: vi.fn(),
     validateWorld: vi.fn(),
     createRun: vi.fn(),
@@ -25,7 +26,8 @@ vi.mock('../src/api/proposalClient', async () => {
 
 import {
   getPackages,
-  getSeed,
+  getPreset,
+  getPresets,
   createRun,
   selectService,
   getDatasets,
@@ -36,7 +38,7 @@ import {
   journeyPreview,
 } from '../src/api/proposalClient'
 
-const AUTO_SEED = 'seed-night-highway-oshi'
+const AUTO_PRESET = 'preset-monotone-highway-energize'
 
 function pkg(id: string, family: string) {
   return { id, version: '1.0.0', label: { ja: id, en: id }, family, approach: 'transparent', supported_services: [], parameters: {}, hyperparameters: [] }
@@ -47,6 +49,18 @@ const world = {
   situation: {},
   driver_profile: {},
   catalog_ref: { dataset_id: 'ds-1', dataset_version: {}, dataset_hash: 'sha256:x' },
+}
+
+const preset = {
+  preset_id: AUTO_PRESET,
+  schema_version: '1.0.0',
+  label: { ja: '', en: 'Monotone highway — energize' },
+  brief: { ja: '', en: '' },
+  family: 'mood_coherence',
+  contrast_with: 'preset-late-night-winddown',
+  world,
+  algorithm_config_overrides: null,
+  expectation: { hypothesis: '', expected_top: { must_be_oshi: true }, top_fit_min: 0.38, gradient: 'none', expected_service: { top_should_be_in: ['humming_karaoke'] }, override_required: false },
 }
 
 function runLog() {
@@ -86,7 +100,8 @@ describe('Proposal auto-init', () => {
       slots: [],
       errors: [],
     } as never)
-    vi.mocked(getSeed).mockResolvedValue({ seed_id: AUTO_SEED, label: { ja: '', en: '' }, description: { ja: '', en: '' }, world } as never)
+    vi.mocked(getPreset).mockResolvedValue(preset as never)
+    vi.mocked(getPresets).mockResolvedValue({ presets: [{ preset_id: AUTO_PRESET, label: preset.label, brief: preset.brief, family: preset.family, contrast_with: preset.contrast_with, hypothesis: '' }] } as never)
     vi.mocked(createRun).mockResolvedValue(runLog() as never)
     // STEP 2 result after the rank-1 service is auto-chosen.
     vi.mocked(selectService).mockResolvedValue({ ...runLog(), status: 'content_selected' } as never)
@@ -98,24 +113,53 @@ describe('Proposal auto-init', () => {
     vi.mocked(journeyPreview).mockResolvedValue({ steps: [] } as never)
   })
 
-  it('auto-loads the reference seed and runs STEP 1 on load (no Run click)', async () => {
+  it('auto-loads the reference preset and runs STEP 1 on load (no Run click)', async () => {
     render(
       <ProposalStoreProvider>
         <ProposalScreen autoInit />
       </ProposalStoreProvider>,
     )
-    // getSeed called with the reference seed, createRun fired automatically…
-    await waitFor(() => expect(getSeed).toHaveBeenCalledWith(AUTO_SEED))
+    // getPreset called with the reference preset, createRun fired automatically…
+    await waitFor(() => expect(getPreset).toHaveBeenCalledWith(AUTO_PRESET))
     await waitFor(() => expect(createRun).toHaveBeenCalled())
-    // …and the persisted run origin records the ACTUAL seed (not null) — guards
-    // the LOAD_SEED/runWith stale-closure race.
-    expect(vi.mocked(createRun).mock.calls[0][0].origin_seed_id).toBe(AUTO_SEED)
+    // …and the persisted run origin records the ACTUAL preset (not null) — guards
+    // the LOAD_PRESET/runWith stale-closure race.
+    expect(vi.mocked(createRun).mock.calls[0][0].origin_preset_id).toBe(AUTO_PRESET)
     // …STEP 2 auto-ran with the rank-1 service (no user interaction)…
     await waitFor(() =>
       expect(selectService).toHaveBeenCalledWith('run-auto-1', 'humming_karaoke', expect.anything()),
     )
     // …and the rank-1 candidate card is rendered.
     await waitFor(() => expect(screen.getByTestId('candidate-card-humming_karaoke')).toBeTruthy())
+  })
+
+  it('choosing a different preset auto-runs STEP 1 → STEP 2 again', async () => {
+    const preset2 = { ...preset, preset_id: 'preset-late-night-winddown', label: { ja: '', en: 'Late-night wind down' } }
+    vi.mocked(getPresets).mockResolvedValue({
+      presets: [
+        { preset_id: AUTO_PRESET, label: preset.label, brief: preset.brief, family: preset.family, contrast_with: preset.contrast_with, hypothesis: '' },
+        { preset_id: 'preset-late-night-winddown', label: preset2.label, brief: preset2.brief, family: preset2.family, contrast_with: AUTO_PRESET, hypothesis: '' },
+      ],
+    } as never)
+    vi.mocked(getPreset).mockImplementation((id: string) =>
+      Promise.resolve((id === AUTO_PRESET ? preset : preset2) as never),
+    )
+
+    render(
+      <ProposalStoreProvider>
+        <ProposalScreen autoInit />
+      </ProposalStoreProvider>,
+    )
+    // Initial preset auto-runs once.
+    await waitFor(() => expect(createRun).toHaveBeenCalledTimes(1))
+    expect(vi.mocked(createRun).mock.calls[0][0].origin_preset_id).toBe(AUTO_PRESET)
+
+    // Selecting a DIFFERENT preset in the picker re-runs STEP 1 → STEP 2.
+    const select = await screen.findByTestId('preset-picker-select')
+    fireEvent.change(select, { target: { value: 'preset-late-night-winddown' } })
+    await waitFor(() => expect(getPreset).toHaveBeenCalledWith('preset-late-night-winddown'))
+    await waitFor(() => expect(createRun).toHaveBeenCalledTimes(2))
+    expect(vi.mocked(createRun).mock.calls[1][0].origin_preset_id).toBe('preset-late-night-winddown')
   })
 
   it('does NOT auto-run when autoInit is absent', async () => {
@@ -125,9 +169,9 @@ describe('Proposal auto-init', () => {
       </ProposalStoreProvider>,
     )
     await waitFor(() => expect(getPackages).toHaveBeenCalled())
-    // Give any stray effects a tick, then assert no seed load / no run happened.
+    // Give any stray effects a tick, then assert no preset auto-load / no run happened.
     await new Promise((r) => setTimeout(r, 50))
-    expect(getSeed).not.toHaveBeenCalled()
+    expect(getPreset).not.toHaveBeenCalled()
     expect(createRun).not.toHaveBeenCalled()
     expect(selectService).not.toHaveBeenCalled()
   })

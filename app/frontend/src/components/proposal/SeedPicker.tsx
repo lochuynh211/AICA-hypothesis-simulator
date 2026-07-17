@@ -5,7 +5,7 @@
  * (`GET /api/proposal/seeds/{id}`) into the whole editable world, replacing
  * every group at once.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { t } from '../../i18n/t'
 import { useProposalStore } from '../../state/proposalStore'
 import { getSeeds, getSeed } from '../../api/proposalClient'
@@ -26,6 +26,15 @@ export default function SeedPicker() {
   const [selected, setSelected] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Tracks the `selectedSeedId` THIS component most recently pushed into the
+  // store (or `null` if it never has). Lets the reflect-effect below tell
+  // "the store changed because I just dispatched it" (already mirrored via
+  // `setSelected` above — a no-op here) apart from "the store changed
+  // because something ELSE loaded a world" (e.g. the app's auto-init effect,
+  // or a preset's atomic LOAD_PRESET, which clears this to `null`) — the
+  // latter must always be reflected, even after the user already picked a
+  // seed here (feature 018 — PresetPicker must be able to override).
+  const lastDispatchedSeedId = useRef<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -42,12 +51,15 @@ export default function SeedPicker() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Reflect a seed loaded by someone else (e.g. the app's auto-init effect,
-  // which calls getSeed + dispatches LOAD_SEED directly on first mount,
-  // bypassing this picker) — but only to fill the INITIAL empty selection,
-  // never to override a choice the user already made here.
+  // Reflect a seed selection loaded from OUTSIDE this component (auto-init,
+  // or a preset's atomic LOAD_PRESET clearing it to null) — always, not only
+  // into an empty selection, so a later external load correctly overrides an
+  // earlier direct choice too.
   useEffect(() => {
-    if (!selected && state.selectedSeedId) setSelected(state.selectedSeedId)
+    if (state.selectedSeedId !== lastDispatchedSeedId.current) {
+      setSelected(state.selectedSeedId ?? '')
+      lastDispatchedSeedId.current = state.selectedSeedId
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.selectedSeedId])
 
@@ -58,6 +70,7 @@ export default function SeedPicker() {
     setError(null)
     try {
       const seed = await getSeed(seedId)
+      lastDispatchedSeedId.current = seed.seed_id
       dispatch({ type: 'LOAD_SEED', seedId: seed.seed_id, world: seed.world })
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))

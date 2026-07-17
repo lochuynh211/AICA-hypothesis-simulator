@@ -736,6 +736,14 @@ export type CreateProposalRunBody = {
   origin_seed_id?: string | null
   origin_clone_id?: string | null
   origin_profile_id?: string | null
+  /** feature 018 — which committed preset (if any) the world/overrides came
+   * from; frozen into `SetupSnapshot.origin.origin_preset_id`. */
+  origin_preset_id?: string | null
+  /** feature 018 — the selected preset's isolated per-selector config
+   * deltas; `.service` is merged over the resolved service hyperparameters
+   * before STEP 1 (and `.content` before the inline STEP-2 dispatch, for a
+   * `quick_check` run). Null/absent when no preset is selected or it has none. */
+  algorithm_config_overrides?: AlgorithmConfigOverrides
   service_package_id: string
   content_package_id: string
   mode?: ProposalRunMode
@@ -759,16 +767,29 @@ export async function createRun(body: CreateProposalRunBody): Promise<ProposalRu
 export async function selectService(
   runId: string,
   serviceId: string,
-  overrides: { parameters?: Record<string, unknown>; hyperparameters?: Record<string, unknown> } = {},
+  overrides: {
+    parameters?: Record<string, unknown>
+    hyperparameters?: Record<string, unknown>
+    /** feature 018 — the selected preset's isolated content-selector config
+     * delta (`.service` is irrelevant at this step — there is no service
+     * dispatch in select-service). Omitted (not sent as an explicit `null`)
+     * when undefined, so a caller that never passes this keeps sending the
+     * exact same request body as before feature 018 (byte-for-byte). */
+    algorithm_config_overrides?: AlgorithmConfigOverrides
+  } = {},
 ): Promise<ProposalRunLog> {
+  const body: Record<string, unknown> = {
+    selected_service_id: serviceId,
+    parameters: overrides.parameters ?? {},
+    hyperparameters: overrides.hyperparameters ?? {},
+  }
+  if (overrides.algorithm_config_overrides !== undefined) {
+    body.algorithm_config_overrides = overrides.algorithm_config_overrides
+  }
   return apiFetch(`/runs/${encodeURIComponent(runId)}/select-service`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      selected_service_id: serviceId,
-      parameters: overrides.parameters ?? {},
-      hyperparameters: overrides.hyperparameters ?? {},
-    }),
+    body: JSON.stringify(body),
   })
 }
 
@@ -886,6 +907,90 @@ export async function deleteRun(runId: string): Promise<void> {
   if (!response.ok) {
     throw new Error(`Proposal API error: ${response.status}`)
   }
+}
+
+// ── Presets (feature 018) — committed, read-only test-case worlds ──────────
+//
+// Mirrors `app/api/aica_api/models/proposal/preset.py` /
+// `specs/018-proposal-preset-testcases/{data-model.md,contracts/preset_endpoints.md}`.
+// A preset binds a full `World` (like a seed) with a bilingual brief and a
+// machine-checkable `ExpectationContract`, plus optional isolated
+// `algorithm_config_overrides`. Read-only — no mutation endpoints (FR-018).
+
+export type PresetFamily =
+  | 'mood_coherence'
+  | 'directional_hypothesis'
+  | 'oshi_personalization'
+  | 'genre_usage'
+  | 'route_genre'
+  | 'era_age'
+  | 'passenger_genre'
+  | 'singability_service'
+  | 'history_mechanics'
+  | 'baseline'
+  | 'combo'
+
+/** Lightweight projection returned by `GET /api/proposal/presets` (avoids
+ * shipping full worlds in the list) — enough to render the picker + the
+ * on-selection brief blurb without a second fetch. */
+export type PresetSummary = {
+  preset_id: string
+  label: BilingualLabel
+  brief: BilingualLabel
+  family: PresetFamily
+  contrast_with: string | null
+  hypothesis: string
+}
+
+export type ArousalBandValue = 'high' | 'mid' | 'low'
+
+/** A predicate on the top candidate; at least one field is set (generator/
+ * schema invariant — not re-checked client-side). */
+export type ExpectedTop = {
+  track_id?: string | null
+  genre?: string | null
+  arousal_band?: ArousalBandValue | null
+  must_be_oshi?: boolean
+}
+
+export type ExpectationGradient = 'arousal_up_implies_fit_up' | 'arousal_down_implies_fit_up' | 'none'
+
+export type ExpectationContract = {
+  hypothesis: string
+  expected_top: ExpectedTop
+  top_fit_min: number
+  gradient: ExpectationGradient
+  should_rank_below?: ExpectedTop[]
+  expected_service: { top_should_be_in: string[] }
+  override_required: boolean
+}
+
+/** Isolated per-preset config deltas merged over the package defaults at
+ * dispatch (`merge_algorithm_config`, backend). Null when unused. */
+export type AlgorithmConfigOverrides = {
+  content: Record<string, unknown> | null
+  service: Record<string, unknown> | null
+} | null
+
+/** The full committed preset (`GET /api/proposal/presets/{id}`). */
+export type Preset = {
+  preset_id: string
+  schema_version: string
+  label: BilingualLabel
+  brief: BilingualLabel
+  family: PresetFamily
+  contrast_with: string | null
+  world: World
+  algorithm_config_overrides: AlgorithmConfigOverrides
+  expectation: ExpectationContract
+}
+
+export async function getPresets(): Promise<{ presets: PresetSummary[] }> {
+  return apiFetch('/presets', { method: 'GET' })
+}
+
+export async function getPreset(presetId: string): Promise<Preset> {
+  return apiFetch(`/presets/${encodeURIComponent(presetId)}`, { method: 'GET' })
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

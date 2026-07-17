@@ -1,0 +1,124 @@
+{
+  "algorithm_config_overrides": null,
+  "brief": {
+    "en": "A relaxed coastal local road. Route/destination genre affinity (coast → city-pop / jazz) should lift bright coastal-friendly tracks.",
+    "ja": "のんびりした海岸沿いの一般道。ルート/目的地ジャンル親和（海岸→シティポップ/ジャズ）で明るい曲が上位に。"
+  },
+  "contrast_with": "preset-mountain-pass",
+  "expectation": {
+    "expected_service": {
+      "top_should_be_in": [
+        "music_playlist",
+        "radio_style",
+        "humming_karaoke"
+      ]
+    },
+    "expected_top": {
+      "arousal_band": "mid"
+    },
+    "gradient": "none",
+    "hypothesis": "coastal route/destination genre affinity → bright coastal track tops",
+    "override_required": false,
+    "top_fit_min": 0.2
+  },
+  "family": "route_genre",
+  "label": {
+    "en": "Coastal cruise",
+    "ja": "海岸クルーズ"
+  },
+  "preset_id": "preset-coastal-cruise",
+  "schema_version": "1.0.0",
+  "world": {
+    "catalog_ref": {
+      "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "dataset_version": {
+        "schema_version": "1.0.0",
+        "spotify_audio_features_reference_version": "1.0.0",
+        "spotify_track_reference_version": "1.0.0"
+      }
+    },
+    "control_inputs": {
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "lifecycle_stage": "before_rest_until_stop",
+      "matrix_version": "v1",
+      "motion_state": "driving",
+      "trigger_purpose": "rest_recommended"
+    },
+    "driver_profile": {
+      "age_band": "30s",
+      "cancelled_content_plans": [],
+      "catalog_item_recency_state": {},
+      "catalog_item_usage_level": {
+        "synthetic-track-0027": "high",
+        "synthetic-track-0280": "high",
+        "synthetic-track-0281": "high"
+      },
+      "changed_from_items": [],
+      "completed_items": [],
+      "content_proposal_acceptance_confidence": {},
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0027": 95.0,
+        "synthetic-track-0280": 95.0,
+        "synthetic-track-0281": 95.0
+      },
+      "content_recovery_confidence": {},
+      "content_recovery_rate": {
+        "synthetic-track-0027": 90.0,
+        "synthetic-track-0280": 90.0,
+        "synthetic-track-0281": 90.0
+      },
+      "content_tag_recency_state": {},
+      "content_tag_usage_level": {},
+      "gender": "unspecified",
+      "genre_affinity_v1_enabled": true,
+      "hobby_interest_tags": [],
+      "manually_selected_items": [],
+      "oshi_id": null,
+      "oshi_mode": "off",
+      "oshi_registered": false,
+      "oshi_tags": [],
+      "oshi_type": null,
+      "played_items": [],
+      "repeated_items": [],
+      "scene_content_tag_usage_level": {},
+      "scene_genre_usage": null,
+      "scene_service_usage_level": {},
+      "scheduled_event_tags": [],
+      "scheduled_event_timing": null,
+      "scheduled_event_type": null,
+      "service_proposal_acceptance_confidence": {},
+      "service_proposal_acceptance_rate": {},
+      "service_recency_state": {},
+      "service_recovery_confidence": {},
+      "service_recovery_rate": {},
+      "service_usage_level": {},
+      "skipped_items": [],
+      "usage_by_genre": {
+        "city pop": "high",
+        "jazz": "med"
+      }
+    },
+    "situation": {
+      "active_service": null,
+      "child_present": false,
+      "destination_tags": [
+        "coast"
+      ],
+      "drowsiness_level": 25,
+      "estimated_min_until_rest_spot": null,
+      "fatigue_level": 25,
+      "monotony_level": 40,
+      "motion_state": "driving",
+      "multiple_passengers": false,
+      "night_state": "day",
+      "recent_service_rejections": [],
+      "rest_spot_type": "unknown",
+      "road_type": "local",
+      "route_tags": [
+        "coastal"
+      ],
+      "traffic_state": "normal"
+    }
+  }
+}

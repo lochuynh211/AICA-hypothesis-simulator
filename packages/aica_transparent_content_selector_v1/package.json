@@ -60,7 +60,7 @@
       "key": "content_category_weights",
       "kind": "table",
       "label": { "ja": "コンテンツカテゴリ重み", "en": "Content Category Weights" },
-      "default": { "Situation": 0.55, "Preference": 0.30, "History": 0.15 }
+      "default": { "Situation": 0.45, "Preference": 0.35, "History": 0.20 }
     },
     {
       "key": "hierarchy_weights",

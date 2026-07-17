@@ -1,0 +1,156 @@
+{
+  "algorithm_config_overrides": {
+    "content": {
+      "hierarchy_weights": {
+        "Preference": {
+          "upro_oshi": {
+            "leaves": {
+              "age": {
+                "feature_id": "age_band",
+                "mask": 1,
+                "share": 0.35
+              },
+              "gender": {
+                "feature_id": "gender",
+                "mask": 0,
+                "share": 0.0
+              },
+              "hobbies": {
+                "feature_id": "hobby_interest_tags",
+                "genre_gated": true,
+                "mask": 0,
+                "share": 0.2
+              },
+              "oshi": {
+                "feature_id": "oshi_id",
+                "mask": 1,
+                "share": 0.45
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "brief": {
+    "en": "A teenage driver whose oshi is Ado (2020s). Same neutral road, same raised era/age weight — but now current 2020s tracks win. Age-band alone flips the era.",
+    "ja": "推しがAdo（2020年代）の10代ドライバー。同じ道・同じ年代重みで、今度は2020年代の曲が上位に。世代だけで年代が反転。"
+  },
+  "contrast_with": "preset-showa-nostalgia",
+  "expectation": {
+    "expected_service": {
+      "top_should_be_in": [
+        "music_playlist",
+        "humming_karaoke",
+        "radio_style"
+      ]
+    },
+    "expected_top": {
+      "must_be_oshi": true
+    },
+    "gradient": "none",
+    "hypothesis": "teens age-band + 2020s oshi + raised age weight → a 2020s track tops",
+    "override_required": true,
+    "top_fit_min": 0.3
+  },
+  "family": "era_age",
+  "label": {
+    "en": "Gen-Z now (teens driver)",
+    "ja": "Z世代（10代ドライバー）"
+  },
+  "preset_id": "preset-genz-now",
+  "schema_version": "1.0.0",
+  "world": {
+    "catalog_ref": {
+      "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "dataset_version": {
+        "schema_version": "1.0.0",
+        "spotify_audio_features_reference_version": "1.0.0",
+        "spotify_track_reference_version": "1.0.0"
+      }
+    },
+    "control_inputs": {
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "lifecycle_stage": "before_rest_until_stop",
+      "matrix_version": "v1",
+      "motion_state": "driving",
+      "trigger_purpose": "rest_recommended"
+    },
+    "driver_profile": {
+      "age_band": "teens",
+      "cancelled_content_plans": [],
+      "catalog_item_recency_state": {},
+      "catalog_item_usage_level": {
+        "synthetic-track-0121": "high",
+        "synthetic-track-0122": "high",
+        "synthetic-track-0130": "high",
+        "synthetic-track-0135": "high"
+      },
+      "changed_from_items": [],
+      "completed_items": [],
+      "content_proposal_acceptance_confidence": {},
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0121": 95.0,
+        "synthetic-track-0122": 95.0,
+        "synthetic-track-0130": 95.0,
+        "synthetic-track-0135": 95.0
+      },
+      "content_recovery_confidence": {},
+      "content_recovery_rate": {
+        "synthetic-track-0121": 90.0,
+        "synthetic-track-0122": 90.0,
+        "synthetic-track-0130": 90.0,
+        "synthetic-track-0135": 90.0
+      },
+      "content_tag_recency_state": {},
+      "content_tag_usage_level": {},
+      "gender": "unspecified",
+      "genre_affinity_v1_enabled": true,
+      "hobby_interest_tags": [],
+      "manually_selected_items": [],
+      "oshi_id": "synthetic-artist-0122",
+      "oshi_mode": "on",
+      "oshi_registered": true,
+      "oshi_tags": [],
+      "oshi_type": "artist",
+      "played_items": [],
+      "repeated_items": [],
+      "scene_content_tag_usage_level": {},
+      "scene_genre_usage": null,
+      "scene_service_usage_level": {},
+      "scheduled_event_tags": [],
+      "scheduled_event_timing": null,
+      "scheduled_event_type": null,
+      "service_proposal_acceptance_confidence": {},
+      "service_proposal_acceptance_rate": {},
+      "service_recency_state": {},
+      "service_recovery_confidence": {},
+      "service_recovery_rate": {},
+      "service_usage_level": {},
+      "skipped_items": [],
+      "usage_by_genre": {
+        "j-pop": "high"
+      }
+    },
+    "situation": {
+      "active_service": null,
+      "child_present": false,
+      "destination_tags": [],
+      "drowsiness_level": 35,
+      "estimated_min_until_rest_spot": null,
+      "fatigue_level": 30,
+      "monotony_level": 45,
+      "motion_state": "driving",
+      "multiple_passengers": false,
+      "night_state": "day",
+      "recent_service_rejections": [],
+      "rest_spot_type": "unknown",
+      "road_type": "highway",
+      "route_tags": [
+        "highway"
+      ],
+      "traffic_state": "normal"
+    }
+  }
+}

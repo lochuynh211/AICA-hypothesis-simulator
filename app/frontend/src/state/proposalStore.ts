@@ -39,6 +39,8 @@ import type {
   WorldValidationIssue,
   GenreLiteralValue,
   UsageLevelValue,
+  PresetSummary,
+  AlgorithmConfigOverrides,
 } from '../api/proposalClient'
 
 // ── State ────────────────────────────────────────────────────────────────
@@ -159,12 +161,22 @@ export type ProposalStoreState = {
    * if any (frozen into the run's SetupSnapshot.origin at create-run time). */
   selectedSeedId: string | null
   selectedProfileId: string | null
+  /** Which committed preset (feature 018) the current world was loaded
+   * from, if any — mutually exclusive with selectedSeedId/selectedProfileId
+   * (a preset atomically replaces both; see LOAD_PRESET below). */
+  selectedPresetId: string | null
+  /** The selected preset's isolated algorithm-config deltas (content/service),
+   * stashed here for whatever dispatches the next run/recompute to merge in —
+   * null when no preset is selected, or the selected preset has none. */
+  presetOverrides: AlgorithmConfigOverrides
   worldValidationIssues: WorldValidationIssue[]
 
   // ── World panel — read-only reference caches (fetched by pickers) ──────
   datasets: DatasetSummary[]
   seeds: SeedSummary[]
   profiles: ProfileSummary[]
+  /** Committed preset test-cases (feature 018), cached like seeds/profiles. */
+  presets: PresetSummary[]
   /** The active dataset's catalog page, for `CatalogView` / provenance. */
   catalog: CatalogSongSummary[]
   catalogTotal: number
@@ -197,10 +209,13 @@ const initialState: ProposalStoreState = {
   world: DEFAULT_WORLD,
   selectedSeedId: null,
   selectedProfileId: null,
+  selectedPresetId: null,
+  presetOverrides: null,
   worldValidationIssues: [],
   datasets: [],
   seeds: [],
   profiles: [],
+  presets: [],
   catalog: [],
   catalogTotal: 0,
   servicePackageId: null,
@@ -245,9 +260,20 @@ export type ProposalStoreAction =
   /** Clears `selectedProfileId` without touching world.driver_profile (e.g.
    * after the currently-loaded profile is deleted). */
   | { type: 'CLEAR_SELECTED_PROFILE' }
+  /** Loads a full committed preset (feature 018) ATOMICALLY: replaces the
+   * whole editable world (situation + driver_profile + control_inputs +
+   * catalog_ref together, same as LOAD_SEED — the preset's `world` already
+   * carries the control_inputs/situation motion_state double-write in
+   * sync), clears any seed/profile selection (a preset supersedes both —
+   * it isn't "the seed" or "the profile", it's its own self-contained
+   * world), records `selectedPresetId`, and stashes the preset's
+   * `algorithm_config_overrides` in `presetOverrides` for whatever
+   * dispatches the next run/recompute to merge in. */
+  | { type: 'LOAD_PRESET'; presetId: string; world: World; overrides: AlgorithmConfigOverrides }
   | { type: 'SET_DATASETS'; datasets: DatasetSummary[] }
   | { type: 'SET_SEEDS'; seeds: SeedSummary[] }
   | { type: 'SET_PROFILES'; profiles: ProfileSummary[] }
+  | { type: 'SET_PRESETS'; presets: PresetSummary[] }
   | { type: 'SET_CATALOG'; catalog: CatalogSongSummary[]; total: number }
   | { type: 'SET_WORLD_VALIDATION_ISSUES'; issues: WorldValidationIssue[] }
   | { type: 'SET_SERVICE_PACKAGE'; packageId: string }
@@ -434,6 +460,20 @@ export function proposalReducer(
     case 'CLEAR_SELECTED_PROFILE':
       return { ...state, selectedProfileId: null }
 
+    case 'LOAD_PRESET':
+      return {
+        ...state,
+        world: action.world,
+        selectedSeedId: null,
+        selectedProfileId: null,
+        selectedPresetId: action.presetId,
+        presetOverrides: action.overrides,
+        triggerPurpose: action.world.control_inputs.trigger_purpose,
+        lifecycleStage: action.world.control_inputs.lifecycle_stage,
+        motionState: action.world.control_inputs.motion_state,
+        worldValidationIssues: [],
+      }
+
     case 'SET_DATASETS':
       return { ...state, datasets: action.datasets }
 
@@ -442,6 +482,9 @@ export function proposalReducer(
 
     case 'SET_PROFILES':
       return { ...state, profiles: action.profiles }
+
+    case 'SET_PRESETS':
+      return { ...state, presets: action.presets }
 
     case 'SET_CATALOG':
       return { ...state, catalog: action.catalog, catalogTotal: action.total }

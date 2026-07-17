@@ -621,6 +621,12 @@ class SetupSnapshotOrigin(BaseModel):
     optional and independent because a reviewer may also hand-edit a world
     from scratch (all three ``None``) or load a profile into a hand-edited
     world (only ``profile_id`` set).
+
+    ``origin_preset_id`` (feature 018) is likewise optional and independent:
+    set when the run's world/overrides were loaded from a committed
+    ``Preset`` (``models/proposal/preset.py``). A reviewer may still hand-edit
+    fields afterward — the preset origin is recorded regardless, alongside
+    whatever edited-fields evidence already exists (honest provenance).
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -628,6 +634,7 @@ class SetupSnapshotOrigin(BaseModel):
     seed_id: str | None = None
     clone_id: str | None = None
     profile_id: str | None = None
+    origin_preset_id: str | None = None
 
 
 class SetupSnapshot(BaseModel):

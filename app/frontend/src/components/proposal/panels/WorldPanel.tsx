@@ -3,6 +3,11 @@
  * `World`; reworked again per owner feedback 2026-07-17 — see below).
  *
  * Section order (top-to-bottom):
+ *   0. Preset      — (feature 018) dropdown over committed preset test-case
+ *                     worlds; selecting one ATOMICALLY replaces the whole
+ *                     world (situation + driver_profile + control_inputs
+ *                     together) and supersedes any Seed/Profile selection
+ *                     below, plus shows a bilingual brief blurb.
  *   1. Seed        — dropdown, autoloads a committed base-seed world on
  *                     selection (no separate Load button)
  *   2. Trigger signal — the 4 `trigger_purpose` options (control input, not scored)
@@ -69,8 +74,7 @@ import {
   type UsageLevelValue,
   type WorldValidationIssue,
 } from '../../../api/proposalClient'
-import SeedPicker from '../SeedPicker'
-import DriverProfilePicker from '../DriverProfilePicker'
+import PresetPicker from '../PresetPicker'
 import DatasetProvenanceBanner from '../DatasetProvenanceBanner'
 import CatalogView from '../CatalogView'
 import {
@@ -265,6 +269,7 @@ const PROFILE_GROUPS: ProfileGroup[] = [
 // ── Small shared UI atoms ───────────────────────────────────────────────────
 
 const LABELS = {
+  preset: { ja: 'プリセット（テストケース）', en: 'Preset (test-case)' },
   triggerSignal: { ja: '発火シグナル（4つ）', en: 'Trigger signal (4)' },
   carState: { ja: '車両状態（現在状況）', en: 'Car state (current status)' },
   worldSituation: { ja: '世界・状況（初期値・編集可）', en: 'World · situation (init values, editable)' },
@@ -695,12 +700,15 @@ export default function WorldPanel() {
           </div>
         )}
 
-        {/* 1. Seed — dropdown, autoloads on selection (replaces every group
-            at once: control_inputs + situation + driver_profile + catalog_ref). */}
+        {/* 0. Preset — committed test-case worlds (feature 018): selecting one
+            atomically replaces the whole world (situation + driver profile +
+            control_inputs together). The preset is the single seeding control
+            for this panel; the old separate Seed and Driver-Profile pickers
+            were removed in favor of it. */}
         <div style={{ fontSize: '0.68em', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 800, color: '#6b7280', margin: '0 0 6px' }}>
-          {t(LABELS.seed, lang)}
+          {t(LABELS.preset, lang)}
         </div>
-        <SeedPicker />
+        <PresetPicker />
 
         {/* 2. Trigger signal */}
         <SectionLabel>{t(LABELS.triggerSignal, lang)}</SectionLabel>
@@ -800,9 +808,9 @@ export default function WorldPanel() {
           />
         ))}
 
-        {/* 5. Preference & history — profile picker FIRST, then scored fields */}
+        {/* 5. Preference & history — scored fields (the preset sets these;
+            the standalone Driver-Profile picker was removed in favor of it). */}
         <SectionLabel>{t(LABELS.preferenceHistory, lang)}</SectionLabel>
-        <DriverProfilePicker />
         {PROFILE_GROUPS.map((group) => (
           <div key={t(group.label, 'en')}>
             <div style={{ fontSize: '0.72em', fontWeight: 700, color: '#9ca3af', margin: '10px 0 2px' }}>

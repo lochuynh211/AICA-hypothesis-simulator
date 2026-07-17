@@ -1,0 +1,131 @@
+{
+  "algorithm_config_overrides": null,
+  "brief": {
+    "en": "No registered oshi — taste alone. Heavy j-rock/electronic usage plus history on favourite j-rock tracks should lift the j-rock cluster to the top on an ordinary drive.",
+    "ja": "登録推しなし、嗜好のみ。J-ROCK/エレクトロニカの多用と履歴により、J-ROCK群が上位に。"
+  },
+  "contrast_with": "preset-jazz-calm-listener",
+  "expectation": {
+    "expected_service": {
+      "top_should_be_in": [
+        "music_playlist",
+        "humming_karaoke",
+        "radio_style"
+      ]
+    },
+    "expected_top": {
+      "genre": "j-rock"
+    },
+    "gradient": "none",
+    "hypothesis": "j-rock usage + history → a j-rock track tops",
+    "override_required": false,
+    "top_fit_min": 0.3
+  },
+  "family": "genre_usage",
+  "label": {
+    "en": "J-Rock enthusiast",
+    "ja": "J-ROCK 愛好家"
+  },
+  "preset_id": "preset-jrock-enthusiast",
+  "schema_version": "1.0.0",
+  "world": {
+    "catalog_ref": {
+      "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "dataset_version": {
+        "schema_version": "1.0.0",
+        "spotify_audio_features_reference_version": "1.0.0",
+        "spotify_track_reference_version": "1.0.0"
+      }
+    },
+    "control_inputs": {
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "lifecycle_stage": "before_rest_until_stop",
+      "matrix_version": "v1",
+      "motion_state": "driving",
+      "trigger_purpose": "rest_recommended"
+    },
+    "driver_profile": {
+      "age_band": "30s",
+      "cancelled_content_plans": [],
+      "catalog_item_recency_state": {},
+      "catalog_item_usage_level": {
+        "synthetic-track-0087": "high",
+        "synthetic-track-0097": "high",
+        "synthetic-track-0098": "high",
+        "synthetic-track-0108": "high",
+        "synthetic-track-0115": "high",
+        "synthetic-track-0203": "high"
+      },
+      "changed_from_items": [],
+      "completed_items": [],
+      "content_proposal_acceptance_confidence": {},
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0087": 95.0,
+        "synthetic-track-0097": 95.0,
+        "synthetic-track-0098": 95.0,
+        "synthetic-track-0108": 95.0,
+        "synthetic-track-0115": 95.0,
+        "synthetic-track-0203": 95.0
+      },
+      "content_recovery_confidence": {},
+      "content_recovery_rate": {
+        "synthetic-track-0087": 90.0,
+        "synthetic-track-0097": 90.0,
+        "synthetic-track-0098": 90.0,
+        "synthetic-track-0108": 90.0,
+        "synthetic-track-0115": 90.0,
+        "synthetic-track-0203": 90.0
+      },
+      "content_tag_recency_state": {},
+      "content_tag_usage_level": {},
+      "gender": "unspecified",
+      "genre_affinity_v1_enabled": true,
+      "hobby_interest_tags": [],
+      "manually_selected_items": [],
+      "oshi_id": null,
+      "oshi_mode": "off",
+      "oshi_registered": false,
+      "oshi_tags": [],
+      "oshi_type": null,
+      "played_items": [],
+      "repeated_items": [],
+      "scene_content_tag_usage_level": {},
+      "scene_genre_usage": null,
+      "scene_service_usage_level": {},
+      "scheduled_event_tags": [],
+      "scheduled_event_timing": null,
+      "scheduled_event_type": null,
+      "service_proposal_acceptance_confidence": {},
+      "service_proposal_acceptance_rate": {},
+      "service_recency_state": {},
+      "service_recovery_confidence": {},
+      "service_recovery_rate": {},
+      "service_usage_level": {},
+      "skipped_items": [],
+      "usage_by_genre": {
+        "electronic": "med",
+        "j-rock": "high"
+      }
+    },
+    "situation": {
+      "active_service": null,
+      "child_present": false,
+      "destination_tags": [],
+      "drowsiness_level": 40,
+      "estimated_min_until_rest_spot": null,
+      "fatigue_level": 30,
+      "monotony_level": 55,
+      "motion_state": "driving",
+      "multiple_passengers": false,
+      "night_state": "day",
+      "recent_service_rejections": [],
+      "rest_spot_type": "unknown",
+      "road_type": "highway",
+      "route_tags": [
+        "highway"
+      ],
+      "traffic_state": "normal"
+    }
+  }
+}

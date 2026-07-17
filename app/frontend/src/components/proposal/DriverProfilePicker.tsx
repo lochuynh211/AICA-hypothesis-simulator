@@ -8,7 +8,7 @@
  * user profile (built-ins are not deletable — the backend returns 409,
  * surfaced here as an inline error).
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { t } from '../../i18n/t'
 import { useProposalStore } from '../../state/proposalStore'
 import { listProfiles, getProfile, saveProfile, deleteProfile } from '../../api/proposalClient'
@@ -37,6 +37,24 @@ export default function DriverProfilePicker() {
   const [labelEn, setLabelEn] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Tracks the `selectedProfileId` THIS component most recently pushed into
+  // the store (or `null` if it never has, or most recently cleared it) —
+  // lets the reflect-effect below tell "the store changed because I just
+  // dispatched it" (already mirrored via `setSelected` above — a no-op here)
+  // apart from "the store changed because something ELSE loaded a world"
+  // (e.g. a preset's atomic LOAD_PRESET, which clears this to `null`) — the
+  // latter must always be reflected, even after the user already picked a
+  // profile here (feature 018 — PresetPicker must be able to override).
+  //
+  // IMPORTANT: `handleDelete` below deliberately sets this ref to `null`
+  // itself (alongside its own `CLEAR_SELECTED_PROFILE` dispatch) — NOT to
+  // the newly-selected "first remaining profile" it optimistically shows in
+  // the dropdown — because that reselect is a local UI convenience only; it
+  // does not dispatch LOAD_PROFILE, so the store's concept of a loaded
+  // profile really is `null` after a delete, and the ref must say so too, or
+  // the reflect-effect would wrongly treat its own clear as an external
+  // change and stomp the optimistic local selection back to empty.
+  const lastDispatchedProfileId = useRef<string | null>(null)
 
   function refreshProfiles() {
     return listProfiles().then((resp) => {
@@ -56,11 +74,15 @@ export default function DriverProfilePicker() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Reflect a profile loaded by someone else (e.g. a future auto-init path)
-  // — but only to fill the INITIAL empty selection, never to override a
-  // choice the user already made here.
+  // Reflect a profile selection loaded from OUTSIDE this component (a future
+  // auto-init path, or a preset's atomic LOAD_PRESET clearing it to null) —
+  // always, not only into an empty selection, so a later external load
+  // correctly overrides an earlier direct choice too.
   useEffect(() => {
-    if (!selected && state.selectedProfileId) setSelected(state.selectedProfileId)
+    if (state.selectedProfileId !== lastDispatchedProfileId.current) {
+      setSelected(state.selectedProfileId ?? '')
+      lastDispatchedProfileId.current = state.selectedProfileId
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.selectedProfileId])
 
@@ -73,6 +95,7 @@ export default function DriverProfilePicker() {
     setError(null)
     try {
       const record = await getProfile(profileId)
+      lastDispatchedProfileId.current = record.profile_id
       dispatch({ type: 'LOAD_PROFILE', profileId: record.profile_id, profile: record.profile })
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -92,6 +115,7 @@ export default function DriverProfilePicker() {
       )
       await refreshProfiles()
       setSelected(record.profile_id)
+      lastDispatchedProfileId.current = record.profile_id
       dispatch({ type: 'LOAD_PROFILE', profileId: record.profile_id, profile: record.profile })
       setLabelJa('')
       setLabelEn('')
@@ -111,6 +135,7 @@ export default function DriverProfilePicker() {
       const profiles = await refreshProfiles()
       setSelected(profiles[0]?.profile_id ?? '')
       if (state.selectedProfileId === selected) {
+        lastDispatchedProfileId.current = null
         dispatch({ type: 'CLEAR_SELECTED_PROFILE' })
       }
     } catch (e) {

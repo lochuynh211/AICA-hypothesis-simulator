@@ -1,0 +1,130 @@
+{
+  "algorithm_config_overrides": null,
+  "brief": {
+    "en": "A winding mountain road. The algorithm's mountain response coefficient (α = −1.0) penalizes distracting high-energy tracks, and mountain genre affinity (folk / classical) surfaces calmer music — the opposite winner to the coastal cruise.",
+    "ja": "曲がりくねった山道。山道の応答係数（α=−1.0）が高エネルギー曲を抑制し、山道ジャンル親和（フォーク/クラシック）で落ち着いた曲が上位に — 海岸とは逆の結果。"
+  },
+  "contrast_with": "preset-coastal-cruise",
+  "expectation": {
+    "expected_service": {
+      "top_should_be_in": [
+        "music_playlist",
+        "radio_style",
+        "humming_karaoke"
+      ]
+    },
+    "expected_top": {
+      "arousal_band": "low"
+    },
+    "gradient": "arousal_down_implies_fit_up",
+    "hypothesis": "mountain road penalizes high-arousal; calmer track tops (different from coastal)",
+    "override_required": false,
+    "top_fit_min": 0.2
+  },
+  "family": "route_genre",
+  "label": {
+    "en": "Mountain pass",
+    "ja": "山道"
+  },
+  "preset_id": "preset-mountain-pass",
+  "schema_version": "1.0.0",
+  "world": {
+    "catalog_ref": {
+      "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "dataset_version": {
+        "schema_version": "1.0.0",
+        "spotify_audio_features_reference_version": "1.0.0",
+        "spotify_track_reference_version": "1.0.0"
+      }
+    },
+    "control_inputs": {
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "lifecycle_stage": "before_rest_until_stop",
+      "matrix_version": "v1",
+      "motion_state": "driving",
+      "trigger_purpose": "rest_recommended"
+    },
+    "driver_profile": {
+      "age_band": "30s",
+      "cancelled_content_plans": [],
+      "catalog_item_recency_state": {},
+      "catalog_item_usage_level": {
+        "synthetic-track-0009": "high",
+        "synthetic-track-0017": "high",
+        "synthetic-track-0024": "high",
+        "synthetic-track-0045": "high",
+        "synthetic-track-0270": "high"
+      },
+      "changed_from_items": [],
+      "completed_items": [],
+      "content_proposal_acceptance_confidence": {},
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0009": 95.0,
+        "synthetic-track-0017": 95.0,
+        "synthetic-track-0024": 95.0,
+        "synthetic-track-0045": 95.0,
+        "synthetic-track-0270": 95.0
+      },
+      "content_recovery_confidence": {},
+      "content_recovery_rate": {
+        "synthetic-track-0009": 90.0,
+        "synthetic-track-0017": 90.0,
+        "synthetic-track-0024": 90.0,
+        "synthetic-track-0045": 90.0,
+        "synthetic-track-0270": 90.0
+      },
+      "content_tag_recency_state": {},
+      "content_tag_usage_level": {},
+      "gender": "unspecified",
+      "genre_affinity_v1_enabled": true,
+      "hobby_interest_tags": [],
+      "manually_selected_items": [],
+      "oshi_id": null,
+      "oshi_mode": "off",
+      "oshi_registered": false,
+      "oshi_tags": [],
+      "oshi_type": null,
+      "played_items": [],
+      "repeated_items": [],
+      "scene_content_tag_usage_level": {},
+      "scene_genre_usage": null,
+      "scene_service_usage_level": {},
+      "scheduled_event_tags": [],
+      "scheduled_event_timing": null,
+      "scheduled_event_type": null,
+      "service_proposal_acceptance_confidence": {},
+      "service_proposal_acceptance_rate": {},
+      "service_recency_state": {},
+      "service_recovery_confidence": {},
+      "service_recovery_rate": {},
+      "service_usage_level": {},
+      "skipped_items": [],
+      "usage_by_genre": {
+        "classical": "high",
+        "japanese folk": "high"
+      }
+    },
+    "situation": {
+      "active_service": null,
+      "child_present": false,
+      "destination_tags": [
+        "nature"
+      ],
+      "drowsiness_level": 25,
+      "estimated_min_until_rest_spot": null,
+      "fatigue_level": 30,
+      "monotony_level": 35,
+      "motion_state": "driving",
+      "multiple_passengers": false,
+      "night_state": "day",
+      "recent_service_rejections": [],
+      "rest_spot_type": "unknown",
+      "road_type": "mountain",
+      "route_tags": [
+        "mountain"
+      ],
+      "traffic_state": "normal"
+    }
+  }
+}

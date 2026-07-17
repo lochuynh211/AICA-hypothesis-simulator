@@ -1,0 +1,134 @@
+{
+  "algorithm_config_overrides": null,
+  "brief": {
+    "en": "A daytime family drive with a child aboard. Child genre affinity (→ anime) plus anime usage should lift kid-friendly anime tracks; energetic adult rock is de-prioritized.",
+    "ja": "子ども同乗の昼間の家族ドライブ。子ども向けジャンル親和（→アニメ）とアニメ利用で、アニメ曲が上位に。"
+  },
+  "contrast_with": null,
+  "expectation": {
+    "expected_service": {
+      "top_should_be_in": [
+        "music_playlist",
+        "quiz",
+        "ranking_creation",
+        "humming_karaoke"
+      ]
+    },
+    "expected_top": {
+      "genre": "anime"
+    },
+    "gradient": "none",
+    "hypothesis": "child + anime affinity/usage → an anime track tops",
+    "override_required": false,
+    "top_fit_min": 0.28
+  },
+  "family": "passenger_genre",
+  "label": {
+    "en": "Child on board — family drive",
+    "ja": "子ども同乗 — 家族ドライブ"
+  },
+  "preset_id": "preset-child-family-drive",
+  "schema_version": "1.0.0",
+  "world": {
+    "catalog_ref": {
+      "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "dataset_version": {
+        "schema_version": "1.0.0",
+        "spotify_audio_features_reference_version": "1.0.0",
+        "spotify_track_reference_version": "1.0.0"
+      }
+    },
+    "control_inputs": {
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "lifecycle_stage": "active_driving_content",
+      "matrix_version": "v1",
+      "motion_state": "driving",
+      "trigger_purpose": "child_passenger_experience"
+    },
+    "driver_profile": {
+      "age_band": "30s",
+      "cancelled_content_plans": [],
+      "catalog_item_recency_state": {},
+      "catalog_item_usage_level": {
+        "synthetic-track-0058": "high",
+        "synthetic-track-0060": "high",
+        "synthetic-track-0061": "high",
+        "synthetic-track-0077": "high",
+        "synthetic-track-0115": "high",
+        "synthetic-track-0144": "high"
+      },
+      "changed_from_items": [],
+      "completed_items": [],
+      "content_proposal_acceptance_confidence": {},
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0058": 95.0,
+        "synthetic-track-0060": 95.0,
+        "synthetic-track-0061": 95.0,
+        "synthetic-track-0077": 95.0,
+        "synthetic-track-0115": 95.0,
+        "synthetic-track-0144": 95.0
+      },
+      "content_recovery_confidence": {},
+      "content_recovery_rate": {
+        "synthetic-track-0058": 90.0,
+        "synthetic-track-0060": 90.0,
+        "synthetic-track-0061": 90.0,
+        "synthetic-track-0077": 90.0,
+        "synthetic-track-0115": 90.0,
+        "synthetic-track-0144": 90.0
+      },
+      "content_tag_recency_state": {},
+      "content_tag_usage_level": {},
+      "gender": "unspecified",
+      "genre_affinity_v1_enabled": true,
+      "hobby_interest_tags": [
+        "anime-fan"
+      ],
+      "manually_selected_items": [],
+      "oshi_id": null,
+      "oshi_mode": "off",
+      "oshi_registered": false,
+      "oshi_tags": [],
+      "oshi_type": null,
+      "played_items": [],
+      "repeated_items": [],
+      "scene_content_tag_usage_level": {},
+      "scene_genre_usage": null,
+      "scene_service_usage_level": {},
+      "scheduled_event_tags": [],
+      "scheduled_event_timing": null,
+      "scheduled_event_type": null,
+      "service_proposal_acceptance_confidence": {},
+      "service_proposal_acceptance_rate": {},
+      "service_recency_state": {},
+      "service_recovery_confidence": {},
+      "service_recovery_rate": {},
+      "service_usage_level": {},
+      "skipped_items": [],
+      "usage_by_genre": {
+        "anime": "high",
+        "j-pop": "med"
+      }
+    },
+    "situation": {
+      "active_service": null,
+      "child_present": true,
+      "destination_tags": [],
+      "drowsiness_level": 20,
+      "estimated_min_until_rest_spot": null,
+      "fatigue_level": 20,
+      "monotony_level": 30,
+      "motion_state": "driving",
+      "multiple_passengers": true,
+      "night_state": "day",
+      "recent_service_rejections": [],
+      "rest_spot_type": "unknown",
+      "road_type": "local",
+      "route_tags": [
+        "highway"
+      ],
+      "traffic_state": "normal"
+    }
+  }
+}

@@ -1193,7 +1193,7 @@
     },
     "SetupSnapshotOrigin": {
       "additionalProperties": false,
-      "description": "Which committed artifact(s) the run's world was assembled from.\n\nAt most a run typically has one of ``seed_id``/``clone_id`` set (which\nbase the world started from) plus, independently, ``profile_id`` if a\nreusable ``DriverProfileRecord`` was loaded into it — all three are\noptional and independent because a reviewer may also hand-edit a world\nfrom scratch (all three ``None``) or load a profile into a hand-edited\nworld (only ``profile_id`` set).",
+      "description": "Which committed artifact(s) the run's world was assembled from.\n\nAt most a run typically has one of ``seed_id``/``clone_id`` set (which\nbase the world started from) plus, independently, ``profile_id`` if a\nreusable ``DriverProfileRecord`` was loaded into it — all three are\noptional and independent because a reviewer may also hand-edit a world\nfrom scratch (all three ``None``) or load a profile into a hand-edited\nworld (only ``profile_id`` set).\n\n``origin_preset_id`` (feature 018) is likewise optional and independent:\nset when the run's world/overrides were loaded from a committed\n``Preset`` (``models/proposal/preset.py``). A reviewer may still hand-edit\nfields afterward — the preset origin is recorded regardless, alongside\nwhatever edited-fields evidence already exists (honest provenance).",
       "properties": {
         "clone_id": {
           "anyOf": [
@@ -1206,6 +1206,18 @@
           ],
           "default": null,
           "title": "Clone Id"
+        },
+        "origin_preset_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Origin Preset Id"
         },
         "profile_id": {
           "anyOf": [

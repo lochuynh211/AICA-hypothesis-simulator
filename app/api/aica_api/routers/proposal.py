@@ -60,6 +60,7 @@ from aica_api.models.proposal.journey_preview import JourneyPreview
 from aica_api.models.proposal.matrix import MatrixResolutionError, PurposeStageServiceMatrix
 from aica_api.models.proposal.opportunity import ProposalOpportunity
 from aica_api.models.proposal.package_manifest import BilingualLabel, ProposalPackageManifest
+from aica_api.models.proposal.preset import AlgorithmConfigOverrides, Preset
 from aica_api.models.proposal.proposal_run import ProposalRun, ProposalRunLog
 from aica_api.models.proposal.recompute import RecomputeRequest
 from aica_api.models.proposal.service_capabilities import ServiceCapabilities
@@ -72,12 +73,14 @@ from aica_api.models.proposal.world import (
     World,
 )
 from aica_api.services import proposal_run_manager as prm
+from aica_api.services.algorithm_config import merge_algorithm_config
 from aica_api.services.dataset_catalog_registry import DatasetCatalogRegistry
 from aica_api.services.driver_profile_store import (
     DriverProfileConflictError,
     DriverProfileNotFoundError,
     DriverProfileStore,
 )
+from aica_api.services.preset_store import PresetStore
 from aica_api.services.proposal_eligibility import derive_registered_entities, resolve_eligibility
 from aica_api.services.proposal_journey import apply_action
 from aica_api.services.proposal_journey_preview import preview as build_journey_preview
@@ -138,6 +141,17 @@ def _get_seed_store() -> WorldSeedStore:
 def _get_profile_store() -> DriverProfileStore:
     """Instantiate a DriverProfileStore from the configured user-profiles directory."""
     return DriverProfileStore(settings.proposal_profiles_dir)
+
+
+def _get_preset_store() -> PresetStore:
+    """Instantiate a PresetStore from the configured presets directory.
+
+    Raises ``PresetLoadError`` (unhandled here -> FastAPI 500) if any
+    committed preset file fails to validate — a load-time integrity error
+    surfaced visibly, never a silently degraded preset list (data-model.md
+    §Preset, contracts/preset_endpoints.md).
+    """
+    return PresetStore(settings.proposal_presets_dir)
 
 
 def _make_opportunity_id() -> str:
@@ -505,6 +519,28 @@ def get_seed(seed_id: str) -> SeedWorld:
 
 
 # ---------------------------------------------------------------------------
+# GET /api/proposal/presets — feature 018 (committed preset test-cases)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/proposal/presets")
+def get_presets() -> dict:
+    """List the committed presets (summary projection), sorted by preset_id."""
+    store = _get_preset_store()
+    return {"presets": store.list_summaries()}
+
+
+@router.get("/api/proposal/presets/{preset_id}")
+def get_preset(preset_id: str) -> Preset:
+    """Return the full Preset (world + overrides + expectation) for preset_id."""
+    store = _get_preset_store()
+    preset = store.get(preset_id)
+    if preset is None:
+        raise HTTPException(status_code=404, detail=f"preset not found: {preset_id}")
+    return preset
+
+
+# ---------------------------------------------------------------------------
 # Driver-profile CRUD — T021/T022 (P3 — built-in + user profile store)
 # ---------------------------------------------------------------------------
 
@@ -611,6 +647,16 @@ class CreateProposalRunBody(BaseModel):
     ``origin_seed_id``/``origin_clone_id``/``origin_profile_id`` are optional
     hints recording which committed artifact(s) the typed world was built
     from, frozen verbatim into ``SetupSnapshot.origin``.
+
+    ``origin_preset_id`` (feature 018) is the analogous hint when the world
+    (and, via ``algorithm_config_overrides``, the service/content
+    hyperparameters) originated from a committed ``Preset`` — frozen into
+    ``SetupSnapshot.origin.origin_preset_id``. ``algorithm_config_overrides``
+    carries the preset's per-selector deltas; ``.service`` is deep-merged
+    into the resolved service ``hyperparameters`` BEFORE the STEP-1 service
+    ``dispatch_selector`` call (and, for a quick_check run, ``.content`` is
+    likewise merged into the content hyperparameters before the inline
+    STEP-2 content dispatch) — see ``services/algorithm_config.py``.
     """
 
     trigger_purpose: TriggerPurpose | None = None
@@ -621,6 +667,8 @@ class CreateProposalRunBody(BaseModel):
     origin_seed_id: str | None = None
     origin_clone_id: str | None = None
     origin_profile_id: str | None = None
+    origin_preset_id: str | None = None
+    algorithm_config_overrides: AlgorithmConfigOverrides | None = None
     service_package_id: str
     content_package_id: str
     mode: ProposalRunMode = ProposalRunMode.interactive
@@ -670,6 +718,7 @@ def _freeze_setup_snapshot(
     origin_seed_id: str | None = None,
     origin_clone_id: str | None = None,
     origin_profile_id: str | None = None,
+    origin_preset_id: str | None = None,
 ) -> tuple[dict, SetupSnapshot]:
     """Validate the typed world and build (world_snapshot dict, SetupSnapshot).
 
@@ -718,6 +767,7 @@ def _freeze_setup_snapshot(
             seed_id=origin_seed_id,
             clone_id=origin_clone_id,
             profile_id=origin_profile_id,
+            origin_preset_id=origin_preset_id,
         ),
         matrix_version=matrix_version,
         dataset_id=world.control_inputs.dataset_id,
@@ -787,6 +837,17 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
         hp.key: hp.default for hp in service_pkg.hyperparameters
     }
 
+    # feature 018 (preset override seam #1 — service, STEP 1): merge the
+    # preset's isolated ``service`` config delta over the resolved service
+    # hyperparameters BEFORE the SetupSnapshot freeze (which records the
+    # resulting parameter_set_version) and BEFORE the service
+    # dispatch_selector call below. Never mutates service_pkg's own
+    # package.json — merge_algorithm_config always returns a fresh dict.
+    if body.algorithm_config_overrides is not None:
+        hyperparameters = merge_algorithm_config(
+            hyperparameters, body.algorithm_config_overrides.service
+        )
+
     # P3 typed-world path: validate + project + freeze a SetupSnapshot; the
     # resulting world_snapshot dict replaces body.world_snapshot for the
     # service-selector context and the persisted log (world wins over
@@ -803,6 +864,7 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
             origin_seed_id=body.origin_seed_id,
             origin_clone_id=body.origin_clone_id,
             origin_profile_id=body.origin_profile_id,
+            origin_preset_id=body.origin_preset_id,
         )
 
     # -----------------------------------------------------------------
@@ -962,6 +1024,14 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
     if body.mode == ProposalRunMode.quick_check and selected_service_id is not None:
         content_parameters = dict(content_pkg.parameters)
         content_hyperparameters = {hp.key: hp.default for hp in content_pkg.hyperparameters}
+        # feature 018 (preset override seam #2 — content, quick_check STEP 2
+        # dispatched inline here): merge the preset's isolated ``content``
+        # config delta over the resolved content hyperparameters BEFORE the
+        # content dispatch inside _apply_quick_check_content.
+        if body.algorithm_config_overrides is not None:
+            content_hyperparameters = merge_algorithm_config(
+                content_hyperparameters, body.algorithm_config_overrides.content
+            )
         run_log = _apply_quick_check_content(
             run_log.run_id,
             run_log,
@@ -1182,11 +1252,19 @@ class SelectServiceBody(BaseModel):
     service-side ``parameters``/``hyperparameters``. Empty (the default)
     falls back to the content package's own manifest defaults, exactly like
     the service side does at create-run.
+
+    ``algorithm_config_overrides`` (feature 018) is the analogous preset
+    override seam for the INTERACTIVE STEP-2 content dispatch — only
+    ``.content`` is relevant here (there is no service dispatch at this
+    step); it is merged over ``hyperparameters`` the same way
+    ``CreateProposalRunBody.algorithm_config_overrides.service`` is merged
+    at STEP 1.
     """
 
     selected_service_id: ServiceId
     parameters: dict[str, Any] = {}
     hyperparameters: dict[str, Any] = {}
+    algorithm_config_overrides: AlgorithmConfigOverrides | None = None
 
 
 @router.post("/api/proposal/runs/{run_id}/select-service")
@@ -1264,6 +1342,14 @@ def select_service(run_id: str, body: SelectServiceBody) -> ProposalRunLog:
     content_hyperparameters = body.hyperparameters or {
         hp.key: hp.default for hp in content_pkg.hyperparameters
     }
+
+    # feature 018 (preset override seam #3 — content, interactive STEP 2):
+    # merge the preset's isolated ``content`` config delta over the resolved
+    # content hyperparameters BEFORE the content dispatch below.
+    if body.algorithm_config_overrides is not None:
+        content_hyperparameters = merge_algorithm_config(
+            content_hyperparameters, body.algorithm_config_overrides.content
+        )
 
     # T010 (P7, research.md D5): the real-vs-mock context-builder choice, the
     # _REAL_CONTENT_PACKAGE_ID gate, catalog redaction, and the

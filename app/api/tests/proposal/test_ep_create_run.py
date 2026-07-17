@@ -397,7 +397,12 @@ def test_create_run_typed_world_201_freezes_setup_snapshot():
     assert snap["service_parameter_set_version"]
     assert snap["content_parameter_set_version"]
     assert snap["feature_provenance"]  # non-empty: every A.1/A.2 field has provenance
-    assert snap["origin"] == {"seed_id": None, "clone_id": None, "profile_id": None}
+    assert snap["origin"] == {
+        "seed_id": None,
+        "clone_id": None,
+        "profile_id": None,
+        "origin_preset_id": None,
+    }
 
 
 def test_create_run_typed_world_derives_purpose_stage_motion_from_world():
@@ -427,6 +432,7 @@ def test_create_run_typed_world_records_origin_hints_when_supplied():
         "seed_id": _SEED_ID,
         "clone_id": None,
         "profile_id": "profile-neutral-default",
+        "origin_preset_id": None,
     }
 
 

@@ -11,10 +11,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { t } from '../../../i18n/t'
 import { useProposalStore } from '../../../state/proposalStore'
+import { fitBand } from '../../../lib/fitBand'
 import type { World, ProposalRunLog } from '../../../api/proposalClient'
 import {
   getPackages,
-  getSeed,
+  getPreset,
   createRun,
   selectService,
   type ProposalPackageSummary,
@@ -22,10 +23,10 @@ import {
   type ExcludedCandidate,
 } from '../../../api/proposalClient'
 
-/** Seed auto-loaded on screen open when `autoInit` is set (the P7 reference
- * journey). Selecting it, the two transparent packages, and auto-running
- * STEP 1 is what "Setup auto init" means (owner request 2026-07-17). */
-const AUTO_INIT_SEED_ID = 'seed-night-highway-oshi'
+/** Preset auto-loaded on screen open when `autoInit` is set. The proposal panel
+ * is preset-first (the old Seed/Profile pickers were removed), so the screen
+ * opens on a complete, already-recommended plan for a representative preset. */
+const AUTO_INIT_PRESET_ID = 'preset-monotone-highway-energize'
 import HyperparamMatrix from '../HyperparamMatrix'
 import ResponseMatrixTable from '../ResponseMatrixTable'
 import HierarchyWeightsTable from '../HierarchyWeightsTable'
@@ -58,6 +59,13 @@ const LABELS = {
   choose: { ja: 'これを選ぶ', en: 'Choose' },
   selected: { ja: '選択中 → STEP 2 へ', en: 'Selected → to STEP 2' },
   noProposal: { ja: '候補なし（no_proposal）', en: 'No candidates (no_proposal)' },
+  // feature 018 (US4) — friendlier, stable 0-100 band alongside the raw
+  // score (never replacing it — raw stays authoritative).
+  fitBand: { ja: '適合', en: 'fit' },
+  fitBandTitle: {
+    ja: '0〜100の目安スコア = (raw + 1) × 50。生スコアの表示用変換であり、判定には使用しません。',
+    en: 'A friendlier 0-100 band = (raw + 1) × 50. A display transform of the raw score only — never used in scoring.',
+  },
   algorithmError: { ja: 'アルゴリズムエラー', en: 'Algorithm error' },
   // Task 5 — Choose is gated to content-backed services (CONTENT package's
   // `supported_services`); non-backed candidates get this note instead.
@@ -173,7 +181,7 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
     // calls runWith in the SAME tick, so the state.selected* values captured by
     // this closure are still the pre-dispatch (null) values — passing the seed
     // id explicitly keeps the persisted SetupSnapshot.origin accurate.
-    origin?: { seedId?: string | null; cloneId?: string | null; profileId?: string | null },
+    origin?: { seedId?: string | null; cloneId?: string | null; profileId?: string | null; presetId?: string | null },
   ): Promise<ProposalRunLog | null> {
     const pkg = servicePackages.find((p) => p.id === servicePackageId) ?? manifest
     if (!pkg) return null
@@ -200,6 +208,12 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
         // clone selection, so this is always the explicit override (or null).
         origin_clone_id: origin?.cloneId ?? null,
         origin_profile_id: origin?.profileId !== undefined ? origin.profileId : state.selectedProfileId,
+        // feature 018 — preset provenance + its isolated service-config delta
+        // (merged server-side over the resolved service hyperparameters
+        // before STEP 1). `presetOverrides` is undefined-coalesced so a run
+        // with no preset selected sends no override at all.
+        origin_preset_id: origin?.presetId !== undefined ? origin.presetId : state.selectedPresetId,
+        algorithm_config_overrides: state.presetOverrides ?? undefined,
         service_package_id: servicePackageId,
         content_package_id: contentPackageId,
         mode: 'interactive',
@@ -228,11 +242,31 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
     await runWith(state.world, manifest.id, contentPackageId)
   }
 
-  // "Setup auto init" (owner request): once the packages have loaded, load the
-  // reference seed and auto-run STEP 1 AND STEP 2 exactly once — only in the
-  // real app (`autoInit`), never in isolated panel tests (which omit the prop).
-  // STEP 2 auto-selects the rank-1 service so the screen opens on a complete,
-  // already-recommended plan.
+  /** Run STEP 1 (service) then auto-select the rank-1 service for STEP 2
+   * (content) — the consecutive "STEP 1 → STEP 2" flow shared by the on-open
+   * auto-init and every preset selection. The STEP 2 auto-choose is gated to
+   * services the content package can actually serve (mirrors the manual Choose
+   * gate); quick_check mode may already have selected content on create. */
+  async function runServiceThenContent(world: World, presetId: string | null) {
+    const log = await runWith(world, servicePackages[0].id, contentPackages[0].id, {
+      seedId: null,
+      cloneId: null,
+      profileId: null,
+      presetId,
+    })
+    if (log && log.status === 'service_selected') {
+      const svcEv = log.evidence.filter((ev) => ev.step === 'service').slice(-1)[0]
+      const out = svcEv?.output as { ranked_candidates?: { candidate_id: string }[] } | undefined
+      const rank1 = out?.ranked_candidates?.[0]?.candidate_id
+      const backedIds = new Set<string>(contentPackages[0]?.supported_services ?? [])
+      if (rank1 && backedIds.has(rank1)) await chooseWith(log.run_id, rank1)
+    }
+  }
+
+  // "Setup auto init": on open (real app only — `autoInit`), load the reference
+  // preset and run the first STEP 1 → STEP 2 explicitly, so the screen opens on
+  // a complete, already-recommended plan. Every later change (a new preset, or
+  // any edited field/parameter) flows through the live-recompute effect below.
   useEffect(() => {
     if (!autoInit || autoInitStarted.current) return
     if (servicePackages.length === 0 || contentPackages.length === 0) return
@@ -240,24 +274,14 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
     autoInitStarted.current = true
     ;(async () => {
       try {
-        const seed = await getSeed(AUTO_INIT_SEED_ID)
-        dispatch({ type: 'LOAD_SEED', seedId: AUTO_INIT_SEED_ID, world: seed.world })
-        const log = await runWith(seed.world, servicePackages[0].id, contentPackages[0].id, {
-          seedId: AUTO_INIT_SEED_ID,
-          cloneId: null,
-          profileId: null,
+        const preset = await getPreset(AUTO_INIT_PRESET_ID)
+        dispatch({
+          type: 'LOAD_PRESET',
+          presetId: preset.preset_id,
+          world: preset.world,
+          overrides: preset.algorithm_config_overrides,
         })
-        // Auto-run STEP 2 with the rank-1 service (unless quick_check mode
-        // already selected content server-side on create).
-        if (log && log.status === 'service_selected') {
-          const svcEv = log.evidence.filter((ev) => ev.step === 'service').slice(-1)[0]
-          const out = svcEv?.output as { ranked_candidates?: { candidate_id: string }[] } | undefined
-          const rank1 = out?.ranked_candidates?.[0]?.candidate_id
-          // Task 5 — never auto-choose a candidate the content package can't
-          // actually serve (mirrors the manual Choose gate above).
-          const backedIds = new Set<string>(contentPackages[0]?.supported_services ?? [])
-          if (rank1 && backedIds.has(rank1)) await chooseWith(log.run_id, rank1)
-        }
+        await runServiceThenContent(preset.world, preset.preset_id)
       } catch (e) {
         setLocalError(e instanceof Error ? e.message : String(e))
       }
@@ -265,50 +289,53 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoInit, servicePackages, contentPackages])
 
-  // Task 9 — debounced auto-recompute: once a run exists, editing
-  // max_candidates (manifest key `top_k`) re-runs STEP 1 automatically
-  // ~400ms after the edit, without the reviewer clicking Run again.
-  const topKOverride = state.serviceParameterOverrides['top_k']
-  const didInitialRun = useRef(false)
+  // LIVE RECOMPUTE — once a run exists, the panel re-runs STEP 1 → STEP 2
+  // (debounced ~400ms) whenever ANY editable input changes: world fields
+  // (situation / driver profile / trigger signal), the service parameters +
+  // hyperparameters, the content parameters + hyperparameters, or the selected
+  // preset. The reviewer never clicks Run or Choose. The first run itself is
+  // explicit (auto-init on open, or the Run button in isolated use).
 
-  // Mirrors `running` in a ref so the debounce timer below can read the
-  // CURRENT value at fire time instead of the stale value captured when the
-  // effect scheduled the timer (avoids a dropped-edit / concurrent-run race
-  // — see the review finding on this effect).
+  // Mirrors `running` in a ref so the debounce timer reads the CURRENT value at
+  // fire time (not the value captured when the timer was scheduled).
   const runningRef = useRef(running)
   useEffect(() => {
     runningRef.current = running
   }, [running])
 
-  // Marks the initial run as "seen" the moment a runLog first appears —
-  // BEFORE any top_k edit — so the debounce effect below (keyed only on
-  // topKOverride, which does NOT change merely because a run was created)
-  // never mistakes the reviewer's first edit for the initial/autoInit run.
+  // A signature over every editable input; the recompute effect below is keyed
+  // on it, so it fires exactly when one of these changes (never merely because
+  // a run was created — that does not change the signature).
+  const editableSignature = JSON.stringify({
+    preset: state.selectedPresetId,
+    world: state.world,
+    serviceParams: state.serviceParameterOverrides,
+    serviceHyper: state.serviceHyperparameterOverrides,
+    contentParams: state.contentParameterOverrides,
+    contentHyper: state.contentHyperparameterOverrides,
+  })
+  const didInitialRun = useRef(false)
   useEffect(() => {
     if (state.runLog) didInitialRun.current = true
   }, [state.runLog])
 
   useEffect(() => {
-    // Only recompute for edits AFTER the first run exists; skip while no run
-    // has happened yet.
+    // Only recompute for edits AFTER the first run exists.
     if (!state.runLog) return
     if (!didInitialRun.current) {
       didInitialRun.current = true
       return
     }
-    const contentPackageId = state.contentPackageId ?? contentPackages[0]?.id
-    if (!manifest || !contentPackageId) return
+    if (servicePackages.length === 0 || contentPackages.length === 0) return
     const handle = setTimeout(() => {
-      // Check `running` at FIRE time (via ref, not the closed-over state) —
-      // if a run is already in flight, skip this auto-recompute rather than
-      // firing a second concurrent createRun. The stale edit is not
-      // re-queued; skipping is the intended behavior.
+      // If a run is in flight at fire time, skip rather than firing a second
+      // concurrent run (matches the prior top_k-recompute behavior).
       if (runningRef.current) return
-      void runWith(state.world, manifest.id, contentPackageId)
+      void runServiceThenContent(state.world, state.selectedPresetId)
     }, 400)
     return () => clearTimeout(handle)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [topKOverride])
+  }, [editableSignature])
 
   /** STEP 2 with an explicit runId (auto-init passes the just-created run's id
    * directly, avoiding the async `state.runLog` update race). */
@@ -338,6 +365,11 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
       const runLog = await selectService(runId, serviceId, {
         parameters: contentParameters,
         hyperparameters: contentHyperparameters,
+        // feature 018 — the selected preset's isolated content-config delta,
+        // merged server-side over the resolved content hyperparameters
+        // before this STEP-2 dispatch. Omitted (not sent) when no preset is
+        // selected — see selectService()'s own undefined-key handling.
+        algorithm_config_overrides: state.presetOverrides ?? undefined,
       })
       if (runLog) {
         dispatch({ type: 'CONTENT_SELECTED', runLog })
@@ -527,6 +559,15 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
                       <span style={{ marginLeft: 'auto', fontFamily: 'monospace', fontWeight: 800, color: '#1d4ed8' }}>
                         {candidate.score >= 0 ? '+' : ''}
                         {candidate.score.toFixed(3)}
+                      </span>
+                    )}
+                    {candidate.score !== null && (
+                      <span
+                        data-testid={`fit-band-${candidate.candidate_id}`}
+                        title={t(LABELS.fitBandTitle, lang)}
+                        style={fitBandBadgeStyle}
+                      >
+                        {t(LABELS.fitBand, lang)} {Math.round(fitBand(candidate.score))}/100
                       </span>
                     )}
                   </div>
@@ -863,6 +904,19 @@ const whyStyle: React.CSSProperties = {
   borderRadius: '0 7px 7px 0',
   fontSize: '0.8em',
   color: '#4b5563',
+}
+
+// feature 018 (US4) — the friendlier 0-100 fit-band badge, rendered next to
+// (never instead of) the raw score.
+const fitBandBadgeStyle: React.CSSProperties = {
+  fontSize: '0.68em',
+  fontWeight: 700,
+  color: '#1d4ed8',
+  background: '#eef2ff',
+  border: '1px solid #c7d2fe',
+  borderRadius: '999px',
+  padding: '2px 8px',
+  fontFamily: 'monospace',
 }
 
 const runButtonStyle: React.CSSProperties = {

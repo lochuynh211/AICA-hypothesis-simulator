@@ -1,0 +1,154 @@
+{
+  "algorithm_config_overrides": {
+    "content": {
+      "hierarchy_weights": {
+        "Preference": {
+          "upro_oshi": {
+            "leaves": {
+              "age": {
+                "feature_id": "age_band",
+                "mask": 1,
+                "share": 0.35
+              },
+              "gender": {
+                "feature_id": "gender",
+                "mask": 0,
+                "share": 0.0
+              },
+              "hobbies": {
+                "feature_id": "hobby_interest_tags",
+                "genre_gated": true,
+                "mask": 0,
+                "share": 0.2
+              },
+              "oshi": {
+                "feature_id": "oshi_id",
+                "mask": 1,
+                "share": 0.45
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "brief": {
+    "en": "A driver in their 50s whose oshi is Seiko Matsuda (1980s). With the era/age weight raised (per-preset override), 1980s tracks win — the same neutral road, a generation earlier.",
+    "ja": "推しが松田聖子（1980年代）の50代ドライバー。年代/世代の重みを引き上げ（プリセット単位のオーバーライド）、1980年代の曲が上位に。"
+  },
+  "contrast_with": "preset-genz-now",
+  "expectation": {
+    "expected_service": {
+      "top_should_be_in": [
+        "music_playlist",
+        "humming_karaoke",
+        "radio_style"
+      ]
+    },
+    "expected_top": {
+      "must_be_oshi": true
+    },
+    "gradient": "none",
+    "hypothesis": "50s age-band + 1980s oshi + raised age weight → a 1980s track tops",
+    "override_required": true,
+    "top_fit_min": 0.3
+  },
+  "family": "era_age",
+  "label": {
+    "en": "Shōwa nostalgia (50s driver)",
+    "ja": "昭和ノスタルジー（50代ドライバー）"
+  },
+  "preset_id": "preset-showa-nostalgia",
+  "schema_version": "1.0.0",
+  "world": {
+    "catalog_ref": {
+      "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "dataset_version": {
+        "schema_version": "1.0.0",
+        "spotify_audio_features_reference_version": "1.0.0",
+        "spotify_track_reference_version": "1.0.0"
+      }
+    },
+    "control_inputs": {
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "lifecycle_stage": "before_rest_until_stop",
+      "matrix_version": "v1",
+      "motion_state": "driving",
+      "trigger_purpose": "rest_recommended"
+    },
+    "driver_profile": {
+      "age_band": "50s",
+      "cancelled_content_plans": [],
+      "catalog_item_recency_state": {},
+      "catalog_item_usage_level": {
+        "synthetic-track-0148": "high",
+        "synthetic-track-0149": "high",
+        "synthetic-track-0150": "high"
+      },
+      "changed_from_items": [],
+      "completed_items": [],
+      "content_proposal_acceptance_confidence": {},
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0148": 95.0,
+        "synthetic-track-0149": 95.0,
+        "synthetic-track-0150": 95.0
+      },
+      "content_recovery_confidence": {},
+      "content_recovery_rate": {
+        "synthetic-track-0148": 90.0,
+        "synthetic-track-0149": 90.0,
+        "synthetic-track-0150": 90.0
+      },
+      "content_tag_recency_state": {},
+      "content_tag_usage_level": {},
+      "gender": "unspecified",
+      "genre_affinity_v1_enabled": true,
+      "hobby_interest_tags": [],
+      "manually_selected_items": [],
+      "oshi_id": "synthetic-artist-0136",
+      "oshi_mode": "on",
+      "oshi_registered": true,
+      "oshi_tags": [],
+      "oshi_type": "artist",
+      "played_items": [],
+      "repeated_items": [],
+      "scene_content_tag_usage_level": {},
+      "scene_genre_usage": null,
+      "scene_service_usage_level": {},
+      "scheduled_event_tags": [],
+      "scheduled_event_timing": null,
+      "scheduled_event_type": null,
+      "service_proposal_acceptance_confidence": {},
+      "service_proposal_acceptance_rate": {},
+      "service_recency_state": {},
+      "service_recovery_confidence": {},
+      "service_recovery_rate": {},
+      "service_usage_level": {},
+      "skipped_items": [],
+      "usage_by_genre": {
+        "j-pop": "high",
+        "jazz": "med"
+      }
+    },
+    "situation": {
+      "active_service": null,
+      "child_present": false,
+      "destination_tags": [],
+      "drowsiness_level": 35,
+      "estimated_min_until_rest_spot": null,
+      "fatigue_level": 30,
+      "monotony_level": 45,
+      "motion_state": "driving",
+      "multiple_passengers": false,
+      "night_state": "day",
+      "recent_service_rejections": [],
+      "rest_spot_type": "unknown",
+      "road_type": "highway",
+      "route_tags": [
+        "highway"
+      ],
+      "traffic_state": "normal"
+    }
+  }
+}

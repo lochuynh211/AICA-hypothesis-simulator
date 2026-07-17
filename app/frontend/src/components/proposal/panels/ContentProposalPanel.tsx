@@ -33,6 +33,7 @@
 import { useEffect, useState } from 'react'
 import { t } from '../../../i18n/t'
 import { useProposalStore } from '../../../state/proposalStore'
+import { fitBand } from '../../../lib/fitBand'
 import {
   getPackages,
   getDatasetCatalog,
@@ -121,6 +122,13 @@ const LABELS = {
     en: 'Non-binding preview — not committed',
   },
   previewEmpty: { ja: 'プレビューできる次のステップがありません。', en: 'No next step to preview.' },
+  // feature 018 (US4) — friendlier, stable 0-100 band alongside the raw
+  // item_fit (never replacing it — raw stays authoritative).
+  fitBand: { ja: '適合', en: 'fit' },
+  fitBandTitle: {
+    ja: '0〜100の目安スコア = (raw + 1) × 50。生スコアの表示用変換であり、判定には使用しません。',
+    en: 'A friendlier 0-100 band = (raw + 1) × 50. A display transform of the raw score only — never used in scoring.',
+  },
 };
 
 const _NON_PLAN_DECISION_LABELS: Record<string, { ja: string; en: string }> = {
@@ -386,6 +394,15 @@ export default function ContentProposalPanel() {
                       {item.item_fit}
                     </span>
                   )}
+                  {item.item_fit !== null && (
+                    <span
+                      data-testid={`fit-band-${item.item_id}`}
+                      title={t(LABELS.fitBandTitle, lang)}
+                      style={fitBandBadgeStyle}
+                    >
+                      {t(LABELS.fitBand, lang)} {Math.round(fitBand(item.item_fit))}/100
+                    </span>
+                  )}
                 </div>
                 <ReasonBreakdown
                   rows={contentRows(item)}
@@ -632,6 +649,19 @@ const planMetadataStyle: React.CSSProperties = {
   border: '1px solid #e5e7eb',
   borderRadius: '7px',
   padding: '6px 10px',
+}
+
+// feature 018 (US4) — the friendlier 0-100 fit-band badge, rendered next to
+// (never instead of) the raw item_fit.
+const fitBandBadgeStyle: React.CSSProperties = {
+  fontSize: '0.68em',
+  fontWeight: 700,
+  color: '#7c3aed',
+  background: '#f5f3ff',
+  border: '1px solid #ddd6fe',
+  borderRadius: '999px',
+  padding: '2px 8px',
+  fontFamily: 'monospace',
 }
 
 const committedBadgeStyle: React.CSSProperties = {

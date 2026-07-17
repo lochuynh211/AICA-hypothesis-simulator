@@ -11,7 +11,7 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ProposalStoreProvider, useProposalStore } from '../src/state/proposalStore'
 import WorldPanel from '../src/components/proposal/panels/WorldPanel'
-import type { World, DriverProfile, SeedWorld, DriverProfileRecord } from '../src/api/proposalClient'
+import type { World, DriverProfile, SeedWorld } from '../src/api/proposalClient'
 
 vi.mock('../src/api/proposalClient', async () => {
   const actual = await vi.importActual<typeof import('../src/api/proposalClient')>('../src/api/proposalClient')
@@ -36,8 +36,6 @@ import {
   getSeed,
   listProfiles,
   getProfile,
-  saveProfile,
-  deleteProfile,
   validateWorld,
 } from '../src/api/proposalClient'
 
@@ -182,45 +180,6 @@ describe('WorldPanel (P3 real editor)', () => {
     expect(screen.getByText('Input · World')).toBeInTheDocument()
   })
 
-  it('loading a seed populates control_inputs, situation, and driver_profile groups', async () => {
-    function Probe() {
-      const { state } = useProposalStore()
-      return (
-        <div>
-          <span data-testid="probe-trigger">{state.triggerPurpose}</span>
-          <span data-testid="probe-lifecycle">{state.lifecycleStage}</span>
-          <span data-testid="probe-motion">{state.motionState}</span>
-          <span data-testid="probe-drowsiness">{state.world.situation.drowsiness_level}</span>
-          <span data-testid="probe-oshi">{String(state.world.driver_profile.oshi_registered)}</span>
-          <span data-testid="probe-oshi-id">{String(state.world.driver_profile.oshi_id)}</span>
-          <span data-testid="probe-seed-id">{String(state.selectedSeedId)}</span>
-        </div>
-      )
-    }
-    render(
-      <ProposalStoreProvider>
-        <WorldPanel />
-        <Probe />
-      </ProposalStoreProvider>,
-    )
-    await waitFor(() => expect(getSeeds).toHaveBeenCalled())
-    await waitFor(() => expect(screen.getByTestId('seed-picker-select')).toBeInTheDocument())
-
-    // Selecting a seed now AUTOLOADS it immediately — no separate Load button
-    // (owner feedback 2026-07-17).
-    fireEvent.change(screen.getByTestId('seed-picker-select'), { target: { value: 'seed-night-highway-oshi' } })
-
-    await waitFor(() => expect(getSeed).toHaveBeenCalledWith('seed-night-highway-oshi'))
-    await waitFor(() => expect(screen.getByTestId('probe-seed-id').textContent).toBe('seed-night-highway-oshi'))
-
-    expect(screen.getByTestId('probe-trigger').textContent).toBe('rest_recommended')
-    expect(screen.getByTestId('probe-lifecycle').textContent).toBe('before_rest_until_stop')
-    expect(screen.getByTestId('probe-motion').textContent).toBe('driving')
-    expect(screen.getByTestId('probe-drowsiness').textContent).toBe('80')
-    expect(screen.getByTestId('probe-oshi').textContent).toBe('true')
-    expect(screen.getByTestId('probe-oshi-id').textContent).toBe('synthetic-artist-0001')
-  })
-
   it('a preference/history field (service_usage_level) is a REAL editable control, not a JSON dump', async () => {
     renderWithStore()
     await screen.findByTestId('dataset-provenance-banner')
@@ -263,59 +222,6 @@ describe('WorldPanel (P3 real editor)', () => {
     expect(screen.getByTestId('probe-rate').textContent).toBe('{"music_playlist":77,"humming_karaoke":55}')
   })
 
-  it('saving the current driver profile calls saveProfile and the new profile appears in the picker', async () => {
-    const saved: DriverProfileRecord = {
-      profile_id: 'dprof_new_001',
-      label: { ja: 'テストプロファイル', en: 'Test profile' },
-      builtin: false,
-      profile: baseDriverProfile(),
-    }
-    vi.mocked(saveProfile).mockResolvedValue(saved)
-    vi.mocked(listProfiles)
-      .mockResolvedValueOnce({
-        profiles: [{ profile_id: 'profile-neutral-default', label: { ja: '標準', en: 'Neutral' }, builtin: true }],
-      })
-      .mockResolvedValueOnce({
-        profiles: [
-          { profile_id: 'profile-neutral-default', label: { ja: '標準', en: 'Neutral' }, builtin: true },
-          { profile_id: 'dprof_new_001', label: saved.label, builtin: false },
-        ],
-      })
-
-    renderWithStore()
-    await waitFor(() => expect(listProfiles).toHaveBeenCalled())
-    await screen.findByTestId('profile-picker-select')
-
-    fireEvent.change(screen.getByTestId('profile-picker-label-ja'), { target: { value: 'テストプロファイル' } })
-    fireEvent.change(screen.getByTestId('profile-picker-label-en'), { target: { value: 'Test profile' } })
-    fireEvent.click(screen.getByTestId('profile-picker-save'))
-
-    await waitFor(() => expect(saveProfile).toHaveBeenCalled())
-    const [labelArg] = vi.mocked(saveProfile).mock.calls[0]
-    expect(labelArg).toEqual({ ja: 'テストプロファイル', en: 'Test profile' })
-
-    await waitFor(() => {
-      const options = Array.from((screen.getByTestId('profile-picker-select') as HTMLSelectElement).options)
-      expect(options.some((o) => o.value === 'dprof_new_001')).toBe(true)
-    })
-  })
-
-  it('deleting a user (non-built-in) profile calls deleteProfile', async () => {
-    vi.mocked(listProfiles).mockResolvedValue({
-      profiles: [
-        { profile_id: 'profile-neutral-default', label: { ja: '標準', en: 'Neutral' }, builtin: true },
-        { profile_id: 'dprof_user_1', label: { ja: 'ユーザー', en: 'User' }, builtin: false },
-      ],
-    })
-    vi.mocked(deleteProfile).mockResolvedValue(undefined)
-
-    renderWithStore()
-    await screen.findByTestId('profile-picker-select')
-    fireEvent.change(screen.getByTestId('profile-picker-select'), { target: { value: 'dprof_user_1' } })
-    fireEvent.click(screen.getByTestId('profile-picker-delete'))
-
-    await waitFor(() => expect(deleteProfile).toHaveBeenCalledWith('dprof_user_1'))
-  })
 
   it('the genre_affinity_v1 toggle shows/hides genre controls WITHOUT discarding entered values', async () => {
     renderWithStore()
