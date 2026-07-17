@@ -70,12 +70,13 @@
 
 ### Tests first
 
-- [ ] T019 [US2] Write a failing end-to-end journey test in `app/api/tests/proposal/test_p7_e2e_reference_journey.py` (interactive mode) walking quickstart steps 1–8 against the real service + content packages and `seed-night-highway-oshi`; assert: ordered event timeline across both opportunities; the pre-rest rank-1 is a driving-content service; the post-rest recompute yields an after-rest service; `full_karaoke` cannot be active while `motion_state=driving`; previous content restored; reopen renders without recomputation (AC-1, SC-001, SC-009).
+- [x] T019 [US2] Write a failing end-to-end journey test in `app/api/tests/proposal/test_p7_e2e_reference_journey.py` (interactive mode) walking quickstart steps 1–8 against the real service + content packages and `seed-night-highway-oshi`; assert: ordered event timeline across both opportunities; the pre-rest rank-1 is a driving-content service; the post-rest recompute yields an after-rest service; `full_karaoke` cannot be active while `motion_state=driving`; previous content restored; reopen renders without recomputation (AC-1, SC-001, SC-009).
 
 ### Implementation
 
-- [ ] T020 [US2] Make the e2e test pass: wire any gaps found (e.g. ensure `select-service` after a recompute reads the new head opportunity's `allowed_service_ids`; ensure `previous_content` survives recompute per data-model). Prefer fixing at the seam, not the test. Keep changes minimal and covered by T013–T016.
-- [ ] T021 [US2] Run `cd app/api && uv run pytest tests/proposal/test_p7_e2e_reference_journey.py -q` until green; then `uv run pytest -q`.
+- [x] T020 [US2] Make the e2e test pass: wire any gaps found (e.g. ensure `select-service` after a recompute reads the new head opportunity's `allowed_service_ids`; ensure `previous_content` survives recompute per data-model). Prefer fixing at the seam, not the test. Keep changes minimal and covered by T013–T016.
+  - Genuine seam gap found and fixed in `recompute_proposal_run` (router only): it patched `control_inputs.lifecycle_stage`/`motion_state` from the current `journey_state` but not the separate `Situation.motion_state` field that `World.project()` actually puts into `feature_snapshot["situation"]` — the field the real content selector's full-karaoke stopped-motion gate reads. After `rest_spot_arrived` moved `journey_state.motion_state` to `stopped`, a post-rest recompute still projected the seed's stale `situation.motion_state="driving"`, spuriously denying `full_karaoke` content. Fixed by also `model_copy`-ing `situation.motion_state` alongside `control_inputs.motion_state` before re-projecting. `select-service` reading the new head's `allowed_service_ids` and `previous_content` surviving the recompute both already worked with zero changes.
+- [x] T021 [US2] Run `cd app/api && uv run pytest tests/proposal/test_p7_e2e_reference_journey.py -q` until green; then `uv run pytest -q`.
 
 **Checkpoint**: the milestone's headline demonstration passes at the API layer.
 

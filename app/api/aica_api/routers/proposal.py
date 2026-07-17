@@ -1349,11 +1349,27 @@ def recompute_proposal_run(run_id: str, body: RecomputeRequest) -> ProposalRunLo
     # dataset_id are carried unchanged) BEFORE applying the reviewer's own
     # overrides -- two internal overrides via model_copy, never persisted as
     # a CONTEXT_EDITED diff themselves.
+    #
+    # P7 Unit C seam fix (test-proven by test_p7_e2e_reference_journey.py):
+    # `Situation.motion_state` is a SEPARATE field from
+    # `ControlInputs.motion_state` (data-model.md "Situation") -- it is the
+    # one `World.project()` puts into `feature_snapshot["situation"]`, which
+    # is what selector packages actually read (e.g. the real content
+    # selector's full-karaoke stopped-motion gate). `control_inputs.motion_state`
+    # only drives eligibility/matrix resolution here. Without also syncing
+    # `situation.motion_state`, a recompute after `rest_spot_arrived` (which
+    # advances `journey_state.motion_state` to `stopped`) left the projected
+    # feature snapshot reporting the STALE seed motion_state (`driving`),
+    # spuriously denying `full_karaoke` content as "while moving" even though
+    # the run is genuinely stopped.
     js = run_log.journey_state
     effective_control_inputs = run_log.world.control_inputs.model_copy(
         update={"lifecycle_stage": js.lifecycle_stage, "motion_state": js.motion_state}
     )
-    effective_base_world = run_log.world.model_copy(update={"control_inputs": effective_control_inputs})
+    effective_situation = run_log.world.situation.model_copy(update={"motion_state": js.motion_state})
+    effective_base_world = run_log.world.model_copy(
+        update={"control_inputs": effective_control_inputs, "situation": effective_situation}
+    )
 
     dataset_registry = _get_dataset_registry()
     catalog = dataset_registry.get_catalog(effective_base_world.control_inputs.dataset_id)
