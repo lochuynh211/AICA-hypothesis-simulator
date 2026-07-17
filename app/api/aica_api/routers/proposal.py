@@ -45,6 +45,7 @@ from aica_api.models.proposal.enums import (
     DiscreteEventType,
     LifecycleStage,
     MotionState,
+    PlaybackState,
     ProposalPackageFamily,
     ProposalRunMode,
     ProposalRunStatus,
@@ -60,6 +61,7 @@ from aica_api.models.proposal.matrix import MatrixResolutionError, PurposeStageS
 from aica_api.models.proposal.opportunity import ProposalOpportunity
 from aica_api.models.proposal.package_manifest import BilingualLabel, ProposalPackageManifest
 from aica_api.models.proposal.proposal_run import ProposalRun, ProposalRunLog
+from aica_api.models.proposal.recompute import RecomputeRequest
 from aica_api.models.proposal.service_capabilities import ServiceCapabilities
 from aica_api.models.proposal.world import (
     DriverProfile,
@@ -83,7 +85,7 @@ from aica_api.services.proposal_journey import apply_action
 from aica_api.services.proposal_journey_preview import preview as build_journey_preview
 from aica_api.services.proposal_package_registry import ProposalPackageRegistry
 from aica_api.services.proposal_selector import dispatch_selector
-from aica_api.services.world_clone_store import InvalidOverrideError, WorldCloneStore
+from aica_api.services.world_clone_store import InvalidOverrideError, WorldCloneStore, apply_overrides
 from aica_api.services.world_seed_store import WorldSeedStore
 from aica_api.services.world_validation import ValidationIssue, validate_world
 from aica_api.storage.file_store import read_json
@@ -946,6 +948,8 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
             evidence=[],
             status=ProposalRunStatus.service_selected,
             setup_snapshot=setup_snapshot,
+            world=body.world,
+            mode=body.mode,
             runs_dir=settings.proposal_runs_dir,
         )
 
@@ -1016,6 +1020,8 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
         evidence=[evidence],
         status=status,
         setup_snapshot=setup_snapshot,
+        world=body.world,
+        mode=body.mode,
         runs_dir=settings.proposal_runs_dir,
     )
     return run_log
@@ -1276,6 +1282,293 @@ def select_service(run_id: str, body: SelectServiceBody) -> ProposalRunLog:
         content_parameters=content_parameters,
         content_hyperparameters=content_hyperparameters,
         setup_snapshot=updated_setup_snapshot,
+    )
+    return run_log
+
+
+# ---------------------------------------------------------------------------
+# POST /api/proposal/runs/{run_id}/recompute — P7 Unit B, T017 (US1 MVP)
+# ---------------------------------------------------------------------------
+
+
+@router.post("/api/proposal/runs/{run_id}/recompute")
+def recompute_proposal_run(run_id: str, body: RecomputeRequest) -> ProposalRunLog:
+    """Recompute the proposal for an existing run at its CURRENT lifecycle
+    stage and motion, applying explicit reviewer overrides, and append a new
+    frozen decision point to the same run (contracts/recompute-api.md;
+    data-model.md; research.md D1-D4/D8).
+
+    Mirrors ``create_proposal_run``'s matrix-resolve -> eligibility ->
+    dispatch_selector -> persist orchestration (research.md D1: recompute is
+    a ROUTER endpoint, never ``proposal_journey.apply_action`` -- the pure
+    journey engine stays free of selector dispatch/IO), but on top of the
+    run's EXISTING base ``World`` rather than a brand-new request body, and
+    APPENDS rather than replaces: the prior head opportunity/setup_snapshot
+    are pushed into the append-only history lists before the new head is
+    installed (FR-004/SC-002).
+
+    Guards (in order): 404 unknown run; 422 legacy run (no stored typed
+    ``world`` -- FR-006); 422 while a content plan is actively playing
+    (``playback_state`` in {active, backgrounded} -- FR-006a, never silently
+    ending a playing plan); 422 on an invalid override (FR-005, no snapshot
+    ever appended). A selector algorithm error is NOT an HTTP error -- it is
+    recorded as an ``ALGORITHM_ERROR`` event + ``status=error`` and returned
+    200 (Constitution Principle V / FR-019), exactly like ``create_proposal_run``.
+
+    US1 (interactive) scope only: stops at the service decision (
+    ``service_selected``/``error``/``NO_ELIGIBLE_CANDIDATE``). Quick-check's
+    same-call content auto-dispatch on recompute is US3/T025 -- NOT
+    implemented here (this endpoint never calls
+    ``_dispatch_content_for_service``).
+    """
+    run_log = prm.get_run(run_id, settings.proposal_runs_dir)
+    if run_log is None:
+        raise HTTPException(status_code=404, detail=f"Proposal run {run_id!r} not found")
+
+    if run_log.world is None:
+        raise HTTPException(
+            status_code=422,
+            detail="recompute requires a typed-world run",
+        )
+
+    if run_log.journey_state.playback_state in (PlaybackState.active, PlaybackState.backgrounded):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "recompute_requires_idle_playback",
+                "message": (
+                    "Recompute requires the current content plan to be "
+                    "completed or stopped first / "
+                    "recomputeの前に現在のコンテンツプランを完了または停止してください"
+                ),
+            },
+        )
+
+    # research.md D2: carry the CURRENT journey lifecycle_stage/motion_state
+    # onto the run's stored base World's control_inputs (trigger_purpose and
+    # dataset_id are carried unchanged) BEFORE applying the reviewer's own
+    # overrides -- two internal overrides via model_copy, never persisted as
+    # a CONTEXT_EDITED diff themselves.
+    js = run_log.journey_state
+    effective_control_inputs = run_log.world.control_inputs.model_copy(
+        update={"lifecycle_stage": js.lifecycle_stage, "motion_state": js.motion_state}
+    )
+    effective_base_world = run_log.world.model_copy(update={"control_inputs": effective_control_inputs})
+
+    dataset_registry = _get_dataset_registry()
+    catalog = dataset_registry.get_catalog(effective_base_world.control_inputs.dataset_id)
+
+    try:
+        new_world, diffs = apply_overrides(effective_base_world, body.overrides, catalog=catalog)
+    except InvalidOverrideError as exc:
+        raise HTTPException(status_code=422, detail=[issue.model_dump() for issue in exc.issues]) from exc
+
+    registry = _get_registry()
+    service_pkg = registry.get(run_log.service_package_id)
+    if service_pkg is None or service_pkg.family != ProposalPackageFamily.service_selector:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unknown or mis-slotted service_package_id: {run_log.service_package_id!r}",
+        )
+    content_pkg = registry.get(run_log.content_package_id) if run_log.content_package_id else None
+    if content_pkg is None or content_pkg.family != ProposalPackageFamily.content_selector:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unknown or mis-slotted content_package_id: {run_log.content_package_id!r}",
+        )
+
+    parameters = body.parameters or dict(run_log.parameters)
+    hyperparameters = body.hyperparameters or dict(run_log.hyperparameters)
+
+    # research.md D3: the run's EXISTING setup_snapshot.origin is carried
+    # forward (never re-derived from a CreateProposalRunBody, which doesn't
+    # exist here) -- a typed-world run always has a setup_snapshot (frozen at
+    # create time), guaranteed by the `run_log.world is None` guard above.
+    origin = run_log.setup_snapshot.origin if run_log.setup_snapshot is not None else None
+    world_snapshot, setup_snapshot = _freeze_setup_snapshot(
+        world=new_world,
+        matrix_version=run_log.matrix_version,
+        service_pkg=service_pkg,
+        content_pkg=content_pkg,
+        service_hyperparameters=hyperparameters,
+        origin_seed_id=origin.seed_id if origin is not None else None,
+        origin_clone_id=origin.clone_id if origin is not None else None,
+        origin_profile_id=origin.profile_id if origin is not None else None,
+    )
+
+    matrix = PurposeStageServiceMatrix.load(_matrix_path())
+    try:
+        allowed_service_ids = matrix.resolve(
+            new_world.control_inputs.trigger_purpose, new_world.control_inputs.lifecycle_stage
+        )
+    except MatrixResolutionError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    opportunity_id = _make_opportunity_id()
+    try:
+        opportunity = ProposalOpportunity(
+            opportunity_id=opportunity_id,
+            trigger_purpose=new_world.control_inputs.trigger_purpose,
+            lifecycle_stage=new_world.control_inputs.lifecycle_stage,
+            allowed_service_ids=allowed_service_ids,
+            simulation_time=run_log.opportunity.simulation_time,
+            run_seed=run_log.opportunity.run_seed,
+        )
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    # -----------------------------------------------------------------
+    # Eligibility narrows the allowed row BEFORE ranking (mirrors
+    # create_proposal_run exactly -- research.md D1).
+    # -----------------------------------------------------------------
+    capabilities = _get_service_capabilities()
+    registered_entities = derive_registered_entities(world_snapshot)
+    eligibility_result = resolve_eligibility(
+        allowed_service_ids,
+        new_world.control_inputs.motion_state,
+        capabilities,
+        registered_entities=registered_entities,
+    )
+    excluded_candidates_ctx = [
+        {
+            "candidate_id": excl.service_id.value,
+            "platform_reason": ",".join(rc.value for rc in excl.reason_codes),
+        }
+        for excl in eligibility_result.excluded
+    ]
+
+    at = _now_iso()
+    events: list[DiscreteEvent] = []
+    if diffs:
+        events.append(
+            DiscreteEvent(
+                event_type=DiscreteEventType.CONTEXT_EDITED,
+                at=at,
+                payload={"diffs": [diff.model_dump(mode="json") for diff in diffs]},
+            )
+        )
+    events.append(
+        DiscreteEvent(
+            event_type=DiscreteEventType.OPPORTUNITY_OPENED,
+            at=at,
+            payload={
+                "opportunity_id": opportunity_id,
+                "trigger_purpose": opportunity.trigger_purpose.value,
+                "lifecycle_stage": opportunity.lifecycle_stage.value,
+            },
+        )
+    )
+    events.append(
+        DiscreteEvent(
+            event_type=DiscreteEventType.RECOMPUTED,
+            at=at,
+            payload={
+                "from_opportunity_id": run_log.opportunity.opportunity_id,
+                "to_opportunity_id": opportunity_id,
+            },
+        )
+    )
+
+    evidence: AlgorithmEvidence | None = None
+    selected_service_id: ServiceId | None = None
+    if not eligibility_result.eligible:
+        # T017a-equivalent (research.md D1/D8): every allowed service was
+        # excluded -- never dispatch a selector, never fabricate a candidate.
+        events.append(
+            DiscreteEvent(
+                event_type=DiscreteEventType.NO_ELIGIBLE_CANDIDATE,
+                at=at,
+                payload={
+                    "excluded": [
+                        {
+                            "service_id": excl.service_id.value,
+                            "reason_codes": [rc.value for rc in excl.reason_codes],
+                        }
+                        for excl in eligibility_result.excluded
+                    ],
+                },
+            )
+        )
+        new_status = ProposalRunStatus.service_selected
+    else:
+        context = _build_service_context(
+            package=service_pkg,
+            opportunity=opportunity,
+            world_snapshot=world_snapshot,
+            enabled_feature_extensions=[],
+            parameters=parameters,
+            hyperparameters=hyperparameters,
+            eligible_service_ids=eligibility_result.eligible,
+            excluded_candidates=excluded_candidates_ctx,
+        )
+        evidence = dispatch_selector(
+            service_pkg,
+            context,
+            settings.packages_dir,
+            matrix_version=run_log.matrix_version,
+            used_feature_ids=list(context["feature_snapshot"].keys()),
+            allowed_service_ids=[s.value for s in eligibility_result.eligible],
+        )
+        if evidence.error is not None:
+            new_status = ProposalRunStatus.error
+            events.append(
+                DiscreteEvent(
+                    event_type=DiscreteEventType.ALGORITHM_ERROR,
+                    at=at,
+                    payload={
+                        "step": "service",
+                        "category": evidence.error.category,
+                        "message": evidence.error.message,
+                    },
+                )
+            )
+        else:
+            ranked_candidates = evidence.output.get("ranked_candidates", []) if evidence.output else []
+            if ranked_candidates:
+                selected_service_id = ServiceId(ranked_candidates[0]["candidate_id"])
+                events.append(
+                    DiscreteEvent(
+                        event_type=DiscreteEventType.SERVICE_SELECTED,
+                        at=at,
+                        payload={"selected_service_id": selected_service_id.value, "rank": 1},
+                    )
+                )
+            new_status = ProposalRunStatus.service_selected
+
+    # -----------------------------------------------------------------
+    # Assemble the new head: push the PRIOR head into append-only history,
+    # install the new opportunity/setup_snapshot as the current head
+    # (data-model.md "Modified: ProposalRunLog" invariant: history EXCLUDES
+    # the current head, index-aligned across both lists). A typed-world run
+    # always has a setup_snapshot (frozen at create time) -- guaranteed by
+    # the `run_log.world is None` guard above.
+    # -----------------------------------------------------------------
+    new_opportunity_history = [*run_log.opportunity_history, run_log.opportunity]
+    new_setup_snapshot_history = [*run_log.setup_snapshot_history, run_log.setup_snapshot]
+
+    # data-model.md "State transitions (recompute effect on JourneyState)":
+    # active_service_id resets (rank-1 or None); rejected_service_ids resets
+    # to []; lifecycle_stage/motion_state/playback_state/previous_content/
+    # current_plan_ref/active_plan_id are all PRESERVED (untouched here).
+    new_journey_state = js.model_copy(
+        update={"active_service_id": selected_service_id, "rejected_service_ids": []}
+    )
+
+    for event in events:
+        prm.append_event(run_id, event, settings.proposal_runs_dir)
+    if evidence is not None:
+        prm.append_evidence(run_id, evidence, settings.proposal_runs_dir)
+
+    run_log = prm.update_state(
+        run_id,
+        settings.proposal_runs_dir,
+        status=new_status,
+        journey_state=new_journey_state,
+        opportunity=opportunity,
+        world_snapshot=world_snapshot,
+        setup_snapshot=setup_snapshot,
+        opportunity_history=new_opportunity_history,
+        setup_snapshot_history=new_setup_snapshot_history,
     )
     return run_log
 
