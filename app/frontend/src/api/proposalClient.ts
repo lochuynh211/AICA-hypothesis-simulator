@@ -346,6 +346,25 @@ export type ProposalRunStatus =
   | 'content_completed'
   | 'content_stopped'
 
+/** Per-run mode, frozen at create time (P7 — `enums.py ProposalRunMode`).
+ * `interactive` stops at each reviewer decision point; `quick_check`
+ * auto-selects the rank-1 service + dispatches content in the same call
+ * (FR-011-FR-014). */
+export type ProposalRunMode = 'interactive' | 'quick_check'
+
+/** Minimal shape read by the P7 UI — the backend `SetupSnapshot` (P3
+ * `models/proposal/world.py`) has more fields; this UI only ever renders it
+ * verbatim from history, never edits it, so an index signature covers the
+ * rest without duplicating the whole backend model. */
+export type SetupSnapshot = {
+  origin: { seed_id: string | null; clone_id: string | null; profile_id: string | null }
+  matrix_version: string
+  dataset_id: string
+  service_package_id: string
+  content_package_id: string | null
+  [extra: string]: unknown
+}
+
 export type ProposalRunLog = {
   run_id: string
   created_at: string
@@ -363,6 +382,18 @@ export type ProposalRunLog = {
   events: DiscreteEvent[]
   evidence: AlgorithmEvidence[]
   status: ProposalRunStatus
+  // ── P7 additions (data-model.md "Modified: ProposalRunLog") — additive,
+  // all optional so pre-P7 fixtures/log literals built without them still
+  // type-check; the backend defaults them the same way. ──────────────────
+  /** The run's base typed World (typed-world path only); absent/`null` for
+   * legacy world_snapshot-only runs (recompute 422s on those — FR-006). */
+  world?: World | null
+  /** Prior decision points, EXCLUDING the current head (`opportunity`),
+   * oldest → newest (FR-004/SC-002). */
+  opportunity_history?: ProposalOpportunity[]
+  setup_snapshot_history?: SetupSnapshot[]
+  /** Frozen per-run (FR-011). Defaults to 'interactive' on pre-P7 runs. */
+  mode?: ProposalRunMode
 }
 
 // ── P3 (feature 014): typed World / seeds / profiles / datasets ────────────
@@ -726,7 +757,7 @@ export type CreateProposalRunBody = {
   origin_profile_id?: string | null
   service_package_id: string
   content_package_id: string
-  mode?: string
+  mode?: ProposalRunMode
   enabled_feature_extensions?: string[]
   parameters?: Record<string, unknown>
   hyperparameters?: Record<string, unknown>
@@ -756,6 +787,46 @@ export async function selectService(
       selected_service_id: serviceId,
       parameters: overrides.parameters ?? {},
       hyperparameters: overrides.hyperparameters ?? {},
+    }),
+  })
+}
+
+// ── POST /api/proposal/runs/{run_id}/recompute (P7 Unit F T033, contracts/recompute-api.md) ─
+
+/** Optional per-recompute setup overrides (contracts/recompute-api.md). Every
+ * field defaults to `{}` (falls back to the current head's frozen params, or
+ * — for the `content_*` fields — the content package's manifest defaults,
+ * used only when the run's `mode` is `quick_check`). */
+export type RecomputeOpts = {
+  parameters?: Record<string, unknown>
+  hyperparameters?: Record<string, unknown>
+  content_parameters?: Record<string, unknown>
+  content_hyperparameters?: Record<string, unknown>
+}
+
+/**
+ * Recompute the proposal for an existing run at its CURRENT lifecycle stage
+ * and motion, applying explicit reviewer overrides (`FieldOverride[]`, the
+ * same shape `cloneWorld` accepts — may be empty for a pure stage
+ * recompute). DISPLAY-ONLY: this never decides anything itself — it POSTs
+ * and returns whatever `ProposalRunLog` the backend computed and appended
+ * (a fresh head opportunity/setup_snapshot, the prior head pushed into
+ * history, and the new events/evidence — contracts/recompute-api.md).
+ */
+export async function recompute(
+  runId: string,
+  overrides: FieldOverride[],
+  opts: RecomputeOpts = {},
+): Promise<ProposalRunLog> {
+  return apiFetch(`/runs/${encodeURIComponent(runId)}/recompute`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      overrides,
+      parameters: opts.parameters ?? {},
+      hyperparameters: opts.hyperparameters ?? {},
+      content_parameters: opts.content_parameters ?? {},
+      content_hyperparameters: opts.content_hyperparameters ?? {},
     }),
   })
 }

@@ -128,17 +128,20 @@
 
 ### Tests first
 
-- [ ] T030 [P] [US5] Write failing `app/frontend/tests/proposal_recompute_panel.test.tsx`: a RecomputePanel edits drowsiness/fatigue and, on Recompute, calls `recompute(runId, overrides)` and dispatches `RECOMPUTED` with the returned log; a 422 (playback/invalid) surfaces inline, never a silent no-op.
-- [ ] T031 [P] [US5] Write failing `app/frontend/tests/proposal_mode_toggle.test.tsx`: the ModeToggle sets `interactive`/`quick_check` and the chosen mode is included in the create-run request; JA default + EN labels render.
-- [ ] T032 [P] [US5] Write failing `app/frontend/tests/proposal_timeline_recompute.test.tsx`: EventTimeline renders `RECOMPUTED`/`CONTEXT_EDITED` and the multi-opportunity sequence, and shows the committed action separately from a non-binding preview; lifecycle/motion/allowed-service readouts render from `journey_state`+head opportunity.
+- [x] T030 [P] [US5] Write failing `app/frontend/tests/proposal_recompute_panel.test.tsx`: a RecomputePanel edits drowsiness/fatigue and, on Recompute, calls `recompute(runId, overrides)` and dispatches `RECOMPUTED` with the returned log; a 422 (playback/invalid) surfaces inline, never a silent no-op.
+- [x] T031 [P] [US5] Write failing `app/frontend/tests/proposal_mode_toggle.test.tsx`: the ModeToggle sets `interactive`/`quick_check` and the chosen mode is included in the create-run request; JA default + EN labels render.
+- [x] T032 [P] [US5] Write failing `app/frontend/tests/proposal_timeline_recompute.test.tsx`: EventTimeline renders `RECOMPUTED`/`CONTEXT_EDITED` and the multi-opportunity sequence, and shows the committed action separately from a non-binding preview; lifecycle/motion/allowed-service readouts render from `journey_state`+head opportunity.
 
 ### Implementation
 
-- [ ] T033 [P] [US5] Add `recompute(runId, overrides, opts?)` to `app/frontend/src/api/proposalClient.ts` (POST `/runs/{id}/recompute`) with typed request/response.
-- [ ] T034 [US5] Add `mode` to proposal state and `RECOMPUTED` / `MODE_SET` actions in `app/frontend/src/state/proposalStore.ts` (display-only; backend log is source of truth).
-- [ ] T035 [P] [US5] Create `app/frontend/src/components/proposal/ModeToggle.tsx` (interactive/quick_check, Panel ②) and `RecomputePanel.tsx` (post-rest context edit + Recompute button + inline error) with JA-default bilingual labels in `app/frontend/src/i18n`.
-- [ ] T036 [US5] Extend `app/frontend/src/components/proposal/EventTimeline.tsx` for `RECOMPUTED`/`CONTEXT_EDITED` + the multi-opportunity sequence, and add the lifecycle-stage/motion/allowed-service readout + committed-vs-preview separation to `panels/ServiceProposalPanel.tsx` / `panels/ContentProposalPanel.tsx`. Wire ModeToggle into create and RecomputePanel into the screen (`ProposalScreen.tsx`).
-- [ ] T037 [US5] Run `cd app/frontend && npm run test` until green and `npm run build` (tsc + vite) clean.
+- [x] T033 [P] [US5] Add `recompute(runId, overrides, opts?)` to `app/frontend/src/api/proposalClient.ts` (POST `/runs/{id}/recompute`) with typed request/response.
+- [x] T034 [US5] Add `mode` to proposal state and `RECOMPUTED` / `MODE_SET` actions in `app/frontend/src/state/proposalStore.ts` (display-only; backend log is source of truth).
+- [x] T035 [P] [US5] Create `app/frontend/src/components/proposal/ModeToggle.tsx` (interactive/quick_check, Panel ②) and `RecomputePanel.tsx` (post-rest context edit + Recompute button + inline error) with JA-default bilingual labels in `app/frontend/src/i18n`.
+  - Implemented as local `LABELS` dictionaries resolved through the existing `t()` (`src/i18n/t.ts`), the same convention every other proposal component (`JourneyActionBar`, `EventTimeline`, both panels) already uses — `src/i18n/` itself holds only the resolver, never per-component label dictionaries.
+- [x] T036 [US5] Extend `app/frontend/src/components/proposal/EventTimeline.tsx` for `RECOMPUTED`/`CONTEXT_EDITED` + the multi-opportunity sequence, and add the lifecycle-stage/motion/allowed-service readout + committed-vs-preview separation to `panels/ServiceProposalPanel.tsx` / `panels/ContentProposalPanel.tsx`. Wire ModeToggle into create and RecomputePanel into the screen (`ProposalScreen.tsx`).
+  - `ModeToggle`/`RecomputePanel` are wired into `ServiceProposalPanel` (rendered by `ProposalScreen.tsx`), mirroring how `JourneyActionBar`/`EventTimeline` were wired in P4 — `ProposalScreen.tsx` itself stays a thin 3-panel layout shell with no direct changes needed.
+- [x] T037 [US5] Run `cd app/frontend && npm run test` until green and `npm run build` (tsc + vite) clean.
+  - 58 test files / 547 tests green (528 baseline + 19 new); `npm run build` (`vite build`) clean; a direct `npx tsc --noEmit` shows the same pre-existing ~175-180 line baseline noise in unrelated test files (confirmed present before this unit's changes too, via `git stash`) — zero new errors traced to any P7 Unit F file.
 
 **Checkpoint**: the reference journey is drivable and inspectable on the 4-panel screen in JA/EN.
 
