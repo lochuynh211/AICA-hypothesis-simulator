@@ -249,7 +249,7 @@
       <li><a class="step" href="#features"><span class="ja">特徴量の完全契約</span><span class="en">Feature contracts</span></a></li>
       <li><a class="step" href="#use"><span class="ja">お客様ができること</span><span class="en">What the customer can do</span></a></li>
       <li><a class="step" href="#data"><span class="ja">合成音楽データと生成</span><span class="en">Music data &amp; generation</span></a></li>
-      <li><a class="step" href="#prototype"><span class="ja">画面イメージ（入力・世界/サービス/コンテンツ）</span><span class="en">Screen (input·world/service/content)</span></a></li>
+      <li><a class="step" href="#prototype"><span class="ja">画面イメージ（入力/サービス/コンテンツ）</span><span class="en">Screen (input/service/content)</span></a></li>
       <li><a class="step" href="#delivery"><span class="ja">実装の進め方</span><span class="en">Delivery path</span></a></li>
       <li><a href="#appendix"><span class="ja">付録：既定パラメータ</span><span class="en">Appendix: default params</span></a></li>
     </ol>
@@ -379,7 +379,7 @@
       </div>
       <div class="why">
         <span class="lab"><span class="ja">パッケージは互いのスコアを共有しない</span><span class="en">Packages never share scores</span></span>
-        <p><span class="ja">4つのパッケージ（サービス×2方式、コンテンツ×2方式）が共有するのは、中立なデータ形式とハードなプラットフォーム制約だけです。スコアやランキングは共有しません。だからこそ、同じ世界の上で方式どうしを横並びで比較できます。</span><span class="en">The four packages (service × 2, content × 2) share only neutral data formats and hard platform constraints — never scores or rankings. That is what makes an apples-to-apples comparison on the same world possible.</span></p>
+        <p><span class="ja">4つのパッケージ（サービス×2方式、コンテンツ×2方式）が共有するのは、中立なデータ形式とハードなプラットフォーム制約だけです。スコアやランキングは共有しません。だからこそ、まったく同じ入力データ（状況・ユーザー情報）で、方式どうしを横並びで比較できます。</span><span class="en">The four packages (service × 2, content × 2) share only neutral data formats and hard platform constraints — never scores or rankings. That is what makes an apples-to-apples comparison on the same input data possible.</span></p>
       </div>
     </section>
 
@@ -555,20 +555,20 @@
         </div>
         <div class="qcard">
           <p class="q"><span class="ja">「推しモードをオフにするだけで、休憩後の提案は変わるか？」</span><span class="en">“If I only turn oshi-mode off, does the post-rest recommendation change?”</span></p>
-          <p class="a"><span class="ja">世界を複製して1項目だけ変え、適格性・順位・理由を並べて比べます。</span><span class="en">Clone the world, flip one field, compare eligibility, rank, and reason side by side.</span></p>
+          <p class="a"><span class="ja">同じ状況・ユーザー情報を丸ごとコピーして1項目だけ変え、適格性・順位・理由を並べて比べます。</span><span class="en">Copy the same situation & user info, flip one field, compare eligibility, rank, and reason side by side.</span></p>
         </div>
         <div class="qcard">
           <p class="q"><span class="ja">「走行中にフルカラオケの歌詞画面が提案されることはあるか？」</span><span class="en">“Is a full-karaoke lyrics screen ever offered while the car is moving?”</span></p>
           <p class="a"><span class="ja">提案されてはいけません。順位付けの前に安全除外が働くことを、実際に確認できます。</span><span class="en">It must not — the simulator shows the safety exclusion happening before ranking.</span></p>
         </div>
         <div class="qcard">
-          <p class="q"><span class="ja">「まったく同じ世界で、透明スコアリングとLLMは同じコンテンツを選ぶか？」</span><span class="en">“On the exact same world, do transparent scoring and the LLM pick the same content?”</span></p>
-          <p class="a"><span class="ja">スナップショットを1つ固定して各方式を実行し、2つの証跡を見比べます。</span><span class="en">Freeze one snapshot, run each package, compare the two evidence logs.</span></p>
+          <p class="q"><span class="ja">「まったく同じ状況・ユーザー情報で、透明スコアリングとLLMは同じコンテンツを選ぶか？」</span><span class="en">“On the exact same inputs, do transparent scoring and the LLM pick the same content?”</span></p>
+          <p class="a"><span class="ja">同じ入力データを1つ固定して各方式を実行し、2つの証跡を見比べます。</span><span class="en">Freeze one snapshot, run each package, compare the two evidence logs.</span></p>
         </div>
       </div>
       <h3><span class="ja">主な操作</span><span class="en">The core actions</span></h3>
       <div class="fgrid">
-        <div class="fcard blue"><h4><span class="ja">世界全体を編集</span><span class="en">Edit the whole world</span></h4><p><span class="ja">発火目的、段階、許可サービス表、すべての特徴量、予定、推し、カタログ、パラメータ、ハイパーパラメータを編集できます。各項目には「CDC-SU基準／概念の正規化／追加提案」のいずれかを表示します。</span><span class="en">Edit purpose, stage, allowed-service matrix, every feature, schedule, oshi, catalog, parameters, and hyperparameters. Each is labeled baseline / normalized concept / proposed addition.</span></p></div>
+        <div class="fcard blue"><h4><span class="ja">入力データ全体を編集</span><span class="en">Edit all the input data</span></h4><p><span class="ja">発火目的、段階、許可サービス表、すべての特徴量、予定、推し、カタログ、パラメータ、ハイパーパラメータを編集できます。各項目には「CDC-SU基準／概念の正規化／追加提案」のいずれかを表示します。</span><span class="en">Edit purpose, stage, allowed-service matrix, every feature, schedule, oshi, catalog, parameters, and hyperparameters. Each is labeled baseline / normalized concept / proposed addition.</span></p></div>
         <div class="fcard green"><h4><span class="ja">原因と差分を確認</span><span class="en">See cause and contrast</span></h4><p><span class="ja">シードを複製し、1項目だけ変えて、適格性・順位・理由・体験がどう変わるかを確認します。提案の考え方を説明するときにも使えます。</span><span class="en">Clone a seed, change one field, and see eligibility, rank, reason, and journey changes.</span></p></div>
         <div class="fcard mono"><h4><span class="ja">検証ではなく評価</span><span class="en">Review, not certify</span></h4><p><span class="ja">結果が適切か、理解できるか、安全か、役に立つか、それとも煩わしいかを、お客様に評価していただきます。その評価は別の証跡として保存します。</span><span class="en">The customer judges whether the result feels appropriate, understandable, safe, useful, or intrusive — stored separately.</span></p></div>
       </div>
@@ -582,13 +582,13 @@
     <section id="data">
       <h2><span class="num">7</span><span class="ja">合成音楽データと生成方法</span><span class="en">Synthetic music data &amp; how it is generated</span></h2>
       <p>
-        <span class="ja">シミュレーターには、編集できる「作り物の世界」一式を同梱しています。実在のドライバーやお客様のライブラリからは、何も取り込みません。構成要素は<b>(1) シード世界</b>（状況・履歴）と<b>(2) メディアカタログ</b>（提案できる中身）の2つです。<code>run_seed</code> と<b>凍結スナップショット</b>を固定することで、透明方式は毎回同じ結果を再現できます。生成方法とスキーマは <code class="k">aica_synthetic_music_data_and_generation_specification.md</code> に定義しています。</span>
-        <span class="en">The simulator ships its own editable make-believe world. Nothing comes from a real driver or a customer library. It has two parts — <b>(1) seed worlds</b> (situation &amp; history) and <b>(2) a media catalog</b> (what can be proposed) — and a fixed <code>run_seed</code> plus <b>frozen snapshots</b> make every transparent run reproducible. The schemas and generation method are defined in <code class="k">aica_synthetic_music_data_and_generation_specification.md</code>.</span>
+        <span class="ja">シミュレーターには、編集できる架空のサンプルデータ一式を同梱しています。実在のドライバーやお客様のライブラリからは、何も取り込みません。構成要素は<b>(1) 初期データ</b>（状況・履歴）と<b>(2) メディアカタログ</b>（提案できる中身）の2つです。<code>run_seed</code> と<b>凍結した入力データ</b>を固定することで、透明方式は毎回同じ結果を再現できます。生成方法とスキーマは <code class="k">aica_synthetic_music_data_and_generation_specification.md</code> に定義しています。</span>
+        <span class="en">The simulator ships its own editable, entirely made-up sample data. Nothing comes from a real driver or a customer library. It has two parts — <b>(1) initial data</b> (situation &amp; history) and <b>(2) a media catalog</b> (what can be proposed) — and a fixed <code>run_seed</code> plus <b>frozen snapshots</b> make every transparent run reproducible. The schemas and generation method are defined in <code class="k">aica_synthetic_music_data_and_generation_specification.md</code>.</span>
       </p>
-      <h3><span class="ja">A. シード世界 ― 状況</span><span class="en">A. A seed world — the situation</span></h3>
+      <h3><span class="ja">A. 初期データ ― 状況</span><span class="en">A. Initial data — the situation</span></h3>
       <div class="fgrid">
         <div class="fcard blue"><h4><span class="ja">状況・環境</span><span class="en">Situation &amp; environment</span></h4><p><span class="ja">眠気・疲労、渋滞、道路種別、昼夜、単調度、ルート・目的地タグ、休憩場所の種類と到着分数、同乗者、走行・停車状態。</span><span class="en">Drowsiness, fatigue, traffic, road type, day/night, monotony, route/destination tags, rest-spot type and minutes-to-arrival, passengers, motion state.</span></p></div>
-        <div class="fcard green"><h4><span class="ja">個人・好み</span><span class="en">Person &amp; preferences</span></h4><p><span class="ja">UProプロフィール（年代・趣味）、<b>推しアーティストの完全一致参照（Track/Artist ID）</b>、全体・場面別の利用頻度、未使用項目の新規性です。曲のメタデータではなく、世界側のデータです。</span><span class="en">UPro profile (age band, interests), <b>exact oshi-artist references (Track/Artist IDs)</b>, overall and scene-specific usage levels, recency of unused items. This is world data, not song metadata.</span></p></div>
+        <div class="fcard green"><h4><span class="ja">個人・好み</span><span class="en">Person &amp; preferences</span></h4><p><span class="ja">UProプロフィール（年代・趣味）、<b>推しアーティストの完全一致参照（Track/Artist ID）</b>、全体・場面別の利用頻度、未使用項目の新規性です。曲のメタデータではなく、ユーザー・状況側のデータです。</span><span class="en">UPro profile (age band, interests), <b>exact oshi-artist references (Track/Artist IDs)</b>, overall and scene-specific usage levels, recency of unused items. This is situation &amp; user data, not song metadata.</span></p></div>
         <div class="fcard mono"><h4><span class="ja">履歴・予定</span><span class="en">History &amp; schedule</span></h4><p><span class="ja">過去の受諾率・合成回復率とその信頼度、再生・スキップ・繰り返しの履歴、拒否済みセッション、直近の予定（ライブ・ラジオ・推しイベント）です。</span><span class="en">Past acceptance and synthetic recovery rates with confidence, playback/skip/repeat history, rejected sessions, upcoming events.</span></p></div>
       </div>
       <p class="small muted"><span class="ja">シードには実行制御も含みます。発火目的、開始段階、選んだパッケージとそのパラメータ／ハイパーパラメータ、計画済みのジャーニーイベント、そして明示的な休憩後の眠気・疲労値です。</span><span class="en">A seed also carries its run controls: the trigger purpose, starting stage, chosen packages with parameters/hyperparameters, and planned journey events with explicit post-rest drowsiness/fatigue.</span></p>
@@ -615,15 +615,15 @@
       </div>
 
       <h3><span class="ja">C. 生成方法 ― 3パスのLLM生成 → 検証 → 凍結</span><span class="en">C. How it is generated — 3-pass LLM → validate → freeze</span></h3>
-      <p><span class="ja">循環データ（1つの推薦結果に都合よく作られたデータ）や、壊れた参照を避けるため、生成は<b>3つのパスに分けて</b>行います。各パスのあとには決定論的な検証を入れ、2回失敗した時点で止めます。実行中に生成器を呼び出すことはありません。Audio Featuresエンドポイントは非推奨になっているため、<b>ピン留めしたスキーマ・フィクスチャ</b>を使います。</span><span class="en">To avoid circular data and broken references, generation is <b>split into three passes</b>, each followed by deterministic validation (stops after two failed repairs). The generator is never called during a run. Because Spotify’s Audio Features endpoint is deprecated, V1 uses a <b>pinned schema fixture</b>.</span></p>
+      <p><span class="ja">循環データ（1つの推薦結果に都合よく作られたデータ）や、壊れた参照を避けるため、生成は<b>3つのパスに分けて</b>行います。各パスのあとには決定論的な検証を入れ、2回失敗した時点で止めます。実行中に生成器を呼び出すことはありません。Audio Featuresエンドポイントは非推奨になっているため、<b>ピン留めしたスキーマ準拠のサンプルデータ</b>を使います。</span><span class="en">To avoid circular data and broken references, generation is <b>split into three passes</b>, each followed by deterministic validation (stops after two failed repairs). The generator is never called during a run. Because Spotify’s Audio Features endpoint is deprecated, V1 uses <b>pinned schema-conformant sample data</b>.</span></p>
       <div class="pipe">
         <div class="node"><div class="n">PASS 1</div><div class="t"><span class="ja">架空Trackオブジェクト</span><span class="en">Fictional Track objects</span></div><div class="d"><span class="ja">アーティスト・アルバム・トラックの素性</span><span class="en">artist / album / track identities</span></div></div>
         <div class="arrow">→</div>
         <div class="node"><div class="n">PASS 2</div><div class="t"><span class="ja">Audio Featuresオブジェクト</span><span class="en">Audio Features objects</span></div><div class="d"><span class="ja">音声プロファイル別・相互に妥当な数値</span><span class="en">per audio-profile cell, mutually plausible</span></div></div>
         <div class="arrow">→</div>
-        <div class="node"><div class="n">PASS 3</div><div class="t"><span class="ja">世界・履歴</span><span class="en">Worlds &amp; histories</span></div><div class="d"><span class="ja">ドライバー・推し参照・利用/受諾/回復・対比</span><span class="en">driver, oshi refs, usage/accept/recovery, contrasts</span></div></div>
+        <div class="node"><div class="n">PASS 3</div><div class="t"><span class="ja">状況パターン・履歴</span><span class="en">Situation patterns &amp; histories</span></div><div class="d"><span class="ja">ドライバー・推し参照・利用/受諾/回復・対比</span><span class="en">driver, oshi refs, usage/accept/recovery, contrasts</span></div></div>
         <div class="arrow">→</div>
-        <div class="node"><div class="n">FREEZE</div><div class="t"><span class="ja">不変スナップショット</span><span class="en">Immutable snapshot</span></div><div class="d"><span class="ja">再現の境界</span><span class="en">the replay boundary</span></div></div>
+        <div class="node"><div class="n">FREEZE</div><div class="t"><span class="ja">凍結済み入力データ</span><span class="en">Immutable snapshot</span></div><div class="d"><span class="ja">再現の境界</span><span class="en">the replay boundary</span></div></div>
       </div>
       <div class="pill-row">
         <span class="pill"><b><span class="ja">実演カタログ</span><span class="en">Demonstration catalog</span></b>：36 <span class="ja">曲</span><span class="en">songs</span> = 3 energy × 3 tempo × 4 <span class="ja">音声プロファイル</span><span class="en">audio profiles</span></span>
@@ -634,10 +634,10 @@
         <span class="pill"><span class="ja">データ層</span><span class="en">Tiers</span>：smoke (5+<span class="ja">負例</span><span class="en">neg</span>) · demonstration (36) · stress (<span class="ja">可変</span><span class="en">configurable</span>)</span>
       </div>
       <div class="why">
-        <span class="lab"><span class="ja">わざと「証拠が対立する」曲を入れる</span><span class="en">Deliberate conflicting-evidence fixtures</span></span>
+        <span class="lab"><span class="ja">わざと「証拠が対立する」曲を入れる</span><span class="en">Deliberate conflicting-evidence sample songs</span></span>
         <p><span class="ja">どの曲も全次元で支配的にならないよう、対立する証拠を持つ組を必ず含めます。例えば、穏やか↔活発は<b>活性度軸</b>の反転、明るい↔暗いは<b>明るさ軸</b>（valence・mode）、アコースティック↔電子は<b>活性度への逆寄与</b>（acousticness）、推し一致↔非推しだが高活性度、最近再生済み↔新鮮、受諾済み低活性度↔未検証高活性度、子供同乗時はexplicitを除外、といった組です。<b>隠れた<code>recommended</code>や目標順位フィールドは持ちません</b>。<code>normalized_evidence</code>や応答係数もカタログには保存しません（決定のたびに導出します）。</span><span class="en">So no song dominates every dimension, the catalog always includes conflicting pairs (calm ↔ active for the <b>arousal axis</b>; bright ↔ dark for the <b>valence axis</b> (valence, mode); acoustic ↔ electric for <b>acousticness’s inverse-arousal</b> effect; oshi match ↔ non-oshi but higher arousal; recently played ↔ fresh; accepted low-arousal ↔ untested high-arousal; explicit excluded when a child is present). It stores <b>no hidden <code>recommended</code> or target-rank field</b>, and no <code>normalized_evidence</code> or response coefficients (derived at decision time).</span></p>
       </div>
-      <p class="small muted"><span class="ja">基本世界（例えば単調な夜間高速、海沿い目的地、家族同乗、推しイベント、休憩後の停車カラオケ）と、1変数だけを変えた対比データも同梱しています。ルート・目的地・予定などSpotify非対応の入力は世界の中に存在しますが、V1のスコアには入らず、<code>context_only</code> として扱います。</span><span class="en">Base worlds (e.g. monotonous night highway, coastal destination, family group, upcoming oshi event, post-rest stopped karaoke) and one-variable contrasts are shipped. Spotify-unsupported inputs (route, destination, schedule) may exist in the world but are marked <code>context_only</code> and do not enter V1 scoring.</span></p>
+      <p class="small muted"><span class="ja">基本パターン（例えば単調な夜間高速、海沿い目的地、家族同乗、推しイベント、休憩後の停車カラオケ）と、1変数だけを変えた対比データも同梱しています。ルート・目的地・予定などSpotify非対応の入力はデータの中に存在しますが、V1のスコアには入らず、<code>context_only</code> として扱います。</span><span class="en">Base patterns (e.g. monotonous night highway, coastal destination, family group, upcoming oshi event, post-rest stopped karaoke) and one-variable contrasts are shipped. Spotify-unsupported inputs (route, destination, schedule) may exist in the data but are marked <code>context_only</code> and do not enter V1 scoring.</span></p>
       <div class="why safe">
         <span class="lab"><span class="ja">ユーザーの結果を捏造しない</span><span class="en">No manufactured user truth</span></span>
         <p><span class="ja">「受諾された」「回復した」といった結果をランダムに作り出して、証跡として見せることはありません。判断は評価者が入力します（クイックモードでは単に1位を選ぶだけです）。休憩後の回復値も、明示的な合成入力です。結果を偽造することはありません。</span><span class="en">The simulator never randomly invents an “accepted” or “recovered” outcome and then shows it as evidence. Decisions are entered by the reviewer (or quick mode takes rank 1), and post-rest recovery values are explicit synthetic inputs — never fabricated results.</span></p>
@@ -646,17 +646,17 @@
 
     <!-- 9. Prototype: Input / Parameters / Output -->
     <section id="prototype">
-      <h2><span class="num">8</span><span class="ja">画面の最初のかたち（入力・世界 / サービス提案 / コンテンツ提案）</span><span class="en">First shape of the screen (input · world / service proposal / content proposal)</span></h2>
+      <h2><span class="num">8</span><span class="ja">画面の最初のかたち（入力 / サービス提案 / コンテンツ提案）</span><span class="en">First shape of the screen (input / service proposal / content proposal)</span></h2>
       <p>
-        <span class="ja">要件では、サービスを選ぶだけでなく、<b>具体的なコンテンツ（プレイリストの中身）まで詳しく提案する</b>ことが求められます。そこで画面は<b>3パネル構成</b>にしました。<b>①入力・世界</b>、<b>②サービス提案</b>（STEP 1）、<b>③コンテンツ提案</b>（STEP 2）です。パラメータとハイパーパラメータは、それぞれのパネルの中に折りたたみ式で持たせています。現行のトリガーシミュレーターと大きくは変わりません。</span>
-        <span class="en">The requirement is not only to choose a service but to <b>propose the concrete content (the playlist itself) in detail</b>. So the screen is a <b>three-panel</b> layout — <b>① Input · World</b>, <b>② Service proposal</b> (STEP 1), and <b>③ Content proposal</b> (STEP 2), with parameters and hyperparameters collapsed inside each panel. It is not far from the current trigger simulator.</span>
+        <span class="ja">要件では、サービスを選ぶだけでなく、<b>具体的なコンテンツ（プレイリストの中身）まで詳しく提案する</b>ことが求められます。そこで画面は<b>3パネル構成</b>にしました。<b>①入力（状況・ユーザー情報）</b>、<b>②サービス提案</b>（STEP 1）、<b>③コンテンツ提案</b>（STEP 2）です。パラメータとハイパーパラメータは、それぞれのパネルの中に折りたたみ式で持たせています。現行のトリガーシミュレーターと大きくは変わりません。</span>
+        <span class="en">The requirement is not only to choose a service but to <b>propose the concrete content (the playlist itself) in detail</b>. So the screen is a <b>three-panel</b> layout — <b>① Input (situation &amp; user info)</b>, <b>② Service proposal</b> (STEP 1), and <b>③ Content proposal</b> (STEP 2), with parameters and hyperparameters collapsed inside each panel. It is not far from the current trigger simulator.</span>
       </p>
       <div class="why">
         <span class="lab"><span class="ja">③コンテンツ提案は設計済み（数値は説明用の例）</span><span class="en">③ Content proposal is designed (numbers are illustrative)</span></span>
         <p><span class="ja">具体コンテンツ提案アルゴリズムは設計済みです（<code class="k">aica_transparent_content_proposal_algorithm.md</code>）。各プレイリスト項目に <b>item_fit（−1〜+1）と選定理由</b>を添えて表示します。下の数値は説明用の例です。実行時は、凍結したSpotifyオーディオ特徴量から算出する曲の<b>2つのトレイト（活性度・明るさ）</b>に基づきます。</span><span class="en">The concrete-content algorithm is designed (<code class="k">aica_transparent_content_proposal_algorithm.md</code>). Each playlist item is shown with its <b>item_fit (−1…+1) and the reason it was chosen</b>. The numbers below are illustrative; at run time they follow from each song’s <b>two audio traits (arousal, valence)</b> derived from its frozen Spotify audio features.</span></p>
       </div>
 
-      <div class="mock" role="img" aria-label="Wireframe of the input-world / service-proposal / content-proposal screen">
+      <div class="mock" role="img" aria-label="Wireframe of the input / service-proposal / content-proposal screen">
         <div class="mock-bar">
           <span class="dot"></span><span class="dot"></span><span class="dot"></span>
           <span class="mock-url">aica-simulator / proposal — seed: highway-night-drowsy</span>
@@ -664,7 +664,7 @@
         <div class="sim">
           <!-- ① INPUT / WORLD -->
           <div class="col">
-            <h4><span class="ja">① 入力・世界</span><span class="en">① Input · World</span></h4>
+            <h4><span class="ja">① 入力（状況・ユーザー情報）</span><span class="en">① Input (situation &amp; user info)</span></h4>
             <div class="body">
               <div class="field"><span class="k"><span class="ja">発火目的・段階</span><span class="en">Purpose &amp; stage</span></span><span class="chips"><span class="chip sel">① rest_recommended</span></span><br>before_rest_until_stop</div>
               <div class="field"><span class="k"><span class="ja">走行状態</span><span class="en">Motion</span></span><span class="chips"><span class="chip sel">driving</span><span class="chip">stopped</span></span></div>
@@ -743,7 +743,7 @@
       <div class="pipe">
         <div class="node"><div class="n">1</div><div class="t"><span class="ja">別画面と共通契約</span><span class="en">Screen &amp; contracts</span></div></div>
         <div class="arrow">→</div>
-        <div class="node"><div class="n">2</div><div class="t"><span class="ja">合成世界と制約</span><span class="en">Synthetic world</span></div></div>
+        <div class="node"><div class="n">2</div><div class="t"><span class="ja">合成データと制約</span><span class="en">Synthetic data</span></div></div>
         <div class="arrow">→</div>
         <div class="node"><div class="n">3</div><div class="t"><span class="ja">透明方式の音楽体験</span><span class="en">Transparent music slice</span></div></div>
         <div class="arrow">→</div>

@@ -135,7 +135,7 @@
       <li><a class="step" href="#binsel"><span class="ja">マス分けと選抜</span><span class="en">Binning &amp; selection</span></a></li>
       <li><a class="step" href="#freeze"><span class="ja">変換・修復・凍結</span><span class="en">Map, repair &amp; freeze</span></a></li>
       <li><a class="step" href="#determinism"><span class="ja">再現性と台帳</span><span class="en">Determinism &amp; ledger</span></a></li>
-      <li><a class="step" href="#certify"><span class="ja">ワールド・判定・認証</span><span class="en">Worlds, judge &amp; certify</span></a></li>
+      <li><a class="step" href="#certify"><span class="ja">状況パターン・判定・認証</span><span class="en">Situation patterns, judge &amp; certify</span></a></li>
       <li><a class="step" href="#status"><span class="ja">統合と現状</span><span class="en">Integration &amp; status</span></a></li>
     </ol>
   </nav>
@@ -202,7 +202,7 @@
         <div class="arrow">→</div>
         <div class="node"><div class="n">S4–S6</div><div class="t">map → freeze</div><div class="d"><span class="ja">架空ID・検査・凍結</span><span class="en">synth IDs, validate, freeze</span></div></div>
         <div class="arrow">→</div>
-        <div class="node llm"><div class="n">S7 · LLM</div><div class="t">worlds</div><div class="d"><span class="ja">ワールド＋履歴</span><span class="en">worlds + histories</span></div></div>
+        <div class="node llm"><div class="n">S7 · LLM</div><div class="t">patterns</div><div class="d"><span class="ja">状況パターン＋履歴</span><span class="en">situation patterns + histories</span></div></div>
         <div class="arrow">→</div>
         <div class="node llm"><div class="n">S8 · LLM</div><div class="t">judge</div><div class="d"><span class="ja">ブラインド判定</span><span class="en">blind labels</span></div></div>
         <div class="arrow">→</div>
@@ -256,7 +256,7 @@
           <tr><td><span class="ja">アルバム数</span><span class="en">Albums</span></td><td class="num">≥12</td><td><span class="ja">アルバムに偏りが出ないように</span><span class="en">release diversity</span></td></tr>
           <tr><td><span class="ja">年代（era）</span><span class="en">Eras</span></td><td class="num">≥3</td><td><span class="ja">classic &lt;2000 / modern 2000–2015 / recent 2016+</span><span class="en">classic &lt;2000 / modern 2000–2015 / recent 2016+</span></td></tr>
           <tr><td><span class="ja">explicit（過激表現あり）の曲</span><span class="en">Explicit songs</span></td><td class="num">≥6</td><td><span class="ja">子どもが乗っている場合のチェックを試すため</span><span class="en">exercises child-present eligibility</span></td></tr>
-          <tr><td><span class="ja">36マスの外の比較用曲（negative fixture）</span><span class="en">Negatives outside the 36</span></td><td class="num">≥4</td><td><span class="ja">「どんな曲でも高評価になる」問題を見つけるため</span><span class="en">control group against always-positive scoring</span></td></tr>
+          <tr><td><span class="ja">36マスの外の比較用曲（negative sample data）</span><span class="en">Negatives outside the 36</span></td><td class="num">≥4</td><td><span class="ja">「どんな曲でも高評価になる」問題を見つけるため</span><span class="en">control group against always-positive scoring</span></td></tr>
           <tr><td><code>key = -1</code></td><td class="num">≥1</td><td><span class="ja">キー情報がない曲の扱いを確かめるため</span><span class="en">missing-key handling</span></td></tr>
           <tr><td><span class="ja">長さ／拍子の散らばり</span><span class="en">Duration / time-signature spread</span></td><td class="num">short·medium·long / 3, 4, +1</td><td><span class="ja">長さや拍子が偏らないように</span><span class="en">guards against skew</span></td></tr>
         </tbody>
@@ -424,7 +424,7 @@
         <span class="en">The system draws a hard line between the <b>non-reproducible live harvest</b> (network calls to Soundcharts / MusicBrainz / Deezer) and the <b>deterministic transform</b>. The reproducibility contract lives in the transform:</span>
       </p>
       <div class="fgrid">
-        <div class="fcard"><h4><span class="ja">シード値が決めること</span><span class="en">Seed scope</span></h4><p><span class="ja"><code>random_seed</code> が固定するのは3つ：架空 ID をつける順番、同点だった曲の並べ方、比較用曲（negative fixture）の配置。データ集め自体は、シードでは固定できません。</span><span class="en"><code>random_seed</code> pins: synthetic-ID allocation order, selection tie-breaks among equally-eligible songs, negative-fixture placement. It does not (and cannot) pin the harvest.</span></p></div>
+        <div class="fcard"><h4><span class="ja">シード値が決めること</span><span class="en">Seed scope</span></h4><p><span class="ja"><code>random_seed</code> が固定するのは3つ：架空 ID をつける順番、同点だった曲の並べ方、比較用曲（negative sample data）の配置。データ集め自体は、シードでは固定できません。</span><span class="en"><code>random_seed</code> pins: synthetic-ID allocation order, selection tie-breaks among equally-eligible songs, negative-sample-data placement. It does not (and cannot) pin the harvest.</span></p></div>
         <div class="fcard"><h4><span class="ja">曲ごとの乱数</span><span class="en">Per-song PRNG</span></h4><p><span class="ja"><code>sha256("シード:ISRC")</code> を64ビットに縮めて <code>random.Random</code> の種にします。Python 標準の <code>hash()</code> は起動のたびに値が変わるので使いません。この方法なら、別のマシンでも同じ値になります。</span><span class="en"><code>sha256(f"{seed}:{isrc}")</code> truncated to 64 bits seeds <code>random.Random</code>. Python's built-in <code>hash()</code> was rejected because it is salted per process — this is stable across machines.</span></p></div>
         <div class="fcard"><h4><span class="ja">順番をそろえて読む</span><span class="en">Sorted iteration</span></h4><p><span class="ja">キャッシュはファイル名（＝ISRC）の順に読み、ID も同じ順でつけます。データを集めた時刻の順番には影響されません。</span><span class="en">Cache files are read in filename (ISRC) sorted order; ID allocation follows the same order — independent of harvest wall-clock order.</span></p></div>
         <div class="fcard"><h4><span class="ja">持ち越しの台帳</span><span class="en">Carry-over ledger</span></h4><p><span class="ja">台帳は、曲の同一性（ISRC・UUID・整えた曲名）をキーにした「追記だけ」の記録です。おかげで周回は「積み増し」になり、同じことを二度しません：一度出た名前は再提案されず、一度失敗した曲は再挑戦されません。キーは曲の同一性だけで、スコアは絶対に入れません（FR-023/024）。だから「途中から再開できる」ことが、選抜のゆがみになりません。</span><span class="en">An append-only JSON keyed by identity tokens (ISRC / UUID / normalized name). It makes loops <b>additive and idempotent</b>: known names/ISRCs are never re-proposed or re-fetched, known misses never retried. Keys are identity-only — never a score (FR-023/024) — so resumability adds no selection pressure.</span></p></div>
@@ -438,27 +438,27 @@
       </div>
     </section>
 
-    <!-- 8. Worlds, judge, certify -->
+    <!-- 8. Situation patterns, judge, certify -->
     <section id="certify">
-      <h2><span class="num">8</span><span class="ja">ワールド・ブラインド判定・認証（S7–S9）</span><span class="en">Worlds, blind judge &amp; certification (S7–S9)</span></h2>
+      <h2><span class="num">8</span><span class="ja">状況パターン・ブラインド判定・認証（S7–S9）</span><span class="en">Situation patterns, blind judge &amp; certification (S7–S9)</span></h2>
 
-      <h3><span class="ja">S7 — ワールドと比較ペア（凍結のあとだけ）</span><span class="en">S7 — worlds &amp; contrast pairs (post-freeze only)</span></h3>
+      <h3><span class="ja">S7 — 状況パターンと比較ペア（凍結のあとだけ）</span><span class="en">S7 — situation patterns &amp; contrast pairs (post-freeze only)</span></h3>
       <p>
-        <span class="ja"><code>build_base_worlds</code>（<code>mdg/worlds.py</code>）は、15以上の基本ワールド（昼の通勤、夜の高速道路で眠気が高い/低い、渋滞、山道、単調な道、子ども同乗、推しモードのオン/オフ、休憩後の停車、最近聴いた曲あり など）を、共通のテンプレートの一部だけ書き換えて作ります。<b>12組の比較ペア</b>は「1つの項目だけが違う、2つのワールド」です：</span>
-        <span class="en"><code>build_base_worlds</code> (<code>mdg/worlds.py</code>) generates ≥15 deterministic base worlds (daytime commute, night highway with high/low drowsiness, congestion, mountain road, monotony, child present, oshi mode, stopped-post-rest, recent play, …) by overriding template fields. The <b>12 contrast pairs</b> are two worlds differing in <b>exactly one field</b>:</span>
+        <span class="ja"><code>build_base_worlds</code>（<code>mdg/worlds.py</code>）は、15以上の基本パターン（昼の通勤、夜の高速道路で眠気が高い/低い、渋滞、山道、単調な道、子ども同乗、推しモードのオン/オフ、休憩後の停車、最近聴いた曲あり など）を、共通のテンプレートの一部だけ書き換えて作ります。<b>12組の比較ペア</b>は「1つの項目だけが違う、2つの状況パターン」です：</span>
+        <span class="en"><code>build_base_worlds</code> (<code>mdg/worlds.py</code>) generates ≥15 deterministic base patterns (daytime commute, night highway with high/low drowsiness, congestion, mountain road, monotony, child present, oshi mode, stopped-post-rest, recent play, …) by overriding template fields. The <b>12 contrast pairs</b> are two situation patterns differing in <b>exactly one field</b>:</span>
       </p>
       <div class="formula wrap">
-        pair-01-drowsiness: world A { driver.drowsiness_level: <span class="coef">20</span> } <span class="op">vs</span> world B { driver.drowsiness_level: <span class="coef">90</span> } <span class="cm">— <span class="ja">期待どおりなら、落ち着いた曲と元気な曲の順位が入れ替わる</span><span class="en">expected: calm↔active song ranking reverses</span></span>
+        pair-01-drowsiness: pattern A { driver.drowsiness_level: <span class="coef">20</span> } <span class="op">vs</span> pattern B { driver.drowsiness_level: <span class="coef">90</span> } <span class="cm">— <span class="ja">期待どおりなら、落ち着いた曲と元気な曲の順位が入れ替わる</span><span class="en">expected: calm↔active song ranking reverses</span></span>
       </div>
       <p class="small muted">
-        <span class="ja">AI が書けるのは、再生履歴や推しのプロフィール（<code>direct_item_history</code>／<code>upro</code>／<code>usage_by_genre</code>／<code>scene_genre_usage</code>）だけです。ドライバーや環境の項目には触れられません。ワールド全体を機械的に走査し、凍結カタログに存在しない曲・アーティストへの参照が1つでもあれば、<code>world_reference_failed</code> で止まります。</span>
-        <span class="en">The LLM may compose only history / oshi profiles (<code>direct_item_history</code> / <code>upro</code> / <code>usage_by_genre</code> / <code>scene_genre_usage</code>) — driver/environment fields are untouchable. Every world is regex-scanned; any <code>synthetic-track-*</code> / <code>synthetic-artist-*</code> reference absent from the frozen catalog halts with <code>world_reference_failed</code>.</span>
+        <span class="ja">AI が書けるのは、再生履歴や推しのプロフィール（<code>direct_item_history</code>／<code>upro</code>／<code>usage_by_genre</code>／<code>scene_genre_usage</code>）だけです。ドライバーや環境の項目には触れられません。状況パターン全体を機械的に走査し、凍結カタログに存在しない曲・アーティストへの参照が1つでもあれば、<code>world_reference_failed</code> で止まります。</span>
+        <span class="en">The LLM may compose only history / oshi profiles (<code>direct_item_history</code> / <code>upro</code> / <code>usage_by_genre</code> / <code>scene_genre_usage</code>) — driver/environment fields are untouchable. Every situation pattern is regex-scanned; any <code>synthetic-track-*</code> / <code>synthetic-artist-*</code> reference absent from the frozen catalog halts with <code>world_reference_failed</code>.</span>
       </p>
 
       <h3><span class="ja">S8 — ブラインド判定（答えを見ずに採点）</span><span class="en">S8 — the blind judge</span></h3>
       <p>
-        <span class="ja">AI は各（ワールド, 曲）の組み合わせに <code>positive／negative／neutral</code> のラベルをつけます。このとき「P6 のスコアをまだ見ていない」ことが、仕組みとして保証されます：AI の出力に <code>algorithm_score</code> や <code>agreement</code> が先に入っていたら、<code>BlindOrderingError</code> で止まるのです。この検査を通ってからはじめて、本物の P6 <code>evaluate()</code> のスコアと突き合わせ、AI の直感と一致したかどうかを記録します：</span>
-        <span class="en">The LLM labels each (world, song) as <code>positive / negative / neutral</code> — and being <b>blind to the P6 score</b> is structurally enforced: if the LLM output already contains <code>algorithm_score</code> or <code>agreement</code>, it raises <code>BlindOrderingError</code>. Only after that check is the real P6 <code>evaluate()</code> score revealed and agreement recorded:</span>
+        <span class="ja">AI は各（状況パターン, 曲）の組み合わせに <code>positive／negative／neutral</code> のラベルをつけます。このとき「P6 のスコアをまだ見ていない」ことが、仕組みとして保証されます：AI の出力に <code>algorithm_score</code> や <code>agreement</code> が先に入っていたら、<code>BlindOrderingError</code> で止まるのです。この検査を通ってからはじめて、本物の P6 <code>evaluate()</code> のスコアと突き合わせ、AI の直感と一致したかどうかを記録します：</span>
+        <span class="en">The LLM labels each (situation pattern, song) as <code>positive / negative / neutral</code> — and being <b>blind to the P6 score</b> is structurally enforced: if the LLM output already contains <code>algorithm_score</code> or <code>agreement</code>, it raises <code>BlindOrderingError</code>. Only after that check is the real P6 <code>evaluate()</code> score revealed and agreement recorded:</span>
       </p>
       <div class="formula">
         <span class="lhs">neutral band</span> <span class="op">=</span> |score| &lt; <span class="coef">0.10</span><br>
@@ -472,8 +472,8 @@
 
       <h3><span class="ja">S9 — 認証（順位の逆転テスト）</span><span class="en">S9 — certification (reversal tests)</span></h3>
       <p>
-        <span class="ja"><code>mdg certify</code> は、P6 パッケージの <code>evaluate</code> をファイルパスから直接読み込んで動かします（ロジックのコピーや模倣は作りません）。各比較ペアの2つのワールドでランキングを実行し、指定した2曲の順位が<b>入れ替わるか</b>を確かめます：</span>
-        <span class="en"><code>mdg certify</code> loads the P6 package's <code>evaluate</code> <b>directly by file path</b> (never re-implemented) and runs the ranking over both worlds of each contrast pair, checking that the two designated songs' relative order <b>flips</b>:</span>
+        <span class="ja"><code>mdg certify</code> は、P6 パッケージの <code>evaluate</code> をファイルパスから直接読み込んで動かします（ロジックのコピーや模倣は作りません）。各比較ペアの2つの状況パターンでランキングを実行し、指定した2曲の順位が<b>入れ替わるか</b>を確かめます：</span>
+        <span class="en"><code>mdg certify</code> loads the P6 package's <code>evaluate</code> <b>directly by file path</b> (never re-implemented) and runs the ranking over both situation patterns of each contrast pair, checking that the two designated songs' relative order <b>flips</b>:</span>
       </p>
       <div class="formula">
         <span class="lhs">reverses</span>(pair) <span class="op">⇔</span> ( rank_A(song_hi) &lt; rank_A(song_lo) ) <span class="op">≠</span> ( rank_B(song_hi) &lt; rank_B(song_lo) )
@@ -482,7 +482,7 @@
         <span class="lab"><span class="ja">落ちたら「集め直す」しかない（FR-027）</span><span class="en">The only fix is re-harvest (FR-027)</span></span>
         <p>
           <span class="ja">順位が入れ替わらなかったペアには <code>re_harvest_signal</code> が出ます。意味は「<b>このマスに別の実在曲を集め直せ。数値の調整は絶対にするな</b>」。テストに落ちたら、直すのはデータの側（もっと合う実在曲を探す）であって、アルゴリズムや数値を答えに寄せることではありません。これが、この仕組み全体の「ズルをさせない」大原則です。</span>
-          <span class="en">A non-reversing pair emits a <code>re_harvest_signal</code> — “<b>harvest a different real song for this cell; never tune numbers.</b>” Certification failures are fixed by obtaining better real data, never by nudging the algorithm or the fixture toward a target. This is the load-bearing anti-cheating rule of the whole system.</span>
+          <span class="en">A non-reversing pair emits a <code>re_harvest_signal</code> — “<b>harvest a different real song for this cell; never tune numbers.</b>” Certification failures are fixed by obtaining better real data, never by nudging the algorithm or the sample data toward a target. This is the load-bearing anti-cheating rule of the whole system.</span>
         </p>
       </div>
     </section>
@@ -516,7 +516,7 @@
           <tr><td><span class="ja">言語の配分（demonstration）</span><span class="en">Language split (demonstration)</span></td><td class="num">ja 30 / en 6</td><td><code>mdg/coverage/plan.py</code></td></tr>
           <tr><td><span class="ja">アーティスト数 × 曲数</span><span class="en">Artists × depth</span></td><td class="num">12 × ≥3</td><td><code>mdg/coverage/plan.py</code></td></tr>
           <tr><td><span class="ja">比較ペア</span><span class="en">Contrast pairs</span></td><td class="num">12</td><td><code>mdg/worlds.py</code></td></tr>
-          <tr><td><span class="ja">基本ワールド</span><span class="en">Base worlds</span></td><td class="num">≥15 (18<span class="ja">個生成</span><span class="en"> built</span>)</td><td><code>mdg/worlds.py</code></td></tr>
+          <tr><td><span class="ja">基本パターン</span><span class="en">Base patterns</span></td><td class="num">≥15 (18<span class="ja">個生成</span><span class="en"> built</span>)</td><td><code>mdg/worlds.py</code></td></tr>
           <tr><td><span class="ja">プローブ関門</span><span class="en">Probe gate</span></td><td class="num">≥ 60%</td><td><code>mdg/harvest/probe.py</code></td></tr>
           <tr><td><span class="ja">修復の上限回数</span><span class="en">Repair budget</span></td><td class="num">2</td><td><code>mdg/repair.py</code></td></tr>
           <tr><td><span class="ja">判定の「中立」の幅</span><span class="en">Judge neutral band</span></td><td class="num">|score| &lt; 0.10</td><td><code>mdg/judge.py</code></td></tr>
@@ -541,7 +541,7 @@
       </div>
       <p class="small muted">
         <span class="ja">マスが埋まりきるまで <code>plan → name → resolve → harvest → transform</code> を繰り返します。台帳が既知の曲を飛ばしてくれるので、各周回は足りない分だけを取りにいきます。テストは <code>uv run pytest</code>（保存済みデータで動く、ネット不要）と <code>uv run pytest -m live</code>（Soundcharts のキーが必要）。</span>
-        <span class="en">While cells remain unmet, repeat <code>plan → name → resolve → harvest → transform</code> — the ledger skips everything known, so each loop fetches only the delta. Tests: <code>uv run pytest</code> (recorded fixtures, no network) and <code>uv run pytest -m live</code> (needs a Soundcharts key).</span>
+        <span class="en">While cells remain unmet, repeat <code>plan → name → resolve → harvest → transform</code> — the ledger skips everything known, so each loop fetches only the delta. Tests: <code>uv run pytest</code> (recorded sample data, no network) and <code>uv run pytest -m live</code> (needs a Soundcharts key).</span>
       </p>
     </section>
 

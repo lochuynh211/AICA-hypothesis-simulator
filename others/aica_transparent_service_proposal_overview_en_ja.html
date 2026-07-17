@@ -156,8 +156,8 @@
     <section id="overview">
       <h2><span class="num">1</span><span class="ja">概要 ― 考え方</span><span class="en">Overview — the idea</span></h2>
       <p>
-        <span class="ja">すべての特徴量は同じ形をしています。<b>evidence</b>（状況の強さ）<code>e_i</code>（いまの世界がどれだけ強いか）に、<b>応答係数</b> <code>a_i</code>（その候補がどれだけ応えられるか）を掛け合わせます。evidence は、その時点の世界のスナップショットから1回だけ読み取ります。係数のほうは候補サービスIDごとに決まる固定の値で、スライド67とサービス定義（スライド38–40）から決めます。各特徴量の <code>r_i = e_i·a_i</code> に重みを掛けて足し合わせます。<b>絶対的な安全性</b>は採点の前に行うハード適格性が受け持ち、<b>相対的な適合度</b>は目に見えて編集もできる重みと係数で表します。</span>
-        <span class="en">Every feature takes the same shape: an <b>evidence</b> value <code>e_i</code> (how strong the current world is) times a <b>response coefficient</b> <code>a_i</code> (how well this candidate answers it). Evidence is read once from the world snapshot; the coefficient is a <b>stable property of the candidate service ID</b>, derived from Slide 67 and the service definitions (Slides 38–40). Each feature's <code>r_i = e_i·a_i</code> is scaled by its hierarchical weight and summed. <b>Absolute safety</b> lives in hard eligibility (before scoring); <b>relative suitability</b> lives in visible, editable weights and coefficients.</span>
+        <span class="ja">すべての特徴量は同じ形をしています。<b>evidence</b>（状況の強さ）<code>e_i</code>（いまの状況がどれだけ強いか）に、<b>応答係数</b> <code>a_i</code>（その候補がどれだけ応えられるか）を掛け合わせます。evidence は、その時点の状況・ユーザー情報から1回だけ読み取ります。係数のほうは候補サービスIDごとに決まる固定の値で、スライド67とサービス定義（スライド38–40）から決めます。各特徴量の <code>r_i = e_i·a_i</code> に重みを掛けて足し合わせます。<b>絶対的な安全性</b>は採点の前に行うハード適格性が受け持ち、<b>相対的な適合度</b>は目に見えて編集もできる重みと係数で表します。</span>
+        <span class="en">Every feature takes the same shape: an <b>evidence</b> value <code>e_i</code> (how strong the current situation is) times a <b>response coefficient</b> <code>a_i</code> (how well this candidate answers it). Evidence is read once from the situation at that moment; the coefficient is a <b>stable property of the candidate service ID</b>, derived from Slide 67 and the service definitions (Slides 38–40). Each feature's <code>r_i = e_i·a_i</code> is scaled by its hierarchical weight and summed. <b>Absolute safety</b> lives in hard eligibility (before scoring); <b>relative suitability</b> lives in visible, editable weights and coefficients.</span>
       </p>
 
       <h3><span class="ja">コンテンツ選択との関係（別の決定層）</span><span class="en">Relationship to the content selector (a separate layer)</span></h3>
@@ -211,7 +211,7 @@
       <h2><span class="num">2</span><span class="ja">スコアの仕組み</span><span class="en">The scoring model</span></h2>
       <p><span class="ja">17個のベースライン特徴量は、すべて同じ5ステップをたどります。違うのは <code>a_i</code> の決め方だけです（§3–§4）。</span><span class="en">All 17 baseline features follow the same five steps. Only the way <code>a_i</code> is produced differs (§3–§4).</span></p>
       <div class="pipe">
-        <div class="node"><div class="n">1 · x_i</div><div class="t">raw</div><div class="d"><span class="ja">世界／候補マップ値</span><span class="en">world / candidate-map value</span></div></div>
+        <div class="node"><div class="n">1 · x_i</div><div class="t">raw</div><div class="d"><span class="ja">状況／候補ごとの値</span><span class="en">situation / candidate-map value</span></div></div>
         <div class="arrow">→</div>
         <div class="node"><div class="n">2 · e_i</div><div class="t">evidence</div><div class="d"><span class="ja">状況の強さ [0,1] or [-1,+1]</span><span class="en">context strength [0,1] or [-1,+1]</span></div></div>
         <div class="arrow">→</div>
@@ -349,7 +349,7 @@
       <span class="en"><b>Highway <span class="c-pos">+1.0</span></b> for the four activation services (<code>cdc_su_explicit</code>). <b>Mountain</b> (<code>normalized_context_hypothesis</code>): a demanding road, so reduce interaction load — low-interaction audio (music/radio) mildly supported <span class="c-mid">+0.5</span>; moderate (humming/call-response) <span class="c-neg">−0.5</span>; high (quiz/ranking) <span class="c-neg2">−1.0</span>. These are safety hypotheses that only reorder, never exclude. <b>Local</b>/<b>parking</b> neutral (parking permissibility is eligibility).</span></p>
 
       <h3><span class="ja">4.3 休憩中アクション</span><span class="en">4.3 During-rest actions</span></h3>
-      <p class="small muted"><span class="ja"><code>during_rest_stopped</code>。スライド67には休憩中アクションの表がないため、ゼロでない値はすべて<code>rest_action_hypothesis</code>です。停車時のスナップショットでは、渋滞/道路/単調さはリセットされ（<span class="c-na">—</span>）、ルート/目的地/推しは<code>0.0</code>になります。夜間はそのときの値のままです。</span><span class="en"><code>during_rest_stopped</code>. Slide 67 gives no during-rest matrix, so every non-zero cell is <code>rest_action_hypothesis</code>. Traffic/road/monotony are reset (<span class="c-na">—</span>); route/destination/oshi are <code>0.0</code>; night stays current.</span></p>
+      <p class="small muted"><span class="ja"><code>during_rest_stopped</code>。スライド67には休憩中アクションの表がないため、ゼロでない値はすべて<code>rest_action_hypothesis</code>です。停車中の状況では、渋滞/道路/単調さはリセットされ（<span class="c-na">—</span>）、ルート/目的地/推しは<code>0.0</code>になります。夜間はそのときの値のままです。</span><span class="en"><code>during_rest_stopped</code>. Slide 67 gives no during-rest matrix, so every non-zero cell is <code>rest_action_hypothesis</code>. Traffic/road/monotony are reset (<span class="c-na">—</span>); route/destination/oshi are <code>0.0</code>; night stays current.</span></p>
       <div class="scroll-x"><table class="matrix">
         <thead><tr><th><span class="ja">候補</span><span class="en">Candidate</span></th><th class="num-c"><span class="ja">眠気</span><span class="en">Drowsy</span></th><th class="num-c"><span class="ja">疲労</span><span class="en">Fatigue</span></th><th class="num-c"><span class="ja">夜間</span><span class="en">Night</span></th><th class="num-c"><span class="ja">子供</span><span class="en">Child</span></th><th class="num-c"><span class="ja">複数</span><span class="en">Group</span></th></tr></thead>
         <tbody>
@@ -386,13 +386,13 @@
     <!-- 5. Feature contract -->
     <section id="contract">
       <h2><span class="num">5</span><span class="ja">特徴量の完全契約</span><span class="en">Complete feature contract</span></h2>
-      <p><span class="ja">17個のCDC-SUベースライン・サービス特徴量です（契約順）。各特徴量について、世界の入力→evidenceへの変換と、応答係数の出どころを示します。<span class="st direct">+1.0</span> は、候補ごとの値そのものに方向がすでに含まれているため係数を固定している<b>直接特徴量</b>を表します（§5 direct）。</span>
-      <span class="en">The 17 CDC-SU baseline service features (contract order). For each: world input → evidence, and where the response comes from. <span class="st direct">+1.0</span> marks a <b>direct feature</b> whose candidate-indexed value already carries the direction, so the coefficient is fixed.</span></p>
+      <p><span class="ja">17個のCDC-SUベースライン・サービス特徴量です（契約順）。各特徴量について、状況の入力→evidenceへの変換と、応答係数の出どころを示します。<span class="st direct">+1.0</span> は、候補ごとの値そのものに方向がすでに含まれているため係数を固定している<b>直接特徴量</b>を表します（§5 direct）。</span>
+      <span class="en">The 17 CDC-SU baseline service features (contract order). For each: situation input → evidence, and where the response comes from. <span class="st direct">+1.0</span> marks a <b>direct feature</b> whose candidate-indexed value already carries the direction, so the coefficient is fixed.</span></p>
       <div class="scroll-x"><table>
         <thead><tr>
           <th class="num-c">#</th>
           <th><span class="ja">特徴量</span><span class="en">Feature</span></th>
-          <th><span class="ja">世界入力 → evidence</span><span class="en">World input → evidence</span></th>
+          <th><span class="ja">状況入力 → evidence</span><span class="en">Situation input → evidence</span></th>
           <th><span class="ja">レスポンス <code>a_i(c)</code></span><span class="en">Response <code>a_i(c)</code></span></th>
           <th><span class="ja">出典</span><span class="en">Source</span></th>
         </tr></thead>
@@ -525,7 +525,7 @@
       <ul class="small">
         <li><span class="ja"><b>欠損</b>（値そのものがない、または候補マップに項目がない）→ <code>e=0, r=0, k=0</code>とし、重みはそのまま残して<code>missing_neutral</code>とします。欠損があっても重みを他に振り分けたり、プラスにもマイナスにもエビデンスをでっち上げたりはしません。</span><span class="en"><b>Missing</b> → <code>e=0, r=0, k=0</code>, weight retained, <code>missing_neutral</code>. Absence never redistributes weight or invents evidence.</span></li>
         <li><span class="ja"><b>生の値が0</b>（[0,100]の特徴量）は有効な低い値であって、欠損ではありません。<b>不明なタグ</b>は認識数のカウントには入れず、記録だけします。</span><span class="en"><b>Raw 0</b> on a [0,100] feature is a valid low value. <b>Unknown tags</b> don't contribute to the count and are reported.</span></li>
-        <li><span class="ja"><b>停車時のスナップショット</b>：<code>during_rest_stopped</code>では、渋滞→normal、道路→parking、単調さ→0にします（眠気/疲労/昼夜はそのときの値のまま）。<code>after_rest_before_restart</code>では、休憩後として明示された眠気/疲労の値を使い、環境は同じ停車状態のままです。ルート/目的地・同乗者は、そのときの旅程の事実をそのまま使います。停車する前の渋滞/道路/単調さの値を、暗黙のうちに引きずらないようにしてください。</span><span class="en"><b>Stopped snapshot</b>: <code>during_rest_stopped</code> sets traffic→normal, road→parking, monotony→0 (drowsiness/fatigue/day-night stay current); <code>after_rest_before_restart</code> uses explicit post-rest drowsiness/fatigue with the same stopped environment. Route/destination and passengers stay current. Never implicitly retain pre-stop congestion/road/monotony.</span></li>
+        <li><span class="ja"><b>停車中の状況の扱い</b>：<code>during_rest_stopped</code>では、渋滞→normal、道路→parking、単調さ→0にします（眠気/疲労/昼夜はそのときの値のまま）。<code>after_rest_before_restart</code>では、休憩後として明示された眠気/疲労の値を使い、環境は同じ停車状態のままです。ルート/目的地・同乗者は、そのときの旅程の事実をそのまま使います。停車する前の渋滞/道路/単調さの値を、暗黙のうちに引きずらないようにしてください。</span><span class="en"><b>Stopped snapshot</b>: <code>during_rest_stopped</code> sets traffic→normal, road→parking, monotony→0 (drowsiness/fatigue/day-night stay current); <code>after_rest_before_restart</code> uses explicit post-rest drowsiness/fatigue with the same stopped environment. Route/destination and passengers stay current. Never implicitly retain pre-stop congestion/road/monotony.</span></li>
         <li><span class="ja"><b>不正な入力</b>（型が違う、範囲外、対応していないenum、矛盾する推し状態、有限でない数値、兄弟グループが全部ゼロ、実効重みの分母がゼロ）→ 型付きのエラーで<b>処理を止めます</b>。黙って中立の値にすり替えることは決してありません。</span><span class="en"><b>Invalid</b> (wrong type, out-of-range, unsupported enum, contradictory oshi state, non-finite, all-zero sibling group, zero active-weight denominator) → <b>blocks</b> with a typed error; never silently coerced to neutral.</span></li>
       </ul>
     </section>
@@ -548,7 +548,7 @@
       <span class="en">The <code>situation_fit / preference_fit / history_fit</code> subtotals reconstruct the unclamped sum (explanatory, not a sort key). <b>no_proposal</b> only when the eligible list is empty; a low/negative <code>service_fit</code> never suppresses a proposal — the trigger already established the opportunity.</span></p>
 
       <h3><span class="ja">計算例</span><span class="en">Worked example</span></h3>
-      <p class="small muted"><span class="ja">機会は<code>inattentive_driving_prevention_recovery</code> / <code>active_driving_content</code>、候補は<code>humming_karaoke</code>とします。状況のスナップショット：眠気80・疲労60・渋滞あり・高速道路・夜間・単調さ75・認識できたルートタグ2個・目的地タグ1個・子供あり・複数同乗・推し登録あり＋モードON・サービス新規性はlong_unused・利用度high・場面利用度high・受諾率75・回復率70。目的②の実効重みと、<code>humming_karaoke</code>の応答（活性化<span class="c-pos">+1.0</span>、推し<span class="c-mid">+0.5</span>、直接特徴量<span class="c-pos">+1.0</span>）を使います。</span>
+      <p class="small muted"><span class="ja">機会は<code>inattentive_driving_prevention_recovery</code> / <code>active_driving_content</code>、候補は<code>humming_karaoke</code>とします。その時点の状況：眠気80・疲労60・渋滞あり・高速道路・夜間・単調さ75・認識できたルートタグ2個・目的地タグ1個・子供あり・複数同乗・推し登録あり＋モードON・サービス新規性はlong_unused・利用度high・場面利用度high・受諾率75・回復率70。目的②の実効重みと、<code>humming_karaoke</code>の応答（活性化<span class="c-pos">+1.0</span>、推し<span class="c-mid">+0.5</span>、直接特徴量<span class="c-pos">+1.0</span>）を使います。</span>
       <span class="en">Opportunity <code>inattentive_driving_prevention_recovery</code> / <code>active_driving_content</code>; candidate <code>humming_karaoke</code>. Snapshot: drowsiness 80, fatigue 60, congested, highway, night, monotony 75, two route tags, one destination tag, child present, multiple passengers, oshi registered + mode on, recency long_unused, usage high, scene high, acceptance 75, recovery 70. Using the ② effective weights and <code>humming_karaoke</code>'s responses (activation <span class="c-pos">+1.0</span>, oshi <span class="c-mid">+0.5</span>, direct <span class="c-pos">+1.0</span>).</span></p>
       <div class="scroll-x"><table>
         <thead><tr><th><span class="ja">特徴量</span><span class="en">Feature</span></th><th class="num-c">e</th><th class="num-c">a</th><th class="num-c">r</th><th class="num-c">w</th><th class="num-c">k = w·r</th></tr></thead>
@@ -573,7 +573,7 @@
           <tr style="font-weight:800"><td colspan="5"><span class="ja">service_fit（合計）</span><span class="en">service_fit (sum)</span></td><td class="num c-pos">+0.772349</td></tr>
         </tbody>
       </table></div>
-      <p class="small"><span class="ja">同じスナップショットで<code>music_playlist</code>を見ると、ドライバー/環境まわりの活性化応答がすべて<code>0.0</code>なので、ルート/目的地（<code>+.019091</code>、<code>+.007810</code>）と弱い推しの応答、直接特徴量である利用度/履歴の寄与だけで、合計は<b>≈ +0.132</b>にとどまります。だから鼻歌のほうが上位に来ます。発火目的を<code>route_music</code>に変えると、倍率によってルート/目的地の重みが上がるので、同じ生の値・同じ応答プロファイルでも、順位が入れ替わることがあります。</span>
+      <p class="small"><span class="ja">同じ状況で<code>music_playlist</code>を見ると、ドライバー/環境まわりの活性化応答がすべて<code>0.0</code>なので、ルート/目的地（<code>+.019091</code>、<code>+.007810</code>）と弱い推しの応答、直接特徴量である利用度/履歴の寄与だけで、合計は<b>≈ +0.132</b>にとどまります。だから鼻歌のほうが上位に来ます。発火目的を<code>route_music</code>に変えると、倍率によってルート/目的地の重みが上がるので、同じ生の値・同じ応答プロファイルでも、順位が入れ替わることがあります。</span>
       <span class="en">In the same snapshot <code>music_playlist</code> gets <code>0.0</code> on every driver/environment activation response, so it earns only route/destination (<code>+.019091</code>, <code>+.007810</code>), the mild oshi responses, and the direct usage/history contributions — totalling <b>≈ +0.132</b>. Humming ranks above it. Switch the purpose to <code>route_music</code> and the multipliers raise the route/destination weights, so the same raw snapshot and profiles can produce a different order.</span></p>
 
       <h3><span class="ja">対比テスト（一部）</span><span class="en">Contrast tests (selected)</span></h3>

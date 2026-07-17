@@ -195,7 +195,7 @@
 </header>
 
 <div class="pipe">
-  <span class="step done"><span class="n">1</span><span class="ja">世界</span><span class="en">World</span></span>
+  <span class="step done"><span class="n">1</span><span class="ja">状況入力</span><span class="en">Situation</span></span>
   <span class="arr">→</span>
   <span class="step active"><span class="n">2</span><span class="ja">サービス提案</span><span class="en">Service</span></span>
   <span class="arr">→</span>
@@ -205,9 +205,9 @@
 
 <div class="screen">
 
-  <!-- ───────────────── ① WORLD ───────────────── -->
+  <!-- ───────────────── ① INPUT (SITUATION & USER INFO) ───────────────── -->
   <section class="panel">
-    <h3>① <span class="ja">入力・世界</span><span class="en">Input · World</span></h3>
+    <h3>① <span class="ja">入力（状況・ユーザー情報）</span><span class="en">Input (situation &amp; user info)</span></h3>
     <div class="body">
 
       <div class="slab"><span class="ja">発火シグナル（4つ）</span><span class="en">Trigger signal (4)</span><span class="rule"></span></div>
@@ -229,7 +229,7 @@
       <div class="fld"><span class="lb"><code>motion_state</code> <span class="ja">走行/停車</span><span class="en">Motion</span> <span class="prov add">added</span></span><select><option>stopped</option><option>driving</option></select></div>
       <p class="sub" style="margin:2px 0 0;font-size:0.78em"><span class="ja"><code>lifecycle_stage</code> — 制御入力。休憩ジャーニーの位置。</span><span class="en"><code>lifecycle_stage</code> — control input; position in the rest journey.</span></p>
 
-      <div class="slab"><span class="ja">世界・状況（初期値・編集可）</span><span class="en">World · situation (init values, editable)</span><span class="rule"></span></div>
+      <div class="slab"><span class="ja">状況（ドライバー状態・走行環境、初期値・編集可）</span><span class="en">Situation (driver state &amp; environment, editable)</span><span class="rule"></span></div>
       <div class="fld"><span class="lb"><code>drowsiness_level</code> <span class="ja">眠気</span><span class="en">Drowsiness</span> <span class="prov base">CDC-SU</span></span><input type="number" value="62"></div>
       <div class="fld"><span class="lb"><code>fatigue_level</code> <span class="ja">疲労</span><span class="en">Fatigue</span> <span class="prov base">CDC-SU</span></span><input type="number" value="48"></div>
       <div class="fld"><span class="lb"><code>monotony_level</code> <span class="ja">単調さ</span><span class="en">Monotony</span> <span class="prov base">CDC-SU</span></span><input type="number" value="70"></div>
@@ -344,7 +344,7 @@
 
       <div class="slab"><span class="ja">数式・説明</span><span class="en">Formulation</span><span class="rule"></span></div>
       <div class="formula"><span class="feat">service_fit</span> <span class="op">=</span> clamp( Σ <span class="coef">wᵢ</span>·<span class="coef">rᵢ</span> , −1, +1 )</div>
-      <p class="why"><span class="ja">各サービスの適合度は、<b>重み wᵢ</b> と <b>応答 rᵢ</b>（左の世界特徴量から算出）の重み付き総和。安全・適格が順位を支配します。</span><span class="en">Each service's fit is the weighted sum of <b>weight wᵢ</b> and <b>response rᵢ</b> (derived from the world features at left). Safety/eligibility dominates ranking.</span></p>
+      <p class="why"><span class="ja">各サービスの適合度は、<b>重み wᵢ</b> と <b>応答 rᵢ</b>（左の状況・ユーザー情報から算出）の重み付き総和。安全・適格が順位を支配します。</span><span class="en">Each service's fit is the weighted sum of <b>weight wᵢ</b> and <b>response rᵢ</b> (derived from the situation &amp; user info at left). Safety/eligibility dominates ranking.</span></p>
 
       <div class="slab"><span class="ja">許可サービス（行列 v1 → 動作/適格で絞込）</span><span class="en">Allowed services (matrix v1 → motion/readiness)</span><span class="rule"></span></div>
       <div class="chips">
@@ -362,7 +362,7 @@
           <summary><span class="ja">この候補の理由（スコア内訳）</span><span class="en">Why this candidate (score breakdown)</span></summary>
           <div class="scroll-x">
           <table class="contrib">
-            <thead><tr><th><span class="ja">特徴量</span><span class="en">Feature</span></th><th><span class="ja">世界値</span><span class="en">Value</span></th><th>r (a)</th><th>w</th><th><span class="ja">寄与</span><span class="en">Contribution</span></th></tr></thead>
+            <thead><tr><th><span class="ja">特徴量</span><span class="en">Feature</span></th><th><span class="ja">入力値</span><span class="en">Value</span></th><th>r (a)</th><th>w</th><th><span class="ja">寄与</span><span class="en">Contribution</span></th></tr></thead>
             <tbody>
               <tr><td>monotony</td><td class="mono">70</td><td class="mono">+0.70</td><td class="mono">0.30</td><td class="mono pos">+0.210</td></tr>
               <tr><td>drowsiness</td><td class="mono">62</td><td class="mono">+0.80</td><td class="mono">0.22</td><td class="mono pos">+0.176</td></tr>
@@ -572,8 +572,8 @@
 </div>
 
 <footer>
-  <span class="ja">モックアップ（P1土台・イラスト用の擬似データ）。3パネル: ① 世界 → ② サービス提案 → ③ コンテンツ提案。パラメータ/ハイパーパラメータは編集可、行列は折りたたみ。結果はモック（説明UIは実契約に準拠、後で実アルゴリズムに差替）。日本語デフォルト＋EN切替。</span>
-  <span class="en">Mockup (P1 foundation, illustrative pseudo-data). Three panels: ① World → ② Service → ③ Content. Parameters/hyperparameters editable, matrices collapsible. Results are mock (the explanation UI follows the real contract; real algorithms swap in later). JA default with EN toggle.</span>
+  <span class="ja">モックアップ（P1土台・イラスト用の擬似データ）。3パネル: ① 入力（状況・ユーザー情報） → ② サービス提案 → ③ コンテンツ提案。パラメータ/ハイパーパラメータは編集可、行列は折りたたみ。結果はモック（説明UIは実契約に準拠、後で実アルゴリズムに差替）。日本語デフォルト＋EN切替。</span>
+  <span class="en">Mockup (P1 foundation, illustrative pseudo-data). Three panels: ① Input (situation &amp; user info) → ② Service → ③ Content. Parameters/hyperparameters editable, matrices collapsible. Results are mock (the explanation UI follows the real contract; real algorithms swap in later). JA default with EN toggle.</span>
   <br><span class="ja">参照</span><span class="en">Ref</span>: <code>docs/master/aica_proposal_overview_en_ja.html</code>
 </footer>
 </body>
