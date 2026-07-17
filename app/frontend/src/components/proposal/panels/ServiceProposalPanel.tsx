@@ -40,6 +40,10 @@ const LABELS = {
   parameters: { ja: 'パラメータ（編集可）', en: 'Parameters (editable)' },
   maxCandidates: { ja: '最大候補数', en: 'max_candidates' },
   hyperparameters: { ja: 'ハイパーパラメータ', en: 'Hyperparameters' },
+  settingSection: { ja: '設定', en: 'Setting' },
+  preprocessingSection: { ja: '入力前処理（γ・正規化）', en: 'Input preprocessing (γ / normalization)' },
+  weightsSection: { ja: '重み', en: 'Weights' },
+  advancedSection: { ja: '詳細設定', en: 'Advanced' },
   responseCoeffs: { ja: '応答係数（§5.2）', en: 'Response coefficients (§5.2)' },
   responseByFeature: { ja: '特徴量 × サービス', en: 'feature × service' },
   responseByRoad: { ja: '道路種別 × サービス', en: 'road × service' },
@@ -89,7 +93,17 @@ type ServiceInputSnapshot = {
 // power-user surface, if any). The gamma/confidence knobs are shown
 // read-only here for at-a-glance visibility; they remain fully editable in
 // the "Hyperparameters (advanced)" disclosure below.
-const READONLY_HP_KEYS = ['gamma_drowsiness', 'gamma_fatigue', 'gamma_monotony', 'confidence_shrinkage_v1']
+// Setup-section grouping (owner request). Order within a group follows this list.
+const PREPROCESSING_KEYS = [
+  'gamma_drowsiness',
+  'gamma_fatigue',
+  'gamma_monotony',
+  'route_tag_saturation',
+  'destination_tag_saturation',
+  'monotony_medium_min',
+  'monotony_high_min',
+]
+const WEIGHT_KEYS = ['hierarchy_weights', 'purpose_multipliers']
 
 function serviceRows(candidate: RankedCandidate): ReasonRow[] {
   return candidate.feature_contributions.map((fc) => ({
@@ -359,15 +373,25 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
   const eligibleCandidates = inputSnapshot.eligible_candidates ?? []
   const excludedCandidates = inputSnapshot.excluded_candidates ?? []
 
-  // Task 7 — Parameters box lookups: the effective (override-or-default)
-  // value for a read-only hyperparameter knob, and the editable max_candidates
-  // (manifest key `top_k`) value.
-  function hpEffective(key: string): string {
-    const hp = manifest?.hyperparameters.find((h) => h.key === key)
-    const v = state.serviceHyperparameterOverrides[key] ?? hp?.default
-    return v === undefined || v === null ? '—' : String(v)
-  }
   const topKValue = state.serviceParameterOverrides['top_k'] ?? manifest?.parameters['top_k'] ?? 3
+
+  // Setup fields are grouped into labeled sections (owner request): Setting →
+  // Input preprocessing (γ / normalization) → Response coefficients → Weights.
+  // Anything the manifest carries that isn't in a named group falls to a
+  // collapsed "Advanced" disclosure; the always-empty response_coefficient_
+  // overrides is dropped outright.
+  const preprocessingHps = manifest
+    ? manifest.hyperparameters.filter((h) => PREPROCESSING_KEYS.includes(h.key))
+    : []
+  const weightHps = manifest ? manifest.hyperparameters.filter((h) => WEIGHT_KEYS.includes(h.key)) : []
+  const advancedHps = manifest
+    ? manifest.hyperparameters.filter(
+        (h) =>
+          !PREPROCESSING_KEYS.includes(h.key) &&
+          !WEIGHT_KEYS.includes(h.key) &&
+          h.key !== 'response_coefficient_overrides',
+      )
+    : []
 
   return (
     <section data-testid="service-panel" style={panelSectionStyle}>
@@ -582,7 +606,8 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
             follow below. */}
         {manifest && (
           <>
-            <div style={sectionLabelStyle}>{t(LABELS.parameters, lang)}</div>
+            {/* 1. Setting */}
+            <div style={sectionLabelStyle}>{t(LABELS.settingSection, lang)}</div>
             <div style={grid2Style}>
               <label style={fieldLabelStyle}>
                 {t(LABELS.maxCandidates, lang)}
@@ -595,80 +620,89 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
                   }
                 />
               </label>
-              {READONLY_HP_KEYS.filter((key) => manifest.hyperparameters.some((h) => h.key === key)).map((key) => (
-                <label key={key} style={fieldLabelStyle}>
-                  <code>{key}</code>
-                  <input data-testid={`param-${key}`} type="text" value={hpEffective(key)} readOnly />
-                </label>
-              ))}
             </div>
 
-            {/* Response coefficients (§5.2) — the mockup's `response_matrix`.
-                These live in `parameters` (object-valued), so they're surfaced
-                here as dedicated editable pivot tables; edits flow through
+            {/* 2. Input preprocessing (γ / normalization) — editable scalars. */}
+            {preprocessingHps.length > 0 && (
+              <>
+                <div style={sectionLabelStyle}>{t(LABELS.preprocessingSection, lang)}</div>
+                <div style={grid2Style}>
+                  {preprocessingHps.map((hp) => (
+                    <HyperparamMatrix
+                      key={hp.key}
+                      def={hp}
+                      value={state.serviceHyperparameterOverrides[hp.key]}
+                      onChange={(value) => dispatch({ type: 'SET_SERVICE_HYPERPARAMETER', key: hp.key, value })}
+                      lang={lang}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* 3. Response coefficients (§5.2) — the mockup's response_matrix.
+                These live in `parameters` (object-valued); edits flow through
                 SET_SERVICE_PARAMETER and are sent on the next run. */}
             {(manifest.parameters['service_response_profiles'] ||
               manifest.parameters['road_response_profiles']) && (
-              <details data-testid="response-coefficients-disclosure" style={disclosureStyle}>
-                <summary style={summaryStyle}>{t(LABELS.responseCoeffs, lang)}</summary>
-                <div style={{ padding: '4px 11px 11px' }}>
-                  {manifest.parameters['service_response_profiles'] && (
-                    <>
-                      <div style={subslabStyle}>
-                        <span style={kindBadgeStyle}>matrix</span> <code>service_response_profiles</code>{' '}
-                        <span style={{ color: '#6b7280' }}>{t(LABELS.responseByFeature, lang)}</span>
-                      </div>
-                      <ResponseMatrixTable
-                        value={
-                          (state.serviceParameterOverrides['service_response_profiles'] ??
-                            manifest.parameters['service_response_profiles']) as Record<
-                            string,
-                            Record<string, { coefficient?: number; provenance?: string; source_reference?: string }>
-                          >
-                        }
-                        onChange={(next) =>
-                          dispatch({ type: 'SET_SERVICE_PARAMETER', key: 'service_response_profiles', value: next })
-                        }
-                        cornerLabel={t(LABELS.responseByFeature, lang)}
-                      />
-                    </>
-                  )}
-                  {manifest.parameters['road_response_profiles'] && (
-                    <>
-                      <div style={subslabStyle}>
-                        <span style={kindBadgeStyle}>matrix</span> <code>road_response_profiles</code>{' '}
-                        <span style={{ color: '#6b7280' }}>{t(LABELS.responseByRoad, lang)}</span>
-                      </div>
-                      <ResponseMatrixTable
-                        value={
-                          (state.serviceParameterOverrides['road_response_profiles'] ??
-                            manifest.parameters['road_response_profiles']) as Record<
-                            string,
-                            Record<string, { coefficient?: number; provenance?: string; source_reference?: string }>
-                          >
-                        }
-                        onChange={(next) =>
-                          dispatch({ type: 'SET_SERVICE_PARAMETER', key: 'road_response_profiles', value: next })
-                        }
-                        cornerLabel={t(LABELS.responseByRoad, lang)}
-                      />
-                    </>
-                  )}
-                </div>
-              </details>
+              <>
+                <div style={sectionLabelStyle}>{t(LABELS.responseCoeffs, lang)}</div>
+                {manifest.parameters['service_response_profiles'] && (
+                  <>
+                    <div style={subslabStyle}>
+                      <span style={kindBadgeStyle}>matrix</span> <code>service_response_profiles</code>{' '}
+                      <span style={{ color: '#6b7280' }}>{t(LABELS.responseByFeature, lang)}</span>
+                    </div>
+                    <ResponseMatrixTable
+                      value={
+                        (state.serviceParameterOverrides['service_response_profiles'] ??
+                          manifest.parameters['service_response_profiles']) as Record<
+                          string,
+                          Record<string, { coefficient?: number; provenance?: string; source_reference?: string }>
+                        >
+                      }
+                      onChange={(next) =>
+                        dispatch({ type: 'SET_SERVICE_PARAMETER', key: 'service_response_profiles', value: next })
+                      }
+                      cornerLabel={t(LABELS.responseByFeature, lang)}
+                    />
+                  </>
+                )}
+                {manifest.parameters['road_response_profiles'] && (
+                  <>
+                    <div style={subslabStyle}>
+                      <span style={kindBadgeStyle}>matrix</span> <code>road_response_profiles</code>{' '}
+                      <span style={{ color: '#6b7280' }}>{t(LABELS.responseByRoad, lang)}</span>
+                    </div>
+                    <ResponseMatrixTable
+                      value={
+                        (state.serviceParameterOverrides['road_response_profiles'] ??
+                          manifest.parameters['road_response_profiles']) as Record<
+                          string,
+                          Record<string, { coefficient?: number; provenance?: string; source_reference?: string }>
+                        >
+                      }
+                      onChange={(next) =>
+                        dispatch({ type: 'SET_SERVICE_PARAMETER', key: 'road_response_profiles', value: next })
+                      }
+                      cornerLabel={t(LABELS.responseByRoad, lang)}
+                    />
+                  </>
+                )}
+              </>
             )}
 
-            <details data-testid="hyperparameters-disclosure" style={disclosureStyle}>
-              <summary style={summaryStyle}>
-                {t(LABELS.hyperparameters, lang)} <span>{manifest.hyperparameters.length}</span>
-              </summary>
-              <div style={{ padding: '4px 11px 11px' }}>
-                {manifest.hyperparameters.map((hp) => (
+            {/* 4. Weights */}
+            {weightHps.length > 0 && (
+              <>
+                <div style={sectionLabelStyle}>{t(LABELS.weightsSection, lang)}</div>
+                {weightHps.map((hp) => (
                   <div key={hp.key} style={{ margin: '10px 0 4px' }}>
                     <div style={subslabStyle}>
-                      <span data-testid="hp-kind-badge" style={kindBadgeStyle}>{hp.kind}</span>{' '}
-                      <code>{hp.key}</code>{' '}
-                      <span style={{ color: '#6b7280' }}>{t(hp.label, lang)}</span>
+                      <span data-testid="hp-kind-badge" style={kindBadgeStyle}>
+                        {hp.kind}
+                      </span>{' '}
+                      <code>{hp.key}</code> <span style={{ color: '#6b7280' }}>{t(hp.label, lang)}</span>
                     </div>
                     {hp.key === 'hierarchy_weights' ? (
                       <HierarchyWeightsTable
@@ -697,8 +731,37 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
                     )}
                   </div>
                 ))}
-              </div>
-            </details>
+              </>
+            )}
+
+            {/* Advanced (rarely changed) — leftover knobs kept accessible but
+                out of the main flow (e.g. confidence_shrinkage_v1 opt-in). */}
+            {advancedHps.length > 0 && (
+              <details data-testid="advanced-hyperparameters" style={disclosureStyle}>
+                <summary style={summaryStyle}>
+                  {t(LABELS.advancedSection, lang)} <span>{advancedHps.length}</span>
+                </summary>
+                <div style={{ padding: '4px 11px 11px' }}>
+                  {advancedHps.map((hp) => (
+                    <div key={hp.key} style={{ margin: '10px 0 4px' }}>
+                      <div style={subslabStyle}>
+                        <span data-testid="hp-kind-badge" style={kindBadgeStyle}>
+                          {hp.kind}
+                        </span>{' '}
+                        <code>{hp.key}</code> <span style={{ color: '#6b7280' }}>{t(hp.label, lang)}</span>
+                      </div>
+                      <HyperparamMatrix
+                        def={hp}
+                        value={state.serviceHyperparameterOverrides[hp.key]}
+                        onChange={(value) => dispatch({ type: 'SET_SERVICE_HYPERPARAMETER', key: hp.key, value })}
+                        lang={lang}
+                        hideLabel
+                      />
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
           </>
         )}
 

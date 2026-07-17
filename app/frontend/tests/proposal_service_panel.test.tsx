@@ -311,47 +311,46 @@ describe('ServiceProposalPanel', () => {
     expect(await screen.findByLabelText('max_candidates')).toBeInTheDocument()
   })
 
-  it('parameters: max_candidates editable; gamma/confidence read-only; policy/tie/gap hidden', async () => {
+  it('groups setup into Setting / Input preprocessing (editable gamma) / Advanced; policy/tie/gap hidden', async () => {
     render(
       <ProposalStoreProvider>
         <ServiceProposalPanel />
       </ProposalStoreProvider>,
     )
     await screen.findByText('mock_service_selector_v1')
+    // Setting: max_candidates editable.
     expect(screen.getByLabelText('max_candidates')).toBeEnabled()
-    expect(screen.getByTestId('param-gamma_drowsiness')).toHaveAttribute('readonly')
-    expect(screen.getByTestId('param-confidence_shrinkage_v1')).toBeInTheDocument()
+    // Input preprocessing: gamma is now an EDITABLE numeric input (not a read-only row).
+    const gamma = screen.getByLabelText('Drowsiness Gamma') as HTMLInputElement
+    expect(gamma).toBeEnabled()
+    expect(gamma).not.toHaveAttribute('readonly')
+    expect(gamma.type).toBe('number')
+    // The old read-only param rows are gone entirely.
+    expect(screen.queryByTestId('param-gamma_drowsiness')).toBeNull()
+    // Section headers present.
+    expect(screen.getByText('Setting')).toBeInTheDocument()
+    expect(screen.getByText('Input preprocessing (γ / normalization)')).toBeInTheDocument()
+    // Hidden scalar params stay hidden.
     expect(screen.queryByText('missing_policy')).toBeNull()
     expect(screen.queryByText('tie_breaker')).toBeNull()
     expect(screen.queryByText('material_safety_gap')).toBeNull()
   })
 
-  it('renders the collapsible Hyperparameters (advanced) disclosure with a HyperparamMatrix per hyperparameter', async () => {
+  it('keeps ungrouped knobs (confidence_shrinkage_v1, category_weights) in a collapsed Advanced disclosure', async () => {
     render(
       <ProposalStoreProvider>
         <ServiceProposalPanel />
       </ProposalStoreProvider>,
     )
     await screen.findByText('mock_service_selector_v1')
-    const disclosure = screen.getByTestId('hyperparameters-disclosure') as HTMLDetailsElement
-    expect(disclosure.tagName.toLowerCase()).toBe('details')
-    // Fix (duplicate-label review finding): HyperparamMatrix is rendered with
-    // `hideLabel` in the service subslab, so the subslab header is now the
-    // ONLY place "Category Weights" renders — exactly one match.
-    expect(screen.getByText('Category Weights')).toBeInTheDocument()
-  })
-
-  it('hyperparameters render as labeled subslabs with a kind badge per entry', async () => {
-    render(
-      <ProposalStoreProvider>
-        <ServiceProposalPanel />
-      </ProposalStoreProvider>,
-    )
-    await screen.findByText('mock_service_selector_v1')
-    const disc = screen.getByTestId('hyperparameters-disclosure')
-    fireEvent.click(within(disc).getByText(/Hyperparameters|ハイパーパラメータ/))
-    // e.g. a table-kind hyperparam shows its kind badge
-    expect(within(disc).getAllByTestId('hp-kind-badge').length).toBeGreaterThan(0)
+    const advanced = screen.getByTestId('advanced-hyperparameters') as HTMLDetailsElement
+    expect(advanced.tagName.toLowerCase()).toBe('details')
+    // confidence_shrinkage_v1 is preserved (not deleted) — just moved to Advanced.
+    expect(within(advanced).getByText('confidence_shrinkage_v1')).toBeInTheDocument()
+    // Category Weights (this fixture's ungrouped table hp) also lands in Advanced.
+    expect(within(advanced).getByText('Category Weights')).toBeInTheDocument()
+    // Each Advanced entry carries a kind badge.
+    expect(within(advanced).getAllByTestId('hp-kind-badge').length).toBeGreaterThan(0)
   })
 
   it('renders the service_fit formulation callout', async () => {
@@ -1133,19 +1132,16 @@ describe('ServiceProposalPanel — P5 US4 confidence_shrinkage_v1 toggle (T032)'
   })
 })
 
-// Review fix (whole-branch review finding) — the curated Parameters box used
-// to render the four READONLY_HP_KEYS rows unconditionally, even for a
-// package manifest (like the real mock_service_selector_v1) that has none of
-// those hyperparameters. That produced dead "—" rows implying knobs the
-// package doesn't have. The fix filters READONLY_HP_KEYS down to keys
-// actually present on the current manifest before rendering.
-describe('ServiceProposalPanel — review fix: gamma/confidence rows only when the package defines them', () => {
+// A package manifest with none of the grouped hyperparameters (like the real
+// mock_service_selector_v1) shows only the Setting section — no Input
+// preprocessing (γ) fields are invented for knobs the package doesn't have.
+describe('ServiceProposalPanel — grouped setup adapts to the package manifest', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     vi.mocked(getPackages).mockResolvedValue(packagesResponseMockShaped() as never)
   })
 
-  it('hides all four gamma/confidence read-only rows for a mock-shaped manifest, while max_candidates remains', async () => {
+  it('shows only max_candidates for a mock-shaped manifest (no gamma preprocessing fields)', async () => {
     render(
       <ProposalStoreProvider>
         <ServiceProposalPanel />
@@ -1154,9 +1150,8 @@ describe('ServiceProposalPanel — review fix: gamma/confidence rows only when t
     await screen.findByText('mock_service_selector_v1')
 
     expect(screen.getByLabelText('max_candidates')).toBeInTheDocument()
-    expect(screen.queryByTestId('param-gamma_drowsiness')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('param-gamma_fatigue')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('param-gamma_monotony')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('param-confidence_shrinkage_v1')).not.toBeInTheDocument()
+    // No gamma inputs (the mock manifest defines none) and no preprocessing header.
+    expect(screen.queryByLabelText('Drowsiness Gamma')).not.toBeInTheDocument()
+    expect(screen.queryByText('Input preprocessing (γ / normalization)')).not.toBeInTheDocument()
   })
 })
