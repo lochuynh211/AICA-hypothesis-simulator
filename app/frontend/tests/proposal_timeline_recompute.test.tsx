@@ -1,17 +1,18 @@
 /**
  * P7 T032/T036 (US5) — EventTimeline renders RECOMPUTED/CONTEXT_EDITED and
  * the multi-opportunity sequence (grouped by decision point, current head
- * marked distinctly); ServiceProposalPanel renders the lifecycle-stage /
- * motion-state / allowed-service readout sourced from `journey_state` + the
- * head `opportunity`; ContentProposalPanel visually separates the currently
- * committed content from a non-binding preview (FR-017/FR-022/FR-023).
+ * marked distinctly); ContentProposalPanel visually separates the currently
+ * committed content from a non-binding preview (FR-017/FR-023).
+ *
+ * Task 6 (proposal-service-panel-refinements) removed the ServiceProposalPanel
+ * lifecycle/motion/allowed-service readout this file used to also cover —
+ * see the note above the (now-deleted) describe block below.
  */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
 import { ProposalStoreProvider, useProposalStore } from '../src/state/proposalStore'
 import EventTimeline from '../src/components/proposal/EventTimeline'
-import ServiceProposalPanel from '../src/components/proposal/panels/ServiceProposalPanel'
 import ContentProposalPanel from '../src/components/proposal/panels/ContentProposalPanel'
 import type { ProposalRunLog, DiscreteEvent } from '../src/api/proposalClient'
 
@@ -174,45 +175,14 @@ describe('EventTimeline — multi-opportunity sequence + RECOMPUTED/CONTEXT_EDIT
   })
 })
 
-describe('ServiceProposalPanel — lifecycle/motion/allowed-service readout (FR-022)', () => {
-  beforeEach(() => {
-    vi.resetAllMocks()
-    vi.mocked(getPackages).mockResolvedValue(packagesResponse())
-  })
-
-  it('renders the current lifecycle stage, motion state, and allowed services from journey_state + head opportunity', async () => {
-    const runLog = runLogWithEvents([], {
-      opportunity: {
-        opportunity_id: 'op_2',
-        trigger_purpose: 'rest_recommended',
-        lifecycle_stage: 'after_rest_before_restart',
-        allowed_service_ids: ['stretch_video', 'live_viewing'],
-        simulation_time: '2026-07-16T00:10:01Z',
-        run_seed: 'seed-1',
-      },
-      journey_state: {
-        lifecycle_stage: 'after_rest_before_restart',
-        motion_state: 'stopped',
-        active_service_id: 'live_viewing',
-        active_plan_id: null,
-        playback_state: 'idle',
-      },
-    })
-
-    render(
-      <ProposalStoreProvider>
-        <Setup runLog={runLog} />
-        <ServiceProposalPanel />
-      </ProposalStoreProvider>,
-    )
-    await waitFor(() => expect(getPackages).toHaveBeenCalled())
-
-    expect(screen.getByTestId('readout-lifecycle-stage')).toHaveTextContent('after_rest_before_restart')
-    expect(screen.getByTestId('readout-motion-state')).toHaveTextContent('stopped')
-    expect(screen.getByTestId('readout-allowed-services')).toHaveTextContent('stretch_video')
-    expect(screen.getByTestId('readout-allowed-services')).toHaveTextContent('live_viewing')
-  })
-})
+// Task 6 (proposal-service-panel-refinements) removed the lifecycle/motion/
+// allowed-service readout from ServiceProposalPanel entirely (no migration
+// target — the journey_state/opportunity data it rendered is no longer
+// surfaced in this panel at all), so the describe block that used to live
+// here ("ServiceProposalPanel — lifecycle/motion/allowed-service readout
+// (FR-022)") was deleted rather than migrated. The absence of
+// `journey-readout` is now covered by
+// `proposal_service_panel.test.tsx` ("does not render journey readout...").
 
 describe('ContentProposalPanel — committed action vs non-binding preview (FR-017/FR-023)', () => {
   beforeEach(() => {

@@ -691,7 +691,10 @@ describe('ServiceProposalPanel', () => {
     expect(bodyText).not.toMatch(/確率|安全保証/)
   })
 
-  it('renders the JourneyActionBar and EventTimeline once a run exists', async () => {
+  // Task 6 — journey readout, journey action bar, event timeline, recompute
+  // panel, and the mode toggle are all removed from this panel; the run mode
+  // is locked to 'interactive' (no more mode picker UI).
+  it('does not render journey readout, journey bar, timeline, recompute, or mode toggle', async () => {
     vi.mocked(createRun).mockResolvedValue(runLogWithCandidates() as never)
     render(
       <ProposalStoreProvider>
@@ -699,13 +702,32 @@ describe('ServiceProposalPanel', () => {
       </ProposalStoreProvider>,
     )
     await screen.findByText('mock_service_selector_v1')
-    expect(screen.queryByTestId('journey-action-bar')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('mode-toggle')).toBeNull()
 
     fireEvent.click(screen.getByTestId('service-run-button'))
     await waitFor(() => expect(createRun).toHaveBeenCalled())
+    await screen.findByText('live_viewing')
 
-    expect(await screen.findByTestId('journey-action-bar')).toBeInTheDocument()
-    expect(screen.getByTestId('event-timeline')).toBeInTheDocument()
+    expect(screen.queryByTestId('journey-readout')).toBeNull()
+    expect(screen.queryByTestId('mode-toggle')).toBeNull()
+    expect(screen.queryByTestId('journey-action-bar')).toBeNull()
+    expect(screen.queryByTestId('event-timeline')).toBeNull()
+    expect(screen.queryByTestId('recompute-panel')).toBeNull()
+  })
+
+  it('always creates the run with mode "interactive" (mode picker removed, Task 6)', async () => {
+    vi.mocked(createRun).mockResolvedValue(runLogWithCandidates() as never)
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('mock_service_selector_v1')
+    fireEvent.click(screen.getByTestId('service-run-button'))
+
+    await waitFor(() => expect(createRun).toHaveBeenCalled())
+    const body = vi.mocked(createRun).mock.calls[0][0]
+    expect(body.mode).toBe('interactive')
   })
 })
 

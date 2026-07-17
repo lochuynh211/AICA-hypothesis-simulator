@@ -122,14 +122,19 @@ describe('ModeToggle', () => {
     expect(screen.getByTestId('probe-mode')).toHaveTextContent('quick_check')
   })
 
-  it('the chosen mode is included in the create-run request body', async () => {
+  // Task 6 (proposal-service-panel-refinements) un-mounted <ModeToggle />
+  // from ServiceProposalPanel and locked the create-run body's `mode` to the
+  // literal 'interactive' — the toggle no longer influences a run at all, so
+  // the previous "chosen mode is included in the create-run request body"
+  // test (which drove ModeToggle through the panel) is replaced by this
+  // regression: the panel's request body is always 'interactive', and
+  // ModeToggle itself is not rendered inside it (see
+  // `proposal_service_panel.test.tsx` for the `mode-toggle` absence
+  // assertion covering the panel side of this).
+  it('ServiceProposalPanel always creates the run with mode "interactive" (mode picker removed)', async () => {
     vi.mocked(getPackages).mockResolvedValue(packagesResponse())
     vi.mocked(createRun).mockResolvedValue(createdRunLog())
 
-    // ServiceProposalPanel already wires <ModeToggle /> internally (P7 T036)
-    // — rendering it standalone here would duplicate the `mode-toggle-*`
-    // testids, so this exercises the toggle through the panel that actually
-    // ships it, not a second freestanding instance.
     render(
       <ProposalStoreProvider>
         <ServiceProposalPanel />
@@ -139,11 +144,12 @@ describe('ModeToggle', () => {
     await waitFor(() => expect(getPackages).toHaveBeenCalled())
     await screen.findByTestId('service-run-button')
 
-    fireEvent.click(screen.getByTestId('mode-toggle-quick_check'))
+    expect(screen.queryByTestId('mode-toggle')).toBeNull()
+
     fireEvent.click(screen.getByTestId('service-run-button'))
 
     await waitFor(() =>
-      expect(createRun).toHaveBeenCalledWith(expect.objectContaining({ mode: 'quick_check' })),
+      expect(createRun).toHaveBeenCalledWith(expect.objectContaining({ mode: 'interactive' })),
     )
   })
 })
