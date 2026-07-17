@@ -21,6 +21,7 @@ import {
 } from '../../../api/proposalClient'
 import HyperparamMatrix from '../HyperparamMatrix'
 import ReasonBreakdown, { type ReasonRow } from '../ReasonBreakdown'
+import ServiceExplainability from '../ServiceExplainability'
 import JourneyActionBar from '../JourneyActionBar'
 import EventTimeline from '../EventTimeline'
 
@@ -419,6 +420,7 @@ export default function ServiceProposalPanel() {
                     lang={lang}
                     variant="service"
                   />
+                  <ServiceExplainability candidate={candidate} lang={lang} />
                   <div
                     style={{
                       display: 'flex',

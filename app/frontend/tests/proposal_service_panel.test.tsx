@@ -524,6 +524,149 @@ describe('ServiceProposalPanel', () => {
     expect(screen.getAllByTestId('reason-breakdown').length).toBe(2)
   })
 
+  // P5 Unit D (T025) — the ENRICHED explainability rendering (ServiceExplainability,
+  // wired into Panel ③ at T024): a fully §14-populated candidate (all 17
+  // feature_contributions rows + subtotals + dominance) must render all of
+  // it, visible in the DOM (the per-feature table lives inside a <details>,
+  // which testing-library queries reach whether open or collapsed).
+  const FEATURE_IDS = [
+    'drowsiness_level', 'fatigue_level', 'traffic_state', 'road_type', 'night_state',
+    'monotony_level', 'route_tags', 'destination_tags', 'child_present', 'multiple_passengers',
+    'oshi_registered', 'oshi_mode', 'service_recency_state', 'service_usage_level',
+    'scene_service_usage_level', 'service_proposal_acceptance_rate', 'service_recovery_rate',
+  ]
+
+  function fullFeatureContributions() {
+    return FEATURE_IDS.map((feature_id, idx) => ({
+      feature_id,
+      feature_value: idx % 3 === 0 ? 'highway' : 50 + idx,
+      response_coefficient: idx % 4 === 0 ? -1.0 : 1.0,
+      weight: 0.02 + idx * 0.01,
+      contribution: idx % 4 === 0 ? -0.05 : 0.05 + idx * 0.001,
+      source_reference: idx % 2 === 0 ? 'Slide 67 driver row' : null,
+      raw_value: idx % 3 === 0 ? 'highway' : 50 + idx,
+      normalization_function: '(x/100)^gamma',
+      normalized_evidence: 0.5,
+      response_provenance: idx < 12 ? 'cdc_su_explicit' : 'cdc_su_direct_candidate_feature',
+      normalized_feature_response: idx % 4 === 0 ? -0.5 : 0.5,
+      hierarchy_path: `Situation/Driver state/${feature_id}`,
+      base_weight: 0.02 + idx * 0.01,
+      purpose_multiplier: 1.2,
+      effective_weight: 0.02 + idx * 0.01,
+      status: 'used',
+    }))
+  }
+
+  it('renders a real-shaped candidate with all 17 feature rows, subtotals, and the dominance readout visible (T025)', async () => {
+    const realShapedRunLog = runLogWithCandidates()
+    const [firstCandidate] = realShapedRunLog.evidence[0].output.ranked_candidates
+    firstCandidate.feature_contributions = fullFeatureContributions()
+    firstCandidate.situation_fit = 0.5
+    firstCandidate.preference_fit = 0.15
+    firstCandidate.history_fit = 0.072349
+    firstCandidate.strongest_support = { feature_id: 'drowsiness_level', contribution: 0.2 }
+    firstCandidate.strongest_oppose = { feature_id: 'oshi_mode', contribution: -0.05 }
+    firstCandidate.dominance = {
+      status: 'default_dominance_preserved',
+      w_d: 0.823048,
+      w_l: 0.176952,
+      required_gap: 0.429991,
+      material_safety_gap: 1.0,
+      safety_share: 0.823048,
+      safety_share_warning: false,
+    }
+    realShapedRunLog.evidence[0].output.dominance = firstCandidate.dominance
+    realShapedRunLog.evidence[0].output.effective_weights = { drowsiness_level: 0.254551 }
+    realShapedRunLog.evidence[0].output.resolved_config_versions = { contract_version: '1.0.0' }
+
+    vi.mocked(createRun).mockResolvedValue(realShapedRunLog as never)
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('mock_service_selector_v1')
+    fireEvent.click(screen.getByTestId('service-run-button'))
+    await waitFor(() => expect(createRun).toHaveBeenCalled())
+
+    const explain = await screen.findByTestId('service-explainability')
+    expect(explain).toBeInTheDocument()
+
+    // Subtotals + strongest support/oppose visible.
+    expect(screen.getByTestId('service-subtotals')).toBeInTheDocument()
+    expect(screen.getByTestId('strongest-support')).toHaveTextContent('drowsiness_level')
+    expect(screen.getByTestId('strongest-oppose')).toHaveTextContent('oshi_mode')
+
+    // Dominance readout visible: status + safety_share %.
+    const dominance = screen.getByTestId('service-dominance')
+    expect(dominance).toBeInTheDocument()
+    expect(screen.getByTestId('dominance-status')).toBeInTheDocument()
+    expect(screen.getByTestId('safety-share')).toHaveTextContent('82.3%')
+
+    // All 17 feature rows present (queried regardless of <details> open state).
+    for (const featureId of FEATURE_IDS) {
+      expect(screen.getByTestId(`explain-row-${featureId}`)).toBeInTheDocument()
+    }
+  })
+
+  it('renders the lean fallback for a mock-shaped candidate — no explainability section, no crash', async () => {
+    vi.mocked(createRun).mockResolvedValue(runLogWithCandidates() as never)
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('mock_service_selector_v1')
+    fireEvent.click(screen.getByTestId('service-run-button'))
+    await waitFor(() => expect(createRun).toHaveBeenCalled())
+
+    expect(await screen.findByText('live_viewing')).toBeInTheDocument()
+    // The mock output carries none of the P5 §14 optional fields — the
+    // enrichment renders nothing at all (no empty section headers).
+    expect(screen.queryByTestId('service-explainability')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('service-subtotals')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('service-dominance')).not.toBeInTheDocument()
+  })
+
+  // T025a (FR-023) frontend guard: no dominance/score label anywhere in the
+  // rendered Panel ③ output uses forbidden probability/certification
+  // phrasing, for either the lean (mock) OR enriched (real) render path.
+  it('never renders forbidden probability/certification phrasing (FR-023 guard)', async () => {
+    const realShapedRunLog = runLogWithCandidates()
+    const [firstCandidate] = realShapedRunLog.evidence[0].output.ranked_candidates
+    firstCandidate.feature_contributions = fullFeatureContributions()
+    firstCandidate.situation_fit = 0.5
+    firstCandidate.preference_fit = 0.15
+    firstCandidate.history_fit = 0.072349
+    firstCandidate.strongest_support = { feature_id: 'drowsiness_level', contribution: 0.2 }
+    firstCandidate.strongest_oppose = null
+    firstCandidate.dominance = {
+      status: 'dominance_not_guaranteed',
+      w_d: 0.5,
+      w_l: 0.5,
+      required_gap: 2.0,
+      material_safety_gap: 1.0,
+      safety_share: 0.5,
+      safety_share_warning: true,
+    }
+    realShapedRunLog.evidence[0].output.dominance = firstCandidate.dominance
+
+    vi.mocked(createRun).mockResolvedValue(realShapedRunLog as never)
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('mock_service_selector_v1')
+    fireEvent.click(screen.getByTestId('service-run-button'))
+    await waitFor(() => expect(createRun).toHaveBeenCalled())
+    await screen.findByTestId('service-dominance')
+
+    const bodyText = document.body.textContent ?? ''
+    expect(bodyText.toLowerCase()).not.toMatch(/probability|certified|certification/)
+    expect(bodyText).not.toMatch(/確率|安全保証/)
+  })
+
   it('renders the JourneyActionBar and EventTimeline once a run exists', async () => {
     vi.mocked(createRun).mockResolvedValue(runLogWithCandidates() as never)
     render(
