@@ -28,6 +28,1541 @@
     "call_response_stopped",
     "oshi_reexperience"
   ],
-  "parameters": {},
-  "hyperparameters": []
+  "parameters": {
+    "service_response_profiles": {
+      "music_playlist": {
+        "drowsiness_level": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 driver row (music_playlist not named)"
+        },
+        "fatigue_level": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 driver row (music_playlist not named)"
+        },
+        "traffic_state": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 environment row (music_playlist not named)"
+        },
+        "night_state": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 environment row (music_playlist not named)"
+        },
+        "monotony_level": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 environment row (music_playlist not named)"
+        },
+        "route_tags": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 route row (music recommendation)"
+        },
+        "destination_tags": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 route row (music recommendation)"
+        },
+        "child_present": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 passenger row (music_playlist not named)"
+        },
+        "multiple_passengers": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 passenger row (music_playlist not named)"
+        },
+        "oshi_registered": {
+          "coefficient": 0.5,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 oshi row (oshi-mode content, mild - service definition magnitude)"
+        },
+        "oshi_mode": {
+          "coefficient": 0.5,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 oshi row (oshi-mode content, mild - service definition magnitude)"
+        },
+        "service_recency_state": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (novelty/service-recency direct feature)"
+        },
+        "service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (overall usage direct feature)"
+        },
+        "scene_service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (scene-specific usage direct feature)"
+        },
+        "service_proposal_acceptance_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 acceptance-rate row"
+        },
+        "service_recovery_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 recovery-rate row"
+        }
+      },
+      "humming_karaoke": {
+        "drowsiness_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)"
+        },
+        "fatigue_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)"
+        },
+        "traffic_state": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 environment row (congested -> activation services)"
+        },
+        "night_state": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 environment row (night -> activation services)"
+        },
+        "monotony_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 environment row (monotony -> activation services)"
+        },
+        "route_tags": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 route row (music recommendation + humming karaoke)"
+        },
+        "destination_tags": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 route row (music recommendation + humming karaoke)"
+        },
+        "child_present": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 passenger row (child/group -> shared services)"
+        },
+        "multiple_passengers": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 passenger row (child/group -> shared services)"
+        },
+        "oshi_registered": {
+          "coefficient": 0.5,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 oshi row (oshi-mode content, mild - service definition magnitude)"
+        },
+        "oshi_mode": {
+          "coefficient": 0.5,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 oshi row (oshi-mode content, mild - service definition magnitude)"
+        },
+        "service_recency_state": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (novelty/service-recency direct feature)"
+        },
+        "service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (overall usage direct feature)"
+        },
+        "scene_service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (scene-specific usage direct feature)"
+        },
+        "service_proposal_acceptance_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 acceptance-rate row"
+        },
+        "service_recovery_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 recovery-rate row"
+        }
+      },
+      "call_response_driving": {
+        "drowsiness_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)"
+        },
+        "fatigue_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)"
+        },
+        "traffic_state": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 environment row (congested -> activation services)"
+        },
+        "night_state": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 environment row (night -> activation services)"
+        },
+        "monotony_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 environment row (monotony -> activation services)"
+        },
+        "route_tags": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 route row (interaction games not named)"
+        },
+        "destination_tags": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 route row (interaction games not named)"
+        },
+        "child_present": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 passenger row (child/group -> shared services)"
+        },
+        "multiple_passengers": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 passenger row (child/group -> shared services)"
+        },
+        "oshi_registered": {
+          "coefficient": 0.5,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 oshi row (oshi-mode content, mild - service definition magnitude)"
+        },
+        "oshi_mode": {
+          "coefficient": 0.5,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 oshi row (oshi-mode content, mild - service definition magnitude)"
+        },
+        "service_recency_state": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (novelty/service-recency direct feature)"
+        },
+        "service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (overall usage direct feature)"
+        },
+        "scene_service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (scene-specific usage direct feature)"
+        },
+        "service_proposal_acceptance_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 acceptance-rate row"
+        },
+        "service_recovery_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 recovery-rate row"
+        }
+      },
+      "quiz": {
+        "drowsiness_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)"
+        },
+        "fatigue_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)"
+        },
+        "traffic_state": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 environment row (congested -> activation services)"
+        },
+        "night_state": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 environment row (night -> activation services)"
+        },
+        "monotony_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 environment row (monotony -> activation services)"
+        },
+        "route_tags": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 route row (interaction games not named)"
+        },
+        "destination_tags": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 route row (interaction games not named)"
+        },
+        "child_present": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 passenger row (child/group -> shared services)"
+        },
+        "multiple_passengers": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 passenger row (child/group -> shared services)"
+        },
+        "oshi_registered": {
+          "coefficient": 0.5,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 oshi row (oshi-mode content, mild - service definition magnitude)"
+        },
+        "oshi_mode": {
+          "coefficient": 0.5,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 oshi row (oshi-mode content, mild - service definition magnitude)"
+        },
+        "service_recency_state": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (novelty/service-recency direct feature)"
+        },
+        "service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (overall usage direct feature)"
+        },
+        "scene_service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (scene-specific usage direct feature)"
+        },
+        "service_proposal_acceptance_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 acceptance-rate row"
+        },
+        "service_recovery_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 recovery-rate row"
+        }
+      },
+      "ranking_creation": {
+        "drowsiness_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)"
+        },
+        "fatigue_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 driver row (drowsiness/fatigue -> humming/call-response/quiz/ranking)"
+        },
+        "traffic_state": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 environment row (congested -> activation services)"
+        },
+        "night_state": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 environment row (night -> activation services)"
+        },
+        "monotony_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 environment row (monotony -> activation services)"
+        },
+        "route_tags": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 route row (interaction games not named)"
+        },
+        "destination_tags": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 route row (interaction games not named)"
+        },
+        "child_present": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 passenger row (child/group -> shared services)"
+        },
+        "multiple_passengers": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 passenger row (child/group -> shared services)"
+        },
+        "oshi_registered": {
+          "coefficient": 0.5,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 oshi row (oshi-mode content, mild - service definition magnitude)"
+        },
+        "oshi_mode": {
+          "coefficient": 0.5,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 oshi row (oshi-mode content, mild - service definition magnitude)"
+        },
+        "service_recency_state": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (novelty/service-recency direct feature)"
+        },
+        "service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (overall usage direct feature)"
+        },
+        "scene_service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (scene-specific usage direct feature)"
+        },
+        "service_proposal_acceptance_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 acceptance-rate row"
+        },
+        "service_recovery_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 recovery-rate row"
+        }
+      },
+      "radio_style": {
+        "drowsiness_level": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 driver row (radio_style not named on any driver-state/environment row)"
+        },
+        "fatigue_level": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 driver row (radio_style not named on any driver-state/environment row)"
+        },
+        "traffic_state": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 driver row (radio_style not named on any driver-state/environment row)"
+        },
+        "night_state": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 driver row (radio_style not named on any driver-state/environment row)"
+        },
+        "monotony_level": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 driver row (radio_style not named on any driver-state/environment row)"
+        },
+        "route_tags": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 route row (radio_style not named)"
+        },
+        "destination_tags": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 route row (radio_style not named)"
+        },
+        "child_present": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 passenger row (radio_style not named)"
+        },
+        "multiple_passengers": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 passenger row (radio_style not named)"
+        },
+        "oshi_registered": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 39/67 oshi row - radio_style is THE oshi service (strong response)"
+        },
+        "oshi_mode": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 39/67 oshi row - radio_style is THE oshi service (strong response)"
+        },
+        "service_recency_state": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (novelty/service-recency direct feature)"
+        },
+        "service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (overall usage direct feature)"
+        },
+        "scene_service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (scene-specific usage direct feature)"
+        },
+        "service_proposal_acceptance_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 acceptance-rate row"
+        },
+        "service_recovery_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 recovery-rate row"
+        }
+      },
+      "live_viewing": {
+        "drowsiness_level": {
+          "coefficient": 0.5,
+          "provenance": "post_rest_hypothesis",
+          "source_reference": "Slide 67 (1) driver row silent; light engagement while recovering"
+        },
+        "fatigue_level": {
+          "coefficient": 0.5,
+          "provenance": "post_rest_hypothesis",
+          "source_reference": "Slide 67 (1) driver row silent; light engagement while recovering"
+        },
+        "traffic_state": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Environment reset by the stopped/post-rest snapshot"
+        },
+        "night_state": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 (1) column names no night response"
+        },
+        "monotony_level": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Environment reset by the stopped/post-rest snapshot"
+        },
+        "route_tags": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 (1) route row names only oshi_reexperience"
+        },
+        "destination_tags": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 (1) route row names only oshi_reexperience"
+        },
+        "child_present": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 (1) passenger row -> live viewing, karaoke"
+        },
+        "multiple_passengers": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 (1) passenger row -> live viewing, karaoke"
+        },
+        "oshi_registered": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 (1) oshi row -> live viewing, karaoke, oshi_reexperience"
+        },
+        "oshi_mode": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 (1) oshi row -> live viewing, karaoke, oshi_reexperience"
+        },
+        "service_recency_state": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (novelty/service-recency direct feature)"
+        },
+        "service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (overall usage direct feature)"
+        },
+        "scene_service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (scene-specific usage direct feature)"
+        },
+        "service_proposal_acceptance_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 acceptance-rate row"
+        },
+        "service_recovery_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 recovery-rate row"
+        }
+      },
+      "stretch_video": {
+        "drowsiness_level": {
+          "coefficient": 1.0,
+          "provenance": "post_rest_hypothesis",
+          "source_reference": "Slide 67 (1) driver row silent; stretch_video = physical recovery"
+        },
+        "fatigue_level": {
+          "coefficient": 1.0,
+          "provenance": "post_rest_hypothesis",
+          "source_reference": "Slide 67 (1) driver row silent; stretch_video = physical recovery"
+        },
+        "traffic_state": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Environment reset by the stopped/post-rest snapshot"
+        },
+        "night_state": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 (1) column names no night response"
+        },
+        "monotony_level": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Environment reset by the stopped/post-rest snapshot"
+        },
+        "route_tags": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 (1) route row names only oshi_reexperience"
+        },
+        "destination_tags": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 (1) route row names only oshi_reexperience"
+        },
+        "child_present": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 (1) passenger row omits stretch_video"
+        },
+        "multiple_passengers": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 (1) passenger row omits stretch_video"
+        },
+        "oshi_registered": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 40 defines no oshi content for stretch_video; Slide 67 (1) oshi row omits it"
+        },
+        "oshi_mode": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 40 defines no oshi content for stretch_video; Slide 67 (1) oshi row omits it"
+        },
+        "service_recency_state": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (novelty/service-recency direct feature)"
+        },
+        "service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (overall usage direct feature)"
+        },
+        "scene_service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (scene-specific usage direct feature)"
+        },
+        "service_proposal_acceptance_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 acceptance-rate row"
+        },
+        "service_recovery_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 recovery-rate row"
+        }
+      },
+      "full_karaoke": {
+        "drowsiness_level": {
+          "coefficient": 0.5,
+          "provenance": "post_rest_hypothesis",
+          "source_reference": "Slide 67 (1) driver row silent; light engagement while recovering"
+        },
+        "fatigue_level": {
+          "coefficient": 0.5,
+          "provenance": "post_rest_hypothesis",
+          "source_reference": "Slide 67 (1) driver row silent; light engagement while recovering"
+        },
+        "traffic_state": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Environment reset by the stopped/post-rest snapshot"
+        },
+        "night_state": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 (1) column names no night response"
+        },
+        "monotony_level": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Environment reset by the stopped/post-rest snapshot"
+        },
+        "route_tags": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 (1) route row names only oshi_reexperience"
+        },
+        "destination_tags": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 (1) route row names only oshi_reexperience"
+        },
+        "child_present": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 (1) passenger row -> live viewing, karaoke"
+        },
+        "multiple_passengers": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 (1) passenger row -> live viewing, karaoke"
+        },
+        "oshi_registered": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 (1) oshi row -> live viewing, karaoke, oshi_reexperience"
+        },
+        "oshi_mode": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 (1) oshi row -> live viewing, karaoke, oshi_reexperience"
+        },
+        "service_recency_state": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (novelty/service-recency direct feature)"
+        },
+        "service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (overall usage direct feature)"
+        },
+        "scene_service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (scene-specific usage direct feature)"
+        },
+        "service_proposal_acceptance_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 acceptance-rate row"
+        },
+        "service_recovery_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 recovery-rate row"
+        }
+      },
+      "call_response_stopped": {
+        "drowsiness_level": {
+          "coefficient": 0.5,
+          "provenance": "post_rest_hypothesis",
+          "source_reference": "Slide 40 participatory 合いの手 video; mild engagement while recovering"
+        },
+        "fatigue_level": {
+          "coefficient": 0.5,
+          "provenance": "post_rest_hypothesis",
+          "source_reference": "Slide 40 participatory 合いの手 video; mild engagement while recovering"
+        },
+        "traffic_state": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Environment reset by the stopped/post-rest snapshot"
+        },
+        "night_state": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 (1) column names no night response"
+        },
+        "monotony_level": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Environment reset by the stopped/post-rest snapshot"
+        },
+        "route_tags": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 (1) names 合いの手 in no column; unnamed for route"
+        },
+        "destination_tags": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 (1) names 合いの手 in no column; unnamed for destination"
+        },
+        "child_present": {
+          "coefficient": 0.5,
+          "provenance": "post_rest_hypothesis",
+          "source_reference": "Slide 40 shared, group-friendly recovery activity"
+        },
+        "multiple_passengers": {
+          "coefficient": 0.5,
+          "provenance": "post_rest_hypothesis",
+          "source_reference": "Slide 40 shared, group-friendly recovery activity"
+        },
+        "oshi_registered": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 (1) names 合いの手 in no column; unnamed for oshi"
+        },
+        "oshi_mode": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 (1) names 合いの手 in no column; unnamed for oshi"
+        },
+        "service_recency_state": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (novelty/service-recency direct feature)"
+        },
+        "service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (overall usage direct feature)"
+        },
+        "scene_service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (scene-specific usage direct feature)"
+        },
+        "service_proposal_acceptance_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 acceptance-rate row"
+        },
+        "service_recovery_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 recovery-rate row"
+        }
+      },
+      "oshi_reexperience": {
+        "drowsiness_level": {
+          "coefficient": 0.5,
+          "provenance": "post_rest_hypothesis",
+          "source_reference": "Slide 67 (1) driver row silent; light engagement while recovering"
+        },
+        "fatigue_level": {
+          "coefficient": 0.5,
+          "provenance": "post_rest_hypothesis",
+          "source_reference": "Slide 67 (1) driver row silent; light engagement while recovering"
+        },
+        "traffic_state": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Environment reset by the stopped/post-rest snapshot"
+        },
+        "night_state": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 (1) column names no night response"
+        },
+        "monotony_level": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Environment reset by the stopped/post-rest snapshot"
+        },
+        "route_tags": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 (1) route row -> oshi_reexperience"
+        },
+        "destination_tags": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 (1) route row -> oshi_reexperience"
+        },
+        "child_present": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 (1) passenger row omits oshi_reexperience"
+        },
+        "multiple_passengers": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 (1) passenger row omits oshi_reexperience"
+        },
+        "oshi_registered": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 (1) oshi row -> oshi_reexperience"
+        },
+        "oshi_mode": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 (1) oshi row -> oshi_reexperience"
+        },
+        "service_recency_state": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (novelty/service-recency direct feature)"
+        },
+        "service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (overall usage direct feature)"
+        },
+        "scene_service_usage_level": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slides 66-67 (scene-specific usage direct feature)"
+        },
+        "service_proposal_acceptance_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 acceptance-rate row"
+        },
+        "service_recovery_rate": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_direct_candidate_feature",
+          "source_reference": "Slide 67 recovery-rate row"
+        }
+      }
+    },
+    "road_response_profiles": {
+      "music_playlist": {
+        "highway": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 environment row (music_playlist not named for highway)"
+        },
+        "local": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Source does not distinguish local road"
+        },
+        "mountain": {
+          "coefficient": 0.5,
+          "provenance": "normalized_context_hypothesis",
+          "source_reference": "Demanding road reduces interactive load; low-interaction audio mildly supported"
+        },
+        "parking": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Driving/stopped permissibility is eligibility, not response"
+        }
+      },
+      "humming_karaoke": {
+        "highway": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 environment row (highway)"
+        },
+        "local": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Source does not distinguish local road"
+        },
+        "mountain": {
+          "coefficient": -0.5,
+          "provenance": "normalized_context_hypothesis",
+          "source_reference": "Demanding road reduces moderate-interaction suitability"
+        },
+        "parking": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Driving/stopped permissibility is eligibility, not response"
+        }
+      },
+      "call_response_driving": {
+        "highway": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 environment row (highway)"
+        },
+        "local": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Source does not distinguish local road"
+        },
+        "mountain": {
+          "coefficient": -0.5,
+          "provenance": "normalized_context_hypothesis",
+          "source_reference": "Demanding road reduces moderate-interaction suitability"
+        },
+        "parking": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Driving/stopped permissibility is eligibility, not response"
+        }
+      },
+      "quiz": {
+        "highway": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 environment row (highway)"
+        },
+        "local": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Source does not distinguish local road"
+        },
+        "mountain": {
+          "coefficient": -1.0,
+          "provenance": "normalized_context_hypothesis",
+          "source_reference": "Demanding road makes high-interaction cognitive load unsafe"
+        },
+        "parking": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Driving/stopped permissibility is eligibility, not response"
+        }
+      },
+      "ranking_creation": {
+        "highway": {
+          "coefficient": 1.0,
+          "provenance": "cdc_su_explicit",
+          "source_reference": "Slide 67 environment row (highway)"
+        },
+        "local": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Source does not distinguish local road"
+        },
+        "mountain": {
+          "coefficient": -1.0,
+          "provenance": "normalized_context_hypothesis",
+          "source_reference": "Demanding road makes high-interaction cognitive load unsafe"
+        },
+        "parking": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Driving/stopped permissibility is eligibility, not response"
+        }
+      },
+      "radio_style": {
+        "highway": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 environment row (radio_style not named for highway)"
+        },
+        "local": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Source does not distinguish local road"
+        },
+        "mountain": {
+          "coefficient": 0.5,
+          "provenance": "normalized_context_hypothesis",
+          "source_reference": "Demanding road reduces interactive load; low-interaction audio mildly supported"
+        },
+        "parking": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Driving/stopped permissibility is eligibility, not response"
+        }
+      },
+      "live_viewing": {
+        "highway": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services; road is forced 'parking' by the stopped/post-rest snapshot"
+        },
+        "local": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services"
+        },
+        "mountain": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services"
+        },
+        "parking": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services; the expected post-rest road value"
+        }
+      },
+      "stretch_video": {
+        "highway": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services; road is forced 'parking' by the stopped/post-rest snapshot"
+        },
+        "local": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services"
+        },
+        "mountain": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services"
+        },
+        "parking": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services; the expected post-rest road value"
+        }
+      },
+      "full_karaoke": {
+        "highway": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services; road is forced 'parking' by the stopped/post-rest snapshot"
+        },
+        "local": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services"
+        },
+        "mountain": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services"
+        },
+        "parking": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services; the expected post-rest road value"
+        }
+      },
+      "call_response_stopped": {
+        "highway": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services; road is forced 'parking' by the stopped/post-rest snapshot"
+        },
+        "local": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services"
+        },
+        "mountain": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services"
+        },
+        "parking": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services; the expected post-rest road value"
+        }
+      },
+      "oshi_reexperience": {
+        "highway": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services; road is forced 'parking' by the stopped/post-rest snapshot"
+        },
+        "local": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services"
+        },
+        "mountain": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services"
+        },
+        "parking": {
+          "coefficient": 0.0,
+          "provenance": "neutral_source_silent",
+          "source_reference": "Slide 67 does not address road type for post-rest services; the expected post-rest road value"
+        }
+      }
+    },
+    "response_anchor_map": {
+      "strongly_opposes": -1.0,
+      "opposes": -0.5,
+      "neutral": 0.0,
+      "supports": 0.5,
+      "strongly_supports": 1.0
+    },
+    "usage_ordinal_map": {
+      "never": -1.0,
+      "low": -0.5,
+      "med": 0.25,
+      "high": 1.0
+    },
+    "recency_ordinal_map": {
+      "recent": 0.0,
+      "long_unused": 0.5,
+      "never": 1.0
+    },
+    "recognized_route_tags": [
+      "highway",
+      "mountain",
+      "coastal",
+      "urban",
+      "scenic_byway",
+      "rural"
+    ],
+    "recognized_destination_tags": [
+      "coast",
+      "resort",
+      "nature",
+      "event",
+      "oshi_venue",
+      "event_hall",
+      "home",
+      "shopping"
+    ],
+    "scene_taxonomy": {
+      "version": "1",
+      "predicates": [
+        "traffic:congested (traffic_state == congested)",
+        "road:<highway|local|mountain|parking> (road_type)",
+        "time:night (night_state == night)",
+        "monotony:medium (monotony_medium_min <= monotony_level < monotony_high_min)",
+        "monotony:high (monotony_level >= monotony_high_min)",
+        "passenger:child (child_present)",
+        "passenger:group (multiple_passengers)",
+        "route:<tag> (one per recognized route_tags entry)",
+        "destination:<tag> (one per recognized destination_tags entry)"
+      ]
+    },
+    "candidate_stage_family": {
+      "before_rest_until_stop": [
+        "music_playlist",
+        "humming_karaoke",
+        "call_response_driving",
+        "quiz",
+        "ranking_creation",
+        "radio_style"
+      ],
+      "active_driving_content": [
+        "music_playlist",
+        "humming_karaoke",
+        "call_response_driving",
+        "quiz",
+        "ranking_creation",
+        "radio_style"
+      ],
+      "after_rest_before_restart": [
+        "live_viewing",
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped",
+        "oshi_reexperience"
+      ],
+      "during_rest_stopped": []
+    },
+    "missing_policy": "neutral_and_disclose",
+    "top_k": 3,
+    "tie_breaker": "candidate_id",
+    "material_safety_gap": 1.0
+  },
+  "hyperparameters": [
+    {
+      "key": "hierarchy_weights",
+      "kind": "table",
+      "label": {
+        "ja": "階層重み（§6.1）",
+        "en": "Hierarchy Weights (§6.1)"
+      },
+      "default": {
+        "Situation": {
+          "share": 0.8,
+          "subgroups": {
+            "driver_state": {
+              "share": 0.5,
+              "leaves": {
+                "drowsiness_level": {
+                  "share": 0.55
+                },
+                "fatigue_level": {
+                  "share": 0.45
+                }
+              }
+            },
+            "driving_environment": {
+              "share": 0.35,
+              "leaves": {
+                "traffic_state": {
+                  "share": 0.2
+                },
+                "road_type": {
+                  "share": 0.2
+                },
+                "night_state": {
+                  "share": 0.2
+                },
+                "monotony_level": {
+                  "share": 0.4
+                }
+              }
+            },
+            "route_context": {
+              "share": 0.075,
+              "leaves": {
+                "route_tags": {
+                  "share": 0.55
+                },
+                "destination_tags": {
+                  "share": 0.45
+                }
+              }
+            },
+            "passenger_composition": {
+              "share": 0.075,
+              "leaves": {
+                "child_present": {
+                  "share": 0.65
+                },
+                "multiple_passengers": {
+                  "share": 0.35
+                }
+              }
+            }
+          }
+        },
+        "Preference": {
+          "share": 0.12,
+          "subgroups": {
+            "oshi_preference": {
+              "share": 0.25,
+              "leaves": {
+                "oshi_registered": {
+                  "share": 0.35
+                },
+                "oshi_mode": {
+                  "share": 0.65
+                }
+              }
+            },
+            "novelty": {
+              "share": 0.1,
+              "leaves": {
+                "service_recency_state": {
+                  "share": 1.0
+                }
+              }
+            },
+            "overall_usage": {
+              "share": 0.25,
+              "leaves": {
+                "service_usage_level": {
+                  "share": 1.0
+                }
+              }
+            },
+            "scene_preference": {
+              "share": 0.4,
+              "leaves": {
+                "scene_service_usage_level": {
+                  "share": 1.0
+                }
+              }
+            }
+          }
+        },
+        "History": {
+          "share": 0.08,
+          "subgroups": {
+            "proposal_acceptance": {
+              "share": 0.25,
+              "leaves": {
+                "service_proposal_acceptance_rate": {
+                  "share": 1.0
+                }
+              }
+            },
+            "recovery": {
+              "share": 0.75,
+              "leaves": {
+                "service_recovery_rate": {
+                  "share": 1.0
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "key": "purpose_multipliers",
+      "kind": "table",
+      "label": {
+        "ja": "目的別乗数（§6.2）",
+        "en": "Purpose Multipliers (§6.2)"
+      },
+      "default": {
+        "driver_state": {
+          "rest_recommended": 1.4,
+          "inattentive_driving_prevention_recovery": 1.5,
+          "route_music": 1.2,
+          "child_passenger_experience": 1.2
+        },
+        "driving_environment": {
+          "rest_recommended": 1.1,
+          "inattentive_driving_prevention_recovery": 1.4,
+          "route_music": 1.0,
+          "child_passenger_experience": 1.0
+        },
+        "route_context": {
+          "rest_recommended": 1.0,
+          "inattentive_driving_prevention_recovery": 0.75,
+          "route_music": 2.0,
+          "child_passenger_experience": 0.75
+        },
+        "passenger_composition": {
+          "rest_recommended": 1.0,
+          "inattentive_driving_prevention_recovery": 0.85,
+          "route_music": 0.8,
+          "child_passenger_experience": 2.0
+        },
+        "oshi_preference": {
+          "rest_recommended": 1.0,
+          "inattentive_driving_prevention_recovery": 0.8,
+          "route_music": 1.1,
+          "child_passenger_experience": 0.75
+        },
+        "novelty": {
+          "rest_recommended": 0.8,
+          "inattentive_driving_prevention_recovery": 0.8,
+          "route_music": 0.8,
+          "child_passenger_experience": 0.8
+        },
+        "overall_usage": {
+          "rest_recommended": 0.9,
+          "inattentive_driving_prevention_recovery": 0.9,
+          "route_music": 0.9,
+          "child_passenger_experience": 1.0
+        },
+        "scene_preference": {
+          "rest_recommended": 1.0,
+          "inattentive_driving_prevention_recovery": 1.1,
+          "route_music": 1.1,
+          "child_passenger_experience": 1.2
+        },
+        "proposal_acceptance": {
+          "rest_recommended": 1.0,
+          "inattentive_driving_prevention_recovery": 1.0,
+          "route_music": 1.0,
+          "child_passenger_experience": 1.0
+        },
+        "recovery": {
+          "rest_recommended": 1.3,
+          "inattentive_driving_prevention_recovery": 1.25,
+          "route_music": 1.0,
+          "child_passenger_experience": 1.0
+        }
+      }
+    },
+    {
+      "key": "gamma_drowsiness",
+      "kind": "numeric",
+      "label": {
+        "ja": "眠気ガンマ",
+        "en": "Drowsiness Gamma"
+      },
+      "default": 1.0,
+      "min": 0.25,
+      "max": 4.0,
+      "step": 0.05
+    },
+    {
+      "key": "gamma_fatigue",
+      "kind": "numeric",
+      "label": {
+        "ja": "疲労ガンマ",
+        "en": "Fatigue Gamma"
+      },
+      "default": 1.0,
+      "min": 0.25,
+      "max": 4.0,
+      "step": 0.05
+    },
+    {
+      "key": "gamma_monotony",
+      "kind": "numeric",
+      "label": {
+        "ja": "単調性ガンマ",
+        "en": "Monotony Gamma"
+      },
+      "default": 1.0,
+      "min": 0.25,
+      "max": 4.0,
+      "step": 0.05
+    },
+    {
+      "key": "route_tag_saturation",
+      "kind": "numeric",
+      "label": {
+        "ja": "ルートタグ飽和数",
+        "en": "Route Tag Saturation"
+      },
+      "default": 2,
+      "min": 1,
+      "max": 10,
+      "step": 1
+    },
+    {
+      "key": "destination_tag_saturation",
+      "kind": "numeric",
+      "label": {
+        "ja": "目的地タグ飽和数",
+        "en": "Destination Tag Saturation"
+      },
+      "default": 2,
+      "min": 1,
+      "max": 10,
+      "step": 1
+    },
+    {
+      "key": "monotony_medium_min",
+      "kind": "numeric",
+      "label": {
+        "ja": "単調性「中」下限",
+        "en": "Monotony Medium Min"
+      },
+      "default": 34,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "key": "monotony_high_min",
+      "kind": "numeric",
+      "label": {
+        "ja": "単調性「高」下限",
+        "en": "Monotony High Min"
+      },
+      "default": 67,
+      "min": 0,
+      "max": 100,
+      "step": 1
+    },
+    {
+      "key": "safety_share_warning_floor",
+      "kind": "numeric",
+      "label": {
+        "ja": "安全側配分の警告下限",
+        "en": "Safety Share Warning Floor"
+      },
+      "default": 0.4,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.01
+    },
+    {
+      "key": "confidence_shrinkage_v1",
+      "kind": "enum",
+      "label": {
+        "ja": "信頼度縮小（拡張・既定オフ）",
+        "en": "Confidence Shrinkage (extension, default off)"
+      },
+      "default": false,
+      "values": [
+        false,
+        true
+      ]
+    }
+  ]
 }
