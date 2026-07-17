@@ -1,5 +1,49 @@
 {
   "$defs": {
+    "DominanceReadout": {
+      "description": "Per-candidate and/or run-level safety-dominance configuration readout\n(data-model.md §2 / algorithm doc §6.4). Every field is required WITHIN\nthis object — the object itself is optional on its parents (``None`` when\nnot computed, e.g. by the mock).",
+      "properties": {
+        "material_safety_gap": {
+          "title": "Material Safety Gap",
+          "type": "number"
+        },
+        "required_gap": {
+          "title": "Required Gap",
+          "type": "number"
+        },
+        "safety_share": {
+          "title": "Safety Share",
+          "type": "number"
+        },
+        "safety_share_warning": {
+          "title": "Safety Share Warning",
+          "type": "boolean"
+        },
+        "status": {
+          "title": "Status",
+          "type": "string"
+        },
+        "w_d": {
+          "title": "W D",
+          "type": "number"
+        },
+        "w_l": {
+          "title": "W L",
+          "type": "number"
+        }
+      },
+      "required": [
+        "status",
+        "w_d",
+        "w_l",
+        "required_gap",
+        "material_safety_gap",
+        "safety_share",
+        "safety_share_warning"
+      ],
+      "title": "DominanceReadout",
+      "type": "object"
+    },
     "ExcludedCandidate": {
       "description": "A candidate excluded before algorithm evaluation, with a platform reason.",
       "properties": {
@@ -20,11 +64,47 @@
       "type": "object"
     },
     "FeatureContribution": {
-      "description": "A single feature's contribution row within a ranked candidate's\nreason breakdown.",
+      "description": "A single feature's contribution row within a ranked candidate's\nreason breakdown.\n\nThe trailing fields (``source_reference`` … ``status``) are the P5 §14\nexplainability extension (data-model.md §1) — all optional, populated\nonly by the real transparent package; ``mock_service_selector_v1`` never\nsets them and they default to ``None``.",
       "properties": {
+        "base_weight": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Weight"
+        },
         "contribution": {
           "title": "Contribution",
           "type": "number"
+        },
+        "customer_override": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Customer Override"
+        },
+        "effective_weight": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effective Weight"
         },
         "feature_id": {
           "title": "Feature Id",
@@ -44,9 +124,123 @@
           ],
           "title": "Feature Value"
         },
+        "hierarchy_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hierarchy Path"
+        },
+        "normalization_function": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Normalization Function"
+        },
+        "normalized_evidence": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Normalized Evidence"
+        },
+        "normalized_feature_response": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Normalized Feature Response"
+        },
+        "purpose_multiplier": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Purpose Multiplier"
+        },
+        "raw_value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Value"
+        },
         "response_coefficient": {
           "title": "Response Coefficient",
           "type": "number"
+        },
+        "response_provenance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Response Provenance"
+        },
+        "source_reference": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Reference"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status"
         },
         "weight": {
           "title": "Weight",
@@ -64,10 +258,21 @@
       "type": "object"
     },
     "RankedCandidate": {
-      "description": "A single ranked service candidate (1-based rank, unique, ≤3 total).",
+      "description": "A single ranked service candidate (1-based rank, unique, ≤3 total).\n\nThe trailing fields (``situation_fit`` … ``dominance``) are the P5 §14\noptional extension (data-model.md §3) — explanatory only, never a sort\nkey; ``mock_service_selector_v1`` never sets them.",
       "properties": {
         "candidate_id": {
           "$ref": "#/$defs/ServiceId"
+        },
+        "dominance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DominanceReadout"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "feature_contributions": {
           "items": {
@@ -76,12 +281,36 @@
           "title": "Feature Contributions",
           "type": "array"
         },
+        "history_fit": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "History Fit"
+        },
         "opposing_feature_ids": {
           "items": {
             "type": "string"
           },
           "title": "Opposing Feature Ids",
           "type": "array"
+        },
+        "preference_fit": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Preference Fit"
         },
         "rank": {
           "title": "Rank",
@@ -104,6 +333,44 @@
             }
           ],
           "title": "Score"
+        },
+        "situation_fit": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Situation Fit"
+        },
+        "strongest_oppose": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Strongest Oppose"
+        },
+        "strongest_support": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Strongest Support"
         },
         "supporting_feature_ids": {
           "items": {
@@ -168,7 +435,7 @@
       "type": "string"
     }
   },
-  "description": "Neutral service-selector result (data-model.md §\"ServiceSelectorOutput\").\n\nValidators\n----------\n1. ``len(ranked_candidates) <= 3``.\n2. Ranks are contiguous from 1 (no gaps, no duplicates).\n3. ``decision_type == no_proposal`` ⇒ ``ranked_candidates`` is empty.",
+  "description": "Neutral service-selector result (data-model.md §\"ServiceSelectorOutput\").\n\nValidators\n----------\n1. ``len(ranked_candidates) <= 3``.\n2. Ranks are contiguous from 1 (no gaps, no duplicates).\n3. ``decision_type == no_proposal`` ⇒ ``ranked_candidates`` is empty.\n\nThe trailing fields (``dominance``, ``effective_weights``,\n``resolved_config_versions``) are the P5 optional extension\n(data-model.md §4) — run-level companions to the per-candidate ones\nabove; ``mock_service_selector_v1`` never sets them.",
   "properties": {
     "algorithm_provenance": {
       "additionalProperties": true,
@@ -177,6 +444,32 @@
     },
     "decision_type": {
       "$ref": "#/$defs/ServiceDecisionType"
+    },
+    "dominance": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DominanceReadout"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "effective_weights": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Effective Weights"
     },
     "excluded_candidates": {
       "items": {
@@ -203,6 +496,19 @@
       },
       "title": "Ranked Candidates",
       "type": "array"
+    },
+    "resolved_config_versions": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Resolved Config Versions"
     },
     "unused_available_features": {
       "items": {

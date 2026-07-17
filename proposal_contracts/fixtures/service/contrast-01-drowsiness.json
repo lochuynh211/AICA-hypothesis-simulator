@@ -1,0 +1,30 @@
+{
+  "_comment": "SS11 item 1: low<->high drowsiness_level. call_response_driving responds +1.0 (SS5.2.1 driver row); radio_style responds 0.0 (named in none of the driver/environment/route/passenger rows, SS5.2.1). Doc: 'activation vs calm order shifts among driving services'.",
+  "trigger_purpose": "inattentive_driving_prevention_recovery",
+  "lifecycle_stage": "active_driving_content",
+  "allowed_service_ids": [
+    "call_response_driving",
+    "radio_style"
+  ],
+  "candidates_of_interest": {
+    "activation": "call_response_driving",
+    "calm": "radio_style"
+  },
+  "expected_direction": "as drowsiness rises low->high, call_response_driving's score strictly increases while radio_style's stays pinned at 0 (no drowsiness response) - the activation-over-calm gap strictly widens.",
+  "variants": {
+    "low": {
+      "feature_snapshot": {
+        "situation": {
+          "drowsiness_level": 10
+        }
+      }
+    },
+    "high": {
+      "feature_snapshot": {
+        "situation": {
+          "drowsiness_level": 90
+        }
+      }
+    }
+  }
+}

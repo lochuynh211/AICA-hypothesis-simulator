@@ -1,0 +1,38 @@
+{
+  "_comment": "SS11 item 13: mountain vs highway, focused specifically on the interaction-load hypothesis (SS5.2.2 'normalized_context_hypothesis'): high-interaction quiz/ranking_creation are -1.0 on mountain, while low-interaction music_playlist/radio_style are +0.5 on mountain (and both groups are non-negative on highway) - every other field is absent (neutral), isolating road_type as the sole driver.",
+  "trigger_purpose": "inattentive_driving_prevention_recovery",
+  "lifecycle_stage": "active_driving_content",
+  "allowed_service_ids": [
+    "quiz",
+    "ranking_creation",
+    "music_playlist",
+    "radio_style"
+  ],
+  "candidates_of_interest": {
+    "high_interaction": [
+      "quiz",
+      "ranking_creation"
+    ],
+    "low_interaction": [
+      "music_playlist",
+      "radio_style"
+    ]
+  },
+  "expected_direction": "at highway, quiz and ranking_creation (each +1.0) rank strictly above music_playlist and radio_style (each 0.0); at mountain, quiz and ranking_creation go NEGATIVE (-1.0) while music_playlist and radio_style go positive (+0.5) - both high-interaction candidates drop below both low-interaction candidates.",
+  "variants": {
+    "highway": {
+      "feature_snapshot": {
+        "situation": {
+          "road_type": "highway"
+        }
+      }
+    },
+    "mountain": {
+      "feature_snapshot": {
+        "situation": {
+          "road_type": "mountain"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "_comment": "SS11 item 1: highway<->mountain road_type. Unlike the one-directional fields above, road is the TWO-directional/signed situation field (SS5.2.2): humming_karaoke (moderate-interaction) is +1.0 on highway but -0.5 on mountain, while radio_style (low-interaction) is 0.0 on highway but +0.5 on mountain - a genuine sign flip.",
+  "trigger_purpose": "inattentive_driving_prevention_recovery",
+  "lifecycle_stage": "active_driving_content",
+  "allowed_service_ids": [
+    "humming_karaoke",
+    "radio_style"
+  ],
+  "candidates_of_interest": {
+    "moderate_interaction": "humming_karaoke",
+    "low_interaction": "radio_style"
+  },
+  "expected_direction": "at highway, humming_karaoke (positive) ranks above radio_style (zero); at mountain, humming_karaoke goes NEGATIVE while radio_style goes positive - the order flips (SS5.2.2 'normalized_context_hypothesis').",
+  "variants": {
+    "highway": {
+      "feature_snapshot": {
+        "situation": {
+          "road_type": "highway"
+        }
+      }
+    },
+    "mountain": {
+      "feature_snapshot": {
+        "situation": {
+          "road_type": "mountain"
+        }
+      }
+    }
+  }
+}

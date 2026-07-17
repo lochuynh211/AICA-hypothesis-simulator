@@ -42,6 +42,29 @@ describe('HyperparamMatrix', () => {
     expect(onChange).toHaveBeenCalledWith('keep_alert')
   })
 
+  it('renders a boolean-valued enum hyperparameter (P5 confidence_shrinkage_v1) and round-trips real booleans, not strings', () => {
+    const def: HyperparameterDef = {
+      key: 'confidence_shrinkage_v1',
+      kind: 'enum',
+      label: { ja: '信頼度縮小（拡張・既定オフ）', en: 'Confidence Shrinkage (extension, default off)' },
+      default: false,
+      values: [false, true],
+    }
+    const onChange = vi.fn()
+    render(<HyperparamMatrix def={def} value={undefined} onChange={onChange} lang="en" />)
+
+    const select = screen.getByLabelText('Confidence Shrinkage (extension, default off)') as HTMLSelectElement
+    expect(select.value).toBe('false')
+
+    fireEvent.change(select, { target: { value: 'true' } })
+    expect(onChange).toHaveBeenCalledWith(true)
+    expect(onChange).not.toHaveBeenCalledWith('true')
+
+    fireEvent.change(select, { target: { value: 'false' } })
+    expect(onChange).toHaveBeenCalledWith(false)
+    expect(onChange).not.toHaveBeenCalledWith('false')
+  })
+
   it('renders a string hyperparameter as a text input', () => {
     const def: HyperparameterDef = {
       key: 'formula_version',

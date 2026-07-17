@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Overview of the AICA synthetic music data generation algorithm (Soundcharts-grounded, mdg pipeline) — bilingual JA/EN.">
+<title>AICA 合成楽曲データ生成アルゴリズム 概要 / Synthetic Music Data Generation Overview</title>
+<style>
+  :root {
+    --bg: #ffffff; --bg-soft: #f8fafc; --bg-panel: #f1f5f9;
+    --ink: #1f2937; --ink-soft: #4b5563; --ink-muted: #6b7280;
+    --line: #e5e7eb; --line-strong: #cbd5e1;
+    --rest: #1d4ed8; --rest-bg: #eff6ff;
+    --mono: #7c3aed; --mono-bg: #f5f3ff;
+    --warn: #b45309; --warn-bg: #fffbeb;
+    --danger: #dc2626; --danger-bg: #fef2f2;
+    --ok: #047857; --ok-bg: #ecfdf5;
+    --coef-bg: #eef2ff; --coef-border: #c7d2fe;
+    --radius: 10px;
+    --mono-font: "SF Mono", "SFMono-Regular", "Consolas", "Menlo", "Roboto Mono", monospace;
+    --jp-font: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Meiryo", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; font-family: var(--jp-font); color: var(--ink); background: var(--bg); line-height: 1.8; font-size: 16px; -webkit-font-smoothing: antialiased; }
+  .layout { display: flex; align-items: flex-start; max-width: 1860px; margin: 0 auto; }
+
+  /* ── Sidebar TOC ── */
+  nav.toc { position: sticky; top: 0; align-self: flex-start; width: 268px; flex: none; height: 100vh; overflow-y: auto; padding: 26px 16px 40px 24px; border-right: 1px solid var(--line); font-size: 0.82em; background: var(--bg-soft); }
+  nav.toc .brand { font-weight: 800; font-size: 1.08em; letter-spacing: 0.01em; color: var(--ink); }
+  nav.toc .brand small { display: block; font-weight: 600; color: var(--ink-muted); font-size: 0.72em; margin-top: 3px; }
+  .lang { display: flex; gap: 6px; margin: 16px 0 4px; }
+  .lang button { flex: 1; font: inherit; font-size: 0.86em; padding: 5px 0; cursor: pointer; border: 1px solid var(--line-strong); background: #fff; border-radius: 6px; color: var(--ink-soft); }
+  .lang button.active { background: var(--mono); color: #fff; border-color: var(--mono); }
+  nav.toc ol { list-style: none; padding: 0; margin: 12px 0 0; counter-reset: toc; }
+  nav.toc li { margin: 2px 0; }
+  nav.toc a { display: block; padding: 5px 10px; border-radius: 6px; color: var(--ink-soft); text-decoration: none; border-left: 2px solid transparent; }
+  nav.toc a:hover { background: #e2e8f0; color: var(--ink); }
+  nav.toc a.step::before { counter-increment: toc; content: counter(toc) ". "; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+
+  /* ── Main ── */
+  main { flex: 1; min-width: 0; padding: 34px 44px 120px; }
+  .topline { margin: 0 0 6px; font-size: 0.78em; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--mono); }
+  .oneliner { margin: 8px 0 26px; padding: 16px 20px; background: var(--mono-bg); border: 1px solid var(--coef-border); border-radius: var(--radius); font-size: 1.0em; }
+  .oneliner b { color: var(--mono); }
+
+  section { margin: 40px 0 0; scroll-margin-top: 16px; }
+  section > h2 { font-size: 1.38em; margin: 0 0 8px; padding-bottom: 8px; letter-spacing: 0.01em; border-bottom: 1px solid var(--line); }
+  section > h2 .num { display: inline-block; min-width: 1.7em; color: var(--mono); font-variant-numeric: tabular-nums; }
+  h3 { font-size: 1.12em; margin: 28px 0 8px; }
+  h4 { font-size: 0.98em; margin: 18px 0 6px; color: var(--ink-soft); }
+  p { margin: 10px 0; }
+  .muted { color: var(--ink-muted); } .small { font-size: 0.88em; }
+  code.k, code { font-family: var(--mono-font); font-size: 0.86em; background: var(--bg-panel); padding: 1px 5px; border-radius: 4px; color: var(--ink-soft); }
+
+  /* ── bilingual toggle ── */
+  body.lang-en :lang(ja), body.lang-en .ja { display: none !important; }
+  body.lang-ja .en { display: none !important; }
+
+  /* ── callouts ── */
+  .why { margin: 14px 0; padding: 14px 18px; background: var(--bg-soft); border-left: 4px solid var(--rest); border-radius: 0 8px 8px 0; }
+  .why.mono { border-left-color: var(--mono); background: var(--mono-bg); }
+  .why.warn { border-left-color: var(--warn); background: var(--warn-bg); }
+  .why.safe { border-left-color: var(--danger); background: var(--danger-bg); }
+  .why.ok { border-left-color: var(--ok); background: var(--ok-bg); }
+  .why .lab { display: inline-block; font-weight: 800; font-size: 0.82em; letter-spacing: 0.05em; color: var(--rest); margin-bottom: 2px; }
+  .why.mono .lab { color: var(--mono); } .why.warn .lab { color: var(--warn); } .why.safe .lab { color: var(--danger); } .why.ok .lab { color: var(--ok); }
+  .why p { margin: 4px 0; }
+
+  /* ── formula block ── */
+  .formula { font-family: var(--mono-font); font-size: 0.9em; line-height: 1.95; background: var(--bg-panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; margin: 12px 0; overflow-x: auto; }
+  .formula.wrap { white-space: normal; }
+  .formula .lhs { font-weight: 700; color: var(--mono); }
+  .formula .op { color: var(--ink-muted); }
+  .formula .cm { color: var(--ink-muted); }
+  .coef { display: inline-block; font-family: var(--mono-font); font-size: 0.9em; background: var(--coef-bg); border: 1px solid var(--coef-border); color: #3730a3; border-radius: 5px; padding: 0 6px; margin: 0 1px; }
+
+  /* ── tables ── */
+  table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 0.86em; }
+  .scroll-x { overflow-x: auto; }
+  th, td { text-align: left; padding: 7px 11px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th { background: var(--bg-panel); font-weight: 700; border-bottom: 2px solid var(--line-strong); white-space: nowrap; position: sticky; top: 0; }
+  tbody tr:hover { background: var(--bg-soft); }
+  td.num, th.num-c { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono-font); }
+  .catrow td { background: var(--mono-bg); font-weight: 800; color: var(--mono); letter-spacing: 0.02em; }
+
+  /* ── status pills ── */
+  .st { display: inline-block; min-width: 20px; padding: 1px 7px; border-radius: 5px; font-size: 0.74em; font-weight: 800; text-align: center; white-space: nowrap; }
+  .st.ok { background: var(--ok-bg); color: var(--ok); border: 1px solid #a7f3d0; }
+  .st.no { background: var(--bg-panel); color: var(--ink-muted); border: 1px solid var(--line); }
+  .st.tbd { background: var(--warn-bg); color: var(--warn); border: 1px solid #fde68a; }
+  .st.gate { background: var(--coef-bg); color: #3730a3; border: 1px solid var(--coef-border); }
+  .st.llm { background: var(--danger-bg); color: var(--danger); border: 1px solid #fecaca; }
+  .st.net { background: var(--rest-bg); color: var(--rest); border: 1px solid #bfdbfe; }
+  .warnmark { color: var(--warn); font-weight: 800; }
+
+  /* ── pills / pipeline / cards ── */
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  .pill { font-size: 0.82em; padding: 4px 12px; border-radius: 999px; background: var(--bg-panel); border: 1px solid var(--line); }
+  .pipe { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 18px 0; }
+  .pipe .node { flex: 1 1 120px; min-width: 110px; border: 1px solid var(--line-strong); border-radius: 8px; padding: 10px 12px; background: var(--bg); }
+  .pipe .node.llm { border-color: #fecaca; background: var(--danger-bg); }
+  .pipe .node.net { border-color: #bfdbfe; background: var(--rest-bg); }
+  .pipe .node .n { font-size: 0.70em; font-weight: 700; color: var(--mono); letter-spacing: 0.04em; }
+  .pipe .node .t { font-size: 0.9em; font-weight: 700; margin-top: 2px; font-family: var(--mono-font); }
+  .pipe .node .d { font-size: 0.74em; color: var(--ink-muted); margin-top: 3px; line-height: 1.5; }
+  .pipe .arrow { align-self: center; color: var(--line-strong); font-size: 1.3em; }
+  .fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; margin: 16px 0; }
+  .fcard { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; background: var(--bg); border-top: 4px solid var(--mono); }
+  .fcard h4 { margin: 0 0 6px; color: var(--ink); font-size: 1.0em; }
+  .fcard p { margin: 6px 0 0; font-size: 0.9em; color: var(--ink-soft); }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px 18px; margin: 10px 0; font-size: 0.86em; }
+  .legend span b { font-weight: 800; }
+
+  footer { margin: 60px 0 0; padding-top: 20px; border-top: 1px solid var(--line); font-size: 0.82em; color: var(--ink-muted); }
+
+  @media (max-width: 980px) { nav.toc { display: none; } main { padding: 26px 18px 100px; } }
+  @media print { nav.toc { display: none; } main { padding: 0; } }
+</style>
+</head>
+<body class="lang-ja">
+<div class="layout">
+
+  <nav class="toc">
+    <div class="brand"><span class="ja">AICA 合成楽曲データ生成</span><span class="en">AICA Synthetic Music Data</span><small><span class="ja">本物のデータを土台にした生成パイプラインの概要</span><span class="en">Soundcharts-grounded generation pipeline — overview</span></small></div>
+    <div class="lang" aria-label="Language">
+      <button type="button" data-lang="ja" class="active">日本語</button>
+      <button type="button" data-lang="en">English</button>
+    </div>
+    <ol>
+      <li><a class="step" href="#overview"><span class="ja">概要 ― 考え方</span><span class="en">Overview — the idea</span></a></li>
+      <li><a class="step" href="#pipeline"><span class="ja">パイプライン全体像</span><span class="en">The pipeline (S0→S9)</span></a></li>
+      <li><a class="step" href="#plan"><span class="ja">曲ぞろえの計画</span><span class="en">Coverage plan</span></a></li>
+      <li><a class="step" href="#harvest"><span class="ja">曲名出しとデータ集め</span><span class="en">Naming &amp; harvest</span></a></li>
+      <li><a class="step" href="#binsel"><span class="ja">マス分けと選抜</span><span class="en">Binning &amp; selection</span></a></li>
+      <li><a class="step" href="#freeze"><span class="ja">変換・修復・凍結</span><span class="en">Map, repair &amp; freeze</span></a></li>
+      <li><a class="step" href="#determinism"><span class="ja">再現性と台帳</span><span class="en">Determinism &amp; ledger</span></a></li>
+      <li><a class="step" href="#certify"><span class="ja">ワールド・判定・認証</span><span class="en">Worlds, judge &amp; certify</span></a></li>
+      <li><a class="step" href="#status"><span class="ja">統合と現状</span><span class="en">Integration &amp; status</span></a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <p class="topline"><span class="ja">AICA 合成 Spotify互換 楽曲データ生成 — mdg パイプライン</span><span class="en">AICA synthetic Spotify-compatible music data generation — the mdg pipeline</span></p>
+    <div class="oneliner">
+      <span class="ja"><b>一言で言うと：</b>曲選びアルゴリズム（P6）をシミュレータで試すための<b>曲カタログ</b>を作る仕組みです。曲名・アーティスト名・音の特徴・ISRC は<b>本物のデータ</b>（Soundcharts）をそのまま使います。一方、ID と URL は必ず<b>架空のもの</b>（<code>synthetic-</code> で始まるID、<code>.invalid</code> のURL）に置き換えます。AI（LLM）にできるのは「実在する曲の名前を挙げる」ことだけで、数値は1つも書けません。同じ材料と同じシード値からは、いつでも<b>1バイトも違わない</b>同じカタログが作れます。</span>
+      <span class="en"><b>In one line:</b> this builds the <b>song catalog</b> the Proposal Simulator's content selector (P6) scores. Song/artist names, audio features, and ISRCs are <b>real data</b> (Soundcharts) copied verbatim; every ID and URL is <b>always synthetic</b> (<code>synthetic-</code> prefix, <code>.invalid</code> host). The LLM may only <em>name</em> real candidate songs — it can never write a number. The same cache + seed reproduces the catalog <b>byte-for-byte</b>.</span>
+    </div>
+
+    <!-- 1. Overview -->
+    <section id="overview">
+      <h2><span class="num">1</span><span class="ja">概要 ― 考え方</span><span class="en">Overview — the idea</span></h2>
+      <p>
+        <span class="ja">P6 アルゴリズムを試すには、実際に採点できる曲のデータが必要です。ただ、AI に曲を丸ごと作らせると、本当かどうか確かめられず、同じ結果を再現することもできません。かといって Spotify の本物のデータを取り込むと、ライセンスの問題が出ます。そこで採ったのが「<b>本物のデータを土台にした合成</b>（grounded-synthetic）」という方式です。何が本物で、何が架空かを、はっきり線引きします。</span>
+        <span class="en">Reviewing the P6 algorithm needs concrete songs. Letting an LLM invent songs wholesale is <b>untrustworthy and unreproducible</b>; ingesting real Spotify payloads raises <b>licensing problems</b>. The answer is a <b>grounded-synthetic</b> strategy: a hard line between what is real and what is synthesized.</span>
+      </p>
+      <div class="scroll-x"><table>
+        <thead><tr>
+          <th><span class="ja">区分</span><span class="en">Class</span></th>
+          <th><span class="ja">フィールド</span><span class="en">Fields</span></th>
+          <th><span class="ja">出所</span><span class="en">Source</span></th>
+        </tr></thead>
+        <tbody>
+          <tr><td><b><span class="ja">本物（そのまま使う）</span><span class="en">Real (kept verbatim)</span></b></td><td><span class="ja">曲名・アーティスト名、<code>spotify_audio_features</code> の数値すべて、発売日、ISRC</span><span class="en">song/artist names, every <code>spotify_audio_features</code> value, release dates, the ISRC</span></td><td>Soundcharts</td></tr>
+          <tr><td><b><span class="ja">架空（必ず置き換える）</span><span class="en">Synthetic (always)</span></b></td><td><span class="ja">すべての ID（<code>synthetic-track-0001</code> など）、すべての URL（<code>*.synthetic.invalid</code>）</span><span class="en">every ID (<code>synthetic-track-0001</code>, …), every URL (<code>*.synthetic.invalid</code>)</span></td><td><span class="ja">決まった手順の変換</span><span class="en">deterministic mapper</span></td></tr>
+          <tr><td><b><span class="ja">決まった手順で作る</span><span class="en">Deterministically synthesized</span></b></td><td><code>popularity</code>, <code>track_number</code>, <code>available_markets</code></td><td><span class="ja">曲ごとに決まる乱数（§6）</span><span class="en">per-song seeded PRNG (§6)</span></td></tr>
+        </tbody>
+      </table></div>
+      <div class="why mono">
+        <span class="lab"><span class="ja">なぜこの分け方か</span><span class="en">Why this split</span></span>
+        <p>
+          <span class="ja">この分け方で、3つの利点が同時に手に入ります。（1）<b>ライセンスの安全</b> — Spotify の本物のデータは保存も配信もしません。ID や URL は架空なので、本物の Spotify につながることはあり得ません（データ検査でも <code>.invalid</code> と <code>synthetic-</code> を必ず確かめます）。（2）<b>再現できること</b> — カタログを組み立てる工程では、ネットも AI も使いません。同じ材料と同じシード値なら、結果は毎回まったく同じです。（3）<b>幅広さ</b> — 本物の音の特徴を使って、曲の空間（激しさ・テンポ・タイプなど）をまんべんなくカバーします。だから P6 の2つの軸（arousal＝元気さ／valence＝明るさ）を本物のデータで確かめられます。</span>
+          <span class="en">It buys three things at once. (1) <b>Licensing safety</b> — no live Spotify data is stored or served, and IDs/URLs can never resolve to a real endpoint (the schema enforces <code>.invalid</code>/<code>synthetic-</code>). (2) <b>Reproducibility</b> — the transform that assembles the catalog does no network or LLM I/O; same cache + seed → byte-identical output. (3) <b>Coverage</b> — real audio features deliberately span the feature space (energy/tempo/profile…), so P6's two trait axes (arousal/valence) are exercised with real data.</span>
+        </p>
+      </div>
+      <div class="why safe">
+        <span class="lab"><span class="ja">ズルを防ぐ遮断壁（FR-019）</span><span class="en">The honesty firewall (FR-019)</span></span>
+        <p>
+          <span class="ja">曲がカタログに入る理由はただ1つ、「その曲の本物の音の特徴が、埋めたいマス（セル）に当てはまるから」です。「アルゴリズムに都合のいい結果を出す曲だから」という理由で入ることは絶対にありません。スコア・ラベル・順位の情報は、生成のどの入力にも入りません（最後の凍結時にも、禁止キーが紛れていないか全体を調べ直します）。AI は数値も ISRC も書けない仕組みになっています（§4）。</span>
+          <span class="en">A song is admitted for exactly one reason: <b>its real audio fills a needed coverage cell</b> — never because it would produce a desired recommendation. No score, label, or rank ever enters generation input (freeze re-scans recursively for forbidden keys, §6), and the LLM is structurally barred from writing numbers or ISRCs (§4).</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- 2. Pipeline -->
+    <section id="pipeline">
+      <h2><span class="num">2</span><span class="ja">パイプライン全体像（S0→S9）</span><span class="en">The pipeline (S0→S9)</span></h2>
+      <p>
+        <span class="ja">生成は S0〜S9 の番号つき工程を順に進めます。動かすのは1つのコマンド <code>python -m mdg &lt;工程名&gt;</code>（<code>mdg/cli.py</code>）です。工程には2種類あります：結果が毎回同じになる純粋な Python の工程と、<b>対話型の AI にファイルを渡して返してもらう</b>工程です。AI を API で自動呼び出しする仕組みは<b>どこにもありません</b>（FR-028）。AI の工程は「入力の JSON を書き出す → 端末上のエージェントが指示書どおりに出力の JSON を書く → それを検査して読み込む」の3ステップです。</span>
+        <span class="en">The pipeline is a sequence of numbered stages driven by one CLI, <code>python -m mdg &lt;stage&gt;</code> (<code>mdg/cli.py</code>). Some stages are pure deterministic Python; others are <b>file handoffs to an interactive LLM</b>. There is <b>no LLM API key or programmatic LLM call anywhere</b> (FR-028) — an LLM stage is three moves: write an input JSON → the terminal agent follows a prompt and writes an output JSON → validate and read it back.</span>
+      </p>
+      <div class="pipe">
+        <div class="node"><div class="n">S0</div><div class="t">plan</div><div class="d"><span class="ja">36マスの計画</span><span class="en">36-cell coverage plan</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node llm"><div class="n">S1b · LLM</div><div class="t">name</div><div class="d"><span class="ja">実在曲の名前出し</span><span class="en">name real candidates</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node net"><div class="n">S2b</div><div class="t">resolve</div><div class="d">MusicBrainz + Deezer → ISRC</div></div>
+        <div class="arrow">→</div>
+        <div class="node net"><div class="n">S2c</div><div class="t">probe → harvest</div><div class="d"><span class="ja">Soundcharts からデータ取得</span><span class="en">fetch from Soundcharts</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="n">S3</div><div class="t">bin / select</div><div class="d"><span class="ja">本物の音でマス判定</span><span class="en">cell from real audio</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="n">S4–S6</div><div class="t">map → freeze</div><div class="d"><span class="ja">架空ID・検査・凍結</span><span class="en">synth IDs, validate, freeze</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node llm"><div class="n">S7 · LLM</div><div class="t">worlds</div><div class="d"><span class="ja">ワールド＋履歴</span><span class="en">worlds + histories</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node llm"><div class="n">S8 · LLM</div><div class="t">judge</div><div class="d"><span class="ja">ブラインド判定</span><span class="en">blind labels</span></div></div>
+        <div class="arrow">→</div>
+        <div class="node"><div class="n">S9</div><div class="t">certify</div><div class="d"><span class="ja">P6 逆転テスト</span><span class="en">P6 reversal tests</span></div></div>
+      </div>
+      <div class="legend">
+        <span><span class="st llm">LLM</span> <b><span class="ja">AI とのファイル受け渡し（API 呼び出しなし）</span><span class="en">file handoff (no API call)</span></b></span>
+        <span><span class="st net">NET</span> <b><span class="ja">ネット接続あり（結果が変わりうる領域）</span><span class="en">live network (non-reproducible zone)</span></b></span>
+        <span><span class="st ok">PURE</span> <b><span class="ja">毎回同じ結果の Python（再現できる領域）</span><span class="en">deterministic Python (reproducible zone)</span></b></span>
+      </div>
+      <p class="small muted">
+        <span class="ja">S3 から先が「再現できる領域」です。ネット経由で集めた曲データは ISRC ごとにキャッシュ（保存）され、<code>mdg transform</code>（S3〜S6）は同じキャッシュと同じシード値から、毎回同じカタログを作ります（§7）。S7 以降は凍結済みカタログだけを使います。</span>
+        <span class="en">The reproducibility boundary is at S3: live harvest results are cached per ISRC, and <code>mdg transform</code> (S3–S6) regenerates the identical catalog from the same cache + seed every time (§7). S7 onward depends only on the frozen catalog.</span>
+      </p>
+    </section>
+
+    <!-- 3. Coverage plan -->
+    <section id="plan">
+      <h2><span class="num">3</span><span class="ja">曲ぞろえの計画（S0）</span><span class="en">Coverage plan (S0)</span></h2>
+      <p>
+        <span class="ja"><code>build_coverage_plan(tier, ledger)</code>（<code>mdg/coverage/plan.py</code>）は、ファイルもネットも触らない純粋な関数です。「カタログにどんな曲をそろえるべきか」を、36個のマス（セル）として決めます。</span>
+        <span class="en"><code>build_coverage_plan(tier, ledger)</code> (<code>mdg/coverage/plan.py</code>) is a pure function, no I/O. It defines the space the catalog must span as “cells.”</span>
+      </p>
+      <div class="formula wrap">
+        <span class="lhs">36 <span class="ja">個の主要マス</span><span class="en">primary cells</span></span> <span class="op">=</span> energy {low, medium, high} <span class="op">×</span> tempo {low, medium, high} <span class="op">×</span> profile {4 <span class="ja">タイプ</span><span class="en">families</span>}
+      </div>
+      <div class="scroll-x"><table>
+        <thead><tr>
+          <th><span class="ja">バンド</span><span class="en">Band</span></th><th class="num-c">low</th><th class="num-c">medium</th><th class="num-c">high</th>
+        </tr></thead>
+        <tbody>
+          <tr><td><code>energy</code></td><td class="num">0.10–0.35</td><td class="num">0.40–0.65</td><td class="num">0.70–0.95</td></tr>
+          <tr><td><code>tempo</code> (BPM)</td><td class="num">60–95</td><td class="num">96–130</td><td class="num">131–180</td></tr>
+        </tbody>
+      </table></div>
+      <p class="small muted">
+        <span class="ja">曲のタイプは4種類：<code>balanced_vocal</code>（ふつうのボーカル曲）／<code>danceable_vocal</code>（踊れるボーカル曲）／<code>speech_forward</code>（語り中心）／<code>instrumental_leaning</code>（楽器中心）。判定ルールは §5。バンドの間にわざと<b>隙間</b>を空けてあるのは、境界すれすれの曲が「どちらのマスにも入りうる」という曖昧さをなくすためです。</span>
+        <span class="en">The four profile families: <code>balanced_vocal</code> / <code>danceable_vocal</code> / <code>speech_forward</code> / <code>instrumental_leaning</code> (decision rules in §5). The deliberate <b>gaps</b> between bands avoid boundary songs that could plausibly belong to either cell.</span>
+      </p>
+
+      <h3><span class="ja">そろえる量の決まり（demonstration ティア）</span><span class="en">Quotas (demonstration tier)</span></h3>
+      <div class="scroll-x"><table>
+        <thead><tr>
+          <th><span class="ja">決まり</span><span class="en">Quota</span></th>
+          <th class="num-c"><span class="ja">値</span><span class="en">Value</span></th>
+          <th><span class="ja">狙い</span><span class="en">Intent</span></th>
+        </tr></thead>
+        <tbody>
+          <tr><td><span class="ja">言語の配分</span><span class="en">Language split</span></td><td class="num">ja 30 / en 6 / other 0</td><td><span class="ja">日本向けデモが中心のため</span><span class="en">JA-market demos first</span></td></tr>
+          <tr><td><span class="ja">アーティスト数 × 曲数</span><span class="en">Artists × depth</span></td><td class="num">12 × ≥3<span class="ja">曲</span><span class="en"> tracks</span></td><td><span class="ja">同じアーティストの曲同士も比べられるように</span><span class="en">enables within-artist comparisons</span></td></tr>
+          <tr><td><span class="ja">アルバム数</span><span class="en">Albums</span></td><td class="num">≥12</td><td><span class="ja">アルバムに偏りが出ないように</span><span class="en">release diversity</span></td></tr>
+          <tr><td><span class="ja">年代（era）</span><span class="en">Eras</span></td><td class="num">≥3</td><td><span class="ja">classic &lt;2000 / modern 2000–2015 / recent 2016+</span><span class="en">classic &lt;2000 / modern 2000–2015 / recent 2016+</span></td></tr>
+          <tr><td><span class="ja">explicit（過激表現あり）の曲</span><span class="en">Explicit songs</span></td><td class="num">≥6</td><td><span class="ja">子どもが乗っている場合のチェックを試すため</span><span class="en">exercises child-present eligibility</span></td></tr>
+          <tr><td><span class="ja">36マスの外の比較用曲（negative fixture）</span><span class="en">Negatives outside the 36</span></td><td class="num">≥4</td><td><span class="ja">「どんな曲でも高評価になる」問題を見つけるため</span><span class="en">control group against always-positive scoring</span></td></tr>
+          <tr><td><code>key = -1</code></td><td class="num">≥1</td><td><span class="ja">キー情報がない曲の扱いを確かめるため</span><span class="en">missing-key handling</span></td></tr>
+          <tr><td><span class="ja">長さ／拍子の散らばり</span><span class="en">Duration / time-signature spread</span></td><td class="num">short·medium·long / 3, 4, +1</td><td><span class="ja">長さや拍子が偏らないように</span><span class="en">guards against skew</span></td></tr>
+        </tbody>
+      </table></div>
+      <p class="small">
+        <span class="ja">計画は「台帳（これまでの記録、§7）」を見て作られます。すでに埋まったマスは残り（<code>remaining</code>）から外され、まだ埋まっていないマスが次の周回の優先課題（<code>enrichment_priority</code>）になります。生成は一発勝負ではなく、「<b>足りないマスを埋める周回</b>」の繰り返しです（実績では29周、§9）。1つの条件だけが違う<b>12組の比較ペア</b>（§8）も、この計画で決まります。</span>
+        <span class="en">The plan is <b>ledger-relative</b>: already-accepted cells are subtracted into <code>remaining</code> and echoed as <code>enrichment_priority</code> for the next loop. Generation is not one-shot — it is <b>repeated fill loops</b> against unmet cells (29 loops in practice, §9). The plan also defines the <b>12 one-variable contrast pairs</b> requirement (§8).</span>
+      </p>
+    </section>
+
+    <!-- 4. Naming & harvest -->
+    <section id="harvest">
+      <h2><span class="num">4</span><span class="ja">曲名出しとデータ集め（S1b–S2c）</span><span class="en">Naming &amp; harvest (S1b–S2c)</span></h2>
+
+      <h3><span class="ja">S1b — AI は「曲名」しか出せない</span><span class="en">S1b — the LLM can only produce names</span></h3>
+      <p>
+        <span class="ja"><code>mdg name --write-input</code> が「残っているマス・言語の目標・すでに名前が出た曲の除外リスト」を <code>handoff/s1b_input.json</code> に書き出します。エージェントは指示書（<code>mdg/prompts/s1b_naming.md</code>）に従い、マスごとに「<b>実在していて、Web で確認できる曲</b>」を提案します：</span>
+        <span class="en"><code>mdg name --write-input</code> writes remaining cells + language targets + an already-named exclusion list to <code>handoff/s1b_input.json</code>; the agent follows <code>mdg/prompts/s1b_naming.md</code> and proposes <b>real, web-verifiable songs</b> per cell:</span>
+      </p>
+      <div class="formula wrap">
+        CandidateName <span class="op">=</span> { title, artist, release_year, expected_language, target_cell_id, why_fits_cell, web_evidence[] }
+      </div>
+      <div class="why safe">
+        <span class="lab"><span class="ja">仕組みで守る遮断壁（FR-005）</span><span class="en">Structural firewall (FR-005)</span></span>
+        <p>
+          <span class="ja"><code>CandidateName</code> という入力の型は、<code>isrc</code> や12個の音の特徴のキー（<code>energy</code>, <code>tempo</code> など）が1つでも入っていたら、その場で受け付けを拒否します（<code>mdg/models.py</code>）。つまり AI は「この曲の energy はだいたい 0.8」と<b>書くことすらできません</b>。数値はすべて、あとの工程で本物のデータベースから取ります。検査に落ちると <code>HandoffValidationError</code> になり、エージェントは最初からやり直しです。</span>
+          <span class="en">The <code>CandidateName</code> model <b>rejects on sight</b> any input carrying <code>isrc</code> or any of the 12 audio-feature keys (<code>energy</code>, <code>tempo</code>, …) (<code>mdg/models.py</code>). The LLM is not even allowed to <em>write</em> “this song is about energy 0.8” — every number comes later from the real source. A validation failure raises <code>HandoffValidationError</code> and the agent re-runs the prompt.</span>
+        </p>
+      </div>
+
+      <h3><span class="ja">S2b — ISRC を探す</span><span class="en">S2b — ISRC resolution</span></h3>
+      <p>
+        <span class="ja"><code>ISRCResolver.resolve(曲名, アーティスト, 年)</code>（<code>mdg/sources/resolver.py</code>）が MusicBrainz と Deezer に問い合わせ、候補になる ISRC（曲の国際的な識別番号）を、重複なしで優先順に並べて返します。並べ方のルール：</span>
+        <span class="en"><code>ISRCResolver.resolve(title, artist, year)</code> (<code>mdg/sources/resolver.py</code>) queries MusicBrainz and Deezer and returns an <b>ordered, deduped</b> candidate-ISRC list, ranked by:</span>
+      </p>
+      <div class="formula">
+        rank(isrc) <span class="op">=</span> ( variant_penalty, year_match, first_release_date, isrc )<br>
+        <span class="cm"># variant_penalty: karaoke/live/remix <span class="ja">版は後回し · year_match: 年が ±1 以内の候補を優先 · 発売が早い盤を優先</span><span class="en">versions last · year_match: |year − release_year| ≤ 1 preferred · original-release first</span></span>
+      </div>
+      <p class="small muted">
+        <span class="ja">どちらからも ISRC が見つからなければ、<code>song_not_found_in_sources</code> という「ミス」として台帳に記録され、以後二度と試されません。</span>
+        <span class="en">If neither source yields an ISRC, the candidate is ledgered as a <code>song_not_found_in_sources</code> <b>miss</b> and never retried.</span>
+      </p>
+
+      <h3><span class="ja">S2c の前チェック — プローブ関門</span><span class="en">S2c pre-flight — the probe gate</span></h3>
+      <div class="formula wrap">
+        <span class="lhs">probe</span>: <span class="ja">選んでおいた約15曲を試しに取得し、12個の特徴が全部そろって返る割合が</span><span class="en">fetch ~15 hand-picked ISRCs; fraction returning all 12 features non-null</span> ≥ <span class="coef">0.60</span> <span class="op">, </span><span class="ja">下回ったら</span><span class="en">else</span> <code>isrc_probe_gate_failed</code>
+      </div>
+      <p class="small muted">
+        <span class="ja">本格的に集め始める前に、「この年代・地域はどこまでデータがそろうか」の上限を確かめます。たとえば1960年代の日本の曲は、Soundcharts に音の特徴がそろっていないことが多いのです。</span>
+        <span class="en">This fixes “the achievable era/region ceiling” before quota is spent — e.g. 1960s Japanese songs often lack complete audio blocks in Soundcharts.</span>
+      </p>
+
+      <h3><span class="ja">S2c — データ集めのルール</span><span class="en">S2c — harvest rules</span></h3>
+      <p>
+        <span class="ja"><code>harvest_by_isrc</code>（<code>mdg/harvest/by_isrc.py</code>）は、候補の ISRC を優先順に1つずつ試します：</span>
+        <span class="en"><code>harvest_by_isrc</code> (<code>mdg/harvest/by_isrc.py</code>) walks the ordered candidate ISRCs:</span>
+      </p>
+      <div class="scroll-x"><table>
+        <thead><tr>
+          <th><span class="ja">結果</span><span class="en">Outcome</span></th>
+          <th><span class="ja">動作</span><span class="en">Action</span></th>
+          <th><span class="ja">ミスコード（全部だめだった場合）</span><span class="en">Miss code (if exhausted)</span></th>
+        </tr></thead>
+        <tbody>
+          <tr><td><span class="ja">その ISRC が Soundcharts にない（404）</span><span class="en">ISRC not in Soundcharts (404)</span></td><td><span class="ja">次の候補へ</span><span class="en">try next</span></td><td><code>isrc_not_in_soundcharts</code></td></tr>
+          <tr><td><span class="ja">音の特徴がそろっていない</span><span class="en">Audio block incomplete</span></td><td><span class="ja">次の候補へ</span><span class="en">try next</span></td><td><code>audio_unavailable</code></td></tr>
+          <tr><td><span class="ja">実際の言語が目標と違う</span><span class="en">Real language ≠ target</span></td><td><b><span class="ja">その曲ごとあきらめる（言語ラベルの貼り替えは絶対にしない）</span><span class="en">discard whole song — never relabel</span></b></td><td><code>language_mismatch</code></td></tr>
+          <tr><td><span class="ja">すべて合格</span><span class="en">Full match</span></td><td><span class="ja">受け入れ → <code>cache/{isrc}.json</code> に保存</span><span class="en">accept → cached as <code>cache/{isrc}.json</code></span></td><td>—</td></tr>
+        </tbody>
+      </table></div>
+      <p class="small">
+        <span class="ja">結果は成功でも失敗でも、<b>次の候補を試す前に</b>必ず台帳へ書き足されます。すでに記録済みの曲（ISRC・UUID・整えた曲名で判定）は、<b>API の回数を使う前に</b>スキップされます。</span>
+        <span class="en">Every outcome — accept or miss — is appended to the ledger <b>before the next candidate is tried</b>, and any already-known identity (ISRC / UUID / normalized name) is skipped <b>before spending quota</b>.</span>
+      </p>
+    </section>
+
+    <!-- 5. Binning & selection -->
+    <section id="binsel">
+      <h2><span class="num">5</span><span class="ja">マス分けと選抜（S3）</span><span class="en">Binning &amp; selection (S3)</span></h2>
+      <p>
+        <span class="ja">ここが遮断壁のいちばん大事な部分です。<code>bin_song</code>（<code>mdg/binner.py</code>）は、曲がどのマスに入るかを<b>本物の Soundcharts の音の特徴だけ</b>で決めます。AI が出した「このマスを狙った」という情報（<code>target_cell_id</code>）は、<b>見ることすらしません</b>。AI の狙いが外れていても、曲は「実際に当てはまるマス」に入るだけです。</span>
+        <span class="en">This is the firewall's core. <code>bin_song</code> (<code>mdg/binner.py</code>) computes coverage coordinates from the <b>real Soundcharts audio only</b> — the LLM's <code>target_cell_id</code> guess is <b>never even consulted</b>. If the LLM's aim was off, the song simply lands in the cell it really belongs to.</span>
+      </p>
+      <div class="formula">
+        <span class="cm"># <span class="ja">バンドの境界値（バンド間の隙間のちょうど真ん中）</span><span class="en">band boundaries (midpoints of the inter-band gaps)</span></span><br>
+        energy: low ≤ <span class="coef">0.375</span> &lt; medium ≤ <span class="coef">0.675</span> &lt; high&nbsp;&nbsp;&nbsp;&nbsp; tempo: low ≤ <span class="coef">95.5</span> &lt; medium ≤ <span class="coef">130.5</span> &lt; high<br><br>
+        <span class="cm"># <span class="ja">曲のタイプ — 上から順に、最初に当てはまったもの</span><span class="en">profile family — first matching rule in priority order</span></span><br>
+        <span class="lhs">instrumental_leaning</span> <span class="op">⇐</span> instrumentalness ≥ <span class="coef">0.65</span><br>
+        <span class="lhs">speech_forward</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="op">⇐</span> speechiness ≥ <span class="coef">0.33</span> <span class="cm">(<span class="ja">修正済み、下記</span><span class="en">amended, below</span>)</span><br>
+        <span class="lhs">danceable_vocal</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="op">⇐</span> danceability ≥ <span class="coef">0.65</span> <span class="op">∧</span> instrumentalness ≤ <span class="coef">0.15</span><br>
+        <span class="lhs">balanced_vocal</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="op">⇐</span> <span class="ja">上のどれにも当てはまらない曲</span><span class="en">everything else</span><br><br>
+        cell_id <span class="op">=</span> <span class="ja">例</span><span class="en">e.g.</span> <code>E-hi_T-hi_P-bv</code>
+      </div>
+      <div class="why warn">
+        <span class="lab"><span class="ja">本物のデータに合わせて仕様を直した例</span><span class="en">Where real data amended the spec</span></span>
+        <p>
+          <span class="ja">もともとの仕様は <code>speechiness ≥ 0.40</code> でした。ところが本物のデータでは、ラップでも 0.38 くらいが上限で、<code>speech_forward</code> のマスがそもそも埋められないことが分かりました（<code>cell_unfillable_from_source</code>）。そこで、Spotify 自身が公式に説明している「音楽＋語り」の境界 <b>0.33</b> に直しました（<code>mdg/binner.py</code>、仕様 §10.2 の修正メモ）。都合よく数値をいじったのではなく、<b>現実に合わない境界の定義を直した</b>、ということです。</span>
+          <span class="en">The original spec said <code>speechiness ≥ 0.40</code>, but against real Soundcharts data rap tops out around ~0.38, making <code>speech_forward</code> cells <b>unfillable in principle</b> (<code>cell_unfillable_from_source</code>). The threshold was amended to Spotify's own documented “music + speech” boundary of <b>0.33</b> (<code>mdg/binner.py</code>, spec §10.2 amendment note) — not number-tuning, but correcting the boundary's definition to match reality.</span>
+        </p>
+      </div>
+      <p class="small muted">
+        <span class="ja">同時に補助的な座標も計算します：<code>valence_band</code>（明るさ、0.34／0.67 で3段階）、<code>acousticness_band</code>（0.50 以上ならアコースティック）、<code>humming_ease_band</code>／<code>full_karaoke_ease_band</code>（踊りやすさ・楽器度・語り度・長さのほどよさから作る「歌いやすさ」のめやす、しきい値 0.50）、<code>era_bucket</code>（年代）。これらは選抜の帳簿づけに使うだけで、曲データには保存されず、選抜が終わったら捨てられます。</span>
+        <span class="en">Secondary coordinates are computed alongside: <code>valence_band</code> (0.34/0.67), <code>acousticness_band</code> (≥0.50 → acoustic), <code>humming_ease_band</code>/<code>full_karaoke_ease_band</code> (composite proxies over danceability, instrumentalness, speechiness, duration-moderateness; threshold 0.50), <code>era_bucket</code>. These coordinates are <b>coverage bookkeeping only</b> — never stored on the song, discarded after selection.</span>
+      </p>
+      <div class="why ok">
+        <span class="lab"><span class="ja">選抜は「マス埋め」方式 — スコアでは選ばない</span><span class="en">Selection is pigeonhole — never by score</span></span>
+        <p>
+          <span class="ja"><code>select_catalog</code>（<code>mdg/selector.py</code>）は、候補を「実際に測って決めたマスのID」でまとめ、重複している曲（台帳や同じ回の中で既出）だけを外します。1つのマスに何曲入ってもかまいません（周回を重ねて増やしていきます）。<b>スコアが低いから落ちる、という曲は1曲もありません。</b>落ちる理由は「重複」か「本物のデータが足りない」の2つだけです。</span>
+          <span class="en"><code>select_catalog</code> (<code>mdg/selector.py</code>) groups candidates by their <b>real binned cell ID</b> and skips only duplicate identities (ledger or in-batch). A cell may hold several songs (loop enrichment). <b>No song is ever rejected by score</b> — the only rejection reasons are duplication and missing real data.</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- 6. Map / repair / freeze -->
+    <section id="freeze">
+      <h2><span class="num">6</span><span class="ja">変換・修復・凍結（S4–S6）</span><span class="en">Map, repair &amp; freeze (S4–S6)</span></h2>
+
+      <h3><span class="ja">S4 — 変換（架空IDをつける）</span><span class="en">S4 — mapping (synthetic identity)</span></h3>
+      <p>
+        <span class="ja"><code>CatalogMapper.map_song</code>（<code>mdg/mapper.py</code>）が、Soundcharts から取った生データを、決まった形（凍結スキーマ）の <code>Song</code> に変換します：</span>
+        <span class="en"><code>CatalogMapper.map_song</code> (<code>mdg/mapper.py</code>) converts a raw Soundcharts payload into a frozen-schema <code>Song</code>:</span>
+      </p>
+      <ul class="small">
+        <li><span class="ja">架空の ID を連番でつけます：<code>synthetic-track-0001</code>／<code>synthetic-album-0001</code>／<code>synthetic-artist-0001</code>（アーティストは本名で重複をまとめる）。番号は ISRC を並べた順につけるので、<b>作り直しても同じ ID になります</b>。</span><span class="en">Sequential synthetic IDs — <code>synthetic-track-0001</code> / <code>synthetic-album-0001</code> / <code>synthetic-artist-0001</code> (artists deduped by real name). Allocation follows the ISRC-sorted order, so <b>IDs are stable across reruns</b>.</span></li>
+        <li><span class="ja">本物のデータはそのまま写します：曲名、音の特徴の数値、曲の長さ（秒→ミリ秒）、ISRC（<code>external_ids.isrc</code> へ）。</span><span class="en">Real data copied verbatim: name, audio features, real duration (s→ms), ISRC into <code>external_ids.isrc</code>.</span></li>
+        <li><span class="ja">Soundcharts にない項目（<code>popularity</code>, <code>track_number</code>, <code>available_markets</code>）は、<code>sha256("シード:ISRC")</code> から作った曲ごとの乱数で決めます。乱数といっても種が固定なので、<b>毎回同じ値</b>になります。</span><span class="en">Fields Soundcharts lacks (<code>popularity</code>, <code>track_number</code>, <code>available_markets</code>) are synthesized <b>deterministically</b> from a per-song PRNG seeded with <code>sha256(f"{seed}:{isrc}")</code>.</span></li>
+        <li><span class="ja">URL はすべて <code>https://api.synthetic.invalid/...</code>／<code>https://open.synthetic.invalid/...</code> の形で、実在しないアドレスです。</span><span class="en">Every URL points at <code>https://api.synthetic.invalid/...</code> / <code>https://open.synthetic.invalid/...</code>.</span></li>
+      </ul>
+
+      <h3><span class="ja">S5 — 検査と「2回まで」の修復</span><span class="en">S5 — validation and the 2-strike repair</span></h3>
+      <p>
+        <span class="ja">検査には、<b>アプリ本体と同じ <code>Song</code> の型定義</b>（<code>aica_api.models.proposal.song_schema</code>）をそのまま使います。<code>mdg</code> の中で型を作り直すことはしません。問題が見つかると4種類（identity／url／schema／flag）に分類され、決まった手順の修復を試みます：</span>
+        <span class="en">Validation runs through <b>the app's own frozen <code>Song</code> model</b> (<code>aica_api.models.proposal.song_schema</code>) — never redefined inside <code>mdg</code>. Violations are classified into four categories (identity / url / schema / flag) and deterministic repairs are attempted:</span>
+      </p>
+      <div class="formula">
+        <span class="lhs">repair budget</span> <span class="op">=</span> 2 <span class="cm"># <span class="ja">修復は2回まで。3回目は</span><span class="en">a third violation raises</span> catalog_generation_failed <span class="ja">で停止</span></span><br>
+        identity <span class="op">→</span> <span class="ja">正しい方（Track 側）の ID/URI/長さを、音の特徴側へ写し直す</span><span class="en">copy canonical Track ID/URI/duration onto the audio-features object</span><br>
+        url&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="op">→</span> <span class="ja">正しい架空 ID から <code>.invalid</code> の URL を作り直す</span><span class="en">rebuild the <code>.invalid</code> URL from the canonical synthetic ID</span><br>
+        schema&nbsp;&nbsp; <span class="op">→</span> <span class="ja">丸め誤差（</span><span class="en">clamp only within serialization noise</span> <span class="coef">1e-9</span> <span class="ja">以内）だけ直す — それより大きいズレは本物の壊れなので停止</span><span class="en">— anything further is real corruption and halts</span><br>
+        flag&nbsp;&nbsp;&nbsp;&nbsp; <span class="op">→</span> <span class="ja">修復なし（必ず停止）</span><span class="en">no repairer (always escalates)</span>
+      </div>
+      <p class="small muted">
+        <span class="ja">行った修復は、すべて <code>{rule, field}</code> の形で記録に残ります。どうしても直せないデータは、<b>でっち上げて埋めるのではなく捨てて</b>、捨てたことを記録します。</span>
+        <span class="en">Every applied repair is logged as <code>{rule, field}</code>. A record that cannot be mapped or repaired is <b>dropped, never fabricated</b> — and the drop is logged.</span>
+      </p>
+
+      <h3><span class="ja">S6 — 凍結</span><span class="en">S6 — freeze</span></h3>
+      <div class="formula">
+        1. <span class="lhs">assert_label_free</span>(catalog) <span class="cm"># <span class="ja">カタログ全体をくまなく調べ、禁止キーがないか確認：</span><span class="en">recursive scan for forbidden keys:</span> recommended, best_for_world, target_rank, item_fit, score, label, rank, why_fits_cell, web_evidence, …</span><br>
+        2. <span class="lhs">dataset_hash</span> <span class="op">=</span> sha256( json.dumps(catalog, sort_keys=True, separators=(",",":")) )<br>
+        3. <span class="lhs">manifest</span> <span class="op">=</span> { dataset_id, dataset_kind: "soundcharts_grounded_spotify_compatible", tier, versions, random_seed, generated_at }
+      </div>
+      <p class="small">
+        <span class="ja">凍結は最後の関門です（FR-019）。AI の工程で使った補助情報（<code>why_fits_cell</code> など）やスコアらしきキーがカタログに紛れ込んでいたら、ここで <code>catalog_generation_failed</code> になります。<code>generated_at</code>（作成日時）は外から渡します（再現テスト用の既定値は <code>1970-01-01T00:00:00Z</code>）。つまり、この工程は<b>現在時刻すら読みません</b>。</span>
+        <span class="en">Freeze is the last-mile firewall (FR-019): if any LLM-stage helper field (<code>why_fits_cell</code>, …) or score-like key leaked into the catalog, it fails right here with <code>catalog_generation_failed</code>. <code>generated_at</code> is supplied externally (defaulting to the fixed sentinel <code>1970-01-01T00:00:00Z</code> for reproducibility) — the deterministic core never reads the wall clock.</span>
+      </p>
+    </section>
+
+    <!-- 7. Determinism -->
+    <section id="determinism">
+      <h2><span class="num">7</span><span class="ja">再現性と台帳</span><span class="en">Determinism &amp; the ledger</span></h2>
+      <p>
+        <span class="ja">この仕組みは、「結果が毎回変わりうるデータ集め（Soundcharts などへのネット接続）」と「毎回同じ結果になる変換」を、はっきり分けています。「同じものが必ずできる」という約束は、変換の側にあります：</span>
+        <span class="en">The system draws a hard line between the <b>non-reproducible live harvest</b> (network calls to Soundcharts / MusicBrainz / Deezer) and the <b>deterministic transform</b>. The reproducibility contract lives in the transform:</span>
+      </p>
+      <div class="fgrid">
+        <div class="fcard"><h4><span class="ja">シード値が決めること</span><span class="en">Seed scope</span></h4><p><span class="ja"><code>random_seed</code> が固定するのは3つ：架空 ID をつける順番、同点だった曲の並べ方、比較用曲（negative fixture）の配置。データ集め自体は、シードでは固定できません。</span><span class="en"><code>random_seed</code> pins: synthetic-ID allocation order, selection tie-breaks among equally-eligible songs, negative-fixture placement. It does not (and cannot) pin the harvest.</span></p></div>
+        <div class="fcard"><h4><span class="ja">曲ごとの乱数</span><span class="en">Per-song PRNG</span></h4><p><span class="ja"><code>sha256("シード:ISRC")</code> を64ビットに縮めて <code>random.Random</code> の種にします。Python 標準の <code>hash()</code> は起動のたびに値が変わるので使いません。この方法なら、別のマシンでも同じ値になります。</span><span class="en"><code>sha256(f"{seed}:{isrc}")</code> truncated to 64 bits seeds <code>random.Random</code>. Python's built-in <code>hash()</code> was rejected because it is salted per process — this is stable across machines.</span></p></div>
+        <div class="fcard"><h4><span class="ja">順番をそろえて読む</span><span class="en">Sorted iteration</span></h4><p><span class="ja">キャッシュはファイル名（＝ISRC）の順に読み、ID も同じ順でつけます。データを集めた時刻の順番には影響されません。</span><span class="en">Cache files are read in filename (ISRC) sorted order; ID allocation follows the same order — independent of harvest wall-clock order.</span></p></div>
+        <div class="fcard"><h4><span class="ja">持ち越しの台帳</span><span class="en">Carry-over ledger</span></h4><p><span class="ja">台帳は、曲の同一性（ISRC・UUID・整えた曲名）をキーにした「追記だけ」の記録です。おかげで周回は「積み増し」になり、同じことを二度しません：一度出た名前は再提案されず、一度失敗した曲は再挑戦されません。キーは曲の同一性だけで、スコアは絶対に入れません（FR-023/024）。だから「途中から再開できる」ことが、選抜のゆがみになりません。</span><span class="en">An append-only JSON keyed by identity tokens (ISRC / UUID / normalized name). It makes loops <b>additive and idempotent</b>: known names/ISRCs are never re-proposed or re-fetched, known misses never retried. Keys are identity-only — never a score (FR-023/024) — so resumability adds no selection pressure.</span></p></div>
+      </div>
+      <div class="why ok">
+        <span class="lab"><span class="ja">読み直すのは凍結カタログだけ（SC-001）</span><span class="en">Freeze is the replay boundary (SC-001)</span></span>
+        <p>
+          <span class="ja">シミュレータの透明ランが読み直すのは、<b>コミット済みの凍結カタログ</b>です。データ集めをやり直すことはありません。「透明ランの最中に、ネット接続も AI 呼び出しも一切起きない」ことが約束です。同じキャッシュ＋同じシードで <code>mdg transform</code> を2回動かすと、1バイトも違わない結果になることをテストで確認しています。</span>
+          <span class="en">A transparent simulation run replays against the <b>committed frozen dataset</b> — never a re-run of the harvest. “No live network or LLM call occurs during a transparent simulation run.” Running <code>mdg transform</code> twice over the same accumulated cache + seed is asserted byte-identical by test.</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- 8. Worlds, judge, certify -->
+    <section id="certify">
+      <h2><span class="num">8</span><span class="ja">ワールド・ブラインド判定・認証（S7–S9）</span><span class="en">Worlds, blind judge &amp; certification (S7–S9)</span></h2>
+
+      <h3><span class="ja">S7 — ワールドと比較ペア（凍結のあとだけ）</span><span class="en">S7 — worlds &amp; contrast pairs (post-freeze only)</span></h3>
+      <p>
+        <span class="ja"><code>build_base_worlds</code>（<code>mdg/worlds.py</code>）は、15以上の基本ワールド（昼の通勤、夜の高速道路で眠気が高い/低い、渋滞、山道、単調な道、子ども同乗、推しモードのオン/オフ、休憩後の停車、最近聴いた曲あり など）を、共通のテンプレートの一部だけ書き換えて作ります。<b>12組の比較ペア</b>は「1つの項目だけが違う、2つのワールド」です：</span>
+        <span class="en"><code>build_base_worlds</code> (<code>mdg/worlds.py</code>) generates ≥15 deterministic base worlds (daytime commute, night highway with high/low drowsiness, congestion, mountain road, monotony, child present, oshi mode, stopped-post-rest, recent play, …) by overriding template fields. The <b>12 contrast pairs</b> are two worlds differing in <b>exactly one field</b>:</span>
+      </p>
+      <div class="formula wrap">
+        pair-01-drowsiness: world A { driver.drowsiness_level: <span class="coef">20</span> } <span class="op">vs</span> world B { driver.drowsiness_level: <span class="coef">90</span> } <span class="cm">— <span class="ja">期待どおりなら、落ち着いた曲と元気な曲の順位が入れ替わる</span><span class="en">expected: calm↔active song ranking reverses</span></span>
+      </div>
+      <p class="small muted">
+        <span class="ja">AI が書けるのは、再生履歴や推しのプロフィール（<code>direct_item_history</code>／<code>upro</code>／<code>usage_by_genre</code>／<code>scene_genre_usage</code>）だけです。ドライバーや環境の項目には触れられません。ワールド全体を機械的に走査し、凍結カタログに存在しない曲・アーティストへの参照が1つでもあれば、<code>world_reference_failed</code> で止まります。</span>
+        <span class="en">The LLM may compose only history / oshi profiles (<code>direct_item_history</code> / <code>upro</code> / <code>usage_by_genre</code> / <code>scene_genre_usage</code>) — driver/environment fields are untouchable. Every world is regex-scanned; any <code>synthetic-track-*</code> / <code>synthetic-artist-*</code> reference absent from the frozen catalog halts with <code>world_reference_failed</code>.</span>
+      </p>
+
+      <h3><span class="ja">S8 — ブラインド判定（答えを見ずに採点）</span><span class="en">S8 — the blind judge</span></h3>
+      <p>
+        <span class="ja">AI は各（ワールド, 曲）の組み合わせに <code>positive／negative／neutral</code> のラベルをつけます。このとき「P6 のスコアをまだ見ていない」ことが、仕組みとして保証されます：AI の出力に <code>algorithm_score</code> や <code>agreement</code> が先に入っていたら、<code>BlindOrderingError</code> で止まるのです。この検査を通ってからはじめて、本物の P6 <code>evaluate()</code> のスコアと突き合わせ、AI の直感と一致したかどうかを記録します：</span>
+        <span class="en">The LLM labels each (world, song) as <code>positive / negative / neutral</code> — and being <b>blind to the P6 score</b> is structurally enforced: if the LLM output already contains <code>algorithm_score</code> or <code>agreement</code>, it raises <code>BlindOrderingError</code>. Only after that check is the real P6 <code>evaluate()</code> score revealed and agreement recorded:</span>
+      </p>
+      <div class="formula">
+        <span class="lhs">neutral band</span> <span class="op">=</span> |score| &lt; <span class="coef">0.10</span><br>
+        label = neutral <span class="op">→</span> agree <span class="op">⇔</span> |score| &lt; 0.10<br>
+        label = positive/negative <span class="op">→</span> agree <span class="op">⇔</span> sign(score <span class="ja">を帯で符号化</span><span class="en">banded</span>) <span class="op">=</span> sign(label)
+      </div>
+      <p class="small muted">
+        <span class="ja">この「一致したか」は答え合わせのための記録で、目指すべき点数ではありません。不一致は <code>judge_disagreement</code> という印がつくだけで、エラーにはなりません。</span>
+        <span class="en">Agreement is a <b>cross-check</b>, never a target. A disagreement is recorded as the data status <code>judge_disagreement</code> — not treated as an error.</span>
+      </p>
+
+      <h3><span class="ja">S9 — 認証（順位の逆転テスト）</span><span class="en">S9 — certification (reversal tests)</span></h3>
+      <p>
+        <span class="ja"><code>mdg certify</code> は、P6 パッケージの <code>evaluate</code> をファイルパスから直接読み込んで動かします（ロジックのコピーや模倣は作りません）。各比較ペアの2つのワールドでランキングを実行し、指定した2曲の順位が<b>入れ替わるか</b>を確かめます：</span>
+        <span class="en"><code>mdg certify</code> loads the P6 package's <code>evaluate</code> <b>directly by file path</b> (never re-implemented) and runs the ranking over both worlds of each contrast pair, checking that the two designated songs' relative order <b>flips</b>:</span>
+      </p>
+      <div class="formula">
+        <span class="lhs">reverses</span>(pair) <span class="op">⇔</span> ( rank_A(song_hi) &lt; rank_A(song_lo) ) <span class="op">≠</span> ( rank_B(song_hi) &lt; rank_B(song_lo) )
+      </div>
+      <div class="why safe">
+        <span class="lab"><span class="ja">落ちたら「集め直す」しかない（FR-027）</span><span class="en">The only fix is re-harvest (FR-027)</span></span>
+        <p>
+          <span class="ja">順位が入れ替わらなかったペアには <code>re_harvest_signal</code> が出ます。意味は「<b>このマスに別の実在曲を集め直せ。数値の調整は絶対にするな</b>」。テストに落ちたら、直すのはデータの側（もっと合う実在曲を探す）であって、アルゴリズムや数値を答えに寄せることではありません。これが、この仕組み全体の「ズルをさせない」大原則です。</span>
+          <span class="en">A non-reversing pair emits a <code>re_harvest_signal</code> — “<b>harvest a different real song for this cell; never tune numbers.</b>” Certification failures are fixed by obtaining better real data, never by nudging the algorithm or the fixture toward a target. This is the load-bearing anti-cheating rule of the whole system.</span>
+        </p>
+      </div>
+    </section>
+
+    <!-- 9. Integration & status -->
+    <section id="status">
+      <h2><span class="num">9</span><span class="ja">統合と現状</span><span class="en">Integration &amp; current status</span></h2>
+      <p>
+        <span class="ja">生成器はリポジトリ直下の<b>独立したパッケージ</b>（<code>music_dataset_generator/</code>、FR-030）で、アプリ本体は <code>mdg</code> を一切読み込みません。つながりは、<code>proposal_contracts/</code> 以下の<b>コミット済みファイル</b>だけです：</span>
+        <span class="en">The generator is a <b>separate repo-root package</b> (<code>music_dataset_generator/</code>, FR-030); the runtime API never imports <code>mdg</code>. Integration happens purely through <b>committed files</b> under <code>proposal_contracts/</code>:</span>
+      </p>
+      <div class="formula wrap">
+        proposal_contracts/dataset/&lt;dataset_id&gt;/{ catalog.json, dataset_manifest.json, genre_affinity_v1.json }<br>
+        proposal_contracts/test_cases/test_cases.json&nbsp;&nbsp; proposal_contracts/build_reports/{ build_report.json, certification_report.json }
+      </div>
+      <ul class="small">
+        <li><span class="ja">アプリ側の <code>DatasetCatalogRegistry</code> は読み取り専用で、全曲を同じ <code>Song</code> の型でもう一度検査します。1曲でも不正があれば、そのデータセットは<b>丸ごと隔離</b>されます。「一部だけ公開」は絶対にしません。</span><span class="en"><code>DatasetCatalogRegistry</code> (app side) is a read-only scanner that re-validates every song against the <b>same frozen <code>Song</code> model</b>. If any song is invalid the whole dataset is quarantined — <b>never partially available</b>.</span></li>
+        <li><span class="ja"><code>genre_affinity_v1</code> は、使うかどうか選べる<b>別ファイル</b>の拡張です。本物のジャンル情報を、決めておいた12語（j-pop, j-rock, city pop, anime, vocaloid, enka など）に対応づけます。この拡張を作っても作らなくても、カタログ本体は1バイトも変わりません（SC-005）。</span><span class="en"><code>genre_affinity_v1</code> is an opt-in <b>separate-file</b> extension mapping real Soundcharts genres into a frozen 12-term vocabulary (j-pop, j-rock, city pop, anime, vocaloid, enka, …). The catalog itself is byte-identical with or without it (SC-005).</span></li>
+        <li><span class="ja">凍結前の作業データ（生のキャッシュ、来歴、台帳、AI との受け渡しファイル）は gitignore 済みの <code>generation_workspace/</code> に置かれ、コミットされません。Soundcharts の認証情報は環境変数から読むだけで、どこにも書き込みません。</span><span class="en">Pre-freeze generation state (raw cache, lineage, ledger, LLM I/O) lives in the gitignored <code>generation_workspace/</code> and is never committed. Soundcharts credentials are read from the environment only and never written anywhere.</span></li>
+      </ul>
+
+      <h3><span class="ja">主要な数値</span><span class="en">Key numbers</span></h3>
+      <div class="scroll-x"><table>
+        <thead><tr>
+          <th><span class="ja">項目</span><span class="en">Quantity</span></th>
+          <th class="num-c"><span class="ja">値</span><span class="en">Value</span></th>
+          <th><span class="ja">出所</span><span class="en">Where</span></th>
+        </tr></thead>
+        <tbody>
+          <tr><td><span class="ja">主要なマスの数</span><span class="en">Primary coverage grid</span></td><td class="num">3 × 3 × 4 = 36</td><td><code>mdg/coverage/plan.py</code></td></tr>
+          <tr><td><span class="ja">言語の配分（demonstration）</span><span class="en">Language split (demonstration)</span></td><td class="num">ja 30 / en 6</td><td><code>mdg/coverage/plan.py</code></td></tr>
+          <tr><td><span class="ja">アーティスト数 × 曲数</span><span class="en">Artists × depth</span></td><td class="num">12 × ≥3</td><td><code>mdg/coverage/plan.py</code></td></tr>
+          <tr><td><span class="ja">比較ペア</span><span class="en">Contrast pairs</span></td><td class="num">12</td><td><code>mdg/worlds.py</code></td></tr>
+          <tr><td><span class="ja">基本ワールド</span><span class="en">Base worlds</span></td><td class="num">≥15 (18<span class="ja">個生成</span><span class="en"> built</span>)</td><td><code>mdg/worlds.py</code></td></tr>
+          <tr><td><span class="ja">プローブ関門</span><span class="en">Probe gate</span></td><td class="num">≥ 60%</td><td><code>mdg/harvest/probe.py</code></td></tr>
+          <tr><td><span class="ja">修復の上限回数</span><span class="en">Repair budget</span></td><td class="num">2</td><td><code>mdg/repair.py</code></td></tr>
+          <tr><td><span class="ja">判定の「中立」の幅</span><span class="en">Judge neutral band</span></td><td class="num">|score| &lt; 0.10</td><td><code>mdg/judge.py</code></td></tr>
+          <tr><td><span class="ja">ジャンルの語彙数</span><span class="en">Genre vocabulary</span></td><td class="num">12<span class="ja">語</span><span class="en"> terms</span></td><td><code>mdg/genre_map.py</code></td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="why warn">
+        <span class="lab"><span class="ja">いまコミットされているデータセット（作業途中）</span><span class="en">Currently committed dataset (work-in-progress snapshot)</span></span>
+        <p>
+          <span class="ja"><code>soundcharts-grounded-spotify-compatible-demonstration-seed-1042</code>：<b>300曲</b>、データ集め29周、成功301件／失敗137件、Soundcharts 呼び出し403回。マスの充足は <b>29/36</b>（残り7マスはすべて <code>speech_forward</code> 系）。認証は <b>0/12 ペアしか逆転していません</b>（<code>all_reversed: false</code>）。つまりこれは、<b>完成した認証済みカタログではなく、作業途中の状態</b>です。残る作業は、speech_forward のマスを埋めることと、順位の逆転が成立する比較用の曲を集め直すことです。</span>
+          <span class="en"><code>soundcharts-grounded-spotify-compatible-demonstration-seed-1042</code>: <b>300 songs</b>, 29 harvest loops, 301 accepted / 137 misses, 403 Soundcharts calls. Coverage stands at <b>29/36 cells</b> (all 7 unmet cells are <code>speech_forward</code>). Certification shows <b>0/12 pairs reversed</b> (<code>all_reversed: false</code>) — i.e. this is a <b>work-in-progress snapshot, not a finished, certified demonstration catalog</b>. Remaining work: fill the speech_forward cells and re-harvest contrast songs until the reversals hold.</span>
+        </p>
+      </div>
+
+      <h3><span class="ja">実行のながれ（まとめ）</span><span class="en">How it is run (summary)</span></h3>
+      <div class="formula">
+        mdg plan <span class="op">→</span> mdg name --write-input <span class="op">→</span> <span class="cm">(<span class="ja">エージェントが</span><span class="en">agent runs</span> s1b_naming.md <span class="ja">を実行</span>)</span> <span class="op">→</span> mdg name --read-output<br>
+        <span class="op">→</span> mdg resolve <span class="op">→</span> mdg probe <span class="op">→</span> mdg harvest --candidate-source isrc_resolved<br>
+        <span class="op">→</span> mdg transform --seed 1042 <span class="cm">(<span class="ja">ここは毎回同じ結果：ネットも AI も使わない</span><span class="en">deterministic: no network, no LLM</span>)</span><br>
+        <span class="op">→</span> mdg worlds <span class="op">→</span> mdg judge <span class="op">→</span> mdg certify <span class="op">→</span> mdg report
+      </div>
+      <p class="small muted">
+        <span class="ja">マスが埋まりきるまで <code>plan → name → resolve → harvest → transform</code> を繰り返します。台帳が既知の曲を飛ばしてくれるので、各周回は足りない分だけを取りにいきます。テストは <code>uv run pytest</code>（保存済みデータで動く、ネット不要）と <code>uv run pytest -m live</code>（Soundcharts のキーが必要）。</span>
+        <span class="en">While cells remain unmet, repeat <code>plan → name → resolve → harvest → transform</code> — the ledger skips everything known, so each loop fetches only the delta. Tests: <code>uv run pytest</code> (recorded fixtures, no network) and <code>uv run pytest -m live</code> (needs a Soundcharts key).</span>
+      </p>
+    </section>
+
+    <footer>
+      <p><span class="ja">設計のもとになった資料：<code class="k">docs/master/aica_synthetic_music_data_and_generation_specification.md</code>（§0 データの出どころ、§9 生成アルゴリズム、§10 デモカタログの約束ごと、§17–18 検査と修復、§19 バージョンと再現性）、<code class="k">specs/012-music-dataset-generator/</code>、実装は <code class="k">music_dataset_generator/mdg/</code>。このページは分かりやすさ優先の概要です。正確なしきい値・エラー分類・スキーマは、仕様書とコードが正です。数値は 2026-07-17 時点のコミット済みデータとビルドレポートによります。</span>
+      <span class="en">Design basis: <code class="k">docs/master/aica_synthetic_music_data_and_generation_specification.md</code> (§0 data source, §9 generation algorithm, §10 demonstration-catalog contract, §17–18 validation &amp; repair, §19 versioning &amp; reproducibility), <code class="k">specs/012-music-dataset-generator/</code>, and the implementation in <code class="k">music_dataset_generator/mdg/</code>. This page is an explanatory overview — exact thresholds, error taxonomy, and schemas are authoritative in the spec and code. Figures reflect the committed dataset and build reports as of 2026-07-17.</span></p>
+    </footer>
+  </main>
+</div>
+
+<script>
+  const buttons = document.querySelectorAll('[data-lang]');
+  buttons.forEach((button) => {
+    button.addEventListener('click', () => {
+      document.body.classList.remove('lang-en', 'lang-ja');
+      document.body.classList.add('lang-' + button.dataset.lang);
+      buttons.forEach((item) => item.classList.toggle('active', item === button));
+      document.documentElement.lang = button.dataset.lang === 'ja' ? 'ja' : 'en';
+    });
+  });
+</script>
+</body>
+</html>

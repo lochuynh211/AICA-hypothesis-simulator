@@ -1,0 +1,34 @@
+{
+  "_comment": "SS11 item 11: low<->high service_recovery_rate, varied for humming_karaoke ONLY - call_response_driving has no recovery-rate entry (missing -> neutral 0), and every other field is absent, so the two candidates are otherwise perfectly tied.",
+  "trigger_purpose": "inattentive_driving_prevention_recovery",
+  "lifecycle_stage": "active_driving_content",
+  "allowed_service_ids": [
+    "humming_karaoke",
+    "call_response_driving"
+  ],
+  "candidates_of_interest": {
+    "varied": "humming_karaoke",
+    "fixed_comparator": "call_response_driving"
+  },
+  "expected_direction": "at recovery_rate=0 (e=-1) humming_karaoke goes NEGATIVE and ranks BELOW call_response_driving (pinned at 0); at recovery_rate=100 (e=+1) humming_karaoke goes positive and overtakes call_response_driving - recovery rate alone reorders the pair.",
+  "variants": {
+    "low": {
+      "feature_snapshot": {
+        "history": {
+          "service_recovery_rate": {
+            "humming_karaoke": 0
+          }
+        }
+      }
+    },
+    "high": {
+      "feature_snapshot": {
+        "history": {
+          "service_recovery_rate": {
+            "humming_karaoke": 100
+          }
+        }
+      }
+    }
+  }
+}

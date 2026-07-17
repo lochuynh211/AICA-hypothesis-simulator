@@ -103,16 +103,18 @@ def test_service_package_rejected_from_content_slot():
 
 def test_list_slots_never_cross_assigns_either_package():
     slots = {(s["family"], s["approach"]): s["package_id"] for s in _registry().list_slots()}
-    assert slots[("service_selector", "transparent")] == "mock_service_selector_v1"
-    # P3c (feature 014, T032): the REAL content selector now fills this slot
-    # (it sorts before the mock alphabetically) — the "never cross-assigns"
-    # property under test here is unaffected: neither package ever lands in
-    # the OTHER family's slot.
+    # P3c (feature 014, T032) / P5 Unit A (feature 016, T001/T003): the REAL
+    # content/service selectors now fill these slots (each sorts before its
+    # mock alphabetically) — the "never cross-assigns" property under test
+    # here is unaffected: neither package ever lands in the OTHER family's
+    # slot.
+    assert slots[("service_selector", "transparent")] == "aica_transparent_service_selector_v1"
     assert slots[("content_selector", "transparent")] == "aica_transparent_content_selector_v1"
     # Explicitly never the other way around.
     assert slots[("service_selector", "transparent")] != "mock_content_selector_v1"
     assert slots[("service_selector", "transparent")] != "aica_transparent_content_selector_v1"
     assert slots[("content_selector", "transparent")] != "mock_service_selector_v1"
+    assert slots[("content_selector", "transparent")] != "aica_transparent_service_selector_v1"
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,32 @@
+{
+  "_comment": "SS11 item 8: oshi mode off<->on (oshi_registered=true held constant - only oshi_mode changes). radio_style is the ONE service defined AS the oshi service (+1.0, SS5.2.1); humming_karaoke gets the mild service-level oshi response (+0.5). off is a signed OPPOSING evidence (e=-1, SS5.7), not neutral.",
+  "trigger_purpose": "inattentive_driving_prevention_recovery",
+  "lifecycle_stage": "active_driving_content",
+  "allowed_service_ids": [
+    "humming_karaoke",
+    "radio_style"
+  ],
+  "candidates_of_interest": {
+    "oshi_defined": "radio_style",
+    "oshi_mild": "humming_karaoke"
+  },
+  "expected_direction": "off: both scores are negative (opposing evidence) but radio_style's larger-magnitude coefficient makes it MORE negative than humming_karaoke, so humming_karaoke ranks above radio_style; on: radio_style's larger-magnitude coefficient makes it MORE positive, so radio_style overtakes humming_karaoke - a genuine reorder.",
+  "variants": {
+    "off": {
+      "feature_snapshot": {
+        "preference": {
+          "oshi_registered": true,
+          "oshi_mode": "off"
+        }
+      }
+    },
+    "on": {
+      "feature_snapshot": {
+        "preference": {
+          "oshi_registered": true,
+          "oshi_mode": "on"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "_comment": "SS11 item 10: low<->high overall service_usage_level, varied for quiz ONLY - ranking_creation has no usage entry at all (missing -> neutral 0), and every other field is absent, so the two candidates are otherwise perfectly tied.",
+  "trigger_purpose": "inattentive_driving_prevention_recovery",
+  "lifecycle_stage": "active_driving_content",
+  "allowed_service_ids": [
+    "quiz",
+    "ranking_creation"
+  ],
+  "candidates_of_interest": {
+    "varied": "quiz",
+    "fixed_comparator": "ranking_creation"
+  },
+  "expected_direction": "at 'low' usage (e=-0.5, two-directional ordinal map) quiz goes NEGATIVE and ranks BELOW ranking_creation (pinned at 0); at 'high' usage (e=+1.0) quiz goes positive and overtakes ranking_creation - overall usage alone reorders the pair.",
+  "variants": {
+    "low": {
+      "feature_snapshot": {
+        "preference": {
+          "service_usage_level": {
+            "quiz": "low"
+          }
+        }
+      }
+    },
+    "high": {
+      "feature_snapshot": {
+        "preference": {
+          "service_usage_level": {
+            "quiz": "high"
+          }
+        }
+      }
+    }
+  }
+}

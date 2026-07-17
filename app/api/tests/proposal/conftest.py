@@ -164,3 +164,104 @@ def content_selector():
 def content_hyperparameters() -> dict:
     """Fully-resolved default hyperparameters from the manifest."""
     return manifest_hyperparameters()
+
+
+# ---------------------------------------------------------------------------
+# Service-selector (P5) harness — mirrors the content-selector harness above.
+# ALL file I/O lives here; the package never opens files (`algorithm.py`
+# purity rule, see packages/aica_transparent_service_selector_v1/algorithm.py).
+# ---------------------------------------------------------------------------
+
+_SERVICE_PKG_DIR: Path = _REPO_ROOT / "packages" / "aica_transparent_service_selector_v1"
+
+
+def load_service_selector():
+    """Import the service-selector package's ``algorithm`` module by path."""
+    spec = importlib.util.spec_from_file_location(
+        "aica_service_selector_v1_algorithm", _SERVICE_PKG_DIR / "algorithm.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def load_service_manifest() -> dict:
+    """Load the service-selector ``package.json`` manifest."""
+    with (_SERVICE_PKG_DIR / "package.json").open(encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def service_manifest_hyperparameters() -> dict:
+    """Return the fully-resolved default hyperparameter dict (manifest defaults)."""
+    manifest = load_service_manifest()
+    return {h["key"]: h["default"] for h in manifest["hyperparameters"]}
+
+
+def load_worked_example_context(*, hyperparameters: dict | None = None, parameters: dict | None = None) -> dict:
+    """Load the SS10 worked-example fixture and merge in the manifest's resolved
+    parameters/hyperparameters -- the fixture itself never embeds config (data
+    stays DRY with package.json; see proposal_contracts/fixtures/service/README.md).
+    """
+    manifest = load_service_manifest()
+    fixture = load_fixture("fixtures/service/worked-example.json")
+    context = {k: v for k, v in fixture.items() if not k.startswith("_")}
+    context["parameters"] = parameters if parameters is not None else manifest.get("parameters", {})
+    context["hyperparameters"] = hyperparameters if hyperparameters is not None else service_manifest_hyperparameters()
+    return context
+
+
+def build_service_context(
+    *,
+    trigger_purpose: str = "inattentive_driving_prevention_recovery",
+    lifecycle_stage: str = "active_driving_content",
+    allowed_service_ids: list | None = None,
+    eligible_candidates: list | None = None,
+    excluded_candidates: list | None = None,
+    feature_snapshot: dict | None = None,
+    hyperparameters: dict | None = None,
+    parameters: dict | None = None,
+    simulation_time: str = "2026-07-16T22:00:00Z",
+    catalog_version: str = "n/a",
+) -> dict:
+    """Assemble a runtime ``context`` dict for the service selector."""
+    manifest = load_service_manifest()
+    allowed = allowed_service_ids or []
+    if eligible_candidates is None:
+        eligible_candidates = [{"candidate_id": sid} for sid in allowed]
+    return {
+        "contract_version": manifest.get("contract_version", "1.0.0"),
+        "opportunity_id": "op-test",
+        "simulation_time": simulation_time,
+        "trigger_purpose": trigger_purpose,
+        "lifecycle_stage": lifecycle_stage,
+        "allowed_service_ids": allowed,
+        "selected_service_id": None,
+        "feature_snapshot": feature_snapshot or {},
+        "feature_provenance": {},
+        "enabled_feature_extensions": [],
+        "eligible_candidates": eligible_candidates,
+        "excluded_candidates": excluded_candidates or [],
+        "parameters": parameters if parameters is not None else manifest.get("parameters", {}),
+        "hyperparameters": hyperparameters if hyperparameters is not None else service_manifest_hyperparameters(),
+        "package_runtime_state": {},
+        "catalog_version": catalog_version,
+        "run_seed": "seed-test",
+    }
+
+
+@pytest.fixture()
+def service_selector():
+    """The imported service-selector algorithm module."""
+    return load_service_selector()
+
+
+@pytest.fixture()
+def service_hyperparameters() -> dict:
+    """Fully-resolved default hyperparameters from the manifest."""
+    return service_manifest_hyperparameters()
+
+
+@pytest.fixture()
+def service_parameters() -> dict:
+    """The manifest's structural ``parameters`` dict."""
+    return load_service_manifest().get("parameters", {})
