@@ -285,7 +285,23 @@ describe('ServiceProposalPanel', () => {
     await screen.findByText('mock_service_selector_v1')
     const disclosure = screen.getByTestId('hyperparameters-disclosure') as HTMLDetailsElement
     expect(disclosure.tagName.toLowerCase()).toBe('details')
-    expect(screen.getByText('Category Weights')).toBeInTheDocument()
+    // Task 8: the subslab label and the HyperparamMatrix's own label both
+    // render the same localized text ("Category Weights"), so at least one
+    // (rather than exactly one) must be present.
+    expect(screen.getAllByText('Category Weights').length).toBeGreaterThan(0)
+  })
+
+  it('hyperparameters render as labeled subslabs with a kind badge per entry', async () => {
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('mock_service_selector_v1')
+    const disc = screen.getByTestId('hyperparameters-disclosure')
+    fireEvent.click(within(disc).getByText(/Hyperparameters|ハイパーパラメータ/))
+    // e.g. a table-kind hyperparam shows its kind badge
+    expect(within(disc).getAllByTestId('hp-kind-badge').length).toBeGreaterThan(0)
   })
 
   it('renders the service_fit formulation callout', async () => {

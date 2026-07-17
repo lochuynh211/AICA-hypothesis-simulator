@@ -84,7 +84,6 @@ type ServiceInputSnapshot = {
 // power-user surface, if any). The gamma/confidence knobs are shown
 // read-only here for at-a-glance visibility; they remain fully editable in
 // the "Hyperparameters (advanced)" disclosure below.
-const HIDDEN_PARAMS = new Set(['missing_policy', 'tie_breaker', 'material_safety_gap'])
 const READONLY_HP_KEYS = ['gamma_drowsiness', 'gamma_fatigue', 'gamma_monotony', 'confidence_shrinkage_v1']
 
 function serviceRows(candidate: RankedCandidate): ReasonRow[] {
@@ -560,13 +559,19 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
               </summary>
               <div style={{ padding: '4px 11px 11px' }}>
                 {manifest.hyperparameters.map((hp) => (
-                  <HyperparamMatrix
-                    key={hp.key}
-                    def={hp}
-                    value={state.serviceHyperparameterOverrides[hp.key]}
-                    onChange={(value) => dispatch({ type: 'SET_SERVICE_HYPERPARAMETER', key: hp.key, value })}
-                    lang={lang}
-                  />
+                  <div key={hp.key} style={{ margin: '10px 0 4px' }}>
+                    <div style={subslabStyle}>
+                      <span data-testid="hp-kind-badge" style={kindBadgeStyle}>{hp.kind}</span>{' '}
+                      <code>{hp.key}</code>{' '}
+                      <span style={{ color: '#6b7280' }}>{t(hp.label, lang)}</span>
+                    </div>
+                    <HyperparamMatrix
+                      def={hp}
+                      value={state.serviceHyperparameterOverrides[hp.key]}
+                      onChange={(value) => dispatch({ type: 'SET_SERVICE_HYPERPARAMETER', key: hp.key, value })}
+                      lang={lang}
+                    />
+                  </div>
                 ))}
               </div>
             </details>
@@ -635,6 +640,17 @@ const summaryStyle: React.CSSProperties = {
   fontSize: '0.8em',
   fontWeight: 700,
   color: '#4b5563',
+}
+
+const subslabStyle: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap',
+  fontSize: '0.78em', fontWeight: 700, color: '#4b5563',
+  borderTop: '1px dashed #e5e7eb', paddingTop: '6px', marginBottom: '4px',
+}
+const kindBadgeStyle: React.CSSProperties = {
+  fontSize: '0.68em', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em',
+  background: '#eef2ff', color: '#1d4ed8', border: '1px solid #c7d2fe',
+  borderRadius: '999px', padding: '1px 7px',
 }
 
 const formulaStyle: React.CSSProperties = {
