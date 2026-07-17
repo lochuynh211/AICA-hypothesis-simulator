@@ -32,6 +32,7 @@ from aica_api.models.proposal.enums import (  # noqa: F401
     ServiceDecisionType,
     DiscreteEventType,
     ProposalRunStatus,
+    ProposalRunMode,
 )
 from aica_api.models.proposal.enums import (  # noqa: F401
     TrafficState,
@@ -142,6 +143,13 @@ from aica_api.models.proposal.proposal_run import (  # noqa: F401
 )
 
 # ---------------------------------------------------------------------------
+# Re-exports — P7 recompute request contract (T006)
+# ---------------------------------------------------------------------------
+from aica_api.models.proposal.recompute import (  # noqa: F401
+    RecomputeRequest,
+)
+
+# ---------------------------------------------------------------------------
 # Re-exports — P1 package manifest contract (T010 / T011)
 # ---------------------------------------------------------------------------
 from aica_api.models.proposal.package_manifest import (  # noqa: F401
@@ -193,6 +201,7 @@ __all__ = [
     "ServiceDecisionType",
     "DiscreteEventType",
     "ProposalRunStatus",
+    "ProposalRunMode",
     # enums (P3)
     "TrafficState",
     "RoadType",
@@ -250,6 +259,8 @@ __all__ = [
     # proposal run / run-log (P1)
     "ProposalRun",
     "ProposalRunLog",
+    # recompute request (P7)
+    "RecomputeRequest",
     # package manifest (P1)
     "BilingualLabel",
     "ProposalPackageFamilySlot",

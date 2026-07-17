@@ -57,6 +57,7 @@ from aica_api.storage.file_store import read_json, write_json_atomic
 
 __all__ = [
     "InvalidOverrideError",
+    "apply_overrides",
     "WorldCloneStore",
 ]
 
@@ -159,6 +160,79 @@ def _pydantic_issues(exc: ValidationError) -> list[ValidationIssue]:
     return issues
 
 
+def apply_overrides(
+    base_world: World,
+    overrides: list[FieldOverride | dict],
+    *,
+    catalog: list[Song] | None = None,
+) -> tuple[World, list[FieldDiff]]:
+    """Apply ``overrides`` onto ``base_world`` and return ``(new_world, diffs)``.
+
+    Pure core extracted from ``WorldCloneStore.create_clone`` (research.md
+    D2) — no persistence, no ``WorldClone`` construction. Unlike
+    ``create_clone``, an EMPTY ``overrides`` list is allowed here (recompute's
+    pure lifecycle-stage-only case): it returns ``base_world`` unchanged with
+    an empty diff, never raising ``empty_overrides``. ``create_clone`` keeps
+    its own non-empty guard and calls this helper only after checking it.
+
+    Validation is identical to ``create_clone``'s: each override is applied
+    at its dotted/bracketed path onto a deep copy of ``base_world``'s JSON
+    dump, the result is re-validated as a complete ``World``, and (when
+    ``catalog`` is supplied, or the cloned world has catalog references and
+    none was supplied) checked for dangling catalog references.
+
+    Raises:
+        InvalidOverrideError: malformed/unknown path, a value that makes the
+            resulting world structurally invalid, or a dangling/unresolvable
+            catalog reference. Carries ``.issues`` for a 422 response.
+    """
+    validated_overrides = [o if isinstance(o, FieldOverride) else FieldOverride.model_validate(o) for o in overrides]
+    if not validated_overrides:
+        return base_world, []
+
+    base_dict = base_world.model_dump(mode="json")
+    cloned_dict = copy.deepcopy(base_dict)
+
+    diffs: list[FieldDiff] = []
+    for override in validated_overrides:
+        tokens = _split_path(override.path)
+        before = _get_at_path(base_dict, tokens, full_path=override.path)
+        _set_at_path(cloned_dict, tokens, override.value, full_path=override.path)
+        after = _get_at_path(cloned_dict, tokens, full_path=override.path)
+        diffs.append(FieldDiff(path=override.path, before=before, after=after))
+
+    try:
+        cloned_world = World.model_validate(cloned_dict)
+    except ValidationError as exc:
+        raise InvalidOverrideError(_pydantic_issues(exc)) from exc
+
+    if catalog is not None:
+        issues = validate_world(cloned_world, catalog)
+        if issues:
+            raise InvalidOverrideError(issues)
+    elif has_catalog_references(cloned_world):
+        # Mirrors WorldCloneStore's FIX-5 discipline: an unresolvable/missing
+        # catalog for a world that DOES reference the catalog is a validation
+        # error, never a silent skip. A world with no catalog references at
+        # all is still safe to apply without a catalog.
+        raise InvalidOverrideError(
+            [
+                _issue(
+                    path="control_inputs.dataset_id",
+                    code="unresolvable_catalog",
+                    message=(
+                        f"Cannot validate catalog references for dataset "
+                        f"{cloned_world.control_inputs.dataset_id!r}: no catalog was "
+                        "supplied (unknown/quarantined dataset), but the world "
+                        "contains catalog references that would need checking."
+                    ),
+                )
+            ]
+        )
+
+    return cloned_world, diffs
+
+
 def _make_clone_id() -> str:
     """Generate a unique clone_id: wclone_<YYYYMMDD-HHMMSS>_<6-hex>.
 
@@ -202,50 +276,13 @@ class WorldCloneStore:
                 [_issue(path="overrides", code="empty_overrides", message="At least one override is required.")]
             )
 
-        base_dict = base_world.model_dump(mode="json")
-        cloned_dict = copy.deepcopy(base_dict)
-
-        diffs: list[FieldDiff] = []
-        for override in validated_overrides:
-            tokens = _split_path(override.path)
-            before = _get_at_path(base_dict, tokens, full_path=override.path)
-            _set_at_path(cloned_dict, tokens, override.value, full_path=override.path)
-            after = _get_at_path(cloned_dict, tokens, full_path=override.path)
-            diffs.append(FieldDiff(path=override.path, before=before, after=after))
-
-        try:
-            cloned_world = World.model_validate(cloned_dict)
-        except ValidationError as exc:
-            raise InvalidOverrideError(_pydantic_issues(exc)) from exc
-
-        if catalog is not None:
-            issues = validate_world(cloned_world, catalog)
-            if issues:
-                raise InvalidOverrideError(issues)
-        elif has_catalog_references(cloned_world):
-            # Whole-branch review FIX 5: an unresolvable/missing catalog used
-            # to silently skip reference validation entirely -- even for a
-            # world that DOES reference the catalog (e.g. `oshi_id`, played/
-            # skipped items, acceptance-rate maps). That let a clone with a
-            # dangling catalog reference be created/persisted unchecked. Now:
-            # if there's nothing to check (a bare world with no references at
-            # all), skipping is still safe and cheap; otherwise, the caller
-            # must supply the resolved catalog, or this is treated as a
-            # validation error -- never a silent pass-through.
-            raise InvalidOverrideError(
-                [
-                    _issue(
-                        path="control_inputs.dataset_id",
-                        code="unresolvable_catalog",
-                        message=(
-                            f"Cannot validate catalog references for dataset "
-                            f"{cloned_world.control_inputs.dataset_id!r}: no catalog was "
-                            "supplied (unknown/quarantined dataset), but the world "
-                            "contains catalog references that would need checking."
-                        ),
-                    )
-                ]
-            )
+        # T009 (research.md D2): the apply->revalidate->diff core is shared
+        # with recompute via the pure `apply_overrides` helper; create_clone
+        # keeps its own non-empty-override guard (above) since a clone is a
+        # user-triggered "change ONE variable" contrast (empty is meaningless
+        # here), while recompute allows an empty list (a pure lifecycle-stage
+        # recompute with no context edit).
+        cloned_world, diffs = apply_overrides(base_world, validated_overrides, catalog=catalog)
 
         clone = WorldClone(
             clone_id=_make_clone_id(),

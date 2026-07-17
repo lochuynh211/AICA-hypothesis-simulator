@@ -46,6 +46,7 @@ from aica_api.models.proposal.enums import (
     LifecycleStage,
     MotionState,
     ProposalPackageFamily,
+    ProposalRunMode,
     ProposalRunStatus,
     ServiceId,
     TriggerPurpose,
@@ -689,7 +690,7 @@ class CreateProposalRunBody(BaseModel):
     origin_profile_id: str | None = None
     service_package_id: str
     content_package_id: str
-    mode: str = "interactive"
+    mode: ProposalRunMode = ProposalRunMode.interactive
     enabled_feature_extensions: list[str] = []
     parameters: dict[str, Any] = {}
     hyperparameters: dict[str, Any] = {}

@@ -73,7 +73,7 @@ class TestServiceDecisionType:
 
 
 # ---------------------------------------------------------------------------
-# DiscreteEventType — 18 members (8 P1 + 10 P4 additions)
+# DiscreteEventType — 20 members (8 P1 + 10 P4 + 2 P7 additions)
 # ---------------------------------------------------------------------------
 class TestDiscreteEventType:
     EXPECTED = {
@@ -96,10 +96,13 @@ class TestDiscreteEventType:
         "CHOOSE_ANOTHER",
         "REQUEST_MORE",
         "NO_ELIGIBLE_CANDIDATE",
+        # P7 additions (data-model.md "Modified enum: DiscreteEventType")
+        "RECOMPUTED",
+        "CONTEXT_EDITED",
     }
 
     def test_member_count(self):
-        assert len(DiscreteEventType) == 18
+        assert len(DiscreteEventType) == 20
 
     def test_exact_members(self):
         assert {m.value for m in DiscreteEventType} == self.EXPECTED
