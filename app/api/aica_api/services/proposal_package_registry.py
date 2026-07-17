@@ -59,6 +59,7 @@ class ProposalPackageRegistry:
                 "supported_services": [s.value for s in pkg.supported_services],
                 "parameters": pkg.parameters,
                 "hyperparameters": [hp.model_dump(mode="json") for hp in pkg.hyperparameters],
+                "hidden": pkg.hidden,
             }
             for pkg in self._packages.values()
         ]

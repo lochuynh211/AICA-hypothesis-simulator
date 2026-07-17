@@ -1,0 +1,2176 @@
+{
+  "run_id": "prun_20260717-053515_f6a7e7",
+  "created_at": "2026-07-17T05:35:15.619745Z",
+  "opportunity": {
+    "opportunity_id": "op_20260717-053515_587f94",
+    "trigger_purpose": "rest_recommended",
+    "lifecycle_stage": "before_rest_until_stop",
+    "allowed_service_ids": [
+      "music_playlist",
+      "humming_karaoke",
+      "quiz",
+      "ranking_creation",
+      "radio_style",
+      "call_response_driving"
+    ],
+    "simulation_time": "2026-07-17T00:00:00Z",
+    "run_seed": "seed-12345"
+  },
+  "matrix_version": "v1",
+  "world_snapshot": {
+    "feature_snapshot": {
+      "situation": {
+        "drowsiness_level": 80,
+        "fatigue_level": 70,
+        "traffic_state": "congested",
+        "road_type": "highway",
+        "night_state": "night",
+        "monotony_level": 90,
+        "route_tags": [
+          "highway"
+        ],
+        "destination_tags": [
+          "coast"
+        ],
+        "child_present": false,
+        "multiple_passengers": false,
+        "motion_state": "driving"
+      },
+      "preference": {
+        "oshi_registered": true,
+        "oshi_mode": "on",
+        "oshi_id": "synthetic-artist-0001",
+        "oshi_type": "artist",
+        "oshi_tags": [],
+        "service_recency_state": {},
+        "service_usage_level": {},
+        "scene_service_usage_level": {},
+        "age_band": "30s",
+        "gender": "unspecified",
+        "hobby_interest_tags": [],
+        "catalog_item_recency_state": {},
+        "content_tag_recency_state": {},
+        "content_tag_usage_level": {},
+        "catalog_item_usage_level": {},
+        "scene_content_tag_usage_level": {},
+        "played_items": [
+          {
+            "track_id": "synthetic-track-0001",
+            "last_played_at": "2026-07-13T21:00:00Z"
+          }
+        ],
+        "skipped_items": [],
+        "cancelled_content_plans": [],
+        "changed_from_items": []
+      },
+      "history": {
+        "service_proposal_acceptance_rate": {},
+        "service_recovery_rate": {},
+        "scheduled_event_type": null,
+        "scheduled_event_timing": null,
+        "scheduled_event_tags": [],
+        "content_proposal_acceptance_rate": {
+          "synthetic-track-0001": 80.0
+        },
+        "content_recovery_rate": {
+          "synthetic-track-0001": 70.0
+        }
+      },
+      "additional_proposed": {
+        "estimated_min_until_rest_spot": 8,
+        "rest_spot_type": "sa_pa",
+        "active_service": null,
+        "recent_service_rejections": [],
+        "service_proposal_acceptance_confidence": {},
+        "service_recovery_confidence": {},
+        "completed_items": [],
+        "manually_selected_items": [],
+        "repeated_items": [],
+        "content_proposal_acceptance_confidence": {},
+        "content_recovery_confidence": {}
+      },
+      "_genre_extension_enabled": false
+    },
+    "feature_provenance": {
+      "drowsiness_level": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (Situation)"
+      },
+      "fatigue_level": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (Situation, ⚠)"
+      },
+      "traffic_state": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (Situation, ⚠ congested)"
+      },
+      "road_type": {
+        "feature_origin": "normalized_cdc_su_concept",
+        "source_reference": "spec §9 (normalized enum); content-algo §5.3 Table 3"
+      },
+      "night_state": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (Situation, ⚠ night)"
+      },
+      "monotony_level": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (Situation)"
+      },
+      "route_tags": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 (genre‡) / §5.7"
+      },
+      "destination_tags": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 (genre‡) / §5.7"
+      },
+      "child_present": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 (genre‡ + eligibility) / §5.7"
+      },
+      "multiple_passengers": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+      },
+      "motion_state": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (⚠ driving) + eligibility"
+      },
+      "oshi_registered": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (gate)"
+      },
+      "oshi_mode": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (gate)"
+      },
+      "oshi_id": {
+        "feature_origin": "normalized_cdc_su_concept",
+        "source_reference": "spec §9 (normalized UPro identity); content-algo §5.3 Table 3"
+      },
+      "oshi_type": {
+        "feature_origin": "normalized_cdc_su_concept",
+        "source_reference": "spec §9 (normalized UPro identity); content-algo §5.3 (not scored)"
+      },
+      "oshi_tags": {
+        "feature_origin": "normalized_cdc_su_concept",
+        "source_reference": "spec §9 (normalized UPro identity); content-algo §5.3 (not scored)"
+      },
+      "service_recency_state": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+      },
+      "service_usage_level": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+      },
+      "scene_service_usage_level": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+      },
+      "age_band": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (scored)"
+      },
+      "gender": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9 (default weight 0); content-algo §5.3 (not scored)"
+      },
+      "hobby_interest_tags": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 (genre‡) / §5.7"
+      },
+      "catalog_item_recency_state": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+      },
+      "content_tag_recency_state": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+      },
+      "content_tag_usage_level": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 (genre‡) / §5.7 (a.k.a. usage_by_genre)"
+      },
+      "catalog_item_usage_level": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (scored)"
+      },
+      "scene_content_tag_usage_level": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 (genre‡) / §5.7 (a.k.a. scene_genre_usage)"
+      },
+      "played_items": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (scored)"
+      },
+      "skipped_items": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (scored + eligibility)"
+      },
+      "cancelled_content_plans": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+      },
+      "changed_from_items": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (scored)"
+      },
+      "service_proposal_acceptance_rate": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+      },
+      "service_recovery_rate": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+      },
+      "scheduled_event_type": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored); design §6.2"
+      },
+      "scheduled_event_timing": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored); design §6.2"
+      },
+      "scheduled_event_tags": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored); design §6.2"
+      },
+      "content_proposal_acceptance_rate": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (scored)"
+      },
+      "content_recovery_rate": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (scored)"
+      },
+      "estimated_min_until_rest_spot": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "rest_spot_type": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "active_service": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "recent_service_rejections": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "service_proposal_acceptance_confidence": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "service_recovery_confidence": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "completed_items": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "manually_selected_items": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "repeated_items": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "content_proposal_acceptance_confidence": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "content_recovery_confidence": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      }
+    },
+    "catalog_version": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd"
+  },
+  "setup_snapshot": {
+    "origin": {
+      "seed_id": null,
+      "clone_id": null,
+      "profile_id": null
+    },
+    "matrix_version": "v1",
+    "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+    "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+    "service_package_id": "mock_service_selector_v1",
+    "service_contract_version": "1.0.0",
+    "content_package_id": "aica_transparent_content_selector_v1",
+    "content_contract_version": "1.0.0",
+    "service_parameter_set_version": "1.0.0",
+    "content_parameter_set_version": "1.0.0",
+    "feature_provenance": {
+      "drowsiness_level": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (Situation)"
+      },
+      "fatigue_level": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (Situation, ⚠)"
+      },
+      "traffic_state": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (Situation, ⚠ congested)"
+      },
+      "road_type": {
+        "feature_origin": "normalized_cdc_su_concept",
+        "source_reference": "spec §9 (normalized enum); content-algo §5.3 Table 3"
+      },
+      "night_state": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (Situation, ⚠ night)"
+      },
+      "monotony_level": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (Situation)"
+      },
+      "route_tags": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 (genre‡) / §5.7"
+      },
+      "destination_tags": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 (genre‡) / §5.7"
+      },
+      "child_present": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 (genre‡ + eligibility) / §5.7"
+      },
+      "multiple_passengers": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+      },
+      "motion_state": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (⚠ driving) + eligibility"
+      },
+      "oshi_registered": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (gate)"
+      },
+      "oshi_mode": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (gate)"
+      },
+      "oshi_id": {
+        "feature_origin": "normalized_cdc_su_concept",
+        "source_reference": "spec §9 (normalized UPro identity); content-algo §5.3 Table 3"
+      },
+      "oshi_type": {
+        "feature_origin": "normalized_cdc_su_concept",
+        "source_reference": "spec §9 (normalized UPro identity); content-algo §5.3 (not scored)"
+      },
+      "oshi_tags": {
+        "feature_origin": "normalized_cdc_su_concept",
+        "source_reference": "spec §9 (normalized UPro identity); content-algo §5.3 (not scored)"
+      },
+      "service_recency_state": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+      },
+      "service_usage_level": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+      },
+      "scene_service_usage_level": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+      },
+      "age_band": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (scored)"
+      },
+      "gender": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9 (default weight 0); content-algo §5.3 (not scored)"
+      },
+      "hobby_interest_tags": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 (genre‡) / §5.7"
+      },
+      "catalog_item_recency_state": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+      },
+      "content_tag_recency_state": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+      },
+      "content_tag_usage_level": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 (genre‡) / §5.7 (a.k.a. usage_by_genre)"
+      },
+      "catalog_item_usage_level": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (scored)"
+      },
+      "scene_content_tag_usage_level": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 (genre‡) / §5.7 (a.k.a. scene_genre_usage)"
+      },
+      "played_items": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (scored)"
+      },
+      "skipped_items": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (scored + eligibility)"
+      },
+      "cancelled_content_plans": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+      },
+      "changed_from_items": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (scored)"
+      },
+      "service_proposal_acceptance_rate": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+      },
+      "service_recovery_rate": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+      },
+      "scheduled_event_type": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored); design §6.2"
+      },
+      "scheduled_event_timing": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored); design §6.2"
+      },
+      "scheduled_event_tags": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored); design §6.2"
+      },
+      "content_proposal_acceptance_rate": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (scored)"
+      },
+      "content_recovery_rate": {
+        "feature_origin": "cdc_su_baseline",
+        "source_reference": "spec §9; content-algo §5.3 Table 3 (scored)"
+      },
+      "estimated_min_until_rest_spot": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "rest_spot_type": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "active_service": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "recent_service_rejections": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "service_proposal_acceptance_confidence": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "service_recovery_confidence": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "completed_items": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "manually_selected_items": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "repeated_items": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "content_proposal_acceptance_confidence": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      },
+      "content_recovery_confidence": {
+        "feature_origin": "proposed_addition",
+        "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+      }
+    }
+  },
+  "service_package_id": "mock_service_selector_v1",
+  "content_package_id": "aica_transparent_content_selector_v1",
+  "parameters": {
+    "top_k": 3,
+    "tie_breaker": "candidate_id_ascending",
+    "missing_policy": "neutral_and_disclose",
+    "scene_taxonomy_version": "v1",
+    "note": "evaluate() ignores parameters/hyperparameters and returns a FIXED illustrative ranking; this block exists so the editable setup UI renders the real density described in docs/master/aica_transparent_service_proposal_algorithm.md §5-6. When P5 ships its own package, this manifest's shape is superseded."
+  },
+  "hyperparameters": {
+    "response_matrix": {
+      "driving_services": {
+        "music_playlist": {
+          "drowsiness": 0.0,
+          "fatigue": 0.0,
+          "traffic_congested": 0.0,
+          "night": 0.0,
+          "monotony": 0.0,
+          "route": 1.0,
+          "destination": 1.0,
+          "child": 0.0,
+          "group": 0.0,
+          "oshi_registered": 0.5,
+          "oshi_mode": 0.5
+        },
+        "humming_karaoke": {
+          "drowsiness": 1.0,
+          "fatigue": 1.0,
+          "traffic_congested": 1.0,
+          "night": 1.0,
+          "monotony": 1.0,
+          "route": 1.0,
+          "destination": 1.0,
+          "child": 1.0,
+          "group": 1.0,
+          "oshi_registered": 0.5,
+          "oshi_mode": 0.5
+        },
+        "call_response_driving": {
+          "drowsiness": 1.0,
+          "fatigue": 1.0,
+          "traffic_congested": 1.0,
+          "night": 1.0,
+          "monotony": 1.0,
+          "route": 0.0,
+          "destination": 0.0,
+          "child": 1.0,
+          "group": 1.0,
+          "oshi_registered": 0.5,
+          "oshi_mode": 0.5
+        },
+        "quiz": {
+          "drowsiness": 1.0,
+          "fatigue": 1.0,
+          "traffic_congested": 1.0,
+          "night": 1.0,
+          "monotony": 1.0,
+          "route": 0.0,
+          "destination": 0.0,
+          "child": 1.0,
+          "group": 1.0,
+          "oshi_registered": 0.5,
+          "oshi_mode": 0.5
+        },
+        "ranking_creation": {
+          "drowsiness": 1.0,
+          "fatigue": 1.0,
+          "traffic_congested": 1.0,
+          "night": 1.0,
+          "monotony": 1.0,
+          "route": 0.0,
+          "destination": 0.0,
+          "child": 1.0,
+          "group": 1.0,
+          "oshi_registered": 0.5,
+          "oshi_mode": 0.5
+        },
+        "radio_style": {
+          "drowsiness": 0.0,
+          "fatigue": 0.0,
+          "traffic_congested": 0.0,
+          "night": 0.0,
+          "monotony": 0.0,
+          "route": 0.0,
+          "destination": 0.0,
+          "child": 0.0,
+          "group": 0.0,
+          "oshi_registered": 1.0,
+          "oshi_mode": 1.0
+        }
+      },
+      "road_type": {
+        "music_playlist": {
+          "highway": 0.0,
+          "local": 0.0,
+          "mountain": 0.5,
+          "parking": 0.0
+        },
+        "humming_karaoke": {
+          "highway": 1.0,
+          "local": 0.0,
+          "mountain": -0.5,
+          "parking": 0.0
+        },
+        "call_response_driving": {
+          "highway": 1.0,
+          "local": 0.0,
+          "mountain": -0.5,
+          "parking": 0.0
+        },
+        "quiz": {
+          "highway": 1.0,
+          "local": 0.0,
+          "mountain": -1.0,
+          "parking": 0.0
+        },
+        "ranking_creation": {
+          "highway": 1.0,
+          "local": 0.0,
+          "mountain": -1.0,
+          "parking": 0.0
+        },
+        "radio_style": {
+          "highway": 0.0,
+          "local": 0.0,
+          "mountain": 0.5,
+          "parking": 0.0
+        }
+      },
+      "post_rest_services": {
+        "live_viewing": {
+          "drowsiness": 0.5,
+          "fatigue": 0.5,
+          "route": 0.0,
+          "destination": 0.0,
+          "child": 1.0,
+          "group": 1.0,
+          "oshi_registered": 1.0,
+          "oshi_mode": 1.0
+        },
+        "stretch_video": {
+          "drowsiness": 1.0,
+          "fatigue": 1.0,
+          "route": 0.0,
+          "destination": 0.0,
+          "child": 0.0,
+          "group": 0.0,
+          "oshi_registered": 0.0,
+          "oshi_mode": 0.0
+        },
+        "full_karaoke": {
+          "drowsiness": 0.5,
+          "fatigue": 0.5,
+          "route": 0.0,
+          "destination": 0.0,
+          "child": 1.0,
+          "group": 1.0,
+          "oshi_registered": 1.0,
+          "oshi_mode": 1.0
+        },
+        "call_response_stopped": {
+          "drowsiness": 0.5,
+          "fatigue": 0.5,
+          "route": 0.0,
+          "destination": 0.0,
+          "child": 0.5,
+          "group": 0.5,
+          "oshi_registered": 0.0,
+          "oshi_mode": 0.0
+        },
+        "oshi_reexperience": {
+          "drowsiness": 0.5,
+          "fatigue": 0.5,
+          "route": 1.0,
+          "destination": 1.0,
+          "child": 0.0,
+          "group": 0.0,
+          "oshi_registered": 1.0,
+          "oshi_mode": 1.0
+        }
+      }
+    },
+    "category_weights": {
+      "Situation": 0.8,
+      "Preference": 0.12,
+      "History": 0.08
+    },
+    "hierarchy_weights": {
+      "Situation": {
+        "driver_state": {
+          "share": 0.5,
+          "leaves": {
+            "drowsiness": {
+              "share": 0.55,
+              "feature_id": "drowsiness_level"
+            },
+            "fatigue": {
+              "share": 0.45,
+              "feature_id": "fatigue_level"
+            }
+          }
+        },
+        "driving_environment": {
+          "share": 0.35,
+          "leaves": {
+            "traffic": {
+              "share": 0.2,
+              "feature_id": "traffic_state"
+            },
+            "road": {
+              "share": 0.2,
+              "feature_id": "road_type"
+            },
+            "night": {
+              "share": 0.2,
+              "feature_id": "night_state"
+            },
+            "monotony": {
+              "share": 0.4,
+              "feature_id": "monotony_level"
+            }
+          }
+        },
+        "route_context": {
+          "share": 0.075,
+          "leaves": {
+            "route": {
+              "share": 0.55,
+              "feature_id": "route_tags"
+            },
+            "destination": {
+              "share": 0.45,
+              "feature_id": "destination_tags"
+            }
+          }
+        },
+        "passenger_composition": {
+          "share": 0.075,
+          "leaves": {
+            "child": {
+              "share": 0.65,
+              "feature_id": "child_present"
+            },
+            "multiple": {
+              "share": 0.35,
+              "feature_id": "multiple_passengers"
+            }
+          }
+        }
+      },
+      "Preference": {
+        "oshi_preference": {
+          "share": 0.25,
+          "leaves": {
+            "oshi_registered": {
+              "share": 0.35,
+              "feature_id": "oshi_registered"
+            },
+            "oshi_mode": {
+              "share": 0.65,
+              "feature_id": "oshi_mode"
+            }
+          }
+        },
+        "novelty": {
+          "share": 0.1,
+          "leaves": {
+            "service_recency": {
+              "share": 1.0,
+              "feature_id": "service_recency_state"
+            }
+          }
+        },
+        "overall_usage": {
+          "share": 0.25,
+          "leaves": {
+            "overall_usage": {
+              "share": 1.0,
+              "feature_id": "service_usage_level"
+            }
+          }
+        },
+        "scene_preference": {
+          "share": 0.4,
+          "leaves": {
+            "scene_usage": {
+              "share": 1.0,
+              "feature_id": "scene_service_usage_level"
+            }
+          }
+        }
+      },
+      "History": {
+        "proposal_acceptance": {
+          "share": 0.25,
+          "leaves": {
+            "acceptance": {
+              "share": 1.0,
+              "feature_id": "service_proposal_acceptance_rate"
+            }
+          }
+        },
+        "recovery": {
+          "share": 0.75,
+          "leaves": {
+            "recovery": {
+              "share": 1.0,
+              "feature_id": "service_recovery_rate"
+            }
+          }
+        }
+      }
+    },
+    "purpose_multipliers": {
+      "driver_state": {
+        "rest_recommended": 1.4,
+        "inattentive_driving_prevention_recovery": 1.5,
+        "route_music": 1.2,
+        "child_passenger_experience": 1.2
+      },
+      "driving_environment": {
+        "rest_recommended": 1.1,
+        "inattentive_driving_prevention_recovery": 1.4,
+        "route_music": 1.0,
+        "child_passenger_experience": 1.0
+      },
+      "route_context": {
+        "rest_recommended": 1.0,
+        "inattentive_driving_prevention_recovery": 0.75,
+        "route_music": 2.0,
+        "child_passenger_experience": 0.75
+      },
+      "passenger_composition": {
+        "rest_recommended": 1.0,
+        "inattentive_driving_prevention_recovery": 0.85,
+        "route_music": 0.8,
+        "child_passenger_experience": 2.0
+      },
+      "oshi_preference": {
+        "rest_recommended": 1.0,
+        "inattentive_driving_prevention_recovery": 0.8,
+        "route_music": 1.1,
+        "child_passenger_experience": 0.75
+      },
+      "novelty": {
+        "rest_recommended": 0.8,
+        "inattentive_driving_prevention_recovery": 0.8,
+        "route_music": 0.8,
+        "child_passenger_experience": 0.8
+      },
+      "overall_usage": {
+        "rest_recommended": 0.9,
+        "inattentive_driving_prevention_recovery": 0.9,
+        "route_music": 0.9,
+        "child_passenger_experience": 1.0
+      },
+      "scene_preference": {
+        "rest_recommended": 1.0,
+        "inattentive_driving_prevention_recovery": 1.1,
+        "route_music": 1.1,
+        "child_passenger_experience": 1.2
+      },
+      "proposal_acceptance": {
+        "rest_recommended": 1.0,
+        "inattentive_driving_prevention_recovery": 1.0,
+        "route_music": 1.0,
+        "child_passenger_experience": 1.0
+      },
+      "recovery": {
+        "rest_recommended": 1.3,
+        "inattentive_driving_prevention_recovery": 1.25,
+        "route_music": 1.0,
+        "child_passenger_experience": 1.0
+      }
+    },
+    "evidence_normalization": {
+      "gamma_drowsiness": 1.0,
+      "gamma_fatigue": 1.0,
+      "gamma_monotony": 1.0,
+      "route_tag_saturation": 2,
+      "destination_tag_saturation": 2,
+      "monotony_medium_min": 34,
+      "monotony_high_min": 67,
+      "usage_ordinal_map": {
+        "never": -1.0,
+        "low": -0.5,
+        "medium": 0.25,
+        "high": 1.0
+      },
+      "recency_ordinal_map": {
+        "recent": 0.0,
+        "long_unused": 0.5,
+        "never": 1.0
+      },
+      "response_anchor_map": {
+        "strong_negative": -1.0,
+        "mild_negative": -0.5,
+        "neutral": 0.0,
+        "mild_positive": 0.5,
+        "strong_positive": 1.0
+      }
+    },
+    "safety_dominance": {
+      "material_safety_gap": 1.0,
+      "safety_share_warning_floor": 0.4
+    },
+    "confidence_shrinkage": {
+      "enabled": false,
+      "min_sample_count": 10,
+      "shrinkage_factor": 0.5,
+      "note": "Baseline-only mode has no confidence/sample-count feature (§5.4/§12), so sparse acceptance/recovery rates cannot be shrunk today; this hyperparameter is reserved so a later package version can enable shrinkage without a contract change."
+    },
+    "parameter_set_version": "1.0.0",
+    "formula_version": "1.0.0"
+  },
+  "content_parameters": {},
+  "content_hyperparameters": {},
+  "journey_state": {
+    "lifecycle_stage": "before_rest_until_stop",
+    "motion_state": "driving",
+    "active_service_id": "music_playlist",
+    "active_plan_id": null,
+    "playback_state": "idle",
+    "current_plan_ref": null,
+    "previous_content": null,
+    "rejected_service_ids": []
+  },
+  "events": [
+    {
+      "event_type": "OPPORTUNITY_OPENED",
+      "at": "2026-07-17T00:00:00Z",
+      "payload": {
+        "opportunity_id": "op_20260717-053515_587f94",
+        "trigger_purpose": "rest_recommended",
+        "lifecycle_stage": "before_rest_until_stop"
+      }
+    },
+    {
+      "event_type": "SERVICE_SELECTED",
+      "at": "2026-07-17T00:00:00Z",
+      "payload": {
+        "selected_service_id": "music_playlist",
+        "rank": 1
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "step": "service",
+      "package_id": "mock_service_selector_v1",
+      "contract_version": "1.0.0",
+      "schema_version": "1.0.0",
+      "matrix_version": "v1",
+      "input_snapshot": {
+        "contract_version": "1.0.0",
+        "opportunity_id": "op_20260717-053515_587f94",
+        "simulation_time": "2026-07-17T00:00:00Z",
+        "trigger_purpose": "rest_recommended",
+        "lifecycle_stage": "before_rest_until_stop",
+        "allowed_service_ids": [
+          "music_playlist",
+          "humming_karaoke",
+          "quiz",
+          "ranking_creation",
+          "radio_style",
+          "call_response_driving"
+        ],
+        "feature_snapshot": {
+          "situation": {
+            "drowsiness_level": 80,
+            "fatigue_level": 70,
+            "traffic_state": "congested",
+            "road_type": "highway",
+            "night_state": "night",
+            "monotony_level": 90,
+            "route_tags": [
+              "highway"
+            ],
+            "destination_tags": [
+              "coast"
+            ],
+            "child_present": false,
+            "multiple_passengers": false,
+            "motion_state": "driving"
+          },
+          "preference": {
+            "oshi_registered": true,
+            "oshi_mode": "on",
+            "oshi_id": "synthetic-artist-0001",
+            "oshi_type": "artist",
+            "oshi_tags": [],
+            "service_recency_state": {},
+            "service_usage_level": {},
+            "scene_service_usage_level": {},
+            "age_band": "30s",
+            "gender": "unspecified",
+            "hobby_interest_tags": [],
+            "catalog_item_recency_state": {},
+            "content_tag_recency_state": {},
+            "content_tag_usage_level": {},
+            "catalog_item_usage_level": {},
+            "scene_content_tag_usage_level": {},
+            "played_items": [
+              {
+                "track_id": "synthetic-track-0001",
+                "last_played_at": "2026-07-13T21:00:00Z"
+              }
+            ],
+            "skipped_items": [],
+            "cancelled_content_plans": [],
+            "changed_from_items": []
+          },
+          "history": {
+            "service_proposal_acceptance_rate": {},
+            "service_recovery_rate": {},
+            "scheduled_event_type": null,
+            "scheduled_event_timing": null,
+            "scheduled_event_tags": [],
+            "content_proposal_acceptance_rate": {
+              "synthetic-track-0001": 80.0
+            },
+            "content_recovery_rate": {
+              "synthetic-track-0001": 70.0
+            }
+          },
+          "additional_proposed": {
+            "estimated_min_until_rest_spot": 8,
+            "rest_spot_type": "sa_pa",
+            "active_service": null,
+            "recent_service_rejections": [],
+            "service_proposal_acceptance_confidence": {},
+            "service_recovery_confidence": {},
+            "completed_items": [],
+            "manually_selected_items": [],
+            "repeated_items": [],
+            "content_proposal_acceptance_confidence": {},
+            "content_recovery_confidence": {}
+          },
+          "_genre_extension_enabled": false
+        },
+        "feature_provenance": {
+          "drowsiness_level": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (Situation)"
+          },
+          "fatigue_level": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (Situation, ⚠)"
+          },
+          "traffic_state": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (Situation, ⚠ congested)"
+          },
+          "road_type": {
+            "feature_origin": "normalized_cdc_su_concept",
+            "source_reference": "spec §9 (normalized enum); content-algo §5.3 Table 3"
+          },
+          "night_state": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (Situation, ⚠ night)"
+          },
+          "monotony_level": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (Situation)"
+          },
+          "route_tags": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 (genre‡) / §5.7"
+          },
+          "destination_tags": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 (genre‡) / §5.7"
+          },
+          "child_present": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 (genre‡ + eligibility) / §5.7"
+          },
+          "multiple_passengers": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+          },
+          "motion_state": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (⚠ driving) + eligibility"
+          },
+          "oshi_registered": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (gate)"
+          },
+          "oshi_mode": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (gate)"
+          },
+          "oshi_id": {
+            "feature_origin": "normalized_cdc_su_concept",
+            "source_reference": "spec §9 (normalized UPro identity); content-algo §5.3 Table 3"
+          },
+          "oshi_type": {
+            "feature_origin": "normalized_cdc_su_concept",
+            "source_reference": "spec §9 (normalized UPro identity); content-algo §5.3 (not scored)"
+          },
+          "oshi_tags": {
+            "feature_origin": "normalized_cdc_su_concept",
+            "source_reference": "spec §9 (normalized UPro identity); content-algo §5.3 (not scored)"
+          },
+          "service_recency_state": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+          },
+          "service_usage_level": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+          },
+          "scene_service_usage_level": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+          },
+          "age_band": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (scored)"
+          },
+          "gender": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9 (default weight 0); content-algo §5.3 (not scored)"
+          },
+          "hobby_interest_tags": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 (genre‡) / §5.7"
+          },
+          "catalog_item_recency_state": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+          },
+          "content_tag_recency_state": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+          },
+          "content_tag_usage_level": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 (genre‡) / §5.7 (a.k.a. usage_by_genre)"
+          },
+          "catalog_item_usage_level": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (scored)"
+          },
+          "scene_content_tag_usage_level": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 (genre‡) / §5.7 (a.k.a. scene_genre_usage)"
+          },
+          "played_items": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (scored)"
+          },
+          "skipped_items": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (scored + eligibility)"
+          },
+          "cancelled_content_plans": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+          },
+          "changed_from_items": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (scored)"
+          },
+          "service_proposal_acceptance_rate": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+          },
+          "service_recovery_rate": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored)"
+          },
+          "scheduled_event_type": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored); design §6.2"
+          },
+          "scheduled_event_timing": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored); design §6.2"
+          },
+          "scheduled_event_tags": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (not scored); design §6.2"
+          },
+          "content_proposal_acceptance_rate": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (scored)"
+          },
+          "content_recovery_rate": {
+            "feature_origin": "cdc_su_baseline",
+            "source_reference": "spec §9; content-algo §5.3 Table 3 (scored)"
+          },
+          "estimated_min_until_rest_spot": {
+            "feature_origin": "proposed_addition",
+            "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+          },
+          "rest_spot_type": {
+            "feature_origin": "proposed_addition",
+            "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+          },
+          "active_service": {
+            "feature_origin": "proposed_addition",
+            "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+          },
+          "recent_service_rejections": {
+            "feature_origin": "proposed_addition",
+            "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+          },
+          "service_proposal_acceptance_confidence": {
+            "feature_origin": "proposed_addition",
+            "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+          },
+          "service_recovery_confidence": {
+            "feature_origin": "proposed_addition",
+            "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+          },
+          "completed_items": {
+            "feature_origin": "proposed_addition",
+            "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+          },
+          "manually_selected_items": {
+            "feature_origin": "proposed_addition",
+            "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+          },
+          "repeated_items": {
+            "feature_origin": "proposed_addition",
+            "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+          },
+          "content_proposal_acceptance_confidence": {
+            "feature_origin": "proposed_addition",
+            "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+          },
+          "content_recovery_confidence": {
+            "feature_origin": "proposed_addition",
+            "source_reference": "spec §9 (Simulator proposal); content-algo §5.3 (baseline-only V1 out of scope)"
+          }
+        },
+        "enabled_feature_extensions": [],
+        "selected_service_id": null,
+        "eligible_candidates": [
+          {
+            "candidate_id": "music_playlist"
+          },
+          {
+            "candidate_id": "humming_karaoke"
+          },
+          {
+            "candidate_id": "quiz"
+          },
+          {
+            "candidate_id": "ranking_creation"
+          },
+          {
+            "candidate_id": "radio_style"
+          },
+          {
+            "candidate_id": "call_response_driving"
+          }
+        ],
+        "excluded_candidates": [],
+        "parameters": {
+          "top_k": 3,
+          "tie_breaker": "candidate_id_ascending",
+          "missing_policy": "neutral_and_disclose",
+          "scene_taxonomy_version": "v1",
+          "note": "evaluate() ignores parameters/hyperparameters and returns a FIXED illustrative ranking; this block exists so the editable setup UI renders the real density described in docs/master/aica_transparent_service_proposal_algorithm.md §5-6. When P5 ships its own package, this manifest's shape is superseded."
+        },
+        "hyperparameters": {
+          "response_matrix": {
+            "driving_services": {
+              "music_playlist": {
+                "drowsiness": 0.0,
+                "fatigue": 0.0,
+                "traffic_congested": 0.0,
+                "night": 0.0,
+                "monotony": 0.0,
+                "route": 1.0,
+                "destination": 1.0,
+                "child": 0.0,
+                "group": 0.0,
+                "oshi_registered": 0.5,
+                "oshi_mode": 0.5
+              },
+              "humming_karaoke": {
+                "drowsiness": 1.0,
+                "fatigue": 1.0,
+                "traffic_congested": 1.0,
+                "night": 1.0,
+                "monotony": 1.0,
+                "route": 1.0,
+                "destination": 1.0,
+                "child": 1.0,
+                "group": 1.0,
+                "oshi_registered": 0.5,
+                "oshi_mode": 0.5
+              },
+              "call_response_driving": {
+                "drowsiness": 1.0,
+                "fatigue": 1.0,
+                "traffic_congested": 1.0,
+                "night": 1.0,
+                "monotony": 1.0,
+                "route": 0.0,
+                "destination": 0.0,
+                "child": 1.0,
+                "group": 1.0,
+                "oshi_registered": 0.5,
+                "oshi_mode": 0.5
+              },
+              "quiz": {
+                "drowsiness": 1.0,
+                "fatigue": 1.0,
+                "traffic_congested": 1.0,
+                "night": 1.0,
+                "monotony": 1.0,
+                "route": 0.0,
+                "destination": 0.0,
+                "child": 1.0,
+                "group": 1.0,
+                "oshi_registered": 0.5,
+                "oshi_mode": 0.5
+              },
+              "ranking_creation": {
+                "drowsiness": 1.0,
+                "fatigue": 1.0,
+                "traffic_congested": 1.0,
+                "night": 1.0,
+                "monotony": 1.0,
+                "route": 0.0,
+                "destination": 0.0,
+                "child": 1.0,
+                "group": 1.0,
+                "oshi_registered": 0.5,
+                "oshi_mode": 0.5
+              },
+              "radio_style": {
+                "drowsiness": 0.0,
+                "fatigue": 0.0,
+                "traffic_congested": 0.0,
+                "night": 0.0,
+                "monotony": 0.0,
+                "route": 0.0,
+                "destination": 0.0,
+                "child": 0.0,
+                "group": 0.0,
+                "oshi_registered": 1.0,
+                "oshi_mode": 1.0
+              }
+            },
+            "road_type": {
+              "music_playlist": {
+                "highway": 0.0,
+                "local": 0.0,
+                "mountain": 0.5,
+                "parking": 0.0
+              },
+              "humming_karaoke": {
+                "highway": 1.0,
+                "local": 0.0,
+                "mountain": -0.5,
+                "parking": 0.0
+              },
+              "call_response_driving": {
+                "highway": 1.0,
+                "local": 0.0,
+                "mountain": -0.5,
+                "parking": 0.0
+              },
+              "quiz": {
+                "highway": 1.0,
+                "local": 0.0,
+                "mountain": -1.0,
+                "parking": 0.0
+              },
+              "ranking_creation": {
+                "highway": 1.0,
+                "local": 0.0,
+                "mountain": -1.0,
+                "parking": 0.0
+              },
+              "radio_style": {
+                "highway": 0.0,
+                "local": 0.0,
+                "mountain": 0.5,
+                "parking": 0.0
+              }
+            },
+            "post_rest_services": {
+              "live_viewing": {
+                "drowsiness": 0.5,
+                "fatigue": 0.5,
+                "route": 0.0,
+                "destination": 0.0,
+                "child": 1.0,
+                "group": 1.0,
+                "oshi_registered": 1.0,
+                "oshi_mode": 1.0
+              },
+              "stretch_video": {
+                "drowsiness": 1.0,
+                "fatigue": 1.0,
+                "route": 0.0,
+                "destination": 0.0,
+                "child": 0.0,
+                "group": 0.0,
+                "oshi_registered": 0.0,
+                "oshi_mode": 0.0
+              },
+              "full_karaoke": {
+                "drowsiness": 0.5,
+                "fatigue": 0.5,
+                "route": 0.0,
+                "destination": 0.0,
+                "child": 1.0,
+                "group": 1.0,
+                "oshi_registered": 1.0,
+                "oshi_mode": 1.0
+              },
+              "call_response_stopped": {
+                "drowsiness": 0.5,
+                "fatigue": 0.5,
+                "route": 0.0,
+                "destination": 0.0,
+                "child": 0.5,
+                "group": 0.5,
+                "oshi_registered": 0.0,
+                "oshi_mode": 0.0
+              },
+              "oshi_reexperience": {
+                "drowsiness": 0.5,
+                "fatigue": 0.5,
+                "route": 1.0,
+                "destination": 1.0,
+                "child": 0.0,
+                "group": 0.0,
+                "oshi_registered": 1.0,
+                "oshi_mode": 1.0
+              }
+            }
+          },
+          "category_weights": {
+            "Situation": 0.8,
+            "Preference": 0.12,
+            "History": 0.08
+          },
+          "hierarchy_weights": {
+            "Situation": {
+              "driver_state": {
+                "share": 0.5,
+                "leaves": {
+                  "drowsiness": {
+                    "share": 0.55,
+                    "feature_id": "drowsiness_level"
+                  },
+                  "fatigue": {
+                    "share": 0.45,
+                    "feature_id": "fatigue_level"
+                  }
+                }
+              },
+              "driving_environment": {
+                "share": 0.35,
+                "leaves": {
+                  "traffic": {
+                    "share": 0.2,
+                    "feature_id": "traffic_state"
+                  },
+                  "road": {
+                    "share": 0.2,
+                    "feature_id": "road_type"
+                  },
+                  "night": {
+                    "share": 0.2,
+                    "feature_id": "night_state"
+                  },
+                  "monotony": {
+                    "share": 0.4,
+                    "feature_id": "monotony_level"
+                  }
+                }
+              },
+              "route_context": {
+                "share": 0.075,
+                "leaves": {
+                  "route": {
+                    "share": 0.55,
+                    "feature_id": "route_tags"
+                  },
+                  "destination": {
+                    "share": 0.45,
+                    "feature_id": "destination_tags"
+                  }
+                }
+              },
+              "passenger_composition": {
+                "share": 0.075,
+                "leaves": {
+                  "child": {
+                    "share": 0.65,
+                    "feature_id": "child_present"
+                  },
+                  "multiple": {
+                    "share": 0.35,
+                    "feature_id": "multiple_passengers"
+                  }
+                }
+              }
+            },
+            "Preference": {
+              "oshi_preference": {
+                "share": 0.25,
+                "leaves": {
+                  "oshi_registered": {
+                    "share": 0.35,
+                    "feature_id": "oshi_registered"
+                  },
+                  "oshi_mode": {
+                    "share": 0.65,
+                    "feature_id": "oshi_mode"
+                  }
+                }
+              },
+              "novelty": {
+                "share": 0.1,
+                "leaves": {
+                  "service_recency": {
+                    "share": 1.0,
+                    "feature_id": "service_recency_state"
+                  }
+                }
+              },
+              "overall_usage": {
+                "share": 0.25,
+                "leaves": {
+                  "overall_usage": {
+                    "share": 1.0,
+                    "feature_id": "service_usage_level"
+                  }
+                }
+              },
+              "scene_preference": {
+                "share": 0.4,
+                "leaves": {
+                  "scene_usage": {
+                    "share": 1.0,
+                    "feature_id": "scene_service_usage_level"
+                  }
+                }
+              }
+            },
+            "History": {
+              "proposal_acceptance": {
+                "share": 0.25,
+                "leaves": {
+                  "acceptance": {
+                    "share": 1.0,
+                    "feature_id": "service_proposal_acceptance_rate"
+                  }
+                }
+              },
+              "recovery": {
+                "share": 0.75,
+                "leaves": {
+                  "recovery": {
+                    "share": 1.0,
+                    "feature_id": "service_recovery_rate"
+                  }
+                }
+              }
+            }
+          },
+          "purpose_multipliers": {
+            "driver_state": {
+              "rest_recommended": 1.4,
+              "inattentive_driving_prevention_recovery": 1.5,
+              "route_music": 1.2,
+              "child_passenger_experience": 1.2
+            },
+            "driving_environment": {
+              "rest_recommended": 1.1,
+              "inattentive_driving_prevention_recovery": 1.4,
+              "route_music": 1.0,
+              "child_passenger_experience": 1.0
+            },
+            "route_context": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.75,
+              "route_music": 2.0,
+              "child_passenger_experience": 0.75
+            },
+            "passenger_composition": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.85,
+              "route_music": 0.8,
+              "child_passenger_experience": 2.0
+            },
+            "oshi_preference": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 0.8,
+              "route_music": 1.1,
+              "child_passenger_experience": 0.75
+            },
+            "novelty": {
+              "rest_recommended": 0.8,
+              "inattentive_driving_prevention_recovery": 0.8,
+              "route_music": 0.8,
+              "child_passenger_experience": 0.8
+            },
+            "overall_usage": {
+              "rest_recommended": 0.9,
+              "inattentive_driving_prevention_recovery": 0.9,
+              "route_music": 0.9,
+              "child_passenger_experience": 1.0
+            },
+            "scene_preference": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 1.1,
+              "route_music": 1.1,
+              "child_passenger_experience": 1.2
+            },
+            "proposal_acceptance": {
+              "rest_recommended": 1.0,
+              "inattentive_driving_prevention_recovery": 1.0,
+              "route_music": 1.0,
+              "child_passenger_experience": 1.0
+            },
+            "recovery": {
+              "rest_recommended": 1.3,
+              "inattentive_driving_prevention_recovery": 1.25,
+              "route_music": 1.0,
+              "child_passenger_experience": 1.0
+            }
+          },
+          "evidence_normalization": {
+            "gamma_drowsiness": 1.0,
+            "gamma_fatigue": 1.0,
+            "gamma_monotony": 1.0,
+            "route_tag_saturation": 2,
+            "destination_tag_saturation": 2,
+            "monotony_medium_min": 34,
+            "monotony_high_min": 67,
+            "usage_ordinal_map": {
+              "never": -1.0,
+              "low": -0.5,
+              "medium": 0.25,
+              "high": 1.0
+            },
+            "recency_ordinal_map": {
+              "recent": 0.0,
+              "long_unused": 0.5,
+              "never": 1.0
+            },
+            "response_anchor_map": {
+              "strong_negative": -1.0,
+              "mild_negative": -0.5,
+              "neutral": 0.0,
+              "mild_positive": 0.5,
+              "strong_positive": 1.0
+            }
+          },
+          "safety_dominance": {
+            "material_safety_gap": 1.0,
+            "safety_share_warning_floor": 0.4
+          },
+          "confidence_shrinkage": {
+            "enabled": false,
+            "min_sample_count": 10,
+            "shrinkage_factor": 0.5,
+            "note": "Baseline-only mode has no confidence/sample-count feature (§5.4/§12), so sparse acceptance/recovery rates cannot be shrunk today; this hyperparameter is reserved so a later package version can enable shrinkage without a contract change."
+          },
+          "parameter_set_version": "1.0.0",
+          "formula_version": "1.0.0"
+        },
+        "package_runtime_state": {},
+        "catalog_version": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+        "run_seed": "seed-12345"
+      },
+      "output": {
+        "decision_type": "ranked_candidates",
+        "ranked_candidates": [
+          {
+            "rank": 1,
+            "candidate_id": "music_playlist",
+            "score": 0.772,
+            "rationale": [
+              "眠気・疲労・単調さの証拠が最も強く支持する候補です（固定モック説明）。",
+              "This candidate has the strongest drowsiness/fatigue/monotony support (fixed mock rationale)."
+            ],
+            "supporting_feature_ids": [
+              "drowsiness_level",
+              "fatigue_level",
+              "monotony_level"
+            ],
+            "opposing_feature_ids": [],
+            "uncertainty": null,
+            "feature_contributions": [
+              {
+                "feature_id": "drowsiness_level",
+                "feature_value": 72,
+                "response_coefficient": 1.0,
+                "weight": 0.254551,
+                "contribution": 0.183277,
+                "source_reference": null,
+                "raw_value": null,
+                "normalization_function": null,
+                "normalized_evidence": null,
+                "response_provenance": null,
+                "normalized_feature_response": null,
+                "hierarchy_path": null,
+                "base_weight": null,
+                "purpose_multiplier": null,
+                "effective_weight": null,
+                "status": null,
+                "customer_override": null
+              },
+              {
+                "feature_id": "fatigue_level",
+                "feature_value": 55,
+                "response_coefficient": 1.0,
+                "weight": 0.208269,
+                "contribution": 0.114548,
+                "source_reference": null,
+                "raw_value": null,
+                "normalization_function": null,
+                "normalized_evidence": null,
+                "response_provenance": null,
+                "normalized_feature_response": null,
+                "hierarchy_path": null,
+                "base_weight": null,
+                "purpose_multiplier": null,
+                "effective_weight": null,
+                "status": null,
+                "customer_override": null
+              },
+              {
+                "feature_id": "monotony_level",
+                "feature_value": 60,
+                "response_coefficient": 1.0,
+                "weight": 0.12095,
+                "contribution": 0.07257,
+                "source_reference": null,
+                "raw_value": null,
+                "normalization_function": null,
+                "normalized_evidence": null,
+                "response_provenance": null,
+                "normalized_feature_response": null,
+                "hierarchy_path": null,
+                "base_weight": null,
+                "purpose_multiplier": null,
+                "effective_weight": null,
+                "status": null,
+                "customer_override": null
+              },
+              {
+                "feature_id": "service_recency_state",
+                "feature_value": "long_unused",
+                "response_coefficient": 1.0,
+                "weight": 0.007405,
+                "contribution": 0.003703,
+                "source_reference": null,
+                "raw_value": null,
+                "normalization_function": null,
+                "normalized_evidence": null,
+                "response_provenance": null,
+                "normalized_feature_response": null,
+                "hierarchy_path": null,
+                "base_weight": null,
+                "purpose_multiplier": null,
+                "effective_weight": null,
+                "status": null,
+                "customer_override": null
+              },
+              {
+                "feature_id": "service_proposal_acceptance_rate",
+                "feature_value": 68,
+                "response_coefficient": 1.0,
+                "weight": 0.015427,
+                "contribution": 0.005554,
+                "source_reference": null,
+                "raw_value": null,
+                "normalization_function": null,
+                "normalized_evidence": null,
+                "response_provenance": null,
+                "normalized_feature_response": null,
+                "hierarchy_path": null,
+                "base_weight": null,
+                "purpose_multiplier": null,
+                "effective_weight": null,
+                "status": null,
+                "customer_override": null
+              }
+            ],
+            "situation_fit": null,
+            "preference_fit": null,
+            "history_fit": null,
+            "strongest_support": null,
+            "strongest_oppose": null,
+            "dominance": null
+          },
+          {
+            "rank": 2,
+            "candidate_id": "humming_karaoke",
+            "score": 0.451,
+            "rationale": [
+              "上位候補ほどではありませんが、運転環境の証拠が一定程度この候補を支持しています（固定モック説明）。",
+              "Driving-environment evidence moderately supports this candidate, though less than the top rank (fixed mock rationale)."
+            ],
+            "supporting_feature_ids": [
+              "drowsiness_level",
+              "fatigue_level",
+              "monotony_level"
+            ],
+            "opposing_feature_ids": [],
+            "uncertainty": "moderate",
+            "feature_contributions": [
+              {
+                "feature_id": "drowsiness_level",
+                "feature_value": 72,
+                "response_coefficient": 1.0,
+                "weight": 0.254551,
+                "contribution": 0.183277,
+                "source_reference": null,
+                "raw_value": null,
+                "normalization_function": null,
+                "normalized_evidence": null,
+                "response_provenance": null,
+                "normalized_feature_response": null,
+                "hierarchy_path": null,
+                "base_weight": null,
+                "purpose_multiplier": null,
+                "effective_weight": null,
+                "status": null,
+                "customer_override": null
+              },
+              {
+                "feature_id": "fatigue_level",
+                "feature_value": 55,
+                "response_coefficient": 1.0,
+                "weight": 0.208269,
+                "contribution": 0.114548,
+                "source_reference": null,
+                "raw_value": null,
+                "normalization_function": null,
+                "normalized_evidence": null,
+                "response_provenance": null,
+                "normalized_feature_response": null,
+                "hierarchy_path": null,
+                "base_weight": null,
+                "purpose_multiplier": null,
+                "effective_weight": null,
+                "status": null,
+                "customer_override": null
+              },
+              {
+                "feature_id": "monotony_level",
+                "feature_value": 60,
+                "response_coefficient": 1.0,
+                "weight": 0.12095,
+                "contribution": 0.07257,
+                "source_reference": null,
+                "raw_value": null,
+                "normalization_function": null,
+                "normalized_evidence": null,
+                "response_provenance": null,
+                "normalized_feature_response": null,
+                "hierarchy_path": null,
+                "base_weight": null,
+                "purpose_multiplier": null,
+                "effective_weight": null,
+                "status": null,
+                "customer_override": null
+              },
+              {
+                "feature_id": "service_recency_state",
+                "feature_value": "long_unused",
+                "response_coefficient": 1.0,
+                "weight": 0.007405,
+                "contribution": 0.003703,
+                "source_reference": null,
+                "raw_value": null,
+                "normalization_function": null,
+                "normalized_evidence": null,
+                "response_provenance": null,
+                "normalized_feature_response": null,
+                "hierarchy_path": null,
+                "base_weight": null,
+                "purpose_multiplier": null,
+                "effective_weight": null,
+                "status": null,
+                "customer_override": null
+              },
+              {
+                "feature_id": "service_proposal_acceptance_rate",
+                "feature_value": 68,
+                "response_coefficient": 1.0,
+                "weight": 0.015427,
+                "contribution": 0.005554,
+                "source_reference": null,
+                "raw_value": null,
+                "normalization_function": null,
+                "normalized_evidence": null,
+                "response_provenance": null,
+                "normalized_feature_response": null,
+                "hierarchy_path": null,
+                "base_weight": null,
+                "purpose_multiplier": null,
+                "effective_weight": null,
+                "status": null,
+                "customer_override": null
+              }
+            ],
+            "situation_fit": null,
+            "preference_fit": null,
+            "history_fit": null,
+            "strongest_support": null,
+            "strongest_oppose": null,
+            "dominance": null
+          },
+          {
+            "rank": 3,
+            "candidate_id": "quiz",
+            "score": 0.132,
+            "rationale": [
+              "支持する証拠は弱く、参考候補として提示されています（固定モック説明）。",
+              "Supporting evidence is weak; this candidate is offered only as a reference option (fixed mock rationale)."
+            ],
+            "supporting_feature_ids": [
+              "drowsiness_level",
+              "fatigue_level",
+              "monotony_level"
+            ],
+            "opposing_feature_ids": [],
+            "uncertainty": "low_sample_support",
+            "feature_contributions": [
+              {
+                "feature_id": "drowsiness_level",
+                "feature_value": 72,
+                "response_coefficient": 1.0,
+                "weight": 0.254551,
+                "contribution": 0.183277,
+                "source_reference": null,
+                "raw_value": null,
+                "normalization_function": null,
+                "normalized_evidence": null,
+                "response_provenance": null,
+                "normalized_feature_response": null,
+                "hierarchy_path": null,
+                "base_weight": null,
+                "purpose_multiplier": null,
+                "effective_weight": null,
+                "status": null,
+                "customer_override": null
+              },
+              {
+                "feature_id": "fatigue_level",
+                "feature_value": 55,
+                "response_coefficient": 1.0,
+                "weight": 0.208269,
+                "contribution": 0.114548,
+                "source_reference": null,
+                "raw_value": null,
+                "normalization_function": null,
+                "normalized_evidence": null,
+                "response_provenance": null,
+                "normalized_feature_response": null,
+                "hierarchy_path": null,
+                "base_weight": null,
+                "purpose_multiplier": null,
+                "effective_weight": null,
+                "status": null,
+                "customer_override": null
+              },
+              {
+                "feature_id": "monotony_level",
+                "feature_value": 60,
+                "response_coefficient": 1.0,
+                "weight": 0.12095,
+                "contribution": 0.07257,
+                "source_reference": null,
+                "raw_value": null,
+                "normalization_function": null,
+                "normalized_evidence": null,
+                "response_provenance": null,
+                "normalized_feature_response": null,
+                "hierarchy_path": null,
+                "base_weight": null,
+                "purpose_multiplier": null,
+                "effective_weight": null,
+                "status": null,
+                "customer_override": null
+              },
+              {
+                "feature_id": "service_recency_state",
+                "feature_value": "long_unused",
+                "response_coefficient": 1.0,
+                "weight": 0.007405,
+                "contribution": 0.003703,
+                "source_reference": null,
+                "raw_value": null,
+                "normalization_function": null,
+                "normalized_evidence": null,
+                "response_provenance": null,
+                "normalized_feature_response": null,
+                "hierarchy_path": null,
+                "base_weight": null,
+                "purpose_multiplier": null,
+                "effective_weight": null,
+                "status": null,
+                "customer_override": null
+              },
+              {
+                "feature_id": "service_proposal_acceptance_rate",
+                "feature_value": 68,
+                "response_coefficient": 1.0,
+                "weight": 0.015427,
+                "contribution": 0.005554,
+                "source_reference": null,
+                "raw_value": null,
+                "normalization_function": null,
+                "normalized_evidence": null,
+                "response_provenance": null,
+                "normalized_feature_response": null,
+                "hierarchy_path": null,
+                "base_weight": null,
+                "purpose_multiplier": null,
+                "effective_weight": null,
+                "status": null,
+                "customer_override": null
+              }
+            ],
+            "situation_fit": null,
+            "preference_fit": null,
+            "history_fit": null,
+            "strongest_support": null,
+            "strongest_oppose": null,
+            "dominance": null
+          }
+        ],
+        "excluded_candidates": [
+          {
+            "candidate_id": "ranking_creation",
+            "platform_reason": "mock_service_selector_returns_top_3_only"
+          },
+          {
+            "candidate_id": "radio_style",
+            "platform_reason": "mock_service_selector_returns_top_3_only"
+          },
+          {
+            "candidate_id": "call_response_driving",
+            "platform_reason": "mock_service_selector_returns_top_3_only"
+          }
+        ],
+        "unused_available_features": [],
+        "missing_features": [],
+        "next_package_runtime_state": {},
+        "algorithm_provenance": {
+          "package_id": "mock_service_selector_v1",
+          "contract_version": "1.0.0",
+          "schema_version": "1.0.0"
+        },
+        "dominance": null,
+        "effective_weights": null,
+        "resolved_config_versions": null
+      },
+      "error": null,
+      "used_feature_ids": [
+        "situation",
+        "preference",
+        "history",
+        "additional_proposed",
+        "_genre_extension_enabled"
+      ],
+      "unused_available_features": [],
+      "missing_features": []
+    }
+  ],
+  "status": "service_selected",
+  "world": {
+    "control_inputs": {
+      "trigger_purpose": "rest_recommended",
+      "lifecycle_stage": "before_rest_until_stop",
+      "motion_state": "driving",
+      "matrix_version": "v1",
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042"
+    },
+    "situation": {
+      "drowsiness_level": 80,
+      "fatigue_level": 70,
+      "traffic_state": "congested",
+      "road_type": "highway",
+      "night_state": "night",
+      "monotony_level": 90,
+      "route_tags": [
+        "highway"
+      ],
+      "destination_tags": [
+        "coast"
+      ],
+      "child_present": false,
+      "multiple_passengers": false,
+      "motion_state": "driving",
+      "estimated_min_until_rest_spot": 8,
+      "rest_spot_type": "sa_pa",
+      "active_service": null,
+      "recent_service_rejections": []
+    },
+    "driver_profile": {
+      "oshi_registered": true,
+      "oshi_mode": "on",
+      "oshi_id": "synthetic-artist-0001",
+      "oshi_type": "artist",
+      "oshi_tags": [],
+      "age_band": "30s",
+      "gender": "unspecified",
+      "hobby_interest_tags": [],
+      "service_usage_level": {},
+      "service_recency_state": {},
+      "scene_service_usage_level": {},
+      "catalog_item_usage_level": {},
+      "catalog_item_recency_state": {},
+      "content_tag_usage_level": {},
+      "content_tag_recency_state": {},
+      "scene_content_tag_usage_level": {},
+      "played_items": [
+        {
+          "track_id": "synthetic-track-0001",
+          "last_played_at": "2026-07-13T21:00:00Z"
+        }
+      ],
+      "skipped_items": [],
+      "changed_from_items": [],
+      "cancelled_content_plans": [],
+      "completed_items": [],
+      "manually_selected_items": [],
+      "repeated_items": [],
+      "service_proposal_acceptance_rate": {},
+      "service_recovery_rate": {},
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0001": 80.0
+      },
+      "content_recovery_rate": {
+        "synthetic-track-0001": 70.0
+      },
+      "service_proposal_acceptance_confidence": {},
+      "service_recovery_confidence": {},
+      "content_proposal_acceptance_confidence": {},
+      "content_recovery_confidence": {},
+      "scheduled_event_type": null,
+      "scheduled_event_timing": null,
+      "scheduled_event_tags": [],
+      "genre_affinity_v1_enabled": false,
+      "usage_by_genre": null,
+      "scene_genre_usage": null
+    },
+    "catalog_ref": {
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "dataset_version": {
+        "schema_version": "1.0.0",
+        "spotify_track_reference_version": "1.0.0",
+        "spotify_audio_features_reference_version": "1.0.0"
+      },
+      "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd"
+    }
+  },
+  "opportunity_history": [],
+  "setup_snapshot_history": [],
+  "mode": "interactive"
+}

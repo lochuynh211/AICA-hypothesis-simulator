@@ -85,7 +85,7 @@ describe('ModeToggle', () => {
     vi.resetAllMocks()
   })
 
-  it('defaults to interactive and renders JA labels by default', () => {
+  it('defaults to interactive and renders EN labels by default', () => {
     render(
       <ProposalStoreProvider>
         <ModeToggle />
@@ -93,18 +93,18 @@ describe('ModeToggle', () => {
     )
     expect(screen.getByTestId('mode-toggle-interactive')).toBeChecked()
     expect(screen.getByTestId('mode-toggle-quick_check')).not.toBeChecked()
-    expect(screen.getByText('インタラクティブ')).toBeInTheDocument()
-    expect(screen.getByText('クイックチェック')).toBeInTheDocument()
+    expect(screen.getByText('Interactive')).toBeInTheDocument()
+    expect(screen.getByText('Quick check')).toBeInTheDocument()
   })
 
-  it('renders EN labels when uiLanguage is en', () => {
+  it('renders JA labels when uiLanguage is ja', () => {
     render(
-      <ProposalStoreProvider initialLanguage="en">
+      <ProposalStoreProvider initialLanguage="ja">
         <ModeToggle />
       </ProposalStoreProvider>,
     )
-    expect(screen.getByText('Interactive')).toBeInTheDocument()
-    expect(screen.getByText('Quick check')).toBeInTheDocument()
+    expect(screen.getByText('インタラクティブ')).toBeInTheDocument()
+    expect(screen.getByText('クイックチェック')).toBeInTheDocument()
   })
 
   it('selecting quick_check updates the store mode', () => {

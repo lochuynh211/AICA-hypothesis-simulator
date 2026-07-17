@@ -47,14 +47,16 @@ describe('WorldPanel', () => {
     vi.clearAllMocks()
   })
 
-  it('renders the section order: trigger signal, car state, world/situation, preference & history, driver profile', async () => {
+  it('renders the section order: trigger signal, car state, world/situation, preference & history', async () => {
     renderWithStore()
     await screen.findByTestId('dataset-provenance-banner')
     const headings = screen.getAllByTestId('world-section-label').map((el) => el.textContent)
-    // JA default labels, in document order.
-    expect(headings.length).toBe(5)
+    // EN default labels, in document order. The driver-profile picker no
+    // longer has its own trailing section — it moved to the TOP of
+    // "Preference & history" (owner feedback 2026-07-17).
+    expect(headings.length).toBe(4)
     expect(headings[0]).toMatch(/発火シグナル|trigger signal/i)
-    expect(headings[headings.length - 1]).toMatch(/ドライバープロファイル|driver profile/i)
+    expect(headings[headings.length - 1]).toMatch(/好み・履歴|preference & history/i)
   })
 
   it('shows the 4 trigger_purpose options as selectable, with rest_recommended selected by default', () => {
@@ -82,16 +84,30 @@ describe('WorldPanel', () => {
     expect(screen.getByTestId('probe').textContent).toBe('route_music')
   })
 
-  it('renders lifecycle_stage options and motion_state selector', () => {
+  it('renders lifecycle_stage options and a read-only motion_state readout derived from the stage', () => {
     renderWithStore()
     expect(screen.getByTestId('lifecycle-stage-before_rest_until_stop')).toBeInTheDocument()
     expect(screen.getByTestId('lifecycle-stage-during_rest_stopped')).toBeInTheDocument()
     expect(screen.getByTestId('lifecycle-stage-after_rest_before_restart')).toBeInTheDocument()
     expect(screen.getByTestId('lifecycle-stage-active_driving_content')).toBeInTheDocument()
-    expect(screen.getByTestId('motion-state-select')).toBeInTheDocument()
+    // No editable motion control — it's derived (owner feedback 2026-07-17).
+    expect(screen.queryByTestId('motion-state-select')).not.toBeInTheDocument()
+    expect(screen.getByTestId('motion-state-readonly')).toBeInTheDocument()
   })
 
-  it('editing a world/situation field dispatches SET_SITUATION_FIELD', () => {
+  it('clicking a "stopped" lifecycle stage derives motion_state=stopped; a "driving" stage derives motion_state=driving', () => {
+    renderWithStore()
+    fireEvent.click(screen.getByTestId('lifecycle-stage-during_rest_stopped'))
+    expect(screen.getByTestId('motion-state-readonly').textContent).toBe('stopped')
+
+    fireEvent.click(screen.getByTestId('lifecycle-stage-active_driving_content'))
+    expect(screen.getByTestId('motion-state-readonly').textContent).toBe('driving')
+
+    fireEvent.click(screen.getByTestId('lifecycle-stage-after_rest_before_restart'))
+    expect(screen.getByTestId('motion-state-readonly').textContent).toBe('stopped')
+  })
+
+  it('editing a world/situation slider field (drowsiness_level, 0-100 step 5) dispatches SET_SITUATION_FIELD', () => {
     function Probe() {
       const { state } = useProposalStore()
       return <span data-testid="probe">{String(state.world.situation.drowsiness_level)}</span>
@@ -103,17 +119,21 @@ describe('WorldPanel', () => {
       </ProposalStoreProvider>,
     )
     const input = screen.getByTestId('feature-field-drowsiness_level') as HTMLInputElement
+    expect(input.type).toBe('range')
+    expect(input.min).toBe('0')
+    expect(input.max).toBe('100')
+    expect(input.step).toBe('5')
     fireEvent.change(input, { target: { value: '80' } })
     expect(screen.getByTestId('probe').textContent).toBe('80')
   })
 
-  it('renders a provenance badge for every world/situation feature field', () => {
+  it('renders a usage badge (S/C/S·C) for every world/situation feature field', () => {
     renderWithStore()
-    const badges = screen.getAllByTestId('provenance-badge')
+    const badges = screen.getAllByTestId('usage-badge')
     expect(badges.length).toBeGreaterThan(5)
   })
 
-  it('renders the driver profile picker in the last section', async () => {
+  it('renders the driver profile picker as the first control in the last (Preference & history) section', async () => {
     renderWithStore()
     await waitFor(() => expect(screen.getByTestId('profile-picker-select')).toBeInTheDocument())
     const headings = screen.getAllByTestId('world-section-label')

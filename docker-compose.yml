@@ -13,6 +13,15 @@ services:
       - AICA_SCENARIOS_DIR=/data/scenarios
       - AICA_RUNS_DIR=/data/runs
       - AICA_ROUTES_DIR=/data/routes
+      # Proposal simulator (P1-P7) data dirs. The repo-root default resolves to
+      # "/" in-container (package is mounted at /app), so these MUST be set
+      # explicitly or the proposal registries load nothing (empty dataset/seeds).
+      - AICA_PROPOSAL_CONTRACTS_DIR=/data/proposal_contracts
+      - AICA_PROPOSAL_DATASET_DIR=/data/proposal_contracts/dataset
+      - AICA_PROPOSAL_SEEDS_DIR=/data/proposal_contracts/seeds
+      - AICA_PROPOSAL_RUNS_DIR=/data/proposal_runs
+      - AICA_PROPOSAL_PROFILES_DIR=/data/proposal_profiles
+      - AICA_PROPOSAL_WORLDS_DIR=/data/proposal_worlds
       # watchfiles polling for reliable hot-reload over Windows volume mounts
       - WATCHFILES_FORCE_POLLING=true
       # Corporate proxy for outbound API calls (Google Maps)
@@ -31,6 +40,13 @@ services:
       - ./scenarios:/data/scenarios
       - ./runs:/data/runs
       - ./routes:/data/routes
+      # Proposal simulator data: frozen contracts (dataset/seeds/matrix/
+      # capabilities/built-in profiles) read-only; user runs/profiles/worlds
+      # persist back to the host.
+      - ./proposal_contracts:/data/proposal_contracts:ro
+      - ./proposal_runs:/data/proposal_runs
+      - ./proposal_profiles:/data/proposal_profiles
+      - ./proposal_worlds:/data/proposal_worlds
 
   frontend:
     build:

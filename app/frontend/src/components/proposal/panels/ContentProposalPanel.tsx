@@ -182,7 +182,7 @@ export default function ContentProposalPanel() {
   return (
     <section
       data-testid="content-panel"
-      style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden' }}
+      style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px' }}
     >
       <h3
         style={{
@@ -191,6 +191,7 @@ export default function ContentProposalPanel() {
           fontSize: '0.9em',
           background: '#f5f3ff',
           borderBottom: '1px solid #e5e7eb',
+          borderRadius: '10px 10px 0 0',
           color: '#7c3aed',
         }}
       >
@@ -211,59 +212,8 @@ export default function ContentProposalPanel() {
                 <span style={rdonlyStyle}>{manifest.approach}</span>
               </label>
             </div>
-
-            <div style={sectionLabelStyle}>{t(LABELS.parameters, lang)}</div>
-            <div style={grid2Style}>
-              {Object.entries(manifest.parameters)
-                .filter(([key]) => key !== 'note')
-                .map(([key, defaultValue]) => {
-                  if (typeof defaultValue === 'object') return null
-                  const value = state.contentParameterOverrides[key] ?? defaultValue
-                  return (
-                    <label key={key} style={fieldLabelStyle}>
-                      <code>{key}</code>
-                      <input
-                        type={typeof defaultValue === 'number' ? 'number' : 'text'}
-                        value={String(value)}
-                        onChange={(e) =>
-                          dispatch({
-                            type: 'SET_CONTENT_PARAMETER',
-                            key,
-                            value: typeof defaultValue === 'number' ? Number(e.target.value) : e.target.value,
-                          })
-                        }
-                      />
-                    </label>
-                  )
-                })}
-            </div>
-
-            {manifest.hyperparameters.length > 0 && (
-              <details style={disclosureStyle}>
-                <summary style={summaryStyle}>
-                  {t(LABELS.hyperparameters, lang)} <span>{manifest.hyperparameters.length}</span>
-                </summary>
-                <div style={{ padding: '4px 11px 11px' }}>
-                  {manifest.hyperparameters.map((hp) => (
-                    <HyperparamMatrix
-                      key={hp.key}
-                      def={hp}
-                      value={state.contentHyperparameterOverrides[hp.key]}
-                      onChange={(value) => dispatch({ type: 'SET_CONTENT_HYPERPARAMETER', key: hp.key, value })}
-                      lang={lang}
-                    />
-                  ))}
-                </div>
-              </details>
-            )}
           </>
         )}
-
-        <div style={sectionLabelStyle}>{t(LABELS.formulation, lang)}</div>
-        <div data-testid="content-formulation" style={formulaStyle}>
-          item_fit = clamp( Σ wᵢ·eᵢ·aᵢ , −1, +1 )
-        </div>
-        <p style={whyStyle}>{t(LABELS.formulationWhy, lang)}</p>
 
         {!state.runLog && (
           <p data-testid="content-waiting" style={{ fontSize: '0.82em', color: '#6b7280' }}>
@@ -417,6 +367,63 @@ export default function ContentProposalPanel() {
             )}
           </>
         )}
+
+        {/* Setup (after the result, per owner request): package readout + plan
+            show first; parameters → hyperparameters → formulation follow. */}
+        {manifest && (
+          <>
+            <div style={sectionLabelStyle}>{t(LABELS.parameters, lang)}</div>
+            <div style={grid2Style}>
+              {Object.entries(manifest.parameters)
+                .filter(([key]) => key !== 'note')
+                .map(([key, defaultValue]) => {
+                  if (typeof defaultValue === 'object') return null
+                  const value = state.contentParameterOverrides[key] ?? defaultValue
+                  return (
+                    <label key={key} style={fieldLabelStyle}>
+                      <code>{key}</code>
+                      <input
+                        type={typeof defaultValue === 'number' ? 'number' : 'text'}
+                        value={String(value)}
+                        onChange={(e) =>
+                          dispatch({
+                            type: 'SET_CONTENT_PARAMETER',
+                            key,
+                            value: typeof defaultValue === 'number' ? Number(e.target.value) : e.target.value,
+                          })
+                        }
+                      />
+                    </label>
+                  )
+                })}
+            </div>
+
+            {manifest.hyperparameters.length > 0 && (
+              <details style={disclosureStyle}>
+                <summary style={summaryStyle}>
+                  {t(LABELS.hyperparameters, lang)} <span>{manifest.hyperparameters.length}</span>
+                </summary>
+                <div style={{ padding: '4px 11px 11px' }}>
+                  {manifest.hyperparameters.map((hp) => (
+                    <HyperparamMatrix
+                      key={hp.key}
+                      def={hp}
+                      value={state.contentHyperparameterOverrides[hp.key]}
+                      onChange={(value) => dispatch({ type: 'SET_CONTENT_HYPERPARAMETER', key: hp.key, value })}
+                      lang={lang}
+                    />
+                  ))}
+                </div>
+              </details>
+            )}
+          </>
+        )}
+
+        <div style={sectionLabelStyle}>{t(LABELS.formulation, lang)}</div>
+        <div data-testid="content-formulation" style={formulaStyle}>
+          item_fit = clamp( Σ wᵢ·eᵢ·aᵢ , −1, +1 )
+        </div>
+        <p style={whyStyle}>{t(LABELS.formulationWhy, lang)}</p>
       </div>
     </section>
   )

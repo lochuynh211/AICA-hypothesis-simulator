@@ -191,21 +191,9 @@ describe('RecomputePanel', () => {
     expect(alert.getAttribute('role')).toBe('alert')
   })
 
-  it('renders JA labels by default', () => {
+  it('renders EN labels by default', () => {
     render(
       <ProposalStoreProvider>
-        <Setup runLog={baseRunLog()} />
-        <RecomputePanel />
-      </ProposalStoreProvider>,
-    )
-    expect(screen.getByText('眠気レベル')).toBeInTheDocument()
-    expect(screen.getByText('疲労レベル')).toBeInTheDocument()
-    expect(screen.getByText('再計算')).toBeInTheDocument()
-  })
-
-  it('renders EN labels when uiLanguage is en', () => {
-    render(
-      <ProposalStoreProvider initialLanguage="en">
         <Setup runLog={baseRunLog()} />
         <RecomputePanel />
       </ProposalStoreProvider>,
@@ -213,5 +201,17 @@ describe('RecomputePanel', () => {
     expect(screen.getByText('Drowsiness level')).toBeInTheDocument()
     expect(screen.getByText('Fatigue level')).toBeInTheDocument()
     expect(screen.getByText('Recompute')).toBeInTheDocument()
+  })
+
+  it('renders JA labels when uiLanguage is ja', () => {
+    render(
+      <ProposalStoreProvider initialLanguage="ja">
+        <Setup runLog={baseRunLog()} />
+        <RecomputePanel />
+      </ProposalStoreProvider>,
+    )
+    expect(screen.getByText('眠気レベル')).toBeInTheDocument()
+    expect(screen.getByText('疲労レベル')).toBeInTheDocument()
+    expect(screen.getByText('再計算')).toBeInTheDocument()
   })
 })

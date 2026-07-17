@@ -1,9 +1,11 @@
 """TDD: T036 — the milestone-exit contrast demonstration (SC-004).
 
-Builds two worlds via CLONE (``WorldCloneStore``) that differ in exactly ONE
-scored driver-profile dimension (``driver_profile.oshi_id``), runs
-STEP 1 (mock service selector, picking ``music_playlist``) -> STEP 2 (the
-REAL transparent content selector) on each, and asserts:
+Builds two worlds via ``apply_overrides`` (the pure override-application
+helper the now-removed contrast-clone feature was built on top of, still
+shared with the P7 recompute endpoint) that differ in exactly ONE scored
+driver-profile dimension (``driver_profile.oshi_id``), runs STEP 1 (mock
+service selector, picking ``music_playlist``) -> STEP 2 (the REAL
+transparent content selector) on each, and asserts:
 
   - the two resulting content plans differ;
   - the differing feature (oshi match) is visible in the per-item
@@ -23,7 +25,7 @@ from fastapi.testclient import TestClient
 from aica_api.config import settings
 from aica_api.main import app
 from aica_api.models.proposal.world import FieldOverride
-from aica_api.services.world_clone_store import WorldCloneStore
+from aica_api.services.world_clone_store import apply_overrides
 from aica_api.services.world_seed_store import WorldSeedStore
 
 client = TestClient(app)
@@ -61,7 +63,7 @@ def _create_and_select(world_dict: dict, *, selected_service_id: str = "music_pl
     return resp2.json()
 
 
-def test_contrast_demo_two_clones_differing_in_oshi_id_yield_different_plans(tmp_path):
+def test_contrast_demo_two_clones_differing_in_oshi_id_yield_different_plans():
     seed_store = WorldSeedStore(settings.proposal_contracts_dir / "seeds")
     seed = seed_store.get_seed(_BASE_SEED_ID)
     assert seed is not None
@@ -73,31 +75,27 @@ def test_contrast_demo_two_clones_differing_in_oshi_id_yield_different_plans(tmp
 
     catalog = [Song.model_validate(entry) for entry in catalog_raw]
 
-    clone_store = WorldCloneStore(tmp_path / "clones")
-
     # World A: the base seed's world unchanged.
-    clone_a = clone_store.create_clone(
-        base_world=seed.world,
-        base_seed_id=_BASE_SEED_ID,
-        overrides=[FieldOverride(path="driver_profile.oshi_id", value="synthetic-artist-0001")],
+    world_a, _diffs_a = apply_overrides(
+        seed.world,
+        [FieldOverride(path="driver_profile.oshi_id", value="synthetic-artist-0001")],
         catalog=catalog,
     )
     # World B: EXACTLY one field changed — a different oshi artist.
-    clone_b = clone_store.create_clone(
-        base_world=seed.world,
-        base_seed_id=_BASE_SEED_ID,
-        overrides=[FieldOverride(path="driver_profile.oshi_id", value="synthetic-artist-0157")],
+    world_b, diffs_b = apply_overrides(
+        seed.world,
+        [FieldOverride(path="driver_profile.oshi_id", value="synthetic-artist-0157")],
         catalog=catalog,
     )
 
-    # The clone mechanism itself proves the one-variable-change property.
-    assert len(clone_b.diff) == 1
-    assert clone_b.diff[0].path == "driver_profile.oshi_id"
-    assert clone_b.diff[0].before == "synthetic-artist-0001"
-    assert clone_b.diff[0].after == "synthetic-artist-0157"
+    # The override mechanism itself proves the one-variable-change property.
+    assert len(diffs_b) == 1
+    assert diffs_b[0].path == "driver_profile.oshi_id"
+    assert diffs_b[0].before == "synthetic-artist-0001"
+    assert diffs_b[0].after == "synthetic-artist-0157"
 
-    run_a = _create_and_select(clone_a.world.model_dump(mode="json"))
-    run_b = _create_and_select(clone_b.world.model_dump(mode="json"))
+    run_a = _create_and_select(world_a.model_dump(mode="json"))
+    run_b = _create_and_select(world_b.model_dump(mode="json"))
 
     plan_a = run_a["evidence"][-1]["output"]
     plan_b = run_b["evidence"][-1]["output"]
@@ -131,9 +129,10 @@ def test_contrast_demo_two_clones_differing_in_oshi_id_yield_different_plans(tmp
     assert any("推し" in r or "oshi" in r.lower() for r in reason_texts_b) or oshi_hits_b
 
 
-def test_contrast_demo_is_deterministic_on_repeat(tmp_path):
-    """Re-running the exact same clone twice through create->select reproduces
-    an identical plan (Constitution III: replay/determinism)."""
+def test_contrast_demo_is_deterministic_on_repeat():
+    """Re-running the exact same overridden world twice through
+    create->select reproduces an identical plan (Constitution III:
+    replay/determinism)."""
     seed_store = WorldSeedStore(settings.proposal_contracts_dir / "seeds")
     seed = seed_store.get_seed(_BASE_SEED_ID)
     assert seed is not None
@@ -144,15 +143,13 @@ def test_contrast_demo_is_deterministic_on_repeat(tmp_path):
 
     catalog = [Song.model_validate(entry) for entry in catalog_raw]
 
-    clone_store = WorldCloneStore(tmp_path / "clones")
-    clone = clone_store.create_clone(
-        base_world=seed.world,
-        base_seed_id=_BASE_SEED_ID,
-        overrides=[FieldOverride(path="driver_profile.oshi_id", value="synthetic-artist-0157")],
+    world, _diffs = apply_overrides(
+        seed.world,
+        [FieldOverride(path="driver_profile.oshi_id", value="synthetic-artist-0157")],
         catalog=catalog,
     )
 
-    world_dict = clone.world.model_dump(mode="json")
+    world_dict = world.model_dump(mode="json")
     run1 = _create_and_select(world_dict)
     run2 = _create_and_select(world_dict)
 

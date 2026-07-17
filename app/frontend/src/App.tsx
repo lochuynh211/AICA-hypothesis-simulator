@@ -84,7 +84,7 @@ function AppBody({ healthStatus }: { healthStatus?: string }) {
           </RunStoreProvider>
         ) : (
           <ProposalStoreProvider>
-            <ProposalShell />
+            <ProposalShell autoInit />
           </ProposalStoreProvider>
         )}
       </div>
@@ -112,7 +112,7 @@ export default function App() {
   const healthStatus = `Backend: ${state.data.status} — ${state.data.service}`
 
   return (
-    <AppModeProvider>
+    <AppModeProvider initialMode="proposal">
       <AppBody healthStatus={healthStatus} />
     </AppModeProvider>
   )

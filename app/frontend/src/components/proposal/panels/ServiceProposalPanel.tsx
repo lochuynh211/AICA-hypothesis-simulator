@@ -8,17 +8,24 @@
  *   a ReasonBreakdown. Choosing a candidate calls `selectService` (STEP 2)
  *   and hands off to ContentProposalPanel via the shared `proposalStore`.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { t } from '../../../i18n/t'
 import { useProposalStore } from '../../../state/proposalStore'
+import type { World, ProposalRunLog } from '../../../api/proposalClient'
 import {
   getPackages,
+  getSeed,
   createRun,
   selectService,
   type ProposalPackageSummary,
   type RankedCandidate,
   type ExcludedCandidate,
 } from '../../../api/proposalClient'
+
+/** Seed auto-loaded on screen open when `autoInit` is set (the P7 reference
+ * journey). Selecting it, the two transparent packages, and auto-running
+ * STEP 1 is what "Setup auto init" means (owner request 2026-07-17). */
+const AUTO_INIT_SEED_ID = 'seed-night-highway-oshi'
 import HyperparamMatrix from '../HyperparamMatrix'
 import ReasonBreakdown, { type ReasonRow } from '../ReasonBreakdown'
 import ServiceExplainability from '../ServiceExplainability'
@@ -68,7 +75,11 @@ const LABELS = {
  * never computes eligibility itself, only renders what the backend put in
  * the snapshot (Constitution I). */
 type ServiceInputSnapshot = {
-  eligible_candidates?: string[]
+  // The frozen SelectorInput lists eligible candidates as objects
+  // (`{candidate_id}`), NOT bare strings — mirrors excluded_candidates and the
+  // backend's `_build_service_context`. Rendering the object directly is what
+  // blanked the panel (React: "Objects are not valid as a React child").
+  eligible_candidates?: { candidate_id: string }[]
   excluded_candidates?: ExcludedCandidate[]
 }
 
@@ -82,7 +93,7 @@ function serviceRows(candidate: RankedCandidate): ReasonRow[] {
   }))
 }
 
-export default function ServiceProposalPanel() {
+export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: boolean }) {
   const { state, dispatch } = useProposalStore()
   const { uiLanguage: lang } = state
   const [servicePackages, setServicePackages] = useState<ProposalPackageSummary[]>([])
@@ -91,6 +102,7 @@ export default function ServiceProposalPanel() {
   const [running, setRunning] = useState(false)
   const [choosingId, setChoosingId] = useState<string | null>(null)
   const [localError, setLocalError] = useState<string | null>(null)
+  const autoInitStarted = useRef(false)
 
   useEffect(() => {
     let cancelled = false
@@ -120,35 +132,45 @@ export default function ServiceProposalPanel() {
 
   const manifest = servicePackages.find((p) => p.id === state.servicePackageId) ?? servicePackages[0]
 
-  async function handleRun() {
-    if (!manifest) return
+  /** Create + STEP 1 with explicit world/package ids. Both the Run button and
+   * `autoInit` call this — the latter passes the freshly-fetched seed world
+   * directly, so it never races the async `LOAD_SEED` state update. */
+  async function runWith(
+    world: World,
+    servicePackageId: string,
+    contentPackageId: string,
+    // Explicit origin overrides. Needed by autoInit: it dispatches LOAD_SEED and
+    // calls runWith in the SAME tick, so the state.selected* values captured by
+    // this closure are still the pre-dispatch (null) values — passing the seed
+    // id explicitly keeps the persisted SetupSnapshot.origin accurate.
+    origin?: { seedId?: string | null; cloneId?: string | null; profileId?: string | null },
+  ): Promise<ProposalRunLog | null> {
+    const pkg = servicePackages.find((p) => p.id === servicePackageId) ?? manifest
+    if (!pkg) return null
     setRunning(true)
     setLocalError(null)
     try {
       const parameters: Record<string, unknown> = {}
-      for (const [key, value] of Object.entries(manifest.parameters)) {
+      for (const [key, value] of Object.entries(pkg.parameters)) {
         if (key === 'note') continue
         parameters[key] = state.serviceParameterOverrides[key] ?? value
       }
       const hyperparameters: Record<string, unknown> = {}
-      for (const hp of manifest.hyperparameters) {
+      for (const hp of pkg.hyperparameters) {
         hyperparameters[hp.key] = state.serviceHyperparameterOverrides[hp.key] ?? hp.default
       }
 
-      const contentPackageId = state.contentPackageId ?? contentPackages[0]?.id
-      if (!contentPackageId) {
-        throw new Error('No content_selector package available')
-      }
-
       const runLog = await createRun({
-        trigger_purpose: state.triggerPurpose,
-        lifecycle_stage: state.lifecycleStage,
-        motion_state: state.motionState,
-        world: state.world,
-        origin_seed_id: state.selectedSeedId,
-        origin_clone_id: state.selectedCloneId,
-        origin_profile_id: state.selectedProfileId,
-        service_package_id: manifest.id,
+        trigger_purpose: world.control_inputs.trigger_purpose,
+        lifecycle_stage: world.control_inputs.lifecycle_stage,
+        motion_state: world.control_inputs.motion_state,
+        world,
+        origin_seed_id: origin?.seedId !== undefined ? origin.seedId : state.selectedSeedId,
+        // Contrast clones were removed — there is no longer any store-tracked
+        // clone selection, so this is always the explicit override (or null).
+        origin_clone_id: origin?.cloneId ?? null,
+        origin_profile_id: origin?.profileId !== undefined ? origin.profileId : state.selectedProfileId,
+        service_package_id: servicePackageId,
         content_package_id: contentPackageId,
         mode: state.mode,
         parameters,
@@ -157,15 +179,62 @@ export default function ServiceProposalPanel() {
         simulation_time: new Date().toISOString(),
       })
       dispatch({ type: 'RUN_CREATED', runLog })
+      return runLog
     } catch (e) {
       setLocalError(e instanceof Error ? e.message : String(e))
+      return null
     } finally {
       setRunning(false)
     }
   }
 
-  async function handleChoose(serviceId: string) {
-    if (!state.runLog) return
+  async function handleRun() {
+    if (!manifest) return
+    const contentPackageId = state.contentPackageId ?? contentPackages[0]?.id
+    if (!contentPackageId) {
+      setLocalError('No content_selector package available')
+      return
+    }
+    await runWith(state.world, manifest.id, contentPackageId)
+  }
+
+  // "Setup auto init" (owner request): once the packages have loaded, load the
+  // reference seed and auto-run STEP 1 AND STEP 2 exactly once — only in the
+  // real app (`autoInit`), never in isolated panel tests (which omit the prop).
+  // STEP 2 auto-selects the rank-1 service so the screen opens on a complete,
+  // already-recommended plan.
+  useEffect(() => {
+    if (!autoInit || autoInitStarted.current) return
+    if (servicePackages.length === 0 || contentPackages.length === 0) return
+    if (state.runLog) return
+    autoInitStarted.current = true
+    ;(async () => {
+      try {
+        const seed = await getSeed(AUTO_INIT_SEED_ID)
+        dispatch({ type: 'LOAD_SEED', seedId: AUTO_INIT_SEED_ID, world: seed.world })
+        const log = await runWith(seed.world, servicePackages[0].id, contentPackages[0].id, {
+          seedId: AUTO_INIT_SEED_ID,
+          cloneId: null,
+          profileId: null,
+        })
+        // Auto-run STEP 2 with the rank-1 service (unless quick_check mode
+        // already selected content server-side on create).
+        if (log && log.status === 'service_selected') {
+          const svcEv = log.evidence.filter((ev) => ev.step === 'service').slice(-1)[0]
+          const out = svcEv?.output as { ranked_candidates?: { candidate_id: string }[] } | undefined
+          const rank1 = out?.ranked_candidates?.[0]?.candidate_id
+          if (rank1) await chooseWith(log.run_id, rank1)
+        }
+      } catch (e) {
+        setLocalError(e instanceof Error ? e.message : String(e))
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoInit, servicePackages, contentPackages])
+
+  /** STEP 2 with an explicit runId (auto-init passes the just-created run's id
+   * directly, avoiding the async `state.runLog` update race). */
+  async function chooseWith(runId: string, serviceId: string) {
     setChoosingId(serviceId)
     setLocalError(null)
     try {
@@ -188,7 +257,7 @@ export default function ServiceProposalPanel() {
         }
       }
 
-      const runLog = await selectService(state.runLog.run_id, serviceId, {
+      const runLog = await selectService(runId, serviceId, {
         parameters: contentParameters,
         hyperparameters: contentHyperparameters,
       })
@@ -209,6 +278,11 @@ export default function ServiceProposalPanel() {
     }
   }
 
+  async function handleChoose(serviceId: string) {
+    if (!state.runLog) return
+    await chooseWith(state.runLog.run_id, serviceId)
+  }
+
   const serviceEvidence = state.runLog?.evidence.filter((ev) => ev.step === 'service').slice(-1)[0]
   const output = serviceEvidence?.output as
     | { decision_type: string; ranked_candidates: RankedCandidate[] }
@@ -223,10 +297,7 @@ export default function ServiceProposalPanel() {
   const excludedCandidates = inputSnapshot.excluded_candidates ?? []
 
   return (
-    <section
-      data-testid="service-panel"
-      style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden' }}
-    >
+    <section data-testid="service-panel" style={panelSectionStyle}>
       <h3
         style={{
           margin: 0,
@@ -234,6 +305,7 @@ export default function ServiceProposalPanel() {
           fontSize: '0.9em',
           background: '#f8fafc',
           borderBottom: '1px solid #e5e7eb',
+          borderRadius: '10px 10px 0 0',
           color: '#1d4ed8',
         }}
       >
@@ -276,58 +348,6 @@ export default function ServiceProposalPanel() {
         {/* P7 (US3/US5, FR-011) — interactive/quick_check, frozen for the run once created. */}
         <ModeToggle />
 
-        {manifest && (
-          <>
-            <div style={sectionLabelStyle}>{t(LABELS.parameters, lang)}</div>
-            <div style={grid2Style}>
-              {Object.entries(manifest.parameters)
-                .filter(([key]) => key !== 'note')
-                .map(([key, defaultValue]) => {
-                  const value = state.serviceParameterOverrides[key] ?? defaultValue
-                  return (
-                    <label key={key} style={fieldLabelStyle}>
-                      <code>{key}</code>
-                      <input
-                        type={typeof defaultValue === 'number' ? 'number' : 'text'}
-                        value={String(value)}
-                        onChange={(e) =>
-                          dispatch({
-                            type: 'SET_SERVICE_PARAMETER',
-                            key,
-                            value: typeof defaultValue === 'number' ? Number(e.target.value) : e.target.value,
-                          })
-                        }
-                      />
-                    </label>
-                  )
-                })}
-            </div>
-
-            <details data-testid="hyperparameters-disclosure" style={disclosureStyle}>
-              <summary style={summaryStyle}>
-                {t(LABELS.hyperparameters, lang)} <span>{manifest.hyperparameters.length}</span>
-              </summary>
-              <div style={{ padding: '4px 11px 11px' }}>
-                {manifest.hyperparameters.map((hp) => (
-                  <HyperparamMatrix
-                    key={hp.key}
-                    def={hp}
-                    value={state.serviceHyperparameterOverrides[hp.key]}
-                    onChange={(value) => dispatch({ type: 'SET_SERVICE_HYPERPARAMETER', key: hp.key, value })}
-                    lang={lang}
-                  />
-                ))}
-              </div>
-            </details>
-          </>
-        )}
-
-        <div style={sectionLabelStyle}>{t(LABELS.formulation, lang)}</div>
-        <div data-testid="service-formulation" style={formulaStyle}>
-          service_fit = clamp( Σ wᵢ·rᵢ , −1, +1 )
-        </div>
-        <p style={whyStyle}>{t(LABELS.formulationWhy, lang)}</p>
-
         <button
           type="button"
           data-testid="service-run-button"
@@ -348,9 +368,9 @@ export default function ServiceProposalPanel() {
           <>
             <div style={sectionLabelStyle}>{t(LABELS.eligibleTitle, lang)}</div>
             <ul data-testid="eligible-list" style={eligibilityListStyle}>
-              {eligibleCandidates.map((candidateId) => (
-                <li key={candidateId} data-testid={`eligible-${candidateId}`}>
-                  {candidateId}
+              {eligibleCandidates.map(({ candidate_id }) => (
+                <li key={candidate_id} data-testid={`eligible-${candidate_id}`}>
+                  {candidate_id}
                 </li>
               ))}
             </ul>
@@ -511,12 +531,82 @@ export default function ServiceProposalPanel() {
             <EventTimeline />
           </>
         )}
+
+        {/* Setup (after the result, per owner request): the package dropdown +
+            run result show first; parameters → hyperparameters → formulation
+            follow below. */}
+        {manifest && (
+          <>
+            <div style={sectionLabelStyle}>{t(LABELS.parameters, lang)}</div>
+            <div style={grid2Style}>
+              {Object.entries(manifest.parameters)
+                .filter(([key]) => key !== 'note')
+                // Object/array-valued params (the response-profile config maps)
+                // are not text-editable fields — skip them so they never render
+                // as "[object Object]" (mirrors ContentProposalPanel's guard).
+                .filter(([, defaultValue]) => typeof defaultValue !== 'object' || defaultValue === null)
+                .map(([key, defaultValue]) => {
+                  const value = state.serviceParameterOverrides[key] ?? defaultValue
+                  return (
+                    <label key={key} style={fieldLabelStyle}>
+                      <code>{key}</code>
+                      <input
+                        type={typeof defaultValue === 'number' ? 'number' : 'text'}
+                        value={String(value ?? '')}
+                        onChange={(e) =>
+                          dispatch({
+                            type: 'SET_SERVICE_PARAMETER',
+                            key,
+                            value: typeof defaultValue === 'number' ? Number(e.target.value) : e.target.value,
+                          })
+                        }
+                      />
+                    </label>
+                  )
+                })}
+            </div>
+
+            <details data-testid="hyperparameters-disclosure" style={disclosureStyle}>
+              <summary style={summaryStyle}>
+                {t(LABELS.hyperparameters, lang)} <span>{manifest.hyperparameters.length}</span>
+              </summary>
+              <div style={{ padding: '4px 11px 11px' }}>
+                {manifest.hyperparameters.map((hp) => (
+                  <HyperparamMatrix
+                    key={hp.key}
+                    def={hp}
+                    value={state.serviceHyperparameterOverrides[hp.key]}
+                    onChange={(value) => dispatch({ type: 'SET_SERVICE_HYPERPARAMETER', key: hp.key, value })}
+                    lang={lang}
+                  />
+                ))}
+              </div>
+            </details>
+          </>
+        )}
+
+        <div style={sectionLabelStyle}>{t(LABELS.formulation, lang)}</div>
+        <div data-testid="service-formulation" style={formulaStyle}>
+          service_fit = clamp( Σ wᵢ·rᵢ , −1, +1 )
+        </div>
+        <p style={whyStyle}>{t(LABELS.formulationWhy, lang)}</p>
       </div>
     </section>
   )
 }
 
 // ── Shared inline styles ─────────────────────────────────────────────────────
+
+// No `overflow: hidden` here: as a grid item it would get an automatic
+// min-size of 0, collapsing the ProposalScreen grid row to the viewport and
+// clipping all content (nothing scrolled). Letting the section keep its
+// content min-height lets the grid grow and the screen scroll. The header's
+// own top border-radius handles the rounded top corners instead.
+const panelSectionStyle: React.CSSProperties = {
+  background: '#fff',
+  border: '1px solid #e5e7eb',
+  borderRadius: '10px',
+}
 
 const sectionLabelStyle: React.CSSProperties = {
   fontSize: '0.68em',

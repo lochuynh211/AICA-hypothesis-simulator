@@ -12,9 +12,6 @@ Covers, per ``specs/014-proposal-p3-editable-world/contracts/proposal-p3-api.md`
   - ``POST /api/proposal/worlds/validate`` — valid world -> no issues;
     unknown catalog reference -> field-level issue; unknown dataset_id ->
     an issue (never a 500).
-  - Worlds: clone & diff (T030) — ``POST /api/proposal/worlds/clone`` (201 +
-    exact diff, 404 unknown base_seed_id, 422 invalid override
-    path/value/reference) and ``GET``/``GET {id}``/``DELETE`` clones round-trip.
 
 Isolation invariant: every dataset/profile fixture test monkeypatches the
 relevant ``AICA_PROPOSAL_*_DIR`` env var so nothing here ever writes to the
@@ -164,16 +161,6 @@ def isolate_profiles_dir(tmp_path, monkeypatch):
     yield
 
 
-@pytest.fixture(autouse=True)
-def isolate_worlds_dir(tmp_path, monkeypatch):
-    """Route world-clone writes to an isolated tmp dir for every test in this
-    module (seeds keep loading from the real, committed
-    ``proposal_contracts/seeds/`` directory)."""
-    clones_dir = tmp_path / "proposal_worlds"
-    monkeypatch.setenv("AICA_PROPOSAL_WORLDS_DIR", str(clones_dir))
-    yield clones_dir
-
-
 def test_get_profiles_lists_builtins():
     resp = client.get("/api/proposal/profiles")
     assert resp.status_code == 200
@@ -315,107 +302,3 @@ def test_validate_world_structurally_invalid_body_is_422_at_the_type_boundary():
     resp = client.post("/api/proposal/worlds/validate", json={"world": world})
     assert resp.status_code == 422
 
-
-# ---------------------------------------------------------------------------
-# Worlds: clone & diff — T030
-# ---------------------------------------------------------------------------
-
-
-def test_clone_world_201_with_exact_diff():
-    resp = client.post(
-        "/api/proposal/worlds/clone",
-        json={
-            "base_seed_id": _SEED_ID,
-            "overrides": [{"path": "situation.drowsiness_level", "value": 5}],
-        },
-    )
-    assert resp.status_code == 201
-    body = resp.json()
-    assert body["base_seed_id"] == _SEED_ID
-    assert body["clone_id"]
-    assert body["world"]["situation"]["drowsiness_level"] == 5
-    assert len(body["diff"]) == 1
-    assert body["diff"][0] == {
-        "path": "situation.drowsiness_level",
-        "before": _load_seed_world_dict()["situation"]["drowsiness_level"],
-        "after": 5,
-    }
-
-
-def test_clone_world_404_unknown_base_seed_id():
-    resp = client.post(
-        "/api/proposal/worlds/clone",
-        json={"base_seed_id": "no-such-seed", "overrides": [{"path": "situation.drowsiness_level", "value": 5}]},
-    )
-    assert resp.status_code == 404
-
-
-def test_clone_world_422_unknown_override_path():
-    resp = client.post(
-        "/api/proposal/worlds/clone",
-        json={"base_seed_id": _SEED_ID, "overrides": [{"path": "situation.no_such_field", "value": 5}]},
-    )
-    assert resp.status_code == 422
-    assert resp.json()["detail"]
-
-
-def test_clone_world_422_invalid_override_value():
-    resp = client.post(
-        "/api/proposal/worlds/clone",
-        json={"base_seed_id": _SEED_ID, "overrides": [{"path": "situation.drowsiness_level", "value": 999}]},
-    )
-    assert resp.status_code == 422
-
-
-def test_clone_world_422_dangling_catalog_reference():
-    resp = client.post(
-        "/api/proposal/worlds/clone",
-        json={
-            "base_seed_id": _SEED_ID,
-            "overrides": [{"path": "driver_profile.oshi_id", "value": "synthetic-artist-DOES-NOT-EXIST"}],
-        },
-    )
-    assert resp.status_code == 422
-    detail = resp.json()["detail"]
-    assert any(issue.get("code") == "unknown_catalog_reference" for issue in detail)
-
-
-def test_clone_world_deterministic_diff_on_repeat():
-    body = {"base_seed_id": _SEED_ID, "overrides": [{"path": "situation.fatigue_level", "value": 12}]}
-    first = client.post("/api/proposal/worlds/clone", json=body).json()
-    second = client.post("/api/proposal/worlds/clone", json=body).json()
-    assert first["clone_id"] != second["clone_id"]
-    assert first["world"] == second["world"]
-    assert first["diff"] == second["diff"]
-
-
-def test_list_get_delete_world_clone_round_trip():
-    create_resp = client.post(
-        "/api/proposal/worlds/clone",
-        json={"base_seed_id": _SEED_ID, "overrides": [{"path": "situation.drowsiness_level", "value": 20}]},
-    )
-    clone_id = create_resp.json()["clone_id"]
-
-    list_resp = client.get("/api/proposal/worlds/clones")
-    assert list_resp.status_code == 200
-    ids = {c["clone_id"] for c in list_resp.json()["clones"]}
-    assert clone_id in ids
-
-    get_resp = client.get(f"/api/proposal/worlds/clones/{clone_id}")
-    assert get_resp.status_code == 200
-    assert get_resp.json()["clone_id"] == clone_id
-
-    del_resp = client.delete(f"/api/proposal/worlds/clones/{clone_id}")
-    assert del_resp.status_code == 204
-
-    assert client.get(f"/api/proposal/worlds/clones/{clone_id}").status_code == 404
-
-
-def test_get_world_clone_404_unknown_clone_id():
-    resp = client.get("/api/proposal/worlds/clones/no-such-clone")
-    assert resp.status_code == 404
-
-
-def test_delete_world_clone_404_unknown_clone_id():
-    resp = client.delete("/api/proposal/worlds/clones/no-such-clone")
-    assert resp.status_code == 404

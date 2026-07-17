@@ -176,10 +176,10 @@ describe('WorldPanel (P3 real editor)', () => {
     setupDefaultMocks()
   })
 
-  it('defaults to Japanese (JA) as the UI language', async () => {
+  it('defaults to English (EN) as the UI language', async () => {
     renderWithStore()
     await screen.findByTestId('dataset-provenance-banner')
-    expect(screen.getByText('入力・世界')).toBeInTheDocument()
+    expect(screen.getByText('Input · World')).toBeInTheDocument()
   })
 
   it('loading a seed populates control_inputs, situation, and driver_profile groups', async () => {
@@ -206,8 +206,9 @@ describe('WorldPanel (P3 real editor)', () => {
     await waitFor(() => expect(getSeeds).toHaveBeenCalled())
     await waitFor(() => expect(screen.getByTestId('seed-picker-select')).toBeInTheDocument())
 
+    // Selecting a seed now AUTOLOADS it immediately — no separate Load button
+    // (owner feedback 2026-07-17).
     fireEvent.change(screen.getByTestId('seed-picker-select'), { target: { value: 'seed-night-highway-oshi' } })
-    fireEvent.click(screen.getByTestId('seed-picker-load'))
 
     await waitFor(() => expect(getSeed).toHaveBeenCalledWith('seed-night-highway-oshi'))
     await waitFor(() => expect(screen.getByTestId('probe-seed-id').textContent).toBe('seed-night-highway-oshi'))

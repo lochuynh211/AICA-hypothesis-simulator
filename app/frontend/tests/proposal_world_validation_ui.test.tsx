@@ -45,8 +45,19 @@ function setupBaselineMocks() {
       tier: 'demonstration',
       provenance_note: 'P2 Soundcharts-grounded synthetic dataset',
     },
-    total: 0,
-    songs: [],
+    total: 1,
+    // oshi_id is now an artist-ID dropdown sourced from the loaded catalog —
+    // include one song by the artist referenced in the tests below so it's a
+    // selectable option.
+    songs: [
+      {
+        spotify_track: {
+          id: 'synthetic-track-0157',
+          name: 'Test Track',
+          artists: [{ id: 'synthetic-artist-0157', name: 'Test Artist' }],
+        },
+      },
+    ],
   })
   vi.mocked(getSeeds).mockResolvedValue({ seeds: [] })
   vi.mocked(listProfiles).mockResolvedValue({
@@ -107,7 +118,12 @@ describe('WorldPanel inline world validation (MF1)', () => {
 
     await waitFor(() => expect(validateWorld).toHaveBeenCalledTimes(1))
 
-    fireEvent.change(screen.getByTestId('feature-field-oshi_id'), { target: { value: 'synthetic-artist-0157' } })
+    // oshi_id is an artist-ID dropdown sourced from the loaded catalog — wait
+    // for the fixture artist's option to appear before selecting it.
+    const oshiSelect = screen.getByTestId('feature-field-oshi_id') as HTMLSelectElement
+    await waitFor(() => expect(oshiSelect.querySelector('option[value="synthetic-artist-0157"]')).toBeTruthy())
+
+    fireEvent.change(oshiSelect, { target: { value: 'synthetic-artist-0157' } })
 
     await waitFor(() => expect(validateWorld).toHaveBeenCalledTimes(2))
     const [lastCallArg] = vi.mocked(validateWorld).mock.calls[1]

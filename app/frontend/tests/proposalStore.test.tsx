@@ -8,9 +8,9 @@ function wrapper({ children }: { children: React.ReactNode }) {
 }
 
 describe('proposalStore', () => {
-  it('defaults uiLanguage to "ja"', () => {
+  it('defaults uiLanguage to "en"', () => {
     const { result } = renderHook(() => useProposalStore(), { wrapper })
-    expect(result.current.state.uiLanguage).toBe('ja')
+    expect(result.current.state.uiLanguage).toBe('en')
   })
 
   it('dispatching SET_LANGUAGE updates uiLanguage', () => {

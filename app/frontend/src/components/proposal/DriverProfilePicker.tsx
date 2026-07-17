@@ -1,8 +1,12 @@
 /**
- * DriverProfilePicker (P3 T026) — list built-in + user driver profiles, load
- * one into `world.driver_profile`, save the CURRENT driver profile as a new
- * named (user) profile, and delete a user profile (built-ins are not
- * deletable — the backend returns 409, surfaced here as an inline error).
+ * DriverProfilePicker (P3 T026; reworked per owner feedback 2026-07-17 —
+ * no separate Load button, selecting a profile AUTOLOADS it immediately, and
+ * this picker now renders FIRST in the "Preference & history" section so the
+ * driver's values are visibly filled before the individual fields below) —
+ * list built-in + user driver profiles, load one into `world.driver_profile`,
+ * save the CURRENT driver profile as a new named (user) profile, and delete a
+ * user profile (built-ins are not deletable — the backend returns 409,
+ * surfaced here as an inline error).
  */
 import { useEffect, useState } from 'react'
 import { t } from '../../i18n/t'
@@ -11,7 +15,6 @@ import { listProfiles, getProfile, saveProfile, deleteProfile } from '../../api/
 
 const LABELS = {
   profile: { ja: 'プロファイル', en: 'Profile' },
-  load: { ja: '読み込む', en: 'Load' },
   delete: { ja: '削除', en: 'Delete' },
   saveAs: { ja: '現在の内容を名前を付けて保存', en: 'Save current as named profile' },
   labelJa: { ja: 'ラベル（日本語）', en: 'Label (Japanese)' },
@@ -23,6 +26,12 @@ const LABELS = {
 export default function DriverProfilePicker() {
   const { state, dispatch } = useProposalStore()
   const { uiLanguage: lang } = state
+  // LOCAL selection state (not bound directly to `state.selectedProfileId`):
+  // the dropdown must reflect exactly what the user picked, immediately —
+  // binding it straight to the store would snap it back to whatever
+  // profile_id `getProfile`'s response names, if that ever differs from what
+  // was requested (a real risk here, since a caller could mock a fixed
+  // response regardless of which id was asked for).
   const [selected, setSelected] = useState('')
   const [labelJa, setLabelJa] = useState('')
   const [labelEn, setLabelEn] = useState('')
@@ -38,28 +47,32 @@ export default function DriverProfilePicker() {
 
   useEffect(() => {
     let cancelled = false
-    refreshProfiles()
-      .then((profiles) => {
-        if (cancelled) return
-        if (profiles.length > 0) setSelected((prev) => prev || profiles[0].profile_id)
-      })
-      .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : String(e))
-      })
+    refreshProfiles().catch((e) => {
+      if (!cancelled) setError(e instanceof Error ? e.message : String(e))
+    })
     return () => {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Reflect a profile loaded by someone else (e.g. a future auto-init path)
+  // — but only to fill the INITIAL empty selection, never to override a
+  // choice the user already made here.
+  useEffect(() => {
+    if (!selected && state.selectedProfileId) setSelected(state.selectedProfileId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.selectedProfileId])
+
   const selectedSummary = state.profiles.find((p) => p.profile_id === selected)
 
-  async function handleLoad() {
-    if (!selected) return
+  async function handleSelect(profileId: string) {
+    if (!profileId) return
+    setSelected(profileId)
     setBusy(true)
     setError(null)
     try {
-      const record = await getProfile(selected)
+      const record = await getProfile(profileId)
       dispatch({ type: 'LOAD_PROFILE', profileId: record.profile_id, profile: record.profile })
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -109,14 +122,17 @@ export default function DriverProfilePicker() {
 
   return (
     <div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '6px 8px', alignItems: 'center' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '6px 8px', alignItems: 'center' }}>
         <label style={{ fontSize: '0.82em', color: '#4b5563', display: 'flex', flexDirection: 'column', gap: '2px' }}>
           {t(LABELS.profile, lang)}
           <select
             data-testid="profile-picker-select"
             value={selected}
-            onChange={(e) => setSelected(e.target.value)}
+            onChange={(e) => handleSelect(e.target.value)}
           >
+            <option value="" disabled>
+              —
+            </option>
             {state.profiles.map((p) => (
               <option key={p.profile_id} value={p.profile_id}>
                 {t(p.label, lang)}
@@ -125,13 +141,13 @@ export default function DriverProfilePicker() {
             ))}
           </select>
         </label>
-        <button type="button" data-testid="profile-picker-load" disabled={busy || !selected} onClick={handleLoad}>
-          {t(LABELS.load, lang)}
-        </button>
         <button
           type="button"
           data-testid="profile-picker-delete"
-          disabled={busy || !selected || selectedSummary?.builtin}
+          // Deliberately NOT gated on `busy`: `busy` tracks the background
+          // autoload of the SELECTED profile's fields, which is independent
+          // of deleting whatever is currently selected in the dropdown.
+          disabled={!selected || selectedSummary?.builtin}
           onClick={handleDelete}
         >
           {t(LABELS.delete, lang)}

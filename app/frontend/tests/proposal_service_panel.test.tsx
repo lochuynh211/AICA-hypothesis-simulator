@@ -16,96 +16,7 @@ vi.mock('../src/api/proposalClient', async () => {
 })
 
 import { getPackages, createRun, selectService } from '../src/api/proposalClient'
-import type { World, WorldClone, RankedCandidate, ServiceSelectorOutput } from '../src/api/proposalClient'
-
-const DATASET_ID = 'soundcharts-grounded-spotify-compatible-demonstration-seed-1042'
-
-function baseWorld(): World {
-  return {
-    control_inputs: {
-      trigger_purpose: 'rest_recommended',
-      lifecycle_stage: 'before_rest_until_stop',
-      motion_state: 'driving',
-      matrix_version: 'v1',
-      dataset_id: DATASET_ID,
-    },
-    situation: {
-      drowsiness_level: 80,
-      fatigue_level: 70,
-      traffic_state: 'congested',
-      road_type: 'highway',
-      night_state: 'night',
-      monotony_level: 90,
-      route_tags: ['highway'],
-      destination_tags: ['coast'],
-      child_present: false,
-      multiple_passengers: false,
-      motion_state: 'driving',
-      estimated_min_until_rest_spot: 8,
-      rest_spot_type: 'sa_pa',
-      active_service: null,
-      recent_service_rejections: [],
-    },
-    driver_profile: {
-      oshi_registered: true,
-      oshi_mode: 'on',
-      oshi_id: 'synthetic-artist-0001',
-      oshi_type: 'artist',
-      oshi_tags: [],
-      age_band: '30s',
-      gender: 'unspecified',
-      hobby_interest_tags: [],
-      service_usage_level: {},
-      service_recency_state: {},
-      scene_service_usage_level: {},
-      catalog_item_usage_level: {},
-      catalog_item_recency_state: {},
-      content_tag_usage_level: {},
-      content_tag_recency_state: {},
-      scene_content_tag_usage_level: {},
-      played_items: [],
-      skipped_items: [],
-      changed_from_items: [],
-      cancelled_content_plans: [],
-      completed_items: [],
-      manually_selected_items: [],
-      repeated_items: [],
-      service_proposal_acceptance_rate: {},
-      service_recovery_rate: {},
-      content_proposal_acceptance_rate: {},
-      content_recovery_rate: {},
-      service_proposal_acceptance_confidence: {},
-      service_recovery_confidence: {},
-      content_proposal_acceptance_confidence: {},
-      content_recovery_confidence: {},
-      scheduled_event_type: null,
-      scheduled_event_timing: null,
-      scheduled_event_tags: [],
-      genre_affinity_v1_enabled: false,
-      usage_by_genre: null,
-      scene_genre_usage: null,
-    },
-    catalog_ref: {
-      dataset_id: DATASET_ID,
-      dataset_version: {
-        schema_version: '1.0.0',
-        spotify_track_reference_version: '1.0.0',
-        spotify_audio_features_reference_version: '1.0.0',
-      },
-      dataset_hash: 'sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd',
-    },
-  }
-}
-
-function cloneFixture(): WorldClone {
-  return {
-    clone_id: 'wclone_20260716-100000_abcdef',
-    base_seed_id: 'seed-night-highway-oshi',
-    overrides: [{ path: 'situation.drowsiness_level', value: 5 }],
-    world: baseWorld(),
-    diff: [{ path: 'situation.drowsiness_level', before: 80, after: 5 }],
-  }
-}
+import type { RankedCandidate, ServiceSelectorOutput } from '../src/api/proposalClient'
 
 const SERVICE_PACKAGE = {
   id: 'mock_service_selector_v1',
@@ -307,7 +218,7 @@ describe('ServiceProposalPanel', () => {
     await screen.findByText('mock_service_selector_v1')
     const disclosure = screen.getByTestId('hyperparameters-disclosure') as HTMLDetailsElement
     expect(disclosure.tagName.toLowerCase()).toBe('details')
-    expect(screen.getByText('カテゴリ重み')).toBeInTheDocument()
+    expect(screen.getByText('Category Weights')).toBeInTheDocument()
   })
 
   it('renders the service_fit formulation callout', async () => {
@@ -387,37 +298,11 @@ describe('ServiceProposalPanel', () => {
     expect(body.content_package_id).toBe('mock_content_selector_v1')
   })
 
-  it('sends origin_clone_id on createRun when the loaded world came from a contrast clone (FIX 1 regression)', async () => {
-    vi.mocked(createRun).mockResolvedValue(runLogWithCandidates() as never)
-
-    function Setup() {
-      const { dispatch } = useProposalStore()
-      React.useEffect(() => {
-        dispatch({ type: 'CLONE_CREATED', clone: cloneFixture() })
-      }, [dispatch])
-      return null
-    }
-
-    render(
-      <ProposalStoreProvider>
-        <Setup />
-        <ServiceProposalPanel />
-      </ProposalStoreProvider>,
-    )
-    await screen.findByText('mock_service_selector_v1')
-    fireEvent.click(screen.getByTestId('service-run-button'))
-
-    await waitFor(() => expect(createRun).toHaveBeenCalled())
-    const body = vi.mocked(createRun).mock.calls[0][0]
-    expect(body.origin_clone_id).toBe('wclone_20260716-100000_abcdef')
-    expect(body.origin_seed_id).toBe('seed-night-highway-oshi')
-  })
-
   // P4 (US5, FR-022): eligible/excluded lists from the STEP-1 input_snapshot.
   it('renders the eligible list and the excluded list with reason codes, and no score on exclusions', async () => {
     vi.mocked(createRun).mockResolvedValue(
       runLogWithCandidates({
-        eligible_candidates: ['live_viewing', 'stretch_video'],
+        eligible_candidates: [{ candidate_id: 'live_viewing' }, { candidate_id: 'stretch_video' }],
         excluded_candidates: [
           { candidate_id: 'full_karaoke', platform_reason: 'full_karaoke_requires_stopped' },
           { candidate_id: 'oshi_reexperience', platform_reason: 'missing_required_entity' },
@@ -449,7 +334,7 @@ describe('ServiceProposalPanel', () => {
   it('renders a "none excluded" message when excluded_candidates is empty', async () => {
     vi.mocked(createRun).mockResolvedValue(
       runLogWithCandidates({
-        eligible_candidates: ['live_viewing', 'stretch_video'],
+        eligible_candidates: [{ candidate_id: 'live_viewing' }, { candidate_id: 'stretch_video' }],
         excluded_candidates: [],
       }) as never,
     )
@@ -713,7 +598,7 @@ describe('ServiceProposalPanel — P5 US1 default service package (T018)', () =>
       </ProposalStoreProvider>,
     )
 
-    const select = (await screen.findByLabelText('サービスPKG')) as HTMLSelectElement
+    const select = (await screen.findByLabelText('Service pkg')) as HTMLSelectElement
     await waitFor(() => expect(select.value).toBe('aica_transparent_service_selector_v1'))
 
     const optionValues = Array.from(select.options).map((o) => o.value)
@@ -735,7 +620,7 @@ describe('ServiceProposalPanel — P5 US1 default service package (T018)', () =>
       </ProposalStoreProvider>,
     )
     await waitFor(() =>
-      expect((screen.getByLabelText('サービスPKG') as HTMLSelectElement).value).toBe(
+      expect((screen.getByLabelText('Service pkg') as HTMLSelectElement).value).toBe(
         'aica_transparent_service_selector_v1',
       ),
     )
@@ -817,9 +702,9 @@ describe('ServiceProposalPanel — P5 US4 confidence_shrinkage_v1 toggle (T032)'
     await screen.findByText('aica_transparent_service_selector_v1')
 
     // Open the collapsible disclosure and flip the toggle.
-    // ProposalStoreProvider defaults uiLanguage to 'ja' -- HyperparamMatrix
-    // renders the manifest's Japanese label by default (project convention).
-    const select = (await screen.findByLabelText('信頼度縮小（拡張・既定オフ）')) as HTMLSelectElement
+    // ProposalStoreProvider defaults uiLanguage to 'en' -- HyperparamMatrix
+    // renders the manifest's English label by default (project convention).
+    const select = (await screen.findByLabelText('Confidence Shrinkage (extension, default off)')) as HTMLSelectElement
     expect(select.value).toBe('false')
     fireEvent.change(select, { target: { value: 'true' } })
     expect(select.value).toBe('true')
@@ -845,9 +730,9 @@ describe('ServiceProposalPanel — P5 US4 confidence_shrinkage_v1 toggle (T032)'
     )
     await screen.findByText('aica_transparent_service_selector_v1')
 
-    // ProposalStoreProvider defaults uiLanguage to 'ja' -- HyperparamMatrix
-    // renders the manifest's Japanese label by default (project convention).
-    const select = (await screen.findByLabelText('信頼度縮小（拡張・既定オフ）')) as HTMLSelectElement
+    // ProposalStoreProvider defaults uiLanguage to 'en' -- HyperparamMatrix
+    // renders the manifest's English label by default (project convention).
+    const select = (await screen.findByLabelText('Confidence Shrinkage (extension, default off)')) as HTMLSelectElement
     fireEvent.change(select, { target: { value: 'true' } })
 
     fireEvent.click(screen.getByTestId('service-run-button'))

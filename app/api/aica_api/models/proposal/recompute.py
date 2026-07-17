@@ -24,12 +24,11 @@ __all__ = ["RecomputeRequest"]
 class RecomputeRequest(BaseModel):
     """Request body for ``POST /api/proposal/runs/{run_id}/recompute``.
 
-    ``overrides`` reuses the existing P3 ``FieldOverride`` shape (the same
-    one ``POST /worlds/clone`` already accepts) — an empty list is valid (a
-    pure lifecycle-stage recompute with no context edit). The four optional
-    dicts mirror the create-run/select-service convention: empty falls back
-    to the current head's (service) or the content package's manifest
-    defaults (content, quick_check only).
+    ``overrides`` reuses the existing P3 ``FieldOverride`` shape — an empty
+    list is valid (a pure lifecycle-stage recompute with no context edit).
+    The four optional dicts mirror the create-run/select-service convention:
+    empty falls back to the current head's (service) or the content
+    package's manifest defaults (content, quick_check only).
     """
 
     overrides: list[FieldOverride] = []

@@ -133,6 +133,11 @@ class ProposalPackageManifest(BaseModel):
     supported_services: list[ServiceId] = []
     parameters: dict
     hyperparameters: list[HyperparameterDef]
+    # Internal/fixture packages set this so the reviewer-facing selector can
+    # hide them (the two mock_* packages stay on disk as test fixtures but must
+    # not clutter the dropdown). Loading, slotting, and direct-by-id use are
+    # unaffected — only the /packages listing filters on it.
+    hidden: bool = False
 
     @model_validator(mode="after")
     def content_family_requires_supported_services(self) -> "ProposalPackageManifest":

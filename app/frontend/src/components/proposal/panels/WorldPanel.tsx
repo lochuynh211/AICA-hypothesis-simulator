@@ -1,30 +1,55 @@
 /**
  * WorldPanel (P1 T026, rebuilt P3 T026 as a REAL editor over the typed
- * `World`).
+ * `World`; reworked again per owner feedback 2026-07-17 — see below).
  *
- * Section order (per ui-mockup.html / design doc §7 — UNCHANGED from P1):
- *   1. Trigger signal   — the 4 `trigger_purpose` options (control input, not scored)
- *   2. Car state        — `lifecycle_stage` (rest-journey position) + `motion_state`
- *                          + the dataset/catalog selector + read-only provenance banner
- *   3. World · situation — every `Situation` field, each with a ProvenanceBadge
- *   4. Preference & history — every `DriverProfile` field as a REAL editable
- *                          control (no more read-only JSON dumps), plus the
- *                          opt-in `genre_affinity_v1` toggle
- *   5. Driver profile    — DriverProfilePicker (load/save/delete), LAST
+ * Section order (top-to-bottom):
+ *   1. Seed        — dropdown, autoloads a committed base-seed world on
+ *                     selection (no separate Load button)
+ *   2. Trigger signal — the 4 `trigger_purpose` options (control input, not scored)
+ *   3. Car state   — `lifecycle_stage` (rest-journey position) + a READ-ONLY
+ *                     `motion_state` readout DERIVED from the lifecycle stage
+ *                     (during_rest_stopped / after_rest_before_restart =>
+ *                     stopped, else driving) — motion is no longer an
+ *                     independently editable field
+ *   4. World · situation — ONLY the `Situation` fields actually SCORED by the
+ *                     transparent service and/or content algorithm (per
+ *                     aica_transparent_service_proposal_algorithm.md /
+ *                     aica_transparent_content_proposal_algorithm.md), each
+ *                     badged S / C / S·C for which algorithm scores it.
+ *                     Numeric fields are 0-100 sliders (step 5); route/
+ *                     destination tags are on/off toggle buttons over the
+ *                     algorithms' fixed recognized vocabularies.
+ *   5. Preference & history — DriverProfilePicker dropdown FIRST (autoloads
+ *                     a driver profile, filling every field below), then
+ *                     ONLY the scored `DriverProfile` fields, grouped and
+ *                     badged the same way. `oshi_id` is an artist-ID
+ *                     dropdown sourced from the loaded catalog (implicitly
+ *                     `oshi_type='artist'` — no separate oshi_type/oshi_tags
+ *                     fields).
+ *   6. Genre affinity extension (opt-in, unchanged) — usage_by_genre /
+ *                     scene_genre_usage, scored by content only when enabled.
+ *   7. Dataset (read-only) — DatasetProvenanceBanner + CatalogView. There is
+ *                     no dataset SELECTOR: the world's dataset_id comes from
+ *                     the loaded seed/profile and is not reviewer-editable.
  *
- * A SeedPicker sits above section 1 — loading a seed replaces the WHOLE
- * world (control_inputs + situation + driver_profile + catalog_ref) in one
- * shot, which is why it isn't scoped to any single section below.
+ * REMOVED (owner feedback 2026-07-17): the contrast-clone picker/diff view
+ * (WorldClonePicker/WorldDiffView — deleted entirely, see [[proposal-live-run-and-ux-defaults]]
+ * memory); the dataset selector; the CDC-SU/normalized/proposed_addition
+ * provenance badges (replaced by the S/C/S·C "is this scored" badge); every
+ * Situation/DriverProfile field that is NOT actually read by either V1
+ * transparent package (e.g. gender at weight 0, oshi_type/oshi_tags,
+ * scheduled_event_*, the four *_confidence maps, content_tag_usage_level/
+ * scene_content_tag_usage_level which the code never reads at all).
  *
  * Writes directly to `proposalStore` (SET_TRIGGER_PURPOSE / SET_LIFECYCLE_STAGE /
  * SET_MOTION_STATE / SET_SITUATION_FIELD / SET_DRIVER_PROFILE_FIELD / ...).
  * Does not read/write `runStore` (proposal/trigger isolation invariant).
  *
- * Catalog is READ-ONLY here: the dataset selector only ever POINTS the world
- * at a different frozen dataset — there is no edit/import control for the
- * catalog itself anywhere in this panel (see `DatasetProvenanceBanner`).
+ * Catalog is READ-ONLY here: it only ever informs the artist-ID dropdown and
+ * the provenance banner — there is no edit/import control for the catalog
+ * itself anywhere in this panel.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { t, type UiLanguage } from '../../../i18n/t'
 import { useProposalStore } from '../../../state/proposalStore'
 import type {
@@ -33,7 +58,6 @@ import type {
   MotionStateValue,
 } from '../../../state/proposalStore'
 import {
-  getDatasets,
   getCatalog,
   validateWorld,
   GENRE_VOCABULARY,
@@ -45,15 +69,11 @@ import {
   type UsageLevelValue,
   type WorldValidationIssue,
 } from '../../../api/proposalClient'
-import ProvenanceBadge, { type ProvenanceKind } from '../ProvenanceBadge'
 import SeedPicker from '../SeedPicker'
 import DriverProfilePicker from '../DriverProfilePicker'
 import DatasetProvenanceBanner from '../DatasetProvenanceBanner'
 import CatalogView from '../CatalogView'
-import WorldClonePicker from '../WorldClonePicker'
-import WorldDiffView from '../WorldDiffView'
 import {
-  TextListEditor,
   RecordEditor,
   NestedRecordEditor,
   ItemListEditor,
@@ -67,6 +87,15 @@ const WORLD_VALIDATE_DEBOUNCE_MS = 300
 
 function issuesForPath(issues: WorldValidationIssue[], path: string): WorldValidationIssue[] {
   return issues.filter((issue) => issue.path === path)
+}
+
+/** motion_state is no longer an independent reviewer-editable field: it is
+ * DERIVED from lifecycle_stage (during_rest_stopped / after_rest_before_restart
+ * imply the vehicle already stopped for the rest event; every other stage is
+ * driving). Dispatched alongside SET_LIFECYCLE_STAGE so `world.control_inputs
+ * .motion_state` / `world.situation.motion_state` never disagree with it. */
+function deriveMotion(lifecycle: LifecycleStageValue): MotionStateValue {
+  return lifecycle === 'during_rest_stopped' || lifecycle === 'after_rest_before_restart' ? 'stopped' : 'driving'
 }
 
 // ── Static option/field metadata (bilingual) ────────────────────────────────
@@ -88,23 +117,34 @@ const LIFECYCLE_STAGES: { value: LifecycleStageValue; label: { ja: string; en: s
   { value: 'active_driving_content', label: { ja: '走行中', en: 'driving' } },
 ]
 
-const MOTION_STATES: { value: MotionStateValue; label: string }[] = [
-  { value: 'stopped', label: 'stopped' },
-  { value: 'driving', label: 'driving' },
-]
-
 const USAGE_LEVEL_OPTIONS = ['never', 'low', 'med', 'high']
 const RECENCY_OPTIONS = ['never', 'long_unused', 'recent']
+
+// Route/destination tag vocabularies — the SERVICE selector's own
+// `recognized_route_tags` / `recognized_destination_tags` (its evidence
+// saturates on recognized-tag COUNT; unrecognized tags are simply ignored,
+// never an error). Content only scores these under the opt-in
+// `genre_affinity_v1` extension (a strict subset maps to a genre).
+const ROUTE_TAG_OPTIONS = ['highway', 'mountain', 'coastal', 'urban', 'scenic_byway', 'rural']
+const DESTINATION_TAG_OPTIONS = ['coast', 'resort', 'nature', 'event', 'oshi_venue', 'event_hall', 'home', 'shopping']
+
+/** Which algorithm(s) actually score this field in the current V1 transparent
+ * packages (per aica_transparent_service_proposal_algorithm.md /
+ * aica_transparent_content_proposal_algorithm.md, cross-checked against
+ * packages/aica_transparent_{service,content}_selector_v1/algorithm.py).
+ * Replaces the old CDC-SU/normalized/proposed_addition provenance labels —
+ * this panel now shows ONLY scored fields, so the badge answers the one
+ * question that matters: does moving this actually change a proposal? */
+type UsedBy = 's' | 'c' | 'sc'
 
 type FieldKind =
   | 'number'
   | 'select'
-  | 'text'
   | 'boolean'
-  | 'nullable_number'
-  | 'nullable_text'
   | 'nullable_select'
-  | 'string_list'
+  | 'slider'
+  | 'tag_toggle'
+  | 'artist_select'
   | 'record_enum'
   | 'record_number'
   | 'nested_record_enum'
@@ -119,183 +159,105 @@ type WorldFieldDef = {
   idField?: string
   tsField?: string
   idPlaceholder?: string
-  provenance: ProvenanceKind
+  used: UsedBy
 }
 
-// ── Section 3: World · situation (every Situation field) ───────────────────
+// ── World · situation — ONLY the fields actually scored by an algorithm ─────
 
 const SITUATION_FIELDS: WorldFieldDef[] = [
-  { key: 'drowsiness_level', label: { ja: '眠気', en: 'Drowsiness' }, kind: 'number', provenance: 'cdc_su_baseline' },
-  { key: 'fatigue_level', label: { ja: '疲労', en: 'Fatigue' }, kind: 'number', provenance: 'cdc_su_baseline' },
-  { key: 'monotony_level', label: { ja: '単調さ', en: 'Monotony' }, kind: 'number', provenance: 'cdc_su_baseline' },
+  { key: 'drowsiness_level', label: { ja: '眠気', en: 'Drowsiness' }, kind: 'slider', used: 'sc' },
+  { key: 'fatigue_level', label: { ja: '疲労', en: 'Fatigue' }, kind: 'slider', used: 'sc' },
+  { key: 'monotony_level', label: { ja: '単調さ', en: 'Monotony' }, kind: 'slider', used: 'sc' },
   {
     key: 'traffic_state',
     label: { ja: '交通', en: 'Traffic' },
     kind: 'select',
     options: ['normal', 'congested'],
-    provenance: 'cdc_su_baseline',
+    used: 'sc',
   },
   {
     key: 'road_type',
     label: { ja: '道路', en: 'Road' },
     kind: 'select',
     options: ['highway', 'local', 'mountain', 'parking'],
-    provenance: 'normalized_cdc_su_concept',
+    used: 'sc',
   },
   {
     key: 'night_state',
     label: { ja: '昼夜', en: 'Day/Night' },
     kind: 'select',
     options: ['night', 'day'],
-    provenance: 'cdc_su_baseline',
+    used: 'sc',
   },
-  { key: 'route_tags', label: { ja: 'ルート特徴', en: 'Route' }, kind: 'string_list', provenance: 'cdc_su_baseline' },
+  {
+    key: 'route_tags',
+    label: { ja: 'ルート特徴', en: 'Route' },
+    kind: 'tag_toggle',
+    options: ROUTE_TAG_OPTIONS,
+    used: 's',
+  },
   {
     key: 'destination_tags',
     label: { ja: '目的地', en: 'Destination' },
-    kind: 'string_list',
-    provenance: 'cdc_su_baseline',
+    kind: 'tag_toggle',
+    options: DESTINATION_TAG_OPTIONS,
+    used: 's',
   },
-  {
-    key: 'child_present',
-    label: { ja: '子ども同乗', en: 'Child present' },
-    kind: 'boolean',
-    provenance: 'cdc_su_baseline',
-  },
-  {
-    key: 'multiple_passengers',
-    label: { ja: '複数同乗', en: 'Multiple' },
-    kind: 'boolean',
-    provenance: 'cdc_su_baseline',
-  },
-  {
-    key: 'estimated_min_until_rest_spot',
-    label: { ja: '休憩地点までの推定分数', en: 'Min. until rest spot' },
-    kind: 'nullable_number',
-    provenance: 'proposed_addition',
-  },
-  {
-    key: 'rest_spot_type',
-    label: { ja: '休憩地点の種類', en: 'Rest spot type' },
-    kind: 'select',
-    options: ['sa_pa', 'convenience_store', 'parking', 'oshi_spot', 'other', 'unknown'],
-    provenance: 'proposed_addition',
-  },
-  {
-    key: 'active_service',
-    label: { ja: '現在のサービス', en: 'Active service' },
-    kind: 'nullable_select',
-    options: SERVICE_ID_OPTIONS,
-    provenance: 'proposed_addition',
-  },
-  {
-    key: 'recent_service_rejections',
-    label: { ja: '直近のサービス拒否', en: 'Recent service rejections' },
-    kind: 'item_list',
-    idField: 'service_id',
-    tsField: 'rejected_at',
-    idPlaceholder: 'service_id',
-    provenance: 'proposed_addition',
-  },
+  { key: 'child_present', label: { ja: '子ども同乗', en: 'Child present' }, kind: 'boolean', used: 's' },
+  { key: 'multiple_passengers', label: { ja: '複数同乗', en: 'Multiple' }, kind: 'boolean', used: 's' },
 ]
 
-// ── Section 4: Preference & history (every DriverProfile field) ────────────
+// ── Preference & history — ONLY the fields actually scored by an algorithm ──
 
 type ProfileGroup = { label: { ja: string; en: string }; fields: WorldFieldDef[] }
 
 const PROFILE_GROUPS: ProfileGroup[] = [
   {
-    label: { ja: '推し情報', en: 'Oshi information' },
+    label: { ja: '推し情報', en: 'Oshi' },
     fields: [
-      { key: 'oshi_registered', label: { ja: '推し登録', en: 'Oshi registered' }, kind: 'boolean', provenance: 'cdc_su_baseline' },
-      { key: 'oshi_mode', label: { ja: '推しモード', en: 'Oshi mode' }, kind: 'select', options: ['on', 'off'], provenance: 'cdc_su_baseline' },
-      { key: 'oshi_id', label: { ja: '推しID', en: 'Oshi ID' }, kind: 'nullable_text', provenance: 'normalized_cdc_su_concept' },
-      {
-        key: 'oshi_type',
-        label: { ja: '推し種別', en: 'Oshi type' },
-        kind: 'nullable_select',
-        options: ['artist', 'artist_member', 'group', 'character', 'voice_actor', 'franchise', 'creator', 'other'],
-        provenance: 'normalized_cdc_su_concept',
-      },
-      { key: 'oshi_tags', label: { ja: '推しタグ', en: 'Oshi tags' }, kind: 'string_list', provenance: 'normalized_cdc_su_concept' },
+      { key: 'oshi_registered', label: { ja: '推し登録', en: 'Oshi registered' }, kind: 'boolean', used: 's' },
+      { key: 'oshi_mode', label: { ja: '推しモード', en: 'Oshi mode' }, kind: 'select', options: ['on', 'off'], used: 's' },
+      // Implicitly `oshi_type='artist'` on selection (see WorldPanel's onChange
+      // wrapper) — no separate oshi_type/oshi_tags fields; neither is scored.
+      { key: 'oshi_id', label: { ja: '推しアーティスト', en: 'Oshi artist' }, kind: 'artist_select', used: 'c' },
     ],
   },
   {
-    label: { ja: 'UPro情報', en: 'UPro information' },
+    label: { ja: 'ドライバー', en: 'Driver' },
     fields: [
       {
         key: 'age_band',
         label: { ja: '年代', en: 'Age' },
         kind: 'select',
         options: ['teens', '20s', '30s', '40s', '50s', '60plus'],
-        provenance: 'cdc_su_baseline',
+        used: 'c',
       },
-      {
-        key: 'gender',
-        label: { ja: '性別', en: 'Gender' },
-        kind: 'select',
-        options: ['unspecified', 'female', 'male', 'non_binary'],
-        provenance: 'cdc_su_baseline',
-      },
-      { key: 'hobby_interest_tags', label: { ja: '趣味・関心', en: 'Hobbies/interests' }, kind: 'string_list', provenance: 'cdc_su_baseline' },
     ],
   },
   {
-    label: { ja: '利用頻度・シーン傾向', en: 'Usage / scene tendency' },
+    label: { ja: '利用頻度', en: 'Usage & recency' },
     fields: [
-      { key: 'service_usage_level', label: { ja: 'サービス利用頻度', en: 'Service usage level' }, kind: 'record_enum', keyOptions: SERVICE_ID_OPTIONS, options: USAGE_LEVEL_OPTIONS, provenance: 'cdc_su_baseline' },
-      { key: 'service_recency_state', label: { ja: 'サービス最終利用', en: 'Service recency' }, kind: 'record_enum', keyOptions: SERVICE_ID_OPTIONS, options: RECENCY_OPTIONS, provenance: 'cdc_su_baseline' },
-      { key: 'scene_service_usage_level', label: { ja: 'シーン別サービス利用', en: 'Scene/service usage' }, kind: 'nested_record_enum', keyOptions: SERVICE_ID_OPTIONS, options: USAGE_LEVEL_OPTIONS, provenance: 'cdc_su_baseline' },
-      { key: 'catalog_item_usage_level', label: { ja: '楽曲利用頻度', en: 'Catalog item usage' }, kind: 'record_enum', options: USAGE_LEVEL_OPTIONS, provenance: 'cdc_su_baseline' },
-      { key: 'catalog_item_recency_state', label: { ja: '楽曲最終利用', en: 'Catalog item recency' }, kind: 'record_enum', options: RECENCY_OPTIONS, provenance: 'cdc_su_baseline' },
-      { key: 'content_tag_usage_level', label: { ja: 'コンテンツタグ利用頻度', en: 'Content-tag usage' }, kind: 'record_enum', options: USAGE_LEVEL_OPTIONS, provenance: 'cdc_su_baseline' },
-      { key: 'content_tag_recency_state', label: { ja: 'コンテンツタグ最終利用', en: 'Content-tag recency' }, kind: 'record_enum', options: RECENCY_OPTIONS, provenance: 'cdc_su_baseline' },
-      { key: 'scene_content_tag_usage_level', label: { ja: 'シーン別タグ利用', en: 'Scene/tag usage' }, kind: 'nested_record_enum', options: USAGE_LEVEL_OPTIONS, provenance: 'cdc_su_baseline' },
+      { key: 'service_usage_level', label: { ja: 'サービス利用頻度', en: 'Service usage level' }, kind: 'record_enum', keyOptions: SERVICE_ID_OPTIONS, options: USAGE_LEVEL_OPTIONS, used: 's' },
+      { key: 'service_recency_state', label: { ja: 'サービス最終利用', en: 'Service recency' }, kind: 'record_enum', keyOptions: SERVICE_ID_OPTIONS, options: RECENCY_OPTIONS, used: 's' },
+      { key: 'scene_service_usage_level', label: { ja: 'シーン別サービス利用', en: 'Scene/service usage' }, kind: 'nested_record_enum', keyOptions: SERVICE_ID_OPTIONS, options: USAGE_LEVEL_OPTIONS, used: 's' },
+      { key: 'catalog_item_usage_level', label: { ja: '楽曲利用頻度', en: 'Catalog item usage' }, kind: 'record_enum', options: USAGE_LEVEL_OPTIONS, used: 'c' },
     ],
   },
   {
-    label: { ja: '再生・操作履歴', en: 'Playback & operations' },
+    label: { ja: '再生履歴', en: 'Playback history' },
     fields: [
-      { key: 'played_items', label: { ja: '再生済み', en: 'Played items' }, kind: 'item_list', idField: 'track_id', tsField: 'last_played_at', provenance: 'cdc_su_baseline' },
-      { key: 'skipped_items', label: { ja: 'スキップ済み', en: 'Skipped items' }, kind: 'item_list', idField: 'track_id', tsField: 'skipped_at', provenance: 'cdc_su_baseline' },
-      { key: 'changed_from_items', label: { ja: '変更元', en: 'Changed-from items' }, kind: 'item_list', idField: 'track_id', tsField: 'changed_at', provenance: 'cdc_su_baseline' },
-      { key: 'cancelled_content_plans', label: { ja: 'キャンセル済みプラン', en: 'Cancelled plans' }, kind: 'item_list', idField: 'plan_id', tsField: 'cancelled_at', idPlaceholder: 'plan_id', provenance: 'cdc_su_baseline' },
-      { key: 'completed_items', label: { ja: '完了済み', en: 'Completed items' }, kind: 'item_list', idField: 'track_id', tsField: 'completed_at', provenance: 'proposed_addition' },
-      { key: 'manually_selected_items', label: { ja: '手動選択済み', en: 'Manually selected' }, kind: 'item_list', idField: 'track_id', tsField: 'selected_at', provenance: 'proposed_addition' },
-      { key: 'repeated_items', label: { ja: 'リピート済み', en: 'Repeated items' }, kind: 'item_list', idField: 'track_id', tsField: 'repeated_at', provenance: 'proposed_addition' },
+      { key: 'played_items', label: { ja: '再生済み', en: 'Played items' }, kind: 'item_list', idField: 'track_id', tsField: 'last_played_at', used: 'c' },
+      { key: 'skipped_items', label: { ja: 'スキップ済み', en: 'Skipped items' }, kind: 'item_list', idField: 'track_id', tsField: 'skipped_at', used: 'c' },
+      { key: 'changed_from_items', label: { ja: '変更元', en: 'Changed-from items' }, kind: 'item_list', idField: 'track_id', tsField: 'changed_at', used: 'c' },
     ],
   },
   {
-    label: { ja: '提案・回復結果（履歴）', en: 'Proposal / recovery results (history)' },
+    label: { ja: '提案・回復結果', en: 'Proposal / recovery results' },
     fields: [
-      { key: 'service_proposal_acceptance_rate', label: { ja: 'サービス提案受諾率', en: 'Service acceptance rate' }, kind: 'record_number', keyOptions: SERVICE_ID_OPTIONS, provenance: 'cdc_su_baseline' },
-      { key: 'service_recovery_rate', label: { ja: 'サービス回復率', en: 'Service recovery rate' }, kind: 'record_number', keyOptions: SERVICE_ID_OPTIONS, provenance: 'cdc_su_baseline' },
-      { key: 'content_proposal_acceptance_rate', label: { ja: 'コンテンツ提案受諾率', en: 'Content acceptance rate' }, kind: 'record_number', provenance: 'cdc_su_baseline' },
-      { key: 'content_recovery_rate', label: { ja: 'コンテンツ回復率', en: 'Content recovery rate' }, kind: 'record_number', provenance: 'cdc_su_baseline' },
-      { key: 'service_proposal_acceptance_confidence', label: { ja: 'サービス提案信頼度', en: 'Service acceptance confidence' }, kind: 'record_number', keyOptions: SERVICE_ID_OPTIONS, provenance: 'proposed_addition' },
-      { key: 'service_recovery_confidence', label: { ja: 'サービス回復信頼度', en: 'Service recovery confidence' }, kind: 'record_number', keyOptions: SERVICE_ID_OPTIONS, provenance: 'proposed_addition' },
-      { key: 'content_proposal_acceptance_confidence', label: { ja: 'コンテンツ提案信頼度', en: 'Content acceptance confidence' }, kind: 'record_number', provenance: 'proposed_addition' },
-      { key: 'content_recovery_confidence', label: { ja: 'コンテンツ回復信頼度', en: 'Content recovery confidence' }, kind: 'record_number', provenance: 'proposed_addition' },
-    ],
-  },
-  {
-    label: { ja: '予定イベント', en: 'Scheduled event' },
-    fields: [
-      {
-        key: 'scheduled_event_type',
-        label: { ja: '予定種別', en: 'Event type' },
-        kind: 'nullable_select',
-        options: ['none', 'live_show', 'radio_program', 'concert', 'oshi_event', 'other'],
-        provenance: 'cdc_su_baseline',
-      },
-      {
-        key: 'scheduled_event_timing',
-        label: { ja: '予定時期', en: 'Event timing' },
-        kind: 'nullable_select',
-        options: ['now', 'soon', 'later', 'unknown'],
-        provenance: 'cdc_su_baseline',
-      },
-      { key: 'scheduled_event_tags', label: { ja: '予定タグ', en: 'Event tags' }, kind: 'string_list', provenance: 'cdc_su_baseline' },
+      { key: 'service_proposal_acceptance_rate', label: { ja: 'サービス提案受諾率', en: 'Service acceptance rate' }, kind: 'record_number', keyOptions: SERVICE_ID_OPTIONS, used: 's' },
+      { key: 'service_recovery_rate', label: { ja: 'サービス回復率', en: 'Service recovery rate' }, kind: 'record_number', keyOptions: SERVICE_ID_OPTIONS, used: 's' },
+      { key: 'content_proposal_acceptance_rate', label: { ja: 'コンテンツ提案受諾率', en: 'Content acceptance rate' }, kind: 'record_number', used: 'c' },
+      { key: 'content_recovery_rate', label: { ja: 'コンテンツ回復率', en: 'Content recovery rate' }, kind: 'record_number', used: 'c' },
     ],
   },
 ]
@@ -307,16 +269,15 @@ const LABELS = {
   carState: { ja: '車両状態（現在状況）', en: 'Car state (current status)' },
   worldSituation: { ja: '世界・状況（初期値・編集可）', en: 'World · situation (init values, editable)' },
   preferenceHistory: { ja: '好み・履歴', en: 'Preference & history' },
-  driverProfile: { ja: 'ドライバープロファイル', en: 'Driver profile' },
-  motion: { ja: '走行/停車', en: 'Motion' },
-  dataset: { ja: 'データセット', en: 'Dataset' },
-  seed: { ja: 'シード（一括読み込み）', en: 'Seed (bulk load)' },
-  clone: { ja: '対比クローン（1変数変更）', en: 'Contrast clone (change one variable)' },
+  motion: { ja: '走行/停車（自動）', en: 'Motion (derived)' },
+  seed: { ja: 'シード', en: 'Seed' },
   genreExtension: { ja: 'ジャンル選好（genre_affinity_v1）', en: 'Genre affinity (genre_affinity_v1)' },
   scenes: { ja: 'シーン別ジャンル利用', en: 'Scene genre usage' },
+  usedS: { ja: 'サービス（STEP1）で採点', en: 'Scored by Service (STEP 1)' },
+  usedC: { ja: 'コンテンツ（STEP2）で採点', en: 'Scored by Content (STEP 2)' },
 }
 
-function SectionLabel({ children, badge }: { children: React.ReactNode; badge?: React.ReactNode }) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div
       data-testid="world-section-label"
@@ -333,8 +294,43 @@ function SectionLabel({ children, badge }: { children: React.ReactNode; badge?: 
       }}
     >
       {children}
-      {badge}
     </div>
+  )
+}
+
+/** Replaces the old CDC-SU/norm./added ProvenanceBadge on every field: shows
+ * which algorithm(s) actually score this field so a reviewer never wonders
+ * "does moving this slider do anything". */
+function UsageBadge({ used, lang }: { used: UsedBy; lang: UiLanguage }) {
+  const parts: { text: string; bg: string; fg: string; border: string; title: string }[] = []
+  if (used === 's' || used === 'sc') {
+    parts.push({ text: 'S', bg: '#eff6ff', fg: '#1d4ed8', border: '#c7d2fe', title: t(LABELS.usedS, lang) })
+  }
+  if (used === 'c' || used === 'sc') {
+    parts.push({ text: 'C', bg: '#f5f3ff', fg: '#7c3aed', border: '#ddd6fe', title: t(LABELS.usedC, lang) })
+  }
+  return (
+    <span data-testid="usage-badge" style={{ display: 'inline-flex', gap: '2px' }}>
+      {parts.map((p) => (
+        <span
+          key={p.text}
+          title={p.title}
+          style={{
+            display: 'inline-block',
+            fontSize: '0.65em',
+            fontWeight: 800,
+            padding: '1px 6px',
+            borderRadius: '999px',
+            letterSpacing: '0.02em',
+            background: p.bg,
+            color: p.fg,
+            border: `1px solid ${p.border}`,
+          }}
+        >
+          {p.text}
+        </span>
+      ))}
+    </span>
   )
 }
 
@@ -343,6 +339,7 @@ function renderFieldControl(
   value: unknown,
   onChange: (value: unknown) => void,
   testId: string,
+  ctx?: { artists?: { id: string; name: string }[] },
 ) {
   switch (def.kind) {
     case 'number':
@@ -354,6 +351,27 @@ function renderFieldControl(
           onChange={(e) => onChange(Number(e.target.value))}
         />
       )
+    case 'slider':
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <input
+            data-testid={testId}
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            value={Number(value ?? 0)}
+            onChange={(e) => onChange(Number(e.target.value))}
+            style={{ flex: 1, minWidth: '80px' }}
+          />
+          <span
+            data-testid={`${testId}-value`}
+            style={{ fontFamily: 'monospace', fontSize: '0.85em', minWidth: '26px', textAlign: 'right', color: '#4b5563' }}
+          >
+            {Number(value ?? 0)}
+          </span>
+        </div>
+      )
     case 'select':
       return (
         <select data-testid={testId} value={String(value ?? '')} onChange={(e) => onChange(e.target.value)}>
@@ -363,15 +381,6 @@ function renderFieldControl(
             </option>
           ))}
         </select>
-      )
-    case 'text':
-      return (
-        <input
-          data-testid={testId}
-          type="text"
-          value={String(value ?? '')}
-          onChange={(e) => onChange(e.target.value)}
-        />
       )
     case 'boolean':
       return (
@@ -383,24 +392,6 @@ function renderFieldControl(
           <option value="false">false</option>
           <option value="true">true</option>
         </select>
-      )
-    case 'nullable_number':
-      return (
-        <input
-          data-testid={testId}
-          type="number"
-          value={value === null || value === undefined ? '' : Number(value)}
-          onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
-        />
-      )
-    case 'nullable_text':
-      return (
-        <input
-          data-testid={testId}
-          type="text"
-          value={value === null || value === undefined ? '' : String(value)}
-          onChange={(e) => onChange(e.target.value === '' ? null : e.target.value)}
-        />
       )
     case 'nullable_select':
       return (
@@ -417,8 +408,57 @@ function renderFieldControl(
           ))}
         </select>
       )
-    case 'string_list':
-      return <TextListEditor testId={testId} value={(value as string[]) ?? []} onChange={onChange} />
+    case 'artist_select':
+      return (
+        <select
+          data-testid={testId}
+          value={value === null || value === undefined ? '' : String(value)}
+          onChange={(e) => onChange(e.target.value === '' ? null : e.target.value)}
+        >
+          <option value="">—</option>
+          {(ctx?.artists ?? []).map((artist) => (
+            <option key={artist.id} value={artist.id}>
+              {artist.name}
+            </option>
+          ))}
+        </select>
+      )
+    case 'tag_toggle': {
+      const selected = new Set(((value as string[]) ?? []).filter(Boolean))
+      return (
+        <div data-testid={testId} style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+          {(def.options ?? []).map((opt) => {
+            const isOn = selected.has(opt)
+            return (
+              <button
+                key={opt}
+                type="button"
+                data-testid={`${testId}-${opt}`}
+                aria-pressed={isOn}
+                onClick={() => {
+                  const next = new Set(selected)
+                  if (isOn) next.delete(opt)
+                  else next.add(opt)
+                  onChange(Array.from(next))
+                }}
+                style={{
+                  fontSize: '0.74em',
+                  padding: '2px 9px',
+                  borderRadius: '999px',
+                  border: isOn ? '1px solid #1d4ed8' : '1px solid #cbd5e1',
+                  background: isOn ? '#1d4ed8' : '#fff',
+                  color: isOn ? '#fff' : '#4b5563',
+                  fontWeight: isOn ? 700 : 400,
+                  cursor: 'pointer',
+                }}
+              >
+                {opt}
+              </button>
+            )
+          })}
+        </div>
+      )
+    }
     case 'record_enum':
       return (
         <RecordEditor
@@ -472,17 +512,17 @@ function FieldRow({
   onChange,
   lang,
   issues,
+  artists,
 }: {
   def: WorldFieldDef
   value: unknown
   onChange: (value: unknown) => void
   lang: UiLanguage
   issues?: WorldValidationIssue[]
+  artists?: { id: string; name: string }[]
 }) {
   const testId = `feature-field-${def.key}`
-  const isCompact = ['number', 'select', 'text', 'boolean', 'nullable_number', 'nullable_text', 'nullable_select'].includes(
-    def.kind,
-  )
+  const isCompact = ['number', 'select', 'boolean', 'nullable_select', 'slider', 'artist_select'].includes(def.kind)
   const fieldIssues = issues ?? []
   return (
     <div
@@ -499,9 +539,9 @@ function FieldRow({
       <span style={{ fontSize: '0.82em', color: '#4b5563', display: 'flex', alignItems: 'center', gap: '6px' }}>
         <code style={{ fontSize: '0.9em', color: '#6b7280' }}>{def.key}</code>
         {t(def.label, lang)}
-        <ProvenanceBadge provenance={def.provenance} lang={lang} />
+        <UsageBadge used={def.used} lang={lang} />
       </span>
-      {renderFieldControl(def, value, onChange, testId)}
+      {renderFieldControl(def, value, onChange, testId, { artists })}
       {fieldIssues.length > 0 && (
         <p
           role="alert"
@@ -523,22 +563,6 @@ export default function WorldPanel() {
   const { situation, driver_profile: driverProfile } = world
 
   const [datasetProvenance, setDatasetProvenance] = useState<DatasetProvenance | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    getDatasets()
-      .then((resp) => {
-        if (!cancelled) dispatch({ type: 'SET_DATASETS', datasets: resp.datasets })
-      })
-      .catch(() => {
-        /* dataset listing is best-effort for the selector; the world already
-         * carries a valid dataset_id/catalog_ref from its default/seed. */
-      })
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -587,18 +611,42 @@ export default function WorldPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [world])
 
+  // Artist dropdown for oshi_id — derived client-side from the already-loaded
+  // catalog (no dedicated artist-list endpoint exists; see
+  // [[proposal-live-run-and-ux-defaults]]), de-duplicated by artist id.
+  const artists = useMemo(() => {
+    const byId = new Map<string, string>()
+    for (const song of state.catalog) {
+      for (const artist of song.spotify_track.artists ?? []) {
+        if (!byId.has(artist.id)) byId.set(artist.id, artist.name)
+      }
+    }
+    return Array.from(byId, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name))
+  }, [state.catalog])
+
   function setSituationField(key: keyof Situation, value: unknown) {
     dispatch({ type: 'SET_SITUATION_FIELD', key, value })
   }
 
   function setProfileField(key: keyof DriverProfile, value: unknown) {
     dispatch({ type: 'SET_DRIVER_PROFILE_FIELD', key, value })
+    // oshi_id is now an artist-ID dropdown; picking (or clearing) an artist
+    // implicitly sets/clears oshi_type='artist' — there is no separate
+    // oshi_type control in this panel (it isn't scored by either algorithm).
+    if (key === 'oshi_id') {
+      dispatch({ type: 'SET_DRIVER_PROFILE_FIELD', key: 'oshi_type', value: value === null ? null : 'artist' })
+    }
+  }
+
+  function handleLifecycleStage(stage: LifecycleStageValue) {
+    dispatch({ type: 'SET_LIFECYCLE_STAGE', stage })
+    dispatch({ type: 'SET_MOTION_STATE', motionState: deriveMotion(stage) })
   }
 
   return (
     <section
       data-testid="world-panel"
-      style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden' }}
+      style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px' }}
     >
       <h3
         style={{
@@ -607,6 +655,7 @@ export default function WorldPanel() {
           fontSize: '0.9em',
           background: '#f8fafc',
           borderBottom: '1px solid #e5e7eb',
+          borderRadius: '10px 10px 0 0',
           color: '#1d4ed8',
         }}
       >
@@ -646,22 +695,14 @@ export default function WorldPanel() {
           </div>
         )}
 
-        {/* Quick full-world load — above section 1, since it replaces every
-            group at once (control_inputs + situation + driver_profile). */}
+        {/* 1. Seed — dropdown, autoloads on selection (replaces every group
+            at once: control_inputs + situation + driver_profile + catalog_ref). */}
         <div style={{ fontSize: '0.68em', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 800, color: '#6b7280', margin: '0 0 6px' }}>
           {t(LABELS.seed, lang)}
         </div>
         <SeedPicker />
 
-        {/* Contrast clone — clone the base seed above and change ONE
-            variable (data-model.md §WorldClone); the diff renders below. */}
-        <div style={{ fontSize: '0.68em', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 800, color: '#6b7280', margin: '12px 0 6px' }}>
-          {t(LABELS.clone, lang)}
-        </div>
-        <WorldClonePicker />
-        <WorldDiffView />
-
-        {/* 1. Trigger signal */}
+        {/* 2. Trigger signal */}
         <SectionLabel>{t(LABELS.triggerSignal, lang)}</SectionLabel>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', margin: '3px 0 8px' }}>
           {TRIGGER_PURPOSES.map((opt) => {
@@ -690,7 +731,7 @@ export default function WorldPanel() {
           })}
         </div>
 
-        {/* 2. Car state */}
+        {/* 3. Car state — lifecycle + motion (read-only, derived) */}
         <SectionLabel>{t(LABELS.carState, lang)}</SectionLabel>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', margin: '3px 0 8px' }}>
           {LIFECYCLE_STAGES.map((opt) => {
@@ -701,7 +742,7 @@ export default function WorldPanel() {
                 type="button"
                 data-testid={`lifecycle-stage-${opt.value}`}
                 aria-pressed={isSelected}
-                onClick={() => dispatch({ type: 'SET_LIFECYCLE_STAGE', stage: opt.value })}
+                onClick={() => handleLifecycleStage(opt.value)}
                 style={{
                   fontSize: '0.74em',
                   padding: '3px 10px',
@@ -727,47 +768,26 @@ export default function WorldPanel() {
             padding: '6px 0',
           }}
         >
-          <span style={{ fontSize: '0.82em', color: '#4b5563', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <code>motion_state</code> {t(LABELS.motion, lang)}
-            <ProvenanceBadge provenance="proposed_addition" lang={lang} />
-          </span>
-          <select
-            data-testid="motion-state-select"
-            value={motionState}
-            onChange={(e) => dispatch({ type: 'SET_MOTION_STATE', motionState: e.target.value as MotionStateValue })}
-          >
-            {MOTION_STATES.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: '6px 10px', padding: '6px 0' }}>
           <span style={{ fontSize: '0.82em', color: '#4b5563' }}>
-            <code>dataset_id</code> {t(LABELS.dataset, lang)}
+            <code>motion_state</code> {t(LABELS.motion, lang)}
           </span>
-          <select
-            data-testid="dataset-select"
-            value={world.control_inputs.dataset_id}
-            onChange={(e) => {
-              const chosen = state.datasets.find((d) => d.dataset_id === e.target.value)
-              if (chosen) dispatch({ type: 'SET_DATASET', dataset: chosen })
+          <span
+            data-testid="motion-state-readonly"
+            style={{
+              fontSize: '0.82em',
+              fontFamily: 'monospace',
+              color: '#4b5563',
+              background: '#f1f5f9',
+              padding: '2px 9px',
+              borderRadius: '6px',
+              border: '1px solid #e5e7eb',
             }}
           >
-            {state.datasets.length === 0 && <option value={world.control_inputs.dataset_id}>{world.control_inputs.dataset_id}</option>}
-            {state.datasets.map((d) => (
-              <option key={d.dataset_id} value={d.dataset_id}>
-                {d.dataset_id} ({d.song_count})
-              </option>
-            ))}
-          </select>
+            {motionState}
+          </span>
         </div>
-        <DatasetProvenanceBanner provenance={datasetProvenance} lang={lang} />
-        <CatalogView songs={state.catalog} total={state.catalogTotal} lang={lang} />
 
-        {/* 3. World · situation */}
+        {/* 4. World · situation — scored fields only */}
         <SectionLabel>{t(LABELS.worldSituation, lang)}</SectionLabel>
         {SITUATION_FIELDS.map((def) => (
           <FieldRow
@@ -780,10 +800,9 @@ export default function WorldPanel() {
           />
         ))}
 
-        {/* 4. Preference & history — REAL editable controls (P3) */}
-        <SectionLabel badge={<ProvenanceBadge provenance="from_profile" lang={lang} />}>
-          {t(LABELS.preferenceHistory, lang)}
-        </SectionLabel>
+        {/* 5. Preference & history — profile picker FIRST, then scored fields */}
+        <SectionLabel>{t(LABELS.preferenceHistory, lang)}</SectionLabel>
+        <DriverProfilePicker />
         {PROFILE_GROUPS.map((group) => (
           <div key={t(group.label, 'en')}>
             <div style={{ fontSize: '0.72em', fontWeight: 700, color: '#9ca3af', margin: '10px 0 2px' }}>
@@ -797,6 +816,7 @@ export default function WorldPanel() {
                 onChange={(value) => setProfileField(def.key as keyof DriverProfile, value)}
                 lang={lang}
                 issues={issuesForPath(state.worldValidationIssues, `driver_profile.${def.key}`)}
+                artists={def.key === 'oshi_id' ? artists : undefined}
               />
             ))}
           </div>
@@ -855,9 +875,10 @@ export default function WorldPanel() {
           </div>
         )}
 
-        {/* 5. Driver profile — picker, LAST */}
-        <SectionLabel>{t(LABELS.driverProfile, lang)}</SectionLabel>
-        <DriverProfilePicker />
+        {/* 6. Dataset (read-only) — no selector; the dataset comes from the
+            loaded seed/profile and is not reviewer-editable here. */}
+        <DatasetProvenanceBanner provenance={datasetProvenance} lang={lang} />
+        <CatalogView songs={state.catalog} total={state.catalogTotal} lang={lang} />
       </div>
     </section>
   )

@@ -139,6 +139,11 @@
     "family": {
       "$ref": "#/$defs/ProposalPackageFamily"
     },
+    "hidden": {
+      "default": false,
+      "title": "Hidden",
+      "type": "boolean"
+    },
     "hyperparameters": {
       "items": {
         "$ref": "#/$defs/HyperparameterDef"

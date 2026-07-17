@@ -30,18 +30,13 @@ describe('appMode toggle', () => {
     vi.resetAllMocks()
   })
 
-  it('defaults to the trigger shell and switches to the proposal placeholder and back', async () => {
+  it('defaults to the proposal shell and switches to the trigger shell and back', async () => {
     mockFetchByUrl({ status: 'ok', service: 'aica-api', version: '0.0.0' })
 
     render(<App />)
 
-    // Trigger shell renders by default (health status is an AppShell-only string).
-    expect(await screen.findByText('Backend: ok — aica-api')).toBeInTheDocument()
-    expect(screen.queryByTestId('proposal-shell')).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Proposal' }))
-
-    expect(screen.getByTestId('proposal-shell')).toBeInTheDocument()
+    // Proposal shell renders by default (health status is an AppShell-only string).
+    expect(await screen.findByTestId('proposal-shell')).toBeInTheDocument()
     expect(screen.queryByText('Backend: ok — aica-api')).not.toBeInTheDocument()
     await waitFor(() => expect(screen.getByTestId('world-panel')).toBeInTheDocument())
 
@@ -49,6 +44,11 @@ describe('appMode toggle', () => {
 
     expect(await screen.findByText('Backend: ok — aica-api')).toBeInTheDocument()
     expect(screen.queryByTestId('proposal-shell')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Proposal' }))
+
+    expect(screen.getByTestId('proposal-shell')).toBeInTheDocument()
+    expect(screen.queryByText('Backend: ok — aica-api')).not.toBeInTheDocument()
   })
 })
 

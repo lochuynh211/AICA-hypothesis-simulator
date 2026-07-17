@@ -302,7 +302,7 @@ describe('ContentProposalPanel', () => {
       </ProposalStoreProvider>,
     )
     expect(await screen.findByLabelText('plan_item_count')).toBeInTheDocument()
-    expect(screen.getByText('コンテンツカテゴリ重み')).toBeInTheDocument()
+    expect(screen.getByText('Content Category Weights')).toBeInTheDocument()
   })
 
   // ---------------------------------------------------------------------

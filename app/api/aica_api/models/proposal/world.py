@@ -88,7 +88,6 @@ __all__ = [
     "DriverProfileRecord",
     "FieldOverride",
     "FieldDiff",
-    "WorldClone",
     "SetupSnapshotOrigin",
     "SetupSnapshot",
 ]
@@ -559,8 +558,12 @@ class DriverProfileRecord(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# WorldClone — clone-and-change-one-variable contrast (data-model.md
-# §WorldClone / research.md §R5, T028-T031)
+# FieldOverride / FieldDiff — shared override-application shapes
+# (data-model.md; research.md §R5/D2). Applying/validating overrides is a
+# service concern (``services/world_clone_store.py``'s ``apply_overrides``)
+# — these models only shape the request/result, they do not walk the path
+# themselves. Used by both the P7 recompute endpoint and (formerly) the now-
+# removed contrast-clone feature.
 # ---------------------------------------------------------------------------
 
 
@@ -589,11 +592,11 @@ class FieldOverride(BaseModel):
 
 
 class FieldDiff(BaseModel):
-    """One field-level before/after difference produced by a clone.
+    """One field-level before/after difference produced by applying an override.
 
     ``path`` matches the ``FieldOverride.path`` it came from; ``before``/
     ``after`` are the plain (JSON-mode) values at that path in the base and
-    cloned world respectively.
+    resulting world respectively.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -601,35 +604,6 @@ class FieldDiff(BaseModel):
     path: str
     before: Any
     after: Any
-
-
-class WorldClone(BaseModel):
-    """A user-created "clone the base seed and change ONE variable" contrast
-    (data-model.md §WorldClone).
-
-    ``world`` is the base seed's world with every override in ``overrides``
-    applied — a COMPLETE, valid ``World`` (never a partial one). ``diff`` is
-    computed deterministically as EXACTLY the overridden path(s) with their
-    before/after values — nothing unchanged ever appears in it. Built and
-    persisted by ``services/world_clone_store.py`` (T029) under
-    ``settings.proposal_worlds_dir`` (git-ignored, unlike the committed
-    ``SeedWorld``s it is based on).
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    clone_id: str
-    base_seed_id: str
-    overrides: list[FieldOverride]
-    world: World
-    diff: list[FieldDiff]
-
-    @field_validator("clone_id", "base_seed_id")
-    @classmethod
-    def _non_empty(cls, v: str) -> str:
-        if not v:
-            raise ValueError("clone_id/base_seed_id must not be empty.")
-        return v
 
 
 # ---------------------------------------------------------------------------

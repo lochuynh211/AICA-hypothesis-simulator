@@ -214,8 +214,8 @@ def has_catalog_references(world: World) -> bool:
     ``driver_profile.oshi_id``, or any track-id list/map field
     (``_TRACK_ID_LIST_FIELDS``/``_TRACK_ID_MAP_FIELDS``) that is non-empty.
 
-    Used by callers (e.g. ``world_clone_store.create_clone`` — whole-branch
-    review FIX 5) that must decide whether an unresolvable/missing catalog is
+    Used by callers (e.g. ``world_clone_store.apply_overrides``) that must
+    decide whether an unresolvable/missing catalog is
     safe to skip reference validation against (a world with NO catalog
     references at all), or must be treated as an error because there IS
     something in the world that would need checking but can't be.

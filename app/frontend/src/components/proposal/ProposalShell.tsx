@@ -61,7 +61,7 @@ function ProposalLanguageToggle() {
   )
 }
 
-export default function ProposalShell() {
+export default function ProposalShell({ autoInit = false }: { autoInit?: boolean }) {
   const { state } = useProposalStore()
   const { uiLanguage: lang } = state
   const [subView, setSubView] = useState<SubView>('screen')
@@ -112,7 +112,7 @@ export default function ProposalShell() {
       </header>
 
       <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        {subView === 'screen' ? <ProposalScreen /> : <ProposalRunsScreen />}
+        {subView === 'screen' ? <ProposalScreen autoInit={autoInit} /> : <ProposalRunsScreen />}
       </div>
     </div>
   )

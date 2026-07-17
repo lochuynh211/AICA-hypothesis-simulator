@@ -38,7 +38,10 @@ def test_get_packages_lists_loaded_package_summaries():
     resp = client.get("/api/proposal/packages")
     body = resp.json()
     ids = {p["id"] for p in body["packages"]}
-    assert {"mock_service_selector_v1", "mock_content_selector_v1"} <= ids
+    # The real transparent packages are listed; the hidden mock_* fixtures are
+    # filtered out of the reviewer-facing endpoint (they stay loaded for tests).
+    assert {"aica_transparent_service_selector_v1", "aica_transparent_content_selector_v1"} <= ids
+    assert not ({"mock_service_selector_v1", "mock_content_selector_v1"} & ids)
 
     for pkg in body["packages"]:
         assert "family" in pkg
@@ -48,7 +51,7 @@ def test_get_packages_lists_loaded_package_summaries():
         assert "parameters" in pkg
         assert "hyperparameters" in pkg
 
-    content_pkg = next(p for p in body["packages"] if p["id"] == "mock_content_selector_v1")
+    content_pkg = next(p for p in body["packages"] if p["id"] == "aica_transparent_content_selector_v1")
     assert set(content_pkg["supported_services"]) == {
         "music_playlist",
         "humming_karaoke",

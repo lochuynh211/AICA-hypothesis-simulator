@@ -1,8 +1,10 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import App from '../src/App'
 
-// Route fetch by URL so the 3-panel layout's component effects don't reject
+// Route fetch by URL so the 3-panel layout's component effects don't reject.
+// The app now opens in proposal mode by default, so also stub the proposal
+// endpoints ProposalShell fetches on mount.
 function mockFetchByUrl(healthBody: unknown) {
   global.fetch = vi.fn().mockImplementation(async (url: string) => {
     if (url === '/api/health') {
@@ -13,6 +15,12 @@ function mockFetchByUrl(healthBody: unknown) {
     }
     if (url === '/api/scenarios') {
       return { ok: true, json: async () => ({ scenarios: [], errors: [] }) }
+    }
+    if (url === '/api/proposal/packages') {
+      return { ok: true, json: async () => ({ slots: [], packages: [], errors: [] }) }
+    }
+    if (url === '/api/proposal/matrix') {
+      return { ok: true, json: async () => ({ matrix_version: 'v1', rows: [] }) }
     }
     return { ok: false, status: 404 }
   })
@@ -30,6 +38,12 @@ describe('App — backend health display', () => {
 
     // Initial loading state
     expect(screen.getByText('Checking backend…')).toBeInTheDocument()
+
+    // The app now opens in proposal mode by default, so the health status
+    // (an AppShell-only string) isn't visible until switched to trigger mode.
+    expect(await screen.findByTestId('proposal-shell')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Trigger' }))
 
     // After the async fetch resolves — health status appears in the AppShell header
     expect(await screen.findByText('Backend: ok — aica-api')).toBeInTheDocument()

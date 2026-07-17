@@ -145,7 +145,7 @@ describe('EventTimeline — multi-opportunity sequence + RECOMPUTED/CONTEXT_EDIT
     expect(screen.getByTestId('decision-point-op_2')).toHaveTextContent(/現在|current/i)
   })
 
-  it('renders bilingual captions for the new P7 event types in JA (default)', () => {
+  it('renders bilingual captions for the new P7 event types in EN (default)', () => {
     const runLog = runLogWithEvents(TWO_OPPORTUNITY_EVENTS, {
       opportunity: { ...runLogWithEvents([]).opportunity, opportunity_id: 'op_2' },
     })
@@ -155,22 +155,22 @@ describe('EventTimeline — multi-opportunity sequence + RECOMPUTED/CONTEXT_EDIT
         <EventTimeline />
       </ProposalStoreProvider>,
     )
-    expect(screen.getByText('再計算されました')).toBeInTheDocument()
-    expect(screen.getByText('コンテキストが編集されました')).toBeInTheDocument()
+    expect(screen.getByText('Recomputed')).toBeInTheDocument()
+    expect(screen.getByText('Context edited')).toBeInTheDocument()
   })
 
-  it('renders bilingual captions for the new P7 event types in EN', () => {
+  it('renders bilingual captions for the new P7 event types in JA', () => {
     const runLog = runLogWithEvents(TWO_OPPORTUNITY_EVENTS, {
       opportunity: { ...runLogWithEvents([]).opportunity, opportunity_id: 'op_2' },
     })
     render(
-      <ProposalStoreProvider initialLanguage="en">
+      <ProposalStoreProvider initialLanguage="ja">
         <Setup runLog={runLog} />
         <EventTimeline />
       </ProposalStoreProvider>,
     )
-    expect(screen.getByText('Recomputed')).toBeInTheDocument()
-    expect(screen.getByText('Context edited')).toBeInTheDocument()
+    expect(screen.getByText('再計算されました')).toBeInTheDocument()
+    expect(screen.getByText('コンテキストが編集されました')).toBeInTheDocument()
   })
 })
 

@@ -1,7 +1,7 @@
 /**
- * ProposalScreen.i18n (P1 T030) — JA is the default language for the whole
- * Proposal shell; toggling to EN switches every panel heading/label;
- * toggling back to JA restores the original JA text (FR-004, SC-007).
+ * ProposalScreen.i18n (P1 T030) — EN is the default language for the whole
+ * Proposal shell; toggling to JA switches every panel heading/label;
+ * toggling back to EN restores the original EN text (FR-004, SC-007).
  */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -57,12 +57,12 @@ vi.mock('../src/api/proposalClient', async () => {
 
 import { getPackages } from '../src/api/proposalClient'
 
-describe('ProposalScreen bilingual (JA default / EN toggle / back to JA)', () => {
+describe('ProposalScreen bilingual (EN default / JA toggle / back to EN)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('renders JA labels by default across all three panels', async () => {
+  it('renders EN labels by default across all three panels', async () => {
     render(
       <ProposalStoreProvider>
         <ProposalShell />
@@ -71,38 +71,27 @@ describe('ProposalScreen bilingual (JA default / EN toggle / back to JA)', () =>
     await waitFor(() => expect(getPackages).toHaveBeenCalled())
     await screen.findByText('mock_service_selector_v1')
 
-    // Panel headings (JA default)
-    expect(screen.getByText('入力・世界')).toBeInTheDocument()
-    expect(screen.getByText('サービス提案')).toBeInTheDocument()
-    expect(screen.getByText('コンテンツ提案')).toBeInTheDocument()
-
-    // A section label from each panel + a hyperparameter label from the manifest.
-    expect(screen.getByText('発火シグナル（4つ）')).toBeInTheDocument()
-    expect(screen.getAllByText('パラメータ（編集可）').length).toBeGreaterThanOrEqual(2)
-    expect(screen.getByText('カテゴリ重み')).toBeInTheDocument()
-  })
-
-  it('toggling to EN switches every panel heading/label, and back to JA restores them', async () => {
-    render(
-      <ProposalStoreProvider>
-        <ProposalShell />
-      </ProposalStoreProvider>,
-    )
-    await waitFor(() => expect(getPackages).toHaveBeenCalled())
-    await screen.findByText('mock_service_selector_v1')
-
-    expect(screen.getByText('入力・世界')).toBeInTheDocument()
-
-    fireEvent.click(screen.getByTestId('proposal-lang-toggle-en'))
-
-    expect(screen.queryByText('入力・世界')).not.toBeInTheDocument()
+    // Panel headings (EN default)
     expect(screen.getByText('Input · World')).toBeInTheDocument()
     expect(screen.getByText('Service proposal')).toBeInTheDocument()
     expect(screen.getByText('Content proposal')).toBeInTheDocument()
+
+    // A section label from each panel + a hyperparameter label from the manifest.
     expect(screen.getByText('Trigger signal (4)')).toBeInTheDocument()
     expect(screen.getAllByText('Parameters (editable)').length).toBeGreaterThanOrEqual(2)
     expect(screen.getByText('Category Weights')).toBeInTheDocument()
-    expect(screen.queryByText('カテゴリ重み')).not.toBeInTheDocument()
+  })
+
+  it('toggling to JA switches every panel heading/label, and back to EN restores them', async () => {
+    render(
+      <ProposalStoreProvider>
+        <ProposalShell />
+      </ProposalStoreProvider>,
+    )
+    await waitFor(() => expect(getPackages).toHaveBeenCalled())
+    await screen.findByText('mock_service_selector_v1')
+
+    expect(screen.getByText('Input · World')).toBeInTheDocument()
 
     fireEvent.click(screen.getByTestId('proposal-lang-toggle-ja'))
 
@@ -111,6 +100,17 @@ describe('ProposalScreen bilingual (JA default / EN toggle / back to JA)', () =>
     expect(screen.getByText('サービス提案')).toBeInTheDocument()
     expect(screen.getByText('コンテンツ提案')).toBeInTheDocument()
     expect(screen.getByText('発火シグナル（4つ）')).toBeInTheDocument()
+    expect(screen.getAllByText('パラメータ（編集可）').length).toBeGreaterThanOrEqual(2)
     expect(screen.getByText('カテゴリ重み')).toBeInTheDocument()
+    expect(screen.queryByText('Category Weights')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('proposal-lang-toggle-en'))
+
+    expect(screen.queryByText('入力・世界')).not.toBeInTheDocument()
+    expect(screen.getByText('Input · World')).toBeInTheDocument()
+    expect(screen.getByText('Service proposal')).toBeInTheDocument()
+    expect(screen.getByText('Content proposal')).toBeInTheDocument()
+    expect(screen.getByText('Trigger signal (4)')).toBeInTheDocument()
+    expect(screen.getByText('Category Weights')).toBeInTheDocument()
   })
 })

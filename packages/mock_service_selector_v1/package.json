@@ -26,129 +26,454 @@
     {
       "key": "response_matrix",
       "kind": "matrix",
-      "label": { "ja": "候補応答行列（§5.2）", "en": "Candidate Response Matrix (§5.2)" },
+      "label": {
+        "ja": "候補応答行列（§5.2）",
+        "en": "Candidate Response Matrix (§5.2)"
+      },
       "default": {
         "driving_services": {
-          "music_playlist": { "drowsiness": 0.0, "fatigue": 0.0, "traffic_congested": 0.0, "night": 0.0, "monotony": 0.0, "route": 1.0, "destination": 1.0, "child": 0.0, "group": 0.0, "oshi_registered": 0.5, "oshi_mode": 0.5 },
-          "humming_karaoke": { "drowsiness": 1.0, "fatigue": 1.0, "traffic_congested": 1.0, "night": 1.0, "monotony": 1.0, "route": 1.0, "destination": 1.0, "child": 1.0, "group": 1.0, "oshi_registered": 0.5, "oshi_mode": 0.5 },
-          "call_response_driving": { "drowsiness": 1.0, "fatigue": 1.0, "traffic_congested": 1.0, "night": 1.0, "monotony": 1.0, "route": 0.0, "destination": 0.0, "child": 1.0, "group": 1.0, "oshi_registered": 0.5, "oshi_mode": 0.5 },
-          "quiz": { "drowsiness": 1.0, "fatigue": 1.0, "traffic_congested": 1.0, "night": 1.0, "monotony": 1.0, "route": 0.0, "destination": 0.0, "child": 1.0, "group": 1.0, "oshi_registered": 0.5, "oshi_mode": 0.5 },
-          "ranking_creation": { "drowsiness": 1.0, "fatigue": 1.0, "traffic_congested": 1.0, "night": 1.0, "monotony": 1.0, "route": 0.0, "destination": 0.0, "child": 1.0, "group": 1.0, "oshi_registered": 0.5, "oshi_mode": 0.5 },
-          "radio_style": { "drowsiness": 0.0, "fatigue": 0.0, "traffic_congested": 0.0, "night": 0.0, "monotony": 0.0, "route": 0.0, "destination": 0.0, "child": 0.0, "group": 0.0, "oshi_registered": 1.0, "oshi_mode": 1.0 }
+          "music_playlist": {
+            "drowsiness": 0.0,
+            "fatigue": 0.0,
+            "traffic_congested": 0.0,
+            "night": 0.0,
+            "monotony": 0.0,
+            "route": 1.0,
+            "destination": 1.0,
+            "child": 0.0,
+            "group": 0.0,
+            "oshi_registered": 0.5,
+            "oshi_mode": 0.5
+          },
+          "humming_karaoke": {
+            "drowsiness": 1.0,
+            "fatigue": 1.0,
+            "traffic_congested": 1.0,
+            "night": 1.0,
+            "monotony": 1.0,
+            "route": 1.0,
+            "destination": 1.0,
+            "child": 1.0,
+            "group": 1.0,
+            "oshi_registered": 0.5,
+            "oshi_mode": 0.5
+          },
+          "call_response_driving": {
+            "drowsiness": 1.0,
+            "fatigue": 1.0,
+            "traffic_congested": 1.0,
+            "night": 1.0,
+            "monotony": 1.0,
+            "route": 0.0,
+            "destination": 0.0,
+            "child": 1.0,
+            "group": 1.0,
+            "oshi_registered": 0.5,
+            "oshi_mode": 0.5
+          },
+          "quiz": {
+            "drowsiness": 1.0,
+            "fatigue": 1.0,
+            "traffic_congested": 1.0,
+            "night": 1.0,
+            "monotony": 1.0,
+            "route": 0.0,
+            "destination": 0.0,
+            "child": 1.0,
+            "group": 1.0,
+            "oshi_registered": 0.5,
+            "oshi_mode": 0.5
+          },
+          "ranking_creation": {
+            "drowsiness": 1.0,
+            "fatigue": 1.0,
+            "traffic_congested": 1.0,
+            "night": 1.0,
+            "monotony": 1.0,
+            "route": 0.0,
+            "destination": 0.0,
+            "child": 1.0,
+            "group": 1.0,
+            "oshi_registered": 0.5,
+            "oshi_mode": 0.5
+          },
+          "radio_style": {
+            "drowsiness": 0.0,
+            "fatigue": 0.0,
+            "traffic_congested": 0.0,
+            "night": 0.0,
+            "monotony": 0.0,
+            "route": 0.0,
+            "destination": 0.0,
+            "child": 0.0,
+            "group": 0.0,
+            "oshi_registered": 1.0,
+            "oshi_mode": 1.0
+          }
         },
         "road_type": {
-          "music_playlist": { "highway": 0.0, "local": 0.0, "mountain": 0.5, "parking": 0.0 },
-          "humming_karaoke": { "highway": 1.0, "local": 0.0, "mountain": -0.5, "parking": 0.0 },
-          "call_response_driving": { "highway": 1.0, "local": 0.0, "mountain": -0.5, "parking": 0.0 },
-          "quiz": { "highway": 1.0, "local": 0.0, "mountain": -1.0, "parking": 0.0 },
-          "ranking_creation": { "highway": 1.0, "local": 0.0, "mountain": -1.0, "parking": 0.0 },
-          "radio_style": { "highway": 0.0, "local": 0.0, "mountain": 0.5, "parking": 0.0 }
+          "music_playlist": {
+            "highway": 0.0,
+            "local": 0.0,
+            "mountain": 0.5,
+            "parking": 0.0
+          },
+          "humming_karaoke": {
+            "highway": 1.0,
+            "local": 0.0,
+            "mountain": -0.5,
+            "parking": 0.0
+          },
+          "call_response_driving": {
+            "highway": 1.0,
+            "local": 0.0,
+            "mountain": -0.5,
+            "parking": 0.0
+          },
+          "quiz": {
+            "highway": 1.0,
+            "local": 0.0,
+            "mountain": -1.0,
+            "parking": 0.0
+          },
+          "ranking_creation": {
+            "highway": 1.0,
+            "local": 0.0,
+            "mountain": -1.0,
+            "parking": 0.0
+          },
+          "radio_style": {
+            "highway": 0.0,
+            "local": 0.0,
+            "mountain": 0.5,
+            "parking": 0.0
+          }
         },
         "post_rest_services": {
-          "live_viewing": { "drowsiness": 0.5, "fatigue": 0.5, "route": 0.0, "destination": 0.0, "child": 1.0, "group": 1.0, "oshi_registered": 1.0, "oshi_mode": 1.0 },
-          "stretch_video": { "drowsiness": 1.0, "fatigue": 1.0, "route": 0.0, "destination": 0.0, "child": 0.0, "group": 0.0, "oshi_registered": 0.0, "oshi_mode": 0.0 },
-          "full_karaoke": { "drowsiness": 0.5, "fatigue": 0.5, "route": 0.0, "destination": 0.0, "child": 1.0, "group": 1.0, "oshi_registered": 1.0, "oshi_mode": 1.0 },
-          "call_response_stopped": { "drowsiness": 0.5, "fatigue": 0.5, "route": 0.0, "destination": 0.0, "child": 0.5, "group": 0.5, "oshi_registered": 0.0, "oshi_mode": 0.0 },
-          "oshi_reexperience": { "drowsiness": 0.5, "fatigue": 0.5, "route": 1.0, "destination": 1.0, "child": 0.0, "group": 0.0, "oshi_registered": 1.0, "oshi_mode": 1.0 }
+          "live_viewing": {
+            "drowsiness": 0.5,
+            "fatigue": 0.5,
+            "route": 0.0,
+            "destination": 0.0,
+            "child": 1.0,
+            "group": 1.0,
+            "oshi_registered": 1.0,
+            "oshi_mode": 1.0
+          },
+          "stretch_video": {
+            "drowsiness": 1.0,
+            "fatigue": 1.0,
+            "route": 0.0,
+            "destination": 0.0,
+            "child": 0.0,
+            "group": 0.0,
+            "oshi_registered": 0.0,
+            "oshi_mode": 0.0
+          },
+          "full_karaoke": {
+            "drowsiness": 0.5,
+            "fatigue": 0.5,
+            "route": 0.0,
+            "destination": 0.0,
+            "child": 1.0,
+            "group": 1.0,
+            "oshi_registered": 1.0,
+            "oshi_mode": 1.0
+          },
+          "call_response_stopped": {
+            "drowsiness": 0.5,
+            "fatigue": 0.5,
+            "route": 0.0,
+            "destination": 0.0,
+            "child": 0.5,
+            "group": 0.5,
+            "oshi_registered": 0.0,
+            "oshi_mode": 0.0
+          },
+          "oshi_reexperience": {
+            "drowsiness": 0.5,
+            "fatigue": 0.5,
+            "route": 1.0,
+            "destination": 1.0,
+            "child": 0.0,
+            "group": 0.0,
+            "oshi_registered": 1.0,
+            "oshi_mode": 1.0
+          }
         }
       }
     },
     {
       "key": "category_weights",
       "kind": "table",
-      "label": { "ja": "カテゴリ重み（§6.1）", "en": "Category Weights (§6.1)" },
-      "default": { "Situation": 0.80, "Preference": 0.12, "History": 0.08 }
+      "label": {
+        "ja": "カテゴリ重み（§6.1）",
+        "en": "Category Weights (§6.1)"
+      },
+      "default": {
+        "Situation": 0.8,
+        "Preference": 0.12,
+        "History": 0.08
+      }
     },
     {
       "key": "hierarchy_weights",
       "kind": "matrix",
-      "label": { "ja": "階層重み（§6.1）", "en": "Hierarchy Weights (§6.1)" },
+      "label": {
+        "ja": "階層重み（§6.1）",
+        "en": "Hierarchy Weights (§6.1)"
+      },
       "default": {
         "Situation": {
-          "driver_state": { "share": 0.50, "leaves": {
-            "drowsiness": { "share": 0.55, "feature_id": "drowsiness_level" },
-            "fatigue": { "share": 0.45, "feature_id": "fatigue_level" }
-          }},
-          "driving_environment": { "share": 0.35, "leaves": {
-            "traffic": { "share": 0.20, "feature_id": "traffic_state" },
-            "road": { "share": 0.20, "feature_id": "road_type" },
-            "night": { "share": 0.20, "feature_id": "night_state" },
-            "monotony": { "share": 0.40, "feature_id": "monotony_level" }
-          }},
-          "route_context": { "share": 0.075, "leaves": {
-            "route": { "share": 0.55, "feature_id": "route_tags" },
-            "destination": { "share": 0.45, "feature_id": "destination_tags" }
-          }},
-          "passenger_composition": { "share": 0.075, "leaves": {
-            "child": { "share": 0.65, "feature_id": "child_present" },
-            "multiple": { "share": 0.35, "feature_id": "multiple_passengers" }
-          }}
+          "driver_state": {
+            "share": 0.5,
+            "leaves": {
+              "drowsiness": {
+                "share": 0.55,
+                "feature_id": "drowsiness_level"
+              },
+              "fatigue": {
+                "share": 0.45,
+                "feature_id": "fatigue_level"
+              }
+            }
+          },
+          "driving_environment": {
+            "share": 0.35,
+            "leaves": {
+              "traffic": {
+                "share": 0.2,
+                "feature_id": "traffic_state"
+              },
+              "road": {
+                "share": 0.2,
+                "feature_id": "road_type"
+              },
+              "night": {
+                "share": 0.2,
+                "feature_id": "night_state"
+              },
+              "monotony": {
+                "share": 0.4,
+                "feature_id": "monotony_level"
+              }
+            }
+          },
+          "route_context": {
+            "share": 0.075,
+            "leaves": {
+              "route": {
+                "share": 0.55,
+                "feature_id": "route_tags"
+              },
+              "destination": {
+                "share": 0.45,
+                "feature_id": "destination_tags"
+              }
+            }
+          },
+          "passenger_composition": {
+            "share": 0.075,
+            "leaves": {
+              "child": {
+                "share": 0.65,
+                "feature_id": "child_present"
+              },
+              "multiple": {
+                "share": 0.35,
+                "feature_id": "multiple_passengers"
+              }
+            }
+          }
         },
         "Preference": {
-          "oshi_preference": { "share": 0.25, "leaves": {
-            "oshi_registered": { "share": 0.35, "feature_id": "oshi_registered" },
-            "oshi_mode": { "share": 0.65, "feature_id": "oshi_mode" }
-          }},
-          "novelty": { "share": 0.10, "leaves": {
-            "service_recency": { "share": 1.00, "feature_id": "service_recency_state" }
-          }},
-          "overall_usage": { "share": 0.25, "leaves": {
-            "overall_usage": { "share": 1.00, "feature_id": "service_usage_level" }
-          }},
-          "scene_preference": { "share": 0.40, "leaves": {
-            "scene_usage": { "share": 1.00, "feature_id": "scene_service_usage_level" }
-          }}
+          "oshi_preference": {
+            "share": 0.25,
+            "leaves": {
+              "oshi_registered": {
+                "share": 0.35,
+                "feature_id": "oshi_registered"
+              },
+              "oshi_mode": {
+                "share": 0.65,
+                "feature_id": "oshi_mode"
+              }
+            }
+          },
+          "novelty": {
+            "share": 0.1,
+            "leaves": {
+              "service_recency": {
+                "share": 1.0,
+                "feature_id": "service_recency_state"
+              }
+            }
+          },
+          "overall_usage": {
+            "share": 0.25,
+            "leaves": {
+              "overall_usage": {
+                "share": 1.0,
+                "feature_id": "service_usage_level"
+              }
+            }
+          },
+          "scene_preference": {
+            "share": 0.4,
+            "leaves": {
+              "scene_usage": {
+                "share": 1.0,
+                "feature_id": "scene_service_usage_level"
+              }
+            }
+          }
         },
         "History": {
-          "proposal_acceptance": { "share": 0.25, "leaves": {
-            "acceptance": { "share": 1.00, "feature_id": "service_proposal_acceptance_rate" }
-          }},
-          "recovery": { "share": 0.75, "leaves": {
-            "recovery": { "share": 1.00, "feature_id": "service_recovery_rate" }
-          }}
+          "proposal_acceptance": {
+            "share": 0.25,
+            "leaves": {
+              "acceptance": {
+                "share": 1.0,
+                "feature_id": "service_proposal_acceptance_rate"
+              }
+            }
+          },
+          "recovery": {
+            "share": 0.75,
+            "leaves": {
+              "recovery": {
+                "share": 1.0,
+                "feature_id": "service_recovery_rate"
+              }
+            }
+          }
         }
       }
     },
     {
       "key": "purpose_multipliers",
       "kind": "table",
-      "label": { "ja": "目的別乗数（§6.2）", "en": "Purpose Multipliers (§6.2)" },
+      "label": {
+        "ja": "目的別乗数（§6.2）",
+        "en": "Purpose Multipliers (§6.2)"
+      },
       "default": {
-        "driver_state": { "rest_recommended": 1.40, "inattentive_driving_prevention_recovery": 1.50, "route_music": 1.20, "child_passenger_experience": 1.20 },
-        "driving_environment": { "rest_recommended": 1.10, "inattentive_driving_prevention_recovery": 1.40, "route_music": 1.00, "child_passenger_experience": 1.00 },
-        "route_context": { "rest_recommended": 1.00, "inattentive_driving_prevention_recovery": 0.75, "route_music": 2.00, "child_passenger_experience": 0.75 },
-        "passenger_composition": { "rest_recommended": 1.00, "inattentive_driving_prevention_recovery": 0.85, "route_music": 0.80, "child_passenger_experience": 2.00 },
-        "oshi_preference": { "rest_recommended": 1.00, "inattentive_driving_prevention_recovery": 0.80, "route_music": 1.10, "child_passenger_experience": 0.75 },
-        "novelty": { "rest_recommended": 0.80, "inattentive_driving_prevention_recovery": 0.80, "route_music": 0.80, "child_passenger_experience": 0.80 },
-        "overall_usage": { "rest_recommended": 0.90, "inattentive_driving_prevention_recovery": 0.90, "route_music": 0.90, "child_passenger_experience": 1.00 },
-        "scene_preference": { "rest_recommended": 1.00, "inattentive_driving_prevention_recovery": 1.10, "route_music": 1.10, "child_passenger_experience": 1.20 },
-        "proposal_acceptance": { "rest_recommended": 1.00, "inattentive_driving_prevention_recovery": 1.00, "route_music": 1.00, "child_passenger_experience": 1.00 },
-        "recovery": { "rest_recommended": 1.30, "inattentive_driving_prevention_recovery": 1.25, "route_music": 1.00, "child_passenger_experience": 1.00 }
+        "driver_state": {
+          "rest_recommended": 1.4,
+          "inattentive_driving_prevention_recovery": 1.5,
+          "route_music": 1.2,
+          "child_passenger_experience": 1.2
+        },
+        "driving_environment": {
+          "rest_recommended": 1.1,
+          "inattentive_driving_prevention_recovery": 1.4,
+          "route_music": 1.0,
+          "child_passenger_experience": 1.0
+        },
+        "route_context": {
+          "rest_recommended": 1.0,
+          "inattentive_driving_prevention_recovery": 0.75,
+          "route_music": 2.0,
+          "child_passenger_experience": 0.75
+        },
+        "passenger_composition": {
+          "rest_recommended": 1.0,
+          "inattentive_driving_prevention_recovery": 0.85,
+          "route_music": 0.8,
+          "child_passenger_experience": 2.0
+        },
+        "oshi_preference": {
+          "rest_recommended": 1.0,
+          "inattentive_driving_prevention_recovery": 0.8,
+          "route_music": 1.1,
+          "child_passenger_experience": 0.75
+        },
+        "novelty": {
+          "rest_recommended": 0.8,
+          "inattentive_driving_prevention_recovery": 0.8,
+          "route_music": 0.8,
+          "child_passenger_experience": 0.8
+        },
+        "overall_usage": {
+          "rest_recommended": 0.9,
+          "inattentive_driving_prevention_recovery": 0.9,
+          "route_music": 0.9,
+          "child_passenger_experience": 1.0
+        },
+        "scene_preference": {
+          "rest_recommended": 1.0,
+          "inattentive_driving_prevention_recovery": 1.1,
+          "route_music": 1.1,
+          "child_passenger_experience": 1.2
+        },
+        "proposal_acceptance": {
+          "rest_recommended": 1.0,
+          "inattentive_driving_prevention_recovery": 1.0,
+          "route_music": 1.0,
+          "child_passenger_experience": 1.0
+        },
+        "recovery": {
+          "rest_recommended": 1.3,
+          "inattentive_driving_prevention_recovery": 1.25,
+          "route_music": 1.0,
+          "child_passenger_experience": 1.0
+        }
       }
     },
     {
       "key": "evidence_normalization",
       "kind": "table",
-      "label": { "ja": "証拠正規化（§5.7）", "en": "Evidence Normalization (§5.7)" },
+      "label": {
+        "ja": "証拠正規化（§5.7）",
+        "en": "Evidence Normalization (§5.7)"
+      },
       "default": {
-        "gamma_drowsiness": 1.0, "gamma_fatigue": 1.0, "gamma_monotony": 1.0,
-        "route_tag_saturation": 2, "destination_tag_saturation": 2,
-        "monotony_medium_min": 34, "monotony_high_min": 67,
-        "usage_ordinal_map": { "never": -1.0, "low": -0.5, "medium": 0.25, "high": 1.0 },
-        "recency_ordinal_map": { "recent": 0.0, "long_unused": 0.5, "never": 1.0 },
-        "response_anchor_map": { "strong_negative": -1.0, "mild_negative": -0.5, "neutral": 0.0, "mild_positive": 0.5, "strong_positive": 1.0 }
+        "gamma_drowsiness": 1.0,
+        "gamma_fatigue": 1.0,
+        "gamma_monotony": 1.0,
+        "route_tag_saturation": 2,
+        "destination_tag_saturation": 2,
+        "monotony_medium_min": 34,
+        "monotony_high_min": 67,
+        "usage_ordinal_map": {
+          "never": -1.0,
+          "low": -0.5,
+          "medium": 0.25,
+          "high": 1.0
+        },
+        "recency_ordinal_map": {
+          "recent": 0.0,
+          "long_unused": 0.5,
+          "never": 1.0
+        },
+        "response_anchor_map": {
+          "strong_negative": -1.0,
+          "mild_negative": -0.5,
+          "neutral": 0.0,
+          "mild_positive": 0.5,
+          "strong_positive": 1.0
+        }
       }
     },
     {
       "key": "safety_dominance",
       "kind": "table",
-      "label": { "ja": "安全支配保証（§6.4）", "en": "Safety Dominance Guarantee (§6.4)" },
-      "default": { "material_safety_gap": 1.00, "safety_share_warning_floor": 0.40 }
+      "label": {
+        "ja": "安全支配保証（§6.4）",
+        "en": "Safety Dominance Guarantee (§6.4)"
+      },
+      "default": {
+        "material_safety_gap": 1.0,
+        "safety_share_warning_floor": 0.4
+      }
     },
     {
       "key": "confidence_shrinkage",
       "kind": "table",
-      "label": { "ja": "信頼度縮小（将来拡張・予約）", "en": "Confidence Shrinkage (reserved future extension)" },
+      "label": {
+        "ja": "信頼度縮小（将来拡張・予約）",
+        "en": "Confidence Shrinkage (reserved future extension)"
+      },
       "default": {
         "enabled": false,
         "min_sample_count": 10,
@@ -159,14 +484,21 @@
     {
       "key": "parameter_set_version",
       "kind": "string",
-      "label": { "ja": "パラメータセット版", "en": "Parameter Set Version" },
+      "label": {
+        "ja": "パラメータセット版",
+        "en": "Parameter Set Version"
+      },
       "default": "1.0.0"
     },
     {
       "key": "formula_version",
       "kind": "string",
-      "label": { "ja": "計算式版", "en": "Formula Version" },
+      "label": {
+        "ja": "計算式版",
+        "en": "Formula Version"
+      },
       "default": "1.0.0"
     }
-  ]
+  ],
+  "hidden": true
 }
