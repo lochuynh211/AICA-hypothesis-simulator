@@ -89,14 +89,14 @@
 
 ### Tests first
 
-- [ ] T022 [P] [US3] Write failing quick-check tests in `app/api/tests/proposal/test_p7_quick_check.py`: `create` with `mode=quick_check` and a typed world reaches `content_selected` in one response (rank-1 service auto-selected + content dispatched); `create` with `mode=interactive` stops at `service_selected` (FR-011–FR-013).
-- [ ] T023 [P] [US3] Add failing recompute-quick-check + parity + no-probabilistic tests to `test_p7_quick_check.py`: a `quick_check` recompute reaches `content_selected`; for one frozen snapshot the quick-check auto rank-1 service equals the interactive rank-1 service (FR-014, SC-006); assert no acceptance/recovery probability field appears anywhere and post-rest values come only from explicit input (FR-009, SC-007); quick-check with no eligible service stays at `service_selected` (no fabricated content).
+- [x] T022 [P] [US3] Write failing quick-check tests in `app/api/tests/proposal/test_p7_quick_check.py`: `create` with `mode=quick_check` and a typed world reaches `content_selected` in one response (rank-1 service auto-selected + content dispatched); `create` with `mode=interactive` stops at `service_selected` (FR-011–FR-013).
+- [x] T023 [P] [US3] Add failing recompute-quick-check + parity + no-probabilistic tests to `test_p7_quick_check.py`: a `quick_check` recompute reaches `content_selected`; for one frozen snapshot the quick-check auto rank-1 service equals the interactive rank-1 service (FR-014, SC-006); assert no acceptance/recovery probability field appears anywhere and post-rest values come only from explicit input (FR-009, SC-007); quick-check with no eligible service stays at `service_selected` (no fabricated content).
 
 ### Implementation
 
-- [ ] T024 [US3] Add the quick-check branch to `create_proposal_run` in `app/api/aica_api/routers/proposal.py`: after STEP 1 yields a rank-1 service, when `mode == quick_check` call `_dispatch_content_for_service` for that service and advance to `content_selected` (append `CONTENT_SELECTED`/`ALGORITHM_ERROR`, update state) in the same response; persist `world` + `mode` on create.
-- [ ] T025 [US3] Add the same quick-check content dispatch to the recompute endpoint (`T017`) so a `quick_check` recompute reaches `content_selected` via `_dispatch_content_for_service`.
-- [ ] T026 [US3] Run `cd app/api && uv run pytest tests/proposal/test_p7_quick_check.py -q` until green; then `uv run pytest -q`.
+- [x] T024 [US3] Add the quick-check branch to `create_proposal_run` in `app/api/aica_api/routers/proposal.py`: after STEP 1 yields a rank-1 service, when `mode == quick_check` call `_dispatch_content_for_service` for that service and advance to `content_selected` (append `CONTENT_SELECTED`/`ALGORITHM_ERROR`, update state) in the same response; persist `world` + `mode` on create.
+- [x] T025 [US3] Add the same quick-check content dispatch to the recompute endpoint (`T017`) so a `quick_check` recompute reaches `content_selected` via `_dispatch_content_for_service`.
+- [x] T026 [US3] Run `cd app/api && uv run pytest tests/proposal/test_p7_quick_check.py -q` until green; then `uv run pytest -q`.
 
 **Checkpoint**: quick-check works on both create and recompute with proven parity.
 

@@ -1024,6 +1024,22 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
         mode=body.mode,
         runs_dir=settings.proposal_runs_dir,
     )
+
+    # US3/T024 (FR-011-FR-013): quick_check auto-dispatches content for the
+    # rank-1 service in the SAME response, whenever STEP 1 actually yielded
+    # one. Interactive mode (and quick_check with no rank-1, e.g. zero
+    # eligible/an errored service dispatch) is untouched -- it stops here.
+    if body.mode == ProposalRunMode.quick_check and selected_service_id is not None:
+        content_parameters = dict(content_pkg.parameters)
+        content_hyperparameters = {hp.key: hp.default for hp in content_pkg.hyperparameters}
+        run_log = _apply_quick_check_content(
+            run_log.run_id,
+            run_log,
+            ServiceId(selected_service_id),
+            content_parameters,
+            content_hyperparameters,
+        )
+
     return run_log
 
 
@@ -1113,6 +1129,114 @@ def _dispatch_content_for_service(
         evidence_input_snapshot=evidence_input_snapshot,
     )
     return evidence, evidence_input_snapshot
+
+
+# ---------------------------------------------------------------------------
+# _apply_quick_check_content — T024/T025 (P7 Unit D, US3)
+# ---------------------------------------------------------------------------
+
+
+def _apply_quick_check_content(
+    run_id: str,
+    run_log: ProposalRunLog,
+    selected_service_id: ServiceId,
+    content_parameters: dict,
+    content_hyperparameters: dict,
+) -> ProposalRunLog:
+    """Quick-check-only: dispatch content for the auto-selected rank-1
+    service via ``_dispatch_content_for_service`` (the SAME helper
+    ``select_service`` uses — FR-014/SC-006 content parity) and advance the
+    run to ``content_selected`` in the SAME call. Shared by quick-check
+    create (T024) and quick-check recompute (T025).
+
+    Mirrors ``select_service``'s STEP-2 tail (content-package-support gate,
+    event + status + setup_snapshot bookkeeping) with one difference:
+    quick-check is AUTOMATIC (the service was never reviewer-chosen), so an
+    unsupported rank-1 can never raise an HTTPException the way
+    ``select_service`` does for a user-supplied service — it is instead
+    recorded as an ``ALGORITHM_ERROR`` event (step=content,
+    category=unsupported_service) with no fabricated plan, exactly like a
+    zero-eligible service never fabricates a candidate (Constitution
+    Principle V).
+
+    ``journey_state.active_service_id`` is left untouched here — both
+    ``create_proposal_run`` and ``recompute_proposal_run`` already set it to
+    this same rank-1 service unconditionally (interactive or quick_check)
+    before this helper is ever called, so there is no mode-conditioned
+    ``active_service_id`` semantics to introduce (research.md / P7 brief:
+    the data-model.md interactive-vs-None split is a doc reconciliation
+    deferred to Step 5, not implemented here).
+    """
+    registry = _get_registry()
+    content_pkg = registry.get(run_log.content_package_id) if run_log.content_package_id else None
+    at = _now_iso()
+
+    if content_pkg is None or selected_service_id not in content_pkg.supported_services:
+        event = DiscreteEvent(
+            event_type=DiscreteEventType.ALGORITHM_ERROR,
+            at=at,
+            payload={
+                "step": "content",
+                "category": "unsupported_service",
+                "message": (
+                    f"Content package {run_log.content_package_id!r} does not "
+                    f"support service {selected_service_id.value!r}"
+                ),
+            },
+        )
+        prm.append_event(run_id, event, settings.proposal_runs_dir)
+        return prm.update_state(run_id, settings.proposal_runs_dir, status=ProposalRunStatus.error)
+
+    evidence, _evidence_input_snapshot = _dispatch_content_for_service(
+        run_log, selected_service_id, content_parameters, content_hyperparameters
+    )
+
+    if evidence.error is not None:
+        event = DiscreteEvent(
+            event_type=DiscreteEventType.ALGORITHM_ERROR,
+            at=at,
+            payload={
+                "step": "content",
+                "category": evidence.error.category,
+                "message": evidence.error.message,
+            },
+        )
+        new_status = ProposalRunStatus.error
+    else:
+        event = DiscreteEvent(
+            event_type=DiscreteEventType.CONTENT_SELECTED,
+            at=at,
+            payload={"selected_service_id": selected_service_id.value},
+        )
+        new_status = ProposalRunStatus.content_selected
+
+    prm.append_event(run_id, event, settings.proposal_runs_dir)
+    prm.append_evidence(run_id, evidence, settings.proposal_runs_dir)
+
+    # Mirrors select_service's FIX 2: re-freeze the persisted
+    # content_parameter_set_version (+ content_contract_version) to what was
+    # ACTUALLY used for this content dispatch (FR-011/SC-008).
+    updated_setup_snapshot = None
+    if run_log.setup_snapshot is not None:
+        used_content_parameter_set_version = content_hyperparameters.get(
+            "parameter_set_version", content_pkg.version
+        )
+        updated_setup_snapshot = run_log.setup_snapshot.model_copy(
+            update={
+                "content_package_id": content_pkg.id,
+                "content_contract_version": content_pkg.contract_version,
+                "content_parameter_set_version": used_content_parameter_set_version,
+            }
+        )
+
+    return prm.update_state(
+        run_id,
+        settings.proposal_runs_dir,
+        status=new_status,
+        content_parameters=content_parameters,
+        content_hyperparameters=content_hyperparameters,
+        setup_snapshot=updated_setup_snapshot,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1315,11 +1439,14 @@ def recompute_proposal_run(run_id: str, body: RecomputeRequest) -> ProposalRunLo
     recorded as an ``ALGORITHM_ERROR`` event + ``status=error`` and returned
     200 (Constitution Principle V / FR-019), exactly like ``create_proposal_run``.
 
-    US1 (interactive) scope only: stops at the service decision (
-    ``service_selected``/``error``/``NO_ELIGIBLE_CANDIDATE``). Quick-check's
-    same-call content auto-dispatch on recompute is US3/T025 -- NOT
-    implemented here (this endpoint never calls
-    ``_dispatch_content_for_service``).
+    Interactive-mode runs stop at the service decision (``service_selected``/
+    ``error``/``NO_ELIGIBLE_CANDIDATE``). US3/T025: a ``quick_check`` run
+    additionally dispatches content for the rank-1 service in this SAME
+    call via ``_apply_quick_check_content`` (which itself calls the shared
+    ``_dispatch_content_for_service`` -- FR-012/FR-014), advancing to
+    ``content_selected``/``error`` -- never when there is no rank-1 (zero
+    eligible or a service-selector error leaves the run at
+    ``service_selected``/``error`` with no content fabricated).
     """
     run_log = prm.get_run(run_id, settings.proposal_runs_dir)
     if run_log is None:
@@ -1586,6 +1713,24 @@ def recompute_proposal_run(run_id: str, body: RecomputeRequest) -> ProposalRunLo
         opportunity_history=new_opportunity_history,
         setup_snapshot_history=new_setup_snapshot_history,
     )
+
+    # US3/T025 (FR-012/FR-014): a quick_check run additionally dispatches
+    # content for the rank-1 service in this SAME recompute response,
+    # whenever this recompute actually yielded one (interactive runs, and
+    # quick_check with no rank-1, are untouched -- they stop above).
+    if run_log.mode == ProposalRunMode.quick_check and selected_service_id is not None:
+        content_parameters_for_dispatch = body.content_parameters or dict(content_pkg.parameters)
+        content_hyperparameters_for_dispatch = body.content_hyperparameters or {
+            hp.key: hp.default for hp in content_pkg.hyperparameters
+        }
+        run_log = _apply_quick_check_content(
+            run_id,
+            run_log,
+            selected_service_id,
+            content_parameters_for_dispatch,
+            content_hyperparameters_for_dispatch,
+        )
+
     return run_log
 
 
