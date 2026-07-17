@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
 import { ProposalStoreProvider, useProposalStore } from '../src/state/proposalStore'
@@ -497,10 +497,55 @@ describe('ServiceProposalPanel', () => {
     expect(screen.getByTestId('dominance-status')).toBeInTheDocument()
     expect(screen.getByTestId('safety-share')).toHaveTextContent('82.3%')
 
-    // All 17 feature rows present (queried regardless of <details> open state).
+    // All 17 feature rows present once expanded past the top-5 collapse.
+    fireEvent.click(within(explain).getByTestId('trace-show-more'))
     for (const featureId of FEATURE_IDS) {
       expect(screen.getByTestId(`explain-row-${featureId}`)).toBeInTheDocument()
     }
+  })
+
+  it('feature trace: top-5 by |contribution|, expandable, no provenance/status columns', async () => {
+    const realShapedRunLog = runLogWithCandidates()
+    const [firstCandidate] = realShapedRunLog.evidence[0].output.ranked_candidates
+    firstCandidate.feature_contributions = fullFeatureContributions()
+    firstCandidate.situation_fit = 0.5
+    firstCandidate.preference_fit = 0.15
+    firstCandidate.history_fit = 0.072349
+    firstCandidate.strongest_support = { feature_id: 'drowsiness_level', contribution: 0.2 }
+    firstCandidate.strongest_oppose = { feature_id: 'oshi_mode', contribution: -0.05 }
+    firstCandidate.dominance = {
+      status: 'default_dominance_preserved',
+      w_d: 0.823048,
+      w_l: 0.176952,
+      required_gap: 0.429991,
+      material_safety_gap: 1.0,
+      safety_share: 0.823048,
+      safety_share_warning: false,
+    }
+    realShapedRunLog.evidence[0].output.dominance = firstCandidate.dominance
+    realShapedRunLog.evidence[0].output.effective_weights = { drowsiness_level: 0.254551 }
+    realShapedRunLog.evidence[0].output.resolved_config_versions = { contract_version: '1.0.0' }
+
+    vi.mocked(createRun).mockResolvedValue(realShapedRunLog as never)
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('mock_service_selector_v1')
+    fireEvent.click(screen.getByTestId('service-run-button'))
+    await waitFor(() => expect(createRun).toHaveBeenCalled())
+
+    const table = await screen.findByTestId('service-explainability-table')
+    // Provenance/Status headers are gone
+    expect(within(table).queryByText('Provenance')).toBeNull()
+    expect(within(table).queryByText('Status')).toBeNull()
+    // Only 5 data rows visible before expanding
+    const openTrace = within(table).getByTestId('trace-show-more')
+    const bodyBefore = within(table).getAllByTestId(/^explain-row-/)
+    expect(bodyBefore.length).toBe(5)
+    fireEvent.click(openTrace)
+    expect(within(table).getAllByTestId(/^explain-row-/).length).toBe(17)
   })
 
   it('renders the lean fallback for a mock-shaped candidate — no explainability section, no crash', async () => {

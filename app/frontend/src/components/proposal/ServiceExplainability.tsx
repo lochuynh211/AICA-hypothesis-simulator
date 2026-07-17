@@ -19,6 +19,7 @@
  * certification (see `proposal_service_panel.test.tsx`'s
  * "no forbidden phrasing" assertion).
  */
+import { useState } from 'react'
 import type { UiLanguage } from '../../i18n/t'
 import { t } from '../../i18n/t'
 import type { RankedCandidate } from '../../api/proposalClient'
@@ -45,8 +46,6 @@ const LABELS = {
   colR: { ja: 'r=e·a', en: 'r=e·a' },
   colW: { ja: 'w（重み）', en: 'w (weight)' },
   colK: { ja: 'k=r×w', en: 'k=r×w' },
-  colProvenance: { ja: '根拠', en: 'Provenance' },
-  colStatus: { ja: '状態', en: 'Status' },
 }
 
 function fmt(n: number | null | undefined): string {
@@ -80,12 +79,21 @@ export function hasFeatureTrace(candidate: RankedCandidate): boolean {
 }
 
 export default function ServiceExplainability({ candidate, lang }: ServiceExplainabilityProps) {
+  const [traceExpanded, setTraceExpanded] = useState(false)
+
   if (!hasExplainability(candidate)) return null
 
   const hasSubtotals =
     candidate.situation_fit != null || candidate.preference_fit != null || candidate.history_fit != null
   const dominance = candidate.dominance
   const showFeatureTrace = hasFeatureTrace(candidate)
+
+  const TOP_N = 5
+  const sortedContribs = [...candidate.feature_contributions].sort(
+    (a, b) => Math.abs(b.contribution) - Math.abs(a.contribution),
+  )
+  const visibleContribs = traceExpanded ? sortedContribs : sortedContribs.slice(0, TOP_N)
+  const hiddenCount = sortedContribs.length - visibleContribs.length
 
   return (
     <div data-testid="service-explainability" style={{ borderTop: '1px solid #e5e7eb', padding: '8px 10px' }}>
@@ -170,8 +178,6 @@ export default function ServiceExplainability({ candidate, lang }: ServiceExplai
                     LABELS.colR,
                     LABELS.colW,
                     LABELS.colK,
-                    LABELS.colProvenance,
-                    LABELS.colStatus,
                   ].map((label, idx) => (
                     <th key={idx} style={thStyle}>
                       {t(label, lang)}
@@ -180,22 +186,47 @@ export default function ServiceExplainability({ candidate, lang }: ServiceExplai
                 </tr>
               </thead>
               <tbody>
-                {candidate.feature_contributions.map((fc) => (
-                  <tr key={fc.feature_id} data-testid={`explain-row-${fc.feature_id}`}>
-                    <td style={tdStyle}>{fc.feature_id}</td>
-                    <td style={tdStyleMono}>{fc.raw_value ?? fc.feature_value}</td>
-                    <td style={tdStyleMono}>{fmt(fc.normalized_evidence)}</td>
-                    <td style={tdStyleMono}>{fmt(fc.response_coefficient)}</td>
-                    <td style={tdStyleMono}>{fmt(fc.normalized_feature_response)}</td>
-                    <td style={tdStyleMono}>{fmt(fc.effective_weight ?? fc.weight)}</td>
-                    <td style={tdStyleMono}>{fmt(fc.contribution)}</td>
-                    <td style={tdStyle}>{fc.response_provenance ?? '—'}</td>
-                    <td style={tdStyle}>{fc.status ?? '—'}</td>
-                  </tr>
-                ))}
+                {visibleContribs.map((fc) => {
+                  const muted = fc.status === 'missing' || fc.status === 'neutral'
+                  return (
+                    <tr
+                      key={fc.feature_id}
+                      data-testid={`explain-row-${fc.feature_id}`}
+                      style={muted ? mutedRowStyle : undefined}
+                    >
+                      <td style={tdStyle}>{fc.feature_id}</td>
+                      <td style={tdStyleMono}>{fc.raw_value ?? fc.feature_value}</td>
+                      <td style={tdStyleMono}>{fmt(fc.normalized_evidence)}</td>
+                      <td style={tdStyleMono}>{fmt(fc.response_coefficient)}</td>
+                      <td style={tdStyleMono}>{fmt(fc.normalized_feature_response)}</td>
+                      <td style={tdStyleMono}>{fmt(fc.effective_weight ?? fc.weight)}</td>
+                      <td style={tdStyleMono}>{fmt(fc.contribution)}</td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
+          {(hiddenCount > 0 || traceExpanded) && (
+            <button
+              type="button"
+              data-testid="trace-show-more"
+              onClick={() => setTraceExpanded((v) => !v)}
+              style={{
+                margin: '6px 0',
+                fontSize: '0.76em',
+                color: '#1d4ed8',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+              }}
+            >
+              {traceExpanded
+                ? t({ ja: '折りたたむ', en: 'Show fewer' }, lang)
+                : t({ ja: `他 ${hiddenCount} 件を表示`, en: `Show ${hiddenCount} more` }, lang)}
+            </button>
+          )}
         </details>
       )}
     </div>
@@ -227,4 +258,10 @@ const tdStyleMono: React.CSSProperties = {
   textAlign: 'right',
   borderBottom: '1px solid #f1f5f9',
   fontFamily: 'monospace',
+}
+
+const mutedRowStyle: React.CSSProperties = {
+  filter: 'blur(1.5px)',
+  opacity: 0.45,
+  pointerEvents: 'none',
 }
