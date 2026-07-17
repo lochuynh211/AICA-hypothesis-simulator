@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
 import { ProposalStoreProvider, useProposalStore } from '../src/state/proposalStore'
@@ -804,6 +804,55 @@ describe('ServiceProposalPanel', () => {
     await waitFor(() => expect(createRun).toHaveBeenCalled())
     const body = vi.mocked(createRun).mock.calls[0][0]
     expect(body.mode).toBe('interactive')
+  })
+
+  // Task 9 — debounced auto-recompute: once a run exists, editing
+  // max_candidates (top_k) re-runs STEP 1 automatically after a ~400ms
+  // debounce, without a reviewer click on Run.
+  it('editing max_candidates after a run triggers exactly one debounced STEP-1 re-run', async () => {
+    vi.mocked(createRun).mockResolvedValue(runLogWithCandidates() as never)
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('mock_service_selector_v1')
+    fireEvent.click(screen.getByTestId('service-run-button'))
+    await waitFor(() => expect(createRun).toHaveBeenCalledTimes(1))
+    await screen.findByText('live_viewing')
+
+    vi.useFakeTimers()
+    try {
+      vi.mocked(createRun).mockClear()
+      fireEvent.change(screen.getByLabelText('max_candidates'), { target: { value: '2' } })
+      expect(createRun).not.toHaveBeenCalled() // debounced, not yet
+      await act(async () => {
+        vi.advanceTimersByTime(450)
+      })
+      expect(createRun).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  // Task 9 — the initial run (whether from the Run button or autoInit) must
+  // not itself be mistaken for an edit and spuriously trigger a recompute.
+  it('the initial run alone does not trigger an auto-recompute', async () => {
+    vi.mocked(createRun).mockResolvedValue(runLogWithCandidates() as never)
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('mock_service_selector_v1')
+    fireEvent.click(screen.getByTestId('service-run-button'))
+    await waitFor(() => expect(createRun).toHaveBeenCalledTimes(1))
+    await screen.findByText('live_viewing')
+
+    // No edit performed — wait past the debounce window (real timers) and
+    // confirm no second createRun call happened.
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    expect(createRun).toHaveBeenCalledTimes(1)
   })
 })
 

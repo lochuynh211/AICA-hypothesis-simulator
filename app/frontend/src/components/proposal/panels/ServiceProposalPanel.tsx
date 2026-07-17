@@ -245,6 +245,38 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoInit, servicePackages, contentPackages])
 
+  // Task 9 — debounced auto-recompute: once a run exists, editing
+  // max_candidates (manifest key `top_k`) re-runs STEP 1 automatically
+  // ~400ms after the edit, without the reviewer clicking Run again.
+  const topKOverride = state.serviceParameterOverrides['top_k']
+  const didInitialRun = useRef(false)
+
+  // Marks the initial run as "seen" the moment a runLog first appears —
+  // BEFORE any top_k edit — so the debounce effect below (keyed only on
+  // topKOverride, which does NOT change merely because a run was created)
+  // never mistakes the reviewer's first edit for the initial/autoInit run.
+  useEffect(() => {
+    if (state.runLog) didInitialRun.current = true
+  }, [state.runLog])
+
+  useEffect(() => {
+    // Only recompute for edits AFTER the first run exists; skip while no run
+    // has happened yet, and skip while a run is already in flight.
+    if (!state.runLog) return
+    if (!didInitialRun.current) {
+      didInitialRun.current = true
+      return
+    }
+    if (running) return
+    const contentPackageId = state.contentPackageId ?? contentPackages[0]?.id
+    if (!manifest || !contentPackageId) return
+    const handle = setTimeout(() => {
+      void runWith(state.world, manifest.id, contentPackageId)
+    }, 400)
+    return () => clearTimeout(handle)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topKOverride])
+
   /** STEP 2 with an explicit runId (auto-init passes the just-created run's id
    * directly, avoiding the async `state.runLog` update race). */
   async function chooseWith(runId: string, serviceId: string) {
