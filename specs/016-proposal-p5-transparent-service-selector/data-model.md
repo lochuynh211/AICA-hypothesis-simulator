@@ -19,7 +19,8 @@ New optional §14 fields:
 | `raw_value` | `str \| float \| int \| None` | `x_i` world snapshot / candidate-map entry |
 | `normalization_function` | `str \| None` | e.g. `"(x/100)^gamma"`, `"2*rate/100-1"`, `"ordinal_map"` |
 | `normalized_evidence` | `float \| None` | `e_i` ∈ `[0,1]` or `[−1,+1]` |
-| `response_provenance` | `str \| None` | `cdc_su_explicit` / `service_definition` / `normalized_context_hypothesis` / `rest_action_hypothesis` / `post_rest_hypothesis` / `cdc_su_direct_candidate_feature` / `neutral_source_silent` / `customer_override` / `confidence_shrinkage_v1` |
+| `response_provenance` | `str \| None` | `cdc_su_explicit` / `service_definition` / `normalized_context_hypothesis` / `rest_action_hypothesis` / `post_rest_hypothesis` / `cdc_su_direct_candidate_feature` / `neutral_source_silent` / `confidence_shrinkage_v1` |
+| `customer_override` | `float \| None` | the reviewer-entered response coefficient when this cell was overridden (algorithm §4.2: the cell **retains its original `response_provenance`** AND carries `customer_override` with the changed value — override is a separate field, not a provenance value) |
 | `normalized_feature_response` | `float \| None` | `r_i = clamp(e_i·a_i, −1, +1)` |
 | `hierarchy_path` | `str \| None` | e.g. `"Situation/Driver state/drowsiness"` |
 | `base_weight` | `float \| None` | pre-multiplier flattened weight |

@@ -398,8 +398,11 @@ configured rates, not reliable empirical estimates or clinical claims.
 > fields (`service_proposal_acceptance_confidence` /
 > `service_recovery_confidence`) — `available_but_not_used` in the baseline
 > (§5.6) — are brought forward as an **opt-in, off-by-default** extension,
-> mirroring the content selector's `genre_affinity_v1`. When enabled via
-> `enabled_feature_extensions`, acceptance/recovery evidence is shrunk toward
+> mirroring the content selector's `genre_affinity_v1`. It is toggled by the
+> package's own boolean **hyperparameter** `confidence_shrinkage_v1` (edited in
+> the algorithm-parameter surface, not via `enabled_feature_extensions` and not
+> a world/driver-profile field — it is algorithm behaviour, not a world
+> property). When **on**, acceptance/recovery evidence is shrunk toward
 > neutral by its confidence (`e ← e · confidence[c]`; missing confidence ⇒
 > `1.0`, disclosed), so sparse rates influence the ranking less than identical
 > high-confidence rates. When **off** (the default) the baseline is unchanged
