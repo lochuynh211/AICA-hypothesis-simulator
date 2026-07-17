@@ -740,3 +740,111 @@ describe('ServiceProposalPanel — P5 US1 default service package (T018)', () =>
     expect(body.service_package_id).toBe('aica_transparent_service_selector_v1')
   })
 })
+
+// P5 Unit F (T032, US4, FR-019/FR-020) — the confidence_shrinkage_v1 opt-in
+// hyperparameter is NOT special-cased by ServiceProposalPanel: it is just
+// another entry in the transparent package's manifest `hyperparameters`
+// list, rendered generically by HyperparamMatrix (Panel ③'s
+// "Hyperparameters (advanced)" disclosure) exactly like every other
+// hyperparameter. This confirms that generic path actually carries the
+// toggle's on/off state into the run request and that it is visible once a
+// run exists (evidence.hyperparameters, persisted verbatim by createRun's
+// mock response below).
+const TRANSPARENT_SERVICE_PACKAGE_WITH_CONFIDENCE_SHRINKAGE = {
+  ...TRANSPARENT_SERVICE_PACKAGE,
+  hyperparameters: [
+    {
+      key: 'confidence_shrinkage_v1',
+      kind: 'enum' as const,
+      label: { ja: '信頼度縮小（拡張・既定オフ）', en: 'Confidence Shrinkage (extension, default off)' },
+      default: false,
+      values: [false, true],
+    },
+  ],
+}
+
+function packagesResponseWithConfidenceShrinkageHyperparameter() {
+  return {
+    slots: [
+      { family: 'service_selector', approach: 'transparent', package_id: 'aica_transparent_service_selector_v1' },
+      { family: 'service_selector', approach: 'constrained_llm', package_id: null },
+      { family: 'content_selector', approach: 'transparent', package_id: 'mock_content_selector_v1' },
+      { family: 'content_selector', approach: 'constrained_llm', package_id: null },
+    ],
+    packages: [TRANSPARENT_SERVICE_PACKAGE_WITH_CONFIDENCE_SHRINKAGE, SERVICE_PACKAGE, CONTENT_PACKAGE],
+    errors: [],
+  }
+}
+
+describe('ServiceProposalPanel — P5 US4 confidence_shrinkage_v1 toggle (T032)', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    vi.mocked(getPackages).mockResolvedValue(packagesResponseWithConfidenceShrinkageHyperparameter() as never)
+  })
+
+  it('defaults confidence_shrinkage_v1 to false in the run request when left untouched', async () => {
+    vi.mocked(createRun).mockResolvedValue(runLogWithCandidates() as never)
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('aica_transparent_service_selector_v1')
+
+    fireEvent.click(screen.getByTestId('service-run-button'))
+    await waitFor(() => expect(createRun).toHaveBeenCalled())
+
+    const body = vi.mocked(createRun).mock.calls[0][0]
+    expect(body.hyperparameters.confidence_shrinkage_v1).toBe(false)
+  })
+
+  it('toggling the Hyperparameters (advanced) control flips confidence_shrinkage_v1 to true in the run request', async () => {
+    vi.mocked(createRun).mockResolvedValue(runLogWithCandidates() as never)
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('aica_transparent_service_selector_v1')
+
+    // Open the collapsible disclosure and flip the toggle.
+    // ProposalStoreProvider defaults uiLanguage to 'ja' -- HyperparamMatrix
+    // renders the manifest's Japanese label by default (project convention).
+    const select = (await screen.findByLabelText('信頼度縮小（拡張・既定オフ）')) as HTMLSelectElement
+    expect(select.value).toBe('false')
+    fireEvent.change(select, { target: { value: 'true' } })
+    expect(select.value).toBe('true')
+
+    fireEvent.click(screen.getByTestId('service-run-button'))
+    await waitFor(() => expect(createRun).toHaveBeenCalled())
+
+    const body = vi.mocked(createRun).mock.calls[0][0]
+    // A real (not stringified) boolean -- see the HyperparamMatrix fix.
+    expect(body.hyperparameters.confidence_shrinkage_v1).toBe(true)
+    expect(body.hyperparameters.confidence_shrinkage_v1).not.toBe('true')
+  })
+
+  it("the toggled state is visible in the run's evidence hyperparameters once a run exists", async () => {
+    vi.mocked(createRun).mockImplementation(async (body) => ({
+      ...runLogWithCandidates(),
+      hyperparameters: body.hyperparameters,
+    }) as never)
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('aica_transparent_service_selector_v1')
+
+    // ProposalStoreProvider defaults uiLanguage to 'ja' -- HyperparamMatrix
+    // renders the manifest's Japanese label by default (project convention).
+    const select = (await screen.findByLabelText('信頼度縮小（拡張・既定オフ）')) as HTMLSelectElement
+    fireEvent.change(select, { target: { value: 'true' } })
+
+    fireEvent.click(screen.getByTestId('service-run-button'))
+    await waitFor(() => expect(createRun).toHaveBeenCalled())
+
+    const runLog = await vi.mocked(createRun).mock.results[0].value
+    expect(runLog.hyperparameters.confidence_shrinkage_v1).toBe(true)
+  })
+})

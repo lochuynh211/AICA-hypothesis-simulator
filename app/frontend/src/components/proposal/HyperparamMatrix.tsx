@@ -83,16 +83,31 @@ export default function HyperparamMatrix({ def, value, onChange, lang }: Props) 
   }
 
   if (def.kind === 'enum') {
-    const options = (def.values as string[] | undefined) ?? []
+    // `values` may be strings (e.g. `directional_hypothesis`) OR booleans
+    // (e.g. `confidence_shrinkage_v1`, P5 T032) -- a bare
+    // `onChange(e.target.value)` would always hand back a STRING
+    // ("true"/"false"), silently turning an off-by-default boolean
+    // hyperparameter truthy no matter what the reviewer picked. Match the
+    // selected option's string form back to its ORIGINAL typed value from
+    // `options` so booleans round-trip as booleans.
+    const options = (def.values as (string | boolean)[] | undefined) ?? []
     return (
       <div className="hpm-field" style={{ padding: '4px 0' }}>
         <label htmlFor={inputId} style={{ display: 'block', fontSize: '0.8em', color: '#4b5563' }}>
           {labelText}
         </label>
-        <select id={inputId} value={String(effective)} onChange={(e) => onChange(e.target.value)}>
+        <select
+          id={inputId}
+          value={String(effective)}
+          onChange={(e) => {
+            const raw = e.target.value
+            const match = options.find((opt) => String(opt) === raw)
+            onChange(match !== undefined ? match : raw)
+          }}
+        >
           {options.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
+            <option key={String(opt)} value={String(opt)}>
+              {String(opt)}
             </option>
           ))}
         </select>
