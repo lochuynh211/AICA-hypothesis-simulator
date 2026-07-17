@@ -854,6 +854,67 @@ describe('ServiceProposalPanel', () => {
     await new Promise((resolve) => setTimeout(resolve, 500))
     expect(createRun).toHaveBeenCalledTimes(1)
   })
+
+  // Review fix — timing race: the debounce effect used to check `running`
+  // only at SCHEDULE time. If a run was already in flight when max_candidates
+  // changed, no timer was scheduled (the edit was silently dropped); if a run
+  // started AFTER the timer was scheduled, the callback fired unconditionally
+  // and raced a second concurrent createRun against the in-flight one. The
+  // fix moves the `running` check to FIRE time (via a ref). This test drives
+  // real concurrency: a Run-button click leaves createRun pending (running
+  // stays true), an edit lands and its debounce timer fires while that first
+  // call is still unresolved — the auto-recompute must be skipped, not fire
+  // a second createRun.
+  it('an edit while a run is in flight does not produce a concurrent createRun', async () => {
+    vi.mocked(createRun).mockResolvedValueOnce(runLogWithCandidates() as never)
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('mock_service_selector_v1')
+    fireEvent.click(screen.getByTestId('service-run-button'))
+    await waitFor(() => expect(createRun).toHaveBeenCalledTimes(1))
+    await screen.findByText('live_viewing')
+
+    vi.useFakeTimers()
+    try {
+      vi.mocked(createRun).mockClear()
+      // The next createRun (triggered by clicking Run again) stays pending —
+      // this simulates "a run is already in flight" at the moment the
+      // debounce timer fires.
+      let resolveInFlightRun!: (value: unknown) => void
+      const inFlight = new Promise((resolve) => {
+        resolveInFlightRun = resolve
+      })
+      vi.mocked(createRun).mockReturnValueOnce(inFlight as never)
+
+      fireEvent.click(screen.getByTestId('service-run-button'))
+      // The synchronous portion of runWith (setRunning(true) + the createRun
+      // call itself) has already executed by the time fireEvent.click
+      // returns — createRun was called once and is still pending.
+      expect(createRun).toHaveBeenCalledTimes(1)
+
+      // An edit lands while that run is still in flight.
+      fireEvent.change(screen.getByLabelText('max_candidates'), { target: { value: '2' } })
+
+      // Advance past the 400ms debounce: the timer fires, but `running` is
+      // still true at fire time, so the auto-recompute must be skipped —
+      // no second (concurrent) createRun call.
+      await act(async () => {
+        vi.advanceTimersByTime(450)
+      })
+      expect(createRun).toHaveBeenCalledTimes(1)
+
+      // Resolve the in-flight run so it doesn't leak into other tests.
+      await act(async () => {
+        resolveInFlightRun(runLogWithCandidates())
+        await Promise.resolve()
+      })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })
 
 // P5 Unit C (T018, FR-001): the transparent service-selector package MUST be

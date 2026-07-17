@@ -251,6 +251,15 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
   const topKOverride = state.serviceParameterOverrides['top_k']
   const didInitialRun = useRef(false)
 
+  // Mirrors `running` in a ref so the debounce timer below can read the
+  // CURRENT value at fire time instead of the stale value captured when the
+  // effect scheduled the timer (avoids a dropped-edit / concurrent-run race
+  // — see the review finding on this effect).
+  const runningRef = useRef(running)
+  useEffect(() => {
+    runningRef.current = running
+  }, [running])
+
   // Marks the initial run as "seen" the moment a runLog first appears —
   // BEFORE any top_k edit — so the debounce effect below (keyed only on
   // topKOverride, which does NOT change merely because a run was created)
@@ -261,16 +270,20 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
 
   useEffect(() => {
     // Only recompute for edits AFTER the first run exists; skip while no run
-    // has happened yet, and skip while a run is already in flight.
+    // has happened yet.
     if (!state.runLog) return
     if (!didInitialRun.current) {
       didInitialRun.current = true
       return
     }
-    if (running) return
     const contentPackageId = state.contentPackageId ?? contentPackages[0]?.id
     if (!manifest || !contentPackageId) return
     const handle = setTimeout(() => {
+      // Check `running` at FIRE time (via ref, not the closed-over state) —
+      // if a run is already in flight, skip this auto-recompute rather than
+      // firing a second concurrent createRun. The stale edit is not
+      // re-queued; skipping is the intended behavior.
+      if (runningRef.current) return
       void runWith(state.world, manifest.id, contentPackageId)
     }, 400)
     return () => clearTimeout(handle)
