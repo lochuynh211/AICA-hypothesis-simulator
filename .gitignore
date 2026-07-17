@@ -33,6 +33,7 @@ key.local.js
 
 # Run evidence logs (only .gitkeep is tracked)
 runs/*.json
+proposal_runs/*.json
 corporate-proxy.crt
 
 # Proposal-simulator local user artifacts (P3) — never committed
