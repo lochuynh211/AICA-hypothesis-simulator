@@ -13,6 +13,11 @@ algorithm doc SS5.4 note / SS5.6 / SS5.7, contracts/evaluate_contract.md
     contributions; the affected rows carry
     `response_provenance == "confidence_shrinkage_v1"`.
 (c) missing confidence => treated as 1.0 (no shrink), disclosed in the row.
+(d) whole-branch review fix: `algorithm_provenance.extensions_on` (data-model.md
+    SS4, the run-level record of enabled extensions) must reflect whether the
+    hyperparameter was on, at BOTH sites that build `algorithm_provenance`
+    (the `ranked_candidates` path and the `no_proposal`/empty-eligible-set
+    path) -- it must never be hardcoded `[]`.
 """
 from __future__ import annotations
 
@@ -222,3 +227,37 @@ def test_on_missing_confidence_treated_as_full_confidence_and_disclosed(service_
     shrunk_row = by_candidate["humming_karaoke"]["service_proposal_acceptance_rate"]
     assert "missing" not in shrunk_row["normalization_function"].lower()
     assert missing_conf_row["normalized_evidence"] != shrunk_row["normalized_evidence"]
+
+
+# ---------------------------------------------------------------------------
+# (d) whole-branch review fix -- algorithm_provenance.extensions_on must
+#     reflect the hyperparameter, at both call sites (ranked + no_proposal).
+# ---------------------------------------------------------------------------
+
+
+def test_off_extensions_on_is_empty_ranked_path(service_selector):
+    result = service_selector.evaluate(load_worked_example_context())
+    assert result["decision_type"] == "ranked_candidates"
+    assert result["algorithm_provenance"]["extensions_on"] == []
+
+
+def test_on_extensions_on_lists_confidence_shrinkage_ranked_path(service_selector, service_hyperparameters):
+    ctx = _contrast_b_context()
+    ctx["hyperparameters"] = _on_hyperparameters(service_hyperparameters)
+    result = service_selector.evaluate(ctx)
+    assert result["decision_type"] == "ranked_candidates"
+    assert result["algorithm_provenance"]["extensions_on"] == ["confidence_shrinkage_v1"]
+
+
+def test_off_extensions_on_is_empty_no_proposal_path(service_selector, service_hyperparameters):
+    ctx = build_service_context(allowed_service_ids=[], hyperparameters=service_hyperparameters)
+    result = service_selector.evaluate(ctx)
+    assert result["decision_type"] == "no_proposal"
+    assert result["algorithm_provenance"]["extensions_on"] == []
+
+
+def test_on_extensions_on_lists_confidence_shrinkage_no_proposal_path(service_selector, service_hyperparameters):
+    ctx = build_service_context(allowed_service_ids=[], hyperparameters=_on_hyperparameters(service_hyperparameters))
+    result = service_selector.evaluate(ctx)
+    assert result["decision_type"] == "no_proposal"
+    assert result["algorithm_provenance"]["extensions_on"] == ["confidence_shrinkage_v1"]
