@@ -26,13 +26,58 @@ const SERVICE_PACKAGE = {
   approach: 'transparent' as const,
   contract_version: '1.0.0',
   supported_services: [],
-  parameters: { top_k: 3, tie_breaker: 'candidate_id_ascending' },
+  // Extended (Task 7) to mirror the real
+  // aica_transparent_service_selector_v1 manifest's parameter/hyperparameter
+  // keys (missing_policy, top_k, tie_breaker, material_safety_gap /
+  // gamma_drowsiness, gamma_fatigue, gamma_monotony, confidence_shrinkage_v1)
+  // — keys + minimal shapes only, values unchanged from the real package
+  // where practical.
+  parameters: {
+    missing_policy: 'neutral_and_disclose',
+    top_k: 3,
+    tie_breaker: 'candidate_id_ascending',
+    material_safety_gap: 1.0,
+  },
   hyperparameters: [
     {
       key: 'category_weights',
       kind: 'table' as const,
       label: { ja: 'カテゴリ重み', en: 'Category Weights' },
       default: { Situation: 0.8, Preference: 0.12, History: 0.08 },
+    },
+    {
+      key: 'gamma_drowsiness',
+      kind: 'numeric' as const,
+      label: { ja: '眠気ガンマ', en: 'Drowsiness Gamma' },
+      default: 1.0,
+      min: 0.25,
+      max: 4.0,
+      step: 0.05,
+    },
+    {
+      key: 'gamma_fatigue',
+      kind: 'numeric' as const,
+      label: { ja: '疲労ガンマ', en: 'Fatigue Gamma' },
+      default: 1.0,
+      min: 0.25,
+      max: 4.0,
+      step: 0.05,
+    },
+    {
+      key: 'gamma_monotony',
+      kind: 'numeric' as const,
+      label: { ja: '単調性ガンマ', en: 'Monotony Gamma' },
+      default: 1.0,
+      min: 0.25,
+      max: 4.0,
+      step: 0.05,
+    },
+    {
+      key: 'confidence_shrinkage_v1',
+      kind: 'enum' as const,
+      label: { ja: '信頼度縮小（拡張・既定オフ）', en: 'Confidence Shrinkage (extension, default off)' },
+      default: false,
+      values: [false, true],
     },
   ],
 }
@@ -213,7 +258,22 @@ describe('ServiceProposalPanel', () => {
         <ServiceProposalPanel />
       </ProposalStoreProvider>,
     )
-    expect(await screen.findByLabelText('top_k')).toBeInTheDocument()
+    expect(await screen.findByLabelText('max_candidates')).toBeInTheDocument()
+  })
+
+  it('parameters: max_candidates editable; gamma/confidence read-only; policy/tie/gap hidden', async () => {
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('mock_service_selector_v1')
+    expect(screen.getByLabelText('max_candidates')).toBeEnabled()
+    expect(screen.getByTestId('param-gamma_drowsiness')).toHaveAttribute('readonly')
+    expect(screen.getByTestId('param-confidence_shrinkage_v1')).toBeInTheDocument()
+    expect(screen.queryByText('missing_policy')).toBeNull()
+    expect(screen.queryByText('tie_breaker')).toBeNull()
+    expect(screen.queryByText('material_safety_gap')).toBeNull()
   })
 
   it('renders the collapsible Hyperparameters (advanced) disclosure with a HyperparamMatrix per hyperparameter', async () => {

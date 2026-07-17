@@ -36,6 +36,7 @@ const LABELS = {
   packageMode: { ja: 'パッケージ・モード', en: 'Package · Mode' },
   servicePkg: { ja: 'サービスPKG', en: 'Service pkg' },
   parameters: { ja: 'パラメータ（編集可）', en: 'Parameters (editable)' },
+  maxCandidates: { ja: '最大候補数', en: 'max_candidates' },
   hyperparameters: { ja: 'ハイパーパラメータ', en: 'Hyperparameters' },
   formulation: { ja: '数式・説明', en: 'Formulation' },
   formulationWhy: {
@@ -76,6 +77,15 @@ type ServiceInputSnapshot = {
   eligible_candidates?: { candidate_id: string }[]
   excluded_candidates?: ExcludedCandidate[]
 }
+
+// Task 7 — curated Parameters box: `missing_policy`, `tie_breaker`, and
+// `material_safety_gap` are real manifest parameters but are not surfaced in
+// this reviewer-facing grid (they stay editable only via a future
+// power-user surface, if any). The gamma/confidence knobs are shown
+// read-only here for at-a-glance visibility; they remain fully editable in
+// the "Hyperparameters (advanced)" disclosure below.
+const HIDDEN_PARAMS = new Set(['missing_policy', 'tie_breaker', 'material_safety_gap'])
+const READONLY_HP_KEYS = ['gamma_drowsiness', 'gamma_fatigue', 'gamma_monotony', 'confidence_shrinkage_v1']
 
 function serviceRows(candidate: RankedCandidate): ReasonRow[] {
   return candidate.feature_contributions.map((fc) => ({
@@ -300,6 +310,16 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
   const eligibleCandidates = inputSnapshot.eligible_candidates ?? []
   const excludedCandidates = inputSnapshot.excluded_candidates ?? []
 
+  // Task 7 — Parameters box lookups: the effective (override-or-default)
+  // value for a read-only hyperparameter knob, and the editable max_candidates
+  // (manifest key `top_k`) value.
+  function hpEffective(key: string): string {
+    const hp = manifest?.hyperparameters.find((h) => h.key === key)
+    const v = state.serviceHyperparameterOverrides[key] ?? hp?.default
+    return v === undefined || v === null ? '—' : String(v)
+  }
+  const topKValue = state.serviceParameterOverrides['top_k'] ?? manifest?.parameters['top_k'] ?? 3
+
   return (
     <section data-testid="service-panel" style={panelSectionStyle}>
       <h3
@@ -515,31 +535,23 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
           <>
             <div style={sectionLabelStyle}>{t(LABELS.parameters, lang)}</div>
             <div style={grid2Style}>
-              {Object.entries(manifest.parameters)
-                .filter(([key]) => key !== 'note')
-                // Object/array-valued params (the response-profile config maps)
-                // are not text-editable fields — skip them so they never render
-                // as "[object Object]" (mirrors ContentProposalPanel's guard).
-                .filter(([, defaultValue]) => typeof defaultValue !== 'object' || defaultValue === null)
-                .map(([key, defaultValue]) => {
-                  const value = state.serviceParameterOverrides[key] ?? defaultValue
-                  return (
-                    <label key={key} style={fieldLabelStyle}>
-                      <code>{key}</code>
-                      <input
-                        type={typeof defaultValue === 'number' ? 'number' : 'text'}
-                        value={String(value ?? '')}
-                        onChange={(e) =>
-                          dispatch({
-                            type: 'SET_SERVICE_PARAMETER',
-                            key,
-                            value: typeof defaultValue === 'number' ? Number(e.target.value) : e.target.value,
-                          })
-                        }
-                      />
-                    </label>
-                  )
-                })}
+              <label style={fieldLabelStyle}>
+                {t(LABELS.maxCandidates, lang)}
+                <input
+                  aria-label="max_candidates"
+                  type="number"
+                  value={Number(topKValue)}
+                  onChange={(e) =>
+                    dispatch({ type: 'SET_SERVICE_PARAMETER', key: 'top_k', value: Number(e.target.value) })
+                  }
+                />
+              </label>
+              {READONLY_HP_KEYS.map((key) => (
+                <label key={key} style={fieldLabelStyle}>
+                  <code>{key}</code>
+                  <input data-testid={`param-${key}`} type="text" value={hpEffective(key)} readOnly />
+                </label>
+              ))}
             </div>
 
             <details data-testid="hyperparameters-disclosure" style={disclosureStyle}>
