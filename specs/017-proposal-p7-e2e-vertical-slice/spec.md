@@ -12,6 +12,13 @@
 
 P7 turns the previously-separate pieces of the Proposal Simulator — the transparent service selector (P5), the transparent music content selector (P6), and the eligibility/journey engine (P4) — into a single, reviewable **end-to-end journey** on the standalone 4-panel proposal screen. A reviewer starts from one built-in world seed (a night-highway rest-recommended situation with high drowsiness/fatigue) and drives the whole central use case as a sequence of **advisory, recomputed decisions**: a pre-rest service and its concrete content, arrival and rest, an explicit reviewer-entered post-rest driver state, a **recomputed** stopped-stage proposal, a concrete full-karaoke plan, and a return to driving that restores the previous content. Every decision remains advisory (the simulator proposes, never forces), every recomputation is a newly frozen, replayable snapshot, and post-rest outcomes are explicit reviewer inputs — never probabilistically generated.
 
+## Clarifications
+
+### Session 2026-07-17
+
+- Q: When a recompute happens, what should it do to a content plan that is currently playing, and from which run statuses is recompute allowed? → A: Recompute is allowed from any run status **except** while a content plan is actively playing (playback active or backgrounded), which must be completed or stopped first (rejected with a clear message). Recompute never silently ends playing content. After recompute, the current-service selection and rejection list are reset for the new opportunity, while motion state, lifecycle stage, and the restorable previous-content reference are preserved.
+- Q: For "changing post-rest drowsiness/fatigue can change the next proposal", what change must the demonstration prove? → A: Either a different top-ranked **service** OR (if the top service is unchanged) a different concrete **content plan** satisfies it — post-rest state flows into the features both selectors score, so "the next proposal" legitimately includes the concrete plan. The demonstration seed and override values are chosen to guarantee at least one such difference.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Recompute a proposal after a lifecycle-stage change or context edit (Priority: P1)
@@ -29,6 +36,7 @@ A reviewer has an in-progress proposal run. The journey has advanced to a new li
 3. **Given** a run in the after-rest stage, **When** the reviewer recomputes with a high post-rest drowsiness/fatigue versus a low one, **Then** the resulting service proposal can differ between the two (post-rest state demonstrably influences the next proposal).
 4. **Given** a recompute request whose overrides would make the world invalid (out-of-range value, dangling catalog reference, unknown field path), **When** it is submitted, **Then** it is rejected with a field-level explanation and no new snapshot is created.
 5. **Given** a legacy run that has no stored typed world, **When** a recompute is requested, **Then** it is rejected with a clear message rather than fabricating a world.
+6. **Given** a run with a content plan actively playing, **When** a recompute is requested, **Then** it is rejected with a message to complete or stop the plan first, and the run is unchanged; **and** once the plan is completed or stopped, the recompute succeeds.
 
 ---
 
@@ -99,6 +107,7 @@ A reviewer uses the standalone 4-panel screen to run and inspect the journey: th
 ### Edge Cases
 
 - **Recompute with no overrides**: allowed (e.g. a pure lifecycle-stage change already applied by a journey action); it recomputes against the current world and stage and records the new snapshot, with no context-edit recorded.
+- **Recompute while a plan is actively playing**: rejected with a clear message to complete or stop the plan first; the run and its persisted record are unchanged (FR-006a).
 - **Recompute when every allowed service is excluded by eligibility**: produces the new frozen snapshot and an explicit no-eligible-candidate outcome, never a fabricated ranked candidate.
 - **Recompute when the service algorithm errors**: recorded as an algorithm-error event on the new decision point; not disguised as a normal proposal; the run remains reopenable.
 - **Quick-check when no service is eligible / no rank-1 exists**: stops at the service stage with the no-eligible-candidate outcome; no content plan is fabricated.
@@ -115,11 +124,12 @@ A reviewer uses the standalone 4-panel screen to run and inspect the journey: th
 - **FR-001**: The system MUST provide a way to recompute a proposal within an existing run, taking an explicit, possibly empty list of context overrides.
 - **FR-002**: A recompute MUST apply the overrides to the run's stored base world, using the current journey lifecycle stage and motion state, then re-validate the resulting world before producing any proposal.
 - **FR-003**: A recompute MUST re-resolve the allowed-service set for the current stage, re-apply eligibility for the current motion, and re-run the service selector, producing a fresh ranked service proposal (or an explicit no-eligible / algorithm-error outcome).
-- **FR-004**: Each recompute MUST append a new frozen decision point to the same run: a new opportunity and a new frozen setup snapshot added to append-only history, with the newest becoming the current one, plus the new service decision evidence; earlier decision points MUST remain unchanged.
+- **FR-004**: Each recompute MUST append a new frozen decision point to the same run: a new opportunity and a new frozen setup snapshot added to append-only history, with the newest becoming the current one, plus the new service decision evidence; earlier decision points MUST remain unchanged. The recompute MUST reset the current-service selection and the rejection list for the new opportunity, while preserving motion state, lifecycle stage, and the restorable previous-content reference.
 - **FR-005**: A recompute with overrides that make the world invalid (out-of-range, dangling catalog reference, unknown/malformed override path) MUST be rejected with a field-level explanation and MUST NOT create a new snapshot or decision point.
 - **FR-006**: A recompute requested on a run that has no stored base typed world MUST be rejected with a clear message and MUST NOT fabricate a world.
+- **FR-006a**: A recompute requested while a content plan is actively playing (playback active or backgrounded) MUST be rejected with a clear message instructing the reviewer to complete or stop the plan first; recompute MUST NOT silently end a playing plan. Recompute MUST be permitted from every other run status.
 - **FR-007**: Given identical run state and identical overrides, a recompute MUST produce an identical frozen snapshot and identical ranking (deterministic; no live model or network call in a transparent run).
-- **FR-008**: Changing the post-rest drowsiness/fatigue overrides between two recomputes MUST be able to change the resulting service proposal.
+- **FR-008**: Changing the post-rest drowsiness/fatigue overrides between two recomputes MUST be able to change the resulting proposal — demonstrated by either a different top-ranked service or a different concrete content plan for a high-versus-low post-rest pair.
 
 **Post-rest driver state**
 
@@ -166,7 +176,7 @@ A reviewer uses the standalone 4-panel screen to run and inspect the journey: th
 
 - **SC-001**: A reviewer can complete the entire reference journey from the one built-in seed on the 4-panel screen, and the run records every transition in order (AC-1, FR-015).
 - **SC-002**: Every recompute that requires recomputation produces a new frozen snapshot appended to history while preserving all earlier decision points (AC-2, FR-004).
-- **SC-003**: Changing the reviewer-entered post-rest drowsiness/fatigue can change the next proposal, demonstrated by at least one high-versus-low pair whose rank-1 service differs (AC-3, FR-008).
+- **SC-003**: Changing the reviewer-entered post-rest drowsiness/fatigue can change the next proposal, demonstrated by at least one high-versus-low pair whose top-ranked service **or** concrete content plan differs (AC-3, FR-008).
 - **SC-004**: A previewed future content is never automatically committed: the run's committed state and persisted record are identical before and after a preview (AC-4, FR-017).
 - **SC-005**: The reviewer can reject every proposal after a recompute and still exit safely to an explicit no-eligible-candidate end-state (AC-5, FR-016).
 - **SC-006**: In quick-check mode the auto-selected rank-1 result equals the rank-1 result shown in interactive mode for the same snapshot, in 100% of compared cases (AC-6, FR-014).
