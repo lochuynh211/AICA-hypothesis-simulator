@@ -22,11 +22,25 @@
  *
  * Purely reactive to `proposalStore.runLog` — STEP 2 is triggered by
  * ServiceProposalPanel's "Choose" action, not by a button in this panel.
+ *
+ * P7 (US4/US5, FR-017/FR-023) — also renders a "Preview next" control that
+ * calls the read-only `GET /runs/{id}/journey/preview` and shows its steps
+ * in a visually separate, clearly-labeled non-binding block: the preview
+ * result is kept in LOCAL component state only (never dispatched into
+ * `proposalStore`), so it can never be mistaken for — or accidentally
+ * mutate — the run's actual committed state/record (FR-017).
  */
 import { useEffect, useState } from 'react'
 import { t } from '../../../i18n/t'
 import { useProposalStore } from '../../../state/proposalStore'
-import { getPackages, type ProposalPackageSummary, type OrderedItem, type CompletePlan } from '../../../api/proposalClient'
+import {
+  getPackages,
+  journeyPreview,
+  type ProposalPackageSummary,
+  type OrderedItem,
+  type CompletePlan,
+  type JourneyPreviewStep,
+} from '../../../api/proposalClient'
 import HyperparamMatrix from '../HyperparamMatrix'
 import ReasonBreakdown, { type ReasonRow } from '../ReasonBreakdown'
 
@@ -82,6 +96,15 @@ const LABELS = {
     ja: 'このリクエストに対するプランはありません。',
     en: 'No plan is available for this request.',
   },
+  // P7 (US4/US5, FR-017/FR-023) — committed action vs non-binding preview.
+  committedBadge: { ja: '確定済み', en: 'Committed' },
+  previewSectionTitle: { ja: '先読み（非拘束）', en: 'Look-ahead (non-binding)' },
+  previewButton: { ja: '次の内容をプレビュー', en: 'Preview next content' },
+  previewBadge: {
+    ja: '非拘束プレビュー（未確定・未コミット）',
+    en: 'Non-binding preview — not committed',
+  },
+  previewEmpty: { ja: 'プレビューできる次のステップがありません。', en: 'No next step to preview.' },
 };
 
 const _NON_PLAN_DECISION_LABELS: Record<string, { ja: string; en: string }> = {
@@ -108,6 +131,33 @@ export default function ContentProposalPanel() {
   const { state, dispatch } = useProposalStore()
   const { uiLanguage: lang } = state
   const [contentPackages, setContentPackages] = useState<ProposalPackageSummary[]>([])
+  const [previewSteps, setPreviewSteps] = useState<JourneyPreviewStep[] | null>(null)
+  const [previewPending, setPreviewPending] = useState(false)
+  const [previewError, setPreviewError] = useState<string | null>(null)
+
+  async function handlePreview() {
+    if (!state.runLog) return
+    setPreviewPending(true)
+    setPreviewError(null)
+    try {
+      // Read-only (FR-017): never touches `dispatch`/`proposalStore.runLog` —
+      // the committed run is byte-identical before and after this call.
+      const resp = await journeyPreview(state.runLog.run_id)
+      setPreviewSteps(resp.steps)
+    } catch (e) {
+      setPreviewError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setPreviewPending(false)
+    }
+  }
+
+  // Clear any stale preview when the run itself changes (new run created, or
+  // the committed state advanced via recompute/journey-action) — a preview
+  // is only ever meaningful against the run state it was fetched against.
+  useEffect(() => {
+    setPreviewSteps(null)
+    setPreviewError(null)
+  }, [state.runLog?.run_id, state.runLog?.status, state.runLog?.opportunity.opportunity_id])
 
   useEffect(() => {
     let cancelled = false
@@ -260,7 +310,12 @@ export default function ContentProposalPanel() {
 
         {plan && plan.ordered_items.length > 0 && (
           <>
-            <div style={sectionLabelStyle}>{t(LABELS.orderedPlan, lang)}</div>
+            <div style={sectionLabelStyle}>
+              {t(LABELS.orderedPlan, lang)}{' '}
+              <span data-testid="content-committed-badge" style={committedBadgeStyle}>
+                {t(LABELS.committedBadge, lang)}
+              </span>
+            </div>
             {plan.ordered_items.map((item) => (
               <div
                 key={item.item_id}
@@ -314,6 +369,52 @@ export default function ContentProposalPanel() {
               {plan.lighting_configuration?.enabled ? plan.lighting_configuration.cue_basis ?? 'on' : 'n/a'} ·
               approval={plan.approval_policy} · completion_rule={plan.completion_rule}
             </div>
+          </>
+        )}
+
+        {/* P7 (US4/US5, FR-017/FR-023) — the committed content (whatever was
+            rendered above, from the persisted log) vs a non-binding preview
+            of what would come next, kept visually + structurally separate:
+            the preview is local-only state, never merged into the plan
+            above and never dispatched into the shared run log. */}
+        {state.runLog && (
+          <>
+            <div style={sectionLabelStyle}>{t(LABELS.previewSectionTitle, lang)}</div>
+            <button
+              type="button"
+              data-testid="content-preview-button"
+              disabled={previewPending}
+              onClick={handlePreview}
+              style={previewButtonStyle}
+            >
+              {previewPending ? '…' : t(LABELS.previewButton, lang)}
+            </button>
+            {previewError && (
+              <p role="alert" data-testid="content-preview-error" style={{ color: '#dc2626', fontSize: '0.8em' }}>
+                {previewError}
+              </p>
+            )}
+            {previewSteps && (
+              <div data-testid="content-preview-panel" style={previewPanelStyle}>
+                <span data-testid="content-preview-badge" style={previewBadgeStyle}>
+                  {t(LABELS.previewBadge, lang)}
+                </span>
+                {previewSteps.length === 0 ? (
+                  <p style={{ fontSize: '0.78em', color: '#6b7280', margin: '6px 0 0' }}>
+                    {t(LABELS.previewEmpty, lang)}
+                  </p>
+                ) : (
+                  <ul style={{ margin: '6px 0 0', padding: '0 0 0 18px', fontSize: '0.78em', color: '#4b5563' }}>
+                    {previewSteps.map((step, index) => (
+                      <li key={`${step.label}-${index}`} data-testid={`content-preview-step-${index}`}>
+                        {step.label} — {step.lifecycle_stage}
+                        {step.note ? ` (${step.note})` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>
@@ -398,4 +499,45 @@ const planMetadataStyle: React.CSSProperties = {
   border: '1px solid #e5e7eb',
   borderRadius: '7px',
   padding: '6px 10px',
+}
+
+const committedBadgeStyle: React.CSSProperties = {
+  fontSize: '0.66em',
+  fontWeight: 800,
+  letterSpacing: '0.05em',
+  background: '#ecfdf5',
+  color: '#059669',
+  border: '1px solid #6ee7b7',
+  borderRadius: '999px',
+  padding: '2px 9px',
+}
+
+const previewButtonStyle: React.CSSProperties = {
+  fontSize: '0.8em',
+  fontWeight: 700,
+  padding: '6px 13px',
+  borderRadius: '7px',
+  border: '1px dashed #7c3aed',
+  background: '#fff',
+  color: '#7c3aed',
+  cursor: 'pointer',
+}
+
+const previewPanelStyle: React.CSSProperties = {
+  marginTop: '8px',
+  padding: '8px 11px',
+  border: '1px dashed #a78bfa',
+  borderRadius: '8px',
+  background: '#faf5ff',
+}
+
+const previewBadgeStyle: React.CSSProperties = {
+  fontSize: '0.66em',
+  fontWeight: 800,
+  letterSpacing: '0.05em',
+  background: '#fef3c7',
+  color: '#92400e',
+  border: '1px solid #fcd34d',
+  borderRadius: '999px',
+  padding: '2px 9px',
 }

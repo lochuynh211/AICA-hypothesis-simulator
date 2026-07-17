@@ -45,12 +45,15 @@ from aica_api.models.proposal.enums import (
     DiscreteEventType,
     LifecycleStage,
     MotionState,
+    PlaybackState,
     ProposalPackageFamily,
+    ProposalRunMode,
     ProposalRunStatus,
     ServiceId,
     TriggerPurpose,
 )
 from aica_api.models.proposal.events import DiscreteEvent
+from aica_api.models.proposal.evidence import AlgorithmEvidence
 from aica_api.models.proposal.journey import JourneyState
 from aica_api.models.proposal.journey_action import JourneyAction
 from aica_api.models.proposal.journey_preview import JourneyPreview
@@ -58,6 +61,7 @@ from aica_api.models.proposal.matrix import MatrixResolutionError, PurposeStageS
 from aica_api.models.proposal.opportunity import ProposalOpportunity
 from aica_api.models.proposal.package_manifest import BilingualLabel, ProposalPackageManifest
 from aica_api.models.proposal.proposal_run import ProposalRun, ProposalRunLog
+from aica_api.models.proposal.recompute import RecomputeRequest
 from aica_api.models.proposal.service_capabilities import ServiceCapabilities
 from aica_api.models.proposal.world import (
     DriverProfile,
@@ -81,7 +85,7 @@ from aica_api.services.proposal_journey import apply_action
 from aica_api.services.proposal_journey_preview import preview as build_journey_preview
 from aica_api.services.proposal_package_registry import ProposalPackageRegistry
 from aica_api.services.proposal_selector import dispatch_selector
-from aica_api.services.world_clone_store import InvalidOverrideError, WorldCloneStore
+from aica_api.services.world_clone_store import InvalidOverrideError, WorldCloneStore, apply_overrides
 from aica_api.services.world_seed_store import WorldSeedStore
 from aica_api.services.world_validation import ValidationIssue, validate_world
 from aica_api.storage.file_store import read_json
@@ -689,7 +693,7 @@ class CreateProposalRunBody(BaseModel):
     origin_profile_id: str | None = None
     service_package_id: str
     content_package_id: str
-    mode: str = "interactive"
+    mode: ProposalRunMode = ProposalRunMode.interactive
     enabled_feature_extensions: list[str] = []
     parameters: dict[str, Any] = {}
     hyperparameters: dict[str, Any] = {}
@@ -727,15 +731,23 @@ def _resolve_run_setup(
 
 
 def _freeze_setup_snapshot(
-    body: CreateProposalRunBody,
     *,
     world: World,
     matrix_version: str,
     service_pkg: ProposalPackageManifest,
     content_pkg: ProposalPackageManifest,
     service_hyperparameters: dict,
+    origin_seed_id: str | None = None,
+    origin_clone_id: str | None = None,
+    origin_profile_id: str | None = None,
 ) -> tuple[dict, SetupSnapshot]:
     """Validate the typed world and build (world_snapshot dict, SetupSnapshot).
+
+    T011 (P7, research.md D3): origin inputs are explicit params rather than
+    the whole ``CreateProposalRunBody`` — ``create_proposal_run`` passes them
+    from ``body.origin_*`` (unchanged behavior); a later recompute call
+    (P7 Phase 3) passes the run's existing ``setup_snapshot.origin`` carried
+    forward instead, with no dependency on any ``CreateProposalRunBody``.
 
     Raises HTTPException(422, detail=[{path, code, message}, ...]) if the
     dataset_id is unknown or the world fails ``validate_world`` — never a
@@ -773,9 +785,9 @@ def _freeze_setup_snapshot(
 
     setup_snapshot = SetupSnapshot(
         origin=SetupSnapshotOrigin(
-            seed_id=body.origin_seed_id,
-            clone_id=body.origin_clone_id,
-            profile_id=body.origin_profile_id,
+            seed_id=origin_seed_id,
+            clone_id=origin_clone_id,
+            profile_id=origin_profile_id,
         ),
         matrix_version=matrix_version,
         dataset_id=world.control_inputs.dataset_id,
@@ -853,12 +865,14 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
     world_snapshot = body.world_snapshot
     if body.world is not None:
         world_snapshot, setup_snapshot = _freeze_setup_snapshot(
-            body,
             world=body.world,
             matrix_version=matrix.matrix_version,
             service_pkg=service_pkg,
             content_pkg=content_pkg,
             service_hyperparameters=hyperparameters,
+            origin_seed_id=body.origin_seed_id,
+            origin_clone_id=body.origin_clone_id,
+            origin_profile_id=body.origin_profile_id,
         )
 
     # -----------------------------------------------------------------
@@ -934,6 +948,8 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
             evidence=[],
             status=ProposalRunStatus.service_selected,
             setup_snapshot=setup_snapshot,
+            world=body.world,
+            mode=body.mode,
             runs_dir=settings.proposal_runs_dir,
         )
 
@@ -1004,9 +1020,223 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
         evidence=[evidence],
         status=status,
         setup_snapshot=setup_snapshot,
+        world=body.world,
+        mode=body.mode,
         runs_dir=settings.proposal_runs_dir,
     )
+
+    # US3/T024 (FR-011-FR-013): quick_check auto-dispatches content for the
+    # rank-1 service in the SAME response, whenever STEP 1 actually yielded
+    # one. Interactive mode (and quick_check with no rank-1, e.g. zero
+    # eligible/an errored service dispatch) is untouched -- it stops here.
+    if body.mode == ProposalRunMode.quick_check and selected_service_id is not None:
+        content_parameters = dict(content_pkg.parameters)
+        content_hyperparameters = {hp.key: hp.default for hp in content_pkg.hyperparameters}
+        run_log = _apply_quick_check_content(
+            run_log.run_id,
+            run_log,
+            ServiceId(selected_service_id),
+            content_parameters,
+            content_hyperparameters,
+        )
+
     return run_log
+
+
+# ---------------------------------------------------------------------------
+# _dispatch_content_for_service — T010 (P7, research.md D5)
+# ---------------------------------------------------------------------------
+
+
+def _dispatch_content_for_service(
+    run_log: ProposalRunLog,
+    selected_service_id: ServiceId,
+    content_parameters: dict,
+    content_hyperparameters: dict,
+) -> tuple[AlgorithmEvidence, dict | None]:
+    """Dispatch the CONTENT selector for ``selected_service_id`` against
+    ``run_log`` and return ``(evidence, evidence_input_snapshot)``.
+
+    Extracted from ``select_service``'s STEP-2 content-dispatch body
+    (research.md D5) so quick-check (create + recompute, later P7 units) can
+    reuse the IDENTICAL real-vs-mock context-builder choice
+    (``_build_real_content_context``/``_build_content_context``), the
+    ``_REAL_CONTENT_PACKAGE_ID`` gate, catalog redaction
+    (``_redact_catalog_for_evidence``), and the ``dispatch_selector`` call —
+    guaranteeing quick-check content == interactive content (FR-014/SC-006),
+    since both paths call this exact function.
+
+    The user-supplied-service eligibility check and the content package's
+    own ``supported_services`` gate stay in ``select_service`` (they validate
+    a *user-supplied* service id); this helper assumes ``selected_service_id``
+    is already known eligible/supported — for quick-check it is the
+    selector's own rank-1, already eligible by construction.
+
+    Returns:
+        A tuple of the dispatched ``AlgorithmEvidence`` and the (possibly
+        catalog-redacted) dict recorded as its persisted ``input_snapshot``
+        — ``None`` when no redaction was applied (mock/legacy content path,
+        where ``dispatch_selector`` falls back to ``context`` itself).
+
+    Raises:
+        HTTPException(422): ``run_log.content_package_id`` is unknown or
+            mis-slotted (not a ``content_selector`` family package).
+    """
+    registry = _get_registry()
+    content_pkg = registry.get(run_log.content_package_id) if run_log.content_package_id else None
+    if content_pkg is None or content_pkg.family != ProposalPackageFamily.content_selector:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unknown or mis-slotted content_package_id: {run_log.content_package_id!r}",
+        )
+
+    # T034 (P3c): the REAL transparent content package gets the frozen-catalog
+    # context (full catalog, no eligibility narrowing) whenever the run was
+    # created from a typed World (setup_snapshot present). A legacy
+    # world_snapshot-only run has no dataset_id to resolve a catalog from, so
+    # it keeps the P1 mock-path context builder (mirrors the mock package's
+    # own behavior — never a crash, just an unusable/empty catalog).
+    evidence_input_snapshot: dict | None = None
+    if content_pkg.id == _REAL_CONTENT_PACKAGE_ID and run_log.setup_snapshot is not None:
+        context = _build_real_content_context(
+            package=content_pkg,
+            run_log=run_log,
+            selected_service_id=selected_service_id,
+            content_parameters=content_parameters,
+            content_hyperparameters=content_hyperparameters,
+        )
+        # MF2 (P3 POLISH unit): the real content selector's context embeds
+        # the full frozen catalog — redact it for the PERSISTED evidence
+        # only; evaluate() below still receives the full `context`.
+        evidence_input_snapshot = _redact_catalog_for_evidence(
+            context, dataset_id=run_log.setup_snapshot.dataset_id
+        )
+    else:
+        context = _build_content_context(
+            package=content_pkg,
+            run_log=run_log,
+            selected_service_id=selected_service_id,
+            content_parameters=content_parameters,
+            content_hyperparameters=content_hyperparameters,
+        )
+
+    evidence = dispatch_selector(
+        content_pkg,
+        context,
+        settings.packages_dir,
+        matrix_version=run_log.matrix_version,
+        used_feature_ids=list(context["feature_snapshot"].keys()),
+        evidence_input_snapshot=evidence_input_snapshot,
+    )
+    return evidence, evidence_input_snapshot
+
+
+# ---------------------------------------------------------------------------
+# _apply_quick_check_content — T024/T025 (P7 Unit D, US3)
+# ---------------------------------------------------------------------------
+
+
+def _apply_quick_check_content(
+    run_id: str,
+    run_log: ProposalRunLog,
+    selected_service_id: ServiceId,
+    content_parameters: dict,
+    content_hyperparameters: dict,
+) -> ProposalRunLog:
+    """Quick-check-only: dispatch content for the auto-selected rank-1
+    service via ``_dispatch_content_for_service`` (the SAME helper
+    ``select_service`` uses — FR-014/SC-006 content parity) and advance the
+    run to ``content_selected`` in the SAME call. Shared by quick-check
+    create (T024) and quick-check recompute (T025).
+
+    Mirrors ``select_service``'s STEP-2 tail (content-package-support gate,
+    event + status + setup_snapshot bookkeeping) with one difference:
+    quick-check is AUTOMATIC (the service was never reviewer-chosen), so an
+    unsupported rank-1 can never raise an HTTPException the way
+    ``select_service`` does for a user-supplied service — it is instead
+    recorded as an ``ALGORITHM_ERROR`` event (step=content,
+    category=unsupported_service) with no fabricated plan, exactly like a
+    zero-eligible service never fabricates a candidate (Constitution
+    Principle V).
+
+    ``journey_state.active_service_id`` is left untouched here — both
+    ``create_proposal_run`` and ``recompute_proposal_run`` already set it to
+    this same rank-1 service unconditionally (interactive or quick_check)
+    before this helper is ever called, so there is no mode-conditioned
+    ``active_service_id`` semantics to introduce (research.md / P7 brief:
+    the data-model.md interactive-vs-None split is a doc reconciliation
+    deferred to Step 5, not implemented here).
+    """
+    registry = _get_registry()
+    content_pkg = registry.get(run_log.content_package_id) if run_log.content_package_id else None
+    at = _now_iso()
+
+    if content_pkg is None or selected_service_id not in content_pkg.supported_services:
+        event = DiscreteEvent(
+            event_type=DiscreteEventType.ALGORITHM_ERROR,
+            at=at,
+            payload={
+                "step": "content",
+                "category": "unsupported_service",
+                "message": (
+                    f"Content package {run_log.content_package_id!r} does not "
+                    f"support service {selected_service_id.value!r}"
+                ),
+            },
+        )
+        prm.append_event(run_id, event, settings.proposal_runs_dir)
+        return prm.update_state(run_id, settings.proposal_runs_dir, status=ProposalRunStatus.error)
+
+    evidence, _evidence_input_snapshot = _dispatch_content_for_service(
+        run_log, selected_service_id, content_parameters, content_hyperparameters
+    )
+
+    if evidence.error is not None:
+        event = DiscreteEvent(
+            event_type=DiscreteEventType.ALGORITHM_ERROR,
+            at=at,
+            payload={
+                "step": "content",
+                "category": evidence.error.category,
+                "message": evidence.error.message,
+            },
+        )
+        new_status = ProposalRunStatus.error
+    else:
+        event = DiscreteEvent(
+            event_type=DiscreteEventType.CONTENT_SELECTED,
+            at=at,
+            payload={"selected_service_id": selected_service_id.value},
+        )
+        new_status = ProposalRunStatus.content_selected
+
+    prm.append_event(run_id, event, settings.proposal_runs_dir)
+    prm.append_evidence(run_id, evidence, settings.proposal_runs_dir)
+
+    # Mirrors select_service's FIX 2: re-freeze the persisted
+    # content_parameter_set_version (+ content_contract_version) to what was
+    # ACTUALLY used for this content dispatch (FR-011/SC-008).
+    updated_setup_snapshot = None
+    if run_log.setup_snapshot is not None:
+        used_content_parameter_set_version = content_hyperparameters.get(
+            "parameter_set_version", content_pkg.version
+        )
+        updated_setup_snapshot = run_log.setup_snapshot.model_copy(
+            update={
+                "content_package_id": content_pkg.id,
+                "content_contract_version": content_pkg.contract_version,
+                "content_parameter_set_version": used_content_parameter_set_version,
+            }
+        )
+
+    return prm.update_state(
+        run_id,
+        settings.proposal_runs_dir,
+        status=new_status,
+        content_parameters=content_parameters,
+        content_hyperparameters=content_hyperparameters,
+        setup_snapshot=updated_setup_snapshot,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1105,43 +1335,13 @@ def select_service(run_id: str, body: SelectServiceBody) -> ProposalRunLog:
         hp.key: hp.default for hp in content_pkg.hyperparameters
     }
 
-    # T034 (P3c): the REAL transparent content package gets the frozen-catalog
-    # context (full catalog, no eligibility narrowing) whenever the run was
-    # created from a typed World (setup_snapshot present). A legacy
-    # world_snapshot-only run has no dataset_id to resolve a catalog from, so
-    # it keeps the P1 mock-path context builder (mirrors the mock package's
-    # own behavior — never a crash, just an unusable/empty catalog).
-    evidence_input_snapshot: dict | None = None
-    if content_pkg.id == _REAL_CONTENT_PACKAGE_ID and run_log.setup_snapshot is not None:
-        context = _build_real_content_context(
-            package=content_pkg,
-            run_log=run_log,
-            selected_service_id=selected_service_id,
-            content_parameters=content_parameters,
-            content_hyperparameters=content_hyperparameters,
-        )
-        # MF2 (P3 POLISH unit): the real content selector's context embeds
-        # the full frozen catalog — redact it for the PERSISTED evidence
-        # only; evaluate() below still receives the full `context`.
-        evidence_input_snapshot = _redact_catalog_for_evidence(
-            context, dataset_id=run_log.setup_snapshot.dataset_id
-        )
-    else:
-        context = _build_content_context(
-            package=content_pkg,
-            run_log=run_log,
-            selected_service_id=selected_service_id,
-            content_parameters=content_parameters,
-            content_hyperparameters=content_hyperparameters,
-        )
-
-    evidence = dispatch_selector(
-        content_pkg,
-        context,
-        settings.packages_dir,
-        matrix_version=run_log.matrix_version,
-        used_feature_ids=list(context["feature_snapshot"].keys()),
-        evidence_input_snapshot=evidence_input_snapshot,
+    # T010 (P7, research.md D5): the real-vs-mock context-builder choice, the
+    # _REAL_CONTENT_PACKAGE_ID gate, catalog redaction, and the
+    # dispatch_selector call itself are extracted into a shared helper so
+    # quick-check (later P7 units) dispatches content through the identical
+    # code path — no behavior change here.
+    evidence, _evidence_input_snapshot = _dispatch_content_for_service(
+        run_log, selected_service_id, content_parameters, content_hyperparameters
     )
 
     at = _now_iso()
@@ -1207,6 +1407,330 @@ def select_service(run_id: str, body: SelectServiceBody) -> ProposalRunLog:
         content_hyperparameters=content_hyperparameters,
         setup_snapshot=updated_setup_snapshot,
     )
+    return run_log
+
+
+# ---------------------------------------------------------------------------
+# POST /api/proposal/runs/{run_id}/recompute — P7 Unit B, T017 (US1 MVP)
+# ---------------------------------------------------------------------------
+
+
+@router.post("/api/proposal/runs/{run_id}/recompute")
+def recompute_proposal_run(run_id: str, body: RecomputeRequest) -> ProposalRunLog:
+    """Recompute the proposal for an existing run at its CURRENT lifecycle
+    stage and motion, applying explicit reviewer overrides, and append a new
+    frozen decision point to the same run (contracts/recompute-api.md;
+    data-model.md; research.md D1-D4/D8).
+
+    Mirrors ``create_proposal_run``'s matrix-resolve -> eligibility ->
+    dispatch_selector -> persist orchestration (research.md D1: recompute is
+    a ROUTER endpoint, never ``proposal_journey.apply_action`` -- the pure
+    journey engine stays free of selector dispatch/IO), but on top of the
+    run's EXISTING base ``World`` rather than a brand-new request body, and
+    APPENDS rather than replaces: the prior head opportunity/setup_snapshot
+    are pushed into the append-only history lists before the new head is
+    installed (FR-004/SC-002).
+
+    Guards (in order): 404 unknown run; 422 legacy run (no stored typed
+    ``world`` -- FR-006); 422 while a content plan is actively playing
+    (``playback_state`` in {active, backgrounded} -- FR-006a, never silently
+    ending a playing plan); 422 on an invalid override (FR-005, no snapshot
+    ever appended). A selector algorithm error is NOT an HTTP error -- it is
+    recorded as an ``ALGORITHM_ERROR`` event + ``status=error`` and returned
+    200 (Constitution Principle V / FR-019), exactly like ``create_proposal_run``.
+
+    Interactive-mode runs stop at the service decision (``service_selected``/
+    ``error``/``NO_ELIGIBLE_CANDIDATE``). US3/T025: a ``quick_check`` run
+    additionally dispatches content for the rank-1 service in this SAME
+    call via ``_apply_quick_check_content`` (which itself calls the shared
+    ``_dispatch_content_for_service`` -- FR-012/FR-014), advancing to
+    ``content_selected``/``error`` -- never when there is no rank-1 (zero
+    eligible or a service-selector error leaves the run at
+    ``service_selected``/``error`` with no content fabricated).
+    """
+    run_log = prm.get_run(run_id, settings.proposal_runs_dir)
+    if run_log is None:
+        raise HTTPException(status_code=404, detail=f"Proposal run {run_id!r} not found")
+
+    if run_log.world is None:
+        raise HTTPException(
+            status_code=422,
+            detail="recompute requires a typed-world run",
+        )
+
+    if run_log.journey_state.playback_state in (PlaybackState.active, PlaybackState.backgrounded):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "recompute_requires_idle_playback",
+                "message": (
+                    "Recompute requires the current content plan to be "
+                    "completed or stopped first / "
+                    "recomputeの前に現在のコンテンツプランを完了または停止してください"
+                ),
+            },
+        )
+
+    # research.md D2: carry the CURRENT journey lifecycle_stage/motion_state
+    # onto the run's stored base World's control_inputs (trigger_purpose and
+    # dataset_id are carried unchanged) BEFORE applying the reviewer's own
+    # overrides -- two internal overrides via model_copy, never persisted as
+    # a CONTEXT_EDITED diff themselves.
+    #
+    # P7 Unit C seam fix (test-proven by test_p7_e2e_reference_journey.py):
+    # `Situation.motion_state` is a SEPARATE field from
+    # `ControlInputs.motion_state` (data-model.md "Situation") -- it is the
+    # one `World.project()` puts into `feature_snapshot["situation"]`, which
+    # is what selector packages actually read (e.g. the real content
+    # selector's full-karaoke stopped-motion gate). `control_inputs.motion_state`
+    # only drives eligibility/matrix resolution here. Without also syncing
+    # `situation.motion_state`, a recompute after `rest_spot_arrived` (which
+    # advances `journey_state.motion_state` to `stopped`) left the projected
+    # feature snapshot reporting the STALE seed motion_state (`driving`),
+    # spuriously denying `full_karaoke` content as "while moving" even though
+    # the run is genuinely stopped.
+    js = run_log.journey_state
+    effective_control_inputs = run_log.world.control_inputs.model_copy(
+        update={"lifecycle_stage": js.lifecycle_stage, "motion_state": js.motion_state}
+    )
+    effective_situation = run_log.world.situation.model_copy(update={"motion_state": js.motion_state})
+    effective_base_world = run_log.world.model_copy(
+        update={"control_inputs": effective_control_inputs, "situation": effective_situation}
+    )
+
+    dataset_registry = _get_dataset_registry()
+    catalog = dataset_registry.get_catalog(effective_base_world.control_inputs.dataset_id)
+
+    try:
+        new_world, diffs = apply_overrides(effective_base_world, body.overrides, catalog=catalog)
+    except InvalidOverrideError as exc:
+        raise HTTPException(status_code=422, detail=[issue.model_dump() for issue in exc.issues]) from exc
+
+    registry = _get_registry()
+    service_pkg = registry.get(run_log.service_package_id)
+    if service_pkg is None or service_pkg.family != ProposalPackageFamily.service_selector:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unknown or mis-slotted service_package_id: {run_log.service_package_id!r}",
+        )
+    content_pkg = registry.get(run_log.content_package_id) if run_log.content_package_id else None
+    if content_pkg is None or content_pkg.family != ProposalPackageFamily.content_selector:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unknown or mis-slotted content_package_id: {run_log.content_package_id!r}",
+        )
+
+    parameters = body.parameters or dict(run_log.parameters)
+    hyperparameters = body.hyperparameters or dict(run_log.hyperparameters)
+
+    # research.md D3: the run's EXISTING setup_snapshot.origin is carried
+    # forward (never re-derived from a CreateProposalRunBody, which doesn't
+    # exist here) -- a typed-world run always has a setup_snapshot (frozen at
+    # create time), guaranteed by the `run_log.world is None` guard above.
+    origin = run_log.setup_snapshot.origin if run_log.setup_snapshot is not None else None
+    world_snapshot, setup_snapshot = _freeze_setup_snapshot(
+        world=new_world,
+        matrix_version=run_log.matrix_version,
+        service_pkg=service_pkg,
+        content_pkg=content_pkg,
+        service_hyperparameters=hyperparameters,
+        origin_seed_id=origin.seed_id if origin is not None else None,
+        origin_clone_id=origin.clone_id if origin is not None else None,
+        origin_profile_id=origin.profile_id if origin is not None else None,
+    )
+
+    matrix = PurposeStageServiceMatrix.load(_matrix_path())
+    try:
+        allowed_service_ids = matrix.resolve(
+            new_world.control_inputs.trigger_purpose, new_world.control_inputs.lifecycle_stage
+        )
+    except MatrixResolutionError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    opportunity_id = _make_opportunity_id()
+    try:
+        opportunity = ProposalOpportunity(
+            opportunity_id=opportunity_id,
+            trigger_purpose=new_world.control_inputs.trigger_purpose,
+            lifecycle_stage=new_world.control_inputs.lifecycle_stage,
+            allowed_service_ids=allowed_service_ids,
+            simulation_time=run_log.opportunity.simulation_time,
+            run_seed=run_log.opportunity.run_seed,
+        )
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    # -----------------------------------------------------------------
+    # Eligibility narrows the allowed row BEFORE ranking (mirrors
+    # create_proposal_run exactly -- research.md D1).
+    # -----------------------------------------------------------------
+    capabilities = _get_service_capabilities()
+    registered_entities = derive_registered_entities(world_snapshot)
+    eligibility_result = resolve_eligibility(
+        allowed_service_ids,
+        new_world.control_inputs.motion_state,
+        capabilities,
+        registered_entities=registered_entities,
+    )
+    excluded_candidates_ctx = [
+        {
+            "candidate_id": excl.service_id.value,
+            "platform_reason": ",".join(rc.value for rc in excl.reason_codes),
+        }
+        for excl in eligibility_result.excluded
+    ]
+
+    at = _now_iso()
+    events: list[DiscreteEvent] = []
+    if diffs:
+        events.append(
+            DiscreteEvent(
+                event_type=DiscreteEventType.CONTEXT_EDITED,
+                at=at,
+                payload={"diffs": [diff.model_dump(mode="json") for diff in diffs]},
+            )
+        )
+    events.append(
+        DiscreteEvent(
+            event_type=DiscreteEventType.OPPORTUNITY_OPENED,
+            at=at,
+            payload={
+                "opportunity_id": opportunity_id,
+                "trigger_purpose": opportunity.trigger_purpose.value,
+                "lifecycle_stage": opportunity.lifecycle_stage.value,
+            },
+        )
+    )
+    events.append(
+        DiscreteEvent(
+            event_type=DiscreteEventType.RECOMPUTED,
+            at=at,
+            payload={
+                "from_opportunity_id": run_log.opportunity.opportunity_id,
+                "to_opportunity_id": opportunity_id,
+            },
+        )
+    )
+
+    evidence: AlgorithmEvidence | None = None
+    selected_service_id: ServiceId | None = None
+    if not eligibility_result.eligible:
+        # T017a-equivalent (research.md D1/D8): every allowed service was
+        # excluded -- never dispatch a selector, never fabricate a candidate.
+        events.append(
+            DiscreteEvent(
+                event_type=DiscreteEventType.NO_ELIGIBLE_CANDIDATE,
+                at=at,
+                payload={
+                    "excluded": [
+                        {
+                            "service_id": excl.service_id.value,
+                            "reason_codes": [rc.value for rc in excl.reason_codes],
+                        }
+                        for excl in eligibility_result.excluded
+                    ],
+                },
+            )
+        )
+        new_status = ProposalRunStatus.service_selected
+    else:
+        context = _build_service_context(
+            package=service_pkg,
+            opportunity=opportunity,
+            world_snapshot=world_snapshot,
+            enabled_feature_extensions=[],
+            parameters=parameters,
+            hyperparameters=hyperparameters,
+            eligible_service_ids=eligibility_result.eligible,
+            excluded_candidates=excluded_candidates_ctx,
+        )
+        evidence = dispatch_selector(
+            service_pkg,
+            context,
+            settings.packages_dir,
+            matrix_version=run_log.matrix_version,
+            used_feature_ids=list(context["feature_snapshot"].keys()),
+            allowed_service_ids=[s.value for s in eligibility_result.eligible],
+        )
+        if evidence.error is not None:
+            new_status = ProposalRunStatus.error
+            events.append(
+                DiscreteEvent(
+                    event_type=DiscreteEventType.ALGORITHM_ERROR,
+                    at=at,
+                    payload={
+                        "step": "service",
+                        "category": evidence.error.category,
+                        "message": evidence.error.message,
+                    },
+                )
+            )
+        else:
+            ranked_candidates = evidence.output.get("ranked_candidates", []) if evidence.output else []
+            if ranked_candidates:
+                selected_service_id = ServiceId(ranked_candidates[0]["candidate_id"])
+                events.append(
+                    DiscreteEvent(
+                        event_type=DiscreteEventType.SERVICE_SELECTED,
+                        at=at,
+                        payload={"selected_service_id": selected_service_id.value, "rank": 1},
+                    )
+                )
+            new_status = ProposalRunStatus.service_selected
+
+    # -----------------------------------------------------------------
+    # Assemble the new head: push the PRIOR head into append-only history,
+    # install the new opportunity/setup_snapshot as the current head
+    # (data-model.md "Modified: ProposalRunLog" invariant: history EXCLUDES
+    # the current head, index-aligned across both lists). A typed-world run
+    # always has a setup_snapshot (frozen at create time) -- guaranteed by
+    # the `run_log.world is None` guard above.
+    # -----------------------------------------------------------------
+    new_opportunity_history = [*run_log.opportunity_history, run_log.opportunity]
+    new_setup_snapshot_history = [*run_log.setup_snapshot_history, run_log.setup_snapshot]
+
+    # data-model.md "State transitions (recompute effect on JourneyState)":
+    # active_service_id resets (rank-1 or None); rejected_service_ids resets
+    # to []; lifecycle_stage/motion_state/playback_state/previous_content/
+    # current_plan_ref/active_plan_id are all PRESERVED (untouched here).
+    new_journey_state = js.model_copy(
+        update={"active_service_id": selected_service_id, "rejected_service_ids": []}
+    )
+
+    for event in events:
+        prm.append_event(run_id, event, settings.proposal_runs_dir)
+    if evidence is not None:
+        prm.append_evidence(run_id, evidence, settings.proposal_runs_dir)
+
+    run_log = prm.update_state(
+        run_id,
+        settings.proposal_runs_dir,
+        status=new_status,
+        journey_state=new_journey_state,
+        opportunity=opportunity,
+        world_snapshot=world_snapshot,
+        setup_snapshot=setup_snapshot,
+        opportunity_history=new_opportunity_history,
+        setup_snapshot_history=new_setup_snapshot_history,
+    )
+
+    # US3/T025 (FR-012/FR-014): a quick_check run additionally dispatches
+    # content for the rank-1 service in this SAME recompute response,
+    # whenever this recompute actually yielded one (interactive runs, and
+    # quick_check with no rank-1, are untouched -- they stop above).
+    if run_log.mode == ProposalRunMode.quick_check and selected_service_id is not None:
+        content_parameters_for_dispatch = body.content_parameters or dict(content_pkg.parameters)
+        content_hyperparameters_for_dispatch = body.content_hyperparameters or {
+            hp.key: hp.default for hp in content_pkg.hyperparameters
+        }
+        run_log = _apply_quick_check_content(
+            run_id,
+            run_log,
+            selected_service_id,
+            content_parameters_for_dispatch,
+            content_hyperparameters_for_dispatch,
+        )
+
     return run_log
 
 

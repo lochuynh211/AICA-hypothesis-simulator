@@ -178,7 +178,7 @@
   .sim-params { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 10px 14px; background: var(--rest-bg); border-bottom: 1px solid var(--line); font-size: 0.8em; }
   .sim-params .p { display: flex; gap: 6px; align-items: baseline; }
   .sim-params .p .k { font-size: 0.82em; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-muted); font-weight: 800; }
-  .sim { display: grid; grid-template-columns: 0.8fr 0.85fr 1fr 1.3fr; }
+  .sim { display: grid; grid-template-columns: 1fr 1.3fr 1.3fr; }
   .col { border-right: 1px solid var(--line); min-width: 0; }
   .col:last-child { border-right: 0; }
   .col > h4 { margin: 0; padding: 10px 14px; font-size: 0.78em; letter-spacing: 0.04em; text-transform: uppercase; background: var(--bg-soft); border-bottom: 1px solid var(--line); color: var(--rest); }
@@ -249,7 +249,7 @@
       <li><a class="step" href="#features"><span class="ja">特徴量の完全契約</span><span class="en">Feature contracts</span></a></li>
       <li><a class="step" href="#use"><span class="ja">お客様ができること</span><span class="en">What the customer can do</span></a></li>
       <li><a class="step" href="#data"><span class="ja">合成音楽データと生成</span><span class="en">Music data &amp; generation</span></a></li>
-      <li><a class="step" href="#prototype"><span class="ja">画面イメージ（入力/設定/サービス/コンテンツ）</span><span class="en">Screen (input/setup/service/content)</span></a></li>
+      <li><a class="step" href="#prototype"><span class="ja">画面イメージ（入力/サービス/コンテンツ）</span><span class="en">Screen (input/service/content)</span></a></li>
       <li><a class="step" href="#delivery"><span class="ja">実装の進め方</span><span class="en">Delivery path</span></a></li>
       <li><a href="#appendix"><span class="ja">付録：既定パラメータ</span><span class="en">Appendix: default params</span></a></li>
     </ol>
@@ -260,11 +260,11 @@
       <span class="badge"><span class="ja">AICA 提案シミュレーター 概要</span><span class="en">AICA proposal simulator — overview</span></span>
       <h1><span class="ja">「いつ提案するか」から<br>「次に何を提案するか」へ</span><span class="en">From “when to propose”<br>to “what to propose next”</span></h1>
       <p class="lede">
-        <span class="ja">休憩前・休憩中・休憩後を通して、車内サービスと具体的なコンテンツの選び方を、お客様が確認・調整するためのレビュー用シミュレーターです。</span>
+        <span class="ja">休憩前・休憩中・休憩後を通して、車内サービスと具体的なコンテンツをどう選ぶかを、お客様がご自身で確認・調整できるレビュー用シミュレーターです。</span>
         <span class="en">A customer-review simulator for choosing an in-car service and its concrete content across pre-rest, rest, and post-rest situations.</span>
       </p>
       <div class="oneliner">
-        <span class="ja"><b>一言で言うと：</b>発火目的とライフサイクル段階を<b>明示的に受け取り</b>、その段階で<b>許可されたサービスだけ</b>を状況・好み・履歴の特徴量で<b>順位付け</b>し、安全を最優先しつつ、<b>ドライバーが選べる</b>提案を出す仕組みを、レビューできるツールです。</span>
+        <span class="ja"><b>一言で言うと：</b>発火目的とライフサイクル段階を、そのまま<b>入力として受け取ります</b>。その段階で<b>許可されたサービスだけ</b>を、状況・好み・履歴の特徴量で<b>順位付け</b>します。安全を最優先しながら、最後は<b>ドライバーが選べる</b>提案を出す仕組みを、まるごとレビューできるツールです。</span>
         <span class="en"><b>In one line:</b> it takes an <b>explicit</b> trigger purpose and lifecycle stage, <b>ranks only the services allowed</b> in that stage using situation/preference/history features, keeps <b>safety dominant</b>, and leaves the <b>final choice to the driver</b> — and lets a reviewer inspect all of it.</span>
       </div>
     </header>
@@ -273,20 +273,20 @@
     <section id="overview">
       <h2><span class="ja">概要 ― 提案の考え方</span><span class="en">Overview — the proposal idea</span></h2>
       <p>
-        <span class="ja">このシミュレーターは実車機能ではなく<b>レビュー用ツール</b>です。トリガー（発火）が「休憩を勧めるべき」と判断した<b>後</b>に、「では具体的に何を提供するか」を決める部分を対象にします。トリガー側の詳細は別資料 <code class="k">aica_hybrid_trigger_explained.html</code> を参照してください。</span>
+        <span class="ja">このシミュレーターは実車機能ではなく、<b>レビュー用ツール</b>です。対象になるのは、トリガー（発火）が「休憩を勧めるべき」と判断した<b>あと</b>の部分です。つまり「では具体的に何を提供するか」を決めるところです。トリガー側の詳細は、別資料の <code class="k">aica_hybrid_trigger_explained.html</code> をご覧ください。</span>
         <span class="en">This is a <b>review tool</b>, not a live product. It covers what happens <b>after</b> a trigger decides “a rest should be recommended” — namely, deciding <b>what to actually offer</b>. The trigger side is described separately in <code class="k">aica_hybrid_trigger_explained.html</code>.</span>
       </p>
 
       <h3><span class="ja">発火目的は「推論」ではなく「入力」</span><span class="en">The purpose is supplied, not inferred</span></h3>
       <p>
-        <span class="ja">提案アルゴリズムは、4つの発火目的のいずれか、現在のライフサイクル段階、その段階で許可されたサービス集合を<b>入力として受け取ります</b>。そのうえで、状況・好み・履歴の特徴量を使って、許可された候補<b>だけ</b>を順位付けします。禁止されたサービスを付け足すことはできません。</span>
+        <span class="ja">提案アルゴリズムが<b>入力として受け取る</b>のは、4つの発火目的のいずれか、現在のライフサイクル段階、そしてその段階で許可されたサービスの集合です。そのうえで、状況・好み・履歴の特徴量を使い、許可された候補<b>だけ</b>を順位付けします。禁止されたサービスをあとから付け足すことはできません。</span>
         <span class="en">The algorithm <b>receives</b> one of four trigger purposes, the current lifecycle stage, and the services allowed in that stage. It then ranks <b>only</b> those permitted candidates using situation/preference/history features. It cannot add a service forbidden in that flow.</span>
       </p>
 
       <div class="why safe">
         <span class="lab"><span class="ja">安全最優先、ただし提案型</span><span class="en">Safety first, but advisory</span></span>
         <p>
-          <span class="ja">許容できない提供方法（例：走行中の歌詞画面）は候補から<b>除外</b>され、そのうえで安全性に<b>圧倒的な優先度</b>が与えられます。それでも最終的な選択はドライバーにあり、AICAは提案するだけで強制しません。</span>
+          <span class="ja">許容できない提供方法（例えば走行中の歌詞画面）は、候補から<b>除外</b>します。そのうえで、安全性には<b>圧倒的な優先度</b>を与えます。それでも最終的な選択はドライバー本人にあります。AICAはあくまで提案するだけで、強制はしません。</span>
           <span class="en">Impermissible behavior (e.g. a lyrics screen while driving) is <b>excluded</b>, and safety then receives <b>overwhelming</b> ranking priority. The driver still makes the final choice; AICA proposes and does not force.</span>
         </p>
       </div>
@@ -295,7 +295,7 @@
     <!-- 2. Purpose & lifecycle -->
     <section id="purposes">
       <h2><span class="num">1</span><span class="ja">発火目的とライフサイクル</span><span class="en">Purpose &amp; lifecycle</span></h2>
-      <p><span class="ja">明示される4つの発火目的：</span><span class="en">The four explicit trigger purposes:</span></p>
+      <p><span class="ja">明示的に与えられる4つの発火目的です。</span><span class="en">The four explicit trigger purposes:</span></p>
       <div class="pill-row">
         <span class="pill">① <span class="ja">休憩推奨</span><span class="en">Rest recommended</span> — <code>rest_recommended</code></span>
         <span class="pill">② <span class="ja">漫然運転予防・疲労回復</span><span class="en">Inattentive prevention / recovery</span> — <code>inattentive_driving_prevention_recovery</code></span>
@@ -303,7 +303,7 @@
         <span class="pill">④ <span class="ja">子供同乗時体験</span><span class="en">Child-passenger experience</span> — <code>child_passenger_experience</code></span>
       </div>
       <p>
-        <span class="ja">目的①では「休憩所まで走行中」「停車して休憩中」「休憩後・再走行前」で選べるサービスが変わります。目的②〜④は走行中コンテンツフローを使います（スライド64・65の制約表）。</span>
+        <span class="ja">目的①では、「休憩所まで走行中」「停車して休憩中」「休憩後・再走行前」のどの段階かによって、選べるサービスが変わります。目的②〜④は、走行中コンテンツフローを使います（スライド64・65の制約表）。</span>
         <span class="en">For purpose ①, the allowed choices differ across driving-to-the-spot, resting-while-stopped, and post-rest-while-stopped. Purposes ②–④ use the driving-content flow (the Slides 64–65 constraint matrix).</span>
       </p>
       <div class="scroll-x">
@@ -327,27 +327,27 @@
     <section id="journey">
       <h2><span class="num">2</span><span class="ja">休憩前から休憩後までの一例</span><span class="en">One end-to-end rest journey</span></h2>
       <p class="muted small">
-        <span class="ja">これはユースケースに基づく代表例であり、固定シナリオではありません。各フェーズで最新状況を使って再確認します。</span>
+        <span class="ja">これはユースケースに基づく代表例であり、決まりきったシナリオではありません。各フェーズで、そのときの最新状況を使って毎回確認し直します。</span>
         <span class="en">A representative path from the use cases — not a fixed script. Each phase is confirmed again using the latest situation.</span>
       </p>
       <div class="fgrid">
         <div class="fcard blue">
           <h4><span class="ja">休憩前：走行中</span><span class="en">Pre-rest: while driving</span></h4>
-          <p><span class="ja">現実的な休憩場所と、そこまでの走行中に使える「サビのみ鼻歌カラオケ」など音声中心の案を提案します。</span><span class="en">Propose a practical rest spot and an audio-first option for the drive there, such as chorus-only humming karaoke.</span></p>
+          <p><span class="ja">現実的な休憩場所と、そこまでの走行中に使える案を提案します。「サビだけの鼻歌カラオケ」など、音声中心のものが中心です。</span><span class="en">Propose a practical rest spot and an audio-first option for the drive there, such as chorus-only humming karaoke.</span></p>
         </div>
         <div class="fcard green">
           <h4><span class="ja">休憩中：到着後</span><span class="en">Rest: after arrival</span></h4>
-          <p><span class="ja">仮眠などの休憩方法・時間をドライバーが選びます。休憩後の状態は、評価者が設定した明示的な値を反映します。</span><span class="en">The driver chooses the rest method and duration (e.g. a nap). The post-rest state is an explicit value set by the reviewer.</span></p>
+          <p><span class="ja">仮眠などの休憩方法と時間は、ドライバーが選びます。休憩後の状態には、評価者があらかじめ設定した明示的な値を使います。</span><span class="en">The driver chooses the rest method and duration (e.g. a nap). The post-rest state is an explicit value set by the reviewer.</span></p>
         </div>
         <div class="fcard mono">
           <h4><span class="ja">休憩後：停車中</span><span class="en">Post-rest: while stopped</span></h4>
-          <p><span class="ja">再計算し、フルカラオケ、ライブ映像、ストレッチ、推し関連体験など停車中向けサービスを提案します。</span><span class="en">Recompute and offer stopped experiences such as full karaoke, live viewing, stretch, or an oshi-related experience.</span></p>
+          <p><span class="ja">状況を再計算し、フルカラオケ、ライブ映像、ストレッチ、推し関連体験など、停車中向けのサービスを提案します。</span><span class="en">Recompute and offer stopped experiences such as full karaoke, live viewing, stretch, or an oshi-related experience.</span></p>
         </div>
       </div>
       <div class="why warn">
         <span class="lab"><span class="ja">ライティングは「演出オプション」</span><span class="en">Lighting is a presentation option</span></span>
         <p>
-          <span class="ja">ライティングは単独サービスではなく演出オプションです。プレイリスト、鼻歌カラオケ、合いの手、ライブビューイング、フルカラオケに利用でき、クイズ、ランキング、ラジオ風、ストレッチ、推し追体験では利用しません。</span>
+          <span class="ja">ライティングは単独のサービスではなく、あくまで演出オプションです。プレイリスト、鼻歌カラオケ、合いの手、ライブビューイング、フルカラオケでは使えますが、クイズ、ランキング、ラジオ風、ストレッチ、推し追体験では使いません。</span>
           <span class="en">Lighting is not a service by itself. It can accompany playlist, humming karaoke, call-and-response, live viewing, and full karaoke — and is not used for quiz, ranking, radio-style, stretch, or oshi reexperience.</span>
         </p>
       </div>
@@ -357,7 +357,7 @@
     <section id="packages">
       <h2><span class="num">3</span><span class="ja">2段階の決定 × 2方式</span><span class="en">Two decisions × two package families</span></h2>
       <p>
-        <span class="ja">提案は<b>2段階</b>で決まります。まず<b>サービス</b>（プレイリストか鼻歌カラオケか等）を選び、その後に<b>具体コンテンツ</b>（実際の曲・モード・演出）を選びます。それぞれに<b>2つの独立した方式</b>があります。</span>
+        <span class="ja">提案は<b>2段階</b>で決まります。まず<b>サービス</b>（プレイリストか鼻歌カラオケか、など）を選びます。そのあとで<b>具体コンテンツ</b>（実際の曲・モード・演出）を選びます。それぞれの段階に<b>2つの独立した方式</b>を用意しています。</span>
         <span class="en">A proposal is made in <b>two steps</b>: first choose the <b>service</b> (playlist vs humming karaoke, etc.), then the <b>concrete content</b> (actual songs, mode, presentation). Each step has <b>two independent package families</b>.</span>
       </p>
       <div class="pipe">
@@ -370,16 +370,16 @@
       <div class="fgrid">
         <div class="fcard blue">
           <h4><span class="ja">透明スコアリング方式</span><span class="en">Transparent scoring</span></h4>
-          <p><span class="ja">専門家が定義し、お客様が編集できる仮説です。重みと寄与をすべて表示します。学習データがないため、スコアは適合度の仮説であり、確率や正しさの証明ではありません。</span><span class="en">An expert-defined, customer-editable hypothesis. Every weight and contribution is visible. With no training data, the score is a fit hypothesis — not a probability or proof.</span></p>
+          <p><span class="ja">専門家が定義し、お客様が編集もできる仮説です。重みと寄与はすべて表示します。学習データを使わないため、スコアはあくまで適合度の仮説です。確率でも、正しさの証明でもありません。</span><span class="en">An expert-defined, customer-editable hypothesis. Every weight and contribution is visible. With no training data, the score is a fit hypothesis — not a probability or proof.</span></p>
         </div>
         <div class="fcard mono">
           <h4><span class="ja">制約付きLLM方式</span><span class="en">Constrained LLM</span></h4>
-          <p><span class="ja">同じ事実とカタログを使いますが、独立して判断します。入力特徴量とカタログIDを根拠として示し、曲・イベント・ユーザー情報を創作してはいけません。</span><span class="en">Uses the same facts and catalog but judges independently. It must cite supplied fields and catalog IDs, and may not invent songs, events, or user facts.</span></p>
+          <p><span class="ja">同じ事実とカタログを使いますが、判断は独立して行います。根拠として示せるのは、入力特徴量とカタログIDだけです。曲・イベント・ユーザー情報を創作することは禁じています。</span><span class="en">Uses the same facts and catalog but judges independently. It must cite supplied fields and catalog IDs, and may not invent songs, events, or user facts.</span></p>
         </div>
       </div>
       <div class="why">
         <span class="lab"><span class="ja">パッケージは互いのスコアを共有しない</span><span class="en">Packages never share scores</span></span>
-        <p><span class="ja">4つのパッケージ（サービス×2方式、コンテンツ×2方式）が共有するのは、中立なデータ形式とハードなプラットフォーム制約だけです。スコアやランキングは共有しません。だからこそ、同じ世界で方式を横並び比較できます。</span><span class="en">The four packages (service × 2, content × 2) share only neutral data formats and hard platform constraints — never scores or rankings. That is what makes an apples-to-apples comparison on the same world possible.</span></p>
+        <p><span class="ja">4つのパッケージ（サービス×2方式、コンテンツ×2方式）が共有するのは、中立なデータ形式とハードなプラットフォーム制約だけです。スコアやランキングは共有しません。だからこそ、まったく同じ入力データ（状況・ユーザー情報）で、方式どうしを横並びで比較できます。</span><span class="en">The four packages (service × 2, content × 2) share only neutral data formats and hard platform constraints — never scores or rankings. That is what makes an apples-to-apples comparison on the same input data possible.</span></p>
       </div>
     </section>
 
@@ -387,7 +387,7 @@
     <section id="scoring">
       <h2><span class="num">4</span><span class="ja">スコアの仕組み（透明方式）</span><span class="en">How the transparent score works</span></h2>
       <p>
-        <span class="ja">透明方式は<b>決定論的な正規化重み付き応答モデル</b>です。各特徴量の応答（<code>r</code>、−1〜+1）に、正規化された有効重み（<code>w</code>、合計1）を掛けて足し合わせ、サービスの<b>適合度</b> <code>service_fit</code>（−1〜+1）を得て、その順に並べます。バンドやしきい値はありません。</span>
+        <span class="ja">透明方式は<b>決定論的な正規化重み付き応答モデル</b>です。各特徴量の応答（<code>r</code>、−1〜+1）に、正規化した有効重み（<code>w</code>、合計1）を掛けて足し合わせます。こうしてサービスの<b>適合度</b> <code>service_fit</code>（−1〜+1）を求め、その順に並べます。バンドもしきい値もありません。</span>
         <span class="en">The transparent method is a <b>deterministic normalized weighted-response model</b>. Each feature response (<code>r</code>, in −1…+1) is multiplied by its normalized effective weight (<code>w</code>, summing to 1) and added up to give a service’s <b>fit</b> <code>service_fit</code> (−1…+1); candidates are ranked by it. No bands, no threshold.</span>
       </p>
       <div class="formula wrap">
@@ -396,7 +396,7 @@
       </div>
 
       <p>
-        <span class="ja">重みは階層構造です。<b>カテゴリ</b>の初期配分は次の通りで、状況が支配的です。すべて<b>編集可能なハイパーパラメータ</b>です。</span>
+        <span class="ja">重みは<b>階層構造（重みの階層）</b>になっています。<b>カテゴリ</b>の初期配分は次の通りで、状況が支配的です。すべて<b>編集可能なハイパーパラメータ</b>です。</span>
         <span class="en">Weights are hierarchical. The initial <b>category</b> allocation below makes situation dominant, and all of it is <b>editable hyperparameters</b>.</span>
       </p>
       <div class="pill-row">
@@ -404,37 +404,37 @@
         <span class="pill"><b>Preference <span class="ja">好み</span></b> — .12</span>
         <span class="pill"><b>History <span class="ja">履歴</span></b> — .08</span>
       </div>
-      <p class="small muted"><span class="ja">履歴の中では<b>回復</b>が受諾より重く、発火目的の乗数がドライバー状態と環境をさらに強調します。</span><span class="en">Within History, <b>recovery</b> outweighs acceptance, and purpose multipliers further emphasize driver state and environment.</span></p>
+      <p class="small muted"><span class="ja">履歴の中では<b>回復</b>を受諾より重く扱います。さらに、発火目的ごとの乗数が、ドライバー状態と環境をいっそう強調します。</span><span class="en">Within History, <b>recovery</b> outweighs acceptance, and purpose multipliers further emphasize driver state and environment.</span></p>
 
       <div class="why safe">
         <span class="lab"><span class="ja">安全は数式で保証される（逆転不能）</span><span class="en">Safety is guaranteed by the math (non-reversal)</span></span>
         <p>
-          <span class="ja">まず<b>ハード適格性</b>（走行/停車、カタログ準備、予定成立など）で候補を除外します。<b>どんな重みもハード除外を覆せません</b>。さらに既定配分は「ドライバー状態＋環境＋回復」に約<b>79%</b>を割り当てるため、下位の全特徴量が最悪方向に振れても、上位の実質的な差（既定 1.00）を逆転できないことが<b>数式で示されています</b>。</span>
+          <span class="ja">まず<b>ハード適格性</b>（走行/停車、カタログ準備、予定成立など）で候補を除外します。<b>どんな重みもハード除外を覆せません</b>。さらに既定配分では「ドライバー状態＋環境＋回復」に約<b>79%</b>を割り当てています。そのため、下位の全特徴量が最悪の方向に振れたとしても、上位にある実質的な差（既定 1.00）を逆転できないことが<b>数式のうえで示されています</b>。</span>
           <span class="en">First, <b>hard eligibility</b> (driving/stopped, catalog readiness, schedule, …) removes candidates — and <b>no weight can reverse a hard exclusion</b>. On top of that, the default profile gives ~<b>79%</b> to “driver state + environment + recovery,” so it is <b>provable</b> that the full lower-priority set, even at its worst, cannot overturn a material high-priority advantage (default gap 1.00).</span>
         </p>
       </div>
-      <p class="small muted"><span class="ja">出典：<code class="k">aica_transparent_service_proposal_algorithm.md</code> §4・§6。走行/停車（motion）は<b>ランキング特徴量ではなく</b>、適格性の事実として扱われます。</span><span class="en">Source: <code class="k">aica_transparent_service_proposal_algorithm.md</code> §4, §6. Motion is an eligibility fact, <b>not</b> a ranking feature.</span></p>
+      <p class="small muted"><span class="ja">出典：<code class="k">aica_transparent_service_proposal_algorithm.md</code> §4・§6。走行/停車（motion）は<b>ランキングの特徴量ではありません</b>。適格性の事実として扱います。</span><span class="en">Source: <code class="k">aica_transparent_service_proposal_algorithm.md</code> §4, §6. Motion is an eligibility fact, <b>not</b> a ranking feature.</span></p>
 
       <h3><span class="ja">コンテンツ提案 ― 同じ文法、曲を「2つの軸」で捉える</span><span class="en">Content proposal — same grammar, the song on two axes</span></h3>
       <p>
-        <span class="ja">具体コンテンツ提案も<b>同じ数式文法</b>で、独立パッケージです（<code>service_fit</code>やサービス順位を<b>一切参照しません</b>）。各曲の <b>item_fit</b>（−1〜+1）は、要素ごとの応答 <code>r = e × a</code> を重み付き合計したものです。新しいのは <code>a</code>（応答係数）の作り方だけです ―― ドライバー状態・環境の6要素では、曲を<b>2つのオーディオ特性</b>に還元します：どれだけ<b>元気か（覚醒度 arousal）</b>と、どれだけ<b>明るいか（明るさ valence）</b>。<code>e</code>（証拠）は「状況がどれだけ強くそれを求めるか」という<b>大きさ（0〜1）</b>だけを表し、＋/−の<b>向きは要素側の「需要」</b>が持ちます。</span>
+        <span class="ja">具体コンテンツ提案も<b>同じ数式文法</b>を使う、独立したパッケージです。<code>service_fit</code>やサービス順位は<b>一切参照しません</b>。各曲の <b>item_fit</b>（−1〜+1）は、要素ごとの応答 <code>r = e × a</code> を重み付きで合計したものです。新しいのは <code>a</code>（応答係数）の作り方だけです。ドライバー状態・環境の6要素では、曲を<b>2つのトレイト（曲の性格を表す値）</b>に還元します。どれだけ<b>元気か（活性度 arousal）</b>と、どれだけ<b>明るいか（明るさ valence）</b>です。<code>e</code>（evidence＝状況の強さ）が表すのは「状況がどれだけ強くそれを求めるか」という<b>大きさ（0〜1）</b>だけです。＋/−の<b>向きは要素側の「需要」</b>が持ちます。</span>
         <span class="en">Content selection uses the <b>same grammar</b> and is a fully independent package (it <b>never consumes</b> <code>service_fit</code> or service rank). Each song’s <b>item_fit</b> (−1…+1) is a weighted sum of per-factor responses <code>r = e × a</code>. Only the way <code>a</code> is built is new: for the six driver/environment factors, the song is reduced to <b>two audio traits</b> — how <b>energetic</b> it is (<b>arousal</b>) and how <b>bright</b> it is (<b>valence</b>). Here <code>e</code> is just a <b>magnitude</b> (0…1 — how strongly the context calls for something); the +/− <b>direction lives in the factor’s demand</b>.</span>
       </p>
       <div class="formula wrap">
         <span class="lhs">item_fit</span> = clamp( <span class="op">Σ<sub>i</sub></span> <span class="coef">w<sub>i</sub></span> <span class="op">·</span> <span class="feat">e<sub>i</sub></span> <span class="op">·</span> <span class="feat">a<sub>i</sub></span> , −1, +1 )
         &nbsp;&nbsp;<span class="op">|</span>&nbsp;&nbsp; <span class="feat">a</span><sub>song</sub> = <span class="coef">α</span> <span class="op">·</span> A<sub>s</sub> <span class="op">+</span> <span class="coef">β</span> <span class="op">·</span> V<sub>s</sub>
-        &nbsp;&nbsp;<span class="op">(<span class="ja">覚醒</span><span class="en">arousal</span> A<sub>s</sub>, <span class="ja">明るさ</span><span class="en">valence</span> V<sub>s</sub> ∈ −1…+1)</span>
+        &nbsp;&nbsp;<span class="op">(<span class="ja">活性度</span><span class="en">arousal</span> A<sub>s</sub>, <span class="ja">明るさ</span><span class="en">valence</span> V<sub>s</sub> ∈ −1…+1)</span>
       </div>
       <div class="why mono">
         <span class="lab"><span class="ja">なぜ1つの「活性度」ではなく2軸なのか</span><span class="en">Why two axes instead of one “activation”</span></span>
-        <p><span class="ja">1つの数値では「穏やかで明るい」曲と「穏やかで暗い」曲を区別できません。<b>眠い</b>ドライバーには<b>元気な</b>曲を、<b>疲れて</b>いる・<b>渋滞</b>や<b>夜間</b>で張り詰めたドライバーには<b>穏やかで安心できる（明るい）</b>曲を ―― この違いは覚醒度と明るさの2軸で初めて表せます。覚醒度の需要 <code>α</code> は<b>両方向</b>（元気がほしい＝＋／落ち着きたい＝−）、明るさの需要 <code>β</code> は<b>片方向</b>（明るさは足すだけで、暗さを求めることはない）。曲の2特性も、鼻歌・フルカラオケの「歌いやすさ」も、凍結した<b>Spotifyオーディオ特徴量</b>から決定時に導く<b>透明な指標</b>で、カタログには保存しません。</span><span class="en">A single number can’t tell a <b>calm-but-bright</b> song from a <b>calm-but-dark</b> one. A <b>drowsy</b> driver wants an <b>energetic</b> song; a <b>fatigued</b> driver — or one tensed by <b>congestion</b> or <b>night</b> — wants <b>calm, reassuring (bright)</b> music. Only two axes separate these. The arousal demand <code>α</code> is <b>two-sided</b> (want energy = +, want calm = −); the valence demand <code>β</code> is <b>one-sided</b> (brightness is only ever added, darkness is never requested). Both traits — and the humming/full-karaoke “ease” proxies — are <b>transparent values</b> derived from frozen <b>Spotify audio features</b> at decision time, never stored in the catalog.</span></p>
+        <p><span class="ja">1つの数値だけでは、「穏やかで明るい」曲と「穏やかで暗い」曲を区別できません。<b>眠い</b>ドライバーには<b>元気な</b>曲を提案したいところです。一方、<b>疲れて</b>いたり、<b>渋滞</b>や<b>夜間</b>で気が張っていたりするドライバーには、<b>穏やかで安心できる（明るい）</b>曲のほうが合います。この違いは、活性度と明るさの2軸があって初めて表せます。活性度の需要 <code>α</code> は<b>両方向</b>です（元気がほしい＝＋、落ち着きたい＝−）。明るさの需要 <code>β</code> は<b>片方向</b>だけです（明るさは足すだけで、暗さを求めることはありません）。曲の2つのトレイトも、鼻歌・フルカラオケの「歌いやすさ」も、凍結した<b>Spotifyオーディオ特徴量</b>から決定時に導く<b>透明な指標</b>です。カタログには保存しません。</span><span class="en">A single number can’t tell a <b>calm-but-bright</b> song from a <b>calm-but-dark</b> one. A <b>drowsy</b> driver wants an <b>energetic</b> song; a <b>fatigued</b> driver — or one tensed by <b>congestion</b> or <b>night</b> — wants <b>calm, reassuring (bright)</b> music. Only two axes separate these. The arousal demand <code>α</code> is <b>two-sided</b> (want energy = +, want calm = −); the valence demand <code>β</code> is <b>one-sided</b> (brightness is only ever added, darkness is never requested). Both traits — and the humming/full-karaoke “ease” proxies — are <b>transparent values</b> derived from frozen <b>Spotify audio features</b> at decision time, never stored in the catalog.</span></p>
       </div>
       <div class="scroll-x">
         <table>
           <thead><tr>
             <th><span class="ja">状況（要素）</span><span class="en">Context factor</span></th>
             <th><span class="ja">何を求めるか</span><span class="en">What it wants</span></th>
-            <th><span class="ja">覚醒 α</span><span class="en">Arousal α</span></th>
+            <th><span class="ja">活性度 α</span><span class="en">Arousal α</span></th>
             <th><span class="ja">明るさ β</span><span class="en">Valence β</span></th>
           </tr></thead>
           <tbody>
@@ -447,21 +447,21 @@
           </tbody>
         </table>
       </div>
-      <p class="small muted"><span class="ja">眠気（＋）と疲労（−）は覚醒度で<b>逆向き</b>に引きます ―― 1つの活性度では表せない分離です。オシ・年代・再生履歴・受諾・回復などその他の要素は、2軸ではなく<b>完全一致メタデータ</b>から直接 <code>a</code> を決めます（例：Track/Artist ID一致で +1）。⚠付き（疲労・渋滞・夜間）の向きはバージョン管理されたハイパーパラメータで、反転も可能です。</span><span class="en">Drowsiness (+) and fatigue (−) pull in <b>opposite</b> arousal directions — a separation one “activation” number can’t express. Every other factor (oshi, age, playback history, acceptance, recovery) sets <code>a</code> directly from <b>exact-ID metadata</b> instead of traits (e.g. +1 on a Track/Artist-ID match). The ⚠ directions (fatigue, congestion, night) are versioned hyperparameters and can be flipped.</span></p>
+      <p class="small muted"><span class="ja">眠気（＋）と疲労（−）は、活性度において<b>逆向き</b>に引き合います。1つの活性度だけでは表せない分離です。推し・年代・再生履歴・受諾・回復などその他の要素は、2軸ではなく<b>完全一致メタデータ</b>から直接 <code>a</code> を決めます（例：Track/Artist IDが一致すれば+1）。⚠が付いた要素（疲労・渋滞・夜間）の向きは、バージョン管理されたハイパーパラメータで、反転もできます。</span><span class="en">Drowsiness (+) and fatigue (−) pull in <b>opposite</b> arousal directions — a separation one “activation” number can’t express. Every other factor (oshi, age, playback history, acceptance, recovery) sets <code>a</code> directly from <b>exact-ID metadata</b> instead of traits (e.g. +1 on a Track/Artist-ID match). The ⚠ directions (fatigue, congestion, night) are versioned hyperparameters and can be flipped.</span></p>
       <div class="pill-row">
         <span class="pill"><b>Situation <span class="ja">状況</span></b> — .55</span>
         <span class="pill"><b>Preference <span class="ja">好み</span></b> — .30</span>
         <span class="pill"><b>History <span class="ja">履歴</span></b> — .15</span>
         <span class="pill"><span class="ja">既定プラン</span><span class="en">Default plan</span> — 5 <span class="ja">曲（並び順つき）</span><span class="en">ordered songs</span></span>
       </div>
-      <p class="small muted"><span class="ja">V1は music_playlist / humming_karaoke / full_karaoke の3レシピを実装。<b>Spotifyのみのため、ルート・目的地・同乗者・タグ・予定などの一部特徴量はV1でマスク（無効化）</b>され、残る有効な葉を再正規化します。プランは決定論的（item_fit降順→Track ID昇順の上位5件）。出典：<code class="k">aica_transparent_content_proposal_algorithm.md</code> §6・§7・§9・§13。</span><span class="en">V1 implements three recipes (music_playlist / humming_karaoke / full_karaoke). <b>Because V1 is Spotify-only, some features (route, destination, passengers, tags, schedule) are masked</b> and the remaining active leaves are renormalized. The plan is deterministic (top 5 by item_fit desc, then Track ID asc). Source: <code class="k">aica_transparent_content_proposal_algorithm.md</code> §6, §7, §9, §13.</span></p>
+      <p class="small muted"><span class="ja">V1では music_playlist / humming_karaoke / full_karaoke の3レシピを実装しています。<b>Spotifyだけを使うため、ルート・目的地・同乗者・タグ・予定などの一部特徴量はV1ではマスク（無効化）</b>し、残った有効な葉を再正規化します。プランの決め方は決定論的です（item_fit降順→Track ID昇順で上位5件）。出典：<code class="k">aica_transparent_content_proposal_algorithm.md</code> §6・§7・§9・§13。</span><span class="en">V1 implements three recipes (music_playlist / humming_karaoke / full_karaoke). <b>Because V1 is Spotify-only, some features (route, destination, passengers, tags, schedule) are masked</b> and the remaining active leaves are renormalized. The plan is deterministic (top 5 by item_fit desc, then Track ID asc). Source: <code class="k">aica_transparent_content_proposal_algorithm.md</code> §6, §7, §9, §13.</span></p>
     </section>
 
     <!-- 6. Features -->
     <section id="features">
       <h2><span class="num">5</span><span class="ja">独立して確認できる完全な特徴量契約</span><span class="en">Complete independent feature contracts</span></h2>
       <p class="small muted">
-        <span class="ja">両アルゴリズムは同じ列とカテゴリ順（状況、好み、過去実績、追加提案）を使います。P0は安全・適格性、P1は主要状況、P2は文脈、P3は個人化・履歴、P4は弱い新規性です。各表はそのアルゴリズムで使う全特徴量を直接記載し、別表との組み合わせは不要です。</span>
+        <span class="ja">両アルゴリズムとも、同じ列とカテゴリ順（状況、好み、過去実績、追加提案）を使います。優先度は、P0が安全・適格性、P1が主要状況、P2が文脈、P3が個人化・履歴、P4が弱い新規性です。各表はそのアルゴリズムが使う特徴量を直接記載しているので、他の表と組み合わせて読む必要はありません。</span>
         <span class="en">Both algorithms use the same columns and category order (Situation, Preference, History, then Additional proposed). P0 = safety/eligibility, P1 = primary situation, P2 = context, P3 = personalization/history, P4 = weak novelty. Each table states every feature that algorithm uses — no cross-table assembly required.</span>
       </p>
 
@@ -505,8 +505,10 @@
         </table>
       </div>
 
+      <p class="small muted"><span class="ja">表Aの「追加提案」行のうち、実際にスコアへ入るのは<b>走行状態（motion_state）</b>だけです。順位付けの<b>前</b>に適格性の事実として使うだけで、点数は付けません。それ以外の行（休憩場所までの分、休憩場所の種類、実行中サービス、直近の拒否、受諾/回復の信頼度、予定イベント）は、17個のCDC-SUベースライン特徴量には含まれない追加シミュレータ入力です。ベースラインのパッケージでは既定で無効になっており、旅程エンジンの制御やUI表示にのみ使います。</span><span class="en">Of Table A's “Additional proposed” rows, only <b>motion state (<code>motion_state</code>)</b> actually enters the score — and only as a pre-ranking eligibility fact, never a point contribution. The remaining rows (minutes to a rest spot, rest-spot type, active service, recent rejections, acceptance/recovery confidence, scheduled events) sit outside the 17 CDC-SU baseline features; they are additional-simulator inputs, disabled by default in the baseline package, and used only for journey-engine control or UI display.</span></p>
+
       <h3><span class="ja">B. 具体コンテンツ提案アルゴリズム</span><span class="en">B. Concrete-content proposal algorithm</span></h3>
-      <p class="small muted"><span class="ja">サービス提案の全特徴量に加え、コンテンツ選択に固有の項目を持ちます（下は追加・固有分の要約）。これは完全な<b>契約</b>で、<b>SpotifyのみのV1では</b>ルート・目的地・タグ・予定・同乗者などの一部の葉がマスク（無効化）され、残る有効な葉が再正規化されます。</span><span class="en">It uses all service-level features plus content-specific ones (summarized below). This is the full <b>contract</b>; in <b>Spotify-only V1</b> some leaves (route, destination, tags, schedule, passengers) are masked and the remaining active leaves are renormalized.</span></p>
+      <p class="small muted"><span class="ja">サービス提案の全特徴量に加えて、コンテンツ選択に固有の項目を持ちます（下は追加・固有分の要約です）。これは完全な<b>契約</b>です。<b>SpotifyのみのV1では</b>、ルート・目的地・タグ・予定・同乗者などの一部の葉をマスク（無効化）し、残った有効な葉を再正規化します。</span><span class="en">It uses all service-level features plus content-specific ones (summarized below). This is the full <b>contract</b>; in <b>Spotify-only V1</b> some leaves (route, destination, tags, schedule, passengers) are masked and the remaining active leaves are renormalized.</span></p>
       <div class="scroll-x">
         <table id="content-feature-contract">
           <thead><tr>
@@ -530,9 +532,11 @@
           </tbody>
         </table>
       </div>
+      <p class="small muted"><span class="ja">同じように、コンテンツ側の「追加提案」（詳細な推し、詳細な操作履歴、具体提案データ信頼度）も、38個のベースライン特徴量の外にある追加入力です。ベースラインのV1パッケージでは採点しません（出典：<code class="k">aica_transparent_content_proposal_algorithm.md</code> §9）。</span><span class="en">Likewise, the content side's “Additional proposed” rows (detailed oshi, granular operations, content confidence) sit outside the 38 baseline features and are not scored by the baseline V1 package (source: <code class="k">aica_transparent_content_proposal_algorithm.md</code> §9).</span></p>
+
       <div class="why">
         <span class="lab"><span class="ja">スコア特徴量ではない必須制御入力</span><span class="en">Required controls, not scored features</span></span>
-        <p><span class="ja">発火目的・ライフサイクル段階・段階別許可サービスは、順位付け<b>前</b>にフローと候補集合を決めます。サービス機能、カタログ、UIページ、アルゴリズム設定、クイック/対話モードは、制約・データ・設定・UI動作であり、特徴量ではありません。</span><span class="en">Trigger purpose, lifecycle stage, and stage-allowed services determine the flow and candidate set <b>before</b> ranking. Service capability, catalog, UI page, algorithm settings, and quick/interactive mode are constraints, data, configuration, or UI behavior — not features.</span></p>
+        <p><span class="ja">発火目的・ライフサイクル段階・段階別の許可サービスは、順位付けの<b>前</b>にフローと候補集合を決めます。サービス機能、カタログ、UIページ、アルゴリズム設定、クイック/対話モードは、制約・データ・設定・UI動作であって、特徴量ではありません。</span><span class="en">Trigger purpose, lifecycle stage, and stage-allowed services determine the flow and candidate set <b>before</b> ranking. Service capability, catalog, UI page, algorithm settings, and quick/interactive mode are constraints, data, configuration, or UI behavior — not features.</span></p>
       </div>
     </section>
 
@@ -540,37 +544,37 @@
     <section id="use">
       <h2><span class="num">6</span><span class="ja">お客様がシミュレーターでできること</span><span class="en">What the customer can do</span></h2>
       <p>
-        <span class="ja">コードを書かず、実データも取り込まずに、評価者が走行状況を設定して実行するだけで、AICAが何をどんな理由で提案するかを確認できます。目的は、実車に組み込む前に<b>提案の考え方が適切・安全・理解可能かをお客様が判断する</b>ことです。</span>
+        <span class="ja">コードを書く必要はなく、実データを取り込む必要もありません。評価者が走行状況を設定して実行するだけで、AICAが何をどんな理由で提案するかを確認できます。目的は、実車に組み込む前に、<b>提案の考え方が適切・安全・理解可能かをお客様ご自身で判断していただく</b>ことです。</span>
         <span class="en">Without writing code or importing real data, a reviewer sets up a driving situation, runs it, and sees exactly what AICA would propose and why. The point is to <b>judge whether the idea is appropriate, safe, and understandable</b> before it is ever built into a car.</span>
       </p>
       <h3><span class="ja">お客様が確認できる具体的な問い</span><span class="en">Concrete questions the customer can answer</span></h3>
       <div class="qgrid">
         <div class="qcard">
           <p class="q"><span class="ja">「夜間・単調な高速道路で強い眠気があるとき、AICAは最初に何を提案し、なぜ他ではなくそれなのか？」</span><span class="en">“Very drowsy, at night, on a monotonous highway — what does AICA propose first, and why that?”</span></p>
-          <p class="a"><span class="ja">状態を設定して実行し、順位付き候補と寄与要因を確認します。</span><span class="en">Set the state, run, read the ranked candidates and their contributing factors.</span></p>
+          <p class="a"><span class="ja">状態を設定して実行し、順位付きの候補とその寄与要因を確認します。</span><span class="en">Set the state, run, read the ranked candidates and their contributing factors.</span></p>
         </div>
         <div class="qcard">
           <p class="q"><span class="ja">「推しモードをオフにするだけで、休憩後の提案は変わるか？」</span><span class="en">“If I only turn oshi-mode off, does the post-rest recommendation change?”</span></p>
-          <p class="a"><span class="ja">世界を複製して1項目だけ変え、適格性・順位・理由を並べて比較します。</span><span class="en">Clone the world, flip one field, compare eligibility, rank, and reason side by side.</span></p>
+          <p class="a"><span class="ja">同じ状況・ユーザー情報を丸ごとコピーして1項目だけ変え、適格性・順位・理由を並べて比べます。</span><span class="en">Copy the same situation & user info, flip one field, compare eligibility, rank, and reason side by side.</span></p>
         </div>
         <div class="qcard">
           <p class="q"><span class="ja">「走行中にフルカラオケの歌詞画面が提案されることはあるか？」</span><span class="en">“Is a full-karaoke lyrics screen ever offered while the car is moving?”</span></p>
-          <p class="a"><span class="ja">提案されてはいけません。順位付け前に安全除外が働くことを確認できます。</span><span class="en">It must not — the simulator shows the safety exclusion happening before ranking.</span></p>
+          <p class="a"><span class="ja">提案されてはいけません。順位付けの前に安全除外が働くことを、実際に確認できます。</span><span class="en">It must not — the simulator shows the safety exclusion happening before ranking.</span></p>
         </div>
         <div class="qcard">
-          <p class="q"><span class="ja">「まったく同じ世界で、透明スコアリングとLLMは同じコンテンツを選ぶか？」</span><span class="en">“On the exact same world, do transparent scoring and the LLM pick the same content?”</span></p>
-          <p class="a"><span class="ja">スナップショットを固定して各方式を実行し、2つの証跡を比較します。</span><span class="en">Freeze one snapshot, run each package, compare the two evidence logs.</span></p>
+          <p class="q"><span class="ja">「まったく同じ状況・ユーザー情報で、透明スコアリングとLLMは同じコンテンツを選ぶか？」</span><span class="en">“On the exact same inputs, do transparent scoring and the LLM pick the same content?”</span></p>
+          <p class="a"><span class="ja">同じ入力データを1つ固定して各方式を実行し、2つの証跡を見比べます。</span><span class="en">Freeze one snapshot, run each package, compare the two evidence logs.</span></p>
         </div>
       </div>
       <h3><span class="ja">主な操作</span><span class="en">The core actions</span></h3>
       <div class="fgrid">
-        <div class="fcard blue"><h4><span class="ja">世界全体を編集</span><span class="en">Edit the whole world</span></h4><p><span class="ja">発火目的、段階、許可サービス表、すべての特徴量、予定、推し、カタログ、パラメータ、ハイパーパラメータを編集。各項目は「CDC-SU基準／概念の正規化／追加提案」を表示。</span><span class="en">Edit purpose, stage, allowed-service matrix, every feature, schedule, oshi, catalog, parameters, and hyperparameters. Each is labeled baseline / normalized concept / proposed addition.</span></p></div>
-        <div class="fcard green"><h4><span class="ja">原因と差分を確認</span><span class="en">See cause and contrast</span></h4><p><span class="ja">シードを複製し、1項目だけ変えて、適格性・順位・理由・体験の変化を確認。提案の考え方を説明しやすくします。</span><span class="en">Clone a seed, change one field, and see eligibility, rank, reason, and journey changes.</span></p></div>
-        <div class="fcard mono"><h4><span class="ja">検証ではなく評価</span><span class="en">Review, not certify</span></h4><p><span class="ja">結果が適切・理解可能・安全・有用・煩わしいかをお客様が評価。その評価は別の証跡として保存されます。</span><span class="en">The customer judges whether the result feels appropriate, understandable, safe, useful, or intrusive — stored separately.</span></p></div>
+        <div class="fcard blue"><h4><span class="ja">入力データ全体を編集</span><span class="en">Edit all the input data</span></h4><p><span class="ja">発火目的、段階、許可サービス表、すべての特徴量、予定、推し、カタログ、パラメータ、ハイパーパラメータを編集できます。各項目には「CDC-SU基準／概念の正規化／追加提案」のいずれかを表示します。</span><span class="en">Edit purpose, stage, allowed-service matrix, every feature, schedule, oshi, catalog, parameters, and hyperparameters. Each is labeled baseline / normalized concept / proposed addition.</span></p></div>
+        <div class="fcard green"><h4><span class="ja">原因と差分を確認</span><span class="en">See cause and contrast</span></h4><p><span class="ja">シードを複製し、1項目だけ変えて、適格性・順位・理由・体験がどう変わるかを確認します。提案の考え方を説明するときにも使えます。</span><span class="en">Clone a seed, change one field, and see eligibility, rank, reason, and journey changes.</span></p></div>
+        <div class="fcard mono"><h4><span class="ja">検証ではなく評価</span><span class="en">Review, not certify</span></h4><p><span class="ja">結果が適切か、理解できるか、安全か、役に立つか、それとも煩わしいかを、お客様に評価していただきます。その評価は別の証跡として保存します。</span><span class="en">The customer judges whether the result feels appropriate, understandable, safe, useful, or intrusive — stored separately.</span></p></div>
       </div>
       <div class="pill-row">
-        <span class="pill"><b><span class="ja">対話モード</span><span class="en">Interactive</span></b>：<span class="ja">選択・拒否・編集・別候補要求・イベント進行を手動で。</span><span class="en">choose, reject, edit, request alternatives, step events.</span></span>
-        <span class="pill"><b><span class="ja">クイック確認</span><span class="en">Quick-check</span></b>：<span class="ja">最上位候補を自動選択（同じランキング）。</span><span class="en">auto-take rank 1 (same ranking).</span></span>
+        <span class="pill"><b><span class="ja">対話モード</span><span class="en">Interactive</span></b>：<span class="ja">選択・拒否・編集・別候補の要求・イベント進行を、手動で行います。</span><span class="en">choose, reject, edit, request alternatives, step events.</span></span>
+        <span class="pill"><b><span class="ja">クイック確認</span><span class="en">Quick-check</span></b>：<span class="ja">最上位候補を自動で選びます（ランキングは同じです）。</span><span class="en">auto-take rank 1 (same ranking).</span></span>
       </div>
     </section>
 
@@ -578,48 +582,48 @@
     <section id="data">
       <h2><span class="num">7</span><span class="ja">合成音楽データと生成方法</span><span class="en">Synthetic music data &amp; how it is generated</span></h2>
       <p>
-        <span class="ja">シミュレーターは、編集可能な「作り物の世界」一式を同梱します。実在のドライバーやお客様のライブラリからは何も取り込みません。<b>(1) シード世界</b>（状況・履歴）と<b>(2) メディアカタログ</b>（提案できる中身）の2要素で構成され、<code>run_seed</code> と<b>凍結スナップショット</b>の固定により透明方式は毎回再現できます。生成方法・スキーマは <code class="k">aica_synthetic_music_data_and_generation_specification.md</code> に定義されています。</span>
-        <span class="en">The simulator ships its own editable make-believe world. Nothing comes from a real driver or a customer library. It has two parts — <b>(1) seed worlds</b> (situation &amp; history) and <b>(2) a media catalog</b> (what can be proposed) — and a fixed <code>run_seed</code> plus <b>frozen snapshots</b> make every transparent run reproducible. The schemas and generation method are defined in <code class="k">aica_synthetic_music_data_and_generation_specification.md</code>.</span>
+        <span class="ja">シミュレーターには、編集できる架空のサンプルデータ一式を同梱しています。実在のドライバーやお客様のライブラリからは、何も取り込みません。構成要素は<b>(1) 初期データ</b>（状況・履歴）と<b>(2) メディアカタログ</b>（提案できる中身）の2つです。<code>run_seed</code> と<b>凍結した入力データ</b>を固定することで、透明方式は毎回同じ結果を再現できます。生成方法とスキーマは <code class="k">aica_synthetic_music_data_and_generation_specification.md</code> に定義しています。</span>
+        <span class="en">The simulator ships its own editable, entirely made-up sample data. Nothing comes from a real driver or a customer library. It has two parts — <b>(1) initial data</b> (situation &amp; history) and <b>(2) a media catalog</b> (what can be proposed) — and a fixed <code>run_seed</code> plus <b>frozen snapshots</b> make every transparent run reproducible. The schemas and generation method are defined in <code class="k">aica_synthetic_music_data_and_generation_specification.md</code>.</span>
       </p>
-      <h3><span class="ja">A. シード世界 ― 状況</span><span class="en">A. A seed world — the situation</span></h3>
+      <h3><span class="ja">A. 初期データ ― 状況</span><span class="en">A. Initial data — the situation</span></h3>
       <div class="fgrid">
         <div class="fcard blue"><h4><span class="ja">状況・環境</span><span class="en">Situation &amp; environment</span></h4><p><span class="ja">眠気・疲労、渋滞、道路種別、昼夜、単調度、ルート・目的地タグ、休憩場所の種類と到着分数、同乗者、走行・停車状態。</span><span class="en">Drowsiness, fatigue, traffic, road type, day/night, monotony, route/destination tags, rest-spot type and minutes-to-arrival, passengers, motion state.</span></p></div>
-        <div class="fcard green"><h4><span class="ja">個人・好み</span><span class="en">Person &amp; preferences</span></h4><p><span class="ja">UProプロフィール（年代・趣味）、<b>推しアーティストの完全一致参照（Track/Artist ID）</b>、全体・場面別の利用頻度、未使用項目の新規性。曲メタではなく世界データです。</span><span class="en">UPro profile (age band, interests), <b>exact oshi-artist references (Track/Artist IDs)</b>, overall and scene-specific usage levels, recency of unused items. This is world data, not song metadata.</span></p></div>
-        <div class="fcard mono"><h4><span class="ja">履歴・予定</span><span class="en">History &amp; schedule</span></h4><p><span class="ja">過去の受諾率・合成回復率と信頼度、再生・スキップ・繰り返し履歴、拒否済みセッション、直近の予定（ライブ・ラジオ・推しイベント）。</span><span class="en">Past acceptance and synthetic recovery rates with confidence, playback/skip/repeat history, rejected sessions, upcoming events.</span></p></div>
+        <div class="fcard green"><h4><span class="ja">個人・好み</span><span class="en">Person &amp; preferences</span></h4><p><span class="ja">UProプロフィール（年代・趣味）、<b>推しアーティストの完全一致参照（Track/Artist ID）</b>、全体・場面別の利用頻度、未使用項目の新規性です。曲のメタデータではなく、ユーザー・状況側のデータです。</span><span class="en">UPro profile (age band, interests), <b>exact oshi-artist references (Track/Artist IDs)</b>, overall and scene-specific usage levels, recency of unused items. This is situation &amp; user data, not song metadata.</span></p></div>
+        <div class="fcard mono"><h4><span class="ja">履歴・予定</span><span class="en">History &amp; schedule</span></h4><p><span class="ja">過去の受諾率・合成回復率とその信頼度、再生・スキップ・繰り返しの履歴、拒否済みセッション、直近の予定（ライブ・ラジオ・推しイベント）です。</span><span class="en">Past acceptance and synthetic recovery rates with confidence, playback/skip/repeat history, rejected sessions, upcoming events.</span></p></div>
       </div>
-      <p class="small muted"><span class="ja">シードには実行制御も含まれます：発火目的、開始段階、選択パッケージとパラメータ／ハイパーパラメータ、計画されたジャーニーイベントと明示的な休憩後の眠気・疲労値。</span><span class="en">A seed also carries its run controls: the trigger purpose, starting stage, chosen packages with parameters/hyperparameters, and planned journey events with explicit post-rest drowsiness/fatigue.</span></p>
+      <p class="small muted"><span class="ja">シードには実行制御も含みます。発火目的、開始段階、選んだパッケージとそのパラメータ／ハイパーパラメータ、計画済みのジャーニーイベント、そして明示的な休憩後の眠気・疲労値です。</span><span class="en">A seed also carries its run controls: the trigger purpose, starting stage, chosen packages with parameters/hyperparameters, and planned journey events with explicit post-rest drowsiness/fatigue.</span></p>
 
       <h3><span class="ja">B. メディアカタログ ― Spotify互換の2オブジェクト＋シミュレーターフラグ</span><span class="en">B. The media catalog — two Spotify objects + a simulator flag</span></h3>
-      <p class="small muted"><span class="ja">各曲は<b>Spotifyのフィールド名・意味</b>をそのまま使う2オブジェクト＋AICA独自のフラグで構成されます。表示名・アーティスト・アルバムは <code>spotify_track</code> から取得します。すべて架空（<code>.invalid</code> URL・合成ID）で、<code>synthetic_only: true</code> のマニフェストが付き、実データと取り違えられません。</span><span class="en">Every song uses <b>Spotify field names and semantics</b> in two objects, plus one AICA-only flag. Display title/artists/album come from <code>spotify_track</code>. Everything is fictional (<code>.invalid</code> URLs, synthetic IDs) under a <code>synthetic_only: true</code> manifest so it can never be mistaken for real data.</span></p>
+      <p class="small muted"><span class="ja">各曲は、<b>Spotifyのフィールド名・意味</b>をそのまま使う2つのオブジェクトと、AICA独自のフラグで構成しています。表示名・アーティスト・アルバムは <code>spotify_track</code> から取得します。すべて架空のデータ（<code>.invalid</code> のURL・合成ID）で、<code>synthetic_only: true</code> のマニフェストを付けているため、実データと取り違えることはありません。</span><span class="en">Every song uses <b>Spotify field names and semantics</b> in two objects, plus one AICA-only flag. Display title/artists/album come from <code>spotify_track</code>. Everything is fictional (<code>.invalid</code> URLs, synthetic IDs) under a <code>synthetic_only: true</code> manifest so it can never be mistaken for real data.</span></p>
       <div class="fgrid">
         <div class="fcard blue">
           <h4><code>spotify_track</code></h4>
-          <p><span class="ja">Trackオブジェクト：<code>id</code>、<code>name</code>、<code>artists[]</code>、<code>album</code>、<code>duration_ms</code>、<code>explicit</code>、<code>is_playable</code>、<code>popularity</code>、<code>available_markets</code>、<code>external_ids.isrc</code> ほか。<b>歌手・作曲者の別フィールドは作りません</b>（Spotifyが保証しないため）。</span><span class="en">Track object: <code>id</code>, <code>name</code>, <code>artists[]</code>, <code>album</code>, <code>duration_ms</code>, <code>explicit</code>, <code>is_playable</code>, <code>popularity</code>, <code>available_markets</code>, <code>external_ids.isrc</code>, etc. <b>No invented singer/composer fields</b> (Spotify does not guarantee them).</span></p>
+          <p><span class="ja">Trackオブジェクトです。<code>id</code>、<code>name</code>、<code>artists[]</code>、<code>album</code>、<code>duration_ms</code>、<code>explicit</code>、<code>is_playable</code>、<code>popularity</code>、<code>available_markets</code>、<code>external_ids.isrc</code> などを持ちます。<b>歌手・作曲者の独自フィールドは作りません</b>（Spotifyが保証していないためです）。</span><span class="en">Track object: <code>id</code>, <code>name</code>, <code>artists[]</code>, <code>album</code>, <code>duration_ms</code>, <code>explicit</code>, <code>is_playable</code>, <code>popularity</code>, <code>available_markets</code>, <code>external_ids.isrc</code>, etc. <b>No invented singer/composer fields</b> (Spotify does not guarantee them).</span></p>
         </div>
         <div class="fcard green">
           <h4><code>spotify_audio_features</code></h4>
-          <p><span class="ja">Audio Features は3つの指標に寄与：<b>覚醒度</b>（<code>energy</code>・<code>loudness</code>・<code>tempo</code>・<code>danceability</code>・<code>acousticness</code>逆）、<b>明るさ</b>（<code>valence</code>・<code>mode</code>）、<b>歌いやすさ</b>（<code>instrumentalness</code>逆・<code>speechiness</code>逆・<code>tempo</code>・<code>danceability</code>・<code>duration_ms</code>）。<code>key</code>・<code>time_signature</code>・<code>liveness</code> <b>のみ</b>V1では<b>非スコア</b>（保持のみ）。</span><span class="en">Audio Features feed three proxies: <b>arousal</b> (<code>energy</code>, <code>loudness</code>, <code>tempo</code>, <code>danceability</code>, <code>acousticness</code>-inv), <b>valence</b> (<code>valence</code>, <code>mode</code>), and <b>karaoke-ease</b> (<code>instrumentalness</code>-inv, <code>speechiness</code>-inv, <code>tempo</code>, <code>danceability</code>, <code>duration_ms</code>). <b>Only</b> <code>key</code>, <code>time_signature</code>, <code>liveness</code> are <b>kept but not scored</b> in V1.</span></p>
+          <p><span class="ja">Audio Featuresは3つの指標に寄与します。<b>活性度</b>（<code>energy</code>・<code>loudness</code>・<code>tempo</code>・<code>danceability</code>・<code>acousticness</code>の逆）、<b>明るさ</b>（<code>valence</code>・<code>mode</code>）、<b>歌いやすさ</b>（<code>instrumentalness</code>の逆・<code>speechiness</code>の逆・<code>tempo</code>・<code>danceability</code>・<code>duration_ms</code>）です。<code>key</code>・<code>time_signature</code>・<code>liveness</code> <b>だけ</b>はV1で<b>採点せず</b>、保持だけします。</span><span class="en">Audio Features feed three proxies: <b>arousal</b> (<code>energy</code>, <code>loudness</code>, <code>tempo</code>, <code>danceability</code>, <code>acousticness</code>-inv), <b>valence</b> (<code>valence</code>, <code>mode</code>), and <b>karaoke-ease</b> (<code>instrumentalness</code>-inv, <code>speechiness</code>-inv, <code>tempo</code>, <code>danceability</code>, <code>duration_ms</code>). <b>Only</b> <code>key</code>, <code>time_signature</code>, <code>liveness</code> are <b>kept but not scored</b> in V1.</span></p>
         </div>
         <div class="fcard mono">
           <h4><code>simulation_flags</code></h4>
-          <p><span class="ja">AICA独自の可否ゲート：<code>humming_karaoke_available</code>、<code>full_karaoke_available</code>（各 0/1、既定1）。<b>適格性の判定のみ</b>でスコアは上げません。Spotifyがカラオケ権利・歌詞・素材を提供する主張ではありません。</span><span class="en">AICA-only eligibility gates: <code>humming_karaoke_available</code>, <code>full_karaoke_available</code> (0/1, default 1). <b>Eligibility only</b>, never a score boost; not a claim that Spotify supplies karaoke rights, lyrics, or assets.</span></p>
+          <p><span class="ja">AICA独自の可否ゲートです。<code>humming_karaoke_available</code>、<code>full_karaoke_available</code>（それぞれ0/1、既定1）を持ちます。<b>適格性の判定にだけ</b>使い、スコアを上げることはありません。Spotifyがカラオケの権利・歌詞・素材を提供しているという意味ではありません。</span><span class="en">AICA-only eligibility gates: <code>humming_karaoke_available</code>, <code>full_karaoke_available</code> (0/1, default 1). <b>Eligibility only</b>, never a score boost; not a claim that Spotify supplies karaoke rights, lyrics, or assets.</span></p>
         </div>
       </div>
       <div class="why warn">
         <span class="lab"><span class="ja">V1にエンリッチ（加工）工程はない</span><span class="en">V1 has no enrichment stage</span></span>
-        <p><span class="ja">「プロバイダのTrack → LLMがサビ・客層・ルート・歌いやすさを推測 → それを推薦根拠に使う」という流れは<b>禁止</b>です。カタログはジャンル/ルート/推し/ムード/客層タグ、サビ位置、歌詞・音域・メロディ複雑度・歌いやすさを<b>保存しません</b>。透明セレクターが<b>決定時に</b>Spotify特徴量から代理指標（覚醒度・明るさ・歌いやすさ）を導出しますが、それを事実として保存しません。</span><span class="en">The flow “provider Track → LLM guesses chorus, audience, route, or singability → use as recommendation evidence” is <b>prohibited</b>. The catalog stores <b>no</b> genre/route/oshi/mood/audience tags, no chorus timestamps, and no lyric/vocal-range/melody/singability fields. The transparent selector derives proxies (arousal, valence, ease) from Spotify features <b>at decision time</b> and does not persist them as facts.</span></p>
+        <p><span class="ja">「プロバイダのTrack → LLMがサビ・客層・ルート・歌いやすさを推測 → それを推薦の根拠に使う」という流れは<b>禁止</b>です。カタログには、ジャンル/ルート/推し/ムード/客層タグ、サビ位置、歌詞・音域・メロディ複雑度・歌いやすさを<b>保存しません</b>。透明セレクターは<b>決定のたびに</b>Spotify特徴量から代理指標（活性度・明るさ・歌いやすさ）を導出しますが、それを事実として保存することはありません。</span><span class="en">The flow “provider Track → LLM guesses chorus, audience, route, or singability → use as recommendation evidence” is <b>prohibited</b>. The catalog stores <b>no</b> genre/route/oshi/mood/audience tags, no chorus timestamps, and no lyric/vocal-range/melody/singability fields. The transparent selector derives proxies (arousal, valence, ease) from Spotify features <b>at decision time</b> and does not persist them as facts.</span></p>
       </div>
 
       <h3><span class="ja">C. 生成方法 ― 3パスのLLM生成 → 検証 → 凍結</span><span class="en">C. How it is generated — 3-pass LLM → validate → freeze</span></h3>
-      <p><span class="ja">循環データ（1つの推薦結果に都合よく作られたデータ）や壊れた参照を避けるため、生成は<b>3つのパスに分離</b>され、各パスの後に決定論的検証（2回失敗で停止）が入ります。実行中に生成器を呼ぶことはありません。Audio Featuresエンドポイントは非推奨のため、<b>ピン留めしたスキーマ・フィクスチャ</b>を用います。</span><span class="en">To avoid circular data and broken references, generation is <b>split into three passes</b>, each followed by deterministic validation (stops after two failed repairs). The generator is never called during a run. Because Spotify’s Audio Features endpoint is deprecated, V1 uses a <b>pinned schema fixture</b>.</span></p>
+      <p><span class="ja">循環データ（1つの推薦結果に都合よく作られたデータ）や、壊れた参照を避けるため、生成は<b>3つのパスに分けて</b>行います。各パスのあとには決定論的な検証を入れ、2回失敗した時点で止めます。実行中に生成器を呼び出すことはありません。Audio Featuresエンドポイントは非推奨になっているため、<b>ピン留めしたスキーマ準拠のサンプルデータ</b>を使います。</span><span class="en">To avoid circular data and broken references, generation is <b>split into three passes</b>, each followed by deterministic validation (stops after two failed repairs). The generator is never called during a run. Because Spotify’s Audio Features endpoint is deprecated, V1 uses <b>pinned schema-conformant sample data</b>.</span></p>
       <div class="pipe">
         <div class="node"><div class="n">PASS 1</div><div class="t"><span class="ja">架空Trackオブジェクト</span><span class="en">Fictional Track objects</span></div><div class="d"><span class="ja">アーティスト・アルバム・トラックの素性</span><span class="en">artist / album / track identities</span></div></div>
         <div class="arrow">→</div>
         <div class="node"><div class="n">PASS 2</div><div class="t"><span class="ja">Audio Featuresオブジェクト</span><span class="en">Audio Features objects</span></div><div class="d"><span class="ja">音声プロファイル別・相互に妥当な数値</span><span class="en">per audio-profile cell, mutually plausible</span></div></div>
         <div class="arrow">→</div>
-        <div class="node"><div class="n">PASS 3</div><div class="t"><span class="ja">世界・履歴</span><span class="en">Worlds &amp; histories</span></div><div class="d"><span class="ja">ドライバー・推し参照・利用/受諾/回復・対比</span><span class="en">driver, oshi refs, usage/accept/recovery, contrasts</span></div></div>
+        <div class="node"><div class="n">PASS 3</div><div class="t"><span class="ja">状況パターン・履歴</span><span class="en">Situation patterns &amp; histories</span></div><div class="d"><span class="ja">ドライバー・推し参照・利用/受諾/回復・対比</span><span class="en">driver, oshi refs, usage/accept/recovery, contrasts</span></div></div>
         <div class="arrow">→</div>
-        <div class="node"><div class="n">FREEZE</div><div class="t"><span class="ja">不変スナップショット</span><span class="en">Immutable snapshot</span></div><div class="d"><span class="ja">再現の境界</span><span class="en">the replay boundary</span></div></div>
+        <div class="node"><div class="n">FREEZE</div><div class="t"><span class="ja">凍結済み入力データ</span><span class="en">Immutable snapshot</span></div><div class="d"><span class="ja">再現の境界</span><span class="en">the replay boundary</span></div></div>
       </div>
       <div class="pill-row">
         <span class="pill"><b><span class="ja">実演カタログ</span><span class="en">Demonstration catalog</span></b>：36 <span class="ja">曲</span><span class="en">songs</span> = 3 energy × 3 tempo × 4 <span class="ja">音声プロファイル</span><span class="en">audio profiles</span></span>
@@ -630,62 +634,56 @@
         <span class="pill"><span class="ja">データ層</span><span class="en">Tiers</span>：smoke (5+<span class="ja">負例</span><span class="en">neg</span>) · demonstration (36) · stress (<span class="ja">可変</span><span class="en">configurable</span>)</span>
       </div>
       <div class="why">
-        <span class="lab"><span class="ja">わざと「証拠が対立する」曲を入れる</span><span class="en">Deliberate conflicting-evidence fixtures</span></span>
-        <p><span class="ja">どの曲も全次元で支配的にならないよう、対立する証拠を持つ組を必ず含めます（例：穏やか↔活発＝<b>覚醒軸</b>の反転／明るい↔暗い＝<b>明るさ軸</b>（valence・mode）／アコースティック↔電子＝<b>覚醒への逆寄与</b>（acousticness）／推し一致↔非推しだが高覚醒／最近再生済み↔新鮮／受諾済み低覚醒↔未検証高覚醒／子供同乗時にexplicitを除外）。<b>隠れた<code>recommended</code>や目標順位フィールドは持たず</b>、<code>normalized_evidence</code>や応答係数もカタログに保存しません（決定時に導出）。</span><span class="en">So no song dominates every dimension, the catalog always includes conflicting pairs (calm ↔ active for the <b>arousal axis</b>; bright ↔ dark for the <b>valence axis</b> (valence, mode); acoustic ↔ electric for <b>acousticness’s inverse-arousal</b> effect; oshi match ↔ non-oshi but higher arousal; recently played ↔ fresh; accepted low-arousal ↔ untested high-arousal; explicit excluded when a child is present). It stores <b>no hidden <code>recommended</code> or target-rank field</b>, and no <code>normalized_evidence</code> or response coefficients (derived at decision time).</span></p>
+        <span class="lab"><span class="ja">わざと「証拠が対立する」曲を入れる</span><span class="en">Deliberate conflicting-evidence sample songs</span></span>
+        <p><span class="ja">どの曲も全次元で支配的にならないよう、対立する証拠を持つ組を必ず含めます。例えば、穏やか↔活発は<b>活性度軸</b>の反転、明るい↔暗いは<b>明るさ軸</b>（valence・mode）、アコースティック↔電子は<b>活性度への逆寄与</b>（acousticness）、推し一致↔非推しだが高活性度、最近再生済み↔新鮮、受諾済み低活性度↔未検証高活性度、子供同乗時はexplicitを除外、といった組です。<b>隠れた<code>recommended</code>や目標順位フィールドは持ちません</b>。<code>normalized_evidence</code>や応答係数もカタログには保存しません（決定のたびに導出します）。</span><span class="en">So no song dominates every dimension, the catalog always includes conflicting pairs (calm ↔ active for the <b>arousal axis</b>; bright ↔ dark for the <b>valence axis</b> (valence, mode); acoustic ↔ electric for <b>acousticness’s inverse-arousal</b> effect; oshi match ↔ non-oshi but higher arousal; recently played ↔ fresh; accepted low-arousal ↔ untested high-arousal; explicit excluded when a child is present). It stores <b>no hidden <code>recommended</code> or target-rank field</b>, and no <code>normalized_evidence</code> or response coefficients (derived at decision time).</span></p>
       </div>
-      <p class="small muted"><span class="ja">基本世界（例：単調な夜間高速、海沿い目的地、家族同乗、推しイベント、休憩後停車カラオケ）と1変数対比が同梱されます。ルート・目的地・予定などSpotify非対応の入力は世界には存在しますが、V1のスコアには入らず <code>context_only</code> として扱われます。</span><span class="en">Base worlds (e.g. monotonous night highway, coastal destination, family group, upcoming oshi event, post-rest stopped karaoke) and one-variable contrasts are shipped. Spotify-unsupported inputs (route, destination, schedule) may exist in the world but are marked <code>context_only</code> and do not enter V1 scoring.</span></p>
+      <p class="small muted"><span class="ja">基本パターン（例えば単調な夜間高速、海沿い目的地、家族同乗、推しイベント、休憩後の停車カラオケ）と、1変数だけを変えた対比データも同梱しています。ルート・目的地・予定などSpotify非対応の入力はデータの中に存在しますが、V1のスコアには入らず、<code>context_only</code> として扱います。</span><span class="en">Base patterns (e.g. monotonous night highway, coastal destination, family group, upcoming oshi event, post-rest stopped karaoke) and one-variable contrasts are shipped. Spotify-unsupported inputs (route, destination, schedule) may exist in the data but are marked <code>context_only</code> and do not enter V1 scoring.</span></p>
       <div class="why safe">
         <span class="lab"><span class="ja">ユーザーの結果を捏造しない</span><span class="en">No manufactured user truth</span></span>
-        <p><span class="ja">「受諾された」「回復した」といった結果をランダムに作り出して証跡として見せることはありません。判断は評価者が入力し（クイックモードは単に1位を選択）、休憩後の回復値は明示的な合成入力です。結果を偽造しません。</span><span class="en">The simulator never randomly invents an “accepted” or “recovered” outcome and then shows it as evidence. Decisions are entered by the reviewer (or quick mode takes rank 1), and post-rest recovery values are explicit synthetic inputs — never fabricated results.</span></p>
+        <p><span class="ja">「受諾された」「回復した」といった結果をランダムに作り出して、証跡として見せることはありません。判断は評価者が入力します（クイックモードでは単に1位を選ぶだけです）。休憩後の回復値も、明示的な合成入力です。結果を偽造することはありません。</span><span class="en">The simulator never randomly invents an “accepted” or “recovered” outcome and then shows it as evidence. Decisions are entered by the reviewer (or quick mode takes rank 1), and post-rest recovery values are explicit synthetic inputs — never fabricated results.</span></p>
       </div>
     </section>
 
     <!-- 9. Prototype: Input / Parameters / Output -->
     <section id="prototype">
-      <h2><span class="num">8</span><span class="ja">画面の最初のかたち（入力 / 設定 / サービス提案 / コンテンツ提案）</span><span class="en">First shape of the screen (input / setup / service / content)</span></h2>
+      <h2><span class="num">8</span><span class="ja">画面の最初のかたち（入力 / サービス提案 / コンテンツ提案）</span><span class="en">First shape of the screen (input / service proposal / content proposal)</span></h2>
       <p>
-        <span class="ja">要件では、サービスを選ぶだけでなく<b>具体的なコンテンツ（プレイリストの中身）まで詳細に提案する</b>ことが求められます。そこで画面は<b>4パネル構成</b>とします ―― <b>①入力</b>（世界）、<b>②設定</b>（パラメータ）、<b>③サービス提案</b>、<b>④コンテンツ提案</b>。現行のトリガーシミュレーターと大きくは変わりません。</span>
-        <span class="en">The requirement is not only to choose a service but to <b>propose the concrete content (the playlist itself) in detail</b>. So the screen is a <b>four-panel</b> layout — <b>① Input</b> (the world), <b>② Setup</b> (parameters), <b>③ Service proposal</b>, and <b>④ Content proposal</b>. It is not far from the current trigger simulator.</span>
+        <span class="ja">要件では、サービスを選ぶだけでなく、<b>具体的なコンテンツ（プレイリストの中身）まで詳しく提案する</b>ことが求められます。そこで画面は<b>3パネル構成</b>にしました。<b>①入力（状況・ユーザー情報）</b>、<b>②サービス提案</b>（STEP 1）、<b>③コンテンツ提案</b>（STEP 2）です。パラメータとハイパーパラメータは、それぞれのパネルの中に折りたたみ式で持たせています。現行のトリガーシミュレーターと大きくは変わりません。</span>
+        <span class="en">The requirement is not only to choose a service but to <b>propose the concrete content (the playlist itself) in detail</b>. So the screen is a <b>three-panel</b> layout — <b>① Input (situation &amp; user info)</b>, <b>② Service proposal</b> (STEP 1), and <b>③ Content proposal</b> (STEP 2), with parameters and hyperparameters collapsed inside each panel. It is not far from the current trigger simulator.</span>
       </p>
       <div class="why">
-        <span class="lab"><span class="ja">④コンテンツ提案は設計済み（数値は説明用の例）</span><span class="en">④ Content proposal is designed (numbers are illustrative)</span></span>
-        <p><span class="ja">具体コンテンツ提案アルゴリズムは設計済みです（<code class="k">aica_transparent_content_proposal_algorithm.md</code>）。各プレイリスト項目に <b>item_fit（−1〜+1）と選定理由</b>を添えて表示します。下の数値は説明用の例で、実行時は凍結したSpotifyオーディオ特徴量から算出される曲の<b>2軸特性（覚醒度・明るさ）</b>に基づきます。</span><span class="en">The concrete-content algorithm is designed (<code class="k">aica_transparent_content_proposal_algorithm.md</code>). Each playlist item is shown with its <b>item_fit (−1…+1) and the reason it was chosen</b>. The numbers below are illustrative; at run time they follow from each song’s <b>two audio traits (arousal, valence)</b> derived from its frozen Spotify audio features.</span></p>
+        <span class="lab"><span class="ja">③コンテンツ提案は設計済み（数値は説明用の例）</span><span class="en">③ Content proposal is designed (numbers are illustrative)</span></span>
+        <p><span class="ja">具体コンテンツ提案アルゴリズムは設計済みです（<code class="k">aica_transparent_content_proposal_algorithm.md</code>）。各プレイリスト項目に <b>item_fit（−1〜+1）と選定理由</b>を添えて表示します。下の数値は説明用の例です。実行時は、凍結したSpotifyオーディオ特徴量から算出する曲の<b>2つのトレイト（活性度・明るさ）</b>に基づきます。</span><span class="en">The concrete-content algorithm is designed (<code class="k">aica_transparent_content_proposal_algorithm.md</code>). Each playlist item is shown with its <b>item_fit (−1…+1) and the reason it was chosen</b>. The numbers below are illustrative; at run time they follow from each song’s <b>two audio traits (arousal, valence)</b> derived from its frozen Spotify audio features.</span></p>
       </div>
 
-      <div class="mock" role="img" aria-label="Wireframe of the input / setup / service-proposal / content-proposal screen">
+      <div class="mock" role="img" aria-label="Wireframe of the input / service-proposal / content-proposal screen">
         <div class="mock-bar">
           <span class="dot"></span><span class="dot"></span><span class="dot"></span>
           <span class="mock-url">aica-simulator / proposal — seed: highway-night-drowsy</span>
         </div>
         <div class="sim">
-          <!-- ① INPUT -->
+          <!-- ① INPUT / WORLD -->
           <div class="col">
-            <h4><span class="ja">① 入力（世界）</span><span class="en">① Input (the world)</span></h4>
+            <h4><span class="ja">① 入力（状況・ユーザー情報）</span><span class="en">① Input (situation &amp; user info)</span></h4>
             <div class="body">
+              <div class="field"><span class="k"><span class="ja">発火目的・段階</span><span class="en">Purpose &amp; stage</span></span><span class="chips"><span class="chip sel">① rest_recommended</span></span><br>before_rest_until_stop</div>
+              <div class="field"><span class="k"><span class="ja">走行状態</span><span class="en">Motion</span></span><span class="chips"><span class="chip sel">driving</span><span class="chip">stopped</span></span></div>
               <div class="field"><span class="k"><span class="ja">ドライバー状態</span><span class="en">Driver state</span></span>drowsiness <b>82</b> · fatigue <b>60</b></div>
               <div class="field"><span class="k"><span class="ja">環境</span><span class="en">Environment</span></span>night · monotony <b>75</b> · highway · traffic normal</div>
               <div class="field"><span class="k"><span class="ja">ルート・休憩</span><span class="en">Route &amp; rest</span></span><span class="ja">SA/PA まで約8分</span><span class="en">~8 min to SA/PA</span> · sa_pa</div>
               <div class="field"><span class="k"><span class="ja">同乗者</span><span class="en">Passengers</span></span><span class="ja">なし</span><span class="en">none</span> · child false</div>
               <div class="field"><span class="k"><span class="ja">好み・履歴</span><span class="en">Preference &amp; history</span></span>oshi_mode on · age 30s · j-pop · <span class="ja">利用/受諾/回復率</span><span class="en">usage/accept/recovery</span></div>
-              <div class="field"><span class="k"><span class="ja">走行状態</span><span class="en">Motion</span></span><span class="chips"><span class="chip sel">driving</span><span class="chip">stopped</span></span></div>
             </div>
           </div>
-          <!-- ② SETUP (parameters) -->
+          <!-- ② SERVICE PROPOSAL — STEP 1 -->
           <div class="col">
-            <h4><span class="ja">② 設定（パラメータ）</span><span class="en">② Setup (parameters)</span></h4>
+            <h4><span class="ja">② サービス提案</span><span class="en">② Service proposal</span><span class="sub"> — STEP 1</span></h4>
             <div class="body">
-              <div class="field"><span class="k"><span class="ja">発火目的・段階</span><span class="en">Purpose &amp; stage</span></span><span class="chips"><span class="chip sel">① rest_recommended</span></span><br>before_rest_until_stop</div>
               <div class="field"><span class="k"><span class="ja">方式・モード</span><span class="en">Package &amp; mode</span></span><span class="ja">透明スコアリング</span><span class="en">Transparent scoring</span> · <span class="ja">対話</span><span class="en">interactive</span></div>
               <div class="field"><span class="k"><span class="ja">カテゴリ重み</span><span class="en">Category weights</span></span>Situation <b>.80</b> · Preference <b>.12</b> · History <b>.08</b></div>
               <div class="field"><span class="k"><span class="ja">目的乗数</span><span class="en">Purpose multiplier</span></span><span class="ja">rest_recommended（状態・環境を強調）</span><span class="en">rest_recommended (driver + env emphasized)</span></div>
               <div class="field"><span class="k"><span class="ja">安全</span><span class="en">Safety</span></span><span class="ja">ハード適格性 → 支配度 .79 · gap 1.00</span><span class="en">hard eligibility → dominance .79 · gap 1.00</span></div>
               <div class="field"><span class="k"><span class="ja">編集可</span><span class="en">Editable</span></span><span class="ja">重み・乗数・応答曲線はすべて編集可</span><span class="en">all weights, multipliers, curves</span></div>
-            </div>
-          </div>
-          <!-- ③ SERVICE PROPOSAL -->
-          <div class="col">
-            <h4><span class="ja">③ サービス提案</span><span class="en">③ Service proposal</span></h4>
-            <div class="body">
               <div class="field"><span class="k"><span class="ja">適格サービス（除外後）</span><span class="en">Eligible (after exclusion)</span></span><span class="chips"><span class="chip ok">humming_karaoke</span><span class="chip ok">playlist</span><span class="chip ok">quiz</span><span class="chip no">full_karaoke</span></span></div>
               <div class="field"><span class="k"><span class="ja">サービス順位（service_fit −1…+1）</span><span class="en">Ranked by service_fit</span></span>
                 <div class="rankrow"><span class="n">1</span><span>humming_karaoke</span><span class="bar"><span style="width:81%"></span></span><span class="fit">+0.62</span></div>
@@ -700,19 +698,19 @@
               <div class="field"><span class="k"><span class="ja">選択 → コンテンツへ</span><span class="en">Selected → to content</span></span><span class="chips"><span class="chip sel">humming_karaoke</span></span> <span class="ja">を選択</span><span class="en">chosen</span></div>
             </div>
           </div>
-          <!-- ④ CONTENT PROPOSAL -->
+          <!-- ③ CONTENT PROPOSAL — STEP 2 -->
           <div class="col content">
-            <h4><span class="ja">④ コンテンツ提案（プレイリスト詳細）</span><span class="en">④ Content proposal (playlist detail)</span></h4>
+            <h4><span class="ja">③ コンテンツ提案（プレイリスト詳細）</span><span class="en">③ Content proposal (playlist detail)</span><span class="sub"> — STEP 2</span></h4>
             <div class="body">
               <div class="field"><span class="k"><span class="ja">レシピ / プラン</span><span class="en">Recipe / plan</span></span><code>humming_karaoke</code> · <span class="ja">擬似ハミング区間30秒 × 5曲（サビ検出やカラオケ素材の主張はしない）</span><span class="en">simulated 30s humming segment × 5 songs (no claimed chorus or karaoke asset)</span></div>
               <ol class="plist">
                 <li>
                   <div class="top"><span class="rk">1</span><span class="nm">synthetic-track-0001 — “Afterglow Highway”</span><span class="sc">+0.38</span></div>
-                  <p class="rz"><span class="ja">元気な曲（高覚醒→a=+0.52）が、眠気・単調の「元気づけ」需要（α＝＋）と一致＝加点。推しアーティスト完全一致＋回復実績が後押し。今週再生済みで小さく減点。</span><span class="en">Energetic song (high arousal → a=+0.52) matches the energize demand of drowsiness/monotony (α=+) → positive. Exact oshi-artist match and recovery history add lift; a play this week is a small penalty.</span></p>
+                  <p class="rz"><span class="ja">元気な曲（高活性度→a=+0.52）が、眠気・単調の「元気づけ」需要（α＝＋）と一致＝加点。推しアーティスト完全一致＋回復実績が後押し。今週再生済みで小さく減点。</span><span class="en">Energetic song (high arousal → a=+0.52) matches the energize demand of drowsiness/monotony (α=+) → positive. Exact oshi-artist match and recovery history add lift; a play this week is a small penalty.</span></p>
                 </li>
                 <li>
                   <div class="top"><span class="rk">2</span><span class="nm">synthetic-track-0014 — “Neon Corridor”</span><span class="sc">+0.29</span></div>
-                  <p class="rz"><span class="ja">中〜高エネルギー・高danceabilityで覚醒度が高い。推し一致はないが受諾実績あり。</span><span class="en">Mid-high energy and high danceability give strong arousal; no oshi match but positive acceptance history.</span></p>
+                  <p class="rz"><span class="ja">中〜高エネルギー・高danceabilityで活性度が高い。推し一致はないが受諾実績あり。</span><span class="en">Mid-high energy and high danceability give strong arousal; no oshi match but positive acceptance history.</span></p>
                 </li>
                 <li>
                   <div class="top"><span class="rk">3</span><span class="nm">synthetic-track-0022 — “Midnight Compass”</span><span class="sc">+0.17</span></div>
@@ -720,11 +718,11 @@
                 </li>
                 <li>
                   <div class="top"><span class="rk">4</span><span class="nm">synthetic-track-0007 — “Open Meridian”</span><span class="sc">+0.06</span></div>
-                  <p class="rz"><span class="ja">プレイリスト新規性はプラスだが、覚醒度がほぼ中立で覚醒維持への寄与は小さい。</span><span class="en">Playlist novelty helps, but near-neutral arousal contributes little to staying alert.</span></p>
+                  <p class="rz"><span class="ja">プレイリスト新規性はプラスだが、活性度がほぼ中立で覚醒維持への寄与は小さい。</span><span class="en">Playlist novelty helps, but near-neutral arousal contributes little to staying alert.</span></p>
                 </li>
                 <li>
                   <div class="top"><span class="rk">5</span><span class="nm">synthetic-track-0031 — “Quiet Harbor”</span><span class="sc">−0.12</span></div>
-                  <p class="rz"><span class="ja">穏やかな曲（低覚醒→a=−0.4）は、眠気・単調の「元気づけ」需要（α＝＋）と逆＝減点。ただし除外はされない。</span><span class="en">A calm song (low arousal → a=−0.4) opposes the energize demand of drowsiness/monotony (α=+) → negative, but it is not excluded.</span></p>
+                  <p class="rz"><span class="ja">穏やかな曲（低活性度→a=−0.4）は、眠気・単調の「元気づけ」需要（α＝＋）と逆＝減点。ただし除外はされない。</span><span class="en">A calm song (low arousal → a=−0.4) opposes the energize demand of drowsiness/monotony (α=+) → negative, but it is not excluded.</span></p>
                 </li>
               </ol>
               <div class="field"><span class="k"><span class="ja">除外例</span><span class="en">Excluded</span></span><span class="chips"><span class="chip no">synthetic-track-0009 — <span class="ja">humming_karaoke_available: 0</span><span class="en">flag 0</span></span><span class="chip no"><span class="ja">explicit＋子供同乗</span><span class="en">explicit + child present</span></span></span></div>
@@ -734,8 +732,8 @@
         </div>
       </div>
       <p class="small muted">
-        <span class="ja">この単独画面がV1のかたちです。両提案アルゴリズム（サービス／コンテンツ）は設計済みで、③④は同じ透明な数式文法（証拠→応答→重み→寄与→fit）で動きます。将来はトリガーシミュレーターが、同じ発火目的とジャーニー状態を同一の提案契約へ渡すため、各エリアはそのまま機能し続けます。</span>
-        <span class="en">This standalone screen is the V1 shape. Both proposal algorithms (service and content) are designed, and panels ③④ run on the same transparent grammar (evidence → response → weight → contribution → fit). Later, the trigger simulator can feed the same purpose and journey state into the identical proposal contract, so every area keeps working unchanged.</span>
+        <span class="ja">この単独画面がV1のかたちです。両方の提案アルゴリズム（サービス／コンテンツ）は設計済みで、パネル②③はどちらも同じ透明な数式文法（証拠→応答→重み→寄与→fit）で動きます。将来、トリガーシミュレーターが同じ発火目的とジャーニー状態を同一の提案契約へ渡すようになっても、各エリアはそのまま機能し続けます。</span>
+        <span class="en">This standalone screen is the V1 shape. Both proposal algorithms (service and content) are designed, and panels ②③ both run on the same transparent grammar (evidence → response → weight → contribution → fit). Later, the trigger simulator can feed the same purpose and journey state into the identical proposal contract, so every area keeps working unchanged.</span>
       </p>
     </section>
 
@@ -745,7 +743,7 @@
       <div class="pipe">
         <div class="node"><div class="n">1</div><div class="t"><span class="ja">別画面と共通契約</span><span class="en">Screen &amp; contracts</span></div></div>
         <div class="arrow">→</div>
-        <div class="node"><div class="n">2</div><div class="t"><span class="ja">合成世界と制約</span><span class="en">Synthetic world</span></div></div>
+        <div class="node"><div class="n">2</div><div class="t"><span class="ja">合成データと制約</span><span class="en">Synthetic data</span></div></div>
         <div class="arrow">→</div>
         <div class="node"><div class="n">3</div><div class="t"><span class="ja">透明方式の音楽体験</span><span class="en">Transparent music slice</span></div></div>
         <div class="arrow">→</div>
@@ -754,7 +752,7 @@
         <div class="node"><div class="n">5</div><div class="t"><span class="ja">比較・全サービス・統合</span><span class="en">Compare &amp; integrate</span></div></div>
       </div>
       <p>
-        <span class="ja">最初にお客様へ価値を示せるリリースは、透明方式の音楽縦断体験です：編集可能データ → サービス提案 → 具体提案 → 休憩前/中/後 → 証跡。その後、同じ契約上でLLM方式と比較します。</span>
+        <span class="ja">最初にお客様へ価値を示せるリリースは、透明方式による音楽の縦断体験です。編集可能データ → サービス提案 → 具体提案 → 休憩前/中/後 → 証跡、という流れです。そのあと、同じ契約の上でLLM方式と比較します。</span>
         <span class="en">The first customer-meaningful release is the transparent music vertical slice: editable data → service proposal → content proposal → pre/rest/post journey → evidence. LLM comparison follows on the same contracts.</span>
       </p>
     </section>
@@ -762,7 +760,7 @@
     <!-- Appendix -->
     <section id="appendix">
       <h2><span class="ja">付録：既定パラメータ（透明サービス方式）</span><span class="en">Appendix: default parameters (transparent service package)</span></h2>
-      <p class="small muted"><span class="ja">すべてセットアップ画面で編集可能なハイパーパラメータです。出典 <code class="k">aica_transparent_service_proposal_algorithm.md</code> §4。</span><span class="en">All editable hyperparameters. Source: <code class="k">aica_transparent_service_proposal_algorithm.md</code> §4.</span></p>
+      <p class="small muted"><span class="ja">すべて、セットアップ画面で編集できるハイパーパラメータです。出典：<code class="k">aica_transparent_service_proposal_algorithm.md</code> §4。</span><span class="en">All editable hyperparameters. Source: <code class="k">aica_transparent_service_proposal_algorithm.md</code> §4.</span></p>
       <div class="scroll-x">
         <table>
           <thead><tr>
@@ -784,7 +782,7 @@
     </section>
 
     <footer>
-      <p><span class="ja">設計根拠：<code class="k">docs/master/aica_proposal_simulator_specification.md</code>、<code class="k">aica_transparent_service_proposal_algorithm.md</code>、<code class="k">aica_transparent_content_proposal_algorithm.md</code>、<code class="k">aica_synthetic_music_data_and_generation_specification.md</code>、CDC-SU音楽企画仕様書（主にスライド1–7、26、38–44、64–82）。本ページは経営・説明向け概要です。詳細な契約・受入条件は各仕様書に記載しています。トリガー側は <code class="k">aica_hybrid_trigger_explained.html</code> を参照。</span>
+      <p><span class="ja">設計根拠：<code class="k">docs/master/aica_proposal_simulator_specification.md</code>、<code class="k">aica_transparent_service_proposal_algorithm.md</code>、<code class="k">aica_transparent_content_proposal_algorithm.md</code>、<code class="k">aica_synthetic_music_data_and_generation_specification.md</code>、CDC-SU音楽企画仕様書（主にスライド1–7、26、38–44、64–82）。本ページは経営・説明向けの概要です。詳細な契約や受入条件は、各仕様書をご覧ください。トリガー側は <code class="k">aica_hybrid_trigger_explained.html</code> をご参照ください。</span>
       <span class="en">Design basis: <code class="k">docs/master/aica_proposal_simulator_specification.md</code>, <code class="k">aica_transparent_service_proposal_algorithm.md</code>, <code class="k">aica_transparent_content_proposal_algorithm.md</code>, <code class="k">aica_synthetic_music_data_and_generation_specification.md</code>, and the CDC-SU music-planning specification (mainly Slides 1–7, 26, 38–44, 64–82). This page is an executive overview; the specifications hold the detailed contracts and acceptance criteria. For the trigger side see <code class="k">aica_hybrid_trigger_explained.html</code>.</span></p>
     </footer>
   </main>

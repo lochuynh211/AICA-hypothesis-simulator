@@ -176,6 +176,18 @@ class DiscreteEventType(str, Enum):
     CHOOSE_ANOTHER = "CHOOSE_ANOTHER"
     REQUEST_MORE = "REQUEST_MORE"
     NO_ELIGIBLE_CANDIDATE = "NO_ELIGIBLE_CANDIDATE"
+    # P7 additions (data-model.md §"Modified enum: DiscreteEventType")
+    RECOMPUTED = "RECOMPUTED"
+    CONTEXT_EDITED = "CONTEXT_EDITED"
+
+
+class ProposalRunMode(str, Enum):
+    """Per-run mode, frozen at create time (data-model.md §"New enum:
+    ProposalRunMode"): ``interactive`` stops at each reviewer decision point;
+    ``quick_check`` auto-selects the rank-1 service + dispatches content in
+    the same call."""
+    interactive = "interactive"
+    quick_check = "quick_check"
 
 
 class ProposalRunStatus(str, Enum):

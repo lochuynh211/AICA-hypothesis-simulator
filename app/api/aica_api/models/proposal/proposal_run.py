@@ -14,12 +14,12 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from aica_api.models.proposal.enums import ProposalRunStatus
+from aica_api.models.proposal.enums import ProposalRunMode, ProposalRunStatus
 from aica_api.models.proposal.events import DiscreteEvent
 from aica_api.models.proposal.evidence import AlgorithmEvidence
 from aica_api.models.proposal.journey import JourneyState
 from aica_api.models.proposal.opportunity import ProposalOpportunity
-from aica_api.models.proposal.world import SetupSnapshot
+from aica_api.models.proposal.world import SetupSnapshot, World
 
 __all__ = ["ProposalRun", "ProposalRunLog"]
 
@@ -33,6 +33,10 @@ class ProposalRun(BaseModel):
     created_at: str
     service_package_id: str
     content_package_id: str | None
+    # P7 addition (data-model.md §"Modified: ProposalRun summary") — additive,
+    # defaulted so pre-P7 callers constructing a ProposalRun without `mode`
+    # still work.
+    mode: ProposalRunMode = ProposalRunMode.interactive
 
 
 class ProposalRunLog(BaseModel):
@@ -68,3 +72,17 @@ class ProposalRunLog(BaseModel):
     events: list[DiscreteEvent]
     evidence: list[AlgorithmEvidence]
     status: ProposalRunStatus
+    # P7 additions (data-model.md §"Modified: ProposalRunLog") — additive,
+    # all defaulted so a pre-P7 persisted log (none of these keys present)
+    # loads unchanged.
+    #
+    # ``world``: the run's base typed World (typed-world path only); ``None``
+    # for legacy world_snapshot-only runs -> recompute 422s (FR-006).
+    # ``opportunity_history``/``setup_snapshot_history``: append-only prior
+    # decision points, EXCLUDING the current head (``opportunity``/
+    # ``setup_snapshot``), oldest -> newest, index-aligned with each other.
+    # ``mode``: frozen per-run (interactive/quick_check).
+    world: World | None = None
+    opportunity_history: list[ProposalOpportunity] = []
+    setup_snapshot_history: list[SetupSnapshot] = []
+    mode: ProposalRunMode = ProposalRunMode.interactive

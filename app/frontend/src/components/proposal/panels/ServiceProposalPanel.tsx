@@ -24,13 +24,14 @@ import ReasonBreakdown, { type ReasonRow } from '../ReasonBreakdown'
 import ServiceExplainability from '../ServiceExplainability'
 import JourneyActionBar from '../JourneyActionBar'
 import EventTimeline from '../EventTimeline'
+import ModeToggle from '../ModeToggle'
+import RecomputePanel from '../RecomputePanel'
 
 const LABELS = {
   title: { ja: 'サービス提案', en: 'Service proposal' },
   step1: 'STEP 1',
   packageMode: { ja: 'パッケージ・モード', en: 'Package · Mode' },
   servicePkg: { ja: 'サービスPKG', en: 'Service pkg' },
-  mode: { ja: 'モード', en: 'Mode' },
   parameters: { ja: 'パラメータ（編集可）', en: 'Parameters (editable)' },
   hyperparameters: { ja: 'ハイパーパラメータ', en: 'Hyperparameters' },
   formulation: { ja: '数式・説明', en: 'Formulation' },
@@ -54,6 +55,11 @@ const LABELS = {
   eligibleTitle: { ja: '適格サービス', en: 'Eligible services' },
   excludedTitle: { ja: '除外サービス（理由コード）', en: 'Excluded services (reason codes)' },
   noneExcluded: { ja: 'なし', en: 'None' },
+  // P7 (US5, FR-022) — current journey readout.
+  journeyReadoutTitle: { ja: '現在のジャーニー状態', en: 'Current journey state' },
+  lifecycleStage: { ja: 'ライフサイクル段階', en: 'Lifecycle stage' },
+  motionState: { ja: '走行状態', en: 'Motion state' },
+  allowedServices: { ja: '許可サービス', en: 'Allowed services' },
 }
 
 /** The subset of the STEP-1 evidence `input_snapshot` this panel reads (P4
@@ -266,14 +272,9 @@ export default function ServiceProposalPanel() {
               ))}
             </select>
           </label>
-          <label style={fieldLabelStyle}>
-            {t(LABELS.mode, lang)}
-            <select value={state.mode} onChange={(e) => dispatch({ type: 'SET_MODE', mode: e.target.value })}>
-              <option value="interactive">interactive</option>
-              <option value="quick">quick</option>
-            </select>
-          </label>
         </div>
+        {/* P7 (US3/US5, FR-011) — interactive/quick_check, frozen for the run once created. */}
+        <ModeToggle />
 
         {manifest && (
           <>
@@ -475,12 +476,38 @@ export default function ServiceProposalPanel() {
           </p>
         )}
 
+        {/* P7 (US5, FR-022) — the current lifecycle stage, motion state, and
+            currently-allowed services, sourced straight from the backend's
+            journey_state + head opportunity (never re-derived here). */}
+        {state.runLog && (
+          <>
+            <div style={sectionLabelStyle}>{t(LABELS.journeyReadoutTitle, lang)}</div>
+            <div data-testid="journey-readout" style={readoutRowStyle}>
+              <span>
+                {t(LABELS.lifecycleStage, lang)}:{' '}
+                <b data-testid="readout-lifecycle-stage">{state.runLog.journey_state.lifecycle_stage}</b>
+              </span>
+              <span>
+                {t(LABELS.motionState, lang)}:{' '}
+                <b data-testid="readout-motion-state">{state.runLog.journey_state.motion_state}</b>
+              </span>
+              <span>
+                {t(LABELS.allowedServices, lang)}:{' '}
+                <b data-testid="readout-allowed-services">
+                  {state.runLog.opportunity.allowed_service_ids.join(', ')}
+                </b>
+              </span>
+            </div>
+          </>
+        )}
+
         {/* P4 (US5, FR-022) — the journey action bar + discrete-event
             timeline render the whole run's journey state/events, not just
             the STEP-1 candidates above; shown once a run exists. */}
         {state.runLog && (
           <>
             <JourneyActionBar />
+            <RecomputePanel />
             <EventTimeline />
           </>
         )}
@@ -501,6 +528,19 @@ const sectionLabelStyle: React.CSSProperties = {
 }
 
 const grid2Style: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 14px' }
+
+const readoutRowStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '3px',
+  fontSize: '0.82em',
+  color: '#4b5563',
+  background: '#f8fafc',
+  border: '1px solid #e5e7eb',
+  borderRadius: '8px',
+  padding: '8px 11px',
+  margin: '4px 0 8px',
+}
 
 const eligibilityListStyle: React.CSSProperties = {
   margin: '0 0 8px',

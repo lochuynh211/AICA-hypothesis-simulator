@@ -20,7 +20,9 @@
         "POSTPONED",
         "CHOOSE_ANOTHER",
         "REQUEST_MORE",
-        "NO_ELIGIBLE_CANDIDATE"
+        "NO_ELIGIBLE_CANDIDATE",
+        "RECOMPUTED",
+        "CONTEXT_EDITED"
       ],
       "title": "DiscreteEventType",
       "type": "string"

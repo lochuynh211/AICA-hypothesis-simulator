@@ -27,6 +27,7 @@
 import React, { createContext, useContext, useReducer } from 'react'
 import type {
   ProposalRunLog,
+  ProposalRunMode,
   World,
   Situation,
   DriverProfile,
@@ -178,7 +179,11 @@ export type ProposalStoreState = {
 
   // ── Service panel (STEP 1) setup ─────────────────────────────────────────
   servicePackageId: string | null
-  mode: string
+  /** interactive/quick_check (P7 FR-011), chosen before create-run and
+   * frozen for the run thereafter — display-only mirror of what gets sent
+   * on `createRun`; the backend is the actual source of truth once a run
+   * exists (its own frozen `runLog.mode`). */
+  mode: ProposalRunMode
   serviceParameterOverrides: Record<string, unknown>
   serviceHyperparameterOverrides: Record<string, unknown>
 
@@ -265,7 +270,10 @@ export type ProposalStoreAction =
    * (e.g. after the diff banner is dismissed). */
   | { type: 'CLEAR_ACTIVE_CLONE' }
   | { type: 'SET_SERVICE_PACKAGE'; packageId: string }
-  | { type: 'SET_MODE'; mode: string }
+  /** P7 (US5, T034) — set the interactive/quick_check mode from `ModeToggle`,
+   * typed against the real `ProposalRunMode` union (replaces the earlier
+   * untyped `SET_MODE`, which had no callers). */
+  | { type: 'MODE_SET'; mode: ProposalRunMode }
   | { type: 'SET_SERVICE_PARAMETER'; key: string; value: unknown }
   | { type: 'SET_SERVICE_HYPERPARAMETER'; key: string; value: unknown }
   | { type: 'SET_CONTENT_PACKAGE'; packageId: string }
@@ -277,6 +285,10 @@ export type ProposalStoreAction =
    * backend returned the updated run log (P4 T031) — mirrors how
    * CONTENT_SELECTED refreshes `runLog` after `selectService`. */
   | { type: 'JOURNEY_ACTION_APPLIED'; runLog: ProposalRunLog }
+  /** A recompute (P7 US1/US5) returned a new head opportunity/setup_snapshot
+   * appended to the same run — mirrors JOURNEY_ACTION_APPLIED: the backend
+   * log is the source of truth, this action only refreshes the display. */
+  | { type: 'RECOMPUTED'; runLog: ProposalRunLog }
   | { type: 'SET_ERROR'; message: string | null }
   | { type: 'RESET_RUN' }
 
@@ -479,7 +491,7 @@ export function proposalReducer(
     case 'SET_SERVICE_PACKAGE':
       return { ...state, servicePackageId: action.packageId }
 
-    case 'SET_MODE':
+    case 'MODE_SET':
       return { ...state, mode: action.mode }
 
     case 'SET_SERVICE_PARAMETER':
@@ -516,6 +528,9 @@ export function proposalReducer(
       return { ...state, runLog: action.runLog, error: null }
 
     case 'JOURNEY_ACTION_APPLIED':
+      return { ...state, runLog: action.runLog, error: null }
+
+    case 'RECOMPUTED':
       return { ...state, runLog: action.runLog, error: null }
 
     case 'SET_ERROR':

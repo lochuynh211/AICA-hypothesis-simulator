@@ -125,9 +125,11 @@ class TestDiscreteEventTypeP4Extension:
             assert member.value == name
 
     def test_full_member_set_is_exactly_old_plus_new(self):
-        assert {m.value for m in DiscreteEventType} == (
-            self.PRE_EXISTING_MEMBERS | self.NEW_MEMBERS
-        )
+        # P7 additively extends DiscreteEventType further (RECOMPUTED /
+        # CONTEXT_EDITED — see test_p1_enums.py::TestDiscreteEventType for the
+        # current full closed set); this test only asserts the P1+P4 set is
+        # still fully present and none of ITS members were removed/renamed.
+        assert (self.PRE_EXISTING_MEMBERS | self.NEW_MEMBERS) <= {m.value for m in DiscreteEventType}
 
 
 # ---------------------------------------------------------------------------

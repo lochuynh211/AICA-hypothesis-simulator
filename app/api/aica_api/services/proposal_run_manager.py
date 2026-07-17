@@ -28,7 +28,9 @@ Public API:
   append_evidence(run_id, evidence, runs_dir) -> ProposalRunLog
   update_state(run_id, runs_dir, *, status=None, journey_state=None,
                content_parameters=None, content_hyperparameters=None,
-               setup_snapshot=None) -> ProposalRunLog
+               setup_snapshot=None, opportunity=None, world_snapshot=None,
+               opportunity_history=None, setup_snapshot_history=None)
+               -> ProposalRunLog
 """
 from __future__ import annotations
 
@@ -37,13 +39,13 @@ import os
 import pathlib
 from datetime import datetime, timezone
 
-from aica_api.models.proposal.enums import ProposalRunStatus
+from aica_api.models.proposal.enums import ProposalRunMode, ProposalRunStatus
 from aica_api.models.proposal.events import DiscreteEvent
 from aica_api.models.proposal.evidence import AlgorithmEvidence
 from aica_api.models.proposal.journey import JourneyState
 from aica_api.models.proposal.opportunity import ProposalOpportunity
 from aica_api.models.proposal.proposal_run import ProposalRun, ProposalRunLog
-from aica_api.models.proposal.world import SetupSnapshot
+from aica_api.models.proposal.world import SetupSnapshot, World
 from aica_api.storage.file_store import read_json, write_json_atomic
 
 __all__ = [
@@ -108,6 +110,8 @@ def create_run(
     evidence: list[AlgorithmEvidence] | None = None,
     status: ProposalRunStatus = ProposalRunStatus.created,
     setup_snapshot: SetupSnapshot | None = None,
+    world: World | None = None,
+    mode: ProposalRunMode = ProposalRunMode.interactive,
     runs_dir: pathlib.Path,
 ) -> ProposalRunLog:
     """Build a ``ProposalRunLog``, append any provided events/evidence, and
@@ -138,6 +142,13 @@ def create_run(
         setup_snapshot:        Frozen P3 ``SetupSnapshot`` (typed-world path
                                only) — ``None`` for the legacy opaque
                                ``world_snapshot`` path (P1 back-compat).
+        world:                 P7 addition: the run's base typed ``World``
+                               (typed-world path only), deep-copied/frozen at
+                               creation like ``parameters``/``hyperparameters``
+                               — ``None`` for the legacy ``world_snapshot``-only
+                               path (data-model.md §"Modified: ProposalRunLog").
+        mode:                   P7 addition: the run's frozen
+                               ``ProposalRunMode`` (interactive/quick_check).
         runs_dir:              Directory for persisting ``<run_id>.json``
                                (``settings.proposal_runs_dir`` in production
                                — NEVER the trigger ``runs_dir``).
@@ -163,6 +174,8 @@ def create_run(
         events=list(events) if events else [],
         evidence=list(evidence) if evidence else [],
         status=status,
+        world=copy.deepcopy(world) if world is not None else None,
+        mode=mode,
     )
     _persist(run_log, pathlib.Path(runs_dir))
     return run_log
@@ -210,6 +223,7 @@ def list_runs(runs_dir: pathlib.Path) -> list[ProposalRun]:
                 created_at=log.created_at,
                 service_package_id=log.service_package_id,
                 content_package_id=log.content_package_id,
+                mode=log.mode,
             )
         )
     return summaries
@@ -266,6 +280,10 @@ def update_state(
     content_parameters: dict | None = None,
     content_hyperparameters: dict | None = None,
     setup_snapshot: SetupSnapshot | None = None,
+    opportunity: ProposalOpportunity | None = None,
+    world_snapshot: dict | None = None,
+    opportunity_history: list[ProposalOpportunity] | None = None,
+    setup_snapshot_history: list[SetupSnapshot] | None = None,
 ) -> ProposalRunLog:
     """Update ``status``/``journey_state``/content overrides on an existing
     run and re-persist.
@@ -291,6 +309,17 @@ def update_state(
     the run (FR-011/SC-008). This never changes what ``evaluate()`` receives
     or the returned plan — only persisted metadata.
 
+    P7 additions (data-model.md §"Run-manager surface", research.md D4):
+    ``opportunity``/``world_snapshot`` REPLACE the current head fields (the
+    same "current head" ``ProposalRunLog.opportunity``/``world_snapshot`` a
+    recompute re-freezes); ``opportunity_history``/``setup_snapshot_history``
+    REPLACE the append-only history lists WHOLESALE with the caller-assembled
+    list (the caller — the recompute endpoint — is responsible for having
+    already appended the prior head before calling this). All four are
+    deep-copied here, mirroring ``content_parameters``/
+    ``content_hyperparameters``'s freezing discipline, so a later mutation of
+    the caller's own objects never retroactively changes the persisted log.
+
     Raises:
         ProposalRunNotFoundError: If run_id has no persisted log.
     """
@@ -307,5 +336,13 @@ def update_state(
         run_log.content_hyperparameters = copy.deepcopy(content_hyperparameters)
     if setup_snapshot is not None:
         run_log.setup_snapshot = setup_snapshot
+    if opportunity is not None:
+        run_log.opportunity = copy.deepcopy(opportunity)
+    if world_snapshot is not None:
+        run_log.world_snapshot = copy.deepcopy(world_snapshot)
+    if opportunity_history is not None:
+        run_log.opportunity_history = copy.deepcopy(opportunity_history)
+    if setup_snapshot_history is not None:
+        run_log.setup_snapshot_history = copy.deepcopy(setup_snapshot_history)
     _persist(run_log, pathlib.Path(runs_dir))
     return run_log

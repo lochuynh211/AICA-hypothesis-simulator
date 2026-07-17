@@ -1,5 +1,18 @@
 {
   "$defs": {
+    "AgeBand": {
+      "description": "Driver age band (spec §9; keys mirror the content selector's age_era_affinity table).",
+      "enum": [
+        "teens",
+        "20s",
+        "30s",
+        "40s",
+        "50s",
+        "60plus"
+      ],
+      "title": "AgeBand",
+      "type": "string"
+    },
     "AlgorithmEvidence": {
       "description": "Per-evaluation evidence appended to a ``ProposalRunLog``.",
       "properties": {
@@ -92,6 +105,147 @@
       "title": "AlgorithmEvidence",
       "type": "object"
     },
+    "CancelledContentPlan": {
+      "additionalProperties": false,
+      "description": "One cancelled content-plan record (spec §9: \"timestamped plan record array\").",
+      "properties": {
+        "cancelled_at": {
+          "title": "Cancelled At",
+          "type": "string"
+        },
+        "plan_id": {
+          "title": "Plan Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "plan_id",
+        "cancelled_at"
+      ],
+      "title": "CancelledContentPlan",
+      "type": "object"
+    },
+    "CatalogRef": {
+      "additionalProperties": false,
+      "description": "Lightweight, immutable reference to a frozen dataset.\n\n``dataset_id`` + ``dataset_version`` + ``dataset_hash`` — enough to pin\nexactly which frozen catalog a ``World`` (a later P3 task) is drawing\nsongs from, without embedding the full provenance note. Read-only:\n``frozen=True``, no edit/mutate method.",
+      "properties": {
+        "dataset_hash": {
+          "title": "Dataset Hash",
+          "type": "string"
+        },
+        "dataset_id": {
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "dataset_version": {
+          "$ref": "#/$defs/DatasetVersion"
+        }
+      },
+      "required": [
+        "dataset_id",
+        "dataset_version",
+        "dataset_hash"
+      ],
+      "title": "CatalogRef",
+      "type": "object"
+    },
+    "ChangedFromItem": {
+      "additionalProperties": false,
+      "description": "One changed-from-item history entry (``track_id``, ``changed_at``).",
+      "properties": {
+        "changed_at": {
+          "title": "Changed At",
+          "type": "string"
+        },
+        "track_id": {
+          "title": "Track Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "track_id",
+        "changed_at"
+      ],
+      "title": "ChangedFromItem",
+      "type": "object"
+    },
+    "CompletedItem": {
+      "additionalProperties": false,
+      "description": "One completed-item history entry (Additional proposed / Granular operations).",
+      "properties": {
+        "completed_at": {
+          "title": "Completed At",
+          "type": "string"
+        },
+        "track_id": {
+          "title": "Track Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "track_id",
+        "completed_at"
+      ],
+      "title": "CompletedItem",
+      "type": "object"
+    },
+    "ControlInputs": {
+      "additionalProperties": false,
+      "description": "The run's control inputs (data-model.md §ControlInputs).\n\n``matrix_version``/``dataset_id`` are validated here only for non-emptiness;\nactual resolvability against the matrix/dataset registries is a service-layer\nconcern (``services/world_validation.py``, a later P3 task), not this model.",
+      "properties": {
+        "dataset_id": {
+          "title": "Dataset Id",
+          "type": "string"
+        },
+        "lifecycle_stage": {
+          "$ref": "#/$defs/LifecycleStage"
+        },
+        "matrix_version": {
+          "title": "Matrix Version",
+          "type": "string"
+        },
+        "motion_state": {
+          "$ref": "#/$defs/MotionState"
+        },
+        "trigger_purpose": {
+          "$ref": "#/$defs/TriggerPurpose"
+        }
+      },
+      "required": [
+        "trigger_purpose",
+        "lifecycle_stage",
+        "motion_state",
+        "matrix_version",
+        "dataset_id"
+      ],
+      "title": "ControlInputs",
+      "type": "object"
+    },
+    "DatasetVersion": {
+      "additionalProperties": false,
+      "description": "Schema / track / audio-feature reference versions for a dataset.\n\nRead-only, immutable — mirrors the corresponding ``dataset_manifest.json``\nfields verbatim.",
+      "properties": {
+        "schema_version": {
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "spotify_audio_features_reference_version": {
+          "title": "Spotify Audio Features Reference Version",
+          "type": "string"
+        },
+        "spotify_track_reference_version": {
+          "title": "Spotify Track Reference Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "spotify_track_reference_version",
+        "spotify_audio_features_reference_version"
+      ],
+      "title": "DatasetVersion",
+      "type": "object"
+    },
     "DiscreteEvent": {
       "description": "A single discrete event appended to a ``ProposalRunLog`` (append-only\nin usage; this model just holds the shape).",
       "properties": {
@@ -143,10 +297,337 @@
         "POSTPONED",
         "CHOOSE_ANOTHER",
         "REQUEST_MORE",
-        "NO_ELIGIBLE_CANDIDATE"
+        "NO_ELIGIBLE_CANDIDATE",
+        "RECOMPUTED",
+        "CONTEXT_EDITED"
       ],
       "title": "DiscreteEventType",
       "type": "string"
+    },
+    "DriverProfile": {
+      "additionalProperties": false,
+      "description": "Preference + history + profile-side additional-proposed fields + the\nopt-in genre extension (data-model.md §DriverProfile).\n\nField groupings below reflect the UI/editing grouping (Preference / History /\ngenre extension); ``World.project()`` re-buckets some of these fields into\n``feature_snapshot[\"additional_proposed\"]`` per the disposition registry\n(``completed_items``/``manually_selected_items``/``repeated_items`` from\nPreference; the four ``*_confidence`` maps from History).",
+      "properties": {
+        "age_band": {
+          "$ref": "#/$defs/AgeBand"
+        },
+        "cancelled_content_plans": {
+          "items": {
+            "$ref": "#/$defs/CancelledContentPlan"
+          },
+          "title": "Cancelled Content Plans",
+          "type": "array"
+        },
+        "catalog_item_recency_state": {
+          "additionalProperties": {
+            "$ref": "#/$defs/RecencyState"
+          },
+          "title": "Catalog Item Recency State",
+          "type": "object"
+        },
+        "catalog_item_usage_level": {
+          "additionalProperties": {
+            "$ref": "#/$defs/UsageLevel"
+          },
+          "title": "Catalog Item Usage Level",
+          "type": "object"
+        },
+        "changed_from_items": {
+          "items": {
+            "$ref": "#/$defs/ChangedFromItem"
+          },
+          "title": "Changed From Items",
+          "type": "array"
+        },
+        "completed_items": {
+          "items": {
+            "$ref": "#/$defs/CompletedItem"
+          },
+          "title": "Completed Items",
+          "type": "array"
+        },
+        "content_proposal_acceptance_confidence": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Content Proposal Acceptance Confidence",
+          "type": "object"
+        },
+        "content_proposal_acceptance_rate": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Content Proposal Acceptance Rate",
+          "type": "object"
+        },
+        "content_recovery_confidence": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Content Recovery Confidence",
+          "type": "object"
+        },
+        "content_recovery_rate": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Content Recovery Rate",
+          "type": "object"
+        },
+        "content_tag_recency_state": {
+          "additionalProperties": {
+            "$ref": "#/$defs/RecencyState"
+          },
+          "title": "Content Tag Recency State",
+          "type": "object"
+        },
+        "content_tag_usage_level": {
+          "additionalProperties": {
+            "$ref": "#/$defs/UsageLevel"
+          },
+          "title": "Content Tag Usage Level",
+          "type": "object"
+        },
+        "gender": {
+          "$ref": "#/$defs/Gender"
+        },
+        "genre_affinity_v1_enabled": {
+          "default": false,
+          "title": "Genre Affinity V1 Enabled",
+          "type": "boolean"
+        },
+        "hobby_interest_tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Hobby Interest Tags",
+          "type": "array"
+        },
+        "manually_selected_items": {
+          "items": {
+            "$ref": "#/$defs/ManuallySelectedItem"
+          },
+          "title": "Manually Selected Items",
+          "type": "array"
+        },
+        "oshi_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Oshi Id"
+        },
+        "oshi_mode": {
+          "$ref": "#/$defs/OshiMode"
+        },
+        "oshi_registered": {
+          "title": "Oshi Registered",
+          "type": "boolean"
+        },
+        "oshi_tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Oshi Tags",
+          "type": "array"
+        },
+        "oshi_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OshiType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "played_items": {
+          "items": {
+            "$ref": "#/$defs/PlayedItem"
+          },
+          "title": "Played Items",
+          "type": "array"
+        },
+        "repeated_items": {
+          "items": {
+            "$ref": "#/$defs/RepeatedItem"
+          },
+          "title": "Repeated Items",
+          "type": "array"
+        },
+        "scene_content_tag_usage_level": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "$ref": "#/$defs/UsageLevel"
+            },
+            "type": "object"
+          },
+          "title": "Scene Content Tag Usage Level",
+          "type": "object"
+        },
+        "scene_genre_usage": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "additionalProperties": {
+                  "$ref": "#/$defs/UsageLevel"
+                },
+                "propertyNames": {
+                  "$ref": "#/$defs/GenreLiteral"
+                },
+                "type": "object"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scene Genre Usage"
+        },
+        "scene_service_usage_level": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "$ref": "#/$defs/UsageLevel"
+            },
+            "propertyNames": {
+              "$ref": "#/$defs/ServiceId"
+            },
+            "type": "object"
+          },
+          "title": "Scene Service Usage Level",
+          "type": "object"
+        },
+        "scheduled_event_tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Scheduled Event Tags",
+          "type": "array"
+        },
+        "scheduled_event_timing": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScheduledEventTiming"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "scheduled_event_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScheduledEventType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "service_proposal_acceptance_confidence": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/ServiceId"
+          },
+          "title": "Service Proposal Acceptance Confidence",
+          "type": "object"
+        },
+        "service_proposal_acceptance_rate": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/ServiceId"
+          },
+          "title": "Service Proposal Acceptance Rate",
+          "type": "object"
+        },
+        "service_recency_state": {
+          "additionalProperties": {
+            "$ref": "#/$defs/RecencyState"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/ServiceId"
+          },
+          "title": "Service Recency State",
+          "type": "object"
+        },
+        "service_recovery_confidence": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/ServiceId"
+          },
+          "title": "Service Recovery Confidence",
+          "type": "object"
+        },
+        "service_recovery_rate": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/ServiceId"
+          },
+          "title": "Service Recovery Rate",
+          "type": "object"
+        },
+        "service_usage_level": {
+          "additionalProperties": {
+            "$ref": "#/$defs/UsageLevel"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/ServiceId"
+          },
+          "title": "Service Usage Level",
+          "type": "object"
+        },
+        "skipped_items": {
+          "items": {
+            "$ref": "#/$defs/SkippedItem"
+          },
+          "title": "Skipped Items",
+          "type": "array"
+        },
+        "usage_by_genre": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/UsageLevel"
+              },
+              "propertyNames": {
+                "$ref": "#/$defs/GenreLiteral"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Usage By Genre"
+        }
+      },
+      "required": [
+        "oshi_registered",
+        "oshi_mode",
+        "age_band",
+        "gender"
+      ],
+      "title": "DriverProfile",
+      "type": "object"
     },
     "EvidenceError": {
       "description": "Structured error detail recorded when an ``evaluate()`` call raises or\nreturns an invalid result.",
@@ -194,6 +675,36 @@
       ],
       "title": "FeatureProvenanceEntry",
       "type": "object"
+    },
+    "Gender": {
+      "description": "Driver gender (spec §9: \"enum plus unknown\"; default transparent weight is zero).",
+      "enum": [
+        "male",
+        "female",
+        "non_binary",
+        "unspecified"
+      ],
+      "title": "Gender",
+      "type": "string"
+    },
+    "GenreLiteral": {
+      "description": "Controlled vocabulary of 12 Japanese-market music genres.",
+      "enum": [
+        "j-pop",
+        "j-rock",
+        "city pop",
+        "anime",
+        "vocaloid",
+        "enka",
+        "children's music",
+        "classical",
+        "jazz",
+        "ambient",
+        "electronic",
+        "japanese folk"
+      ],
+      "title": "GenreLiteral",
+      "type": "string"
     },
     "JourneyState": {
       "description": "A snapshot of the journey at a point in the proposal run.",
@@ -280,6 +791,26 @@
       "title": "LifecycleStage",
       "type": "string"
     },
+    "ManuallySelectedItem": {
+      "additionalProperties": false,
+      "description": "One manually-selected-item history entry (Additional proposed / Granular operations).",
+      "properties": {
+        "selected_at": {
+          "title": "Selected At",
+          "type": "string"
+        },
+        "track_id": {
+          "title": "Track Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "track_id",
+        "selected_at"
+      ],
+      "title": "ManuallySelectedItem",
+      "type": "object"
+    },
     "MotionState": {
       "description": "Vehicle motion state at proposal time (P1 journey-state snapshot).",
       "enum": [
@@ -287,6 +818,39 @@
         "stopped"
       ],
       "title": "MotionState",
+      "type": "string"
+    },
+    "NightState": {
+      "description": "Day/night driving state (spec §8/§9).",
+      "enum": [
+        "day",
+        "night"
+      ],
+      "title": "NightState",
+      "type": "string"
+    },
+    "OshiMode": {
+      "description": "Whether oshi (favorite-artist) personalization is explicitly enabled.",
+      "enum": [
+        "on",
+        "off"
+      ],
+      "title": "OshiMode",
+      "type": "string"
+    },
+    "OshiType": {
+      "description": "Kind of oshi entity the driver has registered (spec §9, normalized UPro identity).",
+      "enum": [
+        "artist",
+        "artist_member",
+        "group",
+        "character",
+        "voice_actor",
+        "franchise",
+        "creator",
+        "other"
+      ],
+      "title": "OshiType",
       "type": "string"
     },
     "PlaybackState": {
@@ -301,6 +865,26 @@
       ],
       "title": "PlaybackState",
       "type": "string"
+    },
+    "PlayedItem": {
+      "additionalProperties": false,
+      "description": "One played-item history entry. Field names match what the real content\nselector reads directly (``track_id``, ``last_played_at``).",
+      "properties": {
+        "last_played_at": {
+          "title": "Last Played At",
+          "type": "string"
+        },
+        "track_id": {
+          "title": "Track Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "track_id",
+        "last_played_at"
+      ],
+      "title": "PlayedItem",
+      "type": "object"
     },
     "PreviousContent": {
       "description": "The service/plan that was active before the current one (P4) — used to\nrestore playback when a ``stop`` action returns to prior content.",
@@ -379,6 +963,15 @@
       "title": "ProposalOpportunity",
       "type": "object"
     },
+    "ProposalRunMode": {
+      "description": "Per-run mode, frozen at create time (data-model.md §\"New enum:\nProposalRunMode\"): ``interactive`` stops at each reviewer decision point;\n``quick_check`` auto-selects the rank-1 service + dispatches content in\nthe same call.",
+      "enum": [
+        "interactive",
+        "quick_check"
+      ],
+      "title": "ProposalRunMode",
+      "type": "string"
+    },
     "ProposalRunStatus": {
       "description": "Lifecycle status of a ``ProposalRun``.",
       "enum": [
@@ -391,6 +984,84 @@
         "content_stopped"
       ],
       "title": "ProposalRunStatus",
+      "type": "string"
+    },
+    "RecencyState": {
+      "description": "Service/item/tag recency band (spec §8/§9: \"map to never, long_unused, recent\").",
+      "enum": [
+        "never",
+        "long_unused",
+        "recent"
+      ],
+      "title": "RecencyState",
+      "type": "string"
+    },
+    "RepeatedItem": {
+      "additionalProperties": false,
+      "description": "One repeated-item history entry (Additional proposed / Granular operations).",
+      "properties": {
+        "repeated_at": {
+          "title": "Repeated At",
+          "type": "string"
+        },
+        "track_id": {
+          "title": "Track Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "track_id",
+        "repeated_at"
+      ],
+      "title": "RepeatedItem",
+      "type": "object"
+    },
+    "RestSpotType": {
+      "description": "Classification of a rest opportunity location.",
+      "enum": [
+        "sa_pa",
+        "convenience_store",
+        "parking",
+        "oshi_spot",
+        "other",
+        "unknown"
+      ],
+      "title": "RestSpotType",
+      "type": "string"
+    },
+    "RoadType": {
+      "description": "Normalized road-type context (spec §8/§9).",
+      "enum": [
+        "highway",
+        "local",
+        "mountain",
+        "parking"
+      ],
+      "title": "RoadType",
+      "type": "string"
+    },
+    "ScheduledEventTiming": {
+      "description": "Proximity of a scheduled event (spec §8/§9, simulator proposal).",
+      "enum": [
+        "now",
+        "soon",
+        "later",
+        "unknown"
+      ],
+      "title": "ScheduledEventTiming",
+      "type": "string"
+    },
+    "ScheduledEventType": {
+      "description": "Kind of upcoming scheduled event (spec §8/§9, simulator proposal).",
+      "enum": [
+        "none",
+        "live_show",
+        "radio_program",
+        "concert",
+        "oshi_event",
+        "other"
+      ],
+      "title": "ScheduledEventType",
       "type": "string"
     },
     "ServiceId": {
@@ -413,6 +1084,25 @@
       ],
       "title": "ServiceId",
       "type": "string"
+    },
+    "ServiceRejection": {
+      "additionalProperties": false,
+      "description": "One recent service-rejection record (spec §8/§9: \"timestamped service-ID array\").",
+      "properties": {
+        "rejected_at": {
+          "title": "Rejected At",
+          "type": "string"
+        },
+        "service_id": {
+          "$ref": "#/$defs/ServiceId"
+        }
+      },
+      "required": [
+        "service_id",
+        "rejected_at"
+      ],
+      "title": "ServiceRejection",
+      "type": "object"
     },
     "SetupSnapshot": {
       "additionalProperties": false,
@@ -545,6 +1235,141 @@
       "title": "SetupSnapshotOrigin",
       "type": "object"
     },
+    "Situation": {
+      "additionalProperties": false,
+      "description": "The momentary driving scene (data-model.md §Situation).\n\nOwns the 11 core-scene A.1/A.2 fields plus the 4 \"additional proposed\" scene\nfields (``estimated_min_until_rest_spot``/``rest_spot_type``/``active_service``/\n``recent_service_rejections``) — the UI edits them together as one \"Situation\"\ngroup, but ``World.project()`` re-buckets the latter 4 into\n``feature_snapshot[\"additional_proposed\"]`` per the disposition registry.",
+      "properties": {
+        "active_service": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ServiceId"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "child_present": {
+          "title": "Child Present",
+          "type": "boolean"
+        },
+        "destination_tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Destination Tags",
+          "type": "array"
+        },
+        "drowsiness_level": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Drowsiness Level",
+          "type": "integer"
+        },
+        "estimated_min_until_rest_spot": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Estimated Min Until Rest Spot"
+        },
+        "fatigue_level": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Fatigue Level",
+          "type": "integer"
+        },
+        "monotony_level": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Monotony Level",
+          "type": "integer"
+        },
+        "motion_state": {
+          "$ref": "#/$defs/MotionState"
+        },
+        "multiple_passengers": {
+          "title": "Multiple Passengers",
+          "type": "boolean"
+        },
+        "night_state": {
+          "$ref": "#/$defs/NightState"
+        },
+        "recent_service_rejections": {
+          "items": {
+            "$ref": "#/$defs/ServiceRejection"
+          },
+          "title": "Recent Service Rejections",
+          "type": "array"
+        },
+        "rest_spot_type": {
+          "$ref": "#/$defs/RestSpotType"
+        },
+        "road_type": {
+          "$ref": "#/$defs/RoadType"
+        },
+        "route_tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Route Tags",
+          "type": "array"
+        },
+        "traffic_state": {
+          "$ref": "#/$defs/TrafficState"
+        }
+      },
+      "required": [
+        "drowsiness_level",
+        "fatigue_level",
+        "traffic_state",
+        "road_type",
+        "night_state",
+        "monotony_level",
+        "child_present",
+        "multiple_passengers",
+        "motion_state",
+        "rest_spot_type"
+      ],
+      "title": "Situation",
+      "type": "object"
+    },
+    "SkippedItem": {
+      "additionalProperties": false,
+      "description": "One skipped-item history entry (``track_id``, ``skipped_at``).",
+      "properties": {
+        "skipped_at": {
+          "title": "Skipped At",
+          "type": "string"
+        },
+        "track_id": {
+          "title": "Track Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "track_id",
+        "skipped_at"
+      ],
+      "title": "SkippedItem",
+      "type": "object"
+    },
+    "TrafficState": {
+      "description": "Traffic condition (spec §8/§9 content feature table).",
+      "enum": [
+        "normal",
+        "congested"
+      ],
+      "title": "TrafficState",
+      "type": "string"
+    },
     "TriggerPurpose": {
       "description": "The high-level intent of the proposal trigger (spec §7).",
       "enum": [
@@ -555,6 +1380,43 @@
       ],
       "title": "TriggerPurpose",
       "type": "string"
+    },
+    "UsageLevel": {
+      "description": "Ordinal usage-frequency level for genre-affinity extension.",
+      "enum": [
+        "never",
+        "low",
+        "med",
+        "high"
+      ],
+      "title": "UsageLevel",
+      "type": "string"
+    },
+    "World": {
+      "additionalProperties": false,
+      "description": "The complete editable proposal world (data-model.md §World).\n\n``control_inputs`` + ``situation`` + ``driver_profile`` is the UI's editing\ngrouping. ``catalog_ref`` pins which frozen dataset the world's catalog\nreferences are drawn from (immutable — see ``dataset.py``).",
+      "properties": {
+        "catalog_ref": {
+          "$ref": "#/$defs/CatalogRef"
+        },
+        "control_inputs": {
+          "$ref": "#/$defs/ControlInputs"
+        },
+        "driver_profile": {
+          "$ref": "#/$defs/DriverProfile"
+        },
+        "situation": {
+          "$ref": "#/$defs/Situation"
+        }
+      },
+      "required": [
+        "control_inputs",
+        "situation",
+        "driver_profile",
+        "catalog_ref"
+      ],
+      "title": "World",
+      "type": "object"
     }
   },
   "description": "Full append-only record persisted to ``proposal_runs/<run_id>.json``.\n\nRules (enforced by the run manager, not this model): append-only;\npersisted atomically after each event; reopen renders from this log\nwithout recomputation; created/edited entirely within ``proposal_runs/``\n(never touches trigger ``runs/``).\n\n``setup_snapshot`` (P3, feature 014) is an ADDITIVE field: it freezes the\ntyped provenance of what produced the run (data-model.md §SetupSnapshot,\nresearch.md §R6). It is optional and defaults to ``None`` so that\nexisting runs persisted before P3 (which only ever populated the opaque\n``world_snapshot`` dict) still load unchanged. The run-create ENDPOINT\nmigration to actually populate ``setup_snapshot`` (and eventually retire\n``world_snapshot``) is a later P3 task — this model only adds the shape.",
@@ -612,8 +1474,20 @@
       "title": "Matrix Version",
       "type": "string"
     },
+    "mode": {
+      "$ref": "#/$defs/ProposalRunMode",
+      "default": "interactive"
+    },
     "opportunity": {
       "$ref": "#/$defs/ProposalOpportunity"
+    },
+    "opportunity_history": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ProposalOpportunity"
+      },
+      "title": "Opportunity History",
+      "type": "array"
     },
     "parameters": {
       "additionalProperties": true,
@@ -639,8 +1513,27 @@
       ],
       "default": null
     },
+    "setup_snapshot_history": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/SetupSnapshot"
+      },
+      "title": "Setup Snapshot History",
+      "type": "array"
+    },
     "status": {
       "$ref": "#/$defs/ProposalRunStatus"
+    },
+    "world": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/World"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "world_snapshot": {
       "additionalProperties": true,
