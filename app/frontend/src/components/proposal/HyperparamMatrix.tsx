@@ -53,9 +53,11 @@ type Props = {
   value: unknown
   onChange: (next: unknown) => void
   lang: UiLanguage
+  /** When true, suppress the internal label element (caller renders its own, e.g. a subslab header). */
+  hideLabel?: boolean
 }
 
-export default function HyperparamMatrix({ def, value, onChange, lang }: Props) {
+export default function HyperparamMatrix({ def, value, onChange, lang, hideLabel = false }: Props) {
   const effective = value !== undefined ? value : def.default
   const inputId = `hpm-${def.key}`
   const labelText = t(def.label, lang)
@@ -66,9 +68,11 @@ export default function HyperparamMatrix({ def, value, onChange, lang }: Props) 
     const step = def.step as number | undefined
     return (
       <div className="hpm-field" style={{ padding: '4px 0' }}>
-        <label htmlFor={inputId} style={{ display: 'block', fontSize: '0.8em', color: '#4b5563' }}>
-          {labelText}
-        </label>
+        {!hideLabel && (
+          <label htmlFor={inputId} style={{ display: 'block', fontSize: '0.8em', color: '#4b5563' }}>
+            {labelText}
+          </label>
+        )}
         <input
           id={inputId}
           type="number"
@@ -76,6 +80,7 @@ export default function HyperparamMatrix({ def, value, onChange, lang }: Props) 
           min={min}
           max={max}
           step={step}
+          aria-label={hideLabel ? labelText : undefined}
           onChange={(e) => onChange(Number(e.target.value))}
         />
       </div>
@@ -93,12 +98,15 @@ export default function HyperparamMatrix({ def, value, onChange, lang }: Props) 
     const options = (def.values as (string | boolean)[] | undefined) ?? []
     return (
       <div className="hpm-field" style={{ padding: '4px 0' }}>
-        <label htmlFor={inputId} style={{ display: 'block', fontSize: '0.8em', color: '#4b5563' }}>
-          {labelText}
-        </label>
+        {!hideLabel && (
+          <label htmlFor={inputId} style={{ display: 'block', fontSize: '0.8em', color: '#4b5563' }}>
+            {labelText}
+          </label>
+        )}
         <select
           id={inputId}
           value={String(effective)}
+          aria-label={hideLabel ? labelText : undefined}
           onChange={(e) => {
             const raw = e.target.value
             const match = options.find((opt) => String(opt) === raw)
@@ -118,10 +126,18 @@ export default function HyperparamMatrix({ def, value, onChange, lang }: Props) 
   if (def.kind === 'string') {
     return (
       <div className="hpm-field" style={{ padding: '4px 0' }}>
-        <label htmlFor={inputId} style={{ display: 'block', fontSize: '0.8em', color: '#4b5563' }}>
-          {labelText}
-        </label>
-        <input id={inputId} type="text" value={String(effective)} onChange={(e) => onChange(e.target.value)} />
+        {!hideLabel && (
+          <label htmlFor={inputId} style={{ display: 'block', fontSize: '0.8em', color: '#4b5563' }}>
+            {labelText}
+          </label>
+        )}
+        <input
+          id={inputId}
+          type="text"
+          value={String(effective)}
+          aria-label={hideLabel ? labelText : undefined}
+          onChange={(e) => onChange(e.target.value)}
+        />
       </div>
     )
   }
@@ -129,7 +145,9 @@ export default function HyperparamMatrix({ def, value, onChange, lang }: Props) 
   // matrix / table / map — a scroll-x table of inputs, recursing as needed.
   return (
     <div className="hpm-matrix" style={{ padding: '4px 0' }}>
-      <div style={{ fontSize: '0.8em', fontWeight: 700, color: '#4b5563', marginBottom: '4px' }}>{labelText}</div>
+      {!hideLabel && (
+        <div style={{ fontSize: '0.8em', fontWeight: 700, color: '#4b5563', marginBottom: '4px' }}>{labelText}</div>
+      )}
       <div style={{ overflowX: 'auto' }}>
         <MatrixNode
           value={(effective ?? {}) as JsonValue}

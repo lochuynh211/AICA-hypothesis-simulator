@@ -570,6 +570,7 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
                       value={state.serviceHyperparameterOverrides[hp.key]}
                       onChange={(value) => dispatch({ type: 'SET_SERVICE_HYPERPARAMETER', key: hp.key, value })}
                       lang={lang}
+                      hideLabel
                     />
                   </div>
                 ))}

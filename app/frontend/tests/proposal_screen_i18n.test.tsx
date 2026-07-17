@@ -79,9 +79,11 @@ describe('ProposalScreen bilingual (EN default / JA toggle / back to EN)', () =>
     // A section label from each panel + a hyperparameter label from the manifest.
     expect(screen.getByText('Trigger signal (4)')).toBeInTheDocument()
     expect(screen.getAllByText('Parameters (editable)').length).toBeGreaterThanOrEqual(2)
-    // Task 8: the subslab label and the HyperparamMatrix's own label both
-    // render the same localized text, so at least one match is expected.
-    expect(screen.getAllByText('Category Weights').length).toBeGreaterThan(0)
+    // Fix (duplicate-label review finding): HyperparamMatrix is rendered with
+    // `hideLabel` in the service subslab, and this fixture's CONTENT_PACKAGE
+    // has no hyperparameters, so "Category Weights" renders exactly once
+    // (the service subslab header).
+    expect(screen.getByText('Category Weights')).toBeInTheDocument()
   })
 
   it('toggling to JA switches every panel heading/label, and back to EN restores them', async () => {
@@ -103,7 +105,8 @@ describe('ProposalScreen bilingual (EN default / JA toggle / back to EN)', () =>
     expect(screen.getByText('コンテンツ提案')).toBeInTheDocument()
     expect(screen.getByText('発火シグナル（4つ）')).toBeInTheDocument()
     expect(screen.getAllByText('パラメータ（編集可）').length).toBeGreaterThanOrEqual(2)
-    expect(screen.getAllByText('カテゴリ重み').length).toBeGreaterThan(0)
+    // Fix (duplicate-label review finding): single match — see EN-default case above.
+    expect(screen.getByText('カテゴリ重み')).toBeInTheDocument()
     expect(screen.queryByText('Category Weights')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByTestId('proposal-lang-toggle-en'))
@@ -113,6 +116,7 @@ describe('ProposalScreen bilingual (EN default / JA toggle / back to EN)', () =>
     expect(screen.getByText('Service proposal')).toBeInTheDocument()
     expect(screen.getByText('Content proposal')).toBeInTheDocument()
     expect(screen.getByText('Trigger signal (4)')).toBeInTheDocument()
-    expect(screen.getAllByText('Category Weights').length).toBeGreaterThan(0)
+    // Fix (duplicate-label review finding): single match — see EN-default case above.
+    expect(screen.getByText('Category Weights')).toBeInTheDocument()
   })
 })

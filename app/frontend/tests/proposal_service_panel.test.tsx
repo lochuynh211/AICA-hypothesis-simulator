@@ -285,10 +285,10 @@ describe('ServiceProposalPanel', () => {
     await screen.findByText('mock_service_selector_v1')
     const disclosure = screen.getByTestId('hyperparameters-disclosure') as HTMLDetailsElement
     expect(disclosure.tagName.toLowerCase()).toBe('details')
-    // Task 8: the subslab label and the HyperparamMatrix's own label both
-    // render the same localized text ("Category Weights"), so at least one
-    // (rather than exactly one) must be present.
-    expect(screen.getAllByText('Category Weights').length).toBeGreaterThan(0)
+    // Fix (duplicate-label review finding): HyperparamMatrix is rendered with
+    // `hideLabel` in the service subslab, so the subslab header is now the
+    // ONLY place "Category Weights" renders — exactly one match.
+    expect(screen.getByText('Category Weights')).toBeInTheDocument()
   })
 
   it('hyperparameters render as labeled subslabs with a kind badge per entry', async () => {
