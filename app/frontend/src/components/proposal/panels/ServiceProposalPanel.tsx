@@ -590,7 +590,7 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
                   }
                 />
               </label>
-              {READONLY_HP_KEYS.map((key) => (
+              {READONLY_HP_KEYS.filter((key) => manifest.hyperparameters.some((h) => h.key === key)).map((key) => (
                 <label key={key} style={fieldLabelStyle}>
                   <code>{key}</code>
                   <input data-testid={`param-${key}`} type="text" value={hpEffective(key)} readOnly />

@@ -107,6 +107,56 @@ function packagesResponse() {
   }
 }
 
+// Review fix — the REAL mock_service_selector_v1 package.json manifest has NO
+// top-level gamma_drowsiness/gamma_fatigue/gamma_monotony/confidence_shrinkage_v1
+// hyperparameters at all (gammas live nested inside its `evidence_normalization`
+// table entry, and its confidence knob is named `confidence_shrinkage`, not
+// `confidence_shrinkage_v1`). SERVICE_PACKAGE above was extended (Task 7) to
+// mirror the REAL TRANSPARENT package's keys for other tests, so it is not a
+// faithful mock-shaped fixture for this guard; this constant is.
+const MOCK_SHAPED_SERVICE_PACKAGE = {
+  id: 'mock_service_selector_v1',
+  version: '1.0.0',
+  label: { ja: 'モック・サービス選定 v1.0', en: 'Mock Service Selector v1.0' },
+  family: 'service_selector' as const,
+  approach: 'transparent' as const,
+  contract_version: '1.0.0',
+  supported_services: [],
+  parameters: {
+    missing_policy: 'neutral_and_disclose',
+    top_k: 3,
+    tie_breaker: 'candidate_id_ascending',
+    material_safety_gap: 1.0,
+  },
+  hyperparameters: [
+    {
+      key: 'category_weights',
+      kind: 'table' as const,
+      label: { ja: 'カテゴリ重み', en: 'Category Weights' },
+      default: { Situation: 0.8, Preference: 0.12, History: 0.08 },
+    },
+    {
+      key: 'confidence_shrinkage',
+      kind: 'table' as const,
+      label: { ja: '信頼度縮小（将来拡張・予約）', en: 'Confidence Shrinkage (reserved future extension)' },
+      default: { enabled: false },
+    },
+  ],
+}
+
+function packagesResponseMockShaped() {
+  return {
+    slots: [
+      { family: 'service_selector', approach: 'transparent', package_id: 'mock_service_selector_v1' },
+      { family: 'service_selector', approach: 'constrained_llm', package_id: null },
+      { family: 'content_selector', approach: 'transparent', package_id: 'mock_content_selector_v1' },
+      { family: 'content_selector', approach: 'constrained_llm', package_id: null },
+    ],
+    packages: [MOCK_SHAPED_SERVICE_PACKAGE, CONTENT_PACKAGE],
+    errors: [],
+  }
+}
+
 // P5 Unit C (T018) — the REAL transparent service-selector package
 // (`aica_transparent_service_selector_v1`), the slot's default occupant per
 // ProposalPackageRegistry.list_slots() (Unit A, alphabetical first-wins:
@@ -1080,5 +1130,33 @@ describe('ServiceProposalPanel — P5 US4 confidence_shrinkage_v1 toggle (T032)'
 
     const runLog = await vi.mocked(createRun).mock.results[0].value
     expect(runLog.hyperparameters.confidence_shrinkage_v1).toBe(true)
+  })
+})
+
+// Review fix (whole-branch review finding) — the curated Parameters box used
+// to render the four READONLY_HP_KEYS rows unconditionally, even for a
+// package manifest (like the real mock_service_selector_v1) that has none of
+// those hyperparameters. That produced dead "—" rows implying knobs the
+// package doesn't have. The fix filters READONLY_HP_KEYS down to keys
+// actually present on the current manifest before rendering.
+describe('ServiceProposalPanel — review fix: gamma/confidence rows only when the package defines them', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    vi.mocked(getPackages).mockResolvedValue(packagesResponseMockShaped() as never)
+  })
+
+  it('hides all four gamma/confidence read-only rows for a mock-shaped manifest, while max_candidates remains', async () => {
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('mock_service_selector_v1')
+
+    expect(screen.getByLabelText('max_candidates')).toBeInTheDocument()
+    expect(screen.queryByTestId('param-gamma_drowsiness')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('param-gamma_fatigue')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('param-gamma_monotony')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('param-confidence_shrinkage_v1')).not.toBeInTheDocument()
   })
 })
