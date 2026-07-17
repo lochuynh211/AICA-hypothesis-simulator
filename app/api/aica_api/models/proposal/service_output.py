@@ -73,6 +73,7 @@ class FeatureContribution(BaseModel):
     purpose_multiplier: float | None = None
     effective_weight: float | None = None
     status: str | None = None
+    customer_override: float | None = None
 
 
 # ---------------------------------------------------------------------------

@@ -588,6 +588,36 @@ def _validate_response_cell(candidate_id: str, feature_id: str, cell: dict) -> f
     return fcoef
 
 
+def _apply_response_override(cell: dict, candidate_id: str, feature_id: str, hp: dict) -> dict:
+    """SS4.2/SS12 customer response-coefficient override: an OPTIONAL
+    `hyperparameters['response_coefficient_overrides'][candidate_id][feature_id]`
+    replaces the cell's `coefficient` with a reviewer-entered value, while
+    RETAINING the cell's original `provenance`/`source_reference` and ADDING
+    `customer_override` with the changed value (doc SS4.2: "Customer edits
+    retain the original provenance and add `customer_override` with the
+    changed value"). A missing overrides table/candidate/feature is simply
+    "no override" (this is an opt-in editability surface, not a required
+    structural key) -- but a PRESENT override value that is non-finite or
+    outside `[-1,+1]` is rejected as invalid_configuration, never clamped
+    (doc SS12: "out-of-range/NaN/inf are invalid, not clamped")."""
+    overrides = hp.get("response_coefficient_overrides") or {}
+    candidate_overrides = overrides.get(candidate_id) or {}
+    if feature_id not in candidate_overrides:
+        return cell
+
+    raw = candidate_overrides[feature_id]
+    value = _finite(raw, f"response_coefficient_overrides['{candidate_id}']['{feature_id}']")
+    if not (-1.0 <= value <= 1.0):
+        raise _ConfigError(
+            f"response_coefficient_overrides['{candidate_id}']['{feature_id}'] out of [-1,1]: {value!r}"
+        )
+
+    overridden = dict(cell)
+    overridden["coefficient"] = value
+    overridden["customer_override"] = value
+    return overridden
+
+
 # ---------------------------------------------------------------------------
 # InputValidator (SS9 step 1) helpers
 # ---------------------------------------------------------------------------
@@ -672,12 +702,19 @@ def evaluate(context: dict) -> dict:
     # this call (Unit D, data-model.md SS2/SS4).
     dominance = compute_dominance(weights, hp, params)
     effective_weights = {fid: e["effective_weight"] for fid, e in weights.items()}
+    # SS12 "resolved beside entered": the reviewer-entered ratios/multipliers
+    # (as configured in `hyperparameters`, NOT normalized) recorded alongside
+    # the Sigma=1-resolved `effective_weights` above, plus whatever
+    # per-cell response-coefficient overrides were entered for this run.
     resolved_config_versions = {
         "package_id": "aica_transparent_service_selector_v1",
         "contract_version": context.get("contract_version"),
         "schema_version": context.get("schema_version"),
         "purpose": purpose,
         "lifecycle_stage": stage,
+        "entered_hierarchy_weights": hp.get("hierarchy_weights"),
+        "entered_purpose_multipliers": hp.get("purpose_multipliers"),
+        "entered_response_coefficient_overrides": hp.get("response_coefficient_overrides") or {},
     }
 
     # Response-profile completeness sweep (SS9 step 1) for every eligible candidate.
@@ -687,6 +724,7 @@ def evaluate(context: dict) -> dict:
                 cell = resolve_response(cid, fid, "highway", params)
             else:
                 cell = resolve_response(cid, fid, None, params)
+            cell = _apply_response_override(cell, cid, fid, hp)
             _validate_response_cell(cid, fid, cell)
 
     # Pre-compute the non-candidate-indexed evidence once (SS9 step 4).
@@ -766,6 +804,8 @@ def evaluate(context: dict) -> dict:
                 ev = scalar_evidence[fid]
                 resp = resolve_response(cid, fid, None, params)
 
+            resp = _apply_response_override(resp, cid, fid, hp)
+
             e_i = ev["e"]
             a_i = _validate_response_cell(cid, fid, resp)
             r_i = _clamp(e_i * a_i)
@@ -807,6 +847,7 @@ def evaluate(context: dict) -> dict:
                 "purpose_multiplier": w_entry["purpose_multiplier"],
                 "effective_weight": w,
                 "status": status,
+                "customer_override": resp.get("customer_override"),
             })
 
         score = _norm0(_clamp(unclamped_sum, -1.0, 1.0))

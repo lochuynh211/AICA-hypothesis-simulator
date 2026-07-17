@@ -82,6 +82,18 @@
           "title": "Contribution",
           "type": "number"
         },
+        "customer_override": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Customer Override"
+        },
         "effective_weight": {
           "anyOf": [
             {

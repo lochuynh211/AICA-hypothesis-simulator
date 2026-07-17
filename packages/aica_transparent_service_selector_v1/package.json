@@ -1552,6 +1552,15 @@
       "step": 0.01
     },
     {
+      "key": "response_coefficient_overrides",
+      "kind": "table",
+      "label": {
+        "ja": "応答係数の上書き（§4.2/§12）",
+        "en": "Response Coefficient Overrides (§4.2/§12)"
+      },
+      "default": {}
+    },
+    {
       "key": "confidence_shrinkage_v1",
       "kind": "enum",
       "label": {
