@@ -413,7 +413,59 @@ describe('ServiceProposalPanel', () => {
     await waitFor(() => expect(createRun).toHaveBeenCalled())
     expect(await screen.findByText('live_viewing')).toBeInTheDocument()
     expect(screen.getByText('stretch_video')).toBeInTheDocument()
-    expect(screen.getAllByTestId('reason-breakdown').length).toBe(2)
+    // Both candidates keep their reason-breakdown disclosure (chips/rationale),
+    // but live_viewing carries the §14 feature trace (normalized_evidence) so
+    // its OWN ReasonBreakdown table is suppressed — the table remains only
+    // for stretch_video (mock candidate, no trace).
+    const reasonBreakdowns = screen.getAllByTestId('reason-breakdown')
+    expect(reasonBreakdowns.length).toBe(2)
+    expect(within(reasonBreakdowns[0]).queryByRole('table')).toBeNull()
+    expect(within(reasonBreakdowns[0]).getByTestId('reason-supporting')).toBeInTheDocument()
+    expect(within(reasonBreakdowns[1]).getByRole('table')).toBeInTheDocument()
+  })
+
+  it('renders a single feature table (no ReasonBreakdown table) for the transparent candidate, keeping chips', async () => {
+    const realShapedRunLog = runLogWithCandidates()
+    const [firstCandidate] = realShapedRunLog.evidence[0].output.ranked_candidates
+    firstCandidate.feature_contributions = [
+      {
+        feature_id: 'drowsiness_level',
+        feature_value: 80,
+        response_coefficient: 1.0,
+        weight: 0.254551,
+        contribution: 0.203641,
+        source_reference: 'Slide 67 driver row',
+        raw_value: 80,
+        normalization_function: '(x/100)^gamma',
+        normalized_evidence: 0.8,
+        response_provenance: 'cdc_su_explicit',
+        normalized_feature_response: 0.8,
+        hierarchy_path: 'Situation/Driver state/drowsiness',
+        base_weight: 0.22,
+        purpose_multiplier: 1.5,
+        effective_weight: 0.254551,
+        status: 'used',
+      },
+    ]
+
+    vi.mocked(createRun).mockResolvedValue(realShapedRunLog as never)
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('mock_service_selector_v1')
+    fireEvent.click(screen.getByTestId('service-run-button'))
+    await waitFor(() => expect(createRun).toHaveBeenCalled())
+
+    const card = await screen.findByTestId('candidate-card-live_viewing')
+    // ReasonBreakdown's own table is gone — scope inside the reason-breakdown
+    // disclosure specifically, since the card ALSO contains a separate table
+    // (the §14 trace, `service-explainability-table`) that must stay.
+    const reasonBreakdown = within(card).getByTestId('reason-breakdown')
+    expect(within(reasonBreakdown).queryByRole('table')).toBeNull()
+    expect(within(card).getByTestId('reason-supporting')).toBeInTheDocument()
+    expect(within(card).getByTestId('service-explainability-table')).toBeInTheDocument()
   })
 
   // P5 Unit D (T025) — the ENRICHED explainability rendering (ServiceExplainability,

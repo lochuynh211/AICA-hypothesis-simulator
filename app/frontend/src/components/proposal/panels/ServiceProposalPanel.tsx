@@ -28,7 +28,7 @@ import {
 const AUTO_INIT_SEED_ID = 'seed-night-highway-oshi'
 import HyperparamMatrix from '../HyperparamMatrix'
 import ReasonBreakdown, { type ReasonRow } from '../ReasonBreakdown'
-import ServiceExplainability from '../ServiceExplainability'
+import ServiceExplainability, { hasFeatureTrace } from '../ServiceExplainability'
 import JourneyActionBar from '../JourneyActionBar'
 import EventTimeline from '../EventTimeline'
 import ModeToggle from '../ModeToggle'
@@ -440,6 +440,7 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
                     rationale={candidate.rationale}
                     lang={lang}
                     variant="service"
+                    showTable={!hasFeatureTrace(candidate)}
                   />
                   <ServiceExplainability candidate={candidate} lang={lang} />
                   <div
