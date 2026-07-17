@@ -45,6 +45,7 @@ import {
 import HyperparamMatrix from '../HyperparamMatrix'
 import ReasonBreakdown, { type ReasonRow } from '../ReasonBreakdown'
 import ContentExplainability, { hasContentExplainability } from '../ContentExplainability'
+import ContentHierarchyTable from '../ContentHierarchyTable'
 
 // Setup-section grouping (mirrors the service panel). Keys not listed anywhere
 // fall to a collapsed "Advanced" disclosure; the removed keys are dropped.
@@ -240,13 +241,25 @@ export default function ContentProposalPanel() {
           </span>{' '}
           <code>{hp.key}</code> <span style={{ color: '#6b7280' }}>{t(hp.label, lang)}</span>
         </div>
-        <HyperparamMatrix
-          def={hp}
-          value={state.contentHyperparameterOverrides[hp.key]}
-          onChange={(value) => dispatch({ type: 'SET_CONTENT_HYPERPARAMETER', key: hp.key, value })}
-          lang={lang}
-          hideLabel
-        />
+        {hp.key === 'hierarchy_weights' ? (
+          <ContentHierarchyTable
+            value={
+              (state.contentHyperparameterOverrides[hp.key] ?? hp.default) as Record<
+                string,
+                Record<string, { share?: number; leaves?: Record<string, { share?: number; mask?: number }> }>
+              >
+            }
+            onChange={(value) => dispatch({ type: 'SET_CONTENT_HYPERPARAMETER', key: hp.key, value })}
+          />
+        ) : (
+          <HyperparamMatrix
+            def={hp}
+            value={state.contentHyperparameterOverrides[hp.key]}
+            onChange={(value) => dispatch({ type: 'SET_CONTENT_HYPERPARAMETER', key: hp.key, value })}
+            lang={lang}
+            hideLabel
+          />
+        )}
       </div>
     ))
 

@@ -3,6 +3,36 @@ import { describe, it, expect, vi } from 'vitest'
 import ResponseMatrixTable from '../src/components/proposal/ResponseMatrixTable'
 import HierarchyWeightsTable from '../src/components/proposal/HierarchyWeightsTable'
 import ScalarTable from '../src/components/proposal/ScalarTable'
+import ContentHierarchyTable from '../src/components/proposal/ContentHierarchyTable'
+
+describe('ContentHierarchyTable', () => {
+  const hierarchy = {
+    Situation: {
+      driver_state: {
+        share: 0.35,
+        leaves: { drowsiness: { share: 0.55, mask: 1 }, fatigue: { share: 0.45, mask: 1 } },
+      },
+    },
+  }
+
+  it('renders one row per Category·subgroup with an editable share and a leaves text summary', () => {
+    render(<ContentHierarchyTable value={hierarchy} onChange={vi.fn()} />)
+    expect(screen.getByRole('rowheader', { name: 'Situation·driver_state' })).toBeInTheDocument()
+    expect((screen.getByTestId('chw-share-Situation-driver_state') as HTMLInputElement).value).toBe('0.35')
+    // leaves rendered as compact "share·mask" text
+    expect(screen.getByText('drowsiness 0.55·1 / fatigue 0.45·1')).toBeInTheDocument()
+  })
+
+  it('editing a subgroup share updates only that subgroup', () => {
+    const onChange = vi.fn()
+    render(<ContentHierarchyTable value={hierarchy} onChange={onChange} />)
+    fireEvent.change(screen.getByTestId('chw-share-Situation-driver_state'), { target: { value: '0.4' } })
+    const next = onChange.mock.calls[0][0]
+    expect(next.Situation.driver_state.share).toBe(0.4)
+    // leaves preserved
+    expect(next.Situation.driver_state.leaves.drowsiness.share).toBe(0.55)
+  })
+})
 
 describe('ScalarTable', () => {
   const fields = [

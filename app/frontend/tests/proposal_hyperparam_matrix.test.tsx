@@ -144,6 +144,31 @@ describe('HyperparamMatrix', () => {
     expect(screen.getByDisplayValue('1.1')).toBeInTheDocument()
   })
 
+  it('renders a RAGGED matrix (trait × audio, differing columns per row) as one union-column pivot', () => {
+    const def: HyperparameterDef = {
+      key: 'trait_composition_matrix',
+      kind: 'matrix',
+      label: { ja: '曲トレイト構成', en: 'Trait Composition Matrix' },
+      default: {
+        arousal: { energy: 0.3, tempo: 0.25 },
+        valence: { valence: 0.65, mode: 0.35 },
+      },
+    }
+    render(<HyperparamMatrix def={def} value={undefined} onChange={vi.fn()} lang="en" />)
+    // one pivot table, columns = union of inner keys
+    expect(screen.getAllByRole('table')).toHaveLength(1)
+    for (const col of ['energy', 'tempo', 'valence', 'mode']) {
+      expect(screen.getByRole('columnheader', { name: col })).toBeInTheDocument()
+    }
+    // row headers = outer keys
+    expect(screen.getByRole('rowheader', { name: 'arousal' })).toBeInTheDocument()
+    expect(screen.getByRole('rowheader', { name: 'valence' })).toBeInTheDocument()
+    // present cells are editable; missing cells render a muted dot
+    expect(screen.getByDisplayValue('0.3')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('0.65')).toBeInTheDocument()
+    expect(screen.getAllByText('·').length).toBeGreaterThan(0)
+  })
+
   it('renders deeply-nested data (hierarchy_weights shape) faithfully to its real depth', () => {
     const def: HyperparameterDef = {
       key: 'hierarchy_weights',
