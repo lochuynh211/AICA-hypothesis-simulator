@@ -120,6 +120,48 @@ describe('HyperparamMatrix', () => {
     })
   })
 
+  it('renders a uniform 2-D matrix (subgroup × purpose) as a single pivot table with row labels and column headers', () => {
+    const def: HyperparameterDef = {
+      key: 'purpose_multipliers',
+      kind: 'table',
+      label: { ja: '目的別乗数', en: 'Purpose Multipliers' },
+      default: {
+        driver_state: { rest_recommended: 1.4, route_music: 1.2 },
+        driving_environment: { rest_recommended: 1.1, route_music: 1.0 },
+      },
+    }
+    render(<HyperparamMatrix def={def} value={undefined} onChange={vi.fn()} lang="en" />)
+
+    // Exactly one table (a single pivot), not one per subgroup.
+    expect(screen.getAllByRole('table')).toHaveLength(1)
+    // Column headers = inner keys; row headers = outer keys.
+    expect(screen.getByRole('columnheader', { name: 'rest_recommended' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'route_music' })).toBeInTheDocument()
+    expect(screen.getByRole('rowheader', { name: 'driver_state' })).toBeInTheDocument()
+    expect(screen.getByRole('rowheader', { name: 'driving_environment' })).toBeInTheDocument()
+    // Every cell value is present and editable (numbers stringify: 1.0 → "1").
+    expect(screen.getByDisplayValue('1.4')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('1.1')).toBeInTheDocument()
+  })
+
+  it('renders deeply-nested data (hierarchy_weights shape) faithfully to its real depth', () => {
+    const def: HyperparameterDef = {
+      key: 'hierarchy_weights',
+      kind: 'table',
+      label: { ja: '階層重み', en: 'Hierarchy Weights' },
+      default: {
+        Situation: { share: 0.8, subgroups: { driver_state: { share: 0.5 } } },
+      },
+    }
+    render(<HyperparamMatrix def={def} value={undefined} onChange={vi.fn()} lang="en" />)
+
+    // Depth is preserved (not flattened): the outer group, the nested subgroup,
+    // and the leaf share value all render.
+    expect(screen.getByText('Situation')).toBeInTheDocument()
+    expect(screen.getByText('driver_state')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('0.5')).toBeInTheDocument()
+  })
+
   it('uses the provided override value instead of the manifest default when given', () => {
     const def: HyperparameterDef = {
       key: 'plan_item_count',
