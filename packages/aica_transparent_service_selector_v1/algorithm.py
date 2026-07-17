@@ -113,6 +113,21 @@ _DOMINANCE_D_SUBGROUPS = frozenset({"driver_state", "driving_environment", "reco
 # two confidence fields, and anything else the world happens to carry).
 _SNAPSHOT_GROUPS = ("situation", "preference", "history", "additional_proposed")
 
+# P5 Unit F (T030-T032, spec.md FR-019/FR-020, algorithm doc SS5.4 note): the
+# opt-in `confidence_shrinkage_v1` hyperparameter (default false, declared in
+# package.json) shrinks these two direct features' evidence toward neutral
+# by a candidate-indexed confidence value living under
+# `feature_snapshot["additional_proposed"]`. OFF (baseline, default): the
+# confidence fields are inert and reported `available_but_not_used` via
+# `scan_unused_snapshot_keys`. ON: they move to "used" and the affected rows'
+# `response_provenance` becomes `confidence_shrinkage_v1` (never touching the
+# response coefficient, which stays +1.0 -- purely additive to the evidence
+# step, doc SS5.4).
+_CONFIDENCE_FIELD_FOR_FEATURE = {
+    "service_proposal_acceptance_rate": "service_proposal_acceptance_confidence",
+    "service_recovery_rate": "service_recovery_confidence",
+}
+
 _FEATURE_LABELS = {
     "drowsiness_level": {"ja": "眠気", "en": "drowsiness"},
     "fatigue_level": {"ja": "疲労", "en": "fatigue"},
@@ -327,7 +342,7 @@ def compute_dominance(weights: dict, hp: dict, params: dict) -> dict:
     }
 
 
-def scan_unused_snapshot_keys(snapshot: dict) -> set:
+def scan_unused_snapshot_keys(snapshot: dict, confidence_shrinkage_on: bool = False) -> set:
     """Generic sweep: any key present under one of the four `feature_snapshot`
     groups (situation/preference/history/additional_proposed) that is not
     one of the 17 scored `FEATURE_ORDER` features is "available but not
@@ -335,8 +350,14 @@ def scan_unused_snapshot_keys(snapshot: dict) -> set:
     documented additional-simulator feature, an opt-in confidence field the
     package doesn't (yet, in the baseline) consume, or anything else the
     world happens to carry. Nothing is silently dropped.
+
+    When `confidence_shrinkage_v1` is ON (T031), the two confidence fields
+    ARE consumed (SS5.4 note) -- they move out of this "unused" report into
+    "used" (verified via the affected rows' `response_provenance`).
     """
     used = set(FEATURE_ORDER)
+    if confidence_shrinkage_on:
+        used = used | set(_CONFIDENCE_FIELD_FOR_FEATURE.values())
     found: set = set()
     for group in _SNAPSHOT_GROUPS:
         for key in (snapshot.get(group) or {}).keys():
@@ -531,25 +552,51 @@ def resolve_direct_evidence(feature_id: str, candidate_id: str, snapshot: dict, 
         e, status = _scene_usage_evidence(candidate_id, scene_ids, scene_map, usage_map)
         return {"raw_value": scene_ids, "e": e, "normalization_function": "mean(usage_ordinal_map over current scene ids)", "status": status}
 
-    if feature_id == "service_proposal_acceptance_rate":
-        table = history.get("service_proposal_acceptance_rate") or {}
+    if feature_id in _CONFIDENCE_FIELD_FOR_FEATURE:
+        table = history.get(feature_id) or {}
         if candidate_id not in table:
             return {"raw_value": None, "e": 0.0, "normalization_function": "2*rate/100-1", "status": "missing_neutral"}
         rate = table[candidate_id]
         if not isinstance(rate, (int, float)) or isinstance(rate, bool) or not (0 <= rate <= 100):
-            raise _RequestError(f"service_proposal_acceptance_rate[{candidate_id}] must be numeric in [0,100], got {rate!r}")
-        return {"raw_value": rate, "e": 2.0 * rate / 100.0 - 1.0, "normalization_function": "2*rate/100-1", "status": "used"}
-
-    if feature_id == "service_recovery_rate":
-        table = history.get("service_recovery_rate") or {}
-        if candidate_id not in table:
-            return {"raw_value": None, "e": 0.0, "normalization_function": "2*rate/100-1", "status": "missing_neutral"}
-        rate = table[candidate_id]
-        if not isinstance(rate, (int, float)) or isinstance(rate, bool) or not (0 <= rate <= 100):
-            raise _RequestError(f"service_recovery_rate[{candidate_id}] must be numeric in [0,100], got {rate!r}")
-        return {"raw_value": rate, "e": 2.0 * rate / 100.0 - 1.0, "normalization_function": "2*rate/100-1", "status": "used"}
+            raise _RequestError(f"{feature_id}[{candidate_id}] must be numeric in [0,100], got {rate!r}")
+        e = 2.0 * rate / 100.0 - 1.0
+        result = {"raw_value": rate, "e": e, "normalization_function": "2*rate/100-1", "status": "used"}
+        if _hp(hp, "confidence_shrinkage_v1"):
+            result = _apply_confidence_shrinkage(result, feature_id, candidate_id, snapshot)
+        return result
 
     raise _ConfigError(f"resolve_direct_evidence: unknown feature_id '{feature_id}'")
+
+
+def _apply_confidence_shrinkage(evidence: dict, feature_id: str, candidate_id: str, snapshot: dict) -> dict:
+    """SS5.4 note / FR-020: shrink acceptance/recovery evidence toward
+    neutral (0) by the candidate's confidence value, `e <- e * clamp(conf,
+    0, 1)`. A missing confidence entry is treated as full confidence (1.0 --
+    no shrink) and disclosed via `normalization_function`. Purely additive
+    to the EVIDENCE step -- the caller (evaluate()) is responsible for the
+    response-coefficient side (stays +1.0) and for marking the row's
+    `response_provenance`."""
+    confidence_field = _CONFIDENCE_FIELD_FOR_FEATURE[feature_id]
+    confidence_table = (snapshot.get("additional_proposed") or {}).get(confidence_field) or {}
+    missing = candidate_id not in confidence_table
+    if missing:
+        conf = 1.0
+    else:
+        raw_conf = confidence_table[candidate_id]
+        conf = _clamp(_finite(raw_conf, f"{confidence_field}[{candidate_id}]"), 0.0, 1.0)
+
+    shrunk = dict(evidence)
+    shrunk["e"] = evidence["e"] * conf
+    if missing:
+        shrunk["normalization_function"] = (
+            f"{evidence['normalization_function']} * clamp(confidence,0,1)"
+            f"[confidence=1.0 (missing, disclosed)]"
+        )
+    else:
+        shrunk["normalization_function"] = (
+            f"{evidence['normalization_function']} * clamp(confidence,0,1)[confidence={conf}]"
+        )
+    return shrunk
 
 
 # ---------------------------------------------------------------------------
@@ -672,6 +719,9 @@ def evaluate(context: dict) -> dict:
     params = context.get("parameters") or {}
     purpose = context.get("trigger_purpose")
     stage = context.get("lifecycle_stage")
+    # P5 Unit F (T031): read once, direct-index (missing key is a real
+    # configuration bug -- package.json already declares the default false).
+    confidence_shrinkage_on = bool(_hp(hp, "confidence_shrinkage_v1"))
 
     _validate_purpose_stage(purpose, stage)
 
@@ -752,7 +802,7 @@ def evaluate(context: dict) -> dict:
     # additional-simulator groups carry -- motion state, minutes-to-rest,
     # active service, recent rejections, schedule, the two confidence
     # fields, ...). Nothing silently dropped (Unit D, T022).
-    unused_available_features = unknown_tags | scan_unused_snapshot_keys(snapshot)
+    unused_available_features = unknown_tags | scan_unused_snapshot_keys(snapshot, confidence_shrinkage_on)
 
     if not eligible_ids:
         return {
@@ -796,7 +846,17 @@ def evaluate(context: dict) -> dict:
                 ev = resolve_direct_evidence(fid, cid, snapshot, hp, situation, params)
                 if ev["status"] == "missing_neutral":
                     missing_features.add(fid)
-                resp = {"coefficient": 1.0, "provenance": "cdc_su_direct_candidate_feature", "source_reference": "Slides 66-67 (direct candidate feature)"}
+                # P5 Unit F (T031, FR-020): the acceptance/recovery rows are
+                # marked with the extension's own provenance whenever it's
+                # on -- disclosing that this row's evidence went through the
+                # confidence-shrinkage step (even for a candidate whose own
+                # confidence happens to be missing/full, since the shrink
+                # STEP still ran). Never touches the response coefficient
+                # itself (stays +1.0, doc SS5.4).
+                provenance = "cdc_su_direct_candidate_feature"
+                if confidence_shrinkage_on and fid in _CONFIDENCE_FIELD_FOR_FEATURE:
+                    provenance = "confidence_shrinkage_v1"
+                resp = {"coefficient": 1.0, "provenance": provenance, "source_reference": "Slides 66-67 (direct candidate feature)"}
             elif fid == "road_type":
                 ev = scalar_evidence[fid]
                 resp = resolve_response(cid, fid, road_type, params)
