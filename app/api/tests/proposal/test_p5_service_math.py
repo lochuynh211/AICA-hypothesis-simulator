@@ -360,3 +360,134 @@ def test_dominance_invariant_violating_custom_weights_still_evaluates(
     assert out["decision_type"] == "ranked_candidates"
     assert out["dominance"]["status"] == "dominance_not_guaranteed"
     assert out["ranked_candidates"][0]["dominance"]["status"] == "dominance_not_guaranteed"
+
+
+# ---------------------------------------------------------------------------
+# T026/T027/T028 (US3) - editability: purpose-multiplier reorder, sibling
+# scale invariance (T027a, ABOVE, pre-existing), response-coefficient
+# overrides, and both entered + resolved config recorded in evidence.
+# ---------------------------------------------------------------------------
+
+
+def _music_vs_humming_context(purpose: str) -> dict:
+    """Same raw worked-example snapshot and response profiles, narrowed to
+    the two candidates the doc §10 last paragraph contrasts, purpose varied."""
+    context = load_worked_example_context()
+    context["trigger_purpose"] = purpose
+    context["allowed_service_ids"] = ["music_playlist", "humming_karaoke"]
+    context["eligible_candidates"] = [{"candidate_id": "music_playlist"}, {"candidate_id": "humming_karaoke"}]
+    return context
+
+
+def test_purpose_multiplier_reorder(service_selector):
+    """doc §10 last paragraph / §11 contrast #12: switching `trigger_purpose`
+    from `inattentive_driving_prevention_recovery` to `route_music` on the
+    SAME raw snapshot and response profiles raises the route/destination
+    weight (§6.2 multiplier profile: route_context multiplier 0.75 -> 2.0)
+    and narrows the music_playlist-vs-humming_karaoke gap -- doc: "narrowing
+    the gap on the same raw snapshot and response profiles"."""
+    hp = service_manifest_hyperparameters()
+
+    w_inattentive = service_selector.resolve_weights(hp, "inattentive_driving_prevention_recovery")
+    w_route_music = service_selector.resolve_weights(hp, "route_music")
+
+    route_dest_inattentive = (
+        w_inattentive["route_tags"]["effective_weight"] + w_inattentive["destination_tags"]["effective_weight"]
+    )
+    route_dest_route_music = (
+        w_route_music["route_tags"]["effective_weight"] + w_route_music["destination_tags"]["effective_weight"]
+    )
+    # the doc's own §6.2 route_context multiplier rises 0.75 -> 2.0 for this purpose switch.
+    assert route_dest_route_music > route_dest_inattentive
+
+    def _gap(purpose: str) -> float:
+        out = service_selector.evaluate(_music_vs_humming_context(purpose))
+        by_id = {c["candidate_id"]: c for c in out["ranked_candidates"]}
+        return by_id["humming_karaoke"]["score"] - by_id["music_playlist"]["score"]
+
+    gap_inattentive = _gap("inattentive_driving_prevention_recovery")
+    gap_route_music = _gap("route_music")
+
+    # humming still ranks above music_playlist (every eligible candidate is
+    # always ranked, never suppressed -- doc §11), but the gap narrows.
+    assert gap_route_music > 0.0
+    assert gap_route_music < gap_inattentive
+
+
+def test_editable_response_override(service_selector):
+    """§4.2/§12: a customer response-coefficient override on one
+    candidate x feature cell (finite, in [-1,+1]) changes that candidate's
+    score, and the evidence row RETAINS the original `response_provenance`
+    while ADDING `customer_override` with the changed value (§4.2:
+    "Customer edits retain the original provenance and add
+    `customer_override` with the changed value")."""
+
+    def _music_playlist_row(hp: dict) -> tuple[dict, dict]:
+        context = load_worked_example_context(hyperparameters=hp)
+        context["allowed_service_ids"] = ["music_playlist"]
+        context["eligible_candidates"] = [{"candidate_id": "music_playlist"}]
+        out = service_selector.evaluate(context)
+        candidate = out["ranked_candidates"][0]
+        row = next(c for c in candidate["feature_contributions"] if c["feature_id"] == "drowsiness_level")
+        return candidate, row
+
+    hp_base = service_manifest_hyperparameters()
+    # music_playlist/drowsiness_level is `neutral_source_silent` @ 0.0 by
+    # default (package.json) -- override it to a strongly-supportive +0.6.
+    hp_override = copy.deepcopy(hp_base)
+    hp_override["response_coefficient_overrides"] = {"music_playlist": {"drowsiness_level": 0.6}}
+
+    candidate_base, row_base = _music_playlist_row(hp_base)
+    candidate_override, row_override = _music_playlist_row(hp_override)
+
+    assert row_base["response_coefficient"] == pytest.approx(0.0)
+    assert row_base.get("customer_override") is None
+    assert row_base["response_provenance"] == "neutral_source_silent"
+
+    assert row_override["response_coefficient"] == pytest.approx(0.6)
+    assert row_override.get("customer_override") == pytest.approx(0.6)
+    # original provenance is RETAINED, not replaced.
+    assert row_override["response_provenance"] == "neutral_source_silent"
+
+    assert candidate_override["score"] > candidate_base["score"]
+
+
+@pytest.mark.parametrize("bad_value", [1.5, -1.5, float("nan"), float("inf"), float("-inf")])
+def test_override_rejected(service_selector, bad_value):
+    """§12: out-of-range/NaN/inf response-coefficient overrides are REJECTED
+    as invalid configuration -- never clamped into range."""
+    hp = copy.deepcopy(service_manifest_hyperparameters())
+    hp["response_coefficient_overrides"] = {"music_playlist": {"drowsiness_level": bad_value}}
+    context = load_worked_example_context(hyperparameters=hp)
+    context["allowed_service_ids"] = ["music_playlist"]
+    context["eligible_candidates"] = [{"candidate_id": "music_playlist"}]
+
+    with pytest.raises(Exception):
+        service_selector.evaluate(context)
+
+
+def test_entered_and_resolved_config_both_recorded(service_selector, service_hyperparameters):
+    """T028: `evaluate()` records BOTH the reviewer-entered hierarchy
+    weights/purpose multipliers (ratios, as configured) AND the
+    Sigma=1-resolved `effective_weights`, and recomputes `dominance` for the
+    resolved config actually used (doc §12 'the resolved normalized values
+    are recorded beside the customer-entered ones' / §6.4 'recomputed after
+    every config resolve')."""
+    hp = copy.deepcopy(service_hyperparameters)
+    hp["hierarchy_weights"]["Situation"]["subgroups"]["route_context"]["share"] *= 3.0
+
+    context = load_worked_example_context(hyperparameters=hp)
+    out = service_selector.evaluate(context)
+
+    resolved = out["resolved_config_versions"]
+    assert resolved["entered_hierarchy_weights"] == hp["hierarchy_weights"]
+    assert resolved["entered_purpose_multipliers"] == hp["purpose_multipliers"]
+
+    effective = out["effective_weights"]
+    assert sum(effective.values()) == pytest.approx(1.0, abs=1e-12)
+
+    # dominance is recomputed for the resolved weights that were actually
+    # used for this call, not some other/default config.
+    weights = service_selector.resolve_weights(hp, context["trigger_purpose"])
+    expected_dominance = service_selector.compute_dominance(weights, hp, context["parameters"])
+    assert out["dominance"] == expected_dominance
