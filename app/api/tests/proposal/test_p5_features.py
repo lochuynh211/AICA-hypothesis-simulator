@@ -5,7 +5,12 @@ from __future__ import annotations
 
 import pytest
 
-from tests.proposal.conftest import service_manifest_hyperparameters, load_service_manifest
+from tests.proposal.conftest import (
+    build_service_context,
+    load_service_manifest,
+    load_worked_example_context,
+    service_manifest_hyperparameters,
+)
 
 _HP = service_manifest_hyperparameters
 _PARAMS = lambda: load_service_manifest()["parameters"]  # noqa: E731
@@ -250,6 +255,107 @@ def test_scene_usage_no_matching_record_is_missing(service_selector):
     )
     assert result["e"] == 0.0
     assert result["status"] == "missing_neutral"
+
+
+# ---------------------------------------------------------------------------
+# T022 (US2) - feature-gate completeness: every A.1 contract row is
+# accounted for (used OR in unused_available_features), CDC-SU vs
+# Additional-proposed provenance is distinguished, and the two confidence
+# fields are reported unused while confidence_shrinkage_v1 is off.
+# ---------------------------------------------------------------------------
+
+
+def test_all_17_baseline_features_present_in_evidence_with_a_status(service_selector):
+    """Every FEATURE_ORDER row appears in EVERY scored candidate's
+    feature_contributions with a status in the SS14 enum - 0 rows silently
+    dropped (doc SS17 acceptance criterion 7 / SS16 required test)."""
+    context = load_worked_example_context()
+    out = service_selector.evaluate(context)
+    assert out["decision_type"] == "ranked_candidates"
+    valid_statuses = {"used", "neutral", "zero_weight", "missing", "invalid"}
+    for candidate in out["ranked_candidates"]:
+        ids = {c["feature_id"] for c in candidate["feature_contributions"]}
+        assert ids == set(service_selector.FEATURE_ORDER), candidate["candidate_id"]
+        for c in candidate["feature_contributions"]:
+            assert c["status"] in valid_statuses, (candidate["candidate_id"], c["feature_id"], c["status"])
+
+
+def test_two_confidence_fields_are_unused_while_shrinkage_off(service_selector):
+    """`service_proposal_acceptance_confidence`/`service_recovery_confidence`
+    are present in the worked-example's `additional_proposed` group but are
+    NOT among the 17 scored features -> reported in
+    `unused_available_features` while `confidence_shrinkage_v1` is off (doc
+    SS5.4 note / data-model.md, T022)."""
+    context = load_worked_example_context()
+    assert context["hyperparameters"]["confidence_shrinkage_v1"] is False
+    out = service_selector.evaluate(context)
+    assert "service_proposal_acceptance_confidence" in out["unused_available_features"]
+    assert "service_recovery_confidence" in out["unused_available_features"]
+
+
+def test_additional_simulator_features_reported_unused_not_dropped(service_selector):
+    """Motion state, minutes-to-a-rest-spot, currently-active-service,
+    recent rejections, and schedule (doc SS5.6 'additional-simulator'
+    table) - when present in the world snapshot, none of these silently
+    disappear; every one surfaces in `unused_available_features`."""
+    situation = {
+        "drowsiness_level": 40, "fatigue_level": 30, "traffic_state": "normal",
+        "road_type": "local", "night_state": "day", "monotony_level": 20,
+        "route_tags": [], "destination_tags": [], "child_present": False,
+        "multiple_passengers": False,
+        "motion_state": "driving",  # SS5.6 "Driving/stopped state" - platform eligibility fact
+    }
+    feature_snapshot = {
+        "situation": situation,
+        "preference": {"oshi_registered": False, "oshi_mode": "off"},
+        "history": {
+            "scheduled_event_type": "oshi_live",  # SS5.6 "Schedule (推しイベント等)"
+        },
+        "additional_proposed": {
+            "estimated_min_until_rest_spot": 8,  # SS5.6 "Minutes until a rest spot"
+            "active_service": None,  # SS5.6 "Currently active service"
+            "recent_service_rejections": [],  # SS5.6 "Recent rejection / confidence"
+            "service_proposal_acceptance_confidence": {},
+            "service_recovery_confidence": {},
+        },
+    }
+    context = build_service_context(
+        allowed_service_ids=["music_playlist"],
+        feature_snapshot=feature_snapshot,
+    )
+    out = service_selector.evaluate(context)
+    for expected in (
+        "motion_state",
+        "scheduled_event_type",
+        "estimated_min_until_rest_spot",
+        "active_service",
+        "recent_service_rejections",
+        "service_proposal_acceptance_confidence",
+        "service_recovery_confidence",
+    ):
+        assert expected in out["unused_available_features"], expected
+
+
+def test_cdc_su_vs_additional_proposed_provenance_distinguished(service_selector):
+    """The 17-row trace distinguishes CDC-SU-sourced response coefficients
+    (e.g. `cdc_su_explicit` for drowsiness) from the Additional-proposed /
+    direct-candidate-feature provenance (`cdc_su_direct_candidate_feature`
+    for service recency/usage/scene-usage/acceptance/recovery, doc SS5.4) -
+    both provenance families are present and distinct, never collapsed into
+    one undifferentiated label."""
+    context = load_worked_example_context()
+    out = service_selector.evaluate(context)
+    humming = next(c for c in out["ranked_candidates"] if c["candidate_id"] == "humming_karaoke")
+    provenance_by_feature = {c["feature_id"]: c["response_provenance"] for c in humming["feature_contributions"]}
+
+    assert provenance_by_feature["drowsiness_level"] == "cdc_su_explicit"
+    for direct_feature in (
+        "service_recency_state", "service_usage_level", "scene_service_usage_level",
+        "service_proposal_acceptance_rate", "service_recovery_rate",
+    ):
+        assert provenance_by_feature[direct_feature] == "cdc_su_direct_candidate_feature"
+
+    assert provenance_by_feature["drowsiness_level"] != provenance_by_feature["service_recency_state"]
 
 
 # ---------------------------------------------------------------------------

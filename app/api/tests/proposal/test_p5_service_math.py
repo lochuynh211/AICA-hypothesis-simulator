@@ -14,9 +14,12 @@ finding behind this file's `_SCORE_TOLERANCE`.
 """
 from __future__ import annotations
 
+import copy
+
 import pytest
 
 from tests.proposal.conftest import (
+    build_service_context,
     load_service_manifest,
     load_worked_example_context,
     service_manifest_hyperparameters,
@@ -172,3 +175,188 @@ def test_manifest_loads_and_matches_algorithm_feature_order(service_selector):
     hp = service_manifest_hyperparameters()
     weights = service_selector.resolve_weights(hp, "rest_recommended")
     assert set(weights) == set(service_selector.FEATURE_ORDER)
+
+
+# ---------------------------------------------------------------------------
+# T020 (US2) - situation/preference/history subtotals reconcile to the
+# unclamped Sigma k_i (doc SS9 step 6 / data-model.md SS3), and are never a
+# sort key.
+# ---------------------------------------------------------------------------
+
+_NEGATIVE_FIT_SITUATION = {
+    "drowsiness_level": 90, "fatigue_level": 90, "traffic_state": "congested",
+    "road_type": "local", "night_state": "night", "monotony_level": 90,
+    "route_tags": [], "destination_tags": [], "child_present": False,
+    "multiple_passengers": False,
+}
+
+
+def _negative_fit_context():
+    """`radio_style` under oshi-off (SS16 'low/negative fit still ranked'
+    fixture, mirrored from `test_p5_eligibility_ranking.py`): neutral on
+    every non-oshi feature and OPPOSED on oshi (mode off -> -1.0 for radio),
+    so its unclamped sum is negative."""
+    return build_service_context(
+        allowed_service_ids=["radio_style"],
+        eligible_candidates=[{"candidate_id": "radio_style"}],
+        feature_snapshot={
+            "situation": dict(_NEGATIVE_FIT_SITUATION),
+            "preference": {"oshi_registered": True, "oshi_mode": "off"},
+            "history": {},
+            "additional_proposed": {},
+        },
+    )
+
+
+@pytest.mark.parametrize(
+    "context_factory",
+    [load_worked_example_context, _negative_fit_context],
+    ids=["worked_example_positive_fit", "radio_style_negative_fit"],
+)
+def test_subtotals_reconcile(service_selector, context_factory):
+    context = context_factory()
+    out = service_selector.evaluate(context)
+    assert out["decision_type"] == "ranked_candidates"
+    for candidate in out["ranked_candidates"]:
+        unclamped_sum = sum(c["contribution"] for c in candidate["feature_contributions"])
+        subtotal_sum = (
+            candidate["situation_fit"] + candidate["preference_fit"] + candidate["history_fit"]
+        )
+        assert subtotal_sum == pytest.approx(unclamped_sum, abs=1e-12), candidate["candidate_id"]
+
+
+def test_negative_fit_candidate_has_negative_unclamped_sum(service_selector):
+    """Sanity check that `_negative_fit_context` actually exercises a
+    negative-fit candidate (not merely a low-positive one), so T020's second
+    parametrization is a real negative case, not a degenerate positive one."""
+    out = service_selector.evaluate(_negative_fit_context())
+    candidate = out["ranked_candidates"][0]
+    unclamped_sum = sum(c["contribution"] for c in candidate["feature_contributions"])
+    assert unclamped_sum < 0.0
+
+
+def test_subtotals_are_not_a_sort_key(service_selector):
+    """Construct two candidates where `situation_fit(A) > situation_fit(B)`
+    but `score(A) < score(B)` (via a custom hierarchy that de-emphasizes
+    Situation and emphasizes Preference/History), and confirm the ranking
+    follows `score`, NOT `situation_fit` (doc SS9 step 6: 'explanatory only,
+    never rescaled, never a sort key')."""
+    hp = copy.deepcopy(service_manifest_hyperparameters())
+    hw = hp["hierarchy_weights"]
+    hw["Situation"]["share"] = 0.01
+    hw["Preference"]["share"] = 0.90
+    hw["History"]["share"] = 0.09
+
+    situation = {
+        "drowsiness_level": 100, "fatigue_level": 100, "traffic_state": "congested",
+        "road_type": "highway", "night_state": "night", "monotony_level": 100,
+        "route_tags": [], "destination_tags": [], "child_present": True,
+        "multiple_passengers": True,
+    }
+    feature_snapshot = {
+        "situation": situation,
+        "preference": {
+            "oshi_registered": False,
+            "oshi_mode": "off",
+            "service_recency_state": {"music_playlist": "never", "humming_karaoke": "recent"},
+            "service_usage_level": {"music_playlist": "high", "humming_karaoke": "never"},
+            "scene_service_usage_level": {},
+        },
+        "history": {
+            "service_proposal_acceptance_rate": {"music_playlist": 100, "humming_karaoke": 0},
+            "service_recovery_rate": {"music_playlist": 100, "humming_karaoke": 0},
+        },
+        "additional_proposed": {},
+    }
+    context = build_service_context(
+        allowed_service_ids=["music_playlist", "humming_karaoke"],
+        feature_snapshot=feature_snapshot,
+        hyperparameters=hp,
+    )
+    out = service_selector.evaluate(context)
+    by_id = {c["candidate_id"]: c for c in out["ranked_candidates"]}
+
+    # humming_karaoke's situation responses are all +1.0 (SS5.2.1 activation
+    # services) vs music_playlist's ~0 -> higher situation_fit for humming...
+    assert by_id["humming_karaoke"]["situation_fit"] > by_id["music_playlist"]["situation_fit"]
+    # ...but under this weighting, Preference/History dominate the total and
+    # music_playlist's score wins -> the ranking is NOT sorted by situation_fit.
+    assert by_id["music_playlist"]["score"] > by_id["humming_karaoke"]["score"]
+    assert out["ranked_candidates"][0]["candidate_id"] == "music_playlist"
+
+
+# ---------------------------------------------------------------------------
+# T021 (US2) - the SS6.4 continuous default dominance invariant.
+# ---------------------------------------------------------------------------
+
+# doc SS6.4 table, verbatim (safety_share == W_D).
+_DOC_DOMINANCE = {
+    "rest_recommended": {"w_d": 0.787939, "w_l": 0.212061, "required_gap": 0.538266},
+    "inattentive_driving_prevention_recovery": {"w_d": 0.823048, "w_l": 0.176952, "required_gap": 0.429991},
+    "route_music": {"w_d": 0.725407, "w_l": 0.274593, "required_gap": 0.757073},
+    "child_passenger_experience": {"w_d": 0.729083, "w_l": 0.270917, "required_gap": 0.743171},
+}
+
+
+@pytest.mark.parametrize("purpose", _PURPOSES)
+def test_dominance_invariant_built_in_purposes(service_selector, service_hyperparameters, service_parameters, purpose):
+    weights = service_selector.resolve_weights(service_hyperparameters, purpose)
+    dominance = service_selector.compute_dominance(weights, service_hyperparameters, service_parameters)
+
+    assert dominance["status"] == "default_dominance_preserved"
+    expected = _DOC_DOMINANCE[purpose]
+    assert dominance["w_d"] == pytest.approx(expected["w_d"], abs=6e-7)
+    assert dominance["w_l"] == pytest.approx(expected["w_l"], abs=6e-7)
+    assert dominance["required_gap"] == pytest.approx(expected["required_gap"], abs=6e-7)
+    assert dominance["safety_share"] == pytest.approx(expected["w_d"], abs=6e-7)
+    # W_D * material_safety_gap(1.00) > 2 * W_L for every built-in purpose.
+    assert dominance["w_d"] * dominance["material_safety_gap"] > 2.0 * dominance["w_l"]
+
+
+def test_dominance_adversarial_pair_dominant_gap_one_keeps_higher_safety_candidate_first(
+    service_selector, service_hyperparameters,
+):
+    """P(A)-P(B) == material_safety_gap(1.00) exactly (A's D-set responses
+    all +1.0, B's all 0.0) and the L-set is maximally reversed AGAINST A
+    (Q(A)=-1, Q(B)=+1, the doc's worst case 'Q(A)-Q(B) = -2'). Even so, A
+    (the higher-safety candidate) must still score above B, because
+    `required_gap` (~0.43 for purpose (2)) is well under the configured
+    `material_safety_gap` (1.00) -- doc SS6.4."""
+    weights = service_selector.resolve_weights(
+        service_hyperparameters, "inattentive_driving_prevention_recovery"
+    )
+    d_subgroups = {"driver_state", "driving_environment", "recovery"}
+
+    r_a = {fid: (1.0 if e["subgroup"] in d_subgroups else -1.0) for fid, e in weights.items()}
+    r_b = {fid: (0.0 if e["subgroup"] in d_subgroups else 1.0) for fid, e in weights.items()}
+
+    def unclamped_score(r):
+        return sum(weights[fid]["effective_weight"] * r[fid] for fid in weights)
+
+    score_a = max(-1.0, min(1.0, unclamped_score(r_a)))
+    score_b = max(-1.0, min(1.0, unclamped_score(r_b)))
+    assert score_a > score_b
+
+
+def test_dominance_invariant_violating_custom_weights_still_evaluates(
+    service_selector, service_hyperparameters, service_parameters,
+):
+    """A customer profile that de-emphasizes Situation enough to break the
+    invariant is still SCORED (never blocked) but reports
+    `dominance_not_guaranteed` + the `required_gap` that would restore it
+    (doc SS6.4: 'it never silently alters weights or ranks')."""
+    hp = copy.deepcopy(service_hyperparameters)
+    hp["hierarchy_weights"]["Situation"]["share"] = 0.15  # verified violating: W_D*1.00 < 2*W_L
+    weights = service_selector.resolve_weights(hp, "inattentive_driving_prevention_recovery")
+    dominance = service_selector.compute_dominance(weights, hp, service_parameters)
+
+    assert dominance["status"] == "dominance_not_guaranteed"
+    assert dominance["w_d"] * dominance["material_safety_gap"] <= 2.0 * dominance["w_l"]
+    assert dominance["required_gap"] > dominance["material_safety_gap"]
+
+    # The full evaluate() pipeline still produces a real ranking, not a block.
+    context = load_worked_example_context(hyperparameters=hp)
+    out = service_selector.evaluate(context)
+    assert out["decision_type"] == "ranked_candidates"
+    assert out["dominance"]["status"] == "dominance_not_guaranteed"
+    assert out["ranked_candidates"][0]["dominance"]["status"] == "dominance_not_guaranteed"

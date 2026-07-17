@@ -6,15 +6,16 @@ T010-T017) implements the numerically-critical scoring core: the 17-feature
 evidence/response/weight pipeline (SS3-SS9 of the algorithm doc), reproducing
 the SS10 worked example (`humming_karaoke == +0.772349`) exactly.
 
-Scope note (Unit B, not later units): this module emits the MINIMUM SS14
-explainability row (`feature_id`/`feature_value`/`response_coefficient`/
-`weight`/`contribution`) plus the cheap-to-populate optional extension
-fields that fall out of the same computation (raw_value, normalization
-detail, provenance, hierarchy path, base/purpose/effective weight, status).
-It deliberately does NOT compute `situation_fit`/`preference_fit`/
-`history_fit` subtotals, `strongest_support`/`strongest_oppose`, or the
-SS6.4 `dominance` readout -- those are Unit D's (US2 EvidenceBuilder)
-responsibility (data-model.md SS2-SS3; see contracts/evaluate_contract.md).
+Unit D (T020-T025a, US2 EvidenceBuilder) ADDS the remaining SS14
+explainability surface on top of Unit B's arithmetic (never altering it):
+per-candidate `situation_fit`/`preference_fit`/`history_fit` subtotals
+(SS9 step 6, reconstructing the unclamped Sigma k_i), `strongest_support`/
+`strongest_oppose`, the SS6.4 `dominance` readout (per-candidate AND
+top-level -- a pure function of the resolved weights, identical for every
+candidate in one `evaluate()` call), `effective_weights`,
+`resolved_config_versions`, and a generic "every A.1 feature-snapshot key
+not among the 17 scored features is reported" sweep for
+`unused_available_features` (data-model.md SS1-SS4).
 
 Documented limitation (Unit A CRITICAL CONTEXT #3, preserved here): the
 frozen purpose/stage matrix resolves `during_rest_stopped` to an EMPTY
@@ -98,6 +99,19 @@ _REST_STAGES = frozenset({"before_rest_until_stop", "during_rest_stopped", "afte
 _ACTIVE_DRIVING_PURPOSES = frozenset(
     {"inattentive_driving_prevention_recovery", "route_music", "child_passenger_experience"}
 )
+
+# SS6.4 dominance invariant: D = Driver State + Driving Environment + Recovery.
+# These are `subgroup` names (see resolve_weights' `hierarchy_path` entries),
+# unique across the whole hierarchy (SS6.1), so a subgroup-name membership
+# test is sufficient -- no category qualifier needed.
+_DOMINANCE_D_SUBGROUPS = frozenset({"driver_state", "driving_environment", "recovery"})
+
+# Snapshot groups the world projects `feature_snapshot` into (world.py
+# `World.project()` / `CONTENT_FEATURE_DISPOSITIONS`); scanned generically
+# below to find any key NOT among the 17 scored features (doc SS5.6 -- motion
+# state, minutes-to-rest, active service, recent rejections, schedule, the
+# two confidence fields, and anything else the world happens to carry).
+_SNAPSHOT_GROUPS = ("situation", "preference", "history", "additional_proposed")
 
 _FEATURE_LABELS = {
     "drowsiness_level": {"ja": "眠気", "en": "drowsiness"},
@@ -262,6 +276,73 @@ def resolve_weights(hp: dict, purpose: str) -> dict:
         raise _ConfigError(f"hierarchy_weights is missing leaves for feature(s): {missing}")
 
     return entries
+
+
+# ---------------------------------------------------------------------------
+# EvidenceBuilder (Unit D, SS6.4 / SS9 step 6 / SS14): the dominance readout
+# is a pure function of the RESOLVED weights alone -- it is identical for
+# every candidate scored in one `evaluate()` call (same purpose, same
+# hyperparameters), so it is computed once and shared (per-candidate AND
+# top-level, per data-model.md SS2-SS4).
+# ---------------------------------------------------------------------------
+
+
+def compute_dominance(weights: dict, hp: dict, params: dict) -> dict:
+    """Return the SS6.4 `DominanceReadout` dict for one resolved weight set.
+
+    `W_D` = sum of effective weights whose subgroup is Driver State,
+    Driving Environment, or Recovery; `W_L = 1 - W_D`. The default
+    configuration must (and every built-in purpose does, see SS6.4's table)
+    satisfy `W_D * material_safety_gap > 2 * W_L`; a customer edit that
+    breaks this is still scored (never blocked) but reported
+    `dominance_not_guaranteed` with the `required_gap` that WOULD restore
+    the guarantee.
+    """
+    w_d = sum(e["effective_weight"] for e in weights.values() if e["subgroup"] in _DOMINANCE_D_SUBGROUPS)
+    w_l = 1.0 - w_d
+    material_safety_gap = _finite(_param(params, "material_safety_gap"), "material_safety_gap")
+    if material_safety_gap < 0:
+        raise _ConfigError(f"material_safety_gap is negative: {material_safety_gap!r}")
+
+    if w_d > 1e-12:
+        required_gap = 2.0 * w_l / w_d
+    else:
+        # W_D ~ 0 can never satisfy the invariant for any finite gap; report
+        # a large-but-finite sentinel rather than +inf (JSON-serialization
+        # safety -- see data-model.md SS2 `required_gap: float`).
+        required_gap = 1.0e12
+
+    preserved = (w_d * material_safety_gap) > (2.0 * w_l)
+
+    floor = _finite(_hp(hp, "safety_share_warning_floor"), "safety_share_warning_floor")
+
+    return {
+        "status": "default_dominance_preserved" if preserved else "dominance_not_guaranteed",
+        "w_d": _norm0(w_d),
+        "w_l": _norm0(w_l),
+        "required_gap": _norm0(required_gap),
+        "material_safety_gap": material_safety_gap,
+        "safety_share": _norm0(w_d),
+        "safety_share_warning": w_d < floor,
+    }
+
+
+def scan_unused_snapshot_keys(snapshot: dict) -> set:
+    """Generic sweep: any key present under one of the four `feature_snapshot`
+    groups (situation/preference/history/additional_proposed) that is not
+    one of the 17 scored `FEATURE_ORDER` features is "available but not
+    used" (doc SS5.6) -- reported by name, regardless of whether it is a
+    documented additional-simulator feature, an opt-in confidence field the
+    package doesn't (yet, in the baseline) consume, or anything else the
+    world happens to carry. Nothing is silently dropped.
+    """
+    used = set(FEATURE_ORDER)
+    found: set = set()
+    for group in _SNAPSHOT_GROUPS:
+        for key in (snapshot.get(group) or {}).keys():
+            if key not in used:
+                found.add(key)
+    return found
 
 
 # ---------------------------------------------------------------------------
@@ -586,6 +667,19 @@ def evaluate(context: dict) -> dict:
     # Resolve effective weights once (SS9 step 3).
     weights = resolve_weights(hp, purpose)
 
+    # SS6.4 dominance readout + SS12 "resolved beside entered" evidence: pure
+    # functions of the resolved weights, identical for every candidate in
+    # this call (Unit D, data-model.md SS2/SS4).
+    dominance = compute_dominance(weights, hp, params)
+    effective_weights = {fid: e["effective_weight"] for fid, e in weights.items()}
+    resolved_config_versions = {
+        "package_id": "aica_transparent_service_selector_v1",
+        "contract_version": context.get("contract_version"),
+        "schema_version": context.get("schema_version"),
+        "purpose": purpose,
+        "lifecycle_stage": stage,
+    }
+
     # Response-profile completeness sweep (SS9 step 1) for every eligible candidate.
     for cid in eligible_ids:
         for fid in FEATURE_ORDER:
@@ -615,14 +709,19 @@ def evaluate(context: dict) -> dict:
         if info["status"] in ("missing", "missing_neutral"):
             missing_features.add(fid)
 
+    # SS5.6 "features not used" sweep: every feature_snapshot key not among
+    # the 17 scored features (unknown route/dest tags + whatever the
+    # additional-simulator groups carry -- motion state, minutes-to-rest,
+    # active service, recent rejections, schedule, the two confidence
+    # fields, ...). Nothing silently dropped (Unit D, T022).
+    unused_available_features = unknown_tags | scan_unused_snapshot_keys(snapshot)
+
     if not eligible_ids:
         return {
             "decision_type": "no_proposal",
             "ranked_candidates": [],
             "excluded_candidates": excluded_candidates,
-            "unused_available_features": sorted(
-                unknown_tags | {"service_proposal_acceptance_confidence", "service_recovery_confidence"}
-            ),
+            "unused_available_features": sorted(unused_available_features),
             "missing_features": sorted(missing_features),
             "next_package_runtime_state": {},
             "algorithm_provenance": {
@@ -634,6 +733,9 @@ def evaluate(context: dict) -> dict:
                 "extensions_on": [],
                 "reason": "empty_eligible_candidate_set",
             },
+            "dominance": dominance,
+            "effective_weights": effective_weights,
+            "resolved_config_versions": resolved_config_versions,
         }
 
     road_type = situation.get("road_type")
@@ -641,6 +743,13 @@ def evaluate(context: dict) -> dict:
     for cid in eligible_ids:
         contributions = []
         unclamped_sum = 0.0
+        # SS9 step 6: situation/preference/history subtotals reconstruct the
+        # unclamped Sigma k_i by construction -- every feature belongs to
+        # exactly one category, so summing this accumulator alongside
+        # unclamped_sum keeps the two identical by definition (never
+        # rescaled, never a sort key -- see `test_subtotals_reconcile` /
+        # `test_subtotals_are_not_a_sort_key`).
+        subtotal_by_category = {"Situation": 0.0, "Preference": 0.0, "History": 0.0}
         for fid in FEATURE_ORDER:
             w_entry = weights[fid]
             w = w_entry["effective_weight"]
@@ -662,12 +771,24 @@ def evaluate(context: dict) -> dict:
             r_i = _clamp(e_i * a_i)
             k_i = w * r_i
             unclamped_sum += k_i
+            subtotal_by_category[w_entry["category"]] += k_i
 
-            status = ev["status"]
-            if status == "missing_neutral":
+            # SS14 `status`: missing takes priority (absent/no candidate
+            # entry); then zero_weight (the reviewer disabled this feature's
+            # influence via the hierarchy, doc SS6.2 "0 disables ranking
+            # influence but not the evidence trace"); then neutral (present,
+            # weighted, but this row happens to contribute nothing -- e.g. a
+            # `neutral_source_silent` response coefficient of 0.0, doc
+            # SS5.2.1); otherwise used. Purely descriptive -- never changes
+            # `contribution`/`score` (Unit D scope).
+            if ev["status"] in ("missing", "missing_neutral"):
                 status = "missing"
-            elif status == "used" and w <= 0.0:
+            elif w <= 0.0:
                 status = "zero_weight"
+            elif abs(k_i) < 1e-12:
+                status = "neutral"
+            else:
+                status = "used"
 
             contributions.append({
                 "feature_id": fid,
@@ -691,15 +812,38 @@ def evaluate(context: dict) -> dict:
         score = _norm0(_clamp(unclamped_sum, -1.0, 1.0))
         supporting = [c["feature_id"] for c in contributions if c["contribution"] > 1e-9]
         opposing = [c["feature_id"] for c in contributions if c["contribution"] < -1e-9]
+
+        # SS14 "strongest supporting and opposing contributions".
+        positive = [c for c in contributions if c["contribution"] > 0.0]
+        negative = [c for c in contributions if c["contribution"] < 0.0]
+        strongest_support = (
+            {"feature_id": (best := max(positive, key=lambda c: c["contribution"]))["feature_id"], "contribution": best["contribution"]}
+            if positive
+            else None
+        )
+        strongest_oppose = (
+            {"feature_id": (worst := min(negative, key=lambda c: c["contribution"]))["feature_id"], "contribution": worst["contribution"]}
+            if negative
+            else None
+        )
+
         scored.append({
             "candidate_id": cid,
             "score": score,
             "contributions": contributions,
             "supporting": supporting,
             "opposing": opposing,
+            "situation_fit": _norm0(subtotal_by_category["Situation"]),
+            "preference_fit": _norm0(subtotal_by_category["Preference"]),
+            "history_fit": _norm0(subtotal_by_category["History"]),
+            "strongest_support": strongest_support,
+            "strongest_oppose": strongest_oppose,
         })
 
     # Rank: (service_fit desc, candidate_id asc); take top_k (SS9 step 7).
+    # `score` -- and ONLY `score` -- is the sort key; situation_fit/
+    # preference_fit/history_fit are explanatory subtotals that reconstruct
+    # `score` (SS9 step 6) but never participate in ordering.
     scored.sort(key=lambda s: (-s["score"], s["candidate_id"]))
     top_k = int(_param(params, "top_k"))
     chosen = scored[:top_k]
@@ -715,15 +859,19 @@ def evaluate(context: dict) -> dict:
             "opposing_feature_ids": s["opposing"],
             "uncertainty": None,
             "feature_contributions": s["contributions"],
+            "situation_fit": s["situation_fit"],
+            "preference_fit": s["preference_fit"],
+            "history_fit": s["history_fit"],
+            "strongest_support": s["strongest_support"],
+            "strongest_oppose": s["strongest_oppose"],
+            "dominance": dominance,
         })
 
     return {
         "decision_type": "ranked_candidates",
         "ranked_candidates": ranked_candidates,
         "excluded_candidates": excluded_candidates,
-        "unused_available_features": sorted(
-            unknown_tags | {"service_proposal_acceptance_confidence", "service_recovery_confidence"}
-        ),
+        "unused_available_features": sorted(unused_available_features),
         "missing_features": sorted(missing_features),
         "next_package_runtime_state": {},
         "algorithm_provenance": {
@@ -734,4 +882,7 @@ def evaluate(context: dict) -> dict:
             "lifecycle_stage": stage,
             "extensions_on": [],
         },
+        "dominance": dominance,
+        "effective_weights": effective_weights,
+        "resolved_config_versions": resolved_config_versions,
     }
