@@ -151,6 +151,40 @@ function packagesResponse() {
   }
 }
 
+// P5 Unit C (T018) — the REAL transparent service-selector package
+// (`aica_transparent_service_selector_v1`), the slot's default occupant per
+// ProposalPackageRegistry.list_slots() (Unit A, alphabetical first-wins:
+// "aica_..." sorts before "mock_..." in the package-dir scan order that
+// ALSO orders GET /api/proposal/packages' `packages` list).
+const TRANSPARENT_SERVICE_PACKAGE = {
+  id: 'aica_transparent_service_selector_v1',
+  version: '1.0.0',
+  label: { ja: '透明サービス選定 v1.0', en: 'Transparent Service Selector v1.0' },
+  family: 'service_selector' as const,
+  approach: 'transparent' as const,
+  contract_version: '1.0.0',
+  supported_services: [],
+  parameters: {},
+  hyperparameters: [],
+}
+
+function packagesResponseWithTransparentDefault() {
+  return {
+    slots: [
+      { family: 'service_selector', approach: 'transparent', package_id: 'aica_transparent_service_selector_v1' },
+      { family: 'service_selector', approach: 'constrained_llm', package_id: null },
+      { family: 'content_selector', approach: 'transparent', package_id: 'mock_content_selector_v1' },
+      { family: 'content_selector', approach: 'constrained_llm', package_id: null },
+    ],
+    // Order mirrors the registry's alphabetical package-dir scan: the
+    // transparent package sorts before the mock, exactly like the real
+    // backend returns them (verified against a live GET /api/proposal/packages
+    // during Unit C).
+    packages: [TRANSPARENT_SERVICE_PACKAGE, SERVICE_PACKAGE, CONTENT_PACKAGE],
+    errors: [],
+  }
+}
+
 function runLogWithCandidates(inputSnapshot: Record<string, unknown> = {}) {
   return {
     run_id: 'prun_20260716-000000_abcdef',
@@ -505,5 +539,61 @@ describe('ServiceProposalPanel', () => {
 
     expect(await screen.findByTestId('journey-action-bar')).toBeInTheDocument()
     expect(screen.getByTestId('event-timeline')).toBeInTheDocument()
+  })
+})
+
+// P5 Unit C (T018, FR-001): the transparent service-selector package MUST be
+// the screen's default service-slot selection, with the mock retained as a
+// selectable regression fixture. The panel derives its default purely from
+// GET /api/proposal/packages' `packages` list order (`services[0].id`) —
+// this suite pins that the real backend order (verified live during Unit C:
+// GET /api/proposal/packages returns the transparent package first) actually
+// produces the transparent default in the UI, and that switching back to the
+// mock still works.
+describe('ServiceProposalPanel — P5 US1 default service package (T018)', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    vi.mocked(getPackages).mockResolvedValue(packagesResponseWithTransparentDefault() as never)
+  })
+
+  it('defaults the service-package selector to the transparent package (the slot default) while the mock remains selectable', async () => {
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+
+    const select = (await screen.findByLabelText('サービスPKG')) as HTMLSelectElement
+    await waitFor(() => expect(select.value).toBe('aica_transparent_service_selector_v1'))
+
+    const optionValues = Array.from(select.options).map((o) => o.value)
+    expect(optionValues).toEqual(
+      expect.arrayContaining(['aica_transparent_service_selector_v1', 'mock_service_selector_v1']),
+    )
+
+    // The mock is still selectable (FR-001's "retaining the existing mock
+    // as a selectable regression fixture").
+    fireEvent.change(select, { target: { value: 'mock_service_selector_v1' } })
+    expect(select.value).toBe('mock_service_selector_v1')
+  })
+
+  it('sends the default transparent package id in the createRun body when Run is clicked without changing the selector', async () => {
+    vi.mocked(createRun).mockResolvedValue(runLogWithCandidates() as never)
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await waitFor(() =>
+      expect((screen.getByLabelText('サービスPKG') as HTMLSelectElement).value).toBe(
+        'aica_transparent_service_selector_v1',
+      ),
+    )
+
+    fireEvent.click(screen.getByTestId('service-run-button'))
+    await waitFor(() => expect(createRun).toHaveBeenCalled())
+
+    const body = vi.mocked(createRun).mock.calls[0][0]
+    expect(body.service_package_id).toBe('aica_transparent_service_selector_v1')
   })
 })
