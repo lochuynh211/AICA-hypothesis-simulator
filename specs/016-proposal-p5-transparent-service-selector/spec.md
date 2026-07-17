@@ -145,7 +145,7 @@ A reviewer who wants sparse synthetic acceptance/recovery history to count for l
 
 ### Measurable Outcomes
 
-- **SC-001**: For the documented inattentive-driving worked-example world, the transparent package reproduces the documented top-candidate `service_fit` within a numeric tolerance of 1e-12 and ranks it above the low-scoring alternative.
+- **SC-001**: For the documented inattentive-driving worked-example world, the transparent package reproduces the documented top-candidate's per-feature `w_i`/`k_i` values to the doc's published 6-decimal precision (abs ≤ 6e-7) and reproduces the aggregate `service_fit` to within the doc's own worked-example rounding (abs 2e-6 of the stated `+0.772349`; the mathematically exact value is `40051/51856 = 0.77235035…`, independently confirmed by exact-rational recomputation — the doc's headline has a ~1.4e-6 internal rounding artifact, so `1e-12` against the headline is unachievable), and ranks the top candidate strictly above the low-scoring alternative. Identical-input replay of the package's own float64 output remains exact (see SC-006).
 - **SC-002**: 100% of ranked candidates are members of the eligible allowed-service set; no run ever presents a candidate outside it.
 - **SC-003**: For every built-in configuration and every default purpose, the effective weights sum to 1 and the material-safety dominance invariant holds (and is reported).
 - **SC-004**: Every ranked candidate exposes all 17 feature contribution rows, and the Situation/Preference/History subtotals reconcile to `service_fit` within 1e-12.
