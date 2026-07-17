@@ -1,0 +1,36 @@
+{
+  "_comment": "SS11 item 9: recent<->long_unused service_recency_state, varied for music_playlist ONLY - humming_karaoke's recency is held fixed at 'recent' (e=0) in both variants as the comparator, and every other field is absent (neutral), so the two candidates are otherwise perfectly tied.",
+  "trigger_purpose": "inattentive_driving_prevention_recovery",
+  "lifecycle_stage": "active_driving_content",
+  "allowed_service_ids": [
+    "music_playlist",
+    "humming_karaoke"
+  ],
+  "candidates_of_interest": {
+    "varied": "music_playlist",
+    "fixed_comparator": "humming_karaoke"
+  },
+  "expected_direction": "at 'recent' (e=0) the two candidates tie (0 vs 0), tie-broken to humming_karaoke first by candidate_id; at 'long_unused' (e=0.5) music_playlist gains a strictly positive novelty contribution and overtakes humming_karaoke - recency alone reorders the pair.",
+  "variants": {
+    "recent": {
+      "feature_snapshot": {
+        "preference": {
+          "service_recency_state": {
+            "music_playlist": "recent",
+            "humming_karaoke": "recent"
+          }
+        }
+      }
+    },
+    "long_unused": {
+      "feature_snapshot": {
+        "preference": {
+          "service_recency_state": {
+            "music_playlist": "long_unused",
+            "humming_karaoke": "recent"
+          }
+        }
+      }
+    }
+  }
+}

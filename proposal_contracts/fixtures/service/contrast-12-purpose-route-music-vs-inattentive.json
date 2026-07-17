@@ -1,0 +1,30 @@
+{
+  "_comment": "SS11 item 12: same raw snapshot, purpose switches inattentive<->route_music. humming_karaoke leads on both (it dominates music_playlist on every shared situation feature - SS5.2.1), but route_music's purpose-multiplier table (SS6.2: route_context 0.75->2.00) raises the route/destination weight both candidates share equally while shrinking driver-state weight (humming's exclusive edge), narrowing the gap - doc SS10's own text: 'narrowing the gap on the same raw snapshot and response profiles'.",
+  "lifecycle_stage": "active_driving_content",
+  "allowed_service_ids": [
+    "humming_karaoke",
+    "music_playlist"
+  ],
+  "candidates_of_interest": {
+    "leader": "humming_karaoke",
+    "trailing": "music_playlist"
+  },
+  "expected_direction": "humming_karaoke ranks above music_playlist under BOTH purposes, but the (humming - music) score gap strictly narrows when purpose switches from inattentive_driving_prevention_recovery to route_music.",
+  "feature_snapshot": {
+    "situation": {
+      "drowsiness_level": 40,
+      "fatigue_level": 30,
+      "route_tags": [
+        "highway",
+        "mountain"
+      ],
+      "destination_tags": [
+        "coast"
+      ]
+    }
+  },
+  "trigger_purpose_variants": {
+    "inattentive": "inattentive_driving_prevention_recovery",
+    "route_music": "route_music"
+  }
+}

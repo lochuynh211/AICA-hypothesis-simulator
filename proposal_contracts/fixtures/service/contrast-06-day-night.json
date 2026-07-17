@@ -1,0 +1,30 @@
+{
+  "_comment": "SS11 item 1: day<->night night_state (SS5.2.1 environment row; radio_style responds 0.0 to night).",
+  "trigger_purpose": "inattentive_driving_prevention_recovery",
+  "lifecycle_stage": "active_driving_content",
+  "allowed_service_ids": [
+    "call_response_driving",
+    "radio_style"
+  ],
+  "candidates_of_interest": {
+    "activation": "call_response_driving",
+    "calm": "radio_style"
+  },
+  "expected_direction": "night strictly outscores day for call_response_driving while radio_style stays pinned at 0 - the gap widens at night.",
+  "variants": {
+    "day": {
+      "feature_snapshot": {
+        "situation": {
+          "night_state": "day"
+        }
+      }
+    },
+    "night": {
+      "feature_snapshot": {
+        "situation": {
+          "night_state": "night"
+        }
+      }
+    }
+  }
+}

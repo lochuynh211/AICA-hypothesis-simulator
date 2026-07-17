@@ -1,0 +1,30 @@
+{
+  "_comment": "SS11 item 1: low<->high road monotony. Same activation/calm pair (SS5.2.1 environment row; radio_style responds 0.0 to monotony).",
+  "trigger_purpose": "inattentive_driving_prevention_recovery",
+  "lifecycle_stage": "active_driving_content",
+  "allowed_service_ids": [
+    "call_response_driving",
+    "radio_style"
+  ],
+  "candidates_of_interest": {
+    "activation": "call_response_driving",
+    "calm": "radio_style"
+  },
+  "expected_direction": "as monotony rises low->high, call_response_driving's score strictly increases while radio_style's stays pinned at 0 - the gap widens.",
+  "variants": {
+    "low": {
+      "feature_snapshot": {
+        "situation": {
+          "monotony_level": 10
+        }
+      }
+    },
+    "high": {
+      "feature_snapshot": {
+        "situation": {
+          "monotony_level": 90
+        }
+      }
+    }
+  }
+}

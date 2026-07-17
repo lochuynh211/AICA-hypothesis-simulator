@@ -1,0 +1,30 @@
+{
+  "_comment": "SS11 item 7: child absent<->present (SS5.2.1 passenger row; radio_style responds 0.0 to child_present).",
+  "trigger_purpose": "inattentive_driving_prevention_recovery",
+  "lifecycle_stage": "active_driving_content",
+  "allowed_service_ids": [
+    "call_response_driving",
+    "radio_style"
+  ],
+  "candidates_of_interest": {
+    "activation": "call_response_driving",
+    "calm": "radio_style"
+  },
+  "expected_direction": "child present strictly outscores child absent for call_response_driving while radio_style stays pinned at 0 - the gap widens when a child is present.",
+  "variants": {
+    "absent": {
+      "feature_snapshot": {
+        "situation": {
+          "child_present": false
+        }
+      }
+    },
+    "present": {
+      "feature_snapshot": {
+        "situation": {
+          "child_present": true
+        }
+      }
+    }
+  }
+}
