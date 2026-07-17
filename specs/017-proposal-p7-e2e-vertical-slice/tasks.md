@@ -109,12 +109,13 @@
 
 ### Tests first
 
-- [ ] T027 [P] [US4] Write failing reject-all-after-recompute test in `app/api/tests/proposal/test_p7_advisory_safety.py`: after a recompute produces several eligible after-rest services, rejecting each in turn reaches `NO_ELIGIBLE_CANDIDATE` without error and the run stays reopenable (FR-016, SC-005).
-- [ ] T028 [P] [US4] Add a failing preview-not-committed test to `test_p7_advisory_safety.py`: `GET /runs/{id}/journey/preview` on an in-progress run leaves the on-disk file and `GET /runs/{id}` byte-identical (FR-017, SC-004).
+- [x] T027 [P] [US4] Write failing reject-all-after-recompute test in `app/api/tests/proposal/test_p7_advisory_safety.py`: after a recompute produces several eligible after-rest services, rejecting each in turn reaches `NO_ELIGIBLE_CANDIDATE` without error and the run stays reopenable (FR-016, SC-005).
+- [x] T028 [P] [US4] Add a failing preview-not-committed test to `test_p7_advisory_safety.py`: `GET /runs/{id}/journey/preview` on an in-progress run leaves the on-disk file and `GET /runs/{id}` byte-identical (FR-017, SC-004).
 
 ### Implementation
 
-- [ ] T029 [US4] Make T027/T028 pass. Expected: the P4 `reject`/`choose_another` and preview mechanisms already satisfy these; if a gap surfaces at the recomputed-opportunity boundary (e.g. rejection pool drawn from the stale opportunity), fix it at the seam in `app/api/aica_api/services/proposal_journey.py` / the recompute reset. Run `cd app/api && uv run pytest tests/proposal/test_p7_advisory_safety.py -q` then `uv run pytest -q`.
+- [x] T029 [US4] Make T027/T028 pass. Expected: the P4 `reject`/`choose_another` and preview mechanisms already satisfy these; if a gap surfaces at the recomputed-opportunity boundary (e.g. rejection pool drawn from the stale opportunity), fix it at the seam in `app/api/aica_api/services/proposal_journey.py` / the recompute reset. Run `cd app/api && uv run pytest tests/proposal/test_p7_advisory_safety.py -q` then `uv run pytest -q`.
+  - Result: ZERO production change was needed. Both invariants already held end-to-end through the P4 `_reject_service`/`_choose_another`/`_eligible_pool` engine and the pure-read preview handler, exercised across the recompute boundary — proven with 4 new tests (2 reject-all walks: explicit-`selected_service_id` and offered+`choose_another`; 1 preview-non-commit; the recomputed-vs-stale-pool disjointness assertion). Full suite: 2114 passed / 3 skipped (up from the 2061/3 T001 baseline).
 
 **Checkpoint**: advisory-safety invariants hold across a recomputed stage.
 
