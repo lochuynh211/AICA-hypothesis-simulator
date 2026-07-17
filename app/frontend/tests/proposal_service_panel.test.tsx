@@ -16,7 +16,7 @@ vi.mock('../src/api/proposalClient', async () => {
 })
 
 import { getPackages, createRun, selectService } from '../src/api/proposalClient'
-import type { World, WorldClone } from '../src/api/proposalClient'
+import type { World, WorldClone, RankedCandidate, ServiceSelectorOutput } from '../src/api/proposalClient'
 
 const DATASET_ID = 'soundcharts-grounded-spotify-compatible-demonstration-seed-1042'
 
@@ -186,6 +186,50 @@ function packagesResponseWithTransparentDefault() {
 }
 
 function runLogWithCandidates(inputSnapshot: Record<string, unknown> = {}) {
+  // Explicitly typed (rather than left as an inferred object literal) so
+  // that the P5 §14 optional fields (dominance/situation_fit/
+  // strongest_support/...) are recognized on later mutation in tests below
+  // -- see whole-branch review finding: an untyped literal here made those
+  // mutations fail `tsc --noEmit` even though they're valid at runtime.
+  const ranked_candidates: RankedCandidate[] = [
+    {
+      rank: 1,
+      candidate_id: 'live_viewing',
+      score: 0.77,
+      rationale: ['一位の理由', 'Top rank rationale'],
+      supporting_feature_ids: ['drowsiness_level'],
+      opposing_feature_ids: [],
+      uncertainty: null,
+      feature_contributions: [
+        {
+          feature_id: 'drowsiness_level',
+          feature_value: 72,
+          response_coefficient: 1.0,
+          weight: 0.25,
+          contribution: 0.18,
+        },
+      ],
+    },
+    {
+      rank: 2,
+      candidate_id: 'stretch_video',
+      score: 0.45,
+      rationale: ['二位の理由', 'Second rank rationale'],
+      supporting_feature_ids: [],
+      opposing_feature_ids: [],
+      uncertainty: 'moderate',
+      feature_contributions: [],
+    },
+  ]
+  const output: ServiceSelectorOutput = {
+    decision_type: 'ranked_candidates',
+    ranked_candidates,
+    excluded_candidates: [],
+    unused_available_features: [],
+    missing_features: [],
+    next_package_runtime_state: {},
+    algorithm_provenance: {},
+  }
   return {
     run_id: 'prun_20260716-000000_abcdef',
     created_at: '2026-07-16T00:00:00Z',
@@ -218,44 +262,7 @@ function runLogWithCandidates(inputSnapshot: Record<string, unknown> = {}) {
         schema_version: '1.0.0',
         matrix_version: 'v1',
         input_snapshot: inputSnapshot,
-        output: {
-          decision_type: 'ranked_candidates',
-          ranked_candidates: [
-            {
-              rank: 1,
-              candidate_id: 'live_viewing',
-              score: 0.77,
-              rationale: ['一位の理由', 'Top rank rationale'],
-              supporting_feature_ids: ['drowsiness_level'],
-              opposing_feature_ids: [],
-              uncertainty: null,
-              feature_contributions: [
-                {
-                  feature_id: 'drowsiness_level',
-                  feature_value: 72,
-                  response_coefficient: 1.0,
-                  weight: 0.25,
-                  contribution: 0.18,
-                },
-              ],
-            },
-            {
-              rank: 2,
-              candidate_id: 'stretch_video',
-              score: 0.45,
-              rationale: ['二位の理由', 'Second rank rationale'],
-              supporting_feature_ids: [],
-              opposing_feature_ids: [],
-              uncertainty: 'moderate',
-              feature_contributions: [],
-            },
-          ],
-          excluded_candidates: [],
-          unused_available_features: [],
-          missing_features: [],
-          next_package_runtime_state: {},
-          algorithm_provenance: {},
-        },
+        output,
         error: null,
         used_feature_ids: [],
         unused_available_features: [],
@@ -795,7 +802,9 @@ describe('ServiceProposalPanel — P5 US4 confidence_shrinkage_v1 toggle (T032)'
     await waitFor(() => expect(createRun).toHaveBeenCalled())
 
     const body = vi.mocked(createRun).mock.calls[0][0]
-    expect(body.hyperparameters.confidence_shrinkage_v1).toBe(false)
+    // Non-null: the component always sends `hyperparameters` on run creation
+    // (it's optional only in the wire type `CreateProposalRunBody`).
+    expect(body.hyperparameters!.confidence_shrinkage_v1).toBe(false)
   })
 
   it('toggling the Hyperparameters (advanced) control flips confidence_shrinkage_v1 to true in the run request', async () => {
@@ -820,8 +829,8 @@ describe('ServiceProposalPanel — P5 US4 confidence_shrinkage_v1 toggle (T032)'
 
     const body = vi.mocked(createRun).mock.calls[0][0]
     // A real (not stringified) boolean -- see the HyperparamMatrix fix.
-    expect(body.hyperparameters.confidence_shrinkage_v1).toBe(true)
-    expect(body.hyperparameters.confidence_shrinkage_v1).not.toBe('true')
+    expect(body.hyperparameters!.confidence_shrinkage_v1).toBe(true)
+    expect(body.hyperparameters!.confidence_shrinkage_v1).not.toBe('true')
   })
 
   it("the toggled state is visible in the run's evidence hyperparameters once a run exists", async () => {
