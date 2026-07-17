@@ -75,7 +75,14 @@ describe('Proposal auto-init', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(getPackages).mockResolvedValue({
-      packages: [pkg('aica_transparent_service_selector_v1', 'service_selector'), pkg('aica_transparent_content_selector_v1', 'content_selector')],
+      packages: [
+        pkg('aica_transparent_service_selector_v1', 'service_selector'),
+        // Task 5 (Choose scope-gate): supported_services must include the
+        // fixture's rank-1 candidate (humming_karaoke) or the panel's
+        // content-backed gate — reused by autoInit's rank-1 auto-choose —
+        // would skip auto-choosing it, breaking this fixture's premise.
+        { ...pkg('aica_transparent_content_selector_v1', 'content_selector'), supported_services: ['humming_karaoke', 'full_karaoke'] },
+      ],
       slots: [],
       errors: [],
     } as never)

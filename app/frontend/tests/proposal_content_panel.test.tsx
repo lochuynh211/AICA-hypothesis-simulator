@@ -55,11 +55,14 @@ function packagesResponse() {
   }
 }
 
-/** A service-selected run whose ranked candidates include `live_viewing` — in
- * the after-rest allowed set, but NOT in the mock content selector's
- * `supported_services` (music-only). Mirrors the real backend fixture used
- * by `app/api/tests/proposal/test_ep_select_service.py`. */
-function runLogServiceSelectedWithUnsupportedCandidate(): ProposalRunLog {
+/** A service-selected run whose sole ranked candidate is `candidateId` — in
+ * the after-rest allowed set. Defaults to `live_viewing`, which is NOT in
+ * the mock content selector's `supported_services` (music-only); mirrors the
+ * real backend fixture used by `app/api/tests/proposal/test_ep_select_service.py`.
+ * Task 5 (Choose scope-gate) tests that need a Choose click to actually fire
+ * (rather than be blocked client-side by the new gate) pass a content-backed
+ * id instead (e.g. `full_karaoke`). */
+function runLogServiceSelectedWithUnsupportedCandidate(candidateId = 'live_viewing'): ProposalRunLog {
   return {
     run_id: 'prun_unsupported_test',
     created_at: '2026-07-16T00:00:00Z',
@@ -80,7 +83,7 @@ function runLogServiceSelectedWithUnsupportedCandidate(): ProposalRunLog {
     journey_state: {
       lifecycle_stage: 'after_rest_before_restart',
       motion_state: 'stopped',
-      active_service_id: 'live_viewing',
+      active_service_id: candidateId,
       active_plan_id: null,
     },
     events: [],
@@ -97,7 +100,7 @@ function runLogServiceSelectedWithUnsupportedCandidate(): ProposalRunLog {
           ranked_candidates: [
             {
               rank: 1,
-              candidate_id: 'live_viewing',
+              candidate_id: candidateId,
               score: 0.77,
               rationale: ['一位の理由', 'Top rank rationale'],
               supporting_feature_ids: [],
@@ -370,7 +373,12 @@ describe('ContentProposalPanel', () => {
   })
 
   it('editing a content parameter is captured and sent as an override when Choose is clicked', async () => {
-    vi.mocked(createRun).mockResolvedValue(runLogServiceSelectedWithUnsupportedCandidate() as never)
+    // Task 5 (Choose scope-gate): this test is about parameter-override
+    // capture, not unsupported-service handling — use a content-backed
+    // candidate (`full_karaoke`) so the Choose button is actually enabled
+    // and the click fires (the unsupported-service scenario is covered
+    // separately below, without going through a disabled button).
+    vi.mocked(createRun).mockResolvedValue(runLogServiceSelectedWithUnsupportedCandidate('full_karaoke') as never)
     vi.mocked(selectService).mockResolvedValue({ ...runLogWithPlan(), status: 'content_selected' } as never)
 
     render(
@@ -381,15 +389,15 @@ describe('ContentProposalPanel', () => {
     )
     await waitFor(() => expect(getPackages).toHaveBeenCalled())
     fireEvent.click(screen.getByTestId('service-run-button'))
-    await screen.findByText('live_viewing')
+    await screen.findByText('full_karaoke')
 
     const input = await screen.findByLabelText('plan_item_count')
     fireEvent.change(input, { target: { value: '7' } })
 
-    fireEvent.click(screen.getByTestId('choose-candidate-live_viewing'))
+    fireEvent.click(screen.getByTestId('choose-candidate-full_karaoke'))
 
     await waitFor(() => expect(selectService).toHaveBeenCalled())
-    expect(selectService).toHaveBeenCalledWith('prun_unsupported_test', 'live_viewing', {
+    expect(selectService).toHaveBeenCalledWith('prun_unsupported_test', 'full_karaoke', {
       parameters: { plan_item_count: 7 },
       hyperparameters: { content_category_weights: { Situation: 0.55, Preference: 0.3, History: 0.15 } },
     })
@@ -490,13 +498,15 @@ describe('ContentProposalPanel', () => {
     expect(screen.queryByTestId('content-select-error')).not.toBeInTheDocument()
   })
 
-  it('end-to-end: choosing an unsupported service in ServiceProposalPanel surfaces the graceful unsupported message in ContentProposalPanel (never blank)', async () => {
+  // Task 5 (Choose scope-gate): previously this scenario reached the backend
+  // and relied on its 422 unsupported_service rejection being surfaced
+  // gracefully (still covered above via direct SET_ERROR dispatch). Now the
+  // Choose button itself is disabled for a non-content-backed candidate, so
+  // selectService is never even called — the "never blank" guarantee is
+  // enforced client-side, before any request goes out, and
+  // ContentProposalPanel simply stays in its waiting state.
+  it('end-to-end: an unsupported service in ServiceProposalPanel has Choose disabled, so selectService is never called and ContentProposalPanel stays in its waiting state', async () => {
     vi.mocked(createRun).mockResolvedValue(runLogServiceSelectedWithUnsupportedCandidate() as never)
-    vi.mocked(selectService).mockRejectedValue(
-      new Error(
-        "Proposal API error: 422 — Content package 'mock_content_selector_v1' does not support service 'live_viewing' (unsupported_service)",
-      ),
-    )
 
     render(
       <ProposalStoreProvider initialLanguage="en">
@@ -508,11 +518,14 @@ describe('ContentProposalPanel', () => {
     fireEvent.click(screen.getByTestId('service-run-button'))
     await screen.findByText('live_viewing')
 
-    fireEvent.click(screen.getByTestId('choose-candidate-live_viewing'))
+    const chooseBtn = screen.getByTestId('choose-candidate-live_viewing')
+    expect(chooseBtn).toBeDisabled()
+    expect(screen.getByTestId('out-of-scope-live_viewing')).toBeInTheDocument()
 
-    await waitFor(() => expect(selectService).toHaveBeenCalled())
-    const message = await screen.findByTestId('content-select-error')
-    expect(message).toHaveTextContent(/unsupported/i)
+    fireEvent.click(chooseBtn)
+
+    expect(selectService).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('content-select-error')).not.toBeInTheDocument()
     expect(screen.queryByTestId('plan-metadata')).not.toBeInTheDocument()
   })
 })

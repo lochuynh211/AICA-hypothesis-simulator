@@ -52,6 +52,9 @@ const LABELS = {
   selected: { ja: '選択中 → STEP 2 へ', en: 'Selected → to STEP 2' },
   noProposal: { ja: '候補なし（no_proposal）', en: 'No candidates (no_proposal)' },
   algorithmError: { ja: 'アルゴリズムエラー', en: 'Algorithm error' },
+  // Task 5 — Choose is gated to content-backed services (CONTENT package's
+  // `supported_services`); non-backed candidates get this note instead.
+  outOfScope: { ja: 'V1対象外', en: 'Out of V1 scope' },
   // The service selector is still the P1 mock (real service ranking is a
   // later milestone) — P3c wires up the REAL content selector for STEP 2,
   // so this "mock data" marker is scoped to the service panel only; it no
@@ -131,6 +134,13 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
   }, [])
 
   const manifest = servicePackages.find((p) => p.id === state.servicePackageId) ?? servicePackages[0]
+
+  // Task 5 — scope-gate: Choose is only enabled for services the CONTENT
+  // package can actually serve content for (its `supported_services`), read
+  // from the already-fetched `contentPackages` state — never hardcoded.
+  const contentManifestForScope =
+    contentPackages.find((p) => p.id === state.contentPackageId) ?? contentPackages[0]
+  const contentBackedServices = new Set<string>(contentManifestForScope?.supported_services ?? [])
 
   /** Create + STEP 1 with explicit world/package ids. Both the Run button and
    * `autoInit` call this — the latter passes the freshly-fetched seed world
@@ -223,7 +233,10 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
           const svcEv = log.evidence.filter((ev) => ev.step === 'service').slice(-1)[0]
           const out = svcEv?.output as { ranked_candidates?: { candidate_id: string }[] } | undefined
           const rank1 = out?.ranked_candidates?.[0]?.candidate_id
-          if (rank1) await chooseWith(log.run_id, rank1)
+          // Task 5 — never auto-choose a candidate the content package can't
+          // actually serve (mirrors the manual Choose gate above).
+          const backedIds = new Set<string>(contentPackages[0]?.supported_services ?? [])
+          if (rank1 && backedIds.has(rank1)) await chooseWith(log.run_id, rank1)
         }
       } catch (e) {
         setLocalError(e instanceof Error ? e.message : String(e))
@@ -398,6 +411,7 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
             )}
             {output.ranked_candidates.slice(0, 3).map((candidate) => {
               const isActive = candidate.candidate_id === activeServiceId
+              const backed = contentBackedServices.has(candidate.candidate_id)
               return (
                 <div
                   key={candidate.candidate_id}
@@ -469,7 +483,7 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
                     <button
                       type="button"
                       data-testid={`choose-candidate-${candidate.candidate_id}`}
-                      disabled={choosingId === candidate.candidate_id}
+                      disabled={!backed || choosingId === candidate.candidate_id}
                       onClick={() => handleChoose(candidate.candidate_id)}
                       style={{
                         fontSize: '0.8em',
@@ -477,13 +491,21 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
                         padding: '5px 12px',
                         borderRadius: '7px',
                         border: '1px solid #1d4ed8',
-                        background: isActive ? '#fff' : '#1d4ed8',
-                        color: isActive ? '#1d4ed8' : '#fff',
-                        cursor: 'pointer',
+                        background: !backed ? '#f1f5f9' : isActive ? '#fff' : '#1d4ed8',
+                        color: !backed ? '#9ca3af' : isActive ? '#1d4ed8' : '#fff',
+                        cursor: backed ? 'pointer' : 'not-allowed',
                       }}
                     >
                       {choosingId === candidate.candidate_id ? '…' : t(LABELS.choose, lang)}
                     </button>
+                    {!backed && (
+                      <span
+                        data-testid={`out-of-scope-${candidate.candidate_id}`}
+                        style={{ fontSize: '0.72em', color: '#9ca3af' }}
+                      >
+                        {t(LABELS.outOfScope, lang)}
+                      </span>
+                    )}
                   </div>
                 </div>
               )

@@ -96,7 +96,14 @@ function packagesResponseWithTransparentDefault() {
   }
 }
 
-function runLogWithCandidates(inputSnapshot: Record<string, unknown> = {}) {
+function runLogWithCandidates(
+  inputSnapshot: Record<string, unknown> = {},
+  // Task 5 — most tests just need "a" rank-2 candidate; a couple need it to be
+  // content-backed (`full_karaoke`) specifically to exercise the Choose gate's
+  // enabled path without disturbing every other test's assumption that rank 2
+  // is `stretch_video` (NOT content-backed, used for the disabled-gate tests).
+  secondCandidateId = 'stretch_video',
+) {
   // Explicitly typed (rather than left as an inferred object literal) so
   // that the P5 §14 optional fields (dominance/situation_fit/
   // strongest_support/...) are recognized on later mutation in tests below
@@ -123,7 +130,7 @@ function runLogWithCandidates(inputSnapshot: Record<string, unknown> = {}) {
     },
     {
       rank: 2,
-      candidate_id: 'stretch_video',
+      candidate_id: secondCandidateId,
       score: 0.45,
       rationale: ['二位の理由', 'Second rank rationale'],
       supporting_feature_ids: [],
@@ -248,8 +255,10 @@ describe('ServiceProposalPanel', () => {
   })
 
   it('choosing a candidate calls selectService with its candidate_id', async () => {
-    vi.mocked(createRun).mockResolvedValue(runLogWithCandidates() as never)
-    const afterSelect = { ...runLogWithCandidates(), status: 'content_selected' }
+    // rank 2 is `full_karaoke` here specifically so it's content-backed
+    // (CONTENT_PACKAGE.supported_services) and the Choose button is enabled.
+    vi.mocked(createRun).mockResolvedValue(runLogWithCandidates({}, 'full_karaoke') as never)
+    const afterSelect = { ...runLogWithCandidates({}, 'full_karaoke'), status: 'content_selected' }
     vi.mocked(selectService).mockResolvedValue(afterSelect as never)
 
     render(
@@ -259,16 +268,40 @@ describe('ServiceProposalPanel', () => {
     )
     await screen.findByText('mock_service_selector_v1')
     fireEvent.click(screen.getByTestId('service-run-button'))
-    await screen.findByText('stretch_video')
+    await screen.findByText('full_karaoke')
 
-    fireEvent.click(screen.getByTestId('choose-candidate-stretch_video'))
+    fireEvent.click(screen.getByTestId('choose-candidate-full_karaoke'))
 
     await waitFor(() =>
-      expect(selectService).toHaveBeenCalledWith('prun_20260716-000000_abcdef', 'stretch_video', {
+      expect(selectService).toHaveBeenCalledWith('prun_20260716-000000_abcdef', 'full_karaoke', {
         parameters: {},
         hyperparameters: {},
       }),
     )
+  })
+
+  // Task 5 — scope-gate: candidates not in the CONTENT package's
+  // `supported_services` get a disabled Choose button + an "out of V1 scope"
+  // note, so a reviewer can never select a service the content selector
+  // can't actually serve content for.
+  it('disables Choose with an out-of-scope note for a non-content-backed service', async () => {
+    vi.mocked(createRun).mockResolvedValue(runLogWithCandidates() as never)
+    render(
+      <ProposalStoreProvider>
+        <ServiceProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    await screen.findByText('mock_service_selector_v1')
+    fireEvent.click(screen.getByTestId('service-run-button'))
+    await screen.findByText('stretch_video')
+
+    const stretchBtn = screen.getByTestId('choose-candidate-stretch_video')
+    expect(stretchBtn).toBeDisabled()
+    expect(screen.getByTestId('out-of-scope-stretch_video')).toBeInTheDocument()
+
+    // live_viewing (rank 1) is also not content-backed.
+    expect(screen.getByTestId('choose-candidate-live_viewing')).toBeDisabled()
+    expect(screen.getByTestId('out-of-scope-live_viewing')).toBeInTheDocument()
   })
 
   it('exposes the current triggerPurpose/lifecycleStage from the store in the createRun body', async () => {
