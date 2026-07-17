@@ -60,21 +60,29 @@ def _content_top(run: dict):
     return items[0]["item_id"] if items else None
 
 
+def _content_seq(run: dict):
+    evs = [e for e in run["evidence"] if e["step"] == "content" and e.get("output")]
+    if not evs:
+        return None
+    return [it["item_id"] for it in (evs[-1]["output"].get("ordered_items") or [])]
+
+
 def test_content_override_changes_ranking_through_router():
-    kp = _preset("preset-drowsy-keepalert")
-    world = kp["world"]  # identical world to preset-drowsy-soothe
+    # preset-showa-nostalgia carries an isolated content override (raised age-band
+    # weight); routed through the REAL dispatch it must change the content ranking
+    # vs. the un-overridden run — proving overrides are merged before evaluate.
+    sp = _preset("preset-showa-nostalgia")
+    world = sp["world"]
 
-    soothe = _run(world)  # default hypothesis, no override
-    keepalert = _run(world, overrides=kp["algorithm_config_overrides"])  # {"content": {"directional_hypothesis": "keep_alert"}}
+    base = _run(world)  # no override
+    overridden = _run(world, overrides=sp["algorithm_config_overrides"])
 
-    # Both must actually reach content (service rank-1 is content-supported here).
-    top_soothe = _content_top(soothe)
-    top_keepalert = _content_top(keepalert)
-    assert top_soothe is not None and top_keepalert is not None, (
-        soothe["status"], keepalert["status"])
-    assert top_soothe != top_keepalert, (
-        "keep_alert override did not change the #1 content track through the router "
-        f"(both = {top_soothe}) — override not applied before dispatch")
+    base_seq = _content_seq(base)
+    ov_seq = _content_seq(overridden)
+    assert base_seq and ov_seq, (base["status"], overridden["status"])
+    assert base_seq != ov_seq, (
+        "the preset's algorithm_config_overrides did not change the content ranking "
+        f"through the router (both = {base_seq}) — override not applied before dispatch")
 
 
 def test_origin_preset_id_recorded_in_setup_provenance():

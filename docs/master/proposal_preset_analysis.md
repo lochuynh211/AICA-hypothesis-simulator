@@ -10,24 +10,24 @@ On a cold-start driver (no oshi, no history) the single best song in the whole c
 
 | Preset | Family | Hypothesis | Expected | Real top (fit / arousal) | Service top | Override | Result |
 |---|---|---|---|---|---|---|---|
-| `preset-anime-fan-event-night` | combo | stacked oshi + hobby + usage + destination → anime/vocaloid oshi track tops strongly | oshi track, fit≥0.37 | 夜に融ける — Hatsune Miku (+0.404 / a=0.75) | humming_karaoke | — | ✅ pass |
-| `preset-child-family-drive` | passenger_genre | child + anime affinity/usage → an anime track tops | genre=anime, fit≥0.28 | Zenzenzense - English Ver. — RADWIMPS (+0.372 / a=0.85) | humming_karaoke | — | ✅ pass |
-| `preset-coastal-cruise` | route_genre | coastal route/destination genre affinity → bright coastal track tops | arousal=mid, fit≥0.2 | Birdland — Weather Report (+0.252 / a=0.68) | humming_karaoke | — | ✅ pass |
-| `preset-coldstart-neutral` | baseline | cold-start: no personalization → low top score, documents the honest floor | arousal=high, fit≥0.08 | The Seed (2.0) — Cody ChesnuTT (+0.155 / a=0.80) | humming_karaoke | — | ✅ pass |
-| `preset-drowsy-keepalert` | directional_hypothesis | flipping to keep_alert makes a higher-arousal track top the identical world | arousal=high, fit≥0.16 | The Seed (2.0) — Cody ChesnuTT (+0.199 / a=0.80) | humming_karaoke | yes | ✅ pass |
-| `preset-drowsy-soothe` | directional_hypothesis | under soothe_destress the top track differs from keep_alert on the identical world | arousal=mid, fit≥0.08 | アンパンマンのマーチ — Dreaming (+0.127 / a=0.67) | humming_karaoke | — | ✅ pass |
-| `preset-genz-now` | era_age | teens age-band + 2020s oshi + raised age weight → a 2020s track tops | oshi track, fit≥0.3 | 踊 — Ado (+0.423 / a=0.83) | humming_karaoke | yes | ✅ pass |
-| `preset-high-recovery-regular` | history_mechanics | strong per-track recovery history lifts exactly those tracks to the top | arousal=high, fit≥0.22 | 千本桜 — Hatsune Miku (+0.340 / a=0.88) | humming_karaoke | — | ✅ pass |
-| `preset-jazz-calm-listener` | genre_usage | jazz/classical usage + history → a jazz/classical track tops | genre=jazz, fit≥0.17 | Desafinado — João Gilberto (+0.221 / a=0.28) | humming_karaoke | — | ✅ pass |
-| `preset-jrock-enthusiast` | genre_usage | j-rock usage + history → a j-rock track tops | genre=j-rock, fit≥0.3 | READY STEADY GO — L'Arc-en-Ciel (+0.357 / a=0.83) | humming_karaoke | — | ✅ pass |
-| `preset-late-night-winddown` | mood_coherence | coherent low-arousal world + calm oshi + jazz usage → the calm oshi's track tops | oshi track, fit≥0.33 | Aguas De Marco — Antônio Carlos Jobim (+0.403 / a=0.60) | humming_karaoke | — | ✅ pass |
-| `preset-monotone-highway-energize` | mood_coherence | coherent high-arousal world + oshi + j-rock usage → upbeat oshi track tops | oshi track, arousal=high, fit≥0.38 | ミックスナッツ — Official HIGE DANdism (+0.442 / a=0.82) | humming_karaoke | — | ✅ pass |
-| `preset-mountain-pass` | route_genre | mountain road penalizes high-arousal; calmer track tops (different from coastal) | arousal=low, fit≥0.2 | saman — Ólafur Arnalds (+0.229 / a=0.31) | humming_karaoke | — | ✅ pass |
-| `preset-oshi-off` | oshi_personalization | with oshi off the same driver's top track is no longer the oshi | NOT the oshi, fit≥0.1 | Flamingo — Kenshi Yonezu (+0.161 / a=0.69) | humming_karaoke | — | ✅ pass |
-| `preset-oshi-superfan` | oshi_personalization | neutral situation + oshi on → the oshi's track tops | oshi track, fit≥0.15 | 踊 — Ado (+0.224 / a=0.83) | humming_karaoke | — | ✅ pass |
-| `preset-recently-played-fatigue` | history_mechanics | just-played tracks are demoted below other strong matches | genre=j-pop, fit≥0.22 | Zenzenzense - English Ver. — RADWIMPS (+0.317 / a=0.85) | humming_karaoke | — | ✅ pass |
+| `preset-anime-fan-event-night` | combo | stacked oshi + hobby + usage + destination → anime/vocaloid oshi track tops strongly | oshi track, fit≥0.37 | 夜に融ける — Hatsune Miku (+0.447 / a=0.75) | humming_karaoke | — | ✅ pass |
+| `preset-child-family-drive` | passenger_genre | child + anime affinity/usage → an anime track tops | genre=anime, fit≥0.28 | Zenzenzense - English Ver. — RADWIMPS (+0.377 / a=0.85) | humming_karaoke | — | ✅ pass |
+| `preset-coastal-cruise` | route_genre | coastal route/destination genre affinity → bright coastal track tops | arousal=mid, fit≥0.2 | Birdland — Weather Report (+0.267 / a=0.68) | humming_karaoke | — | ✅ pass |
+| `preset-coldstart-neutral` | baseline | cold-start: no personalization → low top score, documents the honest floor | arousal=high, fit≥0.08 | The Seed (2.0) — Cody ChesnuTT (+0.168 / a=0.80) | humming_karaoke | — | ✅ pass |
+| `preset-fresh-alert-cruise` | driver_state | fresh driver + own taste → an upbeat j-pop track tops (differs from the drowsy state) | genre=j-pop, fit≥0.28 | 千本桜 — Hatsune Miku (+0.339 / a=0.88) | humming_karaoke | — | ✅ pass |
+| `preset-genz-now` | era_age | teens age-band + 2020s oshi + raised age weight → a 2020s track tops | oshi track, fit≥0.3 | 踊 — Ado (+0.479 / a=0.83) | humming_karaoke | yes | ✅ pass |
+| `preset-high-recovery-regular` | history_mechanics | strong per-track recovery history lifts exactly those tracks to the top | arousal=high, fit≥0.22 | New Genesis - UTA from ONE PIECE FILM RED — Ado (+0.397 / a=0.90) | humming_karaoke | — | ✅ pass |
+| `preset-jazz-calm-listener` | genre_usage | jazz/classical usage + history → a jazz/classical track tops | genre=jazz, fit≥0.17 | Desafinado — João Gilberto (+0.270 / a=0.28) | humming_karaoke | — | ✅ pass |
+| `preset-jrock-enthusiast` | genre_usage | j-rock usage + history → a j-rock track tops | genre=j-rock, fit≥0.3 | READY STEADY GO — L'Arc-en-Ciel (+0.371 / a=0.83) | humming_karaoke | — | ✅ pass |
+| `preset-late-night-winddown` | mood_coherence | coherent low-arousal world + calm oshi + jazz usage → the calm oshi's track tops | oshi track, fit≥0.33 | Aguas De Marco — Antônio Carlos Jobim (+0.432 / a=0.60) | humming_karaoke | — | ✅ pass |
+| `preset-long-haul-drowsy` | driver_state | drowsy state → a high-arousal j-pop track tops (different track than fresh) | genre=j-pop, arousal=high, fit≥0.3 | Zenzenzense - English Ver. — RADWIMPS (+0.395 / a=0.85) | humming_karaoke | — | ✅ pass |
+| `preset-monotone-highway-energize` | mood_coherence | coherent high-arousal world + oshi + j-rock usage → upbeat oshi track tops | oshi track, arousal=high, fit≥0.38 | ミックスナッツ — Official HIGE DANdism (+0.444 / a=0.82) | humming_karaoke | — | ✅ pass |
+| `preset-mountain-pass` | route_genre | mountain road penalizes high-arousal; calmer track tops (different from coastal) | arousal=low, fit≥0.2 | saman — Ólafur Arnalds (+0.264 / a=0.31) | humming_karaoke | — | ✅ pass |
+| `preset-oshi-off` | oshi_personalization | with oshi off the same driver's top track is no longer the oshi | NOT the oshi, fit≥0.1 | Flamingo — Kenshi Yonezu (+0.176 / a=0.69) | humming_karaoke | — | ✅ pass |
+| `preset-oshi-superfan` | oshi_personalization | neutral situation + oshi on → the oshi's track tops | oshi track, fit≥0.15 | 踊 — Ado (+0.258 / a=0.83) | humming_karaoke | — | ✅ pass |
+| `preset-recently-played-fatigue` | history_mechanics | just-played tracks are demoted below other strong matches | genre=j-pop, fit≥0.22 | Zenzenzense - English Ver. — RADWIMPS (+0.349 / a=0.85) | humming_karaoke | — | ✅ pass |
 | `preset-reststop-full-karaoke` | singability_service | full-karaoke stage + oshi → a singable oshi track tops | oshi track, fit≥0.35 | ミックスナッツ — Official HIGE DANdism (+0.374 / a=0.82) | stretch_video | — | ✅ pass |
-| `preset-showa-nostalgia` | era_age | 50s age-band + 1980s oshi + raised age weight → a 1980s track tops | oshi track, fit≥0.3 | 青い珊瑚礁 — Seiko Matsuda (+0.388 / a=0.63) | humming_karaoke | yes | ✅ pass |
+| `preset-showa-nostalgia` | era_age | 50s age-band + 1980s oshi + raised age weight → a 1980s track tops | oshi track, fit≥0.3 | 青い珊瑚礁 — Seiko Matsuda (+0.451 / a=0.63) | humming_karaoke | yes | ✅ pass |
 
 ## Contrast pairs (top track must differ)
 
@@ -35,7 +35,7 @@ On a cold-start driver (no oshi, no history) the single best song in the whole c
 |---|---|---|---|---|
 | `preset-anime-fan-event-night` | `preset-coldstart-neutral` | 夜に融ける — Hatsune Miku | The Seed (2.0) — Cody ChesnuTT | ✅ |
 | `preset-coastal-cruise` | `preset-mountain-pass` | Birdland — Weather Report | saman — Ólafur Arnalds | ✅ |
-| `preset-drowsy-keepalert` | `preset-drowsy-soothe` | The Seed (2.0) — Cody ChesnuTT | アンパンマンのマーチ — Dreaming | ✅ |
+| `preset-fresh-alert-cruise` | `preset-long-haul-drowsy` | 千本桜 — Hatsune Miku | Zenzenzense - English Ver. — RADWIMPS | ✅ |
 | `preset-genz-now` | `preset-showa-nostalgia` | 踊 — Ado | 青い珊瑚礁 — Seiko Matsuda | ✅ |
 | `preset-jazz-calm-listener` | `preset-jrock-enthusiast` | Desafinado — João Gilberto | READY STEADY GO — L'Arc-en-Ciel | ✅ |
 | `preset-late-night-winddown` | `preset-monotone-highway-energize` | Aguas De Marco — Antônio Carlos Jobim | ミックスナッツ — Official HIGE DANdism | ✅ |

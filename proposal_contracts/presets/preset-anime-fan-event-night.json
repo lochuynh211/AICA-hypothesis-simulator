@@ -40,10 +40,10 @@
     },
     "control_inputs": {
       "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
-      "lifecycle_stage": "before_rest_until_stop",
+      "lifecycle_stage": "active_driving_content",
       "matrix_version": "v1",
       "motion_state": "driving",
-      "trigger_purpose": "rest_recommended"
+      "trigger_purpose": "route_music"
     },
     "driver_profile": {
       "age_band": "30s",
@@ -109,10 +109,10 @@
         "event",
         "oshi_venue"
       ],
-      "drowsiness_level": 35,
+      "drowsiness_level": 45,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 35,
-      "monotony_level": 55,
+      "fatigue_level": 30,
+      "monotony_level": 50,
       "motion_state": "driving",
       "multiple_passengers": false,
       "night_state": "night",

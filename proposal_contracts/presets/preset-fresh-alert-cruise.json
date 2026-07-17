@@ -1,10 +1,10 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "Three tracks that would otherwise score well were just played minutes ago. The recency/novelty penalty pushes them down, demonstrating that the algorithm avoids immediately repeating songs.",
-    "ja": "本来は上位のはずの3曲を数分前に再生済み。新鮮さペナルティで順位が下がり、直近曲の繰り返しを避ける挙動を示す。"
+    "en": "A rested driver on an ordinary daytime highway, only just underway — drowsiness low (≈30, a few minutes in). With no fatigue pressure, the assistant leans on the driver's own j-pop/j-rock taste. Its partner preset is the SAME driver after a long monotonous stretch — watch the pick change.",
+    "ja": "休息十分なドライバーが昼間の高速を走り始めたところ — 眠気は低い（約30、走行数分）。疲労の圧力がないため本人のJ-POP/J-ROCK嗜好が主導。対のプリセットは長い単調区間の後の同一ドライバー — 選曲の変化に注目。"
   },
-  "contrast_with": null,
+  "contrast_with": "preset-long-haul-drowsy",
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
@@ -17,27 +17,16 @@
       "genre": "j-pop"
     },
     "gradient": "none",
-    "hypothesis": "just-played tracks are demoted below other strong matches",
+    "hypothesis": "fresh driver + own taste → an upbeat j-pop track tops (differs from the drowsy state)",
     "override_required": false,
-    "should_rank_below": [
-      {
-        "track_id": "synthetic-track-0130"
-      },
-      {
-        "track_id": "synthetic-track-0108"
-      },
-      {
-        "track_id": "synthetic-track-0097"
-      }
-    ],
-    "top_fit_min": 0.22
+    "top_fit_min": 0.28
   },
-  "family": "history_mechanics",
+  "family": "driver_state",
   "label": {
-    "en": "Recently played — novelty penalty",
-    "ja": "直近再生 — 新鮮さペナルティ"
+    "en": "Fresh driver — early cruise",
+    "ja": "元気なドライバー — 走り始め"
   },
-  "preset_id": "preset-recently-played-fatigue",
+  "preset_id": "preset-fresh-alert-cruise",
   "schema_version": "1.0.0",
   "world": {
     "catalog_ref": {
@@ -51,10 +40,10 @@
     },
     "control_inputs": {
       "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
-      "lifecycle_stage": "before_rest_until_stop",
+      "lifecycle_stage": "active_driving_content",
       "matrix_version": "v1",
       "motion_state": "driving",
-      "trigger_purpose": "rest_recommended"
+      "trigger_purpose": "route_music"
     },
     "driver_profile": {
       "age_band": "30s",
@@ -62,37 +51,61 @@
       "catalog_item_recency_state": {},
       "catalog_item_usage_level": {
         "synthetic-track-0060": "high",
+        "synthetic-track-0067": "high",
+        "synthetic-track-0076": "high",
         "synthetic-track-0077": "high",
         "synthetic-track-0097": "high",
         "synthetic-track-0098": "high",
         "synthetic-track-0108": "high",
+        "synthetic-track-0112": "high",
         "synthetic-track-0115": "high",
         "synthetic-track-0130": "high",
-        "synthetic-track-0202": "high"
+        "synthetic-track-0149": "high",
+        "synthetic-track-0158": "high",
+        "synthetic-track-0159": "high",
+        "synthetic-track-0181": "high",
+        "synthetic-track-0202": "high",
+        "synthetic-track-0217": "high"
       },
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
       "content_proposal_acceptance_rate": {
+        "synthetic-track-0060": 95.0,
+        "synthetic-track-0067": 95.0,
+        "synthetic-track-0076": 95.0,
+        "synthetic-track-0077": 95.0,
+        "synthetic-track-0097": 95.0,
+        "synthetic-track-0098": 95.0,
+        "synthetic-track-0108": 95.0,
+        "synthetic-track-0112": 95.0,
+        "synthetic-track-0115": 95.0,
+        "synthetic-track-0130": 95.0,
+        "synthetic-track-0149": 95.0,
+        "synthetic-track-0158": 95.0,
+        "synthetic-track-0159": 95.0,
+        "synthetic-track-0181": 95.0,
+        "synthetic-track-0202": 95.0,
+        "synthetic-track-0217": 95.0
+      },
+      "content_recovery_confidence": {},
+      "content_recovery_rate": {
         "synthetic-track-0060": 90.0,
+        "synthetic-track-0067": 90.0,
+        "synthetic-track-0076": 90.0,
         "synthetic-track-0077": 90.0,
         "synthetic-track-0097": 90.0,
         "synthetic-track-0098": 90.0,
         "synthetic-track-0108": 90.0,
+        "synthetic-track-0112": 90.0,
         "synthetic-track-0115": 90.0,
         "synthetic-track-0130": 90.0,
-        "synthetic-track-0202": 90.0
-      },
-      "content_recovery_confidence": {},
-      "content_recovery_rate": {
-        "synthetic-track-0060": 85.0,
-        "synthetic-track-0077": 85.0,
-        "synthetic-track-0097": 85.0,
-        "synthetic-track-0098": 85.0,
-        "synthetic-track-0108": 85.0,
-        "synthetic-track-0115": 85.0,
-        "synthetic-track-0130": 85.0,
-        "synthetic-track-0202": 85.0
+        "synthetic-track-0149": 90.0,
+        "synthetic-track-0158": 90.0,
+        "synthetic-track-0159": 90.0,
+        "synthetic-track-0181": 90.0,
+        "synthetic-track-0202": 90.0,
+        "synthetic-track-0217": 90.0
       },
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
@@ -105,20 +118,7 @@
       "oshi_registered": false,
       "oshi_tags": [],
       "oshi_type": null,
-      "played_items": [
-        {
-          "last_played_at": "2026-07-17T11:45:00Z",
-          "track_id": "synthetic-track-0130"
-        },
-        {
-          "last_played_at": "2026-07-17T11:45:00Z",
-          "track_id": "synthetic-track-0108"
-        },
-        {
-          "last_played_at": "2026-07-17T11:45:00Z",
-          "track_id": "synthetic-track-0097"
-        }
-      ],
+      "played_items": [],
       "repeated_items": [],
       "scene_content_tag_usage_level": {},
       "scene_genre_usage": null,
@@ -134,17 +134,18 @@
       "service_usage_level": {},
       "skipped_items": [],
       "usage_by_genre": {
-        "j-pop": "high"
+        "j-pop": "high",
+        "j-rock": "med"
       }
     },
     "situation": {
       "active_service": null,
       "child_present": false,
       "destination_tags": [],
-      "drowsiness_level": 75,
+      "drowsiness_level": 30,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 40,
-      "monotony_level": 62,
+      "fatigue_level": 26,
+      "monotony_level": 35,
       "motion_state": "driving",
       "multiple_passengers": false,
       "night_state": "day",

@@ -13,7 +13,7 @@
     "brief": { "$ref": "#/$defs/bilingual" },
     "family": {
       "type": "string",
-      "enum": ["mood_coherence", "directional_hypothesis", "oshi_personalization", "genre_usage", "route_genre", "era_age", "passenger_genre", "singability_service", "history_mechanics", "baseline", "combo"]
+      "enum": ["mood_coherence", "driver_state", "oshi_personalization", "genre_usage", "route_genre", "era_age", "passenger_genre", "singability_service", "history_mechanics", "baseline", "combo"]
     },
     "contrast_with": { "type": ["string", "null"], "pattern": "^preset-[a-z0-9-]+$" },
     "world": {

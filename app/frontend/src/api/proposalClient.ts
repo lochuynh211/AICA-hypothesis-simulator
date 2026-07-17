@@ -919,7 +919,7 @@ export async function deleteRun(runId: string): Promise<void> {
 
 export type PresetFamily =
   | 'mood_coherence'
-  | 'directional_hypothesis'
+  | 'driver_state'
   | 'oshi_personalization'
   | 'genre_usage'
   | 'route_genre'

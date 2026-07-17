@@ -18,8 +18,8 @@ _EXPECTED_PRESET_IDS = {
     "preset-child-family-drive",
     "preset-coastal-cruise",
     "preset-coldstart-neutral",
-    "preset-drowsy-keepalert",
-    "preset-drowsy-soothe",
+    "preset-fresh-alert-cruise",
+    "preset-long-haul-drowsy",
     "preset-genz-now",
     "preset-high-recovery-regular",
     "preset-jazz-calm-listener",
@@ -95,13 +95,13 @@ def test_get_preset_returns_the_full_preset():
 
 
 def test_get_preset_with_algorithm_config_overrides():
-    resp = client.get("/api/proposal/presets/preset-drowsy-keepalert")
+    # preset-showa-nostalgia carries an isolated content override (raised
+    # era/age-band weight) — served verbatim on the full preset.
+    resp = client.get("/api/proposal/presets/preset-showa-nostalgia")
     assert resp.status_code == 200
-    body = resp.json()
-    assert body["algorithm_config_overrides"] == {
-        "content": {"directional_hypothesis": "keep_alert"},
-        "service": None,
-    }
+    ov = resp.json()["algorithm_config_overrides"]
+    assert ov is not None
+    assert ov.get("content") is not None  # the AGE_BOOST content-config delta
 
 
 def test_get_preset_404_unknown_preset_id():

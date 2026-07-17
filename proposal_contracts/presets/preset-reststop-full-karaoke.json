@@ -116,7 +116,7 @@
       "destination_tags": [],
       "drowsiness_level": 20,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 20,
+      "fatigue_level": 15,
       "monotony_level": 20,
       "motion_state": "stopped",
       "multiple_passengers": false,
