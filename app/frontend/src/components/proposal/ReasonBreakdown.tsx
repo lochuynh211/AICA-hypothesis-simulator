@@ -39,6 +39,8 @@ export type ReasonBreakdownProps = {
   defaultOpen?: boolean
   /** Purely cosmetic — content panel uses the "mono" accent color. */
   variant?: 'service' | 'content'
+  /** When false, omit the per-feature score table (chips + rationale stay). */
+  showTable?: boolean
 }
 
 const LABELS = {
@@ -62,6 +64,7 @@ export default function ReasonBreakdown({
   lang,
   defaultOpen = false,
   variant = 'service',
+  showTable = true,
 }: ReasonBreakdownProps) {
   const accent = variant === 'content' ? '#7c3aed' : '#1d4ed8'
   return (
@@ -73,52 +76,54 @@ export default function ReasonBreakdown({
         {t(LABELS.summary, lang)}
       </summary>
 
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '0.8em' }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left', padding: '3px 8px', borderBottom: '1px solid #e5e7eb' }}>
-                {t(LABELS.feature, lang)}
-              </th>
-              <th style={{ textAlign: 'right', padding: '3px 8px', borderBottom: '1px solid #e5e7eb' }}>
-                {t(LABELS.value, lang)}
-              </th>
-              <th style={{ textAlign: 'right', padding: '3px 8px', borderBottom: '1px solid #e5e7eb' }}>r (a)</th>
-              <th style={{ textAlign: 'right', padding: '3px 8px', borderBottom: '1px solid #e5e7eb' }}>w</th>
-              <th style={{ textAlign: 'right', padding: '3px 8px', borderBottom: '1px solid #e5e7eb' }}>
-                {t(LABELS.contribution, lang)}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.featureId}>
-                <td style={{ padding: '3px 8px', borderBottom: '1px solid #f1f5f9' }}>{row.featureId}</td>
-                <td style={{ padding: '3px 8px', textAlign: 'right', borderBottom: '1px solid #f1f5f9', fontFamily: 'monospace' }}>
-                  {row.value}
-                </td>
-                <td style={{ padding: '3px 8px', textAlign: 'right', borderBottom: '1px solid #f1f5f9', fontFamily: 'monospace' }}>
-                  {fmt(row.r)}
-                </td>
-                <td style={{ padding: '3px 8px', textAlign: 'right', borderBottom: '1px solid #f1f5f9', fontFamily: 'monospace' }}>
-                  {fmt(row.w)}
-                </td>
-                <td
-                  style={{
-                    padding: '3px 8px',
-                    textAlign: 'right',
-                    borderBottom: '1px solid #f1f5f9',
-                    fontFamily: 'monospace',
-                    color: row.contribution >= 0 ? '#047857' : '#dc2626',
-                  }}
-                >
-                  {fmt(row.contribution)}
-                </td>
+      {showTable && (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '0.8em' }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left', padding: '3px 8px', borderBottom: '1px solid #e5e7eb' }}>
+                  {t(LABELS.feature, lang)}
+                </th>
+                <th style={{ textAlign: 'right', padding: '3px 8px', borderBottom: '1px solid #e5e7eb' }}>
+                  {t(LABELS.value, lang)}
+                </th>
+                <th style={{ textAlign: 'right', padding: '3px 8px', borderBottom: '1px solid #e5e7eb' }}>r (a)</th>
+                <th style={{ textAlign: 'right', padding: '3px 8px', borderBottom: '1px solid #e5e7eb' }}>w</th>
+                <th style={{ textAlign: 'right', padding: '3px 8px', borderBottom: '1px solid #e5e7eb' }}>
+                  {t(LABELS.contribution, lang)}
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.featureId}>
+                  <td style={{ padding: '3px 8px', borderBottom: '1px solid #f1f5f9' }}>{row.featureId}</td>
+                  <td style={{ padding: '3px 8px', textAlign: 'right', borderBottom: '1px solid #f1f5f9', fontFamily: 'monospace' }}>
+                    {row.value}
+                  </td>
+                  <td style={{ padding: '3px 8px', textAlign: 'right', borderBottom: '1px solid #f1f5f9', fontFamily: 'monospace' }}>
+                    {fmt(row.r)}
+                  </td>
+                  <td style={{ padding: '3px 8px', textAlign: 'right', borderBottom: '1px solid #f1f5f9', fontFamily: 'monospace' }}>
+                    {fmt(row.w)}
+                  </td>
+                  <td
+                    style={{
+                      padding: '3px 8px',
+                      textAlign: 'right',
+                      borderBottom: '1px solid #f1f5f9',
+                      fontFamily: 'monospace',
+                      color: row.contribution >= 0 ? '#047857' : '#dc2626',
+                    }}
+                  >
+                    {fmt(row.contribution)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <div style={{ padding: '2px 10px 8px', fontSize: '0.78em', color: '#6b7280' }}>
         <b>{t(LABELS.supportedBy, lang)}</b>{' '}

@@ -74,13 +74,18 @@ export function hasExplainability(candidate: RankedCandidate): boolean {
   return candidate.feature_contributions.some((fc) => fc.normalized_evidence != null || fc.status != null)
 }
 
+/** Does this candidate carry the rich §14 per-feature trace (evidence detail)? */
+export function hasFeatureTrace(candidate: RankedCandidate): boolean {
+  return candidate.feature_contributions.some((fc) => fc.normalized_evidence != null)
+}
+
 export default function ServiceExplainability({ candidate, lang }: ServiceExplainabilityProps) {
   if (!hasExplainability(candidate)) return null
 
   const hasSubtotals =
     candidate.situation_fit != null || candidate.preference_fit != null || candidate.history_fit != null
   const dominance = candidate.dominance
-  const hasFeatureTrace = candidate.feature_contributions.some((fc) => fc.normalized_evidence != null)
+  const showFeatureTrace = hasFeatureTrace(candidate)
 
   return (
     <div data-testid="service-explainability" style={{ borderTop: '1px solid #e5e7eb', padding: '8px 10px' }}>
@@ -148,7 +153,7 @@ export default function ServiceExplainability({ candidate, lang }: ServiceExplai
         </div>
       )}
 
-      {hasFeatureTrace && (
+      {showFeatureTrace && (
         <details data-testid="service-explainability-table">
           <summary style={{ cursor: 'pointer', fontSize: '0.8em', fontWeight: 700, color: '#1d4ed8' }}>
             {t(LABELS.tableSummary, lang)} <span>({candidate.feature_contributions.length})</span>

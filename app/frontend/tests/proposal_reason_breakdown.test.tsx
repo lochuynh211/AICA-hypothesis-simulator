@@ -76,4 +76,21 @@ describe('ReasonBreakdown', () => {
     const details = screen.getByTestId('reason-breakdown') as HTMLDetailsElement
     expect(details.open).toBe(true)
   })
+
+  it('hides the score table but keeps chips + rationale when showTable is false', () => {
+    render(
+      <ReasonBreakdown
+        rows={[{ featureId: 'monotony', value: 70, r: 0.7, w: 0.3, contribution: 0.21 }]}
+        supportingFeatureIds={['monotony']}
+        opposingFeatureIds={[]}
+        rationale={['理由', 'because monotony']}
+        lang="en"
+        defaultOpen
+        showTable={false}
+      />,
+    )
+    expect(screen.queryByRole('table')).toBeNull()
+    expect(screen.getByTestId('reason-supporting')).toHaveTextContent('monotony')
+    expect(screen.getByText('because monotony')).toBeInTheDocument()
+  })
 })
