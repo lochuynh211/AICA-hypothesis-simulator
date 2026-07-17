@@ -1,0 +1,82 @@
+{
+  "_comment": "P5 Unit B (T005) - the algorithm doc's SS10 worked example, transcribed verbatim. NEVER score-derived: every situation/preference/history value below is copied from docs/master/aica_transparent_service_proposal_algorithm.md SS10's narrative snapshot. Golden results (computed by evaluate(), recorded here only as a human-readable cross-check - the authoritative golden is the doc's own SS10 table): humming_karaoke.score == +0.772349 (+/-1e-12); music_playlist.score is materially lower (~+0.13, not doc-pinned - the doc's own text calls it 'approx +0.132' from illustrative direct-feature contributions the doc does not fully specify, so this fixture authors its own plausible music_playlist history/usage values; only the ORDERING humming > music is a firm assertion, see test_p5_service_math.py::test_worked_example). trigger_purpose=inattentive_driving_prevention_recovery (purpose (2)), lifecycle_stage=active_driving_content -> the 6 driving services are eligible.",
+  "contract_version": "1.0.0",
+  "opportunity_id": "opportunity-p5-worked-example",
+  "simulation_time": "2026-07-16T22:00:00Z",
+  "trigger_purpose": "inattentive_driving_prevention_recovery",
+  "lifecycle_stage": "active_driving_content",
+  "allowed_service_ids": [
+    "music_playlist",
+    "humming_karaoke",
+    "call_response_driving",
+    "quiz",
+    "ranking_creation",
+    "radio_style"
+  ],
+  "eligible_candidates": [
+    { "candidate_id": "music_playlist" },
+    { "candidate_id": "humming_karaoke" },
+    { "candidate_id": "call_response_driving" },
+    { "candidate_id": "quiz" },
+    { "candidate_id": "ranking_creation" },
+    { "candidate_id": "radio_style" }
+  ],
+  "excluded_candidates": [],
+  "feature_snapshot": {
+    "situation": {
+      "drowsiness_level": 80,
+      "fatigue_level": 60,
+      "traffic_state": "congested",
+      "road_type": "highway",
+      "night_state": "night",
+      "monotony_level": 75,
+      "route_tags": ["highway", "scenic_byway"],
+      "destination_tags": ["coast"],
+      "child_present": true,
+      "multiple_passengers": true
+    },
+    "preference": {
+      "oshi_registered": true,
+      "oshi_mode": "on",
+      "service_recency_state": {
+        "humming_karaoke": "long_unused",
+        "music_playlist": "recent"
+      },
+      "service_usage_level": {
+        "humming_karaoke": "high",
+        "music_playlist": "high"
+      },
+      "scene_service_usage_level": {
+        "traffic:congested": { "humming_karaoke": "high", "music_playlist": "high" },
+        "road:highway": { "humming_karaoke": "high", "music_playlist": "high" },
+        "time:night": { "humming_karaoke": "high", "music_playlist": "high" },
+        "monotony:high": { "humming_karaoke": "high", "music_playlist": "high" },
+        "passenger:child": { "humming_karaoke": "high", "music_playlist": "high" },
+        "passenger:group": { "humming_karaoke": "high", "music_playlist": "high" },
+        "route:highway": { "humming_karaoke": "high", "music_playlist": "high" },
+        "route:scenic_byway": { "humming_karaoke": "high", "music_playlist": "high" },
+        "destination:coast": { "humming_karaoke": "high", "music_playlist": "high" }
+      }
+    },
+    "history": {
+      "service_proposal_acceptance_rate": {
+        "humming_karaoke": 75,
+        "music_playlist": 50
+      },
+      "service_recovery_rate": {
+        "humming_karaoke": 70,
+        "music_playlist": 75
+      }
+    },
+    "additional_proposed": {
+      "service_proposal_acceptance_confidence": {},
+      "service_recovery_confidence": {}
+    }
+  },
+  "feature_provenance": {},
+  "enabled_feature_extensions": [],
+  "selected_service_id": null,
+  "package_runtime_state": {},
+  "catalog_version": "n/a",
+  "run_seed": "seed-p5-worked-example"
+}
