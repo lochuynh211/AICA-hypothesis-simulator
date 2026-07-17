@@ -29,6 +29,7 @@ const AUTO_INIT_SEED_ID = 'seed-night-highway-oshi'
 import HyperparamMatrix from '../HyperparamMatrix'
 import ResponseMatrixTable from '../ResponseMatrixTable'
 import HierarchyWeightsTable from '../HierarchyWeightsTable'
+import ScalarTable from '../ScalarTable'
 import ReasonBreakdown, { type ReasonRow } from '../ReasonBreakdown'
 import ServiceExplainability, { hasFeatureTrace } from '../ServiceExplainability'
 
@@ -622,21 +623,23 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
               </label>
             </div>
 
-            {/* 2. Input preprocessing (γ / normalization) — editable scalars. */}
+            {/* 2. Input preprocessing (γ / normalization) — editable scalars as
+                a compact 2-column table (reads clearer than loose number boxes). */}
             {preprocessingHps.length > 0 && (
               <>
                 <div style={sectionLabelStyle}>{t(LABELS.preprocessingSection, lang)}</div>
-                <div style={grid2Style}>
-                  {preprocessingHps.map((hp) => (
-                    <HyperparamMatrix
-                      key={hp.key}
-                      def={hp}
-                      value={state.serviceHyperparameterOverrides[hp.key]}
-                      onChange={(value) => dispatch({ type: 'SET_SERVICE_HYPERPARAMETER', key: hp.key, value })}
-                      lang={lang}
-                    />
-                  ))}
-                </div>
+                <ScalarTable
+                  fields={preprocessingHps.map((hp) => ({
+                    key: hp.key,
+                    label: hp.label,
+                    value: (state.serviceHyperparameterOverrides[hp.key] ?? hp.default) as number,
+                    min: hp.min as number | undefined,
+                    max: hp.max as number | undefined,
+                    step: hp.step as number | undefined,
+                  }))}
+                  onChange={(key, value) => dispatch({ type: 'SET_SERVICE_HYPERPARAMETER', key, value })}
+                  lang={lang}
+                />
               </>
             )}
 

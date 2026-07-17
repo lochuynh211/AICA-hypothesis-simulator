@@ -2,6 +2,31 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import ResponseMatrixTable from '../src/components/proposal/ResponseMatrixTable'
 import HierarchyWeightsTable from '../src/components/proposal/HierarchyWeightsTable'
+import ScalarTable from '../src/components/proposal/ScalarTable'
+
+describe('ScalarTable', () => {
+  const fields = [
+    { key: 'gamma_drowsiness', label: { ja: '眠気ガンマ', en: 'Drowsiness Gamma' }, value: 1.0, min: 0.25, max: 4, step: 0.05 },
+    { key: 'route_tag_saturation', label: { ja: 'ルートタグ飽和', en: 'Route Tag Saturation' }, value: 3 },
+  ]
+
+  it('renders each scalar as a parameter|value table row with an editable number input', () => {
+    render(<ScalarTable fields={fields} onChange={vi.fn()} lang="en" />)
+    expect(screen.getByRole('rowheader', { name: /Drowsiness Gamma/ })).toBeInTheDocument()
+    const input = screen.getByTestId('scalar-gamma_drowsiness') as HTMLInputElement
+    expect(input.type).toBe('number')
+    expect(input.value).toBe('1')
+    // findable by its localized label (accessible)
+    expect(screen.getByLabelText('Route Tag Saturation')).toBeInTheDocument()
+  })
+
+  it('editing a cell calls onChange(key, numericValue)', () => {
+    const onChange = vi.fn()
+    render(<ScalarTable fields={fields} onChange={onChange} lang="en" />)
+    fireEvent.change(screen.getByTestId('scalar-gamma_drowsiness'), { target: { value: '1.5' } })
+    expect(onChange).toHaveBeenCalledWith('gamma_drowsiness', 1.5)
+  })
+})
 
 describe('ResponseMatrixTable', () => {
   const profiles = {
