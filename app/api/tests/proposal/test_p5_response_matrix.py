@@ -15,7 +15,7 @@ import math
 
 import pytest
 
-from tests.proposal.conftest import load_service_manifest
+from tests.proposal.conftest import build_service_context, load_service_manifest
 
 _ANCHOR = pytest.approx
 
@@ -85,13 +85,41 @@ def test_radio_style_neutral_except_oshi(profiles):
     assert row["oshi_mode"]["coefficient"] == 1.0
 
 
-def test_oshi_mode_off_yields_opposing_evidence_for_radio_style():
+def test_oshi_mode_off_yields_opposing_evidence_for_radio_style(service_selector):
     """Two-directional oshi_mode: off -> e=-1; radio's coefficient +1.0 means
-    off produces r=-1.0 (opposing), not neutral."""
-    e_off = -1.0
-    a = 1.0
-    r = max(-1.0, min(1.0, e_off * a))
-    assert r == -1.0
+    off produces r=-1.0 (opposing), not neutral.
+
+    Unit B review finding (Minor, cleared by Unit G T033-T037 polish): the
+    original version of this test only did standalone arithmetic against
+    hardcoded literals (`e_off * a == -1.0`) and could never fail on a real
+    coefficient regression in the package itself. This version resolves
+    `radio_style`'s `oshi_mode` response THROUGH the real scorer
+    (`evaluate()`, exercising `resolve_scalar_evidence` + `resolve_response`
+    + the scoring loop together) against a world with `oshi_mode='off'`
+    (`oshi_registered=True` so the input stays valid — SS5.7 oshi
+    consistency), and asserts the resulting `feature_contribution` for that
+    row is strictly negative — so a coefficient-sign or evidence-sign
+    regression in `service_response_profiles['radio_style']['oshi_mode']`
+    or in `resolve_scalar_evidence('oshi_mode', ...)` would actually fail
+    this test."""
+    context = build_service_context(
+        trigger_purpose="inattentive_driving_prevention_recovery",
+        lifecycle_stage="active_driving_content",
+        allowed_service_ids=["radio_style"],
+        feature_snapshot={"preference": {"oshi_registered": True, "oshi_mode": "off"}},
+    )
+    out = service_selector.evaluate(context)
+    candidate = out["ranked_candidates"][0]
+    assert candidate["candidate_id"] == "radio_style"
+    row = next(c for c in candidate["feature_contributions"] if c["feature_id"] == "oshi_mode")
+
+    assert row["normalized_evidence"] == pytest.approx(-1.0, abs=1e-12)
+    assert row["response_coefficient"] == pytest.approx(1.0, abs=1e-12)
+    assert row["normalized_feature_response"] == pytest.approx(-1.0, abs=1e-12)
+    assert row["contribution"] < 0.0
+    # the whole score is driven negative by this single opposing row, since
+    # every other feature is absent (neutral) in this minimal snapshot.
+    assert candidate["score"] < 0.0
 
 
 # ---------------------------------------------------------------------------

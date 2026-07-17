@@ -466,6 +466,65 @@ def test_override_rejected(service_selector, bad_value):
         service_selector.evaluate(context)
 
 
+def test_editable_response_override_on_direct_feature(service_selector):
+    """§4.2/§12 override, applied to a DIRECT candidate-indexed feature (one
+    of the 5 SS5.4 `cdc_su_direct_candidate_feature` rows — service
+    recency/usage/scene-usage/acceptance/recovery — normally fixed at
+    coefficient `+1.0` for every candidate).
+
+    Unit E review finding (Minor, cleared by Unit G T033-T037 polish): the
+    existing `test_editable_response_override` above only exercised an
+    override on an ordinary `service_response_profiles`-table feature
+    (`music_playlist`/`drowsiness_level`, a `neutral_source_silent` cell
+    read from `parameters`). The DIRECT-feature branch is a materially
+    different code path in `evaluate()` — for `fid in _DIRECT_FEATURES` the
+    response cell is NOT read from `parameters` at all; it is constructed
+    inline (`{"coefficient": 1.0, "provenance": "cdc_su_direct_candidate_
+    feature", ...}`) and only THEN passed through `_apply_response_override`
+    — so this branch was previously untested. Overriding
+    `humming_karaoke`'s `service_recovery_rate` coefficient from `+1.0` to
+    `-1.0` (sign-flipped) must: change the score, retain the original
+    `cdc_su_direct_candidate_feature` provenance (not replace it), and
+    record `customer_override`."""
+
+    def _humming_recovery_row(hp: dict) -> tuple[dict, dict]:
+        context = load_worked_example_context(hyperparameters=hp)
+        context["allowed_service_ids"] = ["humming_karaoke"]
+        context["eligible_candidates"] = [{"candidate_id": "humming_karaoke"}]
+        out = service_selector.evaluate(context)
+        candidate = out["ranked_candidates"][0]
+        row = next(c for c in candidate["feature_contributions"] if c["feature_id"] == "service_recovery_rate")
+        return candidate, row
+
+    hp_base = service_manifest_hyperparameters()
+    hp_override = copy.deepcopy(hp_base)
+    # worked-example fixture: humming_karaoke recovery_rate=70 -> e=+0.4;
+    # sign-flip the normally-fixed +1.0 direct-feature coefficient to -1.0.
+    hp_override["response_coefficient_overrides"] = {"humming_karaoke": {"service_recovery_rate": -1.0}}
+
+    candidate_base, row_base = _humming_recovery_row(hp_base)
+    candidate_override, row_override = _humming_recovery_row(hp_override)
+
+    assert row_base["response_coefficient"] == pytest.approx(1.0)
+    assert row_base.get("customer_override") is None
+    assert row_base["response_provenance"] == "cdc_su_direct_candidate_feature"
+    assert row_base["contribution"] > 0.0
+
+    assert row_override["response_coefficient"] == pytest.approx(-1.0)
+    assert row_override.get("customer_override") == pytest.approx(-1.0)
+    # original provenance is RETAINED, not replaced, exactly as the
+    # non-direct-feature override path behaves.
+    assert row_override["response_provenance"] == "cdc_su_direct_candidate_feature"
+    assert row_override["contribution"] < 0.0
+
+    # the evidence itself is untouched by the override (only the response
+    # coefficient / resulting r/k change) - the sign flip is visible end to
+    # end: normalized_evidence unchanged, normalized_feature_response flips.
+    assert row_override["normalized_evidence"] == pytest.approx(row_base["normalized_evidence"])
+    assert row_override["normalized_feature_response"] == pytest.approx(-row_base["normalized_feature_response"])
+    assert candidate_override["score"] < candidate_base["score"]
+
+
 def test_entered_and_resolved_config_both_recorded(service_selector, service_hyperparameters):
     """T028: `evaluate()` records BOTH the reviewer-entered hierarchy
     weights/purpose multipliers (ratios, as configured) AND the
