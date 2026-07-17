@@ -8,10 +8,10 @@ import type { ProposalRunLog } from '../src/api/proposalClient'
 
 vi.mock('../src/api/proposalClient', async () => {
   const actual = await vi.importActual<typeof import('../src/api/proposalClient')>('../src/api/proposalClient')
-  return { ...actual, getPackages: vi.fn(), createRun: vi.fn(), selectService: vi.fn() }
+  return { ...actual, getPackages: vi.fn(), createRun: vi.fn(), selectService: vi.fn(), getDatasetCatalog: vi.fn() }
 })
 
-import { getPackages, createRun, selectService } from '../src/api/proposalClient'
+import { getPackages, createRun, selectService, getDatasetCatalog } from '../src/api/proposalClient'
 
 const CONTENT_PACKAGE = {
   id: 'mock_content_selector_v1',
@@ -238,6 +238,31 @@ describe('ContentProposalPanel', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     vi.mocked(getPackages).mockResolvedValue(packagesResponse() as never)
+    vi.mocked(getDatasetCatalog).mockResolvedValue({ total: 0, songs: [] } as never)
+  })
+
+  it('shows the song name first with the item_id in brackets (resolved via the catalog)', async () => {
+    vi.mocked(getDatasetCatalog).mockResolvedValue({
+      total: 1,
+      songs: [{ spotify_track: { id: 'synthetic-track-0001', name: 'Jessica' } }],
+    } as never)
+    function Setup() {
+      const { dispatch } = useProposalStore()
+      React.useEffect(() => {
+        dispatch({ type: 'RUN_CREATED', runLog: runLogWithPlan() })
+      }, [dispatch])
+      return null
+    }
+    render(
+      <ProposalStoreProvider>
+        <Setup />
+        <ContentProposalPanel />
+      </ProposalStoreProvider>,
+    )
+    // name first, id in brackets
+    expect(await screen.findByText('Jessica')).toBeInTheDocument()
+    const card = screen.getByTestId('plan-item-synthetic-track-0001')
+    expect(card).toHaveTextContent('(synthetic-track-0001)')
   })
 
   it('shows a waiting placeholder before STEP 1 has produced a content plan', async () => {

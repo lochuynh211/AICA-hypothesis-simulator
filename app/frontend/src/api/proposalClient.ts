@@ -670,8 +670,9 @@ export async function getSeed(seedId: string): Promise<SeedWorld> {
   return apiFetch(`/seeds/${encodeURIComponent(seedId)}`, { method: 'GET' })
 }
 
-/** A catalog song (subset the content panel needs — id → display name). */
-export type CatalogSong = { id: string; name: string }
+/** A catalog song (subset the content panel needs — track id → display name).
+ * The track id/name live under `spotify_track` (mirrors the Song schema). */
+export type CatalogSong = { spotify_track: { id: string; name: string } }
 
 /** Read-only full song catalog for a dataset (used to resolve item_id → name). */
 export async function getDatasetCatalog(datasetId: string): Promise<{ total: number; songs: CatalogSong[] }> {

@@ -160,7 +160,7 @@ export default function ContentProposalPanel() {
       .then((resp) => {
         if (cancelled) return
         const map: Record<string, string> = {}
-        for (const song of resp.songs) map[song.id] = song.name
+        for (const song of resp.songs) map[song.spotify_track.id] = song.spotify_track.name
         setSongNames(map)
       })
       .catch(() => {
