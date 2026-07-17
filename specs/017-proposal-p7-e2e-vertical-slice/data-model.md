@@ -66,9 +66,9 @@ On a successful recompute (per clarification 2026-07-17):
 
 | Field | New value |
 |---|---|
-| `lifecycle_stage` | unchanged (already advanced by the preceding journey action) |
+| `lifecycle_stage` | unchanged (already advanced by the preceding journey action); the effective World's `control_inputs.lifecycle_stage` and `situation`/`control_inputs` `motion_state` are re-synced from the current `journey_state` before re-projection |
 | `motion_state` | unchanged |
-| `active_service_id` | reset: rank-1 (quick_check) or `None` (interactive) |
+| `active_service_id` | reset to the recomputed rank-1 service (or `None` if no eligible/ranked candidate). This is set **unconditionally in both modes** — it is a display-only convenience mirroring `create_proposal_run`; it is never an implicit commitment, because `select-service` requires an explicit `selected_service_id` and independently re-validates eligibility. (Earlier drafts described an interactive→`None` split; the implementation keeps create and recompute consistent instead — reconciled 2026-07-17.) |
 | `rejected_service_ids` | reset to `[]` for the new opportunity |
 | `playback_state` | unchanged — **precondition**: must be `idle`/`stopped`/`completed`/`paused`; `active`/`backgrounded` → 422 (FR-006a) |
 | `previous_content` | preserved (restorable content reference survives the recompute) |
