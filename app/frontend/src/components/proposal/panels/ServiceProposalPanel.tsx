@@ -429,7 +429,7 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
                     {candidate.score !== null && (
                       <span style={{ marginLeft: 'auto', fontFamily: 'monospace', fontWeight: 800, color: '#1d4ed8' }}>
                         {candidate.score >= 0 ? '+' : ''}
-                        {candidate.score}
+                        {candidate.score.toFixed(3)}
                       </span>
                     )}
                   </div>

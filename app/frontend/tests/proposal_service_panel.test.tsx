@@ -486,6 +486,8 @@ describe('ServiceProposalPanel', () => {
 
     // Subtotals + strongest support/oppose visible.
     expect(screen.getByTestId('service-subtotals')).toBeInTheDocument()
+    // situation subtotal (situation_fit = 0.5) renders with 3 decimals ("0.500"), not "0.5".
+    expect(screen.getByTestId('service-subtotals').textContent).toContain('0.500')
     expect(screen.getByTestId('strongest-support')).toHaveTextContent('drowsiness_level')
     expect(screen.getByTestId('strongest-oppose')).toHaveTextContent('oshi_mode')
 

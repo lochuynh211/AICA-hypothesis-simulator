@@ -51,9 +51,7 @@ const LABELS = {
 }
 
 function fmt(n: number): string {
-  // Trim to a stable, readable precision without trailing zeros drift.
-  const rounded = Math.round(n * 1000) / 1000
-  return String(rounded)
+  return n.toFixed(3)
 }
 
 export default function ReasonBreakdown({

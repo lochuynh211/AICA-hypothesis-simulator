@@ -20,7 +20,7 @@ describe('ReasonBreakdown', () => {
     )
     expect(screen.getByRole('cell', { name: 'monotony_level' })).toBeInTheDocument()
     expect(screen.getByRole('cell', { name: 'drowsiness_level' })).toBeInTheDocument()
-    expect(screen.getByText('0.21')).toBeInTheDocument()
+    expect(screen.getByText('0.210')).toBeInTheDocument()
     expect(screen.getByText('0.176')).toBeInTheDocument()
   })
 

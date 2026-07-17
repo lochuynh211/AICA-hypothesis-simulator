@@ -51,8 +51,7 @@ const LABELS = {
 
 function fmt(n: number | null | undefined): string {
   if (n === null || n === undefined) return '—'
-  const rounded = Math.round(n * 1000) / 1000
-  return String(rounded)
+  return n.toFixed(3)
 }
 
 function fmtPercent(n: number | null | undefined): string {
