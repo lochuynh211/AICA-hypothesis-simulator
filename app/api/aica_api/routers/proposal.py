@@ -52,6 +52,7 @@ from aica_api.models.proposal.enums import (
     TriggerPurpose,
 )
 from aica_api.models.proposal.events import DiscreteEvent
+from aica_api.models.proposal.evidence import AlgorithmEvidence
 from aica_api.models.proposal.journey import JourneyState
 from aica_api.models.proposal.journey_action import JourneyAction
 from aica_api.models.proposal.journey_preview import JourneyPreview
@@ -728,15 +729,23 @@ def _resolve_run_setup(
 
 
 def _freeze_setup_snapshot(
-    body: CreateProposalRunBody,
     *,
     world: World,
     matrix_version: str,
     service_pkg: ProposalPackageManifest,
     content_pkg: ProposalPackageManifest,
     service_hyperparameters: dict,
+    origin_seed_id: str | None = None,
+    origin_clone_id: str | None = None,
+    origin_profile_id: str | None = None,
 ) -> tuple[dict, SetupSnapshot]:
     """Validate the typed world and build (world_snapshot dict, SetupSnapshot).
+
+    T011 (P7, research.md D3): origin inputs are explicit params rather than
+    the whole ``CreateProposalRunBody`` — ``create_proposal_run`` passes them
+    from ``body.origin_*`` (unchanged behavior); a later recompute call
+    (P7 Phase 3) passes the run's existing ``setup_snapshot.origin`` carried
+    forward instead, with no dependency on any ``CreateProposalRunBody``.
 
     Raises HTTPException(422, detail=[{path, code, message}, ...]) if the
     dataset_id is unknown or the world fails ``validate_world`` — never a
@@ -774,9 +783,9 @@ def _freeze_setup_snapshot(
 
     setup_snapshot = SetupSnapshot(
         origin=SetupSnapshotOrigin(
-            seed_id=body.origin_seed_id,
-            clone_id=body.origin_clone_id,
-            profile_id=body.origin_profile_id,
+            seed_id=origin_seed_id,
+            clone_id=origin_clone_id,
+            profile_id=origin_profile_id,
         ),
         matrix_version=matrix_version,
         dataset_id=world.control_inputs.dataset_id,
@@ -854,12 +863,14 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
     world_snapshot = body.world_snapshot
     if body.world is not None:
         world_snapshot, setup_snapshot = _freeze_setup_snapshot(
-            body,
             world=body.world,
             matrix_version=matrix.matrix_version,
             service_pkg=service_pkg,
             content_pkg=content_pkg,
             service_hyperparameters=hyperparameters,
+            origin_seed_id=body.origin_seed_id,
+            origin_clone_id=body.origin_clone_id,
+            origin_profile_id=body.origin_profile_id,
         )
 
     # -----------------------------------------------------------------
@@ -1011,6 +1022,94 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
 
 
 # ---------------------------------------------------------------------------
+# _dispatch_content_for_service — T010 (P7, research.md D5)
+# ---------------------------------------------------------------------------
+
+
+def _dispatch_content_for_service(
+    run_log: ProposalRunLog,
+    selected_service_id: ServiceId,
+    content_parameters: dict,
+    content_hyperparameters: dict,
+) -> tuple[AlgorithmEvidence, dict | None]:
+    """Dispatch the CONTENT selector for ``selected_service_id`` against
+    ``run_log`` and return ``(evidence, evidence_input_snapshot)``.
+
+    Extracted from ``select_service``'s STEP-2 content-dispatch body
+    (research.md D5) so quick-check (create + recompute, later P7 units) can
+    reuse the IDENTICAL real-vs-mock context-builder choice
+    (``_build_real_content_context``/``_build_content_context``), the
+    ``_REAL_CONTENT_PACKAGE_ID`` gate, catalog redaction
+    (``_redact_catalog_for_evidence``), and the ``dispatch_selector`` call —
+    guaranteeing quick-check content == interactive content (FR-014/SC-006),
+    since both paths call this exact function.
+
+    The user-supplied-service eligibility check and the content package's
+    own ``supported_services`` gate stay in ``select_service`` (they validate
+    a *user-supplied* service id); this helper assumes ``selected_service_id``
+    is already known eligible/supported — for quick-check it is the
+    selector's own rank-1, already eligible by construction.
+
+    Returns:
+        A tuple of the dispatched ``AlgorithmEvidence`` and the (possibly
+        catalog-redacted) dict recorded as its persisted ``input_snapshot``
+        — ``None`` when no redaction was applied (mock/legacy content path,
+        where ``dispatch_selector`` falls back to ``context`` itself).
+
+    Raises:
+        HTTPException(422): ``run_log.content_package_id`` is unknown or
+            mis-slotted (not a ``content_selector`` family package).
+    """
+    registry = _get_registry()
+    content_pkg = registry.get(run_log.content_package_id) if run_log.content_package_id else None
+    if content_pkg is None or content_pkg.family != ProposalPackageFamily.content_selector:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Unknown or mis-slotted content_package_id: {run_log.content_package_id!r}",
+        )
+
+    # T034 (P3c): the REAL transparent content package gets the frozen-catalog
+    # context (full catalog, no eligibility narrowing) whenever the run was
+    # created from a typed World (setup_snapshot present). A legacy
+    # world_snapshot-only run has no dataset_id to resolve a catalog from, so
+    # it keeps the P1 mock-path context builder (mirrors the mock package's
+    # own behavior — never a crash, just an unusable/empty catalog).
+    evidence_input_snapshot: dict | None = None
+    if content_pkg.id == _REAL_CONTENT_PACKAGE_ID and run_log.setup_snapshot is not None:
+        context = _build_real_content_context(
+            package=content_pkg,
+            run_log=run_log,
+            selected_service_id=selected_service_id,
+            content_parameters=content_parameters,
+            content_hyperparameters=content_hyperparameters,
+        )
+        # MF2 (P3 POLISH unit): the real content selector's context embeds
+        # the full frozen catalog — redact it for the PERSISTED evidence
+        # only; evaluate() below still receives the full `context`.
+        evidence_input_snapshot = _redact_catalog_for_evidence(
+            context, dataset_id=run_log.setup_snapshot.dataset_id
+        )
+    else:
+        context = _build_content_context(
+            package=content_pkg,
+            run_log=run_log,
+            selected_service_id=selected_service_id,
+            content_parameters=content_parameters,
+            content_hyperparameters=content_hyperparameters,
+        )
+
+    evidence = dispatch_selector(
+        content_pkg,
+        context,
+        settings.packages_dir,
+        matrix_version=run_log.matrix_version,
+        used_feature_ids=list(context["feature_snapshot"].keys()),
+        evidence_input_snapshot=evidence_input_snapshot,
+    )
+    return evidence, evidence_input_snapshot
+
+
+# ---------------------------------------------------------------------------
 # POST /api/proposal/runs/{run_id}/select-service — T023 (STEP 2 content)
 # ---------------------------------------------------------------------------
 
@@ -1106,43 +1205,13 @@ def select_service(run_id: str, body: SelectServiceBody) -> ProposalRunLog:
         hp.key: hp.default for hp in content_pkg.hyperparameters
     }
 
-    # T034 (P3c): the REAL transparent content package gets the frozen-catalog
-    # context (full catalog, no eligibility narrowing) whenever the run was
-    # created from a typed World (setup_snapshot present). A legacy
-    # world_snapshot-only run has no dataset_id to resolve a catalog from, so
-    # it keeps the P1 mock-path context builder (mirrors the mock package's
-    # own behavior — never a crash, just an unusable/empty catalog).
-    evidence_input_snapshot: dict | None = None
-    if content_pkg.id == _REAL_CONTENT_PACKAGE_ID and run_log.setup_snapshot is not None:
-        context = _build_real_content_context(
-            package=content_pkg,
-            run_log=run_log,
-            selected_service_id=selected_service_id,
-            content_parameters=content_parameters,
-            content_hyperparameters=content_hyperparameters,
-        )
-        # MF2 (P3 POLISH unit): the real content selector's context embeds
-        # the full frozen catalog — redact it for the PERSISTED evidence
-        # only; evaluate() below still receives the full `context`.
-        evidence_input_snapshot = _redact_catalog_for_evidence(
-            context, dataset_id=run_log.setup_snapshot.dataset_id
-        )
-    else:
-        context = _build_content_context(
-            package=content_pkg,
-            run_log=run_log,
-            selected_service_id=selected_service_id,
-            content_parameters=content_parameters,
-            content_hyperparameters=content_hyperparameters,
-        )
-
-    evidence = dispatch_selector(
-        content_pkg,
-        context,
-        settings.packages_dir,
-        matrix_version=run_log.matrix_version,
-        used_feature_ids=list(context["feature_snapshot"].keys()),
-        evidence_input_snapshot=evidence_input_snapshot,
+    # T010 (P7, research.md D5): the real-vs-mock context-builder choice, the
+    # _REAL_CONTENT_PACKAGE_ID gate, catalog redaction, and the
+    # dispatch_selector call itself are extracted into a shared helper so
+    # quick-check (later P7 units) dispatches content through the identical
+    # code path — no behavior change here.
+    evidence, _evidence_input_snapshot = _dispatch_content_for_service(
+        run_log, selected_service_id, content_parameters, content_hyperparameters
     )
 
     at = _now_iso()
