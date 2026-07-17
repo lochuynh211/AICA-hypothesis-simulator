@@ -27,6 +27,8 @@ import {
  * STEP 1 is what "Setup auto init" means (owner request 2026-07-17). */
 const AUTO_INIT_SEED_ID = 'seed-night-highway-oshi'
 import HyperparamMatrix from '../HyperparamMatrix'
+import ResponseMatrixTable from '../ResponseMatrixTable'
+import HierarchyWeightsTable from '../HierarchyWeightsTable'
 import ReasonBreakdown, { type ReasonRow } from '../ReasonBreakdown'
 import ServiceExplainability, { hasFeatureTrace } from '../ServiceExplainability'
 
@@ -38,6 +40,9 @@ const LABELS = {
   parameters: { ja: 'パラメータ（編集可）', en: 'Parameters (editable)' },
   maxCandidates: { ja: '最大候補数', en: 'max_candidates' },
   hyperparameters: { ja: 'ハイパーパラメータ', en: 'Hyperparameters' },
+  responseCoeffs: { ja: '応答係数（§5.2）', en: 'Response coefficients (§5.2)' },
+  responseByFeature: { ja: '特徴量 × サービス', en: 'feature × service' },
+  responseByRoad: { ja: '道路種別 × サービス', en: 'road × service' },
   formulation: { ja: '数式・説明', en: 'Formulation' },
   formulationWhy: {
     ja: '各サービスの適合度は、重み wᵢ と応答 rᵢ（左の世界特徴量から算出）の重み付き総和。',
@@ -598,6 +603,61 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
               ))}
             </div>
 
+            {/* Response coefficients (§5.2) — the mockup's `response_matrix`.
+                These live in `parameters` (object-valued), so they're surfaced
+                here as dedicated editable pivot tables; edits flow through
+                SET_SERVICE_PARAMETER and are sent on the next run. */}
+            {(manifest.parameters['service_response_profiles'] ||
+              manifest.parameters['road_response_profiles']) && (
+              <details data-testid="response-coefficients-disclosure" style={disclosureStyle}>
+                <summary style={summaryStyle}>{t(LABELS.responseCoeffs, lang)}</summary>
+                <div style={{ padding: '4px 11px 11px' }}>
+                  {manifest.parameters['service_response_profiles'] && (
+                    <>
+                      <div style={subslabStyle}>
+                        <span style={kindBadgeStyle}>matrix</span> <code>service_response_profiles</code>{' '}
+                        <span style={{ color: '#6b7280' }}>{t(LABELS.responseByFeature, lang)}</span>
+                      </div>
+                      <ResponseMatrixTable
+                        value={
+                          (state.serviceParameterOverrides['service_response_profiles'] ??
+                            manifest.parameters['service_response_profiles']) as Record<
+                            string,
+                            Record<string, { coefficient?: number; provenance?: string; source_reference?: string }>
+                          >
+                        }
+                        onChange={(next) =>
+                          dispatch({ type: 'SET_SERVICE_PARAMETER', key: 'service_response_profiles', value: next })
+                        }
+                        cornerLabel={t(LABELS.responseByFeature, lang)}
+                      />
+                    </>
+                  )}
+                  {manifest.parameters['road_response_profiles'] && (
+                    <>
+                      <div style={subslabStyle}>
+                        <span style={kindBadgeStyle}>matrix</span> <code>road_response_profiles</code>{' '}
+                        <span style={{ color: '#6b7280' }}>{t(LABELS.responseByRoad, lang)}</span>
+                      </div>
+                      <ResponseMatrixTable
+                        value={
+                          (state.serviceParameterOverrides['road_response_profiles'] ??
+                            manifest.parameters['road_response_profiles']) as Record<
+                            string,
+                            Record<string, { coefficient?: number; provenance?: string; source_reference?: string }>
+                          >
+                        }
+                        onChange={(next) =>
+                          dispatch({ type: 'SET_SERVICE_PARAMETER', key: 'road_response_profiles', value: next })
+                        }
+                        cornerLabel={t(LABELS.responseByRoad, lang)}
+                      />
+                    </>
+                  )}
+                </div>
+              </details>
+            )}
+
             <details data-testid="hyperparameters-disclosure" style={disclosureStyle}>
               <summary style={summaryStyle}>
                 {t(LABELS.hyperparameters, lang)} <span>{manifest.hyperparameters.length}</span>
@@ -610,13 +670,31 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
                       <code>{hp.key}</code>{' '}
                       <span style={{ color: '#6b7280' }}>{t(hp.label, lang)}</span>
                     </div>
-                    <HyperparamMatrix
-                      def={hp}
-                      value={state.serviceHyperparameterOverrides[hp.key]}
-                      onChange={(value) => dispatch({ type: 'SET_SERVICE_HYPERPARAMETER', key: hp.key, value })}
-                      lang={lang}
-                      hideLabel
-                    />
+                    {hp.key === 'hierarchy_weights' ? (
+                      <HierarchyWeightsTable
+                        value={
+                          (state.serviceHyperparameterOverrides[hp.key] ?? hp.default) as Record<
+                            string,
+                            {
+                              share?: number
+                              subgroups?: Record<
+                                string,
+                                { share?: number; leaves?: Record<string, { share?: number }> }
+                              >
+                            }
+                          >
+                        }
+                        onChange={(value) => dispatch({ type: 'SET_SERVICE_HYPERPARAMETER', key: hp.key, value })}
+                      />
+                    ) : (
+                      <HyperparamMatrix
+                        def={hp}
+                        value={state.serviceHyperparameterOverrides[hp.key]}
+                        onChange={(value) => dispatch({ type: 'SET_SERVICE_HYPERPARAMETER', key: hp.key, value })}
+                        lang={lang}
+                        hideLabel
+                      />
+                    )}
                   </div>
                 ))}
               </div>
