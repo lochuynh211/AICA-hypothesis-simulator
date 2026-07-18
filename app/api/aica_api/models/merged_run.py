@@ -15,6 +15,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from aica_api.models.proposal.world import World
+from aica_api.models.run import RestSpot
 
 
 class CorrelationEntry(BaseModel):
@@ -48,6 +49,21 @@ class MergedRunHandle(BaseModel):
     current_proposal_run_id: str | None = None
     correlation_log: list[CorrelationEntry] = []
 
+    # Slice-2 core (Task 3): rest-journey auto-drive progress.
+    # None       — no accept-rest issued yet (or scenario has no recovery_options).
+    # "before"   — accept-rest issued; waiting for the trigger recovery to reach
+    #              the rest spot (motion -> stopped).
+    # "during"   — arrived; rest_spot_arrived/rest_started applied; waiting for
+    #              the trigger recovery to complete (active -> inactive).
+    # "after"    — rest_completed + the after-rest recompute have both run.
+    # Guards the tick endpoint's auto-drive so each transition fires exactly
+    # once, regardless of how many further ticks are issued afterward.
+    rest_stage_synced: str | None = None
+    # The nap-duration override supplied to accept-rest, if any (record-only —
+    # the actual stage.ticks override lives on the trigger run's own per-run
+    # ScenarioDef copy, mutated via run_manager.get_scenario at accept-rest time).
+    nap_minutes: int | None = None
+
 
 class CreateMergedRunBody(BaseModel):
     """Request body to create a merged run.
@@ -63,6 +79,21 @@ class CreateMergedRunBody(BaseModel):
     content_package_id: str
     proposal_mode: str = "interactive"
     run_seed: str
+
+
+class AcceptRestBody(BaseModel):
+    """Request body for ``POST /api/merged-runs/{id}/accept-rest``.
+
+    ``nap_minutes``, when supplied, overrides the chosen recovery option's
+    nap STOPPED stage duration (see ``routers/merged_runs.py``'s
+    ``accept_rest_endpoint``) — the ticks are derived as
+    ``round(nap_minutes * 60 / scenario.tick_seconds)`` and applied to a
+    per-run ``ScenarioDef`` copy before the trigger recovery starts.
+    """
+
+    recovery_option_id: str
+    rest_spot: RestSpot
+    nap_minutes: int | None = None
 
 
 class MergedProposalActionBody(BaseModel):

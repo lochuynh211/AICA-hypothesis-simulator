@@ -35,18 +35,22 @@ from pydantic import ValidationError
 
 from aica_api.config import settings
 from aica_api.models.merged_run import (
+    AcceptRestBody,
     CorrelationEntry,
     CreateMergedRunBody,
     MergedProposalActionBody,
     MergedTickResponse,
 )
+from aica_api.models.proposal.enums import PlaybackState
 from aica_api.models.proposal.journey_action import JourneyAction
-from aica_api.models.proposal.world import World
+from aica_api.models.proposal.recompute import RecomputeRequest
+from aica_api.models.proposal.world import FieldOverride, World
 from aica_api.routers.proposal import (
     CreateProposalRunBody,
     SelectServiceBody,
     apply_journey_action,
     create_proposal_run,
+    recompute_proposal_run,
     select_service,
 )
 from aica_api.services import run_manager
@@ -139,6 +143,97 @@ def create_merged_run_endpoint(body: CreateMergedRunBody) -> dict:
     return {"merged_run_id": merged_run_id, "trigger_run_id": trigger_run_id}
 
 
+def _override_nap_stage_ticks(scenario, recovery_option_id: str, nap_minutes: int) -> None:
+    """Mutate ``scenario.recovery_options`` IN PLACE so the chosen option's nap
+    STOPPED stage (``phase == "nap"``) lasts ``round(nap_minutes * 60 /
+    scenario.tick_seconds)`` ticks instead of its scenario-authored default.
+
+    ``scenario`` is the LIVE per-run ``ScenarioDef`` returned by
+    ``run_manager.get_scenario`` — each trigger run owns its own parsed copy
+    (``ScenarioRegistry`` re-scans/parses scenario JSON fresh on every
+    ``POST /api/run-plans`` call), so this mutation never leaks into another
+    run or the on-disk scenario file. Builds new ``RecoveryStage``/
+    ``RecoveryOption`` copies (``model_copy``) rather than mutating existing
+    ones in place, so any other reference sharing an option/stage list
+    (e.g. ``preview.py``'s own independent simulation) is unaffected.
+    """
+    new_ticks = round(nap_minutes * 60 / scenario.tick_seconds)
+    scenario.recovery_options = [
+        (
+            option.model_copy(
+                update={
+                    "stages": [
+                        stage.model_copy(update={"ticks": new_ticks})
+                        if stage.phase == "nap" and stage.motion == "STOPPED"
+                        else stage
+                        for stage in option.stages
+                    ]
+                }
+            )
+            if option.id == recovery_option_id
+            else option
+        )
+        for option in scenario.recovery_options
+    ]
+
+
+@router.post("/api/merged-runs/{merged_run_id}/accept-rest")
+def accept_rest_endpoint(merged_run_id: str, body: AcceptRestBody) -> dict:
+    """Start the trigger-side recovery sequence for a merged run's REST fire.
+
+    Calls ``run_manager.action(trigger_run_id, "accept_rest", ...)`` — the
+    SAME entrypoint the trigger-only screen uses — to begin the deterministic
+    recovery state machine (Approach A, M7). When ``nap_minutes`` is
+    supplied, the chosen option's nap STOPPED stage duration is overridden
+    (``_override_nap_stage_ticks``) on the run's own live ``ScenarioDef``
+    BEFORE starting recovery, so the subsequent tick-engine countdown honors
+    the requested sleep length.
+
+    Sets ``handle.rest_stage_synced = "before"`` — the rest-journey
+    auto-drive block in ``tick_merged_run_endpoint`` below watches this to
+    detect the "motion just became stopped" transition exactly once.
+
+    404 for an unknown merged_run_id or trigger_run_id; 422 when
+    ``run_manager.action`` rejects the action (e.g. an unknown
+    ``recovery_option_id``, or the trigger run isn't currently paused on a
+    pending proposal).
+    """
+    handle = get_handle(merged_run_id, settings.merged_runs_dir)
+    if handle is None:
+        raise HTTPException(status_code=404, detail=f"Merged run {merged_run_id!r} not found")
+
+    scenario = run_manager.get_scenario(handle.trigger_run_id)
+    if scenario is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Trigger run {handle.trigger_run_id!r} not found",
+        )
+
+    if body.nap_minutes is not None:
+        _override_nap_stage_ticks(scenario, body.recovery_option_id, body.nap_minutes)
+
+    try:
+        run_state = run_manager.action(
+            handle.trigger_run_id,
+            "accept_rest",
+            recovery_option_id=body.recovery_option_id,
+            rest_spot=body.rest_spot,
+        )
+    except run_manager.RunNotFoundError:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Trigger run {handle.trigger_run_id!r} not found",
+        )
+    except run_manager.ActionNotAllowedError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    handle.rest_stage_synced = "before"
+    handle.nap_minutes = body.nap_minutes
+    save_handle(handle, settings.merged_runs_dir)
+
+    return run_state.model_dump(mode="json")
+
+
 @router.post("/api/merged-runs/{merged_run_id}/tick")
 def tick_merged_run_endpoint(merged_run_id: str) -> MergedTickResponse:
     """Advance the paired trigger run by one tick; 404 for an unknown
@@ -219,6 +314,88 @@ def tick_merged_run_endpoint(merged_run_id: str) -> MergedTickResponse:
 
         resp.proposal = plog.model_dump(mode="json")
         resp.correlation = corr
+
+    # ── Slice-2 core (Task 3): rest-journey auto-drive ──────────────────────
+    # Guarded by `rest_stage_synced` (None until `accept-rest` is called) so
+    # each transition — before->during, during->after — fires exactly once,
+    # however many further ticks follow. Mutually exclusive with the slice-1
+    # fire block above (that one requires `current_proposal_run_id is None`;
+    # this one requires the opposite), so no tick can hit both.
+    if (
+        handle.current_proposal_run_id is not None
+        and handle.rest_stage_synced is not None
+        and outcome.tick_state is not None
+    ):
+        run_id = handle.current_proposal_run_id
+        dynamic = (outcome.tick_state.signals or {}).get("dynamic", {})
+        journey_plog = None
+
+        if handle.rest_stage_synced == "before" and dynamic.get("motionState") == "STOPPED":
+            # The recovery has reached the rest spot — the trigger's own
+            # `motionState` dynamic signal is authoritative for "stopped"
+            # (mirrors `build_world_from_tick`'s own motion mapping). This is
+            # the FIRST tick where it reads "STOPPED" (tick_engine only holds
+            # position once the recovery state machine has actually entered
+            # a STOPPED stage), so the "before" guard makes this a one-shot
+            # rising-edge detection without needing separate prior-tick state.
+            journey_plog = apply_journey_action(run_id, JourneyAction(action_type="rest_spot_arrived"))
+            journey_plog = apply_journey_action(run_id, JourneyAction(action_type="rest_started"))
+            handle.rest_stage_synced = "during"
+
+        elif handle.rest_stage_synced == "during" and outcome.run_state.recovery is None:
+            # `run_manager.tick` already collapsed `run_state.recovery` back
+            # to `None` once the staged recovery finished (active ->
+            # inactive, on the "resuming" tick) — see `run_manager.tick`'s
+            # `_recovery_next` handling. The "during" guard means this fires
+            # exactly once, on the first tick recovery is observed inactive.
+            simulated = (outcome.tick_state.signals or {}).get("simulated", {})
+            drowsiness = round(simulated.get("drowsiness", 0.0))
+            fatigue = round(simulated.get("fatigue", 0.0))
+            journey_plog = apply_journey_action(
+                run_id,
+                JourneyAction(
+                    action_type="rest_completed",
+                    payload={
+                        "post_rest": {
+                            "drowsiness_level": drowsiness,
+                            "fatigue_level": fatigue,
+                        }
+                    },
+                ),
+            )
+            # recompute 422s while a content plan is active/backgrounded
+            # (FR-006a) — auto-complete/stop any before-rest content so the
+            # after-rest recompute below is never blocked by that guard.
+            if journey_plog.journey_state.playback_state == PlaybackState.active:
+                journey_plog = apply_journey_action(run_id, JourneyAction(action_type="complete"))
+            if journey_plog.journey_state.playback_state in (
+                PlaybackState.active,
+                PlaybackState.backgrounded,
+            ):
+                journey_plog = apply_journey_action(run_id, JourneyAction(action_type="stop"))
+
+            journey_plog = recompute_proposal_run(
+                run_id,
+                RecomputeRequest(
+                    overrides=[
+                        FieldOverride(path="situation.drowsiness_level", value=drowsiness),
+                        FieldOverride(path="situation.fatigue_level", value=fatigue),
+                    ]
+                ),
+            )
+            handle.rest_stage_synced = "after"
+
+        if journey_plog is not None:
+            corr = CorrelationEntry(
+                trigger_tick_index=outcome.evaluated_tick_index or 0,
+                proposal_run_id=run_id,
+                proposal_event_ids=[f"{e.event_type}@{e.at}" for e in journey_plog.events],
+            )
+            handle.correlation_log.append(corr)
+            save_handle(handle, settings.merged_runs_dir)
+
+            resp.proposal = journey_plog.model_dump(mode="json")
+            resp.correlation = corr
 
     return resp
 
