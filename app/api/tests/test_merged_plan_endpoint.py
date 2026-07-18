@@ -36,6 +36,17 @@ _MAX_TICKS = 400
 _MOUNTAIN_RANGE_KM = (40.0, 70.0)
 _JAM_RANGE_KM = (10.0, 20.0)
 
+# routes/presets/short_tokyo_chichibu.json — one of the 3 fixtures committed
+# under routes/presets/ in this repo (settings.routes_dir resolves there by
+# default; the isolate_dirs fixture above only redirects AICA_RUNS_DIR /
+# AICA_PROPOSAL_RUNS_DIR / AICA_MERGED_RUNS_DIR, never AICA_ROUTES_DIR).
+# raw_route.distance_m=112134, duration_s=6643.
+_PRESET_ID = "short_tokyo_chichibu"
+_PRESET_TOTAL_KM = 112.134
+_PRESET_DURATION_MIN = 6643 / 60
+_PRESET_MOUNTAIN_RANGE_KM = (30.0, 50.0)
+_PRESET_JAM_RANGE_KM = (5.0, 15.0)
+
 
 @pytest.fixture(autouse=True)
 def isolate_dirs(tmp_path, monkeypatch):
@@ -152,6 +163,68 @@ def test_plan_endpoint_without_mountain_or_jam_matches_local_analysis():
     draft, _package, _scenario = entry
     assert all(seg.segment_type != "mountain_road" for seg in draft.route_facts.route_segments)
     assert all(e.id != "manual_jam" for e in draft.draft_event_plan.traffic_events)
+
+
+def test_plan_endpoint_route_preset_id_alone_loads_maps_route_unpainted():
+    """route_preset_id (no mountain/jam) selects the loaded-preset path — NOT
+    the local analyze_route(scenario) path the other tests use. Distinguishes
+    on total_route_distance_km/estimated_route_duration_min/route_source,
+    which only match the preset fixture (112.134 km / ~110.72 min / "maps"),
+    never the local route (120.0 km / 108.0 min / "local")."""
+    plan_id = _create_merged_plan(
+        route_preset_id=_PRESET_ID, mountain_range_km=None, jam_range_km=None
+    )
+
+    entry = get_draft_entry(plan_id)
+    assert entry is not None
+    draft, _package, _scenario = entry
+
+    assert draft.route_facts.route_source == "maps"
+    assert draft.route_facts.total_route_distance_km == pytest.approx(_PRESET_TOTAL_KM)
+    assert draft.route_facts.estimated_route_duration_min == pytest.approx(_PRESET_DURATION_MIN)
+    assert all(seg.segment_type != "mountain_road" for seg in draft.route_facts.route_segments)
+    assert all(e.id != "manual_jam" for e in draft.draft_event_plan.traffic_events)
+
+
+def test_plan_endpoint_route_preset_id_combined_with_mountain_and_jam():
+    """route_preset_id combined with mountain_range_km + jam_range_km: the
+    painter operates on the LOADED PRESET's route_facts (not the local
+    route's), so the km->min jam conversion must use the preset's own
+    total_km/estimated_duration_min."""
+    plan_id = _create_merged_plan(
+        route_preset_id=_PRESET_ID,
+        mountain_range_km=list(_PRESET_MOUNTAIN_RANGE_KM),
+        jam_range_km=list(_PRESET_JAM_RANGE_KM),
+    )
+
+    entry = get_draft_entry(plan_id)
+    assert entry is not None
+    draft, _package, _scenario = entry
+
+    assert draft.route_facts.route_source == "maps"
+    assert draft.route_facts.total_route_distance_km == pytest.approx(_PRESET_TOTAL_KM)
+
+    mountain_segments = [
+        seg for seg in draft.route_facts.route_segments if seg.segment_type == "mountain_road"
+    ]
+    assert mountain_segments, "expected an injected mountain_road segment"
+    assert min(seg.start_km for seg in mountain_segments) == pytest.approx(
+        _PRESET_MOUNTAIN_RANGE_KM[0]
+    )
+    assert max(seg.start_km + seg.length_km for seg in mountain_segments) == pytest.approx(
+        _PRESET_MOUNTAIN_RANGE_KM[1]
+    )
+
+    jam_events = [e for e in draft.draft_event_plan.traffic_events if e.id == "manual_jam"]
+    assert len(jam_events) == 1
+    jam = jam_events[0]
+    expected_start_min = (_PRESET_JAM_RANGE_KM[0] / _PRESET_TOTAL_KM) * _PRESET_DURATION_MIN
+    expected_duration_min = (
+        (_PRESET_JAM_RANGE_KM[1] - _PRESET_JAM_RANGE_KM[0]) / _PRESET_TOTAL_KM
+    ) * _PRESET_DURATION_MIN
+    assert jam.start_min == pytest.approx(expected_start_min)
+    assert jam.duration_min == pytest.approx(expected_duration_min)
+    assert jam.speed_kph == pytest.approx(15.0)
 
 
 def test_plan_endpoint_unknown_package_400():
