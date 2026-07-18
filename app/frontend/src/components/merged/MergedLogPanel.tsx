@@ -1,13 +1,184 @@
 /**
- * MergedLogPanel — right-panel stub for the Combined Simulator (020 Task 6).
- * Placeholder only; the real trigger+proposal correlated log/trace view
- * lands in a later 020 task.
+ * MergedLogPanel — the Combined Simulator's right-panel chronological log
+ * (020 Task 11): trigger trace entries + proposal events interleaved by
+ * correlation tick index, color-coded by subsystem.
+ *
+ * Mirrors `DecisionTracePanel`'s own `MergedEntry` union/sort pattern (its
+ * LIVE-mode `merged` array over `trace`/`algorithmErrors`/`restHistory`) but
+ * across the TWO isolated stores this screen mounts via
+ * `useMergedCoordinator()`: `state.triggerTrace` (kind `trace`, tickIndex =
+ * `tick_index`) and `state.proposalLog.events` (kind `proposal`, tickIndex =
+ * the `CorrelationEntry`'s `trigger_tick_index` for that proposal run —
+ * slice-1's merged-runs router creates at most one proposal run/correlation
+ * entry per merged run (`current_proposal_run_id is None` guard), so a
+ * single `find` by `proposal_run_id` is enough here; a future multi-fire
+ * slice would need a finer-grained per-event lookup).
+ *
+ * Trigger rows are a slim inline row — `DecisionTracePanel`'s own
+ * `TraceEntryRow` is not exported — styled the same as that panel's
+ * REPLAY-mode row (tick#, result_type, selected_category). Proposal rows are
+ * the new `ProposalEventRow` below, using the proposal accent color
+ * `#7c3aed`.
  */
-export default function MergedLogPanel() {
+import { useMergedCoordinator } from '../../state/mergedCoordinator'
+import type { MergedCoordinatorState } from '../../state/mergedCoordinator'
+import type { TraceEntry } from '../../api/types'
+import type { DiscreteEvent } from '../../api/proposalClient'
+
+const PROPOSAL_ACCENT = '#7c3aed'
+
+type MergedEntry =
+  | { kind: 'trace'; tickIndex: number; entry: TraceEntry }
+  | { kind: 'proposal'; tickIndex: number; event: DiscreteEvent }
+
+/**
+ * Builds the chronological trigger+proposal union, sorted ascending by
+ * tickIndex; ties break trigger-before-proposal, then by each source
+ * array's own order (`Array#sort` is stable — ES2019+/every runtime this
+ * project targets — so within-kind ties keep their original relative order
+ * for free, no explicit index tiebreaker needed).
+ */
+function buildMergedEntries(state: MergedCoordinatorState): MergedEntry[] {
+  const traceEntries: MergedEntry[] = state.triggerTrace.map((entry) => ({
+    kind: 'trace',
+    tickIndex: entry.tick_index,
+    entry,
+  }))
+
+  const proposalEntries: MergedEntry[] = []
+  const proposalLog = state.proposalLog
+  if (proposalLog) {
+    const correlationEntry = state.correlation.find((c) => c.proposal_run_id === proposalLog.run_id)
+    const tickIndex = correlationEntry ? correlationEntry.trigger_tick_index : 0
+    for (const event of proposalLog.events) {
+      proposalEntries.push({ kind: 'proposal', tickIndex, event })
+    }
+  }
+
+  return [...traceEntries, ...proposalEntries].sort((a, b) => {
+    if (a.tickIndex !== b.tickIndex) return a.tickIndex - b.tickIndex
+    if (a.kind !== b.kind) return a.kind === 'trace' ? -1 : 1
+    return 0
+  })
+}
+
+/**
+ * One-line payload summary per subsystem event: `SERVICE_SELECTED` -> the
+ * selected service id, `CONTENT_SELECTED` -> item count (when the payload
+ * carries an `items` list) falling back to the selected service id,
+ * `OPPORTUNITY_OPENED` -> the trigger purpose. Anything else falls back to a
+ * generic `key=value` dump (mirrors `EventTimeline`'s `summarizePayload`).
+ */
+function summarizeProposalEvent(event: DiscreteEvent): string {
+  const payload = event.payload
+  switch (event.event_type) {
+    case 'SERVICE_SELECTED':
+      return String(payload.selected_service_id ?? '')
+    case 'CONTENT_SELECTED':
+      return Array.isArray(payload.items)
+        ? `${payload.items.length} items`
+        : String(payload.selected_service_id ?? '')
+    case 'OPPORTUNITY_OPENED':
+      return String(payload.trigger_purpose ?? '')
+    default: {
+      const entries = Object.entries(payload)
+      if (entries.length === 0) return ''
+      return entries
+        .map(([key, value]) => `${key}=${typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value)}`)
+        .join(', ')
+    }
+  }
+}
+
+// ── Sub-components ──────────────────────────────────────────────────────────
+
+/** Slim inline trigger row (see module doc — `TraceEntryRow` isn't exported). */
+function TriggerTraceRow({ entry }: { entry: TraceEntry }) {
   return (
-    <div data-testid="merged-log-panel">
-      <h2>Log</h2>
-      <p>Combined Simulator trace/log — coming soon.</p>
+    <div
+      data-testid={`merged-log-trigger-${entry.tick_index}`}
+      style={{
+        borderBottom: '1px solid #2a2a2a',
+        padding: '6px 4px',
+        fontSize: '0.85em',
+        fontFamily: 'monospace',
+      }}
+    >
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <span style={{ color: '#6af', fontWeight: 700 }}>tick#{entry.tick_index}</span>
+        <span style={{ color: '#ffe066', fontWeight: 700 }}>{entry.result_type}</span>
+        {entry.selected_category && <span style={{ color: '#8f8' }}>cat={entry.selected_category}</span>}
+      </div>
+    </div>
+  )
+}
+
+function ProposalEventRow({
+  tickIndex,
+  event,
+  rowIndex,
+}: {
+  tickIndex: number
+  event: DiscreteEvent
+  rowIndex: number
+}) {
+  const summary = summarizeProposalEvent(event)
+  return (
+    <div
+      data-testid={`merged-log-proposal-${rowIndex}-${event.event_type}`}
+      style={{
+        borderBottom: '1px solid #2a2a2a',
+        padding: '6px 4px',
+        fontSize: '0.85em',
+        fontFamily: 'monospace',
+      }}
+    >
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <span style={{ color: '#6af', fontWeight: 700 }}>tick#{tickIndex}</span>
+        <span style={{ color: PROPOSAL_ACCENT, fontWeight: 700 }}>{event.event_type}</span>
+      </div>
+      {summary && <div style={{ color: PROPOSAL_ACCENT, marginTop: '2px' }}>{summary}</div>}
+    </div>
+  )
+}
+
+// ── Main panel ───────────────────────────────────────────────────────────────
+
+export default function MergedLogPanel() {
+  const { state } = useMergedCoordinator()
+  const entries = buildMergedEntries(state)
+
+  return (
+    <div
+      data-testid="merged-log-panel"
+      style={{ background: '#111', color: '#ddd', overflowY: 'auto', maxHeight: '100%', fontSize: '0.85em' }}
+    >
+      <div
+        style={{
+          padding: '4px 8px',
+          background: '#1a1a1a',
+          fontWeight: 700,
+          fontSize: '0.8em',
+          letterSpacing: '0.05em',
+          color: '#aaa',
+          borderBottom: '1px solid #333',
+        }}
+      >
+        MERGED LOG
+      </div>
+      {entries.length === 0 ? (
+        <div data-testid="merged-log-empty" style={{ padding: '8px', color: '#666' }}>
+          No entries yet.
+        </div>
+      ) : (
+        entries.map((item, i) =>
+          item.kind === 'trace' ? (
+            <TriggerTraceRow key={`t-${i}`} entry={item.entry} />
+          ) : (
+            <ProposalEventRow key={`p-${i}`} tickIndex={item.tickIndex} event={item.event} rowIndex={i} />
+          ),
+        )
+      )}
     </div>
   )
 }
