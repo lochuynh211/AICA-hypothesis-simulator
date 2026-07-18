@@ -7,11 +7,17 @@
  * `createRunPlan`) from the selected route preset + scenario + trigger
  * package + a run seed, (b) fetches a default typed `World` from a
  * feature-018 proposal preset (`proposalClient` `getPreset`/`getPresets`),
- * then (c) calls `useMergedCoordinator().create(...)`.
+ * then (c) calls `useMergedCoordinator().create(...)` (from a real
+ * `MergedCoordinatorProvider`, which in turn calls `createMergedRun`).
  *
- * All three client modules are mocked — this test never hits the network —
- * and `useMergedCoordinator` itself is mocked so the assertion is a plain
- * `expect(create).toHaveBeenCalledWith(...)` rather than a real tick loop.
+ * Rendered inside a REAL `MergedCoordinatorProvider` (the same
+ * pattern `merged_coordinator.test.tsx` and every other store-consuming
+ * component test in the repo uses — e.g. `proposal_content_panel.test.tsx`
+ * wraps `ProposalStoreProvider` and mocks only the network boundary): only
+ * `api/client.ts`, `api/proposalClient.ts`, and `api/mergedClient.ts` are
+ * mocked, so the assertion exercises the real Context/Provider wiring and a
+ * real `createMergedRun` payload, not a stand-in spy shaped like
+ * `coordinator.create`.
  */
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -31,8 +37,10 @@ vi.mock('../src/api/proposalClient', () => ({
   getPreset: vi.fn(),
 }))
 
-vi.mock('../src/state/mergedCoordinator', () => ({
-  useMergedCoordinator: vi.fn(),
+vi.mock('../src/api/mergedClient', () => ({
+  createMergedRun: vi.fn(),
+  tickMergedRun: vi.fn(),
+  mergedProposalAction: vi.fn(),
 }))
 
 import {
@@ -43,7 +51,8 @@ import {
   createRunPlan,
 } from '../src/api/client'
 import { getPackages, getPresets, getPreset } from '../src/api/proposalClient'
-import { useMergedCoordinator } from '../src/state/mergedCoordinator'
+import { createMergedRun } from '../src/api/mergedClient'
+import { MergedCoordinatorProvider } from '../src/state/mergedCoordinator'
 import MergedSetupPanel from '../src/components/merged/MergedSetupPanel'
 
 function fullWorld(): World {
@@ -130,8 +139,6 @@ const ROUTE_FACTS = {
   rest_spot_positions: [],
   route_progress_checkpoints: [],
 }
-
-const mockCreate = vi.fn()
 
 function setupMocks() {
   vi.mocked(listRoutePresets).mockResolvedValue({
@@ -251,35 +258,28 @@ function setupMocks() {
       override_required: false,
     },
   })
-  vi.mocked(useMergedCoordinator).mockReturnValue({
-    state: {
-      mergedRunId: null,
-      triggerTrace: [],
-      latestTrigger: null,
-      proposalLog: null,
-      correlation: [],
-      paused: false,
-      completed: false,
-      running: false,
-      error: null,
-    },
-    create: mockCreate,
-    play: vi.fn(),
-    pause: vi.fn(),
-    step: vi.fn(),
-    selectService: vi.fn(),
-  } as unknown as ReturnType<typeof useMergedCoordinator>)
+  vi.mocked(createMergedRun).mockResolvedValue({
+    merged_run_id: 'mrun_1',
+    trigger_run_id: 'run_1',
+  })
+}
+
+function renderPanel() {
+  return render(
+    <MergedCoordinatorProvider>
+      <MergedSetupPanel />
+    </MergedCoordinatorProvider>,
+  )
 }
 
 describe('MergedSetupPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockCreate.mockClear()
     setupMocks()
   })
 
   it('opens the Route popup and lists the fetched route presets', async () => {
-    render(<MergedSetupPanel />)
+    renderPanel()
 
     fireEvent.click(screen.getByRole('button', { name: /route/i }))
 
@@ -289,7 +289,7 @@ describe('MergedSetupPanel', () => {
   })
 
   it('configures a full run via the popups and starts it, calling coordinator.create with the built trigger_plan_id + package ids', async () => {
-    render(<MergedSetupPanel />)
+    renderPanel()
 
     // Route: open popup, pick the preset route.
     fireEvent.click(screen.getByRole('button', { name: /route/i }))
@@ -323,7 +323,7 @@ describe('MergedSetupPanel', () => {
     // Start run.
     fireEvent.click(screen.getByRole('button', { name: /start run/i }))
 
-    await waitFor(() => expect(mockCreate).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(createMergedRun).toHaveBeenCalledTimes(1))
 
     expect(createRunPlan).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -333,7 +333,7 @@ describe('MergedSetupPanel', () => {
       }),
     )
 
-    expect(mockCreate).toHaveBeenCalledWith(
+    expect(createMergedRun).toHaveBeenCalledWith(
       expect.objectContaining({
         trigger_plan_id: 'plan_abc123',
         service_package_id: 'svc_pkg_1',
