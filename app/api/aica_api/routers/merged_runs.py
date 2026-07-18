@@ -31,6 +31,7 @@ import os
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException
+from pydantic import ValidationError
 
 from aica_api.config import settings
 from aica_api.models.merged_run import (
@@ -232,18 +233,28 @@ def proposal_action_endpoint(merged_run_id: str, body: MergedProposalActionBody)
                 status_code=422,
                 detail="selected_service_id is required for kind='select_service'",
             )
-        plog = select_service(
-            run_id, SelectServiceBody(selected_service_id=body.selected_service_id)
-        )
+        # An unknown selected_service_id fails SelectServiceBody's enum-typed
+        # field validation. FastAPI only auto-converts a ValidationError to a
+        # 422 for the request body it decodes itself — constructing this
+        # model manually here means the error must be caught explicitly
+        # (mirrors routers/proposal.py's ValidationError -> 422 convention).
+        try:
+            select_body = SelectServiceBody(selected_service_id=body.selected_service_id)
+        except ValidationError as exc:
+            raise HTTPException(status_code=422, detail=exc.errors()) from exc
+        plog = select_service(run_id, select_body)
     else:  # kind == "journey_action"
         if body.action_type is None:
             raise HTTPException(
                 status_code=422,
                 detail="action_type is required for kind='journey_action'",
             )
-        plog = apply_journey_action(
-            run_id, JourneyAction(action_type=body.action_type, payload=body.payload)
-        )
+        # Same rationale as above: JourneyAction.action_type is enum-typed.
+        try:
+            journey_action = JourneyAction(action_type=body.action_type, payload=body.payload)
+        except ValidationError as exc:
+            raise HTTPException(status_code=422, detail=exc.errors()) from exc
+        plog = apply_journey_action(run_id, journey_action)
 
     # Refresh the correlation entry's proposal_event_ids for this proposal run
     # (most recent entry tied to run_id — slice-1 has exactly one).

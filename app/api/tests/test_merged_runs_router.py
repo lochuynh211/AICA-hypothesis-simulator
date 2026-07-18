@@ -140,3 +140,33 @@ def test_proposal_action_before_any_fire_404(rest_plan_id, base_world_dict):
         json={"kind": "select_service", "selected_service_id": "music_playlist"},
     )
     assert resp.status_code == 404
+
+
+def test_proposal_action_invalid_selected_service_id_422(rest_plan_id, base_world_dict):
+    """Review fix: an unknown ``selected_service_id`` must surface as a 422
+    (SelectServiceBody's enum-typed field rejects it), not an unhandled 500.
+    """
+    mid = _create_merged_run(rest_plan_id, base_world_dict)
+    proposal = _tick_until_proposal(mid)
+    assert proposal is not None
+
+    resp = client.post(
+        f"/api/merged-runs/{mid}/proposal-action",
+        json={"kind": "select_service", "selected_service_id": "not_a_real_service"},
+    )
+    assert resp.status_code == 422, resp.text
+
+
+def test_proposal_action_invalid_action_type_422(rest_plan_id, base_world_dict):
+    """Review fix: an unknown ``action_type`` must surface as a 422
+    (JourneyAction's enum-typed field rejects it), not an unhandled 500.
+    """
+    mid = _create_merged_run(rest_plan_id, base_world_dict)
+    proposal = _tick_until_proposal(mid)
+    assert proposal is not None
+
+    resp = client.post(
+        f"/api/merged-runs/{mid}/proposal-action",
+        json={"kind": "journey_action", "action_type": "not_a_real_action"},
+    )
+    assert resp.status_code == 422, resp.text
