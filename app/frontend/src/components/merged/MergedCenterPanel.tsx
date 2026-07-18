@@ -168,7 +168,7 @@ export default function MergedCenterPanel() {
               eligibleCandidates={eligibleCandidates}
               excludedCandidates={excludedCandidates}
               activeServiceId={activeServiceId}
-              choosingId={null}
+              choosingId={state.choosingId}
               onChoose={handleChoose}
               explanationProvider="off"
               lang="en"

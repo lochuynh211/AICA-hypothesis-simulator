@@ -47,6 +47,13 @@ export type MergedCoordinatorState = {
   completed: boolean
   /** True while `play()`'s loop is actively ticking. */
   running: boolean
+  /** The service candidate id currently being selected, or null when no
+   * `selectService()` call is in flight — mirrors `ServiceProposalPanel`'s
+   * local `choosingId` state, but lives in the coordinator here since
+   * `selectService()` itself lives on the coordinator. Drives the
+   * Choose-button busy/disabled affordance in `ServiceResultOverlay` and
+   * doubles as the double-submit guard's visible state. */
+  choosingId: string | null
   error: string | null
 }
 
@@ -59,6 +66,7 @@ export const initialMergedCoordinatorState: MergedCoordinatorState = {
   paused: false,
   completed: false,
   running: false,
+  choosingId: null,
   error: null,
 }
 
@@ -69,6 +77,7 @@ export type MergedCoordinatorAction =
   | { type: 'TICK_APPENDED'; response: MergedTickResponse }
   | { type: 'PROPOSAL_UPDATED'; proposalLog: ProposalRunLog }
   | { type: 'SET_RUNNING'; running: boolean }
+  | { type: 'SET_CHOOSING'; serviceId: string | null }
   | { type: 'ERROR'; message: string }
 
 /** Builds a TraceEntry from a tick's trigger payload the same way runStore's
@@ -114,9 +123,18 @@ export function mergedCoordinatorReducer(
         correlation: correlation ? [...state.correlation, correlation] : state.correlation,
         paused: trigger.paused,
         completed: trigger.completed,
-        // Surface a per-tick algorithm_error without disguising it as a
-        // normal decision (CLAUDE.md) — otherwise leave any prior error alone.
-        error: trigger.error ? trigger.error.message : state.error,
+        // Surface a per-tick algorithm_error, OR a synchronous
+        // create_proposal_run failure during this tick's fire
+        // (`trigger.proposal_error` — set by merged_runs.py when the fire
+        // itself succeeds but spawning the proposal run threw), without
+        // disguising the trigger tick as failed (CLAUDE.md: failures are
+        // never disguised/silently swallowed) — otherwise leave any prior
+        // error alone.
+        error: trigger.proposal_error
+          ? trigger.proposal_error
+          : trigger.error
+            ? trigger.error.message
+            : state.error,
       }
     }
 
@@ -125,6 +143,9 @@ export function mergedCoordinatorReducer(
 
     case 'SET_RUNNING':
       return { ...state, running: action.running }
+
+    case 'SET_CHOOSING':
+      return { ...state, choosingId: action.serviceId }
 
     case 'ERROR':
       return { ...state, error: action.message, running: false }
@@ -156,6 +177,10 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
   // merged_run_id / run flag synchronously, without waiting on a re-render.
   const mergedRunIdRef = useRef<string | null>(null)
   const runningRef = useRef(false)
+  // Double-submit guard for selectService(): a ref (not just `state.choosingId`)
+  // so a re-entrant call made before the next render commits still sees the
+  // in-flight selection synchronously — mirrors `runningRef`'s role for play().
+  const choosingRef = useRef<string | null>(null)
 
   const create = async (req: CreateMergedRunReq): Promise<void> => {
     try {
@@ -207,6 +232,15 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
   const selectService = async (serviceId: string): Promise<void> => {
     const mergedRunId = mergedRunIdRef.current
     if (!mergedRunId) return
+    // Double-submit guard (mirrors ServiceProposalPanel's local `choosingId`
+    // state, see components/proposal/panels/ServiceProposalPanel.tsx): while
+    // a selection is already in flight, a rapid double-click on Choose must
+    // NOT fire a second concurrent proposal-action request — the backend's
+    // select_service has no idempotency check, so a second call would append
+    // a duplicate entry to the append-only evidence log.
+    if (choosingRef.current) return
+    choosingRef.current = serviceId
+    dispatch({ type: 'SET_CHOOSING', serviceId })
     try {
       const proposalLog = await mergedProposalAction(mergedRunId, {
         kind: 'select_service',
@@ -218,6 +252,9 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
         type: 'ERROR',
         message: err instanceof Error ? err.message : 'select_service failed',
       })
+    } finally {
+      choosingRef.current = null
+      dispatch({ type: 'SET_CHOOSING', serviceId: null })
     }
   }
 

@@ -391,6 +391,55 @@ describe('MergedCenterPanel', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('boom: division by zero')
   })
 
+  it('disables the Choose button while selectService is in flight (choosingId wired through, Finding 2)', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_6', trigger_run_id: 'run_6' })
+    vi.mocked(tickMergedRun).mockResolvedValueOnce(firedTickWithProposal(45))
+
+    let resolveAction: (log: ProposalRunLog) => void = () => {}
+    const pending = new Promise<ProposalRunLog>((resolve) => {
+      resolveAction = resolve
+    })
+    vi.mocked(mergedProposalAction).mockReturnValue(pending)
+
+    const coordinatorRef = renderCenterPanel()
+
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => {
+      await coordinatorRef.current!.step()
+    })
+
+    const chooseButton = screen.getByTestId('choose-candidate-music_playlist') as HTMLButtonElement
+    expect(chooseButton).not.toBeDisabled()
+
+    act(() => {
+      fireEvent.click(chooseButton)
+    })
+
+    // Passing `choosingId={null}` unconditionally (the pre-fix bug) would
+    // leave this button always enabled/idle no matter what — asserting it
+    // goes busy+disabled here proves `state.choosingId` from the coordinator
+    // is actually threaded through to `<ServiceResultOverlay>`.
+    expect(chooseButton).toBeDisabled()
+    expect(chooseButton).toHaveTextContent('…')
+
+    // A second click while disabled must not fire a second request (jsdom
+    // does not dispatch click handlers for disabled buttons).
+    fireEvent.click(chooseButton)
+    expect(mergedProposalAction).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      resolveAction(baseProposalLog({ status: 'service_selected' }))
+    })
+  })
+
   it('the Play button drives coordinator.play() (ticks until the trigger pauses)', async () => {
     vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_4', trigger_run_id: 'run_4' })
     vi.mocked(tickMergedRun).mockResolvedValueOnce(firedTickWithProposal(45))

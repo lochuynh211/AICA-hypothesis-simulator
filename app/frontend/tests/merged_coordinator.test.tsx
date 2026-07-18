@@ -134,6 +134,33 @@ function firedTickWithProposal(tickIndex: number): MergedTickResponse {
   }
 }
 
+/** A fire tick where `create_proposal_run` failed synchronously — mirrors
+ * `merged_runs.py`'s `resp.trigger["proposal_error"] = str(exc.detail)` path
+ * (Finding 1): the trigger tick itself still succeeds (decision/paused as
+ * normal) and no proposal/correlation is produced, but `proposal_error`
+ * carries the failure message. */
+function firedTickWithProposalError(tickIndex: number): MergedTickResponse {
+  return {
+    trigger: {
+      decision: restProposalDecision,
+      error: null,
+      paused: true,
+      completed: false,
+      tick_index: tickIndex,
+      route_fraction: tickIndex / 100,
+      distance_km: null,
+      speed_kph: 0,
+      motion_state: 'STOPPED',
+      recovery_phase: null,
+      is_traffic_jam: false,
+      segment_type: 'highway',
+      proposal_error: 'create_proposal_run failed: 422 invalid parameters',
+    },
+    proposal: null,
+    correlation: null,
+  }
+}
+
 function wrapper({ children }: { children: React.ReactNode }) {
   return React.createElement(MergedCoordinatorProvider, null, children)
 }
@@ -242,6 +269,87 @@ describe('mergedCoordinator — create + step tick loop', () => {
       kind: 'select_service',
       selected_service_id: 'music_playlist',
     })
+    expect(result.current.state.proposalLog?.status).toBe('service_selected')
+  })
+
+  it('a tick response carrying trigger.proposal_error sets store.error without disguising the tick as failed (Finding 1)', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({
+      merged_run_id: 'mrun_6',
+      trigger_run_id: 'run_6',
+    })
+    vi.mocked(tickMergedRun).mockResolvedValueOnce(firedTickWithProposalError(45))
+
+    const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
+
+    await act(async () => {
+      await result.current.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => {
+      await result.current.step()
+    })
+
+    expect(result.current.state.error).toBe('create_proposal_run failed: 422 invalid parameters')
+    // The trigger tick itself is NOT disguised as failed: the decision still
+    // appended to the trace and the tick reports paused, same as any other
+    // fired tick — only proposalLog stays null (no proposal run was created).
+    expect(result.current.state.triggerTrace).toHaveLength(1)
+    expect(result.current.state.paused).toBe(true)
+    expect(result.current.state.proposalLog).toBeNull()
+  })
+
+  it('a double selectService() call while the first is in flight is ignored (Finding 2 double-submit guard)', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({
+      merged_run_id: 'mrun_7',
+      trigger_run_id: 'run_7',
+    })
+    vi.mocked(tickMergedRun).mockResolvedValueOnce(firedTickWithProposal(45))
+
+    let resolveAction!: (log: ProposalRunLog) => void
+    const pending = new Promise<ProposalRunLog>((resolve) => {
+      resolveAction = resolve
+    })
+    vi.mocked(mergedProposalAction).mockReturnValue(pending)
+
+    const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
+
+    await act(async () => {
+      await result.current.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => {
+      await result.current.step()
+    })
+
+    let firstCall!: Promise<void>
+    act(() => {
+      firstCall = result.current.selectService('music_playlist')
+    })
+    expect(result.current.state.choosingId).toBe('music_playlist')
+
+    // Re-entrant call while the first is still in flight — must be a no-op:
+    // no second mergedProposalAction call, no throw.
+    await act(async () => {
+      await result.current.selectService('music_playlist')
+    })
+    expect(mergedProposalAction).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      resolveAction(baseProposalLog({ status: 'service_selected' }))
+      await firstCall
+    })
+
+    expect(result.current.state.choosingId).toBeNull()
     expect(result.current.state.proposalLog?.status).toBe('service_selected')
   })
 
