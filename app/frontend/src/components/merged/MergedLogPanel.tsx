@@ -56,6 +56,26 @@ const REST_JOURNEY_EVENT_LABELS: Record<string, { ja: string; en: string }> = {
   RECOMPUTED: { ja: '休憩後に再計算', en: 'Recomputed after rest' },
 }
 
+/**
+ * Bilingual friendly labels for `trigger_purpose` (Slice 3 Task 3) — a
+ * small, purpose-agnostic lookup so `OPPORTUNITY_OPENED` rows read clearly
+ * instead of printing the raw enum. The `ja` text mirrors `WorldPanel`'s own
+ * `TRIGGER_PURPOSES` map; unlike that map (whose `en` column is deliberately
+ * the raw value, used there as button captions), the `en` text here is a
+ * genuine friendly label since this panel always renders English (see
+ * module doc). Unknown/future purposes fall back to the raw string in
+ * `summarizeProposalEvent` below.
+ */
+const TRIGGER_PURPOSE_LABELS: Record<string, { ja: string; en: string }> = {
+  rest_recommended: { ja: '休憩推奨', en: 'Rest recommended' },
+  inattentive_driving_prevention_recovery: {
+    ja: '注意力低下防止・回復',
+    en: 'Inattentive driving prevention & recovery',
+  },
+  route_music: { ja: 'ルート音楽', en: 'Route music' },
+  child_passenger_experience: { ja: '子ども同乗体験', en: 'Child passenger experience' },
+}
+
 type MergedEntry =
   | { kind: 'trace'; tickIndex: number; entry: TraceEntry }
   | { kind: 'proposal'; tickIndex: number; event: DiscreteEvent }
@@ -95,8 +115,11 @@ function buildMergedEntries(state: MergedCoordinatorState): MergedEntry[] {
  * One-line payload summary per subsystem event: `SERVICE_SELECTED` -> the
  * selected service id, `CONTENT_SELECTED` -> item count (when the payload
  * carries an `items` list) falling back to the selected service id,
- * `OPPORTUNITY_OPENED` -> the trigger purpose. Anything else falls back to a
- * generic `key=value` dump (mirrors `EventTimeline`'s `summarizePayload`).
+ * `OPPORTUNITY_OPENED` -> the friendly bilingual `trigger_purpose` label
+ * (via `TRIGGER_PURPOSE_LABELS` above, English resolved same as elsewhere in
+ * this panel), falling back to the raw string for unknown purposes.
+ * Anything else falls back to a generic `key=value` dump (mirrors
+ * `EventTimeline`'s `summarizePayload`).
  */
 function summarizeProposalEvent(event: DiscreteEvent): string {
   const payload = event.payload
@@ -107,8 +130,11 @@ function summarizeProposalEvent(event: DiscreteEvent): string {
       return Array.isArray(payload.items)
         ? `${payload.items.length} items`
         : String(payload.selected_service_id ?? '')
-    case 'OPPORTUNITY_OPENED':
-      return String(payload.trigger_purpose ?? '')
+    case 'OPPORTUNITY_OPENED': {
+      const purpose = String(payload.trigger_purpose ?? '')
+      const label = TRIGGER_PURPOSE_LABELS[purpose]
+      return label ? t(label, 'en') : purpose
+    }
     default: {
       const entries = Object.entries(payload)
       if (entries.length === 0) return ''

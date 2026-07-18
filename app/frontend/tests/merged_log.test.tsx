@@ -233,6 +233,56 @@ function restJourneyTick(tickIndex: number): MergedTickResponse {
   }
 }
 
+/** A single-tick fixture whose `OPPORTUNITY_OPENED` event carries the
+ * monotony/inattentive-driving trigger purpose (Task 3 of Slice 3) — used to
+ * verify the merged log prints a friendly bilingual label rather than the
+ * raw `trigger_purpose` enum value. */
+function inattentiveOpportunityTick(tickIndex: number): MergedTickResponse {
+  return {
+    trigger: {
+      decision: restProposalDecision,
+      error: null,
+      paused: true,
+      completed: false,
+      tick_index: tickIndex,
+      route_fraction: tickIndex / 100,
+      distance_km: null,
+      speed_kph: 0,
+      motion_state: 'STOPPED',
+      recovery_phase: null,
+      is_traffic_jam: false,
+      segment_type: 'highway',
+    },
+    proposal: baseProposalLog({
+      opportunity: {
+        opportunity_id: 'op_2',
+        trigger_purpose: 'inattentive_driving_prevention_recovery',
+        lifecycle_stage: 'before_rest_until_stop',
+        allowed_service_ids: ['music_playlist'],
+        simulation_time: 1,
+        run_seed: '7',
+      },
+      status: 'created',
+      events: [
+        {
+          event_type: 'OPPORTUNITY_OPENED',
+          at: '2026-07-18T00:00:01Z',
+          payload: {
+            opportunity_id: 'op_2',
+            trigger_purpose: 'inattentive_driving_prevention_recovery',
+            lifecycle_stage: 'before_rest_until_stop',
+          },
+        },
+      ],
+    }),
+    correlation: {
+      trigger_tick_index: tickIndex,
+      proposal_run_id: 'prun_20260718-000000_abcdef',
+      proposal_event_ids: ['OPPORTUNITY_OPENED@2026-07-18T00:00:01Z'],
+    },
+  }
+}
+
 /** Same `Capture` pattern as `merged_center.test.tsx`'s `renderCenterPanel`. */
 function renderLogPanel() {
   const coordinatorRef: { current: ReturnType<typeof useMergedCoordinator> | null } = { current: null }
@@ -373,5 +423,29 @@ describe('MergedLogPanel', () => {
     const phase3Idx = rows.indexOf('merged-log-recovery-phase-3')
     expect(phase1Idx).toBeLessThan(phase2Idx)
     expect(phase2Idx).toBeLessThan(phase3Idx)
+  })
+
+  it('shows a friendly bilingual trigger-purpose label for OPPORTUNITY_OPENED, not the raw enum (Slice 3 Task 3)', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_1', trigger_run_id: 'run_1' })
+    vi.mocked(tickMergedRun).mockResolvedValueOnce(inattentiveOpportunityTick(0))
+
+    const { coordinatorRef } = renderLogPanel()
+
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => {
+      await coordinatorRef.current!.step()
+    })
+
+    // Friendly label present; raw enum string is not rendered anywhere.
+    expect(screen.getByText('Inattentive driving prevention & recovery')).toBeInTheDocument()
+    expect(screen.queryByText('inattentive_driving_prevention_recovery')).not.toBeInTheDocument()
   })
 })
