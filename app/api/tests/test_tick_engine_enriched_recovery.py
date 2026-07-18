@@ -23,6 +23,8 @@ brief), independent of tests/helpers_recovery.py's fixture.
 
 from __future__ import annotations
 
+import pytest
+
 from aica_api.models.profile import (
     ActivityRecovery,
     AnomalySignalParams,
@@ -220,6 +222,66 @@ def test_moving_content_stage_accrues_small_recovery_growing_with_ticks():
 
     assert gap_1 > 0.0          # a small amount of recovery already after 1 tick
     assert gap_3 > gap_1        # the recovered amount grows with more moving ticks
+
+
+def _moving_content_capped_drowsiness_after(n_ticks: int, *, cap_drowsiness: float | None) -> float:
+    """Like _moving_content_drowsiness_after, but properly threads the
+    RecoveryState's `_recovery_next` across ticks (mirroring run_manager.py's
+    production tick loop) instead of reusing a static `rec` object -- required
+    to exercise the aggregate-cap accrual, which lives ON RecoveryState."""
+    dm = DrowsinessModel(
+        base_growth_per_min=0.0, night_add_per_min=0.0,
+        monotony_add_per_min=0.0, traffic_jam_add_per_min=0.0,
+    )
+    fm = FatigueModel(
+        base_growth_per_min=0.0, continuous_driving_add_per_min_after_60_min=0.0,
+        mountain_road_add_per_min=0.0, traffic_jam_add_per_min=0.0,
+    )
+    scenario = _build_scenario(
+        recovery_model={
+            "video_karaoke": ActivityRecovery(
+                drowsiness_per_min=1.0, fatigue_per_min=0.5,
+                cap_drowsiness=cap_drowsiness,
+            ),
+        },
+        stages=[
+            RecoveryStage(phase="content", content="video_karaoke", motion="MOVING"),
+        ],
+        drowsiness_model=dm,
+        fatigue_model=fm,
+        initial_drowsiness=90.0,
+        initial_fatigue=90.0,
+    )
+    plan, facts = _tick_and_facts(scenario)
+    rec = RecoveryState(
+        active=True, option_id="opt", rest_spot=_SPOT,
+        phase="content", stage_index=0, stage_ticks_remaining=0,
+    )
+    state = advance_tick(None, 0, plan, facts, scenario)  # tick 0 baseline
+    for i in range(1, n_ticks + 1):
+        state = advance_tick(state, i, plan, facts, scenario, recovery=rec)
+        rec_next = (state.model_extra or {}).get("_recovery_next")
+        if rec_next is not None:
+            rec = rec_next
+    return float(state.signals["simulated"]["drowsiness"])
+
+
+def test_moving_content_stage_aggregate_recovery_is_capped_across_the_whole_stage():
+    """Review fix (Slice-2 core Task 2 findings): a MOVING content stage with
+    drowsiness_per_min=1.0 (per tick) and cap_drowsiness=5.0 must not recover
+    more than 5.0 IN TOTAL across many en-route ticks, even though each
+    single tick's raw amount (1.0) is well under the per-call cap of 5.0 --
+    i.e. the cap must bound the SUM over the stage, not just each call.
+    """
+    # 20 ticks * 1.0/min = 20.0 raw if uncapped-per-tick would recover past the
+    # cap many times over; the aggregate cap must stop total recovery at 5.0.
+    capped_final = _moving_content_capped_drowsiness_after(20, cap_drowsiness=5.0)
+    assert capped_final == pytest.approx(90.0 - 5.0)
+
+    # An uncapped activity (cap_drowsiness=None) keeps recovering linearly --
+    # confirms the cap (not some other clamp) is what bounded the capped case.
+    uncapped_final = _moving_content_capped_drowsiness_after(20, cap_drowsiness=None)
+    assert uncapped_final == pytest.approx(90.0 - 20.0)
 
 
 def test_moving_wakefulness_stage_recovers_nothing():

@@ -29,6 +29,7 @@ from aica_api.services.behavior.driver_signals import (
     apply_rest_recovery,
     apply_rest_recovery_minutes,
     apply_rest_recovery_rate,
+    apply_rest_recovery_rate_capped,
 )
 
 # ─── Fixtures ──────────────────────────────────────────────────────────────────
@@ -223,3 +224,102 @@ def test_rate_capped_per_call():
     result = apply_rest_recovery_rate(_PARAMS, state, "nap_capped", tick_minutes=100.0)
     assert result.drowsiness == pytest.approx(80.0 - 15.0)
     assert result.fatigue == pytest.approx(80.0 - 8.0)
+
+
+# ─── apply_rest_recovery_rate_capped — AGGREGATE cap across a whole stage ─────
+#
+# Review fix (Slice-2 core Task 2 findings): apply_rest_recovery_rate caps only
+# the CURRENT call's amount, so calling it every MOVING tick for N ticks lets
+# total recovery grow to N * per_min * tick_minutes with no ceiling across the
+# stage. apply_rest_recovery_rate_capped instead takes the accrued-so-far
+# totals (threaded by the caller, e.g. on RecoveryState, reset per stage) and
+# shrinks this call's amount to the remaining headroom under the cap.
+
+
+def test_rate_capped_aggregate_first_call_uncapped_when_room_remains():
+    state = DriverState(drowsiness=80.0, fatigue=80.0)
+    new_state, accrued_d, accrued_f = apply_rest_recovery_rate_capped(
+        _PARAMS, state, "nap_capped", tick_minutes=1.0,
+        accrued_drowsiness=0.0, accrued_fatigue=0.0,
+    )
+    assert new_state.drowsiness == pytest.approx(80.0 - 1.0)
+    assert new_state.fatigue == pytest.approx(80.0 - 0.5)
+    assert accrued_d == pytest.approx(1.0)
+    assert accrued_f == pytest.approx(0.5)
+
+
+def test_rate_capped_aggregate_shrinks_as_cap_approached():
+    # cap_drowsiness=15.0; already accrued 14.5 -> only 0.5 headroom left,
+    # even though the raw per-tick amount (1.0 * 1.0min = 1.0) is well under
+    # the per-call cap of 15.0 -- this is exactly the gap apply_rest_recovery_rate
+    # (per-call only) misses.
+    state = DriverState(drowsiness=80.0, fatigue=80.0)
+    new_state, accrued_d, accrued_f = apply_rest_recovery_rate_capped(
+        _PARAMS, state, "nap_capped", tick_minutes=1.0,
+        accrued_drowsiness=14.5, accrued_fatigue=0.0,
+    )
+    assert new_state.drowsiness == pytest.approx(80.0 - 0.5)   # only headroom, not full 1.0
+    assert accrued_d == pytest.approx(15.0)                    # saturates exactly at cap
+
+
+def test_rate_capped_aggregate_zero_once_cap_already_reached():
+    state = DriverState(drowsiness=80.0, fatigue=80.0)
+    new_state, accrued_d, accrued_f = apply_rest_recovery_rate_capped(
+        _PARAMS, state, "nap_capped", tick_minutes=1.0,
+        accrued_drowsiness=15.0, accrued_fatigue=8.0,   # already at both caps
+    )
+    assert new_state.drowsiness == 80.0     # no further recovery once cap reached
+    assert new_state.fatigue == 80.0
+    assert accrued_d == 15.0
+    assert accrued_f == 8.0
+
+
+def test_rate_capped_aggregate_over_many_ticks_saturates_at_cap_not_beyond():
+    """30 ticks * 1.0/min raw would sum to 30.0 (double the cap=15.0 for
+    nap_capped's drowsiness) if capped only per-call -- the aggregate-capped
+    function must saturate the SUM at the cap instead."""
+    state = DriverState(drowsiness=80.0, fatigue=80.0)
+    accrued_d, accrued_f = 0.0, 0.0
+    for _ in range(30):
+        state, accrued_d, accrued_f = apply_rest_recovery_rate_capped(
+            _PARAMS, state, "nap_capped", tick_minutes=1.0,
+            accrued_drowsiness=accrued_d, accrued_fatigue=accrued_f,
+        )
+    assert accrued_d == pytest.approx(15.0)
+    assert accrued_f == pytest.approx(8.0)
+    assert state.drowsiness == pytest.approx(80.0 - 15.0)
+    assert state.fatigue == pytest.approx(80.0 - 8.0)
+
+
+def test_rate_capped_uncapped_activity_accrues_without_limit():
+    state = DriverState(drowsiness=80.0, fatigue=80.0)
+    accrued_d, accrued_f = 0.0, 0.0
+    for _ in range(5):
+        state, accrued_d, accrued_f = apply_rest_recovery_rate_capped(
+            _PARAMS, state, "nap_rate_only", tick_minutes=1.0,
+            accrued_drowsiness=accrued_d, accrued_fatigue=accrued_f,
+        )
+    assert accrued_d == pytest.approx(5.0)   # no cap on nap_rate_only -> keeps growing
+    assert state.drowsiness == pytest.approx(80.0 - 5.0)
+
+
+def test_rate_capped_unknown_activity_recovers_nothing_and_accrued_unchanged():
+    state = DriverState(drowsiness=50.0, fatigue=40.0)
+    new_state, accrued_d, accrued_f = apply_rest_recovery_rate_capped(
+        _PARAMS, state, "unlisted_activity", tick_minutes=1.0,
+        accrued_drowsiness=3.0, accrued_fatigue=2.0,
+    )
+    assert new_state.drowsiness == 50.0
+    assert new_state.fatigue == 40.0
+    assert accrued_d == 3.0
+    assert accrued_f == 2.0
+
+
+def test_rate_capped_never_goes_below_zero():
+    state = DriverState(drowsiness=0.3, fatigue=0.1)
+    new_state, _, _ = apply_rest_recovery_rate_capped(
+        _PARAMS, state, "nap_rate_only", tick_minutes=5.0,
+        accrued_drowsiness=0.0, accrued_fatigue=0.0,
+    )
+    assert new_state.drowsiness == 0.0
+    assert new_state.fatigue == 0.0

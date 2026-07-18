@@ -34,3 +34,34 @@ def test_stopped_stages_count_down_then_resume():
     assert s.phase == "resuming"
     s = advance_recovery(s, OPT, at_rest_spot=True)   # resuming -> done
     assert s.active is False and s.phase is None
+
+
+def test_moving_recovery_accrual_resets_on_stage_transition():
+    """Feature 020 (Slice-2 core, review fix): the per-stage MOVING recovery
+    accrual counters must reset to 0.0 whenever a stage transition happens
+    (_enter_stage), so a following en-route MOVING stage's aggregate cap
+    starts fresh rather than inheriting a prior stage's accrued total."""
+    s = start_recovery(OPT, SPOT)
+    s = s.model_copy(update={
+        "moving_recovery_accrued_drowsiness": 7.5,
+        "moving_recovery_accrued_fatigue": 3.0,
+    })
+    s = advance_recovery(s, OPT, at_rest_spot=True)   # wakefulness -> nap (transition)
+    assert s.phase == "nap"
+    assert s.moving_recovery_accrued_drowsiness == 0.0
+    assert s.moving_recovery_accrued_fatigue == 0.0
+
+
+def test_moving_recovery_accrual_unchanged_while_still_in_same_stage():
+    """While still en route (no transition), advance_recovery must not touch
+    the accrual counters — the tick engine is solely responsible for updating
+    them (via the applied recovery amount)."""
+    s = start_recovery(OPT, SPOT)
+    s = s.model_copy(update={
+        "moving_recovery_accrued_drowsiness": 4.0,
+        "moving_recovery_accrued_fatigue": 1.0,
+    })
+    s = advance_recovery(s, OPT, at_rest_spot=False)  # still en route, no transition
+    assert s.phase == "wakefulness"
+    assert s.moving_recovery_accrued_drowsiness == 4.0
+    assert s.moving_recovery_accrued_fatigue == 1.0

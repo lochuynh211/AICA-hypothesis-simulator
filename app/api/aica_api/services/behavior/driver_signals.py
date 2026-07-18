@@ -255,6 +255,73 @@ def apply_rest_recovery_rate(
     )
 
 
+def apply_rest_recovery_rate_capped(
+    params: DriverSignalParams,
+    current: DriverState,
+    activity: str,
+    tick_minutes: float,
+    accrued_drowsiness: float,
+    accrued_fatigue: float,
+) -> tuple[DriverState, float, float]:
+    """Per-tick recovery accrual for a MOVING/en-route activity, with the
+    activity's cap enforced as an AGGREGATE ceiling across the whole en-route
+    stage instead of per call.
+
+    Feature 020 (Slice-2 core, review fix). ``apply_rest_recovery_rate`` caps
+    each call independently, so invoking it every tick for N ticks can let
+    total recovery grow to ``N * per_min * tick_minutes`` with no ceiling
+    across the stage even when ``cap_drowsiness``/``cap_fatigue`` are set.
+    This function instead takes how much has already been recovered THIS
+    stage (``accrued_drowsiness`` / ``accrued_fatigue`` — threaded by the
+    caller across ticks, e.g. on ``RecoveryState``, reset to 0.0 whenever a
+    new stage is entered) and only grants the remaining headroom under the
+    cap this tick.
+
+    Args:
+        params:             DriverSignalParams (per-activity recovery map).
+        current:            State before this tick's accrual.
+        activity:           The stage ``content`` naming the rest activity.
+        tick_minutes:       Length of this tick, in minutes.
+        accrued_drowsiness: Cumulative drowsiness recovery already granted
+                            this stage (before this tick).
+        accrued_fatigue:    Cumulative fatigue recovery already granted this
+                            stage (before this tick).
+
+    Returns:
+        ``(new_state, new_accrued_drowsiness, new_accrued_fatigue)`` — the
+        accrued totals returned INCLUDE this tick's applied amount, for the
+        caller to thread into the next tick. An activity with no cap set for
+        a component keeps accruing without limit for that component (matches
+        ``apply_rest_recovery_rate``'s uncapped behavior). Result state is
+        always clamped >= 0 (never over-recovers below the floor). An
+        unknown activity recovers nothing and returns the accrued totals
+        unchanged.
+    """
+    rec = params.recovery_model.get(activity)
+    if rec is None:
+        return current, accrued_drowsiness, accrued_fatigue
+
+    drowsiness_amount = rec.drowsiness_per_min * tick_minutes
+    if rec.cap_drowsiness is not None:
+        remaining_drowsiness = max(0.0, rec.cap_drowsiness - accrued_drowsiness)
+        drowsiness_amount = min(drowsiness_amount, remaining_drowsiness)
+
+    fatigue_amount = rec.fatigue_per_min * tick_minutes
+    if rec.cap_fatigue is not None:
+        remaining_fatigue = max(0.0, rec.cap_fatigue - accrued_fatigue)
+        fatigue_amount = min(fatigue_amount, remaining_fatigue)
+
+    new_state = DriverState(
+        drowsiness=_clamp(current.drowsiness - drowsiness_amount),
+        fatigue=_clamp(current.fatigue - fatigue_amount),
+    )
+    return (
+        new_state,
+        accrued_drowsiness + drowsiness_amount,
+        accrued_fatigue + fatigue_amount,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------

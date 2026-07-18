@@ -333,14 +333,32 @@ def advance_tick(
         elif _stage is not None and motion_state == "MOVING" and (
             _stage.phase == "content" or _stage.content != "wakefulness"
         ):
-            from aica_api.services.behavior.driver_signals import DriverState, apply_rest_recovery_rate
-            recovered = apply_rest_recovery_rate(
+            # Review fix (Slice-2 core Task 2 findings): apply_rest_recovery_rate
+            # caps only the amount from THIS call, so calling it every MOVING
+            # tick would let total recovery over the stage grow unbounded. Use
+            # the aggregate-capped variant, threading the accrued-so-far totals
+            # from `recovery` (this stage's running total so far) and stashing
+            # the updated totals onto `recovery_next` below -- but ONLY while
+            # `recovery_next` is still the SAME stage (a transition this tick
+            # already reset the new stage's accrual to 0.0 via _enter_stage;
+            # don't clobber that reset with the outgoing stage's total).
+            from aica_api.services.behavior.driver_signals import (
+                DriverState, apply_rest_recovery_rate_capped,
+            )
+            recovered, _new_accrued_drowsiness, _new_accrued_fatigue = apply_rest_recovery_rate_capped(
                 scenario.driver_signal_params,
                 DriverState(drowsiness=new_drowsiness, fatigue=new_fatigue),
                 _stage.content,
                 tick_minutes=tick_seconds / 60.0,
+                accrued_drowsiness=recovery.moving_recovery_accrued_drowsiness,
+                accrued_fatigue=recovery.moving_recovery_accrued_fatigue,
             )
             new_drowsiness, new_fatigue = recovered.drowsiness, recovered.fatigue
+            if recovery_next is not None and recovery_next.stage_index == recovery.stage_index:
+                recovery_next = recovery_next.model_copy(update={
+                    "moving_recovery_accrued_drowsiness": _new_accrued_drowsiness,
+                    "moving_recovery_accrued_fatigue": _new_accrued_fatigue,
+                })
 
     # ── Update drowsinessAboveWeakTicks counter (signal_duration ordinal) ──
     new_above_weak = above_weak + 1 if new_drowsiness >= 20.0 else 0

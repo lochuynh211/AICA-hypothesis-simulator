@@ -28,11 +28,23 @@ def start_recovery(option: RecoveryOption, rest_spot: RestSpot) -> RecoveryState
 
 
 def _enter_stage(state: RecoveryState, option: RecoveryOption, index: int) -> RecoveryState:
+    # Feature 020 (Slice-2 core, review fix): reset the MOVING-stage recovery
+    # accrual counters on every stage transition, so a cap_drowsiness/
+    # cap_fatigue applied to a later stage's own aggregate never inherits an
+    # earlier stage's accrued total.
+    _reset_accrual = {
+        "moving_recovery_accrued_drowsiness": 0.0,
+        "moving_recovery_accrued_fatigue": 0.0,
+    }
     if index >= len(option.stages):
-        return state.model_copy(update={"phase": "resuming", "stage_index": index, "stage_ticks_remaining": 0})
+        return state.model_copy(update={
+            "phase": "resuming", "stage_index": index, "stage_ticks_remaining": 0,
+            **_reset_accrual,
+        })
     stage = option.stages[index]
     return state.model_copy(update={
         "phase": stage.phase, "stage_index": index, "stage_ticks_remaining": stage.ticks or 0,
+        **_reset_accrual,
     })
 
 

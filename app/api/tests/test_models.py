@@ -1549,3 +1549,14 @@ def test_recovery_state_defaults():
     assert rs.stage_index == 0
     assert rs.stage_ticks_remaining == 0
     assert rs.rest_spot.route_fraction == 0.6
+
+
+def test_recovery_state_moving_recovery_accrual_fields_default_zero():
+    """Feature 020 (Slice-2 core, review fix): cumulative MOVING-stage recovery
+    accrual fields default to 0.0 so pre-existing persisted runs (missing these
+    keys) and fixtures that don't pass them keep working unchanged."""
+    rs = RecoveryState(active=True, option_id="nap_karaoke",
+                        rest_spot=RestSpot(id="p1", label={"ja": "SA", "en": "SA"}, route_fraction=0.6),
+                        phase="wakefulness")
+    assert rs.moving_recovery_accrued_drowsiness == 0.0
+    assert rs.moving_recovery_accrued_fatigue == 0.0

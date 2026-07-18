@@ -322,6 +322,15 @@ class RecoveryState(BaseModel):
     phase: str | None = None              # wakefulness|arriving|nap|content|resuming
     stage_index: int = 0
     stage_ticks_remaining: int = 0
+    # Feature 020 (Slice-2 core, review fix): cumulative recovery already
+    # granted during the CURRENT en-route MOVING stage (accrued across ticks
+    # by the tick engine via apply_rest_recovery_rate_capped), so a
+    # cap_drowsiness/cap_fatigue can bound the TOTAL recovered over the whole
+    # stage, not just a single tick's amount. Reset to 0.0 whenever a stage
+    # transition happens (services/recovery.py::_enter_stage). Defaults to
+    # 0.0 for back-compat with persisted runs/fixtures predating this field.
+    moving_recovery_accrued_drowsiness: float = 0.0
+    moving_recovery_accrued_fatigue: float = 0.0
     model_config = {"extra": "allow"}
 
 
