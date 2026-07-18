@@ -159,7 +159,19 @@ export default function MergedCenterPanel() {
     Promise.all([getScenario(state.scenarioId), getRestSpots(state.triggerRunId)])
       .then(([scenario, spotsResp]) => {
         if (cancelled) return
-        setRecoveryOptions(scenario.recovery_options ?? [])
+        // Exclude `postpone: true` options (e.g. uc01_fatigue_recovery_v0_1's
+        // `{id:'postpone', stages:[]}`) — unlike RecoveryPicker (which routes
+        // opt.postpone through a DIFFERENT action with no rest_spot,
+        // RecoveryPicker.tsx:67-70), this panel's Accept-rest button ALWAYS
+        // submits via coordinator.acceptRest -> POST accept-rest ->
+        // run_manager.action(..., 'accept_rest', recovery_option_id, rest_spot).
+        // A postpone option has no recovery stages, so that call would leave
+        // motion stuck MOVING forever (the rest-journey auto-drive in
+        // routers/merged_runs.py never sees a stopped transition to key off
+        // of) while reporting success — review finding (slice-2 core Task 4).
+        // Slice-2 core has no separate postpone/decline action for merged
+        // runs, so these options simply aren't offered here yet.
+        setRecoveryOptions((scenario.recovery_options ?? []).filter((opt) => !opt.postpone))
         setRestSpots(spotsResp.rest_spots)
       })
       .catch((err: unknown) => {

@@ -337,6 +337,61 @@ describe('MergedCenterPanel — rest-accept UI + journey auto-drive', () => {
     await waitFor(() => expect(tickMergedRun).toHaveBeenCalledTimes(2))
   })
 
+  it('excludes postpone-flagged recovery options from the accept-rest select (review fix: selecting one would wrongly drive run_manager.action(..., "accept_rest", ...) with stages=[], leaving motion stuck MOVING forever)', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_3', trigger_run_id: 'run_3' })
+    vi.mocked(tickMergedRun).mockResolvedValueOnce(firedTickWithProposal(45))
+    vi.mocked(mergedProposalAction).mockResolvedValue(
+      baseProposalLog({
+        status: 'content_selected',
+        journey_state: {
+          lifecycle_stage: 'before_rest_until_stop',
+          motion_state: 'stopped',
+          active_service_id: 'music_playlist',
+          active_plan_id: 'plan_1',
+        },
+        evidence: [serviceEvidence('music_playlist')],
+      }),
+    )
+    // scenarioFixture.recovery_options includes a `postpone: true` entry
+    // (mirrors the real uc01_fatigue_recovery_v0_1.json scenario's
+    // `{id:'postpone', postpone:true, stages:[]}`) — accept-rest ALWAYS
+    // submits via run_manager.action(..., 'accept_rest', ...), which is only
+    // valid for a real rest option; a postpone option must never appear in
+    // this select.
+    vi.mocked(getScenario).mockResolvedValue(scenarioFixture)
+    vi.mocked(getRestSpots).mockResolvedValue({ rest_spots: [restSpotFixture] })
+
+    const coordinatorRef = renderCenterPanel()
+
+    await act(async () => {
+      await coordinatorRef.current!.create(
+        {
+          trigger_plan_id: 'plan_1',
+          world: {} as never,
+          service_package_id: 'mock_service_selector_v1',
+          content_package_id: 'mock_content_selector_v1',
+          run_seed: '7',
+        },
+        'uc01_fatigue_recovery_v0_1',
+      )
+    })
+    await act(async () => {
+      await coordinatorRef.current!.step()
+    })
+    await act(async () => {
+      await coordinatorRef.current!.selectService('music_playlist')
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('recovery-option-select')).toHaveTextContent('Nap + karaoke')
+    })
+
+    const select = screen.getByTestId('recovery-option-select') as HTMLSelectElement
+    const optionValues = Array.from(select.options).map((o) => o.value)
+    expect(optionValues).not.toContain('postpone')
+    expect(screen.queryByRole('option', { name: 'Postpone' })).not.toBeInTheDocument()
+  })
+
   it('renders the after-rest service overlay once the journey advances to after_rest_before_restart, with no new dock logic', async () => {
     vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_2', trigger_run_id: 'run_2' })
     vi.mocked(tickMergedRun)
