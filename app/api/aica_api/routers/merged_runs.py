@@ -419,6 +419,10 @@ def create_merged_run_endpoint(body: CreateMergedRunBody) -> dict:
         proposal_mode=body.proposal_mode,
         run_seed=body.run_seed,
         merged_dir=settings.merged_runs_dir,
+        service_parameters=body.service_parameters,
+        service_hyperparameters=body.service_hyperparameters,
+        content_parameters=body.content_parameters,
+        content_hyperparameters=body.content_hyperparameters,
     )
     save_handle(handle, settings.merged_runs_dir)
 
@@ -663,6 +667,13 @@ def tick_merged_run_endpoint(merged_run_id: str) -> MergedTickResponse:
                 mode=handle.proposal_mode,
                 run_seed=handle.run_seed,
                 simulation_time=outcome.evaluated_tick_index or 0,
+                # feature 020 override plumbing: SERVICE parameters/
+                # hyperparameters carried from CreateMergedRunBody onto the
+                # handle. Empty (default {}) is identical to
+                # CreateProposalRunBody's own field defaults, so an existing
+                # merged run created without these fields is unaffected.
+                parameters=handle.service_parameters,
+                hyperparameters=handle.service_hyperparameters,
             )
         except ValidationError as exc:
             raise HTTPException(status_code=422, detail=exc.errors()) from exc
@@ -866,7 +877,16 @@ def proposal_action_endpoint(merged_run_id: str, body: MergedProposalActionBody)
         # model manually here means the error must be caught explicitly
         # (mirrors routers/proposal.py's ValidationError -> 422 convention).
         try:
-            select_body = SelectServiceBody(selected_service_id=body.selected_service_id)
+            select_body = SelectServiceBody(
+                selected_service_id=body.selected_service_id,
+                # feature 020 override plumbing: CONTENT parameters/
+                # hyperparameters carried from CreateMergedRunBody onto the
+                # handle. Empty (default {}) is identical to
+                # SelectServiceBody's own field defaults, so an existing
+                # merged run created without these fields is unaffected.
+                parameters=handle.content_parameters,
+                hyperparameters=handle.content_hyperparameters,
+            )
         except ValidationError as exc:
             raise HTTPException(status_code=422, detail=exc.errors()) from exc
         plog = select_service(run_id, select_body)

@@ -76,6 +76,21 @@ class MergedRunHandle(BaseModel):
     # another run created from the same plan_id is unaffected).
     nap_minutes: int | None = None
 
+    # feature 020 (Combined Simulator) service/content override plumbing:
+    # non-default setup-time params/hyperparams for the proposal side, carried
+    # from CreateMergedRunBody so the fire-spawned proposal run (SERVICE, at
+    # tick-fire creation) and the later content dispatch (proposal-action
+    # select_service) can use them instead of each package's own defaults.
+    # Empty (default) means "use the package defaults" -- identical to today's
+    # behavior. `service_*` mirrors CreateProposalRunBody.parameters/
+    # hyperparameters (the SERVICE selector's); `content_*` mirrors
+    # SelectServiceBody.parameters/hyperparameters (the CONTENT selector's,
+    # applied at content-dispatch time in interactive mode).
+    service_parameters: dict = {}
+    service_hyperparameters: dict = {}
+    content_parameters: dict = {}
+    content_hyperparameters: dict = {}
+
 
 class CreateMergedRunBody(BaseModel):
     """Request body to create a merged run.
@@ -83,6 +98,13 @@ class CreateMergedRunBody(BaseModel):
     `trigger_plan_id` refers to a draft already built via the existing
     `POST /api/run-plans`; `world` is the base `World` template (typed) that seeds
     `MergedRunHandle.world_template`.
+
+    `service_parameters`/`service_hyperparameters` and `content_parameters`/
+    `content_hyperparameters` (feature 020 override plumbing) are optional,
+    additive setup-time overrides for the paired proposal run's service and
+    content selectors respectively -- empty (default `{}`) means "use each
+    package's own defaults", byte-identical to pre-override behavior. See
+    `MergedRunHandle`'s matching fields for how they are threaded through.
     """
 
     trigger_plan_id: str
@@ -91,6 +113,10 @@ class CreateMergedRunBody(BaseModel):
     content_package_id: str
     proposal_mode: str = "interactive"
     run_seed: str
+    service_parameters: dict = {}
+    service_hyperparameters: dict = {}
+    content_parameters: dict = {}
+    content_hyperparameters: dict = {}
 
 
 class AcceptRestBody(BaseModel):
@@ -215,6 +241,19 @@ class MergedQuickviewBody(BaseModel):
     ``str``-typed — distinct from the trigger's int ``run_seed`` above, so
     both are threaded independently rather than coercing one into the
     other).
+
+    ``service_parameters``/``service_hyperparameters`` (feature 020 override
+    plumbing) are additive setup-time overrides for each projected fire's
+    quick-check proposal's SERVICE selector -- empty (default ``{}``) means
+    "use the service package's own defaults", byte-identical to pre-override
+    behavior. ``content_parameters``/``content_hyperparameters`` are accepted
+    for symmetry with ``CreateMergedRunBody`` but are NOT currently wired into
+    the projected quick-check proposal's content dispatch -- see
+    ``services/merged_quickview.py``'s module docstring for why (the only
+    content-hyperparameter override channel ``create_proposal_run`` exposes,
+    ``algorithm_config_overrides.content``, requires importing a
+    proposal-scoped model this module's isolation constraint forbids; there
+    is no channel at all for raw content ``parameters`` in quick_check mode).
     """
 
     package_id: str
@@ -230,3 +269,7 @@ class MergedQuickviewBody(BaseModel):
     service_package_id: str
     content_package_id: str
     run_seed_proposal: str
+    service_parameters: dict[str, Any] = {}
+    service_hyperparameters: dict[str, Any] = {}
+    content_parameters: dict[str, Any] = {}
+    content_hyperparameters: dict[str, Any] = {}

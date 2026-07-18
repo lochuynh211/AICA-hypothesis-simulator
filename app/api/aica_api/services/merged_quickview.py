@@ -91,6 +91,20 @@ def _project_fire(ev: PreviewFireEvent, body: MergedQuickviewBody) -> tuple[dict
             # module docstring for why this is a plain string, not the enum.
             run_seed=body.run_seed_proposal,
             simulation_time=ev.tick_index,
+            # feature 020 override plumbing: SERVICE parameters/
+            # hyperparameters. Empty (default {}) is identical to
+            # CreateProposalRunBody's own field defaults, so an existing
+            # caller that omits them is unaffected. NOTE: body.content_parameters/
+            # content_hyperparameters are deliberately NOT threaded here --
+            # CreateProposalRunBody has no field for raw content parameters in
+            # quick_check mode, and the one channel that can reach content
+            # HYPERparameters (algorithm_config_overrides.content) requires
+            # importing a proposal-scoped model (AlgorithmConfigOverrides,
+            # under aica_api.models.proposal.preset) that this module's
+            # isolation constraint forbids (see module docstring) — a real,
+            # unresolved gap, not an oversight.
+            parameters=body.service_parameters,
+            hyperparameters=body.service_hyperparameters,
         )
     except ValidationError as exc:
         return None, str(exc)

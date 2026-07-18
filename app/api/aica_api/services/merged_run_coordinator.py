@@ -78,6 +78,10 @@ def create_handle(
     proposal_mode: str,
     run_seed: str,
     merged_dir: pathlib.Path,
+    service_parameters: dict | None = None,
+    service_hyperparameters: dict | None = None,
+    content_parameters: dict | None = None,
+    content_hyperparameters: dict | None = None,
 ) -> MergedRunHandle:
     """Build a ``MergedRunHandle`` in memory. Does NOT persist — call
     ``save_handle`` to write it to disk.
@@ -86,6 +90,12 @@ def create_handle(
     signature symmetric with ``save_handle``/``get_handle`` and to leave
     room for future validation against the registry without changing the
     call sites that already pass it.
+
+    ``service_parameters``/``service_hyperparameters``/``content_parameters``/
+    ``content_hyperparameters`` (feature 020 override plumbing) default to
+    ``None`` here and are normalized to ``{}`` (``MergedRunHandle``'s own
+    field default) — additive-only: an existing call site that omits them
+    behaves exactly as before.
     """
     return MergedRunHandle(
         merged_run_id=merged_run_id,
@@ -95,6 +105,10 @@ def create_handle(
         content_package_id=content_package_id,
         proposal_mode=proposal_mode,
         run_seed=run_seed,
+        service_parameters=service_parameters or {},
+        service_hyperparameters=service_hyperparameters or {},
+        content_parameters=content_parameters or {},
+        content_hyperparameters=content_hyperparameters or {},
     )
 
 
