@@ -611,6 +611,43 @@ def evaluate_preview(
     of its own bookkeeping to reproduce the exact same ``InstantResult`` the
     pre-extraction, single-function ``evaluate_preview`` returned.
 
+    Design note — reviewed, intentional deviation from the brief's literal
+    "for ev in iter_preview_ticks(...): <append into fires/score_series/...>"
+    consumer sketch (``.superpowers/sdd/s2c-task-1-brief.md`` Task 1; recorded
+    permanently here — see the "Task 1 review-fix" section of
+    ``.superpowers/sdd/s2c-task-1-report.md`` for the full sign-off record —
+    so this does not need re-litigating on a future read):
+
+    1. Mechanically, a plain ``for ev in iter_preview_ticks(...): ...`` loop
+       cannot ALSO recover the generator's ``return`` value: a ``for`` loop
+       silently discards ``StopIteration.value`` (a well-known Python
+       generator gotcha). Retrieving the return value requires exactly the
+       manual ``next()`` / ``except StopIteration as stop: stop.value``
+       pattern used below — the brief's literal sketch is not achievable
+       verbatim without giving up the return value.
+    2. Several output fields (``score_series``, ``segments``, ``spikes``,
+       ``monotony_series``, ``completed_min``, ``error``) are built from
+       EVERY tick, not just fire ticks — including two exit paths that never
+       reach a computed ``decision`` at all (natural route completion breaks
+       before the adapter runs; an ``AlgorithmAdapterError`` breaks right
+       after it raises). ``PreviewFireEvent`` only carries fire-episode data,
+       so reconstructing those fields from the yielded events HERE would
+       require duplicating the generator's tick-loop bookkeeping in a second
+       place, with real risk of silently drifting out of "byte-identical"
+       over time.
+
+    So this function is deliberately a pure drain-and-return: it advances
+    past (consumes) every ``PreviewFireEvent`` ``iter_preview_ticks`` yields
+    but keeps no accumulator locals of its own, because the generator itself
+    already computed the complete, byte-identical result. That equivalence is
+    proven three ways: full-dict ``==`` against a pre-refactor baseline
+    (``tests/fixtures/preview_characterization_baseline.json``), the existing
+    preview/instant-result suite staying green, and an independent
+    re-verification against the true pre-refactor commit (``f5cfb23``)
+    checked out in a scratch worktree. Task 3 (merged quickview) is the
+    caller that iterates ``iter_preview_ticks`` directly for its own per-fire
+    hook, exactly as the brief's consumer pattern describes.
+
     Raises:
         PreviewValidationError: unknown/incompatible package or scenario, an
             old-shape scenario, invalid hyperparameter overrides, invalid
@@ -632,6 +669,9 @@ def evaluate_preview(
     )
     try:
         while True:
-            next(ticks)
+            # Consumed for OTHER callers (merged quickview, see design note
+            # above) — evaluate_preview itself needs none of this per-tick
+            # data, only the generator's final accumulated return value.
+            _fire_event = next(ticks)  # noqa: F841
     except StopIteration as stop:
         return stop.value
