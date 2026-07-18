@@ -4,6 +4,7 @@ Resolves file-system paths for the six data directories:
   packages_dir              — AICA_PACKAGES_DIR                  (default: <repo-root>/packages)
   scenarios_dir             — AICA_SCENARIOS_DIR                 (default: <repo-root>/scenarios)
   runs_dir                  — AICA_RUNS_DIR                      (default: <repo-root>/runs)
+  merged_runs_dir           — AICA_MERGED_RUNS_DIR               (default: <repo-root>/merged_runs)
   proposal_contracts_dir    — AICA_PROPOSAL_CONTRACTS_DIR        (default: <repo-root>/proposal_contracts)
   generation_workspace_dir  — AICA_GENERATION_WORKSPACE_DIR      (default: <repo-root>/generation_workspace)
   proposal_dataset_dir      — AICA_PROPOSAL_DATASET_DIR          (default: <repo-root>/proposal_contracts/dataset)
@@ -51,6 +52,12 @@ class Settings:
     @property
     def runs_dir(self) -> Path:
         return _resolve("AICA_RUNS_DIR", "runs")
+
+    @property
+    def merged_runs_dir(self) -> Path:
+        # Feature 020 (Combined Simulator) merged-run handles — a namespace
+        # separate from both the trigger runs_dir and proposal_runs_dir.
+        return _resolve("AICA_MERGED_RUNS_DIR", "merged_runs")
 
     @property
     def routes_dir(self) -> Path:
