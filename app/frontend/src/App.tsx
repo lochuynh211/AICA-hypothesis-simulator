@@ -15,6 +15,7 @@ type State =
 const APP_MODE_LABELS = {
   trigger: { ja: 'トリガー', en: 'Trigger' },
   proposal: { ja: '提案', en: 'Proposal' },
+  merged: { ja: '統合', en: 'Combined' },
 }
 
 /** Header toggle — switches the top-level appMode between the Trigger
@@ -63,6 +64,13 @@ export function AppModeToggle({ lang = 'en' }: { lang?: UiLanguage } = {}) {
       >
         {t(APP_MODE_LABELS.proposal, lang)}
       </button>
+      <button
+        onClick={() => setAppMode('merged')}
+        aria-current={appMode === 'merged' ? 'page' : undefined}
+        style={buttonStyle(appMode === 'merged')}
+      >
+        {t(APP_MODE_LABELS.merged, lang)}
+      </button>
     </nav>
   )
 }
@@ -71,23 +79,31 @@ export function AppModeToggle({ lang = 'en' }: { lang?: UiLanguage } = {}) {
  *  unmodified Trigger Simulator (RunStoreProvider + AppShell); 'proposal'
  *  renders the standalone Proposal Simulator (ProposalStoreProvider + the
  *  real 3-panel ProposalShell, P1 T029) — isolated from the trigger's
- *  RunStoreProvider/AppShell. */
+ *  RunStoreProvider/AppShell; 'merged' renders the Combined Simulator (020) —
+ *  for now a stub node, the real shell (wrapped in a MergedCoordinatorProvider
+ *  that mounts both stores' concerns) lands in Task 6/7. */
 function AppBody({ healthStatus }: { healthStatus?: string }) {
   const { appMode } = useAppMode()
+  let body: React.ReactNode
+  if (appMode === 'trigger') {
+    body = (
+      <RunStoreProvider>
+        <AppShell healthStatus={healthStatus} />
+      </RunStoreProvider>
+    )
+  } else if (appMode === 'proposal') {
+    body = (
+      <ProposalStoreProvider>
+        <ProposalShell autoInit />
+      </ProposalStoreProvider>
+    )
+  } else {
+    body = <div data-testid="merged-shell" />
+  }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       <AppModeToggle />
-      <div style={{ flex: 1, minHeight: 0 }}>
-        {appMode === 'trigger' ? (
-          <RunStoreProvider>
-            <AppShell healthStatus={healthStatus} />
-          </RunStoreProvider>
-        ) : (
-          <ProposalStoreProvider>
-            <ProposalShell autoInit />
-          </ProposalStoreProvider>
-        )}
-      </div>
+      <div style={{ flex: 1, minHeight: 0 }}>{body}</div>
     </div>
   )
 }
