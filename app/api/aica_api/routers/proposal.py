@@ -2022,7 +2022,11 @@ def explain_run(run_id: str, body: ExplainRequestBody) -> ExplainResponse:
         # the template rather than presenting echoed text as a real generation.
         if not explanation_builder.response_is_usable(parsed, prompt):
             raise ollama_client.OllamaError("unusable_response", "Model output was empty or echoed the prompt")
-        rationale = parsed
+        # Strip any leftover format-example placeholder tokens ("(factor A)")
+        # AFTER the usable/parrot check, then re-verify non-empty.
+        rationale = [explanation_builder.strip_placeholder_artifacts(p) for p in parsed]
+        if not any(p.strip() for p in rationale):
+            raise ollama_client.OllamaError("unusable_response", "Model output was only placeholder artifacts")
         provider_used: Literal["backend", "template"] = "backend"
         model = settings.ollama_model
         fell_back = False

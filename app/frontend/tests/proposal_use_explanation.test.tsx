@@ -7,6 +7,7 @@ import { renderHook, act, waitFor } from '@testing-library/react'
 import {
   useExplanation,
   parseBilingual,
+  stripPlaceholders,
   __clearExplanationCache,
 } from '../src/components/proposal/useExplanation'
 import * as client from '../src/api/proposalClient'
@@ -38,6 +39,16 @@ describe('parseBilingual', () => {
   it('strips code fences and handles empty', () => {
     expect(parseBilingual('```\nJA: あ\nEN: b\n```')).toEqual(['あ', 'b'])
     expect(parseBilingual('   ')).toEqual(['', ''])
+  })
+})
+
+describe('stripPlaceholders', () => {
+  it('removes leftover "(factor A)" / "要因A" tokens but keeps real words', () => {
+    expect(stripPlaceholders('high acceptance rate of this song proposal (factor A).')).toBe(
+      'high acceptance rate of this song proposal.',
+    )
+    expect(stripPlaceholders('推し一致「要因A」が寄与しました。')).toBe('推し一致が寄与しました。')
+    expect(stripPlaceholders('The factor above mattered most.')).toBe('The factor above mattered most.')
   })
 })
 

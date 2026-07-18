@@ -186,6 +186,27 @@ def test_explain_422_no_decision_for_step_without_evidence():
     assert resp.json()["detail"]["code"] == "no_decision"
 
 
+def test_backend_strips_placeholder_artifacts_end_to_end(monkeypatch):
+    """A model that leaks the format placeholder "(factor A)" / "（要因A）" has it
+    stripped from the returned + persisted rationale (still provider=backend)."""
+    run_id, service_id, _ = _run_with_service_and_content()
+    monkeypatch.setattr(
+        ollama_client,
+        "generate",
+        lambda messages, **kw: "JA: 眠気が最も強く働きました（要因A）。\nEN: Drowsiness mattered most (factor A).",
+    )
+    resp = client.post(
+        f"/api/proposal/runs/{run_id}/explain",
+        json={"step": "service", "target_id": service_id, "provider": "backend"},
+    )
+    data = resp.json()
+    assert data["provider_used"] == "backend"
+    assert data["rationale"] == ["眠気が最も強く働きました。", "Drowsiness mattered most."]
+    # persisted copy is also clean
+    reopened = client.get(f"/api/proposal/runs/{run_id}").json()
+    assert "factor A" not in reopened["explanations"][0]["rationale"][1]
+
+
 def test_explain_404_unknown_run():
     resp = client.post(
         "/api/proposal/runs/prun_nope/explain",

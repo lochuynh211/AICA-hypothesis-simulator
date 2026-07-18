@@ -179,6 +179,35 @@ def test_response_is_usable_accepts_partial_echo_with_real_line():
     assert eb.response_is_usable([user_line, "A genuine explanation sentence."], prompt) is True
 
 
+# ── placeholder artifact stripping ───────────────────────────────────────────
+
+def test_strip_placeholder_artifacts_removes_trailing_paren_token():
+    # the exact coastal-cruise artifact seen live with 3b
+    assert (
+        eb.strip_placeholder_artifacts("The choice was made based on the high acceptance rate of this song proposal (factor A).")
+        == "The choice was made based on the high acceptance rate of this song proposal."
+    )
+
+
+def test_strip_placeholder_artifacts_removes_bracketed_japanese_token():
+    assert eb.strip_placeholder_artifacts("推し一致「要因A」が寄与しました。") == "推し一致が寄与しました。"
+
+
+def test_strip_placeholder_artifacts_handles_factor_b_and_both():
+    assert eb.strip_placeholder_artifacts("Drowsiness (factor A) and fatigue (factor B) drove it.") == "Drowsiness and fatigue drove it."
+
+
+def test_strip_placeholder_artifacts_does_not_touch_real_words():
+    # "factor above" / "a bad factor" must be preserved (the a/b must stand alone)
+    assert eb.strip_placeholder_artifacts("The factor above mattered most.") == "The factor above mattered most."
+    assert eb.strip_placeholder_artifacts("眠気が最も強く働きました。") == "眠気が最も強く働きました。"
+
+
+def test_strip_placeholder_artifacts_empty_and_noop():
+    assert eb.strip_placeholder_artifacts("") == ""
+    assert eb.strip_placeholder_artifacts("A clean grounded reason.") == "A clean grounded reason."
+
+
 # ── prompt hash ──────────────────────────────────────────────────────────────
 
 def test_prompt_hash_is_stable_and_sensitive():

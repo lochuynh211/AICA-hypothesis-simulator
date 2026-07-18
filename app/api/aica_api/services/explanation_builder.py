@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from typing import Any
 
 from aica_api.models.proposal.explanation import ExplainMessage, ExplanationPrompt
@@ -427,6 +428,31 @@ def response_is_usable(rationale: list[str], prompt: ExplanationPrompt) -> bool:
                     user_lines.add(s)
     non_echo = [t for t in texts if t not in user_lines and t.lstrip("-").strip() not in user_lines]
     return len(non_echo) > 0
+
+
+# Leftover format-example PLACEHOLDER tokens a weak model sometimes copies
+# literally ("factor A/B", "要因A/B", optionally wrapped in brackets/quotes).
+# `\bfactors?\s+[ab]\b` requires the a/b to stand alone, so real words like
+# "factor above" are never touched.
+_PLACEHOLDER_RE = re.compile(
+    r"[（(「\[]?\s*(?:\bfactors?\s+[ab]\b|要因[abＡＢ])\s*[)\]」）]?",
+    re.IGNORECASE,
+)
+
+
+def strip_placeholder_artifacts(text: str) -> str:
+    """Remove any leftover format-example placeholder tokens and tidy the
+    surrounding punctuation/whitespace. Applied to displayable output ONLY after
+    ``response_is_usable`` has run (so it never weakens the echo/parrot guard)."""
+    if not text:
+        return text
+    out = _PLACEHOLDER_RE.sub("", text)
+    out = re.sub(r"[（(「\[]\s*[)\]」）]", "", out)             # empty bracket pairs left behind
+    out = re.sub(r"\s{2,}", " ", out)                          # collapse doubled spaces
+    out = re.sub(r"\s+([.,!?;:。、！？)）])", r"\1", out)       # space before punctuation
+    out = re.sub(r"^\s*(?:and|、|,)\s+", "", out.strip())      # dangling leading conjunction
+    out = re.sub(r"\s*(?:and|、|,)\s*$", "", out.strip())      # dangling trailing conjunction
+    return out.strip()
 
 
 def parse_bilingual(text: str) -> list[str]:

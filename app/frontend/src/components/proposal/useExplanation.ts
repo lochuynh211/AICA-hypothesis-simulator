@@ -57,6 +57,21 @@ function setCache(key: string, entry: CacheEntry): void {
   listeners.get(key)?.forEach((fn) => fn())
 }
 
+/** Client-side mirror of the backend `strip_placeholder_artifacts` — removes
+ * leftover format-example placeholder tokens ("(factor A)", "要因A") a weak
+ * on-device model may copy literally, then tidies punctuation. */
+const PLACEHOLDER_RE = /[（(「[]?\s*(?:\bfactors?\s+[ab]\b|要因[abＡＢ])\s*[)\]」）]?/gi
+export function stripPlaceholders(text: string): string {
+  if (!text) return text
+  let out = text.replace(PLACEHOLDER_RE, '')
+  out = out.replace(/[（(「[]\s*[)\]」）]/g, '')
+  out = out.replace(/\s{2,}/g, ' ')
+  out = out.replace(/\s+([.,!?;:。、！？)）])/g, '$1')
+  out = out.replace(/^\s*(?:and|、|,)\s+/i, '').trim()
+  out = out.replace(/\s*(?:and|、|,)\s*$/i, '').trim()
+  return out.trim()
+}
+
 /** Client-side mirror of the backend `parse_bilingual` — for the Nano path. */
 export function parseBilingual(text: string): [string, string] {
   const lines = (text || '')
@@ -95,7 +110,7 @@ async function generate(
   const res = await explain(runId, { step, targetId, provider: 'browser' })
   if (!(await nanoAvailable())) throw new Error('nano_unavailable')
   const raw = await runNano(res.prompt.messages)
-  const [ja, en] = parseBilingual(raw)
+  const [ja, en] = parseBilingual(raw).map(stripPlaceholders) as [string, string]
   if (!ja && !en) throw new Error('empty_nano_output')
   return { status: 'ready', ja, en, model: res.model, fellBack: false }
 }
