@@ -3,6 +3,7 @@ import { getHealth, HealthStatus } from './api/client'
 import { RunStoreProvider } from './state/runStore'
 import { AppModeProvider, useAppMode } from './state/appMode'
 import { ProposalStoreProvider } from './state/proposalStore'
+import { MergedCoordinatorProvider } from './state/mergedCoordinator'
 import AppShell from './components/layout/AppShell'
 import ProposalShell from './components/proposal/ProposalShell'
 import MergedShell from './components/merged/MergedShell'
@@ -82,8 +83,10 @@ export function AppModeToggle({ lang = 'en' }: { lang?: UiLanguage } = {}) {
  *  real 3-panel ProposalShell, P1 T029) — isolated from the trigger's
  *  RunStoreProvider/AppShell; 'merged' renders the Combined Simulator (020)
  *  shell — `MergedShell` (Task 6), a 20:60:20 3-panel layout with stub
- *  panels for now. The real panels + the `MergedCoordinatorProvider` that
- *  mounts both stores' concerns land in later 020 tasks (7+). */
+ *  panels for now, wrapped in `MergedCoordinatorProvider` (Task 7) — the
+ *  isolated store that owns the merged tick loop and mounts both the
+ *  trigger and proposal concerns for it. The real (non-stub) panels land in
+ *  later 020 tasks. */
 function AppBody({ healthStatus }: { healthStatus?: string }) {
   const { appMode } = useAppMode()
   let body: React.ReactNode
@@ -100,7 +103,11 @@ function AppBody({ healthStatus }: { healthStatus?: string }) {
       </ProposalStoreProvider>
     )
   } else {
-    body = <MergedShell />
+    body = (
+      <MergedCoordinatorProvider>
+        <MergedShell />
+      </MergedCoordinatorProvider>
+    )
   }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>

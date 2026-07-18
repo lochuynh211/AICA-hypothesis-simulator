@@ -1,0 +1,116 @@
+/**
+ * mergedClient — API client for the Combined Simulator's merged-run endpoints
+ * (feature 020, Task 7). Mirrors `client.ts`'s `apiFetch` exactly (bare
+ * `fetch` to an already-absolute `/api/...` path, throw a plain `Error` on a
+ * non-ok response) rather than `proposalClient.ts`'s body-detail-parsing
+ * variant — the merged-runs router (`routers/merged_runs.py`) is a thin seam
+ * over the existing trigger/proposal handlers, not the Proposal Simulator's
+ * own API surface.
+ *
+ * Deliberately depends only on `./types` (trigger side) and `./proposalClient`
+ * (proposal side, for `World`/`ProposalRunLog`) — never on `state/runStore` or
+ * `state/proposalStore` (feature-020 isolation constraint; see CLAUDE.md).
+ */
+import type { DecisionResult, AlgorithmError } from './types'
+import type { World, ProposalRunLog } from './proposalClient'
+
+// ── Internal helper (mirrors api/client.ts's apiFetch) ──────────────────────
+
+async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const response = await fetch(path, init)
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`)
+  }
+  return response.json() as Promise<T>
+}
+
+// ── Shapes ───────────────────────────────────────────────────────────────
+
+/** Request body for `POST /api/merged-runs` (mirrors `CreateMergedRunBody`). */
+export type CreateMergedRunReq = {
+  trigger_plan_id: string
+  world: World
+  service_package_id: string
+  content_package_id: string
+  /** Frozen per-run proposal mode; defaults server-side to 'interactive'. */
+  proposal_mode?: string
+  run_seed: string
+}
+
+/** Request body for `POST /api/merged-runs/{id}/proposal-action`
+ * (mirrors `MergedProposalActionBody`). */
+export type MergedProposalActionReq =
+  | { kind: 'select_service'; selected_service_id: string }
+  | { kind: 'journey_action'; action_type: string; payload?: Record<string, unknown> }
+
+/**
+ * The `trigger` field of a `MergedTickResponse` — mirrors the dict built by
+ * `routers/merged_runs.py`'s `_serialize_trigger_tick` (itself mirroring the
+ * field extraction `routers/runs.py`'s tick endpoint / `TickResponseSuccess`
+ * use), unified into one shape rather than a discriminated union since the
+ * merged tick endpoint never raises a blocking 500 on an algorithm error —
+ * it always returns `decision`/`error` side by side.
+ */
+export type MergedTriggerTick = {
+  decision: DecisionResult | null
+  error: AlgorithmError | null
+  paused: boolean
+  completed: boolean
+  tick_index: number | null
+  route_fraction?: number | null
+  distance_km?: number | null
+  speed_kph?: number | null
+  motion_state?: string | null
+  recovery_phase?: string | null
+  is_traffic_jam?: boolean | null
+  segment_type?: string | null
+  /** Set only when a fire's auto-created proposal run failed synchronously
+   * (slice-1 `create_proposal_run` HTTPException path) — the tick itself
+   * still succeeds so the trigger side is never disguised as failed. */
+  proposal_error?: string
+}
+
+/** Links one trigger tick to the proposal run/events it produced (mirrors
+ * `models/merged_run.py`'s `CorrelationEntry`). */
+export type CorrelationEntry = {
+  trigger_tick_index: number
+  proposal_run_id: string
+  proposal_event_ids: string[]
+}
+
+/** Response for `POST /api/merged-runs/{id}/tick` (mirrors `MergedTickResponse`). */
+export type MergedTickResponse = {
+  trigger: MergedTriggerTick
+  /** Present only when this tick's trigger fire created/updated a proposal run. */
+  proposal: ProposalRunLog | null
+  correlation: CorrelationEntry | null
+}
+
+// ── Endpoints ────────────────────────────────────────────────────────────
+
+export async function createMergedRun(
+  body: CreateMergedRunReq,
+): Promise<{ merged_run_id: string; trigger_run_id: string }> {
+  return apiFetch('/api/merged-runs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
+export async function tickMergedRun(mergedRunId: string): Promise<MergedTickResponse> {
+  return apiFetch(`/api/merged-runs/${encodeURIComponent(mergedRunId)}/tick`, {
+    method: 'POST',
+  })
+}
+
+export async function mergedProposalAction(
+  mergedRunId: string,
+  body: MergedProposalActionReq,
+): Promise<ProposalRunLog> {
+  return apiFetch(`/api/merged-runs/${encodeURIComponent(mergedRunId)}/proposal-action`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
