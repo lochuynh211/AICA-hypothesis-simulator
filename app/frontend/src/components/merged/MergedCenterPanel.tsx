@@ -10,10 +10,15 @@
  *     geometry/rest markers, since the coordinator carries no route/
  *     alternatives state the way `useLiveTimelineData` reads off `runStore`)
  *   - a `position:relative` dock — mirrors `CenterPlaybackPanel`'s dock
- *     (lines 87-114): renders `<ServiceResultOverlay/>` once
- *     `state.proposalLog` has service evidence and no service is chosen yet,
- *     else `<ContentResultOverlay/>` once a service IS chosen. Overlay props
- *     are derived from `state.proposalLog.evidence` (filter
+ *     (lines 87-114): renders `<ServiceResultOverlay/>` or
+ *     `<ContentResultOverlay/>` depending on which step's evidence is MOST
+ *     RECENT in the append-only `state.proposalLog.evidence` list (slice-2
+ *     verification fix — `activeServiceId == null` alone is not a reliable
+ *     signal: the after-rest `recompute_proposal_run` unconditionally sets
+ *     `journey_state.active_service_id` to the fresh rank-1 candidate
+ *     without dispatching content, so a non-null `activeServiceId` can still
+ *     mean "fresh service decision awaiting Choose"). Overlay PROPS are
+ *     still derived from `state.proposalLog.evidence` (filter
  *     step==='service'|'content', take the latest) + `journey_state
  *     .active_service_id` — the same derivation
  *     `ServiceProposalPanel`/`ContentProposalPanel` do from `proposalStore`.
@@ -120,8 +125,22 @@ export default function MergedCenterPanel() {
   const contentPlan = contentEv?.output as CompletePlan | undefined
 
   const activeServiceId = state.proposalLog?.journey_state.active_service_id ?? null
-  const showServiceOverlay = serviceEv != null && activeServiceId == null
-  const showContentOverlay = !showServiceOverlay && activeServiceId != null
+
+  // Which overlay docks is decided by RECENCY, not `activeServiceId` —
+  // `recompute_proposal_run` (the after-rest recompute) unconditionally sets
+  // `journey_state.active_service_id` to the fresh rank-1 candidate AND
+  // appends a new step='service' evidence entry, WITHOUT dispatching content
+  // in interactive mode (proposal.py ~1687-1721). So right after an after-rest
+  // recompute, `activeServiceId` is non-null but there is no content evidence
+  // for it yet — keying off `activeServiceId == null` would wrongly dock the
+  // (empty) ContentResultOverlay instead of the fresh ServiceResultOverlay.
+  // `evidence` is append-only and ordered, so the step whose evidence is MOST
+  // RECENT tells us which decision the reviewer is actually facing.
+  const evidence = state.proposalLog?.evidence ?? []
+  const lastServiceIdx = evidence.map((ev) => ev.step).lastIndexOf('service')
+  const lastContentIdx = evidence.map((ev) => ev.step).lastIndexOf('content')
+  const showContentOverlay = lastContentIdx > lastServiceIdx
+  const showServiceOverlay = lastServiceIdx >= 0 && !showContentOverlay
 
   const hasRun = state.mergedRunId != null
 

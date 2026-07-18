@@ -105,6 +105,60 @@ function serviceEvidence(candidateId: string): AlgorithmEvidence {
   }
 }
 
+/** Before-rest content evidence — simulates the before-rest
+ * choose-service-then-content dispatch that happened earlier in the SAME
+ * append-only `evidence` list, prior to the after-rest recompute's fresh
+ * `service` entry (slice-2 verification fix fixture). */
+function contentEvidence(candidateId: string): AlgorithmEvidence {
+  return {
+    step: 'content',
+    package_id: 'mock_content_selector_v1',
+    contract_version: '1.0.0',
+    schema_version: '1.0.0',
+    matrix_version: 'v1',
+    input_snapshot: {},
+    output: {
+      decision_type: 'complete_plan',
+      selected_service_id: candidateId,
+      requested_item_count: 1,
+      returned_item_count: 1,
+      ordered_items: [
+        {
+          position: 1,
+          item_id: 'track-1',
+          item_fit: 0.81,
+          trait_values: null,
+          feature_contributions: [],
+          rationale: ['一曲目', 'first track'],
+        },
+      ],
+      mode: {
+        service_id: candidateId,
+        mode_kind: 'playlist',
+        chorus_only: null,
+        guide_vocal: null,
+        driving_lyrics: null,
+        fixed_segment_sec: null,
+        stopped_only: null,
+        simulated_queue: null,
+      },
+      expected_duration_sec: 300,
+      lighting_configuration: null,
+      approval_policy: 'explicit_opt_in',
+      completion_rule: 'plan_exhausted',
+      next_transition_policy: 'await_user',
+      excluded_items: [],
+      unused_available_features: [],
+      missing_features: [],
+      algorithm_provenance: {},
+    },
+    error: null,
+    used_feature_ids: [],
+    unused_available_features: [],
+    missing_features: [],
+  }
+}
+
 function baseProposalLog(overrides: Partial<ProposalRunLog> = {}): ProposalRunLog {
   return {
     run_id: 'prun_20260718-000000_abcdef',
@@ -162,8 +216,17 @@ function firedTickWithProposal(tickIndex: number): MergedTickResponse {
 }
 
 /** A later tick where the journey has fully auto-driven through the rest
- * (Task 3's orchestrator) to the after-rest recompute — a fresh service
- * decision, awaiting Choose, exactly like the before-rest fire. */
+ * (Task 3's orchestrator) to the after-rest recompute. This is the REALISTIC
+ * shape `recompute_proposal_run` actually produces (proposal.py
+ * ~1687-1721, slice-2 verification finding): it unconditionally sets
+ * `journey_state.active_service_id` to the fresh rank-1 candidate AND
+ * appends a new step='service' evidence entry, WITHOUT dispatching content
+ * — so `active_service_id` is non-null (rank-1, `stretch_video`) even though
+ * the reviewer is still facing a fresh service decision (awaiting Choose),
+ * not a content decision. The evidence list also carries the EARLIER
+ * before-rest `content` entry (music_playlist), so the fix must key off
+ * which step's evidence is MOST RECENT (service, here), not off
+ * `active_service_id == null`. */
 function afterRestTick(tickIndex: number): MergedTickResponse {
   return {
     trigger: {
@@ -192,10 +255,10 @@ function afterRestTick(tickIndex: number): MergedTickResponse {
       journey_state: {
         lifecycle_stage: 'after_rest_before_restart',
         motion_state: 'stopped',
-        active_service_id: null,
+        active_service_id: 'stretch_video',
         active_plan_id: null,
       },
-      evidence: [serviceEvidence('stretch_video')],
+      evidence: [contentEvidence('music_playlist'), serviceEvidence('stretch_video')],
     }),
     correlation: {
       trigger_tick_index: tickIndex,
