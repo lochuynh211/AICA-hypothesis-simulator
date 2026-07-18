@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timezone
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ValidationError
@@ -38,7 +39,9 @@ from aica_api.models.merged_run import (
     AcceptRestBody,
     CorrelationEntry,
     CreateMergedRunBody,
+    MergedInstantResult,
     MergedProposalActionBody,
+    MergedQuickviewBody,
     MergedTickResponse,
 )
 from aica_api.models.proposal.enums import DiscreteEventType, LifecycleStage, PlaybackState
@@ -63,6 +66,7 @@ from aica_api.services.merged_adapter import (
     map_trigger_purpose,
 )
 from aica_api.services.merged_painter import inject_mountain_segment, jam_traffic_event
+from aica_api.services.merged_quickview import project as project_merged_quickview
 from aica_api.services.merged_run_coordinator import (
     create_handle,
     get_handle,
@@ -70,6 +74,7 @@ from aica_api.services.merged_run_coordinator import (
     save_handle,
 )
 from aica_api.services.package_registry import PackageRegistry
+from aica_api.services.preview import PreviewValidationError
 from aica_api.services.route_analysis import analyze_route
 from aica_api.services.run_plan import create_draft
 from aica_api.services.scenario_registry import ScenarioRegistry
@@ -262,6 +267,133 @@ def create_merged_plan_endpoint(body: CreateMergedPlanBody) -> dict:
         )
 
     return {"plan_id": draft.plan_id}
+
+
+def _build_quickview_route_facts(
+    body: MergedQuickviewBody,
+) -> tuple[Any, str, dict[str, Any] | None]:
+    """Resolve package/scenario and build a "painted" route_facts (+ any
+    manual-jam ``presets``) for the quickview projection — mirrors
+    ``create_merged_plan_endpoint`` above (same painter reuse, same
+    400-on-unknown/incompatible convention), but scoped to ONLY this
+    endpoint's isolated helper since ``services/merged_quickview.py`` itself
+    must never import a trigger Pydantic model (feature-020 isolation
+    constraint — see that module's docstring): building route_facts stays
+    here, in the router that already straddles both sides of the merge
+    boundary, and is handed to ``merged_quickview.project`` as opaque
+    ``Any``/``dict`` values (``route_facts``/``route_source``/``presets``).
+
+    Returns ``(route_facts, route_source, presets)`` — ``route_source`` is
+    always ``"maps"`` here (a route_facts was actually built/painted);
+    ``presets`` is ``{"traffic_events": [jam]}`` when ``jam_range_km`` was
+    supplied, else ``None``. The caller only invokes this when a
+    preset/mountain/jam field was actually supplied, so the common
+    (unpainted) quickview case never reaches this function and stays as
+    simple as the trigger's own ``/api/runs/preview``
+    (``route_source="local"``, ``route_facts=None``, ``presets=None``).
+
+    Raises HTTPException(400) for an unknown/incompatible package or
+    scenario — same convention as ``create_merged_plan_endpoint``.
+    """
+    pkg_reg = PackageRegistry(settings.packages_dir)
+    sc_reg = ScenarioRegistry(settings.scenarios_dir)
+
+    package = pkg_reg.get(body.package_id)
+    if package is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Package {body.package_id!r} not found or invalid",
+        )
+
+    scenario = sc_reg.get(body.scenario_id)
+    if scenario is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Scenario {body.scenario_id!r} not found or invalid",
+        )
+
+    if not pkg_reg.is_compatible(package, scenario):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Package {body.package_id!r} is not compatible with "
+                f"scenario {body.scenario_id!r} (type={scenario.type!r})"
+            ),
+        )
+
+    if body.route_preset_id is not None:
+        preset_envelope = load_route_preset(body.route_preset_id)
+        route_facts = RouteFacts.model_validate(
+            preset_envelope["alternatives"][0]["route_facts"]
+        )
+    else:
+        route_facts = analyze_route(scenario)
+
+    if body.mountain_range_km is not None:
+        start_km, end_km = body.mountain_range_km
+        route_facts.route_segments = inject_mountain_segment(
+            route_facts.route_segments, start_km, end_km
+        )
+
+    presets: dict[str, Any] | None = None
+    if body.jam_range_km is not None:
+        start_km, end_km = body.jam_range_km
+        jam = jam_traffic_event(
+            start_km,
+            end_km,
+            route_facts.total_route_distance_km,
+            route_facts.estimated_route_duration_min,
+            speed_kph=body.jam_speed_kph,
+        )
+        presets = {"traffic_events": [jam]}
+
+    return route_facts, "maps", presets
+
+
+@router.post("/api/merged-runs/quickview", response_model=MergedInstantResult)
+def quickview_merged_run_endpoint(body: MergedQuickviewBody) -> MergedInstantResult:
+    """Ephemeral, non-persisting projection of the WHOLE merged chain
+    (feature 020, Slice-2c): one headless trigger preview pass
+    (``services.preview.iter_preview_ticks``) with a default quick-check
+    proposal attached to every actionable fire
+    (``services/merged_quickview.py::project``). Nothing is persisted
+    anywhere — not the trigger run, not any projected proposal run (each
+    built with ``cache={}``).
+
+    ``route_preset_id``/``mountain_range_km``/``jam_range_km`` mirror
+    ``POST /api/merged-runs/plan``: only when one of these is supplied does
+    this endpoint resolve the package/scenario and build a painted
+    route_facts (``_build_quickview_route_facts``) — the common (unpainted)
+    case stays as simple as ``/api/runs/preview`` (``route_source="local"``,
+    no route_facts).
+
+    400 for an unknown/incompatible package or scenario, an old-shape
+    scenario, or invalid hyperparameter overrides
+    (``PreviewValidationError``, raised from inside
+    ``iter_preview_ticks``).
+    """
+    route_facts: Any = None
+    route_source = "local"
+    presets: dict[str, Any] | None = None
+
+    if (
+        body.route_preset_id is not None
+        or body.mountain_range_km is not None
+        or body.jam_range_km is not None
+    ):
+        route_facts, route_source, presets = _build_quickview_route_facts(body)
+
+    try:
+        return project_merged_quickview(
+            body,
+            packages_dir=settings.packages_dir,
+            scenarios_dir=settings.scenarios_dir,
+            route_facts=route_facts,
+            route_source=route_source,
+            presets=presets,
+        )
+    except PreviewValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @router.post("/api/merged-runs", status_code=201)

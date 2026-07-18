@@ -160,6 +160,7 @@ def iter_preview_ticks(
     route_source: str = "local",
     route_facts: Any = None,
     display_route: Any = None,
+    presets: dict[str, Any] | None = None,
 ) -> Iterator[PreviewFireEvent]:
     """Run the headless, non-persisting preview tick loop, yielding a
     ``PreviewFireEvent`` at each new actionable-proposal episode (rising edge).
@@ -193,6 +194,18 @@ def iter_preview_ticks(
     unchanged; the generator both yields fire notifications AND returns the
     full accumulated result, so `evaluate_preview` needs no bookkeeping of its
     own to stay byte-identical.
+
+    *presets* (feature 020, Slice-2c — additive, ``None`` by default): the
+    same ``presets`` shape ``create_draft``/``POST /api/run-plans`` accepts
+    (e.g. ``{"traffic_events": [...]}``), forwarded verbatim to
+    ``create_draft``. This lets a caller other than ``evaluate_preview``
+    (the merged simulator's quickview projection, which paints an ad-hoc
+    traffic jam via ``services/merged_painter.py::jam_traffic_event`` the
+    SAME way ``POST /api/merged-runs/plan`` does) drive a jam-painted
+    preview. ``None`` (every existing caller — ``evaluate_preview``,
+    ``POST /api/runs/preview``) resolves to ``{}``, the exact value
+    hardcoded at this call site before *presets* existed, so this addition
+    changes nothing for any pre-existing caller.
 
     Raises:
         PreviewValidationError: unknown/incompatible package or scenario, an
@@ -246,7 +259,7 @@ def iter_preview_ticks(
         plan_id=plan_id,
         package=package,
         scenario=scenario,
-        presets={},
+        presets=presets or {},
         parameters={},
         hyperparameters=overrides,
         run_mode="standard",

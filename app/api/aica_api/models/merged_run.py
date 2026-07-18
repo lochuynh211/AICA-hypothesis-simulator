@@ -10,12 +10,21 @@ tick/action orchestration itself.
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
 from aica_api.models.proposal.world import World
-from aica_api.models.run import RestSpot
+from aica_api.models.run import (
+    FirePoint,
+    PreviewError,
+    PreviewRestOption,
+    PreviewRestSpot,
+    PreviewSegment,
+    RestSpot,
+    ScoreSeriesPoint,
+    SpikePoint,
+)
 
 
 class CorrelationEntry(BaseModel):
@@ -119,3 +128,105 @@ class MergedTickResponse(BaseModel):
     trigger: dict
     proposal: dict | None = None  # ProposalRunLog.model_dump() when a fire created/updated one
     correlation: CorrelationEntry | None = None
+
+
+# ---------------------------------------------------------------------------
+# Quickview projection — feature 020, Slice-2c (Task 3)
+# ---------------------------------------------------------------------------
+
+
+class MergedFirePoint(FirePoint):
+    """One trigger fire (rising edge), projected through a default,
+    non-persisting quick-check proposal.
+
+    Extends the trigger-side ``FirePoint`` (``category``/``strength``/
+    ``tick``/``time_min``) with the proposal ``merged_quickview.project``
+    built for THIS fire — ``ProposalRunLog.model_dump()`` when
+    ``create_proposal_run(..., cache={})`` succeeded, else ``None`` with
+    ``proposal_error`` set to the caught ``HTTPException.detail`` (never
+    both set, and both ``None`` only when the fire's ``result_type`` had no
+    mapped ``trigger_purpose`` — see ``services/merged_adapter.py
+    ::map_trigger_purpose``).
+    """
+
+    proposal: dict | None = None
+    proposal_error: str | None = None
+
+
+class MergedInstantResult(BaseModel):
+    """Ephemeral, non-persisting projection of the WHOLE merged chain
+    (feature 020, Slice-2c): one headless trigger preview pass
+    (``services.preview.iter_preview_ticks``) plus a default quick-check
+    proposal attached to every actionable fire.
+
+    Same shape as ``aica_api.models.run.InstantResult`` (the trigger-only
+    preview result) except ``fires`` carries a ``MergedFirePoint`` (with the
+    projected proposal) per entry instead of a bare ``FirePoint`` — the
+    singular back-compat ``fire`` field (first entry, unaugmented) is kept
+    as a plain ``FirePoint`` on purpose (mirrors ``InstantResult.fire``,
+    which the setup-strip UI reads for its "first trigger" marker without
+    caring about a proposal). Never persisted anywhere: not the trigger run
+    (``iter_preview_ticks`` is the same non-persisting engine
+    ``/api/runs/preview`` uses), not any projected proposal run (built with
+    ``cache={}`` — feature 020, Slice-2c's in-memory stand-in for disk).
+    """
+
+    fired: bool
+    fire: FirePoint | None = None
+    fires: list[MergedFirePoint] = []
+    peak_score: float
+    threshold: float | None = None
+    score_series: list[ScoreSeriesPoint] = []
+    monotony_series: list[ScoreSeriesPoint] = []
+    monotony_threshold: float | None = None
+    spikes: list[SpikePoint] = []
+    segments: list[PreviewSegment] = []
+    rest_spot: PreviewRestSpot | None = None
+    rest_option: PreviewRestOption | None = None
+    rest_spots: list[PreviewRestSpot] = []
+    rest_options: list[PreviewRestOption] = []
+    completed_min: float | None = None
+    seed: int
+    overrides: list[dict[str, Any]] = []
+    error: PreviewError | None = None
+
+
+class MergedQuickviewBody(BaseModel):
+    """Request body for ``POST /api/merged-runs/quickview`` (feature 020,
+    Slice-2c, Task 3).
+
+    Trigger-side fields (``package_id``/``scenario_id``/``run_seed``/
+    ``hyperparameter_overrides``/``rest_option_id``) mirror
+    ``aica_api.routers.runs.PreviewRunBody`` — this drives the SAME
+    non-persisting ``iter_preview_ticks`` engine. ``route_preset_id``/
+    ``mountain_range_km``/``jam_range_km``/``jam_speed_kph`` mirror
+    ``CreateMergedPlanBody`` (``routers/merged_runs.py``) — an ad-hoc
+    "painted" route (mountain segment / manual traffic jam), built the SAME
+    way ``POST /api/merged-runs/plan`` does, BEFORE the preview tick loop
+    runs.
+
+    ``world`` is the INLINE proposal ``World`` template whose GENERATED
+    situation/control fields (drowsiness, road_type, ...) get overwritten
+    per fire by ``build_world_from_tick`` — the same role
+    ``CreateMergedRunBody.world``/``MergedRunHandle.world_template`` plays
+    for a real (persisted) merged run. ``service_package_id``/
+    ``content_package_id`` select the proposal selectors; ``run_seed_proposal``
+    is the proposal side's OWN run_seed (``ProposalOpportunity.run_seed`` is
+    ``str``-typed — distinct from the trigger's int ``run_seed`` above, so
+    both are threaded independently rather than coercing one into the
+    other).
+    """
+
+    package_id: str
+    scenario_id: str
+    route_preset_id: str | None = None
+    run_seed: int
+    mountain_range_km: tuple[float, float] | None = None
+    jam_range_km: tuple[float, float] | None = None
+    jam_speed_kph: float = 15.0
+    hyperparameter_overrides: dict[str, Any] = {}
+    rest_option_id: str | None = None
+    world: World
+    service_package_id: str
+    content_package_id: str
+    run_seed_proposal: str
