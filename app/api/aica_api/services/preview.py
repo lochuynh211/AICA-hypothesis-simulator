@@ -23,13 +23,16 @@ Design constraints (contracts/ephemeral-evaluate.md):
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from dataclasses import dataclass
 from typing import Any
 
 import aica_api.algorithms.adapter as _adapter
 from aica_api.algorithms.adapter import AlgorithmAdapterError
+from aica_api.models.decision import DecisionResult
 from aica_api.models.log import ActionEvent, TickEvent, TraceEntry
 from aica_api.models.package import PackageManifest
-from aica_api.models.run import DisplayRoute, RecoveryState, RestSpot, RouteFacts
+from aica_api.models.run import DisplayRoute, RecoveryState, RestSpot, RouteFacts, TickState
 from aica_api.models.scenario import ScenarioDef
 from aica_api.services.package_registry import PackageRegistry
 from aica_api.services.recovery import start_recovery
@@ -50,6 +53,30 @@ class PreviewValidationError(Exception):
 
     The router converts this to a 4xx response with a clear message.
     """
+
+
+@dataclass
+class PreviewFireEvent:
+    """One actionable-proposal EPISODE (rising edge), surfaced by
+    ``iter_preview_ticks`` for reuse by callers other than ``evaluate_preview``
+    (feature 020's merged-simulator quickview, slice 2c).
+
+    Yielded exactly where today's ``evaluate_preview`` loop marks a new
+    trigger episode (``if not fire_active:``) — i.e. once per distinct
+    actionable run (a long route can yield several), not once per tick.
+    ``decision.proposal`` is guaranteed non-None on every yielded event.
+    ``rest_spot`` is the nearest named/synthetic rest spot ahead of the
+    vehicle's current position at this tick (same rule `/api/runs/{id}/
+    rest-spots` and the auto-accept step use) — None if none is ahead.
+    """
+
+    tick_index: int
+    tick_state: TickState
+    decision: DecisionResult
+    elapsed_min: float
+    route_facts: RouteFacts
+    effective_scenario: ScenarioDef
+    rest_spot: RestSpot | None
 
 
 def _pick_rest_spot(route_facts: RouteFacts, current_distance_km: float) -> RestSpot | None:
@@ -119,7 +146,7 @@ def _resolve_package_and_scenario(
     return package, scenario
 
 
-def evaluate_preview(
+def iter_preview_ticks(
     *,
     package_id: str,
     scenario_id: str,
@@ -133,8 +160,22 @@ def evaluate_preview(
     route_source: str = "local",
     route_facts: Any = None,
     display_route: Any = None,
-) -> dict[str, Any]:
-    """Run a headless, non-persisting evaluation and return an InstantResult dict.
+) -> Iterator[PreviewFireEvent]:
+    """Run the headless, non-persisting preview tick loop, yielding a
+    ``PreviewFireEvent`` at each new actionable-proposal episode (rising edge).
+
+    This is the extracted engine behind ``evaluate_preview`` (feature 020,
+    slice 2c) — a reusable generator so a caller other than ``evaluate_preview``
+    (e.g. the merged simulator's quickview projection) can hook a proposal at
+    each fire without re-running or duplicating the trigger tick loop.
+
+    Setup (package/scenario resolution, overrides validation, draft creation,
+    route selection) is identical to — and raises the SAME
+    ``PreviewValidationError`` as — the pre-extraction ``evaluate_preview``.
+    Because generator bodies are lazy, setup only actually runs (and can only
+    raise) once the FIRST item is pulled (the immediate ``for`` in
+    ``evaluate_preview`` below does this right away, so the exception still
+    surfaces before ``evaluate_preview`` returns, exactly as before).
 
     UX-BE (feature 009 UX iteration): *profiles* (partial ``driver``/``anomaly``/
     ``speed`` overrides — same shape as ``CreateRunPlanBody.profiles``) and
@@ -143,6 +184,15 @@ def evaluate_preview(
     SAME ``create_draft``/``_apply_profile_overrides`` machinery a real
     ``POST /api/run-plans`` uses (see routers/run_plans.py), so a preview
     computed with the same overrides as "Open full run" is faithful to it.
+
+    On normal completion this generator's ``return`` value (retrievable as
+    ``StopIteration.value`` when driven manually, as ``evaluate_preview`` does)
+    is the SAME ``InstantResult`` dict ``evaluate_preview`` used to build and
+    return directly before this extraction — that accumulation (fires,
+    score_series, segments, rest_spots, ...) still happens tick-by-tick here,
+    unchanged; the generator both yields fire notifications AND returns the
+    full accumulated result, so `evaluate_preview` needs no bookkeeping of its
+    own to stay byte-identical.
 
     Raises:
         PreviewValidationError: unknown/incompatible package or scenario, an
@@ -428,6 +478,18 @@ def evaluate_preview(
                 fires.append(fire)
                 if fired_at is None:
                     fired_at = fire  # first trigger — kept for the result-line/back-compat
+                # Rising edge — a fresh trigger episode. Reusable notification
+                # for callers other than evaluate_preview (feature 020 slice 2c);
+                # evaluate_preview itself ignores yielded values (see below).
+                yield PreviewFireEvent(
+                    tick_index=tick_index,
+                    tick_state=tick_state,
+                    decision=decision,
+                    elapsed_min=elapsed_min,
+                    route_facts=route_facts,
+                    effective_scenario=effective_scenario,
+                    rest_spot=_pick_rest_spot(route_facts, tick_state.distance_km or 0.0),
+                )
             fire_active = True
         else:
             fire_active = False
@@ -523,3 +585,53 @@ def evaluate_preview(
         "overrides": overrides_out,
         "error": error_out,
     }
+
+
+def evaluate_preview(
+    *,
+    package_id: str,
+    scenario_id: str,
+    hyperparameter_overrides: dict[str, Any] | None,
+    run_seed: int,
+    rest_option_id: str | None,
+    packages_dir,
+    scenarios_dir,
+    profiles: dict[str, Any] | None = None,
+    context_overrides: dict[str, Any] | None = None,
+    route_source: str = "local",
+    route_facts: Any = None,
+    display_route: Any = None,
+) -> dict[str, Any]:
+    """Run a headless, non-persisting evaluation and return an InstantResult dict.
+
+    A thin consumer of ``iter_preview_ticks`` (feature 020 slice 2c extraction):
+    drives the generator to completion and returns its accumulated result
+    unchanged. ``PreviewFireEvent``s yielded along the way are for OTHER
+    callers (e.g. the merged simulator's quickview) — this function needs none
+    of its own bookkeeping to reproduce the exact same ``InstantResult`` the
+    pre-extraction, single-function ``evaluate_preview`` returned.
+
+    Raises:
+        PreviewValidationError: unknown/incompatible package or scenario, an
+            old-shape scenario, invalid hyperparameter overrides, invalid
+            profile overrides, or invalid context overrides.
+    """
+    ticks = iter_preview_ticks(
+        package_id=package_id,
+        scenario_id=scenario_id,
+        hyperparameter_overrides=hyperparameter_overrides,
+        run_seed=run_seed,
+        rest_option_id=rest_option_id,
+        packages_dir=packages_dir,
+        scenarios_dir=scenarios_dir,
+        profiles=profiles,
+        context_overrides=context_overrides,
+        route_source=route_source,
+        route_facts=route_facts,
+        display_route=display_route,
+    )
+    try:
+        while True:
+            next(ticks)
+    except StopIteration as stop:
+        return stop.value
