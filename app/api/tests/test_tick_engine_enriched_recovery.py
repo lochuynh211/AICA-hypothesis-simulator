@@ -8,11 +8,12 @@ services/behavior/driver_signals.py:
       ``*_per_min`` field set recovers MORE with a LARGER stage.ticks
       (duration-scaled via apply_rest_recovery_minutes, applied once on
       activity entry — minutes = stage.ticks * tick_seconds / 60).
-  (b) A MOVING content stage (motion=="MOVING", phase=="content") whose
-      recovery_model[content] entry has drowsiness_per_min set accrues a
-      small per-tick recovery (apply_rest_recovery_rate) EVERY moving tick
-      while en route — additive; the recovery/no-recovery gap after 3 ticks
-      is larger than after 1 tick.
+  (b) A MOVING content stage (motion=="MOVING", grants_moving_recovery=True --
+      Slice-2b Task 3 explicit opt-in flag) whose recovery_model[content]
+      entry has drowsiness_per_min set accrues a small per-tick recovery
+      (apply_rest_recovery_rate) EVERY moving tick while en route —
+      additive; the recovery/no-recovery gap after 3 ticks is larger than
+      after 1 tick.
   (c) A legacy flat-only recovery_model entry (no per-min fields set) still
       recovers EXACTLY the flat amount once, unchanged (back-compat with
       feature 009's apply_rest_recovery — no regression).
@@ -190,7 +191,10 @@ def _moving_content_drowsiness_after(n_ticks: int, *, with_recovery: bool) -> fl
             "video_karaoke": ActivityRecovery(drowsiness_per_min=2.0, fatigue_per_min=1.0),
         },
         stages=[
-            RecoveryStage(phase="content", content="video_karaoke", motion="MOVING"),
+            RecoveryStage(
+                phase="content", content="video_karaoke", motion="MOVING",
+                grants_moving_recovery=True,  # Slice-2b Task 3: explicit opt-in
+            ),
         ],
         drowsiness_model=dm,
         fatigue_model=fm,
@@ -245,7 +249,10 @@ def _moving_content_capped_drowsiness_after(n_ticks: int, *, cap_drowsiness: flo
             ),
         },
         stages=[
-            RecoveryStage(phase="content", content="video_karaoke", motion="MOVING"),
+            RecoveryStage(
+                phase="content", content="video_karaoke", motion="MOVING",
+                grants_moving_recovery=True,  # Slice-2b Task 3: explicit opt-in
+            ),
         ],
         drowsiness_model=dm,
         fatigue_model=fm,

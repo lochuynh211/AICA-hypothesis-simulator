@@ -289,12 +289,17 @@ def advance_tick(
     # amount (apply_rest_recovery) — additive/opt-in; a flat-only entry (no
     # per-min fields set) keeps today's exact fixed-once behavior unchanged.
     #
-    # MOVING content stage (feature 020, NEW): a stage with motion=="MOVING" and
-    # phase=="content" (or content != "wakefulness") accrues per-tick rate-based
-    # recovery (apply_rest_recovery_rate) EVERY moving tick while en route to the
-    # rest spot — additive; today MOVING stages get zero recovery. A plain
-    # wakefulness MOVING stage (content == "wakefulness", not phase=="content")
-    # still recovers nothing.
+    # MOVING content stage (feature 020, Slice-2b Task 3): a stage with
+    # motion=="MOVING" AND the explicit opt-in flag grants_moving_recovery==True
+    # accrues per-tick rate-based recovery (apply_rest_recovery_rate) EVERY
+    # moving tick while en route to the rest spot — additive; today MOVING
+    # stages get zero recovery. This replaces the earlier name-heuristic
+    # (phase=="content" or content != "wakefulness"), which was a landmine:
+    # any real MOVING stage not literally named "wakefulness" would silently
+    # start accruing recovery the moment its recovery_model entry gained a
+    # *_per_min field, with no explicit opt-in. Default False → a plain
+    # wakefulness MOVING stage (grants_moving_recovery unset) still recovers
+    # nothing.
     if (
         recovery is not None
         and recovery.active
@@ -330,9 +335,7 @@ def advance_tick(
                         _stage.content,
                     )
                 new_drowsiness, new_fatigue = recovered.drowsiness, recovered.fatigue
-        elif _stage is not None and motion_state == "MOVING" and (
-            _stage.phase == "content" or _stage.content != "wakefulness"
-        ):
+        elif _stage is not None and motion_state == "MOVING" and _stage.grants_moving_recovery:
             # Review fix (Slice-2 core Task 2 findings): apply_rest_recovery_rate
             # caps only the amount from THIS call, so calling it every MOVING
             # tick would let total recovery over the stage grow unbounded. Use
