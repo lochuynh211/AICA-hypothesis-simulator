@@ -100,6 +100,11 @@ def test_parse_bilingual_prefix_case_insensitive_and_trimmed():
     assert eb.parse_bilingual("  ja:  あ \n  en:  b  ") == ["あ", "b"]
 
 
+def test_parse_bilingual_inline_ja_en_on_one_line():
+    # Gemini Nano sometimes emits both on a single line — must still split.
+    assert eb.parse_bilingual("JA: 眠気が強い。 EN: Drowsiness is strong.") == ["眠気が強い。", "Drowsiness is strong."]
+
+
 def test_parse_bilingual_two_plain_lines():
     assert eb.parse_bilingual("日本語の文\nEnglish line") == ["日本語の文", "English line"]
 

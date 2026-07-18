@@ -450,8 +450,9 @@ def strip_placeholder_artifacts(text: str) -> str:
     out = re.sub(r"[（(「\[]\s*[)\]」）]", "", out)             # empty bracket pairs left behind
     out = re.sub(r"\s{2,}", " ", out)                          # collapse doubled spaces
     out = re.sub(r"\s+([.,!?;:。、！？)）])", r"\1", out)       # space before punctuation
-    out = re.sub(r"^\s*(?:and|、|,)\s+", "", out.strip())      # dangling leading conjunction
-    out = re.sub(r"\s*(?:and|、|,)\s*$", "", out.strip())      # dangling trailing conjunction
+    # case-insensitive to match the JS mirrors (nano-test.html / useExplanation.ts)
+    out = re.sub(r"^\s*(?:and|、|,)\s+", "", out.strip(), flags=re.IGNORECASE)   # dangling leading conjunction
+    out = re.sub(r"\s*(?:and|、|,)\s*$", "", out.strip(), flags=re.IGNORECASE)   # dangling trailing conjunction
     return out.strip()
 
 
@@ -462,7 +463,16 @@ def parse_bilingual(text: str) -> list[str]:
     first two non-empty lines → the whole text used for both. Code fences and
     surrounding whitespace are stripped. Empty input yields ``["", ""]``.
     """
-    cleaned = (text or "").strip()
+    cleaned = (text or "").strip().strip("`").strip()
+    # Primary: match "JA: <ja> ... EN: <en>" whether the two are on separate
+    # lines OR inline on one line (Gemini Nano sometimes emits both on a single
+    # line, which the line-by-line pass below would fail to split).
+    m = re.search(r"ja:\s*(.+?)\s*en:\s*(.+)", cleaned, re.IGNORECASE | re.DOTALL)
+    if m:
+        ja = m.group(1).strip().strip("`").strip()
+        en = m.group(2).strip().strip("`").strip()
+        if ja or en:
+            return [ja or en, en or ja]
     # strip ``` fences
     lines_all = [ln for ln in cleaned.splitlines() if ln.strip().strip("`") != ""]
     ja: str | None = None

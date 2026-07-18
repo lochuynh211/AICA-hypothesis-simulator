@@ -49,3 +49,6 @@ generation_workspace/**/*.env
 
 # SpecKit implementation-scratch subagent reports + review packages
 specs/*/.reports/
+
+# feature 019 in-browser Nano test harness eval sink
+proposal_runs/nano-test/

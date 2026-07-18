@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AICA · Gemini Nano preset test (feature 019)</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; padding: 20px; line-height: 1.4; }
+  h1 { font-size: 1.25rem; margin: 0 0 4px; }
+  .sub { color: #6b7280; font-size: 0.85rem; margin: 0 0 16px; }
+  .banner { padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; margin: 10px 0; border: 1px solid transparent; }
+  .ok { background: #ecfdf5; color: #065f46; border-color: #6ee7b7; }
+  .bad { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+  .warn { background: #fffbeb; color: #92400e; border-color: #fcd34d; }
+  button { font-size: 0.92rem; font-weight: 700; padding: 9px 18px; border-radius: 8px; border: 1px solid #1d4ed8;
+           background: #1d4ed8; color: #fff; cursor: pointer; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.secondary { background: #fff; color: #1d4ed8; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 12px 0; }
+  .counts { font-size: 0.85rem; color: #374151; }
+  code { font-family: ui-monospace, monospace; font-size: 0.82em; background: rgba(127,127,127,.12); padding: 1px 5px; border-radius: 4px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.8rem; margin-top: 12px; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid rgba(127,127,127,.25); vertical-align: top; }
+  th { position: sticky; top: 0; background: Canvas; }
+  .pill { display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 1px 7px; border-radius: 999px; }
+  .p-ok { background: #dcfce7; color: #166534; } .p-err { background: #fee2e2; color: #991b1b; }
+  .p-run { background: #dbeafe; color: #1e40af; } .p-wait { background: #f3f4f6; color: #6b7280; }
+  .p-cite { background: #dcfce7; color: #166534; } .p-nocite { background: #fef3c7; color: #92400e; }
+  .mono { font-family: ui-monospace, monospace; font-size: 0.92em; color: #6b7280; }
+  .reason { max-width: 460px; }
+  .reason .ja { display: block; } .reason .en { display: block; color: #6b7280; }
+  .top { color: #6b7280; }
+</style>
+</head>
+<body>
+  <h1>AICA · Gemini Nano preset test</h1>
+  <p class="sub">Runs every committed preset through the real browser flow
+    (create run → select service → <code>explain(provider=browser)</code>) and executes the
+    <b>same server-built prompt</b> through Chrome's on-device Gemini Nano — then posts the results back to
+    the backend at <code>POST /api/proposal/nano-test/results</code> for review. Open this at a
+    <b>http://localhost</b> URL (secure context) in desktop Chrome with the on-device model enabled.</p>
+
+  <div id="nano-banner" class="banner warn">Checking on-device model availability…</div>
+
+  <div class="row">
+    <button id="run" disabled>Run all presets</button>
+    <button id="download" class="secondary" disabled>Download results JSON</button>
+    <span id="counts" class="counts"></span>
+  </div>
+  <div id="stored" class="banner ok" style="display:none"></div>
+
+  <table id="tbl">
+    <thead><tr>
+      <th>#</th><th>Preset</th><th>Step</th><th>Decision · top factor</th>
+      <th>Nano reason</th><th>Status</th><th>ms</th>
+    </tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+<script>
+const API = '/api/proposal';
+const $ = (id) => document.getElementById(id);
+
+async function jget(p) { const r = await fetch(API + p); if (!r.ok) throw new Error('GET ' + p + ' → ' + r.status); return r.json(); }
+async function jpost(p, b) {
+  const r = await fetch(API + p, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) });
+  if (!r.ok) { let t = ''; try { t = await r.text(); } catch {} throw new Error('POST ' + p + ' → ' + r.status + ' ' + t.slice(0, 200)); }
+  return r.json();
+}
+
+// ── Gemini Nano (Chrome built-in Prompt API) ────────────────────────────────
+function getLM() {
+  const g = window;
+  if (g.LanguageModel && typeof g.LanguageModel.create === 'function') return g.LanguageModel;
+  if (g.ai && g.ai.languageModel && typeof g.ai.languageModel.create === 'function') return g.ai.languageModel;
+  return null;
+}
+async function nanoAvailability() {
+  const lm = getLM();
+  if (!lm) return 'no-api';
+  try {
+    if (typeof lm.availability === 'function') return await lm.availability();
+    if (typeof lm.capabilities === 'function') { const c = await lm.capabilities(); return (c && c.available) || 'unknown'; }
+    return 'unknown';
+  } catch (e) { return 'error:' + e; }
+}
+function availUsable(a) { return ['available', 'readily', 'downloadable', 'downloading', 'after-download', 'unknown'].includes(a); }
+async function runNano(messages) {
+  const lm = getLM();
+  if (!lm) throw new Error('nano_unavailable');
+  const sys = (messages.find((m) => m.role === 'system') || {}).content;
+  const user = messages.filter((m) => m.role === 'user').map((m) => m.content).join('\n\n');
+  let s;
+  try { const o = { temperature: 0, topK: 1 }; if (sys) o.initialPrompts = [{ role: 'system', content: sys }]; s = await lm.create(o); }
+  catch { s = await lm.create(sys ? { systemPrompt: sys } : {}); }
+  try { const out = await s.prompt(user); return typeof out === 'string' ? out : String(out == null ? '' : out); }
+  finally { try { s.destroy && s.destroy(); } catch {} }
+}
+
+// ── parse + strip (mirror of the backend/TS helpers) ────────────────────────
+const PLACEHOLDER_RE = /[（(「[]?\s*(?:\bfactors?\s+[ab]\b|要因[abＡＢ])\s*[)\]」）]?/gi;
+function stripPlaceholders(text) {
+  if (!text) return text;
+  let o = text.replace(PLACEHOLDER_RE, '');
+  o = o.replace(/[（(「[]\s*[)\]」）]/g, '');
+  o = o.replace(/\s{2,}/g, ' ');
+  o = o.replace(/\s+([.,!?;:。、！？)）])/g, '$1');
+  o = o.replace(/^\s*(?:and|、|,)\s+/i, '').trim();
+  o = o.replace(/\s*(?:and|、|,)\s*$/i, '').trim();
+  return o.trim();
+}
+function parseBilingual(text) {
+  const cleaned = (text || '').trim().replace(/^`+|`+$/g, '').trim();
+  const inline = cleaned.match(/ja:\s*([\s\S]+?)\s*en:\s*([\s\S]+)/i);
+  if (inline) { const ja = inline[1].trim().replace(/`+/g, '').trim(), en = inline[2].trim().replace(/`+/g, '').trim(); if (ja || en) return [ja || en, en || ja]; }
+  const lines = (text || '').trim().split(/\r?\n/).map((l) => l.trim().replace(/^`+|`+$/g, '').trim()).filter((l) => l.length);
+  let ja, en; const plain = [];
+  for (const ln of lines) { const low = ln.toLowerCase();
+    if (low.startsWith('ja:')) ja = ln.slice(3).trim();
+    else if (low.startsWith('en:')) en = ln.slice(3).trim();
+    else plain.push(ln); }
+  if (ja !== undefined || en !== undefined) return [ja || en || '', en || ja || ''];
+  if (plain.length >= 2) return [plain[0], plain[1]];
+  if (plain.length === 1) return [plain[0], plain[0]];
+  return ['', ''];
+}
+function citesTop(reason, factors) {
+  if (!factors || !factors.length) return null;
+  const text = ((reason.ja || '') + ' ' + (reason.en || '')).toLowerCase();
+  for (const f of factors.slice(0, 2)) {
+    const en = (f.label_en || '').toLowerCase().split(/[^a-z]+/).filter((w) => w.length > 3);
+    const kws = [...en, f.label_ja].filter(Boolean);
+    if (kws.some((k) => text.includes(String(k).toLowerCase()))) return true;
+  }
+  return false;
+}
+
+// Mirror of backend explanation_builder.response_is_usable (keep EXAMPLE_* in
+// sync with _EXAMPLE_JA/_EN). Runs on the PARSED (un-stripped) text, exactly as
+// the backend does, so we can mark Nano output the backend would have discarded
+// (echo / example-parrot) and count it apples-to-apples with the 3b path.
+const EXAMPLE_JA = '「要因A」と「要因B」が最も強く働いたため、この選択に至りました。';
+const EXAMPLE_EN = 'Factor A and factor B contributed the most, which is why this choice was made.';
+function responseIsUsable(rationale, messages) {
+  const texts = (rationale || []).map((t) => (t || '').trim()).filter(Boolean);
+  if (!texts.length) return false;
+  if (texts.some((t) => t === EXAMPLE_JA || t === EXAMPLE_EN)) return false;
+  const userLines = new Set();
+  for (const m of messages || []) {
+    if (m.role === 'user') for (const ln of m.content.split(/\r?\n/)) {
+      const s = ln.trim().replace(/^-+/, '').trim(); if (s) userLines.add(s);
+    }
+  }
+  return texts.some((t) => !userLines.has(t) && !userLines.has(t.replace(/^-+/, '').trim()));
+}
+
+// ── pipeline (one preset) ───────────────────────────────────────────────────
+async function explainAndNano(runId, step, targetId) {
+  const t0 = performance.now();
+  try {
+    const resp = await jpost('/runs/' + encodeURIComponent(runId) + '/explain', { step, target_id: targetId, provider: 'browser' });
+    const g = (resp.prompt && resp.prompt.grounding) || {};
+    const factors = (g.factors || []).slice(0, 6);
+    const base = { step, target_id: targetId, fit: g.fit,
+      top_factors: factors.map((f) => ({ id: f.feature_id, contribution: f.contribution, label_ja: f.label_ja, label_en: f.label_en })) };
+    const raw = await runNano(resp.prompt.messages);
+    // Mirror backend order: usable-check on PARSED text, then strip, then re-check emptiness.
+    const parsed = parseBilingual(raw);
+    const [ja, en] = parsed.map(stripPlaceholders);
+    const usable = responseIsUsable(parsed, resp.prompt.messages) && !!(ja.trim() || en.trim());
+    return { ...base, raw, ja, en, usable, would_fall_back: !usable,
+      cites_top: usable ? citesTop({ ja, en }, factors) : null, ms: Math.round(performance.now() - t0) };
+  } catch (e) { return { step, target_id: targetId, error: String(e && e.message || e), ms: Math.round(performance.now() - t0) }; }
+}
+
+async function runPreset(pid, pkgs) {
+  const preset = await jget('/presets/' + encodeURIComponent(pid));
+  const world = preset.world, ci = world.control_inputs;
+  const created = await jpost('/runs', {
+    trigger_purpose: ci.trigger_purpose, lifecycle_stage: ci.lifecycle_stage, motion_state: ci.motion_state,
+    world, service_package_id: pkgs.svc, content_package_id: pkgs.content, mode: 'interactive',
+    parameters: {}, hyperparameters: {}, run_seed: 'nano-' + pid, simulation_time: new Date().toISOString(),
+    origin_preset_id: pid, algorithm_config_overrides: preset.algorithm_config_overrides,
+  });
+  const runId = created.run_id;
+  const sev = created.evidence.find((e) => e.step === 'service' && e.output);
+  const rec = { preset: pid, category: preset.category, hypothesis: (preset.expectation || {}).hypothesis };
+  if (!sev) { rec.error = 'no_service_decision'; rec.service_error = (created.evidence.find((e) => e.step === 'service') || {}).error; return rec; }
+  const cands = sev.output.ranked_candidates || [];
+  const chosen = cands.find((c) => pkgs.backed.has(c.candidate_id)) || cands[0];
+  rec.chosen_service = chosen.candidate_id; rec.service_fit = chosen.score;
+  rec.service = await explainAndNano(runId, 'service', chosen.candidate_id);
+  const sel = await jpost('/runs/' + encodeURIComponent(runId) + '/select-service',
+    { selected_service_id: chosen.candidate_id, algorithm_config_overrides: preset.algorithm_config_overrides }).catch((e) => ({ _err: String(e) }));
+  const cev = (sel.evidence || []).find((e) => e.step === 'content' && e.output);
+  const item = cev && cev.output.ordered_items && cev.output.ordered_items[0];
+  if (item) { rec.chosen_item = item.item_id; rec.content = await explainAndNano(runId, 'content', item.item_id); }
+  return rec;
+}
+
+// ── UI ──────────────────────────────────────────────────────────────────────
+let ALL_RESULTS = [];
+function addRows(rec, idx) {
+  const tb = $('tbody');
+  const mk = (sub, r) => {
+    const tr = document.createElement('tr');
+    const top = (r && r.top_factors && r.top_factors[0]) ? (r.top_factors[0].label_en + ' (' + r.top_factors[0].contribution.toFixed(3) + ')') : '';
+    let status, reason = '';
+    if (!r) { status = '<span class="pill p-wait">—</span>'; }
+    else if (r.error) { status = '<span class="pill p-err">error</span>'; reason = '<span class="mono">' + esc(r.error) + '</span>'; }
+    else {
+      const tag = r.would_fall_back ? '<span class="pill p-nocite">would fall back (unusable)</span>'
+        : (r.cites_top === false ? '<span class="pill p-nocite">missed top</span>' : '<span class="pill p-cite">cites top</span>');
+      status = '<span class="pill p-ok">nano</span> ' + tag;
+      reason = '<div class="reason"><span class="ja">' + esc(r.ja) + '</span><span class="en">' + esc(r.en) + '</span></div>';
+    }
+    tr.innerHTML = '<td>' + idx + '</td><td><code>' + esc(rec.preset.replace('preset-', '')) + '</code></td>' +
+      '<td>' + sub + '</td><td class="top">' + esc((sub === 'service' ? (rec.chosen_service || '') : (rec.chosen_item || '')) + (top ? ' · ' + top : '')) + '</td>' +
+      '<td>' + reason + '</td><td>' + status + '</td><td class="mono">' + (r && r.ms != null ? r.ms : '') + '</td>';
+    tb.appendChild(tr);
+  };
+  if (rec.error) { const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + idx + '</td><td><code>' + esc(rec.preset.replace('preset-', '')) + '</code></td><td>—</td><td colspan="4"><span class="pill p-err">' + esc(rec.error) + '</span> <span class="mono">' + esc(JSON.stringify(rec.service_error || '')) + '</span></td>';
+    tb.appendChild(tr); return; }
+  mk('service', rec.service);
+  if (rec.content) mk('content', rec.content);
+}
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+function summarize() {
+  const ok = ALL_RESULTS.filter((r) => !r.error);
+  const svc = ok.map((r) => r.service).filter(Boolean);
+  const sN = svc.filter((s) => !s.error).length, sU = svc.filter((s) => s.usable).length, sC = svc.filter((s) => s.cites_top).length;
+  const con = ok.map((r) => r.content).filter(Boolean);
+  const cN = con.filter((s) => !s.error).length, cU = con.filter((s) => s.usable).length, cC = con.filter((s) => s.cites_top).length;
+  $('counts').textContent =
+    `presets ${ALL_RESULTS.length} · SERVICE nano ${sN}, usable ${sU}, cites-top ${sC}` +
+    ` · CONTENT nano ${cN}, usable ${cU}, cites-top ${cC} · preset errors ${ALL_RESULTS.filter((r) => r.error).length}`;
+}
+
+async function runAll() {
+  $('run').disabled = true; $('tbody').innerHTML = ''; ALL_RESULTS = []; $('stored').style.display = 'none';
+  try {
+    const pkgsResp = await jget('/packages');
+    const svc = pkgsResp.packages.find((p) => p.family === 'service_selector' && p.approach === 'transparent');
+    const content = pkgsResp.packages.find((p) => p.family === 'content_selector' && p.approach === 'transparent');
+    const pkgs = { svc: svc.id, content: content.id, backed: new Set(content.supported_services || []) };
+    const { presets } = await jget('/presets');
+    const ids = presets.map((p) => p.preset_id);
+    for (let i = 0; i < ids.length; i++) {
+      let rec;
+      try { rec = await runPreset(ids[i], pkgs); }
+      catch (e) { rec = { preset: ids[i], error: String(e && e.message || e) }; }
+      ALL_RESULTS.push(rec); addRows(rec, i + 1); summarize();
+    }
+    const avail = await nanoAvailability();
+    const stored = await jpost('/nano-test/results', {
+      session_label: 'nano-' + new Date().toISOString(),
+      meta: { nano_availability: avail, user_agent: navigator.userAgent, preset_count: ids.length },
+      results: ALL_RESULTS,
+    });
+    $('stored').style.display = ''; $('stored').textContent = '✅ Posted ' + stored.count + ' preset results to the backend (' + stored.stored + '). You can now review them.';
+    $('download').disabled = false;
+  } catch (e) {
+    $('stored').style.display = ''; $('stored').className = 'banner bad'; $('stored').textContent = '❌ ' + (e && e.message || e);
+  } finally { $('run').disabled = false; }
+}
+
+$('download').onclick = () => {
+  const blob = new Blob([JSON.stringify({ results: ALL_RESULTS }, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'nano-test-results.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 0);  // release the Blob (no leak on repeated downloads)
+};
+
+(async () => {
+  const avail = await nanoAvailability();
+  const b = $('nano-banner');
+  if (avail === 'no-api') {
+    b.className = 'banner bad';
+    b.innerHTML = '❌ Chrome built-in AI (LanguageModel / window.ai) not found. Use desktop Chrome at a <b>http://localhost</b> URL with the Prompt API + on-device model enabled (chrome://flags, chrome://on-device-internals). The run button still works but Nano calls will error.';
+    $('run').disabled = false;
+  } else if (availUsable(avail)) {
+    b.className = 'banner ok'; b.innerHTML = '✅ On-device model available (availability = <code>' + esc(avail) + '</code>). Ready to run.';
+    $('run').disabled = false;
+  } else {
+    b.className = 'banner warn'; b.innerHTML = '⚠️ On-device model reported availability = <code>' + esc(avail) + '</code>. Trying anyway; some calls may fail.';
+    $('run').disabled = false;
+  }
+  $('run').onclick = runAll;
+})();
+</script>
+</body>
+</html>

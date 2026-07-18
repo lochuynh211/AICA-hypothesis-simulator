@@ -74,6 +74,15 @@ export function stripPlaceholders(text: string): string {
 
 /** Client-side mirror of the backend `parse_bilingual` — for the Nano path. */
 export function parseBilingual(text: string): [string, string] {
+  const cleaned = (text || '').trim().replace(/^`+|`+$/g, '').trim()
+  // Primary: "JA: <ja> ... EN: <en>" inline OR across lines (Nano sometimes
+  // emits both on one line, which the line-by-line pass wouldn't split).
+  const m = cleaned.match(/ja:\s*([\s\S]+?)\s*en:\s*([\s\S]+)/i)
+  if (m) {
+    const ja = m[1].trim().replace(/`+/g, '').trim()
+    const en = m[2].trim().replace(/`+/g, '').trim()
+    if (ja || en) return [ja || en, en || ja]
+  }
   const lines = (text || '')
     .trim()
     .split(/\r?\n/)
@@ -94,6 +103,27 @@ export function parseBilingual(text: string): [string, string] {
   return ['', '']
 }
 
+// Mirror of backend explanation_builder.response_is_usable (keep EXAMPLE_* in
+// sync with _EXAMPLE_JA/_EN). Rejects empty, verbatim-example-parrot, and
+// all-lines-echo-the-facts output — so the Nano path falls back to the template
+// on degenerate output, matching the backend Ollama path's honesty guarantee.
+const EXAMPLE_JA = '「要因A」と「要因B」が最も強く働いたため、この選択に至りました。'
+const EXAMPLE_EN = 'Factor A and factor B contributed the most, which is why this choice was made.'
+export function responseIsUsable(rationale: string[], messages: { role: string; content: string }[]): boolean {
+  const texts = rationale.map((t) => (t || '').trim()).filter(Boolean)
+  if (!texts.length) return false
+  if (texts.some((t) => t === EXAMPLE_JA || t === EXAMPLE_EN)) return false
+  const userLines = new Set<string>()
+  for (const m of messages || []) {
+    if (m.role === 'user')
+      for (const ln of m.content.split(/\r?\n/)) {
+        const s = ln.trim().replace(/^-+/, '').trim()
+        if (s) userLines.add(s)
+      }
+  }
+  return texts.some((t) => !userLines.has(t) && !userLines.has(t.replace(/^-+/, '').trim()))
+}
+
 async function generate(
   runId: string,
   step: ExplainStep,
@@ -110,7 +140,12 @@ async function generate(
   const res = await explain(runId, { step, targetId, provider: 'browser' })
   if (!(await nanoAvailable())) throw new Error('nano_unavailable')
   const raw = await runNano(res.prompt.messages)
-  const [ja, en] = parseBilingual(raw).map(stripPlaceholders) as [string, string]
+  // Same honesty guard as the backend Ollama path: reject echo / example-parrot
+  // output (checked on the PARSED text) so the panel falls back to the template
+  // via 'error' rather than showing degenerate Nano text as a real explanation.
+  const parsed = parseBilingual(raw)
+  if (!responseIsUsable(parsed, res.prompt.messages)) throw new Error('nano_unusable')
+  const [ja, en] = parsed.map(stripPlaceholders) as [string, string]
   if (!ja && !en) throw new Error('empty_nano_output')
   return { status: 'ready', ja, en, model: res.model, fellBack: false }
 }

@@ -91,7 +91,7 @@ from aica_api.services.proposal_selector import dispatch_selector
 from aica_api.services.world_clone_store import InvalidOverrideError, apply_overrides
 from aica_api.services.world_seed_store import WorldSeedStore
 from aica_api.services.world_validation import ValidationIssue, validate_world
-from aica_api.storage.file_store import read_json
+from aica_api.storage.file_store import read_json, write_json_atomic
 
 router = APIRouter()
 
@@ -2063,3 +2063,43 @@ def explain_run(run_id: str, body: ExplainRequestBody) -> ExplainResponse:
         error=error,
         prompt=prompt,
     )
+
+
+# ---------------------------------------------------------------------------
+# POST /api/proposal/nano-test/results — feature 019 in-browser eval sink
+#
+# Catches results posted by the in-browser Gemini Nano test harness
+# (app/frontend/public/nano-test.html), so a maintainer can review how the
+# on-device model performed across the presets — exactly the same server-built
+# prompts the backend uses, run through Chrome's Nano instead of Ollama. This is
+# a LOCAL single-user tool (no auth). The latest batch overwrites
+# proposal_runs/nano-test-results.json (git-ignored, host-readable).
+# ---------------------------------------------------------------------------
+
+
+class NanoTestResults(BaseModel):
+    session_label: str | None = None
+    meta: dict[str, Any] = {}
+    results: list[dict[str, Any]]
+
+
+@router.post("/api/proposal/nano-test/results")
+def post_nano_test_results(body: NanoTestResults) -> dict:
+    # Soft bound (eval sink on a local tool — the harness posts ~32*2 entries).
+    if len(body.results) > 5000:
+        raise HTTPException(status_code=413, detail="too many results (max 5000)")
+    # Write into a dedicated SUBDIRECTORY (not directly under proposal_runs/) so
+    # the sink file can never collide with a `{run_id}.json` path and is never
+    # picked up by list_runs()'s top-level *.json glob.
+    out_dir = settings.proposal_runs_dir / "nano-test"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / "results.json"
+    payload = {
+        "received_at": datetime.now(timezone.utc).isoformat(),
+        "session_label": body.session_label,
+        "meta": body.meta,
+        "count": len(body.results),
+        "results": body.results,
+    }
+    write_json_atomic(str(path), payload)
+    return {"stored": str(path), "count": len(body.results)}
