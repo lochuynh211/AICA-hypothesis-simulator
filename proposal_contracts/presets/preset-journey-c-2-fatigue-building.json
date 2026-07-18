@@ -1,0 +1,165 @@
+{
+  "algorithm_config_overrides": null,
+  "brief": {
+    "en": "The winding climb has taken its toll: fatigue has caught up to drowsiness, both at ≈55 — the mountain's own fatigue bonus outpacing the merely-base drowsiness rise on a non-monotonous road. A rest stop is now recommended, about 8 minutes ahead. The same calm taste keeps the same Joe Hisaishi track on top while the assistant guides the driver toward the stop.",
+    "ja": "曲がりくねった登りで疲労が眠気に追いつき、両方とも約55に — 山道特有の疲労ボーナスが、単調でない道でのベースの眠気上昇を上回った。休憩スポットが約8分先に推奨される。同じ穏やかな嗜好により、休憩地点へ誘導する間も同じJoe Hisaishiの曲が1位のまま。"
+  },
+  "category": "situation",
+  "contrast_with": null,
+  "expectation": {
+    "expected_service": {
+      "top_should_be_in": [
+        "humming_karaoke",
+        "music_playlist",
+        "quiz",
+        "call_response_driving",
+        "radio_style",
+        "ranking_creation"
+      ]
+    },
+    "expected_top": {
+      "arousal_band": "mid",
+      "genre": "classical",
+      "must_be_oshi": true,
+      "track_id": "synthetic-track-0078"
+    },
+    "gradient": "none",
+    "hypothesis": "fatigue-led winding-road buildup (fatigue == drowsiness), same taste -> same oshi track still tops",
+    "override_required": false,
+    "top_fit_min": 0.339
+  },
+  "family": "journey",
+  "journey": {
+    "id": "journey-c",
+    "label": {
+      "en": "C · The Mountain Road Trip",
+      "ja": "C・山道ロードトリップ"
+    },
+    "of": 4,
+    "step": 2
+  },
+  "label": {
+    "en": "C · 2/4 — Fatigue building from the winding road",
+    "ja": "C・2/4 — 曲がりくねった道で疲労蓄積"
+  },
+  "preset_id": "preset-journey-c-2-fatigue-building",
+  "schema_version": "1.0.0",
+  "world": {
+    "catalog_ref": {
+      "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "dataset_version": {
+        "schema_version": "1.0.0",
+        "spotify_audio_features_reference_version": "1.0.0",
+        "spotify_track_reference_version": "1.0.0"
+      }
+    },
+    "control_inputs": {
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "lifecycle_stage": "before_rest_until_stop",
+      "matrix_version": "v1",
+      "motion_state": "driving",
+      "trigger_purpose": "rest_recommended"
+    },
+    "driver_profile": {
+      "age_band": "50s",
+      "cancelled_content_plans": [],
+      "catalog_item_recency_state": {},
+      "catalog_item_usage_level": {
+        "synthetic-track-0003": "high",
+        "synthetic-track-0004": "high",
+        "synthetic-track-0009": "high",
+        "synthetic-track-0017": "high",
+        "synthetic-track-0022": "high",
+        "synthetic-track-0024": "high",
+        "synthetic-track-0026": "high",
+        "synthetic-track-0045": "high",
+        "synthetic-track-0078": "high",
+        "synthetic-track-0112": "high",
+        "synthetic-track-0158": "high",
+        "synthetic-track-0270": "high"
+      },
+      "changed_from_items": [],
+      "completed_items": [],
+      "content_proposal_acceptance_confidence": {},
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0003": 95,
+        "synthetic-track-0004": 95,
+        "synthetic-track-0009": 95,
+        "synthetic-track-0017": 95,
+        "synthetic-track-0022": 95,
+        "synthetic-track-0024": 95,
+        "synthetic-track-0026": 95,
+        "synthetic-track-0045": 95,
+        "synthetic-track-0078": 95,
+        "synthetic-track-0112": 95,
+        "synthetic-track-0158": 95,
+        "synthetic-track-0270": 95
+      },
+      "content_recovery_confidence": {},
+      "content_recovery_rate": {
+        "synthetic-track-0003": 90,
+        "synthetic-track-0004": 90,
+        "synthetic-track-0009": 90,
+        "synthetic-track-0017": 90,
+        "synthetic-track-0022": 90,
+        "synthetic-track-0024": 90,
+        "synthetic-track-0026": 90,
+        "synthetic-track-0045": 90,
+        "synthetic-track-0078": 90,
+        "synthetic-track-0112": 90,
+        "synthetic-track-0158": 90,
+        "synthetic-track-0270": 90
+      },
+      "content_tag_recency_state": {},
+      "content_tag_usage_level": {},
+      "gender": "unspecified",
+      "genre_affinity_v1_enabled": true,
+      "hobby_interest_tags": [],
+      "manually_selected_items": [],
+      "oshi_id": "synthetic-artist-0090",
+      "oshi_mode": "on",
+      "oshi_registered": true,
+      "oshi_tags": [],
+      "oshi_type": "artist",
+      "played_items": [],
+      "repeated_items": [],
+      "scene_content_tag_usage_level": {},
+      "scene_genre_usage": null,
+      "scene_service_usage_level": {},
+      "scheduled_event_tags": [],
+      "scheduled_event_timing": null,
+      "scheduled_event_type": null,
+      "service_proposal_acceptance_confidence": {},
+      "service_proposal_acceptance_rate": {},
+      "service_recency_state": {},
+      "service_recovery_confidence": {},
+      "service_recovery_rate": {},
+      "service_usage_level": {},
+      "skipped_items": [],
+      "usage_by_genre": {
+        "classical": "high",
+        "jazz": "med"
+      }
+    },
+    "situation": {
+      "active_service": null,
+      "child_present": false,
+      "destination_tags": [],
+      "drowsiness_level": 55,
+      "estimated_min_until_rest_spot": 8,
+      "fatigue_level": 55,
+      "monotony_level": 18,
+      "motion_state": "driving",
+      "multiple_passengers": false,
+      "night_state": "day",
+      "recent_service_rejections": [],
+      "rest_spot_type": "sa_pa",
+      "road_type": "mountain",
+      "route_tags": [
+        "highway"
+      ],
+      "traffic_state": "normal"
+    }
+  }
+}

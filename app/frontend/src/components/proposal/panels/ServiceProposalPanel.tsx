@@ -26,13 +26,14 @@ import {
 /** Preset auto-loaded on screen open when `autoInit` is set. The proposal panel
  * is preset-first (the old Seed/Profile pickers were removed), so the screen
  * opens on a complete, already-recommended plan for a representative preset. */
-const AUTO_INIT_PRESET_ID = 'preset-monotone-highway-energize'
+const AUTO_INIT_PRESET_ID = 'preset-journey-a-1-cruising-fresh-monotonous'
 import HyperparamMatrix from '../HyperparamMatrix'
 import ResponseMatrixTable from '../ResponseMatrixTable'
 import HierarchyWeightsTable from '../HierarchyWeightsTable'
 import ScalarTable from '../ScalarTable'
 import ReasonBreakdown, { type ReasonRow } from '../ReasonBreakdown'
 import ServiceExplainability, { hasFeatureTrace } from '../ServiceExplainability'
+import { useExplanation, type ExplanationProvider } from '../useExplanation'
 
 const LABELS = {
   title: { ja: 'サービス提案', en: 'Service proposal' },
@@ -122,6 +123,37 @@ function serviceRows(candidate: RankedCandidate): ReasonRow[] {
     w: fc.weight,
     contribution: fc.contribution,
   }))
+}
+
+/** One candidate's ReasonBreakdown, wired to the explanation hook. Its own
+ * component so the hook (one per candidate) obeys the rules of hooks even
+ * though candidates are rendered in a `.map()`. When the provider is 'off' the
+ * hook is inert and the deterministic template shows. */
+function ServiceReason({
+  candidate,
+  runId,
+  provider,
+  lang,
+}: {
+  candidate: RankedCandidate
+  runId: string | undefined
+  provider: ExplanationProvider
+  lang: 'ja' | 'en'
+}) {
+  const { ai, request } = useExplanation(runId, 'service', candidate.candidate_id, provider, lang)
+  return (
+    <ReasonBreakdown
+      rows={serviceRows(candidate)}
+      supportingFeatureIds={candidate.supporting_feature_ids}
+      opposingFeatureIds={candidate.opposing_feature_ids}
+      rationale={candidate.rationale}
+      lang={lang}
+      variant="service"
+      showTable={!hasFeatureTrace(candidate)}
+      aiExplanation={ai}
+      onExpand={request}
+    />
+  )
 }
 
 export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: boolean }) {
@@ -571,14 +603,11 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
                       </span>
                     )}
                   </div>
-                  <ReasonBreakdown
-                    rows={serviceRows(candidate)}
-                    supportingFeatureIds={candidate.supporting_feature_ids}
-                    opposingFeatureIds={candidate.opposing_feature_ids}
-                    rationale={candidate.rationale}
+                  <ServiceReason
+                    candidate={candidate}
+                    runId={state.runLog?.run_id}
+                    provider={state.explanationProvider}
                     lang={lang}
-                    variant="service"
-                    showTable={!hasFeatureTrace(candidate)}
                   />
                   <ServiceExplainability candidate={candidate} lang={lang} />
                   <div

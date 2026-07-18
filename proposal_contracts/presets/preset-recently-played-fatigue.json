@@ -4,6 +4,7 @@
     "en": "Three tracks that would otherwise score well were just played minutes ago. The recency/novelty penalty pushes them down, demonstrating that the algorithm avoids immediately repeating songs.",
     "ja": "本来は上位のはずの3曲を数分前に再生済み。新鮮さペナルティで順位が下がり、直近曲の繰り返しを避ける挙動を示す。"
   },
+  "category": "history",
   "contrast_with": null,
   "expectation": {
     "expected_service": {
@@ -33,6 +34,7 @@
     "top_fit_min": 0.22
   },
   "family": "history_mechanics",
+  "journey": null,
   "label": {
     "en": "Recently played — novelty penalty",
     "ja": "直近再生 — 新鮮さペナルティ"

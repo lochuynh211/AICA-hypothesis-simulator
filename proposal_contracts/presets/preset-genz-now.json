@@ -36,6 +36,7 @@
     "en": "A teenage driver whose oshi is Ado (2020s). Same neutral road, same raised era/age weight — but now current 2020s tracks win. Age-band alone flips the era.",
     "ja": "推しがAdo（2020年代）の10代ドライバー。同じ道・同じ年代重みで、今度は2020年代の曲が上位に。世代だけで年代が反転。"
   },
+  "category": "preference",
   "contrast_with": "preset-showa-nostalgia",
   "expectation": {
     "expected_service": {
@@ -54,6 +55,7 @@
     "top_fit_min": 0.3
   },
   "family": "era_age",
+  "journey": null,
   "label": {
     "en": "Gen-Z now (teens driver)",
     "ja": "Z世代（10代ドライバー）"

@@ -4,6 +4,7 @@
     "en": "No oshi, but three specific tracks have an excellent recovery record with this driver. The recovery-rate signal (the strongest History lever at rest) should lift exactly those three above equally-matched peers.",
     "ja": "推しはいないが、3曲がこのドライバーで高い回復実績を持つ。回復レートのシグナルにより、その3曲が同等の他曲より上位に。"
   },
+  "category": "history",
   "contrast_with": null,
   "expectation": {
     "expected_service": {
@@ -22,6 +23,7 @@
     "top_fit_min": 0.22
   },
   "family": "history_mechanics",
+  "journey": null,
   "label": {
     "en": "High-recovery regulars",
     "ja": "回復実績の高い定番曲"

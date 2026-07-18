@@ -4,6 +4,7 @@
     "en": "The same Ado fan and the same road — but with oshi mode switched OFF. With only the shared j-pop taste left, Ado no longer tops and a different track wins — isolating exactly what the oshi signal contributes.",
     "ja": "同じAdoファン・同じ状況で、推しモードをOFFに。共通のJ-POP嗜好だけが残り、Adoは上位から外れ別の曲が勝つ — 推しシグナルの寄与を分離。"
   },
+  "category": "preference",
   "contrast_with": "preset-oshi-superfan",
   "expectation": {
     "expected_service": {
@@ -22,6 +23,7 @@
     "top_fit_min": 0.1
   },
   "family": "oshi_personalization",
+  "journey": null,
   "label": {
     "en": "Oshi off (same driver)",
     "ja": "推し OFF（同一ドライバー）"

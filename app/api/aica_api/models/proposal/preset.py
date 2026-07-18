@@ -28,6 +28,8 @@ from aica_api.models.proposal.world import World
 
 __all__ = [
     "PresetFamily",
+    "PresetCategory",
+    "PresetJourney",
     "ArousalBand",
     "Gradient",
     "ExpectedTop",
@@ -38,7 +40,8 @@ __all__ = [
     "PresetSummary",
 ]
 
-# The 9 families + baseline control + combo (data-model.md §Preset, 11 values).
+# Fine-grained family tag (kept for continuity); "journey" tags a preset that is
+# one step of a multi-stage journey timeline.
 PresetFamily = Literal[
     "mood_coherence",
     "driver_state",
@@ -51,7 +54,12 @@ PresetFamily = Literal[
     "history_mechanics",
     "baseline",
     "combo",
+    "journey",
 ]
+
+# Top-level grouping shown in the preset picker — the three content-scoring
+# categories plus the baseline control.
+PresetCategory = Literal["situation", "preference", "history", "baseline"]
 
 ArousalBand = Literal["high", "mid", "low"]
 
@@ -111,6 +119,18 @@ class AlgorithmConfigOverrides(BaseModel):
     service: dict | None = None
 
 
+class PresetJourney(BaseModel):
+    """Timeline linkage — presets sharing a journey ``id`` form an ordered,
+    same-driver sequence of driving stages (e.g. drive → rest → resume)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(pattern=r"^[a-z0-9-]+$")
+    step: int = Field(ge=1)
+    of: int = Field(ge=1)
+    label: BilingualLabel
+
+
 class Preset(BaseModel):
     """The committed, read-only test-case artifact (data-model.md §Preset).
 
@@ -128,7 +148,9 @@ class Preset(BaseModel):
     schema_version: Literal["1.0.0"]
     label: BilingualLabel
     brief: BilingualLabel
+    category: PresetCategory
     family: PresetFamily
+    journey: "PresetJourney | None" = None
     contrast_with: str | None = Field(default=None, pattern=r"^preset-[a-z0-9-]+$")
     world: World
     algorithm_config_overrides: AlgorithmConfigOverrides | None = None
@@ -138,6 +160,7 @@ class Preset(BaseModel):
 class PresetSummary(BaseModel):
     """List projection for ``GET /api/proposal/presets`` (data-model.md
     §PresetSummary) — omits the embedded ``World`` to keep the listing light.
+    Carries ``category``/``journey`` so the picker can group and order presets.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -145,6 +168,8 @@ class PresetSummary(BaseModel):
     preset_id: str
     label: BilingualLabel
     brief: BilingualLabel
+    category: PresetCategory
     family: PresetFamily
+    journey: PresetJourney | None = None
     contrast_with: str | None = None
     hypothesis: str

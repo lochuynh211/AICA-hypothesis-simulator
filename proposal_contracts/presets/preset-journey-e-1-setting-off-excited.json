@@ -1,34 +1,45 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "Bored on a long monotonous highway with little fatigue. The driver's oshi (Official HIGE DANdism) and their high j-rock usage should push upbeat, high-energy tracks to the top — coherent 'wake me up' signals, no soothe/energize conflict.",
-    "ja": "単調な高速道路で退屈、疲労は低め。推し（Official HIGE DANdism）とJ-ROCK嗜好により、アップテンポで高エネルギーな曲が上位に来るはず。"
+    "en": "Morning departure on local roads, low drowsiness. The kids are buzzing with excitement. The parent's anime-fan hobby tag and rich history on upbeat anime-opening tracks push a high-energy anime song straight to the top — a coherent 'keep the excitement going' pick.",
+    "ja": "朝、一般道での出発。眠気は低め。子どもたちは大はしゃぎ。親のアニメ好きという趣味タグと、アップテンポなアニメソングへの豊富な利用履歴により、高エネルギーなアニメ曲が即座に上位へ。子どもの興奮そのままの一曲。"
   },
-  "contrast_with": "preset-late-night-winddown",
+  "category": "situation",
+  "contrast_with": null,
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
         "humming_karaoke",
-        "quiz",
         "call_response_driving",
-        "music_playlist"
+        "quiz"
       ]
     },
     "expected_top": {
       "arousal_band": "high",
-      "must_be_oshi": true
+      "genre": "anime",
+      "must_be_oshi": false,
+      "track_id": null
     },
-    "gradient": "arousal_up_implies_fit_up",
-    "hypothesis": "coherent high-arousal world + oshi + j-rock usage → upbeat oshi track tops",
+    "gradient": "none",
+    "hypothesis": "child_present + anime-fan hobby + heavy anime usage → a high-arousal anime track tops, humming_karaoke leads the service ranking",
     "override_required": false,
-    "top_fit_min": 0.38
+    "top_fit_min": 0.344
   },
-  "family": "mood_coherence",
+  "family": "journey",
+  "journey": {
+    "id": "journey-e",
+    "label": {
+      "en": "E · The family road trip",
+      "ja": "E・家族の遠出"
+    },
+    "of": 4,
+    "step": 1
+  },
   "label": {
-    "en": "Monotone highway — energize",
-    "ja": "単調ハイウェイ — 元気づけ"
+    "en": "E · 1/4 — Setting off, kids excited",
+    "ja": "E・1/4 — 出発、子どもたちは大はしゃぎ"
   },
-  "preset_id": "preset-monotone-highway-energize",
+  "preset_id": "preset-journey-e-1-setting-off-excited",
   "schema_version": "1.0.0",
   "world": {
     "catalog_ref": {
@@ -45,51 +56,53 @@
       "lifecycle_stage": "active_driving_content",
       "matrix_version": "v1",
       "motion_state": "driving",
-      "trigger_purpose": "inattentive_driving_prevention_recovery"
+      "trigger_purpose": "child_passenger_experience"
     },
     "driver_profile": {
       "age_band": "30s",
       "cancelled_content_plans": [],
       "catalog_item_recency_state": {},
       "catalog_item_usage_level": {
-        "synthetic-track-0095": "high",
-        "synthetic-track-0096": "high",
-        "synthetic-track-0097": "high",
-        "synthetic-track-0098": "high",
-        "synthetic-track-0100": "high",
-        "synthetic-track-0101": "high"
+        "synthetic-track-0058": "high",
+        "synthetic-track-0060": "high",
+        "synthetic-track-0061": "high",
+        "synthetic-track-0077": "high",
+        "synthetic-track-0115": "high",
+        "synthetic-track-0144": "high"
       },
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
       "content_proposal_acceptance_rate": {
-        "synthetic-track-0095": 95.0,
-        "synthetic-track-0096": 95.0,
-        "synthetic-track-0097": 95.0,
-        "synthetic-track-0098": 95.0,
-        "synthetic-track-0100": 95.0,
-        "synthetic-track-0101": 95.0
+        "synthetic-track-0058": 95,
+        "synthetic-track-0060": 95,
+        "synthetic-track-0061": 95,
+        "synthetic-track-0077": 95,
+        "synthetic-track-0115": 95,
+        "synthetic-track-0144": 95
       },
       "content_recovery_confidence": {},
       "content_recovery_rate": {
-        "synthetic-track-0095": 90.0,
-        "synthetic-track-0096": 90.0,
-        "synthetic-track-0097": 90.0,
-        "synthetic-track-0098": 90.0,
-        "synthetic-track-0100": 90.0,
-        "synthetic-track-0101": 90.0
+        "synthetic-track-0058": 90,
+        "synthetic-track-0060": 90,
+        "synthetic-track-0061": 90,
+        "synthetic-track-0077": 90,
+        "synthetic-track-0115": 90,
+        "synthetic-track-0144": 90
       },
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
       "gender": "unspecified",
       "genre_affinity_v1_enabled": true,
-      "hobby_interest_tags": [],
+      "hobby_interest_tags": [
+        "anime-fan"
+      ],
       "manually_selected_items": [],
-      "oshi_id": "synthetic-artist-0107",
-      "oshi_mode": "on",
-      "oshi_registered": true,
+      "oshi_id": null,
+      "oshi_mode": "off",
+      "oshi_registered": false,
       "oshi_tags": [],
-      "oshi_type": "artist",
+      "oshi_type": null,
       "played_items": [],
       "repeated_items": [],
       "scene_content_tag_usage_level": {},
@@ -106,24 +119,24 @@
       "service_usage_level": {},
       "skipped_items": [],
       "usage_by_genre": {
-        "electronic": "med",
-        "j-rock": "high"
+        "anime": "high",
+        "j-pop": "med"
       }
     },
     "situation": {
       "active_service": null,
-      "child_present": false,
+      "child_present": true,
       "destination_tags": [],
-      "drowsiness_level": 62,
+      "drowsiness_level": 30,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 30,
-      "monotony_level": 90,
+      "fatigue_level": 20,
+      "monotony_level": 20,
       "motion_state": "driving",
-      "multiple_passengers": false,
+      "multiple_passengers": true,
       "night_state": "day",
       "recent_service_rejections": [],
       "rest_spot_type": "unknown",
-      "road_type": "highway",
+      "road_type": "local",
       "route_tags": [
         "highway"
       ],

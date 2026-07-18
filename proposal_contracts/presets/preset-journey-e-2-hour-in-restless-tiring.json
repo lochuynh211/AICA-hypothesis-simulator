@@ -1,0 +1,146 @@
+{
+  "algorithm_config_overrides": null,
+  "brief": {
+    "en": "An hour into the highway drive, traffic thickens and monotony builds — drowsiness climbs to 55 as the kids grow restless. The same anime-fan affinity keeps a high-energy anime opening on top, holding the kids' attention while the parent starts to feel the strain.",
+    "ja": "高速道路を1時間走行、渋滞と単調さで眠気は55まで上昇し子どもたちも落ち着かない。同じアニメ嗜好が引き続き高エネルギーなアニメ曲を上位に保ち、親の疲れが出始める中でも子どもの気を引き続ける。"
+  },
+  "category": "situation",
+  "contrast_with": null,
+  "expectation": {
+    "expected_service": {
+      "top_should_be_in": [
+        "humming_karaoke",
+        "call_response_driving",
+        "quiz"
+      ]
+    },
+    "expected_top": {
+      "arousal_band": "high",
+      "genre": "anime",
+      "must_be_oshi": false,
+      "track_id": null
+    },
+    "gradient": "none",
+    "hypothesis": "rising drowsiness + congestion, same child/anime-fan affinity → the same high-arousal anime track still tops, with a stronger service margin",
+    "override_required": false,
+    "top_fit_min": 0.389
+  },
+  "family": "journey",
+  "journey": {
+    "id": "journey-e",
+    "label": {
+      "en": "E · The family road trip",
+      "ja": "E・家族の遠出"
+    },
+    "of": 4,
+    "step": 2
+  },
+  "label": {
+    "en": "E · 2/4 — An hour in, restless kids & tiring parent",
+    "ja": "E・2/4 — 1時間経過、落ち着かない子どもと疲れ始める親"
+  },
+  "preset_id": "preset-journey-e-2-hour-in-restless-tiring",
+  "schema_version": "1.0.0",
+  "world": {
+    "catalog_ref": {
+      "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "dataset_version": {
+        "schema_version": "1.0.0",
+        "spotify_audio_features_reference_version": "1.0.0",
+        "spotify_track_reference_version": "1.0.0"
+      }
+    },
+    "control_inputs": {
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "lifecycle_stage": "active_driving_content",
+      "matrix_version": "v1",
+      "motion_state": "driving",
+      "trigger_purpose": "child_passenger_experience"
+    },
+    "driver_profile": {
+      "age_band": "30s",
+      "cancelled_content_plans": [],
+      "catalog_item_recency_state": {},
+      "catalog_item_usage_level": {
+        "synthetic-track-0058": "high",
+        "synthetic-track-0060": "high",
+        "synthetic-track-0061": "high",
+        "synthetic-track-0077": "high",
+        "synthetic-track-0115": "high",
+        "synthetic-track-0144": "high"
+      },
+      "changed_from_items": [],
+      "completed_items": [],
+      "content_proposal_acceptance_confidence": {},
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0058": 95,
+        "synthetic-track-0060": 95,
+        "synthetic-track-0061": 95,
+        "synthetic-track-0077": 95,
+        "synthetic-track-0115": 95,
+        "synthetic-track-0144": 95
+      },
+      "content_recovery_confidence": {},
+      "content_recovery_rate": {
+        "synthetic-track-0058": 90,
+        "synthetic-track-0060": 90,
+        "synthetic-track-0061": 90,
+        "synthetic-track-0077": 90,
+        "synthetic-track-0115": 90,
+        "synthetic-track-0144": 90
+      },
+      "content_tag_recency_state": {},
+      "content_tag_usage_level": {},
+      "gender": "unspecified",
+      "genre_affinity_v1_enabled": true,
+      "hobby_interest_tags": [
+        "anime-fan"
+      ],
+      "manually_selected_items": [],
+      "oshi_id": null,
+      "oshi_mode": "off",
+      "oshi_registered": false,
+      "oshi_tags": [],
+      "oshi_type": null,
+      "played_items": [],
+      "repeated_items": [],
+      "scene_content_tag_usage_level": {},
+      "scene_genre_usage": null,
+      "scene_service_usage_level": {},
+      "scheduled_event_tags": [],
+      "scheduled_event_timing": null,
+      "scheduled_event_type": null,
+      "service_proposal_acceptance_confidence": {},
+      "service_proposal_acceptance_rate": {},
+      "service_recency_state": {},
+      "service_recovery_confidence": {},
+      "service_recovery_rate": {},
+      "service_usage_level": {},
+      "skipped_items": [],
+      "usage_by_genre": {
+        "anime": "high",
+        "j-pop": "med"
+      }
+    },
+    "situation": {
+      "active_service": null,
+      "child_present": true,
+      "destination_tags": [],
+      "drowsiness_level": 55,
+      "estimated_min_until_rest_spot": null,
+      "fatigue_level": 40,
+      "monotony_level": 55,
+      "motion_state": "driving",
+      "multiple_passengers": true,
+      "night_state": "day",
+      "recent_service_rejections": [],
+      "rest_spot_type": "unknown",
+      "road_type": "highway",
+      "route_tags": [
+        "highway"
+      ],
+      "traffic_state": "congested"
+    }
+  }
+}

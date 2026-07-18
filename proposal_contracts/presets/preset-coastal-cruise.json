@@ -4,7 +4,8 @@
     "en": "A relaxed coastal local road. Route/destination genre affinity (coast → city-pop / jazz) should lift bright coastal-friendly tracks.",
     "ja": "のんびりした海岸沿いの一般道。ルート/目的地ジャンル親和（海岸→シティポップ/ジャズ）で明るい曲が上位に。"
   },
-  "contrast_with": "preset-mountain-pass",
+  "category": "situation",
+  "contrast_with": null,
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
@@ -22,6 +23,7 @@
     "top_fit_min": 0.2
   },
   "family": "route_genre",
+  "journey": null,
   "label": {
     "en": "Coastal cruise",
     "ja": "海岸クルーズ"

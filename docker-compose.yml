@@ -22,6 +22,11 @@ services:
       - AICA_PROPOSAL_RUNS_DIR=/data/proposal_runs
       - AICA_PROPOSAL_PROFILES_DIR=/data/proposal_profiles
       - AICA_PROPOSAL_WORLDS_DIR=/data/proposal_worlds
+      # LLM rationale (feature 019). Points at the opt-in `ollama` service
+      # (started via `--profile llm`). When that service is NOT up, the explain
+      # endpoint simply falls back to the deterministic template — safe default.
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=qwen2.5:3b
       # watchfiles polling for reliable hot-reload over Windows volume mounts
       - WATCHFILES_FORCE_POLLING=true
       # Corporate proxy for outbound API calls (Google Maps)
@@ -29,8 +34,10 @@ services:
       - https_proxy=http://163.116.128.80:8080
       - HTTP_PROXY=http://163.116.128.80:8080
       - HTTPS_PROXY=http://163.116.128.80:8080
-      - no_proxy=localhost,127.0.0.1,api
-      - NO_PROXY=localhost,127.0.0.1,api
+      # `ollama` MUST be in no_proxy: the local model server is on the compose
+      # network, never through the corporate proxy (urllib honors these).
+      - no_proxy=localhost,127.0.0.1,api,ollama
+      - NO_PROXY=localhost,127.0.0.1,api,ollama
     volumes:
       - ./app/api:/app
       - api_venv:/app/.venv
@@ -65,6 +72,25 @@ services:
     depends_on:
       - api
 
+  # Opt-in local LLM server for the backend explanation provider (feature 019).
+  # NOT started by a plain `docker compose up` — enable with the `llm` profile:
+  #   docker compose --profile llm up
+  # One-time model pull (after it's running):
+  #   docker compose --profile llm exec ollama ollama pull qwen2.5:3b
+  # The `api` service reaches it at http://ollama:11434 (see OLLAMA_BASE_URL).
+  ollama:
+    image: ollama/ollama
+    profiles: ["llm"]
+    restart: unless-stopped
+    # `api` reaches Ollama over the compose network (http://ollama:11434); the
+    # host mapping is bound to loopback only (for one-off host-side pulls/debug),
+    # never exposed on all interfaces — the API is unauthenticated.
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+
 volumes:
   api_venv:
   frontend_node_modules:
+  ollama_models:

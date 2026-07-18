@@ -280,6 +280,11 @@ const LABELS = {
   scenes: { ja: 'シーン別ジャンル利用', en: 'Scene genre usage' },
   usedS: { ja: 'サービス（STEP1）で採点', en: 'Scored by Service (STEP 1)' },
   usedC: { ja: 'コンテンツ（STEP2）で採点', en: 'Scored by Content (STEP 2)' },
+  // feature 019 — explanation-source flag (narration layer over the decision)
+  explanationSource: { ja: '説明の生成元', en: 'Explanation source' },
+  explOff: { ja: 'オフ（既定テンプレート）', en: 'Off (template)' },
+  explBackend: { ja: 'バックエンドLLM（Ollama）', en: 'Backend LLM (Ollama)' },
+  explBrowser: { ja: 'ブラウザ（Gemini Nano）', en: 'Browser (Gemini Nano)' },
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -709,6 +714,30 @@ export default function WorldPanel() {
           {t(LABELS.preset, lang)}
         </div>
         <PresetPicker />
+
+        {/* 1. Explanation source (feature 019) — chooses which pipeline writes
+            the natural-language rationale sentence in each candidate/item
+            breakdown. Never affects scoring/ranking; a per-run, session-only
+            display flag. Rendered as a top-of-panel setting alongside Preset
+            (a plain label, not a numbered SectionLabel). */}
+        <div style={{ fontSize: '0.68em', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 800, color: '#6b7280', margin: '8px 0 6px' }}>
+          {t(LABELS.explanationSource, lang)}
+        </div>
+        <select
+          data-testid="explanation-provider-select"
+          value={state.explanationProvider}
+          onChange={(e) =>
+            dispatch({
+              type: 'SET_EXPLANATION_PROVIDER',
+              provider: e.target.value as 'off' | 'backend' | 'browser',
+            })
+          }
+          style={{ width: '100%', fontSize: '0.82em', margin: '0 0 8px', padding: '3px' }}
+        >
+          <option value="off">{t(LABELS.explOff, lang)}</option>
+          <option value="backend">{t(LABELS.explBackend, lang)}</option>
+          <option value="browser">{t(LABELS.explBrowser, lang)}</option>
+        </select>
 
         {/* 2. Trigger signal */}
         <SectionLabel>{t(LABELS.triggerSignal, lang)}</SectionLabel>

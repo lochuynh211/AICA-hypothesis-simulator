@@ -94,5 +94,23 @@ class Settings:
         # scripts/generate_presets.py — golden-pinned, read-only.
         return _resolve("AICA_PROPOSAL_PRESETS_DIR", "proposal_contracts/presets")
 
+    # ── LLM rationale (feature 019) — local Ollama server the backend calls ──
+    # over HTTP (stdlib urllib, no new dependency). These are plain env-var
+    # string/number settings (not filesystem paths), so they read os.environ
+    # directly rather than via _resolve. The backend model path is OPT-IN: when
+    # Ollama is unreachable the explain endpoint falls back to the deterministic
+    # template, so these defaults are safe even when no Ollama is running.
+    @property
+    def ollama_base_url(self) -> str:
+        return os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+
+    @property
+    def ollama_model(self) -> str:
+        return os.environ.get("OLLAMA_MODEL", "qwen2.5:3b")
+
+    @property
+    def ollama_timeout_sec(self) -> float:
+        return float(os.environ.get("OLLAMA_TIMEOUT_SEC", "20"))
+
 
 settings = Settings()

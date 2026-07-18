@@ -1,32 +1,45 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "Everything on at once: a Hatsune Miku oshi, an anime-fan hobby, anime/vocaloid usage, and an event-hall destination at night. Anime/vocaloid tracks top strongly — the opposite extreme to the cold-start control.",
-    "ja": "全レバー同時オン：初音ミク推し、アニメファン趣味、アニメ/ボカロ利用、夜のイベント会場。アニメ/ボカロ曲が強く上位に — 対照の真逆。"
+    "en": "An hour in, the monotonous highway has pushed drowsiness to ~62 and monotony to ~88. The assistant switches to keep-alert mode, doubling down on the same high-energy oshi track to fight the fade — with a wider margin now.",
+    "ja": "1時間走行し、単調な高速道路で眠気62・モノトニー88まで上昇。アシスタントは注意喚起モードに切り替え、同じ高エネルギーな推し曲でさらに気を引き締める — 差はさらに開く。"
   },
-  "contrast_with": "preset-coldstart-neutral",
+  "category": "situation",
+  "contrast_with": null,
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "music_playlist",
         "humming_karaoke",
-        "radio_style"
+        "call_response_driving",
+        "quiz"
       ]
     },
     "expected_top": {
-      "must_be_oshi": true
+      "arousal_band": "high",
+      "genre": "j-pop",
+      "must_be_oshi": true,
+      "track_id": "synthetic-track-0176"
     },
-    "gradient": "none",
-    "hypothesis": "stacked oshi + hobby + usage + destination → anime/vocaloid oshi track tops strongly",
+    "gradient": "arousal_up_implies_fit_up",
+    "hypothesis": "drowsiness/monotony climbing on the same monotonous highway → assistant leans harder into energize; the same high-arousal oshi track holds top",
     "override_required": false,
-    "top_fit_min": 0.37
+    "top_fit_min": 0.38
   },
-  "family": "combo",
+  "family": "journey",
+  "journey": {
+    "id": "journey-a",
+    "label": {
+      "en": "A · The Boring Commute",
+      "ja": "A・退屈な通勤"
+    },
+    "of": 4,
+    "step": 2
+  },
   "label": {
-    "en": "Anime fan — event night (all levers)",
-    "ja": "アニメファン — イベントの夜（全レバー）"
+    "en": "A · 2/4 — Drowsiness Building — Stay Alert",
+    "ja": "A・2/4 — 眠気が高まる — 注意喚起"
   },
-  "preset_id": "preset-anime-fan-event-night",
+  "preset_id": "preset-journey-a-2-drowsiness-building-nudge",
   "schema_version": "1.0.0",
   "world": {
     "catalog_ref": {
@@ -43,40 +56,38 @@
       "lifecycle_stage": "active_driving_content",
       "matrix_version": "v1",
       "motion_state": "driving",
-      "trigger_purpose": "route_music"
+      "trigger_purpose": "inattentive_driving_prevention_recovery"
     },
     "driver_profile": {
       "age_band": "30s",
       "cancelled_content_plans": [],
       "catalog_item_recency_state": {},
       "catalog_item_usage_level": {
-        "synthetic-track-0108": "high",
-        "synthetic-track-0215": "high",
-        "synthetic-track-0240": "high"
+        "synthetic-track-0176": "high",
+        "synthetic-track-0177": "high",
+        "synthetic-track-0183": "high"
       },
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
       "content_proposal_acceptance_rate": {
-        "synthetic-track-0108": 95.0,
-        "synthetic-track-0215": 95.0,
-        "synthetic-track-0240": 95.0
+        "synthetic-track-0176": 88,
+        "synthetic-track-0177": 90,
+        "synthetic-track-0183": 97
       },
       "content_recovery_confidence": {},
       "content_recovery_rate": {
-        "synthetic-track-0108": 90.0,
-        "synthetic-track-0215": 90.0,
-        "synthetic-track-0240": 90.0
+        "synthetic-track-0176": 85,
+        "synthetic-track-0177": 88,
+        "synthetic-track-0183": 95
       },
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
       "gender": "unspecified",
       "genre_affinity_v1_enabled": true,
-      "hobby_interest_tags": [
-        "anime-fan"
-      ],
+      "hobby_interest_tags": [],
       "manually_selected_items": [],
-      "oshi_id": "synthetic-artist-0115",
+      "oshi_id": "synthetic-artist-0157",
       "oshi_mode": "on",
       "oshi_registered": true,
       "oshi_tags": [],
@@ -97,25 +108,21 @@
       "service_usage_level": {},
       "skipped_items": [],
       "usage_by_genre": {
-        "anime": "high",
-        "j-pop": "med",
-        "vocaloid": "high"
+        "j-pop": "high",
+        "j-rock": "med"
       }
     },
     "situation": {
       "active_service": null,
       "child_present": false,
-      "destination_tags": [
-        "event",
-        "oshi_venue"
-      ],
-      "drowsiness_level": 45,
+      "destination_tags": [],
+      "drowsiness_level": 62,
       "estimated_min_until_rest_spot": null,
       "fatigue_level": 30,
-      "monotony_level": 50,
+      "monotony_level": 88,
       "motion_state": "driving",
       "multiple_passengers": false,
-      "night_state": "night",
+      "night_state": "day",
       "recent_service_rejections": [],
       "rest_spot_type": "unknown",
       "road_type": "highway",

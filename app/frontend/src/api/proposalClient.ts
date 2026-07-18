@@ -876,6 +876,45 @@ export async function journeyPreview(runId: string): Promise<JourneyPreviewRespo
   return apiFetch(`/runs/${encodeURIComponent(runId)}/journey/preview`, { method: 'GET' })
 }
 
+// ── POST /api/proposal/runs/{run_id}/explain (feature 019 — LLM rationale) ──
+
+/** Which decision the explanation is for. Mirrors the evidence `step` union. */
+export type ExplainStep = 'service' | 'content'
+export type ExplainProvider = 'backend' | 'browser'
+
+/** One chat message in the grounded prompt (mirrors backend `ExplainMessage`). */
+export type ExplainMessage = { role: 'system' | 'user'; content: string }
+
+/** The server-built, provider-agnostic prompt (mirrors `ExplanationPrompt`). */
+export type ExplanationPrompt = { messages: ExplainMessage[]; grounding: Record<string, unknown> }
+
+/** Response of the explain endpoint (mirrors backend `ExplainResponse`).
+ * For `provider: 'browser'`, `rationale` is empty and the client runs `prompt`
+ * through Gemini Nano; for `provider: 'backend'`, `rationale` is the generated
+ * (or template-fallback) positional `[ja, en]` pair. */
+export type ExplainResponse = {
+  step: ExplainStep
+  target_id: string
+  requested_provider: ExplainProvider
+  rationale: string[]
+  provider_used: 'backend' | 'browser' | 'template'
+  model: string
+  fell_back: boolean
+  error: string | null
+  prompt: ExplanationPrompt
+}
+
+export async function explain(
+  runId: string,
+  args: { step: ExplainStep; targetId: string; provider: ExplainProvider },
+): Promise<ExplainResponse> {
+  return apiFetch(`/runs/${encodeURIComponent(runId)}/explain`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ step: args.step, target_id: args.targetId, provider: args.provider }),
+  })
+}
+
 // ── GET /api/proposal/runs — list summaries (P1 T036) ───────────────────────
 
 /** Summary shape for run listings (mirrors backend `ProposalRun`). */
@@ -929,15 +968,28 @@ export type PresetFamily =
   | 'history_mechanics'
   | 'baseline'
   | 'combo'
+  | 'journey'
+
+/** Top-level grouping shown in the preset picker — the three content-scoring
+ * categories plus the baseline control (mirrors backend `PresetCategory`). */
+export type PresetCategory = 'situation' | 'preference' | 'history' | 'baseline'
+
+/** Timeline linkage — presets sharing a journey `id` form an ordered,
+ * same-driver sequence of driving stages (e.g. drive → rest → resume).
+ * Mirrors backend `PresetJourney`. */
+export type PresetJourney = { id: string; step: number; of: number; label: BilingualLabel }
 
 /** Lightweight projection returned by `GET /api/proposal/presets` (avoids
  * shipping full worlds in the list) — enough to render the picker + the
- * on-selection brief blurb without a second fetch. */
+ * on-selection brief blurb without a second fetch. Carries `category`/
+ * `journey` so the picker can group and order presets. */
 export type PresetSummary = {
   preset_id: string
   label: BilingualLabel
   brief: BilingualLabel
+  category: PresetCategory
   family: PresetFamily
+  journey: PresetJourney | null
   contrast_with: string | null
   hypothesis: string
 }
@@ -978,7 +1030,9 @@ export type Preset = {
   schema_version: string
   label: BilingualLabel
   brief: BilingualLabel
+  category: PresetCategory
   family: PresetFamily
+  journey: PresetJourney | null
   contrast_with: string | null
   world: World
   algorithm_config_overrides: AlgorithmConfigOverrides

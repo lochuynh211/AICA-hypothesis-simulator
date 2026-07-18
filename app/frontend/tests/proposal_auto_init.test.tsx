@@ -38,7 +38,7 @@ import {
   journeyPreview,
 } from '../src/api/proposalClient'
 
-const AUTO_PRESET = 'preset-monotone-highway-energize'
+const AUTO_PRESET = 'preset-journey-a-1-cruising-fresh-monotonous'
 
 function pkg(id: string, family: string) {
   return { id, version: '1.0.0', label: { ja: id, en: id }, family, approach: 'transparent', supported_services: [], parameters: {}, hyperparameters: [] }
@@ -101,7 +101,7 @@ describe('Proposal auto-init', () => {
       errors: [],
     } as never)
     vi.mocked(getPreset).mockResolvedValue(preset as never)
-    vi.mocked(getPresets).mockResolvedValue({ presets: [{ preset_id: AUTO_PRESET, label: preset.label, brief: preset.brief, family: preset.family, contrast_with: preset.contrast_with, hypothesis: '' }] } as never)
+    vi.mocked(getPresets).mockResolvedValue({ presets: [{ preset_id: AUTO_PRESET, label: preset.label, brief: preset.brief, category: 'situation', journey: null, family: preset.family, contrast_with: preset.contrast_with, hypothesis: '' }] } as never)
     vi.mocked(createRun).mockResolvedValue(runLog() as never)
     // STEP 2 result after the rank-1 service is auto-chosen.
     vi.mocked(selectService).mockResolvedValue({ ...runLog(), status: 'content_selected' } as never)
@@ -137,8 +137,8 @@ describe('Proposal auto-init', () => {
     const preset2 = { ...preset, preset_id: 'preset-late-night-winddown', label: { ja: '', en: 'Late-night wind down' } }
     vi.mocked(getPresets).mockResolvedValue({
       presets: [
-        { preset_id: AUTO_PRESET, label: preset.label, brief: preset.brief, family: preset.family, contrast_with: preset.contrast_with, hypothesis: '' },
-        { preset_id: 'preset-late-night-winddown', label: preset2.label, brief: preset2.brief, family: preset2.family, contrast_with: AUTO_PRESET, hypothesis: '' },
+        { preset_id: AUTO_PRESET, label: preset.label, brief: preset.brief, category: 'situation', journey: null, family: preset.family, contrast_with: preset.contrast_with, hypothesis: '' },
+        { preset_id: 'preset-late-night-winddown', label: preset2.label, brief: preset2.brief, category: 'situation', journey: null, family: preset2.family, contrast_with: AUTO_PRESET, hypothesis: '' },
       ],
     } as never)
     vi.mocked(getPreset).mockImplementation((id: string) =>

@@ -14,9 +14,11 @@
  * `rationale` is a POSITIONAL bilingual pair (`[ja_text, en_text]`, per the
  * mock packages' contract) — resolved with `pickRationale()`, NOT `t()`.
  */
+import { useEffect } from 'react'
 import type { UiLanguage } from '../../i18n/t'
 import { t } from '../../i18n/t'
 import { pickRationale } from '../../api/proposalClient'
+import type { AiExplanation } from './useExplanation'
 
 export type ReasonRow = {
   featureId: string
@@ -41,6 +43,14 @@ export type ReasonBreakdownProps = {
   variant?: 'service' | 'content'
   /** When false, omit the per-feature score table (chips + rationale stay). */
   showTable?: boolean
+  /** feature 019 — when an explanation provider is active, the resolved
+   * AI-generated sentence (or its loading/error state). `null`/omitted keeps
+   * the deterministic templated `rationale`. Never replaces the numeric trace,
+   * only the italic sentence at the bottom. */
+  aiExplanation?: AiExplanation | null
+  /** feature 019 — fired when the disclosure is first opened, so the caller can
+   * lazily request the explanation (on-demand generation). */
+  onExpand?: () => void
 }
 
 const LABELS = {
@@ -50,6 +60,9 @@ const LABELS = {
   contribution: { ja: '寄与', en: 'Contribution' },
   supportedBy: { ja: '支持:', en: 'Supported by:' },
   opposedBy: { ja: '反対:', en: 'Opposed by:' },
+  aiGenerating: { ja: 'AI生成中…', en: 'generating…' },
+  aiFellBack: { ja: '（AI利用不可 — 既定の説明に戻りました）', en: '(AI unavailable — showing default rationale)' },
+  aiError: { ja: '（AI説明を取得できませんでした — 既定の説明）', en: '(could not get AI explanation — default rationale)' },
 }
 
 function fmt(n: number): string {
@@ -65,10 +78,28 @@ export default function ReasonBreakdown({
   defaultOpen = false,
   variant = 'service',
   showTable = true,
+  aiExplanation = null,
+  onExpand,
 }: ReasonBreakdownProps) {
   const accent = variant === 'content' ? '#7c3aed' : '#1d4ed8'
+
+  // If the disclosure starts open, the browser fires no toggle event, so
+  // request the explanation on mount for that case (idempotent in the caller).
+  useEffect(() => {
+    if (defaultOpen) onExpand?.()
+    // Only on mount / when defaultOpen flips.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultOpen])
+
   return (
-    <details data-testid="reason-breakdown" open={defaultOpen} style={{ borderTop: '1px solid #e5e7eb' }}>
+    <details
+      data-testid="reason-breakdown"
+      open={defaultOpen}
+      style={{ borderTop: '1px solid #e5e7eb' }}
+      onToggle={(e) => {
+        if ((e.currentTarget as HTMLDetailsElement).open) onExpand?.()
+      }}
+    >
       <summary
         data-testid="reason-summary"
         style={{ cursor: 'pointer', padding: '6px 10px', fontSize: '0.8em', fontWeight: 700, color: accent }}
@@ -172,9 +203,53 @@ export default function ReasonBreakdown({
         </span>
       </div>
 
-      <p style={{ padding: '0 10px 9px', fontSize: '0.8em', color: '#4b5563', fontStyle: 'italic' }}>
-        {pickRationale(rationale, lang)}
-      </p>
+      {aiExplanation?.status === 'ready' ? (
+        <p
+          data-testid="ai-rationale"
+          style={{ padding: '0 10px 9px', fontSize: '0.8em', color: '#4b5563', fontStyle: 'italic' }}
+        >
+          {aiExplanation.text}{' '}
+          <span
+            data-testid="ai-rationale-badge"
+            style={{
+              display: 'inline-block',
+              fontSize: '0.86em',
+              fontStyle: 'normal',
+              fontWeight: 700,
+              padding: '1px 7px',
+              borderRadius: '999px',
+              background: '#eef2ff',
+              color: accent,
+              border: `1px solid ${accent}33`,
+            }}
+          >
+            AI · {aiExplanation.model}
+          </span>
+          {aiExplanation.fellBack && (
+            <span data-testid="ai-fellback-note" style={{ fontStyle: 'normal', color: '#b45309' }}>
+              {' '}
+              {t(LABELS.aiFellBack, lang)}
+            </span>
+          )}
+        </p>
+      ) : aiExplanation?.status === 'loading' ? (
+        <p
+          data-testid="ai-rationale-loading"
+          style={{ padding: '0 10px 9px', fontSize: '0.8em', color: '#9ca3af', fontStyle: 'italic' }}
+        >
+          {t(LABELS.aiGenerating, lang)}
+        </p>
+      ) : (
+        <p style={{ padding: '0 10px 9px', fontSize: '0.8em', color: '#4b5563', fontStyle: 'italic' }}>
+          {pickRationale(rationale, lang)}
+          {aiExplanation?.status === 'error' && (
+            <span data-testid="ai-error-note" style={{ fontStyle: 'normal', color: '#b45309' }}>
+              {' '}
+              {t(LABELS.aiError, lang)}
+            </span>
+          )}
+        </p>
+      )}
     </details>
   )
 }

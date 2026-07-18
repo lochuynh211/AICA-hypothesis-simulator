@@ -1,0 +1,159 @@
+{
+  "algorithm_config_overrides": null,
+  "brief": {
+    "en": "Drowsiness has reached ~85, well past the rest threshold; at night, the assistant now recommends the upcoming service area (~8 min away, sa_pa). Even at the peak of drowsiness the SAME Jobim track still leads content — personalization holds through the whole climb, with humming_karaoke again the content-supported service on top.",
+    "ja": "眠気は約85に達し休憩閾値を大きく超過。夜間、アシスタントは約8分先のサービスエリア（sa_pa）を推奨。眠気のピークでも同じジョビンの曲がコンテンツ首位を維持 — パーソナライズは上昇局面を通じて崩れず、コンテンツ対応サービスとして再びハミングカラオケが首位に。"
+  },
+  "category": "situation",
+  "contrast_with": null,
+  "expectation": {
+    "expected_service": {
+      "top_should_be_in": [
+        "music_playlist",
+        "humming_karaoke",
+        "radio_style"
+      ]
+    },
+    "expected_top": {
+      "arousal_band": "mid",
+      "genre": "jazz",
+      "must_be_oshi": true,
+      "track_id": "synthetic-track-0267"
+    },
+    "gradient": "none",
+    "hypothesis": "At peak night drowsiness approaching the rest stop, the driver's calm-jazz personalization still keeps the same mid-arousal Jobim track on top; fit recovers slightly vs. stage 2 as the rest-context feature snapshot shifts.",
+    "override_required": false,
+    "top_fit_min": 0.38
+  },
+  "family": "journey",
+  "journey": {
+    "id": "journey-b",
+    "label": {
+      "en": "B · The Night Drive",
+      "ja": "B・夜のドライブ"
+    },
+    "of": 4,
+    "step": 3
+  },
+  "label": {
+    "en": "B · 3/4 — Rest recommended — 8 minutes to the SA/PA",
+    "ja": "B・3/4 — 休憩推奨 — SA/PAまで8分"
+  },
+  "preset_id": "preset-journey-b-3-rest-recommended-night",
+  "schema_version": "1.0.0",
+  "world": {
+    "catalog_ref": {
+      "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "dataset_version": {
+        "schema_version": "1.0.0",
+        "spotify_audio_features_reference_version": "1.0.0",
+        "spotify_track_reference_version": "1.0.0"
+      }
+    },
+    "control_inputs": {
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "lifecycle_stage": "before_rest_until_stop",
+      "matrix_version": "v1",
+      "motion_state": "driving",
+      "trigger_purpose": "rest_recommended"
+    },
+    "driver_profile": {
+      "age_band": "40s",
+      "cancelled_content_plans": [],
+      "catalog_item_recency_state": {},
+      "catalog_item_usage_level": {
+        "synthetic-track-0003": "high",
+        "synthetic-track-0004": "high",
+        "synthetic-track-0005": "high",
+        "synthetic-track-0009": "high",
+        "synthetic-track-0026": "high",
+        "synthetic-track-0028": "high",
+        "synthetic-track-0033": "high",
+        "synthetic-track-0034": "high",
+        "synthetic-track-0035": "high",
+        "synthetic-track-0263": "high",
+        "synthetic-track-0267": "high"
+      },
+      "changed_from_items": [],
+      "completed_items": [],
+      "content_proposal_acceptance_confidence": {},
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0003": 95,
+        "synthetic-track-0004": 95,
+        "synthetic-track-0005": 95,
+        "synthetic-track-0009": 95,
+        "synthetic-track-0026": 95,
+        "synthetic-track-0028": 95,
+        "synthetic-track-0033": 95,
+        "synthetic-track-0034": 95,
+        "synthetic-track-0035": 95,
+        "synthetic-track-0263": 95,
+        "synthetic-track-0267": 95
+      },
+      "content_recovery_confidence": {},
+      "content_recovery_rate": {
+        "synthetic-track-0003": 90,
+        "synthetic-track-0004": 90,
+        "synthetic-track-0005": 90,
+        "synthetic-track-0009": 90,
+        "synthetic-track-0026": 90,
+        "synthetic-track-0028": 90,
+        "synthetic-track-0033": 90,
+        "synthetic-track-0034": 90,
+        "synthetic-track-0035": 90,
+        "synthetic-track-0263": 90,
+        "synthetic-track-0267": 90
+      },
+      "content_tag_recency_state": {},
+      "content_tag_usage_level": {},
+      "gender": "unspecified",
+      "genre_affinity_v1_enabled": true,
+      "hobby_interest_tags": [],
+      "manually_selected_items": [],
+      "oshi_id": "synthetic-artist-0004",
+      "oshi_mode": "on",
+      "oshi_registered": true,
+      "oshi_tags": [],
+      "oshi_type": "artist",
+      "played_items": [],
+      "repeated_items": [],
+      "scene_content_tag_usage_level": {},
+      "scene_genre_usage": null,
+      "scene_service_usage_level": {},
+      "scheduled_event_tags": [],
+      "scheduled_event_timing": null,
+      "scheduled_event_type": null,
+      "service_proposal_acceptance_confidence": {},
+      "service_proposal_acceptance_rate": {},
+      "service_recency_state": {},
+      "service_recovery_confidence": {},
+      "service_recovery_rate": {},
+      "service_usage_level": {},
+      "skipped_items": [],
+      "usage_by_genre": {
+        "city pop": "med",
+        "jazz": "high"
+      }
+    },
+    "situation": {
+      "active_service": null,
+      "child_present": false,
+      "destination_tags": [],
+      "drowsiness_level": 85,
+      "estimated_min_until_rest_spot": 8,
+      "fatigue_level": 42,
+      "monotony_level": 70,
+      "motion_state": "driving",
+      "multiple_passengers": false,
+      "night_state": "night",
+      "recent_service_rejections": [],
+      "rest_spot_type": "sa_pa",
+      "road_type": "highway",
+      "route_tags": [
+        "highway"
+      ],
+      "traffic_state": "normal"
+    }
+  }
+}

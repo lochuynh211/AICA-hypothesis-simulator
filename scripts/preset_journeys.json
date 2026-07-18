@@ -1,0 +1,1575 @@
+[
+ {
+  "journey_id": "rest-monotony-day",
+  "category": "situation",
+  "label": {
+   "en": "The Boring Commute",
+   "ja": "退屈な通勤"
+  },
+  "driver_note": "30s office worker, mainstream J-pop/J-rock listener. Oshi = Kenshi Yonezu (synthetic-artist-0157, 10 in-catalog tracks, genres j-pop+j-rock). Rich per-track history (item_usage=high plus tuned acceptance/recovery rates) on three of his tracks spanning high→mid arousal: LOSER (synthetic-track-0176, arousal 0.792, \"energizer\") acc=88/rec=85; orion (synthetic-track-0177, arousal 0.669, mid) acc=90/rec=88; Lemon (synthetic-track-0183, arousal 0.595, \"calmer favorite\") acc=97/rec=95 — Lemon's slightly higher acceptance/recovery is what lets it overtake LOSER once the drowsiness/monotony energize-pressure relaxes in stage 4, while staying behind LOSER while that pressure is high (stages 1-3). usage_by_genre: j-pop high / j-rock med, genre_affinity_v1_enabled true. Cause of the arc: a long monotonous daytime highway drives drowsiness up fast (per the trigger model, ~0.9 base + 0.3 monotony(highway) + 0.3 night(none, day) per minute) while fatigue is deliberately kept low and always below drowsiness (25→30→35→20) — a pure monotony/drowsiness story, no mountain/continuous-drive fatigue confound. Verified against the REAL content+service selectors (scripts/preset_eval.py evaluate_preset) with zero expectation failures on all 4 stages.",
+  "driver_profile": {
+   "oshi_registered": true,
+   "oshi_mode": "on",
+   "oshi_id": "synthetic-artist-0157",
+   "oshi_type": "artist",
+   "age_band": "30s",
+   "genre_affinity_v1_enabled": true,
+   "usage_by_genre": {
+    "j-pop": "high",
+    "j-rock": "med"
+   },
+   "catalog_item_usage_level": {
+    "synthetic-track-0176": "high",
+    "synthetic-track-0183": "high",
+    "synthetic-track-0177": "high"
+   },
+   "content_proposal_acceptance_rate": {
+    "synthetic-track-0176": 88,
+    "synthetic-track-0183": 97,
+    "synthetic-track-0177": 90
+   },
+   "content_recovery_rate": {
+    "synthetic-track-0176": 85,
+    "synthetic-track-0183": 95,
+    "synthetic-track-0177": 88
+   }
+  },
+  "stages": [
+   {
+    "step": 1,
+    "of": 4,
+    "slug": "cruising-fresh-monotonous",
+    "label": {
+     "en": "Cruising, Still Fresh",
+     "ja": "巡航中、まだ元気"
+    },
+    "brief": {
+     "en": "Mid-morning, an empty monotonous highway. Drowsiness is only ~40 but the boredom (monotony ~45) already nudges the assistant toward something upbeat — the driver's own oshi Kenshi Yonezu comes out swinging with his highest-energy track.",
+     "ja": "午前中、単調な高速道路を巡航。眠気はまだ40ほどだが、単調さ（モノトニー45）により早くもアップテンポな選曲へ傾く。推しの米津玄師の中でも一番エネルギッシュな曲が早速上位に。"
+    },
+    "situation": {
+     "drowsiness_level": 40,
+     "fatigue_level": 25,
+     "monotony_level": 45,
+     "traffic_state": "normal",
+     "road_type": "highway",
+     "night_state": "day"
+    },
+    "control": {
+     "trigger_purpose": "route_music",
+     "lifecycle_stage": "active_driving_content",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "mainstream j-pop/j-rock taste + oshi Kenshi Yonezu, mildly drowsy on a monotonous highway → the driver's own upbeat oshi track already tops (energize lean begins early)",
+     "expected_top": {
+      "arousal_band": "high",
+      "genre": "j-pop",
+      "must_be_oshi": true,
+      "track_id": "synthetic-track-0176"
+     },
+     "top_fit_min": 0.4,
+     "gradient": "arousal_up_implies_fit_up",
+     "expected_service": {
+      "top_should_be_in": [
+       "humming_karaoke",
+       "call_response_driving",
+       "quiz"
+      ]
+     },
+     "override_required": false
+    },
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0176",
+     "top_name": "LOSER — Kenshi Yonezu",
+     "top_fit": 0.4373,
+     "arousal": 0.792,
+     "service_top": "humming_karaoke"
+    }
+   },
+   {
+    "step": 2,
+    "of": 4,
+    "slug": "drowsiness-building-nudge",
+    "label": {
+     "en": "Drowsiness Building — Stay Alert",
+     "ja": "眠気が高まる — 注意喚起"
+    },
+    "brief": {
+     "en": "An hour in, the monotonous highway has pushed drowsiness to ~62 and monotony to ~88. The assistant switches to keep-alert mode, doubling down on the same high-energy oshi track to fight the fade — with a wider margin now.",
+     "ja": "1時間走行し、単調な高速道路で眠気62・モノトニー88まで上昇。アシスタントは注意喚起モードに切り替え、同じ高エネルギーな推し曲でさらに気を引き締める — 差はさらに開く。"
+    },
+    "situation": {
+     "drowsiness_level": 62,
+     "fatigue_level": 30,
+     "monotony_level": 88,
+     "traffic_state": "normal",
+     "road_type": "highway",
+     "night_state": "day"
+    },
+    "control": {
+     "trigger_purpose": "inattentive_driving_prevention_recovery",
+     "lifecycle_stage": "active_driving_content",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "drowsiness/monotony climbing on the same monotonous highway → assistant leans harder into energize; the same high-arousal oshi track holds top",
+     "expected_top": {
+      "arousal_band": "high",
+      "genre": "j-pop",
+      "must_be_oshi": true,
+      "track_id": "synthetic-track-0176"
+     },
+     "top_fit_min": 0.38,
+     "gradient": "arousal_up_implies_fit_up",
+     "expected_service": {
+      "top_should_be_in": [
+       "humming_karaoke",
+       "call_response_driving",
+       "quiz"
+      ]
+     },
+     "override_required": false
+    },
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0176",
+     "top_name": "LOSER — Kenshi Yonezu",
+     "top_fit": 0.4129,
+     "arousal": 0.792,
+     "service_top": "humming_karaoke"
+    }
+   },
+   {
+    "step": 3,
+    "of": 4,
+    "slug": "rest-recommended-approaching",
+    "label": {
+     "en": "Rest Recommended — 8 Minutes Out",
+     "ja": "休憩推奨 — あと8分"
+    },
+    "brief": {
+     "en": "Drowsiness has climbed to ~80, past the rest threshold. The SA/PA is 8 minutes ahead and the driver is still on the wheel — the assistant keeps the same energizing oshi track playing to bridge the gap safely.",
+     "ja": "眠気は約80まで上昇し、休憩の閾値を超えた。SA/PAまであと8分、まだ運転中。アシスタントは同じ推しの高揚曲をかけ続け、安全にたどり着くまで繋ぐ。"
+    },
+    "situation": {
+     "drowsiness_level": 80,
+     "fatigue_level": 35,
+     "monotony_level": 90,
+     "traffic_state": "normal",
+     "road_type": "highway",
+     "night_state": "day",
+     "estimated_min_until_rest_spot": 8,
+     "rest_spot_type": "sa_pa"
+    },
+    "control": {
+     "trigger_purpose": "rest_recommended",
+     "lifecycle_stage": "before_rest_until_stop",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "drowsiness ~80 near the rest threshold, 8 min to the SA/PA, still driving → the assistant keeps pushing the same high-arousal oshi track to stay alert until the stop",
+     "expected_top": {
+      "arousal_band": "high",
+      "genre": "j-pop",
+      "must_be_oshi": true,
+      "track_id": "synthetic-track-0176"
+     },
+     "top_fit_min": 0.4,
+     "gradient": "arousal_up_implies_fit_up",
+     "expected_service": {
+      "top_should_be_in": [
+       "humming_karaoke",
+       "call_response_driving",
+       "quiz"
+      ]
+     },
+     "override_required": false
+    },
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0176",
+     "top_name": "LOSER — Kenshi Yonezu",
+     "top_fit": 0.4307,
+     "arousal": 0.792,
+     "service_top": "humming_karaoke"
+    }
+   },
+   {
+    "step": 4,
+    "of": 4,
+    "slug": "refreshed-after-nap",
+    "label": {
+     "en": "Back on the Road, Refreshed",
+     "ja": "仮眠後、リフレッシュして再出発"
+    },
+    "brief": {
+     "en": "A nap at the SA/PA reset drowsiness to ~22 and monotony to ~30. With the energize pressure gone, a calmer favorite from the same oshi rises to the top — a different pick than the whole drowsy climb.",
+     "ja": "SA/PAでの仮眠により眠気は約22、モノトニーは約30まで低下。覚醒への圧力が消え、同じ推しの中でも落ち着いた一曲が上位に浮上 — 眠気が高かった間とは違う曲に変わる。"
+    },
+    "situation": {
+     "drowsiness_level": 22,
+     "fatigue_level": 20,
+     "monotony_level": 30,
+     "traffic_state": "normal",
+     "road_type": "highway",
+     "night_state": "day"
+    },
+    "control": {
+     "trigger_purpose": "route_music",
+     "lifecycle_stage": "active_driving_content",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "after the nap, drowsiness/monotony collapse → energize pressure relaxes and a calmer favorite from the same oshi rises to top, different from the drowsy-climb pick",
+     "expected_top": {
+      "arousal_band": "mid",
+      "genre": "j-pop",
+      "must_be_oshi": true,
+      "track_id": "synthetic-track-0183"
+     },
+     "top_fit_min": 0.39,
+     "gradient": "arousal_down_implies_fit_up",
+     "expected_service": {
+      "top_should_be_in": [
+       "humming_karaoke",
+       "call_response_driving",
+       "quiz"
+      ]
+     },
+     "override_required": false
+    },
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0183",
+     "top_name": "Lemon — Kenshi Yonezu",
+     "top_fit": 0.4285,
+     "arousal": 0.595,
+     "service_top": "humming_karaoke"
+    }
+   }
+  ]
+ },
+ {
+  "journey_id": "rest-night",
+  "category": "situation",
+  "label": {
+   "en": "The Night Drive",
+   "ja": "夜のドライブ"
+  },
+  "driver_note": "40s driver, calm taste: jazz usage=high, city pop usage=med (city pop has no matching genre tags in this frozen catalog, so it contributes nothing measurable — jazz + the Jobim oshi carry the personalization). Oshi = Antônio Carlos Jobim (synthetic-artist-0004, jazz, calm), with rich per-track history on his 4 tracks plus 8 additional calm (low-arousal-sorted) jazz tracks. VERIFIED across all 4 real-selector runs: despite night + climbing drowsiness normally pulling the mood/arousal signal toward high-arousal picks, this driver's oshi+genre+history personalization is strong enough that the SAME mid-arousal Jobim track ('Águas de Março', arousal=0.601, band=mid) tops the content ranking at every single stage — fresh, drowsy, rest-recommended, and post-sleep-resume. Taste beats mood in this run; the story is not 'high arousal wins when drowsy' but 'strong personalization is mood-robust.' The content-supported service selected is humming_karaoke at every stage (including before_rest_until_stop), consistent with the matrix's allowed set. NOTE: generate_presets.py was being concurrently edited by another process during verification (adding category/journey fields to make_preset); I bypassed it and re-implemented the needed world-building helpers directly against the frozen catalog + preset_eval.py (stable) to avoid the race — verification script left at /tmp/claude-1001/-home-tony-works-AICA-hypothesis-simulator/ab0333eb-95c2-4fe5-90f3-a1807af0a1f4/scratchpad/verify_journey_b.py.",
+  "driver_profile": {
+   "oshi_registered": true,
+   "oshi_mode": "on",
+   "oshi_id": "synthetic-artist-0004",
+   "oshi_type": "artist",
+   "age_band": "40s",
+   "genre_affinity_v1_enabled": true,
+   "usage_by_genre": {
+    "jazz": "high",
+    "city pop": "med"
+   },
+   "catalog_item_usage_level": {
+    "synthetic-track-0004": "high",
+    "synthetic-track-0005": "high",
+    "synthetic-track-0263": "high",
+    "synthetic-track-0267": "high",
+    "synthetic-track-0026": "high",
+    "synthetic-track-0003": "high",
+    "synthetic-track-0009": "high",
+    "synthetic-track-0033": "high",
+    "synthetic-track-0035": "high",
+    "synthetic-track-0028": "high",
+    "synthetic-track-0034": "high"
+   },
+   "content_proposal_acceptance_rate": {
+    "synthetic-track-0004": 95,
+    "synthetic-track-0005": 95,
+    "synthetic-track-0263": 95,
+    "synthetic-track-0267": 95,
+    "synthetic-track-0026": 95,
+    "synthetic-track-0003": 95,
+    "synthetic-track-0009": 95,
+    "synthetic-track-0033": 95,
+    "synthetic-track-0035": 95,
+    "synthetic-track-0028": 95,
+    "synthetic-track-0034": 95
+   },
+   "content_recovery_rate": {
+    "synthetic-track-0004": 90,
+    "synthetic-track-0005": 90,
+    "synthetic-track-0263": 90,
+    "synthetic-track-0267": 90,
+    "synthetic-track-0026": 90,
+    "synthetic-track-0003": 90,
+    "synthetic-track-0009": 90,
+    "synthetic-track-0033": 90,
+    "synthetic-track-0035": 90,
+    "synthetic-track-0028": 90,
+    "synthetic-track-0034": 90
+   }
+  },
+  "stages": [
+   {
+    "step": 1,
+    "of": 4,
+    "slug": "fresh-night-cruise",
+    "label": {
+     "en": "Night highway — still fresh",
+     "ja": "夜の高速道路 — まだ元気"
+    },
+    "brief": {
+     "en": "Just underway on a quiet night highway, mild monotony, drowsiness only ~45. Mellow music suits the mood — and this driver's own calm-jazz taste (oshi Antônio Carlos Jobim) leads naturally: his mid-tempo bossa 'Águas de Março' tops the list.",
+     "ja": "静かな夜の高速道路を走り始めたところ。単調さは軽く、眠気は約45。落ち着いた音楽が合う場面で、ドライバー自身の穏やかなジャズ嗜好（推しはアントニオ・カルロス・ジョビン）が自然にリード — ミディアムテンポのボサノバ「アグアス・デ・マルソ」が首位に。"
+    },
+    "situation": {
+     "drowsiness_level": 45,
+     "fatigue_level": 30,
+     "monotony_level": 30,
+     "traffic_state": "normal",
+     "road_type": "highway",
+     "night_state": "night"
+    },
+    "control": {
+     "trigger_purpose": "route_music",
+     "lifecycle_stage": "active_driving_content",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "Fresh night cruise + calm jazz oshi/usage + rich history → a mid-arousal Jobim jazz track tops; no mood-vs-taste conflict yet.",
+     "expected_top": {
+      "must_be_oshi": true,
+      "genre": "jazz",
+      "arousal_band": "mid",
+      "track_id": "synthetic-track-0267"
+     },
+     "top_fit_min": 0.39,
+     "gradient": "none",
+     "expected_service": {
+      "top_should_be_in": [
+       "music_playlist",
+       "humming_karaoke",
+       "radio_style"
+      ]
+     },
+     "override_required": false
+    },
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0267",
+     "top_name": "Águas de Março — Antônio Carlos Jobim",
+     "top_fit": 0.429,
+     "arousal": 0.601,
+     "band": "mid",
+     "is_oshi": true,
+     "genres": [
+      "jazz"
+     ],
+     "service_top": "humming_karaoke",
+     "service_score": 0.335
+    },
+    "overrides": null
+   },
+   {
+    "step": 2,
+    "of": 4,
+    "slug": "drowsy-in-the-dark",
+    "label": {
+     "en": "Drowsiness climbing in the dark",
+     "ja": "暗闇の中で眠気が上昇"
+    },
+    "brief": {
+     "en": "Further into the night highway, drowsiness has climbed to ~68 and the assistant switches to keep-alert mode. A drowsy mood would normally tempt a shift toward higher-arousal picks, but this driver's oshi/jazz personalization is strong enough to hold the SAME mid-arousal Jobim track on top — taste beats the mood pull here (fit dips slightly, but the winner doesn't change).",
+     "ja": "夜の高速をさらに走行し、眠気は約68まで上昇。アシスタントは覚醒維持モードに切り替わる。本来なら眠い気分は高エネルギーな選曲へ傾くはずだが、このドライバーの推し/ジャズ嗜好によるパーソナライズが強く、同じミディアム覚醒度のジョビン曲が首位を維持 — ここでは嗜好が気分の引力に勝つ（フィットはわずかに低下するが首位は変わらない）。"
+    },
+    "situation": {
+     "drowsiness_level": 68,
+     "fatigue_level": 38,
+     "monotony_level": 55,
+     "traffic_state": "normal",
+     "road_type": "highway",
+     "night_state": "night"
+    },
+    "control": {
+     "trigger_purpose": "inattentive_driving_prevention_recovery",
+     "lifecycle_stage": "active_driving_content",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "Drowsy/inattentive night context tempts a mood shift toward high arousal, but strong calm-jazz personalization keeps the SAME mid-arousal Jobim track on top — taste dominates mood; fit dips vs. stage 1 but the winner is unchanged.",
+     "expected_top": {
+      "must_be_oshi": true,
+      "genre": "jazz",
+      "arousal_band": "mid",
+      "track_id": "synthetic-track-0267"
+     },
+     "top_fit_min": 0.36,
+     "gradient": "none",
+     "expected_service": {
+      "top_should_be_in": [
+       "music_playlist",
+       "humming_karaoke",
+       "radio_style"
+      ]
+     },
+     "override_required": false
+    },
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0267",
+     "top_name": "Águas de Março — Antônio Carlos Jobim",
+     "top_fit": 0.3939,
+     "arousal": 0.601,
+     "band": "mid",
+     "is_oshi": true,
+     "genres": [
+      "jazz"
+     ],
+     "service_top": "humming_karaoke",
+     "service_score": 0.459
+    },
+    "overrides": null
+   },
+   {
+    "step": 3,
+    "of": 4,
+    "slug": "rest-recommended-night",
+    "label": {
+     "en": "Rest recommended — 8 minutes to the SA/PA",
+     "ja": "休憩推奨 — SA/PAまで8分"
+    },
+    "brief": {
+     "en": "Drowsiness has reached ~85, well past the rest threshold; at night, the assistant now recommends the upcoming service area (~8 min away, sa_pa). Even at the peak of drowsiness the SAME Jobim track still leads content — personalization holds through the whole climb, with humming_karaoke again the content-supported service on top.",
+     "ja": "眠気は約85に達し休憩閾値を大きく超過。夜間、アシスタントは約8分先のサービスエリア（sa_pa）を推奨。眠気のピークでも同じジョビンの曲がコンテンツ首位を維持 — パーソナライズは上昇局面を通じて崩れず、コンテンツ対応サービスとして再びハミングカラオケが首位に。"
+    },
+    "situation": {
+     "drowsiness_level": 85,
+     "fatigue_level": 42,
+     "monotony_level": 70,
+     "traffic_state": "normal",
+     "road_type": "highway",
+     "night_state": "night",
+     "estimated_min_until_rest_spot": 8,
+     "rest_spot_type": "sa_pa"
+    },
+    "control": {
+     "trigger_purpose": "rest_recommended",
+     "lifecycle_stage": "before_rest_until_stop",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "At peak night drowsiness approaching the rest stop, the driver's calm-jazz personalization still keeps the same mid-arousal Jobim track on top; fit recovers slightly vs. stage 2 as the rest-context feature snapshot shifts.",
+     "expected_top": {
+      "must_be_oshi": true,
+      "genre": "jazz",
+      "arousal_band": "mid",
+      "track_id": "synthetic-track-0267"
+     },
+     "top_fit_min": 0.38,
+     "gradient": "none",
+     "expected_service": {
+      "top_should_be_in": [
+       "music_playlist",
+       "humming_karaoke",
+       "radio_style"
+      ]
+     },
+     "override_required": false
+    },
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0267",
+     "top_name": "Águas de Março — Antônio Carlos Jobim",
+     "top_fit": 0.4142,
+     "arousal": 0.601,
+     "band": "mid",
+     "is_oshi": true,
+     "genres": [
+      "jazz"
+     ],
+     "service_top": "humming_karaoke",
+     "service_score": 0.507
+    },
+    "overrides": null
+   },
+   {
+    "step": 4,
+    "of": 4,
+    "slug": "resumed-after-sleep",
+    "label": {
+     "en": "Resuming after a full sleep-rest",
+     "ja": "しっかり睡眠後、再出発"
+    },
+    "brief": {
+     "en": "After a full sleep-rest at the SA/PA, drowsiness resets to ~24 and the driver resumes the same calm night highway. With the mood pressure gone, the driver's own taste leads uncontested — the identical Jobim track tops again, now at its highest fit since the fresh start.",
+     "ja": "SA/PAでしっかり眠った後、眠気は約24にリセットされ、同じ穏やかな夜の高速道路を再出発。気分の圧力が消え、ドライバー自身の嗜好が異論なく主導 — 同じジョビンの曲が再び首位、走り始め以来最も高いフィットに。"
+    },
+    "situation": {
+     "drowsiness_level": 24,
+     "fatigue_level": 18,
+     "monotony_level": 25,
+     "traffic_state": "normal",
+     "road_type": "highway",
+     "night_state": "night"
+    },
+    "control": {
+     "trigger_purpose": "route_music",
+     "lifecycle_stage": "active_driving_content",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "Post-sleep-rest, low-drowsiness night cruise → the same mid-arousal Jobim jazz oshi track tops again, near its highest fit of the journey (mood no longer competes with taste).",
+     "expected_top": {
+      "must_be_oshi": true,
+      "genre": "jazz",
+      "arousal_band": "mid",
+      "track_id": "synthetic-track-0267"
+     },
+     "top_fit_min": 0.38,
+     "gradient": "none",
+     "expected_service": {
+      "top_should_be_in": [
+       "music_playlist",
+       "humming_karaoke",
+       "radio_style"
+      ]
+     },
+     "override_required": false
+    },
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0267",
+     "top_name": "Águas de Março — Antônio Carlos Jobim",
+     "top_fit": 0.4179,
+     "arousal": 0.601,
+     "band": "mid",
+     "is_oshi": true,
+     "genres": [
+      "jazz"
+     ],
+     "service_top": "humming_karaoke",
+     "service_score": 0.258
+    },
+    "overrides": null
+   }
+  ]
+ },
+ {
+  "journey_id": "rest-mountain",
+  "category": "situation",
+  "label": {
+   "en": "The Mountain Road Trip",
+   "ja": "山道ロードトリップ"
+  },
+  "driver_note": "50s driver with a traditional, calm taste — classical is the dominant genre, jazz secondary (folk/enka are near-empty in the catalog so classical/jazz stand in). Joe Hisaishi (movie-soundtrack composer, calm/mid-arousal) is registered as oshi, and the driver has rich per-track history on calm classical/jazz picks including Joe's own soundtrack pieces, so personalization dominates from the very first stage. This is the FATIGUE-led journey: a winding mountain road is not monotonous, so drowsiness only climbs via its base rate while fatigue gets the +0.2 mountain bonus — fatigue closes the gap with (and briefly equals) drowsiness at the peak of the winding climb, unlike the monotony-led highway journeys.",
+  "driver_profile": {
+   "oshi_registered": true,
+   "oshi_mode": "on",
+   "oshi_id": "synthetic-artist-0090",
+   "oshi_type": "artist",
+   "age_band": "50s",
+   "genre_affinity_v1_enabled": true,
+   "usage_by_genre": {
+    "classical": "high",
+    "jazz": "med"
+   },
+   "catalog_item_usage_level": {
+    "synthetic-track-0078": "high",
+    "synthetic-track-0112": "high",
+    "synthetic-track-0158": "high",
+    "synthetic-track-0017": "high",
+    "synthetic-track-0270": "high",
+    "synthetic-track-0024": "high",
+    "synthetic-track-0009": "high",
+    "synthetic-track-0045": "high",
+    "synthetic-track-0022": "high",
+    "synthetic-track-0026": "high",
+    "synthetic-track-0003": "high",
+    "synthetic-track-0004": "high"
+   },
+   "content_proposal_acceptance_rate": {
+    "synthetic-track-0078": 95,
+    "synthetic-track-0112": 95,
+    "synthetic-track-0158": 95,
+    "synthetic-track-0017": 95,
+    "synthetic-track-0270": 95,
+    "synthetic-track-0024": 95,
+    "synthetic-track-0009": 95,
+    "synthetic-track-0045": 95,
+    "synthetic-track-0022": 95,
+    "synthetic-track-0026": 95,
+    "synthetic-track-0003": 95,
+    "synthetic-track-0004": 95
+   },
+   "content_recovery_rate": {
+    "synthetic-track-0078": 90,
+    "synthetic-track-0112": 90,
+    "synthetic-track-0158": 90,
+    "synthetic-track-0017": 90,
+    "synthetic-track-0270": 90,
+    "synthetic-track-0024": 90,
+    "synthetic-track-0009": 90,
+    "synthetic-track-0045": 90,
+    "synthetic-track-0022": 90,
+    "synthetic-track-0026": 90,
+    "synthetic-track-0003": 90,
+    "synthetic-track-0004": 90
+   }
+  },
+  "stages": [
+   {
+    "step": 1,
+    "of": 4,
+    "slug": "climbing-the-pass",
+    "label": {
+     "en": "Climbing a scenic mountain pass — engaged",
+     "ja": "眺めの良い峠道を登る — 集中"
+    },
+    "brief": {
+     "en": "Early on a winding mountain pass, still engaged by the scenery. Fatigue is just starting to build from the curves (≈35) and drowsiness sits a little ahead on its own base rate (≈42) — low monotony, since a mountain road is never boring. The driver's classical/jazz taste and Joe Hisaishi oshi should already put his calm soundtrack piece on top.",
+     "ja": "曲がりくねった峠道の序盤、景色に集中している。カーブによる疲労はまだ蓄積し始めたばかり（約35）、眠気は基礎ペースでやや先行（約42）— 山道は単調にならないので単調度は低い。ドライバーのクラシック/ジャズ嗜好と推しJoe Hisaishiにより、彼の穏やかなサウンドトラック曲が既に1位になるはず。"
+    },
+    "situation": {
+     "drowsiness_level": 42,
+     "fatigue_level": 35,
+     "monotony_level": 15,
+     "traffic_state": "normal",
+     "road_type": "mountain",
+     "night_state": "day"
+    },
+    "control": {
+     "trigger_purpose": "route_music",
+     "lifecycle_stage": "active_driving_content",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "classical/jazz taste + Joe Hisaishi oshi + rich history -> Joe's soundtrack piece tops on an ordinary mountain drive",
+     "expected_top": {
+      "arousal_band": "mid",
+      "genre": "classical",
+      "must_be_oshi": true,
+      "track_id": "synthetic-track-0078"
+     },
+     "top_fit_min": 0.386,
+     "gradient": "none",
+     "expected_service": {
+      "top_should_be_in": [
+       "humming_karaoke",
+       "music_playlist",
+       "quiz",
+       "call_response_driving",
+       "radio_style",
+       "ranking_creation"
+      ]
+     },
+     "override_required": false
+    },
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0078",
+     "top_name": "崖の上のポニョ — Joe Hisaishi",
+     "top_fit": 0.4169,
+     "arousal": 0.614,
+     "service_top": "humming_karaoke",
+     "service_score": 0.199
+    }
+   },
+   {
+    "step": 2,
+    "of": 4,
+    "slug": "fatigue-building",
+    "label": {
+     "en": "Fatigue building from the winding road",
+     "ja": "曲がりくねった道で疲労蓄積"
+    },
+    "brief": {
+     "en": "The winding climb has taken its toll: fatigue has caught up to drowsiness, both at ≈55 — the mountain's own fatigue bonus outpacing the merely-base drowsiness rise on a non-monotonous road. A rest stop is now recommended, about 8 minutes ahead. The same calm taste keeps the same Joe Hisaishi track on top while the assistant guides the driver toward the stop.",
+     "ja": "曲がりくねった登りで疲労が眠気に追いつき、両方とも約55に — 山道特有の疲労ボーナスが、単調でない道でのベースの眠気上昇を上回った。休憩スポットが約8分先に推奨される。同じ穏やかな嗜好により、休憩地点へ誘導する間も同じJoe Hisaishiの曲が1位のまま。"
+    },
+    "situation": {
+     "drowsiness_level": 55,
+     "fatigue_level": 55,
+     "monotony_level": 18,
+     "traffic_state": "normal",
+     "road_type": "mountain",
+     "night_state": "day",
+     "estimated_min_until_rest_spot": 8,
+     "rest_spot_type": "sa_pa"
+    },
+    "control": {
+     "trigger_purpose": "rest_recommended",
+     "lifecycle_stage": "before_rest_until_stop",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "fatigue-led winding-road buildup (fatigue == drowsiness), same taste -> same oshi track still tops",
+     "expected_top": {
+      "arousal_band": "mid",
+      "genre": "classical",
+      "must_be_oshi": true,
+      "track_id": "synthetic-track-0078"
+     },
+     "top_fit_min": 0.339,
+     "gradient": "none",
+     "expected_service": {
+      "top_should_be_in": [
+       "humming_karaoke",
+       "music_playlist",
+       "quiz",
+       "call_response_driving",
+       "radio_style",
+       "ranking_creation"
+      ]
+     },
+     "override_required": false
+    },
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0078",
+     "top_name": "崖の上のポニョ — Joe Hisaishi",
+     "top_fit": 0.3699,
+     "arousal": 0.614,
+     "service_top": "humming_karaoke",
+     "service_score": 0.276
+    }
+   },
+   {
+    "step": 3,
+    "of": 4,
+    "slug": "stretch-break-overlook",
+    "label": {
+     "en": "A stretch break at a mountain overlook",
+     "ja": "山の展望台でストレッチ休憩"
+    },
+    "brief": {
+     "en": "Stopped at a scenic overlook to stretch and recover: fatigue has dropped to ≈20 and drowsiness is low (≈15) after the break. This lifecycle stage only content-supports full_karaoke, so the assistant dispatches content there — and the same oshi soundtrack piece, now as a karaoke pick, still tops the list.",
+     "ja": "展望台に停車してストレッチ休憩、疲労は約20に低下、眠気も休憩後で低い（約15）。このライフサイクル段階でコンテンツ対応するのはfull_karaokeのみのため、そこでコンテンツが配信される — 同じ推しのサウンドトラック曲が、カラオケ選曲として今も1位。"
+    },
+    "situation": {
+     "drowsiness_level": 15,
+     "fatigue_level": 20,
+     "monotony_level": 15,
+     "traffic_state": "normal",
+     "road_type": "mountain",
+     "night_state": "day"
+    },
+    "control": {
+     "trigger_purpose": "rest_recommended",
+     "lifecycle_stage": "after_rest_before_restart",
+     "motion_state": "stopped"
+    },
+    "expectation": {
+     "hypothesis": "stopped and recovered at the overlook -> content dispatches under full_karaoke (the only content-supported service here); oshi track still tops",
+     "expected_top": {
+      "arousal_band": "mid",
+      "genre": "classical",
+      "must_be_oshi": true,
+      "track_id": "synthetic-track-0078"
+     },
+     "top_fit_min": 0.315,
+     "gradient": "none",
+     "expected_service": {
+      "top_should_be_in": [
+       "stretch_video",
+       "oshi_reexperience",
+       "full_karaoke",
+       "live_viewing",
+       "call_response_stopped"
+      ]
+     },
+     "override_required": false
+    },
+    "measured": {
+     "content_service_id": "full_karaoke",
+     "top_track": "synthetic-track-0078",
+     "top_name": "崖の上のポニョ — Joe Hisaishi",
+     "top_fit": 0.3451,
+     "arousal": 0.614,
+     "service_top": "stretch_video",
+     "service_score": 0.08
+    }
+   },
+   {
+    "step": 4,
+    "of": 4,
+    "slug": "back-on-the-pass-refreshed",
+    "label": {
+     "en": "Back on the winding pass, refreshed",
+     "ja": "峠道に戻る — リフレッシュ済み"
+    },
+    "brief": {
+     "en": "Underway again after the stretch break: fatigue is low (≈28) and drowsiness has settled back down (≈40) as the drive resumes through the curves. With the recovery complete, ordinary route music is appropriate again — and the driver's own oshi track wins the top spot once more, unchanged by the rest cycle.",
+     "ja": "ストレッチ休憩後に再び走行開始：疲労は低く（約28）、眠気もカーブの走行再開とともに落ち着いた（約40）。回復が完了し通常のルート音楽が再び適切に — 休憩サイクルを経ても変わらず、ドライバー自身の推し曲が再び1位を獲得。"
+    },
+    "situation": {
+     "drowsiness_level": 40,
+     "fatigue_level": 28,
+     "monotony_level": 15,
+     "traffic_state": "normal",
+     "road_type": "mountain",
+     "night_state": "day"
+    },
+    "control": {
+     "trigger_purpose": "route_music",
+     "lifecycle_stage": "active_driving_content",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "refreshed, back on the pass, same taste -> the oshi track tops again",
+     "expected_top": {
+      "arousal_band": "mid",
+      "genre": "classical",
+      "must_be_oshi": true,
+      "track_id": "synthetic-track-0078"
+     },
+     "top_fit_min": 0.385,
+     "gradient": "none",
+     "expected_service": {
+      "top_should_be_in": [
+       "humming_karaoke",
+       "music_playlist",
+       "quiz",
+       "call_response_driving",
+       "radio_style",
+       "ranking_creation"
+      ]
+     },
+     "override_required": false
+    },
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0078",
+     "top_name": "崖の上のポニョ — Joe Hisaishi",
+     "top_fit": 0.415,
+     "arousal": 0.614,
+     "service_top": "humming_karaoke",
+     "service_score": 0.181
+    }
+   }
+  ]
+ },
+ {
+  "journey_id": "traffic-jam",
+  "category": "situation",
+  "label": {
+   "en": "Stuck in traffic",
+   "ja": "渋滞に巻き込まれて"
+  },
+  "driver_note": "A 20-something with upbeat taste — heavy J-pop and anime-OST listening, with rich play history on their favorite high-energy tracks. No registered oshi; the personalization comes purely from genre affinity + usage history. This journey never reaches a rest situation — it's rush-hour gridlock that eventually clears on its own, testing whether the assistant keeps serving coherent upbeat picks as boredom and mild drowsiness build, then ease off, entirely within active_driving_content.",
+  "driver_profile": {
+   "age_band": "20s",
+   "genre_affinity_v1_enabled": true,
+   "usage_by_genre": {
+    "j-pop": "high",
+    "anime": "med"
+   },
+   "catalog_item_usage_level": {
+    "synthetic-track-0130": "high",
+    "synthetic-track-0108": "high",
+    "synthetic-track-0097": "high",
+    "synthetic-track-0115": "high",
+    "synthetic-track-0077": "high",
+    "synthetic-track-0060": "high",
+    "synthetic-track-0098": "high",
+    "synthetic-track-0202": "high",
+    "synthetic-track-0181": "high",
+    "synthetic-track-0076": "high",
+    "synthetic-track-0061": "high",
+    "synthetic-track-0058": "high",
+    "synthetic-track-0144": "high",
+    "synthetic-track-0087": "high"
+   },
+   "content_proposal_acceptance_rate": {
+    "synthetic-track-0130": 95,
+    "synthetic-track-0108": 95,
+    "synthetic-track-0097": 95,
+    "synthetic-track-0115": 95,
+    "synthetic-track-0077": 95,
+    "synthetic-track-0060": 95,
+    "synthetic-track-0098": 95,
+    "synthetic-track-0202": 95,
+    "synthetic-track-0181": 95,
+    "synthetic-track-0076": 95,
+    "synthetic-track-0061": 95,
+    "synthetic-track-0058": 95,
+    "synthetic-track-0144": 95,
+    "synthetic-track-0087": 95
+   },
+   "content_recovery_rate": {
+    "synthetic-track-0130": 90,
+    "synthetic-track-0108": 90,
+    "synthetic-track-0097": 90,
+    "synthetic-track-0115": 90,
+    "synthetic-track-0077": 90,
+    "synthetic-track-0060": 90,
+    "synthetic-track-0098": 90,
+    "synthetic-track-0202": 90,
+    "synthetic-track-0181": 90,
+    "synthetic-track-0076": 90,
+    "synthetic-track-0061": 90,
+    "synthetic-track-0058": 90,
+    "synthetic-track-0144": 90,
+    "synthetic-track-0087": 90
+   }
+  },
+  "stages": [
+   {
+    "step": 1,
+    "of": 3,
+    "slug": "hitting-jam",
+    "label": {
+     "en": "Hitting the jam",
+     "ja": "渋滞に突入"
+    },
+    "brief": {
+     "en": "Rush hour just turned into gridlock. Drowsiness is still low (~40) and patience is fine — the driver wants upbeat music to pass the time, and their strong J-pop/anime taste should carry an energetic track straight to the top.",
+     "ja": "ラッシュアワーが渋滞に変わった。眠気はまだ低く（約40）、余裕もある。飽きしのぎにアップテンポな音楽を求めており、強いJ-POP/アニメ嗜好によりエネルギッシュな曲が上位に来るはず。"
+    },
+    "situation": {
+     "drowsiness_level": 40,
+     "fatigue_level": 28,
+     "monotony_level": 15,
+     "traffic_state": "congested",
+     "road_type": "highway",
+     "night_state": "day"
+    },
+    "control": {
+     "trigger_purpose": "route_music",
+     "lifecycle_stage": "active_driving_content",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "rush-hour gridlock, low drowsiness, strong j-pop/anime usage+history → an upbeat (high-arousal) j-pop track tops for route_music",
+     "expected_top": {
+      "arousal_band": "high",
+      "genre": "j-pop",
+      "must_be_oshi": false
+     },
+     "top_fit_min": 0.308,
+     "gradient": "none",
+     "expected_service": {
+      "top_should_be_in": [
+       "humming_karaoke",
+       "call_response_driving",
+       "quiz"
+      ]
+     },
+     "override_required": false
+    },
+    "overrides": null,
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0181",
+     "top_name": "さよならエレジー — SUDA MASAKI",
+     "top_fit": 0.338,
+     "arousal": 0.838,
+     "service_top": "humming_karaoke",
+     "service_score": 0.2806
+    }
+   },
+   {
+    "step": 2,
+    "of": 3,
+    "slug": "jam-drags",
+    "label": {
+     "en": "Jam drags on",
+     "ja": "渋滞が長引く"
+    },
+    "brief": {
+     "en": "The gridlock hasn't budged in a while. Boredom has turned into mild drowsiness (~58) — the assistant shifts into keep-alert mode, still riding the driver's own upbeat taste, this time surfacing an anime-flavored pick for variety.",
+     "ja": "渋滞は一向に動かない。退屈が軽い眠気（約58）に変わり、アシスタントは覚醒維持モードへ。引き続き本人のアップテンポ嗜好に基づきつつ、今回はアニメ系の一曲で変化をつける。"
+    },
+    "situation": {
+     "drowsiness_level": 58,
+     "fatigue_level": 34,
+     "monotony_level": 55,
+     "traffic_state": "congested",
+     "road_type": "highway",
+     "night_state": "day"
+    },
+    "control": {
+     "trigger_purpose": "inattentive_driving_prevention_recovery",
+     "lifecycle_stage": "active_driving_content",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "boredom deepens into mild drowsiness under continued gridlock → inattentive-prevention keeps serving the driver's own upbeat taste, this time an anime-tagged high-arousal track tops",
+     "expected_top": {
+      "arousal_band": "high",
+      "genre": "anime",
+      "must_be_oshi": false
+     },
+     "top_fit_min": 0.327,
+     "gradient": "none",
+     "expected_service": {
+      "top_should_be_in": [
+       "humming_karaoke",
+       "call_response_driving",
+       "quiz"
+      ]
+     },
+     "override_required": false
+    },
+    "overrides": null,
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0087",
+     "top_name": "READY STEADY GO — L'Arc-en-Ciel",
+     "top_fit": 0.3574,
+     "arousal": 0.828,
+     "service_top": "humming_karaoke",
+     "service_score": 0.4095
+    }
+   },
+   {
+    "step": 3,
+    "of": 3,
+    "slug": "jam-clears",
+    "label": {
+     "en": "Jam clears",
+     "ja": "渋滞解消"
+    },
+    "brief": {
+     "en": "Traffic finally frees up and speed returns. Relief eases drowsiness back down (~45); with the jam behind them, the assistant returns to ordinary route-music mode and again leads with the driver's upbeat J-pop favorites.",
+     "ja": "渋滞がようやく解消し、速度が戻る。安堵感で眠気はやや下がり（約45）、通常のルート音楽モードに戻ってドライバー好みのアップテンポなJ-POPが再び上位に。"
+    },
+    "situation": {
+     "drowsiness_level": 45,
+     "fatigue_level": 38,
+     "monotony_level": 45,
+     "traffic_state": "normal",
+     "road_type": "highway",
+     "night_state": "day"
+    },
+    "control": {
+     "trigger_purpose": "route_music",
+     "lifecycle_stage": "active_driving_content",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "jam clears, drowsiness eases, traffic normal → route_music returns to an upbeat j-pop track from the same taste profile",
+     "expected_top": {
+      "arousal_band": "high",
+      "genre": "j-pop",
+      "must_be_oshi": false
+     },
+     "top_fit_min": 0.325,
+     "gradient": "none",
+     "expected_service": {
+      "top_should_be_in": [
+       "humming_karaoke",
+       "call_response_driving",
+       "quiz"
+      ]
+     },
+     "override_required": false
+    },
+    "overrides": null,
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0108",
+     "top_name": "千本桜 — Hatsune Miku",
+     "top_fit": 0.3547,
+     "arousal": 0.875,
+     "service_top": "humming_karaoke",
+     "service_score": 0.2915
+    }
+   }
+  ]
+ },
+ {
+  "journey_id": "family-trip",
+  "category": "situation",
+  "label": {
+   "en": "The family road trip",
+   "ja": "家族の遠出"
+  },
+  "driver_note": "30s parent driving with a child aboard on a long family trip; anime-fan hobby tag, heavy anime genre usage + moderate j-pop usage, rich play/acceptance/recovery history on six upbeat anime-opening tracks. No oshi registered — genre affinity, hobby tag, and the child_present context feature (not personality/oshi) are what keep anime/kid-friendly tracks on top across every stage.",
+  "driver_profile": {
+   "age_band": "30s",
+   "hobby_interest_tags": [
+    "anime-fan"
+   ],
+   "genre_affinity_v1_enabled": true,
+   "usage_by_genre": {
+    "anime": "high",
+    "j-pop": "med"
+   },
+   "catalog_item_usage_level": {
+    "synthetic-track-0058": "high",
+    "synthetic-track-0060": "high",
+    "synthetic-track-0061": "high",
+    "synthetic-track-0077": "high",
+    "synthetic-track-0115": "high",
+    "synthetic-track-0144": "high"
+   },
+   "content_proposal_acceptance_rate": {
+    "synthetic-track-0058": 95,
+    "synthetic-track-0060": 95,
+    "synthetic-track-0061": 95,
+    "synthetic-track-0077": 95,
+    "synthetic-track-0115": 95,
+    "synthetic-track-0144": 95
+   },
+   "content_recovery_rate": {
+    "synthetic-track-0058": 90,
+    "synthetic-track-0060": 90,
+    "synthetic-track-0061": 90,
+    "synthetic-track-0077": 90,
+    "synthetic-track-0115": 90,
+    "synthetic-track-0144": 90
+   }
+  },
+  "stages": [
+   {
+    "step": 1,
+    "of": 4,
+    "slug": "setting-off-excited",
+    "label": {
+     "en": "Setting off, kids excited",
+     "ja": "出発、子どもたちは大はしゃぎ"
+    },
+    "brief": {
+     "en": "Morning departure on local roads, low drowsiness. The kids are buzzing with excitement. The parent's anime-fan hobby tag and rich history on upbeat anime-opening tracks push a high-energy anime song straight to the top — a coherent 'keep the excitement going' pick.",
+     "ja": "朝、一般道での出発。眠気は低め。子どもたちは大はしゃぎ。親のアニメ好きという趣味タグと、アップテンポなアニメソングへの豊富な利用履歴により、高エネルギーなアニメ曲が即座に上位へ。子どもの興奮そのままの一曲。"
+    },
+    "situation": {
+     "drowsiness_level": 30,
+     "fatigue_level": 20,
+     "monotony_level": 20,
+     "traffic_state": "normal",
+     "road_type": "local",
+     "night_state": "day",
+     "child_present": true,
+     "multiple_passengers": true
+    },
+    "control": {
+     "trigger_purpose": "child_passenger_experience",
+     "lifecycle_stage": "active_driving_content",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "child_present + anime-fan hobby + heavy anime usage → a high-arousal anime track tops, humming_karaoke leads the service ranking",
+     "expected_top": {
+      "genre": "anime",
+      "arousal_band": "high",
+      "must_be_oshi": false,
+      "track_id": null
+     },
+     "top_fit_min": 0.344,
+     "gradient": "none",
+     "expected_service": {
+      "top_should_be_in": [
+       "humming_karaoke",
+       "call_response_driving",
+       "quiz"
+      ]
+     },
+     "override_required": false
+    },
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0115",
+     "top_name": "Zenzenzense - English Ver. — RADWIMPS",
+     "top_fit": 0.374,
+     "arousal": 0.854,
+     "service_top": "humming_karaoke",
+     "service_score": 0.24
+    }
+   },
+   {
+    "step": 2,
+    "of": 4,
+    "slug": "hour-in-restless-tiring",
+    "label": {
+     "en": "An hour in, restless kids & tiring parent",
+     "ja": "1時間経過、落ち着かない子どもと疲れ始める親"
+    },
+    "brief": {
+     "en": "An hour into the highway drive, traffic thickens and monotony builds — drowsiness climbs to 55 as the kids grow restless. The same anime-fan affinity keeps a high-energy anime opening on top, holding the kids' attention while the parent starts to feel the strain.",
+     "ja": "高速道路を1時間走行、渋滞と単調さで眠気は55まで上昇し子どもたちも落ち着かない。同じアニメ嗜好が引き続き高エネルギーなアニメ曲を上位に保ち、親の疲れが出始める中でも子どもの気を引き続ける。"
+    },
+    "situation": {
+     "drowsiness_level": 55,
+     "fatigue_level": 40,
+     "monotony_level": 55,
+     "traffic_state": "congested",
+     "road_type": "highway",
+     "night_state": "day",
+     "child_present": true,
+     "multiple_passengers": true
+    },
+    "control": {
+     "trigger_purpose": "child_passenger_experience",
+     "lifecycle_stage": "active_driving_content",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "rising drowsiness + congestion, same child/anime-fan affinity → the same high-arousal anime track still tops, with a stronger service margin",
+     "expected_top": {
+      "genre": "anime",
+      "arousal_band": "high",
+      "must_be_oshi": false,
+      "track_id": null
+     },
+     "top_fit_min": 0.389,
+     "gradient": "none",
+     "expected_service": {
+      "top_should_be_in": [
+       "humming_karaoke",
+       "call_response_driving",
+       "quiz"
+      ]
+     },
+     "override_required": false
+    },
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0115",
+     "top_name": "Zenzenzense - English Ver. — RADWIMPS",
+     "top_fit": 0.419,
+     "arousal": 0.854,
+     "service_top": "humming_karaoke",
+     "service_score": 0.472
+    }
+   },
+   {
+    "step": 3,
+    "of": 4,
+    "slug": "rest-stop-stretch",
+    "label": {
+     "en": "Rest stop — everyone stretches",
+     "ja": "休憩ストップ — みんなでストレッチ"
+    },
+    "brief": {
+     "en": "A stop at the service area — everyone gets out and stretches, drowsiness drops back to 15. Only full_karaoke is content-supported at this stage, and the family's anime-fan profile surfaces a singable anime ballad for a group karaoke break.",
+     "ja": "サービスエリアで休憩、みんなで車を降りてストレッチ。眠気は15まで回復。このステージではフルカラオケのみコンテンツ対応。家族のアニメ嗜好により、歌いやすいアニメソングがカラオケ向けに上位表示される。"
+    },
+    "situation": {
+     "drowsiness_level": 15,
+     "fatigue_level": 15,
+     "monotony_level": 10,
+     "traffic_state": "normal",
+     "road_type": "local",
+     "night_state": "day",
+     "child_present": true,
+     "multiple_passengers": true,
+     "rest_spot_type": "sa_pa"
+    },
+    "control": {
+     "trigger_purpose": "rest_recommended",
+     "lifecycle_stage": "after_rest_before_restart",
+     "motion_state": "stopped"
+    },
+    "expectation": {
+     "hypothesis": "stopped + recovered + child/anime-fan affinity → content dispatches via full_karaoke, an anime track tops as a singable family karaoke pick",
+     "expected_top": {
+      "genre": "anime",
+      "arousal_band": "high",
+      "must_be_oshi": false,
+      "track_id": null
+     },
+     "top_fit_min": 0.291,
+     "gradient": "none",
+     "expected_service": {
+      "top_should_be_in": [
+       "stretch_video",
+       "full_karaoke",
+       "live_viewing",
+       "oshi_reexperience",
+       "call_response_stopped"
+      ]
+     },
+     "override_required": false
+    },
+    "measured": {
+     "content_service_id": "full_karaoke",
+     "top_track": "synthetic-track-0144",
+     "top_name": "君の知らない物語 — supercell",
+     "top_fit": 0.321,
+     "arousal": 0.843,
+     "service_top": "stretch_video",
+     "service_score": 0.07
+    }
+   },
+   {
+    "step": 4,
+    "of": 4,
+    "slug": "back-on-road-calmer",
+    "label": {
+     "en": "Back on the road, calmer",
+     "ja": "再出発、落ち着いた車内"
+    },
+    "brief": {
+     "en": "Back on the highway, refreshed and calmer — drowsiness settles at 30. The family's favorite high-energy anime opening returns to the top of the playlist; the anime-fan and child-passenger signals are as steady as ever.",
+     "ja": "高速道路に戻り、休憩明けで落ち着いた様子。眠気は30に落ち着く。家族お気に入りの高揚感あるアニメソングが再びプレイリスト上位に。アニメ嗜好・子ども同乗のシグナルは変わらず安定。"
+    },
+    "situation": {
+     "drowsiness_level": 30,
+     "fatigue_level": 25,
+     "monotony_level": 30,
+     "traffic_state": "normal",
+     "road_type": "highway",
+     "night_state": "day",
+     "child_present": true,
+     "multiple_passengers": true
+    },
+    "control": {
+     "trigger_purpose": "child_passenger_experience",
+     "lifecycle_stage": "active_driving_content",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "post-rest, calmer drive, same child/anime-fan affinity → the same high-arousal anime track resumes the top spot",
+     "expected_top": {
+      "genre": "anime",
+      "arousal_band": "high",
+      "must_be_oshi": false,
+      "track_id": null
+     },
+     "top_fit_min": 0.362,
+     "gradient": "none",
+     "expected_service": {
+      "top_should_be_in": [
+       "humming_karaoke",
+       "call_response_driving",
+       "quiz"
+      ]
+     },
+     "override_required": false
+    },
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0115",
+     "top_name": "Zenzenzense - English Ver. — RADWIMPS",
+     "top_fit": 0.392,
+     "arousal": 0.854,
+     "service_top": "humming_karaoke",
+     "service_score": 0.309
+    }
+   }
+  ]
+ },
+ {
+  "journey_id": "oshi-event",
+  "category": "preference",
+  "label": {
+   "en": "The oshi pilgrimage",
+   "ja": "推しの聖地巡礼"
+  },
+  "driver_note": "Teens driver, devoted Hatsune Miku (synthetic-artist-0115) superfan: oshi_mode on, heavy anime/vocaloid usage_by_genre, rich per-track history on all 3 of Miku's catalog tracks, anime-fan hobby tag. Cause for the drive is a live EVENT, not fatigue — drowsiness stays low-to-mild across the whole arc (30 -> 40 -> 45) and never approaches a rest threshold. Verified against the real content+service selectors: Miku's own track \"synthetic-track-0240\" (夜に融ける) tops all three stages with fit 0.41-0.45 and content dispatches via humming_karaoke throughout — preference dominates with no fatigue arc.",
+  "driver_profile": {
+   "oshi_registered": true,
+   "oshi_mode": "on",
+   "oshi_id": "synthetic-artist-0115",
+   "oshi_type": "artist",
+   "age_band": "teens",
+   "genre_affinity_v1_enabled": true,
+   "usage_by_genre": {
+    "anime": "high",
+    "vocaloid": "high",
+    "j-pop": "med"
+   },
+   "catalog_item_usage_level": {
+    "synthetic-track-0108": "high",
+    "synthetic-track-0215": "high",
+    "synthetic-track-0240": "high"
+   },
+   "content_proposal_acceptance_rate": {
+    "synthetic-track-0108": 95,
+    "synthetic-track-0215": 95,
+    "synthetic-track-0240": 95
+   },
+   "content_recovery_rate": {
+    "synthetic-track-0108": 90,
+    "synthetic-track-0215": 90,
+    "synthetic-track-0240": 90
+   },
+   "hobby_interest_tags": [
+    "anime-fan"
+   ]
+  },
+  "stages": [
+   {
+    "step": 1,
+    "of": 3,
+    "slug": "depart-hyped",
+    "label": {
+     "en": "Departing for the event, hyped",
+     "ja": "イベントへ出発、テンション爆上がり"
+    },
+    "brief": {
+     "en": "She's leaving hours before showtime, playlist already blasting — tonight is the Hatsune Miku live she's dreamed about, and drowsiness (~30) is barely on the radar. Her Miku oshi signal plus heavy anime/vocaloid usage push Miku's own track to the top from the very first mile.",
+     "ja": "本番の何時間も前に家を出る、プレイリストはもう全開——今夜は夢見た初音ミクのライブ、眠気（約30）なんて眼中にない。ミク推しシグナルとアニメ/ボカロ利用の多さで、走り出した瞬間からミク自身の曲が首位に。"
+    },
+    "situation": {
+     "drowsiness_level": 30,
+     "fatigue_level": 20,
+     "monotony_level": 20,
+     "traffic_state": "normal",
+     "road_type": "local",
+     "night_state": "day",
+     "destination_tags": [
+      "event"
+     ],
+     "route_tags": [
+      "local"
+     ]
+    },
+    "control": {
+     "trigger_purpose": "route_music",
+     "lifecycle_stage": "active_driving_content",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "teens Miku superfan + anime/vocaloid usage + event destination, low drowsiness (~30) -> Miku's own track tops strongly despite minimal road/fatigue pressure",
+     "expected_top": {
+      "arousal_band": "high",
+      "genre": null,
+      "must_be_oshi": true,
+      "track_id": "synthetic-track-0240"
+     },
+     "top_fit_min": 0.38,
+     "gradient": "none",
+     "expected_service": {
+      "top_should_be_in": [
+       "humming_karaoke",
+       "music_playlist",
+       "radio_style"
+      ]
+     },
+     "override_required": false
+    },
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0240",
+     "top_name": "夜に融ける — Hatsune Miku",
+     "top_fit": 0.4139,
+     "arousal": 0.753,
+     "service_top": "humming_karaoke"
+    }
+   },
+   {
+    "step": 2,
+    "of": 3,
+    "slug": "highway-excitement",
+    "label": {
+     "en": "On the highway, excitement building",
+     "ja": "高速道路上、興奮が高まる"
+    },
+    "brief": {
+     "en": "Highway miles pass and the destination tags now read 'event' AND 'oshi_venue' — pure anticipation, not fatigue, is climbing. Drowsiness ticks up to a mild ~40 from the monotonous stretch, but the oshi signal only strengthens: Miku's track tops even more strongly than at departure.",
+     "ja": "高速道路を進み、目的地タグは「イベント」に加え「推しの会場」も表示——高まっているのは疲労ではなく期待感だけ。単調な区間で眠気は約40へわずかに上昇するが、推しシグナルはむしろ強まり、出発時より一段と強くミクの曲が首位に。"
+    },
+    "situation": {
+     "drowsiness_level": 40,
+     "fatigue_level": 25,
+     "monotony_level": 45,
+     "traffic_state": "normal",
+     "road_type": "highway",
+     "night_state": "day",
+     "destination_tags": [
+      "event",
+      "oshi_venue"
+     ],
+     "route_tags": [
+      "highway"
+     ]
+    },
+    "control": {
+     "trigger_purpose": "route_music",
+     "lifecycle_stage": "active_driving_content",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "same driver on a highway leg, destination now includes 'oshi_venue', drowsiness still mild (~40) -> Miku's track tops even more strongly as anticipation (not fatigue) drives the fit up",
+     "expected_top": {
+      "arousal_band": "high",
+      "genre": null,
+      "must_be_oshi": true,
+      "track_id": "synthetic-track-0240"
+     },
+     "top_fit_min": 0.42,
+     "gradient": "none",
+     "expected_service": {
+      "top_should_be_in": [
+       "humming_karaoke",
+       "music_playlist",
+       "radio_style"
+      ]
+     },
+     "override_required": false
+    },
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0240",
+     "top_name": "夜に融ける — Hatsune Miku",
+     "top_fit": 0.4546,
+     "arousal": 0.753,
+     "service_top": "humming_karaoke"
+    }
+   },
+   {
+    "step": 3,
+    "of": 3,
+    "slug": "arriving-venue-night",
+    "label": {
+     "en": "Arriving at the venue, at night",
+     "ja": "夜、会場に到着"
+    },
+    "brief": {
+     "en": "Night has fallen and traffic thickens near the venue; drowsiness has crept to ~45 — still nowhere close to a rest trigger. She's finally arriving at the place she's dreamed about for months, and it's Miku's own song that plays her in the door.",
+     "ja": "夜になり会場周辺は渋滞、眠気は約45までじわり上昇——それでも休憩トリガーにはまだ遠い。何ヶ月も夢見た場所へ、ついに到着。会場入りを飾るのは、ミク自身の曲。"
+    },
+    "situation": {
+     "drowsiness_level": 45,
+     "fatigue_level": 28,
+     "monotony_level": 25,
+     "traffic_state": "congested",
+     "road_type": "local",
+     "night_state": "night",
+     "destination_tags": [
+      "event",
+      "oshi_venue"
+     ],
+     "route_tags": [
+      "local"
+     ]
+    },
+    "control": {
+     "trigger_purpose": "route_music",
+     "lifecycle_stage": "active_driving_content",
+     "motion_state": "driving"
+    },
+    "expectation": {
+     "hypothesis": "arrival at the venue at night, drowsiness still mild (~45, no rest trigger reached) -> Miku's track remains on top throughout; preference, not tiredness, explains the whole arc",
+     "expected_top": {
+      "arousal_band": "high",
+      "genre": null,
+      "must_be_oshi": true,
+      "track_id": "synthetic-track-0240"
+     },
+     "top_fit_min": 0.4,
+     "gradient": "none",
+     "expected_service": {
+      "top_should_be_in": [
+       "humming_karaoke",
+       "music_playlist",
+       "radio_style"
+      ]
+     },
+     "override_required": false
+    },
+    "measured": {
+     "content_service_id": "humming_karaoke",
+     "top_track": "synthetic-track-0240",
+     "top_name": "夜に融ける — Hatsune Miku",
+     "top_fit": 0.432,
+     "arousal": 0.753,
+     "service_top": "humming_karaoke"
+    }
+   }
+  ]
+ }
+]

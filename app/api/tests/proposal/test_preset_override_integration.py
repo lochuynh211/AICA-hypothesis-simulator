@@ -86,7 +86,7 @@ def test_content_override_changes_ranking_through_router():
 
 
 def test_origin_preset_id_recorded_in_setup_provenance():
-    p = _preset("preset-monotone-highway-energize")
+    p = _preset("preset-coastal-cruise")
     run = _run(p["world"], origin_preset_id=p["preset_id"])
     origin = (run.get("setup_snapshot") or {}).get("origin") or {}
-    assert origin.get("origin_preset_id") == "preset-monotone-highway-energize", origin
+    assert origin.get("origin_preset_id") == "preset-coastal-cruise", origin

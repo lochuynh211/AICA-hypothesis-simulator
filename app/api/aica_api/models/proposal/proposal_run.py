@@ -12,11 +12,12 @@ This module is ISOLATED from trigger models:
 """
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from aica_api.models.proposal.enums import ProposalRunMode, ProposalRunStatus
 from aica_api.models.proposal.events import DiscreteEvent
 from aica_api.models.proposal.evidence import AlgorithmEvidence
+from aica_api.models.proposal.explanation import Explanation
 from aica_api.models.proposal.journey import JourneyState
 from aica_api.models.proposal.opportunity import ProposalOpportunity
 from aica_api.models.proposal.world import SetupSnapshot, World
@@ -86,3 +87,8 @@ class ProposalRunLog(BaseModel):
     opportunity_history: list[ProposalOpportunity] = []
     setup_snapshot_history: list[SetupSnapshot] = []
     mode: ProposalRunMode = ProposalRunMode.interactive
+    # feature 019 — append-only LLM-narration records (one per generated
+    # rationale). Additive/defaulted so pre-019 persisted logs load unchanged.
+    # Only the server-side `backend`/`template` providers persist here; the
+    # in-browser `browser` provider is display-only and never recorded.
+    explanations: list[Explanation] = Field(default_factory=list)

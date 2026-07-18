@@ -42,6 +42,7 @@ from datetime import datetime, timezone
 from aica_api.models.proposal.enums import ProposalRunMode, ProposalRunStatus
 from aica_api.models.proposal.events import DiscreteEvent
 from aica_api.models.proposal.evidence import AlgorithmEvidence
+from aica_api.models.proposal.explanation import Explanation
 from aica_api.models.proposal.journey import JourneyState
 from aica_api.models.proposal.opportunity import ProposalOpportunity
 from aica_api.models.proposal.proposal_run import ProposalRun, ProposalRunLog
@@ -56,6 +57,7 @@ __all__ = [
     "delete_run",
     "append_event",
     "append_evidence",
+    "append_explanation",
     "update_state",
 ]
 
@@ -267,6 +269,23 @@ def append_evidence(run_id: str, evidence: AlgorithmEvidence, runs_dir: pathlib.
     if run_log is None:
         raise ProposalRunNotFoundError(f"Unknown proposal run_id: {run_id!r}")
     run_log.evidence.append(evidence)
+    _persist(run_log, pathlib.Path(runs_dir))
+    return run_log
+
+
+def append_explanation(run_id: str, explanation: Explanation, runs_dir: pathlib.Path) -> ProposalRunLog:
+    """Append one ``Explanation`` (feature 019) to an existing run and re-persist.
+
+    Append-only narration record for a generated rationale. Mirrors
+    ``append_evidence``: load → append → atomic re-persist → return.
+
+    Raises:
+        ProposalRunNotFoundError: If run_id has no persisted log.
+    """
+    run_log = get_run(run_id, runs_dir)
+    if run_log is None:
+        raise ProposalRunNotFoundError(f"Unknown proposal run_id: {run_id!r}")
+    run_log.explanations.append(explanation)
     _persist(run_log, pathlib.Path(runs_dir))
     return run_log
 

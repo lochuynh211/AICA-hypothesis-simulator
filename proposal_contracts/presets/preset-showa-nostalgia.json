@@ -36,6 +36,7 @@
     "en": "A driver in their 50s whose oshi is Seiko Matsuda (1980s). With the era/age weight raised (per-preset override), 1980s tracks win — the same neutral road, a generation earlier.",
     "ja": "推しが松田聖子（1980年代）の50代ドライバー。年代/世代の重みを引き上げ（プリセット単位のオーバーライド）、1980年代の曲が上位に。"
   },
+  "category": "preference",
   "contrast_with": "preset-genz-now",
   "expectation": {
     "expected_service": {
@@ -54,6 +55,7 @@
     "top_fit_min": 0.3
   },
   "family": "era_age",
+  "journey": null,
   "label": {
     "en": "Shōwa nostalgia (50s driver)",
     "ja": "昭和ノスタルジー（50代ドライバー）"

@@ -648,6 +648,88 @@
       "title": "EvidenceError",
       "type": "object"
     },
+    "Explanation": {
+      "description": "Append-only narration record persisted in ``ProposalRunLog.explanations``.\n\n``rationale`` is the positional bilingual pair ``[ja, en]`` (the same shape\nthe frontend ``pickRationale`` expects). ``provider_used`` records who\nactually produced the text: ``backend`` (Ollama), ``template`` (deterministic\nfallback after an Ollama failure), or ``browser`` (only when a client chose\nto persist Nano output — not done in v1). ``fell_back`` is True whenever the\nrequested provider failed and the deterministic template was used instead,\nso a review never mistakes a fallback for a real generation.",
+      "properties": {
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        },
+        "fell_back": {
+          "title": "Fell Back",
+          "type": "boolean"
+        },
+        "generated_at": {
+          "title": "Generated At",
+          "type": "string"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "prompt_hash": {
+          "title": "Prompt Hash",
+          "type": "string"
+        },
+        "provider_used": {
+          "enum": [
+            "backend",
+            "browser",
+            "template"
+          ],
+          "title": "Provider Used",
+          "type": "string"
+        },
+        "rationale": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Rationale",
+          "type": "array"
+        },
+        "requested_provider": {
+          "enum": [
+            "backend",
+            "browser"
+          ],
+          "title": "Requested Provider",
+          "type": "string"
+        },
+        "step": {
+          "enum": [
+            "service",
+            "content"
+          ],
+          "title": "Step",
+          "type": "string"
+        },
+        "target_id": {
+          "title": "Target Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "step",
+        "target_id",
+        "requested_provider",
+        "provider_used",
+        "model",
+        "rationale",
+        "fell_back",
+        "prompt_hash",
+        "generated_at"
+      ],
+      "title": "Explanation",
+      "type": "object"
+    },
     "FeatureOriginProvenance": {
       "description": "Provenance of a feature's origin (distinct from response-coefficient provenance — FR-020).",
       "enum": [
@@ -1472,6 +1554,13 @@
         "$ref": "#/$defs/AlgorithmEvidence"
       },
       "title": "Evidence",
+      "type": "array"
+    },
+    "explanations": {
+      "items": {
+        "$ref": "#/$defs/Explanation"
+      },
+      "title": "Explanations",
       "type": "array"
     },
     "hyperparameters": {

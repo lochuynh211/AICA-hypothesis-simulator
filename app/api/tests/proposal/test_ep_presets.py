@@ -10,29 +10,12 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 from aica_api.main import app
+from aica_api.config import settings
 
 client = TestClient(app)
+_PRESETS_DIR = settings.proposal_contracts_dir / "presets"
 
-_EXPECTED_PRESET_IDS = {
-    "preset-anime-fan-event-night",
-    "preset-child-family-drive",
-    "preset-coastal-cruise",
-    "preset-coldstart-neutral",
-    "preset-fresh-alert-cruise",
-    "preset-long-haul-drowsy",
-    "preset-genz-now",
-    "preset-high-recovery-regular",
-    "preset-jazz-calm-listener",
-    "preset-jrock-enthusiast",
-    "preset-late-night-winddown",
-    "preset-monotone-highway-energize",
-    "preset-mountain-pass",
-    "preset-oshi-off",
-    "preset-oshi-superfan",
-    "preset-recently-played-fatigue",
-    "preset-reststop-full-karaoke",
-    "preset-showa-nostalgia",
-}
+_EXPECTED_PRESET_IDS = {p.stem for p in _PRESETS_DIR.glob("preset-*.json")}
 
 
 # ---------------------------------------------------------------------------
@@ -45,7 +28,7 @@ def test_get_presets_lists_the_18_committed_presets():
     assert resp.status_code == 200
     body = resp.json()
     presets = body["presets"]
-    assert len(presets) == 18
+    assert len(presets) == 32
     ids = {p["preset_id"] for p in presets}
     assert ids == _EXPECTED_PRESET_IDS
 
@@ -60,7 +43,7 @@ def test_get_presets_summary_shape():
     resp = client.get("/api/proposal/presets")
     for summary in resp.json()["presets"]:
         assert set(summary.keys()) == {
-            "preset_id", "label", "brief", "family", "contrast_with", "hypothesis",
+            "preset_id", "label", "brief", "category", "family", "journey", "contrast_with", "hypothesis",
         }
         assert set(summary["label"].keys()) == {"ja", "en"}
         assert set(summary["brief"].keys()) == {"ja", "en"}
@@ -80,18 +63,20 @@ def test_get_presets_summary_shape():
 
 
 def test_get_preset_returns_the_full_preset():
-    resp = client.get("/api/proposal/presets/preset-monotone-highway-energize")
+    resp = client.get("/api/proposal/presets/preset-oshi-superfan")
     assert resp.status_code == 200
     body = resp.json()
-    assert body["preset_id"] == "preset-monotone-highway-energize"
-    assert body["family"] == "mood_coherence"
-    assert body["contrast_with"] == "preset-late-night-winddown"
+    assert body["preset_id"] == "preset-oshi-superfan"
+    assert body["category"] == "preference"
+    assert body["family"] == "oshi_personalization"
+    assert body["journey"] is None
+    assert body["contrast_with"] == "preset-oshi-off"
     assert body["algorithm_config_overrides"] is None
     assert body["expectation"]["hypothesis"]
-    assert body["expectation"]["top_fit_min"] == 0.38
+    assert body["expectation"]["top_fit_min"] == 0.15
     assert body["world"]["control_inputs"]["dataset_id"]
     assert body["world"]["situation"]["road_type"] == "highway"
-    assert body["world"]["driver_profile"]["oshi_id"] == "synthetic-artist-0107"
+    assert body["world"]["driver_profile"]["oshi_id"] == "synthetic-artist-0122"
 
 
 def test_get_preset_with_algorithm_config_overrides():

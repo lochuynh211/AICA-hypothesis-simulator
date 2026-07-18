@@ -1,32 +1,45 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "High fatigue, night, stuck in congestion. The driver's calm oshi (Antônio Carlos Jobim) and jazz/classical taste should surface soothing low-energy tracks — coherent 'calm me down' signals.",
-    "ja": "疲労が高く夜間・渋滞。落ち着いた推し（Antônio Carlos Jobim）とジャズ/クラシック嗜好により、癒し系の低エネルギー曲が上位に。"
+    "en": "Back on the highway, refreshed and calmer — drowsiness settles at 30. The family's favorite high-energy anime opening returns to the top of the playlist; the anime-fan and child-passenger signals are as steady as ever.",
+    "ja": "高速道路に戻り、休憩明けで落ち着いた様子。眠気は30に落ち着く。家族お気に入りの高揚感あるアニメソングが再びプレイリスト上位に。アニメ嗜好・子ども同乗のシグナルは変わらず安定。"
   },
-  "contrast_with": "preset-monotone-highway-energize",
+  "category": "situation",
+  "contrast_with": null,
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "music_playlist",
-        "radio_style",
-        "humming_karaoke"
+        "humming_karaoke",
+        "call_response_driving",
+        "quiz"
       ]
     },
     "expected_top": {
-      "must_be_oshi": true
+      "arousal_band": "high",
+      "genre": "anime",
+      "must_be_oshi": false,
+      "track_id": null
     },
-    "gradient": "arousal_down_implies_fit_up",
-    "hypothesis": "coherent low-arousal world + calm oshi + jazz usage → the calm oshi's track tops",
+    "gradient": "none",
+    "hypothesis": "post-rest, calmer drive, same child/anime-fan affinity → the same high-arousal anime track resumes the top spot",
     "override_required": false,
-    "top_fit_min": 0.33
+    "top_fit_min": 0.362
   },
-  "family": "mood_coherence",
+  "family": "journey",
+  "journey": {
+    "id": "journey-e",
+    "label": {
+      "en": "E · The family road trip",
+      "ja": "E・家族の遠出"
+    },
+    "of": 4,
+    "step": 4
+  },
   "label": {
-    "en": "Late-night congestion — wind down",
-    "ja": "深夜の渋滞 — 落ち着かせ"
+    "en": "E · 4/4 — Back on the road, calmer",
+    "ja": "E・4/4 — 再出発、落ち着いた車内"
   },
-  "preset_id": "preset-late-night-winddown",
+  "preset_id": "preset-journey-e-4-back-on-road-calmer",
   "schema_version": "1.0.0",
   "world": {
     "catalog_ref": {
@@ -43,45 +56,53 @@
       "lifecycle_stage": "active_driving_content",
       "matrix_version": "v1",
       "motion_state": "driving",
-      "trigger_purpose": "route_music"
+      "trigger_purpose": "child_passenger_experience"
     },
     "driver_profile": {
       "age_band": "30s",
       "cancelled_content_plans": [],
       "catalog_item_recency_state": {},
       "catalog_item_usage_level": {
-        "synthetic-track-0004": "high",
-        "synthetic-track-0005": "high",
-        "synthetic-track-0263": "high",
-        "synthetic-track-0267": "high"
+        "synthetic-track-0058": "high",
+        "synthetic-track-0060": "high",
+        "synthetic-track-0061": "high",
+        "synthetic-track-0077": "high",
+        "synthetic-track-0115": "high",
+        "synthetic-track-0144": "high"
       },
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
       "content_proposal_acceptance_rate": {
-        "synthetic-track-0004": 95.0,
-        "synthetic-track-0005": 95.0,
-        "synthetic-track-0263": 95.0,
-        "synthetic-track-0267": 95.0
+        "synthetic-track-0058": 95,
+        "synthetic-track-0060": 95,
+        "synthetic-track-0061": 95,
+        "synthetic-track-0077": 95,
+        "synthetic-track-0115": 95,
+        "synthetic-track-0144": 95
       },
       "content_recovery_confidence": {},
       "content_recovery_rate": {
-        "synthetic-track-0004": 90.0,
-        "synthetic-track-0005": 90.0,
-        "synthetic-track-0263": 90.0,
-        "synthetic-track-0267": 90.0
+        "synthetic-track-0058": 90,
+        "synthetic-track-0060": 90,
+        "synthetic-track-0061": 90,
+        "synthetic-track-0077": 90,
+        "synthetic-track-0115": 90,
+        "synthetic-track-0144": 90
       },
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
       "gender": "unspecified",
       "genre_affinity_v1_enabled": true,
-      "hobby_interest_tags": [],
+      "hobby_interest_tags": [
+        "anime-fan"
+      ],
       "manually_selected_items": [],
-      "oshi_id": "synthetic-artist-0004",
-      "oshi_mode": "on",
-      "oshi_registered": true,
+      "oshi_id": null,
+      "oshi_mode": "off",
+      "oshi_registered": false,
       "oshi_tags": [],
-      "oshi_type": "artist",
+      "oshi_type": null,
       "played_items": [],
       "repeated_items": [],
       "scene_content_tag_usage_level": {},
@@ -98,28 +119,28 @@
       "service_usage_level": {},
       "skipped_items": [],
       "usage_by_genre": {
-        "classical": "high",
-        "jazz": "high"
+        "anime": "high",
+        "j-pop": "med"
       }
     },
     "situation": {
       "active_service": null,
-      "child_present": false,
+      "child_present": true,
       "destination_tags": [],
-      "drowsiness_level": 45,
+      "drowsiness_level": 30,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 32,
-      "monotony_level": 20,
+      "fatigue_level": 25,
+      "monotony_level": 30,
       "motion_state": "driving",
-      "multiple_passengers": false,
-      "night_state": "night",
+      "multiple_passengers": true,
+      "night_state": "day",
       "recent_service_rejections": [],
       "rest_spot_type": "unknown",
       "road_type": "highway",
       "route_tags": [
         "highway"
       ],
-      "traffic_state": "congested"
+      "traffic_state": "normal"
     }
   }
 }

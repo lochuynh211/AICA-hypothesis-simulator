@@ -1,32 +1,44 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "A rested driver on an ordinary daytime highway, only just underway — drowsiness low (≈30, a few minutes in). With no fatigue pressure, the assistant leans on the driver's own j-pop/j-rock taste. Its partner preset is the SAME driver after a long monotonous stretch — watch the pick change.",
-    "ja": "休息十分なドライバーが昼間の高速を走り始めたところ — 眠気は低い（約30、走行数分）。疲労の圧力がないため本人のJ-POP/J-ROCK嗜好が主導。対のプリセットは長い単調区間の後の同一ドライバー — 選曲の変化に注目。"
+    "en": "The gridlock hasn't budged in a while. Boredom has turned into mild drowsiness (~58) — the assistant shifts into keep-alert mode, still riding the driver's own upbeat taste, this time surfacing an anime-flavored pick for variety.",
+    "ja": "渋滞は一向に動かない。退屈が軽い眠気（約58）に変わり、アシスタントは覚醒維持モードへ。引き続き本人のアップテンポ嗜好に基づきつつ、今回はアニメ系の一曲で変化をつける。"
   },
-  "contrast_with": "preset-long-haul-drowsy",
+  "category": "situation",
+  "contrast_with": null,
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "music_playlist",
         "humming_karaoke",
-        "radio_style"
+        "call_response_driving",
+        "quiz"
       ]
     },
     "expected_top": {
-      "genre": "j-pop"
+      "arousal_band": "high",
+      "genre": "anime",
+      "must_be_oshi": false
     },
     "gradient": "none",
-    "hypothesis": "fresh driver + own taste → an upbeat j-pop track tops (differs from the drowsy state)",
+    "hypothesis": "boredom deepens into mild drowsiness under continued gridlock → inattentive-prevention keeps serving the driver's own upbeat taste, this time an anime-tagged high-arousal track tops",
     "override_required": false,
-    "top_fit_min": 0.28
+    "top_fit_min": 0.327
   },
-  "family": "driver_state",
+  "family": "journey",
+  "journey": {
+    "id": "journey-d",
+    "label": {
+      "en": "D · Stuck in traffic",
+      "ja": "D・渋滞に巻き込まれて"
+    },
+    "of": 3,
+    "step": 2
+  },
   "label": {
-    "en": "Fresh driver — early cruise",
-    "ja": "元気なドライバー — 走り始め"
+    "en": "D · 2/3 — Jam drags on",
+    "ja": "D・2/3 — 渋滞が長引く"
   },
-  "preset_id": "preset-fresh-alert-cruise",
+  "preset_id": "preset-journey-d-2-jam-drags",
   "schema_version": "1.0.0",
   "world": {
     "catalog_ref": {
@@ -43,69 +55,63 @@
       "lifecycle_stage": "active_driving_content",
       "matrix_version": "v1",
       "motion_state": "driving",
-      "trigger_purpose": "route_music"
+      "trigger_purpose": "inattentive_driving_prevention_recovery"
     },
     "driver_profile": {
-      "age_band": "30s",
+      "age_band": "20s",
       "cancelled_content_plans": [],
       "catalog_item_recency_state": {},
       "catalog_item_usage_level": {
+        "synthetic-track-0058": "high",
         "synthetic-track-0060": "high",
-        "synthetic-track-0067": "high",
+        "synthetic-track-0061": "high",
         "synthetic-track-0076": "high",
         "synthetic-track-0077": "high",
+        "synthetic-track-0087": "high",
         "synthetic-track-0097": "high",
         "synthetic-track-0098": "high",
         "synthetic-track-0108": "high",
-        "synthetic-track-0112": "high",
         "synthetic-track-0115": "high",
         "synthetic-track-0130": "high",
-        "synthetic-track-0149": "high",
-        "synthetic-track-0158": "high",
-        "synthetic-track-0159": "high",
+        "synthetic-track-0144": "high",
         "synthetic-track-0181": "high",
-        "synthetic-track-0202": "high",
-        "synthetic-track-0217": "high"
+        "synthetic-track-0202": "high"
       },
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
       "content_proposal_acceptance_rate": {
-        "synthetic-track-0060": 95.0,
-        "synthetic-track-0067": 95.0,
-        "synthetic-track-0076": 95.0,
-        "synthetic-track-0077": 95.0,
-        "synthetic-track-0097": 95.0,
-        "synthetic-track-0098": 95.0,
-        "synthetic-track-0108": 95.0,
-        "synthetic-track-0112": 95.0,
-        "synthetic-track-0115": 95.0,
-        "synthetic-track-0130": 95.0,
-        "synthetic-track-0149": 95.0,
-        "synthetic-track-0158": 95.0,
-        "synthetic-track-0159": 95.0,
-        "synthetic-track-0181": 95.0,
-        "synthetic-track-0202": 95.0,
-        "synthetic-track-0217": 95.0
+        "synthetic-track-0058": 95,
+        "synthetic-track-0060": 95,
+        "synthetic-track-0061": 95,
+        "synthetic-track-0076": 95,
+        "synthetic-track-0077": 95,
+        "synthetic-track-0087": 95,
+        "synthetic-track-0097": 95,
+        "synthetic-track-0098": 95,
+        "synthetic-track-0108": 95,
+        "synthetic-track-0115": 95,
+        "synthetic-track-0130": 95,
+        "synthetic-track-0144": 95,
+        "synthetic-track-0181": 95,
+        "synthetic-track-0202": 95
       },
       "content_recovery_confidence": {},
       "content_recovery_rate": {
-        "synthetic-track-0060": 90.0,
-        "synthetic-track-0067": 90.0,
-        "synthetic-track-0076": 90.0,
-        "synthetic-track-0077": 90.0,
-        "synthetic-track-0097": 90.0,
-        "synthetic-track-0098": 90.0,
-        "synthetic-track-0108": 90.0,
-        "synthetic-track-0112": 90.0,
-        "synthetic-track-0115": 90.0,
-        "synthetic-track-0130": 90.0,
-        "synthetic-track-0149": 90.0,
-        "synthetic-track-0158": 90.0,
-        "synthetic-track-0159": 90.0,
-        "synthetic-track-0181": 90.0,
-        "synthetic-track-0202": 90.0,
-        "synthetic-track-0217": 90.0
+        "synthetic-track-0058": 90,
+        "synthetic-track-0060": 90,
+        "synthetic-track-0061": 90,
+        "synthetic-track-0076": 90,
+        "synthetic-track-0077": 90,
+        "synthetic-track-0087": 90,
+        "synthetic-track-0097": 90,
+        "synthetic-track-0098": 90,
+        "synthetic-track-0108": 90,
+        "synthetic-track-0115": 90,
+        "synthetic-track-0130": 90,
+        "synthetic-track-0144": 90,
+        "synthetic-track-0181": 90,
+        "synthetic-track-0202": 90
       },
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
@@ -134,18 +140,18 @@
       "service_usage_level": {},
       "skipped_items": [],
       "usage_by_genre": {
-        "j-pop": "high",
-        "j-rock": "med"
+        "anime": "med",
+        "j-pop": "high"
       }
     },
     "situation": {
       "active_service": null,
       "child_present": false,
       "destination_tags": [],
-      "drowsiness_level": 30,
+      "drowsiness_level": 58,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 26,
-      "monotony_level": 35,
+      "fatigue_level": 34,
+      "monotony_level": 55,
       "motion_state": "driving",
       "multiple_passengers": false,
       "night_state": "day",
@@ -155,7 +161,7 @@
       "route_tags": [
         "highway"
       ],
-      "traffic_state": "normal"
+      "traffic_state": "congested"
     }
   }
 }

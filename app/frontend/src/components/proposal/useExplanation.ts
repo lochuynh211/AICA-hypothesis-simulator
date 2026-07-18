@@ -1,0 +1,171 @@
+/**
+ * useExplanation (feature 019) — on-demand LLM rationale for one candidate/item.
+ *
+ * Called once per candidate/item in the Service/Content panels. It stays idle
+ * until `request()` fires (wired to the ReasonBreakdown `<details>` first open),
+ * so generation is lazy — the reviewer only pays inference for reasons they
+ * actually expand. Results are cached in a module-level map so re-expanding
+ * (and component remounts within the session) never regenerate.
+ *
+ * Provider behavior:
+ *   - 'off'     → no-op; the panel shows the deterministic template.
+ *   - 'backend' → POST /explain (provider=backend); the backend runs Ollama and
+ *                 returns the `[ja, en]` pair (or its template fallback).
+ *   - 'browser' → POST /explain (provider=browser) to fetch the SAME prompt,
+ *                 then run it through Chrome's Gemini Nano on-device and parse.
+ *
+ * Any failure resolves to `status:'error'`, so the panel falls back to the
+ * deterministic template — a failed explanation never blocks the UI.
+ */
+import { useCallback, useEffect, useRef, useState } from 'react'
+
+import { explain, type ExplainStep } from '../../api/proposalClient'
+import { nanoAvailable, runNano } from '../../lib/nano'
+
+export type ExplanationProvider = 'off' | 'backend' | 'browser'
+
+/** Resolved, render-ready explanation for one language. */
+export type AiExplanation =
+  | { status: 'loading' }
+  | { status: 'ready'; text: string; model: string; fellBack: boolean }
+  | { status: 'error' }
+
+type CacheEntry =
+  | { status: 'loading' }
+  | { status: 'ready'; ja: string; en: string; model: string; fellBack: boolean }
+  | { status: 'error' }
+
+const cache = new Map<string, CacheEntry>()
+/** Subscribers per cache key, so all hook instances sharing a key re-render together. */
+const listeners = new Map<string, Set<() => void>>()
+
+/** Bound the cache: run_id churns on every live-recompute edit, so without a
+ * cap the map would grow for the life of the tab. Superseded runs' cards are
+ * unmounted, so evicting the oldest entry is safe. */
+const MAX_CACHE = 100
+
+function cacheKey(runId: string, step: ExplainStep, targetId: string, provider: ExplanationProvider): string {
+  return `${runId}|${step}|${targetId}|${provider}`
+}
+
+function setCache(key: string, entry: CacheEntry): void {
+  cache.set(key, entry)
+  if (cache.size > MAX_CACHE) {
+    const oldest = cache.keys().next().value // Map preserves insertion order
+    if (oldest !== undefined && oldest !== key) cache.delete(oldest)
+  }
+  listeners.get(key)?.forEach((fn) => fn())
+}
+
+/** Client-side mirror of the backend `parse_bilingual` — for the Nano path. */
+export function parseBilingual(text: string): [string, string] {
+  const lines = (text || '')
+    .trim()
+    .split(/\r?\n/)
+    .map((l) => l.trim().replace(/^`+|`+$/g, '').trim())
+    .filter((l) => l.length > 0)
+  let ja: string | undefined
+  let en: string | undefined
+  const plain: string[] = []
+  for (const ln of lines) {
+    const low = ln.toLowerCase()
+    if (low.startsWith('ja:')) ja = ln.slice(3).trim()
+    else if (low.startsWith('en:')) en = ln.slice(3).trim()
+    else plain.push(ln)
+  }
+  if (ja !== undefined || en !== undefined) return [ja || en || '', en || ja || '']
+  if (plain.length >= 2) return [plain[0], plain[1]]
+  if (plain.length === 1) return [plain[0], plain[0]]
+  return ['', '']
+}
+
+async function generate(
+  runId: string,
+  step: ExplainStep,
+  targetId: string,
+  provider: 'backend' | 'browser',
+): Promise<CacheEntry> {
+  if (provider === 'backend') {
+    const res = await explain(runId, { step, targetId, provider: 'backend' })
+    const ja = res.rationale[0] ?? ''
+    const en = res.rationale[1] ?? ja
+    return { status: 'ready', ja, en, model: res.model, fellBack: res.fell_back }
+  }
+  // browser: fetch the prompt from the backend, run Nano locally, parse.
+  const res = await explain(runId, { step, targetId, provider: 'browser' })
+  if (!(await nanoAvailable())) throw new Error('nano_unavailable')
+  const raw = await runNano(res.prompt.messages)
+  const [ja, en] = parseBilingual(raw)
+  if (!ja && !en) throw new Error('empty_nano_output')
+  return { status: 'ready', ja, en, model: res.model, fellBack: false }
+}
+
+export function useExplanation(
+  runId: string | undefined,
+  step: ExplainStep,
+  targetId: string,
+  provider: ExplanationProvider,
+  lang: 'ja' | 'en',
+): { ai: AiExplanation | null; request: () => void } {
+  const [, forceRender] = useState(0)
+  const requestedRef = useRef(false)
+  // Whether this logical slot (this candidate/item card) is currently expanded.
+  // Persists ACROSS key changes (unlike requestedRef) so a live-recompute that
+  // mints a new run_id, or a provider switch, can auto-regenerate rather than
+  // silently reverting the shown explanation to the template.
+  const expandedRef = useRef(false)
+
+  const key = runId ? cacheKey(runId, step, targetId, provider) : ''
+
+  // Subscribe to cache updates for this key so async completion re-renders us.
+  useEffect(() => {
+    if (!key) return
+    const rerender = () => forceRender((n) => n + 1)
+    let set = listeners.get(key)
+    if (!set) {
+      set = new Set()
+      listeners.set(key, set)
+    }
+    set.add(rerender)
+    return () => {
+      set?.delete(rerender)
+      if (set && set.size === 0) listeners.delete(key)
+    }
+  }, [key])
+
+  const request = useCallback(() => {
+    expandedRef.current = true // remember the slot is open (even when provider='off')
+    if (!runId || provider === 'off') return
+    if (requestedRef.current || cache.has(key)) return // already generated / in flight
+    requestedRef.current = true
+    setCache(key, { status: 'loading' })
+    generate(runId, step, targetId, provider)
+      .then((entry) => setCache(key, entry))
+      .catch(() => setCache(key, { status: 'error' }))
+  }, [runId, step, targetId, provider, key])
+
+  // When the key changes (new run from a live-recompute edit, or a provider
+  // switch): reset the per-key guard and, if this card is already expanded,
+  // auto-(re)request so the shown explanation tracks the CURRENT decision.
+  useEffect(() => {
+    requestedRef.current = false
+    if (expandedRef.current) request()
+  }, [key, request])
+
+  if (provider === 'off' || !runId) return { ai: null, request }
+
+  const entry = cache.get(key)
+  let ai: AiExplanation | null = null
+  if (entry?.status === 'loading') ai = { status: 'loading' }
+  else if (entry?.status === 'error') ai = { status: 'error' }
+  else if (entry?.status === 'ready') {
+    ai = { status: 'ready', text: lang === 'ja' ? entry.ja : entry.en, model: entry.model, fellBack: entry.fellBack }
+  }
+  return { ai, request }
+}
+
+/** Test-only: clear the module cache between cases. */
+export function __clearExplanationCache(): void {
+  cache.clear()
+  listeners.clear()
+}

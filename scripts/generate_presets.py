@@ -173,9 +173,9 @@ def strong_oshi(artist_id: str, genres: dict, *, age_band: str = "30s") -> dict:
     return frag
 
 
-def make_preset(preset_id, *, family, contrast_with, label, brief,
+def make_preset(preset_id, *, category, family, contrast_with, label, brief,
                 situation=None, profile=None, control=None,
-                overrides=None, expectation) -> dict:
+                overrides=None, expectation, journey=None) -> dict:
     world = _apply(_neutral_world(), situation=situation, profile=profile, control=control)
     World(**world)  # validate against the real model; raises on any bad field
     return {
@@ -183,7 +183,9 @@ def make_preset(preset_id, *, family, contrast_with, label, brief,
         "schema_version": SCHEMA_VERSION,
         "label": label,
         "brief": brief,
+        "category": category,
         "family": family,
+        "journey": journey,
         "contrast_with": contrast_with,
         "world": world,
         "algorithm_config_overrides": overrides,
@@ -238,79 +240,37 @@ def _p(*a, **k):
     PRESETS.append(make_preset(*a, **k))
 
 
-# ---- Family A: mood coherence (1a ⇄ 1b) ----
-_p("preset-monotone-highway-energize", family="mood_coherence",
-   contrast_with="preset-late-night-winddown",
-   label={"en": "Monotone highway — energize", "ja": "単調ハイウェイ — 元気づけ"},
-   brief={"en": "Bored on a long monotonous highway with little fatigue. The driver's oshi (Official HIGE DANdism) and their high j-rock usage should push upbeat, high-energy tracks to the top — coherent 'wake me up' signals, no soothe/energize conflict.",
-          "ja": "単調な高速道路で退屈、疲労は低め。推し（Official HIGE DANdism）とJ-ROCK嗜好により、アップテンポで高エネルギーな曲が上位に来るはず。"},
-   situation={"drowsiness_level": 62, "fatigue_level": 30, "monotony_level": 90,
-              "traffic_state": "normal", "night_state": "day", "road_type": "highway"},
-   profile=strong_oshi(HIGE, {"j-rock": "high", "electronic": "med"}),
-   control=INATTENTIVE,  # monotony-induced drowsiness → keep the driver alert (not "rest")
-   expectation=_exp("coherent high-arousal world + oshi + j-rock usage → upbeat oshi track tops",
-                    top={"must_be_oshi": True, "arousal_band": "high"}, top_fit_min=0.38,
-                    gradient="arousal_up_implies_fit_up",
-                    service=["humming_karaoke", "quiz", "call_response_driving", "music_playlist"]))
+# ===========================================================================
+# STANDALONE presets — grouped by scoring category. The multi-stage rest/route
+# JOURNEYS (situation-driven timelines) are generated below from
+# scripts/preset_journeys.json. Presets folded into a journey (monotony energize,
+# night wind-down, fresh/drowsy, mountain, family, rest-stop karaoke, anime event)
+# were removed here — they now live as journey stages.
+# ===========================================================================
 
-_p("preset-late-night-winddown", family="mood_coherence",
-   contrast_with="preset-monotone-highway-energize",
-   label={"en": "Late-night congestion — wind down", "ja": "深夜の渋滞 — 落ち着かせ"},
-   brief={"en": "High fatigue, night, stuck in congestion. The driver's calm oshi (Antônio Carlos Jobim) and jazz/classical taste should surface soothing low-energy tracks — coherent 'calm me down' signals.",
-          "ja": "疲労が高く夜間・渋滞。落ち着いた推し（Antônio Carlos Jobim）とジャズ/クラシック嗜好により、癒し系の低エネルギー曲が上位に。"},
-   situation={"drowsiness_level": 45, "fatigue_level": 32, "monotony_level": 20,
-              "traffic_state": "congested", "night_state": "night", "road_type": "highway"},
-   profile=strong_oshi(JOBIM, {"jazz": "high", "classical": "high"}),
-   control=ROUTE_MUSIC,  # a calm night drive, not a rest emergency — the jazz taste leads
-   expectation=_exp("coherent low-arousal world + calm oshi + jazz usage → the calm oshi's track tops",
-                    top={"must_be_oshi": True}, top_fit_min=0.33,
-                    gradient="arousal_down_implies_fit_up",
+# ---- Situation (a standalone route context) ----
+_p("preset-coastal-cruise", category="situation", family="route_genre",
+   contrast_with=None,
+   label={"en": "Coastal cruise", "ja": "海岸クルーズ"},
+   brief={"en": "A relaxed coastal local road. Route/destination genre affinity (coast → city-pop / jazz) should lift bright coastal-friendly tracks.",
+          "ja": "のんびりした海岸沿いの一般道。ルート/目的地ジャンル親和（海岸→シティポップ/ジャズ）で明るい曲が上位に。"},
+   situation={"road_type": "local", "route_tags": ["coastal"], "destination_tags": ["coast"],
+              "monotony_level": 25, "drowsiness_level": 35, "fatigue_level": 28, "night_state": "day"},
+   profile={"genre_affinity_v1_enabled": True, "usage_by_genre": {"city pop": "high", "jazz": "med"},
+            **rich_on(genre_track_ids("city pop", 4) + genre_track_ids("jazz", 3))},
+   control=ROUTE_MUSIC,
+   expectation=_exp("coastal route/destination genre affinity → bright coastal track tops",
+                    top={"arousal_band": "mid"}, top_fit_min=0.20, gradient="none",
                     service=["music_playlist", "radio_style", "humming_karaoke"]))
 
-# ---- Family B: driver-state adaptation (fresh ⇄ drowsy, SAME driver) ----
-# Realistic replacement for the (physically-impossible) directional-hypothesis pair:
-# in the trigger model drowsiness always outpaces fatigue, so a tired driver's mood
-# block always favours HIGH arousal — "soothe wins when tired" is not a real scenario.
-# Instead: the SAME driver (same broad j-pop/j-rock taste + history), fresh vs. after a
-# long monotonous stretch. The assistant adapts its pick to the driver's state — the
-# real safety behaviour — and the #1 track changes.
-_STATE_TRACKS = list(dict.fromkeys(
-    genre_track_ids("j-pop", 10, prefer_high_arousal=True)
-    + genre_track_ids("j-pop", 6, prefer_high_arousal=False)))
-_STATE_PROF = {"genre_affinity_v1_enabled": True, "usage_by_genre": {"j-pop": "high", "j-rock": "med"},
-               **rich_on(_STATE_TRACKS)}
-_p("preset-fresh-alert-cruise", family="driver_state",
-   contrast_with="preset-long-haul-drowsy",
-   label={"en": "Fresh driver — early cruise", "ja": "元気なドライバー — 走り始め"},
-   brief={"en": "A rested driver on an ordinary daytime highway, only just underway — drowsiness low (≈30, a few minutes in). With no fatigue pressure, the assistant leans on the driver's own j-pop/j-rock taste. Its partner preset is the SAME driver after a long monotonous stretch — watch the pick change.",
-          "ja": "休息十分なドライバーが昼間の高速を走り始めたところ — 眠気は低い（約30、走行数分）。疲労の圧力がないため本人のJ-POP/J-ROCK嗜好が主導。対のプリセットは長い単調区間の後の同一ドライバー — 選曲の変化に注目。"},
-   situation={"drowsiness_level": 30, "fatigue_level": 26, "monotony_level": 35,
-              "night_state": "day", "road_type": "highway"},
-   profile=dict(_STATE_PROF), control=ROUTE_MUSIC,
-   expectation=_exp("fresh driver + own taste → an upbeat j-pop track tops (differs from the drowsy state)",
-                    top={"genre": "j-pop"}, top_fit_min=0.28, gradient="none",
-                    service=["music_playlist", "humming_karaoke", "radio_style"]))
-
-_p("preset-long-haul-drowsy", family="driver_state",
-   contrast_with="preset-fresh-alert-cruise",
-   label={"en": "Long-haul — drowsy on a monotonous highway", "ja": "長距離 — 単調な高速で眠気"},
-   brief={"en": "The SAME driver after ~50 minutes of monotonous highway: drowsiness has climbed to ≈82 — past the rest threshold, per the trigger model's realistic build-up (≈1.2/min on a monotonous road). The assistant now proposes to keep them alert, a different top pick than when they were fresh.",
-          "ja": "同一ドライバーが単調な高速を約50分走った後：眠気は約82まで上昇 — トリガーモデルの現実的な蓄積（単調路で約1.2/分）により休憩閾値を超過。覚醒維持の選曲となり、走り始めとは異なる1位に。"},
-   situation={"drowsiness_level": 82, "fatigue_level": 38, "monotony_level": 92,
-              "night_state": "day", "road_type": "highway"},
-   profile=dict(_STATE_PROF), control=INATTENTIVE,
-   expectation=_exp("drowsy state → a high-arousal j-pop track tops (different track than fresh)",
-                    top={"genre": "j-pop", "arousal_band": "high"}, top_fit_min=0.30, gradient="none",
-                    service=["humming_karaoke", "quiz", "music_playlist", "call_response_driving"]))
-
-# ---- Family C: oshi personalization (3a ⇄ 3b) ----
+# ---- Preference — oshi gate (on ⇄ off), taste (j-rock ⇄ jazz), era (Shōwa ⇄ Gen-Z) ----
 # Oshi gate isolated: oshi + genre usage but NO per-track history (rich history would
 # keep the oshi's tracks on top even with the gate off, masking the gate's own effect).
 _OSHI_SIT = {"drowsiness_level": 42, "fatigue_level": 28, "monotony_level": 40,
              "traffic_state": "normal", "night_state": "day", "road_type": "highway"}
 _OSHI_ON = {"oshi_registered": True, "oshi_mode": "on", "oshi_id": ADO, "oshi_type": "artist",
             "age_band": "30s", "genre_affinity_v1_enabled": True, "usage_by_genre": {"j-pop": "high"}}
-_p("preset-oshi-superfan", family="oshi_personalization",
+_p("preset-oshi-superfan", category="preference", family="oshi_personalization",
    contrast_with="preset-oshi-off",
    label={"en": "Oshi fan (on)", "ja": "推しファン（ON）"},
    brief={"en": "A mild, neutral situation so preference — not the road — leads. The driver has registered Ado as their oshi. The oshi signal lifts Ado's tracks to the top; the partner preset flips oshi off to isolate exactly this contribution.",
@@ -321,7 +281,7 @@ _p("preset-oshi-superfan", family="oshi_personalization",
                     top={"must_be_oshi": True}, top_fit_min=0.15, gradient="none",
                     service=["music_playlist", "humming_karaoke", "radio_style"]))
 
-_p("preset-oshi-off", family="oshi_personalization",
+_p("preset-oshi-off", category="preference", family="oshi_personalization",
    contrast_with="preset-oshi-superfan",
    label={"en": "Oshi off (same driver)", "ja": "推し OFF（同一ドライバー）"},
    brief={"en": "The same Ado fan and the same road — but with oshi mode switched OFF. With only the shared j-pop taste left, Ado no longer tops and a different track wins — isolating exactly what the oshi signal contributes.",
@@ -336,7 +296,7 @@ _p("preset-oshi-off", family="oshi_personalization",
 # ---- Family D: genre usage (4a ⇄ 4b), no oshi ----
 _GEN_SIT = {"drowsiness_level": 42, "fatigue_level": 28, "monotony_level": 45,
             "traffic_state": "normal", "night_state": "day", "road_type": "highway"}
-_p("preset-jrock-enthusiast", family="genre_usage",
+_p("preset-jrock-enthusiast", category="preference", family="genre_usage",
    contrast_with="preset-jazz-calm-listener",
    label={"en": "J-Rock enthusiast", "ja": "J-ROCK 愛好家"},
    brief={"en": "No registered oshi — taste alone. Heavy j-rock/electronic usage plus history on favourite j-rock tracks should lift the j-rock cluster to the top on an ordinary drive.",
@@ -349,7 +309,7 @@ _p("preset-jrock-enthusiast", family="genre_usage",
                     top={"genre": "j-rock"}, top_fit_min=0.30, gradient="none",
                     service=["music_playlist", "humming_karaoke", "radio_style"]))
 
-_p("preset-jazz-calm-listener", family="genre_usage",
+_p("preset-jazz-calm-listener", category="preference", family="genre_usage",
    contrast_with="preset-jrock-enthusiast",
    label={"en": "Jazz / classical calm listener", "ja": "ジャズ/クラシック 静穏派"},
    brief={"en": "Same ordinary drive, opposite taste: heavy jazz/classical usage and history. The soothing jazz/classical cluster should rise instead — same road, different driver, different winner.",
@@ -363,37 +323,8 @@ _p("preset-jazz-calm-listener", family="genre_usage",
                     top={"genre": "jazz"}, top_fit_min=0.17, gradient="none",
                     service=["music_playlist", "humming_karaoke", "radio_style"]))
 
-# ---- Family E: route→genre + negative response (5a ⇄ 5b) ----
-_p("preset-coastal-cruise", family="route_genre",
-   contrast_with="preset-mountain-pass",
-   label={"en": "Coastal cruise", "ja": "海岸クルーズ"},
-   brief={"en": "A relaxed coastal local road. Route/destination genre affinity (coast → city-pop / jazz) should lift bright coastal-friendly tracks.",
-          "ja": "のんびりした海岸沿いの一般道。ルート/目的地ジャンル親和（海岸→シティポップ/ジャズ）で明るい曲が上位に。"},
-   situation={"road_type": "local", "route_tags": ["coastal"], "destination_tags": ["coast"],
-              "monotony_level": 25, "drowsiness_level": 35, "fatigue_level": 28, "night_state": "day"},
-   profile={"genre_affinity_v1_enabled": True, "usage_by_genre": {"city pop": "high", "jazz": "med"},
-            **rich_on(genre_track_ids("city pop", 4) + genre_track_ids("jazz", 3))},
-   control=ROUTE_MUSIC,
-   expectation=_exp("coastal route/destination genre affinity → bright coastal track tops",
-                    top={"arousal_band": "mid"}, top_fit_min=0.20, gradient="none",
-                    service=["music_playlist", "radio_style", "humming_karaoke"]))
-
-_p("preset-mountain-pass", family="route_genre",
-   contrast_with="preset-coastal-cruise",
-   label={"en": "Mountain pass", "ja": "山道"},
-   brief={"en": "A winding mountain road. The algorithm's mountain response coefficient (α = −1.0) penalizes distracting high-energy tracks, and mountain genre affinity (folk / classical) surfaces calmer music — the opposite winner to the coastal cruise.",
-          "ja": "曲がりくねった山道。山道の応答係数（α=−1.0）が高エネルギー曲を抑制し、山道ジャンル親和（フォーク/クラシック）で落ち着いた曲が上位に — 海岸とは逆の結果。"},
-   situation={"road_type": "mountain", "route_tags": ["mountain"], "destination_tags": ["nature"],
-              "monotony_level": 18, "drowsiness_level": 55, "fatigue_level": 45, "night_state": "day"},
-   profile={"genre_affinity_v1_enabled": True, "usage_by_genre": {"classical": "high", "japanese folk": "high"},
-            **rich_on(genre_track_ids("classical", 5, prefer_high_arousal=False))},
-   control=ROUTE_MUSIC,
-   expectation=_exp("mountain road penalizes high-arousal; calmer track tops (different from coastal)",
-                    top={"arousal_band": "low"}, top_fit_min=0.20, gradient="arousal_down_implies_fit_up",
-                    service=["music_playlist", "radio_style", "humming_karaoke"]))
-
 # ---- Family F: era / age-band affinity (6a ⇄ 6b) ----
-_p("preset-showa-nostalgia", family="era_age",
+_p("preset-showa-nostalgia", category="preference", family="era_age",
    contrast_with="preset-genz-now",
    label={"en": "Shōwa nostalgia (50s driver)", "ja": "昭和ノスタルジー（50代ドライバー）"},
    brief={"en": "A driver in their 50s whose oshi is Seiko Matsuda (1980s). With the era/age weight raised (per-preset override), 1980s tracks win — the same neutral road, a generation earlier.",
@@ -407,7 +338,7 @@ _p("preset-showa-nostalgia", family="era_age",
                     service=["music_playlist", "humming_karaoke", "radio_style"],
                     override_required=True))
 
-_p("preset-genz-now", family="era_age",
+_p("preset-genz-now", category="preference", family="era_age",
    contrast_with="preset-showa-nostalgia",
    label={"en": "Gen-Z now (teens driver)", "ja": "Z世代（10代ドライバー）"},
    brief={"en": "A teenage driver whose oshi is Ado (2020s). Same neutral road, same raised era/age weight — but now current 2020s tracks win. Age-band alone flips the era.",
@@ -421,41 +352,9 @@ _p("preset-genz-now", family="era_age",
                     service=["music_playlist", "humming_karaoke", "radio_style"],
                     override_required=True))
 
-# ---- Family G: passenger + genre gate (standalone) ----
-_p("preset-child-family-drive", family="passenger_genre",
-   contrast_with=None,
-   label={"en": "Child on board — family drive", "ja": "子ども同乗 — 家族ドライブ"},
-   brief={"en": "A daytime family drive with a child aboard. Child genre affinity (→ anime) plus anime usage should lift kid-friendly anime tracks; energetic adult rock is de-prioritized.",
-          "ja": "子ども同乗の昼間の家族ドライブ。子ども向けジャンル親和（→アニメ）とアニメ利用で、アニメ曲が上位に。"},
-   situation={"child_present": True, "multiple_passengers": True, "road_type": "local",
-              "night_state": "day", "monotony_level": 30, "drowsiness_level": 28, "fatigue_level": 24},
-   profile={"genre_affinity_v1_enabled": True, "hobby_interest_tags": ["anime-fan"],
-            "usage_by_genre": {"anime": "high", "j-pop": "med"},
-            **rich_on(genre_track_ids("anime", 6))},
-   control={"trigger_purpose": "child_passenger_experience", "lifecycle_stage": "active_driving_content"},
-   expectation=_exp("child + anime affinity/usage → an anime track tops",
-                    top={"genre": "anime"}, top_fit_min=0.28, gradient="none",
-                    service=["music_playlist", "quiz", "ranking_creation", "humming_karaoke"]))
-
-# ---- Family H: singability + service link (standalone) ----
-_p("preset-reststop-full-karaoke", family="singability_service",
-   contrast_with=None,
-   label={"en": "Rest-stop full karaoke", "ja": "休憩中フルカラオケ"},
-   brief={"en": "Stopped at a rest area after the break, full-karaoke selected. With the karaoke service active the song-singability leaf turns on, so highly singable tracks by the driver's oshi rise.",
-          "ja": "休憩後に停車、フルカラオケ選択。カラオケサービスで歌いやすさの要素が有効化され、歌いやすい推しの曲が上位に。"},
-   situation={"drowsiness_level": 20, "fatigue_level": 15, "monotony_level": 20, "night_state": "day",
-              "road_type": "highway", "motion_state": "stopped"},
-   profile=strong_oshi(HIGE, {"j-pop": "high", "j-rock": "med"}),
-   control={"trigger_purpose": "rest_recommended", "lifecycle_stage": "after_rest_before_restart",
-            "motion_state": "stopped"},
-   expectation=_exp("full-karaoke stage + oshi → a singable oshi track tops",
-                    top={"must_be_oshi": True}, top_fit_min=0.35, gradient="none",
-                    service=["full_karaoke", "live_viewing", "oshi_reexperience", "stretch_video",
-                             "call_response_stopped"]))
-
 # ---- Family I: history mechanics (standalone x2) ----
 _REC3 = genre_track_ids("j-pop", 3, prefer_high_arousal=True)
-_p("preset-high-recovery-regular", family="history_mechanics",
+_p("preset-high-recovery-regular", category="history", family="history_mechanics",
    contrast_with=None,
    label={"en": "High-recovery regulars", "ja": "回復実績の高い定番曲"},
    brief={"en": "No oshi, but three specific tracks have an excellent recovery record with this driver. The recovery-rate signal (the strongest History lever at rest) should lift exactly those three above equally-matched peers.",
@@ -468,7 +367,7 @@ _p("preset-high-recovery-regular", family="history_mechanics",
                     service=["music_playlist", "humming_karaoke", "radio_style"]))
 
 _PLAYED3 = genre_track_ids("j-pop", 3, prefer_high_arousal=True)
-_p("preset-recently-played-fatigue", family="history_mechanics",
+_p("preset-recently-played-fatigue", category="history", family="history_mechanics",
    contrast_with=None,
    label={"en": "Recently played — novelty penalty", "ja": "直近再生 — 新鮮さペナルティ"},
    brief={"en": "Three tracks that would otherwise score well were just played minutes ago. The recency/novelty penalty pushes them down, demonstrating that the algorithm avoids immediately repeating songs.",
@@ -484,8 +383,8 @@ _p("preset-recently-played-fatigue", family="history_mechanics",
                     should_rank_below=[{"track_id": t} for t in _PLAYED3]))
 
 # ---- Family J: baseline control ⇄ multi-lever combo (11 ⇄ 12) ----
-_p("preset-coldstart-neutral", family="baseline",
-   contrast_with="preset-anime-fan-event-night",
+_p("preset-coldstart-neutral", category="baseline", family="baseline",
+   contrast_with=None,
    label={"en": "Cold-start neutral (control)", "ja": "コールドスタート中立（対照）"},
    brief={"en": "The honest baseline: an unknown driver (no oshi, no history, no genre data) on an ordinary road. Scores stay low (~0.10) BY DESIGN — a third of the model's weight has nothing to act on. This control makes every personalized preset's lift meaningful.",
           "ja": "正直な基準：未知のドライバー（推し・履歴・ジャンル情報なし）で通常走行。設計上スコアは低いまま（約0.10）— モデル重みの約1/3が働く材料を持たない。対照として他プリセットの上振れを意味づける。"},
@@ -497,19 +396,48 @@ _p("preset-coldstart-neutral", family="baseline",
                     top={"arousal_band": "high"}, top_fit_min=0.08, gradient="none",
                     service=["music_playlist", "humming_karaoke", "radio_style"]))
 
-_p("preset-anime-fan-event-night", family="combo",
-   contrast_with="preset-coldstart-neutral",
-   label={"en": "Anime fan — event night (all levers)", "ja": "アニメファン — イベントの夜（全レバー）"},
-   brief={"en": "Everything on at once: a Hatsune Miku oshi, an anime-fan hobby, anime/vocaloid usage, and an event-hall destination at night. Anime/vocaloid tracks top strongly — the opposite extreme to the cold-start control.",
-          "ja": "全レバー同時オン：初音ミク推し、アニメファン趣味、アニメ/ボカロ利用、夜のイベント会場。アニメ/ボカロ曲が強く上位に — 対照の真逆。"},
-   situation={"night_state": "night", "destination_tags": ["event", "oshi_venue"],
-              "route_tags": ["highway"], "monotony_level": 50, "drowsiness_level": 45, "fatigue_level": 30},
-   profile={**strong_oshi(MIKU, {"anime": "high", "vocaloid": "high", "j-pop": "med"}),
-            "hobby_interest_tags": ["anime-fan"]},
-   control=ROUTE_MUSIC,
-   expectation=_exp("stacked oshi + hobby + usage + destination → anime/vocaloid oshi track tops strongly",
-                    top={"must_be_oshi": True}, top_fit_min=0.37, gradient="none",
-                    service=["music_playlist", "humming_karaoke", "radio_style"]))
+
+
+# --------------------------------------------------------------------------- #
+# JOURNEY presets — multi-stage, same-driver driving timelines (grouped by
+# category). Each journey's stages were designed + VERIFIED against the real
+# content+service selectors and frozen in scripts/preset_journeys.json; every
+# stage becomes one preset, linked by the `journey` field (id/step/of/label).
+# --------------------------------------------------------------------------- #
+_JOURNEY_LETTER = {
+    "rest-monotony-day": "A", "rest-night": "B", "rest-mountain": "C",
+    "traffic-jam": "D", "family-trip": "E", "oshi-event": "F",
+}
+_JOURNEYS_DATA = json.loads((_REPO / "scripts" / "preset_journeys.json").read_text(encoding="utf-8"))
+
+
+def _add_journeys() -> None:
+    for spec in sorted(_JOURNEYS_DATA, key=lambda s: _JOURNEY_LETTER[s["journey_id"]]):
+        letter = _JOURNEY_LETTER[spec["journey_id"]]
+        jid = f"journey-{letter.lower()}"
+        of = len(spec["stages"])
+        jlabel = {"en": f"{letter} · {spec['label']['en']}", "ja": f"{letter}・{spec['label']['ja']}"}
+        driver = spec["driver_profile"]
+        for st in spec["stages"]:
+            step = st["step"]
+            pid = f"preset-journey-{letter.lower()}-{step}-{st['slug']}"
+            label = {"en": f"{letter} · {step}/{of} — {st['label']['en']}",
+                     "ja": f"{letter}・{step}/{of} — {st['label']['ja']}"}
+            e = st["expectation"]
+            expectation = _exp(e["hypothesis"], top=e.get("expected_top"), top_fit_min=e["top_fit_min"],
+                               gradient=e.get("gradient", "none"),
+                               service=e["expected_service"]["top_should_be_in"],
+                               override_required=e.get("override_required", False),
+                               should_rank_below=e.get("should_rank_below"))
+            PRESETS.append(make_preset(
+                pid, category=spec["category"], family="journey",
+                journey={"id": jid, "step": step, "of": of, "label": jlabel},
+                contrast_with=None, label=label, brief=st["brief"],
+                situation=st["situation"], profile=dict(driver), control=st["control"],
+                overrides=st.get("overrides"), expectation=expectation))
+
+
+_add_journeys()
 
 
 def write() -> list[Path]:

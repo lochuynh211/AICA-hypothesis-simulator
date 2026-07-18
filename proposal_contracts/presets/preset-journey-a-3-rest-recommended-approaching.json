@@ -1,0 +1,135 @@
+{
+  "algorithm_config_overrides": null,
+  "brief": {
+    "en": "Drowsiness has climbed to ~80, past the rest threshold. The SA/PA is 8 minutes ahead and the driver is still on the wheel — the assistant keeps the same energizing oshi track playing to bridge the gap safely.",
+    "ja": "眠気は約80まで上昇し、休憩の閾値を超えた。SA/PAまであと8分、まだ運転中。アシスタントは同じ推しの高揚曲をかけ続け、安全にたどり着くまで繋ぐ。"
+  },
+  "category": "situation",
+  "contrast_with": null,
+  "expectation": {
+    "expected_service": {
+      "top_should_be_in": [
+        "humming_karaoke",
+        "call_response_driving",
+        "quiz"
+      ]
+    },
+    "expected_top": {
+      "arousal_band": "high",
+      "genre": "j-pop",
+      "must_be_oshi": true,
+      "track_id": "synthetic-track-0176"
+    },
+    "gradient": "arousal_up_implies_fit_up",
+    "hypothesis": "drowsiness ~80 near the rest threshold, 8 min to the SA/PA, still driving → the assistant keeps pushing the same high-arousal oshi track to stay alert until the stop",
+    "override_required": false,
+    "top_fit_min": 0.4
+  },
+  "family": "journey",
+  "journey": {
+    "id": "journey-a",
+    "label": {
+      "en": "A · The Boring Commute",
+      "ja": "A・退屈な通勤"
+    },
+    "of": 4,
+    "step": 3
+  },
+  "label": {
+    "en": "A · 3/4 — Rest Recommended — 8 Minutes Out",
+    "ja": "A・3/4 — 休憩推奨 — あと8分"
+  },
+  "preset_id": "preset-journey-a-3-rest-recommended-approaching",
+  "schema_version": "1.0.0",
+  "world": {
+    "catalog_ref": {
+      "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "dataset_version": {
+        "schema_version": "1.0.0",
+        "spotify_audio_features_reference_version": "1.0.0",
+        "spotify_track_reference_version": "1.0.0"
+      }
+    },
+    "control_inputs": {
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "lifecycle_stage": "before_rest_until_stop",
+      "matrix_version": "v1",
+      "motion_state": "driving",
+      "trigger_purpose": "rest_recommended"
+    },
+    "driver_profile": {
+      "age_band": "30s",
+      "cancelled_content_plans": [],
+      "catalog_item_recency_state": {},
+      "catalog_item_usage_level": {
+        "synthetic-track-0176": "high",
+        "synthetic-track-0177": "high",
+        "synthetic-track-0183": "high"
+      },
+      "changed_from_items": [],
+      "completed_items": [],
+      "content_proposal_acceptance_confidence": {},
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0176": 88,
+        "synthetic-track-0177": 90,
+        "synthetic-track-0183": 97
+      },
+      "content_recovery_confidence": {},
+      "content_recovery_rate": {
+        "synthetic-track-0176": 85,
+        "synthetic-track-0177": 88,
+        "synthetic-track-0183": 95
+      },
+      "content_tag_recency_state": {},
+      "content_tag_usage_level": {},
+      "gender": "unspecified",
+      "genre_affinity_v1_enabled": true,
+      "hobby_interest_tags": [],
+      "manually_selected_items": [],
+      "oshi_id": "synthetic-artist-0157",
+      "oshi_mode": "on",
+      "oshi_registered": true,
+      "oshi_tags": [],
+      "oshi_type": "artist",
+      "played_items": [],
+      "repeated_items": [],
+      "scene_content_tag_usage_level": {},
+      "scene_genre_usage": null,
+      "scene_service_usage_level": {},
+      "scheduled_event_tags": [],
+      "scheduled_event_timing": null,
+      "scheduled_event_type": null,
+      "service_proposal_acceptance_confidence": {},
+      "service_proposal_acceptance_rate": {},
+      "service_recency_state": {},
+      "service_recovery_confidence": {},
+      "service_recovery_rate": {},
+      "service_usage_level": {},
+      "skipped_items": [],
+      "usage_by_genre": {
+        "j-pop": "high",
+        "j-rock": "med"
+      }
+    },
+    "situation": {
+      "active_service": null,
+      "child_present": false,
+      "destination_tags": [],
+      "drowsiness_level": 80,
+      "estimated_min_until_rest_spot": 8,
+      "fatigue_level": 35,
+      "monotony_level": 90,
+      "motion_state": "driving",
+      "multiple_passengers": false,
+      "night_state": "day",
+      "recent_service_rejections": [],
+      "rest_spot_type": "sa_pa",
+      "road_type": "highway",
+      "route_tags": [
+        "highway"
+      ],
+      "traffic_state": "normal"
+    }
+  }
+}

@@ -4,7 +4,7 @@ Test-Cases).
 Covers (data-model.md §Preset/§PresetSummary, contracts/preset_endpoints.md):
   - all 18 committed presets load and validate with no errors;
   - each loaded preset round-trips through the Preset model unchanged;
-  - PresetSummary projection shape ({preset_id, label, brief, family,
+  - PresetSummary projection shape ({preset_id, label, brief, category, family, journey,
     contrast_with, hypothesis}), sorted by preset_id;
   - a deliberately malformed preset (built in a tmp dir fixture) is REJECTED
     with a visible error (``PresetLoadError`` raised at construction) —
@@ -22,26 +22,7 @@ from aica_api.services.preset_store import PresetLoadError, PresetStore
 
 _PRESETS_DIR = settings.proposal_contracts_dir / "presets"
 
-_EXPECTED_PRESET_IDS = {
-    "preset-anime-fan-event-night",
-    "preset-child-family-drive",
-    "preset-coastal-cruise",
-    "preset-coldstart-neutral",
-    "preset-fresh-alert-cruise",
-    "preset-long-haul-drowsy",
-    "preset-genz-now",
-    "preset-high-recovery-regular",
-    "preset-jazz-calm-listener",
-    "preset-jrock-enthusiast",
-    "preset-late-night-winddown",
-    "preset-monotone-highway-energize",
-    "preset-mountain-pass",
-    "preset-oshi-off",
-    "preset-oshi-superfan",
-    "preset-recently-played-fatigue",
-    "preset-reststop-full-karaoke",
-    "preset-showa-nostalgia",
-}
+_EXPECTED_PRESET_IDS = {p.stem for p in _PRESETS_DIR.glob("preset-*.json")}
 
 
 @pytest.fixture()
@@ -54,11 +35,11 @@ def store() -> PresetStore:
 # ---------------------------------------------------------------------------
 
 
-def test_exactly_the_18_committed_presets_are_present(store: PresetStore):
+def test_exactly_the_committed_presets_are_present(store: PresetStore):
     summaries = store.list_summaries()
     ids = {s.preset_id for s in summaries}
     assert ids == _EXPECTED_PRESET_IDS
-    assert len(summaries) == 18
+    assert len(summaries) == 32
 
 
 @pytest.mark.parametrize("preset_id", sorted(_EXPECTED_PRESET_IDS))

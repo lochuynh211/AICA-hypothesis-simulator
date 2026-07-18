@@ -133,6 +133,11 @@ from aica_api.models.proposal.evidence import (  # noqa: F401
     EvidenceError,
     AlgorithmEvidence,
 )
+from aica_api.models.proposal.explanation import (  # noqa: F401
+    ExplainMessage,
+    ExplanationPrompt,
+    Explanation,
+)
 
 # ---------------------------------------------------------------------------
 # Re-exports — P1 proposal run / run-log contracts (T009 / T011)
@@ -256,6 +261,10 @@ __all__ = [
     "JourneyState",
     "EvidenceError",
     "AlgorithmEvidence",
+    # explanation / LLM-rationale narration (feature 019)
+    "ExplainMessage",
+    "ExplanationPrompt",
+    "Explanation",
     # proposal run / run-log (P1)
     "ProposalRun",
     "ProposalRunLog",

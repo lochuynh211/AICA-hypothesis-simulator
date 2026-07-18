@@ -60,7 +60,9 @@ class PresetStore:
                 preset_id=preset.preset_id,
                 label=preset.label,
                 brief=preset.brief,
+                category=preset.category,
                 family=preset.family,
+                journey=preset.journey,
                 contrast_with=preset.contrast_with,
                 hypothesis=preset.expectation.hypothesis,
             )

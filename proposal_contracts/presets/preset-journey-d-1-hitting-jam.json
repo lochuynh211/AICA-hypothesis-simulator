@@ -1,0 +1,167 @@
+{
+  "algorithm_config_overrides": null,
+  "brief": {
+    "en": "Rush hour just turned into gridlock. Drowsiness is still low (~40) and patience is fine — the driver wants upbeat music to pass the time, and their strong J-pop/anime taste should carry an energetic track straight to the top.",
+    "ja": "ラッシュアワーが渋滞に変わった。眠気はまだ低く（約40）、余裕もある。飽きしのぎにアップテンポな音楽を求めており、強いJ-POP/アニメ嗜好によりエネルギッシュな曲が上位に来るはず。"
+  },
+  "category": "situation",
+  "contrast_with": null,
+  "expectation": {
+    "expected_service": {
+      "top_should_be_in": [
+        "humming_karaoke",
+        "call_response_driving",
+        "quiz"
+      ]
+    },
+    "expected_top": {
+      "arousal_band": "high",
+      "genre": "j-pop",
+      "must_be_oshi": false
+    },
+    "gradient": "none",
+    "hypothesis": "rush-hour gridlock, low drowsiness, strong j-pop/anime usage+history → an upbeat (high-arousal) j-pop track tops for route_music",
+    "override_required": false,
+    "top_fit_min": 0.308
+  },
+  "family": "journey",
+  "journey": {
+    "id": "journey-d",
+    "label": {
+      "en": "D · Stuck in traffic",
+      "ja": "D・渋滞に巻き込まれて"
+    },
+    "of": 3,
+    "step": 1
+  },
+  "label": {
+    "en": "D · 1/3 — Hitting the jam",
+    "ja": "D・1/3 — 渋滞に突入"
+  },
+  "preset_id": "preset-journey-d-1-hitting-jam",
+  "schema_version": "1.0.0",
+  "world": {
+    "catalog_ref": {
+      "dataset_hash": "sha256:83d8079c7a81bc6afbd01cdba65fe2330de66b900a113723814fa938fce516cd",
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "dataset_version": {
+        "schema_version": "1.0.0",
+        "spotify_audio_features_reference_version": "1.0.0",
+        "spotify_track_reference_version": "1.0.0"
+      }
+    },
+    "control_inputs": {
+      "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
+      "lifecycle_stage": "active_driving_content",
+      "matrix_version": "v1",
+      "motion_state": "driving",
+      "trigger_purpose": "route_music"
+    },
+    "driver_profile": {
+      "age_band": "20s",
+      "cancelled_content_plans": [],
+      "catalog_item_recency_state": {},
+      "catalog_item_usage_level": {
+        "synthetic-track-0058": "high",
+        "synthetic-track-0060": "high",
+        "synthetic-track-0061": "high",
+        "synthetic-track-0076": "high",
+        "synthetic-track-0077": "high",
+        "synthetic-track-0087": "high",
+        "synthetic-track-0097": "high",
+        "synthetic-track-0098": "high",
+        "synthetic-track-0108": "high",
+        "synthetic-track-0115": "high",
+        "synthetic-track-0130": "high",
+        "synthetic-track-0144": "high",
+        "synthetic-track-0181": "high",
+        "synthetic-track-0202": "high"
+      },
+      "changed_from_items": [],
+      "completed_items": [],
+      "content_proposal_acceptance_confidence": {},
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0058": 95,
+        "synthetic-track-0060": 95,
+        "synthetic-track-0061": 95,
+        "synthetic-track-0076": 95,
+        "synthetic-track-0077": 95,
+        "synthetic-track-0087": 95,
+        "synthetic-track-0097": 95,
+        "synthetic-track-0098": 95,
+        "synthetic-track-0108": 95,
+        "synthetic-track-0115": 95,
+        "synthetic-track-0130": 95,
+        "synthetic-track-0144": 95,
+        "synthetic-track-0181": 95,
+        "synthetic-track-0202": 95
+      },
+      "content_recovery_confidence": {},
+      "content_recovery_rate": {
+        "synthetic-track-0058": 90,
+        "synthetic-track-0060": 90,
+        "synthetic-track-0061": 90,
+        "synthetic-track-0076": 90,
+        "synthetic-track-0077": 90,
+        "synthetic-track-0087": 90,
+        "synthetic-track-0097": 90,
+        "synthetic-track-0098": 90,
+        "synthetic-track-0108": 90,
+        "synthetic-track-0115": 90,
+        "synthetic-track-0130": 90,
+        "synthetic-track-0144": 90,
+        "synthetic-track-0181": 90,
+        "synthetic-track-0202": 90
+      },
+      "content_tag_recency_state": {},
+      "content_tag_usage_level": {},
+      "gender": "unspecified",
+      "genre_affinity_v1_enabled": true,
+      "hobby_interest_tags": [],
+      "manually_selected_items": [],
+      "oshi_id": null,
+      "oshi_mode": "off",
+      "oshi_registered": false,
+      "oshi_tags": [],
+      "oshi_type": null,
+      "played_items": [],
+      "repeated_items": [],
+      "scene_content_tag_usage_level": {},
+      "scene_genre_usage": null,
+      "scene_service_usage_level": {},
+      "scheduled_event_tags": [],
+      "scheduled_event_timing": null,
+      "scheduled_event_type": null,
+      "service_proposal_acceptance_confidence": {},
+      "service_proposal_acceptance_rate": {},
+      "service_recency_state": {},
+      "service_recovery_confidence": {},
+      "service_recovery_rate": {},
+      "service_usage_level": {},
+      "skipped_items": [],
+      "usage_by_genre": {
+        "anime": "med",
+        "j-pop": "high"
+      }
+    },
+    "situation": {
+      "active_service": null,
+      "child_present": false,
+      "destination_tags": [],
+      "drowsiness_level": 40,
+      "estimated_min_until_rest_spot": null,
+      "fatigue_level": 28,
+      "monotony_level": 15,
+      "motion_state": "driving",
+      "multiple_passengers": false,
+      "night_state": "day",
+      "recent_service_rejections": [],
+      "rest_spot_type": "unknown",
+      "road_type": "highway",
+      "route_tags": [
+        "highway"
+      ],
+      "traffic_state": "congested"
+    }
+  }
+}

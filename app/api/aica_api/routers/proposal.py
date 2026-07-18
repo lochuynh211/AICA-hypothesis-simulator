@@ -35,7 +35,7 @@ from __future__ import annotations
 import copy
 import os
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Response
 from pydantic import BaseModel, ValidationError
@@ -54,6 +54,7 @@ from aica_api.models.proposal.enums import (
 )
 from aica_api.models.proposal.events import DiscreteEvent
 from aica_api.models.proposal.evidence import AlgorithmEvidence
+from aica_api.models.proposal.explanation import Explanation, ExplanationPrompt
 from aica_api.models.proposal.journey import JourneyState
 from aica_api.models.proposal.journey_action import JourneyAction
 from aica_api.models.proposal.journey_preview import JourneyPreview
@@ -72,6 +73,7 @@ from aica_api.models.proposal.world import (
     SetupSnapshotOrigin,
     World,
 )
+from aica_api.services import explanation_builder, ollama_client
 from aica_api.services import proposal_run_manager as prm
 from aica_api.services.algorithm_config import merge_algorithm_config
 from aica_api.services.dataset_catalog_registry import DatasetCatalogRegistry
@@ -1870,3 +1872,190 @@ def get_journey_preview(run_id: str) -> JourneyPreview:
     if run_log is None:
         raise HTTPException(status_code=404, detail=f"Proposal run {run_id!r} not found")
     return build_journey_preview(run_log)
+
+
+# ---------------------------------------------------------------------------
+# POST /api/proposal/runs/{run_id}/explain — feature 019, LLM rationale
+#
+# NARRATION LAYER ONLY. Regenerates the single human-readable rationale
+# sentence for one already-decided candidate/item, grounded strictly in the
+# persisted decision trace. It NEVER re-runs a selector, changes a score, or
+# touches ranking/feature contributions (Constitution I/II/V). The SAME
+# server-built prompt is used by both providers so backend-model vs Gemini-Nano
+# is an apples-to-apples comparison.
+#
+#   provider=backend  → run local Ollama; on ANY failure fall back to the
+#                       deterministic template (never disguised); append an
+#                       honest, append-only Explanation record and return it.
+#   provider=browser  → build-only: return the prompt; the client runs Gemini
+#                       Nano on-device. Display-only, nothing is persisted.
+# ---------------------------------------------------------------------------
+
+
+class ExplainRequestBody(BaseModel):
+    step: Literal["service", "content"]
+    target_id: str
+    provider: Literal["backend", "browser"]
+
+
+class ExplainResponse(BaseModel):
+    step: Literal["service", "content"]
+    target_id: str
+    requested_provider: Literal["backend", "browser"]
+    # Filled for the backend/template providers; empty for browser (the client
+    # runs `prompt` through Gemini Nano and fills it in on-device).
+    rationale: list[str]
+    provider_used: Literal["backend", "browser", "template"]
+    model: str
+    fell_back: bool
+    error: str | None
+    prompt: ExplanationPrompt
+
+
+def _resolve_song_name(run_log: ProposalRunLog, track_id: str) -> str | None:
+    """Best-effort catalog lookup of a song's display title (feature 019).
+
+    Fully defensive — any failure (legacy run without a dataset, quarantined
+    catalog, unknown id) simply returns ``None`` and the reason omits the title.
+    """
+    dataset_id = None
+    try:
+        if run_log.world is not None and run_log.world.catalog_ref is not None:
+            dataset_id = run_log.world.catalog_ref.dataset_id
+    except Exception:  # noqa: BLE001
+        dataset_id = None
+    if not dataset_id and run_log.setup_snapshot is not None:
+        dataset_id = getattr(run_log.setup_snapshot, "dataset_id", None)
+    if not dataset_id:
+        return None
+    try:
+        catalog_map = _catalog_map_for_dataset(dataset_id) or {}
+        song = catalog_map.get(track_id)
+        if song:
+            return (song.get("spotify_track") or {}).get("name")
+    except Exception:  # noqa: BLE001
+        return None
+    return None
+
+
+def _find_explain_target(
+    run_log: ProposalRunLog, step: str, target_id: str
+) -> tuple[AlgorithmEvidence | None, dict | None]:
+    """Locate the latest non-error evidence for ``step`` and the candidate/item
+    matching ``target_id`` within its recorded output (append-only, newest wins)."""
+    ev = next(
+        (e for e in reversed(run_log.evidence) if e.step == step and e.error is None and e.output),
+        None,
+    )
+    if ev is None:
+        return None, None
+    if step == "service":
+        items = ev.output.get("ranked_candidates", []) or []
+        key = "candidate_id"
+    else:
+        items = ev.output.get("ordered_items", []) or []
+        key = "item_id"
+    target = next((it for it in items if str(it.get(key)) == target_id), None)
+    return ev, target
+
+
+@router.post("/api/proposal/runs/{run_id}/explain")
+def explain_run(run_id: str, body: ExplainRequestBody) -> ExplainResponse:
+    run_log = prm.get_run(run_id, settings.proposal_runs_dir)
+    if run_log is None:
+        raise HTTPException(status_code=404, detail=f"Proposal run {run_id!r} not found")
+
+    ev, target = _find_explain_target(run_log, body.step, body.target_id)
+    if ev is None:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "no_decision", "message": f"No {body.step} decision recorded for this run"},
+        )
+    if target is None:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "unknown_target",
+                "message": f"{body.step} target {body.target_id!r} not found in the recorded decision",
+            },
+        )
+
+    context: dict[str, Any] = {
+        "trigger_purpose": ev.input_snapshot.get("trigger_purpose"),
+        "lifecycle_stage": ev.input_snapshot.get("lifecycle_stage"),
+    }
+    # feature 019 (Maximal grounding) — best-effort song title for content, so
+    # the reason can name the track. Fully optional: any failure just omits it.
+    if body.step == "content":
+        context["song_name"] = _resolve_song_name(run_log, body.target_id)
+
+    prompt = explanation_builder.build_explanation_prompt(body.step, target, context)
+    p_hash = explanation_builder.prompt_hash(prompt)
+
+    # ── Browser (Gemini Nano) — build-only, no inference, no persistence ────
+    if body.provider == "browser":
+        return ExplainResponse(
+            step=body.step,
+            target_id=body.target_id,
+            requested_provider="browser",
+            rationale=[],
+            provider_used="browser",
+            model="gemini-nano",
+            fell_back=False,
+            error=None,
+            prompt=prompt,
+        )
+
+    # ── Backend (Ollama) — generate; fall back to template on any failure ───
+    messages = [{"role": m.role, "content": m.content} for m in prompt.messages]
+    generated_at = datetime.now(timezone.utc).isoformat()
+    try:
+        raw = ollama_client.generate(
+            messages,
+            model=settings.ollama_model,
+            base_url=settings.ollama_base_url,
+            timeout=settings.ollama_timeout_sec,
+        )
+        parsed = explanation_builder.parse_bilingual(raw)
+        # Reject blank output OR a weak model that just echoed the prompt facts
+        # (see explanation_builder.response_is_usable) — fall back honestly to
+        # the template rather than presenting echoed text as a real generation.
+        if not explanation_builder.response_is_usable(parsed, prompt):
+            raise ollama_client.OllamaError("unusable_response", "Model output was empty or echoed the prompt")
+        rationale = parsed
+        provider_used: Literal["backend", "template"] = "backend"
+        model = settings.ollama_model
+        fell_back = False
+        error: str | None = None
+    except ollama_client.OllamaError as exc:
+        rationale = explanation_builder.template_rationale(body.step, target)
+        provider_used = "template"
+        model = "template"
+        fell_back = True
+        error = exc.error_type
+
+    explanation = Explanation(
+        step=body.step,
+        target_id=body.target_id,
+        requested_provider="backend",
+        provider_used=provider_used,
+        model=model,
+        rationale=rationale,
+        fell_back=fell_back,
+        error=error,
+        prompt_hash=p_hash,
+        generated_at=generated_at,
+    )
+    prm.append_explanation(run_id, explanation, settings.proposal_runs_dir)
+
+    return ExplainResponse(
+        step=body.step,
+        target_id=body.target_id,
+        requested_provider="backend",
+        rationale=rationale,
+        provider_used=provider_used,
+        model=model,
+        fell_back=fell_back,
+        error=error,
+        prompt=prompt,
+    )

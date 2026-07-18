@@ -47,6 +47,7 @@ import HyperparamMatrix from '../HyperparamMatrix'
 import ReasonBreakdown, { type ReasonRow } from '../ReasonBreakdown'
 import ContentExplainability, { hasContentExplainability } from '../ContentExplainability'
 import ContentHierarchyTable from '../ContentHierarchyTable'
+import { useExplanation, type ExplanationProvider } from '../useExplanation'
 
 // Setup-section grouping (mirrors the service panel). Keys not listed anywhere
 // fall to a collapsed "Advanced" disclosure; the removed keys are dropped.
@@ -149,6 +150,36 @@ function contentRows(item: OrderedItem): ReasonRow[] {
     w: fc.effective_weight,
     contribution: fc.contribution,
   }))
+}
+
+/** One plan item's ReasonBreakdown, wired to the explanation hook (own
+ * component so the per-item hook obeys the rules of hooks inside the `.map()`).
+ * Provider 'off' → inert hook, deterministic template shows. */
+function ContentReason({
+  item,
+  runId,
+  provider,
+  lang,
+}: {
+  item: OrderedItem
+  runId: string | undefined
+  provider: ExplanationProvider
+  lang: 'ja' | 'en'
+}) {
+  const { ai, request } = useExplanation(runId, 'content', item.item_id, provider, lang)
+  return (
+    <ReasonBreakdown
+      rows={contentRows(item)}
+      supportingFeatureIds={[]}
+      opposingFeatureIds={[]}
+      rationale={item.rationale}
+      lang={lang}
+      variant="content"
+      showTable={!hasContentExplainability(item)}
+      aiExplanation={ai}
+      onExpand={request}
+    />
+  )
 }
 
 export default function ContentProposalPanel() {
@@ -404,14 +435,11 @@ export default function ContentProposalPanel() {
                     </span>
                   )}
                 </div>
-                <ReasonBreakdown
-                  rows={contentRows(item)}
-                  supportingFeatureIds={[]}
-                  opposingFeatureIds={[]}
-                  rationale={item.rationale}
+                <ContentReason
+                  item={item}
+                  runId={state.runLog?.run_id}
+                  provider={state.explanationProvider}
                   lang={lang}
-                  variant="content"
-                  showTable={!hasContentExplainability(item)}
                 />
                 <ContentExplainability item={item} lang={lang} />
               </div>

@@ -4,7 +4,8 @@
     "en": "The honest baseline: an unknown driver (no oshi, no history, no genre data) on an ordinary road. Scores stay low (~0.10) BY DESIGN — a third of the model's weight has nothing to act on. This control makes every personalized preset's lift meaningful.",
     "ja": "正直な基準：未知のドライバー（推し・履歴・ジャンル情報なし）で通常走行。設計上スコアは低いまま（約0.10）— モデル重みの約1/3が働く材料を持たない。対照として他プリセットの上振れを意味づける。"
   },
-  "contrast_with": "preset-anime-fan-event-night",
+  "category": "baseline",
+  "contrast_with": null,
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
@@ -22,6 +23,7 @@
     "top_fit_min": 0.08
   },
   "family": "baseline",
+  "journey": null,
   "label": {
     "en": "Cold-start neutral (control)",
     "ja": "コールドスタート中立（対照）"

@@ -196,6 +196,13 @@ export type ProposalStoreState = {
   contentParameterOverrides: Record<string, unknown>
   contentHyperparameterOverrides: Record<string, unknown>
 
+  /** feature 019 — which pipeline (if any) writes the natural-language
+   * rationale sentence shown in each candidate/item ReasonBreakdown. Session-
+   * only (mirrors uiLanguage). 'off' keeps the deterministic template;
+   * 'backend' calls the local Ollama model server-side; 'browser' runs Chrome's
+   * on-device Gemini Nano. Never influences any score or ranking. */
+  explanationProvider: 'off' | 'backend' | 'browser'
+
   // ── Run state (populated by createRun / selectService) ──────────────────
   runLog: ProposalRunLog | null
   error: string | null
@@ -225,6 +232,7 @@ const initialState: ProposalStoreState = {
   contentPackageId: null,
   contentParameterOverrides: {},
   contentHyperparameterOverrides: {},
+  explanationProvider: 'off',
   runLog: null,
   error: null,
 }
@@ -286,6 +294,8 @@ export type ProposalStoreAction =
   | { type: 'SET_CONTENT_PACKAGE'; packageId: string }
   | { type: 'SET_CONTENT_PARAMETER'; key: string; value: unknown }
   | { type: 'SET_CONTENT_HYPERPARAMETER'; key: string; value: unknown }
+  /** feature 019 — pick the explanation source (off/backend/browser). */
+  | { type: 'SET_EXPLANATION_PROVIDER'; provider: 'off' | 'backend' | 'browser' }
   | { type: 'RUN_CREATED'; runLog: ProposalRunLog }
   | { type: 'CONTENT_SELECTED'; runLog: ProposalRunLog }
   /** A journey action (accept/reject/.../motion_change) was applied and the
@@ -497,6 +507,9 @@ export function proposalReducer(
 
     case 'MODE_SET':
       return { ...state, mode: action.mode }
+
+    case 'SET_EXPLANATION_PROVIDER':
+      return { ...state, explanationProvider: action.provider }
 
     case 'SET_SERVICE_PARAMETER':
       return {
