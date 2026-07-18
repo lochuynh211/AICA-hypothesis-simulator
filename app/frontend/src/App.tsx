@@ -5,6 +5,7 @@ import { AppModeProvider, useAppMode } from './state/appMode'
 import { ProposalStoreProvider } from './state/proposalStore'
 import AppShell from './components/layout/AppShell'
 import ProposalShell from './components/proposal/ProposalShell'
+import MergedShell from './components/merged/MergedShell'
 import { t, type UiLanguage } from './i18n/t'
 
 type State =
@@ -79,9 +80,10 @@ export function AppModeToggle({ lang = 'en' }: { lang?: UiLanguage } = {}) {
  *  unmodified Trigger Simulator (RunStoreProvider + AppShell); 'proposal'
  *  renders the standalone Proposal Simulator (ProposalStoreProvider + the
  *  real 3-panel ProposalShell, P1 T029) — isolated from the trigger's
- *  RunStoreProvider/AppShell; 'merged' renders the Combined Simulator (020) —
- *  for now a stub node, the real shell (wrapped in a MergedCoordinatorProvider
- *  that mounts both stores' concerns) lands in Task 6/7. */
+ *  RunStoreProvider/AppShell; 'merged' renders the Combined Simulator (020)
+ *  shell — `MergedShell` (Task 6), a 20:60:20 3-panel layout with stub
+ *  panels for now. The real panels + the `MergedCoordinatorProvider` that
+ *  mounts both stores' concerns land in later 020 tasks (7+). */
 function AppBody({ healthStatus }: { healthStatus?: string }) {
   const { appMode } = useAppMode()
   let body: React.ReactNode
@@ -98,7 +100,7 @@ function AppBody({ healthStatus }: { healthStatus?: string }) {
       </ProposalStoreProvider>
     )
   } else {
-    body = <div data-testid="merged-shell" />
+    body = <MergedShell />
   }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
