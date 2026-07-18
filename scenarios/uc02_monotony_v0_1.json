@@ -1,0 +1,136 @@
+{
+  "_comment": [
+    "Scenario: UC-02 monotonous night highway drive intended to fire the",
+    "aica_transparent_hybrid_trigger_v1 package's MONOTONY_PROPOSAL (not",
+    "REST_PROPOSAL). Feature 020 (merged simulator), Slice-3.",
+    "",
+    "Recipe (see docs/superpowers/plans/2026-07-18-merged-simulator-slice3-monotony.md):",
+    "a long uninterrupted highway route (>=60 continuous minutes before the",
+    "single required rest facility, placed EARLY so it never re-enters the",
+    "'nextRestSpotMin' window once passed), is_night=true + familiar_route=true",
+    "(both feed monotony_prevention_score directly), a short intermittent",
+    "traffic jam early on (pushes env_load, shared by monotony_prevention_score",
+    "AND base_safety_risk, but only 0.10-weighted in the latter), and",
+    "driver_signal_params tuned for SLOW drowsiness/fatigue growth so",
+    "base_safety_risk stays far below minimum_risk_for_rest_bonus (0.45) and",
+    "threshold_suggest (0.7) for the whole run -- REST never wins priority.",
+    "allowed_actions includes decline (+ acknowledge) so MONOTONY_PROPOSAL is",
+    "actionable and pauses the run like REST does."
+  ],
+  "id": "uc02_monotony_v0_1",
+  "version": "0.1.0",
+  "type": "uc01_fatigue",
+  "persona": {
+    "name": "Aoi Sato",
+    "description": "uc-02-01"
+  },
+  "route_intent": {
+    "rest_facility": {
+      "label": {
+        "ja": "深夜高速 休憩所",
+        "en": "Late-Night Highway Rest Area"
+      }
+    },
+    "segments": [
+      {
+        "id": "seg_start",
+        "name": {"ja": "出発地", "en": "Start"},
+        "type": "start",
+        "at": 0.0,
+        "speed_band": "slow",
+        "length_band": "short",
+        "is_rest_facility": false
+      },
+      {
+        "id": "seg_rest",
+        "name": {"ja": "深夜高速 休憩所", "en": "Late-Night Highway Rest Area"},
+        "type": "rest",
+        "at": 0.03,
+        "speed_band": "slow",
+        "length_band": "short",
+        "is_rest_facility": true
+      },
+      {
+        "id": "seg_highway",
+        "name": {"ja": "深夜高速区間（単調）", "en": "Late-Night Highway (Monotonous)"},
+        "type": "highway",
+        "at": 0.06,
+        "speed_band": "fast",
+        "length_band": "long",
+        "is_rest_facility": false
+      },
+      {
+        "id": "seg_end",
+        "name": {"ja": "目的地", "en": "Destination"},
+        "type": "end",
+        "at": 1.0,
+        "speed_band": "slow",
+        "length_band": "short",
+        "is_rest_facility": false
+      }
+    ]
+  },
+  "initial_state": {
+    "drowsiness_level": 5,
+    "fatigue_level": 5
+  },
+  "driver_signal_params": {
+    "id": "monotony_driver_v1",
+    "drowsiness_model": {
+      "base_growth_per_min": 0.10,
+      "night_add_per_min": 0.05,
+      "monotony_add_per_min": 0.05,
+      "traffic_jam_add_per_min": 0.05
+    },
+    "fatigue_model": {
+      "base_growth_per_min": 0.08,
+      "continuous_driving_add_per_min_after_60_min": 0.05,
+      "mountain_road_add_per_min": 0.0,
+      "traffic_jam_add_per_min": 0.02
+    },
+    "recovery_model": {
+      "sleep": {"drowsiness": 60.0, "fatigue": 60.0},
+      "audio_karaoke": {"drowsiness": 25.0, "fatigue": 25.0},
+      "stretch": {"drowsiness": 25.0, "fatigue": 25.0}
+    }
+  },
+  "anomaly_signal_params": {
+    "lambda_base": 0.0,
+    "lambda_gain": 0.0,
+    "theta": 100.0,
+    "window_min": 15.0
+  },
+  "run_seed_default": 42,
+  "speed_profile": {
+    "normal_road_kph": 60,
+    "highway_kph": 100,
+    "mountain_road_kph": 40,
+    "sightseeing_road_kph": 30,
+    "traffic_jam_kph": 20
+  },
+  "is_night": true,
+  "child_passenger": false,
+  "familiar_route": true,
+  "weather_risk": 0,
+  "presets": {
+    "total_route_distance_km": 160,
+    "traffic_events": [
+      {
+        "id": "jam_early_highway",
+        "start_min": 5,
+        "duration_min": 6,
+        "affected_segment_id": "seg_highway",
+        "speed_kph": 20
+      }
+    ],
+    "weather_events": []
+  },
+  "event_presets": {
+    "signal_duration_at_trigger": "persistent"
+  },
+  "total_duration_seconds": 7200,
+  "tick_seconds": 180,
+  "allowed_actions": ["acknowledge", "decline"],
+  "recovery_options": [],
+  "review_focus": "UC-02-01"
+}
