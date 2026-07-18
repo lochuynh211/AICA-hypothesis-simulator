@@ -152,6 +152,87 @@ function firedTickWithEvents(tickIndex: number): MergedTickResponse {
   }
 }
 
+/** A trigger-only tick carrying a `recovery_phase` (no proposal payload) — the
+ * driver is mid-recovery; the trigger keeps ticking through the recovery
+ * engine's phases while the paired proposal run (if any) is untouched. */
+function recoveryPhaseTick(tickIndex: number, phase: string): MergedTickResponse {
+  return {
+    trigger: {
+      decision: restProposalDecision,
+      error: null,
+      paused: true,
+      completed: false,
+      tick_index: tickIndex,
+      route_fraction: tickIndex / 100,
+      distance_km: null,
+      speed_kph: 0,
+      motion_state: 'STOPPED',
+      recovery_phase: phase,
+      is_traffic_jam: false,
+      segment_type: 'highway',
+    },
+    proposal: null,
+    correlation: null,
+  }
+}
+
+/** A tick whose paired proposal run has advanced through the whole
+ * rest-journey (arrive → nap → recover → after-rest recompute) — Task 3's
+ * server-side orchestrator folds all of this into the proposal log the
+ * frontend receives, so a single tick carrying all four events is a faithful
+ * fixture for this panel's rendering concern. */
+function restJourneyTick(tickIndex: number): MergedTickResponse {
+  return {
+    trigger: {
+      decision: restProposalDecision,
+      error: null,
+      paused: true,
+      completed: false,
+      tick_index: tickIndex,
+      route_fraction: tickIndex / 100,
+      distance_km: null,
+      speed_kph: 0,
+      motion_state: 'STOPPED',
+      recovery_phase: 'resuming',
+      is_traffic_jam: false,
+      segment_type: 'highway',
+    },
+    proposal: baseProposalLog({
+      status: 'content_completed',
+      journey_state: {
+        lifecycle_stage: 'after_rest_before_restart',
+        motion_state: 'stopped',
+        active_service_id: null,
+        active_plan_id: null,
+      },
+      events: [
+        { event_type: 'REST_SPOT_ARRIVED', at: '2026-07-18T00:01:00Z', payload: {} },
+        { event_type: 'REST_STARTED', at: '2026-07-18T00:02:00Z', payload: {} },
+        {
+          event_type: 'REST_COMPLETED',
+          at: '2026-07-18T00:20:00Z',
+          payload: { drowsiness_level: 10, fatigue_level: 15 },
+        },
+        {
+          event_type: 'RECOMPUTED',
+          at: '2026-07-18T00:20:01Z',
+          payload: { from_opportunity_id: 'op_1', to_opportunity_id: 'op_2' },
+        },
+      ],
+    }),
+    correlation: {
+      trigger_tick_index: tickIndex,
+      proposal_run_id: 'prun_20260718-000000_abcdef',
+      proposal_event_ids: [
+        'REST_SPOT_ARRIVED@2026-07-18T00:01:00Z',
+        'REST_STARTED@2026-07-18T00:02:00Z',
+        'REST_COMPLETED@2026-07-18T00:20:00Z',
+        'RECOMPUTED@2026-07-18T00:20:01Z',
+      ],
+    },
+  }
+}
+
 /** Same `Capture` pattern as `merged_center.test.tsx`'s `renderCenterPanel`. */
 function renderLogPanel() {
   const coordinatorRef: { current: ReturnType<typeof useMergedCoordinator> | null } = { current: null }
@@ -224,5 +305,73 @@ describe('MergedLogPanel', () => {
     const serviceIdx = rows.findIndex((id) => id?.includes('SERVICE_SELECTED'))
     expect(triggerIdx).toBeGreaterThanOrEqual(0)
     expect(serviceIdx).toBeGreaterThan(triggerIdx)
+  })
+
+  it('labels the rest-journey proposal events and surfaces recovery phase on trigger rows, in tick order', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_1', trigger_run_id: 'run_1' })
+    vi.mocked(tickMergedRun)
+      .mockResolvedValueOnce(noProposalTick(0))
+      .mockResolvedValueOnce(recoveryPhaseTick(1, 'arriving'))
+      .mockResolvedValueOnce(recoveryPhaseTick(2, 'nap'))
+      .mockResolvedValueOnce(restJourneyTick(3))
+
+    const { coordinatorRef, container } = renderLogPanel()
+
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    for (let i = 0; i < 4; i++) {
+      await act(async () => {
+        await coordinatorRef.current!.step()
+      })
+    }
+
+    // Recovery phase surfaced on the relevant trigger rows (bilingual label,
+    // English resolved here). Tick 0 had no recovery_phase -> no such row.
+    expect(screen.getByTestId('merged-log-recovery-phase-1')).toHaveTextContent('Arriving at rest spot')
+    expect(screen.getByTestId('merged-log-recovery-phase-2')).toHaveTextContent('Resting (nap)')
+    expect(screen.getByTestId('merged-log-recovery-phase-3')).toHaveTextContent('Resuming drive')
+    expect(screen.queryByTestId('merged-log-recovery-phase-0')).not.toBeInTheDocument()
+
+    // Rest-journey proposal rows: clear labels, purple proposal accent,
+    // correlated to tick 3.
+    const arrivedLabel = screen.getByText('Arrived at rest spot')
+    const startedLabel = screen.getByText('Rest started')
+    const completedLabel = screen.getByText('Rest completed')
+    const recomputedLabel = screen.getByText('Recomputed after rest')
+    for (const label of [arrivedLabel, startedLabel, completedLabel, recomputedLabel]) {
+      expect(label).toHaveStyle({ color: '#7c3aed' })
+    }
+    expect(arrivedLabel.closest('[data-testid^="merged-log-proposal-"]')).toHaveTextContent('tick#3')
+    expect(recomputedLabel.closest('[data-testid^="merged-log-proposal-"]')).toHaveTextContent('tick#3')
+
+    // Tick order: trigger-3 row (carrying the 'resuming' phase), THEN the
+    // four rest-journey rows in their original event order.
+    const rows = Array.from(container.querySelectorAll('[data-testid^="merged-log-"]')).map((el) =>
+      el.getAttribute('data-testid'),
+    )
+    const trigger3Idx = rows.indexOf('merged-log-trigger-3')
+    const arrivedIdx = rows.findIndex((id) => id?.includes('REST_SPOT_ARRIVED'))
+    const startedIdx = rows.findIndex((id) => id?.includes('REST_STARTED'))
+    const completedIdx = rows.findIndex((id) => id?.includes('REST_COMPLETED'))
+    const recomputedIdx = rows.findIndex((id) => id?.includes('RECOMPUTED'))
+    expect(trigger3Idx).toBeGreaterThanOrEqual(0)
+    expect(arrivedIdx).toBeGreaterThan(trigger3Idx)
+    expect(startedIdx).toBeGreaterThan(arrivedIdx)
+    expect(completedIdx).toBeGreaterThan(startedIdx)
+    expect(recomputedIdx).toBeGreaterThan(completedIdx)
+
+    // Recovery-phase rows themselves stay in ascending tick order (1 < 2 < 3).
+    const phase1Idx = rows.indexOf('merged-log-recovery-phase-1')
+    const phase2Idx = rows.indexOf('merged-log-recovery-phase-2')
+    const phase3Idx = rows.indexOf('merged-log-recovery-phase-3')
+    expect(phase1Idx).toBeLessThan(phase2Idx)
+    expect(phase2Idx).toBeLessThan(phase3Idx)
   })
 })

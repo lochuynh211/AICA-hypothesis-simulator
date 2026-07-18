@@ -19,13 +19,42 @@
  * REPLAY-mode row (tick#, result_type, selected_category). Proposal rows are
  * the new `ProposalEventRow` below, using the proposal accent color
  * `#7c3aed`.
+ *
+ * Task 5 additive: trigger rows also surface `TraceEntry.recovery_phase`
+ * (same green recovery line + label set as `DecisionTracePanel`'s
+ * `RECOVERY_PHASE_LABELS` — duplicated here rather than imported since that
+ * map isn't exported), and proposal rows for the rest-journey event types
+ * (`REST_SPOT_ARRIVED`/`REST_STARTED`/`REST_COMPLETED`/`RECOMPUTED`) get an
+ * extra bilingual label line so the merged log narrates arrive → nap →
+ * recover → after-rest recompute, not just raw event-type constants. The
+ * merged screen has no `uiLanguage` yet (mergedCoordinator carries no such
+ * field — see `MergedCenterPanel`'s hardcoded `lang="en"`), so `t()` is
+ * called with `'en'` here too, same convention.
  */
 import { useMergedCoordinator } from '../../state/mergedCoordinator'
 import type { MergedCoordinatorState } from '../../state/mergedCoordinator'
 import type { TraceEntry } from '../../api/types'
 import type { DiscreteEvent } from '../../api/proposalClient'
+import { t } from '../../i18n/t'
 
 const PROPOSAL_ACCENT = '#7c3aed'
+
+/** Mirrors `DecisionTracePanel`'s own (unexported) `RECOVERY_PHASE_LABELS`. */
+const RECOVERY_PHASE_LABELS: Record<string, { ja: string; en: string }> = {
+  wakefulness: { ja: 'ドライブ中の覚醒', en: 'En route to rest' },
+  arriving: { ja: '休憩所に到着', en: 'Arriving at rest spot' },
+  nap: { ja: '仮眠中', en: 'Resting (nap)' },
+  content: { ja: '休憩後コンテンツ', en: 'Rest activity' },
+  resuming: { ja: '再出発', en: 'Resuming drive' },
+}
+
+/** Bilingual labels for the rest-journey proposal event types (Task 5). */
+const REST_JOURNEY_EVENT_LABELS: Record<string, { ja: string; en: string }> = {
+  REST_SPOT_ARRIVED: { ja: '休憩地点に到着', en: 'Arrived at rest spot' },
+  REST_STARTED: { ja: '休憩開始', en: 'Rest started' },
+  REST_COMPLETED: { ja: '休憩完了', en: 'Rest completed' },
+  RECOMPUTED: { ja: '休憩後に再計算', en: 'Recomputed after rest' },
+}
 
 type MergedEntry =
   | { kind: 'trace'; tickIndex: number; entry: TraceEntry }
@@ -109,6 +138,21 @@ function TriggerTraceRow({ entry }: { entry: TraceEntry }) {
         <span style={{ color: '#ffe066', fontWeight: 700 }}>{entry.result_type}</span>
         {entry.selected_category && <span style={{ color: '#8f8' }}>cat={entry.selected_category}</span>}
       </div>
+      {entry.recovery_phase && (
+        <div
+          data-testid={`merged-log-recovery-phase-${entry.tick_index}`}
+          style={{ color: '#34d399', marginTop: '2px' }}
+        >
+          🛌{' '}
+          {t(
+            RECOVERY_PHASE_LABELS[entry.recovery_phase] ?? {
+              ja: entry.recovery_phase,
+              en: entry.recovery_phase,
+            },
+            'en',
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -123,6 +167,7 @@ function ProposalEventRow({
   rowIndex: number
 }) {
   const summary = summarizeProposalEvent(event)
+  const journeyLabel = REST_JOURNEY_EVENT_LABELS[event.event_type]
   return (
     <div
       data-testid={`merged-log-proposal-${rowIndex}-${event.event_type}`}
@@ -137,6 +182,9 @@ function ProposalEventRow({
         <span style={{ color: '#6af', fontWeight: 700 }}>tick#{tickIndex}</span>
         <span style={{ color: PROPOSAL_ACCENT, fontWeight: 700 }}>{event.event_type}</span>
       </div>
+      {journeyLabel && (
+        <div style={{ color: PROPOSAL_ACCENT, marginTop: '2px', fontWeight: 600 }}>{t(journeyLabel, 'en')}</div>
+      )}
       {summary && <div style={{ color: PROPOSAL_ACCENT, marginTop: '2px' }}>{summary}</div>}
     </div>
   )
