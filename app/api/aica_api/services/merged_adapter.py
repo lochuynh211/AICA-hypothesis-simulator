@@ -133,12 +133,16 @@ def build_world_from_tick(
     segment_type = dynamic.get("segmentType")
     next_rest_spot_min = dynamic.get("nextRestSpotMin")
 
-    drowsiness = simulated.get("drowsiness")
-    fatigue = simulated.get("fatigue")
+    # tick_engine always emits both (defaults to 0.0 itself when a prior tick's
+    # signals are missing them) — mirror that same default here.
+    drowsiness = simulated.get("drowsiness", 0.0)
+    fatigue = simulated.get("fatigue", 0.0)
 
     motion = "stopped" if dynamic.get("motionState") == "STOPPED" else "driving"
 
     situation_update: dict[str, Any] = {
+        "drowsiness_level": round(drowsiness),
+        "fatigue_level": round(fatigue),
         "traffic_state": "congested" if is_traffic_jam else "normal",
         "road_type": map_road_type(segment_type),
         "night_state": "night" if is_night else "day",
@@ -148,10 +152,6 @@ def build_world_from_tick(
             round(next_rest_spot_min) if next_rest_spot_min is not None else None
         ),
     }
-    if drowsiness is not None:
-        situation_update["drowsiness_level"] = round(drowsiness)
-    if fatigue is not None:
-        situation_update["fatigue_level"] = round(fatigue)
 
     new_situation = world_template.situation.model_copy(update=situation_update)
     new_control_inputs = world_template.control_inputs.model_copy(
