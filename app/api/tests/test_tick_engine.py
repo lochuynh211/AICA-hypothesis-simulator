@@ -47,6 +47,7 @@ _FIXED_KEYS = {"isNight", "familiarRoute", "childPassenger", "weatherRiskLevel"}
 _DYNAMIC_KEYS = {
     "segmentType", "motionState", "continuousDrivingMin", "speedKph",
     "routeFraction", "nextRestSpotMin", "isTrafficJam", "recoveryPhase",
+    "monotonyLevel",  # feature 020, Slice-3: simulator-owned monotony proxy
 }
 _SIMULATED_KEYS = {"drowsiness", "fatigue", "anomaly_rate"}
 

@@ -184,8 +184,9 @@ def advance_tick(
 
     Returns:
         TickState with signals (tiered {fixed, dynamic, simulated}), feature_groups,
-        distance_km, continuous_driving_min, anomaly_events, and M1 backward-compat
-        ordinal fields.  completed=True when distance_km >= total_route_distance_km.
+        distance_km, continuous_driving_min, monotony_accrued_min, anomaly_events,
+        and M1 backward-compat ordinal fields.  completed=True when distance_km >=
+        total_route_distance_km.
     """
     tick_seconds = event_plan.tick_seconds
     total_km = route_facts.total_route_distance_km or 120.0
@@ -199,6 +200,7 @@ def advance_tick(
         fatigue = _initial_fatigue(scenario.initial_state.get("fatigue_level", "low"))
         distance_km = 0.0
         continuous_driving_min = 0.0
+        monotony_accrued_min = 0.0
         above_weak = 0
         anomaly_events: list[int] = []
     else:
@@ -207,6 +209,7 @@ def advance_tick(
         fatigue = float(simulated.get("fatigue", 0.0))
         distance_km = prior_state.distance_km or 0.0
         continuous_driving_min = prior_state.continuous_driving_min or 0.0
+        monotony_accrued_min = prior_state.monotony_accrued_min or 0.0
         above_weak = prior_state.above_weak_ticks
         anomaly_events = list(prior_state.anomaly_events)
 
@@ -256,6 +259,21 @@ def advance_tick(
                 motion_state = "STOPPED"
             recovery_phase = recovery.phase
             recovery_next = advance_recovery(recovery, option, at_rest_spot=at_spot)
+
+    # ── Monotony proxy (feature 020, Slice-3) ──────────────────────────────
+    # Package-agnostic 0-100 signal derived purely from segment_type/motion_state/
+    # is_night; simulator-owned (this module), never reads/touches any package's
+    # own internal monotony state (e.g. the Hybrid package's mono_min). Accrues
+    # while driving a monotonous segment (highway/normal_road) MOVING; decays
+    # (at twice the accrual rate) otherwise; night adds a flat +20 bonus.
+    _MONOTONOUS_SEGMENTS = ("highway", "normal_road")
+    if segment_type in _MONOTONOUS_SEGMENTS and motion_state == "MOVING":
+        new_monotony_accrued_min = monotony_accrued_min + tick_seconds / 60.0
+    else:
+        new_monotony_accrued_min = max(0.0, monotony_accrued_min - 2.0 * tick_seconds / 60.0)
+    monotony_level = round(
+        min(100.0, (new_monotony_accrued_min / 30.0) * 80.0 + (20.0 if is_night else 0.0))
+    )
 
     # ── Advance driver signals (Tier 3a: drowsiness/fatigue) ───────────────
     if scenario.driver_signal_params is not None:
@@ -415,6 +433,7 @@ def advance_tick(
             "nextRestSpotMin": next_rest_min,
             "isTrafficJam": is_traffic_jam,
             "recoveryPhase": recovery_phase,
+            "monotonyLevel": monotony_level,
         },
         "simulated": {
             "drowsiness": new_drowsiness,
@@ -466,6 +485,7 @@ def advance_tick(
         feature_groups=feature_groups,
         distance_km=new_distance_km,
         continuous_driving_min=new_continuous_min,
+        monotony_accrued_min=new_monotony_accrued_min,
         anomaly_events=new_anomaly_events,
         above_weak_ticks=new_above_weak,
         # Pass state through extra fields (model_config extra=allow)

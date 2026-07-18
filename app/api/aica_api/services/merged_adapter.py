@@ -11,8 +11,11 @@ task) can call it deterministically on every trigger fire.
 Slice-1 scope (per the feature-020 plan): one trigger fire -> one proposal
 run, ``rest_recommended`` only in practice today, but ``MONOTONY_PROPOSAL``
 is mapped too since the trigger side already emits it. No journey chain,
-recompute, enriched recovery, or monotony-level derivation yet — those are
-later slices; ``monotony_level`` is a fixed slice-1 default (0).
+recompute, or enriched recovery yet — those are later slices.
+``monotony_level`` (feature 020, Slice-3) is fed from the simulator-owned
+proxy the tick engine derives from segment_type/motion_state/is_night
+(``tick_state.signals["dynamic"]["monotonyLevel"]``), defaulting to 0 when
+a tick lacks the field (e.g. older persisted ticks).
 
 This module intentionally imports ONLY ``aica_api.models.proposal.*`` plus
 stdlib — it does not import the trigger `run_manager`/`tick_engine` modules
@@ -115,9 +118,12 @@ def build_world_from_tick(
 
     GENERATED (overwritten every fire): drowsiness_level, fatigue_level,
     traffic_state, road_type, night_state, motion_state (both locations),
-    estimated_min_until_rest_spot. ``monotony_level`` is a slice-1 fixed
-    default (0); ``rest_spot_type`` and every other Situation/DriverProfile
-    field are left as-is from the template (INLINE — reviewer/preset-owned).
+    estimated_min_until_rest_spot, monotony_level. ``monotony_level``
+    (feature 020, Slice-3) comes from the simulator-owned monotony proxy
+    (``tick_state.signals["dynamic"]["monotonyLevel"]``), defaulting to 0
+    when the tick lacks the field; ``rest_spot_type`` and every other
+    Situation/DriverProfile field are left as-is from the template
+    (INLINE — reviewer/preset-owned).
 
     ``motion_state`` is written to BOTH ``situation.motion_state`` and
     ``control_inputs.motion_state`` (the two-field-sync gotcha from prior
@@ -146,7 +152,7 @@ def build_world_from_tick(
         "traffic_state": "congested" if is_traffic_jam else "normal",
         "road_type": map_road_type(segment_type),
         "night_state": "night" if is_night else "day",
-        "monotony_level": 0,
+        "monotony_level": round(dynamic.get("monotonyLevel", 0)),
         "motion_state": motion,
         "estimated_min_until_rest_spot": (
             round(next_rest_spot_min) if next_rest_spot_min is not None else None

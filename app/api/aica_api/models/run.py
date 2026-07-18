@@ -216,6 +216,8 @@ class TickState(BaseModel):
 
     M1 fields: tick_index through completed.
     M2 additions: feature_groups, distance_km, continuous_driving_min.
+    Feature 020 (Slice-3): monotony_accrued_min carries the simulator-owned
+    monotony-proxy accumulator tick-to-tick (see tick_engine.advance_tick).
     Feature 009 (signal-tier redesign): the flat M2 `raw_state` dict is replaced by
     `signals` — the tiered {fixed, dynamic, simulated} dict (see
     specs/009-signal-tier-redesign/contracts/tiered-context.md).  `anomaly_events`
@@ -238,6 +240,7 @@ class TickState(BaseModel):
     feature_groups: FeatureGroups = FeatureGroups()
     distance_km: float | None = None
     continuous_driving_min: float | None = None
+    monotony_accrued_min: float | None = None
 
     # Feature 009: tiered signals {fixed, dynamic, simulated} — replaces raw_state.
     signals: dict[str, Any] = {}
