@@ -20,17 +20,30 @@ Design constraints (mirrors the trigger ``run_manager``'s discipline):
     selector — no algorithm is ever invoked in this module.
 
 Public API:
-  create_run(...) -> ProposalRunLog
-  get_run(run_id, runs_dir) -> ProposalRunLog | None
+  create_run(..., cache=None) -> ProposalRunLog
+  get_run(run_id, runs_dir, *, cache=None) -> ProposalRunLog | None
   list_runs(runs_dir) -> list[ProposalRun]
   delete_run(run_id, runs_dir) -> bool
-  append_event(run_id, event, runs_dir) -> ProposalRunLog
-  append_evidence(run_id, evidence, runs_dir) -> ProposalRunLog
+  append_event(run_id, event, runs_dir, *, cache=None) -> ProposalRunLog
+  append_evidence(run_id, evidence, runs_dir, *, cache=None) -> ProposalRunLog
   update_state(run_id, runs_dir, *, status=None, journey_state=None,
                content_parameters=None, content_hyperparameters=None,
                setup_snapshot=None, opportunity=None, world_snapshot=None,
-               opportunity_history=None, setup_snapshot_history=None)
+               opportunity_history=None, setup_snapshot_history=None,
+               cache=None)
                -> ProposalRunLog
+
+Non-persisting cache (feature 020, Slice-2c): every writer/reader above
+accepts an optional keyword-only ``cache: dict[str, ProposalRunLog] | None``.
+When ``cache`` is ``None`` (the default -- every existing call site),
+behavior is byte-identical to before this feature: reads/writes go through
+``read_json``/``write_json_atomic`` against ``runs_dir`` exactly as always.
+When a caller supplies a ``dict`` (even an empty one), it is used as an
+in-memory stand-in for disk: reads become ``cache.get(run_id)`` and writes
+become ``cache[run_id] = run_log`` -- nothing touches ``runs_dir``. This lets
+a quick-check-only proposal run be built and resolved entirely in memory
+(``merged_quickview``, feature 020) without ever creating a file under
+``proposal_runs/``.
 """
 from __future__ import annotations
 
@@ -115,6 +128,7 @@ def create_run(
     world: World | None = None,
     mode: ProposalRunMode = ProposalRunMode.interactive,
     runs_dir: pathlib.Path,
+    cache: dict[str, ProposalRunLog] | None = None,
 ) -> ProposalRunLog:
     """Build a ``ProposalRunLog``, append any provided events/evidence, and
     persist it atomically to ``<runs_dir>/<run_id>.json``.
@@ -154,9 +168,16 @@ def create_run(
         runs_dir:              Directory for persisting ``<run_id>.json``
                                (``settings.proposal_runs_dir`` in production
                                — NEVER the trigger ``runs_dir``).
+        cache:                  Feature 020 (Slice-2c): when not ``None``,
+                               store the built log at ``cache[run_id]``
+                               instead of persisting to ``runs_dir`` —
+                               ``runs_dir`` is then unused. ``None`` (the
+                               default) preserves every existing call site's
+                               disk-persisting behavior unchanged.
 
     Returns:
-        The persisted ``ProposalRunLog``.
+        The ``ProposalRunLog`` (persisted to disk, or written into ``cache``
+        when supplied).
     """
     run_id = _make_run_id()
     run_log = ProposalRunLog(
@@ -179,7 +200,10 @@ def create_run(
         world=copy.deepcopy(world) if world is not None else None,
         mode=mode,
     )
-    _persist(run_log, pathlib.Path(runs_dir))
+    if cache is not None:
+        cache[run_id] = run_log
+    else:
+        _persist(run_log, pathlib.Path(runs_dir))
     return run_log
 
 
@@ -188,11 +212,21 @@ def create_run(
 # ---------------------------------------------------------------------------
 
 
-def get_run(run_id: str, runs_dir: pathlib.Path) -> ProposalRunLog | None:
-    """Load the full ``ProposalRunLog`` for ``run_id`` from disk, or None.
+def get_run(
+    run_id: str,
+    runs_dir: pathlib.Path,
+    *,
+    cache: dict[str, ProposalRunLog] | None = None,
+) -> ProposalRunLog | None:
+    """Load the full ``ProposalRunLog`` for ``run_id``, or None.
 
     Renders from the persisted record WITHOUT recomputing any selector.
+
+    Feature 020 (Slice-2c): when ``cache`` is not ``None``, reads from
+    ``cache.get(run_id)`` instead of disk — ``runs_dir`` is then unused.
     """
+    if cache is not None:
+        return cache.get(run_id)
     path = _run_path(run_id, runs_dir)
     if not path.exists():
         return None
@@ -245,31 +279,55 @@ def delete_run(run_id: str, runs_dir: pathlib.Path) -> bool:
 # ---------------------------------------------------------------------------
 
 
-def append_event(run_id: str, event: DiscreteEvent, runs_dir: pathlib.Path) -> ProposalRunLog:
+def append_event(
+    run_id: str,
+    event: DiscreteEvent,
+    runs_dir: pathlib.Path,
+    *,
+    cache: dict[str, ProposalRunLog] | None = None,
+) -> ProposalRunLog:
     """Append one ``DiscreteEvent`` to an existing run and re-persist.
+
+    Feature 020 (Slice-2c): when ``cache`` is not ``None``, reads/writes
+    ``cache[run_id]`` instead of disk — ``runs_dir`` is then unused for I/O.
 
     Raises:
         ProposalRunNotFoundError: If run_id has no persisted log.
     """
-    run_log = get_run(run_id, runs_dir)
+    run_log = get_run(run_id, runs_dir, cache=cache)
     if run_log is None:
         raise ProposalRunNotFoundError(f"Unknown proposal run_id: {run_id!r}")
     run_log.events.append(event)
-    _persist(run_log, pathlib.Path(runs_dir))
+    if cache is not None:
+        cache[run_id] = run_log
+    else:
+        _persist(run_log, pathlib.Path(runs_dir))
     return run_log
 
 
-def append_evidence(run_id: str, evidence: AlgorithmEvidence, runs_dir: pathlib.Path) -> ProposalRunLog:
+def append_evidence(
+    run_id: str,
+    evidence: AlgorithmEvidence,
+    runs_dir: pathlib.Path,
+    *,
+    cache: dict[str, ProposalRunLog] | None = None,
+) -> ProposalRunLog:
     """Append one ``AlgorithmEvidence`` to an existing run and re-persist.
+
+    Feature 020 (Slice-2c): when ``cache`` is not ``None``, reads/writes
+    ``cache[run_id]`` instead of disk — ``runs_dir`` is then unused for I/O.
 
     Raises:
         ProposalRunNotFoundError: If run_id has no persisted log.
     """
-    run_log = get_run(run_id, runs_dir)
+    run_log = get_run(run_id, runs_dir, cache=cache)
     if run_log is None:
         raise ProposalRunNotFoundError(f"Unknown proposal run_id: {run_id!r}")
     run_log.evidence.append(evidence)
-    _persist(run_log, pathlib.Path(runs_dir))
+    if cache is not None:
+        cache[run_id] = run_log
+    else:
+        _persist(run_log, pathlib.Path(runs_dir))
     return run_log
 
 
@@ -303,9 +361,13 @@ def update_state(
     world_snapshot: dict | None = None,
     opportunity_history: list[ProposalOpportunity] | None = None,
     setup_snapshot_history: list[SetupSnapshot] | None = None,
+    cache: dict[str, ProposalRunLog] | None = None,
 ) -> ProposalRunLog:
     """Update ``status``/``journey_state``/content overrides on an existing
     run and re-persist.
+
+    Feature 020 (Slice-2c): when ``cache`` is not ``None``, reads/writes
+    ``cache[run_id]`` instead of disk — ``runs_dir`` is then unused for I/O.
 
     None of these fields is mutated by ``append_event``/``append_evidence``
     (which only ever append to their respective lists), so a STEP-2-style
@@ -342,7 +404,7 @@ def update_state(
     Raises:
         ProposalRunNotFoundError: If run_id has no persisted log.
     """
-    run_log = get_run(run_id, runs_dir)
+    run_log = get_run(run_id, runs_dir, cache=cache)
     if run_log is None:
         raise ProposalRunNotFoundError(f"Unknown proposal run_id: {run_id!r}")
     if status is not None:
@@ -363,5 +425,8 @@ def update_state(
         run_log.opportunity_history = copy.deepcopy(opportunity_history)
     if setup_snapshot_history is not None:
         run_log.setup_snapshot_history = copy.deepcopy(setup_snapshot_history)
-    _persist(run_log, pathlib.Path(runs_dir))
+    if cache is not None:
+        cache[run_id] = run_log
+    else:
+        _persist(run_log, pathlib.Path(runs_dir))
     return run_log

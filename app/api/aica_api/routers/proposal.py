@@ -35,9 +35,9 @@ from __future__ import annotations
 import copy
 import os
 from datetime import datetime, timezone
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, ValidationError
 
 from aica_api.config import settings
@@ -170,6 +170,25 @@ def _make_opportunity_id() -> str:
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _no_cache_dependency() -> None:
+    """FastAPI dependency that always resolves ``cache`` to ``None`` for a
+    REAL HTTP request (feature 020, Slice-2c).
+
+    ``create_proposal_run`` below is BOTH a FastAPI route handler AND a
+    plain importable Python function (``merged_quickview``'s in-memory
+    quick-check path calls it directly with ``cache={}``). A bare
+    ``cache: dict[str, ProposalRunLog] | None = None`` keyword-only
+    parameter would make FastAPI treat ``cache`` as a second request-body
+    field, forcing every existing HTTP caller to nest its payload under a
+    ``"body"`` key (breaking the flat-JSON contract). Routing ``cache``
+    through ``Depends`` instead keeps it entirely out of the endpoint's
+    request/OpenAPI surface for HTTP calls (always resolves to ``None``,
+    i.e. disk-persisting — unchanged behavior) while a direct in-process
+    Python call can still override it by passing ``cache=`` explicitly.
+    """
+    return None
 
 
 def _build_service_context(
@@ -790,7 +809,11 @@ def _freeze_setup_snapshot(
 
 
 @router.post("/api/proposal/runs", status_code=201)
-def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
+def create_proposal_run(
+    body: CreateProposalRunBody,
+    *,
+    cache: Annotated[dict[str, ProposalRunLog] | None, Depends(_no_cache_dependency)] = None,
+) -> ProposalRunLog:
     registry = _get_registry()
 
     service_pkg = registry.get(body.service_package_id)
@@ -945,6 +968,7 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
             world=body.world,
             mode=body.mode,
             runs_dir=settings.proposal_runs_dir,
+            cache=cache,
         )
 
     context = _build_service_context(
@@ -1017,6 +1041,7 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
         world=body.world,
         mode=body.mode,
         runs_dir=settings.proposal_runs_dir,
+        cache=cache,
     )
 
     # US3/T024 (FR-011-FR-013): quick_check auto-dispatches content for the
@@ -1040,6 +1065,7 @@ def create_proposal_run(body: CreateProposalRunBody) -> ProposalRunLog:
             ServiceId(selected_service_id),
             content_parameters,
             content_hyperparameters,
+            cache=cache,
         )
 
     return run_log
@@ -1144,6 +1170,8 @@ def _apply_quick_check_content(
     selected_service_id: ServiceId,
     content_parameters: dict,
     content_hyperparameters: dict,
+    *,
+    cache: dict[str, ProposalRunLog] | None = None,
 ) -> ProposalRunLog:
     """Quick-check-only: dispatch content for the auto-selected rank-1
     service via ``_dispatch_content_for_service`` (the SAME helper
@@ -1168,6 +1196,12 @@ def _apply_quick_check_content(
     ``active_service_id`` semantics to introduce (research.md / P7 brief:
     the data-model.md interactive-vs-None split is a doc reconciliation
     deferred to Step 5, not implemented here).
+
+    ``cache`` (feature 020, Slice-2c): forwarded verbatim to every
+    ``proposal_run_manager`` call below — ``None`` (the default, used by
+    ``recompute_proposal_run``'s call site) persists to disk exactly as
+    before; a caller-supplied dict (``create_proposal_run``'s quick-check
+    in-memory path) keeps every read/write in that dict instead.
     """
     registry = _get_registry()
     content_pkg = registry.get(run_log.content_package_id) if run_log.content_package_id else None
@@ -1186,8 +1220,8 @@ def _apply_quick_check_content(
                 ),
             },
         )
-        prm.append_event(run_id, event, settings.proposal_runs_dir)
-        return prm.update_state(run_id, settings.proposal_runs_dir, status=ProposalRunStatus.error)
+        prm.append_event(run_id, event, settings.proposal_runs_dir, cache=cache)
+        return prm.update_state(run_id, settings.proposal_runs_dir, status=ProposalRunStatus.error, cache=cache)
 
     evidence, _evidence_input_snapshot = _dispatch_content_for_service(
         run_log, selected_service_id, content_parameters, content_hyperparameters
@@ -1212,8 +1246,8 @@ def _apply_quick_check_content(
         )
         new_status = ProposalRunStatus.content_selected
 
-    prm.append_event(run_id, event, settings.proposal_runs_dir)
-    prm.append_evidence(run_id, evidence, settings.proposal_runs_dir)
+    prm.append_event(run_id, event, settings.proposal_runs_dir, cache=cache)
+    prm.append_evidence(run_id, evidence, settings.proposal_runs_dir, cache=cache)
 
     # Mirrors select_service's FIX 2: re-freeze the persisted
     # content_parameter_set_version (+ content_contract_version) to what was
@@ -1238,6 +1272,7 @@ def _apply_quick_check_content(
         content_parameters=content_parameters,
         content_hyperparameters=content_hyperparameters,
         setup_snapshot=updated_setup_snapshot,
+        cache=cache,
     )
 
 
