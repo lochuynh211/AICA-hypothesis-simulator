@@ -31,6 +31,7 @@
 import { useEffect, useState } from 'react'
 import Modal from './Modal'
 import ErrorNotice from '../common/ErrorNotice'
+import RouteConditionsPainter, { type KmRange } from './RouteConditionsPainter'
 import {
   listRoutePresets,
   loadRoutePreset,
@@ -41,6 +42,7 @@ import {
 import type { PackageSummary, ScenarioSummary, RoutePresetSummary, RouteEnvelope } from '../../api/types'
 import { getPackages, getPresets, getPreset } from '../../api/proposalClient'
 import type { ProposalPackageSummary, World } from '../../api/proposalClient'
+import { buildMergedPlan } from '../../api/mergedClient'
 import { useMergedCoordinator } from '../../state/mergedCoordinator'
 
 /** The feature-018 reference "journey A, stage 1" preset — the default
@@ -76,6 +78,10 @@ export default function MergedSetupPanel() {
   const [selectedRoutePresetId, setSelectedRoutePresetId] = useState<string | null>(null)
   const [routeEnvelope, setRouteEnvelope] = useState<RouteEnvelope | null>(null)
   const [loadingRoute, setLoadingRoute] = useState(false)
+  // Route-conditions painter (Slice-2b Task 4): null means "not painted" —
+  // Start keeps the existing plain createRunPlan path when both stay null.
+  const [mountainRange, setMountainRange] = useState<KmRange | null>(null)
+  const [jamRange, setJamRange] = useState<KmRange | null>(null)
 
   // Scenario
   const [scenarios, setScenarios] = useState<ScenarioSummary[]>([])
@@ -170,20 +176,36 @@ export default function MergedSetupPanel() {
     setStarting(true)
     setError(null)
     try {
-      const alt = routeEnvelope.alternatives[0]
-      const plan = await createRunPlan({
-        packageId: selectedTriggerPackageId,
-        scenarioId: selectedScenarioId,
-        routeId: alt.route_id,
-        routeSource: routeEnvelope.route_source,
-        routeFacts: alt.route_facts,
-        displayRoute: alt.display,
-        runSeed,
-      })
+      let planId: string
+      if (mountainRange || jamRange) {
+        // A painter range is set — build a "painted" plan (Slice-2b Task 2)
+        // instead of the plain run-plan path below.
+        const painted = await buildMergedPlan({
+          package_id: selectedTriggerPackageId,
+          scenario_id: selectedScenarioId,
+          route_preset_id: selectedRoutePresetId,
+          run_seed: runSeed,
+          mountain_range_km: mountainRange,
+          jam_range_km: jamRange,
+        })
+        planId = painted.plan_id
+      } else {
+        const alt = routeEnvelope.alternatives[0]
+        const plan = await createRunPlan({
+          packageId: selectedTriggerPackageId,
+          scenarioId: selectedScenarioId,
+          routeId: alt.route_id,
+          routeSource: routeEnvelope.route_source,
+          routeFacts: alt.route_facts,
+          displayRoute: alt.display,
+          runSeed,
+        })
+        planId = plan.plan_id
+      }
       const world = defaultWorld ?? (await loadDefaultWorld())
       await coordinator.create(
         {
-          trigger_plan_id: plan.plan_id,
+          trigger_plan_id: planId,
           world,
           service_package_id: selectedServicePackageId,
           content_package_id: selectedContentPackageId,
@@ -269,6 +291,13 @@ export default function MergedSetupPanel() {
             {routeEnvelope.alternatives[0]?.summary} — {routeEnvelope.route_source}
           </p>
         )}
+        <RouteConditionsPainter
+          totalKm={routeEnvelope?.alternatives[0]?.route_facts.total_route_distance_km ?? 100}
+          mountainRange={mountainRange}
+          onMountainRangeChange={setMountainRange}
+          jamRange={jamRange}
+          onJamRangeChange={setJamRange}
+        />
       </Modal>
 
       {/* ── Scenario ──────────────────────────────────────────────────── */}

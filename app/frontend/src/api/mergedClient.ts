@@ -95,6 +95,28 @@ export type AcceptRestReq = {
   nap_minutes: number | null
 }
 
+/** Request body for `POST /api/merged-runs/plan` (mirrors
+ * `CreateMergedPlanBody` — Slice-2b Task 2). Builds a "painted" trigger
+ * run-plan draft (an ad-hoc `mountain_road` segment and/or a manually
+ * positioned traffic jam spliced onto the resolved route) and registers it
+ * in the SAME draft registry `POST /api/run-plans` populates, so the
+ * returned `plan_id` feeds into `createMergedRun`'s `trigger_plan_id`
+ * unchanged. `mountain_range_km`/`jam_range_km` are `[start_km, end_km]`
+ * pairs over the route's 0..total-km axis; omit (or pass `null`) either to
+ * skip that paint. */
+export type BuildMergedPlanReq = {
+  package_id: string
+  scenario_id: string
+  route_preset_id: string | null
+  run_seed: number
+  mountain_range_km: [number, number] | null
+  jam_range_km: [number, number] | null
+  jam_speed_kph?: number
+  presets?: Record<string, unknown>
+  parameters?: Record<string, unknown>
+  hyperparameters?: Record<string, unknown>
+}
+
 // ── Endpoints ────────────────────────────────────────────────────────────
 
 export async function createMergedRun(
@@ -131,6 +153,21 @@ export async function mergedProposalAction(
  * journey server-side (Task 3); no further per-stage action is needed. */
 export async function acceptRest(mergedRunId: string, body: AcceptRestReq): Promise<RunState> {
   return apiFetch(`/api/merged-runs/${encodeURIComponent(mergedRunId)}/accept-rest`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
+/** Builds a "painted" trigger run-plan (mountain-road segment and/or a
+ * positioned traffic jam) and returns its `plan_id` (mirrors
+ * `routers/merged_runs.py`'s `create_merged_plan_endpoint`, Slice-2b Task
+ * 2). Call this INSTEAD of `client.ts`'s `createRunPlan` whenever the
+ * reviewer has painted a mountain/jam range onto the route (`RouteConditionsPainter`,
+ * Slice-2b Task 4) — the returned `plan_id` feeds into `createMergedRun`'s
+ * `trigger_plan_id` exactly like a plain run-plan's does. */
+export async function buildMergedPlan(body: BuildMergedPlanReq): Promise<{ plan_id: string }> {
+  return apiFetch('/api/merged-runs/plan', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
