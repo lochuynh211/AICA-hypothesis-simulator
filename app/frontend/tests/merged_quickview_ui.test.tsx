@@ -165,9 +165,35 @@ describe('merged quickview projection strip + click-to-inspect (feature 020, Sli
   })
 
   it('renders clickable fire markers from quickviewResult; clicking fire #2 inspects it and docks its service overlay read-only', async () => {
+    // A real merged run backs this test (`mergedRunId` set via `create()`)
+    // so the READ-ONLY assertion below is load-bearing. Without this,
+    // `selectService()` (mergedCoordinator.tsx) no-ops purely because
+    // `mergedRunIdRef.current` is null — it returns before ever reaching
+    // `mergedProposalAction`, regardless of whether `onChoose` is wired to
+    // `noopChoose` or to the live `handleChoose` for the inspected-fire
+    // branch. That made the original assertion pass even when the read-only
+    // guard in MergedCenterPanel was (experimentally) removed — verified
+    // during Slice-2c Task 5 review. Creating a real run first means a
+    // regression that wires `handleChoose` unconditionally would actually
+    // reach `mergedProposalAction` and fail this assertion.
+    vi.mocked(createMergedRun).mockResolvedValue({
+      merged_run_id: 'mrun_choose_guard',
+      trigger_run_id: 'run_choose_guard',
+    })
     vi.mocked(mergedQuickview).mockResolvedValue(quickviewResultFixture())
 
     const coordinatorRef = renderCenterPanel()
+
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    expect(coordinatorRef.current!.state.mergedRunId).toBe('mrun_choose_guard')
 
     await act(async () => {
       await coordinatorRef.current!.quickview({
@@ -205,7 +231,10 @@ describe('merged quickview projection strip + click-to-inspect (feature 020, Sli
     expect(screen.queryByTestId('candidate-card-music_playlist')).not.toBeInTheDocument()
 
     // READ-ONLY: clicking Choose on the inspected (ephemeral) overlay must
-    // never call the live selectService action.
+    // never call the live selectService action. Load-bearing because a real
+    // run backs this test (`mergedRunId` set above) — `selectService()`
+    // would actually reach `mergedProposalAction` if `onChoose` weren't
+    // wired to `noopChoose` for the inspected-fire branch.
     fireEvent.click(screen.getByTestId('choose-candidate-karaoke_mode'))
     expect(mergedProposalAction).not.toHaveBeenCalled()
 
