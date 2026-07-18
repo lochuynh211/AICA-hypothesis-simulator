@@ -25,6 +25,11 @@ import type { TraceEntry } from '../../api/types'
 import type { RankedCandidate, ExcludedCandidate, CompletePlan } from '../../api/proposalClient'
 import { ServiceResultOverlay } from './ServiceResultOverlay'
 import { ContentResultOverlay } from './ContentResultOverlay'
+import { t } from '../../i18n/t'
+
+const LABELS = {
+  algorithmError: { ja: 'アルゴリズムエラー', en: 'Algorithm error' },
+}
 
 const num = (v: unknown): number | null => (typeof v === 'number' ? v : null)
 
@@ -168,6 +173,11 @@ export default function MergedCenterPanel() {
               explanationProvider="off"
               lang="en"
             />
+            {serviceEv?.error && (
+              <p role="alert" style={{ color: '#dc2626', fontSize: '0.82em' }}>
+                {t(LABELS.algorithmError, 'en')}: {serviceEv.error.message}
+              </p>
+            )}
           </div>
         )}
 

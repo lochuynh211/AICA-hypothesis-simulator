@@ -92,6 +92,25 @@ function serviceEvidence(): AlgorithmEvidence {
   }
 }
 
+function serviceEvidenceWithError(): AlgorithmEvidence {
+  return {
+    step: 'service',
+    package_id: 'mock_service_selector_v1',
+    contract_version: '1.0.0',
+    schema_version: '1.0.0',
+    matrix_version: 'v1',
+    input_snapshot: {
+      eligible_candidates: [{ candidate_id: 'music_playlist' }],
+      excluded_candidates: [],
+    },
+    output: null,
+    error: { category: 'algorithm_error', message: 'boom: division by zero' },
+    used_feature_ids: [],
+    unused_available_features: [],
+    missing_features: [],
+  }
+}
+
 function contentEvidence(): AlgorithmEvidence {
   return {
     step: 'content',
@@ -190,6 +209,31 @@ function firedTickWithProposal(tickIndex: number): MergedTickResponse {
       segment_type: 'highway',
     },
     proposal: baseProposalLog({ evidence: [serviceEvidence()] }),
+    correlation: {
+      trigger_tick_index: tickIndex,
+      proposal_run_id: 'prun_20260718-000000_abcdef',
+      proposal_event_ids: ['OPPORTUNITY_CREATED@45'],
+    },
+  }
+}
+
+function firedTickWithServiceError(tickIndex: number): MergedTickResponse {
+  return {
+    trigger: {
+      decision: restProposalDecision,
+      error: null,
+      paused: true,
+      completed: false,
+      tick_index: tickIndex,
+      route_fraction: tickIndex / 100,
+      distance_km: null,
+      speed_kph: 0,
+      motion_state: 'STOPPED',
+      recovery_phase: null,
+      is_traffic_jam: false,
+      segment_type: 'highway',
+    },
+    proposal: baseProposalLog({ evidence: [serviceEvidenceWithError()] }),
     correlation: {
       trigger_tick_index: tickIndex,
       proposal_run_id: 'prun_20260718-000000_abcdef',
@@ -323,6 +367,28 @@ describe('MergedCenterPanel', () => {
       kind: 'select_service',
       selected_service_id: 'music_playlist',
     })
+  })
+
+  it('surfaces a service algorithm_error as an alert instead of silently swallowing it', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_5', trigger_run_id: 'run_5' })
+    vi.mocked(tickMergedRun).mockResolvedValueOnce(firedTickWithServiceError(45))
+
+    const coordinatorRef = renderCenterPanel()
+
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => {
+      await coordinatorRef.current!.step()
+    })
+
+    expect(screen.getByRole('alert')).toHaveTextContent('boom: division by zero')
   })
 
   it('the Play button drives coordinator.play() (ticks until the trigger pauses)', async () => {
