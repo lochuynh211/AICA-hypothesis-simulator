@@ -154,6 +154,14 @@ def test_full_rest_journey_before_during_after_one_proposal_run(rest_plan_id, ba
             if stage == "after_rest_before_restart":
                 after_rest_proposal = body["proposal"]
                 assert body["correlation"] is not None
+                # Slice-2 fix: the response must be paused on THIS tick so
+                # the frontend auto-drive loop (which halts only on
+                # `trigger.paused || trigger.completed`) stops here and
+                # surfaces the after-rest proposal, instead of ticking past
+                # it before the reviewer/user ever sees it.
+                assert body["trigger"]["paused"] is True, (
+                    "after-rest tick response must be paused so Play halts on it"
+                )
                 break
         if body["trigger"].get("completed"):
             break

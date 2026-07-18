@@ -457,6 +457,16 @@ def tick_merged_run_endpoint(merged_run_id: str) -> MergedTickResponse:
                     ),
                 )
                 handle.rest_stage_synced = "after"
+                # Pause the response here so the frontend auto-drive loop
+                # (`mergedCoordinator.play()`, which halts only on
+                # `trigger.paused || trigger.completed`) stops on THIS tick to
+                # surface the after-rest proposal, instead of ticking straight
+                # past it. This is a response-only mutation of the plain
+                # `dict` built by `_serialize_trigger_tick` — it does NOT
+                # touch the trigger `RunState` server-side, so the next
+                # `/tick` call resumes normally once the user presses Play
+                # again.
+                resp.trigger["paused"] = True
             except HTTPException as exc:
                 resp.trigger["proposal_error"] = str(exc.detail)
 
