@@ -1,5 +1,6 @@
 // app/frontend/src/components/playback/timelineData.ts
 import type { InstantResult } from '../../api/types'
+import type { MergedInstantResult } from '../../api/mergedClient'
 
 export type TimelinePoint = { x: number; y: number }
 export type TimelineFire = { x: number; kind: 'rest' | 'monotony' }
@@ -72,6 +73,16 @@ export function instantResultToTimeline(result: InstantResult): TimelineData {
       .map((o) => ({ fromX: xMin(o.recovery_from_min as number), toX: xMin(o.to_min as number) })),
     completionX: completed_min != null ? xMin(completed_min) : null,
   }
+}
+
+/** Map a merged quickview projection (feature 020, Slice-2c Task 5) to a
+ * resolution-independent `TimelineData` — `MergedInstantResult` is
+ * `InstantResult`-shaped (its `fires` carry a `MergedFirePoint` per entry,
+ * which is a `FirePoint` plus an ignored per-fire `proposal`/`proposal_error`),
+ * so this reuses `instantResultToTimeline`'s derivation verbatim rather than
+ * duplicating the tick/minute-domain and y-axis normalization it already does. */
+export function mergedInstantResultToTimeline(result: MergedInstantResult): TimelineData {
+  return instantResultToTimeline(result)
 }
 
 /** y-axis domain fitting BOTH curves and BOTH thresholds (never hardcode 0–1). */

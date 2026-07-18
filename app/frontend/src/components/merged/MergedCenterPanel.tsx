@@ -26,9 +26,9 @@
 import { useEffect, useState } from 'react'
 import { useMergedCoordinator } from '../../state/mergedCoordinator'
 import ScoreTimeline from '../playback/ScoreTimeline'
-import type { TimelineData, TimelineFire, TimelinePoint } from '../playback/timelineData'
+import { mergedInstantResultToTimeline, type TimelineData, type TimelineFire, type TimelinePoint } from '../playback/timelineData'
 import type { TraceEntry, RecoveryOption, RestSpot } from '../../api/types'
-import type { RankedCandidate, ExcludedCandidate, CompletePlan } from '../../api/proposalClient'
+import type { RankedCandidate, ExcludedCandidate, CompletePlan, ProposalRunLog, EvidenceError } from '../../api/proposalClient'
 import { getScenario, getRestSpots } from '../../api/client'
 import { ServiceResultOverlay } from './ServiceResultOverlay'
 import { ContentResultOverlay } from './ContentResultOverlay'
@@ -36,6 +36,74 @@ import { t } from '../../i18n/t'
 
 const LABELS = {
   algorithmError: { ja: 'アルゴリズムエラー', en: 'Algorithm error' },
+}
+
+const QUICKVIEW_LABELS = {
+  title: { ja: 'クイックビュー・プロジェクション', en: 'Quickview projection' },
+  readonlyBadge: { ja: 'プレビュー（読み取り専用）', en: 'Preview (read-only)' },
+  close: { ja: '閉じる', en: 'Close' },
+}
+
+/** Derived overlay props for the dock — pulled out of `MergedCenterPanel` so
+ * the SAME recency-based derivation (see module docstring) can be applied to
+ * EITHER `state.proposalLog` (the live tick loop) OR an inspected quickview
+ * fire's ephemeral `MergedFirePoint.proposal` (Task 5), without duplicating
+ * the logic between them. */
+type ProposalOverlayDerivation = {
+  showServiceOverlay: boolean
+  showContentOverlay: boolean
+  serviceOutput: { decision_type: string; ranked_candidates: RankedCandidate[] } | undefined
+  eligibleCandidates: { candidate_id: string }[]
+  excludedCandidates: ExcludedCandidate[]
+  serviceError: EvidenceError | null | undefined
+  contentPlan: CompletePlan | undefined
+  contentError: EvidenceError | null | undefined
+  activeServiceId: string | null
+}
+
+function deriveProposalOverlay(proposalLog: ProposalRunLog | null): ProposalOverlayDerivation {
+  const serviceEv = proposalLog?.evidence.filter((ev) => ev.step === 'service').slice(-1)[0]
+  const serviceOutput = serviceEv?.output as
+    | { decision_type: string; ranked_candidates: RankedCandidate[] }
+    | undefined
+  const serviceSnapshot = (serviceEv?.input_snapshot ?? {}) as {
+    eligible_candidates?: { candidate_id: string }[]
+    excluded_candidates?: ExcludedCandidate[]
+  }
+  const eligibleCandidates = serviceSnapshot.eligible_candidates ?? []
+  const excludedCandidates = serviceSnapshot.excluded_candidates ?? []
+
+  const contentEv = proposalLog?.evidence.filter((ev) => ev.step === 'content').slice(-1)[0]
+  const contentPlan = contentEv?.output as CompletePlan | undefined
+
+  const activeServiceId = proposalLog?.journey_state.active_service_id ?? null
+
+  // Which overlay docks is decided by RECENCY, not `activeServiceId` — see the
+  // module docstring's explanation of the after-rest recompute edge case.
+  const evidence = proposalLog?.evidence ?? []
+  const lastServiceIdx = evidence.map((ev) => ev.step).lastIndexOf('service')
+  const lastContentIdx = evidence.map((ev) => ev.step).lastIndexOf('content')
+  const showContentOverlay = lastContentIdx > lastServiceIdx
+  const showServiceOverlay = lastServiceIdx >= 0 && !showContentOverlay
+
+  return {
+    showServiceOverlay,
+    showContentOverlay,
+    serviceOutput,
+    eligibleCandidates,
+    excludedCandidates,
+    serviceError: serviceEv?.error,
+    contentPlan,
+    contentError: contentEv?.error,
+    activeServiceId,
+  }
+}
+
+/** No-op Choose handler for the read-only inspected-fire dock (Task 5) — an
+ * ephemeral quickview proposal has no real merged run backing it, so Choose
+ * must never call `coordinator.selectService`. */
+function noopChoose(): void {
+  // read-only: intentionally does nothing
 }
 
 const RECOVERY_LABELS = {
@@ -108,39 +176,19 @@ export default function MergedCenterPanel() {
   const timelineData = buildTimelineData(state.triggerTrace)
   const revealFraction = state.latestTrigger?.route_fraction ?? 0
 
-  // Derive overlay props from state.proposalLog.evidence, the same way
-  // ServiceProposalPanel/ContentProposalPanel derive them from proposalStore.
-  const serviceEv = state.proposalLog?.evidence.filter((ev) => ev.step === 'service').slice(-1)[0]
-  const serviceOutput = serviceEv?.output as
-    | { decision_type: string; ranked_candidates: RankedCandidate[] }
-    | undefined
-  const serviceSnapshot = (serviceEv?.input_snapshot ?? {}) as {
-    eligible_candidates?: { candidate_id: string }[]
-    excluded_candidates?: ExcludedCandidate[]
-  }
-  const eligibleCandidates = serviceSnapshot.eligible_candidates ?? []
-  const excludedCandidates = serviceSnapshot.excluded_candidates ?? []
+  // Quickview projection strip + click-to-inspect (feature 020, Slice-2c Task
+  // 5) — independent of mergedRunId/the tick loop; shown pre-run (or whenever
+  // paused) so the reviewer can preview the whole chain's fires+proposals
+  // before/without ever pressing Play.
+  const showQuickviewStrip = state.quickviewResult != null && !state.running
+  const inspectedFire =
+    state.inspectedFireIndex != null ? (state.quickviewResult?.fires[state.inspectedFireIndex] ?? null) : null
+  const isInspectingFire = inspectedFire != null
 
-  const contentEv = state.proposalLog?.evidence.filter((ev) => ev.step === 'content').slice(-1)[0]
-  const contentPlan = contentEv?.output as CompletePlan | undefined
-
-  const activeServiceId = state.proposalLog?.journey_state.active_service_id ?? null
-
-  // Which overlay docks is decided by RECENCY, not `activeServiceId` —
-  // `recompute_proposal_run` (the after-rest recompute) unconditionally sets
-  // `journey_state.active_service_id` to the fresh rank-1 candidate AND
-  // appends a new step='service' evidence entry, WITHOUT dispatching content
-  // in interactive mode (proposal.py ~1687-1721). So right after an after-rest
-  // recompute, `activeServiceId` is non-null but there is no content evidence
-  // for it yet — keying off `activeServiceId == null` would wrongly dock the
-  // (empty) ContentResultOverlay instead of the fresh ServiceResultOverlay.
-  // `evidence` is append-only and ordered, so the step whose evidence is MOST
-  // RECENT tells us which decision the reviewer is actually facing.
-  const evidence = state.proposalLog?.evidence ?? []
-  const lastServiceIdx = evidence.map((ev) => ev.step).lastIndexOf('service')
-  const lastContentIdx = evidence.map((ev) => ev.step).lastIndexOf('content')
-  const showContentOverlay = lastContentIdx > lastServiceIdx
-  const showServiceOverlay = lastServiceIdx >= 0 && !showContentOverlay
+  // Dock source: the inspected quickview fire's ephemeral proposal (READ-ONLY)
+  // takes over from the live `state.proposalLog` while one is being inspected
+  // — same recency-based derivation either way (`deriveProposalOverlay`).
+  const overlay = deriveProposalOverlay(isInspectingFire ? inspectedFire.proposal : state.proposalLog)
 
   const hasRun = state.mergedRunId != null
 
@@ -162,7 +210,11 @@ export default function MergedCenterPanel() {
   const journeyStage = state.proposalLog?.journey_state.lifecycle_stage
   const isBeforeRestOpportunity =
     opportunity?.trigger_purpose === 'rest_recommended' && journeyStage === 'before_rest_until_stop'
-  const showRestAccept = isBeforeRestOpportunity && activeServiceId != null
+  // Deliberately reads the LIVE `state.proposalLog` (not `overlay`/an
+  // inspected quickview fire) — accepting rest is a real backend action with
+  // no meaning against an ephemeral, non-persisting quickview proposal.
+  const liveActiveServiceId = state.proposalLog?.journey_state.active_service_id ?? null
+  const showRestAccept = isBeforeRestOpportunity && liveActiveServiceId != null
 
   const [recoveryOptions, setRecoveryOptions] = useState<RecoveryOption[]>([])
   const [restSpots, setRestSpots] = useState<RestSpot[]>([])
@@ -251,6 +303,33 @@ export default function MergedCenterPanel() {
       </div>
 
       <ScoreTimeline data={timelineData} revealFraction={revealFraction} showPlayhead testIds={{ root: 'merged-timeline' }} />
+
+      {/* Quickview projection strip + click-to-inspect (feature 020, Slice-2c
+          Task 5) — an ephemeral, non-persisting whole-chain preview,
+          independent of the live tick loop above. Shown whenever a
+          `quickview()` result exists and the live loop isn't actively
+          ticking (mirrors the strip's own "static preview" nature — it would
+          be misleading to show a frozen projection while the real run is
+          progressing). */}
+      {showQuickviewStrip && (
+        <div data-testid="quickview-strip" style={{ flexShrink: 0, margin: '8px 0' }}>
+          <p style={{ fontSize: '0.72em', fontWeight: 700, color: '#6b7280', margin: '0 0 2px' }}>
+            {t(QUICKVIEW_LABELS.title, 'en')}
+          </p>
+          <ScoreTimeline
+            data={mergedInstantResultToTimeline(state.quickviewResult!)}
+            revealFraction={1}
+            testIds={{
+              root: 'quickview-timeline',
+              fireGroup: 'quickview-fire-group',
+              fire: 'quickview-fire',
+              monotonyFire: 'quickview-monotony-fire',
+              fireHit: (i) => `quickview-fire-hit-${i}`,
+            }}
+            onFireClick={(_fire, i) => coordinator.inspectFire(i)}
+          />
+        </div>
+      )}
 
       {state.error && (
         <p role="alert" style={{ color: '#dc2626', fontSize: '0.82em' }}>
@@ -350,33 +429,56 @@ export default function MergedCenterPanel() {
         </div>
       )}
 
-      {/* Dock — mirrors CenterPlaybackPanel's proposal dock (lines 87-114). */}
+      {/* Dock — mirrors CenterPlaybackPanel's proposal dock (lines 87-114).
+          Fed from `overlay`, which derives from EITHER the live
+          `state.proposalLog` OR an inspected quickview fire's ephemeral
+          proposal (Task 5) — see `deriveProposalOverlay`. */}
       <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
-        {showServiceOverlay && (
+        {isInspectingFire && (
+          <div data-testid="inspected-fire-readonly-badge" style={readonlyBadgeStyle}>
+            <span>{t(QUICKVIEW_LABELS.readonlyBadge, 'en')}</span>
+            <button
+              type="button"
+              data-testid="quickview-inspect-close"
+              onClick={() => coordinator.inspectFire(null)}
+              style={{ marginLeft: '8px', fontSize: '0.85em' }}
+            >
+              {t(QUICKVIEW_LABELS.close, 'en')}
+            </button>
+          </div>
+        )}
+
+        {isInspectingFire && inspectedFire.proposal_error && (
+          <p role="alert" style={{ color: '#dc2626', fontSize: '0.82em' }}>
+            {inspectedFire.proposal_error}
+          </p>
+        )}
+
+        {overlay.showServiceOverlay && (
           <div data-testid="service-result-overlay" style={dockStyle}>
             <ServiceResultOverlay
-              output={serviceOutput}
-              eligibleCandidates={eligibleCandidates}
-              excludedCandidates={excludedCandidates}
-              activeServiceId={activeServiceId}
-              choosingId={state.choosingId}
-              onChoose={handleChoose}
+              output={overlay.serviceOutput}
+              eligibleCandidates={overlay.eligibleCandidates}
+              excludedCandidates={overlay.excludedCandidates}
+              activeServiceId={overlay.activeServiceId}
+              choosingId={isInspectingFire ? null : state.choosingId}
+              onChoose={isInspectingFire ? noopChoose : handleChoose}
               explanationProvider="off"
               lang="en"
             />
-            {serviceEv?.error && (
+            {overlay.serviceError && (
               <p role="alert" style={{ color: '#dc2626', fontSize: '0.82em' }}>
-                {t(LABELS.algorithmError, 'en')}: {serviceEv.error.message}
+                {t(LABELS.algorithmError, 'en')}: {overlay.serviceError.message}
               </p>
             )}
           </div>
         )}
 
-        {showContentOverlay && (
+        {overlay.showContentOverlay && (
           <div data-testid="content-result-overlay" style={dockStyle}>
             <ContentResultOverlay
-              plan={contentPlan}
-              error={contentEv?.error ?? undefined}
+              plan={overlay.contentPlan}
+              error={overlay.contentError ?? undefined}
               songNames={{}}
               explanationProvider="off"
               lang="en"
@@ -403,4 +505,25 @@ const dockStyle: React.CSSProperties = {
   borderRadius: '10px',
   padding: '10px 12px',
   boxShadow: '0 4px 14px rgba(0,0,0,0.12)',
+}
+
+// Read-only badge shown above the dock while a quickview fire is being
+// inspected (feature 020, Slice-2c Task 5) — positioned above the (absolute)
+// dockStyle overlays so it's never obscured by them.
+const readonlyBadgeStyle: React.CSSProperties = {
+  position: 'absolute',
+  left: '8px',
+  right: '8px',
+  top: '0',
+  zIndex: 16,
+  fontSize: '0.72em',
+  fontWeight: 700,
+  color: '#92400e',
+  background: '#fffbeb',
+  border: '1px solid #fde68a',
+  borderRadius: '999px',
+  padding: '3px 10px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
 }

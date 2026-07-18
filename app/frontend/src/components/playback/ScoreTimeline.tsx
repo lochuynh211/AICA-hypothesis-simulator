@@ -1,5 +1,5 @@
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { timelineYDomain, type TimelineData } from './timelineData'
+import { timelineYDomain, type TimelineData, type TimelineFire } from './timelineData'
 import { t, type UiLanguage, type BilingualLabel } from '../../i18n/t'
 
 // Road-band colors are COPIED VERBATIM from MapSurface's ROAD_COLORS so a road
@@ -52,6 +52,9 @@ export type ScoreTimelineTestIds = {
   recoveryWindow?: string; completion?: string; playhead?: string
   legend?: string
   segment?: (i: number) => string
+  /** Testid for the (invisible, wider-than-the-line) per-fire click hit-rect —
+   *  only rendered when `onFireClick` is supplied (see `ScoreTimelineProps`). */
+  fireHit?: (i: number) => string
 }
 
 export type ScoreTimelineProps = {
@@ -72,6 +75,14 @@ export type ScoreTimelineProps = {
   showLegend?: boolean
   /** UI language for the built-in legend labels (default 'en'). */
   lang?: UiLanguage
+  /** ADDITIVE, feature-020 Slice-2c (Task 5): when supplied, each fire marker
+   *  gains a transparent, wider hit-rect calling this with the fire and its
+   *  index on click — e.g. the merged quickview projection strip's
+   *  click-to-inspect affordance. `undefined` (the default) renders byte-
+   *  identical to before this prop existed: no hit-rect, no click affordance,
+   *  every existing ScoreTimeline usage (InstantResultStrip, playback,
+   *  MergedCenterPanel's live trace) is unaffected. */
+  onFireClick?: (fire: TimelineFire, index: number) => void
 }
 
 function useMeasuredWidth<T extends HTMLElement>(ref: React.RefObject<T>): number {
@@ -93,6 +104,7 @@ export default function ScoreTimeline({
   data, revealFraction = 1, ghostAhead = false, animated = false,
   showPlayhead = false, playheadAriaLabel, height = 92, testIds = {},
   thresholdLabel, monotonyThresholdLabel, restDotAriaLabel, showLegend = false, lang = 'en',
+  onFireClick,
 }: ScoreTimelineProps) {
   const ref = useRef<HTMLDivElement>(null)
   const measured = useMeasuredWidth(ref)
@@ -246,7 +258,14 @@ export default function ScoreTimeline({
             </g>
           )}
           {data.fires.length > 0 && (
-            <FireGroup testIds={testIds} fires={data.fires} W={W} top={CURVE_TOP} bottom={SEG_BOTTOM} />
+            <FireGroup
+              testIds={testIds}
+              fires={data.fires}
+              W={W}
+              top={CURVE_TOP}
+              bottom={SEG_BOTTOM}
+              onFireClick={onFireClick}
+            />
           )}
           {data.completionX != null && (
             <line data-testid={testIds.completion} x1={data.completionX * W} x2={data.completionX * W}
@@ -283,21 +302,38 @@ export default function ScoreTimeline({
   )
 }
 
-function FireGroup({ testIds, fires, W, top, bottom }: {
+// Wider-than-the-line invisible hit-rect half-width (px) — a 2px-wide fire
+// line is nearly impossible to click precisely; the hit-rect gives it a
+// comfortable click/tap target without changing what's visibly drawn.
+const FIRE_HIT_HALF_WIDTH = 8
+
+function FireGroup({ testIds, fires, W, top, bottom, onFireClick }: {
   testIds: ScoreTimelineTestIds
-  fires: { x: number; kind: 'rest' | 'monotony' }[]
+  fires: TimelineFire[]
   W: number; top: number; bottom: number
+  onFireClick?: (fire: TimelineFire, index: number) => void
 }) {
-  const lines = fires.map((f, i) => {
+  const nodes = fires.flatMap((f, i) => {
     const isRest = f.kind === 'rest'
-    return (
-      <line key={i} data-testid={isRest ? testIds.fire : (testIds.monotonyFire ?? testIds.fire)}
+    const line = (
+      <line key={`fire-${i}`} data-testid={isRest ? testIds.fire : (testIds.monotonyFire ?? testIds.fire)}
         x1={f.x * W} x2={f.x * W} y1={top} y2={bottom}
         stroke={isRest ? TRIGGER_COLOR : MONOTONY_COLOR} strokeWidth={isRest ? 2 : 1}
         strokeDasharray={isRest ? undefined : '2 3'} opacity={isRest ? 1 : 0.7} />
     )
+    // Additive only when a caller opts in via onFireClick — when it's
+    // undefined (every pre-existing usage), `nodes` is exactly `[line, line, ...]`,
+    // byte-identical to the render before this hit-rect existed.
+    if (!onFireClick) return [line]
+    const hit = (
+      <rect key={`fire-hit-${i}`} data-testid={testIds.fireHit?.(i)}
+        x={f.x * W - FIRE_HIT_HALF_WIDTH} y={top} width={FIRE_HIT_HALF_WIDTH * 2} height={bottom - top}
+        fill="transparent" style={{ cursor: 'pointer' }}
+        onClick={() => onFireClick(f, i)} />
+    )
+    return [line, hit]
   })
-  return testIds.fireGroup ? <g data-testid={testIds.fireGroup}>{lines}</g> : <>{lines}</>
+  return testIds.fireGroup ? <g data-testid={testIds.fireGroup}>{nodes}</g> : <>{nodes}</>
 }
 
 /** Legend entry for a score/threshold line (colored line + label). */

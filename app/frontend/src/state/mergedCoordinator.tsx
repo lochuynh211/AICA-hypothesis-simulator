@@ -24,11 +24,14 @@ import {
   tickMergedRun,
   mergedProposalAction,
   acceptRest as acceptRestClient,
+  mergedQuickview,
   type CreateMergedRunReq,
   type MergedTickResponse,
   type MergedTriggerTick,
   type CorrelationEntry,
   type AcceptRestReq,
+  type MergedQuickviewReq,
+  type MergedInstantResult,
 } from '../api/mergedClient'
 
 // ── State ──────────────────────────────────────────────────────────────────
@@ -69,6 +72,14 @@ export type MergedCoordinatorState = {
    * doubles as the double-submit guard's visible state. */
   choosingId: string | null
   error: string | null
+  /** The most recent `mergedQuickview()` projection (feature 020, Slice-2c
+   * Task 5) — an ephemeral, non-persisting whole-chain preview, independent
+   * of `mergedRunId`/the tick loop (callable before, instead of, or alongside
+   * a real run). `null` until `quickview()` is called. */
+  quickviewResult: MergedInstantResult | null
+  /** Index into `quickviewResult.fires` the reviewer clicked to inspect, or
+   * `null` when nothing is being inspected. Set by `inspectFire()`. */
+  inspectedFireIndex: number | null
 }
 
 export const initialMergedCoordinatorState: MergedCoordinatorState = {
@@ -84,6 +95,8 @@ export const initialMergedCoordinatorState: MergedCoordinatorState = {
   running: false,
   choosingId: null,
   error: null,
+  quickviewResult: null,
+  inspectedFireIndex: null,
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -95,6 +108,8 @@ export type MergedCoordinatorAction =
   | { type: 'SET_RUNNING'; running: boolean }
   | { type: 'SET_CHOOSING'; serviceId: string | null }
   | { type: 'ERROR'; message: string }
+  | { type: 'QUICKVIEW_LOADED'; result: MergedInstantResult }
+  | { type: 'INSPECT_FIRE'; index: number | null }
 
 /** Builds a TraceEntry from a tick's trigger payload the same way runStore's
  * TICK_APPENDED reducer case does (see state/runStore.ts) — including
@@ -163,13 +178,30 @@ export function mergedCoordinatorReducer(
       return { ...state, proposalLog: action.proposalLog }
 
     case 'SET_RUNNING':
-      return { ...state, running: action.running }
+      // Starting the live tick loop invalidates any fire currently being
+      // inspected from a (pre-run/paused) quickview projection — otherwise a
+      // stale ephemeral read-only overlay could keep masking the live dock
+      // across a later pause. `quickviewResult` itself is left alone (only
+      // the strip's visibility, gated on `!running` elsewhere, hides it).
+      return {
+        ...state,
+        running: action.running,
+        inspectedFireIndex: action.running ? null : state.inspectedFireIndex,
+      }
 
     case 'SET_CHOOSING':
       return { ...state, choosingId: action.serviceId }
 
     case 'ERROR':
       return { ...state, error: action.message, running: false }
+
+    case 'QUICKVIEW_LOADED':
+      // A fresh projection invalidates any previously-inspected fire index
+      // (it indexed into the PRIOR quickviewResult.fires, which this replaces).
+      return { ...state, quickviewResult: action.result, inspectedFireIndex: null }
+
+    case 'INSPECT_FIRE':
+      return { ...state, inspectedFireIndex: action.index }
 
     default:
       return state
@@ -189,6 +221,12 @@ type MergedCoordinatorContextValue = {
   step(): Promise<void>
   selectService(serviceId: string): Promise<void>
   acceptRest(body: AcceptRestReq): Promise<void>
+  /** Ephemeral whole-chain projection (feature 020, Slice-2c Task 5) —
+   * populates `state.quickviewResult`; independent of `create()`/the tick
+   * loop, so it may be called before, instead of, or alongside a real run. */
+  quickview(body: MergedQuickviewReq): Promise<void>
+  /** Sets `state.inspectedFireIndex` — `null` clears the inspected fire. */
+  inspectFire(index: number | null): void
 }
 
 const MergedCoordinatorContext = createContext<MergedCoordinatorContextValue | null>(null)
@@ -306,6 +344,22 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     }
   }
 
+  const quickview = async (body: MergedQuickviewReq): Promise<void> => {
+    try {
+      const result = await mergedQuickview(body)
+      dispatch({ type: 'QUICKVIEW_LOADED', result })
+    } catch (err) {
+      dispatch({
+        type: 'ERROR',
+        message: err instanceof Error ? err.message : 'Quickview failed',
+      })
+    }
+  }
+
+  const inspectFire = (index: number | null): void => {
+    dispatch({ type: 'INSPECT_FIRE', index })
+  }
+
   const value: MergedCoordinatorContextValue = {
     state,
     create,
@@ -314,6 +368,8 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     step,
     selectService,
     acceptRest,
+    quickview,
+    inspectFire,
   }
   return React.createElement(MergedCoordinatorContext.Provider, { value }, children)
 }

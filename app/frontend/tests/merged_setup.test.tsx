@@ -41,6 +41,7 @@ vi.mock('../src/api/mergedClient', () => ({
   createMergedRun: vi.fn(),
   tickMergedRun: vi.fn(),
   mergedProposalAction: vi.fn(),
+  mergedQuickview: vi.fn(),
 }))
 
 import {
@@ -51,7 +52,7 @@ import {
   createRunPlan,
 } from '../src/api/client'
 import { getPackages, getPresets, getPreset } from '../src/api/proposalClient'
-import { createMergedRun } from '../src/api/mergedClient'
+import { createMergedRun, mergedQuickview } from '../src/api/mergedClient'
 import { MergedCoordinatorProvider } from '../src/state/mergedCoordinator'
 import MergedSetupPanel from '../src/components/merged/MergedSetupPanel'
 
@@ -342,5 +343,72 @@ describe('MergedSetupPanel', () => {
         run_seed: expect.any(String),
       }),
     )
+  })
+
+  it('runs a quickview via the dedicated button (feature 020, Slice-2c Task 5), independent of Start/createMergedRun', async () => {
+    vi.mocked(mergedQuickview).mockResolvedValue({
+      fired: false,
+      fire: null,
+      fires: [],
+      peak_score: 0,
+      threshold: null,
+      score_series: [],
+      monotony_series: [],
+      monotony_threshold: null,
+      spikes: [],
+      segments: [],
+      rest_spot: null,
+      rest_option: null,
+      rest_spots: [],
+      rest_options: [],
+      completed_min: null,
+      seed: 42,
+      overrides: [],
+      error: null,
+    })
+
+    renderPanel()
+
+    // Scenario: open popup, pick the scenario.
+    fireEvent.click(screen.getByRole('button', { name: /scenario/i }))
+    let dialog = await screen.findByRole('dialog')
+    fireEvent.change(await within(dialog).findByLabelText(/scenario/i), {
+      target: { value: 'scn_fatigue_1' },
+    })
+    fireEvent.click(within(dialog).getByRole('button', { name: /close/i }))
+
+    // Packages: open popup, pick trigger + service + content packages.
+    fireEvent.click(screen.getByRole('button', { name: /packages/i }))
+    dialog = await screen.findByRole('dialog')
+    fireEvent.change(await within(dialog).findByLabelText(/trigger package/i), {
+      target: { value: 'trigger_pkg_1' },
+    })
+    fireEvent.change(within(dialog).getByLabelText(/service package/i), {
+      target: { value: 'svc_pkg_1' },
+    })
+    fireEvent.change(within(dialog).getByLabelText(/content package/i), {
+      target: { value: 'content_pkg_1' },
+    })
+    fireEvent.click(within(dialog).getByRole('button', { name: /close/i }))
+
+    fireEvent.click(screen.getByTestId('merged-quickview-button'))
+
+    await waitFor(() => expect(mergedQuickview).toHaveBeenCalledTimes(1))
+
+    expect(mergedQuickview).toHaveBeenCalledWith(
+      expect.objectContaining({
+        package_id: 'trigger_pkg_1',
+        scenario_id: 'scn_fatigue_1',
+        service_package_id: 'svc_pkg_1',
+        content_package_id: 'content_pkg_1',
+        world: expect.objectContaining({ control_inputs: expect.any(Object) }),
+        run_seed: expect.any(Number),
+        run_seed_proposal: expect.any(String),
+      }),
+    )
+
+    // A pure quickview never touches the trigger run-plan/createMergedRun path.
+    expect(createRunPlan).not.toHaveBeenCalled()
+    expect(createMergedRun).not.toHaveBeenCalled()
   })
 })

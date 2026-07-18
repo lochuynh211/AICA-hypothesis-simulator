@@ -11,7 +11,7 @@
  * (proposal side, for `World`/`ProposalRunLog`) — never on `state/runStore` or
  * `state/proposalStore` (feature-020 isolation constraint; see CLAUDE.md).
  */
-import type { DecisionResult, AlgorithmError, RestSpot, RunState } from './types'
+import type { DecisionResult, AlgorithmError, RestSpot, RunState, FirePoint, InstantResult } from './types'
 import type { World, ProposalRunLog } from './proposalClient'
 
 // ── Internal helper (mirrors api/client.ts's apiFetch) ──────────────────────
@@ -117,6 +117,52 @@ export type BuildMergedPlanReq = {
   hyperparameters?: Record<string, unknown>
 }
 
+// ── Quickview projection — feature 020, Slice-2c (Task 5) ──────────────────
+
+/** One trigger fire (rising edge), projected through a default, non-persisting
+ * quick-check proposal (mirrors `models/merged_run.py`'s `MergedFirePoint`,
+ * itself extending the trigger-side `FirePoint`). `proposal` is a
+ * `ProposalRunLog` when `create_proposal_run(..., cache={})` succeeded for
+ * this fire, else `null` with `proposal_error` set to the caught detail —
+ * never both set. */
+export type MergedFirePoint = FirePoint & {
+  proposal: ProposalRunLog | null
+  proposal_error: string | null
+}
+
+/** Ephemeral, non-persisting projection of the WHOLE merged chain (mirrors
+ * `models/merged_run.py`'s `MergedInstantResult`) — same shape as the
+ * trigger-only `InstantResult` except `fires` carries a `MergedFirePoint`
+ * (with the projected proposal) per entry instead of a bare `FirePoint`. The
+ * singular back-compat `fire` field (first entry, unaugmented) stays a plain
+ * `FirePoint` on purpose, mirroring the backend model. */
+export type MergedInstantResult = Omit<InstantResult, 'fires'> & {
+  fires: MergedFirePoint[]
+}
+
+/** Request body for `POST /api/merged-runs/quickview` (mirrors
+ * `MergedQuickviewBody`). Trigger-side fields mirror
+ * `aica_api.routers.runs.PreviewRunBody`; `route_preset_id`/
+ * `mountain_range_km`/`jam_range_km`/`jam_speed_kph` mirror
+ * `BuildMergedPlanReq` (an ad-hoc "painted" route, applied before the preview
+ * tick loop runs). `world`/`service_package_id`/`content_package_id`/
+ * `run_seed_proposal` select and seed the proposal side projected per fire. */
+export type MergedQuickviewReq = {
+  package_id: string
+  scenario_id: string
+  route_preset_id?: string | null
+  run_seed: number
+  mountain_range_km?: [number, number] | null
+  jam_range_km?: [number, number] | null
+  jam_speed_kph?: number
+  hyperparameter_overrides?: Record<string, unknown>
+  rest_option_id?: string | null
+  world: World
+  service_package_id: string
+  content_package_id: string
+  run_seed_proposal: string
+}
+
 // ── Endpoints ────────────────────────────────────────────────────────────
 
 export async function createMergedRun(
@@ -168,6 +214,20 @@ export async function acceptRest(mergedRunId: string, body: AcceptRestReq): Prom
  * `trigger_plan_id` exactly like a plain run-plan's does. */
 export async function buildMergedPlan(body: BuildMergedPlanReq): Promise<{ plan_id: string }> {
   return apiFetch('/api/merged-runs/plan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
+/** Ephemeral, non-persisting projection of the WHOLE merged chain (mirrors
+ * `routers/merged_runs.py`'s `quickview_merged_run_endpoint`, Slice-2c Task
+ * 3): one headless trigger preview pass plus a default quick-check proposal
+ * attached to every actionable fire. Nothing is written to `runs/`,
+ * `proposal_runs/`, or `merged_runs/` — safe to call before (or without ever)
+ * creating a real merged run via `createMergedRun`. */
+export async function mergedQuickview(body: MergedQuickviewReq): Promise<MergedInstantResult> {
+  return apiFetch('/api/merged-runs/quickview', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

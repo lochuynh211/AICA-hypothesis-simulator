@@ -105,6 +105,12 @@ export default function MergedSetupPanel() {
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Quickview (feature 020, Slice-2c Task 5) — a dedicated button rather than
+  // folding into "Start run": it's an ephemeral, non-persisting projection,
+  // independent of mergedRunId/create(), so it must work standalone without
+  // entangling with the Start flow's own two-round-trip sequencing/tests.
+  const [runningQuickview, setRunningQuickview] = useState(false)
+
   useEffect(() => {
     listRoutePresets()
       .then((res) => setRoutePresets(res.presets))
@@ -224,6 +230,46 @@ export default function MergedSetupPanel() {
     }
   }
 
+  /** Runs `coordinator.quickview()` — an ephemeral whole-chain projection
+   * (feature 020, Slice-2c Task 5). Reuses the SAME selected scenario/package
+   * ids and default `World` "Start run" does, but never calls
+   * `createRunPlan`/`buildMergedPlan`/`coordinator.create` — the quickview
+   * endpoint resolves its own route server-side from `route_preset_id`
+   * (falling back to the scenario's local route when none is selected), so
+   * no `routeEnvelope` round-trip is needed first. */
+  async function handleQuickview() {
+    if (
+      !selectedScenarioId ||
+      !selectedTriggerPackageId ||
+      !selectedServicePackageId ||
+      !selectedContentPackageId
+    ) {
+      setError('Select a scenario and all three packages before running a quickview.')
+      return
+    }
+    setRunningQuickview(true)
+    setError(null)
+    try {
+      const world = defaultWorld ?? (await loadDefaultWorld())
+      await coordinator.quickview({
+        package_id: selectedTriggerPackageId,
+        scenario_id: selectedScenarioId,
+        route_preset_id: selectedRoutePresetId,
+        run_seed: runSeed,
+        mountain_range_km: mountainRange,
+        jam_range_km: jamRange,
+        world,
+        service_package_id: selectedServicePackageId,
+        content_package_id: selectedContentPackageId,
+        run_seed_proposal: String(runSeed),
+      })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to run quickview')
+    } finally {
+      setRunningQuickview(false)
+    }
+  }
+
   const selectedRoutePreset = routePresets.find((p) => p.id === selectedRoutePresetId) ?? null
   const selectedScenario = scenarios.find((s) => s.id === selectedScenarioId) ?? null
   const selectedTriggerPackage = triggerPackages.find((p) => p.id === selectedTriggerPackageId) ?? null
@@ -264,6 +310,16 @@ export default function MergedSetupPanel() {
         onClick={handleStart}
       >
         {starting ? 'Starting…' : 'Start run'}
+      </button>
+
+      <button
+        type="button"
+        data-testid="merged-quickview-button"
+        style={{ width: '100%', marginTop: '6px' }}
+        disabled={runningQuickview}
+        onClick={() => void handleQuickview()}
+      >
+        {runningQuickview ? 'Running quickview…' : 'Quickview'}
       </button>
 
       {/* ── Route ─────────────────────────────────────────────────────── */}
