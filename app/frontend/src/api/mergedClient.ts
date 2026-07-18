@@ -11,7 +11,7 @@
  * (proposal side, for `World`/`ProposalRunLog`) — never on `state/runStore` or
  * `state/proposalStore` (feature-020 isolation constraint; see CLAUDE.md).
  */
-import type { DecisionResult, AlgorithmError, RestSpot, RunState, FirePoint, InstantResult } from './types'
+import type { DecisionResult, AlgorithmError, RestSpot, RunState, FirePoint, InstantResult, RunLog } from './types'
 import type { World, ProposalRunLog } from './proposalClient'
 
 // ── Internal helper (mirrors api/client.ts's apiFetch) ──────────────────────
@@ -232,4 +232,63 @@ export async function mergedQuickview(body: MergedQuickviewReq): Promise<MergedI
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
+}
+
+// ── Correlation replay — feature 020, Slice-2c (Task 6) ─────────────────────
+
+/** Persisted merged-run record (mirrors `models/merged_run.py`'s
+ * `MergedRunHandle.model_dump()`) — the shape `GET /api/merged-runs/{id}`
+ * returns under `handle`. */
+export type MergedRunHandle = {
+  merged_run_id: string
+  trigger_run_id: string
+  world_template: Record<string, unknown>
+  service_package_id: string
+  content_package_id: string
+  proposal_mode: string
+  run_seed: string
+  proposal_run_ids: string[]
+  current_proposal_run_id: string | null
+  correlation_log: CorrelationEntry[]
+  rest_stage_synced: string | null
+  nap_minutes: number | null
+}
+
+/** Response for `GET /api/merged-runs/{id}` (mirrors
+ * `routers/merged_runs.py`'s `get_merged_run_endpoint`) — a pure disk-read
+ * reassembly for read-only replay: the persisted handle, the raw trigger
+ * `RunLog` JSON exactly as stored (`null` only if that file is missing —
+ * should not happen for a real merged run), and every paired
+ * `ProposalRunLog` in `handle.proposal_run_ids` order. Nothing here is
+ * recomputed — no engine, no selector runs. */
+export type GetMergedRunResponse = {
+  handle: MergedRunHandle
+  trigger_log: RunLog | null
+  proposal_logs: ProposalRunLog[]
+}
+
+/** Summary row for `GET /api/merged-runs` (mirrors
+ * `list_merged_runs_endpoint`'s per-file projection). */
+export type MergedRunSummary = {
+  merged_run_id: string
+  trigger_run_id: string | null
+  proposal_run_ids_count: number
+}
+
+/** Reassembles one persisted merged run for read-only replay (mirrors
+ * `routers/merged_runs.py`'s `get_merged_run_endpoint`, Slice-2c Task 4).
+ * Pure disk read — never recomputes a decision and never mutates the run.
+ * Feeds `replay/mergedReplaySource.ts`'s `createMergedReplaySource`. */
+export async function getMergedRun(mergedRunId: string): Promise<GetMergedRunResponse> {
+  return apiFetch(`/api/merged-runs/${encodeURIComponent(mergedRunId)}`, { method: 'GET' })
+}
+
+/** Lists every persisted merged run's summary (mirrors
+ * `list_merged_runs_endpoint`). Unwraps the backend's `{merged_runs: [...]}`
+ * envelope so callers receive the array directly. */
+export async function listMergedRuns(): Promise<MergedRunSummary[]> {
+  const { merged_runs } = await apiFetch<{ merged_runs: MergedRunSummary[] }>('/api/merged-runs', {
+    method: 'GET',
+  })
+  return merged_runs
 }
