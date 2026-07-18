@@ -219,6 +219,54 @@ describe('createMergedReplaySource (pure projector)', () => {
     expect(source.getAt(0).trigger).toBeNull()
     expect(source.getAt(0).proposalEvents).toEqual([])
   })
+
+  it('splits ONE proposal run\'s events across ALL of its correlation entries (multi-tick rest journey), instead of collapsing everything onto the first tick', () => {
+    // Mirrors the backend rest-journey auto-drive (routers/merged_runs.py):
+    // ONE proposal run gets a NEW CorrelationEntry at each stage (fire,
+    // during_rest_stopped, after-rest recompute), each carrying a CUMULATIVE
+    // snapshot of `proposal_event_ids` as of that tick.
+    const restJourneyLog: ProposalRunLog = {
+      ...proposalLog,
+      run_id: 'prop-run-rest',
+      events: [
+        { event_type: 'OPPORTUNITY_OPENED', at: 5, payload: {} },
+        { event_type: 'REST_SPOT_ARRIVED', at: 20, payload: {} },
+        { event_type: 'REST_STARTED', at: 20, payload: {} },
+        { event_type: 'REST_COMPLETED', at: 35, payload: {} },
+      ],
+    }
+    const restJourneyCorrelation = [
+      { trigger_tick_index: 5, proposal_run_id: 'prop-run-rest', proposal_event_ids: ['OPPORTUNITY_OPENED@5'] },
+      {
+        trigger_tick_index: 20,
+        proposal_run_id: 'prop-run-rest',
+        proposal_event_ids: ['OPPORTUNITY_OPENED@5', 'REST_SPOT_ARRIVED@20', 'REST_STARTED@20'],
+      },
+      {
+        trigger_tick_index: 35,
+        proposal_run_id: 'prop-run-rest',
+        proposal_event_ids: [
+          'OPPORTUNITY_OPENED@5',
+          'REST_SPOT_ARRIVED@20',
+          'REST_STARTED@20',
+          'REST_COMPLETED@35',
+        ],
+      },
+    ]
+
+    const source = createMergedReplaySource({
+      trigger_log: triggerLog,
+      proposal_logs: [restJourneyLog],
+      correlation: restJourneyCorrelation,
+    })
+
+    expect(source.getAt(5).proposalEvents.map((e) => e.event_type)).toEqual(['OPPORTUNITY_OPENED'])
+    expect(source.getAt(20).proposalEvents.map((e) => e.event_type)).toEqual([
+      'REST_SPOT_ARRIVED',
+      'REST_STARTED',
+    ])
+    expect(source.getAt(35).proposalEvents.map((e) => e.event_type)).toEqual(['REST_COMPLETED'])
+  })
 })
 
 // ── MergedReplayViewer — fetch + reused ReplayControls + read-only trace ────
