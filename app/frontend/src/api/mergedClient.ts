@@ -11,7 +11,7 @@
  * (proposal side, for `World`/`ProposalRunLog`) — never on `state/runStore` or
  * `state/proposalStore` (feature-020 isolation constraint; see CLAUDE.md).
  */
-import type { DecisionResult, AlgorithmError } from './types'
+import type { DecisionResult, AlgorithmError, RestSpot, RunState } from './types'
 import type { World, ProposalRunLog } from './proposalClient'
 
 // ── Internal helper (mirrors api/client.ts's apiFetch) ──────────────────────
@@ -86,6 +86,15 @@ export type MergedTickResponse = {
   correlation: CorrelationEntry | null
 }
 
+/** Request body for `POST /api/merged-runs/{id}/accept-rest` (mirrors
+ * `AcceptRestBody` — slice-2 core Task 4). `nap_minutes`, when supplied,
+ * overrides the chosen recovery option's nap-stage duration server-side. */
+export type AcceptRestReq = {
+  recovery_option_id: string
+  rest_spot: RestSpot
+  nap_minutes: number | null
+}
+
 // ── Endpoints ────────────────────────────────────────────────────────────
 
 export async function createMergedRun(
@@ -109,6 +118,19 @@ export async function mergedProposalAction(
   body: MergedProposalActionReq,
 ): Promise<ProposalRunLog> {
   return apiFetch(`/api/merged-runs/${encodeURIComponent(mergedRunId)}/proposal-action`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
+/** Starts the trigger-side recovery sequence for a merged run's REST fire
+ * (mirrors `routers/merged_runs.py`'s `accept_rest_endpoint`). Returns the
+ * full trigger `RunState` — the SAME shape `GET /api/runs/{id}` returns.
+ * After this resolves, the existing tick loop (Play) auto-drives the rest
+ * journey server-side (Task 3); no further per-stage action is needed. */
+export async function acceptRest(mergedRunId: string, body: AcceptRestReq): Promise<RunState> {
+  return apiFetch(`/api/merged-runs/${encodeURIComponent(mergedRunId)}/accept-rest`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

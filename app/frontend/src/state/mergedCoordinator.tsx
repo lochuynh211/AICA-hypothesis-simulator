@@ -23,16 +23,30 @@ import {
   createMergedRun,
   tickMergedRun,
   mergedProposalAction,
+  acceptRest as acceptRestClient,
   type CreateMergedRunReq,
   type MergedTickResponse,
   type MergedTriggerTick,
   type CorrelationEntry,
+  type AcceptRestReq,
 } from '../api/mergedClient'
 
 // ── State ──────────────────────────────────────────────────────────────────
 
 export type MergedCoordinatorState = {
   mergedRunId: string | null
+  /** The paired trigger run id (from `create()`'s response) — needed by
+   * `MergedCenterPanel`'s rest-accept affordance to fetch candidate rest
+   * spots via `getRestSpots(triggerRunId, ...)` (slice-2 core Task 4), the
+   * SAME client `RecoveryPicker` uses for the trigger-only screen. */
+  triggerRunId: string | null
+  /** The scenario catalog id the run was created from, when the caller
+   * supplies one to `create()` — needed to fetch `recovery_options` via
+   * `getScenario(scenarioId)` (same client `RecoveryPicker` uses). `null`
+   * when the caller doesn't pass one (existing callers/tests are
+   * unaffected — the rest-accept affordance simply stays unable to load
+   * recovery options until a scenarioId is available). */
+  scenarioId: string | null
   /** Accumulated from each tick's trigger payload — built the same way
    * runStore's TICK_APPENDED builds a TraceEntry, one entry per evaluated
    * tick (a completed no-op tick with `decision: null` is not appended). */
@@ -59,6 +73,8 @@ export type MergedCoordinatorState = {
 
 export const initialMergedCoordinatorState: MergedCoordinatorState = {
   mergedRunId: null,
+  triggerRunId: null,
+  scenarioId: null,
   triggerTrace: [],
   latestTrigger: null,
   proposalLog: null,
@@ -73,7 +89,7 @@ export const initialMergedCoordinatorState: MergedCoordinatorState = {
 // ── Actions ────────────────────────────────────────────────────────────────
 
 export type MergedCoordinatorAction =
-  | { type: 'CREATED'; mergedRunId: string }
+  | { type: 'CREATED'; mergedRunId: string; triggerRunId: string; scenarioId: string | null }
   | { type: 'TICK_APPENDED'; response: MergedTickResponse }
   | { type: 'PROPOSAL_UPDATED'; proposalLog: ProposalRunLog }
   | { type: 'SET_RUNNING'; running: boolean }
@@ -110,7 +126,12 @@ export function mergedCoordinatorReducer(
   switch (action.type) {
     case 'CREATED':
       // A fresh merged run starts clean — mirrors runStore's RUN_CREATED.
-      return { ...initialMergedCoordinatorState, mergedRunId: action.mergedRunId }
+      return {
+        ...initialMergedCoordinatorState,
+        mergedRunId: action.mergedRunId,
+        triggerRunId: action.triggerRunId,
+        scenarioId: action.scenarioId,
+      }
 
     case 'TICK_APPENDED': {
       const { trigger, proposal, correlation } = action.response
@@ -159,11 +180,15 @@ export function mergedCoordinatorReducer(
 
 type MergedCoordinatorContextValue = {
   state: MergedCoordinatorState
-  create(req: CreateMergedRunReq): Promise<void>
+  /** `scenarioId` is OPTIONAL local bookkeeping only — never sent over the
+   * wire (the `POST /api/merged-runs` body is `req`, untouched) — so every
+   * existing caller that omits it keeps working unchanged. */
+  create(req: CreateMergedRunReq, scenarioId?: string): Promise<void>
   play(): void
   pause(): void
   step(): Promise<void>
   selectService(serviceId: string): Promise<void>
+  acceptRest(body: AcceptRestReq): Promise<void>
 }
 
 const MergedCoordinatorContext = createContext<MergedCoordinatorContextValue | null>(null)
@@ -182,11 +207,16 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
   // in-flight selection synchronously — mirrors `runningRef`'s role for play().
   const choosingRef = useRef<string | null>(null)
 
-  const create = async (req: CreateMergedRunReq): Promise<void> => {
+  const create = async (req: CreateMergedRunReq, scenarioId?: string): Promise<void> => {
     try {
       const resp = await createMergedRun(req)
       mergedRunIdRef.current = resp.merged_run_id
-      dispatch({ type: 'CREATED', mergedRunId: resp.merged_run_id })
+      dispatch({
+        type: 'CREATED',
+        mergedRunId: resp.merged_run_id,
+        triggerRunId: resp.trigger_run_id,
+        scenarioId: scenarioId ?? null,
+      })
     } catch (err) {
       dispatch({
         type: 'ERROR',
@@ -258,7 +288,33 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     }
   }
 
-  const value: MergedCoordinatorContextValue = { state, create, play, pause, step, selectService }
+  const acceptRest = async (body: AcceptRestReq): Promise<void> => {
+    const mergedRunId = mergedRunIdRef.current
+    if (!mergedRunId) return
+    try {
+      await acceptRestClient(mergedRunId, body)
+      // The trigger's staged recovery has now started server-side — resume
+      // Play so the existing tick loop auto-drives the rest journey
+      // (Task 3's orchestrator) through to the after-rest recompute. No
+      // separate per-stage action is needed (brief/CLAUDE.md).
+      play()
+    } catch (err) {
+      dispatch({
+        type: 'ERROR',
+        message: err instanceof Error ? err.message : 'accept_rest failed',
+      })
+    }
+  }
+
+  const value: MergedCoordinatorContextValue = {
+    state,
+    create,
+    play,
+    pause,
+    step,
+    selectService,
+    acceptRest,
+  }
   return React.createElement(MergedCoordinatorContext.Provider, { value }, children)
 }
 

@@ -18,17 +18,28 @@
  *     .active_service_id` — the same derivation
  *     `ServiceProposalPanel`/`ContentProposalPanel` do from `proposalStore`.
  */
+import { useEffect, useState } from 'react'
 import { useMergedCoordinator } from '../../state/mergedCoordinator'
 import ScoreTimeline from '../playback/ScoreTimeline'
 import type { TimelineData, TimelineFire, TimelinePoint } from '../playback/timelineData'
-import type { TraceEntry } from '../../api/types'
+import type { TraceEntry, RecoveryOption, RestSpot } from '../../api/types'
 import type { RankedCandidate, ExcludedCandidate, CompletePlan } from '../../api/proposalClient'
+import { getScenario, getRestSpots } from '../../api/client'
 import { ServiceResultOverlay } from './ServiceResultOverlay'
 import { ContentResultOverlay } from './ContentResultOverlay'
 import { t } from '../../i18n/t'
 
 const LABELS = {
   algorithmError: { ja: 'アルゴリズムエラー', en: 'Algorithm error' },
+}
+
+const RECOVERY_LABELS = {
+  title: { ja: '休憩を受け入れる', en: 'Accept rest' },
+  option: { ja: '休憩オプション', en: 'Recovery option' },
+  spot: { ja: '休憩場所', en: 'Rest spot' },
+  minutes: { ja: '仮眠時間（分）', en: 'Sleep minutes' },
+  accept: { ja: '休憩を受け入れる', en: 'Accept rest' },
+  loadError: { ja: '休憩オプションの読み込みに失敗しました', en: 'Failed to load recovery options' },
 }
 
 const num = (v: unknown): number | null => (typeof v === 'number' ? v : null)
@@ -118,6 +129,63 @@ export default function MergedCenterPanel() {
     await coordinator.selectService(candidateId)
   }
 
+  // ── Rest-accept affordance (slice-2 core Task 4) ──────────────────────────
+  //
+  // Shown once the CURRENT before-rest proposal is a rest opportunity
+  // (opportunity.trigger_purpose === 'rest_recommended') that hasn't yet
+  // advanced past before_rest_until_stop (journey_state.lifecycle_stage —
+  // the LIVE stage tracker, unlike opportunity.lifecycle_stage which stays
+  // frozen at 'before_rest_until_stop' for the opportunity's whole rest
+  // journey) AND a service has been chosen (activeServiceId set) — mirrors
+  // RecoveryPicker's own visibility guard, adapted to the coordinator's
+  // proposalLog-derived state instead of runStore's latestDecision.
+  const opportunity = state.proposalLog?.opportunity
+  const journeyStage = state.proposalLog?.journey_state.lifecycle_stage
+  const isBeforeRestOpportunity =
+    opportunity?.trigger_purpose === 'rest_recommended' && journeyStage === 'before_rest_until_stop'
+  const showRestAccept = isBeforeRestOpportunity && activeServiceId != null
+
+  const [recoveryOptions, setRecoveryOptions] = useState<RecoveryOption[]>([])
+  const [restSpots, setRestSpots] = useState<RestSpot[]>([])
+  const [selectedOptionId, setSelectedOptionId] = useState('')
+  const [selectedSpotId, setSelectedSpotId] = useState('')
+  const [napMinutes, setNapMinutes] = useState('')
+  const [restLoadError, setRestLoadError] = useState<string | null>(null)
+  const [submittingRest, setSubmittingRest] = useState(false)
+
+  useEffect(() => {
+    if (!showRestAccept || !state.scenarioId || !state.triggerRunId) return
+    let cancelled = false
+    Promise.all([getScenario(state.scenarioId), getRestSpots(state.triggerRunId)])
+      .then(([scenario, spotsResp]) => {
+        if (cancelled) return
+        setRecoveryOptions(scenario.recovery_options ?? [])
+        setRestSpots(spotsResp.rest_spots)
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) setRestLoadError(err instanceof Error ? err.message : 'Failed to load recovery options')
+      })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showRestAccept, state.scenarioId, state.triggerRunId])
+
+  async function handleAcceptRest(): Promise<void> {
+    const spot = restSpots.find((s) => s.id === selectedSpotId)
+    if (!selectedOptionId || !spot) return
+    setSubmittingRest(true)
+    try {
+      await coordinator.acceptRest({
+        recovery_option_id: selectedOptionId,
+        rest_spot: spot,
+        nap_minutes: napMinutes === '' ? null : Number(napMinutes),
+      })
+    } finally {
+      setSubmittingRest(false)
+    }
+  }
+
   return (
     <div
       data-testid="merged-center-panel"
@@ -157,6 +225,98 @@ export default function MergedCenterPanel() {
         <p role="alert" style={{ color: '#dc2626', fontSize: '0.82em' }}>
           {state.error}
         </p>
+      )}
+
+      {/* Rest-accept affordance — RecoveryOption select + rest-spot select +
+          sleep-minutes input + Accept-rest button (slice-2 core Task 4).
+          Once accepted, the existing tick loop (Play) auto-drives the rest
+          journey server-side; this affordance disappears on its own once
+          journey_state.lifecycle_stage advances past before_rest_until_stop. */}
+      {showRestAccept && (
+        <div
+          data-testid="rest-accept-panel"
+          style={{
+            flexShrink: 0,
+            margin: '8px 0',
+            padding: '10px 12px',
+            border: '2px solid #5bc0be',
+            borderRadius: '8px',
+            background: '#f0fbff',
+          }}
+        >
+          <p style={{ fontSize: '0.85em', fontWeight: 700, marginBottom: '8px' }}>
+            {t(RECOVERY_LABELS.title, 'en')}
+          </p>
+
+          <label htmlFor="rest-accept-option-select" style={{ display: 'block', fontSize: '0.8em', marginBottom: '2px' }}>
+            {t(RECOVERY_LABELS.option, 'en')}
+          </label>
+          <select
+            id="rest-accept-option-select"
+            data-testid="recovery-option-select"
+            value={selectedOptionId}
+            onChange={(e) => setSelectedOptionId(e.target.value)}
+            disabled={recoveryOptions.length === 0}
+          >
+            <option value="" disabled>
+              {recoveryOptions.length === 0 ? 'Loading…' : 'Select a recovery option'}
+            </option>
+            {recoveryOptions.map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {t(opt.label, 'en')}
+              </option>
+            ))}
+          </select>
+
+          <label htmlFor="rest-accept-spot-select" style={{ display: 'block', fontSize: '0.8em', margin: '8px 0 2px' }}>
+            {t(RECOVERY_LABELS.spot, 'en')}
+          </label>
+          <select
+            id="rest-accept-spot-select"
+            data-testid="rest-spot-select"
+            value={selectedSpotId}
+            onChange={(e) => setSelectedSpotId(e.target.value)}
+            disabled={restSpots.length === 0}
+          >
+            <option value="" disabled>
+              {restSpots.length === 0 ? 'Loading…' : 'Select a rest spot'}
+            </option>
+            {restSpots.map((spot) => (
+              <option key={spot.id} value={spot.id}>
+                {t(spot.label, 'en')}
+              </option>
+            ))}
+          </select>
+
+          <label htmlFor="rest-accept-nap-minutes" style={{ display: 'block', fontSize: '0.8em', margin: '8px 0 2px' }}>
+            {t(RECOVERY_LABELS.minutes, 'en')}
+          </label>
+          <input
+            id="rest-accept-nap-minutes"
+            data-testid="nap-minutes-input"
+            type="number"
+            min={0}
+            value={napMinutes}
+            onChange={(e) => setNapMinutes(e.target.value)}
+          />
+
+          {restLoadError && (
+            <p role="alert" style={{ color: '#dc2626', fontSize: '0.82em' }}>
+              {t(RECOVERY_LABELS.loadError, 'en')}: {restLoadError}
+            </p>
+          )}
+
+          <div style={{ marginTop: '8px' }}>
+            <button
+              type="button"
+              data-testid="accept-rest-button"
+              disabled={submittingRest || !selectedOptionId || !selectedSpotId}
+              onClick={() => void handleAcceptRest()}
+            >
+              {submittingRest ? '…' : t(RECOVERY_LABELS.accept, 'en')}
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Dock — mirrors CenterPlaybackPanel's proposal dock (lines 87-114). */}

@@ -181,13 +181,20 @@ export default function MergedSetupPanel() {
         runSeed,
       })
       const world = defaultWorld ?? (await loadDefaultWorld())
-      await coordinator.create({
-        trigger_plan_id: plan.plan_id,
-        world,
-        service_package_id: selectedServicePackageId,
-        content_package_id: selectedContentPackageId,
-        run_seed: String(runSeed),
-      })
+      await coordinator.create(
+        {
+          trigger_plan_id: plan.plan_id,
+          world,
+          service_package_id: selectedServicePackageId,
+          content_package_id: selectedContentPackageId,
+          run_seed: String(runSeed),
+        },
+        // Local-only bookkeeping (never sent to the backend — see
+        // mergedCoordinator's `create()` docstring): lets MergedCenterPanel's
+        // rest-accept affordance later resolve `recovery_options` via
+        // `getScenario(scenarioId)`, the same client RecoveryPicker uses.
+        selectedScenarioId,
+      )
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to start run')
     } finally {
