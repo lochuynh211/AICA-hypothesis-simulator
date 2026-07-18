@@ -276,31 +276,69 @@ def advance_tick(
         new_drowsiness = drowsiness
         new_fatigue = fatigue
 
-    # ── Recovery: apply a rest activity's fixed recovery ONCE, on entry ────
-    # Feature 009 (UX iteration): recovery is applied a single time per activity
+    # ── Recovery: apply a rest activity's recovery ─────────────────────────
+    # STOPPED nap/content stage: recovery is applied a single time per activity
     # (the first STOPPED tick of each recovery stage), keyed by the stage's
     # ``content`` — NOT accumulated every tick. A stage's first dwell tick is the
     # one where recovery.stage_ticks_remaining still equals the stage's full
     # ``ticks`` (it is decremented by advance_recovery from this tick onward).
+    # Feature 020 (Slice-2, merged simulator): when the activity's recovery_model
+    # entry has any ``*_per_min`` field set, the once-on-entry amount is
+    # duration-scaled over the stage's full dwell (apply_rest_recovery_minutes,
+    # minutes = stage.ticks * tick_seconds / 60) instead of the legacy fixed flat
+    # amount (apply_rest_recovery) — additive/opt-in; a flat-only entry (no
+    # per-min fields set) keeps today's exact fixed-once behavior unchanged.
+    #
+    # MOVING content stage (feature 020, NEW): a stage with motion=="MOVING" and
+    # phase=="content" (or content != "wakefulness") accrues per-tick rate-based
+    # recovery (apply_rest_recovery_rate) EVERY moving tick while en route to the
+    # rest spot — additive; today MOVING stages get zero recovery. A plain
+    # wakefulness MOVING stage (content == "wakefulness", not phase=="content")
+    # still recovers nothing.
     if (
         recovery is not None
         and recovery.active
-        and motion_state == "STOPPED"
         and scenario.driver_signal_params is not None
     ):
-        from aica_api.services.behavior.driver_signals import DriverState, apply_rest_recovery
         _rec_option = next((o for o in scenario.recovery_options if o.id == recovery.option_id), None)
         _stage = (
             _rec_option.stages[recovery.stage_index]
             if _rec_option and 0 <= recovery.stage_index < len(_rec_option.stages)
             else None
         )
-        _is_activity_entry = _stage is not None and recovery.stage_ticks_remaining == (_stage.ticks or 0)
-        if _stage is not None and _is_activity_entry:
-            recovered = apply_rest_recovery(
+        if _stage is not None and motion_state == "STOPPED":
+            from aica_api.services.behavior.driver_signals import (
+                DriverState, apply_rest_recovery, apply_rest_recovery_minutes,
+            )
+            _is_activity_entry = recovery.stage_ticks_remaining == (_stage.ticks or 0)
+            if _is_activity_entry:
+                _rec_entry = scenario.driver_signal_params.recovery_model.get(_stage.content)
+                _is_enriched = _rec_entry is not None and (
+                    _rec_entry.drowsiness_per_min > 0.0 or _rec_entry.fatigue_per_min > 0.0
+                )
+                if _is_enriched:
+                    recovered = apply_rest_recovery_minutes(
+                        scenario.driver_signal_params,
+                        DriverState(drowsiness=new_drowsiness, fatigue=new_fatigue),
+                        _stage.content,
+                        minutes=(_stage.ticks or 0) * tick_seconds / 60.0,
+                    )
+                else:
+                    recovered = apply_rest_recovery(
+                        scenario.driver_signal_params,
+                        DriverState(drowsiness=new_drowsiness, fatigue=new_fatigue),
+                        _stage.content,
+                    )
+                new_drowsiness, new_fatigue = recovered.drowsiness, recovered.fatigue
+        elif _stage is not None and motion_state == "MOVING" and (
+            _stage.phase == "content" or _stage.content != "wakefulness"
+        ):
+            from aica_api.services.behavior.driver_signals import DriverState, apply_rest_recovery_rate
+            recovered = apply_rest_recovery_rate(
                 scenario.driver_signal_params,
                 DriverState(drowsiness=new_drowsiness, fatigue=new_fatigue),
                 _stage.content,
+                tick_minutes=tick_seconds / 60.0,
             )
             new_drowsiness, new_fatigue = recovered.drowsiness, recovered.fatigue
 
