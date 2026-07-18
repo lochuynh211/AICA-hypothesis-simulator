@@ -178,17 +178,29 @@ def tick_merged_run_endpoint(merged_run_id: str) -> MergedTickResponse:
             trigger_purpose=purpose,
             lifecycle_stage=stage,
         )
-        proposal_body = CreateProposalRunBody(
-            world=world,
-            trigger_purpose=purpose,
-            lifecycle_stage=stage,
-            motion_state=world.control_inputs.motion_state,
-            service_package_id=handle.service_package_id,
-            content_package_id=handle.content_package_id,
-            mode=handle.proposal_mode,
-            run_seed=handle.run_seed,
-            simulation_time=outcome.evaluated_tick_index or 0,
-        )
+        # `handle.proposal_mode` is an unconstrained ``str`` on
+        # ``CreateMergedRunBody``/``MergedRunHandle`` (no Literal/enum), so
+        # `POST /api/merged-runs` accepts any string. `CreateProposalRunBody
+        # .mode` is enum-typed (``ProposalRunMode``) — constructing this
+        # model manually here means an invalid stored value must be caught
+        # explicitly (mirrors the SelectServiceBody/JourneyAction
+        # ValidationError -> 422 convention two call sites below), rather
+        # than letting the ValidationError propagate out as a raw 500.
+        try:
+            proposal_body = CreateProposalRunBody(
+                world=world,
+                trigger_purpose=purpose,
+                lifecycle_stage=stage,
+                motion_state=world.control_inputs.motion_state,
+                service_package_id=handle.service_package_id,
+                content_package_id=handle.content_package_id,
+                mode=handle.proposal_mode,
+                run_seed=handle.run_seed,
+                simulation_time=outcome.evaluated_tick_index or 0,
+            )
+        except ValidationError as exc:
+            raise HTTPException(status_code=422, detail=exc.errors()) from exc
+
         try:
             plog = create_proposal_run(proposal_body)
         except HTTPException as exc:

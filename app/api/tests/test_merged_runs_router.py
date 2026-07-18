@@ -170,3 +170,40 @@ def test_proposal_action_invalid_action_type_422(rest_plan_id, base_world_dict):
         json={"kind": "journey_action", "action_type": "not_a_real_action"},
     )
     assert resp.status_code == 422, resp.text
+
+
+def test_tick_with_invalid_proposal_mode_422_not_500(rest_plan_id, base_world_dict):
+    """Review fix: `CreateMergedRunBody.proposal_mode` is an unconstrained
+    ``str`` (no ``Literal``/enum), so ``POST /api/merged-runs`` accepts any
+    string and returns 201. When the trigger later fires, the tick endpoint
+    manually constructs ``CreateProposalRunBody(..., mode=handle.proposal_mode,
+    ...)`` — an enum-typed field — which must surface as a structured 422,
+    not an unhandled 500 (ValidationError propagating out of the endpoint).
+    """
+    r = client.post(
+        "/api/merged-runs",
+        json={
+            "trigger_plan_id": rest_plan_id,
+            "world": base_world_dict,
+            "service_package_id": _SERVICE_PACKAGE_ID,
+            "content_package_id": _CONTENT_PACKAGE_ID,
+            "proposal_mode": "not_a_real_mode",
+            "run_seed": "7",
+        },
+    )
+    assert r.status_code == 201, r.text
+    mid = r.json()["merged_run_id"]
+
+    saw_422 = False
+    for _ in range(_MAX_TICKS):
+        tr = client.post(f"/api/merged-runs/{mid}/tick")
+        if tr.status_code == 422:
+            saw_422 = True
+            break
+        assert tr.status_code == 200, tr.text
+        body = tr.json()
+        if body["proposal"]:
+            pytest.fail("proposal run must not be created with an invalid proposal_mode")
+        if body["trigger"].get("completed"):
+            break
+    assert saw_422, "expected a 422 on the fire tick, not a 500 or silent success"
