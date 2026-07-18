@@ -68,21 +68,34 @@ class FatigueModel(BaseModel):
 
 
 class ActivityRecovery(BaseModel):
-    """Fixed recovery amounts applied ONCE when a rest activity is performed.
+    """Recovery amounts applied when a rest activity is performed.
 
     Feature 009 (UX iteration): replaces the old short/long RecoveryModel. Each
     rest activity (a recovery-option stage's ``content`` — e.g. ``sleep``,
     ``audio_karaoke``, ``stretch``) carries its own drowsiness/fatigue recovery.
-    The amount is applied once per activity, independent of how long the stage
-    lasts (no per-minute rate, no short/long distinction).
+    ``drowsiness``/``fatigue`` are FIXED amounts applied once per activity,
+    independent of how long the stage lasts (legacy behavior, unchanged).
+
+    Feature 020 (Slice-2, merged simulator): adds OPT-IN duration/rate-scaled
+    recovery on top of the legacy flat amount (default 0.0 — inert unless
+    set). ``drowsiness_per_min``/``fatigue_per_min`` are per-minute recovery
+    rates consumed by ``apply_rest_recovery_minutes`` (duration-scaled, for a
+    STOPPED activity) and ``apply_rest_recovery_rate`` (per-tick accrual, for
+    a MOVING/en-route activity) in services/behavior/driver_signals.py.
+    ``cap_drowsiness``/``cap_fatigue`` optionally saturate the accrued
+    (rate-derived) portion only — the legacy flat amount is never capped.
     """
 
     model_config = ConfigDict(extra="forbid")
 
     drowsiness: float = 0.0
     fatigue: float = 0.0
+    drowsiness_per_min: float = 0.0
+    fatigue_per_min: float = 0.0
+    cap_drowsiness: float | None = None
+    cap_fatigue: float | None = None
 
-    @field_validator("drowsiness", "fatigue")
+    @field_validator("drowsiness", "fatigue", "drowsiness_per_min", "fatigue_per_min")
     @classmethod
     def _nonneg(cls, v: float) -> float:
         if v < 0:

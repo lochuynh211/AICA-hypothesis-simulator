@@ -164,6 +164,97 @@ def apply_rest_recovery(
     )
 
 
+def apply_rest_recovery_minutes(
+    params: DriverSignalParams,
+    current: DriverState,
+    activity: str,
+    minutes: float,
+) -> DriverState:
+    """Duration-scaled recovery for a STOPPED activity of ``minutes`` length.
+
+    Feature 020 (Slice-2, merged simulator). Recovery per component is::
+
+        flat_amount + min(cap, per_min * minutes)
+
+    where ``cap`` is the activity's ``cap_drowsiness``/``cap_fatigue`` (no cap
+    when ``None``). The cap applies ONLY to the accrued (rate-derived)
+    portion — the legacy flat amount is never capped.
+
+    Back-compat: an entry with only the legacy flat fields set (``per_min``
+    fields left at their 0.0 default) recovers exactly the flat amount
+    regardless of ``minutes`` — identical to ``apply_rest_recovery``.
+
+    Args:
+        params:   DriverSignalParams (provides the per-activity recovery map).
+        current:  State before the activity.
+        activity: The stage ``content`` naming the rest activity.
+        minutes:  Length of the stopped activity, in minutes.
+
+    Returns:
+        Recovered DriverState (drowsiness/fatigue reduced, clamped >= 0).
+    """
+    rec = params.recovery_model.get(activity)
+    if rec is None:
+        return DriverState(drowsiness=current.drowsiness, fatigue=current.fatigue)
+
+    drowsiness_rate = rec.drowsiness_per_min * minutes
+    if rec.cap_drowsiness is not None:
+        drowsiness_rate = min(drowsiness_rate, rec.cap_drowsiness)
+
+    fatigue_rate = rec.fatigue_per_min * minutes
+    if rec.cap_fatigue is not None:
+        fatigue_rate = min(fatigue_rate, rec.cap_fatigue)
+
+    return DriverState(
+        drowsiness=_clamp(current.drowsiness - (rec.drowsiness + drowsiness_rate)),
+        fatigue=_clamp(current.fatigue - (rec.fatigue + fatigue_rate)),
+    )
+
+
+def apply_rest_recovery_rate(
+    params: DriverSignalParams,
+    current: DriverState,
+    activity: str,
+    tick_minutes: float,
+) -> DriverState:
+    """Per-tick recovery accrual for a MOVING/en-route activity.
+
+    Feature 020 (Slice-2, merged simulator). Subtracts
+    ``per_min * tick_minutes`` per component on EACH call (the caller invokes
+    this once per tick while the activity is ongoing), optionally capped by
+    ``cap_drowsiness``/``cap_fatigue`` on that single call's amount. Unlike
+    ``apply_rest_recovery_minutes`` this ignores the legacy flat
+    ``drowsiness``/``fatigue`` fields — those are for one-shot STOPPED
+    activities, not per-tick accrual. Result is always clamped >= 0 (never
+    goes negative-current, i.e. never over-recovers below the floor).
+
+    Args:
+        params:       DriverSignalParams (provides the per-activity recovery map).
+        current:      State before this tick's accrual.
+        activity:     The stage ``content`` naming the rest activity.
+        tick_minutes: Length of this tick, in minutes.
+
+    Returns:
+        Recovered DriverState (drowsiness/fatigue reduced, clamped >= 0).
+    """
+    rec = params.recovery_model.get(activity)
+    if rec is None:
+        return DriverState(drowsiness=current.drowsiness, fatigue=current.fatigue)
+
+    drowsiness_amount = rec.drowsiness_per_min * tick_minutes
+    if rec.cap_drowsiness is not None:
+        drowsiness_amount = min(drowsiness_amount, rec.cap_drowsiness)
+
+    fatigue_amount = rec.fatigue_per_min * tick_minutes
+    if rec.cap_fatigue is not None:
+        fatigue_amount = min(fatigue_amount, rec.cap_fatigue)
+
+    return DriverState(
+        drowsiness=_clamp(current.drowsiness - drowsiness_amount),
+        fatigue=_clamp(current.fatigue - fatigue_amount),
+    )
+
+
 # ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
