@@ -31,7 +31,7 @@ import os
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from aica_api.config import settings
 from aica_api.models.merged_run import (
@@ -45,6 +45,7 @@ from aica_api.models.proposal.enums import DiscreteEventType, LifecycleStage, Pl
 from aica_api.models.proposal.journey_action import JourneyAction
 from aica_api.models.proposal.recompute import RecomputeRequest
 from aica_api.models.proposal.world import FieldOverride, World
+from aica_api.models.run import RouteFacts
 from aica_api.routers.proposal import (
     CreateProposalRunBody,
     SelectServiceBody,
@@ -54,24 +55,31 @@ from aica_api.routers.proposal import (
     recompute_proposal_run,
     select_service,
 )
+from aica_api.routers.route_presets import load_route_preset
 from aica_api.services import run_manager
 from aica_api.services.merged_adapter import (
     build_world_from_tick,
     map_lifecycle_stage,
     map_trigger_purpose,
 )
+from aica_api.services.merged_painter import inject_mountain_segment, jam_traffic_event
 from aica_api.services.merged_run_coordinator import (
     create_handle,
     get_handle,
     make_merged_run_id,
     save_handle,
 )
+from aica_api.services.package_registry import PackageRegistry
+from aica_api.services.route_analysis import analyze_route
+from aica_api.services.run_plan import create_draft
+from aica_api.services.scenario_registry import ScenarioRegistry
 
 router = APIRouter()
 
 
-# ── Run-ID generation (mirrors routers/runs.py's _make_run_id convention;
-#    kept local rather than imported so this seam stays self-contained) ──────
+# ── Run-ID / plan-ID generation (mirrors routers/runs.py's _make_run_id and
+#    routers/run_plans.py's _make_plan_id conventions; kept local rather than
+#    imported so this seam stays self-contained) ──────────────────────────────
 
 
 def _make_trigger_run_id() -> str:
@@ -79,6 +87,43 @@ def _make_trigger_run_id() -> str:
     ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     rand = os.urandom(3).hex()
     return f"run_{ts}_{rand}"
+
+
+def _make_merged_plan_id() -> str:
+    """Generate a unique plan_id: ``plan_<YYYYMMDD-HHMMSS>_<6-hex>``."""
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    rand = os.urandom(3).hex()
+    return f"plan_{ts}_{rand}"
+
+
+# ── Request body models ───────────────────────────────────────────────────────
+
+
+class CreateMergedPlanBody(BaseModel):
+    """Request body for ``POST /api/merged-runs/plan`` (Slice-2b Task 2).
+
+    Builds a trigger-side run-plan draft (the same registry ``POST
+    /api/run-plans`` populates) whose route_facts/event-plan are "painted"
+    with an ad-hoc ``mountain_road`` segment and/or a manually-positioned
+    traffic jam, via the Task-1 pure painter (``services/merged_painter.py``)
+    — so a merged scenario can be composed without new scenario JSON fixtures.
+
+    ``route_preset_id`` selects a pre-extracted Google route (same envelope
+    ``routers/route_presets.py``'s ``load_route_preset`` returns); ``None``
+    (default) uses the local ``analyze_route(scenario)`` path — same as the
+    run-plans router's local path.
+    """
+
+    package_id: str
+    scenario_id: str
+    route_preset_id: str | None = None
+    run_seed: int
+    mountain_range_km: tuple[float, float] | None = None
+    jam_range_km: tuple[float, float] | None = None
+    jam_speed_kph: float = 15.0
+    presets: dict = {}
+    parameters: dict = {}
+    hyperparameters: dict = {}
 
 
 # ── Trigger-tick serialization helper ────────────────────────────────────────
@@ -115,6 +160,108 @@ def _serialize_trigger_tick(outcome: run_manager.TickOutcome) -> dict:
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
+
+
+@router.post("/api/merged-runs/plan")
+def create_merged_plan_endpoint(body: CreateMergedPlanBody) -> dict:
+    """Build a "painted" trigger run-plan draft and return its ``plan_id``.
+
+    Mirrors ``routers/run_plans.py``'s ``create_run_plan_endpoint`` for
+    resolving package/scenario (400 for unknown/incompatible), but builds
+    ``route_facts`` from either the local ``analyze_route(scenario)`` path
+    (``route_preset_id`` absent) or a loaded route preset envelope (same
+    shape ``routers/route_presets.py``'s ``load_route_preset`` returns), then
+    applies the Task-1 pure painter (``services/merged_painter.py``):
+
+      - ``mountain_range_km`` splices a ``mountain_road`` run into
+        ``route_facts.route_segments`` (POSITION-native — km extents).
+      - ``jam_range_km`` converts to a TIME-based manual traffic-jam preset
+        (using the route's total km + estimated duration) appended to
+        ``presets["traffic_events"]`` (there is no pre-built ``EventPlan``
+        param on ``create_draft``).
+
+    The resulting draft is registered via the existing
+    ``run_plan.create_draft`` — the SAME registry ``POST /api/run-plans``
+    populates — so the returned ``plan_id`` feeds directly into
+    ``POST /api/merged-runs`` (``trigger_plan_id``) unchanged.
+    """
+    pkg_reg = PackageRegistry(settings.packages_dir)
+    sc_reg = ScenarioRegistry(settings.scenarios_dir)
+
+    package = pkg_reg.get(body.package_id)
+    if package is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Package {body.package_id!r} not found or invalid",
+        )
+
+    scenario = sc_reg.get(body.scenario_id)
+    if scenario is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Scenario {body.scenario_id!r} not found or invalid",
+        )
+
+    if not pkg_reg.is_compatible(package, scenario):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Package {body.package_id!r} is not compatible with "
+                f"scenario {body.scenario_id!r} (type={scenario.type!r})"
+            ),
+        )
+
+    if body.route_preset_id is not None:
+        preset_envelope = load_route_preset(body.route_preset_id)
+        route_facts = RouteFacts.model_validate(
+            preset_envelope["alternatives"][0]["route_facts"]
+        )
+    else:
+        route_facts = analyze_route(scenario)
+
+    if body.mountain_range_km is not None:
+        start_km, end_km = body.mountain_range_km
+        route_facts.route_segments = inject_mountain_segment(
+            route_facts.route_segments, start_km, end_km
+        )
+
+    presets = dict(body.presets)
+    if body.jam_range_km is not None:
+        start_km, end_km = body.jam_range_km
+        jam = jam_traffic_event(
+            start_km,
+            end_km,
+            route_facts.total_route_distance_km,
+            route_facts.estimated_route_duration_min,
+            speed_kph=body.jam_speed_kph,
+        )
+        traffic_events = list(presets.get("traffic_events", []))
+        traffic_events.append(jam)
+        presets["traffic_events"] = traffic_events
+
+    plan_id = _make_merged_plan_id()
+    draft = create_draft(
+        plan_id=plan_id,
+        package=package,
+        scenario=scenario,
+        presets=presets,
+        parameters=body.parameters,
+        hyperparameters=body.hyperparameters,
+        route_facts=route_facts,
+        route_source=route_facts.route_source,
+        run_seed=body.run_seed,
+    )
+
+    if draft.validation_errors:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "detail": "One or more parameter/hyperparameter values are invalid.",
+                "validation_errors": draft.validation_errors,
+            },
+        )
+
+    return {"plan_id": draft.plan_id}
 
 
 @router.post("/api/merged-runs", status_code=201)
