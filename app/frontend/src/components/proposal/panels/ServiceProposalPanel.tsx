@@ -11,7 +11,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { t } from '../../../i18n/t'
 import { useProposalStore } from '../../../state/proposalStore'
-import { fitBand } from '../../../lib/fitBand'
 import type { World, ProposalRunLog } from '../../../api/proposalClient'
 import {
   getPackages,
@@ -31,9 +30,7 @@ import HyperparamMatrix from '../HyperparamMatrix'
 import ResponseMatrixTable from '../ResponseMatrixTable'
 import HierarchyWeightsTable from '../HierarchyWeightsTable'
 import ScalarTable from '../ScalarTable'
-import ReasonBreakdown, { type ReasonRow } from '../ReasonBreakdown'
-import ServiceExplainability, { hasFeatureTrace } from '../ServiceExplainability'
-import { useExplanation, type ExplanationProvider } from '../useExplanation'
+import { ServiceResultOverlay } from '../../merged/ServiceResultOverlay'
 
 const LABELS = {
   title: { ja: 'サービス提案', en: 'Service proposal' },
@@ -55,32 +52,14 @@ const LABELS = {
     ja: '各サービスの適合度は、重み wᵢ と応答 rᵢ（左の世界特徴量から算出）の重み付き総和。',
     en: "Each service's fit is the weighted sum of weight wᵢ and response rᵢ (derived from the world features at left).",
   },
-  recommended: { ja: '推奨サービス（最大3件）', en: 'Recommended (≤3)' },
   run: { ja: '実行', en: 'Run' },
-  choose: { ja: 'これを選ぶ', en: 'Choose' },
-  selected: { ja: '選択中 → STEP 2 へ', en: 'Selected → to STEP 2' },
-  noProposal: { ja: '候補なし（no_proposal）', en: 'No candidates (no_proposal)' },
-  // feature 018 (US4) — friendlier, stable 0-100 band alongside the raw
-  // score (never replacing it — raw stays authoritative).
-  fitBand: { ja: '適合', en: 'fit' },
-  fitBandTitle: {
-    ja: '0〜100の目安スコア = (raw + 1) × 50。生スコアの表示用変換であり、判定には使用しません。',
-    en: 'A friendlier 0-100 band = (raw + 1) × 50. A display transform of the raw score only — never used in scoring.',
-  },
   algorithmError: { ja: 'アルゴリズムエラー', en: 'Algorithm error' },
-  // Task 5 — Choose is gated to content-backed services (CONTENT package's
-  // `supported_services`); non-backed candidates get this note instead.
-  outOfScope: { ja: 'V1対象外', en: 'Out of V1 scope' },
   // The service selector is still the P1 mock (real service ranking is a
   // later milestone) — P3c wires up the REAL content selector for STEP 2,
   // so this "mock data" marker is scoped to the service panel only; it no
   // longer applies to ContentProposalPanel (see ProposalShell — the badge
   // used to live in the shared header for both panels).
   mockBadge: { ja: 'モックデータ（P1土台）', en: 'MOCK DATA (P1 foundation)' },
-  // P4 (US5, FR-022) — eligibility lists from the STEP-1 input_snapshot.
-  eligibleTitle: { ja: '適格サービス', en: 'Eligible services' },
-  excludedTitle: { ja: '除外サービス（理由コード）', en: 'Excluded services (reason codes)' },
-  noneExcluded: { ja: 'なし', en: 'None' },
 }
 
 /** The subset of the STEP-1 evidence `input_snapshot` this panel reads (P4
@@ -114,47 +93,6 @@ const PREPROCESSING_KEYS = [
   'monotony_high_min',
 ]
 const WEIGHT_KEYS = ['hierarchy_weights', 'purpose_multipliers']
-
-function serviceRows(candidate: RankedCandidate): ReasonRow[] {
-  return candidate.feature_contributions.map((fc) => ({
-    featureId: fc.feature_id,
-    value: fc.feature_value,
-    r: fc.response_coefficient,
-    w: fc.weight,
-    contribution: fc.contribution,
-  }))
-}
-
-/** One candidate's ReasonBreakdown, wired to the explanation hook. Its own
- * component so the hook (one per candidate) obeys the rules of hooks even
- * though candidates are rendered in a `.map()`. When the provider is 'off' the
- * hook is inert and the deterministic template shows. */
-function ServiceReason({
-  candidate,
-  runId,
-  provider,
-  lang,
-}: {
-  candidate: RankedCandidate
-  runId: string | undefined
-  provider: ExplanationProvider
-  lang: 'ja' | 'en'
-}) {
-  const { ai, request } = useExplanation(runId, 'service', candidate.candidate_id, provider, lang)
-  return (
-    <ReasonBreakdown
-      rows={serviceRows(candidate)}
-      supportingFeatureIds={candidate.supporting_feature_ids}
-      opposingFeatureIds={candidate.opposing_feature_ids}
-      rationale={candidate.rationale}
-      lang={lang}
-      variant="service"
-      showTable={!hasFeatureTrace(candidate)}
-      aiExplanation={ai}
-      onExpand={request}
-    />
-  )
-}
 
 export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: boolean }) {
   const { state, dispatch } = useProposalStore()
@@ -525,145 +463,18 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
         )}
 
         {serviceEvidence && (
-          <>
-            <div style={sectionLabelStyle}>{t(LABELS.eligibleTitle, lang)}</div>
-            <ul data-testid="eligible-list" style={eligibilityListStyle}>
-              {eligibleCandidates.map(({ candidate_id }) => (
-                <li key={candidate_id} data-testid={`eligible-${candidate_id}`}>
-                  {candidate_id}
-                </li>
-              ))}
-            </ul>
-
-            <div style={sectionLabelStyle}>{t(LABELS.excludedTitle, lang)}</div>
-            {excludedCandidates.length === 0 ? (
-              <p style={{ fontSize: '0.82em', color: '#6b7280' }}>{t(LABELS.noneExcluded, lang)}</p>
-            ) : (
-              <ul data-testid="excluded-list" style={eligibilityListStyle}>
-                {excludedCandidates.map((excluded) => (
-                  <li key={excluded.candidate_id} data-testid={`excluded-${excluded.candidate_id}`}>
-                    {excluded.candidate_id} — <code>{excluded.platform_reason}</code>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </>
-        )}
-
-        {output && (
-          <>
-            <div style={sectionLabelStyle}>{t(LABELS.recommended, lang)}</div>
-            {output.decision_type === 'no_proposal' && (
-              <p style={{ fontSize: '0.82em', color: '#6b7280' }}>{t(LABELS.noProposal, lang)}</p>
-            )}
-            {output.ranked_candidates.slice(0, 3).map((candidate) => {
-              const isActive = candidate.candidate_id === activeServiceId
-              const backed = contentBackedServices.has(candidate.candidate_id)
-              return (
-                <div
-                  key={candidate.candidate_id}
-                  data-testid={`candidate-card-${candidate.candidate_id}`}
-                  style={{
-                    border: isActive ? '1px solid #1d4ed8' : '1px solid #e5e7eb',
-                    borderRadius: '9px',
-                    margin: '8px 0',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '8px 10px' }}>
-                    <span
-                      style={{
-                        width: '20px',
-                        height: '20px',
-                        borderRadius: '6px',
-                        background: '#1d4ed8',
-                        color: '#fff',
-                        fontSize: '0.72em',
-                        fontWeight: 800,
-                        display: 'grid',
-                        placeItems: 'center',
-                      }}
-                    >
-                      {candidate.rank}
-                    </span>
-                    <span style={{ fontWeight: 700, fontSize: '0.86em' }}>{candidate.candidate_id}</span>
-                    {candidate.score !== null && (
-                      <span style={{ marginLeft: 'auto', fontFamily: 'monospace', fontWeight: 800, color: '#1d4ed8' }}>
-                        {candidate.score >= 0 ? '+' : ''}
-                        {candidate.score.toFixed(3)}
-                      </span>
-                    )}
-                    {candidate.score !== null && (
-                      <span
-                        data-testid={`fit-band-${candidate.candidate_id}`}
-                        title={t(LABELS.fitBandTitle, lang)}
-                        style={fitBandBadgeStyle}
-                      >
-                        {t(LABELS.fitBand, lang)} {Math.round(fitBand(candidate.score))}/100
-                      </span>
-                    )}
-                  </div>
-                  <ServiceReason
-                    candidate={candidate}
-                    runId={state.runLog?.run_id}
-                    provider={state.explanationProvider}
-                    lang={lang}
-                  />
-                  <ServiceExplainability candidate={candidate} lang={lang} />
-                  <div
-                    style={{
-                      display: 'flex',
-                      gap: '7px',
-                      alignItems: 'center',
-                      padding: '7px 10px',
-                      borderTop: '1px solid #e5e7eb',
-                      background: '#f8fafc',
-                    }}
-                  >
-                    {isActive ? (
-                      <span
-                        style={{
-                          fontSize: '0.78em',
-                          padding: '2px 9px',
-                          borderRadius: '999px',
-                          background: '#1d4ed8',
-                          color: '#fff',
-                        }}
-                      >
-                        {t(LABELS.selected, lang)}
-                      </span>
-                    ) : null}
-                    <button
-                      type="button"
-                      data-testid={`choose-candidate-${candidate.candidate_id}`}
-                      disabled={!backed || choosingId === candidate.candidate_id}
-                      onClick={() => handleChoose(candidate.candidate_id)}
-                      style={{
-                        fontSize: '0.8em',
-                        fontWeight: 700,
-                        padding: '5px 12px',
-                        borderRadius: '7px',
-                        border: '1px solid #1d4ed8',
-                        background: !backed ? '#f1f5f9' : isActive ? '#fff' : '#1d4ed8',
-                        color: !backed ? '#9ca3af' : isActive ? '#1d4ed8' : '#fff',
-                        cursor: backed ? 'pointer' : 'not-allowed',
-                      }}
-                    >
-                      {choosingId === candidate.candidate_id ? '…' : t(LABELS.choose, lang)}
-                    </button>
-                    {!backed && (
-                      <span
-                        data-testid={`out-of-scope-${candidate.candidate_id}`}
-                        style={{ fontSize: '0.72em', color: '#9ca3af' }}
-                      >
-                        {t(LABELS.outOfScope, lang)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </>
+          <ServiceResultOverlay
+            output={output}
+            eligibleCandidates={eligibleCandidates}
+            excludedCandidates={excludedCandidates}
+            activeServiceId={activeServiceId}
+            choosingId={choosingId}
+            onChoose={handleChoose}
+            isBacked={(candidateId) => contentBackedServices.has(candidateId)}
+            runId={state.runLog?.run_id}
+            explanationProvider={state.explanationProvider}
+            lang={lang}
+          />
         )}
 
         {serviceEvidence?.error && (
@@ -872,13 +683,6 @@ const sectionLabelStyle: React.CSSProperties = {
 
 const grid2Style: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 14px' }
 
-const eligibilityListStyle: React.CSSProperties = {
-  margin: '0 0 8px',
-  padding: '0 0 0 18px',
-  fontSize: '0.82em',
-  color: '#4b5563',
-}
-
 const fieldLabelStyle: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
@@ -933,19 +737,6 @@ const whyStyle: React.CSSProperties = {
   borderRadius: '0 7px 7px 0',
   fontSize: '0.8em',
   color: '#4b5563',
-}
-
-// feature 018 (US4) — the friendlier 0-100 fit-band badge, rendered next to
-// (never instead of) the raw score.
-const fitBandBadgeStyle: React.CSSProperties = {
-  fontSize: '0.68em',
-  fontWeight: 700,
-  color: '#1d4ed8',
-  background: '#eef2ff',
-  border: '1px solid #c7d2fe',
-  borderRadius: '999px',
-  padding: '2px 8px',
-  fontFamily: 'monospace',
 }
 
 const runButtonStyle: React.CSSProperties = {
