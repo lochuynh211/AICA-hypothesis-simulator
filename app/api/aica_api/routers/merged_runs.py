@@ -27,6 +27,7 @@ already set), this module does not create or recompute a proposal run.
 """
 from __future__ import annotations
 
+import json
 import os
 from datetime import datetime, timezone
 from typing import Any
@@ -59,6 +60,7 @@ from aica_api.routers.proposal import (
     select_service,
 )
 from aica_api.routers.route_presets import load_route_preset
+from aica_api.services import proposal_run_manager as prm
 from aica_api.services import run_manager
 from aica_api.services.merged_adapter import (
     build_world_from_tick,
@@ -421,6 +423,78 @@ def create_merged_run_endpoint(body: CreateMergedRunBody) -> dict:
     save_handle(handle, settings.merged_runs_dir)
 
     return {"merged_run_id": merged_run_id, "trigger_run_id": trigger_run_id}
+
+
+@router.get("/api/merged-runs/{merged_run_id}")
+def get_merged_run_endpoint(merged_run_id: str) -> dict:
+    """Reassemble a persisted merged run for read-only replay (feature 020,
+    Slice-2c, Task 4): the ``MergedRunHandle``, the raw trigger ``RunLog``
+    JSON exactly as stored on disk (mirrors ``routers/runs.py``'s
+    ``get_run_log``), and every paired ``ProposalRunLog`` (via
+    ``proposal_run_manager.get_run``, in ``handle.proposal_run_ids`` order).
+
+    Pure disk reads — nothing is recomputed, and no selector/tick-engine code
+    runs. 404 when ``merged_run_id`` is unknown. ``trigger_log`` is ``None``
+    if the trigger run's file is missing (should not happen for a real merged
+    run, but this endpoint never raises for it — it is not the resource being
+    looked up). Entries in ``handle.proposal_run_ids`` that resolve to
+    ``None`` (a proposal run file the caller does not have, or a stale
+    ``None``/missing entry) are skipped rather than erroring, since
+    ``proposal_logs`` is a best-effort projection over IDs that are
+    themselves append-only history, never mutated after being recorded.
+    """
+    handle = get_handle(merged_run_id, settings.merged_runs_dir)
+    if handle is None:
+        raise HTTPException(status_code=404, detail=f"Merged run {merged_run_id!r} not found")
+
+    trigger_log_path = settings.runs_dir / f"{handle.trigger_run_id}.json"
+    trigger_log = (
+        json.loads(trigger_log_path.read_text(encoding="utf-8"))
+        if trigger_log_path.exists()
+        else None
+    )
+
+    proposal_logs = []
+    for proposal_run_id in handle.proposal_run_ids:
+        if proposal_run_id is None:
+            continue
+        plog = prm.get_run(proposal_run_id, settings.proposal_runs_dir)
+        if plog is not None:
+            proposal_logs.append(plog.model_dump(mode="json"))
+
+    return {
+        "handle": handle.model_dump(mode="json"),
+        "trigger_log": trigger_log,
+        "proposal_logs": proposal_logs,
+    }
+
+
+@router.get("/api/merged-runs")
+def list_merged_runs_endpoint() -> dict:
+    """List summaries for every persisted merged run under
+    ``settings.merged_runs_dir`` (feature 020, Slice-2c, Task 4) — mirrors
+    ``routers/runs.py``'s ``list_runs_endpoint`` (glob ``*.json``, skip
+    corrupt/invalid files rather than raising; this is a listing helper, not
+    a validator).
+    """
+    merged_dir = settings.merged_runs_dir
+    items: list[dict] = []
+    if not merged_dir.exists():
+        return {"merged_runs": items}
+
+    for path in sorted(merged_dir.glob("*.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        items.append(
+            {
+                "merged_run_id": data.get("merged_run_id", path.stem),
+                "trigger_run_id": data.get("trigger_run_id"),
+                "proposal_run_ids_count": len(data.get("proposal_run_ids") or []),
+            }
+        )
+    return {"merged_runs": items}
 
 
 def _override_nap_stage_ticks(scenario, recovery_option_id: str, nap_minutes: int):
