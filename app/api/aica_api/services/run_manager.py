@@ -171,6 +171,15 @@ def get_scenario(run_id: str) -> "ScenarioDef | None":
     Used by the rest-spots endpoint to read scenario-level config such as
     rest_drowsiness_ceiling and driver_signal_params growth rates.
 
+    CAUTION: this is the EXACT object reference stored in the run's registry
+    entry — the same object ``create_run`` read off ``run_plan._draft_registry
+    [plan_id]`` (create_run never copies it). A plan_id is never invalidated
+    after use, so a SECOND run created from the same plan_id (e.g. re-running
+    a scenario with a different run_seed for comparison) gets the IDENTICAL
+    ScenarioDef reference. Never mutate the returned object in place — use
+    ``replace_scenario`` to install a per-run override instead (see its
+    docstring for the incident this guards against).
+
     Args:
         run_id: The run identifier to look up.
 
@@ -179,6 +188,38 @@ def get_scenario(run_id: str) -> "ScenarioDef | None":
     """
     entry = _registry.get(run_id)
     return entry[2] if entry is not None else None
+
+
+def replace_scenario(run_id: str, scenario: "ScenarioDef") -> None:
+    """Replace the ScenarioDef installed in ONE run's own registry entry.
+
+    Used by the merged-runs orchestrator (feature 020) to install a per-run
+    override (e.g. a nap-duration override on ``recovery_options``) WITHOUT
+    mutating the object ``get_scenario`` returns in place. That object may be
+    shared with OTHER runs: ``run_plan._draft_registry`` is keyed by plan_id,
+    not run_id, and ``create_run`` stores whatever ScenarioDef is cached
+    there for a given plan_id without copying it — so two runs created from
+    the same plan_id (an ordinary, fully-supported workflow) start out
+    pointing at the literal same ScenarioDef object. Mutating it in place
+    (e.g. ``scenario.recovery_options = [...]``) would silently leak into
+    every other run built from that plan_id, present or future.
+
+    The caller must pass a NEW ScenarioDef (e.g. via ``scenario.model_copy
+    (update={...})``) — this function only swaps the reference stored for
+    ``run_id``; it never mutates or copies anything itself.
+
+    Args:
+        run_id:   The run identifier whose registry entry is updated.
+        scenario: The replacement ScenarioDef for this run only.
+
+    Raises:
+        RunNotFoundError: If run_id is not in the active registry.
+    """
+    entry = _registry.get(run_id)
+    if entry is None:
+        raise RunNotFoundError(f"Unknown run_id: {run_id!r}")
+    run_state, package, _old_scenario, recorder, prior_tick_state = entry
+    _registry[run_id] = (run_state, package, scenario, recorder, prior_tick_state)
 
 
 # ---------------------------------------------------------------------------

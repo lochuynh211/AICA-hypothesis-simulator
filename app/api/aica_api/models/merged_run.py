@@ -60,8 +60,11 @@ class MergedRunHandle(BaseModel):
     # once, regardless of how many further ticks are issued afterward.
     rest_stage_synced: str | None = None
     # The nap-duration override supplied to accept-rest, if any (record-only —
-    # the actual stage.ticks override lives on the trigger run's own per-run
-    # ScenarioDef copy, mutated via run_manager.get_scenario at accept-rest time).
+    # the actual stage.ticks override lives on a per-run ScenarioDef COPY
+    # installed into the trigger run's own registry entry via
+    # run_manager.replace_scenario at accept-rest time; the shared
+    # run_plan._draft_registry[plan_id] ScenarioDef is never mutated, so
+    # another run created from the same plan_id is unaffected).
     nap_minutes: int | None = None
 
 

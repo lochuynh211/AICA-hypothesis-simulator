@@ -27,10 +27,12 @@ from __future__ import annotations
 import json
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from aica_api.config import settings
 from aica_api.main import app
+from aica_api.services import run_manager
 from aica_api.services.run_manager import clear_registry
 from aica_api.services.run_plan import clear_draft_registry
 
@@ -207,3 +209,143 @@ def test_accept_rest_invalid_recovery_option_id_422(rest_plan_id, base_world_dic
         },
     )
     assert resp.status_code == 422, resp.text
+
+
+def _nap_stage_ticks(scenario, recovery_option_id: str = _RECOVERY_OPTION_ID) -> int:
+    option = next(o for o in scenario.recovery_options if o.id == recovery_option_id)
+    stage = next(s for s in option.stages if s.phase == "nap" and s.motion == "STOPPED")
+    return stage.ticks
+
+
+def test_accept_rest_nap_override_does_not_leak_to_other_run_sharing_plan_id(
+    rest_plan_id, base_world_dict
+):
+    """CRITICAL fix regression: two merged runs created off the SAME
+    ``trigger_plan_id`` (an ordinary, fully-supported workflow -- e.g.
+    re-running a scenario with a different run_seed for comparison, exactly
+    like a second ``POST /api/run-plans``-backed ``POST /api/runs``) must NOT
+    share ScenarioDef state. ``nap_minutes`` supplied to run A's accept-rest
+    must never change run B's (untouched) nap_karaoke stage duration -- even
+    though ``run_manager.create_run`` stores whatever ScenarioDef is cached
+    in ``run_plan._draft_registry[plan_id]`` without copying it, so two runs
+    built from the same plan_id start out pointing at the IDENTICAL object.
+    """
+    mid_a, trigger_run_id_a = _create_merged_run(rest_plan_id, base_world_dict)
+    mid_b, trigger_run_id_b = _create_merged_run(rest_plan_id, base_world_dict)
+
+    # Before any override, both runs really do share the same ScenarioDef
+    # object (create_run never copies it) -- this is the precondition that
+    # makes the in-place mutation dangerous.
+    assert run_manager.get_scenario(trigger_run_id_a) is run_manager.get_scenario(trigger_run_id_b)
+    assert _nap_stage_ticks(run_manager.get_scenario(trigger_run_id_b)) == 3
+
+    _tick_until_proposal(mid_a)
+
+    spots_resp = client.get(f"/api/runs/{trigger_run_id_a}/rest-spots")
+    assert spots_resp.status_code == 200, spots_resp.text
+    first_spot = spots_resp.json()["rest_spots"][0]
+
+    accept_resp = client.post(
+        f"/api/merged-runs/{mid_a}/accept-rest",
+        json={
+            "recovery_option_id": _RECOVERY_OPTION_ID,
+            "rest_spot": first_spot,
+            "nap_minutes": 15,
+        },
+    )
+    assert accept_resp.status_code == 200, accept_resp.text
+
+    scenario_a = run_manager.get_scenario(trigger_run_id_a)
+    scenario_b = run_manager.get_scenario(trigger_run_id_b)
+    assert scenario_a is not scenario_b, (
+        "run A must own an isolated ScenarioDef copy after accept-rest with nap_minutes"
+    )
+    assert _nap_stage_ticks(scenario_a) == 5, "run A's own override should apply (round(15*60/180)=5)"
+    assert _nap_stage_ticks(scenario_b) == 3, (
+        "run B (never touched) must keep the scenario-authored default nap duration"
+    )
+
+
+def test_rest_journey_recovers_after_transient_post_completion_failure(
+    monkeypatch, rest_plan_id, base_world_dict
+):
+    """IMPORTANT fix regression: a failure AFTER ``rest_completed`` has
+    already succeeded (e.g. a future/edge-case rejection from the
+    recompute step) must not permanently brick the merged run's ``/tick``
+    endpoint. ``rest_completed``'s own state change (lifecycle_stage ->
+    after_rest_before_restart) is already persisted, so a naive retry that
+    blindly re-invokes ``rest_completed`` would 422 forever (its
+    precondition -- lifecycle_stage == during_rest_stopped -- no longer
+    holds). The endpoint must self-heal: re-read the actual current
+    proposal state, skip the already-succeeded step, and complete the
+    remaining ones on a later tick.
+    """
+    mid, trigger_run_id = _create_merged_run(rest_plan_id, base_world_dict)
+    proposal_at_fire = _tick_until_proposal(mid)
+    run_id = proposal_at_fire["run_id"]
+
+    spots_resp = client.get(f"/api/runs/{trigger_run_id}/rest-spots")
+    first_spot = spots_resp.json()["rest_spots"][0]
+    accept_resp = client.post(
+        f"/api/merged-runs/{mid}/accept-rest",
+        json={
+            "recovery_option_id": _RECOVERY_OPTION_ID,
+            "rest_spot": first_spot,
+            "nap_minutes": 15,
+        },
+    )
+    assert accept_resp.status_code == 200, accept_resp.text
+
+    import aica_api.routers.merged_runs as merged_runs_module
+
+    real_recompute = merged_runs_module.recompute_proposal_run
+    calls = {"n": 0}
+
+    def _flaky_recompute(run_id_arg, body):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise HTTPException(status_code=422, detail="simulated transient recompute failure")
+        return real_recompute(run_id_arg, body)
+
+    monkeypatch.setattr(merged_runs_module, "recompute_proposal_run", _flaky_recompute)
+
+    hit_failure = False
+    for _ in range(_MAX_TICKS_TO_AFTER_REST):
+        tr = client.post(f"/api/merged-runs/{mid}/tick")
+        assert tr.status_code == 200, tr.text  # never a raw error out of /tick
+        body = tr.json()
+        if body["trigger"].get("proposal_error"):
+            hit_failure = True
+            break
+        if body["trigger"].get("completed"):
+            break
+    assert hit_failure, "expected the simulated recompute failure to surface as proposal_error"
+    assert calls["n"] == 1
+
+    # rest_completed's own transition must already be persisted (NOT retried
+    # -- a retry would 422 since the precondition no longer holds).
+    stuck_log = client.get(f"/api/proposal/runs/{run_id}").json()
+    assert stuck_log["journey_state"]["lifecycle_stage"] == "after_rest_before_restart"
+
+    # The merged run must recover on a later tick -- NOT permanently bricked.
+    after_rest_proposal = None
+    for _ in range(_MAX_TICKS_TO_AFTER_REST):
+        tr = client.post(f"/api/merged-runs/{mid}/tick")
+        assert tr.status_code == 200, tr.text
+        body = tr.json()
+        if body["proposal"] and body["proposal"]["journey_state"]["lifecycle_stage"] == "after_rest_before_restart":
+            after_rest_proposal = body["proposal"]
+            break
+        if body["trigger"].get("completed"):
+            break
+    assert after_rest_proposal is not None, "merged run must recover, not be permanently bricked"
+    assert calls["n"] == 2
+
+    # The recovered post-rest values must match what was captured at the
+    # ORIGINAL rest_completed call, not re-derived from a later (already
+    # advanced) tick's simulated signals.
+    final_situation = after_rest_proposal["world_snapshot"]["feature_snapshot"]["situation"]
+    rest_completed_events = [e for e in stuck_log["events"] if e["event_type"] == "REST_COMPLETED"]
+    assert len(rest_completed_events) == 1
+    assert final_situation["drowsiness_level"] == rest_completed_events[0]["payload"]["drowsiness_level"]
+    assert final_situation["fatigue_level"] == rest_completed_events[0]["payload"]["fatigue_level"]
