@@ -1,8 +1,8 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "The honest baseline: an unknown driver (no oshi, no history, no genre data) on an ordinary road. Scores stay low (~0.10) BY DESIGN — a third of the model's weight has nothing to act on. This control makes every personalized preset's lift meaningful.",
-    "ja": "正直な基準：未知のドライバー（推し・履歴・ジャンル情報なし）で通常走行。設計上スコアは低いまま（約0.10）— モデル重みの約1/3が働く材料を持たない。対照として他プリセットの上振れを意味づける。"
+    "en": "The honest floor: an unknown driver (no oshi, no history, no genre data) on an ordinary highway drive with a neutral situation. Scores stay low BY DESIGN — a third of the model's weight (Preference/History) has nothing to act on. This control makes every personalized preset's lift meaningful by comparison.",
+    "ja": "正直な基準値：未知のドライバー（推し・履歴・ジャンル情報なし）が中立な状況で通常の高速道路を走行。設計上スコアは低いまま — モデル重み（嗜好/履歴）の1/3が働く材料を持たない。この対照があるからこそ、他の個人化プリセットの上振れに意味が生まれる。"
   },
   "category": "baseline",
   "contrast_with": null,
@@ -11,16 +11,19 @@
       "top_should_be_in": [
         "music_playlist",
         "humming_karaoke",
-        "radio_style"
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "call_response_driving"
       ]
     },
     "expected_top": {
       "arousal_band": "high"
     },
     "gradient": "none",
-    "hypothesis": "cold-start: no personalization → low top score, documents the honest floor",
+    "hypothesis": "cold-start: no personalization -> low top score, documents the honest floor",
     "override_required": false,
-    "top_fit_min": 0.08
+    "top_fit_min": 0.15
   },
   "family": "baseline",
   "journey": null,
@@ -90,7 +93,7 @@
       "active_service": null,
       "child_present": false,
       "destination_tags": [],
-      "drowsiness_level": 42,
+      "drowsiness_level": 40,
       "estimated_min_until_rest_spot": null,
       "fatigue_level": 28,
       "monotony_level": 40,

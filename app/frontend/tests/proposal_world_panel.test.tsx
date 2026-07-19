@@ -84,27 +84,42 @@ describe('WorldPanel', () => {
     expect(screen.getByTestId('probe').textContent).toBe('route_music')
   })
 
-  it('renders lifecycle_stage options and a read-only motion_state readout derived from the stage', () => {
+  it('renders only the car states valid for the current signal (during_rest_stopped is never selectable — it is the nap)', () => {
     renderWithStore()
+    // Default signal is rest_recommended → only the two rest stages appear.
     expect(screen.getByTestId('lifecycle-stage-before_rest_until_stop')).toBeInTheDocument()
-    expect(screen.getByTestId('lifecycle-stage-during_rest_stopped')).toBeInTheDocument()
     expect(screen.getByTestId('lifecycle-stage-after_rest_before_restart')).toBeInTheDocument()
-    expect(screen.getByTestId('lifecycle-stage-active_driving_content')).toBeInTheDocument()
+    // The nap (during_rest_stopped) proposes nothing and is never user-selectable here.
+    expect(screen.queryByTestId('lifecycle-stage-during_rest_stopped')).not.toBeInTheDocument()
+    // active_driving_content belongs to the non-rest signals, not rest_recommended.
+    expect(screen.queryByTestId('lifecycle-stage-active_driving_content')).not.toBeInTheDocument()
     // No editable motion control — it's derived (owner feedback 2026-07-17).
     expect(screen.queryByTestId('motion-state-select')).not.toBeInTheDocument()
     expect(screen.getByTestId('motion-state-readonly')).toBeInTheDocument()
   })
 
+  it('a non-rest signal locks the car state to active_driving_content and hides the rest stages', () => {
+    renderWithStore()
+    fireEvent.click(screen.getByTestId('trigger-purpose-route_music'))
+    expect(screen.getByTestId('lifecycle-stage-active_driving_content')).toBeInTheDocument()
+    expect(screen.queryByTestId('lifecycle-stage-before_rest_until_stop')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('lifecycle-stage-after_rest_before_restart')).not.toBeInTheDocument()
+    // active_driving_content ⇒ motion derives to driving.
+    expect(screen.getByTestId('motion-state-readonly').textContent).toBe('driving')
+  })
+
   it('clicking a "stopped" lifecycle stage derives motion_state=stopped; a "driving" stage derives motion_state=driving', () => {
     renderWithStore()
-    fireEvent.click(screen.getByTestId('lifecycle-stage-during_rest_stopped'))
-    expect(screen.getByTestId('motion-state-readonly').textContent).toBe('stopped')
-
-    fireEvent.click(screen.getByTestId('lifecycle-stage-active_driving_content'))
-    expect(screen.getByTestId('motion-state-readonly').textContent).toBe('driving')
-
+    // rest_recommended default: after_rest ⇒ stopped, before_rest ⇒ driving.
     fireEvent.click(screen.getByTestId('lifecycle-stage-after_rest_before_restart'))
     expect(screen.getByTestId('motion-state-readonly').textContent).toBe('stopped')
+
+    fireEvent.click(screen.getByTestId('lifecycle-stage-before_rest_until_stop'))
+    expect(screen.getByTestId('motion-state-readonly').textContent).toBe('driving')
+
+    // active_driving_content (driving) is reached via a non-rest signal.
+    fireEvent.click(screen.getByTestId('trigger-purpose-inattentive_driving_prevention_recovery'))
+    expect(screen.getByTestId('motion-state-readonly').textContent).toBe('driving')
   })
 
   it('editing a world/situation slider field (drowsiness_level, 0-100 step 5) dispatches SET_SITUATION_FIELD', () => {

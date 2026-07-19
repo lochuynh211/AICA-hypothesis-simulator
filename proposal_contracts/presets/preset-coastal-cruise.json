@@ -1,8 +1,8 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "A relaxed coastal local road. Route/destination genre affinity (coast → city-pop / jazz) should lift bright coastal-friendly tracks.",
-    "ja": "のんびりした海岸沿いの一般道。ルート/目的地ジャンル親和（海岸→シティポップ/ジャズ）で明るい曲が上位に。"
+    "en": "A relaxed coastal local road (route_tags=coastal, destination_tags=coast) with a mild, non-drowsy situation. The driver has strong city-pop and moderate jazz usage/history. Route/destination genre affinity lifts a bright, mid-arousal coastal-friendly track to the top — the road and destination tags are the lever, not fatigue or preference alone.",
+    "ja": "のんびりした海岸沿いの一般道（route_tags=coastal、destination_tags=coast）で、眠気の少ない穏やかな状況。ドライバーはシティポップを強く、ジャズを中程度利用・履歴あり。ルート/目的地のジャンル親和性により、明るく中程度の高揚感を持つ海岸向けの曲が上位に — 疲労や単なる嗜好ではなく、ルート/目的地タグが決め手。"
   },
   "category": "situation",
   "contrast_with": null,
@@ -11,16 +11,19 @@
       "top_should_be_in": [
         "music_playlist",
         "radio_style",
-        "humming_karaoke"
+        "humming_karaoke",
+        "quiz",
+        "ranking_creation",
+        "call_response_driving"
       ]
     },
     "expected_top": {
       "arousal_band": "mid"
     },
     "gradient": "none",
-    "hypothesis": "coastal route/destination genre affinity → bright coastal track tops",
+    "hypothesis": "coastal route/destination genre affinity -> a bright/mid-arousal coastal-friendly track tops",
     "override_required": false,
-    "top_fit_min": 0.2
+    "top_fit_min": 0.25
   },
   "family": "route_genre",
   "journey": null,

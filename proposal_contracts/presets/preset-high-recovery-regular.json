@@ -1,26 +1,29 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "No oshi, but three specific tracks have an excellent recovery record with this driver. The recovery-rate signal (the strongest History lever at rest) should lift exactly those three above equally-matched peers.",
-    "ja": "推しはいないが、3曲がこのドライバーで高い回復実績を持つ。回復レートのシグナルにより、その3曲が同等の他曲より上位に。"
+    "en": "Same neutral situation as the blank baseline, no registered oshi, no genre-affinity data — but three specific tracks (all in the driver's usage history) have an excellent recovery record with this driver. The per-track recovery-rate signal (the strongest History lever when the situation is neutral) lifts exactly one of those three tracks to the top, well above the honest floor. Its paired preset removes only the recovery history to isolate this exact contribution.",
+    "ja": "回復履歴のないベースラインと同じ中立状況で、推し登録もジャンル嗜好データもない。ただし3曲だけ、このドライバーで高い回復実績（リカバリーレート）を持つ。中立な状況下でこの3曲のうち1曲が明確に上位へ押し上げられ、正直な基準値を大きく上回る。対のプリセットはこの回復履歴だけを取り除き、寄与を分離する。"
   },
   "category": "history",
-  "contrast_with": null,
+  "contrast_with": "preset-recovery-blank-baseline",
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
         "music_playlist",
         "humming_karaoke",
-        "radio_style"
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "call_response_driving"
       ]
     },
     "expected_top": {
-      "arousal_band": "high"
+      "track_id": "synthetic-track-0108"
     },
     "gradient": "none",
-    "hypothesis": "strong per-track recovery history lifts exactly those tracks to the top",
+    "hypothesis": "neutral situation + per-track recovery history on 3 tracks -> one of those tracks tops",
     "override_required": false,
-    "top_fit_min": 0.22
+    "top_fit_min": 0.34
   },
   "family": "history_mechanics",
   "journey": null,
@@ -42,10 +45,10 @@
     },
     "control_inputs": {
       "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
-      "lifecycle_stage": "before_rest_until_stop",
+      "lifecycle_stage": "active_driving_content",
       "matrix_version": "v1",
       "motion_state": "driving",
-      "trigger_purpose": "rest_recommended"
+      "trigger_purpose": "route_music"
     },
     "driver_profile": {
       "age_band": "30s",
@@ -102,10 +105,10 @@
       "active_service": null,
       "child_present": false,
       "destination_tags": [],
-      "drowsiness_level": 78,
+      "drowsiness_level": 42,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 38,
-      "monotony_level": 70,
+      "fatigue_level": 28,
+      "monotony_level": 40,
       "motion_state": "driving",
       "multiple_passengers": false,
       "night_state": "day",

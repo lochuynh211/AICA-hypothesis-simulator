@@ -1,8 +1,8 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "Stopped at a scenic overlook to stretch and recover: fatigue has dropped to ≈20 and drowsiness is low (≈15) after the break. This lifecycle stage only content-supports full_karaoke, so the assistant dispatches content there — and the same oshi soundtrack piece, now as a karaoke pick, still tops the list.",
-    "ja": "展望台に停車してストレッチ休憩、疲労は約20に低下、眠気も休憩後で低い（約15）。このライフサイクル段階でコンテンツ対応するのはfull_karaokeのみのため、そこでコンテンツが配信される — 同じ推しのサウンドトラック曲が、カラオケ選曲として今も1位。"
+    "en": "Stopped at a mountain overlook: fatigue (15) and drowsiness (30) have both dropped sharply after the break. The lifecycle stage switches to the post-rest service family (stretch_video leads) and the same style of track that dominated the drive now scores far lower — the fit floor is honest.",
+    "ja": "山の展望台に停車：休憩後、疲労（15）も眠気（30）も大きく低下。ライフサイクル段階が休憩後のサービス群（stretch_videoが1位）に切り替わり、道中を支配していた同系統の曲のスコアも大きく下がる — 正直な下限。"
   },
   "category": "situation",
   "contrast_with": null,
@@ -17,29 +17,26 @@
       ]
     },
     "expected_top": {
-      "arousal_band": "mid",
-      "genre": "classical",
-      "must_be_oshi": true,
-      "track_id": "synthetic-track-0078"
+      "arousal_band": "high"
     },
     "gradient": "none",
-    "hypothesis": "stopped and recovered at the overlook -> content dispatches under full_karaoke (the only content-supported service here); oshi track still tops",
+    "hypothesis": "stopped at the overlook after the stretch break, fatigue/drowsiness collapse back down -> the driving-service ranking is replaced by the post-rest one (stretch_video tops) and content fit for the same style of track falls back near its cold floor",
     "override_required": false,
-    "top_fit_min": 0.315
+    "top_fit_min": 0.055
   },
   "family": "journey",
   "journey": {
     "id": "journey-c",
     "label": {
-      "en": "C · The Mountain Road Trip",
-      "ja": "C・山道ロードトリップ"
+      "en": "C · The Mountain Pass (fatigue-led, blank profile)",
+      "ja": "C・山道の峠越え（疲労主導・履歴なし）"
     },
     "of": 4,
     "step": 3
   },
   "label": {
-    "en": "C · 3/4 — A stretch break at a mountain overlook",
-    "ja": "C・3/4 — 山の展望台でストレッチ休憩"
+    "en": "C · 3/4 — Stretch break at the overlook",
+    "ja": "C・3/4 — 展望台でストレッチ休憩"
   },
   "preset_id": "preset-journey-c-3-stretch-break-overlook",
   "schema_version": "1.0.0",
@@ -61,66 +58,27 @@
       "trigger_purpose": "rest_recommended"
     },
     "driver_profile": {
-      "age_band": "50s",
+      "age_band": "30s",
       "cancelled_content_plans": [],
       "catalog_item_recency_state": {},
-      "catalog_item_usage_level": {
-        "synthetic-track-0003": "high",
-        "synthetic-track-0004": "high",
-        "synthetic-track-0009": "high",
-        "synthetic-track-0017": "high",
-        "synthetic-track-0022": "high",
-        "synthetic-track-0024": "high",
-        "synthetic-track-0026": "high",
-        "synthetic-track-0045": "high",
-        "synthetic-track-0078": "high",
-        "synthetic-track-0112": "high",
-        "synthetic-track-0158": "high",
-        "synthetic-track-0270": "high"
-      },
+      "catalog_item_usage_level": {},
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
-      "content_proposal_acceptance_rate": {
-        "synthetic-track-0003": 95,
-        "synthetic-track-0004": 95,
-        "synthetic-track-0009": 95,
-        "synthetic-track-0017": 95,
-        "synthetic-track-0022": 95,
-        "synthetic-track-0024": 95,
-        "synthetic-track-0026": 95,
-        "synthetic-track-0045": 95,
-        "synthetic-track-0078": 95,
-        "synthetic-track-0112": 95,
-        "synthetic-track-0158": 95,
-        "synthetic-track-0270": 95
-      },
+      "content_proposal_acceptance_rate": {},
       "content_recovery_confidence": {},
-      "content_recovery_rate": {
-        "synthetic-track-0003": 90,
-        "synthetic-track-0004": 90,
-        "synthetic-track-0009": 90,
-        "synthetic-track-0017": 90,
-        "synthetic-track-0022": 90,
-        "synthetic-track-0024": 90,
-        "synthetic-track-0026": 90,
-        "synthetic-track-0045": 90,
-        "synthetic-track-0078": 90,
-        "synthetic-track-0112": 90,
-        "synthetic-track-0158": 90,
-        "synthetic-track-0270": 90
-      },
+      "content_recovery_rate": {},
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
       "gender": "unspecified",
-      "genre_affinity_v1_enabled": true,
+      "genre_affinity_v1_enabled": false,
       "hobby_interest_tags": [],
       "manually_selected_items": [],
-      "oshi_id": "synthetic-artist-0090",
-      "oshi_mode": "on",
-      "oshi_registered": true,
+      "oshi_id": null,
+      "oshi_mode": "off",
+      "oshi_registered": false,
       "oshi_tags": [],
-      "oshi_type": "artist",
+      "oshi_type": null,
       "played_items": [],
       "repeated_items": [],
       "scene_content_tag_usage_level": {},
@@ -136,27 +94,26 @@
       "service_recovery_rate": {},
       "service_usage_level": {},
       "skipped_items": [],
-      "usage_by_genre": {
-        "classical": "high",
-        "jazz": "med"
-      }
+      "usage_by_genre": null
     },
     "situation": {
       "active_service": null,
       "child_present": false,
-      "destination_tags": [],
-      "drowsiness_level": 15,
+      "destination_tags": [
+        "mountain"
+      ],
+      "drowsiness_level": 30,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 20,
-      "monotony_level": 15,
+      "fatigue_level": 15,
+      "monotony_level": 20,
       "motion_state": "stopped",
       "multiple_passengers": false,
       "night_state": "day",
       "recent_service_rejections": [],
-      "rest_spot_type": "unknown",
-      "road_type": "mountain",
+      "rest_spot_type": "sa_pa",
+      "road_type": "parking",
       "route_tags": [
-        "highway"
+        "mountain"
       ],
       "traffic_state": "normal"
     }

@@ -11,6 +11,14 @@ JSON; edit the compact specs here and re-run:
 
     cd app/api && uv run python ../../scripts/generate_presets.py
 
+Both the STANDALONE presets (``scripts/preset_standalones.json``) and the
+multi-stage JOURNEYS (``scripts/preset_journeys.json``) are data-driven: their
+situation values are grounded in a real Tokyo→Osaka tick simulation and every
+preset was tuned + adversarially audited against the REAL content and service
+selectors (baseline + one-lever contrasts; driver history left BLANK except the
+dedicated recovery/history presets, so the recovery leaf never silently
+dominates a situation- or preference-driven contrast).
+
 Idempotent: same specs + same frozen catalog => byte-identical output (a golden
 test pins it). READ-ONLY toward the frozen dataset; imports only
 ``aica_api.models.proposal.*`` + stdlib (never ``mdg``).
@@ -45,6 +53,7 @@ CATALOG_REF = {
 
 # --------------------------------------------------------------------------- #
 # Frozen catalog (read-only) + trait helper (mirrors the content selector).
+# Retained so the compact specs / tuning harness can resolve genre/artist tracks.
 # --------------------------------------------------------------------------- #
 _CATALOG = json.loads((_DATASET_DIR / "catalog.json").read_text(encoding="utf-8"))
 _ARTIST_GENRES = json.loads(
@@ -101,6 +110,17 @@ def played_recent_on(track_ids: list[str], at: str = "2026-07-17T11:45:00Z") -> 
     return {"played_items": [{"track_id": t, "last_played_at": at} for t in track_ids]}
 
 
+def strong_oshi(artist_id: str, genres: dict, *, age_band: str = "30s") -> dict:
+    """Full strong-personalization profile fragment for an in-catalog oshi artist."""
+    tids = artist_track_ids(artist_id)
+    frag = {
+        "oshi_registered": True, "oshi_mode": "on", "oshi_id": artist_id, "oshi_type": "artist",
+        "age_band": age_band, "genre_affinity_v1_enabled": True, "usage_by_genre": genres,
+    }
+    frag.update(rich_on(tids))
+    return frag
+
+
 # --------------------------------------------------------------------------- #
 # Canonical NEUTRAL base world (self-contained; every field a valid neutral).
 # --------------------------------------------------------------------------- #
@@ -118,10 +138,7 @@ _NEUTRAL_PROFILE = {
     "played_items": [], "skipped_items": [], "changed_from_items": [], "repeated_items": [],
     "completed_items": [], "manually_selected_items": [], "cancelled_content_plans": [],
     "scheduled_event_type": None, "scheduled_event_timing": None, "scheduled_event_tags": [],
-    "usage_by_genre_v1_placeholder": None,
 }
-# Drop any key the model rejects (kept tolerant; validated below).
-_NEUTRAL_PROFILE.pop("usage_by_genre_v1_placeholder", None)
 
 _BASE_SITUATION = {
     "drowsiness_level": 25, "fatigue_level": 25, "monotony_level": 30,
@@ -162,17 +179,6 @@ def _apply(world: dict, *, situation=None, profile=None, control=None) -> dict:
     return world
 
 
-def strong_oshi(artist_id: str, genres: dict, *, age_band: str = "30s") -> dict:
-    """Full strong-personalization profile fragment for an in-catalog oshi artist."""
-    tids = artist_track_ids(artist_id)
-    frag = {
-        "oshi_registered": True, "oshi_mode": "on", "oshi_id": artist_id, "oshi_type": "artist",
-        "age_band": age_band, "genre_affinity_v1_enabled": True, "usage_by_genre": genres,
-    }
-    frag.update(rich_on(tids))
-    return frag
-
-
 def make_preset(preset_id, *, category, family, contrast_with, label, brief,
                 situation=None, profile=None, control=None,
                 overrides=None, expectation, journey=None) -> dict:
@@ -208,194 +214,31 @@ def _exp(hypothesis, *, top=None, top_fit_min, gradient="none",
     return e
 
 
+PRESETS: list = []
+
+
 # --------------------------------------------------------------------------- #
-# The 18 presets (9 families, 7 contrast pairs).  top_fit_min values are the
-# honest measured floors finalized by the tune loop (see build report).
+# STANDALONE presets — data-driven, loaded from scripts/preset_standalones.json.
+# Each is a baseline or a one-lever variant of a baseline (oshi gate, genre taste,
+# era/age, recovery history, novelty penalty, route-genre) on a NEUTRAL situation
+# so the isolated lever — not the road — drives the outcome. Concrete expanded
+# driver_profile dicts (already resolved against the frozen catalog).
 # --------------------------------------------------------------------------- #
-HIGE = "synthetic-artist-0107"   # Official HIGE DANdism — j-pop/j-rock, high arousal
-JOBIM = "synthetic-artist-0004"  # Antônio Carlos Jobim — jazz, calm
-ADO = "synthetic-artist-0122"    # Ado — j-pop, 2020s
-SEIKO = "synthetic-artist-0136"  # Seiko Matsuda — j-pop, 1980s
-MIKU = "synthetic-artist-0115"   # Hatsune Miku — j-pop/j-rock, vocaloid/anime-adjacent
-
-# Coherent (trigger_purpose, lifecycle_stage) contexts — the trigger must match
-# the driving state: route_music = "playing music on an ordinary drive" (no
-# fatigue implied), inattentive = "drowsy, keep alert", rest_recommended (base) =
-# "tired, heading to a rest stop".
-ROUTE_MUSIC = {"trigger_purpose": "route_music", "lifecycle_stage": "active_driving_content"}
-INATTENTIVE = {"trigger_purpose": "inattentive_driving_prevention_recovery",
-               "lifecycle_stage": "active_driving_content"}
-
-AGE_BOOST = {"content": {"hierarchy_weights": {"Preference": {"upro_oshi": {"leaves": {
-    "age": {"share": 0.35, "mask": 1, "feature_id": "age_band"},
-    "oshi": {"share": 0.45, "mask": 1, "feature_id": "oshi_id"},
-    "hobbies": {"share": 0.20, "mask": 0, "genre_gated": True, "feature_id": "hobby_interest_tags"},
-    "gender": {"share": 0.00, "mask": 0, "feature_id": "gender"},
-}}}}}}
-
-PRESETS = []
+_STANDALONES_DATA = json.loads(
+    (_REPO / "scripts" / "preset_standalones.json").read_text(encoding="utf-8")
+)
 
 
-def _p(*a, **k):
-    PRESETS.append(make_preset(*a, **k))
+def _add_standalones() -> None:
+    for s in _STANDALONES_DATA:
+        PRESETS.append(make_preset(
+            s["preset_id"], category=s["category"], family=s["family"],
+            contrast_with=s.get("contrast_with"), label=s["label"], brief=s["brief"],
+            situation=s.get("situation"), profile=s.get("profile"), control=s.get("control"),
+            overrides=s.get("overrides"), expectation=s["expectation"]))
 
 
-# ===========================================================================
-# STANDALONE presets — grouped by scoring category. The multi-stage rest/route
-# JOURNEYS (situation-driven timelines) are generated below from
-# scripts/preset_journeys.json. Presets folded into a journey (monotony energize,
-# night wind-down, fresh/drowsy, mountain, family, rest-stop karaoke, anime event)
-# were removed here — they now live as journey stages.
-# ===========================================================================
-
-# ---- Situation (a standalone route context) ----
-_p("preset-coastal-cruise", category="situation", family="route_genre",
-   contrast_with=None,
-   label={"en": "Coastal cruise", "ja": "海岸クルーズ"},
-   brief={"en": "A relaxed coastal local road. Route/destination genre affinity (coast → city-pop / jazz) should lift bright coastal-friendly tracks.",
-          "ja": "のんびりした海岸沿いの一般道。ルート/目的地ジャンル親和（海岸→シティポップ/ジャズ）で明るい曲が上位に。"},
-   situation={"road_type": "local", "route_tags": ["coastal"], "destination_tags": ["coast"],
-              "monotony_level": 25, "drowsiness_level": 35, "fatigue_level": 28, "night_state": "day"},
-   profile={"genre_affinity_v1_enabled": True, "usage_by_genre": {"city pop": "high", "jazz": "med"},
-            **rich_on(genre_track_ids("city pop", 4) + genre_track_ids("jazz", 3))},
-   control=ROUTE_MUSIC,
-   expectation=_exp("coastal route/destination genre affinity → bright coastal track tops",
-                    top={"arousal_band": "mid"}, top_fit_min=0.20, gradient="none",
-                    service=["music_playlist", "radio_style", "humming_karaoke"]))
-
-# ---- Preference — oshi gate (on ⇄ off), taste (j-rock ⇄ jazz), era (Shōwa ⇄ Gen-Z) ----
-# Oshi gate isolated: oshi + genre usage but NO per-track history (rich history would
-# keep the oshi's tracks on top even with the gate off, masking the gate's own effect).
-_OSHI_SIT = {"drowsiness_level": 42, "fatigue_level": 28, "monotony_level": 40,
-             "traffic_state": "normal", "night_state": "day", "road_type": "highway"}
-_OSHI_ON = {"oshi_registered": True, "oshi_mode": "on", "oshi_id": ADO, "oshi_type": "artist",
-            "age_band": "30s", "genre_affinity_v1_enabled": True, "usage_by_genre": {"j-pop": "high"}}
-_p("preset-oshi-superfan", category="preference", family="oshi_personalization",
-   contrast_with="preset-oshi-off",
-   label={"en": "Oshi fan (on)", "ja": "推しファン（ON）"},
-   brief={"en": "A mild, neutral situation so preference — not the road — leads. The driver has registered Ado as their oshi. The oshi signal lifts Ado's tracks to the top; the partner preset flips oshi off to isolate exactly this contribution.",
-          "ja": "状況は穏やかで中立。ドライバーはAdoを推し登録。推しシグナルがAdoの曲を上位に押し上げる。対のプリセットは推しOFFでこの寄与を分離。"},
-   situation=_OSHI_SIT, profile=dict(_OSHI_ON),
-   control=ROUTE_MUSIC,
-   expectation=_exp("neutral situation + oshi on → the oshi's track tops",
-                    top={"must_be_oshi": True}, top_fit_min=0.15, gradient="none",
-                    service=["music_playlist", "humming_karaoke", "radio_style"]))
-
-_p("preset-oshi-off", category="preference", family="oshi_personalization",
-   contrast_with="preset-oshi-superfan",
-   label={"en": "Oshi off (same driver)", "ja": "推し OFF（同一ドライバー）"},
-   brief={"en": "The same Ado fan and the same road — but with oshi mode switched OFF. With only the shared j-pop taste left, Ado no longer tops and a different track wins — isolating exactly what the oshi signal contributes.",
-          "ja": "同じAdoファン・同じ状況で、推しモードをOFFに。共通のJ-POP嗜好だけが残り、Adoは上位から外れ別の曲が勝つ — 推しシグナルの寄与を分離。"},
-   situation=_OSHI_SIT,
-   profile={**_OSHI_ON, "oshi_mode": "off"},
-   control=ROUTE_MUSIC,
-   expectation=_exp("with oshi off the same driver's top track is no longer the oshi",
-                    top={"must_be_oshi": False}, top_fit_min=0.10, gradient="none",
-                    service=["music_playlist", "humming_karaoke", "radio_style"]))
-
-# ---- Family D: genre usage (4a ⇄ 4b), no oshi ----
-_GEN_SIT = {"drowsiness_level": 42, "fatigue_level": 28, "monotony_level": 45,
-            "traffic_state": "normal", "night_state": "day", "road_type": "highway"}
-_p("preset-jrock-enthusiast", category="preference", family="genre_usage",
-   contrast_with="preset-jazz-calm-listener",
-   label={"en": "J-Rock enthusiast", "ja": "J-ROCK 愛好家"},
-   brief={"en": "No registered oshi — taste alone. Heavy j-rock/electronic usage plus history on favourite j-rock tracks should lift the j-rock cluster to the top on an ordinary drive.",
-          "ja": "登録推しなし、嗜好のみ。J-ROCK/エレクトロニカの多用と履歴により、J-ROCK群が上位に。"},
-   situation=_GEN_SIT,
-   profile={"genre_affinity_v1_enabled": True, "usage_by_genre": {"j-rock": "high", "electronic": "med"},
-            **rich_on(genre_track_ids("j-rock", 6, prefer_high_arousal=True))},
-   control=ROUTE_MUSIC,
-   expectation=_exp("j-rock usage + history → a j-rock track tops",
-                    top={"genre": "j-rock"}, top_fit_min=0.30, gradient="none",
-                    service=["music_playlist", "humming_karaoke", "radio_style"]))
-
-_p("preset-jazz-calm-listener", category="preference", family="genre_usage",
-   contrast_with="preset-jrock-enthusiast",
-   label={"en": "Jazz / classical calm listener", "ja": "ジャズ/クラシック 静穏派"},
-   brief={"en": "Same ordinary drive, opposite taste: heavy jazz/classical usage and history. The soothing jazz/classical cluster should rise instead — same road, different driver, different winner.",
-          "ja": "同じ通常走行で正反対の嗜好：ジャズ/クラシックの多用と履歴。静穏なジャズ/クラシック群が上位に — 同じ道でも勝者が変わる。"},
-   situation=_GEN_SIT,
-   profile={"genre_affinity_v1_enabled": True, "usage_by_genre": {"jazz": "high", "classical": "high"},
-            **rich_on(genre_track_ids("jazz", 5, prefer_high_arousal=False)
-                      + genre_track_ids("classical", 4, prefer_high_arousal=False))},
-   control=ROUTE_MUSIC,
-   expectation=_exp("jazz/classical usage + history → a jazz/classical track tops",
-                    top={"genre": "jazz"}, top_fit_min=0.17, gradient="none",
-                    service=["music_playlist", "humming_karaoke", "radio_style"]))
-
-# ---- Family F: era / age-band affinity (6a ⇄ 6b) ----
-_p("preset-showa-nostalgia", category="preference", family="era_age",
-   contrast_with="preset-genz-now",
-   label={"en": "Shōwa nostalgia (50s driver)", "ja": "昭和ノスタルジー（50代ドライバー）"},
-   brief={"en": "A driver in their 50s whose oshi is Seiko Matsuda (1980s). With the era/age weight raised (per-preset override), 1980s tracks win — the same neutral road, a generation earlier.",
-          "ja": "推しが松田聖子（1980年代）の50代ドライバー。年代/世代の重みを引き上げ（プリセット単位のオーバーライド）、1980年代の曲が上位に。"},
-   situation=_OSHI_SIT,
-   profile=strong_oshi(SEIKO, {"j-pop": "high", "jazz": "med"}, age_band="50s"),
-   overrides=AGE_BOOST,
-   control=ROUTE_MUSIC,
-   expectation=_exp("50s age-band + 1980s oshi + raised age weight → a 1980s track tops",
-                    top={"must_be_oshi": True}, top_fit_min=0.30, gradient="none",
-                    service=["music_playlist", "humming_karaoke", "radio_style"],
-                    override_required=True))
-
-_p("preset-genz-now", category="preference", family="era_age",
-   contrast_with="preset-showa-nostalgia",
-   label={"en": "Gen-Z now (teens driver)", "ja": "Z世代（10代ドライバー）"},
-   brief={"en": "A teenage driver whose oshi is Ado (2020s). Same neutral road, same raised era/age weight — but now current 2020s tracks win. Age-band alone flips the era.",
-          "ja": "推しがAdo（2020年代）の10代ドライバー。同じ道・同じ年代重みで、今度は2020年代の曲が上位に。世代だけで年代が反転。"},
-   situation=_OSHI_SIT,
-   profile=strong_oshi(ADO, {"j-pop": "high"}, age_band="teens"),
-   overrides=AGE_BOOST,
-   control=ROUTE_MUSIC,
-   expectation=_exp("teens age-band + 2020s oshi + raised age weight → a 2020s track tops",
-                    top={"must_be_oshi": True}, top_fit_min=0.30, gradient="none",
-                    service=["music_playlist", "humming_karaoke", "radio_style"],
-                    override_required=True))
-
-# ---- Family I: history mechanics (standalone x2) ----
-_REC3 = genre_track_ids("j-pop", 3, prefer_high_arousal=True)
-_p("preset-high-recovery-regular", category="history", family="history_mechanics",
-   contrast_with=None,
-   label={"en": "High-recovery regulars", "ja": "回復実績の高い定番曲"},
-   brief={"en": "No oshi, but three specific tracks have an excellent recovery record with this driver. The recovery-rate signal (the strongest History lever at rest) should lift exactly those three above equally-matched peers.",
-          "ja": "推しはいないが、3曲がこのドライバーで高い回復実績を持つ。回復レートのシグナルにより、その3曲が同等の他曲より上位に。"},
-   situation={"drowsiness_level": 78, "fatigue_level": 38, "monotony_level": 70, "night_state": "day",
-              "road_type": "highway"},
-   profile={**rich_on(_REC3, acc=90.0, rec=95.0)},
-   expectation=_exp("strong per-track recovery history lifts exactly those tracks to the top",
-                    top={"arousal_band": "high"}, top_fit_min=0.22, gradient="none",
-                    service=["music_playlist", "humming_karaoke", "radio_style"]))
-
-_PLAYED3 = genre_track_ids("j-pop", 3, prefer_high_arousal=True)
-_p("preset-recently-played-fatigue", category="history", family="history_mechanics",
-   contrast_with=None,
-   label={"en": "Recently played — novelty penalty", "ja": "直近再生 — 新鮮さペナルティ"},
-   brief={"en": "Three tracks that would otherwise score well were just played minutes ago. The recency/novelty penalty pushes them down, demonstrating that the algorithm avoids immediately repeating songs.",
-          "ja": "本来は上位のはずの3曲を数分前に再生済み。新鮮さペナルティで順位が下がり、直近曲の繰り返しを避ける挙動を示す。"},
-   situation={"drowsiness_level": 75, "fatigue_level": 40, "monotony_level": 62, "night_state": "day",
-              "road_type": "highway"},
-   profile={"genre_affinity_v1_enabled": True, "usage_by_genre": {"j-pop": "high"},
-            **rich_on(genre_track_ids("j-pop", 8), acc=90.0, rec=85.0),
-            **played_recent_on(_PLAYED3)},
-   expectation=_exp("just-played tracks are demoted below other strong matches",
-                    top={"genre": "j-pop"}, top_fit_min=0.22, gradient="none",
-                    service=["music_playlist", "humming_karaoke", "radio_style"],
-                    should_rank_below=[{"track_id": t} for t in _PLAYED3]))
-
-# ---- Family J: baseline control ⇄ multi-lever combo (11 ⇄ 12) ----
-_p("preset-coldstart-neutral", category="baseline", family="baseline",
-   contrast_with=None,
-   label={"en": "Cold-start neutral (control)", "ja": "コールドスタート中立（対照）"},
-   brief={"en": "The honest baseline: an unknown driver (no oshi, no history, no genre data) on an ordinary road. Scores stay low (~0.10) BY DESIGN — a third of the model's weight has nothing to act on. This control makes every personalized preset's lift meaningful.",
-          "ja": "正直な基準：未知のドライバー（推し・履歴・ジャンル情報なし）で通常走行。設計上スコアは低いまま（約0.10）— モデル重みの約1/3が働く材料を持たない。対照として他プリセットの上振れを意味づける。"},
-   situation={"drowsiness_level": 42, "fatigue_level": 28, "monotony_level": 40, "night_state": "day",
-              "road_type": "highway"},
-   profile={},  # pure neutral base
-   control=ROUTE_MUSIC,
-   expectation=_exp("cold-start: no personalization → low top score, documents the honest floor",
-                    top={"arousal_band": "high"}, top_fit_min=0.08, gradient="none",
-                    service=["music_playlist", "humming_karaoke", "radio_style"]))
-
+_add_standalones()
 
 
 # --------------------------------------------------------------------------- #

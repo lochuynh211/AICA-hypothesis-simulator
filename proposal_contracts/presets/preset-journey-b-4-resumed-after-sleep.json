@@ -1,43 +1,42 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "After a full sleep-rest at the SA/PA, drowsiness resets to ~24 and the driver resumes the same calm night highway. With the mood pressure gone, the driver's own taste leads uncontested — the identical Jobim track tops again, now at its highest fit since the fresh start.",
-    "ja": "SA/PAでしっかり眠った後、眠気は約24にリセットされ、同じ穏やかな夜の高速道路を再出発。気分の圧力が消え、ドライバー自身の嗜好が異論なく主導 — 同じジョビンの曲が再び首位、走り始め以来最も高いフィットに。"
+    "en": "After a nap, drowsiness collapses to 38 and fatigue to 5; the trip moves to after_rest_before_restart, stopped at an SA/PA. The service switches away from driving services to a post-rest one (stretch_video) and the fit resets low since the situational push is gone. At night the winner is the same track as the drive — the day journey's after-rest stage instead crowns a different, higher-arousal track, showing the night leaf's small but real pull.",
+    "ja": "仮眠後、眠気は38、疲労は5まで低下。旅程はafter_rest_before_restart（停車中・SA/PA）へ。サービスは走行系から休憩後系（ストレッチ動画）へ切り替わり、状況側の後押しが消えたためフィットは低くリセットされる。夜間はドライブと同じ曲が首位に残るが、昼間バージョンの同ステージでは別のより高覚醒な曲が首位になる — night leafの小さいが確かな影響を示す。"
   },
   "category": "situation",
   "contrast_with": null,
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "music_playlist",
-        "humming_karaoke",
-        "radio_style"
+        "live_viewing",
+        "stretch_video",
+        "full_karaoke",
+        "oshi_reexperience",
+        "call_response_stopped"
       ]
     },
     "expected_top": {
-      "arousal_band": "mid",
-      "genre": "jazz",
-      "must_be_oshi": true,
-      "track_id": "synthetic-track-0267"
+      "arousal_band": "high"
     },
     "gradient": "none",
-    "hypothesis": "Post-sleep-rest, low-drowsiness night cruise → the same mid-arousal Jobim jazz oshi track tops again, near its highest fit of the journey (mood no longer competes with taste).",
+    "hypothesis": "After a nap at night, situational push collapses and the service switches to a post-rest one (stretch_video/full_karaoke content); fit resets low. Night vs day differ in which track tops this stage.",
     "override_required": false,
-    "top_fit_min": 0.38
+    "top_fit_min": 0.05
   },
   "family": "journey",
   "journey": {
     "id": "journey-b",
     "label": {
-      "en": "B · The Night Drive",
-      "ja": "B・夜のドライブ"
+      "en": "B · B · The Night Drive (Rest Arc)",
+      "ja": "B・B・夜のドライブ（休憩アーク）"
     },
     "of": 4,
     "step": 4
   },
   "label": {
-    "en": "B · 4/4 — Resuming after a full sleep-rest",
-    "ja": "B・4/4 — しっかり睡眠後、再出発"
+    "en": "B · 4/4 — B · 4/4 — Resumed after sleep",
+    "ja": "B・4/4 — B・4/4 — 仮眠後に再出発"
   },
   "preset_id": "preset-journey-b-4-resumed-after-sleep",
   "schema_version": "1.0.0",
@@ -53,69 +52,33 @@
     },
     "control_inputs": {
       "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
-      "lifecycle_stage": "active_driving_content",
+      "lifecycle_stage": "after_rest_before_restart",
       "matrix_version": "v1",
-      "motion_state": "driving",
-      "trigger_purpose": "route_music"
+      "motion_state": "stopped",
+      "trigger_purpose": "rest_recommended"
     },
     "driver_profile": {
-      "age_band": "40s",
+      "age_band": "30s",
       "cancelled_content_plans": [],
       "catalog_item_recency_state": {},
-      "catalog_item_usage_level": {
-        "synthetic-track-0003": "high",
-        "synthetic-track-0004": "high",
-        "synthetic-track-0005": "high",
-        "synthetic-track-0009": "high",
-        "synthetic-track-0026": "high",
-        "synthetic-track-0028": "high",
-        "synthetic-track-0033": "high",
-        "synthetic-track-0034": "high",
-        "synthetic-track-0035": "high",
-        "synthetic-track-0263": "high",
-        "synthetic-track-0267": "high"
-      },
+      "catalog_item_usage_level": {},
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
-      "content_proposal_acceptance_rate": {
-        "synthetic-track-0003": 95,
-        "synthetic-track-0004": 95,
-        "synthetic-track-0005": 95,
-        "synthetic-track-0009": 95,
-        "synthetic-track-0026": 95,
-        "synthetic-track-0028": 95,
-        "synthetic-track-0033": 95,
-        "synthetic-track-0034": 95,
-        "synthetic-track-0035": 95,
-        "synthetic-track-0263": 95,
-        "synthetic-track-0267": 95
-      },
+      "content_proposal_acceptance_rate": {},
       "content_recovery_confidence": {},
-      "content_recovery_rate": {
-        "synthetic-track-0003": 90,
-        "synthetic-track-0004": 90,
-        "synthetic-track-0005": 90,
-        "synthetic-track-0009": 90,
-        "synthetic-track-0026": 90,
-        "synthetic-track-0028": 90,
-        "synthetic-track-0033": 90,
-        "synthetic-track-0034": 90,
-        "synthetic-track-0035": 90,
-        "synthetic-track-0263": 90,
-        "synthetic-track-0267": 90
-      },
+      "content_recovery_rate": {},
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
       "gender": "unspecified",
-      "genre_affinity_v1_enabled": true,
+      "genre_affinity_v1_enabled": false,
       "hobby_interest_tags": [],
       "manually_selected_items": [],
-      "oshi_id": "synthetic-artist-0004",
-      "oshi_mode": "on",
-      "oshi_registered": true,
+      "oshi_id": null,
+      "oshi_mode": "off",
+      "oshi_registered": false,
       "oshi_tags": [],
-      "oshi_type": "artist",
+      "oshi_type": null,
       "played_items": [],
       "repeated_items": [],
       "scene_content_tag_usage_level": {},
@@ -131,25 +94,22 @@
       "service_recovery_rate": {},
       "service_usage_level": {},
       "skipped_items": [],
-      "usage_by_genre": {
-        "city pop": "med",
-        "jazz": "high"
-      }
+      "usage_by_genre": null
     },
     "situation": {
       "active_service": null,
       "child_present": false,
       "destination_tags": [],
-      "drowsiness_level": 24,
+      "drowsiness_level": 38,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 18,
-      "monotony_level": 25,
-      "motion_state": "driving",
+      "fatigue_level": 5,
+      "monotony_level": 20,
+      "motion_state": "stopped",
       "multiple_passengers": false,
       "night_state": "night",
       "recent_service_rejections": [],
-      "rest_spot_type": "unknown",
-      "road_type": "highway",
+      "rest_spot_type": "sa_pa",
+      "road_type": "parking",
       "route_tags": [
         "highway"
       ],

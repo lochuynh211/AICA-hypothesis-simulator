@@ -1,10 +1,10 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "She's leaving hours before showtime, playlist already blasting — tonight is the Hatsune Miku live she's dreamed about, and drowsiness (~30) is barely on the radar. Her Miku oshi signal plus heavy vocaloid/j-pop usage push Miku's own track to the top from the very first mile.",
-    "ja": "本番の何時間も前に家を出る、プレイリストはもう全開——今夜は夢見た初音ミクのライブ、眠気（約30）なんて眼中にない。ミク推しシグナルとボカロ/J-POPの多用で、走り出した瞬間からミク自身の曲が首位に。"
+    "en": "Drowsiness has pegged at 100 and fatigue has climbed to 56 -- the rest threshold is crossed and AICA now recommends a stop. Until the driver actually reaches the SA/PA they are still driving, so the assistant keeps pushing the same energize track, now at its highest fit of the drive: peak confidence right before the stop.",
+    "ja": "眠気は上限の100に達し、疲労も56まで上昇 — 休憩の閾値を超え、AICAは休憩を推奨する。SA/PAに着くまではまだ運転中のため、アシスタントは同じエナジャイズ系の曲を推し続け、フィットスコアはこの走行で最高値に — 停車直前が確信のピーク。"
   },
-  "category": "preference",
+  "category": "situation",
   "contrast_with": null,
   "expectation": {
     "expected_service": {
@@ -19,28 +19,28 @@
     },
     "expected_top": {
       "arousal_band": "high",
-      "must_be_oshi": true
+      "track_id": "synthetic-track-0266"
     },
     "gradient": "none",
-    "hypothesis": "teens Miku superfan + vocaloid/j-pop usage, low drowsiness (~30) -> Miku's own track tops strongly despite minimal road/fatigue pressure",
+    "hypothesis": "drowsiness pegs at 100, fatigue 56, rest now recommended, still driving -> the SAME high-arousal track tops with its highest fit yet, and the assistant is still offering a driving service to bridge the gap to the stop",
     "override_required": false,
-    "top_fit_min": 0.38
+    "top_fit_min": 0.25
   },
   "family": "journey",
   "journey": {
-    "id": "journey-f",
+    "id": "journey-a",
     "label": {
-      "en": "F · The oshi pilgrimage",
-      "ja": "F・推しの聖地巡礼"
+      "en": "A · The Boring Commute",
+      "ja": "A・退屈な通勤"
     },
-    "of": 4,
-    "step": 1
+    "of": 5,
+    "step": 3
   },
   "label": {
-    "en": "F · 1/4 — Departing for the event, hyped",
-    "ja": "F・1/4 — イベントへ出発、テンション爆上がり"
+    "en": "A · 3/5 — Rest Recommended",
+    "ja": "A・3/5 — 休憩推奨"
   },
-  "preset_id": "preset-journey-f-1-depart-hyped",
+  "preset_id": "preset-journey-a-3-rest-recommended",
   "schema_version": "1.0.0",
   "world": {
     "catalog_ref": {
@@ -54,45 +54,33 @@
     },
     "control_inputs": {
       "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
-      "lifecycle_stage": "active_driving_content",
+      "lifecycle_stage": "before_rest_until_stop",
       "matrix_version": "v1",
       "motion_state": "driving",
-      "trigger_purpose": "route_music"
+      "trigger_purpose": "rest_recommended"
     },
     "driver_profile": {
-      "age_band": "teens",
+      "age_band": "30s",
       "cancelled_content_plans": [],
       "catalog_item_recency_state": {},
-      "catalog_item_usage_level": {
-        "synthetic-track-0108": "high",
-        "synthetic-track-0215": "high",
-        "synthetic-track-0240": "high"
-      },
+      "catalog_item_usage_level": {},
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
-      "content_proposal_acceptance_rate": {
-        "synthetic-track-0108": 95.0,
-        "synthetic-track-0215": 95.0,
-        "synthetic-track-0240": 95.0
-      },
+      "content_proposal_acceptance_rate": {},
       "content_recovery_confidence": {},
-      "content_recovery_rate": {
-        "synthetic-track-0108": 90.0,
-        "synthetic-track-0215": 90.0,
-        "synthetic-track-0240": 90.0
-      },
+      "content_recovery_rate": {},
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
       "gender": "unspecified",
-      "genre_affinity_v1_enabled": true,
+      "genre_affinity_v1_enabled": false,
       "hobby_interest_tags": [],
       "manually_selected_items": [],
-      "oshi_id": "synthetic-artist-0115",
-      "oshi_mode": "on",
-      "oshi_registered": true,
+      "oshi_id": null,
+      "oshi_mode": "off",
+      "oshi_registered": false,
       "oshi_tags": [],
-      "oshi_type": "artist",
+      "oshi_type": null,
       "played_items": [],
       "repeated_items": [],
       "scene_content_tag_usage_level": {},
@@ -108,19 +96,16 @@
       "service_recovery_rate": {},
       "service_usage_level": {},
       "skipped_items": [],
-      "usage_by_genre": {
-        "j-pop": "high",
-        "vocaloid": "high"
-      }
+      "usage_by_genre": null
     },
     "situation": {
       "active_service": null,
       "child_present": false,
       "destination_tags": [],
-      "drowsiness_level": 30,
+      "drowsiness_level": 100,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 25,
-      "monotony_level": 30,
+      "fatigue_level": 56,
+      "monotony_level": 100,
       "motion_state": "driving",
       "multiple_passengers": false,
       "night_state": "day",

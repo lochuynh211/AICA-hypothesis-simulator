@@ -1,46 +1,44 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "The winding climb has taken its toll: fatigue has caught up to drowsiness, both at ≈55 — the mountain's own fatigue bonus outpacing the merely-base drowsiness rise on a non-monotonous road. A rest stop is now recommended, about 8 minutes ahead. The same calm taste keeps the same Joe Hisaishi track on top while the assistant guides the driver toward the stop.",
-    "ja": "曲がりくねった登りで疲労が眠気に追いつき、両方とも約55に — 山道特有の疲労ボーナスが、単調でない道でのベースの眠気上昇を上回った。休憩スポットが約8分先に推奨される。同じ穏やかな嗜好により、休憩地点へ誘導する間も同じJoe Hisaishiの曲が1位のまま。"
+    "en": "The winding climb has pushed fatigue (85) well past drowsiness (75) and monotony has crept up too (60) — a rest stop is now recommended. The same energizer track that led on the flat road still leads here, but its pull is much stronger now.",
+    "ja": "曲がりくねった登りで疲労（85）が眠気（75）を大きく上回り、単調度も上昇（60）— 休憩が推奨される。平坦な道と同じ元気付け系の曲が引き続き1位だが、その引きは今はずっと強い。"
   },
   "category": "situation",
   "contrast_with": null,
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "humming_karaoke",
         "music_playlist",
+        "humming_karaoke",
         "quiz",
-        "call_response_driving",
+        "ranking_creation",
         "radio_style",
-        "ranking_creation"
+        "call_response_driving"
       ]
     },
     "expected_top": {
-      "arousal_band": "mid",
-      "genre": "classical",
-      "must_be_oshi": true,
-      "track_id": "synthetic-track-0078"
+      "arousal_band": "high",
+      "track_id": "synthetic-track-0266"
     },
     "gradient": "none",
-    "hypothesis": "fatigue-led winding-road buildup (fatigue == drowsiness), same taste -> same oshi track still tops",
+    "hypothesis": "fatigue has rocketed past drowsiness (85 vs 75) on the winding climb -> the SAME track stays on top (no swap) but its fit rises sharply as the model's energize pull strengthens with fatigue/drowsiness",
     "override_required": false,
-    "top_fit_min": 0.339
+    "top_fit_min": 0.17
   },
   "family": "journey",
   "journey": {
     "id": "journey-c",
     "label": {
-      "en": "C · The Mountain Road Trip",
-      "ja": "C・山道ロードトリップ"
+      "en": "C · The Mountain Pass (fatigue-led, blank profile)",
+      "ja": "C・山道の峠越え（疲労主導・履歴なし）"
     },
     "of": 4,
     "step": 2
   },
   "label": {
-    "en": "C · 2/4 — Fatigue building from the winding road",
-    "ja": "C・2/4 — 曲がりくねった道で疲労蓄積"
+    "en": "C · 2/4 — Fatigue building on the climb",
+    "ja": "C・2/4 — 登りで疲労が蓄積"
   },
   "preset_id": "preset-journey-c-2-fatigue-building",
   "schema_version": "1.0.0",
@@ -62,66 +60,27 @@
       "trigger_purpose": "rest_recommended"
     },
     "driver_profile": {
-      "age_band": "50s",
+      "age_band": "30s",
       "cancelled_content_plans": [],
       "catalog_item_recency_state": {},
-      "catalog_item_usage_level": {
-        "synthetic-track-0003": "high",
-        "synthetic-track-0004": "high",
-        "synthetic-track-0009": "high",
-        "synthetic-track-0017": "high",
-        "synthetic-track-0022": "high",
-        "synthetic-track-0024": "high",
-        "synthetic-track-0026": "high",
-        "synthetic-track-0045": "high",
-        "synthetic-track-0078": "high",
-        "synthetic-track-0112": "high",
-        "synthetic-track-0158": "high",
-        "synthetic-track-0270": "high"
-      },
+      "catalog_item_usage_level": {},
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
-      "content_proposal_acceptance_rate": {
-        "synthetic-track-0003": 95,
-        "synthetic-track-0004": 95,
-        "synthetic-track-0009": 95,
-        "synthetic-track-0017": 95,
-        "synthetic-track-0022": 95,
-        "synthetic-track-0024": 95,
-        "synthetic-track-0026": 95,
-        "synthetic-track-0045": 95,
-        "synthetic-track-0078": 95,
-        "synthetic-track-0112": 95,
-        "synthetic-track-0158": 95,
-        "synthetic-track-0270": 95
-      },
+      "content_proposal_acceptance_rate": {},
       "content_recovery_confidence": {},
-      "content_recovery_rate": {
-        "synthetic-track-0003": 90,
-        "synthetic-track-0004": 90,
-        "synthetic-track-0009": 90,
-        "synthetic-track-0017": 90,
-        "synthetic-track-0022": 90,
-        "synthetic-track-0024": 90,
-        "synthetic-track-0026": 90,
-        "synthetic-track-0045": 90,
-        "synthetic-track-0078": 90,
-        "synthetic-track-0112": 90,
-        "synthetic-track-0158": 90,
-        "synthetic-track-0270": 90
-      },
+      "content_recovery_rate": {},
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
       "gender": "unspecified",
-      "genre_affinity_v1_enabled": true,
+      "genre_affinity_v1_enabled": false,
       "hobby_interest_tags": [],
       "manually_selected_items": [],
-      "oshi_id": "synthetic-artist-0090",
-      "oshi_mode": "on",
-      "oshi_registered": true,
+      "oshi_id": null,
+      "oshi_mode": "off",
+      "oshi_registered": false,
       "oshi_tags": [],
-      "oshi_type": "artist",
+      "oshi_type": null,
       "played_items": [],
       "repeated_items": [],
       "scene_content_tag_usage_level": {},
@@ -137,19 +96,18 @@
       "service_recovery_rate": {},
       "service_usage_level": {},
       "skipped_items": [],
-      "usage_by_genre": {
-        "classical": "high",
-        "jazz": "med"
-      }
+      "usage_by_genre": null
     },
     "situation": {
       "active_service": null,
       "child_present": false,
-      "destination_tags": [],
-      "drowsiness_level": 55,
+      "destination_tags": [
+        "mountain"
+      ],
+      "drowsiness_level": 75,
       "estimated_min_until_rest_spot": 8,
-      "fatigue_level": 55,
-      "monotony_level": 18,
+      "fatigue_level": 85,
+      "monotony_level": 60,
       "motion_state": "driving",
       "multiple_passengers": false,
       "night_state": "day",
@@ -157,7 +115,7 @@
       "rest_spot_type": "sa_pa",
       "road_type": "mountain",
       "route_tags": [
-        "highway"
+        "mountain"
       ],
       "traffic_state": "normal"
     }

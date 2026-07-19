@@ -38,7 +38,7 @@ import {
   journeyPreview,
 } from '../src/api/proposalClient'
 
-const AUTO_PRESET = 'preset-journey-a-1-cruising-fresh-monotonous'
+const AUTO_PRESET = 'preset-journey-a-1-cruising-fresh'
 
 function pkg(id: string, family: string) {
   return { id, version: '1.0.0', label: { ja: id, en: id }, family, approach: 'transparent', supported_services: [], parameters: {}, hyperparameters: [] }

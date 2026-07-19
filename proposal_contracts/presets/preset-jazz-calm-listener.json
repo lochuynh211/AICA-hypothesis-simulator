@@ -1,8 +1,8 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "Same ordinary drive, opposite taste: heavy jazz/classical usage and history. The soothing jazz/classical cluster should rise instead — same road, different driver, different winner.",
-    "ja": "同じ通常走行で正反対の嗜好：ジャズ/クラシックの多用と履歴。静穏なジャズ/クラシック群が上位に — 同じ道でも勝者が変わる。"
+    "en": "Same ordinary neutral drive, opposite taste: heavy jazz/classical usage and history on 9 calm tracks. The soothing jazz/classical cluster rises instead — same road, different driver, different winner.",
+    "ja": "同じ通常の中立走行で正反対の嗜好：ジャズ/クラシックの多用と静穏な9曲の履歴。静穏なジャズ/クラシック群が代わりに上位に — 同じ道でも勝者が変わる。"
   },
   "category": "preference",
   "contrast_with": "preset-jrock-enthusiast",
@@ -11,16 +11,19 @@
       "top_should_be_in": [
         "music_playlist",
         "humming_karaoke",
-        "radio_style"
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "call_response_driving"
       ]
     },
     "expected_top": {
       "genre": "jazz"
     },
     "gradient": "none",
-    "hypothesis": "jazz/classical usage + history → a jazz/classical track tops",
+    "hypothesis": "Same neutral drive, same absence of any oshi, opposite taste: heavy jazz/classical genre usage and history on 9 calm tracks. The soothing jazz/classical cluster should rise instead of j-rock — same road, different driver, different winner.",
     "override_required": false,
-    "top_fit_min": 0.17
+    "top_fit_min": 0.25
   },
   "family": "genre_usage",
   "journey": null,
@@ -120,10 +123,10 @@
       "active_service": null,
       "child_present": false,
       "destination_tags": [],
-      "drowsiness_level": 42,
+      "drowsiness_level": 40,
       "estimated_min_until_rest_spot": null,
       "fatigue_level": 28,
-      "monotony_level": 45,
+      "monotony_level": 40,
       "motion_state": "driving",
       "multiple_passengers": false,
       "night_state": "day",

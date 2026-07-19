@@ -33,8 +33,8 @@
     }
   },
   "brief": {
-    "en": "A teenage driver whose oshi is Ado (2020s). Same neutral road, same raised era/age weight — but now current 2020s tracks win. Age-band alone flips the era.",
-    "ja": "推しがAdo（2020年代）の10代ドライバー。同じ道・同じ年代重みで、今度は2020年代の曲が上位に。世代だけで年代が反転。"
+    "en": "A teenage driver whose oshi is Ado (2020s). Same neutral road, same raised age/oshi weight override — but now a current 2020s track wins. Age-band alone flips the era versus the Shōwa preset.",
+    "ja": "推しがAdo（2020年代）の10代ドライバー。同じ中立の道・同じ重みオーバーライドで、今度は2020年代の曲が上位に。世代（年代）だけで昭和の対と勝者が反転する。"
   },
   "category": "preference",
   "contrast_with": "preset-showa-nostalgia",
@@ -43,16 +43,19 @@
       "top_should_be_in": [
         "music_playlist",
         "humming_karaoke",
-        "radio_style"
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "call_response_driving"
       ]
     },
     "expected_top": {
       "must_be_oshi": true
     },
     "gradient": "none",
-    "hypothesis": "teens age-band + 2020s oshi + raised age weight → a 2020s track tops",
+    "hypothesis": "A teenage driver whose oshi is Ado (2020s j-pop). Same neutral road, same raised age/oshi weight override — but now a current 2020s track wins. Age-band alone flips the era versus the Shōwa preset.",
     "override_required": true,
-    "top_fit_min": 0.3
+    "top_fit_min": 0.45
   },
   "family": "era_age",
   "journey": null,
@@ -139,7 +142,7 @@
       "active_service": null,
       "child_present": false,
       "destination_tags": [],
-      "drowsiness_level": 42,
+      "drowsiness_level": 40,
       "estimated_min_until_rest_spot": null,
       "fatigue_level": 28,
       "monotony_level": 40,

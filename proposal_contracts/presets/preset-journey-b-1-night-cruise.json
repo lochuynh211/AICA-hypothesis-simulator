@@ -1,10 +1,10 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "She's leaving hours before showtime, playlist already blasting — tonight is the Hatsune Miku live she's dreamed about, and drowsiness (~30) is barely on the radar. Her Miku oshi signal plus heavy vocaloid/j-pop usage push Miku's own track to the top from the very first mile.",
-    "ja": "本番の何時間も前に家を出る、プレイリストはもう全開——今夜は夢見た初音ミクのライブ、眠気（約30）なんて眼中にない。ミク推しシグナルとボカロ/J-POPの多用で、走り出した瞬間からミク自身の曲が首位に。"
+    "en": "Just underway on a quiet night highway. Drowsiness is mild (31), monotony is light (30). No driver history yet — the situation alone sets a modest fit for the high-arousal track that will carry through the whole night arc.",
+    "ja": "静かな夜の高速道路を走り始めたところ。眠気は軽く（31）、単調さも軽い（30）。履歴はまだ無く、状況だけで高覚醒トラックに控えめなフィットが付く — 一晩の物語の起点。"
   },
-  "category": "preference",
+  "category": "situation",
   "contrast_with": null,
   "expectation": {
     "expected_service": {
@@ -18,29 +18,28 @@
       ]
     },
     "expected_top": {
-      "arousal_band": "high",
-      "must_be_oshi": true
+      "arousal_band": "high"
     },
     "gradient": "none",
-    "hypothesis": "teens Miku superfan + vocaloid/j-pop usage, low drowsiness (~30) -> Miku's own track tops strongly despite minimal road/fatigue pressure",
+    "hypothesis": "Night cruise, mild drowsiness → a high-arousal track already leads at a modest fit; this is the floor of the night's rising-fit arc.",
     "override_required": false,
-    "top_fit_min": 0.38
+    "top_fit_min": 0.13
   },
   "family": "journey",
   "journey": {
-    "id": "journey-f",
+    "id": "journey-b",
     "label": {
-      "en": "F · The oshi pilgrimage",
-      "ja": "F・推しの聖地巡礼"
+      "en": "B · B · The Night Drive (Rest Arc)",
+      "ja": "B・B・夜のドライブ（休憩アーク）"
     },
     "of": 4,
     "step": 1
   },
   "label": {
-    "en": "F · 1/4 — Departing for the event, hyped",
-    "ja": "F・1/4 — イベントへ出発、テンション爆上がり"
+    "en": "B · 1/4 — B · 1/4 — Night highway — still fresh",
+    "ja": "B・1/4 — B・1/4 — 夜の高速道路 — まだ元気"
   },
-  "preset_id": "preset-journey-f-1-depart-hyped",
+  "preset_id": "preset-journey-b-1-night-cruise",
   "schema_version": "1.0.0",
   "world": {
     "catalog_ref": {
@@ -60,39 +59,27 @@
       "trigger_purpose": "route_music"
     },
     "driver_profile": {
-      "age_band": "teens",
+      "age_band": "30s",
       "cancelled_content_plans": [],
       "catalog_item_recency_state": {},
-      "catalog_item_usage_level": {
-        "synthetic-track-0108": "high",
-        "synthetic-track-0215": "high",
-        "synthetic-track-0240": "high"
-      },
+      "catalog_item_usage_level": {},
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
-      "content_proposal_acceptance_rate": {
-        "synthetic-track-0108": 95.0,
-        "synthetic-track-0215": 95.0,
-        "synthetic-track-0240": 95.0
-      },
+      "content_proposal_acceptance_rate": {},
       "content_recovery_confidence": {},
-      "content_recovery_rate": {
-        "synthetic-track-0108": 90.0,
-        "synthetic-track-0215": 90.0,
-        "synthetic-track-0240": 90.0
-      },
+      "content_recovery_rate": {},
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
       "gender": "unspecified",
-      "genre_affinity_v1_enabled": true,
+      "genre_affinity_v1_enabled": false,
       "hobby_interest_tags": [],
       "manually_selected_items": [],
-      "oshi_id": "synthetic-artist-0115",
-      "oshi_mode": "on",
-      "oshi_registered": true,
+      "oshi_id": null,
+      "oshi_mode": "off",
+      "oshi_registered": false,
       "oshi_tags": [],
-      "oshi_type": "artist",
+      "oshi_type": null,
       "played_items": [],
       "repeated_items": [],
       "scene_content_tag_usage_level": {},
@@ -108,22 +95,19 @@
       "service_recovery_rate": {},
       "service_usage_level": {},
       "skipped_items": [],
-      "usage_by_genre": {
-        "j-pop": "high",
-        "vocaloid": "high"
-      }
+      "usage_by_genre": null
     },
     "situation": {
       "active_service": null,
       "child_present": false,
       "destination_tags": [],
-      "drowsiness_level": 30,
+      "drowsiness_level": 31,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 25,
+      "fatigue_level": 23,
       "monotony_level": 30,
       "motion_state": "driving",
       "multiple_passengers": false,
-      "night_state": "day",
+      "night_state": "night",
       "recent_service_rejections": [],
       "rest_spot_type": "unknown",
       "road_type": "highway",

@@ -1,8 +1,8 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "Back on the highway, refreshed and calmer — drowsiness settles at 30. The family's favorite high-energy anime opening returns to the top of the playlist; the anime-fan and child-passenger signals are as steady as ever.",
-    "ja": "高速道路に戻り、休憩明けで落ち着いた様子。眠気は30に落ち着く。家族お気に入りの高揚感あるアニメソングが再びプレイリスト上位に。アニメ嗜好・子ども同乗のシグナルは変わらず安定。"
+    "en": "Back on the highway, calmer than the restless hour but past the fresh start (drowsiness 35). The same child-present track resumes the top spot and humming_karaoke leads the service ranking again -- the family's baseline reasserts itself.",
+    "ja": "高速道路に戻り、落ち着かない1時間よりは穏やかだが出発直後ほど新鮮でもない（眠気35）。同じ子ども同乗の曲が再び首位となり、humming_karaokeが再びサービスランキングを主導 — 家族のベースラインが戻る。"
   },
   "category": "situation",
   "contrast_with": null,
@@ -10,34 +10,32 @@
     "expected_service": {
       "top_should_be_in": [
         "humming_karaoke",
-        "call_response_driving",
-        "quiz"
+        "music_playlist",
+        "radio_style"
       ]
     },
     "expected_top": {
       "arousal_band": "high",
-      "genre": "anime",
-      "must_be_oshi": false,
-      "track_id": null
+      "track_id": "synthetic-track-0161"
     },
     "gradient": "none",
-    "hypothesis": "post-rest, calmer drive, same child/anime-fan affinity → the same high-arousal anime track resumes the top spot",
+    "hypothesis": "back on the road, calmer than stage 2 but past the fresh start -> the same child track resumes the top spot and humming_karaoke leads service again",
     "override_required": false,
-    "top_fit_min": 0.362
+    "top_fit_min": 0.135
   },
   "family": "journey",
   "journey": {
     "id": "journey-e",
     "label": {
-      "en": "E · The family road trip",
-      "ja": "E・家族の遠出"
+      "en": "E · E · The family road trip",
+      "ja": "E・E・家族の遠出"
     },
     "of": 4,
     "step": 4
   },
   "label": {
-    "en": "E · 4/4 — Back on the road, calmer",
-    "ja": "E・4/4 — 再出発、落ち着いた車内"
+    "en": "E · 4/4 — E · 4/4 — Back on the road, calmer",
+    "ja": "E・4/4 — E・4/4 — 再出発、落ち着いた車内"
   },
   "preset_id": "preset-journey-e-4-back-on-road-calmer",
   "schema_version": "1.0.0",
@@ -62,41 +60,18 @@
       "age_band": "30s",
       "cancelled_content_plans": [],
       "catalog_item_recency_state": {},
-      "catalog_item_usage_level": {
-        "synthetic-track-0058": "high",
-        "synthetic-track-0060": "high",
-        "synthetic-track-0061": "high",
-        "synthetic-track-0077": "high",
-        "synthetic-track-0115": "high",
-        "synthetic-track-0144": "high"
-      },
+      "catalog_item_usage_level": {},
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
-      "content_proposal_acceptance_rate": {
-        "synthetic-track-0058": 95,
-        "synthetic-track-0060": 95,
-        "synthetic-track-0061": 95,
-        "synthetic-track-0077": 95,
-        "synthetic-track-0115": 95,
-        "synthetic-track-0144": 95
-      },
+      "content_proposal_acceptance_rate": {},
       "content_recovery_confidence": {},
-      "content_recovery_rate": {
-        "synthetic-track-0058": 90,
-        "synthetic-track-0060": 90,
-        "synthetic-track-0061": 90,
-        "synthetic-track-0077": 90,
-        "synthetic-track-0115": 90,
-        "synthetic-track-0144": 90
-      },
+      "content_recovery_rate": {},
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
       "gender": "unspecified",
-      "genre_affinity_v1_enabled": true,
-      "hobby_interest_tags": [
-        "anime-fan"
-      ],
+      "genre_affinity_v1_enabled": false,
+      "hobby_interest_tags": [],
       "manually_selected_items": [],
       "oshi_id": null,
       "oshi_mode": "off",
@@ -118,19 +93,16 @@
       "service_recovery_rate": {},
       "service_usage_level": {},
       "skipped_items": [],
-      "usage_by_genre": {
-        "anime": "high",
-        "j-pop": "med"
-      }
+      "usage_by_genre": null
     },
     "situation": {
       "active_service": null,
       "child_present": true,
       "destination_tags": [],
-      "drowsiness_level": 30,
+      "drowsiness_level": 35,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 25,
-      "monotony_level": 30,
+      "fatigue_level": 30,
+      "monotony_level": 40,
       "motion_state": "driving",
       "multiple_passengers": true,
       "night_state": "day",

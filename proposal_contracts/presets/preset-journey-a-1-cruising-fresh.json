@@ -1,29 +1,30 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "A nap at the SA/PA reset drowsiness to ~22 and monotony to ~30. With the energize pressure gone, a calmer favorite from the same oshi rises to the top — a different pick than the whole drowsy climb.",
-    "ja": "SA/PAでの仮眠により眠気は約22、モノトニーは約30まで低下。覚醒への圧力が消え、同じ推しの中でも落ち着いた一曲が上位に浮上 — 眠気が高かった間とは違う曲に変わる。"
+    "en": "Mid-morning, an empty monotonous highway, driver is still fresh. Drowsiness is only 31 and the assistant is just playing route music -- a high-arousal energize track already tops the list, but its fit score is low: the system has little reason yet to push hard.",
+    "ja": "午前中、単調な高速道路を巡航中でまだ元気。眠気はわずか31、アシスタントは通常のルートミュージックを再生中。高覚醒のエナジャイズ系の曲がすでに1位だが、フィットスコアは低い — システムはまだ強く推す理由がない。"
   },
   "category": "situation",
   "contrast_with": null,
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
+        "music_playlist",
         "humming_karaoke",
-        "call_response_driving",
-        "quiz"
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "call_response_driving"
       ]
     },
     "expected_top": {
-      "arousal_band": "mid",
-      "genre": "j-pop",
-      "must_be_oshi": true,
-      "track_id": "synthetic-track-0183"
+      "arousal_band": "high",
+      "track_id": "synthetic-track-0266"
     },
-    "gradient": "arousal_down_implies_fit_up",
-    "hypothesis": "after the nap, drowsiness/monotony collapse → energize pressure relaxes and a calmer favorite from the same oshi rises to top, different from the drowsy-climb pick",
+    "gradient": "none",
+    "hypothesis": "fresh cruise on a monotonous highway, low drowsiness -> a high-arousal energize track already tops, but confidence (fit) is still low",
     "override_required": false,
-    "top_fit_min": 0.39
+    "top_fit_min": 0.13
   },
   "family": "journey",
   "journey": {
@@ -32,14 +33,14 @@
       "en": "A · The Boring Commute",
       "ja": "A・退屈な通勤"
     },
-    "of": 4,
-    "step": 4
+    "of": 5,
+    "step": 1
   },
   "label": {
-    "en": "A · 4/4 — Back on the Road, Refreshed",
-    "ja": "A・4/4 — 仮眠後、リフレッシュして再出発"
+    "en": "A · 1/5 — Cruising, Still Fresh",
+    "ja": "A・1/5 — 巡航中、まだ元気"
   },
-  "preset_id": "preset-journey-a-4-refreshed-after-nap",
+  "preset_id": "preset-journey-a-1-cruising-fresh",
   "schema_version": "1.0.0",
   "world": {
     "catalog_ref": {
@@ -62,36 +63,24 @@
       "age_band": "30s",
       "cancelled_content_plans": [],
       "catalog_item_recency_state": {},
-      "catalog_item_usage_level": {
-        "synthetic-track-0176": "high",
-        "synthetic-track-0177": "high",
-        "synthetic-track-0183": "high"
-      },
+      "catalog_item_usage_level": {},
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
-      "content_proposal_acceptance_rate": {
-        "synthetic-track-0176": 88,
-        "synthetic-track-0177": 90,
-        "synthetic-track-0183": 97
-      },
+      "content_proposal_acceptance_rate": {},
       "content_recovery_confidence": {},
-      "content_recovery_rate": {
-        "synthetic-track-0176": 85,
-        "synthetic-track-0177": 88,
-        "synthetic-track-0183": 95
-      },
+      "content_recovery_rate": {},
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
       "gender": "unspecified",
-      "genre_affinity_v1_enabled": true,
+      "genre_affinity_v1_enabled": false,
       "hobby_interest_tags": [],
       "manually_selected_items": [],
-      "oshi_id": "synthetic-artist-0157",
-      "oshi_mode": "on",
-      "oshi_registered": true,
+      "oshi_id": null,
+      "oshi_mode": "off",
+      "oshi_registered": false,
       "oshi_tags": [],
-      "oshi_type": "artist",
+      "oshi_type": null,
       "played_items": [],
       "repeated_items": [],
       "scene_content_tag_usage_level": {},
@@ -107,19 +96,16 @@
       "service_recovery_rate": {},
       "service_usage_level": {},
       "skipped_items": [],
-      "usage_by_genre": {
-        "j-pop": "high",
-        "j-rock": "med"
-      }
+      "usage_by_genre": null
     },
     "situation": {
       "active_service": null,
       "child_present": false,
       "destination_tags": [],
-      "drowsiness_level": 22,
+      "drowsiness_level": 31,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 20,
-      "monotony_level": 30,
+      "fatigue_level": 23,
+      "monotony_level": 24,
       "motion_state": "driving",
       "multiple_passengers": false,
       "night_state": "day",

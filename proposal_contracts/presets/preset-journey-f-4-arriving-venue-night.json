@@ -1,45 +1,44 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "Drowsiness has climbed to ~80, past the rest threshold. The SA/PA is 8 minutes ahead and the driver is still on the wheel — the assistant keeps the same energizing oshi track playing to bridge the gap safely.",
-    "ja": "眠気は約80まで上昇し、休憩の閾値を超えた。SA/PAまであと8分、まだ運転中。アシスタントは同じ推しの高揚曲をかけ続け、安全にたどり着くまで繋ぐ。"
+    "en": "Parked at the venue lot at night, drowsiness has dropped to 35 and fatigue to 8 after the short stop -- the rest_spot_type is now the dedicated 'oshi_spot'. The content story switches to full-karaoke scoring for the same Miku track, and the service ranking now includes oshi_reexperience among the after-rest options -- the entity gate opens because this driver has a registered oshi.",
+    "ja": "夜、会場の駐車場に停車。短い休憩の後、眠気は35、疲労は8まで低下——rest_spot_typeは専用の「oshi_spot」に。コンテンツは同じミクの曲をフルカラオケ向けに採点し直し、休憩後のサービス候補に oshi_reexperience が加わる——このドライバーは推しを登録済みのためエンティティゲートが開く。"
   },
-  "category": "situation",
+  "category": "preference",
   "contrast_with": null,
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "humming_karaoke",
-        "call_response_driving",
-        "quiz"
+        "stretch_video",
+        "full_karaoke",
+        "oshi_reexperience",
+        "call_response_stopped",
+        "live_viewing"
       ]
     },
     "expected_top": {
-      "arousal_band": "high",
-      "genre": "j-pop",
-      "must_be_oshi": true,
-      "track_id": "synthetic-track-0176"
+      "must_be_oshi": true
     },
-    "gradient": "arousal_up_implies_fit_up",
-    "hypothesis": "drowsiness ~80 near the rest threshold, 8 min to the SA/PA, still driving → the assistant keeps pushing the same high-arousal oshi track to stay alert until the stop",
+    "gradient": "none",
+    "hypothesis": "after_rest at the oshi_spot, night, low drowsiness/fatigue -> content re-scores the same Miku track for full-karaoke and still tops on oshi identity; the registered-oshi entity gate opens oshi_reexperience into the after-rest service ranking",
     "override_required": false,
-    "top_fit_min": 0.4
+    "top_fit_min": 0.3
   },
   "family": "journey",
   "journey": {
-    "id": "journey-a",
+    "id": "journey-f",
     "label": {
-      "en": "A · The Boring Commute",
-      "ja": "A・退屈な通勤"
+      "en": "F · The oshi pilgrimage",
+      "ja": "F・推しの聖地巡礼"
     },
     "of": 4,
-    "step": 3
+    "step": 4
   },
   "label": {
-    "en": "A · 3/4 — Rest Recommended — 8 Minutes Out",
-    "ja": "A・3/4 — 休憩推奨 — あと8分"
+    "en": "F · 4/4 — Arrived at the venue, night",
+    "ja": "F・4/4 — 会場に到着、夜"
   },
-  "preset_id": "preset-journey-a-3-rest-recommended-approaching",
+  "preset_id": "preset-journey-f-4-arriving-venue-night",
   "schema_version": "1.0.0",
   "world": {
     "catalog_ref": {
@@ -53,33 +52,33 @@
     },
     "control_inputs": {
       "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
-      "lifecycle_stage": "before_rest_until_stop",
+      "lifecycle_stage": "after_rest_before_restart",
       "matrix_version": "v1",
-      "motion_state": "driving",
+      "motion_state": "stopped",
       "trigger_purpose": "rest_recommended"
     },
     "driver_profile": {
-      "age_band": "30s",
+      "age_band": "teens",
       "cancelled_content_plans": [],
       "catalog_item_recency_state": {},
       "catalog_item_usage_level": {
-        "synthetic-track-0176": "high",
-        "synthetic-track-0177": "high",
-        "synthetic-track-0183": "high"
+        "synthetic-track-0108": "high",
+        "synthetic-track-0215": "high",
+        "synthetic-track-0240": "high"
       },
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
       "content_proposal_acceptance_rate": {
-        "synthetic-track-0176": 88,
-        "synthetic-track-0177": 90,
-        "synthetic-track-0183": 97
+        "synthetic-track-0108": 95.0,
+        "synthetic-track-0215": 95.0,
+        "synthetic-track-0240": 95.0
       },
       "content_recovery_confidence": {},
       "content_recovery_rate": {
-        "synthetic-track-0176": 85,
-        "synthetic-track-0177": 88,
-        "synthetic-track-0183": 95
+        "synthetic-track-0108": 90.0,
+        "synthetic-track-0215": 90.0,
+        "synthetic-track-0240": 90.0
       },
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
@@ -87,7 +86,7 @@
       "genre_affinity_v1_enabled": true,
       "hobby_interest_tags": [],
       "manually_selected_items": [],
-      "oshi_id": "synthetic-artist-0157",
+      "oshi_id": "synthetic-artist-0115",
       "oshi_mode": "on",
       "oshi_registered": true,
       "oshi_tags": [],
@@ -109,23 +108,23 @@
       "skipped_items": [],
       "usage_by_genre": {
         "j-pop": "high",
-        "j-rock": "med"
+        "vocaloid": "high"
       }
     },
     "situation": {
       "active_service": null,
       "child_present": false,
       "destination_tags": [],
-      "drowsiness_level": 80,
-      "estimated_min_until_rest_spot": 8,
-      "fatigue_level": 35,
-      "monotony_level": 90,
-      "motion_state": "driving",
+      "drowsiness_level": 35,
+      "estimated_min_until_rest_spot": null,
+      "fatigue_level": 8,
+      "monotony_level": 20,
+      "motion_state": "stopped",
       "multiple_passengers": false,
-      "night_state": "day",
+      "night_state": "night",
       "recent_service_rejections": [],
-      "rest_spot_type": "sa_pa",
-      "road_type": "highway",
+      "rest_spot_type": "oshi_spot",
+      "road_type": "parking",
       "route_tags": [
         "highway"
       ],

@@ -1,28 +1,30 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "Rush hour just turned into gridlock. Drowsiness is still low (~40) and patience is fine — the driver wants upbeat music to pass the time, and their strong J-pop/anime taste should carry an energetic track straight to the top.",
-    "ja": "ラッシュアワーが渋滞に変わった。眠気はまだ低く（約40）、余裕もある。飽きしのぎにアップテンポな音楽を求めており、強いJ-POP/アニメ嗜好によりエネルギッシュな曲が上位に来るはず。"
+    "en": "Traffic just seized up. Drowsiness (45) and fatigue (40) are moderate, monotony is climbing (70) as the stop-and-go grind sets in. The assistant is already in keep-alert mode; the energize pick should show a real but not-yet-peak fit.",
+    "ja": "交通が突然詰まった。眠気（45）と疲労（40）は中程度、ストップ&ゴーの単調さで単調度が上昇中（70）。アシスタントはすでに覚醒維持モード。覚醒を促す一曲は、まだピークではないが確かなフィット感を示すはず。"
   },
   "category": "situation",
   "contrast_with": null,
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
+        "music_playlist",
         "humming_karaoke",
-        "call_response_driving",
-        "quiz"
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "call_response_driving"
       ]
     },
     "expected_top": {
       "arousal_band": "high",
-      "genre": "j-pop",
       "must_be_oshi": false
     },
     "gradient": "none",
-    "hypothesis": "rush-hour gridlock, low drowsiness, strong j-pop/anime usage+history → an upbeat (high-arousal) j-pop track tops for route_music",
+    "hypothesis": "jam just starting, drowsiness/fatigue moderate and monotony climbing (70) under gridlock → inattentive-prevention already leads with a high-arousal energize track, fit elevated but not yet peaked",
     "override_required": false,
-    "top_fit_min": 0.308
+    "top_fit_min": 0.2
   },
   "family": "journey",
   "journey": {
@@ -55,68 +57,23 @@
       "lifecycle_stage": "active_driving_content",
       "matrix_version": "v1",
       "motion_state": "driving",
-      "trigger_purpose": "route_music"
+      "trigger_purpose": "inattentive_driving_prevention_recovery"
     },
     "driver_profile": {
-      "age_band": "20s",
+      "age_band": "30s",
       "cancelled_content_plans": [],
       "catalog_item_recency_state": {},
-      "catalog_item_usage_level": {
-        "synthetic-track-0058": "high",
-        "synthetic-track-0060": "high",
-        "synthetic-track-0061": "high",
-        "synthetic-track-0076": "high",
-        "synthetic-track-0077": "high",
-        "synthetic-track-0087": "high",
-        "synthetic-track-0097": "high",
-        "synthetic-track-0098": "high",
-        "synthetic-track-0108": "high",
-        "synthetic-track-0115": "high",
-        "synthetic-track-0130": "high",
-        "synthetic-track-0144": "high",
-        "synthetic-track-0181": "high",
-        "synthetic-track-0202": "high"
-      },
+      "catalog_item_usage_level": {},
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
-      "content_proposal_acceptance_rate": {
-        "synthetic-track-0058": 95,
-        "synthetic-track-0060": 95,
-        "synthetic-track-0061": 95,
-        "synthetic-track-0076": 95,
-        "synthetic-track-0077": 95,
-        "synthetic-track-0087": 95,
-        "synthetic-track-0097": 95,
-        "synthetic-track-0098": 95,
-        "synthetic-track-0108": 95,
-        "synthetic-track-0115": 95,
-        "synthetic-track-0130": 95,
-        "synthetic-track-0144": 95,
-        "synthetic-track-0181": 95,
-        "synthetic-track-0202": 95
-      },
+      "content_proposal_acceptance_rate": {},
       "content_recovery_confidence": {},
-      "content_recovery_rate": {
-        "synthetic-track-0058": 90,
-        "synthetic-track-0060": 90,
-        "synthetic-track-0061": 90,
-        "synthetic-track-0076": 90,
-        "synthetic-track-0077": 90,
-        "synthetic-track-0087": 90,
-        "synthetic-track-0097": 90,
-        "synthetic-track-0098": 90,
-        "synthetic-track-0108": 90,
-        "synthetic-track-0115": 90,
-        "synthetic-track-0130": 90,
-        "synthetic-track-0144": 90,
-        "synthetic-track-0181": 90,
-        "synthetic-track-0202": 90
-      },
+      "content_recovery_rate": {},
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
       "gender": "unspecified",
-      "genre_affinity_v1_enabled": true,
+      "genre_affinity_v1_enabled": false,
       "hobby_interest_tags": [],
       "manually_selected_items": [],
       "oshi_id": null,
@@ -139,19 +96,16 @@
       "service_recovery_rate": {},
       "service_usage_level": {},
       "skipped_items": [],
-      "usage_by_genre": {
-        "anime": "med",
-        "j-pop": "high"
-      }
+      "usage_by_genre": null
     },
     "situation": {
       "active_service": null,
       "child_present": false,
       "destination_tags": [],
-      "drowsiness_level": 40,
+      "drowsiness_level": 45,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 28,
-      "monotony_level": 15,
+      "fatigue_level": 40,
+      "monotony_level": 70,
       "motion_state": "driving",
       "multiple_passengers": false,
       "night_state": "day",

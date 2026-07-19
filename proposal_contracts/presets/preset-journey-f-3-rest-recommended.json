@@ -1,8 +1,8 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "She's leaving hours before showtime, playlist already blasting — tonight is the Hatsune Miku live she's dreamed about, and drowsiness (~30) is barely on the radar. Her Miku oshi signal plus heavy vocaloid/j-pop usage push Miku's own track to the top from the very first mile.",
-    "ja": "本番の何時間も前に家を出る、プレイリストはもう全開——今夜は夢見た初音ミクのライブ、眠気（約30）なんて眼中にない。ミク推しシグナルとボカロ/J-POPの多用で、走り出した瞬間からミク自身の曲が首位に。"
+    "en": "The excitement hasn't stopped the fatigue: drowsiness has spiked to 90 and monotony is pinned at 80 after a long stretch of highway. The assistant recommends a stop before the venue — but Miku's track is now at its highest fit of the whole drive: preference and rising drowsiness reinforce the same pick instead of fighting it.",
+    "ja": "興奮していても疲労は止まらない：長い高速走行の末、眠気は90まで急上昇し単調度は80に張り付く。会場前に休憩を推奨——それでもミクの曲はドライブ中で最も高いフィットを記録：嗜好と眠気の上昇が対立せず同じ選曲を後押しする。"
   },
   "category": "preference",
   "contrast_with": null,
@@ -22,7 +22,7 @@
       "must_be_oshi": true
     },
     "gradient": "none",
-    "hypothesis": "teens Miku superfan + vocaloid/j-pop usage, low drowsiness (~30) -> Miku's own track tops strongly despite minimal road/fatigue pressure",
+    "hypothesis": "before_rest at high drowsiness (90) + fatigue (55) -> the oshi track's fit peaks for the journey (situation amplifies rather than overrides preference), service stays among the driving set",
     "override_required": false,
     "top_fit_min": 0.38
   },
@@ -34,13 +34,13 @@
       "ja": "F・推しの聖地巡礼"
     },
     "of": 4,
-    "step": 1
+    "step": 3
   },
   "label": {
-    "en": "F · 1/4 — Departing for the event, hyped",
-    "ja": "F・1/4 — イベントへ出発、テンション爆上がり"
+    "en": "F · 3/4 — Rest recommended before the show",
+    "ja": "F・3/4 — 本番前に休憩を推奨"
   },
-  "preset_id": "preset-journey-f-1-depart-hyped",
+  "preset_id": "preset-journey-f-3-rest-recommended",
   "schema_version": "1.0.0",
   "world": {
     "catalog_ref": {
@@ -54,10 +54,10 @@
     },
     "control_inputs": {
       "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
-      "lifecycle_stage": "active_driving_content",
+      "lifecycle_stage": "before_rest_until_stop",
       "matrix_version": "v1",
       "motion_state": "driving",
-      "trigger_purpose": "route_music"
+      "trigger_purpose": "rest_recommended"
     },
     "driver_profile": {
       "age_band": "teens",
@@ -117,10 +117,10 @@
       "active_service": null,
       "child_present": false,
       "destination_tags": [],
-      "drowsiness_level": 30,
+      "drowsiness_level": 90,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 25,
-      "monotony_level": 30,
+      "fatigue_level": 55,
+      "monotony_level": 80,
       "motion_state": "driving",
       "multiple_passengers": false,
       "night_state": "day",

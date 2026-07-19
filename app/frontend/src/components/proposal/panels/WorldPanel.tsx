@@ -71,6 +71,19 @@ const LIFECYCLE_STAGES: { value: LifecycleStageValue; label: { ja: string; en: s
   { value: 'active_driving_content', label: { ja: '走行中', en: 'driving' } },
 ]
 
+/** Which car states each trigger signal may pair with — mirrors the frozen
+ * `purpose_stage_matrix.v1.json` so the UI can never form a pair the backend
+ * would 422 on (e.g. route_music × before_rest_until_stop). `during_rest_stopped`
+ * is deliberately omitted everywhere: it is the nap, which proposes nothing —
+ * the Combined screen still transitions through it, but it is not a
+ * user-selectable proposal state here. */
+const STAGES_FOR_PURPOSE: Record<TriggerPurposeValue, LifecycleStageValue[]> = {
+  rest_recommended: ['before_rest_until_stop', 'after_rest_before_restart'],
+  inattentive_driving_prevention_recovery: ['active_driving_content'],
+  route_music: ['active_driving_content'],
+  child_passenger_experience: ['active_driving_content'],
+}
+
 // ── Small shared UI atoms ───────────────────────────────────────────────────
 
 const LABELS = {
@@ -163,6 +176,21 @@ export default function WorldPanel() {
     dispatch({ type: 'SET_MOTION_STATE', motionState: deriveMotion(stage) })
   }
 
+  /** Selecting a trigger signal constrains the valid car states. If the current
+   * stage is no longer compatible (e.g. switching route_music while sitting on a
+   * rest stage), snap to the first allowed stage and re-derive motion — so an
+   * invalid signal×state pair can never be formed in the UI. */
+  function handleTriggerPurpose(purpose: TriggerPurposeValue) {
+    dispatch({ type: 'SET_TRIGGER_PURPOSE', purpose })
+    const allowed = STAGES_FOR_PURPOSE[purpose]
+    if (!allowed.includes(lifecycleStage)) {
+      handleLifecycleStage(allowed[0])
+    }
+  }
+
+  const allowedStages = STAGES_FOR_PURPOSE[triggerPurpose]
+  const visibleStages = LIFECYCLE_STAGES.filter((opt) => allowedStages.includes(opt.value))
+
   return (
     <section
       data-testid="world-panel"
@@ -249,7 +277,7 @@ export default function WorldPanel() {
                 type="button"
                 data-testid={`trigger-purpose-${opt.value}`}
                 aria-pressed={isSelected}
-                onClick={() => dispatch({ type: 'SET_TRIGGER_PURPOSE', purpose: opt.value })}
+                onClick={() => handleTriggerPurpose(opt.value)}
                 style={{
                   fontSize: '0.74em',
                   padding: '3px 10px',
@@ -270,7 +298,7 @@ export default function WorldPanel() {
         {/* 3. Car state — lifecycle + motion (read-only, derived) */}
         <SectionLabel>{t(LABELS.carState, lang)}</SectionLabel>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', margin: '3px 0 8px' }}>
-          {LIFECYCLE_STAGES.map((opt) => {
+          {visibleStages.map((opt) => {
             const isSelected = opt.value === lifecycleStage
             return (
               <button

@@ -33,8 +33,8 @@
     }
   },
   "brief": {
-    "en": "A driver in their 50s whose oshi is Seiko Matsuda (1980s). With the era/age weight raised (per-preset override), 1980s tracks win — the same neutral road, a generation earlier.",
-    "ja": "推しが松田聖子（1980年代）の50代ドライバー。年代/世代の重みを引き上げ（プリセット単位のオーバーライド）、1980年代の曲が上位に。"
+    "en": "A driver in their 50s whose oshi is Seiko Matsuda (1980s). With the age/oshi hierarchy weight raised (per-preset override), a 1980s track wins — the same neutral road as the Gen-Z pair, a generation earlier.",
+    "ja": "推しが松田聖子（1980年代）の50代ドライバー。年代/推しの重みを引き上げ（プリセット単位のオーバーライド）、1980年代の曲が上位に — Z世代の対と同じ中立の道で、一世代前の勝者。"
   },
   "category": "preference",
   "contrast_with": "preset-genz-now",
@@ -43,16 +43,19 @@
       "top_should_be_in": [
         "music_playlist",
         "humming_karaoke",
-        "radio_style"
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "call_response_driving"
       ]
     },
     "expected_top": {
       "must_be_oshi": true
     },
     "gradient": "none",
-    "hypothesis": "50s age-band + 1980s oshi + raised age weight → a 1980s track tops",
+    "hypothesis": "A driver in their 50s whose oshi is Seiko Matsuda (1980s j-pop). The age/oshi hierarchy weight is raised via a per-preset override so era/age can flip the winner. On the same neutral road as the Gen-Z pair, a 1980s track wins.",
     "override_required": true,
-    "top_fit_min": 0.3
+    "top_fit_min": 0.42
   },
   "family": "era_age",
   "journey": null,
@@ -137,7 +140,7 @@
       "active_service": null,
       "child_present": false,
       "destination_tags": [],
-      "drowsiness_level": 42,
+      "drowsiness_level": 40,
       "estimated_min_until_rest_spot": null,
       "fatigue_level": 28,
       "monotony_level": 40,

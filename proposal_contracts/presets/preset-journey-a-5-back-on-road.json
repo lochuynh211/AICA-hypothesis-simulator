@@ -1,45 +1,46 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "An hour into the highway drive, traffic thickens and monotony builds — drowsiness climbs to 55 as the kids grow restless. The same anime-fan affinity keeps a high-energy anime opening on top, holding the kids' attention while the parent starts to feel the strain.",
-    "ja": "高速道路を1時間走行、渋滞と単調さで眠気は55まで上昇し子どもたちも落ち着かない。同じアニメ嗜好が引き続き高エネルギーなアニメ曲を上位に保ち、親の疲れが出始める中でも子どもの気を引き続ける。"
+    "en": "Back on the highway after the stop, refreshed: drowsiness is only 40, fatigue 20, monotony has not yet rebuilt (35). AICA returns to an ordinary driving service and the same energize track tops again -- at a moderate fit, clearly below the pre-rest peak (0.276) but above the very first fresh-cruise reading (0.150). The arc has come full circle.",
+    "ja": "休憩を終えてリフレッシュし、再び高速道路へ。眠気はわずか40、疲労は20、モノトニーはまだ再蓄積していない（35）。AICAは通常の運転サービスに戻り、同じエナジャイズ系の曲が再び1位に — フィットスコアは休憩直前のピーク（0.276）より明らかに低いが、最初の元気な巡航時（0.150）よりは高い。物語は一周した。"
   },
   "category": "situation",
   "contrast_with": null,
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
+        "music_playlist",
         "humming_karaoke",
-        "call_response_driving",
-        "quiz"
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "call_response_driving"
       ]
     },
     "expected_top": {
       "arousal_band": "high",
-      "genre": "anime",
-      "must_be_oshi": false,
-      "track_id": null
+      "track_id": "synthetic-track-0266"
     },
     "gradient": "none",
-    "hypothesis": "rising drowsiness + congestion, same child/anime-fan affinity → the same high-arousal anime track still tops, with a stronger service margin",
+    "hypothesis": "refreshed and back on the highway, drowsiness only 40 -> a driving service leads again and the SAME energize track tops, at a moderate fit -- lower than the pre-rest peak, higher than the very first fresh-cruise reading",
     "override_required": false,
-    "top_fit_min": 0.389
+    "top_fit_min": 0.14
   },
   "family": "journey",
   "journey": {
-    "id": "journey-e",
+    "id": "journey-a",
     "label": {
-      "en": "E · The family road trip",
-      "ja": "E・家族の遠出"
+      "en": "A · The Boring Commute",
+      "ja": "A・退屈な通勤"
     },
-    "of": 4,
-    "step": 2
+    "of": 5,
+    "step": 5
   },
   "label": {
-    "en": "E · 2/4 — An hour in, restless kids & tiring parent",
-    "ja": "E・2/4 — 1時間経過、落ち着かない子どもと疲れ始める親"
+    "en": "A · 5/5 — Cruising Again",
+    "ja": "A・5/5 — 再び巡航"
   },
-  "preset_id": "preset-journey-e-2-hour-in-restless-tiring",
+  "preset_id": "preset-journey-a-5-back-on-road",
   "schema_version": "1.0.0",
   "world": {
     "catalog_ref": {
@@ -56,47 +57,24 @@
       "lifecycle_stage": "active_driving_content",
       "matrix_version": "v1",
       "motion_state": "driving",
-      "trigger_purpose": "child_passenger_experience"
+      "trigger_purpose": "route_music"
     },
     "driver_profile": {
       "age_band": "30s",
       "cancelled_content_plans": [],
       "catalog_item_recency_state": {},
-      "catalog_item_usage_level": {
-        "synthetic-track-0058": "high",
-        "synthetic-track-0060": "high",
-        "synthetic-track-0061": "high",
-        "synthetic-track-0077": "high",
-        "synthetic-track-0115": "high",
-        "synthetic-track-0144": "high"
-      },
+      "catalog_item_usage_level": {},
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
-      "content_proposal_acceptance_rate": {
-        "synthetic-track-0058": 95,
-        "synthetic-track-0060": 95,
-        "synthetic-track-0061": 95,
-        "synthetic-track-0077": 95,
-        "synthetic-track-0115": 95,
-        "synthetic-track-0144": 95
-      },
+      "content_proposal_acceptance_rate": {},
       "content_recovery_confidence": {},
-      "content_recovery_rate": {
-        "synthetic-track-0058": 90,
-        "synthetic-track-0060": 90,
-        "synthetic-track-0061": 90,
-        "synthetic-track-0077": 90,
-        "synthetic-track-0115": 90,
-        "synthetic-track-0144": 90
-      },
+      "content_recovery_rate": {},
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
       "gender": "unspecified",
-      "genre_affinity_v1_enabled": true,
-      "hobby_interest_tags": [
-        "anime-fan"
-      ],
+      "genre_affinity_v1_enabled": false,
+      "hobby_interest_tags": [],
       "manually_selected_items": [],
       "oshi_id": null,
       "oshi_mode": "off",
@@ -118,21 +96,18 @@
       "service_recovery_rate": {},
       "service_usage_level": {},
       "skipped_items": [],
-      "usage_by_genre": {
-        "anime": "high",
-        "j-pop": "med"
-      }
+      "usage_by_genre": null
     },
     "situation": {
       "active_service": null,
-      "child_present": true,
+      "child_present": false,
       "destination_tags": [],
-      "drowsiness_level": 55,
+      "drowsiness_level": 40,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 40,
-      "monotony_level": 55,
+      "fatigue_level": 20,
+      "monotony_level": 35,
       "motion_state": "driving",
-      "multiple_passengers": true,
+      "multiple_passengers": false,
       "night_state": "day",
       "recent_service_rejections": [],
       "rest_spot_type": "unknown",
@@ -140,7 +115,7 @@
       "route_tags": [
         "highway"
       ],
-      "traffic_state": "congested"
+      "traffic_state": "normal"
     }
   }
 }

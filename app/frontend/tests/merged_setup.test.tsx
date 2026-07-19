@@ -302,7 +302,7 @@ function setupMocks() {
   vi.mocked(getPresets).mockResolvedValue({
     presets: [
       {
-        preset_id: 'preset-journey-a-1-cruising-fresh-monotonous',
+        preset_id: 'preset-journey-a-1-cruising-fresh',
         label: { ja: 'A', en: 'Journey A' },
         brief: { ja: '', en: '' },
         category: 'baseline',
@@ -314,7 +314,7 @@ function setupMocks() {
     ],
   })
   vi.mocked(getPreset).mockResolvedValue({
-    preset_id: 'preset-journey-a-1-cruising-fresh-monotonous',
+    preset_id: 'preset-journey-a-1-cruising-fresh',
     schema_version: '1.0',
     label: { ja: 'A', en: 'Journey A' },
     brief: { ja: '', en: '' },

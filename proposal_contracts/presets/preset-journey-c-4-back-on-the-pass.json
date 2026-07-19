@@ -1,45 +1,46 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "Morning departure on local roads, low drowsiness. The kids are buzzing with excitement. The parent's anime-fan hobby tag and rich history on upbeat anime-opening tracks push a high-energy anime song straight to the top — a coherent 'keep the excitement going' pick.",
-    "ja": "朝、一般道での出発。眠気は低め。子どもたちは大はしゃぎ。親のアニメ好きという趣味タグと、アップテンポなアニメソングへの豊富な利用履歴により、高エネルギーなアニメ曲が即座に上位へ。子どもの興奮そのままの一曲。"
+    "en": "Underway again through the curves: fatigue (40) is back ahead of drowsiness (35), mirroring stage 1 almost exactly. The same track and the same driving-service family win again, closing the fatigue-led mountain loop.",
+    "ja": "再びカーブを走行：疲労（40）が眠気（35）を上回り、ステージ1とほぼ同じ形に戻る。同じ曲・同じ運転系サービス群が再び勝ち、疲労主導の山道ループが閉じる。"
   },
   "category": "situation",
   "contrast_with": null,
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
+        "music_playlist",
         "humming_karaoke",
-        "call_response_driving",
-        "quiz"
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "call_response_driving"
       ]
     },
     "expected_top": {
       "arousal_band": "high",
-      "genre": "anime",
-      "must_be_oshi": false,
-      "track_id": null
+      "track_id": "synthetic-track-0266"
     },
     "gradient": "none",
-    "hypothesis": "child_present + anime-fan hobby + heavy anime usage → a high-arousal anime track tops, humming_karaoke leads the service ranking",
+    "hypothesis": "back on the pass, fatigue-led again and almost identical to stage 1 -> the same energizer track tops again with the same driving-service family, closing the loop",
     "override_required": false,
-    "top_fit_min": 0.344
+    "top_fit_min": 0.12
   },
   "family": "journey",
   "journey": {
-    "id": "journey-e",
+    "id": "journey-c",
     "label": {
-      "en": "E · The family road trip",
-      "ja": "E・家族の遠出"
+      "en": "C · The Mountain Pass (fatigue-led, blank profile)",
+      "ja": "C・山道の峠越え（疲労主導・履歴なし）"
     },
     "of": 4,
-    "step": 1
+    "step": 4
   },
   "label": {
-    "en": "E · 1/4 — Setting off, kids excited",
-    "ja": "E・1/4 — 出発、子どもたちは大はしゃぎ"
+    "en": "C · 4/4 — Back on the pass, fatigue-led again",
+    "ja": "C・4/4 — 峠道に戻る — 再び疲労主導"
   },
-  "preset_id": "preset-journey-e-1-setting-off-excited",
+  "preset_id": "preset-journey-c-4-back-on-the-pass",
   "schema_version": "1.0.0",
   "world": {
     "catalog_ref": {
@@ -56,47 +57,24 @@
       "lifecycle_stage": "active_driving_content",
       "matrix_version": "v1",
       "motion_state": "driving",
-      "trigger_purpose": "child_passenger_experience"
+      "trigger_purpose": "route_music"
     },
     "driver_profile": {
       "age_band": "30s",
       "cancelled_content_plans": [],
       "catalog_item_recency_state": {},
-      "catalog_item_usage_level": {
-        "synthetic-track-0058": "high",
-        "synthetic-track-0060": "high",
-        "synthetic-track-0061": "high",
-        "synthetic-track-0077": "high",
-        "synthetic-track-0115": "high",
-        "synthetic-track-0144": "high"
-      },
+      "catalog_item_usage_level": {},
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
-      "content_proposal_acceptance_rate": {
-        "synthetic-track-0058": 95,
-        "synthetic-track-0060": 95,
-        "synthetic-track-0061": 95,
-        "synthetic-track-0077": 95,
-        "synthetic-track-0115": 95,
-        "synthetic-track-0144": 95
-      },
+      "content_proposal_acceptance_rate": {},
       "content_recovery_confidence": {},
-      "content_recovery_rate": {
-        "synthetic-track-0058": 90,
-        "synthetic-track-0060": 90,
-        "synthetic-track-0061": 90,
-        "synthetic-track-0077": 90,
-        "synthetic-track-0115": 90,
-        "synthetic-track-0144": 90
-      },
+      "content_recovery_rate": {},
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
       "gender": "unspecified",
-      "genre_affinity_v1_enabled": true,
-      "hobby_interest_tags": [
-        "anime-fan"
-      ],
+      "genre_affinity_v1_enabled": false,
+      "hobby_interest_tags": [],
       "manually_selected_items": [],
       "oshi_id": null,
       "oshi_mode": "off",
@@ -118,27 +96,26 @@
       "service_recovery_rate": {},
       "service_usage_level": {},
       "skipped_items": [],
-      "usage_by_genre": {
-        "anime": "high",
-        "j-pop": "med"
-      }
+      "usage_by_genre": null
     },
     "situation": {
       "active_service": null,
-      "child_present": true,
-      "destination_tags": [],
-      "drowsiness_level": 30,
+      "child_present": false,
+      "destination_tags": [
+        "mountain"
+      ],
+      "drowsiness_level": 35,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 20,
-      "monotony_level": 20,
+      "fatigue_level": 40,
+      "monotony_level": 45,
       "motion_state": "driving",
-      "multiple_passengers": true,
+      "multiple_passengers": false,
       "night_state": "day",
       "recent_service_rejections": [],
       "rest_spot_type": "unknown",
-      "road_type": "local",
+      "road_type": "mountain",
       "route_tags": [
-        "highway"
+        "mountain"
       ],
       "traffic_state": "normal"
     }

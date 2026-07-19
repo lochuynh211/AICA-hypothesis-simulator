@@ -1,8 +1,8 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "Mid-morning, an empty monotonous highway. Drowsiness is only ~40 but the boredom (monotony ~45) already nudges the assistant toward something upbeat — the driver's own oshi Kenshi Yonezu comes out swinging with his highest-energy track.",
-    "ja": "午前中、単調な高速道路を巡航。眠気はまだ40ほどだが、単調さ（モノトニー45）により早くもアップテンポな選曲へ傾く。推しの米津玄師の中でも一番エネルギッシュな曲が早速上位に。"
+    "en": "An hour later: traffic and monotony have built, drowsiness climbs to 55. Same blank profile, same child_present -- the SAME track that led stage 1 stays on top, but its fit score rises with the harder situation (situation moves fit magnitude, not identity).",
+    "ja": "1時間後、渋滞と単調さが蓄積し眠気は55まで上昇。同じ空欄プロファイル、同じchild_present — ステージ1で首位だった同じ曲がそのまま首位を維持するが、状況が厳しくなるにつれフィットスコアは上昇する（状況はフィットの大きさを動かすが、識別は変えない）。"
   },
   "category": "situation",
   "contrast_with": null,
@@ -10,36 +10,34 @@
     "expected_service": {
       "top_should_be_in": [
         "humming_karaoke",
-        "call_response_driving",
-        "quiz"
+        "music_playlist",
+        "radio_style"
       ]
     },
     "expected_top": {
       "arousal_band": "high",
-      "genre": "j-pop",
-      "must_be_oshi": true,
-      "track_id": "synthetic-track-0176"
+      "track_id": "synthetic-track-0161"
     },
-    "gradient": "arousal_up_implies_fit_up",
-    "hypothesis": "mainstream j-pop/j-rock taste + oshi Kenshi Yonezu, mildly drowsy on a monotonous highway → the driver's own upbeat oshi track already tops (energize lean begins early)",
+    "gradient": "none",
+    "hypothesis": "same blank profile, same child_present, but drowsiness/monotony climb -> the SAME child track stays top, fit rises (situation raises fit magnitude, doesn't swap identity)",
     "override_required": false,
-    "top_fit_min": 0.4
+    "top_fit_min": 0.16
   },
   "family": "journey",
   "journey": {
-    "id": "journey-a",
+    "id": "journey-e",
     "label": {
-      "en": "A · The Boring Commute",
-      "ja": "A・退屈な通勤"
+      "en": "E · E · The family road trip",
+      "ja": "E・E・家族の遠出"
     },
     "of": 4,
-    "step": 1
+    "step": 2
   },
   "label": {
-    "en": "A · 1/4 — Cruising, Still Fresh",
-    "ja": "A・1/4 — 巡航中、まだ元気"
+    "en": "E · 2/4 — E · 2/4 — An hour in, restless",
+    "ja": "E・2/4 — E・2/4 — 1時間経過、落ち着かない"
   },
-  "preset_id": "preset-journey-a-1-cruising-fresh-monotonous",
+  "preset_id": "preset-journey-e-2-hour-in-restless",
   "schema_version": "1.0.0",
   "world": {
     "catalog_ref": {
@@ -56,42 +54,30 @@
       "lifecycle_stage": "active_driving_content",
       "matrix_version": "v1",
       "motion_state": "driving",
-      "trigger_purpose": "route_music"
+      "trigger_purpose": "child_passenger_experience"
     },
     "driver_profile": {
       "age_band": "30s",
       "cancelled_content_plans": [],
       "catalog_item_recency_state": {},
-      "catalog_item_usage_level": {
-        "synthetic-track-0176": "high",
-        "synthetic-track-0177": "high",
-        "synthetic-track-0183": "high"
-      },
+      "catalog_item_usage_level": {},
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
-      "content_proposal_acceptance_rate": {
-        "synthetic-track-0176": 88,
-        "synthetic-track-0177": 90,
-        "synthetic-track-0183": 97
-      },
+      "content_proposal_acceptance_rate": {},
       "content_recovery_confidence": {},
-      "content_recovery_rate": {
-        "synthetic-track-0176": 85,
-        "synthetic-track-0177": 88,
-        "synthetic-track-0183": 95
-      },
+      "content_recovery_rate": {},
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
       "gender": "unspecified",
-      "genre_affinity_v1_enabled": true,
+      "genre_affinity_v1_enabled": false,
       "hobby_interest_tags": [],
       "manually_selected_items": [],
-      "oshi_id": "synthetic-artist-0157",
-      "oshi_mode": "on",
-      "oshi_registered": true,
+      "oshi_id": null,
+      "oshi_mode": "off",
+      "oshi_registered": false,
       "oshi_tags": [],
-      "oshi_type": "artist",
+      "oshi_type": null,
       "played_items": [],
       "repeated_items": [],
       "scene_content_tag_usage_level": {},
@@ -107,21 +93,18 @@
       "service_recovery_rate": {},
       "service_usage_level": {},
       "skipped_items": [],
-      "usage_by_genre": {
-        "j-pop": "high",
-        "j-rock": "med"
-      }
+      "usage_by_genre": null
     },
     "situation": {
       "active_service": null,
-      "child_present": false,
+      "child_present": true,
       "destination_tags": [],
-      "drowsiness_level": 40,
+      "drowsiness_level": 55,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 25,
-      "monotony_level": 45,
+      "fatigue_level": 45,
+      "monotony_level": 60,
       "motion_state": "driving",
-      "multiple_passengers": false,
+      "multiple_passengers": true,
       "night_state": "day",
       "recent_service_rejections": [],
       "rest_spot_type": "unknown",

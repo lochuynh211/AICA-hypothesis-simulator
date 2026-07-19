@@ -29,7 +29,7 @@ _RESULTS = PE.evaluate_all()
 
 
 def test_all_presets_committed():
-    assert len(_PRESETS) == 32, sorted(_PRESETS)
+    assert len(_PRESETS) == 35, sorted(_PRESETS)
 
 
 @pytest.mark.parametrize("pid", sorted(_PRESETS))
@@ -53,7 +53,8 @@ def _pairs():
 
 
 def test_contrast_pairs_declared():
-    assert len(list(_pairs())) == 3, list(_pairs())
+    # oshi on/off, jrock/jazz, showa/genz, high-recovery/blank-baseline.
+    assert len(list(_pairs())) == 4, list(_pairs())
 
 
 @pytest.mark.parametrize("pid,cw", list(_pairs()))
@@ -72,7 +73,7 @@ def test_contrast_pairs_are_symmetric():
 
 def test_strong_fit_presets_clear_threshold():
     # Presets designed as strong personalization cases declare (and must meet) >= 0.35.
-    strong = {"preset-journey-a-1-cruising-fresh-monotonous", "preset-journey-f-2-highway-excitement",
+    strong = {"preset-journey-f-2-highway-excitement", "preset-journey-f-3-rest-recommended",
               "preset-showa-nostalgia", "preset-genz-now"}
     for pid in strong:
         assert _RESULTS[pid]["top_fit"] >= 0.35, (pid, _RESULTS[pid]["top_fit"])

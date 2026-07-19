@@ -1,29 +1,30 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "Highway miles pass and the destination tags now read 'event' AND 'oshi_venue' — pure anticipation, not fatigue, is climbing. Drowsiness ticks up to a mild ~40 from the monotonous stretch, but the oshi signal only strengthens: Miku's track tops even more strongly than at departure.",
-    "ja": "高速道路を進み、目的地タグは「イベント」に加え「推しの会場」も表示——高まっているのは疲労ではなく期待感だけ。単調な区間で眠気は約40へわずかに上昇するが、推しシグナルはむしろ強まり、出発時より一段と強くミクの曲が首位に。"
+    "en": "An hour into the drive, drowsiness has crept up a little (~40) and the road has gone monotonous (~45) — but the anticipation for tonight only grows. Miku's track still tops, and its fit is now even higher: the mild road pressure adds to preference rather than overriding it.",
+    "ja": "走行1時間、眠気はわずかに上昇（約40）、道は単調に（約45）——それでも今夜への期待は高まるばかり。ミクの曲は変わらず首位、フィットはさらに上昇：軽い走行負荷が嗜好を上書きするのではなく上乗せされる。"
   },
   "category": "preference",
   "contrast_with": null,
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "humming_karaoke",
         "music_playlist",
-        "radio_style"
+        "humming_karaoke",
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "call_response_driving"
       ]
     },
     "expected_top": {
       "arousal_band": "high",
-      "genre": null,
-      "must_be_oshi": true,
-      "track_id": "synthetic-track-0240"
+      "must_be_oshi": true
     },
     "gradient": "none",
-    "hypothesis": "same driver on a highway leg, destination now includes 'oshi_venue', drowsiness still mild (~40) -> Miku's track tops even more strongly as anticipation (not fatigue) drives the fit up",
+    "hypothesis": "drowsiness/monotony nudged up (40/45) on the same neutral-ish highway -> the oshi track stays top and its fit RISES further, not swaps -- situation adds to preference's magnitude",
     "override_required": false,
-    "top_fit_min": 0.42
+    "top_fit_min": 0.4
   },
   "family": "journey",
   "journey": {
@@ -32,12 +33,12 @@
       "en": "F · The oshi pilgrimage",
       "ja": "F・推しの聖地巡礼"
     },
-    "of": 3,
+    "of": 4,
     "step": 2
   },
   "label": {
-    "en": "F · 2/3 — On the highway, excitement building",
-    "ja": "F・2/3 — 高速道路上、興奮が高まる"
+    "en": "F · 2/4 — Highway excitement building",
+    "ja": "F・2/4 — 高速道路、テンション上昇中"
   },
   "preset_id": "preset-journey-f-2-highway-excitement",
   "schema_version": "1.0.0",
@@ -71,23 +72,21 @@
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
       "content_proposal_acceptance_rate": {
-        "synthetic-track-0108": 95,
-        "synthetic-track-0215": 95,
-        "synthetic-track-0240": 95
+        "synthetic-track-0108": 95.0,
+        "synthetic-track-0215": 95.0,
+        "synthetic-track-0240": 95.0
       },
       "content_recovery_confidence": {},
       "content_recovery_rate": {
-        "synthetic-track-0108": 90,
-        "synthetic-track-0215": 90,
-        "synthetic-track-0240": 90
+        "synthetic-track-0108": 90.0,
+        "synthetic-track-0215": 90.0,
+        "synthetic-track-0240": 90.0
       },
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
       "gender": "unspecified",
       "genre_affinity_v1_enabled": true,
-      "hobby_interest_tags": [
-        "anime-fan"
-      ],
+      "hobby_interest_tags": [],
       "manually_selected_items": [],
       "oshi_id": "synthetic-artist-0115",
       "oshi_mode": "on",
@@ -110,21 +109,17 @@
       "service_usage_level": {},
       "skipped_items": [],
       "usage_by_genre": {
-        "anime": "high",
-        "j-pop": "med",
+        "j-pop": "high",
         "vocaloid": "high"
       }
     },
     "situation": {
       "active_service": null,
       "child_present": false,
-      "destination_tags": [
-        "event",
-        "oshi_venue"
-      ],
+      "destination_tags": [],
       "drowsiness_level": 40,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 25,
+      "fatigue_level": 30,
       "monotony_level": 45,
       "motion_state": "driving",
       "multiple_passengers": false,

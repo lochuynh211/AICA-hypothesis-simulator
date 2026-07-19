@@ -1,8 +1,8 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "A stop at the service area — everyone gets out and stretches, drowsiness drops back to 15. Only full_karaoke is content-supported at this stage, and the family's anime-fan profile surfaces a singable anime ballad for a group karaoke break.",
-    "ja": "サービスエリアで休憩、みんなで車を降りてストレッチ。眠気は15まで回復。このステージではフルカラオケのみコンテンツ対応。家族のアニメ嗜好により、歌いやすいアニメソングがカラオケ向けに上位表示される。"
+    "en": "A stop at the service area to stretch -- drowsiness drops back to 30, the car is stopped in the parking area. The purpose becomes rest_recommended / after_rest_before_restart: the overall service ranking now favours a post-rest activity (stretch_video) instead of a driving service, and content fit dips below the driving stages.",
+    "ja": "サービスエリアで休憩ストップ、眠気は30まで回復し車は駐車エリアで停止。目的はrest_recommended／after_rest_before_restartに切り替わり、全体のサービスランキングは走行系サービスではなく休憩後のアクティビティ（stretch_video）を優先。コンテンツのフィットも走行ステージより下がる。"
   },
   "category": "situation",
   "contrast_with": null,
@@ -18,28 +18,26 @@
     },
     "expected_top": {
       "arousal_band": "high",
-      "genre": "anime",
-      "must_be_oshi": false,
-      "track_id": null
+      "track_id": "synthetic-track-0161"
     },
     "gradient": "none",
-    "hypothesis": "stopped + recovered + child/anime-fan affinity → content dispatches via full_karaoke, an anime track tops as a singable family karaoke pick",
+    "hypothesis": "family stops to stretch: lifecycle flips to after_rest_before_restart -> the overall service ranking switches to a post-rest service (stretch_video), content still resolves via a content-supported service at a lower fit than mid-drive",
     "override_required": false,
-    "top_fit_min": 0.291
+    "top_fit_min": 0.105
   },
   "family": "journey",
   "journey": {
     "id": "journey-e",
     "label": {
-      "en": "E · The family road trip",
-      "ja": "E・家族の遠出"
+      "en": "E · E · The family road trip",
+      "ja": "E・E・家族の遠出"
     },
     "of": 4,
     "step": 3
   },
   "label": {
-    "en": "E · 3/4 — Rest stop — everyone stretches",
-    "ja": "E・3/4 — 休憩ストップ — みんなでストレッチ"
+    "en": "E · 3/4 — E · 3/4 — Rest stop, everyone stretches",
+    "ja": "E・3/4 — E・3/4 — 休憩ストップ、みんなでストレッチ"
   },
   "preset_id": "preset-journey-e-3-rest-stop-stretch",
   "schema_version": "1.0.0",
@@ -64,41 +62,18 @@
       "age_band": "30s",
       "cancelled_content_plans": [],
       "catalog_item_recency_state": {},
-      "catalog_item_usage_level": {
-        "synthetic-track-0058": "high",
-        "synthetic-track-0060": "high",
-        "synthetic-track-0061": "high",
-        "synthetic-track-0077": "high",
-        "synthetic-track-0115": "high",
-        "synthetic-track-0144": "high"
-      },
+      "catalog_item_usage_level": {},
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
-      "content_proposal_acceptance_rate": {
-        "synthetic-track-0058": 95,
-        "synthetic-track-0060": 95,
-        "synthetic-track-0061": 95,
-        "synthetic-track-0077": 95,
-        "synthetic-track-0115": 95,
-        "synthetic-track-0144": 95
-      },
+      "content_proposal_acceptance_rate": {},
       "content_recovery_confidence": {},
-      "content_recovery_rate": {
-        "synthetic-track-0058": 90,
-        "synthetic-track-0060": 90,
-        "synthetic-track-0061": 90,
-        "synthetic-track-0077": 90,
-        "synthetic-track-0115": 90,
-        "synthetic-track-0144": 90
-      },
+      "content_recovery_rate": {},
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
       "gender": "unspecified",
-      "genre_affinity_v1_enabled": true,
-      "hobby_interest_tags": [
-        "anime-fan"
-      ],
+      "genre_affinity_v1_enabled": false,
+      "hobby_interest_tags": [],
       "manually_selected_items": [],
       "oshi_id": null,
       "oshi_mode": "off",
@@ -120,25 +95,22 @@
       "service_recovery_rate": {},
       "service_usage_level": {},
       "skipped_items": [],
-      "usage_by_genre": {
-        "anime": "high",
-        "j-pop": "med"
-      }
+      "usage_by_genre": null
     },
     "situation": {
       "active_service": null,
       "child_present": true,
       "destination_tags": [],
-      "drowsiness_level": 15,
+      "drowsiness_level": 30,
       "estimated_min_until_rest_spot": null,
       "fatigue_level": 15,
-      "monotony_level": 10,
+      "monotony_level": 20,
       "motion_state": "stopped",
       "multiple_passengers": true,
       "night_state": "day",
       "recent_service_rejections": [],
       "rest_spot_type": "sa_pa",
-      "road_type": "local",
+      "road_type": "parking",
       "route_tags": [
         "highway"
       ],

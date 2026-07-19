@@ -1,45 +1,45 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "Night has fallen and traffic thickens near the venue; drowsiness has crept to ~45 — still nowhere close to a rest trigger. She's finally arriving at the place she's dreamed about for months, and it's Miku's own song that plays her in the door.",
-    "ja": "夜になり会場周辺は渋滞、眠気は約45までじわり上昇——それでも休憩トリガーにはまだ遠い。何ヶ月も夢見た場所へ、ついに到着。会場入りを飾るのは、ミク自身の曲。"
+    "en": "Drowsiness has climbed to 70 and monotony has pegged at 100 on the dark highway. The inattentive-driving recovery trigger fires. The same high-arousal track's fit rises sharply from stage 1 — situation, not preference, is driving the story.",
+    "ja": "眠気は70まで上昇し、単調さは暗い高速道路で100に張り付いた。不注意運転の回復トリガーが発動。同じ高覚醒トラックのフィットが1段階目から急上昇 — 嗜好ではなく状況が物語を牽引。"
   },
-  "category": "preference",
+  "category": "situation",
   "contrast_with": null,
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "humming_karaoke",
         "music_playlist",
-        "radio_style"
+        "humming_karaoke",
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "call_response_driving"
       ]
     },
     "expected_top": {
-      "arousal_band": "high",
-      "genre": null,
-      "must_be_oshi": true,
-      "track_id": "synthetic-track-0240"
+      "arousal_band": "high"
     },
     "gradient": "none",
-    "hypothesis": "arrival at the venue at night, drowsiness still mild (~45, no rest trigger reached) -> Miku's track remains on top throughout; preference, not tiredness, explains the whole arc",
+    "hypothesis": "Drowsiness spikes and monotony maxes out at night → the same track's fit rises sharply (rising-fit arc); still a driving service.",
     "override_required": false,
-    "top_fit_min": 0.4
+    "top_fit_min": 0.2
   },
   "family": "journey",
   "journey": {
-    "id": "journey-f",
+    "id": "journey-b",
     "label": {
-      "en": "F · The oshi pilgrimage",
-      "ja": "F・推しの聖地巡礼"
+      "en": "B · B · The Night Drive (Rest Arc)",
+      "ja": "B・B・夜のドライブ（休憩アーク）"
     },
-    "of": 3,
-    "step": 3
+    "of": 4,
+    "step": 2
   },
   "label": {
-    "en": "F · 3/3 — Arriving at the venue, at night",
-    "ja": "F・3/3 — 夜、会場に到着"
+    "en": "B · 2/4 — B · 2/4 — Drowsy in the dark",
+    "ja": "B・2/4 — B・2/4 — 暗闇での眠気"
   },
-  "preset_id": "preset-journey-f-3-arriving-venue-night",
+  "preset_id": "preset-journey-b-2-drowsy-in-dark",
   "schema_version": "1.0.0",
   "world": {
     "catalog_ref": {
@@ -56,44 +56,30 @@
       "lifecycle_stage": "active_driving_content",
       "matrix_version": "v1",
       "motion_state": "driving",
-      "trigger_purpose": "route_music"
+      "trigger_purpose": "inattentive_driving_prevention_recovery"
     },
     "driver_profile": {
-      "age_band": "teens",
+      "age_band": "30s",
       "cancelled_content_plans": [],
       "catalog_item_recency_state": {},
-      "catalog_item_usage_level": {
-        "synthetic-track-0108": "high",
-        "synthetic-track-0215": "high",
-        "synthetic-track-0240": "high"
-      },
+      "catalog_item_usage_level": {},
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
-      "content_proposal_acceptance_rate": {
-        "synthetic-track-0108": 95,
-        "synthetic-track-0215": 95,
-        "synthetic-track-0240": 95
-      },
+      "content_proposal_acceptance_rate": {},
       "content_recovery_confidence": {},
-      "content_recovery_rate": {
-        "synthetic-track-0108": 90,
-        "synthetic-track-0215": 90,
-        "synthetic-track-0240": 90
-      },
+      "content_recovery_rate": {},
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
       "gender": "unspecified",
-      "genre_affinity_v1_enabled": true,
-      "hobby_interest_tags": [
-        "anime-fan"
-      ],
+      "genre_affinity_v1_enabled": false,
+      "hobby_interest_tags": [],
       "manually_selected_items": [],
-      "oshi_id": "synthetic-artist-0115",
-      "oshi_mode": "on",
-      "oshi_registered": true,
+      "oshi_id": null,
+      "oshi_mode": "off",
+      "oshi_registered": false,
       "oshi_tags": [],
-      "oshi_type": "artist",
+      "oshi_type": null,
       "played_items": [],
       "repeated_items": [],
       "scene_content_tag_usage_level": {},
@@ -109,33 +95,26 @@
       "service_recovery_rate": {},
       "service_usage_level": {},
       "skipped_items": [],
-      "usage_by_genre": {
-        "anime": "high",
-        "j-pop": "med",
-        "vocaloid": "high"
-      }
+      "usage_by_genre": null
     },
     "situation": {
       "active_service": null,
       "child_present": false,
-      "destination_tags": [
-        "event",
-        "oshi_venue"
-      ],
-      "drowsiness_level": 45,
+      "destination_tags": [],
+      "drowsiness_level": 70,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 28,
-      "monotony_level": 25,
+      "fatigue_level": 34,
+      "monotony_level": 100,
       "motion_state": "driving",
       "multiple_passengers": false,
       "night_state": "night",
       "recent_service_rejections": [],
       "rest_spot_type": "unknown",
-      "road_type": "local",
+      "road_type": "highway",
       "route_tags": [
-        "local"
+        "highway"
       ],
-      "traffic_state": "congested"
+      "traffic_state": "normal"
     }
   }
 }

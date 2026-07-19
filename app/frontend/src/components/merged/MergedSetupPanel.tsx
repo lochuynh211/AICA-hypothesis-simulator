@@ -57,7 +57,7 @@ import { useProposalStore } from '../../state/proposalStore'
 import RestCeilingEditor from '../setup/RestCeilingEditor'
 import RestSpacingEditor from '../setup/RestSpacingEditor'
 
-const DEFAULT_PRESET_ID = 'preset-journey-a-1-cruising-fresh-monotonous'
+const DEFAULT_PRESET_ID = 'preset-journey-a-1-cruising-fresh'
 type EditKey = 'situation' | 'profile' | 'trigger' | 'service' | 'content' | null
 
 // Scenarios hidden from the Combined scenario picker (owner review): the uc02

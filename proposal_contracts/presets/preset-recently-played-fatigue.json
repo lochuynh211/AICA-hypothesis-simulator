@@ -1,8 +1,8 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "Three tracks that would otherwise score well were just played minutes ago. The recency/novelty penalty pushes them down, demonstrating that the algorithm avoids immediately repeating songs.",
-    "ja": "本来は上位のはずの3曲を数分前に再生済み。新鮮さペナルティで順位が下がり、直近曲の繰り返しを避ける挙動を示す。"
+    "en": "A driver with a rich j-pop listening history (8 tracks, strong usage/acceptance/recovery) on a fairly tired, monotonous highway drive. Three of the driver's otherwise-strongest tracks were played just minutes ago. The recency/novelty penalty pushes those three down even though the situation and taste both favor them, demonstrating that the algorithm avoids immediately repeating songs — a different track (still j-pop-adjacent) wins instead.",
+    "ja": "豊富なJ-POP視聴履歴（8曲、高い利用実績・受諾率・回復率）を持つドライバーが、やや疲労した単調な高速走行中。本来最も強いはずの3曲を数分前に再生済み。状況も嗜好もその3曲を支持するにもかかわらず、新鮮さ（直近再生）ペナルティにより順位が下がる — 同じ曲の連続再生を避ける挙動を示し、別の曲（J-POP系統ではある）が代わりに勝つ。"
   },
   "category": "history",
   "contrast_with": null,
@@ -11,14 +11,17 @@
       "top_should_be_in": [
         "music_playlist",
         "humming_karaoke",
-        "radio_style"
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "call_response_driving"
       ]
     },
     "expected_top": {
       "genre": "j-pop"
     },
     "gradient": "none",
-    "hypothesis": "just-played tracks are demoted below other strong matches",
+    "hypothesis": "just-played tracks are demoted below other strong matches even though they'd otherwise score well",
     "override_required": false,
     "should_rank_below": [
       {
@@ -31,7 +34,7 @@
         "track_id": "synthetic-track-0097"
       }
     ],
-    "top_fit_min": 0.22
+    "top_fit_min": 0.32
   },
   "family": "history_mechanics",
   "journey": null,
@@ -53,10 +56,10 @@
     },
     "control_inputs": {
       "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
-      "lifecycle_stage": "before_rest_until_stop",
+      "lifecycle_stage": "active_driving_content",
       "matrix_version": "v1",
       "motion_state": "driving",
-      "trigger_purpose": "rest_recommended"
+      "trigger_purpose": "route_music"
     },
     "driver_profile": {
       "age_band": "30s",
@@ -143,10 +146,10 @@
       "active_service": null,
       "child_present": false,
       "destination_tags": [],
-      "drowsiness_level": 75,
+      "drowsiness_level": 55,
       "estimated_min_until_rest_spot": null,
       "fatigue_level": 40,
-      "monotony_level": 62,
+      "monotony_level": 60,
       "motion_state": "driving",
       "multiple_passengers": false,
       "night_state": "day",

@@ -1,8 +1,8 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "A mild, neutral situation so preference — not the road — leads. The driver has registered Ado as their oshi. The oshi signal lifts Ado's tracks to the top; the partner preset flips oshi off to isolate exactly this contribution.",
-    "ja": "状況は穏やかで中立。ドライバーはAdoを推し登録。推しシグナルがAdoの曲を上位に押し上げる。対のプリセットは推しOFFでこの寄与を分離。"
+    "en": "Same neutral road, no history at all. Only the oshi GATE is on for Ado — this isolates exactly what registering + enabling an oshi contributes, apart from any listening history.",
+    "ja": "同じ中立の道、履歴は一切なし。Adoの推しゲートのみがON — 視聴履歴とは切り離して、推しを登録・有効化すること自体の寄与だけを分離する。"
   },
   "category": "preference",
   "contrast_with": "preset-oshi-off",
@@ -11,16 +11,19 @@
       "top_should_be_in": [
         "music_playlist",
         "humming_karaoke",
-        "radio_style"
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "call_response_driving"
       ]
     },
     "expected_top": {
       "must_be_oshi": true
     },
     "gradient": "none",
-    "hypothesis": "neutral situation + oshi on → the oshi's track tops",
+    "hypothesis": "A neutral, undramatic driving situation so preference alone leads. The driver has registered Ado as their oshi (oshi_mode on) with no per-track history at all — isolating the oshi GATE itself, not accumulated history. The oshi's own track should top.",
     "override_required": false,
-    "top_fit_min": 0.15
+    "top_fit_min": 0.24
   },
   "family": "oshi_personalization",
   "journey": null,
@@ -92,7 +95,7 @@
       "active_service": null,
       "child_present": false,
       "destination_tags": [],
-      "drowsiness_level": 42,
+      "drowsiness_level": 40,
       "estimated_min_until_rest_spot": null,
       "fatigue_level": 28,
       "monotony_level": 40,

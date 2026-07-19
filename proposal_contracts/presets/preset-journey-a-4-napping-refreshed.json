@@ -1,29 +1,22 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "An hour in, the monotonous highway has pushed drowsiness to ~62 and monotony to ~88. The assistant switches to keep-alert mode, doubling down on the same high-energy oshi track to fight the fade — with a wider margin now.",
-    "ja": "1時間走行し、単調な高速道路で眠気62・モノトニー88まで上昇。アシスタントは注意喚起モードに切り替え、同じ高エネルギーな推し曲でさらに気を引き締める — 差はさらに開く。"
+    "en": "A short nap at the SA/PA has done its job: drowsiness collapsed from 100 to 37 and fatigue from 56 to just 4. Stopped in the parking area, AICA no longer needs to fight sleepiness with music -- the top-ranked service switches entirely to stretch_video, a physical-recovery activity. Content (offered through the fallback music service since no karaoke service reaches the top-3) now scores low: the story has moved from 'push a driving song' to 'help the body recover'.",
+    "ja": "SA/PAでの短い仮眠が効いた：眠気は100から37へ、疲労は56からわずか4へ低下。駐車エリアで停車中のAICAはもう音楽で眠気と戦う必要がなく、最上位サービスはstretch_video（体を動かす回復系アクティビティ）へ完全に切り替わる。コンテンツ（カラオケ系サービスが上位3に入らないためフォールバックのmusic_playlistで評価）のスコアは低い — 物語は「運転用の曲を推す」から「体の回復を助ける」へと移った。"
   },
   "category": "situation",
   "contrast_with": null,
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "humming_karaoke",
-        "call_response_driving",
-        "quiz"
+        "stretch_video"
       ]
     },
-    "expected_top": {
-      "arousal_band": "high",
-      "genre": "j-pop",
-      "must_be_oshi": true,
-      "track_id": "synthetic-track-0176"
-    },
-    "gradient": "arousal_up_implies_fit_up",
-    "hypothesis": "drowsiness/monotony climbing on the same monotonous highway → assistant leans harder into energize; the same high-arousal oshi track holds top",
+    "expected_top": {},
+    "gradient": "none",
+    "hypothesis": "after a nap at the SA/PA, drowsiness collapses 100->37 and fatigue collapses 56->4 (stopped, parking) -> the assistant's top SERVICE switches away from any driving/content service to the post-rest recovery service stretch_video; content itself becomes secondary and its fit collapses",
     "override_required": false,
-    "top_fit_min": 0.38
+    "top_fit_min": 0.05
   },
   "family": "journey",
   "journey": {
@@ -32,14 +25,14 @@
       "en": "A · The Boring Commute",
       "ja": "A・退屈な通勤"
     },
-    "of": 4,
-    "step": 2
+    "of": 5,
+    "step": 4
   },
   "label": {
-    "en": "A · 2/4 — Drowsiness Building — Stay Alert",
-    "ja": "A・2/4 — 眠気が高まる — 注意喚起"
+    "en": "A · 4/5 — Back on the Road, Refreshed",
+    "ja": "A・4/5 — 仮眠後、リフレッシュして再出発"
   },
-  "preset_id": "preset-journey-a-2-drowsiness-building-nudge",
+  "preset_id": "preset-journey-a-4-napping-refreshed",
   "schema_version": "1.0.0",
   "world": {
     "catalog_ref": {
@@ -53,45 +46,33 @@
     },
     "control_inputs": {
       "dataset_id": "soundcharts-grounded-spotify-compatible-demonstration-seed-1042",
-      "lifecycle_stage": "active_driving_content",
+      "lifecycle_stage": "after_rest_before_restart",
       "matrix_version": "v1",
-      "motion_state": "driving",
-      "trigger_purpose": "inattentive_driving_prevention_recovery"
+      "motion_state": "stopped",
+      "trigger_purpose": "rest_recommended"
     },
     "driver_profile": {
       "age_band": "30s",
       "cancelled_content_plans": [],
       "catalog_item_recency_state": {},
-      "catalog_item_usage_level": {
-        "synthetic-track-0176": "high",
-        "synthetic-track-0177": "high",
-        "synthetic-track-0183": "high"
-      },
+      "catalog_item_usage_level": {},
       "changed_from_items": [],
       "completed_items": [],
       "content_proposal_acceptance_confidence": {},
-      "content_proposal_acceptance_rate": {
-        "synthetic-track-0176": 88,
-        "synthetic-track-0177": 90,
-        "synthetic-track-0183": 97
-      },
+      "content_proposal_acceptance_rate": {},
       "content_recovery_confidence": {},
-      "content_recovery_rate": {
-        "synthetic-track-0176": 85,
-        "synthetic-track-0177": 88,
-        "synthetic-track-0183": 95
-      },
+      "content_recovery_rate": {},
       "content_tag_recency_state": {},
       "content_tag_usage_level": {},
       "gender": "unspecified",
-      "genre_affinity_v1_enabled": true,
+      "genre_affinity_v1_enabled": false,
       "hobby_interest_tags": [],
       "manually_selected_items": [],
-      "oshi_id": "synthetic-artist-0157",
-      "oshi_mode": "on",
-      "oshi_registered": true,
+      "oshi_id": null,
+      "oshi_mode": "off",
+      "oshi_registered": false,
       "oshi_tags": [],
-      "oshi_type": "artist",
+      "oshi_type": null,
       "played_items": [],
       "repeated_items": [],
       "scene_content_tag_usage_level": {},
@@ -107,25 +88,22 @@
       "service_recovery_rate": {},
       "service_usage_level": {},
       "skipped_items": [],
-      "usage_by_genre": {
-        "j-pop": "high",
-        "j-rock": "med"
-      }
+      "usage_by_genre": null
     },
     "situation": {
       "active_service": null,
       "child_present": false,
       "destination_tags": [],
-      "drowsiness_level": 62,
+      "drowsiness_level": 37,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 30,
-      "monotony_level": 88,
-      "motion_state": "driving",
+      "fatigue_level": 4,
+      "monotony_level": 20,
+      "motion_state": "stopped",
       "multiple_passengers": false,
       "night_state": "day",
       "recent_service_rejections": [],
-      "rest_spot_type": "unknown",
-      "road_type": "highway",
+      "rest_spot_type": "sa_pa",
+      "road_type": "parking",
       "route_tags": [
         "highway"
       ],

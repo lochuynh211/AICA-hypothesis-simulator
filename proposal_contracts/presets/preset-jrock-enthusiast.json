@@ -1,8 +1,8 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "No registered oshi — taste alone. Heavy j-rock/electronic usage plus history on favourite j-rock tracks should lift the j-rock cluster to the top on an ordinary drive.",
-    "ja": "登録推しなし、嗜好のみ。J-ROCK/エレクトロニカの多用と履歴により、J-ROCK群が上位に。"
+    "en": "No registered oshi — taste and history alone. Heavy j-rock/electronic usage plus rich history on 6 favourite j-rock tracks lifts the j-rock cluster to the top on an ordinary neutral drive.",
+    "ja": "登録推しなし、嗜好と履歴のみ。J-ROCK/エレクトロニカの多用とお気に入りJ-ROCK6曲の厚い履歴により、通常の中立走行でJ-ROCK群が上位に。"
   },
   "category": "preference",
   "contrast_with": "preset-jazz-calm-listener",
@@ -11,16 +11,19 @@
       "top_should_be_in": [
         "music_playlist",
         "humming_karaoke",
-        "radio_style"
+        "quiz",
+        "ranking_creation",
+        "radio_style",
+        "call_response_driving"
       ]
     },
     "expected_top": {
       "genre": "j-rock"
     },
     "gradient": "none",
-    "hypothesis": "j-rock usage + history → a j-rock track tops",
+    "hypothesis": "No registered oshi at all — taste and history alone. Heavy j-rock/electronic genre usage plus rich per-track history on 6 j-rock tracks should lift the j-rock cluster to the top on an ordinary neutral drive.",
     "override_required": false,
-    "top_fit_min": 0.3
+    "top_fit_min": 0.34
   },
   "family": "genre_usage",
   "journey": null,
@@ -114,10 +117,10 @@
       "active_service": null,
       "child_present": false,
       "destination_tags": [],
-      "drowsiness_level": 42,
+      "drowsiness_level": 40,
       "estimated_min_until_rest_spot": null,
       "fatigue_level": 28,
-      "monotony_level": 45,
+      "monotony_level": 40,
       "motion_state": "driving",
       "multiple_passengers": false,
       "night_state": "day",

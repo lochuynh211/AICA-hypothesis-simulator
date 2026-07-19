@@ -1,0 +1,929 @@
+[
+  {
+    "preset_id": "preset-oshi-superfan",
+    "category": "preference",
+    "family": "oshi_personalization",
+    "contrast_with": "preset-oshi-off",
+    "label": {
+      "en": "Oshi fan (on)",
+      "ja": "推しファン（ON）"
+    },
+    "brief": {
+      "en": "Same neutral road, no history at all. Only the oshi GATE is on for Ado — this isolates exactly what registering + enabling an oshi contributes, apart from any listening history.",
+      "ja": "同じ中立の道、履歴は一切なし。Adoの推しゲートのみがON — 視聴履歴とは切り離して、推しを登録・有効化すること自体の寄与だけを分離する。"
+    },
+    "situation": {
+      "drowsiness_level": 40,
+      "fatigue_level": 28,
+      "monotony_level": 40,
+      "traffic_state": "normal",
+      "night_state": "day",
+      "road_type": "highway",
+      "motion_state": "driving"
+    },
+    "profile": {
+      "oshi_registered": true,
+      "oshi_mode": "on",
+      "oshi_id": "synthetic-artist-0122",
+      "oshi_type": "artist",
+      "age_band": "30s",
+      "genre_affinity_v1_enabled": true,
+      "usage_by_genre": {
+        "j-pop": "high"
+      }
+    },
+    "control": {
+      "trigger_purpose": "route_music",
+      "lifecycle_stage": "active_driving_content",
+      "motion_state": "driving"
+    },
+    "overrides": null,
+    "expectation": {
+      "hypothesis": "A neutral, undramatic driving situation so preference alone leads. The driver has registered Ado as their oshi (oshi_mode on) with no per-track history at all — isolating the oshi GATE itself, not accumulated history. The oshi's own track should top.",
+      "expected_top": {
+        "must_be_oshi": true
+      },
+      "top_fit_min": 0.24,
+      "gradient": "none",
+      "expected_service": {
+        "top_should_be_in": [
+          "music_playlist",
+          "humming_karaoke",
+          "quiz",
+          "ranking_creation",
+          "radio_style",
+          "call_response_driving"
+        ]
+      },
+      "override_required": false
+    },
+    "measured": {
+      "top_name": "踊 — Ado",
+      "arousal": 0.829,
+      "top_fit": 0.2567,
+      "service_top": "humming_karaoke",
+      "service_score": 0.28
+    }
+  },
+  {
+    "preset_id": "preset-oshi-off",
+    "category": "preference",
+    "family": "oshi_personalization",
+    "contrast_with": "preset-oshi-superfan",
+    "label": {
+      "en": "Oshi off (same driver)",
+      "ja": "推し OFF（同一ドライバー）"
+    },
+    "brief": {
+      "en": "The same Ado registration and the same road as the superfan preset, but oshi_mode is OFF. With the gate closed and no history to fall back on, Ado's track no longer tops — a different track wins, isolating exactly what the gate itself contributes.",
+      "ja": "同一のAdo登録・同一の道だが推しモードはOFF。ゲートが閉じ、頼れる履歴もないため、Adoの曲はもう上位に来ない — 別の曲が勝ち、ゲート自体の寄与を分離する。"
+    },
+    "situation": {
+      "drowsiness_level": 40,
+      "fatigue_level": 28,
+      "monotony_level": 40,
+      "traffic_state": "normal",
+      "night_state": "day",
+      "road_type": "highway",
+      "motion_state": "driving"
+    },
+    "profile": {
+      "oshi_registered": true,
+      "oshi_mode": "off",
+      "oshi_id": "synthetic-artist-0122",
+      "oshi_type": "artist",
+      "age_band": "30s",
+      "genre_affinity_v1_enabled": true,
+      "usage_by_genre": {
+        "j-pop": "high"
+      }
+    },
+    "control": {
+      "trigger_purpose": "route_music",
+      "lifecycle_stage": "active_driving_content",
+      "motion_state": "driving"
+    },
+    "overrides": null,
+    "expectation": {
+      "hypothesis": "The identical driver and identical road as preset-oshi-superfan, but oshi_mode switched off. With no history and no active oshi gate, the oshi's own track no longer wins — a different track tops, isolating what the gate alone contributed.",
+      "expected_top": {
+        "must_be_oshi": false
+      },
+      "top_fit_min": 0.16,
+      "gradient": "none",
+      "expected_service": {
+        "top_should_be_in": [
+          "music_playlist",
+          "humming_karaoke",
+          "quiz",
+          "ranking_creation",
+          "radio_style",
+          "call_response_driving"
+        ]
+      },
+      "override_required": false
+    },
+    "measured": {
+      "top_name": "Flamingo — Kenshi Yonezu",
+      "arousal": 0.692,
+      "top_fit": 0.1752,
+      "service_top": "humming_karaoke",
+      "service_score": 0.261
+    }
+  },
+  {
+    "preset_id": "preset-jrock-enthusiast",
+    "category": "preference",
+    "family": "genre_usage",
+    "contrast_with": "preset-jazz-calm-listener",
+    "label": {
+      "en": "J-Rock enthusiast",
+      "ja": "J-ROCK 愛好家"
+    },
+    "brief": {
+      "en": "No registered oshi — taste and history alone. Heavy j-rock/electronic usage plus rich history on 6 favourite j-rock tracks lifts the j-rock cluster to the top on an ordinary neutral drive.",
+      "ja": "登録推しなし、嗜好と履歴のみ。J-ROCK/エレクトロニカの多用とお気に入りJ-ROCK6曲の厚い履歴により、通常の中立走行でJ-ROCK群が上位に。"
+    },
+    "situation": {
+      "drowsiness_level": 40,
+      "fatigue_level": 28,
+      "monotony_level": 40,
+      "traffic_state": "normal",
+      "night_state": "day",
+      "road_type": "highway",
+      "motion_state": "driving"
+    },
+    "profile": {
+      "genre_affinity_v1_enabled": true,
+      "usage_by_genre": {
+        "j-rock": "high",
+        "electronic": "med"
+      },
+      "catalog_item_usage_level": {
+        "synthetic-track-0108": "high",
+        "synthetic-track-0097": "high",
+        "synthetic-track-0115": "high",
+        "synthetic-track-0203": "high",
+        "synthetic-track-0098": "high",
+        "synthetic-track-0087": "high"
+      },
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0108": 95.0,
+        "synthetic-track-0097": 95.0,
+        "synthetic-track-0115": 95.0,
+        "synthetic-track-0203": 95.0,
+        "synthetic-track-0098": 95.0,
+        "synthetic-track-0087": 95.0
+      },
+      "content_recovery_rate": {
+        "synthetic-track-0108": 90.0,
+        "synthetic-track-0097": 90.0,
+        "synthetic-track-0115": 90.0,
+        "synthetic-track-0203": 90.0,
+        "synthetic-track-0098": 90.0,
+        "synthetic-track-0087": 90.0
+      }
+    },
+    "control": {
+      "trigger_purpose": "route_music",
+      "lifecycle_stage": "active_driving_content",
+      "motion_state": "driving"
+    },
+    "overrides": null,
+    "expectation": {
+      "hypothesis": "No registered oshi at all — taste and history alone. Heavy j-rock/electronic genre usage plus rich per-track history on 6 j-rock tracks should lift the j-rock cluster to the top on an ordinary neutral drive.",
+      "expected_top": {
+        "genre": "j-rock"
+      },
+      "top_fit_min": 0.34,
+      "gradient": "none",
+      "expected_service": {
+        "top_should_be_in": [
+          "music_playlist",
+          "humming_karaoke",
+          "quiz",
+          "ranking_creation",
+          "radio_style",
+          "call_response_driving"
+        ]
+      },
+      "override_required": false
+    },
+    "measured": {
+      "top_name": "READY STEADY GO — L'Arc-en-Ciel",
+      "arousal": 0.828,
+      "top_fit": 0.3677,
+      "service_top": "humming_karaoke",
+      "service_score": 0.256
+    }
+  },
+  {
+    "preset_id": "preset-jazz-calm-listener",
+    "category": "preference",
+    "family": "genre_usage",
+    "contrast_with": "preset-jrock-enthusiast",
+    "label": {
+      "en": "Jazz / classical calm listener",
+      "ja": "ジャズ/クラシック 静穏派"
+    },
+    "brief": {
+      "en": "Same ordinary neutral drive, opposite taste: heavy jazz/classical usage and history on 9 calm tracks. The soothing jazz/classical cluster rises instead — same road, different driver, different winner.",
+      "ja": "同じ通常の中立走行で正反対の嗜好：ジャズ/クラシックの多用と静穏な9曲の履歴。静穏なジャズ/クラシック群が代わりに上位に — 同じ道でも勝者が変わる。"
+    },
+    "situation": {
+      "drowsiness_level": 40,
+      "fatigue_level": 28,
+      "monotony_level": 40,
+      "traffic_state": "normal",
+      "night_state": "day",
+      "road_type": "highway",
+      "motion_state": "driving"
+    },
+    "profile": {
+      "genre_affinity_v1_enabled": true,
+      "usage_by_genre": {
+        "jazz": "high",
+        "classical": "high"
+      },
+      "catalog_item_usage_level": {
+        "synthetic-track-0026": "high",
+        "synthetic-track-0003": "high",
+        "synthetic-track-0009": "high",
+        "synthetic-track-0004": "high",
+        "synthetic-track-0033": "high",
+        "synthetic-track-0017": "high",
+        "synthetic-track-0270": "high",
+        "synthetic-track-0024": "high"
+      },
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0026": 95.0,
+        "synthetic-track-0003": 95.0,
+        "synthetic-track-0009": 95.0,
+        "synthetic-track-0004": 95.0,
+        "synthetic-track-0033": 95.0,
+        "synthetic-track-0017": 95.0,
+        "synthetic-track-0270": 95.0,
+        "synthetic-track-0024": 95.0
+      },
+      "content_recovery_rate": {
+        "synthetic-track-0026": 90.0,
+        "synthetic-track-0003": 90.0,
+        "synthetic-track-0009": 90.0,
+        "synthetic-track-0004": 90.0,
+        "synthetic-track-0033": 90.0,
+        "synthetic-track-0017": 90.0,
+        "synthetic-track-0270": 90.0,
+        "synthetic-track-0024": 90.0
+      }
+    },
+    "control": {
+      "trigger_purpose": "route_music",
+      "lifecycle_stage": "active_driving_content",
+      "motion_state": "driving"
+    },
+    "overrides": null,
+    "expectation": {
+      "hypothesis": "Same neutral drive, same absence of any oshi, opposite taste: heavy jazz/classical genre usage and history on 9 calm tracks. The soothing jazz/classical cluster should rise instead of j-rock — same road, different driver, different winner.",
+      "expected_top": {
+        "genre": "jazz"
+      },
+      "top_fit_min": 0.25,
+      "gradient": "none",
+      "expected_service": {
+        "top_should_be_in": [
+          "music_playlist",
+          "humming_karaoke",
+          "quiz",
+          "ranking_creation",
+          "radio_style",
+          "call_response_driving"
+        ]
+      },
+      "override_required": false
+    },
+    "measured": {
+      "top_name": "Desafinado — João Gilberto",
+      "arousal": 0.283,
+      "top_fit": 0.2719,
+      "service_top": "humming_karaoke",
+      "service_score": 0.256
+    }
+  },
+  {
+    "preset_id": "preset-showa-nostalgia",
+    "category": "preference",
+    "family": "era_age",
+    "contrast_with": "preset-genz-now",
+    "label": {
+      "en": "Shōwa nostalgia (50s driver)",
+      "ja": "昭和ノスタルジー（50代ドライバー）"
+    },
+    "brief": {
+      "en": "A driver in their 50s whose oshi is Seiko Matsuda (1980s). With the age/oshi hierarchy weight raised (per-preset override), a 1980s track wins — the same neutral road as the Gen-Z pair, a generation earlier.",
+      "ja": "推しが松田聖子（1980年代）の50代ドライバー。年代/推しの重みを引き上げ（プリセット単位のオーバーライド）、1980年代の曲が上位に — Z世代の対と同じ中立の道で、一世代前の勝者。"
+    },
+    "situation": {
+      "drowsiness_level": 40,
+      "fatigue_level": 28,
+      "monotony_level": 40,
+      "traffic_state": "normal",
+      "night_state": "day",
+      "road_type": "highway",
+      "motion_state": "driving"
+    },
+    "profile": {
+      "oshi_registered": true,
+      "oshi_mode": "on",
+      "oshi_id": "synthetic-artist-0136",
+      "oshi_type": "artist",
+      "age_band": "50s",
+      "genre_affinity_v1_enabled": true,
+      "usage_by_genre": {
+        "j-pop": "high",
+        "jazz": "med"
+      },
+      "catalog_item_usage_level": {
+        "synthetic-track-0148": "high",
+        "synthetic-track-0149": "high",
+        "synthetic-track-0150": "high"
+      },
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0148": 95.0,
+        "synthetic-track-0149": 95.0,
+        "synthetic-track-0150": 95.0
+      },
+      "content_recovery_rate": {
+        "synthetic-track-0148": 90.0,
+        "synthetic-track-0149": 90.0,
+        "synthetic-track-0150": 90.0
+      }
+    },
+    "control": {
+      "trigger_purpose": "route_music",
+      "lifecycle_stage": "active_driving_content",
+      "motion_state": "driving"
+    },
+    "overrides": {
+      "content": {
+        "hierarchy_weights": {
+          "Preference": {
+            "upro_oshi": {
+              "leaves": {
+                "age": {
+                  "share": 0.35,
+                  "mask": 1,
+                  "feature_id": "age_band"
+                },
+                "oshi": {
+                  "share": 0.45,
+                  "mask": 1,
+                  "feature_id": "oshi_id"
+                },
+                "hobbies": {
+                  "share": 0.2,
+                  "mask": 0,
+                  "genre_gated": true,
+                  "feature_id": "hobby_interest_tags"
+                },
+                "gender": {
+                  "share": 0.0,
+                  "mask": 0,
+                  "feature_id": "gender"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "expectation": {
+      "hypothesis": "A driver in their 50s whose oshi is Seiko Matsuda (1980s j-pop). The age/oshi hierarchy weight is raised via a per-preset override so era/age can flip the winner. On the same neutral road as the Gen-Z pair, a 1980s track wins.",
+      "expected_top": {
+        "must_be_oshi": true
+      },
+      "top_fit_min": 0.42,
+      "gradient": "none",
+      "expected_service": {
+        "top_should_be_in": [
+          "music_playlist",
+          "humming_karaoke",
+          "quiz",
+          "ranking_creation",
+          "radio_style",
+          "call_response_driving"
+        ]
+      },
+      "override_required": true
+    },
+    "measured": {
+      "top_name": "青い珊瑚礁 — Seiko Matsuda",
+      "arousal": 0.63,
+      "top_fit": 0.4506,
+      "service_top": "humming_karaoke",
+      "service_score": 0.28
+    }
+  },
+  {
+    "preset_id": "preset-genz-now",
+    "category": "preference",
+    "family": "era_age",
+    "contrast_with": "preset-showa-nostalgia",
+    "label": {
+      "en": "Gen-Z now (teens driver)",
+      "ja": "Z世代（10代ドライバー）"
+    },
+    "brief": {
+      "en": "A teenage driver whose oshi is Ado (2020s). Same neutral road, same raised age/oshi weight override — but now a current 2020s track wins. Age-band alone flips the era versus the Shōwa preset.",
+      "ja": "推しがAdo（2020年代）の10代ドライバー。同じ中立の道・同じ重みオーバーライドで、今度は2020年代の曲が上位に。世代（年代）だけで昭和の対と勝者が反転する。"
+    },
+    "situation": {
+      "drowsiness_level": 40,
+      "fatigue_level": 28,
+      "monotony_level": 40,
+      "traffic_state": "normal",
+      "night_state": "day",
+      "road_type": "highway",
+      "motion_state": "driving"
+    },
+    "profile": {
+      "oshi_registered": true,
+      "oshi_mode": "on",
+      "oshi_id": "synthetic-artist-0122",
+      "oshi_type": "artist",
+      "age_band": "teens",
+      "genre_affinity_v1_enabled": true,
+      "usage_by_genre": {
+        "j-pop": "high"
+      },
+      "catalog_item_usage_level": {
+        "synthetic-track-0121": "high",
+        "synthetic-track-0122": "high",
+        "synthetic-track-0130": "high",
+        "synthetic-track-0135": "high"
+      },
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0121": 95.0,
+        "synthetic-track-0122": 95.0,
+        "synthetic-track-0130": 95.0,
+        "synthetic-track-0135": 95.0
+      },
+      "content_recovery_rate": {
+        "synthetic-track-0121": 90.0,
+        "synthetic-track-0122": 90.0,
+        "synthetic-track-0130": 90.0,
+        "synthetic-track-0135": 90.0
+      }
+    },
+    "control": {
+      "trigger_purpose": "route_music",
+      "lifecycle_stage": "active_driving_content",
+      "motion_state": "driving"
+    },
+    "overrides": {
+      "content": {
+        "hierarchy_weights": {
+          "Preference": {
+            "upro_oshi": {
+              "leaves": {
+                "age": {
+                  "share": 0.35,
+                  "mask": 1,
+                  "feature_id": "age_band"
+                },
+                "oshi": {
+                  "share": 0.45,
+                  "mask": 1,
+                  "feature_id": "oshi_id"
+                },
+                "hobbies": {
+                  "share": 0.2,
+                  "mask": 0,
+                  "genre_gated": true,
+                  "feature_id": "hobby_interest_tags"
+                },
+                "gender": {
+                  "share": 0.0,
+                  "mask": 0,
+                  "feature_id": "gender"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "expectation": {
+      "hypothesis": "A teenage driver whose oshi is Ado (2020s j-pop). Same neutral road, same raised age/oshi weight override — but now a current 2020s track wins. Age-band alone flips the era versus the Shōwa preset.",
+      "expected_top": {
+        "must_be_oshi": true
+      },
+      "top_fit_min": 0.45,
+      "gradient": "none",
+      "expected_service": {
+        "top_should_be_in": [
+          "music_playlist",
+          "humming_karaoke",
+          "quiz",
+          "ranking_creation",
+          "radio_style",
+          "call_response_driving"
+        ]
+      },
+      "override_required": true
+    },
+    "measured": {
+      "top_name": "踊 — Ado",
+      "arousal": 0.829,
+      "top_fit": 0.4776,
+      "service_top": "humming_karaoke",
+      "service_score": 0.28
+    }
+  },
+  {
+    "preset_id": "preset-coldstart-neutral",
+    "category": "baseline",
+    "family": "baseline",
+    "contrast_with": null,
+    "label": {
+      "en": "Cold-start neutral (control)",
+      "ja": "コールドスタート中立（対照）"
+    },
+    "brief": {
+      "en": "The honest floor: an unknown driver (no oshi, no history, no genre data) on an ordinary highway drive with a neutral situation. Scores stay low BY DESIGN — a third of the model's weight (Preference/History) has nothing to act on. This control makes every personalized preset's lift meaningful by comparison.",
+      "ja": "正直な基準値：未知のドライバー（推し・履歴・ジャンル情報なし）が中立な状況で通常の高速道路を走行。設計上スコアは低いまま — モデル重み（嗜好/履歴）の1/3が働く材料を持たない。この対照があるからこそ、他の個人化プリセットの上振れに意味が生まれる。"
+    },
+    "driver_note": "Unknown driver: zero oshi, zero genre affinity, zero listening/recovery history. Pure neutral profile.",
+    "situation": {
+      "drowsiness_level": 40,
+      "fatigue_level": 28,
+      "monotony_level": 40,
+      "night_state": "day",
+      "road_type": "highway"
+    },
+    "profile": {},
+    "control": {
+      "trigger_purpose": "route_music",
+      "lifecycle_stage": "active_driving_content",
+      "motion_state": "driving"
+    },
+    "overrides": null,
+    "expectation": {
+      "hypothesis": "cold-start: no personalization -> low top score, documents the honest floor",
+      "expected_top": {
+        "arousal_band": "high"
+      },
+      "top_fit_min": 0.15,
+      "gradient": "none",
+      "expected_service": {
+        "top_should_be_in": [
+          "music_playlist",
+          "humming_karaoke",
+          "quiz",
+          "ranking_creation",
+          "radio_style",
+          "call_response_driving"
+        ]
+      },
+      "override_required": false
+    },
+    "measured": {
+      "top_track_id": "synthetic-track-0266",
+      "top_name": "The Seed (2.0) — Cody ChesnuTT",
+      "arousal": 0.797,
+      "top_fit": 0.166,
+      "service_top": "humming_karaoke"
+    }
+  },
+  {
+    "preset_id": "preset-high-recovery-regular",
+    "category": "history",
+    "family": "history_mechanics",
+    "contrast_with": "preset-recovery-blank-baseline",
+    "label": {
+      "en": "High-recovery regulars",
+      "ja": "回復実績の高い定番曲"
+    },
+    "brief": {
+      "en": "Same neutral situation as the blank baseline, no registered oshi, no genre-affinity data — but three specific tracks (all in the driver's usage history) have an excellent recovery record with this driver. The per-track recovery-rate signal (the strongest History lever when the situation is neutral) lifts exactly one of those three tracks to the top, well above the honest floor. Its paired preset removes only the recovery history to isolate this exact contribution.",
+      "ja": "回復履歴のないベースラインと同じ中立状況で、推し登録もジャンル嗜好データもない。ただし3曲だけ、このドライバーで高い回復実績（リカバリーレート）を持つ。中立な状況下でこの3曲のうち1曲が明確に上位へ押し上げられ、正直な基準値を大きく上回る。対のプリセットはこの回復履歴だけを取り除き、寄与を分離する。"
+    },
+    "driver_note": "No oshi, no genre_affinity. catalog_item_usage_level=high, content_proposal_acceptance_rate=90, content_recovery_rate=95 on exactly 3 j-pop/j-rock tracks: synthetic-track-0130 (New Genesis — Ado), synthetic-track-0108 (千本桜 — Hatsune Miku), synthetic-track-0097 (Universe — Official HIGE DANdism).",
+    "situation": {
+      "drowsiness_level": 42,
+      "fatigue_level": 28,
+      "monotony_level": 40,
+      "night_state": "day",
+      "road_type": "highway"
+    },
+    "profile": {
+      "catalog_item_usage_level": {
+        "synthetic-track-0130": "high",
+        "synthetic-track-0108": "high",
+        "synthetic-track-0097": "high"
+      },
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0130": 90.0,
+        "synthetic-track-0108": 90.0,
+        "synthetic-track-0097": 90.0
+      },
+      "content_recovery_rate": {
+        "synthetic-track-0130": 95.0,
+        "synthetic-track-0108": 95.0,
+        "synthetic-track-0097": 95.0
+      }
+    },
+    "control": {
+      "trigger_purpose": "route_music",
+      "lifecycle_stage": "active_driving_content",
+      "motion_state": "driving"
+    },
+    "overrides": null,
+    "expectation": {
+      "hypothesis": "neutral situation + per-track recovery history on 3 tracks -> one of those tracks tops",
+      "expected_top": {
+        "track_id": "synthetic-track-0108"
+      },
+      "top_fit_min": 0.34,
+      "gradient": "none",
+      "expected_service": {
+        "top_should_be_in": [
+          "music_playlist",
+          "humming_karaoke",
+          "quiz",
+          "ranking_creation",
+          "radio_style",
+          "call_response_driving"
+        ]
+      },
+      "override_required": false
+    },
+    "measured": {
+      "top_track_id": "synthetic-track-0108",
+      "top_name": "千本桜 — Hatsune Miku",
+      "arousal": 0.875,
+      "top_fit": 0.3615,
+      "service_top": "humming_karaoke"
+    }
+  },
+  {
+    "preset_id": "preset-recovery-blank-baseline",
+    "category": "history",
+    "family": "history_mechanics",
+    "contrast_with": "preset-high-recovery-regular",
+    "label": {
+      "en": "Recovery-blank baseline (same driver, no history)",
+      "ja": "回復履歴なし基準（同一状況・履歴なし）"
+    },
+    "brief": {
+      "en": "The exact same neutral situation as the high-recovery preset, but with the driver's history left completely blank — no usage, no acceptance rate, no recovery rate on any track. The top track flips to a different one, and the three tracks that carried strong recovery history in the paired preset do NOT rise here. This isolates precisely what the recovery-rate signal contributes: nothing else about the world changed.",
+      "ja": "回復履歴プリセットとまったく同じ中立状況だが、ドライバー履歴は完全に空欄（利用実績・受諾率・回復率すべてなし）。上位曲は別の曲に入れ替わり、対プリセットで強い回復実績を持っていた3曲はここでは上位に来ない。世界の他の条件は一切変えていないため、回復レートシグナルの寄与だけを正確に分離できる。"
+    },
+    "driver_note": "Pure neutral profile: no oshi, no genre_affinity, no usage/acceptance/recovery history on any track (profile={}).",
+    "situation": {
+      "drowsiness_level": 42,
+      "fatigue_level": 28,
+      "monotony_level": 40,
+      "night_state": "day",
+      "road_type": "highway"
+    },
+    "profile": {},
+    "control": {
+      "trigger_purpose": "route_music",
+      "lifecycle_stage": "active_driving_content",
+      "motion_state": "driving"
+    },
+    "overrides": null,
+    "expectation": {
+      "hypothesis": "same neutral situation, no recovery history -> honest floor; the 3 tracks that dominate the paired preset do NOT rise here",
+      "expected_top": {},
+      "top_fit_min": 0.15,
+      "gradient": "none",
+      "expected_service": {
+        "top_should_be_in": [
+          "music_playlist",
+          "humming_karaoke",
+          "quiz",
+          "ranking_creation",
+          "radio_style",
+          "call_response_driving"
+        ]
+      },
+      "override_required": false,
+      "should_rank_below": [
+        {
+          "track_id": "synthetic-track-0130"
+        },
+        {
+          "track_id": "synthetic-track-0108"
+        },
+        {
+          "track_id": "synthetic-track-0097"
+        }
+      ]
+    },
+    "measured": {
+      "top_track_id": "synthetic-track-0266",
+      "top_name": "The Seed (2.0) — Cody ChesnuTT",
+      "arousal": 0.797,
+      "top_fit": 0.1676,
+      "service_top": "humming_karaoke"
+    }
+  },
+  {
+    "preset_id": "preset-recently-played-fatigue",
+    "category": "history",
+    "family": "history_mechanics",
+    "contrast_with": null,
+    "label": {
+      "en": "Recently played — novelty penalty",
+      "ja": "直近再生 — 新鮮さペナルティ"
+    },
+    "brief": {
+      "en": "A driver with a rich j-pop listening history (8 tracks, strong usage/acceptance/recovery) on a fairly tired, monotonous highway drive. Three of the driver's otherwise-strongest tracks were played just minutes ago. The recency/novelty penalty pushes those three down even though the situation and taste both favor them, demonstrating that the algorithm avoids immediately repeating songs — a different track (still j-pop-adjacent) wins instead.",
+      "ja": "豊富なJ-POP視聴履歴（8曲、高い利用実績・受諾率・回復率）を持つドライバーが、やや疲労した単調な高速走行中。本来最も強いはずの3曲を数分前に再生済み。状況も嗜好もその3曲を支持するにもかかわらず、新鮮さ（直近再生）ペナルティにより順位が下がる — 同じ曲の連続再生を避ける挙動を示し、別の曲（J-POP系統ではある）が代わりに勝つ。"
+    },
+    "driver_note": "genre_affinity_v1_enabled=true, usage_by_genre j-pop=high; catalog_item_usage_level/acceptance(90)/recovery(85) on 8 j-pop tracks; played_items marks 3 of those 8 as just-played at 2026-07-17T11:45:00Z: synthetic-track-0130, synthetic-track-0108, synthetic-track-0097.",
+    "situation": {
+      "drowsiness_level": 55,
+      "fatigue_level": 40,
+      "monotony_level": 60,
+      "night_state": "day",
+      "road_type": "highway"
+    },
+    "profile": {
+      "genre_affinity_v1_enabled": true,
+      "usage_by_genre": {
+        "j-pop": "high"
+      },
+      "catalog_item_usage_level": {
+        "synthetic-track-0130": "high",
+        "synthetic-track-0108": "high",
+        "synthetic-track-0097": "high",
+        "synthetic-track-0115": "high",
+        "synthetic-track-0077": "high",
+        "synthetic-track-0060": "high",
+        "synthetic-track-0098": "high",
+        "synthetic-track-0202": "high"
+      },
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0130": 90.0,
+        "synthetic-track-0108": 90.0,
+        "synthetic-track-0097": 90.0,
+        "synthetic-track-0115": 90.0,
+        "synthetic-track-0077": 90.0,
+        "synthetic-track-0060": 90.0,
+        "synthetic-track-0098": 90.0,
+        "synthetic-track-0202": 90.0
+      },
+      "content_recovery_rate": {
+        "synthetic-track-0130": 85.0,
+        "synthetic-track-0108": 85.0,
+        "synthetic-track-0097": 85.0,
+        "synthetic-track-0115": 85.0,
+        "synthetic-track-0077": 85.0,
+        "synthetic-track-0060": 85.0,
+        "synthetic-track-0098": 85.0,
+        "synthetic-track-0202": 85.0
+      },
+      "played_items": [
+        {
+          "track_id": "synthetic-track-0130",
+          "last_played_at": "2026-07-17T11:45:00Z"
+        },
+        {
+          "track_id": "synthetic-track-0108",
+          "last_played_at": "2026-07-17T11:45:00Z"
+        },
+        {
+          "track_id": "synthetic-track-0097",
+          "last_played_at": "2026-07-17T11:45:00Z"
+        }
+      ]
+    },
+    "control": {
+      "trigger_purpose": "route_music",
+      "lifecycle_stage": "active_driving_content",
+      "motion_state": "driving"
+    },
+    "overrides": null,
+    "expectation": {
+      "hypothesis": "just-played tracks are demoted below other strong matches even though they'd otherwise score well",
+      "expected_top": {
+        "genre": "j-pop"
+      },
+      "top_fit_min": 0.32,
+      "gradient": "none",
+      "expected_service": {
+        "top_should_be_in": [
+          "music_playlist",
+          "humming_karaoke",
+          "quiz",
+          "ranking_creation",
+          "radio_style",
+          "call_response_driving"
+        ]
+      },
+      "override_required": false,
+      "should_rank_below": [
+        {
+          "track_id": "synthetic-track-0130"
+        },
+        {
+          "track_id": "synthetic-track-0108"
+        },
+        {
+          "track_id": "synthetic-track-0097"
+        }
+      ]
+    },
+    "measured": {
+      "top_track_id": "synthetic-track-0115",
+      "top_name": "Zenzenzense - English Ver. — RADWIMPS",
+      "arousal": 0.854,
+      "top_fit": 0.3407,
+      "service_top": "humming_karaoke"
+    }
+  },
+  {
+    "preset_id": "preset-coastal-cruise",
+    "category": "situation",
+    "family": "route_genre",
+    "contrast_with": null,
+    "label": {
+      "en": "Coastal cruise",
+      "ja": "海岸クルーズ"
+    },
+    "brief": {
+      "en": "A relaxed coastal local road (route_tags=coastal, destination_tags=coast) with a mild, non-drowsy situation. The driver has strong city-pop and moderate jazz usage/history. Route/destination genre affinity lifts a bright, mid-arousal coastal-friendly track to the top — the road and destination tags are the lever, not fatigue or preference alone.",
+      "ja": "のんびりした海岸沿いの一般道（route_tags=coastal、destination_tags=coast）で、眠気の少ない穏やかな状況。ドライバーはシティポップを強く、ジャズを中程度利用・履歴あり。ルート/目的地のジャンル親和性により、明るく中程度の高揚感を持つ海岸向けの曲が上位に — 疲労や単なる嗜好ではなく、ルート/目的地タグが決め手。"
+    },
+    "driver_note": "genre_affinity_v1_enabled=true, usage_by_genre city pop=high / jazz=med. Note: this frozen catalog has zero tracks tagged exactly 'city pop' (genre_track_ids('city pop',4) returns []), so the per-track rich_on history lands on 3 jazz tracks only (acceptance=95, recovery=90); the city-pop usage_by_genre signal is still set but has no catalog tracks to act on directly.",
+    "situation": {
+      "road_type": "local",
+      "route_tags": [
+        "coastal"
+      ],
+      "destination_tags": [
+        "coast"
+      ],
+      "monotony_level": 25,
+      "drowsiness_level": 35,
+      "fatigue_level": 28,
+      "night_state": "day"
+    },
+    "profile": {
+      "genre_affinity_v1_enabled": true,
+      "usage_by_genre": {
+        "city pop": "high",
+        "jazz": "med"
+      },
+      "catalog_item_usage_level": {
+        "synthetic-track-0027": "high",
+        "synthetic-track-0281": "high",
+        "synthetic-track-0280": "high"
+      },
+      "content_proposal_acceptance_rate": {
+        "synthetic-track-0027": 95.0,
+        "synthetic-track-0281": 95.0,
+        "synthetic-track-0280": 95.0
+      },
+      "content_recovery_rate": {
+        "synthetic-track-0027": 90.0,
+        "synthetic-track-0281": 90.0,
+        "synthetic-track-0280": 90.0
+      }
+    },
+    "control": {
+      "trigger_purpose": "route_music",
+      "lifecycle_stage": "active_driving_content",
+      "motion_state": "driving"
+    },
+    "overrides": null,
+    "expectation": {
+      "hypothesis": "coastal route/destination genre affinity -> a bright/mid-arousal coastal-friendly track tops",
+      "expected_top": {
+        "arousal_band": "mid"
+      },
+      "top_fit_min": 0.25,
+      "gradient": "none",
+      "expected_service": {
+        "top_should_be_in": [
+          "music_playlist",
+          "radio_style",
+          "humming_karaoke",
+          "quiz",
+          "ranking_creation",
+          "call_response_driving"
+        ]
+      },
+      "override_required": false
+    },
+    "measured": {
+      "top_track_id": "synthetic-track-0281",
+      "top_name": "Birdland — Weather Report",
+      "arousal": 0.677,
+      "top_fit": 0.2668,
+      "service_top": "humming_karaoke"
+    }
+  }
+]

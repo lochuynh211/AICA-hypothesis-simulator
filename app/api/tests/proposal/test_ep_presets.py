@@ -23,12 +23,12 @@ _EXPECTED_PRESET_IDS = {p.stem for p in _PRESETS_DIR.glob("preset-*.json")}
 # ---------------------------------------------------------------------------
 
 
-def test_get_presets_lists_the_18_committed_presets():
+def test_get_presets_lists_the_committed_presets():
     resp = client.get("/api/proposal/presets")
     assert resp.status_code == 200
     body = resp.json()
     presets = body["presets"]
-    assert len(presets) == 32
+    assert len(presets) == 35
     ids = {p["preset_id"] for p in presets}
     assert ids == _EXPECTED_PRESET_IDS
 
@@ -73,7 +73,7 @@ def test_get_preset_returns_the_full_preset():
     assert body["contrast_with"] == "preset-oshi-off"
     assert body["algorithm_config_overrides"] is None
     assert body["expectation"]["hypothesis"]
-    assert body["expectation"]["top_fit_min"] == 0.15
+    assert body["expectation"]["top_fit_min"] == 0.24
     assert body["world"]["control_inputs"]["dataset_id"]
     assert body["world"]["situation"]["road_type"] == "highway"
     assert body["world"]["driver_profile"]["oshi_id"] == "synthetic-artist-0122"

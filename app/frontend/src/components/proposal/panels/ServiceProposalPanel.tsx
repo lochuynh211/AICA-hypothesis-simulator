@@ -25,7 +25,7 @@ import {
 /** Preset auto-loaded on screen open when `autoInit` is set. The proposal panel
  * is preset-first (the old Seed/Profile pickers were removed), so the screen
  * opens on a complete, already-recommended plan for a representative preset. */
-const AUTO_INIT_PRESET_ID = 'preset-journey-a-1-cruising-fresh-monotonous'
+const AUTO_INIT_PRESET_ID = 'preset-journey-a-1-cruising-fresh'
 import { ServiceResultOverlay } from '../../merged/ServiceResultOverlay'
 import ServiceSetupSection from './sections/ServiceSetupSection'
 
