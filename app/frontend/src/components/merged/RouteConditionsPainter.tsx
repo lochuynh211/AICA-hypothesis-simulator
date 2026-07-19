@@ -7,33 +7,34 @@
  * per handle) with min-gap clamping so `start` can never cross past `end`
  * (and vice versa) — there is no native two-thumb range input, so this is
  * the standard DOM workaround rather than a bespoke pointer-drag widget.
- * Each slider shows a position readout (`data-testid="*-readout"`) and a
- * distinct color band spanning the painted extent, purely for visual
- * feedback — the actual paint is applied server-side by
- * `POST /api/merged-runs/plan` (`buildMergedPlan`, Task 2/this task's
- * wiring in `MergedSetupPanel`), never computed here.
+ * Each slider snaps to 5 km steps (`STEP_KM`), shows a position readout
+ * (`data-testid="*-readout"`) and a distinct color band + matching thumbs, so
+ * the reviewer can tell the two ranges apart at a glance. The actual paint is
+ * applied server-side by `POST /api/merged-runs/plan` — never computed here.
  *
  * `null` means "no range painted" (the field is left out of the
- * `buildMergedPlan` call entirely); the sliders still render so the
- * reviewer can start painting, defaulting their displayed span to `[0, 0]`
- * until moved.
+ * `buildMergedPlan` call entirely); the sliders still render defaulting their
+ * displayed span to `[0, 0]` until moved.
  */
 export type KmRange = [number, number]
 
-const MIN_GAP_KM = 1
+/** Coarse, easy-to-grab granularity — a 5 km step (owner request); the min gap
+ * matches it so the two handles never sit closer than one step. */
+const STEP_KM = 5
+const MIN_GAP_KM = STEP_KM
 
-/** Clamps a `[start, end]` pair to `[0, totalKm]`, keeping at least
- * `MIN_GAP_KM` between the two handles. `changedIndex` identifies which
- * handle the user just dragged (0 = start, 1 = end); if closing the gap
- * would cross the OTHER handle, that other handle is pushed along by the
- * gap rather than clamping the one just moved — the usual dual-thumb-slider
- * behavior (dragging the lower thumb past the upper one carries the upper
- * thumb along, and vice versa) so a handle never "sticks" at its neighbor. */
+/** Snap a raw slider value to the nearest STEP_KM, clamped to [0, cap]. */
+function snap(value: number, cap: number): number {
+  return Math.min(Math.max(Math.round(value / STEP_KM) * STEP_KM, 0), cap)
+}
+
+/** Clamps a `[start, end]` pair to `[0, totalKm]` (snapped to STEP_KM), keeping
+ * at least `MIN_GAP_KM` between the handles; dragging one handle past the other
+ * carries the other along, the usual dual-thumb behavior. */
 function clampRange(range: KmRange, changedIndex: 0 | 1, totalKm: number): KmRange {
   const cap = totalKm > 0 ? totalKm : 0
-  let [start, end] = range
-  start = Math.min(Math.max(start, 0), cap)
-  end = Math.min(Math.max(end, 0), cap)
+  let start = snap(range[0], cap)
+  let end = snap(range[1], cap)
   if (changedIndex === 0 && start > end - MIN_GAP_KM) {
     end = Math.min(cap, start + MIN_GAP_KM)
   }
@@ -43,21 +44,10 @@ function clampRange(range: KmRange, changedIndex: 0 | 1, totalKm: number): KmRan
   return [start, end]
 }
 
-const trackStyle: React.CSSProperties = { position: 'relative', height: '22px', marginTop: '4px' }
-
-const handleInputStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  width: '100%',
-  margin: 0,
-  background: 'transparent',
-  pointerEvents: 'none',
-}
-
 function DualRangeSlider({
   label,
   testIdPrefix,
+  variant,
   totalKm,
   value,
   color,
@@ -65,6 +55,8 @@ function DualRangeSlider({
 }: {
   label: string
   testIdPrefix: string
+  /** Drives the per-range thumb color class (see `.dual-range--*` in app.css). */
+  variant: 'mountain' | 'jam'
   totalKm: number
   value: KmRange
   color: string
@@ -76,51 +68,49 @@ function DualRangeSlider({
   const pctEnd = cap > 0 ? (end / cap) * 100 : 0
 
   return (
-    <div style={{ marginTop: '10px' }} data-testid={`${testIdPrefix}-painter`}>
-      <label style={{ display: 'block', fontSize: '0.8em', color: '#666', marginBottom: '2px' }}>
-        {label}
-      </label>
-      <p
-        data-testid={`${testIdPrefix}-readout`}
-        style={{ fontSize: '0.82em', margin: '2px 0', fontFamily: 'monospace' }}
-      >
-        {start.toFixed(1)}–{end.toFixed(1)} km
-      </p>
-      <div style={trackStyle}>
+    <div style={{ marginTop: '12px' }} data-testid={`${testIdPrefix}-painter`}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
+        <label style={{ fontSize: '0.8em', fontWeight: 600, color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '2px', background: color }} />
+          {label}
+        </label>
+        <span
+          data-testid={`${testIdPrefix}-readout`}
+          style={{ fontSize: '0.8em', fontFamily: 'monospace', color: '#334155' }}
+        >
+          {Math.round(start)}–{Math.round(end)} km
+        </span>
+      </div>
+      <div className={`dual-range dual-range--${variant}`}>
         <div
           data-testid={`${testIdPrefix}-band`}
-          style={{
-            position: 'absolute',
-            top: '9px',
-            left: `${pctStart}%`,
-            width: `${Math.max(pctEnd - pctStart, 0)}%`,
-            height: '4px',
-            background: color,
-            borderRadius: '2px',
-            pointerEvents: 'none',
-          }}
+          className="dual-range-fill"
+          style={{ left: `${pctStart}%`, width: `${Math.max(pctEnd - pctStart, 0)}%`, background: color }}
         />
+        {/* Two overlaid range inputs; pointer-events live only on the thumbs
+            (see .dual-range in app.css) so BOTH handles are independently
+            draggable. */}
         <input
+          className="range-start"
           type="range"
           data-testid={`${testIdPrefix}-start`}
           aria-label={`${label} start`}
           min={0}
           max={cap}
-          step={0.5}
+          step={STEP_KM}
           value={start}
           onChange={(e) => onChange(clampRange([Number(e.target.value), end], 0, cap))}
-          style={{ ...handleInputStyle, pointerEvents: 'auto' }}
         />
         <input
+          className="range-end"
           type="range"
           data-testid={`${testIdPrefix}-end`}
           aria-label={`${label} end`}
           min={0}
           max={cap}
-          step={0.5}
+          step={STEP_KM}
           value={end}
           onChange={(e) => onChange(clampRange([start, Number(e.target.value)], 1, cap))}
-          style={{ ...handleInputStyle, pointerEvents: 'auto' }}
         />
       </div>
     </div>
@@ -144,19 +134,21 @@ export default function RouteConditionsPainter({
   return (
     <div data-testid="route-conditions-painter">
       <DualRangeSlider
-        label="Mountain range"
+        label="Mountain road"
         testIdPrefix="mountain-range"
+        variant="mountain"
         totalKm={totalKm}
         value={mountainRange ?? [0, 0]}
-        color="#a0785a"
+        color="#16a34a"
         onChange={onMountainRangeChange}
       />
       <DualRangeSlider
-        label="Traffic-jam range"
+        label="Traffic jam"
         testIdPrefix="jam-range"
+        variant="jam"
         totalKm={totalKm}
         value={jamRange ?? [0, 0]}
-        color="#d97706"
+        color="#dc2626"
         onChange={onJamRangeChange}
       />
     </div>

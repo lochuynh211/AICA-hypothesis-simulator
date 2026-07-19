@@ -374,6 +374,12 @@ export type PreviewSegment = {
   to_min: number
 }
 
+/** A traffic-jam range on the previewed route (minutes, same axis as PreviewSegment). */
+export type PreviewTrafficJam = {
+  from_min: number
+  to_min: number
+}
+
 /** The rest spot the auto-chosen recovery stopped at. */
 export type PreviewRestSpot = {
   at_km: number
@@ -425,6 +431,10 @@ export type InstantResult = {
    * the field still typecheck; the backend always sends it (defaulting to []). */
   spikes?: SpikePoint[]
   segments: PreviewSegment[]
+  /** Manually-painted traffic-jam ranges (minutes, same axis as `segments`).
+   * Optional so pre-existing fixtures/constructors predating the field still
+   * typecheck; the backend always sends it (defaulting to []). */
+  traffic_jams?: PreviewTrafficJam[]
   rest_spot: PreviewRestSpot | null
   rest_option: PreviewRestOption | null
   /** Every auto-accepted rest across the run (rest_spot/rest_option == first of each).

@@ -19,7 +19,10 @@ import { useState } from 'react'
 import MergedSetupPanel from './MergedSetupPanel'
 import MergedCenterPanel from './MergedCenterPanel'
 import MergedLogPanel from './MergedLogPanel'
+import MergedProposalPanel from './MergedProposalPanel'
 import MergedRunsScreen from './MergedRunsScreen'
+import { RunStoreProvider } from '../../state/runStore'
+import { ProposalStoreProvider } from '../../state/proposalStore'
 
 type MergedView = 'live' | 'runs'
 
@@ -72,17 +75,33 @@ export default function MergedShell(): JSX.Element {
 
       <div style={{ flex: 1, minHeight: 0 }}>
         {view === 'live' ? (
-          <div className="merged-shell" data-testid="merged-shell">
-            <div className="left-panel">
-              <MergedSetupPanel />
-            </div>
-            <div className="center-panel">
-              <MergedCenterPanel />
-            </div>
-            <div className="right-panel">
-              <MergedLogPanel />
-            </div>
-          </div>
+          // The whole 3-panel shell mounts SCOPED run/proposal stores (owner
+          // layout, feature 020): the setup panel (left) reuses the Trigger +
+          // Proposal setup editors verbatim and seeds these stores; the CENTER's
+          // <MapSurface/> reads the same scoped route/Maps key. Confirmed safe
+          // (both stores are plain Context + useReducer, no module singletons).
+          // 20:50:30 — left = setup + log, center = quickview/animation/map,
+          // right = service (top) + content (bottom) proposals.
+          <RunStoreProvider>
+            <ProposalStoreProvider>
+              <div className="merged-shell" data-testid="merged-shell">
+                <div className="left-panel">
+                  <div className="merged-left-setup">
+                    <MergedSetupPanel />
+                  </div>
+                  <div className="merged-left-log">
+                    <MergedLogPanel />
+                  </div>
+                </div>
+                <div className="center-panel">
+                  <MergedCenterPanel />
+                </div>
+                <div className="right-panel">
+                  <MergedProposalPanel />
+                </div>
+              </div>
+            </ProposalStoreProvider>
+          </RunStoreProvider>
         ) : (
           <MergedRunsScreen />
         )}

@@ -438,6 +438,16 @@ class PreviewSegment(BaseModel):
     to_min: float
 
 
+class PreviewTrafficJam(BaseModel):
+    """A traffic-jam range on the previewed route, in MINUTES on the same axis
+    as ``PreviewSegment`` (feature 020 — the Combined Simulator draws a thin
+    jam sub-bar above the road-type bar). Derived from the event plan's
+    ``traffic_events`` (start_min .. start_min+duration_min)."""
+
+    from_min: float
+    to_min: float
+
+
 class PreviewRestSpot(BaseModel):
     """The rest spot the auto-chosen recovery stopped at."""
 
@@ -486,6 +496,9 @@ class InstantResult(BaseModel):
     # reviewer can see the rest-propose curve step up right after a spike.
     spikes: list[SpikePoint] = []
     segments: list[PreviewSegment] = []
+    # Manually-painted traffic-jam ranges (minutes, same axis as `segments`) —
+    # feature 020 Combined Simulator jam sub-bar. Empty when no jam was painted.
+    traffic_jams: list[PreviewTrafficJam] = []
     rest_spot: PreviewRestSpot | None = None
     rest_option: PreviewRestOption | None = None
     # Every auto-accepted rest across the run (rest_spot/rest_option == first of each).

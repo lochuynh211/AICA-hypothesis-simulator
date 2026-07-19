@@ -21,6 +21,7 @@ from aica_api.models.run import (
     PreviewRestOption,
     PreviewRestSpot,
     PreviewSegment,
+    PreviewTrafficJam,
     RestSpot,
     ScoreSeriesPoint,
     SpikePoint,
@@ -207,6 +208,7 @@ class MergedInstantResult(BaseModel):
     monotony_threshold: float | None = None
     spikes: list[SpikePoint] = []
     segments: list[PreviewSegment] = []
+    traffic_jams: list[PreviewTrafficJam] = []
     rest_spot: PreviewRestSpot | None = None
     rest_option: PreviewRestOption | None = None
     rest_spots: list[PreviewRestSpot] = []

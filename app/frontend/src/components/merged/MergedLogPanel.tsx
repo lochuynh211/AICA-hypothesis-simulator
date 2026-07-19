@@ -147,36 +147,72 @@ function summarizeProposalEvent(event: DiscreteEvent): string {
 
 // ── Sub-components ──────────────────────────────────────────────────────────
 
-/** Slim inline trigger row (see module doc — `TraceEntryRow` isn't exported). */
+const fmt = (v: unknown): string => (typeof v === 'number' ? v.toFixed(3) : String(v))
+
+/** The fire threshold the score is compared against, if the entry carries one. */
+function entryThreshold(entry: TraceEntry): number | null {
+  const c = entry.criteria ?? {}
+  for (const k of ['rest_required_threshold', 'threshold_suggest', 'threshold_fire']) {
+    const v = c[k as keyof typeof c]
+    if (typeof v === 'number') return v
+  }
+  return null
+}
+
+function explanationText(entry: TraceEntry): string {
+  const e = entry.explanation as unknown
+  if (e == null) return ''
+  if (typeof e === 'string') return e
+  if (typeof e === 'object' && ('en' in (e as object) || 'ja' in (e as object))) {
+    return t(e as { en: string; ja: string }, 'en')
+  }
+  return String(e)
+}
+
+/** Trigger trace row — mirrors the Trigger screen's DecisionTracePanel so the
+ * log is actually useful (score, per-category scores, threshold, fire_control,
+ * reason_inputs, explanation) — the same TraceEntry data replay reads. */
 function TriggerTraceRow({ entry }: { entry: TraceEntry }) {
+  const fc = entry.fire_control
+  const threshold = entryThreshold(entry)
+  const scoreEntries = Object.entries(entry.scores ?? {}).filter(([, v]) => typeof v === 'number')
+  const reasons = Array.isArray(entry.reason_inputs) ? (entry.reason_inputs as unknown[]).map(String).filter(Boolean) : []
+  const explanation = explanationText(entry)
   return (
     <div
       data-testid={`merged-log-trigger-${entry.tick_index}`}
-      style={{
-        borderBottom: '1px solid #2a2a2a',
-        padding: '6px 4px',
-        fontSize: '0.85em',
-        fontFamily: 'monospace',
-      }}
+      style={{ borderBottom: '1px solid #2a2a2a', padding: '6px 4px', fontSize: '0.85em', fontFamily: 'monospace' }}
     >
-      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
         <span style={{ color: '#6af', fontWeight: 700 }}>tick#{entry.tick_index}</span>
         <span style={{ color: '#ffe066', fontWeight: 700 }}>{entry.result_type}</span>
         {entry.selected_category && <span style={{ color: '#8f8' }}>cat={entry.selected_category}</span>}
+        {typeof entry.score === 'number' && (
+          <span data-testid={`merged-log-score-${entry.tick_index}`} style={{ color: '#7dd3fc' }}>
+            score={entry.score.toFixed(3)}
+            {threshold != null && <span style={{ color: '#f87171' }}> / thr {threshold.toFixed(2)}</span>}
+          </span>
+        )}
+        {entry.segment_type && <span style={{ color: '#a5b4fc' }}>seg={entry.segment_type}</span>}
+        {entry.is_traffic_jam && <span style={{ color: '#fca5a5' }}>🚧jam</span>}
       </div>
+      {scoreEntries.length > 0 && (
+        <div style={{ color: '#94a3b8', marginTop: '2px', wordBreak: 'break-all' }}>
+          {scoreEntries.map(([k, v]) => `${k}=${fmt(v)}`).join('  ')}
+        </div>
+      )}
+      {fc && (
+        <div style={{ color: fc.fired ? '#fbbf24' : '#64748b', marginTop: '2px' }}>
+          fire: fired={String(fc.fired)} suppressed={String(fc.suppressed)}
+          {fc.reason ? ` (${fc.reason})` : ''}
+        </div>
+      )}
+      {reasons.length > 0 && <div style={{ color: '#cbd5e1', marginTop: '2px' }}>{reasons.join(' · ')}</div>}
+      {explanation && <div style={{ color: '#e2e8f0', marginTop: '2px', whiteSpace: 'normal' }}>{explanation}</div>}
       {entry.recovery_phase && (
-        <div
-          data-testid={`merged-log-recovery-phase-${entry.tick_index}`}
-          style={{ color: '#34d399', marginTop: '2px' }}
-        >
+        <div data-testid={`merged-log-recovery-phase-${entry.tick_index}`} style={{ color: '#34d399', marginTop: '2px' }}>
           🛌{' '}
-          {t(
-            RECOVERY_PHASE_LABELS[entry.recovery_phase] ?? {
-              ja: entry.recovery_phase,
-              en: entry.recovery_phase,
-            },
-            'en',
-          )}
+          {t(RECOVERY_PHASE_LABELS[entry.recovery_phase] ?? { ja: entry.recovery_phase, en: entry.recovery_phase }, 'en')}
         </div>
       )}
     </div>

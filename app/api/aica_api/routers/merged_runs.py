@@ -78,7 +78,7 @@ from aica_api.services.merged_run_coordinator import (
 from aica_api.services.package_registry import PackageRegistry
 from aica_api.services.preview import PreviewValidationError
 from aica_api.services.route_analysis import analyze_route
-from aica_api.services.run_plan import create_draft
+from aica_api.services.run_plan import create_draft, validate_context_overrides
 from aica_api.services.scenario_registry import ScenarioRegistry
 
 router = APIRouter()
@@ -131,6 +131,14 @@ class CreateMergedPlanBody(BaseModel):
     presets: dict = {}
     parameters: dict = {}
     hyperparameters: dict = {}
+    # Trigger-side situation edits (feature 020 exact-reuse redesign): the
+    # Combined Situation editor reuses the trigger fixed-conditions / speed /
+    # initial-signal editors verbatim; these carry their (sparse) edits so a
+    # PAINTED run respects them too, threaded into the same ``create_draft``
+    # ``routers/run_plans.py`` uses. ``None`` (default) means "unedited".
+    profiles: dict | None = None
+    initial_state: dict | None = None
+    context_overrides: dict | None = None
 
 
 # ── Trigger-tick serialization helper ────────────────────────────────────────
@@ -246,6 +254,48 @@ def create_merged_plan_endpoint(body: CreateMergedPlanBody) -> dict:
         traffic_events.append(jam)
         presets["traffic_events"] = traffic_events
 
+    # Validate the trigger situation edits threaded from the Combined Situation
+    # editor (feature 020) — same rejections the run-plans router applies on the
+    # unpainted path, so both merged trigger-plan paths behave identically.
+    if body.initial_state is not None:
+        valid_initial_keys = {"drowsiness_level", "fatigue_level"}
+        init_errors: list[dict[str, str]] = []
+        for key, value in body.initial_state.items():
+            if key not in valid_initial_keys:
+                init_errors.append(
+                    {
+                        "field": f"initial_state.{key}",
+                        "message": f"Unknown initial_state key {key!r}. Valid keys: {sorted(valid_initial_keys)}",
+                    }
+                )
+            elif not isinstance(value, (int, float)) or isinstance(value, bool):
+                init_errors.append(
+                    {
+                        "field": f"initial_state.{key}",
+                        "message": f"initial_state.{key} must be a number in [0, 100]; got {value!r}",
+                    }
+                )
+            elif not 0 <= value <= 100:
+                init_errors.append(
+                    {
+                        "field": f"initial_state.{key}",
+                        "message": f"initial_state.{key} must be in [0, 100]; got {value!r}",
+                    }
+                )
+        if init_errors:
+            raise HTTPException(
+                status_code=400,
+                detail={"detail": "One or more initial_state values are invalid.", "validation_errors": init_errors},
+            )
+
+    if body.context_overrides is not None:
+        ctx_errors = validate_context_overrides(body.context_overrides)
+        if ctx_errors:
+            raise HTTPException(
+                status_code=400,
+                detail={"detail": "One or more context_overrides values are invalid.", "validation_errors": ctx_errors},
+            )
+
     plan_id = _make_merged_plan_id()
     draft = create_draft(
         plan_id=plan_id,
@@ -257,6 +307,9 @@ def create_merged_plan_endpoint(body: CreateMergedPlanBody) -> dict:
         route_facts=route_facts,
         route_source=route_facts.route_source,
         run_seed=body.run_seed,
+        profiles=body.profiles,
+        initial_state=body.initial_state,
+        context_overrides=body.context_overrides,
     )
 
     if draft.validation_errors:
@@ -604,6 +657,44 @@ def accept_rest_endpoint(merged_run_id: str, body: AcceptRestBody) -> dict:
 
     handle.rest_stage_synced = "before"
     handle.nap_minutes = body.nap_minutes
+    save_handle(handle, settings.merged_runs_dir)
+
+    return run_state.model_dump(mode="json")
+
+
+@router.post("/api/merged-runs/{merged_run_id}/decline")
+def decline_rest_endpoint(merged_run_id: str) -> dict:
+    """Decline a merged run's pending REST proposal and keep ticking (owner
+    review — the Combined Simulator's on-map rest overlay 'reject' button).
+
+    Calls ``run_manager.action(trigger_run_id, "decline")`` — the SAME
+    entrypoint the trigger-only screen's decline uses — which clears the
+    pending proposal and returns the run to a playing state WITHOUT starting
+    any recovery. Also resets ``handle.current_proposal_run_id`` to ``None`` so
+    a LATER re-fire (after the trigger cooldown) spawns a FRESH proposal run
+    instead of being silently swallowed by the once-per-run fire guard in
+    ``tick_merged_run_endpoint`` (``current_proposal_run_id is None``).
+
+    404 for an unknown merged_run_id or trigger_run_id; 422 when
+    ``run_manager.action`` rejects the action (e.g. the trigger run isn't
+    currently paused on a pending proposal).
+    """
+    handle = get_handle(merged_run_id, settings.merged_runs_dir)
+    if handle is None:
+        raise HTTPException(status_code=404, detail=f"Merged run {merged_run_id!r} not found")
+
+    try:
+        run_state = run_manager.action(handle.trigger_run_id, "decline")
+    except run_manager.RunNotFoundError:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Trigger run {handle.trigger_run_id!r} not found",
+        )
+    except run_manager.ActionNotAllowedError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    # Re-arm the fire guard so a later re-fire creates a new proposal run.
+    handle.current_proposal_run_id = None
     save_handle(handle, settings.merged_runs_dir)
 
     return run_state.model_dump(mode="json")

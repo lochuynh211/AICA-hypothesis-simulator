@@ -14,10 +14,12 @@
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MergedCoordinatorProvider, useMergedCoordinator } from '../src/state/mergedCoordinator'
+import { RunStoreProvider } from '../src/state/runStore'
 import type { MergedTickResponse } from '../src/api/mergedClient'
 import type { DecisionResult } from '../src/api/types'
 import type { ProposalRunLog, AlgorithmEvidence } from '../src/api/proposalClient'
 import MergedCenterPanel from '../src/components/merged/MergedCenterPanel'
+import MergedProposalPanel from '../src/components/merged/MergedProposalPanel'
 
 vi.mock('../src/api/mergedClient', () => ({
   createMergedRun: vi.fn(),
@@ -255,10 +257,16 @@ function renderCenterPanel() {
     return null
   }
 
+  // The proposal output moved to the RIGHT panel (MergedProposalPanel, owner
+  // layout); the center's <MapSurface/> needs a RunStoreProvider. Both panels
+  // share the coordinator, so the dock assertions still find the overlays.
   render(
     <MergedCoordinatorProvider>
-      <Capture />
-      <MergedCenterPanel />
+      <RunStoreProvider>
+        <Capture />
+        <MergedCenterPanel />
+        <MergedProposalPanel />
+      </RunStoreProvider>
     </MergedCoordinatorProvider>,
   )
 
@@ -294,7 +302,7 @@ describe('MergedCenterPanel', () => {
     expect(screen.getByTestId('candidate-card-music_playlist')).toBeInTheDocument()
   })
 
-  it('swaps to the content result overlay once a service is chosen', async () => {
+  it('shows service AND content side-by-side once a service is chosen (owner review — no either/or swap)', async () => {
     vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_2', trigger_run_id: 'run_2' })
     vi.mocked(tickMergedRun).mockResolvedValueOnce(firedTickWithProposal(45))
     vi.mocked(mergedProposalAction).mockResolvedValue(
@@ -334,7 +342,9 @@ describe('MergedCenterPanel', () => {
       kind: 'select_service',
       selected_service_id: 'music_playlist',
     })
-    expect(screen.queryByTestId('service-result-overlay')).not.toBeInTheDocument()
+    // Side-by-side (owner review): the service panel STAYS (left) while the
+    // content plan appears (right) — no longer an either/or recency swap.
+    expect(screen.getByTestId('service-result-overlay')).toBeInTheDocument()
     expect(screen.getByTestId('content-result-overlay')).toBeInTheDocument()
     expect(screen.getByTestId('plan-item-track-1')).toBeInTheDocument()
   })
@@ -438,6 +448,35 @@ describe('MergedCenterPanel', () => {
     await act(async () => {
       resolveAction(baseProposalLog({ status: 'service_selected' }))
     })
+  })
+
+  it('the Reset button clears the run (proposalLog + overlays gone, mergedRunId null)', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_reset', trigger_run_id: 'run_reset' })
+    vi.mocked(tickMergedRun).mockResolvedValueOnce(firedTickWithProposal(45))
+
+    const coordinatorRef = renderCenterPanel()
+
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => {
+      await coordinatorRef.current!.step()
+    })
+    expect(screen.getByTestId('service-result-overlay')).toBeInTheDocument()
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('merged-reset-button'))
+    })
+
+    expect(coordinatorRef.current!.state.mergedRunId).toBeNull()
+    expect(coordinatorRef.current!.state.proposalLog).toBeNull()
+    expect(screen.queryByTestId('service-result-overlay')).not.toBeInTheDocument()
   })
 
   it('the Play button drives coordinator.play() (ticks until the trigger pauses)', async () => {

@@ -12,29 +12,34 @@
  * `coordinator.create` (`createMergedRun`) instead of the plain
  * `createRunPlan` path.
  */
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { World } from '../src/api/proposalClient'
 
-vi.mock('../src/api/client', () => ({
+vi.mock('../src/api/client', async (orig) => ({
+  ...(await orig<typeof import('../src/api/client')>()),
   listRoutePresets: vi.fn(),
   loadRoutePreset: vi.fn(),
   listScenarios: vi.fn(),
   listPackages: vi.fn(),
   createRunPlan: vi.fn(),
+  getScenario: vi.fn(),
 }))
 
-vi.mock('../src/api/proposalClient', () => ({
+vi.mock('../src/api/proposalClient', async (orig) => ({
+  ...(await orig<typeof import('../src/api/proposalClient')>()),
   getPackages: vi.fn(),
   getPresets: vi.fn(),
   getPreset: vi.fn(),
 }))
 
-vi.mock('../src/api/mergedClient', () => ({
+vi.mock('../src/api/mergedClient', async (orig) => ({
+  ...(await orig<typeof import('../src/api/mergedClient')>()),
   createMergedRun: vi.fn(),
   tickMergedRun: vi.fn(),
   mergedProposalAction: vi.fn(),
   buildMergedPlan: vi.fn(),
+  mergedQuickview: vi.fn(),
 }))
 
 import {
@@ -43,11 +48,56 @@ import {
   listScenarios,
   listPackages,
   createRunPlan,
+  getScenario,
 } from '../src/api/client'
 import { getPackages, getPresets, getPreset } from '../src/api/proposalClient'
-import { createMergedRun, buildMergedPlan } from '../src/api/mergedClient'
-import { MergedCoordinatorProvider } from '../src/state/mergedCoordinator'
+import { createMergedRun, tickMergedRun, buildMergedPlan, mergedQuickview } from '../src/api/mergedClient'
+import { MergedCoordinatorProvider, useMergedCoordinator } from '../src/state/mergedCoordinator'
+import { RunStoreProvider } from '../src/state/runStore'
+import { ProposalStoreProvider } from '../src/state/proposalStore'
 import MergedSetupPanel from '../src/components/merged/MergedSetupPanel'
+
+const PAUSED_TICK = {
+  trigger: {
+    tick_index: null, decision: null, route_fraction: null, motion_state: null,
+    recovery_phase: null, is_traffic_jam: null, segment_type: null,
+    paused: true, completed: false,
+  },
+  proposal: null,
+  correlation: null,
+}
+const EMPTY_QUICKVIEW = {
+  fired: false, fire: null, fires: [], peak_score: 0, threshold: null,
+  score_series: [], monotony_series: [], monotony_threshold: null, spikes: [],
+  segments: [], rest_spot: null, rest_option: null, rest_spots: [], rest_options: [],
+  completed_min: null, seed: 42, overrides: [], error: null,
+}
+
+function Harness() {
+  const c = useMergedCoordinator()
+  return (
+    <>
+      <MergedSetupPanel />
+      <button type="button" data-testid="test-play" onClick={() => void c.startAndPlay()}>play</button>
+    </>
+  )
+}
+
+async function selectValue(testId: string, value: string) {
+  const el = await screen.findByTestId(testId)
+  await waitFor(() => expect(el).not.toBeDisabled())
+  fireEvent.change(el, { target: { value } })
+}
+
+/** Fills every inline dropdown so the panel reaches complete/ready. */
+async function fillSetup() {
+  await selectValue('merged-route-preset-select', 'preset-route-1')
+  await waitFor(() => expect(loadRoutePreset).toHaveBeenCalledWith('preset-route-1'))
+  await selectValue('merged-trigger-package-select', 'trigger_pkg_1')
+  await selectValue('merged-scenario-select', 'scn_fatigue_1')
+  await selectValue('merged-service-package-select', 'svc_pkg_1')
+  await selectValue('merged-content-package-select', 'content_pkg_1')
+}
 
 function fullWorld(): World {
   return {
@@ -257,91 +307,68 @@ function setupMocks() {
     trigger_run_id: 'run_1',
   })
   vi.mocked(buildMergedPlan).mockResolvedValue({ plan_id: 'plan_painted_xyz' })
+  // The situation popup's trigger sections + painter render once the ScenarioDef
+  // resolves (the painter's totalKm comes from the route, but the popup body is
+  // gated on a resolved scenario).
+  vi.mocked(getScenario).mockResolvedValue({
+    id: 'scn_fatigue_1',
+    is_night: false,
+    familiar_route: false,
+    child_passenger: false,
+    weather_risk: 0,
+    speed_profile: {},
+  } as unknown as Awaited<ReturnType<typeof getScenario>>)
 }
 
 function renderPanel() {
   return render(
     <MergedCoordinatorProvider>
-      <MergedSetupPanel />
+      <RunStoreProvider>
+        <ProposalStoreProvider>
+          <Harness />
+        </ProposalStoreProvider>
+      </RunStoreProvider>
     </MergedCoordinatorProvider>,
   )
-}
-
-/** Fills route/scenario/packages the same way merged_setup.test.tsx's second
- * test does, leaving the Route popup OPEN afterwards (its dialog reference
- * returned) so callers can interact with the painter sliders that live in it
- * before closing/starting. */
-async function fillRouteScenarioAndPackages() {
-  fireEvent.click(screen.getByRole('button', { name: /route/i }))
-  let dialog = await screen.findByRole('dialog')
-  const routeSelect = await within(dialog).findByLabelText(/route preset/i)
-  fireEvent.change(routeSelect, { target: { value: 'preset-route-1' } })
-  await waitFor(() => expect(loadRoutePreset).toHaveBeenCalledWith('preset-route-1'))
-
-  fireEvent.click(within(dialog).getByRole('button', { name: /close/i }))
-
-  fireEvent.click(screen.getByRole('button', { name: /scenario/i }))
-  dialog = await screen.findByRole('dialog')
-  const scenarioSelect = await within(dialog).findByLabelText(/scenario/i)
-  fireEvent.change(scenarioSelect, { target: { value: 'scn_fatigue_1' } })
-  fireEvent.click(within(dialog).getByRole('button', { name: /close/i }))
-
-  fireEvent.click(screen.getByRole('button', { name: /packages/i }))
-  dialog = await screen.findByRole('dialog')
-  fireEvent.change(await within(dialog).findByLabelText(/trigger package/i), {
-    target: { value: 'trigger_pkg_1' },
-  })
-  fireEvent.change(within(dialog).getByLabelText(/service package/i), {
-    target: { value: 'svc_pkg_1' },
-  })
-  fireEvent.change(within(dialog).getByLabelText(/content package/i), {
-    target: { value: 'content_pkg_1' },
-  })
-  fireEvent.click(within(dialog).getByRole('button', { name: /close/i }))
 }
 
 describe('MergedSetupPanel — route-conditions painter', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     setupMocks()
+    vi.mocked(tickMergedRun).mockResolvedValue(PAUSED_TICK)
+    vi.mocked(mergedQuickview).mockResolvedValue(EMPTY_QUICKVIEW)
   })
 
-  it('opens the Route popup and renders mountain + jam range sliders', async () => {
+  it('renders the mountain + jam range sliders in the Situation popup', async () => {
     renderPanel()
-
-    fireEvent.click(screen.getByRole('button', { name: /route/i }))
-    const dialog = await screen.findByRole('dialog')
-
-    expect(within(dialog).getByTestId('mountain-range-start')).toBeInTheDocument()
-    expect(within(dialog).getByTestId('mountain-range-end')).toBeInTheDocument()
-    expect(within(dialog).getByTestId('jam-range-start')).toBeInTheDocument()
-    expect(within(dialog).getByTestId('jam-range-end')).toBeInTheDocument()
+    await fillSetup()
+    fireEvent.click(screen.getByTestId('edit-situation'))
+    expect(await screen.findByTestId('mountain-range-start')).toBeInTheDocument()
+    expect(screen.getByTestId('mountain-range-end')).toBeInTheDocument()
+    expect(screen.getByTestId('jam-range-start')).toBeInTheDocument()
+    expect(screen.getByTestId('jam-range-end')).toBeInTheDocument()
   })
 
-  it('paints a mountain + jam range and, on Start, builds a painted plan via buildMergedPlan before coordinator.create', async () => {
+  it('paints a mountain + jam range and, on Play, builds a painted plan via buildMergedPlan before coordinator.create', async () => {
     renderPanel()
+    await fillSetup()
 
-    await fillRouteScenarioAndPackages()
+    // Paint the mountain + jam ranges (in the Situation popup) onto the 120km route.
+    fireEvent.click(screen.getByTestId('edit-situation'))
+    await screen.findByTestId('mountain-range-start')
+    fireEvent.change(screen.getByTestId('mountain-range-start'), { target: { value: '40' } })
+    fireEvent.change(screen.getByTestId('mountain-range-end'), { target: { value: '70' } })
+    fireEvent.change(screen.getByTestId('jam-range-start'), { target: { value: '10' } })
+    fireEvent.change(screen.getByTestId('jam-range-end'), { target: { value: '20' } })
 
-    // Re-open the Route popup to paint the mountain + jam ranges onto the
-    // now-loaded 120km route.
-    fireEvent.click(screen.getByRole('button', { name: /route/i }))
-    const dialog = await screen.findByRole('dialog')
+    expect(screen.getByTestId('mountain-range-readout').textContent).toMatch(/40.*70/)
+    expect(screen.getByTestId('jam-range-readout').textContent).toMatch(/10.*20/)
 
-    fireEvent.change(within(dialog).getByTestId('mountain-range-start'), { target: { value: '40' } })
-    fireEvent.change(within(dialog).getByTestId('mountain-range-end'), { target: { value: '70' } })
-    fireEvent.change(within(dialog).getByTestId('jam-range-start'), { target: { value: '10' } })
-    fireEvent.change(within(dialog).getByTestId('jam-range-end'), { target: { value: '20' } })
-
-    expect(within(dialog).getByTestId('mountain-range-readout').textContent).toMatch(/40.*70/)
-    expect(within(dialog).getByTestId('jam-range-readout').textContent).toMatch(/10.*20/)
-
-    fireEvent.click(within(dialog).getByRole('button', { name: /close/i }))
-
-    fireEvent.click(screen.getByRole('button', { name: /start run/i }))
+    await waitFor(() => expect(screen.getByTestId('test-play')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('test-play'))
 
     await waitFor(() => expect(buildMergedPlan).toHaveBeenCalledTimes(1))
-
     expect(buildMergedPlan).toHaveBeenCalledWith(
       expect.objectContaining({
         package_id: 'trigger_pkg_1',
@@ -362,12 +389,12 @@ describe('MergedSetupPanel — route-conditions painter', () => {
     )
   })
 
-  it('keeps the existing plain plan-build path unchanged when no painter range is set', async () => {
+  it('keeps the plain plan-build path when no painter range is set', async () => {
     renderPanel()
+    await fillSetup()
 
-    await fillRouteScenarioAndPackages()
-
-    fireEvent.click(screen.getByRole('button', { name: /start run/i }))
+    await waitFor(() => expect(screen.getByTestId('test-play')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('test-play'))
 
     await waitFor(() => expect(createMergedRun).toHaveBeenCalledTimes(1))
     expect(buildMergedPlan).not.toHaveBeenCalled()

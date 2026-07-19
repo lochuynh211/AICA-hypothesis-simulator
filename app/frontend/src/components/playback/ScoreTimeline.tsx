@@ -40,6 +40,11 @@ const TRIGGER_COLOR = '#dc2626'
 const REST_SPOT_COLOR = '#f59e0b'
 const SPIKE_COLOR = '#db2777'
 const TRACK_COLOR = '#e2e8f0'
+// Journey markers (feature 020): red = after-nap service, green = driving after rest.
+const AFTER_NAP_COLOR = '#dc2626'
+const DRIVE_AFTER_COLOR = '#16a34a'
+// Traffic-jam sub-bar color (feature 020) — matches the setup painter's jam red.
+const JAM_COLOR = '#dc2626'
 
 const W_FALLBACK = 760
 
@@ -48,6 +53,8 @@ export type ScoreTimelineTestIds = {
   threshold?: string; monotonyThreshold?: string
   fireGroup?: string; fire?: string; monotonyFire?: string
   spikeGroup?: string; spike?: string
+  /** Traffic-jam sub-bar group (feature 020). */
+  jamGroup?: string
   restSpotGroup?: string; restDot?: string; restOptionGroup?: string
   recoveryWindow?: string; completion?: string; playhead?: string
   legend?: string
@@ -75,6 +82,11 @@ export type ScoreTimelineProps = {
   showLegend?: boolean
   /** UI language for the built-in legend labels (default 'en'). */
   lang?: UiLanguage
+  /** Render the rest-JOURNEY markers (feature 020): a red "after-nap service"
+   * dot above each orange rest-spot dot + a green "driving after rest" dot at
+   * each recovery-window end. Off by default so the Trigger screen is
+   * unaffected; the Combined quickview turns it on. */
+  showJourneyMarkers?: boolean
   /** ADDITIVE, feature-020 Slice-2c (Task 5): when supplied, each fire marker
    *  gains a transparent, wider hit-rect calling this with the fire and its
    *  index on click — e.g. the merged quickview projection strip's
@@ -104,7 +116,7 @@ export default function ScoreTimeline({
   data, revealFraction = 1, ghostAhead = false, animated = false,
   showPlayhead = false, playheadAriaLabel, height = 92, testIds = {},
   thresholdLabel, monotonyThresholdLabel, restDotAriaLabel, showLegend = false, lang = 'en',
-  onFireClick,
+  showJourneyMarkers = false, onFireClick,
 }: ScoreTimelineProps) {
   const ref = useRef<HTMLDivElement>(null)
   const measured = useMeasuredWidth(ref)
@@ -118,6 +130,9 @@ export default function ScoreTimeline({
   const SEG_TOP = SEG_BOTTOM - 14
   const CURVE_BOTTOM = SEG_TOP - 8
   const BAND_MID = (SEG_TOP + SEG_BOTTOM) / 2
+  // Thin traffic-jam sub-bar, drawn in the gap just above the road-type bar.
+  const JAM_BOTTOM = SEG_TOP - 2
+  const JAM_TOP = JAM_BOTTOM - 3
 
   const { yMin, yMax } = useMemo(() => timelineYDomain(data), [data])
   const yPix = (v: number) => CURVE_BOTTOM - ((v - yMin) / (yMax - yMin || 1)) * (CURVE_BOTTOM - CURVE_TOP)
@@ -185,6 +200,21 @@ export default function ScoreTimeline({
           data.segments.map((seg, i) => bandRect(seg, i, true))
         )}
 
+        {/* Traffic-jam sub-bar (feature 020) — a thin bar just above the road
+            bar marking painted jam ranges, drawn FORWARD (full width, not
+            reveal-clipped) so the reviewer sees where jams are before the car
+            reaches them. Guarded with `?? []` so hand-built TimelineData
+            fixtures predating the field still render. */}
+        {(data.trafficJams ?? []).length > 0 && (
+          <g data-testid={testIds.jamGroup}>
+            {(data.trafficJams ?? []).map((j, i) => (
+              <rect key={`jam-${i}`} x={j.fromX * W} y={JAM_TOP}
+                width={Math.max(0, (j.toX - j.fromX) * W)} height={JAM_BOTTOM - JAM_TOP}
+                fill={JAM_COLOR} rx={1} />
+            ))}
+          </g>
+        )}
+
         {/* Threshold lines — drawn FORWARD (full width, not revealed progressively):
             they are per-run constants, so the reviewer sees the bar the score must
             cross before the car reaches it. */}
@@ -220,6 +250,22 @@ export default function ScoreTimeline({
               <circle key={i} data-testid={testIds.restDot} cx={x * W} cy={BAND_MID} r={6}
                 fill={REST_SPOT_COLOR} stroke="#fff" strokeWidth={2}
                 aria-label={restDotAriaLabel} />
+            ))}
+            {/* Journey markers (feature 020): a RED "after-nap service" dot
+                stacked above each orange rest-spot dot. */}
+            {showJourneyMarkers && data.restDots.map((x, i) => (
+              <circle key={`nap-${i}`} cx={x * W} cy={BAND_MID - 13} r={5}
+                fill={AFTER_NAP_COLOR} stroke="#fff" strokeWidth={1.5} />
+            ))}
+          </g>
+        )}
+        {/* GREEN "driving after rest" dot at each recovery-window END (drawn
+            FORWARD so it's visible on the projection). */}
+        {showJourneyMarkers && data.recoveryWindows.length > 0 && (
+          <g data-testid="journey-drive-after-group">
+            {data.recoveryWindows.map((rw, i) => (
+              <circle key={`drive-${i}`} cx={rw.toX * W} cy={BAND_MID} r={5}
+                fill={DRIVE_AFTER_COLOR} stroke="#fff" strokeWidth={1.5} />
             ))}
           </g>
         )}
@@ -295,7 +341,10 @@ export default function ScoreTimeline({
             <LegendSwatch key={type} color={SEGMENT_COLORS[type] ?? DEFAULT_SEGMENT_COLOR}
               label={segLabel(type, lang)} />
           ))}
-          {data.restDots.length > 0 && <LegendDot color={REST_SPOT_COLOR} label={t({ en: 'chosen rest spot', ja: '選択した休憩地点' }, lang)} />}
+          {(data.trafficJams ?? []).length > 0 && <LegendSwatch color={JAM_COLOR} label={t({ en: 'traffic jam', ja: '渋滞' }, lang)} />}
+          {data.restDots.length > 0 && <LegendDot color={REST_SPOT_COLOR} label={t({ en: showJourneyMarkers ? 'rest spot' : 'chosen rest spot', ja: showJourneyMarkers ? '休憩地点' : '選択した休憩地点' }, lang)} />}
+          {showJourneyMarkers && data.restDots.length > 0 && <LegendDot color={AFTER_NAP_COLOR} label={t({ en: 'after-nap service', ja: '仮眠後サービス' }, lang)} />}
+          {showJourneyMarkers && data.recoveryWindows.length > 0 && <LegendDot color={DRIVE_AFTER_COLOR} label={t({ en: 'driving after rest', ja: '休憩後の走行' }, lang)} />}
         </div>
       )}
     </div>

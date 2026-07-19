@@ -575,6 +575,15 @@ def iter_preview_ticks(
 
     fired = fired_at is not None and error_out is None
 
+    # Traffic-jam ranges (minutes, same axis as `segments`) — derived directly
+    # from the event plan's traffic_events, NOT by re-scanning ticks. Feeds the
+    # Combined Simulator's jam sub-bar (feature 020). `_active_traffic_jam` uses
+    # the identical `start_min <= elapsed_min < start_min + duration_min` axis.
+    traffic_jams = [
+        {"from_min": ev.start_min, "to_min": ev.start_min + ev.duration_min}
+        for ev in event_plan.traffic_events
+    ]
+
     return {
         "fired": fired,
         "fire": fired_at if fired else None,
@@ -587,6 +596,7 @@ def iter_preview_ticks(
         "monotony_series": monotony_series,
         "monotony_threshold": monotony_threshold,
         "segments": segments,
+        "traffic_jams": traffic_jams,
         # First-accepted rest kept as rest_spot/rest_option for back-compat; the
         # full lists let the strip mark every rest stop taken over the route.
         "rest_spot": rest_spots_out[0] if rest_spots_out else None,

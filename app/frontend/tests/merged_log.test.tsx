@@ -448,4 +448,30 @@ describe('MergedLogPanel', () => {
     expect(screen.getByText('Inattentive driving prevention & recovery')).toBeInTheDocument()
     expect(screen.queryByText('inattentive_driving_prevention_recovery')).not.toBeInTheDocument()
   })
+
+  it('renders a USEFUL trigger row — score + threshold, fire_control, explanation (owner review)', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_score', trigger_run_id: 'run_score' })
+    vi.mocked(tickMergedRun).mockResolvedValueOnce(firedTickWithEvents(1))
+
+    const { coordinatorRef } = renderLogPanel()
+
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => {
+      await coordinatorRef.current!.step()
+    })
+
+    const row = screen.getByTestId('merged-log-trigger-1')
+    // The score is surfaced (was missing before) — the same data replay reads.
+    expect(screen.getByTestId('merged-log-score-1')).toHaveTextContent('3.200')
+    expect(row).toHaveTextContent('fire: fired=true')
+    expect(row).toHaveTextContent('Rest recommended') // explanation
+  })
 })

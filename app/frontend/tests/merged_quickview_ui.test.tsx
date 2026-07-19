@@ -18,9 +18,11 @@
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MergedCoordinatorProvider, useMergedCoordinator } from '../src/state/mergedCoordinator'
+import { RunStoreProvider } from '../src/state/runStore'
 import type { MergedInstantResult, MergedFirePoint, MergedTickResponse } from '../src/api/mergedClient'
 import type { ProposalRunLog, AlgorithmEvidence } from '../src/api/proposalClient'
 import MergedCenterPanel from '../src/components/merged/MergedCenterPanel'
+import MergedProposalPanel from '../src/components/merged/MergedProposalPanel'
 
 vi.mock('../src/api/mergedClient', () => ({
   createMergedRun: vi.fn(),
@@ -149,10 +151,16 @@ function renderCenterPanel() {
     return null
   }
 
+  // Quickview click-to-inspect lives in the center; the inspected proposal
+  // renders in the RIGHT panel (MergedProposalPanel). Both share the coordinator
+  // and the center's <MapSurface/> needs a RunStoreProvider.
   render(
     <MergedCoordinatorProvider>
-      <Capture />
-      <MergedCenterPanel />
+      <RunStoreProvider>
+        <Capture />
+        <MergedCenterPanel />
+        <MergedProposalPanel />
+      </RunStoreProvider>
     </MergedCoordinatorProvider>,
   )
 
@@ -275,7 +283,7 @@ describe('merged quickview projection strip + click-to-inspect (feature 020, Sli
     expect(screen.getByTestId('candidate-card-karaoke_mode')).toBeInTheDocument()
   })
 
-  it('does not render the projection strip while the live tick loop is running', async () => {
+  it('keeps the projection strip visible while the live tick loop is running (persistent — owner review)', async () => {
     vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_qv', trigger_run_id: 'run_qv' })
     // A pending (never-resolving, until we say so) tick keeps `state.running`
     // true for the whole assertion window — mirrors merged_center.test.tsx's
@@ -315,8 +323,10 @@ describe('merged quickview projection strip + click-to-inspect (feature 020, Sli
       fireEvent.click(screen.getByTestId('merged-play-button'))
     })
 
+    // The quickview projection is a SEPARATE, persistent component from the
+    // live animation (owner review) — playback must NOT hide it.
     expect(coordinatorRef.current!.state.running).toBe(true)
-    expect(screen.queryByTestId('quickview-strip')).not.toBeInTheDocument()
+    expect(screen.getByTestId('quickview-strip')).toBeInTheDocument()
 
     // Clean up the still-in-flight tick so nothing dangles past the test.
     await act(async () => {

@@ -29,11 +29,16 @@ export function Modal({
   title,
   onClose,
   children,
+  size = 'default',
 }: {
   open: boolean
   title: string
   onClose: () => void
   children: React.ReactNode
+  /** 'wide' widens the card for editor popups that mount a full setup panel
+   * (Combined Simulator reuses the Trigger/Proposal setup editors verbatim,
+   * which need far more than the default 520px). Defaults to 'default'. */
+  size?: 'default' | 'wide'
 }): JSX.Element | null {
   const cardRef = useRef<HTMLDivElement | null>(null)
 
@@ -83,7 +88,7 @@ export function Modal({
       onClick={onClose}
     >
       <div
-        className="modal-card"
+        className={size === 'wide' ? 'modal-card modal-card--wide' : 'modal-card'}
         role="dialog"
         aria-modal="true"
         aria-label={title}

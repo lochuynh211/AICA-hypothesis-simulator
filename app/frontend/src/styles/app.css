@@ -84,11 +84,40 @@ body {
    apply cleanly under either parent grid). */
 .merged-shell {
   display: grid;
-  grid-template-columns: 1fr 3fr 1fr;
+  /* 20 : 50 : 30 (owner layout) — left setup+log, center quickview+animation+map,
+     right service (top) + content (bottom) proposals. */
+  grid-template-columns: 2fr 5fr 3fr;
   grid-template-rows: 1fr;
   height: 100%;
   width: 100%;
   overflow: hidden;
+}
+
+/* The Combined Simulator's RIGHT panel holds the light-themed proposal output
+   (service/content), NOT the Trigger screen's dark trace log — override the
+   #111 background so it isn't black. */
+.merged-shell .right-panel {
+  background: #ffffff;
+}
+
+/* Left panel of the Combined Simulator stacks the setup component (natural
+   height) over the run/output log (fills the rest, own scroll). */
+.merged-shell .left-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.merged-shell .left-panel > .merged-left-setup {
+  flex: 0 0 auto;
+  overflow-y: auto;
+  max-height: 60%;
+}
+.merged-shell .left-panel > .merged-left-log {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 2px solid #2a2a4a;
 }
 
 /* ── Modal primitive (020 Task 6) — net-new popup used by the Combined
@@ -114,6 +143,15 @@ body {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+/* Wide variant for editor popups that mount a full setup panel (Combined
+   Simulator — situation / package / driver-profile editors reused verbatim
+   from the Trigger & Proposal screens). The default 520px is too narrow for
+   those multi-column editors; this matches the real setup panels' width. */
+.modal-card--wide {
+  max-width: min(920px, 94vw);
+  width: 920px;
 }
 
 .modal-card .modal-header {
@@ -520,3 +558,80 @@ button[style*="width:100%"]:disabled {
   color: #9ca3af;
   margin-left: 4px;
 }
+
+/* Dual-handle ("2-dot") range slider — Combined-screen route-conditions painter.
+   The two <input type=range> overlap the full track, so pointer events must be
+   disabled on the tracks and re-enabled ONLY on the thumbs; otherwise the last
+   input in DOM order covers the whole track and only its (end) thumb is
+   reachable. The start input sits on top so it stays grabbable when the two
+   thumbs overlap. */
+.dual-range {
+  position: relative;
+  height: 26px;
+  margin-top: 4px;
+}
+/* Visible track rail (centered on the thumbs) so the slider is obviously
+   grabbable — without it the transparent tracks give no hint where to click. */
+.dual-range::before {
+  content: "";
+  position: absolute;
+  top: 11px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 2px;
+  background: #e2e8f0;
+  pointer-events: none;
+}
+/* The painted extent, drawn over the rail. */
+.dual-range .dual-range-fill {
+  position: absolute;
+  top: 11px;
+  height: 4px;
+  border-radius: 2px;
+  pointer-events: none;
+}
+.dual-range input[type="range"] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  margin: 0;
+  height: 26px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  pointer-events: none;
+}
+.dual-range input.range-start { z-index: 4; }
+.dual-range input.range-end { z-index: 3; }
+.dual-range input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 3px solid #64748b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: grab;
+  margin-top: 0;
+}
+.dual-range input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; }
+.dual-range input[type="range"]::-moz-range-thumb {
+  pointer-events: auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 3px solid #64748b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  cursor: grab;
+}
+.dual-range input[type="range"]::-moz-range-track { background: transparent; }
+/* Per-range thumb color so the two ranges read as distinct (mountain=green,
+   jam=red) — matches each slider's fill band + swatch. */
+.dual-range--mountain input[type="range"]::-webkit-slider-thumb { border-color: #16a34a; }
+.dual-range--mountain input[type="range"]::-moz-range-thumb { border-color: #16a34a; }
+.dual-range--jam input[type="range"]::-webkit-slider-thumb { border-color: #dc2626; }
+.dual-range--jam input[type="range"]::-moz-range-thumb { border-color: #dc2626; }

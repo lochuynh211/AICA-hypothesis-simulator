@@ -20,6 +20,8 @@
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MergedCoordinatorProvider, useMergedCoordinator } from '../src/state/mergedCoordinator'
+import { RunStoreProvider } from '../src/state/runStore'
+import MergedProposalPanel from '../src/components/merged/MergedProposalPanel'
 import type { MergedTickResponse } from '../src/api/mergedClient'
 import type { DecisionResult, ScenarioDef, RestSpot } from '../src/api/types'
 import type { ProposalRunLog, AlgorithmEvidence } from '../src/api/proposalClient'
@@ -30,6 +32,7 @@ vi.mock('../src/api/mergedClient', () => ({
   tickMergedRun: vi.fn(),
   mergedProposalAction: vi.fn(),
   acceptRest: vi.fn(),
+  declineRest: vi.fn(),
 }))
 
 vi.mock('../src/api/client', () => ({
@@ -37,7 +40,7 @@ vi.mock('../src/api/client', () => ({
   getRestSpots: vi.fn(),
 }))
 
-import { createMergedRun, tickMergedRun, mergedProposalAction, acceptRest } from '../src/api/mergedClient'
+import { createMergedRun, tickMergedRun, mergedProposalAction, acceptRest, declineRest } from '../src/api/mergedClient'
 import { getScenario, getRestSpots } from '../src/api/client'
 
 // ── fixtures ─────────────────────────────────────────────────────────────
@@ -303,10 +306,16 @@ function renderCenterPanel() {
     return null
   }
 
+  // Owner layout: rest-accept is in the center; the service/content overlays
+  // moved to the RIGHT panel (MergedProposalPanel). Both share the coordinator;
+  // the center's <MapSurface/> needs a RunStoreProvider.
   render(
     <MergedCoordinatorProvider>
-      <Capture />
-      <MergedCenterPanel />
+      <RunStoreProvider>
+        <Capture />
+        <MergedCenterPanel />
+        <MergedProposalPanel />
+      </RunStoreProvider>
     </MergedCoordinatorProvider>,
   )
 
@@ -318,7 +327,7 @@ describe('MergedCenterPanel — rest-accept UI + journey auto-drive', () => {
     vi.resetAllMocks()
   })
 
-  it('shows the rest-accept controls once a service is chosen for the before-rest proposal, and Accept-rest calls acceptRest with the selected option/spot/minutes', async () => {
+  it('shows the on-map rest overlay once a service is chosen, and choosing a rest spot calls acceptRest with the DEFAULT recovery option + spot (no picker)', async () => {
     vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_1', trigger_run_id: 'run_1' })
     vi.mocked(tickMergedRun)
       .mockResolvedValueOnce(firedTickWithProposal(45))
@@ -361,46 +370,51 @@ describe('MergedCenterPanel — rest-accept UI + journey auto-drive', () => {
       await coordinatorRef.current!.step()
     })
 
-    // Before a service is chosen, no rest-accept controls yet.
-    expect(screen.queryByTestId('accept-rest-button')).not.toBeInTheDocument()
+    // Before a service is chosen, no on-map rest overlay yet.
+    expect(screen.queryByTestId('rest-accept-panel')).not.toBeInTheDocument()
 
     await act(async () => {
       await coordinatorRef.current!.selectService('music_playlist')
     })
 
-    // Recovery options + rest spots are fetched via the SAME clients
-    // RecoveryPicker uses, once the affordance becomes eligible.
+    // The on-map rest overlay appears; rest spots are fetched via the SAME
+    // client RecoveryPicker uses, once the affordance becomes eligible.
     await waitFor(() => {
-      expect(screen.getByTestId('accept-rest-button')).toBeInTheDocument()
+      expect(screen.getByTestId('rest-accept-panel')).toBeInTheDocument()
     })
     expect(getScenario).toHaveBeenCalledWith('uc01_fatigue_recovery_v0_1')
     expect(getRestSpots).toHaveBeenCalledWith('run_1')
 
+    // A rest-spot option button (no recovery-option/nap picker — defaulted).
     await waitFor(() => {
-      expect(screen.getByTestId('recovery-option-select')).toHaveTextContent('Nap + karaoke')
-      expect(screen.getByTestId('rest-spot-select')).toHaveTextContent('Rest Area 1')
+      expect(screen.getByTestId('rest-spot-choice-spot_1')).toHaveTextContent('Rest Area 1')
     })
-
-    fireEvent.change(screen.getByTestId('recovery-option-select'), { target: { value: 'nap_karaoke' } })
-    fireEvent.change(screen.getByTestId('rest-spot-select'), { target: { value: 'spot_1' } })
-    fireEvent.change(screen.getByTestId('nap-minutes-input'), { target: { value: '15' } })
 
     await act(async () => {
-      fireEvent.click(screen.getByTestId('accept-rest-button'))
+      fireEvent.click(screen.getByTestId('rest-spot-choice-spot_1'))
     })
 
+    // Accepts with the DEFAULT (first non-postpone) recovery option +
+    // scenario-authored nap (nap_minutes: null) — no picker shown.
     expect(acceptRest).toHaveBeenCalledWith('mrun_1', {
       recovery_option_id: 'nap_karaoke',
       rest_spot: restSpotFixture,
-      nap_minutes: 15,
+      nap_minutes: null,
     })
 
-    // Let the resumed Play loop settle (it stops itself once the 2nd mocked
-    // tick reports paused: true) so no update happens after the test ends.
-    await waitFor(() => expect(tickMergedRun).toHaveBeenCalledTimes(2))
+    // Auto-selects the rank-1 content (service rank-1 was auto-selected at the
+    // fire) and STAYS paused — no auto-resume (owner review: stop for inspection
+    // until Continue). Only the single step() tick has fired.
+    await waitFor(() =>
+      expect(mergedProposalAction).toHaveBeenCalledWith('mrun_1', {
+        kind: 'select_service',
+        selected_service_id: 'music_playlist',
+      }),
+    )
+    expect(tickMergedRun).toHaveBeenCalledTimes(1)
   })
 
-  it('excludes postpone-flagged recovery options from the accept-rest select (review fix: selecting one would wrongly drive run_manager.action(..., "accept_rest", ...) with stages=[], leaving motion stuck MOVING forever)', async () => {
+  it('never accepts with a postpone-flagged recovery option (the default option chosen for a spot is the first NON-postpone one; postpone/decline is the Reject button)', async () => {
     vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_3', trigger_run_id: 'run_3' })
     vi.mocked(tickMergedRun).mockResolvedValueOnce(firedTickWithProposal(45))
     vi.mocked(mergedProposalAction).mockResolvedValue(
@@ -423,6 +437,8 @@ describe('MergedCenterPanel — rest-accept UI + journey auto-drive', () => {
     // this select.
     vi.mocked(getScenario).mockResolvedValue(scenarioFixture)
     vi.mocked(getRestSpots).mockResolvedValue({ rest_spots: [restSpotFixture] })
+    vi.mocked(acceptRest).mockResolvedValue({} as never)
+    vi.mocked(tickMergedRun).mockResolvedValue(afterRestTick(120))
 
     const coordinatorRef = renderCenterPanel()
 
@@ -446,13 +462,77 @@ describe('MergedCenterPanel — rest-accept UI + journey auto-drive', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByTestId('recovery-option-select')).toHaveTextContent('Nap + karaoke')
+      expect(screen.getByTestId('rest-spot-choice-spot_1')).toBeInTheDocument()
     })
 
-    const select = screen.getByTestId('recovery-option-select') as HTMLSelectElement
-    const optionValues = Array.from(select.options).map((o) => o.value)
-    expect(optionValues).not.toContain('postpone')
-    expect(screen.queryByRole('option', { name: 'Postpone' })).not.toBeInTheDocument()
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('rest-spot-choice-spot_1'))
+    })
+
+    // The postpone-flagged option (scenarioFixture has one) is filtered out, so
+    // the default option used for accept is the first NON-postpone one.
+    expect(acceptRest).toHaveBeenCalledWith(
+      'mrun_3',
+      expect.objectContaining({ recovery_option_id: 'nap_karaoke' }),
+    )
+    expect(acceptRest).not.toHaveBeenCalledWith('mrun_3', expect.objectContaining({ recovery_option_id: 'postpone' }))
+  })
+
+  it('the on-map Reject button declines the rest and resumes ticking (no recovery started)', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_rej', trigger_run_id: 'run_rej' })
+    vi.mocked(tickMergedRun)
+      .mockResolvedValueOnce(firedTickWithProposal(45))
+      .mockResolvedValueOnce(afterRestTick(120))
+    vi.mocked(mergedProposalAction).mockResolvedValue(
+      baseProposalLog({
+        status: 'content_selected',
+        journey_state: {
+          lifecycle_stage: 'before_rest_until_stop',
+          motion_state: 'stopped',
+          active_service_id: 'music_playlist',
+          active_plan_id: 'plan_1',
+        },
+        evidence: [serviceEvidence('music_playlist')],
+      }),
+    )
+    vi.mocked(getScenario).mockResolvedValue(scenarioFixture)
+    vi.mocked(getRestSpots).mockResolvedValue({ rest_spots: [restSpotFixture] })
+    vi.mocked(declineRest).mockResolvedValue({} as never)
+
+    const coordinatorRef = renderCenterPanel()
+
+    await act(async () => {
+      await coordinatorRef.current!.create(
+        {
+          trigger_plan_id: 'plan_1',
+          world: {} as never,
+          service_package_id: 'mock_service_selector_v1',
+          content_package_id: 'mock_content_selector_v1',
+          run_seed: '7',
+        },
+        'uc01_fatigue_recovery_v0_1',
+      )
+    })
+    await act(async () => {
+      await coordinatorRef.current!.step()
+    })
+    await act(async () => {
+      await coordinatorRef.current!.selectService('music_playlist')
+    })
+    await waitFor(() => {
+      expect(screen.getByTestId('rest-reject-button')).toBeInTheDocument()
+    })
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('rest-reject-button'))
+    })
+
+    // Reject calls the decline endpoint and resumes the tick loop (no acceptRest).
+    expect(declineRest).toHaveBeenCalledWith('mrun_rej')
+    expect(acceptRest).not.toHaveBeenCalled()
+    await waitFor(() => expect(tickMergedRun).toHaveBeenCalledTimes(2))
+    // The overlay is gone (the declined proposal was cleared).
+    expect(screen.queryByTestId('rest-accept-panel')).not.toBeInTheDocument()
   })
 
   it('renders the after-rest service overlay once the journey advances to after_rest_before_restart, with no new dock logic', async () => {
@@ -497,27 +577,30 @@ describe('MergedCenterPanel — rest-accept UI + journey auto-drive', () => {
       await coordinatorRef.current!.selectService('music_playlist')
     })
     await waitFor(() => {
-      expect(screen.getByTestId('accept-rest-button')).toBeInTheDocument()
+      expect(screen.getByTestId('rest-spot-choice-spot_1')).toHaveTextContent('Rest Area 1')
+    })
+
+    // Choose the rest spot — accepts + auto-selects content, then STAYS paused
+    // (owner review). The overlay hides once the decision is made.
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('rest-spot-choice-spot_1'))
     })
     await waitFor(() => {
-      expect(screen.getByTestId('rest-spot-select')).toHaveTextContent('Rest Area 1')
+      expect(screen.queryByTestId('rest-accept-panel')).not.toBeInTheDocument()
     })
-    fireEvent.change(screen.getByTestId('recovery-option-select'), { target: { value: 'nap_karaoke' } })
-    fireEvent.change(screen.getByTestId('rest-spot-select'), { target: { value: 'spot_1' } })
+    expect(tickMergedRun).toHaveBeenCalledTimes(1) // paused after accept, not auto-resumed
 
-    // Accept rest — the coordinator continues Play, driving the tick loop
-    // (Task 3's server-side auto-drive) until the mocked after-rest tick
-    // reports paused again.
+    // Press Continue (the Play button resumes) — NOW the tick loop auto-drives
+    // the rest journey until the mocked after-rest tick reports paused again.
     await act(async () => {
-      fireEvent.click(screen.getByTestId('accept-rest-button'))
+      fireEvent.click(screen.getByTestId('merged-play-button'))
+      await Promise.resolve()
+      await Promise.resolve()
     })
 
     await waitFor(() => {
       expect(tickMergedRun).toHaveBeenCalledTimes(2)
     })
-
-    // The rest-accept affordance is gone (no longer before_rest_until_stop)…
-    expect(screen.queryByTestId('accept-rest-button')).not.toBeInTheDocument()
     // …and the SAME (unmodified) dock logic renders the fresh after-rest
     // service decision, keyed purely off proposalLog.evidence/journey_state.
     await waitFor(() => {

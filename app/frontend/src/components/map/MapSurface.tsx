@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRunStore } from '../../state/runStore'
+import type { RestSpot } from '../../api/types'
 import { useRouteProgress } from '../playback/useRouteProgress'
 import { useSmoothFraction } from '../playback/useSmoothFraction'
 
@@ -87,7 +88,19 @@ function slicePath(path: any[], cum: number[], total: number, fStart: number, fE
   return pts
 }
 
-export default function MapSurface() {
+export default function MapSurface({
+  fractionOverride,
+  proposalFractionsOverride,
+  restSpotsOverride,
+}: {
+  fractionOverride?: number | null
+  /** Decision/fire positions (route_fraction 0-1) — the Combined Simulator feeds
+   * these from its coordinator (the merged run has no runStore trace). */
+  proposalFractionsOverride?: number[]
+  /** Accepted rest spots — the Combined Simulator feeds these from its
+   * coordinator (no runStore `restHistory`). */
+  restSpotsOverride?: RestSpot[]
+} = {}) {
   const { state } = useRunStore()
   const { mapsKey, alternatives, selectedRouteId } = state
 
@@ -95,7 +108,7 @@ export default function MapSurface() {
   // restHistory so the gold markers persist after recovery ends instead of
   // vanishing with the transient recovery.rest_spot. Drives both the
   // geographic markers and the DOM-overlay fallback markers.
-  const restSpots = state.restHistory.map((r) => r.spot)
+  const restSpots = restSpotsOverride ?? state.restHistory.map((r) => r.spot)
 
   // mapsReady: true when the Google Maps SDK is available (either pre-loaded or
   // after the async script callback fires). Drives the map-init useEffect so
@@ -117,7 +130,13 @@ export default function MapSurface() {
   const display = selectedAlt?.display ?? null
 
   // ── Route position (shared, clamped) + eased car fraction ─────────────────
-  const { currentFraction, proposalFractions } = useRouteProgress()
+  // `fractionOverride` (feature 020) lets the Combined Simulator drive the car
+  // from its coordinator's live `route_fraction` — the merged run has no
+  // runStore run, so `useRouteProgress()` (runStore-driven) would stay at 0.
+  // Omitted everywhere else → byte-identical store-driven behavior.
+  const { currentFraction: storeFraction, proposalFractions: storeProposalFractions } = useRouteProgress()
+  const currentFraction = fractionOverride ?? storeFraction
+  const proposalFractions = proposalFractionsOverride ?? storeProposalFractions
   const positionPct = `${Math.round(currentFraction * 100)}%`
   const shownFraction = useSmoothFraction(currentFraction)
 

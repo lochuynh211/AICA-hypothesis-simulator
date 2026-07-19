@@ -249,3 +249,55 @@ def test_plan_endpoint_unknown_scenario_400():
         },
     )
     assert resp.status_code == 400
+
+
+# ── Situation overrides threaded from the Combined Situation editor ───────────
+# (feature 020 exact-reuse redesign): a PAINTED plan must respect the trigger
+# fixed-conditions / speed / initial-signal edits made in the Combined Situation
+# editor, threaded into the same create_draft the run-plans router uses, with the
+# SAME validation rejections on the unpainted path.
+
+
+def test_plan_endpoint_accepts_valid_situation_overrides():
+    """context_overrides / initial_state / profiles are accepted and the draft
+    is registered — the merged Situation editor's fixed-conditions, initial
+    drowsiness/fatigue, and speed edits reach the painted trigger plan."""
+    plan_id = _create_merged_plan(
+        context_overrides={"is_night": True, "child_passenger": True},
+        initial_state={"drowsiness_level": 90.0},
+        profiles={"speed": {"highway_kph": 88.0}},
+    )
+    entry = get_draft_entry(plan_id)
+    assert entry is not None, "plan_id must be registered even with situation overrides"
+    draft, _package, _scenario = entry
+    # The speed override deep-merges onto the effective scenario's speed_profile,
+    # surfaced in the draft's effective_setup (same path the run-plans router uses).
+    assert draft.effective_setup["speed_profile"]["highway_kph"] == pytest.approx(88.0)
+
+
+def test_plan_endpoint_rejects_invalid_context_override_400():
+    resp = client.post(
+        "/api/merged-runs/plan",
+        json={
+            "package_id": _TRIGGER_PACKAGE_ID,
+            "scenario_id": _TRIGGER_SCENARIO_ID,
+            "run_seed": 1,
+            "context_overrides": {"is_night": "yes"},  # must be a boolean
+        },
+    )
+    assert resp.status_code == 400
+    assert "context_overrides" in json.dumps(resp.json())
+
+
+def test_plan_endpoint_rejects_invalid_initial_state_400():
+    resp = client.post(
+        "/api/merged-runs/plan",
+        json={
+            "package_id": _TRIGGER_PACKAGE_ID,
+            "scenario_id": _TRIGGER_SCENARIO_ID,
+            "run_seed": 1,
+            "initial_state": {"drowsiness_level": 150.0},  # out of [0, 100]
+        },
+    )
+    assert resp.status_code == 400
+    assert "initial_state" in json.dumps(resp.json())

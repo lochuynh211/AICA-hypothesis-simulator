@@ -1,476 +1,494 @@
 /**
- * MergedSetupPanel — left setup panel for the Combined Simulator (020 Task
- * 8, replacing the Task-6 stub).
+ * MergedSetupPanel — left setup panel for the Combined Simulator (feature 020,
+ * owner-review redesign: EXACT reuse of the Trigger + Proposal setup editors).
  *
- * Six collapsed summary buttons, each opening a `Modal` (Task 6) popup.
- * Slice-1 keeps only three FUNCTIONAL: Route, Scenario, Packages (trigger +
- * service + content). Driver Profile / Situation / Run show read-only
- * summaries of the default `World` fetched from a feature-018 proposal
- * preset — no editing surface yet (a later 020 task upgrades them).
+ * The panel is a column of INLINE dropdowns, each with an "Edit" button that
+ * opens a WIDE editor popup mounting the *identical* component the Trigger /
+ * Proposal screens use — not a reimplementation:
+ *   - Route:            preset dropdown + Google-Maps (BYO key) disclosure.
+ *   - Situation:        scenario dropdown; Edit popup = the merged A/B/C fields —
+ *                       trigger FixedConditions / Speed / Simulated signals
+ *                       (`setup/situation/*`) + proposal route/destination tags &
+ *                       passenger flag (`SituationFieldRows`) + the mountain/jam
+ *                       PAINT bands. Drowsiness/fatigue/monotony/traffic/road are
+ *                       computed LIVE by the tick engine — not set here.
+ *   - Driver profile:   dropdown over the 16 DISTINCT driver profiles embedded in
+ *                       the 32 committed presets (NOT the old 4-profile store);
+ *                       Edit popup = `PreferenceHistorySection` (editable
+ *                       preference + history).
+ *   - Trigger package:  Edit popup = `AlgorithmFormulationPanel` (verbatim).
+ *   - Service/Content package: Edit popup = `Service/ContentSetupSection`
+ *                       (the proposal panels' setup blocks, verbatim).
  *
- * "Start run" does three network round-trips in sequence:
- *   (a) `POST /api/run-plans` (`client.ts` `createRunPlan`) from the
- *       selected route preset + scenario + trigger package + a locally
- *       generated numeric run seed → `plan_id`.
- *   (b) a default typed `World`, resolved from `proposalClient` via
- *       `getPreset(DEFAULT_PRESET_ID)` (the feature-018 reference journey
- *       preset), falling back to the first preset returned by `getPresets()`
- *       when that id isn't present. Fetched once on mount (so the read-only
- *       popups have something to show before Start is ever clicked) and
- *       reused here rather than re-fetched.
- *   (c) `useMergedCoordinator().create({ trigger_plan_id, world,
- *       service_package_id, content_package_id, run_seed })`.
- *
- * Deliberately standalone: does NOT import `useRunStore` or
- * `useProposalStore` (020 isolation constraint — see CLAUDE.md), so the
- * existing `PackageSelector`/`ScenarioSelector`/`MapKeyAndRouteInput`
- * components (all hard-wired to `useRunStore`) don't drop in here; this
- * panel uses its own plain `<select>`s (bare-select CSS convention) fed by
- * the SAME `client.ts`/`proposalClient` fetch functions instead.
+ * The editors are store-driven, so the panel mounts a SCOPED `RunStoreProvider`
+ * + `ProposalStoreProvider` (see `MergedShell`) and seeds/reads them: the
+ * dropdowns dispatch selection; the popups read/write the same scoped stores;
+ * Play/quickview read the stores to build the run. This relaxes the earlier
+ * "no store" isolation of this panel — the owner explicitly required exact reuse
+ * of the store-driven editors. The center/log panels stay coordinator-only.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Modal from './Modal'
 import ErrorNotice from '../common/ErrorNotice'
 import RouteConditionsPainter, { type KmRange } from './RouteConditionsPainter'
+import AlgorithmFormulationPanel from '../setup/AlgorithmFormulationPanel'
+import FixedConditionsSection from '../setup/situation/FixedConditionsSection'
+import SpeedProfileSection from '../setup/situation/SpeedProfileSection'
+import SimulatedSignalsSection from '../setup/situation/SimulatedSignalsSection'
+import SituationFieldRows from '../proposal/panels/sections/SituationFieldRows'
+import PreferenceHistorySection from '../proposal/panels/sections/PreferenceHistorySection'
+import ServiceSetupSection from '../proposal/panels/sections/ServiceSetupSection'
+import ContentSetupSection from '../proposal/panels/sections/ContentSetupSection'
+import { SITUATION_FIELDS } from '../proposal/panels/sections/worldFields'
 import {
-  listRoutePresets,
-  loadRoutePreset,
-  listScenarios,
-  listPackages,
+  listRoutePresets, loadRoutePreset, routesAnalyze, listScenarios, listPackages, getScenario,
   createRunPlan,
 } from '../../api/client'
-import type { PackageSummary, ScenarioSummary, RoutePresetSummary, RouteEnvelope } from '../../api/types'
-import { getPackages, getPresets, getPreset } from '../../api/proposalClient'
-import type { ProposalPackageSummary, World } from '../../api/proposalClient'
+import { MapsError } from '../../api/types'
+import type {
+  PackageSummary, ScenarioSummary, RoutePresetSummary, RouteAlternative, RouteEnvelope, ScenarioDef, SetupValue,
+} from '../../api/types'
+import { getPackages, getPreset, getPresets } from '../../api/proposalClient'
+import type { ProposalPackageSummary, DriverProfile } from '../../api/proposalClient'
 import { buildMergedPlan } from '../../api/mergedClient'
 import { useMergedCoordinator } from '../../state/mergedCoordinator'
+import { useRunStore } from '../../state/runStore'
+import { useProposalStore } from '../../state/proposalStore'
 
-/** The feature-018 reference "journey A, stage 1" preset — the default
- * world a merged run starts from when the reviewer hasn't picked one
- * explicitly (slice-1 has no world-editing surface yet). */
 const DEFAULT_PRESET_ID = 'preset-journey-a-1-cruising-fresh-monotonous'
+type EditKey = 'situation' | 'profile' | 'trigger' | 'service' | 'content' | null
 
-type ModalKey = 'route' | 'scenario' | 'packages' | 'profile' | 'situation' | 'run' | null
+// Scenarios hidden from the Combined scenario picker (owner review): the uc02
+// "Aoi Sato" monotony scenario is kept on disk (the monotony path + its backend
+// tests depend on it) but is not offered here.
+const HIDDEN_SCENARIO_IDS = new Set(['uc02_monotony_v0_1'])
 
-const groupButtonStyle: React.CSSProperties = {
-  width: '100%',
-  textAlign: 'left',
-  marginBottom: '6px',
-}
+/** One distinct driver profile sourced from a committed preset (feature 020). */
+type ProfileOption = { key: string; label: string; profile: DriverProfile }
 
-const fieldLabelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: '0.8em',
-  color: '#666',
-  marginBottom: '2px',
-  marginTop: '8px',
-}
+// The setup-time proposal situation fields shown in the merged Situation popup —
+// the SCORED fields that are NOT computed live by the tick engine (drowsiness /
+// fatigue / monotony / traffic / road / night / child come from the trigger side
+// or the live engine). See worldFields.SITUATION_FIELDS.
+const MERGED_SITUATION_KEYS = ['route_tags', 'destination_tags', 'multiple_passengers']
 
-const summaryRowStyle: React.CSSProperties = { fontSize: '0.82em', margin: '4px 0' }
+const fieldLabel: React.CSSProperties = { display: 'block', fontSize: '0.8em', fontWeight: 700, color: '#334155', margin: '10px 0 3px' }
+const selectStyle: React.CSSProperties = { width: '100%', fontSize: '0.82em', padding: '5px' }
+const rowStyle: React.CSSProperties = { display: 'flex', gap: '6px', alignItems: 'center' }
+const editBtnStyle: React.CSSProperties = { flexShrink: 0, fontSize: '0.78em', padding: '4px 8px' }
+const summaryRow: React.CSSProperties = { fontSize: '0.82em', margin: '4px 0' }
+const inputStyle: React.CSSProperties = { width: '100%', fontSize: '0.8em', padding: '4px' }
+const groupLabel: React.CSSProperties = { fontSize: '0.72em', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6b7280', margin: '14px 0 4px' }
+
+/** Stable-ish dedup key for a driver profile object (schema key order is
+ * consistent across presets, so JSON.stringify is sufficient here). */
+const profileKey = (p: DriverProfile): string => JSON.stringify(p)
 
 export default function MergedSetupPanel() {
   const coordinator = useMergedCoordinator()
+  const runStore = useRunStore()
+  const proposalStore = useProposalStore()
+  const rs = runStore.state
+  const ps = proposalStore.state
 
-  const [openModal, setOpenModal] = useState<ModalKey>(null)
-
-  // Route
+  // Panel-local registries + selection bookkeeping (the stores hold the edits).
+  // The ROUTE stays panel-local (NOT in runStore): SELECT_SCENARIO clears a
+  // local-source route as a per-scenario reset, which would wipe a chosen route
+  // preset whenever the scenario is (re)selected. The route is only read here to
+  // build the trigger plan, so keeping it local avoids that interaction.
   const [routePresets, setRoutePresets] = useState<RoutePresetSummary[]>([])
   const [selectedRoutePresetId, setSelectedRoutePresetId] = useState<string | null>(null)
   const [routeEnvelope, setRouteEnvelope] = useState<RouteEnvelope | null>(null)
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
   const [loadingRoute, setLoadingRoute] = useState(false)
-  // Route-conditions painter (Slice-2b Task 4): null means "not painted" —
-  // Start keeps the existing plain createRunPlan path when both stay null.
+  // Maps API key lives in the scoped runStore (pre-filled from
+  // VITE_GOOGLE_MAPS_KEY in its initialState, exactly like the Trigger screen)
+  // so the zero-prop <MapSurface/> reads the same key. Start/end stay local.
+  const [mapsStart, setMapsStart] = useState('')
+  const [mapsEnd, setMapsEnd] = useState('')
+  const [analyzing, setAnalyzing] = useState(false)
+  const [mapsErrorMsg, setMapsErrorMsg] = useState<string | null>(null)
+
+  const [scenarios, setScenarios] = useState<ScenarioSummary[]>([])
+  const [triggerPackages, setTriggerPackages] = useState<PackageSummary[]>([])
+  const [servicePackages, setServicePackages] = useState<ProposalPackageSummary[]>([])
+  const [contentPackages, setContentPackages] = useState<ProposalPackageSummary[]>([])
+
+  // Driver-profile options: the 16 DISTINCT profiles embedded in the 32 presets.
+  const [profileOptions, setProfileOptions] = useState<ProfileOption[]>([])
+  const [selectedProfileKey, setSelectedProfileKey] = useState<string | null>(null)
+
+  // The resolved ScenarioDef (for the trigger situation sections' defaults).
+  const [scenarioDef, setScenarioDef] = useState<ScenarioDef | null>(null)
+
+  // Situation paint bands (mountain / jam) — merged-screen-local (there is no
+  // scenario JSON for these; painted onto the resolved route at build time).
   const [mountainRange, setMountainRange] = useState<KmRange | null>(null)
   const [jamRange, setJamRange] = useState<KmRange | null>(null)
 
-  // Scenario
-  const [scenarios, setScenarios] = useState<ScenarioSummary[]>([])
-  const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null)
-
-  // Packages
-  const [triggerPackages, setTriggerPackages] = useState<PackageSummary[]>([])
-  const [selectedTriggerPackageId, setSelectedTriggerPackageId] = useState<string | null>(null)
-  const [servicePackages, setServicePackages] = useState<ProposalPackageSummary[]>([])
-  const [selectedServicePackageId, setSelectedServicePackageId] = useState<string | null>(null)
-  const [contentPackages, setContentPackages] = useState<ProposalPackageSummary[]>([])
-  const [selectedContentPackageId, setSelectedContentPackageId] = useState<string | null>(null)
-
-  // Default World (feeds the read-only Driver Profile / Situation popups AND "Start run")
-  const [defaultWorld, setDefaultWorld] = useState<World | null>(null)
-
-  // A single run seed, generated once per panel mount and reused for both
-  // the trigger run-plan (numeric) and the merged create call (its string form).
-  const [runSeed] = useState(() => Math.floor(Math.random() * 1_000_000_000))
-
-  const [starting, setStarting] = useState(false)
+  const [openEdit, setOpenEdit] = useState<EditKey>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Quickview (feature 020, Slice-2c Task 5) — a dedicated button rather than
-  // folding into "Start run": it's an ephemeral, non-persisting projection,
-  // independent of mergedRunId/create(), so it must work standalone without
-  // entangling with the Start flow's own two-round-trip sequencing/tests.
-  const [runningQuickview, setRunningQuickview] = useState(false)
-
+  // ── Load registries + seed both scoped stores (auto-select first of each) ───
   useEffect(() => {
     listRoutePresets()
-      .then((res) => setRoutePresets(res.presets))
+      .then((r) => { setRoutePresets(r.presets); if (r.presets[0]) void handleSelectRoutePreset(r.presets[0].id) })
       .catch(() => setError('Failed to load route presets'))
     listScenarios()
-      .then((res) => setScenarios(res.scenarios))
+      .then((r) => { setScenarios(r.scenarios); runStore.dispatch({ type: 'LOAD_SCENARIOS', scenarios: r.scenarios }) })
       .catch(() => setError('Failed to load scenarios'))
     listPackages()
-      .then((res) => setTriggerPackages(res.packages))
+      .then((r) => {
+        setTriggerPackages(r.packages)
+        runStore.dispatch({ type: 'LOAD_PACKAGES', packages: r.packages })
+        if (r.packages[0]) runStore.dispatch({ type: 'SELECT_PACKAGE', id: r.packages[0].id })
+      })
       .catch(() => setError('Failed to load trigger packages'))
     getPackages()
-      .then((res) => {
-        setServicePackages(res.packages.filter((p) => p.family === 'service_selector'))
-        setContentPackages(res.packages.filter((p) => p.family === 'content_selector'))
+      .then((r) => {
+        const svc = r.packages.filter((p) => p.family === 'service_selector')
+        const cnt = r.packages.filter((p) => p.family === 'content_selector')
+        setServicePackages(svc); if (svc[0]) proposalStore.dispatch({ type: 'SET_SERVICE_PACKAGE', packageId: svc[0].id })
+        setContentPackages(cnt); if (cnt[0]) proposalStore.dispatch({ type: 'SET_CONTENT_PACKAGE', packageId: cnt[0].id })
       })
       .catch(() => setError('Failed to load service/content packages'))
-    loadDefaultWorld()
-      .then((world) => setDefaultWorld(world))
-      .catch(() => setError('Failed to load default world'))
-    // Intentionally run once on mount — the registries don't change at runtime.
+    // Seed the world (situation + driver_profile) from the default preset.
+    loadDefaultPresetWorld().catch(() => setError('Failed to load default preset'))
+    // Build the distinct-driver-profile dropdown from the 32 presets.
+    loadPresetProfiles().catch(() => { /* profiles optional */ })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  /** Resolve the default World from the feature-018 reference preset,
-   * falling back to the first preset returned by `getPresets()` when the
-   * reference id isn't present in this deployment. */
-  async function loadDefaultWorld(): Promise<World> {
-    try {
-      const preset = await getPreset(DEFAULT_PRESET_ID)
-      return preset.world
-    } catch {
+  // Auto-select the first COMPATIBLE scenario once scenarios + trigger pkg known.
+  useEffect(() => {
+    if (scenarios.length === 0) return
+    const compatible = compatibleScenarios
+    if (compatible.length > 0 && !compatible.some((s) => s.id === rs.selectedScenarioId)) {
+      runStore.dispatch({ type: 'SELECT_SCENARIO', id: compatible[0].id })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scenarios, rs.selectedPackageId])
+
+  // Resolve the ScenarioDef whenever the selected scenario changes (the trigger
+  // situation sections need it for their defaults).
+  useEffect(() => {
+    if (!rs.selectedScenarioId) { setScenarioDef(null); return }
+    let cancelled = false
+    getScenario(rs.selectedScenarioId)
+      .then((def) => { if (!cancelled) setScenarioDef(def) })
+      .catch(() => { if (!cancelled) setScenarioDef(null) })
+    return () => { cancelled = true }
+  }, [rs.selectedScenarioId])
+
+  async function loadDefaultPresetWorld() {
+    let preset
+    try { preset = await getPreset(DEFAULT_PRESET_ID) } catch {
       const { presets } = await getPresets()
       if (presets.length === 0) throw new Error('No proposal presets available')
-      const preset = await getPreset(presets[0].preset_id)
-      return preset.world
+      preset = await getPreset(presets[0].preset_id)
     }
+    proposalStore.dispatch({ type: 'LOAD_PRESET', presetId: preset.preset_id, world: preset.world, overrides: preset.algorithm_config_overrides })
+    setSelectedProfileKey(profileKey(preset.world.driver_profile))
+  }
+
+  async function loadPresetProfiles() {
+    const { presets } = await getPresets()
+    const details = await Promise.all(presets.map((p) => getPreset(p.preset_id).catch(() => null)))
+    const seen = new Map<string, ProfileOption>()
+    for (const d of details) {
+      if (!d) continue
+      const key = profileKey(d.world.driver_profile)
+      if (!seen.has(key)) seen.set(key, { key, label: d.label.en, profile: d.world.driver_profile })
+    }
+    setProfileOptions(Array.from(seen.values()))
   }
 
   async function handleSelectRoutePreset(presetId: string) {
-    setSelectedRoutePresetId(presetId)
+    setSelectedRoutePresetId(presetId); setMapsErrorMsg(null)
+    if (!presetId) { setRouteEnvelope(null); setSelectedRouteId(null); return }
     setLoadingRoute(true)
-    setError(null)
     try {
-      const envelope = await loadRoutePreset(presetId)
-      setRouteEnvelope(envelope)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load route preset')
-    } finally {
-      setLoadingRoute(false)
-    }
+      const env = await loadRoutePreset(presetId)
+      setRouteEnvelope(env); setSelectedRouteId(env.alternatives[0]?.route_id ?? null)
+    } catch (e) { setError(e instanceof Error ? e.message : 'Failed to load route preset') } finally { setLoadingRoute(false) }
   }
 
-  const compatibleScenarios = (() => {
-    const pkg = triggerPackages.find((p) => p.id === selectedTriggerPackageId)
-    return pkg ? scenarios.filter((s) => pkg.compatible_scenario_types.includes(s.type)) : scenarios
-  })()
-
-  async function handleStart() {
-    if (
-      !routeEnvelope ||
-      !selectedScenarioId ||
-      !selectedTriggerPackageId ||
-      !selectedServicePackageId ||
-      !selectedContentPackageId
-    ) {
-      setError('Select a route, scenario, and all three packages before starting.')
-      return
-    }
-    setStarting(true)
-    setError(null)
+  async function handleAnalyzeMaps() {
+    setAnalyzing(true); setMapsErrorMsg(null)
     try {
-      let planId: string
-      if (mountainRange || jamRange) {
-        // A painter range is set — build a "painted" plan (Slice-2b Task 2)
-        // instead of the plain run-plan path below.
-        const painted = await buildMergedPlan({
-          package_id: selectedTriggerPackageId,
-          scenario_id: selectedScenarioId,
-          route_preset_id: selectedRoutePresetId,
-          run_seed: runSeed,
-          mountain_range_km: mountainRange,
-          jam_range_km: jamRange,
-        })
-        planId = painted.plan_id
-      } else {
-        const alt = routeEnvelope.alternatives[0]
-        const plan = await createRunPlan({
-          packageId: selectedTriggerPackageId,
-          scenarioId: selectedScenarioId,
-          routeId: alt.route_id,
-          routeSource: routeEnvelope.route_source,
-          routeFacts: alt.route_facts,
-          displayRoute: alt.display,
-          runSeed,
-        })
-        planId = plan.plan_id
-      }
-      const world = defaultWorld ?? (await loadDefaultWorld())
-      await coordinator.create(
-        {
-          trigger_plan_id: planId,
-          world,
-          service_package_id: selectedServicePackageId,
-          content_package_id: selectedContentPackageId,
-          run_seed: String(runSeed),
-        },
-        // Local-only bookkeeping (never sent to the backend — see
-        // mergedCoordinator's `create()` docstring): lets MergedCenterPanel's
-        // rest-accept affordance later resolve `recovery_options` via
-        // `getScenario(scenarioId)`, the same client RecoveryPicker uses.
-        selectedScenarioId,
-      )
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to start run')
-    } finally {
-      setStarting(false)
-    }
+      const env = await routesAnalyze({ scenarioId: rs.selectedScenarioId || undefined, mapsKey: rs.mapsKey || undefined, start: mapsStart || undefined, end: mapsEnd || undefined })
+      setSelectedRoutePresetId(null); setRouteEnvelope(env); setSelectedRouteId(env.alternatives[0]?.route_id ?? null)
+    } catch (err) { setMapsErrorMsg(err instanceof MapsError ? err.body.message : err instanceof Error ? err.message : 'Route analysis failed') } finally { setAnalyzing(false) }
   }
 
-  /** Runs `coordinator.quickview()` — an ephemeral whole-chain projection
-   * (feature 020, Slice-2c Task 5). Reuses the SAME selected scenario/package
-   * ids and default `World` "Start run" does, but never calls
-   * `createRunPlan`/`buildMergedPlan`/`coordinator.create` — the quickview
-   * endpoint resolves its own route server-side from `route_preset_id`
-   * (falling back to the scenario's local route when none is selected), so
-   * no `routeEnvelope` round-trip is needed first. */
-  async function handleQuickview() {
-    if (
-      !selectedScenarioId ||
-      !selectedTriggerPackageId ||
-      !selectedServicePackageId ||
-      !selectedContentPackageId
-    ) {
-      setError('Select a scenario and all three packages before running a quickview.')
-      return
-    }
-    setRunningQuickview(true)
-    setError(null)
-    try {
-      const world = defaultWorld ?? (await loadDefaultWorld())
-      await coordinator.quickview({
-        package_id: selectedTriggerPackageId,
-        scenario_id: selectedScenarioId,
-        route_preset_id: selectedRoutePresetId,
-        run_seed: runSeed,
-        mountain_range_km: mountainRange,
-        jam_range_km: jamRange,
-        world,
-        service_package_id: selectedServicePackageId,
-        content_package_id: selectedContentPackageId,
-        run_seed_proposal: String(runSeed),
+  // Mirror the panel-local route into the scoped runStore so the zero-prop
+  // <MapSurface/> (useRunStore-driven) can render the selected route's map.
+  // Re-runs after SELECT_SCENARIO (which clears a runStore route) to re-sync;
+  // real preset/maps routes are route_source 'maps', so this stays stable.
+  useEffect(() => {
+    if (!routeEnvelope) return
+    runStore.dispatch({ type: 'SET_ALTERNATIVES', envelope: routeEnvelope })
+    if (selectedRouteId) runStore.dispatch({ type: 'SELECT_ROUTE', routeId: selectedRouteId })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeEnvelope, selectedRouteId, rs.selectedScenarioId])
+
+  function handleSelectProfile(key: string) {
+    const opt = profileOptions.find((o) => o.key === key)
+    if (!opt) return
+    setSelectedProfileKey(key)
+    // LOAD_PROFILE replaces ONLY world.driver_profile — the user's situation
+    // edits are preserved (unlike LOAD_PRESET, which replaces the whole world).
+    proposalStore.dispatch({ type: 'LOAD_PROFILE', profileId: opt.key, profile: opt.profile })
+  }
+
+  const compatibleScenarios = useMemo(() => {
+    const visible = scenarios.filter((s) => !HIDDEN_SCENARIO_IDS.has(s.id))
+    const pkg = triggerPackages.find((p) => p.id === rs.selectedPackageId)
+    return pkg ? visible.filter((s) => pkg.compatible_scenario_types.includes(s.type)) : visible
+  }, [triggerPackages, rs.selectedPackageId, scenarios])
+
+  const chosenAlt: RouteAlternative | null =
+    routeEnvelope?.alternatives.find((a) => a.route_id === selectedRouteId) ?? routeEnvelope?.alternatives[0] ?? null
+  const totalKm = chosenAlt?.route_facts.total_route_distance_km ?? 100
+
+  // Traffic-jam speed for a painted jam comes from the Situation editor's speed
+  // profile (B · Live speed by road type → "Traffic jam"), NOT a second control
+  // (owner review — the duplicate input was removed). Falls back to 15 km/h when
+  // the scenario has no speed profile.
+  const jamSpeedKph = useMemo(() => {
+    const override = (rs.profileOverrides?.speed as Record<string, number> | undefined)?.traffic_jam_kph
+    if (override != null) return override
+    const fromScenario = (scenarioDef?.speed_profile as Record<string, number> | undefined)?.traffic_jam_kph
+    return fromScenario ?? 15
+  }, [rs.profileOverrides, scenarioDef])
+
+  // Effective world = the edited proposal world with night/child SYNCED from the
+  // trigger fixed-conditions (the "merge from both screens" the owner asked for);
+  // an absent context override keeps the preset's own value.
+  const effectiveWorld = useMemo(() => {
+    const s = { ...ps.world.situation }
+    if (rs.contextOverrides.is_night !== undefined) s.night_state = rs.contextOverrides.is_night ? 'night' : 'day'
+    if (rs.contextOverrides.child_passenger !== undefined) s.child_present = Boolean(rs.contextOverrides.child_passenger)
+    return { ...ps.world, situation: s }
+  }, [ps.world, rs.contextOverrides])
+
+  const isComplete =
+    rs.selectedPackageId != null && rs.selectedScenarioId != null && chosenAlt != null &&
+    ps.servicePackageId != null && ps.contentPackageId != null
+
+  // Build the trigger run-plan from the scoped runStore (mirrors
+  // InstantResultStrip.handleOpenFullRun), painting mountain/jam when set.
+  async function buildTriggerPlan(): Promise<string> {
+    const presets: Record<string, unknown> = rs.tickSecondsOverride != null ? { tick_seconds: rs.tickSecondsOverride } : {}
+    const initialState: { drowsiness_level?: number; fatigue_level?: number } = {}
+    if (rs.initialDrowsiness != null) initialState.drowsiness_level = rs.initialDrowsiness
+    if (rs.initialFatigue != null) initialState.fatigue_level = rs.initialFatigue
+
+    if (mountainRange || jamRange) {
+      const painted = await buildMergedPlan({
+        package_id: rs.selectedPackageId!, scenario_id: rs.selectedScenarioId!, route_preset_id: selectedRoutePresetId,
+        run_seed: rs.runSeed, mountain_range_km: mountainRange, jam_range_km: jamRange, jam_speed_kph: jamSpeedKph,
+        presets, parameters: rs.editedParameters, hyperparameters: rs.editedHyperparameters,
+        profiles: rs.profileOverrides ?? undefined,
+        initial_state: Object.keys(initialState).length > 0 ? initialState : undefined,
+        context_overrides: Object.keys(rs.contextOverrides).length > 0 ? rs.contextOverrides : undefined,
       })
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to run quickview')
-    } finally {
-      setRunningQuickview(false)
+      return painted.plan_id
     }
+    const alt = chosenAlt!
+    const plan = await createRunPlan({
+      packageId: rs.selectedPackageId!, scenarioId: rs.selectedScenarioId!, routeId: alt.route_id,
+      routeSource: routeEnvelope!.route_source, routeFacts: alt.route_facts, displayRoute: alt.display, runSeed: rs.runSeed,
+      parameters: rs.editedParameters as Record<string, SetupValue>, hyperparameters: rs.editedHyperparameters as Record<string, SetupValue>,
+      presets, runMode: 'standard',
+      ...(rs.profileOverrides != null ? { profiles: rs.profileOverrides } : {}),
+      ...(Object.keys(initialState).length > 0 ? { initialState } : {}),
+      ...(Object.keys(rs.contextOverrides).length > 0 ? { contextOverrides: rs.contextOverrides } : {}),
+    })
+    return plan.plan_id
   }
 
-  const selectedRoutePreset = routePresets.find((p) => p.id === selectedRoutePresetId) ?? null
-  const selectedScenario = scenarios.find((s) => s.id === selectedScenarioId) ?? null
-  const selectedTriggerPackage = triggerPackages.find((p) => p.id === selectedTriggerPackageId) ?? null
-  const selectedServicePackage = servicePackages.find((p) => p.id === selectedServicePackageId) ?? null
-  const selectedContentPackage = contentPackages.find((p) => p.id === selectedContentPackageId) ?? null
+  // Register the start fn for the center Play button (re-registers on any change).
+  useEffect(() => {
+    if (!isComplete) { coordinator.prepareStart(null); return }
+    coordinator.prepareStart(async (): Promise<boolean> => {
+      setError(null)
+      try {
+        const planId = await buildTriggerPlan()
+        await coordinator.create({
+          trigger_plan_id: planId, world: effectiveWorld,
+          service_package_id: ps.servicePackageId!, content_package_id: ps.contentPackageId!,
+          run_seed: String(rs.runSeed),
+          service_parameters: ps.serviceParameterOverrides, service_hyperparameters: ps.serviceHyperparameterOverrides,
+          content_parameters: ps.contentParameterOverrides, content_hyperparameters: ps.contentHyperparameterOverrides,
+        }, rs.selectedScenarioId!)
+        return true
+      } catch (e) { setError(e instanceof Error ? e.message : 'Failed to start run'); return false }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isComplete, rs, ps, effectiveWorld, selectedRoutePresetId, routeEnvelope, selectedRouteId, mountainRange, jamRange, jamSpeedKph])
+
+  // Auto-quickview (debounced) on ANY setup change, before a run exists.
+  const hasRun = coordinator.state.mergedRunId != null
+  useEffect(() => {
+    if (!isComplete || hasRun) return
+    const timer = setTimeout(() => {
+      void coordinator.quickview({
+        package_id: rs.selectedPackageId!, scenario_id: rs.selectedScenarioId!, route_preset_id: selectedRoutePresetId,
+        run_seed: rs.runSeed, mountain_range_km: mountainRange, jam_range_km: jamRange, jam_speed_kph: jamSpeedKph,
+        hyperparameter_overrides: rs.editedHyperparameters,
+        world: effectiveWorld, service_package_id: ps.servicePackageId!, content_package_id: ps.contentPackageId!,
+        run_seed_proposal: String(rs.runSeed),
+        service_parameters: ps.serviceParameterOverrides, service_hyperparameters: ps.serviceHyperparameterOverrides,
+        content_parameters: ps.contentParameterOverrides, content_hyperparameters: ps.contentHyperparameterOverrides,
+      })
+    }, 500)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isComplete, hasRun, rs.selectedPackageId, rs.selectedScenarioId, rs.editedHyperparameters, selectedRoutePresetId,
+      mountainRange, jamRange, jamSpeedKph, effectiveWorld, ps.servicePackageId, ps.contentPackageId,
+      ps.serviceParameterOverrides, ps.serviceHyperparameterOverrides, ps.contentParameterOverrides, ps.contentHyperparameterOverrides])
+
+  const selService = servicePackages.find((p) => p.id === ps.servicePackageId) ?? null
+  const selContent = contentPackages.find((p) => p.id === ps.contentPackageId) ?? null
 
   return (
-    <div data-testid="merged-setup-panel">
+    <div data-testid="merged-setup-panel" className="setup-panel">
       <h2>Setup</h2>
 
-      <button type="button" style={groupButtonStyle} onClick={() => setOpenModal('route')}>
-        Route{selectedRoutePreset ? `: ${selectedRoutePreset.label.en}` : ''}
-      </button>
-      <button type="button" style={groupButtonStyle} onClick={() => setOpenModal('scenario')}>
-        Scenario{selectedScenario ? `: ${selectedScenario.persona_label}` : ''}
-      </button>
-      <button type="button" style={groupButtonStyle} onClick={() => setOpenModal('packages')}>
-        Packages
-        {selectedTriggerPackage || selectedServicePackage || selectedContentPackage ? ': configured' : ''}
-      </button>
-      <button type="button" style={groupButtonStyle} onClick={() => setOpenModal('profile')}>
-        Driver Profile
-      </button>
-      <button type="button" style={groupButtonStyle} onClick={() => setOpenModal('situation')}>
-        Situation
-      </button>
-      <button type="button" style={groupButtonStyle} onClick={() => setOpenModal('run')}>
-        Run
-      </button>
+      {/* ── Route ─────────────────────────────────────────────────────────── */}
+      <label htmlFor="merged-route-preset-select" style={fieldLabel}>Route preset</label>
+      <select id="merged-route-preset-select" data-testid="merged-route-preset-select" style={selectStyle}
+        value={selectedRoutePresetId ?? ''} onChange={(e) => handleSelectRoutePreset(e.target.value)}
+        disabled={routePresets.length === 0 || loadingRoute}>
+        <option value="">{routePresets.length === 0 ? 'Loading…' : '— Select a preset route —'}</option>
+        {routePresets.map((p) => <option key={p.id} value={p.id}>{p.label.en} ({p.distance_km} km, ~{p.duration_min} min)</option>)}
+      </select>
+      <details style={{ marginTop: '6px' }} open={rs.mapsKey !== ''}>
+        <summary style={{ fontSize: '0.8em', color: '#475569', cursor: 'pointer' }}>Custom route (Google Maps)</summary>
+        <label htmlFor="merged-maps-key" style={fieldLabel}>Maps API key {rs.mapsKey !== '' && <span style={{ color: '#16a34a', fontWeight: 400 }}>· from environment</span>}</label>
+        <input id="merged-maps-key" type="password" autoComplete="off" style={inputStyle} value={rs.mapsKey} onChange={(e) => runStore.dispatch({ type: 'SET_MAPS_KEY', key: e.target.value })} placeholder="Google Maps API key" />
+        <label htmlFor="merged-maps-start" style={fieldLabel}>Start</label>
+        <input id="merged-maps-start" type="text" style={inputStyle} value={mapsStart} onChange={(e) => setMapsStart(e.target.value)} placeholder="e.g. Tokyo Station" />
+        <label htmlFor="merged-maps-end" style={fieldLabel}>End</label>
+        <input id="merged-maps-end" type="text" style={inputStyle} value={mapsEnd} onChange={(e) => setMapsEnd(e.target.value)} placeholder="e.g. Osaka Station" />
+        <button type="button" data-testid="merged-analyze-route" style={{ width: '100%', marginTop: '6px' }} disabled={analyzing} onClick={() => void handleAnalyzeMaps()}>
+          {analyzing ? 'Analyzing…' : 'Analyze Route'}
+        </button>
+        {mapsErrorMsg && <p role="alert" style={{ color: '#dc2626', fontSize: '0.8em' }}>{mapsErrorMsg}</p>}
+      </details>
+      {routeEnvelope && routeEnvelope.alternatives.length > 1 && (
+        <div data-testid="merged-route-alternatives" style={{ marginTop: '6px' }}>
+          {routeEnvelope.alternatives.map((alt) => (
+            <label key={alt.route_id} style={{ display: 'flex', gap: '6px', fontSize: '0.8em', margin: '3px 0' }}>
+              <input type="radio" name="merged-route-alt" checked={selectedRouteId === alt.route_id} onChange={() => setSelectedRouteId(alt.route_id)} />
+              <span>{alt.summary}</span>
+            </label>
+          ))}
+        </div>
+      )}
+      {chosenAlt && <p style={summaryRow}>{chosenAlt.summary} — {routeEnvelope!.route_source} · {totalKm.toFixed(0)} km</p>}
+      {/* The route is mirrored into the scoped runStore (above) so the CENTER
+          panel's <MapSurface/> renders this route's map — the map is no longer
+          shown in this left panel (owner layout). */}
+
+      {/* ── Situation & Scenario ──────────────────────────────────────────── */}
+      <label htmlFor="merged-scenario-select" style={fieldLabel}>Situation &amp; Scenario</label>
+      <div style={rowStyle}>
+        <select id="merged-scenario-select" data-testid="merged-scenario-select" style={selectStyle} value={rs.selectedScenarioId ?? ''}
+          onChange={(e) => e.target.value && runStore.dispatch({ type: 'SELECT_SCENARIO', id: e.target.value })} disabled={compatibleScenarios.length === 0}>
+          <option value="">{compatibleScenarios.length === 0 ? 'Loading…' : '— Select a scenario —'}</option>
+          {compatibleScenarios.map((s) => <option key={s.id} value={s.id}>{s.persona_label} — {s.review_focus}</option>)}
+        </select>
+        <button type="button" style={editBtnStyle} data-testid="edit-situation" onClick={() => setOpenEdit('situation')}>Edit</button>
+      </div>
+
+      {/* ── Driver profile (from the 32 presets) ──────────────────────────── */}
+      <label htmlFor="merged-profile-select" style={fieldLabel}>Driver profile</label>
+      <div style={rowStyle}>
+        <select id="merged-profile-select" data-testid="merged-profile-select" style={selectStyle} value={selectedProfileKey ?? ''}
+          onChange={(e) => handleSelectProfile(e.target.value)} disabled={profileOptions.length === 0}>
+          {profileOptions.length === 0 && <option value="">Loading…</option>}
+          {profileOptions.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
+        </select>
+        <button type="button" style={editBtnStyle} data-testid="edit-profile" onClick={() => setOpenEdit('profile')}>Edit</button>
+      </div>
+
+      {/* ── Trigger / Service / Content packages ──────────────────────────── */}
+      <label htmlFor="merged-trigger-package-select" style={fieldLabel}>Trigger package</label>
+      <div style={rowStyle}>
+        <select id="merged-trigger-package-select" data-testid="merged-trigger-package-select" style={selectStyle} value={rs.selectedPackageId ?? ''}
+          onChange={(e) => e.target.value && runStore.dispatch({ type: 'SELECT_PACKAGE', id: e.target.value })} disabled={triggerPackages.length === 0}>
+          <option value="">{triggerPackages.length === 0 ? 'Loading…' : '— Select —'}</option>
+          {triggerPackages.map((p) => <option key={p.id} value={p.id}>{p.label.en} ({p.version})</option>)}
+        </select>
+        <button type="button" style={editBtnStyle} data-testid="edit-trigger" onClick={() => setOpenEdit('trigger')}>Edit</button>
+      </div>
+
+      <label htmlFor="merged-service-package-select" style={fieldLabel}>Service proposal package</label>
+      <div style={rowStyle}>
+        <select id="merged-service-package-select" data-testid="merged-service-package-select" style={selectStyle} value={ps.servicePackageId ?? ''}
+          onChange={(e) => e.target.value && proposalStore.dispatch({ type: 'SET_SERVICE_PACKAGE', packageId: e.target.value })} disabled={servicePackages.length === 0}>
+          <option value="">{servicePackages.length === 0 ? 'Loading…' : '— Select —'}</option>
+          {servicePackages.map((p) => <option key={p.id} value={p.id}>{p.id}</option>)}
+        </select>
+        <button type="button" style={editBtnStyle} data-testid="edit-service" onClick={() => setOpenEdit('service')}>Edit</button>
+      </div>
+
+      <label htmlFor="merged-content-package-select" style={fieldLabel}>Content proposal package</label>
+      <div style={rowStyle}>
+        <select id="merged-content-package-select" data-testid="merged-content-package-select" style={selectStyle} value={ps.contentPackageId ?? ''}
+          onChange={(e) => e.target.value && proposalStore.dispatch({ type: 'SET_CONTENT_PACKAGE', packageId: e.target.value })} disabled={contentPackages.length === 0}>
+          <option value="">{contentPackages.length === 0 ? 'Loading…' : '— Select —'}</option>
+          {contentPackages.map((p) => <option key={p.id} value={p.id}>{p.id}</option>)}
+        </select>
+        <button type="button" style={editBtnStyle} data-testid="edit-content" onClick={() => setOpenEdit('content')}>Edit</button>
+      </div>
 
       {error && <ErrorNotice testid="merged-setup-error" message={error} onDismiss={() => setError(null)} />}
+      <p style={{ fontSize: '0.72em', color: '#94a3b8', marginTop: '10px' }}>
+        {isComplete ? 'Ready — press Play in the center panel.' : 'Select a route, scenario, and all three packages.'}
+      </p>
 
-      <button
-        type="button"
-        data-testid="merged-start-run"
-        style={{ width: '100%', marginTop: '10px' }}
-        disabled={starting}
-        onClick={handleStart}
-      >
-        {starting ? 'Starting…' : 'Start run'}
-      </button>
-
-      <button
-        type="button"
-        data-testid="merged-quickview-button"
-        style={{ width: '100%', marginTop: '6px' }}
-        disabled={runningQuickview}
-        onClick={() => void handleQuickview()}
-      >
-        {runningQuickview ? 'Running quickview…' : 'Quickview'}
-      </button>
-
-      {/* ── Route ─────────────────────────────────────────────────────── */}
-      <Modal open={openModal === 'route'} title="Route" onClose={() => setOpenModal(null)}>
-        <label htmlFor="merged-route-preset-select" style={fieldLabelStyle}>
-          Route preset
-        </label>
-        <select
-          id="merged-route-preset-select"
-          value={selectedRoutePresetId ?? ''}
-          onChange={(e) => handleSelectRoutePreset(e.target.value)}
-          disabled={routePresets.length === 0 || loadingRoute}
-        >
-          <option value="" disabled>
-            {routePresets.length === 0 ? 'Loading…' : 'Select a route preset'}
-          </option>
-          {routePresets.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.label.en} ({p.distance_km} km, ~{p.duration_min} min)
-            </option>
-          ))}
-        </select>
-        {routeEnvelope && (
-          <p style={summaryRowStyle}>
-            {routeEnvelope.alternatives[0]?.summary} — {routeEnvelope.route_source}
-          </p>
-        )}
-        <RouteConditionsPainter
-          totalKm={routeEnvelope?.alternatives[0]?.route_facts.total_route_distance_km ?? 100}
-          mountainRange={mountainRange}
-          onMountainRangeChange={setMountainRange}
-          jamRange={jamRange}
-          onJamRangeChange={setJamRange}
-        />
-      </Modal>
-
-      {/* ── Scenario ──────────────────────────────────────────────────── */}
-      <Modal open={openModal === 'scenario'} title="Scenario" onClose={() => setOpenModal(null)}>
-        <label htmlFor="merged-scenario-select" style={fieldLabelStyle}>
-          Scenario
-        </label>
-        <select
-          id="merged-scenario-select"
-          value={selectedScenarioId ?? ''}
-          onChange={(e) => setSelectedScenarioId(e.target.value)}
-          disabled={compatibleScenarios.length === 0}
-        >
-          <option value="" disabled>
-            {compatibleScenarios.length === 0 ? 'Loading…' : 'Select a scenario'}
-          </option>
-          {compatibleScenarios.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.persona_label} — {s.review_focus}
-            </option>
-          ))}
-        </select>
-      </Modal>
-
-      {/* ── Packages ──────────────────────────────────────────────────── */}
-      <Modal open={openModal === 'packages'} title="Packages" onClose={() => setOpenModal(null)}>
-        <label htmlFor="merged-trigger-package-select" style={fieldLabelStyle}>
-          Trigger package
-        </label>
-        <select
-          id="merged-trigger-package-select"
-          value={selectedTriggerPackageId ?? ''}
-          onChange={(e) => setSelectedTriggerPackageId(e.target.value)}
-          disabled={triggerPackages.length === 0}
-        >
-          <option value="" disabled>
-            {triggerPackages.length === 0 ? 'Loading…' : 'Select a trigger package'}
-          </option>
-          {triggerPackages.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.label.en} ({p.version})
-            </option>
-          ))}
-        </select>
-
-        <label htmlFor="merged-service-package-select" style={fieldLabelStyle}>
-          Service package
-        </label>
-        <select
-          id="merged-service-package-select"
-          value={selectedServicePackageId ?? ''}
-          onChange={(e) => setSelectedServicePackageId(e.target.value)}
-          disabled={servicePackages.length === 0}
-        >
-          <option value="" disabled>
-            {servicePackages.length === 0 ? 'Loading…' : 'Select a service package'}
-          </option>
-          {servicePackages.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.label.en} ({p.version})
-            </option>
-          ))}
-        </select>
-
-        <label htmlFor="merged-content-package-select" style={fieldLabelStyle}>
-          Content package
-        </label>
-        <select
-          id="merged-content-package-select"
-          value={selectedContentPackageId ?? ''}
-          onChange={(e) => setSelectedContentPackageId(e.target.value)}
-          disabled={contentPackages.length === 0}
-        >
-          <option value="" disabled>
-            {contentPackages.length === 0 ? 'Loading…' : 'Select a content package'}
-          </option>
-          {contentPackages.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.label.en} ({p.version})
-            </option>
-          ))}
-        </select>
-      </Modal>
-
-      {/* ── Driver Profile (read-only summary, slice-1) ──────────────────── */}
-      <Modal open={openModal === 'profile'} title="Driver Profile" onClose={() => setOpenModal(null)}>
-        {defaultWorld ? (
+      {/* ── Situation Edit popup (merged A/B/C fields, reused verbatim) ─────── */}
+      <Modal open={openEdit === 'situation'} title="Situation" size="wide" onClose={() => setOpenEdit(null)}>
+        <p style={{ ...summaryRow, color: '#64748b' }}>
+          Drowsiness, fatigue, monotony, traffic &amp; road are computed LIVE by the tick engine — not set here.
+        </p>
+        {scenarioDef ? (
           <>
-            <p style={summaryRowStyle}>Age band: {defaultWorld.driver_profile.age_band}</p>
-            <p style={summaryRowStyle}>Gender: {defaultWorld.driver_profile.gender}</p>
-            <p style={summaryRowStyle}>
-              Oshi: {defaultWorld.driver_profile.oshi_registered ? defaultWorld.driver_profile.oshi_mode : 'not registered'}
+            <div style={groupLabel}>A · Fixed conditions</div>
+            <FixedConditionsSection scenario={scenarioDef} hideTitle />
+            <SituationFieldRows fields={SITUATION_FIELDS.filter((f) => MERGED_SITUATION_KEYS.includes(f.key))} />
+            <p style={{ ...fieldLabel, marginTop: '14px' }}>Route conditions (painted onto the {totalKm.toFixed(0)} km route)</p>
+            <RouteConditionsPainter totalKm={totalKm} mountainRange={mountainRange} onMountainRangeChange={setMountainRange} jamRange={jamRange} onJamRangeChange={setJamRange} />
+            <p style={{ fontSize: '0.72em', color: '#94a3b8', margin: '4px 0 0' }}>
+              Traffic-jam speed is set below in “B · Live speed by road type → Traffic jam” ({jamSpeedKph} km/h).
             </p>
+
+            <div style={groupLabel}>B · Live speed by road type</div>
+            <SpeedProfileSection scenario={scenarioDef} hideTitle />
+
+            <div style={groupLabel}>C · Simulated driver state</div>
+            <SimulatedSignalsSection scenario={scenarioDef} hideTitle />
           </>
-        ) : (
-          <p style={summaryRowStyle}>Loading default driver profile…</p>
-        )}
+        ) : <p style={summaryRow}>Select a scenario to edit its situation.</p>}
       </Modal>
 
-      {/* ── Situation (read-only summary, slice-1) ───────────────────────── */}
-      <Modal open={openModal === 'situation'} title="Situation" onClose={() => setOpenModal(null)}>
-        {defaultWorld ? (
-          <>
-            <p style={summaryRowStyle}>Drowsiness: {defaultWorld.situation.drowsiness_level}</p>
-            <p style={summaryRowStyle}>Fatigue: {defaultWorld.situation.fatigue_level}</p>
-            <p style={summaryRowStyle}>Traffic: {defaultWorld.situation.traffic_state}</p>
-            <p style={summaryRowStyle}>Road type: {defaultWorld.situation.road_type}</p>
-          </>
-        ) : (
-          <p style={summaryRowStyle}>Loading default situation…</p>
-        )}
+      {/* ── Driver profile Edit popup (preference + history, reused verbatim) ── */}
+      <Modal open={openEdit === 'profile'} title="Driver profile — preference & history" size="wide" onClose={() => setOpenEdit(null)}>
+        <PreferenceHistorySection />
       </Modal>
 
-      {/* ── Run (read-only summary, slice-1) ─────────────────────────────── */}
-      <Modal open={openModal === 'run'} title="Run" onClose={() => setOpenModal(null)}>
-        <p style={summaryRowStyle}>Run seed: {runSeed}</p>
-        <p style={summaryRowStyle}>Proposal mode: interactive</p>
+      {/* ── Package Edit popups (reused verbatim from Trigger / Proposal) ───── */}
+      <Modal open={openEdit === 'trigger'} title="Trigger algorithm" size="wide" onClose={() => setOpenEdit(null)}>
+        <AlgorithmFormulationPanel />
+      </Modal>
+      <Modal open={openEdit === 'service'} title="Service proposal package" size="wide" onClose={() => setOpenEdit(null)}>
+        {selService ? <ServiceSetupSection manifest={selService} /> : <p style={summaryRow}>Select a service package first.</p>}
+      </Modal>
+      <Modal open={openEdit === 'content'} title="Content proposal package" size="wide" onClose={() => setOpenEdit(null)}>
+        {selContent ? <ContentSetupSection manifest={selContent} /> : <p style={summaryRow}>Select a content package first.</p>}
       </Modal>
     </div>
   )

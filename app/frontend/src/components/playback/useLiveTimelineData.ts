@@ -86,6 +86,7 @@ export function useLiveTimelineData(replayTick?: ReplayTick | null): {
 
   const data: TimelineData = {
     segments,
+    trafficJams: [], // jam ranges are a preview/quickview-only overlay (feature 020)
     restScore,
     monotonyScore,
     restThreshold,

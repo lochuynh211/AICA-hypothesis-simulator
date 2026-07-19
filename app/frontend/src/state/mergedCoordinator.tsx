@@ -17,13 +17,14 @@
  * existing store knows how to combine.
  */
 import React, { createContext, useContext, useReducer, useRef } from 'react'
-import type { TraceEntry } from '../api/types'
+import type { TraceEntry, RestSpot } from '../api/types'
 import type { ProposalRunLog } from '../api/proposalClient'
 import {
   createMergedRun,
   tickMergedRun,
   mergedProposalAction,
   acceptRest as acceptRestClient,
+  declineRest as declineRestClient,
   mergedQuickview,
   type CreateMergedRunReq,
   type MergedTickResponse,
@@ -80,7 +81,21 @@ export type MergedCoordinatorState = {
   /** Index into `quickviewResult.fires` the reviewer clicked to inspect, or
    * `null` when nothing is being inspected. Set by `inspectFire()`. */
   inspectedFireIndex: number | null
+  /** True once the setup panel has a complete, valid selection and has
+   * registered a start function via `prepareStart()`. The center-panel Play
+   * button uses this (OR an already-created run) to enable itself — there is
+   * no separate "Start run" button; Play lazily creates the run. */
+  ready: boolean
+  /** Rest spots the driver accepted this run, captured at accept time so the
+   * center map can show gold rest markers (the merged run has no runStore
+   * `restHistory` — the tick loop lives here). */
+  acceptedRestSpots: RestSpot[]
 }
+
+/** A function the setup panel registers via `prepareStart()`: builds the
+ * trigger run-plan + calls `create()`, resolving `true` on success. `startAndPlay()`
+ * invokes it once (lazily) the first time Play is pressed with no run yet. */
+export type StartFn = () => Promise<boolean>
 
 export const initialMergedCoordinatorState: MergedCoordinatorState = {
   mergedRunId: null,
@@ -97,6 +112,8 @@ export const initialMergedCoordinatorState: MergedCoordinatorState = {
   error: null,
   quickviewResult: null,
   inspectedFireIndex: null,
+  ready: false,
+  acceptedRestSpots: [],
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -110,6 +127,15 @@ export type MergedCoordinatorAction =
   | { type: 'ERROR'; message: string }
   | { type: 'QUICKVIEW_LOADED'; result: MergedInstantResult }
   | { type: 'INSPECT_FIRE'; index: number | null }
+  | { type: 'SET_READY'; ready: boolean }
+  /** Rest declined — clear the pending proposal + unpause so the on-map rest
+   * overlay + right-panel dock hide and the tick loop can resume. */
+  | { type: 'REST_DECLINED' }
+  /** Rest accepted at a spot — record it for the map's gold rest markers. */
+  | { type: 'REST_ACCEPTED'; spot: RestSpot }
+  /** Reset the whole run (+ log/projection) back to a fresh, un-started state.
+   * Preserves `ready` (the setup panel's registered start fn is still valid). */
+  | { type: 'RESET' }
 
 /** Builds a TraceEntry from a tick's trigger payload the same way runStore's
  * TICK_APPENDED reducer case does (see state/runStore.ts) — including
@@ -140,12 +166,17 @@ export function mergedCoordinatorReducer(
 ): MergedCoordinatorState {
   switch (action.type) {
     case 'CREATED':
-      // A fresh merged run starts clean — mirrors runStore's RUN_CREATED.
+      // A fresh merged run starts clean — mirrors runStore's RUN_CREATED — BUT
+      // preserves the quickview projection + any inspected fire (owner review):
+      // pressing Play/creating the run must NOT wipe the persistent top-panel
+      // quickview.
       return {
         ...initialMergedCoordinatorState,
         mergedRunId: action.mergedRunId,
         triggerRunId: action.triggerRunId,
         scenarioId: action.scenarioId,
+        quickviewResult: state.quickviewResult,
+        inspectedFireIndex: state.inspectedFireIndex,
       }
 
     case 'TICK_APPENDED': {
@@ -203,6 +234,22 @@ export function mergedCoordinatorReducer(
     case 'INSPECT_FIRE':
       return { ...state, inspectedFireIndex: action.index }
 
+    case 'SET_READY':
+      return { ...state, ready: action.ready }
+
+    case 'REST_DECLINED':
+      // Drop the declined proposal so the overlay/dock hide; a later re-fire
+      // brings a fresh one. Unpause so `play()` can resume ticking.
+      return { ...state, proposalLog: null, paused: false }
+
+    case 'REST_ACCEPTED':
+      return { ...state, acceptedRestSpots: [...state.acceptedRestSpots, action.spot] }
+
+    case 'RESET':
+      // Fresh start — clear the run, log, and projection, but keep `ready` so
+      // the Play button stays enabled (the setup panel's start fn is untouched).
+      return { ...initialMergedCoordinatorState, ready: state.ready }
+
     default:
       return state
   }
@@ -221,12 +268,25 @@ type MergedCoordinatorContextValue = {
   step(): Promise<void>
   selectService(serviceId: string): Promise<void>
   acceptRest(body: AcceptRestReq): Promise<void>
+  /** Decline the pending REST proposal (the on-map rest overlay's reject) and
+   * resume ticking — no recovery is started. */
+  declineRest(): Promise<void>
   /** Ephemeral whole-chain projection (feature 020, Slice-2c Task 5) —
    * populates `state.quickviewResult`; independent of `create()`/the tick
    * loop, so it may be called before, instead of, or alongside a real run. */
   quickview(body: MergedQuickviewReq): Promise<void>
   /** Sets `state.inspectedFireIndex` — `null` clears the inspected fire. */
   inspectFire(index: number | null): void
+  /** Reset the whole run (+ log/projection) to a fresh, un-started state. */
+  reset(): void
+  /** Registers (or clears, with `null`) the setup panel's start function and
+   * flips `state.ready`. The center-panel Play button calls `startAndPlay()`,
+   * which invokes this once when no run exists yet — so there is no separate
+   * "Start run" button. */
+  prepareStart(fn: StartFn | null): void
+  /** Lazily creates the run (via the registered `prepareStart` fn) if none
+   * exists yet, then starts the tick loop. No-op if not ready and no run. */
+  startAndPlay(): Promise<void>
 }
 
 const MergedCoordinatorContext = createContext<MergedCoordinatorContextValue | null>(null)
@@ -331,15 +391,32 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     if (!mergedRunId) return
     try {
       await acceptRestClient(mergedRunId, body)
-      // The trigger's staged recovery has now started server-side — resume
-      // Play so the existing tick loop auto-drives the rest journey
-      // (Task 3's orchestrator) through to the after-rest recompute. No
-      // separate per-stage action is needed (brief/CLAUDE.md).
-      play()
+      // Record the accepted spot for the map's gold markers. Do NOT resume Play
+      // (owner review): the run STAYS paused showing the auto-selected
+      // service+content proposal until the reviewer presses "Continue" — the
+      // caller (handleChooseSpot) dispatches the rank-1 content selection.
+      dispatch({ type: 'REST_ACCEPTED', spot: body.rest_spot })
     } catch (err) {
       dispatch({
         type: 'ERROR',
         message: err instanceof Error ? err.message : 'accept_rest failed',
+      })
+    }
+  }
+
+  const declineRest = async (): Promise<void> => {
+    const mergedRunId = mergedRunIdRef.current
+    if (!mergedRunId) return
+    try {
+      await declineRestClient(mergedRunId)
+      // Clear the declined proposal + unpause, then resume the tick loop so the
+      // drive continues (a later re-fire, after cooldown, asks again).
+      dispatch({ type: 'REST_DECLINED' })
+      play()
+    } catch (err) {
+      dispatch({
+        type: 'ERROR',
+        message: err instanceof Error ? err.message : 'decline failed',
       })
     }
   }
@@ -360,6 +437,36 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     dispatch({ type: 'INSPECT_FIRE', index })
   }
 
+  const reset = (): void => {
+    // Stop the tick loop + drop the run identity so later step()/selectService()
+    // /acceptRest() no-op until a new run is created. `startFnRef` is kept — the
+    // setup panel's registered build+create fn is still valid for the next Play.
+    runningRef.current = false
+    mergedRunIdRef.current = null
+    choosingRef.current = null
+    dispatch({ type: 'RESET' })
+  }
+
+  // The setup panel's start function (build plan + create), registered via
+  // prepareStart(). A ref (not state) so startAndPlay() always sees the current
+  // one synchronously.
+  const startFnRef = useRef<StartFn | null>(null)
+
+  const prepareStart = (fn: StartFn | null): void => {
+    startFnRef.current = fn
+    dispatch({ type: 'SET_READY', ready: fn != null })
+  }
+
+  const startAndPlay = async (): Promise<void> => {
+    // Lazily create the run the first time Play is pressed (no "Start" button).
+    if (!mergedRunIdRef.current) {
+      if (!startFnRef.current) return
+      const ok = await startFnRef.current()
+      if (!ok) return
+    }
+    play()
+  }
+
   const value: MergedCoordinatorContextValue = {
     state,
     create,
@@ -368,8 +475,12 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     step,
     selectService,
     acceptRest,
+    declineRest,
     quickview,
     inspectFire,
+    reset,
+    prepareStart,
+    startAndPlay,
   }
   return React.createElement(MergedCoordinatorContext.Provider, { value }, children)
 }

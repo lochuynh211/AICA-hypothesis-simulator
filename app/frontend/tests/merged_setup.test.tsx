@@ -23,25 +23,34 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { World } from '../src/api/proposalClient'
 
-vi.mock('../src/api/client', () => ({
+// Spread the real modules (importActual) and override only the network
+// functions — the exact-reuse setup editors the panel now mounts import real
+// constants/types from these modules (e.g. GENRE_VOCABULARY, SERVICE_ID_OPTIONS,
+// AlgorithmFormulationPanel's getPackage), which must stay real.
+vi.mock('../src/api/client', async (orig) => ({
+  ...(await orig<typeof import('../src/api/client')>()),
   listRoutePresets: vi.fn(),
   loadRoutePreset: vi.fn(),
   listScenarios: vi.fn(),
   listPackages: vi.fn(),
   createRunPlan: vi.fn(),
+  getScenario: vi.fn(),
 }))
 
-vi.mock('../src/api/proposalClient', () => ({
+vi.mock('../src/api/proposalClient', async (orig) => ({
+  ...(await orig<typeof import('../src/api/proposalClient')>()),
   getPackages: vi.fn(),
   getPresets: vi.fn(),
   getPreset: vi.fn(),
 }))
 
-vi.mock('../src/api/mergedClient', () => ({
+vi.mock('../src/api/mergedClient', async (orig) => ({
+  ...(await orig<typeof import('../src/api/mergedClient')>()),
   createMergedRun: vi.fn(),
   tickMergedRun: vi.fn(),
   mergedProposalAction: vi.fn(),
   mergedQuickview: vi.fn(),
+  buildMergedPlan: vi.fn(),
 }))
 
 import {
@@ -50,11 +59,65 @@ import {
   listScenarios,
   listPackages,
   createRunPlan,
+  getScenario,
 } from '../src/api/client'
 import { getPackages, getPresets, getPreset } from '../src/api/proposalClient'
-import { createMergedRun, mergedQuickview } from '../src/api/mergedClient'
-import { MergedCoordinatorProvider } from '../src/state/mergedCoordinator'
+import { createMergedRun, tickMergedRun, mergedQuickview } from '../src/api/mergedClient'
+import { MergedCoordinatorProvider, useMergedCoordinator } from '../src/state/mergedCoordinator'
+import { RunStoreProvider } from '../src/state/runStore'
+import { ProposalStoreProvider } from '../src/state/proposalStore'
 import MergedSetupPanel from '../src/components/merged/MergedSetupPanel'
+
+/** A live trigger tick with the loop halted (paused) so `startAndPlay()`'s
+ * play() loop stops after one tick without needing a full tick fixture. */
+const PAUSED_TICK = {
+  trigger: {
+    tick_index: null,
+    decision: null,
+    route_fraction: null,
+    motion_state: null,
+    recovery_phase: null,
+    is_traffic_jam: null,
+    segment_type: null,
+    paused: true,
+    completed: false,
+  },
+  proposal: null,
+  correlation: null,
+}
+
+/** Renders the panel plus a test-only Play button that drives
+ * `coordinator.startAndPlay()` — the real run start now lives on the center
+ * panel's Play (no "Start run" button in the setup panel), so setup-panel
+ * tests trigger it through the coordinator directly. */
+function Harness() {
+  const c = useMergedCoordinator()
+  return (
+    <>
+      <MergedSetupPanel />
+      <button type="button" data-testid="test-play" onClick={() => void c.startAndPlay()}>
+        play
+      </button>
+    </>
+  )
+}
+
+async function selectValue(testId: string, value: string) {
+  const el = await screen.findByTestId(testId)
+  await waitFor(() => expect(el).not.toBeDisabled())
+  fireEvent.change(el, { target: { value } })
+}
+
+/** Fills every inline dropdown (route preset → trigger pkg → scenario →
+ * service pkg → content pkg) so the panel reaches its complete/ready state. */
+async function fillSetup() {
+  await selectValue('merged-route-preset-select', 'preset-route-1')
+  await waitFor(() => expect(loadRoutePreset).toHaveBeenCalledWith('preset-route-1'))
+  await selectValue('merged-trigger-package-select', 'trigger_pkg_1')
+  await selectValue('merged-scenario-select', 'scn_fatigue_1')
+  await selectValue('merged-service-package-select', 'svc_pkg_1')
+  await selectValue('merged-content-package-select', 'content_pkg_1')
+}
 
 function fullWorld(): World {
   return {
@@ -263,138 +326,71 @@ function setupMocks() {
     merged_run_id: 'mrun_1',
     trigger_run_id: 'run_1',
   })
+  // The situation popup's trigger sections resolve the ScenarioDef; a minimal
+  // stub is enough (the tests here don't open the popup, but the panel's effect
+  // fetches it on scenario selection).
+  vi.mocked(getScenario).mockResolvedValue({
+    id: 'scn_fatigue_1',
+    is_night: false,
+    familiar_route: false,
+    child_passenger: false,
+    weather_risk: 0,
+    speed_profile: {},
+  } as unknown as Awaited<ReturnType<typeof getScenario>>)
 }
 
 function renderPanel() {
   return render(
     <MergedCoordinatorProvider>
-      <MergedSetupPanel />
+      <RunStoreProvider>
+        <ProposalStoreProvider>
+          <Harness />
+        </ProposalStoreProvider>
+      </RunStoreProvider>
     </MergedCoordinatorProvider>,
   )
+}
+
+const EMPTY_QUICKVIEW = {
+  fired: false,
+  fire: null,
+  fires: [],
+  peak_score: 0,
+  threshold: null,
+  score_series: [],
+  monotony_series: [],
+  monotony_threshold: null,
+  spikes: [],
+  segments: [],
+  rest_spot: null,
+  rest_option: null,
+  rest_spots: [],
+  rest_options: [],
+  completed_min: null,
+  seed: 42,
+  overrides: [],
+  error: null,
 }
 
 describe('MergedSetupPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     setupMocks()
+    vi.mocked(mergedQuickview).mockResolvedValue(EMPTY_QUICKVIEW)
+    vi.mocked(tickMergedRun).mockResolvedValue(PAUSED_TICK)
   })
 
-  it('opens the Route popup and lists the fetched route presets', async () => {
+  it('lists the fetched route presets in the inline dropdown (no popup)', async () => {
     renderPanel()
-
-    fireEvent.click(screen.getByRole('button', { name: /route/i }))
-
-    const dialog = await screen.findByRole('dialog')
-    const option = await within(dialog).findByText(/Route Preset 1/)
-    expect(option).toBeInTheDocument()
+    const select = await screen.findByTestId('merged-route-preset-select')
+    expect(within(select).getByText(/Route Preset 1/)).toBeInTheDocument()
   })
 
-  it('configures a full run via the popups and starts it, calling coordinator.create with the built trigger_plan_id + package ids', async () => {
+  it('auto-runs a quickview once the selection is complete — no button, no run created', async () => {
     renderPanel()
+    await fillSetup()
 
-    // Route: open popup, pick the preset route.
-    fireEvent.click(screen.getByRole('button', { name: /route/i }))
-    let dialog = await screen.findByRole('dialog')
-    const routeSelect = await within(dialog).findByLabelText(/route preset/i)
-    fireEvent.change(routeSelect, { target: { value: 'preset-route-1' } })
-    await waitFor(() => expect(loadRoutePreset).toHaveBeenCalledWith('preset-route-1'))
-    fireEvent.click(within(dialog).getByRole('button', { name: /close/i }))
-
-    // Scenario: open popup, pick the scenario.
-    fireEvent.click(screen.getByRole('button', { name: /scenario/i }))
-    dialog = await screen.findByRole('dialog')
-    const scenarioSelect = await within(dialog).findByLabelText(/scenario/i)
-    fireEvent.change(scenarioSelect, { target: { value: 'scn_fatigue_1' } })
-    fireEvent.click(within(dialog).getByRole('button', { name: /close/i }))
-
-    // Packages: open popup, pick trigger + service + content packages.
-    fireEvent.click(screen.getByRole('button', { name: /packages/i }))
-    dialog = await screen.findByRole('dialog')
-    fireEvent.change(await within(dialog).findByLabelText(/trigger package/i), {
-      target: { value: 'trigger_pkg_1' },
-    })
-    fireEvent.change(within(dialog).getByLabelText(/service package/i), {
-      target: { value: 'svc_pkg_1' },
-    })
-    fireEvent.change(within(dialog).getByLabelText(/content package/i), {
-      target: { value: 'content_pkg_1' },
-    })
-    fireEvent.click(within(dialog).getByRole('button', { name: /close/i }))
-
-    // Start run.
-    fireEvent.click(screen.getByRole('button', { name: /start run/i }))
-
-    await waitFor(() => expect(createMergedRun).toHaveBeenCalledTimes(1))
-
-    expect(createRunPlan).toHaveBeenCalledWith(
-      expect.objectContaining({
-        packageId: 'trigger_pkg_1',
-        scenarioId: 'scn_fatigue_1',
-        routeId: 'route-1',
-      }),
-    )
-
-    expect(createMergedRun).toHaveBeenCalledWith(
-      expect.objectContaining({
-        trigger_plan_id: 'plan_abc123',
-        service_package_id: 'svc_pkg_1',
-        content_package_id: 'content_pkg_1',
-        world: expect.objectContaining({ control_inputs: expect.any(Object) }),
-        run_seed: expect.any(String),
-      }),
-    )
-  })
-
-  it('runs a quickview via the dedicated button (feature 020, Slice-2c Task 5), independent of Start/createMergedRun', async () => {
-    vi.mocked(mergedQuickview).mockResolvedValue({
-      fired: false,
-      fire: null,
-      fires: [],
-      peak_score: 0,
-      threshold: null,
-      score_series: [],
-      monotony_series: [],
-      monotony_threshold: null,
-      spikes: [],
-      segments: [],
-      rest_spot: null,
-      rest_option: null,
-      rest_spots: [],
-      rest_options: [],
-      completed_min: null,
-      seed: 42,
-      overrides: [],
-      error: null,
-    })
-
-    renderPanel()
-
-    // Scenario: open popup, pick the scenario.
-    fireEvent.click(screen.getByRole('button', { name: /scenario/i }))
-    let dialog = await screen.findByRole('dialog')
-    fireEvent.change(await within(dialog).findByLabelText(/scenario/i), {
-      target: { value: 'scn_fatigue_1' },
-    })
-    fireEvent.click(within(dialog).getByRole('button', { name: /close/i }))
-
-    // Packages: open popup, pick trigger + service + content packages.
-    fireEvent.click(screen.getByRole('button', { name: /packages/i }))
-    dialog = await screen.findByRole('dialog')
-    fireEvent.change(await within(dialog).findByLabelText(/trigger package/i), {
-      target: { value: 'trigger_pkg_1' },
-    })
-    fireEvent.change(within(dialog).getByLabelText(/service package/i), {
-      target: { value: 'svc_pkg_1' },
-    })
-    fireEvent.change(within(dialog).getByLabelText(/content package/i), {
-      target: { value: 'content_pkg_1' },
-    })
-    fireEvent.click(within(dialog).getByRole('button', { name: /close/i }))
-
-    fireEvent.click(screen.getByTestId('merged-quickview-button'))
-
-    await waitFor(() => expect(mergedQuickview).toHaveBeenCalledTimes(1))
-
+    await waitFor(() => expect(mergedQuickview).toHaveBeenCalled(), { timeout: 2000 })
     expect(mergedQuickview).toHaveBeenCalledWith(
       expect.objectContaining({
         package_id: 'trigger_pkg_1',
@@ -406,9 +402,35 @@ describe('MergedSetupPanel', () => {
         run_seed_proposal: expect.any(String),
       }),
     )
-
-    // A pure quickview never touches the trigger run-plan/createMergedRun path.
-    expect(createRunPlan).not.toHaveBeenCalled()
+    // Auto-quickview is ephemeral — it never creates a real run.
     expect(createMergedRun).not.toHaveBeenCalled()
+  })
+
+  it('the center Play starts the run — builds the plan and calls createMergedRun with the selected ids', async () => {
+    renderPanel()
+    await fillSetup()
+
+    // Play (center panel) lazily creates the run via the registered start fn.
+    await waitFor(() => expect(screen.getByTestId('test-play')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('test-play'))
+
+    await waitFor(() => expect(createMergedRun).toHaveBeenCalledTimes(1))
+
+    expect(createRunPlan).toHaveBeenCalledWith(
+      expect.objectContaining({
+        packageId: 'trigger_pkg_1',
+        scenarioId: 'scn_fatigue_1',
+        routeId: 'route-1',
+      }),
+    )
+    expect(createMergedRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        trigger_plan_id: 'plan_abc123',
+        service_package_id: 'svc_pkg_1',
+        content_package_id: 'content_pkg_1',
+        world: expect.objectContaining({ control_inputs: expect.any(Object) }),
+        run_seed: expect.any(String),
+      }),
+    )
   })
 })

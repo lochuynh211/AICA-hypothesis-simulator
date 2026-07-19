@@ -357,3 +357,42 @@ def test_rest_journey_recovers_after_transient_post_completion_failure(
     assert len(rest_completed_events) == 1
     assert final_situation["drowsiness_level"] == rest_completed_events[0]["payload"]["drowsiness_level"]
     assert final_situation["fatigue_level"] == rest_completed_events[0]["payload"]["fatigue_level"]
+
+
+# ── Decline (reject) — owner-review on-map rest overlay's "reject" button ──────
+
+
+def test_decline_resumes_ticking_and_rearms_the_fire_guard(rest_plan_id, base_world_dict):
+    """POST /api/merged-runs/{id}/decline clears the pending REST proposal and
+    keeps the run tickable (no recovery started), and resets
+    handle.current_proposal_run_id so a later re-fire spawns a fresh proposal.
+    """
+    from aica_api.config import settings
+    from aica_api.services.merged_run_coordinator import get_handle
+
+    mid, trigger_run_id = _create_merged_run(rest_plan_id, base_world_dict)
+    _tick_until_proposal(mid)
+
+    # After the fire, the run is paused and a proposal run is recorded.
+    handle = get_handle(mid, settings.merged_runs_dir)
+    assert handle.current_proposal_run_id is not None
+
+    r = client.post(f"/api/merged-runs/{mid}/decline")
+    assert r.status_code == 200, r.text
+    run_state = r.json()
+    # Declining returns the run to a playing state with no pending proposal.
+    assert run_state["status"] == "playing"
+    assert run_state.get("pending_proposal") is None
+
+    # The fire guard is re-armed so a later re-fire is NOT swallowed.
+    handle_after = get_handle(mid, settings.merged_runs_dir)
+    assert handle_after.current_proposal_run_id is None
+
+    # And the run keeps ticking (does not 500 / stay stuck).
+    tr = client.post(f"/api/merged-runs/{mid}/tick")
+    assert tr.status_code == 200, tr.text
+
+
+def test_decline_unknown_merged_run_id_404():
+    r = client.post("/api/merged-runs/mrun_does_not_exist/decline")
+    assert r.status_code == 404

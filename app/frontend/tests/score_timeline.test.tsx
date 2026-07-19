@@ -213,4 +213,23 @@ describe('ScoreTimeline', () => {
     rerender(<ScoreTimeline data={withMonotony} testIds={{ ...TID, legend: 'ttl-legend' }} />)
     expect(screen.queryByTestId('ttl-legend')).not.toBeInTheDocument()
   })
+
+  it('draws a thin traffic-jam sub-bar + legend entry only when trafficJams are present (feature 020)', () => {
+    const withJam: TimelineData = {
+      ...data,
+      trafficJams: [{ fromX: 0.1, toX: 0.3 }],
+    }
+    const { rerender } = render(
+      <ScoreTimeline data={withJam} testIds={{ ...TID, jamGroup: 'ttl-jams', legend: 'ttl-legend' }} showLegend />,
+    )
+    const jams = screen.getByTestId('ttl-jams')
+    expect(jams.querySelectorAll('rect')).toHaveLength(1)
+    expect(screen.getByTestId('ttl-legend').textContent).toContain('traffic jam')
+
+    // No jam painted → no sub-bar group and no legend entry.
+    const noJam: TimelineData = { ...data, trafficJams: [] }
+    rerender(<ScoreTimeline data={noJam} testIds={{ ...TID, jamGroup: 'ttl-jams', legend: 'ttl-legend' }} showLegend />)
+    expect(screen.queryByTestId('ttl-jams')).not.toBeInTheDocument()
+    expect(screen.getByTestId('ttl-legend').textContent).not.toContain('traffic jam')
+  })
 })

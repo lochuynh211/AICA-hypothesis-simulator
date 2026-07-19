@@ -35,6 +35,11 @@ export type CreateMergedRunReq = {
   /** Frozen per-run proposal mode; defaults server-side to 'interactive'. */
   proposal_mode?: string
   run_seed: string
+  /** Optional service/content package param+hyperparam overrides (owner review). */
+  service_parameters?: Record<string, unknown>
+  service_hyperparameters?: Record<string, unknown>
+  content_parameters?: Record<string, unknown>
+  content_hyperparameters?: Record<string, unknown>
 }
 
 /** Request body for `POST /api/merged-runs/{id}/proposal-action`
@@ -115,6 +120,13 @@ export type BuildMergedPlanReq = {
   presets?: Record<string, unknown>
   parameters?: Record<string, unknown>
   hyperparameters?: Record<string, unknown>
+  /** Trigger-side situation edits (feature 020 exact-reuse redesign) so a
+   * PAINTED run still respects the fixed-conditions / speed / initial-signal
+   * edits made in the Combined Situation editor — threaded into the same
+   * `create_draft` the run-plans router uses. Omit when unedited. */
+  profiles?: Record<string, unknown>
+  initial_state?: Record<string, unknown>
+  context_overrides?: Record<string, unknown>
 }
 
 // ── Quickview projection — feature 020, Slice-2c (Task 5) ──────────────────
@@ -161,6 +173,10 @@ export type MergedQuickviewReq = {
   service_package_id: string
   content_package_id: string
   run_seed_proposal: string
+  service_parameters?: Record<string, unknown>
+  service_hyperparameters?: Record<string, unknown>
+  content_parameters?: Record<string, unknown>
+  content_hyperparameters?: Record<string, unknown>
 }
 
 // ── Endpoints ────────────────────────────────────────────────────────────
@@ -202,6 +218,16 @@ export async function acceptRest(mergedRunId: string, body: AcceptRestReq): Prom
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+  })
+}
+
+/** Declines a merged run's pending REST proposal (the on-map rest overlay's
+ * "reject" button) and keeps ticking — no recovery is started. Mirrors
+ * `routers/merged_runs.py`'s `decline_rest_endpoint`; re-arms the fire guard so
+ * a later re-fire spawns a fresh proposal. Returns the trigger `RunState`. */
+export async function declineRest(mergedRunId: string): Promise<RunState> {
+  return apiFetch(`/api/merged-runs/${encodeURIComponent(mergedRunId)}/decline`, {
+    method: 'POST',
   })
 }
 
