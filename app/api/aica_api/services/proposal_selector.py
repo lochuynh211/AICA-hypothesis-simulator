@@ -229,6 +229,15 @@ def dispatch_selector(
 
     if allowed_service_ids is not None and model_cls is ServiceSelectorOutput:
         allowed_set = set(allowed_service_ids)
+        # Platform exclusions are handed INTO the selector (context['excluded_candidates'])
+        # and echoed back unchanged (FR-003/FR-004). They are outside the already-narrowed
+        # eligible allowed_set BY DESIGN — the transparent "unavailable" report — so they must
+        # not trip the invented-candidate guard below. Only RANKED candidates must be members
+        # of the eligible allowed_set (that is the real FR-013 boundary).
+        platform_excluded = {
+            (e.get("candidate_id") if isinstance(e, dict) else e)
+            for e in (context.get("excluded_candidates") or [])
+        }
         offending = [
             cand.candidate_id.value
             for cand in validated.ranked_candidates
@@ -237,7 +246,7 @@ def dispatch_selector(
         offending += [
             excl.candidate_id
             for excl in validated.excluded_candidates
-            if excl.candidate_id not in allowed_set
+            if excl.candidate_id not in allowed_set and excl.candidate_id not in platform_excluded
         ]
         if offending:
             return _error_evidence(

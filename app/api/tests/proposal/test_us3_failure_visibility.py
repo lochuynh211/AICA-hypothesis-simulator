@@ -197,6 +197,56 @@ def test_candidate_outside_allowed_set_yields_algorithm_error_not_a_fabricated_p
     assert "music_playlist" in evidence.error.message
 
 
+def test_platform_excluded_candidate_passthrough_is_not_flagged_outside_allowed_set(tmp_path):
+    """A candidate that was EXCLUDED by platform eligibility (e.g. oshi_reexperience
+    when no oshi is registered) is passed INTO the selector via
+    context['excluded_candidates'] and echoed back in the output's
+    excluded_candidates. It is outside the (already-narrowed) eligible
+    allowed_service_ids BY DESIGN and must NOT trip candidate_outside_allowed_set
+    — the safety net only guards against INVENTED candidates. Regression for the
+    after_rest_before_restart + oshi-off run erroring instead of proposing."""
+    pkg_dir = tmp_path / "throwaway_excluded_passthrough"
+    pkg = _write_package(
+        pkg_dir,
+        {**_MINIMAL_SERVICE_MANIFEST, "id": "throwaway_excluded_passthrough"},
+        "def evaluate(context):\n"
+        "    return {\n"
+        "        'decision_type': 'ranked_candidates',\n"
+        "        'ranked_candidates': [{\n"
+        "            'rank': 1,\n"
+        "            'candidate_id': 'stretch_video',\n"
+        "            'score': 0.4,\n"
+        "            'rationale': ['x'],\n"
+        "            'supporting_feature_ids': [],\n"
+        "            'opposing_feature_ids': [],\n"
+        "            'uncertainty': None,\n"
+        "            'feature_contributions': [],\n"
+        "        }],\n"
+        "        'excluded_candidates': list(context.get('excluded_candidates') or []),\n"
+        "        'unused_available_features': [],\n"
+        "        'missing_features': [],\n"
+        "        'next_package_runtime_state': {},\n"
+        "        'algorithm_provenance': {},\n"
+        "    }\n",
+    )
+
+    evidence = dispatch_selector(
+        pkg,
+        {"excluded_candidates": [
+            {"candidate_id": "oshi_reexperience", "platform_reason": "missing_required_entity"},
+        ]},
+        tmp_path,
+        matrix_version=_MATRIX_VERSION,
+        # The eligible (already-narrowed) allowed set — oshi_reexperience is NOT in it.
+        allowed_service_ids=["live_viewing", "stretch_video", "full_karaoke", "call_response_stopped"],
+    )
+
+    assert evidence.error is None, evidence.error
+    assert evidence.output is not None
+    excluded = evidence.output["excluded_candidates"]
+    assert [e["candidate_id"] for e in excluded] == ["oshi_reexperience"]
+
+
 def test_candidate_inside_allowed_set_still_passes_when_allowed_set_is_checked(tmp_path):
     """Sanity check: passing allowed_service_ids doesn't break an honest
     package whose candidates are all in-set (mirrors the real mock's

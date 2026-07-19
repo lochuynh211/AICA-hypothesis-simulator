@@ -1,5 +1,18 @@
 # FINDING — `preset-journey-e-3-rest-stop-stretch` service decision errors
 
+> **RESOLVED 2026-07-19.** Root cause was NOT the algorithm (as originally hypothesised below) but the
+> **safety-net check** in `services/proposal_selector.py::dispatch_selector`. The service algorithm
+> correctly PASSES THROUGH the platform-excluded `oshi_reexperience` in its output
+> `excluded_candidates` (the transparent "unavailable: no oshi registered" report — this is desired,
+> NOT a defect). The safety net then wrongly validated `excluded_candidates` against the *eligible*
+> `allowed_service_ids` (which excludes them by design) and rejected the whole run. Fix: the
+> excluded-candidate guard now permits candidates that were handed IN via
+> `context['excluded_candidates']` (platform exclusions); only RANKED candidates must be within the
+> eligible set. Regression test: `test_us3_failure_visibility.py::test_platform_excluded_candidate_passthrough_is_not_flagged_outside_allowed_set`.
+> After-rest + oshi-off runs now return `service_selected` with `oshi_reexperience` shown as excluded.
+> (The original "fix the algorithm to drop oshi_reexperience" suggestion below would have been WRONG —
+> it would hide a legitimate transparent exclusion.)
+
 **Severity:** medium (one preset produces `status=error` instead of a service proposal)
 **Owner area:** 018 presets / service-selector matrix + `aica_transparent_service_selector_v1` algorithm
 **Found by:** feature-019 (LLM rationale) full-preset accuracy sweep, 2026-07-18 — NOT a 019 issue; the
