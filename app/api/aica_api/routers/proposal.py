@@ -2068,36 +2068,53 @@ def explain_from_run_log(
         )
 
     # ── Backend (Ollama) — generate; fall back to template on any failure ───
+    # A weak model (qwen2.5:3b) at temperature 0 deterministically COPIES the
+    # format-example placeholders ("要因A"/"要因B") on the fact-sparse SERVICE
+    # prompt, so a single greedy roll would ALWAYS drop that step to the template
+    # ("AI unavailable"). Attempt 0 stays greedy/deterministic (unchanged for the
+    # cases that already work — e.g. the richer content prompt). If it comes back
+    # unusable, RE-ROLL with a slightly higher temperature and a FIXED per-attempt
+    # SEED — each such draw is itself deterministic/reproducible (same run → same
+    # seed sequence → same text), but escapes the greedy example-copy. We do NOT
+    # re-roll on a real ollama failure (down/timeout), where it only wastes time.
+    _EXPLAIN_ATTEMPT_OPTIONS = [None, {"temperature": 0.6, "seed": 1}, {"temperature": 0.6, "seed": 2}]
     messages = [{"role": m.role, "content": m.content} for m in prompt.messages]
     generated_at = datetime.now(timezone.utc).isoformat()
-    try:
-        raw = ollama_client.generate(
-            messages,
-            model=settings.ollama_model,
-            base_url=settings.ollama_base_url,
-            timeout=settings.ollama_timeout_sec,
-        )
+    provider_used: Literal["backend", "template"] = "template"
+    model = "template"
+    fell_back = True
+    error: str | None = None
+    rationale: list[str] | None = None
+    for _opts in _EXPLAIN_ATTEMPT_OPTIONS:
+        try:
+            raw = ollama_client.generate(
+                messages,
+                model=settings.ollama_model,
+                base_url=settings.ollama_base_url,
+                timeout=settings.ollama_timeout_sec,
+                options=_opts,
+            )
+        except ollama_client.OllamaError as exc:
+            error = exc.error_type  # ollama itself failed — retrying won't help
+            break
         parsed = explanation_builder.parse_bilingual(raw)
-        # Reject blank output OR a weak model that just echoed the prompt facts
-        # (see explanation_builder.response_is_usable) — fall back honestly to
-        # the template rather than presenting echoed text as a real generation.
+        # Reject blank/echoed output (see explanation_builder.response_is_usable),
+        # then strip leftover format-example placeholders and re-verify non-empty.
         if not explanation_builder.response_is_usable(parsed, prompt):
-            raise ollama_client.OllamaError("unusable_response", "Model output was empty or echoed the prompt")
-        # Strip any leftover format-example placeholder tokens ("(factor A)")
-        # AFTER the usable/parrot check, then re-verify non-empty.
-        rationale = [explanation_builder.strip_placeholder_artifacts(p) for p in parsed]
-        if not any(p.strip() for p in rationale):
-            raise ollama_client.OllamaError("unusable_response", "Model output was only placeholder artifacts")
-        provider_used: Literal["backend", "template"] = "backend"
+            error = "unusable_response"
+            continue  # echoed the facts or copied the example verbatim — re-roll
+        stripped = [explanation_builder.strip_placeholder_artifacts(p) for p in parsed]
+        if not any(p.strip() for p in stripped):
+            error = "unusable_response"
+            continue  # only placeholder artifacts survived — re-roll
+        rationale = stripped
+        provider_used = "backend"
         model = settings.ollama_model
         fell_back = False
-        error: str | None = None
-    except ollama_client.OllamaError as exc:
+        error = None
+        break
+    if rationale is None:
         rationale = explanation_builder.template_rationale(body.step, target)
-        provider_used = "template"
-        model = "template"
-        fell_back = True
-        error = exc.error_type
 
     # Persist to the append-only log only for a real on-disk run; an ephemeral
     # projection (persist_run_id is None) skips this — nothing to append to.

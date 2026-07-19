@@ -76,6 +76,7 @@ def generate(
     model: str,
     base_url: str,
     timeout: float,
+    options: dict | None = None,
 ) -> str:
     """Run one non-streaming chat completion and return the assistant text.
 
@@ -85,6 +86,10 @@ def generate(
     model    : Ollama model tag (e.g. ``"qwen2.5:3b"``).
     base_url : Ollama base URL (e.g. ``"http://ollama:11434"``).
     timeout  : per-request timeout in seconds.
+    options  : generation options override. Defaults to the greedy/deterministic
+               ``GENERATION_OPTIONS`` (``temperature=0``). A caller re-rolling an
+               unusable greedy result may pass ``{"temperature": t, "seed": n}``
+               — a fixed seed keeps each such draw itself deterministic/reproducible.
 
     Raises
     ------
@@ -97,7 +102,7 @@ def generate(
         "model": model,
         "messages": messages,
         "stream": False,
-        "options": GENERATION_OPTIONS,
+        "options": options if options is not None else GENERATION_OPTIONS,
     }
     body = json.dumps(payload).encode("utf-8")
 
