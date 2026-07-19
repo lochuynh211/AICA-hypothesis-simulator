@@ -19,7 +19,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { explain, type ExplainStep } from '../../api/proposalClient'
+import { explain, explainInline, type ExplainStep, type ProposalRunLog } from '../../api/proposalClient'
 import { nanoAvailable, runNano } from '../../lib/nano'
 
 export type ExplanationProvider = 'off' | 'backend' | 'browser'
@@ -129,15 +129,21 @@ async function generate(
   step: ExplainStep,
   targetId: string,
   provider: 'backend' | 'browser',
+  inlineProposal?: ProposalRunLog | null,
 ): Promise<CacheEntry> {
+  // An ephemeral (never-persisted) proposal is explained INLINE via
+  // /api/merged-runs/explain (feature 020); a persisted run uses the run-id
+  // endpoint. Both return the identical ExplainResponse shape.
+  const call = (p: 'backend' | 'browser') =>
+    inlineProposal ? explainInline(inlineProposal, { step, targetId, provider: p }) : explain(runId, { step, targetId, provider: p })
   if (provider === 'backend') {
-    const res = await explain(runId, { step, targetId, provider: 'backend' })
+    const res = await call('backend')
     const ja = res.rationale[0] ?? ''
     const en = res.rationale[1] ?? ja
     return { status: 'ready', ja, en, model: res.model, fellBack: res.fell_back }
   }
   // browser: fetch the prompt from the backend, run Nano locally, parse.
-  const res = await explain(runId, { step, targetId, provider: 'browser' })
+  const res = await call('browser')
   if (!(await nanoAvailable())) throw new Error('nano_unavailable')
   const raw = await runNano(res.prompt.messages)
   // Same honesty guard as the backend Ollama path: reject echo / example-parrot
@@ -156,9 +162,15 @@ export function useExplanation(
   targetId: string,
   provider: ExplanationProvider,
   lang: 'ja' | 'en',
+  inlineProposal?: ProposalRunLog | null,
 ): { ai: AiExplanation | null; request: () => void } {
   const [, forceRender] = useState(0)
   const requestedRef = useRef(false)
+  // The ephemeral proposal to explain inline, if any. Held in a ref so `request`
+  // stays stable (its identity churns each render) — the cache key is still the
+  // stable runId, so this only affects HOW generate fetches, not caching.
+  const inlineRef = useRef(inlineProposal)
+  inlineRef.current = inlineProposal
   // Whether this logical slot (this candidate/item card) is currently expanded.
   // Persists ACROSS key changes (unlike requestedRef) so a live-recompute that
   // mints a new run_id, or a provider switch, can auto-regenerate rather than
@@ -189,7 +201,7 @@ export function useExplanation(
     if (requestedRef.current || cache.has(key)) return // already generated / in flight
     requestedRef.current = true
     setCache(key, { status: 'loading' })
-    generate(runId, step, targetId, provider)
+    generate(runId, step, targetId, provider, inlineRef.current)
       .then((entry) => setCache(key, entry))
       .catch(() => setCache(key, { status: 'error' }))
   }, [runId, step, targetId, provider, key])

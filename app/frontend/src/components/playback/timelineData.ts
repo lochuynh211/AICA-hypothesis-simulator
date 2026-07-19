@@ -80,14 +80,84 @@ export function instantResultToTimeline(result: InstantResult): TimelineData {
   }
 }
 
-/** Map a merged quickview projection (feature 020, Slice-2c Task 5) to a
- * resolution-independent `TimelineData` — `MergedInstantResult` is
- * `InstantResult`-shaped (its `fires` carry a `MergedFirePoint` per entry,
- * which is a `FirePoint` plus an ignored per-fire `proposal`/`proposal_error`),
- * so this reuses `instantResultToTimeline`'s derivation verbatim rather than
- * duplicating the tick/minute-domain and y-axis normalization it already does. */
+/** Piecewise-linear interpolator from a monotone `(key → frac)` map (the
+ * per-tick `progress` series). `anchorOrigin` prepends `(0, 0)` so a minute
+ * value before the first tick (a segment starting at `from_min: 0`) maps to
+ * the route start; tick keys already start at 0 so they don't need it. Beyond
+ * the last point the last frac is held (clamped to [0,1]). */
+function makeFracInterp(
+  points: { key: number; frac: number }[],
+  anchorOrigin: boolean,
+): (q: number) => number {
+  const pts = anchorOrigin ? [{ key: 0, frac: 0 }, ...points] : points
+  return (q: number): number => {
+    if (pts.length === 0) return 0
+    if (q <= pts[0].key) return clamp01(pts[0].frac)
+    for (let i = 1; i < pts.length; i++) {
+      if (q <= pts[i].key) {
+        const a = pts[i - 1]
+        const b = pts[i]
+        const span = b.key - a.key
+        const f = span > 0 ? (q - a.key) / span : 0
+        return clamp01(a.frac + (b.frac - a.frac) * f)
+      }
+    }
+    return clamp01(pts[pts.length - 1].frac)
+  }
+}
+
+/** Map a merged quickview projection (feature 020) to a resolution-independent
+ * `TimelineData` on the DISTANCE (route_fraction) axis — so its fires/curve/rest
+ * markers line up with the distance-axis live animation (owner review issue 2:
+ * the quickview trigger point must sit at the same x as the animation's). The
+ * per-tick `progress` map (added by `services/preview.py`) remaps every
+ * minute/tick x-coordinate onto route_fraction; distance is FLAT across a
+ * stopped rest, so a multi-minute rest collapses to a single route position,
+ * exactly as the live animation shows it. Falls back to the time-axis
+ * `instantResultToTimeline` when `progress` is absent (older payloads/fixtures). */
 export function mergedInstantResultToTimeline(result: MergedInstantResult): TimelineData {
-  return instantResultToTimeline(result)
+  const progress = result.progress ?? []
+  if (progress.length === 0) return instantResultToTimeline(result)
+
+  const tickToFrac = makeFracInterp(progress.map((p) => ({ key: p.t, frac: p.frac })), false)
+  const minToFrac = makeFracInterp(progress.map((p) => ({ key: p.min, frac: p.frac })), true)
+
+  const restOptions =
+    result.rest_options && result.rest_options.length > 0
+      ? result.rest_options
+      : result.rest_option != null
+        ? [result.rest_option]
+        : []
+  const fires = result.fired
+    ? result.fires && result.fires.length > 0
+      ? result.fires
+      : result.fire != null
+        ? [result.fire]
+        : []
+    : []
+
+  const restStops = restOptions
+    .map((o) => o.recovery_from_min)
+    .filter((m): m is number => m != null)
+
+  return {
+    segments: result.segments.map((s) => ({ fromX: minToFrac(s.from_min), toX: minToFrac(s.to_min), type: s.type })),
+    trafficJams: (result.traffic_jams ?? []).map((j) => ({ fromX: minToFrac(j.from_min), toX: minToFrac(j.to_min) })),
+    restScore: result.score_series.map((p) => ({ x: tickToFrac(p.t), y: p.score })),
+    monotonyScore: (result.monotony_series ?? []).map((p) => ({ x: tickToFrac(p.t), y: p.score })),
+    restThreshold: result.threshold,
+    monotonyThreshold: result.monotony_threshold ?? null,
+    spikes: (result.spikes ?? []).map((s) => tickToFrac(s.t)),
+    fires: fires.map((f) => ({
+      x: tickToFrac(f.tick),
+      kind: (f.category ?? '').startsWith('rest') ? 'rest' : 'monotony',
+    })),
+    restDots: restStops.map(minToFrac),
+    recoveryWindows: restOptions
+      .filter((o) => o.recovery_from_min != null && o.to_min != null)
+      .map((o) => ({ fromX: minToFrac(o.recovery_from_min as number), toX: minToFrac(o.to_min as number) })),
+    completionX: result.completed_min != null ? minToFrac(result.completed_min) : null,
+  }
 }
 
 /** y-axis domain fitting BOTH curves and BOTH thresholds (never hardcode 0–1). */

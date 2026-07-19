@@ -261,7 +261,7 @@ export default function MergedLogPanel() {
   return (
     <div
       data-testid="merged-log-panel"
-      style={{ background: '#111', color: '#ddd', overflowY: 'auto', maxHeight: '100%', fontSize: '0.85em' }}
+      style={{ background: '#111', color: '#ddd', overflowY: 'auto', height: '100%', minHeight: 0, fontSize: '0.85em' }}
     >
       <div
         style={{

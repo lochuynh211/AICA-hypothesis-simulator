@@ -698,6 +698,12 @@ class CreateProposalRunBody(BaseModel):
     hyperparameters: dict[str, Any] = {}
     run_seed: str
     simulation_time: str | int
+    # quick_check only: force content dispatch for THIS ranked service instead of
+    # the selector's own rank-1 (feature 020 — the merged after-nap inspect panel
+    # lets the reviewer pick a non-rank-1 service, e.g. full_karaoke, and see its
+    # content). Ignored in interactive mode. Falls back to rank-1 when the id
+    # isn't among the ranked candidates (so a stale/invalid pick can't error).
+    quick_check_service_id: str | None = None
 
 
 def _resolve_run_setup(
@@ -1008,12 +1014,26 @@ def create_proposal_run(
     else:
         ranked_candidates = evidence.output.get("ranked_candidates", []) if evidence.output else []
         if ranked_candidates:
-            selected_service_id = ranked_candidates[0]["candidate_id"]
+            ranked_ids = [c["candidate_id"] for c in ranked_candidates]
+            # quick_check may FORCE a specific ranked service (the merged after-nap
+            # inspect panel's Choose) instead of rank-1; fall back to rank-1 when
+            # the override is unset/not among the ranked candidates.
+            if (
+                body.mode == ProposalRunMode.quick_check
+                and body.quick_check_service_id is not None
+                and body.quick_check_service_id in ranked_ids
+            ):
+                selected_service_id = body.quick_check_service_id
+            else:
+                selected_service_id = ranked_candidates[0]["candidate_id"]
             events.append(
                 DiscreteEvent(
                     event_type=DiscreteEventType.SERVICE_SELECTED,
                     at=at,
-                    payload={"selected_service_id": selected_service_id, "rank": 1},
+                    payload={
+                        "selected_service_id": selected_service_id,
+                        "rank": ranked_ids.index(selected_service_id) + 1,
+                    },
                 )
             )
         status = ProposalRunStatus.service_selected
@@ -1994,12 +2014,18 @@ def _find_explain_target(
     return ev, target
 
 
-@router.post("/api/proposal/runs/{run_id}/explain")
-def explain_run(run_id: str, body: ExplainRequestBody) -> ExplainResponse:
-    run_log = prm.get_run(run_id, settings.proposal_runs_dir)
-    if run_log is None:
-        raise HTTPException(status_code=404, detail=f"Proposal run {run_id!r} not found")
+def explain_from_run_log(
+    run_log: ProposalRunLog, body: ExplainRequestBody, *, persist_run_id: str | None
+) -> ExplainResponse:
+    """Core of the explain flow, independent of HOW ``run_log`` was obtained.
 
+    ``persist_run_id`` (the on-disk run id) appends the generated backend
+    explanation to that run's append-only log; ``None`` skips persistence — used
+    by the Combined Simulator's INLINE explain over an EPHEMERAL, never-persisted
+    quickview / after-nap projection (feature 020), which has no disk run to
+    append to. Behaviorally identical to the run-id endpoint otherwise (same
+    prompt, same Ollama call + honest template fallback, same browser build-only
+    path)."""
     ev, target = _find_explain_target(run_log, body.step, body.target_id)
     if ev is None:
         raise HTTPException(
@@ -2073,19 +2099,22 @@ def explain_run(run_id: str, body: ExplainRequestBody) -> ExplainResponse:
         fell_back = True
         error = exc.error_type
 
-    explanation = Explanation(
-        step=body.step,
-        target_id=body.target_id,
-        requested_provider="backend",
-        provider_used=provider_used,
-        model=model,
-        rationale=rationale,
-        fell_back=fell_back,
-        error=error,
-        prompt_hash=p_hash,
-        generated_at=generated_at,
-    )
-    prm.append_explanation(run_id, explanation, settings.proposal_runs_dir)
+    # Persist to the append-only log only for a real on-disk run; an ephemeral
+    # projection (persist_run_id is None) skips this — nothing to append to.
+    if persist_run_id is not None:
+        explanation = Explanation(
+            step=body.step,
+            target_id=body.target_id,
+            requested_provider="backend",
+            provider_used=provider_used,
+            model=model,
+            rationale=rationale,
+            fell_back=fell_back,
+            error=error,
+            prompt_hash=p_hash,
+            generated_at=generated_at,
+        )
+        prm.append_explanation(persist_run_id, explanation, settings.proposal_runs_dir)
 
     return ExplainResponse(
         step=body.step,
@@ -2098,6 +2127,14 @@ def explain_run(run_id: str, body: ExplainRequestBody) -> ExplainResponse:
         error=error,
         prompt=prompt,
     )
+
+
+@router.post("/api/proposal/runs/{run_id}/explain")
+def explain_run(run_id: str, body: ExplainRequestBody) -> ExplainResponse:
+    run_log = prm.get_run(run_id, settings.proposal_runs_dir)
+    if run_log is None:
+        raise HTTPException(status_code=404, detail=f"Proposal run {run_id!r} not found")
+    return explain_from_run_log(run_log, body, persist_run_id=run_id)
 
 
 # ---------------------------------------------------------------------------

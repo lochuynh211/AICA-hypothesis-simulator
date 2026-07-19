@@ -7,10 +7,12 @@
  *   1. QUICKVIEW PROJECTION — persistent ephemeral preview (legend + jam
  *      sub-bar + journey markers); click a fire to inspect it (right panel).
  *   2. Play/Continue · Pause · Step · Reset controls.
- *   3. ANIMATION — the SAME quickview timeline (so it's identical) with only a
- *      moving playhead (driven by a TICK fraction, so the live playhead aligns
- *      with the projection's time-axis geometry). No legend (the quickview has
- *      one right above).
+ *   3. ANIMATION — a REALTIME timeline built from the observed trace on the
+ *      DISTANCE (route_fraction) axis, with a moving playhead at the car's
+ *      route_fraction. The quickview above is remapped onto the SAME distance
+ *      axis (`mergedInstantResultToTimeline` uses the preview `progress` map),
+ *      so a trigger point sits at the same x in both (owner review issue 2).
+ *      No legend (the quickview has one right above).
  *   4. GOOGLE MAP — `<MapSurface/>` with the live car + decision/rest markers,
  *      and the on-map REST overlay (rest message + spot options w/ distance +
  *      Reject). Choose a spot → auto-select service+content (rank-1) and PAUSE
@@ -243,8 +245,10 @@ export default function MergedCenterPanel() {
               jamGroup: 'quickview-jam-group',
               restSpotGroup: 'quickview-rest-group',
               fireHit: (i) => `quickview-fire-hit-${i}`,
+              restOptionHit: (i) => `quickview-rest-hit-${i}`,
             }}
             onFireClick={(_fire, i) => coordinator.inspectFire(state.inspectedFireIndex === i ? null : i)}
+            onRestOptionClick={(i) => coordinator.inspectRestOption(state.inspectedRestOptionIndex === i ? null : i)}
           />
         </section>
       )}
@@ -316,6 +320,7 @@ export default function MergedCenterPanel() {
             fractionOverride={state.latestTrigger?.route_fraction ?? undefined}
             proposalFractionsOverride={decisionFractions}
             restSpotsOverride={state.acceptedRestSpots}
+            jamRangesKm={rs.mergedJamRangesKm}
           />
 
           {showRestOverlay && (

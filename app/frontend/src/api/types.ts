@@ -360,6 +360,17 @@ export type ScoreSeriesPoint = {
   score: number
 }
 
+/** One per-tick route-progress sample (feature 020 — trigger-point alignment):
+ *  pairs a tick's elapsed `min` (segments/fires axis) with its DISTANCE `frac`
+ *  (route_fraction, 0-1). Lets a distance-axis consumer (the Combined Simulator's
+ *  quickview) remap minute/tick x-coordinates onto the distance axis. `frac` is
+ *  flat across a stopped rest (car parked while time advances). */
+export type ProgressPoint = {
+  t: number
+  min: number
+  frac: number
+}
+
 /** One anomaly-spike event marked on the preview timeline. `t` aligns with
  *  score_series.t (tick index); `time_min` is the same instant in minutes. */
 export type SpikePoint = {
@@ -421,6 +432,11 @@ export type InstantResult = {
   peak_score: number
   threshold: number | null
   score_series: ScoreSeriesPoint[]
+  /** Per-tick route-progress map (feature 020 — trigger-point alignment): lets the
+   * Combined Simulator's quickview remap onto the DISTANCE axis. Optional so
+   * hand-built fixtures predating the field still typecheck; the backend always
+   * sends it (defaulting to []). */
+  progress?: ProgressPoint[]
   /** Second curve: the hybrid's monotony-prevention score/threshold. Empty for
    * algorithms (NRI) with a single rest-required score → strip renders one curve.
    * Optional so hand-built fixtures/constructors predating the field still typecheck;

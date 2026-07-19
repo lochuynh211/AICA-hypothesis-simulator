@@ -117,6 +117,59 @@ def _project_fire(ev: PreviewFireEvent, body: MergedQuickviewBody) -> tuple[dict
     return plog.model_dump(mode="json"), None
 
 
+def _project_after_rest(tick_state: Any, body: MergedQuickviewBody) -> tuple[dict | None, str | None]:
+    """Build ONE quick-check proposal for the AFTER-NAP moment of a projected
+    rest (feature 020 — the clickable purple "after-nap" journey dot), from the
+    recovered driver state captured on the last stopped recovery tick.
+
+    Modeled as the SAME rest journey that started this recovery:
+    ``trigger_purpose="rest_recommended"`` at ``lifecycle_stage=
+    "after_rest_before_restart"`` (the "after spot" stage — frozen §7.5 matrix
+    row 3), motion left as the captured ``stopped`` state. This is the genuine
+    after-nap proposal: the after-rest service row (live_viewing / stretch_video /
+    full_karaoke / oshi_reexperience / call_response_stopped) is ranked and, when
+    the top service isn't one the single wired music content package can serve,
+    the content step surfaces an honest ``unsupported_service`` error inside the
+    run (never a faked plan — CLAUDE.md). quick_check dispatches service + content
+    in one call. Returns ``(proposal_dict, proposal_error)`` — at most one
+    non-None (``proposal_error`` only on a caught ``HTTPException``, e.g. a
+    mis-slotted package; an in-run content error is carried in the proposal's own
+    evidence, not here).
+
+    NOTE (owner decision, feature 020): the green "driving-after-rest" dot was
+    dropped — under ``rest_recommended`` the frozen §7.5 matrix has no
+    ``active_driving_content`` row, and the real journey keeps a resumed drive at
+    ``after_rest_before_restart`` (only motion flips), so there is no distinct
+    matrix-valid proposal to project for it. Only the purple after-nap dot is
+    clickable."""
+    purpose = "rest_recommended"
+    stage = "after_rest_before_restart"
+    # The captured tick is the last STOPPED recovery tick, so build_world_from_tick
+    # copies motion=stopped — exactly the after-nap state; no override needed.
+    world = build_world_from_tick(body.world, tick_state, trigger_purpose=purpose, lifecycle_stage=stage)
+    try:
+        proposal_body = CreateProposalRunBody(
+            world=world,
+            trigger_purpose=purpose,
+            lifecycle_stage=stage,
+            motion_state=world.control_inputs.motion_state,
+            service_package_id=body.service_package_id,
+            content_package_id=body.content_package_id,
+            mode="quick_check",
+            run_seed=body.run_seed_proposal,
+            simulation_time=0,
+            parameters=body.service_parameters,
+            hyperparameters=body.service_hyperparameters,
+        )
+    except ValidationError as exc:
+        return None, str(exc)
+    try:
+        plog = create_proposal_run(proposal_body, cache={})
+    except HTTPException as exc:
+        return None, str(exc.detail)
+    return plog.model_dump(mode="json"), None
+
+
 def project(
     body: MergedQuickviewBody,
     *,
@@ -165,6 +218,21 @@ def project(
             projected.append(_project_fire(ev, body))
     except StopIteration as stop:
         result = stop.value
+
+    # feature 020 — clickable journey dots: iter_preview_ticks stashes the
+    # recovered driver `tick_state` (private `_post_rest_tick_state`) on each
+    # projected auto-accepted rest. Pop it (it must NEVER reach the response —
+    # the models are extra=allow) and, when the run didn't end in an algorithm
+    # error, project the AFTER-REST proposal (both service + content) the
+    # purple/green dots reveal. `rest_option` (singular) IS `rest_options[0]`
+    # (same dict object — see services/preview.py), so mutating the list entry
+    # cleans/augments the singular alias too.
+    for opt in result.get("rest_options", []):
+        post_tick = opt.pop("_post_rest_tick_state", None)
+        if post_tick is not None and result["error"] is None:
+            proposal, proposal_error = _project_after_rest(post_tick, body)
+            opt["after_rest_proposal"] = proposal
+            opt["after_rest_proposal_error"] = proposal_error
 
     # `iter_preview_ticks` deliberately empties its OWN `fires`/`spikes` to
     # `[]` whenever the run ends in an algorithm error (`result["error"]` set)

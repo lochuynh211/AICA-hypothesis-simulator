@@ -27,7 +27,7 @@
  * "no store" isolation of this panel — the owner explicitly required exact reuse
  * of the store-driven editors. The center/log panels stay coordinator-only.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Modal from './Modal'
 import ErrorNotice from '../common/ErrorNotice'
 import RouteConditionsPainter, { type KmRange } from './RouteConditionsPainter'
@@ -350,6 +350,43 @@ export default function MergedSetupPanel() {
   }, [isComplete, hasRun, rs.selectedPackageId, rs.selectedScenarioId, rs.editedHyperparameters, selectedRoutePresetId,
       mountainRange, jamRange, jamSpeedKph, effectiveWorld, ps.servicePackageId, ps.contentPackageId,
       ps.serviceParameterOverrides, ps.serviceHyperparameterOverrides, ps.contentParameterOverrides, ps.contentHyperparameterOverrides])
+
+  // Issue 1: bridge the painted traffic-jam range (km) into the runStore so the
+  // center panel's <MapSurface/> can draw it in red over the route. A zero-width
+  // or unpainted range clears the overlay.
+  useEffect(() => {
+    const ranges: [number, number][] = jamRange && jamRange[1] > jamRange[0] ? [jamRange] : []
+    runStore.dispatch({ type: 'SET_MERGED_JAM_RANGES', ranges })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jamRange])
+
+  // Issue 2: editing ANY setup field after a live run has been created (or while
+  // it is running) resets the simulator — the reviewer must Play again against
+  // the new setup. A signature of every setup input is compared against the last
+  // one so this fires ONLY on a real change (never on unrelated re-renders, and
+  // never on mount). After reset, the auto-quickview effect above re-projects the
+  // new setup (hasRun is false again).
+  const setupSignature = JSON.stringify({
+    pkg: rs.selectedPackageId, scn: rs.selectedScenarioId,
+    hp: rs.editedHyperparameters, pm: rs.editedParameters,
+    routePreset: selectedRoutePresetId, routeId: selectedRouteId,
+    mountain: mountainRange, jam: jamRange, jamSpeed: jamSpeedKph,
+    svc: ps.servicePackageId, cnt: ps.contentPackageId,
+    svcP: ps.serviceParameterOverrides, svcHp: ps.serviceHyperparameterOverrides,
+    cntP: ps.contentParameterOverrides, cntHp: ps.contentHyperparameterOverrides,
+    seed: rs.runSeed, tick: rs.tickSecondsOverride,
+    profile: rs.profileOverrides, ctx: rs.contextOverrides,
+    initD: rs.initialDrowsiness, initF: rs.initialFatigue,
+    world: effectiveWorld,
+  })
+  const prevSetupSig = useRef(setupSignature)
+  useEffect(() => {
+    if (prevSetupSig.current === setupSignature) return
+    prevSetupSig.current = setupSignature
+    if (coordinator.state.mergedRunId != null || coordinator.state.running) {
+      coordinator.reset()
+    }
+  }, [setupSignature, coordinator])
 
   const selService = servicePackages.find((p) => p.id === ps.servicePackageId) ?? null
   const selContent = contentPackages.find((p) => p.id === ps.contentPackageId) ?? null

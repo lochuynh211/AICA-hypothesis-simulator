@@ -13,7 +13,7 @@
  */
 import { t } from '../../i18n/t'
 import { fitBand } from '../../lib/fitBand'
-import type { RankedCandidate, ExcludedCandidate } from '../../api/proposalClient'
+import type { RankedCandidate, ExcludedCandidate, ProposalRunLog } from '../../api/proposalClient'
 import ReasonBreakdown, { type ReasonRow } from '../proposal/ReasonBreakdown'
 import ServiceExplainability, { hasFeatureTrace } from '../proposal/ServiceExplainability'
 import { useExplanation, type ExplanationProvider } from '../proposal/useExplanation'
@@ -53,13 +53,15 @@ function ServiceReason({
   runId,
   provider,
   lang,
+  inlineProposal,
 }: {
   candidate: RankedCandidate
   runId: string | undefined
   provider: ExplanationProvider
   lang: 'ja' | 'en'
+  inlineProposal?: ProposalRunLog | null
 }) {
-  const { ai, request } = useExplanation(runId, 'service', candidate.candidate_id, provider, lang)
+  const { ai, request } = useExplanation(runId, 'service', candidate.candidate_id, provider, lang, inlineProposal)
   return (
     <ReasonBreakdown
       rows={serviceRows(candidate)}
@@ -89,6 +91,9 @@ export function ServiceResultOverlay(props: {
   isBacked?: (candidateId: string) => boolean
   runId?: string
   explanationProvider: ExplanationProvider
+  /** An EPHEMERAL proposal (quickview/after-nap projection) to explain inline —
+   * feature 020. Undefined for a persisted run (uses the run-id endpoint). */
+  inlineProposal?: ProposalRunLog | null
   lang: 'ja' | 'en'
 }) {
   const {
@@ -101,6 +106,7 @@ export function ServiceResultOverlay(props: {
     isBacked = () => true,
     runId,
     explanationProvider,
+    inlineProposal,
     lang,
   } = props
 
@@ -181,7 +187,7 @@ export function ServiceResultOverlay(props: {
                     </span>
                   )}
                 </div>
-                <ServiceReason candidate={candidate} runId={runId} provider={explanationProvider} lang={lang} />
+                <ServiceReason candidate={candidate} runId={runId} provider={explanationProvider} lang={lang} inlineProposal={inlineProposal} />
                 <ServiceExplainability candidate={candidate} lang={lang} />
                 <div
                   style={{

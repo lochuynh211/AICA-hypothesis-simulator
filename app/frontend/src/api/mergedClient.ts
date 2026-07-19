@@ -11,7 +11,7 @@
  * (proposal side, for `World`/`ProposalRunLog`) — never on `state/runStore` or
  * `state/proposalStore` (feature-020 isolation constraint; see CLAUDE.md).
  */
-import type { DecisionResult, AlgorithmError, RestSpot, RunState, FirePoint, InstantResult, RunLog } from './types'
+import type { DecisionResult, AlgorithmError, RestSpot, RunState, FirePoint, InstantResult, PreviewRestOption, RunLog } from './types'
 import type { World, ProposalRunLog } from './proposalClient'
 
 // ── Internal helper (mirrors api/client.ts's apiFetch) ──────────────────────
@@ -142,14 +142,27 @@ export type MergedFirePoint = FirePoint & {
   proposal_error: string | null
 }
 
+/** A projected auto-accepted rest, extended (feature 020 — clickable journey
+ * dots) with the AFTER-REST proposal built from the recovered driver state
+ * (quick_check → both service+content). Mirrors `models/merged_run.py`'s
+ * `MergedRestOption`; `after_rest_proposal` is a `ProposalRunLog` when the
+ * projection succeeded, else `null` with `after_rest_proposal_error` set —
+ * never both. */
+export type MergedRestOption = PreviewRestOption & {
+  after_rest_proposal: ProposalRunLog | null
+  after_rest_proposal_error: string | null
+}
+
 /** Ephemeral, non-persisting projection of the WHOLE merged chain (mirrors
  * `models/merged_run.py`'s `MergedInstantResult`) — same shape as the
  * trigger-only `InstantResult` except `fires` carries a `MergedFirePoint`
- * (with the projected proposal) per entry instead of a bare `FirePoint`. The
- * singular back-compat `fire` field (first entry, unaugmented) stays a plain
- * `FirePoint` on purpose, mirroring the backend model. */
-export type MergedInstantResult = Omit<InstantResult, 'fires'> & {
+ * (with the projected proposal) per entry instead of a bare `FirePoint`, and
+ * `rest_options` carries a `MergedRestOption` (with the after-rest proposal).
+ * The singular back-compat `fire` field (first entry, unaugmented) stays a
+ * plain `FirePoint` on purpose, mirroring the backend model. */
+export type MergedInstantResult = Omit<InstantResult, 'fires' | 'rest_options'> & {
   fires: MergedFirePoint[]
+  rest_options?: MergedRestOption[]
 }
 
 /** Request body for `POST /api/merged-runs/quickview` (mirrors
@@ -254,6 +267,31 @@ export async function buildMergedPlan(body: BuildMergedPlanReq): Promise<{ plan_
  * creating a real merged run via `createMergedRun`. */
 export async function mergedQuickview(body: MergedQuickviewReq): Promise<MergedInstantResult> {
   return apiFetch('/api/merged-runs/quickview', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
+/** Request for `POST /api/merged-runs/after-rest-proposal` (mirrors
+ * `AfterRestProposalBody`). Re-projects the read-only after-nap inspect panel's
+ * proposal from the SAME recovered-driver `world`, forcing content dispatch for
+ * `selected_service_id` (the reviewer-chosen service, e.g. full_karaoke). */
+export type AfterRestProposalReq = {
+  world: World
+  service_package_id: string
+  content_package_id: string
+  run_seed_proposal: string
+  selected_service_id?: string | null
+  service_parameters?: Record<string, unknown>
+  service_hyperparameters?: Record<string, unknown>
+}
+
+/** Interactive Choose for the after-nap inspect panel: dispatch content for a
+ * reviewer-chosen after-rest service. Stateless / non-persisting (the backend
+ * builds it with `cache={}`) — nothing is written to `proposal_runs/`. */
+export async function afterRestProposal(body: AfterRestProposalReq): Promise<ProposalRunLog> {
+  return apiFetch('/api/merged-runs/after-rest-proposal', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

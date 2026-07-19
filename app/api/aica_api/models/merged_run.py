@@ -22,6 +22,7 @@ from aica_api.models.run import (
     PreviewRestSpot,
     PreviewSegment,
     PreviewTrafficJam,
+    ProgressPoint,
     RestSpot,
     ScoreSeriesPoint,
     SpikePoint,
@@ -180,6 +181,18 @@ class MergedFirePoint(FirePoint):
     proposal_error: str | None = None
 
 
+class MergedRestOption(PreviewRestOption):
+    """A projected auto-accepted rest, extended (feature 020 — clickable
+    journey dots) with the AFTER-REST proposal ``merged_quickview.project``
+    builds from the recovered driver state (quick_check → both service+content).
+    ``dict | None`` (``ProposalRunLog.model_dump()``) mirrors ``MergedFirePoint
+    .proposal``; ``after_rest_proposal_error`` carries a caught
+    ``HTTPException.detail`` instead (never both set)."""
+
+    after_rest_proposal: dict | None = None
+    after_rest_proposal_error: str | None = None
+
+
 class MergedInstantResult(BaseModel):
     """Ephemeral, non-persisting projection of the WHOLE merged chain
     (feature 020, Slice-2c): one headless trigger preview pass
@@ -204,6 +217,9 @@ class MergedInstantResult(BaseModel):
     peak_score: float
     threshold: float | None = None
     score_series: list[ScoreSeriesPoint] = []
+    # Per-tick route-progress map (feature 020 — trigger-point alignment): lets the
+    # quickview remap onto the DISTANCE axis so its fires align with the live animation.
+    progress: list[ProgressPoint] = []
     monotony_series: list[ScoreSeriesPoint] = []
     monotony_threshold: float | None = None
     spikes: list[SpikePoint] = []
@@ -212,7 +228,7 @@ class MergedInstantResult(BaseModel):
     rest_spot: PreviewRestSpot | None = None
     rest_option: PreviewRestOption | None = None
     rest_spots: list[PreviewRestSpot] = []
-    rest_options: list[PreviewRestOption] = []
+    rest_options: list[MergedRestOption] = []
     completed_min: float | None = None
     seed: int
     overrides: list[dict[str, Any]] = []

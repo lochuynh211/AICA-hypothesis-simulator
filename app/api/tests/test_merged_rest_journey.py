@@ -396,3 +396,51 @@ def test_decline_resumes_ticking_and_rearms_the_fire_guard(rest_plan_id, base_wo
 def test_decline_unknown_merged_run_id_404():
     r = client.post("/api/merged-runs/mrun_does_not_exist/decline")
     assert r.status_code == 404
+
+
+def test_second_rest_trigger_spawns_a_fresh_proposal_run(rest_plan_id, base_world_dict):
+    """After an accepted rest journey COMPLETES, a genuine SECOND rest trigger
+    later in the same run must spawn a NEW proposal run — not be silently
+    swallowed by the once-per-run fire guard (owner review issue 3). This is the
+    accept-path analogue of ``test_decline_resumes_ticking_and_rearms_the_fire_guard``.
+    """
+    mid, trigger_run_id = _create_merged_run(rest_plan_id, base_world_dict)
+
+    # First fire → accept a rest.
+    first = _tick_until_proposal(mid)
+    first_run_id = first["run_id"]
+    spots = client.get(f"/api/runs/{trigger_run_id}/rest-spots").json()["rest_spots"]
+    assert spots
+    accept_resp = client.post(
+        f"/api/merged-runs/{mid}/accept-rest",
+        json={"recovery_option_id": _RECOVERY_OPTION_ID, "rest_spot": spots[0], "nap_minutes": None},
+    )
+    assert accept_resp.status_code == 200, accept_resp.text
+
+    # Drive through the journey until the after-rest recompute pauses the run.
+    saw_after_rest = False
+    for _ in range(_MAX_TICKS_TO_AFTER_REST):
+        body = client.post(f"/api/merged-runs/{mid}/tick").json()
+        if body["proposal"] and body["proposal"]["journey_state"]["lifecycle_stage"] == "after_rest_before_restart":
+            saw_after_rest = True
+            break
+        if body["trigger"].get("completed"):
+            break
+    assert saw_after_rest, "expected to reach the after-rest proposal"
+
+    # Keep ticking (resume) — a SECOND rest fire must eventually spawn a fresh
+    # proposal run (different run_id) before the route completes.
+    second_run_id = None
+    for _ in range(_MAX_TICKS_TO_FIRE):
+        body = client.post(f"/api/merged-runs/{mid}/tick").json()
+        if body["proposal"] and body["proposal"]["run_id"] != first_run_id:
+            second_run_id = body["proposal"]["run_id"]
+            break
+        if body["trigger"].get("completed"):
+            break
+
+    assert second_run_id is not None, (
+        "a SECOND rest trigger after a completed journey must spawn a NEW proposal run "
+        "(the re-fire guard must be re-armed once rest_stage_synced == 'after')"
+    )
+    assert second_run_id != first_run_id

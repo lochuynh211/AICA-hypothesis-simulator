@@ -15,6 +15,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MergedCoordinatorProvider, useMergedCoordinator } from '../src/state/mergedCoordinator'
 import { RunStoreProvider } from '../src/state/runStore'
+import { ProposalStoreProvider } from '../src/state/proposalStore'
 import type { MergedTickResponse } from '../src/api/mergedClient'
 import type { DecisionResult } from '../src/api/types'
 import type { ProposalRunLog, AlgorithmEvidence } from '../src/api/proposalClient'
@@ -263,9 +264,11 @@ function renderCenterPanel() {
   render(
     <MergedCoordinatorProvider>
       <RunStoreProvider>
+        <ProposalStoreProvider>
         <Capture />
         <MergedCenterPanel />
         <MergedProposalPanel />
+        </ProposalStoreProvider>
       </RunStoreProvider>
     </MergedCoordinatorProvider>,
   )

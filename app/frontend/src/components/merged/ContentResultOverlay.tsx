@@ -14,7 +14,7 @@
  */
 import { t } from '../../i18n/t'
 import { fitBand } from '../../lib/fitBand'
-import type { CompletePlan, EvidenceError, OrderedItem } from '../../api/proposalClient'
+import type { CompletePlan, EvidenceError, OrderedItem, ProposalRunLog } from '../../api/proposalClient'
 import ReasonBreakdown, { type ReasonRow } from '../proposal/ReasonBreakdown'
 import ContentExplainability, { hasContentExplainability } from '../proposal/ContentExplainability'
 import { useExplanation, type ExplanationProvider } from '../proposal/useExplanation'
@@ -84,13 +84,15 @@ function ContentReason({
   runId,
   provider,
   lang,
+  inlineProposal,
 }: {
   item: OrderedItem
   runId: string | undefined
   provider: ExplanationProvider
   lang: 'ja' | 'en'
+  inlineProposal?: ProposalRunLog | null
 }) {
-  const { ai, request } = useExplanation(runId, 'content', item.item_id, provider, lang)
+  const { ai, request } = useExplanation(runId, 'content', item.item_id, provider, lang, inlineProposal)
   return (
     <ReasonBreakdown
       rows={contentRows(item)}
@@ -112,9 +114,12 @@ export function ContentResultOverlay(props: {
   songNames: Record<string, string>
   runId?: string
   explanationProvider: ExplanationProvider
+  /** An EPHEMERAL proposal (quickview/after-nap projection) to explain inline —
+   * feature 020. Undefined for a persisted run (uses the run-id endpoint). */
+  inlineProposal?: ProposalRunLog | null
   lang: 'ja' | 'en'
 }) {
-  const { plan, error, songNames, runId, explanationProvider, lang } = props
+  const { plan, error, songNames, runId, explanationProvider, inlineProposal, lang } = props
 
   return (
     <>
@@ -192,7 +197,7 @@ export function ContentResultOverlay(props: {
                   </span>
                 )}
               </div>
-              <ContentReason item={item} runId={runId} provider={explanationProvider} lang={lang} />
+              <ContentReason item={item} runId={runId} provider={explanationProvider} lang={lang} inlineProposal={inlineProposal} />
               <ContentExplainability item={item} lang={lang} />
             </div>
           ))}

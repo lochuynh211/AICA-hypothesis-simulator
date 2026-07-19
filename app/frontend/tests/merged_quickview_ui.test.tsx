@@ -19,7 +19,8 @@ import { render, screen, fireEvent, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MergedCoordinatorProvider, useMergedCoordinator } from '../src/state/mergedCoordinator'
 import { RunStoreProvider } from '../src/state/runStore'
-import type { MergedInstantResult, MergedFirePoint, MergedTickResponse } from '../src/api/mergedClient'
+import { ProposalStoreProvider } from '../src/state/proposalStore'
+import type { MergedInstantResult, MergedFirePoint, MergedRestOption, MergedTickResponse } from '../src/api/mergedClient'
 import type { ProposalRunLog, AlgorithmEvidence } from '../src/api/proposalClient'
 import MergedCenterPanel from '../src/components/merged/MergedCenterPanel'
 import MergedProposalPanel from '../src/components/merged/MergedProposalPanel'
@@ -29,9 +30,10 @@ vi.mock('../src/api/mergedClient', () => ({
   tickMergedRun: vi.fn(),
   mergedProposalAction: vi.fn(),
   mergedQuickview: vi.fn(),
+  afterRestProposal: vi.fn(),
 }))
 
-import { createMergedRun, tickMergedRun, mergedQuickview, mergedProposalAction } from '../src/api/mergedClient'
+import { createMergedRun, tickMergedRun, mergedQuickview, mergedProposalAction, afterRestProposal } from '../src/api/mergedClient'
 
 // ── fixtures ─────────────────────────────────────────────────────────────
 
@@ -141,6 +143,25 @@ function quickviewResultFixture(): MergedInstantResult {
   }
 }
 
+/** A recovered rest option carrying an after-rest (resumed-drive) proposal —
+ * `recovery_from_min`/`to_min` set so the timeline draws the purple/green
+ * journey dots (and, with `onRestOptionClick` supplied, their hit-circles). */
+function restOptionFixture(): MergedRestOption {
+  return {
+    id: 'auto_rest_0',
+    auto_chosen: true,
+    recovery_from_min: 12,
+    to_min: 18,
+    after_rest_proposal: proposalLogFor('humming_karaoke', 'prun_after_rest'),
+    after_rest_proposal_error: null,
+  }
+}
+
+function quickviewWithRestOptionFixture(): MergedInstantResult {
+  const opt = restOptionFixture()
+  return { ...quickviewResultFixture(), rest_option: opt, rest_options: [opt] }
+}
+
 /** Captures the real coordinator context, mirroring
  * `merged_center.test.tsx`'s `renderCenterPanel`. */
 function renderCenterPanel() {
@@ -157,9 +178,11 @@ function renderCenterPanel() {
   render(
     <MergedCoordinatorProvider>
       <RunStoreProvider>
+        <ProposalStoreProvider>
         <Capture />
         <MergedCenterPanel />
         <MergedProposalPanel />
+        </ProposalStoreProvider>
       </RunStoreProvider>
     </MergedCoordinatorProvider>,
   )
@@ -170,6 +193,18 @@ function renderCenterPanel() {
 describe('merged quickview projection strip + click-to-inspect (feature 020, Slice-2c Task 5)', () => {
   beforeEach(() => {
     vi.resetAllMocks()
+  })
+
+  it('wires the Explanation-source selector (feature 019) to the shared proposal store', () => {
+    renderCenterPanel()
+    const select = screen.getByTestId('merged-explanation-provider-select') as HTMLSelectElement
+    // Defaults to the deterministic template ('off').
+    expect(select.value).toBe('off')
+    // Changing it round-trips through the scoped proposal store (controlled value).
+    act(() => {
+      fireEvent.change(select, { target: { value: 'backend' } })
+    })
+    expect(select.value).toBe('backend')
   })
 
   it('renders clickable fire markers from quickviewResult; clicking fire #2 inspects it and docks its service overlay read-only', async () => {
@@ -281,6 +316,120 @@ describe('merged quickview projection strip + click-to-inspect (feature 020, Sli
     })
     expect(screen.queryByTestId('candidate-card-music_playlist')).not.toBeInTheDocument()
     expect(screen.getByTestId('candidate-card-karaoke_mode')).toBeInTheDocument()
+  })
+
+  it('renders the clickable purple after-nap dot; clicking it inspects the rest\'s after_rest_proposal read-only, mutually exclusive with fire inspection', async () => {
+    vi.mocked(mergedQuickview).mockResolvedValue(quickviewWithRestOptionFixture())
+
+    const coordinatorRef = renderCenterPanel()
+
+    await act(async () => {
+      await coordinatorRef.current!.quickview({
+        package_id: 'nri_fatigue_score_v1',
+        scenario_id: 'uc01_fatigue_recovery_v0_1',
+        run_seed: 42,
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed_proposal: '42',
+      })
+    })
+
+    expect(coordinatorRef.current!.state.quickviewResult?.rest_options).toHaveLength(1)
+
+    // The purple "after-nap" dot renders a clickable hit-circle; nothing
+    // inspected yet.
+    expect(screen.getByTestId('quickview-rest-hit-0')).toBeInTheDocument()
+    expect(screen.queryByTestId('service-result-overlay')).not.toBeInTheDocument()
+
+    // Inspect a fire FIRST, then click the journey dot — the rest inspection
+    // must clear the fire inspection (mutually exclusive).
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('quickview-fire-hit-0'))
+    })
+    expect(coordinatorRef.current!.state.inspectedFireIndex).toBe(0)
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('quickview-rest-hit-0'))
+    })
+
+    expect(coordinatorRef.current!.state.inspectedRestOptionIndex).toBe(0)
+    expect(coordinatorRef.current!.state.inspectedFireIndex).toBeNull()
+    expect(screen.getByTestId('inspected-fire-readonly-badge')).toBeInTheDocument()
+
+    // Dock shows the AFTER-REST proposal's service candidate (humming_karaoke),
+    // not either fire's candidate.
+    expect(screen.getByTestId('candidate-card-humming_karaoke')).toBeInTheDocument()
+    expect(screen.queryByTestId('candidate-card-music_playlist')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('candidate-card-karaoke_mode')).not.toBeInTheDocument()
+
+    // The after-nap Choose is interactive (dispatches an after-rest re-projection,
+    // NOT the live select-service action) — but this fixture's proposal carries no
+    // recovered `world`, so the guard makes it a no-op here: neither the live action
+    // nor the re-projection endpoint is called.
+    fireEvent.click(screen.getByTestId('choose-candidate-humming_karaoke'))
+    expect(mergedProposalAction).not.toHaveBeenCalled()
+    expect(afterRestProposal).not.toHaveBeenCalled()
+
+    // Close reverts (the shared Close button clears BOTH inspection kinds).
+    fireEvent.click(screen.getByTestId('quickview-inspect-close'))
+    expect(coordinatorRef.current!.state.inspectedRestOptionIndex).toBeNull()
+    expect(screen.queryByTestId('service-result-overlay')).not.toBeInTheDocument()
+  })
+
+  it('after-nap Choose re-projects the chosen service content (interactive) and swaps in its proposal', async () => {
+    // An after-nap proposal carrying the recovered `world` (so the interactive
+    // Choose's guard passes) + a content-capable service candidate (full_karaoke).
+    const afterNap = proposalLogFor('full_karaoke', 'prun_afternap')
+    ;(afterNap as unknown as { world: unknown }).world = { control_inputs: { motion_state: 'stopped' } }
+    const restOpt = {
+      id: 'r',
+      auto_chosen: true,
+      recovery_from_min: 12,
+      to_min: 18,
+      after_rest_proposal: afterNap,
+      after_rest_proposal_error: null,
+    } as unknown as MergedRestOption
+    vi.mocked(mergedQuickview).mockResolvedValue({
+      ...quickviewResultFixture(),
+      rest_option: restOpt,
+      rest_options: [restOpt],
+    })
+    // The re-projection endpoint returns a FRESH proposal (full_karaoke + content).
+    const reprojected = proposalLogFor('full_karaoke', 'prun_afternap_content')
+    vi.mocked(afterRestProposal).mockResolvedValue(reprojected)
+
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.quickview({
+        package_id: 'nri_fatigue_score_v1',
+        scenario_id: 'uc01_fatigue_recovery_v0_1',
+        run_seed: 42,
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed_proposal: '42',
+      })
+    })
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('quickview-rest-hit-0'))
+    })
+    expect(screen.getByTestId('candidate-card-full_karaoke')).toBeInTheDocument()
+
+    // Choose full_karaoke → the interactive after-rest re-projection (NOT the live
+    // select-service action).
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('choose-candidate-full_karaoke'))
+    })
+
+    expect(mergedProposalAction).not.toHaveBeenCalled()
+    expect(afterRestProposal).toHaveBeenCalledTimes(1)
+    const arg = vi.mocked(afterRestProposal).mock.calls[0][0]
+    expect(arg.selected_service_id).toBe('full_karaoke')
+    expect(arg.world).toEqual({ control_inputs: { motion_state: 'stopped' } })
+    // The re-projected proposal swaps in (run_id proves it replaced the default).
+    expect(coordinatorRef.current!.state.afterRestOverride?.run_id).toBe('prun_afternap_content')
   })
 
   it('keeps the projection strip visible while the live tick loop is running (persistent — owner review)', async () => {

@@ -92,6 +92,7 @@ export default function MapSurface({
   fractionOverride,
   proposalFractionsOverride,
   restSpotsOverride,
+  jamRangesKm,
 }: {
   fractionOverride?: number | null
   /** Decision/fire positions (route_fraction 0-1) — the Combined Simulator feeds
@@ -100,6 +101,10 @@ export default function MapSurface({
   /** Accepted rest spots — the Combined Simulator feeds these from its
    * coordinator (no runStore `restHistory`). */
   restSpotsOverride?: RestSpot[]
+  /** Painted traffic-jam ranges as `[start_km, end_km]` pairs (feature 020) —
+   * drawn as thick RED polylines over the route so the reviewer sees where the
+   * jam sits. Empty/undefined → no jam overlay. */
+  jamRangesKm?: [number, number][]
 } = {}) {
   const { state } = useRunStore()
   const { mapsKey, alternatives, selectedRouteId } = state
@@ -147,6 +152,9 @@ export default function MapSurface({
   const carRef = useRef<GMapsLib>(null)
   const startRef = useRef<GMapsLib>(null)
   const fireRefs = useRef<GMapsLib[]>([])
+  // Red traffic-jam polylines (feature 020) — one per painted jam range, redrawn
+  // whenever the ranges change.
+  const jamPolyRefs = useRef<GMapsLib[]>([])
   // Geographic markers for the accepted rest spots (real SDK only) — one per
   // restHistory entry, so all accepted rests stay visible on the map.
   const chosenRestRefs = useRef<GMapsLib[]>([])
@@ -378,6 +386,39 @@ export default function MapSurface({
       }
     }
   }, [shownFraction, proposalFractions, restSpots.length])
+
+  // ── Traffic-jam overlay (feature 020) ─────────────────────────────────────
+  // Thick RED polylines over the painted jam km ranges. Redraws whenever the
+  // ranges change, the route changes, or the geographic path becomes available
+  // (`realMarkers` flips true once the init effect built `pathRef`). No-op under
+  // the test mock (pathRef stays null).
+  const jamKey = JSON.stringify(jamRangesKm ?? [])
+  useEffect(() => {
+    const gmaps = getGMaps()
+    const built = pathRef.current
+    // Clear prior jam polylines first — the ranges may have shrunk or cleared.
+    jamPolyRefs.current.forEach((p) => p.setMap(null))
+    jamPolyRefs.current = []
+    if (!built || !gmaps?.geometry?.spherical || !mapInstanceRef.current) return
+    const totalKm = selectedAlt?.route_facts?.total_route_distance_km ?? 0
+    if (totalKm <= 0) return
+    for (const [startKm, endKm] of jamRangesKm ?? []) {
+      if (!(endKm > startKm)) continue
+      const fStart = Math.max(0, Math.min(1, startKm / totalKm))
+      const fEnd = Math.max(0, Math.min(1, endKm / totalKm))
+      const jamPath = slicePath(built.path, built.cum, built.total, fStart, fEnd, gmaps.geometry.spherical)
+      const jamPoly = new gmaps.Polyline({
+        path: jamPath,
+        strokeColor: '#dc2626',
+        strokeOpacity: 0.95,
+        strokeWeight: 8,
+        zIndex: 500,
+      })
+      jamPoly.setMap(mapInstanceRef.current)
+      jamPolyRefs.current.push(jamPoly)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jamKey, mapsReady, display?.encoded_polyline, realMarkers])
 
   // ── Guard: nothing to show ────────────────────────────────────────────────
   // When display is null (local path), return null so the caller can fall back

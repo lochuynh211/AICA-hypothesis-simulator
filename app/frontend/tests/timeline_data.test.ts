@@ -1,7 +1,8 @@
 // app/frontend/tests/timeline_data.test.ts
 import { describe, it, expect } from 'vitest'
-import { instantResultToTimeline, timelineYDomain } from '../src/components/playback/timelineData'
+import { instantResultToTimeline, mergedInstantResultToTimeline, timelineYDomain } from '../src/components/playback/timelineData'
 import type { InstantResult } from '../src/api/types'
+import type { MergedInstantResult } from '../src/api/mergedClient'
 
 const base: InstantResult = {
   fired: true,
@@ -71,5 +72,73 @@ describe('instantResultToTimeline', () => {
     const { yMin, yMax } = timelineYDomain(d)
     expect(yMin).toBeLessThanOrEqual(0.1)
     expect(yMax).toBeGreaterThanOrEqual(0.8)
+  })
+})
+
+describe('mergedInstantResultToTimeline — distance (route_fraction) axis via progress', () => {
+  // A run where TIME and DISTANCE diverge: 80% of the route is covered in the
+  // first 10 min, then the car PARKS for a rest (min 20-30, distance flat at
+  // 0.8), then finishes. On the time axis a fire at min 10 sits at 0.25; on the
+  // distance axis it sits at 0.8 — the whole point of owner-review issue 2.
+  const merged: MergedInstantResult = {
+    fired: true,
+    fire: { category: 'rest_required', strength: 'clear', tick: 1, time_min: 10 },
+    fires: [{ category: 'rest_required', strength: 'clear', tick: 1, time_min: 10, proposal: null, proposal_error: null }],
+    peak_score: 0.9,
+    threshold: 0.6,
+    score_series: [
+      { t: 0, score: 0.1 },
+      { t: 1, score: 0.4 },
+      { t: 2, score: 0.8 },
+      { t: 3, score: 0.8 },
+      { t: 4, score: 0.9 },
+    ],
+    progress: [
+      { t: 0, min: 0, frac: 0.0 },
+      { t: 1, min: 10, frac: 0.8 },
+      { t: 2, min: 20, frac: 0.8 },
+      { t: 3, min: 30, frac: 0.8 },
+      { t: 4, min: 40, frac: 1.0 },
+    ],
+    monotony_series: [],
+    monotony_threshold: null,
+    spikes: [],
+    segments: [
+      { type: 'highway', from_min: 0, to_min: 20 },
+      { type: 'parking', from_min: 20, to_min: 30 },
+    ],
+    traffic_jams: [],
+    rest_spot: null,
+    rest_option: { id: 'r', auto_chosen: true, recovery_from_min: 20, to_min: 30, after_rest_proposal: null, after_rest_proposal_error: null },
+    rest_options: [{ id: 'r', auto_chosen: true, recovery_from_min: 20, to_min: 30, after_rest_proposal: null, after_rest_proposal_error: null }],
+    completed_min: 40,
+    seed: 1,
+    overrides: [],
+    error: null,
+  }
+
+  it('plots the fire at its DISTANCE route_fraction (0.8), not its time fraction (0.25)', () => {
+    const d = mergedInstantResultToTimeline(merged)
+    expect(d.fires).toHaveLength(1)
+    expect(d.fires[0].x).toBeCloseTo(0.8)
+  })
+
+  it('maps the score curve x onto route_fraction per tick', () => {
+    const d = mergedInstantResultToTimeline(merged)
+    expect(d.restScore.map((p) => p.x)).toEqual([0, 0.8, 0.8, 0.8, 1])
+  })
+
+  it('collapses a stopped-rest span (flat distance) to a single route position', () => {
+    const d = mergedInstantResultToTimeline(merged)
+    expect(d.restDots).toEqual([0.8])
+    expect(d.recoveryWindows).toEqual([{ fromX: 0.8, toX: 0.8 }])
+    // The parking segment (min 20-30) collapses too — the car isn't moving.
+    expect(d.segments[1]).toEqual({ fromX: 0.8, toX: 0.8, type: 'parking' })
+  })
+
+  it('falls back to the TIME axis when progress is absent (older payloads)', () => {
+    const d = mergedInstantResultToTimeline({ ...merged, progress: [] })
+    // time axis: fire time_min 10 / completed_min 40 = 0.25
+    expect(d.fires[0].x).toBeCloseTo(0.25)
   })
 })

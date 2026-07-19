@@ -47,14 +47,18 @@ from aica_api.models.merged_run import (
 )
 from aica_api.models.proposal.enums import DiscreteEventType, LifecycleStage, PlaybackState
 from aica_api.models.proposal.journey_action import JourneyAction
+from aica_api.models.proposal.proposal_run import ProposalRunLog
 from aica_api.models.proposal.recompute import RecomputeRequest
 from aica_api.models.proposal.world import FieldOverride, World
 from aica_api.models.run import RouteFacts
 from aica_api.routers.proposal import (
     CreateProposalRunBody,
+    ExplainRequestBody,
+    ExplainResponse,
     SelectServiceBody,
     apply_journey_action,
     create_proposal_run,
+    explain_from_run_log,
     get_proposal_run,
     recompute_proposal_run,
     select_service,
@@ -451,6 +455,84 @@ def quickview_merged_run_endpoint(body: MergedQuickviewBody) -> MergedInstantRes
         raise HTTPException(status_code=400, detail=str(exc))
 
 
+class AfterRestProposalBody(BaseModel):
+    """feature 020 — the merged after-nap inspect panel's interactive Choose.
+
+    Re-projects the after-nap (``rest_recommended`` / ``after_rest_before_restart``
+    / ``stopped``) quick_check proposal from the SAME recovered-driver ``world``
+    the quickview already built (the frontend sends back the inspected proposal's
+    own ``world``), but FORCING content dispatch for ``selected_service_id`` (e.g.
+    ``full_karaoke``) instead of the selector's rank-1. Stateless / non-persisting
+    (``cache={}``), exactly like the quickview it extends — nothing is written to
+    ``proposal_runs/``. ``selected_service_id=None`` reproduces the default
+    rank-1 projection."""
+
+    world: World
+    service_package_id: str
+    content_package_id: str
+    run_seed_proposal: str
+    selected_service_id: str | None = None
+    service_parameters: dict[str, Any] = {}
+    service_hyperparameters: dict[str, Any] = {}
+
+
+@router.post("/api/merged-runs/after-rest-proposal")
+def after_rest_proposal_endpoint(body: AfterRestProposalBody) -> dict:
+    """Interactive Choose for the read-only after-nap inspect panel: dispatch
+    content for the reviewer-chosen after-rest service. Mirrors
+    ``merged_quickview._project_after_rest`` (rest_recommended /
+    after_rest_before_restart, motion from the passed world) with the ONE
+    addition of ``quick_check_service_id``. 422 for a mis-slotted package
+    (propagated from ``create_proposal_run``)."""
+    try:
+        proposal_body = CreateProposalRunBody(
+            world=body.world,
+            trigger_purpose="rest_recommended",
+            lifecycle_stage="after_rest_before_restart",
+            motion_state=body.world.control_inputs.motion_state,
+            service_package_id=body.service_package_id,
+            content_package_id=body.content_package_id,
+            mode="quick_check",
+            run_seed=body.run_seed_proposal,
+            simulation_time=0,
+            quick_check_service_id=body.selected_service_id,
+            parameters=body.service_parameters,
+            hyperparameters=body.service_hyperparameters,
+        )
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return create_proposal_run(proposal_body, cache={}).model_dump(mode="json")
+
+
+class MergedExplainBody(BaseModel):
+    """feature 020 — INLINE explain for the Combined Simulator's EPHEMERAL
+    proposals (the quickview fire / after-nap projections built with ``cache={}``,
+    which are never written to ``proposal_runs/`` so the run-id explain endpoint
+    would 404). The frontend already holds the full projected proposal, so it
+    posts it back inline. ``step``/``target_id``/``provider`` mirror
+    ``ExplainRequestBody``."""
+
+    proposal: dict[str, Any]
+    step: str
+    target_id: str
+    provider: str = "backend"
+
+
+@router.post("/api/merged-runs/explain", response_model=ExplainResponse)
+def merged_explain_endpoint(body: MergedExplainBody) -> ExplainResponse:
+    """Generate (or build the browser prompt for) an LLM rationale for a target
+    in an EPHEMERAL projected proposal — same prompt + Ollama/template path as
+    ``POST /api/proposal/runs/{run_id}/explain``, but the ``ProposalRunLog`` comes
+    from the request body instead of disk, and nothing is persisted
+    (``persist_run_id=None``). 422 on a malformed proposal or unknown target."""
+    try:
+        run_log = ProposalRunLog.model_validate(body.proposal)
+        explain_body = ExplainRequestBody(step=body.step, target_id=body.target_id, provider=body.provider)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return explain_from_run_log(run_log, explain_body, persist_run_id=None)
+
+
 @router.post("/api/merged-runs", status_code=201)
 def create_merged_run_endpoint(body: CreateMergedRunBody) -> dict:
     """Create the trigger run (from an existing ``POST /api/run-plans`` draft)
@@ -731,7 +813,19 @@ def tick_merged_run_endpoint(merged_run_id: str) -> MergedTickResponse:
     fired = bool(d and d.fire_control.fired and d.proposal is not None)
     purpose = map_trigger_purpose(d.result_type) if d else None
 
-    if fired and purpose is not None and handle.current_proposal_run_id is None:
+    # Create a proposal run for a NEW fire when there is no current proposal
+    # (first fire, or after a decline re-armed the guard) OR when a PRIOR
+    # accept-rest journey has fully completed (``rest_stage_synced == "after"``)
+    # — otherwise a genuine SECOND rest trigger later in the run is silently
+    # swallowed (the guard used to latch on the first fire forever). The
+    # ``rest_stage_synced`` reset below (on a new fire) keeps this from
+    # re-firing every driving tick, and preserves "Choose" on the after-rest
+    # proposal until the next real fire.
+    if (
+        fired
+        and purpose is not None
+        and (handle.current_proposal_run_id is None or handle.rest_stage_synced == "after")
+    ):
         stage = map_lifecycle_stage(fired=True, result_type=d.result_type, recovery_phase=None)
         world = build_world_from_tick(
             World.model_validate(handle.world_template),
@@ -777,6 +871,10 @@ def tick_merged_run_endpoint(merged_run_id: str) -> MergedTickResponse:
 
         handle.proposal_run_ids.append(plog.run_id)
         handle.current_proposal_run_id = plog.run_id
+        # A fresh fire starts a fresh rest journey — clear any prior "after"
+        # so this new opportunity's before→during→after auto-drive runs, and so
+        # the guard above doesn't keep spawning a new run every subsequent tick.
+        handle.rest_stage_synced = None
         corr = CorrelationEntry(
             trigger_tick_index=outcome.evaluated_tick_index or 0,
             proposal_run_id=plog.run_id,

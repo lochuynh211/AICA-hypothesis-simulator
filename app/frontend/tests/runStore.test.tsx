@@ -153,6 +153,24 @@ describe('runStore — LOAD_PACKAGES / LOAD_SCENARIOS', () => {
   })
 })
 
+describe('runStore — SET_MERGED_JAM_RANGES (feature 020 map overlay)', () => {
+  it('starts empty and stores painted jam km ranges', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    expect(result.current.state.mergedJamRangesKm).toEqual([])
+    act(() => result.current.dispatch({ type: 'SET_MERGED_JAM_RANGES', ranges: [[10, 25]] }))
+    expect(result.current.state.mergedJamRangesKm).toEqual([[10, 25]])
+    act(() => result.current.dispatch({ type: 'SET_MERGED_JAM_RANGES', ranges: [] }))
+    expect(result.current.state.mergedJamRangesKm).toEqual([])
+  })
+
+  it('survives RESET (setup-time paint, not run state)', () => {
+    const { result } = renderHook(() => useRunStore(), { wrapper })
+    act(() => result.current.dispatch({ type: 'SET_MERGED_JAM_RANGES', ranges: [[5, 12]] }))
+    act(() => result.current.dispatch({ type: 'RESET' }))
+    expect(result.current.state.mergedJamRangesKm).toEqual([[5, 12]])
+  })
+})
+
 describe('runStore — SELECT_PACKAGE / SELECT_SCENARIO', () => {
   it('sets selectedPackageId', () => {
     const { result } = renderHook(() => useRunStore(), { wrapper })

@@ -342,6 +342,17 @@ def iter_preview_ticks(
     rest_spots_out: list[dict[str, Any]] = []
     rest_options_out: list[dict[str, Any]] = []
 
+    # Per-tick route-progress map (feature 020 — trigger-point alignment): pairs
+    # each tick's elapsed MINUTE with its DISTANCE route_fraction so a distance-axis
+    # consumer (the Combined Simulator's quickview, which must line its fires up
+    # with the distance-axis live animation) can remap any minute/tick x-coordinate
+    # onto the distance axis. Distance is FLAT across a stopped rest (car parked,
+    # time keeps advancing), so a rest that spans many minutes collapses to a single
+    # route position — exactly what the live animation shows. Additive; the trigger
+    # screen's own strip ignores it and stays on the time axis.
+    route_total_km = route_facts.total_route_distance_km or 120.0
+    progress: list[dict[str, Any]] = []
+
     for tick_index in range(_MAX_PREVIEW_TICKS):
         tick_state = advance_tick(
             prior_tick_state,
@@ -365,6 +376,14 @@ def iter_preview_ticks(
             if cur["recovery_from_min"] is None:
                 cur["recovery_from_min"] = elapsed_min
             cur["to_min"] = elapsed_min
+            # Stash the LATEST stopped-tick state so the merged quickview can
+            # project an AFTER-REST proposal from the recovered driver state
+            # (feature 020 — clickable purple/green journey dots). Overwritten
+            # every stopped tick, so it lands on the last one before the driver
+            # resumes (the recovered drowsiness/fatigue). A private key stripped
+            # by merged_quickview before the model is built (trigger-only
+            # InstantResult never sees it — it's discarded when never read).
+            cur["_post_rest_tick_state"] = tick_state
 
         if rec_next is not None:
             recovery = rec_next if rec_next.active else None
@@ -435,6 +454,13 @@ def iter_preview_ticks(
         score = float(score)
         score_series.append({"t": tick_index, "score": score})
         peak_score = max(peak_score, score)
+
+        # Route-progress point for THIS tick (see `progress` init above). Distance
+        # is clamped to [0, 1]; a parked (recovery) tick advances `min` but not `frac`.
+        route_fraction = (
+            min(1.0, max(0.0, (tick_state.distance_km or 0.0) / route_total_km)) if route_total_km else 0.0
+        )
+        progress.append({"t": tick_index, "min": elapsed_min, "frac": route_fraction})
 
         # ── Anomaly spike marker (aligned with the score point above) ──────
         if tick_index in (tick_state.anomaly_events or []):
@@ -592,6 +618,7 @@ def iter_preview_ticks(
         "peak_score": peak_score,
         "threshold": threshold,
         "score_series": score_series,
+        "progress": progress,
         "spikes": spikes if error_out is None else [],
         "monotony_series": monotony_series,
         "monotony_threshold": monotony_threshold,
@@ -697,4 +724,11 @@ def evaluate_preview(
             # data, only the generator's final accumulated return value.
             _fire_event = next(ticks)  # noqa: F841
     except StopIteration as stop:
-        return stop.value
+        result = stop.value
+        # Strip the merged-quickview-only recovery-state stash so it never leaks
+        # into the trigger-only InstantResult response (models are extra=allow).
+        # merged_quickview reads it from its OWN iter_preview_ticks pass; this
+        # drain-and-return trigger path must stay byte-identical.
+        for opt in result.get("rest_options", []):
+            opt.pop("_post_rest_tick_state", None)
+        return result

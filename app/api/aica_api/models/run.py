@@ -419,6 +419,20 @@ class ScoreSeriesPoint(BaseModel):
     score: float
 
 
+class ProgressPoint(BaseModel):
+    """One per-tick route-progress sample (feature 020 — trigger-point alignment).
+
+    Pairs a tick's elapsed ``min`` (same axis as segments/fires) with its DISTANCE
+    ``frac`` (route_fraction, 0-1). Lets a distance-axis consumer (the Combined
+    Simulator's quickview) remap any minute/tick x-coordinate onto the distance
+    axis so its fires line up with the distance-axis live animation. ``frac`` is
+    flat across a stopped rest (car parked while time advances)."""
+
+    t: int
+    min: float
+    frac: float
+
+
 class SpikePoint(BaseModel):
     """One anomaly-spike event (for the setup-screen preview timeline marker).
 
@@ -487,6 +501,11 @@ class InstantResult(BaseModel):
     peak_score: float
     threshold: float | None = None
     score_series: list[ScoreSeriesPoint] = []
+    # Per-tick route-progress map (feature 020 — trigger-point alignment): remaps
+    # the Combined Simulator's quickview onto the DISTANCE axis so its fires align
+    # with the distance-axis live animation. Empty is fine (consumer falls back to
+    # the time axis). Additive — the trigger screen's own strip ignores it.
+    progress: list[ProgressPoint] = []
     # Second (monotony-prevention) curve — populated only by algorithms that emit
     # a `monotony_prevention_score` (the transparent hybrid); empty for NRI, which
     # has a single rest-required score. `monotony_threshold` is its trigger level.

@@ -129,6 +129,146 @@ def test_quickview_rest_scenario_fires_with_rest_recommended_proposal(base_world
     _assert_nothing_persisted(tmp_path)
 
 
+def test_quickview_rest_option_carries_after_rest_proposal(base_world_dict, tmp_path):
+    """feature 020 — the clickable purple "after-nap" journey dot: the auto-
+    accepted rest (the REST scenario recovers, so ``rest_options`` are non-empty
+    and each recovered one carries ``recovery_from_min``) is projected into an
+    AFTER-NAP quick_check proposal (``after_rest_proposal``) built from the
+    recovered driver state, modeled as the SAME rest journey that started it —
+    ``trigger_purpose="rest_recommended"`` at ``after_rest_before_restart`` (§7.5
+    matrix row 3), motion ``stopped``. The private ``_post_rest_tick_state`` stash
+    must NOT leak into the response.
+
+    (Owner decision: the green "driving-after-rest" dot was dropped — there is no
+    matrix-valid ``rest_recommended``/``active_driving_content`` proposal to
+    project for it.)
+    """
+    resp = client.post(
+        "/api/merged-runs/quickview",
+        json=_quickview_body(world=base_world_dict),
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+
+    rest_options = body["rest_options"]
+    assert rest_options, "REST scenario should auto-accept at least one rest"
+
+    recovered = [o for o in rest_options if o.get("recovery_from_min") is not None]
+    assert recovered, f"expected a recovered rest option; rest_options={rest_options}"
+
+    opt = recovered[0]
+    # The private stash never leaks into the serialized response.
+    assert "_post_rest_tick_state" not in opt
+
+    # `after_rest_proposal_error` is only a caught HTTPException; an in-run content
+    # error (e.g. an after-rest service the music content package can't serve) lives
+    # in the proposal's own evidence, so the proposal itself is still present.
+    assert opt["after_rest_proposal_error"] is None, opt["after_rest_proposal_error"]
+    after = opt["after_rest_proposal"]
+    assert after is not None, "recovered rest option should carry an after_rest_proposal"
+
+    # Trigger signal + car status the purple dot must show: rest_recommended /
+    # after spot / stopped — inherited from the rest journey, NOT route_music.
+    opportunity = after["opportunity"]
+    assert opportunity["trigger_purpose"] == "rest_recommended"
+    assert opportunity["lifecycle_stage"] == "after_rest_before_restart"
+    assert after["journey_state"]["motion_state"] == "stopped"
+
+    # The after-rest service row IS ranked (a real evaluate() ran — never faked).
+    service_evidence = [ev for ev in after["evidence"] if ev["step"] == "service"]
+    assert len(service_evidence) == 1
+    assert service_evidence[0]["output"]["ranked_candidates"]
+
+    _assert_nothing_persisted(tmp_path)
+
+
+def test_after_rest_proposal_endpoint_forces_chosen_service_content(base_world_dict, tmp_path):
+    """feature 020 — the after-nap inspect panel's interactive Choose:
+    ``POST /api/merged-runs/after-rest-proposal`` re-projects the after-nap
+    proposal from the SAME recovered ``world`` the quickview built, but forcing
+    content dispatch for the reviewer-chosen ``selected_service_id``. Default
+    (unset) reproduces the rank-1 projection (``oshi_reexperience``, no music
+    content); forcing ``full_karaoke`` (rank-3, the one content-capable after-rest
+    service) yields a ``content_selected`` proposal WITH content. Non-persisting.
+    """
+    qv = client.post("/api/merged-runs/quickview", json=_quickview_body(world=base_world_dict))
+    assert qv.status_code == 200, qv.text
+    opt = next(o for o in qv.json()["rest_options"] if o.get("recovery_from_min") is not None)
+    base = opt["after_rest_proposal"]
+    assert base is not None
+    world = base["world"]
+    assert world is not None, "after_rest_proposal must carry the recovered typed world"
+
+    req = {
+        "world": world,
+        "service_package_id": _SERVICE_PACKAGE_ID,
+        "content_package_id": _CONTENT_PACKAGE_ID,
+        "run_seed_proposal": "seed-1",
+    }
+
+    # Default (no forced service) — rank-1 auto-selected (oshi_reexperience), no content.
+    default_resp = client.post("/api/merged-runs/after-rest-proposal", json=req)
+    assert default_resp.status_code == 200, default_resp.text
+    default = default_resp.json()
+    assert default["opportunity"]["trigger_purpose"] == "rest_recommended"
+    assert default["opportunity"]["lifecycle_stage"] == "after_rest_before_restart"
+    assert default["journey_state"]["active_service_id"] == "oshi_reexperience"
+
+    # Forcing full_karaoke — a content-capable after-rest service → content dispatched.
+    forced_resp = client.post(
+        "/api/merged-runs/after-rest-proposal",
+        json={**req, "selected_service_id": "full_karaoke"},
+    )
+    assert forced_resp.status_code == 200, forced_resp.text
+    forced = forced_resp.json()
+    assert forced["journey_state"]["active_service_id"] == "full_karaoke"
+    assert forced["status"] == "content_selected"
+    content_ev = [ev for ev in forced["evidence"] if ev["step"] == "content"]
+    assert len(content_ev) == 1
+    assert content_ev[0].get("error") is None
+    assert content_ev[0]["output"] is not None
+
+    _assert_nothing_persisted(tmp_path)
+
+
+def test_merged_explain_inline_for_ephemeral_projection(base_world_dict, tmp_path):
+    """feature 020 — LLM reason for an EPHEMERAL projected proposal. The quickview
+    fire proposal is built with cache={} and never written to proposal_runs/, so
+    the run-id explain endpoint would 404; POST /api/merged-runs/explain takes the
+    proposal inline. Browser path returns the grounded prompt (build-only, no
+    inference, no persistence); the backend/Ollama path shares the same
+    ``explain_from_run_log`` core the run-id explain tests already cover. An
+    unknown target is a clean 422.
+    """
+    qv = client.post("/api/merged-runs/quickview", json=_quickview_body(world=base_world_dict))
+    assert qv.status_code == 200, qv.text
+    fire = next(f for f in qv.json()["fires"] if f["proposal"] is not None)
+    proposal = fire["proposal"]
+    target = [e for e in proposal["evidence"] if e["step"] == "service"][0]["output"]["ranked_candidates"][0][
+        "candidate_id"
+    ]
+
+    # Browser: build-only — a grounded prompt to run on-device, no inference.
+    browser = client.post(
+        "/api/merged-runs/explain",
+        json={"proposal": proposal, "step": "service", "target_id": target, "provider": "browser"},
+    )
+    assert browser.status_code == 200, browser.text
+    bout = browser.json()
+    assert bout["step"] == "service" and bout["target_id"] == target
+    assert bout["provider_used"] == "browser"
+    assert bout["prompt"]["messages"], "browser path must return a grounded prompt"
+
+    # An unknown target is a clean 422, not a 500.
+    bad = client.post(
+        "/api/merged-runs/explain",
+        json={"proposal": proposal, "step": "service", "target_id": "not_a_candidate", "provider": "browser"},
+    )
+    assert bad.status_code == 422, bad.text
+
+    _assert_nothing_persisted(tmp_path)
+
+
 def test_quickview_monotony_scenario_fires_with_inattentive_driving_proposal(base_world_dict, tmp_path):
     resp = client.post(
         "/api/merged-runs/quickview",

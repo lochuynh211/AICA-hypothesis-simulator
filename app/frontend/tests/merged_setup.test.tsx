@@ -64,7 +64,7 @@ import {
 import { getPackages, getPresets, getPreset } from '../src/api/proposalClient'
 import { createMergedRun, tickMergedRun, mergedQuickview } from '../src/api/mergedClient'
 import { MergedCoordinatorProvider, useMergedCoordinator } from '../src/state/mergedCoordinator'
-import { RunStoreProvider } from '../src/state/runStore'
+import { RunStoreProvider, useRunStore } from '../src/state/runStore'
 import { ProposalStoreProvider } from '../src/state/proposalStore'
 import MergedSetupPanel from '../src/components/merged/MergedSetupPanel'
 
@@ -92,12 +92,23 @@ const PAUSED_TICK = {
  * tests trigger it through the coordinator directly. */
 function Harness() {
   const c = useMergedCoordinator()
+  const rsStore = useRunStore()
   return (
     <>
       <MergedSetupPanel />
       <button type="button" data-testid="test-play" onClick={() => void c.startAndPlay()}>
         play
       </button>
+      {/* A stand-in for "the reviewer edited a setup field during a live run" —
+          dispatches a real setup change into the shared runStore (issue 2). */}
+      <button
+        type="button"
+        data-testid="test-change-setup"
+        onClick={() => rsStore.dispatch({ type: 'SET_TICK_SECONDS', seconds: 42 })}
+      >
+        change setup
+      </button>
+      <span data-testid="test-merged-run-id">{c.state.mergedRunId ?? 'none'}</span>
     </>
   )
 }
@@ -441,5 +452,20 @@ describe('MergedSetupPanel', () => {
         run_seed: expect.any(String),
       }),
     )
+  })
+
+  it('resets the live run when a setup field changes after Play (owner review issue 2)', async () => {
+    renderPanel()
+    await fillSetup()
+
+    await waitFor(() => expect(screen.getByTestId('test-play')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('test-play'))
+    await waitFor(() => expect(createMergedRun).toHaveBeenCalledTimes(1))
+    // The run now exists (its id is shown by the harness).
+    await waitFor(() => expect(screen.getByTestId('test-merged-run-id')).not.toHaveTextContent('none'))
+
+    // Editing a setup field (here: tick duration) invalidates the created run.
+    fireEvent.click(screen.getByTestId('test-change-setup'))
+    await waitFor(() => expect(screen.getByTestId('test-merged-run-id')).toHaveTextContent('none'))
   })
 })

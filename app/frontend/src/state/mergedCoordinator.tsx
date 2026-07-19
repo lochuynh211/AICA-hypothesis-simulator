@@ -26,6 +26,7 @@ import {
   acceptRest as acceptRestClient,
   declineRest as declineRestClient,
   mergedQuickview,
+  afterRestProposal,
   type CreateMergedRunReq,
   type MergedTickResponse,
   type MergedTriggerTick,
@@ -79,8 +80,20 @@ export type MergedCoordinatorState = {
    * a real run). `null` until `quickview()` is called. */
   quickviewResult: MergedInstantResult | null
   /** Index into `quickviewResult.fires` the reviewer clicked to inspect, or
-   * `null` when nothing is being inspected. Set by `inspectFire()`. */
+   * `null` when nothing is being inspected. Set by `inspectFire()`. Mutually
+   * exclusive with `inspectedRestOptionIndex` — inspecting one clears the other. */
   inspectedFireIndex: number | null
+  /** Index into `quickviewResult.rest_options` the reviewer clicked (the purple
+   * "after-nap" journey dot) to inspect its AFTER-NAP proposal, or `null`. Set
+   * by `inspectRestOption()`; mutually exclusive with `inspectedFireIndex`
+   * (feature 020 — clickable journey dot). */
+  inspectedRestOptionIndex: number | null
+  /** When the reviewer chooses a specific service in the read-only after-nap
+   * inspect panel (`chooseAfterRestService`), the freshly re-projected proposal
+   * for THAT service (with its content dispatched) — shown instead of the
+   * default rank-1 `after_rest_proposal`. Reset to `null` whenever the inspection
+   * changes (a new rest option / a fire / a fresh quickview). */
+  afterRestOverride: ProposalRunLog | null
   /** True once the setup panel has a complete, valid selection and has
    * registered a start function via `prepareStart()`. The center-panel Play
    * button uses this (OR an already-created run) to enable itself — there is
@@ -115,6 +128,8 @@ export const initialMergedCoordinatorState: MergedCoordinatorState = {
   error: null,
   quickviewResult: null,
   inspectedFireIndex: null,
+  inspectedRestOptionIndex: null,
+  afterRestOverride: null,
   ready: false,
   acceptedRestSpots: [],
   speed: 1,
@@ -131,6 +146,8 @@ export type MergedCoordinatorAction =
   | { type: 'ERROR'; message: string }
   | { type: 'QUICKVIEW_LOADED'; result: MergedInstantResult }
   | { type: 'INSPECT_FIRE'; index: number | null }
+  | { type: 'INSPECT_REST_OPTION'; index: number | null }
+  | { type: 'AFTER_REST_OVERRIDE'; proposal: ProposalRunLog }
   | { type: 'SET_READY'; ready: boolean }
   /** Rest declined — clear the pending proposal + unpause so the on-map rest
    * overlay + right-panel dock hide and the tick loop can resume. */
@@ -183,6 +200,8 @@ export function mergedCoordinatorReducer(
         scenarioId: action.scenarioId,
         quickviewResult: state.quickviewResult,
         inspectedFireIndex: state.inspectedFireIndex,
+        inspectedRestOptionIndex: state.inspectedRestOptionIndex,
+        afterRestOverride: state.afterRestOverride,
       }
 
     case 'TICK_APPENDED': {
@@ -224,6 +243,8 @@ export function mergedCoordinatorReducer(
         ...state,
         running: action.running,
         inspectedFireIndex: action.running ? null : state.inspectedFireIndex,
+        inspectedRestOptionIndex: action.running ? null : state.inspectedRestOptionIndex,
+        afterRestOverride: action.running ? null : state.afterRestOverride,
       }
 
     case 'SET_CHOOSING':
@@ -233,12 +254,29 @@ export function mergedCoordinatorReducer(
       return { ...state, error: action.message, running: false }
 
     case 'QUICKVIEW_LOADED':
-      // A fresh projection invalidates any previously-inspected fire index
-      // (it indexed into the PRIOR quickviewResult.fires, which this replaces).
-      return { ...state, quickviewResult: action.result, inspectedFireIndex: null }
+      // A fresh projection invalidates any previously-inspected fire / rest-option
+      // index (they indexed into the PRIOR quickviewResult, which this replaces).
+      return {
+        ...state,
+        quickviewResult: action.result,
+        inspectedFireIndex: null,
+        inspectedRestOptionIndex: null,
+        afterRestOverride: null,
+      }
 
     case 'INSPECT_FIRE':
-      return { ...state, inspectedFireIndex: action.index }
+      // Inspecting a fire clears any inspected rest option (mutually exclusive) and
+      // any after-nap service override; INSPECT_FIRE(null) — the panel's Close
+      // button — clears BOTH inspection kinds.
+      return { ...state, inspectedFireIndex: action.index, inspectedRestOptionIndex: null, afterRestOverride: null }
+
+    case 'INSPECT_REST_OPTION':
+      // A fresh rest inspection starts from the default rank-1 after-nap proposal
+      // (drop any prior chosen-service override).
+      return { ...state, inspectedRestOptionIndex: action.index, inspectedFireIndex: null, afterRestOverride: null }
+
+    case 'AFTER_REST_OVERRIDE':
+      return { ...state, afterRestOverride: action.proposal }
 
     case 'SET_READY':
       return { ...state, ready: action.ready }
@@ -284,8 +322,17 @@ type MergedCoordinatorContextValue = {
    * populates `state.quickviewResult`; independent of `create()`/the tick
    * loop, so it may be called before, instead of, or alongside a real run. */
   quickview(body: MergedQuickviewReq): Promise<void>
-  /** Sets `state.inspectedFireIndex` — `null` clears the inspected fire. */
+  /** Sets `state.inspectedFireIndex` — `null` clears the inspected fire (and
+   * any inspected rest option). */
   inspectFire(index: number | null): void
+  /** Sets `state.inspectedRestOptionIndex` — inspect a rest's AFTER-NAP
+   * proposal (the purple journey dot); clears any inspected fire. `null` clears
+   * it. */
+  inspectRestOption(index: number | null): void
+  /** Interactive Choose for the read-only after-nap inspect panel: re-project
+   * that rest's after-nap proposal forcing content for `serviceId` (from
+   * `baseProposal`'s recovered world), storing it as `state.afterRestOverride`. */
+  chooseAfterRestService(serviceId: string, baseProposal: ProposalRunLog): Promise<void>
   /** Reset the whole run (+ log/projection) to a fresh, un-started state. */
   reset(): void
   /** Set the 1×/2×/4× playback speed (paces the tick loop). */
@@ -406,6 +453,36 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     }
   }
 
+  const chooseAfterRestService = async (serviceId: string, baseProposal: ProposalRunLog): Promise<void> => {
+    // Interactive Choose for the read-only after-nap inspect panel: re-project the
+    // after-nap proposal forcing content for `serviceId`, from the SAME recovered
+    // world the base proposal carries. Stateless (no run) — no mergedRunId needed.
+    if (baseProposal.world == null || baseProposal.content_package_id == null) return
+    if (choosingRef.current) return
+    choosingRef.current = serviceId
+    dispatch({ type: 'SET_CHOOSING', serviceId })
+    try {
+      const proposal = await afterRestProposal({
+        world: baseProposal.world,
+        service_package_id: baseProposal.service_package_id,
+        content_package_id: baseProposal.content_package_id,
+        run_seed_proposal: String(baseProposal.opportunity.run_seed ?? ''),
+        selected_service_id: serviceId,
+        service_parameters: baseProposal.parameters,
+        service_hyperparameters: baseProposal.hyperparameters,
+      })
+      dispatch({ type: 'AFTER_REST_OVERRIDE', proposal })
+    } catch (err) {
+      dispatch({
+        type: 'ERROR',
+        message: err instanceof Error ? err.message : 'after-rest content dispatch failed',
+      })
+    } finally {
+      choosingRef.current = null
+      dispatch({ type: 'SET_CHOOSING', serviceId: null })
+    }
+  }
+
   const acceptRest = async (body: AcceptRestReq): Promise<void> => {
     const mergedRunId = mergedRunIdRef.current
     if (!mergedRunId) return
@@ -457,6 +534,10 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     dispatch({ type: 'INSPECT_FIRE', index })
   }
 
+  const inspectRestOption = (index: number | null): void => {
+    dispatch({ type: 'INSPECT_REST_OPTION', index })
+  }
+
   const setSpeed = (speed: 1 | 2 | 4): void => {
     speedRef.current = speed
     dispatch({ type: 'SET_SPEED', speed })
@@ -503,6 +584,8 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     declineRest,
     quickview,
     inspectFire,
+    inspectRestOption,
+    chooseAfterRestService,
     reset,
     setSpeed,
     prepareStart,

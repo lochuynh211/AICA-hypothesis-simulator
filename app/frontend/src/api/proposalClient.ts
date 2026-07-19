@@ -915,6 +915,25 @@ export async function explain(
   })
 }
 
+/** Inline explain for an EPHEMERAL proposal (feature 020 — the Combined
+ * Simulator's quickview / after-nap projections are built with `cache={}` and
+ * never persisted, so the run-id endpoint would 404). Posts the full proposal to
+ * `/api/merged-runs/explain` and returns the SAME `ExplainResponse` as `explain`
+ * (same prompt + Ollama/template/browser path, just not persisted). Raw fetch to
+ * an absolute path since this endpoint is outside the `/api/proposal` base. */
+export async function explainInline(
+  proposal: ProposalRunLog,
+  args: { step: ExplainStep; targetId: string; provider: ExplainProvider },
+): Promise<ExplainResponse> {
+  const response = await fetch('/api/merged-runs/explain', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ proposal, step: args.step, target_id: args.targetId, provider: args.provider }),
+  })
+  if (!response.ok) throw new Error(`API error: ${response.status}`)
+  return response.json() as Promise<ExplainResponse>
+}
+
 // ── GET /api/proposal/runs — list summaries (P1 T036) ───────────────────────
 
 /** Summary shape for run listings (mirrors backend `ProposalRun`). */

@@ -40,10 +40,9 @@ const TRIGGER_COLOR = '#dc2626'
 const REST_SPOT_COLOR = '#f59e0b'
 const SPIKE_COLOR = '#db2777'
 const TRACK_COLOR = '#e2e8f0'
-// Journey markers (feature 020): purple = after-nap service, green = driving
-// after rest (red is reserved for the trigger fire).
+// Journey marker (feature 020): purple = after-nap service (the green
+// "driving after rest" dot was dropped — owner decision).
 const AFTER_NAP_COLOR = '#9333ea'
-const DRIVE_AFTER_COLOR = '#16a34a'
 // Traffic-jam sub-bar color (feature 020) — matches the setup painter's jam red.
 const JAM_COLOR = '#dc2626'
 
@@ -63,6 +62,9 @@ export type ScoreTimelineTestIds = {
   /** Testid for the (invisible, wider-than-the-line) per-fire click hit-rect —
    *  only rendered when `onFireClick` is supplied (see `ScoreTimelineProps`). */
   fireHit?: (i: number) => string
+  /** Testid for the (invisible, wider) per-rest-option journey-dot hit-circle —
+   *  only rendered when `onRestOptionClick` is supplied. */
+  restOptionHit?: (i: number) => string
 }
 
 export type ScoreTimelineProps = {
@@ -83,9 +85,8 @@ export type ScoreTimelineProps = {
   showLegend?: boolean
   /** UI language for the built-in legend labels (default 'en'). */
   lang?: UiLanguage
-  /** Render the rest-JOURNEY markers (feature 020): a red "after-nap service"
-   * dot above each orange rest-spot dot + a green "driving after rest" dot at
-   * each recovery-window end. Off by default so the Trigger screen is
+  /** Render the rest-JOURNEY marker (feature 020): a purple "after-nap service"
+   * dot above each orange rest-spot dot. Off by default so the Trigger screen is
    * unaffected; the Combined quickview turns it on. */
   showJourneyMarkers?: boolean
   /** ADDITIVE, feature-020 Slice-2c (Task 5): when supplied, each fire marker
@@ -96,6 +97,12 @@ export type ScoreTimelineProps = {
    *  every existing ScoreTimeline usage (InstantResultStrip, playback,
    *  MergedCenterPanel's live trace) is unaffected. */
   onFireClick?: (fire: TimelineFire, index: number) => void
+  /** ADDITIVE, feature-020 (clickable journey dot): when supplied (only with
+   *  `showJourneyMarkers`), each purple "after-nap" dot for rest-option `i` gains
+   *  a transparent, wider hit-circle calling this with `i` on click — the
+   *  quickview's after-nap proposal inspect affordance. `undefined` (default)
+   *  renders exactly as before: no hit-circle, no click. */
+  onRestOptionClick?: (index: number) => void
 }
 
 function useMeasuredWidth<T extends HTMLElement>(ref: React.RefObject<T>): number {
@@ -117,7 +124,7 @@ export default function ScoreTimeline({
   data, revealFraction = 1, ghostAhead = false, animated = false,
   showPlayhead = false, playheadAriaLabel, height = 92, testIds = {},
   thresholdLabel, monotonyThresholdLabel, restDotAriaLabel, showLegend = false, lang = 'en',
-  showJourneyMarkers = false, onFireClick,
+  showJourneyMarkers = false, onFireClick, onRestOptionClick,
 }: ScoreTimelineProps) {
   const ref = useRef<HTMLDivElement>(null)
   const measured = useMeasuredWidth(ref)
@@ -252,21 +259,22 @@ export default function ScoreTimeline({
                 fill={REST_SPOT_COLOR} stroke="#fff" strokeWidth={2}
                 aria-label={restDotAriaLabel} />
             ))}
-            {/* Journey markers (feature 020): a RED "after-nap service" dot
-                stacked above each orange rest-spot dot. */}
+            {/* Journey marker (feature 020): a PURPLE "after-nap service" dot
+                stacked above each orange rest-spot dot. Clickable when
+                `onRestOptionClick` is supplied — inspects rest-option `i`'s
+                after-nap proposal. (The green "driving-after-rest" dot was
+                dropped — owner decision: under rest_recommended there is no
+                matrix-valid active_driving_content proposal to project, and on
+                the distance axis it collapses onto this same route position.) */}
             {showJourneyMarkers && data.restDots.map((x, i) => (
               <circle key={`nap-${i}`} cx={x * W} cy={BAND_MID - 13} r={5}
-                fill={AFTER_NAP_COLOR} stroke="#fff" strokeWidth={1.5} />
+                fill={AFTER_NAP_COLOR} stroke="#fff" strokeWidth={1.5}
+                style={onRestOptionClick ? { cursor: 'pointer' } : undefined} />
             ))}
-          </g>
-        )}
-        {/* GREEN "driving after rest" dot at each recovery-window END (drawn
-            FORWARD so it's visible on the projection). */}
-        {showJourneyMarkers && data.recoveryWindows.length > 0 && (
-          <g data-testid="journey-drive-after-group">
-            {data.recoveryWindows.map((rw, i) => (
-              <circle key={`drive-${i}`} cx={rw.toX * W} cy={BAND_MID} r={5}
-                fill={DRIVE_AFTER_COLOR} stroke="#fff" strokeWidth={1.5} />
+            {onRestOptionClick && data.restDots.map((x, i) => (
+              <circle key={`nap-hit-${i}`} data-testid={testIds.restOptionHit?.(i)}
+                cx={x * W} cy={BAND_MID - 13} r={11} fill="transparent"
+                style={{ cursor: 'pointer' }} onClick={() => onRestOptionClick(i)} />
             ))}
           </g>
         )}
@@ -345,7 +353,6 @@ export default function ScoreTimeline({
           {(data.trafficJams ?? []).length > 0 && <LegendSwatch color={JAM_COLOR} label={t({ en: 'traffic jam', ja: '渋滞' }, lang)} />}
           {data.restDots.length > 0 && <LegendDot color={REST_SPOT_COLOR} label={t({ en: showJourneyMarkers ? 'rest spot' : 'chosen rest spot', ja: showJourneyMarkers ? '休憩地点' : '選択した休憩地点' }, lang)} />}
           {showJourneyMarkers && data.restDots.length > 0 && <LegendDot color={AFTER_NAP_COLOR} label={t({ en: 'after-nap service', ja: '仮眠後サービス' }, lang)} />}
-          {showJourneyMarkers && data.recoveryWindows.length > 0 && <LegendDot color={DRIVE_AFTER_COLOR} label={t({ en: 'driving after rest', ja: '休憩後の走行' }, lang)} />}
         </div>
       )}
     </div>

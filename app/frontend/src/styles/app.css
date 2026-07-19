@@ -108,16 +108,21 @@ body {
   min-height: 0;
 }
 .merged-shell .left-panel > .merged-left-setup {
-  flex: 0 0 auto;
+  /* Setup gets the lion's share now (owner review): grow to fill, own scroll. */
+  flex: 1 1 auto;
   overflow-y: auto;
-  max-height: 60%;
+  min-height: 0;
 }
 .merged-shell .left-panel > .merged-left-log {
-  flex: 1 1 auto;
+  /* Shorter output log — a compact fixed band, black even when empty so the
+     placeholder reads as a real (dark) log surface rather than blank space. */
+  flex: 0 0 auto;
+  height: 26%;
   min-height: 0;
   display: flex;
   flex-direction: column;
   border-top: 2px solid #2a2a4a;
+  background: #111;
 }
 
 /* ── Modal primitive (020 Task 6) — net-new popup used by the Combined
