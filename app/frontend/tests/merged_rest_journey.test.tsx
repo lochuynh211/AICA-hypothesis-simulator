@@ -383,7 +383,9 @@ describe('MergedCenterPanel — rest-accept UI + journey auto-drive', () => {
       expect(screen.getByTestId('rest-accept-panel')).toBeInTheDocument()
     })
     expect(getScenario).toHaveBeenCalledWith('uc01_fatigue_recovery_v0_1')
-    expect(getRestSpots).toHaveBeenCalledWith('run_1')
+    // Fetched for the correct trigger run (now also threads mapsKey/ceiling/
+    // spacing filters, whose exact values depend on the env — assert the runId).
+    expect(vi.mocked(getRestSpots).mock.calls[0][0]).toBe('run_1')
 
     // A rest-spot option button (no recovery-option/nap picker — defaulted).
     await waitFor(() => {

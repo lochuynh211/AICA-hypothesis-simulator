@@ -54,6 +54,8 @@ import { buildMergedPlan } from '../../api/mergedClient'
 import { useMergedCoordinator } from '../../state/mergedCoordinator'
 import { useRunStore } from '../../state/runStore'
 import { useProposalStore } from '../../state/proposalStore'
+import RestCeilingEditor from '../setup/RestCeilingEditor'
+import RestSpacingEditor from '../setup/RestSpacingEditor'
 
 const DEFAULT_PRESET_ID = 'preset-journey-a-1-cruising-fresh-monotonous'
 type EditKey = 'situation' | 'profile' | 'trigger' | 'service' | 'content' | null
@@ -391,6 +393,26 @@ export default function MergedSetupPanel() {
       {/* The route is mirrored into the scoped runStore (above) so the CENTER
           panel's <MapSurface/> renders this route's map — the map is no longer
           shown in this left panel (owner layout). */}
+
+      {/* Rest-spot filters + tick duration — the SAME controls as the Trigger
+          screen (reused verbatim), reading/writing the scoped runStore that the
+          center panel's rest-spot fetch + this panel's run-plan build read. */}
+      <RestCeilingEditor />
+      <RestSpacingEditor />
+      <label htmlFor="merged-tick-seconds" style={fieldLabel}>Tick duration (seconds)</label>
+      <input
+        id="merged-tick-seconds"
+        data-testid="merged-tick-seconds-input"
+        type="number"
+        min={1}
+        step={1}
+        style={inputStyle}
+        value={rs.tickSecondsOverride ?? 180}
+        onChange={(e) => {
+          const n = Math.round(Number(e.target.value))
+          if (!Number.isNaN(n) && n >= 1) runStore.dispatch({ type: 'SET_TICK_SECONDS', seconds: n === 180 ? null : n })
+        }}
+      />
 
       {/* ── Situation & Scenario ──────────────────────────────────────────── */}
       <label htmlFor="merged-scenario-select" style={fieldLabel}>Situation &amp; Scenario</label>

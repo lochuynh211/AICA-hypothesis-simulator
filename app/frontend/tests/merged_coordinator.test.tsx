@@ -376,10 +376,13 @@ describe('mergedCoordinator — create + step tick loop', () => {
     })
 
     act(() => {
+      // 4× = a 250ms inter-tick pace (the play loop now throttles to 1000/speed
+      // ms, owner review) — keeps this 3-tick loop fast + deterministic.
+      result.current.setSpeed(4)
       result.current.play()
     })
 
-    await waitFor(() => expect(result.current.state.paused).toBe(true))
+    await waitFor(() => expect(result.current.state.paused).toBe(true), { timeout: 3000 })
 
     expect(tickMergedRun).toHaveBeenCalledTimes(3)
     expect(result.current.state.triggerTrace).toHaveLength(3)

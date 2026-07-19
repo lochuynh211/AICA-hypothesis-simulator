@@ -90,6 +90,9 @@ export type MergedCoordinatorState = {
    * center map can show gold rest markers (the merged run has no runStore
    * `restHistory` — the tick loop lives here). */
   acceptedRestSpots: RestSpot[]
+  /** Playback speed multiplier (1×/2×/4×) — the `play()` loop delays
+   * `1000/speed` ms between ticks (mirrors the Trigger review's PlaybackControls). */
+  speed: 1 | 2 | 4
 }
 
 /** A function the setup panel registers via `prepareStart()`: builds the
@@ -114,6 +117,7 @@ export const initialMergedCoordinatorState: MergedCoordinatorState = {
   inspectedFireIndex: null,
   ready: false,
   acceptedRestSpots: [],
+  speed: 1,
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -136,6 +140,8 @@ export type MergedCoordinatorAction =
   /** Reset the whole run (+ log/projection) back to a fresh, un-started state.
    * Preserves `ready` (the setup panel's registered start fn is still valid). */
   | { type: 'RESET' }
+  /** Set the 1×/2×/4× playback speed. */
+  | { type: 'SET_SPEED'; speed: 1 | 2 | 4 }
 
 /** Builds a TraceEntry from a tick's trigger payload the same way runStore's
  * TICK_APPENDED reducer case does (see state/runStore.ts) — including
@@ -246,9 +252,12 @@ export function mergedCoordinatorReducer(
       return { ...state, acceptedRestSpots: [...state.acceptedRestSpots, action.spot] }
 
     case 'RESET':
-      // Fresh start — clear the run, log, and projection, but keep `ready` so
-      // the Play button stays enabled (the setup panel's start fn is untouched).
-      return { ...initialMergedCoordinatorState, ready: state.ready }
+      // Fresh start — clear the run, log, and projection, but keep `ready` (so
+      // the Play button stays enabled) + `speed` (a reviewer preference).
+      return { ...initialMergedCoordinatorState, ready: state.ready, speed: state.speed }
+
+    case 'SET_SPEED':
+      return { ...state, speed: action.speed }
 
     default:
       return state
@@ -279,6 +288,8 @@ type MergedCoordinatorContextValue = {
   inspectFire(index: number | null): void
   /** Reset the whole run (+ log/projection) to a fresh, un-started state. */
   reset(): void
+  /** Set the 1×/2×/4× playback speed (paces the tick loop). */
+  setSpeed(speed: 1 | 2 | 4): void
   /** Registers (or clears, with `null`) the setup panel's start function and
    * flips `state.ready`. The center-panel Play button calls `startAndPlay()`,
    * which invokes this once when no run exists yet — so there is no separate
@@ -304,6 +315,9 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
   // so a re-entrant call made before the next render commits still sees the
   // in-flight selection synchronously — mirrors `runningRef`'s role for play().
   const choosingRef = useRef<string | null>(null)
+  // Playback speed read synchronously by play()'s loop (like runningRef) so a
+  // mid-run speed change takes effect on the next tick without a re-render.
+  const speedRef = useRef<1 | 2 | 4>(1)
 
   const create = async (req: CreateMergedRunReq, scenarioId?: string): Promise<void> => {
     try {
@@ -348,6 +362,12 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     void (async () => {
       while (runningRef.current) {
         await step()
+        // Pace the loop to the selected speed (1×=1000ms, 2×=500ms, 4×=250ms)
+        // — mirrors PlaybackControls' `1000/speed` interval. Skip the wait if a
+        // tick already stopped the loop (pause/proposal-pause/completion).
+        if (runningRef.current) {
+          await new Promise((r) => setTimeout(r, 1000 / speedRef.current))
+        }
       }
     })()
   }
@@ -437,6 +457,11 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     dispatch({ type: 'INSPECT_FIRE', index })
   }
 
+  const setSpeed = (speed: 1 | 2 | 4): void => {
+    speedRef.current = speed
+    dispatch({ type: 'SET_SPEED', speed })
+  }
+
   const reset = (): void => {
     // Stop the tick loop + drop the run identity so later step()/selectService()
     // /acceptRest() no-op until a new run is created. `startFnRef` is kept — the
@@ -479,6 +504,7 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     quickview,
     inspectFire,
     reset,
+    setSpeed,
     prepareStart,
     startAndPlay,
   }

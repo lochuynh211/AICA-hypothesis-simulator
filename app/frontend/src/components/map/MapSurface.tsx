@@ -343,7 +343,7 @@ export default function MapSurface({
       if (!fireRefs.current[i]) {
         fireRefs.current[i] = new gmaps.Marker({
           map: mapInstanceRef.current,
-          icon: { path: gmaps.SymbolPath.CIRCLE, scale: 7, fillColor: '#ff7b54', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+          icon: { path: gmaps.SymbolPath.CIRCLE, scale: 7, fillColor: '#dc2626', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
           zIndex: 998,
         })
       }
@@ -365,7 +365,7 @@ export default function MapSurface({
       if (!chosenRestRefs.current[i]) {
         chosenRestRefs.current[i] = new gmaps.Marker({
           map: mapInstanceRef.current,
-          icon: { path: gmaps.SymbolPath.CIRCLE, scale: 8, fillColor: '#f0c000', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 },
+          icon: { path: gmaps.SymbolPath.CIRCLE, scale: 8, fillColor: '#f59e0b', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 },
           title: spot.label?.en ?? 'Chosen Rest Spot',
           zIndex: 999,
         })
@@ -478,7 +478,7 @@ export default function MapSurface({
             transform: 'translateX(-50%)',
             width: '16px',
             height: '16px',
-            background: '#f0c000',
+            background: '#f59e0b',
             borderRadius: '50%',
             border: '3px solid white',
             zIndex: 11,

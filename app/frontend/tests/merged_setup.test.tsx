@@ -386,6 +386,15 @@ describe('MergedSetupPanel', () => {
     expect(within(select).getByText(/Route Preset 1/)).toBeInTheDocument()
   })
 
+  it('renders the reused rest-spot filter editors + a 180s-default tick-duration field (owner review)', async () => {
+    renderPanel()
+    // The Trigger screen's ceiling + spacing editors, reused verbatim.
+    expect(await screen.findByTestId('rest-ceiling-editor')).toBeInTheDocument()
+    expect(screen.getByTestId('rest-spacing-editor')).toBeInTheDocument()
+    // Tick duration defaults to 180s.
+    expect((screen.getByTestId('merged-tick-seconds-input') as HTMLInputElement).value).toBe('180')
+  })
+
   it('auto-runs a quickview once the selection is complete — no button, no run created', async () => {
     renderPanel()
     await fillSetup()

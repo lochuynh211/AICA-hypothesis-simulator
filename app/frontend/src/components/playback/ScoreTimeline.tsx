@@ -40,8 +40,9 @@ const TRIGGER_COLOR = '#dc2626'
 const REST_SPOT_COLOR = '#f59e0b'
 const SPIKE_COLOR = '#db2777'
 const TRACK_COLOR = '#e2e8f0'
-// Journey markers (feature 020): red = after-nap service, green = driving after rest.
-const AFTER_NAP_COLOR = '#dc2626'
+// Journey markers (feature 020): purple = after-nap service, green = driving
+// after rest (red is reserved for the trigger fire).
+const AFTER_NAP_COLOR = '#9333ea'
 const DRIVE_AFTER_COLOR = '#16a34a'
 // Traffic-jam sub-bar color (feature 020) — matches the setup painter's jam red.
 const JAM_COLOR = '#dc2626'

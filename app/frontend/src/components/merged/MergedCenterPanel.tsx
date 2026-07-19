@@ -18,8 +18,9 @@
  */
 import { useEffect, useState } from 'react'
 import { useMergedCoordinator } from '../../state/mergedCoordinator'
+import { useRunStore } from '../../state/runStore'
 import ScoreTimeline from '../playback/ScoreTimeline'
-import { mergedInstantResultToTimeline, type TimelineData, type TimelineFire, type TimelinePoint } from '../playback/timelineData'
+import { mergedInstantResultToTimeline, type TimelineData, type TimelineFire, type TimelinePoint, type TimelineSegment } from '../playback/timelineData'
 import type { TraceEntry, RecoveryOption, RestSpot } from '../../api/types'
 import { getScenario, getRestSpots } from '../../api/client'
 import MapSurface from '../map/MapSurface'
@@ -49,9 +50,17 @@ function fireKind(cat: string | null): 'rest' | 'monotony' {
   return (cat ?? '').startsWith('rest') ? 'rest' : 'monotony'
 }
 
-/** Bare trace-only `TimelineData` — used only as the fallback before any
- * quickview projection exists (once it does, the animation reuses it verbatim). */
-function buildTimelineData(trace: TraceEntry[]): TimelineData {
+/** REALTIME live `TimelineData` (owner review issue 3): everything is derived
+ * from actually-observed data on the DISTANCE (route_fraction) axis — NOT the
+ * projection. Road bands come from the selected route's geometry (known, static)
+ * but traffic jams, the curves/fires, and the rest markers are all realtime, so
+ * a rest spot is NEVER shown in advance (only once the driver actually accepts
+ * one, from `acceptedRestSpots`). */
+function buildLiveTimeline(
+  trace: TraceEntry[],
+  routeSegments: TimelineSegment[],
+  acceptedRestSpots: RestSpot[],
+): TimelineData {
   const fracFor = (e: TraceEntry): number => (typeof e.route_fraction === 'number' ? e.route_fraction : 0)
   const restScore: TimelinePoint[] = trace.map((e) => ({ x: fracFor(e), y: restY(e) }))
   const monotonyScore: TimelinePoint[] = trace
@@ -61,6 +70,7 @@ function buildTimelineData(trace: TraceEntry[]): TimelineData {
   const restThreshold =
     num(last?.criteria?.['rest_required_threshold']) ?? num(last?.criteria?.['threshold_suggest']) ?? num(last?.criteria?.['threshold_fire']) ?? null
   const monotonyThreshold = num(last?.criteria?.['monotony_suggest_threshold']) ?? null
+
   const fires: TimelineFire[] = []
   let active = false
   for (const e of trace) {
@@ -68,28 +78,62 @@ function buildTimelineData(trace: TraceEntry[]): TimelineData {
     if (paused && !active) fires.push({ x: fracFor(e), kind: fireKind(e.selected_category) })
     active = paused
   }
+
+  // Traffic jams — realtime, from is_traffic_jam transitions (open/close spans).
+  const trafficJams: { fromX: number; toX: number }[] = []
+  let jamFrom: number | null = null
+  for (const e of trace) {
+    const x = fracFor(e)
+    if (e.is_traffic_jam) {
+      if (jamFrom === null) jamFrom = x
+    } else if (jamFrom !== null) {
+      trafficJams.push({ fromX: jamFrom, toX: x })
+      jamFrom = null
+    }
+  }
+  if (jamFrom !== null && last) trafficJams.push({ fromX: jamFrom, toX: fracFor(last) })
+
   return {
-    segments: [], trafficJams: [], restScore, monotonyScore, restThreshold, monotonyThreshold,
-    spikes: [], fires, restDots: [], recoveryWindows: [], completionX: null,
+    segments: routeSegments,
+    trafficJams,
+    restScore,
+    monotonyScore,
+    restThreshold,
+    monotonyThreshold,
+    spikes: [],
+    fires,
+    // Rest markers ONLY for spots the driver actually accepted (realtime) — never
+    // the projected candidates (owner review: no rest spot shown in advance).
+    restDots: acceptedRestSpots.map((s) => s.route_fraction),
+    recoveryWindows: [],
+    completionX: null,
   }
 }
 
 export default function MergedCenterPanel() {
   const coordinator = useMergedCoordinator()
   const { state } = coordinator
+  // The setup panel mirrors the route + rest-filter fields into this scoped
+  // runStore (whole shell is wrapped) — read them for the road bands + the
+  // rest-spot fetch filters.
+  const { state: rs } = useRunStore()
 
-  // The quickview projection powers BOTH the top strip AND the live animation
-  // (owner review: they must be identical). The animation only differs by a
-  // moving playhead driven off the live tick index on the SAME time axis.
+  // TOP strip = the projection (time axis, journey markers).
   const quickviewTimeline = state.quickviewResult ? mergedInstantResultToTimeline(state.quickviewResult) : null
-  const tickMax = state.quickviewResult
-    ? Math.max(1, ...state.quickviewResult.score_series.map((p) => p.t), ...(state.quickviewResult.monotony_series ?? []).map((p) => p.t))
-    : 1
-  const liveTimeline = quickviewTimeline ?? buildTimelineData(state.triggerTrace)
-  const liveTickIndex = state.latestTrigger?.tick_index ?? 0
-  const revealFraction = quickviewTimeline ? clamp01(liveTickIndex / tickMax) : state.latestTrigger?.route_fraction ?? 0
+  const hasQuickview = quickviewTimeline != null
 
-  const hasQuickview = state.quickviewResult != null
+  // LIVE animation = REALTIME, built from the observed trace + the known route
+  // geometry (distance axis) — NOT the projection (owner review issue 3).
+  const routeSegments: TimelineSegment[] = (() => {
+    const alt = rs.alternatives.find((a) => a.route_id === rs.selectedRouteId)
+    const segs = alt?.route_facts?.route_segments ?? []
+    const totalKm = alt?.route_facts?.total_route_distance_km ?? 0
+    if (segs.length === 0 || totalKm <= 0) return []
+    return segs.map((s) => ({ fromX: s.start_km / totalKm, toX: (s.start_km + s.length_km) / totalKm, type: s.segment_type }))
+  })()
+  const liveTimeline = buildLiveTimeline(state.triggerTrace, routeSegments, state.acceptedRestSpots)
+  const revealFraction = clamp01(state.latestTrigger?.route_fraction ?? 0)
+
   const hasRun = state.mergedRunId != null
 
   // Decision (fire) positions + accepted rest spots for the map markers (the
@@ -120,7 +164,12 @@ export default function MergedCenterPanel() {
   useEffect(() => {
     if (!showRestAccept || !state.scenarioId || !state.triggerRunId) return
     let cancelled = false
-    Promise.all([getScenario(state.scenarioId), getRestSpots(state.triggerRunId)])
+    Promise.all([
+      getScenario(state.scenarioId),
+      // Thread the reviewer's rest-spot filters (drowsiness ceiling / min
+      // spacing) the SAME way the Trigger screen's RecoveryPicker does.
+      getRestSpots(state.triggerRunId, rs.mapsKey || undefined, rs.restDrowsinessCeiling ?? undefined, rs.minRestSpacingKm ?? undefined),
+    ])
       .then(([scenario, spotsResp]) => {
         if (cancelled) return
         setRecoveryOptions((scenario.recovery_options ?? []).filter((opt) => !opt.postpone))
@@ -226,6 +275,19 @@ export default function MergedCenterPanel() {
         <button type="button" data-testid="merged-reset-button" disabled={!hasRun && !state.error} onClick={handleReset}>
           ↺ Reset
         </button>
+        {/* Animation speed (1×/2×/4×) — paces the tick loop (owner review). */}
+        <label style={{ fontSize: '0.78em', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          Speed
+          <select
+            data-testid="merged-speed-select"
+            value={state.speed}
+            onChange={(e) => coordinator.setSpeed(Number(e.target.value) as 1 | 2 | 4)}
+          >
+            <option value={1}>1×</option>
+            <option value={2}>2×</option>
+            <option value={4}>4×</option>
+          </select>
+        </label>
       </div>
 
       {/* 3. ANIMATION — identical to the quickview + a moving playhead, no legend. */}
