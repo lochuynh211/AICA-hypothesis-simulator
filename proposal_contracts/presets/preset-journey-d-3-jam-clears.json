@@ -9,22 +9,19 @@
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "music_playlist",
         "humming_karaoke",
+        "call_response_driving",
         "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "ranking_creation"
       ]
     },
     "expected_top": {
-      "arousal_band": "high",
-      "must_be_oshi": false
+      "arousal_band": "high"
     },
     "gradient": "none",
     "hypothesis": "jam clears, drowsiness/fatigue/monotony all ease back down from their stage-2 peak → the same energize track stays on top but its fit eases off the peak, still a driving service",
     "override_required": false,
-    "top_fit_min": 0.19
+    "top_fit_min": 0.17
   },
   "family": "journey",
   "journey": {

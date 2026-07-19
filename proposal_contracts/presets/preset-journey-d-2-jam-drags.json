@@ -9,22 +9,19 @@
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "music_playlist",
         "humming_karaoke",
+        "call_response_driving",
         "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "ranking_creation"
       ]
     },
     "expected_top": {
-      "arousal_band": "high",
-      "must_be_oshi": false
+      "arousal_band": "high"
     },
     "gradient": "none",
     "hypothesis": "worst point of the jam: drowsiness 70 + fatigue 55 + monotony pegged at 100 → the energize track's fit peaks for the journey, still inattentive-prevention, still a driving service",
     "override_required": false,
-    "top_fit_min": 0.25
+    "top_fit_min": 0.223
   },
   "family": "journey",
   "journey": {

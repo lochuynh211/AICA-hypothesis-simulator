@@ -10,11 +10,7 @@
     "expected_service": {
       "top_should_be_in": [
         "music_playlist",
-        "humming_karaoke",
-        "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "humming_karaoke"
       ]
     },
     "expected_top": {
@@ -23,7 +19,7 @@
     "gradient": "none",
     "hypothesis": "No registered oshi at all — taste and history alone. Heavy j-rock/electronic genre usage plus rich per-track history on 6 j-rock tracks should lift the j-rock cluster to the top on an ordinary neutral drive.",
     "override_required": false,
-    "top_fit_min": 0.34
+    "top_fit_min": 0.305
   },
   "family": "genre_usage",
   "journey": null,

@@ -2,7 +2,27 @@
 
 Status: approved CDC-SU baseline V1 design (deterministic normalized hierarchical weighted response)
 Scope: transparent selector that ranks AICA **services**; concrete-content selection is a separate algorithm
-Last updated: 2026-07-15
+Last updated: 2026-07-19
+
+> **Model revision 2026-07-19 — semantic activation-need.** Two changes make the
+> selector distinguish an *alert* driver from a *drowsy* one instead of treating
+> "alert" as "no signal":
+> 1. **Signed activation-need evidence (§5.3).** `drowsiness_level`, `fatigue_level`,
+>    `monotony_level` now normalize to a SIGNED value `e = 2·(x/100)^gamma − 1 ∈ [−1,+1]`
+>    (was `(x/100)^gamma ∈ [0,1]`). An **alert** driver (low value → `e≈−1`) now actively
+>    prefers PASSIVE content (`music_playlist`, response 0) over ACTIVATION content
+>    (`humming_karaoke`/`quiz`/`ranking_creation`/`call_response_driving`, response `+1` →
+>    negative contribution), while a **drowsy** driver (`e≈+1`) prefers activation. A
+>    *missing* field stays `e=0` (neutral), distinct from a present alert value.
+> 2. **Purpose-multiplier Scheme 1 (§6.2).** The `route_music` and `child_passenger_experience`
+>    columns trade their other-leisure subgroups down (→0.3) and raise their own triggering
+>    subgroup (`route_context`→5.0 / `passenger_composition`→5.0), so route/destination
+>    (resp. passenger) become the top leisure weights. `driver_state`/`driving_environment`/
+>    `recovery` are untouched and the **SS6.4 dominance invariant is preserved** (W_D=0.695
+>    for both; weights, not evidence, drive that invariant). `rest_recommended`/`inattentive`
+>    columns are unchanged. Net effect: fresh route drives → `music_playlist`; drowsy →
+>    activation; the mountain road-safety hypothesis (§5.2.2) still reorders. Some numeric
+>    tables below predate this revision and are illustrative; the package JSON + tests are authoritative.
 
 ---
 

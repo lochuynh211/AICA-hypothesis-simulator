@@ -2,7 +2,19 @@
 
 Status: approved Spotify-only V1 design (two-axis song-trait model)
 Scope: baseline-feature transparent selector for concrete music content
-Last updated: 2026-07-15
+Last updated: 2026-07-19
+
+> **Model revision 2026-07-19 — state-appropriate arousal.** A driving baseline
+> now pushes toward CALM/PLEASANT content, so drowsiness/monotony must EARN high
+> arousal instead of it being the default. `context_response_matrix`: `drowsiness`
+> α 0.80→0.55 / β 0.20→0.45, `monotony` α 0.90→0.60 / β 0.10→0.40, `road.highway`
+> α 1.00→0.00 (it was an always-on high-arousal push), `motion_driving` α −0.30→−0.50 /
+> β 0.00→0.45 (driving itself now favours pleasant/calmer). `hierarchy_weights.Situation`
+> shares: `driving_environment` 0.30→0.21, `driving_state` (motion) 0.05→0.14. Effect:
+> a **fresh** driver on a passive `music_playlist` proposal gets **moderate/pleasant**
+> content, a **drowsy** one **high-arousal energize**, and a **mountain/scenic** drive
+> **calm** — while karaoke (`humming`/`full_karaoke`) content stays upbeat by nature.
+> The §5/§10 worked-example numbers below predate this revision; the package JSON + tests are authoritative.
 
 ---
 

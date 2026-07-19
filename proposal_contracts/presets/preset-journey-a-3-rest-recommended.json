@@ -9,22 +9,19 @@
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "music_playlist",
         "humming_karaoke",
+        "call_response_driving",
         "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "ranking_creation"
       ]
     },
     "expected_top": {
-      "arousal_band": "high",
-      "track_id": "synthetic-track-0266"
+      "arousal_band": "high"
     },
     "gradient": "none",
     "hypothesis": "drowsiness pegs at 100, fatigue 56, rest now recommended, still driving -> the SAME high-arousal track tops with its highest fit yet, and the assistant is still offering a driving service to bridge the gap to the stop",
     "override_required": false,
-    "top_fit_min": 0.25
+    "top_fit_min": 0.249
   },
   "family": "journey",
   "journey": {

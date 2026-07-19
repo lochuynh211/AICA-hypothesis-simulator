@@ -12,18 +12,14 @@
         "stretch_video",
         "full_karaoke",
         "live_viewing",
-        "oshi_reexperience",
         "call_response_stopped"
       ]
     },
-    "expected_top": {
-      "arousal_band": "high",
-      "track_id": "synthetic-track-0161"
-    },
+    "expected_top": {},
     "gradient": "none",
     "hypothesis": "family stops to stretch: lifecycle flips to after_rest_before_restart -> the overall service ranking switches to a post-rest service (stretch_video), content still resolves via a content-supported service at a lower fit than mid-drive",
     "override_required": false,
-    "top_fit_min": 0.105
+    "top_fit_min": 0.086
   },
   "family": "journey",
   "journey": {

@@ -26,7 +26,8 @@ _PARAMS = lambda: load_service_manifest()["parameters"]  # noqa: E731
     ("fatigue_level", "gamma_fatigue"),
     ("monotony_level", "gamma_monotony"),
 ])
-@pytest.mark.parametrize("raw,expected", [(0, 0.0), (100, 1.0), (50, None)])
+# SIGNED activation-need evidence: e = 2*(x/100)^gamma - 1  (alert -> -1, drowsy -> +1)
+@pytest.mark.parametrize("raw,expected", [(0, -1.0), (100, 1.0), (50, None)])
 def test_gamma_power_boundaries(service_selector, feature_id, gamma_key, raw, expected):
     hp = _HP()
     situation = {feature_id: raw}
@@ -35,7 +36,7 @@ def test_gamma_power_boundaries(service_selector, feature_id, gamma_key, raw, ex
         assert result["e"] == pytest.approx(expected, abs=1e-12)
     else:
         gamma = hp[gamma_key]
-        assert result["e"] == pytest.approx((raw / 100.0) ** gamma, abs=1e-12)
+        assert result["e"] == pytest.approx(2.0 * (raw / 100.0) ** gamma - 1.0, abs=1e-12)
     assert result["status"] == "used"
     assert result["raw_value"] == raw
 
@@ -45,7 +46,7 @@ def test_gamma_at_validation_bounds(service_selector, gamma):
     hp = dict(_HP())
     hp["gamma_drowsiness"] = gamma
     result = service_selector.resolve_scalar_evidence("drowsiness_level", {"drowsiness_level": 60}, hp, _PARAMS())
-    assert result["e"] == pytest.approx((60 / 100.0) ** gamma, abs=1e-12)
+    assert result["e"] == pytest.approx(2.0 * (60 / 100.0) ** gamma - 1.0, abs=1e-12)
 
 
 def test_gamma_power_missing_field_is_neutral(service_selector):
@@ -56,10 +57,12 @@ def test_gamma_power_missing_field_is_neutral(service_selector):
 
 
 def test_gamma_power_present_zero_is_not_missing(service_selector):
-    """Present raw 0 is a valid low value, not missing (doc §8)."""
+    """Present raw 0 is a valid low value, not missing (doc §8). Under signed
+    activation-need evidence, an alert (0) driver maps to e=-1.0 (prefers passive),
+    distinct from a MISSING field (e=0.0, neutral)."""
     result = service_selector.resolve_scalar_evidence("fatigue_level", {"fatigue_level": 0}, _HP(), _PARAMS())
     assert result["status"] == "used"
-    assert result["e"] == 0.0
+    assert result["e"] == -1.0
 
 
 # ---------------------------------------------------------------------------

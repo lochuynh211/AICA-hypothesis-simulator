@@ -9,14 +9,17 @@
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "stretch_video"
+        "stretch_video",
+        "full_karaoke",
+        "live_viewing",
+        "call_response_stopped"
       ]
     },
     "expected_top": {},
     "gradient": "none",
     "hypothesis": "after a nap at the SA/PA, drowsiness collapses 100->37 and fatigue collapses 56->4 (stopped, parking) -> the assistant's top SERVICE switches away from any driving/content service to the post-rest recovery service stretch_video; content itself becomes secondary and its fit collapses",
     "override_required": false,
-    "top_fit_min": 0.05
+    "top_fit_min": 0.097
   },
   "family": "journey",
   "journey": {

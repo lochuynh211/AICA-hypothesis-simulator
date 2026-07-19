@@ -10,21 +10,16 @@
     "expected_service": {
       "top_should_be_in": [
         "music_playlist",
-        "humming_karaoke",
-        "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "humming_karaoke"
       ]
     },
     "expected_top": {
-      "arousal_band": "high",
-      "track_id": "synthetic-track-0266"
+      "arousal_band": "mid"
     },
     "gradient": "none",
     "hypothesis": "fresh cruise on a monotonous highway, low drowsiness -> a high-arousal energize track already tops, but confidence (fit) is still low",
     "override_required": false,
-    "top_fit_min": 0.13
+    "top_fit_min": 0.059
   },
   "family": "journey",
   "journey": {

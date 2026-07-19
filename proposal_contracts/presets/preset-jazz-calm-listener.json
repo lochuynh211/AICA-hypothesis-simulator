@@ -10,11 +10,7 @@
     "expected_service": {
       "top_should_be_in": [
         "music_playlist",
-        "humming_karaoke",
-        "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "humming_karaoke"
       ]
     },
     "expected_top": {
@@ -23,7 +19,7 @@
     "gradient": "none",
     "hypothesis": "Same neutral drive, same absence of any oshi, opposite taste: heavy jazz/classical genre usage and history on 9 calm tracks. The soothing jazz/classical cluster should rise instead of j-rock — same road, different driver, different winner.",
     "override_required": false,
-    "top_fit_min": 0.25
+    "top_fit_min": 0.255
   },
   "family": "genre_usage",
   "journey": null,

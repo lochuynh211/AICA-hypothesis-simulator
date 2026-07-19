@@ -60,16 +60,23 @@ def _scores(service_selector, fixture: dict, variant_key: str) -> dict:
 
 
 @pytest.mark.parametrize(
-    "fixture_name,activation_id,calm_id,low_key,high_key",
+    "fixture_name,activation_id,calm_id,low_key,high_key,signed",
     [
-        ("01-drowsiness", "call_response_driving", "radio_style", "low", "high"),
-        ("02-fatigue", "call_response_driving", "radio_style", "low", "high"),
-        ("03-monotony", "call_response_driving", "radio_style", "low", "high"),
-        ("04-traffic", "call_response_driving", "radio_style", "normal", "congested"),
-        ("06-day-night", "call_response_driving", "radio_style", "day", "night"),
+        # drowsiness/fatigue/monotony went through the 2026-07-19 SIGNED
+        # driver-state evidence change (`e = 2*(x/100)^gamma - 1`, algorithm.py
+        # `resolve_scalar_evidence`): "low" (10) is now BELOW the neutral
+        # midpoint (50) and yields NEGATIVE evidence, so the activation
+        # candidate (whose response is +1.0 here) goes strictly negative at
+        # "low" - it no longer merely sits near 0. traffic_state/night_state
+        # stayed categorical/unsigned (e in {0,1}), so "low" is still exactly 0.
+        ("01-drowsiness", "call_response_driving", "radio_style", "low", "high", True),
+        ("02-fatigue", "call_response_driving", "radio_style", "low", "high", True),
+        ("03-monotony", "call_response_driving", "radio_style", "low", "high", True),
+        ("04-traffic", "call_response_driving", "radio_style", "normal", "congested", False),
+        ("06-day-night", "call_response_driving", "radio_style", "day", "night", False),
     ],
 )
-def test_activation_vs_calm_gap_widens(service_selector, fixture_name, activation_id, calm_id, low_key, high_key):
+def test_activation_vs_calm_gap_widens(service_selector, fixture_name, activation_id, calm_id, low_key, high_key, signed):
     fixture = _load(fixture_name)
     low_scores = _scores(service_selector, fixture, low_key)
     high_scores = _scores(service_selector, fixture, high_key)
@@ -79,8 +86,15 @@ def test_activation_vs_calm_gap_widens(service_selector, fixture_name, activatio
     assert low_scores[calm_id] == pytest.approx(0.0, abs=1e-12)
     assert high_scores[calm_id] == pytest.approx(0.0, abs=1e-12)
 
-    # activation candidate strictly rises low -> high.
-    assert low_scores[activation_id] >= 0.0
+    # activation candidate strictly rises low -> high. For the signed
+    # driver-state fields, "low" now sits below the neutral midpoint and is
+    # strictly negative (an alert/rested/un-monotonous driver actively
+    # disprefers activation content); the unsigned categorical fields are
+    # still pinned at exactly 0 at "low".
+    if signed:
+        assert low_scores[activation_id] < 0.0
+    else:
+        assert low_scores[activation_id] == pytest.approx(0.0, abs=1e-12)
     assert high_scores[activation_id] > low_scores[activation_id]
 
     # the activation-over-calm gap strictly widens.
@@ -212,12 +226,30 @@ def test_recovery_rate_low_to_high_reorders_humming_vs_call_response(service_sel
 def test_route_music_purpose_narrows_humming_over_music_gap(service_selector):
     fixture = _load("12-purpose-route-music-vs-inattentive")
 
+    # The fixture's raw drowsiness_level=40/fatigue_level=30 predate the
+    # 2026-07-19 SIGNED driver-state evidence change (`e = 2*(x/100)^gamma -
+    # 1`): both values now sit BELOW the neutral midpoint (50), so
+    # humming_karaoke's exclusive driver-state edge (music_playlist doesn't
+    # respond to drowsiness/fatigue at all, see service_response_profiles)
+    # flips NEGATIVE and music_playlist leads instead -- contradicting item
+    # 12's "humming leads under both purposes" premise this test exercises.
+    # Route/destination tags (the only other differentiator here) respond
+    # identically for both candidates and cancel out of the gap, so this is
+    # driven entirely by drowsiness/fatigue. Raise both above the new
+    # midpoint (mirroring the §10 worked example's drowsy/fatigued driver)
+    # so the scenario is a genuinely drowsy driver again, restoring the
+    # documented "humming leads, route_music narrows the gap" story without
+    # touching the frozen fixture file itself.
+    situation_override = {"drowsiness_level": 80, "fatigue_level": 70}
+
     def _score_pair(purpose: str) -> tuple[float, float]:
+        snapshot = copy.deepcopy(fixture["feature_snapshot"])
+        snapshot["situation"].update(situation_override)
         context = build_service_context(
             trigger_purpose=purpose,
             lifecycle_stage=fixture["lifecycle_stage"],
             allowed_service_ids=fixture["allowed_service_ids"],
-            feature_snapshot=fixture["feature_snapshot"],
+            feature_snapshot=snapshot,
         )
         out = service_selector.evaluate(context)
         by_id = {c["candidate_id"]: c["score"] for c in out["ranked_candidates"]}

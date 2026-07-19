@@ -9,12 +9,10 @@
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "music_playlist",
         "humming_karaoke",
+        "call_response_driving",
         "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "ranking_creation"
       ]
     },
     "expected_top": {
@@ -23,7 +21,7 @@
     "gradient": "none",
     "hypothesis": "At the rest trigger drowsiness/fatigue/monotony all peak at night → the track's fit peaks too, still before the stop; service remains a driving service.",
     "override_required": false,
-    "top_fit_min": 0.24
+    "top_fit_min": 0.255
   },
   "family": "journey",
   "journey": {

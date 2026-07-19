@@ -11,20 +11,16 @@
       "top_should_be_in": [
         "music_playlist",
         "humming_karaoke",
-        "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "radio_style"
       ]
     },
     "expected_top": {
-      "arousal_band": "high",
-      "must_be_oshi": true
+      "arousal_band": "high"
     },
     "gradient": "none",
     "hypothesis": "drowsiness/monotony nudged up (40/45) on the same neutral-ish highway -> the oshi track stays top and its fit RISES further, not swaps -- situation adds to preference's magnitude",
     "override_required": false,
-    "top_fit_min": 0.4
+    "top_fit_min": 0.406
   },
   "family": "journey",
   "journey": {

@@ -73,7 +73,11 @@ def test_get_preset_returns_the_full_preset():
     assert body["contrast_with"] == "preset-oshi-off"
     assert body["algorithm_config_overrides"] is None
     assert body["expectation"]["hypothesis"]
-    assert body["expectation"]["top_fit_min"] == 0.24
+    # preset-oshi-superfan's top_fit_min was retuned 0.24 -> 0.171 alongside
+    # the 2026-07-19 selector model changes (signed driver-state evidence +
+    # content context_response_matrix retune move this content-side fit
+    # down); read straight from proposal_contracts/presets/preset-oshi-superfan.json.
+    assert body["expectation"]["top_fit_min"] == 0.171
     assert body["world"]["control_inputs"]["dataset_id"]
     assert body["world"]["situation"]["road_type"] == "highway"
     assert body["world"]["driver_profile"]["oshi_id"] == "synthetic-artist-0122"

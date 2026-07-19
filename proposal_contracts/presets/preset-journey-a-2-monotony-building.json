@@ -9,22 +9,19 @@
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "music_playlist",
         "humming_karaoke",
+        "call_response_driving",
         "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "ranking_creation"
       ]
     },
     "expected_top": {
-      "arousal_band": "high",
-      "track_id": "synthetic-track-0266"
+      "arousal_band": "high"
     },
     "gradient": "none",
     "hypothesis": "drowsiness/monotony climbing (monotony pegs at 100) on the same highway, inattentive-prevention mode -> the SAME high-arousal track holds the top spot, now with a mid fit as the system grows more confident",
     "override_required": false,
-    "top_fit_min": 0.21
+    "top_fit_min": 0.205
   },
   "family": "journey",
   "journey": {

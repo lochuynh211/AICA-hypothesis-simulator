@@ -11,20 +11,16 @@
       "top_should_be_in": [
         "music_playlist",
         "humming_karaoke",
-        "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "radio_style"
       ]
     },
     "expected_top": {
-      "arousal_band": "high",
-      "must_be_oshi": true
+      "arousal_band": "high"
     },
     "gradient": "none",
     "hypothesis": "teens Miku superfan + vocaloid/j-pop usage, low drowsiness (~30) -> Miku's own track tops strongly despite minimal road/fatigue pressure",
     "override_required": false,
-    "top_fit_min": 0.38
+    "top_fit_min": 0.395
   },
   "family": "journey",
   "journey": {

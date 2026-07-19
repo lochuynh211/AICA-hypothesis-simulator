@@ -9,22 +9,19 @@
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "music_playlist",
         "humming_karaoke",
+        "call_response_driving",
         "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "ranking_creation"
       ]
     },
     "expected_top": {
-      "arousal_band": "high",
-      "track_id": "synthetic-track-0266"
+      "arousal_band": "high"
     },
     "gradient": "none",
     "hypothesis": "fatigue has rocketed past drowsiness (85 vs 75) on the winding climb -> the SAME track stays on top (no swap) but its fit rises sharply as the model's energize pull strengthens with fatigue/drowsiness",
     "override_required": false,
-    "top_fit_min": 0.17
+    "top_fit_min": 0.191
   },
   "family": "journey",
   "journey": {

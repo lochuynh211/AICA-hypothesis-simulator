@@ -9,20 +9,17 @@
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "live_viewing",
         "stretch_video",
         "full_karaoke",
-        "oshi_reexperience",
+        "live_viewing",
         "call_response_stopped"
       ]
     },
-    "expected_top": {
-      "arousal_band": "high"
-    },
+    "expected_top": {},
     "gradient": "none",
     "hypothesis": "After a nap at night, situational push collapses and the service switches to a post-rest one (stretch_video/full_karaoke content); fit resets low. Night vs day differ in which track tops this stage.",
     "override_required": false,
-    "top_fit_min": 0.05
+    "top_fit_min": 0.104
   },
   "family": "journey",
   "journey": {

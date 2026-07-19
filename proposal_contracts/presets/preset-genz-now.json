@@ -43,19 +43,17 @@
       "top_should_be_in": [
         "music_playlist",
         "humming_karaoke",
-        "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "radio_style"
       ]
     },
     "expected_top": {
+      "arousal_band": "high",
       "must_be_oshi": true
     },
     "gradient": "none",
     "hypothesis": "A teenage driver whose oshi is Ado (2020s j-pop). Same neutral road, same raised age/oshi weight override — but now a current 2020s track wins. Age-band alone flips the era versus the Shōwa preset.",
     "override_required": true,
-    "top_fit_min": 0.45
+    "top_fit_min": 0.406
   },
   "family": "era_age",
   "journey": null,

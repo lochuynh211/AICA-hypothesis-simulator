@@ -42,18 +42,18 @@
       "kind": "matrix",
       "label": { "ja": "コンテキスト応答行列（表2）", "en": "Context Response Matrix (Table 2)" },
       "default": {
-        "drowsiness": { "alpha": 0.80, "beta": 0.20, "directional": false },
+        "drowsiness": { "alpha": 0.55, "beta": 0.45, "directional": false },
         "fatigue": { "alpha": -0.50, "beta": 0.50, "directional": true },
-        "monotony": { "alpha": 0.90, "beta": 0.10, "directional": false },
+        "monotony": { "alpha": 0.60, "beta": 0.40, "directional": false },
         "traffic_congested": { "alpha": -0.40, "beta": 0.60, "directional": true },
         "night": { "alpha": -0.50, "beta": 0.50, "directional": true },
         "road": {
-          "highway": { "alpha": 1.00, "beta": 0.00 },
+          "highway": { "alpha": 0.00, "beta": 0.00 },
           "local": { "alpha": 0.00, "beta": 0.00 },
           "mountain": { "alpha": -1.00, "beta": 0.00 },
           "parking": { "alpha": 0.00, "beta": 0.00 }
         },
-        "motion_driving": { "alpha": -0.30, "beta": 0.00, "directional": false }
+        "motion_driving": { "alpha": -0.50, "beta": 0.45, "directional": false }
       }
     },
     {
@@ -72,13 +72,13 @@
             "drowsiness": { "share": 0.55, "mask": 1, "feature_id": "drowsiness_level" },
             "fatigue": { "share": 0.45, "mask": 1, "feature_id": "fatigue_level" }
           }},
-          "driving_environment": { "share": 0.30, "leaves": {
+          "driving_environment": { "share": 0.21, "leaves": {
             "traffic": { "share": 0.15, "mask": 1, "feature_id": "traffic_state" },
             "road": { "share": 0.15, "mask": 1, "feature_id": "road_type" },
             "night": { "share": 0.20, "mask": 1, "feature_id": "night_state" },
             "monotony": { "share": 0.50, "mask": 1, "feature_id": "monotony_level" }
           }},
-          "driving_state": { "share": 0.05, "leaves": {
+          "driving_state": { "share": 0.14, "leaves": {
             "motion": { "share": 1.00, "mask": 1, "feature_id": "motion_state" }
           }},
           "song_singability": { "share": 0.13, "leaves": {

@@ -11,19 +11,17 @@
       "top_should_be_in": [
         "music_playlist",
         "humming_karaoke",
-        "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "radio_style"
       ]
     },
     "expected_top": {
+      "arousal_band": "high",
       "must_be_oshi": true
     },
     "gradient": "none",
     "hypothesis": "A neutral, undramatic driving situation so preference alone leads. The driver has registered Ado as their oshi (oshi_mode on) with no per-track history at all — isolating the oshi GATE itself, not accumulated history. The oshi's own track should top.",
     "override_required": false,
-    "top_fit_min": 0.24
+    "top_fit_min": 0.171
   },
   "family": "oshi_personalization",
   "journey": null,

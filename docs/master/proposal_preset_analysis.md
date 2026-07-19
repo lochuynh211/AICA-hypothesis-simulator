@@ -18,55 +18,55 @@ Drowsiness/fatigue/monotony in each brief are grounded in the trigger-mode drive
 
 | # | Stage | Situation (purpose · lifecycle) | Real top (fit / arousal) | Service | Result |
 |---|---|---|---|---|---|
-| 1/5 | Cruising, Still Fresh | route_music · active_driving_content | The Seed (2.0) — Cody ChesnuTT (+0.150 / a=0.80) | humming_karaoke | ✅ pass |
-| 2/5 | Drowsiness Building — Stay Alert | inattentive_driving_prevention_recovery · active_driving_content | The Seed (2.0) — Cody ChesnuTT (+0.239 / a=0.80) | humming_karaoke | ✅ pass |
-| 3/5 | Rest Recommended | rest_recommended · before_rest_until_stop | The Seed (2.0) — Cody ChesnuTT (+0.276 / a=0.80) | humming_karaoke | ✅ pass |
-| 4/5 | Back on the Road, Refreshed | rest_recommended · after_rest_before_restart | READY STEADY GO — L'Arc-en-Ciel (+0.074 / a=0.83) | stretch_video | ✅ pass |
-| 5/5 | Cruising Again | route_music · active_driving_content | The Seed (2.0) — Cody ChesnuTT (+0.162 / a=0.80) | humming_karaoke | ✅ pass |
+| 1/5 | Cruising, Still Fresh | route_music · active_driving_content | Rebel Rouser - Re-Recording — Duane Eddy (+0.089 / a=0.64) | music_playlist | ✅ pass |
+| 2/5 | Drowsiness Building — Stay Alert | inattentive_driving_prevention_recovery · active_driving_content | The Seed (2.0) — Cody ChesnuTT (+0.235 / a=0.80) | humming_karaoke | ✅ pass |
+| 3/5 | Rest Recommended | rest_recommended · before_rest_until_stop | The Seed (2.0) — Cody ChesnuTT (+0.279 / a=0.80) | humming_karaoke | ✅ pass |
+| 4/5 | Back on the Road, Refreshed | rest_recommended · after_rest_before_restart | The Seed (2.0) — Cody ChesnuTT (+0.127 / a=0.80) | call_response_stopped | ✅ pass |
+| 5/5 | Cruising Again | route_music · active_driving_content | Rebel Rouser - Re-Recording — Duane Eddy (+0.098 / a=0.64) | music_playlist | ✅ pass |
 
 ### B · B · The Night Drive (Rest Arc)
 
 | # | Stage | Situation (purpose · lifecycle) | Real top (fit / arousal) | Service | Result |
 |---|---|---|---|---|---|
-| 1/4 | B · 1/4 — Night highway — still fresh | route_music · active_driving_content | The Seed (2.0) — Cody ChesnuTT (+0.159 / a=0.80) | humming_karaoke | ✅ pass |
-| 2/4 | B · 2/4 — Drowsy in the dark | inattentive_driving_prevention_recovery · active_driving_content | The Seed (2.0) — Cody ChesnuTT (+0.251 / a=0.80) | humming_karaoke | ✅ pass |
-| 3/4 | B · 3/4 — Rest recommended, night | rest_recommended · before_rest_until_stop | The Seed (2.0) — Cody ChesnuTT (+0.284 / a=0.80) | humming_karaoke | ✅ pass |
-| 4/4 | B · 4/4 — Resumed after sleep | rest_recommended · after_rest_before_restart | The Seed (2.0) — Cody ChesnuTT (+0.081 / a=0.80) | stretch_video | ✅ pass |
+| 1/4 | B · 1/4 — Night highway — still fresh | route_music · active_driving_content | Rebel Rouser - Re-Recording — Duane Eddy (+0.099 / a=0.64) | music_playlist | ✅ pass |
+| 2/4 | B · 2/4 — Drowsy in the dark | inattentive_driving_prevention_recovery · active_driving_content | The Seed (2.0) — Cody ChesnuTT (+0.246 / a=0.80) | humming_karaoke | ✅ pass |
+| 3/4 | B · 3/4 — Rest recommended, night | rest_recommended · before_rest_until_stop | The Seed (2.0) — Cody ChesnuTT (+0.285 / a=0.80) | humming_karaoke | ✅ pass |
+| 4/4 | B · 4/4 — Resumed after sleep | rest_recommended · after_rest_before_restart | The Seed (2.0) — Cody ChesnuTT (+0.134 / a=0.80) | call_response_stopped | ✅ pass |
 
 ### C · The Mountain Pass (fatigue-led, blank profile)
 
 | # | Stage | Situation (purpose · lifecycle) | Real top (fit / arousal) | Service | Result |
 |---|---|---|---|---|---|
-| 1/4 | Climbing a mountain pass | route_music · active_driving_content | The Seed (2.0) — Cody ChesnuTT (+0.134 / a=0.80) | humming_karaoke | ✅ pass |
-| 2/4 | Fatigue building on the climb | rest_recommended · before_rest_until_stop | The Seed (2.0) — Cody ChesnuTT (+0.193 / a=0.80) | humming_karaoke | ✅ pass |
-| 3/4 | Stretch break at the overlook | rest_recommended · after_rest_before_restart | READY STEADY GO — L'Arc-en-Ciel (+0.067 / a=0.83) | stretch_video | ✅ pass |
-| 4/4 | Back on the pass, fatigue-led again | route_music · active_driving_content | The Seed (2.0) — Cody ChesnuTT (+0.138 / a=0.80) | humming_karaoke | ✅ pass |
+| 1/4 | Climbing a mountain pass | route_music · active_driving_content | いつも何度でも (千と千尋の神隠し) — Yumi Kimura (+0.068 / a=0.42) | music_playlist | ✅ pass |
+| 2/4 | Fatigue building on the climb | rest_recommended · before_rest_until_stop | The Seed (2.0) — Cody ChesnuTT (+0.221 / a=0.80) | humming_karaoke | ✅ pass |
+| 3/4 | Stretch break at the overlook | rest_recommended · after_rest_before_restart | The Seed (2.0) — Cody ChesnuTT (+0.121 / a=0.80) | call_response_stopped | ✅ pass |
+| 4/4 | Back on the pass, fatigue-led again | route_music · active_driving_content | いつも何度でも (千と千尋の神隠し) — Yumi Kimura (+0.068 / a=0.42) | music_playlist | ✅ pass |
 
 ### D · Stuck in traffic
 
 | # | Stage | Situation (purpose · lifecycle) | Real top (fit / arousal) | Service | Result |
 |---|---|---|---|---|---|
-| 1/3 | Hitting the jam | inattentive_driving_prevention_recovery · active_driving_content | The Seed (2.0) — Cody ChesnuTT (+0.208 / a=0.80) | humming_karaoke | ✅ pass |
-| 2/3 | Jam drags on | inattentive_driving_prevention_recovery · active_driving_content | The Seed (2.0) — Cody ChesnuTT (+0.259 / a=0.80) | humming_karaoke | ✅ pass |
-| 3/3 | Jam clears | inattentive_driving_prevention_recovery · active_driving_content | The Seed (2.0) — Cody ChesnuTT (+0.201 / a=0.80) | humming_karaoke | ✅ pass |
+| 1/3 | Hitting the jam | inattentive_driving_prevention_recovery · active_driving_content | The Seed (2.0) — Cody ChesnuTT (+0.201 / a=0.80) | humming_karaoke | ✅ pass |
+| 2/3 | Jam drags on | inattentive_driving_prevention_recovery · active_driving_content | The Seed (2.0) — Cody ChesnuTT (+0.253 / a=0.80) | humming_karaoke | ✅ pass |
+| 3/3 | Jam clears | inattentive_driving_prevention_recovery · active_driving_content | The Seed (2.0) — Cody ChesnuTT (+0.200 / a=0.80) | humming_karaoke | ✅ pass |
 
 ### E · E · The family road trip
 
 | # | Stage | Situation (purpose · lifecycle) | Real top (fit / arousal) | Service | Result |
 |---|---|---|---|---|---|
-| 1/4 | E · 1/4 — Setting off | child_passenger_experience · active_driving_content | チョコレイト・ディスコ — Perfume (+0.138 / a=0.81) | humming_karaoke | ✅ pass |
-| 2/4 | E · 2/4 — An hour in, restless | child_passenger_experience · active_driving_content | チョコレイト・ディスコ — Perfume (+0.173 / a=0.81) | humming_karaoke | ✅ pass |
-| 3/4 | E · 3/4 — Rest stop, everyone stretches | rest_recommended · after_rest_before_restart | チョコレイト・ディスコ — Perfume (+0.115 / a=0.81) | stretch_video | ✅ pass |
-| 4/4 | E · 4/4 — Back on the road, calmer | child_passenger_experience · active_driving_content | チョコレイト・ディスコ — Perfume (+0.145 / a=0.81) | humming_karaoke | ✅ pass |
+| 1/4 | E · 1/4 — Setting off | child_passenger_experience · active_driving_content | アンパンマンのマーチ — Dreaming (+0.154 / a=0.67) | humming_karaoke | ✅ pass |
+| 2/4 | E · 2/4 — An hour in, restless | child_passenger_experience · active_driving_content | アンパンマンのマーチ — Dreaming (+0.186 / a=0.67) | humming_karaoke | ✅ pass |
+| 3/4 | E · 3/4 — Rest stop, everyone stretches | rest_recommended · after_rest_before_restart | アンパンマンのマーチ — Dreaming (+0.116 / a=0.67) | full_karaoke | ✅ pass |
+| 4/4 | E · 4/4 — Back on the road, calmer | child_passenger_experience · active_driving_content | アンパンマンのマーチ — Dreaming (+0.160 / a=0.67) | humming_karaoke | ✅ pass |
 
 ### F · The oshi pilgrimage
 
 | # | Stage | Situation (purpose · lifecycle) | Real top (fit / arousal) | Service | Result |
 |---|---|---|---|---|---|
-| 1/4 | Departing for the event, hyped | route_music · active_driving_content | 夜に融ける — Hatsune Miku (+0.447 / a=0.75) | humming_karaoke | ✅ pass |
-| 2/4 | Highway excitement building | route_music · active_driving_content | 夜に融ける — Hatsune Miku (+0.457 / a=0.75) | humming_karaoke | ✅ pass |
-| 3/4 | Rest recommended before the show | rest_recommended · before_rest_until_stop | 夜に融ける — Hatsune Miku (+0.463 / a=0.75) | humming_karaoke | ✅ pass |
-| 4/4 | Arrived at the venue, night | rest_recommended · after_rest_before_restart | 夜に融ける — Hatsune Miku (+0.381 / a=0.75) | stretch_video | ✅ pass |
+| 1/4 | Departing for the event, hyped | route_music · active_driving_content | 夜に融ける — Hatsune Miku (+0.425 / a=0.75) | music_playlist | ✅ pass |
+| 2/4 | Highway excitement building | route_music · active_driving_content | 夜に融ける — Hatsune Miku (+0.436 / a=0.75) | music_playlist | ✅ pass |
+| 3/4 | Rest recommended before the show | rest_recommended · before_rest_until_stop | 夜に融ける — Hatsune Miku (+0.464 / a=0.75) | humming_karaoke | ✅ pass |
+| 4/4 | Arrived at the venue, night | rest_recommended · after_rest_before_restart | 夜に融ける — Hatsune Miku (+0.385 / a=0.75) | oshi_reexperience | ✅ pass |
 
 ## Standalone presets — one lever each
 
@@ -74,38 +74,38 @@ Drowsiness/fatigue/monotony in each brief are grounded in the trigger-mode drive
 
 | Preset | Family | Hypothesis | Expected | Real top (fit / arousal) | Service | Override | Result |
 |---|---|---|---|---|---|---|---|
-| `preset-coastal-cruise` | route_genre | coastal route/destination genre affinity -> a bright/mid-arousal coastal-friendly track tops | arousal=mid, fit≥0.25 | Birdland — Weather Report (+0.267 / a=0.68) | humming_karaoke | — | ✅ pass |
+| `preset-coastal-cruise` | route_genre | coastal route/destination genre affinity -> a bright/mid-arousal coastal-friendly track tops | arousal=mid, fit≥0.215 | Chameleon — Herbie Hancock (+0.245 / a=0.66) | music_playlist | — | ✅ pass |
 
 ### Preference — the driver’s taste
 
 | Preset | Family | Hypothesis | Expected | Real top (fit / arousal) | Service | Override | Result |
 |---|---|---|---|---|---|---|---|
-| `preset-genz-now` | era_age | A teenage driver whose oshi is Ado (2020s j-pop). Same neutral road, same raised age/oshi weight override — but now a current 2020s track wins. Age-band alone flips the era versus the Shōwa preset. | oshi track, fit≥0.45 | 踊 — Ado (+0.478 / a=0.83) | humming_karaoke | yes | ✅ pass |
-| `preset-jazz-calm-listener` | genre_usage | Same neutral drive, same absence of any oshi, opposite taste: heavy jazz/classical genre usage and history on 9 calm tracks. The soothing jazz/classical cluster should rise instead of j-rock — same road, different driver, different winner. | genre=jazz, fit≥0.25 | Desafinado — João Gilberto (+0.272 / a=0.28) | humming_karaoke | — | ✅ pass |
-| `preset-jrock-enthusiast` | genre_usage | No registered oshi at all — taste and history alone. Heavy j-rock/electronic genre usage plus rich per-track history on 6 j-rock tracks should lift the j-rock cluster to the top on an ordinary neutral drive. | genre=j-rock, fit≥0.34 | READY STEADY GO — L'Arc-en-Ciel (+0.368 / a=0.83) | humming_karaoke | — | ✅ pass |
-| `preset-oshi-off` | oshi_personalization | The identical driver and identical road as preset-oshi-superfan, but oshi_mode switched off. With no history and no active oshi gate, the oshi's own track no longer wins — a different track tops, isolating what the gate alone contributed. | NOT the oshi, fit≥0.16 | Flamingo — Kenshi Yonezu (+0.175 / a=0.69) | humming_karaoke | — | ✅ pass |
-| `preset-oshi-superfan` | oshi_personalization | A neutral, undramatic driving situation so preference alone leads. The driver has registered Ado as their oshi (oshi_mode on) with no per-track history at all — isolating the oshi GATE itself, not accumulated history. The oshi's own track should top. | oshi track, fit≥0.24 | 踊 — Ado (+0.257 / a=0.83) | humming_karaoke | — | ✅ pass |
-| `preset-showa-nostalgia` | era_age | A driver in their 50s whose oshi is Seiko Matsuda (1980s j-pop). The age/oshi hierarchy weight is raised via a per-preset override so era/age can flip the winner. On the same neutral road as the Gen-Z pair, a 1980s track wins. | oshi track, fit≥0.42 | 青い珊瑚礁 — Seiko Matsuda (+0.451 / a=0.63) | humming_karaoke | yes | ✅ pass |
+| `preset-genz-now` | era_age | A teenage driver whose oshi is Ado (2020s j-pop). Same neutral road, same raised age/oshi weight override — but now a current 2020s track wins. Age-band alone flips the era versus the Shōwa preset. | oshi track, arousal=high, fit≥0.406 | 踊 — Ado (+0.436 / a=0.83) | music_playlist | yes | ✅ pass |
+| `preset-jazz-calm-listener` | genre_usage | Same neutral drive, same absence of any oshi, opposite taste: heavy jazz/classical genre usage and history on 9 calm tracks. The soothing jazz/classical cluster should rise instead of j-rock — same road, different driver, different winner. | genre=jazz, fit≥0.255 | Desafinado — João Gilberto (+0.285 / a=0.28) | music_playlist | — | ✅ pass |
+| `preset-jrock-enthusiast` | genre_usage | No registered oshi at all — taste and history alone. Heavy j-rock/electronic genre usage plus rich per-track history on 6 j-rock tracks should lift the j-rock cluster to the top on an ordinary neutral drive. | genre=j-rock, fit≥0.305 | READY STEADY GO — L'Arc-en-Ciel (+0.335 / a=0.83) | music_playlist | — | ✅ pass |
+| `preset-oshi-off` | oshi_personalization | The identical driver and identical road as preset-oshi-superfan, but oshi_mode switched off. With no history and no active oshi gate, the oshi's own track no longer wins — a different track tops, isolating what the gate alone contributed. | NOT the oshi, arousal=mid, fit≥0.107 | Flamingo — Kenshi Yonezu (+0.137 / a=0.69) | music_playlist | — | ✅ pass |
+| `preset-oshi-superfan` | oshi_personalization | A neutral, undramatic driving situation so preference alone leads. The driver has registered Ado as their oshi (oshi_mode on) with no per-track history at all — isolating the oshi GATE itself, not accumulated history. The oshi's own track should top. | oshi track, arousal=high, fit≥0.171 | 踊 — Ado (+0.201 / a=0.83) | music_playlist | — | ✅ pass |
+| `preset-showa-nostalgia` | era_age | A driver in their 50s whose oshi is Seiko Matsuda (1980s j-pop). The age/oshi hierarchy weight is raised via a per-preset override so era/age can flip the winner. On the same neutral road as the Gen-Z pair, a 1980s track wins. | oshi track, arousal=mid, fit≥0.409 | 青い珊瑚礁 — Seiko Matsuda (+0.439 / a=0.63) | music_playlist | yes | ✅ pass |
 
 ### History — past behavior
 
 | Preset | Family | Hypothesis | Expected | Real top (fit / arousal) | Service | Override | Result |
 |---|---|---|---|---|---|---|---|
-| `preset-high-recovery-regular` | history_mechanics | neutral situation + per-track recovery history on 3 tracks -> one of those tracks tops | track=synthetic-track-0108, fit≥0.34 | 千本桜 — Hatsune Miku (+0.361 / a=0.88) | humming_karaoke | — | ✅ pass |
-| `preset-recently-played-fatigue` | history_mechanics | just-played tracks are demoted below other strong matches even though they'd otherwise score well | genre=j-pop, fit≥0.32 | Zenzenzense - English Ver. — RADWIMPS (+0.341 / a=0.85) | humming_karaoke | — | ✅ pass |
-| `preset-recovery-blank-baseline` | history_mechanics | same neutral situation, no recovery history -> honest floor; the 3 tracks that dominate the paired preset do NOT rise here | fit≥0.15 | The Seed (2.0) — Cody ChesnuTT (+0.168 / a=0.80) | humming_karaoke | — | ✅ pass |
+| `preset-high-recovery-regular` | history_mechanics | neutral situation + per-track recovery history on 3 tracks -> one of those tracks tops | track=synthetic-track-0097, fit≥0.261 | Universe — Official HIGE DANdism (+0.291 / a=0.86) | music_playlist | — | ✅ pass |
+| `preset-recently-played-fatigue` | history_mechanics | just-played tracks are demoted below other strong matches even though they'd otherwise score well | genre=j-pop, fit≥0.279 | Zenzenzense - English Ver. — RADWIMPS (+0.309 / a=0.85) | humming_karaoke | — | ✅ pass |
+| `preset-recovery-blank-baseline` | history_mechanics | same neutral situation, no recovery history -> honest floor; the 3 tracks that dominate the paired preset do NOT rise here | fit≥0.074 | Rebel Rouser - Re-Recording — Duane Eddy (+0.104 / a=0.64) | music_playlist | — | ✅ pass |
 
 ### Baseline / control
 
 | Preset | Family | Hypothesis | Expected | Real top (fit / arousal) | Service | Override | Result |
 |---|---|---|---|---|---|---|---|
-| `preset-coldstart-neutral` | baseline | cold-start: no personalization -> low top score, documents the honest floor | arousal=high, fit≥0.15 | The Seed (2.0) — Cody ChesnuTT (+0.166 / a=0.80) | humming_karaoke | — | ✅ pass |
+| `preset-coldstart-neutral` | baseline | cold-start: no personalization -> low top score, documents the honest floor | arousal=mid, fit≥0.072 | Rebel Rouser - Re-Recording — Duane Eddy (+0.102 / a=0.64) | music_playlist | — | ✅ pass |
 
 ## Contrast pairs — the #1 track must differ
 
 | A | B | A top | B top | Diverge |
 |---|---|---|---|---|
 | `preset-genz-now` | `preset-showa-nostalgia` | 踊 — Ado | 青い珊瑚礁 — Seiko Matsuda | ✅ |
-| `preset-high-recovery-regular` | `preset-recovery-blank-baseline` | 千本桜 — Hatsune Miku | The Seed (2.0) — Cody ChesnuTT | ✅ |
+| `preset-high-recovery-regular` | `preset-recovery-blank-baseline` | Universe — Official HIGE DANdism | Rebel Rouser - Re-Recording — Duane Eddy | ✅ |
 | `preset-jazz-calm-listener` | `preset-jrock-enthusiast` | Desafinado — João Gilberto | READY STEADY GO — L'Arc-en-Ciel | ✅ |
 | `preset-oshi-off` | `preset-oshi-superfan` | Flamingo — Kenshi Yonezu | 踊 — Ado | ✅ |

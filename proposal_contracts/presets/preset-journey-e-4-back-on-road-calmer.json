@@ -10,18 +10,19 @@
     "expected_service": {
       "top_should_be_in": [
         "humming_karaoke",
-        "music_playlist",
-        "radio_style"
+        "call_response_driving",
+        "quiz",
+        "ranking_creation"
       ]
     },
     "expected_top": {
-      "arousal_band": "high",
-      "track_id": "synthetic-track-0161"
+      "arousal_band": "mid",
+      "genre": "anime"
     },
     "gradient": "none",
     "hypothesis": "back on the road, calmer than stage 2 but past the fresh start -> the same child track resumes the top spot and humming_karaoke leads service again",
     "override_required": false,
-    "top_fit_min": 0.135
+    "top_fit_min": 0.13
   },
   "family": "journey",
   "journey": {

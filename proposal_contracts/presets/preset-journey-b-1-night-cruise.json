@@ -10,20 +10,16 @@
     "expected_service": {
       "top_should_be_in": [
         "music_playlist",
-        "humming_karaoke",
-        "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "humming_karaoke"
       ]
     },
     "expected_top": {
-      "arousal_band": "high"
+      "arousal_band": "mid"
     },
     "gradient": "none",
     "hypothesis": "Night cruise, mild drowsiness → a high-arousal track already leads at a modest fit; this is the floor of the night's rising-fit arc.",
     "override_required": false,
-    "top_fit_min": 0.13
+    "top_fit_min": 0.069
   },
   "family": "journey",
   "journey": {

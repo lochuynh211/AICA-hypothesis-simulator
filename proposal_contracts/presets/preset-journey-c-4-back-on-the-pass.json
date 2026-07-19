@@ -1,8 +1,8 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "Underway again through the curves: fatigue (40) is back ahead of drowsiness (35), mirroring stage 1 almost exactly. The same track and the same driving-service family win again, closing the fatigue-led mountain loop.",
-    "ja": "再びカーブを走行：疲労（40）が眠気（35）を上回り、ステージ1とほぼ同じ形に戻る。同じ曲・同じ運転系サービス群が再び勝ち、疲労主導の山道ループが閉じる。"
+    "en": "Back on the scenic pass after the rest stop — refreshed (fatigue is low again). Same route-led logic as the opening climb: the mountain route drives the proposal and music_playlist stays prominent among the driving services.",
+    "ja": "休憩後、景色のよい峠道に復帰 — リフレッシュ（疲労は再び低い）。登り始めと同じルート主導のロジック：山道ルートが提案を牽引し、走行サービスの中でmusic_playlistが上位を保つ。"
   },
   "category": "situation",
   "contrast_with": null,
@@ -10,21 +10,16 @@
     "expected_service": {
       "top_should_be_in": [
         "music_playlist",
-        "humming_karaoke",
-        "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "humming_karaoke"
       ]
     },
     "expected_top": {
-      "arousal_band": "high",
-      "track_id": "synthetic-track-0266"
+      "arousal_band": "low"
     },
     "gradient": "none",
     "hypothesis": "back on the pass, fatigue-led again and almost identical to stage 1 -> the same energizer track tops again with the same driving-service family, closing the loop",
     "override_required": false,
-    "top_fit_min": 0.12
+    "top_fit_min": 0.038
   },
   "family": "journey",
   "journey": {
@@ -104,10 +99,10 @@
       "destination_tags": [
         "mountain"
       ],
-      "drowsiness_level": 35,
+      "drowsiness_level": 8,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 40,
-      "monotony_level": 45,
+      "fatigue_level": 10,
+      "monotony_level": 15,
       "motion_state": "driving",
       "multiple_passengers": false,
       "night_state": "day",

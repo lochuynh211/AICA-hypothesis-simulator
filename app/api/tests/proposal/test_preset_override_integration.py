@@ -9,6 +9,7 @@ override yields a different #1 content track than the default `soothe_destress`)
 """
 from __future__ import annotations
 
+import copy
 import json
 
 import pytest
@@ -71,15 +72,39 @@ def test_content_override_changes_ranking_through_router():
     # preset-showa-nostalgia carries an isolated content override (raised age-band
     # weight); routed through the REAL dispatch it must change the content ranking
     # vs. the un-overridden run — proving overrides are merged before evaluate.
+    #
+    # NOTE (2026-07-19): under the retuned content `context_response_matrix` +
+    # `hierarchy_weights.Situation` shares, the preset's own driver_profile
+    # (catalog_item_usage_level=high + content_proposal_acceptance_rate=95 /
+    # content_recovery_rate=90, all keyed to Seiko Matsuda's own 3 tracks —
+    # exactly this preset's oshi) already puts those 3 tracks at #1-#3 by
+    # History/general fit ALONE, with or without the preset's Preference-only
+    # `upro_oshi` override — so at the default `plan_item_count` (5) the
+    # top-5 sequence is now saturated and identical either way (item_fit
+    # values still differ per-track, just not the top-5 order). Widening the
+    # window via a `plan_item_count` override — applied symmetrically to
+    # BOTH runs, on top of (never replacing) the preset's own override for
+    # the overridden run — reveals the reorder starting at position 6, where
+    # the Preference nudge is no longer swamped by the saturated History
+    # signal. This keeps testing a genuine RANKING change through the same
+    # router dispatch path; it does not touch the frozen preset file.
     sp = _preset("preset-showa-nostalgia")
     world = sp["world"]
+    widen = {"content": {"plan_item_count": 20}}
+    override_with_widen = copy.deepcopy(sp["algorithm_config_overrides"])
+    override_with_widen.setdefault("content", {})["plan_item_count"] = 20
 
-    base = _run(world)  # no override
-    overridden = _run(world, overrides=sp["algorithm_config_overrides"])
+    base = _run(world, overrides=widen)  # no preset override, widened window
+    overridden = _run(world, overrides=override_with_widen)
 
     base_seq = _content_seq(base)
     ov_seq = _content_seq(overridden)
     assert base_seq and ov_seq, (base["status"], overridden["status"])
+    # the top 5 stay saturated by the preset's own strong history bias.
+    assert base_seq[:5] == ov_seq[:5] == [
+        "synthetic-track-0148", "synthetic-track-0149", "synthetic-track-0150",
+        "synthetic-track-0151", "synthetic-track-0071",
+    ]
     assert base_seq != ov_seq, (
         "the preset's algorithm_config_overrides did not change the content ranking "
         f"through the router (both = {base_seq}) — override not applied before dispatch")

@@ -35,24 +35,19 @@
           "motion_state": "driving"
         },
         "expectation": {
-          "hypothesis": "fresh cruise on a monotonous highway, low drowsiness -> a high-arousal energize track already tops, but confidence (fit) is still low",
-          "expected_top": {
-            "arousal_band": "high",
-            "track_id": "synthetic-track-0266"
-          },
-          "top_fit_min": 0.13,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
               "music_playlist",
-              "humming_karaoke",
-              "quiz",
-              "ranking_creation",
-              "radio_style",
-              "call_response_driving"
+              "humming_karaoke"
             ]
           },
-          "override_required": false
+          "expected_top": {
+            "arousal_band": "mid"
+          },
+          "gradient": "none",
+          "hypothesis": "fresh cruise on a monotonous highway, low drowsiness -> a high-arousal energize track already tops, but confidence (fit) is still low",
+          "override_required": false,
+          "top_fit_min": 0.059
         },
         "measured": {
           "top_name": "The Seed (2.0) — Cody ChesnuTT",
@@ -87,24 +82,21 @@
           "motion_state": "driving"
         },
         "expectation": {
-          "hypothesis": "drowsiness/monotony climbing (monotony pegs at 100) on the same highway, inattentive-prevention mode -> the SAME high-arousal track holds the top spot, now with a mid fit as the system grows more confident",
-          "expected_top": {
-            "arousal_band": "high",
-            "track_id": "synthetic-track-0266"
-          },
-          "top_fit_min": 0.21,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
-              "music_playlist",
               "humming_karaoke",
+              "call_response_driving",
               "quiz",
-              "ranking_creation",
-              "radio_style",
-              "call_response_driving"
+              "ranking_creation"
             ]
           },
-          "override_required": false
+          "expected_top": {
+            "arousal_band": "high"
+          },
+          "gradient": "none",
+          "hypothesis": "drowsiness/monotony climbing (monotony pegs at 100) on the same highway, inattentive-prevention mode -> the SAME high-arousal track holds the top spot, now with a mid fit as the system grows more confident",
+          "override_required": false,
+          "top_fit_min": 0.205
         },
         "measured": {
           "top_name": "The Seed (2.0) — Cody ChesnuTT",
@@ -139,24 +131,21 @@
           "motion_state": "driving"
         },
         "expectation": {
-          "hypothesis": "drowsiness pegs at 100, fatigue 56, rest now recommended, still driving -> the SAME high-arousal track tops with its highest fit yet, and the assistant is still offering a driving service to bridge the gap to the stop",
-          "expected_top": {
-            "arousal_band": "high",
-            "track_id": "synthetic-track-0266"
-          },
-          "top_fit_min": 0.25,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
-              "music_playlist",
               "humming_karaoke",
+              "call_response_driving",
               "quiz",
-              "ranking_creation",
-              "radio_style",
-              "call_response_driving"
+              "ranking_creation"
             ]
           },
-          "override_required": false
+          "expected_top": {
+            "arousal_band": "high"
+          },
+          "gradient": "none",
+          "hypothesis": "drowsiness pegs at 100, fatigue 56, rest now recommended, still driving -> the SAME high-arousal track tops with its highest fit yet, and the assistant is still offering a driving service to bridge the gap to the stop",
+          "override_required": false,
+          "top_fit_min": 0.249
         },
         "measured": {
           "top_name": "The Seed (2.0) — Cody ChesnuTT",
@@ -193,16 +182,19 @@
           "motion_state": "stopped"
         },
         "expectation": {
-          "hypothesis": "after a nap at the SA/PA, drowsiness collapses 100->37 and fatigue collapses 56->4 (stopped, parking) -> the assistant's top SERVICE switches away from any driving/content service to the post-rest recovery service stretch_video; content itself becomes secondary and its fit collapses",
-          "expected_top": {},
-          "top_fit_min": 0.05,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
-              "stretch_video"
+              "stretch_video",
+              "full_karaoke",
+              "live_viewing",
+              "call_response_stopped"
             ]
           },
-          "override_required": false
+          "expected_top": {},
+          "gradient": "none",
+          "hypothesis": "after a nap at the SA/PA, drowsiness collapses 100->37 and fatigue collapses 56->4 (stopped, parking) -> the assistant's top SERVICE switches away from any driving/content service to the post-rest recovery service stretch_video; content itself becomes secondary and its fit collapses",
+          "override_required": false,
+          "top_fit_min": 0.097
         },
         "measured": {
           "top_name": "READY STEADY GO — L'Arc-en-Ciel",
@@ -237,24 +229,19 @@
           "motion_state": "driving"
         },
         "expectation": {
-          "hypothesis": "refreshed and back on the highway, drowsiness only 40 -> a driving service leads again and the SAME energize track tops, at a moderate fit -- lower than the pre-rest peak, higher than the very first fresh-cruise reading",
-          "expected_top": {
-            "arousal_band": "high",
-            "track_id": "synthetic-track-0266"
-          },
-          "top_fit_min": 0.14,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
               "music_playlist",
-              "humming_karaoke",
-              "quiz",
-              "ranking_creation",
-              "radio_style",
-              "call_response_driving"
+              "humming_karaoke"
             ]
           },
-          "override_required": false
+          "expected_top": {
+            "arousal_band": "mid"
+          },
+          "gradient": "none",
+          "hypothesis": "refreshed and back on the highway, drowsiness only 40 -> a driving service leads again and the SAME energize track tops, at a moderate fit -- lower than the pre-rest peak, higher than the very first fresh-cruise reading",
+          "override_required": false,
+          "top_fit_min": 0.068
         },
         "measured": {
           "top_name": "The Seed (2.0) — Cody ChesnuTT",
@@ -304,23 +291,19 @@
           "motion_state": "driving"
         },
         "expectation": {
-          "hypothesis": "Night cruise, mild drowsiness → a high-arousal track already leads at a modest fit; this is the floor of the night's rising-fit arc.",
-          "expected_top": {
-            "arousal_band": "high"
-          },
-          "top_fit_min": 0.13,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
               "music_playlist",
-              "humming_karaoke",
-              "quiz",
-              "ranking_creation",
-              "radio_style",
-              "call_response_driving"
+              "humming_karaoke"
             ]
           },
-          "override_required": false
+          "expected_top": {
+            "arousal_band": "mid"
+          },
+          "gradient": "none",
+          "hypothesis": "Night cruise, mild drowsiness → a high-arousal track already leads at a modest fit; this is the floor of the night's rising-fit arc.",
+          "override_required": false,
+          "top_fit_min": 0.069
         },
         "measured": {
           "top_name": "The Seed (2.0) — Cody ChesnuTT",
@@ -355,23 +338,21 @@
           "motion_state": "driving"
         },
         "expectation": {
-          "hypothesis": "Drowsiness spikes and monotony maxes out at night → the same track's fit rises sharply (rising-fit arc); still a driving service.",
+          "expected_service": {
+            "top_should_be_in": [
+              "humming_karaoke",
+              "call_response_driving",
+              "quiz",
+              "ranking_creation"
+            ]
+          },
           "expected_top": {
             "arousal_band": "high"
           },
-          "top_fit_min": 0.2,
           "gradient": "none",
-          "expected_service": {
-            "top_should_be_in": [
-              "music_playlist",
-              "humming_karaoke",
-              "quiz",
-              "ranking_creation",
-              "radio_style",
-              "call_response_driving"
-            ]
-          },
-          "override_required": false
+          "hypothesis": "Drowsiness spikes and monotony maxes out at night → the same track's fit rises sharply (rising-fit arc); still a driving service.",
+          "override_required": false,
+          "top_fit_min": 0.216
         },
         "measured": {
           "top_name": "The Seed (2.0) — Cody ChesnuTT",
@@ -406,23 +387,21 @@
           "motion_state": "driving"
         },
         "expectation": {
-          "hypothesis": "At the rest trigger drowsiness/fatigue/monotony all peak at night → the track's fit peaks too, still before the stop; service remains a driving service.",
+          "expected_service": {
+            "top_should_be_in": [
+              "humming_karaoke",
+              "call_response_driving",
+              "quiz",
+              "ranking_creation"
+            ]
+          },
           "expected_top": {
             "arousal_band": "high"
           },
-          "top_fit_min": 0.24,
           "gradient": "none",
-          "expected_service": {
-            "top_should_be_in": [
-              "music_playlist",
-              "humming_karaoke",
-              "quiz",
-              "ranking_creation",
-              "radio_style",
-              "call_response_driving"
-            ]
-          },
-          "override_required": false
+          "hypothesis": "At the rest trigger drowsiness/fatigue/monotony all peak at night → the track's fit peaks too, still before the stop; service remains a driving service.",
+          "override_required": false,
+          "top_fit_min": 0.255
         },
         "measured": {
           "top_name": "The Seed (2.0) — Cody ChesnuTT",
@@ -459,22 +438,19 @@
           "motion_state": "stopped"
         },
         "expectation": {
-          "hypothesis": "After a nap at night, situational push collapses and the service switches to a post-rest one (stretch_video/full_karaoke content); fit resets low. Night vs day differ in which track tops this stage.",
-          "expected_top": {
-            "arousal_band": "high"
-          },
-          "top_fit_min": 0.05,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
-              "live_viewing",
               "stretch_video",
               "full_karaoke",
-              "oshi_reexperience",
+              "live_viewing",
               "call_response_stopped"
             ]
           },
-          "override_required": false
+          "expected_top": {},
+          "gradient": "none",
+          "hypothesis": "After a nap at night, situational push collapses and the service switches to a post-rest one (stretch_video/full_karaoke content); fit resets low. Night vs day differ in which track tops this stage.",
+          "override_required": false,
+          "top_fit_min": 0.104
         },
         "measured": {
           "top_name": "The Seed (2.0) — Cody ChesnuTT",
@@ -504,13 +480,13 @@
           "ja": "山道の峠を登る"
         },
         "brief": {
-          "en": "Winding mountain road, engaged. Fatigue (40) is already ahead of drowsiness (30) as the curves work the driver harder than the road bores them — this is the fatigue-led shape of a mountain drive, unlike a monotony-led highway.",
-          "ja": "曲がりくねった山道、まだ集中している。カーブが単調さより先にドライバーを疲れさせるため、疲労（40）が眠気（30）を上回り始めている — 単調度主導の高速道路とは異なる、山道特有の疲労主導の形。"
+          "en": "Fresh at the start of a winding mountain pass — the driver is alert (low drowsiness/fatigue), so this route_music proposal is driven by the mountain ROUTE itself, not by driver-state: route_tags leads the service reasons and music_playlist rises among the driving services (the mountain safety hypothesis favours low-interaction audio over karaoke).",
+          "ja": "曲がりくねった峠道の登り始め。ドライバーは覚醒しており（眠気・疲労とも低い）、このroute_music提案は運転者状態ではなく山道ルート自体が主導する。サービス理由はroute_tagsが先頭で、走行サービスの中でmusic_playlistが上位に入る（山道の安全仮説がカラオケより低操作の音声を優先）。"
         },
         "situation": {
-          "drowsiness_level": 30,
-          "fatigue_level": 40,
-          "monotony_level": 45,
+          "drowsiness_level": 8,
+          "fatigue_level": 10,
+          "monotony_level": 15,
           "road_type": "mountain",
           "route_tags": [
             "mountain"
@@ -527,24 +503,19 @@
           "motion_state": "driving"
         },
         "expectation": {
-          "hypothesis": "fatigue-led mountain climb (fat40>drow30), blank profile -> same high-arousal energizer track tops as it would on a flat road; only the fit magnitude is being shaped by the mountain road's negative arousal-preference lever",
-          "expected_top": {
-            "arousal_band": "high",
-            "track_id": "synthetic-track-0266"
-          },
-          "top_fit_min": 0.12,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
               "music_playlist",
-              "humming_karaoke",
-              "quiz",
-              "ranking_creation",
-              "radio_style",
-              "call_response_driving"
+              "humming_karaoke"
             ]
           },
-          "override_required": false
+          "expected_top": {
+            "arousal_band": "low"
+          },
+          "gradient": "none",
+          "hypothesis": "fatigue-led mountain climb (fat40>drow30), blank profile -> same high-arousal energizer track tops as it would on a flat road; only the fit magnitude is being shaped by the mountain road's negative arousal-preference lever",
+          "override_required": false,
+          "top_fit_min": 0.038
         },
         "measured": {
           "top_track": "synthetic-track-0266",
@@ -589,24 +560,21 @@
           "motion_state": "driving"
         },
         "expectation": {
-          "hypothesis": "fatigue has rocketed past drowsiness (85 vs 75) on the winding climb -> the SAME track stays on top (no swap) but its fit rises sharply as the model's energize pull strengthens with fatigue/drowsiness",
-          "expected_top": {
-            "arousal_band": "high",
-            "track_id": "synthetic-track-0266"
-          },
-          "top_fit_min": 0.17,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
-              "music_playlist",
               "humming_karaoke",
+              "call_response_driving",
               "quiz",
-              "ranking_creation",
-              "radio_style",
-              "call_response_driving"
+              "ranking_creation"
             ]
           },
-          "override_required": false
+          "expected_top": {
+            "arousal_band": "high"
+          },
+          "gradient": "none",
+          "hypothesis": "fatigue has rocketed past drowsiness (85 vs 75) on the winding climb -> the SAME track stays on top (no swap) but its fit rises sharply as the model's energize pull strengthens with fatigue/drowsiness",
+          "override_required": false,
+          "top_fit_min": 0.191
         },
         "measured": {
           "top_track": "synthetic-track-0266",
@@ -651,22 +619,19 @@
           "motion_state": "stopped"
         },
         "expectation": {
-          "hypothesis": "stopped at the overlook after the stretch break, fatigue/drowsiness collapse back down -> the driving-service ranking is replaced by the post-rest one (stretch_video tops) and content fit for the same style of track falls back near its cold floor",
-          "expected_top": {
-            "arousal_band": "high"
-          },
-          "top_fit_min": 0.055,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
               "stretch_video",
-              "oshi_reexperience",
               "full_karaoke",
               "live_viewing",
               "call_response_stopped"
             ]
           },
-          "override_required": false
+          "expected_top": {},
+          "gradient": "none",
+          "hypothesis": "stopped at the overlook after the stretch break, fatigue/drowsiness collapse back down -> the driving-service ranking is replaced by the post-rest one (stretch_video tops) and content fit for the same style of track falls back near its cold floor",
+          "override_required": false,
+          "top_fit_min": 0.091
         },
         "measured": {
           "top_track": "synthetic-track-0087",
@@ -686,13 +651,13 @@
           "ja": "峠道に戻る — 再び疲労主導"
         },
         "brief": {
-          "en": "Underway again through the curves: fatigue (40) is back ahead of drowsiness (35), mirroring stage 1 almost exactly. The same track and the same driving-service family win again, closing the fatigue-led mountain loop.",
-          "ja": "再びカーブを走行：疲労（40）が眠気（35）を上回り、ステージ1とほぼ同じ形に戻る。同じ曲・同じ運転系サービス群が再び勝ち、疲労主導の山道ループが閉じる。"
+          "en": "Back on the scenic pass after the rest stop — refreshed (fatigue is low again). Same route-led logic as the opening climb: the mountain route drives the proposal and music_playlist stays prominent among the driving services.",
+          "ja": "休憩後、景色のよい峠道に復帰 — リフレッシュ（疲労は再び低い）。登り始めと同じルート主導のロジック：山道ルートが提案を牽引し、走行サービスの中でmusic_playlistが上位を保つ。"
         },
         "situation": {
-          "drowsiness_level": 35,
-          "fatigue_level": 40,
-          "monotony_level": 45,
+          "drowsiness_level": 8,
+          "fatigue_level": 10,
+          "monotony_level": 15,
           "road_type": "mountain",
           "route_tags": [
             "mountain"
@@ -709,24 +674,19 @@
           "motion_state": "driving"
         },
         "expectation": {
-          "hypothesis": "back on the pass, fatigue-led again and almost identical to stage 1 -> the same energizer track tops again with the same driving-service family, closing the loop",
-          "expected_top": {
-            "arousal_band": "high",
-            "track_id": "synthetic-track-0266"
-          },
-          "top_fit_min": 0.12,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
               "music_playlist",
-              "humming_karaoke",
-              "quiz",
-              "ranking_creation",
-              "radio_style",
-              "call_response_driving"
+              "humming_karaoke"
             ]
           },
-          "override_required": false
+          "expected_top": {
+            "arousal_band": "low"
+          },
+          "gradient": "none",
+          "hypothesis": "back on the pass, fatigue-led again and almost identical to stage 1 -> the same energizer track tops again with the same driving-service family, closing the loop",
+          "override_required": false,
+          "top_fit_min": 0.038
         },
         "measured": {
           "top_track": "synthetic-track-0266",
@@ -775,24 +735,21 @@
           "motion_state": "driving"
         },
         "expectation": {
-          "hypothesis": "jam just starting, drowsiness/fatigue moderate and monotony climbing (70) under gridlock → inattentive-prevention already leads with a high-arousal energize track, fit elevated but not yet peaked",
-          "expected_top": {
-            "arousal_band": "high",
-            "must_be_oshi": false
-          },
-          "top_fit_min": 0.2,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
-              "music_playlist",
               "humming_karaoke",
+              "call_response_driving",
               "quiz",
-              "ranking_creation",
-              "radio_style",
-              "call_response_driving"
+              "ranking_creation"
             ]
           },
-          "override_required": false
+          "expected_top": {
+            "arousal_band": "high"
+          },
+          "gradient": "none",
+          "hypothesis": "jam just starting, drowsiness/fatigue moderate and monotony climbing (70) under gridlock → inattentive-prevention already leads with a high-arousal energize track, fit elevated but not yet peaked",
+          "override_required": false,
+          "top_fit_min": 0.171
         },
         "measured": {
           "top_name": "The Seed (2.0) — Cody ChesnuTT",
@@ -827,24 +784,21 @@
           "motion_state": "driving"
         },
         "expectation": {
-          "hypothesis": "worst point of the jam: drowsiness 70 + fatigue 55 + monotony pegged at 100 → the energize track's fit peaks for the journey, still inattentive-prevention, still a driving service",
-          "expected_top": {
-            "arousal_band": "high",
-            "must_be_oshi": false
-          },
-          "top_fit_min": 0.25,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
-              "music_playlist",
               "humming_karaoke",
+              "call_response_driving",
               "quiz",
-              "ranking_creation",
-              "radio_style",
-              "call_response_driving"
+              "ranking_creation"
             ]
           },
-          "override_required": false
+          "expected_top": {
+            "arousal_band": "high"
+          },
+          "gradient": "none",
+          "hypothesis": "worst point of the jam: drowsiness 70 + fatigue 55 + monotony pegged at 100 → the energize track's fit peaks for the journey, still inattentive-prevention, still a driving service",
+          "override_required": false,
+          "top_fit_min": 0.223
         },
         "measured": {
           "top_name": "The Seed (2.0) — Cody ChesnuTT",
@@ -879,24 +833,21 @@
           "motion_state": "driving"
         },
         "expectation": {
-          "hypothesis": "jam clears, drowsiness/fatigue/monotony all ease back down from their stage-2 peak → the same energize track stays on top but its fit eases off the peak, still a driving service",
-          "expected_top": {
-            "arousal_band": "high",
-            "must_be_oshi": false
-          },
-          "top_fit_min": 0.19,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
-              "music_playlist",
               "humming_karaoke",
+              "call_response_driving",
               "quiz",
-              "ranking_creation",
-              "radio_style",
-              "call_response_driving"
+              "ranking_creation"
             ]
           },
-          "override_required": false
+          "expected_top": {
+            "arousal_band": "high"
+          },
+          "gradient": "none",
+          "hypothesis": "jam clears, drowsiness/fatigue/monotony all ease back down from their stage-2 peak → the same energize track stays on top but its fit eases off the peak, still a driving service",
+          "override_required": false,
+          "top_fit_min": 0.17
         },
         "measured": {
           "top_name": "The Seed (2.0) — Cody ChesnuTT",
@@ -944,21 +895,22 @@
           "motion_state": "driving"
         },
         "expectation": {
-          "hypothesis": "blank profile + child_present on a mild drive -> the child-appropriate high-arousal track tops via humming_karaoke, at a modest fit",
-          "expected_top": {
-            "arousal_band": "high",
-            "track_id": "synthetic-track-0161"
-          },
-          "top_fit_min": 0.13,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
               "humming_karaoke",
-              "music_playlist",
-              "radio_style"
+              "call_response_driving",
+              "quiz",
+              "ranking_creation"
             ]
           },
-          "override_required": false
+          "expected_top": {
+            "arousal_band": "mid",
+            "genre": "anime"
+          },
+          "gradient": "none",
+          "hypothesis": "blank profile + child_present on a mild drive -> the child-appropriate high-arousal track tops via humming_karaoke, at a modest fit",
+          "override_required": false,
+          "top_fit_min": 0.124
         },
         "measured": {
           "top_name": "チョコレイト・ディスコ — Perfume",
@@ -994,21 +946,22 @@
           "motion_state": "driving"
         },
         "expectation": {
-          "hypothesis": "same blank profile, same child_present, but drowsiness/monotony climb -> the SAME child track stays top, fit rises (situation raises fit magnitude, doesn't swap identity)",
-          "expected_top": {
-            "arousal_band": "high",
-            "track_id": "synthetic-track-0161"
-          },
-          "top_fit_min": 0.16,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
               "humming_karaoke",
-              "music_playlist",
-              "radio_style"
+              "call_response_driving",
+              "quiz",
+              "ranking_creation"
             ]
           },
-          "override_required": false
+          "expected_top": {
+            "arousal_band": "mid",
+            "genre": "anime"
+          },
+          "gradient": "none",
+          "hypothesis": "same blank profile, same child_present, but drowsiness/monotony climb -> the SAME child track stays top, fit rises (situation raises fit magnitude, doesn't swap identity)",
+          "override_required": false,
+          "top_fit_min": 0.156
         },
         "measured": {
           "top_name": "チョコレイト・ディスコ — Perfume",
@@ -1045,23 +998,19 @@
           "motion_state": "stopped"
         },
         "expectation": {
-          "hypothesis": "family stops to stretch: lifecycle flips to after_rest_before_restart -> the overall service ranking switches to a post-rest service (stretch_video), content still resolves via a content-supported service at a lower fit than mid-drive",
-          "expected_top": {
-            "arousal_band": "high",
-            "track_id": "synthetic-track-0161"
-          },
-          "top_fit_min": 0.105,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
               "stretch_video",
               "full_karaoke",
               "live_viewing",
-              "oshi_reexperience",
               "call_response_stopped"
             ]
           },
-          "override_required": false
+          "expected_top": {},
+          "gradient": "none",
+          "hypothesis": "family stops to stretch: lifecycle flips to after_rest_before_restart -> the overall service ranking switches to a post-rest service (stretch_video), content still resolves via a content-supported service at a lower fit than mid-drive",
+          "override_required": false,
+          "top_fit_min": 0.086
         },
         "measured": {
           "top_name": "チョコレイト・ディスコ — Perfume",
@@ -1097,21 +1046,22 @@
           "motion_state": "driving"
         },
         "expectation": {
-          "hypothesis": "back on the road, calmer than stage 2 but past the fresh start -> the same child track resumes the top spot and humming_karaoke leads service again",
-          "expected_top": {
-            "arousal_band": "high",
-            "track_id": "synthetic-track-0161"
-          },
-          "top_fit_min": 0.135,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
               "humming_karaoke",
-              "music_playlist",
-              "radio_style"
+              "call_response_driving",
+              "quiz",
+              "ranking_creation"
             ]
           },
-          "override_required": false
+          "expected_top": {
+            "arousal_band": "mid",
+            "genre": "anime"
+          },
+          "gradient": "none",
+          "hypothesis": "back on the road, calmer than stage 2 but past the fresh start -> the same child track resumes the top spot and humming_karaoke leads service again",
+          "override_required": false,
+          "top_fit_min": 0.13
         },
         "measured": {
           "top_name": "チョコレイト・ディスコ — Perfume",
@@ -1183,24 +1133,20 @@
           "motion_state": "driving"
         },
         "expectation": {
-          "hypothesis": "teens Miku superfan + vocaloid/j-pop usage, low drowsiness (~30) -> Miku's own track tops strongly despite minimal road/fatigue pressure",
-          "expected_top": {
-            "must_be_oshi": true,
-            "arousal_band": "high"
-          },
-          "top_fit_min": 0.38,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
               "music_playlist",
               "humming_karaoke",
-              "quiz",
-              "ranking_creation",
-              "radio_style",
-              "call_response_driving"
+              "radio_style"
             ]
           },
-          "override_required": false
+          "expected_top": {
+            "arousal_band": "high"
+          },
+          "gradient": "none",
+          "hypothesis": "teens Miku superfan + vocaloid/j-pop usage, low drowsiness (~30) -> Miku's own track tops strongly despite minimal road/fatigue pressure",
+          "override_required": false,
+          "top_fit_min": 0.395
         },
         "measured": {
           "top_name": "夜に融ける — Hatsune Miku",
@@ -1234,24 +1180,20 @@
           "motion_state": "driving"
         },
         "expectation": {
-          "hypothesis": "drowsiness/monotony nudged up (40/45) on the same neutral-ish highway -> the oshi track stays top and its fit RISES further, not swaps -- situation adds to preference's magnitude",
-          "expected_top": {
-            "must_be_oshi": true,
-            "arousal_band": "high"
-          },
-          "top_fit_min": 0.4,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
               "music_playlist",
               "humming_karaoke",
-              "quiz",
-              "ranking_creation",
-              "radio_style",
-              "call_response_driving"
+              "radio_style"
             ]
           },
-          "override_required": false
+          "expected_top": {
+            "arousal_band": "high"
+          },
+          "gradient": "none",
+          "hypothesis": "drowsiness/monotony nudged up (40/45) on the same neutral-ish highway -> the oshi track stays top and its fit RISES further, not swaps -- situation adds to preference's magnitude",
+          "override_required": false,
+          "top_fit_min": 0.406
         },
         "measured": {
           "top_name": "夜に融ける — Hatsune Miku",
@@ -1285,24 +1227,21 @@
           "motion_state": "driving"
         },
         "expectation": {
-          "hypothesis": "before_rest at high drowsiness (90) + fatigue (55) -> the oshi track's fit peaks for the journey (situation amplifies rather than overrides preference), service stays among the driving set",
-          "expected_top": {
-            "must_be_oshi": true,
-            "arousal_band": "high"
-          },
-          "top_fit_min": 0.38,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
-              "music_playlist",
               "humming_karaoke",
+              "call_response_driving",
               "quiz",
-              "ranking_creation",
-              "radio_style",
-              "call_response_driving"
+              "ranking_creation"
             ]
           },
-          "override_required": false
+          "expected_top": {
+            "arousal_band": "high"
+          },
+          "gradient": "none",
+          "hypothesis": "before_rest at high drowsiness (90) + fatigue (55) -> the oshi track's fit peaks for the journey (situation amplifies rather than overrides preference), service stays among the driving set",
+          "override_required": false,
+          "top_fit_min": 0.433
         },
         "measured": {
           "top_name": "夜に融ける — Hatsune Miku",
@@ -1338,22 +1277,18 @@
           "motion_state": "stopped"
         },
         "expectation": {
-          "hypothesis": "after_rest at the oshi_spot, night, low drowsiness/fatigue -> content re-scores the same Miku track for full-karaoke and still tops on oshi identity; the registered-oshi entity gate opens oshi_reexperience into the after-rest service ranking",
-          "expected_top": {
-            "must_be_oshi": true
-          },
-          "top_fit_min": 0.3,
-          "gradient": "none",
           "expected_service": {
             "top_should_be_in": [
-              "stretch_video",
-              "full_karaoke",
               "oshi_reexperience",
-              "call_response_stopped",
+              "full_karaoke",
               "live_viewing"
             ]
           },
-          "override_required": false
+          "expected_top": {},
+          "gradient": "none",
+          "hypothesis": "after_rest at the oshi_spot, night, low drowsiness/fatigue -> content re-scores the same Miku track for full-karaoke and still tops on oshi identity; the registered-oshi entity gate opens oshi_reexperience into the after-rest service ranking",
+          "override_required": false,
+          "top_fit_min": 0.355
         },
         "measured": {
           "top_name": "夜に融ける — Hatsune Miku",

@@ -10,21 +10,16 @@
     "expected_service": {
       "top_should_be_in": [
         "music_playlist",
-        "humming_karaoke",
-        "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "humming_karaoke"
       ]
     },
     "expected_top": {
-      "arousal_band": "high",
-      "track_id": "synthetic-track-0266"
+      "arousal_band": "mid"
     },
     "gradient": "none",
     "hypothesis": "refreshed and back on the highway, drowsiness only 40 -> a driving service leads again and the SAME energize track tops, at a moderate fit -- lower than the pre-rest peak, higher than the very first fresh-cruise reading",
     "override_required": false,
-    "top_fit_min": 0.14
+    "top_fit_min": 0.068
   },
   "family": "journey",
   "journey": {

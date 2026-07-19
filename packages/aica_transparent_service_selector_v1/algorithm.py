@@ -452,7 +452,14 @@ def resolve_scalar_evidence(feature_id: str, situation: dict, hp: dict, params: 
             return {"raw_value": None, "e": 0.0, "normalization_function": "(x/100)^gamma", "status": "missing"}
         if not isinstance(raw, (int, float)) or isinstance(raw, bool) or not (0 <= raw <= 100):
             raise _RequestError(f"{feature_id} must be numeric in [0,100], got {raw!r}")
-        return {"raw_value": raw, "e": _pow_evidence(raw, gamma), "normalization_function": "(x/100)^gamma", "status": "used"}
+        # SIGNED activation-need evidence (2026-07-19): map [0,100] -> [-1,+1] so an
+        # ALERT driver (low value) actively prefers PASSIVE content (music_playlist,
+        # response 0) over ACTIVATION content (humming/quiz/ranking/call-response,
+        # response +1 -> negative contribution), while a DROWSY driver (high value)
+        # prefers activation. Magnitude-only evidence made "alert" indistinguishable
+        # from "no signal", so activation services won by default. Missing stays 0.
+        e = 2.0 * _pow_evidence(raw, gamma) - 1.0
+        return {"raw_value": raw, "e": e, "normalization_function": "2*(x/100)^gamma - 1", "status": "used"}
 
     if feature_id == "traffic_state":
         if not present or raw is None:

@@ -1,8 +1,11 @@
 """P6 T012 — Scoring math (§3, §5, §10).
 
 Numeric /100 evidence; six mood a_i = α·A_s + β·V_s; r_i = e_i·a_i; the §10 worked
-block reproduces +0.187; all-neutral world → 0 block; |a_i|≤1; valence β≥0; direct
-rows use a=+1.
+block originally reproduced +0.187, retuned to +0.112283 by the 2026-07-19
+`context_response_matrix` retune (drowsiness/monotony alpha-beta shift, highway
+alpha zeroed, motion_driving response widened -- see
+`test_worked_example_block_reproduces_0187`); all-neutral world → 0 block;
+|a_i|≤1; valence β≥0; direct rows use a=+1.
 """
 from __future__ import annotations
 
@@ -35,6 +38,13 @@ def test_numeric_drowsiness_evidence_is_value_over_100():
 
 
 def test_worked_example_block_reproduces_0187():
+    # NOTE (2026-07-19): the §10 doc's block was +0.187 under the ORIGINAL
+    # `context_response_matrix` (drowsiness alpha 0.8/beta 0.2, monotony
+    # 0.9/0.1, road.highway.alpha 1.0, motion_driving -0.3/0). The retuned
+    # matrix (drowsiness 0.55/0.45, monotony 0.6/0.4, road.highway.alpha
+    # 0.0, motion_driving -0.5/0.45) moves the reproduced block to
+    # +0.112283 on this same worked-example snapshot -- recomputed from the
+    # current `context_response_matrix`, not the (now stale) doc figure.
     song = WORKED["synthetic-track-9001"]
     af = song["spotify_audio_features"]
     traits = CS.derive_traits(af, HP)
@@ -54,7 +64,7 @@ def test_worked_example_block_reproduces_0187():
     for leaf, w in block_weights.items():
         e, a, meta = _mood_leaf(leaf, snap, track, traits)
         block += w * (e * a)
-    assert abs(block - 0.187) < 1e-3
+    assert abs(block - 0.112283) < 1e-3
 
 
 def test_all_neutral_world_zero_mood_block():

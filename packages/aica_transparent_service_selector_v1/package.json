@@ -1408,44 +1408,44 @@
         "route_context": {
           "rest_recommended": 1.0,
           "inattentive_driving_prevention_recovery": 0.75,
-          "route_music": 2.0,
-          "child_passenger_experience": 0.75
+          "route_music": 5.0,
+          "child_passenger_experience": 0.3
         },
         "passenger_composition": {
           "rest_recommended": 1.0,
           "inattentive_driving_prevention_recovery": 0.85,
-          "route_music": 0.8,
-          "child_passenger_experience": 2.0
+          "route_music": 0.3,
+          "child_passenger_experience": 5.0
         },
         "oshi_preference": {
           "rest_recommended": 1.0,
           "inattentive_driving_prevention_recovery": 0.8,
-          "route_music": 1.1,
-          "child_passenger_experience": 0.75
+          "route_music": 0.3,
+          "child_passenger_experience": 0.3
         },
         "novelty": {
           "rest_recommended": 0.8,
           "inattentive_driving_prevention_recovery": 0.8,
-          "route_music": 0.8,
-          "child_passenger_experience": 0.8
+          "route_music": 0.3,
+          "child_passenger_experience": 0.3
         },
         "overall_usage": {
           "rest_recommended": 0.9,
           "inattentive_driving_prevention_recovery": 0.9,
-          "route_music": 0.9,
-          "child_passenger_experience": 1.0
+          "route_music": 0.3,
+          "child_passenger_experience": 0.3
         },
         "scene_preference": {
           "rest_recommended": 1.0,
           "inattentive_driving_prevention_recovery": 1.1,
-          "route_music": 1.1,
-          "child_passenger_experience": 1.2
+          "route_music": 0.3,
+          "child_passenger_experience": 0.3
         },
         "proposal_acceptance": {
           "rest_recommended": 1.0,
           "inattentive_driving_prevention_recovery": 1.0,
-          "route_music": 1.0,
-          "child_passenger_experience": 1.0
+          "route_music": 0.3,
+          "child_passenger_experience": 0.3
         },
         "recovery": {
           "rest_recommended": 1.3,

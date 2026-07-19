@@ -60,23 +60,26 @@ _DOC_WEIGHTS = {
         "scene_service_usage_level": 0.040728, "service_proposal_acceptance_rate": 0.015427,
         "service_recovery_rate": 0.057853,
     },
+    # Scheme 1 (2026-07-19): route/child leisure subgroups traded down, own
+    # category up -> triggering category (route_tags / child_present) leads the
+    # leisure weights while SS6.4 W_D (0.695) is preserved. driver_state untouched.
     "route_music": {
-        "drowsiness_level": 0.233546, "fatigue_level": 0.191083, "traffic_state": 0.049540,
-        "road_type": 0.049540, "night_state": 0.049540, "monotony_level": 0.099080,
-        "route_tags": 0.058386, "destination_tags": 0.047771, "child_present": 0.027601,
-        "multiple_passengers": 0.014862, "oshi_registered": 0.010218, "oshi_mode": 0.018976,
-        "service_recency_state": 0.008493, "service_usage_level": 0.023885,
-        "scene_service_usage_level": 0.046709, "service_proposal_acceptance_rate": 0.017693,
-        "service_recovery_rate": 0.053079,
+        "drowsiness_level": 0.223729, "fatigue_level": 0.183051, "traffic_state": 0.047458,
+        "road_type": 0.047458, "night_state": 0.047458, "monotony_level": 0.094915,
+        "route_tags": 0.139831, "destination_tags": 0.114407, "child_present": 0.009915,
+        "multiple_passengers": 0.005339, "oshi_registered": 0.002669, "oshi_mode": 0.004958,
+        "service_recency_state": 0.003051, "service_usage_level": 0.007627,
+        "scene_service_usage_level": 0.012203, "service_proposal_acceptance_rate": 0.005085,
+        "service_recovery_rate": 0.050847,
     },
     "child_passenger_experience": {
-        "drowsiness_level": 0.234729, "fatigue_level": 0.192051, "traffic_state": 0.049791,
-        "road_type": 0.049791, "night_state": 0.049791, "monotony_level": 0.099582,
-        "route_tags": 0.022006, "destination_tags": 0.018005, "child_present": 0.069352,
-        "multiple_passengers": 0.037343, "oshi_registered": 0.007002, "oshi_mode": 0.013003,
-        "service_recency_state": 0.008536, "service_usage_level": 0.026674,
-        "scene_service_usage_level": 0.051214, "service_proposal_acceptance_rate": 0.017783,
-        "service_recovery_rate": 0.053348,
+        "drowsiness_level": 0.223729, "fatigue_level": 0.183051, "traffic_state": 0.047458,
+        "road_type": 0.047458, "night_state": 0.047458, "monotony_level": 0.094915,
+        "route_tags": 0.008390, "destination_tags": 0.006864, "child_present": 0.165254,
+        "multiple_passengers": 0.088983, "oshi_registered": 0.002669, "oshi_mode": 0.004958,
+        "service_recency_state": 0.003051, "service_usage_level": 0.007627,
+        "scene_service_usage_level": 0.012203, "service_proposal_acceptance_rate": 0.005085,
+        "service_recovery_rate": 0.050847,
     },
 }
 
@@ -127,12 +130,20 @@ def test_worked_example(service_selector):
     assert "humming_karaoke" in by_id
 
     humming = by_id["humming_karaoke"]
-    assert humming["score"] == pytest.approx(0.772349, abs=_SCORE_TOLERANCE)
+    # Recomputed 2026-07-19 for the SIGNED driver-state evidence model
+    # (`e = 2*(x/100)^gamma - 1`, see algorithm.py `resolve_scalar_evidence`):
+    # only drowsiness_level/fatigue_level/monotony_level's k_i shift (their
+    # evidence is no longer magnitude-only); every other row is untouched
+    # since this purpose's (inattentive_driving_prevention_recovery) weights
+    # were not retuned by the Scheme 1 multiplier change (that only touched
+    # route_music/child_passenger_experience).
+    assert humming["score"] == pytest.approx(0.607895, abs=_SCORE_TOLERANCE)
 
-    # per-feature k_i reconciliation against the doc's §10 table.
+    # per-feature k_i reconciliation (was the doc's §10 table; drowsiness/
+    # fatigue/monotony recomputed for the signed-evidence model above).
     doc_k = {
-        "drowsiness_level": 0.203641, "fatigue_level": 0.124961, "traffic_state": 0.060475,
-        "road_type": 0.060475, "night_state": 0.060475, "monotony_level": 0.090713,
+        "drowsiness_level": 0.152731, "fatigue_level": 0.041654, "traffic_state": 0.060475,
+        "road_type": 0.060475, "night_state": 0.060475, "monotony_level": 0.060475,
         "route_tags": 0.019091, "destination_tags": 0.007810, "child_present": 0.025571,
         "multiple_passengers": 0.013769, "oshi_registered": 0.003240, "oshi_mode": 0.006017,
         "service_recency_state": 0.003703, "service_usage_level": 0.020827,
@@ -293,8 +304,8 @@ def test_subtotals_are_not_a_sort_key(service_selector):
 _DOC_DOMINANCE = {
     "rest_recommended": {"w_d": 0.787939, "w_l": 0.212061, "required_gap": 0.538266},
     "inattentive_driving_prevention_recovery": {"w_d": 0.823048, "w_l": 0.176952, "required_gap": 0.429991},
-    "route_music": {"w_d": 0.725407, "w_l": 0.274593, "required_gap": 0.757073},
-    "child_passenger_experience": {"w_d": 0.729083, "w_l": 0.270917, "required_gap": 0.743171},
+    "route_music": {"w_d": 0.694915, "w_l": 0.305085, "required_gap": 0.878049},
+    "child_passenger_experience": {"w_d": 0.694915, "w_l": 0.305085, "required_gap": 0.878049},
 }
 
 

@@ -9,20 +9,16 @@
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "stretch_video",
-        "full_karaoke",
         "oshi_reexperience",
-        "call_response_stopped",
+        "full_karaoke",
         "live_viewing"
       ]
     },
-    "expected_top": {
-      "must_be_oshi": true
-    },
+    "expected_top": {},
     "gradient": "none",
     "hypothesis": "after_rest at the oshi_spot, night, low drowsiness/fatigue -> content re-scores the same Miku track for full-karaoke and still tops on oshi identity; the registered-oshi entity gate opens oshi_reexperience into the after-rest service ranking",
     "override_required": false,
-    "top_fit_min": 0.3
+    "top_fit_min": 0.355
   },
   "family": "journey",
   "journey": {

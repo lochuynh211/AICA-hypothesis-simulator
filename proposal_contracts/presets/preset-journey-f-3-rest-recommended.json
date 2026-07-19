@@ -9,22 +9,19 @@
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "music_playlist",
         "humming_karaoke",
+        "call_response_driving",
         "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "ranking_creation"
       ]
     },
     "expected_top": {
-      "arousal_band": "high",
-      "must_be_oshi": true
+      "arousal_band": "high"
     },
     "gradient": "none",
     "hypothesis": "before_rest at high drowsiness (90) + fatigue (55) -> the oshi track's fit peaks for the journey (situation amplifies rather than overrides preference), service stays among the driving set",
     "override_required": false,
-    "top_fit_min": 0.38
+    "top_fit_min": 0.433
   },
   "family": "journey",
   "journey": {

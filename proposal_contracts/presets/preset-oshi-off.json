@@ -10,20 +10,17 @@
     "expected_service": {
       "top_should_be_in": [
         "music_playlist",
-        "humming_karaoke",
-        "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "humming_karaoke"
       ]
     },
     "expected_top": {
+      "arousal_band": "mid",
       "must_be_oshi": false
     },
     "gradient": "none",
     "hypothesis": "The identical driver and identical road as preset-oshi-superfan, but oshi_mode switched off. With no history and no active oshi gate, the oshi's own track no longer wins — a different track tops, isolating what the gate alone contributed.",
     "override_required": false,
-    "top_fit_min": 0.16
+    "top_fit_min": 0.107
   },
   "family": "oshi_personalization",
   "journey": null,

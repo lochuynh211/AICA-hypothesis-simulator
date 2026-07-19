@@ -43,19 +43,17 @@
       "top_should_be_in": [
         "music_playlist",
         "humming_karaoke",
-        "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "radio_style"
       ]
     },
     "expected_top": {
+      "arousal_band": "mid",
       "must_be_oshi": true
     },
     "gradient": "none",
     "hypothesis": "A driver in their 50s whose oshi is Seiko Matsuda (1980s j-pop). The age/oshi hierarchy weight is raised via a per-preset override so era/age can flip the winner. On the same neutral road as the Gen-Z pair, a 1980s track wins.",
     "override_required": true,
-    "top_fit_min": 0.42
+    "top_fit_min": 0.409
   },
   "family": "era_age",
   "journey": null,

@@ -10,19 +10,16 @@
     "expected_service": {
       "top_should_be_in": [
         "stretch_video",
-        "oshi_reexperience",
         "full_karaoke",
         "live_viewing",
         "call_response_stopped"
       ]
     },
-    "expected_top": {
-      "arousal_band": "high"
-    },
+    "expected_top": {},
     "gradient": "none",
     "hypothesis": "stopped at the overlook after the stretch break, fatigue/drowsiness collapse back down -> the driving-service ranking is replaced by the post-rest one (stretch_video tops) and content fit for the same style of track falls back near its cold floor",
     "override_required": false,
-    "top_fit_min": 0.055
+    "top_fit_min": 0.091
   },
   "family": "journey",
   "journey": {

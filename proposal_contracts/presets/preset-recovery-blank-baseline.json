@@ -10,11 +10,7 @@
     "expected_service": {
       "top_should_be_in": [
         "music_playlist",
-        "humming_karaoke",
-        "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "humming_karaoke"
       ]
     },
     "expected_top": {},
@@ -32,7 +28,7 @@
         "track_id": "synthetic-track-0097"
       }
     ],
-    "top_fit_min": 0.15
+    "top_fit_min": 0.074
   },
   "family": "history_mechanics",
   "journey": null,

@@ -9,22 +9,19 @@
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "music_playlist",
         "humming_karaoke",
+        "call_response_driving",
         "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "ranking_creation"
       ]
     },
     "expected_top": {
-      "arousal_band": "high",
-      "must_be_oshi": false
+      "arousal_band": "high"
     },
     "gradient": "none",
     "hypothesis": "jam just starting, drowsiness/fatigue moderate and monotony climbing (70) under gridlock → inattentive-prevention already leads with a high-arousal energize track, fit elevated but not yet peaked",
     "override_required": false,
-    "top_fit_min": 0.2
+    "top_fit_min": 0.171
   },
   "family": "journey",
   "journey": {

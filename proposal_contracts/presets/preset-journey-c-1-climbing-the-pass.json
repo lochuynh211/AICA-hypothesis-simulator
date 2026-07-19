@@ -1,8 +1,8 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "Winding mountain road, engaged. Fatigue (40) is already ahead of drowsiness (30) as the curves work the driver harder than the road bores them — this is the fatigue-led shape of a mountain drive, unlike a monotony-led highway.",
-    "ja": "曲がりくねった山道、まだ集中している。カーブが単調さより先にドライバーを疲れさせるため、疲労（40）が眠気（30）を上回り始めている — 単調度主導の高速道路とは異なる、山道特有の疲労主導の形。"
+    "en": "Fresh at the start of a winding mountain pass — the driver is alert (low drowsiness/fatigue), so this route_music proposal is driven by the mountain ROUTE itself, not by driver-state: route_tags leads the service reasons and music_playlist rises among the driving services (the mountain safety hypothesis favours low-interaction audio over karaoke).",
+    "ja": "曲がりくねった峠道の登り始め。ドライバーは覚醒しており（眠気・疲労とも低い）、このroute_music提案は運転者状態ではなく山道ルート自体が主導する。サービス理由はroute_tagsが先頭で、走行サービスの中でmusic_playlistが上位に入る（山道の安全仮説がカラオケより低操作の音声を優先）。"
   },
   "category": "situation",
   "contrast_with": null,
@@ -10,21 +10,16 @@
     "expected_service": {
       "top_should_be_in": [
         "music_playlist",
-        "humming_karaoke",
-        "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "humming_karaoke"
       ]
     },
     "expected_top": {
-      "arousal_band": "high",
-      "track_id": "synthetic-track-0266"
+      "arousal_band": "low"
     },
     "gradient": "none",
     "hypothesis": "fatigue-led mountain climb (fat40>drow30), blank profile -> same high-arousal energizer track tops as it would on a flat road; only the fit magnitude is being shaped by the mountain road's negative arousal-preference lever",
     "override_required": false,
-    "top_fit_min": 0.12
+    "top_fit_min": 0.038
   },
   "family": "journey",
   "journey": {
@@ -104,10 +99,10 @@
       "destination_tags": [
         "mountain"
       ],
-      "drowsiness_level": 30,
+      "drowsiness_level": 8,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 40,
-      "monotony_level": 45,
+      "fatigue_level": 10,
+      "monotony_level": 15,
       "motion_state": "driving",
       "multiple_passengers": false,
       "night_state": "day",

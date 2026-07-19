@@ -1,8 +1,8 @@
 {
   "algorithm_config_overrides": null,
   "brief": {
-    "en": "A relaxed coastal local road (route_tags=coastal, destination_tags=coast) with a mild, non-drowsy situation. The driver has strong city-pop and moderate jazz usage/history. Route/destination genre affinity lifts a bright, mid-arousal coastal-friendly track to the top — the road and destination tags are the lever, not fatigue or preference alone.",
-    "ja": "のんびりした海岸沿いの一般道（route_tags=coastal、destination_tags=coast）で、眠気の少ない穏やかな状況。ドライバーはシティポップを強く、ジャズを中程度利用・履歴あり。ルート/目的地のジャンル親和性により、明るく中程度の高揚感を持つ海岸向けの曲が上位に — 疲労や単なる嗜好ではなく、ルート/目的地タグが決め手。"
+    "en": "A relaxed coastal local road (route_tags=coastal, destination_tags=coast) with a fresh, alert driver. Route/destination genre affinity (coast -> city-pop/jazz) leads; the coastal ROUTE, not driver-state, shapes the proposal, and music_playlist sits high among the services.",
+    "ja": "のんびりした海岸沿いの一般道（route_tags=coastal, destination_tags=coast）で、ドライバーは覚醒。ルート/目的地のジャンル親和（海岸→シティポップ/ジャズ）が主導し、運転者状態ではなく海岸ルートが提案を形づくる。サービスの中でmusic_playlistが上位に位置する。"
   },
   "category": "situation",
   "contrast_with": null,
@@ -10,11 +10,7 @@
     "expected_service": {
       "top_should_be_in": [
         "music_playlist",
-        "radio_style",
-        "humming_karaoke",
-        "quiz",
-        "ranking_creation",
-        "call_response_driving"
+        "humming_karaoke"
       ]
     },
     "expected_top": {
@@ -23,7 +19,7 @@
     "gradient": "none",
     "hypothesis": "coastal route/destination genre affinity -> a bright/mid-arousal coastal-friendly track tops",
     "override_required": false,
-    "top_fit_min": 0.25
+    "top_fit_min": 0.215
   },
   "family": "route_genre",
   "journey": null,
@@ -110,10 +106,10 @@
       "destination_tags": [
         "coast"
       ],
-      "drowsiness_level": 35,
+      "drowsiness_level": 8,
       "estimated_min_until_rest_spot": null,
-      "fatigue_level": 28,
-      "monotony_level": 25,
+      "fatigue_level": 10,
+      "monotony_level": 15,
       "motion_state": "driving",
       "multiple_passengers": false,
       "night_state": "day",

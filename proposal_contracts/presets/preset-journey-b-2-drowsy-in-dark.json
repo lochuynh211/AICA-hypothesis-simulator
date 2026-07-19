@@ -9,12 +9,10 @@
   "expectation": {
     "expected_service": {
       "top_should_be_in": [
-        "music_playlist",
         "humming_karaoke",
+        "call_response_driving",
         "quiz",
-        "ranking_creation",
-        "radio_style",
-        "call_response_driving"
+        "ranking_creation"
       ]
     },
     "expected_top": {
@@ -23,7 +21,7 @@
     "gradient": "none",
     "hypothesis": "Drowsiness spikes and monotony maxes out at night → the same track's fit rises sharply (rising-fit arc); still a driving service.",
     "override_required": false,
-    "top_fit_min": 0.2
+    "top_fit_min": 0.216
   },
   "family": "journey",
   "journey": {
