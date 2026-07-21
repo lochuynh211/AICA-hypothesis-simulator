@@ -7,9 +7,9 @@ REM   docker-start.bat vpn          - route container outbound via the VPN proxy
 REM   docker-start.bat build        - rebuild images, then start
 REM   docker-start.bat llm vpn      - typical on-VPN start (Ollama + proxy)
 REM
-REM The `vpn` flag reads the WSL shell's own $HTTP_PROXY at launch and passes it
-REM to the containers as AICA_HTTP_PROXY, so Google Maps works on-VPN. Omit it
-REM off-VPN and the containers stay direct. Nothing persists between runs.
+REM The `vpn` flag points the containers at the corporate proxy
+REM (163.116.128.80:8080) so Google Maps works on-VPN. Omit it off-VPN and the
+REM containers stay direct. Nothing persists between runs.
 
 echo === AICA Hypothesis Simulator (Docker on WSL2) ===
 echo.
@@ -24,13 +24,14 @@ for %%A in (%1 %2 %3) do (
     if /i "%%A"=="vpn" set "USE_VPN=1"
 )
 
-REM When `vpn` is given, mirror the shell proxy into the AICA_ namespaced vars
-REM compose reads (WSL expands $HTTP_PROXY at runtime). Empty otherwise = direct.
+REM When `vpn` is given, point the containers at the corporate proxy BY IP (no
+REM DNS needed inside the container, and no dependency on the non-interactive
+REM shell sourcing $HTTP_PROXY). Empty otherwise = direct.
 set "PROXYENV="
 set "BUILDARGS="
 if defined USE_VPN (
-    set "PROXYENV=AICA_HTTP_PROXY=$HTTP_PROXY AICA_HTTPS_PROXY=${HTTPS_PROXY:-$HTTP_PROXY} AICA_NO_PROXY=localhost,127.0.0.1,api,ollama "
-    set "BUILDARGS=--build-arg http_proxy=$HTTP_PROXY --build-arg https_proxy=${HTTPS_PROXY:-$HTTP_PROXY} "
+    set "PROXYENV=AICA_HTTP_PROXY=http://163.116.128.80:8080 AICA_HTTPS_PROXY=http://163.116.128.80:8080 AICA_NO_PROXY=localhost,127.0.0.1,api,ollama "
+    set "BUILDARGS=--build-arg http_proxy=http://163.116.128.80:8080 --build-arg https_proxy=http://163.116.128.80:8080 "
 )
 
 REM Start Docker daemon in WSL
