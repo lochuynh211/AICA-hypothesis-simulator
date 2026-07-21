@@ -10,6 +10,8 @@
  * nested tables. Leaf detail stays visible (as text) but isn't individually
  * editable, matching the mockup.
  */
+import { t } from '../../i18n/t'
+import type { UiLanguage } from '../../i18n/t'
 import { mtxTableStyle, mtxThStyle, mtxTdStyle, mtxRowLabelStyle } from './matrixStyles'
 
 type Leaf = { share?: number; mask?: number; feature_id?: string }
@@ -17,9 +19,16 @@ type Subgroup = { share?: number; leaves?: Record<string, Leaf> }
 type Category = Record<string, Subgroup>
 type Hierarchy = Record<string, Category>
 
+const LABELS = {
+  subgroup: { ja: 'サブグループ', en: 'subgroup' },
+  share: { ja: '割合', en: 'share' },
+  leaves: { ja: 'リーフ (割合・マスク)', en: 'leaves (share·mask)' },
+}
+
 export type ContentHierarchyTableProps = {
   value: Hierarchy
   onChange: (next: Hierarchy) => void
+  lang?: UiLanguage
 }
 
 function leavesText(sub: Subgroup): string {
@@ -31,7 +40,7 @@ function leavesText(sub: Subgroup): string {
   return parts.join(' / ') || '—'
 }
 
-export default function ContentHierarchyTable({ value, onChange }: ContentHierarchyTableProps) {
+export default function ContentHierarchyTable({ value, onChange, lang = 'en' }: ContentHierarchyTableProps) {
   function setSubgroupShare(cat: string, sub: string, raw: string) {
     const n = Number(raw)
     const prev = value[cat]?.[sub] ?? {}
@@ -46,9 +55,9 @@ export default function ContentHierarchyTable({ value, onChange }: ContentHierar
       <table style={mtxTableStyle}>
         <thead>
           <tr>
-            <th style={{ ...mtxThStyle, textAlign: 'left' }}>subgroup</th>
-            <th style={mtxThStyle}>share</th>
-            <th style={{ ...mtxThStyle, textAlign: 'left' }}>leaves (share·mask)</th>
+            <th style={{ ...mtxThStyle, textAlign: 'left' }}>{t(LABELS.subgroup, lang)}</th>
+            <th style={mtxThStyle}>{t(LABELS.share, lang)}</th>
+            <th style={{ ...mtxThStyle, textAlign: 'left' }}>{t(LABELS.leaves, lang)}</th>
           </tr>
         </thead>
         <tbody>

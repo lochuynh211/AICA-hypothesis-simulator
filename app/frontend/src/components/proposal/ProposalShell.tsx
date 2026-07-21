@@ -4,12 +4,13 @@
  *
  * Sub-nav [ Screen | Runs ]: "Screen" renders the 3-panel ProposalScreen;
  * "Runs" renders `ProposalRunsScreen` (list / reopen / delete persisted
- * proposal runs, T032-T036). Also hosts a JA/EN language toggle (T030) that
- * dispatches SET_LANGUAGE on the isolated `proposalStore` — distinct from
- * the trigger app's own `LanguageToggle` (which dispatches to `runStore`).
+ * proposal runs, T032-T036).
  *
- * The top-level [ Trigger | Proposal ] appMode toggle lives in App.tsx
- * (already wired) — this shell does not duplicate it.
+ * The top-level [ Trigger | Proposal | Combined ] appMode toggle AND the
+ * single global JA/EN language toggle both live in App.tsx's top bar — this
+ * shell no longer hosts its own language toggle. It reads the language from
+ * `proposalStore.uiLanguage`, which the App-level bridge mirrors from the
+ * global `LanguageProvider`.
  */
 import { useState } from 'react'
 import { t } from '../../i18n/t'
@@ -22,43 +23,6 @@ type SubView = 'screen' | 'runs'
 const LABELS = {
   screen: { ja: '画面', en: 'Screen' },
   runs: { ja: '実行履歴', en: 'Runs' },
-}
-
-function ProposalLanguageToggle() {
-  const { state, dispatch } = useProposalStore()
-  const { uiLanguage } = state
-
-  const btnStyle = (active: boolean): React.CSSProperties => ({
-    padding: '3px 10px',
-    fontSize: '0.8em',
-    fontWeight: active ? 700 : 400,
-    background: active ? '#2563eb' : 'transparent',
-    color: active ? '#fff' : '#94a3b8',
-    border: active ? '1px solid #1d4ed8' : '1px solid transparent',
-    borderRadius: '4px',
-    cursor: 'pointer',
-  })
-
-  return (
-    <div style={{ display: 'flex', gap: '2px', marginLeft: 'auto' }}>
-      <button
-        data-testid="proposal-lang-toggle-ja"
-        aria-pressed={uiLanguage === 'ja'}
-        onClick={() => dispatch({ type: 'SET_LANGUAGE', lang: 'ja' })}
-        style={btnStyle(uiLanguage === 'ja')}
-      >
-        日本語
-      </button>
-      <button
-        data-testid="proposal-lang-toggle-en"
-        aria-pressed={uiLanguage === 'en'}
-        onClick={() => dispatch({ type: 'SET_LANGUAGE', lang: 'en' })}
-        style={btnStyle(uiLanguage === 'en')}
-      >
-        EN
-      </button>
-    </div>
-  )
 }
 
 export default function ProposalShell({ autoInit = false }: { autoInit?: boolean }) {
@@ -108,7 +72,6 @@ export default function ProposalShell({ autoInit = false }: { autoInit?: boolean
             {t(LABELS.runs, lang)}
           </button>
         </nav>
-        <ProposalLanguageToggle />
       </header>
 
       <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>

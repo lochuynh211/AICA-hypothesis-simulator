@@ -16,6 +16,14 @@
  * `buildMergedPlan` call entirely); the sliders still render defaulting their
  * displayed span to `[0, 0]` until moved.
  */
+import { t } from '../../i18n/t'
+import { useLanguage } from '../../state/language'
+
+const LABELS = {
+  mountain: { ja: '山道', en: 'Mountain road' },
+  jam: { ja: '渋滞', en: 'Traffic jam' },
+}
+
 export type KmRange = [number, number]
 
 /** Coarse, easy-to-grab granularity — a 5 km step (owner request); the min gap
@@ -131,10 +139,11 @@ export default function RouteConditionsPainter({
   jamRange: KmRange | null
   onJamRangeChange: (range: KmRange) => void
 }) {
+  const { lang } = useLanguage()
   return (
     <div data-testid="route-conditions-painter">
       <DualRangeSlider
-        label="Mountain road"
+        label={t(LABELS.mountain, lang)}
         testIdPrefix="mountain-range"
         variant="mountain"
         totalKm={totalKm}
@@ -143,7 +152,7 @@ export default function RouteConditionsPainter({
         onChange={onMountainRangeChange}
       />
       <DualRangeSlider
-        label="Traffic jam"
+        label={t(LABELS.jam, lang)}
         testIdPrefix="jam-range"
         variant="jam"
         totalKm={totalKm}

@@ -25,6 +25,22 @@ import { FeedbackValidationError } from '../../api/types'
 import type { FieldDef, FeedbackTarget, FeedbackSchema } from '../../api/types'
 import { t } from '../../i18n/t'
 
+const LABELS = {
+  failedToLoadSchema: { ja: 'スキーマの読み込みに失敗しました', en: 'Failed to load schema' },
+  submitFailed: { ja: '送信に失敗しました', en: 'Submit failed' },
+  notSelected: { ja: '— 未選択 —', en: '— not selected —' },
+  noteOptional: { ja: 'メモ（任意）', en: 'Note (optional)' },
+  noActiveRun: { ja: '実行中のランがありません — フィードバックは利用できません。', en: 'No active run — feedback unavailable.' },
+  couldNotLoadSchema: { ja: 'フィードバックスキーマを読み込めませんでした: ', en: 'Could not load feedback schema: ' },
+  loadingForm: { ja: 'フィードバックフォームを読み込み中…', en: 'Loading feedback form…' },
+  submittedSuccess: { ja: 'フィードバックを送信しました。', en: 'Feedback submitted successfully.' },
+  comment: { ja: 'コメント', en: 'Comment' },
+  commentPlaceholder: { ja: '任意のコメントを入力…', en: 'Optional free-text comment…' },
+  fixErrors: { ja: '次のエラーを修正してください:', en: 'Please fix the following errors:' },
+  submitting: { ja: '送信中…', en: 'Submitting…' },
+  submitFeedback: { ja: 'フィードバックを送信', en: 'Submit feedback' },
+}
+
 type Props = {
   /** Attach-point: what this feedback is about. */
   target: FeedbackTarget
@@ -60,7 +76,7 @@ export default function FeedbackForm({ target, onSuccess }: Props) {
       })
       .catch((e) => {
         if (!cancelled)
-          setSchemaError(e instanceof Error ? e.message : 'Failed to load schema')
+          setSchemaError(e instanceof Error ? e.message : t(LABELS.failedToLoadSchema, uiLanguage))
       })
 
     return () => {
@@ -115,7 +131,7 @@ export default function FeedbackForm({ target, onSuccess }: Props) {
       if (err instanceof FeedbackValidationError) {
         setValidationErrors(err.validationErrors)
       } else {
-        setSubmitError(err instanceof Error ? err.message : 'Submit failed')
+        setSubmitError(err instanceof Error ? err.message : t(LABELS.submitFailed, uiLanguage))
       }
     } finally {
       setSubmitting(false)
@@ -148,7 +164,7 @@ export default function FeedbackForm({ target, onSuccess }: Props) {
               onChange={(e) => setValue(e.target.value)}
               style={{ width: '100%' }}
             >
-              <option value="">— not selected —</option>
+              <option value="">{t(LABELS.notSelected, uiLanguage)}</option>
               {(fd.options ?? []).map((opt) => (
                 <option key={opt} value={opt}>
                   {opt}
@@ -161,7 +177,7 @@ export default function FeedbackForm({ target, onSuccess }: Props) {
                   htmlFor={`${labelId}-note`}
                   style={{ display: 'block', fontSize: '0.75em', color: '#555' }}
                 >
-                  Note (optional)
+                  {t(LABELS.noteOptional, uiLanguage)}
                 </label>
                 <textarea
                   id={`${labelId}-note`}
@@ -206,7 +222,7 @@ export default function FeedbackForm({ target, onSuccess }: Props) {
   if (!runId) {
     return (
       <div style={{ color: '#888', fontSize: '0.85em', padding: '8px' }}>
-        No active run — feedback unavailable.
+        {t(LABELS.noActiveRun, uiLanguage)}
       </div>
     )
   }
@@ -215,7 +231,7 @@ export default function FeedbackForm({ target, onSuccess }: Props) {
   if (schemaError) {
     return (
       <div data-testid="feedback-schema-error" style={{ color: '#c00', padding: '8px' }}>
-        Could not load feedback schema: {schemaError}
+        {t(LABELS.couldNotLoadSchema, uiLanguage)}{schemaError}
       </div>
     )
   }
@@ -224,7 +240,7 @@ export default function FeedbackForm({ target, onSuccess }: Props) {
   if (!schema) {
     return (
       <div style={{ color: '#888', fontSize: '0.85em', padding: '8px' }}>
-        Loading feedback form…
+        {t(LABELS.loadingForm, uiLanguage)}
       </div>
     )
   }
@@ -236,7 +252,7 @@ export default function FeedbackForm({ target, onSuccess }: Props) {
         data-testid="feedback-success"
         style={{ color: '#060', padding: '8px', fontSize: '0.9em' }}
       >
-        Feedback submitted successfully.
+        {t(LABELS.submittedSuccess, uiLanguage)}
       </div>
     )
   }
@@ -252,16 +268,16 @@ export default function FeedbackForm({ target, onSuccess }: Props) {
           htmlFor="fb-comment"
           style={{ display: 'block', fontSize: '0.8em', fontWeight: 600, marginBottom: '3px' }}
         >
-          Comment
+          {t(LABELS.comment, uiLanguage)}
         </label>
         <textarea
           id="fb-comment"
           rows={3}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          placeholder="Optional free-text comment…"
+          placeholder={t(LABELS.commentPlaceholder, uiLanguage)}
           style={{ width: '100%', resize: 'vertical' }}
-          aria-label="Comment"
+          aria-label={t(LABELS.comment, uiLanguage)}
         />
       </div>
 
@@ -272,7 +288,7 @@ export default function FeedbackForm({ target, onSuccess }: Props) {
           role="alert"
           style={{ color: '#c00', marginBottom: '8px', fontSize: '0.8em' }}
         >
-          <strong>Please fix the following errors:</strong>
+          <strong>{t(LABELS.fixErrors, uiLanguage)}</strong>
           <ul style={{ margin: '4px 0 0', paddingLeft: '16px' }}>
             {validationErrors.map((ve, i) => (
               <li key={i}>
@@ -302,7 +318,7 @@ export default function FeedbackForm({ target, onSuccess }: Props) {
           cursor: submitting ? 'not-allowed' : 'pointer',
         }}
       >
-        {submitting ? 'Submitting…' : 'Submit feedback'}
+        {submitting ? t(LABELS.submitting, uiLanguage) : t(LABELS.submitFeedback, uiLanguage)}
       </button>
     </form>
   )

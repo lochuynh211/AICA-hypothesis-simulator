@@ -10,6 +10,8 @@
  * text and shows only the subgroup share), EVERY share at all three levels is a
  * live editable input: the real, fully-editable data in the mockup's layout.
  */
+import { t } from '../../i18n/t'
+import type { UiLanguage } from '../../i18n/t'
 import { mtxTableStyle, mtxThStyle, mtxTdStyle, mtxRowLabelStyle, mtxInputStyle } from './matrixStyles'
 
 type Leaf = { share?: number }
@@ -17,9 +19,17 @@ type Subgroup = { share?: number; leaves?: Record<string, Leaf> }
 type Category = { share?: number; subgroups?: Record<string, Subgroup> }
 type Hierarchy = Record<string, Category>
 
+const LABELS = {
+  category: { ja: 'カテゴリ', en: 'category' },
+  share: { ja: '割合', en: 'share' },
+  subgroup: { ja: 'サブグループ', en: 'subgroup' },
+  leaf: { ja: 'リーフ', en: 'leaf' },
+}
+
 export type HierarchyWeightsTableProps = {
   value: Hierarchy
   onChange: (next: Hierarchy) => void
+  lang?: UiLanguage
 }
 
 function num(raw: string, prev: number | undefined): number | undefined {
@@ -27,7 +37,7 @@ function num(raw: string, prev: number | undefined): number | undefined {
   return Number.isNaN(n) ? prev : n
 }
 
-export default function HierarchyWeightsTable({ value, onChange }: HierarchyWeightsTableProps) {
+export default function HierarchyWeightsTable({ value, onChange, lang = 'en' }: HierarchyWeightsTableProps) {
   function setCategoryShare(cat: string, raw: string) {
     onChange({ ...value, [cat]: { ...value[cat], share: num(raw, value[cat]?.share) } })
   }
@@ -68,12 +78,12 @@ export default function HierarchyWeightsTable({ value, onChange }: HierarchyWeig
       <table style={mtxTableStyle}>
         <thead>
           <tr>
-            <th style={mtxThStyle}>category</th>
-            <th style={mtxThStyle}>share</th>
-            <th style={mtxThStyle}>subgroup</th>
-            <th style={mtxThStyle}>share</th>
-            <th style={mtxThStyle}>leaf</th>
-            <th style={mtxThStyle}>share</th>
+            <th style={mtxThStyle}>{t(LABELS.category, lang)}</th>
+            <th style={mtxThStyle}>{t(LABELS.share, lang)}</th>
+            <th style={mtxThStyle}>{t(LABELS.subgroup, lang)}</th>
+            <th style={mtxThStyle}>{t(LABELS.share, lang)}</th>
+            <th style={mtxThStyle}>{t(LABELS.leaf, lang)}</th>
+            <th style={mtxThStyle}>{t(LABELS.share, lang)}</th>
           </tr>
         </thead>
         <tbody>

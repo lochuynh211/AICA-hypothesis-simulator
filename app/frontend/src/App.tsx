@@ -4,10 +4,13 @@ import { RunStoreProvider } from './state/runStore'
 import { AppModeProvider, useAppMode } from './state/appMode'
 import { ProposalStoreProvider } from './state/proposalStore'
 import { MergedCoordinatorProvider } from './state/mergedCoordinator'
+import { LanguageProvider, useLanguage } from './state/language'
+import { RunLanguageBridge, ProposalLanguageBridge } from './state/languageBridges'
 import AppShell from './components/layout/AppShell'
 import ProposalShell from './components/proposal/ProposalShell'
 import MergedShell from './components/merged/MergedShell'
-import { t, type UiLanguage } from './i18n/t'
+import GlobalLanguageToggle from './components/layout/GlobalLanguageToggle'
+import { t } from './i18n/t'
 
 type State =
   | { phase: 'loading' }
@@ -20,18 +23,16 @@ const APP_MODE_LABELS = {
   merged: { ja: '統合', en: 'Combined' },
 }
 
-/** Header toggle — switches the top-level appMode between the Trigger
- *  Simulator and the (placeholder, for now) Proposal Simulator. Additive:
- *  does not alter AppShell's own header/nav.
+/** Header toggle — switches the top-level appMode between the Trigger,
+ *  Proposal and Combined simulators. Additive: does not alter AppShell's
+ *  own header/nav.
  *
- *  Bilingual via the shared `t()` helper. This toggle renders ABOVE both
- *  the trigger `runStore` and the proposal `proposalStore` (it decides
- *  which one even mounts), so it cannot read either store's `uiLanguage`
- *  without breaking their provider isolation — `lang` defaults to `'en'`
- *  (the trigger shell's own default) as the "sensible shared default";
- *  callers with a language available may pass it explicitly. */
-export function AppModeToggle({ lang = 'en' }: { lang?: UiLanguage } = {}) {
+ *  Bilingual via the shared `t()` helper. Reads the single global
+ *  `LanguageProvider` (the one source of truth), so it follows the header
+ *  JA/EN toggle like every other screen. */
+export function AppModeToggle() {
   const { appMode, setAppMode } = useAppMode()
+  const { lang } = useLanguage()
   const buttonStyle = (active: boolean): React.CSSProperties => ({
     padding: '4px 14px',
     fontSize: '0.82em',
@@ -73,6 +74,7 @@ export function AppModeToggle({ lang = 'en' }: { lang?: UiLanguage } = {}) {
       >
         {t(APP_MODE_LABELS.merged, lang)}
       </button>
+      <GlobalLanguageToggle />
     </nav>
   )
 }
@@ -89,17 +91,22 @@ export function AppModeToggle({ lang = 'en' }: { lang?: UiLanguage } = {}) {
  *  later 020 tasks. */
 function AppBody({ healthStatus }: { healthStatus?: string }) {
   const { appMode } = useAppMode()
+  const { lang } = useLanguage()
   let body: React.ReactNode
   if (appMode === 'trigger') {
     body = (
-      <RunStoreProvider>
-        <AppShell healthStatus={healthStatus} />
+      <RunStoreProvider initialLanguage={lang}>
+        <RunLanguageBridge>
+          <AppShell healthStatus={healthStatus} />
+        </RunLanguageBridge>
       </RunStoreProvider>
     )
   } else if (appMode === 'proposal') {
     body = (
-      <ProposalStoreProvider>
-        <ProposalShell autoInit />
+      <ProposalStoreProvider initialLanguage={lang}>
+        <ProposalLanguageBridge>
+          <ProposalShell autoInit />
+        </ProposalLanguageBridge>
       </ProposalStoreProvider>
     )
   } else {
@@ -137,8 +144,10 @@ export default function App() {
   const healthStatus = `Backend: ${state.data.status} — ${state.data.service}`
 
   return (
-    <AppModeProvider initialMode="proposal">
-      <AppBody healthStatus={healthStatus} />
-    </AppModeProvider>
+    <LanguageProvider initialLanguage="ja">
+      <AppModeProvider initialMode="proposal">
+        <AppBody healthStatus={healthStatus} />
+      </AppModeProvider>
+    </LanguageProvider>
   )
 }

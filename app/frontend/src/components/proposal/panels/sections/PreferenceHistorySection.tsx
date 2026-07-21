@@ -24,6 +24,8 @@ import { FieldRow, issuesForPath, PROFILE_GROUPS, USAGE_LEVEL_OPTIONS } from './
 const LABELS = {
   genreExtension: { ja: 'ジャンル選好（genre_affinity_v1）', en: 'Genre affinity (genre_affinity_v1)' },
   scenes: { ja: 'シーン別ジャンル利用', en: 'Scene genre usage' },
+  genreAffinityEnabled: { ja: 'ジャンル選好を有効化', en: 'Enable genre affinity' },
+  usageByGenre: { ja: 'ジャンル別利用状況', en: 'Usage by genre' },
 }
 
 export default function PreferenceHistorySection() {
@@ -79,7 +81,7 @@ export default function PreferenceHistorySection() {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: '6px 10px', padding: '6px 0' }}>
         <span style={{ fontSize: '0.82em', color: '#4b5563' }}>
-          <code>genre_affinity_v1_enabled</code>
+          <code>genre_affinity_v1_enabled</code> {t(LABELS.genreAffinityEnabled, lang)}
         </span>
         <select
           data-testid="genre-affinity-toggle"
@@ -93,7 +95,7 @@ export default function PreferenceHistorySection() {
       {driverProfile.genre_affinity_v1_enabled && (
         <div data-testid="genre-fields">
           <div style={{ fontSize: '0.78em', color: '#6b7280', margin: '4px 0 2px' }}>
-            <code>usage_by_genre</code>
+            <code>usage_by_genre</code> {t(LABELS.usageByGenre, lang)}
           </div>
           <GenreUsageTable
             testId="genre-usage-by-genre"

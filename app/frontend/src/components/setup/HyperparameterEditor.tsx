@@ -5,6 +5,13 @@ import type { HyperparameterDef, SetupValue, ValidationError } from '../../api/t
 import { t } from '../../i18n/t'
 import ErrorNotice from '../common/ErrorNotice'
 
+const LABELS = {
+  hyperparameters: { ja: 'ハイパーパラメータ', en: 'Hyperparameters' },
+  mustBeANumber: { ja: '{field}は数値である必要があります', en: '{field} must be a number' },
+  mustBeAtLeast: { ja: '{field}は{min}以上である必要があります', en: '{field} must be ≥ {min}' },
+  mustBeAtMost: { ja: '{field}は{max}以下である必要があります', en: '{field} must be ≤ {max}' },
+}
+
 /**
  * HyperparameterEditor (T024) — renders the selected package's hyperparameter
  * defs as editable controls:
@@ -51,14 +58,27 @@ export default function HyperparameterEditor() {
       const raw = next[def.key]
       const v = raw !== undefined ? Number(raw) : Number(def.default)
       if (Number.isNaN(v)) {
-        errors.push({ field: def.key, message: `${t(def.label, uiLanguage)} must be a number` })
+        errors.push({
+          field: def.key,
+          message: t(LABELS.mustBeANumber, uiLanguage).replace('{field}', t(def.label, uiLanguage)),
+        })
         continue
       }
       if (def.min !== undefined && v < def.min) {
-        errors.push({ field: def.key, message: `${t(def.label, uiLanguage)} must be ≥ ${def.min}` })
+        errors.push({
+          field: def.key,
+          message: t(LABELS.mustBeAtLeast, uiLanguage)
+            .replace('{field}', t(def.label, uiLanguage))
+            .replace('{min}', String(def.min)),
+        })
       }
       if (def.max !== undefined && v > def.max) {
-        errors.push({ field: def.key, message: `${t(def.label, uiLanguage)} must be ≤ ${def.max}` })
+        errors.push({
+          field: def.key,
+          message: t(LABELS.mustBeAtMost, uiLanguage)
+            .replace('{field}', t(def.label, uiLanguage))
+            .replace('{max}', String(def.max)),
+        })
       }
     }
     return errors
@@ -78,7 +98,7 @@ export default function HyperparameterEditor() {
   return (
     <div data-testid="hyperparameter-editor" style={{ marginBottom: '8px' }}>
       <h3 style={{ fontSize: '0.75em', fontWeight: 600, color: '#666', margin: '8px 0 4px' }}>
-        Hyperparameters
+        {t(LABELS.hyperparameters, uiLanguage)}
       </h3>
       {defs.map((def) => {
         const value = effectiveValue(def)

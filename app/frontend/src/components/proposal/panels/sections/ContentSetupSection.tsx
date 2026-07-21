@@ -65,6 +65,7 @@ export default function ContentSetupSection({ manifest }: { manifest: ProposalPa
               >
             }
             onChange={(value) => dispatch({ type: 'SET_CONTENT_HYPERPARAMETER', key: hp.key, value })}
+            lang={lang}
           />
         ) : (
           <HyperparamMatrix

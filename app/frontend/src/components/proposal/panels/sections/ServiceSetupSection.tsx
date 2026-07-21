@@ -163,6 +163,7 @@ export default function ServiceSetupSection({ manifest }: { manifest: ProposalPa
                     >
                   }
                   onChange={(value) => dispatch({ type: 'SET_SERVICE_HYPERPARAMETER', key: hp.key, value })}
+                  lang={lang}
                 />
               ) : (
                 <HyperparamMatrix

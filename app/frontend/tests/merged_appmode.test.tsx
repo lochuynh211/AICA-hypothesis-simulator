@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import App, { AppModeToggle } from '../src/App'
 import { AppModeProvider } from '../src/state/appMode'
+import { LanguageProvider } from '../src/state/language'
 
 // Route fetch by URL so App/AppShell/ProposalShell's health + registry effects
 // don't reject (App defaults to the proposal shell — see appMode.test.tsx).
@@ -36,16 +37,19 @@ describe('merged appMode', () => {
 
     render(<App />)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Combined' }))
+    // The app defaults to Japanese, so the Combined mode button reads 統合.
+    fireEvent.click(await screen.findByRole('button', { name: '統合' }))
 
     expect(await screen.findByTestId('merged-shell')).toBeInTheDocument()
   })
 
   it('renders the Japanese label 統合 for the Combined mode toggle', () => {
     render(
-      <AppModeProvider>
-        <AppModeToggle lang="ja" />
-      </AppModeProvider>,
+      <LanguageProvider>
+        <AppModeProvider>
+          <AppModeToggle />
+        </AppModeProvider>
+      </LanguageProvider>,
     )
     expect(screen.getByRole('button', { name: '統合' })).toBeInTheDocument()
   })

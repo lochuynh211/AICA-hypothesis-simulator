@@ -14,6 +14,19 @@ import { useState, useEffect } from 'react'
 import { listRuns } from '../../api/client'
 import type { RunSummary } from '../../api/types'
 import ErrorNotice from '../common/ErrorNotice'
+import { t } from '../../i18n/t'
+import { useLanguage } from '../../state/language'
+
+const LABELS = {
+  failedToLoad: { ja: '実行の読み込みに失敗しました', en: 'Failed to load runs' },
+  loadingRuns: { ja: '実行を読み込み中…', en: 'Loading runs…' },
+  noRuns: { ja: '過去の実行は見つかりませんでした。実行を完了するとここに表示されます。', en: 'No past runs found. Complete a run to see it here.' },
+  colRunId: { ja: 'Run ID', en: 'Run ID' },
+  colPackage: { ja: 'パッケージ', en: 'Package' },
+  colScenario: { ja: 'シナリオ', en: 'Scenario' },
+  colStatus: { ja: 'ステータス', en: 'Status' },
+  colCreated: { ja: '作成日時', en: 'Created' },
+}
 
 const C = {
   bg: '#fff',
@@ -31,6 +44,7 @@ type RunListProps = {
 }
 
 export default function RunList({ onSelect, selectedRunId }: RunListProps) {
+  const { lang } = useLanguage()
   const [runs, setRuns] = useState<RunSummary[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -47,7 +61,7 @@ export default function RunList({ onSelect, selectedRunId }: RunListProps) {
         setRuns(sorted)
       })
       .catch((e: unknown) => {
-        setError(e instanceof Error ? e.message : 'Failed to load runs')
+        setError(e instanceof Error ? e.message : t(LABELS.failedToLoad, lang))
       })
       .finally(() => setLoading(false))
   }, [])
@@ -55,7 +69,7 @@ export default function RunList({ onSelect, selectedRunId }: RunListProps) {
   if (loading) {
     return (
       <div style={{ padding: '12px', color: C.muted, fontSize: '0.9em' }}>
-        Loading runs…
+        {t(LABELS.loadingRuns, lang)}
       </div>
     )
   }
@@ -67,7 +81,7 @@ export default function RunList({ onSelect, selectedRunId }: RunListProps) {
   if (runs.length === 0) {
     return (
       <div style={{ padding: '12px', color: C.muted, fontSize: '0.9em' }}>
-        No past runs found. Complete a run to see it here.
+        {t(LABELS.noRuns, lang)}
       </div>
     )
   }
@@ -92,23 +106,25 @@ export default function RunList({ onSelect, selectedRunId }: RunListProps) {
             borderBottom: C.border,
           }}
         >
-          {['Run ID', 'Package', 'Scenario', 'Status', 'Created'].map((col) => (
-            <th
-              key={col}
-              style={{
-                padding: '6px 10px',
-                textAlign: 'left',
-                fontWeight: 600,
-                color: C.muted,
-                fontSize: '0.8em',
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-                borderRight: C.border,
-              }}
-            >
-              {col}
-            </th>
-          ))}
+          {[LABELS.colRunId, LABELS.colPackage, LABELS.colScenario, LABELS.colStatus, LABELS.colCreated].map(
+            (col) => (
+              <th
+                key={col.en}
+                style={{
+                  padding: '6px 10px',
+                  textAlign: 'left',
+                  fontWeight: 600,
+                  color: C.muted,
+                  fontSize: '0.8em',
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                  borderRight: C.border,
+                }}
+              >
+                {t(col, lang)}
+              </th>
+            ),
+          )}
         </tr>
       </thead>
       <tbody>

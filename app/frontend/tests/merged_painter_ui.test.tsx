@@ -53,6 +53,7 @@ import {
 import { getPackages, getPresets, getPreset } from '../src/api/proposalClient'
 import { createMergedRun, tickMergedRun, buildMergedPlan, mergedQuickview } from '../src/api/mergedClient'
 import { MergedCoordinatorProvider, useMergedCoordinator } from '../src/state/mergedCoordinator'
+import { LanguageProvider } from '../src/state/language'
 import { RunStoreProvider } from '../src/state/runStore'
 import { ProposalStoreProvider } from '../src/state/proposalStore'
 import MergedSetupPanel from '../src/components/merged/MergedSetupPanel'
@@ -322,13 +323,15 @@ function setupMocks() {
 
 function renderPanel() {
   return render(
-    <MergedCoordinatorProvider>
+    <LanguageProvider initialLanguage="en">
+      <MergedCoordinatorProvider>
       <RunStoreProvider>
         <ProposalStoreProvider>
           <Harness />
         </ProposalStoreProvider>
       </RunStoreProvider>
-    </MergedCoordinatorProvider>,
+    </MergedCoordinatorProvider>
+    </LanguageProvider>,
   )
 }
 

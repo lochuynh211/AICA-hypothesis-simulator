@@ -3,6 +3,23 @@ import { useRunStore } from '../../state/runStore'
 import type { RestSpot } from '../../api/types'
 import { useRouteProgress } from '../playback/useRouteProgress'
 import { useSmoothFraction } from '../playback/useSmoothFraction'
+import { t } from '../../i18n/t'
+import { useLanguage } from '../../state/language'
+
+const LABELS = {
+  authFailed: {
+    ja: 'Google Maps の認証に失敗しました。API キーとドメイン制限を確認してください。',
+    en: 'Google Maps authorization failed. Verify your API key and domain restrictions.',
+  },
+  start: { ja: '出発地', en: 'Start' },
+  destination: { ja: '目的地', en: 'Destination' },
+  initFailed: { ja: '地図の初期化に失敗しました', en: 'Map initialization failed' },
+  mapUnavailable: { ja: '地図を利用できません — ', en: 'Map unavailable — ' },
+  routePosition: { ja: 'ルート上の位置', en: 'Route position' },
+  proposalPosition: { ja: '提案の位置', en: 'Proposal position' },
+  chosenRestSpot: { ja: '選択済みの休憩スポット', en: 'Chosen Rest Spot' },
+  chosenRestSpotPrefix: { ja: '選択済みの休憩スポット: ', en: 'Chosen rest spot: ' },
+}
 
 /**
  * MapSurface (T008 / M4) — Google Maps route surface for the playback panel.
@@ -108,6 +125,7 @@ export default function MapSurface({
 } = {}) {
   const { state } = useRunStore()
   const { mapsKey, alternatives, selectedRouteId } = state
+  const { lang } = useLanguage()
 
   // Accepted rest spots (one per accepted rest), captured at accept time into
   // restHistory so the gold markers persist after recovery ends instead of
@@ -182,9 +200,7 @@ export default function MapSurface({
       delete (window as Record<string, unknown>)['gm_authfailure']
     }
     ;(window as Record<string, unknown>)['gm_authfailure'] = () => {
-      setMapError(
-        'Google Maps authorization failed. Verify your API key and domain restrictions.',
-      )
+      setMapError(t(LABELS.authFailed, lang))
     }
 
     if (getGMaps()?.geometry?.encoding) return authCleanup // already loaded
@@ -212,7 +228,11 @@ export default function MapSurface({
       delete (window as Record<string, unknown>)[callbackName]
       authCleanup()
     }
-  }, [mapsKey, display?.encoded_polyline])
+    // `lang` is included so the gm_authfailure handler captures the current
+    // language for its (rarely fired) error message; this does not rebuild the
+    // map canvas, only re-registers the auth-failure callback / re-runs the
+    // (idempotent, ref-guarded) script-injection check.
+  }, [mapsKey, display?.encoded_polyline, lang])
 
   // ── Google Maps canvas initialization ─────────────────────────────────────
   // Runs when the SDK becomes ready (mapsReady) or the selected polyline changes.
@@ -302,7 +322,7 @@ export default function MapSurface({
           position: path[0],
           map,
           icon: { path: gmaps.SymbolPath.CIRCLE, scale: 6, fillColor: '#22c55e', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
-          title: 'Start',
+          title: t(LABELS.start, lang),
           zIndex: 998,
         })
         // End marker — the destination at the end of the polyline.
@@ -310,7 +330,7 @@ export default function MapSurface({
           position: path[path.length - 1],
           map,
           icon: { path: gmaps.SymbolPath.CIRCLE, scale: 6, fillColor: '#64748b', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
-          title: 'Destination',
+          title: t(LABELS.destination, lang),
           zIndex: 998,
         })
         carRef.current = new gmaps.Marker({
@@ -325,9 +345,17 @@ export default function MapSurface({
       // Canvas initialization failed — show inline fallback instead of propagating.
       // Car and decision markers still work; only the actual map canvas is missing.
       console.error('[MapSurface] Maps canvas init failed:', err)
-      setMapError(err instanceof Error ? err.message : 'Map initialization failed')
+      setMapError(err instanceof Error ? err.message : t(LABELS.initFailed, lang))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // NOTE: `lang` is deliberately NOT a dependency here. This effect builds the
+    // map canvas + Start/Destination markers once per polyline (guarded by
+    // `mapInstanceRef.current`); adding `lang` would either be a no-op (guard
+    // blocks re-creation, so titles wouldn't actually update) or, if the guard
+    // were removed, would re-run full canvas/marker initialization on every
+    // language switch. The Start/Destination marker titles and this fallback
+    // message are localized to whatever `lang` is active at first successful
+    // init and do not retroactively relabel on a later language switch.
   }, [mapsReady, display?.encoded_polyline])
 
   // ── Move/refresh geographic markers as the run progresses ─────────────────
@@ -367,6 +395,11 @@ export default function MapSurface({
     // Chosen rest-spot markers (gold) — one per accepted rest; they persist as
     // history.  Sync the marker array to restSpots: create/position present
     // ones, drop any extras (e.g. after a reset clears restHistory).
+    // `lang` is read from the render closure (not a dep) — this effect already
+    // reruns on every `shownFraction` tick during playback, so newly-created
+    // markers pick up the current language; a marker's title is set only once
+    // at creation, so an already-created marker's title does not retroactively
+    // relabel on a later language switch.
     restSpots.forEach((spot, i) => {
       const rsp = latLngAt(path, cum, total, spot.route_fraction, sph)
       if (!rsp) return
@@ -374,7 +407,7 @@ export default function MapSurface({
         chosenRestRefs.current[i] = new gmaps.Marker({
           map: mapInstanceRef.current,
           icon: { path: gmaps.SymbolPath.CIRCLE, scale: 8, fillColor: '#f59e0b', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 },
-          title: spot.label?.en ?? 'Chosen Rest Spot',
+          title: spot.label ? t(spot.label, lang) : t(LABELS.chosenRestSpot, lang),
           zIndex: 999,
         })
       }
@@ -448,7 +481,7 @@ export default function MapSurface({
           }}
         >
           <p style={{ color: '#b91c1c', fontSize: '0.85em', textAlign: 'center', margin: 0 }}>
-            Map unavailable — {mapError}
+            {t(LABELS.mapUnavailable, lang)}{mapError}
           </p>
         </div>
       ) : (
@@ -463,7 +496,7 @@ export default function MapSurface({
       {/* CSS left drives display-only position; no store mutation on animation. */}
       <div
         data-testid="car-marker"
-        aria-label={`Route position: ${positionPct}`}
+        aria-label={`${t(LABELS.routePosition, lang)}: ${positionPct}`}
         style={{
           position: 'absolute',
           bottom: '4px',
@@ -487,7 +520,7 @@ export default function MapSurface({
         <div
           key={`decision-${i}`}
           data-testid="decision-marker"
-          aria-label="Proposal position"
+          aria-label={t(LABELS.proposalPosition, lang)}
           style={{
             position: 'absolute',
             bottom: '0',
@@ -511,7 +544,7 @@ export default function MapSurface({
         <div
           key={`rest-${i}-${spot.id}`}
           data-testid="rest-spot-marker"
-          aria-label={`Chosen rest spot: ${spot.label?.en ?? spot.id}`}
+          aria-label={`${t(LABELS.chosenRestSpotPrefix, lang)}${spot.label ? t(spot.label, lang) : spot.id}`}
           style={{
             position: 'absolute',
             bottom: '0',

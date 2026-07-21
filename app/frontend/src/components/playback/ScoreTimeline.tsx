@@ -48,6 +48,10 @@ const JAM_COLOR = '#dc2626'
 
 const W_FALLBACK = 760
 
+const LABELS = {
+  routeTimeline: { ja: 'ルートタイムライン', en: 'Route timeline' },
+}
+
 export type ScoreTimelineTestIds = {
   root?: string; svg?: string; curve?: string; monotonyCurve?: string
   threshold?: string; monotonyThreshold?: string
@@ -179,7 +183,7 @@ export default function ScoreTimeline({
   return (
     <div ref={ref} data-testid={testIds.root} style={{ position: 'relative', width: '100%' }}>
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img"
-        aria-label="Route timeline" data-testid={testIds.svg}>
+        aria-label={t(LABELS.routeTimeline, lang)} data-testid={testIds.svg}>
         <defs>
           <clipPath id={clipId}>
             <rect x={0} y={0} width={revealX} height={H} style={{ transition: trans }} />

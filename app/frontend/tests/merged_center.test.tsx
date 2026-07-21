@@ -14,6 +14,7 @@
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MergedCoordinatorProvider, useMergedCoordinator } from '../src/state/mergedCoordinator'
+import { LanguageProvider } from '../src/state/language'
 import { RunStoreProvider } from '../src/state/runStore'
 import { ProposalStoreProvider } from '../src/state/proposalStore'
 import type { MergedTickResponse } from '../src/api/mergedClient'
@@ -262,7 +263,8 @@ function renderCenterPanel() {
   // layout); the center's <MapSurface/> needs a RunStoreProvider. Both panels
   // share the coordinator, so the dock assertions still find the overlays.
   render(
-    <MergedCoordinatorProvider>
+    <LanguageProvider initialLanguage="en">
+      <MergedCoordinatorProvider>
       <RunStoreProvider>
         <ProposalStoreProvider>
         <Capture />
@@ -270,7 +272,8 @@ function renderCenterPanel() {
         <MergedProposalPanel />
         </ProposalStoreProvider>
       </RunStoreProvider>
-    </MergedCoordinatorProvider>,
+    </MergedCoordinatorProvider>
+    </LanguageProvider>,
   )
 
   return coordinatorRef

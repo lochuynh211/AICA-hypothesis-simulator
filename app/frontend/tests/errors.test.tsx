@@ -115,7 +115,7 @@ describe('PackageSelector — registry error display', () => {
     renderInStore(<PackageSelector />)
 
     expect(await screen.findByRole('alert')).toBeInTheDocument()
-    expect(await screen.findByText('1 package(s) could not be loaded')).toBeInTheDocument()
+    expect(await screen.findByText('1個のパッケージを読み込めませんでした')).toBeInTheDocument()
   })
 
   it('shows count matching the number of errors', async () => {
@@ -126,7 +126,7 @@ describe('PackageSelector — registry error display', () => {
 
     renderInStore(<PackageSelector />)
 
-    expect(await screen.findByText('2 package(s) could not be loaded')).toBeInTheDocument()
+    expect(await screen.findByText('2個のパッケージを読み込めませんでした')).toBeInTheDocument()
   })
 
   it('does NOT show the error banner when there are no errors', async () => {
@@ -152,7 +152,7 @@ describe('PackageSelector — registry error display', () => {
 
     // Store seeded to 'ja' — JA label rendered, not EN
     expect(await screen.findByText('テスト (0.1.0)')).toBeInTheDocument()
-    expect(await screen.findByText('1 package(s) could not be loaded')).toBeInTheDocument()
+    expect(await screen.findByText('1個のパッケージを読み込めませんでした')).toBeInTheDocument()
   })
 })
 
@@ -169,7 +169,7 @@ describe('ScenarioSelector — registry error display', () => {
 
     renderInStore(<ScenarioSelector />)
 
-    expect(await screen.findByText('1 scenario(s) could not be loaded')).toBeInTheDocument()
+    expect(await screen.findByText('1個のシナリオを読み込めませんでした')).toBeInTheDocument()
     expect(await screen.findByRole('alert')).toBeInTheDocument()
   })
 
@@ -219,7 +219,7 @@ describe('PlanPreview — createRun error display', () => {
     const stateRef: { current: ReturnType<typeof useRunStore>['state'] | null } = { current: null }
     renderPreviewWithDraft(stateRef)
 
-    fireEvent.click(screen.getByRole('button', { name: /start run/i }))
+    fireEvent.click(screen.getByRole('button', { name: /実行開始/ }))
 
     expect(await screen.findByRole('alert')).toBeInTheDocument()
     expect(await screen.findByText(/API error: 400/)).toBeInTheDocument()
@@ -231,7 +231,7 @@ describe('PlanPreview — createRun error display', () => {
     const stateRef: { current: ReturnType<typeof useRunStore>['state'] | null } = { current: null }
     renderPreviewWithDraft(stateRef)
 
-    fireEvent.click(screen.getByRole('button', { name: /start run/i }))
+    fireEvent.click(screen.getByRole('button', { name: /実行開始/ }))
 
     await screen.findByRole('alert')
     expect(vi.mocked(client.createRun)).toHaveBeenCalledWith('plan_x')
@@ -245,7 +245,7 @@ describe('PlanPreview — createRun error display', () => {
     const stateRef: { current: ReturnType<typeof useRunStore>['state'] | null } = { current: null }
     renderPreviewWithDraft(stateRef)
 
-    fireEvent.click(screen.getByRole('button', { name: /start run/i }))
+    fireEvent.click(screen.getByRole('button', { name: /実行開始/ }))
     expect(await screen.findByRole('alert')).toBeInTheDocument()
 
     const runState = {
@@ -263,7 +263,7 @@ describe('PlanPreview — createRun error display', () => {
     }
     vi.mocked(client.createRun).mockResolvedValueOnce(runState)
 
-    fireEvent.click(screen.getByRole('button', { name: /start run/i }))
+    fireEvent.click(screen.getByRole('button', { name: /実行開始/ }))
 
     await waitFor(() => {
       expect(screen.queryByRole('alert')).not.toBeInTheDocument()

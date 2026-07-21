@@ -23,11 +23,20 @@ import MergedProposalPanel from './MergedProposalPanel'
 import MergedRunsScreen from './MergedRunsScreen'
 import { RunStoreProvider } from '../../state/runStore'
 import { ProposalStoreProvider } from '../../state/proposalStore'
+import { RunLanguageBridge, ProposalLanguageBridge } from '../../state/languageBridges'
+import { useLanguage } from '../../state/language'
+import { t } from '../../i18n/t'
 
 type MergedView = 'live' | 'runs'
 
+const LABELS = {
+  live: { ja: 'ライブ', en: 'Live' },
+  runs: { ja: '実行履歴', en: 'Runs' },
+}
+
 export default function MergedShell(): JSX.Element {
   const [view, setView] = useState<MergedView>('live')
+  const { lang } = useLanguage()
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
     padding: '3px 12px',
@@ -60,7 +69,7 @@ export default function MergedShell(): JSX.Element {
           onClick={() => setView('live')}
           style={tabStyle(view === 'live')}
         >
-          Live
+          {t(LABELS.live, lang)}
         </button>
         <button
           type="button"
@@ -69,7 +78,7 @@ export default function MergedShell(): JSX.Element {
           onClick={() => setView('runs')}
           style={tabStyle(view === 'runs')}
         >
-          Runs
+          {t(LABELS.runs, lang)}
         </button>
       </nav>
 
@@ -82,8 +91,10 @@ export default function MergedShell(): JSX.Element {
           // (both stores are plain Context + useReducer, no module singletons).
           // 20:50:30 — left = setup + log, center = quickview/animation/map,
           // right = service (top) + content (bottom) proposals.
-          <RunStoreProvider>
-            <ProposalStoreProvider>
+          <RunStoreProvider initialLanguage={lang}>
+            <ProposalStoreProvider initialLanguage={lang}>
+              <RunLanguageBridge>
+              <ProposalLanguageBridge>
               <div className="merged-shell" data-testid="merged-shell">
                 <div className="left-panel">
                   <div className="merged-left-setup">
@@ -100,6 +111,8 @@ export default function MergedShell(): JSX.Element {
                   <MergedProposalPanel />
                 </div>
               </div>
+              </ProposalLanguageBridge>
+              </RunLanguageBridge>
             </ProposalStoreProvider>
           </RunStoreProvider>
         ) : (

@@ -10,10 +10,12 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import type { ScenarioDef } from '../../../api/types'
 import SignalFormulationEditor, { type FormulationSignalKey } from '../SignalFormulationEditor'
 import { HIGHLIGHT_BG } from '../highlight'
+import { t } from '../../../i18n/t'
+import { useLanguage } from '../../../state/language'
 
 /** Faded opacity for a signal row the selected package doesn't consume. */
 export const DIMMED_OPACITY = 0.35
-export const UNUSED_SIGNAL_TITLE = 'Not used by the selected algorithm'
+export const UNUSED_SIGNAL_TITLE = { en: 'Not used by the selected algorithm', ja: '選択中のアルゴリズムでは使用されません' }
 
 /**
  * Auto-scroll a cross-link source row into view when it becomes highlighted.
@@ -100,6 +102,7 @@ export function SignalRow({
   onLeave?: () => void
 }) {
   const rowRef = useHighlightScroll(highlighted)
+  const { lang } = useLanguage()
   return (
     <div
       ref={rowRef}
@@ -107,7 +110,7 @@ export function SignalRow({
       data-dimmed={dimmed ? 'true' : 'false'}
       onMouseEnter={onHover}
       onMouseLeave={onLeave}
-      title={dimmed ? UNUSED_SIGNAL_TITLE : undefined}
+      title={dimmed ? t(UNUSED_SIGNAL_TITLE, lang) : undefined}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -162,6 +165,7 @@ export function SimulatedSignal({
   initialControl?: ReactNode
 }) {
   const rowRef = useHighlightScroll(highlighted)
+  const { lang } = useLanguage()
   return (
     <div
       ref={rowRef}
@@ -169,7 +173,7 @@ export function SimulatedSignal({
       data-dimmed={dimmed ? 'true' : 'false'}
       onMouseEnter={onHover}
       onMouseLeave={onLeave}
-      title={dimmed ? UNUSED_SIGNAL_TITLE : undefined}
+      title={dimmed ? t(UNUSED_SIGNAL_TITLE, lang) : undefined}
       style={{
         padding: '4px',
         marginBottom: '4px',

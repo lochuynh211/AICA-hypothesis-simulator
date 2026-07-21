@@ -27,17 +27,22 @@
  * (`REST_SPOT_ARRIVED`/`REST_STARTED`/`REST_COMPLETED`/`RECOMPUTED`) get an
  * extra bilingual label line so the merged log narrates arrive → nap →
  * recover → after-rest recompute, not just raw event-type constants. The
- * merged screen has no `uiLanguage` yet (mergedCoordinator carries no such
- * field — see `MergedCenterPanel`'s hardcoded `lang="en"`), so `t()` is
- * called with `'en'` here too, same convention.
+ * merged screen reads the single global `LanguageProvider` (via
+ * `useLanguage()`) and threads `lang` through the rows/helpers.
  */
 import { useMergedCoordinator } from '../../state/mergedCoordinator'
 import type { MergedCoordinatorState } from '../../state/mergedCoordinator'
 import type { TraceEntry } from '../../api/types'
 import type { DiscreteEvent } from '../../api/proposalClient'
-import { t } from '../../i18n/t'
+import { t, type UiLanguage } from '../../i18n/t'
+import { useLanguage } from '../../state/language'
 
 const PROPOSAL_ACCENT = '#7c3aed'
+
+const LABELS = {
+  header: { ja: '統合ログ', en: 'MERGED LOG' },
+  empty: { ja: 'まだエントリはありません。', en: 'No entries yet.' },
+}
 
 /** Mirrors `DecisionTracePanel`'s own (unexported) `RECOVERY_PHASE_LABELS`. */
 const RECOVERY_PHASE_LABELS: Record<string, { ja: string; en: string }> = {
@@ -121,7 +126,7 @@ function buildMergedEntries(state: MergedCoordinatorState): MergedEntry[] {
  * Anything else falls back to a generic `key=value` dump (mirrors
  * `EventTimeline`'s `summarizePayload`).
  */
-function summarizeProposalEvent(event: DiscreteEvent): string {
+function summarizeProposalEvent(event: DiscreteEvent, lang: UiLanguage): string {
   const payload = event.payload
   switch (event.event_type) {
     case 'SERVICE_SELECTED':
@@ -133,7 +138,7 @@ function summarizeProposalEvent(event: DiscreteEvent): string {
     case 'OPPORTUNITY_OPENED': {
       const purpose = String(payload.trigger_purpose ?? '')
       const label = TRIGGER_PURPOSE_LABELS[purpose]
-      return label ? t(label, 'en') : purpose
+      return label ? t(label, lang) : purpose
     }
     default: {
       const entries = Object.entries(payload)
@@ -159,12 +164,12 @@ function entryThreshold(entry: TraceEntry): number | null {
   return null
 }
 
-function explanationText(entry: TraceEntry): string {
+function explanationText(entry: TraceEntry, lang: UiLanguage): string {
   const e = entry.explanation as unknown
   if (e == null) return ''
   if (typeof e === 'string') return e
   if (typeof e === 'object' && ('en' in (e as object) || 'ja' in (e as object))) {
-    return t(e as { en: string; ja: string }, 'en')
+    return t(e as { en: string; ja: string }, lang)
   }
   return String(e)
 }
@@ -172,12 +177,12 @@ function explanationText(entry: TraceEntry): string {
 /** Trigger trace row — mirrors the Trigger screen's DecisionTracePanel so the
  * log is actually useful (score, per-category scores, threshold, fire_control,
  * reason_inputs, explanation) — the same TraceEntry data replay reads. */
-function TriggerTraceRow({ entry }: { entry: TraceEntry }) {
+function TriggerTraceRow({ entry, lang }: { entry: TraceEntry; lang: UiLanguage }) {
   const fc = entry.fire_control
   const threshold = entryThreshold(entry)
   const scoreEntries = Object.entries(entry.scores ?? {}).filter(([, v]) => typeof v === 'number')
   const reasons = Array.isArray(entry.reason_inputs) ? (entry.reason_inputs as unknown[]).map(String).filter(Boolean) : []
-  const explanation = explanationText(entry)
+  const explanation = explanationText(entry, lang)
   return (
     <div
       data-testid={`merged-log-trigger-${entry.tick_index}`}
@@ -212,7 +217,7 @@ function TriggerTraceRow({ entry }: { entry: TraceEntry }) {
       {entry.recovery_phase && (
         <div data-testid={`merged-log-recovery-phase-${entry.tick_index}`} style={{ color: '#34d399', marginTop: '2px' }}>
           🛌{' '}
-          {t(RECOVERY_PHASE_LABELS[entry.recovery_phase] ?? { ja: entry.recovery_phase, en: entry.recovery_phase }, 'en')}
+          {t(RECOVERY_PHASE_LABELS[entry.recovery_phase] ?? { ja: entry.recovery_phase, en: entry.recovery_phase }, lang)}
         </div>
       )}
     </div>
@@ -223,12 +228,14 @@ function ProposalEventRow({
   tickIndex,
   event,
   rowIndex,
+  lang,
 }: {
   tickIndex: number
   event: DiscreteEvent
   rowIndex: number
+  lang: UiLanguage
 }) {
-  const summary = summarizeProposalEvent(event)
+  const summary = summarizeProposalEvent(event, lang)
   const journeyLabel = REST_JOURNEY_EVENT_LABELS[event.event_type]
   return (
     <div
@@ -245,7 +252,7 @@ function ProposalEventRow({
         <span style={{ color: PROPOSAL_ACCENT, fontWeight: 700 }}>{event.event_type}</span>
       </div>
       {journeyLabel && (
-        <div style={{ color: PROPOSAL_ACCENT, marginTop: '2px', fontWeight: 600 }}>{t(journeyLabel, 'en')}</div>
+        <div style={{ color: PROPOSAL_ACCENT, marginTop: '2px', fontWeight: 600 }}>{t(journeyLabel, lang)}</div>
       )}
       {summary && <div style={{ color: PROPOSAL_ACCENT, marginTop: '2px' }}>{summary}</div>}
     </div>
@@ -256,6 +263,7 @@ function ProposalEventRow({
 
 export default function MergedLogPanel() {
   const { state } = useMergedCoordinator()
+  const { lang } = useLanguage()
   const entries = buildMergedEntries(state)
 
   return (
@@ -274,18 +282,18 @@ export default function MergedLogPanel() {
           borderBottom: '1px solid #333',
         }}
       >
-        MERGED LOG
+        {t(LABELS.header, lang)}
       </div>
       {entries.length === 0 ? (
         <div data-testid="merged-log-empty" style={{ padding: '8px', color: '#666' }}>
-          No entries yet.
+          {t(LABELS.empty, lang)}
         </div>
       ) : (
         entries.map((item, i) =>
           item.kind === 'trace' ? (
-            <TriggerTraceRow key={`t-${i}`} entry={item.entry} />
+            <TriggerTraceRow key={`t-${i}`} entry={item.entry} lang={lang} />
           ) : (
-            <ProposalEventRow key={`p-${i}`} tickIndex={item.tickIndex} event={item.event} rowIndex={i} />
+            <ProposalEventRow key={`p-${i}`} tickIndex={item.tickIndex} event={item.event} rowIndex={i} lang={lang} />
           ),
         )
       )}

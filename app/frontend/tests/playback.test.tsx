@@ -251,8 +251,8 @@ describe('CockpitView', () => {
     expect(overlay).toBeInTheDocument()
     // Store seeded to 'ja' — proposal message rendered in Japanese
     expect(screen.getByText(/休憩を取ってください/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /accept rest/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /postpone/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /休憩を受け入れる/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /延期/ })).toBeInTheDocument()
   })
 
   it('(c) Accept rest button calls actRun with "accept_rest"', async () => {
@@ -271,7 +271,7 @@ describe('CockpitView', () => {
       })
     })
 
-    const acceptButton = await screen.findByRole('button', { name: /accept rest/i })
+    const acceptButton = await screen.findByRole('button', { name: /休憩を受け入れる/ })
     fireEvent.click(acceptButton)
 
     await waitFor(() => {
@@ -295,7 +295,7 @@ describe('CockpitView', () => {
     })
 
     await screen.findByTestId('proposal-overlay')
-    expect(screen.getByRole('button', { name: /decline/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /断る/ })).toBeInTheDocument()
   })
 
   it('(g) Decline button is absent when "decline" not in allowed_actions', async () => {
@@ -312,7 +312,7 @@ describe('CockpitView', () => {
     })
 
     await screen.findByTestId('proposal-overlay')
-    expect(screen.queryByRole('button', { name: /decline/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /断る/ })).not.toBeInTheDocument()
   })
 
   it('(h) Decline button calls actRun with "decline"', async () => {
@@ -332,7 +332,7 @@ describe('CockpitView', () => {
       })
     })
 
-    const declineButton = await screen.findByRole('button', { name: /decline/i })
+    const declineButton = await screen.findByRole('button', { name: /断る/ })
     fireEvent.click(declineButton)
 
     await waitFor(() => {

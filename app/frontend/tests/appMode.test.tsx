@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import App, { AppModeToggle } from '../src/App'
 import { AppModeProvider } from '../src/state/appMode'
+import { LanguageProvider } from '../src/state/language'
 
 // Route fetch by URL so App/AppShell's health + registry effects don't reject.
 function mockFetchByUrl(healthBody: unknown) {
@@ -40,12 +41,13 @@ describe('appMode toggle', () => {
     expect(screen.queryByText('Backend: ok — aica-api')).not.toBeInTheDocument()
     await waitFor(() => expect(screen.getByTestId('world-panel')).toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Trigger' }))
+    // The app now defaults to Japanese, so the mode buttons render JA labels.
+    fireEvent.click(screen.getByRole('button', { name: 'トリガー' }))
 
     expect(await screen.findByText('Backend: ok — aica-api')).toBeInTheDocument()
     expect(screen.queryByTestId('proposal-shell')).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Proposal' }))
+    fireEvent.click(screen.getByRole('button', { name: '提案' }))
 
     expect(screen.getByTestId('proposal-shell')).toBeInTheDocument()
     expect(screen.queryByText('Backend: ok — aica-api')).not.toBeInTheDocument()
@@ -53,30 +55,33 @@ describe('appMode toggle', () => {
 })
 
 // ---------------------------------------------------------------------------
-// FR-004 bilingual labels — the toggle previously hardcoded English strings
-// ('Trigger'/'Proposal') directly rather than resolving them via the shared
-// t() helper. Covers both the (unchanged) default rendering and the
-// previously-impossible Japanese rendering.
+// FR-004 bilingual labels — the toggle resolves its labels via the shared t()
+// helper, driven by the single global LanguageProvider. Covers the JA default
+// and the EN override.
 // ---------------------------------------------------------------------------
 
 describe('AppModeToggle bilingual labels', () => {
-  it('renders the English labels by default (t() resolving {ja,en} via the "en" default)', () => {
+  it('renders the Japanese labels by default (LanguageProvider defaults to ja)', () => {
     render(
-      <AppModeProvider>
-        <AppModeToggle />
-      </AppModeProvider>,
-    )
-    expect(screen.getByRole('button', { name: 'Trigger' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Proposal' })).toBeInTheDocument()
-  })
-
-  it('renders the Japanese labels when passed lang="ja"', () => {
-    render(
-      <AppModeProvider>
-        <AppModeToggle lang="ja" />
-      </AppModeProvider>,
+      <LanguageProvider>
+        <AppModeProvider>
+          <AppModeToggle />
+        </AppModeProvider>
+      </LanguageProvider>,
     )
     expect(screen.getByRole('button', { name: 'トリガー' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '提案' })).toBeInTheDocument()
+  })
+
+  it('renders the English labels when the global language is en', () => {
+    render(
+      <LanguageProvider initialLanguage="en">
+        <AppModeProvider>
+          <AppModeToggle />
+        </AppModeProvider>
+      </LanguageProvider>,
+    )
+    expect(screen.getByRole('button', { name: 'Trigger' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Proposal' })).toBeInTheDocument()
   })
 })

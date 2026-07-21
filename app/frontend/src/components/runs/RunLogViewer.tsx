@@ -22,6 +22,20 @@ import type {
   FeedbackTarget,
 } from '../../api/types'
 import ErrorNotice from '../common/ErrorNotice'
+import { t, type UiLanguage } from '../../i18n/t'
+
+const LABELS = {
+  algorithmError: { ja: 'アルゴリズムエラー', en: 'Algorithm Error' },
+  runFallback: { ja: '実行', en: 'run' },
+  humanReview: { ja: 'HUMAN REVIEW', en: 'HUMAN REVIEW' },
+  feedback: { ja: 'フィードバック', en: 'Feedback' },
+  noEvents: { ja: '記録されたイベントはありません。', en: 'No events recorded.' },
+  runLog: { ja: 'RUN LOG', en: 'RUN LOG' },
+  loading: { ja: '読み込み中…', en: 'Loading…' },
+  load: { ja: '読み込み', en: 'Load' },
+  clickLoad: { ja: '「読み込み」をクリックして保存済みの実行ログを表示します。', en: 'Click Load to view the persisted run log.' },
+  noActiveRun: { ja: 'アクティブな実行はありません。', en: 'No active run.' },
+}
 
 // ── Colour tokens (dark-theme, matches DecisionTracePanel palette) ─────────────
 
@@ -223,7 +237,7 @@ function ActionEventRow({ event }: { event: ActionEvent }) {
 
 // ── Algorithm-error event row ─────────────────────────────────────────────────
 
-function AlgorithmErrorEventRow({ event }: { event: AlgorithmErrorEvent }) {
+function AlgorithmErrorEventRow({ event, lang }: { event: AlgorithmErrorEvent; lang: UiLanguage }) {
   const [open, setOpen] = useState(false)
   const ti = event.tick_index
 
@@ -242,7 +256,7 @@ function AlgorithmErrorEventRow({ event }: { event: AlgorithmErrorEvent }) {
         }}
       >
         <span style={{ color: C.tick, fontWeight: 700 }}>tick#{ti}</span>
-        <span style={{ color: C.err, fontWeight: 700 }}>Algorithm Error</span>
+        <span style={{ color: C.err, fontWeight: 700 }}>{t(LABELS.algorithmError, lang)}</span>
         <span style={{ color: C.errLight }}>{event.error_type}</span>
         <ExpandButton
           testId={`timeline-expand-algorithm-error-${ti}`}
@@ -289,7 +303,7 @@ function LabelValue({ value }: { value: unknown }) {
   return <span style={{ color: '#ddd' }}>{String(value)}</span>
 }
 
-function renderTargetLabel(target: FeedbackTarget): string {
+function renderTargetLabel(target: FeedbackTarget, lang: UiLanguage): string {
   switch (target.scope) {
     case 'decision':
       return `decision${target.tick_index !== null && target.tick_index !== undefined ? ` (tick#${target.tick_index})` : ''}`
@@ -298,7 +312,7 @@ function renderTargetLabel(target: FeedbackTarget): string {
     case 'action':
       return `action${target.action ? ` (${target.action})` : ''}`
     case 'run':
-      return 'run'
+      return t(LABELS.runFallback, lang)
     default:
       return target.scope
   }
@@ -306,9 +320,9 @@ function renderTargetLabel(target: FeedbackTarget): string {
 
 // ── Feedback event row ────────────────────────────────────────────────────────
 
-function FeedbackEventRow({ event, fbIdx }: { event: FeedbackEvent; fbIdx: number }) {
+function FeedbackEventRow({ event, fbIdx, lang }: { event: FeedbackEvent; fbIdx: number; lang: UiLanguage }) {
   const [open, setOpen] = useState(false)
-  const targetLabel = renderTargetLabel(event.target)
+  const targetLabel = renderTargetLabel(event.target, lang)
 
   return (
     <div
@@ -337,9 +351,9 @@ function FeedbackEventRow({ event, fbIdx }: { event: FeedbackEvent; fbIdx: numbe
             letterSpacing: '0.06em',
           }}
         >
-          HUMAN REVIEW
+          {t(LABELS.humanReview, lang)}
         </span>
-        <span style={{ color: C.feedbackAccent }}>Feedback</span>
+        <span style={{ color: C.feedbackAccent }}>{t(LABELS.feedback, lang)}</span>
         <span style={{ color: C.muted }}>→</span>
         <span style={{ color: '#ccc' }}>{targetLabel}</span>
         <ExpandButton
@@ -397,7 +411,7 @@ function FeedbackEventRow({ event, fbIdx }: { event: FeedbackEvent; fbIdx: numbe
 
 // ── Timeline ──────────────────────────────────────────────────────────────────
 
-function Timeline({ log }: { log: RunLog }) {
+function Timeline({ log, lang }: { log: RunLog; lang: UiLanguage }) {
   let fbCounter = 0
 
   return (
@@ -412,16 +426,16 @@ function Timeline({ log }: { log: RunLog }) {
       }}
     >
       {log.events.length === 0 && (
-        <div style={{ padding: '8px', color: C.faint }}>No events recorded.</div>
+        <div style={{ padding: '8px', color: C.faint }}>{t(LABELS.noEvents, lang)}</div>
       )}
       {log.events.map((event, idx) => {
         if (event.kind === 'feedback') {
           const fi = fbCounter++
-          return <FeedbackEventRow key={idx} event={event} fbIdx={fi} />
+          return <FeedbackEventRow key={idx} event={event} fbIdx={fi} lang={lang} />
         }
         if (event.kind === 'tick') return <TickEventRow key={idx} event={event} />
         if (event.kind === 'action') return <ActionEventRow key={idx} event={event} />
-        if (event.kind === 'algorithm_error') return <AlgorithmErrorEventRow key={idx} event={event} />
+        if (event.kind === 'algorithm_error') return <AlgorithmErrorEventRow key={idx} event={event} lang={lang} />
         return null
       })}
     </div>
@@ -439,6 +453,7 @@ type RunLogViewerProps = {
 export default function RunLogViewer({ runId: runIdProp }: RunLogViewerProps = {}) {
   const { state } = useRunStore()
   const runId = runIdProp ?? state.runState?.run_id ?? null
+  const { uiLanguage } = state
 
   const [log, setLog] = useState<RunLog | null>(null)
   const [loading, setLoading] = useState(false)
@@ -476,7 +491,7 @@ export default function RunLogViewer({ runId: runIdProp }: RunLogViewerProps = {
           gap: '8px',
         }}
       >
-        <span>RUN LOG</span>
+        <span>{t(LABELS.runLog, uiLanguage)}</span>
         <button
           onClick={handleLoad}
           disabled={!runId || loading}
@@ -490,7 +505,7 @@ export default function RunLogViewer({ runId: runIdProp }: RunLogViewerProps = {
             borderRadius: '3px',
           }}
         >
-          {loading ? 'Loading…' : 'Load'}
+          {loading ? t(LABELS.loading, uiLanguage) : t(LABELS.load, uiLanguage)}
         </button>
         {runId && <span style={{ color: C.faint, fontSize: '0.85em' }}>{runId}</span>}
       </div>
@@ -501,17 +516,17 @@ export default function RunLogViewer({ runId: runIdProp }: RunLogViewerProps = {
       )}
 
       {/* Timeline */}
-      {log && <Timeline log={log} />}
+      {log && <Timeline log={log} lang={uiLanguage} />}
 
       {/* Empty-state prompts */}
       {!log && !error && !loading && runId && (
         <div style={{ padding: '6px 8px', color: C.faint, fontSize: '0.85em' }}>
-          Click Load to view the persisted run log.
+          {t(LABELS.clickLoad, uiLanguage)}
         </div>
       )}
       {!runId && (
         <div style={{ padding: '6px 8px', color: C.faint, fontSize: '0.85em' }}>
-          No active run.
+          {t(LABELS.noActiveRun, uiLanguage)}
         </div>
       )}
     </div>

@@ -20,6 +20,7 @@
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MergedCoordinatorProvider, useMergedCoordinator } from '../src/state/mergedCoordinator'
+import { LanguageProvider } from '../src/state/language'
 import { RunStoreProvider } from '../src/state/runStore'
 import { ProposalStoreProvider } from '../src/state/proposalStore'
 import MergedProposalPanel from '../src/components/merged/MergedProposalPanel'
@@ -311,7 +312,8 @@ function renderCenterPanel() {
   // moved to the RIGHT panel (MergedProposalPanel). Both share the coordinator;
   // the center's <MapSurface/> needs a RunStoreProvider.
   render(
-    <MergedCoordinatorProvider>
+    <LanguageProvider initialLanguage="en">
+      <MergedCoordinatorProvider>
       <RunStoreProvider>
         <ProposalStoreProvider>
         <Capture />
@@ -319,7 +321,8 @@ function renderCenterPanel() {
         <MergedProposalPanel />
         </ProposalStoreProvider>
       </RunStoreProvider>
-    </MergedCoordinatorProvider>,
+    </MergedCoordinatorProvider>
+    </LanguageProvider>,
   )
 
   return coordinatorRef

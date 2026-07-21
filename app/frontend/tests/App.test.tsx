@@ -43,7 +43,8 @@ describe('App — backend health display', () => {
     // (an AppShell-only string) isn't visible until switched to trigger mode.
     expect(await screen.findByTestId('proposal-shell')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Trigger' }))
+    // The app defaults to Japanese, so the Trigger mode button reads トリガー.
+    fireEvent.click(screen.getByRole('button', { name: 'トリガー' }))
 
     // After the async fetch resolves — health status appears in the AppShell header
     expect(await screen.findByText('Backend: ok — aica-api')).toBeInTheDocument()

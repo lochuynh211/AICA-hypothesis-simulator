@@ -27,6 +27,7 @@ import type { TraceEntry, RecoveryOption, RestSpot } from '../../api/types'
 import { getScenario, getRestSpots } from '../../api/client'
 import MapSurface from '../map/MapSurface'
 import { t } from '../../i18n/t'
+import { useLanguage } from '../../state/language'
 
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
 
@@ -41,6 +42,13 @@ const LABELS = {
   tooFar: { ja: '遠すぎる', en: 'too far' },
   restAccepted: { ja: '休憩を受け入れました。提案（右）を確認して「続行」を押してください。', en: 'Rest accepted — inspect the proposal (right), then press Continue.' },
   loadError: { ja: '休憩スポットの読み込みに失敗しました', en: 'Failed to load rest spots' },
+  play: { ja: '再生', en: 'Play' },
+  continue: { ja: '▶ 続行', en: '▶ Continue' },
+  pause: { ja: '一時停止', en: 'Pause' },
+  step: { ja: 'ステップ', en: 'Step' },
+  reset: { ja: '↺ リセット', en: '↺ Reset' },
+  speed: { ja: '速度', en: 'Speed' },
+  loadingSpots: { ja: '休憩スポットを読み込み中…', en: 'Loading rest spots…' },
 }
 
 const num = (v: unknown): number | null => (typeof v === 'number' ? v : null)
@@ -115,6 +123,7 @@ function buildLiveTimeline(
 export default function MergedCenterPanel() {
   const coordinator = useMergedCoordinator()
   const { state } = coordinator
+  const { lang } = useLanguage()
   // The setup panel mirrors the route + rest-filter fields into this scoped
   // runStore (whole shell is wrapped) — read them for the road bands + the
   // rest-spot fetch filters.
@@ -218,7 +227,7 @@ export default function MergedCenterPanel() {
     coordinator.reset()
   }
 
-  const playLabel = hasRun && !state.running ? '▶ Continue' : 'Play'
+  const playLabel = hasRun && !state.running ? t(LABELS.continue, lang) : t(LABELS.play, lang)
 
   return (
     <div
@@ -229,8 +238,8 @@ export default function MergedCenterPanel() {
       {hasQuickview && (
         <section data-testid="quickview-strip" style={{ flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
-            <p style={{ fontSize: '0.72em', fontWeight: 700, color: '#6b7280', margin: '0 0 2px' }}>{t(LABELS.title, 'en')}</p>
-            <p style={{ fontSize: '0.68em', color: '#94a3b8', margin: 0 }}>{t(LABELS.hint, 'en')}</p>
+            <p style={{ fontSize: '0.72em', fontWeight: 700, color: '#6b7280', margin: '0 0 2px' }}>{t(LABELS.title, lang)}</p>
+            <p style={{ fontSize: '0.68em', color: '#94a3b8', margin: 0 }}>{t(LABELS.hint, lang)}</p>
           </div>
           <ScoreTimeline
             data={quickviewTimeline!}
@@ -266,7 +275,7 @@ export default function MergedCenterPanel() {
           {playLabel}
         </button>
         <button type="button" data-testid="merged-pause-button" disabled={!state.running} onClick={() => coordinator.pause()}>
-          Pause
+          {t(LABELS.pause, lang)}
         </button>
         <button
           type="button"
@@ -274,14 +283,14 @@ export default function MergedCenterPanel() {
           disabled={!hasRun || state.running || state.completed}
           onClick={() => coordinator.step()}
         >
-          Step
+          {t(LABELS.step, lang)}
         </button>
         <button type="button" data-testid="merged-reset-button" disabled={!hasRun && !state.error} onClick={handleReset}>
-          ↺ Reset
+          {t(LABELS.reset, lang)}
         </button>
         {/* Animation speed (1×/2×/4×) — paces the tick loop (owner review). */}
         <label style={{ fontSize: '0.78em', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '4px' }}>
-          Speed
+          {t(LABELS.speed, lang)}
           <select
             data-testid="merged-speed-select"
             value={state.speed}
@@ -296,7 +305,7 @@ export default function MergedCenterPanel() {
 
       {/* 3. ANIMATION — identical to the quickview + a moving playhead, no legend. */}
       <div style={{ flexShrink: 0 }}>
-        <p style={{ fontSize: '0.72em', fontWeight: 700, color: '#6b7280', margin: '0 0 2px' }}>{t(LABELS.animation, 'en')}</p>
+        <p style={{ fontSize: '0.72em', fontWeight: 700, color: '#6b7280', margin: '0 0 2px' }}>{t(LABELS.animation, lang)}</p>
         <ScoreTimeline data={liveTimeline} revealFraction={revealFraction} showPlayhead testIds={{ root: 'merged-timeline' }} />
       </div>
 
@@ -308,13 +317,13 @@ export default function MergedCenterPanel() {
 
       {restDecided && showRestAccept && (
         <p data-testid="rest-accepted-hint" style={{ fontSize: '0.78em', color: '#0f766e', margin: 0, flexShrink: 0 }}>
-          ✓ {t(LABELS.restAccepted, 'en')}
+          ✓ {t(LABELS.restAccepted, lang)}
         </p>
       )}
 
       {/* 4. GOOGLE MAP + on-map REST overlay. */}
       <div style={{ flex: '1 1 auto', minHeight: '240px', display: 'flex', flexDirection: 'column' }}>
-        <p style={{ fontSize: '0.72em', fontWeight: 700, color: '#6b7280', margin: '0 0 2px', flexShrink: 0 }}>{t(LABELS.map, 'en')}</p>
+        <p style={{ fontSize: '0.72em', fontWeight: 700, color: '#6b7280', margin: '0 0 2px', flexShrink: 0 }}>{t(LABELS.map, lang)}</p>
         <div data-testid="merged-map-surface" style={{ flex: '1 1 auto', minHeight: '220px', position: 'relative' }}>
           <MapSurface
             fractionOverride={state.latestTrigger?.route_fraction ?? undefined}
@@ -325,10 +334,10 @@ export default function MergedCenterPanel() {
 
           {showRestOverlay && (
             <div data-testid="rest-accept-panel" style={restOverlayStyle}>
-              <p style={{ fontSize: '0.85em', fontWeight: 700, margin: '0 0 2px', color: '#0f766e' }}>🛑 {t(LABELS.restTitle, 'en')}</p>
-              <p style={{ fontSize: '0.78em', color: '#334155', margin: '0 0 8px' }}>{t(LABELS.restPrompt, 'en')}</p>
+              <p style={{ fontSize: '0.85em', fontWeight: 700, margin: '0 0 2px', color: '#0f766e' }}>🛑 {t(LABELS.restTitle, lang)}</p>
+              <p style={{ fontSize: '0.78em', color: '#334155', margin: '0 0 8px' }}>{t(LABELS.restPrompt, lang)}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '8px' }}>
-                {restSpots.length === 0 && <span style={{ fontSize: '0.78em', color: '#94a3b8' }}>Loading rest spots…</span>}
+                {restSpots.length === 0 && <span style={{ fontSize: '0.78em', color: '#94a3b8' }}>{t(LABELS.loadingSpots, lang)}</span>}
                 {restSpots.map((spot) => {
                   const unreachable = spot.reachable === false
                   return (
@@ -340,22 +349,22 @@ export default function MergedCenterPanel() {
                       onClick={() => void handleChooseSpot(spot)}
                       style={{ ...spotButtonStyle, ...(unreachable ? spotButtonUnreachable : {}) }}
                     >
-                      <span>📍 {t(spot.label, 'en')}</span>
+                      <span>📍 {t(spot.label, lang)}</span>
                       <span style={{ fontSize: '0.86em', color: unreachable ? '#b91c1c' : '#0d9488', fontWeight: 400 }}>
                         {spot.distance_km != null ? `${spot.distance_km} km` : ''}
                         {spot.eta_min != null ? ` · ETA ${spot.eta_min} min` : ''}
-                        {unreachable ? ` · ${t(LABELS.tooFar, 'en')}` : ''}
+                        {unreachable ? ` · ${t(LABELS.tooFar, lang)}` : ''}
                       </span>
                     </button>
                   )
                 })}
               </div>
               <button type="button" data-testid="rest-reject-button" disabled={submittingRest} onClick={() => void handleReject()} style={rejectButtonStyle}>
-                {t(LABELS.reject, 'en')}
+                {t(LABELS.reject, lang)}
               </button>
               {restLoadError && (
                 <p role="alert" style={{ color: '#dc2626', fontSize: '0.78em', margin: '6px 0 0' }}>
-                  {t(LABELS.loadError, 'en')}: {restLoadError}
+                  {t(LABELS.loadError, lang)}: {restLoadError}
                 </p>
               )}
             </div>

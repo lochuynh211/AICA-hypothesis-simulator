@@ -16,6 +16,11 @@ import { getScenario } from '../../api/client'
 import type { RouteSegment } from '../../api/types'
 import { t } from '../../i18n/t'
 
+const LABELS = {
+  nowPlayingRecovery: { ja: '再生中・回復', en: 'Now playing · recovery' },
+  restStop: { ja: '休憩施設', en: 'Rest stop' },
+}
+
 export default function MusicOverlay() {
   const { state } = useRunStore()
   const { selectedScenarioId, runState, uiLanguage } = state
@@ -62,7 +67,7 @@ export default function MusicOverlay() {
       <span aria-hidden style={{ fontSize: '1.1em' }}>🎵</span>
       <div style={{ overflow: 'hidden' }}>
         <div style={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#5bc0be', fontWeight: 700 }}>
-          Now playing · recovery
+          {t(LABELS.nowPlayingRecovery, uiLanguage)}
         </div>
         <div
           style={{
@@ -73,7 +78,7 @@ export default function MusicOverlay() {
             textOverflow: 'ellipsis',
           }}
         >
-          {restName || 'Rest stop'}
+          {restName || t(LABELS.restStop, uiLanguage)}
         </div>
       </div>
     </div>

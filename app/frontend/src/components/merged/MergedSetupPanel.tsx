@@ -54,11 +54,59 @@ import { buildMergedPlan } from '../../api/mergedClient'
 import { useMergedCoordinator } from '../../state/mergedCoordinator'
 import { useRunStore } from '../../state/runStore'
 import { useProposalStore } from '../../state/proposalStore'
+import { useLanguage } from '../../state/language'
+import { t, type BilingualLabel } from '../../i18n/t'
 import RestCeilingEditor from '../setup/RestCeilingEditor'
 import RestSpacingEditor from '../setup/RestSpacingEditor'
 
 const DEFAULT_PRESET_ID = 'preset-journey-a-1-cruising-fresh'
 type EditKey = 'situation' | 'profile' | 'trigger' | 'service' | 'content' | null
+
+const LABELS = {
+  setup: { ja: 'セットアップ', en: 'Setup' },
+  loading: { ja: '読み込み中…', en: 'Loading…' },
+  selectPreset: { ja: '— プリセットルートを選択 —', en: '— Select a preset route —' },
+  select: { ja: '— 選択 —', en: '— Select —' },
+  routePreset: { ja: 'ルートプリセット', en: 'Route preset' },
+  customRoute: { ja: 'カスタムルート（Google マップ）', en: 'Custom route (Google Maps)' },
+  mapsKey: { ja: 'マップ API キー', en: 'Maps API key' },
+  fromEnv: { ja: '· 環境変数から', en: '· from environment' },
+  mapsKeyPlaceholder: { ja: 'Google マップ API キー', en: 'Google Maps API key' },
+  start: { ja: '出発地', en: 'Start' },
+  end: { ja: '目的地', en: 'End' },
+  startPlaceholder: { ja: '例: 東京駅', en: 'e.g. Tokyo Station' },
+  endPlaceholder: { ja: '例: 大阪駅', en: 'e.g. Osaka Station' },
+  analyzing: { ja: '解析中…', en: 'Analyzing…' },
+  analyzeRoute: { ja: 'ルートを解析', en: 'Analyze Route' },
+  tickDuration: { ja: 'ティック長（秒）', en: 'Tick duration (seconds)' },
+  situationScenario: { ja: '状況とシナリオ', en: 'Situation & Scenario' },
+  selectScenario: { ja: '— シナリオを選択 —', en: '— Select a scenario —' },
+  edit: { ja: '編集', en: 'Edit' },
+  driverProfile: { ja: 'ドライバープロファイル', en: 'Driver profile' },
+  triggerPackage: { ja: 'トリガーパッケージ', en: 'Trigger package' },
+  servicePackage: { ja: 'サービス提案パッケージ', en: 'Service proposal package' },
+  contentPackage: { ja: 'コンテンツ提案パッケージ', en: 'Content proposal package' },
+  ready: { ja: '準備完了 — 中央パネルの「再生」を押してください。', en: 'Ready — press Play in the center panel.' },
+  incomplete: { ja: 'ルート・シナリオ・3つのパッケージをすべて選択してください。', en: 'Select a route, scenario, and all three packages.' },
+  situationTitle: { ja: '状況', en: 'Situation' },
+  situationNote: {
+    ja: '眠気・疲労・単調さ・渋滞・道路はティックエンジンがライブで計算します（ここでは設定しません）。',
+    en: 'Drowsiness, fatigue, monotony, traffic & road are computed LIVE by the tick engine — not set here.',
+  },
+  groupFixed: { ja: 'A · 固定条件', en: 'A · Fixed conditions' },
+  routeConditions: { ja: 'ルート条件（{km} km のルートに描画）', en: 'Route conditions (painted onto the {km} km route)' },
+  jamSpeedNote: {
+    ja: '渋滞速度は下の「B · 道路種別ごとのライブ速度 → 渋滞」で設定します（{kph} km/h）。',
+    en: 'Traffic-jam speed is set below in "B · Live speed by road type → Traffic jam" ({kph} km/h).',
+  },
+  groupSpeed: { ja: 'B · 道路種別ごとのライブ速度', en: 'B · Live speed by road type' },
+  groupSimulated: { ja: 'C · シミュレートされたドライバー状態', en: 'C · Simulated driver state' },
+  selectScenarioToEdit: { ja: 'シナリオを選ぶと状況を編集できます。', en: 'Select a scenario to edit its situation.' },
+  profileTitle: { ja: 'ドライバープロファイル — 嗜好と履歴', en: 'Driver profile — preference & history' },
+  triggerAlgorithm: { ja: 'トリガーアルゴリズム', en: 'Trigger algorithm' },
+  selectServiceFirst: { ja: 'まずサービスパッケージを選択してください。', en: 'Select a service package first.' },
+  selectContentFirst: { ja: 'まずコンテンツパッケージを選択してください。', en: 'Select a content package first.' },
+}
 
 // Scenarios hidden from the Combined scenario picker (owner review): the uc02
 // "Aoi Sato" monotony scenario is kept on disk (the monotony path + its backend
@@ -66,7 +114,7 @@ type EditKey = 'situation' | 'profile' | 'trigger' | 'service' | 'content' | nul
 const HIDDEN_SCENARIO_IDS = new Set(['uc02_monotony_v0_1'])
 
 /** One distinct driver profile sourced from a committed preset (feature 020). */
-type ProfileOption = { key: string; label: string; profile: DriverProfile }
+type ProfileOption = { key: string; label: BilingualLabel; profile: DriverProfile }
 
 // The setup-time proposal situation fields shown in the merged Situation popup —
 // the SCORED fields that are NOT computed live by the tick engine (drowsiness /
@@ -90,6 +138,7 @@ export default function MergedSetupPanel() {
   const coordinator = useMergedCoordinator()
   const runStore = useRunStore()
   const proposalStore = useProposalStore()
+  const { lang } = useLanguage()
   const rs = runStore.state
   const ps = proposalStore.state
 
@@ -200,7 +249,7 @@ export default function MergedSetupPanel() {
     for (const d of details) {
       if (!d) continue
       const key = profileKey(d.world.driver_profile)
-      if (!seen.has(key)) seen.set(key, { key, label: d.label.en, profile: d.world.driver_profile })
+      if (!seen.has(key)) seen.set(key, { key, label: d.label, profile: d.world.driver_profile })
     }
     setProfileOptions(Array.from(seen.values()))
   }
@@ -393,26 +442,26 @@ export default function MergedSetupPanel() {
 
   return (
     <div data-testid="merged-setup-panel" className="setup-panel">
-      <h2>Setup</h2>
+      <h2>{t(LABELS.setup, lang)}</h2>
 
       {/* ── Route ─────────────────────────────────────────────────────────── */}
-      <label htmlFor="merged-route-preset-select" style={fieldLabel}>Route preset</label>
+      <label htmlFor="merged-route-preset-select" style={fieldLabel}>{t(LABELS.routePreset, lang)}</label>
       <select id="merged-route-preset-select" data-testid="merged-route-preset-select" style={selectStyle}
         value={selectedRoutePresetId ?? ''} onChange={(e) => handleSelectRoutePreset(e.target.value)}
         disabled={routePresets.length === 0 || loadingRoute}>
-        <option value="">{routePresets.length === 0 ? 'Loading…' : '— Select a preset route —'}</option>
-        {routePresets.map((p) => <option key={p.id} value={p.id}>{p.label.en} ({p.distance_km} km, ~{p.duration_min} min)</option>)}
+        <option value="">{routePresets.length === 0 ? t(LABELS.loading, lang) : t(LABELS.selectPreset, lang)}</option>
+        {routePresets.map((p) => <option key={p.id} value={p.id}>{t(p.label, lang)} ({p.distance_km} km, ~{p.duration_min} min)</option>)}
       </select>
       <details style={{ marginTop: '6px' }} open={rs.mapsKey !== ''}>
-        <summary style={{ fontSize: '0.8em', color: '#475569', cursor: 'pointer' }}>Custom route (Google Maps)</summary>
-        <label htmlFor="merged-maps-key" style={fieldLabel}>Maps API key {rs.mapsKey !== '' && <span style={{ color: '#16a34a', fontWeight: 400 }}>· from environment</span>}</label>
-        <input id="merged-maps-key" type="password" autoComplete="off" style={inputStyle} value={rs.mapsKey} onChange={(e) => runStore.dispatch({ type: 'SET_MAPS_KEY', key: e.target.value })} placeholder="Google Maps API key" />
-        <label htmlFor="merged-maps-start" style={fieldLabel}>Start</label>
-        <input id="merged-maps-start" type="text" style={inputStyle} value={mapsStart} onChange={(e) => setMapsStart(e.target.value)} placeholder="e.g. Tokyo Station" />
-        <label htmlFor="merged-maps-end" style={fieldLabel}>End</label>
-        <input id="merged-maps-end" type="text" style={inputStyle} value={mapsEnd} onChange={(e) => setMapsEnd(e.target.value)} placeholder="e.g. Osaka Station" />
+        <summary style={{ fontSize: '0.8em', color: '#475569', cursor: 'pointer' }}>{t(LABELS.customRoute, lang)}</summary>
+        <label htmlFor="merged-maps-key" style={fieldLabel}>{t(LABELS.mapsKey, lang)} {rs.mapsKey !== '' && <span style={{ color: '#16a34a', fontWeight: 400 }}>{t(LABELS.fromEnv, lang)}</span>}</label>
+        <input id="merged-maps-key" type="password" autoComplete="off" style={inputStyle} value={rs.mapsKey} onChange={(e) => runStore.dispatch({ type: 'SET_MAPS_KEY', key: e.target.value })} placeholder={t(LABELS.mapsKeyPlaceholder, lang)} />
+        <label htmlFor="merged-maps-start" style={fieldLabel}>{t(LABELS.start, lang)}</label>
+        <input id="merged-maps-start" type="text" style={inputStyle} value={mapsStart} onChange={(e) => setMapsStart(e.target.value)} placeholder={t(LABELS.startPlaceholder, lang)} />
+        <label htmlFor="merged-maps-end" style={fieldLabel}>{t(LABELS.end, lang)}</label>
+        <input id="merged-maps-end" type="text" style={inputStyle} value={mapsEnd} onChange={(e) => setMapsEnd(e.target.value)} placeholder={t(LABELS.endPlaceholder, lang)} />
         <button type="button" data-testid="merged-analyze-route" style={{ width: '100%', marginTop: '6px' }} disabled={analyzing} onClick={() => void handleAnalyzeMaps()}>
-          {analyzing ? 'Analyzing…' : 'Analyze Route'}
+          {analyzing ? t(LABELS.analyzing, lang) : t(LABELS.analyzeRoute, lang)}
         </button>
         {mapsErrorMsg && <p role="alert" style={{ color: '#dc2626', fontSize: '0.8em' }}>{mapsErrorMsg}</p>}
       </details>
@@ -436,7 +485,7 @@ export default function MergedSetupPanel() {
           center panel's rest-spot fetch + this panel's run-plan build read. */}
       <RestCeilingEditor />
       <RestSpacingEditor />
-      <label htmlFor="merged-tick-seconds" style={fieldLabel}>Tick duration (seconds)</label>
+      <label htmlFor="merged-tick-seconds" style={fieldLabel}>{t(LABELS.tickDuration, lang)}</label>
       <input
         id="merged-tick-seconds"
         data-testid="merged-tick-seconds-input"
@@ -452,102 +501,102 @@ export default function MergedSetupPanel() {
       />
 
       {/* ── Situation & Scenario ──────────────────────────────────────────── */}
-      <label htmlFor="merged-scenario-select" style={fieldLabel}>Situation &amp; Scenario</label>
+      <label htmlFor="merged-scenario-select" style={fieldLabel}>{t(LABELS.situationScenario, lang)}</label>
       <div style={rowStyle}>
         <select id="merged-scenario-select" data-testid="merged-scenario-select" style={selectStyle} value={rs.selectedScenarioId ?? ''}
           onChange={(e) => e.target.value && runStore.dispatch({ type: 'SELECT_SCENARIO', id: e.target.value })} disabled={compatibleScenarios.length === 0}>
-          <option value="">{compatibleScenarios.length === 0 ? 'Loading…' : '— Select a scenario —'}</option>
+          <option value="">{compatibleScenarios.length === 0 ? t(LABELS.loading, lang) : t(LABELS.selectScenario, lang)}</option>
           {compatibleScenarios.map((s) => <option key={s.id} value={s.id}>{s.persona_label} — {s.review_focus}</option>)}
         </select>
-        <button type="button" style={editBtnStyle} data-testid="edit-situation" onClick={() => setOpenEdit('situation')}>Edit</button>
+        <button type="button" style={editBtnStyle} data-testid="edit-situation" onClick={() => setOpenEdit('situation')}>{t(LABELS.edit, lang)}</button>
       </div>
 
       {/* ── Driver profile (from the 32 presets) ──────────────────────────── */}
-      <label htmlFor="merged-profile-select" style={fieldLabel}>Driver profile</label>
+      <label htmlFor="merged-profile-select" style={fieldLabel}>{t(LABELS.driverProfile, lang)}</label>
       <div style={rowStyle}>
         <select id="merged-profile-select" data-testid="merged-profile-select" style={selectStyle} value={selectedProfileKey ?? ''}
           onChange={(e) => handleSelectProfile(e.target.value)} disabled={profileOptions.length === 0}>
-          {profileOptions.length === 0 && <option value="">Loading…</option>}
-          {profileOptions.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
+          {profileOptions.length === 0 && <option value="">{t(LABELS.loading, lang)}</option>}
+          {profileOptions.map((o) => <option key={o.key} value={o.key}>{t(o.label, lang)}</option>)}
         </select>
-        <button type="button" style={editBtnStyle} data-testid="edit-profile" onClick={() => setOpenEdit('profile')}>Edit</button>
+        <button type="button" style={editBtnStyle} data-testid="edit-profile" onClick={() => setOpenEdit('profile')}>{t(LABELS.edit, lang)}</button>
       </div>
 
       {/* ── Trigger / Service / Content packages ──────────────────────────── */}
-      <label htmlFor="merged-trigger-package-select" style={fieldLabel}>Trigger package</label>
+      <label htmlFor="merged-trigger-package-select" style={fieldLabel}>{t(LABELS.triggerPackage, lang)}</label>
       <div style={rowStyle}>
         <select id="merged-trigger-package-select" data-testid="merged-trigger-package-select" style={selectStyle} value={rs.selectedPackageId ?? ''}
           onChange={(e) => e.target.value && runStore.dispatch({ type: 'SELECT_PACKAGE', id: e.target.value })} disabled={triggerPackages.length === 0}>
-          <option value="">{triggerPackages.length === 0 ? 'Loading…' : '— Select —'}</option>
-          {triggerPackages.map((p) => <option key={p.id} value={p.id}>{p.label.en} ({p.version})</option>)}
+          <option value="">{triggerPackages.length === 0 ? t(LABELS.loading, lang) : t(LABELS.select, lang)}</option>
+          {triggerPackages.map((p) => <option key={p.id} value={p.id}>{t(p.label, lang)} ({p.version})</option>)}
         </select>
-        <button type="button" style={editBtnStyle} data-testid="edit-trigger" onClick={() => setOpenEdit('trigger')}>Edit</button>
+        <button type="button" style={editBtnStyle} data-testid="edit-trigger" onClick={() => setOpenEdit('trigger')}>{t(LABELS.edit, lang)}</button>
       </div>
 
-      <label htmlFor="merged-service-package-select" style={fieldLabel}>Service proposal package</label>
+      <label htmlFor="merged-service-package-select" style={fieldLabel}>{t(LABELS.servicePackage, lang)}</label>
       <div style={rowStyle}>
         <select id="merged-service-package-select" data-testid="merged-service-package-select" style={selectStyle} value={ps.servicePackageId ?? ''}
           onChange={(e) => e.target.value && proposalStore.dispatch({ type: 'SET_SERVICE_PACKAGE', packageId: e.target.value })} disabled={servicePackages.length === 0}>
-          <option value="">{servicePackages.length === 0 ? 'Loading…' : '— Select —'}</option>
+          <option value="">{servicePackages.length === 0 ? t(LABELS.loading, lang) : t(LABELS.select, lang)}</option>
           {servicePackages.map((p) => <option key={p.id} value={p.id}>{p.id}</option>)}
         </select>
-        <button type="button" style={editBtnStyle} data-testid="edit-service" onClick={() => setOpenEdit('service')}>Edit</button>
+        <button type="button" style={editBtnStyle} data-testid="edit-service" onClick={() => setOpenEdit('service')}>{t(LABELS.edit, lang)}</button>
       </div>
 
-      <label htmlFor="merged-content-package-select" style={fieldLabel}>Content proposal package</label>
+      <label htmlFor="merged-content-package-select" style={fieldLabel}>{t(LABELS.contentPackage, lang)}</label>
       <div style={rowStyle}>
         <select id="merged-content-package-select" data-testid="merged-content-package-select" style={selectStyle} value={ps.contentPackageId ?? ''}
           onChange={(e) => e.target.value && proposalStore.dispatch({ type: 'SET_CONTENT_PACKAGE', packageId: e.target.value })} disabled={contentPackages.length === 0}>
-          <option value="">{contentPackages.length === 0 ? 'Loading…' : '— Select —'}</option>
+          <option value="">{contentPackages.length === 0 ? t(LABELS.loading, lang) : t(LABELS.select, lang)}</option>
           {contentPackages.map((p) => <option key={p.id} value={p.id}>{p.id}</option>)}
         </select>
-        <button type="button" style={editBtnStyle} data-testid="edit-content" onClick={() => setOpenEdit('content')}>Edit</button>
+        <button type="button" style={editBtnStyle} data-testid="edit-content" onClick={() => setOpenEdit('content')}>{t(LABELS.edit, lang)}</button>
       </div>
 
       {error && <ErrorNotice testid="merged-setup-error" message={error} onDismiss={() => setError(null)} />}
       <p style={{ fontSize: '0.72em', color: '#94a3b8', marginTop: '10px' }}>
-        {isComplete ? 'Ready — press Play in the center panel.' : 'Select a route, scenario, and all three packages.'}
+        {isComplete ? t(LABELS.ready, lang) : t(LABELS.incomplete, lang)}
       </p>
 
       {/* ── Situation Edit popup (merged A/B/C fields, reused verbatim) ─────── */}
-      <Modal open={openEdit === 'situation'} title="Situation" size="wide" onClose={() => setOpenEdit(null)}>
+      <Modal open={openEdit === 'situation'} title={t(LABELS.situationTitle, lang)} size="wide" onClose={() => setOpenEdit(null)}>
         <p style={{ ...summaryRow, color: '#64748b' }}>
-          Drowsiness, fatigue, monotony, traffic &amp; road are computed LIVE by the tick engine — not set here.
+          {t(LABELS.situationNote, lang)}
         </p>
         {scenarioDef ? (
           <>
-            <div style={groupLabel}>A · Fixed conditions</div>
+            <div style={groupLabel}>{t(LABELS.groupFixed, lang)}</div>
             <FixedConditionsSection scenario={scenarioDef} hideTitle />
             <SituationFieldRows fields={SITUATION_FIELDS.filter((f) => MERGED_SITUATION_KEYS.includes(f.key))} />
-            <p style={{ ...fieldLabel, marginTop: '14px' }}>Route conditions (painted onto the {totalKm.toFixed(0)} km route)</p>
+            <p style={{ ...fieldLabel, marginTop: '14px' }}>{t(LABELS.routeConditions, lang).replace('{km}', totalKm.toFixed(0))}</p>
             <RouteConditionsPainter totalKm={totalKm} mountainRange={mountainRange} onMountainRangeChange={setMountainRange} jamRange={jamRange} onJamRangeChange={setJamRange} />
             <p style={{ fontSize: '0.72em', color: '#94a3b8', margin: '4px 0 0' }}>
-              Traffic-jam speed is set below in “B · Live speed by road type → Traffic jam” ({jamSpeedKph} km/h).
+              {t(LABELS.jamSpeedNote, lang).replace('{kph}', String(jamSpeedKph))}
             </p>
 
-            <div style={groupLabel}>B · Live speed by road type</div>
+            <div style={groupLabel}>{t(LABELS.groupSpeed, lang)}</div>
             <SpeedProfileSection scenario={scenarioDef} hideTitle />
 
-            <div style={groupLabel}>C · Simulated driver state</div>
+            <div style={groupLabel}>{t(LABELS.groupSimulated, lang)}</div>
             <SimulatedSignalsSection scenario={scenarioDef} hideTitle />
           </>
-        ) : <p style={summaryRow}>Select a scenario to edit its situation.</p>}
+        ) : <p style={summaryRow}>{t(LABELS.selectScenarioToEdit, lang)}</p>}
       </Modal>
 
       {/* ── Driver profile Edit popup (preference + history, reused verbatim) ── */}
-      <Modal open={openEdit === 'profile'} title="Driver profile — preference & history" size="wide" onClose={() => setOpenEdit(null)}>
+      <Modal open={openEdit === 'profile'} title={t(LABELS.profileTitle, lang)} size="wide" onClose={() => setOpenEdit(null)}>
         <PreferenceHistorySection />
       </Modal>
 
       {/* ── Package Edit popups (reused verbatim from Trigger / Proposal) ───── */}
-      <Modal open={openEdit === 'trigger'} title="Trigger algorithm" size="wide" onClose={() => setOpenEdit(null)}>
+      <Modal open={openEdit === 'trigger'} title={t(LABELS.triggerAlgorithm, lang)} size="wide" onClose={() => setOpenEdit(null)}>
         <AlgorithmFormulationPanel />
       </Modal>
-      <Modal open={openEdit === 'service'} title="Service proposal package" size="wide" onClose={() => setOpenEdit(null)}>
-        {selService ? <ServiceSetupSection manifest={selService} /> : <p style={summaryRow}>Select a service package first.</p>}
+      <Modal open={openEdit === 'service'} title={t(LABELS.servicePackage, lang)} size="wide" onClose={() => setOpenEdit(null)}>
+        {selService ? <ServiceSetupSection manifest={selService} /> : <p style={summaryRow}>{t(LABELS.selectServiceFirst, lang)}</p>}
       </Modal>
-      <Modal open={openEdit === 'content'} title="Content proposal package" size="wide" onClose={() => setOpenEdit(null)}>
-        {selContent ? <ContentSetupSection manifest={selContent} /> : <p style={summaryRow}>Select a content package first.</p>}
+      <Modal open={openEdit === 'content'} title={t(LABELS.contentPackage, lang)} size="wide" onClose={() => setOpenEdit(null)}>
+        {selContent ? <ContentSetupSection manifest={selContent} /> : <p style={summaryRow}>{t(LABELS.selectContentFirst, lang)}</p>}
       </Modal>
     </div>
   )

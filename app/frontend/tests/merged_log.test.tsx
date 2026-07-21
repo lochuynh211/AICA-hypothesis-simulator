@@ -12,6 +12,7 @@
 import { render, screen, act } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MergedCoordinatorProvider, useMergedCoordinator } from '../src/state/mergedCoordinator'
+import { LanguageProvider } from '../src/state/language'
 import type { MergedTickResponse } from '../src/api/mergedClient'
 import type { DecisionResult } from '../src/api/types'
 import type { ProposalRunLog } from '../src/api/proposalClient'
@@ -293,10 +294,12 @@ function renderLogPanel() {
   }
 
   const utils = render(
-    <MergedCoordinatorProvider>
+    <LanguageProvider initialLanguage="en">
+      <MergedCoordinatorProvider>
       <Capture />
       <MergedLogPanel />
-    </MergedCoordinatorProvider>,
+    </MergedCoordinatorProvider>
+    </LanguageProvider>,
   )
 
   return { coordinatorRef, ...utils }

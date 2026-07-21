@@ -89,7 +89,7 @@ const mockSchema: FeedbackSchema = {
     },
     {
       key: 'overall_comments',
-      label: { ja: 'コメント', en: 'Overall Comments' },
+      label: { ja: '総評', en: 'Overall Comments' },
       type: 'text',
     },
     {
@@ -166,13 +166,13 @@ describe('FeedbackForm', () => {
     expect(screen.getByText(/承諾理由/)).toBeInTheDocument()
 
     // text field — textarea — JA label
-    expect(screen.getByText(/コメント/)).toBeInTheDocument()
+    expect(screen.getByText(/総評/)).toBeInTheDocument()
 
     // scale field — JA label
     expect(screen.getByText(/満足度/)).toBeInTheDocument()
 
     // Always-present free-text comment field (exact label "Comment")
-    expect(screen.getByLabelText('Comment', { exact: true })).toBeInTheDocument()
+    expect(screen.getByLabelText('コメント', { exact: true })).toBeInTheDocument()
   })
 
   it('submits feedback with the correct target on form submit', async () => {
@@ -198,7 +198,7 @@ describe('FeedbackForm', () => {
     await screen.findByText(/提案タイミング/)
 
     // Submit the form without filling any field (all optional)
-    const submitButton = screen.getByRole('button', { name: /submit/i })
+    const submitButton = screen.getByRole('button', { name: /フィードバックを送信/ })
     fireEvent.click(submitButton)
 
     await waitFor(() => {
@@ -228,7 +228,7 @@ describe('FeedbackForm', () => {
     await waitFor(() => expect(client.getFeedbackSchema).toHaveBeenCalled())
     await screen.findByText(/提案タイミング/)
 
-    fireEvent.click(screen.getByRole('button', { name: /submit/i }))
+    fireEvent.click(screen.getByRole('button', { name: /フィードバックを送信/ }))
 
     await screen.findByTestId('feedback-success')
   })
@@ -253,7 +253,7 @@ describe('FeedbackForm', () => {
     await waitFor(() => expect(client.getFeedbackSchema).toHaveBeenCalled())
     await screen.findByText(/提案タイミング/)
 
-    fireEvent.click(screen.getByRole('button', { name: /submit/i }))
+    fireEvent.click(screen.getByRole('button', { name: /フィードバックを送信/ }))
 
     // Validation errors must appear in the document
     await waitFor(() => {
@@ -427,6 +427,6 @@ describe('DecisionTracePanel — I-1 regression (per-tick feedback affordance)',
     // The per-tick "Give feedback" button must be visible for tick 0.
     const btn = await screen.findByTestId('feedback-toggle-tick-0')
     expect(btn).toBeInTheDocument()
-    expect(btn).toHaveAccessibleName(/give feedback on tick 0/i)
+    expect(btn).toHaveAccessibleName(/ティック0にフィードバックする/)
   })
 })

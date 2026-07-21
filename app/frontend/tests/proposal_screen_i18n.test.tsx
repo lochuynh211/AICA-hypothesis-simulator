@@ -6,7 +6,26 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ProposalStoreProvider } from '../src/state/proposalStore'
+import { LanguageProvider } from '../src/state/language'
+import { ProposalLanguageBridge } from '../src/state/languageBridges'
+import GlobalLanguageToggle from '../src/components/layout/GlobalLanguageToggle'
 import ProposalShell from '../src/components/proposal/ProposalShell'
+
+/** Mirrors App.tsx's proposal-branch wiring: the single global language toggle
+ *  drives the LanguageProvider, whose value the bridge mirrors into the
+ *  proposal store's uiLanguage (which the shell reads). */
+function ToggleHarness() {
+  return (
+    <LanguageProvider initialLanguage="en">
+      <ProposalStoreProvider initialLanguage="en">
+        <ProposalLanguageBridge>
+          <GlobalLanguageToggle />
+          <ProposalShell />
+        </ProposalLanguageBridge>
+      </ProposalStoreProvider>
+    </LanguageProvider>
+  )
+}
 
 // vi.mock factories are hoisted above top-level consts, so fixtures used
 // inside the factory must themselves be declared via vi.hoisted().
@@ -90,20 +109,17 @@ describe('ProposalScreen bilingual (EN default / JA toggle / back to EN)', () =>
   })
 
   it('toggling to JA switches every panel heading/label, and back to EN restores them', async () => {
-    render(
-      <ProposalStoreProvider>
-        <ProposalShell />
-      </ProposalStoreProvider>,
-    )
+    render(<ToggleHarness />)
     await waitFor(() => expect(getPackages).toHaveBeenCalled())
     await screen.findByText('mock_service_selector_v1')
 
     expect(screen.getByText('Input · World')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByTestId('proposal-lang-toggle-ja'))
+    // The single global toggle (App's top bar) drives the language now.
+    fireEvent.click(screen.getByTestId('lang-toggle-ja'))
 
+    await waitFor(() => expect(screen.getByText('入力・世界')).toBeInTheDocument())
     expect(screen.queryByText('Input · World')).not.toBeInTheDocument()
-    expect(screen.getByText('入力・世界')).toBeInTheDocument()
     expect(screen.getByText('サービス提案')).toBeInTheDocument()
     expect(screen.getByText('コンテンツ提案')).toBeInTheDocument()
     expect(screen.getByText('発火シグナル（4つ）')).toBeInTheDocument()
@@ -112,10 +128,10 @@ describe('ProposalScreen bilingual (EN default / JA toggle / back to EN)', () =>
     expect(screen.getByText('カテゴリ重み')).toBeInTheDocument()
     expect(screen.queryByText('Category Weights')).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByTestId('proposal-lang-toggle-en'))
+    fireEvent.click(screen.getByTestId('lang-toggle-en'))
 
+    await waitFor(() => expect(screen.getByText('Input · World')).toBeInTheDocument())
     expect(screen.queryByText('入力・世界')).not.toBeInTheDocument()
-    expect(screen.getByText('Input · World')).toBeInTheDocument()
     expect(screen.getByText('Service proposal')).toBeInTheDocument()
     expect(screen.getByText('Content proposal')).toBeInTheDocument()
     expect(screen.getByText('Trigger signal (4)')).toBeInTheDocument()

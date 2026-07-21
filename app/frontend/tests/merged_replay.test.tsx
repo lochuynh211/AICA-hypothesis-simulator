@@ -39,6 +39,7 @@ import {
 import { createMergedReplaySource } from '../src/replay/mergedReplaySource'
 import MergedReplayViewer from '../src/components/merged/MergedReplayViewer'
 import MergedRunsScreen from '../src/components/merged/MergedRunsScreen'
+import { LanguageProvider } from '../src/state/language'
 
 // ── Fixtures ─────────────────────────────────────────────────────────────
 
@@ -327,12 +328,12 @@ describe('MergedRunsScreen', () => {
   })
 
   it('lists persisted merged runs from listMergedRuns()', async () => {
-    render(<MergedRunsScreen />)
+    render(<LanguageProvider initialLanguage="en"><MergedRunsScreen /></LanguageProvider>)
     expect(await screen.findByTestId('merged-run-row-merged-001')).toBeInTheDocument()
   })
 
   it('selecting a run mounts MergedReplayViewer, which fetches getMergedRun + renders ReplayControls', async () => {
-    render(<MergedRunsScreen />)
+    render(<LanguageProvider initialLanguage="en"><MergedRunsScreen /></LanguageProvider>)
     fireEvent.click(await screen.findByTestId('merged-run-row-merged-001'))
 
     await waitFor(() => expect(getMergedRun).toHaveBeenCalledWith('merged-001'))
@@ -340,7 +341,7 @@ describe('MergedRunsScreen', () => {
   })
 
   it('scrubbing the mounted viewer to a correlated tick shows both trigger + proposal rows', async () => {
-    render(<MergedRunsScreen />)
+    render(<LanguageProvider initialLanguage="en"><MergedRunsScreen /></LanguageProvider>)
     fireEvent.click(await screen.findByTestId('merged-run-row-merged-001'))
     await waitFor(() => expect(screen.getByTestId('replay-scrubber')).toBeInTheDocument())
 
@@ -354,7 +355,7 @@ describe('MergedRunsScreen', () => {
 
   it('shows an empty state when there are no persisted merged runs', async () => {
     vi.mocked(listMergedRuns).mockResolvedValue([])
-    render(<MergedRunsScreen />)
+    render(<LanguageProvider initialLanguage="en"><MergedRunsScreen /></LanguageProvider>)
     expect(await screen.findByTestId('merged-runs-empty')).toBeInTheDocument()
   })
 })

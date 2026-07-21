@@ -24,6 +24,7 @@ import { ServiceResultOverlay } from './ServiceResultOverlay'
 import { ContentResultOverlay } from './ContentResultOverlay'
 import { useProposalStore } from '../../state/proposalStore'
 import { t } from '../../i18n/t'
+import { useLanguage } from '../../state/language'
 
 const LABELS = {
   algorithmError: { ja: 'アルゴリズムエラー', en: 'Algorithm error' },
@@ -44,18 +45,28 @@ const LABELS = {
   motion: { ja: '走行/停車', en: 'Motion' },
 }
 
-// Bilingual labels mirrored from the Proposal screen's WorldPanel (read-only here).
+// Friendly bilingual labels — read-only status strip. Unlike WorldPanel (whose
+// `en` column is deliberately the raw enum, used there as button captions), the
+// `en` text here is a genuine human-readable label so the strip never shows a
+// raw variable name. Unknown/future values fall back to the raw string below.
 const TRIGGER_PURPOSE_LABELS: Record<string, { ja: string; en: string }> = {
-  rest_recommended: { ja: '休憩推奨', en: 'rest_recommended' },
-  inattentive_driving_prevention_recovery: { ja: '注意力低下防止・回復', en: 'inattentive_driving_prevention_recovery' },
-  route_music: { ja: 'ルート音楽', en: 'route_music' },
-  child_passenger_experience: { ja: '子ども同乗体験', en: 'child_passenger_experience' },
+  rest_recommended: { ja: '休憩推奨', en: 'Rest recommended' },
+  inattentive_driving_prevention_recovery: { ja: '注意力低下防止・回復', en: 'Inattentive driving prevention & recovery' },
+  route_music: { ja: 'ルート音楽', en: 'Route music' },
+  child_passenger_experience: { ja: '子ども同乗体験', en: 'Child passenger experience' },
 }
 const LIFECYCLE_STAGE_LABELS: Record<string, { ja: string; en: string }> = {
-  before_rest_until_stop: { ja: 'スポットへ向かう', en: 'heading to spot' },
-  during_rest_stopped: { ja: 'スポットで停車', en: 'stopped at spot' },
-  after_rest_before_restart: { ja: '休憩後・再開前', en: 'after spot' },
-  active_driving_content: { ja: '走行中', en: 'driving' },
+  before_rest_until_stop: { ja: 'スポットへ向かう', en: 'Heading to spot' },
+  during_rest_stopped: { ja: 'スポットで停車', en: 'Stopped at spot' },
+  after_rest_before_restart: { ja: '休憩後・再開前', en: 'After spot' },
+  active_driving_content: { ja: '走行中', en: 'Driving' },
+}
+const MOTION_STATE_LABELS: Record<string, { ja: string; en: string }> = {
+  in_motion: { ja: '走行中', en: 'In motion' },
+  moving: { ja: '走行中', en: 'Moving' },
+  stopped: { ja: '停車中', en: 'Stopped' },
+  parked: { ja: '駐車中', en: 'Parked' },
+  idle: { ja: 'アイドリング', en: 'Idle' },
 }
 
 type ProposalOverlayDerivation = {
@@ -108,6 +119,7 @@ function noopChoose(): void {
 export default function MergedProposalPanel() {
   const coordinator = useMergedCoordinator()
   const { state } = coordinator
+  const { lang } = useLanguage()
   // Read the SETUP world for the read-only status strip before a run/fire exists,
   // and the shared explanation-source preference (feature 019) — same scoped-store
   // precedent MergedCenterPanel already relies on.
@@ -212,25 +224,27 @@ export default function MergedProposalPanel() {
       {/* Read-only trigger signal + car status (like the Proposal screen). */}
       <div data-testid="merged-status-strip" style={statusStripStyle}>
         <span>
-          <span style={statusLabelStyle}>{t(LABELS.triggerSignal, 'en')}:</span>{' '}
+          <span style={statusLabelStyle}>{t(LABELS.triggerSignal, lang)}:</span>{' '}
           <span data-testid="merged-status-trigger" style={statusValueStyle}>
-            {t(TRIGGER_PURPOSE_LABELS[triggerPurpose] ?? { ja: triggerPurpose, en: triggerPurpose }, 'en')}
+            {t(TRIGGER_PURPOSE_LABELS[triggerPurpose] ?? { ja: triggerPurpose, en: triggerPurpose }, lang)}
           </span>
         </span>
         <span>
-          <span style={statusLabelStyle}>{t(LABELS.carState, 'en')}:</span>{' '}
+          <span style={statusLabelStyle}>{t(LABELS.carState, lang)}:</span>{' '}
           <span data-testid="merged-status-lifecycle" style={statusValueStyle}>
-            {t(LIFECYCLE_STAGE_LABELS[lifecycleStage] ?? { ja: lifecycleStage, en: lifecycleStage }, 'en')}
+            {t(LIFECYCLE_STAGE_LABELS[lifecycleStage] ?? { ja: lifecycleStage, en: lifecycleStage }, lang)}
           </span>
-          <span style={{ color: '#94a3b8' }}> · {t(LABELS.motion, 'en')} </span>
-          <span data-testid="merged-status-motion" style={statusValueStyle}>{motionState}</span>
+          <span style={{ color: '#94a3b8' }}> · {t(LABELS.motion, lang)} </span>
+          <span data-testid="merged-status-motion" style={statusValueStyle}>
+            {t(MOTION_STATE_LABELS[motionState] ?? { ja: motionState, en: motionState }, lang)}
+          </span>
         </span>
       </div>
 
       {/* Explanation source (feature 019) — drives lazy LLM rationale for BOTH
           service and content reasons, same as the Proposal screen. */}
       <label style={explSelectStyle}>
-        <span style={statusLabelStyle}>{t(LABELS.explanationSource, 'en')}</span>
+        <span style={statusLabelStyle}>{t(LABELS.explanationSource, lang)}</span>
         <select
           data-testid="merged-explanation-provider-select"
           value={explanationProvider}
@@ -242,22 +256,22 @@ export default function MergedProposalPanel() {
           }
           style={{ fontSize: '0.82em', padding: '3px' }}
         >
-          <option value="off">{t(LABELS.explOff, 'en')}</option>
-          <option value="backend">{t(LABELS.explBackend, 'en')}</option>
-          <option value="browser">{t(LABELS.explBrowser, 'en')}</option>
+          <option value="off">{t(LABELS.explOff, lang)}</option>
+          <option value="backend">{t(LABELS.explBackend, lang)}</option>
+          <option value="browser">{t(LABELS.explBrowser, lang)}</option>
         </select>
       </label>
 
       {isInspecting && (
         <div data-testid="inspected-fire-readonly-badge" style={readonlyBadgeStyle}>
-          <span>{t(isInspectingRest ? LABELS.inspectingRest : LABELS.inspecting, 'en')}</span>
+          <span>{t(isInspectingRest ? LABELS.inspectingRest : LABELS.inspecting, lang)}</span>
           <button
             type="button"
             data-testid="quickview-inspect-close"
             onClick={() => coordinator.inspectFire(null)}
             style={{ marginLeft: '8px', fontSize: '0.85em' }}
           >
-            {t(LABELS.close, 'en')}
+            {t(LABELS.close, lang)}
           </button>
         </div>
       )}
@@ -269,13 +283,13 @@ export default function MergedProposalPanel() {
 
       {!overlay.hasService ? (
         <p data-testid="merged-proposal-empty" style={{ fontSize: '0.82em', color: '#94a3b8', fontStyle: 'italic', padding: '10px' }}>
-          {t(LABELS.empty, 'en')}
+          {t(LABELS.empty, lang)}
         </p>
       ) : (
         <>
           {/* TOP half — Service proposal */}
           <div data-testid="service-result-overlay" style={halfStyle}>
-            <p style={halfTitleStyle}>① {t(LABELS.service, 'en')}</p>
+            <p style={halfTitleStyle}>① {t(LABELS.service, lang)}</p>
             <ServiceResultOverlay
               output={overlay.serviceOutput}
               eligibleCandidates={overlay.eligibleCandidates}
@@ -286,18 +300,18 @@ export default function MergedProposalPanel() {
               runId={explanationRunId}
               explanationProvider={explanationProvider}
               inlineProposal={explanationInlineProposal}
-              lang="en"
+              lang={lang}
             />
             {overlay.serviceError && (
               <p role="alert" style={{ color: '#dc2626', fontSize: '0.82em' }}>
-                {t(LABELS.algorithmError, 'en')}: {overlay.serviceError.message}
+                {t(LABELS.algorithmError, lang)}: {overlay.serviceError.message}
               </p>
             )}
           </div>
 
           {/* BOTTOM half — Content proposal */}
           <div style={{ ...halfStyle, borderTop: '2px solid #e5e7eb' }}>
-            <p style={halfTitleStyle}>② {t(LABELS.content, 'en')}</p>
+            <p style={halfTitleStyle}>② {t(LABELS.content, lang)}</p>
             {hasContent ? (
               <div data-testid="content-result-overlay">
                 <ContentResultOverlay
@@ -307,12 +321,12 @@ export default function MergedProposalPanel() {
                   runId={explanationRunId}
                   explanationProvider={explanationProvider}
                   inlineProposal={explanationInlineProposal}
-                  lang="en"
+                  lang={lang}
                 />
               </div>
             ) : (
               <p data-testid="content-awaiting" style={{ fontSize: '0.82em', color: '#94a3b8', fontStyle: 'italic' }}>
-                {t(isInspecting ? LABELS.awaitingReadonly : LABELS.awaitingLive, 'en')}
+                {t(isInspecting ? LABELS.awaitingReadonly : LABELS.awaitingLive, lang)}
               </p>
             )}
           </div>

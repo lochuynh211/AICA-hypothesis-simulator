@@ -19,6 +19,11 @@ import { getScenario, getRestSpots, actRun } from '../../api/client'
 import type { RecoveryOption, RestSpot } from '../../api/types'
 import { t } from '../../i18n/t'
 
+const LABELS = {
+  failedToLoad: { ja: '休憩オプションの読み込みに失敗しました', en: 'Failed to load recovery options' },
+  actionFailed: { ja: '操作に失敗しました', en: 'Action failed' },
+}
+
 export default function RecoveryPicker() {
   const { state, dispatch } = useRunStore()
   const { runState, selectedScenarioId, mapsKey, uiLanguage, paused, latestDecision, restDrowsinessCeiling, minRestSpacingKm } = state
@@ -49,7 +54,7 @@ export default function RecoveryPicker() {
         setNoSpotsNotice(spotsResp.notice ?? null)
       })
       .catch((err: unknown) => {
-        setFetchError(err instanceof Error ? err.message : 'Failed to load recovery options')
+        setFetchError(err instanceof Error ? err.message : t(LABELS.failedToLoad, uiLanguage))
       })
       .finally(() => setLoading(false))
   }, [selectedScenarioId, runState?.run_id, mapsKey, restDrowsinessCeiling, minRestSpacingKm])
@@ -86,7 +91,7 @@ export default function RecoveryPicker() {
     } catch (err: unknown) {
       dispatch({
         type: 'SET_RUN_ERROR',
-        message: err instanceof Error ? err.message : 'Action failed',
+        message: err instanceof Error ? err.message : t(LABELS.actionFailed, uiLanguage),
       })
     }
   }
@@ -98,7 +103,7 @@ export default function RecoveryPicker() {
     } catch (err: unknown) {
       dispatch({
         type: 'SET_RUN_ERROR',
-        message: err instanceof Error ? err.message : 'Action failed',
+        message: err instanceof Error ? err.message : t(LABELS.actionFailed, uiLanguage),
       })
     }
   }

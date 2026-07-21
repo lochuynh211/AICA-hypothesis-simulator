@@ -11,8 +11,20 @@
 import { useEffect, useState } from 'react'
 import { listMergedRuns, type MergedRunSummary } from '../../api/mergedClient'
 import MergedReplayViewer from './MergedReplayViewer'
+import { t } from '../../i18n/t'
+import { useLanguage } from '../../state/language'
+
+const LABELS = {
+  title: { ja: '統合実行履歴', en: 'Merged runs' },
+  loading: { ja: '読み込み中…', en: 'Loading…' },
+  empty: { ja: '保存された統合実行はまだありません。', en: 'No persisted merged runs yet.' },
+  colMergedId: { ja: '統合実行ID', en: 'Merged run ID' },
+  colTrigger: { ja: 'トリガー実行', en: 'Trigger run' },
+  colProposals: { ja: '提案実行', en: 'Proposal runs' },
+}
 
 export default function MergedRunsScreen() {
+  const { lang } = useLanguage()
   const [runs, setRuns] = useState<MergedRunSummary[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -45,7 +57,7 @@ export default function MergedRunsScreen() {
       data-testid="merged-runs-screen"
       style={{ padding: '16px', overflow: 'auto', height: '100%', color: '#ddd', background: '#111' }}
     >
-      <h3 style={{ margin: '0 0 10px', color: '#eee', fontSize: '1em' }}>Merged runs</h3>
+      <h3 style={{ margin: '0 0 10px', color: '#eee', fontSize: '1em' }}>{t(LABELS.title, lang)}</h3>
 
       {error && (
         <p role="alert" style={{ color: '#f66', fontSize: '0.85em' }}>
@@ -55,19 +67,19 @@ export default function MergedRunsScreen() {
 
       {loading ? (
         <p data-testid="merged-runs-loading" style={{ color: '#888' }}>
-          Loading…
+          {t(LABELS.loading, lang)}
         </p>
       ) : runs.length === 0 ? (
         <p data-testid="merged-runs-empty" style={{ color: '#888' }}>
-          No persisted merged runs yet.
+          {t(LABELS.empty, lang)}
         </p>
       ) : (
         <table data-testid="merged-run-list" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85em' }}>
           <thead>
             <tr style={{ textAlign: 'left', borderBottom: '1px solid #333' }}>
-              <th style={thStyle}>Merged run ID</th>
-              <th style={thStyle}>Trigger run</th>
-              <th style={thStyle}>Proposal runs</th>
+              <th style={thStyle}>{t(LABELS.colMergedId, lang)}</th>
+              <th style={thStyle}>{t(LABELS.colTrigger, lang)}</th>
+              <th style={thStyle}>{t(LABELS.colProposals, lang)}</th>
             </tr>
           </thead>
           <tbody>

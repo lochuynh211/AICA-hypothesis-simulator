@@ -129,35 +129,52 @@ describe('runStore — uiLanguage field and SET_LANGUAGE action (T004)', () => {
   })
 })
 
-// ── LanguageToggle component ──────────────────────────────────────────────────
-import LanguageToggle from '../src/components/layout/LanguageToggle'
+// ── GlobalLanguageToggle component ────────────────────────────────────────────
+import GlobalLanguageToggle from '../src/components/layout/GlobalLanguageToggle'
+import { LanguageProvider } from '../src/state/language'
+import { RunLanguageBridge } from '../src/state/languageBridges'
 
-describe('LanguageToggle component', () => {
+/** Test shim: a minimal toggle that dispatches SET_LANGUAGE straight to the run
+ *  store — used by the per-component bilingual audits below to flip uiLanguage
+ *  without wiring the full LanguageProvider/bridge. The real app uses the single
+ *  GlobalLanguageToggle (its own describe block above); these audits only need
+ *  to prove a component re-renders in the store's current language. */
+function LanguageToggle() {
+  const { dispatch } = useRunStore()
+  return (
+    <div>
+      <button data-testid="lang-toggle-ja" onClick={() => dispatch({ type: 'SET_LANGUAGE', lang: 'ja' })}>JA</button>
+      <button data-testid="lang-toggle-en" onClick={() => dispatch({ type: 'SET_LANGUAGE', lang: 'en' })}>EN</button>
+    </div>
+  )
+}
+
+describe('GlobalLanguageToggle component', () => {
   it('renders JA and EN toggle buttons', () => {
     render(
-      <RunStoreProvider>
-        <LanguageToggle />
-      </RunStoreProvider>,
+      <LanguageProvider>
+        <GlobalLanguageToggle />
+      </LanguageProvider>,
     )
     expect(screen.getByTestId('lang-toggle-ja')).toBeInTheDocument()
     expect(screen.getByTestId('lang-toggle-en')).toBeInTheDocument()
   })
 
-  it('EN button has aria-pressed=true by default (default lang is en)', () => {
+  it('JA button has aria-pressed=true by default (global default is ja)', () => {
     render(
-      <RunStoreProvider>
-        <LanguageToggle />
-      </RunStoreProvider>,
+      <LanguageProvider>
+        <GlobalLanguageToggle />
+      </LanguageProvider>,
     )
-    expect(screen.getByTestId('lang-toggle-en')).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByTestId('lang-toggle-ja')).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByTestId('lang-toggle-ja')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('lang-toggle-en')).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('clicking EN toggles aria-pressed to EN=true, JA=false', () => {
     render(
-      <RunStoreProvider>
-        <LanguageToggle />
-      </RunStoreProvider>,
+      <LanguageProvider>
+        <GlobalLanguageToggle />
+      </LanguageProvider>,
     )
     fireEvent.click(screen.getByTestId('lang-toggle-en'))
     expect(screen.getByTestId('lang-toggle-en')).toHaveAttribute('aria-pressed', 'true')
@@ -166,9 +183,9 @@ describe('LanguageToggle component', () => {
 
   it('clicking back to JA switches aria-pressed back', () => {
     render(
-      <RunStoreProvider>
-        <LanguageToggle />
-      </RunStoreProvider>,
+      <LanguageProvider>
+        <GlobalLanguageToggle />
+      </LanguageProvider>,
     )
     fireEvent.click(screen.getByTestId('lang-toggle-en'))
     fireEvent.click(screen.getByTestId('lang-toggle-ja'))
@@ -189,13 +206,20 @@ const mockBilingualPkg: PackageSummary = {
   compatible_scenario_types: ['uc01_fatigue'],
 }
 
-/** Wrapper that renders LanguageToggle + the component-under-test in one provider. */
+/** Wrapper that renders the global toggle + the component-under-test, wired
+ *  exactly like App: the toggle drives LanguageProvider, whose value the bridge
+ *  mirrors into the run store's uiLanguage (which the component reads). Starts
+ *  in EN so the toggle-to-JA transition is observable. */
 function WithToggle({ children }: { children: React.ReactNode }) {
   return (
-    <RunStoreProvider>
-      <LanguageToggle />
-      {children}
-    </RunStoreProvider>
+    <LanguageProvider initialLanguage="en">
+      <RunStoreProvider initialLanguage="en">
+        <RunLanguageBridge>
+          <GlobalLanguageToggle />
+          {children}
+        </RunLanguageBridge>
+      </RunStoreProvider>
+    </LanguageProvider>
   )
 }
 

@@ -12,6 +12,13 @@ type Props = {
   allowedActions?: string[]
 }
 
+const LABELS = {
+  actionFailed: { ja: '操作に失敗しました', en: 'Action failed' },
+  acceptRest: { ja: '休憩を受け入れる', en: 'Accept rest' },
+  postpone: { ja: '延期', en: 'Postpone' },
+  decline: { ja: '断る', en: 'Decline' },
+}
+
 export default function ProposalPanel({ proposal, runId, reasonInputs, explanation, allowedActions = [] }: Props) {
   const { dispatch, state } = useRunStore()
   const { uiLanguage } = state
@@ -21,7 +28,7 @@ export default function ProposalPanel({ proposal, runId, reasonInputs, explanati
       const runState = await actRun(runId, action)
       dispatch({ type: 'ACTION_APPLIED', runState, action })
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Action failed'
+      const message = err instanceof Error ? err.message : t(LABELS.actionFailed, uiLanguage)
       dispatch({ type: 'SET_RUN_ERROR', message })
     }
   }
@@ -36,10 +43,10 @@ export default function ProposalPanel({ proposal, runId, reasonInputs, explanati
         </ul>
       )}
       <div style={{ display: 'flex', gap: '8px' }}>
-        <button onClick={() => handleAction('accept_rest')}>Accept rest</button>
-        <button onClick={() => handleAction('postpone')}>Postpone</button>
+        <button onClick={() => handleAction('accept_rest')}>{t(LABELS.acceptRest, uiLanguage)}</button>
+        <button onClick={() => handleAction('postpone')}>{t(LABELS.postpone, uiLanguage)}</button>
         {allowedActions.includes('decline') && (
-          <button onClick={() => handleAction('decline')}>Decline</button>
+          <button onClick={() => handleAction('decline')}>{t(LABELS.decline, uiLanguage)}</button>
         )}
       </div>
     </div>

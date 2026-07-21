@@ -348,7 +348,7 @@ describe('HyperparameterEditor + PlanPreview — T024', () => {
     fireEvent.change(input, { target: { value: '0.6' } })
 
     // Preview
-    fireEvent.click(screen.getByRole('button', { name: /preview plan/i }))
+    fireEvent.click(screen.getByRole('button', { name: /プランをプレビュー/ }))
     await screen.findByTestId('plan-summary')
     // M4: routesAnalyze is now called with an object arg (not a plain string)
     expect(vi.mocked(client.routesAnalyze)).toHaveBeenCalledWith(
@@ -363,7 +363,7 @@ describe('HyperparameterEditor + PlanPreview — T024', () => {
     )
 
     // Regenerate
-    fireEvent.click(screen.getByRole('button', { name: /regenerate/i }))
+    fireEvent.click(screen.getByRole('button', { name: /再生成/ }))
     await waitFor(() => {
       expect(vi.mocked(client.regenerateRunPlan)).toHaveBeenCalledWith(
         'plan_w1',
@@ -372,7 +372,7 @@ describe('HyperparameterEditor + PlanPreview — T024', () => {
     })
 
     // Start
-    fireEvent.click(screen.getByRole('button', { name: /start run/i }))
+    fireEvent.click(screen.getByRole('button', { name: /実行開始/ }))
     await waitFor(() => {
       expect(vi.mocked(client.createRun)).toHaveBeenCalledWith('plan_w1')
     })
@@ -397,7 +397,7 @@ describe('HyperparameterEditor + PlanPreview — T024', () => {
     expect(await screen.findByTestId('setup-validation-error')).toBeInTheDocument()
 
     // Preview button is disabled — no plan can be built
-    const previewBtn = screen.getByRole('button', { name: /preview plan/i })
+    const previewBtn = screen.getByRole('button', { name: /プランをプレビュー/ })
     expect(previewBtn).toBeDisabled()
     fireEvent.click(previewBtn)
     expect(vi.mocked(client.createRunPlan)).not.toHaveBeenCalled()
