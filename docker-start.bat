@@ -1,38 +1,51 @@
 @echo off
 REM Start the AICA Hypothesis Simulator via Docker in WSL2.
-REM Usage:
-REM   docker-start.bat              - start api + frontend (fast; no Ollama)
+REM Usage (arguments may be combined in any order):
+REM   docker-start.bat              - api + frontend, direct internet (off-VPN)
 REM   docker-start.bat llm          - also start the backend Ollama LLM server
-REM   docker-start.bat build        - rebuild images then start
-REM   docker-start.bat build llm    - rebuild, then start including Ollama
-REM (arguments may be given in any order)
+REM   docker-start.bat vpn          - route container outbound via the VPN proxy
+REM   docker-start.bat build        - rebuild images, then start
+REM   docker-start.bat llm vpn      - typical on-VPN start (Ollama + proxy)
+REM
+REM The `vpn` flag reads the WSL shell's own $HTTP_PROXY at launch and passes it
+REM to the containers as AICA_HTTP_PROXY, so Google Maps works on-VPN. Omit it
+REM off-VPN and the containers stay direct. Nothing persists between runs.
 
 echo === AICA Hypothesis Simulator (Docker on WSL2) ===
 echo.
 
-REM Parse optional arguments (build / llm), position-independent
+REM Parse optional arguments (build / llm / vpn), position-independent
 set "PROFILE="
 set "DO_BUILD="
-if /i "%1"=="build" set "DO_BUILD=1"
-if /i "%2"=="build" set "DO_BUILD=1"
-if /i "%1"=="llm" set "PROFILE=--profile llm"
-if /i "%2"=="llm" set "PROFILE=--profile llm"
+set "USE_VPN="
+for %%A in (%1 %2 %3) do (
+    if /i "%%A"=="build" set "DO_BUILD=1"
+    if /i "%%A"=="llm" set "PROFILE=--profile llm"
+    if /i "%%A"=="vpn" set "USE_VPN=1"
+)
+
+REM When `vpn` is given, mirror the shell proxy into the AICA_ namespaced vars
+REM compose reads (WSL expands $HTTP_PROXY at runtime). Empty otherwise = direct.
+set "PROXYENV="
+set "BUILDARGS="
+if defined USE_VPN (
+    set "PROXYENV=AICA_HTTP_PROXY=$HTTP_PROXY AICA_HTTPS_PROXY=${HTTPS_PROXY:-$HTTP_PROXY} AICA_NO_PROXY=localhost,127.0.0.1,api,ollama "
+    set "BUILDARGS=--build-arg http_proxy=$HTTP_PROXY --build-arg https_proxy=${HTTPS_PROXY:-$HTTP_PROXY} "
+)
 
 REM Start Docker daemon in WSL
 echo Starting Docker daemon...
 wsl -d Ubuntu -u root -- bash -c "service docker start 2>/dev/null; sleep 2; docker info >/dev/null 2>&1 && echo OK || echo FAIL"
 
-REM Build if requested
+REM Build if requested (build-args only set when `vpn` is given)
 if defined DO_BUILD (
     echo Rebuilding images...
-    wsl -d Ubuntu -u root -- bash -c "cd /mnt/c/Users/l-huynh/Desktop/AICA-hypothesis-simulator && docker compose build --build-arg http_proxy=http://163.116.128.80:8080 --build-arg https_proxy=http://163.116.128.80:8080 2>&1 | tail -5"
+    wsl -d Ubuntu -u root -- bash -c "cd /mnt/c/Users/l-huynh/Desktop/AICA-hypothesis-simulator && docker compose build %BUILDARGS%2>&1 | tail -5"
 )
 
-REM Start containers. Add `llm` to also bring up the Ollama server (opt-in
-REM because its image + model are large). Off-VPN with existing images this
-REM needs no network at all.
+REM Start containers. `llm` adds the Ollama server; `vpn` prefixes the proxy env.
 echo Starting containers...
-wsl -d Ubuntu -u root -- bash -c "cd /mnt/c/Users/l-huynh/Desktop/AICA-hypothesis-simulator && docker compose %PROFILE% up -d 2>&1 | tail -5"
+wsl -d Ubuntu -u root -- bash -c "cd /mnt/c/Users/l-huynh/Desktop/AICA-hypothesis-simulator && %PROXYENV%docker compose %PROFILE% up -d 2>&1 | tail -5"
 
 REM Keep WSL alive in background (prevents VM shutdown)
 tasklist /fi "WINDOWTITLE eq WSL-keepalive" 2>nul | find "wsl" >nul || (
@@ -63,8 +76,13 @@ echo.
 echo === Services running ===
 echo   Backend:  http://localhost:8137/api/health
 echo   Frontend: http://localhost:5180
+if defined PROFILE echo   Ollama:   enabled ^(--profile llm^)
+if defined USE_VPN (
+    echo   Proxy:    ON ^(container outbound via VPN proxy - Google Maps enabled^)
+) else (
+    echo   Proxy:    off ^(direct internet^)
+)
 if defined PROFILE (
-    echo   Ollama:   enabled ^(--profile llm^)
     echo.
     echo First time only - pull the model once:
     echo   wsl -d Ubuntu -u root -- bash -c "cd /mnt/c/Users/l-huynh/Desktop/AICA-hypothesis-simulator ^&^& docker compose --profile llm exec ollama ollama pull qwen2.5:3b"
