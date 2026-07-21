@@ -38,15 +38,18 @@ services:
       - OLLAMA_MODEL=qwen2.5:3b
       # watchfiles polling for reliable hot-reload over Windows volume mounts
       - WATCHFILES_FORCE_POLLING=true
-      # Corporate proxy for outbound API calls (Google Maps)
-      - http_proxy=http://163.116.128.80:8080
-      - https_proxy=http://163.116.128.80:8080
-      - HTTP_PROXY=http://163.116.128.80:8080
-      - HTTPS_PROXY=http://163.116.128.80:8080
-      # `ollama` MUST be in no_proxy: the local model server is on the compose
+      # Outbound proxy for Google Maps. EMPTY by default = direct internet
+      # (works off-VPN). On the corporate VPN, put the Netskope proxy URL in a
+      # local .env (see .env.example) and compose injects it here; off-VPN the
+      # vars are unset so these resolve to empty (no proxy).
+      - http_proxy=${HTTP_PROXY-}
+      - https_proxy=${HTTPS_PROXY-}
+      - HTTP_PROXY=${HTTP_PROXY-}
+      - HTTPS_PROXY=${HTTPS_PROXY-}
+      # `ollama` MUST stay in no_proxy: the local model server is on the compose
       # network, never through the corporate proxy (urllib honors these).
-      - no_proxy=localhost,127.0.0.1,api,ollama
-      - NO_PROXY=localhost,127.0.0.1,api,ollama
+      - no_proxy=${NO_PROXY-localhost,127.0.0.1,api,ollama}
+      - NO_PROXY=${NO_PROXY-localhost,127.0.0.1,api,ollama}
     volumes:
       - ./app/api:/app
       - api_venv:/app/.venv
@@ -93,16 +96,15 @@ services:
     profiles: ["llm"]
     restart: unless-stopped
     # Ollama's OUTBOUND model pull (`ollama pull qwen2.5:3b`) reaches
-    # registry.ollama.ai, which is behind the corporate proxy. Without these the
-    # one-time pull times out. Inbound calls from `api` stay direct (`api` lists
-    # `ollama` in its no_proxy).
+    # registry.ollama.ai. EMPTY proxy by default = direct (off-VPN). On the VPN,
+    # set HTTP_PROXY/HTTPS_PROXY in .env; off-VPN they resolve to empty.
     environment:
-      - http_proxy=http://163.116.128.80:8080
-      - https_proxy=http://163.116.128.80:8080
-      - HTTP_PROXY=http://163.116.128.80:8080
-      - HTTPS_PROXY=http://163.116.128.80:8080
-      - no_proxy=localhost,127.0.0.1
-      - NO_PROXY=localhost,127.0.0.1
+      - http_proxy=${HTTP_PROXY-}
+      - https_proxy=${HTTPS_PROXY-}
+      - HTTP_PROXY=${HTTP_PROXY-}
+      - HTTPS_PROXY=${HTTPS_PROXY-}
+      - no_proxy=${NO_PROXY-localhost,127.0.0.1}
+      - NO_PROXY=${NO_PROXY-localhost,127.0.0.1}
     # `api` reaches Ollama over the compose network (http://ollama:11434); the
     # host mapping is bound to loopback only (for one-off host-side pulls/debug),
     # never exposed on all interfaces — the API is unauthenticated.

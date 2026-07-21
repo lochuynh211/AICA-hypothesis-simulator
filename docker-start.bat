@@ -17,10 +17,13 @@ if /i "%1"=="build" (
     wsl -d Ubuntu -u root -- bash -c "cd /mnt/c/Users/l-huynh/Desktop/AICA-hypothesis-simulator && docker compose build --build-arg http_proxy=http://163.116.128.80:8080 --build-arg https_proxy=http://163.116.128.80:8080 2>&1 | tail -5"
 )
 
-REM Start containers (--profile llm also starts the local Ollama server for the
-REM backend LLM rationale provider; the model must be pulled once — see below).
+REM Start containers (api + frontend only — no image pull needed, so this works
+REM off-VPN with direct internet). The backend Ollama LLM is OPT-IN because it
+REM pulls a large image + model; start it deliberately when you want it:
+REM   docker compose --profile llm up -d ollama
+REM   docker compose --profile llm exec ollama ollama pull qwen2.5:3b
 echo Starting containers...
-wsl -d Ubuntu -u root -- bash -c "cd /mnt/c/Users/l-huynh/Desktop/AICA-hypothesis-simulator && docker compose --profile llm up -d 2>&1 | tail -5"
+wsl -d Ubuntu -u root -- bash -c "cd /mnt/c/Users/l-huynh/Desktop/AICA-hypothesis-simulator && docker compose up -d 2>&1 | tail -5"
 
 REM Keep WSL alive in background (prevents VM shutdown)
 tasklist /fi "WINDOWTITLE eq WSL-keepalive" 2>nul | find "wsl" >nul || (

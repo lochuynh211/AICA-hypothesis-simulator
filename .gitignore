@@ -37,6 +37,9 @@ proposal_runs/*.json
 merged_runs/*.json
 corporate-proxy.crt
 
+# Local Docker Compose proxy overrides (.env.example is the tracked template)
+.env
+
 # Proposal-simulator local user artifacts (P3) — never committed
 proposal_profiles/
 proposal_worlds/
