@@ -13,12 +13,21 @@ services:
       - AICA_SCENARIOS_DIR=/data/scenarios
       - AICA_RUNS_DIR=/data/runs
       - AICA_ROUTES_DIR=/data/routes
+      # Combined Simulator merged-run handles (feature 020). Same repo-root-default
+      # trap: without this it resolves to "/merged_runs" in-container and Combined
+      # runs fail to persist. Mounted writable below so they survive a recreate.
+      - AICA_MERGED_RUNS_DIR=/data/merged_runs
       # Proposal simulator (P1-P7) data dirs. The repo-root default resolves to
       # "/" in-container (package is mounted at /app), so these MUST be set
       # explicitly or the proposal registries load nothing (empty dataset/seeds).
       - AICA_PROPOSAL_CONTRACTS_DIR=/data/proposal_contracts
       - AICA_PROPOSAL_DATASET_DIR=/data/proposal_contracts/dataset
       - AICA_PROPOSAL_SEEDS_DIR=/data/proposal_contracts/seeds
+      # Preset test-cases (feature 018). Like the other proposal dirs above, the
+      # repo-root default resolves to "/proposal_contracts/presets" in-container
+      # (which does not exist), so the PresetStore loads NOTHING and every
+      # /api/proposal/presets/{id} returns 404. Point it at the mounted dir.
+      - AICA_PROPOSAL_PRESETS_DIR=/data/proposal_contracts/presets
       - AICA_PROPOSAL_RUNS_DIR=/data/proposal_runs
       - AICA_PROPOSAL_PROFILES_DIR=/data/proposal_profiles
       - AICA_PROPOSAL_WORLDS_DIR=/data/proposal_worlds
@@ -47,6 +56,7 @@ services:
       - ./scenarios:/data/scenarios
       - ./runs:/data/runs
       - ./routes:/data/routes
+      - ./merged_runs:/data/merged_runs
       # Proposal simulator data: frozen contracts (dataset/seeds/matrix/
       # capabilities/built-in profiles) read-only; user runs/profiles/worlds
       # persist back to the host.
@@ -82,6 +92,17 @@ services:
     image: ollama/ollama
     profiles: ["llm"]
     restart: unless-stopped
+    # Ollama's OUTBOUND model pull (`ollama pull qwen2.5:3b`) reaches
+    # registry.ollama.ai, which is behind the corporate proxy. Without these the
+    # one-time pull times out. Inbound calls from `api` stay direct (`api` lists
+    # `ollama` in its no_proxy).
+    environment:
+      - http_proxy=http://163.116.128.80:8080
+      - https_proxy=http://163.116.128.80:8080
+      - HTTP_PROXY=http://163.116.128.80:8080
+      - HTTPS_PROXY=http://163.116.128.80:8080
+      - no_proxy=localhost,127.0.0.1
+      - NO_PROXY=localhost,127.0.0.1
     # `api` reaches Ollama over the compose network (http://ollama:11434); the
     # host mapping is bound to loopback only (for one-off host-side pulls/debug),
     # never exposed on all interfaces — the API is unauthenticated.
