@@ -36,6 +36,10 @@ services:
       # endpoint simply falls back to the deterministic template — safe default.
       - OLLAMA_BASE_URL=http://ollama:11434
       - OLLAMA_MODEL=qwen2.5:3b
+      # Per-request timeout for the rationale generation. Default is 20s, which a
+      # cold 3B model (reload + generate on CPU) can exceed → template fallback.
+      # 60s gives headroom; combined with OLLAMA_KEEP_ALIVE the model stays warm.
+      - OLLAMA_TIMEOUT_SEC=60
       # watchfiles polling for reliable hot-reload over Windows volume mounts
       - WATCHFILES_FORCE_POLLING=true
       # Outbound proxy for Google Maps. Uses the AICA_-namespaced vars ON PURPOSE:
@@ -101,6 +105,11 @@ services:
     # 0.0.0.0 call). EMPTY = direct by default; set AICA_HTTP_PROXY in .env on VPN.
     # 0.0.0.0 is in no_proxy so the local CLI never routes through a proxy.
     environment:
+      # Keep the model resident instead of unloading it after 5 min idle (the
+      # default), which forces a slow cold reload that can blow the request
+      # timeout and make the rationale intermittently fall back to the template.
+      # -1 = never unload. Costs ~2-3 GB RAM while the llm profile is up.
+      - OLLAMA_KEEP_ALIVE=-1
       - http_proxy=${AICA_HTTP_PROXY-}
       - https_proxy=${AICA_HTTPS_PROXY-}
       - HTTP_PROXY=${AICA_HTTP_PROXY-}
