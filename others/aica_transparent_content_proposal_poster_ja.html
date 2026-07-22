@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="AICA 透明コンテンツ提案アルゴリズム（2軸トレイト・モデル）の1枚概要ポスター。状況・好み・過去実績の3ファミリーで曲を採点。">
+<title>AICA コンテンツ提案アルゴリズム — 1枚概要</title>
+<style>
+  :root{
+    --ink:#111827; --ink-soft:#374151; --ink-mut:#6b7280;
+    --line:#e5e7eb; --line2:#cbd5e1; --panel:#f8fafc; --panel2:#f1f5f9;
+    --mono:#7c3aed; --mono-bg:#f5f3ff; --mono-bd:#ddd6fe;
+    --aro:#1d4ed8; --aro-bg:#eff6ff;      /* arousal 軸 / 状況ファミリー */
+    --val:#b45309; --val-bg:#fffbeb;      /* valence 軸 */
+    --sing:#0f766e; --sing-bg:#f0fdfa;    /* 曲・歌いやすさ */
+    --pref:#7c3aed; --pref-bg:#f5f3ff; --pref-bd:#ddd6fe;   /* 好み＝プロファイル */
+    --hist:#0369a1; --hist-bg:#f0f9ff; --hist-bd:#bae6fd;   /* 過去実績 */
+    --ok:#047857; --ok-bg:#ecfdf5; --ok-bd:#a7f3d0;
+    --gate:#3730a3; --gate-bg:#eef2ff; --gate-bd:#c7d2fe;
+    --jp:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Meiryo",system-ui,sans-serif;
+    --mn:"SF Mono","Consolas","Roboto Mono",monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{background:#cbd5e1;display:grid;place-items:center;font-family:var(--jp);color:var(--ink);
+       -webkit-font-smoothing:antialiased;padding:2vmin;}
+  .slide{
+    width:min(100vw - 4vmin, (100vh - 4vmin) * 16 / 9);
+    aspect-ratio:16/9; background:#fff; overflow:hidden;
+    container-type:inline-size; border-radius:.6cqw;
+    box-shadow:0 2.4cqw 5cqw rgba(15,23,42,.28);
+  }
+  .canvas{width:100%;height:100%;padding:1.45cqw 1.9cqw 1.05cqw;display:flex;flex-direction:column;}
+
+  /* ── header ── */
+  header{display:flex;align-items:flex-start;gap:1.6cqw;border-bottom:.16cqw solid var(--line);padding-bottom:.7cqw;}
+  .htext{flex:1;min-width:0;}
+  .kicker{font-size:.86cqw;font-weight:800;letter-spacing:.1em;color:var(--mono);text-transform:uppercase;margin-bottom:.24cqw;}
+  h1{margin:0;font-size:1.95cqw;font-weight:900;letter-spacing:.01em;line-height:1.08;}
+  h1 .thin{color:var(--ink-soft);font-weight:700;font-size:1.12cqw;display:block;margin-top:.26cqw;letter-spacing:.02em;}
+  .oneliner{flex:0 0 34cqw;font-size:.94cqw;line-height:1.5;color:var(--ink-soft);
+    background:var(--mono-bg);border:.12cqw solid var(--mono-bd);border-radius:.55cqw;padding:.6cqw .85cqw;}
+  .oneliner b{color:var(--mono);}
+
+  /* ── chronological flow strip (slim) ── */
+  .flow-lab{font-size:.94cqw;font-weight:800;color:var(--ink);margin:.7cqw 0 .5cqw;display:flex;align-items:center;gap:.6cqw;}
+  .flow-lab .hint{font-size:.78cqw;font-weight:700;color:var(--ink-mut);letter-spacing:.02em;}
+  .flow{display:flex;align-items:stretch;gap:.35cqw;}
+  .fchip{flex:1 1 0;min-width:0;background:#fff;border:.12cqw solid var(--line);border-top:.3cqw solid var(--mono);
+    border-radius:.42cqw;padding:.42cqw .55cqw;display:flex;flex-direction:column;position:relative;}
+  .fchip.pre{border-top-color:var(--ink-mut);background:var(--panel);}
+  .fchip.final{border-top-color:var(--ok);}
+  .fchip .n{font-size:.72cqw;font-weight:900;letter-spacing:.04em;color:var(--mono);}
+  .fchip.pre .n{color:var(--ink-mut);} .fchip.final .n{color:var(--ok);}
+  .fchip .h{font-size:.9cqw;font-weight:800;margin:.1cqw 0 .16cqw;line-height:1.18;}
+  .fchip .d{font-size:.74cqw;line-height:1.34;color:var(--ink-soft);}
+  .fchip .d code{font-family:var(--mn);font-size:.72cqw;background:var(--panel2);border-radius:.2cqw;padding:0 .24cqw;color:var(--mono);}
+  .farrow{align-self:center;color:var(--line2);font-size:1.25cqw;font-weight:900;flex:0 0 auto;}
+
+  /* ── families row: 4 columns ── */
+  .families{display:flex;gap:.85cqw;margin-top:1cqw;flex:1;min-height:0;}
+  .fam{display:flex;flex-direction:column;min-width:0;min-height:0;border:.12cqw solid var(--line);
+    border-radius:.5cqw;padding:.6cqw .7cqw .5cqw;background:#fff;}
+  .fam.song{border-top:.34cqw solid var(--sing);flex:1.18;}
+  .fam.situ{border-top:.34cqw solid var(--aro);flex:1.28;}
+  .fam.pref{border-top:.34cqw solid var(--pref);flex:1.28;}
+  .fam.hist{border-top:.34cqw solid var(--hist);flex:1.02;}
+  .fam-h{display:flex;align-items:baseline;gap:.45cqw;margin-bottom:.4cqw;line-height:1.1;}
+  .fam-h .t{font-size:1.12cqw;font-weight:900;}
+  .fam-h .w{font-size:.78cqw;font-weight:900;color:#fff;border-radius:.28cqw;padding:.06cqw .4cqw;letter-spacing:.02em;}
+  .song .fam-h .w{background:var(--sing);} .situ .fam-h .w{background:var(--aro);}
+  .pref .fam-h .w{background:var(--pref);} .hist .fam-h .w{background:var(--hist);}
+  .fam-sub{font-size:.76cqw;color:var(--ink-mut);line-height:1.32;margin:-.1cqw 0 .34cqw;}
+
+  /* ── data tables ── */
+  table{border-collapse:collapse;width:100%;font-size:.79cqw;line-height:1.22;}
+  th,td{padding:.2cqw .3cqw;border-bottom:.1cqw solid var(--line);text-align:left;white-space:nowrap;vertical-align:top;}
+  thead th{font-weight:800;border-bottom:.15cqw solid var(--line2);background:var(--panel2);}
+  td.f{font-family:var(--mn);font-size:.74cqw;color:var(--ink-soft);}
+  td.n,th.n{text-align:center;font-variant-numeric:tabular-nums;font-family:var(--mn);font-size:.74cqw;}
+  .col-a{color:var(--aro);} .th-a{background:var(--aro-bg);color:var(--aro);}
+  .col-v{color:var(--val);} .th-v{background:var(--val-bg);color:var(--val);}
+  .th-s{background:var(--sing-bg);color:var(--sing);}
+  td.dash{color:#cbd5e1;text-align:center;}
+  .inv{font-size:.6cqw;color:var(--ink-mut);font-family:var(--jp);}
+  tr.sum td{font-weight:800;border-top:.14cqw solid var(--line2);border-bottom:none;}
+  .tnote{font-size:.68cqw;color:var(--ink-mut);line-height:1.36;margin:.35cqw 0 0;}
+  .tnote code,.wnote code{font-family:var(--mn);font-size:.64cqw;}
+  .wnote{font-size:.7cqw;color:var(--ink-soft);line-height:1.4;margin:.34cqw 0 0;}
+  .wnote b{color:var(--ink);}
+  .warnmark{color:var(--val);font-weight:800;}
+  td.pos{color:var(--aro);} td.neg{color:var(--val);}
+  .rd{font-size:.74cqw;color:var(--ink-soft);white-space:normal;}
+  .lw{font-family:var(--mn);font-size:.68cqw;color:var(--ink-mut);}
+  .gp{display:inline-block;font-size:.62cqw;font-weight:800;color:var(--gate);background:var(--gate-bg);
+    border:.1cqw solid var(--gate-bd);border-radius:.24cqw;padding:0 .3cqw;font-family:var(--jp);}
+  .zz{color:var(--ink-mut);font-weight:800;}   /* 不採点マーク ✗ */
+
+  /* mood plane (compact, in 状況 column) */
+  .plane{margin-top:.5cqw;display:flex;gap:.55cqw;align-items:center;}
+  .plane svg{width:11.5cqw;height:auto;flex:0 0 auto;}
+  .plane-leg{display:flex;flex-direction:column;gap:.28cqw;font-size:.68cqw;line-height:1.28;color:var(--ink-soft);}
+  .plane-leg b{font-weight:800;}
+  .sw{display:inline-block;width:.8cqw;height:.8cqw;border-radius:.16cqw;vertical-align:-.04cqw;margin-right:.26cqw;}
+
+  /* ── deep-dive on one pipeline step (conceptual) ── */
+  .deep{margin-top:.85cqw;background:var(--mono-bg);border:.12cqw solid var(--mono-bd);
+    border-left:.4cqw solid var(--mono);border-radius:.5cqw;padding:.6cqw .85cqw .7cqw;}
+  .deep-h{font-size:1cqw;font-weight:900;color:var(--ink);display:flex;align-items:baseline;gap:.5cqw;flex-wrap:wrap;margin-bottom:.5cqw;}
+  .deep-h .badge{font-size:.66cqw;font-weight:800;color:#fff;background:var(--mono);border-radius:.24cqw;padding:.06cqw .45cqw;letter-spacing:.02em;}
+  .deep-h .sub{font-size:.78cqw;font-weight:700;color:var(--ink-mut);}
+  .deep-h .sub code{font-family:var(--mn);color:var(--mono);font-weight:800;}
+  .deep-body{display:flex;gap:1.1cqw;align-items:stretch;}
+  .dcard{flex:1;min-width:0;display:flex;flex-direction:column;gap:.28cqw;}
+  .dcard + .dcard{padding-left:1.1cqw;border-left:.12cqw solid var(--mono-bd);}
+  .dcard .q{font-size:.88cqw;font-weight:900;color:var(--mono);letter-spacing:.01em;}
+  .dcard p{margin:0;font-size:.8cqw;line-height:1.5;color:var(--ink-soft);}
+  .dcard p b{color:var(--ink);}
+  .dcard code{font-family:var(--mn);font-size:.74cqw;background:#fff;border:.1cqw solid var(--mono-bd);border-radius:.24cqw;padding:0 .28cqw;color:var(--mono);}
+  .dformula{font-family:var(--mn);font-size:.98cqw;font-weight:800;color:var(--mono);background:#fff;
+    border:.1cqw solid var(--mono-bd);border-radius:.34cqw;padding:.36cqw .5cqw;text-align:center;margin:.05cqw 0;}
+  .dvote{display:flex;gap:.42cqw;margin-top:.16cqw;}
+  .dvote .vv{flex:1;font-size:.72cqw;line-height:1.32;border-radius:.3cqw;padding:.3cqw .44cqw;}
+  .dvote .vv.agree{background:var(--aro-bg);color:var(--aro);border:.1cqw solid #bfdbfe;}
+  .dvote .vv.oppose{background:var(--val-bg);color:var(--val);border:.1cqw solid #fde68a;}
+  .dvote .vv b{font-weight:900;}
+
+  footer{margin-top:.55cqw;padding-top:.38cqw;border-top:.12cqw solid var(--line);
+    font-size:.68cqw;color:var(--ink-mut);line-height:1.36;}
+  footer code{font-family:var(--mn);font-size:.64cqw;}
+
+  @media print{
+    @page{size:landscape;margin:0;}
+    body{background:#fff;padding:0;}
+    .slide{width:100%;height:100%;box-shadow:none;border-radius:0;}
+  }
+</style>
+</head>
+<body>
+<div class="slide">
+  <div class="canvas">
+
+    <!-- ── CHRONOLOGICAL FLOW ── -->
+    <div class="flow-lab">アルゴリズムの流れ <span class="hint">— 左から右へ、1曲ごとに合い度 <code style="font-family:var(--mn)">item_fit</code> を計算 →</span></div>
+    <div class="flow">
+      <div class="fchip pre">
+        <div class="n">前提</div>
+        <div class="h">サービスは選択済み</div>
+        <div class="d">サービスの決定は見直さない。その中で「曲」だけを選ぶ。</div>
+      </div>
+      <div class="farrow">→</div>
+      <div class="fchip">
+        <div class="n">STEP 1</div>
+        <div class="h">曲を4トレイトに要約</div>
+        <div class="d">Spotify音声 → 元気さ・明るさ・歌いやすさ2種。各 0〜1。</div>
+      </div>
+      <div class="farrow">→</div>
+      <div class="fchip">
+        <div class="n">STEP 2</div>
+        <div class="h">3ファミリーが需要を出す</div>
+        <div class="d">状況・好み・過去実績が、それぞれ強さ <code>e</code> と応答係数 <code>a</code> を出す。</div>
+      </div>
+      <div class="farrow">→</div>
+      <div class="fchip">
+        <div class="n">STEP 3</div>
+        <div class="h">特徴量ごとの寄与</div>
+        <div class="d"><code>r = e × a</code>。状況では <code>a = α×A_s + β×V_s</code>。</div>
+      </div>
+      <div class="farrow">→</div>
+      <div class="fchip">
+        <div class="n">STEP 4</div>
+        <div class="h">重み付きで合計</div>
+        <div class="d">Σ（重み × 寄与）→ <code>item_fit ∈ [-1,+1]</code>。仮説スコア。</div>
+      </div>
+      <div class="farrow">→</div>
+      <div class="fchip final">
+        <div class="n">STEP 5</div>
+        <div class="h">適格性で絞り→上位5曲</div>
+        <div class="d">再生可否・市場・子供向け等を先に確認。高い順に5曲。</div>
+      </div>
+    </div>
+
+    <!-- ── FAMILIES: song | situation | preference | history ── -->
+    <div class="families">
+
+      <!-- COL 1 — SONG: measured into traits -->
+      <div class="fam song">
+        <div class="fam-h"><span class="t">曲を測る</span><span class="w">表1</span></div>
+        <div class="fam-sub">Spotify音声フィールド → 4トレイト（列の重み合計 = 1）</div>
+        <table>
+          <thead>
+            <tr>
+              <th>音声フィールド</th>
+              <th class="n th-a">活性</th><th class="n th-v">明る</th><th class="n th-s">鼻歌</th><th class="n th-s">カラ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="f">energy</td>          <td class="n col-a">.30</td><td class="dash">·</td><td class="dash">·</td><td class="dash">·</td></tr>
+            <tr><td class="f">loudness</td>        <td class="n col-a">.25</td><td class="dash">·</td><td class="dash">·</td><td class="dash">·</td></tr>
+            <tr><td class="f">tempo</td>           <td class="n col-a">.25</td><td class="dash">·</td><td class="n">.20</td><td class="n">.20</td></tr>
+            <tr><td class="f">danceability</td>    <td class="n col-a">.15</td><td class="dash">·</td><td class="n">.20</td><td class="n">.15</td></tr>
+            <tr><td class="f">acousticness</td>    <td class="n col-a">.05<span class="inv">逆</span></td><td class="dash">·</td><td class="dash">·</td><td class="dash">·</td></tr>
+            <tr><td class="f">valence</td>         <td class="dash">·</td><td class="n col-v">.65</td><td class="dash">·</td><td class="dash">·</td></tr>
+            <tr><td class="f">mode</td>            <td class="dash">·</td><td class="n col-v">.35</td><td class="dash">·</td><td class="dash">·</td></tr>
+            <tr><td class="f">instrumentalness</td><td class="dash">·</td><td class="dash">·</td><td class="n">.35<span class="inv">逆</span></td><td class="n">.30<span class="inv">逆</span></td></tr>
+            <tr><td class="f">speechiness</td>     <td class="dash">·</td><td class="dash">·</td><td class="n">.25<span class="inv">逆</span></td><td class="n">.20<span class="inv">逆</span></td></tr>
+            <tr><td class="f">duration_ms</td>     <td class="dash">·</td><td class="dash">·</td><td class="dash">·</td><td class="n">.15</td></tr>
+            <tr class="sum"><td>合計</td><td class="n">1.00</td><td class="n">1.00</td><td class="n">1.00</td><td class="n">1.00</td></tr>
+          </tbody>
+        </table>
+        <p class="tnote"><span class="inv">逆</span>＝反転（値が高いほどトレイトは低い）。<b>活性・明るさ</b>はランキング全体に効く曲の性格で、符号付き <code>A_s=2·活性−1</code>／<code>V_s=2·明るさ−1</code> にして使う。<b>鼻歌・カラ</b>はカラオケ・サービスの適合判断だけ。<code>key / time_signature / liveness</code> は保持のみ。</p>
+      </div>
+
+      <!-- COL 2 — SITUATION 0.45 -->
+      <div class="fam situ">
+        <div class="fam-h"><span class="t">状況</span><span class="w">0.45</span></div>
+        <div class="fam-sub">いまの状態・環境の「求めるもの」= <b style="color:var(--aro)">α 活性</b> ＋ <b style="color:var(--val)">β 明るさ</b></div>
+        <table>
+          <thead>
+            <tr><th>状況</th><th class="n th-a">α</th><th class="n th-v">β</th><th>向き</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>眠気</td>          <td class="n pos">+.55</td><td class="n pos">+.45</td><td class="rd">元気づけ＋明るく</td></tr>
+            <tr><td>単調さ</td>        <td class="n pos">+.60</td><td class="n pos">+.40</td><td class="rd">刺激＋明るく</td></tr>
+            <tr><td>疲労 <span class="warnmark">⚠</span></td><td class="n neg">−.50</td><td class="n pos">+.50</td><td class="rd">和らげる＋明るく</td></tr>
+            <tr><td>渋滞 <span class="warnmark">⚠</span></td><td class="n neg">−.40</td><td class="n pos">+.60</td><td class="rd">緩和＋明るく</td></tr>
+            <tr><td>夜間 <span class="warnmark">⚠</span></td><td class="n neg">−.50</td><td class="n pos">+.50</td><td class="rd">穏やか＋暖かく</td></tr>
+            <tr><td>山道</td>          <td class="n neg">−1.0</td><td class="n">0</td><td class="rd">穏やかに</td></tr>
+          </tbody>
+        </table>
+        <p class="wnote"><b>内訳の重み：</b><span class="lw">運転者状態.35 / 走行環境.21 / 走行状態.14 / 歌唱.13 / ルート.09‡ / 同乗者.08‡</span>。<span class="warnmark">⚠</span>＝向きは仮説（符号反転で切替）。各行 <code>|α|+β≤1</code>、<b>β は常に ≥0</b>（暗い曲は求めない）。</p>
+        <div class="plane">
+          <svg viewBox="0 0 300 250" role="img" aria-label="状況ごとの需要の向きを示す2軸ベクトル図">
+            <rect x="20" y="10" width="260" height="230" fill="#fcfcfb" stroke="#e5e7eb" stroke-width="1.2"/>
+            <line x1="150" y1="10" x2="150" y2="240" stroke="#cbd5e1" stroke-width="1.4"/>
+            <line x1="20" y1="125" x2="280" y2="125" stroke="#cbd5e1" stroke-width="1.4"/>
+            <text x="150" y="7" text-anchor="middle" font-size="12" font-weight="800" fill="#1d4ed8">↑ 元気にする</text>
+            <text x="150" y="250" text-anchor="middle" font-size="12" font-weight="800" fill="#b45309">↓ 穏やかにする</text>
+            <text x="276" y="121" text-anchor="end" font-size="11.5" font-weight="800" fill="#b45309">明るく →</text>
+            <defs>
+              <marker id="ah-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1d4ed8"/></marker>
+              <marker id="ah-v" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b45309"/></marker>
+            </defs>
+            <line x1="150" y1="125" x2="214" y2="66"  stroke="#1d4ed8" stroke-width="2.8" marker-end="url(#ah-a)"/>
+            <line x1="150" y1="125" x2="202" y2="54"  stroke="#1d4ed8" stroke-width="2.8" marker-end="url(#ah-a)"/>
+            <text x="219" y="62" font-size="11" font-weight="800" fill="#1d4ed8">眠気</text>
+            <text x="176" y="48" font-size="11" font-weight="800" fill="#1d4ed8">単調</text>
+            <line x1="150" y1="125" x2="214" y2="188" stroke="#b45309" stroke-width="2.8" marker-end="url(#ah-v)"/>
+            <line x1="150" y1="125" x2="222" y2="172" stroke="#b45309" stroke-width="2.8" marker-end="url(#ah-v)"/>
+            <line x1="150" y1="125" x2="150" y2="232" stroke="#b45309" stroke-width="2.8" marker-end="url(#ah-v)"/>
+            <text x="218" y="204" font-size="11" font-weight="800" fill="#b45309">疲労・夜間</text>
+            <text x="226" y="168" font-size="11" font-weight="800" fill="#b45309">渋滞</text>
+            <text x="155" y="230" font-size="11" font-weight="800" fill="#b45309">山道</text>
+          </svg>
+          <div class="plane-leg">
+            <span><span class="sw" style="background:#1d4ed8"></span><b>元気にする</b></span>
+            <span><span class="sw" style="background:#b45309"></span><b>穏やかにする</b></span>
+            <span style="color:#6b7280">1軸では〈静か⇔激しい〉しか並べられない。<b>2軸</b>で「穏やかで明るい／暗い」を区別できる。</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- COL 3 — PREFERENCE 0.35 (user profile) -->
+      <div class="fam pref">
+        <div class="fam-h"><span class="t">好み</span><span class="w">0.35</span></div>
+        <div class="fam-sub"><b style="color:var(--pref)">ユーザープロファイル</b>＋利用・操作履歴。曲メタデータや正確なIDと照合。</div>
+        <table>
+          <thead>
+            <tr><th>要素</th><th class="n">重み</th><th>曲との照合</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>推し</td><td class="n">.60</td><td class="rd">Artist ID 一致 → <b>+1</b>（推しモードONゲート）</td></tr>
+            <tr><td>年齢帯</td><td class="n">.10</td><td class="rd">リリース年代 → 年代アフィニティ</td></tr>
+            <tr><td>趣味 ‡</td><td class="n">.30</td><td class="rd">趣味タグ → ジャンル対応表</td></tr>
+            <tr><td>性別</td><td class="n">.00</td><td class="rd"><span class="zz">不採点</span>：透明重み0（CDC-SU既定）</td></tr>
+            <tr><td>利用度</td><td class="n">.40</td><td class="rd">同一Track ID の再生頻度 → ±</td></tr>
+            <tr><td>再生/スキップ<br>/曲変更</td><td class="n">.20</td><td class="rd">直近ほど強い加減点＋<span class="gp">スキップ=除外</span></td></tr>
+          </tbody>
+        </table>
+        <p class="wnote"><b>好みは2種：</b>「誰が・何が好きか」（推し・年齢・趣味）と「実際にどう使ったか」（利用・操作）。<b>‡</b> のジャンル系は拡張で採点。<b>性別は説明可能性のため重み0を明示</b>。サービス単位の指標（利用レベル等）は全候補で同じになるため不採点。</p>
+      </div>
+
+      <!-- COL 4 — HISTORY 0.20 -->
+      <div class="fam hist">
+        <div class="fam-h"><span class="t">過去実績</span><span class="w">0.20</span></div>
+        <div class="fam-sub">その曲の提案が過去に効いたか。正確なTrack IDだけを見る。</div>
+        <table>
+          <thead>
+            <tr><th>指標</th><th class="n">重み</th><th>評価</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>受諾率</td><td class="n">.30</td><td class="rd"><code>2·率/100−1</code></td></tr>
+            <tr><td>回復率</td><td class="n">.40</td><td class="rd"><code>2·率/100−1</code></td></tr>
+            <tr><td>スケジュール</td><td class="n">.30</td><td class="rd"><span class="zz">不採点</span>：曲と無関係</td></tr>
+          </tbody>
+        </table>
+        <p class="wnote">受諾率・回復率は<b>コンテンツ（曲）単位</b>の実績。<code>track_id</code> が一致した曲だけに効く。サービス単位の受諾率・回復率は全候補で同じになるため使わない。</p>
+        <p class="wnote" style="margin-top:.3cqw"><b>3ファミリーの重み：</b><span class="lw">状況 <b style="color:var(--aro)">0.45</b> / 好み <b style="color:var(--pref)">0.35</b> / 過去 <b style="color:var(--hist)">0.20</b></span>。使えない特徴量は重み0にして、残りを合計1へ再正規化。</p>
+      </div>
+    </div>
+
+    <!-- ── DEEP-DIVE: one pipeline step, conceptually ── -->
+    <div class="deep">
+      <div class="deep-h">
+        <span class="badge">深掘り</span>STEP 3「特徴量ごとの寄与」は何をしているか
+        <span class="sub">各ファミリーが出した「証拠」と「求め」を、1要素につき1つの数 <code>r = e × a</code> にまとめる段</span>
+      </div>
+      <div class="deep-body">
+
+        <!-- what it does -->
+        <div class="dcard">
+          <div class="q">何をする段か</div>
+          <div class="dformula">r = e × a</div>
+          <p>要素ごとに、<b>いまどれだけ当てはまるか</b>（証拠強度 <code>e ∈ [0,1]</code>）と、<b>その要素が曲に何を求めるか</b>（応答係数 <code>a ∈ [−1,+1]</code>）を掛け、寄与 <code>r</code> を1つ出す。<b>ここで初めて「状況」と「曲」が出会う</b>。全要素の <code>r</code> を次段で重み付き合算すると合い度になる。</p>
+        </div>
+
+        <!-- why split e and a -->
+        <div class="dcard">
+          <div class="q">なぜ e と a を分けるのか</div>
+          <p><code>e</code> は状況の<b>強さ</b>（眠気80＝強い証拠／わずかな眠気＝弱い証拠）。<code>a</code> は<b>向きと度合い</b>（元気を求める＝＋／穏やかを求める＝−）。分けることで「強いが求めは弱い」と「弱いが求めは強い」を別物として扱え、<b>どの要素がどれだけ効いたか</b>を1行ずつ後から説明できる ― 透明性の要。</p>
+        </div>
+
+        <!-- what the sign means -->
+        <div class="dcard">
+          <div class="q">符号がそろえば"賛成票"</div>
+          <p>曲側も符号付き（<code>A_s, V_s ∈ [−1,+1]</code>）。掛け算は<b>賛成・反対の投票</b>になる：</p>
+          <div class="dvote">
+            <div class="vv agree"><b>同じ向き → ＋</b><br>求め＝元気・曲＝元気なら合う</div>
+            <div class="vv oppose"><b>逆向き → −</b><br>求め＝穏やか・曲＝激しいなら外す</div>
+          </div>
+          <p style="margin-top:.06cqw">状況だけは <code>a = α·A_s + β·V_s</code> と<b>2軸</b>。活性と明るさを別々に求められる（疲労＝落ち着かせたいが暗くはしない）。</p>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      出典：<code>docs/master/aica_transparent_content_proposal_algorithm.md</code> ほか（<code>aica_proposal_simulator_specification.md</code> §9、CDC-SU 音楽企画 スライド68–75）。本ページは説明用の概要 ― 特徴量の完全契約（表3・全38件）、重み階層の全ツリー、genre対応表、計算例は仕様書本文に記載。
+    </footer>
+
+  </div>
+</div>
+</body>
+</html>

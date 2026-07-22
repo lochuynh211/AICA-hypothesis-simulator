@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="AICA 透明サービス提案アルゴリズム（重み付きレスポンス・モデル）の1枚概要ポスター。状況・好み・過去実績の3ファミリーでサービス候補を採点。">
+<title>AICA サービス提案アルゴリズム — 1枚概要</title>
+<style>
+  :root{
+    --ink:#111827; --ink-soft:#374151; --ink-mut:#6b7280;
+    --line:#e5e7eb; --line2:#cbd5e1; --panel:#f8fafc; --panel2:#f1f5f9;
+    --mono:#1d4ed8; --mono-bg:#eff6ff; --mono-bd:#bfdbfe;   /* primary accent (blue — sister of the purple content page) */
+    --matx:#0f766e; --matx-bg:#f0fdfa;    /* 応答マトリクス（候補側） */
+    --situ:#1d4ed8; --situ-bg:#eff6ff;    /* 状況ファミリー（支配・安全） */
+    --pref:#7c3aed; --pref-bg:#f5f3ff; --pref-bd:#ddd6fe;   /* 好み */
+    --hist:#0369a1; --hist-bg:#f0f9ff; --hist-bd:#bae6fd;   /* 過去実績 */
+    --ok:#047857; --ok-bg:#ecfdf5; --ok-bd:#a7f3d0;
+    --gate:#3730a3; --gate-bg:#eef2ff; --gate-bd:#c7d2fe;
+    /* レスポンス係数の色 */
+    --cpos:#047857; --cmid:#1d4ed8; --czero:#9ca3af; --cneg:#b45309; --cneg2:#dc2626;
+    --jp:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Meiryo",system-ui,sans-serif;
+    --mn:"SF Mono","Consolas","Roboto Mono",monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{background:#cbd5e1;display:grid;place-items:center;font-family:var(--jp);color:var(--ink);
+       -webkit-font-smoothing:antialiased;padding:2vmin;}
+  .slide{
+    width:min(100vw - 4vmin, (100vh - 4vmin) * 16 / 9);
+    aspect-ratio:16/9; background:#fff; overflow:hidden;
+    container-type:inline-size; border-radius:.6cqw;
+    box-shadow:0 2.4cqw 5cqw rgba(15,23,42,.28);
+  }
+  .canvas{width:100%;height:100%;padding:1.45cqw 1.9cqw 1.05cqw;display:flex;flex-direction:column;}
+
+  /* ── chronological flow strip (slim) ── */
+  .flow-lab{font-size:.94cqw;font-weight:800;color:var(--ink);margin:.7cqw 0 .5cqw;display:flex;align-items:center;gap:.6cqw;}
+  .flow-lab .hint{font-size:.78cqw;font-weight:700;color:var(--ink-mut);letter-spacing:.02em;}
+  .flow{display:flex;align-items:stretch;gap:.35cqw;}
+  .fchip{flex:1 1 0;min-width:0;background:#fff;border:.12cqw solid var(--line);border-top:.3cqw solid var(--mono);
+    border-radius:.42cqw;padding:.42cqw .55cqw;display:flex;flex-direction:column;position:relative;}
+  .fchip.pre{border-top-color:var(--ink-mut);background:var(--panel);}
+  .fchip.gate{border-top-color:var(--gate);}
+  .fchip.final{border-top-color:var(--ok);}
+  .fchip .n{font-size:.72cqw;font-weight:900;letter-spacing:.04em;color:var(--mono);}
+  .fchip.pre .n{color:var(--ink-mut);} .fchip.gate .n{color:var(--gate);} .fchip.final .n{color:var(--ok);}
+  .fchip .h{font-size:.9cqw;font-weight:800;margin:.1cqw 0 .16cqw;line-height:1.18;}
+  .fchip .d{font-size:.74cqw;line-height:1.34;color:var(--ink-soft);}
+  .fchip .d code{font-family:var(--mn);font-size:.72cqw;background:var(--panel2);border-radius:.2cqw;padding:0 .24cqw;color:var(--mono);}
+  .farrow{align-self:center;color:var(--line2);font-size:1.25cqw;font-weight:900;flex:0 0 auto;}
+
+  /* ── families row: 4 columns ── */
+  .families{display:flex;gap:.85cqw;margin-top:1cqw;flex:1;min-height:0;}
+  .fam{display:flex;flex-direction:column;min-width:0;min-height:0;border:.12cqw solid var(--line);
+    border-radius:.5cqw;padding:.6cqw .7cqw .5cqw;background:#fff;}
+  .fam.matx{border-top:.34cqw solid var(--matx);flex:1.34;}
+  .fam.situ{border-top:.34cqw solid var(--situ);flex:1.22;}
+  .fam.pref{border-top:.34cqw solid var(--pref);flex:1.12;}
+  .fam.hist{border-top:.34cqw solid var(--hist);flex:1.0;}
+  .fam-h{display:flex;align-items:baseline;gap:.45cqw;margin-bottom:.4cqw;line-height:1.1;}
+  .fam-h .t{font-size:1.12cqw;font-weight:900;}
+  .fam-h .w{font-size:.78cqw;font-weight:900;color:#fff;border-radius:.28cqw;padding:.06cqw .4cqw;letter-spacing:.02em;}
+  .matx .fam-h .w{background:var(--matx);} .situ .fam-h .w{background:var(--situ);}
+  .pref .fam-h .w{background:var(--pref);} .hist .fam-h .w{background:var(--hist);}
+  .fam-sub{font-size:.76cqw;color:var(--ink-mut);line-height:1.32;margin:-.1cqw 0 .34cqw;}
+  .fam-sub b{color:var(--ink-soft);}
+
+  /* ── data tables ── */
+  table{border-collapse:collapse;width:100%;font-size:.79cqw;line-height:1.22;}
+  th,td{padding:.2cqw .3cqw;border-bottom:.1cqw solid var(--line);text-align:left;white-space:nowrap;vertical-align:top;}
+  thead th{font-weight:800;border-bottom:.15cqw solid var(--line2);background:var(--panel2);}
+  td.cand{font-weight:700;font-size:.76cqw;color:var(--ink-soft);}
+  td.n,th.n{text-align:center;font-variant-numeric:tabular-nums;font-family:var(--mn);font-size:.74cqw;}
+  th.mh{text-align:center;background:var(--matx-bg);color:var(--matx);font-size:.72cqw;}
+  /* response-coefficient cells */
+  td.c{text-align:center;font-variant-numeric:tabular-nums;font-family:var(--mn);font-size:.74cqw;font-weight:700;}
+  td.cp{color:var(--cpos);} td.cm{color:var(--cmid);} td.cz{color:var(--czero);font-weight:400;}
+  td.cn{color:var(--cneg);} td.cn2{color:var(--cneg2);}
+  td.sg{font-weight:700;color:var(--ink-soft);}
+  .rd{font-size:.74cqw;color:var(--ink-soft);white-space:normal;}
+  .rd code,.tnote code,.wnote code{font-family:var(--mn);font-size:.66cqw;background:var(--panel2);border-radius:.2cqw;padding:0 .22cqw;color:var(--situ);}
+  .lw{font-family:var(--mn);font-size:.68cqw;color:var(--ink-mut);}
+  .inv{font-size:.6cqw;color:var(--ink-mut);font-family:var(--jp);}
+  .tnote{font-size:.68cqw;color:var(--ink-mut);line-height:1.38;margin:.35cqw 0 0;}
+  .wnote{font-size:.7cqw;color:var(--ink-soft);line-height:1.42;margin:.34cqw 0 0;}
+  .wnote b{color:var(--ink);}
+  .warnmark{color:var(--cneg);font-weight:800;}
+  .gp{display:inline-block;font-size:.62cqw;font-weight:800;color:var(--gate);background:var(--gate-bg);
+    border:.1cqw solid var(--gate-bd);border-radius:.24cqw;padding:0 .3cqw;font-family:var(--jp);}
+  .dir{display:inline-block;font-size:.62cqw;font-weight:800;color:var(--cpos);background:var(--ok-bg);
+    border:.1cqw solid var(--ok-bd);border-radius:.24cqw;padding:0 .3cqw;font-family:var(--jp);}
+
+  /* legend for coefficient scale */
+  .clegend{display:flex;flex-wrap:wrap;gap:.1cqw .7cqw;font-size:.66cqw;color:var(--ink-soft);margin:.32cqw 0 0;line-height:1.5;}
+  .clegend b{font-family:var(--mn);font-weight:800;}
+  .clegend .cp{color:var(--cpos);} .clegend .cm{color:var(--cmid);} .clegend .cz{color:var(--czero);}
+  .clegend .cn{color:var(--cneg);} .clegend .cn2{color:var(--cneg2);}
+
+  /* category-share bar (situation dominates) */
+  .sharebar{display:flex;gap:.16cqw;height:1.5cqw;margin:.36cqw 0 .1cqw;}
+  .sharebar .seg{display:flex;align-items:center;justify-content:center;font-size:.64cqw;font-weight:900;
+    color:#fff;border-radius:.2cqw;white-space:nowrap;overflow:hidden;}
+  .sharebar .s-situ{background:var(--situ);} .sharebar .s-pref{background:var(--pref);} .sharebar .s-hist{background:var(--hist);}
+
+  /* ── deep-dive: the safety / transparency design (conceptual) ── */
+  .deep{margin-top:.85cqw;background:var(--mono-bg);border:.12cqw solid var(--mono-bd);
+    border-left:.4cqw solid var(--mono);border-radius:.5cqw;padding:.6cqw .85cqw .7cqw;}
+  .deep-h{font-size:1cqw;font-weight:900;color:var(--ink);display:flex;align-items:baseline;gap:.5cqw;flex-wrap:wrap;margin-bottom:.5cqw;}
+  .deep-h .badge{font-size:.66cqw;font-weight:800;color:#fff;background:var(--mono);border-radius:.24cqw;padding:.06cqw .45cqw;letter-spacing:.02em;}
+  .deep-h .sub{font-size:.78cqw;font-weight:700;color:var(--ink-mut);}
+  .deep-h .sub code{font-family:var(--mn);color:var(--mono);font-weight:800;}
+  .deep-body{display:flex;gap:1.1cqw;align-items:stretch;}
+  .dcard{flex:1;min-width:0;display:flex;flex-direction:column;gap:.28cqw;}
+  .dcard + .dcard{padding-left:1.1cqw;border-left:.12cqw solid var(--mono-bd);}
+  .dcard .q{font-size:.88cqw;font-weight:900;color:var(--mono);letter-spacing:.01em;}
+  .dcard p{margin:0;font-size:.8cqw;line-height:1.5;color:var(--ink-soft);}
+  .dcard p b{color:var(--ink);}
+  .dcard code{font-family:var(--mn);font-size:.74cqw;background:#fff;border:.1cqw solid var(--mono-bd);border-radius:.24cqw;padding:0 .28cqw;color:var(--mono);}
+  .dformula{font-family:var(--mn);font-size:.94cqw;font-weight:800;color:var(--mono);background:#fff;
+    border:.1cqw solid var(--mono-bd);border-radius:.34cqw;padding:.36cqw .5cqw;text-align:center;margin:.05cqw 0;}
+
+  footer{margin-top:.55cqw;padding-top:.38cqw;border-top:.12cqw solid var(--line);
+    font-size:.68cqw;color:var(--ink-mut);line-height:1.36;}
+  footer code{font-family:var(--mn);font-size:.64cqw;}
+
+  @media print{
+    @page{size:landscape;margin:0;}
+    body{background:#fff;padding:0;}
+    .slide{width:100%;height:100%;box-shadow:none;border-radius:0;}
+  }
+</style>
+</head>
+<body>
+<div class="slide">
+  <div class="canvas">
+
+    <!-- ── CHRONOLOGICAL FLOW ── -->
+    <div class="flow-lab">アルゴリズムの流れ <span class="hint">— 発火のあと、どの<b>サービス</b>を提案するかを候補ごとに <code style="font-family:var(--mn)">service_fit</code> で採点 →</span></div>
+    <div class="flow">
+      <div class="fchip pre">
+        <div class="n">前提</div>
+        <div class="h">機会は確立済み</div>
+        <div class="d">トリガーが「提案してよい」と決めた後。<b>段階</b>が候補ファミリーを選ぶ（走行中6／休憩後5／休憩中は空）。</div>
+      </div>
+      <div class="farrow">→</div>
+      <div class="fchip gate">
+        <div class="n">STEP 1</div>
+        <div class="h">適格性で絞る</div>
+        <div class="d">カタログ ∩ 目的/段階の許可 ∩ motion・能力。<b>落ちた候補は採点されない</b>。</div>
+      </div>
+      <div class="farrow">→</div>
+      <div class="fchip">
+        <div class="n">STEP 2</div>
+        <div class="h">e と a を用意</div>
+        <div class="d">状況から証拠 <code>e</code>。候補ごとの応答 <code>a</code> は<b>人手で設定</b>（S67）。</div>
+      </div>
+      <div class="farrow">→</div>
+      <div class="fchip">
+        <div class="n">STEP 3</div>
+        <div class="h">特徴量ごとの寄与</div>
+        <div class="d"><code>r = clamp(e × a)</code>。1特徴量につき1つの数。</div>
+      </div>
+      <div class="farrow">→</div>
+      <div class="fchip">
+        <div class="n">STEP 4</div>
+        <div class="h">重み付きで合計</div>
+        <div class="d">Σ（実効重み × 寄与）→ <code>service_fit ∈ [-1,+1]</code>。目的で重みが変わる。</div>
+      </div>
+      <div class="farrow">→</div>
+      <div class="fchip final">
+        <div class="n">STEP 5</div>
+        <div class="h">上位3を返す</div>
+        <div class="d">fit降順・id昇順。適格候補が0件なら <code>no_proposal</code>。</div>
+      </div>
+    </div>
+
+    <!-- ── FAMILIES: response-matrix | situation | preference | history ── -->
+    <div class="families">
+
+      <!-- COL 1 — RESPONSE MATRIX (the candidate side) -->
+      <div class="fam matx">
+        <div class="fam-h"><span class="t">応答マトリクス</span><span class="w">核心</span></div>
+        <div class="fam-sub"><b>走行中6サービス</b>が各証拠にどう応えるか。セル = 応答係数 <code style="font-family:var(--mn)">a</code>（S67から<b>人手で設定</b>）。</div>
+        <table>
+          <thead>
+            <tr>
+              <th>候補（走行中）</th>
+              <th class="mh">覚醒<br>環境</th><th class="mh">ルート<br>目的地</th><th class="mh">同乗<br>者</th><th class="mh">推し</th><th class="mh">山道</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="cand">音楽</td>       <td class="c cz">0.0</td><td class="c cp">+1.0</td><td class="c cz">0.0</td><td class="c cm">+.5</td><td class="c cm">+.5</td></tr>
+            <tr><td class="cand">鼻歌カラオケ</td><td class="c cp">+1.0</td><td class="c cp">+1.0</td><td class="c cp">+1.0</td><td class="c cm">+.5</td><td class="c cn">−.5</td></tr>
+            <tr><td class="cand">合いの手</td>   <td class="c cp">+1.0</td><td class="c cz">0.0</td><td class="c cp">+1.0</td><td class="c cm">+.5</td><td class="c cn">−.5</td></tr>
+            <tr><td class="cand">クイズ</td>     <td class="c cp">+1.0</td><td class="c cz">0.0</td><td class="c cp">+1.0</td><td class="c cm">+.5</td><td class="c cn2">−1.0</td></tr>
+            <tr><td class="cand">ランキング</td> <td class="c cp">+1.0</td><td class="c cz">0.0</td><td class="c cp">+1.0</td><td class="c cm">+.5</td><td class="c cn2">−1.0</td></tr>
+            <tr><td class="cand">ラジオ風</td>   <td class="c cz">0.0</td><td class="c cz">0.0</td><td class="c cz">0.0</td><td class="c cp">+1.0</td><td class="c cm">+.5</td></tr>
+          </tbody>
+        </table>
+        <div class="clegend">
+          <span><b class="cp">+1.0</b> 強く支持</span><span><b class="cm">+0.5</b> 支持</span><span><b class="cz">0.0</b> 中立</span><span><b class="cn">−0.5</b> 反対</span><span><b class="cn2">−1.0</b> 強く反対</span>
+        </div>
+        <p class="tnote"><b>覚醒環境</b>＝眠気・疲労・渋滞・夜間・単調（S67がこの4サービスを名指し→<code>+1.0</code>）。<b>山道</b>は相互作用の負荷が高い道なので安全上マイナス（クイズ/ランキング＝<code>−1.0</code>）― 除外ではなく<b>並べ替え</b>。<b>休憩前①と走行中②–④は同じ1枚を共有</b>し、目的は重みだけを変える。休憩後5サービスは別マトリクス。</p>
+      </div>
+
+      <!-- COL 2 — SITUATION 0.80 -->
+      <div class="fam situ">
+        <div class="fam-h"><span class="t">状況</span><span class="w">0.80</span></div>
+        <div class="fam-sub">いまの運転者・道路の状態＝<b>安全に直結</b>する信号。だから最優先。</div>
+        <table>
+          <thead>
+            <tr><th>サブグループ</th><th class="n">比率</th><th>リーフ ／ 証拠 e</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="sg">運転者状態</td><td class="n">.50</td><td class="rd">眠気・疲労 <span class="warnmark">±</span> <code>2·(x/100)^γ−1</code></td></tr>
+            <tr><td class="sg">走行環境</td><td class="n">.35</td><td class="rd">渋滞・道路・夜間・単調 <span class="warnmark">±</span></td></tr>
+            <tr><td class="sg">ルート文脈</td><td class="n">.075</td><td class="rd">ルート・目的地 <code>[0,1]</code></td></tr>
+            <tr><td class="sg">同乗者構成</td><td class="n">.075</td><td class="rd">子供・複数 <code>0/1</code></td></tr>
+          </tbody>
+        </table>
+        <p class="wnote"><b>証拠 e は2種：</b><span class="warnmark">±</span>＝<b>符号付き</b> <code>[−1,+1]</code>（眠気・疲労・単調）。はっきり覚醒したドライバー（低い値）は<b>マイナスの証拠</b>になり、活性化サービスを押し下げる。片方向 <code>[0,1]</code> は「0＝証拠なし」で、反対の意味ではない。</p>
+        <p class="wnote" style="margin-top:.3cqw"><b>目的マルチプライヤ：</b>同じ6候補が②–④で共通なので、<b>目的ごとにサブグループ重みを倍率で調整</b>（例：ルート③はルート文脈を <code>×5.0</code>、子供④は同乗者を <code>×5.0</code>、他の嗜好系は <code>×0.3</code>）。階層は1つのまま。</p>
+      </div>
+
+      <!-- COL 3 — PREFERENCE 0.12 -->
+      <div class="fam pref">
+        <div class="fam-h"><span class="t">好み</span><span class="w">0.12</span></div>
+        <div class="fam-sub">個人に合わせるが、状況ほどは重視しない。</div>
+        <table>
+          <thead>
+            <tr><th>要素</th><th class="n">比率</th><th>証拠 e</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="sg">推し（登録・モード）</td><td class="n">.25</td><td class="rd">登録<code>0/1</code>、モード off<code>−1</code>/on<code>+1</code></td></tr>
+            <tr><td class="sg">新規性</td><td class="n">.10</td><td class="rd">最近0 / 長期未使用.5 / 未使用1</td></tr>
+            <tr><td class="sg">全体利用度</td><td class="n">.25</td><td class="rd">never<code>−1</code>…high<code>+1</code> <span class="dir">直接+1.0</span></td></tr>
+            <tr><td class="sg">場面別利用度</td><td class="n">.40</td><td class="rd">現在シーンの利用度平均 <span class="dir">直接+1.0</span></td></tr>
+          </tbody>
+        </table>
+        <p class="wnote"><b>直接特徴量</b>（利用度・履歴）は候補ごとの値の<b>符号そのものが方向</b>を持つので、係数はどの候補でも <code>+1.0</code> に固定。新規性は片方向で、最近使ったことはマイナスにはせず中立。出典が沈黙なら中立 <code>0.0</code>で、負にはしない。</p>
+      </div>
+
+      <!-- COL 4 — HISTORY 0.08 -->
+      <div class="fam hist">
+        <div class="fam-h"><span class="t">過去実績</span><span class="w">0.08</span></div>
+        <div class="fam-sub">過去に効いたか。合成値で未検証のため控えめ。</div>
+        <table>
+          <thead>
+            <tr><th>指標</th><th class="n">比率</th><th>証拠 e</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="sg">提案受諾率</td><td class="n">.25</td><td class="rd"><code>2·率/100−1</code> <span class="dir">直接+1.0</span></td></tr>
+            <tr><td class="sg">回復率</td><td class="n">.75</td><td class="rd"><code>2·率/100−1</code> <span class="dir">直接+1.0</span></td></tr>
+          </tbody>
+        </table>
+        <p class="wnote">受諾より<b>回復を重視</b>（.75）。実測ではなく設定した仮の率で、受諾確率でも臨床的主張でもない。</p>
+        <p class="wnote" style="margin-top:.3cqw"><b>3ファミリーの比率（正規化前）：</b></p>
+        <div class="sharebar">
+          <span class="seg s-situ" style="flex:0.80">状況 0.80</span>
+          <span class="seg s-pref" style="flex:0.12">好み</span>
+          <span class="seg s-hist" style="flex:0.08">過去</span>
+        </div>
+        <p class="wnote" style="margin-top:.16cqw"><span class="lw">状況 <b style="color:var(--situ)">0.80</b> ／ 好み <b style="color:var(--pref)">0.12</b> ／ 過去 <b style="color:var(--hist)">0.08</b></span>。使えない特徴量は重み0にして残りを合計1へ再正規化。</p>
+      </div>
+    </div>
+
+    <!-- ── DEEP-DIVE: the safety / transparency design, conceptually ── -->
+    <div class="deep">
+      <div class="deep-h">
+        <span class="badge">深掘り</span>なぜ「安全」を採点そのものに混ぜないのか ― 2層で守る設計
+        <span class="sub">絶対的な安全は<b>採点前</b>の適格性で、相対的な適合は<b>目に見える</b>重みと係数で。<code>service_fit</code>は受諾確率でも安全保証でもない。</span>
+      </div>
+      <div class="deep-body">
+
+        <!-- eligibility = absolute safety -->
+        <div class="dcard">
+          <div class="q">適格性 ＝ 絶対安全（採点の前）</div>
+          <div class="dformula">候補 = カタログ ∩ 許可 ∩ 適格性</div>
+          <p>提案してよいかは<b>採点の前</b>に決める。走行中にフルカラオケ（画面必須）などは<b>ここで除外</b>され、<code>service_fit</code> を持たず理由コード付きで報告される。<b>あとからスコアや重みで復活させることはない</b>。走行中か停車中かも、順位付けの特徴量ではなく適格性の事実として扱う。</p>
+        </div>
+
+        <!-- weights = relative suitability, situation dominates -->
+        <div class="dcard">
+          <div class="q">重み ＝ 相対適合（状況0.80が支配）</div>
+          <p>いまの運転者・道路の状態が安全に直結する信号なので<b>状況を最優先</b>にする（好み0.12・過去0.08）。連続的な支配条件 <code>W_D·gap &gt; 2·W_L</code> により、<b>高優先の明確な差は、下位の証拠をすべて足しても覆らない</b>。境界バンドは使わず、顧客が編集するたび再計算し、安全シェアが <code>0.40</code> を切ると<b>止めずに警告</b>する。</p>
+        </div>
+
+        <!-- a is hand-authored -->
+        <div class="dcard">
+          <div class="q">応答係数 a は人手で決める（状況非依存）</div>
+          <p>コンテンツ選択は音声から <b>算出</b>するが、サービスの <code>a</code> は候補IDごとに<b>人手で設定</b>（S67）。IDに固有の性質で、<b>目的は重みだけ・段階は候補ファミリーだけ</b>を変える。だから休憩前①と走行中②–④は<b>1枚のマトリクスを共有</b>できる。方向はS67、大きさはサービス定義（S38–40）から。</p>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      出典：<code>docs/master/aica_transparent_service_proposal_algorithm.md</code> ほか（<code>aica_proposal_simulator_specification.md</code>、CDC-SU 音楽企画 スライド38–40・64–67）。本ページは説明用の概要 ― 17特徴量の完全契約、重み階層の全ツリー、目的マルチプライヤ表、支配不変条件の証明、計算例は仕様書本文に記載。<code>service_fit</code> は受諾確率でも回復確率でも安全保証でもない。
+    </footer>
+
+  </div>
+</div>
+</body>
+</html>
