@@ -80,16 +80,16 @@ def build_prompt(target: dict[str, Any], context: dict[str, Any]) -> Explanation
         "NEGATIVE when it pushed against it; a larger magnitude means a stronger influence."
     )
     lines.append(
-        "- The number in [brackets] is that factor's raw value. A factor can be a top "
-        "contributor without its raw value being high, so do NOT describe a value as "
-        "'high' unless the bracketed value truly is."
+        "- The value in [brackets] is that factor's qualitative level (low / medium / "
+        "high). A factor can be a top contributor even at a low level, so weigh the "
+        "level and the contribution together."
     )
 
     if factors:
         lines.append("")
-        lines.append("Factors, most influential first (label [raw value]: contribution — meaning):")
+        lines.append("Factors, most influential first (label [level]: contribution — meaning):")
         for f in factors:
-            val = "" if f["value"] in (None, "") else f" [{f['value']}]"
+            val = "" if f["value_display"] in (None, "") else f" [{f['value_display']}]"
             meaning = f" — {f['meaning']}" if f["meaning"] else ""
             lines.append(f"- {f['label_ja']} / {f['label_en']}{val}: {f['contribution']:+.3f}{meaning}")
     if supporting:

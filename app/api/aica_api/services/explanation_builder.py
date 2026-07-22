@@ -121,9 +121,9 @@ FEATURE_LABELS: dict[str, dict[str, str]] = {
 # disposition registry (e.g. "2·rate/100−1"), which a small model would parrot.
 # Missing → "" (the label alone is shown).
 _FEATURE_MEANINGS: dict[str, str] = {
-    "drowsiness_level": "how sleepy the driver is (0 = alert … 100 = very drowsy)",
-    "fatigue_level": "how physically tired the driver is (0–100)",
-    "monotony_level": "how monotonous/boring the road feels (0–100)",
+    "drowsiness_level": "how sleepy the driver is (alert → very drowsy)",
+    "fatigue_level": "how physically tired the driver is",
+    "monotony_level": "how monotonous/boring the road feels",
     "traffic_state": "the current traffic level",
     "road_type": "the kind of road (e.g. highway vs local)",
     "night_state": "whether it is day or night",
@@ -237,6 +237,29 @@ _FORMAT_REMINDER = (
 )
 
 
+def _value_display(value: Any) -> str:
+    """Qualitative band for a factor's raw value (FIX-SCALE).
+
+    Numeric ``e_i``/``feature_value`` (0–1 normalized evidence) is banded into
+    "high"/"medium"/"low" so it reads consistently against the 0–100 style
+    meanings, instead of showing a raw fraction like ``0.7`` that looks low
+    against a 0–100 scale. Non-empty strings (service categoricals like
+    "heavy"/"high") pass through unchanged. Missing/blank -> "".
+    """
+    if isinstance(value, bool):
+        return "high" if value else "low"
+    if isinstance(value, (int, float)):
+        v = float(value)
+        if v >= 0.62:
+            return "high"
+        if v < 0.40:
+            return "low"
+        return "medium"
+    if isinstance(value, str) and value:
+        return value
+    return ""
+
+
 def _factors_from_target(target: dict[str, Any]) -> list[dict[str, Any]]:
     """Extract, label, define, and rank the contributions of a candidate/item.
 
@@ -261,6 +284,7 @@ def _factors_from_target(target: dict[str, Any]) -> list[dict[str, Any]]:
                 "label_en": lab["en"],
                 "contribution": contribution,
                 "value": value,
+                "value_display": _value_display(value),
                 "meaning": feature_meaning(fid),
             }
         )

@@ -35,3 +35,10 @@ def test_service_template_degrades_to_passthrough_pair():
     target = {"candidate_id": "rest_stop",
               "rationale": ["日本語の理由。", "English reason."]}
     assert se.template(target) == ["日本語の理由。", "English reason."]
+
+
+def test_service_build_prompt_factor_list_uses_categorical_value_passthrough():
+    prompt = se.build_prompt(_service_target(), {"trigger_purpose": "drowsiness"})
+    user = prompt.messages[1].content
+    assert "[high]" in user  # drowsiness_level feature_value="high" passes through
+    assert "level" in user.lower()  # updated "how to read" note

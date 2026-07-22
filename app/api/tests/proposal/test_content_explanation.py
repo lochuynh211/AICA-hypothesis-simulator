@@ -44,6 +44,33 @@ def test_causal_bridge_empty_when_no_traits():
     assert ce.causal_bridge_lines({"item_id": "x", "feature_contributions": []}) == []
 
 
+# ── FIX-D3: motion_state/motion is not a causal anchor ──────────────────────
+
+def test_causal_bridge_skips_motion_state():
+    target = {
+        "item_id": "x",
+        "trait_values": {"arousal": 0.80},
+        "feature_contributions": [
+            {"feature_id": "motion_state", "alpha": 0.5, "beta": 0.0, "contribution": 0.10},
+        ],
+    }
+    assert ce.causal_bridge_lines(target) == []
+
+
+def test_template_skips_motion_state_as_sentence1_anchor():
+    target = {
+        "item_id": "x",
+        "trait_values": {"arousal": 0.80},
+        "feature_contributions": [
+            {"feature_id": "motion_state", "alpha": 0.5, "beta": 0.0, "contribution": 0.50},
+        ],
+    }
+    ja, en = ce.template(target)
+    assert "motion" not in en.lower() and "走行状態" not in ja
+    # no other demand-bearing feature -> falls back to legacy join (empty rationale here -> blank pair)
+    assert [ja, en] == ["", ""]
+
+
 def test_build_prompt_injects_bridge_and_readout():
     prompt = ce.build_prompt(_drowsy_song_target(), {"trigger_purpose": "drowsiness"})
     user = prompt.messages[1].content.lower()
@@ -57,6 +84,76 @@ def test_content_template_is_causal_when_facts_present():
     assert "energetic" in en.lower()
     assert ja and en
     assert " / " not in ja  # not the raw combined form
+
+
+# ── FIX-D1: sentence 1 states the feature's REAL value band, never "is high"
+# when it isn't ──────────────────────────────────────────────────────────────
+
+def test_content_template_low_drowsiness_does_not_say_is_high():
+    target = {
+        "item_id": "song-low", "position": 1, "item_fit": 0.20,
+        "trait_values": {"arousal": 0.80, "valence": 0.60},
+        "situation_fit": 0.10, "preference_fit": 0.01, "history_fit": 0.0,
+        "feature_contributions": [
+            {"feature_id": "drowsiness_level", "e_i": 0.15, "alpha": 0.80, "beta": 0.20,
+             "contribution": 0.05},
+        ],
+    }
+    ja, en = ce.template(target)
+    assert "drowsiness is high" not in en.lower()
+    assert "drowsiness is low" in en.lower()
+
+
+# ── FIX-D5: sentence 1 leads with the dominant preference/history family ────
+
+def test_content_template_leads_with_preference_when_dominant():
+    target = {
+        "item_id": "song-pref", "position": 1, "item_fit": 0.30,
+        "trait_values": {"arousal": 0.80, "valence": 0.60},
+        "situation_fit": 0.02, "preference_fit": 0.35, "history_fit": 0.01,
+        "feature_contributions": [
+            {"feature_id": "drowsiness_level", "e_i": 0.72, "alpha": 0.80, "beta": 0.20,
+             "contribution": 0.02},
+            {"feature_id": "oshi_id", "e_i": 1.0, "contribution": 0.30},
+        ],
+    }
+    ja, en = ce.template(target)
+    assert "taste" in en.lower()
+    assert "oshi" in en.lower() or "favorite" in en.lower()
+    assert "situation calls for" not in en.lower()
+
+
+def test_content_template_leads_with_history_when_dominant():
+    target = {
+        "item_id": "song-hist", "position": 1, "item_fit": 0.30,
+        "trait_values": {"arousal": 0.80, "valence": 0.60},
+        "situation_fit": 0.02, "preference_fit": 0.01, "history_fit": 0.30,
+        "feature_contributions": [
+            {"feature_id": "drowsiness_level", "e_i": 0.72, "alpha": 0.80, "beta": 0.20,
+             "contribution": 0.02},
+            {"feature_id": "catalog_item_usage_level", "e_i": 0.9, "contribution": 0.28},
+        ],
+    }
+    ja, en = ce.template(target)
+    assert "history" in en.lower()
+    assert "situation calls for" not in en.lower()
+
+
+# ── FIX-D4: taste/history reinforcement needs a real signal (>= 0.05) ───────
+
+def test_content_template_blank_profile_does_not_claim_taste_reinforced():
+    target = {
+        "item_id": "song-blank", "position": 1, "item_fit": 0.20,
+        "trait_values": {"arousal": 0.80, "valence": 0.60},
+        "situation_fit": 0.30, "preference_fit": 0.03, "history_fit": 0.0,
+        "feature_contributions": [
+            {"feature_id": "drowsiness_level", "e_i": 0.72, "alpha": 0.80, "beta": 0.20,
+             "contribution": 0.18},
+        ],
+    }
+    ja, en = ce.template(target)
+    assert "your taste" not in en.lower()
+    assert "reinforced" not in en.lower()
 
 
 def test_content_template_degrades_to_legacy_join():
@@ -123,6 +220,60 @@ def test_demand_uses_static_fallback_when_row_alpha_missing():
     # feature_id, exactly as _STATIC_DEMAND specifies.
     p = ce.demand_phrase(None, None, "drowsiness_level")
     assert p is not None and "energetic" in p["en"].lower()
+
+
+# ── FIX-SCALE: factor list shows a qualitative band, not a raw fraction ──────
+
+def test_build_prompt_factor_list_shows_band_not_raw_fraction():
+    prompt = ce.build_prompt(_drowsy_song_target(), {"trigger_purpose": "drowsiness"})
+    user = prompt.messages[1].content
+    assert "[0.7" not in user and "[0.72]" not in user
+    assert "[high]" in user  # drowsiness e_i=0.72 -> high band
+    assert "(0-100)" not in user and "(0–100)" not in user
+
+
+# ── FIX-D2: bridge narrates the axis the song actually satisfies ────────────
+
+def test_bridge_fatigue_style_row_reads_as_coherent_valence_match():
+    # alpha<0 (soothe demand) but beta>0 (bright demand); song is HIGH arousal
+    # (soothe unsatisfied) AND bright (bright satisfied) -> must narrate the
+    # valence axis honestly, never claim a soothe/calm match that isn't real.
+    target = {
+        "item_id": "x", "position": 1, "item_fit": 0.4,
+        "trait_values": {"arousal": 0.80, "valence": 0.70},
+        "feature_contributions": [
+            {"feature_id": "fatigue_level", "alpha": -0.5, "beta": 0.5, "contribution": 0.089},
+        ],
+    }
+    lines = ce.causal_bridge_lines(target)
+    joined = " ".join(lines).lower()
+    assert not ("calm" in joined and "a strong match" in joined)
+    assert "brighter" in joined or "bright" in joined
+    assert "matches" in joined
+    assert "calm" not in joined and "soothing" not in joined
+
+
+def test_bridge_drowsiness_stays_arousal_energize_match():
+    lines = ce.causal_bridge_lines(_drowsy_song_target())
+    joined = " ".join(lines).lower()
+    assert "energetic" in joined and "matches" in joined
+
+
+def test_bridge_never_pairs_calm_demand_with_strong_match_wording():
+    # Across a battery of alpha/beta combos with a high-energy song, no bridge
+    # line may claim "(a strong match)" (the old buggy phrasing) at all, and
+    # none may pair calm/soothing with a match claim.
+    for alpha, beta in [(-0.5, 0.5), (-0.8, 0.1), (-0.3, 0.7)]:
+        target = {
+            "item_id": "x",
+            "trait_values": {"arousal": 0.85, "valence": 0.75},
+            "feature_contributions": [
+                {"feature_id": "fatigue_level", "alpha": alpha, "beta": beta, "contribution": 0.05},
+            ],
+        }
+        joined = " ".join(ce.causal_bridge_lines(target)).lower()
+        assert "a strong match" not in joined
+        assert not ("calm" in joined and "match" in joined)
 
 
 def test_demand_phrase_directional_features_stay_silent_without_row_alpha():
