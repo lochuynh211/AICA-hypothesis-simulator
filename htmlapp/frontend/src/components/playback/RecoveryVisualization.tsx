@@ -15,10 +15,17 @@
  */
 
 import { useRunStore } from '../../state/runStore'
+import { useLanguage } from '../../state/language'
+import { t } from '../../i18n/t'
+
+const LABELS = {
+  wakeUpAudio: { ja: '目覚まし音声', en: 'Wake-up audio' },
+}
 
 export default function RecoveryVisualization() {
   const { state } = useRunStore()
   const { trace } = state
+  const { lang } = useLanguage()
 
   const latest = trace[trace.length - 1]
   const phase = latest?.recovery_phase ?? null
@@ -155,7 +162,7 @@ export default function RecoveryVisualization() {
         }}
       >
         <span style={{ fontSize: '1.15em' }}>♪</span>
-        <span>Wake-up audio</span>
+        <span>{t(LABELS.wakeUpAudio, lang)}</span>
       </div>
     )
   }

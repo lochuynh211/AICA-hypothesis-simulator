@@ -36,9 +36,11 @@ import { createRunPlan, createRun as clientCreateRun, tickRun, getRunLog, getEvi
 import { renderEvidenceMarkdown } from '../src/engine/services/evidence_markdown'
 import { exportRun, exportAllRuns, importRun } from '../src/engine/services/portability'
 import { seedDefaults } from '../src/storage/db'
+import { resetDispatchState } from '../src/engine/worker/dispatch'
 
 beforeEach(async () => {
   globalThis.indexedDB = new IDBFactory()
+  resetDispatchState()
   clearDraftRegistry()
   clearRegistry()
   await seedDefaults()

@@ -97,7 +97,7 @@ export type ExplainedStep = {
 
 export type FormulationSection = {
   id: string
-  title: string
+  title: BilingualLabel
   lines?: FormulaLine[]
   thresholdReads?: ThresholdRead[]
   /** Step-by-step pipeline explanation (each stage names the hyperparameter it uses). */
@@ -118,7 +118,7 @@ const HYBRID_TEMPLATE: PackageFormulationTemplate = {
   sections: [
     {
       id: 'features',
-      title: 'Features (per-signal)',
+      title: { en: 'Features (per-signal)', ja: '特徴量（信号ごと）' },
       lines: [
         { output: 'drowsiness', parts: [{ link: 'drowsiness' }, { text: ' ÷ 100' }] },
         { output: 'fatigue', parts: [{ link: 'fatigue' }, { text: ' ÷ 100' }] },
@@ -175,7 +175,7 @@ const HYBRID_TEMPLATE: PackageFormulationTemplate = {
     },
     {
       id: 'combined',
-      title: 'Combined features (multi-signal)',
+      title: { en: 'Combined features (multi-signal)', ja: '複合特徴量（複数信号）' },
       lines: [
         {
           output: 'env_load',
@@ -205,7 +205,7 @@ const HYBRID_TEMPLATE: PackageFormulationTemplate = {
     },
     {
       id: 'base_safety_risk',
-      title: 'base_safety_risk',
+      title: { en: 'base_safety_risk', ja: 'base_safety_risk' },
       lines: [
         {
           output: 'base_safety_risk',
@@ -237,7 +237,7 @@ const HYBRID_TEMPLATE: PackageFormulationTemplate = {
     },
     {
       id: 'rest_required',
-      title: 'rest_required',
+      title: { en: 'rest_required', ja: 'rest_required' },
       lines: [
         {
           output: 'rest_required_score',
@@ -279,7 +279,7 @@ const HYBRID_TEMPLATE: PackageFormulationTemplate = {
     },
     {
       id: 'monotony_prevention',
-      title: 'monotony_prevention',
+      title: { en: 'monotony_prevention', ja: 'monotony_prevention' },
       lines: [
         {
           output: 'monotony_prevention_score',
@@ -315,7 +315,7 @@ const HYBRID_TEMPLATE: PackageFormulationTemplate = {
     },
     {
       id: 'fire_control',
-      title: 'fire-control',
+      title: { en: 'fire-control', ja: '発火制御' },
       steps: [
         {
           text: {
@@ -387,7 +387,7 @@ const NRI_TEMPLATE: PackageFormulationTemplate = {
   sections: [
     {
       id: 's_base',
-      title: 'S_base',
+      title: { en: 'S_base', ja: 'S_base' },
       lines: [
         {
           output: 'S_base',
@@ -415,7 +415,7 @@ const NRI_TEMPLATE: PackageFormulationTemplate = {
     },
     {
       id: 's_env',
-      title: 'S_env',
+      title: { en: 'S_env', ja: 'S_env' },
       lines: [
         {
           output: 'S_env',
@@ -440,7 +440,7 @@ const NRI_TEMPLATE: PackageFormulationTemplate = {
     },
     {
       id: 's_realtime',
-      title: 'S_realtime',
+      title: { en: 'S_realtime', ja: 'S_realtime' },
       lines: [
         {
           output: 'S_realtime',
@@ -463,7 +463,7 @@ const NRI_TEMPLATE: PackageFormulationTemplate = {
     },
     {
       id: 's_total',
-      title: 'S_total (rest_required)',
+      title: { en: 'S_total (rest_required)', ja: 'S_total (rest_required)' },
       lines: [
         {
           output: 'S_total',
@@ -482,7 +482,7 @@ const NRI_TEMPLATE: PackageFormulationTemplate = {
     },
     {
       id: 'fire_control',
-      title: 'fire-control',
+      title: { en: 'fire-control', ja: '発火制御' },
       steps: [
         {
           text: {

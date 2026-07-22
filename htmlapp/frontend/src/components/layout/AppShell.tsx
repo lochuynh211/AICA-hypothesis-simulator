@@ -20,7 +20,6 @@ import RunsScreen from '../screens/RunsScreen'
 import LeftContextPanel from './LeftContextPanel'
 import CenterPlaybackPanel from './CenterPlaybackPanel'
 import RightReviewPanel from './RightReviewPanel'
-import LanguageToggle from './LanguageToggle'
 import ErrorNotice from '../common/ErrorNotice'
 
 type Props = {
@@ -111,8 +110,6 @@ export default function AppShell({ healthStatus }: Props) {
             Runs
           </button>
         </nav>
-
-        <LanguageToggle />
 
         {healthStatus && (
           <span

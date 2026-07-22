@@ -33,13 +33,25 @@ export function startRecovery(option: RecoveryOption, restSpot: RestSpot): Recov
     phase: first ? first.phase : 'resuming',
     stage_index: 0,
     stage_ticks_remaining: first ? (first.ticks ?? 0) : 0,
+    // Feature 020 Slice-2 accumulators — always start at 0.0 (not yet
+    // implemented in this offline JS build; included for API parity with Python).
+    moving_recovery_accrued_drowsiness: 0.0,
+    moving_recovery_accrued_fatigue: 0.0,
   }
 }
 
 function enterStage(state: RecoveryStateT, option: RecoveryOption, index: number): RecoveryStateT {
   const stages = option.stages ?? []
   if (index >= stages.length) {
-    return { ...state, phase: 'resuming', stage_index: index, stage_ticks_remaining: 0 }
+    return {
+      ...state,
+      phase: 'resuming',
+      stage_index: index,
+      stage_ticks_remaining: 0,
+      // Reset per-stage accumulators on stage transition (mirrors Python's _enter_stage).
+      moving_recovery_accrued_drowsiness: 0.0,
+      moving_recovery_accrued_fatigue: 0.0,
+    }
   }
   const stage = stages[index]
   return {
@@ -47,6 +59,9 @@ function enterStage(state: RecoveryStateT, option: RecoveryOption, index: number
     phase: stage.phase,
     stage_index: index,
     stage_ticks_remaining: stage.ticks ?? 0,
+    // Reset per-stage accumulators on stage transition (mirrors Python's _enter_stage).
+    moving_recovery_accrued_drowsiness: 0.0,
+    moving_recovery_accrued_fatigue: 0.0,
   }
 }
 

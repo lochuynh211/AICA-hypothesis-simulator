@@ -1,6 +1,7 @@
 import { describe, it, beforeEach } from 'vitest'
 import { IDBFactory } from 'fake-indexeddb'
 import { seedDefaults } from '../src/storage/db'
+import { resetDispatchState } from '../src/engine/worker/dispatch'
 import { runPreview } from '../src/api/client'
 import { loadFixture, expectParity } from '../src/engine/__fixtures__/parity'
 import { clearDraftRegistry } from '../src/engine/run_plan'
@@ -8,6 +9,7 @@ import { clearRegistry } from '../src/engine/run_manager'
 
 beforeEach(async () => {
   globalThis.indexedDB = new IDBFactory()
+  resetDispatchState()
   await seedDefaults()
   clearDraftRegistry()
   clearRegistry()

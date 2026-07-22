@@ -85,6 +85,8 @@ import { startRecovery } from './recovery'
 import { EvidenceRecorder } from './services/evidence_recorder'
 import { runsStore } from '../storage/runs_store'
 import type { RunHeader, EvidenceEvent } from '../storage/db'
+import { deriveProposalHistory } from './proposal_history'
+export type { ProposalHistory } from './proposal_history'
 
 // ---------------------------------------------------------------------------
 // Simulator version
@@ -132,6 +134,9 @@ export type RunStateM2 = RunState & {
   modified_values: Record<string, unknown>
   route_source: 'maps' | 'local'
   display_route: DisplayRoute | null
+  /** run_seed frozen at run creation — used by the anomaly-signal generator.
+   * Mirrors Python's RunState.run_seed (default 42). */
+  run_seed: number
 }
 
 export type RunLogM2 = RunLog & {
@@ -371,96 +376,6 @@ function isM2Scenario(scenario: ScenarioDefM2): boolean {
   return dsp !== null && dsp !== undefined
 }
 
-type ProposalHistory = {
-  lastProposalTimeSec: number | null
-  lastProposalCategory: string | null
-  lastProposalResult: string | null
-  proposalCountLast30Min: number
-  acceptanceRateRecent: number
-}
-
-/**
- * Derive proposal_history and user_action_history from the event log.
- * Ported from Python's `_derive_history` — see that function's docstring for
- * the full field semantics. Walks `events` once.
- */
-function deriveHistory(
-  events: RunLogEvent[],
-  tickSeconds: number,
-  currentSimSec: number,
-): [ProposalHistory, { tick_index: number; action: string }[]] {
-  const firedProposalTicks: number[] = []
-  const firedProposalCategories: string[] = []
-  const actionByOrder: [number, string][] = []
-  const userActionHistory: { tick_index: number; action: string }[] = []
-
-  for (const event of events) {
-    if (event.kind === 'tick') {
-      const dr = event.trace.decision_result
-      if (dr.fire_control.fired && dr.proposal !== null) {
-        firedProposalTicks.push(event.tick_index)
-        firedProposalCategories.push(dr.selected_category ?? '')
-      }
-    } else if (event.kind === 'action') {
-      actionByOrder.push([event.tick_index, event.action])
-      userActionHistory.push({ tick_index: event.tick_index, action: event.action })
-    }
-  }
-
-  if (firedProposalTicks.length === 0) {
-    return [
-      {
-        lastProposalTimeSec: null,
-        lastProposalCategory: null,
-        lastProposalResult: null,
-        proposalCountLast30Min: 0,
-        acceptanceRateRecent: 0.0,
-      },
-      userActionHistory,
-    ]
-  }
-
-  const lastTick = firedProposalTicks[firedProposalTicks.length - 1]
-  const lastCategory = firedProposalCategories[firedProposalCategories.length - 1]
-  const lastTimeSec = lastTick * tickSeconds
-
-  let lastProposalResult: string | null = null
-  for (const [actionTick, act] of actionByOrder) {
-    if (actionTick >= lastTick) {
-      lastProposalResult = act
-      break
-    }
-  }
-
-  const windowStartSec = currentSimSec - 1800.0
-  const proposalsInWindow = firedProposalTicks.filter((t) => t * tickSeconds >= windowStartSec).length
-
-  let actedCount = 0
-  let acceptedCount = 0
-  let searchStart = 0
-  for (const proposalTick of firedProposalTicks) {
-    for (let i = searchStart; i < actionByOrder.length; i++) {
-      if (actionByOrder[i][0] >= proposalTick) {
-        actedCount += 1
-        if (actionByOrder[i][1] === 'accept_rest') acceptedCount += 1
-        searchStart = i + 1
-        break
-      }
-    }
-  }
-  const acceptanceRate = actedCount > 0 ? acceptedCount / actedCount : 0.0
-
-  return [
-    {
-      lastProposalTimeSec: lastTimeSec,
-      lastProposalCategory: lastCategory,
-      lastProposalResult,
-      proposalCountLast30Min: proposalsInWindow,
-      acceptanceRateRecent: acceptanceRate,
-    },
-    userActionHistory,
-  ]
-}
 
 /** Append one event to the in-memory mirror, persist it (durability), and
  * re-persist the header's `status` field. Called after EVERY meaningful
@@ -580,6 +495,11 @@ export async function createRun(planId: string, runId: string): Promise<RunState
   const vehicleProfile = null
   const speedProfile = (scenario.speed_profile as Record<string, unknown> | null | undefined) ?? null
 
+  // run_seed is frozen in the event_plan at plan-creation time (see
+  // event_plan.ts buildEventPlan / freezeEventPlan). Mirror Python's
+  // RunState.run_seed which reads scenario.run_seed_default at the same point.
+  const runSeed = (eventPlan as { run_seed?: number }).run_seed ?? 42
+
   const runState: RunStateM2 = {
     run_id: runId,
     status: 'created',
@@ -605,6 +525,7 @@ export async function createRun(planId: string, runId: string): Promise<RunState
     display_route: draftDisplayRoute,
     last_error: null,
     recovery: null,
+    run_seed: runSeed,
   }
 
   const header: Omit<RunLogM2, 'events'> = {
@@ -749,7 +670,7 @@ export async function tick(runId: string): Promise<TickOutcome> {
   // Inject simulation_time_sec, proposal_history, user_action_history —
   // required by python_module packages and harmless for built-ins.
   context['simulation_time_sec'] = Number(tickState.elapsed_seconds)
-  const [proposalHistory, userActionHistory] = deriveHistory(
+  const [proposalHistory, userActionHistory] = deriveProposalHistory(
     entry.events,
     Number((runState.event_plan as EventPlan).tick_seconds),
     Number(tickState.elapsed_seconds),

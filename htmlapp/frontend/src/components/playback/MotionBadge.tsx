@@ -7,10 +7,18 @@
  */
 
 import { useRunStore } from '../../state/runStore'
+import { useLanguage } from '../../state/language'
+import { t } from '../../i18n/t'
+
+const LABELS = {
+  stopped: { ja: '停止中', en: 'Stopped' },
+  driving: { ja: '走行中', en: 'Driving' },
+}
 
 export default function MotionBadge() {
   const { state } = useRunStore()
   const { trace } = state
+  const { lang } = useLanguage()
 
   const latest = trace[trace.length - 1]
   const motionState = latest?.motion_state ?? null
@@ -18,7 +26,7 @@ export default function MotionBadge() {
   if (!motionState) return null
 
   const isStopped = motionState === 'STOPPED'
-  const label = isStopped ? 'Stopped' : 'Driving'
+  const label = t(isStopped ? LABELS.stopped : LABELS.driving, lang)
   const bg = isStopped ? '#f59e0b' : '#10b981'
 
   return (

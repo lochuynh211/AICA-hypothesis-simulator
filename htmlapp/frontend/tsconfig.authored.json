@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/vite-env.d.ts",
+    "src/config.ts",
+    "src/api/**/*",
+    "src/engine/**/*",
+    "src/storage/**/*",
+    "src/data/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "src/engine/algorithms/js_module.ts"
+  ]
+}

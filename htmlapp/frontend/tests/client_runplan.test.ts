@@ -3,9 +3,11 @@ import { IDBFactory } from 'fake-indexeddb'
 import { seedDefaults } from '../src/storage/db'
 import { createRunPlan, regenerateRunPlan, RunPlanError } from '../src/api/client'
 import { clearDraftRegistry } from '../src/engine/run_plan'
+import { resetDispatchState } from '../src/engine/worker/dispatch'
 
 beforeEach(async () => {
   globalThis.indexedDB = new IDBFactory()
+  resetDispatchState()
   await seedDefaults()
   clearDraftRegistry()
 })

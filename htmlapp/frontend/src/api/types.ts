@@ -188,6 +188,11 @@ export type ScenarioDef = {
    * mechanism as child_passenger/familiar_route. Defaults to 0.0 on the backend
    * when a scenario file omits it. */
   weather_risk?: number
+  /** Feature 020: drowsiness ceiling for rest-spot scoring. Defaults to 100.0
+   * on the backend when a scenario file omits it. Optional for back-compat. */
+  rest_drowsiness_ceiling?: number
+  /** Scenario-level preset values. Passed through as-is. */
+  presets?: Record<string, unknown>
 }
 
 /**
@@ -402,6 +407,19 @@ export type PreviewOverrideEntry = {
   value: unknown
 }
 
+/** Feature 020: per-tick route-progress sample (distance axis alignment). */
+export type ProgressPoint = {
+  t: number
+  min: number
+  frac: number
+}
+
+/** Feature 020: a traffic-jam range on the previewed route (minutes axis). */
+export type PreviewTrafficJam = {
+  from_min: number
+  to_min: number
+}
+
 /**
  * Ephemeral, non-persisting preview result — response body of POST /api/runs/preview
  * (feature 009, US1). Never stored; a pure computation over a RunConfig.
@@ -435,6 +453,10 @@ export type InstantResult = {
   seed: number
   overrides: PreviewOverrideEntry[]
   error: PreviewError | null
+  /** Feature 020: per-tick route-progress (distance axis alignment). Empty for pre-020 consumers. */
+  progress?: ProgressPoint[]
+  /** Feature 020: traffic-jam ranges (minutes axis). Empty when no jams. */
+  traffic_jams?: PreviewTrafficJam[]
 }
 
 // ── Run domain ─────────────────────────────────────────────────────────────
@@ -572,6 +594,14 @@ export type RecoveryStateT = {
   phase: string | null
   stage_index: number
   stage_ticks_remaining: number
+  /** Feature 020 Slice-2: cumulative drowsiness recovered via en-route MOVING
+   * recovery this stage. Reset on stage transition. Defaults to 0.0 (not yet
+   * implemented in the offline JS build; Python adds this via Pydantic default). */
+  moving_recovery_accrued_drowsiness: number
+  /** Feature 020 Slice-2: cumulative fatigue recovered via en-route MOVING
+   * recovery this stage. Reset on stage transition. Defaults to 0.0 (not yet
+   * implemented in the offline JS build; Python adds this via Pydantic default). */
+  moving_recovery_accrued_fatigue: number
 }
 
 /**

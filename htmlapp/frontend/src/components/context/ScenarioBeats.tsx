@@ -192,7 +192,7 @@ export default function ScenarioBeats() {
         beats.push({
           id: `action-${e.tick_index}`,
           icon: al ? al.icon : '👉',
-          label: al ? t(al.label, uiLanguage) : lastAction,
+          label: t(al?.label ?? { ja: lastAction, en: lastAction }, uiLanguage),
           kind: 'action',
         })
         actionEmitted = true
@@ -208,7 +208,7 @@ export default function ScenarioBeats() {
       beats.push({
         id: `recovery-${e.tick_index}-${phase}`,
         icon: rb ? rb.icon : '🔄',
-        label: rb ? t(rb.label, uiLanguage) : phase,
+        label: t(rb?.label ?? { ja: phase, en: phase }, uiLanguage),
         kind: 'recovery',
       })
     }
@@ -222,7 +222,7 @@ export default function ScenarioBeats() {
     beats.push({
       id: 'action-trailing',
       icon: al ? al.icon : '👉',
-      label: al ? t(al.label, uiLanguage) : lastAction,
+      label: t(al?.label ?? { ja: lastAction, en: lastAction }, uiLanguage),
       kind: 'action',
     })
   }

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { IDBFactory } from 'fake-indexeddb'
 import { loadFixture, expectParity } from '../src/engine/__fixtures__/parity'
+import { resetDispatchState } from '../src/engine/worker/dispatch'
 import { effectiveSchema, validate } from '../src/engine/services/feedback'
 import { seedDefaults } from '../src/storage/db'
 import { createDraft, clearDraftRegistry } from '../src/engine/run_plan'
@@ -16,6 +17,7 @@ import { FeedbackValidationError, type FeedbackSubmitBody } from '../src/api/typ
 
 beforeEach(async () => {
   globalThis.indexedDB = new IDBFactory()
+  resetDispatchState()
   clearDraftRegistry()
   clearRegistry()
   await seedDefaults()

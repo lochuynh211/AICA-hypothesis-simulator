@@ -7,6 +7,11 @@ import ScoreTimeline, { type ScoreTimelineTestIds, segLabel } from '../playback/
 import { instantResultToTimeline } from '../playback/timelineData'
 import { t, type UiLanguage } from '../../i18n/t'
 
+const LABELS = {
+  openFullRunFailed: { en: 'Failed to open full run', ja: 'フル実行を開けませんでした' },
+  triggerFallback: { en: 'TRIGGER', ja: 'トリガー' },
+}
+
 /**
  * InstantResultStrip (feature 009, FE4) — full-width bottom strip of the new
  * setup screen (others/aica_setup_screen_uiux.md "Bottom strip — Instant
@@ -161,7 +166,7 @@ export default function InstantResultStrip() {
       const runState = await createRun(planResp.plan_id)
       dispatch({ type: 'RUN_CREATED', runState })
     } catch (err: unknown) {
-      setOpenRunError(err instanceof Error ? err.message : 'Failed to open full run')
+      setOpenRunError(err instanceof Error ? err.message : t(LABELS.openFullRunFailed, uiLanguage))
     } finally {
       setOpenRunLoading(false)
     }
@@ -446,7 +451,7 @@ function buildResultLine(result: InstantResult, lang: UiLanguage): string {
     )
   }
 
-  const category = fire.category ? fire.category.split('_')[0].toUpperCase() : 'TRIGGER'
+  const category = fire.category ? fire.category.split('_')[0].toUpperCase() : t(LABELS.triggerFallback, lang)
   const strength = fire.strength ? ` · ${fire.strength}` : ''
   const restPart = rest_option ? ` · auto-rest ${rest_option.id}` : ''
   const donePart = completed_min != null ? ` · done ${Math.round(completed_min)} min` : ''

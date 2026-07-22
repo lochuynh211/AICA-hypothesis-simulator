@@ -636,15 +636,27 @@
           "recovery_model": {
             "sleep": {
               "drowsiness": 60.0,
-              "fatigue": 60.0
+              "fatigue": 60.0,
+              "drowsiness_per_min": 0.0,
+              "fatigue_per_min": 0.0,
+              "cap_drowsiness": null,
+              "cap_fatigue": null
             },
             "audio_karaoke": {
               "drowsiness": 25.0,
-              "fatigue": 25.0
+              "fatigue": 25.0,
+              "drowsiness_per_min": 0.0,
+              "fatigue_per_min": 0.0,
+              "cap_drowsiness": null,
+              "cap_fatigue": null
             },
             "stretch": {
               "drowsiness": 25.0,
-              "fatigue": 25.0
+              "fatigue": 25.0,
+              "drowsiness_per_min": 0.0,
+              "fatigue_per_min": 0.0,
+              "cap_drowsiness": null,
+              "cap_fatigue": null
             }
           }
         },
@@ -697,6 +709,7 @@
         "tick_seconds": 180,
         "error_mode": "blocking"
       },
+      "parameters": [],
       "features": [
         {
           "key": "drowsiness",
@@ -743,7 +756,6 @@
           "band_values": []
         }
       ],
-      "parameters": [],
       "hyperparameters": [
         {
           "key": "w_base",
@@ -752,6 +764,7 @@
             "en": "Base Accumulation Rate (pts/min)"
           },
           "kind": "numeric",
+          "band_values": null,
           "default": 0.5,
           "min": 0.1,
           "max": 2.0,
@@ -764,6 +777,7 @@
             "en": "Child Passenger Offset (pts)"
           },
           "kind": "numeric",
+          "band_values": null,
           "default": 20.0,
           "min": 0.0,
           "max": 50.0,
@@ -776,6 +790,7 @@
             "en": "Night Multiplier"
           },
           "kind": "numeric",
+          "band_values": null,
           "default": 1.2,
           "min": 1.0,
           "max": 2.0,
@@ -788,6 +803,7 @@
             "en": "Familiar Route Multiplier"
           },
           "kind": "numeric",
+          "band_values": null,
           "default": 1.2,
           "min": 1.0,
           "max": 2.0,
@@ -800,6 +816,7 @@
             "en": "Traffic Jam Weight (pts/min)"
           },
           "kind": "numeric",
+          "band_values": null,
           "default": 0.8,
           "min": 0.0,
           "max": 3.0,
@@ -812,6 +829,7 @@
             "en": "Highway Weight (pts/min)"
           },
           "kind": "numeric",
+          "band_values": null,
           "default": 0.2,
           "min": 0.0,
           "max": 2.0,
@@ -824,6 +842,7 @@
             "en": "Monotonous Road Weight (pts/min)"
           },
           "kind": "numeric",
+          "band_values": null,
           "default": 0.3,
           "min": 0.0,
           "max": 2.0,
@@ -836,6 +855,7 @@
             "en": "Drowsiness Dead-zone Threshold"
           },
           "kind": "numeric",
+          "band_values": null,
           "default": 60.0,
           "min": 0.0,
           "max": 100.0,
@@ -848,6 +868,7 @@
             "en": "Drowsiness Penalty Weight"
           },
           "kind": "numeric",
+          "band_values": null,
           "default": 1.5,
           "min": 0.0,
           "max": 5.0,
@@ -860,6 +881,7 @@
             "en": "Fatigue Dead-zone Threshold"
           },
           "kind": "numeric",
+          "band_values": null,
           "default": 60.0,
           "min": 0.0,
           "max": 100.0,
@@ -872,6 +894,7 @@
             "en": "Fatigue Penalty Weight"
           },
           "kind": "numeric",
+          "band_values": null,
           "default": 1.5,
           "min": 0.0,
           "max": 5.0,
@@ -884,6 +907,7 @@
             "en": "Fire Threshold (pts)"
           },
           "kind": "numeric",
+          "band_values": null,
           "default": 80.0,
           "min": 20.0,
           "max": 200.0,
@@ -896,6 +920,7 @@
             "en": "Rest Spot ETA Filter (min)"
           },
           "kind": "numeric",
+          "band_values": null,
           "default": 15.0,
           "min": 1.0,
           "max": 60.0,
@@ -931,25 +956,6 @@
       "evidence_metrics": []
     },
     "scenario": {
-      "_comment": [
-        "Scenario: UC-01 fatigue/drowsiness with staged recovery options.",
-        "",
-        "Feature 009 (signal-tier redesign): rewritten from the old",
-        "driver_profile/vehicle_profile shape to driver_signal_params +",
-        "anomaly_signal_params + run_seed_default (data-model.md §2). The vehicle",
-        "behaviour model (steering/pedal/lane/ADAS) is retired; the attention signal",
-        "is retired. Drowsiness/fatigue are deterministic Tier-3a signals;",
-        "anomaly_rate is the seeded-stochastic Tier-3b signal (the only randomness",
-        "in the simulation, seeded by run_seed).",
-        "",
-        "Recovery options (recovery_model gives each activity's fixed drowsiness/fatigue",
-        "recovery, applied once per activity — no short/long rest distinction):",
-        "  nap_karaoke        — wakefulness (MOVING) -> nap/sleep 3 ticks -> karaoke 3 ticks",
-        "  convenience_stretch — wakefulness (MOVING) -> stretch 2 ticks",
-        "  postpone           — postpone=true, no stages (acts as continue driving)",
-        "",
-        "allowed_actions includes decline in addition to accept_rest/postpone."
-      ],
       "id": "uc01_fatigue_recovery_v0_1",
       "version": "0.2.0",
       "type": "uc01_fatigue",
@@ -1031,6 +1037,85 @@
         "drowsiness_level": 20,
         "fatigue_level": 20
       },
+      "event_presets": {
+        "signal_duration_at_trigger": "persistent",
+        "rest_spot_eta_near_before": null,
+        "rest_spot_eta_schedule": null
+      },
+      "total_duration_seconds": 7200,
+      "tick_seconds": 180,
+      "allowed_actions": [
+        "accept_rest",
+        "postpone",
+        "decline"
+      ],
+      "recovery_options": [
+        {
+          "id": "nap_karaoke",
+          "label": {
+            "ja": "仮眠＋カラオケ",
+            "en": "Nap + Karaoke"
+          },
+          "stages": [
+            {
+              "phase": "wakefulness",
+              "content": "audio_karaoke",
+              "motion": "MOVING",
+              "ticks": null,
+              "grants_moving_recovery": false
+            },
+            {
+              "phase": "nap",
+              "content": "sleep",
+              "motion": "STOPPED",
+              "ticks": 3,
+              "grants_moving_recovery": false
+            },
+            {
+              "phase": "content",
+              "content": "audio_karaoke",
+              "motion": "STOPPED",
+              "ticks": 3,
+              "grants_moving_recovery": false
+            }
+          ],
+          "postpone": false
+        },
+        {
+          "id": "convenience_stretch",
+          "label": {
+            "ja": "コンビニ休憩＋ストレッチ",
+            "en": "Convenience + Stretch"
+          },
+          "stages": [
+            {
+              "phase": "wakefulness",
+              "content": "stretch",
+              "motion": "MOVING",
+              "ticks": null,
+              "grants_moving_recovery": false
+            },
+            {
+              "phase": "content",
+              "content": "stretch",
+              "motion": "STOPPED",
+              "ticks": 2,
+              "grants_moving_recovery": false
+            }
+          ],
+          "postpone": false
+        },
+        {
+          "id": "postpone",
+          "label": {
+            "ja": "先延ばし",
+            "en": "Postpone"
+          },
+          "stages": [],
+          "postpone": true
+        }
+      ],
+      "review_focus": "UC-01-01",
       "driver_signal_params": {
         "id": "friend_drive_driver_v1",
         "drowsiness_model": {
@@ -1048,15 +1133,27 @@
         "recovery_model": {
           "sleep": {
             "drowsiness": 60.0,
-            "fatigue": 60.0
+            "fatigue": 60.0,
+            "drowsiness_per_min": 0.0,
+            "fatigue_per_min": 0.0,
+            "cap_drowsiness": null,
+            "cap_fatigue": null
           },
           "audio_karaoke": {
             "drowsiness": 25.0,
-            "fatigue": 25.0
+            "fatigue": 25.0,
+            "drowsiness_per_min": 0.0,
+            "fatigue_per_min": 0.0,
+            "cap_drowsiness": null,
+            "cap_fatigue": null
           },
           "stretch": {
             "drowsiness": 25.0,
-            "fatigue": 25.0
+            "fatigue": 25.0,
+            "drowsiness_per_min": 0.0,
+            "fatigue_per_min": 0.0,
+            "cap_drowsiness": null,
+            "cap_fatigue": null
           }
         }
       },
@@ -1077,80 +1174,13 @@
       "is_night": false,
       "child_passenger": true,
       "familiar_route": true,
-      "weather_risk": 0,
+      "weather_risk": 0.0,
       "presets": {
         "total_route_distance_km": 120,
         "traffic_events": [],
         "weather_events": []
       },
-      "event_presets": {
-        "signal_duration_at_trigger": "persistent"
-      },
-      "total_duration_seconds": 7200,
-      "tick_seconds": 180,
-      "allowed_actions": [
-        "accept_rest",
-        "postpone",
-        "decline"
-      ],
-      "recovery_options": [
-        {
-          "id": "nap_karaoke",
-          "label": {
-            "ja": "仮眠＋カラオケ",
-            "en": "Nap + Karaoke"
-          },
-          "stages": [
-            {
-              "phase": "wakefulness",
-              "content": "audio_karaoke",
-              "motion": "MOVING"
-            },
-            {
-              "phase": "nap",
-              "content": "sleep",
-              "motion": "STOPPED",
-              "ticks": 3
-            },
-            {
-              "phase": "content",
-              "content": "audio_karaoke",
-              "motion": "STOPPED",
-              "ticks": 3
-            }
-          ]
-        },
-        {
-          "id": "convenience_stretch",
-          "label": {
-            "ja": "コンビニ休憩＋ストレッチ",
-            "en": "Convenience + Stretch"
-          },
-          "stages": [
-            {
-              "phase": "wakefulness",
-              "content": "stretch",
-              "motion": "MOVING"
-            },
-            {
-              "phase": "content",
-              "content": "stretch",
-              "motion": "STOPPED",
-              "ticks": 2
-            }
-          ]
-        },
-        {
-          "id": "postpone",
-          "label": {
-            "ja": "先延ばし",
-            "en": "Postpone"
-          },
-          "postpone": true,
-          "stages": []
-        }
-      ],
-      "review_focus": "UC-01-01"
+      "rest_drowsiness_ceiling": 100.0
     }
   }
 }

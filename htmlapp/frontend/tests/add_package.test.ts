@@ -11,6 +11,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { IDBFactory } from 'fake-indexeddb'
 import { seedDefaults } from '../src/storage/db'
+import { resetDispatchState } from '../src/engine/worker/dispatch'
 import { addUserPackage, listPackages } from '../src/api/client'
 import { packagesStore } from '../src/storage/packages_store'
 
@@ -135,6 +136,7 @@ class FakeWorker {
 
 beforeEach(async () => {
   globalThis.indexedDB = new IDBFactory()
+  resetDispatchState()
   await seedDefaults()
   vi.stubGlobal('Worker', FakeWorker)
   FakeWorker.sideEffectAlreadyRanAtConstruction = []

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { IDBFactory } from 'fake-indexeddb'
 import { seedDefaults } from '../src/storage/db'
+import { resetDispatchState } from '../src/engine/worker/dispatch'
 import { loadFixture, expectParity } from '../src/engine/__fixtures__/parity'
 import { routesAnalyze, getRestSpots } from '../src/api/client'
 import { MapsError } from '../src/api/types'
@@ -10,6 +11,7 @@ import { createRun, tick, action, clearRegistry } from '../src/engine/run_manage
 
 beforeEach(async () => {
   globalThis.indexedDB = new IDBFactory()
+  resetDispatchState()
   await seedDefaults()
   clearDraftRegistry()
   clearRegistry()

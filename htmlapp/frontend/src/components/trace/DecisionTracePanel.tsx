@@ -33,6 +33,20 @@ const CONTENT_LABELS: Record<string, { ja: string; en: string }> = {
   stretch:       { ja: 'ストレッチ',   en: 'Stretch' },
 }
 
+const LABELS = {
+  closeFeedback: { ja: 'フィードバックを閉じる', en: 'Close feedback' },
+  giveFeedback: { ja: 'フィードバックする', en: 'Give feedback' },
+  algorithmError: { ja: 'アルゴリズムエラー', en: 'Algorithm Error' },
+  decisionTrace: { ja: '判定トレース', en: 'DECISION TRACE' },
+  noTraceEntries: { ja: 'まだトレースエントリがありません。', en: 'No trace entries yet.' },
+  eventLogLive: { ja: 'イベントログ・ライブ', en: 'EVENT LOG · LIVE' },
+}
+
+/** Feedback-toggle aria-label — interpolates the tick number, byte-identical EN. */
+function feedbackAriaLabel(tickIndex: number, lang: 'ja' | 'en'): string {
+  return lang === 'ja' ? `ティック${tickIndex}にフィードバックする` : `Give feedback on tick ${tickIndex}`
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function CandidateRow({ candidate }: { candidate: Candidate }) {
@@ -216,9 +230,9 @@ function TraceEntryRow({ entry }: { entry: TraceEntry }) {
             borderRadius: '3px',
           }}
           aria-expanded={feedbackOpen}
-          aria-label={`Give feedback on tick ${entry.tick_index}`}
+          aria-label={feedbackAriaLabel(entry.tick_index, uiLanguage)}
         >
-          {feedbackOpen ? 'Close feedback' : 'Give feedback'}
+          {feedbackOpen ? t(LABELS.closeFeedback, uiLanguage) : t(LABELS.giveFeedback, uiLanguage)}
         </button>
       </div>
 
@@ -335,7 +349,7 @@ function RestChoiceRow({ rest, lang }: { rest: RestChoice; lang: string }) {
   )
 }
 
-function AlgorithmErrorRow({ error }: { error: AlgorithmError }) {
+function AlgorithmErrorRow({ error, lang }: { error: AlgorithmError; lang: string }) {
   return (
     <div
       style={{
@@ -348,7 +362,7 @@ function AlgorithmErrorRow({ error }: { error: AlgorithmError }) {
     >
       <div style={{ display: 'flex', gap: '10px' }}>
         <span style={{ color: '#6af', fontWeight: 700 }}>tick#{error.tick_index}</span>
-        <span style={{ color: '#f66', fontWeight: 700 }}>Algorithm Error</span>
+        <span style={{ color: '#f66', fontWeight: 700 }}>{t(LABELS.algorithmError, lang)}</span>
         <span style={{ color: '#f88' }}>{error.error_type}</span>
       </div>
       <div style={{ color: '#faa', marginTop: '2px' }}>{error.message}</div>
@@ -381,7 +395,7 @@ export default function DecisionTracePanel({ replayTick }: { replayTick?: Replay
             borderBottom: '1px solid #333',
           }}
         >
-          DECISION TRACE
+          {t(LABELS.decisionTrace, uiLanguage)}
         </div>
         <div
           style={{
@@ -423,7 +437,7 @@ export default function DecisionTracePanel({ replayTick }: { replayTick?: Replay
   if (!hasEntries) {
     return (
       <div style={{ padding: '8px', color: '#666', fontSize: '0.85em', fontFamily: 'monospace' }}>
-        No trace entries yet.
+        {t(LABELS.noTraceEntries, uiLanguage)}
       </div>
     )
   }
@@ -462,7 +476,7 @@ export default function DecisionTracePanel({ replayTick }: { replayTick?: Replay
           borderBottom: '1px solid #333',
         }}
       >
-        EVENT LOG · LIVE
+        {t(LABELS.eventLogLive, uiLanguage)}
       </div>
       {merged.map((item, i) =>
         item.kind === 'trace' ? (
@@ -470,7 +484,7 @@ export default function DecisionTracePanel({ replayTick }: { replayTick?: Replay
         ) : item.kind === 'rest' ? (
           <RestChoiceRow key={`r-${i}`} rest={item.rest} lang={uiLanguage} />
         ) : (
-          <AlgorithmErrorRow key={`e-${i}`} error={item.error} />
+          <AlgorithmErrorRow key={`e-${i}`} error={item.error} lang={uiLanguage} />
         ),
       )}
     </div>

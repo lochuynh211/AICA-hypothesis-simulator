@@ -141,6 +141,16 @@ export type RunStoreState = {
    */
   minRestSpacingKm: number | null
 
+  // ── feature 020: painted traffic-jam ranges (km) for the Combined Simulator ─
+  /**
+   * Traffic-jam ranges painted in the merged setup panel, as `[start_km, end_km]`
+   * pairs on the selected route. Bridged into the runStore so the center panel's
+   * `<MapSurface/>` can draw them in red over the route (the setup panel that
+   * paints them is a sibling of the map). Empty = no jam painted. Setup-only —
+   * survives RESET (a run reset shouldn't wipe the painted setup).
+   */
+  mergedJamRangesKm: [number, number][]
+
   // ── M7: last applied action (for beat timeline / recovery) ─────────────────
   /**
    * The action string from the most recent ACTION_APPLIED dispatch.
@@ -240,6 +250,8 @@ export const initialState: RunStoreState = {
   restDrowsinessCeiling: null,
   // rest-spot minimum spacing — null means "use backend default (20 km)"
   minRestSpacingKm: null,
+  // feature 020 — no traffic jam painted yet
+  mergedJamRangesKm: [],
   // M7 — no action taken yet
   lastAction: null,
   // M7 — no rests accepted yet
@@ -381,6 +393,9 @@ export type RunStoreAction =
   // ── Rest-spot minimum spacing override ───────────────────────────────────
   /** Set the minimum distance (km) between rest spots, or null to clear (use backend default 20 km). */
   | { type: 'SET_MIN_REST_SPACING_KM'; value: number | null }
+  // ── feature 020: painted traffic-jam ranges (km) for the merged map ─────────
+  /** Set the painted traffic-jam km ranges (Combined Simulator map overlay). */
+  | { type: 'SET_MERGED_JAM_RANGES'; ranges: [number, number][] }
   // ── Initial driver state overrides ─────────────────────────────────────────
   /** Set the starting drowsiness (0–100), or null to clear (use scenario default). */
   | { type: 'SET_INITIAL_DROWSINESS'; value: number | null }
@@ -677,6 +692,9 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
 
     case 'SET_MIN_REST_SPACING_KM':
       return { ...state, minRestSpacingKm: action.value }
+
+    case 'SET_MERGED_JAM_RANGES':
+      return { ...state, mergedJamRangesKm: action.ranges }
 
     case 'SET_INITIAL_DROWSINESS':
       return { ...state, initialDrowsiness: action.value }

@@ -471,10 +471,6 @@
       ],
       "review_focus": "UC-01-01"
     },
-    "parameters": {},
-    "hyperparameters": {},
-    "presets": {},
-    "runMode": "standard",
     "n_ticks": 5
   },
   "output": {
