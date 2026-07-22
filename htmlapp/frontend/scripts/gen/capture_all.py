@@ -25,7 +25,8 @@ Fixtures written:
     feedback.json             — services/feedback.effective_schema / validate
     evidence_report.json      — services/evidence.build_evidence_report (full nri run)
     evidence_markdown.json    — services/evidence_markdown.render_evidence_markdown
-    evidence_markdown_nri.json — same (nri run, whole-number float hyperparameter guard)
+    evidence_markdown_nri.json — separate nri_fatigue_score_v1 run (all pauses declined),
+                                  guards whole-number-float hyperparameter formatting
     nri_tick_by_tick.json     — POST /api/run-plans + runs + tick loop (TestClient), per-tick decision_result
 
 Usage invariant: every output file is written atomically (write temp, then rename).
@@ -828,11 +829,77 @@ def _capture_evidence_fixtures() -> None:
             "output": markdown,
         })
 
-        # evidence_markdown_nri: same run but render markdown from the report
-        # (this fixture is specifically about the nri whole-number float formatting)
+    # evidence_markdown_nri: SEPARATE NRI run (nri_fatigue_score_v1 +
+    # uc01_fatigue_recovery_v0_1) with ALL REST_PROPOSAL pauses declined,
+    # so the fixture is intentionally distinct from evidence_markdown.json.
+    # This guards nri whole-number-float hyperparameter formatting:
+    # e.g. w_child: 20.0, theta_sleep: 60.0, rest_cooldown_sec: 600.0 must
+    # render as "20.0"/"60.0" not "20"/"60", while genuine-int hyperparameters
+    # (max_proposals_per_30min: 3, persistence_ticks: 2) must stay as "3"/"2".
+    _capture_evidence_markdown_nri()
+
+
+def _capture_evidence_markdown_nri() -> None:
+    import tempfile
+    from aica_api.services.run_plan import create_draft, clear_draft_registry
+    from aica_api.services.run_manager import create_run, tick, action, get_active_run_log, clear_registry
+    from aica_api.services.evidence import build_evidence_report
+    from aica_api.services.evidence_markdown import render_evidence_markdown
+    from aica_api.models.package import PackageManifest
+
+    pkg_path = (_REPO / "packages" / "nri_fatigue_score_v1" / "package.json")
+    pkg_raw = _load_json(pkg_path)
+    pkg = PackageManifest.model_validate(pkg_raw)
+
+    scenario_raw = _load_json(_SCENARIO_PATH)
+    from aica_api.models.scenario import ScenarioDef
+    scenario = ScenarioDef.model_validate(scenario_raw)
+
+    with tempfile.TemporaryDirectory() as runs_dir:
+        runs_dir_path = pathlib.Path(runs_dir)
+        clear_draft_registry()
+        clear_registry()
+
+        plan_id = "plan_evidence_nri_fixture"
+        create_draft(plan_id=plan_id, package=pkg, scenario=scenario, presets={}, parameters={}, hyperparameters={})
+
+        run_id = "run_evidence_nri_fixture"
+        create_run(plan_id, run_id, runs_dir=runs_dir_path)
+
+        # Decline ALL REST_PROPOSAL pauses — this produces a distinct run log
+        # compared to evidence_markdown.json (which accepts one rest).
+        declined_count = 0
+        for _ in range(1000):
+            outcome = tick(run_id)
+            if outcome.completed:
+                break
+            if outcome.paused:
+                action(run_id, "decline")
+                declined_count += 1
+
+        assert declined_count > 0, "no REST_PROPOSAL fired in evidence_markdown_nri run"
+
+        run_log = get_active_run_log(run_id)
+        assert run_log is not None
+
+        nri_report = build_evidence_report(
+            run_log,
+            report_id="report_nri_fixture_20260701-000000_abcdef",
+            timestamp="2026-07-01T00:00:00+00:00",
+            ui_language="en",
+        )
+        nri_markdown = render_evidence_markdown(nri_report)
+
+        # Key exclusion guard
+        report_str = json.dumps(nri_report, ensure_ascii=False)
+        assert "googleMapsApiKey" not in report_str
+        assert "google_maps_api_key" not in report_str
+        import re
+        assert not re.search(r"AIza[0-9A-Za-z_-]{10,}", report_str)
+
         _write("evidence_markdown_nri", {
-            "input": report,
-            "output": markdown,
+            "input": nri_report,
+            "output": nri_markdown,
         })
 
 
@@ -932,7 +999,8 @@ CAPTURES = [
     ("nri_fatigue_score_v1", _capture_nri_fatigue_score_v1),
     ("aica_transparent_hybrid_trigger_v1", _capture_aica_transparent_hybrid_trigger_v1),
     ("feedback", _capture_feedback),
-    ("evidence_report+evidence_markdown+evidence_markdown_nri", _capture_evidence_fixtures),
+    ("evidence_report+evidence_markdown", _capture_evidence_fixtures),
+    ("evidence_markdown_nri", _capture_evidence_markdown_nri),
     ("nri_tick_by_tick", _capture_nri_tick_by_tick),
 ]
 

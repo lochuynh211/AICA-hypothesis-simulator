@@ -39,10 +39,8 @@ export function loadTranscript(name: string): Transcript {
  *                   drowsiness/fatigue, so this is a purely cosmetic serialization
  *                   difference — no behavioral impact.
  *   effective_setup — Contains driver_profile (same Pydantic-inflation issue as above).
- *   monotony_accrued_min — Feature 020 Slice-3 field in TickState; not yet ported to
- *                   the offline JS build.
- *   monotonyLevel  — Feature 020 dynamic signal derived from monotony_accrued_min;
- *                   not yet ported to the offline JS tick engine.
+ *   (monotony_accrued_min and monotonyLevel were removed: both fields are now
+ *                   computed by the offline JS tick engine in S5 — no longer volatile.)
  */
 const VOLATILE = new Set([
   'run_id',
@@ -54,8 +52,6 @@ const VOLATILE = new Set([
   'snapshot',              // hash values differ: Python Pydantic-canonical vs JS JSON-canonical
   'driver_profile',        // Pydantic adds extra ActivityRecovery defaults; JS is raw JSON pass-through
   'effective_setup',       // contains driver_profile (same Pydantic-inflation issue)
-  'monotony_accrued_min',  // Feature 020 Slice-3 TickState field; not yet ported to offline JS
-  'monotonyLevel',         // Feature 020 dynamic signal; not yet ported to offline JS tick engine
 ])
 
 export function normalizeForParity(v: unknown): unknown {
