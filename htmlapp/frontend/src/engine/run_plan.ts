@@ -259,9 +259,11 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
  * causing a key-count mismatch against the Python fixture output.
  */
 function normalizePackageForOutput(pkg: PackageManifestM2): PackageManifestM2 {
-  const normalizedHps = (pkg.hyperparameters ?? []).map((hp) => {
+  const normalizedHps = (pkg.hyperparameters ?? []).map((hp): HyperparameterDef => {
     if (!('band_values' in hp)) {
-      return { ...hp, band_values: null }
+      // Python Pydantic serializes band_values: null for non-band hyperparameters.
+      // Use null cast via unknown to preserve JSON serialization shape.
+      return { ...hp, band_values: null as unknown as string[] | undefined }
     }
     return hp
   })

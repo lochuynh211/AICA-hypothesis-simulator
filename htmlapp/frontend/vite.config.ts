@@ -2,15 +2,18 @@ import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { viteSingleFile } from 'vite-plugin-singlefile'
 
+const SINGLE = process.env.HTMLAPP_SINGLEFILE === '1'
+
 export default defineConfig({
   base: './',
-  plugins: [react(), viteSingleFile()],
+  plugins: [react(), ...(SINGLE ? [viteSingleFile()] : [])],
   build: {
     target: 'es2020',
     assetsInlineLimit: 100 * 1024, // inline assets <= 100 KB as base64
-    cssCodeSplit: false,
-    rollupOptions: { output: { inlineDynamicImports: true } },
+    cssCodeSplit: !SINGLE,
+    rollupOptions: SINGLE ? { output: { inlineDynamicImports: true } } : {},
   },
+  worker: { format: 'es' },
   server: { port: 5181, host: true },
   test: {
     environment: 'jsdom',
