@@ -4016,7 +4016,9 @@
             },
             "phase": "wakefulness",
             "stage_index": 0,
-            "stage_ticks_remaining": 0
+            "stage_ticks_remaining": 0,
+            "moving_recovery_accrued_drowsiness": 0.0,
+            "moving_recovery_accrued_fatigue": 0.0
           }
         },
         "trace": {
@@ -4239,7 +4241,9 @@
             },
             "phase": "wakefulness",
             "stage_index": 0,
-            "stage_ticks_remaining": 0
+            "stage_ticks_remaining": 0,
+            "moving_recovery_accrued_drowsiness": 0.0,
+            "moving_recovery_accrued_fatigue": 0.0
           }
         },
         "trace": {
@@ -4462,7 +4466,9 @@
             },
             "phase": "wakefulness",
             "stage_index": 0,
-            "stage_ticks_remaining": 0
+            "stage_ticks_remaining": 0,
+            "moving_recovery_accrued_drowsiness": 0.0,
+            "moving_recovery_accrued_fatigue": 0.0
           }
         },
         "trace": {
@@ -4685,7 +4691,9 @@
             },
             "phase": "nap",
             "stage_index": 1,
-            "stage_ticks_remaining": 3
+            "stage_ticks_remaining": 3,
+            "moving_recovery_accrued_drowsiness": 0.0,
+            "moving_recovery_accrued_fatigue": 0.0
           }
         },
         "trace": {
@@ -4908,7 +4916,9 @@
             },
             "phase": "nap",
             "stage_index": 1,
-            "stage_ticks_remaining": 2
+            "stage_ticks_remaining": 2,
+            "moving_recovery_accrued_drowsiness": 0.0,
+            "moving_recovery_accrued_fatigue": 0.0
           }
         },
         "trace": {
@@ -5129,7 +5139,9 @@
             },
             "phase": "nap",
             "stage_index": 1,
-            "stage_ticks_remaining": 1
+            "stage_ticks_remaining": 1,
+            "moving_recovery_accrued_drowsiness": 0.0,
+            "moving_recovery_accrued_fatigue": 0.0
           }
         },
         "trace": {
@@ -5350,7 +5362,9 @@
             },
             "phase": "content",
             "stage_index": 2,
-            "stage_ticks_remaining": 3
+            "stage_ticks_remaining": 3,
+            "moving_recovery_accrued_drowsiness": 0.0,
+            "moving_recovery_accrued_fatigue": 0.0
           }
         },
         "trace": {
@@ -5571,7 +5585,9 @@
             },
             "phase": "content",
             "stage_index": 2,
-            "stage_ticks_remaining": 2
+            "stage_ticks_remaining": 2,
+            "moving_recovery_accrued_drowsiness": 0.0,
+            "moving_recovery_accrued_fatigue": 0.0
           }
         },
         "trace": {
@@ -5792,7 +5808,9 @@
             },
             "phase": "content",
             "stage_index": 2,
-            "stage_ticks_remaining": 1
+            "stage_ticks_remaining": 1,
+            "moving_recovery_accrued_drowsiness": 0.0,
+            "moving_recovery_accrued_fatigue": 0.0
           }
         },
         "trace": {
@@ -6013,7 +6031,9 @@
             },
             "phase": "resuming",
             "stage_index": 3,
-            "stage_ticks_remaining": 0
+            "stage_ticks_remaining": 0,
+            "moving_recovery_accrued_drowsiness": 0.0,
+            "moving_recovery_accrued_fatigue": 0.0
           }
         },
         "trace": {
@@ -6234,7 +6254,9 @@
             },
             "phase": null,
             "stage_index": 3,
-            "stage_ticks_remaining": 0
+            "stage_ticks_remaining": 0,
+            "moving_recovery_accrued_drowsiness": 0.0,
+            "moving_recovery_accrued_fatigue": 0.0
           }
         },
         "trace": {

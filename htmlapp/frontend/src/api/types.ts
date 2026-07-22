@@ -572,6 +572,14 @@ export type RecoveryStateT = {
   phase: string | null
   stage_index: number
   stage_ticks_remaining: number
+  /** Feature 020 Slice-2: cumulative drowsiness recovered via en-route MOVING
+   * recovery this stage. Reset on stage transition. Defaults to 0.0 (not yet
+   * implemented in the offline JS build; Python adds this via Pydantic default). */
+  moving_recovery_accrued_drowsiness: number
+  /** Feature 020 Slice-2: cumulative fatigue recovered via en-route MOVING
+   * recovery this stage. Reset on stage transition. Defaults to 0.0 (not yet
+   * implemented in the offline JS build; Python adds this via Pydantic default). */
+  moving_recovery_accrued_fatigue: number
 }
 
 /**

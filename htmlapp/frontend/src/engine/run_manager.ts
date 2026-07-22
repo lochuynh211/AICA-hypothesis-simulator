@@ -134,6 +134,9 @@ export type RunStateM2 = RunState & {
   modified_values: Record<string, unknown>
   route_source: 'maps' | 'local'
   display_route: DisplayRoute | null
+  /** run_seed frozen at run creation — used by the anomaly-signal generator.
+   * Mirrors Python's RunState.run_seed (default 42). */
+  run_seed: number
 }
 
 export type RunLogM2 = RunLog & {
@@ -492,6 +495,11 @@ export async function createRun(planId: string, runId: string): Promise<RunState
   const vehicleProfile = null
   const speedProfile = (scenario.speed_profile as Record<string, unknown> | null | undefined) ?? null
 
+  // run_seed is frozen in the event_plan at plan-creation time (see
+  // event_plan.ts buildEventPlan / freezeEventPlan). Mirror Python's
+  // RunState.run_seed which reads scenario.run_seed_default at the same point.
+  const runSeed = (eventPlan as { run_seed?: number }).run_seed ?? 42
+
   const runState: RunStateM2 = {
     run_id: runId,
     status: 'created',
@@ -517,6 +525,7 @@ export async function createRun(planId: string, runId: string): Promise<RunState
     display_route: draftDisplayRoute,
     last_error: null,
     recovery: null,
+    run_seed: runSeed,
   }
 
   const header: Omit<RunLogM2, 'events'> = {
