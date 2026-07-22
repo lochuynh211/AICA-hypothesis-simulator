@@ -210,7 +210,12 @@ _REASON_CLOSING = (
     "preferences that are not listed. Do NOT copy the fact lines verbatim.\n\n"
     "Reply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, "
     "then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', "
-    "each one or two natural sentences."
+    "each one or two natural sentences.\n\n"
+    "IMPORTANT: the facts above are written in English, but you MUST write Line 1 "
+    "in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape "
+    "(write your own words, do not copy):\n"
+    "JA: 〔日本語で1〜2文の理由〕\n"
+    "EN: 〔the same reason in English〕"
 )
 
 _CONTENT_REASON_SYSTEM = (

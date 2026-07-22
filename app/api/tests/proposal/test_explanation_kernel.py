@@ -53,6 +53,25 @@ def test_example_lines_still_use_strippable_placeholders():
     assert eb.strip_placeholder_artifacts(eb._EXAMPLE_EN) != eb._EXAMPLE_EN
 
 
+def test_reasoning_system_prompts_have_strong_japanese_anchor():
+    # Regression: qwen2.5:3b wrote Line 1 in ENGLISH on most presets once the
+    # fact sections became English-only, because the old prompt lost its
+    # Japanese anchoring. Both reasoning system prompts must carry an
+    # explicit, hard-to-miss instruction that Line 1 must be Japanese, plus a
+    # placeholder-shaped example line so the model doesn't copy it verbatim.
+    for sys in (eb._CONTENT_REASON_SYSTEM.format(kind="song"), eb._SERVICE_REASON_SYSTEM):
+        assert "日本語" in sys
+        assert "〔" in sys
+        lowered = sys.lower()
+        assert "must write line 1 in japanese" in lowered
+        # existing guarantees must still hold after strengthening the ending
+        assert "only" in lowered
+        assert "japanese" in lowered and "english" in lowered
+        assert "exactly two lines" in lowered
+        assert "do not copy" in lowered
+        assert lowered.count("ja:") >= 2 and lowered.count("en:") >= 2
+
+
 # ── FIX-SCALE: factor value_display is a qualitative band, not a raw number ──
 
 def test_factors_from_target_numeric_value_gets_banded_display():
