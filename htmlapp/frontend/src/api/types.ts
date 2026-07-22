@@ -307,16 +307,6 @@ export type ValidationError = {
   message: string
 }
 
-/** Thrown by createRunPlan/regenerateRunPlan on any router-equivalent 400/404. */
-export class RunPlanError extends Error {
-  readonly validationErrors: ValidationError[]
-  constructor(detail: string, validationErrors: ValidationError[] = []) {
-    super(detail)
-    this.name = 'RunPlanError'
-    this.validationErrors = validationErrors
-  }
-}
-
 /** Setup-time parameter/hyperparameter value (band/bool/numeric). */
 export type SetupValue = string | boolean | number
 

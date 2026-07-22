@@ -64,7 +64,7 @@ export type HealthStatus = {
 
 // Re-export error classes so callers can `instanceof` them.
 export { MapsError, FeedbackValidationError } from './types'
-export { RunPlanError } from './types'
+export { RunPlanError } from './errors'
 
 async function call<T>(op: RpcRequest['op'], params?: unknown): Promise<T> {
   return unwrap<T>(await dispatch({ op, params }) as import('./rpc').RpcResponse<T>)

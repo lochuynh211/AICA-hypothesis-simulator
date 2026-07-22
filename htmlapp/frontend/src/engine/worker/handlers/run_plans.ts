@@ -8,7 +8,7 @@ import type {
   ProfileOverrides,
   ValidationError,
 } from '../../../api/types'
-import { RunPlanError } from '../../../api/types'
+import { RunPlanError } from '../../../api/errors'
 import { packageRegistry } from '../../services/package_registry'
 import { scenarioRegistry } from '../../services/scenario_registry'
 import {

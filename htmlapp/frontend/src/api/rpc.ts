@@ -1,4 +1,5 @@
-import { MapsError, FeedbackValidationError, RunPlanError } from './types'
+import { MapsError, FeedbackValidationError } from './types'
+import { RunPlanError } from './errors'
 
 export type RpcOp =
   | 'health.get'

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { unwrap, serializeError } from '../src/api/rpc'
 import { MapsError, FeedbackValidationError } from '../src/api/types'
+import { RunPlanError } from '../src/api/errors'
 
 describe('rpc envelope', () => {
   it('unwrap returns result on ok', () => {
@@ -28,5 +29,16 @@ describe('rpc envelope', () => {
     try { unwrap({ ok: false, error: serializeError(original) }) } catch (e) { caught = e }
     expect(caught).toBeInstanceOf(FeedbackValidationError)
     expect((caught as FeedbackValidationError).validationErrors[0].field).toBe('x')
+  })
+
+  it('serialize→unwrap round-trips a RunPlanError with its validationErrors list', () => {
+    const original = new RunPlanError('invalid params', [{ field: 'hyperparam.foo', message: 'out of range' }])
+    const wire = serializeError(original)
+    expect(wire.type).toBe('RunPlanError')
+    let caught: unknown
+    try { unwrap({ ok: false, error: wire }) } catch (e) { caught = e }
+    expect(caught).toBeInstanceOf(RunPlanError)
+    expect((caught as RunPlanError).message).toBe('invalid params')
+    expect((caught as RunPlanError).validationErrors[0].field).toBe('hyperparam.foo')
   })
 })
