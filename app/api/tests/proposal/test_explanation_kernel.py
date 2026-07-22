@@ -20,11 +20,32 @@ def test_category_readout_none_when_no_subtotals():
     assert eb.category_readout({"item_id": "x"}) is None
 
 
-def test_system_prompt_has_algorithm_primer_and_causal_instruction():
-    sys = eb._SYSTEM_TEMPLATE.format(kind="song").lower()
-    assert "how much" in sys and "answers" in sys  # contribution = importance × answer
+def test_content_reason_system_has_response_matrix_and_causal_instruction():
+    sys = eb._CONTENT_REASON_SYSTEM.format(kind="song").lower()
+    assert "how much" in sys and "answered" in sys  # contribution = weight × answer
     assert "situation" in sys and "taste" in sys and "history" in sys  # three families
     assert "calls for" in sys  # causal structure cue
+    assert "drowsiness" in sys and "monotony" in sys and "fatigue" in sys  # the response matrix
+
+
+def test_service_reason_system_has_response_matrix_and_causal_instruction():
+    sys = eb._SERVICE_REASON_SYSTEM.lower()
+    assert "situation" in sys and "taste" in sys and "history" in sys
+    assert "trigger" in sys and "car state" in sys
+    assert "drowsiness" in sys and "monotony" in sys
+    assert "rest" in sys  # rest & recovery services family
+
+
+def test_reasoning_system_prompts_satisfy_format_and_anti_parrot_guard():
+    # Both new system prompts must independently satisfy the SAME guard the
+    # dispatcher-level test pins (test_explanation_builder.py) — "only",
+    # "do not copy", "exactly two lines", "japanese"/"english", ja:/en: x2.
+    for sys in (eb._CONTENT_REASON_SYSTEM.format(kind="song").lower(), eb._SERVICE_REASON_SYSTEM.lower()):
+        assert "only" in sys
+        assert "do not copy" in sys
+        assert "exactly two lines" in sys
+        assert "japanese" in sys and "english" in sys
+        assert sys.count("ja:") >= 2 and sys.count("en:") >= 2
 
 
 def test_example_lines_still_use_strippable_placeholders():
@@ -72,3 +93,126 @@ def test_feature_meanings_have_no_numeric_range_parentheticals():
         assert "0–100" not in meaning and "0-100" not in meaning
         assert "0–1)" not in meaning and "0-1)" not in meaning
         assert "0 = " not in meaning, f"{fid}: {meaning!r} still has a numeric-range parenthetical"
+
+
+# ── fact-rich reasoning prompt translators (022) ────────────────────────────
+
+def test_feature_family_classifies_all_three():
+    assert eb.feature_family("drowsiness_level") == "situation"
+    assert eb.feature_family("oshi_id") == "preference"
+    assert eb.feature_family("catalog_item_usage_level") == "history"
+    assert eb.feature_family("service_recovery_rate") == "history"
+    assert eb.feature_family("totally_unknown") is None
+
+
+def test_situation_sentence_bands_drowsiness_and_monotony_from_content_e_i():
+    target = {
+        "feature_contributions": [
+            {"feature_id": "drowsiness", "e_i": 0.72, "contribution": 0.1},  # ->72 -> very drowsy
+            {"feature_id": "monotony", "e_i": 0.70, "contribution": 0.1},    # ->70 -> very monotonous
+        ]
+    }
+    s = eb.situation_sentence(target, None)
+    assert "very drowsy" in s
+    assert "very monotonous" in s
+
+
+def test_situation_sentence_alert_and_low_monotony():
+    target = {
+        "feature_contributions": [
+            {"feature_id": "drowsiness_level", "feature_value": 10, "contribution": 0.05},
+            {"feature_id": "monotony_level", "feature_value": 15, "contribution": 0.02},
+        ]
+    }
+    s = eb.situation_sentence(target, None)
+    assert "alert and awake" in s
+    assert "engaging" in s
+
+
+def test_situation_sentence_night_and_traffic_and_rest_trigger():
+    target = {
+        "feature_contributions": [
+            {"feature_id": "night_state", "feature_value": "night", "contribution": 0.01},
+            {"feature_id": "traffic_state", "feature_value": "heavy", "contribution": 0.02},
+            {"feature_id": "road_type", "feature_value": "mountain_road", "contribution": 0.0},
+        ]
+    }
+    s = eb.situation_sentence(target, "rest_recommended")
+    assert "it is night" in s
+    assert "traffic is heavy" in s
+    assert "mountain road" in s
+    assert "rest stop is now being recommended" in s
+
+
+def test_situation_sentence_none_when_no_situation_rows():
+    target = {"feature_contributions": [{"feature_id": "oshi_id", "e_i": 1.0, "contribution": 0.1}]}
+    assert eb.situation_sentence(target, None) is None
+
+
+def test_trigger_sentence_maps_known_purposes_and_reads_motion_state():
+    target = {"feature_contributions": [{"feature_id": "motion_state", "feature_value": "stopped", "contribution": 0.0}]}
+    s = eb.trigger_sentence("rest_recommended", target, None)
+    assert "rest stop is now being recommended" in s
+    assert "car is stopped" in s
+
+
+def test_trigger_sentence_infers_car_state_from_lifecycle_stage_when_no_motion_row():
+    target = {"feature_contributions": []}
+    s = eb.trigger_sentence("route_music", target, "active_driving_content")
+    assert "routine in-drive music selection" in s
+    assert "car is moving" in s
+
+    s2 = eb.trigger_sentence("rest_recommended", target, "during_rest_stopped")
+    assert "car is stopped" in s2
+
+
+def test_preference_sentence_uses_oshi_artist_context_field():
+    assert eb.preference_sentence({"oshi_artist": "YOASOBI"}) == "Their favorite artist (oshi) is YOASOBI."
+    assert eb.preference_sentence({}) is None
+
+
+def test_history_sentences_translate_content_history_rows():
+    target = {
+        "feature_contributions": [
+            {"feature_id": "catalog_item_usage_level", "e_i": 0.9, "contribution": 0.1},
+            {"feature_id": "content_proposal_acceptance_rate", "e_i": 0.95, "contribution": 0.1},
+            {"feature_id": "played_items", "e_i": 1.0, "contribution": 0.05},
+        ]
+    }
+    out = eb.history_sentences(target)
+    assert any("plays this song often" in s for s in out)
+    assert any("usually accepts song suggestions" in s for s in out)
+    assert any("played this song recently" in s for s in out)
+
+
+def test_history_sentences_translate_service_history_rows():
+    target = {
+        "feature_contributions": [
+            {"feature_id": "service_recovery_rate", "e_i": 0.9, "contribution": 0.1},
+            {"feature_id": "service_usage_level", "e_i": 0.5, "contribution": 0.05},
+        ]
+    }
+    out = eb.history_sentences(target)
+    assert any("reliably restored the driver's state before" in s for s in out)
+    assert any("uses this service sometimes" in s for s in out)
+
+
+def test_history_sentences_empty_when_no_history_rows():
+    target = {"feature_contributions": [{"feature_id": "drowsiness_level", "feature_value": 80, "contribution": 0.1}]}
+    assert eb.history_sentences(target) == []
+
+
+def test_score_evidence_strength_words_and_oshi_naming():
+    factors = [
+        {"feature_id": "oshi_id", "label_en": "oshi (favorite-artist) match", "contribution": 0.30},
+        {"feature_id": "drowsiness_level", "label_en": "drowsiness", "contribution": 0.02},
+        {"feature_id": "traffic_state", "label_en": "traffic", "contribution": -0.02},
+    ]
+    lines = eb.score_evidence(factors, oshi_artist="YOASOBI")
+    joined = " ".join(lines)
+    assert "favorite artist (YOASOBI)" in joined
+    assert "a major reason" in joined  # 0.30
+    assert "a minor reason" in joined  # 0.02
+    assert "pushed slightly against it" in joined  # -0.02
+    # no raw numbers leak into the evidence lines
+    assert "0.30" not in joined and "0.02" not in joined

@@ -10,9 +10,36 @@ from typing import Any
 from aica_api.models.proposal.explanation import ExplainMessage, ExplanationPrompt
 from aica_api.services import explanation_builder as _k
 
+# Plain-English "what this service is" — one line each, driver-facing.
+# Unlisted ids fall back to the raw candidate id.
+_SERVICE_DESC: dict[str, str] = {
+    "music_playlist": "a background music playlist",
+    "humming_karaoke": "an interactive sing-along that keeps the driver engaged",
+    "call_response_driving": "a hands-free call-and-response game",
+    "call_response_stopped": "a call-and-response game for when the car is stopped",
+    "quiz": "a driving quiz game",
+    "ranking_creation": "a music ranking/creation activity",
+    "radio_style": "a radio-style stream",
+    "conversation_audio": "an audio conversation/chat companion",
+    "live_viewing": "a live concert/performance viewing experience",
+    "stretch_video": "a guided stretch/rest video",
+    "full_karaoke": "a full karaoke session",
+    "oshi_reexperience": "a favorite-artist re-experience",
+    "relaxation_multisensory": "a multisensory relaxation experience",
+    "linked_video_recommendation": "a linked video recommendation",
+}
+
 
 def build_prompt(target: dict[str, Any], context: dict[str, Any]) -> ExplanationPrompt:
-    """Service branch of the former build_explanation_prompt (is_service=True)."""
+    """Service branch — fact-rich reasoning-mode prompt (analogous to the
+    content branch, see .superpowers/sdd/fix-reasoning-prompt-brief.md).
+
+    Hands the model natural-language FACTS (what the service is, the trigger +
+    car state, the situation, history with this service) plus the service
+    response matrix in the system prompt, and lets it reason the causal story
+    itself — no pre-baked verdict, no raw numbers in the user text (grounding
+    still keeps the numeric factors/readout for auditability).
+    """
     kind_en = "service"
     target_id = str(target.get("candidate_id"))
     rank = target.get("rank")
@@ -52,60 +79,41 @@ def build_prompt(target: dict[str, Any], context: dict[str, Any]) -> Explanation
         "category_readout": readout,
     }
 
-    # ── User message: the full grounding ────────────────────────────────────
-    formula = "fit = clamp( sum over factors of (weight x response), -1..+1 )"
-    lines: list[str] = []
-    fit_txt = f"{fit:+.3f}" if isinstance(fit, (int, float)) else "n/a"
-    rank_txt = f"rank {rank}, " if rank is not None else ""
-    lines.append(f'The assistant selected {kind_en} "{target_id}" ({rank_txt}fit {fit_txt}).')
-    if context.get("trigger_purpose"):
-        lines.append(f"Trigger purpose: {context.get('trigger_purpose')}.")
-    if context.get("lifecycle_stage"):
-        lines.append(f"Driving stage: {context.get('lifecycle_stage')}.")
+    # ── User message: natural-language facts, no scores-only, no verdict ────
+    trigger_purpose = context.get("trigger_purpose")
+    lifecycle_stage = context.get("lifecycle_stage")
+    desc = _SERVICE_DESC.get(target_id, target_id)
 
-    if readout:
-        lines.append("")
-        lines.append(readout["phrase_en"])
+    L: list[str] = []
+    L.append(f'The assistant is considering offering the service "{target_id}" to the driver.')
+    L.append("")
+    L.append("THE SERVICE: " + desc + ".")
 
-    if song_facts:
-        lines.append("")
-        lines.append("About the chosen song:")
-        lines.extend(song_facts)
+    L.append("")
+    L.append("THE TRIGGER & CAR STATE: " + _k.trigger_sentence(trigger_purpose, target, lifecycle_stage))
 
-    lines.append("")
-    lines.append("How to read the factors below:")
-    lines.append(f"- {formula}; a higher fit means a stronger overall match.")
-    lines.append(
-        "- Each factor's contribution is POSITIVE when it pushed toward this choice and "
-        "NEGATIVE when it pushed against it; a larger magnitude means a stronger influence."
-    )
-    lines.append(
-        "- The value in [brackets] is that factor's qualitative level (low / medium / "
-        "high). A factor can be a top contributor even at a low level, so weigh the "
-        "level and the contribution together."
-    )
+    situation = _k.situation_sentence(target, trigger_purpose)
+    if situation:
+        L.append("")
+        L.append("THE SITUATION RIGHT NOW: " + situation)
 
-    if factors:
-        lines.append("")
-        lines.append("Factors, most influential first (label [level]: contribution — meaning):")
-        for f in factors:
-            val = "" if f["value_display"] in (None, "") else f" [{f['value_display']}]"
-            meaning = f" — {f['meaning']}" if f["meaning"] else ""
-            lines.append(f"- {f['label_ja']} / {f['label_en']}{val}: {f['contribution']:+.3f}{meaning}")
-    if supporting:
-        labs = ", ".join(_k.label_for(s)["en"] for s in supporting)
-        lines.append(f"Overall pushed TOWARD this choice by: {labs}.")
-    if opposing:
-        labs = ", ".join(_k.label_for(o)["en"] for o in opposing)
-        lines.append(f"Pushed AGAINST by: {labs}.")
+    history = _k.history_sentences(target)
+    if history:
+        L.append("")
+        L.append("THE DRIVER'S HISTORY WITH THIS SERVICE: " + "; ".join(history) + ".")
 
-    # Terminal format reminder (recency) — the last thing the model reads.
-    lines.append("")
-    lines.append(_k._FORMAT_REMINDER)
+    evidence = _k.score_evidence(factors)
+    if evidence:
+        L.append("")
+        L.append("WHY THE ALGORITHM RANKED IT TOP (strongest reasons first):")
+        L.extend(evidence)
+
+    L.append("")
+    L.append(_k._FORMAT_REMINDER)
 
     messages = [
-        ExplainMessage(role="system", content=_k._SYSTEM_TEMPLATE.format(kind=kind_en)),
-        ExplainMessage(role="user", content="\n".join(lines)),
+        ExplainMessage(role="system", content=_k._SERVICE_REASON_SYSTEM),
+        ExplainMessage(role="user", content="\n".join(L)),
     ]
     return ExplanationPrompt(messages=messages, grounding=grounding)
 

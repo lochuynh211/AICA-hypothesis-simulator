@@ -71,12 +71,26 @@ def test_template_skips_motion_state_as_sentence1_anchor():
     assert [ja, en] == ["", ""]
 
 
-def test_build_prompt_injects_bridge_and_readout():
-    prompt = ce.build_prompt(_drowsy_song_target(), {"trigger_purpose": "drowsiness"})
-    user = prompt.messages[1].content.lower()
-    assert "energetic" in user and "driven mostly by" in user
+def test_build_prompt_is_fact_rich_not_scores_only():
+    prompt = ce.build_prompt(
+        _drowsy_song_target(),
+        {"trigger_purpose": "rest_recommended", "song_name": "Night Drive", "oshi_artist": "YOASOBI"},
+    )
+    user = prompt.messages[1].content
+    # fact-rich sections present, in natural language
+    assert "THE SONG:" in user and "energetic" in user
+    assert "THE SITUATION RIGHT NOW:" in user and "very drowsy" in user.lower()
+    assert "WHY THE ALGORITHM RANKED IT TOP" in user
+    assert "favorite artist (YOASOBI)" in user
+    # no pre-baked verdict / no raw contribution numbers pasted into the text
+    assert "driven mostly by" not in user.lower()
+    assert "0.180" not in user and "+0.05" not in user
+    # numeric bridge/readout/factors still kept in grounding for auditability
     assert "causal_bridge" in prompt.grounding
     assert prompt.grounding["category_readout"]["dominant"] == "situation"
+    # uses the content reasoning system prompt (its response matrix)
+    system = prompt.messages[0].content.lower()
+    assert "response model" in system and "drowsiness" in system
 
 
 def test_content_template_is_causal_when_facts_present():
@@ -224,12 +238,15 @@ def test_demand_uses_static_fallback_when_row_alpha_missing():
 
 # ── FIX-SCALE: factor list shows a qualitative band, not a raw fraction ──────
 
-def test_build_prompt_factor_list_shows_band_not_raw_fraction():
+def test_build_prompt_user_text_has_no_raw_numbers_but_grounding_keeps_bands():
     prompt = ce.build_prompt(_drowsy_song_target(), {"trigger_purpose": "drowsiness"})
     user = prompt.messages[1].content
     assert "[0.7" not in user and "[0.72]" not in user
-    assert "[high]" in user  # drowsiness e_i=0.72 -> high band
     assert "(0-100)" not in user and "(0–100)" not in user
+    # the numeric factor list itself moved out of the user text into grounding,
+    # where the qualitative band is still available for auditability
+    by_id = {f["feature_id"]: f for f in prompt.grounding["factors"]}
+    assert by_id["drowsiness_level"]["value_display"] == "high"  # e_i=0.72 -> high band
 
 
 # ── FIX-D2: bridge narrates the axis the song actually satisfies ────────────

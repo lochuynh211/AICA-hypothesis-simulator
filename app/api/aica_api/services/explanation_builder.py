@@ -170,70 +170,107 @@ def feature_meaning(feature_id: str) -> str:
 # Prompt construction
 # ---------------------------------------------------------------------------
 
-# The two-line example that anchors the output FORMAT AND demonstrates the
-# causal SHAPE (situation calls for -> choice answers -> factor reinforces). It
-# uses obvious PLACEHOLDERS ("situation A", "factor B", "要因B") rather than
-# real features or a copyable generic sentence, because:
+# The two-line example, kept ONLY as a parrot-guard fixture (response_is_usable
+# rejects output that copies it verbatim, and strip_placeholder_artifacts still
+# strips its "factor A/B" placeholders). It uses obvious PLACEHOLDERS
+# ("situation A", "factor B", "要因B") rather than real features or a copyable
+# generic sentence, because:
 #   - a concrete example naming real features leaked into reasons (3b reused
 #     "traffic / destination"), and
 #   - a generic-but-complete sentence got copied VERBATIM (esp. the JA line),
 #     tripping response_is_usable and nuking otherwise-good output.
-# Placeholders force the model to substitute the real top factors in BOTH lines
-# while still demonstrating the JA:/EN: shape. Verbatim parroting → template.
-# `_PLACEHOLDER_RE` still matches "factor B" / "要因B" in this new example.
+# The reasoning-mode system prompts below deliberately do NOT embed this (or
+# any) example — a concrete example is exactly what got parroted — but the
+# guard functions still reference these constants defensively.
 _EXAMPLE_JA = "「状況A」は「〜」を必要とし、この選択はそれに合致します。さらに「要因B」が後押ししました。"
 _EXAMPLE_EN = "Situation A calls for a certain kind of choice, and this one matches it; factor B further reinforced it."
-
-# Robust, example-anchored format instruction. Small local models tend to
-# (a) ignore the format and echo the facts, or (b) reply in one language only —
-# both seen live with qwen2.5:0.5b. The rules are therefore explicit and
-# imperative, the two-language requirement is stated per line, and a concrete
-# two-line example fixes the shape. A matching one-line reminder is appended to
-# the END of the user message (recency) in build_explanation_prompt. Output that
-# still doesn't comply is caught by response_is_usable() → template fallback.
-#
-# Task 6 (causal explanation enrichment): the primer teaches the model HOW the
-# scores work (contribution = importance × how well the choice answers the
-# situation) and the three factor families (situation/taste/history), plus a
-# causal telling-order cue (situation calls for -> choice answers -> taste/
-# history reinforces), so the generated prose reads as an explanation of WHY,
-# not just a list of which numbers were largest.
-_SYSTEM_TEMPLATE = (
-    "You write a short, faithful explanation of why an in-car assistant selected "
-    "a {kind} for the driver — in BOTH Japanese and English.\n"
-    "\n"
-    "How the scoring works (use this to interpret, do NOT restate it):\n"
-    "- A factor's influence = how much this trigger purpose cares about it, TIMES "
-    "how well the chosen {kind} answers what the current situation calls for.\n"
-    "- Factors group into three families: the driving SITUATION (drowsiness, "
-    "fatigue, traffic, road, night, monotony), the driver's TASTE (favorite "
-    "artist, genre, era, singability), and the driver's HISTORY (past plays, "
-    "skips, acceptance, recovery).\n"
-    "\n"
-    "Rules:\n"
-    "- Use ONLY the facts in the next message. Never invent features, numbers, "
-    "songs, or driver preferences that are not listed.\n"
-    "- Do NOT copy or repeat the fact lines, and do NOT restate the raw numeric "
-    "scores.\n"
-    "- Tell the CAUSAL story in this order when the facts support it: what the "
-    "driving situation calls for -> how the chosen {kind} answers that -> how the "
-    "driver's taste or history reinforced or tempered it.\n"
-    "- Reply with EXACTLY two lines and NOTHING else: no preamble, no greeting, "
-    "no notes, no markdown, no blank line between them.\n"
-    "- Line 1 MUST start with 'JA:' and be written in Japanese. Line 2 MUST "
-    "start with 'EN:' and be written in English. ALWAYS output both lines, each "
-    "one or two natural sentences.\n"
-    "\n"
-    "Follow this exact shape (copy the format, NOT the wording):\n"
-    "JA: " + _EXAMPLE_JA + "\n"
-    "EN: " + _EXAMPLE_EN
-)
 
 # Appended to the end of the user message so the format is the last thing the
 # model reads before generating.
 _FORMAT_REMINDER = (
     "Reply with exactly two lines and nothing else: a 'JA:' line in Japanese, "
     "then an 'EN:' line in English."
+)
+
+# ---------------------------------------------------------------------------
+# Reasoning-mode system prompts (validated by A/B on qwen2.5:3b over 35
+# presets — see .superpowers/sdd/fix-reasoning-prompt-brief.md). Each carries
+# ITS OWN response matrix (what the algorithm does + what each situation/
+# trigger calls for) so the model reasons the causal story itself from
+# natural-language FACTS in the user message, instead of being handed a
+# pre-baked "driven mostly by X" verdict (which biases the model and caused
+# situation/oshi hallucinations in the old numbers-only design).
+# ---------------------------------------------------------------------------
+
+# Shared closing paragraph: mentions 'JA:'/'EN:' twice each (format guard) and
+# explicitly forbids copying the fact lines verbatim (anti-parrot), WITHOUT
+# embedding a concrete copyable example.
+_REASON_CLOSING = (
+    "Use ONLY the given facts; never invent features, numbers, songs, or driver "
+    "preferences that are not listed. Do NOT copy the fact lines verbatim.\n\n"
+    "Reply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, "
+    "then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', "
+    "each one or two natural sentences."
+)
+
+_CONTENT_REASON_SYSTEM = (
+    "You explain why an in-car assistant selected a {kind} for the driver — in BOTH "
+    "Japanese and English. You are given the raw scoring facts; work out the causal story "
+    "yourself. Do not just restate numbers.\n\n"
+    "WHAT THE ALGORITHM DOES\n"
+    "Each song is distilled into traits: arousal (energy — how lively the song is), valence "
+    "(brightness/positivity of its mood), and sing-along ease. The driver's current situation "
+    "CALLS FOR a certain kind of music, and a song scores well when its traits answer that call.\n\n"
+    "WHAT EACH SITUATION CALLS FOR (the response model — apply this):\n"
+    "- Drowsiness -> MORE energetic (higher arousal) AND brighter music (re-energize).\n"
+    "- Monotony -> MORE energetic and brighter music (counter boredom).\n"
+    "- Fatigue -> CALMER (lower arousal) but brighter music (soothe without dulling).\n"
+    "- Heavy traffic -> CALMER but brighter music (de-stress).\n"
+    "- Night -> CALMER, brighter music.\n"
+    "- Winding/mountain road -> CALMER music (matches the heavier driving load).\n"
+    "- Highway / local roads -> no particular energy demand.\n\n"
+    "HOW A FACTOR SCORES\n"
+    "A factor's contribution = how much the trigger purpose weights it TIMES how well the "
+    "chosen {kind} answered what it calls for. So a POSITIVE contribution from, say, drowsiness "
+    "means the song was energetic/bright enough to answer it. Factors group into three families: "
+    "the driving SITUATION (above), the driver's TASTE (favorite artist, genre, era, singability), "
+    "and the driver's HISTORY (past plays, skips, acceptance, recovery). The family with the "
+    "largest subtotal drove the choice most.\n\n"
+    "YOUR TASK\n"
+    "Reason the causal story: (1) which family dominated (compare the subtotals); (2) what its "
+    "top factors called for; (3) how the {kind}'s actual character answered that; (4) how the "
+    "other families reinforced or tempered it.\n\n" + _REASON_CLOSING
+)
+
+_SERVICE_REASON_SYSTEM = (
+    "You explain why an in-car assistant proposed a SERVICE (not a song) to the driver — in "
+    "BOTH Japanese and English. Work out the causal story from the facts; do not just restate "
+    "numbers.\n\n"
+    "WHAT THE ALGORITHM DOES\n"
+    "After a trigger decides a proposal is warranted, it ranks which service to offer. Each "
+    "candidate service has a RESPONSE to the current situation — how well that service answers "
+    "what the situation needs. A factor's contribution = how strong that situation signal is "
+    "TIMES how well this service responds to it, shaped by the trigger purpose.\n\n"
+    "WHAT EACH KIND OF SERVICE IS FOR (the response model — apply this):\n"
+    "- Interactive / engaging services (humming karaoke, call-and-response, quiz, ranking) keep "
+    "a drowsy or bored driver alert — they strongly respond to drowsiness, fatigue, monotony.\n"
+    "- Background music (music playlist, radio) is a low-demand default — mainly driven by the "
+    "route/music purpose, largely neutral to driver state.\n"
+    "- Rest & recovery services (stretch video, full karaoke, live viewing, oshi re-experience) "
+    "are for when the car is stopped or after a rest — they fit rest/stopped stages, not "
+    "active driving.\n"
+    "The trigger purpose steers the emphasis: a rest recommendation favors rest bridging; "
+    "inattentive-driving prevention favors engaging services; routine music favors the music "
+    "services; a child aboard favors child-friendly ones.\n\n"
+    "HOW A FACTOR SCORES\n"
+    "Factors group into three families: the driving SITUATION (drowsiness, fatigue, traffic, "
+    "road, night, monotony) plus the trigger and car state; the driver's service TASTE; and the "
+    "driver's HISTORY with this service (past acceptance, recovery, usage). The family with the "
+    "largest subtotal drove the choice most.\n\n"
+    "YOUR TASK\n"
+    "Reason the causal story: (1) what the trigger + situation call for; (2) how the chosen "
+    "service answers that; (3) how history/other factors reinforced or tempered it.\n\n"
+    + _REASON_CLOSING
 )
 
 
@@ -290,6 +327,249 @@ def _factors_from_target(target: dict[str, Any]) -> list[dict[str, Any]]:
         )
     factors.sort(key=lambda f: abs(f["contribution"]), reverse=True)
     return factors[:MAX_FACTORS]
+
+
+# ---------------------------------------------------------------------------
+# Shared natural-language fact translators (fact-rich reasoning prompts).
+#
+# These turn a target's ``feature_contributions`` rows into plain-language
+# FACTS (bands/strength words, never raw numbers) for the fact-rich user
+# messages built by ``content_explanation.build_prompt`` /
+# ``service_explanation.build_prompt``. This classifier is intentionally
+# SEPARATE from content_explanation's private ``_family_of``/feature sets
+# (which the UNCHANGED deterministic ``template()`` still uses) so nothing
+# here can alter template output.
+# ---------------------------------------------------------------------------
+
+_REASON_SITUATION_FEATURES = {
+    "drowsiness_level", "drowsiness", "fatigue_level", "fatigue",
+    "monotony_level", "monotony", "traffic_state", "traffic",
+    "night_state", "night", "road_type", "road",
+    "route_tags", "route", "destination_tags", "destination",
+    "child_present", "child", "multiple_passengers",
+}
+_REASON_PREFERENCE_FEATURES = {
+    "oshi_id", "oshi_tags", "oshi_type", "oshi",
+    "song_singability", "service_ease",
+    "age_band", "age", "gender",
+    "hobby_interest_tags", "hobbies",
+    "usage_by_genre", "genre_usage", "scene_genre", "genre_affinity",
+}
+_REASON_HISTORY_FEATURES = {
+    "catalog_item_usage_level", "item_usage",
+    "catalog_item_recency_state",
+    "content_proposal_acceptance_rate", "acceptance",
+    "content_recovery_rate", "recovery",
+    "played_items", "played",
+    "skipped_items", "skipped",
+    "changed_from_items", "changed",
+    "repeated_items", "completed_items", "cancelled_content_plans",
+    "manually_selected_items", "content_tag_recency_state",
+    "content_tag_usage_level", "scene_content_tag_usage_level",
+    "service_recency_state", "service_usage_level", "scene_service_usage_level",
+    "service_proposal_acceptance_rate", "service_recovery_rate",
+}
+
+
+def feature_family(feature_id: str) -> str | None:
+    """``"situation"`` | ``"preference"`` | ``"history"`` | ``None`` for a feature id.
+
+    Used ONLY by the new fact-rich reasoning prompts (see module docstring
+    above) — independent of ``content_explanation``'s own classifier.
+    """
+    if feature_id in _REASON_SITUATION_FEATURES:
+        return "situation"
+    if feature_id in _REASON_PREFERENCE_FEATURES:
+        return "preference"
+    if feature_id in _REASON_HISTORY_FEATURES:
+        return "history"
+    return None
+
+
+def _lvl3(v: float | None, lo: float, hi: float) -> str | None:
+    if v is None:
+        return None
+    return "low" if v < lo else ("high" if v >= hi else "mid")
+
+
+def _reason_row_value(target: dict[str, Any], *feature_ids: str) -> Any:
+    """Raw ``feature_value`` (preferred) or ``e_i`` scaled to 0–100 for the
+    first matching row among ``feature_ids`` (full + short leaf forms)."""
+    for fc in target.get("feature_contributions", []) or []:
+        if str(fc.get("feature_id", "")) in feature_ids:
+            v = fc.get("feature_value")
+            if v is not None:
+                return v
+            e = fc.get("e_i")
+            if isinstance(e, (int, float)):
+                return float(e) * 100.0
+            return None
+    return None
+
+
+def situation_sentence(target: dict[str, Any], trigger_purpose: str | None) -> str | None:
+    """Plain-language driver/road state from the target's situation-family
+    rows (drowsiness/fatigue/monotony levels; traffic/night/road state).
+    ``None`` when no situation row is present at all."""
+    d = _reason_row_value(target, "drowsiness_level", "drowsiness")
+    f = _reason_row_value(target, "fatigue_level", "fatigue")
+    m = _reason_row_value(target, "monotony_level", "monotony")
+    night = _reason_row_value(target, "night_state", "night")
+    traffic = _reason_row_value(target, "traffic_state", "traffic")
+    road = _reason_row_value(target, "road_type", "road")
+    if d is None and f is None and m is None and night is None and traffic is None and road is None:
+        return None
+
+    parts = []
+    if isinstance(d, (int, float)):
+        parts.append(
+            "alert and awake" if d < 30 else ("very drowsy" if d >= 60 else "getting drowsy")
+        )
+    if isinstance(f, (int, float)) and f >= 55:
+        parts.append("physically tired")
+    lead = "The driver is " + (", ".join(parts) if parts else "in a neutral state")
+
+    env = []
+    if isinstance(m, (int, float)):
+        env.append(
+            "the road is very monotonous and boring" if m >= 60 else
+            ("the road is a little monotonous" if m >= 35 else "the road is engaging")
+        )
+    if isinstance(night, str) and night == "night":
+        env.append("it is night")
+    if isinstance(traffic, str) and traffic and traffic != "normal":
+        env.append(f"traffic is {traffic}")
+    if isinstance(road, str) and road:
+        env.append(f"they are on a {road.replace('_', ' ')}")
+    env_s = ("; " + ", ".join(env) + ".") if env else "."
+
+    trig = ""
+    if trigger_purpose == "rest_recommended":
+        trig = " A rest stop is now being recommended."
+    return lead + env_s + trig
+
+
+_TRIGGER_SENTENCES = {
+    "rest_recommended": "A rest stop is now being recommended",
+    "inattentive_driving_prevention_recovery": "The assistant is trying to keep the driver alert",
+    "route_music": "This is routine in-drive music selection",
+    "child_passenger_experience": "A child is aboard",
+}
+
+
+def trigger_sentence(
+    trigger_purpose: str | None, target: dict[str, Any], lifecycle_stage: str | None
+) -> str:
+    """Service-step fact: what the trigger is asking for + the car's motion
+    state (moving vs stopped)."""
+    lead = _TRIGGER_SENTENCES.get(trigger_purpose) if trigger_purpose else None
+    if lead is None:
+        lead = f"The trigger purpose is {trigger_purpose}" if trigger_purpose else "A proposal is being made"
+
+    motion = _reason_row_value(target, "motion_state", "motion")
+    if isinstance(motion, str) and motion:
+        stopped = motion.lower() in ("stopped", "parked", "parking")
+    else:
+        ls = (lifecycle_stage or "").lower()
+        stopped = any(k in ls for k in ("rest", "stopped", "parking"))
+    car = "the car is stopped" if stopped else "the car is moving (active driving)"
+    return f"{lead}; {car}."
+
+
+def preference_sentence(context: dict[str, Any]) -> str | None:
+    """Content-step fact: the driver's registered favorite artist (oshi) and,
+    when available, top genres / age band. Purely best-effort from ``context``
+    — absent fields are silently skipped (never invented)."""
+    oshi_artist = context.get("oshi_artist")
+    dp = context.get("driver_profile") or {}
+    parts: list[str] = []
+    if oshi_artist:
+        parts.append(f"Their favorite artist (oshi) is {oshi_artist}")
+    elif dp.get("oshi_registered") is False:
+        parts.append("They have no registered favorite artist")
+    genres = [g for g, lv in (dp.get("usage_by_genre") or {}).items() if lv in ("high", "mid")]
+    if genres:
+        parts.append("they often listen to " + "/".join(genres))
+    age_band = dp.get("age_band") or context.get("age_band")
+    if age_band:
+        parts.append(f"they are in their {age_band}")
+    if not parts:
+        return None
+    return ". ".join(p[0].upper() + p[1:] for p in parts) + "."
+
+
+def history_sentences(target: dict[str, Any]) -> list[str]:
+    """Driver-history facts (recovery/usage/acceptance/played/skipped) for
+    either a content item or a service candidate, translated from the
+    history-family rows' evidence — never a raw number."""
+    out: list[str] = []
+    for fc in target.get("feature_contributions", []) or []:
+        fid = str(fc.get("feature_id", ""))
+        if feature_family(fid) != "history":
+            continue
+        e = fc.get("e_i")
+        if not isinstance(e, (int, float)):
+            fv = fc.get("feature_value")
+            if isinstance(fv, (int, float)):
+                e = float(fv) / 100.0 if fv > 1 else float(fv)
+        lvl = _lvl3(e, 0.34, 0.66) if isinstance(e, (int, float)) else None
+
+        if fid == "content_recovery_rate" and lvl == "high":
+            out.append("this song has reliably restored the driver's state before")
+        elif fid == "service_recovery_rate" and lvl == "high":
+            out.append("this service has reliably restored the driver's state before")
+        elif fid == "catalog_item_usage_level" and lvl in ("high", "mid"):
+            out.append(f"the driver plays this song {'often' if lvl == 'high' else 'sometimes'}")
+        elif fid in ("service_usage_level", "scene_service_usage_level") and lvl in ("high", "mid"):
+            out.append(f"the driver uses this service {'often' if lvl == 'high' else 'sometimes'}")
+        elif fid == "content_proposal_acceptance_rate" and lvl == "high":
+            out.append("the driver usually accepts song suggestions")
+        elif fid == "service_proposal_acceptance_rate" and lvl == "high":
+            out.append("the driver usually accepts this service when offered")
+        elif fid == "played_items" and isinstance(e, (int, float)) and e >= 0.99:
+            out.append("the driver played this song recently")
+        elif fid == "skipped_items" and isinstance(e, (int, float)) and e >= 0.99:
+            out.append("the driver recently skipped this song")
+        elif fid in ("content_tag_usage_level", "scene_content_tag_usage_level") and lvl in ("high", "mid"):
+            out.append(f"the driver {'often' if lvl == 'high' else 'sometimes'} plays this song's genre")
+        elif fid == "service_recency_state" and isinstance(fc.get("feature_value"), str):
+            fv = fc["feature_value"]
+            if fv and fv != "normal":
+                out.append(f"it has been {fv} since the driver last used this service")
+
+    seen: set[str] = set()
+    uniq: list[str] = []
+    for s in out:
+        if s not in seen:
+            seen.add(s)
+            uniq.append(s)
+    return uniq
+
+
+def _score_strength(c: float) -> str:
+    a = abs(c)
+    w = (
+        "a major reason" if a >= 0.08 else
+        ("a significant reason" if a >= 0.04 else
+         ("a minor reason" if a >= 0.015 else "a slight factor"))
+    )
+    return w if c > 0 else "pushed slightly against it"
+
+
+def score_evidence(factors: list[dict[str, Any]], oshi_artist: str | None = None) -> list[str]:
+    """Top |contribution| factors (already extracted by ``_factors_from_target``)
+    as strength words — never the raw fraction."""
+    lines: list[str] = []
+    for f in factors[:6]:
+        c = f["contribution"]
+        if abs(c) < 0.008:
+            continue
+        if f["feature_id"] == "oshi_id":
+            what = f"it is by the driver's favorite artist{f' ({oshi_artist})' if oshi_artist else ''}"
+        else:
+            what = f["label_en"]
+        lines.append(f"- {what}: {_score_strength(c)}")
+    return lines
 
 
 def build_explanation_prompt(

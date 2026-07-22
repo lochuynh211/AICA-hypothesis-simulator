@@ -17,11 +17,22 @@ def _service_target():
     }
 
 
-def test_service_build_prompt_injects_readout():
-    prompt = se.build_prompt(_service_target(), {"trigger_purpose": "drowsiness"})
-    user = prompt.messages[1].content.lower()
-    assert "driven mostly by" in user
+def test_service_build_prompt_is_fact_rich_not_scores_only():
+    prompt = se.build_prompt(_service_target(), {"trigger_purpose": "rest_recommended", "lifecycle_stage": "during_rest_stopped"})
+    user = prompt.messages[1].content
+    assert "THE SERVICE:" in user
+    assert "THE TRIGGER & CAR STATE:" in user and "rest stop is now being recommended" in user
+    assert "car is stopped" in user
+    assert "THE SITUATION RIGHT NOW:" in user
+    assert "WHY THE ALGORITHM RANKED IT TOP" in user
+    # no pre-baked verdict / no raw contribution numbers in the user text
+    assert "driven mostly by" not in user.lower()
+    assert "+0.300" not in user and "-0.050" not in user
+    # numeric readout still kept in grounding for auditability
     assert prompt.grounding["category_readout"]["dominant"] == "situation"
+    # uses the service reasoning system prompt (its response matrix)
+    system = prompt.messages[0].content.lower()
+    assert "service" in system and "response" in system
 
 
 def test_service_template_is_causal_when_facts_present():
@@ -37,8 +48,12 @@ def test_service_template_degrades_to_passthrough_pair():
     assert se.template(target) == ["日本語の理由。", "English reason."]
 
 
-def test_service_build_prompt_factor_list_uses_categorical_value_passthrough():
+def test_service_build_prompt_situation_sentence_reads_categorical_feature_value():
     prompt = se.build_prompt(_service_target(), {"trigger_purpose": "drowsiness"})
     user = prompt.messages[1].content
-    assert "[high]" in user  # drowsiness_level feature_value="high" passes through
-    assert "level" in user.lower()  # updated "how to read" note
+    # drowsiness_level feature_value="high" is a categorical passthrough (not a
+    # numeric band), so situation_sentence can't narrate a level from it, but
+    # traffic_state's categorical value IS surfaced verbatim
+    assert "traffic is heavy" in user
+    grounding_factors = {f["feature_id"]: f for f in prompt.grounding["factors"]}
+    assert grounding_factors["drowsiness_level"]["value_display"] == "high"

@@ -232,7 +232,15 @@ def causal_bridge_lines(target):
 
 
 def build_prompt(target: dict[str, Any], context: dict[str, Any]) -> ExplanationPrompt:
-    """Content branch of the former build_explanation_prompt (is_service=False)."""
+    """Content branch — fact-rich reasoning-mode prompt (validated on qwen2.5:3b,
+    see .superpowers/sdd/fix-reasoning-prompt-brief.md).
+
+    Hands the model natural-language FACTS (the song's character, the driver's
+    situation/taste/history) plus the response matrix in the system prompt,
+    and lets it reason the causal story itself — no pre-baked "driven mostly
+    by X" verdict and no raw numbers in the user text (grounding still keeps
+    the numeric bridge/readout/factors for auditability).
+    """
     kind_en = "song"
     target_id = str(target.get("item_id") or "")
     rank = target.get("position")
@@ -274,64 +282,65 @@ def build_prompt(target: dict[str, Any], context: dict[str, Any]) -> Explanation
         "category_readout": readout,
     }
 
-    # ── User message: the full grounding ────────────────────────────────────
-    formula = "fit = clamp( sum over factors of (weight x evidence x response), -1..+1 )"
-    lines: list[str] = []
-    fit_txt = f"{fit:+.3f}" if isinstance(fit, (int, float)) else "n/a"
-    rank_txt = f"rank {rank}, " if rank is not None else ""
-    lines.append(f'The assistant selected {kind_en} "{target_id}" ({rank_txt}fit {fit_txt}).')
-    if context.get("trigger_purpose"):
-        lines.append(f"Trigger purpose: {context.get('trigger_purpose')}.")
-    if context.get("lifecycle_stage"):
-        lines.append(f"Driving stage: {context.get('lifecycle_stage')}.")
+    # ── User message: natural-language facts, no scores-only, no verdict ────
+    name = context.get("song_name") or target_id
+    song_artist = context.get("song_artist")
+    oshi_artist = context.get("oshi_artist")
+    tv = target.get("trait_values") or {}
 
-    if song_facts:
-        lines.append("")
-        lines.append("About the chosen song:")
-        lines.extend(song_facts)
-
-    if readout:
-        lines.append("")
-        lines.append(readout["phrase_en"])
-    if bridge:
-        lines.append("")
-        lines.append("How the driving situation shapes the music choice:")
-        lines.extend(bridge)
-
-    lines.append("")
-    lines.append("How to read the factors below:")
-    lines.append(f"- {formula}; a higher fit means a stronger overall match.")
-    lines.append(
-        "- Each factor's contribution is POSITIVE when it pushed toward this choice and "
-        "NEGATIVE when it pushed against it; a larger magnitude means a stronger influence."
-    )
-    lines.append(
-        "- The value in [brackets] is that factor's qualitative level (low / medium / "
-        "high). A factor can be a top contributor even at a low level, so weigh the "
-        "level and the contribution together."
+    L: list[str] = []
+    L.append(
+        f'The assistant selected the song "{name}"'
+        + (f" by {song_artist}" if song_artist else "")
+        + " for the driver."
     )
 
-    if factors:
-        lines.append("")
-        lines.append("Factors, most influential first (label [level]: contribution — meaning):")
-        for f in factors:
-            val = "" if f["value_display"] in (None, "") else f" [{f['value_display']}]"
-            meaning = f" — {f['meaning']}" if f["meaning"] else ""
-            lines.append(f"- {f['label_ja']} / {f['label_en']}{val}: {f['contribution']:+.3f}{meaning}")
-    if supporting:
-        labs = ", ".join(_k.label_for(s)["en"] for s in supporting)
-        lines.append(f"Overall pushed TOWARD this choice by: {labs}.")
-    if opposing:
-        labs = ", ".join(_k.label_for(o)["en"] for o in opposing)
-        lines.append(f"Pushed AGAINST by: {labs}.")
+    arousal = tv.get("arousal")
+    valence = tv.get("valence")
+    eases = [x for x in (tv.get("humming_ease"), tv.get("full_karaoke_ease")) if isinstance(x, (int, float))]
+    desc: list[str] = []
+    if isinstance(arousal, (int, float)):
+        desc.append(
+            "energetic and lively" if arousal >= 0.62 else
+            ("calm and low-energy" if arousal < 0.40 else "moderate-energy")
+        )
+    if isinstance(valence, (int, float)):
+        desc.append(
+            "bright and positive in mood" if valence >= 0.55 else
+            ("darker in mood" if valence < 0.40 else "neutral in mood")
+        )
+    if eases and max(eases) >= 0.66:
+        desc.append("easy to sing along to")
+    L.append("")
+    L.append("THE SONG: " + ("a song that is " + ", ".join(desc) + "." if desc else "the chosen song."))
 
-    # Terminal format reminder (recency) — the last thing the model reads.
-    lines.append("")
-    lines.append(_k._FORMAT_REMINDER)
+    situation = _k.situation_sentence(target, context.get("trigger_purpose"))
+    if situation:
+        L.append("")
+        L.append("THE SITUATION RIGHT NOW: " + situation)
+
+    preference = _k.preference_sentence(context)
+    if preference:
+        L.append("")
+        L.append("THE DRIVER'S TASTE: " + preference)
+
+    history = _k.history_sentences(target)
+    if history:
+        L.append("")
+        L.append("THE DRIVER'S HISTORY WITH THIS SONG/GENRE: " + "; ".join(history) + ".")
+
+    evidence = _k.score_evidence(factors, oshi_artist)
+    if evidence:
+        L.append("")
+        L.append("WHY THE ALGORITHM RANKED IT TOP (strongest reasons first):")
+        L.extend(evidence)
+
+    L.append("")
+    L.append(_k._FORMAT_REMINDER)
 
     messages = [
-        ExplainMessage(role="system", content=_k._SYSTEM_TEMPLATE.format(kind=kind_en)),
-        ExplainMessage(role="user", content="\n".join(lines)),
+        ExplainMessage(role="system", content=_k._CONTENT_REASON_SYSTEM.format(kind=kind_en)),
+        ExplainMessage(role="user", content="\n".join(L)),
     ]
     return ExplanationPrompt(messages=messages, grounding=grounding)
 

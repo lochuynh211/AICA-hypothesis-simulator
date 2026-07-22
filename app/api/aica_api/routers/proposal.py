@@ -1967,11 +1967,11 @@ class ExplainResponse(BaseModel):
     prompt: ExplanationPrompt
 
 
-def _resolve_song_name(run_log: ProposalRunLog, track_id: str) -> str | None:
-    """Best-effort catalog lookup of a song's display title (feature 019).
+def _dataset_id_for_run(run_log: ProposalRunLog) -> str | None:
+    """Best-effort dataset id for a run's catalog, or ``None`` (feature 019/022).
 
     Fully defensive — any failure (legacy run without a dataset, quarantined
-    catalog, unknown id) simply returns ``None`` and the reason omits the title.
+    catalog) simply returns ``None``.
     """
     dataset_id = None
     try:
@@ -1981,6 +1981,16 @@ def _resolve_song_name(run_log: ProposalRunLog, track_id: str) -> str | None:
         dataset_id = None
     if not dataset_id and run_log.setup_snapshot is not None:
         dataset_id = getattr(run_log.setup_snapshot, "dataset_id", None)
+    return dataset_id
+
+
+def _resolve_song_name(run_log: ProposalRunLog, track_id: str) -> str | None:
+    """Best-effort catalog lookup of a song's display title (feature 019).
+
+    Fully defensive — any failure (legacy run without a dataset, quarantined
+    catalog, unknown id) simply returns ``None`` and the reason omits the title.
+    """
+    dataset_id = _dataset_id_for_run(run_log)
     if not dataset_id:
         return None
     try:
@@ -1988,6 +1998,48 @@ def _resolve_song_name(run_log: ProposalRunLog, track_id: str) -> str | None:
         song = catalog_map.get(track_id)
         if song:
             return (song.get("spotify_track") or {}).get("name")
+    except Exception:  # noqa: BLE001
+        return None
+    return None
+
+
+def _resolve_song_artist(run_log: ProposalRunLog, track_id: str) -> str | None:
+    """Best-effort catalog lookup of a song's primary artist name (feature 022,
+    causal explanation enrichment). Fully defensive — any failure simply omits
+    the artist name from the explanation prompt."""
+    dataset_id = _dataset_id_for_run(run_log)
+    if not dataset_id:
+        return None
+    try:
+        catalog_map = _catalog_map_for_dataset(dataset_id) or {}
+        song = catalog_map.get(track_id)
+        if song:
+            artists = (song.get("spotify_track") or {}).get("artists") or []
+            if artists:
+                return artists[0].get("name")
+    except Exception:  # noqa: BLE001
+        return None
+    return None
+
+
+def _resolve_oshi_artist(run_log: ProposalRunLog) -> str | None:
+    """Best-effort artist name for the driver's registered oshi (feature 022).
+
+    Only resolved when oshi is registered AND oshi mode is on (mirrors the
+    algorithms' own oshi-match gating); any failure (no dataset, unknown
+    oshi_id, legacy run without a driver_profile) simply omits the name."""
+    try:
+        dp = run_log.world.driver_profile if run_log.world is not None else None
+        if dp is None or not dp.oshi_registered or dp.oshi_mode != "on" or not dp.oshi_id:
+            return None
+        dataset_id = _dataset_id_for_run(run_log)
+        if not dataset_id:
+            return None
+        catalog_map = _catalog_map_for_dataset(dataset_id) or {}
+        for song in catalog_map.values():
+            for artist in (song.get("spotify_track") or {}).get("artists") or []:
+                if artist.get("id") == dp.oshi_id:
+                    return artist.get("name")
     except Exception:  # noqa: BLE001
         return None
     return None
@@ -2049,6 +2101,11 @@ def explain_from_run_log(
     # the reason can name the track. Fully optional: any failure just omits it.
     if body.step == "content":
         context["song_name"] = _resolve_song_name(run_log, body.target_id)
+        # feature 022 (causal explanation enrichment) — best-effort artist
+        # names so the fact-rich reasoning prompt can name them; any failure
+        # just omits the field (never blocks the explanation).
+        context["song_artist"] = _resolve_song_artist(run_log, body.target_id)
+        context["oshi_artist"] = _resolve_oshi_artist(run_log)
 
     prompt = explanation_builder.build_explanation_prompt(body.step, target, context)
     p_hash = explanation_builder.prompt_hash(prompt)
