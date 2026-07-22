@@ -152,6 +152,59 @@ def test_situation_sentence_none_when_no_situation_rows():
     assert eb.situation_sentence(target, None) is None
 
 
+# ── contributing_only gate (022 fix — kills the music_playlist contradiction) ──
+
+def test_situation_sentence_contributing_only_drops_zero_contribution_drowsiness():
+    # drowsiness contribution ~0 (this candidate is NEUTRAL to it), but route
+    # tags (not narrated by situation_sentence) is what actually drove it.
+    target = {
+        "feature_contributions": [
+            {"feature_id": "drowsiness_level", "feature_value": 70, "contribution": 0.0},
+            {"feature_id": "monotony_level", "feature_value": 65, "contribution": 0.0},
+        ]
+    }
+    s = eb.situation_sentence(target, "route_music", contributing_only=True)
+    assert s is None or "drowsy" not in s
+
+
+def test_situation_sentence_contributing_only_keeps_meaningful_drowsiness():
+    target = {
+        "feature_contributions": [
+            {"feature_id": "drowsiness_level", "feature_value": 70, "contribution": 0.25},
+        ]
+    }
+    s = eb.situation_sentence(target, "inattentive_driving_prevention_recovery", contributing_only=True)
+    assert s is not None
+    assert "drowsy" in s
+
+
+def test_situation_sentence_contributing_only_none_when_nothing_passes_gate():
+    target = {
+        "feature_contributions": [
+            {"feature_id": "drowsiness_level", "feature_value": 70, "contribution": 0.0},
+            {"feature_id": "monotony_level", "feature_value": 65, "contribution": 0.0},
+            {"feature_id": "night_state", "feature_value": "night", "contribution": 0.0},
+        ]
+    }
+    assert eb.situation_sentence(target, "route_music", contributing_only=True) is None
+    # never the mild overclaim in this mode
+    assert eb.situation_sentence(target, "route_music", contributing_only=True) != "The driver is in a neutral state."
+
+
+def test_situation_sentence_content_default_ignores_contribution_magnitude():
+    # Content path (contributing_only=False, the default) must be unaffected:
+    # drowsiness contribution ~0 still gets narrated, since content reasoning
+    # needs the full situation regardless of this item's own response to it.
+    target = {
+        "feature_contributions": [
+            {"feature_id": "drowsiness_level", "feature_value": 70, "contribution": 0.0},
+        ]
+    }
+    s = eb.situation_sentence(target, "route_music")
+    assert s is not None
+    assert "drowsy" in s
+
+
 def test_trigger_sentence_maps_known_purposes_and_reads_motion_state():
     target = {"feature_contributions": [{"feature_id": "motion_state", "feature_value": "stopped", "contribution": 0.0}]}
     s = eb.trigger_sentence("rest_recommended", target, None)

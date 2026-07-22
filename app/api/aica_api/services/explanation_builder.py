@@ -270,6 +270,9 @@ _SERVICE_REASON_SYSTEM = (
     "YOUR TASK\n"
     "Reason the causal story: (1) what the trigger + situation call for; (2) how the chosen "
     "service answers that; (3) how history/other factors reinforced or tempered it.\n\n"
+    "Explain using the ranked reasons below; only cite a situation as a reason if it drove THIS "
+    "service. Never argue that a different kind of service is needed than the one that was "
+    "chosen.\n\n"
     + _REASON_CLOSING
 )
 
@@ -407,10 +410,51 @@ def _reason_row_value(target: dict[str, Any], *feature_ids: str) -> Any:
     return None
 
 
-def situation_sentence(target: dict[str, Any], trigger_purpose: str | None) -> str | None:
+def _reason_row_contribution(target: dict[str, Any], *feature_ids: str) -> float | None:
+    """``contribution`` float for the first matching row among ``feature_ids``
+    (full + short leaf forms), or ``None`` when no such row is present."""
+    for fc in target.get("feature_contributions", []) or []:
+        if str(fc.get("feature_id", "")) in feature_ids:
+            c = fc.get("contribution")
+            if isinstance(c, (int, float)):
+                return float(c)
+            return None
+    return None
+
+
+# Minimum |contribution| for a situation feature to count as actually having
+# driven THIS candidate, used by situation_sentence's contributing_only gate
+# (see module docstring / feature 022 fix). Below this, the row is present but
+# effectively inert for this candidate (e.g. a NEUTRAL service like background
+# music, where drowsiness/monotony contribute ~0).
+_CONTRIBUTING_THRESHOLD = 0.005
+
+
+def situation_sentence(
+    target: dict[str, Any],
+    trigger_purpose: str | None,
+    contributing_only: bool = False,
+) -> str | None:
     """Plain-language driver/road state from the target's situation-family
     rows (drowsiness/fatigue/monotony levels; traffic/night/road state).
-    ``None`` when no situation row is present at all."""
+    ``None`` when no situation row is present at all.
+
+    When ``contributing_only`` is True (used by the SERVICE prompt — see
+    ``service_explanation.build_prompt``), each situation piece is gated
+    independently on whether ITS row actually contributed to this candidate
+    (``abs(contribution) >= _CONTRIBUTING_THRESHOLD``). This stops a service
+    that is NEUTRAL to drowsiness/monotony (e.g. background music, contribution
+    ~0) from being handed a prominent "the driver is getting drowsy" fact that
+    has nothing to do with why it was picked — which was pulling the model
+    into arguing for a different (interactive) kind of service than the one
+    actually chosen. When nothing passes the gate, returns ``None`` (the
+    caller omits the whole SITUATION section) rather than the mild overclaim
+    "the driver is in a neutral state".
+
+    ``contributing_only=False`` (the default, used by the CONTENT prompt) is
+    unchanged: every situation row present is narrated regardless of its
+    contribution to this particular item.
+    """
     d = _reason_row_value(target, "drowsiness_level", "drowsiness")
     f = _reason_row_value(target, "fatigue_level", "fatigue")
     m = _reason_row_value(target, "monotony_level", "monotony")
@@ -420,29 +464,42 @@ def situation_sentence(target: dict[str, Any], trigger_purpose: str | None) -> s
     if d is None and f is None and m is None and night is None and traffic is None and road is None:
         return None
 
+    def _passes(*feature_ids: str) -> bool:
+        if not contributing_only:
+            return True
+        c = _reason_row_contribution(target, *feature_ids)
+        return c is not None and abs(c) >= _CONTRIBUTING_THRESHOLD
+
     parts = []
-    if isinstance(d, (int, float)):
+    if isinstance(d, (int, float)) and _passes("drowsiness_level", "drowsiness"):
         parts.append(
             "alert and awake" if d < 30 else ("very drowsy" if d >= 60 else "getting drowsy")
         )
-    if isinstance(f, (int, float)) and f >= 55:
+    if isinstance(f, (int, float)) and f >= 55 and _passes("fatigue_level", "fatigue"):
         parts.append("physically tired")
-    lead = "The driver is " + (", ".join(parts) if parts else "in a neutral state")
 
     env = []
-    if isinstance(m, (int, float)):
+    if isinstance(m, (int, float)) and _passes("monotony_level", "monotony"):
         env.append(
             "the road is very monotonous and boring" if m >= 60 else
             ("the road is a little monotonous" if m >= 35 else "the road is engaging")
         )
-    if isinstance(night, str) and night == "night":
+    if isinstance(night, str) and night == "night" and _passes("night_state", "night"):
         env.append("it is night")
-    if isinstance(traffic, str) and traffic and traffic != "normal":
+    if isinstance(traffic, str) and traffic and traffic != "normal" and _passes("traffic_state", "traffic"):
         env.append(f"traffic is {traffic}")
-    if isinstance(road, str) and road:
+    if isinstance(road, str) and road and _passes("road_type", "road"):
         env.append(f"they are on a {road.replace('_', ' ')}")
-    env_s = ("; " + ", ".join(env) + ".") if env else "."
 
+    if contributing_only and not parts and not env:
+        # Nothing about the driver/road situation actually contributed to this
+        # candidate — omit the section entirely rather than emit the mild
+        # overclaim "the driver is in a neutral state" (contributing_only mode
+        # only; the default/content path never hits this branch below).
+        return None
+
+    lead = "The driver is " + (", ".join(parts) if parts else "in a neutral state")
+    env_s = ("; " + ", ".join(env) + ".") if env else "."
     # The rest-recommendation clause is carried by trigger_sentence's "THE
     # TRIGGER & CAR STATE" section for service prompts — do not repeat it
     # here, or a rest_recommended service prompt shows it twice.

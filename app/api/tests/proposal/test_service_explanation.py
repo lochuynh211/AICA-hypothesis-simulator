@@ -51,6 +51,54 @@ def test_service_template_degrades_to_passthrough_pair():
     assert se.template(target) == ["日本語の理由。", "English reason."]
 
 
+def test_service_build_prompt_omits_situation_section_when_service_is_neutral_to_it():
+    # music_playlist: background music that is NEUTRAL to drowsiness/monotony
+    # (contribution ~0) — only route/music-purpose features actually drove it.
+    # The prompt must NOT hand the model a prominent "getting drowsy" fact that
+    # has nothing to do with why this (non-interactive) service was chosen —
+    # that fact plus the system-prompt matrix was pulling qwen2.5:3b into
+    # arguing for a DIFFERENT kind of service than the one picked (022 fix).
+    target = {
+        "candidate_id": "music_playlist", "rank": 1, "score": 0.20,
+        "situation_fit": 0.0, "preference_fit": 0.02, "history_fit": 0.08,
+        "strongest_support": {"feature_id": "route_tags", "contribution": 0.10},
+        "supporting_feature_ids": ["route_tags"],
+        "opposing_feature_ids": [],
+        "feature_contributions": [
+            {"feature_id": "drowsiness_level", "feature_value": 70, "contribution": 0.0},
+            {"feature_id": "monotony_level", "feature_value": 65, "contribution": 0.0},
+            {"feature_id": "route_tags", "feature_value": "highway", "contribution": 0.10},
+        ],
+        "rationale": ["ルート特性が支持（+0.1000）。", "route characteristics support this pick (+0.1000)."],
+    }
+    prompt = se.build_prompt(target, {"trigger_purpose": "route_music", "lifecycle_stage": "active_driving"})
+    user = prompt.messages[1].content
+    assert "THE SITUATION RIGHT NOW:" not in user
+    assert "drowsy" not in user.lower()
+
+
+def test_service_build_prompt_keeps_situation_section_when_service_responds_to_it():
+    # humming_karaoke: interactive service where drowsiness genuinely drove the
+    # pick — the situation section must stay.
+    target = {
+        "candidate_id": "humming_karaoke", "rank": 1, "score": 0.35,
+        "situation_fit": 0.28, "preference_fit": 0.0, "history_fit": 0.05,
+        "strongest_support": {"feature_id": "drowsiness_level", "contribution": 0.25},
+        "supporting_feature_ids": ["drowsiness_level"],
+        "opposing_feature_ids": [],
+        "feature_contributions": [
+            {"feature_id": "drowsiness_level", "feature_value": 70, "contribution": 0.25},
+        ],
+        "rationale": ["眠気が支持（+0.2500）。", "drowsiness supports this pick (+0.2500)."],
+    }
+    prompt = se.build_prompt(
+        target, {"trigger_purpose": "inattentive_driving_prevention_recovery", "lifecycle_stage": "active_driving"}
+    )
+    user = prompt.messages[1].content
+    assert "THE SITUATION RIGHT NOW:" in user
+    assert "drowsy" in user.lower()
+
+
 def test_service_build_prompt_situation_sentence_reads_categorical_feature_value():
     prompt = se.build_prompt(_service_target(), {"trigger_purpose": "drowsiness"})
     user = prompt.messages[1].content

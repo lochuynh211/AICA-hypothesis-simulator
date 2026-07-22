@@ -92,7 +92,7 @@ def build_prompt(target: dict[str, Any], context: dict[str, Any]) -> Explanation
     L.append("")
     L.append("THE TRIGGER & CAR STATE: " + _k.trigger_sentence(trigger_purpose, target, lifecycle_stage))
 
-    situation = _k.situation_sentence(target, trigger_purpose)
+    situation = _k.situation_sentence(target, trigger_purpose, contributing_only=True)
     if situation:
         L.append("")
         L.append("THE SITUATION RIGHT NOW: " + situation)
