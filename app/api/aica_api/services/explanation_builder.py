@@ -398,3 +398,39 @@ def template_rationale(step: str, target: dict[str, Any]) -> list[str]:
     if step == "service":
         return service_explanation.template(target)
     return content_explanation.template(target)
+
+
+# ---------------------------------------------------------------------------
+# Shared category readout (§14 fit subtotals -> signed trio + dominant + phrase)
+# ---------------------------------------------------------------------------
+
+_CATEGORY_PHRASES = {
+    "situation": {"ja": "運転状況", "en": "the driving situation"},
+    "preference": {"ja": "運転者の好み", "en": "the driver's taste"},
+    "history": {"ja": "運転者の利用履歴", "en": "the driver's history"},
+}
+
+
+def category_readout(target: dict[str, Any]) -> dict[str, Any] | None:
+    """Bilingual 'what dominated' readout from the §14 fit subtotals.
+
+    Returns None when the target carries no numeric situation/preference/history
+    subtotal (LLM-shaped plans, mock selector), so callers can skip the line.
+    """
+    subs = {
+        cat: target.get(f"{cat}_fit")
+        for cat in ("situation", "preference", "history")
+    }
+    nums = {c: float(v) for c, v in subs.items() if isinstance(v, (int, float))}
+    if not nums:
+        return None
+    dominant = max(nums, key=lambda c: abs(nums[c]))
+    ph = _CATEGORY_PHRASES[dominant]
+    return {
+        "situation": nums.get("situation", 0.0),
+        "preference": nums.get("preference", 0.0),
+        "history": nums.get("history", 0.0),
+        "dominant": dominant,
+        "phrase_ja": f"この選択は主に{ph['ja']}によって決まりました。",
+        "phrase_en": f"This choice was driven mostly by {ph['en']}.",
+    }
