@@ -1,5 +1,7 @@
 node_modules/
 dist/
+dist-htmlapp.zip
+dist-singlefile/
 src/config.ts
 test-results/
 playwright-report/
