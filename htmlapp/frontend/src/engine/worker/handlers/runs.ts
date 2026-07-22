@@ -41,6 +41,7 @@ import {
 } from '../../run_plan'
 import type { ScenarioDefM2 } from '../../event_plan'
 import { advanceTick, buildAdapterContext, type TickState } from '../../tick_engine'
+import { deriveProposalHistory } from '../../proposal_history'
 import { evaluate as evaluateAlgorithm } from '../../algorithms/adapter'
 import { AlgorithmAdapterError } from '../../algorithms/errors'
 import { startRecovery } from '../../recovery'
@@ -322,91 +323,6 @@ type PreviewEvent =
   | { kind: 'tick'; tick_index: number; trace: { tick_index: number; decision_result: DecisionResult } }
   | { kind: 'action'; tick_index: number; action: string; resulting_status: string }
 
-type PreviewProposalHistory = {
-  lastProposalTimeSec: number | null
-  lastProposalCategory: string | null
-  lastProposalResult: string | null
-  proposalCountLast30Min: number
-  acceptanceRateRecent: number
-}
-
-function derivePreviewHistory(
-  events: PreviewEvent[],
-  tickSeconds: number,
-  currentSimSec: number,
-): [PreviewProposalHistory, { tick_index: number; action: string }[]] {
-  const firedProposalTicks: number[] = []
-  const firedProposalCategories: string[] = []
-  const actionByOrder: [number, string][] = []
-  const userActionHistory: { tick_index: number; action: string }[] = []
-
-  for (const event of events) {
-    if (event.kind === 'tick') {
-      const dr = event.trace.decision_result
-      if (dr.fire_control.fired && dr.proposal !== null) {
-        firedProposalTicks.push(event.tick_index)
-        firedProposalCategories.push(dr.selected_category ?? '')
-      }
-    } else if (event.kind === 'action') {
-      actionByOrder.push([event.tick_index, event.action])
-      userActionHistory.push({ tick_index: event.tick_index, action: event.action })
-    }
-  }
-
-  if (firedProposalTicks.length === 0) {
-    return [
-      {
-        lastProposalTimeSec: null,
-        lastProposalCategory: null,
-        lastProposalResult: null,
-        proposalCountLast30Min: 0,
-        acceptanceRateRecent: 0.0,
-      },
-      userActionHistory,
-    ]
-  }
-
-  const lastTick = firedProposalTicks[firedProposalTicks.length - 1]
-  const lastCategory = firedProposalCategories[firedProposalCategories.length - 1]
-  const lastTimeSec = lastTick * tickSeconds
-
-  let lastProposalResult: string | null = null
-  for (const [actionTick, act] of actionByOrder) {
-    if (actionTick >= lastTick) {
-      lastProposalResult = act
-      break
-    }
-  }
-
-  const windowStartSec = currentSimSec - 1800.0
-  const proposalsInWindow = firedProposalTicks.filter((t) => t * tickSeconds >= windowStartSec).length
-
-  let actedCount = 0
-  let acceptedCount = 0
-  let searchStart = 0
-  for (const proposalTick of firedProposalTicks) {
-    for (let i = searchStart; i < actionByOrder.length; i++) {
-      if (actionByOrder[i][0] >= proposalTick) {
-        actedCount += 1
-        if (actionByOrder[i][1] === 'accept_rest') acceptedCount += 1
-        searchStart = i + 1
-        break
-      }
-    }
-  }
-  const acceptanceRate = actedCount > 0 ? acceptedCount / actedCount : 0.0
-
-  return [
-    {
-      lastProposalTimeSec: lastTimeSec,
-      lastProposalCategory: lastCategory,
-      lastProposalResult,
-      proposalCountLast30Min: proposalsInWindow,
-      acceptanceRateRecent: acceptanceRate,
-    },
-    userActionHistory,
-  ]
-}
 
 const _MAX_PREVIEW_TICKS = 2000
 
@@ -561,7 +477,7 @@ export async function runsPreview(params: { config: RunConfig; restOptionId?: st
 
     const context = buildAdapterContext(tickState)
     context['simulation_time_sec'] = Number(tickState.elapsed_seconds)
-    const [proposalHistory, userActionHistory] = derivePreviewHistory(
+    const [proposalHistory, userActionHistory] = deriveProposalHistory(
       events,
       Number(eventPlan.tick_seconds),
       Number(tickState.elapsed_seconds),
