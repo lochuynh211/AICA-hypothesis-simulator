@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "sync": "node scripts/sync-from-app.mjs"
+    "sync": "node scripts/sync-from-app.mjs",
+    "capture-fixtures": "echo 'Run from repo root: PYTHONPATH=app/api python htmlapp/frontend/scripts/gen/capture_all.py'"
   },
   "dependencies": {
     "idb": "^8.0.0",

@@ -516,9 +516,7 @@
           "overall_judgment": "good_trigger"
         },
         "comment": null
-      },
-      "proposalTickIndex": 15,
-      "proposalEventRef": 15
+      }
     }
   },
   "output": {
@@ -704,15 +702,27 @@
         "recovery_model": {
           "sleep": {
             "drowsiness": 60.0,
-            "fatigue": 60.0
+            "fatigue": 60.0,
+            "drowsiness_per_min": 0.0,
+            "fatigue_per_min": 0.0,
+            "cap_drowsiness": null,
+            "cap_fatigue": null
           },
           "audio_karaoke": {
             "drowsiness": 25.0,
-            "fatigue": 25.0
+            "fatigue": 25.0,
+            "drowsiness_per_min": 0.0,
+            "fatigue_per_min": 0.0,
+            "cap_drowsiness": null,
+            "cap_fatigue": null
           },
           "stretch": {
             "drowsiness": 25.0,
-            "fatigue": 25.0
+            "fatigue": 25.0,
+            "drowsiness_per_min": 0.0,
+            "fatigue_per_min": 0.0,
+            "cap_drowsiness": null,
+            "cap_fatigue": null
           }
         }
       },
@@ -750,6 +760,7 @@
             },
             "distance_km": 3.0,
             "continuous_driving_min": 3.0,
+            "monotony_accrued_min": 3.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -765,7 +776,8 @@
                 "routeFraction": 0.025,
                 "nextRestSpotMin": 57.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 8
               },
               "simulated": {
                 "drowsiness": 23.599999999999998,
@@ -884,7 +896,8 @@
               "routeFraction": 0.025,
               "nextRestSpotMin": 57.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 8
             },
             "simulated": {
               "drowsiness": 23.599999999999998,
@@ -954,6 +967,7 @@
             },
             "distance_km": 6.0,
             "continuous_driving_min": 6.0,
+            "monotony_accrued_min": 6.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -969,7 +983,8 @@
                 "routeFraction": 0.05,
                 "nextRestSpotMin": 54.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 16
               },
               "simulated": {
                 "drowsiness": 27.199999999999996,
@@ -1088,7 +1103,8 @@
               "routeFraction": 0.05,
               "nextRestSpotMin": 54.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 16
             },
             "simulated": {
               "drowsiness": 27.199999999999996,
@@ -1158,6 +1174,7 @@
             },
             "distance_km": 9.0,
             "continuous_driving_min": 9.0,
+            "monotony_accrued_min": 9.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -1173,7 +1190,8 @@
                 "routeFraction": 0.075,
                 "nextRestSpotMin": 51.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 24
               },
               "simulated": {
                 "drowsiness": 30.799999999999994,
@@ -1294,7 +1312,8 @@
               "routeFraction": 0.075,
               "nextRestSpotMin": 51.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 24
             },
             "simulated": {
               "drowsiness": 30.799999999999994,
@@ -1364,6 +1383,7 @@
             },
             "distance_km": 12.0,
             "continuous_driving_min": 12.0,
+            "monotony_accrued_min": 12.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -1379,7 +1399,8 @@
                 "routeFraction": 0.1,
                 "nextRestSpotMin": 48.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 32
               },
               "simulated": {
                 "drowsiness": 34.39999999999999,
@@ -1500,7 +1521,8 @@
               "routeFraction": 0.1,
               "nextRestSpotMin": 48.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 32
             },
             "simulated": {
               "drowsiness": 34.39999999999999,
@@ -1570,6 +1592,7 @@
             },
             "distance_km": 15.0,
             "continuous_driving_min": 15.0,
+            "monotony_accrued_min": 15.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -1585,7 +1608,8 @@
                 "routeFraction": 0.125,
                 "nextRestSpotMin": 45.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 40
               },
               "simulated": {
                 "drowsiness": 37.99999999999999,
@@ -1706,7 +1730,8 @@
               "routeFraction": 0.125,
               "nextRestSpotMin": 45.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 40
             },
             "simulated": {
               "drowsiness": 37.99999999999999,
@@ -1776,6 +1801,7 @@
             },
             "distance_km": 18.0,
             "continuous_driving_min": 18.0,
+            "monotony_accrued_min": 18.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -1791,7 +1817,8 @@
                 "routeFraction": 0.15,
                 "nextRestSpotMin": 42.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 48
               },
               "simulated": {
                 "drowsiness": 41.599999999999994,
@@ -1912,7 +1939,8 @@
               "routeFraction": 0.15,
               "nextRestSpotMin": 42.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 48
             },
             "simulated": {
               "drowsiness": 41.599999999999994,
@@ -1982,6 +2010,7 @@
             },
             "distance_km": 21.0,
             "continuous_driving_min": 21.0,
+            "monotony_accrued_min": 21.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -1997,7 +2026,8 @@
                 "routeFraction": 0.175,
                 "nextRestSpotMin": 39.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 56
               },
               "simulated": {
                 "drowsiness": 45.199999999999996,
@@ -2118,7 +2148,8 @@
               "routeFraction": 0.175,
               "nextRestSpotMin": 39.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 56
             },
             "simulated": {
               "drowsiness": 45.199999999999996,
@@ -2188,6 +2219,7 @@
             },
             "distance_km": 24.0,
             "continuous_driving_min": 24.0,
+            "monotony_accrued_min": 24.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -2203,7 +2235,8 @@
                 "routeFraction": 0.2,
                 "nextRestSpotMin": 36.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 64
               },
               "simulated": {
                 "drowsiness": 48.8,
@@ -2322,7 +2355,8 @@
               "routeFraction": 0.2,
               "nextRestSpotMin": 36.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 64
             },
             "simulated": {
               "drowsiness": 48.8,
@@ -2392,6 +2426,7 @@
             },
             "distance_km": 27.0,
             "continuous_driving_min": 27.0,
+            "monotony_accrued_min": 27.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -2407,7 +2442,8 @@
                 "routeFraction": 0.225,
                 "nextRestSpotMin": 33.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 72
               },
               "simulated": {
                 "drowsiness": 52.4,
@@ -2526,7 +2562,8 @@
               "routeFraction": 0.225,
               "nextRestSpotMin": 33.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 72
             },
             "simulated": {
               "drowsiness": 52.4,
@@ -2596,6 +2633,7 @@
             },
             "distance_km": 30.0,
             "continuous_driving_min": 30.0,
+            "monotony_accrued_min": 30.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -2611,7 +2649,8 @@
                 "routeFraction": 0.25,
                 "nextRestSpotMin": 30.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 80
               },
               "simulated": {
                 "drowsiness": 56.0,
@@ -2730,7 +2769,8 @@
               "routeFraction": 0.25,
               "nextRestSpotMin": 30.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 80
             },
             "simulated": {
               "drowsiness": 56.0,
@@ -2800,6 +2840,7 @@
             },
             "distance_km": 33.0,
             "continuous_driving_min": 33.0,
+            "monotony_accrued_min": 33.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -2815,7 +2856,8 @@
                 "routeFraction": 0.275,
                 "nextRestSpotMin": 27.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 88
               },
               "simulated": {
                 "drowsiness": 59.6,
@@ -2934,7 +2976,8 @@
               "routeFraction": 0.275,
               "nextRestSpotMin": 27.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 88
             },
             "simulated": {
               "drowsiness": 59.6,
@@ -3004,6 +3047,7 @@
             },
             "distance_km": 36.0,
             "continuous_driving_min": 36.0,
+            "monotony_accrued_min": 36.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -3019,7 +3063,8 @@
                 "routeFraction": 0.3,
                 "nextRestSpotMin": 24.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 96
               },
               "simulated": {
                 "drowsiness": 63.2,
@@ -3138,7 +3183,8 @@
               "routeFraction": 0.3,
               "nextRestSpotMin": 24.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 96
             },
             "simulated": {
               "drowsiness": 63.2,
@@ -3208,6 +3254,7 @@
             },
             "distance_km": 39.0,
             "continuous_driving_min": 39.0,
+            "monotony_accrued_min": 39.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -3223,7 +3270,8 @@
                 "routeFraction": 0.325,
                 "nextRestSpotMin": 21.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 66.80000000000001,
@@ -3342,7 +3390,8 @@
               "routeFraction": 0.325,
               "nextRestSpotMin": 21.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 66.80000000000001,
@@ -3412,6 +3461,7 @@
             },
             "distance_km": 42.0,
             "continuous_driving_min": 42.0,
+            "monotony_accrued_min": 42.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -3427,7 +3477,8 @@
                 "routeFraction": 0.35,
                 "nextRestSpotMin": 18.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 70.40000000000002,
@@ -3546,7 +3597,8 @@
               "routeFraction": 0.35,
               "nextRestSpotMin": 18.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 70.40000000000002,
@@ -3616,6 +3668,7 @@
             },
             "distance_km": 45.0,
             "continuous_driving_min": 45.0,
+            "monotony_accrued_min": 45.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -3631,7 +3684,8 @@
                 "routeFraction": 0.375,
                 "nextRestSpotMin": 15.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 74.00000000000003,
@@ -3750,7 +3804,8 @@
               "routeFraction": 0.375,
               "nextRestSpotMin": 15.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 74.00000000000003,
@@ -3820,6 +3875,7 @@
             },
             "distance_km": 48.0,
             "continuous_driving_min": 48.0,
+            "monotony_accrued_min": 48.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -3835,7 +3891,8 @@
                 "routeFraction": 0.4,
                 "nextRestSpotMin": 12.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 77.60000000000004,
@@ -3965,7 +4022,8 @@
               "routeFraction": 0.4,
               "nextRestSpotMin": 12.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 77.60000000000004,
@@ -4041,6 +4099,7 @@
             },
             "distance_km": 51.0,
             "continuous_driving_min": 51.0,
+            "monotony_accrued_min": 51.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -4056,7 +4115,8 @@
                 "routeFraction": 0.425,
                 "nextRestSpotMin": 9.0,
                 "isTrafficJam": false,
-                "recoveryPhase": "wakefulness"
+                "recoveryPhase": "wakefulness",
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 81.20000000000005,
@@ -4196,7 +4256,8 @@
               "routeFraction": 0.425,
               "nextRestSpotMin": 9.0,
               "isTrafficJam": false,
-              "recoveryPhase": "wakefulness"
+              "recoveryPhase": "wakefulness",
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 81.20000000000005,
@@ -4266,6 +4327,7 @@
             },
             "distance_km": 54.0,
             "continuous_driving_min": 54.0,
+            "monotony_accrued_min": 54.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -4281,7 +4343,8 @@
                 "routeFraction": 0.45,
                 "nextRestSpotMin": 6.0,
                 "isTrafficJam": false,
-                "recoveryPhase": "wakefulness"
+                "recoveryPhase": "wakefulness",
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 84.80000000000005,
@@ -4421,7 +4484,8 @@
               "routeFraction": 0.45,
               "nextRestSpotMin": 6.0,
               "isTrafficJam": false,
-              "recoveryPhase": "wakefulness"
+              "recoveryPhase": "wakefulness",
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 84.80000000000005,
@@ -4491,6 +4555,7 @@
             },
             "distance_km": 57.0,
             "continuous_driving_min": 57.0,
+            "monotony_accrued_min": 57.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -4506,7 +4571,8 @@
                 "routeFraction": 0.475,
                 "nextRestSpotMin": 3.0,
                 "isTrafficJam": false,
-                "recoveryPhase": "wakefulness"
+                "recoveryPhase": "wakefulness",
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 88.40000000000006,
@@ -4646,7 +4712,8 @@
               "routeFraction": 0.475,
               "nextRestSpotMin": 3.0,
               "isTrafficJam": false,
-              "recoveryPhase": "wakefulness"
+              "recoveryPhase": "wakefulness",
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 88.40000000000006,
@@ -4716,6 +4783,7 @@
             },
             "distance_km": 60.0,
             "continuous_driving_min": 60.0,
+            "monotony_accrued_min": 60.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -4731,7 +4799,8 @@
                 "routeFraction": 0.5,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": "wakefulness"
+                "recoveryPhase": "wakefulness",
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 92.00000000000007,
@@ -4871,7 +4940,8 @@
               "routeFraction": 0.5,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": "wakefulness"
+              "recoveryPhase": "wakefulness",
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 92.00000000000007,
@@ -4941,6 +5011,7 @@
             },
             "distance_km": 60.0,
             "continuous_driving_min": 63.0,
+            "monotony_accrued_min": 54.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -4956,7 +5027,8 @@
                 "routeFraction": 0.5,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": "nap"
+                "recoveryPhase": "nap",
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 35.60000000000008,
@@ -5096,7 +5168,8 @@
               "routeFraction": 0.5,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": "nap"
+              "recoveryPhase": "nap",
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 35.60000000000008,
@@ -5166,6 +5239,7 @@
             },
             "distance_km": 60.0,
             "continuous_driving_min": 66.0,
+            "monotony_accrued_min": 48.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -5181,7 +5255,8 @@
                 "routeFraction": 0.5,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": "nap"
+                "recoveryPhase": "nap",
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 39.20000000000008,
@@ -5319,7 +5394,8 @@
               "routeFraction": 0.5,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": "nap"
+              "recoveryPhase": "nap",
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 39.20000000000008,
@@ -5389,6 +5465,7 @@
             },
             "distance_km": 60.0,
             "continuous_driving_min": 69.0,
+            "monotony_accrued_min": 42.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -5404,7 +5481,8 @@
                 "routeFraction": 0.5,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": "nap"
+                "recoveryPhase": "nap",
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 42.80000000000008,
@@ -5542,7 +5620,8 @@
               "routeFraction": 0.5,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": "nap"
+              "recoveryPhase": "nap",
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 42.80000000000008,
@@ -5612,6 +5691,7 @@
             },
             "distance_km": 60.0,
             "continuous_driving_min": 72.0,
+            "monotony_accrued_min": 36.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -5627,7 +5707,8 @@
                 "routeFraction": 0.5,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": "content"
+                "recoveryPhase": "content",
+                "monotonyLevel": 96
               },
               "simulated": {
                 "drowsiness": 21.400000000000084,
@@ -5765,7 +5846,8 @@
               "routeFraction": 0.5,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": "content"
+              "recoveryPhase": "content",
+              "monotonyLevel": 96
             },
             "simulated": {
               "drowsiness": 21.400000000000084,
@@ -5835,6 +5917,7 @@
             },
             "distance_km": 60.0,
             "continuous_driving_min": 75.0,
+            "monotony_accrued_min": 30.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -5850,7 +5933,8 @@
                 "routeFraction": 0.5,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": "content"
+                "recoveryPhase": "content",
+                "monotonyLevel": 80
               },
               "simulated": {
                 "drowsiness": 25.00000000000008,
@@ -5988,7 +6072,8 @@
               "routeFraction": 0.5,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": "content"
+              "recoveryPhase": "content",
+              "monotonyLevel": 80
             },
             "simulated": {
               "drowsiness": 25.00000000000008,
@@ -6058,6 +6143,7 @@
             },
             "distance_km": 60.0,
             "continuous_driving_min": 78.0,
+            "monotony_accrued_min": 24.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -6073,7 +6159,8 @@
                 "routeFraction": 0.5,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": "content"
+                "recoveryPhase": "content",
+                "monotonyLevel": 64
               },
               "simulated": {
                 "drowsiness": 28.60000000000008,
@@ -6211,7 +6298,8 @@
               "routeFraction": 0.5,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": "content"
+              "recoveryPhase": "content",
+              "monotonyLevel": 64
             },
             "simulated": {
               "drowsiness": 28.60000000000008,
@@ -6281,6 +6369,7 @@
             },
             "distance_km": 63.0,
             "continuous_driving_min": 81.0,
+            "monotony_accrued_min": 27.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -6296,7 +6385,8 @@
                 "routeFraction": 0.525,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": "resuming"
+                "recoveryPhase": "resuming",
+                "monotonyLevel": 72
               },
               "simulated": {
                 "drowsiness": 32.20000000000008,
@@ -6434,7 +6524,8 @@
               "routeFraction": 0.525,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": "resuming"
+              "recoveryPhase": "resuming",
+              "monotonyLevel": 72
             },
             "simulated": {
               "drowsiness": 32.20000000000008,
@@ -6504,6 +6595,7 @@
             },
             "distance_km": 66.0,
             "continuous_driving_min": 84.0,
+            "monotony_accrued_min": 30.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -6519,7 +6611,8 @@
                 "routeFraction": 0.55,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 80
               },
               "simulated": {
                 "drowsiness": 35.80000000000008,
@@ -6638,7 +6731,8 @@
               "routeFraction": 0.55,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 80
             },
             "simulated": {
               "drowsiness": 35.80000000000008,
@@ -6708,6 +6802,7 @@
             },
             "distance_km": 69.0,
             "continuous_driving_min": 87.0,
+            "monotony_accrued_min": 33.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -6723,7 +6818,8 @@
                 "routeFraction": 0.575,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 88
               },
               "simulated": {
                 "drowsiness": 39.400000000000084,
@@ -6842,7 +6938,8 @@
               "routeFraction": 0.575,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 88
             },
             "simulated": {
               "drowsiness": 39.400000000000084,
@@ -6912,6 +7009,7 @@
             },
             "distance_km": 72.0,
             "continuous_driving_min": 90.0,
+            "monotony_accrued_min": 36.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -6927,7 +7025,8 @@
                 "routeFraction": 0.6,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 96
               },
               "simulated": {
                 "drowsiness": 43.000000000000085,
@@ -7046,7 +7145,8 @@
               "routeFraction": 0.6,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 96
             },
             "simulated": {
               "drowsiness": 43.000000000000085,
@@ -7116,6 +7216,7 @@
             },
             "distance_km": 75.0,
             "continuous_driving_min": 93.0,
+            "monotony_accrued_min": 39.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -7131,7 +7232,8 @@
                 "routeFraction": 0.625,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 46.60000000000009,
@@ -7250,7 +7352,8 @@
               "routeFraction": 0.625,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 46.60000000000009,
@@ -7320,6 +7423,7 @@
             },
             "distance_km": 78.0,
             "continuous_driving_min": 96.0,
+            "monotony_accrued_min": 42.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -7335,7 +7439,8 @@
                 "routeFraction": 0.65,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 50.20000000000009,
@@ -7454,7 +7559,8 @@
               "routeFraction": 0.65,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 50.20000000000009,
@@ -7524,6 +7630,7 @@
             },
             "distance_km": 81.0,
             "continuous_driving_min": 99.0,
+            "monotony_accrued_min": 45.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -7539,7 +7646,8 @@
                 "routeFraction": 0.675,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 53.80000000000009,
@@ -7658,7 +7766,8 @@
               "routeFraction": 0.675,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 53.80000000000009,
@@ -7728,6 +7837,7 @@
             },
             "distance_km": 84.0,
             "continuous_driving_min": 102.0,
+            "monotony_accrued_min": 48.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -7743,7 +7853,8 @@
                 "routeFraction": 0.7,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 57.40000000000009,
@@ -7862,7 +7973,8 @@
               "routeFraction": 0.7,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 57.40000000000009,
@@ -7932,6 +8044,7 @@
             },
             "distance_km": 87.0,
             "continuous_driving_min": 105.0,
+            "monotony_accrued_min": 51.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -7947,7 +8060,8 @@
                 "routeFraction": 0.725,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 61.00000000000009,
@@ -8066,7 +8180,8 @@
               "routeFraction": 0.725,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 61.00000000000009,
@@ -8136,6 +8251,7 @@
             },
             "distance_km": 90.0,
             "continuous_driving_min": 108.0,
+            "monotony_accrued_min": 54.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -8151,7 +8267,8 @@
                 "routeFraction": 0.75,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 64.6000000000001,
@@ -8270,7 +8387,8 @@
               "routeFraction": 0.75,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 64.6000000000001,
@@ -8340,6 +8458,7 @@
             },
             "distance_km": 95.0,
             "continuous_driving_min": 111.0,
+            "monotony_accrued_min": 57.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -8355,7 +8474,8 @@
                 "routeFraction": 0.7916666666666666,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 68.2000000000001,
@@ -8474,7 +8594,8 @@
               "routeFraction": 0.7916666666666666,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 68.2000000000001,
@@ -8544,6 +8665,7 @@
             },
             "distance_km": 100.0,
             "continuous_driving_min": 114.0,
+            "monotony_accrued_min": 60.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -8559,7 +8681,8 @@
                 "routeFraction": 0.8333333333333334,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 71.80000000000011,
@@ -8678,7 +8801,8 @@
               "routeFraction": 0.8333333333333334,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 71.80000000000011,
@@ -8748,6 +8872,7 @@
             },
             "distance_km": 105.0,
             "continuous_driving_min": 117.0,
+            "monotony_accrued_min": 63.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -8763,7 +8888,8 @@
                 "routeFraction": 0.875,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 75.40000000000012,
@@ -8882,7 +9008,8 @@
               "routeFraction": 0.875,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 75.40000000000012,
@@ -8952,6 +9079,7 @@
             },
             "distance_km": 110.0,
             "continuous_driving_min": 120.0,
+            "monotony_accrued_min": 66.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -8967,7 +9095,8 @@
                 "routeFraction": 0.9166666666666666,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 79.00000000000013,
@@ -9099,7 +9228,8 @@
               "routeFraction": 0.9166666666666666,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 79.00000000000013,
@@ -9175,6 +9305,7 @@
             },
             "distance_km": 115.0,
             "continuous_driving_min": 123.0,
+            "monotony_accrued_min": 69.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -9190,7 +9321,8 @@
                 "routeFraction": 0.9583333333333334,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 82.60000000000014,
@@ -9322,7 +9454,8 @@
               "routeFraction": 0.9583333333333334,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 82.60000000000014,
@@ -12428,6 +12561,7 @@
             },
             "distance_km": 48.0,
             "continuous_driving_min": 48.0,
+            "monotony_accrued_min": 48.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -12443,7 +12577,8 @@
                 "routeFraction": 0.4,
                 "nextRestSpotMin": 12.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 77.60000000000004,
@@ -12573,7 +12708,8 @@
               "routeFraction": 0.4,
               "nextRestSpotMin": 12.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 77.60000000000004,
@@ -12643,6 +12779,7 @@
             },
             "distance_km": 110.0,
             "continuous_driving_min": 120.0,
+            "monotony_accrued_min": 66.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -12658,7 +12795,8 @@
                 "routeFraction": 0.9166666666666666,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 79.00000000000013,
@@ -12790,7 +12928,8 @@
               "routeFraction": 0.9166666666666666,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 79.00000000000013,
@@ -12860,6 +12999,7 @@
             },
             "distance_km": 115.0,
             "continuous_driving_min": 123.0,
+            "monotony_accrued_min": 69.0,
             "signals": {
               "fixed": {
                 "isNight": false,
@@ -12875,7 +13015,8 @@
                 "routeFraction": 0.9583333333333334,
                 "nextRestSpotMin": 9999.0,
                 "isTrafficJam": false,
-                "recoveryPhase": null
+                "recoveryPhase": null,
+                "monotonyLevel": 100
               },
               "simulated": {
                 "drowsiness": 82.60000000000014,
@@ -13007,7 +13148,8 @@
               "routeFraction": 0.9583333333333334,
               "nextRestSpotMin": 9999.0,
               "isTrafficJam": false,
-              "recoveryPhase": null
+              "recoveryPhase": null,
+              "monotonyLevel": 100
             },
             "simulated": {
               "drowsiness": 82.60000000000014,

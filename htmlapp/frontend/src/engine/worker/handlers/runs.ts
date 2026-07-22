@@ -21,6 +21,8 @@ import type {
   PreviewRestOption,
   PreviewError,
   PreviewOverrideEntry,
+  ProgressPoint,
+  PreviewTrafficJam,
   Snapshot,
 } from '../../../api/types'
 import {
@@ -426,6 +428,8 @@ export async function runsPreview(params: { config: RunConfig; restOptionId?: st
 
   const segments: PreviewSegment[] = []
   let segType: string | null = null
+  const progress: ProgressPoint[] = []
+  // traffic_jams are derived from event_plan.traffic_events (not ticks) — built after the loop
   let segStartMin = 0.0
   let lastElapsedMin = 0.0
 
@@ -521,6 +525,14 @@ export async function runsPreview(params: { config: RunConfig; restOptionId?: st
     scoreSeries.push({ t: tickIndex, score })
     peakScore = Math.max(peakScore, score)
 
+    // Feature 020: per-tick route-progress (distance axis alignment).
+    // Mirrors Python: route_fraction = min(1, max(0, distance_km / total_km)); frac clipped.
+    const totalKmForProgress = routeFacts.total_route_distance_km || 120.0
+    const fracForProgress = totalKmForProgress > 0
+      ? Math.min(1.0, Math.max(0.0, (tickState.distance_km ?? 0.0) / totalKmForProgress))
+      : 0.0
+    progress.push({ t: tickIndex, min: elapsedMin, frac: fracForProgress })
+
     if ((tickState.anomaly_events ?? []).includes(tickIndex)) {
       spikes.push({ t: tickIndex, time_min: elapsedMin })
     }
@@ -609,6 +621,11 @@ export async function runsPreview(params: { config: RunConfig; restOptionId?: st
     segments.push({ type: segType, from_min: segStartMin, to_min: lastElapsedMin })
   }
 
+  // Feature 020: traffic-jam ranges derived from event_plan.traffic_events (same axis as segments).
+  const trafficJams: PreviewTrafficJam[] = (
+    (eventPlan as unknown as { traffic_events?: { start_min: number; duration_min: number }[] }).traffic_events ?? []
+  ).map((ev) => ({ from_min: ev.start_min, to_min: ev.start_min + ev.duration_min }))
+
   const fired = firedAt !== null && errorOut === null
 
   return {
@@ -618,10 +635,12 @@ export async function runsPreview(params: { config: RunConfig; restOptionId?: st
     peak_score: peakScore,
     threshold,
     score_series: scoreSeries,
+    progress: progress,
     spikes: errorOut === null ? spikes : [],
     monotony_series: monotonySeries,
     monotony_threshold: monotonyThreshold,
     segments,
+    traffic_jams: trafficJams,
     rest_spot: restSpotsOut.length > 0 ? restSpotsOut[0] : null,
     rest_option: restOptionsOut.length > 0 ? restOptionsOut[0] : null,
     rest_spots: restSpotsOut,

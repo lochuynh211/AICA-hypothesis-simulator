@@ -253,6 +253,80 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
 }
 
 /**
+ * Normalize a PackageManifest to match Python's Pydantic serialization behavior,
+ * specifically: HyperparameterDef always serializes band_values (even when null).
+ * Without this, the JS output omits band_values for numeric/bool hyperparameters,
+ * causing a key-count mismatch against the Python fixture output.
+ */
+function normalizePackageForOutput(pkg: PackageManifestM2): PackageManifestM2 {
+  const normalizedHps = (pkg.hyperparameters ?? []).map((hp) => {
+    if (!('band_values' in hp)) {
+      return { ...hp, band_values: null }
+    }
+    return hp
+  })
+  return { ...pkg, hyperparameters: normalizedHps }
+}
+
+/**
+ * Normalize a scenario to match Python's Pydantic ScenarioDef serialization:
+ *   - Adds `rest_drowsiness_ceiling: 100.0` when the field is absent (feature 020 default).
+ *   - Strips `_comment` keys (internal annotation in JSON files, not a model field).
+ *   - Normalizes `event_presets` to add `rest_spot_eta_near_before: null` and
+ *     `rest_spot_eta_schedule: null` when absent (Python EventPreset defaults).
+ *
+ * This ensures JS `createDraft` output matches the Python fixture output shape.
+ */
+function normalizeScenarioForOutput(scenario: ScenarioDefM2): ScenarioDefM2 {
+  const raw = scenario as unknown as Record<string, unknown>
+  // Build a copy without _comment but with rest_drowsiness_ceiling added if missing
+  const result: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(raw)) {
+    if (k === '_comment') continue
+    result[k] = v
+  }
+  if (!('rest_drowsiness_ceiling' in result)) {
+    result['rest_drowsiness_ceiling'] = 100.0
+  }
+  // Normalize driver_signal_params.recovery_model entries (feature 020 ActivityRecovery defaults)
+  if (isPlainObject(result['driver_signal_params'])) {
+    result['driver_signal_params'] = normalizeDriverSignalParams(result['driver_signal_params'])
+  }
+  // Normalize event_presets to include Python EventPreset optional fields with defaults
+  if (isPlainObject(result['event_presets'])) {
+    const ep = result['event_presets'] as Record<string, unknown>
+    const normalizedEp: Record<string, unknown> = { ...ep }
+    if (!('rest_spot_eta_near_before' in normalizedEp)) {
+      normalizedEp['rest_spot_eta_near_before'] = null
+    }
+    if (!('rest_spot_eta_schedule' in normalizedEp)) {
+      normalizedEp['rest_spot_eta_schedule'] = null
+    }
+    result['event_presets'] = normalizedEp
+  }
+  // Normalize recovery_options entries to include Python RecoveryOption/RecoveryStage defaults
+  if (Array.isArray(result['recovery_options'])) {
+    result['recovery_options'] = (result['recovery_options'] as unknown[]).map((opt) => {
+      if (!isPlainObject(opt)) return opt
+      const normalizedOpt: Record<string, unknown> = { ...opt }
+      if (!('postpone' in normalizedOpt)) normalizedOpt['postpone'] = false
+      // Normalize stages to include Python RecoveryStage defaults
+      if (Array.isArray(normalizedOpt['stages'])) {
+        normalizedOpt['stages'] = (normalizedOpt['stages'] as unknown[]).map((stage) => {
+          if (!isPlainObject(stage)) return stage
+          const s: Record<string, unknown> = { ...stage }
+          if (!('ticks' in s)) s['ticks'] = null
+          if (!('grants_moving_recovery' in s)) s['grants_moving_recovery'] = false
+          return s
+        })
+      }
+      return normalizedOpt
+    })
+  }
+  return result as unknown as ScenarioDefM2
+}
+
+/**
  * Recursively merge *override* onto *base*. For each key in *override*: if
  * the value is a plain object and the matching key in *base* is also a plain
  * object, recurse; otherwise the override value replaces the base value.
@@ -522,6 +596,39 @@ function mergeDefaults(
   return [effectiveParams, effectiveHps]
 }
 
+/**
+ * Normalize an ActivityRecovery entry to include all feature 020 fields
+ * with their Python defaults, matching Pydantic's serialization behavior.
+ * Python's ActivityRecovery always serializes all 6 fields (including those
+ * that default to 0.0 / null), so we must fill in missing fields here.
+ */
+function normalizeActivityRecovery(raw: Record<string, unknown>): Record<string, unknown> {
+  return {
+    drowsiness: raw['drowsiness'] ?? 0.0,
+    fatigue: raw['fatigue'] ?? 0.0,
+    drowsiness_per_min: raw['drowsiness_per_min'] ?? 0.0,
+    fatigue_per_min: raw['fatigue_per_min'] ?? 0.0,
+    cap_drowsiness: raw['cap_drowsiness'] ?? null,
+    cap_fatigue: raw['cap_fatigue'] ?? null,
+  }
+}
+
+/**
+ * Normalize a driver_signal_params dict so that every recovery_model entry
+ * includes all feature 020 ActivityRecovery fields (matching Python Pydantic
+ * serialization which always emits all fields with their defaults).
+ */
+function normalizeDriverSignalParams(dsp: unknown): unknown {
+  if (!isPlainObject(dsp)) return dsp
+  const rm = (dsp as Record<string, unknown>)['recovery_model']
+  if (!isPlainObject(rm)) return dsp
+  const normalizedRm: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(rm as Record<string, unknown>)) {
+    normalizedRm[k] = isPlainObject(v) ? normalizeActivityRecovery(v as Record<string, unknown>) : v
+  }
+  return { ...(dsp as Record<string, unknown>), recovery_model: normalizedRm }
+}
+
 /** Build the effective_setup dict for the draft response. */
 function buildEffectiveSetup(
   pkg: PackageManifestM2,
@@ -530,6 +637,7 @@ function buildEffectiveSetup(
   effectiveHps: Record<string, unknown>,
   runMode: string,
 ): Record<string, unknown> {
+  const rawDsp = (scenario as unknown as Record<string, unknown>)['driver_signal_params'] ?? null
   return {
     package_id: pkg.id,
     package_version: pkg.version,
@@ -540,7 +648,9 @@ function buildEffectiveSetup(
     hyperparameters: effectiveHps,
     // Feature 009: driver_profile carries driver_signal_params (name kept for
     // compat); vehicle_profile retired (always null); anomaly_signal_params new.
-    driver_profile: (scenario as unknown as Record<string, unknown>)['driver_signal_params'] ?? null,
+    // Feature 020: normalize recovery_model entries to include all ActivityRecovery
+    // fields with Python defaults, matching Pydantic serialization behavior.
+    driver_profile: rawDsp != null ? normalizeDriverSignalParams(rawDsp) : null,
     vehicle_profile: null,
     anomaly_signal_params: (scenario as unknown as Record<string, unknown>)['anomaly_signal_params'] ?? null,
     speed_profile: scenario.speed_profile ?? null,
@@ -713,10 +823,16 @@ export function createDraft(input: CreateDraftArgs): DraftEntry {
     }
   }
 
-  // Register the draft with the EFFECTIVE scenario (profile overrides frozen here).
-  draftRegistry.set(planId, { draft, package: pkg, scenario: effectiveScenario })
+  // Normalize the package and scenario for output to match Python's Pydantic
+  // serialization (e.g. HyperparameterDef.band_values always present, even when
+  // null; ScenarioDef adds rest_drowsiness_ceiling default and strips _comment).
+  const normalizedPkg = normalizePackageForOutput(pkg)
+  const normalizedScenario = normalizeScenarioForOutput(effectiveScenario)
 
-  return { draft, package: pkg, scenario: effectiveScenario }
+  // Register the draft with the EFFECTIVE scenario (profile overrides frozen here).
+  draftRegistry.set(planId, { draft, package: normalizedPkg, scenario: normalizedScenario })
+
+  return { draft, package: normalizedPkg, scenario: normalizedScenario }
 }
 
 /**

@@ -72,6 +72,12 @@ export type TickState = {
   anomaly_events: number[]
   above_weak_ticks: number
 
+  // Feature 020 (Slice-3): simulator-owned monotony proxy 0–100. Accrues while
+  // MOVING on a monotonous segment (highway/normal_road); decays at 2x the
+  // accrual rate otherwise; night adds flat +20. Ported from Python tick_engine
+  // (behavior-of-record). null on M1 / computeTickState path.
+  monotony_accrued_min: number | null
+
   // Extra fields (Python model_config extra="allow") — carried tick-to-tick
   // and/or surfaced for the evidence trace.
   _driver_update?: Record<string, unknown>
@@ -136,6 +142,7 @@ export function computeTickState(plan: EventPlan, tickIndex: number, scenario: S
       feature_groups: emptyFeatureGroups,
       distance_km: null,
       continuous_driving_min: null,
+      monotony_accrued_min: null,
       anomaly_events: [],
       above_weak_ticks: 0,
     }
@@ -163,6 +170,7 @@ export function computeTickState(plan: EventPlan, tickIndex: number, scenario: S
     feature_groups: emptyFeatureGroups,
     distance_km: null,
     continuous_driving_min: null,
+    monotony_accrued_min: null,
     anomaly_events: [],
     above_weak_ticks: 0,
   }
@@ -233,6 +241,7 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
   let fatigue: number
   let distanceKm: number
   let continuousDrivingMin: number
+  let monotonyAccruedMin: number
   let aboveWeak: number
   let anomalyEvents: number[]
 
@@ -242,6 +251,7 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
     fatigue = initialFatigue(scenario.initial_state['fatigue_level'] ?? 'low')
     distanceKm = 0.0
     continuousDrivingMin = 0.0
+    monotonyAccruedMin = 0.0
     aboveWeak = 0
     anomalyEvents = []
   } else {
@@ -250,6 +260,7 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
     fatigue = Number(simulated['fatigue'] ?? 0.0)
     distanceKm = priorState.distance_km ?? 0.0
     continuousDrivingMin = priorState.continuous_driving_min ?? 0.0
+    monotonyAccruedMin = priorState.monotony_accrued_min ?? 0.0
     aboveWeak = priorState.above_weak_ticks
     anomalyEvents = [...priorState.anomaly_events]
   }
@@ -305,6 +316,20 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
       recoveryNext = advanceRecovery(recovery, option, { atRestSpot: atSpot })
     }
   }
+
+  // ── Monotony proxy (feature 020, Slice-3) ──────────────────────────────
+  // Simulator-owned 0–100 signal. Accrues while MOVING on a monotonous segment
+  // (highway/normal_road); decays at 2× the accrual rate otherwise; night adds
+  // flat +20. Ported from Python tick_engine (behavior-of-record, feature 020).
+  const _MONOTONOUS_SEGMENTS = new Set(['highway', 'normal_road'])
+  let newMonotonyAccruedMin: number
+  if (_MONOTONOUS_SEGMENTS.has(segmentType) && motionState === 'MOVING') {
+    newMonotonyAccruedMin = monotonyAccruedMin + tickSeconds / 60.0
+  } else {
+    newMonotonyAccruedMin = Math.max(0.0, monotonyAccruedMin - 2.0 * tickSeconds / 60.0)
+  }
+  // monotony_level is a 0–100 derived signal used by the algorithm; it is NOT
+  // stored on TickState (Python also only stores monotony_accrued_min on TS).
 
   // ── Advance driver signals (Tier 3a: drowsiness/fatigue) ───────────────
   let newDrowsiness: number
@@ -389,6 +414,13 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
     }
   }
 
+  // ── Monotony level (0-100 derived, for signals.dynamic) ───────────────
+  // Mirrors Python: min(100, (monotony_accrued_min / 30) * 80 + (20 if is_night else 0))
+  // rounded to int. Used in signals.dynamic.monotonyLevel for the algorithm context.
+  const monotonyLevel = Math.round(
+    Math.min(100.0, (newMonotonyAccruedMin / 30.0) * 80.0 + (isNight ? 20.0 : 0.0))
+  )
+
   // ── Build the tiered signals dict (feature 009 contract) ──────────────
   const signals: TieredSignals = {
     fixed: {
@@ -406,6 +438,7 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
       nextRestSpotMin: nextRestMin,
       isTrafficJam: isTrafficJam,
       recoveryPhase: recoveryPhase,
+      monotonyLevel: monotonyLevel,
     },
     simulated: {
       drowsiness: newDrowsiness,
@@ -441,6 +474,7 @@ export function advanceTick(args: AdvanceTickArgs): TickState {
     feature_groups: featureGroups,
     distance_km: newDistanceKm,
     continuous_driving_min: newContinuousMin,
+    monotony_accrued_min: newMonotonyAccruedMin,
     anomaly_events: newAnomalyEvents,
     above_weak_ticks: newAboveWeak,
     _driver_update: driverUpdateDict,

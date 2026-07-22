@@ -4,7 +4,7 @@
       "id": "test_pkg_with_extras_v0_1",
       "version": "0.1.0",
       "label": {
-        "ja": "\u8ffd\u52a0\u30d5\u30a3\u30fc\u30c9\u30d0\u30c3\u30af\u30d5\u30a3\u30fc\u30eb\u30c9\u30c6\u30b9\u30c8\u30d1\u30c3\u30b1\u30fc\u30b8",
+        "ja": "追加フィードバックフィールドテストパッケージ",
         "en": "Test Package With Extra Feedback Fields"
       },
       "compatible_scenario_types": [
@@ -44,7 +44,7 @@
         {
           "key": "comfort",
           "label": {
-            "ja": "\u4e57\u308a\u5fc3\u5730",
+            "ja": "乗り心地",
             "en": "Ride Comfort"
           },
           "type": "choice",
@@ -57,7 +57,7 @@
         {
           "key": "seat_quality",
           "label": {
-            "ja": "\u5ea7\u5e2d\u306e\u8cea",
+            "ja": "座席の質",
             "en": "Seat Quality"
           },
           "type": "scale",
@@ -95,7 +95,7 @@
       {
         "key": "proposal_timing",
         "label": {
-          "ja": "\u63d0\u6848\u30bf\u30a4\u30df\u30f3\u30b0",
+          "ja": "提案タイミング",
           "en": "Proposal Timing"
         },
         "type": "choice",
@@ -113,7 +113,7 @@
       {
         "key": "safety_impression",
         "label": {
-          "ja": "\u5b89\u5168\u6027\u306e\u5370\u8c61",
+          "ja": "安全性の印象",
           "en": "Safety Impression"
         },
         "type": "choice",
@@ -130,7 +130,7 @@
       {
         "key": "intrusiveness",
         "label": {
-          "ja": "\u7169\u308f\u3057\u3055",
+          "ja": "煩わしさ",
           "en": "Intrusiveness"
         },
         "type": "choice",
@@ -147,7 +147,7 @@
       {
         "key": "understandability",
         "label": {
-          "ja": "\u308f\u304b\u308a\u3084\u3059\u3055",
+          "ja": "わかりやすさ",
           "en": "Understandability"
         },
         "type": "choice",
@@ -163,7 +163,7 @@
       {
         "key": "rest_spot_suitability",
         "label": {
-          "ja": "\u4f11\u61a9\u5834\u6240\u306e\u9069\u5207\u3055",
+          "ja": "休憩場所の適切さ",
           "en": "Rest Spot Suitability"
         },
         "type": "choice",
@@ -180,7 +180,7 @@
       {
         "key": "proposal_content_suitability",
         "label": {
-          "ja": "\u63d0\u6848\u5185\u5bb9\u306e\u9069\u5207\u3055",
+          "ja": "提案内容の適切さ",
           "en": "Proposal Content Suitability"
         },
         "type": "choice",
@@ -196,7 +196,7 @@
       {
         "key": "acceptance_reason",
         "label": {
-          "ja": "\u627f\u8afe\u7406\u7531",
+          "ja": "承諾理由",
           "en": "Acceptance Reason"
         },
         "type": "choice",
@@ -213,7 +213,7 @@
       {
         "key": "rejection_reason",
         "label": {
-          "ja": "\u62d2\u5426\u7406\u7531",
+          "ja": "拒否理由",
           "en": "Rejection Reason"
         },
         "type": "choice",
@@ -231,7 +231,7 @@
       {
         "key": "overall_judgment",
         "label": {
-          "ja": "\u7dcf\u5408\u8a55\u4fa1",
+          "ja": "総合評価",
           "en": "Overall Judgment"
         },
         "type": "choice",
@@ -247,7 +247,7 @@
       {
         "key": "comfort",
         "label": {
-          "ja": "\u4e57\u308a\u5fc3\u5730",
+          "ja": "乗り心地",
           "en": "Ride Comfort"
         },
         "type": "choice",
@@ -263,7 +263,7 @@
       {
         "key": "seat_quality",
         "label": {
-          "ja": "\u5ea7\u5e2d\u306e\u8cea",
+          "ja": "座席の質",
           "en": "Seat Quality"
         },
         "type": "scale",

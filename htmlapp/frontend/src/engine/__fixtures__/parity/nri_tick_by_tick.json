@@ -1,0 +1,2915 @@
+{
+  "input": {
+    "package": "nri_fatigue_score_v1",
+    "scenario": "uc01_fatigue_recovery_v0_1",
+    "acceptAt": 15
+  },
+  "output": {
+    "decisions": [
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.13933333333333334,
+        "features": {
+          "signal_duration": "brief",
+          "rest_spot_eta": "far",
+          "continuous_driving_time": "short"
+        },
+        "scores": {
+          "s_total": 20.900000000000002,
+          "s_base": 20.6,
+          "s_env": 0.3,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.13933333333333334
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 20.900000000000002,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=20.9点 (基礎=20.6 + 環境=0.3 + リアルタイム=0.0)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=20.9pts (base=20.6 + env=0.3 + realtime=0.0). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 1.0,
+          "driving_min_since_rest": 1.0,
+          "last_sim_time": 180.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.15733333333333333,
+        "features": {
+          "signal_duration": "sustained",
+          "rest_spot_eta": "far",
+          "continuous_driving_time": "short"
+        },
+        "scores": {
+          "s_total": 23.599999999999998,
+          "s_base": 22.4,
+          "s_env": 1.2,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.15733333333333333
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 23.599999999999998,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=23.6点 (基礎=22.4 + 環境=1.2 + リアルタイム=0.0)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=23.6pts (base=22.4 + env=1.2 + realtime=0.0). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 4.0,
+          "driving_min_since_rest": 4.0,
+          "last_sim_time": 360.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.17533333333333334,
+        "features": {
+          "signal_duration": "sustained",
+          "rest_spot_eta": "far",
+          "continuous_driving_time": "short"
+        },
+        "scores": {
+          "s_total": 26.3,
+          "s_base": 24.2,
+          "s_env": 2.1,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.17533333333333334
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 26.3,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=26.3点 (基礎=24.2 + 環境=2.1 + リアルタイム=0.0)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=26.3pts (base=24.2 + env=2.1 + realtime=0.0). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 7.0,
+          "driving_min_since_rest": 7.0,
+          "last_sim_time": 540.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.19333333333333333,
+        "features": {
+          "signal_duration": "sustained",
+          "rest_spot_eta": "far",
+          "continuous_driving_time": "short"
+        },
+        "scores": {
+          "s_total": 29.0,
+          "s_base": 26.0,
+          "s_env": 3.0,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.19333333333333333
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 29.0,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=29.0点 (基礎=26.0 + 環境=3.0 + リアルタイム=0.0)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=29.0pts (base=26.0 + env=3.0 + realtime=0.0). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 10.0,
+          "driving_min_since_rest": 10.0,
+          "last_sim_time": 720.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.21133333333333332,
+        "features": {
+          "signal_duration": "sustained",
+          "rest_spot_eta": "far",
+          "continuous_driving_time": "short"
+        },
+        "scores": {
+          "s_total": 31.7,
+          "s_base": 27.8,
+          "s_env": 3.9,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.21133333333333332
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 31.7,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=31.7点 (基礎=27.8 + 環境=3.9 + リアルタイム=0.0)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=31.7pts (base=27.8 + env=3.9 + realtime=0.0). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 13.0,
+          "driving_min_since_rest": 13.0,
+          "last_sim_time": 900.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.22933333333333333,
+        "features": {
+          "signal_duration": "sustained",
+          "rest_spot_eta": "far",
+          "continuous_driving_time": "short"
+        },
+        "scores": {
+          "s_total": 34.4,
+          "s_base": 29.6,
+          "s_env": 4.8,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.22933333333333333
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 34.4,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=34.4点 (基礎=29.6 + 環境=4.8 + リアルタイム=0.0)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=34.4pts (base=29.6 + env=4.8 + realtime=0.0). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 16.0,
+          "driving_min_since_rest": 16.0,
+          "last_sim_time": 1080.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.24733333333333335,
+        "features": {
+          "signal_duration": "sustained",
+          "rest_spot_eta": "far",
+          "continuous_driving_time": "short"
+        },
+        "scores": {
+          "s_total": 37.1,
+          "s_base": 31.4,
+          "s_env": 5.7,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.24733333333333335
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 37.1,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=37.1点 (基礎=31.4 + 環境=5.7 + リアルタイム=0.0)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=37.1pts (base=31.4 + env=5.7 + realtime=0.0). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 19.0,
+          "driving_min_since_rest": 19.0,
+          "last_sim_time": 1260.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.26533333333333337,
+        "features": {
+          "signal_duration": "sustained",
+          "rest_spot_eta": "far",
+          "continuous_driving_time": "short"
+        },
+        "scores": {
+          "s_total": 39.800000000000004,
+          "s_base": 33.2,
+          "s_env": 6.6,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.26533333333333337
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 39.800000000000004,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=39.8点 (基礎=33.2 + 環境=6.6 + リアルタイム=0.0)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=39.8pts (base=33.2 + env=6.6 + realtime=0.0). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 22.0,
+          "driving_min_since_rest": 22.0,
+          "last_sim_time": 1440.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.2833333333333333,
+        "features": {
+          "signal_duration": "sustained",
+          "rest_spot_eta": "far",
+          "continuous_driving_time": "short"
+        },
+        "scores": {
+          "s_total": 42.5,
+          "s_base": 35.0,
+          "s_env": 7.5,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.2833333333333333
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 42.5,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=42.5点 (基礎=35.0 + 環境=7.5 + リアルタイム=0.0)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=42.5pts (base=35.0 + env=7.5 + realtime=0.0). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 25.0,
+          "driving_min_since_rest": 25.0,
+          "last_sim_time": 1620.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.3013333333333333,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "far",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 45.199999999999996,
+          "s_base": 36.8,
+          "s_env": 8.4,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.3013333333333333
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 45.199999999999996,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=45.2点 (基礎=36.8 + 環境=8.4 + リアルタイム=0.0)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=45.2pts (base=36.8 + env=8.4 + realtime=0.0). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 28.0,
+          "driving_min_since_rest": 28.0,
+          "last_sim_time": 1800.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.3193333333333333,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "far",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 47.89999999999999,
+          "s_base": 38.599999999999994,
+          "s_env": 9.299999999999999,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.3193333333333333
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 47.89999999999999,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=47.9点 (基礎=38.6 + 環境=9.3 + リアルタイム=0.0)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=47.9pts (base=38.6 + env=9.3 + realtime=0.0). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 31.0,
+          "driving_min_since_rest": 31.0,
+          "last_sim_time": 1980.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.36933333333333335,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "far",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 55.4,
+          "s_base": 40.4,
+          "s_env": 10.2,
+          "s_realtime": 4.800000000000004,
+          "rest_required_score": 0.36933333333333335
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 55.4,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=55.4点 (基礎=40.4 + 環境=10.2 + リアルタイム=4.8)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=55.4pts (base=40.4 + env=10.2 + realtime=4.8). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 34.0,
+          "driving_min_since_rest": 34.0,
+          "last_sim_time": 2160.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.42333333333333345,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "far",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 63.50000000000002,
+          "s_base": 42.2,
+          "s_env": 11.1,
+          "s_realtime": 10.200000000000017,
+          "rest_required_score": 0.42333333333333345
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 63.50000000000002,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=63.5点 (基礎=42.2 + 環境=11.1 + リアルタイム=10.2)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=63.5pts (base=42.2 + env=11.1 + realtime=10.2). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 37.0,
+          "driving_min_since_rest": 37.0,
+          "last_sim_time": 2340.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.4773333333333335,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "near",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 71.60000000000002,
+          "s_base": 44.0,
+          "s_env": 12.0,
+          "s_realtime": 15.60000000000003,
+          "rest_required_score": 0.4773333333333335
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 71.60000000000002,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=71.6点 (基礎=44.0 + 環境=12.0 + リアルタイム=15.6)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=71.6pts (base=44.0 + env=12.0 + realtime=15.6). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 40.0,
+          "driving_min_since_rest": 40.0,
+          "last_sim_time": 2520.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.5313333333333337,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "near",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 79.70000000000005,
+          "s_base": 45.8,
+          "s_env": 12.9,
+          "s_realtime": 21.000000000000043,
+          "rest_required_score": 0.5313333333333337
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 79.70000000000005,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=79.7点 (基礎=45.8 + 環境=12.9 + リアルタイム=21.0)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=79.7pts (base=45.8 + env=12.9 + realtime=21.0). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 43.0,
+          "driving_min_since_rest": 43.0,
+          "last_sim_time": 2700.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "REST_PROPOSAL",
+        "trigger_candidate": true,
+        "selected_category": "rest_required",
+        "score": 0.5853333333333336,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "near",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 87.80000000000004,
+          "s_base": 47.599999999999994,
+          "s_env": 13.799999999999999,
+          "s_realtime": 26.400000000000055,
+          "rest_required_score": 0.5853333333333336
+        },
+        "states": {
+          "rest": "REST_FIRE"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": true,
+            "score": 87.80000000000004,
+            "state": "REST_FIRE",
+            "strength": "strong",
+            "fire_control": {
+              "fired": true,
+              "suppressed": false,
+              "override": false,
+              "reason": "fire_threshold_passed"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": true,
+          "suppressed": false,
+          "override": false,
+          "reason": "fire_threshold_passed"
+        },
+        "proposal": {
+          "id": "rest_required_proposal",
+          "message": {
+            "ja": "安全のため、直ちに休憩を取ってください。",
+            "en": "For your safety, please take a rest immediately."
+          },
+          "options": [
+            "accept_rest",
+            "postpone",
+            "decline"
+          ]
+        },
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=87.8点 (基礎=47.6 + 環境=13.8 + リアルタイム=26.4)。発火、状態=REST_FIRE。",
+            "en": "Total fatigue score=87.8pts (base=47.6 + env=13.8 + realtime=26.4). Fired, state=REST_FIRE."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 46.0,
+          "driving_min_since_rest": 46.0,
+          "last_sim_time": 2880.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "SUPPRESSED",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.6393333333333338,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "near",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 95.90000000000006,
+          "s_base": 49.4,
+          "s_env": 14.7,
+          "s_realtime": 31.800000000000068,
+          "rest_required_score": 0.6393333333333338
+        },
+        "states": {
+          "rest": "REST_RECOVERY"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": true,
+            "score": 95.90000000000006,
+            "state": "REST_RECOVERY",
+            "strength": "strong",
+            "fire_control": {
+              "fired": false,
+              "suppressed": true,
+              "override": false,
+              "reason": "recovery_after_accept"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": true,
+          "override": false,
+          "reason": "recovery_after_accept"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=95.9点 (基礎=49.4 + 環境=14.7 + リアルタイム=31.8)。未発火、状態=REST_RECOVERY。",
+            "en": "Total fatigue score=95.9pts (base=49.4 + env=14.7 + realtime=31.8). Not fired, state=REST_RECOVERY."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 49.0,
+          "driving_min_since_rest": 49.0,
+          "last_sim_time": 3060.0,
+          "was_in_recovery": true
+        }
+      },
+      {
+        "result_type": "SUPPRESSED",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.6933333333333339,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "near",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 104.00000000000009,
+          "s_base": 51.2,
+          "s_env": 15.6,
+          "s_realtime": 37.20000000000008,
+          "rest_required_score": 0.6933333333333339
+        },
+        "states": {
+          "rest": "REST_RECOVERY"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": true,
+            "score": 104.00000000000009,
+            "state": "REST_RECOVERY",
+            "strength": "strong",
+            "fire_control": {
+              "fired": false,
+              "suppressed": true,
+              "override": false,
+              "reason": "recovery_after_accept"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": true,
+          "override": false,
+          "reason": "recovery_after_accept"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=104.0点 (基礎=51.2 + 環境=15.6 + リアルタイム=37.2)。未発火、状態=REST_RECOVERY。",
+            "en": "Total fatigue score=104.0pts (base=51.2 + env=15.6 + realtime=37.2). Not fired, state=REST_RECOVERY."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 52.0,
+          "driving_min_since_rest": 52.0,
+          "last_sim_time": 3240.0,
+          "was_in_recovery": true
+        }
+      },
+      {
+        "result_type": "SUPPRESSED",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.747333333333334,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "near",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 112.1000000000001,
+          "s_base": 53.0,
+          "s_env": 16.5,
+          "s_realtime": 42.600000000000094,
+          "rest_required_score": 0.747333333333334
+        },
+        "states": {
+          "rest": "REST_RECOVERY"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": true,
+            "score": 112.1000000000001,
+            "state": "REST_RECOVERY",
+            "strength": "strong",
+            "fire_control": {
+              "fired": false,
+              "suppressed": true,
+              "override": false,
+              "reason": "recovery_after_accept"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": true,
+          "override": false,
+          "reason": "recovery_after_accept"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=112.1点 (基礎=53.0 + 環境=16.5 + リアルタイム=42.6)。未発火、状態=REST_RECOVERY。",
+            "en": "Total fatigue score=112.1pts (base=53.0 + env=16.5 + realtime=42.6). Not fired, state=REST_RECOVERY."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 55.0,
+          "driving_min_since_rest": 55.0,
+          "last_sim_time": 3420.0,
+          "was_in_recovery": true
+        }
+      },
+      {
+        "result_type": "SUPPRESSED",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.801333333333334,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 120.2000000000001,
+          "s_base": 54.8,
+          "s_env": 17.4,
+          "s_realtime": 48.00000000000011,
+          "rest_required_score": 0.801333333333334
+        },
+        "states": {
+          "rest": "REST_RECOVERY"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": true,
+            "score": 120.2000000000001,
+            "state": "REST_RECOVERY",
+            "strength": "strong",
+            "fire_control": {
+              "fired": false,
+              "suppressed": true,
+              "override": false,
+              "reason": "recovery_after_accept"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": true,
+          "override": false,
+          "reason": "recovery_after_accept"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=120.2点 (基礎=54.8 + 環境=17.4 + リアルタイム=48.0)。未発火、状態=REST_RECOVERY。",
+            "en": "Total fatigue score=120.2pts (base=54.8 + env=17.4 + realtime=48.0). Not fired, state=REST_RECOVERY."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 58.0,
+          "driving_min_since_rest": 58.0,
+          "last_sim_time": 3600.0,
+          "was_in_recovery": true
+        }
+      },
+      {
+        "result_type": "SUPPRESSED",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.4813333333333333,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 72.19999999999999,
+          "s_base": 54.8,
+          "s_env": 17.4,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.4813333333333333
+        },
+        "states": {
+          "rest": "REST_RECOVERY"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 72.19999999999999,
+            "state": "REST_RECOVERY",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": true,
+              "override": false,
+              "reason": "recovery_after_accept"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": true,
+          "override": false,
+          "reason": "recovery_after_accept"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=72.2点 (基礎=54.8 + 環境=17.4 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY。",
+            "en": "Total fatigue score=72.2pts (base=54.8 + env=17.4 + realtime=0.0). Not fired, state=REST_RECOVERY."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 58.0,
+          "driving_min_since_rest": 58.0,
+          "last_sim_time": 3780.0,
+          "was_in_recovery": true
+        }
+      },
+      {
+        "result_type": "SUPPRESSED",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.4813333333333333,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 72.19999999999999,
+          "s_base": 54.8,
+          "s_env": 17.4,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.4813333333333333
+        },
+        "states": {
+          "rest": "REST_RECOVERY"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 72.19999999999999,
+            "state": "REST_RECOVERY",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": true,
+              "override": false,
+              "reason": "recovery_after_accept"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": true,
+          "override": false,
+          "reason": "recovery_after_accept"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=72.2点 (基礎=54.8 + 環境=17.4 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY。",
+            "en": "Total fatigue score=72.2pts (base=54.8 + env=17.4 + realtime=0.0). Not fired, state=REST_RECOVERY."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 58.0,
+          "driving_min_since_rest": 58.0,
+          "last_sim_time": 3960.0,
+          "was_in_recovery": true
+        }
+      },
+      {
+        "result_type": "SUPPRESSED",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.4813333333333333,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 72.19999999999999,
+          "s_base": 54.8,
+          "s_env": 17.4,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.4813333333333333
+        },
+        "states": {
+          "rest": "REST_RECOVERY"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 72.19999999999999,
+            "state": "REST_RECOVERY",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": true,
+              "override": false,
+              "reason": "recovery_after_accept"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": true,
+          "override": false,
+          "reason": "recovery_after_accept"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=72.2点 (基礎=54.8 + 環境=17.4 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY。",
+            "en": "Total fatigue score=72.2pts (base=54.8 + env=17.4 + realtime=0.0). Not fired, state=REST_RECOVERY."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 58.0,
+          "driving_min_since_rest": 58.0,
+          "last_sim_time": 4140.0,
+          "was_in_recovery": true
+        }
+      },
+      {
+        "result_type": "SUPPRESSED",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.4813333333333333,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 72.19999999999999,
+          "s_base": 54.8,
+          "s_env": 17.4,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.4813333333333333
+        },
+        "states": {
+          "rest": "REST_RECOVERY"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 72.19999999999999,
+            "state": "REST_RECOVERY",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": true,
+              "override": false,
+              "reason": "recovery_after_accept"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": true,
+          "override": false,
+          "reason": "recovery_after_accept"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=72.2点 (基礎=54.8 + 環境=17.4 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY。",
+            "en": "Total fatigue score=72.2pts (base=54.8 + env=17.4 + realtime=0.0). Not fired, state=REST_RECOVERY."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 58.0,
+          "driving_min_since_rest": 58.0,
+          "last_sim_time": 4320.0,
+          "was_in_recovery": true
+        }
+      },
+      {
+        "result_type": "SUPPRESSED",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.4813333333333333,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 72.19999999999999,
+          "s_base": 54.8,
+          "s_env": 17.4,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.4813333333333333
+        },
+        "states": {
+          "rest": "REST_RECOVERY"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 72.19999999999999,
+            "state": "REST_RECOVERY",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": true,
+              "override": false,
+              "reason": "recovery_after_accept"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": true,
+          "override": false,
+          "reason": "recovery_after_accept"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=72.2点 (基礎=54.8 + 環境=17.4 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY。",
+            "en": "Total fatigue score=72.2pts (base=54.8 + env=17.4 + realtime=0.0). Not fired, state=REST_RECOVERY."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 58.0,
+          "driving_min_since_rest": 58.0,
+          "last_sim_time": 4500.0,
+          "was_in_recovery": true
+        }
+      },
+      {
+        "result_type": "SUPPRESSED",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.4813333333333333,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 72.19999999999999,
+          "s_base": 54.8,
+          "s_env": 17.4,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.4813333333333333
+        },
+        "states": {
+          "rest": "REST_RECOVERY"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 72.19999999999999,
+            "state": "REST_RECOVERY",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": true,
+              "override": false,
+              "reason": "recovery_after_accept"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": true,
+          "override": false,
+          "reason": "recovery_after_accept"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=72.2点 (基礎=54.8 + 環境=17.4 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY。",
+            "en": "Total fatigue score=72.2pts (base=54.8 + env=17.4 + realtime=0.0). Not fired, state=REST_RECOVERY."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 58.0,
+          "driving_min_since_rest": 58.0,
+          "last_sim_time": 4680.0,
+          "was_in_recovery": true
+        }
+      },
+      {
+        "result_type": "SUPPRESSED",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.49933333333333335,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 74.9,
+          "s_base": 56.6,
+          "s_env": 18.3,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.49933333333333335
+        },
+        "states": {
+          "rest": "REST_RECOVERY"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 74.9,
+            "state": "REST_RECOVERY",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": true,
+              "override": false,
+              "reason": "recovery_after_accept"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": true,
+          "override": false,
+          "reason": "recovery_after_accept"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=74.9点 (基礎=56.6 + 環境=18.3 + リアルタイム=0.0)。未発火、状態=REST_RECOVERY。",
+            "en": "Total fatigue score=74.9pts (base=56.6 + env=18.3 + realtime=0.0). Not fired, state=REST_RECOVERY."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 61.0,
+          "driving_min_since_rest": 61.0,
+          "last_sim_time": 4860.0,
+          "was_in_recovery": true
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.15133333333333332,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 22.7,
+          "s_base": 21.8,
+          "s_env": 0.8999999999999999,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.15133333333333332
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 22.7,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=22.7点 (基礎=21.8 + 環境=0.9 + リアルタイム=0.0)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=22.7pts (base=21.8 + env=0.9 + realtime=0.0). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 3.0,
+          "driving_min_since_rest": 3.0,
+          "last_sim_time": 5040.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.16933333333333334,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "moderate"
+        },
+        "scores": {
+          "s_total": 25.400000000000002,
+          "s_base": 23.6,
+          "s_env": 1.7999999999999998,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.16933333333333334
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 25.400000000000002,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=25.4点 (基礎=23.6 + 環境=1.8 + リアルタイム=0.0)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=25.4pts (base=23.6 + env=1.8 + realtime=0.0). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 6.0,
+          "driving_min_since_rest": 6.0,
+          "last_sim_time": 5220.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.18733333333333332,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "long"
+        },
+        "scores": {
+          "s_total": 28.099999999999998,
+          "s_base": 25.4,
+          "s_env": 2.6999999999999997,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.18733333333333332
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 28.099999999999998,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=28.1点 (基礎=25.4 + 環境=2.7 + リアルタイム=0.0)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=28.1pts (base=25.4 + env=2.7 + realtime=0.0). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 9.0,
+          "driving_min_since_rest": 9.0,
+          "last_sim_time": 5400.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.2053333333333333,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "long"
+        },
+        "scores": {
+          "s_total": 30.799999999999997,
+          "s_base": 27.2,
+          "s_env": 3.5999999999999996,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.2053333333333333
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 30.799999999999997,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=30.8点 (基礎=27.2 + 環境=3.6 + リアルタイム=0.0)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=30.8pts (base=27.2 + env=3.6 + realtime=0.0). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 12.0,
+          "driving_min_since_rest": 12.0,
+          "last_sim_time": 5580.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.22333333333333333,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "long"
+        },
+        "scores": {
+          "s_total": 33.5,
+          "s_base": 29.0,
+          "s_env": 4.5,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.22333333333333333
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 33.5,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=33.5点 (基礎=29.0 + 環境=4.5 + リアルタイム=0.0)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=33.5pts (base=29.0 + env=4.5 + realtime=0.0). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 15.0,
+          "driving_min_since_rest": 15.0,
+          "last_sim_time": 5760.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.24133333333333332,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "long"
+        },
+        "scores": {
+          "s_total": 36.199999999999996,
+          "s_base": 30.799999999999997,
+          "s_env": 5.3999999999999995,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.24133333333333332
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 36.199999999999996,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=36.2点 (基礎=30.8 + 環境=5.4 + リアルタイム=0.0)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=36.2pts (base=30.8 + env=5.4 + realtime=0.0). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 18.0,
+          "driving_min_since_rest": 18.0,
+          "last_sim_time": 5940.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.2593333333333333,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "long"
+        },
+        "scores": {
+          "s_total": 38.9,
+          "s_base": 32.6,
+          "s_env": 6.3,
+          "s_realtime": 0.0,
+          "rest_required_score": 0.2593333333333333
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 38.9,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=38.9点 (基礎=32.6 + 環境=6.3 + リアルタイム=0.0)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=38.9pts (base=32.6 + env=6.3 + realtime=0.0). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 21.0,
+          "driving_min_since_rest": 21.0,
+          "last_sim_time": 6120.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.2873333333333342,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "long"
+        },
+        "scores": {
+          "s_total": 43.100000000000136,
+          "s_base": 34.4,
+          "s_env": 7.199999999999999,
+          "s_realtime": 1.5000000000001386,
+          "rest_required_score": 0.2873333333333342
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 43.100000000000136,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=43.1点 (基礎=34.4 + 環境=7.2 + リアルタイム=1.5)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=43.1pts (base=34.4 + env=7.2 + realtime=1.5). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 24.0,
+          "driving_min_since_rest": 24.0,
+          "last_sim_time": 6300.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.3413333333333343,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "long"
+        },
+        "scores": {
+          "s_total": 51.200000000000145,
+          "s_base": 36.2,
+          "s_env": 8.1,
+          "s_realtime": 6.900000000000141,
+          "rest_required_score": 0.3413333333333343
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 51.200000000000145,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=51.2点 (基礎=36.2 + 環境=8.1 + リアルタイム=6.9)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=51.2pts (base=36.2 + env=8.1 + realtime=6.9). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 0.0,
+          "cumulative_monotonous_min": 27.0,
+          "driving_min_since_rest": 27.0,
+          "last_sim_time": 6480.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.3993333333333344,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "long"
+        },
+        "scores": {
+          "s_total": 59.900000000000155,
+          "s_base": 38.0,
+          "s_env": 9.6,
+          "s_realtime": 12.300000000000153,
+          "rest_required_score": 0.3993333333333344
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 59.900000000000155,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=59.9点 (基礎=38.0 + 環境=9.6 + リアルタイム=12.3)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=59.9pts (base=38.0 + env=9.6 + realtime=12.3). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 3.0,
+          "cumulative_monotonous_min": 30.0,
+          "driving_min_since_rest": 30.0,
+          "last_sim_time": 6660.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.4573333333333344,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "long"
+        },
+        "scores": {
+          "s_total": 68.60000000000016,
+          "s_base": 39.8,
+          "s_env": 11.100000000000001,
+          "s_realtime": 17.700000000000166,
+          "rest_required_score": 0.4573333333333344
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 68.60000000000016,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=68.6点 (基礎=39.8 + 環境=11.1 + リアルタイム=17.7)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=68.6pts (base=39.8 + env=11.1 + realtime=17.7). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 6.0,
+          "cumulative_monotonous_min": 33.0,
+          "driving_min_since_rest": 33.0,
+          "last_sim_time": 6840.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "NO_PROPOSAL",
+        "trigger_candidate": false,
+        "selected_category": null,
+        "score": 0.5153333333333345,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "long"
+        },
+        "scores": {
+          "s_total": 77.30000000000018,
+          "s_base": 41.599999999999994,
+          "s_env": 12.6,
+          "s_realtime": 23.10000000000018,
+          "rest_required_score": 0.5153333333333345
+        },
+        "states": {
+          "rest": "REST_NORMAL"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": false,
+            "score": 77.30000000000018,
+            "state": "REST_NORMAL",
+            "strength": null,
+            "fire_control": {
+              "fired": false,
+              "suppressed": false,
+              "override": false,
+              "reason": "below_fire_threshold"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": false,
+          "suppressed": false,
+          "override": false,
+          "reason": "below_fire_threshold"
+        },
+        "proposal": null,
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=77.3点 (基礎=41.6 + 環境=12.6 + リアルタイム=23.1)。未発火、状態=REST_NORMAL。",
+            "en": "Total fatigue score=77.3pts (base=41.6 + env=12.6 + realtime=23.1). Not fired, state=REST_NORMAL."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 9.0,
+          "cumulative_monotonous_min": 36.0,
+          "driving_min_since_rest": 36.0,
+          "last_sim_time": 7020.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "REST_PROPOSAL",
+        "trigger_candidate": true,
+        "selected_category": "rest_required",
+        "score": 0.5733333333333347,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "long"
+        },
+        "scores": {
+          "s_total": 86.0000000000002,
+          "s_base": 43.4,
+          "s_env": 14.1,
+          "s_realtime": 28.500000000000192,
+          "rest_required_score": 0.5733333333333347
+        },
+        "states": {
+          "rest": "REST_FIRE"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": true,
+            "score": 86.0000000000002,
+            "state": "REST_FIRE",
+            "strength": "strong",
+            "fire_control": {
+              "fired": true,
+              "suppressed": false,
+              "override": false,
+              "reason": "fire_threshold_passed"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": true,
+          "suppressed": false,
+          "override": false,
+          "reason": "fire_threshold_passed"
+        },
+        "proposal": {
+          "id": "rest_required_proposal",
+          "message": {
+            "ja": "安全のため、直ちに休憩を取ってください。",
+            "en": "For your safety, please take a rest immediately."
+          },
+          "options": [
+            "accept_rest",
+            "postpone",
+            "decline"
+          ]
+        },
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=86.0点 (基礎=43.4 + 環境=14.1 + リアルタイム=28.5)。発火、状態=REST_FIRE。",
+            "en": "Total fatigue score=86.0pts (base=43.4 + env=14.1 + realtime=28.5). Fired, state=REST_FIRE."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 12.0,
+          "cumulative_monotonous_min": 39.0,
+          "driving_min_since_rest": 39.0,
+          "last_sim_time": 7200.0,
+          "was_in_recovery": false
+        }
+      },
+      {
+        "result_type": "REST_PROPOSAL",
+        "trigger_candidate": true,
+        "selected_category": "rest_required",
+        "score": 0.6313333333333347,
+        "features": {
+          "signal_duration": "persistent",
+          "rest_spot_eta": "none",
+          "continuous_driving_time": "long"
+        },
+        "scores": {
+          "s_total": 94.70000000000022,
+          "s_base": 45.2,
+          "s_env": 15.6,
+          "s_realtime": 33.900000000000205,
+          "rest_required_score": 0.6313333333333347
+        },
+        "states": {
+          "rest": "REST_FIRE"
+        },
+        "criteria": {
+          "threshold_fire": 80.0,
+          "rest_required_threshold": 0.5333333333333333,
+          "rest_spot_eta_filter_min": 15.0
+        },
+        "candidates": [
+          {
+            "category": "rest_required",
+            "exists": true,
+            "score": 94.70000000000022,
+            "state": "REST_FIRE",
+            "strength": "strong",
+            "fire_control": {
+              "fired": true,
+              "suppressed": false,
+              "override": false,
+              "reason": "fire_threshold_passed"
+            }
+          }
+        ],
+        "fire_control": {
+          "fired": true,
+          "suppressed": false,
+          "override": false,
+          "reason": "fire_threshold_passed"
+        },
+        "proposal": {
+          "id": "rest_required_proposal",
+          "message": {
+            "ja": "安全のため、直ちに休憩を取ってください。",
+            "en": "For your safety, please take a rest immediately."
+          },
+          "options": [
+            "accept_rest",
+            "postpone",
+            "decline"
+          ]
+        },
+        "reason_inputs": [
+          "continuous_driving_min",
+          "drowsiness",
+          "fatigue",
+          "traffic_jam",
+          "highway",
+          "monotonous_road"
+        ],
+        "explanation": [
+          {
+            "ja": "総合疲労スコア=94.7点 (基礎=45.2 + 環境=15.6 + リアルタイム=33.9)。発火、状態=REST_FIRE。",
+            "en": "Total fatigue score=94.7pts (base=45.2 + env=15.6 + realtime=33.9). Fired, state=REST_FIRE."
+          }
+        ],
+        "next_package_runtime_state": {
+          "cumulative_jam_min": 0.0,
+          "cumulative_highway_min": 15.0,
+          "cumulative_monotonous_min": 42.0,
+          "driving_min_since_rest": 42.0,
+          "last_sim_time": 7380.0,
+          "was_in_recovery": false
+        }
+      },
+      null
+    ]
+  }
+}
