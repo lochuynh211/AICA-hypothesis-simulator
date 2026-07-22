@@ -35,6 +35,7 @@ def build_prompt(target: dict[str, Any], context: dict[str, Any]) -> Explanation
             opposing = [str(so["feature_id"])]
 
     song_facts: list[str] = []
+    readout = _k.category_readout(target)
 
     grounding: dict[str, Any] = {
         "step": "service",
@@ -48,6 +49,7 @@ def build_prompt(target: dict[str, Any], context: dict[str, Any]) -> Explanation
         "factors": factors,
         "supporting": supporting,
         "opposing": opposing,
+        "category_readout": readout,
     }
 
     # ── User message: the full grounding ────────────────────────────────────
@@ -60,6 +62,10 @@ def build_prompt(target: dict[str, Any], context: dict[str, Any]) -> Explanation
         lines.append(f"Trigger purpose: {context.get('trigger_purpose')}.")
     if context.get("lifecycle_stage"):
         lines.append(f"Driving stage: {context.get('lifecycle_stage')}.")
+
+    if readout:
+        lines.append("")
+        lines.append(readout["phrase_en"])
 
     if song_facts:
         lines.append("")
@@ -104,14 +110,36 @@ def build_prompt(target: dict[str, Any], context: dict[str, Any]) -> Explanation
     return ExplanationPrompt(messages=messages, grounding=grounding)
 
 
-def template(target: dict[str, Any]) -> list[str]:
-    """Service branch of the former template_rationale (already-positional
-    [ja, en] pair; pad/truncate to length 2)."""
+def _passthrough(target: dict[str, Any]) -> list[str]:
+    """Former behavior: already-positional [ja, en] pair, pad/truncate to 2."""
     rationale = target.get("rationale") or []
     if not isinstance(rationale, list) or not rationale:
         return ["", ""]
-
-    # Already a positional [ja, en] pair — pad/truncate to length 2.
     ja = str(rationale[0]) if len(rationale) >= 1 else ""
     en = str(rationale[1]) if len(rationale) >= 2 else ja
+    return [ja, en]
+
+
+def template(target: dict[str, Any]) -> list[str]:
+    """Deterministic category-level causal composer, degrading to the former
+    positional [ja, en] passthrough when subtotals or strongest_support are
+    absent (service response has no arousal/valence, so its causal story is
+    category-level: dominant family + strongest_support label)."""
+    readout = _k.category_readout(target)
+    ss = target.get("strongest_support")
+    cid = str(target.get("candidate_id") or "")
+    if not readout or not isinstance(ss, dict) or not ss.get("feature_id") or not cid:
+        return _passthrough(target)
+    dom = readout["dominant"]
+    dom_ja = {"situation": "運転状況", "preference": "運転者の好み", "history": "利用履歴"}[dom]
+    dom_en = {"situation": "the driving situation", "preference": "the driver's taste",
+              "history": "the driver's history"}[dom]
+    sup = _k.label_for(str(ss["feature_id"]))
+    ja = f"主に{dom_ja}（特に{sup['ja']}）により、{cid}が選ばれました。"
+    en = f"Mainly {dom_en}, chiefly {sup['en']}, drove selecting {cid}."
+    so = target.get("strongest_oppose")
+    if isinstance(so, dict) and so.get("feature_id"):
+        opp = _k.label_for(str(so["feature_id"]))
+        ja += f" 一方で{opp['ja']}は反対に働きました。"
+        en += f" {opp['en'].capitalize()} pushed against it."
     return [ja, en]
