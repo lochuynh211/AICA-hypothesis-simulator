@@ -152,7 +152,7 @@ def _axis_trait_words(axis, arousal_band, valence):
     if valence is None:
         return "neutral in mood", "中立的な雰囲気"
     if valence >= 0.55:
-        return "bright", "明るい"
+        return "bright", "明るい雰囲気"
     if valence < 0.40:
         return "darker, more subdued", "より落ち着いた雰囲気"
     return "neutral in mood", "中立的な雰囲気"
