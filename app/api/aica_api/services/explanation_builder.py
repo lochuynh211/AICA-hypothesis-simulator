@@ -170,17 +170,19 @@ def feature_meaning(feature_id: str) -> str:
 # Prompt construction
 # ---------------------------------------------------------------------------
 
-# The two-line example that anchors the output FORMAT. It uses obvious
-# PLACEHOLDERS ("factor A/B", "要因A/B") rather than real features or a copyable
-# generic sentence, because:
+# The two-line example that anchors the output FORMAT AND demonstrates the
+# causal SHAPE (situation calls for -> choice answers -> factor reinforces). It
+# uses obvious PLACEHOLDERS ("situation A", "factor B", "要因B") rather than
+# real features or a copyable generic sentence, because:
 #   - a concrete example naming real features leaked into reasons (3b reused
 #     "traffic / destination"), and
 #   - a generic-but-complete sentence got copied VERBATIM (esp. the JA line),
 #     tripping response_is_usable and nuking otherwise-good output.
 # Placeholders force the model to substitute the real top factors in BOTH lines
 # while still demonstrating the JA:/EN: shape. Verbatim parroting → template.
-_EXAMPLE_JA = "「要因A」と「要因B」が最も強く働いたため、この選択に至りました。"
-_EXAMPLE_EN = "Factor A and factor B contributed the most, which is why this choice was made."
+# `_PLACEHOLDER_RE` still matches "factor B" / "要因B" in this new example.
+_EXAMPLE_JA = "「状況A」は「〜」を必要とし、この選択はそれに合致します。さらに「要因B」が後押ししました。"
+_EXAMPLE_EN = "Situation A calls for a certain kind of choice, and this one matches it; factor B further reinforced it."
 
 # Robust, example-anchored format instruction. Small local models tend to
 # (a) ignore the format and echo the facts, or (b) reply in one language only —
@@ -189,16 +191,33 @@ _EXAMPLE_EN = "Factor A and factor B contributed the most, which is why this cho
 # two-line example fixes the shape. A matching one-line reminder is appended to
 # the END of the user message (recency) in build_explanation_prompt. Output that
 # still doesn't comply is caught by response_is_usable() → template fallback.
+#
+# Task 6 (causal explanation enrichment): the primer teaches the model HOW the
+# scores work (contribution = importance × how well the choice answers the
+# situation) and the three factor families (situation/taste/history), plus a
+# causal telling-order cue (situation calls for -> choice answers -> taste/
+# history reinforces), so the generated prose reads as an explanation of WHY,
+# not just a list of which numbers were largest.
 _SYSTEM_TEMPLATE = (
     "You write a short, faithful explanation of why an in-car assistant selected "
     "a {kind} for the driver — in BOTH Japanese and English.\n"
+    "\n"
+    "How the scoring works (use this to interpret, do NOT restate it):\n"
+    "- A factor's influence = how much this trigger purpose cares about it, TIMES "
+    "how well the chosen {kind} answers what the current situation calls for.\n"
+    "- Factors group into three families: the driving SITUATION (drowsiness, "
+    "fatigue, traffic, road, night, monotony), the driver's TASTE (favorite "
+    "artist, genre, era, singability), and the driver's HISTORY (past plays, "
+    "skips, acceptance, recovery).\n"
     "\n"
     "Rules:\n"
     "- Use ONLY the facts in the next message. Never invent features, numbers, "
     "songs, or driver preferences that are not listed.\n"
     "- Do NOT copy or repeat the fact lines, and do NOT restate the raw numeric "
-    "scores. Explain qualitatively which factors most drove the choice and which "
-    "pushed against it.\n"
+    "scores.\n"
+    "- Tell the CAUSAL story in this order when the facts support it: what the "
+    "driving situation calls for -> how the chosen {kind} answers that -> how the "
+    "driver's taste or history reinforced or tempered it.\n"
     "- Reply with EXACTLY two lines and NOTHING else: no preamble, no greeting, "
     "no notes, no markdown, no blank line between them.\n"
     "- Line 1 MUST start with 'JA:' and be written in Japanese. Line 2 MUST "
