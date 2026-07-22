@@ -43,6 +43,70 @@ def _song_facts_lines(target: dict[str, Any], context: dict[str, Any]) -> list[s
     return out
 
 
+# Static Context Response Matrix demand (content algorithm §5.2), used when a
+# contribution row does not carry alpha/beta. Values are the sign/intent only.
+_STATIC_DEMAND = {
+    "drowsiness_level": (0.80, 0.20), "drowsiness": (0.80, 0.20),
+    "fatigue_level": (-0.50, 0.50), "fatigue": (-0.50, 0.50),
+    "monotony_level": (0.90, 0.10), "monotony": (0.90, 0.10),
+    "traffic_state": (-0.40, 0.60), "traffic": (-0.40, 0.60),
+    "night_state": (-0.50, 0.50), "night": (-0.50, 0.50),
+}
+
+
+def demand_phrase(alpha, beta, feature_id):
+    """Bilingual 'what this situation calls for' from arousal/valence demand.
+
+    Returns None when there is no usable demand (both coefficients ~0 / absent
+    and no static entry) — the feature is then not a causal bridge.
+    """
+    if alpha is None and beta is None:
+        alpha, beta = _STATIC_DEMAND.get(feature_id, (None, None))
+    if alpha is None and beta is None:
+        return None
+    a = float(alpha or 0.0)
+    b = float(beta or 0.0)
+    if abs(a) < 1e-6 and abs(b) < 1e-6:
+        return None
+    if a > 0:
+        en, ja = "energetic, upbeat music", "活発で高揚感のある曲"
+    elif a < 0:
+        en, ja = "calm, soothing music", "穏やかで落ち着いた曲"
+    else:
+        en, ja = "brighter, more positive music", "より明るくポジティブな曲"
+    if a != 0 and b > 0:
+        en += " (and a bit brighter)"
+        ja += "（やや明るめ）"
+    return {"en": en, "ja": ja}
+
+
+def _arousal_band(v):
+    return "high" if v >= 0.62 else ("low" if v < 0.40 else "medium")
+
+
+def causal_bridge_lines(target):
+    """One line per situation feature that carries a demand, pairing the demand
+    with the song's actual energy trait — the situation→trait causal arrow."""
+    tv = target.get("trait_values") or {}
+    arousal = tv.get("arousal")
+    band = _arousal_band(float(arousal)) if isinstance(arousal, (int, float)) else None
+    out = []
+    for fc in target.get("feature_contributions", []) or []:
+        fid = str(fc.get("feature_id", ""))
+        dem = demand_phrase(fc.get("alpha"), fc.get("beta"), fid)
+        if dem is None:
+            continue
+        lab = _k.label_for(fid)
+        contribution = float(fc.get("contribution", 0.0) or 0.0)
+        trait_txt = f"; this song's energy is {band.upper()}" if band else ""
+        verdict = " (a strong match)" if contribution > 0 else (" (a mismatch)" if contribution < 0 else "")
+        out.append(
+            f"- {lab['ja']} / {lab['en']}: the situation calls for {dem['en']}"
+            f"{trait_txt}{verdict} (contribution {contribution:+.3f})."
+        )
+    return out
+
+
 def build_prompt(target: dict[str, Any], context: dict[str, Any]) -> ExplanationPrompt:
     """Content branch of the former build_explanation_prompt (is_service=False)."""
     kind_en = "song"
@@ -67,6 +131,8 @@ def build_prompt(target: dict[str, Any], context: dict[str, Any]) -> Explanation
             opposing = [str(so["feature_id"])]
 
     song_facts = _song_facts_lines(target, context)
+    bridge = causal_bridge_lines(target)
+    readout = _k.category_readout(target)
 
     grounding: dict[str, Any] = {
         "step": "content",
@@ -80,6 +146,8 @@ def build_prompt(target: dict[str, Any], context: dict[str, Any]) -> Explanation
         "factors": factors,
         "supporting": supporting,
         "opposing": opposing,
+        "causal_bridge": bridge,
+        "category_readout": readout,
     }
 
     # ── User message: the full grounding ────────────────────────────────────
@@ -97,6 +165,14 @@ def build_prompt(target: dict[str, Any], context: dict[str, Any]) -> Explanation
         lines.append("")
         lines.append("About the chosen song:")
         lines.extend(song_facts)
+
+    if readout:
+        lines.append("")
+        lines.append(readout["phrase_en"])
+    if bridge:
+        lines.append("")
+        lines.append("How the driving situation shapes the music choice:")
+        lines.extend(bridge)
 
     lines.append("")
     lines.append("How to read the factors below:")
