@@ -17,6 +17,7 @@ export class WorkerTransport implements Transport {
   private worker: Worker
   private seq = 0
   private pending = new Map<number, (r: RpcResponse) => void>()
+  private dead = false
 
   constructor(worker: Worker) {
     this.worker = worker
@@ -25,16 +26,21 @@ export class WorkerTransport implements Transport {
       const resolve = this.pending.get(id)
       if (resolve) { this.pending.delete(id); resolve(response) }
     }
-    this.worker.onerror = () => {
+    this.worker.onerror = (ev: ErrorEvent) => {
       // A worker-level crash rejects all in-flight calls as a structured error.
+      this.dead = true
+      const msg = 'backend worker crashed' + (ev?.message ? ': ' + ev.message : '')
       for (const [, resolve] of this.pending) {
-        resolve({ ok: false, error: { type: 'WorkerError', message: 'backend worker crashed' } })
+        resolve({ ok: false, error: { type: 'WorkerError', message: msg } })
       }
       this.pending.clear()
     }
   }
 
   call(req: RpcRequest): Promise<RpcResponse> {
+    if (this.dead) {
+      return Promise.resolve({ ok: false, error: { type: 'WorkerError', message: 'backend worker is dead' } })
+    }
     const id = ++this.seq
     return new Promise<RpcResponse>((resolve) => {
       this.pending.set(id, resolve)
