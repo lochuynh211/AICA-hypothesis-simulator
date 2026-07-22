@@ -23,7 +23,6 @@ import type {
   RouteFacts,
   DisplayRoute,
   RouteEnvelope,
-  RouteNotice,
   RoutePresetSummary,
   RunPlanResponse,
   RunState,
@@ -37,22 +36,9 @@ import type {
   EvidenceReport,
   ProfileOverrides,
   RestSpot,
-  ValidationError,
-  Snapshot,
   RunConfig,
   InstantResult,
-  FirePoint,
-  ScoreSeriesPoint,
-  SpikePoint,
-  PreviewSegment,
-  PreviewRestSpot,
-  PreviewRestOption,
-  PreviewError,
-  PreviewOverrideEntry,
-  DecisionResult,
-  RecoveryStateT,
 } from './types'
-import { MapsError, FeedbackValidationError } from './types'
 import { dispatch } from '../engine/worker/dispatch'
 import { unwrap, type RpcRequest } from './rpc'
 
