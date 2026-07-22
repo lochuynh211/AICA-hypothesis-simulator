@@ -24,7 +24,7 @@ import json
 import re
 from typing import Any
 
-from aica_api.models.proposal.explanation import ExplainMessage, ExplanationPrompt
+from aica_api.models.proposal.explanation import ExplanationPrompt
 
 # Maximal grounding (feature 019): hand the model EVERY meaningfully-scored
 # contribution (not just a top-N slice). Exact-zero / negligible contributions
@@ -121,9 +121,9 @@ FEATURE_LABELS: dict[str, dict[str, str]] = {
 # disposition registry (e.g. "2·rate/100−1"), which a small model would parrot.
 # Missing → "" (the label alone is shown).
 _FEATURE_MEANINGS: dict[str, str] = {
-    "drowsiness_level": "how sleepy the driver is (0 = alert … 100 = very drowsy)",
-    "fatigue_level": "how physically tired the driver is (0–100)",
-    "monotony_level": "how monotonous/boring the road feels (0–100)",
+    "drowsiness_level": "how sleepy the driver is (alert → very drowsy)",
+    "fatigue_level": "how physically tired the driver is",
+    "monotony_level": "how monotonous/boring the road feels",
     "traffic_state": "the current traffic level",
     "road_type": "the kind of road (e.g. highway vs local)",
     "night_state": "whether it is day or night",
@@ -170,45 +170,20 @@ def feature_meaning(feature_id: str) -> str:
 # Prompt construction
 # ---------------------------------------------------------------------------
 
-# The two-line example that anchors the output FORMAT. It uses obvious
-# PLACEHOLDERS ("factor A/B", "要因A/B") rather than real features or a copyable
+# The two-line example, kept ONLY as a parrot-guard fixture (response_is_usable
+# rejects output that copies it verbatim, and strip_placeholder_artifacts still
+# strips its "factor A/B" placeholders). It uses obvious PLACEHOLDERS
+# ("situation A", "factor B", "要因B") rather than real features or a copyable
 # generic sentence, because:
 #   - a concrete example naming real features leaked into reasons (3b reused
 #     "traffic / destination"), and
 #   - a generic-but-complete sentence got copied VERBATIM (esp. the JA line),
 #     tripping response_is_usable and nuking otherwise-good output.
-# Placeholders force the model to substitute the real top factors in BOTH lines
-# while still demonstrating the JA:/EN: shape. Verbatim parroting → template.
-_EXAMPLE_JA = "「要因A」と「要因B」が最も強く働いたため、この選択に至りました。"
-_EXAMPLE_EN = "Factor A and factor B contributed the most, which is why this choice was made."
-
-# Robust, example-anchored format instruction. Small local models tend to
-# (a) ignore the format and echo the facts, or (b) reply in one language only —
-# both seen live with qwen2.5:0.5b. The rules are therefore explicit and
-# imperative, the two-language requirement is stated per line, and a concrete
-# two-line example fixes the shape. A matching one-line reminder is appended to
-# the END of the user message (recency) in build_explanation_prompt. Output that
-# still doesn't comply is caught by response_is_usable() → template fallback.
-_SYSTEM_TEMPLATE = (
-    "You write a short, faithful explanation of why an in-car assistant selected "
-    "a {kind} for the driver — in BOTH Japanese and English.\n"
-    "\n"
-    "Rules:\n"
-    "- Use ONLY the facts in the next message. Never invent features, numbers, "
-    "songs, or driver preferences that are not listed.\n"
-    "- Do NOT copy or repeat the fact lines, and do NOT restate the raw numeric "
-    "scores. Explain qualitatively which factors most drove the choice and which "
-    "pushed against it.\n"
-    "- Reply with EXACTLY two lines and NOTHING else: no preamble, no greeting, "
-    "no notes, no markdown, no blank line between them.\n"
-    "- Line 1 MUST start with 'JA:' and be written in Japanese. Line 2 MUST "
-    "start with 'EN:' and be written in English. ALWAYS output both lines, each "
-    "one or two natural sentences.\n"
-    "\n"
-    "Follow this exact shape (copy the format, NOT the wording):\n"
-    "JA: " + _EXAMPLE_JA + "\n"
-    "EN: " + _EXAMPLE_EN
-)
+# The reasoning-mode system prompts below deliberately do NOT embed this (or
+# any) example — a concrete example is exactly what got parroted — but the
+# guard functions still reference these constants defensively.
+_EXAMPLE_JA = "「状況A」は「〜」を必要とし、この選択はそれに合致します。さらに「要因B」が後押ししました。"
+_EXAMPLE_EN = "Situation A calls for a certain kind of choice, and this one matches it; factor B further reinforced it."
 
 # Appended to the end of the user message so the format is the last thing the
 # model reads before generating.
@@ -216,6 +191,118 @@ _FORMAT_REMINDER = (
     "Reply with exactly two lines and nothing else: a 'JA:' line in Japanese, "
     "then an 'EN:' line in English."
 )
+
+# ---------------------------------------------------------------------------
+# Reasoning-mode system prompts (validated by A/B on qwen2.5:3b over 35
+# presets — see .superpowers/sdd/fix-reasoning-prompt-brief.md). Each carries
+# ITS OWN response matrix (what the algorithm does + what each situation/
+# trigger calls for) so the model reasons the causal story itself from
+# natural-language FACTS in the user message, instead of being handed a
+# pre-baked "driven mostly by X" verdict (which biases the model and caused
+# situation/oshi hallucinations in the old numbers-only design).
+# ---------------------------------------------------------------------------
+
+# Shared closing paragraph: mentions 'JA:'/'EN:' twice each (format guard) and
+# explicitly forbids copying the fact lines verbatim (anti-parrot), WITHOUT
+# embedding a concrete copyable example.
+_REASON_CLOSING = (
+    "Use ONLY the given facts; never invent features, numbers, songs, or driver "
+    "preferences that are not listed. Do NOT copy the fact lines verbatim.\n\n"
+    "Reply with EXACTLY two lines and nothing else: a 'JA:' line in Japanese, "
+    "then an 'EN:' line in English. Line 1 starts 'JA:', line 2 starts 'EN:', "
+    "each one or two natural sentences.\n\n"
+    "IMPORTANT: the facts above are written in English, but you MUST write Line 1 "
+    "in JAPANESE (日本語で). Do NOT write Line 1 in English. Follow this shape "
+    "(write your own words, do not copy):\n"
+    "JA: 〔日本語で1〜2文の理由〕\n"
+    "EN: 〔the same reason in English〕"
+)
+
+_CONTENT_REASON_SYSTEM = (
+    "You explain why an in-car assistant selected a {kind} for the driver — in BOTH "
+    "Japanese and English. You are given the raw scoring facts; work out the causal story "
+    "yourself. Do not just restate numbers.\n\n"
+    "WHAT THE ALGORITHM DOES\n"
+    "Each song is distilled into traits: arousal (energy — how lively the song is), valence "
+    "(brightness/positivity of its mood), and sing-along ease. The driver's current situation "
+    "CALLS FOR a certain kind of music, and a song scores well when its traits answer that call.\n\n"
+    "WHAT EACH SITUATION CALLS FOR (the response model — apply this):\n"
+    "- Drowsiness -> MORE energetic (higher arousal) AND brighter music (re-energize).\n"
+    "- Monotony -> MORE energetic and brighter music (counter boredom).\n"
+    "- Fatigue -> CALMER (lower arousal) but brighter music (soothe without dulling).\n"
+    "- Heavy traffic -> CALMER but brighter music (de-stress).\n"
+    "- Night -> CALMER, brighter music.\n"
+    "- Winding/mountain road -> CALMER music (matches the heavier driving load).\n"
+    "- Highway / local roads -> no particular energy demand.\n\n"
+    "HOW A FACTOR SCORES\n"
+    "A factor's contribution = how much the trigger purpose weights it TIMES how well the "
+    "chosen {kind} answered what it calls for. So a POSITIVE contribution from, say, drowsiness "
+    "means the song was energetic/bright enough to answer it. Factors group into three families: "
+    "the driving SITUATION (above), the driver's TASTE (favorite artist, genre, era, singability), "
+    "and the driver's HISTORY (past plays, skips, acceptance, recovery). The family with the "
+    "largest subtotal drove the choice most.\n\n"
+    "YOUR TASK\n"
+    "Reason the causal story: (1) which family dominated (compare the subtotals); (2) what its "
+    "top factors called for; (3) how the {kind}'s actual character answered that; (4) how the "
+    "other families reinforced or tempered it.\n\n" + _REASON_CLOSING
+)
+
+_SERVICE_REASON_SYSTEM = (
+    "You explain why an in-car assistant proposed a SERVICE (not a song) to the driver — in "
+    "BOTH Japanese and English. Work out the causal story from the facts; do not just restate "
+    "numbers.\n\n"
+    "WHAT THE ALGORITHM DOES\n"
+    "After a trigger decides a proposal is warranted, it ranks which service to offer. Each "
+    "candidate service has a RESPONSE to the current situation — how well that service answers "
+    "what the situation needs. A factor's contribution = how strong that situation signal is "
+    "TIMES how well this service responds to it, shaped by the trigger purpose.\n\n"
+    "WHAT EACH KIND OF SERVICE IS FOR (the response model — apply this):\n"
+    "- Interactive / engaging services (humming karaoke, call-and-response, quiz, ranking) keep "
+    "a drowsy or bored driver alert — they strongly respond to drowsiness, fatigue, monotony.\n"
+    "- Background music (music playlist, radio) is a low-demand default — mainly driven by the "
+    "route/music purpose, largely neutral to driver state.\n"
+    "- Rest & recovery services (stretch video, full karaoke, live viewing, oshi re-experience) "
+    "are for when the car is stopped or after a rest — they fit rest/stopped stages, not "
+    "active driving.\n"
+    "The trigger purpose steers the emphasis: a rest recommendation favors rest bridging; "
+    "inattentive-driving prevention favors engaging services; routine music favors the music "
+    "services; a child aboard favors child-friendly ones.\n\n"
+    "HOW A FACTOR SCORES\n"
+    "Factors group into three families: the driving SITUATION (drowsiness, fatigue, traffic, "
+    "road, night, monotony) plus the trigger and car state; the driver's service TASTE; and the "
+    "driver's HISTORY with this service (past acceptance, recovery, usage). The family with the "
+    "largest subtotal drove the choice most.\n\n"
+    "YOUR TASK\n"
+    "Reason the causal story: (1) what the trigger + situation call for; (2) how the chosen "
+    "service answers that; (3) how history/other factors reinforced or tempered it.\n\n"
+    "Explain using the ranked reasons below; only cite a situation as a reason if it drove THIS "
+    "service. Never argue that a different kind of service is needed than the one that was "
+    "chosen.\n\n"
+    + _REASON_CLOSING
+)
+
+
+def _value_display(value: Any) -> str:
+    """Qualitative band for a factor's raw value (FIX-SCALE).
+
+    Numeric ``e_i``/``feature_value`` (0–1 normalized evidence) is banded into
+    "high"/"medium"/"low" so it reads consistently against the 0–100 style
+    meanings, instead of showing a raw fraction like ``0.7`` that looks low
+    against a 0–100 scale. Non-empty strings (service categoricals like
+    "heavy"/"high") pass through unchanged. Missing/blank -> "".
+    """
+    if isinstance(value, bool):
+        return "high" if value else "low"
+    if isinstance(value, (int, float)):
+        v = float(value)
+        if v >= 0.62:
+            return "high"
+        if v < 0.40:
+            return "low"
+        return "medium"
+    if isinstance(value, str) and value:
+        return value
+    return ""
 
 
 def _factors_from_target(target: dict[str, Any]) -> list[dict[str, Any]]:
@@ -242,6 +329,7 @@ def _factors_from_target(target: dict[str, Any]) -> list[dict[str, Any]]:
                 "label_en": lab["en"],
                 "contribution": contribution,
                 "value": value,
+                "value_display": _value_display(value),
                 "meaning": feature_meaning(fid),
             }
         )
@@ -249,35 +337,313 @@ def _factors_from_target(target: dict[str, Any]) -> list[dict[str, Any]]:
     return factors[:MAX_FACTORS]
 
 
-def _song_facts_lines(target: dict[str, Any], context: dict[str, Any]) -> list[str]:
-    """Semantic facts about the chosen song (content step) — derived from the
-    item's decision-time trait values + its oshi-match contribution, so the
-    model can tell the real story (energy, mood, sing-along ease, oshi match)
-    instead of guessing from opaque feature ids. ``song_name`` is optional
-    (resolved from the catalog by the caller when available)."""
-    out: list[str] = []
-    name = context.get("song_name")
-    if name:
-        out.append(f'- Title: "{name}"')
-    tv = target.get("trait_values") or {}
-    arousal = tv.get("arousal")
-    if isinstance(arousal, (int, float)):
-        band = "high (energetic/upbeat)" if arousal >= 0.62 else ("low (calm/relaxed)" if arousal < 0.40 else "medium")
-        out.append(f"- Energy/arousal: {band}")
-    valence = tv.get("valence")
-    if isinstance(valence, (int, float)):
-        mood = "bright/positive" if valence >= 0.55 else ("darker/melancholic" if valence < 0.40 else "neutral")
-        out.append(f"- Mood/valence: {mood}")
-    eases = [x for x in (tv.get("humming_ease"), tv.get("full_karaoke_ease")) if isinstance(x, (int, float))]
-    if eases:
-        ease = max(eases)
-        out.append(f"- Sing-along ease: {'high' if ease >= 0.66 else ('low' if ease < 0.40 else 'medium')}")
+# ---------------------------------------------------------------------------
+# Shared natural-language fact translators (fact-rich reasoning prompts).
+#
+# These turn a target's ``feature_contributions`` rows into plain-language
+# FACTS (bands/strength words, never raw numbers) for the fact-rich user
+# messages built by ``content_explanation.build_prompt`` /
+# ``service_explanation.build_prompt``. This classifier is intentionally
+# SEPARATE from content_explanation's private ``_family_of``/feature sets
+# (which the UNCHANGED deterministic ``template()`` still uses) so nothing
+# here can alter template output.
+# ---------------------------------------------------------------------------
+
+_REASON_SITUATION_FEATURES = {
+    "drowsiness_level", "drowsiness", "fatigue_level", "fatigue",
+    "monotony_level", "monotony", "traffic_state", "traffic",
+    "night_state", "night", "road_type", "road",
+    "route_tags", "route", "destination_tags", "destination",
+    "child_present", "child", "multiple_passengers",
+}
+_REASON_PREFERENCE_FEATURES = {
+    "oshi_id", "oshi_tags", "oshi_type", "oshi",
+    "song_singability", "service_ease",
+    "age_band", "age", "gender",
+    "hobby_interest_tags", "hobbies",
+    "usage_by_genre", "genre_usage", "scene_genre", "genre_affinity",
+}
+_REASON_HISTORY_FEATURES = {
+    "catalog_item_usage_level", "item_usage",
+    "catalog_item_recency_state",
+    "content_proposal_acceptance_rate", "acceptance",
+    "content_recovery_rate", "recovery",
+    "played_items", "played",
+    "skipped_items", "skipped",
+    "changed_from_items", "changed",
+    "repeated_items", "completed_items", "cancelled_content_plans",
+    "manually_selected_items", "content_tag_recency_state",
+    "content_tag_usage_level", "scene_content_tag_usage_level",
+    "service_recency_state", "service_usage_level", "scene_service_usage_level",
+    "service_proposal_acceptance_rate", "service_recovery_rate",
+}
+
+
+def feature_family(feature_id: str) -> str | None:
+    """``"situation"`` | ``"preference"`` | ``"history"`` | ``None`` for a feature id.
+
+    Used ONLY by the new fact-rich reasoning prompts (see module docstring
+    above) — independent of ``content_explanation``'s own classifier.
+    """
+    if feature_id in _REASON_SITUATION_FEATURES:
+        return "situation"
+    if feature_id in _REASON_PREFERENCE_FEATURES:
+        return "preference"
+    if feature_id in _REASON_HISTORY_FEATURES:
+        return "history"
+    return None
+
+
+def _lvl3(v: float | None, lo: float, hi: float) -> str | None:
+    if v is None:
+        return None
+    return "low" if v < lo else ("high" if v >= hi else "mid")
+
+
+def _reason_row_value(target: dict[str, Any], *feature_ids: str) -> Any:
+    """Raw ``feature_value`` (preferred) or ``e_i`` scaled to 0–100 for the
+    first matching row among ``feature_ids`` (full + short leaf forms)."""
     for fc in target.get("feature_contributions", []) or []:
-        if fc.get("feature_id") == "oshi_id":
-            is_oshi = bool(fc.get("exact_match")) or fc.get("e_i") == 1.0
-            out.append(f"- By the driver's oshi (favorite artist): {'yes' if is_oshi else 'no'}")
-            break
-    return out
+        if str(fc.get("feature_id", "")) in feature_ids:
+            v = fc.get("feature_value")
+            if v is not None:
+                return v
+            e = fc.get("e_i")
+            if isinstance(e, (int, float)):
+                return float(e) * 100.0
+            return None
+    return None
+
+
+def _reason_row_contribution(target: dict[str, Any], *feature_ids: str) -> float | None:
+    """``contribution`` float for the first matching row among ``feature_ids``
+    (full + short leaf forms), or ``None`` when no such row is present."""
+    for fc in target.get("feature_contributions", []) or []:
+        if str(fc.get("feature_id", "")) in feature_ids:
+            c = fc.get("contribution")
+            if isinstance(c, (int, float)):
+                return float(c)
+            return None
+    return None
+
+
+# Minimum |contribution| for a situation feature to count as actually having
+# driven THIS candidate, used by situation_sentence's contributing_only gate
+# (see module docstring / feature 022 fix). Below this, the row is present but
+# effectively inert for this candidate (e.g. a NEUTRAL service like background
+# music, where drowsiness/monotony contribute ~0).
+_CONTRIBUTING_THRESHOLD = 0.005
+
+
+def situation_sentence(
+    target: dict[str, Any],
+    trigger_purpose: str | None,
+    contributing_only: bool = False,
+) -> str | None:
+    """Plain-language driver/road state from the target's situation-family
+    rows (drowsiness/fatigue/monotony levels; traffic/night/road state).
+    ``None`` when no situation row is present at all.
+
+    When ``contributing_only`` is True (used by the SERVICE prompt — see
+    ``service_explanation.build_prompt``), each situation piece is gated
+    independently on whether ITS row actually contributed to this candidate
+    (``abs(contribution) >= _CONTRIBUTING_THRESHOLD``). This stops a service
+    that is NEUTRAL to drowsiness/monotony (e.g. background music, contribution
+    ~0) from being handed a prominent "the driver is getting drowsy" fact that
+    has nothing to do with why it was picked — which was pulling the model
+    into arguing for a different (interactive) kind of service than the one
+    actually chosen. When nothing passes the gate, returns ``None`` (the
+    caller omits the whole SITUATION section) rather than the mild overclaim
+    "the driver is in a neutral state".
+
+    ``contributing_only=False`` (the default, used by the CONTENT prompt) is
+    unchanged: every situation row present is narrated regardless of its
+    contribution to this particular item.
+    """
+    d = _reason_row_value(target, "drowsiness_level", "drowsiness")
+    f = _reason_row_value(target, "fatigue_level", "fatigue")
+    m = _reason_row_value(target, "monotony_level", "monotony")
+    night = _reason_row_value(target, "night_state", "night")
+    traffic = _reason_row_value(target, "traffic_state", "traffic")
+    road = _reason_row_value(target, "road_type", "road")
+    if d is None and f is None and m is None and night is None and traffic is None and road is None:
+        return None
+
+    def _passes(*feature_ids: str) -> bool:
+        if not contributing_only:
+            return True
+        c = _reason_row_contribution(target, *feature_ids)
+        return c is not None and abs(c) >= _CONTRIBUTING_THRESHOLD
+
+    parts = []
+    if isinstance(d, (int, float)) and _passes("drowsiness_level", "drowsiness"):
+        parts.append(
+            "alert and awake" if d < 30 else ("very drowsy" if d >= 60 else "getting drowsy")
+        )
+    if isinstance(f, (int, float)) and f >= 55 and _passes("fatigue_level", "fatigue"):
+        parts.append("physically tired")
+
+    env = []
+    if isinstance(m, (int, float)) and _passes("monotony_level", "monotony"):
+        env.append(
+            "the road is very monotonous and boring" if m >= 60 else
+            ("the road is a little monotonous" if m >= 35 else "the road is engaging")
+        )
+    if isinstance(night, str) and night == "night" and _passes("night_state", "night"):
+        env.append("it is night")
+    if isinstance(traffic, str) and traffic and traffic != "normal" and _passes("traffic_state", "traffic"):
+        env.append(f"traffic is {traffic}")
+    if isinstance(road, str) and road and _passes("road_type", "road"):
+        env.append(f"they are on a {road.replace('_', ' ')}")
+
+    if contributing_only and not parts and not env:
+        # Nothing about the driver/road situation actually contributed to this
+        # candidate — omit the section entirely rather than emit the mild
+        # overclaim "the driver is in a neutral state" (contributing_only mode
+        # only; the default/content path never hits this branch below).
+        return None
+
+    lead = "The driver is " + (", ".join(parts) if parts else "in a neutral state")
+    env_s = ("; " + ", ".join(env) + ".") if env else "."
+    # The rest-recommendation clause is carried by trigger_sentence's "THE
+    # TRIGGER & CAR STATE" section for service prompts — do not repeat it
+    # here, or a rest_recommended service prompt shows it twice.
+    return lead + env_s
+
+
+_TRIGGER_SENTENCES = {
+    "rest_recommended": "A rest stop is now being recommended",
+    "inattentive_driving_prevention_recovery": "The assistant is trying to keep the driver alert",
+    "route_music": "This is routine in-drive music selection",
+    "child_passenger_experience": "A child is aboard",
+}
+
+# Genuinely-stopped LifecycleStage values ONLY (see
+# aica_api.models.proposal.enums.LifecycleStage). A bare substring check like
+# ``"rest" in ls`` wrongly catches ``before_rest_until_stop``, which means the
+# car is STILL DRIVING toward the rest stop — an invented fact. Use an
+# explicit set instead.
+_STOPPED_STAGES = {"during_rest_stopped", "after_rest_before_restart"}
+
+
+def trigger_sentence(
+    trigger_purpose: str | None, target: dict[str, Any], lifecycle_stage: str | None
+) -> str:
+    """Service-step fact: what the trigger is asking for + the car's motion
+    state (moving vs stopped)."""
+    lead = _TRIGGER_SENTENCES.get(trigger_purpose) if trigger_purpose else None
+    if lead is None:
+        lead = f"The trigger purpose is {trigger_purpose}" if trigger_purpose else "A proposal is being made"
+
+    motion = _reason_row_value(target, "motion_state", "motion")
+    if isinstance(motion, str) and motion:
+        stopped = motion.lower() in ("stopped", "parked", "parking")
+    else:
+        stopped = (lifecycle_stage or "") in _STOPPED_STAGES
+    car = "the car is stopped" if stopped else "the car is moving (active driving)"
+    return f"{lead}; {car}."
+
+
+def preference_sentence(context: dict[str, Any]) -> str | None:
+    """Content-step fact: the driver's registered favorite artist (oshi) and,
+    when available, top genres / age band. Purely best-effort from ``context``
+    — absent fields are silently skipped (never invented)."""
+    oshi_artist = context.get("oshi_artist")
+    dp = context.get("driver_profile") or {}
+    parts: list[str] = []
+    if oshi_artist:
+        parts.append(f"Their favorite artist (oshi) is {oshi_artist}")
+    elif dp.get("oshi_registered") is False:
+        parts.append("They have no registered favorite artist")
+    genres = [g for g, lv in (dp.get("usage_by_genre") or {}).items() if lv in ("high", "mid")]
+    if genres:
+        parts.append("they often listen to " + "/".join(genres))
+    age_band = dp.get("age_band") or context.get("age_band")
+    if age_band:
+        parts.append(f"they are in their {age_band}")
+    if not parts:
+        return None
+    return ". ".join(p[0].upper() + p[1:] for p in parts) + "."
+
+
+def history_sentences(target: dict[str, Any]) -> list[str]:
+    """Driver-history facts (recovery/usage/acceptance/played/skipped) for
+    either a content item or a service candidate, translated from the
+    history-family rows' evidence — never a raw number."""
+    out: list[str] = []
+    for fc in target.get("feature_contributions", []) or []:
+        fid = str(fc.get("feature_id", ""))
+        if feature_family(fid) != "history":
+            continue
+        e = fc.get("e_i")
+        if not isinstance(e, (int, float)):
+            fv = fc.get("feature_value")
+            if isinstance(fv, (int, float)):
+                e = float(fv) / 100.0 if fv > 1 else float(fv)
+        lvl = _lvl3(e, 0.34, 0.66) if isinstance(e, (int, float)) else None
+
+        if fid == "content_recovery_rate" and lvl == "high":
+            out.append("this song has reliably restored the driver's state before")
+        elif fid == "service_recovery_rate" and lvl == "high":
+            out.append("this service has reliably restored the driver's state before")
+        elif fid == "catalog_item_usage_level" and lvl in ("high", "mid"):
+            out.append(f"the driver plays this song {'often' if lvl == 'high' else 'sometimes'}")
+        elif fid in ("service_usage_level", "scene_service_usage_level") and lvl in ("high", "mid"):
+            out.append(f"the driver uses this service {'often' if lvl == 'high' else 'sometimes'}")
+        elif fid == "content_proposal_acceptance_rate" and lvl == "high":
+            out.append("the driver usually accepts song suggestions")
+        elif fid == "service_proposal_acceptance_rate" and lvl == "high":
+            out.append("the driver usually accepts this service when offered")
+        elif fid == "played_items" and isinstance(e, (int, float)) and e >= 0.99:
+            out.append("the driver played this song recently")
+        elif fid == "skipped_items" and isinstance(e, (int, float)) and e >= 0.99:
+            out.append("the driver recently skipped this song")
+        elif fid in ("content_tag_usage_level", "scene_content_tag_usage_level") and lvl in ("high", "mid"):
+            out.append(f"the driver {'often' if lvl == 'high' else 'sometimes'} plays this song's genre")
+        elif fid == "service_recency_state" and isinstance(fc.get("feature_value"), str):
+            fv = fc["feature_value"]
+            if fv and fv != "normal":
+                out.append(f"it has been {fv} since the driver last used this service")
+
+    seen: set[str] = set()
+    uniq: list[str] = []
+    for s in out:
+        if s not in seen:
+            seen.add(s)
+            uniq.append(s)
+    return uniq
+
+
+def _score_strength(c: float) -> str:
+    a = abs(c)
+    if c > 0:
+        tier = (
+            "a major reason" if a >= 0.08 else
+            ("a significant reason" if a >= 0.04 else
+             ("a minor reason" if a >= 0.015 else "a slight factor"))
+        )
+        return tier
+    # Negative contributions are magnitude-aware too (mirroring the positive
+    # tiers), so a strong opposing factor doesn't collapse into the same
+    # trivial phrase as a barely-there one.
+    tier_word = "strongly" if a >= 0.08 else ("moderately" if a >= 0.04 else "slightly")
+    return f"pushed {tier_word} against it"
+
+
+def score_evidence(factors: list[dict[str, Any]], oshi_artist: str | None = None) -> list[str]:
+    """Top |contribution| factors (already extracted by ``_factors_from_target``)
+    as strength words — never the raw fraction."""
+    lines: list[str] = []
+    for f in factors[:6]:
+        c = f["contribution"]
+        if abs(c) < 0.008:
+            continue
+        if f["feature_id"] == "oshi_id" and c > 0:
+            what = f"it is by the driver's favorite artist{f' ({oshi_artist})' if oshi_artist else ''}"
+        else:
+            what = f["label_en"]
+        lines.append(f"- {what}: {_score_strength(c)}")
+    return lines
 
 
 def build_explanation_prompt(
@@ -291,101 +657,14 @@ def build_explanation_prompt(
     dict from the persisted evidence output; ``context`` carries run-level facts
     (``trigger_purpose``, ``lifecycle_stage``). Deterministic — same inputs
     always produce the same prompt (so ``prompt_hash`` is stable).
+
+    Dispatches to the per-step builder.
     """
-    is_service = step == "service"
-    kind_en = "service" if is_service else "song"
-    target_id = str(target.get("candidate_id") if is_service else target.get("item_id") or "")
-    rank = target.get("rank") if is_service else target.get("position")
-    fit = target.get("score") if is_service else target.get("item_fit")
+    from aica_api.services import service_explanation, content_explanation
 
-    factors = _factors_from_target(target)
-    # Service (RankedCandidate) carries supporting_/opposing_feature_ids lists;
-    # content (OrderedItem) instead carries single strongest_support/oppose dicts
-    # ({feature_id, contribution}). Fall back to those so BOTH shapes contribute
-    # equivalent "factors in favor/against" grounding.
-    supporting = [str(x) for x in (target.get("supporting_feature_ids") or [])]
-    opposing = [str(x) for x in (target.get("opposing_feature_ids") or [])]
-    if not supporting:
-        ss = target.get("strongest_support")
-        if isinstance(ss, dict) and ss.get("feature_id"):
-            supporting = [str(ss["feature_id"])]
-    if not opposing:
-        so = target.get("strongest_oppose")
-        if isinstance(so, dict) and so.get("feature_id"):
-            opposing = [str(so["feature_id"])]
-
-    song_facts = _song_facts_lines(target, context) if not is_service else []
-
-    grounding: dict[str, Any] = {
-        "step": step,
-        "target_id": target_id,
-        "kind": kind_en,
-        "rank": rank,
-        "fit": fit,
-        "trigger_purpose": context.get("trigger_purpose"),
-        "lifecycle_stage": context.get("lifecycle_stage"),
-        "song_facts": song_facts,
-        "factors": factors,
-        "supporting": supporting,
-        "opposing": opposing,
-    }
-
-    # ── User message: the full grounding ────────────────────────────────────
-    formula = (
-        "fit = clamp( sum over factors of (weight x response), -1..+1 )"
-        if is_service
-        else "fit = clamp( sum over factors of (weight x evidence x response), -1..+1 )"
-    )
-    lines: list[str] = []
-    fit_txt = f"{fit:+.3f}" if isinstance(fit, (int, float)) else "n/a"
-    rank_txt = f"rank {rank}, " if rank is not None else ""
-    lines.append(f'The assistant selected {kind_en} "{target_id}" ({rank_txt}fit {fit_txt}).')
-    if context.get("trigger_purpose"):
-        lines.append(f"Trigger purpose: {context.get('trigger_purpose')}.")
-    if context.get("lifecycle_stage"):
-        lines.append(f"Driving stage: {context.get('lifecycle_stage')}.")
-
-    if song_facts:
-        lines.append("")
-        lines.append("About the chosen song:")
-        lines.extend(song_facts)
-
-    lines.append("")
-    lines.append("How to read the factors below:")
-    lines.append(f"- {formula}; a higher fit means a stronger overall match.")
-    lines.append(
-        "- Each factor's contribution is POSITIVE when it pushed toward this choice and "
-        "NEGATIVE when it pushed against it; a larger magnitude means a stronger influence."
-    )
-    lines.append(
-        "- The number in [brackets] is that factor's raw value. A factor can be a top "
-        "contributor without its raw value being high, so do NOT describe a value as "
-        "'high' unless the bracketed value truly is."
-    )
-
-    if factors:
-        lines.append("")
-        lines.append("Factors, most influential first (label [raw value]: contribution — meaning):")
-        for f in factors:
-            val = "" if f["value"] in (None, "") else f" [{f['value']}]"
-            meaning = f" — {f['meaning']}" if f["meaning"] else ""
-            lines.append(f"- {f['label_ja']} / {f['label_en']}{val}: {f['contribution']:+.3f}{meaning}")
-    if supporting:
-        labs = ", ".join(label_for(s)["en"] for s in supporting)
-        lines.append(f"Overall pushed TOWARD this choice by: {labs}.")
-    if opposing:
-        labs = ", ".join(label_for(o)["en"] for o in opposing)
-        lines.append(f"Pushed AGAINST by: {labs}.")
-
-    # Terminal format reminder (recency) — the last thing the model reads.
-    lines.append("")
-    lines.append(_FORMAT_REMINDER)
-
-    messages = [
-        ExplainMessage(role="system", content=_SYSTEM_TEMPLATE.format(kind=kind_en)),
-        ExplainMessage(role="user", content="\n".join(lines)),
-    ]
-    return ExplanationPrompt(messages=messages, grounding=grounding)
+    if step == "service":
+        return service_explanation.build_prompt(target, context)
+    return content_explanation.build_prompt(target, context)
 
 
 def prompt_hash(prompt: ExplanationPrompt) -> str:
@@ -508,27 +787,47 @@ def template_rationale(step: str, target: dict[str, Any]) -> list[str]:
     fallback is byte-identical to today's behavior). The content selector emits
     a variable-length list of ``"<ja> / <en>"`` strings; this normalizes that
     into a single ``[ja, en]`` pair. Missing/empty rationale → ``["", ""]``.
+
+    Dispatches to the per-step deterministic template.
     """
-    rationale = target.get("rationale") or []
-    if not isinstance(rationale, list) or not rationale:
-        return ["", ""]
+    from aica_api.services import service_explanation, content_explanation
 
     if step == "service":
-        # Already a positional [ja, en] pair — pad/truncate to length 2.
-        ja = str(rationale[0]) if len(rationale) >= 1 else ""
-        en = str(rationale[1]) if len(rationale) >= 2 else ja
-        return [ja, en]
+        return service_explanation.template(target)
+    return content_explanation.template(target)
 
-    # content: list of combined "<ja> / <en>" entries → clean pair
-    ja_parts: list[str] = []
-    en_parts: list[str] = []
-    for entry in rationale:
-        s = str(entry)
-        if _CONTENT_LANG_SEP in s:
-            left, right = s.split(_CONTENT_LANG_SEP, 1)
-            ja_parts.append(left.strip())
-            en_parts.append(right.strip())
-        else:
-            ja_parts.append(s.strip())
-            en_parts.append(s.strip())
-    return ["、".join(ja_parts), "; ".join(en_parts)]
+
+# ---------------------------------------------------------------------------
+# Shared category readout (§14 fit subtotals -> signed trio + dominant + phrase)
+# ---------------------------------------------------------------------------
+
+_CATEGORY_PHRASES = {
+    "situation": {"ja": "運転状況", "en": "the driving situation"},
+    "preference": {"ja": "運転者の好み", "en": "the driver's taste"},
+    "history": {"ja": "運転者の利用履歴", "en": "the driver's history"},
+}
+
+
+def category_readout(target: dict[str, Any]) -> dict[str, Any] | None:
+    """Bilingual 'what dominated' readout from the §14 fit subtotals.
+
+    Returns None when the target carries no numeric situation/preference/history
+    subtotal (LLM-shaped plans, mock selector), so callers can skip the line.
+    """
+    subs = {
+        cat: target.get(f"{cat}_fit")
+        for cat in ("situation", "preference", "history")
+    }
+    nums = {c: float(v) for c, v in subs.items() if isinstance(v, (int, float))}
+    if not nums:
+        return None
+    dominant = max(nums, key=lambda c: abs(nums[c]))
+    ph = _CATEGORY_PHRASES[dominant]
+    return {
+        "situation": nums.get("situation", 0.0),
+        "preference": nums.get("preference", 0.0),
+        "history": nums.get("history", 0.0),
+        "dominant": dominant,
+        "phrase_ja": f"この選択は主に{ph['ja']}によって決まりました。",
+        "phrase_en": f"This choice was driven mostly by {ph['en']}.",
+    }
