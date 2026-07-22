@@ -24,6 +24,9 @@ def test_service_build_prompt_is_fact_rich_not_scores_only():
     assert "THE TRIGGER & CAR STATE:" in user and "rest stop is now being recommended" in user
     assert "car is stopped" in user
     assert "THE SITUATION RIGHT NOW:" in user
+    # the rest-recommendation clause must appear ONLY in the trigger section,
+    # not duplicated into THE SITUATION RIGHT NOW below it (IMPORTANT fix).
+    assert user.count("rest stop is now being recommended") == 1
     assert "WHY THE ALGORITHM RANKED IT TOP" in user
     # no pre-baked verdict / no raw contribution numbers in the user text
     assert "driven mostly by" not in user.lower()

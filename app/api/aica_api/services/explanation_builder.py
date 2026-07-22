@@ -443,10 +443,10 @@ def situation_sentence(target: dict[str, Any], trigger_purpose: str | None) -> s
         env.append(f"they are on a {road.replace('_', ' ')}")
     env_s = ("; " + ", ".join(env) + ".") if env else "."
 
-    trig = ""
-    if trigger_purpose == "rest_recommended":
-        trig = " A rest stop is now being recommended."
-    return lead + env_s + trig
+    # The rest-recommendation clause is carried by trigger_sentence's "THE
+    # TRIGGER & CAR STATE" section for service prompts — do not repeat it
+    # here, or a rest_recommended service prompt shows it twice.
+    return lead + env_s
 
 
 _TRIGGER_SENTENCES = {
@@ -455,6 +455,13 @@ _TRIGGER_SENTENCES = {
     "route_music": "This is routine in-drive music selection",
     "child_passenger_experience": "A child is aboard",
 }
+
+# Genuinely-stopped LifecycleStage values ONLY (see
+# aica_api.models.proposal.enums.LifecycleStage). A bare substring check like
+# ``"rest" in ls`` wrongly catches ``before_rest_until_stop``, which means the
+# car is STILL DRIVING toward the rest stop — an invented fact. Use an
+# explicit set instead.
+_STOPPED_STAGES = {"during_rest_stopped", "after_rest_before_restart"}
 
 
 def trigger_sentence(
@@ -470,8 +477,7 @@ def trigger_sentence(
     if isinstance(motion, str) and motion:
         stopped = motion.lower() in ("stopped", "parked", "parking")
     else:
-        ls = (lifecycle_stage or "").lower()
-        stopped = any(k in ls for k in ("rest", "stopped", "parking"))
+        stopped = (lifecycle_stage or "") in _STOPPED_STAGES
     car = "the car is stopped" if stopped else "the car is moving (active driving)"
     return f"{lead}; {car}."
 
@@ -548,12 +554,18 @@ def history_sentences(target: dict[str, Any]) -> list[str]:
 
 def _score_strength(c: float) -> str:
     a = abs(c)
-    w = (
-        "a major reason" if a >= 0.08 else
-        ("a significant reason" if a >= 0.04 else
-         ("a minor reason" if a >= 0.015 else "a slight factor"))
-    )
-    return w if c > 0 else "pushed slightly against it"
+    if c > 0:
+        tier = (
+            "a major reason" if a >= 0.08 else
+            ("a significant reason" if a >= 0.04 else
+             ("a minor reason" if a >= 0.015 else "a slight factor"))
+        )
+        return tier
+    # Negative contributions are magnitude-aware too (mirroring the positive
+    # tiers), so a strong opposing factor doesn't collapse into the same
+    # trivial phrase as a barely-there one.
+    tier_word = "strongly" if a >= 0.08 else ("moderately" if a >= 0.04 else "slightly")
+    return f"pushed {tier_word} against it"
 
 
 def score_evidence(factors: list[dict[str, Any]], oshi_artist: str | None = None) -> list[str]:
@@ -564,7 +576,7 @@ def score_evidence(factors: list[dict[str, Any]], oshi_artist: str | None = None
         c = f["contribution"]
         if abs(c) < 0.008:
             continue
-        if f["feature_id"] == "oshi_id":
+        if f["feature_id"] == "oshi_id" and c > 0:
             what = f"it is by the driver's favorite artist{f' ({oshi_artist})' if oshi_artist else ''}"
         else:
             what = f["label_en"]

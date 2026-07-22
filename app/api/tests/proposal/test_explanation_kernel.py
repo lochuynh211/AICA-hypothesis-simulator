@@ -141,7 +141,10 @@ def test_situation_sentence_night_and_traffic_and_rest_trigger():
     assert "it is night" in s
     assert "traffic is heavy" in s
     assert "mountain road" in s
-    assert "rest stop is now being recommended" in s
+    # The rest-recommendation clause is carried by trigger_sentence (service's
+    # "THE TRIGGER & CAR STATE" section) — situation_sentence must NOT repeat
+    # it, or a rest_recommended service prompt shows the clause twice.
+    assert "rest stop is now being recommended" not in s
 
 
 def test_situation_sentence_none_when_no_situation_rows():
@@ -164,6 +167,18 @@ def test_trigger_sentence_infers_car_state_from_lifecycle_stage_when_no_motion_r
 
     s2 = eb.trigger_sentence("rest_recommended", target, "during_rest_stopped")
     assert "car is stopped" in s2
+
+    # before_rest_until_stop: driving TOWARD the rest stop, still moving —
+    # a bare "rest" substring check on the lifecycle stage wrongly reads this
+    # as stopped (CRITICAL regression guard).
+    s3 = eb.trigger_sentence("rest_recommended", target, "before_rest_until_stop")
+    assert "car is moving" in s3
+    assert "car is stopped" not in s3
+
+    # after_rest_before_restart: genuinely stopped (paused after the rest, not
+    # yet driving again).
+    s4 = eb.trigger_sentence("rest_recommended", target, "after_rest_before_restart")
+    assert "car is stopped" in s4
 
 
 def test_preference_sentence_uses_oshi_artist_context_field():
@@ -216,3 +231,33 @@ def test_score_evidence_strength_words_and_oshi_naming():
     assert "pushed slightly against it" in joined  # -0.02
     # no raw numbers leak into the evidence lines
     assert "0.30" not in joined and "0.02" not in joined
+
+
+def test_score_evidence_negative_tiers_are_magnitude_aware():
+    # A strong opposing factor (-0.20) must NOT collapse to the same trivial
+    # phrase as a barely-there one (-0.01) — IMPORTANT regression guard.
+    factors = [
+        {"feature_id": "traffic_state", "label_en": "traffic", "contribution": -0.20},
+        {"feature_id": "night_state", "label_en": "night", "contribution": -0.05},
+        {"feature_id": "road_type", "label_en": "road type", "contribution": -0.01},
+    ]
+    lines = eb.score_evidence(factors)
+    joined = " ".join(lines)
+    assert "pushed strongly against it" in joined  # -0.20
+    assert "pushed moderately against it" in joined  # -0.05
+    assert "pushed slightly against it" in joined  # -0.01
+
+
+def test_score_evidence_oshi_phrasing_requires_positive_contribution():
+    # A (hypothetical) negative oshi contribution must fall back to the plain
+    # label, never render "favorite artist ... pushed against it" — MINOR
+    # regression guard against an invented positive-sounding fact paired with
+    # negative framing.
+    factors = [
+        {"feature_id": "oshi_id", "label_en": "oshi (favorite-artist) match", "contribution": -0.10},
+    ]
+    lines = eb.score_evidence(factors, oshi_artist="YOASOBI")
+    joined = " ".join(lines)
+    assert "favorite artist" not in joined
+    assert "oshi (favorite-artist) match" in joined
+    assert "pushed strongly against it" in joined
