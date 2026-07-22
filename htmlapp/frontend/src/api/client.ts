@@ -39,8 +39,8 @@ import type {
   RunConfig,
   InstantResult,
 } from './types'
-import { dispatch } from '../engine/worker/dispatch'
-import { unwrap, type RpcRequest } from './rpc'
+import { transport } from './transport'
+import { unwrap, type RpcRequest, type RpcResponse } from './rpc'
 
 export type HealthStatus = {
   status: string
@@ -53,7 +53,7 @@ export { MapsError, FeedbackValidationError } from './types'
 export { RunPlanError } from './errors'
 
 async function call<T>(op: RpcRequest['op'], params?: unknown): Promise<T> {
-  return unwrap<T>(await dispatch({ op, params }) as import('./rpc').RpcResponse<T>)
+  return unwrap<T>(await transport.call({ op, params }) as RpcResponse<T>)
 }
 
 // ── Health ─────────────────────────────────────────────────────────────────
