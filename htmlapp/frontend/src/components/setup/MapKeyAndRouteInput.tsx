@@ -3,6 +3,7 @@ import { useRunStore } from '../../state/runStore'
 import { routesAnalyze, listRoutePresets, loadRoutePreset } from '../../api/client'
 import { MapsError } from '../../api/types'
 import type { RouteAlternative, RouteNotice, RoutePresetSummary } from '../../api/types'
+import { t } from '../../i18n/t'
 import ErrorNotice from '../common/ErrorNotice'
 
 /**
@@ -19,10 +20,31 @@ import ErrorNotice from '../common/ErrorNotice'
  *   the Maps error and falls back to the local path.
  */
 
-const NOTICE_LABELS: Record<RouteNotice, string> = {
-  no_rest_stops_found: 'No rest stops found on this route',
-  rest_data_degraded: 'Rest stop data is degraded (using scenario fallback)',
-  rest_data_unavailable: 'Rest stop data unavailable',
+const NOTICE_LABELS: Record<RouteNotice, { ja: string; en: string }> = {
+  no_rest_stops_found: { ja: 'このルートには休憩ポイントが見つかりませんでした', en: 'No rest stops found on this route' },
+  rest_data_degraded: { ja: '休憩ポイントデータが劣化しています（シナリオのフォールバックを使用）', en: 'Rest stop data is degraded (using scenario fallback)' },
+  rest_data_unavailable: { ja: '休憩ポイントデータが利用できません', en: 'Rest stop data unavailable' },
+}
+
+const LABELS = {
+  routeAnalysisFailed: { ja: 'ルート解析に失敗しました', en: 'Route analysis failed' },
+  tryAgainOrLocalFallback: { ja: 'もう一度お試しいただくか、ローカルルートのフォールバックをご利用ください。', en: 'Try again or use the local route fallback.' },
+  failedToLoadPreset: { ja: 'プリセットの読み込みに失敗しました', en: 'Failed to load preset' },
+  tryAnotherPresetOrManual: { ja: '別のプリセットを試すか、手動でルートを入力してください。', en: 'Try another preset or use manual route input.' },
+  presetRoutes: { ja: 'プリセットルート', en: 'Preset Routes' },
+  selectPresetRoute: { ja: '— プリセットルートを選択 —', en: '— Select a preset route —' },
+  loadingPreset: { ja: 'プリセットを読み込み中…', en: 'Loading preset…' },
+  customRoute: { ja: 'カスタムルート', en: 'Custom Route' },
+  mapsApiKey: { ja: 'Maps APIキー', en: 'Maps API Key' },
+  enterMapsApiKey: { ja: 'Google Maps APIキーを入力してください', en: 'Enter Google Maps API key' },
+  start: { ja: '出発地', en: 'Start' },
+  egTokyoStation: { ja: '例: 東京駅', en: 'e.g. Tokyo Station' },
+  end: { ja: '到着地', en: 'End' },
+  egOsakaStation: { ja: '例: 大阪駅', en: 'e.g. Osaka Station' },
+  analyzing: { ja: '解析中…', en: 'Analyzing…' },
+  analyzeRoute: { ja: 'ルートを解析', en: 'Analyze Route' },
+  useLocalRoute: { ja: 'ローカルルートを使用', en: 'Use local route' },
+  selectARoute: { ja: 'ルートを選択:', en: 'Select a route:' },
 }
 
 export default function MapKeyAndRouteInput() {
@@ -35,7 +57,9 @@ export default function MapKeyAndRouteInput() {
     alternatives,
     selectedRouteId,
     mapsError,
+    uiLanguage,
   } = state
+  const lang = uiLanguage
 
   const [localKey, setLocalKey] = useState(mapsKey)
   const [analyzing, setAnalyzing] = useState(false)
@@ -94,8 +118,8 @@ export default function MapKeyAndRouteInput() {
           type: 'SET_MAPS_ERROR',
           error: {
             error_type: 'UNKNOWN',
-            message: err instanceof Error ? err.message : 'Route analysis failed',
-            suggestion: 'Try again or use the local route fallback.',
+            message: err instanceof Error ? err.message : t(LABELS.routeAnalysisFailed, lang),
+            suggestion: t(LABELS.tryAgainOrLocalFallback, lang),
           },
         })
       }
@@ -132,8 +156,8 @@ export default function MapKeyAndRouteInput() {
         type: 'SET_MAPS_ERROR',
         error: {
           error_type: 'PRESET_ERROR',
-          message: err instanceof Error ? err.message : 'Failed to load preset',
-          suggestion: 'Try another preset or use manual route input.',
+          message: err instanceof Error ? err.message : t(LABELS.failedToLoadPreset, lang),
+          suggestion: t(LABELS.tryAnotherPresetOrManual, lang),
         },
       })
     } finally {
@@ -149,7 +173,7 @@ export default function MapKeyAndRouteInput() {
       {presets.length > 0 && (
         <div style={{ marginBottom: '8px' }}>
           <label htmlFor="route-preset" style={{ display: 'block', fontSize: '0.8em', fontWeight: 'bold', marginBottom: '4px' }}>
-            Preset Routes
+            {t(LABELS.presetRoutes, lang)}
           </label>
           <select
             id="route-preset"
@@ -165,15 +189,15 @@ export default function MapKeyAndRouteInput() {
             disabled={loadingPreset}
             style={{ width: '100%', fontSize: '0.8em', padding: '6px' }}
           >
-            <option value="">— Select a preset route —</option>
+            <option value="">{t(LABELS.selectPresetRoute, lang)}</option>
             {presets.map((preset) => (
               <option key={preset.id} value={preset.id}>
-                {preset.label.en} ({preset.distance_km} km, ~{preset.duration_min} min)
+                {t(preset.label, lang)} ({preset.distance_km} km, ~{preset.duration_min} min)
               </option>
             ))}
           </select>
           {loadingPreset && (
-            <p style={{ fontSize: '0.75em', color: '#666', margin: '4px 0' }}>Loading preset…</p>
+            <p style={{ fontSize: '0.75em', color: '#666', margin: '4px 0' }}>{t(LABELS.loadingPreset, lang)}</p>
           )}
         </div>
       )}
@@ -181,18 +205,18 @@ export default function MapKeyAndRouteInput() {
       {/* Manual / Customize route input */}
       <div style={{ opacity: manualDisabled ? 0.4 : 1, pointerEvents: manualDisabled ? 'none' : 'auto' }}>
         <p style={{ margin: '0 0 4px', fontSize: '0.8em', fontWeight: 'bold' }}>
-          Custom Route
+          {t(LABELS.customRoute, lang)}
         </p>
         <div style={{ marginBottom: '4px' }}>
           <label htmlFor="maps-api-key" style={{ display: 'block', fontSize: '0.8em' }}>
-            Maps API Key
+            {t(LABELS.mapsApiKey, lang)}
           </label>
           <input
             id="maps-api-key"
             type="password"
             value={localKey}
             onChange={handleKeyChange}
-            placeholder="Enter Google Maps API key"
+            placeholder={t(LABELS.enterMapsApiKey, lang)}
             autoComplete="off"
             disabled={manualDisabled}
             style={{ width: '100%', fontSize: '0.8em', padding: '4px' }}
@@ -201,14 +225,14 @@ export default function MapKeyAndRouteInput() {
 
         <div style={{ marginBottom: '4px' }}>
           <label htmlFor="route-start" style={{ display: 'block', fontSize: '0.8em' }}>
-            Start
+            {t(LABELS.start, lang)}
           </label>
           <input
             id="route-start"
             type="text"
             value={mapsStart}
             onChange={handleStartChange}
-            placeholder="e.g. Tokyo Station"
+            placeholder={t(LABELS.egTokyoStation, lang)}
             disabled={manualDisabled}
             style={{ width: '100%', fontSize: '0.8em', padding: '4px' }}
           />
@@ -216,14 +240,14 @@ export default function MapKeyAndRouteInput() {
 
         <div style={{ marginBottom: '6px' }}>
           <label htmlFor="route-end" style={{ display: 'block', fontSize: '0.8em' }}>
-            End
+            {t(LABELS.end, lang)}
           </label>
           <input
             id="route-end"
             type="text"
             value={mapsEnd}
             onChange={handleEndChange}
-            placeholder="e.g. Osaka Station"
+            placeholder={t(LABELS.egOsakaStation, lang)}
             disabled={manualDisabled}
             style={{ width: '100%', fontSize: '0.8em', padding: '4px' }}
           />
@@ -234,7 +258,7 @@ export default function MapKeyAndRouteInput() {
           disabled={analyzing || manualDisabled}
           style={{ width: '100%', padding: '6px', marginBottom: '6px' }}
         >
-          {analyzing ? 'Analyzing…' : 'Analyze Route'}
+          {analyzing ? t(LABELS.analyzing, lang) : t(LABELS.analyzeRoute, lang)}
         </button>
       </div>
 
@@ -245,7 +269,7 @@ export default function MapKeyAndRouteInput() {
             <p style={{ margin: '4px 0', fontSize: '0.9em', color: '#666' }}>{mapsError.suggestion}</p>
           )}
           <button onClick={handleUseLocalRoute} style={{ fontSize: '0.8em', padding: '4px 8px', marginTop: '4px' }}>
-            Use local route
+            {t(LABELS.useLocalRoute, lang)}
           </button>
         </ErrorNotice>
       )}
@@ -254,7 +278,7 @@ export default function MapKeyAndRouteInput() {
       {alternatives.length > 1 && (
         <div data-testid="alternatives-list" style={{ marginTop: '6px' }}>
           <p style={{ margin: '0 0 4px', fontSize: '0.75em', color: '#555' }}>
-            Select a route:
+            {t(LABELS.selectARoute, lang)}
           </p>
           {alternatives.map((alt: RouteAlternative) => (
             <div
@@ -286,7 +310,7 @@ export default function MapKeyAndRouteInput() {
                   {alt.notices.length > 0 && (
                     <ul style={{ margin: '4px 0 0', padding: '0 0 0 16px', fontSize: '0.75em', color: '#92400e' }}>
                       {alt.notices.map((n) => (
-                        <li key={n}>{NOTICE_LABELS[n] ?? n}</li>
+                        <li key={n}>{NOTICE_LABELS[n] ? t(NOTICE_LABELS[n], lang) : n}</li>
                       ))}
                     </ul>
                   )}

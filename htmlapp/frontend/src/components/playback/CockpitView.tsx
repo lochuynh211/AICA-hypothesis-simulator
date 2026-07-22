@@ -4,6 +4,10 @@ import { t } from '../../i18n/t'
 import type { LocalizedLabel } from '../../i18n/t'
 import type { ReplayTick } from '../../replay/replaySource'
 
+const LABELS = {
+  navigationView: { ja: 'ナビゲーションビュー', en: 'Navigation view' },
+}
+
 export default function CockpitView({ replayTick }: { replayTick?: ReplayTick | null } = {}) {
   const { state } = useRunStore()
   const { paused, latestDecision, runState, uiLanguage } = state
@@ -74,7 +78,7 @@ export default function CockpitView({ replayTick }: { replayTick?: ReplayTick | 
 
   return (
     <div data-testid="nav-view" style={{ padding: '16px' }}>
-      <p style={{ color: '#888', marginBottom: '8px' }}>Navigation view</p>
+      <p style={{ color: '#888', marginBottom: '8px' }}>{t(LABELS.navigationView, uiLanguage)}</p>
       {latestDecision && (
         <span data-testid="decision-explanation" style={{ fontSize: '0.9em' }}>
           {t(latestDecision.explanation as LocalizedLabel, uiLanguage)}

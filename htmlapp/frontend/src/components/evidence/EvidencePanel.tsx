@@ -15,6 +15,19 @@
 import { useState } from 'react'
 import { getEvidence, getEvidenceMarkdown } from '../../api/client'
 import { useRunStore } from '../../state/runStore'
+import { t } from '../../i18n/t'
+
+const LABELS = {
+  title: { ja: 'EVIDENCE EXPORT', en: 'EVIDENCE EXPORT' },
+  subtitle: { ja: '§14.2 — シミュレーター事実 + 人によるレビュー', en: '§14.2 — simulator facts + human review' },
+  copying: { ja: 'コピー中…', en: 'Copying…' },
+  copied: { ja: 'コピーしました！', en: 'Copied!' },
+  error: { ja: 'エラー', en: 'Error' },
+  copyJson: { ja: 'JSONをコピー', en: 'Copy JSON' },
+  fetching: { ja: '取得中…', en: 'Fetching…' },
+  downloaded: { ja: 'ダウンロードしました！', en: 'Downloaded!' },
+  copyMd: { ja: '.mdをコピー', en: 'Copy .md' },
+}
 
 const C = {
   bg: '#1a1a1a',
@@ -158,8 +171,8 @@ export default function EvidencePanel({ runId: runIdProp }: EvidencePanelProps =
           gap: '8px',
         }}
       >
-        <span>EVIDENCE EXPORT</span>
-        <span style={{ color: C.faint, fontWeight: 400 }}>§14.2 — simulator facts + human review</span>
+        <span>{t(LABELS.title, uiLanguage)}</span>
+        <span style={{ color: C.faint, fontWeight: 400 }}>{t(LABELS.subtitle, uiLanguage)}</span>
       </div>
 
       {/* Buttons */}
@@ -180,12 +193,12 @@ export default function EvidencePanel({ runId: runIdProp }: EvidencePanelProps =
           }}
         >
           {copyStatus === 'copying'
-            ? 'Copying…'
+            ? t(LABELS.copying, uiLanguage)
             : copyStatus === 'ok'
-              ? 'Copied!'
+              ? t(LABELS.copied, uiLanguage)
               : copyStatus === 'error'
-                ? 'Error'
-                : 'Copy JSON'}
+                ? t(LABELS.error, uiLanguage)
+                : t(LABELS.copyJson, uiLanguage)}
         </button>
 
         {/* JSON download */}
@@ -204,11 +217,11 @@ export default function EvidencePanel({ runId: runIdProp }: EvidencePanelProps =
           }}
         >
           {dlStatus === 'fetching'
-            ? 'Fetching…'
+            ? t(LABELS.fetching, uiLanguage)
             : dlStatus === 'ok'
-              ? 'Downloaded!'
+              ? t(LABELS.downloaded, uiLanguage)
               : dlStatus === 'error'
-                ? 'Error'
+                ? t(LABELS.error, uiLanguage)
                 : `Download evidence-${runId}.json`}
         </button>
 
@@ -228,12 +241,12 @@ export default function EvidencePanel({ runId: runIdProp }: EvidencePanelProps =
           }}
         >
           {copyMdStatus === 'copying'
-            ? 'Copying…'
+            ? t(LABELS.copying, uiLanguage)
             : copyMdStatus === 'ok'
-              ? 'Copied!'
+              ? t(LABELS.copied, uiLanguage)
               : copyMdStatus === 'error'
-                ? 'Error'
-                : 'Copy .md'}
+                ? t(LABELS.error, uiLanguage)
+                : t(LABELS.copyMd, uiLanguage)}
         </button>
 
         {/* Markdown download (S8) */}
@@ -252,11 +265,11 @@ export default function EvidencePanel({ runId: runIdProp }: EvidencePanelProps =
           }}
         >
           {dlMdStatus === 'fetching'
-            ? 'Fetching…'
+            ? t(LABELS.fetching, uiLanguage)
             : dlMdStatus === 'ok'
-              ? 'Downloaded!'
+              ? t(LABELS.downloaded, uiLanguage)
               : dlMdStatus === 'error'
-                ? 'Error'
+                ? t(LABELS.error, uiLanguage)
                 : `Download evidence-${runId}.md`}
         </button>
       </div>

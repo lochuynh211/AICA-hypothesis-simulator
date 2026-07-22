@@ -17,6 +17,13 @@ import {
   type ThresholdRead,
 } from './formulationTemplates'
 
+const LABELS = {
+  selectPackagePrompt: { en: 'Select a package to view its formulation.', ja: 'パッケージを選択すると、その計算式が表示されます。' },
+  otherSectionTitle: { en: 'Other', ja: 'その他' },
+  noHyperparameters: { en: 'No hyperparameters declared for this package.', ja: 'このパッケージにはハイパーパラメータが定義されていません。' },
+  hyperparametersHeading: { en: 'Hyperparameters', ja: 'ハイパーパラメータ' },
+}
+
 /**
  * AlgorithmFormulationPanel (feature 009, FE3 + UX-FE1) — right editor panel
  * of the new setup screen (others/aica_setup_screen_uiux.md "Right panel —
@@ -126,7 +133,7 @@ export default function AlgorithmFormulationPanel() {
         <PackageSelector />
       </StepGate>
       {!scenarioSelected ? null : !selectedPackageId || !manifest ? (
-        <div style={{ fontSize: '0.85em', color: '#6b7280' }}>Select a package to view its formulation.</div>
+        <div style={{ fontSize: '0.85em', color: '#6b7280' }}>{t(LABELS.selectPackagePrompt, uiLanguage)}</div>
       ) : template ? (
         <FormulationTemplateView
           template={template}
@@ -178,7 +185,7 @@ function FormulationTemplateView({
   const leftover = (manifest.hyperparameters ?? []).filter((d) => !usedKeys.has(d.key))
   const sections: FormulationSection[] =
     leftover.length > 0
-      ? [...template.sections, { id: 'other', title: 'Other', extraHyperparameters: leftover.map((d) => d.key) }]
+      ? [...template.sections, { id: 'other', title: LABELS.otherSectionTitle, extraHyperparameters: leftover.map((d) => d.key) }]
       : template.sections
 
   return (
@@ -211,7 +218,7 @@ function FormulationTemplateView({
               }}
             >
               <span>{isCollapsed ? '▸' : '▾'}</span>
-              <span>{section.title}</span>
+              <span>{t(section.title, ctx.uiLanguage)}</span>
             </button>
             {!isCollapsed && (
               <div style={{ marginTop: '4px' }}>
@@ -543,13 +550,13 @@ function FallbackHyperparameterList({ manifest, ctx }: { manifest: PackageManife
   if (defs.length === 0) {
     return (
       <div data-testid="algorithm-formulation-fallback" style={{ fontSize: '0.85em', color: '#6b7280' }}>
-        No hyperparameters declared for this package.
+        {t(LABELS.noHyperparameters, ctx.uiLanguage)}
       </div>
     )
   }
   return (
     <div data-testid="algorithm-formulation-fallback">
-      <h3 style={{ fontSize: '0.75em', fontWeight: 600, color: '#666', margin: '4px 0' }}>Hyperparameters</h3>
+      <h3 style={{ fontSize: '0.75em', fontWeight: 600, color: '#666', margin: '4px 0' }}>{t(LABELS.hyperparametersHeading, ctx.uiLanguage)}</h3>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
         {defs.map((def) => (
           <ExtraHyperparameterView key={def.key} keyName={def.key} ctx={ctx} />

@@ -1,7 +1,19 @@
 import { useRunStore } from '../../state/runStore'
 import { routesAnalyze, createRunPlan, regenerateRunPlan, createRun } from '../../api/client'
 import type { RouteFacts, DisplayRoute } from '../../api/types'
+import { t } from '../../i18n/t'
 import ErrorNotice from '../common/ErrorNotice'
+
+const LABELS = {
+  failedToBuildRunPlan: { ja: '実行プランの作成に失敗しました', en: 'Failed to build run plan' },
+  failedToRegenerateRunPlan: { ja: '実行プランの再生成に失敗しました', en: 'Failed to regenerate run plan' },
+  failedToStartRun: { ja: '実行の開始に失敗しました', en: 'Failed to start run' },
+  previewPlan: { ja: 'プランをプレビュー', en: 'Preview Plan' },
+  planReady: { ja: 'プラン準備完了: ', en: 'Plan ready: ' },
+  regenerate: { ja: '再生成', en: 'Regenerate' },
+  startRun: { ja: '実行開始', en: 'Start Run' },
+  invalidValuesSuffix: { ja: '個の無効な値があります — プレビュー前に修正してください', en: ' invalid value(s) — fix before previewing' },
+}
 
 /**
  * PlanPreview (T024 / M4) — orchestrates the setup flow:
@@ -36,7 +48,9 @@ export default function PlanPreview() {
     tickSecondsOverride,
     initialDrowsiness,
     initialFatigue,
+    uiLanguage,
   } = state
+  const lang = uiLanguage
 
   const hasActiveRun = runState !== null && runState.status !== 'completed'
   const hasValidationErrors = validationErrors.length > 0
@@ -121,7 +135,7 @@ export default function PlanPreview() {
         effectiveSetup: resp.effective_setup,
       })
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to build run plan'
+      const message = err instanceof Error ? err.message : t(LABELS.failedToBuildRunPlan, lang)
       dispatch({ type: 'SET_SETUP_ERROR', message })
     }
   }
@@ -141,7 +155,7 @@ export default function PlanPreview() {
         effectiveSetup: resp.effective_setup,
       })
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to regenerate run plan'
+      const message = err instanceof Error ? err.message : t(LABELS.failedToRegenerateRunPlan, lang)
       dispatch({ type: 'SET_SETUP_ERROR', message })
     }
   }
@@ -152,7 +166,7 @@ export default function PlanPreview() {
       const rs = await createRun(planId)
       dispatch({ type: 'RUN_CREATED', runState: rs })
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to start run'
+      const message = err instanceof Error ? err.message : t(LABELS.failedToStartRun, lang)
       dispatch({ type: 'SET_RUN_ERROR', message })
     }
   }
@@ -164,13 +178,13 @@ export default function PlanPreview() {
         disabled={!canPreview}
         style={{ width: '100%', padding: '6px' }}
       >
-        Preview Plan
+        {t(LABELS.previewPlan, lang)}
       </button>
 
       {planId && effectiveSetup && (
         <div data-testid="plan-summary" style={{ marginTop: '8px' }}>
           <p style={{ fontSize: '0.75em', color: '#444', margin: '0 0 4px' }}>
-            Plan ready: <code>{planId}</code>
+            {t(LABELS.planReady, lang)}<code>{planId}</code>
           </p>
           <pre
             data-testid="effective-setup"
@@ -180,21 +194,21 @@ export default function PlanPreview() {
           </pre>
           <div style={{ display: 'flex', gap: '6px' }}>
             <button onClick={handleRegenerate} style={{ flex: 1, padding: '6px' }}>
-              Regenerate
+              {t(LABELS.regenerate, lang)}
             </button>
             <button
               onClick={handleStart}
               disabled={hasActiveRun}
               style={{ flex: 1, padding: '6px' }}
             >
-              Start Run
+              {t(LABELS.startRun, lang)}
             </button>
           </div>
         </div>
       )}
 
       {hasValidationErrors && (
-        <ErrorNotice testid="setup-validation-error" message={`${validationErrors.length} invalid value(s) — fix before previewing`} />
+        <ErrorNotice testid="setup-validation-error" message={`${validationErrors.length}${t(LABELS.invalidValuesSuffix, lang)}`} />
       )}
       {setupError && (
         <ErrorNotice testid="setup-error" message={setupError} />

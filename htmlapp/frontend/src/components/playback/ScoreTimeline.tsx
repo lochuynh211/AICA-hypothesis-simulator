@@ -1,5 +1,5 @@
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { timelineYDomain, type TimelineData } from './timelineData'
+import { timelineYDomain, type TimelineData, type TimelineFire } from './timelineData'
 import { t, type UiLanguage, type BilingualLabel } from '../../i18n/t'
 
 // Road-band colors are COPIED VERBATIM from MapSurface's ROAD_COLORS so a road
@@ -40,18 +40,35 @@ const TRIGGER_COLOR = '#dc2626'
 const REST_SPOT_COLOR = '#f59e0b'
 const SPIKE_COLOR = '#db2777'
 const TRACK_COLOR = '#e2e8f0'
+// Journey marker (feature 020): purple = after-nap service (the green
+// "driving after rest" dot was dropped — owner decision).
+const AFTER_NAP_COLOR = '#9333ea'
+// Traffic-jam sub-bar color (feature 020) — matches the setup painter's jam red.
+const JAM_COLOR = '#dc2626'
 
 const W_FALLBACK = 760
+
+const LABELS = {
+  routeTimeline: { ja: 'ルートタイムライン', en: 'Route timeline' },
+}
 
 export type ScoreTimelineTestIds = {
   root?: string; svg?: string; curve?: string; monotonyCurve?: string
   threshold?: string; monotonyThreshold?: string
   fireGroup?: string; fire?: string; monotonyFire?: string
   spikeGroup?: string; spike?: string
+  /** Traffic-jam sub-bar group (feature 020). */
+  jamGroup?: string
   restSpotGroup?: string; restDot?: string; restOptionGroup?: string
   recoveryWindow?: string; completion?: string; playhead?: string
   legend?: string
   segment?: (i: number) => string
+  /** Testid for the (invisible, wider-than-the-line) per-fire click hit-rect —
+   *  only rendered when `onFireClick` is supplied (see `ScoreTimelineProps`). */
+  fireHit?: (i: number) => string
+  /** Testid for the (invisible, wider) per-rest-option journey-dot hit-circle —
+   *  only rendered when `onRestOptionClick` is supplied. */
+  restOptionHit?: (i: number) => string
 }
 
 export type ScoreTimelineProps = {
@@ -72,6 +89,24 @@ export type ScoreTimelineProps = {
   showLegend?: boolean
   /** UI language for the built-in legend labels (default 'en'). */
   lang?: UiLanguage
+  /** Render the rest-JOURNEY marker (feature 020): a purple "after-nap service"
+   * dot above each orange rest-spot dot. Off by default so the Trigger screen is
+   * unaffected; the Combined quickview turns it on. */
+  showJourneyMarkers?: boolean
+  /** ADDITIVE, feature-020 Slice-2c (Task 5): when supplied, each fire marker
+   *  gains a transparent, wider hit-rect calling this with the fire and its
+   *  index on click — e.g. the merged quickview projection strip's
+   *  click-to-inspect affordance. `undefined` (the default) renders byte-
+   *  identical to before this prop existed: no hit-rect, no click affordance,
+   *  every existing ScoreTimeline usage (InstantResultStrip, playback,
+   *  MergedCenterPanel's live trace) is unaffected. */
+  onFireClick?: (fire: TimelineFire, index: number) => void
+  /** ADDITIVE, feature-020 (clickable journey dot): when supplied (only with
+   *  `showJourneyMarkers`), each purple "after-nap" dot for rest-option `i` gains
+   *  a transparent, wider hit-circle calling this with `i` on click — the
+   *  quickview's after-nap proposal inspect affordance. `undefined` (default)
+   *  renders exactly as before: no hit-circle, no click. */
+  onRestOptionClick?: (index: number) => void
 }
 
 function useMeasuredWidth<T extends HTMLElement>(ref: React.RefObject<T>): number {
@@ -93,6 +128,7 @@ export default function ScoreTimeline({
   data, revealFraction = 1, ghostAhead = false, animated = false,
   showPlayhead = false, playheadAriaLabel, height = 92, testIds = {},
   thresholdLabel, monotonyThresholdLabel, restDotAriaLabel, showLegend = false, lang = 'en',
+  showJourneyMarkers = false, onFireClick, onRestOptionClick,
 }: ScoreTimelineProps) {
   const ref = useRef<HTMLDivElement>(null)
   const measured = useMeasuredWidth(ref)
@@ -106,6 +142,9 @@ export default function ScoreTimeline({
   const SEG_TOP = SEG_BOTTOM - 14
   const CURVE_BOTTOM = SEG_TOP - 8
   const BAND_MID = (SEG_TOP + SEG_BOTTOM) / 2
+  // Thin traffic-jam sub-bar, drawn in the gap just above the road-type bar.
+  const JAM_BOTTOM = SEG_TOP - 2
+  const JAM_TOP = JAM_BOTTOM - 3
 
   const { yMin, yMax } = useMemo(() => timelineYDomain(data), [data])
   const yPix = (v: number) => CURVE_BOTTOM - ((v - yMin) / (yMax - yMin || 1)) * (CURVE_BOTTOM - CURVE_TOP)
@@ -144,7 +183,7 @@ export default function ScoreTimeline({
   return (
     <div ref={ref} data-testid={testIds.root} style={{ position: 'relative', width: '100%' }}>
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img"
-        aria-label="Route timeline" data-testid={testIds.svg}>
+        aria-label={t(LABELS.routeTimeline, lang)} data-testid={testIds.svg}>
         <defs>
           <clipPath id={clipId}>
             <rect x={0} y={0} width={revealX} height={H} style={{ transition: trans }} />
@@ -171,6 +210,21 @@ export default function ScoreTimeline({
           </>
         ) : (
           data.segments.map((seg, i) => bandRect(seg, i, true))
+        )}
+
+        {/* Traffic-jam sub-bar (feature 020) — a thin bar just above the road
+            bar marking painted jam ranges, drawn FORWARD (full width, not
+            reveal-clipped) so the reviewer sees where jams are before the car
+            reaches them. Guarded with `?? []` so hand-built TimelineData
+            fixtures predating the field still render. */}
+        {(data.trafficJams ?? []).length > 0 && (
+          <g data-testid={testIds.jamGroup}>
+            {(data.trafficJams ?? []).map((j, i) => (
+              <rect key={`jam-${i}`} x={j.fromX * W} y={JAM_TOP}
+                width={Math.max(0, (j.toX - j.fromX) * W)} height={JAM_BOTTOM - JAM_TOP}
+                fill={JAM_COLOR} rx={1} />
+            ))}
+          </g>
         )}
 
         {/* Threshold lines — drawn FORWARD (full width, not revealed progressively):
@@ -209,6 +263,23 @@ export default function ScoreTimeline({
                 fill={REST_SPOT_COLOR} stroke="#fff" strokeWidth={2}
                 aria-label={restDotAriaLabel} />
             ))}
+            {/* Journey marker (feature 020): a PURPLE "after-nap service" dot
+                stacked above each orange rest-spot dot. Clickable when
+                `onRestOptionClick` is supplied — inspects rest-option `i`'s
+                after-nap proposal. (The green "driving-after-rest" dot was
+                dropped — owner decision: under rest_recommended there is no
+                matrix-valid active_driving_content proposal to project, and on
+                the distance axis it collapses onto this same route position.) */}
+            {showJourneyMarkers && data.restDots.map((x, i) => (
+              <circle key={`nap-${i}`} cx={x * W} cy={BAND_MID - 13} r={5}
+                fill={AFTER_NAP_COLOR} stroke="#fff" strokeWidth={1.5}
+                style={onRestOptionClick ? { cursor: 'pointer' } : undefined} />
+            ))}
+            {onRestOptionClick && data.restDots.map((x, i) => (
+              <circle key={`nap-hit-${i}`} data-testid={testIds.restOptionHit?.(i)}
+                cx={x * W} cy={BAND_MID - 13} r={11} fill="transparent"
+                style={{ cursor: 'pointer' }} onClick={() => onRestOptionClick(i)} />
+            ))}
           </g>
         )}
         {testIds.restOptionGroup != null && data.restDots.length > 0 && (
@@ -246,7 +317,14 @@ export default function ScoreTimeline({
             </g>
           )}
           {data.fires.length > 0 && (
-            <FireGroup testIds={testIds} fires={data.fires} W={W} top={CURVE_TOP} bottom={SEG_BOTTOM} />
+            <FireGroup
+              testIds={testIds}
+              fires={data.fires}
+              W={W}
+              top={CURVE_TOP}
+              bottom={SEG_BOTTOM}
+              onFireClick={onFireClick}
+            />
           )}
           {data.completionX != null && (
             <line data-testid={testIds.completion} x1={data.completionX * W} x2={data.completionX * W}
@@ -276,28 +354,47 @@ export default function ScoreTimeline({
             <LegendSwatch key={type} color={SEGMENT_COLORS[type] ?? DEFAULT_SEGMENT_COLOR}
               label={segLabel(type, lang)} />
           ))}
-          {data.restDots.length > 0 && <LegendDot color={REST_SPOT_COLOR} label={t({ en: 'chosen rest spot', ja: '選択した休憩地点' }, lang)} />}
+          {(data.trafficJams ?? []).length > 0 && <LegendSwatch color={JAM_COLOR} label={t({ en: 'traffic jam', ja: '渋滞' }, lang)} />}
+          {data.restDots.length > 0 && <LegendDot color={REST_SPOT_COLOR} label={t({ en: showJourneyMarkers ? 'rest spot' : 'chosen rest spot', ja: showJourneyMarkers ? '休憩地点' : '選択した休憩地点' }, lang)} />}
+          {showJourneyMarkers && data.restDots.length > 0 && <LegendDot color={AFTER_NAP_COLOR} label={t({ en: 'after-nap service', ja: '仮眠後サービス' }, lang)} />}
         </div>
       )}
     </div>
   )
 }
 
-function FireGroup({ testIds, fires, W, top, bottom }: {
+// Wider-than-the-line invisible hit-rect half-width (px) — a 2px-wide fire
+// line is nearly impossible to click precisely; the hit-rect gives it a
+// comfortable click/tap target without changing what's visibly drawn.
+const FIRE_HIT_HALF_WIDTH = 8
+
+function FireGroup({ testIds, fires, W, top, bottom, onFireClick }: {
   testIds: ScoreTimelineTestIds
-  fires: { x: number; kind: 'rest' | 'monotony' }[]
+  fires: TimelineFire[]
   W: number; top: number; bottom: number
+  onFireClick?: (fire: TimelineFire, index: number) => void
 }) {
-  const lines = fires.map((f, i) => {
+  const nodes = fires.flatMap((f, i) => {
     const isRest = f.kind === 'rest'
-    return (
-      <line key={i} data-testid={isRest ? testIds.fire : (testIds.monotonyFire ?? testIds.fire)}
+    const line = (
+      <line key={`fire-${i}`} data-testid={isRest ? testIds.fire : (testIds.monotonyFire ?? testIds.fire)}
         x1={f.x * W} x2={f.x * W} y1={top} y2={bottom}
         stroke={isRest ? TRIGGER_COLOR : MONOTONY_COLOR} strokeWidth={isRest ? 2 : 1}
         strokeDasharray={isRest ? undefined : '2 3'} opacity={isRest ? 1 : 0.7} />
     )
+    // Additive only when a caller opts in via onFireClick — when it's
+    // undefined (every pre-existing usage), `nodes` is exactly `[line, line, ...]`,
+    // byte-identical to the render before this hit-rect existed.
+    if (!onFireClick) return [line]
+    const hit = (
+      <rect key={`fire-hit-${i}`} data-testid={testIds.fireHit?.(i)}
+        x={f.x * W - FIRE_HIT_HALF_WIDTH} y={top} width={FIRE_HIT_HALF_WIDTH * 2} height={bottom - top}
+        fill="transparent" style={{ cursor: 'pointer' }}
+        onClick={() => onFireClick(f, i)} />
+    )
+    return [line, hit]
   })
-  return testIds.fireGroup ? <g data-testid={testIds.fireGroup}>{lines}</g> : <>{lines}</>
+  return testIds.fireGroup ? <g data-testid={testIds.fireGroup}>{nodes}</g> : <>{nodes}</>
 }
 
 /** Legend entry for a score/threshold line (colored line + label). */

@@ -1,7 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRunStore } from '../../state/runStore'
+import type { RestSpot } from '../../api/types'
 import { useRouteProgress } from '../playback/useRouteProgress'
 import { useSmoothFraction } from '../playback/useSmoothFraction'
+import { t } from '../../i18n/t'
+import { useLanguage } from '../../state/language'
+
+const LABELS = {
+  authFailed: {
+    ja: 'Google Maps の認証に失敗しました。API キーとドメイン制限を確認してください。',
+    en: 'Google Maps authorization failed. Verify your API key and domain restrictions.',
+  },
+  start: { ja: '出発地', en: 'Start' },
+  destination: { ja: '目的地', en: 'Destination' },
+  initFailed: { ja: '地図の初期化に失敗しました', en: 'Map initialization failed' },
+  mapUnavailable: { ja: '地図を利用できません — ', en: 'Map unavailable — ' },
+  routePosition: { ja: 'ルート上の位置', en: 'Route position' },
+  proposalPosition: { ja: '提案の位置', en: 'Proposal position' },
+  chosenRestSpot: { ja: '選択済みの休憩スポット', en: 'Chosen Rest Spot' },
+  chosenRestSpotPrefix: { ja: '選択済みの休憩スポット: ', en: 'Chosen rest spot: ' },
+}
 
 /**
  * MapSurface (T008 / M4) — Google Maps route surface for the playback panel.
@@ -87,15 +105,33 @@ function slicePath(path: any[], cum: number[], total: number, fStart: number, fE
   return pts
 }
 
-export default function MapSurface() {
+export default function MapSurface({
+  fractionOverride,
+  proposalFractionsOverride,
+  restSpotsOverride,
+  jamRangesKm,
+}: {
+  fractionOverride?: number | null
+  /** Decision/fire positions (route_fraction 0-1) — the Combined Simulator feeds
+   * these from its coordinator (the merged run has no runStore trace). */
+  proposalFractionsOverride?: number[]
+  /** Accepted rest spots — the Combined Simulator feeds these from its
+   * coordinator (no runStore `restHistory`). */
+  restSpotsOverride?: RestSpot[]
+  /** Painted traffic-jam ranges as `[start_km, end_km]` pairs (feature 020) —
+   * drawn as thick RED polylines over the route so the reviewer sees where the
+   * jam sits. Empty/undefined → no jam overlay. */
+  jamRangesKm?: [number, number][]
+} = {}) {
   const { state } = useRunStore()
   const { mapsKey, alternatives, selectedRouteId } = state
+  const { lang } = useLanguage()
 
   // Accepted rest spots (one per accepted rest), captured at accept time into
   // restHistory so the gold markers persist after recovery ends instead of
   // vanishing with the transient recovery.rest_spot. Drives both the
   // geographic markers and the DOM-overlay fallback markers.
-  const restSpots = state.restHistory.map((r) => r.spot)
+  const restSpots = restSpotsOverride ?? state.restHistory.map((r) => r.spot)
 
   // mapsReady: true when the Google Maps SDK is available (either pre-loaded or
   // after the async script callback fires). Drives the map-init useEffect so
@@ -117,7 +153,13 @@ export default function MapSurface() {
   const display = selectedAlt?.display ?? null
 
   // ── Route position (shared, clamped) + eased car fraction ─────────────────
-  const { currentFraction, proposalFractions } = useRouteProgress()
+  // `fractionOverride` (feature 020) lets the Combined Simulator drive the car
+  // from its coordinator's live `route_fraction` — the merged run has no
+  // runStore run, so `useRouteProgress()` (runStore-driven) would stay at 0.
+  // Omitted everywhere else → byte-identical store-driven behavior.
+  const { currentFraction: storeFraction, proposalFractions: storeProposalFractions } = useRouteProgress()
+  const currentFraction = fractionOverride ?? storeFraction
+  const proposalFractions = proposalFractionsOverride ?? storeProposalFractions
   const positionPct = `${Math.round(currentFraction * 100)}%`
   const shownFraction = useSmoothFraction(currentFraction)
 
@@ -128,6 +170,9 @@ export default function MapSurface() {
   const carRef = useRef<GMapsLib>(null)
   const startRef = useRef<GMapsLib>(null)
   const fireRefs = useRef<GMapsLib[]>([])
+  // Red traffic-jam polylines (feature 020) — one per painted jam range, redrawn
+  // whenever the ranges change.
+  const jamPolyRefs = useRef<GMapsLib[]>([])
   // Geographic markers for the accepted rest spots (real SDK only) — one per
   // restHistory entry, so all accepted rests stay visible on the map.
   const chosenRestRefs = useRef<GMapsLib[]>([])
@@ -155,9 +200,7 @@ export default function MapSurface() {
       delete (window as Record<string, unknown>)['gm_authfailure']
     }
     ;(window as Record<string, unknown>)['gm_authfailure'] = () => {
-      setMapError(
-        'Google Maps authorization failed. Verify your API key and domain restrictions.',
-      )
+      setMapError(t(LABELS.authFailed, lang))
     }
 
     if (getGMaps()?.geometry?.encoding) return authCleanup // already loaded
@@ -185,7 +228,11 @@ export default function MapSurface() {
       delete (window as Record<string, unknown>)[callbackName]
       authCleanup()
     }
-  }, [mapsKey, display?.encoded_polyline])
+    // `lang` is included so the gm_authfailure handler captures the current
+    // language for its (rarely fired) error message; this does not rebuild the
+    // map canvas, only re-registers the auth-failure callback / re-runs the
+    // (idempotent, ref-guarded) script-injection check.
+  }, [mapsKey, display?.encoded_polyline, lang])
 
   // ── Google Maps canvas initialization ─────────────────────────────────────
   // Runs when the SDK becomes ready (mapsReady) or the selected polyline changes.
@@ -275,7 +322,7 @@ export default function MapSurface() {
           position: path[0],
           map,
           icon: { path: gmaps.SymbolPath.CIRCLE, scale: 6, fillColor: '#22c55e', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
-          title: 'Start',
+          title: t(LABELS.start, lang),
           zIndex: 998,
         })
         // End marker — the destination at the end of the polyline.
@@ -283,7 +330,7 @@ export default function MapSurface() {
           position: path[path.length - 1],
           map,
           icon: { path: gmaps.SymbolPath.CIRCLE, scale: 6, fillColor: '#64748b', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
-          title: 'Destination',
+          title: t(LABELS.destination, lang),
           zIndex: 998,
         })
         carRef.current = new gmaps.Marker({
@@ -298,9 +345,17 @@ export default function MapSurface() {
       // Canvas initialization failed — show inline fallback instead of propagating.
       // Car and decision markers still work; only the actual map canvas is missing.
       console.error('[MapSurface] Maps canvas init failed:', err)
-      setMapError(err instanceof Error ? err.message : 'Map initialization failed')
+      setMapError(err instanceof Error ? err.message : t(LABELS.initFailed, lang))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // NOTE: `lang` is deliberately NOT a dependency here. This effect builds the
+    // map canvas + Start/Destination markers once per polyline (guarded by
+    // `mapInstanceRef.current`); adding `lang` would either be a no-op (guard
+    // blocks re-creation, so titles wouldn't actually update) or, if the guard
+    // were removed, would re-run full canvas/marker initialization on every
+    // language switch. The Start/Destination marker titles and this fallback
+    // message are localized to whatever `lang` is active at first successful
+    // init and do not retroactively relabel on a later language switch.
   }, [mapsReady, display?.encoded_polyline])
 
   // ── Move/refresh geographic markers as the run progresses ─────────────────
@@ -324,7 +379,7 @@ export default function MapSurface() {
       if (!fireRefs.current[i]) {
         fireRefs.current[i] = new gmaps.Marker({
           map: mapInstanceRef.current,
-          icon: { path: gmaps.SymbolPath.CIRCLE, scale: 7, fillColor: '#ff7b54', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+          icon: { path: gmaps.SymbolPath.CIRCLE, scale: 7, fillColor: '#dc2626', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
           zIndex: 998,
         })
       }
@@ -340,14 +395,19 @@ export default function MapSurface() {
     // Chosen rest-spot markers (gold) — one per accepted rest; they persist as
     // history.  Sync the marker array to restSpots: create/position present
     // ones, drop any extras (e.g. after a reset clears restHistory).
+    // `lang` is read from the render closure (not a dep) — this effect already
+    // reruns on every `shownFraction` tick during playback, so newly-created
+    // markers pick up the current language; a marker's title is set only once
+    // at creation, so an already-created marker's title does not retroactively
+    // relabel on a later language switch.
     restSpots.forEach((spot, i) => {
       const rsp = latLngAt(path, cum, total, spot.route_fraction, sph)
       if (!rsp) return
       if (!chosenRestRefs.current[i]) {
         chosenRestRefs.current[i] = new gmaps.Marker({
           map: mapInstanceRef.current,
-          icon: { path: gmaps.SymbolPath.CIRCLE, scale: 8, fillColor: '#f0c000', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 },
-          title: spot.label?.en ?? 'Chosen Rest Spot',
+          icon: { path: gmaps.SymbolPath.CIRCLE, scale: 8, fillColor: '#f59e0b', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 },
+          title: spot.label ? t(spot.label, lang) : t(LABELS.chosenRestSpot, lang),
           zIndex: 999,
         })
       }
@@ -359,6 +419,39 @@ export default function MapSurface() {
       }
     }
   }, [shownFraction, proposalFractions, restSpots.length])
+
+  // ── Traffic-jam overlay (feature 020) ─────────────────────────────────────
+  // Thick RED polylines over the painted jam km ranges. Redraws whenever the
+  // ranges change, the route changes, or the geographic path becomes available
+  // (`realMarkers` flips true once the init effect built `pathRef`). No-op under
+  // the test mock (pathRef stays null).
+  const jamKey = JSON.stringify(jamRangesKm ?? [])
+  useEffect(() => {
+    const gmaps = getGMaps()
+    const built = pathRef.current
+    // Clear prior jam polylines first — the ranges may have shrunk or cleared.
+    jamPolyRefs.current.forEach((p) => p.setMap(null))
+    jamPolyRefs.current = []
+    if (!built || !gmaps?.geometry?.spherical || !mapInstanceRef.current) return
+    const totalKm = selectedAlt?.route_facts?.total_route_distance_km ?? 0
+    if (totalKm <= 0) return
+    for (const [startKm, endKm] of jamRangesKm ?? []) {
+      if (!(endKm > startKm)) continue
+      const fStart = Math.max(0, Math.min(1, startKm / totalKm))
+      const fEnd = Math.max(0, Math.min(1, endKm / totalKm))
+      const jamPath = slicePath(built.path, built.cum, built.total, fStart, fEnd, gmaps.geometry.spherical)
+      const jamPoly = new gmaps.Polyline({
+        path: jamPath,
+        strokeColor: '#dc2626',
+        strokeOpacity: 0.95,
+        strokeWeight: 8,
+        zIndex: 500,
+      })
+      jamPoly.setMap(mapInstanceRef.current)
+      jamPolyRefs.current.push(jamPoly)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jamKey, mapsReady, display?.encoded_polyline, realMarkers])
 
   // ── Guard: nothing to show ────────────────────────────────────────────────
   // When display is null (local path), return null so the caller can fall back
@@ -388,7 +481,7 @@ export default function MapSurface() {
           }}
         >
           <p style={{ color: '#b91c1c', fontSize: '0.85em', textAlign: 'center', margin: 0 }}>
-            Map unavailable — {mapError}
+            {t(LABELS.mapUnavailable, lang)}{mapError}
           </p>
         </div>
       ) : (
@@ -403,7 +496,7 @@ export default function MapSurface() {
       {/* CSS left drives display-only position; no store mutation on animation. */}
       <div
         data-testid="car-marker"
-        aria-label={`Route position: ${positionPct}`}
+        aria-label={`${t(LABELS.routePosition, lang)}: ${positionPct}`}
         style={{
           position: 'absolute',
           bottom: '4px',
@@ -427,7 +520,7 @@ export default function MapSurface() {
         <div
           key={`decision-${i}`}
           data-testid="decision-marker"
-          aria-label="Proposal position"
+          aria-label={t(LABELS.proposalPosition, lang)}
           style={{
             position: 'absolute',
             bottom: '0',
@@ -451,7 +544,7 @@ export default function MapSurface() {
         <div
           key={`rest-${i}-${spot.id}`}
           data-testid="rest-spot-marker"
-          aria-label={`Chosen rest spot: ${spot.label?.en ?? spot.id}`}
+          aria-label={`${t(LABELS.chosenRestSpotPrefix, lang)}${spot.label ? t(spot.label, lang) : spot.id}`}
           style={{
             position: 'absolute',
             bottom: '0',
@@ -459,7 +552,7 @@ export default function MapSurface() {
             transform: 'translateX(-50%)',
             width: '16px',
             height: '16px',
-            background: '#f0c000',
+            background: '#f59e0b',
             borderRadius: '50%',
             border: '3px solid white',
             zIndex: 11,

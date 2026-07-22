@@ -13,6 +13,12 @@
  *   </ErrorNotice>
  */
 import React from 'react'
+import { useLanguage } from '../../state/language'
+import { t } from '../../i18n/t'
+
+const LABELS = {
+  dismiss: { ja: '閉じる', en: 'Dismiss' },
+}
 
 type Props = {
   message?: string
@@ -51,27 +57,35 @@ export default function ErrorNotice({ message, testid, onDismiss, children, vari
     >
       {message && <p style={{ margin: '0 0 4px' }}>{message}</p>}
       {children}
-      {onDismiss && (
-        <button
-          onClick={onDismiss}
-          aria-label="Dismiss"
-          style={{
-            position: 'absolute',
-            top: '4px',
-            right: '6px',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '0.85em',
-            color: 'inherit',
-            opacity: 0.7,
-            lineHeight: 1,
-            padding: '2px 4px',
-          }}
-        >
-          ✕
-        </button>
-      )}
+      {onDismiss && <DismissButton onDismiss={onDismiss} />}
     </div>
+  )
+}
+
+/** Extracted so useLanguage() (which requires a LanguageProvider ancestor) is only
+ *  invoked when a dismiss button is actually rendered — keeps ErrorNotice itself
+ *  usable in contexts/tests with no language provider mounted. */
+function DismissButton({ onDismiss }: { onDismiss: () => void }) {
+  const { lang } = useLanguage()
+  return (
+    <button
+      onClick={onDismiss}
+      aria-label={t(LABELS.dismiss, lang)}
+      style={{
+        position: 'absolute',
+        top: '4px',
+        right: '6px',
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: '0.85em',
+        color: 'inherit',
+        opacity: 0.7,
+        lineHeight: 1,
+        padding: '2px 4px',
+      }}
+    >
+      ✕
+    </button>
   )
 }

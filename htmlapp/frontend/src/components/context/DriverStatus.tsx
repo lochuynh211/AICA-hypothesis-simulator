@@ -7,8 +7,15 @@
  */
 import { useRunStore } from '../../state/runStore'
 import { bandViz } from '../common/bands'
+import { t } from '../../i18n/t'
 
-function BandRow({ label, band }: { label: string; band: string | null | undefined }) {
+const LABELS = {
+  driverStatus: { ja: 'ドライバー状態', en: 'DRIVER STATUS' },
+  drowsiness: { ja: '眠気', en: 'Drowsiness' },
+  fatigue: { ja: '疲労', en: 'Fatigue' },
+}
+
+function BandRow({ label, testKey, band }: { label: string; testKey: string; band: string | null | undefined }) {
   const viz = bandViz(band)
   const shown = band && band !== '' ? band : '—'
   return (
@@ -23,7 +30,7 @@ function BandRow({ label, band }: { label: string; band: string | null | undefin
         }}
       >
         <span>{label}</span>
-        <span data-testid={`driver-${label.toLowerCase()}-band`} style={{ color: viz.color, fontWeight: 700 }}>
+        <span data-testid={`driver-${testKey}-band`} style={{ color: viz.color, fontWeight: 700 }}>
           {shown}
         </span>
       </div>
@@ -43,6 +50,7 @@ function BandRow({ label, band }: { label: string; band: string | null | undefin
 
 export default function DriverStatus() {
   const { state } = useRunStore()
+  const lang = state.uiLanguage
   const features = state.latestDecision?.features ?? {}
 
   return (
@@ -56,10 +64,10 @@ export default function DriverStatus() {
           marginBottom: '10px',
         }}
       >
-        DRIVER STATUS
+        {t(LABELS.driverStatus, lang)}
       </div>
-      <BandRow label="Drowsiness" band={features.drowsiness_level} />
-      <BandRow label="Fatigue" band={features.fatigue_level} />
+      <BandRow label={t(LABELS.drowsiness, lang)} testKey="drowsiness" band={features.drowsiness_level} />
+      <BandRow label={t(LABELS.fatigue, lang)} testKey="fatigue" band={features.fatigue_level} />
     </div>
   )
 }

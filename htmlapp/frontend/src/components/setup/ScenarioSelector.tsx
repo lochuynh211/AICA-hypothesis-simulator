@@ -1,11 +1,20 @@
 import { useEffect } from 'react'
 import { useRunStore } from '../../state/runStore'
 import { listScenarios } from '../../api/client'
+import { t } from '../../i18n/t'
 import ErrorNotice from '../common/ErrorNotice'
+
+const LABELS = {
+  failedToLoadScenarios: { ja: 'サーバーからのシナリオの読み込みに失敗しました', en: 'Failed to load scenarios from server' },
+  scenario: { ja: 'シナリオ', en: 'Scenario' },
+  loading: { ja: '読み込み中…', en: 'Loading…' },
+  selectScenario: { ja: 'シナリオを選択', en: 'Select scenario' },
+  couldNotBeLoadedSuffix: { ja: '個のシナリオを読み込めませんでした', en: ' scenario(s) could not be loaded' },
+}
 
 export default function ScenarioSelector() {
   const { state, dispatch } = useRunStore()
-  const { scenarios, selectedScenarioId, scenarioErrors, packages, selectedPackageId } = state
+  const { scenarios, selectedScenarioId, scenarioErrors, packages, selectedPackageId, uiLanguage } = state
 
   useEffect(() => {
     listScenarios()
@@ -13,7 +22,7 @@ export default function ScenarioSelector() {
         dispatch({ type: 'LOAD_SCENARIOS', scenarios, errors })
       )
       .catch(() =>
-        dispatch({ type: 'SET_RUN_ERROR', message: 'Failed to load scenarios from server' })
+        dispatch({ type: 'SET_RUN_ERROR', message: t(LABELS.failedToLoadScenarios, uiLanguage) })
       )
   }, [dispatch])
 
@@ -28,7 +37,7 @@ export default function ScenarioSelector() {
   return (
     <div style={{ marginBottom: '8px' }}>
       <label htmlFor="scenario-select" style={{ display: 'block', fontSize: '0.8em', color: '#666', marginBottom: '2px' }}>
-        Scenario
+        {t(LABELS.scenario, uiLanguage)}
       </label>
       <select
         id="scenario-select"
@@ -38,7 +47,7 @@ export default function ScenarioSelector() {
         style={{ width: '100%' }}
       >
         <option value="" disabled>
-          {filteredScenarios.length === 0 ? 'Loading…' : 'Select scenario'}
+          {filteredScenarios.length === 0 ? t(LABELS.loading, uiLanguage) : t(LABELS.selectScenario, uiLanguage)}
         </option>
         {filteredScenarios.map((s) => (
           <option key={s.id} value={s.id}>
@@ -47,7 +56,7 @@ export default function ScenarioSelector() {
         ))}
       </select>
       {scenarioErrors.length > 0 && (
-        <ErrorNotice testid="scenario-registry-errors" message={`${scenarioErrors.length} scenario(s) could not be loaded`} />
+        <ErrorNotice testid="scenario-registry-errors" message={`${scenarioErrors.length}${t(LABELS.couldNotBeLoadedSuffix, uiLanguage)}`} />
       )}
     </div>
   )

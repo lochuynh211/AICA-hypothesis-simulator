@@ -4,6 +4,11 @@ import { getScenario } from '../../api/client'
 import type { RouteSegment } from '../../api/types'
 import { t } from '../../i18n/t'
 
+const LABELS = {
+  noRouteLoaded: { ja: 'ルート未読み込み', en: 'No route loaded' },
+  rest: { ja: '休憩', en: 'rest' },
+}
+
 export default function RouteSegmentList() {
   const { state } = useRunStore()
   const { selectedScenarioId, runState, uiLanguage } = state
@@ -27,7 +32,7 @@ export default function RouteSegmentList() {
   const activeSegment = sorted.find((s) => s.at <= routeFraction)
 
   if (segments.length === 0) {
-    return <p style={{ padding: '8px', fontSize: '0.85em', color: '#888' }}>No route loaded</p>
+    return <p style={{ padding: '8px', fontSize: '0.85em', color: '#888' }}>{t(LABELS.noRouteLoaded, uiLanguage)}</p>
   }
 
   return (
@@ -56,7 +61,7 @@ export default function RouteSegmentList() {
               {t(seg.name, uiLanguage)}
             </span>
             {seg.is_rest_facility && (
-              <span style={{ color: '#059669', fontSize: '0.82em', fontWeight: 700 }}>⊙ rest</span>
+              <span style={{ color: '#059669', fontSize: '0.82em', fontWeight: 700 }}>⊙ {t(LABELS.rest, uiLanguage)}</span>
             )}
           </li>
         )
