@@ -50,3 +50,22 @@ def test_build_prompt_injects_bridge_and_readout():
     assert "energetic" in user and "driven mostly by" in user
     assert "causal_bridge" in prompt.grounding
     assert prompt.grounding["category_readout"]["dominant"] == "situation"
+
+
+def test_content_template_is_causal_when_facts_present():
+    ja, en = ce.template(_drowsy_song_target())
+    assert "energetic" in en.lower()
+    assert ja and en
+    assert " / " not in ja  # not the raw combined form
+
+
+def test_content_template_degrades_to_legacy_join():
+    target = {"item_id": "x", "rationale": [
+        "眠気が寄与（+0.120） / drowsiness supports this (+0.120)"]}
+    ja, en = ce.template(target)
+    assert "drowsiness supports" in en
+    assert " / " not in ja and " / " not in en
+
+
+def test_content_template_empty_is_safe():
+    assert ce.template({"item_id": "x"}) == ["", ""]

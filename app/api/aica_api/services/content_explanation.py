@@ -212,23 +212,56 @@ def build_prompt(target: dict[str, Any], context: dict[str, Any]) -> Explanation
     return ExplanationPrompt(messages=messages, grounding=grounding)
 
 
-def template(target: dict[str, Any]) -> list[str]:
-    """Content branch of the former template_rationale (variable-length
-    '<ja> / <en>' list → clean [ja, en] pair)."""
+def _legacy_join(target):
+    """Former behavior: variable-length '<ja> / <en>' list → clean [ja, en]."""
     rationale = target.get("rationale") or []
     if not isinstance(rationale, list) or not rationale:
         return ["", ""]
-
-    # content: list of combined "<ja> / <en>" entries → clean pair
-    ja_parts: list[str] = []
-    en_parts: list[str] = []
+    ja_parts, en_parts = [], []
     for entry in rationale:
         s = str(entry)
         if _k._CONTENT_LANG_SEP in s:
             left, right = s.split(_k._CONTENT_LANG_SEP, 1)
-            ja_parts.append(left.strip())
-            en_parts.append(right.strip())
+            ja_parts.append(left.strip()); en_parts.append(right.strip())
         else:
-            ja_parts.append(s.strip())
-            en_parts.append(s.strip())
+            ja_parts.append(s.strip()); en_parts.append(s.strip())
     return ["、".join(ja_parts), "; ".join(en_parts)]
+
+
+def template(target):
+    readout = _k.category_readout(target)
+    tv = target.get("trait_values") or {}
+    # Find the strongest situation feature that has a demand + a real trait to
+    # anchor sentence 1; if none, fall back to the legacy join.
+    best = None
+    for fc in target.get("feature_contributions", []) or []:
+        dem = demand_phrase(fc.get("alpha"), fc.get("beta"), str(fc.get("feature_id", "")))
+        if dem is None:
+            continue
+        c = abs(float(fc.get("contribution", 0.0) or 0.0))
+        if best is None or c > best[0]:
+            best = (c, fc, dem)
+    arousal = tv.get("arousal")
+    if best is None or not isinstance(arousal, (int, float)):
+        return _legacy_join(target)
+    _, fc, dem = best
+    lab = _k.label_for(str(fc.get("feature_id", "")))
+    band = _arousal_band(float(arousal))
+    band_ja = {"high": "活発", "medium": "中程度", "low": "落ち着いた"}[band]
+    band_en = {"high": "energetic", "medium": "moderate", "low": "calm"}[band]
+    ja = f"{lab['ja']}が高く、状況は{dem['ja']}を必要とします。この曲は{band_ja}で、それに合致します。"
+    en = (f"{lab['en'].capitalize()} is high, so the situation calls for {dem['en']}; "
+          f"this song is {band_en}, which matches.")
+    # Sentence 2 — preference/history modifier from the dominant non-situation family.
+    if readout:
+        for fam in ("preference", "history"):
+            val = readout.get(fam, 0.0)
+            if abs(val) >= 0.02:
+                fam_ja = {"preference": "好み", "history": "利用履歴"}[fam]
+                fam_en = {"preference": "your taste", "history": "your history"}[fam]
+                verb_ja = "も後押ししました" if val > 0 else "は反対に働きました"
+                verb_en = "reinforced the choice" if val > 0 else "pushed against it"
+                ja += f" さらに{fam_ja}{verb_ja}。"
+                en += f" {fam_en.capitalize()} also {verb_en}."
+                break
+    return [ja, en]
