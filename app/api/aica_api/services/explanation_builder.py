@@ -24,7 +24,7 @@ import json
 import re
 from typing import Any
 
-from aica_api.models.proposal.explanation import ExplainMessage, ExplanationPrompt
+from aica_api.models.proposal.explanation import ExplanationPrompt
 
 # Maximal grounding (feature 019): hand the model EVERY meaningfully-scored
 # contribution (not just a top-N slice). Exact-zero / negligible contributions

@@ -14,7 +14,7 @@ from aica_api.services import explanation_builder as _k
 def build_prompt(target: dict[str, Any], context: dict[str, Any]) -> ExplanationPrompt:
     """Service branch of the former build_explanation_prompt (is_service=True)."""
     kind_en = "service"
-    target_id = str(target.get("candidate_id") or "")
+    target_id = str(target.get("candidate_id"))
     rank = target.get("rank")
     fit = target.get("score")
 
