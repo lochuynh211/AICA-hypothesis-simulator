@@ -2,8 +2,9 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { IDBFactory } from 'fake-indexeddb'
 import { seedDefaults } from '../src/storage/db'
 import { listPackages, getPackage, listScenarios, getScenario, getHealth } from '../src/api/client'
+import { resetDispatchState } from '../src/engine/worker/dispatch'
 
-beforeEach(async () => { globalThis.indexedDB = new IDBFactory(); await seedDefaults() })
+beforeEach(async () => { globalThis.indexedDB = new IDBFactory(); resetDispatchState(); await seedDefaults() })
 
 describe('client registry seam', () => {
   it('getHealth returns ok', async () => {

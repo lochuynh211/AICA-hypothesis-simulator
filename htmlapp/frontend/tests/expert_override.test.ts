@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { IDBFactory } from 'fake-indexeddb'
 import { seedDefaults } from '../src/storage/db'
+import { resetDispatchState } from '../src/engine/worker/dispatch'
 import { loadFixture, expectParity } from '../src/engine/__fixtures__/parity'
 import { createRunPlan, createRun, getRunLog } from '../src/api/client'
 import * as client from '../src/api/client'
@@ -55,6 +56,7 @@ const SCN = 'uc01_fatigue_recovery_v0_1'
 
 beforeEach(async () => {
   globalThis.indexedDB = new IDBFactory()
+  resetDispatchState()
   await seedDefaults()
   clearDraftRegistry()
   clearRegistry()

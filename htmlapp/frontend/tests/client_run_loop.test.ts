@@ -4,9 +4,11 @@ import { seedDefaults } from '../src/storage/db'
 import { createRunPlan, createRun, tickRun, actRun, getRunLog, listRuns } from '../src/api/client'
 import { clearDraftRegistry } from '../src/engine/run_plan'
 import { clearRegistry } from '../src/engine/run_manager'
+import { resetDispatchState } from '../src/engine/worker/dispatch'
 
 beforeEach(async () => {
   globalThis.indexedDB = new IDBFactory()
+  resetDispatchState()
   await seedDefaults()
   clearDraftRegistry()
   clearRegistry()
