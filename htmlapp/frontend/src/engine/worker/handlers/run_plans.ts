@@ -25,11 +25,15 @@ function pyReprValue(value: unknown): string {
   return String(value)
 }
 
-// plan_id generation: monotonic in-memory counter for determinism.
-let _planIdCounter = 0
+// Collision-resistant id; mirrors Python's plan_<ts>_<hex>. Runs ONCE at creation,
+// outside the deterministic tick loop, so determinism of ticks is unaffected.
+function randHex(n: number): string {
+  let s = ''
+  for (let i = 0; i < n; i++) s += Math.floor(Math.random() * 16).toString(16)
+  return s
+}
 export function makePlanId(): string {
-  _planIdCounter += 1
-  return `plan_${String(_planIdCounter).padStart(6, '0')}`
+  return `plan_${Date.now().toString(36)}_${randHex(6)}`
 }
 
 const VALID_INITIAL_STATE_KEYS = ['drowsiness_level', 'fatigue_level']

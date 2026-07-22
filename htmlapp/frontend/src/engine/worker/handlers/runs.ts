@@ -49,11 +49,15 @@ import { AlgorithmAdapterError } from '../../algorithms/errors'
 import { startRecovery } from '../../recovery'
 import type { RouteFactsFull } from '../../services/route_analysis'
 
-// run_id generation: monotonic in-memory counter for determinism.
-let _runIdCounter = 0
+// Collision-resistant id; mirrors Python's run_<ts>_<hex>. Runs ONCE at creation,
+// outside the deterministic tick loop, so determinism of ticks is unaffected.
+function randHex(n: number): string {
+  let s = ''
+  for (let i = 0; i < n; i++) s += Math.floor(Math.random() * 16).toString(16)
+  return s
+}
 export function makeRunId(): string {
-  _runIdCounter += 1
-  return `run_${String(_runIdCounter).padStart(6, '0')}`
+  return `run_${Date.now().toString(36)}_${randHex(6)}`
 }
 
 export async function runsCreate(params: { planId: string }): Promise<RunState> {
