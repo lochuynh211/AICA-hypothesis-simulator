@@ -44,13 +44,28 @@ def _song_facts_lines(target: dict[str, Any], context: dict[str, Any]) -> list[s
 
 
 # Static Context Response Matrix demand (content algorithm §5.2), used when a
-# contribution row does not carry alpha/beta. Values are the sign/intent only.
+# contribution row does not carry alpha/beta. Values are illustrative
+# sign/intent only (they intentionally differ in magnitude from the package's
+# runtime context_response_matrix) — only the SIGN is consumed by
+# ``demand_phrase``.
 _STATIC_DEMAND = {
     "drowsiness_level": (0.80, 0.20), "drowsiness": (0.80, 0.20),
     "fatigue_level": (-0.50, 0.50), "fatigue": (-0.50, 0.50),
     "monotony_level": (0.90, 0.10), "monotony": (0.90, 0.10),
     "traffic_state": (-0.40, 0.60), "traffic": (-0.40, 0.60),
     "night_state": (-0.50, 0.50), "night": (-0.50, 0.50),
+}
+
+# Directional features whose demand sign depends on the run's
+# ``directional_hypothesis`` hyperparameter (see the transparent content
+# selector's ``_mood``): a "keep_alert" run flips the sign the default
+# ``_STATIC_DEMAND`` entry assumes. When a row for one of these carries no
+# alpha/beta we cannot know which hypothesis produced it, so we stay silent
+# rather than risk an inverted causal claim (no invented facts).
+_DIRECTIONAL_STATIC_UNSAFE = {
+    "fatigue_level", "fatigue",
+    "traffic_state", "traffic",
+    "night_state", "night",
 }
 
 
@@ -61,6 +76,8 @@ def demand_phrase(alpha, beta, feature_id):
     and no static entry) — the feature is then not a causal bridge.
     """
     if alpha is None and beta is None:
+        if feature_id in _DIRECTIONAL_STATIC_UNSAFE:
+            return None  # sign is hypothesis-dependent — don't guess
         alpha, beta = _STATIC_DEMAND.get(feature_id, (None, None))
     if alpha is None and beta is None:
         return None

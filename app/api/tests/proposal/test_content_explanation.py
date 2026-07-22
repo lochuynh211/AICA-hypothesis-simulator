@@ -123,3 +123,12 @@ def test_demand_uses_static_fallback_when_row_alpha_missing():
     # feature_id, exactly as _STATIC_DEMAND specifies.
     p = ce.demand_phrase(None, None, "drowsiness_level")
     assert p is not None and "energetic" in p["en"].lower()
+
+
+def test_demand_phrase_directional_features_stay_silent_without_row_alpha():
+    # sign of fatigue/traffic/night demand is directional_hypothesis-dependent;
+    # with no row alpha/beta we cannot know it, so return None (no invented facts)
+    for fid in ("fatigue_level", "traffic_state", "night_state"):
+        assert ce.demand_phrase(None, None, fid) is None
+    # non-directional drowsiness still uses the stable static fallback
+    assert ce.demand_phrase(None, None, "drowsiness_level") is not None
