@@ -315,7 +315,7 @@
           </tr></thead>
           <tbody>
             <tr><td>① <span class="ja">休憩推奨</span><span class="en">Rest recommended</span></td><td><span class="ja">休憩前・停止まで走行中</span><span class="en">Before rest, driving to stop</span><br><code>before_rest_until_stop</code></td><td><span class="ja">プレイリスト、鼻歌カラオケ、クイズ、ランキング、ラジオ風、合いの手</span><span class="en">Playlist, humming karaoke, quiz, ranking, radio-style, call-and-response</span></td></tr>
-            <tr><td>① <span class="ja">休憩推奨</span><span class="en">Rest recommended</span></td><td><span class="ja">休憩中・停車中</span><span class="en">During rest, stopped</span><br><code>during_rest_stopped</code></td><td><span class="ja">休憩時間、休憩方法、シート調整、仮眠案内、休憩継続確認</span><span class="en">Rest duration, rest method, seat adjustment, nap guidance, rest extension</span></td></tr>
+            <tr><td>① <span class="ja">休憩推奨</span><span class="en">Rest recommended</span></td><td><span class="ja">休憩中・停車中</span><span class="en">During rest, stopped</span><br><code>during_rest_stopped</code></td><td><span class="ja">休憩時間、休憩方法、シート調整、仮眠案内、休憩継続確認</span><span class="en">Rest duration, rest method, seat adjustment, nap guidance, rest extension</span><br><span class="small muted"><span class="ja">※ 設計上の想定メニュー。V1（Spotify連携のみ）では候補が空のため提案されません → <code>no_proposal</code></span><span class="en">※ Design-intent menu; in V1 (Spotify-only) this family is empty, so nothing is proposed → <code>no_proposal</code></span></span></td></tr>
             <tr><td>① <span class="ja">休憩推奨</span><span class="en">Rest recommended</span></td><td><span class="ja">休憩後・走行再開前</span><span class="en">After rest, before restart</span><br><code>after_rest_before_restart</code></td><td><span class="ja">ライブビューイング、ストレッチ動画、フルカラオケ、推し追体験</span><span class="en">Live viewing, stretch video, full karaoke, oshi reexperience</span></td></tr>
             <tr><td>②–④</td><td><span class="ja">走行中コンテンツフロー</span><span class="en">Active driving-content flow</span><br><code>active_driving_content</code></td><td><span class="ja">プレイリスト、鼻歌カラオケ、クイズ、ランキング、ラジオ風、合いの手</span><span class="en">Playlist, humming karaoke, quiz, ranking, radio-style, call-and-response</span></td></tr>
           </tbody>
@@ -438,20 +438,20 @@
             <th><span class="ja">明るさ β</span><span class="en">Valence β</span></th>
           </tr></thead>
           <tbody>
-            <tr><td><span class="ja">眠気</span><span class="en">Drowsiness</span></td><td><span class="ja">元気づける</span><span class="en">energize</span></td><td><b>+0.80</b></td><td>+0.20</td></tr>
+            <tr><td><span class="ja">眠気</span><span class="en">Drowsiness</span></td><td><span class="ja">元気づける</span><span class="en">energize</span></td><td><b>+0.55</b></td><td>+0.45</td></tr>
             <tr><td><span class="ja">疲労</span><span class="en">Fatigue</span></td><td><span class="ja">なだめて明るく</span><span class="en">soothe + brighten</span></td><td><b>−0.50</b></td><td>+0.50</td></tr>
-            <tr><td><span class="ja">単調</span><span class="en">Monotony</span></td><td><span class="ja">刺激を与える</span><span class="en">stimulate</span></td><td><b>+0.90</b></td><td>+0.10</td></tr>
+            <tr><td><span class="ja">単調</span><span class="en">Monotony</span></td><td><span class="ja">刺激を与える</span><span class="en">stimulate</span></td><td><b>+0.60</b></td><td>+0.40</td></tr>
             <tr><td><span class="ja">渋滞</span><span class="en">Congested traffic</span></td><td><span class="ja">緊張をほぐし明るく</span><span class="en">de-stress + brighten</span></td><td><b>−0.40</b></td><td>+0.60</td></tr>
             <tr><td><span class="ja">夜間</span><span class="en">Night</span></td><td><span class="ja">落ち着かせ和ませる</span><span class="en">calm + warm</span></td><td><b>−0.50</b></td><td>+0.50</td></tr>
-            <tr><td><span class="ja">道路種別</span><span class="en">Road type</span></td><td><span class="ja">負荷に合わせる</span><span class="en">match road load</span></td><td><span class="ja">高速<b>+1.0</b>／山道<b>−1.0</b></span><span class="en">highway <b>+1.0</b> / mountain <b>−1.0</b></span></td><td>0</td></tr>
+            <tr><td><span class="ja">道路種別</span><span class="en">Road type</span></td><td><span class="ja">負荷に合わせる</span><span class="en">match road load</span></td><td><span class="ja">高速<b>0</b>／山道<b>−1.0</b></span><span class="en">highway <b>0</b> / mountain <b>−1.0</b></span></td><td>0</td></tr>
           </tbody>
         </table>
       </div>
       <p class="small muted"><span class="ja">眠気（＋）と疲労（−）は、活性度において<b>逆向き</b>に引き合います。1つの活性度だけでは表せない分離です。推し・年代・再生履歴・受諾・回復などその他の要素は、2軸ではなく<b>完全一致メタデータ</b>から直接 <code>a</code> を決めます（例：Track/Artist IDが一致すれば+1）。⚠が付いた要素（疲労・渋滞・夜間）の向きは、バージョン管理されたハイパーパラメータで、反転もできます。</span><span class="en">Drowsiness (+) and fatigue (−) pull in <b>opposite</b> arousal directions — a separation one “activation” number can’t express. Every other factor (oshi, age, playback history, acceptance, recovery) sets <code>a</code> directly from <b>exact-ID metadata</b> instead of traits (e.g. +1 on a Track/Artist-ID match). The ⚠ directions (fatigue, congestion, night) are versioned hyperparameters and can be flipped.</span></p>
       <div class="pill-row">
-        <span class="pill"><b>Situation <span class="ja">状況</span></b> — .55</span>
-        <span class="pill"><b>Preference <span class="ja">好み</span></b> — .30</span>
-        <span class="pill"><b>History <span class="ja">履歴</span></b> — .15</span>
+        <span class="pill"><b>Situation <span class="ja">状況</span></b> — .45</span>
+        <span class="pill"><b>Preference <span class="ja">好み</span></b> — .35</span>
+        <span class="pill"><b>History <span class="ja">履歴</span></b> — .20</span>
         <span class="pill"><span class="ja">既定プラン</span><span class="en">Default plan</span> — 5 <span class="ja">曲（並び順つき）</span><span class="en">ordered songs</span></span>
       </div>
       <p class="small muted"><span class="ja">V1では music_playlist / humming_karaoke / full_karaoke の3レシピを実装しています。<b>Spotifyだけを使うため、ルート・目的地・同乗者・タグ・予定などの一部特徴量はV1ではマスク（無効化）</b>し、残った有効な葉を再正規化します。プランの決め方は決定論的です（item_fit降順→Track ID昇順で上位5件）。出典：<code class="k">aica_transparent_content_proposal_algorithm.md</code> §6・§7・§9・§13。</span><span class="en">V1 implements three recipes (music_playlist / humming_karaoke / full_karaoke). <b>Because V1 is Spotify-only, some features (route, destination, passengers, tags, schedule) are masked</b> and the remaining active leaves are renormalized. The plan is deterministic (top 5 by item_fit desc, then Track ID asc). Source: <code class="k">aica_transparent_content_proposal_algorithm.md</code> §6, §7, §9, §13.</span></p>
@@ -582,8 +582,8 @@
     <section id="data">
       <h2><span class="num">7</span><span class="ja">合成音楽データと生成方法</span><span class="en">Synthetic music data &amp; how it is generated</span></h2>
       <p>
-        <span class="ja">シミュレーターには、編集できる架空のサンプルデータ一式を同梱しています。実在のドライバーやお客様のライブラリからは、何も取り込みません。構成要素は<b>(1) 初期データ</b>（状況・履歴）と<b>(2) メディアカタログ</b>（提案できる中身）の2つです。<code>run_seed</code> と<b>凍結した入力データ</b>を固定することで、透明方式は毎回同じ結果を再現できます。生成方法とスキーマは <code class="k">aica_synthetic_music_data_and_generation_specification.md</code> に定義しています。</span>
-        <span class="en">The simulator ships its own editable, entirely made-up sample data. Nothing comes from a real driver or a customer library. It has two parts — <b>(1) initial data</b> (situation &amp; history) and <b>(2) a media catalog</b> (what can be proposed) — and a fixed <code>run_seed</code> plus <b>frozen snapshots</b> make every transparent run reproducible. The schemas and generation method are defined in <code class="k">aica_synthetic_music_data_and_generation_specification.md</code>.</span>
+        <span class="ja">シミュレーターには、編集できる自己完結型のサンプルデータ一式を同梱しています。実在のドライバーやお客様のライブラリからは、何も取り込みません。構成要素は<b>(1) 初期データ</b>（状況・履歴）と<b>(2) メディアカタログ</b>（提案できる中身）の2つです。<code>run_seed</code> と<b>凍結した入力データ</b>を固定することで、透明方式は毎回同じ結果を再現できます。生成方法とスキーマは <code class="k">aica_synthetic_music_data_and_generation_specification.md</code> に定義しています。</span>
+        <span class="en">The simulator ships its own editable, self-contained sample dataset. Nothing comes from a real driver or a customer library. It has two parts — <b>(1) initial data</b> (situation &amp; history) and <b>(2) a media catalog</b> (what can be proposed) — and a fixed <code>run_seed</code> plus <b>frozen snapshots</b> make every transparent run reproducible. The schemas and generation method are defined in <code class="k">aica_synthetic_music_data_and_generation_specification.md</code>.</span>
       </p>
       <h3><span class="ja">A. 初期データ ― 状況</span><span class="en">A. Initial data — the situation</span></h3>
       <div class="fgrid">
@@ -594,7 +594,7 @@
       <p class="small muted"><span class="ja">シードには実行制御も含みます。発火目的、開始段階、選んだパッケージとそのパラメータ／ハイパーパラメータ、計画済みのジャーニーイベント、そして明示的な休憩後の眠気・疲労値です。</span><span class="en">A seed also carries its run controls: the trigger purpose, starting stage, chosen packages with parameters/hyperparameters, and planned journey events with explicit post-rest drowsiness/fatigue.</span></p>
 
       <h3><span class="ja">B. メディアカタログ ― Spotify互換の2オブジェクト＋シミュレーターフラグ</span><span class="en">B. The media catalog — two Spotify objects + a simulator flag</span></h3>
-      <p class="small muted"><span class="ja">各曲は、<b>Spotifyのフィールド名・意味</b>をそのまま使う2つのオブジェクトと、AICA独自のフラグで構成しています。表示名・アーティスト・アルバムは <code>spotify_track</code> から取得します。すべて架空のデータ（<code>.invalid</code> のURL・合成ID）で、<code>synthetic_only: true</code> のマニフェストを付けているため、実データと取り違えることはありません。</span><span class="en">Every song uses <b>Spotify field names and semantics</b> in two objects, plus one AICA-only flag. Display title/artists/album come from <code>spotify_track</code>. Everything is fictional (<code>.invalid</code> URLs, synthetic IDs) under a <code>synthetic_only: true</code> manifest so it can never be mistaken for real data.</span></p>
+      <p class="small muted"><span class="ja">各曲は、<b>Spotifyのフィールド名・意味</b>をそのまま使う2つのオブジェクトと、AICA独自のフラグで構成しています。表示名・アーティスト・アルバムは <code>spotify_track</code> から取得します。音の特徴量・曲名・ISRCは実在の参照データですが、IDとURLはすべて合成（<code>.invalid</code> のURL・<code>synthetic-</code> 接頭辞のID）で、データ全体に <code>synthetic_only: true</code> のマニフェストを付けているため、実在の配信データと取り違えることはありません。</span><span class="en">Every song uses <b>Spotify field names and semantics</b> in two objects, plus one AICA-only flag. Display title/artists/album come from <code>spotify_track</code>. The audio-feature values, names, and ISRCs are real reference data, but every ID and URL is synthetic (<code>.invalid</code> URLs, <code>synthetic-</code> IDs) and the whole set carries a <code>synthetic_only: true</code> manifest, so it can never be mistaken for a live provider feed.</span></p>
       <div class="fgrid">
         <div class="fcard blue">
           <h4><code>spotify_track</code></h4>
@@ -614,24 +614,24 @@
         <p><span class="ja">「プロバイダのTrack → LLMがサビ・客層・ルート・歌いやすさを推測 → それを推薦の根拠に使う」という流れは<b>禁止</b>です。カタログには、ジャンル/ルート/推し/ムード/客層タグ、サビ位置、歌詞・音域・メロディ複雑度・歌いやすさを<b>保存しません</b>。透明セレクターは<b>決定のたびに</b>Spotify特徴量から代理指標（活性度・明るさ・歌いやすさ）を導出しますが、それを事実として保存することはありません。</span><span class="en">The flow “provider Track → LLM guesses chorus, audience, route, or singability → use as recommendation evidence” is <b>prohibited</b>. The catalog stores <b>no</b> genre/route/oshi/mood/audience tags, no chorus timestamps, and no lyric/vocal-range/melody/singability fields. The transparent selector derives proxies (arousal, valence, ease) from Spotify features <b>at decision time</b> and does not persist them as facts.</span></p>
       </div>
 
-      <h3><span class="ja">C. 生成方法 ― 3パスのLLM生成 → 検証 → 凍結</span><span class="en">C. How it is generated — 3-pass LLM → validate → freeze</span></h3>
-      <p><span class="ja">循環データ（1つの推薦結果に都合よく作られたデータ）や、壊れた参照を避けるため、生成は<b>3つのパスに分けて</b>行います。各パスのあとには決定論的な検証を入れ、2回失敗した時点で止めます。実行中に生成器を呼び出すことはありません。Audio Featuresエンドポイントは非推奨になっているため、<b>ピン留めしたスキーマ準拠のサンプルデータ</b>を使います。</span><span class="en">To avoid circular data and broken references, generation is <b>split into three passes</b>, each followed by deterministic validation (stops after two failed repairs). The generator is never called during a run. Because Spotify’s Audio Features endpoint is deprecated, V1 uses <b>pinned schema-conformant sample data</b>.</span></p>
+      <h3><span class="ja">C. 生成方法 ― 本物のデータを土台にした生成（接地合成）→ 検証 → 凍結</span><span class="en">C. How it is generated — grounded-synthetic build → validate → freeze</span></h3>
+      <p><span class="ja">循環データ（1つの推薦結果に都合よく作られたデータ）や、壊れた参照を避けるため、生成は<b>本物のデータを土台にした（接地合成）</b>方式で行います。曲名・音の特徴量・ISRCは音楽データ提供元（Soundcharts）の<b>実在データ</b>を必要な「マス（カバレッジ）」に当てはめ、IDとURLはすべて合成します。<b>生成のどの段階でも、LLMをプログラムから呼び出すことはありません（FR-028）</b>。LLMが担うのは「空いたマスを埋める実在曲の<b>名前出し</b>」だけで、数値を書くことは一切できません。各段階のあとに決定論的な検証を入れ、2回失敗した時点で止めます。実行中に生成器を呼び出すこともありません。</span><span class="en">To avoid circular data and broken references, generation is <b>grounded-synthetic</b>: song names, audio features, and ISRCs are <b>real data</b> from a music-data provider (Soundcharts) fitted into the required coverage “cells,” while every ID and URL is synthesized. <b>No LLM is ever called programmatically at any stage (FR-028)</b> — an LLM only proposes real, verifiable song <b>names</b> to fill empty cells and can never write a number. Each stage is followed by deterministic validation (stops after two failed repairs), and the generator is never called during a run.</span></p>
       <div class="pipe">
-        <div class="node"><div class="n">PASS 1</div><div class="t"><span class="ja">架空Trackオブジェクト</span><span class="en">Fictional Track objects</span></div><div class="d"><span class="ja">アーティスト・アルバム・トラックの素性</span><span class="en">artist / album / track identities</span></div></div>
+        <div class="node"><div class="n">PLAN</div><div class="t"><span class="ja">36マスの計画</span><span class="en">36-cell coverage plan</span></div><div class="d"><span class="ja">カタログがそろえるべき空間</span><span class="en">the space the catalog must span</span></div></div>
         <div class="arrow">→</div>
-        <div class="node"><div class="n">PASS 2</div><div class="t"><span class="ja">Audio Featuresオブジェクト</span><span class="en">Audio Features objects</span></div><div class="d"><span class="ja">音声プロファイル別・相互に妥当な数値</span><span class="en">per audio-profile cell, mutually plausible</span></div></div>
+        <div class="node"><div class="n">NAME</div><div class="t"><span class="ja">実在曲の名前出し</span><span class="en">real song names (LLM)</span></div><div class="d"><span class="ja">LLMは曲名だけ提案（数値は書けない）</span><span class="en">LLM proposes real songs — names only, never numbers</span></div></div>
         <div class="arrow">→</div>
-        <div class="node"><div class="n">PASS 3</div><div class="t"><span class="ja">状況パターン・履歴</span><span class="en">Situation patterns &amp; histories</span></div><div class="d"><span class="ja">ドライバー・推し参照・利用/受諾/回復・対比</span><span class="en">driver, oshi refs, usage/accept/recovery, contrasts</span></div></div>
+        <div class="node"><div class="n">HARVEST</div><div class="t"><span class="ja">本物の音の特徴量＋状況</span><span class="en">real audio + situations</span></div><div class="d"><span class="ja">提供元から取得（ID/URLは合成）／状況・履歴・ブラインド判定</span><span class="en">fetch real audio (synthetic IDs/URLs); situations, histories, blind judge</span></div></div>
         <div class="arrow">→</div>
         <div class="node"><div class="n">FREEZE</div><div class="t"><span class="ja">凍結済み入力データ</span><span class="en">Immutable snapshot</span></div><div class="d"><span class="ja">再現の境界</span><span class="en">the replay boundary</span></div></div>
       </div>
       <div class="pill-row">
-        <span class="pill"><b><span class="ja">実演カタログ</span><span class="en">Demonstration catalog</span></b>：36 <span class="ja">曲</span><span class="en">songs</span> = 3 energy × 3 tempo × 4 <span class="ja">音声プロファイル</span><span class="en">audio profiles</span></span>
+        <span class="pill"><b><span class="ja">実演カバレッジ</span><span class="en">Demonstration coverage</span></b>：36 <span class="ja">マス</span><span class="en">cells</span> = 3 energy × 3 tempo × 4 <span class="ja">音声プロファイル</span><span class="en">audio profiles</span> <span class="ja">（カタログは約300曲）</span><span class="en">(catalog ≈ 300 songs)</span></span>
         <span class="pill"><span class="ja">プロファイル</span><span class="en">Profiles</span>：balanced vocal · danceable vocal · speech forward · instrumental leaning</span>
       </div>
       <div class="pill-row">
-        <span class="pill"><span class="ja">同一性</span><span class="en">Identity</span>：12 <span class="ja">アーティスト × 3曲</span><span class="en">artists × 3 tracks</span> · ≥12 <span class="ja">アルバム</span><span class="en">albums</span> · 3 <span class="ja">年代</span><span class="en">eras</span></span>
-        <span class="pill"><span class="ja">データ層</span><span class="en">Tiers</span>：smoke (5+<span class="ja">負例</span><span class="en">neg</span>) · demonstration (36) · stress (<span class="ja">可変</span><span class="en">configurable</span>)</span>
+        <span class="pill"><span class="ja">同一性</span><span class="en">Identity</span>：≥12 <span class="ja">アーティスト × ≥3曲</span><span class="en">artists × ≥3 tracks</span> · ≥12 <span class="ja">アルバム</span><span class="en">albums</span> · ≥3 <span class="ja">年代</span><span class="en">eras</span></span>
+        <span class="pill"><span class="ja">データ層</span><span class="en">Tiers</span>：smoke (5+<span class="ja">負例</span><span class="en">neg</span>) · demonstration (36 <span class="ja">マス</span><span class="en">cells</span>) · stress (<span class="ja">可変</span><span class="en">configurable</span>)</span>
       </div>
       <div class="why">
         <span class="lab"><span class="ja">わざと「証拠が対立する」曲を入れる</span><span class="en">Deliberate conflicting-evidence sample songs</span></span>
@@ -659,7 +659,7 @@
       <div class="mock" role="img" aria-label="Wireframe of the input / service-proposal / content-proposal screen">
         <div class="mock-bar">
           <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          <span class="mock-url">aica-simulator / proposal — seed: highway-night-drowsy</span>
+          <span class="mock-url">aica-simulator / proposal — seed: seed-night-highway-oshi</span>
         </div>
         <div class="sim">
           <!-- ① INPUT / WORLD -->
