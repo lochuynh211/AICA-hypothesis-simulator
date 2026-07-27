@@ -1,7 +1,9 @@
 # Combined Experience Test Cases and Expected-vs-Actual Evaluation
 
 **Date:** 2026-07-24  
-**Status:** Approved design  
+**Status:** Deferred — phase 2. The review surface is superseded by
+`2026-07-27-combined-rationale-review-design.md`; the contract, registry, resolver
+and evidence-adapter design below remain valid.  
 **Scope:** Existing Combined Simulator; trigger, service proposal, and content proposal algorithms  
 **Related designs:**
 
@@ -9,6 +11,17 @@
 - `docs/superpowers/specs/2026-07-17-proposal-preset-testcases-design.md`
 - `docs/superpowers/specs/2026-07-16-proposal-p5-transparent-service-selector-design.md`
 - `docs/superpowers/specs/2026-07-16-proposal-p6-content-selector-design.md`
+
+> **Superseded for now (2026-07-27).** This design treats the expectation as an
+> *input* — checkpoints are authored, then graded. The customer needs the
+> expectation as an *output*: it is what human review produces. The `expectation`
+> blocks in the committed presets were LLM-generated from the default algorithms,
+> so they record the baseline and cannot serve as an independent reference.
+>
+> Phase 1 is `2026-07-27-combined-rationale-review-design.md` — baseline plus
+> traceable explanation plus human judgement per parameter. Once enough ratified
+> expectations accumulate from that review, this design becomes buildable and
+> catches regressions and the "right output for the wrong reason" case.
 
 ## 1. Problem
 
