@@ -1107,18 +1107,24 @@ describe('necessity', () => {
   })
 
   it('takes the baseline winner from the RECORDED score, not the raw sum', () => {
-    // Clamping makes Σcontribution exceed the reported score, so the two
-    // disagree about who won. Raw sums say `clamped` (1.3 > 1.1); the recorded
-    // scores say `plain` (1.1 > 1.0). The recorded outcome is the real one.
+    // Clamping makes Σcontribution exceed the reported score, so the two can
+    // disagree about who won: raw sums say `clamped` (1.03 > 1.02), recorded
+    // scores say `plain` (1.02 > 1.0). The recorded outcome is the real one.
+    //
+    // The masked feature's value must DIFFER from the remaining row's value.
+    // When they are equal, redistribution reproduces Σcontribution exactly and
+    // the same option wins under either baseline — the test would then pass
+    // against the bug too.
     const clamped = { id: 'clamped', label: 'C', score: 1.0, clamped: true,
-                      rows: [row('fatigue', 1.0, 1.0), row('monotony', 0.3, 1.0)] }
-    const plain = { id: 'plain', label: 'P', score: 1.1, rows: [row('monotony', 1.1, 1.0)] }
-    // Masking fatigue leaves clamped at 0.6 and plain at 1.1, so `plain` wins
-    // after masking too — unchanged. Sourcing the baseline from raw sums would
-    // report changed:true here, misreporting the very case Task 1 records.
+                      rows: [row('fatigue', 1.0, 1.0), row('monotony', 0.3, 0.1)] }
+    const plain = { id: 'plain', label: 'P', score: 1.02, rows: [row('monotony', 1.02, 1.0)] }
+    // Masking fatigue leaves clamped at 0.13 and plain at 1.02, so `plain` wins
+    // post-mask and was already ahead on recorded score — unchanged. A raw-sum
+    // baseline would call `clamped` the original winner and report changed:true.
     expect(necessity(clamped, plain, 'fatigue')).toMatchObject({
       winnerId: 'plain', changed: false,
     })
+  })
   })
 })
 
