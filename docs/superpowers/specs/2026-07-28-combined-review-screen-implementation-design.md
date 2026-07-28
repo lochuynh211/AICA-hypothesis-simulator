@@ -435,3 +435,75 @@ those testable:
    the content selector's evidence writer changes behaviour; no scoring, ranking or gate is
    altered anywhere.
 6. `reviewMath.ts` and `reviewVocabulary.ts` import no framework and perform no I/O.
+
+---
+
+## 10. Post-implementation record
+
+The feature was built across 19 tasks on branch `023-combined-review-screen`. Each task was
+reviewed against this design and its own brief; a whole-branch review followed. What survives
+below is what a future reader needs and cannot reconstruct from the diff.
+
+### 10.1 Known gap — case pins do not reach the trigger in the pre-Play quickview
+
+`MergedQuickviewBody` accepts neither `context_overrides`, `initial_state` nor `tick_seconds`,
+and `services/merged_quickview.py` forwards none of them to `iter_preview_ticks` — which does
+support them, and which the live-run path uses correctly.
+
+**Consequence.** A case's pinned `is_night` and initial drowsiness/fatigue are causally inert
+on the *trigger* side of the pre-Play quickview, which is the surface the review column reads
+before the reviewer presses Play. `is_night` does reach the proposal side. Painted mountain and
+jam bands *are* wired and were verified end-to-end.
+
+It was measured, not inferred: C-06's request body returns a score series starting at 0.1063 —
+the trajectory of the scenario's default `fatigue: 20`, not its pinned `82`.
+
+**Handling.** All four affected cases (C-01, C-02, C-03, C-06) disclose this in their `brief`,
+bilingually. Integration tests assert positionally only for C-04/C-05, where the pins genuinely
+reach the engine; C-02/C-06 assert reachability with an inline comment saying why they cannot
+assert more. C-01 and C-03 are unaffected today only because their pinned values coincide with
+the scenario defaults — if a scenario default is retuned, they become affected silently, which
+is why their disclosures exist too.
+
+Fixing it is bounded: a few model fields, one service call, one frontend effect. It was deferred
+because the path is shared by roughly twenty existing tests and the change is out of proportion
+to a task's scope. **The natural follow-up is a badge on the checkpoint itself**, not only the
+case card — that turns "won't be misled if they read the brief first" into "cannot be misled".
+
+### 10.2 Correction to a decision recorded in §2
+
+The log panel was dropped from the Combined layout on the stated grounds that it "stays
+available on the Runs/replay screens". That was false: no screen imports `MergedLogPanel`. The
+component file remains but is unreferenced in production, so the event log is currently
+unreachable in the UI. The decision to drop it was the owner's and stands; the justification
+given for it was wrong, and it is worth revisiting on that basis.
+
+### 10.3 Parked findings — real, non-blocking, with rulings
+
+- **`sameRecord` compares record values with `===`** (`lib/review/caseResolver.ts`). Array-valued
+  situation fields (`route_tags`, `destination_tags`) would compare by reference, so drift could
+  be mis-reported in either direction. *Ruling: dormant.* No committed case pins those fields, so
+  `situationFields` currently carries only a boolean. Needs deep equality before any case pins a
+  tag array.
+- **The flag-chip wiring has no end-to-end regression test.** `MergedShell`'s `flagCounts` line
+  is correct by direct reading, and the counting rule is well tested, but no test mounts the
+  shell and asserts the chip reflects real store judgements — so a reversion to the empty stub
+  would pass every test. *Ruling: coverage gap, not a defect.*
+
+### 10.4 Follow-ups worth scheduling
+
+Ordered by value, none blocking:
+
+1. Thread the quickview pins (§10.1), then drop the case disclosures.
+2. Decide the log panel's fate (§10.2) — restore it somewhere, or delete the dead component.
+3. Deep equality in `sameRecord`, before a case pins a tag array.
+4. An integration test for the flag-chip wiring.
+5. `flipDistance` only searches upward (multiplier 1→10) — it answers "how much stronger would
+   this need to be to flip the outcome", never "how much weaker". Confirm that is deliberate.
+6. Case references are not version- or hash-pinned as §4.1 claims. Either build it or soften
+   the claim.
+7. `WhatDecidedIt` has no `initialLanguage="ja"` test, despite being the component class where
+   two real Japanese-leak defects were found. The assembled-column test's stray-English regex
+   backstops it, but only heuristically.
+8. Accessibility: the case picker's `<select>` has no accessible name; the assessment buttons
+   have no `role="group"`.
