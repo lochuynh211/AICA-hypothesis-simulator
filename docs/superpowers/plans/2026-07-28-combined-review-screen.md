@@ -3129,8 +3129,13 @@ path is the pre-Play quickview, whose FirePoint carried no decision at all."
   deriveCheckpoints(result: MergedInstantResult | null): Checkpoint[]
   triggerOptions(fire: MergedFirePoint): ReviewOption[] | Unavailable
   serviceOptions(proposal: ProposalRunLog | null): ReviewOption[] | Unavailable
-  contentOptions(proposal: ProposalRunLog | null): ReviewOption[] | Unavailable
+  contentOptions(proposal: ProposalRunLog | null): ContentOptions | Unavailable
+  type ContentOptions = { options: ReviewOption[]; tailTruncated: boolean }
   ```
+
+  `contentOptions` returns a WRAPPER, not a bare array, because acceptance criterion 2
+  requires the UI to state when the scored tail was truncated at 20 — and a bare
+  `ReviewOption[]` has nowhere to carry that fact. Task 14 destructures it.
   Tasks 12–14 consume all four.
 
 **Context:** Checkpoints are **derived, not authored** — the first `rest_required` fire and the first `monotony_prevention` fire, each with its immediate proposal. Every other journey stage animates but exposes no review target. An empty rail is a legitimate outcome (C-01 is the control case), not an error.
@@ -3406,6 +3411,18 @@ entries (Task 2), so every position below rank 1 has a real runner-up; when
 else was scored", and when `tail_truncated` is true the caller must say so.
 
 Both return `unavailable(...)` when their evidence is missing.
+
+**Filtering must never degrade into a bare empty array.** Candidates and items whose recorded
+score / `item_fit` is `null` (LLM-shaped output carries no numeric fit) cannot be compared and
+are excluded. But if filtering empties a non-empty source, return
+`unavailable('every recorded candidate was LLM-shaped (no numeric score)')` — an empty list
+reads as "the algorithm produced nothing", which is a different and false statement.
+
+**Prerequisite:** `CompletePlan` in `src/api/proposalClient.ts` must first be extended with
+`scored_tail`, `cut_margin` and `tail_truncated`, mirroring the backend model. The earlier
+content-evidence task changed only backend files, so the frontend type still describes a plan
+without them — which is what forces an ad-hoc inline cast here and makes it easy to drop the
+field silently.
 
 - [ ] **Step 7: Extend the chains test for service and content**
 
@@ -3932,7 +3949,7 @@ export const judgmentKey = (
    is selected whose point is exactly that, say so as an outcome rather than a
    problem.
 2. Resolve the active checkpoint's fire, then build each stage's options:
-   `triggerOptions(fire)`, `serviceOptions(fire.proposal)`, `contentOptions(fire.proposal)`.
+   `triggerOptions(fire)`, `serviceOptions(fire.proposal)`, `contentOptions(fire.proposal)` (which returns `{ options, tailTruncated }`).
 3. Render the three stage tabs. A stage whose options are `Unavailable` renders
    `disabled` with the reason in `title`.
 4. Default the comparison per stage: trigger → the two categories; service →
