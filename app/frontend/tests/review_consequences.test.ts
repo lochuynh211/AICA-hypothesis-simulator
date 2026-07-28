@@ -43,6 +43,39 @@ describe('necessity', () => {
     const lonely = opt('a', [row('only', 0.5, 1.0)])
     expect(necessity(lonely, runnerUp, 'only')).toMatchObject({ available: false })
   })
+
+  it('takes the baseline winner from the RECORDED score, not the raw sum', () => {
+    // Clamping makes Σcontribution exceed the reported score, so the two can
+    // disagree about who won: raw sums say `clamped` (1.03 > 1.02), but the
+    // recorded scores say `plain` (1.02 > 1.0) — the recorded outcome is the
+    // real one.
+    //
+    // NOTE ON FIXTURE: this deliberately does not reuse the exact figures from
+    // the review finding (`fatigue` w=1.0/value=1.0, `monotony` w=0.3/value=1.0,
+    // scores 1.0/1.1) — with those figures the single remaining row after
+    // masking exactly reproduces the raw total (masking a feature whose value
+    // equals the sole remaining row's value leaves the redistribution
+    // mass-equal to Σcontribution), so `masked(clamped)` comes out to 1.3, not
+    // 0.6, and `winnerId` resolves to 'clamped' under BOTH the buggy and fixed
+    // baseline — the test could not pass either way. Verified by hand-running
+    // `masked()` against those figures before writing this fixture; see the
+    // fix report for the full trace. This fixture keeps `value` unequal
+    // between the masked feature and its replacement so the redistributed
+    // score is not forced to coincide with the raw sum, which is what lets
+    // `winnerId` land on 'plain' post-mask and the two baselines diverge on
+    // `changed`.
+    const clamped = { id: 'clamped', label: 'C', score: 1.0, clamped: true,
+                      rows: [row('fatigue', 1.0, 1.0), row('monotony', 0.3, 0.1)] }
+    const plain = { id: 'plain', label: 'P', score: 1.02, rows: [row('monotony', 1.02, 1.0)] }
+    // Masking fatigue leaves clamped at 0.13 and plain at 1.02, so `plain`
+    // wins after masking too. Recorded scores already had `plain` ahead
+    // (1.02 > 1.0), so the true answer is unchanged. Sourcing the baseline
+    // from raw sums instead (1.03 > 1.02) would say `clamped` led originally,
+    // and wrongly report changed:true.
+    expect(necessity(clamped, plain, 'fatigue')).toMatchObject({
+      winnerId: 'plain', changed: false,
+    })
+  })
 })
 
 describe('flipDistance', () => {

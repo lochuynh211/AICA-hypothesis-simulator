@@ -132,7 +132,11 @@ export function necessity(
   }
 
   const winnerId = leftScore >= rightScore ? left.id : right.id
-  const originalWinner = total(left.rows) >= total(right.rows) ? left.id : right.id
+  // The baseline winner comes from the RECORDED scores, never from re-summing
+  // contributions: a clamped option's Σcontribution exceeds its reported score,
+  // so the two can disagree about who actually won. Only the post-mask scores
+  // are re-summed, because no recorded value exists for a hypothetical.
+  const originalWinner = left.score >= right.score ? left.id : right.id
   return { winnerId, changed: winnerId !== originalWinner }
 }
 
