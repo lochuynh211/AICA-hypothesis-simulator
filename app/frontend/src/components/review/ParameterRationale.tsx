@@ -58,12 +58,38 @@ const LABELS = {
 
 const JUDGEMENT_OPTIONS: { value: string; label: BilingualLabel }[] = [
   { value: '', label: LABELS.judgeNotJudged },
-  { value: 'makes_sense', label: LABELS.judgeMakesSense },
+  { value: 'rational', label: LABELS.judgeMakesSense },
   { value: 'too_strong', label: LABELS.judgeTooStrong },
   { value: 'too_weak', label: LABELS.judgeTooWeak },
-  { value: 'not_relevant', label: LABELS.judgeNotRelevant },
-  { value: 'not_sure', label: LABELS.judgeNotSure },
+  { value: 'not_relevant_here', label: LABELS.judgeNotRelevant },
+  { value: 'unsure', label: LABELS.judgeNotSure },
 ]
+
+/**
+ * `reviewMath.ts` reasons are raw English diagnostic literals, never
+ * bilingual — they must NEVER be interpolated verbatim into a JA sentence.
+ * There are exactly two reason shapes today; anything unrecognised (a future
+ * third reason) falls to a generic bilingual sentence rather than leaking
+ * English into the default-JA UI.
+ */
+const REASON_NO_CONTRIBUTION_PREFIX = 'no recorded contribution for'
+const REASON_NO_REDISTRIBUTE = 'no other feature could absorb the redistributed weight'
+
+function reasonSentence(reason: string, label: string, lang: 'ja' | 'en'): string {
+  if (reason.startsWith(REASON_NO_CONTRIBUTION_PREFIX)) {
+    return lang === 'ja'
+      ? `「${label}」について記録された寄与がありません`
+      : `no contribution was recorded for ${label}`
+  }
+  if (reason === REASON_NO_REDISTRIBUTE) {
+    return lang === 'ja'
+      ? '重みを再配分できる他の入力がありません'
+      : 'no other input could absorb the redistributed weight'
+  }
+  return lang === 'ja'
+    ? '記録されたデータからは判定できません'
+    : 'this could not be determined from the recorded data'
+}
 
 /** `value · bandWord(band, value)` for a numeric row; the raw string for a categorical one. */
 function situationText(row: ReviewChainRow, lang: 'ja' | 'en'): string {
@@ -80,9 +106,10 @@ function necessitySentence(
   const label = t(phrase(featureId), lang)
   const result = necessity(left, right, featureId)
   if ('available' in result) {
+    const reason = reasonSentence(result.reason, label, lang)
     return lang === 'ja'
-      ? `「${label}」を取り除いた場合の影響は判定できません（${result.reason}）。`
-      : `Whether ${label} was necessary cannot be told (${result.reason}).`
+      ? `「${label}」を取り除いた場合の影響は判定できません（${reason}）。`
+      : `Whether ${label} was necessary cannot be told (${reason}).`
   }
   if (!result.changed) {
     return lang === 'ja'
@@ -107,9 +134,10 @@ function flipSentence(
       : `No setting of ${label} alone changes this decision.`
   }
   if ('available' in result) {
+    const reason = reasonSentence(result.reason, label, lang)
     return lang === 'ja'
-      ? `「${label}」がどれだけ変われば結果が変わるかは判定できません（${result.reason}）。`
-      : `What would flip ${label} cannot be told (${result.reason}).`
+      ? `「${label}」がどれだけ変われば結果が変わるかは判定できません（${reason}）。`
+      : `What would flip ${label} cannot be told (${reason}).`
   }
   const pct = Math.round((result.factor - 1) * 100)
   return lang === 'ja'
@@ -185,7 +213,9 @@ export default function ParameterRationale({
             </span>
             <span style={{ flex: 2 }}>
               <select
+                id={`rationale-judge-${row.featureId}`}
                 data-testid={`rationale-judge-${row.featureId}`}
+                aria-label={t(phrase(row.featureId), lang)}
                 value={judgments[row.featureId] ?? ''}
                 onChange={(e) => onJudge(row.featureId, e.target.value)}
                 style={{ width: '100%', fontSize: '0.92em', padding: '3px' }}
@@ -206,10 +236,10 @@ export default function ParameterRationale({
           </p>
           {rows.slice(0, 3).map((row) => (
             <div key={row.featureId} style={{ marginBottom: '8px' }}>
-              <p data-testid={`consequence-necessity-${row.featureId}`} style={{ fontSize: '0.84em', lineHeight: 1.6, color: '#1e293b', margin: '0 0 2px' }}>
+              <p data-testid={`consequence-${row.featureId}-necessity`} style={{ fontSize: '0.84em', lineHeight: 1.6, color: '#1e293b', margin: '0 0 2px' }}>
                 {necessitySentence(row.featureId, left, right, lang)}
               </p>
-              <p data-testid={`consequence-flip-${row.featureId}`} style={{ fontSize: '0.84em', lineHeight: 1.6, color: '#1e293b', margin: 0 }}>
+              <p data-testid={`consequence-${row.featureId}-flip`} style={{ fontSize: '0.84em', lineHeight: 1.6, color: '#1e293b', margin: 0 }}>
                 {flipSentence(row.featureId, left, right, lang)}
               </p>
             </div>

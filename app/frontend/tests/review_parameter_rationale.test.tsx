@@ -54,10 +54,13 @@ describe('ParameterRationale', () => {
     expect(screen.getByTestId('rationale-ratio-fatigue').textContent).toMatch(/[↑↓≈]/)
   })
 
-  it('offers the six judgement options', () => {
+  it('offers exactly the six judgement values', () => {
     mount()
     const select = screen.getByTestId('rationale-judge-fatigue') as HTMLSelectElement
-    expect(select.options.length).toBe(6)
+    // Pinned to the values, not the count — six WRONG options would pass a count check.
+    expect(Array.from(select.options).map((o) => o.value)).toEqual([
+      '', 'rational', 'too_strong', 'too_weak', 'not_relevant_here', 'unsure',
+    ])
   })
 
   it('reports a judgement', () => {
@@ -73,9 +76,14 @@ describe('ParameterRationale', () => {
     expect(text).toContain('Call & response (driving)')
   })
 
-  it('names inputs that played no part', () => {
+  it('names inputs that played no part, and only those', () => {
     mount()
-    expect(screen.getByTestId('played-no-part')).toHaveTextContent('oshi_affinity')
+    const listed = screen.getByTestId('played-no-part').textContent ?? ''
+    expect(listed).toContain('oshi_affinity')
+    // Without these, an implementation that ignores the 2% threshold and dumps
+    // every feature into the list passes.
+    expect(listed).not.toContain('fatigue')
+    expect(listed).not.toContain('monotony')
   })
 
   it('suppresses both consequence sections on the trigger stage', () => {
@@ -104,7 +112,9 @@ describe('ParameterRationale', () => {
     const dominant: ReviewOption = { id: 'a', label: 'A', score: 9, rows: [row('fatigue', 1, 9)] }
     const weak: ReviewOption = { id: 'b', label: 'B', score: 0.01, rows: [row('monotony', 0.1, 0.1)] }
     mount({ left: dominant, right: weak, declaredWeights: { fatigue: 9 } })
-    expect(screen.getByTestId('different-setting').textContent).toBeTruthy()
+    const text = screen.getByTestId('different-setting').textContent ?? ''
+    expect(text).not.toMatch(/\d+\s*%/)
+    expect(text.length).toBeGreaterThan(0)
   })
 
   it('renders neither consequence section for any stage when there is no alternative and it is not the trigger stage', () => {
@@ -129,5 +139,26 @@ describe('ParameterRationale', () => {
     expect(ids[0]).toContain('fatigue')
     expect(ids[1]).toContain('monotony')
     expect(ids[2]).toContain('oshi_affinity')
+  })
+
+  it('distinguishes "cannot flip" from "evidence unavailable"', () => {
+    const dominant: ReviewOption = { id: 'a', label: 'A', score: 9, rows: [row('fatigue', 1, 9)] }
+    const weak: ReviewOption = { id: 'b', label: 'B', score: 0.01, rows: [row('monotony', 0.1, 0.1)] }
+    mount({ left: dominant, right: weak, declaredWeights: { fatigue: 9 } })
+    const sentences = screen.getAllByTestId(/^consequence-/).map((n) => n.textContent)
+    expect(new Set(sentences).size).toBe(sentences.length)
+  })
+
+  it('renders no raw English in the Japanese UI', () => {
+    const dominant: ReviewOption = { id: 'a', label: 'A', score: 9, rows: [row('fatigue', 1, 9)] }
+    const weak: ReviewOption = { id: 'b', label: 'B', score: 0.01, rows: [row('monotony', 0.1, 0.1)] }
+    render(
+      <LanguageProvider initialLanguage="ja">
+        <ParameterRationale stage="service" left={dominant} right={weak}
+          declaredWeights={{ fatigue: 9 }} judgments={{}} onJudge={() => {}} />
+      </LanguageProvider>,
+    )
+    expect(screen.getByTestId('different-setting').textContent ?? '')
+      .not.toMatch(/[a-z]{4,}\s+[a-z]{4,}/)
   })
 })
