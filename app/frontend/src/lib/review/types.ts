@@ -11,8 +11,13 @@
 /** One feature's recorded link in a decision chain. */
 export type ReviewChainRow = {
   featureId: string
-  /** The raw/smoothed value the formula consumed. */
-  value: number
+  /**
+   * The raw value the formula consumed. `string | number` to match `ReasonRow`
+   * exactly — service and content features include categoricals (`road_type`
+   * is "highway"), and narrowing to number would leave the service/content
+   * mapping with nowhere to put them. A categorical carries no derived band.
+   */
+  value: string | number
   /** Ordinal band word for `value`, or null when none was recorded. */
   band: string | null
   /** Response coefficient. The trigger has none, so trigger rows use 1. */

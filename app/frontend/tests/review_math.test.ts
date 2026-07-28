@@ -20,7 +20,9 @@ describe('scaleBound', () => {
 
   it('is strictly above the magnitude even at an exact step value', () => {
     // 0.3 must NOT bound itself — a bar would touch the edge and read as clipped.
-    expect(scaleBound([0.3])).toBeGreaterThan(0.3)
+    // Pinned to the NEXT step, not merely "something bigger": toBeGreaterThan
+    // alone would pass for a bound of 10, which would squash every bar flat.
+    expect(scaleBound([0.3])).toBe(0.4)
   })
 
   it('uses absolute magnitude, so sign never changes the bound', () => {
@@ -86,6 +88,11 @@ describe('realizedShares', () => {
     const shares = realizedShares([row('a', 0), row('b', 0)])
     expect(shares.a).toBe(0)
     expect(shares.b).toBe(0)
+  })
+
+  it('represents a categorical value, which carries no derived band', () => {
+    const categorical = { featureId: 'road_type', value: 'highway', band: null, r: 1, w: 0.2, contribution: 0.2 }
+    expect(realizedShares([categorical]).road_type).toBe(1)
   })
 })
 
