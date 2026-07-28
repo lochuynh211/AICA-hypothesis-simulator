@@ -1,0 +1,54 @@
+{
+  "case_id": "case-c03-monotonous-highway",
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "title": { "ja": "C-03 単調な高速道路・低疲労", "en": "C-03 Monotonous highway, low fatigue" },
+  "brief": {
+    "ja": "疲労は低いまま、変化の乏しい高速道路を長く走り続けます。介入の理由が疲労ではなく単調さであることを確認します。",
+    "en": "A long stretch of featureless highway while fatigue stays low. Checks that any intervention is caused by monotony rather than by fatigue."
+  },
+  "what_to_watch": [
+    { "ja": "単調さと疲労のどちらが決め手か", "en": "Monotony versus fatigue as the deciding input" },
+    { "ja": "走行中でも使えるサービスが選ばれるか", "en": "A driving-capable service is chosen" },
+    { "ja": "選ばれた曲の高揚感", "en": "How energising the chosen songs are" }
+  ],
+  "persona": {
+    "persona_id": "persona-long-haul-regular",
+    "name": { "ja": "長距離運転に慣れたドライバー", "en": "Seasoned long-haul driver" },
+    "narrative": {
+      "ja": "長距離運転に慣れており体力にも余裕がありますが、単調な高速道路では注意が散漫になりがちです。音楽や声かけによる働きかけを歓迎します。",
+      "en": "Comfortable with long drives and physically fresh, but prone to drifting attention on featureless highway. Welcomes music or a spoken prompt."
+    },
+    "goals": [{ "ja": "集中を保ったまま走り切る", "en": "Stay engaged for the whole drive" }],
+    "preferences": [{ "ja": "対話的なコンテンツを好む", "en": "Prefers interactive content" }],
+    "constraints": [
+      { "ja": "走行中は停車が必要なサービスを使えない", "en": "Cannot use services that require stopping" }
+    ],
+    "assumptions": [
+      { "ja": "疲労は介入時点でも低いままである", "en": "Fatigue remains low at the moment of intervention" }
+    ],
+    "profile_ref": "preset-journey-a-2-monotony-building"
+  },
+  "journey": {
+    "narrative": {
+      "ja": "東京から大阪までの長距離ルートを、変化の乏しい高速区間を含めて走行します。",
+      "en": "The long Tokyo–Osaka route, including a long featureless highway stretch."
+    },
+    "scenario_ref": "uc02_monotony_v0_1",
+    "route_preset_ref": "long_tokyo_osaka",
+    "seed": 1042,
+    "tick_seconds": 60,
+    "fixed_overrides": {
+      "initial_drowsiness": 15,
+      "initial_fatigue": 18,
+      "is_night": false,
+      "child_passenger": false
+    },
+    "automatic_path": { "service_choice": "rank_1" }
+  },
+  "algorithm_defaults": {
+    "trigger": "aica_transparent_hybrid_trigger_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "content": "aica_transparent_content_selector_v1"
+  }
+}

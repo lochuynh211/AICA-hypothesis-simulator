@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "combined_test_case.schema.json",
+  "title": "CombinedTestCase",
+  "description": "One reviewable experience test case. Phase 1 authors NO expectations: the expectation is what human review produces, not an input.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["case_id", "schema_version", "version", "title", "brief", "what_to_watch", "persona", "journey", "algorithm_defaults"],
+  "properties": {
+    "case_id": { "type": "string", "pattern": "^case-[a-z0-9-]+$" },
+    "schema_version": { "type": "string", "const": "1.0.0" },
+    "version": { "type": "string" },
+    "title": { "$ref": "#/definitions/bilingual" },
+    "brief": {
+      "description": "Two sentences: what the case is, and why it is worth running.",
+      "$ref": "#/definitions/bilingual"
+    },
+    "what_to_watch": {
+      "description": "Situation/preference dimensions to focus on, rendered as chips.",
+      "type": "array", "minItems": 1,
+      "items": { "$ref": "#/definitions/bilingual" }
+    },
+    "persona": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["persona_id", "name", "narrative", "profile_ref"],
+      "properties": {
+        "persona_id": { "type": "string" },
+        "name": { "$ref": "#/definitions/bilingual" },
+        "narrative": { "$ref": "#/definitions/bilingual" },
+        "goals": { "type": "array", "items": { "$ref": "#/definitions/bilingual" } },
+        "preferences": { "type": "array", "items": { "$ref": "#/definitions/bilingual" } },
+        "constraints": { "type": "array", "items": { "$ref": "#/definitions/bilingual" } },
+        "assumptions": {
+          "description": "ONLY assumptions relevant to this case. No decorative demographics.",
+          "type": "array", "items": { "$ref": "#/definitions/bilingual" }
+        },
+        "profile_ref": {
+          "description": "A committed proposal preset id; its driver_profile is resolved and frozen into the run.",
+          "type": "string"
+        },
+        "profile_ref_version": { "type": "string" }
+      }
+    },
+    "journey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["narrative", "scenario_ref", "route_preset_ref", "seed", "tick_seconds"],
+      "properties": {
+        "narrative": { "$ref": "#/definitions/bilingual" },
+        "scenario_ref": { "type": "string" },
+        "route_preset_ref": { "type": "string" },
+        "seed": { "type": "integer" },
+        "tick_seconds": { "type": "integer", "minimum": 1 },
+        "fixed_overrides": {
+          "description": "Situation/context this case pins. Live values (drowsiness, fatigue, monotony, traffic, road) still come from the tick engine.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "initial_drowsiness": { "type": "number", "minimum": 0, "maximum": 100 },
+            "initial_fatigue": { "type": "number", "minimum": 0, "maximum": 100 },
+            "is_night": { "type": "boolean" },
+            "child_passenger": { "type": "boolean" },
+            "route_tags": { "type": "array", "items": { "type": "string" } },
+            "destination_tags": { "type": "array", "items": { "type": "string" } },
+            "multiple_passengers": { "type": "boolean" },
+            "mountain_range_km": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+            "jam_range_km": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 }
+          }
+        },
+        "automatic_path": {
+          "description": "Deterministic choices only — NOT a general walkthrough language. Omitted means the quickview convention: rank 1.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "service_choice": { "type": "string", "enum": ["rank_1"] },
+            "rest_response": { "type": "string", "enum": ["accept", "decline", "ignore"] },
+            "sleep_minutes": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "algorithm_defaults": {
+      "description": "Defaults, NOT part of expected behaviour. A candidate version may be substituted while the case stays the same.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trigger", "service", "content"],
+      "properties": {
+        "trigger": { "type": "string" },
+        "service": { "type": "string" },
+        "content": { "type": "string" }
+      }
+    }
+  },
+  "definitions": {
+    "bilingual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ja", "en"],
+      "properties": { "ja": { "type": "string" }, "en": { "type": "string" } }
+    }
+  }
+}

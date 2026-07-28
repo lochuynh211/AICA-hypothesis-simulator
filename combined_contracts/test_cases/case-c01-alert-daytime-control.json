@@ -1,0 +1,51 @@
+{
+  "case_id": "case-c01-alert-daytime-control",
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "title": { "ja": "C-01 日中・覚醒状態の対照ケース", "en": "C-01 Alert daytime control" },
+  "brief": {
+    "ja": "十分に休養したドライバーが、日中の短いルートを走ります。トリガーが一切発火しないことを確認するための対照ケースです。",
+    "en": "A well-rested driver on a short daytime route. The control case: it exists to confirm nothing fires when nothing should."
+  },
+  "what_to_watch": [
+    { "ja": "早すぎる休憩提案がないか", "en": "No premature rest proposal" },
+    { "ja": "単調さスコアが閾値未満に留まるか", "en": "Monotony stays below threshold" }
+  ],
+  "persona": {
+    "persona_id": "persona-rested-commuter",
+    "name": { "ja": "休養十分の通勤ドライバー", "en": "Well-rested commuter" },
+    "narrative": {
+      "ja": "前夜に十分な睡眠をとり、通い慣れた道を昼間に短時間運転します。運転支援からの介入を特に必要としていません。",
+      "en": "Slept well last night and is driving a familiar road for a short daytime trip. Needs no intervention from the assistant."
+    },
+    "goals": [{ "ja": "予定通りに目的地へ着く", "en": "Arrive on schedule" }],
+    "preferences": [{ "ja": "不要な通知を好まない", "en": "Dislikes unnecessary notifications" }],
+    "constraints": [],
+    "assumptions": [
+      { "ja": "出発時の眠気・疲労はいずれも低い", "en": "Both drowsiness and fatigue start low" }
+    ],
+    "profile_ref": "preset-journey-a-1-cruising-fresh"
+  },
+  "journey": {
+    "narrative": {
+      "ja": "日中、東京から秩父までの短いルートを走行します。",
+      "en": "A short daytime drive from Tokyo to Chichibu."
+    },
+    "scenario_ref": "uc01_fatigue_recovery_v0_1",
+    "route_preset_ref": "short_tokyo_chichibu",
+    "seed": 1042,
+    "tick_seconds": 60,
+    "fixed_overrides": {
+      "initial_drowsiness": 10,
+      "initial_fatigue": 12,
+      "is_night": false,
+      "child_passenger": false
+    },
+    "automatic_path": { "service_choice": "rank_1" }
+  },
+  "algorithm_defaults": {
+    "trigger": "aica_transparent_hybrid_trigger_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "content": "aica_transparent_content_selector_v1"
+  }
+}
