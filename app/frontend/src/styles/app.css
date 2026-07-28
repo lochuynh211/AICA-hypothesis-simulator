@@ -98,8 +98,10 @@ body {
   background: #ffffff;
 }
 
-/* Left column is a single scrolling stack now that the log has moved out
-   (log stays on MergedRunsScreen/MergedReplayViewer). */
+/* Left column is a single scrolling stack now that the log has moved out —
+   MergedLogPanel is no longer imported anywhere in the live UI (neither
+   MergedRunsScreen nor MergedReplayViewer reaches it); the log is genuinely
+   unreachable, not just relocated. */
 .merged-shell .left-panel {
   display: flex;
   flex-direction: column;

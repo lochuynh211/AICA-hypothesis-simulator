@@ -16,17 +16,13 @@
  */
 import type { MergedInstantResult } from '../../api/mergedClient'
 import type { BilingualLabel } from './reviewVocabulary'
+import { CATEGORY_LABELS } from './reviewVocabulary'
 
 export type ReviewStage = 'trigger' | 'service' | 'content'
 
 export type ReviewableCategory = 'rest_required' | 'monotony_prevention'
 
 const IN_SCOPE: ReviewableCategory[] = ['rest_required', 'monotony_prevention']
-
-const CATEGORY_LABELS: Record<ReviewableCategory, BilingualLabel> = {
-  rest_required: { ja: '休憩の提案', en: 'Rest proposal' },
-  monotony_prevention: { ja: '単調さへの介入', en: 'Monotony intervention' },
-}
 
 export type Checkpoint = {
   /** Stable within a run — the category is unique because we take only the first. */

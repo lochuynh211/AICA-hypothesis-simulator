@@ -152,6 +152,10 @@ const DIFF_FIELD_LABELS: Record<string, BilingualLabel> = {
   initialDrowsiness: { ja: '初期眠気', en: 'initial drowsiness' },
   initialFatigue: { ja: '初期疲労', en: 'initial fatigue' },
   profileRef: { ja: 'ドライバープロファイル', en: 'driver profile' },
+  contextOverrides: { ja: '状況の上書き（夜間など）', en: 'context overrides (e.g. night)' },
+  situationFields: { ja: '状況フィールド', en: 'situation fields' },
+  mountainRangeKm: { ja: '山道区間', en: 'mountain range' },
+  jamRangeKm: { ja: '渋滞区間', en: 'jam range' },
 }
 
 // Scenarios hidden from the Combined scenario picker (owner review): the uc02
@@ -923,6 +927,25 @@ export default function MergedSetupPanel({
   // corruption `handleSelectCase`'s `selectionRef` guard exists to prevent,
   // just reachable through a different button. Sharing the guarded function
   // closes it for both entry points at once.
+  // Scoped to exactly the keys the CASE pins — not the whole store — so a
+  // context override / situation field the case never mentions can't read as
+  // drift, and a pinned key with no live override yet still reads as "not
+  // drifted" (falls back to the case's own pinned value, mirroring
+  // `BasicSituationView`'s own fallback just above).
+  const liveContextOverrides: Record<string, unknown> = {}
+  if (caseSetup) {
+    const overrides = rs.contextOverrides as unknown as Record<string, unknown>
+    for (const key of Object.keys(caseSetup.contextOverrides)) {
+      liveContextOverrides[key] = key in overrides ? overrides[key] : caseSetup.contextOverrides[key]
+    }
+  }
+  const liveSituationFields: Record<string, unknown> = {}
+  if (caseSetup) {
+    const situation = ps.world.situation as unknown as Record<string, unknown>
+    for (const key of Object.keys(caseSetup.situationFields)) {
+      liveSituationFields[key] = key in situation ? situation[key] : caseSetup.situationFields[key]
+    }
+  }
   const liveSnapshot: LiveSetupSnapshot = {
     scenarioId: rs.selectedScenarioId ?? '',
     routePresetId: selectedRoutePresetId ?? '',
@@ -934,6 +957,10 @@ export default function MergedSetupPanel({
     initialDrowsiness: rs.initialDrowsiness,
     initialFatigue: rs.initialFatigue,
     profileRef: ps.selectedProfileId ?? '',
+    contextOverrides: liveContextOverrides,
+    situationFields: liveSituationFields,
+    mountainRangeKm: mountainRange,
+    jamRangeKm: jamRange,
   }
   const driftFields = caseSetup ? differsFromCase(caseSetup, liveSnapshot) : []
 

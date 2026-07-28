@@ -513,6 +513,25 @@ describe('two-tier setup editors', () => {
     expect(screen.queryByTestId('differs-from-case')).toBeNull()
   })
 
+  // ── Review MUST FIX 1: differsFromCase must see contextOverrides too ─────
+  // C-02's whole premise is the night context — flipping it while exploring
+  // must surface the note, or the right column keeps explaining the
+  // decision as though the setup still matched the case.
+  it('notes when a case-pinned context override is flipped, and offers Reset', async () => {
+    const caseWithNightPin: ResolvedCaseSetup = { ...MATCHING_CASE_SETUP, contextOverrides: { is_night: true } }
+    renderPanel(caseWithNightPin)
+    await waitForSettled()
+    expect(screen.queryByTestId('differs-from-case')).toBeNull()
+
+    fireEvent.click(screen.getByTestId('edit-situation'))
+    const checkbox = (await screen.findByTestId('basic-is_night')) as HTMLInputElement
+    expect(checkbox.checked).toBe(true)
+    fireEvent.click(checkbox) // flips to false, away from the case's pinned true
+
+    expect(await screen.findByTestId('differs-from-case')).toBeTruthy()
+    expect(screen.getByTestId('reset-to-case')).toBeTruthy()
+  })
+
   it('renders the basic trigger view bilingually, JA by default', async () => {
     renderPanel(null, 'ja')
     await waitForSettled()

@@ -57,8 +57,34 @@ const GROUP_LABELS: Record<DomainGroup, BilingualLabel> = {
 
 export const groupLabel = (group: DomainGroup): BilingualLabel => GROUP_LABELS[group]
 
-/** Plain phrasing. The identifier is shown separately in faint grey, never as the label. */
-const PHRASES: Record<string, BilingualLabel> = {
+/**
+ * The two V1 reviewable checkpoint categories, labelled.
+ *
+ * Single source of truth for BOTH `chains.ts` (comparable trigger options)
+ * and `checkpoints.ts` (the derived rail) — this table used to be declared
+ * byte-identically in both files, and this branch already had one incident
+ * from exactly that copy-paste pattern. Loosely typed (`Record<string, ...>`)
+ * rather than keyed on `ReviewableCategory` to avoid a circular import with
+ * `checkpoints.ts`, which already imports `BilingualLabel` from here.
+ */
+export const CATEGORY_LABELS: Record<string, BilingualLabel> = {
+  rest_required: { ja: '休憩の提案', en: 'Rest proposal' },
+  monotony_prevention: { ja: '単調さへの介入', en: 'Monotony intervention' },
+}
+
+/**
+ * Plain phrasing. The identifier is shown separately in faint grey, never as
+ * the label.
+ *
+ * Exported (not just `phrase()`) so a test can scan every entry for a class
+ * of mismatch, not just spot-check individual ids: an English phrase framed
+ * by DEGREE ("how X the thing is") must not pair with a Japanese phrase
+ * framed by YES/NO (ending in かどうか) — `bandWord()` renders a strength
+ * word ("非常に高い" / "very high") after both, and "whether recently played:
+ * very high" reads as nonsense in a way "recency of play: very high" does
+ * not.
+ */
+export const PHRASES: Record<string, BilingualLabel> = {
   drowsiness: { ja: 'ドライバーの眠気', en: 'how drowsy the driver is' },
   fatigue: { ja: 'ドライバーの疲労', en: 'how tired the driver is' },
   driving_anomaly: { ja: '運転の乱れ', en: 'how erratic the driving is' },
@@ -75,7 +101,7 @@ const PHRASES: Record<string, BilingualLabel> = {
   // History phrases stay FACTUAL in both languages. Naming the scoring effect
   // ("…による減点") in JA while EN names the fact would describe two different
   // things to two reviewers looking at the same row.
-  recent_play_penalty: { ja: '直近に再生したかどうか', en: 'how recently this was played' },
+  recent_play_penalty: { ja: '再生の新しさ', en: 'how recently this was played' },
   skip_penalty: { ja: '過去にスキップした頻度', en: 'how often they skipped this before' },
   changed_penalty: { ja: '過去に切り替えた頻度', en: 'how often they switched away from this' },
   road_type: { ja: '走っている道路の種類', en: 'what kind of road they are on' },
@@ -90,7 +116,7 @@ const PHRASES: Record<string, BilingualLabel> = {
   song_singability: { ja: '曲の歌いやすさ', en: 'how easy the song is to sing' },
   song_era: { ja: '曲の年代', en: 'what era the song is from' },
   humming_ease: { ja: 'ハミングのしやすさ', en: 'how easy the song is to hum' },
-  full_karaoke_ease: { ja: 'フルカラオケ向きかどうか', en: 'how suited the song is to full karaoke' },
+  full_karaoke_ease: { ja: 'フルカラオケ適性', en: 'how suited the song is to full karaoke' },
 }
 
 export const phrase = (featureId: string): BilingualLabel =>

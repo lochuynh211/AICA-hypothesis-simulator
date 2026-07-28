@@ -9,8 +9,11 @@
  * not descendants of it). Right = `ReviewColumn`, mounted exactly once (it
  * owns `WhatDecidedIt`'s hardcoded element ids).
  *
- * `MergedLogPanel` is no longer part of this layout — the log stays on
- * `MergedRunsScreen`/`MergedReplayViewer`, which still import it directly.
+ * `MergedLogPanel` is no longer part of this layout, and — despite an
+ * earlier version of this comment claiming otherwise — neither
+ * `MergedRunsScreen` nor `MergedReplayViewer` imports it either: the log is
+ * genuinely unreachable from the UI now. The design doc was corrected; this
+ * comment previously was not.
  *
  * Selecting an experience test case (`ExperienceCasePicker`) is handled by
  * `useCaseSelection()` (extracted so its async race — selecting case A then
@@ -32,11 +35,12 @@ import ExperienceCasePicker from '../review/ExperienceCasePicker'
 import ExperienceCaseCard from '../review/ExperienceCaseCard'
 import CaseDetailsModal from '../review/CaseDetailsModal'
 import ReviewColumn from '../review/ReviewColumn'
+import { caseFlagCounts } from '../review/DecisionAssessment'
 import { useCaseSelection } from './useCaseSelection'
 import { resolveCase } from '../../lib/review/caseResolver'
 import { RunStoreProvider } from '../../state/runStore'
 import { ProposalStoreProvider } from '../../state/proposalStore'
-import { ReviewStoreProvider } from '../../state/reviewStore'
+import { ReviewStoreProvider, useReviewStore } from '../../state/reviewStore'
 import { MergedCoordinatorProvider, useMergedCoordinator } from '../../state/mergedCoordinator'
 import { RunLanguageBridge, ProposalLanguageBridge } from '../../state/languageBridges'
 import { useLanguage } from '../../state/language'
@@ -56,15 +60,20 @@ const LABELS = {
  */
 function MergedLiveBody(): JSX.Element {
   const coordinator = useMergedCoordinator()
+  const { state: reviewState } = useReviewStore()
   const { selectedCaseId, selectedCase, detailsOpen, setDetailsOpen, caseError, handleSelectCase } = useCaseSelection()
   const caseSetup = useMemo(() => (selectedCase ? resolveCase(selectedCase) : null), [selectedCase])
+  // Derived, not stored — `judgments` is the single source of truth (task-14
+  // brief) and this is a pure roll-up of it, recomputed whenever a judgement
+  // changes so the chip never goes stale relative to what was actually judged.
+  const flagCounts = useMemo(() => caseFlagCounts(reviewState.judgments), [reviewState.judgments])
 
   return (
     <div className="merged-shell" data-testid="merged-shell">
       <div className="left-panel">
         <ExperienceCasePicker
           selectedCaseId={selectedCaseId}
-          flagCounts={{}}
+          flagCounts={flagCounts}
           onSelect={(caseId) => void handleSelectCase(caseId)}
         />
         {caseError && (

@@ -73,6 +73,13 @@ export const judgmentKey = (
   featureId: string,
 ): string => [caseId, checkpointId, stage, targetId, featureId].join('|')
 
+/** Inverse of `judgmentKey`: the case id embedded in a judgment key. Kept
+ * next to the builder (rather than re-derived at each call site) so the
+ * delimiter convention only ever exists in one place — see
+ * `DecisionAssessment.tsx`'s `caseFlagCounts`, which rolls judgments up per
+ * case for the picker's flag chip. */
+export const caseIdFromJudgmentKey = (key: string): string => key.split('|')[0]
+
 // ── Reducer ──────────────────────────────────────────────────────────────
 
 export function reviewReducer(state: ReviewState, action: ReviewAction): ReviewState {

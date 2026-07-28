@@ -21,6 +21,7 @@ import { useLanguage } from '../../state/language'
 import { t } from '../../i18n/t'
 import type { BilingualLabel } from '../../lib/review/reviewVocabulary'
 import type { ReviewStage } from '../../lib/review/checkpoints'
+import { caseIdFromJudgmentKey } from '../../state/reviewStore'
 
 /** The three criticisms. "Not sure" and "Makes sense" are deliberately absent. */
 const FLAG_JUDGMENTS = new Set(['too_strong', 'too_weak', 'not_relevant_here'])
@@ -37,6 +38,26 @@ export function summarizeJudgments(
     // here would inflate a number that means "these need attention".
     flags: set.filter((j) => FLAG_JUDGMENTS.has(j)).length,
   }
+}
+
+/**
+ * Roll `reviewStore`'s whole `judgments` map up into a per-case flag count,
+ * for `ExperienceCasePicker`'s chip. Reuses the SAME `FLAG_JUDGMENTS` set
+ * `summarizeJudgments` uses above — `unsure` and `rational` never count,
+ * here either, for the identical reason: they are not complaints.
+ *
+ * A case with zero flags gets no entry at all (not a `0`), so callers that
+ * render "no chip when the count is falsy" can't accidentally render a chip
+ * showing "0".
+ */
+export function caseFlagCounts(judgments: Record<string, string>): Record<string, number> {
+  const counts: Record<string, number> = {}
+  for (const [key, judgment] of Object.entries(judgments)) {
+    if (!judgment || !FLAG_JUDGMENTS.has(judgment)) continue
+    const caseId = caseIdFromJudgmentKey(key)
+    counts[caseId] = (counts[caseId] ?? 0) + 1
+  }
+  return counts
 }
 
 export type JudgmentSummary = { judged: number; total: number; flags: number }

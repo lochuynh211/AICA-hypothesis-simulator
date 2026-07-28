@@ -35,7 +35,8 @@ export type LiveSetupSnapshot = Pick<
   ResolvedCaseSetup,
   | 'scenarioId' | 'routePresetId' | 'triggerPackageId' | 'servicePackageId'
   | 'contentPackageId' | 'seed' | 'tickSeconds' | 'initialDrowsiness'
-  | 'initialFatigue' | 'profileRef'
+  | 'initialFatigue' | 'profileRef' | 'contextOverrides' | 'situationFields'
+  | 'mountainRangeKm' | 'jamRangeKm'
 >
 
 export type RunAction = { type: string; [key: string]: unknown }
@@ -149,13 +150,42 @@ const COMPARED_KEYS: (keyof LiveSetupSnapshot)[] = [
   'initialFatigue', 'profileRef',
 ]
 
+/** Tuple equality for a painted km range — `null` means "not painted", and
+ * is only equal to `null`, never to a range. */
+function sameRange(a: [number, number] | null, b: [number, number] | null): boolean {
+  if (a === null || b === null) return a === b
+  return a[0] === b[0] && a[1] === b[1]
+}
+
+/** Equality for a flat override/situation record: same key count, same value
+ * per key. Order-independent, and a key present on one side only is drift
+ * even if every shared key matches. */
+function sameRecord(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
+  const aKeys = Object.keys(a)
+  const bKeys = Object.keys(b)
+  if (aKeys.length !== bKeys.length) return false
+  return aKeys.every((key) => Object.prototype.hasOwnProperty.call(b, key) && a[key] === b[key])
+}
+
 /**
  * Which setup fields have drifted from the case as defined.
  *
  * A swapped algorithm package counts as drift and is REPORTED, not prevented —
  * reviewing the same situation under a different configuration is the tuning
  * loop, and the note exists so the reviewer knows which loop they are in.
+ *
+ * `contextOverrides`/`situationFields` (flat records) and `mountainRangeKm`/
+ * `jamRangeKm` (painted tuples) get their own comparator rather than `!==`
+ * — several cases' whole premise is a painted band or a context flag (C-02's
+ * night context, C-04/C-05's painted ranges), so silently skipping them would
+ * leave the reviewer with no drift note while the right column keeps
+ * explaining the decision as though the setup still matched the case.
  */
 export function differsFromCase(setup: ResolvedCaseSetup, live: LiveSetupSnapshot): string[] {
-  return COMPARED_KEYS.filter((key) => setup[key] !== live[key]) as string[]
+  const drifted = COMPARED_KEYS.filter((key) => setup[key] !== live[key]) as string[]
+  if (!sameRecord(setup.contextOverrides, live.contextOverrides)) drifted.push('contextOverrides')
+  if (!sameRecord(setup.situationFields, live.situationFields)) drifted.push('situationFields')
+  if (!sameRange(setup.mountainRangeKm, live.mountainRangeKm)) drifted.push('mountainRangeKm')
+  if (!sameRange(setup.jamRangeKm, live.jamRangeKm)) drifted.push('jamRangeKm')
+  return drifted
 }

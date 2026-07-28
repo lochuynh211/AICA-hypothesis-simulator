@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "title": { "ja": "C-03 単調な高速道路・低疲労", "en": "C-03 Monotonous highway, low fatigue" },
   "brief": {
-    "ja": "疲労は低いまま、変化の乏しい高速道路を長く走り続けます。介入の理由が疲労ではなく単調さであることを確認します。",
-    "en": "A long stretch of featureless highway while fatigue stays low. Checks that any intervention is caused by monotony rather than by fatigue."
+    "ja": "疲労は低いまま、変化の乏しい高速道路を長く走り続けます。介入の理由が疲労ではなく単調さであることを確認します。なお、この初期眠気・初期疲労の設定値も現状トリガーの投影には反映されません。今はシナリオ自体の既定値と一致しているため単調さと疲労の切り分けには影響しませんが、シナリオの既定値が今後変更された場合は、この一致が崩れて静かに結果へ影響する可能性があります。",
+    "en": "A long stretch of featureless highway while fatigue stays low. Checks that any intervention is caused by monotony rather than by fatigue. Note: the pinned initial drowsiness and fatigue do not currently reach the trigger projection either — they happen to equal this scenario's own defaults today, so the monotony-versus-fatigue comparison here is unaffected, but that could change silently if the scenario's defaults are ever retuned."
   },
   "what_to_watch": [
     { "ja": "単調さと疲労のどちらが決め手か", "en": "Monotony versus fatigue as the deciding input" },

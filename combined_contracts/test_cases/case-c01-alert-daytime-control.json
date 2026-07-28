@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "title": { "ja": "C-01 日中・覚醒状態の対照ケース", "en": "C-01 Alert daytime control" },
   "brief": {
-    "ja": "十分に休養したドライバーが、日中の短いルートを走ります。トリガーが一切発火しないことを確認するための対照ケースです。",
-    "en": "A well-rested driver on a short daytime route. The control case: it exists to confirm nothing fires when nothing should."
+    "ja": "十分に休養したドライバーが、日中の短いルートを走ります。トリガーが一切発火しないことを確認するための対照ケースです。なお、この初期眠気・初期疲労の設定値も現状トリガーの投影には反映されません。今はシナリオ自体の既定値と一致しているためこの対照ケースの結果に影響しませんが、シナリオの既定値が今後変更された場合は、この一致が崩れて静かに結果へ影響する可能性があります。",
+    "en": "A well-rested driver on a short daytime route. The control case: it exists to confirm nothing fires when nothing should. Note: the pinned initial drowsiness and fatigue do not currently reach the trigger projection either — they happen to equal this scenario's own defaults today, which is why the control case is unaffected, but that could change silently if the scenario's defaults are ever retuned."
   },
   "what_to_watch": [
     { "ja": "早すぎる休憩提案がないか", "en": "No premature rest proposal" },

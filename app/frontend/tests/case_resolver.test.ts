@@ -122,6 +122,10 @@ describe('differsFromCase', () => {
     contentPackageId: setup.contentPackageId, seed: setup.seed, tickSeconds: setup.tickSeconds,
     initialDrowsiness: setup.initialDrowsiness, initialFatigue: setup.initialFatigue,
     profileRef: setup.profileRef,
+    contextOverrides: { ...setup.contextOverrides },
+    situationFields: { ...setup.situationFields },
+    mountainRangeKm: setup.mountainRangeKm,
+    jamRangeKm: setup.jamRangeKm,
   }
 
   it('reports nothing when the live setup matches the case', () => {
@@ -140,5 +144,57 @@ describe('differsFromCase', () => {
   it('treats a swapped algorithm package as drift, since it is the tuning loop', () => {
     expect(differsFromCase(setup, { ...asLive, triggerPackageId: 'nri_fatigue_score_v1' }))
       .toEqual(['triggerPackageId'])
+  })
+
+  // C-04/C-05's whole premise is the painted mountain/jam band — repainting
+  // it must surface as drift, or the right column keeps explaining the
+  // decision as though the setup still matched the case (review MUST FIX 1).
+  it('reports drift when a painted range is repainted', () => {
+    const painted = resolveCase({
+      ...c03,
+      journey: { ...c03.journey, fixed_overrides: { ...c03.journey.fixed_overrides, jam_range_km: [40, 60] } },
+    } as typeof c03)
+    const liveWithSamePainting = { ...asLive, jamRangeKm: painted.jamRangeKm }
+    expect(differsFromCase(painted, liveWithSamePainting)).toEqual([])
+    expect(differsFromCase(painted, { ...liveWithSamePainting, jamRangeKm: [10, 20] }))
+      .toEqual(['jamRangeKm'])
+  })
+
+  it('reports no drift when neither side has a painted range (both null)', () => {
+    // c03 itself pins no mountain range — both sides are null, which must
+    // read as "matches", not as drift (null !== null-as-a-range would be a
+    // bug in `sameRange`'s short-circuit).
+    expect(setup.mountainRangeKm).toBeNull()
+    expect(differsFromCase(setup, { ...asLive, mountainRangeKm: null })).toEqual([])
+  })
+
+  // C-02's whole premise is the night context — flipping it must surface as
+  // drift, or the right column keeps explaining the decision as though it
+  // still happened at night (review MUST FIX 1).
+  it('reports drift when a context override is flipped', () => {
+    const c02 = getCase('case-c02-night-highway-drowsiness')!
+    const nightSetup = resolveCase(c02)
+    const nightAsLive = {
+      scenarioId: nightSetup.scenarioId, routePresetId: nightSetup.routePresetId,
+      triggerPackageId: nightSetup.triggerPackageId, servicePackageId: nightSetup.servicePackageId,
+      contentPackageId: nightSetup.contentPackageId, seed: nightSetup.seed, tickSeconds: nightSetup.tickSeconds,
+      initialDrowsiness: nightSetup.initialDrowsiness, initialFatigue: nightSetup.initialFatigue,
+      profileRef: nightSetup.profileRef,
+      contextOverrides: { ...nightSetup.contextOverrides },
+      situationFields: { ...nightSetup.situationFields },
+      mountainRangeKm: nightSetup.mountainRangeKm,
+      jamRangeKm: nightSetup.jamRangeKm,
+    }
+    expect(differsFromCase(nightSetup, nightAsLive)).toEqual([])
+    expect(
+      differsFromCase(nightSetup, {
+        ...nightAsLive,
+        contextOverrides: { ...nightSetup.contextOverrides, is_night: false },
+      }),
+    ).toEqual(['contextOverrides'])
+  })
+
+  it('reports no drift for an unchanged context-override / situation-field setup', () => {
+    expect(differsFromCase(setup, asLive)).toEqual([])
   })
 })

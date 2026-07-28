@@ -18,12 +18,7 @@ import type { MergedFirePoint } from '../../api/mergedClient'
 import type { ProposalRunLog, ServiceSelectorOutput, CompletePlan, ItemFeatureContribution } from '../../api/proposalClient'
 import { unavailable } from './types'
 import type { ReviewOption, Unavailable } from './types'
-import type { BilingualLabel } from './reviewVocabulary'
-
-const CATEGORY_LABELS: Record<string, BilingualLabel> = {
-  rest_required: { ja: '休憩の提案', en: 'Rest proposal' },
-  monotony_prevention: { ja: '単調さへの介入', en: 'Monotony intervention' },
-}
+import { CATEGORY_LABELS } from './reviewVocabulary'
 
 /**
  * The two trigger categories as comparable options.

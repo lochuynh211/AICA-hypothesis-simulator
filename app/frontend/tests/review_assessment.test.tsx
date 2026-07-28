@@ -2,7 +2,8 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { useState } from 'react'
 import DecisionAssessment from '../src/components/review/DecisionAssessment'
 import { LanguageProvider } from '../src/state/language'
-import { summarizeJudgments } from '../src/components/review/DecisionAssessment'
+import { summarizeJudgments, caseFlagCounts } from '../src/components/review/DecisionAssessment'
+import { judgmentKey } from '../src/state/reviewStore'
 
 const wrap = (ui: React.ReactNode) => render(<LanguageProvider>{ui}</LanguageProvider>)
 const mount = (extra = {}) =>
@@ -42,6 +43,61 @@ describe('summarizeJudgments', () => {
 
   it('ignores an unset judgement', () => {
     expect(summarizeJudgments({ a: '' }, 2).judged).toBe(0)
+  })
+})
+
+// ── caseFlagCounts (MUST FIX 2: wire the picker's flag chip) ────────────────
+//
+// Real keys, built with the SAME `judgmentKey` builder `ReviewColumn` uses to
+// write into the store — not hand-rolled '|'-joined strings — so these tests
+// would catch a delimiter mismatch, not just a counting-logic bug.
+
+describe('caseFlagCounts', () => {
+  it('counts the two criticisms and excludes the "not sure" alongside them', () => {
+    const judgments = {
+      [judgmentKey('case-c03-monotonous-highway', 'monotony_prevention', 'service', 'music_playlist', 'monotony')]: 'too_strong',
+      [judgmentKey('case-c03-monotonous-highway', 'monotony_prevention', 'service', 'music_playlist', 'env_load')]: 'too_weak',
+      [judgmentKey('case-c03-monotonous-highway', 'monotony_prevention', 'service', 'music_playlist', 'rest_window')]: 'unsure',
+    }
+    expect(caseFlagCounts(judgments)).toEqual({ 'case-c03-monotonous-highway': 2 })
+  })
+
+  // The important one: a broken implementation that counts EVERY judgement
+  // (or one that always returns `{}`) could both make a naive "count is 0"
+  // assertion pass. Pairing this case with a genuinely-flagged case in the
+  // SAME map (below) proves the function can produce a nonzero count at all,
+  // so an "always {}" stub would fail the OTHER assertion in this test, not
+  // just be indistinguishable from a correct implementation here.
+  it('gives a case with only "makes sense" / "not sure" judgements no entry at all — not a 0', () => {
+    const judgments = {
+      [judgmentKey('case-c01-alert-daytime-control', 'rest_required', 'trigger', 'rest_required', 'drowsiness')]: 'rational',
+      [judgmentKey('case-c01-alert-daytime-control', 'rest_required', 'trigger', 'rest_required', 'fatigue')]: 'unsure',
+      // A genuinely flagged OTHER case in the same map — rules out an "always
+      // returns {}" implementation, which would fail this assertion.
+      [judgmentKey('case-c03-monotonous-highway', 'monotony_prevention', 'service', 'music_playlist', 'monotony')]: 'too_strong',
+    }
+    const counts = caseFlagCounts(judgments)
+    expect(counts['case-c01-alert-daytime-control']).toBeUndefined()
+    expect('case-c01-alert-daytime-control' in counts).toBe(false)
+    expect(counts['case-c03-monotonous-highway']).toBe(1)
+  })
+
+  it('keeps counts scoped per case, never leaking a flag into another case', () => {
+    const judgments = {
+      [judgmentKey('case-c01-alert-daytime-control', 'rest_required', 'trigger', 'rest_required', 'drowsiness')]: 'too_strong',
+      [judgmentKey('case-c03-monotonous-highway', 'monotony_prevention', 'service', 'music_playlist', 'monotony')]: 'not_relevant_here',
+    }
+    expect(caseFlagCounts(judgments)).toEqual({
+      'case-c01-alert-daytime-control': 1,
+      'case-c03-monotonous-highway': 1,
+    })
+  })
+
+  it('ignores an unset judgement', () => {
+    const judgments = {
+      [judgmentKey('case-c01-alert-daytime-control', 'rest_required', 'trigger', 'rest_required', 'drowsiness')]: '',
+    }
+    expect(caseFlagCounts(judgments)).toEqual({})
   })
 })
 

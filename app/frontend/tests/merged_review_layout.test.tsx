@@ -34,7 +34,11 @@ describe('Combined review layout', () => {
     expect(screen.queryByTestId('merged-log-panel')).toBeNull()
   })
 
-  it('keeps the log available on the Runs screen', () => {
+  it('still renders the Runs screen when the view toggle switches to it', () => {
+    // NOT a guarantee that the log is reachable there — MergedLogPanel is no
+    // longer imported by MergedRunsScreen or MergedReplayViewer (the log is
+    // genuinely unreachable from the UI now); this only asserts the Runs
+    // screen itself still mounts.
     mount()
     fireEvent.click(screen.getByTestId('merged-view-runs'))
     expect(screen.getByTestId('merged-runs-screen')).toBeTruthy()

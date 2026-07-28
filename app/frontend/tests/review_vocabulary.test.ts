@@ -1,5 +1,5 @@
 // app/frontend/tests/review_vocabulary.test.ts
-import { domainGroup, groupLabel, phrase, bandWord, GROUP_MEMBERS } from '../src/lib/review/reviewVocabulary'
+import { domainGroup, groupLabel, phrase, bandWord, GROUP_MEMBERS, PHRASES } from '../src/lib/review/reviewVocabulary'
 
 describe('domainGroup', () => {
   it('buckets driver-state features', () => {
@@ -73,6 +73,31 @@ describe('phrase', () => {
     const grouped = Object.values(GROUP_MEMBERS).flat()
     const unphrased = grouped.filter((id) => phrase(id).en === id)
     expect(unphrased).toEqual([])
+  })
+})
+
+describe('PHRASES — degree-framed English must not pair with yes/no-framed Japanese', () => {
+  // `bandWord()` appends a strength word ("非常に高い" / "very high") after the
+  // phrase. An English phrase framed by DEGREE ("how suited the song is to
+  // full karaoke") paired with a Japanese phrase framed by YES/NO ("フルカラ
+  // オケ向きかどうか" — "whether it's suited to full karaoke") produces
+  // "whether X: very high", which is ungrammatical nonsense — this is the
+  // class of bug MUST FIX 3 fixed for `recent_play_penalty`/`full_karaoke_ease`.
+  // This test catches the CLASS, not just those two instances, so a future
+  // phrase added the same way fails immediately instead of shipping.
+  it('has no entry where the English is "how …"-framed but the Japanese ends in かどうか', () => {
+    const offenders = Object.entries(PHRASES)
+      .filter(([, label]) => /^how\b/.test(label.en) && label.ja.endsWith('かどうか'))
+      .map(([id]) => id)
+    expect(offenders).toEqual([])
+  })
+
+  it('still allows a genuinely yes/no-framed pair (English also "whether …")', () => {
+    // Guards against an overzealous fix that bans かどうか outright — it is
+    // correct when EN is ALSO whether-framed (child_passenger, night_state,
+    // motion_state, oshi_mode), just not when EN is degree-framed.
+    expect(PHRASES.night_state.ja.endsWith('かどうか')).toBe(true)
+    expect(PHRASES.night_state.en.startsWith('whether')).toBe(true)
   })
 })
 
