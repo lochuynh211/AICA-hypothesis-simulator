@@ -12,17 +12,15 @@
  * `MergedLogPanel` is no longer part of this layout — the log stays on
  * `MergedRunsScreen`/`MergedReplayViewer`, which still import it directly.
  *
- * Selecting an experience test case (`ExperienceCasePicker`) resolves it
- * (`resolveCase`) into the scoped `runStore`/`proposalStore` via
- * `caseDispatches`' plain action list, fetching the case's driver profile
- * (`getPreset(profileRef)`) and attaching the resolved `DriverProfile` object
- * to the `LOAD_PROFILE` dispatch — `caseDispatches` itself only knows the
- * preset id, not the object the real reducer needs (a deliberate seam so it
- * stays testable without mounting React). The route preset / painted
+ * Selecting an experience test case (`ExperienceCasePicker`) is handled by
+ * `useCaseSelection()` (extracted so its async race — selecting case A then
+ * case B before A's driver-profile fetch resolves — can be tested without
+ * mounting the whole shell; see `useCaseSelection.ts` and
+ * `tests/use_case_selection.test.tsx`). The route preset / painted
  * mountain-jam ranges `resolveCase` also returns are panel-local state on
  * `MergedSetupPanel`, which doesn't accept them as props yet (Task 18 adds
- * that) — so case selection today seeds the two stores only; the route stays
- * whatever the panel's own defaults loaded.
+ * that) — so case selection today seeds the run/proposal stores only; the
+ * route stays whatever the panel's own defaults loaded.
  */
 import { useState } from 'react'
 import MergedSetupPanel from './MergedSetupPanel'
@@ -32,85 +30,30 @@ import ExperienceCasePicker from '../review/ExperienceCasePicker'
 import ExperienceCaseCard from '../review/ExperienceCaseCard'
 import CaseDetailsModal from '../review/CaseDetailsModal'
 import ReviewColumn from '../review/ReviewColumn'
-import { RunStoreProvider, useRunStore, type RunStoreAction } from '../../state/runStore'
-import { ProposalStoreProvider, useProposalStore, type ProposalStoreAction } from '../../state/proposalStore'
-import { ReviewStoreProvider, useReviewStore } from '../../state/reviewStore'
+import { useCaseSelection } from './useCaseSelection'
+import { RunStoreProvider } from '../../state/runStore'
+import { ProposalStoreProvider } from '../../state/proposalStore'
+import { ReviewStoreProvider } from '../../state/reviewStore'
 import { MergedCoordinatorProvider, useMergedCoordinator } from '../../state/mergedCoordinator'
 import { RunLanguageBridge, ProposalLanguageBridge } from '../../state/languageBridges'
 import { useLanguage } from '../../state/language'
 import { t } from '../../i18n/t'
-import { getCase } from '../../lib/review/caseCatalog'
-import { resolveCase, caseDispatches } from '../../lib/review/caseResolver'
-import { getPreset } from '../../api/proposalClient'
-import type { DriverProfile } from '../../api/proposalClient'
 
 type MergedView = 'live' | 'runs'
 
 const LABELS = {
   live: { ja: 'ライブ', en: 'Live' },
   runs: { ja: '実行履歴', en: 'Runs' },
-  caseLoadFailed: {
-    ja: 'テストケースのドライバープロファイルを読み込めませんでした。',
-    en: 'Could not load the test case’s driver profile.',
-  },
 }
 
 /**
  * The live 3-panel body — a separate component (rather than inline JSX in
- * `MergedShell`) because it needs the scoped `runStore`/`proposalStore`/
- * `reviewStore`/`mergedCoordinator` hooks, which only work below their
- * Providers.
+ * `MergedShell`) because it needs the scoped `mergedCoordinator`/
+ * `useCaseSelection` hooks, which only work below their Providers.
  */
 function MergedLiveBody(): JSX.Element {
-  const { lang } = useLanguage()
-  const runStore = useRunStore()
-  const proposalStore = useProposalStore()
-  const reviewStore = useReviewStore()
   const coordinator = useMergedCoordinator()
-
-  const [detailsOpen, setDetailsOpen] = useState(false)
-  const [caseError, setCaseError] = useState<string | null>(null)
-
-  const selectedCaseId = reviewStore.state.selectedCaseId
-  const selectedCase = selectedCaseId ? getCase(selectedCaseId) : null
-
-  async function handleSelectCase(caseId: string): Promise<void> {
-    setCaseError(null)
-    reviewStore.dispatch({ type: 'SELECT_CASE', caseId })
-    const testCase = getCase(caseId)
-    if (!testCase) return
-
-    const setup = resolveCase(testCase)
-    const { run, proposal } = caseDispatches(setup)
-
-    // Dispatch order matters — SELECT_SCENARIO (inside `run`) clears
-    // contextOverrides/tick/initial signals/seed, so every pin must follow
-    // it. `caseDispatches` already orders `run` correctly; dispatch it
-    // as-is.
-    for (const action of run) {
-      runStore.dispatch(action as unknown as RunStoreAction)
-    }
-
-    // `caseDispatches` emits LOAD_PROFILE with only `profileId` — the real
-    // reducer needs `{ profileId, profile }` carrying the resolved
-    // DriverProfile. Fetch it here and attach it before dispatching.
-    let profile: DriverProfile | null = null
-    try {
-      const preset = await getPreset(setup.profileRef)
-      profile = preset.world.driver_profile
-    } catch {
-      setCaseError(t(LABELS.caseLoadFailed, lang))
-    }
-
-    for (const action of proposal) {
-      if (action.type === 'LOAD_PROFILE') {
-        if (!profile) continue // Keep whatever profile was already loaded rather than dispatching a broken action.
-        proposalStore.dispatch({ type: 'LOAD_PROFILE', profileId: action.profileId as string, profile })
-        continue
-      }
-      proposalStore.dispatch(action as unknown as ProposalStoreAction)
-    }
-  }
+  const { selectedCaseId, selectedCase, detailsOpen, setDetailsOpen, caseError, handleSelectCase } = useCaseSelection()
 
   return (
     <div className="merged-shell" data-testid="merged-shell">
