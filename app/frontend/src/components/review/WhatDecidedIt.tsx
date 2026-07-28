@@ -168,10 +168,11 @@ export default function WhatDecidedIt({
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '4px' }}>
         <div style={{ flex: 1 }}>
-          <label style={{ display: 'block', fontSize: '0.74em', color: '#475569', marginBottom: '2px' }}>
+          <label htmlFor="what-decided-it-compare-left" style={{ display: 'block', fontSize: '0.74em', color: '#475569', marginBottom: '2px' }}>
             {t(LABELS.compareLeft, lang)}
           </label>
           <select
+            id="what-decided-it-compare-left"
             data-testid="compare-left"
             value={leftId}
             onChange={(e) => onChangeLeft(e.target.value)}
@@ -183,10 +184,11 @@ export default function WhatDecidedIt({
           </select>
         </div>
         <div style={{ flex: 1 }}>
-          <label style={{ display: 'block', fontSize: '0.74em', color: '#475569', marginBottom: '2px' }}>
+          <label htmlFor="what-decided-it-compare-right" style={{ display: 'block', fontSize: '0.74em', color: '#475569', marginBottom: '2px' }}>
             {t(LABELS.compareRight, lang)}
           </label>
           <select
+            id="what-decided-it-compare-right"
             data-testid="compare-right"
             value={rightId}
             onChange={(e) => onChangeRight(e.target.value)}
@@ -266,8 +268,8 @@ export default function WhatDecidedIt({
                 </span>
                 <div style={barTrackStyle}>
                   <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '1px', background: '#cbd5e1' }} />
-                  <div style={barFillStyle(row.left, 'left')} />
-                  <div style={barFillStyle(row.right, 'right')} />
+                  <div data-testid={`margin-bar-left-${row.featureId}`} style={barFillStyle(row.left, 'left')} />
+                  <div data-testid={`margin-bar-right-${row.featureId}`} style={barFillStyle(row.right, 'right')} />
                 </div>
                 <span style={{ fontSize: '0.7em', color: '#94a3b8', width: '48px' }}>
                   {row.right.toFixed(3)}

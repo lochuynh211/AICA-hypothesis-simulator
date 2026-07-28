@@ -36,6 +36,24 @@ describe('WhatDecidedIt', () => {
     expect(screen.getByTestId('margin-scale-bound')).toHaveTextContent(/±/)
   })
 
+  it('draws each bar in proportion to the displayed bound', () => {
+    mount()
+    // The bound being PRINTED proves nothing about the bars. Without this, a
+    // regression that hardcodes a width or divides by the wrong denominator
+    // passes every other test while the chart silently misrepresents the data —
+    // worse than drawing no chart at all.
+    //
+    // fatigue's left contribution is 0.8 * 0.3 = 0.24 (not 0.30 — checked by
+    // running scaleBound/marginRows directly against this fixture rather than
+    // hand-deriving it); scaleBound for this fixture's four magnitudes
+    // (0.24, 0.01, 0.02, 0.36) is 0.4. The two sides share one physical track
+    // split at its center line, so a magnitude equal to the bound fills half
+    // the track (50%), not the whole of it: width = (magnitude / bound) * 50
+    // = (0.24 / 0.4) * 50 = 30.
+    const fill = screen.getByTestId('margin-bar-left-fatigue')
+    expect(parseFloat(fill.style.width)).toBeCloseTo(30, 0)
+  })
+
   it('draws one mirrored row per feature across both options', () => {
     mount()
     expect(screen.getAllByTestId('margin-row')).toHaveLength(2)
