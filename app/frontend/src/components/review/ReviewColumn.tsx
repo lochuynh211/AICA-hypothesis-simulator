@@ -339,10 +339,26 @@ export default function ReviewColumn({
     })
   }
 
+  // Every keystroke updates the store (cheap, no network — keeps the
+  // textarea responsive and lets the reviewer navigate away without losing
+  // what they typed), but does NOT persist. `handleCommentCommit` — fired on
+  // blur, not on change — is the persistence boundary: the review-feedback
+  // store is append-only, so committing on every keystroke would turn a
+  // single comment into dozens of near-duplicate `review_decision` events
+  // indistinguishable from its own typing history in any export or replay.
   const handleComment = (comment: string) => {
     if (effectiveTargetId == null || decisionKey == null) return
     const assessment = existingAssessment?.assessment ?? ''
     dispatch({ type: 'SET_ASSESSMENT', key: decisionKey, assessment, comment })
+  }
+
+  const handleCommentCommit = (comment: string) => {
+    if (effectiveTargetId == null || decisionKey == null) return
+    // Deliberately '' (not skipped) when the reviewer writes a comment
+    // before picking an assessment — the record is still worth persisting
+    // (the comment itself is evidence), just with an empty `assessment`
+    // label rather than withholding the whole event until a choice is made.
+    const assessment = existingAssessment?.assessment ?? ''
     void persist({
       scope: 'review_decision',
       case_id: caseId,
@@ -458,6 +474,7 @@ export default function ReviewColumn({
                 comment={existingAssessment?.comment ?? ''}
                 onAssess={handleAssess}
                 onComment={handleComment}
+                onCommentCommit={handleCommentCommit}
                 onExport={() => void handleExport()}
                 hasRun={mergedRunId != null}
               />

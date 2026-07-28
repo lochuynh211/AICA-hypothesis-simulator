@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, act } from '@testing-library/react'
+import { vi, beforeEach } from 'vitest'
 import React from 'react'
 import ReviewColumn from '../src/components/review/ReviewColumn'
 import { ReviewStoreProvider, useReviewStore } from '../src/state/reviewStore'
@@ -6,6 +7,20 @@ import type { ReviewAction } from '../src/state/reviewStore'
 import { LanguageProvider } from '../src/state/language'
 import { getCase } from '../src/lib/review/caseCatalog'
 import type { MergedInstantResult } from '../src/api/mergedClient'
+
+// Task 16 fix-round — the network boundary is mocked so persistence wiring
+// (POST per judgement/assessment/comment, error surfacing, the no-run-yet
+// no-op) can be proven without a real backend. Full replacement (not a
+// partial `importOriginal` mock) mirrors `merged_center.test.tsx`'s own
+// pattern — `ReviewColumn` only ever calls these two functions from the
+// module at runtime; everything else it imports from here is type-only and
+// erased, so nothing else needs a real implementation.
+vi.mock('../src/api/mergedClient', () => ({
+  postReviewFeedback: vi.fn(),
+  getReviewFeedback: vi.fn(),
+}))
+
+import { postReviewFeedback, getReviewFeedback } from '../src/api/mergedClient'
 
 const chain = (score: number, rows: { feature_id: string; value: number; weight: number }[]) => ({
   score, clamped: false, gates: [],
@@ -268,5 +283,124 @@ describe('ReviewColumn — case-scoped empty checkpoints', () => {
 
     const message = screen.getByTestId('no-checkpoints')
     expect(message.textContent ?? '').toContain(controlCase!.title.en)
+  })
+})
+
+// ── Persistence wiring (Task 16 fix round) ───────────────────────────────
+//
+// A failed POST must surface an error, never fail silently, and a comment
+// must be committed on BLUR — not on every keystroke — since the
+// review-feedback store is append-only (two records on the same field
+// append rather than replace). `flush()` drains the microtask queue inside
+// `act()` so the async continuation after `await postReviewFeedback(...)`
+// (the `setPersistError` call) is applied before assertions run, with no
+// stray "not wrapped in act(...)" warning.
+
+const flush = () => act(async () => {
+  await Promise.resolve()
+  await Promise.resolve()
+})
+
+const mountWithRun = (mergedRunId: string | null) =>
+  render(
+    <LanguageProvider initialLanguage="en">
+      <ReviewStoreProvider>
+        <ReviewColumn result={withFire} mergedRunId={mergedRunId} />
+      </ReviewStoreProvider>
+    </LanguageProvider>,
+  )
+
+describe('ReviewColumn — persistence', () => {
+  beforeEach(() => {
+    vi.mocked(postReviewFeedback).mockReset().mockResolvedValue(undefined)
+    vi.mocked(getReviewFeedback).mockReset().mockResolvedValue({
+      events: [],
+      package_versions: {
+        trigger: { id: null, version: null },
+        service: { id: null, version: null },
+        content: { id: null, version: null },
+      },
+    })
+  })
+
+  it('posts exactly one review_input record per judgement', async () => {
+    mountWithRun('mrun-1')
+    fireEvent.change(screen.getByTestId('rationale-judge-fatigue'), { target: { value: 'too_strong' } })
+    await flush()
+    expect(postReviewFeedback).toHaveBeenCalledTimes(1)
+    expect(postReviewFeedback).toHaveBeenCalledWith(
+      'mrun-1',
+      expect.objectContaining({ scope: 'review_input', feature_id: 'fatigue', labels: { judgment: 'too_strong' } }),
+    )
+  })
+
+  it('posts exactly one review_decision record per assessment click', async () => {
+    mountWithRun('mrun-1')
+    fireEvent.click(screen.getByTestId('assess-appropriate'))
+    await flush()
+    expect(postReviewFeedback).toHaveBeenCalledTimes(1)
+    expect(postReviewFeedback).toHaveBeenCalledWith(
+      'mrun-1',
+      expect.objectContaining({ scope: 'review_decision', labels: { assessment: 'appropriate' } }),
+    )
+  })
+
+  // The regression test for the per-keystroke bug: written to fail against
+  // the pre-fix wiring (which called `persist()` from `onComment`, i.e. on
+  // every `onChange`) and confirmed failing there (see task-16-report.md's
+  // fix report for the RED run) before the blur-commit fix made it pass.
+  it('posts exactly ONE review_decision record for a completed comment, never one per keystroke', async () => {
+    mountWithRun('mrun-1')
+    const textarea = screen.getByTestId('assess-comment')
+    fireEvent.focus(textarea)
+    fireEvent.change(textarea, { target: { value: 'e' } })
+    fireEvent.change(textarea, { target: { value: 'ex' } })
+    fireEvent.change(textarea, { target: { value: 'exp' } })
+    fireEvent.change(textarea, { target: { value: 'expected rest' } })
+    fireEvent.blur(textarea)
+    await flush()
+    expect(postReviewFeedback).toHaveBeenCalledTimes(1)
+    expect(postReviewFeedback).toHaveBeenCalledWith(
+      'mrun-1',
+      expect.objectContaining({ scope: 'review_decision', comment: 'expected rest' }),
+    )
+  })
+
+  it('does not post when the comment field is blurred without an edit', async () => {
+    mountWithRun('mrun-1')
+    const textarea = screen.getByTestId('assess-comment')
+    fireEvent.focus(textarea)
+    fireEvent.blur(textarea)
+    await flush()
+    expect(postReviewFeedback).not.toHaveBeenCalled()
+  })
+
+  it('renders the error notice when a POST is rejected', async () => {
+    vi.mocked(postReviewFeedback).mockRejectedValueOnce(new Error('network down'))
+    mountWithRun('mrun-1')
+    fireEvent.click(screen.getByTestId('assess-appropriate'))
+    await flush()
+    expect(screen.getByTestId('review-feedback-error')).toBeTruthy()
+    expect(screen.getByTestId('review-feedback-error').getAttribute('role')).toBe('alert')
+  })
+
+  it('clears a prior error once a later POST succeeds', async () => {
+    vi.mocked(postReviewFeedback).mockRejectedValueOnce(new Error('network down'))
+    mountWithRun('mrun-1')
+    fireEvent.click(screen.getByTestId('assess-appropriate'))
+    await flush()
+    expect(screen.getByTestId('review-feedback-error')).toBeTruthy()
+
+    fireEvent.click(screen.getByTestId('assess-not-sure'))
+    await flush()
+    expect(screen.queryByTestId('review-feedback-error')).toBeNull()
+  })
+
+  it('attempts no POST and shows the persistence-begins-later note when no merged run exists yet', async () => {
+    mountWithRun(null)
+    expect(screen.getByTestId('assess-no-run-yet')).toBeTruthy()
+    fireEvent.click(screen.getByTestId('assess-appropriate'))
+    await flush()
+    expect(postReviewFeedback).not.toHaveBeenCalled()
   })
 })

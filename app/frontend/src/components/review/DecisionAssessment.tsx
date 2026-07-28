@@ -16,6 +16,7 @@
  * that decides what counts as a "flag", and deliberately excludes both the
  * per-input `unsure` and `rational` judgements from that count.
  */
+import { useRef } from 'react'
 import { useLanguage } from '../../state/language'
 import { t } from '../../i18n/t'
 import type { BilingualLabel } from '../../lib/review/reviewVocabulary'
@@ -77,6 +78,7 @@ export default function DecisionAssessment({
   comment,
   onAssess,
   onComment,
+  onCommentCommit = () => {},
   onExport,
   hasRun = true,
 }: {
@@ -89,6 +91,13 @@ export default function DecisionAssessment({
   comment: string
   onAssess: (assessment: string) => void
   onComment: (text: string) => void
+  /** Fired on blur, and ONLY when the text changed since the field was
+   * focused — never on every keystroke. This is the persistence boundary:
+   * `onComment` above is for cheap, local, no-network updates (keeps the
+   * textarea responsive); this is "the reviewer decided this is my
+   * comment." A focus/blur with no edit emits nothing. Optional (defaults
+   * to a no-op) so call sites that don't persist comments are unaffected. */
+  onCommentCommit?: (text: string) => void
   onExport: () => void
   /** False when no live merged run exists yet — judgements still land in the
    * store, but nothing is persisted server-side until a run does. Defaults
@@ -97,6 +106,10 @@ export default function DecisionAssessment({
 }): JSX.Element {
   const { lang } = useLanguage()
   const commentId = `assess-comment-${caseId}-${checkpointId}-${stage}-${targetId}`
+  // Snapshot of the field's value when it was focused, so blur can tell
+  // "the reviewer edited this" apart from "the reviewer just tabbed
+  // through it" — only the former should emit `onCommentCommit`.
+  const focusValueRef = useRef<string | null>(null)
 
   return (
     <div data-testid="decision-assessment" style={{ padding: '12px', borderTop: '1px solid #e2e8f0' }}>
@@ -152,6 +165,14 @@ export default function DecisionAssessment({
           data-testid="assess-comment"
           value={comment}
           onChange={(e) => onComment(e.target.value)}
+          onFocus={(e) => {
+            focusValueRef.current = e.target.value
+          }}
+          onBlur={(e) => {
+            const editedSinceFocus = focusValueRef.current !== null && e.target.value !== focusValueRef.current
+            focusValueRef.current = null
+            if (editedSinceFocus) onCommentCommit(e.target.value)
+          }}
           rows={3}
           style={{ width: '100%', fontSize: '0.84em', padding: '6px', boxSizing: 'border-box' }}
         />
