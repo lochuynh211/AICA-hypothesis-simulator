@@ -1105,6 +1105,21 @@ describe('necessity', () => {
     const lonely = opt('a', [row('only', 0.5, 1.0)])
     expect(necessity(lonely, runnerUp, 'only')).toMatchObject({ available: false })
   })
+
+  it('takes the baseline winner from the RECORDED score, not the raw sum', () => {
+    // Clamping makes Σcontribution exceed the reported score, so the two
+    // disagree about who won. Raw sums say `clamped` (1.3 > 1.1); the recorded
+    // scores say `plain` (1.1 > 1.0). The recorded outcome is the real one.
+    const clamped = { id: 'clamped', label: 'C', score: 1.0, clamped: true,
+                      rows: [row('fatigue', 1.0, 1.0), row('monotony', 0.3, 1.0)] }
+    const plain = { id: 'plain', label: 'P', score: 1.1, rows: [row('monotony', 1.1, 1.0)] }
+    // Masking fatigue leaves clamped at 0.6 and plain at 1.1, so `plain` wins
+    // after masking too — unchanged. Sourcing the baseline from raw sums would
+    // report changed:true here, misreporting the very case Task 1 records.
+    expect(necessity(clamped, plain, 'fatigue')).toMatchObject({
+      winnerId: 'plain', changed: false,
+    })
+  })
 })
 
 describe('flipDistance', () => {
@@ -1204,7 +1219,11 @@ export function necessity(
   }
 
   const winnerId = leftScore >= rightScore ? left.id : right.id
-  const originalWinner = total(left.rows) >= total(right.rows) ? left.id : right.id
+  // The baseline winner comes from the RECORDED scores, never from re-summing
+  // contributions: a clamped option's Σcontribution exceeds its reported score,
+  // so the two can disagree about who actually won. Only the post-mask scores
+  // are re-summed, because no recorded value exists for a hypothetical.
+  const originalWinner = left.score >= right.score ? left.id : right.id
   return { winnerId, changed: winnerId !== originalWinner }
 }
 
