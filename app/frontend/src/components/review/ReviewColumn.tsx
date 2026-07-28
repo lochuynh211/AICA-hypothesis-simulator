@@ -18,7 +18,9 @@
  * delegating to `WhatDecidedIt`'s generic "at least two options" fallback,
  * which would discard the specific evidence gap chains.ts already diagnosed.
  */
-import type { MergedInstantResult, MergedFirePoint } from '../../api/mergedClient'
+import { useState } from 'react'
+import type { MergedInstantResult, MergedFirePoint, ReviewFeedbackBody } from '../../api/mergedClient'
+import { postReviewFeedback, getReviewFeedback } from '../../api/mergedClient'
 import type { ReviewOption } from '../../lib/review/types'
 import type { Unavailable } from '../../lib/review/types'
 import type { Checkpoint, ReviewStage, ReviewableCategory } from '../../lib/review/checkpoints'
@@ -27,6 +29,8 @@ import { triggerOptions, serviceOptions, contentOptions } from '../../lib/review
 import { getCase } from '../../lib/review/caseCatalog'
 import WhatDecidedIt from './WhatDecidedIt'
 import ParameterRationale from './ParameterRationale'
+import DecisionAssessment, { summarizeJudgments } from './DecisionAssessment'
+import ErrorNotice from '../common/ErrorNotice'
 import { useReviewStore, judgmentKey } from '../../state/reviewStore'
 import { useLanguage } from '../../state/language'
 import { t } from '../../i18n/t'
@@ -52,6 +56,18 @@ const LABELS = {
     en: 'is a test case designed to produce no trigger. The absence of a decision point is the outcome being tested, not a problem.',
   },
   unavailableTitle: { ja: 'この段階は比較できません', en: 'This stage cannot be compared' },
+  persistFailed: {
+    ja: '評価を保存できませんでした。もう一度お試しください。',
+    en: 'Could not save your judgement. Please try again.',
+  },
+  exportFailed: {
+    ja: 'エクスポートを取得できませんでした。もう一度お試しください。',
+    en: 'Could not fetch the export. Please try again.',
+  },
+  noRunToExport: {
+    ja: '実行がまだ作成されていないため、エクスポートするものがありません。',
+    en: 'No run exists yet, so there is nothing to export.',
+  },
 } satisfies Record<string, BilingualLabel>
 
 // A raw English diagnostic literal from chains.ts (unavailable().reason) is
@@ -146,13 +162,26 @@ function defaultContentComparison(options: ReviewOption[], targetId: string | nu
   return { left, right }
 }
 
+/** Decision-level key: the same compound shape `judgmentKey` uses minus the
+ * feature — a decision is judged as a whole, not per-input. Kept as its own
+ * tiny builder (rather than calling `judgmentKey` with a fake feature id) so
+ * the two key shapes can never collide. */
+const assessmentKey = (caseId: string, checkpointId: string, stage: string, targetId: string): string =>
+  [caseId, checkpointId, stage, targetId].join('|')
+
 export default function ReviewColumn({
   result,
+  mergedRunId = null,
 }: {
   result: MergedInstantResult | null
+  /** The live merged run's id, when one exists. `null` before any run has
+   * been created — judgements still land in the store, but nothing is
+   * persisted server-side until this is set (07-27 §10). */
+  mergedRunId?: string | null
 }): JSX.Element {
   const { lang } = useLanguage()
   const { state, dispatch } = useReviewStore()
+  const [persistError, setPersistError] = useState<string | null>(null)
 
   const checkpoints = deriveCheckpoints(result)
 
@@ -258,10 +287,94 @@ export default function ReviewColumn({
       if (value) scopedJudgments[row.featureId] = value
     }
   }
+  // Persists one review-feedback record. Failures are surfaced (never
+  // swallowed) — a judgement the reviewer believes was recorded but wasn't
+  // is worse than one that was never offered. Before a live merged run
+  // exists, the judgement already landed in the store above; there is
+  // simply nothing to persist to yet, which is not an error.
+  const persist = async (body: ReviewFeedbackBody) => {
+    if (mergedRunId == null) return
+    try {
+      await postReviewFeedback(mergedRunId, body)
+      setPersistError(null)
+    } catch {
+      setPersistError(t(LABELS.persistFailed, lang))
+    }
+  }
+
   const handleJudge = (featureId: string, judgment: string) => {
     if (effectiveTargetId == null) return
     const key = judgmentKey(caseId, activeCheckpoint.id, stage, effectiveTargetId, featureId)
     dispatch({ type: 'SET_JUDGMENT', key, judgment })
+    void persist({
+      scope: 'review_input',
+      case_id: caseId,
+      checkpoint_id: activeCheckpoint.id,
+      stage,
+      review_target: effectiveTargetId,
+      feature_id: featureId,
+      labels: { judgment },
+    })
+  }
+
+  // Decision-level assessment (Task 16) — keyed the same way minus the
+  // feature, since a decision is judged as a whole, not per-input.
+  const decisionKey = effectiveTargetId != null
+    ? assessmentKey(caseId, activeCheckpoint.id, stage, effectiveTargetId)
+    : null
+  const existingAssessment = decisionKey ? (state.assessments[decisionKey] ?? null) : null
+
+  const handleAssess = (assessment: string) => {
+    if (effectiveTargetId == null || decisionKey == null) return
+    const comment = existingAssessment?.comment ?? ''
+    dispatch({ type: 'SET_ASSESSMENT', key: decisionKey, assessment, comment })
+    void persist({
+      scope: 'review_decision',
+      case_id: caseId,
+      checkpoint_id: activeCheckpoint.id,
+      stage,
+      review_target: effectiveTargetId,
+      labels: { assessment },
+      comment,
+    })
+  }
+
+  const handleComment = (comment: string) => {
+    if (effectiveTargetId == null || decisionKey == null) return
+    const assessment = existingAssessment?.assessment ?? ''
+    dispatch({ type: 'SET_ASSESSMENT', key: decisionKey, assessment, comment })
+    void persist({
+      scope: 'review_decision',
+      case_id: caseId,
+      checkpoint_id: activeCheckpoint.id,
+      stage,
+      review_target: effectiveTargetId,
+      labels: { assessment },
+      comment,
+    })
+  }
+
+  const handleExport = async () => {
+    if (mergedRunId == null) {
+      setPersistError(t(LABELS.noRunToExport, lang))
+      return
+    }
+    try {
+      const report = await getReviewFeedback(mergedRunId)
+      setPersistError(null)
+      const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `review-feedback-${mergedRunId}.json`
+      a.style.display = 'none'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch {
+      setPersistError(t(LABELS.exportFailed, lang))
+    }
   }
 
   // Declared (setup-time) weight per feature is exactly what the LEFT
@@ -328,7 +441,28 @@ export default function ReviewColumn({
               onJudge={handleJudge}
             />
           )}
-          {/* Task 16 mounts <DecisionAssessment> here. */}
+          {leftOption && effectiveTargetId != null && (
+            <>
+              {persistError && (
+                <div style={{ padding: '0 12px' }}>
+                  <ErrorNotice testid="review-feedback-error" message={persistError} onDismiss={() => setPersistError(null)} />
+                </div>
+              )}
+              <DecisionAssessment
+                caseId={caseId}
+                checkpointId={activeCheckpoint.id}
+                stage={stage}
+                targetId={effectiveTargetId}
+                judgmentSummary={summarizeJudgments(scopedJudgments, leftOption.rows.length)}
+                assessment={existingAssessment?.assessment ?? null}
+                comment={existingAssessment?.comment ?? ''}
+                onAssess={handleAssess}
+                onComment={handleComment}
+                onExport={() => void handleExport()}
+                hasRun={mergedRunId != null}
+              />
+            </>
+          )}
         </>
       )}
     </div>

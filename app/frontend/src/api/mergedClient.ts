@@ -356,3 +356,80 @@ export async function listMergedRuns(): Promise<MergedRunSummary[]> {
   })
   return merged_runs
 }
+
+// ── Review feedback — feature 023, Task 16 ──────────────────────────────────
+
+/** Request body for `POST /api/merged-runs/{id}/review-feedback` (mirrors
+ * `routers/merged_runs.py`'s `ReviewFeedbackBody`). `review_input` labels are
+ * `{judgment: ...}`; `review_decision` labels are `{assessment: ...}` plus
+ * the free-form `comment`. `feature_id` only applies to `review_input`. */
+export type ReviewFeedbackBody = {
+  scope: 'review_input' | 'review_decision'
+  case_id: string
+  checkpoint_id: string
+  stage: string
+  review_target: string
+  feature_id?: string | null
+  labels: Record<string, unknown>
+  comment?: string | null
+}
+
+/** One recorded review judgement, as returned by the GET endpoint (mirrors
+ * `FeedbackEvent.model_dump()` — only the fields this client actually reads
+ * are typed; the backend may carry more). */
+export type ReviewFeedbackEvent = {
+  kind: string
+  target: {
+    scope: string
+    case_id?: string | null
+    checkpoint_id?: string | null
+    stage?: string | null
+    review_target?: string | null
+    feature_id?: string | null
+  }
+  labels: Record<string, unknown>
+  comment?: string | null
+}
+
+/** One package's id + version, as recorded at export time. */
+export type ReviewFeedbackPackageVersion = { id: string | null; version: string | null }
+
+/** Response for `GET /api/merged-runs/{id}/review-feedback` (mirrors
+ * `get_review_feedback_endpoint`): every recorded review_input/review_decision
+ * judgement for this merged run, plus the trigger/service/content package
+ * versions in play — so an export can attribute each judgement to the exact
+ * package versions that produced the decision it judges. */
+export type ReviewFeedbackExport = {
+  events: ReviewFeedbackEvent[]
+  package_versions: {
+    trigger: ReviewFeedbackPackageVersion
+    service: ReviewFeedbackPackageVersion
+    content: ReviewFeedbackPackageVersion
+  }
+}
+
+/** Appends one reviewer judgement (a per-input `review_input` judgement or a
+ * decision-level `review_decision` assessment) to the merged run's paired
+ * trigger run log (mirrors `post_review_feedback_endpoint`). Append-only —
+ * two judgements on the same feature append twice, never replace. Throws on
+ * a non-ok response (404 for an unknown merged run) exactly like every other
+ * call in this file — callers must NOT swallow that error, since a
+ * judgement the reviewer believes was recorded but wasn't is worse than one
+ * never offered. */
+export async function postReviewFeedback(mergedRunId: string, body: ReviewFeedbackBody): Promise<void> {
+  await apiFetch(`/api/merged-runs/${encodeURIComponent(mergedRunId)}/review-feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
+/** Reads back every recorded review judgement for a merged run plus the
+ * package versions in play (mirrors `get_review_feedback_endpoint`). Pure
+ * disk read — nothing is recomputed. Feeds the export button on
+ * `DecisionAssessment`. */
+export async function getReviewFeedback(mergedRunId: string): Promise<ReviewFeedbackExport> {
+  return apiFetch(`/api/merged-runs/${encodeURIComponent(mergedRunId)}/review-feedback`, {
+    method: 'GET',
+  })
+}
