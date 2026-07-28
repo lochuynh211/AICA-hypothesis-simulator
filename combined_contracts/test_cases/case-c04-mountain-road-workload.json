@@ -1,0 +1,55 @@
+{
+  "case_id": "case-c04-mountain-road-workload",
+  "schema_version": "1.0.0",
+  "version": "1.0.0",
+  "title": { "ja": "C-04 山道・高い運転負荷", "en": "C-04 Mountain road, high workload" },
+  "brief": {
+    "ja": "東京から軽井沢までのルートの一部に山道区間を配置し、カーブの連続による運転負荷の高まりを走行させます。区間の性質そのものが介入の決め手になるかを確認します。",
+    "en": "A mountain-road segment is painted onto part of the Tokyo–Karuizawa route, driving through a stretch of continuous curves and elevated workload. Checks whether the segment's own character drives the intervention."
+  },
+  "what_to_watch": [
+    { "ja": "山道区間が介入のタイミングに影響しているか", "en": "Whether the mountain segment shapes when the intervention lands" },
+    { "ja": "疲労と単調さのどちらが決め手か", "en": "Fatigue versus monotony as the deciding input" },
+    { "ja": "停車を伴わないサービスが選ばれるか", "en": "Whether a non-stopping service is chosen" }
+  ],
+  "persona": {
+    "persona_id": "persona-mountain-commuter",
+    "name": { "ja": "山道の運転に慣れたドライバー", "en": "Driver used to mountain roads" },
+    "narrative": {
+      "ja": "カーブの多い山道の運転には慣れていますが、連続するカーブは体力的な負荷が大きく、平坦な道より早く疲れが蓄積します。ふだん頼っている曲でその負荷を和らげたいと考えています。",
+      "en": "Comfortable with curvy mountain roads, but the continuous curves are physically demanding and build fatigue faster than flat driving. Leans on a handful of go-to tracks to take the edge off."
+    },
+    "goals": [{ "ja": "峠を安全に越える", "en": "Get over the pass safely" }],
+    "preferences": [{ "ja": "効果が実証済みの曲を優先してほしい", "en": "Prefers tracks with a proven track record for them" }],
+    "constraints": [
+      { "ja": "山道のため停車できる場所が限られる", "en": "Few places to pull over on the mountain road" }
+    ],
+    "assumptions": [
+      { "ja": "山道区間の走行が運転負荷を押し上げる", "en": "The mountain segment itself raises workload" }
+    ],
+    "profile_ref": "preset-high-recovery-regular"
+  },
+  "journey": {
+    "narrative": {
+      "ja": "東京から軽井沢までのルートを、山道区間を含めて走行します。",
+      "en": "The Tokyo–Karuizawa route, including a painted mountain-road segment."
+    },
+    "scenario_ref": "uc01_fatigue_recovery_v0_1",
+    "route_preset_ref": "middle_tokyo_karuizawa",
+    "seed": 42,
+    "tick_seconds": 60,
+    "fixed_overrides": {
+      "initial_drowsiness": 20,
+      "initial_fatigue": 45,
+      "is_night": false,
+      "child_passenger": false,
+      "mountain_range_km": [30.0, 60.0]
+    },
+    "automatic_path": { "service_choice": "rank_1" }
+  },
+  "algorithm_defaults": {
+    "trigger": "aica_transparent_hybrid_trigger_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "content": "aica_transparent_content_selector_v1"
+  }
+}
