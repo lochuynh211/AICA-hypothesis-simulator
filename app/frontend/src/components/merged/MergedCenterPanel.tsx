@@ -5,18 +5,24 @@
  *
  * Top-to-bottom:
  *   1. QUICKVIEW PROJECTION — persistent ephemeral preview (legend + jam
- *      sub-bar + journey markers); click a fire to inspect it (right panel).
- *   2. Play/Continue · Pause · Step · Reset controls.
- *   3. ANIMATION — a REALTIME timeline built from the observed trace on the
- *      DISTANCE (route_fraction) axis, with a moving playhead at the car's
- *      route_fraction. The quickview above is remapped onto the SAME distance
- *      axis (`mergedInstantResultToTimeline` uses the preview `progress` map),
- *      so a trigger point sits at the same x in both (owner review issue 2).
- *      No legend (the quickview has one right above).
- *   4. GOOGLE MAP — `<MapSurface/>` with the live car + decision/rest markers,
+ *
+ * Order (owner review): controls → map → service|content side by side →
+ * quickview strip at the bottom. The standalone ANIMATION timeline was removed
+ * — it duplicated the quickview on the same distance axis and earned no space.
+ *
+ *   1. Play/Continue · Pause · Step · Reset (+ speed), directly above the map.
+ *   2. GOOGLE MAP — `<MapSurface/>` with the live car + decision/rest markers,
  *      and the on-map REST overlay (rest message + spot options w/ distance +
  *      Reject). Choose a spot → auto-select service+content (rank-1) and PAUSE
  *      until Continue; Reject → keep ticking.
+ *   3. Checkpoint rail + decision band, then the service and content proposals
+ *      SIDE BY SIDE (`MergedProposalPanel` owns that split internally).
+ *   4. QUICKVIEW strip — the projected run on the DISTANCE axis, with the
+ *      score curves, threshold, fire markers and journey markers.
+ *
+ * The playback subtree (controls + map) is a SIBLING of the proposal split, so
+ * a tick never re-renders the proposal cards and collapses an expanded
+ * contribution chain mid-run.
  */
 import { useEffect, useState } from 'react'
 import { useMergedCoordinator } from '../../state/mergedCoordinator'
@@ -27,14 +33,12 @@ import CheckpointRail from '../review/CheckpointRail'
 import DecisionBand from '../review/DecisionBand'
 import MergedProposalPanel from './MergedProposalPanel'
 import ScoreTimeline from '../playback/ScoreTimeline'
-import { mergedInstantResultToTimeline, type TimelineData, type TimelineFire, type TimelinePoint, type TimelineSegment } from '../playback/timelineData'
-import type { TraceEntry, RecoveryOption, RestSpot } from '../../api/types'
+import { mergedInstantResultToTimeline } from '../playback/timelineData'
+import type { RecoveryOption, RestSpot } from '../../api/types'
 import { getScenario, getRestSpots } from '../../api/client'
 import MapSurface from '../map/MapSurface'
 import { t } from '../../i18n/t'
 import { useLanguage } from '../../state/language'
-
-const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
 
 const LABELS = {
   title: { ja: 'クイックビュー・プロジェクション', en: 'Quickview projection' },
@@ -54,75 +58,6 @@ const LABELS = {
   reset: { ja: '↺ リセット', en: '↺ Reset' },
   speed: { ja: '速度', en: 'Speed' },
   loadingSpots: { ja: '休憩スポットを読み込み中…', en: 'Loading rest spots…' },
-}
-
-const num = (v: unknown): number | null => (typeof v === 'number' ? v : null)
-
-function restY(e: TraceEntry): number {
-  return num(e.scores?.['rest_required_score']) ?? num(e.score) ?? 0
-}
-function fireKind(cat: string | null): 'rest' | 'monotony' {
-  return (cat ?? '').startsWith('rest') ? 'rest' : 'monotony'
-}
-
-/** REALTIME live `TimelineData` (owner review issue 3): everything is derived
- * from actually-observed data on the DISTANCE (route_fraction) axis — NOT the
- * projection. Road bands come from the selected route's geometry (known, static)
- * but traffic jams, the curves/fires, and the rest markers are all realtime, so
- * a rest spot is NEVER shown in advance (only once the driver actually accepts
- * one, from `acceptedRestSpots`). */
-function buildLiveTimeline(
-  trace: TraceEntry[],
-  routeSegments: TimelineSegment[],
-  acceptedRestSpots: RestSpot[],
-): TimelineData {
-  const fracFor = (e: TraceEntry): number => (typeof e.route_fraction === 'number' ? e.route_fraction : 0)
-  const restScore: TimelinePoint[] = trace.map((e) => ({ x: fracFor(e), y: restY(e) }))
-  const monotonyScore: TimelinePoint[] = trace
-    .filter((e) => num(e.scores?.['monotony_prevention_score']) != null)
-    .map((e) => ({ x: fracFor(e), y: num(e.scores?.['monotony_prevention_score']) as number }))
-  const last = trace.length > 0 ? trace[trace.length - 1] : null
-  const restThreshold =
-    num(last?.criteria?.['rest_required_threshold']) ?? num(last?.criteria?.['threshold_suggest']) ?? num(last?.criteria?.['threshold_fire']) ?? null
-  const monotonyThreshold = num(last?.criteria?.['monotony_suggest_threshold']) ?? null
-
-  const fires: TimelineFire[] = []
-  let active = false
-  for (const e of trace) {
-    const paused = e.proposal_paused === true
-    if (paused && !active) fires.push({ x: fracFor(e), kind: fireKind(e.selected_category) })
-    active = paused
-  }
-
-  // Traffic jams — realtime, from is_traffic_jam transitions (open/close spans).
-  const trafficJams: { fromX: number; toX: number }[] = []
-  let jamFrom: number | null = null
-  for (const e of trace) {
-    const x = fracFor(e)
-    if (e.is_traffic_jam) {
-      if (jamFrom === null) jamFrom = x
-    } else if (jamFrom !== null) {
-      trafficJams.push({ fromX: jamFrom, toX: x })
-      jamFrom = null
-    }
-  }
-  if (jamFrom !== null && last) trafficJams.push({ fromX: jamFrom, toX: fracFor(last) })
-
-  return {
-    segments: routeSegments,
-    trafficJams,
-    restScore,
-    monotonyScore,
-    restThreshold,
-    monotonyThreshold,
-    spikes: [],
-    fires,
-    // Rest markers ONLY for spots the driver actually accepted (realtime) — never
-    // the projected candidates (owner review: no rest spot shown in advance).
-    restDots: acceptedRestSpots.map((s) => s.route_fraction),
-    recoveryWindows: [],
-    completionX: null,
-  }
 }
 
 export default function MergedCenterPanel() {
@@ -145,18 +80,6 @@ export default function MergedCenterPanel() {
   // TOP strip = the projection (time axis, journey markers).
   const quickviewTimeline = state.quickviewResult ? mergedInstantResultToTimeline(state.quickviewResult) : null
   const hasQuickview = quickviewTimeline != null
-
-  // LIVE animation = REALTIME, built from the observed trace + the known route
-  // geometry (distance axis) — NOT the projection (owner review issue 3).
-  const routeSegments: TimelineSegment[] = (() => {
-    const alt = rs.alternatives.find((a) => a.route_id === rs.selectedRouteId)
-    const segs = alt?.route_facts?.route_segments ?? []
-    const totalKm = alt?.route_facts?.total_route_distance_km ?? 0
-    if (segs.length === 0 || totalKm <= 0) return []
-    return segs.map((s) => ({ fromX: s.start_km / totalKm, toX: (s.start_km + s.length_km) / totalKm, type: s.segment_type }))
-  })()
-  const liveTimeline = buildLiveTimeline(state.triggerTrace, routeSegments, state.acceptedRestSpots)
-  const revealFraction = clamp01(state.latestTrigger?.route_fraction ?? 0)
 
   const hasRun = state.mergedRunId != null
 
@@ -257,36 +180,6 @@ export default function MergedCenterPanel() {
         data-testid="merged-playback-subtree"
         style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}
       >
-      {/* 1. QUICKVIEW PROJECTION (top, persistent). */}
-      {hasQuickview && (
-        <section data-testid="quickview-strip" style={{ flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
-            <p style={{ fontSize: '0.72em', fontWeight: 700, color: '#6b7280', margin: '0 0 2px' }}>{t(LABELS.title, lang)}</p>
-            <p style={{ fontSize: '0.68em', color: '#94a3b8', margin: 0 }}>{t(LABELS.hint, lang)}</p>
-          </div>
-          <ScoreTimeline
-            data={quickviewTimeline!}
-            revealFraction={1}
-            showLegend
-            showJourneyMarkers
-            testIds={{
-              root: 'quickview-timeline',
-              fireGroup: 'quickview-fire-group',
-              fire: 'quickview-fire',
-              monotonyFire: 'quickview-monotony-fire',
-              jamGroup: 'quickview-jam-group',
-              restSpotGroup: 'quickview-rest-group',
-              fireHit: (i) => `quickview-fire-hit-${i}`,
-              restOptionHit: (i) => `quickview-rest-hit-${i}`,
-            }}
-            onFireClick={(_fire, i) => coordinator.inspectFire(state.inspectedFireIndex === i ? null : i)}
-            onRestOptionClick={(i) => coordinator.inspectRestOption(state.inspectedRestOptionIndex === i ? null : i)}
-          />
-        </section>
-      )}
-
-      <hr style={{ border: 'none', borderTop: '1px dashed #cbd5e1', margin: 0, flexShrink: 0 }} />
-
       {/* 2. Controls: Play/Continue · Pause · Step · Reset */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
         <button
@@ -326,12 +219,6 @@ export default function MergedCenterPanel() {
         </label>
       </div>
 
-      {/* 3. ANIMATION — identical to the quickview + a moving playhead, no legend. */}
-      <div style={{ flexShrink: 0 }}>
-        <p style={{ fontSize: '0.72em', fontWeight: 700, color: '#6b7280', margin: '0 0 2px' }}>{t(LABELS.animation, lang)}</p>
-        <ScoreTimeline data={liveTimeline} revealFraction={revealFraction} showPlayhead testIds={{ root: 'merged-timeline' }} />
-      </div>
-
       {state.error && (
         <p role="alert" style={{ color: '#dc2626', fontSize: '0.82em' }}>
           {state.error}
@@ -344,7 +231,7 @@ export default function MergedCenterPanel() {
         </p>
       )}
 
-      {/* 4. GOOGLE MAP + on-map REST overlay. */}
+      {/* 2. GOOGLE MAP + on-map REST overlay. */}
       <div style={{ flex: '1 1 auto', minHeight: '240px', display: 'flex', flexDirection: 'column' }}>
         <p style={{ fontSize: '0.72em', fontWeight: 700, color: '#6b7280', margin: '0 0 2px', flexShrink: 0 }}>{t(LABELS.map, lang)}</p>
         <div data-testid="merged-map-surface" style={{ flex: '1 1 auto', minHeight: '220px', position: 'relative' }}>
@@ -407,6 +294,37 @@ export default function MergedCenterPanel() {
       <div className="merged-proposal-split">
         <MergedProposalPanel />
       </div>
+
+      {/* 1. QUICKVIEW PROJECTION (top, persistent). */}
+      {hasQuickview && (
+        <section data-testid="quickview-strip" style={{ flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
+            <p style={{ fontSize: '0.72em', fontWeight: 700, color: '#6b7280', margin: '0 0 2px' }}>{t(LABELS.title, lang)}</p>
+            <p style={{ fontSize: '0.68em', color: '#94a3b8', margin: 0 }}>{t(LABELS.hint, lang)}</p>
+          </div>
+          <ScoreTimeline
+            data={quickviewTimeline!}
+            revealFraction={1}
+            showLegend
+            showJourneyMarkers
+            testIds={{
+              root: 'quickview-timeline',
+              fireGroup: 'quickview-fire-group',
+              fire: 'quickview-fire',
+              monotonyFire: 'quickview-monotony-fire',
+              jamGroup: 'quickview-jam-group',
+              restSpotGroup: 'quickview-rest-group',
+              fireHit: (i) => `quickview-fire-hit-${i}`,
+              restOptionHit: (i) => `quickview-rest-hit-${i}`,
+            }}
+            onFireClick={(_fire, i) => coordinator.inspectFire(state.inspectedFireIndex === i ? null : i)}
+            onRestOptionClick={(i) => coordinator.inspectRestOption(state.inspectedRestOptionIndex === i ? null : i)}
+          />
+        </section>
+      )}
+
+      <hr style={{ border: 'none', borderTop: '1px dashed #cbd5e1', margin: 0, flexShrink: 0 }} />
+
     </div>
   )
 }

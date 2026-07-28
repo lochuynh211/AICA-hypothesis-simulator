@@ -585,6 +585,18 @@ def rest_spots_endpoint(
             "reachable": reachable,
         })
 
+    # ── Never strand the driver ───────────────────────────────────────────────
+    # The ceiling exists to rule out spots the driver cannot safely REACH. Once
+    # current drowsiness is already at or above it, every projection fails (even
+    # a zero-minute ETA), so the whole list comes back unreachable and the driver
+    # can only decline — the outcome the ceiling was meant to prevent. When
+    # nothing qualifies, keep the CLOSEST spot selectable: it is strictly the
+    # best available choice, and stopping slightly past the ceiling beats not
+    # stopping at all. `spots` is ordered ascending by position, so [0] is nearest.
+    if spots and not any(s["reachable"] for s in spots):
+        spots[0]["reachable"] = True
+        spots[0]["reachable_fallback"] = True
+
     # (When maps_key is present, replace `spots` with Places results via the
     #  routes.py Places helper; key stays in-memory, never persisted or logged.)
     notice = "no_rest_stops_found" if not spots else None

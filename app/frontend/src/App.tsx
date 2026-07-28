@@ -145,7 +145,7 @@ export default function App() {
 
   return (
     <LanguageProvider initialLanguage="ja">
-      <AppModeProvider initialMode="proposal">
+      <AppModeProvider initialMode="merged">
         <AppBody healthStatus={healthStatus} />
       </AppModeProvider>
     </LanguageProvider>

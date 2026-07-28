@@ -110,6 +110,10 @@ const LABELS = {
   triggerAlgorithm: { ja: 'トリガーアルゴリズム', en: 'Trigger algorithm' },
   selectServiceFirst: { ja: 'まずサービスパッケージを選択してください。', en: 'Select a service package first.' },
   selectContentFirst: { ja: 'まずコンテンツパッケージを選択してください。', en: 'Select a content package first.' },
+  explanationSource: { ja: '説明の生成元', en: 'Explanation source' },
+  explOff: { ja: 'オフ（定型文）', en: 'Off (template)' },
+  explBackend: { ja: 'バックエンド LLM', en: 'Backend LLM' },
+  explBrowser: { ja: 'ブラウザ LLM', en: 'Browser LLM' },
 
   // ── Two-tier basic/detailed editors (task 18) ─────────────────────────────
   badgeSituation: {
@@ -847,6 +851,15 @@ export default function MergedSetupPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isComplete, rs, ps, effectiveWorld, selectedRoutePresetId, routeEnvelope, selectedRouteId, mountainRange, jamRange, jamSpeedKph])
 
+  // Mirrors buildTriggerPlan's initialState assembly so the projection and the
+  // run are fed identically.
+  const quickviewInitialState = useMemo(() => {
+    const init: { drowsiness_level?: number; fatigue_level?: number } = {}
+    if (rs.initialDrowsiness != null) init.drowsiness_level = rs.initialDrowsiness
+    if (rs.initialFatigue != null) init.fatigue_level = rs.initialFatigue
+    return init
+  }, [rs.initialDrowsiness, rs.initialFatigue])
+
   // Auto-quickview (debounced) on ANY setup change, before a run exists.
   const hasRun = coordinator.state.mergedRunId != null
   useEffect(() => {
@@ -856,6 +869,13 @@ export default function MergedSetupPanel({
         package_id: rs.selectedPackageId!, scenario_id: rs.selectedScenarioId!, route_preset_id: selectedRoutePresetId,
         run_seed: rs.runSeed, mountain_range_km: mountainRange, jam_range_km: jamRange, jam_speed_kph: jamSpeedKph,
         hyperparameter_overrides: rs.editedHyperparameters,
+        // The SAME pins buildTriggerPlan sends on Play. Without them the
+        // projection starts from the scenario's own defaults while the run
+        // starts from these values, and the two disagree visibly on screen.
+        ...(Object.keys(quickviewInitialState).length > 0 ? { initial_state: quickviewInitialState } : {}),
+        ...(Object.keys(rs.contextOverrides).length > 0 ? { context_overrides: rs.contextOverrides } : {}),
+        ...(rs.profileOverrides != null ? { profiles: rs.profileOverrides } : {}),
+        ...(rs.tickSecondsOverride != null ? { tick_seconds: rs.tickSecondsOverride } : {}),
         world: effectiveWorld, service_package_id: ps.servicePackageId!, content_package_id: ps.contentPackageId!,
         run_seed_proposal: String(rs.runSeed),
         service_parameters: ps.serviceParameterOverrides, service_hyperparameters: ps.serviceHyperparameterOverrides,
@@ -866,7 +886,10 @@ export default function MergedSetupPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isComplete, hasRun, rs.selectedPackageId, rs.selectedScenarioId, rs.editedHyperparameters, selectedRoutePresetId,
       mountainRange, jamRange, jamSpeedKph, effectiveWorld, ps.servicePackageId, ps.contentPackageId,
-      ps.serviceParameterOverrides, ps.serviceHyperparameterOverrides, ps.contentParameterOverrides, ps.contentHyperparameterOverrides])
+      ps.serviceParameterOverrides, ps.serviceHyperparameterOverrides, ps.contentParameterOverrides, ps.contentHyperparameterOverrides,
+      // The pins must be dependencies too, or editing initial drowsiness leaves
+      // the projection showing the previous value.
+      quickviewInitialState, rs.contextOverrides, rs.profileOverrides, rs.tickSecondsOverride])
 
   // Issue 1: bridge the painted traffic-jam range (km) into the runStore so the
   // center panel's <MapSurface/> can draw it in red over the route. A zero-width
@@ -1092,6 +1115,33 @@ export default function MergedSetupPanel({
           {contentPackages.map((p) => <option key={p.id} value={p.id}>{p.id}</option>)}
         </select>
         <button type="button" style={editBtnStyle} data-testid="edit-content" onClick={() => setOpenEdit('content')}>{t(LABELS.edit, lang)}</button>
+        <SetupBadge kind="algorithm" lang={lang} />
+      </div>
+
+      {/* Explanation source (feature 019). Lives here rather than over the
+          proposal output: it configures HOW the rationale sentence is produced,
+          which is a setup choice, and the centre column is for what the product
+          did. It drives both the service and content reasons. */}
+      <label htmlFor="merged-explanation-provider-select" style={fieldLabel}>
+        {t(LABELS.explanationSource, lang)}
+      </label>
+      <div style={rowStyle}>
+        <select
+          id="merged-explanation-provider-select"
+          data-testid="merged-explanation-provider-select"
+          style={selectStyle}
+          value={ps.explanationProvider}
+          onChange={(e) =>
+            proposalStore.dispatch({
+              type: 'SET_EXPLANATION_PROVIDER',
+              provider: e.target.value as 'off' | 'backend' | 'browser',
+            })
+          }
+        >
+          <option value="off">{t(LABELS.explOff, lang)}</option>
+          <option value="backend">{t(LABELS.explBackend, lang)}</option>
+          <option value="browser">{t(LABELS.explBrowser, lang)}</option>
+        </select>
         <SetupBadge kind="algorithm" lang={lang} />
       </div>
 

@@ -283,6 +283,14 @@ class MergedQuickviewBody(BaseModel):
     jam_speed_kph: float = 15.0
     hyperparameter_overrides: dict[str, Any] = {}
     rest_option_id: str | None = None
+    # Setup pins. Without these the quickview projects from the scenario's own
+    # defaults while the LIVE run starts from the pinned values, so the two
+    # disagree on drowsiness/fatigue — visibly, on the same screen. All optional
+    # so an unpinned quickview behaves exactly as before.
+    context_overrides: dict[str, Any] | None = None
+    initial_state: dict[str, Any] | None = None
+    profiles: dict[str, Any] | None = None
+    tick_seconds: int | None = None
     world: World
     service_package_id: str
     content_package_id: str

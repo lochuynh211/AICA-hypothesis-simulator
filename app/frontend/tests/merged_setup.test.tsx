@@ -472,3 +472,38 @@ describe('MergedSetupPanel', () => {
     await waitFor(() => expect(screen.getByTestId('test-merged-run-id')).toHaveTextContent('none'))
   })
 })
+
+describe('explanation-source selector (moved from the proposal panel)', () => {
+  it('wires the selector to the shared proposal store', async () => {
+    renderPanel()
+
+    const select = (await screen.findByTestId(
+      'merged-explanation-provider-select',
+    )) as HTMLSelectElement
+
+    // Defaults to the deterministic template — the LLM is opt-in.
+    expect(select.value).toBe('off')
+
+    // Round-trips through the scoped proposal store (it is a controlled value,
+    // so a stuck display would fail here).
+    fireEvent.change(select, { target: { value: 'backend' } })
+    await waitFor(() => expect(select.value).toBe('backend'))
+  })
+
+  it('offers exactly the three providers', async () => {
+    renderPanel()
+    const select = (await screen.findByTestId(
+      'merged-explanation-provider-select',
+    )) as HTMLSelectElement
+
+    // Pinned to the values, not the count.
+    expect(Array.from(select.options).map((o) => o.value)).toEqual(['off', 'backend', 'browser'])
+  })
+
+  it('has an accessible name', async () => {
+    renderPanel()
+    // It configures how the rationale is produced; a screen reader must be able
+    // to say which control this is.
+    expect(await screen.findByLabelText(/Explanation source/i)).toBeInTheDocument()
+  })
+})

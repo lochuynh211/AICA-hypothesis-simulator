@@ -202,17 +202,6 @@ describe('merged quickview projection strip + click-to-inspect (feature 020, Sli
     vi.resetAllMocks()
   })
 
-  it('wires the Explanation-source selector (feature 019) to the shared proposal store', () => {
-    renderCenterPanel()
-    const select = screen.getByTestId('merged-explanation-provider-select') as HTMLSelectElement
-    // Defaults to the deterministic template ('off').
-    expect(select.value).toBe('off')
-    // Changing it round-trips through the scoped proposal store (controlled value).
-    act(() => {
-      fireEvent.change(select, { target: { value: 'backend' } })
-    })
-    expect(select.value).toBe('backend')
-  })
 
   it('renders clickable fire markers from quickviewResult; clicking fire #2 inspects it and docks its service overlay read-only', async () => {
     // A real merged run backs this test (`mergedRunId` set via `create()`)

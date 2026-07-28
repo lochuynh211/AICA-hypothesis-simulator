@@ -170,6 +170,18 @@ def _project_after_rest(tick_state: Any, body: MergedQuickviewBody) -> tuple[dic
     return plog.model_dump(mode="json"), None
 
 
+
+def _with_tick_seconds(presets: dict[str, Any] | None, tick_seconds: int | None) -> dict[str, Any] | None:
+    """Fold a pinned tick duration into the presets the tick engine receives.
+
+    `tick_seconds` travels in `presets` on the live-run path too, so folding it
+    here keeps the projection and the run on the same clock. An unset value
+    leaves `presets` untouched.
+    """
+    if tick_seconds is None:
+        return presets
+    return {**(presets or {}), "tick_seconds": tick_seconds}
+
 def project(
     body: MergedQuickviewBody,
     *,
@@ -208,7 +220,10 @@ def project(
         scenarios_dir=scenarios_dir,
         route_source=route_source,
         route_facts=route_facts,
-        presets=presets,
+        presets=_with_tick_seconds(presets, body.tick_seconds),
+        profiles=body.profiles,
+        context_overrides=body.context_overrides,
+        initial_state=body.initial_state,
     )
 
     projected: list[tuple[dict | None, str | None]] = []

@@ -31,26 +31,28 @@ describe('appMode toggle', () => {
     vi.resetAllMocks()
   })
 
-  it('defaults to the proposal shell and switches to the trigger shell and back', async () => {
+  it('defaults to the Combined shell and switches across all three modes', async () => {
     mockFetchByUrl({ status: 'ok', service: 'aica-api', version: '0.0.0' })
 
     render(<App />)
 
-    // Proposal shell renders by default (health status is an AppShell-only string).
-    expect(await screen.findByTestId('proposal-shell')).toBeInTheDocument()
+    // Combined is the default screen (owner review): it is the review surface.
+    // The backend-health string is an AppShell(trigger)-only affordance.
+    expect(await screen.findByTestId('merged-shell')).toBeInTheDocument()
     expect(screen.queryByText('Backend: ok — aica-api')).not.toBeInTheDocument()
-    await waitFor(() => expect(screen.getByTestId('world-panel')).toBeInTheDocument())
 
-    // The app now defaults to Japanese, so the mode buttons render JA labels.
+    // The app defaults to Japanese, so the mode buttons render JA labels.
     fireEvent.click(screen.getByRole('button', { name: 'トリガー' }))
-
     expect(await screen.findByText('Backend: ok — aica-api')).toBeInTheDocument()
-    expect(screen.queryByTestId('proposal-shell')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('merged-shell')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: '提案' }))
-
-    expect(screen.getByTestId('proposal-shell')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByTestId('world-panel')).toBeInTheDocument())
     expect(screen.queryByText('Backend: ok — aica-api')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '統合' }))
+    expect(await screen.findByTestId('merged-shell')).toBeInTheDocument()
+    expect(screen.queryByTestId('world-panel')).not.toBeInTheDocument()
   })
 })
 

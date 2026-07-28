@@ -123,7 +123,7 @@ export default function MergedProposalPanel() {
   // Read the SETUP world for the read-only status strip before a run/fire exists,
   // and the shared explanation-source preference (feature 019) — same scoped-store
   // precedent MergedCenterPanel already relies on.
-  const { state: ps, dispatch: psDispatch } = useProposalStore()
+  const { state: ps } = useProposalStore()
 
   // item_id → song display name, so the content plan shows "Name (id)" like the
   // Proposal screen (issue #3). Fetched from the world's dataset catalog.
@@ -241,26 +241,6 @@ export default function MergedProposalPanel() {
         </span>
       </div>
 
-      {/* Explanation source (feature 019) — drives lazy LLM rationale for BOTH
-          service and content reasons, same as the Proposal screen. */}
-      <label style={explSelectStyle}>
-        <span style={statusLabelStyle}>{t(LABELS.explanationSource, lang)}</span>
-        <select
-          data-testid="merged-explanation-provider-select"
-          value={explanationProvider}
-          onChange={(e) =>
-            psDispatch({
-              type: 'SET_EXPLANATION_PROVIDER',
-              provider: e.target.value as 'off' | 'backend' | 'browser',
-            })
-          }
-          style={{ fontSize: '0.82em', padding: '3px' }}
-        >
-          <option value="off">{t(LABELS.explOff, lang)}</option>
-          <option value="backend">{t(LABELS.explBackend, lang)}</option>
-          <option value="browser">{t(LABELS.explBrowser, lang)}</option>
-        </select>
-      </label>
 
       {isInspecting && (
         <div data-testid="inspected-fire-readonly-badge" style={readonlyBadgeStyle}>
@@ -287,7 +267,8 @@ export default function MergedProposalPanel() {
         </p>
       ) : (
         <>
-          {/* TOP half — Service proposal */}
+          <div style={splitStyle}>
+          {/* LEFT — Service proposal */}
           <div data-testid="service-result-overlay" style={halfStyle}>
             <p style={halfTitleStyle}>① {t(LABELS.service, lang)}</p>
             <ServiceResultOverlay
@@ -309,8 +290,8 @@ export default function MergedProposalPanel() {
             )}
           </div>
 
-          {/* BOTTOM half — Content proposal */}
-          <div style={{ ...halfStyle, borderTop: '2px solid #e5e7eb' }}>
+          {/* RIGHT — Content proposal */}
+          <div style={{ ...halfStyle, borderLeft: '2px solid #e5e7eb', paddingLeft: '10px' }}>
             <p style={halfTitleStyle}>② {t(LABELS.content, lang)}</p>
             {hasContent ? (
               <div data-testid="content-result-overlay">
@@ -329,6 +310,7 @@ export default function MergedProposalPanel() {
                 {t(isInspecting ? LABELS.awaitingReadonly : LABELS.awaitingLive, lang)}
               </p>
             )}
+          </div>
           </div>
         </>
       )}
@@ -358,14 +340,6 @@ const statusLabelStyle: React.CSSProperties = {
   color: '#64748b',
 }
 const statusValueStyle: React.CSSProperties = { fontWeight: 600, color: '#1d4ed8' }
-const explSelectStyle: React.CSSProperties = {
-  flexShrink: 0,
-  display: 'flex',
-  alignItems: 'center',
-  gap: '6px',
-  fontSize: '0.78em',
-  color: '#334155',
-}
 
 const panelStyle: React.CSSProperties = {
   display: 'flex',
@@ -377,8 +351,20 @@ const panelStyle: React.CSSProperties = {
   gap: '6px',
 }
 
+/** Service and content SIDE BY SIDE — content wider because it carries more
+ *  (the design's 42/58). Previously these were stacked in a column, which is
+ *  why the split grid one level up had nothing to split. */
+const splitStyle: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0, 42fr) minmax(0, 58fr)',
+  gap: '10px',
+  alignItems: 'start',
+  flex: '1 1 auto',
+  minHeight: 0,
+}
+
 const halfStyle: React.CSSProperties = {
-  flex: '1 1 50%',
+  minWidth: 0,
   minHeight: 0,
   overflowY: 'auto',
   paddingTop: '8px',

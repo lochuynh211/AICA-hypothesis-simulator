@@ -23,6 +23,8 @@ Design constraints (contracts/ephemeral-evaluate.md):
 
 from __future__ import annotations
 
+import hashlib
+import json
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any
@@ -146,6 +148,20 @@ def _resolve_package_and_scenario(
     return package, scenario
 
 
+
+def _stable_pin_key(initial_state: dict | None, context_overrides: dict | None) -> str:
+    """Short deterministic digest of the setup pins, for the draft-cache key.
+
+    Unpinned previews collapse to "base", so they keep the exact key they had
+    before pins were threaded and behave identically.
+    """
+    payload = {"i": initial_state or {}, "c": context_overrides or {}}
+    if not payload["i"] and not payload["c"]:
+        return "base"
+    blob = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:10]
+
+
 def iter_preview_ticks(
     *,
     package_id: str,
@@ -157,6 +173,7 @@ def iter_preview_ticks(
     scenarios_dir,
     profiles: dict[str, Any] | None = None,
     context_overrides: dict[str, Any] | None = None,
+    initial_state: dict[str, Any] | None = None,
     route_source: str = "local",
     route_facts: Any = None,
     display_route: Any = None,
@@ -254,7 +271,11 @@ def iter_preview_ticks(
     # source is folded into the id so switching routes can't collide on a cached
     # draft key.
     route_key = selected_route_facts.route_source if selected_route_facts else "local"
-    plan_id = f"preview_{package_id}_{scenario_id}_{run_seed}_{route_key}"
+    # The pins participate in the draft key: two quickviews differing only by
+    # initial drowsiness/fatigue or a context override are DIFFERENT projections,
+    # and a shared key would serve one draft for the other.
+    pin_key = _stable_pin_key(initial_state, context_overrides)
+    plan_id = f"preview_{package_id}_{scenario_id}_{run_seed}_{route_key}_{pin_key}"
     draft = create_draft(
         plan_id=plan_id,
         package=package,
@@ -268,6 +289,7 @@ def iter_preview_ticks(
         display_route=selected_display_route,
         profiles=profiles,
         context_overrides=context_overrides,
+        initial_state=initial_state,
     )
     if draft.validation_errors:
         raise PreviewValidationError(

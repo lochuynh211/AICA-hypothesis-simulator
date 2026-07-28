@@ -41,7 +41,8 @@ describe('App — backend health display', () => {
 
     // The app now opens in proposal mode by default, so the health status
     // (an AppShell-only string) isn't visible until switched to trigger mode.
-    expect(await screen.findByTestId('proposal-shell')).toBeInTheDocument()
+    // Combined is now the default screen.
+    expect(await screen.findByTestId('merged-shell')).toBeInTheDocument()
 
     // The app defaults to Japanese, so the Trigger mode button reads トリガー.
     fireEvent.click(screen.getByRole('button', { name: 'トリガー' }))

@@ -112,11 +112,19 @@ def test_rest_spots_ceiling_override_via_query_param():
     ceiling=1.0 becomes reachable at ceiling=200."""
     run_id = create_paused_rest_run()
 
-    # With a very tight ceiling (1.0) at least one spot is unreachable
+    # With a very tight ceiling (1.0) nothing qualifies on its own merits, so the
+    # nearest spot is rescued (never strand the driver) and every spot BEYOND it
+    # stays unreachable. The rescue is flagged, so the override is still visibly
+    # in effect rather than silently ignored.
     r_tight = client.get(f"/api/runs/{run_id}/rest-spots?drowsiness_ceiling=1.0")
     assert r_tight.status_code == 200
     spots_tight = r_tight.json()["rest_spots"]
-    assert any(not s["reachable"] for s in spots_tight), "expected some unreachable at ceiling=1.0"
+    assert spots_tight[0].get("reachable_fallback") is True, (
+        f"expected the nearest spot to be rescued at ceiling=1.0; got {spots_tight}"
+    )
+    assert all(not s["reachable"] for s in spots_tight[1:]), (
+        f"expected every spot beyond the nearest to be unreachable at ceiling=1.0; got {spots_tight}"
+    )
 
     # With a very high ceiling (200) those spots become reachable
     r_high = client.get(f"/api/runs/{run_id}/rest-spots?drowsiness_ceiling=200")
@@ -127,8 +135,14 @@ def test_rest_spots_ceiling_override_via_query_param():
     )
 
 
-def test_rest_spots_unreachable_when_ceiling_very_low():
-    """All spots unreachable when rest_drowsiness_ceiling is lower than current drowsiness."""
+def test_only_the_nearest_spot_survives_when_ceiling_is_below_current_drowsiness():
+    """Ceiling below current drowsiness: everything past the nearest is unreachable.
+
+    Previously this asserted ALL spots unreachable, which left the driver with
+    nothing selectable — the ceiling is meant to rule out spots that cannot be
+    safely REACHED, not to remove the option of resting at all. The nearest spot
+    is now kept selectable and flagged as a fallback.
+    """
     import json as _json
     import pathlib
     import tempfile
@@ -174,9 +188,13 @@ def test_rest_spots_unreachable_when_ceiling_very_low():
     assert r.status_code == 200
     spots = r.json()["rest_spots"]
     assert len(spots) >= 1
-    # With ceiling=1.0 and drowsiness growing from ~20 (initial "weak"), all spots unreachable
-    assert all(not spot["reachable"] for spot in spots), (
-        f"expected all spots unreachable with ceiling=1.0; got {spots}"
+    # With ceiling=1.0 and drowsiness growing from ~20 (initial "weak"), nothing
+    # qualifies on its own merits — so the nearest is rescued and flagged, and
+    # everything beyond it stays unreachable.
+    assert spots[0]["reachable"] is True
+    assert spots[0].get("reachable_fallback") is True
+    assert all(not spot["reachable"] for spot in spots[1:]), (
+        f"expected every spot beyond the nearest to be unreachable at ceiling=1.0; got {spots}"
     )
 
 
