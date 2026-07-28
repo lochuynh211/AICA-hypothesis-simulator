@@ -86,6 +86,12 @@ services:
     volumes:
       - ./app/frontend:/app
       - frontend_node_modules:/app/node_modules
+      # Experience test cases (feature 023). vite.config.ts aliases `@contracts`
+      # to `../../combined_contracts`, which from the in-container Vite root
+      # (/app) resolves to /combined_contracts. Without this mount the eager
+      # glob matches NOTHING and the case picker comes up empty — the same trap
+      # the proposal_contracts mount hit. Read-only: cases are committed data.
+      - ./combined_contracts:/combined_contracts:ro
     depends_on:
       - api
 
