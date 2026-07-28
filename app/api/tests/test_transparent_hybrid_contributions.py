@@ -36,7 +36,15 @@ HIGH = {
     "familiar_route": 1.0,
 }
 # A vector below the gate (base_safety_risk stays under minimum_risk_for_rest_bonus).
-LOW = dict.fromkeys(HIGH, 0.0) | {"monotony": 0.4, "env_load": 0.1}
+# rest_window/rest_scarcity are deliberately NONZERO here even though the gate
+# blocks them: they are not inputs to base_safety_risk, so the gate staying
+# blocked has nothing to do with their value. Keeping them nonzero is what lets
+# test_rest_bonus_gate_zeroes_its_terms_when_it_blocks distinguish "the gate
+# zeroed a real contribution" from "the value was already zero" — do not
+# "simplify" this back to 0.0, it would make that test vacuous again.
+LOW = dict.fromkeys(HIGH, 0.0) | {
+    "monotony": 0.4, "env_load": 0.1, "rest_window": 0.7, "rest_scarcity": 0.6,
+}
 
 
 def _rows(result, category):
@@ -94,10 +102,17 @@ def test_rest_bonus_gate_zeroes_its_terms_when_it_blocks():
 
     rows = _rows(out, "rest_required")
     # The features stay VISIBLE with their declared weight — a reviewer must be
-    # able to see they were admitted-but-zeroed, not simply absent.
+    # able to see they were admitted-but-zeroed, not simply absent. LOW sets
+    # rest_window/rest_scarcity to nonzero (0.7/0.6) specifically so this test
+    # can tell "the gate zeroed a real contribution" apart from "the value was
+    # already zero" — asserting only `contribution == 0.0` would pass even if
+    # the zeroing branch never ran.
     assert rows["rest_window"]["contribution"] == 0.0
     assert rows["rest_scarcity"]["contribution"] == 0.0
+    assert rows["rest_window"]["value"] == 0.7
+    assert rows["rest_scarcity"]["value"] == 0.6
     assert rows["rest_window"]["weight"] == HP["w_rest_window"]
+    assert rows["rest_scarcity"]["weight"] == HP["w_rest_scarcity"]
 
 
 def test_clamp_is_flagged_when_it_binds():
