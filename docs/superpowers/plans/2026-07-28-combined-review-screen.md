@@ -4775,9 +4775,27 @@ opens basic. Inside each editor's `Modal`, render the `▸ Detailed setup — ev
 parameter` toggle, then either the new basic view or **the existing mounts,
 completely untouched**.
 
-Add `props` for the case: `caseSetup: ResolvedCaseSetup | null`, plus the
-route-preset and painted-range values Task 17 hands down. Compute the live
-snapshot and call `differsFromCase` to drive the note and Reset.
+Add `props` for the case: `caseSetup: ResolvedCaseSetup | null` **and
+`selectedCase: CombinedTestCase | null`**, plus the route-preset and painted-range values.
+Compute the live snapshot and call `differsFromCase` to drive the note and Reset.
+
+`selectedCase` is needed because the basic Driver-profile view shows **the persona's
+defining preferences** — that means the case's authored `persona.preferences` / `goals` /
+`constraints` bullets, the thing a reviewer judges the proposal against. It does not mean the
+resolved profile's scoring inputs (oshi, hobby tags, age band), which tell a reviewer nothing
+they cannot already infer from the profile reference.
+
+**Two write-path traps, both already hit once on this branch:**
+
+- Any `SET_CONTEXT_OVERRIDE` dispatched from a basic view must pass the **sentinel** `default`,
+  never the case's pinned value. The reducer DELETES the override when `value === default`, so
+  passing the case's value means toggling a checkbox off and back on silently drops the
+  override while the UI still shows it set — runtime and display then disagree with no
+  indication. `caseResolver.ts`'s `CASE_OVERRIDE_SENTINEL_DEFAULT` exists for exactly this.
+- `resetToCase()` re-applies a case and therefore awaits a preset fetch. It needs the **same
+  generation guard** `useCaseSelection` uses. It is reachable: the Reset button and the case
+  picker sit in the same left column, so a reviewer can Reset case A then pick case B before
+  A's fetch resolves, landing A's packages and profile on top of B's.
 
 - [ ] **Step 4: Verify no existing editor markup changed**
 
