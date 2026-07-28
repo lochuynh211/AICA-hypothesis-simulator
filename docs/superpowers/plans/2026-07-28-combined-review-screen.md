@@ -4412,7 +4412,18 @@ file rather than inventing a new one.
   with `scope: 'review_input'`. A failed POST must surface an error, never fail
   silently — a judgement the reviewer believes was recorded but was not is worse
   than an unrecorded one.
-- Same for `onAssess`/`onComment` with `scope: 'review_decision'`.
+- `onAssess` persists immediately with `scope: 'review_decision'`.
+- **`onComment` persists on BLUR, not on change.** The store is append-only, so a POST per
+  keystroke appends one evidence event per character — polluting the record this feature exists
+  to produce, and making the reviewer's final comment indistinguishable from its typing history.
+  Debouncing is not sufficient: it still writes intermediate states, just fewer. Keep the local
+  `dispatch` on every keystroke (cheap, no network) and commit on blur, skipping the POST when
+  the text is unchanged since the last commit.
+- **Test the wiring in `review_column.test.tsx`, not just the presentational card.** That file
+  already renders `<ReviewColumn>` directly without going through `App.tsx`, so a mocked client
+  can prove: one POST per judgement/assessment, exactly one per completed comment (not per
+  keystroke), a rejected POST rendering the error notice, a success clearing a prior error, and
+  the no-run path passing through. Without these the error-surfacing requirement is unguarded.
 - `onExport` calls `getReviewFeedback` and downloads the JSON.
 - When there is no live merged run yet, the card still records into the store and
   states that persistence begins once a run exists.
