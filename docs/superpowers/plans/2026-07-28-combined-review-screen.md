@@ -142,8 +142,12 @@ HIGH = {
     "env_load": 0.5, "monotony": 0.6, "rest_window": 0.5, "rest_scarcity": 0.3,
     "familiar_route": 1.0,
 }
-# A vector below the gate (base_safety_risk stays under minimum_risk_for_rest_bonus).
-LOW = dict.fromkeys(HIGH, 0.0) | {"monotony": 0.4, "env_load": 0.1}
+# Below the gate: the five base-safety features are 0 so base_safety_risk stays
+# under minimum_risk_for_rest_bonus, but rest_window/rest_scarcity are NONZERO.
+# They are not inputs to base_safety_risk, so they can carry real values while the
+# gate stays blocked — which is what makes the zeroing assertion below meaningful.
+# With them at 0.0 the test would pass whether or not the gate zeroed anything.
+LOW = dict.fromkeys(HIGH, 0.0) | {"monotony": 0.4, "rest_window": 0.7, "rest_scarcity": 0.6}
 
 
 def _rows(result, category):
@@ -200,10 +204,14 @@ def test_rest_bonus_gate_zeroes_its_terms_when_it_blocks():
     assert gate["effect"] == "exclude"
 
     rows = _rows(out, "rest_required")
-    # The features stay VISIBLE with their declared weight — a reviewer must be
-    # able to see they were admitted-but-zeroed, not simply absent.
+    # BOTH halves matter. The contribution is zeroed...
     assert rows["rest_window"]["contribution"] == 0.0
     assert rows["rest_scarcity"]["contribution"] == 0.0
+    # ...AND the row stays visible carrying its real input and declared weight, so
+    # "admitted but gated to zero" is distinguishable from "not present at all".
+    # Without these three, the assertions above pass on an all-zero fixture too.
+    assert rows["rest_window"]["value"] == 0.7
+    assert rows["rest_scarcity"]["value"] == 0.6
     assert rows["rest_window"]["weight"] == HP["w_rest_window"]
 
 
