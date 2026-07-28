@@ -4,12 +4,12 @@
   "version": "1.0.0",
   "title": { "ja": "C-02 夜間高速道路・眠気の高まり", "en": "C-02 Night highway drowsiness" },
   "brief": {
-    "ja": "夜間の長距離高速走行で、出発時から眠気がすでに高まっているドライバーを走らせます。夜間という状況が、休憩提案とその後のサービス・コンテンツ選定にどう反映されるかを確認します。",
-    "en": "A long night-time highway drive with a driver whose drowsiness is already elevated at departure. Checks how the night context feeds into the rest proposal and the service/content chosen in response."
+    "ja": "夜間の長距離高速走行で、出発時から眠気がすでに高まっているドライバーを走らせます。夜間という状況が、休憩提案とその後のサービス・コンテンツ選定にどう反映されるかを確認します。なお、この初期眠気の設定値は現状トリガーの投影には反映されません。反映されるのは夜間という状況のみで、それはサービス・コンテンツ選定側の世界状態に渡されます。",
+    "en": "A long night-time highway drive with a driver whose drowsiness is already elevated at departure. Checks how the night context feeds into the rest proposal and the service/content chosen in response. Note: the pinned initial drowsiness does not currently reach the trigger projection either — only the night context does, and only into the world state used for service/content selection."
   },
   "what_to_watch": [
     { "ja": "夜間であることがサービス選定に反映されるか", "en": "Whether night context shapes the chosen service" },
-    { "ja": "眠気が疲労より優勢な決め手になっているか", "en": "Drowsiness, not fatigue, as the dominant input" },
+    { "ja": "記録上、眠気と疲労のどちらの寄与が実際に優勢か", "en": "Which of drowsiness or fatigue actually dominates the recorded contribution" },
     { "ja": "夜間に適したコンテンツが選ばれるか", "en": "Whether the selected content suits a night drive" }
   ],
   "persona": {

@@ -134,6 +134,28 @@ def _quickview(case: dict) -> dict:
     return resp.json()
 
 
+def _route_total_km(route_preset_ref: str) -> float:
+    """Same computation ``routers/route_presets.py::load_route_preset`` uses
+    (``total_km = raw_route["distance_m"] / 1000.0``) -- reads the preset file
+    directly rather than hitting an endpoint, since this is the one number
+    (route length) this test needs to turn a fire's ``progress`` fraction into
+    a km position."""
+    path = settings.routes_dir / "presets" / f"{route_preset_ref}.json"
+    raw_route = json.loads(path.read_text(encoding="utf-8"))["raw_route"]
+    return raw_route["distance_m"] / 1000.0
+
+
+def _fire_km(result: dict, fire: dict, total_km: float) -> float:
+    """The fire's position along the route in km, via the per-tick
+    ``progress`` map (``t`` -> route-fraction ``frac``) the quickview result
+    carries -- the SAME map the Combined Simulator uses to align a fire with
+    the distance-axis animation (``ProgressPoint``, ``models/run.py``)."""
+    frac_by_tick = {p["t"]: p["frac"] for p in result.get("progress", [])}
+    frac = frac_by_tick.get(fire["tick"])
+    assert frac is not None, f"no progress entry recorded for fire tick {fire['tick']}"
+    return frac * total_km
+
+
 @pytest.mark.parametrize("path", _CASE_FILES, ids=lambda p: p.stem)
 def test_case_run_completes_without_algorithm_error(path):
     case = _load(path)
@@ -156,6 +178,36 @@ def test_case_reaches_an_in_scope_fire_with_both_categories(path):
     assert in_scope_fires, f"{case['case_id']}: no in-scope fire among {result['fires']}"
 
     fire = in_scope_fires[0]
+
+    # Positional correspondence, where the case's own cause is genuinely
+    # wired: C-04/C-05 paint a mountain/jam band onto the route
+    # (mountain_range_km/jam_range_km ARE threaded through
+    # MergedQuickviewBody -> _build_quickview_route_facts -- verified
+    # empirically, see task-19-report.md), so for THOSE two the fire must
+    # land within or after the painted band, not merely "somewhere on the
+    # route" -- otherwise this test would only prove "a fire happened",
+    # never "the fire happened where this case put the cause".
+    #
+    # C-02 and C-06 have no such wiring to lean on: their pins
+    # (initial_drowsiness/initial_fatigue, and is_night on the TRIGGER side)
+    # do not reach the tick engine through this endpoint at all (the
+    # pre-existing threading gap documented in the module docstring and
+    # task-19-report.md), so there is no position/condition a fire could be
+    # checked against that the case itself actually causes here. Their
+    # assertion stays reachability-only -- strengthening it would require
+    # fixing that gap in production code, which is out of scope for this task.
+    fixed = case["journey"].get("fixed_overrides", {})
+    band = fixed.get("mountain_range_km") or fixed.get("jam_range_km")
+    if band is not None:
+        total_km = _route_total_km(case["journey"]["route_preset_ref"])
+        fire_km = _fire_km(result, fire, total_km)
+        band_start_km = band[0]
+        assert fire_km >= band_start_km, (
+            f"{case['case_id']}: fire at {fire_km:.1f} km falls BEFORE the "
+            f"painted band start {band_start_km} km -- the fire did not "
+            f"happen where this case put the cause"
+        )
+
     contributions = fire.get("feature_contributions") or {}
     assert set(contributions) == _IN_SCOPE_CATEGORIES, (
         f"{case['case_id']}: expected both categories recorded, got {sorted(contributions)}"

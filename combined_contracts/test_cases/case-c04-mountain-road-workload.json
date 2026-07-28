@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "title": { "ja": "C-04 山道・高い運転負荷", "en": "C-04 Mountain road, high workload" },
   "brief": {
-    "ja": "東京から軽井沢までのルートの一部に山道区間を配置し、カーブの連続による運転負荷の高まりを走行させます。区間の性質そのものが介入の決め手になるかを確認します。",
+    "ja": "東京から軽井沢までのルートの一部に山道区間を配置し、カーブが連続する区間を走行して運転負荷の高まりを確認します。区間の性質そのものが介入の決め手になっているかを見極めます。",
     "en": "A mountain-road segment is painted onto part of the Tokyo–Karuizawa route, driving through a stretch of continuous curves and elevated workload. Checks whether the segment's own character drives the intervention."
   },
   "what_to_watch": [
