@@ -110,19 +110,41 @@ class FeedbackTarget(BaseModel):
     - "decision"  — a specific tick's decision (event_ref → index in RunLog.events).
     - "proposal"  — a specific fired proposal (event_ref → tick event index).
     - "action"    — a specific reviewer action (event_ref → action event index).
+    - "review_input"    — (feature: combined review screen) a reviewer's
+      judgement on ONE input feature that fed a decision, anchored by
+      (case_id, checkpoint_id, stage, review_target, feature_id).
+    - "review_decision" — (feature: combined review screen) a reviewer's
+      judgement on the decision itself, anchored by (case_id, checkpoint_id,
+      stage, review_target) — no feature_id.
 
     ``event_ref`` is the index into RunLog.events that uniquely anchors the
     target — required for decision/proposal/action, absent for run.
 
     The display-metadata fields (tick_index, proposal_id, action) are included
     for UI convenience and are not the authoritative anchor (event_ref is).
+
+    review_input/review_decision do not use event_ref — they are anchored
+    by the case/checkpoint/stage/target(/feature) fields below instead,
+    which the frontend joins as ``case_id|checkpoint_id|stage|review_target
+    |feature_id`` to key a judgement.
     """
 
-    scope: Literal["run", "decision", "proposal", "action"]
+    scope: Literal[
+        "run", "decision", "proposal", "action",
+        "review_input", "review_decision",
+    ]
     event_ref: int | None = None
     tick_index: int | None = None
     proposal_id: str | None = None
     action: str | None = None
+    # Review anchors (feature: combined review screen). A review judgement is
+    # keyed by (case · checkpoint · stage · target), plus the feature for a
+    # per-input judgement. All optional so existing scopes are unchanged.
+    case_id: str | None = None
+    checkpoint_id: str | None = None
+    stage: str | None = None
+    review_target: str | None = None
+    feature_id: str | None = None
 
 
 # ─── FeedbackEvent ───────────────────────────────────────────────────────────

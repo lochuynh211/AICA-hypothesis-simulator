@@ -30,12 +30,13 @@ from __future__ import annotations
 import json
 import os
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ValidationError
 
 from aica_api.config import settings
+from aica_api.models.feedback import FeedbackEvent, FeedbackTarget
 from aica_api.models.merged_run import (
     AcceptRestBody,
     CorrelationEntry,
@@ -79,8 +80,10 @@ from aica_api.services.merged_run_coordinator import (
     make_merged_run_id,
     save_handle,
 )
+from aica_api.services.feedback import append_feedback
 from aica_api.services.package_registry import PackageRegistry
 from aica_api.services.preview import PreviewValidationError
+from aica_api.services.proposal_package_registry import ProposalPackageRegistry
 from aica_api.services.route_analysis import analyze_route
 from aica_api.services.run_plan import create_draft, validate_context_overrides
 from aica_api.services.scenario_registry import ScenarioRegistry
@@ -1101,3 +1104,126 @@ def proposal_action_endpoint(merged_run_id: str, body: MergedProposalActionBody)
     save_handle(handle, settings.merged_runs_dir)
 
     return plog.model_dump(mode="json")
+
+
+# ── Review feedback (feature 023, Task 15) ──────────────────────────────────
+#
+# The parameter-rationale review screen records a reviewer's judgement on
+# either ONE input feature that fed a decision (scope="review_input") or on
+# the decision itself (scope="review_decision"). Both kinds ride the SAME
+# M5 append-only feedback store (`services/feedback.py::append_feedback`,
+# `FeedbackEvent` appended into the paired trigger run's `RunLog.events`)
+# via `handle.trigger_run_id` — there is exactly ONE feedback store, not a
+# second parallel one for reviews. Feedback is evidence only: it is never
+# read by, nor alters, any algorithm or recorded simulator decision.
+
+
+class ReviewFeedbackBody(BaseModel):
+    """POST body for ``/api/merged-runs/{id}/review-feedback``.
+
+    ``feature_id`` only applies to ``scope="review_input"`` (a per-feature
+    judgement); ``review_decision`` judges the decision as a whole and omits
+    it. The frontend keys a judgement as
+    ``case_id|checkpoint_id|stage|review_target|feature_id`` — these fields
+    are exactly the anchor needed to reconstruct that key.
+    """
+
+    scope: Literal["review_input", "review_decision"]
+    case_id: str
+    checkpoint_id: str
+    stage: str
+    review_target: str
+    feature_id: str | None = None
+    labels: dict = {}
+    comment: str | None = None
+
+
+@router.post("/api/merged-runs/{merged_run_id}/review-feedback", status_code=201)
+def post_review_feedback_endpoint(merged_run_id: str, body: ReviewFeedbackBody) -> dict:
+    """Append one reviewer judgement to the merged run's paired trigger run
+    log. Append-only, exactly like every other M5 feedback record: two
+    judgements on the same feature append twice — an earlier opinion is
+    never overwritten, never replaced.
+
+    404 for an unknown merged_run_id or a trigger run that has since gone
+    missing.
+    """
+    handle = get_handle(merged_run_id, settings.merged_runs_dir)
+    if handle is None:
+        raise HTTPException(status_code=404, detail=f"Merged run {merged_run_id!r} not found")
+
+    event = FeedbackEvent(
+        kind="feedback",
+        target=FeedbackTarget(
+            scope=body.scope,
+            case_id=body.case_id,
+            checkpoint_id=body.checkpoint_id,
+            stage=body.stage,
+            review_target=body.review_target,
+            feature_id=body.feature_id,
+        ),
+        labels=body.labels,
+        comment=body.comment,
+    )
+
+    try:
+        append_feedback(handle.trigger_run_id, event, settings.runs_dir)
+    except run_manager.RunNotFoundError:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Trigger run {handle.trigger_run_id!r} not found",
+        )
+
+    return event.model_dump(mode="json")
+
+
+@router.get("/api/merged-runs/{merged_run_id}/review-feedback")
+def get_review_feedback_endpoint(merged_run_id: str) -> dict:
+    """Return every recorded review_input/review_decision judgement for a
+    merged run's paired trigger run, plus the trigger/service/content
+    package versions in play — so an export can attribute each judgement to
+    the exact package versions that produced the decision it judges.
+
+    Pure disk read of the trigger run's log (mirrors ``get_merged_run_endpoint``)
+    — nothing is recomputed. 404 for an unknown merged_run_id.
+    """
+    handle = get_handle(merged_run_id, settings.merged_runs_dir)
+    if handle is None:
+        raise HTTPException(status_code=404, detail=f"Merged run {merged_run_id!r} not found")
+
+    trigger_log_path = settings.runs_dir / f"{handle.trigger_run_id}.json"
+    trigger_log = (
+        json.loads(trigger_log_path.read_text(encoding="utf-8"))
+        if trigger_log_path.exists()
+        else None
+    )
+    events = (trigger_log or {}).get("events", [])
+    review_events = [
+        e
+        for e in events
+        if e.get("kind") == "feedback"
+        and str((e.get("target") or {}).get("scope", "")).startswith("review_")
+    ]
+
+    trigger_pkg = ((trigger_log or {}).get("snapshot") or {}).get("package") or {}
+    proposal_pkg_reg = ProposalPackageRegistry(settings.packages_dir)
+    service_pkg = proposal_pkg_reg.get(handle.service_package_id)
+    content_pkg = proposal_pkg_reg.get(handle.content_package_id)
+
+    return {
+        "events": review_events,
+        "package_versions": {
+            "trigger": {
+                "id": trigger_pkg.get("id"),
+                "version": trigger_pkg.get("version"),
+            },
+            "service": {
+                "id": handle.service_package_id,
+                "version": service_pkg.version if service_pkg else None,
+            },
+            "content": {
+                "id": handle.content_package_id,
+                "version": content_pkg.version if content_pkg else None,
+            },
+        },
+    }
