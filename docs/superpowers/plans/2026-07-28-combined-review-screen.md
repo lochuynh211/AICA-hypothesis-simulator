@@ -1125,7 +1125,6 @@ describe('necessity', () => {
       winnerId: 'plain', changed: false,
     })
   })
-  })
 })
 
 describe('flipDistance', () => {
