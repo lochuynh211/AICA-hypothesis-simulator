@@ -257,34 +257,94 @@ def category_scores(features: dict, hp: dict, child_passenger: bool = False) -> 
     It is added AFTER the rest-spot bonus gate so it can never unlock that gate on
     its own, and it is deliberately kept out of `base_safety_risk` and monotony.
     """
-    base_safety_risk = _clamp(
-        hp["w_drowsiness"] * features["drowsiness"]
-        + hp["w_fatigue"] * features["fatigue"]
-        + hp["w_driving_anomaly"] * features["driving_anomaly"]
-        + hp["w_driving_time"] * features["driving_time"]
-        + hp["w_env"] * features["env_load"]
-    )
+    def _row(feature_id: str, value: float, weight: float) -> dict:
+        return {
+            "feature_id": feature_id,
+            "value": value,
+            "band": None,          # filled in by evaluate() from features_ordinal
+            "weight": weight,
+            "contribution": weight * value,
+        }
 
-    if base_safety_risk >= hp["minimum_risk_for_rest_bonus"]:
-        rest_bonus = (
-            hp["w_rest_window"] * features["rest_window"]
-            + hp["w_rest_scarcity"] * features["rest_scarcity"]
-        )
+    base_terms = [
+        _row("drowsiness", features["drowsiness"], hp["w_drowsiness"]),
+        _row("fatigue", features["fatigue"], hp["w_fatigue"]),
+        _row("driving_anomaly", features["driving_anomaly"], hp["w_driving_anomaly"]),
+        _row("driving_time", features["driving_time"], hp["w_driving_time"]),
+        _row("env_load", features["env_load"], hp["w_env"]),
+    ]
+    # NOTE: deliberately NOT `sum(...)` — CPython 3.12+ built-in `sum()` uses
+    # Neumaier-compensated summation for floats, which can differ from a plain
+    # left-to-right `+` chain in the last bit. The pre-existing formula here
+    # was `a + b + c + d + e`; a manual accumulator reproduces that exactly so
+    # `base_safety_risk` stays numerically identical to before this change.
+    base_unclamped = 0.0
+    for t in base_terms:
+        base_unclamped += t["contribution"]
+    base_safety_risk = _clamp(base_unclamped)
+
+    gate_passed = base_safety_risk >= hp["minimum_risk_for_rest_bonus"]
+    rest_bonus_terms = [
+        _row("rest_window", features["rest_window"], hp["w_rest_window"]),
+        _row("rest_scarcity", features["rest_scarcity"], hp["w_rest_scarcity"]),
+    ]
+    if gate_passed:
+        # Direct `+` (not `sum()` — see the base_unclamped note above) to match
+        # the original `w_rest_window*rest_window + w_rest_scarcity*rest_scarcity`.
+        rest_bonus = rest_bonus_terms[0]["contribution"] + rest_bonus_terms[1]["contribution"]
     else:
+        # Keep the rows VISIBLE with their declared weight so a reviewer can see
+        # they were gated out rather than simply absent; zero only the effect.
         rest_bonus = 0.0
-    child_bonus = hp["w_child_bonus"] if child_passenger else 0.0
-    rest_required_score = _clamp(base_safety_risk + rest_bonus + child_bonus)
+        for term in rest_bonus_terms:
+            term["contribution"] = 0.0
 
-    monotony_prevention_score = _clamp(
-        hp["w_monotony"] * features["monotony"]
-        + hp["w_env_mono"] * features["env_load"]
-        + hp["w_familiar"] * features["familiar_route"]
-    )
+    child_term = _row("child_passenger", 1.0 if child_passenger else 0.0, hp["w_child_bonus"])
+    child_bonus = child_term["contribution"]
+
+    rest_unclamped = base_safety_risk + rest_bonus + child_bonus
+    rest_required_score = _clamp(rest_unclamped)
+
+    mono_terms = [
+        _row("monotony", features["monotony"], hp["w_monotony"]),
+        _row("env_load", features["env_load"], hp["w_env_mono"]),
+        _row("familiar_route", features["familiar_route"], hp["w_familiar"]),
+    ]
+    # Manual accumulator (not `sum()` — see the base_unclamped note above) to
+    # match the original `w_monotony*monotony + w_env_mono*env_load + w_familiar*familiar_route`.
+    mono_unclamped = 0.0
+    for t in mono_terms:
+        mono_unclamped += t["contribution"]
+    monotony_prevention_score = _clamp(mono_unclamped)
+
+    rest_rows = base_terms + rest_bonus_terms + [child_term]
 
     return {
         "base_safety_risk": base_safety_risk,
         "rest_required_score": rest_required_score,
         "monotony_prevention_score": monotony_prevention_score,
+        "feature_contributions": {
+            "rest_required": {
+                "score": rest_required_score,
+                # `clamp` means Σcontributions can exceed the reported score, so
+                # realized shares stop reconciling. The panel must be able to SAY so.
+                "clamped": sum(r["contribution"] for r in rest_rows) > rest_required_score,
+                "rows": rest_rows,
+                "gates": [{
+                    "gate_id": "minimum_risk_for_rest_bonus",
+                    "evaluated_inputs": {"base_safety_risk": base_safety_risk},
+                    "threshold": hp["minimum_risk_for_rest_bonus"],
+                    "passed": gate_passed,
+                    "effect": "allow" if gate_passed else "exclude",
+                }],
+            },
+            "monotony_prevention": {
+                "score": monotony_prevention_score,
+                "clamped": mono_unclamped > monotony_prevention_score,
+                "rows": mono_terms,
+                "gates": [],
+            },
+        },
     }
 
 
@@ -774,6 +834,14 @@ def evaluate(context: dict) -> dict:
     # features field is dict[str, str]: the transparent ordinal view of the tick.
     features_ordinal = {k: str(v) for k, v in ordinal.items()}
 
+    # Attach the ordinal band word each row's raw value falls in, so the review
+    # panel can lead with the value a reviewer already understands. `ordinal` is
+    # keyed independently of FEATURE_KEYS, so a miss stays None rather than guessing.
+    feature_contributions = scores["feature_contributions"]
+    for block in feature_contributions.values():
+        for row in block["rows"]:
+            row["band"] = features_ordinal.get(row["feature_id"])
+
     return {
         "result_type": result_type,
         "trigger_candidate": selected is not None,
@@ -787,6 +855,7 @@ def evaluate(context: dict) -> dict:
             "rest_velocity": rest_velocity,
             "monotony_velocity": mono_velocity,
         },
+        "feature_contributions": feature_contributions,
         "states": states,
         "criteria": {
             "smoothing_alpha": alpha,

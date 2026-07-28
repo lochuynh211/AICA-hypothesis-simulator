@@ -119,6 +119,10 @@ class DecisionResult(BaseModel):
     scores: dict = {}
     states: dict = {}
     criteria: dict
+    # Per-category per-feature terms recorded by transparent packages (B1).
+    # Empty for packages that do not populate it — consumers must report the
+    # trigger stage as unavailable rather than inferring contributions.
+    feature_contributions: dict = {}
     candidates: list[Candidate]
     fire_control: FireControl
     proposal: Proposal | None
