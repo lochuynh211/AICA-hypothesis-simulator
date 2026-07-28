@@ -23,7 +23,7 @@ import { MergedCoordinatorProvider, useMergedCoordinator } from '../src/state/me
 import { LanguageProvider } from '../src/state/language'
 import { RunStoreProvider } from '../src/state/runStore'
 import { ProposalStoreProvider } from '../src/state/proposalStore'
-import MergedProposalPanel from '../src/components/merged/MergedProposalPanel'
+import { ReviewStoreProvider } from '../src/state/reviewStore'
 import type { MergedTickResponse } from '../src/api/mergedClient'
 import type { DecisionResult, ScenarioDef, RestSpot } from '../src/api/types'
 import type { ProposalRunLog, AlgorithmEvidence } from '../src/api/proposalClient'
@@ -308,17 +308,20 @@ function renderCenterPanel() {
     return null
   }
 
-  // Owner layout: rest-accept is in the center; the service/content overlays
-  // moved to the RIGHT panel (MergedProposalPanel). Both share the coordinator;
-  // the center's <MapSurface/> needs a RunStoreProvider.
+  // Owner layout: rest-accept is in the center; MergedCenterPanel renders
+  // MergedProposalPanel itself now (task-17-brief, as a sibling of the
+  // animated playback subtree) — no separate mount. Both still share the
+  // coordinator; the center's <MapSurface/> needs a RunStoreProvider, and the
+  // checkpoint rail/decision band it also renders need a ReviewStoreProvider.
   render(
     <LanguageProvider initialLanguage="en">
       <MergedCoordinatorProvider>
       <RunStoreProvider>
         <ProposalStoreProvider>
+        <ReviewStoreProvider>
         <Capture />
         <MergedCenterPanel />
-        <MergedProposalPanel />
+        </ReviewStoreProvider>
         </ProposalStoreProvider>
       </RunStoreProvider>
     </MergedCoordinatorProvider>

@@ -76,53 +76,46 @@ body {
   background: #111111;
 }
 
-/* ── Combined Simulator shell (020 Task 6) ───────────────────────────────────── */
+/* ── Combined Simulator shell (020 Task 6; reshaped task-17-brief) ───────────── */
 
-/* 20:60:20 grid — a narrower left setup column, wide center playback, right
-   trace/log. Reuses the SAME `.left-panel`/`.center-panel`/`.right-panel`
-   rules above (they set only `grid-column`/sizing, not layout mode, so they
-   apply cleanly under either parent grid). */
+/* 20 : 45 : 35 — left case+setup, centre simulation+proposals, right review.
+   Reuses the SAME `.left-panel`/`.center-panel`/`.right-panel` rules above
+   (they set only `grid-column`/sizing, not layout mode, so they apply
+   cleanly under either parent grid). */
 .merged-shell {
   display: grid;
-  /* 20 : 50 : 30 (owner layout) — left setup+log, center quickview+animation+map,
-     right service (top) + content (bottom) proposals. */
-  grid-template-columns: 2fr 5fr 3fr;
+  grid-template-columns: 20fr 45fr 35fr;
   grid-template-rows: 1fr;
   height: 100%;
   width: 100%;
   overflow: hidden;
 }
 
-/* The Combined Simulator's RIGHT panel holds the light-themed proposal output
-   (service/content), NOT the Trigger screen's dark trace log — override the
-   #111 background so it isn't black. */
+/* The Combined Simulator's RIGHT panel holds the light-themed review column,
+   NOT the Trigger screen's dark trace log — override the #111 background so
+   it isn't black. */
 .merged-shell .right-panel {
   background: #ffffff;
 }
 
-/* Left panel of the Combined Simulator stacks the setup component (natural
-   height) over the run/output log (fills the rest, own scroll). */
+/* Left column is a single scrolling stack now that the log has moved out
+   (log stays on MergedRunsScreen/MergedReplayViewer). */
 .merged-shell .left-panel {
   display: flex;
   flex-direction: column;
   min-height: 0;
-}
-.merged-shell .left-panel > .merged-left-setup {
-  /* Setup gets the lion's share now (owner review): grow to fill, own scroll. */
-  flex: 1 1 auto;
   overflow-y: auto;
-  min-height: 0;
 }
-.merged-shell .left-panel > .merged-left-log {
-  /* Shorter output log — a compact fixed band, black even when empty so the
-     placeholder reads as a real (dark) log surface rather than blank space. */
-  flex: 0 0 auto;
-  height: 26%;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  border-top: 2px solid #2a2a4a;
-  background: #111;
+
+/* Service and content side by side; content is wider because it carries more. */
+.merged-proposal-split {
+  display: grid;
+  grid-template-columns: minmax(0, 42fr) minmax(0, 58fr);
+  gap: 9px;
+  align-items: start;
+}
+@media (max-width: 1400px) {
+  .merged-proposal-split { grid-template-columns: 1fr; }
 }
 
 /* ── Modal primitive (020 Task 6) — net-new popup used by the Combined

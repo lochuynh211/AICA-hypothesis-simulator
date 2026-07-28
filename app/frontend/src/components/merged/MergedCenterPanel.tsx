@@ -21,6 +21,11 @@
 import { useEffect, useState } from 'react'
 import { useMergedCoordinator } from '../../state/mergedCoordinator'
 import { useRunStore } from '../../state/runStore'
+import { useReviewStore } from '../../state/reviewStore'
+import { deriveCheckpoints } from '../../lib/review/checkpoints'
+import CheckpointRail from '../review/CheckpointRail'
+import DecisionBand from '../review/DecisionBand'
+import MergedProposalPanel from './MergedProposalPanel'
 import ScoreTimeline from '../playback/ScoreTimeline'
 import { mergedInstantResultToTimeline, type TimelineData, type TimelineFire, type TimelinePoint, type TimelineSegment } from '../playback/timelineData'
 import type { TraceEntry, RecoveryOption, RestSpot } from '../../api/types'
@@ -129,6 +134,14 @@ export default function MergedCenterPanel() {
   // rest-spot fetch filters.
   const { state: rs } = useRunStore()
 
+  // The reviewable decision points (task-17-brief) are derived from the SAME
+  // ephemeral quickview projection `ReviewColumn` reads (`MergedShell` hands
+  // it the identical `state.quickviewResult`) — so the rail, the band and the
+  // review column always agree on which fire is index N.
+  const { state: reviewState, dispatch: reviewDispatch } = useReviewStore()
+  const checkpoints = deriveCheckpoints(state.quickviewResult)
+  const activeCheckpoint = checkpoints.find((c) => c.id === reviewState.checkpointId) ?? checkpoints[0] ?? null
+
   // TOP strip = the projection (time axis, journey markers).
   const quickviewTimeline = state.quickviewResult ? mergedInstantResultToTimeline(state.quickviewResult) : null
   const hasQuickview = quickviewTimeline != null
@@ -234,6 +247,16 @@ export default function MergedCenterPanel() {
       data-testid="merged-center-panel"
       style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '12px', minHeight: 0, overflowY: 'auto', gap: '10px' }}
     >
+      {/* The animated subtree: quickview + playback controls + live timeline
+          + map, all redrawn every tick. `CheckpointRail`/`DecisionBand`/the
+          proposal split below are SIBLINGS of this element, never
+          descendants — a tick re-rendering this subtree must not remount the
+          proposal cards next to it and collapse an expanded contribution
+          chain mid-run (task-17-brief's structural rule). */}
+      <div
+        data-testid="merged-playback-subtree"
+        style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}
+      >
       {/* 1. QUICKVIEW PROJECTION (top, persistent). */}
       {hasQuickview && (
         <section data-testid="quickview-strip" style={{ flexShrink: 0 }}>
@@ -370,6 +393,19 @@ export default function MergedCenterPanel() {
             </div>
           )}
         </div>
+      </div>
+      </div>
+
+      {/* Siblings of the animated subtree above — a playback tick redraws that
+          subtree but never these. */}
+      <CheckpointRail
+        checkpoints={checkpoints}
+        selectedId={activeCheckpoint?.id ?? null}
+        onSelect={(checkpointId) => reviewDispatch({ type: 'SELECT_CHECKPOINT', checkpointId })}
+      />
+      <DecisionBand checkpoint={activeCheckpoint} />
+      <div className="merged-proposal-split">
+        <MergedProposalPanel />
       </div>
     </div>
   )

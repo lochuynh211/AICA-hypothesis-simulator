@@ -21,10 +21,10 @@ import { MergedCoordinatorProvider, useMergedCoordinator } from '../src/state/me
 import { LanguageProvider } from '../src/state/language'
 import { RunStoreProvider } from '../src/state/runStore'
 import { ProposalStoreProvider } from '../src/state/proposalStore'
+import { ReviewStoreProvider } from '../src/state/reviewStore'
 import type { MergedInstantResult, MergedFirePoint, MergedRestOption, MergedTickResponse } from '../src/api/mergedClient'
 import type { ProposalRunLog, AlgorithmEvidence } from '../src/api/proposalClient'
 import MergedCenterPanel from '../src/components/merged/MergedCenterPanel'
-import MergedProposalPanel from '../src/components/merged/MergedProposalPanel'
 
 vi.mock('../src/api/mergedClient', () => ({
   createMergedRun: vi.fn(),
@@ -173,17 +173,21 @@ function renderCenterPanel() {
     return null
   }
 
-  // Quickview click-to-inspect lives in the center; the inspected proposal
-  // renders in the RIGHT panel (MergedProposalPanel). Both share the coordinator
-  // and the center's <MapSurface/> needs a RunStoreProvider.
+  // Quickview click-to-inspect lives in the center; MergedCenterPanel renders
+  // MergedProposalPanel itself now (task-17-brief, as a sibling of the
+  // animated playback subtree), so there's no separate mount. Both still
+  // share the coordinator; the center's <MapSurface/> needs a
+  // RunStoreProvider, and the checkpoint rail/decision band it also renders
+  // need a ReviewStoreProvider.
   render(
     <LanguageProvider initialLanguage="en">
       <MergedCoordinatorProvider>
       <RunStoreProvider>
         <ProposalStoreProvider>
+        <ReviewStoreProvider>
         <Capture />
         <MergedCenterPanel />
-        <MergedProposalPanel />
+        </ReviewStoreProvider>
         </ProposalStoreProvider>
       </RunStoreProvider>
     </MergedCoordinatorProvider>

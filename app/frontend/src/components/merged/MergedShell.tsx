@@ -1,37 +1,142 @@
 /**
  * MergedShell — Combined Simulator shell (020 Task 6, Live/Runs toggle added
- * Slice-2c Task 6).
+ * Slice-2c Task 6; reshaped to a 20:45:35 review layout, task-17-brief).
  *
- * 20:60:20 three-panel layout (`.merged-shell`, styled in app.css) reusing
- * the existing `.left-panel`/`.center-panel`/`.right-panel` classes from the
- * Trigger Simulator's `.app-shell` — `MergedSetupPanel` / `MergedCenterPanel`
- * / `MergedLogPanel`, driving the LIVE `mergedCoordinator` tick loop.
+ * Left = experience-case picker/card + the reused setup panel. Centre =
+ * `MergedCenterPanel` (playback/map, then the checkpoint rail, decision band
+ * and the service/content proposal cards — see that file for why the
+ * proposal cards are rendered as SIBLINGS of the animated playback subtree,
+ * not descendants of it). Right = `ReviewColumn`, mounted exactly once (it
+ * owns `WhatDecidedIt`'s hardcoded element ids).
  *
- * A small screen-level "Live / Runs" toggle (mirrors `RunsScreen`'s
- * screen-level read-only discipline, one level below the top `AppModeToggle`
- * in `App.tsx`) swaps that live 3-panel body out for the read-only
- * `MergedRunsScreen` — list persisted merged runs, reopen one into
- * `MergedReplayViewer`. The `.merged-shell` grid + its three panel children
- * stay structurally IDENTICAL to before (same className/testid, same direct
- * children) when `view === 'live'`, so existing tests/CSS are unaffected.
+ * `MergedLogPanel` is no longer part of this layout — the log stays on
+ * `MergedRunsScreen`/`MergedReplayViewer`, which still import it directly.
+ *
+ * Selecting an experience test case (`ExperienceCasePicker`) resolves it
+ * (`resolveCase`) into the scoped `runStore`/`proposalStore` via
+ * `caseDispatches`' plain action list, fetching the case's driver profile
+ * (`getPreset(profileRef)`) and attaching the resolved `DriverProfile` object
+ * to the `LOAD_PROFILE` dispatch — `caseDispatches` itself only knows the
+ * preset id, not the object the real reducer needs (a deliberate seam so it
+ * stays testable without mounting React). The route preset / painted
+ * mountain-jam ranges `resolveCase` also returns are panel-local state on
+ * `MergedSetupPanel`, which doesn't accept them as props yet (Task 18 adds
+ * that) — so case selection today seeds the two stores only; the route stays
+ * whatever the panel's own defaults loaded.
  */
 import { useState } from 'react'
 import MergedSetupPanel from './MergedSetupPanel'
 import MergedCenterPanel from './MergedCenterPanel'
-import MergedLogPanel from './MergedLogPanel'
-import MergedProposalPanel from './MergedProposalPanel'
 import MergedRunsScreen from './MergedRunsScreen'
-import { RunStoreProvider } from '../../state/runStore'
-import { ProposalStoreProvider } from '../../state/proposalStore'
+import ExperienceCasePicker from '../review/ExperienceCasePicker'
+import ExperienceCaseCard from '../review/ExperienceCaseCard'
+import CaseDetailsModal from '../review/CaseDetailsModal'
+import ReviewColumn from '../review/ReviewColumn'
+import { RunStoreProvider, useRunStore, type RunStoreAction } from '../../state/runStore'
+import { ProposalStoreProvider, useProposalStore, type ProposalStoreAction } from '../../state/proposalStore'
+import { ReviewStoreProvider, useReviewStore } from '../../state/reviewStore'
+import { MergedCoordinatorProvider, useMergedCoordinator } from '../../state/mergedCoordinator'
 import { RunLanguageBridge, ProposalLanguageBridge } from '../../state/languageBridges'
 import { useLanguage } from '../../state/language'
 import { t } from '../../i18n/t'
+import { getCase } from '../../lib/review/caseCatalog'
+import { resolveCase, caseDispatches } from '../../lib/review/caseResolver'
+import { getPreset } from '../../api/proposalClient'
+import type { DriverProfile } from '../../api/proposalClient'
 
 type MergedView = 'live' | 'runs'
 
 const LABELS = {
   live: { ja: 'ライブ', en: 'Live' },
   runs: { ja: '実行履歴', en: 'Runs' },
+  caseLoadFailed: {
+    ja: 'テストケースのドライバープロファイルを読み込めませんでした。',
+    en: 'Could not load the test case’s driver profile.',
+  },
+}
+
+/**
+ * The live 3-panel body — a separate component (rather than inline JSX in
+ * `MergedShell`) because it needs the scoped `runStore`/`proposalStore`/
+ * `reviewStore`/`mergedCoordinator` hooks, which only work below their
+ * Providers.
+ */
+function MergedLiveBody(): JSX.Element {
+  const { lang } = useLanguage()
+  const runStore = useRunStore()
+  const proposalStore = useProposalStore()
+  const reviewStore = useReviewStore()
+  const coordinator = useMergedCoordinator()
+
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const [caseError, setCaseError] = useState<string | null>(null)
+
+  const selectedCaseId = reviewStore.state.selectedCaseId
+  const selectedCase = selectedCaseId ? getCase(selectedCaseId) : null
+
+  async function handleSelectCase(caseId: string): Promise<void> {
+    setCaseError(null)
+    reviewStore.dispatch({ type: 'SELECT_CASE', caseId })
+    const testCase = getCase(caseId)
+    if (!testCase) return
+
+    const setup = resolveCase(testCase)
+    const { run, proposal } = caseDispatches(setup)
+
+    // Dispatch order matters — SELECT_SCENARIO (inside `run`) clears
+    // contextOverrides/tick/initial signals/seed, so every pin must follow
+    // it. `caseDispatches` already orders `run` correctly; dispatch it
+    // as-is.
+    for (const action of run) {
+      runStore.dispatch(action as unknown as RunStoreAction)
+    }
+
+    // `caseDispatches` emits LOAD_PROFILE with only `profileId` — the real
+    // reducer needs `{ profileId, profile }` carrying the resolved
+    // DriverProfile. Fetch it here and attach it before dispatching.
+    let profile: DriverProfile | null = null
+    try {
+      const preset = await getPreset(setup.profileRef)
+      profile = preset.world.driver_profile
+    } catch {
+      setCaseError(t(LABELS.caseLoadFailed, lang))
+    }
+
+    for (const action of proposal) {
+      if (action.type === 'LOAD_PROFILE') {
+        if (!profile) continue // Keep whatever profile was already loaded rather than dispatching a broken action.
+        proposalStore.dispatch({ type: 'LOAD_PROFILE', profileId: action.profileId as string, profile })
+        continue
+      }
+      proposalStore.dispatch(action as unknown as ProposalStoreAction)
+    }
+  }
+
+  return (
+    <div className="merged-shell" data-testid="merged-shell">
+      <div className="left-panel">
+        <ExperienceCasePicker
+          selectedCaseId={selectedCaseId}
+          flagCounts={{}}
+          onSelect={(caseId) => void handleSelectCase(caseId)}
+        />
+        {caseError && (
+          <p role="alert" style={{ fontSize: '0.78em', color: '#dc2626', margin: '0 0 8px' }}>
+            {caseError}
+          </p>
+        )}
+        {selectedCase && <ExperienceCaseCard testCase={selectedCase} onOpenDetails={() => setDetailsOpen(true)} />}
+        <MergedSetupPanel />
+        <CaseDetailsModal open={detailsOpen} testCase={selectedCase} onClose={() => setDetailsOpen(false)} />
+      </div>
+      <div className="center-panel">
+        <MergedCenterPanel />
+      </div>
+      <div className="right-panel">
+        <ReviewColumn result={coordinator.state.quickviewResult} mergedRunId={coordinator.state.mergedRunId} />
+      </div>
+    </div>
+  )
 }
 
 export default function MergedShell(): JSX.Element {
@@ -84,35 +189,22 @@ export default function MergedShell(): JSX.Element {
 
       <div style={{ flex: 1, minHeight: 0 }}>
         {view === 'live' ? (
-          // The whole 3-panel shell mounts SCOPED run/proposal stores (owner
-          // layout, feature 020): the setup panel (left) reuses the Trigger +
-          // Proposal setup editors verbatim and seeds these stores; the CENTER's
-          // <MapSurface/> reads the same scoped route/Maps key. Confirmed safe
-          // (both stores are plain Context + useReducer, no module singletons).
-          // 20:50:30 — left = setup + log, center = quickview/animation/map,
-          // right = service (top) + content (bottom) proposals.
+          // The whole 3-panel shell mounts SCOPED run/proposal/review stores +
+          // its own MergedCoordinatorProvider (owner layout, feature 020 +
+          // task-17-brief), so `MergedShell` is mountable standalone (see
+          // `tests/merged_review_layout.test.tsx`) without relying on
+          // `App.tsx`'s outer provider.
           <RunStoreProvider initialLanguage={lang}>
             <ProposalStoreProvider initialLanguage={lang}>
-              <RunLanguageBridge>
-              <ProposalLanguageBridge>
-              <div className="merged-shell" data-testid="merged-shell">
-                <div className="left-panel">
-                  <div className="merged-left-setup">
-                    <MergedSetupPanel />
-                  </div>
-                  <div className="merged-left-log">
-                    <MergedLogPanel />
-                  </div>
-                </div>
-                <div className="center-panel">
-                  <MergedCenterPanel />
-                </div>
-                <div className="right-panel">
-                  <MergedProposalPanel />
-                </div>
-              </div>
-              </ProposalLanguageBridge>
-              </RunLanguageBridge>
+              <ReviewStoreProvider>
+                <MergedCoordinatorProvider>
+                  <RunLanguageBridge>
+                    <ProposalLanguageBridge>
+                      <MergedLiveBody />
+                    </ProposalLanguageBridge>
+                  </RunLanguageBridge>
+                </MergedCoordinatorProvider>
+              </ReviewStoreProvider>
             </ProposalStoreProvider>
           </RunStoreProvider>
         ) : (
