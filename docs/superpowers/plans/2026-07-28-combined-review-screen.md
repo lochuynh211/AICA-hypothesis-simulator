@@ -3686,7 +3686,8 @@ const right: ReviewOption = {
 }
 const declared = { fatigue: 0.3, monotony: 0.2, oshi_affinity: 0.01 }
 
-const wrap = (ui: React.ReactNode) => render(<LanguageProvider>{ui}</LanguageProvider>)
+// initialLanguage="en" — the provider defaults to JA and these assertions read English.
+const wrap = (ui: React.ReactNode) => render(<LanguageProvider initialLanguage="en">{ui}</LanguageProvider>)
 const mount = (extra: Partial<React.ComponentProps<typeof ParameterRationale>> = {}) =>
   wrap(
     <ParameterRationale
