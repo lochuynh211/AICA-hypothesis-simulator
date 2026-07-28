@@ -59,7 +59,7 @@ pool, and somewhere to put a reviewer's judgement.
 | Scope | All of 07-27 §13, as one feature |
 | Case catalog | New committed contracts, no expectation fields |
 | Catalog delivery | **Bundled JSON**, not a registry endpoint — chosen because it is the only option that survives a later htmlapp export unchanged, and it costs nothing now |
-| Log panel | Dropped from Combined; unchanged on the Runs/replay screens |
+| Log panel | Dropped from Combined. **Correction:** the premise that it "stays available on the Runs/replay screens" was false — `MergedLogPanel` is imported by no other screen, so dropping it makes the event log unreachable in the UI. The decision to drop it stands as the owner's, but it was taken on a wrong fact and is worth revisiting |
 | Content candidate pool | Recorded (07-27 §11 gap 1 fixed here) |
 | Review math | Split at the formula boundary — which, given §1, places all of it in the frontend |
 | Contrast | **Removed.** No paired cases, no A/B switch, no simulated-sensitivity delta table. Test cases only |
@@ -277,7 +277,7 @@ review target.
   decision band, then service and content proposals side by side at **42 / 58**.
 - **Right** — stage tabs → what decided it → parameter rationale → your assessment.
 
-`MergedLogPanel` is removed from Combined and left untouched on the Runs and replay screens.
+`MergedLogPanel` is removed from Combined. It is imported by no other screen, so the component file remains but is unreferenced in production — see the correction in §2.
 
 The playback loop redraws the timeline, rail, map and clock **only**. It must never redraw the
 proposal cards, or an expanded contribution chain collapses mid-run. This is a structural
