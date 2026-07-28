@@ -88,8 +88,18 @@ export function resolveCase(testCase: CombinedTestCase): ResolvedCaseSetup {
  * pins that must survive. `null` is never a legal `SetupValue`
  * (`string | boolean | number`), so it can never accidentally equal a real
  * pinned value — the reducer's else-branch (store the override) always runs.
+ *
+ * Exported so every OTHER call site that dispatches SET_CONTEXT_OVERRIDE for
+ * a case-pinned field (not just `caseDispatches` below) uses the identical
+ * sentinel — task-18 review Finding 1 found a basic-tier checkbox passing
+ * the case's OWN value as `default` instead, which let a value-equals-default
+ * toggle (off then back on to the SAME pinned value) silently delete the
+ * override the reducer's optimization above assumes only ever happens for a
+ * genuine revert-to-scenario-default, desyncing the checkbox's display (which
+ * falls back to the case's value when no override is present) from what
+ * actually ships in the run.
  */
-const CASE_OVERRIDE_SENTINEL_DEFAULT = null as unknown as SetupValue
+export const CASE_OVERRIDE_SENTINEL_DEFAULT = null as unknown as SetupValue
 
 /**
  * The store actions that apply a resolved case.

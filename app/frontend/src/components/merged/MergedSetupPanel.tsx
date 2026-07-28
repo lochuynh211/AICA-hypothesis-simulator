@@ -60,7 +60,8 @@ import { useLanguage } from '../../state/language'
 import { t, type BilingualLabel } from '../../i18n/t'
 import RestCeilingEditor from '../setup/RestCeilingEditor'
 import RestSpacingEditor from '../setup/RestSpacingEditor'
-import { caseDispatches, differsFromCase, type ResolvedCaseSetup, type LiveSetupSnapshot } from '../../lib/review/caseResolver'
+import { differsFromCase, CASE_OVERRIDE_SENTINEL_DEFAULT, type ResolvedCaseSetup, type LiveSetupSnapshot } from '../../lib/review/caseResolver'
+import type { CombinedTestCase } from '../../lib/review/caseCatalog'
 
 const DEFAULT_PRESET_ID = 'preset-journey-a-1-cruising-fresh'
 type EditKey = 'situation' | 'profile' | 'trigger' | 'service' | 'content' | null
@@ -127,10 +128,10 @@ const LABELS = {
   initialDrowsinessLabel: { ja: '初期眠気レベル', en: 'Initial drowsiness level' },
   initialFatigueLabel: { ja: '初期疲労レベル', en: 'Initial fatigue level' },
   definingPreferences: { ja: 'このペルソナを特徴づける嗜好', en: "The persona's defining preferences" },
-  oshiLabel: { ja: '推し', en: 'Oshi' },
-  hobbiesLabel: { ja: '趣味・関心タグ', en: 'Hobby / interest tags' },
-  ageBandLabel: { ja: '年代', en: 'Age band' },
-  noneLabel: { ja: 'なし', en: 'None' },
+  noPersonaPreferences: {
+    ja: 'このペルソナには記載された嗜好がありません。',
+    en: 'This persona has no authored preferences.',
+  },
   casePinsProfile: { ja: 'このケースが固定するプロファイル', en: 'The profile this case pins' },
   maxCandidatesBasic: { ja: '最大候補数（top_k）', en: 'Max candidates (top_k)' },
   differsFromCaseNote: {
@@ -413,8 +414,19 @@ function BasicSituationView({
                 <input
                   type="checkbox" id={`basic-ctx-${key}`} data-testid={`basic-${key}`} checked={value}
                   onChange={(e) => dispatchRun({
+                    // The SENTINEL default (never equal to a real boolean),
+                    // NOT the case's own pinned value (review Finding 1): the
+                    // reducer deletes the override when value === default, so
+                    // passing the case's value here meant toggling a pin off
+                    // then back to the SAME value the case pins (e.g. off,
+                    // then back on to restore) silently deleted the override
+                    // instead of re-storing it — the checkbox kept showing
+                    // checked (display falls back to the case's value when no
+                    // override is present) while the dispatched state, and
+                    // therefore the built run, had reverted to the scenario
+                    // default. See `CASE_OVERRIDE_SENTINEL_DEFAULT`'s doc.
                     type: 'SET_CONTEXT_OVERRIDE', key: key as keyof typeof rs.contextOverrides, value: e.target.checked,
-                    default: Boolean(caseSetup.contextOverrides[key]),
+                    default: CASE_OVERRIDE_SENTINEL_DEFAULT,
                   })}
                 />
                 {key}
@@ -486,35 +498,72 @@ function BasicSituationView({
   )
 }
 
-function BasicProfileView({ caseSetup, ps, lang }: { caseSetup: ResolvedCaseSetup | null; ps: ProposalStoreState; lang: Lang }) {
-  const profile = ps.world.driver_profile
+/**
+ * "The persona's defining preferences" (07-27 §9.1) reads the CASE's
+ * authored `persona.preferences` (task-18 review Finding 3) — the resolved
+ * profile's own scoring inputs (oshi/hobby tags/age band) tell a reviewer
+ * nothing they couldn't already infer from the profile reference; a
+ * reviewer judging whether a proposal suits the persona needs the persona's
+ * STATED preferences to judge the proposal against.
+ */
+function BasicProfileView({
+  caseSetup, selectedCase, lang,
+}: {
+  caseSetup: ResolvedCaseSetup | null
+  selectedCase: CombinedTestCase | null
+  lang: Lang
+}) {
+  if (!caseSetup) {
+    return (
+      <div data-testid="setup-basic-profile">
+        <div style={groupLabel}>{t(LABELS.caseFixesHere, lang)}</div>
+        <p data-testid="basic-pins-nothing" style={summaryRow}>{t(LABELS.pinsNothing, lang)}</p>
+      </div>
+    )
+  }
+  const preferences = selectedCase?.persona.preferences ?? []
   return (
     <div data-testid="setup-basic-profile">
       <div style={groupLabel}>{t(LABELS.caseFixesHere, lang)}</div>
-      {caseSetup?.profileRef ? (
-        <p style={summaryRow}>
-          {t(LABELS.casePinsProfile, lang)}: <strong>{caseSetup.profileRef}</strong>
-          <SetupBadge kind="situation" lang={lang} />
-        </p>
-      ) : (
-        <p data-testid="basic-pins-nothing" style={summaryRow}>{t(LABELS.pinsNothing, lang)}</p>
-      )}
+      <p style={summaryRow}>
+        {t(LABELS.casePinsProfile, lang)}: <strong>{caseSetup.profileRef}</strong>
+        <SetupBadge kind="situation" lang={lang} />
+      </p>
       <div style={{ ...groupLabel, marginTop: '14px' }}>{t(LABELS.definingPreferences, lang)}</div>
-      <ul style={{ fontSize: '0.82em', margin: '4px 0', paddingLeft: '18px', lineHeight: 1.7 }}>
-        <li>
-          {t(LABELS.oshiLabel, lang)}:{' '}
-          {profile.oshi_registered
-            ? `${profile.oshi_mode} (${(profile.oshi_tags ?? []).join(', ') || '—'})`
-            : t(LABELS.noneLabel, lang)}
-        </li>
-        <li>{t(LABELS.hobbiesLabel, lang)}: {(profile.hobby_interest_tags ?? []).join(', ') || t(LABELS.noneLabel, lang)}</li>
-        <li>{t(LABELS.ageBandLabel, lang)}: {profile.age_band}</li>
-      </ul>
+      {preferences.length > 0 ? (
+        <ul data-testid="basic-persona-preferences" style={{ fontSize: '0.82em', margin: '4px 0', paddingLeft: '18px', lineHeight: 1.7 }}>
+          {preferences.map((pref, i) => <li key={i}>{t(pref, lang)}</li>)}
+        </ul>
+      ) : (
+        <p data-testid="basic-no-persona-preferences" style={summaryRow}>{t(LABELS.noPersonaPreferences, lang)}</p>
+      )}
     </div>
   )
 }
 
-export default function MergedSetupPanel({ caseSetup = null }: { caseSetup?: ResolvedCaseSetup | null } = {}) {
+export default function MergedSetupPanel({
+  caseSetup = null,
+  selectedCase = null,
+  onResetToCase,
+}: {
+  caseSetup?: ResolvedCaseSetup | null
+  /** The case's own authored persona bullets (task-18 review Finding 3) — a
+   * second prop alongside `caseSetup` because "the persona's defining
+   * preferences" (07-27 §9.1) means the CASE's stated preferences, not the
+   * resolved profile's scoring inputs. */
+  selectedCase?: CombinedTestCase | null
+  /**
+   * Re-runs the case's run/proposal dispatches through the SAME guarded path
+   * as first selecting it (task-18 review Finding 2). Reset does NOT
+   * reimplement `caseDispatches`/`getPreset` locally — a bespoke unguarded
+   * copy of `useCaseSelection.handleSelectCase`'s async profile-fetch would
+   * reopen the exact cross-store race (Reset case A, then pick case B in the
+   * picker before A's `getPreset` resolves) that hook's `selectionRef` guard
+   * exists to close, entered through a different button. The parent
+   * (`MergedShell`) wires this straight to `useCaseSelection().handleSelectCase`.
+   */
+  onResetToCase?: () => void | Promise<void>
+} = {}) {
   const coordinator = useMergedCoordinator()
   const runStore = useRunStore()
   const proposalStore = useProposalStore()
@@ -855,12 +904,25 @@ export default function MergedSetupPanel({ caseSetup = null }: { caseSetup?: Res
   const selService = servicePackages.find((p) => p.id === ps.servicePackageId) ?? null
   const selContent = contentPackages.find((p) => p.id === ps.contentPackageId) ?? null
 
-  // ── Differs-from-case note + Reset (task 18) ────────────────────────────
+  // ── Differs-from-case note + Reset (task 18; race fix per review Finding 2) ─
   // Selecting a case SEEDS the setup; it does not lock it (caseResolver.ts).
   // This compares the live setup against the case as defined and — when it
-  // has drifted — offers a Reset that reapplies the case's own dispatches,
-  // exactly mirroring what `useCaseSelection.handleSelectCase` does when a
-  // case is first selected (including the async driver-profile fetch).
+  // has drifted — offers a Reset.
+  //
+  // Reset does the route/mountain/jam part itself (synchronous, panel-local
+  // state, no store race possible — and even a stale write here is
+  // self-correcting: the `[caseSetup]` effect above re-applies whichever
+  // case is CURRENTLY selected the moment `caseSetup` next changes). The
+  // run/proposal part is delegated to `onResetToCase` — the SAME
+  // `useCaseSelection().handleSelectCase` the case picker uses — rather than
+  // re-dispatching `caseDispatches(caseSetup)` locally with a second,
+  // unguarded `getPreset` fetch. A bespoke local copy was tried first and
+  // reviewed: Reset(case A) then picking case B in the picker before A's
+  // fetch resolves would let A's stale SET_SERVICE_PACKAGE/SET_CONTENT_PACKAGE/
+  // LOAD_PROFILE dispatches land on top of B's — the exact cross-store
+  // corruption `handleSelectCase`'s `selectionRef` guard exists to prevent,
+  // just reachable through a different button. Sharing the guarded function
+  // closes it for both entry points at once.
   const liveSnapshot: LiveSetupSnapshot = {
     scenarioId: rs.selectedScenarioId ?? '',
     routePresetId: selectedRoutePresetId ?? '',
@@ -877,26 +939,15 @@ export default function MergedSetupPanel({ caseSetup = null }: { caseSetup?: Res
 
   async function resetToCase() {
     if (!caseSetup) return
-    const { run, proposal } = caseDispatches(caseSetup)
-    for (const action of run) runStore.dispatch(action as unknown as RunStoreAction)
-    if (caseSetup.routePresetId) void handleSelectRoutePreset(caseSetup.routePresetId)
+    // Only re-fetch the route when it actually differs (mirrors the
+    // `[caseSetup]` wiring effect's own guard) — avoids a redundant refetch
+    // in the (common) case where the route hasn't drifted.
+    if (caseSetup.routePresetId && caseSetup.routePresetId !== selectedRoutePresetId) {
+      void handleSelectRoutePreset(caseSetup.routePresetId)
+    }
     setMountainRange(caseSetup.mountainRangeKm)
     setJamRange(caseSetup.jamRangeKm)
-
-    let profile: DriverProfile | null = null
-    try {
-      const preset = await getPreset(caseSetup.profileRef)
-      profile = preset.world.driver_profile
-    } catch { /* keep the current profile if the case's preset can't be re-fetched */ }
-
-    for (const action of proposal) {
-      if (action.type === 'LOAD_PROFILE') {
-        if (!profile) continue
-        proposalStore.dispatch({ type: 'LOAD_PROFILE', profileId: action.profileId as string, profile })
-        continue
-      }
-      proposalStore.dispatch(action as unknown as ProposalStoreAction)
-    }
+    await onResetToCase?.()
   }
 
   return (
@@ -1078,7 +1129,7 @@ export default function MergedSetupPanel({ caseSetup = null }: { caseSetup?: Res
       {/* ── Driver profile Edit popup (preference + history, reused verbatim) ── */}
       <Modal open={openEdit === 'profile'} title={t(LABELS.profileTitle, lang)} size="wide" onClose={() => setOpenEdit(null)}>
         <DetailedToggle detailed={detailed} onToggle={() => setDetailed((d) => !d)} lang={lang} />
-        {!detailed ? <BasicProfileView caseSetup={caseSetup} ps={ps} lang={lang} /> : <PreferenceHistorySection />}
+        {!detailed ? <BasicProfileView caseSetup={caseSetup} selectedCase={selectedCase} lang={lang} /> : <PreferenceHistorySection />}
       </Modal>
 
       {/* ── Package Edit popups (reused verbatim from Trigger / Proposal) ───── */}

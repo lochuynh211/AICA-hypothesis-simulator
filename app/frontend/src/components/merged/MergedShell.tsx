@@ -73,7 +73,16 @@ function MergedLiveBody(): JSX.Element {
           </p>
         )}
         {selectedCase && <ExperienceCaseCard testCase={selectedCase} onOpenDetails={() => setDetailsOpen(true)} />}
-        <MergedSetupPanel caseSetup={caseSetup} />
+        <MergedSetupPanel
+          caseSetup={caseSetup}
+          selectedCase={selectedCase}
+          // Reset routes through the SAME guarded selection path the case
+          // picker uses (task-18 review Finding 2) — re-selecting the
+          // already-selected case id is a safe, idempotent no-op on the
+          // review/run-store side, and shares `selectionRef` with any case
+          // switch a reviewer makes while Reset's own fetch is in flight.
+          onResetToCase={() => (selectedCaseId ? handleSelectCase(selectedCaseId) : undefined)}
+        />
         <CaseDetailsModal open={detailsOpen} testCase={selectedCase} onClose={() => setDetailsOpen(false)} />
       </div>
       <div className="center-panel">

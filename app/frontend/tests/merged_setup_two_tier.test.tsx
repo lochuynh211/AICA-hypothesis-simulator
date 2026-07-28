@@ -17,6 +17,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { World } from '../src/api/proposalClient'
 import type { ResolvedCaseSetup } from '../src/lib/review/caseResolver'
+import type { CombinedTestCase } from '../src/lib/review/caseCatalog'
 
 vi.mock('../src/api/client', async (orig) => ({
   ...(await orig<typeof import('../src/api/client')>()),
@@ -57,7 +58,7 @@ import {
 import { getPackages, getPresets, getPreset } from '../src/api/proposalClient'
 import { createMergedRun, mergedQuickview, tickMergedRun } from '../src/api/mergedClient'
 import { LanguageProvider } from '../src/state/language'
-import { RunStoreProvider } from '../src/state/runStore'
+import { RunStoreProvider, useRunStore } from '../src/state/runStore'
 import { ProposalStoreProvider } from '../src/state/proposalStore'
 import { MergedCoordinatorProvider } from '../src/state/mergedCoordinator'
 import MergedSetupPanel from '../src/components/merged/MergedSetupPanel'
@@ -359,18 +360,38 @@ const PAUSED_TICK = {
   correlation: null,
 } as unknown as Awaited<ReturnType<typeof tickMergedRun>>
 
-function renderPanel(caseSetup: ResolvedCaseSetup | null = null, lang: 'ja' | 'en' = 'en') {
-  return render(
+/** Captures the real `runStore` context alongside the panel — needed to
+ * assert on DISPATCHED state (e.g. `contextOverrides.is_night`), not just
+ * what the checkbox displays. Display alone can't catch review Finding 1
+ * (a deleted override still shows checked because the checkbox's display
+ * falls back to the case's own pinned value when no override is present). */
+function renderPanel(
+  caseSetup: ResolvedCaseSetup | null = null,
+  lang: 'ja' | 'en' = 'en',
+  extra: { selectedCase?: CombinedTestCase | null; onResetToCase?: () => void | Promise<void> } = {},
+) {
+  const runRef: { current: ReturnType<typeof useRunStore> | null } = { current: null }
+  function Capture() {
+    runRef.current = useRunStore()
+    return null
+  }
+  const utils = render(
     <LanguageProvider initialLanguage={lang}>
       <MergedCoordinatorProvider>
         <RunStoreProvider>
           <ProposalStoreProvider>
-            <MergedSetupPanel caseSetup={caseSetup} />
+            <Capture />
+            <MergedSetupPanel
+              caseSetup={caseSetup}
+              selectedCase={extra.selectedCase ?? null}
+              onResetToCase={extra.onResetToCase}
+            />
           </ProposalStoreProvider>
         </RunStoreProvider>
       </MergedCoordinatorProvider>
     </LanguageProvider>,
   )
+  return { ...utils, runRef }
 }
 
 /** Waits for every inline dropdown to land on the single mocked option — the
@@ -504,5 +525,107 @@ describe('two-tier setup editors', () => {
     expect(screen.getByTestId('setup-detailed-toggle').textContent).toContain('詳細設定')
     expect(screen.getByText('休憩提案閾値')).toBeTruthy()
     expect(screen.getByText('単調性提案閾値')).toBeTruthy()
+  })
+
+  // ── Review Finding 1: sentinel default, not the case's own value ─────────
+  it('toggling a case-pinned boolean off then back to the SAME value the case pins keeps the override in the store (review Finding 1)', async () => {
+    // The case pins is_night=true precisely BECAUSE the scenario default is
+    // false — the exact shape the review flagged as hazardous.
+    const caseWithNightPin: ResolvedCaseSetup = { ...MATCHING_CASE_SETUP, contextOverrides: { is_night: true } }
+    const { runRef } = renderPanel(caseWithNightPin)
+    await waitForSettled()
+    fireEvent.click(screen.getByTestId('edit-situation'))
+
+    const checkbox = (await screen.findByTestId('basic-is_night')) as HTMLInputElement
+    expect(checkbox.checked).toBe(true)
+
+    fireEvent.click(checkbox) // off
+    expect(runRef.current!.state.contextOverrides.is_night).toBe(false)
+
+    fireEvent.click(checkbox) // back on — the SAME value the case itself pins
+    // Broken version (default: the case's own value): value===default, the
+    // reducer DELETES the key — this would read `undefined` here even
+    // though the checkbox still renders checked (its display falls back to
+    // the case's value when no override is present).
+    expect(runRef.current!.state.contextOverrides.is_night).toBe(true)
+    expect('is_night' in runRef.current!.state.contextOverrides).toBe(true)
+  })
+
+  // ── Review Finding 2: Reset shares the guarded selection path ────────────
+  it('Reset delegates to the shared guarded onResetToCase callback, not a local unguarded fetch', async () => {
+    const onResetToCase = vi.fn()
+    renderPanel(MATCHING_CASE_SETUP, 'en', { onResetToCase })
+    await waitForSettled()
+    fireEvent.change(screen.getByTestId('merged-tick-seconds-input'), { target: { value: '240' } })
+
+    fireEvent.click(await screen.findByTestId('reset-to-case'))
+
+    expect(onResetToCase).toHaveBeenCalledTimes(1)
+  })
+
+  // ── Review Finding 3: the CASE's authored preferences, not the resolved
+  // profile's scoring inputs ────────────────────────────────────────────────
+  it("shows the persona's authored preferences (not the resolved profile's scoring inputs) in the basic driver-profile view", async () => {
+    const testCase: CombinedTestCase = {
+      case_id: 'case-test-basic-profile',
+      schema_version: '1.0',
+      version: '1.0',
+      title: { ja: 'テストケース', en: 'Test case' },
+      brief: { ja: '', en: '' },
+      what_to_watch: [],
+      persona: {
+        persona_id: 'persona-test',
+        name: { ja: 'テスト太郎', en: 'Test Taro' },
+        narrative: { ja: '', en: '' },
+        preferences: [{ ja: '静かな曲を好む', en: 'Prefers calm music' }],
+        profile_ref: 'preset-journey-a-1-cruising-fresh',
+      },
+      journey: {
+        narrative: { ja: '', en: '' },
+        scenario_ref: 'scn_fatigue_1',
+        route_preset_ref: 'preset-route-1',
+        seed: 42,
+        tick_seconds: 180,
+      },
+      algorithm_defaults: { trigger: 'trigger_pkg_1', service: 'svc_pkg_1', content: 'content_pkg_1' },
+    }
+    const caseSetupForTestCase: ResolvedCaseSetup = { ...MATCHING_CASE_SETUP, profileRef: 'preset-journey-a-1-cruising-fresh' }
+    renderPanel(caseSetupForTestCase, 'en', { selectedCase: testCase })
+    await waitForSettled()
+    fireEvent.click(screen.getByTestId('edit-profile'))
+
+    expect(await screen.findByTestId('basic-persona-preferences')).toHaveTextContent('Prefers calm music')
+    // Not the resolved profile's scoring inputs — those aren't rendered here.
+    expect(screen.queryByText(/oshi_registered|hobby_interest_tags/i)).toBeNull()
+  })
+
+  it('says the persona has no authored preferences rather than showing an empty box', async () => {
+    const testCase: CombinedTestCase = {
+      case_id: 'case-test-no-prefs',
+      schema_version: '1.0',
+      version: '1.0',
+      title: { ja: 'テストケース', en: 'Test case' },
+      brief: { ja: '', en: '' },
+      what_to_watch: [],
+      persona: {
+        persona_id: 'persona-test-2',
+        name: { ja: 'テスト次郎', en: 'Test Jiro' },
+        narrative: { ja: '', en: '' },
+        profile_ref: 'preset-journey-a-1-cruising-fresh',
+      },
+      journey: {
+        narrative: { ja: '', en: '' },
+        scenario_ref: 'scn_fatigue_1',
+        route_preset_ref: 'preset-route-1',
+        seed: 42,
+        tick_seconds: 180,
+      },
+      algorithm_defaults: { trigger: 'trigger_pkg_1', service: 'svc_pkg_1', content: 'content_pkg_1' },
+    }
+    renderPanel(MATCHING_CASE_SETUP, 'en', { selectedCase: testCase })
+    await waitForSettled()
+    fireEvent.click(screen.getByTestId('edit-profile'))
+
+    expect(await screen.findByTestId('basic-no-persona-preferences')).toBeTruthy()
   })
 })

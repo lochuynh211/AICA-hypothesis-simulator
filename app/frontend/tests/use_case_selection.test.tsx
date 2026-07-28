@@ -262,6 +262,60 @@ describe('useCaseSelection', () => {
     expect(proposalRef.current!.state.servicePackageId).toBe('aica_transparent_service_selector_v1')
   })
 
+  it(
+    'closes the race for Reset too: re-selecting A (what MergedSetupPanel\'s ' +
+      'Reset button does — calling handleSelectCase with the ALREADY-selected ' +
+      'id) then picking B before the reset\'s fetch resolves leaves the ' +
+      'proposal store on B (task-18 review Finding 2)',
+    async () => {
+      // First, a normal completed selection of A.
+      vi.mocked(getPreset).mockResolvedValueOnce(fullPreset(PROFILE_A, 'marker-a'))
+      const { proposalRef, selectionRef } = renderHarness()
+      await act(async () => {
+        await selectionRef.current!.handleSelectCase(CASE_A)
+      })
+      expect(proposalRef.current!.state.world.driver_profile.oshi_id).toBe('marker-a')
+
+      // Now simulate clicking "Reset" while still on case A — MergedSetupPanel's
+      // `onResetToCase` calls `handleSelectCase(selectedCaseId)` again with the
+      // SAME id. Its getPreset(PROFILE_A) call is pending.
+      let resolveReset!: (preset: Preset) => void
+      const pendingReset = new Promise<Preset>((resolve) => {
+        resolveReset = resolve
+      })
+      vi.mocked(getPreset).mockImplementation((profileRef: string) => {
+        if (profileRef === PROFILE_A) return pendingReset
+        return Promise.resolve(fullPreset(PROFILE_B, 'marker-b'))
+      })
+
+      let resetPromise!: Promise<void>
+      act(() => {
+        resetPromise = selectionRef.current!.handleSelectCase(CASE_A) // Reset(A)
+      })
+
+      // Before the reset's fetch resolves, the reviewer picks case B in the
+      // picker (a separate control in the same left column).
+      await act(async () => {
+        await selectionRef.current!.handleSelectCase(CASE_B)
+      })
+      expect(proposalRef.current!.state.selectedProfileId).toBe(PROFILE_B)
+      expect(proposalRef.current!.state.world.driver_profile.oshi_id).toBe('marker-b')
+
+      // NOW resolve the stale Reset(A) fetch — it must be discarded, not
+      // overwrite B. Before Finding 2 was fixed, MergedSetupPanel ran this
+      // continuation through a bespoke LOCAL fetch with no generation guard
+      // at all, so it would have landed unconditionally.
+      await act(async () => {
+        resolveReset(fullPreset(PROFILE_A, 'marker-a-reset'))
+        await resetPromise
+      })
+
+      expect(proposalRef.current!.state.selectedProfileId).toBe(PROFILE_B)
+      expect(proposalRef.current!.state.world.driver_profile.oshi_id).toBe('marker-b')
+      expect(proposalRef.current!.state.servicePackageId).toBe('aica_transparent_service_selector_v1')
+    },
+  )
+
   it('a failed getPreset surfaces caseError and does not half-apply the proposal actions', async () => {
     vi.mocked(getPreset).mockRejectedValue(new Error('network down'))
     const { proposalRef, selectionRef } = renderHarness()
