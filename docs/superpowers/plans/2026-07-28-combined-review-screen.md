@@ -2455,6 +2455,10 @@ export function caseDispatches(setup: ResolvedCaseSetup): {
   run: RunAction[]
   proposal: ProposalAction[]
 } {
+  // ORDER MATTERS. SELECT_SCENARIO clears contextOverrides, tickSecondsOverride,
+  // initialDrowsiness/Fatigue and resets runSeed (a new scenario has its own
+  // defaults). Every pin below must therefore be dispatched AFTER it, or the
+  // scenario reset silently wipes the case's own settings.
   const run: RunAction[] = [
     { type: 'SELECT_PACKAGE', id: setup.triggerPackageId },
     { type: 'SELECT_SCENARIO', id: setup.scenarioId },
@@ -2468,7 +2472,12 @@ export function caseDispatches(setup: ResolvedCaseSetup): {
     run.push({ type: 'SET_INITIAL_FATIGUE', value: setup.initialFatigue })
   }
   for (const [key, value] of Object.entries(setup.contextOverrides)) {
-    run.push({ type: 'SET_CONTEXT_OVERRIDE', key, value })
+    // The reducer CLEARS an override when `value === default` (a revert-to-
+    // scenario-default shortcut the hand-edit UI uses, since it knows the real
+    // default). We do not know it, and a case's pin must survive regardless.
+    // `null` is not a legal SetupValue (string | boolean | number), so it can
+    // never collide with a pinned value and the override is always stored.
+    run.push({ type: 'SET_CONTEXT_OVERRIDE', key, value, default: null })
   }
 
   const proposal: ProposalAction[] = [
@@ -2477,7 +2486,9 @@ export function caseDispatches(setup: ResolvedCaseSetup): {
     { type: 'LOAD_PROFILE', profileId: setup.profileRef },
   ]
   for (const [key, value] of Object.entries(setup.situationFields)) {
-    proposal.push({ type: 'SET_SITUATION_FIELD', field: key, value })
+    // The reducer destructures `key`, NOT `field` — using `field` writes
+    // situation[undefined] and silently loses the case's pinned tags.
+    proposal.push({ type: 'SET_SITUATION_FIELD', key, value })
   }
 
   return { run, proposal }
