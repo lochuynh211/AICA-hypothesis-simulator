@@ -93,3 +93,98 @@ export function intentVsEffect(realized: number, declared: number): 'up' | 'down
   if (ratio < 1 - EVEN_BAND) return 'down'
   return 'even'
 }
+
+import { unavailable } from './types'
+import type { Unavailable } from './types'
+
+const total = (rows: ReviewChainRow[]) => rows.reduce((sum, r) => sum + r.contribution, 0)
+
+/**
+ * Mask one feature, redistribute its weight proportionally across the option's
+ * remaining features, re-sum, and report who wins now.
+ *
+ * Redistribution — rather than simply deleting the term — keeps the option's
+ * total declared weight constant, so the comparison stays like-for-like instead
+ * of penalising whichever side the masked feature happened to sit on.
+ */
+export function necessity(
+  left: ReviewOption,
+  right: ReviewOption,
+  featureId: string,
+): { winnerId: string; changed: boolean } | Unavailable {
+  const present = [left, right].some((o) => o.rows.some((r) => r.featureId === featureId))
+  if (!present) return unavailable(`no recorded contribution for ${featureId}`)
+
+  const masked = (option: ReviewOption): number | null => {
+    const target = option.rows.find((r) => r.featureId === featureId)
+    if (!target) return total(option.rows)
+    const rest = option.rows.filter((r) => r.featureId !== featureId)
+    const restWeight = rest.reduce((sum, r) => sum + Math.abs(r.w), 0)
+    if (rest.length === 0 || restWeight === 0) return null
+    const scale = (restWeight + Math.abs(target.w)) / restWeight
+    return rest.reduce((sum, r) => sum + r.contribution * scale, 0)
+  }
+
+  const leftScore = masked(left)
+  const rightScore = masked(right)
+  if (leftScore === null || rightScore === null) {
+    return unavailable('no other feature could absorb the redistributed weight')
+  }
+
+  const winnerId = leftScore >= rightScore ? left.id : right.id
+  const originalWinner = total(left.rows) >= total(right.rows) ? left.id : right.id
+  return { winnerId, changed: winnerId !== originalWinner }
+}
+
+/** Bisection bounds for the weight multiplier, and the resolution we report to. */
+const FLIP_MAX = 10
+const FLIP_TOLERANCE = 1e-3
+
+/**
+ * The factor by which this feature's declared weight would have to change for
+ * the outcome to flip. Bisects over the RECORDED chain — it never re-invokes
+ * the algorithm. Returns null when no flip exists below FLIP_MAX.
+ *
+ * Both sides are re-scored, because a feature (env_load, monotony) can appear
+ * in both options and scaling only one would report an impossible flip.
+ */
+export function flipDistance(
+  left: ReviewOption,
+  right: ReviewOption,
+  featureId: string,
+): { factor: number } | null | Unavailable {
+  const present = [left, right].some((o) => o.rows.some((r) => r.featureId === featureId))
+  if (!present) return unavailable(`no recorded contribution for ${featureId}`)
+
+  const scoreAt = (option: ReviewOption, factor: number) =>
+    option.rows.reduce(
+      (sum, r) => sum + (r.featureId === featureId ? r.contribution * factor : r.contribution),
+      0,
+    )
+  // Positive while the original winner still leads.
+  const gapAt = (factor: number) => scoreAt(left, factor) - scoreAt(right, factor)
+
+  const startsLeft = gapAt(1) >= 0
+  const flipped = (factor: number) => (startsLeft ? gapAt(factor) < 0 : gapAt(factor) > 0)
+
+  if (!flipped(FLIP_MAX)) return null
+
+  let low = 1
+  let high = FLIP_MAX
+  while (high - low > FLIP_TOLERANCE) {
+    const mid = (low + high) / 2
+    if (flipped(mid)) high = mid
+    else low = mid
+  }
+  return { factor: high }
+}
+
+/**
+ * Inputs whose realized share is below the threshold. Their absence is often
+ * the most reviewable fact on the screen — "the driver's registered favourite
+ * artist played no part" may well be a bug.
+ */
+export function playedNoPart(rows: ReviewChainRow[], threshold = 0.02): string[] {
+  const shares = realizedShares(rows)
+  return rows.filter((r) => (shares[r.featureId] ?? 0) < threshold).map((r) => r.featureId)
+}
