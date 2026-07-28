@@ -744,7 +744,14 @@ describe('scaleBound', () => {
 
   it('is strictly above the magnitude even at an exact step value', () => {
     // 0.3 must NOT bound itself — a bar would touch the edge and read as clipped.
-    expect(scaleBound([0.3])).toBeGreaterThan(0.3)
+    // Pinned to the NEXT step, not merely "something bigger": toBeGreaterThan
+    // alone would pass for a bound of 10, which would squash every bar flat.
+    expect(scaleBound([0.3])).toBe(0.4)
+  })
+
+  it('represents a categorical value, which carries no derived band', () => {
+    const categorical = { featureId: 'road_type', value: 'highway', band: null, r: 1, w: 0.2, contribution: 0.2 }
+    expect(realizedShares([categorical]).road_type).toBe(1)
   })
 
   it('uses absolute magnitude, so sign never changes the bound', () => {
@@ -869,8 +876,13 @@ Expected: FAIL — cannot resolve `../src/lib/review/reviewMath`
 /** One feature's recorded link in a decision chain. */
 export type ReviewChainRow = {
   featureId: string
-  /** The raw/smoothed value the formula consumed. */
-  value: number
+  /**
+   * The raw value the formula consumed. `string | number` to match `ReasonRow`
+   * exactly — service and content features include categoricals (`road_type`
+   * is "highway"), and narrowing to number would leave Task 11's mapping with
+   * nowhere to put them. A categorical carries no derived band.
+   */
+  value: string | number
   /** Ordinal band word for `value`, or null when none was recorded. */
   band: string | null
   /** Response coefficient. The trigger has none, so trigger rows use 1. */
