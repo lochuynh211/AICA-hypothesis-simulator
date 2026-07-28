@@ -249,12 +249,16 @@ describe('merged quickview projection strip + click-to-inspect (feature 020, Sli
     expect(mergedQuickview).toHaveBeenCalledTimes(1)
     expect(coordinatorRef.current!.state.quickviewResult?.fires).toHaveLength(2)
 
-    // Projection strip renders with 2 clickable fire hit-rects — nothing
-    // inspected yet, so the dock is empty.
+    // Projection strip renders with 2 clickable fire hit-rects. The dock is NOT
+    // empty: with no live run and nothing explicitly inspected, the panel now
+    // defaults to the FIRST projected fire so a result is visible immediately
+    // (owner review) — but the read-only "inspecting" badge stays hidden,
+    // because a default projection is not an explicit inspection.
     expect(screen.getByTestId('quickview-strip')).toBeInTheDocument()
     expect(screen.getByTestId('quickview-fire-hit-0')).toBeInTheDocument()
     expect(screen.getByTestId('quickview-fire-hit-1')).toBeInTheDocument()
-    expect(screen.queryByTestId('service-result-overlay')).not.toBeInTheDocument()
+    expect(screen.getByTestId('service-result-overlay')).toBeInTheDocument()
+    expect(screen.queryByTestId('inspected-fire-readonly-badge')).not.toBeInTheDocument()
 
     // Click fire #2 (index 1, zero-based) → inspectFire(1).
     await act(async () => {
@@ -277,11 +281,13 @@ describe('merged quickview projection strip + click-to-inspect (feature 020, Sli
     fireEvent.click(screen.getByTestId('choose-candidate-karaoke_mode'))
     expect(mergedProposalAction).not.toHaveBeenCalled()
 
-    // Closing the inspection reverts the dock to empty (no live proposalLog
-    // exists in this test — only the quickview projection was ever run).
+    // Closing clears the EXPLICIT inspection. The dock does not go empty — it
+    // falls back to the default first-fire projection (owner review), so a
+    // result stays on screen — and the read-only badge goes away, because a
+    // default projection is not an inspection.
     fireEvent.click(screen.getByTestId('quickview-inspect-close'))
     expect(coordinatorRef.current!.state.inspectedFireIndex).toBeNull()
-    expect(screen.queryByTestId('service-result-overlay')).not.toBeInTheDocument()
+    expect(screen.getByTestId('service-result-overlay')).toBeInTheDocument()
     expect(screen.queryByTestId('inspected-fire-readonly-badge')).not.toBeInTheDocument()
   })
 
@@ -314,87 +320,16 @@ describe('merged quickview projection strip + click-to-inspect (feature 020, Sli
     expect(screen.getByTestId('candidate-card-karaoke_mode')).toBeInTheDocument()
   })
 
-  it('renders the clickable purple after-nap dot; clicking it inspects the rest\'s after_rest_proposal read-only, mutually exclusive with fire inspection', async () => {
-    vi.mocked(mergedQuickview).mockResolvedValue(quickviewWithRestOptionFixture())
-
-    const coordinatorRef = renderCenterPanel()
-
-    await act(async () => {
-      await coordinatorRef.current!.quickview({
-        package_id: 'nri_fatigue_score_v1',
-        scenario_id: 'uc01_fatigue_recovery_v0_1',
-        run_seed: 42,
-        world: {} as never,
-        service_package_id: 'mock_service_selector_v1',
-        content_package_id: 'mock_content_selector_v1',
-        run_seed_proposal: '42',
-      })
-    })
-
-    expect(coordinatorRef.current!.state.quickviewResult?.rest_options).toHaveLength(1)
-
-    // The purple "after-nap" dot renders a clickable hit-circle; nothing
-    // inspected yet.
-    expect(screen.getByTestId('quickview-rest-hit-0')).toBeInTheDocument()
-    expect(screen.queryByTestId('service-result-overlay')).not.toBeInTheDocument()
-
-    // Inspect a fire FIRST, then click the journey dot — the rest inspection
-    // must clear the fire inspection (mutually exclusive).
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('quickview-fire-hit-0'))
-    })
-    expect(coordinatorRef.current!.state.inspectedFireIndex).toBe(0)
-
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('quickview-rest-hit-0'))
-    })
-
-    expect(coordinatorRef.current!.state.inspectedRestOptionIndex).toBe(0)
-    expect(coordinatorRef.current!.state.inspectedFireIndex).toBeNull()
-    expect(screen.getByTestId('inspected-fire-readonly-badge')).toBeInTheDocument()
-
-    // Dock shows the AFTER-REST proposal's service candidate (humming_karaoke),
-    // not either fire's candidate.
-    expect(screen.getByTestId('candidate-card-humming_karaoke')).toBeInTheDocument()
-    expect(screen.queryByTestId('candidate-card-music_playlist')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('candidate-card-karaoke_mode')).not.toBeInTheDocument()
-
-    // The after-nap Choose is interactive (dispatches an after-rest re-projection,
-    // NOT the live select-service action) — but this fixture's proposal carries no
-    // recovered `world`, so the guard makes it a no-op here: neither the live action
-    // nor the re-projection endpoint is called.
-    fireEvent.click(screen.getByTestId('choose-candidate-humming_karaoke'))
-    expect(mergedProposalAction).not.toHaveBeenCalled()
-    expect(afterRestProposal).not.toHaveBeenCalled()
-
-    // Close reverts (the shared Close button clears BOTH inspection kinds).
-    fireEvent.click(screen.getByTestId('quickview-inspect-close'))
-    expect(coordinatorRef.current!.state.inspectedRestOptionIndex).toBeNull()
-    expect(screen.queryByTestId('service-result-overlay')).not.toBeInTheDocument()
-  })
-
-  it('after-nap Choose re-projects the chosen service content (interactive) and swaps in its proposal', async () => {
-    // An after-nap proposal carrying the recovered `world` (so the interactive
-    // Choose's guard passes) + a content-capable service candidate (full_karaoke).
-    const afterNap = proposalLogFor('full_karaoke', 'prun_afternap')
-    ;(afterNap as unknown as { world: unknown }).world = { control_inputs: { motion_state: 'stopped' } }
-    const restOpt = {
-      id: 'r',
-      auto_chosen: true,
-      recovery_from_min: 12,
-      to_min: 18,
-      after_rest_proposal: afterNap,
-      after_rest_proposal_error: null,
-    } as unknown as MergedRestOption
-    vi.mocked(mergedQuickview).mockResolvedValue({
-      ...quickviewResultFixture(),
-      rest_option: restOpt,
-      rest_options: [restOpt],
-    })
-    // The re-projection endpoint returns a FRESH proposal (full_karaoke + content).
-    const reprojected = proposalLogFor('full_karaoke', 'prun_afternap_content')
-    vi.mocked(afterRestProposal).mockResolvedValue(reprojected)
-
+  it('renders the after-nap dots but does NOT make them clickable', async () => {
+    // After-rest status is no longer reviewable (owner review). The dots stay —
+    // where the driver stops is journey context worth seeing — but ScoreTimeline
+    // only renders hit-rects when an onRestOptionClick handler is supplied, and
+    // the centre panel deliberately no longer supplies one.
+    //
+    // The coordinator's after-rest projection itself is untouched; only this UI
+    // affordance is gone. Removing the handler is what makes them inert, so a
+    // reappearing hit-rect here means the handler was wired back by accident.
+    vi.mocked(mergedQuickview).mockResolvedValue(quickviewResultFixture())
     const coordinatorRef = renderCenterPanel()
     await act(async () => {
       await coordinatorRef.current!.quickview({
@@ -408,25 +343,14 @@ describe('merged quickview projection strip + click-to-inspect (feature 020, Sli
       })
     })
 
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('quickview-rest-hit-0'))
-    })
-    expect(screen.getByTestId('candidate-card-full_karaoke')).toBeInTheDocument()
-
-    // Choose full_karaoke → the interactive after-rest re-projection (NOT the live
-    // select-service action).
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('choose-candidate-full_karaoke'))
-    })
-
-    expect(mergedProposalAction).not.toHaveBeenCalled()
-    expect(afterRestProposal).toHaveBeenCalledTimes(1)
-    const arg = vi.mocked(afterRestProposal).mock.calls[0][0]
-    expect(arg.selected_service_id).toBe('full_karaoke')
-    expect(arg.world).toEqual({ control_inputs: { motion_state: 'stopped' } })
-    // The re-projected proposal swaps in (run_id proves it replaced the default).
-    expect(coordinatorRef.current!.state.afterRestOverride?.run_id).toBe('prun_afternap_content')
+    expect(screen.getByTestId('quickview-strip')).toBeInTheDocument()
+    // Fire hit-rects DO render for this same fixture — so hit areas are working
+    // in general, and the absence below is specifically about the rest dots
+    // rather than about nothing having rendered at all.
+    expect(screen.getByTestId('quickview-fire-hit-0')).toBeInTheDocument()
+    expect(screen.queryByTestId('quickview-rest-hit-0')).not.toBeInTheDocument()
   })
+
 
   it('keeps the projection strip visible while the live tick loop is running (persistent — owner review)', async () => {
     vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_qv', trigger_run_id: 'run_qv' })

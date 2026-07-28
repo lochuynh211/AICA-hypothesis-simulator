@@ -132,7 +132,8 @@ export const initialMergedCoordinatorState: MergedCoordinatorState = {
   afterRestOverride: null,
   ready: false,
   acceptedRestSpots: [],
-  speed: 1,
+  // 4x by default (owner review): 1x is too slow to watch a whole journey.
+  speed: 4,
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────

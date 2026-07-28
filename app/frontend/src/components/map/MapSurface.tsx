@@ -336,7 +336,9 @@ export default function MapSurface({
         carRef.current = new gmaps.Marker({
           position: path[0],
           map,
-          icon: { path: gmaps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 5, fillColor: '#2563eb', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+          // A moving DOT, not a heading arrow (owner review) — the arrow implied a
+          // bearing we do not compute, and read as noise at route zoom.
+          icon: { path: gmaps.SymbolPath.CIRCLE, scale: 6, fillColor: '#2563eb', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
           zIndex: 999,
         })
         setRealMarkers(true)

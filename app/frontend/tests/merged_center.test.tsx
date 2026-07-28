@@ -461,14 +461,16 @@ describe('MergedCenterPanel', () => {
   it('the 1×/2×/4× speed selector drives coordinator.setSpeed', async () => {
     const coordinatorRef = renderCenterPanel()
     const select = screen.getByTestId('merged-speed-select') as HTMLSelectElement
-    expect(select.value).toBe('1')
+    // 4x is the default (owner review) — 1x is too slow to watch a whole journey.
+    expect(select.value).toBe('4')
 
+    // Change to a DIFFERENT value, or this proves nothing about the wiring.
     await act(async () => {
-      fireEvent.change(select, { target: { value: '4' } })
+      fireEvent.change(select, { target: { value: '1' } })
     })
 
-    expect(coordinatorRef.current!.state.speed).toBe(4)
-    expect((screen.getByTestId('merged-speed-select') as HTMLSelectElement).value).toBe('4')
+    expect(coordinatorRef.current!.state.speed).toBe(1)
+    expect((screen.getByTestId('merged-speed-select') as HTMLSelectElement).value).toBe('1')
   })
 
   it('the Reset button clears the run (proposalLog + overlays gone, mergedRunId null)', async () => {

@@ -318,7 +318,10 @@ export default function MergedCenterPanel() {
               restOptionHit: (i) => `quickview-rest-hit-${i}`,
             }}
             onFireClick={(_fire, i) => coordinator.inspectFire(state.inspectedFireIndex === i ? null : i)}
-            onRestOptionClick={(i) => coordinator.inspectRestOption(state.inspectedRestOptionIndex === i ? null : i)}
+            // After-rest status is no longer reviewable (owner review), so the
+            // rest dots are NOT clickable. They are deliberately still drawn —
+            // where the driver stops is journey context worth seeing — but
+            // omitting the handler means ScoreTimeline renders no hit areas.
           />
         </section>
       )}

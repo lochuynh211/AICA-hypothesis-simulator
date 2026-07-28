@@ -644,18 +644,31 @@ export default function MergedSetupPanel({
   // on an actual case change, not every render.
   useEffect(() => {
     if (!caseSetup) return
-    if (caseSetup.routePresetId && caseSetup.routePresetId !== selectedRoutePresetId) {
-      void handleSelectRoutePreset(caseSetup.routePresetId)
-    }
     setMountainRange(caseSetup.mountainRangeKm)
     setJamRange(caseSetup.jamRangeKm)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseSetup])
 
+  // SINGLE OWNER of the selected route preset. The case's route wins whenever a
+  // case is selected; otherwise the first registry entry is the default. Having
+  // one effect decide removes the race that let a stale default overwrite the
+  // case's route depending on which fetch resolved last.
+  const desiredRoutePresetId = caseSetup?.routePresetId ?? routePresets[0]?.id ?? null
+  useEffect(() => {
+    if (!desiredRoutePresetId) return
+    if (desiredRoutePresetId === selectedRoutePresetId) return
+    void handleSelectRoutePreset(desiredRoutePresetId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [desiredRoutePresetId])
+
   // ── Load registries + seed both scoped stores (auto-select first of each) ───
   useEffect(() => {
     listRoutePresets()
-      .then((r) => { setRoutePresets(r.presets); if (r.presets[0]) void handleSelectRoutePreset(r.presets[0].id) })
+      // Load the LIST only. Selection is owned by the single effect below —
+      // auto-selecting here raced the case's own route: both are async, so the
+      // default could land after the case's and silently replace it (a C-01 run
+      // showing the Tokyo-Osaka route).
+      .then((r) => { setRoutePresets(r.presets) })
       .catch(() => setError('Failed to load route presets'))
     listScenarios()
       .then((r) => { setScenarios(r.scenarios); runStore.dispatch({ type: 'LOAD_SCENARIOS', scenarios: r.scenarios }) })

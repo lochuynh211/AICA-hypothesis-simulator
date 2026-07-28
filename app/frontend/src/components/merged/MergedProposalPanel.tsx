@@ -150,8 +150,18 @@ export default function MergedProposalPanel() {
     }
   }, [datasetId])
 
+  // Show a proposal IMMEDIATELY (owner review): before any run exists, fall back
+  // to the FIRST projected fire so the reviewer sees a service+content result
+  // without having to click a dot first. An explicit click still wins, and once
+  // a live run exists the live proposal takes over.
+  const defaultsToFirstFire =
+    state.inspectedFireIndex == null &&
+    state.inspectedRestOptionIndex == null &&
+    state.proposalLog == null &&
+    (state.quickviewResult?.fires.length ?? 0) > 0
+  const effectiveFireIndex = state.inspectedFireIndex ?? (defaultsToFirstFire ? 0 : null)
   const inspectedFire =
-    state.inspectedFireIndex != null ? (state.quickviewResult?.fires[state.inspectedFireIndex] ?? null) : null
+    effectiveFireIndex != null ? (state.quickviewResult?.fires[effectiveFireIndex] ?? null) : null
   // The clickable purple after-nap dots (restDots in timelineData) are
   // rest_options FILTERED to those that actually recovered (recovery_from_min
   // set) — the SAME predicate under which the backend attaches after_rest_proposal
@@ -242,7 +252,7 @@ export default function MergedProposalPanel() {
       </div>
 
 
-      {isInspecting && (
+      {isInspecting && !defaultsToFirstFire && (
         <div data-testid="inspected-fire-readonly-badge" style={readonlyBadgeStyle}>
           <span>{t(isInspectingRest ? LABELS.inspectingRest : LABELS.inspecting, lang)}</span>
           <button
@@ -351,12 +361,12 @@ const panelStyle: React.CSSProperties = {
   gap: '6px',
 }
 
-/** Service and content SIDE BY SIDE — content wider because it carries more
- *  (the design's 42/58). Previously these were stacked in a column, which is
- *  why the split grid one level up had nothing to split. */
+/** Service and content SIDE BY SIDE at 40/60 (owner review) — content is wider
+ *  because it carries more rows. Previously these were stacked in a column,
+ *  which is why the split grid one level up had nothing to split. */
 const splitStyle: React.CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'minmax(0, 42fr) minmax(0, 58fr)',
+  gridTemplateColumns: 'minmax(0, 40fr) minmax(0, 60fr)',
   gap: '10px',
   alignItems: 'start',
   flex: '1 1 auto',
