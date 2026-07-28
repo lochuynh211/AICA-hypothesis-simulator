@@ -896,7 +896,15 @@ export type ReviewChainRow = {
 /** One comparable option: a trigger category, a service candidate, a plan item. */
 export type ReviewOption = {
   id: string
-  label: string
+  /**
+   * BilingualLabel, not string. A bare string forces whoever builds the option
+   * to pick a language, and `chains.ts` is a pure lib with no language context —
+   * it picked `.en` and leaked English into the JA UI. Typing it bilingual makes
+   * that a compile error instead of a convention to remember, and stops each
+   * consumer hand-maintaining its own duplicate label table.
+   * For identifier-shaped labels (candidate_id, item_id) use `{ ja: id, en: id }`.
+   */
+  label: BilingualLabel
   /** The score as RECORDED, which may differ from Σcontribution when clamped. */
   score: number
   rows: ReviewChainRow[]
@@ -3382,7 +3390,7 @@ export function triggerOptions(fire: MergedFirePoint): ReviewOption[] | Unavaila
 
   return Object.entries(chains).map(([category, chain]) => ({
     id: category,
-    label: (CATEGORY_LABELS[category] ?? { ja: category, en: category }).en,
+    label: CATEGORY_LABELS[category] ?? { ja: category, en: category },
     score: chain.score,
     clamped: chain.clamped,
     rows: chain.rows.map((row) => ({
