@@ -21,7 +21,7 @@ export type DomainGroup =
   | 'content_properties'
   | 'other'
 
-const GROUP_MEMBERS: Record<Exclude<DomainGroup, 'other'>, string[]> = {
+export const GROUP_MEMBERS: Record<Exclude<DomainGroup, 'other'>, string[]> = {
   driver_state: ['drowsiness', 'fatigue', 'driving_anomaly', 'driving_time', 'child_passenger'],
   road_environment: [
     'monotony', 'env_load', 'rest_window', 'rest_scarcity',
@@ -70,9 +70,27 @@ const PHRASES: Record<string, BilingualLabel> = {
   familiar_route: { ja: 'ルートへの慣れ', en: 'how familiar the route is' },
   child_passenger: { ja: '子供の同乗', en: 'whether a child is aboard' },
   oshi_affinity: { ja: '推しアーティストとの一致', en: 'the match to their favourite artist' },
-  recent_play_penalty: { ja: '直近再生による減点', en: 'how recently this was played' },
+  oshi_mode: { ja: '推し優先モードの有無', en: 'whether favourite-artist mode is on' },
+  genre_affinity: { ja: '好みのジャンルとの一致', en: 'how well the genre matches their taste' },
+  // History phrases stay FACTUAL in both languages. Naming the scoring effect
+  // ("…による減点") in JA while EN names the fact would describe two different
+  // things to two reviewers looking at the same row.
+  recent_play_penalty: { ja: '直近に再生したかどうか', en: 'how recently this was played' },
+  skip_penalty: { ja: '過去にスキップした頻度', en: 'how often they skipped this before' },
+  changed_penalty: { ja: '過去に切り替えた頻度', en: 'how often they switched away from this' },
+  road_type: { ja: '走っている道路の種類', en: 'what kind of road they are on' },
+  traffic_jam: { ja: '渋滞の程度', en: 'how congested the traffic is' },
+  night_state: { ja: '夜間かどうか', en: 'whether it is night' },
+  weather_risk: { ja: '天候によるリスク', en: 'how risky the weather is' },
+  motion_state: { ja: '車が走行中か停車中か', en: 'whether the car is moving or stopped' },
   song_arousal: { ja: '曲の高揚感', en: 'how energising the song is' },
   song_valence: { ja: '曲の明るさ', en: 'how bright the song is' },
+  song_tempo: { ja: '曲のテンポ', en: 'how fast the song is' },
+  song_loudness: { ja: '曲の音量感', en: 'how loud the song is' },
+  song_singability: { ja: '曲の歌いやすさ', en: 'how easy the song is to sing' },
+  song_era: { ja: '曲の年代', en: 'what era the song is from' },
+  humming_ease: { ja: 'ハミングのしやすさ', en: 'how easy the song is to hum' },
+  full_karaoke_ease: { ja: 'フルカラオケ向きかどうか', en: 'how suited the song is to full karaoke' },
 }
 
 export const phrase = (featureId: string): BilingualLabel =>

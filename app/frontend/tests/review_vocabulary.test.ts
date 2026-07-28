@@ -1,5 +1,5 @@
 // app/frontend/tests/review_vocabulary.test.ts
-import { domainGroup, groupLabel, phrase, bandWord } from '../src/lib/review/reviewVocabulary'
+import { domainGroup, groupLabel, phrase, bandWord, GROUP_MEMBERS } from '../src/lib/review/reviewVocabulary'
 
 describe('domainGroup', () => {
   it('buckets driver-state features', () => {
@@ -31,14 +31,23 @@ describe('domainGroup', () => {
 })
 
 describe('groupLabel', () => {
+  const groups = ['driver_state', 'road_environment', 'preferences_history', 'content_properties', 'other'] as const
+
   it('is bilingual for every group', () => {
-    const groups = ['driver_state', 'road_environment', 'preferences_history', 'content_properties', 'other'] as const
     for (const g of groups) {
       const label = groupLabel(g)
       expect(label.ja.length).toBeGreaterThan(0)
       expect(label.en.length).toBeGreaterThan(0)
       expect(label.ja).not.toBe(label.en)
     }
+  })
+
+  it('gives every group a DISTINCT label', () => {
+    // Without this, a stub returning one hardcoded pair for every group passes
+    // the test above in full, and a copy-paste when a sixth group is added
+    // would collapse two groups' labels together undetected.
+    expect(new Set(groups.map((g) => groupLabel(g).en)).size).toBe(groups.length)
+    expect(new Set(groups.map((g) => groupLabel(g).ja)).size).toBe(groups.length)
   })
 })
 
@@ -54,6 +63,16 @@ describe('phrase', () => {
 
   it('returns the raw id for an unknown feature rather than inventing prose', () => {
     expect(phrase('unknown_feature')).toEqual({ ja: 'unknown_feature', en: 'unknown_feature' })
+  })
+
+  it('has a phrase for EVERY feature that belongs to a real group', () => {
+    // A grouped feature with no phrase falls back to its raw identifier, which
+    // puts the identifier on screen as the label — the one thing the design
+    // says it must never be. Tasks 12 and 13 call phrase() on every chain row,
+    // and service/content chains carry exactly these ids.
+    const grouped = Object.values(GROUP_MEMBERS).flat()
+    const unphrased = grouped.filter((id) => phrase(id).en === id)
+    expect(unphrased).toEqual([])
   })
 })
 
