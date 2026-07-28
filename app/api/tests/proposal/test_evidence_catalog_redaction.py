@@ -136,10 +136,14 @@ def test_evidence_size_shrinks_dramatically_after_redaction(tmp_path):
     # RankedCandidate; `mock_service_selector_v1` leaves them all `None`, but
     # they still round-trip through JSON as explicit null keys on every
     # feature/candidate row in the STEP-1 service evidence, adding a small
-    # (~10 KB), bounded amount that is unrelated to catalog redaction — the
-    # threshold below is bumped accordingly, well short of the "hundreds of
-    # KB" an un-redacted catalog would add.
-    assert len(persisted_bytes) < 230_000, (
+    # (~10 KB), bounded amount that is unrelated to catalog redaction.
+    # B2 (feature 023) adds `scored_tail` to the content-selector's
+    # CompletePlan: up to 20 scored-but-unpicked candidates, each carrying the
+    # same full `feature_contributions` chain as a picked item. It's capped
+    # (bounded, ~+170 KB observed here), not proportional to catalog size —
+    # the threshold below is bumped accordingly, still well short of the
+    # "hundreds of KB more" an un-redacted 300-song catalog would add.
+    assert len(persisted_bytes) < 450_000, (
         f"persisted run is {len(persisted_bytes)} bytes — catalog redaction appears not to be applied"
     )
 

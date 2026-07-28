@@ -155,6 +155,25 @@ class ExcludedItem(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# ScoredTailItem  (B2)
+# ---------------------------------------------------------------------------
+
+
+class ScoredTailItem(BaseModel):
+    """A candidate that was scored but did not make the plan.
+
+    Carries the same contribution chain as an OrderedItem so a reviewer can ask
+    why it lost. Ineligible candidates are NOT here — they stay in
+    ``excluded_items`` with their reason codes.
+    """
+
+    item_id: str
+    rank: int                       # continues ordered_items' numbering
+    item_fit: float
+    feature_contributions: list[ItemFeatureContribution]
+
+
+# ---------------------------------------------------------------------------
 # CompletePlan  (spec §5.4 + content-algo §14)
 # ---------------------------------------------------------------------------
 
@@ -183,6 +202,11 @@ class CompletePlan(BaseModel):
     completion_rule: str
     next_transition_policy: str
     excluded_items: list[ExcludedItem]
+    # B2 — the scored-but-unpicked tail, capped. Defaults keep every previously
+    # persisted plan parseable.
+    scored_tail: list[ScoredTailItem] = []
+    cut_margin: float | None = None
+    tail_truncated: bool = False
     unused_available_features: list[str]
     missing_features: list[str]
     algorithm_provenance: dict

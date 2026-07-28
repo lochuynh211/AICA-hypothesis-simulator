@@ -742,6 +742,26 @@ def evaluate(context: dict) -> dict:
     scored_songs.sort(key=lambda s: (-s["item_fit"], s["track"]["id"]))
     chosen = scored_songs[:plan_count]
 
+    # ---- scored tail (B2) ----------------------------------------------------
+    # The candidates that WERE scored but not picked. `excluded_items` records
+    # only INELIGIBLE items, so without this the plan cannot be compared against
+    # anything outside itself.
+    _TAIL_CAP = 20
+    dropped = scored_songs[plan_count:]
+    scored_tail = [
+        {
+            "item_id": s["track"]["id"],
+            "rank": plan_count + offset + 1,
+            "item_fit": s["item_fit"],
+            "feature_contributions": [
+                {k: v for k, v in c.items() if k != "leaf"} for c in s["contributions"]
+            ],
+        }
+        for offset, s in enumerate(dropped[:_TAIL_CAP])
+    ]
+    cut_margin = (chosen[-1]["item_fit"] - dropped[0]["item_fit"]) if dropped else None
+    tail_truncated = len(dropped) > _TAIL_CAP
+
     # 6. build plan
     ordered_items = []
     for pos, s in enumerate(chosen, start=1):
@@ -871,6 +891,9 @@ def evaluate(context: dict) -> dict:
         "completion_rule": "plan_exhausted",
         "next_transition_policy": "await_user",
         "excluded_items": excluded_items,
+        "scored_tail": scored_tail,
+        "cut_margin": cut_margin,
+        "tail_truncated": tail_truncated,
         "unused_available_features": unused_available,
         "missing_features": missing_features,
         "algorithm_provenance": provenance,

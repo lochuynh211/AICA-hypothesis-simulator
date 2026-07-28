@@ -166,6 +166,46 @@ def content_hyperparameters() -> dict:
     return manifest_hyperparameters()
 
 
+@pytest.fixture()
+def content_context_factory():
+    """Build a minimal valid content-selector context with N synthetic songs.
+
+    Clones the single-song ``worked-example`` fixture ``song_count`` times with
+    distinct ids/uris (kept consistent between ``spotify_track`` and
+    ``spotify_audio_features`` so `eligibility_reasons`' identity check passes)
+    and monotonically varying energy/valence so item_fit values are distinct
+    and the sort order is unambiguous.
+    """
+    def _build(song_count: int, plan_item_count: int = 5) -> dict:
+        template = next(iter(load_catalog("fixtures/catalog/worked-example.json").values()))
+        catalog: dict = {}
+        for i in range(song_count):
+            song = json.loads(json.dumps(template))
+            tid = f"trk{i:03d}"
+            uri = f"spotify:track:{tid}"
+            song["spotify_track"]["id"] = tid
+            song["spotify_track"]["uri"] = uri
+            song["spotify_track"]["name"] = f"Track {i}"
+            song["spotify_audio_features"]["id"] = tid
+            song["spotify_audio_features"]["uri"] = uri
+            step = (i * 0.9 / (song_count - 1)) if song_count > 1 else 0.0
+            song["spotify_audio_features"]["energy"] = 0.05 + step
+            song["spotify_audio_features"]["valence"] = 0.95 - step
+            catalog[tid] = song
+
+        hp = dict(manifest_hyperparameters(), plan_item_count=plan_item_count)
+        situation = {
+            "drowsiness_level": 80, "fatigue_level": 30, "monotony_level": 60,
+            "traffic_state": "normal", "road_type": "highway", "night_state": "night",
+            "motion_state": "stopped",
+        }
+        return build_content_context(
+            feature_snapshot={"catalog": catalog, "situation": situation},
+            hyperparameters=hp,
+        )
+    return _build
+
+
 # ---------------------------------------------------------------------------
 # Service-selector (P5) harness — mirrors the content-selector harness above.
 # ALL file I/O lives here; the package never opens files (`algorithm.py`

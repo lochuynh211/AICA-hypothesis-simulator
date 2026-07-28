@@ -407,6 +407,38 @@
       "title": "ResponseCoefficientProvenance",
       "type": "string"
     },
+    "ScoredTailItem": {
+      "description": "A candidate that was scored but did not make the plan.\n\nCarries the same contribution chain as an OrderedItem so a reviewer can ask\nwhy it lost. Ineligible candidates are NOT here — they stay in\n``excluded_items`` with their reason codes.",
+      "properties": {
+        "feature_contributions": {
+          "items": {
+            "$ref": "#/$defs/ItemFeatureContribution"
+          },
+          "title": "Feature Contributions",
+          "type": "array"
+        },
+        "item_fit": {
+          "title": "Item Fit",
+          "type": "number"
+        },
+        "item_id": {
+          "title": "Item Id",
+          "type": "string"
+        },
+        "rank": {
+          "title": "Rank",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "item_id",
+        "rank",
+        "item_fit",
+        "feature_contributions"
+      ],
+      "title": "ScoredTailItem",
+      "type": "object"
+    },
     "ServiceId": {
       "description": "Catalog service identifiers (spec §7.1–7.2, 14 services).",
       "enum": [
@@ -483,6 +515,18 @@
       "title": "Completion Rule",
       "type": "string"
     },
+    "cut_margin": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Cut Margin"
+    },
     "decision_type": {
       "$ref": "#/$defs/ContentDecisionType"
     },
@@ -538,8 +582,21 @@
       "title": "Returned Item Count",
       "type": "integer"
     },
+    "scored_tail": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ScoredTailItem"
+      },
+      "title": "Scored Tail",
+      "type": "array"
+    },
     "selected_service_id": {
       "$ref": "#/$defs/ServiceId"
+    },
+    "tail_truncated": {
+      "default": false,
+      "title": "Tail Truncated",
+      "type": "boolean"
     },
     "unused_available_features": {
       "items": {
