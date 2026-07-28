@@ -3521,9 +3521,12 @@ describe('WhatDecidedIt', () => {
     // regression that hardcodes a width or divides by the wrong denominator
     // passes every other test while the chart silently misrepresents the data —
     // worse than drawing no chart at all.
-    // fatigue contributes +0.30 to the left option; bound for this fixture is 0.4.
+    // Measure these against the real fixture rather than deriving by hand — the
+    // plan's first attempt at this test used a contribution the fixture does not
+    // have. fatigue's left contribution is 0.24, bound is 0.4, and the mirrored
+    // pair shares one track, so each half renders at 30%.
     const fill = screen.getByTestId('margin-bar-left-fatigue')
-    expect(parseFloat(fill.style.width)).toBeCloseTo(75, 0)   // 0.30 / 0.4
+    expect(parseFloat(fill.style.width)).toBeCloseTo(30, 0)
   })
 
   it('draws one mirrored row per feature across both options', () => {
