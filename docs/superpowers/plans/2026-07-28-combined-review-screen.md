@@ -3515,6 +3515,17 @@ describe('WhatDecidedIt', () => {
     expect(screen.getByTestId('margin-scale-bound')).toHaveTextContent(/±/)
   })
 
+  it('draws each bar in proportion to the displayed bound', () => {
+    mount()
+    // The bound being PRINTED proves nothing about the bars. Without this, a
+    // regression that hardcodes a width or divides by the wrong denominator
+    // passes every other test while the chart silently misrepresents the data —
+    // worse than drawing no chart at all.
+    // fatigue contributes +0.30 to the left option; bound for this fixture is 0.4.
+    const fill = screen.getByTestId('margin-bar-left-fatigue')
+    expect(parseFloat(fill.style.width)).toBeCloseTo(75, 0)   // 0.30 / 0.4
+  })
+
   it('draws one mirrored row per feature across both options', () => {
     mount()
     expect(screen.getAllByTestId('margin-row')).toHaveLength(2)
@@ -3593,10 +3604,12 @@ Expected: FAIL — module not found
 Build the component in this order, so each test goes green in turn:
 
 1. **Unavailable guard** — when `options.length < 2` or either id is missing, render only `data-testid="comparison-unavailable"` with a reason. Never render an axis.
-2. **Pickers** — two `<select>`s (`compare-left`, `compare-right`) listing every option by `label`, plus `data-testid="threshold-note"` beneath when `thresholdNote` is non-null.
+2. **Pickers** — two `<select>`s (`compare-left`, `compare-right`), each with an `id` and a
+   `<label htmlFor=...>` so it has an accessible name (the codebase's existing pattern — see
+   `components/proposal/HyperparamMatrix.tsx`), listing every option by `label`, plus `data-testid="threshold-note"` beneath when `thresholdNote` is non-null.
 3. **Verdict sentence** (`verdict-sentence`) — built from the top margin row: *"X was chosen mainly because of `phrase(topSupporting)`, despite `phrase(topOpposing)`."* Both clauses bilingual via `t()`; omit the "despite" clause when nothing pulls the other way.
 4. **Domain grouping** (`domain-group`) — bucket both options' contributions with `domainGroup`, show each group's share of total absolute contribution for both sides. This is the specification-level judgement no per-parameter view offers.
-5. **Scale + bars** — `scaleBound(rows.flatMap(r => [r.left, r.right]))` rendered as `data-testid="margin-scale-bound"` reading `±0.3`; then one `margin-row` per `marginRows()` entry, each with `margin-feature-id` (faint grey identifier), the `phrase()` label, `margin-anchor-<featureId>` leading with `value · bandWord(band, value)`, a mirrored bar pair against the shared bound, and `margin-lean-<featureId>` showing `◀` or `▶` per row (a shared testid would let a hardcoded arrow pass).
+5. **Scale + bars** — `scaleBound(rows.flatMap(r => [r.left, r.right]))` rendered as `data-testid="margin-scale-bound"` reading `±0.3`; then one `margin-row` per `marginRows()` entry, each with `margin-feature-id` (faint grey identifier), the `phrase()` label, `margin-anchor-<featureId>` leading with `value · bandWord(band, value)`, a mirrored bar pair (`margin-bar-left-<featureId>` / `margin-bar-right-<featureId>`) whose width is `|contribution| / bound`, and `margin-lean-<featureId>` showing `◀` or `▶` per row (a shared testid would let a hardcoded arrow pass).
 6. **Clamp note** (`clamp-note`) — when either option has `clamped`, state that contributions sum past the reported score so the shares do not reconcile.
 
 Keep every user-visible string in a `LABELS` object resolved through `t()`.
