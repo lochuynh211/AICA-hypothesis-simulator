@@ -347,6 +347,9 @@ describe('MergedSetupPanel — route-conditions painter', () => {
     renderPanel()
     await fillSetup()
     fireEvent.click(screen.getByTestId('edit-situation'))
+    // The painter lives in the DETAILED tier (task 18's basic/detailed split) —
+    // the popup now opens in the compact basic view first.
+    fireEvent.click(await screen.findByTestId('setup-detailed-toggle'))
     expect(await screen.findByTestId('mountain-range-start')).toBeInTheDocument()
     expect(screen.getByTestId('mountain-range-end')).toBeInTheDocument()
     expect(screen.getByTestId('jam-range-start')).toBeInTheDocument()
@@ -359,6 +362,8 @@ describe('MergedSetupPanel — route-conditions painter', () => {
 
     // Paint the mountain + jam ranges (in the Situation popup) onto the 120km route.
     fireEvent.click(screen.getByTestId('edit-situation'))
+    // The painter lives in the DETAILED tier (task 18's basic/detailed split).
+    fireEvent.click(await screen.findByTestId('setup-detailed-toggle'))
     await screen.findByTestId('mountain-range-start')
     fireEvent.change(screen.getByTestId('mountain-range-start'), { target: { value: '40' } })
     fireEvent.change(screen.getByTestId('mountain-range-end'), { target: { value: '70' } })

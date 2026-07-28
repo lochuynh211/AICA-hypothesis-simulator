@@ -16,13 +16,15 @@
  * `useCaseSelection()` (extracted so its async race — selecting case A then
  * case B before A's driver-profile fetch resolves — can be tested without
  * mounting the whole shell; see `useCaseSelection.ts` and
- * `tests/use_case_selection.test.tsx`). The route preset / painted
- * mountain-jam ranges `resolveCase` also returns are panel-local state on
- * `MergedSetupPanel`, which doesn't accept them as props yet (Task 18 adds
- * that) — so case selection today seeds the run/proposal stores only; the
- * route stays whatever the panel's own defaults loaded.
+ * `tests/use_case_selection.test.tsx`). The resolved case setup — including
+ * the route preset / painted mountain-jam ranges, which are panel-local
+ * state on `MergedSetupPanel` rather than store state — is now handed down
+ * as the `caseSetup` prop (Task 18); `resolveCase(selectedCase)` is memoized
+ * on `selectedCase` (a stable reference per case id from the bundled
+ * catalog) so the panel's wiring effect only re-fires on an actual case
+ * change, not every render.
  */
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import MergedSetupPanel from './MergedSetupPanel'
 import MergedCenterPanel from './MergedCenterPanel'
 import MergedRunsScreen from './MergedRunsScreen'
@@ -31,6 +33,7 @@ import ExperienceCaseCard from '../review/ExperienceCaseCard'
 import CaseDetailsModal from '../review/CaseDetailsModal'
 import ReviewColumn from '../review/ReviewColumn'
 import { useCaseSelection } from './useCaseSelection'
+import { resolveCase } from '../../lib/review/caseResolver'
 import { RunStoreProvider } from '../../state/runStore'
 import { ProposalStoreProvider } from '../../state/proposalStore'
 import { ReviewStoreProvider } from '../../state/reviewStore'
@@ -54,6 +57,7 @@ const LABELS = {
 function MergedLiveBody(): JSX.Element {
   const coordinator = useMergedCoordinator()
   const { selectedCaseId, selectedCase, detailsOpen, setDetailsOpen, caseError, handleSelectCase } = useCaseSelection()
+  const caseSetup = useMemo(() => (selectedCase ? resolveCase(selectedCase) : null), [selectedCase])
 
   return (
     <div className="merged-shell" data-testid="merged-shell">
@@ -69,7 +73,7 @@ function MergedLiveBody(): JSX.Element {
           </p>
         )}
         {selectedCase && <ExperienceCaseCard testCase={selectedCase} onOpenDetails={() => setDetailsOpen(true)} />}
-        <MergedSetupPanel />
+        <MergedSetupPanel caseSetup={caseSetup} />
         <CaseDetailsModal open={detailsOpen} testCase={selectedCase} onClose={() => setDetailsOpen(false)} />
       </div>
       <div className="center-panel">

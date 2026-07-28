@@ -39,25 +39,28 @@ import SituationFieldRows from '../proposal/panels/sections/SituationFieldRows'
 import PreferenceHistorySection from '../proposal/panels/sections/PreferenceHistorySection'
 import ServiceSetupSection from '../proposal/panels/sections/ServiceSetupSection'
 import ContentSetupSection from '../proposal/panels/sections/ContentSetupSection'
+import HyperparamMatrix from '../proposal/HyperparamMatrix'
 import { SITUATION_FIELDS } from '../proposal/panels/sections/worldFields'
 import {
   listRoutePresets, loadRoutePreset, routesAnalyze, listScenarios, listPackages, getScenario,
-  createRunPlan,
+  createRunPlan, getPackage,
 } from '../../api/client'
 import { MapsError } from '../../api/types'
 import type {
   PackageSummary, ScenarioSummary, RoutePresetSummary, RouteAlternative, RouteEnvelope, ScenarioDef, SetupValue,
+  PackageManifest, HyperparameterDef,
 } from '../../api/types'
 import { getPackages, getPreset, getPresets } from '../../api/proposalClient'
-import type { ProposalPackageSummary, DriverProfile } from '../../api/proposalClient'
+import type { ProposalPackageSummary, DriverProfile, Situation } from '../../api/proposalClient'
 import { buildMergedPlan } from '../../api/mergedClient'
 import { useMergedCoordinator } from '../../state/mergedCoordinator'
-import { useRunStore } from '../../state/runStore'
-import { useProposalStore } from '../../state/proposalStore'
+import { useRunStore, type RunStoreState, type RunStoreAction } from '../../state/runStore'
+import { useProposalStore, type ProposalStoreState, type ProposalStoreAction } from '../../state/proposalStore'
 import { useLanguage } from '../../state/language'
 import { t, type BilingualLabel } from '../../i18n/t'
 import RestCeilingEditor from '../setup/RestCeilingEditor'
 import RestSpacingEditor from '../setup/RestSpacingEditor'
+import { caseDispatches, differsFromCase, type ResolvedCaseSetup, type LiveSetupSnapshot } from '../../lib/review/caseResolver'
 
 const DEFAULT_PRESET_ID = 'preset-journey-a-1-cruising-fresh'
 type EditKey = 'situation' | 'profile' | 'trigger' | 'service' | 'content' | null
@@ -106,6 +109,48 @@ const LABELS = {
   triggerAlgorithm: { ja: 'トリガーアルゴリズム', en: 'Trigger algorithm' },
   selectServiceFirst: { ja: 'まずサービスパッケージを選択してください。', en: 'Select a service package first.' },
   selectContentFirst: { ja: 'まずコンテンツパッケージを選択してください。', en: 'Select a content package first.' },
+
+  // ── Two-tier basic/detailed editors (task 18) ─────────────────────────────
+  badgeSituation: {
+    ja: '🚗 状況 — 変更すると同じアルゴリズムを別の状況でレビューすることになります',
+    en: '🚗 Situation — changing this reviews the same algorithm somewhere else',
+  },
+  badgeAlgorithm: {
+    ja: '⚙ アルゴリズム — 変更すると同じ状況を別の設定でレビューすることになります',
+    en: '⚙ Algorithm — changing this reviews the same situation under a different configuration',
+  },
+  detailedToggleShow: { ja: '▸ 詳細設定 — すべてのパラメータ', en: '▸ Detailed setup — every parameter' },
+  detailedToggleHide: { ja: '▾ 基本設定に戻る', en: '▾ Back to basic setup' },
+  pinsNothing: { ja: 'このケースはこの項目を固定していません。', en: 'This case pins nothing in this area.' },
+  caseFixesHere: { ja: 'このケースが固定する項目', en: 'What this case fixes' },
+  driverStateAtDeparture: { ja: '出発時のドライバー状態', en: 'Driver state at departure' },
+  initialDrowsinessLabel: { ja: '初期眠気レベル', en: 'Initial drowsiness level' },
+  initialFatigueLabel: { ja: '初期疲労レベル', en: 'Initial fatigue level' },
+  definingPreferences: { ja: 'このペルソナを特徴づける嗜好', en: "The persona's defining preferences" },
+  oshiLabel: { ja: '推し', en: 'Oshi' },
+  hobbiesLabel: { ja: '趣味・関心タグ', en: 'Hobby / interest tags' },
+  ageBandLabel: { ja: '年代', en: 'Age band' },
+  noneLabel: { ja: 'なし', en: 'None' },
+  casePinsProfile: { ja: 'このケースが固定するプロファイル', en: 'The profile this case pins' },
+  maxCandidatesBasic: { ja: '最大候補数（top_k）', en: 'Max candidates (top_k)' },
+  differsFromCaseNote: {
+    ja: 'この設定はケースの定義と異なります（{fields}）。',
+    en: 'This setup differs from the case as defined ({fields}).',
+  },
+  resetToCase: { ja: 'ケースの定義にリセット', en: 'Reset to the case as defined' },
+}
+
+const DIFF_FIELD_LABELS: Record<string, BilingualLabel> = {
+  scenarioId: { ja: 'シナリオ', en: 'scenario' },
+  routePresetId: { ja: 'ルートプリセット', en: 'route preset' },
+  triggerPackageId: { ja: 'トリガーパッケージ', en: 'trigger package' },
+  servicePackageId: { ja: 'サービスパッケージ', en: 'service package' },
+  contentPackageId: { ja: 'コンテンツパッケージ', en: 'content package' },
+  seed: { ja: 'シード', en: 'seed' },
+  tickSeconds: { ja: 'ティック長', en: 'tick duration' },
+  initialDrowsiness: { ja: '初期眠気', en: 'initial drowsiness' },
+  initialFatigue: { ja: '初期疲労', en: 'initial fatigue' },
+  profileRef: { ja: 'ドライバープロファイル', en: 'driver profile' },
 }
 
 // Scenarios hidden from the Combined scenario picker (owner review): the uc02
@@ -134,7 +179,342 @@ const groupLabel: React.CSSProperties = { fontSize: '0.72em', fontWeight: 800, t
  * consistent across presets, so JSON.stringify is sufficient here). */
 const profileKey = (p: DriverProfile): string => JSON.stringify(p)
 
-export default function MergedSetupPanel() {
+type Lang = 'ja' | 'en'
+
+// ── Two-tier basic/detailed editors (task 18) ───────────────────────────────
+//
+// Every editor's DETAILED tier stays exactly what it was before this task —
+// the existing setup/proposal components, mounted verbatim, untouched below.
+// The BASIC tier is net-new: small, purpose-built controls (not a re-styling
+// of the detailed components) covering only the handful of fields a reviewer
+// routinely turns (07-27 §9.1). These are module-level components (not
+// declared inside MergedSetupPanel) so their identity is stable across
+// re-renders — an inline component definition would remount on every parent
+// render and drop focus/mid-edit state.
+
+/** 🚗 situation / ⚙ algorithm — a LABEL only; nothing it's attached to is
+ * ever disabled (owner rule: badges never lock a control). */
+function SetupBadge({ kind, lang }: { kind: 'situation' | 'algorithm'; lang: Lang }) {
+  const label = kind === 'situation' ? LABELS.badgeSituation : LABELS.badgeAlgorithm
+  return (
+    <span
+      data-testid="setup-badge"
+      role="img"
+      aria-label={t(label, lang)}
+      title={t(label, lang)}
+      style={{ fontSize: '0.85em', marginLeft: '5px', cursor: 'help' }}
+    >
+      {kind === 'situation' ? '🚗' : '⚙'}
+    </span>
+  )
+}
+
+function DetailedToggle({ detailed, onToggle, lang }: { detailed: boolean; onToggle: () => void; lang: Lang }) {
+  return (
+    <button
+      type="button"
+      data-testid="setup-detailed-toggle"
+      onClick={onToggle}
+      style={{
+        fontSize: '0.75em', margin: '0 0 12px', background: '#f8fafc', border: '1px solid #cbd5e1',
+        borderRadius: '4px', padding: '5px 9px', cursor: 'pointer', color: '#334155',
+      }}
+    >
+      {t(detailed ? LABELS.detailedToggleHide : LABELS.detailedToggleShow, lang)}
+    </button>
+  )
+}
+
+function BasicTriggerView({
+  manifest, edited, dispatch, lang,
+}: {
+  manifest: PackageManifest | null
+  edited: Record<string, SetupValue>
+  dispatch: (action: RunStoreAction) => void
+  lang: Lang
+}) {
+  const defsByKey: Record<string, HyperparameterDef> = {}
+  for (const def of manifest?.hyperparameters ?? []) defsByKey[def.key] = def
+  const keys = ['threshold_suggest', 'monotony_suggest_threshold'] as const
+
+  return (
+    <div data-testid="setup-basic-trigger">
+      {keys.map((key) => {
+        const def = defsByKey[key]
+        const fallback = def ? Number(def.default) : 0
+        const value = edited[key] !== undefined ? Number(edited[key]) : fallback
+        return (
+          <div key={key} style={{ margin: '8px 0' }}>
+            <label htmlFor={`basic-input-${key}`} style={fieldLabel}>
+              {def ? t(def.label, lang) : key}
+              <SetupBadge kind="algorithm" lang={lang} />
+            </label>
+            <input
+              id={`basic-input-${key}`}
+              data-testid={`basic-${key}`}
+              type="number"
+              min={def?.min as number | undefined}
+              max={def?.max as number | undefined}
+              step={(def?.step as number | undefined) ?? 0.01}
+              value={value}
+              style={inputStyle}
+              onChange={(e) => {
+                const n = Number(e.target.value)
+                if (Number.isNaN(n)) return
+                dispatch({ type: 'SET_HYPERPARAMETER', key, value: n, default: def ? Number(def.default) : undefined })
+              }}
+            />
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function BasicServiceView({
+  manifest, overrides, parameterOverrides, dispatch, lang,
+}: {
+  manifest: ProposalPackageSummary | null
+  overrides: Record<string, unknown>
+  parameterOverrides: Record<string, unknown>
+  dispatch: (action: ProposalStoreAction) => void
+  lang: Lang
+}) {
+  if (!manifest) return <p style={summaryRow}>{t(LABELS.selectServiceFirst, lang)}</p>
+  const topK = Number(parameterOverrides['top_k'] ?? manifest.parameters['top_k'] ?? 3)
+  const hwDef = manifest.hyperparameters.find((h) => h.key === 'hierarchy_weights')
+  const weights = (overrides['hierarchy_weights'] ?? hwDef?.default ?? {}) as Record<string, { share?: number; [k: string]: unknown }>
+
+  return (
+    <div data-testid="setup-basic-service">
+      <label htmlFor="basic-top_k" style={fieldLabel}>
+        {t(LABELS.maxCandidatesBasic, lang)}
+        <SetupBadge kind="algorithm" lang={lang} />
+      </label>
+      <input
+        id="basic-top_k" data-testid="basic-top_k" type="number" min={1} value={topK} style={inputStyle}
+        onChange={(e) => dispatch({ type: 'SET_SERVICE_PARAMETER', key: 'top_k', value: Number(e.target.value) })}
+      />
+      {hwDef && (
+        <>
+          <div style={groupLabel}>
+            {t(hwDef.label, lang)}
+            <SetupBadge kind="algorithm" lang={lang} />
+          </div>
+          {Object.entries(weights).map(([key, node]) => (
+            <div key={key} style={{ margin: '6px 0' }}>
+              <label htmlFor={`basic-hw-${key}`} style={fieldLabel}>{key}</label>
+              <input
+                id={`basic-hw-${key}`} data-testid={`basic-hierarchy-${key}`} type="number" step={0.01} min={0} max={1}
+                value={Number(node?.share ?? 0)} style={inputStyle}
+                onChange={(e) => {
+                  const share = Number(e.target.value)
+                  if (Number.isNaN(share)) return
+                  const next = { ...weights, [key]: { ...(weights[key] ?? {}), share } }
+                  dispatch({ type: 'SET_SERVICE_HYPERPARAMETER', key: 'hierarchy_weights', value: next })
+                }}
+              />
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  )
+}
+
+function BasicContentView({
+  manifest, overrides, dispatch, lang,
+}: {
+  manifest: ProposalPackageSummary | null
+  overrides: Record<string, unknown>
+  dispatch: (action: ProposalStoreAction) => void
+  lang: Lang
+}) {
+  if (!manifest) return <p style={summaryRow}>{t(LABELS.selectContentFirst, lang)}</p>
+  const ccwDef = manifest.hyperparameters.find((h) => h.key === 'content_category_weights')
+  const weights = (overrides['content_category_weights'] ?? ccwDef?.default ?? {}) as Record<string, number>
+  const planDef = manifest.hyperparameters.find((h) => h.key === 'plan_item_count')
+  const matrixDef = manifest.hyperparameters.find((h) => h.key === 'context_response_matrix')
+
+  return (
+    <div data-testid="setup-basic-content">
+      {ccwDef && (
+        <>
+          <div style={groupLabel}>
+            {t(ccwDef.label, lang)}
+            <SetupBadge kind="algorithm" lang={lang} />
+          </div>
+          {Object.entries(weights).map(([cat, val]) => (
+            <div key={cat} style={{ margin: '6px 0' }}>
+              <label htmlFor={`basic-ccw-${cat}`} style={fieldLabel}>{cat}</label>
+              <input
+                id={`basic-ccw-${cat}`} data-testid={`basic-category-${cat}`} type="number" step={0.01} min={0} max={1}
+                value={Number(val)} style={inputStyle}
+                onChange={(e) => {
+                  const n = Number(e.target.value)
+                  if (Number.isNaN(n)) return
+                  dispatch({ type: 'SET_CONTENT_HYPERPARAMETER', key: 'content_category_weights', value: { ...weights, [cat]: n } })
+                }}
+              />
+            </div>
+          ))}
+        </>
+      )}
+      {planDef && (
+        <div style={{ margin: '10px 0' }}>
+          <HyperparamMatrix
+            def={planDef} value={overrides[planDef.key]} lang={lang}
+            onChange={(v) => dispatch({ type: 'SET_CONTENT_HYPERPARAMETER', key: planDef.key, value: v })}
+          />
+        </div>
+      )}
+      {matrixDef && (
+        <div style={{ margin: '10px 0' }}>
+          <div style={groupLabel}>
+            {t(matrixDef.label, lang)}
+            <SetupBadge kind="algorithm" lang={lang} />
+          </div>
+          <HyperparamMatrix
+            def={matrixDef} value={overrides[matrixDef.key]} lang={lang} hideLabel
+            onChange={(v) => dispatch({ type: 'SET_CONTENT_HYPERPARAMETER', key: matrixDef.key, value: v })}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function BasicSituationView({
+  caseSetup, rs, ps, dispatchRun, dispatchProposal, lang,
+}: {
+  caseSetup: ResolvedCaseSetup | null
+  rs: RunStoreState
+  ps: ProposalStoreState
+  dispatchRun: (action: RunStoreAction) => void
+  dispatchProposal: (action: ProposalStoreAction) => void
+  lang: Lang
+}) {
+  const contextKeys = caseSetup ? Object.keys(caseSetup.contextOverrides) : []
+  const situationKeys = caseSetup ? Object.keys(caseSetup.situationFields) : []
+  const hasPins = contextKeys.length > 0 || situationKeys.length > 0
+
+  return (
+    <div data-testid="setup-basic-situation">
+      <div style={groupLabel}>{t(LABELS.caseFixesHere, lang)}</div>
+      {!caseSetup || !hasPins ? (
+        <p data-testid="basic-pins-nothing" style={summaryRow}>{t(LABELS.pinsNothing, lang)}</p>
+      ) : (
+        <>
+          {contextKeys.map((key) => {
+            const contextOverridesLoose = rs.contextOverrides as unknown as Record<string, unknown>
+            const value = Boolean(contextOverridesLoose[key] ?? caseSetup.contextOverrides[key])
+            return (
+              <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '6px 0', fontSize: '0.82em' }}>
+                <input
+                  type="checkbox" id={`basic-ctx-${key}`} data-testid={`basic-${key}`} checked={value}
+                  onChange={(e) => dispatchRun({
+                    type: 'SET_CONTEXT_OVERRIDE', key: key as keyof typeof rs.contextOverrides, value: e.target.checked,
+                    default: Boolean(caseSetup.contextOverrides[key]),
+                  })}
+                />
+                {key}
+                <SetupBadge kind="situation" lang={lang} />
+              </label>
+            )
+          })}
+          {situationKeys.map((key) => {
+            const raw = (ps.world.situation as unknown as Record<string, unknown>)[key] ?? caseSetup.situationFields[key]
+            if (typeof raw === 'boolean') {
+              return (
+                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '6px 0', fontSize: '0.82em' }}>
+                  <input
+                    type="checkbox" id={`basic-sit-${key}`} data-testid={`basic-${key}`} checked={raw}
+                    onChange={(e) => dispatchProposal({ type: 'SET_SITUATION_FIELD', key: key as keyof Situation, value: e.target.checked })}
+                  />
+                  {key}
+                  <SetupBadge kind="situation" lang={lang} />
+                </label>
+              )
+            }
+            const arr = Array.isArray(raw) ? (raw as string[]) : []
+            return (
+              <div key={key} style={{ margin: '6px 0' }}>
+                <label htmlFor={`basic-sit-${key}`} style={fieldLabel}>
+                  {key}
+                  <SetupBadge kind="situation" lang={lang} />
+                </label>
+                <input
+                  id={`basic-sit-${key}`} data-testid={`basic-${key}`} type="text" style={inputStyle}
+                  value={arr.join(', ')}
+                  onChange={(e) => dispatchProposal({
+                    type: 'SET_SITUATION_FIELD', key: key as keyof Situation,
+                    value: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
+                  })}
+                />
+              </div>
+            )
+          })}
+        </>
+      )}
+
+      <div style={{ ...groupLabel, marginTop: '14px' }}>{t(LABELS.driverStateAtDeparture, lang)}</div>
+      <label htmlFor="basic-initial-drowsiness" style={fieldLabel}>
+        {t(LABELS.initialDrowsinessLabel, lang)}
+        <SetupBadge kind="situation" lang={lang} />
+      </label>
+      <input
+        id="basic-initial-drowsiness" data-testid="basic-initial_drowsiness" type="number" min={0} max={100} style={inputStyle}
+        value={rs.initialDrowsiness ?? 0}
+        onChange={(e) => {
+          const n = Number(e.target.value)
+          if (!Number.isNaN(n)) dispatchRun({ type: 'SET_INITIAL_DROWSINESS', value: n })
+        }}
+      />
+      <label htmlFor="basic-initial-fatigue" style={fieldLabel}>
+        {t(LABELS.initialFatigueLabel, lang)}
+        <SetupBadge kind="situation" lang={lang} />
+      </label>
+      <input
+        id="basic-initial-fatigue" data-testid="basic-initial_fatigue" type="number" min={0} max={100} style={inputStyle}
+        value={rs.initialFatigue ?? 0}
+        onChange={(e) => {
+          const n = Number(e.target.value)
+          if (!Number.isNaN(n)) dispatchRun({ type: 'SET_INITIAL_FATIGUE', value: n })
+        }}
+      />
+    </div>
+  )
+}
+
+function BasicProfileView({ caseSetup, ps, lang }: { caseSetup: ResolvedCaseSetup | null; ps: ProposalStoreState; lang: Lang }) {
+  const profile = ps.world.driver_profile
+  return (
+    <div data-testid="setup-basic-profile">
+      <div style={groupLabel}>{t(LABELS.caseFixesHere, lang)}</div>
+      {caseSetup?.profileRef ? (
+        <p style={summaryRow}>
+          {t(LABELS.casePinsProfile, lang)}: <strong>{caseSetup.profileRef}</strong>
+          <SetupBadge kind="situation" lang={lang} />
+        </p>
+      ) : (
+        <p data-testid="basic-pins-nothing" style={summaryRow}>{t(LABELS.pinsNothing, lang)}</p>
+      )}
+      <div style={{ ...groupLabel, marginTop: '14px' }}>{t(LABELS.definingPreferences, lang)}</div>
+      <ul style={{ fontSize: '0.82em', margin: '4px 0', paddingLeft: '18px', lineHeight: 1.7 }}>
+        <li>
+          {t(LABELS.oshiLabel, lang)}:{' '}
+          {profile.oshi_registered
+            ? `${profile.oshi_mode} (${(profile.oshi_tags ?? []).join(', ') || '—'})`
+            : t(LABELS.noneLabel, lang)}
+        </li>
+        <li>{t(LABELS.hobbiesLabel, lang)}: {(profile.hobby_interest_tags ?? []).join(', ') || t(LABELS.noneLabel, lang)}</li>
+        <li>{t(LABELS.ageBandLabel, lang)}: {profile.age_band}</li>
+      </ul>
+    </div>
+  )
+}
+
+export default function MergedSetupPanel({ caseSetup = null }: { caseSetup?: ResolvedCaseSetup | null } = {}) {
   const coordinator = useMergedCoordinator()
   const runStore = useRunStore()
   const proposalStore = useProposalStore()
@@ -179,6 +559,41 @@ export default function MergedSetupPanel() {
 
   const [openEdit, setOpenEdit] = useState<EditKey>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // Two-tier basic/detailed (task 18): every popup opens BASIC — reset to
+  // `false` whenever a different editor opens (or the same one re-opens).
+  const [detailed, setDetailed] = useState(false)
+  useEffect(() => { setDetailed(false) }, [openEdit])
+
+  // The trigger package's full manifest, fetched independently of
+  // AlgorithmFormulationPanel's own internal fetch (that component has no
+  // prop to hand its manifest back up) — needed for the basic trigger view's
+  // two thresholds (label/default/min/max).
+  const [triggerManifest, setTriggerManifest] = useState<PackageManifest | null>(null)
+  useEffect(() => {
+    if (!rs.selectedPackageId) { setTriggerManifest(null); return }
+    let cancelled = false
+    getPackage(rs.selectedPackageId)
+      .then((m) => { if (!cancelled) setTriggerManifest(m) })
+      .catch(() => { if (!cancelled) setTriggerManifest(null) })
+    return () => { cancelled = true }
+  }, [rs.selectedPackageId])
+
+  // Wire the case's route preset / painted mountain-jam ranges into this
+  // panel's LOCAL state (task 18) — resolveCase/caseDispatches (task 17)
+  // already seed the run/proposal stores; the route+paint fields were left
+  // inert because they live here, not in a store. `caseSetup` is a stable
+  // object per selected case (the parent memoizes it), so this only re-fires
+  // on an actual case change, not every render.
+  useEffect(() => {
+    if (!caseSetup) return
+    if (caseSetup.routePresetId && caseSetup.routePresetId !== selectedRoutePresetId) {
+      void handleSelectRoutePreset(caseSetup.routePresetId)
+    }
+    setMountainRange(caseSetup.mountainRangeKm)
+    setJamRange(caseSetup.jamRangeKm)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [caseSetup])
 
   // ── Load registries + seed both scoped stores (auto-select first of each) ───
   useEffect(() => {
@@ -440,6 +855,50 @@ export default function MergedSetupPanel() {
   const selService = servicePackages.find((p) => p.id === ps.servicePackageId) ?? null
   const selContent = contentPackages.find((p) => p.id === ps.contentPackageId) ?? null
 
+  // ── Differs-from-case note + Reset (task 18) ────────────────────────────
+  // Selecting a case SEEDS the setup; it does not lock it (caseResolver.ts).
+  // This compares the live setup against the case as defined and — when it
+  // has drifted — offers a Reset that reapplies the case's own dispatches,
+  // exactly mirroring what `useCaseSelection.handleSelectCase` does when a
+  // case is first selected (including the async driver-profile fetch).
+  const liveSnapshot: LiveSetupSnapshot = {
+    scenarioId: rs.selectedScenarioId ?? '',
+    routePresetId: selectedRoutePresetId ?? '',
+    triggerPackageId: rs.selectedPackageId ?? '',
+    servicePackageId: ps.servicePackageId ?? '',
+    contentPackageId: ps.contentPackageId ?? '',
+    seed: rs.runSeed,
+    tickSeconds: rs.tickSecondsOverride ?? 180,
+    initialDrowsiness: rs.initialDrowsiness,
+    initialFatigue: rs.initialFatigue,
+    profileRef: ps.selectedProfileId ?? '',
+  }
+  const driftFields = caseSetup ? differsFromCase(caseSetup, liveSnapshot) : []
+
+  async function resetToCase() {
+    if (!caseSetup) return
+    const { run, proposal } = caseDispatches(caseSetup)
+    for (const action of run) runStore.dispatch(action as unknown as RunStoreAction)
+    if (caseSetup.routePresetId) void handleSelectRoutePreset(caseSetup.routePresetId)
+    setMountainRange(caseSetup.mountainRangeKm)
+    setJamRange(caseSetup.jamRangeKm)
+
+    let profile: DriverProfile | null = null
+    try {
+      const preset = await getPreset(caseSetup.profileRef)
+      profile = preset.world.driver_profile
+    } catch { /* keep the current profile if the case's preset can't be re-fetched */ }
+
+    for (const action of proposal) {
+      if (action.type === 'LOAD_PROFILE') {
+        if (!profile) continue
+        proposalStore.dispatch({ type: 'LOAD_PROFILE', profileId: action.profileId as string, profile })
+        continue
+      }
+      proposalStore.dispatch(action as unknown as ProposalStoreAction)
+    }
+  }
+
   return (
     <div data-testid="merged-setup-panel" className="setup-panel">
       <h2>{t(LABELS.setup, lang)}</h2>
@@ -509,6 +968,7 @@ export default function MergedSetupPanel() {
           {compatibleScenarios.map((s) => <option key={s.id} value={s.id}>{s.persona_label} — {s.review_focus}</option>)}
         </select>
         <button type="button" style={editBtnStyle} data-testid="edit-situation" onClick={() => setOpenEdit('situation')}>{t(LABELS.edit, lang)}</button>
+        <SetupBadge kind="situation" lang={lang} />
       </div>
 
       {/* ── Driver profile (from the 32 presets) ──────────────────────────── */}
@@ -520,6 +980,7 @@ export default function MergedSetupPanel() {
           {profileOptions.map((o) => <option key={o.key} value={o.key}>{t(o.label, lang)}</option>)}
         </select>
         <button type="button" style={editBtnStyle} data-testid="edit-profile" onClick={() => setOpenEdit('profile')}>{t(LABELS.edit, lang)}</button>
+        <SetupBadge kind="situation" lang={lang} />
       </div>
 
       {/* ── Trigger / Service / Content packages ──────────────────────────── */}
@@ -531,6 +992,7 @@ export default function MergedSetupPanel() {
           {triggerPackages.map((p) => <option key={p.id} value={p.id}>{t(p.label, lang)} ({p.version})</option>)}
         </select>
         <button type="button" style={editBtnStyle} data-testid="edit-trigger" onClick={() => setOpenEdit('trigger')}>{t(LABELS.edit, lang)}</button>
+        <SetupBadge kind="algorithm" lang={lang} />
       </div>
 
       <label htmlFor="merged-service-package-select" style={fieldLabel}>{t(LABELS.servicePackage, lang)}</label>
@@ -541,6 +1003,7 @@ export default function MergedSetupPanel() {
           {servicePackages.map((p) => <option key={p.id} value={p.id}>{p.id}</option>)}
         </select>
         <button type="button" style={editBtnStyle} data-testid="edit-service" onClick={() => setOpenEdit('service')}>{t(LABELS.edit, lang)}</button>
+        <SetupBadge kind="algorithm" lang={lang} />
       </div>
 
       <label htmlFor="merged-content-package-select" style={fieldLabel}>{t(LABELS.contentPackage, lang)}</label>
@@ -551,6 +1014,7 @@ export default function MergedSetupPanel() {
           {contentPackages.map((p) => <option key={p.id} value={p.id}>{p.id}</option>)}
         </select>
         <button type="button" style={editBtnStyle} data-testid="edit-content" onClick={() => setOpenEdit('content')}>{t(LABELS.edit, lang)}</button>
+        <SetupBadge kind="algorithm" lang={lang} />
       </div>
 
       {error && <ErrorNotice testid="merged-setup-error" message={error} onDismiss={() => setError(null)} />}
@@ -558,45 +1022,86 @@ export default function MergedSetupPanel() {
         {isComplete ? t(LABELS.ready, lang) : t(LABELS.incomplete, lang)}
       </p>
 
+      {/* ── Differs-from-case note + Reset (task 18) — visible whenever a case
+          is selected AND the live setup has drifted from it. Selecting a case
+          seeds the setup; it never locks it, so drift is reported, not
+          prevented. */}
+      {caseSetup && driftFields.length > 0 && (
+        <div data-testid="differs-from-case" style={{ ...summaryRow, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', padding: '7px 9px', marginTop: '8px' }}>
+          <p style={{ margin: '0 0 6px', color: '#92400e' }}>
+            {t(LABELS.differsFromCaseNote, lang).replace(
+              '{fields}',
+              driftFields.map((f) => t(DIFF_FIELD_LABELS[f] ?? { ja: f, en: f }, lang)).join(', '),
+            )}
+          </p>
+          <button type="button" data-testid="reset-to-case" onClick={() => void resetToCase()} style={editBtnStyle}>
+            {t(LABELS.resetToCase, lang)}
+          </button>
+        </div>
+      )}
+
       {/* ── Situation Edit popup (merged A/B/C fields, reused verbatim) ─────── */}
       <Modal open={openEdit === 'situation'} title={t(LABELS.situationTitle, lang)} size="wide" onClose={() => setOpenEdit(null)}>
-        <p style={{ ...summaryRow, color: '#64748b' }}>
-          {t(LABELS.situationNote, lang)}
-        </p>
-        {scenarioDef ? (
+        <DetailedToggle detailed={detailed} onToggle={() => setDetailed((d) => !d)} lang={lang} />
+        {!detailed ? (
+          <BasicSituationView
+            caseSetup={caseSetup} rs={rs} ps={ps}
+            dispatchRun={runStore.dispatch} dispatchProposal={proposalStore.dispatch} lang={lang}
+          />
+        ) : (
           <>
-            <div style={groupLabel}>{t(LABELS.groupFixed, lang)}</div>
-            <FixedConditionsSection scenario={scenarioDef} hideTitle />
-            <SituationFieldRows fields={SITUATION_FIELDS.filter((f) => MERGED_SITUATION_KEYS.includes(f.key))} />
-            <p style={{ ...fieldLabel, marginTop: '14px' }}>{t(LABELS.routeConditions, lang).replace('{km}', totalKm.toFixed(0))}</p>
-            <RouteConditionsPainter totalKm={totalKm} mountainRange={mountainRange} onMountainRangeChange={setMountainRange} jamRange={jamRange} onJamRangeChange={setJamRange} />
-            <p style={{ fontSize: '0.72em', color: '#94a3b8', margin: '4px 0 0' }}>
-              {t(LABELS.jamSpeedNote, lang).replace('{kph}', String(jamSpeedKph))}
+            <p style={{ ...summaryRow, color: '#64748b' }}>
+              {t(LABELS.situationNote, lang)}
             </p>
+            {scenarioDef ? (
+              <>
+                <div style={groupLabel}>{t(LABELS.groupFixed, lang)}</div>
+                <FixedConditionsSection scenario={scenarioDef} hideTitle />
+                <SituationFieldRows fields={SITUATION_FIELDS.filter((f) => MERGED_SITUATION_KEYS.includes(f.key))} />
+                <p style={{ ...fieldLabel, marginTop: '14px' }}>{t(LABELS.routeConditions, lang).replace('{km}', totalKm.toFixed(0))}</p>
+                <RouteConditionsPainter totalKm={totalKm} mountainRange={mountainRange} onMountainRangeChange={setMountainRange} jamRange={jamRange} onJamRangeChange={setJamRange} />
+                <p style={{ fontSize: '0.72em', color: '#94a3b8', margin: '4px 0 0' }}>
+                  {t(LABELS.jamSpeedNote, lang).replace('{kph}', String(jamSpeedKph))}
+                </p>
 
-            <div style={groupLabel}>{t(LABELS.groupSpeed, lang)}</div>
-            <SpeedProfileSection scenario={scenarioDef} hideTitle />
+                <div style={groupLabel}>{t(LABELS.groupSpeed, lang)}</div>
+                <SpeedProfileSection scenario={scenarioDef} hideTitle />
 
-            <div style={groupLabel}>{t(LABELS.groupSimulated, lang)}</div>
-            <SimulatedSignalsSection scenario={scenarioDef} hideTitle />
+                <div style={groupLabel}>{t(LABELS.groupSimulated, lang)}</div>
+                <SimulatedSignalsSection scenario={scenarioDef} hideTitle />
+              </>
+            ) : <p style={summaryRow}>{t(LABELS.selectScenarioToEdit, lang)}</p>}
           </>
-        ) : <p style={summaryRow}>{t(LABELS.selectScenarioToEdit, lang)}</p>}
+        )}
       </Modal>
 
       {/* ── Driver profile Edit popup (preference + history, reused verbatim) ── */}
       <Modal open={openEdit === 'profile'} title={t(LABELS.profileTitle, lang)} size="wide" onClose={() => setOpenEdit(null)}>
-        <PreferenceHistorySection />
+        <DetailedToggle detailed={detailed} onToggle={() => setDetailed((d) => !d)} lang={lang} />
+        {!detailed ? <BasicProfileView caseSetup={caseSetup} ps={ps} lang={lang} /> : <PreferenceHistorySection />}
       </Modal>
 
       {/* ── Package Edit popups (reused verbatim from Trigger / Proposal) ───── */}
       <Modal open={openEdit === 'trigger'} title={t(LABELS.triggerAlgorithm, lang)} size="wide" onClose={() => setOpenEdit(null)}>
-        <AlgorithmFormulationPanel />
+        <DetailedToggle detailed={detailed} onToggle={() => setDetailed((d) => !d)} lang={lang} />
+        {!detailed
+          ? <BasicTriggerView manifest={triggerManifest} edited={rs.editedHyperparameters} dispatch={runStore.dispatch} lang={lang} />
+          : <AlgorithmFormulationPanel />}
       </Modal>
       <Modal open={openEdit === 'service'} title={t(LABELS.servicePackage, lang)} size="wide" onClose={() => setOpenEdit(null)}>
-        {selService ? <ServiceSetupSection manifest={selService} /> : <p style={summaryRow}>{t(LABELS.selectServiceFirst, lang)}</p>}
+        <DetailedToggle detailed={detailed} onToggle={() => setDetailed((d) => !d)} lang={lang} />
+        {!detailed ? (
+          <BasicServiceView
+            manifest={selService} overrides={ps.serviceHyperparameterOverrides}
+            parameterOverrides={ps.serviceParameterOverrides} dispatch={proposalStore.dispatch} lang={lang}
+          />
+        ) : selService ? <ServiceSetupSection manifest={selService} /> : <p style={summaryRow}>{t(LABELS.selectServiceFirst, lang)}</p>}
       </Modal>
       <Modal open={openEdit === 'content'} title={t(LABELS.contentPackage, lang)} size="wide" onClose={() => setOpenEdit(null)}>
-        {selContent ? <ContentSetupSection manifest={selContent} /> : <p style={summaryRow}>{t(LABELS.selectContentFirst, lang)}</p>}
+        <DetailedToggle detailed={detailed} onToggle={() => setDetailed((d) => !d)} lang={lang} />
+        {!detailed ? (
+          <BasicContentView manifest={selContent} overrides={ps.contentHyperparameterOverrides} dispatch={proposalStore.dispatch} lang={lang} />
+        ) : selContent ? <ContentSetupSection manifest={selContent} /> : <p style={summaryRow}>{t(LABELS.selectContentFirst, lang)}</p>}
       </Modal>
     </div>
   )
