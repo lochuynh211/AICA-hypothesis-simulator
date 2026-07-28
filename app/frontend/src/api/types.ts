@@ -352,6 +352,31 @@ export type FirePoint = {
   strength: string | null
   tick: number
   time_min: number
+  /** The trigger chain recorded at this fire. Empty when the package emits none. */
+  feature_contributions?: Record<string, TriggerCategoryChain>
+  /** Thresholds/ladders in force at this tick. */
+  criteria?: Record<string, number>
+}
+
+/** One trigger category's recorded terms, as emitted by a transparent package. */
+export type TriggerCategoryChain = {
+  score: number
+  /** True when clamping bound, so shares will not reconcile with `score`. */
+  clamped: boolean
+  rows: {
+    feature_id: string
+    value: number
+    band: string | null
+    weight: number
+    contribution: number
+  }[]
+  gates: {
+    gate_id: string
+    evaluated_inputs: Record<string, number>
+    threshold: number
+    passed: boolean
+    effect: 'allow' | 'exclude' | 'suppress' | 'override'
+  }[]
 }
 
 /** One rest_required_score sample (for the setup-screen preview curve). */
@@ -549,6 +574,10 @@ export type DecisionResult = {
   scores: Record<string, unknown>
   states: Record<string, unknown>
   criteria: Record<string, number>
+  /** Per-category per-feature terms recorded by transparent packages (B1).
+   * Optional so hand-built fixtures/constructors predating the field still
+   * typecheck; the backend always sends it (defaulting to {}). */
+  feature_contributions?: Record<string, TriggerCategoryChain>
   candidates: Candidate[]
   fire_control: FireControl
   proposal: Proposal | null

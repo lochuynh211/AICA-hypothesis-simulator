@@ -4,14 +4,238 @@
     "category": "rest_required",
     "strength": "gentle",
     "tick": 32,
-    "time_min": 99.0
+    "time_min": 99.0,
+    "feature_contributions": {
+      "rest_required": {
+        "score": 0.7810679892858257,
+        "clamped": false,
+        "rows": [
+          {
+            "feature_id": "drowsiness",
+            "value": 0.9999785156059079,
+            "band": null,
+            "weight": 0.3,
+            "contribution": 0.29999355468177236
+          },
+          {
+            "feature_id": "fatigue",
+            "value": 0.5600007323996394,
+            "band": null,
+            "weight": 0.2,
+            "contribution": 0.1120001464799279
+          },
+          {
+            "feature_id": "driving_anomaly",
+            "value": 0.7035629301331937,
+            "band": null,
+            "weight": 0.25,
+            "contribution": 0.17589073253329843
+          },
+          {
+            "feature_id": "driving_time",
+            "value": 0.39997558593750004,
+            "band": null,
+            "weight": 0.15,
+            "contribution": 0.059996337890625
+          },
+          {
+            "feature_id": "env_load",
+            "value": 0.031875,
+            "band": null,
+            "weight": 0.1,
+            "contribution": 0.0031875000000000002
+          },
+          {
+            "feature_id": "rest_window",
+            "value": 4.5394874177873135e-05,
+            "band": null,
+            "weight": 0.1,
+            "contribution": 4.539487417787314e-06
+          },
+          {
+            "feature_id": "rest_scarcity",
+            "value": 0.9999397276598029,
+            "band": null,
+            "weight": 0.08,
+            "contribution": 0.07999517821278423
+          },
+          {
+            "feature_id": "child_passenger",
+            "value": 1.0,
+            "band": null,
+            "weight": 0.05,
+            "contribution": 0.05
+          }
+        ],
+        "gates": [
+          {
+            "gate_id": "minimum_risk_for_rest_bonus",
+            "evaluated_inputs": {
+              "base_safety_risk": 0.6510682715856236
+            },
+            "threshold": 0.45,
+            "passed": true,
+            "effect": "allow"
+          }
+        ]
+      },
+      "monotony_prevention": {
+        "score": 0.449562494260259,
+        "clamped": false,
+        "rows": [
+          {
+            "feature_id": "monotony",
+            "value": 0.5999999857088552,
+            "band": null,
+            "weight": 0.4,
+            "contribution": 0.23999999428354207
+          },
+          {
+            "feature_id": "env_load",
+            "value": 0.031875,
+            "band": null,
+            "weight": 0.3,
+            "contribution": 0.0095625
+          },
+          {
+            "feature_id": "familiar_route",
+            "value": 0.9999999998835847,
+            "band": null,
+            "weight": 0.2,
+            "contribution": 0.19999999997671694
+          }
+        ],
+        "gates": []
+      }
+    },
+    "criteria": {
+      "smoothing_alpha": 0.5,
+      "threshold_suggest": 0.7,
+      "threshold_recommend": 0.8,
+      "threshold_urgent": 0.9,
+      "rest_persistence_ticks": 6,
+      "monotony_persistence_ticks": 6,
+      "monotony_suggest_threshold": 0.7
+    }
   },
   "fires": [
     {
       "category": "rest_required",
       "strength": "gentle",
       "tick": 32,
-      "time_min": 99.0
+      "time_min": 99.0,
+      "feature_contributions": {
+        "rest_required": {
+          "score": 0.7810679892858257,
+          "clamped": false,
+          "rows": [
+            {
+              "feature_id": "drowsiness",
+              "value": 0.9999785156059079,
+              "band": null,
+              "weight": 0.3,
+              "contribution": 0.29999355468177236
+            },
+            {
+              "feature_id": "fatigue",
+              "value": 0.5600007323996394,
+              "band": null,
+              "weight": 0.2,
+              "contribution": 0.1120001464799279
+            },
+            {
+              "feature_id": "driving_anomaly",
+              "value": 0.7035629301331937,
+              "band": null,
+              "weight": 0.25,
+              "contribution": 0.17589073253329843
+            },
+            {
+              "feature_id": "driving_time",
+              "value": 0.39997558593750004,
+              "band": null,
+              "weight": 0.15,
+              "contribution": 0.059996337890625
+            },
+            {
+              "feature_id": "env_load",
+              "value": 0.031875,
+              "band": null,
+              "weight": 0.1,
+              "contribution": 0.0031875000000000002
+            },
+            {
+              "feature_id": "rest_window",
+              "value": 4.5394874177873135e-05,
+              "band": null,
+              "weight": 0.1,
+              "contribution": 4.539487417787314e-06
+            },
+            {
+              "feature_id": "rest_scarcity",
+              "value": 0.9999397276598029,
+              "band": null,
+              "weight": 0.08,
+              "contribution": 0.07999517821278423
+            },
+            {
+              "feature_id": "child_passenger",
+              "value": 1.0,
+              "band": null,
+              "weight": 0.05,
+              "contribution": 0.05
+            }
+          ],
+          "gates": [
+            {
+              "gate_id": "minimum_risk_for_rest_bonus",
+              "evaluated_inputs": {
+                "base_safety_risk": 0.6510682715856236
+              },
+              "threshold": 0.45,
+              "passed": true,
+              "effect": "allow"
+            }
+          ]
+        },
+        "monotony_prevention": {
+          "score": 0.449562494260259,
+          "clamped": false,
+          "rows": [
+            {
+              "feature_id": "monotony",
+              "value": 0.5999999857088552,
+              "band": null,
+              "weight": 0.4,
+              "contribution": 0.23999999428354207
+            },
+            {
+              "feature_id": "env_load",
+              "value": 0.031875,
+              "band": null,
+              "weight": 0.3,
+              "contribution": 0.0095625
+            },
+            {
+              "feature_id": "familiar_route",
+              "value": 0.9999999998835847,
+              "band": null,
+              "weight": 0.2,
+              "contribution": 0.19999999997671694
+            }
+          ],
+          "gates": []
+        }
+      },
+      "criteria": {
+        "smoothing_alpha": 0.5,
+        "threshold_suggest": 0.7,
+        "threshold_recommend": 0.8,
+        "threshold_urgent": 0.9,
+        "rest_persistence_ticks": 6,
+        "monotony_persistence_ticks": 6,
+        "monotony_suggest_threshold": 0.7
+      }
     }
   ],
   "peak_score": 0.7955169973214564,

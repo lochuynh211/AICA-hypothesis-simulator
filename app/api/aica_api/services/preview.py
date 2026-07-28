@@ -513,6 +513,8 @@ def iter_preview_ticks(
                     "strength": strength,
                     "tick": tick_index,
                     "time_min": elapsed_min,
+                    "feature_contributions": decision.feature_contributions,
+                    "criteria": decision.criteria,
                 }
                 fires.append(fire)
                 if fired_at is None:

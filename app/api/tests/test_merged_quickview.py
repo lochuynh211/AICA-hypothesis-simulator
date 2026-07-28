@@ -301,6 +301,39 @@ def test_quickview_monotony_scenario_fires_with_inattentive_driving_proposal(bas
     _assert_nothing_persisted(tmp_path)
 
 
+def test_quickview_fire_carries_both_trigger_categories(base_world_dict, tmp_path):
+    """Same fixtures/call as
+    test_quickview_monotony_scenario_fires_with_inattentive_driving_proposal
+    -- the hybrid trigger package is the one that emits `feature_contributions`
+    for BOTH categories (nri_fatigue_score_v1, used by the REST test above,
+    emits none). The quickview's fire must carry that recorded chain, not just
+    the proposal built from it."""
+    resp = client.post(
+        "/api/merged-runs/quickview",
+        json=_quickview_body(
+            world=base_world_dict,
+            package_id=_MONOTONY_TRIGGER_PACKAGE_ID,
+            scenario_id=_MONOTONY_TRIGGER_SCENARIO_ID,
+            run_seed=7,
+        ),
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+
+    assert body["fired"] is True
+    assert body["fires"], "expected at least one fire"
+
+    chain = body["fires"][0]["feature_contributions"]
+    assert set(chain) == {"rest_required", "monotony_prevention"}
+    assert chain["rest_required"]["rows"], "the winning category needs its terms"
+    # The runner-up's terms must be RECORDED, not reconstructed — §7.3 compares
+    # the two categories against each other.
+    assert chain["monotony_prevention"]["rows"]
+    assert body["fires"][0]["criteria"].get("threshold_suggest") is not None
+
+    _assert_nothing_persisted(tmp_path)
+
+
 def test_quickview_unknown_package_400(base_world_dict):
     resp = client.post(
         "/api/merged-runs/quickview",

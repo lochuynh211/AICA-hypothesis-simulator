@@ -410,6 +410,13 @@ class FirePoint(BaseModel):
     strength: str | None = None
     tick: int
     time_min: float
+    # The trigger chain recorded AT this fire (B1). Empty for packages that emit
+    # no contributions and for previews recorded before this field existed —
+    # consumers report the trigger stage unavailable rather than inferring.
+    feature_contributions: dict = {}
+    # Thresholds and ladders in force at this tick, so the review can show
+    # "firing threshold 0.70 · clearance +0.010" without a second lookup.
+    criteria: dict = {}
 
 
 class ScoreSeriesPoint(BaseModel):
