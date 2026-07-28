@@ -3719,10 +3719,13 @@ describe('ParameterRationale', () => {
     expect(screen.getByTestId('rationale-ratio-fatigue').textContent).toMatch(/[↑↓≈]/)
   })
 
-  it('offers the six judgement options', () => {
+  it('offers exactly the six judgement values', () => {
     mount()
     const select = screen.getByTestId('rationale-judge-fatigue') as HTMLSelectElement
-    expect(select.options.length).toBe(6)
+    // Pinned to the values, not the count — six WRONG options would pass a count check.
+    expect(Array.from(select.options).map((o) => o.value)).toEqual([
+      '', 'rational', 'too_strong', 'too_weak', 'not_relevant_here', 'unsure',
+    ])
   })
 
   it('reports a judgement', () => {
@@ -3738,9 +3741,14 @@ describe('ParameterRationale', () => {
     expect(text).toContain('Call & response (driving)')
   })
 
-  it('names inputs that played no part', () => {
+  it('names inputs that played no part, and only those', () => {
     mount()
-    expect(screen.getByTestId('played-no-part')).toHaveTextContent('oshi_affinity')
+    const listed = screen.getByTestId('played-no-part').textContent ?? ''
+    expect(listed).toContain('oshi_affinity')
+    // Without these, an implementation that ignores the 2% threshold and dumps
+    // every feature into the list passes.
+    expect(listed).not.toContain('fatigue')
+    expect(listed).not.toContain('monotony')
   })
 
   it('suppresses both consequence sections on the trigger stage', () => {
@@ -3769,7 +3777,38 @@ describe('ParameterRationale', () => {
     const dominant: ReviewOption = { id: 'a', label: 'A', score: 9, rows: [row('fatigue', 1, 9)] }
     const weak: ReviewOption = { id: 'b', label: 'B', score: 0.01, rows: [row('monotony', 0.1, 0.1)] }
     mount({ left: dominant, right: weak, declaredWeights: { fatigue: 9 } })
-    expect(screen.getByTestId('different-setting').textContent).toBeTruthy()
+    const text = screen.getByTestId('different-setting').textContent ?? ''
+    // toBeTruthy() passes for ANY non-empty string, including a fabricated
+    // percentage — the opposite of what this test is named for.
+    expect(text).not.toMatch(/\d+\s*%/)
+    expect(text.length).toBeGreaterThan(0)
+  })
+
+  it('distinguishes "cannot flip" from "evidence unavailable"', () => {
+    // This fixture triggers BOTH on the same row: necessity is Unavailable (no
+    // other feature can absorb the redistributed weight) while flipDistance is
+    // null (no flip below the bound). They must not read identically.
+    const dominant: ReviewOption = { id: 'a', label: 'A', score: 9, rows: [row('fatigue', 1, 9)] }
+    const weak: ReviewOption = { id: 'b', label: 'B', score: 0.01, rows: [row('monotony', 0.1, 0.1)] }
+    mount({ left: dominant, right: weak, declaredWeights: { fatigue: 9 } })
+    const sentences = screen.getAllByTestId(/^consequence-/).map((n) => n.textContent)
+    expect(new Set(sentences).size).toBe(sentences.length)
+  })
+
+  it('renders no raw English in the Japanese UI', () => {
+    // Every other test runs under initialLanguage="en", so JA-only defects are
+    // invisible to this suite. An Unavailable reason interpolated verbatim
+    // leaks an English clause into a Japanese sentence.
+    const dominant: ReviewOption = { id: 'a', label: 'A', score: 9, rows: [row('fatigue', 1, 9)] }
+    const weak: ReviewOption = { id: 'b', label: 'B', score: 0.01, rows: [row('monotony', 0.1, 0.1)] }
+    render(
+      <LanguageProvider initialLanguage="ja">
+        <ParameterRationale stage="service" left={dominant} right={weak}
+          declaredWeights={{ fatigue: 9 }} judgments={{}} onJudge={() => {}} />
+      </LanguageProvider>,
+    )
+    expect(screen.getByTestId('different-setting').textContent ?? '')
+      .not.toMatch(/[a-z]{4,}\s+[a-z]{4,}/)
   })
 })
 ```
@@ -3783,9 +3822,10 @@ Expected: FAIL — module not found
 
 In this order:
 
-1. **The table.** One row per `left.rows`, sorted by `realizedShares(left.rows)` descending. Columns: `rationale-feature` (plain `phrase()`, identifier faint grey), `rationale-situation-<id>` (`value · bandWord(band, value)`), `rationale-declared-<id>`, `rationale-realized-<id>`, `rationale-ratio-<id>` (`↑`/`↓`/`≈` from `intentVsEffect`), and `rationale-judge-<id>` (the six-option `<select>`, value from `judgments[featureId] ?? ''`, firing `onJudge`).
+1. **The table.** One row per `left.rows`, sorted by `realizedShares(left.rows)` descending. Columns: `rationale-feature` (plain `phrase()`, identifier faint grey), `rationale-situation-<id>` (`value · bandWord(band, value)`), `rationale-declared-<id>`, `rationale-realized-<id>`, `rationale-ratio-<id>` (`↑`/`↓`/`≈` from `intentVsEffect`), and `rationale-judge-<id>` (the six-option `<select>`, value from `judgments[featureId] ?? ''`, firing `onJudge`). Each select needs a unique `id` and an `aria-label` — the shared "your view" column header gives a screen reader no per-row name.
 2. **Consequences** (`different-setting`) — rendered **only** when `stage !== 'trigger'` **and** `right !== null`. For each of the top three rows by realized share:
-   - `necessity(left, right, id)`: when `changed`, *"Remove `phrase(id)` and this decision becomes `<winner label>`."* When unchanged, say the decision holds without it. When `Unavailable`, print its reason.
+   - `necessity(left, right, id)`: when `changed`, *"Remove `phrase(id)` and this decision becomes `<winner label>`."* When unchanged, say the decision holds without it. When `Unavailable`, render a BILINGUAL sentence — never interpolate `result.reason` verbatim, which is a raw English literal from `reviewMath.ts` and would leak an English clause into the Japanese UI. Map the known reasons to bilingual text, with a generic bilingual fallback.
+   - Give each sentence a distinct `data-testid="consequence-<featureId>-<kind>"` so tests can prove the three outcomes read differently.
    - `flipDistance(left, right, id)`: when a factor is returned, *"If `phrase(id)` mattered about N % more, `<right.label>` would have been chosen instead"* (N = `Math.round((factor - 1) * 100)`). When `null`, say no setting of that input alone changes the outcome — never a number. When `Unavailable`, print its reason.
 3. **Played no part** (`played-no-part`) — same suppression rule; lists `playedNoPart(left.rows)` with plain phrasing, framed as the reviewable fact it is.
 
