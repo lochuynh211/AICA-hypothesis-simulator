@@ -109,14 +109,15 @@ export default function WhatDecidedIt({
   const topOpposing = rows.find((r) => r.lean !== winnerSide && r.lean !== 'none')
 
   const verdictSentence = (() => {
+    const winnerLabel = t(winner.label, lang)
     const supportingPhrase = topSupporting ? t(phrase(topSupporting.featureId), lang) : ''
     const opposingPhrase = topOpposing ? t(phrase(topOpposing.featureId), lang) : ''
     if (lang === 'ja') {
-      const main = `${winner.label}${t(LABELS.because, lang)}「${supportingPhrase}」${t(LABELS.becauseEnd, lang)}`
+      const main = `${winnerLabel}${t(LABELS.because, lang)}「${supportingPhrase}」${t(LABELS.becauseEnd, lang)}`
       const extra = topOpposing ? `「${opposingPhrase}」${t(LABELS.despite, lang)}` : ''
       return `${main}${extra}`
     }
-    const main = `${winner.label} ${t(LABELS.because, lang)} ${supportingPhrase}`
+    const main = `${winnerLabel} ${t(LABELS.because, lang)} ${supportingPhrase}`
     return topOpposing ? `${main}, ${t(LABELS.despite, lang)} ${opposingPhrase}.` : `${main}.`
   })()
 
@@ -179,7 +180,7 @@ export default function WhatDecidedIt({
             style={{ width: '100%', fontSize: '0.84em', padding: '4px' }}
           >
             {options.map((o) => (
-              <option key={o.id} value={o.id}>{o.label}</option>
+              <option key={o.id} value={o.id}>{t(o.label, lang)}</option>
             ))}
           </select>
         </div>
@@ -195,7 +196,7 @@ export default function WhatDecidedIt({
             style={{ width: '100%', fontSize: '0.84em', padding: '4px' }}
           >
             {options.map((o) => (
-              <option key={o.id} value={o.id}>{o.label}</option>
+              <option key={o.id} value={o.id}>{t(o.label, lang)}</option>
             ))}
           </select>
         </div>

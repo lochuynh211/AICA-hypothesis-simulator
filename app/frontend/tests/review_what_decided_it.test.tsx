@@ -9,9 +9,9 @@ const row = (featureId: string, value: number, w: number, band: string | null = 
 })
 
 const options: ReviewOption[] = [
-  { id: 'rest_required', label: 'Rest proposal', score: 0.72, clamped: false,
+  { id: 'rest_required', label: { ja: '休憩の提案', en: 'Rest proposal' }, score: 0.72, clamped: false,
     rows: [row('fatigue', 0.8, 0.3, 'high'), row('monotony', 0.2, 0.1)] },
-  { id: 'monotony_prevention', label: 'Monotony intervention', score: 0.55, clamped: false,
+  { id: 'monotony_prevention', label: { ja: '単調さへの介入', en: 'Monotony intervention' }, score: 0.55, clamped: false,
     rows: [row('monotony', 0.9, 0.4), row('fatigue', 0.1, 0.1)] },
 ]
 

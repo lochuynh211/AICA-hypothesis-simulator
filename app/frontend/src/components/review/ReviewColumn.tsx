@@ -116,23 +116,6 @@ function buildThresholdNote(
   return lang === 'ja' ? `発火しきい値: ${value.toFixed(2)}` : `Firing threshold: ${value.toFixed(2)}`
 }
 
-// `chains.ts#triggerOptions` hardcodes `ReviewOption.label` to the ENGLISH
-// half of its category label regardless of UI language (chains.ts is owned
-// by an earlier, already-committed task and out of scope here) — left as-is
-// it would leak raw English ("Rest proposal") into WhatDecidedIt's JA
-// verdict sentence and pickers, exactly the class of bug this feature's
-// language-coverage tests exist to catch. Normalized at this integration
-// boundary instead: `id` (what everything else matches on) is untouched.
-const TRIGGER_CATEGORY_LABELS: Record<string, BilingualLabel> = {
-  rest_required: { ja: '休憩の提案', en: 'Rest proposal' },
-  monotony_prevention: { ja: '単調さへの介入', en: 'Monotony intervention' },
-}
-
-function localizeTriggerOption(option: ReviewOption, lang: 'ja' | 'en'): ReviewOption {
-  const label = TRIGGER_CATEGORY_LABELS[option.id]
-  return label ? { ...option, label: t(label, lang) } : option
-}
-
 type Comparison = { left: string | null; right: string | null }
 
 /** Trigger stage: the fired category vs. the other one — exhaustive in V1. */
@@ -216,9 +199,7 @@ export default function ReviewColumn({
   const serviceAvailable = !isUnavailable(serviceResult)
   const contentAvailable = !isUnavailable(contentResult)
 
-  const triggerOpts = (isUnavailable(triggerResult) ? [] : triggerResult).map((o) =>
-    localizeTriggerOption(o, lang),
-  )
+  const triggerOpts = isUnavailable(triggerResult) ? [] : triggerResult
   const serviceOpts = isUnavailable(serviceResult) ? [] : serviceResult
   const contentOpts = isUnavailable(contentResult) ? [] : contentResult.options
 

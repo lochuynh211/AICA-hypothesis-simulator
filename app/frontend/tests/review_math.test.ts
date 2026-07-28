@@ -9,7 +9,7 @@ const row = (featureId: string, contribution: number, w = 0.5) => ({
 })
 
 const opt = (id: string, rows: ReturnType<typeof row>[]): ReviewOption => ({
-  id, label: id, score: rows.reduce((a, r) => a + r.contribution, 0), rows,
+  id, label: { ja: id, en: id }, score: rows.reduce((a, r) => a + r.contribution, 0), rows,
 })
 
 describe('scaleBound', () => {

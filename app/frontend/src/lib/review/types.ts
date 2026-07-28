@@ -7,6 +7,7 @@
  * service and content evidence needs no re-projection — the review reads the
  * chains where they already are.
  */
+import type { BilingualLabel } from './reviewVocabulary'
 
 /** One feature's recorded link in a decision chain. */
 export type ReviewChainRow = {
@@ -31,7 +32,18 @@ export type ReviewChainRow = {
 /** One comparable option: a trigger category, a service candidate, a plan item. */
 export type ReviewOption = {
   id: string
-  label: string
+  /**
+   * Bilingual, not a bare string: `chains.ts` (a pure lib, no language
+   * context) builds these, and every render site resolves with `t()`. A bare
+   * string would force chains.ts to pick a language itself — which is
+   * exactly how the trigger-category label used to leak raw English into the
+   * Japanese UI (it hardcoded `.en`) before this type change, and how a
+   * component-level `TRIGGER_CATEGORY_LABELS` workaround briefly duplicated
+   * `chains.ts`'s own `CATEGORY_LABELS` map. Candidate/item ids (service,
+   * content) are identifier-shaped, so they carry `{ ja: id, en: id }` — a
+   * no-op resolution, kept only so no call site has to branch on shape.
+   */
+  label: BilingualLabel
   /** The score as RECORDED, which may differ from Σcontribution when clamped. */
   score: number
   rows: ReviewChainRow[]

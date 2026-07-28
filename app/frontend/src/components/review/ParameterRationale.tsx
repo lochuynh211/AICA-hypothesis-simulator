@@ -116,7 +116,7 @@ function necessitySentence(
       ? `「${label}」を取り除いても、この判断は変わりません。`
       : `Even without ${label}, the decision still holds.`
   }
-  const winnerLabel = result.winnerId === left.id ? left.label : right.label
+  const winnerLabel = t(result.winnerId === left.id ? left.label : right.label, lang)
   return lang === 'ja'
     ? `「${label}」を取り除くと、この判断は「${winnerLabel}」になります。`
     : `Remove ${label} and this decision becomes ${winnerLabel}.`
@@ -140,9 +140,10 @@ function flipSentence(
       : `What would flip ${label} cannot be told (${reason}).`
   }
   const pct = Math.round((result.factor - 1) * 100)
+  const rightLabel = t(right.label, lang)
   return lang === 'ja'
-    ? `「${label}」の影響が約 ${pct}% 大きければ、「${right.label}」が選ばれていました。`
-    : `If ${label} mattered about ${pct}% more, ${right.label} would have been chosen instead.`
+    ? `「${label}」の影響が約 ${pct}% 大きければ、「${rightLabel}」が選ばれていました。`
+    : `If ${label} mattered about ${pct}% more, ${rightLabel} would have been chosen instead.`
 }
 
 export default function ParameterRationale({

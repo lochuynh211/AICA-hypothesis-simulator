@@ -9,12 +9,14 @@ const row = (featureId: string, value: number, w: number, band: string | null = 
 })
 
 const left: ReviewOption = {
-  id: 'music_playlist', label: 'Music playlist', score: 0.5, rows: [
+  id: 'music_playlist', label: { ja: '音楽プレイリスト', en: 'Music playlist' }, score: 0.5, rows: [
     row('fatigue', 0.8, 0.3, 'high'), row('monotony', 0.6, 0.2), row('oshi_affinity', 0.01, 0.01),
   ],
 }
 const right: ReviewOption = {
-  id: 'call_response_driving', label: 'Call & response (driving)', score: 0.42,
+  id: 'call_response_driving',
+  label: { ja: 'コール＆レスポンス（運転中）', en: 'Call & response (driving)' },
+  score: 0.42,
   rows: [row('monotony', 0.9, 0.3), row('fatigue', 0.1, 0.1)],
 }
 const declared = { fatigue: 0.3, monotony: 0.2, oshi_affinity: 0.01 }
@@ -109,8 +111,8 @@ describe('ParameterRationale', () => {
   })
 
   it('says so when a flip does not exist rather than printing a number', () => {
-    const dominant: ReviewOption = { id: 'a', label: 'A', score: 9, rows: [row('fatigue', 1, 9)] }
-    const weak: ReviewOption = { id: 'b', label: 'B', score: 0.01, rows: [row('monotony', 0.1, 0.1)] }
+    const dominant: ReviewOption = { id: 'a', label: { ja: 'A', en: 'A' }, score: 9, rows: [row('fatigue', 1, 9)] }
+    const weak: ReviewOption = { id: 'b', label: { ja: 'B', en: 'B' }, score: 0.01, rows: [row('monotony', 0.1, 0.1)] }
     mount({ left: dominant, right: weak, declaredWeights: { fatigue: 9 } })
     const text = screen.getByTestId('different-setting').textContent ?? ''
     expect(text).not.toMatch(/\d+\s*%/)
@@ -142,16 +144,16 @@ describe('ParameterRationale', () => {
   })
 
   it('distinguishes "cannot flip" from "evidence unavailable"', () => {
-    const dominant: ReviewOption = { id: 'a', label: 'A', score: 9, rows: [row('fatigue', 1, 9)] }
-    const weak: ReviewOption = { id: 'b', label: 'B', score: 0.01, rows: [row('monotony', 0.1, 0.1)] }
+    const dominant: ReviewOption = { id: 'a', label: { ja: 'A', en: 'A' }, score: 9, rows: [row('fatigue', 1, 9)] }
+    const weak: ReviewOption = { id: 'b', label: { ja: 'B', en: 'B' }, score: 0.01, rows: [row('monotony', 0.1, 0.1)] }
     mount({ left: dominant, right: weak, declaredWeights: { fatigue: 9 } })
     const sentences = screen.getAllByTestId(/^consequence-/).map((n) => n.textContent)
     expect(new Set(sentences).size).toBe(sentences.length)
   })
 
   it('renders no raw English in the Japanese UI', () => {
-    const dominant: ReviewOption = { id: 'a', label: 'A', score: 9, rows: [row('fatigue', 1, 9)] }
-    const weak: ReviewOption = { id: 'b', label: 'B', score: 0.01, rows: [row('monotony', 0.1, 0.1)] }
+    const dominant: ReviewOption = { id: 'a', label: { ja: 'A', en: 'A' }, score: 9, rows: [row('fatigue', 1, 9)] }
+    const weak: ReviewOption = { id: 'b', label: { ja: 'B', en: 'B' }, score: 0.01, rows: [row('monotony', 0.1, 0.1)] }
     render(
       <LanguageProvider initialLanguage="ja">
         <ParameterRationale stage="service" left={dominant} right={weak}

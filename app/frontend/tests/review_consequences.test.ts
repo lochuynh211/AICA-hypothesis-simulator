@@ -7,7 +7,7 @@ const row = (featureId: string, w: number, value: number) => ({
 })
 
 const opt = (id: string, rows: ReturnType<typeof row>[]): ReviewOption => ({
-  id, label: id, score: rows.reduce((a, r) => a + r.contribution, 0), rows,
+  id, label: { ja: id, en: id }, score: rows.reduce((a, r) => a + r.contribution, 0), rows,
 })
 
 // Winner leans on fatigue; runner-up leans on monotony.
@@ -64,9 +64,9 @@ describe('necessity', () => {
     // score is not forced to coincide with the raw sum, which is what lets
     // `winnerId` land on 'plain' post-mask and the two baselines diverge on
     // `changed`.
-    const clamped = { id: 'clamped', label: 'C', score: 1.0, clamped: true,
+    const clamped = { id: 'clamped', label: { ja: 'C', en: 'C' }, score: 1.0, clamped: true,
                       rows: [row('fatigue', 1.0, 1.0), row('monotony', 0.3, 0.1)] }
-    const plain = { id: 'plain', label: 'P', score: 1.02, rows: [row('monotony', 1.02, 1.0)] }
+    const plain = { id: 'plain', label: { ja: 'P', en: 'P' }, score: 1.02, rows: [row('monotony', 1.02, 1.0)] }
     // Masking fatigue leaves clamped at 0.13 and plain at 1.02, so `plain`
     // wins after masking too. Recorded scores already had `plain` ahead
     // (1.02 > 1.0), so the true answer is unchanged. Sourcing the baseline

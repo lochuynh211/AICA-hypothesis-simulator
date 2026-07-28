@@ -40,7 +40,7 @@ export function triggerOptions(fire: MergedFirePoint): ReviewOption[] | Unavaila
 
   return Object.entries(chains).map(([category, chain]) => ({
     id: category,
-    label: (CATEGORY_LABELS[category] ?? { ja: category, en: category }).en,
+    label: CATEGORY_LABELS[category] ?? { ja: category, en: category },
     score: chain.score,
     clamped: chain.clamped,
     rows: chain.rows.map((row) => ({
@@ -95,7 +95,7 @@ export function serviceOptions(proposal: ProposalRunLog | null): ReviewOption[] 
     .filter((candidate) => candidate.score !== null)
     .map((candidate) => ({
       id: candidate.candidate_id,
-      label: candidate.candidate_id,
+      label: { ja: candidate.candidate_id, en: candidate.candidate_id },
       score: candidate.score as number,
       rows: candidate.feature_contributions.map((fc) => ({
         featureId: fc.feature_id,
@@ -162,14 +162,14 @@ export function contentOptions(proposal: ProposalRunLog | null): ContentOptions 
     .filter((item) => item.item_fit !== null)
     .map((item) => ({
       id: item.item_id,
-      label: item.item_id,
+      label: { ja: item.item_id, en: item.item_id },
       score: item.item_fit as number,
       rows: item.feature_contributions.map(contentRow),
     }))
 
   const tailOptions = tail.map((item) => ({
     id: item.item_id,
-    label: item.item_id,
+    label: { ja: item.item_id, en: item.item_id },
     score: item.item_fit,
     rows: item.feature_contributions.map(contentRow),
   }))
