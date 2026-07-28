@@ -19,6 +19,11 @@
 - **Bilingual (ja/en) for every user-visible string**, via `t()` from `src/i18n/t`. JA is the default language.
 - **No new runtime dependencies** in either `app/api` or `app/frontend`.
 - Backend tests: `cd app/api && python -m pytest`. Frontend tests: `cd app/frontend && npx vitest run`.
+- **`npx tsc --noEmit` is NOT clean on this branch's baseline — it reports 167 pre-existing
+  errors (21 in `src/`, 146 in `tests/`).** Never treat a clean typecheck as the gate. The gate
+  is: no NEW errors naming a file you created or modified, and `npx vite build` succeeds.
+  Capture the baseline with `npx tsc --noEmit 2>&1 | grep -c "error TS"` before you start and
+  compare after. Do not "fix" unrelated pre-existing errors — that is outside every task here.
 - htmlapp is out of scope. Do not modify any file under `htmlapp/`.
 
 ---
@@ -928,10 +933,13 @@ export function scaleBound(magnitudes: number[]): number {
   if (peak === 0) return STEPS[0] / 100 // a visible, honest axis for an all-zero chain
   const decade = Math.pow(10, Math.floor(Math.log10(peak)))
   for (const step of STEPS) {
-    const candidate = step * decade
+    // `step * decade` is not exact in IEEE-754 — 3 * 0.1 is 0.30000000000000004,
+    // 1.5 * 0.1 is 0.15000000000000002. The bound is DISPLAYED ("±0.3"), so it
+    // has to be the clean decimal a reader expects, not its float residue.
+    const candidate = Number((step * decade).toPrecision(12))
     if (candidate > peak) return candidate
   }
-  return 10 * decade
+  return Number((10 * decade).toPrecision(12))
 }
 
 /**
@@ -2820,8 +2828,8 @@ Expected: PASS (13 tests)
 
 - [ ] **Step 7: Typecheck**
 
-Run: `cd app/frontend && npx tsc --noEmit`
-Expected: clean.
+Run: `cd app/frontend && npx tsc --noEmit 2>&1 | grep "error TS" | grep -F "<your files>"`
+Expected: no output — no new errors naming your files. (167 pre-existing errors elsewhere are the baseline; ignore them.)
 
 - [ ] **Step 8: Commit**
 
@@ -3850,8 +3858,8 @@ Expected: PASS (9 tests)
 
 - [ ] **Step 6: Run every review suite and typecheck**
 
-Run: `cd app/frontend && npx vitest run tests/review_*.test.* tests/case_*.test.* && npx tsc --noEmit`
-Expected: all green.
+Run: `cd app/frontend && npx vitest run tests/review_*.test.* tests/case_*.test.* && npx tsc --noEmit 2>&1 | grep "error TS" | grep -F "<your files>"`
+Expected: tests green, and no new type errors naming your files.
 
 - [ ] **Step 7: Commit**
 
@@ -4589,8 +4597,8 @@ than mounted, which the design forbids. Revert and mount instead.
 
 - [ ] **Step 5: Run the test and the full frontend suite**
 
-Run: `cd app/frontend && npx vitest run tests/merged_setup_two_tier.test.tsx && npx vitest run && npx tsc --noEmit`
-Expected: all green.
+Run: `cd app/frontend && npx vitest run tests/merged_setup_two_tier.test.tsx && npx vitest run && npx tsc --noEmit 2>&1 | grep "error TS" | grep -F "<your files>"`
+Expected: tests green, and no new type errors naming your files.
 
 - [ ] **Step 6: Commit**
 
@@ -4684,8 +4692,8 @@ what this design exists to avoid.
 
 - [ ] **Step 5: Run both full suites**
 
-Run: `cd app/api && python -m pytest -q` then `cd app/frontend && npx vitest run && npx tsc --noEmit && npx vite build`
-Expected: all green, build clean.
+Run: `cd app/api && python -m pytest -q` then `cd app/frontend && npx vitest run && npx vite build`
+Expected: tests green and build clean. Also confirm `npx tsc --noEmit 2>&1 | grep -c "error TS"` has not risen above the 167-error baseline.
 
 - [ ] **Step 6: Commit**
 
@@ -4705,7 +4713,8 @@ All five slices complete. Final verification:
 
 ```bash
 cd app/api && python -m pytest -q
-cd app/frontend && npx vitest run && npx tsc --noEmit && npx vite build
+cd app/frontend && npx vitest run && npx vite build
+# and confirm tsc error count has not risen above the 167 baseline
 ```
 
 Then walk the running app: `docker compose up`, open the Combined screen, select
