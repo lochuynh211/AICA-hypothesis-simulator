@@ -749,10 +749,6 @@ describe('scaleBound', () => {
     expect(scaleBound([0.3])).toBe(0.4)
   })
 
-  it('represents a categorical value, which carries no derived band', () => {
-    const categorical = { featureId: 'road_type', value: 'highway', band: null, r: 1, w: 0.2, contribution: 0.2 }
-    expect(realizedShares([categorical]).road_type).toBe(1)
-  })
 
   it('uses absolute magnitude, so sign never changes the bound', () => {
     expect(scaleBound([-0.299])).toBe(scaleBound([0.299]))
@@ -817,6 +813,10 @@ describe('realizedShares', () => {
     const shares = realizedShares([row('a', 0), row('b', 0)])
     expect(shares.a).toBe(0)
     expect(shares.b).toBe(0)
+  })
+  it('represents a categorical value, which carries no derived band', () => {
+    const categorical = { featureId: 'road_type', value: 'highway', band: null, r: 1, w: 0.2, contribution: 0.2 }
+    expect(realizedShares([categorical]).road_type).toBe(1)
   })
 })
 
