@@ -3498,7 +3498,9 @@ const options: ReviewOption[] = [
     rows: [row('monotony', 0.9, 0.4), row('fatigue', 0.1, 0.1)] },
 ]
 
-const wrap = (ui: React.ReactNode) => render(<LanguageProvider>{ui}</LanguageProvider>)
+// initialLanguage="en" — LanguageProvider defaults to JA (this project's default),
+// and the assertions below check literal English. Same pattern as merged_setup.test.tsx.
+const wrap = (ui: React.ReactNode) => render(<LanguageProvider initialLanguage="en">{ui}</LanguageProvider>)
 const mount = (extra: Partial<React.ComponentProps<typeof WhatDecidedIt>> = {}) =>
   wrap(
     <WhatDecidedIt
@@ -3525,10 +3527,13 @@ describe('WhatDecidedIt', () => {
     expect(ids[0]).toContain('monotony')
   })
 
-  it('marks which side each feature pulls toward', () => {
+  it('marks which side each feature pulls toward, per row', () => {
     mount()
-    const leans = screen.getAllByTestId('margin-lean').map((n) => n.textContent)
-    expect(leans.join('')).toMatch(/[◀▶]/)
+    // Pinned per feature, not just "an arrow appears somewhere": fatigue leans
+    // left (+0.23) and monotony leans right (-0.34). Matching /[◀▶]/ across the
+    // whole set would pass against a hardcoded arrow on every row.
+    expect(screen.getByTestId('margin-lean-fatigue').textContent).toContain('◀')
+    expect(screen.getByTestId('margin-lean-monotony').textContent).toContain('▶')
   })
 
   it('leads each row with the raw value the reviewer already understands', () => {
@@ -3591,7 +3596,7 @@ Build the component in this order, so each test goes green in turn:
 2. **Pickers** — two `<select>`s (`compare-left`, `compare-right`) listing every option by `label`, plus `data-testid="threshold-note"` beneath when `thresholdNote` is non-null.
 3. **Verdict sentence** (`verdict-sentence`) — built from the top margin row: *"X was chosen mainly because of `phrase(topSupporting)`, despite `phrase(topOpposing)`."* Both clauses bilingual via `t()`; omit the "despite" clause when nothing pulls the other way.
 4. **Domain grouping** (`domain-group`) — bucket both options' contributions with `domainGroup`, show each group's share of total absolute contribution for both sides. This is the specification-level judgement no per-parameter view offers.
-5. **Scale + bars** — `scaleBound(rows.flatMap(r => [r.left, r.right]))` rendered as `data-testid="margin-scale-bound"` reading `±0.3`; then one `margin-row` per `marginRows()` entry, each with `margin-feature-id` (faint grey identifier), the `phrase()` label, `margin-anchor-<featureId>` leading with `value · bandWord(band, value)`, a mirrored bar pair against the shared bound, and `margin-lean` showing `◀` or `▶`.
+5. **Scale + bars** — `scaleBound(rows.flatMap(r => [r.left, r.right]))` rendered as `data-testid="margin-scale-bound"` reading `±0.3`; then one `margin-row` per `marginRows()` entry, each with `margin-feature-id` (faint grey identifier), the `phrase()` label, `margin-anchor-<featureId>` leading with `value · bandWord(band, value)`, a mirrored bar pair against the shared bound, and `margin-lean-<featureId>` showing `◀` or `▶` per row (a shared testid would let a hardcoded arrow pass).
 6. **Clamp note** (`clamp-note`) — when either option has `clamped`, state that contributions sum past the reported score so the shares do not reconcile.
 
 Keep every user-visible string in a `LABELS` object resolved through `t()`.
