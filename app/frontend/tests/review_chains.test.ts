@@ -193,6 +193,49 @@ describe('serviceOptions', () => {
     })
     expect(serviceOptions(log)).toMatchObject({ available: false })
   })
+
+  // Finding 1 (task-11 review) — an all-LLM-shaped ranked_candidates array
+  // filters down to []; that would silently read as "the algorithm produced
+  // nothing" (a false statement) instead of "these could not be compared".
+  it('is unavailable when every recorded candidate is LLM-shaped (score is null)', () => {
+    const log = baseProposalLog({
+      evidence: [
+        {
+          step: 'service',
+          package_id: 'mock_llm_service_selector_v1',
+          contract_version: '1.0.0',
+          schema_version: '1.0.0',
+          matrix_version: 'v1',
+          input_snapshot: {},
+          output: {
+            decision_type: 'ranked_candidates',
+            ranked_candidates: [
+              {
+                rank: 1,
+                candidate_id: 'humming_karaoke',
+                score: null,
+                rationale: ['LLM の理由', 'LLM rationale'],
+                supporting_feature_ids: [],
+                opposing_feature_ids: [],
+                uncertainty: null,
+                feature_contributions: [],
+              },
+            ],
+            excluded_candidates: [],
+            unused_available_features: [],
+            missing_features: [],
+            next_package_runtime_state: {},
+            algorithm_provenance: {},
+          },
+          error: null,
+          used_feature_ids: [],
+          unused_available_features: [],
+          missing_features: [],
+        },
+      ],
+    })
+    expect(serviceOptions(log)).toMatchObject({ available: false })
+  })
 })
 
 describe('contentOptions', () => {
@@ -318,18 +361,21 @@ describe('contentOptions', () => {
 
   it('returns ordered_items.length + scored_tail.length options, ordered plan-first', () => {
     const log = baseProposalLog({ evidence: [contentEvidence()] })
-    const options = contentOptions(log) as { id: string }[]
+    const { options } = contentOptions(log) as { options: { id: string }[]; tailTruncated: boolean }
     expect(options.length).toBe(2)
     expect(options.map((o) => o.id)).toEqual(['synthetic-track-001', 'synthetic-track-002'])
   })
 
   it('mirrors ContentResultOverlay/contentRows field mapping exactly', () => {
     const log = baseProposalLog({ evidence: [contentEvidence()] })
-    const options = contentOptions(log) as {
-      id: string
-      score: number
-      rows: { featureId: string; value: unknown; r: number; w: number; contribution: number }[]
-    }[]
+    const { options } = contentOptions(log) as {
+      options: {
+        id: string
+        score: number
+        rows: { featureId: string; value: unknown; r: number; w: number; contribution: number }[]
+      }[]
+      tailTruncated: boolean
+    }
     const top = options[0]
     expect(top.score).toBe(0.82)
     expect(top.rows).toEqual([
@@ -339,8 +385,83 @@ describe('contentOptions', () => {
 
   it('gives every position below rank 1 a real runner-up from scored_tail', () => {
     const log = baseProposalLog({ evidence: [contentEvidence()] })
-    const options = contentOptions(log) as { id: string; score: number }[]
+    const { options } = contentOptions(log) as { options: { id: string; score: number }[]; tailTruncated: boolean }
     expect(options[1].id).toBe('synthetic-track-002')
     expect(options[1].score).toBe(0.6)
+  })
+
+  it('reports tailTruncated: false when the recorded plan says the pool was not truncated', () => {
+    const log = baseProposalLog({ evidence: [contentEvidence()] })
+    const result = contentOptions(log) as { options: unknown[]; tailTruncated: boolean }
+    expect(result.tailTruncated).toBe(false)
+  })
+
+  it('reports tailTruncated: true when the recorded plan says the tail was capped', () => {
+    const evidence = contentEvidence()
+    ;(evidence.output as { tail_truncated: boolean }).tail_truncated = true
+    const log = baseProposalLog({ evidence: [evidence] })
+    const result = contentOptions(log) as { options: unknown[]; tailTruncated: boolean }
+    expect(result.tailTruncated).toBe(true)
+  })
+
+  // Finding 1 (task-11 review) — an all-LLM-shaped ordered_items array (with
+  // no scored_tail) filters down to []; that would silently read as "the
+  // algorithm produced nothing" instead of "these could not be compared".
+  it('is unavailable when every recorded item is LLM-shaped (item_fit is null)', () => {
+    const log = baseProposalLog({
+      evidence: [
+        {
+          step: 'content',
+          package_id: 'mock_llm_content_selector_v1',
+          contract_version: '1.0.0',
+          schema_version: '1.0.0',
+          matrix_version: 'v1',
+          input_snapshot: {},
+          output: {
+            decision_type: 'complete_plan',
+            selected_service_id: 'music_playlist',
+            requested_item_count: 1,
+            returned_item_count: 1,
+            ordered_items: [
+              {
+                position: 1,
+                item_id: 'llm-track-001',
+                item_fit: null,
+                trait_values: null,
+                feature_contributions: [],
+                rationale: ['LLM の理由', 'LLM rationale'],
+              },
+            ],
+            mode: {
+              service_id: 'music_playlist',
+              mode_kind: 'playlist',
+              chorus_only: null,
+              guide_vocal: null,
+              driving_lyrics: null,
+              fixed_segment_sec: null,
+              stopped_only: null,
+              simulated_queue: null,
+            },
+            expected_duration_sec: 300,
+            lighting_configuration: null,
+            approval_policy: 'auto',
+            completion_rule: 'end_of_queue',
+            next_transition_policy: 'resume',
+            excluded_items: [],
+            scored_tail: [],
+            cut_margin: null,
+            tail_truncated: false,
+            unused_available_features: [],
+            missing_features: [],
+            algorithm_provenance: {},
+          },
+          error: null,
+          used_feature_ids: [],
+          unused_available_features: [],
+          missing_features: [],
+        },
+      ],
+    })
+    expect(contentOptions(log)).toMatchObject({ available: false })
   })
 })

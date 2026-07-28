@@ -272,6 +272,19 @@ export type ExcludedItem = {
   reason_codes: string[]
 }
 
+/**
+ * A candidate that was scored but did not make the plan (B2, feature 023 —
+ * mirrors backend `content_output.py`'s `ScoredTailItem`). Carries the same
+ * contribution chain as an `OrderedItem` so a reviewer can ask why it lost.
+ * Ineligible candidates are NOT here — they stay in `excluded_items`.
+ */
+export type ScoredTailItem = {
+  item_id: string
+  rank: number
+  item_fit: number
+  feature_contributions: ItemFeatureContribution[]
+}
+
 export type CompletePlan = {
   decision_type: string
   selected_service_id: string
@@ -285,6 +298,12 @@ export type CompletePlan = {
   completion_rule: string
   next_transition_policy: string
   excluded_items: ExcludedItem[]
+  // B2 (feature 023) — the scored-but-unpicked tail, capped. Optional (with
+  // backend defaults of `[]`/`null`/`false`) so pre-B2 fixtures/log literals
+  // built without them still type-check.
+  scored_tail?: ScoredTailItem[]
+  cut_margin?: number | null
+  tail_truncated?: boolean
   unused_available_features: string[]
   missing_features: string[]
   algorithm_provenance: Record<string, unknown>

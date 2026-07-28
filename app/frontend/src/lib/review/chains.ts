@@ -15,7 +15,7 @@
  * exists to prevent. See task-11-report.md for the line-by-line comparison.
  */
 import type { MergedFirePoint } from '../../api/mergedClient'
-import type { ProposalRunLog, RankedCandidate, ItemFeatureContribution } from '../../api/proposalClient'
+import type { ProposalRunLog, ServiceSelectorOutput, CompletePlan, ItemFeatureContribution } from '../../api/proposalClient'
 import { unavailable } from './types'
 import type { ReviewOption, Unavailable } from './types'
 import type { BilingualLabel } from './reviewVocabulary'
@@ -75,7 +75,10 @@ function latestEvidence(proposal: ProposalRunLog, step: 'service' | 'content') {
  * A candidate whose `score` is `null` (the LLM-shaped-output case — out of
  * V1 review scope, see task-11-report.md) is left out rather than given a
  * fabricated numeric score, since `ReviewOption.score` is non-nullable by
- * design (Task 3).
+ * design (Task 3). If EVERY recorded candidate is LLM-shaped, the filtered
+ * result is empty — but "empty" here would silently read as "the algorithm
+ * produced nothing", a different and false statement from "these could not
+ * be compared". That case returns `Unavailable` instead.
  */
 export function serviceOptions(proposal: ProposalRunLog | null): ReviewOption[] | Unavailable {
   if (!proposal) return unavailable('no proposal was recorded at this checkpoint')
@@ -85,10 +88,10 @@ export function serviceOptions(proposal: ProposalRunLog | null): ReviewOption[] 
     return unavailable('this proposal recorded no service-selector evidence')
   }
 
-  const output = serviceEv.output as unknown as { ranked_candidates: RankedCandidate[] }
+  const output = serviceEv.output as unknown as ServiceSelectorOutput
   const candidates = output.ranked_candidates ?? []
 
-  return candidates
+  const options = candidates
     .filter((candidate) => candidate.score !== null)
     .map((candidate) => ({
       id: candidate.candidate_id,
@@ -103,6 +106,12 @@ export function serviceOptions(proposal: ProposalRunLog | null): ReviewOption[] 
         contribution: fc.contribution,
       })),
     }))
+
+  if (options.length === 0 && candidates.length > 0) {
+    return unavailable('every recorded candidate was LLM-shaped (no numeric score)')
+  }
+
+  return options
 }
 
 function contentRow(fc: ItemFeatureContribution) {
@@ -116,6 +125,11 @@ function contentRow(fc: ItemFeatureContribution) {
   }
 }
 
+/** `contentOptions`'s success shape — `options` alone cannot say whether the
+ * scored tail was capped, so `tailTruncated` (mirrors `CompletePlan.tail_truncated`,
+ * Task 2's B2) travels alongside it rather than being silently dropped. */
+export type ContentOptions = { options: ReviewOption[]; tailTruncated: boolean }
+
 /**
  * The ordered plan items followed by the `scored_tail` entries (Task 2), so
  * every position below rank 1 has a real runner-up. Mirrors
@@ -126,9 +140,12 @@ function contentRow(fc: ItemFeatureContribution) {
  *
  * An `ordered_items` entry whose `item_fit` is `null` (the LLM-shaped-plan
  * case) is left out for the same non-nullable-`score` reason as
- * `serviceOptions`; `scored_tail`'s `item_fit` is never null.
+ * `serviceOptions`; `scored_tail`'s `item_fit` is never null. If every
+ * recorded item was LLM-shaped, the filtered result is empty — but that
+ * would silently read as "the algorithm produced nothing", so that case
+ * returns `Unavailable` instead (same reasoning as `serviceOptions`).
  */
-export function contentOptions(proposal: ProposalRunLog | null): ReviewOption[] | Unavailable {
+export function contentOptions(proposal: ProposalRunLog | null): ContentOptions | Unavailable {
   if (!proposal) return unavailable('no proposal was recorded at this checkpoint')
 
   const contentEv = latestEvidence(proposal, 'content')
@@ -136,20 +153,12 @@ export function contentOptions(proposal: ProposalRunLog | null): ReviewOption[] 
     return unavailable('this proposal recorded no content-selector evidence')
   }
 
-  const plan = contentEv.output as unknown as {
-    ordered_items: {
-      item_id: string
-      item_fit: number | null
-      feature_contributions: ItemFeatureContribution[]
-    }[]
-    scored_tail?: {
-      item_id: string
-      item_fit: number
-      feature_contributions: ItemFeatureContribution[]
-    }[]
-  }
+  const plan = contentEv.output as unknown as CompletePlan
 
-  const orderedOptions = (plan.ordered_items ?? [])
+  const orderedItems = plan.ordered_items ?? []
+  const tail = plan.scored_tail ?? []
+
+  const orderedOptions = orderedItems
     .filter((item) => item.item_fit !== null)
     .map((item) => ({
       id: item.item_id,
@@ -158,12 +167,18 @@ export function contentOptions(proposal: ProposalRunLog | null): ReviewOption[] 
       rows: item.feature_contributions.map(contentRow),
     }))
 
-  const tailOptions = (plan.scored_tail ?? []).map((item) => ({
+  const tailOptions = tail.map((item) => ({
     id: item.item_id,
     label: item.item_id,
     score: item.item_fit,
     rows: item.feature_contributions.map(contentRow),
   }))
 
-  return [...orderedOptions, ...tailOptions]
+  const options = [...orderedOptions, ...tailOptions]
+
+  if (options.length === 0 && orderedItems.length + tail.length > 0) {
+    return unavailable('every recorded item was LLM-shaped (no numeric item_fit)')
+  }
+
+  return { options, tailTruncated: plan.tail_truncated ?? false }
 }
