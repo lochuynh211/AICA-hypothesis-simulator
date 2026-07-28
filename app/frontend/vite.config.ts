@@ -24,8 +24,10 @@ export default defineConfig({
     },
     fs: {
       // combined_contracts/ lives above the Vite root, so serving it must be
-      // allowed explicitly for the dev server.
-      allow: [path.resolve(__dirname, '..', '..')],
+      // allowed explicitly. Scoped to exactly the two directories needed — the
+      // dev server binds 0.0.0.0 via `host: true`, and allowing the repo root
+      // would serve .git/ history and every unrelated subproject to the LAN.
+      allow: [path.resolve(__dirname), path.resolve(__dirname, '../../combined_contracts')],
     },
     watch: {
       usePolling: !!process.env.CHOKIDAR_USEPOLLING,
