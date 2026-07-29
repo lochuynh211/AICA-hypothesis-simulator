@@ -266,6 +266,23 @@ def test_scenario_validates_with_real_model(tmp_path: Path):
     ScenarioDef.model_validate(scenario)
 
 
+def test_scenario_type_is_accepted_by_the_frozen_trigger_package(tmp_path: Path):
+    compile_artifacts(two_case_catalog(), tmp_path)
+    scenario = json.loads(
+        (tmp_path / "scenarios/semantic_tc_r01.json").read_text(encoding="utf-8")
+    )
+    manifest = json.loads(
+        (
+            _REPO_ROOT
+            / "packages"
+            / "aica_transparent_hybrid_trigger_v1"
+            / "package.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert scenario["type"] in manifest["compatible_scenario_types"]
+
+
 def test_profile_validates_with_real_model(tmp_path: Path):
     compile_artifacts(two_case_catalog(), tmp_path)
     record = json.loads(

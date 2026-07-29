@@ -268,7 +268,11 @@ def _compile_scenario(
     scenario = {
         "id": scenario_id,
         "version": recipe["version"],
-        "type": "semantic_combined",
+        # The semantic provenance lives under presets.semantic_catalog.  The
+        # executable scenario type must remain one accepted by the frozen
+        # hybrid trigger package or the production quickview rejects it before
+        # the first tick.
+        "type": "uc01_fatigue",
         "persona": {
             "name": persona["name"]["en"],
             "description": persona["narrative"]["en"],
