@@ -77,9 +77,22 @@ export default function MergedCenterPanel() {
   const checkpoints = deriveCheckpoints(state.quickviewResult)
   const activeCheckpoint = checkpoints.find((c) => c.id === reviewState.checkpointId) ?? checkpoints[0] ?? null
 
+  const selectedAltDisplay =
+    rs.alternatives.find((a) => a.route_id === rs.selectedRouteId)?.display ?? null
+
   // TOP strip = the projection (time axis, journey markers).
   const quickviewTimeline = state.quickviewResult ? mergedInstantResultToTimeline(state.quickviewResult) : null
   const hasQuickview = quickviewTimeline != null
+
+  // Map markers from the SAME projection the strip draws — one source, so the
+  // map and the strip can never disagree about where a fire happened.
+  const mapFireMarkers = (quickviewTimeline?.fires ?? []).map((f, i) => ({
+    fraction: f.x,
+    index: i,
+    category: state.quickviewResult?.fires[i]?.category ?? null,
+    timeMin: state.quickviewResult?.fires[i]?.time_min ?? null,
+  }))
+  const mapRestMarkers = (quickviewTimeline?.restDots ?? []).map((x) => ({ fraction: x }))
 
   const hasRun = state.mergedRunId != null
 
@@ -240,6 +253,17 @@ export default function MergedCenterPanel() {
             proposalFractionsOverride={decisionFractions}
             restSpotsOverride={state.acceptedRestSpots}
             jamRangesKm={rs.mergedJamRangesKm}
+            // Projected markers, visible BEFORE Play (owner review) so the
+            // reviewer can see where the trigger fires and where the rest spots
+            // are without running the animation first. `quickviewTimeline.fires`
+            // is already on the DISTANCE axis and index-aligned with
+            // `quickviewResult.fires`, so a click maps straight to inspectFire.
+            fireMarkers={mapFireMarkers}
+            restMarkers={mapRestMarkers}
+            inspectedFireIndex={state.inspectedFireIndex}
+            onFireMarkerClick={(i) => coordinator.inspectFire(state.inspectedFireIndex === i ? null : i)}
+            startName={selectedAltDisplay?.start_label ?? null}
+            endName={selectedAltDisplay?.end_label ?? null}
           />
 
           {showRestOverlay && (

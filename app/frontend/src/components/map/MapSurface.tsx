@@ -4,6 +4,7 @@ import type { RestSpot } from '../../api/types'
 import { useRouteProgress } from '../playback/useRouteProgress'
 import { useSmoothFraction } from '../playback/useSmoothFraction'
 import { t } from '../../i18n/t'
+import FallbackRouteMap, { type MapFireMarker, type MapRestMarker } from './FallbackRouteMap'
 import { useLanguage } from '../../state/language'
 
 const LABELS = {
@@ -110,6 +111,12 @@ export default function MapSurface({
   proposalFractionsOverride,
   restSpotsOverride,
   jamRangesKm,
+  fireMarkers = [],
+  restMarkers = [],
+  inspectedFireIndex = null,
+  onFireMarkerClick,
+  startName,
+  endName,
 }: {
   fractionOverride?: number | null
   /** Decision/fire positions (route_fraction 0-1) — the Combined Simulator feeds
@@ -122,6 +129,19 @@ export default function MapSurface({
    * drawn as thick RED polylines over the route so the reviewer sees where the
    * jam sits. Empty/undefined → no jam overlay. */
   jamRangesKm?: [number, number][]
+  /** Projected trigger positions shown BEFORE playback starts (owner review) —
+   * a reviewer should see where things happen without pressing Play first. */
+  fireMarkers?: MapFireMarker[]
+  /** Projected rest-spot positions, same purpose. */
+  restMarkers?: MapRestMarker[]
+  /** Which projected fire is currently inspected, so the map highlights it. */
+  inspectedFireIndex?: number | null
+  /** Clicking a trigger marker inspects that fire — the same selection the
+   * quickview strip drives, so the two views stay in agreement. */
+  onFireMarkerClick?: (index: number) => void
+  /** Start/destination place names for the keyless schematic. */
+  startName?: string | null
+  endName?: string | null
 } = {}) {
   const { state } = useRunStore()
   const { mapsKey, alternatives, selectedRouteId } = state
@@ -465,8 +485,25 @@ export default function MapSurface({
       data-testid="map-surface"
       style={{ position: 'relative', margin: '12px 0' }}
     >
-      {/* Google Maps canvas — or inline error fallback when init fails */}
-      {mapError ? (
+      {/* No key → the route SCHEMATIC, not a grey box. It draws the same route
+          from the same polyline, so the reviewer still sees where the trigger
+          fired and where the rest spots are. */}
+      {!mapsKey ? (
+        <div style={{ height: '52vh', minHeight: '360px' }}>
+          <FallbackRouteMap
+            encodedPolyline={display?.encoded_polyline}
+            startName={startName}
+            endName={endName}
+            totalKm={selectedAlt?.route_facts?.total_route_distance_km ?? null}
+            fires={fireMarkers}
+            restSpots={restMarkers}
+            carFraction={fractionOverride ?? null}
+            inspectedFireIndex={inspectedFireIndex}
+            onFireClick={onFireMarkerClick}
+            lang={lang}
+          />
+        </div>
+      ) : mapError ? (
         <div
           data-testid="map-init-error"
           role="alert"

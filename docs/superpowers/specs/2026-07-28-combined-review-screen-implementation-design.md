@@ -507,3 +507,98 @@ Ordered by value, none blocking:
    backstops it, but only heuristically.
 8. Accessibility: the case picker's `<select>` has no accessible name; the assessment buttons
    have no `role="group"`.
+
+---
+
+## 11. Owner-review revisions (2026-07-29)
+
+Two rounds of live review after the branch was complete. Recorded here because
+several of these changed decisions taken earlier in this document.
+
+### 11.1 Layout and defaults
+
+Combined is now the **default screen**. The centre column runs controls → map →
+service|content **side by side at 40/60** → quickview strip at the bottom. The
+standalone animation timeline was removed: it plotted the same distance axis as
+the quickview and earned no space. The explanation-source selector moved to the
+Setup panel — choosing *how* a rationale is generated is a setup decision, while
+the centre column is for what the product did.
+
+**Why the split looked broken:** `MergedProposalPanel` stacked its two halves in
+a flex column, so the split grid one level up had a single child and nothing to
+split. The panel now owns its own split.
+
+Animation defaults to 4x; the map's car is a dot rather than a heading arrow (no
+bearing is computed).
+
+### 11.2 The quickview threading gap is closed
+
+§10.1 recorded this as a deferred gap needing an owner decision. The owner hit it
+directly: the projection and the live run showed **different drowsiness/fatigue**,
+because the Play path sent `initial_state`/`context_overrides` and the quickview
+sent neither.
+
+`MergedQuickviewBody` now accepts `context_overrides`, `initial_state`,
+`profiles` and `tick_seconds`, and threads them to the tick engine. The pins
+participate in the preview draft-cache key — two projections differing only by
+initial state are different projections, and a shared key would serve one's draft
+for the other.
+
+The case-brief disclosures added for C-01/C-02/C-03/C-06 are now **stale** and
+should be removed on the next touch.
+
+### 11.3 The rest-spot ceiling no longer strands the driver
+
+Once current drowsiness reached the ceiling, every spot failed its projection —
+including one with a zero-minute ETA — so the whole list came back unreachable
+and the driver could only decline. The ceiling exists to rule out spots that
+cannot be safely *reached*, not to remove the option of resting.
+
+The nearest spot is now kept selectable and flagged `reachable_fallback`. Two
+existing tests asserted the old all-unreachable behaviour and were re-aimed at
+the new rule rather than weakened.
+
+### 11.4 A case's route now actually applies
+
+Selecting a case showed the wrong route (C-01 running Tokyo–Osaka). Two effects
+both owned the selection: the registry loader auto-selected `presets[0]` while
+the case effect selected the case's route, both async — so the default could land
+last and silently replace the case's. One effect now owns it: the case's route
+wins, otherwise the first registry entry.
+
+### 11.5 Results are visible before pressing Play
+
+With no live run and nothing explicitly inspected, the proposal panel now falls
+back to the **first projected fire**, so a service and content result is on
+screen immediately. The read-only "inspecting" badge stays hidden, because a
+default projection is not an inspection.
+
+The map shows the projected trigger and rest positions before playback, sourced
+from the same timeline the quickview strip draws — one source, so the two views
+cannot disagree. Clicking a trigger marker inspects that fire, exactly as
+clicking it on the strip does.
+
+### 11.6 Keyless map is a real schematic
+
+Without a Google key the map was a grey box. It now draws the **same route**:
+the preset's encoded polyline decoded in-house (`components/map/polyline.ts`, no
+dependency — the SDK decoder is unavailable precisely when it is needed),
+projected with longitude scaled by cos(latitude) so the route's shape survives,
+with real start/destination names, real total distance, and every marker at its
+true route fraction. Markers are placed by cumulative path *distance*, not vertex
+index, because the engine's fractions are fractions of distance and polyline
+vertices are unevenly spaced.
+
+### 11.7 After-rest status is inert, not deleted
+
+The after-nap dots still render — where the driver stops is journey context worth
+seeing — but the centre panel no longer supplies a click handler, so no hit areas
+are drawn. The coordinator's after-rest projection is untouched; only the UI
+affordance is gone.
+
+### 11.8 Deployment defect found while starting the app
+
+`combined_contracts/` was never mounted into the frontend container, so under
+`docker compose` the `@contracts` alias resolved to a non-existent path and the
+case picker would have come up empty — the same trap the `proposal_contracts`
+mount hit previously. Fixed in `docker-compose.yml`.
