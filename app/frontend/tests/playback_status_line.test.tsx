@@ -1,14 +1,11 @@
 /**
  * The read-only status line that replaced the checkpoint rail + decision band.
- *
- * Two modes: the car's live status during playback, the first PROJECTED
- * trigger before it.
+ * PLAYBACK ONLY: the car's live status. It renders nothing before playback.
  */
 import { render, screen } from '@testing-library/react'
 import PlaybackStatusLine from '../src/components/merged/PlaybackStatusLine'
 import { LanguageProvider } from '../src/state/language'
 import type { MergedTriggerTick } from '../src/api/mergedClient'
-import type { FirePoint } from '../src/api/types'
 
 const tick = (over: Partial<MergedTriggerTick> = {}): MergedTriggerTick => ({
   decision: null,
@@ -26,24 +23,10 @@ const tick = (over: Partial<MergedTriggerTick> = {}): MergedTriggerTick => ({
   ...over,
 })
 
-const fire = (over: Partial<FirePoint> = {}): FirePoint => ({
-  category: 'rest_required',
-  strength: 'strong',
-  tick: 12,
-  time_min: 47.4,
-  ...over,
-})
-
 function mount(props: Partial<React.ComponentProps<typeof PlaybackStatusLine>>, lang: 'ja' | 'en' = 'en') {
   return render(
     <LanguageProvider initialLanguage={lang}>
-      <PlaybackStatusLine
-        playback={false}
-        latestTrigger={null}
-        firstFire={null}
-        hasProjection={false}
-        {...props}
-      />
+      <PlaybackStatusLine playback={false} latestTrigger={null} {...props} />
     </LanguageProvider>,
   )
 }
@@ -59,7 +42,7 @@ describe('PlaybackStatusLine', () => {
     expect(text()).toContain('highway')
   })
 
-  it('names the trigger that fired on this tick', () => {
+  it('names, in words, the proposal category that fired on this tick', () => {
     mount({
       playback: true,
       latestTrigger: tick({
@@ -68,7 +51,10 @@ describe('PlaybackStatusLine', () => {
         decision: { selected_category: 'rest_required' } as never,
       }),
     })
-    expect(text()).toContain('rest_required')
+    // The category reads as the specification's own 提案分類 wording, never
+    // as the raw `selected_category` token.
+    expect(text()).toContain('Rest recommended to prevent dangerous driving')
+    expect(text()).not.toContain('rest_required')
     expect(text()).toContain('fired')
   })
 
@@ -88,35 +74,29 @@ describe('PlaybackStatusLine', () => {
     expect(text()).toContain('traffic jam')
   })
 
-  it('shows the FIRST projected trigger before playback starts', () => {
-    mount({ playback: false, hasProjection: true, firstFire: fire() })
-    expect(text()).toContain('rest_required')
-    expect(text()).toContain('strong')
-    expect(text()).toContain('47 min')
+  it('renders NOTHING before playback starts', () => {
+    // Removed on owner review: the quickview strip and the map markers already
+    // say where the fires are, so a third restatement under the map was noise.
+    mount({ playback: false })
+    expect(screen.queryByTestId('playback-status-line')).toBeNull()
   })
 
-  it('distinguishes "no trigger fired" from "nothing has run yet"', () => {
-    // A quickview that produced no fire is a RESULT and must read as one.
-    mount({ playback: false, hasProjection: true, firstFire: null })
-    expect(text()).toContain('No trigger fired')
-
-    screen.getByTestId('playback-status-text') // sanity: single line
-  })
-
-  it('says so when nothing has run at all', () => {
-    mount({})
-    expect(text()).toContain('Run or preview')
+  it('renders nothing during playback until a tick has been recorded', () => {
+    mount({ playback: true, latestTrigger: null })
+    expect(screen.queryByTestId('playback-status-line')).toBeNull()
   })
 
   it('renders Japanese with no English leaking into the sentence', () => {
     mount({ playback: true, latestTrigger: tick({ motion_state: 'STOPPED', recovery_phase: 'nap' }) }, 'ja')
-    expect(text()).toContain('休憩地点で停車中')
+    expect(text()).toContain('休憩場所で停車中')
     expect(text()).toContain('仮眠')
     expect(text()).toContain('高速道路')
   })
 
-  it('shows an untranslated backend token rather than dropping the fact', () => {
+  it('still states the fact when a backend token has no translation — without printing the token', () => {
     mount({ playback: true, latestTrigger: tick({ motion_state: 'TAXIING' }) })
-    expect(text()).toContain('TAXIING')
+    // The fact is still reported; the raw identifier is not.
+    expect(text()).toContain('unknown')
+    expect(text()).not.toContain('TAXIING')
   })
 })

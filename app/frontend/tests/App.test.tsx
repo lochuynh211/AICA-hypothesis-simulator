@@ -44,8 +44,9 @@ describe('App — backend health display', () => {
     // Combined is now the default screen.
     expect(await screen.findByTestId('merged-shell')).toBeInTheDocument()
 
-    // The app defaults to Japanese, so the Trigger mode button reads トリガー.
-    fireEvent.click(screen.getByRole('button', { name: 'トリガー' }))
+    // The app defaults to Japanese, so the firing-decision mode button
+    // reads 発火判定 (the specification's word — never トリガー).
+    fireEvent.click(screen.getByRole('button', { name: '発火判定' }))
 
     // After the async fetch resolves — health status appears in the AppShell header
     expect(await screen.findByText('Backend: ok — aica-api')).toBeInTheDocument()

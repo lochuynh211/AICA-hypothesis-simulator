@@ -41,7 +41,9 @@ import { t } from '../../i18n/t'
 import type { BilingualLabel } from '../../lib/review/reviewVocabulary'
 
 const LABELS = {
-  tabTrigger: { ja: 'トリガー', en: 'Trigger' },
+  // The review STAGE/TAB (not the fired-decision noun itself — that stays
+  // 発火/"Firing"; this is the reviewable JUDGEMENT of whether it fired).
+  tabTrigger: { ja: '発火判定', en: 'Firing decision' },
   tabService: { ja: 'サービス', en: 'Service' },
   tabContent: { ja: 'コンテンツ', en: 'Content' },
   noRunTitle: { ja: 'レビューできる決定がありません', en: 'Nothing to review yet' },
@@ -49,15 +51,19 @@ const LABELS = {
     ja: 'まだ実行結果がありません。シミュレーションを実行すると、ここにレビュー可能な決定ポイントが表示されます。',
     en: 'No run exists yet. Once a simulation runs, any reviewable decision point appears here.',
   },
-  noCheckpointsTitle: { ja: '発火はありませんでした', en: 'No trigger fired' },
+  noCheckpointsTitle: { ja: '発火はありませんでした', en: 'Nothing fired' },
   noCheckpointsBody: {
     ja: 'この実行ではレビュー可能な決定ポイントが生成されませんでした。',
     en: 'This run produced no reviewable decision point.',
   },
   noCheckpointsCaseTitle: { ja: '想定どおりの結果です', en: 'This is the expected outcome' },
+  // Rendered after a language-conditional lead-in (quoted case title) below —
+  // this is the PREDICATE only, so it must read as a full sentence in both
+  // the JA form (which starts mid-sentence, after 「title」) and the EN form
+  // (which starts after `The case "title" `).
   noCheckpointsCaseBody: {
     ja: 'は発火しないことを想定した試験ケースです。決定ポイントが無いのは不具合ではなく、この結果そのものです。',
-    en: 'is a test case designed to produce no trigger. The absence of a decision point is the outcome being tested, not a problem.',
+    en: 'is a test case designed to produce no firing. The absence of a decision point is the outcome being tested, not a problem.',
   },
   unavailableTitle: { ja: 'この段階は比較できません', en: 'This stage cannot be compared' },
   persistFailed: {
@@ -80,8 +86,8 @@ const LABELS = {
 // sentence rather than leaking English.
 const REASON_TEXT: Record<string, BilingualLabel> = {
   'this trigger package recorded no per-feature contributions': {
-    ja: 'このトリガーパッケージは特徴量ごとの寄与を記録していません。',
-    en: 'This trigger package recorded no per-feature contributions.',
+    ja: 'この発火判定パッケージは特徴量ごとの寄与を記録していません。',
+    en: 'This firing-decision package recorded no per-feature contributions.',
   },
   'no proposal was recorded at this checkpoint': {
     ja: 'この決定ポイントでは提案が記録されていません。',
@@ -96,19 +102,25 @@ const REASON_TEXT: Record<string, BilingualLabel> = {
     en: 'This proposal recorded no content-selector evidence.',
   },
   'every recorded candidate was LLM-shaped (no numeric score)': {
-    ja: '記録された候補はすべてLLM生成であり、数値スコアがありません。',
+    ja: '記録された候補はすべて自動生成された内容であり、数値スコアがありません。',
     en: 'Every recorded candidate was LLM-shaped (no numeric score).',
   },
   'every recorded item was LLM-shaped (no numeric item_fit)': {
-    ja: '記録された項目はすべてLLM生成であり、数値の適合度がありません。',
-    en: 'Every recorded item was LLM-shaped (no numeric item_fit).',
+    ja: '記録された項目はすべて自動生成された内容であり、数値の適合度がありません。',
+    en: 'Every recorded item was LLM-generated, with no numeric fit score.',
   },
 }
 
+// An unrecognised `reason` is an internal diagnostic string from chains.ts,
+// never written for end users — the JA fallback degrades to a clean generic
+// sentence rather than splicing the raw (English) diagnostic into Japanese
+// prose. The EN fallback can show it as-is: it is already English, and this
+// is a genuinely unmapped case a developer needs to see verbatim to add it
+// to the table above.
 function reasonText(reason: string, lang: 'ja' | 'en'): string {
   const known = REASON_TEXT[reason]
   if (known) return t(known, lang)
-  return lang === 'ja' ? `記録されたデータからは判定できません（${reason}）。` : reason
+  return lang === 'ja' ? '記録されたデータからは判定できません。' : reason
 }
 
 function isUnavailable(x: unknown): x is Unavailable {
@@ -200,7 +212,11 @@ export default function ReviewColumn({
                 {t(LABELS.noCheckpointsCaseTitle, lang)}
               </p>
               <p style={{ margin: 0 }}>
-                「{t(selectedCase.title, lang)}」{t(LABELS.noCheckpointsCaseBody, lang)}
+                {lang === 'ja' ? (
+                  <>「{t(selectedCase.title, lang)}」{t(LABELS.noCheckpointsCaseBody, lang)}</>
+                ) : (
+                  <>The case &quot;{t(selectedCase.title, lang)}&quot; {t(LABELS.noCheckpointsCaseBody, lang)}</>
+                )}
               </p>
             </>
           ) : result == null ? (
@@ -234,14 +250,18 @@ export default function ReviewColumn({
 
   const triggerOpts = isUnavailable(triggerResult) ? [] : triggerResult
   const serviceOpts = isUnavailable(serviceResult) ? [] : serviceResult
-  // Content options read as "Name (id)" — a bare Spotify track id tells the
-  // reviewer nothing about what was proposed. The id stays because it is what
-  // the recorded evidence is keyed by.
+  // Content options read as the song's NAME. A catalog track id tells the
+  // reviewer nothing about what was proposed, so it never reaches the label —
+  // the recorded evidence is still keyed by it, and `option.id` still carries
+  // it for the store and the test hooks.
   const rawContentOpts = isUnavailable(contentResult) ? [] : contentResult.options
-  const contentOpts = rawContentOpts.map((option) => {
-    const display = songDisplayName(option.id, songNames)
-    return display === option.id ? option : { ...option, label: { ja: display, en: display } }
-  })
+  const contentOpts = rawContentOpts.map((option) => ({
+    ...option,
+    label: {
+      ja: songDisplayName(option.id, songNames, 'ja'),
+      en: songDisplayName(option.id, songNames, 'en'),
+    },
+  }))
 
   const triggerReason = isUnavailable(triggerResult) ? triggerResult.reason : null
   const serviceReason = isUnavailable(serviceResult) ? serviceResult.reason : null

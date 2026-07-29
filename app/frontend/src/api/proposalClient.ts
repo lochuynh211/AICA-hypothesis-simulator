@@ -18,6 +18,20 @@ export const PROPOSAL_API_BASE = '/api/proposal'
 
 // ── Internal helper (mirrors api/client.ts's apiFetch) ──────────────────────
 
+/**
+ * A `/api/proposal/*` HTTP-status failure. Carries a bilingual `.bilingual`
+ * pair (mirrors `api/client.ts`'s `apiError`) so a caller with the active UI
+ * language can resolve a JA/EN-appropriate message via `t()` instead of
+ * showing the raw English `.message` verbatim. `detail`, when present, is
+ * backend free text passed through unchanged in both halves — it is not
+ * itself guaranteed to be JA-safe (tracked separately, backend-side).
+ */
+function proposalApiError(status: number, detail?: string): Error & { bilingual: BilingualLabel } {
+  const en = detail ? `Proposal API error (${status}) — ${detail}` : `Proposal API error (${status})`
+  const ja = detail ? `提案APIエラー（${status}） — ${detail}` : `提案APIエラー（${status}）`
+  return Object.assign(new Error(en), { bilingual: { ja, en } })
+}
+
 async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(`${PROPOSAL_API_BASE}${path}`, init)
   if (!response.ok) {
@@ -28,9 +42,7 @@ async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
     } catch {
       // response body was not JSON (or empty) — fall back to the status alone
     }
-    throw new Error(
-      detail ? `Proposal API error: ${response.status} — ${detail}` : `Proposal API error: ${response.status}`,
-    )
+    throw proposalApiError(response.status, detail || undefined)
   }
   return response.json() as Promise<T>
 }
@@ -721,7 +733,7 @@ export async function deleteProfile(profileId: string): Promise<void> {
     method: 'DELETE',
   })
   if (!response.ok) {
-    throw new Error(`Proposal API error: ${response.status}`)
+    throw proposalApiError(response.status)
   }
 }
 
@@ -949,7 +961,7 @@ export async function explainInline(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ proposal, step: args.step, target_id: args.targetId, provider: args.provider }),
   })
-  if (!response.ok) throw new Error(`API error: ${response.status}`)
+  if (!response.ok) throw proposalApiError(response.status)
   return response.json() as Promise<ExplainResponse>
 }
 
@@ -982,7 +994,7 @@ export async function deleteRun(runId: string): Promise<void> {
     method: 'DELETE',
   })
   if (!response.ok) {
-    throw new Error(`Proposal API error: ${response.status}`)
+    throw proposalApiError(response.status)
   }
 }
 

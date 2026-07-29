@@ -18,8 +18,9 @@ const LABELS = {
   title: { ja: '統合実行履歴', en: 'Merged runs' },
   loading: { ja: '読み込み中…', en: 'Loading…' },
   empty: { ja: '保存された統合実行はまだありません。', en: 'No persisted merged runs yet.' },
-  colMergedId: { ja: '統合実行ID', en: 'Merged run ID' },
-  colTrigger: { ja: 'トリガー実行', en: 'Trigger run' },
+  loadError: { ja: '統合実行履歴の読み込みに失敗しました。', en: 'Failed to load merged runs.' },
+  colMergedId: { ja: '統合実行番号', en: 'Combined run number' },
+  colTrigger: { ja: '発火判定の実行', en: 'Firing-decision run' },
   colProposals: { ja: '提案実行', en: 'Proposal runs' },
 }
 
@@ -61,7 +62,7 @@ export default function MergedRunsScreen() {
 
       {error && (
         <p role="alert" style={{ color: '#f66', fontSize: '0.85em' }}>
-          {error}
+          {t(LABELS.loadError, lang)}
         </p>
       )}
 

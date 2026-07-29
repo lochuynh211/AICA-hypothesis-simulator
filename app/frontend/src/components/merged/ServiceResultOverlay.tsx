@@ -16,6 +16,7 @@ import type { RankedCandidate, ProposalRunLog } from '../../api/proposalClient'
 import ReasonBreakdown, { type ReasonRow } from '../proposal/ReasonBreakdown'
 import ServiceExplainability, { hasFeatureTrace } from '../proposal/ServiceExplainability'
 import { useExplanation, type ExplanationProvider } from '../proposal/useExplanation'
+import { serviceLabel } from '../../lib/review/reviewVocabulary'
 
 /**
  * The services V1 can actually deliver. Everything else still ranks and still
@@ -27,12 +28,12 @@ export const SUPPORTED_SERVICE_IDS = new Set(['music_playlist', 'humming_karaoke
 const LABELS = {
   recommended: { ja: '推奨サービス（最大3件）', en: 'Recommended (≤3)' },
   choose: { ja: 'これを選ぶ', en: 'Choose' },
-  selected: { ja: '選択中 → STEP 2 へ', en: 'Selected → to STEP 2' },
-  noProposal: { ja: '候補なし（no_proposal）', en: 'No candidates (no_proposal)' },
-  outOfScope: { ja: 'V1対象外', en: 'Out of V1 scope' },
+  selected: { ja: '選択中 → コンテンツ提案へ', en: 'Selected → on to the content proposal' },
+  noProposal: { ja: '候補なし', en: 'No candidates' },
+  outOfScope: { ja: '本シミュレーターでは対象外(コンテンツ未対応)', en: 'Not available in this simulator (no content backing)' },
   eligibleTitle: { ja: '適格サービス', en: 'Eligible services' },
   noneEligible: { ja: '適格なサービスはありません。', en: 'No eligible services.' },
-  notSupported: { ja: 'V1では未対応', en: 'not supported in V1' },
+  notSupported: { ja: '本シミュレーターでは未対応', en: 'Not supported in this simulator' },
 }
 
 function serviceRows(candidate: RankedCandidate): ReasonRow[] {
@@ -89,6 +90,10 @@ export function ServiceResultOverlay(props: {
    * an "out of V1 scope" note. Defaults to always-backed (every candidate
    * choosable) when the caller doesn't need the gate. */
   isBacked?: (candidateId: string) => boolean
+  /** Clicking a card asks to COMPARE it (right column), which is a different
+   *  act from choosing it. Optional: the standalone Proposal screen has no
+   *  review column, and passes nothing. */
+  onInspect?: (candidateId: string) => void
   runId?: string
   explanationProvider: ExplanationProvider
   /** An EPHEMERAL proposal (quickview/after-nap projection) to explain inline —
@@ -103,6 +108,7 @@ export function ServiceResultOverlay(props: {
     choosingId,
     onChoose,
     isBacked = () => true,
+    onInspect,
     runId,
     explanationProvider,
     inlineProposal,
@@ -122,7 +128,7 @@ export function ServiceResultOverlay(props: {
         ) : (
           eligibleCandidates.map(({ candidate_id }) => (
             <span key={candidate_id} data-testid={`eligible-${candidate_id}`} style={eligibleTagStyle}>
-              {candidate_id}
+              {t(serviceLabel(candidate_id), lang)}
             </span>
           ))
         )}
@@ -145,11 +151,13 @@ export function ServiceResultOverlay(props: {
               <div
                 key={candidate.candidate_id}
                 data-testid={`candidate-card-${candidate.candidate_id}`}
+                onClick={onInspect ? () => onInspect(candidate.candidate_id) : undefined}
                 style={{
                   border: isActive ? '1px solid #1d4ed8' : '1px solid #e5e7eb',
                   borderRadius: '9px',
                   margin: '8px 0',
                   overflow: 'hidden',
+                  cursor: onInspect ? 'pointer' : undefined,
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '8px 10px' }}>
@@ -168,7 +176,7 @@ export function ServiceResultOverlay(props: {
                   >
                     {candidate.rank}
                   </span>
-                  <span style={{ fontWeight: 700, fontSize: '0.86em' }}>{candidate.candidate_id}</span>
+                  <span style={{ fontWeight: 700, fontSize: '0.86em' }}>{t(serviceLabel(candidate.candidate_id), lang)}</span>
                   {candidate.score !== null && (
                     <span style={{ marginLeft: 'auto', fontFamily: 'monospace', fontWeight: 800, color: '#1d4ed8' }}>
                       {candidate.score >= 0 ? '+' : ''}
@@ -205,7 +213,7 @@ export function ServiceResultOverlay(props: {
                     type="button"
                     data-testid={`choose-candidate-${candidate.candidate_id}`}
                     disabled={!backed || choosingId === candidate.candidate_id}
-                    onClick={() => onChoose(candidate.candidate_id)}
+                    onClick={(e) => { e.stopPropagation(); onChoose(candidate.candidate_id) }}
                     style={{
                       fontSize: '0.8em',
                       fontWeight: 700,

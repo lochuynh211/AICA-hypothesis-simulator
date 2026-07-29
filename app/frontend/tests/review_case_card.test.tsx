@@ -2,7 +2,6 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import ExperienceCasePicker from '../src/components/review/ExperienceCasePicker'
 import ExperienceCaseCard from '../src/components/review/ExperienceCaseCard'
-import CaseDetailsModal from '../src/components/review/CaseDetailsModal'
 import { getCase, listCases } from '../src/lib/review/caseCatalog'
 import { LanguageProvider } from '../src/state/language'
 
@@ -53,20 +52,36 @@ describe('ExperienceCasePicker', () => {
 
 describe('ExperienceCaseCard', () => {
   it('shows the brief and the what-to-watch chips', () => {
-    wrap(<ExperienceCaseCard testCase={c03} onOpenDetails={() => {}} />)
+    wrap(<ExperienceCaseCard testCase={c03} />)
     expect(screen.getByTestId('case-brief')).toHaveTextContent(c03.brief.ja)
     expect(screen.getAllByTestId('case-watch-chip')).toHaveLength(c03.what_to_watch.length)
   })
 
   it('shows a one-line persona summary', () => {
-    wrap(<ExperienceCaseCard testCase={c03} onOpenDetails={() => {}} />)
+    wrap(<ExperienceCaseCard testCase={c03} />)
     expect(screen.getByTestId('case-persona-line')).toHaveTextContent(c03.persona.name.ja)
   })
 
+  it('shows the case detail INLINE — persona narrative and pinned conditions', () => {
+    // These used to sit behind a "Case details" button in a popup.
+    wrap(<ExperienceCaseCard testCase={c03} />)
+    expect(screen.getByTestId('case-persona-narrative')).toHaveTextContent(c03.persona.narrative.ja)
+    expect(screen.getByTestId('case-fixed-conditions')).toBeTruthy()
+    expect(screen.queryByTestId('case-details-button')).toBeNull()
+  })
+
+  it('survives a case with no goals or constraints', () => {
+    const bare = { ...c03, persona: { ...c03.persona, goals: undefined, constraints: undefined } }
+    wrap(<ExperienceCaseCard testCase={bare} />)
+    expect(screen.getByTestId('experience-case-card')).toBeTruthy()
+    expect(screen.queryByTestId('case-goals')).toBeNull()
+  })
+
   it('omits everything the customer does not read', () => {
-    // 07-27 §6.1: no expected outcome, no expected causal path, no journey
-    // narrative, no event list, no automatic path, no artifact references.
-    wrap(<ExperienceCaseCard testCase={c03} onOpenDetails={() => {}} />)
+    // 07-27 §6.1: no expected outcome, no expected causal path, no event list,
+    // no automatic path, no artifact references. The JOURNEY narrative stays
+    // out too — the PERSONA narrative above is a different field.
+    wrap(<ExperienceCaseCard testCase={c03} />)
     const text = screen.getByTestId('experience-case-card').textContent ?? ''
     expect(text).not.toContain(c03.journey.narrative.ja)
     expect(text).not.toContain(c03.journey.scenario_ref)
@@ -74,34 +89,4 @@ describe('ExperienceCaseCard', () => {
     expect(text).not.toContain(c03.algorithm_defaults.trigger)
   })
 
-  it('opens the details popup', () => {
-    const onOpenDetails = vi.fn()
-    wrap(<ExperienceCaseCard testCase={c03} onOpenDetails={onOpenDetails} />)
-    fireEvent.click(screen.getByTestId('case-details-button'))
-    expect(onOpenDetails).toHaveBeenCalled()
-  })
-})
-
-describe('CaseDetailsModal', () => {
-  it('renders nothing when closed', () => {
-    wrap(<CaseDetailsModal open={false} testCase={c03} onClose={() => {}} />)
-    expect(screen.queryByTestId('case-details-modal')).toBeNull()
-  })
-
-  it('shows the persona narrative and the conditions the case fixes', () => {
-    wrap(<CaseDetailsModal open testCase={c03} onClose={() => {}} />)
-    expect(screen.getByTestId('case-details-modal')).toHaveTextContent(c03.persona.narrative.ja)
-    expect(screen.getByTestId('case-fixed-conditions')).toBeTruthy()
-  })
-
-  it('survives a case with no goals or constraints', () => {
-    const bare = { ...c03, persona: { ...c03.persona, goals: undefined, constraints: undefined } }
-    wrap(<CaseDetailsModal open testCase={bare} onClose={() => {}} />)
-    expect(screen.getByTestId('case-details-modal')).toBeTruthy()
-  })
-
-  it('renders nothing when no case is selected', () => {
-    wrap(<CaseDetailsModal open testCase={null} onClose={() => {}} />)
-    expect(screen.queryByTestId('case-details-modal')).toBeNull()
-  })
 })

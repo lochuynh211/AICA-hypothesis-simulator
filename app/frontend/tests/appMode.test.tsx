@@ -42,7 +42,7 @@ describe('appMode toggle', () => {
     expect(screen.queryByText('Backend: ok — aica-api')).not.toBeInTheDocument()
 
     // The app defaults to Japanese, so the mode buttons render JA labels.
-    fireEvent.click(screen.getByRole('button', { name: 'トリガー' }))
+    fireEvent.click(screen.getByRole('button', { name: '発火判定' }))
     expect(await screen.findByText('Backend: ok — aica-api')).toBeInTheDocument()
     expect(screen.queryByTestId('merged-shell')).not.toBeInTheDocument()
 
@@ -71,7 +71,7 @@ describe('AppModeToggle bilingual labels', () => {
         </AppModeProvider>
       </LanguageProvider>,
     )
-    expect(screen.getByRole('button', { name: 'トリガー' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '発火判定' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '提案' })).toBeInTheDocument()
   })
 
@@ -83,7 +83,7 @@ describe('AppModeToggle bilingual labels', () => {
         </AppModeProvider>
       </LanguageProvider>,
     )
-    expect(screen.getByRole('button', { name: 'Trigger' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Firing decision' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Proposal' })).toBeInTheDocument()
   })
 })

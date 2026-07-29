@@ -46,8 +46,8 @@ const LABELS = {
   responseByRoad: { ja: '道路種別 × サービス', en: 'road × service' },
   formulation: { ja: '数式・説明', en: 'Formulation' },
   formulationWhy: {
-    ja: '各サービスの適合度は、重み wᵢ と応答 rᵢ（左の世界特徴量から算出）の重み付き総和。',
-    en: "Each service's fit is the weighted sum of weight wᵢ and response rᵢ (derived from the world features at left).",
+    ja: '各サービスの適合度は、重みと応答（左のシミュレーション条件から算出）の重み付き総和です。',
+    en: "Each service's fit is the weighted sum of its weights and responses, derived from the simulation conditions at left.",
   },
   run: { ja: '実行', en: 'Run' },
   algorithmError: { ja: 'アルゴリズムエラー', en: 'Algorithm error' },

@@ -108,10 +108,12 @@ describe('toMarkdown', () => {
     const md = toMarkdown(rows, 'en', stamp)
 
     expect(md).toContain('# AICA review feedback')
-    expect(md).toContain(`\`${C1}\``)
-    expect(md).toContain('- **Trigger**: Appropriate')
+    // The raw case id is NOT printed — this report is read by a customer, and
+    // an identifier is not something they can act on. The title names the case.
+    expect(md).not.toContain(C1)
+    expect(md).toContain('- **Firing decision**: Appropriate')
     expect(md).toContain('Comment: fires at the right point')
-    expect(md).toContain('- **Service**: Not appropriate')
+    expect(md).toContain('- **Service proposal**: Not appropriate')
     expect(md).toContain('1 / 6')
     // A case with nothing recorded is named as empty, not omitted.
     expect(md).toContain('No feedback recorded for this case')
@@ -144,8 +146,12 @@ describe('verdictLabel', () => {
     expect(verdictLabel('not_sure', 'ja')).toBe('不明')
   })
 
-  it('shows an unknown stored value rather than dropping it', () => {
-    // A verdict we cannot name is still one the reviewer recorded.
-    expect(verdictLabel('some_future_value', 'en')).toBe('some_future_value')
+  it('reports an unknown stored value in words rather than dropping it', () => {
+    // A verdict we cannot name is still one the reviewer recorded — so it is
+    // still reported. It is reported IN WORDS, though: printing the raw stored
+    // token would put a variable name in a report a customer reads.
+    expect(verdictLabel('some_future_value', 'en')).toBe('Unrecognised verdict')
+    expect(verdictLabel('some_future_value', 'ja')).toBe('判定内容を判別できません')
+    expect(verdictLabel('some_future_value', 'en')).not.toContain('some_future_value')
   })
 })

@@ -61,8 +61,14 @@ describe('phrase', () => {
     expect(phrase('monotony').ja).not.toBe(phrase('monotony').en)
   })
 
-  it('returns the raw id for an unknown feature rather than inventing prose', () => {
-    expect(phrase('unknown_feature')).toEqual({ ja: 'unknown_feature', en: 'unknown_feature' })
+  it('names an unknown feature as unnamed — never as its raw identifier', () => {
+    // Two rules meet here. It must not invent prose for a feature it cannot
+    // name, and it must not put the identifier on screen either: a reviewer
+    // reads product vocabulary, and `unknown_feature` is a variable name. So
+    // it says, in words, that the field has no registered name.
+    expect(phrase('unknown_feature')).toEqual({ ja: '名称未登録の特徴量', en: 'Unnamed feature' })
+    expect(phrase('unknown_feature').ja).not.toContain('unknown_feature')
+    expect(phrase('unknown_feature').en).not.toContain('unknown_feature')
   })
 
   it('has a phrase for EVERY feature that belongs to a real group', () => {

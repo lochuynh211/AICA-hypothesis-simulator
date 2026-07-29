@@ -7,8 +7,8 @@
     "en": "C-02 Night highway drowsiness"
   },
   "brief": {
-    "ja": "夜間の長距離高速走行で、出発時から眠気がすでに高まっているドライバーを走らせます。夜間という状況が、休憩提案とその後のサービス・コンテンツ選定にどう反映されるかを確認します。なお、この初期眠気の設定値は現状トリガーの投影には反映されません。反映されるのは夜間という状況のみで、それはサービス・コンテンツ選定側の世界状態に渡されます。",
-    "en": "A long night-time highway drive with a driver whose drowsiness is already elevated at departure. Checks how the night context feeds into the rest proposal and the service/content chosen in response."
+    "ja": "夜間の長距離高速走行で、出発時から眠気がすでに高まっているドライバーを走らせます。夜間という状況が、休憩提案とその後のサービス・コンテンツ選定にどう反映されるかを確認します。なお、この初期眠気の設定値は現状、発火判定には反映されません。反映されるのは夜間という状況のみで、それはサービス・コンテンツ選定側のシミュレーション条件に渡されます。",
+    "en": "A long night-time highway drive with a driver whose drowsiness is already elevated at departure. Checks how the night context feeds into the rest proposal and the service/content chosen in response. The initial drowsiness value here isn't currently reflected in the firing decision either — only the night context is, and it's passed into the simulation conditions on the service/content selection side."
   },
   "what_to_watch": [
     {

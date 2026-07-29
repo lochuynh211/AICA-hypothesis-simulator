@@ -28,10 +28,15 @@ export const SEGMENT_LABELS: Record<string, BilingualLabel> = {
   rest: { en: 'rest stop', ja: '休憩施設' },
 }
 
-/** Localized road-band label; falls back to the raw segment_type when unknown. */
+/** Fallback for a segment_type this table doesn't recognize — never the raw
+ *  identifier itself (rule 2). */
+const UNNAMED_SEGMENT: BilingualLabel = { ja: '未分類の区間', en: 'Unclassified segment' }
+
+/** Localized road-band label; falls back to a generic "unclassified segment"
+ *  label (never the raw segment_type) when unknown. */
 export function segLabel(type: string, lang: UiLanguage): string {
   const label = SEGMENT_LABELS[type]
-  return label ? t(label, lang) : type
+  return t(label ?? UNNAMED_SEGMENT, lang)
 }
 const DEFAULT_SEGMENT_COLOR = '#f3f4f6'
 const REST_COLOR = '#2563eb'
@@ -347,16 +352,16 @@ export default function ScoreTimeline({
       {showLegend && (
         <div data-testid={testIds.legend}
           style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px', fontSize: '0.72em', color: '#6b7280', margin: '2px 0 0' }}>
-          <LegendLine color={REST_COLOR} label={t({ en: 'rest-propose score', ja: '休憩提案スコア' }, lang)} />
-          {data.monotonyScore.length > 0 && <LegendLine color={MONOTONY_COLOR} label={t({ en: 'monotony score', ja: '単調性スコア' }, lang)} />}
-          {data.restThreshold != null && <LegendLine color={TRIGGER_COLOR} label={t({ en: 'threshold', ja: 'しきい値' }, lang)} dashed />}
+          <LegendLine color={REST_COLOR} label={t({ en: 'Dangerous-driving-prevention score', ja: '危険運転防止スコア' }, lang)} />
+          {data.monotonyScore.length > 0 && <LegendLine color={MONOTONY_COLOR} label={t({ en: 'Inattentive-driving-prevention score', ja: '漫然運転予防スコア' }, lang)} />}
+          {data.restThreshold != null && <LegendLine color={TRIGGER_COLOR} label={t({ en: 'Firing threshold', ja: '発火しきい値' }, lang)} dashed />}
           {presentSegTypes.map((type) => (
             <LegendSwatch key={type} color={SEGMENT_COLORS[type] ?? DEFAULT_SEGMENT_COLOR}
               label={segLabel(type, lang)} />
           ))}
           {(data.trafficJams ?? []).length > 0 && <LegendSwatch color={JAM_COLOR} label={t({ en: 'traffic jam', ja: '渋滞' }, lang)} />}
-          {data.restDots.length > 0 && <LegendDot color={REST_SPOT_COLOR} label={t({ en: showJourneyMarkers ? 'rest spot' : 'chosen rest spot', ja: showJourneyMarkers ? '休憩地点' : '選択した休憩地点' }, lang)} />}
-          {showJourneyMarkers && data.restDots.length > 0 && <LegendDot color={AFTER_NAP_COLOR} label={t({ en: 'after-nap service', ja: '仮眠後サービス' }, lang)} />}
+          {data.restDots.length > 0 && <LegendDot color={REST_SPOT_COLOR} label={t({ en: showJourneyMarkers ? 'rest location' : 'chosen rest location', ja: showJourneyMarkers ? '休憩場所' : '選択した休憩場所' }, lang)} />}
+          {showJourneyMarkers && data.restDots.length > 0 && <LegendDot color={AFTER_NAP_COLOR} label={t({ en: 'after-rest service', ja: '休憩後サービス' }, lang)} />}
         </div>
       )}
     </div>

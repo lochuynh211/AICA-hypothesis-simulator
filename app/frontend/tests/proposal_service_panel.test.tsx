@@ -308,7 +308,9 @@ describe('ServiceProposalPanel', () => {
         <ServiceProposalPanel />
       </ProposalStoreProvider>,
     )
-    expect(await screen.findByLabelText('max_candidates')).toBeInTheDocument()
+    // The field's rendered label reads "Max candidates" — the raw parameter
+    // key ("max_candidates") no longer reaches the screen.
+    expect(await screen.findByLabelText('Max candidates')).toBeInTheDocument()
   })
 
   it('groups setup into Setting / Input preprocessing (editable gamma) / Advanced; policy/tie/gap hidden', async () => {
@@ -318,8 +320,8 @@ describe('ServiceProposalPanel', () => {
       </ProposalStoreProvider>,
     )
     await screen.findByText('mock_service_selector_v1')
-    // Setting: max_candidates editable.
-    expect(screen.getByLabelText('max_candidates')).toBeEnabled()
+    // Setting: Max candidates editable (the raw parameter key, "max_candidates", never renders).
+    expect(screen.getByLabelText('Max candidates')).toBeEnabled()
     // Input preprocessing: gamma is now an EDITABLE numeric input (not a read-only row).
     const gamma = screen.getByLabelText('Drowsiness Gamma') as HTMLInputElement
     expect(gamma).toBeEnabled()
@@ -345,8 +347,11 @@ describe('ServiceProposalPanel', () => {
     await screen.findByText('mock_service_selector_v1')
     const advanced = screen.getByTestId('advanced-hyperparameters') as HTMLDetailsElement
     expect(advanced.tagName.toLowerCase()).toBe('details')
-    // confidence_shrinkage_v1 is preserved (not deleted) — just moved to Advanced.
-    expect(within(advanced).getByText('confidence_shrinkage_v1')).toBeInTheDocument()
+    // confidence_shrinkage_v1 is preserved (not deleted) — just moved to Advanced —
+    // but shown by its readable label; the raw key chip ("confidence_shrinkage_v1"
+    // next to it in faint grey) was deleted along with every other raw-id chip.
+    expect(within(advanced).getByText('Confidence Shrinkage (extension, default off)')).toBeInTheDocument()
+    expect(within(advanced).queryByText('confidence_shrinkage_v1')).not.toBeInTheDocument()
     // Category Weights (this fixture's ungrouped table hp) also lands in Advanced.
     expect(within(advanced).getByText('Category Weights')).toBeInTheDocument()
     // Each Advanced entry carries a kind badge.
@@ -374,8 +379,11 @@ describe('ServiceProposalPanel', () => {
     fireEvent.click(screen.getByTestId('service-run-button'))
 
     await waitFor(() => expect(createRun).toHaveBeenCalled())
-    expect(await screen.findByText('live_viewing')).toBeInTheDocument()
-    expect(screen.getByText('stretch_video')).toBeInTheDocument()
+    // Candidates render their spec service name, never the raw candidate_id.
+    expect(await screen.findByText('Live viewing')).toBeInTheDocument()
+    expect(screen.getByText('Stretch video')).toBeInTheDocument()
+    expect(screen.queryByText('live_viewing')).not.toBeInTheDocument()
+    expect(screen.queryByText('stretch_video')).not.toBeInTheDocument()
     expect(screen.getAllByTestId('reason-breakdown').length).toBe(2)
   })
 
@@ -393,7 +401,8 @@ describe('ServiceProposalPanel', () => {
     )
     await screen.findByText('mock_service_selector_v1')
     fireEvent.click(screen.getByTestId('service-run-button'))
-    await screen.findByText('full_karaoke')
+    // Rendered as its spec service name ("Karaoke (full)"), not the raw candidate_id.
+    await screen.findByText('Karaoke (full)')
 
     fireEvent.click(screen.getByTestId('choose-candidate-full_karaoke'))
 
@@ -418,7 +427,7 @@ describe('ServiceProposalPanel', () => {
     )
     await screen.findByText('mock_service_selector_v1')
     fireEvent.click(screen.getByTestId('service-run-button'))
-    await screen.findByText('stretch_video')
+    await screen.findByText('Stretch video')
 
     const stretchBtn = screen.getByTestId('choose-candidate-stretch_video')
     expect(stretchBtn).toBeDisabled()
@@ -480,8 +489,11 @@ describe('ServiceProposalPanel', () => {
     await waitFor(() => expect(createRun).toHaveBeenCalled())
 
     const eligibleList = await screen.findByTestId('eligible-list')
-    expect(eligibleList).toHaveTextContent('live_viewing')
-    expect(eligibleList).toHaveTextContent('stretch_video')
+    // Spec service names, never the raw candidate_id.
+    expect(eligibleList).toHaveTextContent('Live viewing')
+    expect(eligibleList).toHaveTextContent('Stretch video')
+    expect(eligibleList).not.toHaveTextContent('live_viewing')
+    expect(eligibleList).not.toHaveTextContent('stretch_video')
 
     expect(screen.queryByTestId('excluded-list')).not.toBeInTheDocument()
     expect(screen.queryByText(/full_karaoke_requires_stopped/)).not.toBeInTheDocument()
@@ -569,8 +581,8 @@ describe('ServiceProposalPanel', () => {
     fireEvent.click(screen.getByTestId('service-run-button'))
 
     await waitFor(() => expect(createRun).toHaveBeenCalled())
-    expect(await screen.findByText('live_viewing')).toBeInTheDocument()
-    expect(screen.getByText('stretch_video')).toBeInTheDocument()
+    expect(await screen.findByText('Live viewing')).toBeInTheDocument()
+    expect(screen.getByText('Stretch video')).toBeInTheDocument()
     // Both candidates keep their reason-breakdown disclosure (chips/rationale),
     // but live_viewing carries the §14 feature trace (normalized_evidence) so
     // its OWN ReasonBreakdown table is suppressed — the table remains only
@@ -698,8 +710,11 @@ describe('ServiceProposalPanel', () => {
     expect(screen.getByTestId('service-subtotals')).toBeInTheDocument()
     // situation subtotal (situation_fit = 0.5) renders with 3 decimals ("0.500"), not "0.5".
     expect(screen.getByTestId('service-subtotals').textContent).toContain('0.500')
-    expect(screen.getByTestId('strongest-support')).toHaveTextContent('drowsiness_level')
-    expect(screen.getByTestId('strongest-oppose')).toHaveTextContent('oshi_mode')
+    // Rendered as the field's readable name, never the raw feature id.
+    expect(screen.getByTestId('strongest-support')).toHaveTextContent('Drowsiness')
+    expect(screen.getByTestId('strongest-support')).not.toHaveTextContent('drowsiness_level')
+    expect(screen.getByTestId('strongest-oppose')).toHaveTextContent('Favourite-artist mode')
+    expect(screen.getByTestId('strongest-oppose')).not.toHaveTextContent('oshi_mode')
 
     // The safety-priority/dominance readout is deliberately NOT rendered
     // (owner review) — it is configuration bookkeeping, not per-candidate
@@ -769,7 +784,7 @@ describe('ServiceProposalPanel', () => {
     fireEvent.click(screen.getByTestId('service-run-button'))
     await waitFor(() => expect(createRun).toHaveBeenCalled())
 
-    expect(await screen.findByText('live_viewing')).toBeInTheDocument()
+    expect(await screen.findByText('Live viewing')).toBeInTheDocument()
     // The mock output carries none of the P5 §14 optional fields — the
     // enrichment renders nothing at all (no empty section headers).
     expect(screen.queryByTestId('service-explainability')).not.toBeInTheDocument()
@@ -831,7 +846,7 @@ describe('ServiceProposalPanel', () => {
 
     fireEvent.click(screen.getByTestId('service-run-button'))
     await waitFor(() => expect(createRun).toHaveBeenCalled())
-    await screen.findByText('live_viewing')
+    await screen.findByText('Live viewing')
 
     expect(screen.queryByTestId('journey-readout')).toBeNull()
     expect(screen.queryByTestId('mode-toggle')).toBeNull()
@@ -868,12 +883,12 @@ describe('ServiceProposalPanel', () => {
     await screen.findByText('mock_service_selector_v1')
     fireEvent.click(screen.getByTestId('service-run-button'))
     await waitFor(() => expect(createRun).toHaveBeenCalledTimes(1))
-    await screen.findByText('live_viewing')
+    await screen.findByText('Live viewing')
 
     vi.useFakeTimers()
     try {
       vi.mocked(createRun).mockClear()
-      fireEvent.change(screen.getByLabelText('max_candidates'), { target: { value: '2' } })
+      fireEvent.change(screen.getByLabelText('Max candidates'), { target: { value: '2' } })
       expect(createRun).not.toHaveBeenCalled() // debounced, not yet
       await act(async () => {
         vi.advanceTimersByTime(450)
@@ -896,7 +911,7 @@ describe('ServiceProposalPanel', () => {
     await screen.findByText('mock_service_selector_v1')
     fireEvent.click(screen.getByTestId('service-run-button'))
     await waitFor(() => expect(createRun).toHaveBeenCalledTimes(1))
-    await screen.findByText('live_viewing')
+    await screen.findByText('Live viewing')
 
     vi.useFakeTimers()
     try {
@@ -924,7 +939,7 @@ describe('ServiceProposalPanel', () => {
     await screen.findByText('mock_service_selector_v1')
     fireEvent.click(screen.getByTestId('service-run-button'))
     await waitFor(() => expect(createRun).toHaveBeenCalledTimes(1))
-    await screen.findByText('live_viewing')
+    await screen.findByText('Live viewing')
 
     // No edit performed — wait past the debounce window (real timers) and
     // confirm no second createRun call happened.
@@ -952,7 +967,7 @@ describe('ServiceProposalPanel', () => {
     await screen.findByText('mock_service_selector_v1')
     fireEvent.click(screen.getByTestId('service-run-button'))
     await waitFor(() => expect(createRun).toHaveBeenCalledTimes(1))
-    await screen.findByText('live_viewing')
+    await screen.findByText('Live viewing')
 
     vi.useFakeTimers()
     try {
@@ -973,7 +988,7 @@ describe('ServiceProposalPanel', () => {
       expect(createRun).toHaveBeenCalledTimes(1)
 
       // An edit lands while that run is still in flight.
-      fireEvent.change(screen.getByLabelText('max_candidates'), { target: { value: '2' } })
+      fireEvent.change(screen.getByLabelText('Max candidates'), { target: { value: '2' } })
 
       // Advance past the 400ms debounce: the timer fires, but `running` is
       // still true at fire time, so the auto-recompute must be skipped —
@@ -1177,7 +1192,7 @@ describe('ServiceProposalPanel — grouped setup adapts to the package manifest'
     )
     await screen.findByText('mock_service_selector_v1')
 
-    expect(screen.getByLabelText('max_candidates')).toBeInTheDocument()
+    expect(screen.getByLabelText('Max candidates')).toBeInTheDocument()
     // No gamma inputs (the mock manifest defines none) and no preprocessing header.
     expect(screen.queryByLabelText('Drowsiness Gamma')).not.toBeInTheDocument()
     expect(screen.queryByText('Input preprocessing (γ / normalization)')).not.toBeInTheDocument()

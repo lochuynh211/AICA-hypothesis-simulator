@@ -22,8 +22,8 @@ const LABELS = {
   drowsiness: { ja: '眠気レベル', en: 'Drowsiness level' },
   fatigue: { ja: '疲労レベル', en: 'Fatigue level' },
   hint: {
-    ja: '空欄のフィールドは変更されません（現在の世界の値のまま再計算されます）。',
-    en: 'Blank fields are left unchanged (recomputed against the current world value).',
+    ja: '空欄の項目は変更されません（現在のシミュレーション条件のまま再計算されます）。',
+    en: 'Blank fields are left unchanged — recomputed against the current simulation conditions.',
   },
   recompute: { ja: '再計算', en: 'Recompute' },
 }

@@ -12,7 +12,7 @@ from aica_api.services import explanation_builder as eb
 def test_label_for_known_service_and_content_keys():
     assert eb.label_for("drowsiness_level")["en"] == "drowsiness"
     assert eb.label_for("drowsiness")["en"] == "drowsiness"  # content leaf namespace
-    assert eb.label_for("oshi")["ja"] == "推し一致"
+    assert eb.label_for("oshi")["ja"] == "推しとの一致"
 
 
 def test_label_for_unknown_falls_back_to_raw_id():

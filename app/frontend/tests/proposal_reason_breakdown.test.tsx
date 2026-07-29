@@ -8,7 +8,7 @@ const rows: ReasonRow[] = [
 ]
 
 describe('ReasonBreakdown', () => {
-  it('renders a feature -> value -> r(a) -> w -> contribution row per feature', () => {
+  it('renders a feature -> value -> r(a) -> w -> contribution row per feature, labelled by name not id', () => {
     render(
       <ReasonBreakdown
         rows={rows}
@@ -18,8 +18,12 @@ describe('ReasonBreakdown', () => {
         lang="en"
       />,
     )
-    expect(screen.getByRole('cell', { name: 'monotony_level' })).toBeInTheDocument()
-    expect(screen.getByRole('cell', { name: 'drowsiness_level' })).toBeInTheDocument()
+    // Feature cells resolve through fieldName() — the readable name shows,
+    // never the raw feature id.
+    expect(screen.getByRole('cell', { name: 'Monotony' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Drowsiness' })).toBeInTheDocument()
+    expect(screen.queryByRole('cell', { name: 'monotony_level' })).toBeNull()
+    expect(screen.queryByRole('cell', { name: 'drowsiness_level' })).toBeNull()
     expect(screen.getByText('0.210')).toBeInTheDocument()
     expect(screen.getByText('0.176')).toBeInTheDocument()
   })
@@ -36,7 +40,7 @@ describe('ReasonBreakdown', () => {
     expect(screen.getByText('EN text')).toBeInTheDocument()
   })
 
-  it('renders supporting and opposing feature chips', () => {
+  it('renders supporting and opposing feature chips, labelled by name not id', () => {
     render(
       <ReasonBreakdown
         rows={rows}
@@ -46,9 +50,12 @@ describe('ReasonBreakdown', () => {
         lang="en"
       />,
     )
-    expect(screen.getByTestId('reason-supporting')).toHaveTextContent('monotony_level')
-    expect(screen.getByTestId('reason-supporting')).toHaveTextContent('drowsiness_level')
-    expect(screen.getByTestId('reason-opposing')).toHaveTextContent('night_state')
+    expect(screen.getByTestId('reason-supporting')).toHaveTextContent('Monotony')
+    expect(screen.getByTestId('reason-supporting')).toHaveTextContent('Drowsiness')
+    expect(screen.getByTestId('reason-supporting')).not.toHaveTextContent('monotony_level')
+    expect(screen.getByTestId('reason-supporting')).not.toHaveTextContent('drowsiness_level')
+    expect(screen.getByTestId('reason-opposing')).toHaveTextContent('Night')
+    expect(screen.getByTestId('reason-opposing')).not.toHaveTextContent('night_state')
   })
 
   it('is collapsible (details/summary) and starts closed by default', () => {
@@ -90,7 +97,8 @@ describe('ReasonBreakdown', () => {
       />,
     )
     expect(screen.queryByRole('table')).toBeNull()
-    expect(screen.getByTestId('reason-supporting')).toHaveTextContent('monotony')
+    expect(screen.getByTestId('reason-supporting')).toHaveTextContent('Monotony')
+    expect(screen.getByTestId('reason-supporting')).not.toHaveTextContent('monotony')
     expect(screen.getByText('because monotony')).toBeInTheDocument()
   })
 })

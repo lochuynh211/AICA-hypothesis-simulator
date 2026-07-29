@@ -236,10 +236,14 @@ describe('ContentProposalPanel — real transparent content selector (P3c)', () 
     )
     await waitFor(() => expect(getPackages).toHaveBeenCalled())
 
-    expect(await screen.findByText('synthetic-track-0186')).toBeInTheDocument()
-    expect(screen.getByText('synthetic-track-0266')).toBeInTheDocument()
+    expect(await screen.findByTestId('plan-item-synthetic-track-0186')).toBeInTheDocument()
+    expect(screen.getByTestId('plan-item-synthetic-track-0266')).toBeInTheDocument()
     expect(screen.getAllByTestId('reason-breakdown').length).toBe(2)
     expect(screen.getByText(/oshi match/i)).toBeInTheDocument()
+    // no catalog fetch resolves in this test, so the raw item ids are never
+    // printed as visible text — only reachable via their row's data-testid
+    expect(screen.queryByText('synthetic-track-0186')).not.toBeInTheDocument()
+    expect(screen.queryByText('synthetic-track-0266')).not.toBeInTheDocument()
 
     // Content package id shown in the setup readout is the REAL package.
     expect(screen.getByText(REAL_CONTENT_PACKAGE_ID)).toBeInTheDocument()

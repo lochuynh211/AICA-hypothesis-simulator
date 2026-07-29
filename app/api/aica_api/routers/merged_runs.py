@@ -110,6 +110,33 @@ def _make_merged_plan_id() -> str:
     return f"plan_{ts}_{rand}"
 
 
+def _readable_error_text(detail: Any) -> str:
+    """Best-effort plain-text rendering of an ``HTTPException.detail``.
+
+    ``detail`` is normally a ``{"code": ..., "message": ...}`` dict, or a list
+    of such dicts (pydantic ``ValidationError.errors()``, or a list of
+    ``world_validation.ValidationIssue`` dumps) — in either case the
+    already-written human sentence lives under ``message`` (or, for a raw
+    pydantic error entry, ``msg``). Only when neither shape applies does this
+    fall back to ``str(detail)``, so a caller storing this in ``proposal_error``
+    never surfaces the raw Python dict/list repr (curly braces, single quotes)
+    that ``str()``-ing the whole ``detail`` used to produce.
+    """
+    if isinstance(detail, dict):
+        msg = detail.get("message")
+        if isinstance(msg, str) and msg:
+            return msg
+    elif isinstance(detail, list) and detail:
+        first = detail[0]
+        if isinstance(first, dict):
+            msg = first.get("message") or first.get("msg")
+            if isinstance(msg, str) and msg:
+                return msg
+    if isinstance(detail, str):
+        return detail
+    return str(detail)
+
+
 # ── Request body models ───────────────────────────────────────────────────────
 
 
@@ -869,7 +896,7 @@ def tick_merged_run_endpoint(merged_run_id: str) -> MergedTickResponse:
         try:
             plog = create_proposal_run(proposal_body)
         except HTTPException as exc:
-            resp.trigger["proposal_error"] = str(exc.detail)
+            resp.trigger["proposal_error"] = _readable_error_text(exc.detail)
             return resp
 
         handle.proposal_run_ids.append(plog.run_id)
@@ -944,7 +971,7 @@ def tick_merged_run_endpoint(merged_run_id: str) -> MergedTickResponse:
                     journey_plog = apply_journey_action(run_id, JourneyAction(action_type="rest_started"))
                 handle.rest_stage_synced = "during"
             except HTTPException as exc:
-                resp.trigger["proposal_error"] = str(exc.detail)
+                resp.trigger["proposal_error"] = _readable_error_text(exc.detail)
 
         elif handle.rest_stage_synced == "during" and outcome.run_state.recovery is None:
             # `run_manager.tick` already collapsed `run_state.recovery` back
@@ -1024,7 +1051,7 @@ def tick_merged_run_endpoint(merged_run_id: str) -> MergedTickResponse:
                 # again.
                 resp.trigger["paused"] = True
             except HTTPException as exc:
-                resp.trigger["proposal_error"] = str(exc.detail)
+                resp.trigger["proposal_error"] = _readable_error_text(exc.detail)
 
         if journey_plog is not None:
             corr = CorrelationEntry(

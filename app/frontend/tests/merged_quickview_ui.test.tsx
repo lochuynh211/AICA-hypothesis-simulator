@@ -252,13 +252,11 @@ describe('merged quickview projection strip + click-to-inspect (feature 020, Sli
     // Projection strip renders with 2 clickable fire hit-rects. The dock is NOT
     // empty: with no live run and nothing explicitly inspected, the panel now
     // defaults to the FIRST projected fire so a result is visible immediately
-    // (owner review) — but the read-only "inspecting" badge stays hidden,
-    // because a default projection is not an explicit inspection.
+    // (owner review).
     expect(screen.getByTestId('quickview-strip')).toBeInTheDocument()
     expect(screen.getByTestId('quickview-fire-hit-0')).toBeInTheDocument()
     expect(screen.getByTestId('quickview-fire-hit-1')).toBeInTheDocument()
     expect(screen.getByTestId('service-result-overlay')).toBeInTheDocument()
-    expect(screen.queryByTestId('inspected-fire-readonly-badge')).not.toBeInTheDocument()
 
     // Click fire #2 (index 1, zero-based) → inspectFire(1).
     await act(async () => {
@@ -266,7 +264,10 @@ describe('merged quickview projection strip + click-to-inspect (feature 020, Sli
     })
 
     expect(coordinatorRef.current!.state.inspectedFireIndex).toBe(1)
-    expect(screen.getByTestId('inspected-fire-readonly-badge')).toBeInTheDocument()
+    // The "Inspecting a quickview fire" badge was removed (owner review); the
+    // dock switching to fire #2's evidence below is what proves the click
+    // landed, and it is the thing a reviewer actually looks at.
+    expect(screen.queryByTestId('inspected-fire-readonly-badge')).toBeNull()
 
     // Dock shows FIRE #2's service overlay (karaoke_mode), not fire #1's.
     expect(screen.getByTestId('service-result-overlay')).toBeInTheDocument()
@@ -281,14 +282,16 @@ describe('merged quickview projection strip + click-to-inspect (feature 020, Sli
     fireEvent.click(screen.getByTestId('choose-candidate-karaoke_mode'))
     expect(mergedProposalAction).not.toHaveBeenCalled()
 
-    // Closing clears the EXPLICIT inspection. The dock does not go empty — it
-    // falls back to the default first-fire projection (owner review), so a
-    // result stays on screen — and the read-only badge goes away, because a
-    // default projection is not an inspection.
-    fireEvent.click(screen.getByTestId('quickview-inspect-close'))
+    // Closing clears the EXPLICIT inspection. The dedicated Close button went
+    // with the badge (owner review) — clicking the SELECTED fire again is the
+    // toggle, on both the strip and the map. The dock does not go empty: it
+    // falls back to the default first-fire projection, so a result stays on
+    // screen.
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('quickview-fire-hit-1'))
+    })
     expect(coordinatorRef.current!.state.inspectedFireIndex).toBeNull()
     expect(screen.getByTestId('service-result-overlay')).toBeInTheDocument()
-    expect(screen.queryByTestId('inspected-fire-readonly-badge')).not.toBeInTheDocument()
   })
 
   it('inspecting fire #1 then fire #2 swaps the dock between the two ephemeral proposals', async () => {

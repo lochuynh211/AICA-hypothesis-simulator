@@ -18,6 +18,7 @@ import {
   NestedRecordEditor,
   ItemListEditor,
 } from '../../fieldEditors'
+import { optionLabel, serviceLabel } from '../../../../lib/review/reviewVocabulary'
 
 export function issuesForPath(issues: WorldValidationIssue[], path: string): WorldValidationIssue[] {
   return issues.filter((issue) => issue.path === path)
@@ -69,7 +70,7 @@ export type WorldFieldDef = {
 
 export const SITUATION_FIELDS: WorldFieldDef[] = [
   { key: 'drowsiness_level', label: { ja: '眠気', en: 'Drowsiness' }, kind: 'slider', used: 'sc' },
-  { key: 'fatigue_level', label: { ja: '疲労', en: 'Fatigue' }, kind: 'slider', used: 'sc' },
+  { key: 'fatigue_level', label: { ja: '疲労度', en: 'Fatigue level' }, kind: 'slider', used: 'sc' },
   { key: 'monotony_level', label: { ja: '単調さ', en: 'Monotony' }, kind: 'slider', used: 'sc' },
   {
     key: 'traffic_state',
@@ -166,8 +167,8 @@ export const PROFILE_GROUPS: ProfileGroup[] = [
 ]
 
 const BADGE_LABELS = {
-  usedS: { ja: 'サービス（STEP1）で採点', en: 'Scored by Service (STEP 1)' },
-  usedC: { ja: 'コンテンツ（STEP2）で採点', en: 'Scored by Content (STEP 2)' },
+  usedS: { ja: 'サービス（ステップ1）で採点', en: 'Scored by Service (STEP 1)' },
+  usedC: { ja: 'コンテンツ（ステップ2）で採点', en: 'Scored by Content (STEP 2)' },
 }
 
 /** Which algorithm(s) actually score this field — a reviewer never wonders
@@ -210,8 +211,15 @@ export function renderFieldControl(
   value: unknown,
   onChange: (value: unknown) => void,
   testId: string,
+  lang: UiLanguage,
   ctx?: { artists?: { id: string; name: string }[] },
 ) {
+  // Service ids are the only `keyOptions` vocabulary these World fields use;
+  // any other keyOptions list (e.g. genre ids in PreferenceHistorySection's
+  // own scene_genre_usage editor) supplies its own key/value label resolvers
+  // directly instead of going through this shared renderer.
+  const keyLabel = def.keyOptions === SERVICE_ID_OPTIONS ? serviceLabel : undefined
+  const valueLabel = (opt: string) => optionLabel(def.key, opt)
   switch (def.kind) {
     case 'number':
       return (
@@ -248,7 +256,7 @@ export function renderFieldControl(
         <select data-testid={testId} value={String(value ?? '')} onChange={(e) => onChange(e.target.value)}>
           {(def.options ?? []).map((opt) => (
             <option key={opt} value={opt}>
-              {opt}
+              {t(valueLabel(opt), lang)}
             </option>
           ))}
         </select>
@@ -260,8 +268,8 @@ export function renderFieldControl(
           value={String(Boolean(value))}
           onChange={(e) => onChange(e.target.value === 'true')}
         >
-          <option value="false">false</option>
-          <option value="true">true</option>
+          <option value="false">{t(valueLabel('false'), lang)}</option>
+          <option value="true">{t(valueLabel('true'), lang)}</option>
         </select>
       )
     case 'nullable_select':
@@ -274,7 +282,7 @@ export function renderFieldControl(
           <option value="">—</option>
           {(def.options ?? []).map((opt) => (
             <option key={opt} value={opt}>
-              {opt}
+              {t(valueLabel(opt), lang)}
             </option>
           ))}
         </select>
@@ -323,7 +331,7 @@ export function renderFieldControl(
                   cursor: 'pointer',
                 }}
               >
-                {opt}
+                {t(valueLabel(opt), lang)}
               </button>
             )
           })}
@@ -336,9 +344,12 @@ export function renderFieldControl(
           testId={testId}
           value={(value as Record<string, string>) ?? {}}
           onChange={onChange}
+          lang={lang}
           keyOptions={def.keyOptions}
           valueKind="enum"
           valueOptions={def.options}
+          keyLabel={keyLabel}
+          valueLabel={valueLabel}
         />
       )
     case 'record_number':
@@ -347,8 +358,10 @@ export function renderFieldControl(
           testId={testId}
           value={(value as Record<string, number>) ?? {}}
           onChange={onChange}
+          lang={lang}
           keyOptions={def.keyOptions}
           valueKind="number"
+          keyLabel={keyLabel}
         />
       )
     case 'nested_record_enum':
@@ -357,8 +370,11 @@ export function renderFieldControl(
           testId={testId}
           value={(value as Record<string, Record<string, string>>) ?? {}}
           onChange={onChange}
+          lang={lang}
           innerKeyOptions={def.keyOptions}
           innerValueOptions={def.options ?? []}
+          keyLabel={keyLabel}
+          valueLabel={valueLabel}
         />
       )
     case 'item_list':
@@ -370,6 +386,7 @@ export function renderFieldControl(
           idField={def.idField ?? 'track_id'}
           tsField={def.tsField ?? 'at'}
           idPlaceholder={def.idPlaceholder}
+          lang={lang}
         />
       )
     default:
@@ -408,11 +425,10 @@ export function FieldRow({
       }}
     >
       <span style={{ fontSize: '0.82em', color: '#4b5563', display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <code style={{ fontSize: '0.9em', color: '#6b7280' }}>{def.key}</code>
         {t(def.label, lang)}
         <UsageBadge used={def.used} lang={lang} />
       </span>
-      {renderFieldControl(def, value, onChange, testId, { artists })}
+      {renderFieldControl(def, value, onChange, testId, lang, { artists })}
       {fieldIssues.length > 0 && (
         <p
           role="alert"

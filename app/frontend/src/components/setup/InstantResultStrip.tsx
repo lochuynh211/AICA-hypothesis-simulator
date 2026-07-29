@@ -9,7 +9,9 @@ import { t, type UiLanguage } from '../../i18n/t'
 
 const LABELS = {
   openFullRunFailed: { en: 'Failed to open full run', ja: 'フル実行を開けませんでした' },
-  triggerFallback: { en: 'TRIGGER', ja: 'トリガー' },
+  // 発火 is the specification's word for the decision event (CDC-SU_specplan
+  // Slide 29「トリガー検知・発火」); the UI never says「トリガー」.
+  triggerFallback: { en: 'FIRING', ja: '発火' },
 }
 
 /**

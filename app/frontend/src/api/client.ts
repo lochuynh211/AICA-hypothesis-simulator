@@ -25,6 +25,7 @@ import type {
   InstantResult,
 } from './types'
 import { MapsError, FeedbackValidationError } from './types'
+import type { BilingualLabel } from '../i18n/t'
 
 export type HealthStatus = {
   status: string
@@ -34,10 +35,23 @@ export type HealthStatus = {
 
 // ── Internal helper ────────────────────────────────────────────────────────
 
+/**
+ * A generic HTTP-status failure. Carries a bilingual `.bilingual` pair so a
+ * caller that knows the active UI language can resolve a JA/EN-appropriate
+ * message via `t()` instead of showing raw English — `.message` stays a
+ * plain English string only for logging / callers that predate this and
+ * only ever read `.message`.
+ */
+function apiError(status: number): Error & { bilingual: BilingualLabel } {
+  return Object.assign(new Error(`API error: ${status}`), {
+    bilingual: { ja: `API エラー（${status}）`, en: `API error (${status})` },
+  })
+}
+
 async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(path, init)
   if (!response.ok) {
-    throw new Error(`API error: ${response.status}`)
+    throw apiError(response.status)
   }
   return response.json() as Promise<T>
 }
@@ -124,7 +138,7 @@ export async function routesAnalyze(args: {
   }
 
   if (!response.ok) {
-    throw new Error(`API error: ${response.status}`)
+    throw apiError(response.status)
   }
 
   return response.json() as Promise<RouteEnvelope>
@@ -339,7 +353,7 @@ export async function getEvidenceMarkdown(runId: string, uiLanguage?: string): P
   const qs = uiLanguage ? `?ui_language=${encodeURIComponent(uiLanguage)}` : ''
   const response = await fetch(`/api/runs/${runId}/evidence.md${qs}`, { method: 'GET' })
   if (!response.ok) {
-    throw new Error(`API error: ${response.status}`)
+    throw apiError(response.status)
   }
   return response.text()
 }
@@ -363,7 +377,7 @@ export async function submitFeedback(
     throw new FeedbackValidationError(errJson.detail ?? errJson)
   }
   if (!response.ok) {
-    throw new Error(`API error: ${response.status}`)
+    throw apiError(response.status)
   }
   return response.json() as Promise<FeedbackEvent>
 }

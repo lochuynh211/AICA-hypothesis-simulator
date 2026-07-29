@@ -39,10 +39,23 @@ def test_service_build_prompt_is_fact_rich_not_scores_only():
 
 
 def test_service_template_is_causal_when_facts_present():
-    ja, en = se.template(_service_target())
-    assert "rest_stop" in en
+    # A REAL catalog id is named by its specification service name, never by
+    # the identifier: the sentence a reviewer reads is product vocabulary.
+    target = {**_service_target(), "candidate_id": "music_playlist"}
+    ja, en = se.template(target)
+    assert "playlist playback" in en
+    assert "プレイリスト再生" in ja
+    assert "music_playlist" not in en and "music_playlist" not in ja
     assert "drowsiness" in en.lower()
     assert ja and en
+
+
+def test_service_template_does_not_leak_an_unrecognised_candidate_id():
+    # An id with no catalog entry is described as unnamed rather than printed —
+    # an identifier must not reach the screen even on an unmapped value.
+    ja, en = se.template(_service_target())  # candidate_id="rest_stop", not a V1 service
+    assert "rest_stop" not in en and "rest_stop" not in ja
+    assert "unnamed service" in en
 
 
 def test_service_template_degrades_to_passthrough_pair():

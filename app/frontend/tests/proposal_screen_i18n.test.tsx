@@ -91,12 +91,12 @@ describe('ProposalScreen bilingual (EN default / JA toggle / back to EN)', () =>
     await screen.findByText('mock_service_selector_v1')
 
     // Panel headings (EN default)
-    expect(screen.getByText('Input · World')).toBeInTheDocument()
+    expect(screen.getByText('Input conditions')).toBeInTheDocument()
     expect(screen.getByText('Service proposal')).toBeInTheDocument()
     expect(screen.getByText('Content proposal')).toBeInTheDocument()
 
     // A section label from each panel + a hyperparameter label from the manifest.
-    expect(screen.getByText('Trigger signal (4)')).toBeInTheDocument()
+    expect(screen.getByText('Proposal category (4)')).toBeInTheDocument()
     // Both panels group setup under labeled sections now; the service panel's
     // "Setting" header is present (this fixture's content package has no
     // hyperparameters, so the content panel renders no setup sections).
@@ -113,16 +113,16 @@ describe('ProposalScreen bilingual (EN default / JA toggle / back to EN)', () =>
     await waitFor(() => expect(getPackages).toHaveBeenCalled())
     await screen.findByText('mock_service_selector_v1')
 
-    expect(screen.getByText('Input · World')).toBeInTheDocument()
+    expect(screen.getByText('Input conditions')).toBeInTheDocument()
 
     // The single global toggle (App's top bar) drives the language now.
     fireEvent.click(screen.getByTestId('lang-toggle-ja'))
 
-    await waitFor(() => expect(screen.getByText('入力・世界')).toBeInTheDocument())
-    expect(screen.queryByText('Input · World')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('入力条件')).toBeInTheDocument())
+    expect(screen.queryByText('Input conditions')).not.toBeInTheDocument()
     expect(screen.getByText('サービス提案')).toBeInTheDocument()
     expect(screen.getByText('コンテンツ提案')).toBeInTheDocument()
-    expect(screen.getByText('発火シグナル（4つ）')).toBeInTheDocument()
+    expect(screen.getByText('提案分類（4種類）')).toBeInTheDocument()
     expect(screen.getByText('設定')).toBeInTheDocument()
     // Fix (duplicate-label review finding): single match — see EN-default case above.
     expect(screen.getByText('カテゴリ重み')).toBeInTheDocument()
@@ -130,11 +130,11 @@ describe('ProposalScreen bilingual (EN default / JA toggle / back to EN)', () =>
 
     fireEvent.click(screen.getByTestId('lang-toggle-en'))
 
-    await waitFor(() => expect(screen.getByText('Input · World')).toBeInTheDocument())
-    expect(screen.queryByText('入力・世界')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Input conditions')).toBeInTheDocument())
+    expect(screen.queryByText('入力条件')).not.toBeInTheDocument()
     expect(screen.getByText('Service proposal')).toBeInTheDocument()
     expect(screen.getByText('Content proposal')).toBeInTheDocument()
-    expect(screen.getByText('Trigger signal (4)')).toBeInTheDocument()
+    expect(screen.getByText('Proposal category (4)')).toBeInTheDocument()
     // Fix (duplicate-label review finding): single match — see EN-default case above.
     expect(screen.getByText('Category Weights')).toBeInTheDocument()
   })

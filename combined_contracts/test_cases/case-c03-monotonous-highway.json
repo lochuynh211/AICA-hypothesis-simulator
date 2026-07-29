@@ -7,8 +7,8 @@
     "en": "C-03 Monotonous highway, low fatigue"
   },
   "brief": {
-    "ja": "疲労は低いまま、変化の乏しい高速道路を長く走り続けます。介入の理由が疲労ではなく単調さであることを確認します。なお、この初期眠気・初期疲労の設定値も現状トリガーの投影には反映されません。今はシナリオ自体の既定値と一致しているため単調さと疲労の切り分けには影響しませんが、シナリオの既定値が今後変更された場合は、この一致が崩れて静かに結果へ影響する可能性があります。",
-    "en": "A long stretch of featureless highway while fatigue stays low. Checks that any intervention is caused by monotony rather than by fatigue."
+    "ja": "疲労は低いまま、変化の乏しい高速道路を長く走り続けます。介入の理由が疲労ではなく単調さであることを確認します。なお、この初期眠気・初期疲労の設定値も現状、発火判定には反映されません。今はシナリオ自体の既定値と一致しているため単調さと疲労の切り分けには影響しませんが、シナリオの既定値が今後変更された場合は、この一致が崩れて静かに結果へ影響する可能性があります。",
+    "en": "A long stretch of featureless highway while fatigue stays low. Checks that any intervention is caused by monotony rather than by fatigue. The initial drowsiness and fatigue values here also aren't currently reflected in the firing decision — they happen to match the scenario's own defaults today, so they don't affect how monotony and fatigue are told apart here, but if the scenario's defaults change later, that match could break and quietly affect the result."
   },
   "what_to_watch": [
     {

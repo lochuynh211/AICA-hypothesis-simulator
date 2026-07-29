@@ -1,39 +1,42 @@
 /**
  * PlaybackStatusLine — one READ-ONLY line between the map and the proposals.
  *
- * Two modes, mirroring what the map is showing:
+ * PLAYBACK ONLY: the car's current status — motion, distance, speed, the
+ * road/traffic it is on, whether it is stopped at a rest spot (and in which
+ * recovery phase), and the trigger that just fired, if any.
  *
- *  - **Playback** (a run exists): the car's current status — motion, distance,
- *    speed, the road/traffic it is on, whether it is stopped at a rest spot
- *    (and in which recovery phase), and the trigger that just fired, if any.
- *  - **Quickview** (no run yet): the FIRST projected trigger — the one the
- *    proposals below are showing by default.
+ * It renders NOTHING before playback starts. It used to summarise the first
+ * projected trigger there, which the owner review removed: the quickview strip
+ * and the map markers already say where the fires are, and a third restatement
+ * under the map was noise.
  *
  * It replaced the checkpoint rail + decision band that used to sit here.
  * Choosing WHICH decision the review column examines now happens by clicking a
  * trigger marker on the map, so this line carries no controls of its own.
  */
 import type { MergedTriggerTick } from '../../api/mergedClient'
-import type { FirePoint } from '../../api/types'
 import { useLanguage } from '../../state/language'
 import { t } from '../../i18n/t'
 import type { BilingualLabel } from '../../i18n/t'
+import { CATEGORY_LABELS } from '../../lib/review/reviewVocabulary'
 
 const LABELS = {
-  idle: {
-    ja: '実行またはクイックビューを開始すると、ここに状況が表示されます。',
-    en: 'Run or preview the case to see the status here.',
-  },
-  noFire: {
-    ja: 'この設定ではトリガーは発火しませんでした。',
-    en: 'No trigger fired for this setup.',
-  },
-  firstTrigger: { ja: '最初のトリガー', en: 'First trigger' },
   now: { ja: '現在', en: 'Now' },
   fired: { ja: '発火', en: 'fired' },
   jam: { ja: '渋滞', en: 'traffic jam' },
-  atRest: { ja: '休憩地点で停車中', en: 'stopped at the rest spot' },
+  atRest: { ja: '休憩場所で停車中', en: 'stopped at the rest spot' },
 }
+
+/** A `selected_category` the fixed two-entry `CATEGORY_LABELS` table does not
+ *  recognise. The type is an open `string | null` on the wire, so this is a
+ *  real (if rare) fallback path — shown as a neutral placeholder, never the
+ *  raw backend value, matching the sibling fallback in MergedProposalPanel. */
+const UNKNOWN_CATEGORY: BilingualLabel = { ja: '(不明)', en: '(Unknown)' }
+
+/** A backend token this file has no translation entry for. Rendered as a
+ *  neutral placeholder rather than the raw identifier — no variable name may
+ *  reach the screen, even on an unmapped/future value. */
+const UNKNOWN_TOKEN: BilingualLabel = { ja: '不明', en: 'unknown' }
 
 const MOTION: Record<string, BilingualLabel> = {
   MOVING: { ja: '走行中', en: 'driving' },
@@ -53,28 +56,22 @@ const SEGMENT: Record<string, BilingualLabel> = {
   sightseeing_road: { ja: '観光道路', en: 'scenic road' },
 }
 
-/** A raw backend token we have no translation for is shown as-is rather than
- *  hidden — an untranslated fact still beats a silently dropped one. */
+/** An unmapped backend token is still SHOWN, as a neutral bilingual
+ *  placeholder — an untranslated fact still beats a silently dropped one —
+ *  but the raw identifier itself must never reach the screen. */
 function word(map: Record<string, BilingualLabel>, key: string | null | undefined, lang: 'ja' | 'en'): string | null {
   if (!key) return null
   const label = map[key]
-  return label ? t(label, lang) : key
-}
-
-function minutesLabel(timeMin: number, lang: 'ja' | 'en'): string {
-  const m = Math.round(timeMin)
-  return lang === 'ja' ? `${m}分` : `${m} min`
+  return t(label ?? UNKNOWN_TOKEN, lang)
 }
 
 export function statusParts({
   playback,
   latestTrigger,
-  firstFire,
   lang,
 }: {
   playback: boolean
   latestTrigger: MergedTriggerTick | null
-  firstFire: FirePoint | null
   lang: 'ja' | 'en'
 }): { lead: string; parts: string[] } | null {
   if (playback && latestTrigger) {
@@ -95,16 +92,14 @@ export function statusParts({
 
     const decision = latestTrigger.decision
     if (decision?.selected_category) {
-      parts.push(`⚠ ${decision.selected_category} ${t(LABELS.fired, lang)}`)
+      const categoryLabel = CATEGORY_LABELS[decision.selected_category] ?? UNKNOWN_CATEGORY
+      parts.push(
+        lang === 'ja'
+          ? `⚠ ${t(categoryLabel, lang)} ${t(LABELS.fired, lang)}`
+          : `⚠ ${t(categoryLabel, lang)} — ${t(LABELS.fired, lang)}`,
+      )
     }
     return { lead: t(LABELS.now, lang), parts }
-  }
-
-  if (!playback && firstFire) {
-    const parts = [firstFire.category ?? '—']
-    if (firstFire.strength) parts.push(firstFire.strength)
-    parts.push(minutesLabel(firstFire.time_min, lang))
-    return { lead: t(LABELS.firstTrigger, lang), parts }
   }
 
   return null
@@ -113,23 +108,16 @@ export function statusParts({
 export default function PlaybackStatusLine({
   playback,
   latestTrigger,
-  firstFire,
-  hasProjection,
 }: {
   playback: boolean
   latestTrigger: MergedTriggerTick | null
-  firstFire: FirePoint | null
-  /** A quickview ran — so "no fire" is a RESULT, not "nothing has happened". */
-  hasProjection: boolean
-}): JSX.Element {
+}): JSX.Element | null {
   const { lang } = useLanguage()
-  const status = statusParts({ playback, latestTrigger, firstFire, lang })
+  const status = statusParts({ playback, latestTrigger, lang })
 
-  const message = status
-    ? null
-    : hasProjection && !playback
-      ? t(LABELS.noFire, lang)
-      : t(LABELS.idle, lang)
+  // Before playback there is no car status to report, and the quickview strip
+  // plus the map markers already say where the fires are.
+  if (!status) return null
 
   return (
     <div
@@ -148,16 +136,10 @@ export default function PlaybackStatusLine({
         flexShrink: 0,
       }}
     >
-      {status ? (
-        <>
-          <span style={{ fontWeight: 700, color: '#1e293b' }}>{status.lead}:</span>
-          <span data-testid="playback-status-text" style={{ color: '#1d4ed8' }}>
-            {status.parts.join(' · ')}
-          </span>
-        </>
-      ) : (
-        <span data-testid="playback-status-text" style={{ color: '#64748b' }}>{message}</span>
-      )}
+      <span style={{ fontWeight: 700, color: '#1e293b' }}>{status.lead}:</span>
+      <span data-testid="playback-status-text" style={{ color: '#1d4ed8' }}>
+        {status.parts.join(' · ')}
+      </span>
     </div>
   )
 }

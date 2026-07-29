@@ -22,6 +22,19 @@ const LABELS = {
   otherSectionTitle: { en: 'Other', ja: 'その他' },
   noHyperparameters: { en: 'No hyperparameters declared for this package.', ja: 'このパッケージにはハイパーパラメータが定義されていません。' },
   hyperparametersHeading: { en: 'Hyperparameters', ja: 'ハイパーパラメータ' },
+  unregisteredParameter: { en: '(unregistered parameter)', ja: '（未登録パラメータ）' },
+  unregisteredParameterBracketed: { en: '[unregistered]', ja: '［未登録］' },
+}
+
+/** Bilingual "Bands for X" / "X の区分" aria-label — never a hardcoded English
+ *  template glued onto a translated noun. */
+function bandsForLabel(label: string, lang: 'ja' | 'en'): string {
+  return lang === 'ja' ? `${label}の区分` : `Bands for ${label}`
+}
+
+/** Bilingual "(default N)" / "（既定値: N）" tooltip suffix. */
+function defaultValueSuffix(value: unknown, lang: 'ja' | 'en'): string {
+  return lang === 'ja' ? `（既定値: ${value}）` : ` (default ${value})`
 }
 
 /**
@@ -274,7 +287,7 @@ function FormulaLineView({ line, ctx }: { line: FormulaLine; ctx: FormulaCtx }) 
           <button
             type="button"
             data-testid={`formula-bin-info-${line.output}`}
-            aria-label={`Bands for ${formulaOutputLabel(line.output, ctx.uiLanguage)}`}
+            aria-label={bandsForLabel(formulaOutputLabel(line.output, ctx.uiLanguage), ctx.uiLanguage)}
             aria-expanded={binOpen}
             onClick={() => setBinOpen((o) => !o)}
             style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6b7280', fontSize: '1em', lineHeight: 1, padding: 0, verticalAlign: 'middle' }}
@@ -303,8 +316,8 @@ function FormulaLineView({ line, ctx }: { line: FormulaLine; ctx: FormulaCtx }) 
             >
               <div style={{ marginBottom: '4px', color: '#d1d5db' }}>{t(line.binInfo.input, ctx.uiLanguage)}</div>
               {line.binInfo.bands.map((b) => (
-                <div key={b.when} style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
-                  <span>{b.when}</span>
+                <div key={b.when.en} style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                  <span>{t(b.when, ctx.uiLanguage)}</span>
                   <span style={{ fontWeight: 700 }}>→ {b.value}</span>
                 </div>
               ))}
@@ -338,7 +351,7 @@ function ThresholdReadView({ read, ctx }: { read: ThresholdRead; ctx: FormulaCtx
             ≥ <CoefField keyName={step.coef} ctx={ctx} /> →
           </span>
           <span style={{ fontWeight: 600, textTransform: 'uppercase', fontSize: '0.9em', color: '#4b5563' }}>
-            {step.label}
+            {t(step.label, ctx.uiLanguage)}
           </span>
           {step.meaning && <span style={{ color: '#6b7280' }}>— {t(step.meaning, ctx.uiLanguage)}</span>}
         </div>
@@ -406,7 +419,7 @@ function StepView({
                 key={key}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.74em', color: '#6b7280' }}
               >
-                <span>{def ? t(def.label, ctx.uiLanguage) : key}</span>
+                <span>{def ? t(def.label, ctx.uiLanguage) : t(LABELS.unregisteredParameter, ctx.uiLanguage)}</span>
                 <CoefField keyName={key} ctx={ctx} />
               </span>
             )
@@ -421,7 +434,7 @@ function ExtraHyperparameterView({ keyName, ctx }: { keyName: string; ctx: Formu
   const def = ctx.defsByKey[keyName]
   return (
     <div style={{ fontSize: '0.78em', color: '#4b5563' }}>
-      <div style={{ color: '#6b7280' }}>{def ? t(def.label, ctx.uiLanguage) : keyName}</div>
+      <div style={{ color: '#6b7280' }}>{def ? t(def.label, ctx.uiLanguage) : t(LABELS.unregisteredParameter, ctx.uiLanguage)}</div>
       <CoefField keyName={keyName} ctx={ctx} />
     </div>
   )
@@ -464,7 +477,11 @@ function CoefField({ keyName, ctx }: { keyName: string; ctx: FormulaCtx }) {
   if (!def) {
     // Manifest doesn't declare this key (template/manifest drift) — render
     // plainly rather than crash; see file header "don't crash" requirement.
-    return <span data-testid={`coef-missing-${keyName}`}>[{keyName}]</span>
+    // The raw hyperparameter key never reaches the screen — `data-testid`
+    // still carries it for tests/debugging.
+    return (
+      <span data-testid={`coef-missing-${keyName}`}>{t(LABELS.unregisteredParameterBracketed, ctx.uiLanguage)}</span>
+    )
   }
 
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
@@ -481,7 +498,7 @@ function CoefField({ keyName, ctx }: { keyName: string; ctx: FormulaCtx }) {
   }
 
   return (
-    <span style={{ whiteSpace: 'nowrap' }} title={`${t(def.label, ctx.uiLanguage)} (default ${def.default})`}>
+    <span style={{ whiteSpace: 'nowrap' }} title={`${t(def.label, ctx.uiLanguage)}${defaultValueSuffix(def.default, ctx.uiLanguage)}`}>
       [
       <input
         data-testid={`coef-${keyName}`}

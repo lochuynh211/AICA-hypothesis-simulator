@@ -16,15 +16,20 @@ import { useMemo } from 'react'
 import { decodePolyline, projectToUnitBox, cumulativeFractions, pointAtFraction } from './polyline'
 import { t } from '../../i18n/t'
 import type { UiLanguage } from '../../i18n/t'
+import { CATEGORY_LABELS } from '../../lib/review/reviewVocabulary'
 
 const LABELS = {
   noKey: { ja: 'Google マップキーなし — ルート概略図', en: 'No Google Maps key — route schematic' },
   noRoute: { ja: 'ルートが選択されていません。', en: 'No route selected.' },
-  start: { ja: '出発', en: 'Start' },
+  start: { ja: '出発地', en: 'Start' },
   end: { ja: '目的地', en: 'Destination' },
-  trigger: { ja: 'トリガー', en: 'trigger' },
-  restSpot: { ja: '休憩地点', en: 'rest spot' },
-  car: { ja: '現在地', en: 'car' },
+  /** Generic fallback word for a fire marker whose category isn't one of the
+   *  two known proposal categories (or is null) — the category phrase from
+   *  `CATEGORY_LABELS` is used instead whenever it is available. */
+  fire: { ja: '発火', en: 'Firing' },
+  restSpot: { ja: '休憩場所', en: 'rest location' },
+  car: { ja: '現在地', en: 'Current location' },
+  minuteSuffix: { ja: '分', en: ' min' },
 }
 
 /** One clickable trigger position on the route. */
@@ -160,7 +165,7 @@ export default function FallbackRouteMap({
                 onClick={() => onFireClick?.(f.index)}
               >
                 <title>
-                  {`${t(LABELS.trigger, lang)}: ${f.category ?? ''}${f.timeMin != null ? ` · ${Math.round(f.timeMin)} min` : ''}`}
+                  {`${f.category && CATEGORY_LABELS[f.category] ? t(CATEGORY_LABELS[f.category], lang) : t(LABELS.fire, lang)}${f.timeMin != null ? ` · ${Math.round(f.timeMin)}${t(LABELS.minuteSuffix, lang)}` : ''}`}
                 </title>
               </circle>
             </g>

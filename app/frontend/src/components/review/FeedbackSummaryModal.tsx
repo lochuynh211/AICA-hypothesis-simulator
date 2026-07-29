@@ -98,8 +98,11 @@ export default function FeedbackSummaryModal({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                {/* The raw case id used to sit here in faint grey next to the
+                    title. Removed (glossary rule 2, no identifier reaches the
+                    screen) — the translated title already identifies the case
+                    uniquely, and the id stays reachable in data-testid above. */}
                 <span style={{ fontWeight: 700, fontSize: '0.86em' }}>{t(c.title, lang)}</span>
-                <code style={{ fontSize: '0.72em', color: '#94a3b8' }}>{c.caseId}</code>
                 {c.inputJudgements > 0 && (
                   <span style={{ marginLeft: 'auto', fontSize: '0.74em', color: '#64748b' }}>
                     {c.inputJudgements} {t(LABELS.inputs, lang)}

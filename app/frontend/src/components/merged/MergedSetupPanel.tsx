@@ -62,6 +62,8 @@ import RestCeilingEditor from '../setup/RestCeilingEditor'
 import RestSpacingEditor from '../setup/RestSpacingEditor'
 import { differsFromCase, CASE_OVERRIDE_SENTINEL_DEFAULT, type ResolvedCaseSetup, type LiveSetupSnapshot } from '../../lib/review/caseResolver'
 import type { CombinedTestCase } from '../../lib/review/caseCatalog'
+import { nodeLabel } from '../../lib/review/reviewVocabulary'
+import { SIGNAL_LABELS } from '../setup/signalLabels'
 
 const DEFAULT_PRESET_ID = 'preset-journey-a-1-cruising-fresh'
 type EditKey = 'situation' | 'profile' | 'trigger' | 'service' | 'content' | null
@@ -73,9 +75,9 @@ const LABELS = {
   select: { ja: '— 選択 —', en: '— Select —' },
   routePreset: { ja: 'ルートプリセット', en: 'Route preset' },
   customRoute: { ja: 'カスタムルート（Google マップ）', en: 'Custom route (Google Maps)' },
-  mapsKey: { ja: 'マップ API キー', en: 'Maps API key' },
+  mapsKey: { ja: 'Google マップ APIキー', en: 'Google Maps API key' },
   fromEnv: { ja: '· 環境変数から', en: '· from environment' },
-  mapsKeyPlaceholder: { ja: 'Google マップ API キー', en: 'Google Maps API key' },
+  mapsKeyPlaceholder: { ja: 'Google マップ APIキー', en: 'Google Maps API key' },
   start: { ja: '出発地', en: 'Start' },
   end: { ja: '目的地', en: 'End' },
   startPlaceholder: { ja: '例: 東京駅', en: 'e.g. Tokyo Station' },
@@ -87,7 +89,7 @@ const LABELS = {
   selectScenario: { ja: '— シナリオを選択 —', en: '— Select a scenario —' },
   edit: { ja: '編集', en: 'Edit' },
   driverProfile: { ja: 'ドライバープロファイル', en: 'Driver profile' },
-  triggerPackage: { ja: 'トリガーパッケージ', en: 'Trigger package' },
+  triggerPackage: { ja: '発火判定パッケージ', en: 'Firing-decision package' },
   servicePackage: { ja: 'サービス提案パッケージ', en: 'Service proposal package' },
   contentPackage: { ja: 'コンテンツ提案パッケージ', en: 'Content proposal package' },
   ready: { ja: '準備完了 — 中央パネルの「再生」を押してください。', en: 'Ready — press Play in the center panel.' },
@@ -107,13 +109,13 @@ const LABELS = {
   groupSimulated: { ja: 'C · シミュレートされたドライバー状態', en: 'C · Simulated driver state' },
   selectScenarioToEdit: { ja: 'シナリオを選ぶと状況を編集できます。', en: 'Select a scenario to edit its situation.' },
   profileTitle: { ja: 'ドライバープロファイル — 嗜好と履歴', en: 'Driver profile — preference & history' },
-  triggerAlgorithm: { ja: 'トリガーアルゴリズム', en: 'Trigger algorithm' },
+  triggerAlgorithm: { ja: '発火判定アルゴリズム', en: 'Firing-decision algorithm' },
   selectServiceFirst: { ja: 'まずサービスパッケージを選択してください。', en: 'Select a service package first.' },
   selectContentFirst: { ja: 'まずコンテンツパッケージを選択してください。', en: 'Select a content package first.' },
   explanationSource: { ja: '説明の生成元', en: 'Explanation source' },
   explOff: { ja: 'オフ（定型文）', en: 'Off (template)' },
-  explBackend: { ja: 'バックエンド LLM', en: 'Backend LLM' },
-  explBrowser: { ja: 'ブラウザ LLM', en: 'Browser LLM' },
+  explBackend: { ja: 'サーバー側の生成AI（Ollama）', en: 'Server-side generative AI (Ollama)' },
+  explBrowser: { ja: 'ブラウザ内蔵の生成AI（Gemini Nano）', en: 'In-browser generative AI (Gemini Nano)' },
 
   // ── Two-tier basic/detailed editors (task 18) ─────────────────────────────
   badgeSituation: {
@@ -130,14 +132,32 @@ const LABELS = {
   caseFixesHere: { ja: 'このケースが固定する項目', en: 'What this case fixes' },
   driverStateAtDeparture: { ja: '出発時のドライバー状態', en: 'Driver state at departure' },
   initialDrowsinessLabel: { ja: '初期眠気レベル', en: 'Initial drowsiness level' },
-  initialFatigueLabel: { ja: '初期疲労レベル', en: 'Initial fatigue level' },
+  initialFatigueLabel: { ja: '初期疲労度', en: 'Initial fatigue level' },
   definingPreferences: { ja: 'このペルソナを特徴づける嗜好', en: "The persona's defining preferences" },
   noPersonaPreferences: {
     ja: 'このペルソナには記載された嗜好がありません。',
     en: 'This persona has no authored preferences.',
   },
   casePinsProfile: { ja: 'このケースが固定するプロファイル', en: 'The profile this case pins' },
-  maxCandidatesBasic: { ja: '最大候補数（top_k）', en: 'Max candidates (top_k)' },
+  maxCandidatesBasic: { ja: '最大候補数', en: 'Max candidates' },
+  routeSourceMaps: { ja: 'Google マップ', en: 'Google Maps' },
+  routeSourceLocal: { ja: 'ローカル・フォールバック', en: 'Local fallback' },
+  errLoadRoutePresets: { ja: 'ルートプリセットの読み込みに失敗しました。', en: 'Failed to load route presets.' },
+  errLoadScenarios: { ja: 'シナリオの読み込みに失敗しました。', en: 'Failed to load scenarios.' },
+  errLoadTriggerPackages: { ja: '発火判定パッケージの読み込みに失敗しました。', en: 'Failed to load firing-decision packages.' },
+  errLoadServiceContentPackages: { ja: 'サービス・コンテンツ提案パッケージの読み込みに失敗しました。', en: 'Failed to load service/content proposal packages.' },
+  errLoadDefaultPreset: { ja: '既定のプリセットの読み込みに失敗しました。', en: 'Failed to load the default preset.' },
+  errLoadRoutePreset: { ja: '選択したルートプリセットの読み込みに失敗しました。', en: 'Failed to load the selected route preset.' },
+  errRouteAnalysisFailed: { ja: 'ルート解析に失敗しました。', en: 'Route analysis failed.' },
+  errStartRunFailed: { ja: '実行の開始に失敗しました。', en: 'Failed to start the run.' },
+}
+
+/** Fallback labels for the two basic-tier trigger thresholds when the package
+ * manifest hasn't loaded (or lacks the key) yet — the raw hyperparameter key
+ * must never stand in for a label (owner rule). */
+const BASIC_TRIGGER_FALLBACK_LABELS: Record<string, BilingualLabel> = {
+  threshold_suggest: { ja: '発火しきい値', en: 'Firing threshold' },
+  monotony_suggest_threshold: { ja: '漫然運転予防のしきい値', en: 'Monotony-prevention threshold' },
 }
 
 // Scenarios hidden from the Combined scenario picker (owner review): the uc02
@@ -165,6 +185,22 @@ const groupLabel: React.CSSProperties = { fontSize: '0.72em', fontWeight: 800, t
 /** Stable-ish dedup key for a driver profile object (schema key order is
  * consistent across presets, so JSON.stringify is sufficient here). */
 const profileKey = (p: DriverProfile): string => JSON.stringify(p)
+
+const UNKNOWN_FIELD_LABEL: BilingualLabel = { ja: '(不明)', en: '(Unknown)' }
+
+/** Bilingual label for a runStore context-override key (`is_night`,
+ * `child_passenger`, …), shared with the trigger-side signal registry so the
+ * two screens never name the same field differently. Never falls back to the
+ * raw key — an unrecognised key still reads as a labelled field, not an
+ * identifier (owner rule). */
+const contextOverrideLabel = (key: string): BilingualLabel => SIGNAL_LABELS[key] ?? UNKNOWN_FIELD_LABEL
+
+/** Bilingual label for a proposal-side situation field (`multiple_passengers`,
+ * `route_tags`, `destination_tags`, …), read from the same `SITUATION_FIELDS`
+ * table the detailed editor (`SituationFieldRows`) renders — so the basic and
+ * detailed tiers of the same popup always agree on wording. */
+const situationFieldLabel = (key: string): BilingualLabel =>
+  SITUATION_FIELDS.find((f) => f.key === key)?.label ?? UNKNOWN_FIELD_LABEL
 
 type Lang = 'ja' | 'en'
 
@@ -233,7 +269,7 @@ function BasicTriggerView({
         return (
           <div key={key} style={{ margin: '8px 0' }}>
             <label htmlFor={`basic-input-${key}`} style={fieldLabel}>
-              {def ? t(def.label, lang) : key}
+              {def ? t(def.label, lang) : t(BASIC_TRIGGER_FALLBACK_LABELS[key], lang)}
               <SetupBadge kind="algorithm" lang={lang} />
             </label>
             <input
@@ -290,7 +326,7 @@ function BasicServiceView({
           </div>
           {Object.entries(weights).map(([key, node]) => (
             <div key={key} style={{ margin: '6px 0' }}>
-              <label htmlFor={`basic-hw-${key}`} style={fieldLabel}>{key}</label>
+              <label htmlFor={`basic-hw-${key}`} style={fieldLabel}>{t(nodeLabel(key), lang)}</label>
               <input
                 id={`basic-hw-${key}`} data-testid={`basic-hierarchy-${key}`} type="number" step={0.01} min={0} max={1}
                 value={Number(node?.share ?? 0)} style={inputStyle}
@@ -333,7 +369,7 @@ function BasicContentView({
           </div>
           {Object.entries(weights).map(([cat, val]) => (
             <div key={cat} style={{ margin: '6px 0' }}>
-              <label htmlFor={`basic-ccw-${cat}`} style={fieldLabel}>{cat}</label>
+              <label htmlFor={`basic-ccw-${cat}`} style={fieldLabel}>{t(nodeLabel(cat), lang)}</label>
               <input
                 id={`basic-ccw-${cat}`} data-testid={`basic-category-${cat}`} type="number" step={0.01} min={0} max={1}
                 value={Number(val)} style={inputStyle}
@@ -415,7 +451,7 @@ function BasicSituationView({
                     default: CASE_OVERRIDE_SENTINEL_DEFAULT,
                   })}
                 />
-                {key}
+                {t(contextOverrideLabel(key), lang)}
                 <SetupBadge kind="situation" lang={lang} />
               </label>
             )
@@ -429,7 +465,7 @@ function BasicSituationView({
                     type="checkbox" id={`basic-sit-${key}`} data-testid={`basic-${key}`} checked={raw}
                     onChange={(e) => dispatchProposal({ type: 'SET_SITUATION_FIELD', key: key as keyof Situation, value: e.target.checked })}
                   />
-                  {key}
+                  {t(situationFieldLabel(key), lang)}
                   <SetupBadge kind="situation" lang={lang} />
                 </label>
               )
@@ -438,7 +474,7 @@ function BasicSituationView({
             return (
               <div key={key} style={{ margin: '6px 0' }}>
                 <label htmlFor={`basic-sit-${key}`} style={fieldLabel}>
-                  {key}
+                  {t(situationFieldLabel(key), lang)}
                   <SetupBadge kind="situation" lang={lang} />
                 </label>
                 <input
@@ -493,10 +529,16 @@ function BasicSituationView({
  * STATED preferences to judge the proposal against.
  */
 function BasicProfileView({
-  caseSetup, selectedCase, lang,
+  caseSetup, selectedCase, presetLabelsById, lang,
 }: {
   caseSetup: ResolvedCaseSetup | null
   selectedCase: CombinedTestCase | null
+  /** preset id → the preset's own bilingual display label (feature 020 review
+   * finding): `caseSetup.profileRef` is the raw kebab-case preset id, which
+   * must never reach the screen — the resolved display label stands in for
+   * it, with the id itself reachable only as a fallback if it is somehow
+   * unregistered. */
+  presetLabelsById: Record<string, BilingualLabel>
   lang: Lang
 }) {
   if (!caseSetup) {
@@ -508,11 +550,12 @@ function BasicProfileView({
     )
   }
   const preferences = selectedCase?.persona.preferences ?? []
+  const profileLabel = presetLabelsById[caseSetup.profileRef] ?? UNKNOWN_FIELD_LABEL
   return (
     <div data-testid="setup-basic-profile">
       <div style={groupLabel}>{t(LABELS.caseFixesHere, lang)}</div>
       <p style={summaryRow}>
-        {t(LABELS.casePinsProfile, lang)}: <strong>{caseSetup.profileRef}</strong>
+        {t(LABELS.casePinsProfile, lang)}: <strong>{t(profileLabel, lang)}</strong>
         <SetupBadge kind="situation" lang={lang} />
       </p>
       <div style={{ ...groupLabel, marginTop: '14px' }}>{t(LABELS.definingPreferences, lang)}</div>
@@ -581,6 +624,9 @@ export default function MergedSetupPanel({
   // Driver-profile options: the 16 DISTINCT profiles embedded in the 32 presets.
   const [profileOptions, setProfileOptions] = useState<ProfileOption[]>([])
   const [selectedProfileKey, setSelectedProfileKey] = useState<string | null>(null)
+  // preset id → the preset's own bilingual label, so a pinned case's
+  // `profileRef` (a raw preset id) can be shown as words, never as the id.
+  const [presetLabelsById, setPresetLabelsById] = useState<Record<string, BilingualLabel>>({})
 
   // The resolved ScenarioDef (for the trigger situation sections' defaults).
   const [scenarioDef, setScenarioDef] = useState<ScenarioDef | null>(null)
@@ -657,17 +703,17 @@ export default function MergedSetupPanel({
       // default could land after the case's and silently replace it (a C-01 run
       // showing the Tokyo-Osaka route).
       .then((r) => { setRoutePresets(r.presets) })
-      .catch(() => setError('Failed to load route presets'))
+      .catch(() => setError(t(LABELS.errLoadRoutePresets, lang)))
     listScenarios()
       .then((r) => { setScenarios(r.scenarios); runStore.dispatch({ type: 'LOAD_SCENARIOS', scenarios: r.scenarios }) })
-      .catch(() => setError('Failed to load scenarios'))
+      .catch(() => setError(t(LABELS.errLoadScenarios, lang)))
     listPackages()
       .then((r) => {
         setTriggerPackages(r.packages)
         runStore.dispatch({ type: 'LOAD_PACKAGES', packages: r.packages })
         if (r.packages[0]) runStore.dispatch({ type: 'SELECT_PACKAGE', id: r.packages[0].id })
       })
-      .catch(() => setError('Failed to load trigger packages'))
+      .catch(() => setError(t(LABELS.errLoadTriggerPackages, lang)))
     getPackages()
       .then((r) => {
         const svc = r.packages.filter((p) => p.family === 'service_selector')
@@ -675,9 +721,9 @@ export default function MergedSetupPanel({
         setServicePackages(svc); if (svc[0]) proposalStore.dispatch({ type: 'SET_SERVICE_PACKAGE', packageId: svc[0].id })
         setContentPackages(cnt); if (cnt[0]) proposalStore.dispatch({ type: 'SET_CONTENT_PACKAGE', packageId: cnt[0].id })
       })
-      .catch(() => setError('Failed to load service/content packages'))
+      .catch(() => setError(t(LABELS.errLoadServiceContentPackages, lang)))
     // Seed the world (situation + driver_profile) from the default preset.
-    loadDefaultPresetWorld().catch(() => setError('Failed to load default preset'))
+    loadDefaultPresetWorld().catch(() => setError(t(LABELS.errLoadDefaultPreset, lang)))
     // Build the distinct-driver-profile dropdown from the 32 presets.
     loadPresetProfiles().catch(() => { /* profiles optional */ })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -717,6 +763,7 @@ export default function MergedSetupPanel({
 
   async function loadPresetProfiles() {
     const { presets } = await getPresets()
+    setPresetLabelsById(Object.fromEntries(presets.map((p) => [p.preset_id, p.label])))
     const details = await Promise.all(presets.map((p) => getPreset(p.preset_id).catch(() => null)))
     const seen = new Map<string, ProfileOption>()
     for (const d of details) {
@@ -734,7 +781,7 @@ export default function MergedSetupPanel({
     try {
       const env = await loadRoutePreset(presetId)
       setRouteEnvelope(env); setSelectedRouteId(env.alternatives[0]?.route_id ?? null)
-    } catch (e) { setError(e instanceof Error ? e.message : 'Failed to load route preset') } finally { setLoadingRoute(false) }
+    } catch (e) { setError(e instanceof Error ? e.message : t(LABELS.errLoadRoutePreset, lang)) } finally { setLoadingRoute(false) }
   }
 
   async function handleAnalyzeMaps() {
@@ -742,7 +789,7 @@ export default function MergedSetupPanel({
     try {
       const env = await routesAnalyze({ scenarioId: rs.selectedScenarioId || undefined, mapsKey: rs.mapsKey || undefined, start: mapsStart || undefined, end: mapsEnd || undefined })
       setSelectedRoutePresetId(null); setRouteEnvelope(env); setSelectedRouteId(env.alternatives[0]?.route_id ?? null)
-    } catch (err) { setMapsErrorMsg(err instanceof MapsError ? err.body.message : err instanceof Error ? err.message : 'Route analysis failed') } finally { setAnalyzing(false) }
+    } catch (err) { setMapsErrorMsg(err instanceof MapsError ? err.body.message : err instanceof Error ? err.message : t(LABELS.errRouteAnalysisFailed, lang)) } finally { setAnalyzing(false) }
   }
 
   // Mirror the panel-local route into the scoped runStore so the zero-prop
@@ -847,10 +894,10 @@ export default function MergedSetupPanel({
           content_parameters: ps.contentParameterOverrides, content_hyperparameters: ps.contentHyperparameterOverrides,
         }, rs.selectedScenarioId!)
         return true
-      } catch (e) { setError(e instanceof Error ? e.message : 'Failed to start run'); return false }
+      } catch (e) { setError(e instanceof Error ? e.message : t(LABELS.errStartRunFailed, lang)); return false }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isComplete, rs, ps, effectiveWorld, selectedRoutePresetId, routeEnvelope, selectedRouteId, mountainRange, jamRange, jamSpeedKph])
+  }, [isComplete, rs, ps, effectiveWorld, selectedRoutePresetId, routeEnvelope, selectedRouteId, mountainRange, jamRange, jamSpeedKph, lang])
 
   // Mirrors buildTriggerPlan's initialState assembly so the projection and the
   // run are fed identically.
@@ -1024,7 +1071,11 @@ export default function MergedSetupPanel({
         value={selectedRoutePresetId ?? ''} onChange={(e) => handleSelectRoutePreset(e.target.value)}
         disabled={routePresets.length === 0 || loadingRoute}>
         <option value="">{routePresets.length === 0 ? t(LABELS.loading, lang) : t(LABELS.selectPreset, lang)}</option>
-        {routePresets.map((p) => <option key={p.id} value={p.id}>{t(p.label, lang)} ({p.distance_km} km, ~{p.duration_min} min)</option>)}
+        {routePresets.map((p) => (
+          <option key={p.id} value={p.id}>
+            {t(p.label, lang)} {lang === 'ja' ? `（${p.distance_km} km、約${p.duration_min}分）` : `(${p.distance_km} km, ~${p.duration_min} min)`}
+          </option>
+        ))}
       </select>
       <details style={{ marginTop: '6px' }} open={rs.mapsKey !== ''}>
         <summary style={{ fontSize: '0.8em', color: '#475569', cursor: 'pointer' }}>{t(LABELS.customRoute, lang)}</summary>
@@ -1049,7 +1100,11 @@ export default function MergedSetupPanel({
           ))}
         </div>
       )}
-      {chosenAlt && <p style={summaryRow}>{chosenAlt.summary} — {routeEnvelope!.route_source} · {totalKm.toFixed(0)} km</p>}
+      {chosenAlt && (
+        <p style={summaryRow}>
+          {chosenAlt.summary} — {t(routeEnvelope!.route_source === 'maps' ? LABELS.routeSourceMaps : LABELS.routeSourceLocal, lang)} · {totalKm.toFixed(0)} km
+        </p>
+      )}
       {/* The route is mirrored into the scoped runStore (above) so the CENTER
           panel's <MapSurface/> renders this route's map — the map is no longer
           shown in this left panel (owner layout). */}
@@ -1115,7 +1170,7 @@ export default function MergedSetupPanel({
         <select id="merged-service-package-select" data-testid="merged-service-package-select" style={selectStyle} value={ps.servicePackageId ?? ''}
           onChange={(e) => e.target.value && proposalStore.dispatch({ type: 'SET_SERVICE_PACKAGE', packageId: e.target.value })} disabled={servicePackages.length === 0}>
           <option value="">{servicePackages.length === 0 ? t(LABELS.loading, lang) : t(LABELS.select, lang)}</option>
-          {servicePackages.map((p) => <option key={p.id} value={p.id}>{p.id}</option>)}
+          {servicePackages.map((p) => <option key={p.id} value={p.id}>{t(p.label, lang)}</option>)}
         </select>
         <button type="button" style={editBtnStyle} data-testid="edit-service" onClick={() => setOpenEdit('service')}>{t(LABELS.edit, lang)}</button>
         <SetupBadge kind="algorithm" lang={lang} />
@@ -1126,7 +1181,7 @@ export default function MergedSetupPanel({
         <select id="merged-content-package-select" data-testid="merged-content-package-select" style={selectStyle} value={ps.contentPackageId ?? ''}
           onChange={(e) => e.target.value && proposalStore.dispatch({ type: 'SET_CONTENT_PACKAGE', packageId: e.target.value })} disabled={contentPackages.length === 0}>
           <option value="">{contentPackages.length === 0 ? t(LABELS.loading, lang) : t(LABELS.select, lang)}</option>
-          {contentPackages.map((p) => <option key={p.id} value={p.id}>{p.id}</option>)}
+          {contentPackages.map((p) => <option key={p.id} value={p.id}>{t(p.label, lang)}</option>)}
         </select>
         <button type="button" style={editBtnStyle} data-testid="edit-content" onClick={() => setOpenEdit('content')}>{t(LABELS.edit, lang)}</button>
         <SetupBadge kind="algorithm" lang={lang} />
@@ -1202,7 +1257,9 @@ export default function MergedSetupPanel({
       {/* ── Driver profile Edit popup (preference + history, reused verbatim) ── */}
       <Modal open={openEdit === 'profile'} title={t(LABELS.profileTitle, lang)} size="wide" onClose={() => setOpenEdit(null)}>
         <DetailedToggle detailed={detailed} onToggle={() => setDetailed((d) => !d)} lang={lang} />
-        {!detailed ? <BasicProfileView caseSetup={caseSetup} selectedCase={selectedCase} lang={lang} /> : <PreferenceHistorySection />}
+        {!detailed
+          ? <BasicProfileView caseSetup={caseSetup} selectedCase={selectedCase} presetLabelsById={presetLabelsById} lang={lang} />
+          : <PreferenceHistorySection />}
       </Modal>
 
       {/* ── Package Edit popups (reused verbatim from Trigger / Proposal) ───── */}

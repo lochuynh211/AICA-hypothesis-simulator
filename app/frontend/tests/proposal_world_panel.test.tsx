@@ -55,7 +55,7 @@ describe('WorldPanel', () => {
     // longer has its own trailing section — it moved to the TOP of
     // "Preference & history" (owner feedback 2026-07-17).
     expect(headings.length).toBe(4)
-    expect(headings[0]).toMatch(/発火シグナル|trigger signal/i)
+    expect(headings[0]).toMatch(/提案分類|proposal category/i)
     expect(headings[headings.length - 1]).toMatch(/好み・履歴|preference & history/i)
   })
 

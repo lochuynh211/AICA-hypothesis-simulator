@@ -30,6 +30,36 @@ import {
   nestedBlockStyle,
   nestedLabelStyle,
 } from './matrixStyles'
+import {
+  fieldName,
+  isKnownService,
+  NODE_LABELS,
+  nodeLabel,
+  optionLabel,
+  PURPOSE_LABELS,
+  purposeLabel,
+  serviceLabel,
+} from '../../lib/review/reviewVocabulary'
+
+const LABELS = {
+  empty: { ja: '（空）', en: '(empty)' },
+}
+
+/**
+ * Best-effort translation for a raw manifest/JSON key rendered as a matrix
+ * row/column/section header. This renderer is generic over EVERY
+ * hyperparameter shape, so the same raw key can be a proposal category
+ * (`purpose_multipliers`), a service id, a judgement-axis node
+ * (`Situation`/`driver_state`), or a feature id, depending on which
+ * hyperparameter is being edited — tries each shared vocabulary in turn and
+ * falls back to `fieldName()`'s own "unnamed" wording, never the raw key.
+ */
+function labelForKey(key: string, lang: UiLanguage): string {
+  if (Object.prototype.hasOwnProperty.call(PURPOSE_LABELS, key)) return t(purposeLabel(key), lang)
+  if (isKnownService(key)) return t(serviceLabel(key), lang)
+  if (Object.prototype.hasOwnProperty.call(NODE_LABELS, key)) return t(nodeLabel(key), lang)
+  return t(fieldName(key), lang)
+}
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
 
@@ -160,7 +190,7 @@ export default function HyperparamMatrix({ def, value, onChange, lang, hideLabel
         >
           {options.map((opt) => (
             <option key={String(opt)} value={String(opt)}>
-              {String(opt)}
+              {t(optionLabel(def.key, opt), lang)}
             </option>
           ))}
         </select>
@@ -197,6 +227,7 @@ export default function HyperparamMatrix({ def, value, onChange, lang, hideLabel
         <MatrixNode
           value={(effective ?? {}) as JsonValue}
           path={[]}
+          lang={lang}
           onEdit={(path, leaf) => onChange(setAtPath((effective ?? {}) as JsonValue, path, leaf))}
         />
       </div>
@@ -207,10 +238,12 @@ export default function HyperparamMatrix({ def, value, onChange, lang, hideLabel
 function MatrixNode({
   value,
   path,
+  lang,
   onEdit,
 }: {
   value: JsonValue
   path: string[]
+  lang: UiLanguage
   onEdit: (path: string[], leafValue: JsonValue) => void
 }) {
   if (Array.isArray(value)) {
@@ -222,7 +255,7 @@ function MatrixNode({
   if (isPlainObject(value)) {
     const keys = Object.keys(value)
     if (keys.length === 0) {
-      return <div style={{ fontSize: '0.78em', color: '#9ca3af', fontStyle: 'italic' }}>(empty)</div>
+      return <div style={{ fontSize: '0.78em', color: '#9ca3af', fontStyle: 'italic' }}>{t(LABELS.empty, lang)}</div>
     }
 
     // Regular 2-D matrix — a single pivot table: rows = outer keys (left label
@@ -238,7 +271,7 @@ function MatrixNode({
               <th style={mtxCornerStyle} aria-hidden />
               {colKeys.map((c) => (
                 <th key={c} style={mtxThStyle}>
-                  {c}
+                  {labelForKey(c, lang)}
                 </th>
               ))}
             </tr>
@@ -249,7 +282,7 @@ function MatrixNode({
               return (
                 <tr key={r}>
                   <th scope="row" style={mtxRowLabelStyle}>
-                    {r}
+                    {labelForKey(r, lang)}
                   </th>
                   {colKeys.map((c) => {
                     const cell = row[c]
@@ -295,7 +328,7 @@ function MatrixNode({
             <tr>
               {keys.map((k) => (
                 <th key={k} style={mtxThStyle}>
-                  {k}
+                  {labelForKey(k, lang)}
                 </th>
               ))}
             </tr>
@@ -323,8 +356,8 @@ function MatrixNode({
       <>
         {keys.map((k) => (
           <div key={k} style={nestedBlockStyle}>
-            <div style={nestedLabelStyle}>{k}</div>
-            <MatrixNode value={value[k]} path={[...path, k]} onEdit={onEdit} />
+            <div style={nestedLabelStyle}>{labelForKey(k, lang)}</div>
+            <MatrixNode value={value[k]} path={[...path, k]} lang={lang} onEdit={onEdit} />
           </div>
         ))}
       </>

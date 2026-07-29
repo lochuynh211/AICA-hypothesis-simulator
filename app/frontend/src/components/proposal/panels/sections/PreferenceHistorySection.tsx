@@ -20,12 +20,15 @@ import {
 } from '../../../../api/proposalClient'
 import { GenreUsageTable, NestedRecordEditor } from '../../fieldEditors'
 import { FieldRow, issuesForPath, PROFILE_GROUPS, USAGE_LEVEL_OPTIONS } from './worldFields'
+import { genreLabel, optionLabel } from '../../../../lib/review/reviewVocabulary'
 
 const LABELS = {
-  genreExtension: { ja: 'ジャンル選好（genre_affinity_v1）', en: 'Genre affinity (genre_affinity_v1)' },
+  genreExtension: { ja: 'ジャンル選好', en: 'Genre affinity' },
   scenes: { ja: 'シーン別ジャンル利用', en: 'Scene genre usage' },
   genreAffinityEnabled: { ja: 'ジャンル選好を有効化', en: 'Enable genre affinity' },
   usageByGenre: { ja: 'ジャンル別利用状況', en: 'Usage by genre' },
+  off: { ja: 'オフ', en: 'Off' },
+  on: { ja: 'オン', en: 'On' },
 }
 
 export default function PreferenceHistorySection() {
@@ -81,26 +84,27 @@ export default function PreferenceHistorySection() {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: '6px 10px', padding: '6px 0' }}>
         <span style={{ fontSize: '0.82em', color: '#4b5563' }}>
-          <code>genre_affinity_v1_enabled</code> {t(LABELS.genreAffinityEnabled, lang)}
+          {t(LABELS.genreAffinityEnabled, lang)}
         </span>
         <select
           data-testid="genre-affinity-toggle"
           value={String(driverProfile.genre_affinity_v1_enabled)}
           onChange={(e) => dispatch({ type: 'SET_GENRE_EXTENSION_ENABLED', enabled: e.target.value === 'true' })}
         >
-          <option value="false">off</option>
-          <option value="true">on</option>
+          <option value="false">{t(LABELS.off, lang)}</option>
+          <option value="true">{t(LABELS.on, lang)}</option>
         </select>
       </div>
       {driverProfile.genre_affinity_v1_enabled && (
         <div data-testid="genre-fields">
           <div style={{ fontSize: '0.78em', color: '#6b7280', margin: '4px 0 2px' }}>
-            <code>usage_by_genre</code> {t(LABELS.usageByGenre, lang)}
+            {t(LABELS.usageByGenre, lang)}
           </div>
           <GenreUsageTable
             testId="genre-usage-by-genre"
             genres={GENRE_VOCABULARY}
             value={driverProfile.usage_by_genre ?? {}}
+            lang={lang}
             onChange={(genre, level) =>
               dispatch({
                 type: 'SET_USAGE_BY_GENRE',
@@ -110,11 +114,12 @@ export default function PreferenceHistorySection() {
             }
           />
           <div style={{ fontSize: '0.78em', color: '#6b7280', margin: '8px 0 2px' }}>
-            <code>scene_genre_usage</code> — {t(LABELS.scenes, lang)}
+            {t(LABELS.scenes, lang)}
           </div>
           <NestedRecordEditor
             testId="genre-scene-usage"
             value={(driverProfile.scene_genre_usage ?? {}) as Record<string, Record<string, string>>}
+            lang={lang}
             onChange={(next) =>
               dispatch({
                 type: 'SET_DRIVER_PROFILE_FIELD',
@@ -124,6 +129,8 @@ export default function PreferenceHistorySection() {
             }
             innerKeyOptions={GENRE_VOCABULARY}
             innerValueOptions={USAGE_LEVEL_OPTIONS}
+            keyLabel={genreLabel}
+            valueLabel={(v) => optionLabel('scene_genre_usage', v)}
           />
         </div>
       )}

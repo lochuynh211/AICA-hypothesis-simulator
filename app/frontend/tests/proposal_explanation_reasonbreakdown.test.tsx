@@ -21,7 +21,7 @@ function baseProps() {
 }
 
 describe('ReasonBreakdown AI explanation slot', () => {
-  it('renders the AI sentence + "AI · model" badge when ready, keeping the numeric trace', () => {
+  it('renders the AI sentence + "AI-generated · model" badge when ready, keeping the numeric trace', () => {
     render(
       <ReasonBreakdown
         {...baseProps()}
@@ -29,10 +29,10 @@ describe('ReasonBreakdown AI explanation slot', () => {
       />,
     )
     expect(screen.getByTestId('ai-rationale')).toHaveTextContent('High drowsiness drove this pick.')
-    expect(screen.getByTestId('ai-rationale-badge')).toHaveTextContent('AI · qwen2.5:3b')
+    expect(screen.getByTestId('ai-rationale-badge')).toHaveTextContent('AI-generated · qwen2.5:3b')
     // The AI text replaces the templated sentence, not the score trace:
     expect(screen.queryByText('template rationale')).toBeNull()
-    expect(screen.getByRole('cell', { name: 'drowsiness_level' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'Drowsiness' })).toBeInTheDocument()
   })
 
   it('shows a fell-back note when the AI degraded to the template', () => {

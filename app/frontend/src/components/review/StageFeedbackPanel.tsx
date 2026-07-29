@@ -36,13 +36,17 @@ const NO_RUN_NOTE: BilingualLabel = {
   en: 'Your judgements are kept on this screen. Persistence begins once a run exists.',
 }
 const COMMENT_PLACEHOLDER: Record<ReviewStage, BilingualLabel> = {
-  trigger: { ja: 'トリガーへのコメント', en: 'Comment on the trigger' },
+  trigger: { ja: '発火へのコメント', en: 'Comment on the trigger' },
   service: { ja: 'サービスへのコメント', en: 'Comment on the service' },
   content: { ja: 'コンテンツへのコメント', en: 'Comment on the content' },
 }
 
+// Owner directive: the user-facing word for the decision event is 発火, not
+// トリガー — this ReviewStage names the review target for whether AICA fired
+// (rest_required / monotony_prevention), i.e. the 発火 decision. EN stays
+// 'Trigger', matching the ja:発火/en:Trigger pairing used across this app.
 const STAGE_LABEL: Record<ReviewStage, BilingualLabel> = {
-  trigger: { ja: 'トリガー', en: 'Trigger' },
+  trigger: { ja: '発火', en: 'Trigger' },
   service: { ja: 'サービス', en: 'Service' },
   content: { ja: 'コンテンツ', en: 'Content' },
 }

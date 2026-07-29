@@ -16,6 +16,7 @@ import type { ScenarioDef } from '../../../api/types'
 import { t } from '../../../i18n/t'
 import { SIGNAL_LABELS } from '../signalLabels'
 import { SignalGroup, SignalRow } from './signalPrimitives'
+import { booleanLabel } from '../../../lib/review/reviewVocabulary'
 
 const NOOP = () => {}
 const NEVER_DIMMED = () => false
@@ -77,7 +78,7 @@ export default function FixedConditionsSection({
       <SignalRow
         signalKey="isNight"
         label={t(SIGNAL_LABELS.isNight, uiLanguage)}
-        value={isNightValue ? 'on' : 'off'}
+        value={t(booleanLabel(isNightValue), uiLanguage)}
         highlighted={highlightedSignalKey === 'isNight'}
         dimmed={isDimmed('isNight')}
         onHover={() => onHighlight('isNight')}
@@ -102,7 +103,7 @@ export default function FixedConditionsSection({
       <SignalRow
         signalKey="familiarRoute"
         label={t(SIGNAL_LABELS.familiarRoute, uiLanguage)}
-        value={familiarRouteValue ? 'yes' : 'no'}
+        value={t(booleanLabel(familiarRouteValue), uiLanguage)}
         highlighted={highlightedSignalKey === 'familiarRoute'}
         dimmed={isDimmed('familiarRoute')}
         onHover={() => onHighlight('familiarRoute')}
@@ -127,7 +128,7 @@ export default function FixedConditionsSection({
       <SignalRow
         signalKey="childPassenger"
         label={t(SIGNAL_LABELS.childPassenger, uiLanguage)}
-        value={childPassengerValue ? 'yes' : 'no'}
+        value={t(booleanLabel(childPassengerValue), uiLanguage)}
         highlighted={highlightedSignalKey === 'childPassenger'}
         dimmed={isDimmed('childPassenger')}
         onHover={() => onHighlight('childPassenger')}

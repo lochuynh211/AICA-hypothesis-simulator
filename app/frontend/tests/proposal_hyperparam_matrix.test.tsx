@@ -120,7 +120,7 @@ describe('HyperparamMatrix', () => {
     })
   })
 
-  it('renders a uniform 2-D matrix (subgroup × purpose) as a single pivot table with row labels and column headers', () => {
+  it('renders a uniform 2-D matrix (subgroup × purpose) as a single pivot table with row labels and column headers, labelled by name not id', () => {
     const def: HyperparameterDef = {
       key: 'purpose_multipliers',
       kind: 'table',
@@ -134,16 +134,35 @@ describe('HyperparamMatrix', () => {
 
     // Exactly one table (a single pivot), not one per subgroup.
     expect(screen.getAllByRole('table')).toHaveLength(1)
-    // Column headers = inner keys; row headers = outer keys.
-    expect(screen.getByRole('columnheader', { name: 'rest_recommended' })).toBeInTheDocument()
-    expect(screen.getByRole('columnheader', { name: 'route_music' })).toBeInTheDocument()
-    expect(screen.getByRole('rowheader', { name: 'driver_state' })).toBeInTheDocument()
-    expect(screen.getByRole('rowheader', { name: 'driving_environment' })).toBeInTheDocument()
+    // Column headers = inner keys (the 提案分類 purpose ids), resolved through
+    // purposeLabel() to the spec's own wording, never the raw id.
+    expect(screen.getByRole('columnheader', { name: 'Rest recommended to prevent dangerous driving' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Route-matched music proposal' })).toBeInTheDocument()
+    expect(screen.queryByRole('columnheader', { name: 'rest_recommended' })).toBeNull()
+    expect(screen.queryByRole('columnheader', { name: 'route_music' })).toBeNull()
+    // Row headers = outer keys (weight-tree node ids), resolved through nodeLabel().
+    expect(screen.getByRole('rowheader', { name: 'Driver state' })).toBeInTheDocument()
+    expect(screen.getByRole('rowheader', { name: 'Driving environment' })).toBeInTheDocument()
+    expect(screen.queryByRole('rowheader', { name: 'driver_state' })).toBeNull()
+    expect(screen.queryByRole('rowheader', { name: 'driving_environment' })).toBeNull()
     // Every cell value is present and editable (numbers stringify: 1.0 → "1").
     expect(screen.getByDisplayValue('1.4')).toBeInTheDocument()
     expect(screen.getByDisplayValue('1.1')).toBeInTheDocument()
   })
 
+  // KNOWN FAILING — source bug, not a stale assertion (see vocabulary-refactor
+  // test-fix notes). `trait_composition_matrix` is a real content-package
+  // hyperparameter routed through this exact generic pivot renderer in
+  // production (ContentSetupSection's CONTENT_RESPONSE_KEYS), but none of its
+  // row/column keys (arousal, valence, energy, norm_loudness, norm_tempo,
+  // danceability, acousticness_inv, mode, instrumentalness_inv, speech_ease,
+  // tempo_ease, duration_ease) are registered in reviewVocabulary.ts, so a
+  // reviewer opening that real table sees "Unnamed field" for nearly every
+  // row and column. Left failing rather than papered over because fixing it
+  // correctly means naming ML audio-feature vocabulary that has no spec
+  // backing (CANONICAL.md's term table never mentions this namespace) —
+  // that naming call belongs to whoever owns the specification, not to a
+  // test-assertion fix.
   it('renders a RAGGED matrix (trait × audio, differing columns per row) as one union-column pivot', () => {
     const def: HyperparameterDef = {
       key: 'trait_composition_matrix',
@@ -155,21 +174,26 @@ describe('HyperparamMatrix', () => {
       },
     }
     render(<HyperparamMatrix def={def} value={undefined} onChange={vi.fn()} lang="en" />)
-    // one pivot table, columns = union of inner keys
+    // One pivot table, columns = union of inner keys — each NAMED, never shown
+    // as its raw audio-feature identifier. `tempo` is deliberately left out of
+    // the vocabulary table (the real manifest uses `norm_tempo`), so it stands
+    // in here for a key with no registered name: still a column, still shown,
+    // but as "Unnamed field" rather than as an identifier.
     expect(screen.getAllByRole('table')).toHaveLength(1)
-    for (const col of ['energy', 'tempo', 'valence', 'mode']) {
+    for (const col of ['Energy', 'Brightness', 'Major or minor key']) {
       expect(screen.getByRole('columnheader', { name: col })).toBeInTheDocument()
     }
-    // row headers = outer keys
-    expect(screen.getByRole('rowheader', { name: 'arousal' })).toBeInTheDocument()
-    expect(screen.getByRole('rowheader', { name: 'valence' })).toBeInTheDocument()
+    expect(screen.queryByRole('columnheader', { name: 'energy' })).toBeNull()
+    // row headers = outer keys, likewise named
+    expect(screen.getByRole('rowheader', { name: 'Arousal' })).toBeInTheDocument()
+    expect(screen.getByRole('rowheader', { name: 'Brightness' })).toBeInTheDocument()
     // present cells are editable; missing cells render a muted dot
     expect(screen.getByDisplayValue('0.3')).toBeInTheDocument()
     expect(screen.getByDisplayValue('0.65')).toBeInTheDocument()
     expect(screen.getAllByText('·').length).toBeGreaterThan(0)
   })
 
-  it('renders deeply-nested data (hierarchy_weights shape) faithfully to its real depth', () => {
+  it('renders deeply-nested data (hierarchy_weights shape) faithfully to its real depth, labelled by name not id', () => {
     const def: HyperparameterDef = {
       key: 'hierarchy_weights',
       kind: 'table',
@@ -181,9 +205,11 @@ describe('HyperparamMatrix', () => {
     render(<HyperparamMatrix def={def} value={undefined} onChange={vi.fn()} lang="en" />)
 
     // Depth is preserved (not flattened): the outer group, the nested subgroup,
-    // and the leaf share value all render.
+    // and the leaf share value all render — the subgroup resolved through
+    // nodeLabel() to its readable name, never the raw `driver_state` id.
     expect(screen.getByText('Situation')).toBeInTheDocument()
-    expect(screen.getByText('driver_state')).toBeInTheDocument()
+    expect(screen.getByText('Driver state')).toBeInTheDocument()
+    expect(screen.queryByText('driver_state')).toBeNull()
     expect(screen.getByDisplayValue('0.5')).toBeInTheDocument()
   })
 

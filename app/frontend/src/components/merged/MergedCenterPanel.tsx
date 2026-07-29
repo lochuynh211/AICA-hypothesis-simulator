@@ -24,7 +24,7 @@
  * a tick never re-renders the proposal cards and collapses an expanded
  * contribution chain mid-run.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMergedCoordinator } from '../../state/mergedCoordinator'
 import { useRunStore } from '../../state/runStore'
 import { useReviewStore } from '../../state/reviewStore'
@@ -32,8 +32,10 @@ import { deriveCheckpoints } from '../../lib/review/checkpoints'
 import PlaybackStatusLine from './PlaybackStatusLine'
 import { guidedState, stepPosition } from './guidedSteps'
 import { deriveProposalOverlay } from './MergedProposalPanel'
-import { ServiceResultOverlay } from './ServiceResultOverlay'
-import { ContentResultOverlay } from './ContentResultOverlay'
+import { SUPPORTED_SERVICE_IDS } from './ServiceResultOverlay'
+import { RecoveryVisual } from '../playback/RecoveryVisualization'
+import { serviceLabel } from '../../lib/review/reviewVocabulary'
+import { songDisplayName } from '../proposal/useSongNames'
 import { useProposalStore } from '../../state/proposalStore'
 import { useSongNames } from '../proposal/useSongNames'
 import MergedProposalPanel from './MergedProposalPanel'
@@ -46,26 +48,29 @@ import { t } from '../../i18n/t'
 import { useLanguage } from '../../state/language'
 
 const LABELS = {
-  title: { ja: 'クイックビュー・プロジェクション', en: 'Quickview projection' },
+  title: { ja: '発火予測プレビュー', en: 'Projected firing preview' },
   hint: { ja: '発火をクリックして提案を確認（右パネル）', en: 'Click a fire to inspect its proposal (right panel)' },
   animation: { ja: 'ライブ再生', en: 'Live playback' },
   map: { ja: 'ルートマップ', en: 'Route map' },
-  restTitle: { ja: '休憩推奨', en: 'Rest recommended' },
-  restPrompt: { ja: '休憩スポットを選ぶ、または拒否して走行を続けます。', en: 'Choose a rest spot, or reject to keep driving.' },
+  restTitle: { ja: '危険運転防止のため休憩推奨', en: 'Rest recommended to prevent dangerous driving' },
+  restPrompt: { ja: '休憩場所を選ぶ、または拒否して走行を続けます。', en: 'Choose a rest spot, or reject to keep driving.' },
   reject: { ja: '拒否して走行継続', en: 'Reject — keep driving' },
   tooFar: { ja: '遠すぎる', en: 'too far' },
   restAccepted: { ja: '休憩を受け入れました。提案（右）を確認して「続行」を押してください。', en: 'Rest accepted — inspect the proposal (right), then press Continue.' },
-  loadError: { ja: '休憩スポットの読み込みに失敗しました', en: 'Failed to load rest spots' },
+  loadError: { ja: '休憩場所の読み込みに失敗しました', en: 'Failed to load rest spots' },
   play: { ja: '再生', en: 'Play' },
   continue: { ja: '▶ 続行', en: '▶ Continue' },
   pause: { ja: '一時停止', en: 'Pause' },
   step: { ja: 'ステップ', en: 'Step' },
   reset: { ja: '↺ リセット', en: '↺ Reset' },
   speed: { ja: '速度', en: 'Speed' },
-  loadingSpots: { ja: '休憩スポットを読み込み中…', en: 'Loading rest spots…' },
+  loadingSpots: { ja: '休憩場所を読み込み中…', en: 'Loading rest spots…' },
   stepCaption: { ja: 'ステップ {n} / {total}', en: 'Step {n} / {total}' },
   stepService: { ja: 'サービスの提案', en: 'Service proposal' },
-  stepContent: { ja: '休憩地点までの再生リスト', en: 'Playlist for the drive there' },
+  stepContent: { ja: '休憩場所までの再生リスト', en: 'Playlist for the drive there' },
+  notSupported: { ja: '本バージョンでは未対応', en: 'not supported in this version' },
+  errorGeneric: { ja: '発火処理でエラーが発生しました。', en: 'An error occurred while processing the fire.' },
+  technicalDetail: { ja: '技術的な詳細', en: 'Technical detail' },
 }
 
 export default function MergedCenterPanel() {
@@ -116,6 +121,9 @@ export default function MergedCenterPanel() {
     const category = quickviewFires[index]?.category ?? null
     const checkpoint = checkpoints.find((c) => c.id === category)
     if (checkpoint) reviewDispatch({ type: 'SELECT_CHECKPOINT', checkpointId: checkpoint.id })
+    // …and put the review column on the TRIGGER comparison for that fire —
+    // clicking a trigger dot is a request to see why THAT trigger fired.
+    reviewDispatch({ type: 'SELECT_STAGE', stage: 'trigger' })
   }
 
   // Decision (fire) positions + accepted rest spots for the map markers (the
@@ -139,6 +147,9 @@ export default function MergedCenterPanel() {
   // The opportunity_id whose rest decision (accept/reject) is already made — so
   // the choose/reject overlay hides after the reviewer decides, per opportunity.
   const [resolvedOpportunityId, setResolvedOpportunityId] = useState<string | null>(null)
+  // The opportunity whose service the REVIEWER picked. Kept per opportunity so a
+  // later fire asks again rather than inheriting the previous answer.
+  const [serviceChosenOpportunityId, setServiceChosenOpportunityId] = useState<string | null>(null)
 
   const restDecided = opportunity?.opportunity_id != null && opportunity.opportunity_id === resolvedOpportunityId
 
@@ -148,11 +159,34 @@ export default function MergedCenterPanel() {
   // never show a step the evidence does not support.
   const overlay = deriveProposalOverlay(state.proposalLog)
   const songNames = useSongNames(proposalState.world?.catalog_ref?.dataset_id)
+  const serviceChosen =
+    opportunity?.opportunity_id != null && opportunity.opportunity_id === serviceChosenOpportunityId
+
+  // Recovery has begun (or already ran) for this opportunity: the proposing is
+  // over. `recoveredOpportunities` makes it STICK — once the nap starts, the
+  // overlay must not reappear when recovery ends and the car drives on, which
+  // is what a live `recovery_phase` check alone would do.
+  const recoveryPhase = state.latestTrigger?.recovery_phase ?? null
+  const recoveredOpportunities = useRef<Set<string>>(new Set())
+  const currentOpportunityId = opportunity?.opportunity_id ?? null
+  if (recoveryPhase != null && currentOpportunityId != null) {
+    recoveredOpportunities.current.add(currentOpportunityId)
+  }
+  const conversationOver =
+    recoveryPhase != null ||
+    (currentOpportunityId != null && recoveredOpportunities.current.has(currentOpportunityId))
   const guided = guidedState({
     proposalLog: state.proposalLog,
     restDecided,
+    serviceChosen,
     hasContentPlan: overlay.contentPlan != null,
+    conversationOver,
   })
+
+  async function handleChooseService(candidateId: string): Promise<void> {
+    await coordinator.selectService(candidateId)
+    setServiceChosenOpportunityId(opportunity?.opportunity_id ?? null)
+  }
   const guidedActive = hasRun && guided.step !== 'done'
   const showRestOverlay = guidedActive && guided.step === 'rest' && showRestAccept
 
@@ -274,9 +308,12 @@ export default function MergedCenterPanel() {
       </div>
 
       {state.error && (
-        <p role="alert" style={{ color: '#dc2626', fontSize: '0.82em' }}>
-          {state.error}
-        </p>
+        <div role="alert">
+          <p style={{ color: '#dc2626', fontSize: '0.82em', margin: 0 }}>{t(LABELS.errorGeneric, lang)}</p>
+          <p style={{ color: '#991b1b', fontSize: '0.7em', margin: '2px 0 0', fontFamily: 'monospace' }}>
+            {t(LABELS.technicalDetail, lang)}: {state.error}
+          </p>
+        </div>
       )}
 
       {restDecided && showRestAccept && (
@@ -335,25 +372,41 @@ export default function MergedCenterPanel() {
                 {guided.step === 'service' ? t(LABELS.stepService, lang) : t(LABELS.stepContent, lang)}
               </p>
               {guided.step === 'service' ? (
-                <ServiceResultOverlay
-                  output={overlay.serviceOutput}
-                  eligibleCandidates={overlay.eligibleCandidates}
-                  activeServiceId={overlay.activeServiceId}
-                  choosingId={state.choosingId}
-                  onChoose={(candidateId) => void coordinator.selectService(candidateId)}
-                  explanationProvider="off"
-                  lang={lang}
-                />
+                <ul data-testid="guided-service-list" style={guidedListStyle}>
+                  {(overlay.serviceOutput?.ranked_candidates ?? []).map((candidate) => {
+                    const supported = SUPPORTED_SERVICE_IDS.has(candidate.candidate_id)
+                    return (
+                      <li key={candidate.candidate_id}>
+                        <button
+                          type="button"
+                          data-testid={`guided-choose-${candidate.candidate_id}`}
+                          disabled={!supported || state.choosingId != null}
+                          onClick={() => void handleChooseService(candidate.candidate_id)}
+                          style={{ ...guidedItemButtonStyle, ...(supported ? {} : guidedItemDisabledStyle) }}
+                        >
+                          {t(serviceLabel(candidate.candidate_id), lang)}
+                          {!supported && <span style={{ fontSize: '0.86em' }}> · {t(LABELS.notSupported, lang)}</span>}
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
               ) : overlay.contentPlan ? (
-                <ContentResultOverlay
-                  plan={overlay.contentPlan}
-                  songNames={songNames}
-                  explanationProvider="off"
-                  lang={lang}
-                />
+                <ol data-testid="guided-song-list" style={guidedListStyle}>
+                  {overlay.contentPlan.ordered_items.map((item) => (
+                    <li key={item.item_id} data-testid={`guided-song-${item.item_id}`} style={guidedSongStyle}>
+                      {songDisplayName(item.item_id, songNames, lang)}
+                    </li>
+                  ))}
+                </ol>
               ) : null}
             </div>
           )}
+
+          {/* The nap / karaoke / wake-up animation, over the map — the SAME
+              component the Trigger screen uses, so the two screens show the
+              same recovery. */}
+          <RecoveryVisual phase={recoveryPhase} motionState={state.latestTrigger?.motion_state ?? null} />
 
           {showRestOverlay && (
             <div data-testid="rest-accept-panel" style={restOverlayStyle}>
@@ -375,7 +428,11 @@ export default function MergedCenterPanel() {
                       <span>📍 {t(spot.label, lang)}</span>
                       <span style={{ fontSize: '0.86em', color: unreachable ? '#b91c1c' : '#0d9488', fontWeight: 400 }}>
                         {spot.distance_km != null ? `${spot.distance_km} km` : ''}
-                        {spot.eta_min != null ? ` · ETA ${spot.eta_min} min` : ''}
+                        {spot.eta_min != null
+                          ? lang === 'ja'
+                            ? `・到着まで${spot.eta_min}分`
+                            : ` · ETA ${spot.eta_min} min`
+                          : ''}
                         {unreachable ? ` · ${t(LABELS.tooFar, lang)}` : ''}
                       </span>
                     </button>
@@ -386,9 +443,12 @@ export default function MergedCenterPanel() {
                 {t(LABELS.reject, lang)}
               </button>
               {restLoadError && (
-                <p role="alert" style={{ color: '#dc2626', fontSize: '0.78em', margin: '6px 0 0' }}>
-                  {t(LABELS.loadError, lang)}: {restLoadError}
-                </p>
+                <div role="alert" style={{ margin: '6px 0 0' }}>
+                  <p style={{ color: '#dc2626', fontSize: '0.78em', margin: 0 }}>{t(LABELS.loadError, lang)}</p>
+                  <p style={{ color: '#991b1b', fontSize: '0.68em', margin: '2px 0 0', fontFamily: 'monospace' }}>
+                    {t(LABELS.technicalDetail, lang)}: {restLoadError}
+                  </p>
+                </div>
               )}
             </div>
           )}
@@ -404,12 +464,7 @@ export default function MergedCenterPanel() {
           checkpoint rail + decision band; picking WHICH decision the review
           column examines is now done by clicking a trigger marker on the map,
           which dispatches SELECT_CHECKPOINT below. */}
-      <PlaybackStatusLine
-        playback={hasRun}
-        latestTrigger={state.latestTrigger}
-        firstFire={quickviewFires[0] ?? null}
-        hasProjection={hasQuickview}
-      />
+      <PlaybackStatusLine playback={hasRun} latestTrigger={state.latestTrigger} />
       {/* 3. SERVICE | CONTENT proposals. The panel owns its own 40/60 split;
           it must NOT be wrapped in a grid here. It used to be, and since that
           grid had two columns but only this one child, the panel was confined
@@ -456,17 +511,6 @@ export default function MergedCenterPanel() {
 
 // ── Inline styles ────────────────────────────────────────────────────────────
 
-/** The guided overlay sits over the map like the rest prompt, but wider and
- *  scrollable — a ranked service list or a song list is taller than a prompt. */
-const guidedOverlayStyle: React.CSSProperties = {
-  position: 'absolute', top: '10px', left: '10px', right: '10px', bottom: '10px', zIndex: 20,
-  background: 'rgba(255,255,255,0.97)', border: '2px solid #5bc0be', borderRadius: '10px',
-  padding: '8px 12px', boxShadow: '0 4px 14px rgba(0,0,0,0.2)', overflowY: 'auto',
-}
-const guidedStepCaptionStyle: React.CSSProperties = {
-  fontSize: '0.7em', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
-  color: '#0f766e', margin: '0 0 6px',
-}
 const restOverlayStyle: React.CSSProperties = {
   position: 'absolute', top: '10px', left: '10px', maxWidth: 'min(340px, 72%)', zIndex: 20,
   background: 'rgba(255,255,255,0.97)', border: '2px solid #5bc0be', borderRadius: '10px',
@@ -479,6 +523,28 @@ const spotButtonStyle: React.CSSProperties = {
 }
 const spotButtonUnreachable: React.CSSProperties = {
   border: '1px solid #e5e7eb', background: '#f3f4f6', color: '#9ca3af', cursor: 'not-allowed',
+}
+
+/** The SAME card as the rest prompt (owner review) — the three steps are one
+ *  conversation and must look like it. Bounded, not the whole map: the reviewer
+ *  needs to keep seeing where the car is while they choose. */
+const guidedOverlayStyle: React.CSSProperties = {
+  ...restOverlayStyle,
+  maxHeight: 'calc(100% - 20px)',
+  overflowY: 'auto',
+}
+const guidedListStyle: React.CSSProperties = {
+  listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '4px',
+}
+const guidedItemButtonStyle: React.CSSProperties = { ...spotButtonStyle, width: '100%' }
+const guidedItemDisabledStyle: React.CSSProperties = spotButtonUnreachable
+const guidedSongStyle: React.CSSProperties = {
+  fontSize: '0.82em', color: '#0f766e', padding: '5px 10px', borderRadius: '7px',
+  border: '1px solid #14b8a6', background: '#f0fdfa', fontWeight: 600,
+}
+const guidedStepCaptionStyle: React.CSSProperties = {
+  fontSize: '0.72em', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em',
+  color: '#0f766e', margin: '0 0 6px',
 }
 const rejectButtonStyle: React.CSSProperties = {
   width: '100%', fontSize: '0.82em', padding: '6px 10px', borderRadius: '7px',

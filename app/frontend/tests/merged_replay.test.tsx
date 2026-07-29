@@ -284,10 +284,13 @@ describe('MergedReplayViewer', () => {
     expect(await screen.findByTestId('replay-scrubber')).toBeInTheDocument()
   })
 
-  it('shows the tick-0 trigger trace (NO_TRIGGER) and no proposal events initially', async () => {
+  it('shows the tick-0 firing trace (nothing fired) and no proposal events initially', async () => {
     render(<MergedReplayViewer mergedRunId="merged-001" />)
     await waitFor(() => expect(screen.getByTestId('replay-scrubber')).toBeInTheDocument())
-    expect(screen.getByTestId('merged-replay-trigger-0')).toHaveTextContent('NO_TRIGGER')
+    // The outcome reads in words; `NO_TRIGGER` is the recorded token, not a
+    // label a reviewer should ever be shown.
+    expect(screen.getByTestId('merged-replay-trigger-0')).toHaveTextContent('Nothing fired')
+    expect(screen.getByTestId('merged-replay-trigger-0')).not.toHaveTextContent('NO_TRIGGER')
     expect(screen.getByTestId('merged-replay-no-proposal-events')).toBeInTheDocument()
   })
 
@@ -298,7 +301,9 @@ describe('MergedReplayViewer', () => {
     fireEvent.change(screen.getByTestId('replay-scrubber'), { target: { value: '1' } })
 
     await waitFor(() => {
-      expect(screen.getByTestId('merged-replay-trigger-1')).toHaveTextContent('REST_PROPOSAL')
+      expect(screen.getByTestId('merged-replay-trigger-1'))
+        .toHaveTextContent('Rest recommended to prevent dangerous driving')
+      expect(screen.getByTestId('merged-replay-trigger-1')).not.toHaveTextContent('REST_PROPOSAL')
     })
     expect(screen.getByTestId('merged-replay-proposal-0-OPPORTUNITY_OPENED')).toBeInTheDocument()
   })
@@ -348,7 +353,9 @@ describe('MergedRunsScreen', () => {
     fireEvent.change(screen.getByTestId('replay-scrubber'), { target: { value: '1' } })
 
     await waitFor(() => {
-      expect(screen.getByTestId('merged-replay-trigger-1')).toHaveTextContent('REST_PROPOSAL')
+      expect(screen.getByTestId('merged-replay-trigger-1'))
+        .toHaveTextContent('Rest recommended to prevent dangerous driving')
+      expect(screen.getByTestId('merged-replay-trigger-1')).not.toHaveTextContent('REST_PROPOSAL')
     })
     expect(screen.getByTestId('merged-replay-proposal-0-OPPORTUNITY_OPENED')).toBeInTheDocument()
   })

@@ -88,9 +88,9 @@ const STAGES_FOR_PURPOSE: Record<TriggerPurposeValue, LifecycleStageValue[]> = {
 
 const LABELS = {
   preset: { ja: 'プリセット（テストケース）', en: 'Preset (test-case)' },
-  triggerSignal: { ja: '発火シグナル（4つ）', en: 'Trigger signal (4)' },
+  triggerSignal: { ja: '提案分類（4種類）', en: 'Proposal category (4)' },
   carState: { ja: '車両状態（現在状況）', en: 'Car state (current status)' },
-  worldSituation: { ja: '世界・状況（初期値・編集可）', en: 'World · situation (init values, editable)' },
+  worldSituation: { ja: 'シミュレーション条件・状況（初期値・編集可）', en: 'Simulation conditions · situation (initial values, editable)' },
   preferenceHistory: { ja: '好み・履歴', en: 'Preference & history' },
   motion: { ja: '走行/停車（自動）', en: 'Motion (derived)' },
   // feature 019 — explanation-source flag (narration layer over the decision)
@@ -207,7 +207,7 @@ export default function WorldPanel() {
           color: '#1d4ed8',
         }}
       >
-        {'①'} <span>{t({ ja: '入力・世界', en: 'Input · World' }, lang)}</span>
+        {'①'} <span>{t({ ja: '入力条件', en: 'Input conditions' }, lang)}</span>
       </h3>
       <div style={{ padding: '12px 14px' }}>
         {/* Inline world validation (MF1 / US1 AC#3, SC-002). */}

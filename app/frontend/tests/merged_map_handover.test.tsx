@@ -9,7 +9,7 @@
  * This asserts the WIRING (the prop the centre panel hands down), which is
  * exactly what was missing; `map.test.tsx` covers what MapSurface does with it.
  */
-import { render, screen, act } from '@testing-library/react'
+import { render, screen, act, fireEvent } from '@testing-library/react'
 import { vi } from 'vitest'
 
 vi.mock('../src/api/mergedClient', () => ({
@@ -22,7 +22,15 @@ vi.mock('../src/api/mergedClient', () => ({
 // A probe standing in for the real canvas: it publishes the props it received.
 vi.mock('../src/components/map/MapSurface', () => ({
   default: (props: Record<string, unknown>) => (
-    <div data-testid="map-probe" data-playback={String(props.playback)} />
+    <div data-testid="map-probe" data-playback={String(props.playback)}>
+      <button
+        type="button"
+        data-testid="map-probe-fire-0"
+        onClick={() => (props.onFireMarkerClick as (i: number) => void)?.(0)}
+      >
+        fire 0
+      </button>
+    </div>
   ),
 }))
 
@@ -31,13 +39,19 @@ import { MergedCoordinatorProvider, useMergedCoordinator } from '../src/state/me
 import { LanguageProvider } from '../src/state/language'
 import { RunStoreProvider } from '../src/state/runStore'
 import { ProposalStoreProvider } from '../src/state/proposalStore'
-import { ReviewStoreProvider } from '../src/state/reviewStore'
+import { ReviewStoreProvider, useReviewStore } from '../src/state/reviewStore'
 import MergedCenterPanel from '../src/components/merged/MergedCenterPanel'
+
+const reviewRef: { current: ReturnType<typeof useReviewStore>['state'] | null } = { current: null }
+const reviewDispatchRef: { current: ReturnType<typeof useReviewStore>['dispatch'] | null } = { current: null }
 
 function renderPanel() {
   const ref: { current: ReturnType<typeof useMergedCoordinator> | null } = { current: null }
   function Capture() {
     ref.current = useMergedCoordinator()
+    const review = useReviewStore()
+    reviewRef.current = review.state
+    reviewDispatchRef.current = review.dispatch
     return null
   }
   render(
@@ -83,5 +97,19 @@ describe('map projection → playback handover', () => {
 
     expect(playbackFlag()).toBe('true')
     expect(tickMergedRun).not.toHaveBeenCalled() // creation alone is enough
+  })
+})
+
+describe('clicking a trigger dot on the map', () => {
+  it('sends the review column to the TRIGGER comparison', () => {
+    renderPanel()
+    // The column OPENS on the trigger stage, so move it away first — otherwise
+    // this passes whether or not the click dispatches anything.
+    act(() => { reviewDispatchRef.current!({ type: 'SELECT_STAGE', stage: 'content' }) })
+    expect(reviewRef.current!.stage).toBe('content')
+
+    act(() => { fireEvent.click(screen.getByTestId('map-probe-fire-0')) })
+
+    expect(reviewRef.current!.stage).toBe('trigger')
   })
 })

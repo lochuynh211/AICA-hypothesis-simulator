@@ -116,6 +116,6 @@ describe('ServiceProposalPanel — explanation wiring (ServiceReason)', () => {
     )
     // The resolved AI sentence + badge render (English resolved from the pair).
     expect(await screen.findByTestId('ai-rationale')).toHaveTextContent('AI reason for rest stop')
-    expect(screen.getByTestId('ai-rationale-badge')).toHaveTextContent('AI · qwen2.5:3b')
+    expect(screen.getByTestId('ai-rationale-badge')).toHaveTextContent('AI-generated · qwen2.5:3b')
   })
 })

@@ -22,6 +22,8 @@ import { useLanguage } from '../../state/language'
 const LABELS = {
   mountain: { ja: '山道', en: 'Mountain road' },
   jam: { ja: '渋滞', en: 'Traffic jam' },
+  rangeStart: { ja: '開始', en: 'start' },
+  rangeEnd: { ja: '終了', en: 'end' },
 }
 
 export type KmRange = [number, number]
@@ -60,6 +62,7 @@ function DualRangeSlider({
   value,
   color,
   onChange,
+  lang,
 }: {
   label: string
   testIdPrefix: string
@@ -69,6 +72,7 @@ function DualRangeSlider({
   value: KmRange
   color: string
   onChange: (range: KmRange) => void
+  lang: 'ja' | 'en'
 }) {
   const [start, end] = value
   const cap = totalKm > 0 ? totalKm : 0
@@ -102,7 +106,7 @@ function DualRangeSlider({
           className="range-start"
           type="range"
           data-testid={`${testIdPrefix}-start`}
-          aria-label={`${label} start`}
+          aria-label={`${label} ${t(LABELS.rangeStart, lang)}`}
           min={0}
           max={cap}
           step={STEP_KM}
@@ -113,7 +117,7 @@ function DualRangeSlider({
           className="range-end"
           type="range"
           data-testid={`${testIdPrefix}-end`}
-          aria-label={`${label} end`}
+          aria-label={`${label} ${t(LABELS.rangeEnd, lang)}`}
           min={0}
           max={cap}
           step={STEP_KM}
@@ -150,6 +154,7 @@ export default function RouteConditionsPainter({
         value={mountainRange ?? [0, 0]}
         color="#16a34a"
         onChange={onMountainRangeChange}
+        lang={lang}
       />
       <DualRangeSlider
         label={t(LABELS.jam, lang)}
@@ -159,6 +164,7 @@ export default function RouteConditionsPainter({
         value={jamRange ?? [0, 0]}
         color="#dc2626"
         onChange={onJamRangeChange}
+        lang={lang}
       />
     </div>
   )

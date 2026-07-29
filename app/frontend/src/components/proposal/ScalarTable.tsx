@@ -11,6 +11,11 @@
 import { t, type BilingualLabel, type UiLanguage } from '../../i18n/t'
 import { mtxTableStyle, mtxThStyle, mtxTdStyle, mtxRowLabelStyle } from './matrixStyles'
 
+const LABELS = {
+  parameter: { ja: 'パラメータ', en: 'Parameter' },
+  value: { ja: '値', en: 'Value' },
+}
+
 export type ScalarField = {
   key: string
   label: BilingualLabel
@@ -43,8 +48,8 @@ export default function ScalarTable({
   fields,
   onChange,
   lang,
-  parameterHeader = 'parameter',
-  valueHeader = 'value',
+  parameterHeader = t(LABELS.parameter, lang),
+  valueHeader = t(LABELS.value, lang),
 }: ScalarTableProps) {
   return (
     <div style={{ overflowX: 'auto' }}>
@@ -61,7 +66,7 @@ export default function ScalarTable({
             return (
               <tr key={f.key}>
                 <th scope="row" style={mtxRowLabelStyle}>
-                  {labelText} <code style={{ color: '#9ca3af', fontWeight: 400 }}>{f.key}</code>
+                  {labelText}
                 </th>
                 <td style={mtxTdStyle}>
                   <input

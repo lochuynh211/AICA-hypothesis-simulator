@@ -17,7 +17,7 @@ import { MergedCoordinatorProvider, useMergedCoordinator } from '../src/state/me
 import { LanguageProvider } from '../src/state/language'
 import { RunStoreProvider } from '../src/state/runStore'
 import { ProposalStoreProvider } from '../src/state/proposalStore'
-import { ReviewStoreProvider } from '../src/state/reviewStore'
+import { ReviewStoreProvider, useReviewStore } from '../src/state/reviewStore'
 import type { MergedTickResponse } from '../src/api/mergedClient'
 import type { DecisionResult } from '../src/api/types'
 import type { ProposalRunLog, AlgorithmEvidence } from '../src/api/proposalClient'
@@ -251,11 +251,16 @@ function firedTickWithServiceError(tickIndex: number): MergedTickResponse {
  * selectService() directly — mirrors `playback.test.tsx`'s
  * `DispatchCapture`/`renderInStore` pattern, adapted to the coordinator's
  * async action functions (it has no raw `dispatch`). */
+/** Captured review-store state, so tests can assert what a click sent to the
+ *  RIGHT column without mounting the whole shell. */
+const reviewRef: { current: ReturnType<typeof useReviewStore>['state'] | null } = { current: null }
+
 function renderCenterPanel() {
   const coordinatorRef: { current: ReturnType<typeof useMergedCoordinator> | null } = { current: null }
 
   function Capture() {
     coordinatorRef.current = useMergedCoordinator()
+    reviewRef.current = useReviewStore().state
     return null
   }
 
@@ -589,7 +594,7 @@ describe('MergedCenterPanel — guided proposal steps', () => {
     expect(guided.textContent).toContain('Service proposal')
   })
 
-  it('moves to the songs once a music service is running', async () => {
+  it('waits for the reviewer to CHOOSE a service, then shows the songs', async () => {
     vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_g2', trigger_run_id: 'run_g2' })
     vi.mocked(tickMergedRun).mockResolvedValueOnce({
       ...firedTickWithProposal(45),
@@ -602,6 +607,63 @@ describe('MergedCenterPanel — guided proposal steps', () => {
           active_plan_id: 'plan_1',
         },
         evidence: [serviceEvidence(), contentEvidence()],
+      }),
+    })
+    // Choosing the service returns the log with the plan attached.
+    vi.mocked(mergedProposalAction).mockResolvedValue(
+      baseProposalLog({
+        opportunity: { opportunity_id: 'opp-g2', trigger_purpose: 'monotony_prevention' } as never,
+        journey_state: {
+          lifecycle_stage: 'active_driving_content',
+          motion_state: 'driving',
+          active_service_id: 'music_playlist',
+          active_plan_id: 'plan_1',
+        },
+        evidence: [serviceEvidence(), contentEvidence()],
+      }),
+    )
+
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => { await coordinatorRef.current!.step() })
+
+    // Still on the service step even though the journey pre-selected rank-1 —
+    // the animation must not decide this for the reviewer.
+    expect(screen.getByTestId('guided-overlay').textContent).toContain('Step 1 / 2')
+    expect(screen.getByTestId('guided-choose-music_playlist')).toBeInTheDocument()
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('guided-choose-music_playlist'))
+    })
+
+    const guided = screen.getByTestId('guided-overlay')
+    expect(guided.textContent).toContain('Step 2 / 2')
+    expect(guided.textContent).toContain('Playlist')
+    // A plain list of song names — no cards, no scores.
+    expect(within(guided).getByTestId('guided-song-track-1')).toBeInTheDocument()
+  })
+
+  it('offers the services as a plain list of names, not cards', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_g3', trigger_run_id: 'run_g3' })
+    vi.mocked(tickMergedRun).mockResolvedValueOnce({
+      ...firedTickWithProposal(45),
+      proposal: baseProposalLog({
+        opportunity: { opportunity_id: 'opp-g3', trigger_purpose: 'monotony_prevention' } as never,
+        journey_state: {
+          lifecycle_stage: 'active_driving_content',
+          motion_state: 'driving',
+          active_service_id: null,
+          active_plan_id: null,
+        },
+        evidence: [serviceEvidence()],
       }),
     })
 
@@ -617,15 +679,227 @@ describe('MergedCenterPanel — guided proposal steps', () => {
     })
     await act(async () => { await coordinatorRef.current!.step() })
 
-    const guided = screen.getByTestId('guided-overlay')
-    expect(guided.textContent).toContain('Step 2 / 2')
-    expect(guided.textContent).toContain('Playlist')
-    // The songs themselves, rendered with the SAME component as the panel below.
-    expect(within(guided).getByTestId('plan-item-track-1')).toBeInTheDocument()
+    const list = screen.getByTestId('guided-service-list')
+    // Names, not ids, and none of the full card's machinery. The name is the
+    // specification's own (CDC-SU_specplan Slides 39/41/70).
+    expect(list.textContent).toContain('Playlist playback')
+    expect(list.textContent).not.toContain('music_playlist')
+    expect(within(list).queryByTestId('service-explainability')).toBeNull()
+    expect(within(list).queryByTestId('reason-summary')).toBeNull()
   })
 
   it('shows no guided overlay before a run exists', () => {
     renderCenterPanel()
     expect(screen.queryByTestId('guided-overlay')).toBeNull()
+  })
+})
+
+// ── The overlay must get out of the way at the rest spot ────────────────────
+describe('MergedCenterPanel — arrival at the rest spot', () => {
+  /** A fired tick, then a tick where the car has stopped and the nap begins. */
+  function napTick(tickIndex: number): MergedTickResponse {
+    const base = firedTickWithProposal(tickIndex)
+    return {
+      ...base,
+      trigger: { ...base.trigger, recovery_phase: 'nap', motion_state: 'STOPPED' },
+      // IDENTICAL to the prior tick's proposal except that recovery has begun —
+      // so `recovery_phase` is the ONLY thing that can close the overlay. A nap
+      // tick that also switched the opportunity/lifecycle would route to a
+      // different overlay and pass without the rule under test.
+      proposal: baseProposalLog({
+        opportunity: { opportunity_id: 'opp-nap', trigger_purpose: 'monotony_prevention' } as never,
+        journey_state: {
+          lifecycle_stage: 'active_driving_content',
+          motion_state: 'stopped',
+          active_service_id: 'music_playlist',
+          active_plan_id: 'plan_1',
+        },
+        evidence: [serviceEvidence(), contentEvidence()],
+      }),
+    }
+  }
+
+  it('closes the song list and shows the nap animation on arrival', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_n1', trigger_run_id: 'run_n1' })
+    vi.mocked(tickMergedRun).mockResolvedValueOnce({
+      ...firedTickWithProposal(45),
+      proposal: baseProposalLog({
+        opportunity: { opportunity_id: 'opp-nap', trigger_purpose: 'monotony_prevention' } as never,
+        journey_state: {
+          lifecycle_stage: 'active_driving_content',
+          motion_state: 'driving',
+          active_service_id: 'music_playlist',
+          active_plan_id: 'plan_1',
+        },
+        evidence: [serviceEvidence(), contentEvidence()],
+      }),
+    }).mockResolvedValueOnce(napTick(46))
+    vi.mocked(mergedProposalAction).mockResolvedValue(
+      baseProposalLog({
+        opportunity: { opportunity_id: 'opp-nap', trigger_purpose: 'monotony_prevention' } as never,
+        journey_state: {
+          lifecycle_stage: 'active_driving_content',
+          motion_state: 'driving',
+          active_service_id: 'music_playlist',
+          active_plan_id: 'plan_1',
+        },
+        evidence: [serviceEvidence(), contentEvidence()],
+      }),
+    )
+
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => { await coordinatorRef.current!.step() })
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('guided-choose-music_playlist'))
+    })
+    expect(screen.getByTestId('guided-song-list')).toBeInTheDocument()
+
+    // Continue → the car reaches the spot and the nap starts.
+    await act(async () => { await coordinatorRef.current!.step() })
+
+    // The reported bug: the song list stayed up over the nap.
+    expect(screen.queryByTestId('guided-overlay')).toBeNull()
+    expect(screen.getByTestId('recovery-sleep')).toBeInTheDocument()
+  })
+})
+
+// ── Clicking a card drives the RIGHT column's comparison ────────────────────
+// A click asks "why this instead of the winner?", so A = the top-ranked option
+// and B = the clicked one.
+describe('MergedCenterPanel — click-to-compare', () => {
+  async function runToProposal(log: ProposalRunLog) {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_c1', trigger_run_id: 'run_c1' })
+    vi.mocked(tickMergedRun).mockResolvedValueOnce({ ...firedTickWithProposal(45), proposal: log })
+    vi.mocked(mergedProposalAction).mockResolvedValue(log)
+
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => { await coordinatorRef.current!.step() })
+    return coordinatorRef
+  }
+
+  /** The shared fixtures carry ONE candidate and ONE song; a comparison needs
+   *  two of each, so these widen them locally rather than changing fixtures
+   *  other tests count on. */
+  function twoCandidates(): AlgorithmEvidence {
+    const ev = serviceEvidence()
+    const output = ev.output as { ranked_candidates: unknown[] }
+    const first = output.ranked_candidates[0] as Record<string, unknown>
+    output.ranked_candidates = [
+      first,
+      { ...first, rank: 2, candidate_id: 'full_karaoke', score: 0.41 },
+    ]
+    return ev
+  }
+
+  function twoSongs(): AlgorithmEvidence {
+    const ev = contentEvidence()
+    const output = ev.output as { ordered_items: unknown[] }
+    const first = output.ordered_items[0] as Record<string, unknown>
+    output.ordered_items = [first, { ...first, position: 2, item_id: 'track-2', item_fit: 0.62 }]
+    return ev
+  }
+
+  const chosenLog = () =>
+    baseProposalLog({
+      status: 'content_selected',
+      journey_state: {
+        lifecycle_stage: 'active_driving_content',
+        motion_state: 'driving',
+        active_service_id: 'music_playlist',
+        active_plan_id: 'plan_1',
+      },
+      evidence: [twoCandidates(), twoSongs()],
+    })
+
+  it('sends the service stage with A = rank 1 and B = the clicked candidate', async () => {
+    await runToProposal(chosenLog())
+    // The overlay is on the guided step until a service is chosen; choose it so
+    // the full cards render below.
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('guided-choose-music_playlist'))
+    })
+
+    const cards = screen.getAllByTestId(/^candidate-card-/)
+    expect(cards.length).toBeGreaterThan(1)
+    const firstId = cards[0].getAttribute('data-testid')!.replace('candidate-card-', '')
+    const secondId = cards[1].getAttribute('data-testid')!.replace('candidate-card-', '')
+
+    await act(async () => { fireEvent.click(cards[1]) })
+
+    expect(reviewRef.current!.stage).toBe('service')
+    expect(reviewRef.current!.compareLeftId).toBe(firstId)
+    expect(reviewRef.current!.compareRightId).toBe(secondId)
+    // The judgements scope to the option under review — the winner.
+    expect(reviewRef.current!.targetId).toBe(firstId)
+  })
+
+  it('leaves the stage default when the WINNER itself is clicked', async () => {
+    await runToProposal(chosenLog())
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('guided-choose-music_playlist'))
+    })
+
+    const cards = screen.getAllByTestId(/^candidate-card-/)
+    await act(async () => { fireEvent.click(cards[0]) })
+
+    expect(reviewRef.current!.stage).toBe('service')
+    // Comparing the winner with itself says nothing; the stage's own default
+    // (rank 1 vs rank 2) stands.
+    expect(reviewRef.current!.compareLeftId).toBeNull()
+    expect(reviewRef.current!.compareRightId).toBeNull()
+  })
+
+  it('sends the content stage with A = position 1 and B = the clicked song', async () => {
+    await runToProposal(chosenLog())
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('guided-choose-music_playlist'))
+    })
+
+    const items = screen.getAllByTestId(/^plan-item-/)
+    expect(items.length).toBeGreaterThan(1)
+    const firstId = items[0].getAttribute('data-testid')!.replace('plan-item-', '')
+    const secondId = items[1].getAttribute('data-testid')!.replace('plan-item-', '')
+
+    await act(async () => { fireEvent.click(items[1]) })
+
+    expect(reviewRef.current!.stage).toBe('content')
+    expect(reviewRef.current!.compareLeftId).toBe(firstId)
+    expect(reviewRef.current!.compareRightId).toBe(secondId)
+  })
+
+  it('choosing a service does NOT also re-point the comparison', async () => {
+    // The Choose button sits inside the clickable card; without
+    // stopPropagation, choosing would silently also change what the right
+    // column is comparing.
+    await runToProposal(chosenLog())
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('guided-choose-music_playlist'))
+    })
+    const cards = screen.getAllByTestId(/^candidate-card-/)
+    const secondId = cards[1].getAttribute('data-testid')!.replace('candidate-card-', '')
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId(`choose-candidate-${secondId}`))
+    })
+
+    expect(reviewRef.current!.compareRightId).toBeNull()
   })
 })

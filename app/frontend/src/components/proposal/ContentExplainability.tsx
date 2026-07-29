@@ -3,7 +3,9 @@
  * for a single ordered plan item. Renders the §14 roll-up now emitted by the
  * transparent content selector: the situation / preference / history
  * subtotals, the strongest supporting / opposing feature, and an expandable
- * per-feature trace table (`feature · e · a · r=e·a · w · k=r×w`).
+ * per-feature trace table (feature name · evidence(e) · response coefficient(a)
+ * · response value(r=e·a) · weight(w) · contribution(k=r×w) — the column
+ * headers are the spelled-out words, never the bare formula letters).
  *
  * The trace is ordered by |contribution| descending, shows the top 5 by
  * default with the rest behind a toggle, and blurs zero-contribution rows
@@ -16,22 +18,20 @@ import { useState } from 'react'
 import type { UiLanguage } from '../../i18n/t'
 import { t } from '../../i18n/t'
 import type { OrderedItem } from '../../api/proposalClient'
+import { fieldName, nodeLabel } from '../../lib/review/reviewVocabulary'
 
 const LABELS = {
-  subtotalsTitle: { ja: '内訳（状況・嗜好・履歴）', en: 'Subtotals (situation · preference · history)' },
-  situation: { ja: '状況', en: 'Situation' },
-  preference: { ja: '嗜好', en: 'Preference' },
-  history: { ja: '履歴', en: 'History' },
+  subtotalsTitle: { ja: '内訳（状況・好み・過去実績）', en: 'Subtotals (situation · preference · history)' },
   strongestSupport: { ja: '最も支持する特徴量', en: 'Strongest support' },
   strongestOppose: { ja: '最も反対する特徴量', en: 'Strongest opposition' },
   none: { ja: 'なし', en: 'None' },
   tableSummary: { ja: '特徴量トレース', en: 'Feature trace' },
   colFeature: { ja: '特徴量', en: 'Feature' },
-  colE: { ja: 'e（証拠）', en: 'e (evidence)' },
-  colA: { ja: 'a（応答係数）', en: 'a (response)' },
-  colR: { ja: 'r=e·a', en: 'r=e·a' },
-  colW: { ja: 'w（重み）', en: 'w (weight)' },
-  colK: { ja: 'k=r×w', en: 'k=r×w' },
+  colE: { ja: '証拠', en: 'Evidence' },
+  colA: { ja: '応答係数', en: 'Response coefficient' },
+  colR: { ja: '応答値', en: 'Response value' },
+  colW: { ja: '重み', en: 'Weight' },
+  colK: { ja: '寄与', en: 'Contribution' },
 }
 
 function fmt(n: number | null | undefined): string {
@@ -65,26 +65,26 @@ export default function ContentExplainability({ item, lang }: { item: OrderedIte
         <div style={miniLabelStyle}>{t(LABELS.subtotalsTitle, lang)}</div>
         <div style={{ display: 'flex', gap: '10px', fontSize: '0.8em', fontFamily: 'monospace' }}>
           <span>
-            {t(LABELS.situation, lang)}: {fmt(item.situation_fit)}
+            {t(nodeLabel('Situation'), lang)}: {fmt(item.situation_fit)}
           </span>
           <span>
-            {t(LABELS.preference, lang)}: {fmt(item.preference_fit)}
+            {t(nodeLabel('Preference'), lang)}: {fmt(item.preference_fit)}
           </span>
           <span>
-            {t(LABELS.history, lang)}: {fmt(item.history_fit)}
+            {t(nodeLabel('History'), lang)}: {fmt(item.history_fit)}
           </span>
         </div>
         <div style={{ marginTop: '4px', fontSize: '0.78em', color: '#4b5563' }}>
           <b>{t(LABELS.strongestSupport, lang)}:</b>{' '}
           <span data-testid="content-strongest-support">
             {item.strongest_support
-              ? `${item.strongest_support.feature_id} (+${fmt(item.strongest_support.contribution)})`
+              ? `${t(fieldName(item.strongest_support.feature_id), lang)} (+${fmt(item.strongest_support.contribution)})`
               : t(LABELS.none, lang)}
           </span>{' '}
           <b>{t(LABELS.strongestOppose, lang)}:</b>{' '}
           <span data-testid="content-strongest-oppose">
             {item.strongest_oppose
-              ? `${item.strongest_oppose.feature_id} (${fmt(item.strongest_oppose.contribution)})`
+              ? `${t(fieldName(item.strongest_oppose.feature_id), lang)} (${fmt(item.strongest_oppose.contribution)})`
               : t(LABELS.none, lang)}
           </span>
         </div>
@@ -117,7 +117,7 @@ export default function ContentExplainability({ item, lang }: { item: OrderedIte
                       data-testid={`content-explain-row-${fc.feature_id}`}
                       style={muted ? mutedRowStyle : undefined}
                     >
-                      <td style={tdStyle}>{fc.feature_id}</td>
+                      <td style={tdStyle}>{t(fieldName(fc.feature_id), lang)}</td>
                       <td style={tdStyleMono}>{fmt(fc.e_i)}</td>
                       <td style={tdStyleMono}>{fmt(fc.a_i)}</td>
                       <td style={tdStyleMono}>{fmt(fc.r_i)}</td>

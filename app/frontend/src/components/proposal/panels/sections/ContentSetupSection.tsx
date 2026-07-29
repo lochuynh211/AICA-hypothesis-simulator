@@ -29,6 +29,16 @@ const LABELS = {
   advancedSection: { ja: '詳細設定', en: 'Advanced' },
 }
 
+/** hp.kind is the manifest's raw type literal — never printed as-is (rule 2/3). */
+const HP_KIND_LABELS: Record<string, { ja: string; en: string }> = {
+  matrix: { ja: '行列', en: 'Matrix' },
+  table: { ja: '表', en: 'Table' },
+  map: { ja: 'マップ', en: 'Map' },
+  numeric: { ja: '数値', en: 'Numeric' },
+  enum: { ja: '選択肢', en: 'Enum' },
+  string: { ja: '文字列', en: 'String' },
+}
+
 export default function ContentSetupSection({ manifest }: { manifest: ProposalPackageSummary }) {
   const { state, dispatch } = useProposalStore()
   const { uiLanguage: lang } = state
@@ -49,12 +59,12 @@ export default function ContentSetupSection({ manifest }: { manifest: ProposalPa
 
   const renderSubslabGroup = (hps: ProposalPackageSummary['hyperparameters']) =>
     hps.map((hp) => (
-      <div key={hp.key} style={{ margin: '10px 0 4px' }}>
+      <div key={hp.key} data-hp-key={hp.key} style={{ margin: '10px 0 4px' }}>
         <div style={subslabStyle}>
           <span data-testid="content-hp-kind-badge" style={kindBadgeStyle}>
-            {hp.kind}
+            {t(HP_KIND_LABELS[hp.kind] ?? { ja: hp.kind, en: hp.kind }, lang)}
           </span>{' '}
-          <code>{hp.key}</code> <span style={{ color: '#6b7280' }}>{t(hp.label, lang)}</span>
+          <span style={{ color: '#6b7280' }}>{t(hp.label, lang)}</span>
         </div>
         {hp.key === 'hierarchy_weights' ? (
           <ContentHierarchyTable

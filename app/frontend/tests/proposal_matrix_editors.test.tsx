@@ -15,12 +15,17 @@ describe('ContentHierarchyTable', () => {
     },
   }
 
-  it('renders one row per Category·subgroup with an editable share and a leaves text summary', () => {
+  it('renders one row per Category·subgroup with an editable share and a leaves text summary, labelled by name not id (default JA)', () => {
     render(<ContentHierarchyTable value={hierarchy} onChange={vi.fn()} />)
-    expect(screen.getByRole('rowheader', { name: 'Situation·driver_state' })).toBeInTheDocument()
+    // Row header resolves both halves through nodeLabel() (default lang is
+    // Japanese) — the readable name shows, never the raw `Situation`/
+    // `driver_state` ids.
+    expect(screen.getByRole('rowheader', { name: '状況・現在のドライバー状態' })).toBeInTheDocument()
+    expect(screen.queryByRole('rowheader', { name: 'Situation·driver_state' })).toBeNull()
     expect((screen.getByTestId('chw-share-Situation-driver_state') as HTMLInputElement).value).toBe('0.35')
-    // leaves rendered as compact "share·mask" text
-    expect(screen.getByText('drowsiness 0.55·1 / fatigue 0.45·1')).toBeInTheDocument()
+    // leaves rendered as compact "name share・mask" text (JA separators), the
+    // leaf feature ids resolved through fieldName() rather than shown raw.
+    expect(screen.getByText('眠気 0.55・1、疲労 0.45・1')).toBeInTheDocument()
   })
 
   it('editing a subgroup share updates only that subgroup', () => {
@@ -70,15 +75,19 @@ describe('ResponseMatrixTable', () => {
     },
   }
 
-  it('pivots to feature rows × service columns with editable coefficients', () => {
+  it('pivots to feature rows × service columns with editable coefficients, labelled by name not id (default JA)', () => {
     render(<ResponseMatrixTable value={profiles} onChange={vi.fn()} cornerLabel="feature × service" />)
-    // service columns
-    expect(screen.getByRole('columnheader', { name: 'music_playlist' })).toBeInTheDocument()
-    expect(screen.getByRole('columnheader', { name: 'humming_karaoke' })).toBeInTheDocument()
-    // feature rows
-    expect(screen.getByRole('rowheader', { name: 'drowsiness_level' })).toBeInTheDocument()
-    expect(screen.getByRole('rowheader', { name: 'fatigue_level' })).toBeInTheDocument()
-    // the cell carries the real coefficient
+    // service columns resolve through serviceLabel() (default lang is Japanese)
+    expect(screen.getByRole('columnheader', { name: 'プレイリスト再生' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: '鼻歌カラオケ' })).toBeInTheDocument()
+    expect(screen.queryByRole('columnheader', { name: 'music_playlist' })).toBeNull()
+    expect(screen.queryByRole('columnheader', { name: 'humming_karaoke' })).toBeNull()
+    // feature rows resolve through fieldName()
+    expect(screen.getByRole('rowheader', { name: '眠気' })).toBeInTheDocument()
+    expect(screen.getByRole('rowheader', { name: '疲労度' })).toBeInTheDocument()
+    expect(screen.queryByRole('rowheader', { name: 'drowsiness_level' })).toBeNull()
+    expect(screen.queryByRole('rowheader', { name: 'fatigue_level' })).toBeNull()
+    // the cell carries the real coefficient — data-testid still keys on the raw ids
     expect((screen.getByTestId('resp-cell-music_playlist-drowsiness_level') as HTMLInputElement).value).toBe('0.8')
   })
 
@@ -112,12 +121,17 @@ describe('HierarchyWeightsTable', () => {
     },
   }
 
-  it('renders all three levels with editable share inputs (nothing read-only)', () => {
+  it('renders all three levels with editable share inputs (nothing read-only), labelled by name not id (default JA)', () => {
     render(<HierarchyWeightsTable value={hierarchy} onChange={vi.fn()} />)
-    expect(screen.getByRole('rowheader', { name: 'Situation' })).toBeInTheDocument()
-    expect(screen.getByRole('rowheader', { name: 'driver_state' })).toBeInTheDocument()
-    expect(screen.getByText('drowsiness_level')).toBeInTheDocument()
-    // every share level is an editable input
+    // All three levels resolve through nodeLabel()/fieldName() (default lang
+    // is Japanese) — the readable names show, never the raw ids.
+    expect(screen.getByRole('rowheader', { name: '状況' })).toBeInTheDocument()
+    expect(screen.getByRole('rowheader', { name: '現在のドライバー状態' })).toBeInTheDocument()
+    expect(screen.getByText('眠気')).toBeInTheDocument()
+    expect(screen.queryByRole('rowheader', { name: 'Situation' })).toBeNull()
+    expect(screen.queryByRole('rowheader', { name: 'driver_state' })).toBeNull()
+    expect(screen.queryByText('drowsiness_level')).toBeNull()
+    // every share level is an editable input — data-testid still keys on the raw ids
     expect((screen.getByTestId('hw-cat-Situation') as HTMLInputElement).value).toBe('0.8')
     expect((screen.getByTestId('hw-sub-driver_state') as HTMLInputElement).value).toBe('0.5')
     expect((screen.getByTestId('hw-leaf-drowsiness_level') as HTMLInputElement).value).toBe('0.55')

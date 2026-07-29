@@ -1,11 +1,11 @@
 /**
  * mergedClient — API client for the Combined Simulator's merged-run endpoints
  * (feature 020, Task 7). Mirrors `client.ts`'s `apiFetch` exactly (bare
- * `fetch` to an already-absolute `/api/...` path, throw a plain `Error` on a
- * non-ok response) rather than `proposalClient.ts`'s body-detail-parsing
- * variant — the merged-runs router (`routers/merged_runs.py`) is a thin seam
- * over the existing trigger/proposal handlers, not the Proposal Simulator's
- * own API surface.
+ * `fetch` to an already-absolute `/api/...` path, throw an `Error` carrying a
+ * bilingual `.bilingual` pair on a non-ok response) rather than
+ * `proposalClient.ts`'s body-detail-parsing variant — the merged-runs router
+ * (`routers/merged_runs.py`) is a thin seam over the existing trigger/proposal
+ * handlers, not the Proposal Simulator's own API surface.
  *
  * Deliberately depends only on `./types` (trigger side) and `./proposalClient`
  * (proposal side, for `World`/`ProposalRunLog`) — never on `state/runStore` or
@@ -13,13 +13,26 @@
  */
 import type { DecisionResult, AlgorithmError, RestSpot, RunState, FirePoint, InstantResult, PreviewRestOption, RunLog } from './types'
 import type { World, ProposalRunLog } from './proposalClient'
+import type { BilingualLabel } from '../i18n/t'
 
 // ── Internal helper (mirrors api/client.ts's apiFetch) ──────────────────────
+
+/**
+ * A generic HTTP-status failure. Carries a bilingual `.bilingual` pair
+ * (mirrors `api/client.ts`'s `apiError`) so a caller with the active UI
+ * language can resolve a JA/EN-appropriate message via `t()` instead of
+ * showing the raw English `.message` verbatim.
+ */
+function apiError(status: number): Error & { bilingual: BilingualLabel } {
+  return Object.assign(new Error(`API error: ${status}`), {
+    bilingual: { ja: `API エラー（${status}）`, en: `API error (${status})` },
+  })
+}
 
 async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(path, init)
   if (!response.ok) {
-    throw new Error(`API error: ${response.status}`)
+    throw apiError(response.status)
   }
   return response.json() as Promise<T>
 }

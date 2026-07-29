@@ -795,7 +795,11 @@ describe('useRunPreview — debounced POST /runs/preview (feature 009)', () => {
         await Promise.resolve()
       })
 
-      expect(result.current.state.previewError).toBe('boom')
+      // The failure is STATED in the reviewer's language; the thrown value's
+      // own text survives as clearly-labelled technical detail rather than
+      // being the message a Japanese reviewer is shown.
+      expect(result.current.state.previewError).toContain('Failed to load the preview.')
+      expect(result.current.state.previewError).toContain('boom')
       expect(result.current.state.previewLoading).toBe(false)
     } finally {
       vi.useRealTimers()

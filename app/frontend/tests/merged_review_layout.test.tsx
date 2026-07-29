@@ -74,7 +74,7 @@ describe('Combined review layout', () => {
     expect(proposals.contains(playback)).toBe(false)
   })
 
-  it('renders the Japanese-default case picker label and the idle status line entirely in Japanese', () => {
+  it('renders the Japanese-default case picker label and case card entirely in Japanese', () => {
     // Regression for the earlier bug where English text leaked inside a
     // Japanese sentence — every other test here runs in the LanguageProvider's
     // JA default too, but this one asserts it explicitly with
@@ -85,23 +85,29 @@ describe('Combined review layout', () => {
       </LanguageProvider>,
     )
     expect(screen.getByText('体験テストケース')).toBeTruthy()
-    // No case/run exists yet, so the status line shows its idle message — pure
-    // Japanese, with no stray English word (e.g. "min") mixed in.
-    const status = screen.getByTestId('playback-status-text')
-    expect(status.textContent).toBe(
-      '実行またはクイックビューを開始すると、ここに状況が表示されます。',
-    )
-    expect(status.textContent).not.toMatch(/[a-zA-Z]/)
+    // The status line no longer renders before playback, so the JA-prose guard
+    // moves to the case card, which IS on screen from the start.
+    const card = screen.getByTestId('experience-case-card')
+    expect(card.textContent ?? '').not.toMatch(/[a-z]{4,}\s+[a-z]{4,}/)
   })
 
-  it('puts a READ-ONLY status line between the map and the proposals', () => {
-    // It replaced the checkpoint rail + decision band: one line, no controls.
+  it('shows no status line under the map before playback', () => {
+    // Owner review: the first-trigger summary was removed, and the car status
+    // only exists once a run is ticking.
     mount()
-    expect(screen.getByTestId('playback-status-line')).toBeTruthy()
+    expect(screen.queryByTestId('playback-status-line')).toBeNull()
     expect(screen.queryByTestId('checkpoint-rail')).toBeNull()
     expect(screen.queryByTestId('decision-band')).toBeNull()
+  })
 
-    const line = screen.getByTestId('playback-status-line')
-    expect(line.querySelectorAll('button, a, input, select')).toHaveLength(0)
+  it('shows the case detail inline, with no popup to open', () => {
+    mount()
+    const card = screen.getByTestId('experience-case-card')
+    // The persona narrative and the pinned conditions used to sit behind a
+    // "Case details" button — detail behind a button is detail nobody reads.
+    expect(within(card).getByTestId('case-persona-narrative')).toBeTruthy()
+    expect(within(card).getByTestId('case-fixed-conditions')).toBeTruthy()
+    expect(screen.queryByTestId('case-details-button')).toBeNull()
+    expect(screen.queryByTestId('case-details-modal')).toBeNull()
   })
 })

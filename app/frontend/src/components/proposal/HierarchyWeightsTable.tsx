@@ -13,6 +13,7 @@
 import { t } from '../../i18n/t'
 import type { UiLanguage } from '../../i18n/t'
 import { mtxTableStyle, mtxThStyle, mtxTdStyle, mtxRowLabelStyle, mtxInputStyle } from './matrixStyles'
+import { fieldName, nodeLabel } from '../../lib/review/reviewVocabulary'
 
 type Leaf = { share?: number }
 type Subgroup = { share?: number; leaves?: Record<string, Leaf> }
@@ -37,7 +38,11 @@ function num(raw: string, prev: number | undefined): number | undefined {
   return Number.isNaN(n) ? prev : n
 }
 
-export default function HierarchyWeightsTable({ value, onChange, lang = 'en' }: HierarchyWeightsTableProps) {
+// The default is the APP's default language, not English. A caller that
+// forgets the prop then degrades to the language the rest of the screen is
+// already in, rather than dropping English headers into a Japanese panel —
+// which is exactly the bug that reached the Combined screen's setup popups.
+export default function HierarchyWeightsTable({ value, onChange, lang = 'ja' }: HierarchyWeightsTableProps) {
   function setCategoryShare(cat: string, raw: string) {
     onChange({ ...value, [cat]: { ...value[cat], share: num(raw, value[cat]?.share) } })
   }
@@ -106,7 +111,7 @@ export default function HierarchyWeightsTable({ value, onChange, lang = 'en' }: 
                   catCellEmitted = true
                   cells.push(
                     <th key="cat" scope="row" rowSpan={catRowSpan} style={mtxRowLabelStyle}>
-                      {cat}
+                      {t(nodeLabel(cat), lang)}
                     </th>,
                     <td key="catshare" rowSpan={catRowSpan} style={mtxTdStyle}>
                       {shareInput(catVal.share, (raw) => setCategoryShare(cat, raw), `hw-cat-${cat}`)}
@@ -117,7 +122,7 @@ export default function HierarchyWeightsTable({ value, onChange, lang = 'en' }: 
                   subCellEmitted = true
                   cells.push(
                     <th key="sub" scope="row" rowSpan={subRowSpan} style={mtxRowLabelStyle}>
-                      {sub}
+                      {t(nodeLabel(sub), lang)}
                     </th>,
                     <td key="subshare" rowSpan={subRowSpan} style={mtxTdStyle}>
                       {shareInput(subVal.share, (raw) => setSubgroupShare(cat, sub, raw), `hw-sub-${sub}`)}
@@ -126,7 +131,7 @@ export default function HierarchyWeightsTable({ value, onChange, lang = 'en' }: 
                 }
                 cells.push(
                   <td key="leaf" style={{ ...mtxTdStyle, textAlign: 'left' }}>
-                    {leaf}
+                    {leaf === '—' ? leaf : t(fieldName(leaf), lang)}
                   </td>,
                   <td key="leafshare" style={mtxTdStyle}>
                     {leaf === '—'

@@ -34,6 +34,6 @@ def get_package(package_id: str):
     if pkg is None:
         raise HTTPException(
             status_code=404,
-            detail=f"Package {package_id!r} not found or invalid",
+            detail="Package not found or invalid. / パッケージが見つからないか、無効です。",
         )
     return pkg

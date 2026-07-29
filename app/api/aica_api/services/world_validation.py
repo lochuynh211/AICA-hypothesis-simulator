@@ -152,15 +152,31 @@ def _catalog_ids(catalog: list[Song]) -> tuple[set[str], set[str]]:
     return track_ids, artist_ids
 
 
+# Bilingual noun for each `ref_kind` this module checks — used to keep the
+# free-text `message` plain natural language in BOTH halves (never the raw
+# English `ref_kind` token spliced into the Japanese sentence). `path`/`code`
+# already carry the machine-readable detail as separate structured fields on
+# `ValidationIssue`, so `message` does not need to repeat the dotted field
+# path or the raw id either.
+# 推しアーティスト, not お気に入りアーティスト: 推し is the specification's own
+# word for this relationship (CDC-SU_specplan Slides 26/32/67 — 推し情報,
+# 推し関連の地点, 推しモード) and is the word the frontend's shared label table
+# uses everywhere else. 楽曲 likewise matches the frontend's own noun for a
+# catalog track.
+_REF_KIND_LABELS: dict[str, dict[str, str]] = {
+    "track": {"ja": "楽曲", "en": "track"},
+    "artist": {"ja": "推しアーティスト", "en": "favourite artist"},
+}
+
+
 def _unknown_reference_issue(*, path: str, ref_kind: str, ref_id: str, dataset_id: str) -> ValidationIssue:
+    label = _REF_KIND_LABELS.get(ref_kind, {"ja": "項目", "en": "item"})
     return ValidationIssue(
         path=path,
         code="unknown_catalog_reference",
         message=(
-            f"{path}: unknown {ref_kind} id '{ref_id}' — not present in dataset "
-            f"'{dataset_id}''s catalog. / "
-            f"{path}: 不明な{ref_kind} ID '{ref_id}' です（データセット '{dataset_id}' の"
-            "カタログに存在しません）。"
+            f"The registered {label['en']} isn't in this dataset's catalog. / "
+            f"登録されている{label['ja']}が、このデータセットのカタログに見つかりません。"
         ),
     )
 

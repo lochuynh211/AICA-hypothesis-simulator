@@ -18,7 +18,7 @@ type State =
   | { phase: 'error' }
 
 const APP_MODE_LABELS = {
-  trigger: { ja: 'トリガー', en: 'Trigger' },
+  trigger: { ja: '発火判定', en: 'Firing decision' },
   proposal: { ja: '提案', en: 'Proposal' },
   merged: { ja: '統合', en: 'Combined' },
 }

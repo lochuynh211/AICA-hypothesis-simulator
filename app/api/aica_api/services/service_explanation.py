@@ -29,6 +29,38 @@ _SERVICE_DESC: dict[str, str] = {
     "linked_video_recommendation": "a linked video recommendation",
 }
 
+# Bilingual display names for the V1 service catalog — the specification's own
+# content name (CDC-SU_specplan Slides 26, 38, 39, 40, 70), NOT the raw
+# ``candidate_id``. Mirrors ``SERVICE_LABELS`` in
+# ``app/frontend/src/lib/review/reviewVocabulary.ts`` — the two are the same
+# vocabulary and must be changed together. Used so the deterministic
+# ``template()`` fallback never splices the snake_case candidate id straight
+# into the displayed rationale (see the fix for the rule-2 finding on this
+# file: "cid" used to be interpolated raw into both languages below).
+_SERVICE_LABELS: dict[str, dict[str, str]] = {
+    "music_playlist": {"ja": "プレイリスト再生", "en": "playlist playback"},
+    "humming_karaoke": {"ja": "鼻歌カラオケ", "en": "humming karaoke"},
+    "full_karaoke": {"ja": "カラオケ（フル）", "en": "karaoke (full)"},
+    "call_response_driving": {"ja": "合いの手練習（走行中）", "en": "call-and-response practice (driving)"},
+    "call_response_stopped": {"ja": "合いの手練習（停車中）", "en": "call-and-response practice (stopped)"},
+    "conversation_audio": {"ja": "おしゃべり", "en": "chat"},
+    "linked_video_recommendation": {"ja": "動画レコメンド", "en": "video recommendation"},
+    "live_viewing": {"ja": "ライブビューイング", "en": "live viewing"},
+    "oshi_reexperience": {"ja": "推し追体験", "en": "favourite-artist re-experience"},
+    "quiz": {"ja": "クイズ", "en": "quiz"},
+    "radio_style": {"ja": "ラジオ風再生", "en": "radio-style playback"},
+    "ranking_creation": {"ja": "ランキング作成", "en": "ranking creation"},
+    "relaxation_multisensory": {"ja": "リラックス（多感覚連携）", "en": "relaxation (multisensory)"},
+    "stretch_video": {"ja": "ストレッチ動画", "en": "stretch video"},
+}
+
+
+def _service_label(candidate_id: str) -> dict[str, str]:
+    """Bilingual display name for a service candidate id, falling back to a
+    neutral "unnamed service" phrase rather than the raw id (rule 2: no
+    identifier ever reaches the screen)."""
+    return _SERVICE_LABELS.get(candidate_id, {"ja": "名称未登録のサービス", "en": "an unnamed service"})
+
 
 def build_prompt(target: dict[str, Any], context: dict[str, Any]) -> ExplanationPrompt:
     """Service branch — fact-rich reasoning-mode prompt (analogous to the
@@ -143,8 +175,9 @@ def template(target: dict[str, Any]) -> list[str]:
     dom_en = {"situation": "the driving situation", "preference": "the driver's taste",
               "history": "the driver's history"}[dom]
     sup = _k.label_for(str(ss["feature_id"]))
-    ja = f"主に{dom_ja}（特に{sup['ja']}）により、{cid}が選ばれました。"
-    en = f"Mainly {dom_en}, chiefly {sup['en']}, drove selecting {cid}."
+    svc = _service_label(cid)
+    ja = f"主に{dom_ja}（特に{sup['ja']}）により、{svc['ja']}が選ばれました。"
+    en = f"Mainly {dom_en}, chiefly {sup['en']}, drove selecting {svc['en']}."
     so = target.get("strongest_oppose")
     if isinstance(so, dict) and so.get("feature_id"):
         opp = _k.label_for(str(so["feature_id"]))

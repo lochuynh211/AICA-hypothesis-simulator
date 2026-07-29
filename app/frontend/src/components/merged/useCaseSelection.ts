@@ -38,8 +38,6 @@ const LABELS = {
 export type CaseSelection = {
   selectedCaseId: string | null
   selectedCase: CombinedTestCase | null
-  detailsOpen: boolean
-  setDetailsOpen: (open: boolean) => void
   caseError: string | null
   handleSelectCase: (caseId: string) => Promise<void>
   /** Drop back to "no test case", leaving the current setup untouched. */
@@ -52,7 +50,6 @@ export function useCaseSelection(): CaseSelection {
   const proposalStore = useProposalStore()
   const reviewStore = useReviewStore()
 
-  const [detailsOpen, setDetailsOpen] = useState(false)
   const [caseError, setCaseError] = useState<string | null>(null)
   // Bumped on every `handleSelectCase` call — see the race-guard note above.
   const selectionRef = useRef(0)
@@ -127,7 +124,7 @@ export function useCaseSelection(): CaseSelection {
   }
 
   return {
-    selectedCaseId, selectedCase, detailsOpen, setDetailsOpen, caseError,
+    selectedCaseId, selectedCase, caseError,
     handleSelectCase, clearCase,
   }
 }

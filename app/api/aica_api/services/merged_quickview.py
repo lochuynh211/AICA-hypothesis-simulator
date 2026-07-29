@@ -54,6 +54,48 @@ from aica_api.services.preview import PreviewFireEvent, iter_preview_ticks
 __all__ = ["project"]
 
 
+def _readable_error_text(detail: Any) -> str:
+    """Best-effort plain-text rendering of an ``HTTPException.detail``.
+
+    Mirrors ``routers/merged_runs.py``'s helper of the same name (kept as a
+    private duplicate rather than a shared import — this module's own
+    isolation guard forbids new cross-package imports beyond the ones its
+    docstring already documents). ``detail`` is normally a
+    ``{"code": ..., "message": ...}`` dict, or a list of such dicts, whose
+    already-written human sentence lives under ``message`` (or, for a raw
+    pydantic error entry, ``msg``); only when neither shape applies does this
+    fall back to ``str(detail)``, so a caller never surfaces the raw Python
+    dict/list repr (curly braces, single quotes) that ``str()``-ing the whole
+    ``detail`` used to produce.
+    """
+    if isinstance(detail, dict):
+        msg = detail.get("message")
+        if isinstance(msg, str) and msg:
+            return msg
+    elif isinstance(detail, list) and detail:
+        first = detail[0]
+        if isinstance(first, dict):
+            msg = first.get("message") or first.get("msg")
+            if isinstance(msg, str) and msg:
+                return msg
+    if isinstance(detail, str):
+        return detail
+    return str(detail)
+
+
+def _readable_validation_text(exc: ValidationError) -> str:
+    """Plain-text rendering of a pydantic ``ValidationError`` — its default
+    ``str()`` is a multi-line dump of raw field paths and type jargon (never
+    localized, never natural language), so this surfaces just the first
+    error's own message instead of that whole dump."""
+    errors = exc.errors()
+    if errors:
+        msg = errors[0].get("msg")
+        if isinstance(msg, str) and msg:
+            return msg
+    return str(exc)
+
+
 def _project_fire(ev: PreviewFireEvent, body: MergedQuickviewBody) -> tuple[dict | None, str | None]:
     """Build and run ONE default quick-check proposal for a single fire episode.
 
@@ -107,12 +149,12 @@ def _project_fire(ev: PreviewFireEvent, body: MergedQuickviewBody) -> tuple[dict
             hyperparameters=body.service_hyperparameters,
         )
     except ValidationError as exc:
-        return None, str(exc)
+        return None, _readable_validation_text(exc)
 
     try:
         plog = create_proposal_run(proposal_body, cache={})
     except HTTPException as exc:
-        return None, str(exc.detail)
+        return None, _readable_error_text(exc.detail)
 
     return plog.model_dump(mode="json"), None
 
@@ -162,11 +204,11 @@ def _project_after_rest(tick_state: Any, body: MergedQuickviewBody) -> tuple[dic
             hyperparameters=body.service_hyperparameters,
         )
     except ValidationError as exc:
-        return None, str(exc)
+        return None, _readable_validation_text(exc)
     try:
         plog = create_proposal_run(proposal_body, cache={})
     except HTTPException as exc:
-        return None, str(exc.detail)
+        return None, _readable_error_text(exc.detail)
     return plog.model_dump(mode="json"), None
 
 

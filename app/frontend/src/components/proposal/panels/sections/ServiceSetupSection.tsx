@@ -19,7 +19,7 @@ import HierarchyWeightsTable from '../../HierarchyWeightsTable'
 import ScalarTable from '../../ScalarTable'
 
 const LABELS = {
-  maxCandidates: { ja: '最大候補数', en: 'max_candidates' },
+  maxCandidates: { ja: '最大候補数', en: 'Max candidates' },
   settingSection: { ja: '設定', en: 'Setting' },
   preprocessingSection: { ja: '入力前処理（γ・正規化）', en: 'Input preprocessing (γ / normalization)' },
   weightsSection: { ja: '重み', en: 'Weights' },
@@ -27,6 +27,16 @@ const LABELS = {
   responseCoeffs: { ja: '応答係数（§5.2）', en: 'Response coefficients (§5.2)' },
   responseByFeature: { ja: '特徴量 × サービス', en: 'feature × service' },
   responseByRoad: { ja: '道路種別 × サービス', en: 'road × service' },
+}
+
+/** hp.kind is the manifest's raw type literal — never printed as-is (rule 2/3). */
+const HP_KIND_LABELS: Record<string, { ja: string; en: string }> = {
+  matrix: { ja: '行列', en: 'Matrix' },
+  table: { ja: '表', en: 'Table' },
+  map: { ja: 'マップ', en: 'Map' },
+  numeric: { ja: '数値', en: 'Numeric' },
+  enum: { ja: '選択肢', en: 'Enum' },
+  string: { ja: '文字列', en: 'String' },
 }
 
 const PREPROCESSING_KEYS = [
@@ -63,7 +73,7 @@ export default function ServiceSetupSection({ manifest }: { manifest: ProposalPa
         <label style={fieldLabelStyle}>
           {t(LABELS.maxCandidates, lang)}
           <input
-            aria-label="max_candidates"
+            aria-label={t(LABELS.maxCandidates, lang)}
             type="number"
             value={Number(topKValue)}
             onChange={(e) => dispatch({ type: 'SET_SERVICE_PARAMETER', key: 'top_k', value: Number(e.target.value) })}
@@ -96,8 +106,8 @@ export default function ServiceSetupSection({ manifest }: { manifest: ProposalPa
           <div style={sectionLabelStyle}>{t(LABELS.responseCoeffs, lang)}</div>
           {manifest.parameters['service_response_profiles'] && (
             <>
-              <div style={subslabStyle}>
-                <span style={kindBadgeStyle}>matrix</span> <code>service_response_profiles</code>{' '}
+              <div data-hp-key="service_response_profiles" style={subslabStyle}>
+                <span style={kindBadgeStyle}>{t(HP_KIND_LABELS.matrix, lang)}</span>{' '}
                 <span style={{ color: '#6b7280' }}>{t(LABELS.responseByFeature, lang)}</span>
               </div>
               <ResponseMatrixTable
@@ -112,13 +122,14 @@ export default function ServiceSetupSection({ manifest }: { manifest: ProposalPa
                   dispatch({ type: 'SET_SERVICE_PARAMETER', key: 'service_response_profiles', value: next })
                 }
                 cornerLabel={t(LABELS.responseByFeature, lang)}
+                lang={lang}
               />
             </>
           )}
           {manifest.parameters['road_response_profiles'] && (
             <>
-              <div style={subslabStyle}>
-                <span style={kindBadgeStyle}>matrix</span> <code>road_response_profiles</code>{' '}
+              <div data-hp-key="road_response_profiles" style={subslabStyle}>
+                <span style={kindBadgeStyle}>{t(HP_KIND_LABELS.matrix, lang)}</span>{' '}
                 <span style={{ color: '#6b7280' }}>{t(LABELS.responseByRoad, lang)}</span>
               </div>
               <ResponseMatrixTable
@@ -133,6 +144,7 @@ export default function ServiceSetupSection({ manifest }: { manifest: ProposalPa
                   dispatch({ type: 'SET_SERVICE_PARAMETER', key: 'road_response_profiles', value: next })
                 }
                 cornerLabel={t(LABELS.responseByRoad, lang)}
+                lang={lang}
               />
             </>
           )}
@@ -144,12 +156,12 @@ export default function ServiceSetupSection({ manifest }: { manifest: ProposalPa
         <>
           <div style={sectionLabelStyle}>{t(LABELS.weightsSection, lang)}</div>
           {weightHps.map((hp) => (
-            <div key={hp.key} style={{ margin: '10px 0 4px' }}>
+            <div key={hp.key} data-hp-key={hp.key} style={{ margin: '10px 0 4px' }}>
               <div style={subslabStyle}>
                 <span data-testid="hp-kind-badge" style={kindBadgeStyle}>
-                  {hp.kind}
+                  {t(HP_KIND_LABELS[hp.kind] ?? { ja: hp.kind, en: hp.kind }, lang)}
                 </span>{' '}
-                <code>{hp.key}</code> <span style={{ color: '#6b7280' }}>{t(hp.label, lang)}</span>
+                <span style={{ color: '#6b7280' }}>{t(hp.label, lang)}</span>
               </div>
               {hp.key === 'hierarchy_weights' ? (
                 <HierarchyWeightsTable
@@ -187,12 +199,12 @@ export default function ServiceSetupSection({ manifest }: { manifest: ProposalPa
           </summary>
           <div style={{ padding: '4px 11px 11px' }}>
             {advancedHps.map((hp) => (
-              <div key={hp.key} style={{ margin: '10px 0 4px' }}>
+              <div key={hp.key} data-hp-key={hp.key} style={{ margin: '10px 0 4px' }}>
                 <div style={subslabStyle}>
                   <span data-testid="hp-kind-badge" style={kindBadgeStyle}>
-                    {hp.kind}
+                    {t(HP_KIND_LABELS[hp.kind] ?? { ja: hp.kind, en: hp.kind }, lang)}
                   </span>{' '}
-                  <code>{hp.key}</code> <span style={{ color: '#6b7280' }}>{t(hp.label, lang)}</span>
+                  <span style={{ color: '#6b7280' }}>{t(hp.label, lang)}</span>
                 </div>
                 <HyperparamMatrix
                   def={hp}

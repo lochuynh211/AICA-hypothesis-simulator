@@ -192,8 +192,8 @@ export default function RecoveryPicker() {
           style={{ marginBottom: '16px', color: '#b45309', fontSize: '0.9em' }}
         >
           {t({
-            ja: 'このルートには休憩スポットが見つかりません — 実際の休憩スポットデータが利用できません（マップキーにPlacesアクセス権がない可能性があります）。',
-            en: 'No rest stops found for this route — real rest-stop data is unavailable (the maps key may lack Places access).',
+            ja: 'このルートには休憩場所が見つかりません — 実際の休憩場所データを取得できませんでした（地図キーに場所検索の権限がない可能性があります）。',
+            en: 'No rest locations found for this route — real rest-location data could not be retrieved (the map key may lack place-search access).',
           }, uiLanguage)}
         </div>
       )}

@@ -9,6 +9,21 @@
  * `proposalStore` directly.
  */
 import { useState } from 'react'
+import { t, type UiLanguage } from '../../i18n/t'
+import { genreLabel, optionLabel, type BilingualLabel } from '../../lib/review/reviewVocabulary'
+
+/** Placeholder for a free-text record key (e.g. a catalog item id) — shown
+ *  only when the caller supplies no fixed `keyOptions` dropdown. */
+const FREE_TEXT_KEY_PLACEHOLDER: BilingualLabel = { ja: '項目ID', en: 'Item ID' }
+/** Placeholder for the "add new scene" free-text input in `NestedRecordEditor`. */
+const SCENE_PLACEHOLDER: BilingualLabel = { ja: 'シーン名', en: 'Scene name' }
+/** Default id-input placeholder for `ItemListEditor` — most callers bind this
+ *  to a track id, so that is the sensible default rather than the raw field
+ *  name `track_id`. */
+const DEFAULT_ITEM_ID_PLACEHOLDER: BilingualLabel = { ja: 'トラックID', en: 'Track ID' }
+/** Timestamp-input placeholder for `ItemListEditor` — was the hardcoded,
+ *  never-localized technical phrase "ISO timestamp". */
+const TIMESTAMP_PLACEHOLDER: BilingualLabel = { ja: '日時（例：2026-07-29T10:00）', en: 'Date & time' }
 
 const rowStyle: React.CSSProperties = {
   display: 'flex',
@@ -88,6 +103,7 @@ type RecordEditorProps = {
   value: Record<string, string | number>
   onChange: (next: Record<string, string | number>) => void
   testId: string
+  lang: UiLanguage
   /** If provided, the key is chosen from a fixed <select> (e.g. ServiceId);
    * otherwise the key is a free-text input (e.g. a track/content-tag id). */
   keyOptions?: string[]
@@ -95,9 +111,28 @@ type RecordEditorProps = {
    * renders a numeric input. */
   valueKind: 'enum' | 'number'
   valueOptions?: string[]
+  /** Resolves a `keyOptions` entry (a service or genre id) to its display
+   *  name — the raw id stays the record's actual key and the <select>
+   *  option's `value`, only the visible TEXT changes. Omitted for free-text
+   *  keys (e.g. a catalog item id): that text is real data the user typed,
+   *  not an internal identifier, so it is shown as-is. */
+  keyLabel?: (key: string) => BilingualLabel
+  /** Resolves a `valueOptions` entry (the enum-kind value select) to its
+   *  display name; the raw value stays the option's `value`. */
+  valueLabel?: (value: string) => BilingualLabel
 }
 
-export function RecordEditor({ value, onChange, testId, keyOptions, valueKind, valueOptions }: RecordEditorProps) {
+export function RecordEditor({
+  value,
+  onChange,
+  testId,
+  lang,
+  keyOptions,
+  valueKind,
+  valueOptions,
+  keyLabel,
+  valueLabel,
+}: RecordEditorProps) {
   const entries = Object.entries(value)
   const [draftKey, setDraftKey] = useState(keyOptions?.[0] ?? '')
   const [draftValue, setDraftValue] = useState<string>(valueOptions?.[0] ?? '0')
@@ -116,7 +151,11 @@ export function RecordEditor({ value, onChange, testId, keyOptions, valueKind, v
     <div data-testid={testId}>
       {entries.map(([key, val]) => (
         <div key={key} style={rowStyle} data-testid={`${testId}-row-${key}`}>
-          <code style={{ flex: 1 }}>{key}</code>
+          {keyLabel ? (
+            <span style={{ flex: 1 }}>{t(keyLabel(key), lang)}</span>
+          ) : (
+            <code style={{ flex: 1 }}>{key}</code>
+          )}
           {valueKind === 'enum' ? (
             <select
               data-testid={`${testId}-value-${key}`}
@@ -125,7 +164,7 @@ export function RecordEditor({ value, onChange, testId, keyOptions, valueKind, v
             >
               {(valueOptions ?? []).map((opt) => (
                 <option key={opt} value={opt}>
-                  {opt}
+                  {valueLabel ? t(valueLabel(opt), lang) : opt}
                 </option>
               ))}
             </select>
@@ -157,7 +196,7 @@ export function RecordEditor({ value, onChange, testId, keyOptions, valueKind, v
           >
             {keyOptions.map((opt) => (
               <option key={opt} value={opt}>
-                {opt}
+                {keyLabel ? t(keyLabel(opt), lang) : opt}
               </option>
             ))}
           </select>
@@ -167,7 +206,7 @@ export function RecordEditor({ value, onChange, testId, keyOptions, valueKind, v
             style={{ ...smallInputStyle, flex: 1 }}
             value={draftKey}
             onChange={(e) => setDraftKey(e.target.value)}
-            placeholder="id"
+            placeholder={t(FREE_TEXT_KEY_PLACEHOLDER, lang)}
           />
         )}
         {valueKind === 'enum' ? (
@@ -178,7 +217,7 @@ export function RecordEditor({ value, onChange, testId, keyOptions, valueKind, v
           >
             {(valueOptions ?? []).map((opt) => (
               <option key={opt} value={opt}>
-                {opt}
+                {valueLabel ? t(valueLabel(opt), lang) : opt}
               </option>
             ))}
           </select>
@@ -215,14 +254,20 @@ export function NestedRecordEditor({
   value,
   onChange,
   testId,
+  lang,
   innerKeyOptions,
   innerValueOptions,
+  keyLabel,
+  valueLabel,
 }: {
   value: Record<string, Record<string, string>>
   onChange: (next: Record<string, Record<string, string>>) => void
   testId: string
+  lang: UiLanguage
   innerKeyOptions?: string[]
   innerValueOptions: string[]
+  keyLabel?: (key: string) => BilingualLabel
+  valueLabel?: (value: string) => BilingualLabel
 }) {
   const [draftScene, setDraftScene] = useState('')
   const scenes = Object.keys(value)
@@ -261,9 +306,12 @@ export function NestedRecordEditor({
           <RecordEditor
             testId={`${testId}-scene-${scene}-map`}
             value={value[scene]}
+            lang={lang}
             keyOptions={innerKeyOptions}
             valueKind="enum"
             valueOptions={innerValueOptions}
+            keyLabel={keyLabel}
+            valueLabel={valueLabel}
             onChange={(inner) => onChange({ ...value, [scene]: inner as Record<string, string> })}
           />
         </div>
@@ -274,7 +322,7 @@ export function NestedRecordEditor({
           style={{ ...smallInputStyle, flex: 1 }}
           value={draftScene}
           onChange={(e) => setDraftScene(e.target.value)}
-          placeholder="scene"
+          placeholder={t(SCENE_PLACEHOLDER, lang)}
         />
         <button type="button" data-testid={`${testId}-add-scene`} disabled={!draftScene.trim()} onClick={addScene}>
           +
@@ -292,7 +340,8 @@ export function ItemListEditor<T extends Record<string, string>>({
   testId,
   idField,
   tsField,
-  idPlaceholder = 'track_id',
+  idPlaceholder,
+  lang,
 }: {
   value: T[]
   onChange: (next: T[]) => void
@@ -300,6 +349,7 @@ export function ItemListEditor<T extends Record<string, string>>({
   idField: keyof T & string
   tsField: keyof T & string
   idPlaceholder?: string
+  lang: UiLanguage
 }) {
   const [draftId, setDraftId] = useState('')
   const [draftTs, setDraftTs] = useState('')
@@ -326,14 +376,14 @@ export function ItemListEditor<T extends Record<string, string>>({
           style={{ ...smallInputStyle, flex: 1 }}
           value={draftId}
           onChange={(e) => setDraftId(e.target.value)}
-          placeholder={idPlaceholder}
+          placeholder={idPlaceholder ?? t(DEFAULT_ITEM_ID_PLACEHOLDER, lang)}
         />
         <input
           data-testid={`${testId}-draft-ts`}
           style={{ ...smallInputStyle, flex: 1 }}
           value={draftTs}
           onChange={(e) => setDraftTs(e.target.value)}
-          placeholder="ISO timestamp"
+          placeholder={t(TIMESTAMP_PLACEHOLDER, lang)}
         />
         <button
           type="button"
@@ -362,17 +412,19 @@ export function GenreUsageTable({
   value,
   onChange,
   testId,
+  lang,
 }: {
   genres: string[]
   value: Partial<Record<string, string>>
   onChange: (genre: string, level: string) => void
   testId: string
+  lang: UiLanguage
 }) {
   return (
     <div data-testid={testId}>
       {genres.map((genre) => (
         <div key={genre} style={rowStyle}>
-          <code style={{ flex: 1 }}>{genre}</code>
+          <span style={{ flex: 1 }}>{t(genreLabel(genre), lang)}</span>
           <select
             data-testid={`${testId}-${genre}`}
             value={value[genre] ?? 'never'}
@@ -380,7 +432,7 @@ export function GenreUsageTable({
           >
             {USAGE_LEVELS.map((lvl) => (
               <option key={lvl} value={lvl}>
-                {lvl}
+                {t(optionLabel('usage_by_genre', lvl), lang)}
               </option>
             ))}
           </select>

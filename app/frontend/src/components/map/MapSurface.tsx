@@ -4,8 +4,10 @@ import type { RestSpot } from '../../api/types'
 import { useRouteProgress } from '../playback/useRouteProgress'
 import { useSmoothFraction } from '../playback/useSmoothFraction'
 import { t } from '../../i18n/t'
+import type { UiLanguage } from '../../i18n/t'
 import FallbackRouteMap, { type MapFireMarker, type MapRestMarker } from './FallbackRouteMap'
 import { useLanguage } from '../../state/language'
+import { CATEGORY_LABELS } from '../../lib/review/reviewVocabulary'
 
 const LABELS = {
   authFailed: {
@@ -14,12 +16,19 @@ const LABELS = {
   },
   start: { ja: '出発地', en: 'Start' },
   destination: { ja: '目的地', en: 'Destination' },
-  initFailed: { ja: '地図の初期化に失敗しました', en: 'Map initialization failed' },
+  // Never carries the raw SDK/JS `Error.message` (always English, sometimes
+  // stack-trace-like) — that text is logged to the console instead, and only
+  // this fixed bilingual message reaches the screen.
+  initFailed: {
+    ja: '地図の初期化に失敗しました（技術的な詳細は開発者コンソールを参照）',
+    en: 'Map initialization failed (see the browser console for technical detail)',
+  },
   mapUnavailable: { ja: '地図を利用できません — ', en: 'Map unavailable — ' },
   routePosition: { ja: 'ルート上の位置', en: 'Route position' },
-  proposalPosition: { ja: '提案の位置', en: 'Proposal position' },
-  chosenRestSpot: { ja: '選択済みの休憩スポット', en: 'Chosen Rest Spot' },
-  chosenRestSpotPrefix: { ja: '選択済みの休憩スポット: ', en: 'Chosen rest spot: ' },
+  firePosition: { ja: '発火位置', en: 'Fire position' },
+  fire: { ja: '発火', en: 'Firing' },
+  chosenRestSpot: { ja: '選択済みの休憩場所', en: 'Chosen rest location' },
+  chosenRestSpotPrefix: { ja: '選択済みの休憩場所: ', en: 'Chosen rest location: ' },
 }
 
 /**
@@ -104,6 +113,14 @@ function slicePath(path: any[], cum: number[], total: number, fStart: number, fE
   const ptEnd = latLngAt(path, cum, total, fEnd, spherical)
   if (ptEnd) pts.push(ptEnd)
   return pts
+}
+
+/** The category-specific proposal phrase for a projected fire marker's native
+ *  tooltip — never the raw backend `category` enum literal. Falls back to the
+ *  generic 発火/Firing word for a category this table does not recognize. */
+function fireCategoryLabel(category: string | null | undefined, lang: UiLanguage): string {
+  if (category && CATEGORY_LABELS[category]) return t(CATEGORY_LABELS[category], lang)
+  return t(LABELS.fire, lang)
 }
 
 export default function MapSurface({
@@ -421,7 +438,10 @@ export default function MapSurface({
       // Canvas initialization failed — show inline fallback instead of propagating.
       // Car and decision markers still work; only the actual map canvas is missing.
       console.error('[MapSurface] Maps canvas init failed:', err)
-      setMapError(err instanceof Error ? err.message : t(LABELS.initFailed, lang))
+      // Never surface `err.message` itself — it is raw SDK/JS text (always
+      // English) and would land unlocalized on a JA screen (rule 3). The
+      // technical detail stays in the console log above.
+      setMapError(t(LABELS.initFailed, lang))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     // NOTE: `lang` is deliberately NOT a dependency here. This effect builds the
@@ -476,7 +496,7 @@ export default function MapSurface({
             strokeColor: '#fff',
             strokeWeight: selected ? 3 : 2,
           },
-          title: projecting ? (fireMarkers[i]?.category ?? undefined) : undefined,
+          title: projecting ? fireCategoryLabel(fireMarkers[i]?.category, lang) : undefined,
           clickable: projecting,
           zIndex: 998,
         })
@@ -656,7 +676,7 @@ export default function MapSurface({
         <div
           key={`decision-${i}`}
           data-testid="decision-marker"
-          aria-label={t(LABELS.proposalPosition, lang)}
+          aria-label={t(LABELS.firePosition, lang)}
           style={{
             position: 'absolute',
             bottom: '0',
@@ -680,7 +700,7 @@ export default function MapSurface({
         <div
           key={`rest-${i}-${spot.id}`}
           data-testid="rest-spot-marker"
-          aria-label={`${t(LABELS.chosenRestSpotPrefix, lang)}${spot.label ? t(spot.label, lang) : spot.id}`}
+          aria-label={spot.label ? `${t(LABELS.chosenRestSpotPrefix, lang)}${t(spot.label, lang)}` : t(LABELS.chosenRestSpot, lang)}
           style={{
             position: 'absolute',
             bottom: '0',

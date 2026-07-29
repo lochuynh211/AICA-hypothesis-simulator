@@ -114,7 +114,7 @@ describe('ServiceResultOverlay', () => {
     expect(screen.getByTestId('choose-candidate-stretch_video')).toBeDisabled()
     fireEvent.click(screen.getByTestId('choose-candidate-stretch_video'))
     expect(onChoose).not.toHaveBeenCalled()
-    expect(screen.getByTestId('out-of-scope-stretch_video')).toHaveTextContent('not supported in V1')
+    expect(screen.getByTestId('out-of-scope-stretch_video')).toHaveTextContent('Not supported in this simulator')
   })
 
   it('lets a supported service be chosen', () => {

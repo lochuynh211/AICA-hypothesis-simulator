@@ -241,7 +241,7 @@ describe('ContentProposalPanel', () => {
     vi.mocked(getDatasetCatalog).mockResolvedValue({ total: 0, songs: [] } as never)
   })
 
-  it('shows the song name first with the item_id in brackets (resolved via the catalog)', async () => {
+  it('shows the song name only — the raw item_id never reaches the screen (resolved via the catalog)', async () => {
     vi.mocked(getDatasetCatalog).mockResolvedValue({
       total: 1,
       songs: [{ spotify_track: { id: 'synthetic-track-0001', name: 'Jessica' } }],
@@ -259,10 +259,11 @@ describe('ContentProposalPanel', () => {
         <ContentProposalPanel />
       </ProposalStoreProvider>,
     )
-    // name first, id in brackets
+    // name shown; the raw id is no longer printed as text — it is only
+    // reachable via this row's own data-testid.
     expect(await screen.findByText('Jessica')).toBeInTheDocument()
     const card = screen.getByTestId('plan-item-synthetic-track-0001')
-    expect(card).toHaveTextContent('(synthetic-track-0001)')
+    expect(card).not.toHaveTextContent('synthetic-track-0001')
   })
 
   it('shows a waiting placeholder before STEP 1 has produced a content plan', async () => {
@@ -275,7 +276,7 @@ describe('ContentProposalPanel', () => {
     expect(screen.getByTestId('content-waiting')).toBeInTheDocument()
   })
 
-  it('renders the ordered plan items with per-item ReasonBreakdown once a content plan exists', async () => {
+  it('renders the ordered plan items (found by data-testid — no catalog is loaded, so the raw item_id never prints as text) with per-item ReasonBreakdown once a content plan exists', async () => {
     function Setup() {
       const { dispatch } = useProposalStore()
       React.useEffect(() => {
@@ -291,9 +292,12 @@ describe('ContentProposalPanel', () => {
     )
     await waitFor(() => expect(getPackages).toHaveBeenCalled())
 
-    expect(await screen.findByText('synthetic-track-0001')).toBeInTheDocument()
-    expect(screen.getByText('synthetic-track-0002')).toBeInTheDocument()
+    expect(await screen.findByTestId('plan-item-synthetic-track-0001')).toBeInTheDocument()
+    expect(screen.getByTestId('plan-item-synthetic-track-0002')).toBeInTheDocument()
     expect(screen.getAllByTestId('reason-breakdown').length).toBe(2)
+    // the raw ids are never printed as visible text
+    expect(screen.queryByText('synthetic-track-0001')).not.toBeInTheDocument()
+    expect(screen.queryByText('synthetic-track-0002')).not.toBeInTheDocument()
   })
 
   it('renders plan metadata (mode/duration/lighting/policies) and excluded examples, with no aggregate plan score', async () => {
@@ -310,11 +314,17 @@ describe('ContentProposalPanel', () => {
         <ContentProposalPanel />
       </ProposalStoreProvider>,
     )
-    await screen.findByText('synthetic-track-0001')
+    await screen.findByTestId('plan-item-synthetic-track-0001')
     const meta = screen.getByTestId('plan-metadata')
-    expect(meta).toHaveTextContent('playlist')
-    expect(meta).toHaveTextContent('plan_exhausted')
-    expect(screen.getByTestId('plan-excluded')).toHaveTextContent('synthetic-track-0006')
+    // words, not raw enum literals ("playlist" / "plan_exhausted")
+    expect(meta).toHaveTextContent('Playlist')
+    expect(meta).toHaveTextContent('plan exhausted')
+    expect(meta).not.toHaveTextContent('plan_exhausted')
+    const excluded = screen.getByTestId('plan-excluded')
+    // no catalog is loaded here, so the excluded item's name is unresolved —
+    // it renders as "Unknown item", never as the raw id
+    expect(excluded).toHaveTextContent('Unknown item')
+    expect(excluded).not.toHaveTextContent('synthetic-track-0006')
     expect(screen.queryByTestId('plan-score')).not.toBeInTheDocument()
     expect(screen.queryByText(/plan_score/i)).not.toBeInTheDocument()
   })
@@ -406,7 +416,8 @@ describe('ContentProposalPanel', () => {
     )
     await waitFor(() => expect(getPackages).toHaveBeenCalled())
     fireEvent.click(screen.getByTestId('service-run-button'))
-    await screen.findByText('full_karaoke')
+    // candidate renders its readable service name, never the raw id
+    await screen.findByText('Karaoke (full)')
 
     // plan_item_count is now a Setting hyperparameter — editing it flows through
     // contentHyperparameterOverrides and is sent on select-service.
@@ -516,7 +527,7 @@ describe('ContentProposalPanel', () => {
         <ContentProposalPanel />
       </ProposalStoreProvider>,
     )
-    await screen.findByText('synthetic-track-0001')
+    await screen.findByTestId('plan-item-synthetic-track-0001')
     expect(screen.queryByTestId('content-select-error')).not.toBeInTheDocument()
   })
 
@@ -538,7 +549,8 @@ describe('ContentProposalPanel', () => {
     )
     await waitFor(() => expect(getPackages).toHaveBeenCalled())
     fireEvent.click(screen.getByTestId('service-run-button'))
-    await screen.findByText('live_viewing')
+    // candidate renders its readable service name, never the raw id
+    await screen.findByText('Live viewing')
 
     const chooseBtn = screen.getByTestId('choose-candidate-live_viewing')
     expect(chooseBtn).toBeDisabled()

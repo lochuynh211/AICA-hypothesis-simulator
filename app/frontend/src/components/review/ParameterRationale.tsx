@@ -24,7 +24,7 @@ import type { ReviewOption, ReviewChainRow } from '../../lib/review/types'
 import {
   realizedShares, declaredShares, intentVsEffect, necessity, flipDistance, playedNoPart,
 } from '../../lib/review/reviewMath'
-import { phrase, bandWord } from '../../lib/review/reviewVocabulary'
+import { phrase, bandWord, optionLabel } from '../../lib/review/reviewVocabulary'
 import type { BilingualLabel } from '../../lib/review/reviewVocabulary'
 import type { ReviewStage } from '../../lib/review/checkpoints'
 import { useLanguage } from '../../state/language'
@@ -91,9 +91,10 @@ function reasonSentence(reason: string, label: string, lang: 'ja' | 'en'): strin
     : 'this could not be determined from the recorded data'
 }
 
-/** `value · bandWord(band, value)` for a numeric row; the raw string for a categorical one. */
+/** `value · bandWord(band, value)` for a numeric row; the value's own word
+ *  (via `optionLabel`, never the raw enum literal) for a categorical one. */
 function situationText(row: ReviewChainRow, lang: 'ja' | 'en'): string {
-  if (typeof row.value !== 'number') return String(row.value)
+  if (typeof row.value !== 'number') return t(optionLabel(row.featureId, row.value), lang)
   return `${row.value} · ${t(bandWord(row.band, row.value), lang)}`
 }
 
@@ -169,7 +170,6 @@ export default function ParameterRationale({
   const showConsequences = stage !== 'trigger' && right !== null
 
   const idColStyle: React.CSSProperties = { fontSize: '0.74em', color: '#1e293b' }
-  const faintIdStyle: React.CSSProperties = { fontSize: '0.68em', color: '#cbd5e1', marginLeft: '4px' }
 
   return (
     <div data-testid="parameter-rationale" style={{ padding: '12px' }}>
@@ -195,7 +195,6 @@ export default function ParameterRationale({
           >
             <span data-testid="rationale-feature" style={{ ...idColStyle, flex: 2 }}>
               {t(phrase(row.featureId), lang)}
-              <span style={faintIdStyle}>{row.featureId}</span>
             </span>
             <span data-testid={`rationale-situation-${row.featureId}`} style={{ flex: 2, color: '#475569' }}>
               {situationText(row, lang)}
@@ -260,9 +259,12 @@ export default function ParameterRationale({
             ) : (
               <ul style={{ margin: 0, paddingLeft: '18px' }}>
                 {noPart.map((featureId) => (
-                  <li key={featureId} style={{ fontSize: '0.84em', color: '#1e293b', lineHeight: 1.6 }}>
+                  <li
+                    key={featureId}
+                    data-testid={`played-no-part-${featureId}`}
+                    style={{ fontSize: '0.84em', color: '#1e293b', lineHeight: 1.6 }}
+                  >
                     {t(phrase(featureId), lang)}
-                    <span style={faintIdStyle}>{featureId}</span>
                   </li>
                 ))}
               </ul>

@@ -44,6 +44,7 @@ export function guidedState({
   restDecided,
   serviceChosen,
   hasContentPlan,
+  conversationOver = false,
 }: {
   proposalLog: ProposalRunLog | null
   /** The reviewer already accepted or declined this opportunity's rest. */
@@ -51,6 +52,13 @@ export function guidedState({
   /** The reviewer has explicitly chosen a service for THIS opportunity. */
   serviceChosen: boolean
   hasContentPlan: boolean
+  /**
+   * The car has reached the rest spot and recovery has begun (or has already
+   * been through it for this opportunity). The proposing is finished — what
+   * happens next is the nap, and the overlay must get out of the way so the
+   * reviewer can watch it.
+   */
+  conversationOver?: boolean
 }): GuidedState {
   const opportunity = proposalLog?.opportunity
   const journey = proposalLog?.journey_state
@@ -62,6 +70,10 @@ export function guidedState({
 
   if (proposalLog == null || opportunity == null) {
     return { step: 'done', isRestFlow: false, activeServiceId }
+  }
+
+  if (conversationOver) {
+    return { step: 'done', isRestFlow: Boolean(isRestFlow), activeServiceId }
   }
 
   // 1. Rest first: the driver is asked whether to stop before anything is

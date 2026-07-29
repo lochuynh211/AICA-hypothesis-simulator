@@ -45,13 +45,17 @@ const ITEM: OrderedItem = {
 }
 
 describe('ContentExplainability', () => {
-  it('renders situation/preference/history subtotals and strongest support/oppose', () => {
+  it('renders situation/preference/history subtotals and strongest support/oppose, labelled by name not id', () => {
     render(<ContentExplainability item={ITEM} lang="en" />)
     const subtotals = screen.getByTestId('content-subtotals')
     expect(subtotals.textContent).toContain('Situation: 0.623')
     expect(subtotals.textContent).toContain('Preference: 0.012')
-    expect(subtotals.textContent).toContain('History: 0.000')
-    expect(screen.getByTestId('content-strongest-support')).toHaveTextContent('drowsiness_level (+0.205)')
+    // The `History` judgement axis renders through nodeLabel(), which spells
+    // it out as "Past results" (spec Slide 66-70's own wording) rather than
+    // the raw JSON key.
+    expect(subtotals.textContent).toContain('Past results: 0.000')
+    expect(screen.getByTestId('content-strongest-support')).toHaveTextContent('Drowsiness (+0.205)')
+    expect(screen.getByTestId('content-strongest-support')).not.toHaveTextContent('drowsiness_level')
     expect(screen.getByTestId('content-strongest-oppose')).toHaveTextContent('None')
   })
 

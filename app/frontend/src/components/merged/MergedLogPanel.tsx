@@ -55,7 +55,7 @@ const RECOVERY_PHASE_LABELS: Record<string, { ja: string; en: string }> = {
 
 /** Bilingual labels for the rest-journey proposal event types (Task 5). */
 const REST_JOURNEY_EVENT_LABELS: Record<string, { ja: string; en: string }> = {
-  REST_SPOT_ARRIVED: { ja: '休憩地点に到着', en: 'Arrived at rest spot' },
+  REST_SPOT_ARRIVED: { ja: '休憩場所に到着', en: 'Arrived at the rest location' },
   REST_STARTED: { ja: '休憩開始', en: 'Rest started' },
   REST_COMPLETED: { ja: '休憩完了', en: 'Rest completed' },
   RECOMPUTED: { ja: '休憩後に再計算', en: 'Recomputed after rest' },

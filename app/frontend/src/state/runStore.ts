@@ -18,6 +18,9 @@ import type {
   InstantResult,
 } from '../api/types'
 import { runPreview as runPreviewClient } from '../api/client'
+import { useLanguage } from './language'
+import { t } from '../i18n/t'
+import type { BilingualLabel } from '../i18n/t'
 
 // ── State ──────────────────────────────────────────────────────────────────
 
@@ -842,6 +845,42 @@ export function selectOverridesDiff(
 /** Debounce window (ms) for the setup-screen instant-result preview. */
 const PREVIEW_DEBOUNCE_MS = 400
 
+/** Fallback shown when the preview request fails with no `.bilingual` pair
+ *  to resolve (see `resolvePreviewErrorMessage` below). */
+const PREVIEW_ERROR_LABEL: BilingualLabel = {
+  ja: 'プレビューの取得に失敗しました。',
+  en: 'Failed to load the preview.',
+}
+
+/**
+ * Resolves a caught preview-request error to a UI-language-appropriate
+ * string. Prefers the `.bilingual` pair `api/client.ts`'s `apiFetch` attaches
+ * to HTTP-status failures — resolved through `t()`, never shown as raw
+ * English (rule 3) — and otherwise states the failure in the reviewer's
+ * language.
+ *
+ * A thrown value with no bilingual pair (a network fault, a bug) still
+ * contributes its own text, appended as clearly-labelled TECHNICAL DETAIL
+ * rather than as the message itself. Dropping it would leave a failure with
+ * no record of what went wrong, which is the one thing an error surface must
+ * not do.
+ */
+const TECHNICAL_DETAIL_LABEL: BilingualLabel = { ja: '技術的な詳細', en: 'Technical detail' }
+
+function resolvePreviewErrorMessage(err: unknown, lang: 'ja' | 'en'): string {
+  if (err && typeof err === 'object' && 'bilingual' in err) {
+    return t((err as { bilingual: BilingualLabel }).bilingual, lang)
+  }
+  const raw = err instanceof Error ? err.message : String(err ?? '')
+  const stated = t(PREVIEW_ERROR_LABEL, lang)
+  if (!raw) return stated
+  // Full-width brackets in Japanese, ASCII in English — punctuation is part of
+  // the language, and a 「（）」 inside an English sentence reads as wrong as a
+  // stray English word inside a Japanese one.
+  const [open, close] = lang === 'ja' ? ['（', '）'] : [' (', ')']
+  return `${stated}${open}${t(TECHNICAL_DETAIL_LABEL, lang)}: ${raw}${close}`
+}
+
 /**
  * Fires a debounced POST /runs/preview whenever the setup changes (package,
  * scenario, hyperparameter overrides, or run_seed), storing the resulting
@@ -857,6 +896,9 @@ const PREVIEW_DEBOUNCE_MS = 400
  */
 export function useRunPreview(debounceMs: number = PREVIEW_DEBOUNCE_MS): void {
   const { state, dispatch } = useRunStore()
+  // Resolves the catch-block fallback below to the active UI language. Safe
+  // with no LanguageProvider ancestor — useLanguage() defaults to 'en'.
+  const { lang } = useLanguage()
   const {
     selectedPackageId,
     selectedScenarioId,
@@ -909,7 +951,7 @@ export function useRunPreview(debounceMs: number = PREVIEW_DEBOUNCE_MS): void {
           if (!cancelled) {
             dispatch({
               type: 'PREVIEW_FAILED',
-              message: err instanceof Error ? err.message : 'Preview request failed',
+              message: resolvePreviewErrorMessage(err, lang),
             })
           }
         })

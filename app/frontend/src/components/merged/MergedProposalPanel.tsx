@@ -22,51 +22,50 @@ import { useSongNames } from '../proposal/useSongNames'
 import { ServiceResultOverlay } from './ServiceResultOverlay'
 import { ContentResultOverlay } from './ContentResultOverlay'
 import { useProposalStore } from '../../state/proposalStore'
+import { useReviewStore } from '../../state/reviewStore'
 import { t } from '../../i18n/t'
 import { useLanguage } from '../../state/language'
+import { purposeLabel, optionLabel } from '../../lib/review/reviewVocabulary'
 
 const LABELS = {
-  algorithmError: { ja: 'アルゴリズムエラー', en: 'Algorithm error' },
+  // An algorithm failure is EVIDENCE (architecture §11: a failure is never
+  // disguised as a normal AICA decision), so the backend's own message is
+  // still shown — it is the only record of what actually went wrong. What
+  // changed is the framing: the sentence a reviewer reads is in their own
+  // language, and the backend string is labelled as the technical detail it
+  // is rather than being the whole message.
+  algorithmErrorGeneric: {
+    ja: 'アルゴリズムでエラーが発生しました。',
+    en: 'The algorithm reported an error.',
+  },
+  technicalDetail: { ja: '技術的な詳細', en: 'Technical detail' },
   service: { ja: 'サービス提案', en: 'Service proposal' },
   content: { ja: 'コンテンツ提案', en: 'Content proposal' },
-  inspecting: { ja: 'クイックビュー発火を確認中', en: 'Inspecting a quickview fire' },
-  inspectingRest: { ja: '仮眠後の提案を確認中', en: 'Inspecting the after-nap projection' },
-  close: { ja: '閉じる', en: 'Close' },
   awaitingLive: { ja: 'サービスを選ぶとコンテンツプランが表示されます。', en: 'Choose a service (top) to see its content plan.' },
   awaitingReadonly: { ja: 'この発火にはコンテンツプランがありません。', en: 'No content plan for this fire.' },
   empty: { ja: '発火するとここに提案が表示されます（またはクイックビューの発火をクリック）。', en: 'Proposals appear here on a trigger fire — or click a fire in the quickview.' },
   explanationSource: { ja: '説明の生成元', en: 'Explanation source' },
   explOff: { ja: 'オフ（既定テンプレート）', en: 'Off (template)' },
-  explBackend: { ja: 'バックエンドLLM（Ollama）', en: 'Backend LLM (Ollama)' },
-  explBrowser: { ja: 'ブラウザ（Gemini Nano）', en: 'Browser (Gemini Nano)' },
-  triggerSignal: { ja: '発火シグナル', en: 'Trigger signal' },
+  explBackend: { ja: 'サーバー側の生成AI（Ollama）', en: 'Server-side generative AI (Ollama)' },
+  explBrowser: { ja: 'ブラウザ内蔵の生成AI（Gemini Nano）', en: 'In-browser generative AI (Gemini Nano)' },
+  // 提案分類 is the specification's own name for this field (Slide 35: the
+  // four 提案分類 with their purposes). It carries a proposal CATEGORY, not
+  // a signal, and the value shown under it is that category's spec wording.
+  triggerSignal: { ja: '提案分類', en: 'Proposal category' },
   carState: { ja: '車両状態', en: 'Car status' },
-  motion: { ja: '走行/停車', en: 'Motion' },
+  motion: { ja: '走行・停車', en: 'Motion' },
+  inspectedError: {
+    ja: 'この発火の再計算でエラーが発生しました。',
+    en: 'An error occurred while recomputing this fire.',
+  },
 }
 
-// Friendly bilingual labels — read-only status strip. Unlike WorldPanel (whose
-// `en` column is deliberately the raw enum, used there as button captions), the
-// `en` text here is a genuine human-readable label so the strip never shows a
-// raw variable name. Unknown/future values fall back to the raw string below.
-const TRIGGER_PURPOSE_LABELS: Record<string, { ja: string; en: string }> = {
-  rest_recommended: { ja: '休憩推奨', en: 'Rest recommended' },
-  inattentive_driving_prevention_recovery: { ja: '注意力低下防止・回復', en: 'Inattentive driving prevention & recovery' },
-  route_music: { ja: 'ルート音楽', en: 'Route music' },
-  child_passenger_experience: { ja: '子ども同乗体験', en: 'Child passenger experience' },
-}
-const LIFECYCLE_STAGE_LABELS: Record<string, { ja: string; en: string }> = {
-  before_rest_until_stop: { ja: 'スポットへ向かう', en: 'Heading to spot' },
-  during_rest_stopped: { ja: 'スポットで停車', en: 'Stopped at spot' },
-  after_rest_before_restart: { ja: '休憩後・再開前', en: 'After spot' },
-  active_driving_content: { ja: '走行中', en: 'Driving' },
-}
-const MOTION_STATE_LABELS: Record<string, { ja: string; en: string }> = {
-  in_motion: { ja: '走行中', en: 'In motion' },
-  moving: { ja: '走行中', en: 'Moving' },
-  stopped: { ja: '停車中', en: 'Stopped' },
-  parked: { ja: '駐車中', en: 'Parked' },
-  idle: { ja: 'アイドリング', en: 'Idle' },
-}
+// The read-only status strip's trigger-purpose / lifecycle-stage / motion-state
+// values resolve through the SHARED reviewVocabulary table (`purposeLabel` /
+// `optionLabel`) rather than a local lookup — the same three fields are shown
+// elsewhere in the Combined screen (map markers, playback status line) and must
+// read identically everywhere. An unmapped value falls back to that shared
+// table's own "unnamed" wording, never to the raw backend string.
 
 type ProposalOverlayDerivation = {
   hasService: boolean
@@ -121,6 +120,30 @@ export default function MergedProposalPanel() {
   // and the shared explanation-source preference (feature 019) — same scoped-store
   // precedent MergedCenterPanel already relies on.
   const { state: ps } = useProposalStore()
+
+  /**
+   * Clicking a card sends the RIGHT column to that stage's comparison, with
+   * A = the top-ranked option (the one that won) and B = the clicked one — the
+   * question a click is asking is "why this instead of the winner?".
+   *
+   * `SELECT_STAGE` clears the comparison in the reducer, so it must be
+   * dispatched FIRST; clicking the winner itself leaves the stage's own
+   * default (rank 1 vs rank 2) rather than comparing it with itself.
+   */
+  const { dispatch: reviewDispatch } = useReviewStore()
+
+  function inspectStage(stage: 'service' | 'content', firstId: string | undefined, clickedId: string) {
+    reviewDispatch({ type: 'SELECT_STAGE', stage })
+    if (!firstId || firstId === clickedId) return
+    reviewDispatch({ type: 'SET_COMPARISON', leftId: firstId, rightId: clickedId })
+    reviewDispatch({ type: 'SELECT_TARGET', targetId: firstId })
+  }
+
+  const inspectService = (candidateId: string) =>
+    inspectStage('service', overlay.serviceOutput?.ranked_candidates[0]?.candidate_id, candidateId)
+
+  const inspectContentItem = (itemId: string) =>
+    inspectStage('content', overlay.contentPlan?.ordered_items[0]?.item_id, itemId)
 
   // item_id → song display name, so the content plan shows "Name (id)" like the
   // Proposal screen (issue #3). Shared with the review column via `useSongNames`
@@ -213,39 +236,32 @@ export default function MergedProposalPanel() {
         <span>
           <span style={statusLabelStyle}>{t(LABELS.triggerSignal, lang)}:</span>{' '}
           <span data-testid="merged-status-trigger" style={statusValueStyle}>
-            {t(TRIGGER_PURPOSE_LABELS[triggerPurpose] ?? { ja: triggerPurpose, en: triggerPurpose }, lang)}
+            {t(purposeLabel(triggerPurpose), lang)}
           </span>
         </span>
         <span>
           <span style={statusLabelStyle}>{t(LABELS.carState, lang)}:</span>{' '}
           <span data-testid="merged-status-lifecycle" style={statusValueStyle}>
-            {t(LIFECYCLE_STAGE_LABELS[lifecycleStage] ?? { ja: lifecycleStage, en: lifecycleStage }, lang)}
+            {t(optionLabel('lifecycle_stage', lifecycleStage), lang)}
           </span>
           <span style={{ color: '#94a3b8' }}> · {t(LABELS.motion, lang)} </span>
           <span data-testid="merged-status-motion" style={statusValueStyle}>
-            {t(MOTION_STATE_LABELS[motionState] ?? { ja: motionState, en: motionState }, lang)}
+            {t(optionLabel('motion_state', motionState), lang)}
           </span>
         </span>
       </div>
 
 
-      {isInspecting && !defaultsToFirstFire && (
-        <div data-testid="inspected-fire-readonly-badge" style={readonlyBadgeStyle}>
-          <span>{t(isInspectingRest ? LABELS.inspectingRest : LABELS.inspecting, lang)}</span>
-          <button
-            type="button"
-            data-testid="quickview-inspect-close"
-            onClick={() => coordinator.inspectFire(null)}
-            style={{ marginLeft: '8px', fontSize: '0.85em' }}
-          >
-            {t(LABELS.close, lang)}
-          </button>
-        </div>
-      )}
+      {/* The "Inspecting a quickview fire" badge was removed (owner review).
+          Clearing an inspection is still one click — the map's trigger markers
+          toggle, so clicking the selected one deselects it. */}
       {isInspecting && inspectedProposalError && (
-        <p role="alert" style={{ color: '#dc2626', fontSize: '0.82em' }}>
-          {inspectedProposalError}
-        </p>
+        <div role="alert">
+          <p style={{ color: '#dc2626', fontSize: '0.82em', margin: 0 }}>{t(LABELS.inspectedError, lang)}</p>
+          <p style={{ color: '#991b1b', fontSize: '0.7em', margin: '2px 0 0', fontFamily: 'ui-monospace, monospace' }}>
+            {t(LABELS.technicalDetail, lang)}: {inspectedProposalError}
+          </p>
+        </div>
       )}
 
       {!overlay.hasService ? (
@@ -264,15 +280,21 @@ export default function MergedProposalPanel() {
               activeServiceId={overlay.activeServiceId}
               choosingId={choosingId}
               onChoose={onChoose}
+              onInspect={inspectService}
               runId={explanationRunId}
               explanationProvider={explanationProvider}
               inlineProposal={explanationInlineProposal}
               lang={lang}
             />
             {overlay.serviceError && (
-              <p role="alert" style={{ color: '#dc2626', fontSize: '0.82em' }}>
-                {t(LABELS.algorithmError, lang)}: {overlay.serviceError.message}
-              </p>
+              <div role="alert">
+                <p style={{ color: '#dc2626', fontSize: '0.82em', margin: 0 }}>
+                  {t(LABELS.algorithmErrorGeneric, lang)}
+                </p>
+                <p style={{ color: '#991b1b', fontSize: '0.7em', margin: '2px 0 0', fontFamily: 'ui-monospace, monospace' }}>
+                  {t(LABELS.technicalDetail, lang)}: {overlay.serviceError.message}
+                </p>
+              </div>
             )}
           </div>
 
@@ -285,6 +307,7 @@ export default function MergedProposalPanel() {
                   plan={overlay.contentPlan}
                   error={overlay.contentError ?? undefined}
                   songNames={songNames}
+                  onInspect={inspectContentItem}
                   runId={explanationRunId}
                   explanationProvider={explanationProvider}
                   inlineProposal={explanationInlineProposal}
@@ -365,16 +388,3 @@ const halfTitleStyle: React.CSSProperties = {
   margin: '0 0 6px',
 }
 
-const readonlyBadgeStyle: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  fontSize: '0.72em',
-  fontWeight: 700,
-  color: '#92400e',
-  background: '#fffbeb',
-  border: '1px solid #fde68a',
-  borderRadius: '999px',
-  padding: '3px 10px',
-  flexShrink: 0,
-}

@@ -13,6 +13,7 @@
 import { t } from '../../i18n/t'
 import type { UiLanguage } from '../../i18n/t'
 import { mtxTableStyle, mtxThStyle, mtxTdStyle, mtxRowLabelStyle } from './matrixStyles'
+import { fieldName, nodeLabel } from '../../lib/review/reviewVocabulary'
 
 type Leaf = { share?: number; mask?: number; feature_id?: string }
 type Subgroup = { share?: number; leaves?: Record<string, Leaf> }
@@ -31,16 +32,22 @@ export type ContentHierarchyTableProps = {
   lang?: UiLanguage
 }
 
-function leavesText(sub: Subgroup): string {
+function leavesText(sub: Subgroup, lang: UiLanguage): string {
   const leaves = sub.leaves ?? {}
+  const separator = lang === 'ja' ? '・' : ' · '
   const parts = Object.entries(leaves).map(([leaf, lv]) => {
     const share = lv.share ?? 0
-    return lv.mask === undefined ? `${leaf} ${share}` : `${leaf} ${share}·${lv.mask}`
+    const name = t(fieldName(leaf), lang)
+    return lv.mask === undefined ? `${name} ${share}` : `${name} ${share}${separator}${lv.mask}`
   })
-  return parts.join(' / ') || '—'
+  return parts.join(lang === 'ja' ? '、' : ', ') || '—'
 }
 
-export default function ContentHierarchyTable({ value, onChange, lang = 'en' }: ContentHierarchyTableProps) {
+// The default is the APP's default language, not English. A caller that
+// forgets the prop then degrades to the language the rest of the screen is
+// already in, rather than dropping English headers into a Japanese panel —
+// which is exactly the bug that reached the Combined screen's setup popups.
+export default function ContentHierarchyTable({ value, onChange, lang = 'ja' }: ContentHierarchyTableProps) {
   function setSubgroupShare(cat: string, sub: string, raw: string) {
     const n = Number(raw)
     const prev = value[cat]?.[sub] ?? {}
@@ -65,7 +72,9 @@ export default function ContentHierarchyTable({ value, onChange, lang = 'en' }: 
             Object.entries(subs).map(([sub, subVal]) => (
               <tr key={`${cat}/${sub}`}>
                 <th scope="row" style={mtxRowLabelStyle}>
-                  {cat}·{sub}
+                  {t(nodeLabel(cat), lang)}
+                  {lang === 'ja' ? '・' : ' · '}
+                  {t(nodeLabel(sub), lang)}
                 </th>
                 <td style={mtxTdStyle}>
                   <input
@@ -76,7 +85,7 @@ export default function ContentHierarchyTable({ value, onChange, lang = 'en' }: 
                   />
                 </td>
                 <td style={{ ...mtxTdStyle, textAlign: 'left', color: '#6b7280', whiteSpace: 'normal' }}>
-                  {leavesText(subVal)}
+                  {leavesText(subVal, lang)}
                 </td>
               </tr>
             )),

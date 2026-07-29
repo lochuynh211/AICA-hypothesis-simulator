@@ -35,6 +35,49 @@ import {
   type MergedQuickviewReq,
   type MergedInstantResult,
 } from '../api/mergedClient'
+import { useLanguage } from './language'
+import { t } from '../i18n/t'
+import type { BilingualLabel, UiLanguage } from '../i18n/t'
+
+// ── User-facing failure text ─────────────────────────────────────────────
+//
+// Every catch site below phrases WHAT FAILED FOR THE REVIEWER, never the
+// wire action-kind literal (`select_service`, `accept_rest`, ...) — those
+// are implementation detail, not something a reviewer reading the error
+// banner should have to decode.
+const FAILURE_LABELS = {
+  create: { ja: '結合シミュレーションの作成に失敗しました。', en: 'Failed to create the combined simulation run.' },
+  tick: { ja: 'ティック処理に失敗しました。', en: 'The simulation tick failed.' },
+  selectService: { ja: 'サービスの選択に失敗しました。', en: 'Failed to submit the selected service.' },
+  afterRestContent: {
+    ja: '休憩後コンテンツの生成に失敗しました。',
+    en: 'Failed to generate the after-rest content.',
+  },
+  acceptRest: { ja: '休憩の受け入れに失敗しました。', en: 'Failed to accept the rest stop.' },
+  declineRest: { ja: '休憩の辞退に失敗しました。', en: 'Failed to decline the rest stop.' },
+  quickview: { ja: 'クイックビューの取得に失敗しました。', en: 'Failed to load the quickview projection.' },
+} satisfies Record<string, BilingualLabel>
+
+// NOTE: `state.error` also absorbs `trigger.proposal_error` / `trigger.error`
+// verbatim from the backend in the TICK_APPENDED reducer case below — left
+// UNCHANGED here on purpose. That raw text is a per-tick backend detail (not
+// a client-thrown error this file controls), and its display-side handling
+// (fixed primary message + demoted technical detail) belongs to the
+// component that renders `state.error` (MergedCenterPanel.tsx).
+
+/**
+ * Resolves a caught error to a UI-language-appropriate string. Prefers the
+ * `.bilingual` pair the API clients (`api/mergedClient.ts`) attach to
+ * HTTP-status failures — resolved through `t()`, never shown as raw English
+ * (rule 3) — and only falls back to `fallback` (also resolved through
+ * `t()`) for a thrown value that carries no such pair.
+ */
+function resolveErrorMessage(err: unknown, fallback: BilingualLabel, lang: UiLanguage): string {
+  if (err && typeof err === 'object' && 'bilingual' in err) {
+    return t((err as { bilingual: BilingualLabel }).bilingual, lang)
+  }
+  return t(fallback, lang)
+}
 
 // ── State ──────────────────────────────────────────────────────────────────
 
@@ -354,6 +397,10 @@ const MergedCoordinatorContext = createContext<MergedCoordinatorContextValue | n
 
 export function MergedCoordinatorProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(mergedCoordinatorReducer, initialMergedCoordinatorState)
+  // Resolves the catch-block fallback labels below to the active UI language.
+  // Safe with no LanguageProvider ancestor (e.g. a test rendering this
+  // Provider alone) — useLanguage() defaults to 'en' in that case.
+  const { lang } = useLanguage()
 
   // Refs (not state) so play()'s loop and step() always see the CURRENT
   // merged_run_id / run flag synchronously, without waiting on a re-render.
@@ -383,7 +430,7 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     } catch (err) {
       dispatch({
         type: 'ERROR',
-        message: err instanceof Error ? err.message : 'Failed to create merged run',
+        message: resolveErrorMessage(err, FAILURE_LABELS.create, lang),
       })
     }
   }
@@ -402,7 +449,7 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
       }
     } catch (err) {
       runningRef.current = false
-      dispatch({ type: 'ERROR', message: err instanceof Error ? err.message : 'Tick failed' })
+      dispatch({ type: 'ERROR', message: resolveErrorMessage(err, FAILURE_LABELS.tick, lang) })
     }
   }
 
@@ -449,7 +496,7 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     } catch (err) {
       dispatch({
         type: 'ERROR',
-        message: err instanceof Error ? err.message : 'select_service failed',
+        message: resolveErrorMessage(err, FAILURE_LABELS.selectService, lang),
       })
     } finally {
       choosingRef.current = null
@@ -479,7 +526,7 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     } catch (err) {
       dispatch({
         type: 'ERROR',
-        message: err instanceof Error ? err.message : 'after-rest content dispatch failed',
+        message: resolveErrorMessage(err, FAILURE_LABELS.afterRestContent, lang),
       })
     } finally {
       choosingRef.current = null
@@ -500,7 +547,7 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     } catch (err) {
       dispatch({
         type: 'ERROR',
-        message: err instanceof Error ? err.message : 'accept_rest failed',
+        message: resolveErrorMessage(err, FAILURE_LABELS.acceptRest, lang),
       })
     }
   }
@@ -517,7 +564,7 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     } catch (err) {
       dispatch({
         type: 'ERROR',
-        message: err instanceof Error ? err.message : 'decline failed',
+        message: resolveErrorMessage(err, FAILURE_LABELS.declineRest, lang),
       })
     }
   }
@@ -529,7 +576,7 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
     } catch (err) {
       dispatch({
         type: 'ERROR',
-        message: err instanceof Error ? err.message : 'Quickview failed',
+        message: resolveErrorMessage(err, FAILURE_LABELS.quickview, lang),
       })
     }
   }

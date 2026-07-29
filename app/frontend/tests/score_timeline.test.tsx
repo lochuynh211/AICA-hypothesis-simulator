@@ -203,11 +203,11 @@ describe('ScoreTimeline', () => {
       <ScoreTimeline data={withMonotony} testIds={{ ...TID, legend: 'ttl-legend' }} showLegend />,
     )
     const legend = screen.getByTestId('ttl-legend')
-    expect(legend.textContent).toContain('rest-propose score')
-    expect(legend.textContent).toContain('monotony score')
-    expect(legend.textContent).toContain('threshold')
+    expect(legend.textContent).toContain('Dangerous-driving-prevention score')
+    expect(legend.textContent).toContain('Inattentive-driving-prevention score')
+    expect(legend.textContent).toContain('Firing threshold')
     expect(legend.textContent).toContain('highway')
-    expect(legend.textContent).toContain('chosen rest spot')
+    expect(legend.textContent).toContain('chosen rest location')
 
     // Off by default (Setup strip owns its own legend, so ScoreTimeline must not add one).
     rerender(<ScoreTimeline data={withMonotony} testIds={{ ...TID, legend: 'ttl-legend' }} />)

@@ -16,7 +16,7 @@
  */
 import type { ReviewOption, MarginRow } from '../../lib/review/types'
 import { scaleBound, marginRows } from '../../lib/review/reviewMath'
-import { fieldName } from '../../lib/review/reviewVocabulary'
+import { fieldName, optionLabel } from '../../lib/review/reviewVocabulary'
 import { useLanguage } from '../../state/language'
 import { t } from '../../i18n/t'
 
@@ -45,17 +45,21 @@ function findOption(options: ReviewOption[], id: string): ReviewOption | undefin
 
 
 /**
- * The recorded value, as a NUMBER only (owner review) — no "high"/"low" word.
+ * The recorded value: a categorical feature reads back as its WORD (via
+ * `optionLabel`, never the raw enum token — `highway` reads as 高速道路/
+ * "Highway", not the identifier), and a numeric feature reads back as a
+ * NUMBER only (owner review) — no "high"/"low" band word for those.
  *
  * `drowsiness` and `fatigue` are authored on a 0-100 scale and recorded
  * divided by 100 (see the trigger package), so they read back as `66/100`
  * rather than `0.66`, which is the scale the reviewer set them on. Every other
- * feature is a derived score and is shown as-is, trailing zeros trimmed.
+ * numeric feature is a derived score and is shown as-is, trailing zeros
+ * trimmed.
  */
 const PERCENT_OF_100 = new Set(['drowsiness', 'fatigue'])
 
-export function valueText(featureId: string, value: string | number): string {
-  if (typeof value === 'string') return value
+export function valueText(featureId: string, value: string | number, lang: 'ja' | 'en'): string {
+  if (typeof value === 'string') return t(optionLabel(featureId, value), lang)
   if (PERCENT_OF_100.has(featureId)) return `${Math.round(value * 100)}/100`
   // 1, 0.5, 0.125 — never 1.000.
   return String(Number(value.toFixed(3)))
@@ -196,7 +200,7 @@ export default function WhatDecidedIt({
               <div data-testid={`margin-row-${row.featureId}`} style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '3px' }}>
                 <span style={{ fontSize: '0.84em', color: '#1e293b' }}>{t(fieldName(row.featureId), lang)}</span>
                 <span data-testid={`margin-anchor-${row.featureId}`} style={{ fontSize: '0.76em', color: '#475569', fontFamily: 'ui-monospace, monospace' }}>
-                  {anchorRow ? valueText(row.featureId, anchorRow.value) : '—'}
+                  {anchorRow ? valueText(row.featureId, anchorRow.value, lang) : '—'}
                 </span>
                 <span data-testid={`margin-lean-${row.featureId}`} style={{ fontSize: '0.8em', fontWeight: 700, color: row.lean === 'left' ? '#2563eb' : row.lean === 'right' ? '#dc2626' : '#94a3b8' }}>
                   {lean}

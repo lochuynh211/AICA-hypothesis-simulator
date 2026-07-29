@@ -33,7 +33,6 @@ import MergedCenterPanel from './MergedCenterPanel'
 import MergedRunsScreen from './MergedRunsScreen'
 import ExperienceCasePicker from '../review/ExperienceCasePicker'
 import ExperienceCaseCard from '../review/ExperienceCaseCard'
-import CaseDetailsModal from '../review/CaseDetailsModal'
 import ReviewColumn from '../review/ReviewColumn'
 import { caseFlagCounts } from '../review/DecisionAssessment'
 import { useCaseSelection } from './useCaseSelection'
@@ -66,8 +65,7 @@ function MergedLiveBody(): JSX.Element {
   const coordinator = useMergedCoordinator()
   const { state: reviewState } = useReviewStore()
   const {
-    selectedCaseId, selectedCase, detailsOpen, setDetailsOpen, caseError,
-    handleSelectCase,
+    selectedCaseId, selectedCase, caseError, handleSelectCase,
   } = useCaseSelection()
 
   // Editing the setup no longer CLEARS the case — with no null entry in the
@@ -115,7 +113,7 @@ function MergedLiveBody(): JSX.Element {
             {caseError}
           </p>
         )}
-        {selectedCase && <ExperienceCaseCard testCase={selectedCase} onOpenDetails={() => setDetailsOpen(true)} />}
+        {selectedCase && <ExperienceCaseCard testCase={selectedCase} />}
         <MergedSetupPanel
           caseSetup={caseSetup}
           selectedCase={selectedCase}
@@ -123,7 +121,6 @@ function MergedLiveBody(): JSX.Element {
           onCaseDrift={() => setCaseModified(true)}
 
         />
-        <CaseDetailsModal open={detailsOpen} testCase={selectedCase} onClose={() => setDetailsOpen(false)} />
       </div>
       <div className="center-panel">
         <MergedCenterPanel />

@@ -3,7 +3,7 @@
  *
  * Same grammar for both the service selector (`service_fit`) and the content
  * selector (`item_fit`) per design decision D9: a per-feature row of
- * `feature -> world value -> response(a) -> weight(w) -> signed contribution`,
+ * `feature -> value -> response(a) -> weight(w) -> signed contribution`,
  * plus supporting/opposing feature chips and a bilingual rationale.
  *
  * Callers normalize their differently-named contribution fields
@@ -19,6 +19,7 @@ import type { UiLanguage } from '../../i18n/t'
 import { t } from '../../i18n/t'
 import { pickRationale } from '../../api/proposalClient'
 import type { AiExplanation } from './useExplanation'
+import { booleanLabel, fieldName, isKnownOption, optionLabel } from '../../lib/review/reviewVocabulary'
 
 export type ReasonRow = {
   featureId: string
@@ -56,17 +57,34 @@ export type ReasonBreakdownProps = {
 const LABELS = {
   summary: { ja: 'この候補の理由（スコア内訳）', en: 'Why this candidate (score breakdown)' },
   feature: { ja: '特徴量', en: 'Feature' },
-  value: { ja: '世界値', en: 'Value' },
+  value: { ja: '値', en: 'Value' },
+  responseCoefficient: { ja: '応答係数', en: 'Response coefficient' },
+  weight: { ja: '重み', en: 'Weight' },
   contribution: { ja: '寄与', en: 'Contribution' },
   supportedBy: { ja: '支持:', en: 'Supported by:' },
   opposedBy: { ja: '反対:', en: 'Opposed by:' },
   aiGenerating: { ja: 'AI生成中…', en: 'generating…' },
   aiFellBack: { ja: '（AI利用不可 — 既定の説明に戻りました）', en: '(AI unavailable — showing default rationale)' },
   aiError: { ja: '（AI説明を取得できませんでした — 既定の説明）', en: '(could not get AI explanation — default rationale)' },
+  // WHICH model wrote the sentence is provenance a reviewer needs — an
+  // explanation is only auditable if its source is named — so the model name
+  // stays. It is a product name (like Ollama or Gemini Nano), not an internal
+  // identifier, which is why it may sit inside Japanese text.
+  aiProvenance: { ja: 'AI生成', en: 'AI-generated' },
 }
 
 function fmt(n: number): string {
   return n.toFixed(3)
+}
+
+/** A row's "value" cell carries either a formatted number or a categorical/
+ * boolean world value (`night`, `congested`, or an actual boolean) — the
+ * latter must render as words, never the enum literal or a JS boolean's
+ * `true`/`false` string form. */
+function fmtRowValue(featureId: string, value: unknown, lang: UiLanguage): string {
+  if (typeof value === 'boolean') return t(booleanLabel(value), lang)
+  if (typeof value === 'string' && isKnownOption(featureId, value)) return t(optionLabel(featureId, value), lang)
+  return String(value)
 }
 
 export default function ReasonBreakdown({
@@ -118,8 +136,12 @@ export default function ReasonBreakdown({
                 <th style={{ textAlign: 'right', padding: '3px 8px', borderBottom: '1px solid #e5e7eb' }}>
                   {t(LABELS.value, lang)}
                 </th>
-                <th style={{ textAlign: 'right', padding: '3px 8px', borderBottom: '1px solid #e5e7eb' }}>r (a)</th>
-                <th style={{ textAlign: 'right', padding: '3px 8px', borderBottom: '1px solid #e5e7eb' }}>w</th>
+                <th style={{ textAlign: 'right', padding: '3px 8px', borderBottom: '1px solid #e5e7eb' }}>
+                  {t(LABELS.responseCoefficient, lang)}
+                </th>
+                <th style={{ textAlign: 'right', padding: '3px 8px', borderBottom: '1px solid #e5e7eb' }}>
+                  {t(LABELS.weight, lang)}
+                </th>
                 <th style={{ textAlign: 'right', padding: '3px 8px', borderBottom: '1px solid #e5e7eb' }}>
                   {t(LABELS.contribution, lang)}
                 </th>
@@ -128,9 +150,11 @@ export default function ReasonBreakdown({
             <tbody>
               {rows.map((row) => (
                 <tr key={row.featureId}>
-                  <td style={{ padding: '3px 8px', borderBottom: '1px solid #f1f5f9' }}>{row.featureId}</td>
+                  <td style={{ padding: '3px 8px', borderBottom: '1px solid #f1f5f9' }}>
+                    {t(fieldName(row.featureId), lang)}
+                  </td>
                   <td style={{ padding: '3px 8px', textAlign: 'right', borderBottom: '1px solid #f1f5f9', fontFamily: 'monospace' }}>
-                    {row.value}
+                    {fmtRowValue(row.featureId, row.value, lang)}
                   </td>
                   <td style={{ padding: '3px 8px', textAlign: 'right', borderBottom: '1px solid #f1f5f9', fontFamily: 'monospace' }}>
                     {fmt(row.r)}
@@ -174,7 +198,7 @@ export default function ReasonBreakdown({
                     border: '1px solid #a7f3d0',
                   }}
                 >
-                  {id}
+                  {t(fieldName(id), lang)}
                 </span>
               ))
             : '—'}
@@ -196,7 +220,7 @@ export default function ReasonBreakdown({
                     border: '1px solid #fecaca',
                   }}
                 >
-                  {id}
+                  {t(fieldName(id), lang)}
                 </span>
               ))
             : '—'}
@@ -223,7 +247,8 @@ export default function ReasonBreakdown({
               border: `1px solid ${accent}33`,
             }}
           >
-            AI · {aiExplanation.model}
+            {t(LABELS.aiProvenance, lang)}
+            {aiExplanation.model ? ` · ${aiExplanation.model}` : ''}
           </span>
           {aiExplanation.fellBack && (
             <span data-testid="ai-fellback-note" style={{ fontStyle: 'normal', color: '#b45309' }}>

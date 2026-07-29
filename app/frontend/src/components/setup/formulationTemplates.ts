@@ -25,14 +25,18 @@
  */
 
 import type { BilingualLabel } from '../../i18n/t'
+import { FEATURE_LABELS } from './signalLabels'
+import { CATEGORY_LABELS } from '../../lib/review/reviewVocabulary'
 
 export type FormulaPart =
   | { text: string }
   | { coef: string }
   | { link: string; text?: string }
 
-/** One row of a binning table: the input range and the value it maps to. */
-export type BinBand = { when: string; value: string }
+/** One row of a binning table: the input range and the value it maps to. `when`
+ *  is bilingual — the range is stated in the reader's own language (unit
+ *  suffixes translate; the raw numbers/operators stay identical). */
+export type BinBand = { when: BilingualLabel; value: string }
 
 /** Reveals what a `bins(...)` term actually computes (shown behind an ⓘ). */
 export type BinInfo = {
@@ -56,8 +60,10 @@ export type ThresholdRead = {
   /** The score/feature key being compared — rendered as a cross-link header so
    *  the reader sees exactly which quantity each threshold is checked against. */
   scoreKey?: string
-  /** Ordered list of threshold steps; `meaning` says what crossing it does. */
-  steps: { label: string; coef: string; meaning?: BilingualLabel }[]
+  /** Ordered list of threshold steps; `meaning` says what crossing it does.
+   *  `label` is bilingual — the ladder-stage word ("watch"/"suggest"/…) is
+   *  never shown as its raw English identifier in Japanese mode. */
+  steps: { label: BilingualLabel; coef: string; meaning?: BilingualLabel }[]
 }
 
 /**
@@ -137,15 +143,15 @@ const HYBRID_TEMPLATE: PackageFormulationTemplate = {
           parts: [
             { text: 'bins( ' },
             { link: 'continuousDrivingMin' },
-            { text: ' since last rest )' },
+            { text: ' )' },
           ],
           binInfo: {
             input: { en: 'Minutes driven since the last rest', ja: '前回の休憩からの運転分数' },
             bands: [
-              { when: '< 60 min', value: '0.0' },
-              { when: '60–120 min', value: '0.4' },
-              { when: '120–180 min', value: '0.7' },
-              { when: '≥ 180 min', value: '1.0' },
+              { when: { en: '< 60 min', ja: '60分未満' }, value: '0.0' },
+              { when: { en: '60–120 min', ja: '60〜120分' }, value: '0.4' },
+              { when: { en: '120–180 min', ja: '120〜180分' }, value: '0.7' },
+              { when: { en: '≥ 180 min', ja: '180分以上' }, value: '1.0' },
             ],
           },
         },
@@ -153,13 +159,13 @@ const HYBRID_TEMPLATE: PackageFormulationTemplate = {
           output: 'rest_window',
           parts: [{ text: 'bins( ' }, { link: 'nextRestSpotMin' }, { text: ' )' }],
           binInfo: {
-            input: { en: 'Minutes to the next rest spot', ja: '次の休憩地点までの分数' },
+            input: { en: 'Minutes to the next rest spot', ja: '次の休憩場所までの分数' },
             bands: [
-              { when: '≤ 3 min', value: '0.6' },
-              { when: '3–10 min', value: '1.0' },
-              { when: '10–20 min', value: '0.6' },
-              { when: '> 20 min', value: '0.2' },
-              { when: 'none ahead', value: '0.0' },
+              { when: { en: '≤ 3 min', ja: '3分以下' }, value: '0.6' },
+              { when: { en: '3–10 min', ja: '3〜10分' }, value: '1.0' },
+              { when: { en: '10–20 min', ja: '10〜20分' }, value: '0.6' },
+              { when: { en: '> 20 min', ja: '20分超' }, value: '0.2' },
+              { when: { en: 'none ahead', ja: '前方になし' }, value: '0.0' },
             ],
           },
         },
@@ -205,7 +211,7 @@ const HYBRID_TEMPLATE: PackageFormulationTemplate = {
     },
     {
       id: 'base_safety_risk',
-      title: { en: 'base_safety_risk', ja: 'base_safety_risk' },
+      title: FEATURE_LABELS.base_safety_risk,
       lines: [
         {
           output: 'base_safety_risk',
@@ -237,7 +243,7 @@ const HYBRID_TEMPLATE: PackageFormulationTemplate = {
     },
     {
       id: 'rest_required',
-      title: { en: 'rest_required', ja: 'rest_required' },
+      title: CATEGORY_LABELS.rest_required,
       lines: [
         {
           output: 'rest_required_score',
@@ -269,17 +275,17 @@ const HYBRID_TEMPLATE: PackageFormulationTemplate = {
           scoreName: 'rest_required',
           scoreKey: 'rest_required_score',
           steps: [
-            { label: 'watch', coef: 'rest_watch_threshold', meaning: { en: 'enters WATCH — monitoring, no proposal yet', ja: 'WATCH（監視）に入る。まだ提案しない' } },
-            { label: 'suggest', coef: 'threshold_suggest', meaning: { en: 'a gentle rest proposal becomes possible', ja: '穏やかな休憩提案が可能になる' } },
-            { label: 'recommend', coef: 'threshold_recommend', meaning: { en: 'escalates to a clear recommendation', ja: '明確な推奨に格上げ' } },
-            { label: 'urgent', coef: 'threshold_urgent', meaning: { en: 'urgent — a strong proposal', ja: '緊急 — 強い提案' } },
+            { label: { en: 'Watch', ja: '監視' }, coef: 'rest_watch_threshold', meaning: { en: 'enters monitoring; no proposal yet', ja: '監視状態に入る。まだ提案しない' } },
+            { label: { en: 'Suggest', ja: '提案' }, coef: 'threshold_suggest', meaning: { en: 'a gentle rest proposal becomes possible', ja: '穏やかな休憩提案が可能になる' } },
+            { label: { en: 'Recommend', ja: '推奨' }, coef: 'threshold_recommend', meaning: { en: 'escalates to a clear recommendation', ja: '明確な推奨に格上げ' } },
+            { label: { en: 'Urgent', ja: '緊急' }, coef: 'threshold_urgent', meaning: { en: 'a strong proposal', ja: '強い提案' } },
           ],
         },
       ],
     },
     {
       id: 'monotony_prevention',
-      title: { en: 'monotony_prevention', ja: 'monotony_prevention' },
+      title: CATEGORY_LABELS.monotony_prevention,
       lines: [
         {
           output: 'monotony_prevention_score',
@@ -305,10 +311,10 @@ const HYBRID_TEMPLATE: PackageFormulationTemplate = {
           scoreName: 'monotony_prevention',
           scoreKey: 'monotony_prevention_score',
           steps: [
-            { label: 'watch', coef: 'monotony_watch_threshold', meaning: { en: 'enters WATCH — monitoring only', ja: 'WATCH（監視）に入る' } },
-            { label: 'suggest', coef: 'monotony_suggest_threshold', meaning: { en: 'a content/break suggestion becomes possible', ja: 'コンテンツ・休憩の提案が可能になる' } },
-            { label: 'recommend', coef: 'monotony_recommend_threshold', meaning: { en: 'escalates to a clear suggestion', ja: '明確な提案に格上げ' } },
-            { label: 'urgent', coef: 'monotony_urgent_threshold', meaning: { en: 'strongest attention-drop alert', ja: '最も強い注意力低下の警告' } },
+            { label: { en: 'Watch', ja: '監視' }, coef: 'monotony_watch_threshold', meaning: { en: 'enters monitoring only', ja: '監視状態に入る' } },
+            { label: { en: 'Suggest', ja: '提案' }, coef: 'monotony_suggest_threshold', meaning: { en: 'a content/break suggestion becomes possible', ja: 'コンテンツ・休憩の提案が可能になる' } },
+            { label: { en: 'Recommend', ja: '推奨' }, coef: 'monotony_recommend_threshold', meaning: { en: 'escalates to a clear suggestion', ja: '明確な提案に格上げ' } },
+            { label: { en: 'Urgent', ja: '緊急' }, coef: 'monotony_urgent_threshold', meaning: { en: 'strongest attention-drop alert', ja: '最も強い注意力低下の警告' } },
           ],
         },
       ],
@@ -320,7 +326,7 @@ const HYBRID_TEMPLATE: PackageFormulationTemplate = {
         {
           text: {
             en: '1. Smoothing — each feature and category score is eased toward its new value every tick (EWMA) before any decision. Higher α reacts faster, lower α is steadier. (Not a threshold.)',
-            ja: '1. 平滑化 — 判断の前に、各特徴量とカテゴリスコアを毎ティックで新しい値へ滑らかに近づけます（EWMA）。αが大きいほど反応が速く、小さいほど安定します。（しきい値ではありません）',
+            ja: '1. 平滑化 — 判断の前に、各特徴量とカテゴリスコアを毎ティックで新しい値へ滑らかに近づけます（指数移動平均）。αが大きいほど反応が速く、小さいほど安定します。（しきい値ではありません）',
           },
           equation: 'smoothed[t] = α·value[t] + (1 − α)·smoothed[t−1]',
           coefs: ['smoothing_alpha'],
@@ -387,7 +393,7 @@ const NRI_TEMPLATE: PackageFormulationTemplate = {
   sections: [
     {
       id: 's_base',
-      title: { en: 'S_base', ja: 'S_base' },
+      title: FEATURE_LABELS.S_base,
       lines: [
         {
           output: 'S_base',
@@ -415,7 +421,7 @@ const NRI_TEMPLATE: PackageFormulationTemplate = {
     },
     {
       id: 's_env',
-      title: { en: 'S_env', ja: 'S_env' },
+      title: FEATURE_LABELS.S_env,
       lines: [
         {
           output: 'S_env',
@@ -440,7 +446,7 @@ const NRI_TEMPLATE: PackageFormulationTemplate = {
     },
     {
       id: 's_realtime',
-      title: { en: 'S_realtime', ja: 'S_realtime' },
+      title: FEATURE_LABELS.S_realtime,
       lines: [
         {
           output: 'S_realtime',
@@ -463,7 +469,10 @@ const NRI_TEMPLATE: PackageFormulationTemplate = {
     },
     {
       id: 's_total',
-      title: { en: 'S_total (rest_required)', ja: 'S_total (rest_required)' },
+      title: {
+        en: `${FEATURE_LABELS.S_total.en} (${CATEGORY_LABELS.rest_required.en})`,
+        ja: `${FEATURE_LABELS.S_total.ja}（${CATEGORY_LABELS.rest_required.ja}）`,
+      },
       lines: [
         {
           output: 'S_total',
@@ -475,7 +484,7 @@ const NRI_TEMPLATE: PackageFormulationTemplate = {
           scoreName: 'rest_required',
           scoreKey: 'S_total',
           steps: [
-            { label: 'fire', coef: 'threshold_fire', meaning: { en: 'the rest proposal fires — a single threshold, no ladder', ja: '休憩提案が発火 — 単一しきい値（段階なし）' } },
+            { label: { en: 'Fire', ja: '発火' }, coef: 'threshold_fire', meaning: { en: 'the rest proposal fires at a single threshold (no ladder)', ja: '単一しきい値で休憩提案が発火（段階なし）' } },
           ],
         },
       ],
@@ -496,10 +505,10 @@ const NRI_TEMPLATE: PackageFormulationTemplate = {
         {
           text: {
             en: '2. Post-fire ETA filter — the only gate after the threshold: propose only when a rest spot is reachable (or none is ahead), else suppress. Fatigue-vs-rest-spot are kept separate by design.',
-            ja: '2. 発火後ETAフィルタ — しきい値後の唯一の条件。休憩地点に到達できる（または前方にない）場合のみ提案し、そうでなければ抑制します。疲労と休憩地点は設計上分離されています。',
+            ja: '2. 発火後の到達可否フィルタ — しきい値後の唯一の条件。休憩場所に到達できる（または前方にない）場合のみ提案し、そうでなければ抑制します。疲労と休憩場所は設計上分離されています。',
           },
           checks: [
-            { operand: { en: 'Minutes to the next rest spot (or none ahead)', ja: '次の休憩地点までの分数（または前方になし）' }, op: '≤', coef: 'rest_spot_eta_filter_min', outcome: { en: 'propose; otherwise suppress', ja: '提案。そうでなければ抑制' } },
+            { operand: { en: 'Minutes to the next rest spot (or none ahead)', ja: '次の休憩場所までの分数（または前方になし）' }, op: '≤', coef: 'rest_spot_eta_filter_min', outcome: { en: 'propose; otherwise suppress', ja: '提案。そうでなければ抑制' } },
           ],
         },
         {

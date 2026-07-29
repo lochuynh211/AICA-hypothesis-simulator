@@ -394,7 +394,7 @@ describe('MergedLogPanel', () => {
 
     // Rest-journey proposal rows: clear labels, purple proposal accent,
     // correlated to tick 3.
-    const arrivedLabel = screen.getByText('Arrived at rest spot')
+    const arrivedLabel = screen.getByText('Arrived at the rest location')
     const startedLabel = screen.getByText('Rest started')
     const completedLabel = screen.getByText('Rest completed')
     const recomputedLabel = screen.getByText('Recomputed after rest')

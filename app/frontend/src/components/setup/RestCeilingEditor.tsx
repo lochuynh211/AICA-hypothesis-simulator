@@ -51,11 +51,11 @@ export default function RestCeilingEditor() {
   }
 
   const label = t(
-    { ja: '休憩スポット到達限界 (眠気%)', en: 'Rest-spot reachability ceiling (drowsiness %)' },
+    { ja: '休憩場所到達限界（眠気%）', en: 'Rest-spot reachability ceiling (drowsiness %)' },
     uiLanguage,
   )
   const hint = t(
-    { ja: '(算法の発火閾値とは別。デフォルト150%。100超も可)', en: '(Separate from trigger threshold; default 150%; may exceed 100)' },
+    { ja: '（アルゴリズムの発火閾値とは別。デフォルト150%。100超も可）', en: '(Separate from firing threshold; default 150%; may exceed 100)' },
     uiLanguage,
   )
   const resetLabel = t({ ja: 'クリア', en: 'Clear' }, uiLanguage)

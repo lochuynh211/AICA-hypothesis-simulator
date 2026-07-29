@@ -109,7 +109,10 @@ def test_unknown_oshi_id_produces_field_level_issue(world: World, catalog: list[
     matches = [issue for issue in issues if issue.path == "driver_profile.oshi_id"]
     assert len(matches) == 1
     assert matches[0].code == "unknown_catalog_reference"
-    assert "synthetic-artist-DOES-NOT-EXIST" in matches[0].message
+    # The offending id is NOT spliced into the message — an identifier is not
+    # something a reviewer can act on, and `path` already pins the field.
+    assert "synthetic-artist-DOES-NOT-EXIST" not in matches[0].message
+    assert "推しアーティスト" in matches[0].message
 
 
 def test_unknown_played_item_track_id_produces_field_level_issue(world: World, catalog: list[Song]):
@@ -120,7 +123,8 @@ def test_unknown_played_item_track_id_produces_field_level_issue(world: World, c
     matches = [issue for issue in issues if issue.path == "driver_profile.played_items[0].track_id"]
     assert len(matches) == 1
     assert matches[0].code == "unknown_catalog_reference"
-    assert "synthetic-track-DOES-NOT-EXIST" in matches[0].message
+    assert "synthetic-track-DOES-NOT-EXIST" not in matches[0].message
+    assert "楽曲" in matches[0].message
 
 
 def test_unknown_catalog_item_usage_level_key_produces_field_level_issue(
@@ -135,7 +139,8 @@ def test_unknown_catalog_item_usage_level_key_produces_field_level_issue(
     ]
     assert len(matches) == 1
     assert matches[0].code == "unknown_catalog_reference"
-    assert "synthetic-track-NOPE" in matches[0].message
+    assert "synthetic-track-NOPE" not in matches[0].message
+    assert "楽曲" in matches[0].message
 
 
 def test_known_references_do_not_produce_issues(world: World, catalog: list[Song]):

@@ -34,6 +34,6 @@ def get_scenario(scenario_id: str):
     if sc is None:
         raise HTTPException(
             status_code=404,
-            detail=f"Scenario {scenario_id!r} not found or invalid",
+            detail="Scenario not found or invalid. / シナリオが見つからないか、無効です。",
         )
     return sc

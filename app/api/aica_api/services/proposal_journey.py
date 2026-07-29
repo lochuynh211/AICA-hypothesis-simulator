@@ -89,14 +89,11 @@ def _not_yet_implemented(
     `capabilities` is the only IO-derived data, both passed in by the caller
     (``apply_action``), never fetched here.
     """
-    del now, capabilities  # unused by the stub
+    del action, now, capabilities  # unused by the stub
     return _reject(
         run_log,
         "invalid_precondition",
-        (
-            f"Action {action.action_type.value!r} is not yet implemented / "
-            f"アクション「{action.action_type.value}」は未実装です"
-        ),
+        "This action is not yet supported. / この操作には対応していません。",
     )
 
 
@@ -193,8 +190,8 @@ def _reject_service(
             run_log,
             "invalid_precondition",
             (
-                "reject requires a service_selected run / "
-                "rejectはservice_selected状態のランでのみ有効です"
+                "This action is only available while a service is being "
+                "offered. / この操作はサービス提示中のみ行えます。"
             ),
         )
     js = run_log.journey_state
@@ -207,8 +204,8 @@ def _reject_service(
                 run_log,
                 "invalid_payload",
                 (
-                    f"Unknown selected_service_id: {payload_service_id!r} / "
-                    f"不明なselected_service_id: {payload_service_id!r}"
+                    "The specified service isn't recognized. / "
+                    "指定されたサービスが認識できません。"
                 ),
             )
     else:
@@ -274,8 +271,8 @@ def _choose_another(
             run_log,
             "invalid_precondition",
             (
-                "choose_another requires a service_selected run / "
-                "choose_anotherはservice_selected状態のランでのみ有効です"
+                "This action is only available while a service is being "
+                "offered. / この操作はサービス提示中のみ行えます。"
             ),
         )
     js = run_log.journey_state
@@ -309,8 +306,8 @@ def _choose_another(
             run_log,
             "invalid_payload",
             (
-                f"Eligible pool contains an unknown service id: {next_id!r} / "
-                f"適格候補プールに不明なサービスIDが含まれています: {next_id!r}"
+                "The eligible list contains an unrecognized service. / "
+                "適格候補リストに認識できないサービスが含まれています。"
             ),
         )
     rank: int | None = None
@@ -359,8 +356,8 @@ def _request_more(
             run_log,
             "invalid_precondition",
             (
-                "request_more requires a service_selected run / "
-                "request_moreはservice_selected状態のランでのみ有効です"
+                "This action is only available while a service is being "
+                "offered. / この操作はサービス提示中のみ行えます。"
             ),
         )
     js = run_log.journey_state
@@ -396,8 +393,9 @@ def _postpone(
             run_log,
             "invalid_precondition",
             (
-                "postpone requires a service_selected or content_selected run / "
-                "postponeはservice_selectedまたはcontent_selected状態のランでのみ有効です"
+                "This action is only available while a service or content "
+                "proposal is active. / この操作はサービスまたはコンテンツの"
+                "提案中のみ行えます。"
             ),
         )
     event = DiscreteEvent(event_type=DiscreteEventType.POSTPONED, at=now, payload={})
@@ -429,8 +427,8 @@ def _accept(
             run_log,
             "invalid_precondition",
             (
-                "accept requires a content_selected run / "
-                "acceptはcontent_selected状態のランでのみ有効です"
+                "This action is only available once a content plan has been "
+                "selected. / この操作はコンテンツプラン選択後のみ行えます。"
             ),
         )
     plan = _committed_plan(run_log)
@@ -498,8 +496,8 @@ def _complete(
             run_log,
             "invalid_precondition",
             (
-                "complete requires an active playback state / "
-                "completeはplayback_state=active状態でのみ有効です"
+                "This action is only available while content is actively "
+                "playing. / この操作はコンテンツ再生中のみ行えます。"
             ),
         )
     new_journey_state = run_log.journey_state.model_copy(
@@ -529,8 +527,8 @@ def _continue(
             run_log,
             "invalid_precondition",
             (
-                "continue requires a completed playback state / "
-                "continueはplayback_state=completed状態でのみ有効です"
+                "This action is only available once playback has finished. / "
+                "この操作は再生終了後のみ行えます。"
             ),
         )
     plan = _committed_plan(run_log)
@@ -580,8 +578,9 @@ def _stop(
             run_log,
             "invalid_precondition",
             (
-                "stop requires an active, backgrounded, or completed plan / "
-                "stopはactive・backgrounded・completed状態でのみ有効です"
+                "This action is only available while content is playing or "
+                "has just finished. / この操作はコンテンツ再生中または"
+                "再生終了直後のみ行えます。"
             ),
         )
     js = run_log.journey_state
@@ -654,8 +653,8 @@ def _motion_change(
             run_log,
             "capabilities_unavailable",
             (
-                "motion_change requires ServiceCapabilities / "
-                "motion_changeにはServiceCapabilitiesが必要です"
+                "This action couldn't be completed due to missing internal "
+                "data. / 内部データの不足によりこの操作を完了できませんでした。"
             ),
         )
 
@@ -667,8 +666,8 @@ def _motion_change(
             run_log,
             "invalid_payload",
             (
-                f"Invalid or missing motion_state: {raw_motion_state!r} / "
-                f"無効または欠落したmotion_state: {raw_motion_state!r}"
+                "The vehicle motion state provided isn't recognized. / "
+                "指定された走行状態が認識できません。"
             ),
         )
 
@@ -747,8 +746,8 @@ def _rest_spot_arrived(
             run_log,
             "invalid_precondition",
             (
-                "rest_spot_arrived requires a rest_recommended opportunity / "
-                "rest_spot_arrivedはrest_recommended機会でのみ有効です"
+                "This action is only available for a rest recommendation. / "
+                "この操作は休憩推奨の機会でのみ行えます。"
             ),
         )
     new_journey_state = run_log.journey_state.model_copy(
@@ -779,8 +778,8 @@ def _rest_started(
             run_log,
             "invalid_precondition",
             (
-                "rest_started requires lifecycle_stage=during_rest_stopped / "
-                "rest_startedはduring_rest_stopped状態でのみ有効です"
+                "This action is only available while stopped at the rest "
+                "location. / この操作は休憩場所での停車中のみ行えます。"
             ),
         )
     event = DiscreteEvent(event_type=DiscreteEventType.REST_STARTED, at=now, payload={})
@@ -814,8 +813,8 @@ def _rest_completed(
             run_log,
             "invalid_precondition",
             (
-                "rest_completed requires lifecycle_stage=during_rest_stopped / "
-                "rest_completedはduring_rest_stopped状態でのみ有効です"
+                "This action isn't available until the rest stop has "
+                "finished. / 休憩が完了する前は、この操作は行えません。"
             ),
         )
 
@@ -825,10 +824,8 @@ def _rest_completed(
             run_log,
             "invalid_payload",
             (
-                "rest_completed requires a post_rest object with "
-                "drowsiness_level and fatigue_level / "
-                "rest_completedにはdrowsiness_levelとfatigue_levelを含む"
-                "post_restオブジェクトが必要です"
+                "The post-rest driver state values are missing or invalid. / "
+                "休憩後の運転者状態の値が不足しているか不正です。"
             ),
         )
 
@@ -842,10 +839,9 @@ def _rest_completed(
             run_log,
             "invalid_payload",
             (
-                "post_rest.drowsiness_level and post_rest.fatigue_level "
-                "must each be an int in 0..100 / "
-                "post_rest.drowsiness_levelとpost_rest.fatigue_levelは"
-                "それぞれ0から100の整数である必要があります"
+                "The post-rest drowsiness and fatigue values must each be a "
+                "whole number from 0 to 100. / "
+                "休憩後の眠気と疲労度の値は、それぞれ0〜100の整数である必要があります。"
             ),
         )
 
@@ -924,9 +920,6 @@ def apply_action(
         return _reject(
             run_log,
             "invalid_precondition",
-            (
-                f"Unknown action_type: {action.action_type!r} / "
-                f"未知のアクション種別: {action.action_type!r}"
-            ),
+            "This action type isn't recognized. / この操作の種類が認識できません。",
         )
     return handler(run_log, action, now, capabilities)

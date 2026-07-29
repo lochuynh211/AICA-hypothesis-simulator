@@ -20,9 +20,15 @@
  */
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { useLanguage } from '../../state/language'
+import { t } from '../../i18n/t'
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+const LABELS = {
+  close: { ja: '閉じる', en: 'Close' },
+}
 
 export function Modal({
   open,
@@ -41,6 +47,7 @@ export function Modal({
   size?: 'default' | 'wide'
 }): JSX.Element | null {
   const cardRef = useRef<HTMLDivElement | null>(null)
+  const { lang } = useLanguage()
 
   useEffect(() => {
     if (!open) return
@@ -101,7 +108,7 @@ export function Modal({
           <button
             type="button"
             className="modal-close"
-            aria-label="Close"
+            aria-label={t(LABELS.close, lang)}
             onClick={onClose}
           >
             ×

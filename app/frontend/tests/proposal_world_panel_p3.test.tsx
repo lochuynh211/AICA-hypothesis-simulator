@@ -177,7 +177,7 @@ describe('WorldPanel (P3 real editor)', () => {
   it('defaults to English (EN) as the UI language', async () => {
     renderWithStore()
     await screen.findByTestId('dataset-provenance-banner')
-    expect(screen.getByText('Input · World')).toBeInTheDocument()
+    expect(screen.getByText('Input conditions')).toBeInTheDocument()
   })
 
   it('a preference/history field (service_usage_level) is a REAL editable control, not a JSON dump', async () => {

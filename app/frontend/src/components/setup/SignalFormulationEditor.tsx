@@ -59,8 +59,8 @@ type SignalConfig = {
 const DROWSINESS_CONFIG: SignalConfig = {
   equation: 'drowsiness[t] = drowsiness[t−1] + growth·Δt − recovery',
   lead: {
-    en: 'Δt = minutes since the previous step. “growth” is the per-minute sum below. “recovery” is a fixed amount subtracted once per rest activity — set it under Rest Options.',
-    ja: 'Δt = 前ステップからの経過分数。「growth」は下の1分あたりの合計。「recovery」は休憩アクティビティごとに1回引かれる固定量（下の「Rest Options」で設定）。',
+    en: 'Δt = minutes since the previous step. "Growth" is the per-minute sum below. "Recovery" is a fixed amount subtracted once per rest activity — set it under Rest Options.',
+    ja: 'Δt = 前ステップからの経過分数。「増加量」は下の1分あたりの合計。「回復量」は休憩アクティビティごとに1回引かれる固定量（下の「休憩オプション」で設定）。',
   },
   groups: [
     {
@@ -78,8 +78,8 @@ const DROWSINESS_CONFIG: SignalConfig = {
 const FATIGUE_CONFIG: SignalConfig = {
   equation: 'fatigue[t] = fatigue[t−1] + growth·Δt − recovery',
   lead: {
-    en: 'Δt = minutes since the previous step. “growth” is the per-minute sum below. “recovery” is a fixed amount subtracted once per rest activity — set it under Rest Options.',
-    ja: 'Δt = 前ステップからの経過分数。「growth」は下の1分あたりの合計。「recovery」は休憩アクティビティごとに1回引かれる固定量（下の「Rest Options」で設定）。',
+    en: 'Δt = minutes since the previous step. "Growth" is the per-minute sum below. "Recovery" is a fixed amount subtracted once per rest activity — set it under Rest Options.',
+    ja: 'Δt = 前ステップからの経過分数。「増加量」は下の1分あたりの合計。「回復量」は休憩アクティビティごとに1回引かれる固定量（下の「休憩オプション」で設定）。',
   },
   groups: [
     {
@@ -102,8 +102,8 @@ const FATIGUE_CONFIG: SignalConfig = {
 const ANOMALY_CONFIG: SignalConfig = {
   equation: 'λ = lambda_base + lambda_gain·max(0, drowsiness − θ)/100',
   lead: {
-    en: 'Rare events (lane drifts, steering jerks) drawn from a seeded random stream — replayable from the run seed. The rate λ rises once drowsiness passes θ; anomaly_rate counts events over the window.',
-    ja: '稀な事象（車線のふらつき・急ハンドル）をシード付き乱数系列から生成（シードから再現可能）。眠気がθを超えると発生率λが上昇し、anomaly_rate はウィンドウ内の件数を数えます。',
+    en: 'Rare events (lane drifts, steering jerks) drawn from a seeded random stream — replayable from the run seed. The rate λ rises once drowsiness passes θ; the detected driving-anomaly count is tallied over the window.',
+    ja: '稀な事象（車線のふらつき・急ハンドル）をシード付き乱数系列から生成（シードから再現可能）。眠気がθを超えると発生率λが上昇し、運転の乱れの検知件数はウィンドウ内で集計されます。',
   },
   groups: [
     {
@@ -145,6 +145,12 @@ type Props = {
   /** Already-localized signal label, used for aria-labels. */
   label: string
   scenario: ScenarioSignalDefaults
+}
+
+/** Bilingual "About X" / "X について" aria-label — never a hardcoded English
+ *  template glued onto a translated noun. */
+function aboutLabel(label: string, lang: 'ja' | 'en'): string {
+  return lang === 'ja' ? `${label}について` : `About ${label}`
 }
 
 export default function SignalFormulationEditor({ signalKey, label, scenario }: Props) {
@@ -228,7 +234,7 @@ export default function SignalFormulationEditor({ signalKey, label, scenario }: 
           <button
             type="button"
             data-testid={`signal-info-btn-${signalKey}`}
-            aria-label={`About ${label}`}
+            aria-label={aboutLabel(label, uiLanguage)}
             aria-expanded={explainOpen}
             onClick={() => setExplainOpen((prev) => !prev)}
             style={{

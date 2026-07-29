@@ -303,7 +303,7 @@ describe('RecoveryPicker', () => {
     // Notice is rendered
     await screen.findByTestId('no-rest-spots-notice')
     expect(screen.getByTestId('no-rest-spots-notice')).toHaveTextContent(
-      /No rest stops found for this route/i,
+      /No rest locations found for this route/i,
     )
 
     // Postpone button is still available (not disabled)

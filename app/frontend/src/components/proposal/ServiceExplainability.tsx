@@ -3,8 +3,11 @@
  * enrichment for a ranked service candidate: the situation/preference/
  * history subtotals, the strongest supporting/opposing feature, the §6.4
  * and an expandable
- * per-feature table (`feature_id · raw_value → e·a = r × w = k` +
- * provenance).
+ * per-feature table (feature name · raw value → evidence(e)·response
+ * coefficient(a) = response value(r) × weight(w) = contribution(k) +
+ * provenance — column headers are spelled-out words, never the bare
+ * formula letters, and no row ever shows the raw feature id or a raw
+ * categorical/boolean value).
  *
  * GRACEFUL FALLBACK (contracts/service_output_extension.md "Panel ③ render
  * contract"): when a candidate carries none of the optional §14 fields
@@ -23,28 +26,37 @@ import { useState } from 'react'
 import type { UiLanguage } from '../../i18n/t'
 import { t } from '../../i18n/t'
 import type { RankedCandidate } from '../../api/proposalClient'
+import { booleanLabel, fieldName, isKnownOption, nodeLabel, optionLabel } from '../../lib/review/reviewVocabulary'
 
 const LABELS = {
-  subtotalsTitle: { ja: '内訳（状況・嗜好・履歴）', en: 'Subtotals (situation · preference · history)' },
-  situation: { ja: '状況', en: 'Situation' },
-  preference: { ja: '嗜好', en: 'Preference' },
-  history: { ja: '履歴', en: 'History' },
+  subtotalsTitle: { ja: '内訳（状況・好み・過去実績）', en: 'Subtotals (situation · preference · history)' },
   strongestSupport: { ja: '最も支持する特徴量', en: 'Strongest support' },
   strongestOppose: { ja: '最も反対する特徴量', en: 'Strongest opposition' },
   none: { ja: 'なし', en: 'None' },
   tableSummary: { ja: '特徴量トレース（全項目）', en: 'Feature trace (all rows)' },
   colFeature: { ja: '特徴量', en: 'Feature' },
   colRaw: { ja: '元値', en: 'Raw' },
-  colE: { ja: 'e（証拠）', en: 'e (evidence)' },
-  colA: { ja: 'a（応答係数）', en: 'a (response)' },
-  colR: { ja: 'r=e·a', en: 'r=e·a' },
-  colW: { ja: 'w（重み）', en: 'w (weight)' },
-  colK: { ja: 'k=r×w', en: 'k=r×w' },
+  colE: { ja: '証拠', en: 'Evidence' },
+  colA: { ja: '応答係数', en: 'Response coefficient' },
+  colR: { ja: '応答値', en: 'Response value' },
+  colW: { ja: '重み', en: 'Weight' },
+  colK: { ja: '寄与', en: 'Contribution' },
 }
 
 function fmt(n: number | null | undefined): string {
   if (n === null || n === undefined) return '—'
   return n.toFixed(3)
+}
+
+/** A per-feature "raw value" cell — some rows carry a categorical value
+ * (`night`/`congested`, or an actual boolean for the `child_present`-style
+ * features), never a formatted number. Both must render as words: never the
+ * enum literal, never the English `true`/`false` a JS boolean stringifies to. */
+function fmtRaw(featureId: string, raw: unknown, lang: UiLanguage): string {
+  if (raw === null || raw === undefined || raw === '') return '—'
+  if (typeof raw === 'boolean') return t(booleanLabel(raw), lang)
+  if (typeof raw === 'string' && isKnownOption(featureId, raw)) return t(optionLabel(featureId, raw), lang)
+  return String(raw)
 }
 
 export type ServiceExplainabilityProps = {
@@ -89,26 +101,26 @@ export default function ServiceExplainability({ candidate, lang }: ServiceExplai
           <div style={miniLabelStyle}>{t(LABELS.subtotalsTitle, lang)}</div>
           <div style={{ display: 'flex', gap: '10px', fontSize: '0.8em', fontFamily: 'monospace' }}>
             <span>
-              {t(LABELS.situation, lang)}: {fmt(candidate.situation_fit)}
+              {t(nodeLabel('Situation'), lang)}: {fmt(candidate.situation_fit)}
             </span>
             <span>
-              {t(LABELS.preference, lang)}: {fmt(candidate.preference_fit)}
+              {t(nodeLabel('Preference'), lang)}: {fmt(candidate.preference_fit)}
             </span>
             <span>
-              {t(LABELS.history, lang)}: {fmt(candidate.history_fit)}
+              {t(nodeLabel('History'), lang)}: {fmt(candidate.history_fit)}
             </span>
           </div>
           <div style={{ marginTop: '4px', fontSize: '0.78em', color: '#4b5563' }}>
             <b>{t(LABELS.strongestSupport, lang)}:</b>{' '}
             <span data-testid="strongest-support">
               {candidate.strongest_support
-                ? `${candidate.strongest_support.feature_id} (+${fmt(candidate.strongest_support.contribution)})`
+                ? `${t(fieldName(candidate.strongest_support.feature_id), lang)} (+${fmt(candidate.strongest_support.contribution)})`
                 : t(LABELS.none, lang)}
             </span>{' '}
             <b>{t(LABELS.strongestOppose, lang)}:</b>{' '}
             <span data-testid="strongest-oppose">
               {candidate.strongest_oppose
-                ? `${candidate.strongest_oppose.feature_id} (${fmt(candidate.strongest_oppose.contribution)})`
+                ? `${t(fieldName(candidate.strongest_oppose.feature_id), lang)} (${fmt(candidate.strongest_oppose.contribution)})`
                 : t(LABELS.none, lang)}
             </span>
           </div>
@@ -148,8 +160,8 @@ export default function ServiceExplainability({ candidate, lang }: ServiceExplai
                       data-testid={`explain-row-${fc.feature_id}`}
                       style={muted ? mutedRowStyle : undefined}
                     >
-                      <td style={tdStyle}>{fc.feature_id}</td>
-                      <td style={tdStyleMono}>{fc.raw_value ?? fc.feature_value}</td>
+                      <td style={tdStyle}>{t(fieldName(fc.feature_id), lang)}</td>
+                      <td style={tdStyleMono}>{fmtRaw(fc.feature_id, fc.raw_value ?? fc.feature_value, lang)}</td>
                       <td style={tdStyleMono}>{fmt(fc.normalized_evidence)}</td>
                       <td style={tdStyleMono}>{fmt(fc.response_coefficient)}</td>
                       <td style={tdStyleMono}>{fmt(fc.normalized_feature_response)}</td>

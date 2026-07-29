@@ -27,7 +27,10 @@ def _presets_dir() -> Path:
 def _load_preset(preset_id: str) -> dict[str, Any]:
     path = _presets_dir() / f"{preset_id}.json"
     if not path.exists():
-        raise HTTPException(status_code=404, detail=f"Preset {preset_id!r} not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Route preset not found. / ルートプリセットが見つかりません。",
+        )
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 

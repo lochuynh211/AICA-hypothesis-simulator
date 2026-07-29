@@ -18,7 +18,21 @@ import type { MergedFirePoint } from '../../api/mergedClient'
 import type { ProposalRunLog, ServiceSelectorOutput, CompletePlan, ItemFeatureContribution } from '../../api/proposalClient'
 import { unavailable } from './types'
 import type { ReviewOption, Unavailable } from './types'
+import type { BilingualLabel } from './reviewVocabulary'
 import { CATEGORY_LABELS, serviceLabel } from './reviewVocabulary'
+
+/**
+ * Labels for records this pure layer cannot name.
+ *
+ * A CONTENT option is a catalog item; only a caller holding the song catalog
+ * can name it (`ReviewColumn` resolves every label through `songDisplayName`).
+ * Until it does, the option is labelled as unnamed rather than as its raw
+ * catalog id — this module must never emit an identifier as a display label,
+ * because a caller that forgot to resolve would then leak one to the screen
+ * instead of failing visibly.
+ */
+const UNNAMED_CATEGORY: BilingualLabel = { ja: '名称未登録の提案分類', en: 'Unnamed proposal category' }
+const UNNAMED_ITEM: BilingualLabel = { ja: '名称未登録の楽曲', en: 'Unnamed track' }
 
 /**
  * The two trigger categories as comparable options.
@@ -35,7 +49,9 @@ export function triggerOptions(fire: MergedFirePoint): ReviewOption[] | Unavaila
 
   return Object.entries(chains).map(([category, chain]) => ({
     id: category,
-    label: CATEGORY_LABELS[category] ?? { ja: category, en: category },
+    // A category with no registered name is named as unregistered, never
+    // printed as its raw identifier — the reviewer reads product vocabulary.
+    label: CATEGORY_LABELS[category] ?? UNNAMED_CATEGORY,
     score: chain.score,
     clamped: chain.clamped,
     rows: chain.rows.map((row) => ({
@@ -157,7 +173,7 @@ export function contentOptions(proposal: ProposalRunLog | null): ContentOptions 
     .filter((item) => item.item_fit !== null)
     .map((item) => ({
       id: item.item_id,
-      label: { ja: item.item_id, en: item.item_id },
+      label: UNNAMED_ITEM,
       score: item.item_fit as number,
       rows: item.feature_contributions.map(contentRow),
     }))

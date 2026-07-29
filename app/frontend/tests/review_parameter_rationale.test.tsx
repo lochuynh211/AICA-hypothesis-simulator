@@ -36,8 +36,11 @@ const mount = (extra: Partial<React.ComponentProps<typeof ParameterRationale>> =
 describe('ParameterRationale', () => {
   it('orders rows by realized influence', () => {
     mount()
-    const ids = screen.getAllByTestId('rationale-feature').map((n) => n.textContent ?? '')
-    expect(ids[0]).toContain('fatigue')
+    // Ordered by REALIZED influence. Asserted on the words the reviewer
+    // actually reads — the raw feature id is no longer rendered anywhere.
+    const names = screen.getAllByTestId('rationale-feature').map((n) => n.textContent ?? '')
+    expect(names[0]).toContain('how tired the driver is')
+    expect(names.join(' ')).not.toContain('fatigue')
   })
 
   it('leads the situation column with the raw value and its strength word', () => {
@@ -81,11 +84,14 @@ describe('ParameterRationale', () => {
   it('names inputs that played no part, and only those', () => {
     mount()
     const listed = screen.getByTestId('played-no-part').textContent ?? ''
-    expect(listed).toContain('oshi_affinity')
+    expect(listed).toContain('the match to their favourite artist')
     // Without these, an implementation that ignores the 2% threshold and dumps
     // every feature into the list passes.
-    expect(listed).not.toContain('fatigue')
-    expect(listed).not.toContain('monotony')
+    expect(listed).not.toContain('how tired the driver is')
+    expect(listed).not.toContain('how monotonous the road is')
+    // And the row is named, never identified: no raw feature id on screen.
+    expect(listed).not.toContain('oshi_affinity')
+    expect(screen.getByTestId('played-no-part-oshi_affinity')).toBeTruthy()
   })
 
   it('suppresses both consequence sections on the trigger stage', () => {
@@ -137,10 +143,10 @@ describe('ParameterRationale', () => {
       rows: [left.rows[2], left.rows[0], left.rows[1]], // oshi_affinity, fatigue, monotony
     }
     mount({ left: shuffledLeft })
-    const ids = screen.getAllByTestId('rationale-feature').map((n) => n.textContent ?? '')
-    expect(ids[0]).toContain('fatigue')
-    expect(ids[1]).toContain('monotony')
-    expect(ids[2]).toContain('oshi_affinity')
+    const names = screen.getAllByTestId('rationale-feature').map((n) => n.textContent ?? '')
+    expect(names[0]).toContain('how tired the driver is')
+    expect(names[1]).toContain('how monotonous the road is')
+    expect(names[2]).toContain('the match to their favourite artist')
   })
 
   it('distinguishes "cannot flip" from "evidence unavailable"', () => {

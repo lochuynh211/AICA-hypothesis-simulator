@@ -195,7 +195,7 @@ describe('ReviewColumn — language coverage', () => {
         </ReviewStoreProvider>
       </LanguageProvider>,
     )
-    expect(screen.getByTestId('stage-tab-trigger')).toHaveTextContent('Trigger')
+    expect(screen.getByTestId('stage-tab-trigger')).toHaveTextContent('Firing decision')
     expect(screen.getByTestId('stage-tab-service')).toHaveTextContent('Service')
     expect(screen.getByTestId('stage-tab-content')).toHaveTextContent('Content')
     // Field labels are names now, not the raw variable ids or prose fragments.
@@ -210,8 +210,10 @@ describe('ReviewColumn — language coverage', () => {
         </ReviewStoreProvider>
       </LanguageProvider>,
     )
-    // Stage tabs read in Japanese, not the English labels.
-    expect(screen.getByTestId('stage-tab-trigger')).toHaveTextContent('トリガー')
+    // Stage tabs read in Japanese, not the English labels — and in the
+    // SPECIFICATION's Japanese: the decision event is 発火, never トリガー.
+    expect(screen.getByTestId('stage-tab-trigger')).toHaveTextContent('発火判定')
+    expect(screen.getByTestId('stage-tab-trigger')).not.toHaveTextContent('トリガー')
     expect(screen.getByTestId('what-decided-it')).toHaveTextContent('疲労')
     // No two consecutive lowercase English words (>=4 letters each) anywhere
     // in the column — the shape raw embedded English prose takes, as opposed
@@ -790,11 +792,13 @@ describe('ReviewColumn — readable option labels', () => {
     fireEvent.click(screen.getByTestId('stage-tab-service'))
     const left = screen.getByTestId('compare-left') as HTMLSelectElement
     const labels = Array.from(left.options).map((o) => o.textContent)
-    expect(labels.some((l) => l?.includes('Music playlist'))).toBe(true)
-    expect(labels.some((l) => l === 'music_playlist')).toBe(false)
+    // The specification's own name for this service (CDC-SU_specplan Slides
+    // 39/41/70: プレイリスト再生), not the catalog identifier.
+    expect(labels.some((l) => l?.includes('Playlist playback'))).toBe(true)
+    expect(labels.some((l) => l?.includes('music_playlist'))).toBe(false)
   })
 
-  it('names the song, keeping its id, when song names are known', () => {
+  it('names the song, WITHOUT its catalog id, when song names are known', () => {
     render(
       <LanguageProvider initialLanguage="en">
         <ReviewStoreProvider>
@@ -808,11 +812,16 @@ describe('ReviewColumn — readable option labels', () => {
     fireEvent.click(screen.getByTestId('stage-tab-content'))
     const left = screen.getByTestId('compare-left') as HTMLSelectElement
     const labels = Array.from(left.options).map((o) => o.textContent)
-    expect(labels).toContain('Jessica (track-1)')
+    expect(labels).toContain('Jessica')
+    // The catalog track id is the key the evidence is stored under, not a
+    // name — it stays out of the label entirely.
+    expect(labels.some((l) => l?.includes('track-1'))).toBe(false)
   })
 
-  it('falls back to the bare id when the catalog does not know the song', () => {
-    // Better an honest id than a name borrowed from another dataset.
+  it('says the song is unnamed when the catalog does not know it', () => {
+    // Better an honest "we have no name for this" than a name borrowed from
+    // another dataset — and better than the raw catalog id, which is a
+    // variable name the reviewer cannot act on.
     render(
       <LanguageProvider initialLanguage="en">
         <ReviewStoreProvider>
@@ -822,7 +831,9 @@ describe('ReviewColumn — readable option labels', () => {
     )
     fireEvent.click(screen.getByTestId('stage-tab-content'))
     const left = screen.getByTestId('compare-left') as HTMLSelectElement
-    expect(Array.from(left.options).map((o) => o.textContent)).toContain('track-1')
+    const labels = Array.from(left.options).map((o) => o.textContent)
+    expect(labels).toContain('Unnamed track')
+    expect(labels.some((l) => l?.includes('track-1'))).toBe(false)
   })
 })
 
