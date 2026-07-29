@@ -335,6 +335,11 @@ export default function MergedCenterPanel() {
             proposalFractionsOverride={decisionFractions}
             restSpotsOverride={state.acceptedRestSpots}
             jamRangesKm={rs.mergedJamRangesKm}
+            mountainRangesKm={rs.mergedMountainRangesKm}
+            // A colour key directly under the canvas — the quickview timeline
+            // has always had one, and the map's road classes and painted
+            // conditions are no more self-explanatory than its curves.
+            showLegend
             // Projected markers, visible BEFORE Play (owner review) so the
             // reviewer can see where the trigger fires and where the rest spots
             // are without running the animation first. `quickviewTimeline.fires`
@@ -483,6 +488,10 @@ export default function MergedCenterPanel() {
             data={quickviewTimeline!}
             revealFraction={1}
             showLegend
+            // `ScoreTimeline.lang` DEFAULTS to 'en'. Every other caller passes
+            // it; this one did not, so the legend stayed English on a Japanese
+            // screen while every label around it was translated.
+            lang={lang}
             showJourneyMarkers
             testIds={{
               root: 'quickview-timeline',
@@ -491,6 +500,7 @@ export default function MergedCenterPanel() {
               monotonyFire: 'quickview-monotony-fire',
               jamGroup: 'quickview-jam-group',
               restSpotGroup: 'quickview-rest-group',
+              legend: 'quickview-legend',
               fireHit: (i) => `quickview-fire-hit-${i}`,
               restOptionHit: (i) => `quickview-rest-hit-${i}`,
             }}

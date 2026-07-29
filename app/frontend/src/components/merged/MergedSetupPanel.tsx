@@ -948,6 +948,19 @@ export default function MergedSetupPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jamRange])
 
+  // Same bridge for the painted mountain range. It closes a wider gap than the
+  // jam one: the mountain range is spliced into `route_facts.route_segments`
+  // SERVER-side (`buildMergedPlan` → `inject_mountain_segment`), so the map —
+  // which colours segments from the UNPAINTED route alternative in the runStore
+  // — had no way to know about it. C-04 showed its mountain stretch in the
+  // quickview and nowhere on the map.
+  useEffect(() => {
+    const ranges: [number, number][] =
+      mountainRange && mountainRange[1] > mountainRange[0] ? [mountainRange] : []
+    runStore.dispatch({ type: 'SET_MERGED_MOUNTAIN_RANGES', ranges })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mountainRange])
+
   // Issue 2: editing ANY setup field after a live run has been created (or while
   // it is running) resets the simulator — the reviewer must Play again against
   // the new setup. A signature of every setup input is compared against the last

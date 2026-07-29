@@ -17,10 +17,21 @@ describe('Combined review layout', () => {
     expect(within(left as HTMLElement).getByTestId('merged-setup-panel')).toBeTruthy()
   })
 
-  it('moves the proposal output into the centre column', () => {
+  it('hosts the proposal output in the centre column, and shows none of it before a proposal exists', () => {
+    // `MergedCenterPanel` owns the proposal output (it renders
+    // `MergedProposalPanel` as a sibling of its playback subtree — proven in
+    // `merged_center.test.tsx`, where a proposal actually exists), so the
+    // centre column hosting the centre panel IS the proposal output being in
+    // the centre column.
+    //
+    // At rest there is no proposal, and a case like C-01 is designed to
+    // produce none — so the panel must contribute nothing at all here. It used
+    // to render its status strip regardless, announcing a "proposal category"
+    // read off the SETUP world that no proposal had ever carried.
     mount()
     const centre = screen.getByTestId('merged-shell').querySelector('.center-panel')!
-    expect(within(centre as HTMLElement).getByTestId('merged-proposal-panel')).toBeTruthy()
+    expect(within(centre as HTMLElement).getByTestId('merged-center-panel')).toBeTruthy()
+    expect(screen.queryByTestId('merged-proposal-panel')).toBeNull()
   })
 
   it('puts the review column on the right', () => {
@@ -64,15 +75,10 @@ describe('Combined review layout', () => {
     expect(mapBox.style.overflow).toBe('hidden')
   })
 
-  it('keeps the animated subtree a SIBLING of the proposal subtree', () => {
-    // Structural guarantee: a playback tick must not re-render the proposal
-    // cards, or an expanded contribution chain collapses mid-run.
-    mount()
-    const playback = screen.getByTestId('merged-playback-subtree')
-    const proposals = screen.getByTestId('merged-proposal-panel')
-    expect(playback.contains(proposals)).toBe(false)
-    expect(proposals.contains(playback)).toBe(false)
-  })
+  // The playback-subtree/proposal-subtree sibling invariant now lives in
+  // `merged_center.test.tsx` ("keeps the animated subtree a SIBLING…"): the
+  // proposal panel renders nothing until a proposal exists, and that file is
+  // the one that can drive a real fired tick through the coordinator.
 
   it('renders the Japanese-default case picker label and case card entirely in Japanese', () => {
     // Regression for the earlier bug where English text leaked inside a

@@ -43,7 +43,6 @@ const LABELS = {
   content: { ja: 'コンテンツ提案', en: 'Content proposal' },
   awaitingLive: { ja: 'サービスを選ぶとコンテンツプランが表示されます。', en: 'Choose a service (top) to see its content plan.' },
   awaitingReadonly: { ja: 'この発火にはコンテンツプランがありません。', en: 'No content plan for this fire.' },
-  empty: { ja: '発火するとここに提案が表示されます（またはクイックビューの発火をクリック）。', en: 'Proposals appear here on a trigger fire — or click a fire in the quickview.' },
   explanationSource: { ja: '説明の生成元', en: 'Explanation source' },
   explOff: { ja: 'オフ（既定テンプレート）', en: 'Off (template)' },
   explBackend: { ja: 'サーバー側の生成AI（Ollama）', en: 'Server-side generative AI (Ollama)' },
@@ -229,6 +228,19 @@ export default function MergedProposalPanel() {
   const lifecycleStage = statusSource?.journey_state?.lifecycle_stage ?? ps.world.control_inputs.lifecycle_stage
   const motionState = statusSource?.journey_state?.motion_state ?? ps.world.control_inputs.motion_state
 
+  // No proposal → the panel contributes NOTHING to the centre column. Not a
+  // placeholder, and above all not the status strip: with no proposal to read
+  // from, `statusSource` is null and the strip falls back to the SETUP world,
+  // so it would announce a "proposal category" that no proposal ever carried —
+  // exactly what a designed-to-not-fire control case must never show.
+  //
+  // A recompute ERROR is the one thing that still renders on its own: a
+  // failure is recorded evidence (architecture §11) and is never silently
+  // dropped just because it produced no service candidates.
+  //
+  // Declared AFTER every hook above, so the early return cannot reorder them.
+  if (!overlay.hasService && inspectedProposalError == null) return null
+
   return (
     <div data-testid="merged-proposal-panel" style={panelStyle}>
       {/* Read-only trigger signal + car status (like the Proposal screen). */}
@@ -264,11 +276,7 @@ export default function MergedProposalPanel() {
         </div>
       )}
 
-      {!overlay.hasService ? (
-        <p data-testid="merged-proposal-empty" style={{ fontSize: '0.82em', color: '#94a3b8', fontStyle: 'italic', padding: '10px' }}>
-          {t(LABELS.empty, lang)}
-        </p>
-      ) : (
+      {overlay.hasService && (
         <>
           <div data-testid="proposal-split" style={splitStyle}>
           {/* LEFT — Service proposal */}

@@ -54,7 +54,7 @@ import { getPackages, getPresets, getPreset } from '../src/api/proposalClient'
 import { createMergedRun, tickMergedRun, buildMergedPlan, mergedQuickview } from '../src/api/mergedClient'
 import { MergedCoordinatorProvider, useMergedCoordinator } from '../src/state/mergedCoordinator'
 import { LanguageProvider } from '../src/state/language'
-import { RunStoreProvider } from '../src/state/runStore'
+import { RunStoreProvider, useRunStore } from '../src/state/runStore'
 import { ProposalStoreProvider } from '../src/state/proposalStore'
 import MergedSetupPanel from '../src/components/merged/MergedSetupPanel'
 
@@ -74,8 +74,13 @@ const EMPTY_QUICKVIEW = {
   completed_min: null, seed: 42, overrides: [], error: null,
 }
 
+/** The live runStore state, so tests can assert what the panel bridged into it
+ *  for the (unmounted here) `<MapSurface/>` to read. */
+const runStateRef: { current: ReturnType<typeof useRunStore>['state'] | null } = { current: null }
+
 function Harness() {
   const c = useMergedCoordinator()
+  runStateRef.current = useRunStore().state
   return (
     <>
       <MergedSetupPanel />
@@ -395,6 +400,23 @@ describe('MergedSetupPanel — route-conditions painter', () => {
         content_package_id: 'content_pkg_1',
       }),
     )
+  })
+
+  it('bridges the painted mountain range into the runStore for the map', async () => {
+    // The painted mountain range is spliced into `route_segments` server-side,
+    // inside the trigger run plan — the map has no way to see it. Without this
+    // bridge C-04 showed its mountain stretch in the quickview and nowhere on
+    // the Google canvas. Mirrors the jam bridge exactly.
+    renderPanel()
+    await fillSetup()
+
+    fireEvent.click(screen.getByTestId('edit-situation'))
+    fireEvent.click(await screen.findByTestId('setup-detailed-toggle'))
+    await screen.findByTestId('mountain-range-start')
+    fireEvent.change(screen.getByTestId('mountain-range-start'), { target: { value: '40' } })
+    fireEvent.change(screen.getByTestId('mountain-range-end'), { target: { value: '70' } })
+
+    await waitFor(() => expect(runStateRef.current?.mergedMountainRangesKm).toEqual([[40, 70]]))
   })
 
   it('keeps the plain plan-build path when no painter range is set', async () => {

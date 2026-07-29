@@ -154,6 +154,18 @@ export type RunStoreState = {
    */
   mergedJamRangesKm: [number, number][]
 
+  /**
+   * Mountain-road ranges painted in the merged setup panel, as
+   * `[start_km, end_km]` pairs on the selected route. Bridged here for the same
+   * reason as the jam ranges — but the gap it closes is bigger: a painted
+   * mountain range is spliced into `route_facts.route_segments` SERVER-side,
+   * into the trigger run plan, while `<MapSurface/>` colours segments from the
+   * UNPAINTED route alternative it holds in this store. Without this bridge the
+   * painted stretch showed in the quickview and nowhere on the map.
+   * Empty = none painted. Setup-only — survives RESET.
+   */
+  mergedMountainRangesKm: [number, number][]
+
   // ── M7: last applied action (for beat timeline / recovery) ─────────────────
   /**
    * The action string from the most recent ACTION_APPLIED dispatch.
@@ -255,6 +267,8 @@ export const initialState: RunStoreState = {
   minRestSpacingKm: null,
   // feature 020 — no traffic jam painted yet
   mergedJamRangesKm: [],
+  // feature 020 — no mountain road painted yet
+  mergedMountainRangesKm: [],
   // M7 — no action taken yet
   lastAction: null,
   // M7 — no rests accepted yet
@@ -399,6 +413,8 @@ export type RunStoreAction =
   // ── feature 020: painted traffic-jam ranges (km) for the merged map ─────────
   /** Set the painted traffic-jam km ranges (Combined Simulator map overlay). */
   | { type: 'SET_MERGED_JAM_RANGES'; ranges: [number, number][] }
+  /** Set the painted mountain-road km ranges (Combined Simulator map overlay). */
+  | { type: 'SET_MERGED_MOUNTAIN_RANGES'; ranges: [number, number][] }
   // ── Initial driver state overrides ─────────────────────────────────────────
   /** Set the starting drowsiness (0–100), or null to clear (use scenario default). */
   | { type: 'SET_INITIAL_DROWSINESS'; value: number | null }
@@ -698,6 +714,9 @@ export function reducer(state: RunStoreState, action: RunStoreAction): RunStoreS
 
     case 'SET_MERGED_JAM_RANGES':
       return { ...state, mergedJamRangesKm: action.ranges }
+
+    case 'SET_MERGED_MOUNTAIN_RANGES':
+      return { ...state, mergedMountainRangesKm: action.ranges }
 
     case 'SET_INITIAL_DROWSINESS':
       return { ...state, initialDrowsiness: action.value }

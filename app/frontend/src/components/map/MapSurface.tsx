@@ -8,6 +8,7 @@ import type { UiLanguage } from '../../i18n/t'
 import FallbackRouteMap, { type MapFireMarker, type MapRestMarker } from './FallbackRouteMap'
 import { useLanguage } from '../../state/language'
 import { CATEGORY_LABELS } from '../../lib/review/reviewVocabulary'
+import { segLabel } from '../playback/ScoreTimeline'
 
 const LABELS = {
   authFailed: {
@@ -29,6 +30,11 @@ const LABELS = {
   fire: { ja: '発火', en: 'Firing' },
   chosenRestSpot: { ja: '選択済みの休憩場所', en: 'Chosen rest location' },
   chosenRestSpotPrefix: { ja: '選択済みの休憩場所: ', en: 'Chosen rest location: ' },
+  // Legend-only wording. The road-class names are NOT here: they come from
+  // `SEGMENT_LABELS`, the same table the quickview timeline's legend reads, so
+  // a road is named identically in both places.
+  legendJam: { ja: '渋滞', en: 'traffic jam' },
+  legendCar: { ja: '現在位置', en: 'current position' },
 }
 
 /**
@@ -63,6 +69,38 @@ type GMapsLib = any
 function getGMaps(): GMapsLib | undefined {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (window as any).google?.maps
+}
+
+// ── Road-class paint: colour + priority ─────────────────────────────────────
+//
+// Colours are mobile-Google-Maps inspired. Priority is the OWNER'S rule for
+// what wins when two paints cover the same stretch of route:
+//
+//     traffic jam  >  mountain / sightseeing  >  normal / highway
+//
+// It is expressed as polyline `zIndex` rather than draw order, because the
+// paints are drawn by three independent effects (base segments at canvas init,
+// the painted mountain range and the painted jam range on their own) and draw
+// order between them is not something any one of them controls.
+const ROAD_COLORS: Record<string, string> = {
+  highway: '#06b6d4',           // cyan
+  normal_road: '#2563eb',       // blue (default)
+  mountain_road: '#f59e0b',     // orange
+  sightseeing_road: '#22c55e',  // green
+}
+
+/** The plain road classes — the base the other paints sit on top of. */
+const BASE_ROAD_Z = 100
+/** Character roads: the segment's own nature is what the reviewer is here for. */
+const CHARACTER_ROAD_Z = 300
+/** A jam outranks everything: it is the most acute thing on the route. */
+const JAM_Z = 500
+
+const ROAD_Z: Record<string, number> = {
+  highway: BASE_ROAD_Z,
+  normal_road: BASE_ROAD_Z,
+  mountain_road: CHARACTER_ROAD_Z,
+  sightseeing_road: CHARACTER_ROAD_Z,
 }
 
 /** True only on a real Maps SDK — the test mock omits Marker + geometry.spherical. */
@@ -128,12 +166,14 @@ export default function MapSurface({
   proposalFractionsOverride,
   restSpotsOverride,
   jamRangesKm,
+  mountainRangesKm,
   fireMarkers = [],
   restMarkers = [],
   inspectedFireIndex = null,
   onFireMarkerClick,
   startName,
   endName,
+  showLegend = false,
   playback = false,
   height = '52vh',
   minHeight = '360px',
@@ -149,6 +189,12 @@ export default function MapSurface({
    * drawn as thick RED polylines over the route so the reviewer sees where the
    * jam sits. Empty/undefined → no jam overlay. */
   jamRangesKm?: [number, number][]
+  /** Painted mountain-road ranges as `[start_km, end_km]` pairs — drawn in the
+   * mountain-road colour over the route. Needed as a prop (rather than read off
+   * the selected alternative's `route_segments`) because painting splices the
+   * segment SERVER-side into the trigger run plan, leaving the alternative this
+   * component colours from unpainted. Empty/undefined → no mountain overlay. */
+  mountainRangesKm?: [number, number][]
   /** Projected trigger positions shown BEFORE playback starts (owner review) —
    * a reviewer should see where things happen without pressing Play first. */
   fireMarkers?: MapFireMarker[]
@@ -165,6 +211,10 @@ export default function MapSurface({
   /** True once a run is under way. Until then the map shows the PROJECTED
    *  trigger/rest markers; from then on it shows what actually happened. */
   playback?: boolean
+  /** Render a colour key directly under the canvas. Off by default (the same
+   * convention `ScoreTimeline.showLegend` uses) so screens that don't want it
+   * are untouched. It names only what is actually drawn on THIS route. */
+  showLegend?: boolean
   /** Canvas height. The Combined Simulator passes a shorter band because the
    *  service/content proposals below it are that panel's main content; the
    *  Trigger screen keeps the taller default. */
@@ -241,6 +291,8 @@ export default function MapSurface({
   // Red traffic-jam polylines (feature 020) — one per painted jam range, redrawn
   // whenever the ranges change.
   const jamPolyRefs = useRef<GMapsLib[]>([])
+  // Mountain-road polylines — one per painted mountain range, same lifecycle.
+  const mountainPolyRefs = useRef<GMapsLib[]>([])
   // Geographic markers for the accepted rest spots (real SDK only) — one per
   // restHistory entry, so all accepted rests stay visible on the map.
   const chosenRestRefs = useRef<GMapsLib[]>([])
@@ -330,6 +382,8 @@ export default function MapSurface({
       chosenRestRefs.current = []
       for (const p of jamPolyRefs.current) p?.setMap?.(null)
       jamPolyRefs.current = []
+      for (const p of mountainPolyRefs.current) p?.setMap?.(null)
+      mountainPolyRefs.current = []
       pathRef.current = null
       mapInstanceRef.current = null
       setRealMarkers(false)
@@ -354,42 +408,42 @@ export default function MapSurface({
         zoom: 10,
       })
 
-      // Road-class colors (mobile Google Maps inspired).
-      // Red is reserved for future traffic zone rendering — traffic zones are
-      // not modeled per-segment yet and will be layered on top when available.
-      const ROAD_COLORS: Record<string, string> = {
-        highway: '#06b6d4',           // cyan
-        normal_road: '#2563eb',       // blue (default)
-        mountain_road: '#f59e0b',     // orange
-        sightseeing_road: '#22c55e',  // green
+      // Cache the decoded path + cumulative distances as soon as `spherical` is
+      // available, NOT only alongside the geographic markers below. The painted
+      // overlays (mountain, jam) are km→fraction slices of this path and are
+      // drawn by their own effects, so they need it whether or not the SDK also
+      // offers Marker.
+      if (gmaps.geometry?.spherical) {
+        const { cum, total } = buildCumulative(path, gmaps.geometry.spherical)
+        pathRef.current = { path, cum, total }
       }
+
       const routeSegments = selectedAlt?.route_facts?.route_segments ?? []
       const totalKm = selectedAlt?.route_facts?.total_route_distance_km ?? 0
-      const canColorSegments =
-        routeSegments.length > 0 &&
-        Boolean(gmaps.geometry?.spherical) &&
-        totalKm > 0
+      const canColorSegments = routeSegments.length > 0 && pathRef.current != null && totalKm > 0
 
       if (canColorSegments) {
-        const { cum, total } = buildCumulative(path, gmaps.geometry.spherical)
+        const { cum, total } = pathRef.current!
         for (const seg of routeSegments) {
           const fStart = seg.start_km / totalKm
           const fEnd = (seg.start_km + seg.length_km) / totalKm
           const segPath = slicePath(path, cum, total, fStart, fEnd, gmaps.geometry.spherical)
           const segPolyline = new gmaps.Polyline({
             path: segPath,
-            strokeColor: ROAD_COLORS[seg.segment_type] ?? '#2563eb',
+            strokeColor: ROAD_COLORS[seg.segment_type] ?? ROAD_COLORS.normal_road,
             strokeOpacity: 0.9,
             strokeWeight: 5,
+            zIndex: ROAD_Z[seg.segment_type] ?? BASE_ROAD_Z,
           })
           segPolyline.setMap(mapInstanceRef.current)
         }
       } else {
         const polyline = new gmaps.Polyline({
           path,
-          strokeColor: '#2563eb',
+          strokeColor: ROAD_COLORS.normal_road,
           strokeOpacity: 0.9,
           strokeWeight: 4,
+          zIndex: BASE_ROAD_Z,
         })
         polyline.setMap(mapInstanceRef.current)
       }
@@ -405,8 +459,7 @@ export default function MapSurface({
       // Skipped under the test mock (no Marker / geometry.spherical) — the DOM
       // overlay markers below stay as the testable fallback.
       if (hasGeoMarkers(gmaps)) {
-        const { cum, total } = buildCumulative(path, gmaps.geometry.spherical)
-        pathRef.current = { path, cum, total }
+        // `pathRef` was already filled above — markers only need the map handle.
         const map = mapInstanceRef.current
 
         startRef.current = new gmaps.Marker({
@@ -559,6 +612,44 @@ export default function MapSurface({
     // markers never happens.
   }, [shownFraction, fireKey, restKey, projecting, inspectedFireIndex, realMarkers])
 
+  // ── Painted mountain-road overlay ─────────────────────────────────────────
+  // The painted range is spliced into `route_facts.route_segments` SERVER-side,
+  // inside the trigger run plan — the alternative this component colours from
+  // stays unpainted, so without this the stretch appeared in the quickview and
+  // nowhere on the map (C-04).
+  //
+  // Drawn as its OWN effect rather than inside canvas init, because the canvas
+  // is rebuilt per POLYLINE: switching from a case that paints nothing to one
+  // that paints a mountain range keeps the same route preset, so an init-time
+  // paint would never appear.
+  const mountainKey = JSON.stringify(mountainRangesKm ?? [])
+  useEffect(() => {
+    const gmaps = getGMaps()
+    const built = pathRef.current
+    // Clear prior overlays first — the ranges may have shrunk or cleared.
+    mountainPolyRefs.current.forEach((p) => p.setMap(null))
+    mountainPolyRefs.current = []
+    if (!built || !gmaps?.geometry?.spherical || !mapInstanceRef.current) return
+    const totalKm = selectedAlt?.route_facts?.total_route_distance_km ?? 0
+    if (totalKm <= 0) return
+    for (const [startKm, endKm] of mountainRangesKm ?? []) {
+      if (!(endKm > startKm)) continue
+      const fStart = Math.max(0, Math.min(1, startKm / totalKm))
+      const fEnd = Math.max(0, Math.min(1, endKm / totalKm))
+      const segPath = slicePath(built.path, built.cum, built.total, fStart, fEnd, gmaps.geometry.spherical)
+      const poly = new gmaps.Polyline({
+        path: segPath,
+        strokeColor: ROAD_COLORS.mountain_road,
+        strokeOpacity: 0.95,
+        strokeWeight: 6,
+        zIndex: CHARACTER_ROAD_Z,
+      })
+      poly.setMap(mapInstanceRef.current)
+      mountainPolyRefs.current.push(poly)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mountainKey, mapsReady, display?.encoded_polyline, realMarkers])
+
   // ── Traffic-jam overlay (feature 020) ─────────────────────────────────────
   // Thick RED polylines over the painted jam km ranges. Redraws whenever the
   // ranges change, the route changes, or the geographic path becomes available
@@ -584,7 +675,7 @@ export default function MapSurface({
         strokeColor: '#dc2626',
         strokeOpacity: 0.95,
         strokeWeight: 8,
-        zIndex: 500,
+        zIndex: JAM_Z,
       })
       jamPoly.setMap(mapInstanceRef.current)
       jamPolyRefs.current.push(jamPoly)
@@ -597,7 +688,42 @@ export default function MapSurface({
   // to RouteTimeline.  Must be after all hooks.
   if (!display) return null
 
+  // ── Legend rows ───────────────────────────────────────────────────────────
+  // Only what is ACTUALLY on this route: a key that lists colours the reviewer
+  // cannot see is worse than no key. Ordered to match the paint priority, so
+  // reading down the legend is reading down the layers.
+  //
+  // Deduplicated by LABEL, not by segment type: a painted mountain range and a
+  // preset mountain segment are the same orange road and must be named once.
+  const legendRows: { color: string; label: string; shape: 'line' | 'dot'; weight?: number }[] = []
+  if (showLegend) {
+    const seen = new Set<string>()
+    const addLine = (color: string, label: string, weight?: number) => {
+      if (seen.has(label)) return
+      seen.add(label)
+      legendRows.push({ color, label, shape: 'line', weight })
+    }
+    if ((jamRangesKm ?? []).length > 0) addLine('#dc2626', t(LABELS.legendJam, lang), 5)
+    if ((mountainRangesKm ?? []).length > 0) {
+      addLine(ROAD_COLORS.mountain_road, segLabel('mountain_road', lang), 4)
+    }
+    for (const seg of selectedAlt?.route_facts?.route_segments ?? []) {
+      addLine(ROAD_COLORS[seg.segment_type] ?? ROAD_COLORS.normal_road, segLabel(seg.segment_type, lang), 3)
+    }
+    // Markers, in the order they appear along a journey.
+    legendRows.push({ color: '#22c55e', label: t(LABELS.start, lang), shape: 'dot' })
+    legendRows.push({ color: '#2563eb', label: t(LABELS.legendCar, lang), shape: 'dot' })
+    if (geoFireFractions.length > 0) {
+      legendRows.push({ color: '#dc2626', label: t(LABELS.fire, lang), shape: 'dot' })
+    }
+    if (geoRestFractions.length > 0) {
+      legendRows.push({ color: '#f59e0b', label: t(LABELS.chosenRestSpot, lang), shape: 'dot' })
+    }
+    legendRows.push({ color: '#64748b', label: t(LABELS.destination, lang), shape: 'dot' })
+  }
+
   return (
+    <>
     <div
       data-testid="map-surface"
       style={{ position: 'relative', margin: '12px 0' }}
@@ -717,5 +843,37 @@ export default function MapSurface({
         />
       ))}
     </div>
+
+    {/* Directly under the canvas, and a SIBLING of it — the marker overlays
+        above are absolutely positioned against `map-surface`, so putting the
+        legend inside it would grow that box and drag every `bottom: 0` marker
+        down onto the legend. */}
+    {showLegend && (
+      <div
+        data-testid="map-legend"
+        style={{
+          display: 'flex', flexWrap: 'wrap', gap: '4px 12px',
+          fontSize: '0.72em', color: '#6b7280', margin: '-6px 0 8px',
+        }}
+      >
+        {legendRows.map((row) => (
+          <span key={row.label} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            {row.shape === 'line' ? (
+              <span style={{
+                width: '16px', height: 0, display: 'inline-block',
+                borderTop: `${row.weight ?? 3}px solid ${row.color}`, borderRadius: '2px',
+              }} />
+            ) : (
+              <span style={{
+                width: '10px', height: '10px', display: 'inline-block', background: row.color,
+                borderRadius: '50%', border: '1px solid #fff', boxShadow: '0 0 0 1px #d1d5db',
+              }} />
+            )}
+            {row.label}
+          </span>
+        ))}
+      </div>
+    )}
+    </>
   )
 }

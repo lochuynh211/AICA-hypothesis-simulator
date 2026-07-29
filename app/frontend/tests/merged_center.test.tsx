@@ -291,6 +291,45 @@ describe('MergedCenterPanel', () => {
     vi.resetAllMocks()
   })
 
+  // With no fire and no live proposal there is no proposal to describe, so the
+  // panel must contribute NOTHING to the centre column — not a placeholder,
+  // and above all not the status strip's "Proposal category", which reads off
+  // the SETUP world and so names a category no proposal ever carried.
+  it('renders no proposal panel at all until there is a proposal', () => {
+    renderCenterPanel()
+    expect(screen.queryByTestId('merged-proposal-panel')).toBeNull()
+    expect(screen.queryByTestId('merged-status-strip')).toBeNull()
+    expect(screen.queryByTestId('merged-proposal-empty')).toBeNull()
+  })
+
+  // Structural guarantee: a playback tick must not re-render the proposal
+  // cards, or an expanded contribution chain collapses mid-run. Asserted here
+  // rather than in `merged_review_layout.test.tsx` because the panel renders
+  // nothing until a proposal exists, and this file can drive a real fired tick.
+  it('keeps the animated subtree a SIBLING of the proposal subtree', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_sib', trigger_run_id: 'run_sib' })
+    vi.mocked(tickMergedRun).mockResolvedValueOnce(firedTickWithProposal(45))
+
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => {
+      await coordinatorRef.current!.step()
+    })
+
+    const playback = screen.getByTestId('merged-playback-subtree')
+    const proposals = screen.getByTestId('merged-proposal-panel')
+    expect(playback.contains(proposals)).toBe(false)
+    expect(proposals.contains(playback)).toBe(false)
+  })
+
   it('docks the service result overlay once proposalLog has service evidence and no service is chosen', async () => {
     vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_1', trigger_run_id: 'run_1' })
     vi.mocked(tickMergedRun).mockResolvedValueOnce(firedTickWithProposal(45))

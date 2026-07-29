@@ -153,14 +153,16 @@ describe('ReviewColumn', () => {
     expect(screen.queryByTestId('different-setting')).toBeNull()
   })
 
-  it('says so when the run produced no reviewable decision point', () => {
+  it('shows the verdict card — not an explanation — when the run produced no fire', () => {
     mount({ fires: [] } as unknown as MergedInstantResult)
-    expect(screen.getByTestId('no-checkpoints')).toBeTruthy()
+    expect(screen.queryByTestId('no-checkpoints')).toBeNull()
+    expect(screen.getByTestId('stage-feedback-panel')).toBeTruthy()
   })
 
-  it('says so before any run exists', () => {
+  it('shows the verdict card before any run exists', () => {
     mount(null)
-    expect(screen.getByTestId('no-checkpoints')).toBeTruthy()
+    expect(screen.queryByTestId('no-checkpoints')).toBeNull()
+    expect(screen.getByTestId('stage-feedback-panel')).toBeTruthy()
   })
 
   it('reports the trigger stage unavailable when the package recorded no chain', () => {
@@ -289,38 +291,89 @@ describe('ReviewColumn — clear-on-switch invariant', () => {
   })
 })
 
-// ── Case-scoped empty-checkpoint outcome ─────────────────────────────────
+// ── No fire is still reviewable ──────────────────────────────────────────
 //
-// Nothing dispatches SELECT_CASE elsewhere in this suite, so the "this case
-// is expected not to fire" branch (which interpolates the selected case's
-// title into a sentence) was previously unexercised. `case-c01-alert-daytime
-// -control` is the real committed control case that exists precisely to
-// produce no fire (see `checkpoints.ts`'s own docstring).
+// `case-c01-alert-daytime-control` is the real committed control case that
+// exists precisely to produce no fire (see `checkpoints.ts`'s own docstring).
+// The reviewer still owes a verdict on it — was NOT firing the right call? —
+// so the column shows the verdict card and NOTHING else: no evidence tabs
+// (there is no decision to decompose), and no sentence from the app asserting
+// what the absence of a fire means.
 
-describe('ReviewColumn — case-scoped empty checkpoints', () => {
-  it('reads the empty rail as the expected outcome, naming the selected case, when one is picked', () => {
+const mountNoFire = (result: MergedInstantResult | null, mergedRunId: string | null = null) =>
+  render(
+    <LanguageProvider initialLanguage="en">
+      <ReviewStoreProvider>
+        <SelectCase caseId="case-c01-alert-daytime-control" />
+        <ReviewColumn result={result} mergedRunId={mergedRunId} />
+      </ReviewStoreProvider>
+    </LanguageProvider>,
+  )
+
+const noFireResult = { fires: [] } as unknown as MergedInstantResult
+
+describe('ReviewColumn — no fire is still reviewable', () => {
+  beforeEach(() => {
+    vi.mocked(postReviewFeedback).mockReset().mockResolvedValue(undefined)
+  })
+
+  it('asserts nothing about what the empty rail means', () => {
     const controlCase = getCase('case-c01-alert-daytime-control')
     // Guard the fixture itself: if the committed case file ever moves/renames,
     // this test must fail loudly here rather than silently asserting nothing.
     expect(controlCase).not.toBeNull()
 
-    let dispatch: React.Dispatch<ReviewAction> | null = null
-    render(
-      <LanguageProvider initialLanguage="en">
-        <ReviewStoreProvider>
-          <DispatchCapture onReady={(d) => { dispatch = d }} />
-          <ReviewColumn result={{ fires: [] } as unknown as MergedInstantResult} />
-        </ReviewStoreProvider>
-      </LanguageProvider>,
+    mountNoFire(noFireResult)
+    const column = screen.getByTestId('review-column')
+    expect(column.textContent ?? '').not.toContain('expected outcome')
+    expect(column.textContent ?? '').not.toContain('designed to produce no firing')
+  })
+
+  it('shows no evidence tabs when there is no decision to decompose', () => {
+    mountNoFire(noFireResult)
+    expect(screen.queryByTestId('stage-tab-trigger')).toBeNull()
+    expect(screen.queryByTestId('compare-left')).toBeNull()
+  })
+
+  it('still names the case the verdict is filed against', () => {
+    const controlCase = getCase('case-c01-alert-daytime-control')
+    mountNoFire(noFireResult)
+    expect(screen.getByTestId('feedback-case-name')).toHaveTextContent(controlCase!.title.en)
+  })
+
+  it('keeps the firing decision assessable, and only that one', () => {
+    mountNoFire(noFireResult)
+    expect(screen.getByTestId('verdicts-trigger')).toBeTruthy()
+    expect(screen.getByTestId('assess-comment-trigger')).toBeTruthy()
+    expect(screen.queryByTestId('verdicts-service')).toBeNull()
+    expect(screen.queryByTestId('verdicts-content')).toBeNull()
+    expect(screen.getByTestId('feedback-unavailable-service')).toBeTruthy()
+    expect(screen.getByTestId('feedback-unavailable-content')).toBeTruthy()
+  })
+
+  it('records the no-fire verdict against a no_fire decision point', async () => {
+    mountNoFire(noFireResult, 'mrun-nofire')
+    fireEvent.click(screen.getByTestId('assess-trigger-not-appropriate'))
+    await flush()
+    expect(postReviewFeedback).toHaveBeenCalledWith(
+      'mrun-nofire',
+      expect.objectContaining({
+        scope: 'review_decision',
+        case_id: 'case-c01-alert-daytime-control',
+        checkpoint_id: 'no_fire',
+        stage: 'trigger',
+        review_target: 'no_fire',
+        labels: { assessment: 'not_appropriate' },
+      }),
     )
-    expect(screen.getByTestId('no-checkpoints')).toBeTruthy()
+  })
 
-    act(() => {
-      dispatch!({ type: 'SELECT_CASE', caseId: 'case-c01-alert-daytime-control' })
-    })
-
-    const message = screen.getByTestId('no-checkpoints')
-    expect(message.textContent ?? '').toContain(controlCase!.title.en)
+  it('leaves even the firing decision unassessable before any run exists', () => {
+    // No run means nothing has been decided yet — an absent fire is not the
+    // same fact as a run that produced none, and only the latter is judgeable.
+    mountNoFire(null)
+    expect(screen.queryByTestId('verdicts-trigger')).toBeNull()
+    expect(screen.getByTestId('feedback-unavailable-trigger')).toBeTruthy()
   })
 })
 

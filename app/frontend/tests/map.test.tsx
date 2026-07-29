@@ -20,11 +20,12 @@
  * setup-screen redesign — see the note before the I2-regression block below.
  */
 
-import { render, screen, waitFor, act } from '@testing-library/react'
+import { render, screen, waitFor, act, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import React from 'react'
+import React, { useState } from 'react'
 import { RunStoreProvider, useRunStore } from '../src/state/runStore'
 import type { RunStoreAction } from '../src/state/runStore'
+import { LanguageProvider } from '../src/state/language'
 import type { DecisionResult } from '../src/api/types'
 import type { RouteEnvelope } from '../src/api/types'
 
@@ -703,6 +704,211 @@ describe('MapSurface — road-class colored polyline', () => {
       2,
       expect.objectContaining({ strokeColor: '#06b6d4' }),
     )
+  })
+})
+
+// ── Painted road conditions must reach the Google canvas ────────────────────
+//
+// A painted mountain range is spliced into `route_segments` SERVER-side, into
+// the trigger run plan. The map colours segments from the runStore's route
+// alternatives — the UNPAINTED preset envelope — so the painted stretch never
+// reached the canvas, even though the quickview (fed from the painted plan)
+// showed it. The jam range already had a dedicated prop for exactly this
+// reason; the mountain range needs the same bridge.
+//
+// Owner paint priority, top to bottom: traffic jam > mountain / sightseeing >
+// normal / highway. Expressed as polyline zIndex so an overlapping paint wins
+// visually regardless of draw order.
+
+describe('MapSurface — painted road conditions', () => {
+  afterEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).google
+  })
+
+  /** A 60 km route of plain `normal_road`, so anything mountain-coloured on the
+   *  canvas can only have come from the painted range. */
+  const paintEnvelope: RouteEnvelope = {
+    route_source: 'maps',
+    alternatives: [
+      {
+        route_id: 'route-paint',
+        summary: 'Painted Route',
+        route_facts: {
+          total_route_distance_km: 60,
+          estimated_route_duration_min: 60,
+          route_segments: [{ segment_type: 'normal_road', start_km: 0, length_km: 60 }],
+          rest_spot_positions: [],
+          route_progress_checkpoints: [],
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        display: { encoded_polyline: TEST_POLYLINE } as any,
+        notices: [],
+      },
+    ],
+  }
+
+  function mockSdk() {
+    const decodePath = vi.fn().mockReturnValue([
+      { lat: () => 35.0, lng: () => 135.0 },
+      { lat: () => 35.3, lng: () => 135.3 },
+      { lat: () => 35.6, lng: () => 135.6 },
+    ])
+    const mockMaps = {
+      Map: vi.fn().mockReturnValue({ fitBounds: vi.fn() }),
+      Polyline: vi.fn().mockReturnValue({ setMap: vi.fn() }),
+      LatLngBounds: vi.fn().mockReturnValue({ extend: vi.fn() }),
+      geometry: {
+        encoding: { decodePath },
+        spherical: {
+          computeDistanceBetween: vi.fn().mockReturnValue(30000),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          interpolate: vi.fn().mockImplementation((a: any) => a),
+        },
+      },
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(window as any).google = { maps: mockMaps }
+    return mockMaps
+  }
+
+  /** Every `new Polyline({...})` argument, in draw order. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const polylineCalls = (mockMaps: any) =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockMaps.Polyline.mock.calls.map((c: any[]) => c[0])
+
+  it('draws the painted mountain range on the canvas (C-04 regression)', () => {
+    const mockMaps = mockSdk()
+
+    renderInStore(<MapSurface mountainRangesKm={[[30, 60]]} />, (dispatch) => {
+      dispatch({ type: 'SET_MAPS_KEY', key: 'test-key' })
+      dispatch({ type: 'SET_ALTERNATIVES', envelope: paintEnvelope })
+      dispatch({ type: 'SELECT_ROUTE', routeId: 'route-paint' })
+    })
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mountain = polylineCalls(mockMaps).filter((o: any) => o.strokeColor === '#f59e0b')
+    expect(mountain).toHaveLength(1)
+  })
+
+  it('ranks jam above mountain above the plain road classes', () => {
+    const mockMaps = mockSdk()
+
+    renderInStore(<MapSurface mountainRangesKm={[[30, 60]]} jamRangesKm={[[0, 10]]} />, (dispatch) => {
+      dispatch({ type: 'SET_MAPS_KEY', key: 'test-key' })
+      dispatch({ type: 'SET_ALTERNATIVES', envelope: paintEnvelope })
+      dispatch({ type: 'SELECT_ROUTE', routeId: 'route-paint' })
+    })
+
+    const calls = polylineCalls(mockMaps)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const zOf = (color: string) => calls.find((o: any) => o.strokeColor === color)?.zIndex
+    const base = zOf('#2563eb')     // normal_road
+    const mountain = zOf('#f59e0b') // painted mountain
+    const jam = zOf('#dc2626')      // painted jam
+
+    expect(base).toBeTypeOf('number')
+    expect(mountain).toBeGreaterThan(base as number)
+    expect(jam).toBeGreaterThan(mountain as number)
+  })
+
+  it('repaints when the painted range changes without the route changing', () => {
+    // Switching from a case that paints nothing to C-04 keeps the SAME route
+    // preset, so the canvas-init effect (guarded on the polyline) never re-runs.
+    // A paint that only happened at init would never appear.
+    const mockMaps = mockSdk()
+
+    // The range lives in the wrapper's state so the store — and therefore the
+    // built canvas — is untouched when it changes; only the prop moves.
+    function Wrapper() {
+      const [ranges, setRanges] = useState<[number, number][]>([])
+      return (
+        <>
+          <button type="button" data-testid="paint-mountain" onClick={() => setRanges([[30, 60]])}>
+            paint
+          </button>
+          <MapSurface mountainRangesKm={ranges} />
+        </>
+      )
+    }
+
+    renderInStore(<Wrapper />, (dispatch) => {
+      dispatch({ type: 'SET_MAPS_KEY', key: 'test-key' })
+      dispatch({ type: 'SET_ALTERNATIVES', envelope: paintEnvelope })
+      dispatch({ type: 'SELECT_ROUTE', routeId: 'route-paint' })
+    })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(polylineCalls(mockMaps).filter((o: any) => o.strokeColor === '#f59e0b')).toHaveLength(0)
+
+    fireEvent.click(screen.getByTestId('paint-mountain'))
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(polylineCalls(mockMaps).filter((o: any) => o.strokeColor === '#f59e0b')).toHaveLength(1)
+  })
+
+  // ── The map's own legend ──────────────────────────────────────────────────
+  //
+  // Colours on the canvas mean nothing without a key. The quickview timeline
+  // has had one; the map had none, so a reviewer saw an orange stretch with no
+  // way to know it was the mountain road. Opt-in (`showLegend`), matching
+  // `ScoreTimeline`'s own convention, so screens that don't want it are
+  // untouched. It names only what is actually drawn.
+
+  it('names the road classes actually on the route, in the UI language', () => {
+    mockSdk()
+
+    // MapSurface reads the language from context, like every other label it
+    // already renders — no `lang` prop of its own.
+    renderInStore(
+      <LanguageProvider initialLanguage="ja"><MapSurface showLegend /></LanguageProvider>,
+      (dispatch) => {
+        dispatch({ type: 'SET_MAPS_KEY', key: 'test-key' })
+        dispatch({ type: 'SET_ALTERNATIVES', envelope: paintEnvelope })
+        dispatch({ type: 'SELECT_ROUTE', routeId: 'route-paint' })
+      },
+    )
+
+    const legend = screen.getByTestId('map-legend')
+    expect(legend.textContent ?? '').toContain('一般道')     // normal_road
+    expect(legend.textContent ?? '').not.toContain('高速道路') // highway — not on this route
+    expect(legend.textContent ?? '').not.toMatch(/[A-Za-z]{4,}/)
+  })
+
+  it('names the painted conditions only when they are painted', () => {
+    mockSdk()
+
+    const { unmount } = renderInStore(<MapSurface showLegend />, (dispatch) => {
+      dispatch({ type: 'SET_MAPS_KEY', key: 'test-key' })
+      dispatch({ type: 'SET_ALTERNATIVES', envelope: paintEnvelope })
+      dispatch({ type: 'SELECT_ROUTE', routeId: 'route-paint' })
+    })
+    expect(screen.getByTestId('map-legend').textContent ?? '').not.toContain('traffic jam')
+    expect(screen.getByTestId('map-legend').textContent ?? '').not.toContain('mountain road')
+    unmount()
+
+    renderInStore(
+      <MapSurface showLegend mountainRangesKm={[[30, 60]]} jamRangesKm={[[0, 10]]} />,
+      (dispatch) => {
+        dispatch({ type: 'SET_MAPS_KEY', key: 'test-key' })
+        dispatch({ type: 'SET_ALTERNATIVES', envelope: paintEnvelope })
+        dispatch({ type: 'SELECT_ROUTE', routeId: 'route-paint' })
+      },
+    )
+    const legend = screen.getByTestId('map-legend')
+    expect(legend.textContent ?? '').toContain('traffic jam')
+    expect(legend.textContent ?? '').toContain('mountain road')
+  })
+
+  it('stays off unless asked for', () => {
+    mockSdk()
+
+    renderInStore(<MapSurface />, (dispatch) => {
+      dispatch({ type: 'SET_MAPS_KEY', key: 'test-key' })
+      dispatch({ type: 'SET_ALTERNATIVES', envelope: paintEnvelope })
+      dispatch({ type: 'SELECT_ROUTE', routeId: 'route-paint' })
+    })
+    expect(screen.queryByTestId('map-legend')).toBeNull()
   })
 })
 

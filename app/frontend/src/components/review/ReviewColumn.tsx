@@ -46,25 +46,11 @@ const LABELS = {
   tabTrigger: { ja: '発火判定', en: 'Firing decision' },
   tabService: { ja: 'サービス', en: 'Service' },
   tabContent: { ja: 'コンテンツ', en: 'Content' },
-  noRunTitle: { ja: 'レビューできる決定がありません', en: 'Nothing to review yet' },
-  noRunBody: {
-    ja: 'まだ実行結果がありません。シミュレーションを実行すると、ここにレビュー可能な決定ポイントが表示されます。',
-    en: 'No run exists yet. Once a simulation runs, any reviewable decision point appears here.',
-  },
-  noCheckpointsTitle: { ja: '発火はありませんでした', en: 'Nothing fired' },
-  noCheckpointsBody: {
-    ja: 'この実行ではレビュー可能な決定ポイントが生成されませんでした。',
-    en: 'This run produced no reviewable decision point.',
-  },
-  noCheckpointsCaseTitle: { ja: '想定どおりの結果です', en: 'This is the expected outcome' },
-  // Rendered after a language-conditional lead-in (quoted case title) below —
-  // this is the PREDICATE only, so it must read as a full sentence in both
-  // the JA form (which starts mid-sentence, after 「title」) and the EN form
-  // (which starts after `The case "title" `).
-  noCheckpointsCaseBody: {
-    ja: 'は発火しないことを想定した試験ケースです。決定ポイントが無いのは不具合ではなく、この結果そのものです。',
-    en: 'is a test case designed to produce no firing. The absence of a decision point is the outcome being tested, not a problem.',
-  },
+  // Shown in place of a stage's verdict buttons when nothing fired. Deliberately
+  // a bare FACT and nothing more: whether the absence of a fire was correct is
+  // the reviewer's verdict to file, not a claim the app gets to make for them.
+  noDecisionPoint: { ja: '決定ポイントなし', en: 'No decision point' },
+  noRunYet: { ja: '実行がまだありません', en: 'No run yet' },
   unavailableTitle: { ja: 'この段階は比較できません', en: 'This stage cannot be compared' },
   persistFailed: {
     ja: '評価を保存できませんでした。もう一度お試しください。',
@@ -165,6 +151,18 @@ function defaultContentComparison(options: ReviewOption[], targetId: string | nu
 const assessmentKey = (caseId: string, checkpointId: string, stage: string, targetId: string): string =>
   [caseId, checkpointId, stage, targetId].join('|')
 
+/**
+ * The decision point of a run that fired nothing.
+ *
+ * A no-fire run has no checkpoint and no candidate to anchor a verdict to, but
+ * the verdict itself is real — "was it right NOT to fire?" is precisely what a
+ * control case exists to have answered — so it is filed against this sentinel
+ * rather than not filed at all. It can never collide with a real key: a real
+ * checkpoint id is a `ReviewableCategory` (`rest_required` /
+ * `monotony_prevention`), never this.
+ */
+const NO_FIRE = 'no_fire'
+
 export default function ReviewColumn({
   result,
   mergedRunId = null,
@@ -201,126 +199,19 @@ export default function ReviewColumn({
 
   const checkpoints = deriveCheckpoints(result)
 
-  if (checkpoints.length === 0) {
-    const selectedCase = state.selectedCaseId ? getCase(state.selectedCaseId) : null
-    return (
-      <div data-testid="review-column" style={{ padding: '12px' }}>
-        <div data-testid="no-checkpoints" style={{ padding: '12px', color: '#64748b', fontSize: '0.86em' }}>
-          {selectedCase ? (
-            <>
-              <p style={{ fontWeight: 700, margin: '0 0 4px', color: '#1e293b' }}>
-                {t(LABELS.noCheckpointsCaseTitle, lang)}
-              </p>
-              <p style={{ margin: 0 }}>
-                {lang === 'ja' ? (
-                  <>「{t(selectedCase.title, lang)}」{t(LABELS.noCheckpointsCaseBody, lang)}</>
-                ) : (
-                  <>The case &quot;{t(selectedCase.title, lang)}&quot; {t(LABELS.noCheckpointsCaseBody, lang)}</>
-                )}
-              </p>
-            </>
-          ) : result == null ? (
-            <>
-              <p style={{ fontWeight: 700, margin: '0 0 4px', color: '#1e293b' }}>{t(LABELS.noRunTitle, lang)}</p>
-              <p style={{ margin: 0 }}>{t(LABELS.noRunBody, lang)}</p>
-            </>
-          ) : (
-            <>
-              <p style={{ fontWeight: 700, margin: '0 0 4px', color: '#1e293b' }}>
-                {t(LABELS.noCheckpointsTitle, lang)}
-              </p>
-              <p style={{ margin: 0 }}>{t(LABELS.noCheckpointsBody, lang)}</p>
-            </>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  const activeCheckpoint = checkpoints.find((c) => c.id === state.checkpointId) ?? checkpoints[0]
-  const fire = result!.fires[activeCheckpoint.fireIndex]
-
-  const triggerResult = triggerOptions(fire)
-  const serviceResult = serviceOptions(fire.proposal)
-  const contentResult = contentOptions(fire.proposal)
-
-  const triggerAvailable = !isUnavailable(triggerResult)
-  const serviceAvailable = !isUnavailable(serviceResult)
-  const contentAvailable = !isUnavailable(contentResult)
-
-  const triggerOpts = isUnavailable(triggerResult) ? [] : triggerResult
-  const serviceOpts = isUnavailable(serviceResult) ? [] : serviceResult
-  // Content options read as the song's NAME. A catalog track id tells the
-  // reviewer nothing about what was proposed, so it never reaches the label —
-  // the recorded evidence is still keyed by it, and `option.id` still carries
-  // it for the store and the test hooks.
-  const rawContentOpts = isUnavailable(contentResult) ? [] : contentResult.options
-  const contentOpts = rawContentOpts.map((option) => ({
-    ...option,
-    label: {
-      ja: songDisplayName(option.id, songNames, 'ja'),
-      en: songDisplayName(option.id, songNames, 'en'),
-    },
-  }))
-
-  const triggerReason = isUnavailable(triggerResult) ? triggerResult.reason : null
-  const serviceReason = isUnavailable(serviceResult) ? serviceResult.reason : null
-  const contentReason = isUnavailable(contentResult) ? contentResult.reason : null
-
-  const stage = state.stage
-  const activeOptions = stage === 'trigger' ? triggerOpts : stage === 'service' ? serviceOpts : contentOpts
-  const activeAvailable = stage === 'trigger' ? triggerAvailable : stage === 'service' ? serviceAvailable : contentAvailable
-  const activeReason = stage === 'trigger' ? triggerReason : stage === 'service' ? serviceReason : contentReason
-
-  const defaultComparison =
-    stage === 'trigger'
-      ? defaultTriggerComparison(triggerOpts, activeCheckpoint)
-      : stage === 'service'
-        ? defaultServiceComparison(serviceOpts)
-        : defaultContentComparison(contentOpts, state.targetId)
-
-  const explicit = state.compareLeftId != null && state.compareRightId != null
-  const effectiveLeftId = explicit ? state.compareLeftId : defaultComparison.left
-  const effectiveRightId = explicit ? state.compareRightId : defaultComparison.right
-  const effectiveTargetId = state.targetId ?? effectiveLeftId
-
-  const findOption = (id: string | null): ReviewOption | null =>
-    id == null ? null : activeOptions.find((o) => o.id === id) ?? null
-  const leftOption = findOption(effectiveLeftId)
-  const rightOption = findOption(effectiveRightId)
-
-  const handleChangeLeft = (id: string) => {
-    dispatch({ type: 'SELECT_TARGET', targetId: id })
-    if (stage === 'content') {
-      const { right } = defaultContentComparison(contentOpts, id)
-      dispatch({ type: 'SET_COMPARISON', leftId: id, rightId: right ?? effectiveRightId })
-    } else {
-      dispatch({ type: 'SET_COMPARISON', leftId: id, rightId: effectiveRightId })
-    }
-  }
-
-  const handleChangeRight = (id: string) => {
-    dispatch({ type: 'SET_COMPARISON', leftId: effectiveLeftId, rightId: id })
-  }
-
-  // `judgments` in the store is keyed by the full compound key so a
-  // judgement made at one decision point never leaks into another; project
-  // it back down to the bare-featureId map ParameterRationale expects,
-  // scoped to the CURRENT case/checkpoint/stage/target.
+  // ── Feedback wiring, shared by BOTH branches below ──────────────────────
+  //
+  // None of this depends on a checkpoint existing, so it is defined before
+  // the empty-rail branch: a run that fired nothing is still reviewed, still
+  // exported and still summarised through exactly the same store and the same
+  // endpoint as one that fired.
   const caseId = state.selectedCaseId ?? ''
-  const scopedJudgments: Record<string, string> = {}
-  if (leftOption && effectiveTargetId != null) {
-    for (const row of leftOption.rows) {
-      const key = judgmentKey(caseId, activeCheckpoint.id, stage, effectiveTargetId, row.featureId)
-      const value = state.judgments[key]
-      if (value) scopedJudgments[row.featureId] = value
-    }
-  }
+
   // Persists one review-feedback record. Failures are surfaced (never
   // swallowed) — a judgement the reviewer believes was recorded but wasn't
   // is worse than one that was never offered. Before a live merged run
-  // exists, the judgement already landed in the store above; there is
-  // simply nothing to persist to yet, which is not an error.
+  // exists, the judgement already landed in the store; there is simply
+  // nothing to persist to yet, which is not an error.
   const persist = async (body: ReviewFeedbackBody) => {
     if (mergedRunId == null) return
     try {
@@ -331,51 +222,21 @@ export default function ReviewColumn({
     }
   }
 
-  const handleJudge = (featureId: string, judgment: string) => {
-    if (effectiveTargetId == null) return
-    const key = judgmentKey(caseId, activeCheckpoint.id, stage, effectiveTargetId, featureId)
-    dispatch({ type: 'SET_JUDGMENT', key, judgment })
-    void persist({
-      scope: 'review_input',
-      case_id: caseId,
-      checkpoint_id: activeCheckpoint.id,
-      stage,
-      review_target: effectiveTargetId,
-      feature_id: featureId,
-      labels: { judgment },
-    })
-  }
+  // Decision-level assessment, addressed by its full anchor. Both branches
+  // reach the store through these three, differing only in WHICH decision
+  // point they name — a real checkpoint/candidate, or `NO_FIRE`.
+  const storedAssessment = (checkpointId: string, s: ReviewStage, target: string) =>
+    state.assessments[assessmentKey(caseId, checkpointId, s, target)] ?? null
 
-  // Decision-level assessment (Task 16) — keyed the same way minus the
-  // feature, since a decision is judged as a whole, not per-input.
-  //
-  // Every stage is assessable at once (owner review), so each one resolves its
-  // OWN review target rather than borrowing the open tab's. For the active
-  // stage that is whatever the reviewer is actually inspecting; for the others
-  // it is that stage's default comparison target.
-  const stageTargetId = (s: ReviewStage): string | null => {
-    if (s === stage) return effectiveTargetId
-    if (s === 'trigger') return defaultTriggerComparison(triggerOpts, activeCheckpoint).left
-    if (s === 'service') return defaultServiceComparison(serviceOpts).left
-    return defaultContentComparison(contentOpts, null).left
-  }
-
-  const stageAssessmentKey = (s: ReviewStage): string | null => {
-    const target = stageTargetId(s)
-    return target != null ? assessmentKey(caseId, activeCheckpoint.id, s, target) : null
-  }
-
-  const handleAssessStage = (s: ReviewStage, assessment: string) => {
+  const assessAt = (checkpointId: string, s: ReviewStage, target: string, assessment: string) => {
     if (!caseId) return
-    const target = stageTargetId(s)
-    const key = stageAssessmentKey(s)
-    if (target == null || key == null) return
+    const key = assessmentKey(caseId, checkpointId, s, target)
     const comment = state.assessments[key]?.comment ?? ''
     dispatch({ type: 'SET_ASSESSMENT', key, assessment, comment })
     void persist({
       scope: 'review_decision',
       case_id: caseId,
-      checkpoint_id: activeCheckpoint.id,
+      checkpoint_id: checkpointId,
       stage: s,
       review_target: target,
       labels: { assessment },
@@ -383,26 +244,23 @@ export default function ReviewColumn({
     })
   }
 
-  const handleCommentStage = (s: ReviewStage, comment: string) => {
+  const commentAt = (checkpointId: string, s: ReviewStage, target: string, comment: string) => {
     if (!caseId) return
-    const key = stageAssessmentKey(s)
-    if (key == null) return
+    const key = assessmentKey(caseId, checkpointId, s, target)
     const assessment = state.assessments[key]?.assessment ?? ''
     dispatch({ type: 'SET_ASSESSMENT', key, assessment, comment })
   }
 
-  const handleCommentCommitStage = (s: ReviewStage, comment: string) => {
+  const commitCommentAt = (checkpointId: string, s: ReviewStage, target: string, comment: string) => {
     if (!caseId) return
-    const target = stageTargetId(s)
-    const key = stageAssessmentKey(s)
-    if (target == null || key == null) return
+    const key = assessmentKey(caseId, checkpointId, s, target)
     // Deliberately '' (not skipped) when a comment is written before a verdict
     // is picked — the comment itself is evidence.
     const assessment = state.assessments[key]?.assessment ?? ''
     void persist({
       scope: 'review_decision',
       case_id: caseId,
-      checkpoint_id: activeCheckpoint.id,
+      checkpoint_id: checkpointId,
       stage: s,
       review_target: target,
       labels: { assessment },
@@ -483,6 +341,211 @@ export default function ReviewColumn({
     }
   }
 
+  const feedbackPanelProps = {
+    onExport: () => void handleExport(),
+    onExportMarkdown: handleExportMarkdown,
+    onOpenSummary: () => setSummaryOpen(true),
+    caseName: selectedCaseTitle,
+    caseModified,
+    caseSelected: caseId !== '',
+    hasRun: mergedRunId != null,
+  }
+
+  const summaryModal = (
+    <FeedbackSummaryModal
+      open={summaryOpen}
+      cases={caseFeedback}
+      onClose={() => setSummaryOpen(false)}
+      onExportMarkdown={handleExportMarkdown}
+      onEditRecord={handleEditRecord}
+    />
+  )
+
+  const persistErrorNotice = persistError && (
+    <div style={{ padding: '8px 12px 0' }}>
+      <ErrorNotice testid="review-feedback-error" message={persistError} onDismiss={() => setPersistError(null)} />
+    </div>
+  )
+
+  // ── Nothing fired ───────────────────────────────────────────────────────
+  //
+  // An empty rail is a legitimate outcome, not an error — and it is one the
+  // reviewer still has a verdict to file on, because "AICA should not have
+  // fired here" is the whole point of a control case. So this branch shows
+  // the verdict card and NOTHING else:
+  //
+  //   * no evidence tabs — there is no decision to decompose, and an empty
+  //     comparison would only invite the reviewer to look for one;
+  //   * no sentence from the app about what the absence means. Whether not
+  //     firing was correct is the judgement being collected here; stating the
+  //     answer above the question would be the app reviewing itself.
+  //
+  // Only the firing decision is assessable: service and content never ran, so
+  // there is genuinely nothing to judge about them. And with no run at all,
+  // not even the firing decision is — an absent fire and a run that never
+  // happened are different facts, and only the first was decided.
+  if (checkpoints.length === 0) {
+    const decided = result != null
+    const noFireRows: StageFeedbackRow[] = (['trigger', 'service', 'content'] as ReviewStage[]).map((s) => {
+      const stored = s === 'trigger' ? storedAssessment(NO_FIRE, s, NO_FIRE) : null
+      return {
+        stage: s,
+        available: s === 'trigger' && decided,
+        unavailableReason: t(s === 'trigger' ? LABELS.noRunYet : LABELS.noDecisionPoint, lang),
+        assessment: stored?.assessment ?? null,
+        comment: stored?.comment ?? '',
+      }
+    })
+
+    return (
+      <div data-testid="review-column">
+        <StageFeedbackPanel
+          rows={noFireRows}
+          onAssess={(s, assessment) => assessAt(NO_FIRE, s, NO_FIRE, assessment)}
+          onComment={(s, comment) => commentAt(NO_FIRE, s, NO_FIRE, comment)}
+          onCommentCommit={(s, comment) => commitCommentAt(NO_FIRE, s, NO_FIRE, comment)}
+          {...feedbackPanelProps}
+        />
+        {summaryModal}
+        {persistErrorNotice}
+      </div>
+    )
+  }
+
+  const activeCheckpoint = checkpoints.find((c) => c.id === state.checkpointId) ?? checkpoints[0]
+  const fire = result!.fires[activeCheckpoint.fireIndex]
+
+  const triggerResult = triggerOptions(fire)
+  const serviceResult = serviceOptions(fire.proposal)
+  const contentResult = contentOptions(fire.proposal)
+
+  const triggerAvailable = !isUnavailable(triggerResult)
+  const serviceAvailable = !isUnavailable(serviceResult)
+  const contentAvailable = !isUnavailable(contentResult)
+
+  const triggerOpts = isUnavailable(triggerResult) ? [] : triggerResult
+  const serviceOpts = isUnavailable(serviceResult) ? [] : serviceResult
+  // Content options read as the song's NAME. A catalog track id tells the
+  // reviewer nothing about what was proposed, so it never reaches the label —
+  // the recorded evidence is still keyed by it, and `option.id` still carries
+  // it for the store and the test hooks.
+  const rawContentOpts = isUnavailable(contentResult) ? [] : contentResult.options
+  const contentOpts = rawContentOpts.map((option) => ({
+    ...option,
+    label: {
+      ja: songDisplayName(option.id, songNames, 'ja'),
+      en: songDisplayName(option.id, songNames, 'en'),
+    },
+  }))
+
+  const triggerReason = isUnavailable(triggerResult) ? triggerResult.reason : null
+  const serviceReason = isUnavailable(serviceResult) ? serviceResult.reason : null
+  const contentReason = isUnavailable(contentResult) ? contentResult.reason : null
+
+  const stage = state.stage
+  const activeOptions = stage === 'trigger' ? triggerOpts : stage === 'service' ? serviceOpts : contentOpts
+  const activeAvailable = stage === 'trigger' ? triggerAvailable : stage === 'service' ? serviceAvailable : contentAvailable
+  const activeReason = stage === 'trigger' ? triggerReason : stage === 'service' ? serviceReason : contentReason
+
+  const defaultComparison =
+    stage === 'trigger'
+      ? defaultTriggerComparison(triggerOpts, activeCheckpoint)
+      : stage === 'service'
+        ? defaultServiceComparison(serviceOpts)
+        : defaultContentComparison(contentOpts, state.targetId)
+
+  const explicit = state.compareLeftId != null && state.compareRightId != null
+  const effectiveLeftId = explicit ? state.compareLeftId : defaultComparison.left
+  const effectiveRightId = explicit ? state.compareRightId : defaultComparison.right
+  const effectiveTargetId = state.targetId ?? effectiveLeftId
+
+  const findOption = (id: string | null): ReviewOption | null =>
+    id == null ? null : activeOptions.find((o) => o.id === id) ?? null
+  const leftOption = findOption(effectiveLeftId)
+  const rightOption = findOption(effectiveRightId)
+
+  const handleChangeLeft = (id: string) => {
+    dispatch({ type: 'SELECT_TARGET', targetId: id })
+    if (stage === 'content') {
+      const { right } = defaultContentComparison(contentOpts, id)
+      dispatch({ type: 'SET_COMPARISON', leftId: id, rightId: right ?? effectiveRightId })
+    } else {
+      dispatch({ type: 'SET_COMPARISON', leftId: id, rightId: effectiveRightId })
+    }
+  }
+
+  const handleChangeRight = (id: string) => {
+    dispatch({ type: 'SET_COMPARISON', leftId: effectiveLeftId, rightId: id })
+  }
+
+  // `judgments` in the store is keyed by the full compound key so a
+  // judgement made at one decision point never leaks into another; project
+  // it back down to the bare-featureId map ParameterRationale expects,
+  // scoped to the CURRENT case/checkpoint/stage/target.
+  const scopedJudgments: Record<string, string> = {}
+  if (leftOption && effectiveTargetId != null) {
+    for (const row of leftOption.rows) {
+      const key = judgmentKey(caseId, activeCheckpoint.id, stage, effectiveTargetId, row.featureId)
+      const value = state.judgments[key]
+      if (value) scopedJudgments[row.featureId] = value
+    }
+  }
+
+  const handleJudge = (featureId: string, judgment: string) => {
+    if (effectiveTargetId == null) return
+    const key = judgmentKey(caseId, activeCheckpoint.id, stage, effectiveTargetId, featureId)
+    dispatch({ type: 'SET_JUDGMENT', key, judgment })
+    void persist({
+      scope: 'review_input',
+      case_id: caseId,
+      checkpoint_id: activeCheckpoint.id,
+      stage,
+      review_target: effectiveTargetId,
+      feature_id: featureId,
+      labels: { judgment },
+    })
+  }
+
+  // Decision-level assessment (Task 16) — keyed the same way minus the
+  // feature, since a decision is judged as a whole, not per-input.
+  //
+  // Every stage is assessable at once (owner review), so each one resolves its
+  // OWN review target rather than borrowing the open tab's. For the active
+  // stage that is whatever the reviewer is actually inspecting; for the others
+  // it is that stage's default comparison target.
+  const stageTargetId = (s: ReviewStage): string | null => {
+    if (s === stage) return effectiveTargetId
+    if (s === 'trigger') return defaultTriggerComparison(triggerOpts, activeCheckpoint).left
+    if (s === 'service') return defaultServiceComparison(serviceOpts).left
+    return defaultContentComparison(contentOpts, null).left
+  }
+
+  const stageAssessmentKey = (s: ReviewStage): string | null => {
+    const target = stageTargetId(s)
+    return target != null ? assessmentKey(caseId, activeCheckpoint.id, s, target) : null
+  }
+
+  // Thin wrappers over the shared `assessAt`/`commentAt`/`commitCommentAt`
+  // above: at a real checkpoint the decision point is that checkpoint and the
+  // stage's own review target, rather than the `NO_FIRE` sentinel.
+  const handleAssessStage = (s: ReviewStage, assessment: string) => {
+    const target = stageTargetId(s)
+    if (target == null) return
+    assessAt(activeCheckpoint.id, s, target, assessment)
+  }
+
+  const handleCommentStage = (s: ReviewStage, comment: string) => {
+    const target = stageTargetId(s)
+    if (target == null) return
+    commentAt(activeCheckpoint.id, s, target, comment)
+  }
+
+  const handleCommentCommitStage = (s: ReviewStage, comment: string) => {
+    const target = stageTargetId(s)
+    if (target == null) return
+    commitCommentAt(activeCheckpoint.id, s, target, comment)
+  }
+
   // Declared (setup-time) weight per feature is exactly what the LEFT
   // option's own chain recorded as `w` — realizedShares folds in the
   // observed value+response-coefficient via `contribution`; declaredShares
@@ -533,28 +596,12 @@ export default function ReviewColumn({
         onAssess={handleAssessStage}
         onComment={handleCommentStage}
         onCommentCommit={handleCommentCommitStage}
-        onExport={() => void handleExport()}
-        onExportMarkdown={handleExportMarkdown}
-        onOpenSummary={() => setSummaryOpen(true)}
-        caseName={selectedCaseTitle}
-        caseModified={caseModified}
-        caseSelected={caseId !== ''}
-        hasRun={mergedRunId != null}
+        {...feedbackPanelProps}
       />
 
-      <FeedbackSummaryModal
-        open={summaryOpen}
-        cases={caseFeedback}
-        onClose={() => setSummaryOpen(false)}
-        onExportMarkdown={handleExportMarkdown}
-        onEditRecord={handleEditRecord}
-      />
+      {summaryModal}
 
-      {persistError && (
-        <div style={{ padding: '8px 12px 0' }}>
-          <ErrorNotice testid="review-feedback-error" message={persistError} onDismiss={() => setPersistError(null)} />
-        </div>
-      )}
+      {persistErrorNotice}
 
       <div className="stage-tabs" style={{ padding: '0 11px' }}>
         {stageTab('trigger', LABELS.tabTrigger, triggerAvailable, triggerReason)}

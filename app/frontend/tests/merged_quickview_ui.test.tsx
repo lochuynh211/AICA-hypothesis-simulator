@@ -165,7 +165,7 @@ function quickviewWithRestOptionFixture(): MergedInstantResult {
 
 /** Captures the real coordinator context, mirroring
  * `merged_center.test.tsx`'s `renderCenterPanel`. */
-function renderCenterPanel() {
+function renderCenterPanel(lang: 'ja' | 'en' = 'en') {
   const coordinatorRef: { current: ReturnType<typeof useMergedCoordinator> | null } = { current: null }
 
   function Capture() {
@@ -180,7 +180,7 @@ function renderCenterPanel() {
   // RunStoreProvider, and the checkpoint rail/decision band it also renders
   // need a ReviewStoreProvider.
   render(
-    <LanguageProvider initialLanguage="en">
+    <LanguageProvider initialLanguage={lang}>
       <MergedCoordinatorProvider>
       <RunStoreProvider>
         <ProposalStoreProvider>
@@ -196,6 +196,51 @@ function renderCenterPanel() {
 
   return coordinatorRef
 }
+
+// ── Quickview legend language ───────────────────────────────────────────────
+//
+// `ScoreTimeline`'s legend is bilingual but takes its language from a `lang`
+// prop that DEFAULTS to 'en'. Every other caller passes it; the quickview did
+// not, so its legend stayed English on a Japanese screen while every label
+// around it was translated.
+
+describe('merged quickview legend', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+  })
+
+  async function projectQuickview(lang: 'ja' | 'en') {
+    vi.mocked(mergedQuickview).mockResolvedValue(quickviewResultFixture())
+    const coordinatorRef = renderCenterPanel(lang)
+    await act(async () => {
+      await coordinatorRef.current!.quickview({
+        package_id: 'nri_fatigue_score_v1',
+        scenario_id: 'uc01_fatigue_recovery_v0_1',
+        run_seed: 42,
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed_proposal: '42',
+      })
+    })
+  }
+
+  it('renders the legend in Japanese on a Japanese screen', async () => {
+    await projectQuickview('ja')
+
+    const legend = await screen.findByTestId('quickview-legend')
+    expect(legend.textContent ?? '').toContain('危険運転防止スコア')
+    // No English word may leak into the Japanese legend.
+    expect(legend.textContent ?? '').not.toMatch(/[A-Za-z]{4,}/)
+  })
+
+  it('still renders the legend in English on an English screen', async () => {
+    await projectQuickview('en')
+
+    const legend = await screen.findByTestId('quickview-legend')
+    expect(legend.textContent ?? '').toContain('Dangerous-driving-prevention score')
+  })
+})
 
 describe('merged quickview projection strip + click-to-inspect (feature 020, Slice-2c Task 5)', () => {
   beforeEach(() => {
