@@ -34,7 +34,7 @@
       "max_fire_count": 1,
       "outcome": "rest_required",
       "required_positive_feature_ids": [
-        "weather_risk"
+        "env_load"
       ],
       "time_window_min": [
         0,
@@ -132,8 +132,8 @@
       "ja": "1時間の評価を通して、夜間条件・雨リスク・緩やかな身体状態増加が共存する。"
     },
     "state_at_departure": {
-      "en": "Drowsiness is 52 and fatigue 48; persistent weather risk is 0.95 and the profile is neutral.",
-      "ja": "眠気52、疲労48で、持続天候リスクは0.95、プロファイルは中立である。"
+      "en": "Drowsiness is 52 and fatigue 48; persistent weather risk is 95 out of 100 and the profile is neutral.",
+      "ja": "眠気52、疲労48で、持続天候リスクは100点中95、プロファイルは中立である。"
     },
     "trip_reason": {
       "en": "They travel home on the Tokyo–Osaka highway in persistent heavy rain.",

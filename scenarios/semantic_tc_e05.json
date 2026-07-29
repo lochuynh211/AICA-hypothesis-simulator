@@ -125,5 +125,5 @@
   "total_duration_seconds": 3600,
   "type": "uc01_fatigue",
   "version": "1.0.0",
-  "weather_risk": 0.95
+  "weather_risk": 95
 }

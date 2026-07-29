@@ -34,7 +34,7 @@
       "max_fire_count": 1,
       "outcome": "monotony_prevention",
       "required_positive_feature_ids": [
-        "monotony_prevention_score"
+        "monotony"
       ],
       "time_window_min": [
         30,
