@@ -27,6 +27,29 @@ _MANAGED_GLOBS = (
     (Path("proposal_contracts/profiles"), "profile-semantic-*.json"),
     (Path("combined_contracts/test_cases"), "case-tc-*.json"),
 )
+_REQUIRED_SCENARIO_RECIPE_FIELDS = (
+    "version",
+    "initial_drowsiness",
+    "initial_fatigue",
+    "drowsiness_model",
+    "fatigue_model",
+    "anomaly_model",
+    "route_distance_km",
+    "rest_fraction",
+    "primary_fraction",
+    "primary_road_type",
+    "traffic_events",
+    "weather_events",
+    "is_night",
+    "child_passenger",
+    "familiar_route",
+    "weather_risk",
+    "total_duration_seconds",
+    "tick_seconds",
+    "seed",
+    "speed_profile",
+    "allowed_actions",
+)
 _MISSING = object()
 
 
@@ -75,10 +98,11 @@ def validate_catalog(catalog: Mapping[str, Any]) -> None:
             )
         if profile_id in profiles_by_id:
             raise ValueError(f"duplicate semantic profile_id {profile_id!r}")
-        if not isinstance(profile.get("profile"), Mapping):
-            raise ValueError(f"{where}.profile must be an object")
+        _require_mapping(profile, "label", where)
+        _require_bool(profile, "builtin", where)
+        profile_value = _require_mapping(profile, "profile", where)
         try:
-            DriverProfile.model_validate(profile["profile"])
+            DriverProfile.model_validate(profile_value)
         except Exception as exc:
             raise ValueError(f"{where}.profile is invalid: {exc}") from exc
         profiles_by_id[profile_id] = profile
@@ -94,6 +118,8 @@ def validate_catalog(catalog: Mapping[str, Any]) -> None:
         if display_id in cases_by_id:
             raise ValueError(f"duplicate semantic display_id {display_id!r}")
         _require_nonempty_string(case, "version", where)
+        _require_nonempty_string(case, "group", where)
+        _require_list(case, "what_to_watch", where)
         for key in (
             "title",
             "brief",
@@ -105,13 +131,33 @@ def validate_catalog(catalog: Mapping[str, Any]) -> None:
             "journey",
             "algorithm_defaults",
         ):
-            if not isinstance(case.get(key), Mapping):
-                raise ValueError(f"{where}.{key} must be an object")
+            _require_mapping(case, key, where)
+        title = case["title"]
+        _require_nonempty_string(title, "en", f"{where}.title")
+        persona = case["persona"]
+        persona_name = _require_mapping(persona, "name", f"{where}.persona")
+        _require_nonempty_string(persona_name, "en", f"{where}.persona.name")
+        persona_narrative = _require_mapping(
+            persona,
+            "narrative",
+            f"{where}.persona",
+        )
+        _require_nonempty_string(
+            persona_narrative,
+            "en",
+            f"{where}.persona.narrative",
+        )
         journey = case["journey"]
-        if not isinstance(journey.get("scenario"), Mapping):
-            raise ValueError(f"{where}.journey.scenario must be an object")
+        _require_mapping(journey, "narrative", f"{where}.journey")
+        _require_nonempty_string(
+            journey,
+            "route_preset_ref",
+            f"{where}.journey",
+        )
+        recipe = _require_mapping(journey, "scenario", f"{where}.journey")
+        _validate_scenario_recipe(recipe, f"{where}.journey.scenario")
         profile_ref = _require_nonempty_string(
-            case["persona"], "profile_ref", f"{where}.persona"
+            persona, "profile_ref", f"{where}.persona"
         )
         if profile_ref not in profiles_by_id:
             raise ValueError(f"{where} references unknown profile {profile_ref!r}")
@@ -209,31 +255,6 @@ def _compile_scenario(
     scenario_id = _scenario_id(display_id)
     journey = source_case["journey"]
     recipe = journey["scenario"]
-    for key in (
-        "version",
-        "initial_drowsiness",
-        "initial_fatigue",
-        "drowsiness_model",
-        "fatigue_model",
-        "anomaly_model",
-        "route_distance_km",
-        "rest_fraction",
-        "primary_fraction",
-        "primary_road_type",
-        "traffic_events",
-        "weather_events",
-        "is_night",
-        "child_passenger",
-        "familiar_route",
-        "weather_risk",
-        "total_duration_seconds",
-        "tick_seconds",
-        "seed",
-        "speed_profile",
-        "allowed_actions",
-    ):
-        if key not in recipe:
-            raise ValueError(f"{display_id}.journey.scenario.{key} is required")
 
     primary_type = recipe["primary_road_type"]
     primary_speed_band = {
@@ -426,11 +447,20 @@ def _validate_contrast_pair(
         isinstance(path, str) and path for path in declared
     ):
         raise ValueError(f"{display_id}.contrast.changed_inputs must be strings")
-    if set(declared) != set(reciprocal_declared or []):
+    if not isinstance(reciprocal_declared, list) or not all(
+        isinstance(path, str) and path for path in reciprocal_declared
+    ):
+        raise ValueError(f"{paired_id}.contrast.changed_inputs must be strings")
+    if len(declared) != len(set(declared)):
+        raise ValueError(f"{display_id}.contrast.changed_inputs must be unique")
+    if len(reciprocal_declared) != len(set(reciprocal_declared)):
+        raise ValueError(f"{paired_id}.contrast.changed_inputs must be unique")
+    declared_set = set(declared)
+    if declared_set != set(reciprocal_declared):
         raise ValueError(
             f"contrast pair {display_id}/{paired_id} must declare the same changed_inputs"
         )
-    if kind == "controlled_one_factor" and len(set(declared)) != 1:
+    if kind == "controlled_one_factor" and len(declared) != 1:
         raise ValueError(
             f"controlled one-factor contrast {display_id}/{paired_id} must "
             "declare exactly one changed input"
@@ -439,19 +469,24 @@ def _validate_contrast_pair(
     left = _business_inputs(case, profiles_by_id)
     right = _business_inputs(paired, profiles_by_id)
     differences = _diff_paths(left, right)
-    undeclared = sorted(
-        path for path in differences if not any(_path_covers(item, path) for item in declared)
-    )
+    if kind == "controlled_one_factor" and len(differences) != 1:
+        raise ValueError(
+            f"controlled one-factor contrast {display_id}/{paired_id} must contain "
+            f"exactly one business leaf difference; found {sorted(differences)!r}"
+        )
+    if kind == "controlled_one_factor" and declared_set != differences:
+        raise ValueError(
+            f"controlled one-factor contrast {display_id}/{paired_id} changed_inputs "
+            "must exactly match business leaf differences"
+        )
+
+    undeclared = sorted(differences - declared_set)
     if undeclared:
         raise ValueError(
             "undeclared strict-contrast difference "
             f"{undeclared[0]!r} between {display_id} and {paired_id}"
         )
-    unchanged_declarations = sorted(
-        item
-        for item in set(declared)
-        if not any(_path_covers(item, path) for path in differences)
-    )
+    unchanged_declarations = sorted(declared_set - differences)
     if unchanged_declarations:
         raise ValueError(
             f"declared contrast input {unchanged_declarations[0]!r} does not differ "
@@ -488,14 +523,6 @@ def _diff_paths(left: Any, right: Any, prefix: str = "") -> set[str]:
     if left != right:
         return {prefix}
     return set()
-
-
-def _path_covers(declared: str, actual: str) -> bool:
-    return (
-        actual == declared
-        or actual.startswith(f"{declared}.")
-        or actual.startswith(f"{declared}[")
-    )
 
 
 def _scenario_id(display_id: str) -> str:
@@ -703,6 +730,28 @@ def _require_list(
     return value
 
 
+def _require_mapping(
+    mapping: Mapping[str, Any],
+    key: str,
+    where: str,
+) -> Mapping[str, Any]:
+    value = mapping.get(key)
+    if not isinstance(value, Mapping):
+        raise ValueError(f"{where}.{key} must be an object")
+    return value
+
+
+def _require_bool(
+    mapping: Mapping[str, Any],
+    key: str,
+    where: str,
+) -> bool:
+    value = mapping.get(key)
+    if not isinstance(value, bool):
+        raise ValueError(f"{where}.{key} must be a boolean")
+    return value
+
+
 def _require_nonempty_string(
     mapping: Mapping[str, Any],
     key: str,
@@ -712,6 +761,27 @@ def _require_nonempty_string(
     if not isinstance(value, str) or not value:
         raise ValueError(f"{where}.{key} must be a non-empty string")
     return value
+
+
+def _validate_scenario_recipe(
+    recipe: Mapping[str, Any],
+    where: str,
+) -> None:
+    for key in _REQUIRED_SCENARIO_RECIPE_FIELDS:
+        if key not in recipe:
+            raise ValueError(f"{where}.{key} is required")
+
+    for key in (
+        "drowsiness_model",
+        "fatigue_model",
+        "anomaly_model",
+        "speed_profile",
+    ):
+        _require_mapping(recipe, key, where)
+    for key in ("traffic_events", "weather_events", "allowed_actions"):
+        _require_list(recipe, key, where)
+    _require_nonempty_string(recipe, "version", where)
+    _require_nonempty_string(recipe, "primary_road_type", where)
 
 
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:

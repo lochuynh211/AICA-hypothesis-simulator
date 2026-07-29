@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -285,17 +286,144 @@ def test_strict_pair_rejects_an_undeclared_business_difference():
         validate_catalog(catalog)
 
 
+def test_controlled_pair_rejects_parent_path_covering_multiple_leaf_differences():
+    catalog = two_case_catalog()
+    baseline_recipe = catalog["cases"][0]["journey"]["scenario"]
+    variant_recipe = copy.deepcopy(baseline_recipe)
+    variant_recipe["drowsiness_model"]["base_growth_per_min"] = 0.2
+    variant_recipe["drowsiness_model"]["night_add_per_min"] = 0.1
+    catalog["cases"][1]["journey"]["scenario"] = variant_recipe
+    for case in catalog["cases"]:
+        case["contrast"]["kind"] = "controlled_one_factor"
+        case["contrast"]["changed_inputs"] = ["journey.scenario.drowsiness_model"]
+
+    with pytest.raises(ValueError, match="exactly one business leaf difference"):
+        validate_catalog(catalog)
+
+
+def test_controlled_pair_requires_the_declared_path_to_be_the_exact_changed_leaf():
+    catalog = two_case_catalog()
+    baseline_recipe = catalog["cases"][0]["journey"]["scenario"]
+    variant_recipe = copy.deepcopy(baseline_recipe)
+    variant_recipe["drowsiness_model"]["base_growth_per_min"] = 0.2
+    catalog["cases"][1]["journey"]["scenario"] = variant_recipe
+    for case in catalog["cases"]:
+        case["contrast"]["kind"] = "controlled_one_factor"
+        case["contrast"]["changed_inputs"] = ["journey.scenario.drowsiness_model"]
+
+    with pytest.raises(ValueError, match="must exactly match business leaf differences"):
+        validate_catalog(catalog)
+
+
+@pytest.mark.parametrize(
+    ("path", "expected_context"),
+    [
+        (("group",), "catalog.cases[0].group"),
+        (("what_to_watch",), "catalog.cases[0].what_to_watch"),
+        (("title", "en"), "catalog.cases[0].title.en"),
+        (("persona", "name"), "catalog.cases[0].persona.name"),
+        (("persona", "name", "en"), "catalog.cases[0].persona.name.en"),
+        (("persona", "narrative"), "catalog.cases[0].persona.narrative"),
+        (
+            ("persona", "narrative", "en"),
+            "catalog.cases[0].persona.narrative.en",
+        ),
+        (("journey", "narrative"), "catalog.cases[0].journey.narrative"),
+        (
+            ("journey", "route_preset_ref"),
+            "catalog.cases[0].journey.route_preset_ref",
+        ),
+    ],
+)
+def test_catalog_validation_rejects_missing_compiler_consumed_case_field(
+    path: tuple[str, ...],
+    expected_context: str,
+):
+    catalog = two_case_catalog()
+    parent = catalog["cases"][0]
+    for key in path[:-1]:
+        parent = parent[key]
+    del parent[path[-1]]
+
+    with pytest.raises(ValueError, match=re.escape(expected_context)):
+        validate_catalog(catalog)
+
+
+@pytest.mark.parametrize("field", ["label", "builtin", "profile"])
+def test_catalog_validation_rejects_missing_compiler_consumed_profile_field(
+    field: str,
+):
+    catalog = two_case_catalog()
+    del catalog["profiles"][0][field]
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(f"catalog.profiles[0].{field}"),
+    ):
+        validate_catalog(catalog)
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "version",
+        "initial_drowsiness",
+        "initial_fatigue",
+        "drowsiness_model",
+        "fatigue_model",
+        "anomaly_model",
+        "route_distance_km",
+        "rest_fraction",
+        "primary_fraction",
+        "primary_road_type",
+        "traffic_events",
+        "weather_events",
+        "is_night",
+        "child_passenger",
+        "familiar_route",
+        "weather_risk",
+        "total_duration_seconds",
+        "tick_seconds",
+        "seed",
+        "speed_profile",
+        "allowed_actions",
+    ],
+)
+def test_catalog_validation_rejects_missing_scenario_recipe_field(field: str):
+    catalog = two_case_catalog()
+    for case in catalog["cases"]:
+        del case["journey"]["scenario"][field]
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(f"catalog.cases[0].journey.scenario.{field} is required"),
+    ):
+        validate_catalog(catalog)
+
+
 def test_invalid_scenario_does_not_replace_a_generated_file(tmp_path: Path):
     catalog = two_case_catalog()
     compile_artifacts(catalog, tmp_path)
-    target = tmp_path / "scenarios/semantic_tc_r01.json"
-    original = target.read_bytes()
-    catalog["cases"][0]["journey"]["scenario"]["weather_risk"] = 101
+    original_outputs = {
+        path.relative_to(tmp_path): path.read_bytes()
+        for path in tmp_path.rglob("*")
+        if path.is_file()
+    }
+    for case in catalog["cases"]:
+        case["journey"]["scenario"]["weather_risk"] = 101
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="scenario for TC-R01 failed model validation",
+    ):
         compile_artifacts(catalog, tmp_path)
 
-    assert target.read_bytes() == original
+    current_outputs = {
+        path.relative_to(tmp_path): path.read_bytes()
+        for path in tmp_path.rglob("*")
+        if path.is_file()
+    }
+    assert current_outputs == original_outputs
 
 
 def test_compiler_prunes_only_stale_managed_files(tmp_path: Path):
@@ -325,6 +453,30 @@ def test_load_catalog_validates_and_returns_plain_data(tmp_path: Path):
         "TC-R01",
         "TC-R02",
     ]
+
+
+def test_compiler_returns_sorted_paths_and_exact_bytes_on_repeat(tmp_path: Path):
+    first_paths = compile_artifacts(two_case_catalog(), tmp_path)
+    first_relative_paths = [
+        path.relative_to(tmp_path).as_posix() for path in first_paths
+    ]
+    first_bytes = {
+        relative_path: (tmp_path / relative_path).read_bytes()
+        for relative_path in first_relative_paths
+    }
+
+    second_paths = compile_artifacts(two_case_catalog(), tmp_path)
+    second_relative_paths = [
+        path.relative_to(tmp_path).as_posix() for path in second_paths
+    ]
+    second_bytes = {
+        relative_path: (tmp_path / relative_path).read_bytes()
+        for relative_path in second_relative_paths
+    }
+
+    assert first_relative_paths == sorted(first_relative_paths)
+    assert second_relative_paths == first_relative_paths
+    assert second_bytes == first_bytes
 
 
 def test_committed_source_contains_complete_r01_r02_semantic_pair(tmp_path: Path):
