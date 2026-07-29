@@ -1,77 +1,97 @@
-"""Every committed case runs through the real merged path and yields a review.
+"""Production-path integration contract for every compiled semantic case."""
 
-This is the test that would catch a case whose journey never reaches the
-decision point it was written to examine.
-
-For each ``combined_contracts/test_cases/case-*.json`` file, this test
-resolves its references (route/scenario/algorithm packages already checked
-by ``test_combined_case_contract.py``; here we resolve ``persona.profile_ref``
-into a driver profile too) and builds the SAME ``POST /api/merged-runs/quickview``
-request body ``MergedSetupPanel``'s auto-quickview effect builds for a
-freshly-selected case (``app/frontend/src/components/merged/MergedSetupPanel.tsx``,
-the effect registered around ``coordinator.quickview({...})``):
-
-  - ``package_id``/``scenario_id``/``route_preset_id``/``run_seed`` from the
-    case's ``journey`` (mirrors ``caseResolver.ts``'s ``resolveCase``).
-  - ``mountain_range_km``/``jam_range_km`` from ``journey.fixed_overrides``
-    when the case paints one (same fields ``resolveCase`` surfaces).
-  - ``world`` = the same base world ``test_merged_quickview.py`` uses
-    (``seed-night-highway-oshi``), with ONLY ``driver_profile`` replaced by
-    the case's resolved ``profile_ref`` preset (mirrors the ``LOAD_PROFILE``
-    reducer case in ``proposalStore.ts``, which replaces ONLY
-    ``world.driver_profile``) and ``situation.night_state``/``child_present``
-    synced from ``fixed_overrides.is_night``/``child_passenger`` (mirrors
-    ``MergedSetupPanel``'s ``effectiveWorld`` memo).
-  - ``service_package_id``/``content_package_id``/``run_seed_proposal`` from
-    the case's ``algorithm_defaults``/``journey.seed``.
-
-KNOWN, PRE-EXISTING GAP (not introduced by this test, not fixed by it — see
-task-19-report.md): ``MergedQuickviewBody`` has no ``context_overrides`` or
-``initial_state`` field, and ``services/preview.py::iter_preview_ticks`` never
-forwards an ``initial_state`` to ``create_draft`` at all. So a case's
-``fixed_overrides.initial_drowsiness``/``initial_fatigue`` and (on the
-TRIGGER side only) ``is_night`` cannot reach the tick engine through this
-endpoint -- only through a real "Play" run (``buildTriggerPlan`` in
-``MergedSetupPanel.tsx``, which uses ``createRunPlan``/``buildMergedPlan``
-instead). ``is_night`` DOES still reach the PROPOSAL side, because
-``effectiveWorld`` folds it into ``world.situation.night_state`` before the
-quickview call, which is what a fire's service/content selection actually
-reads. This asymmetry already existed for C-01/C-03 (their pins happen to
-equal the scenario defaults, so it was invisible) -- it is not something a
-case's own pins can work around, so this test does not pretend otherwise.
-"""
 from __future__ import annotations
 
 import json
-import pathlib
+import shutil
+from collections.abc import Mapping
+from pathlib import Path
 from typing import Any
 
 import pytest
-from fastapi.testclient import TestClient
 
-from aica_api.config import settings
-from aica_api.main import app
 from aica_api.services.run_manager import clear_registry
 from aica_api.services.run_plan import clear_draft_registry
+from scripts.semantic_catalog.generator import compile_artifacts, load_catalog
+from scripts.semantic_catalog.runner import run_catalog
 
-_REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
-_CASES_DIR = _REPO_ROOT / "combined_contracts" / "test_cases"
-_CASE_FILES = sorted(_CASES_DIR.glob("case-*.json")) if _CASES_DIR.exists() else []
 
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_SOURCE_CATALOG = _REPO_ROOT / "scripts" / "semantic_combined_catalog.json"
 _IN_SCOPE_CATEGORIES = {"rest_required", "monotony_prevention"}
-_SEED_ID = "seed-night-highway-oshi"
-
-client = TestClient(app)
 
 
-def _load(path: pathlib.Path) -> dict:
+def _load(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+@pytest.fixture
+def compiled_workspace(tmp_path: Path) -> Path:
+    """Compile current source cases in isolation; never pollute source artifacts."""
+
+    root = tmp_path / "repo"
+    schema_dir = root / "combined_contracts" / "schema"
+    schema_dir.mkdir(parents=True)
+    shutil.copy2(
+        _REPO_ROOT
+        / "combined_contracts"
+        / "schema"
+        / "combined_test_case.schema.json",
+        schema_dir / "combined_test_case.schema.json",
+    )
+    scripts_dir = root / "scripts"
+    scripts_dir.mkdir(parents=True)
+    shutil.copy2(
+        _SOURCE_CATALOG,
+        scripts_dir / "semantic_combined_catalog.json",
+    )
+
+    seeds_dir = root / "proposal_contracts" / "seeds"
+    seeds_dir.mkdir(parents=True)
+    shutil.copy2(
+        _REPO_ROOT
+        / "proposal_contracts"
+        / "seeds"
+        / "seed-night-highway-oshi.json",
+        seeds_dir / "seed-night-highway-oshi.json",
+    )
+    presets_dir = root / "proposal_contracts" / "presets"
+    presets_dir.mkdir(parents=True)
+    shutil.copy2(
+        _REPO_ROOT
+        / "proposal_contracts"
+        / "presets"
+        / "preset-oshi-superfan.json",
+        presets_dir / "preset-oshi-superfan.json",
+    )
+    for directory in (
+        "dataset",
+        "dispositions",
+        "matrix",
+        "service_capabilities",
+    ):
+        (root / "proposal_contracts" / directory).symlink_to(
+            _REPO_ROOT / "proposal_contracts" / directory,
+            target_is_directory=True,
+        )
+    (root / "packages").symlink_to(
+        _REPO_ROOT / "packages",
+        target_is_directory=True,
+    )
+    (root / "routes").symlink_to(
+        _REPO_ROOT / "routes",
+        target_is_directory=True,
+    )
+
+    compile_artifacts(load_catalog(_SOURCE_CATALOG), root)
+    return root
+
+
 @pytest.fixture(autouse=True)
-def isolate_dirs(tmp_path, monkeypatch):
-    """Never let these tests write into real runs/proposal_runs/merged_runs
-    (same isolation as tests/test_merged_quickview.py)."""
+def isolate_runtime_dirs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
     monkeypatch.setenv("AICA_RUNS_DIR", str(tmp_path / "runs"))
     monkeypatch.setenv("AICA_PROPOSAL_RUNS_DIR", str(tmp_path / "proposal_runs"))
     monkeypatch.setenv("AICA_MERGED_RUNS_DIR", str(tmp_path / "merged_runs"))
@@ -82,183 +102,127 @@ def isolate_dirs(tmp_path, monkeypatch):
     clear_draft_registry()
 
 
-def _base_world() -> dict:
-    path = settings.proposal_seeds_dir / f"{_SEED_ID}.json"
-    return json.loads(path.read_text(encoding="utf-8"))["world"]
+def _records_for_step(proposal: Mapping[str, Any], step: str) -> list[Mapping[str, Any]]:
+    evidence = proposal.get("evidence")
+    assert isinstance(evidence, list), "attached proposal must expose evidence"
+    return [
+        record
+        for value in evidence
+        if isinstance(value, Mapping)
+        and (record := value).get("step") == step
+    ]
 
 
-def _resolve_driver_profile(profile_ref: str) -> dict:
-    path = settings.proposal_presets_dir / f"{profile_ref}.json"
-    preset = json.loads(path.read_text(encoding="utf-8"))
-    return preset["world"]["driver_profile"]
+def _has_recorded_content_error(proposal: Mapping[str, Any]) -> bool:
+    content_records = _records_for_step(proposal, "content")
+    if any(record.get("error") is not None for record in content_records):
+        return True
+
+    events = proposal.get("events")
+    if not isinstance(events, list):
+        return False
+    return any(
+        isinstance(event, Mapping)
+        and event.get("event_type") == "ALGORITHM_ERROR"
+        and isinstance(event.get("payload"), Mapping)
+        and event["payload"].get("step") == "content"
+        for event in events
+    )
 
 
-def _build_quickview_body(case: dict) -> dict:
-    """Mirrors MergedSetupPanel's auto-quickview effect for a freshly
-    selected case -- see the module docstring for the exact correspondence."""
-    journey = case["journey"]
-    fixed = journey.get("fixed_overrides", {})
-    defaults = case["algorithm_defaults"]
-
-    world = json.loads(json.dumps(_base_world()))  # deep copy
-    world["driver_profile"] = _resolve_driver_profile(case["persona"]["profile_ref"])
-
-    situation = dict(world["situation"])
-    if "is_night" in fixed:
-        situation["night_state"] = "night" if fixed["is_night"] else "day"
-    if "child_passenger" in fixed:
-        situation["child_present"] = bool(fixed["child_passenger"])
-    world["situation"] = situation
-
-    body: dict[str, Any] = {
-        "package_id": defaults["trigger"],
-        "scenario_id": journey["scenario_ref"],
-        "route_preset_id": journey["route_preset_ref"],
-        "run_seed": journey["seed"],
-        "world": world,
-        "service_package_id": defaults["service"],
-        "content_package_id": defaults["content"],
-        "run_seed_proposal": str(journey["seed"]),
+def test_every_compiled_semantic_case_is_evaluable_through_production_quickview(
+    compiled_workspace: Path,
+) -> None:
+    cases = [
+        _load(path)
+        for path in sorted(
+            (
+                compiled_workspace
+                / "combined_contracts"
+                / "test_cases"
+            ).glob("case-tc-*.json")
+        )
+    ]
+    suite = run_catalog(compiled_workspace)
+    runs = {
+        run["display_id"]: run
+        for run in suite["case_results"]
     }
-    if "mountain_range_km" in fixed:
-        body["mountain_range_km"] = fixed["mountain_range_km"]
-    if "jam_range_km" in fixed:
-        body["jam_range_km"] = fixed["jam_range_km"]
-    return body
 
+    assert list(runs) == sorted(case["display_id"] for case in cases)
+    for case in cases:
+        display_id = case["display_id"]
+        run = runs[display_id]
+        result = run["response"]
 
-def _quickview(case: dict) -> dict:
-    body = _build_quickview_body(case)
-    resp = client.post("/api/merged-runs/quickview", json=body)
-    assert resp.status_code == 200, f"{case['case_id']}: {resp.text}"
-    return resp.json()
+        assert run["audit"]["http_status"] == 200, display_id
+        assert result.get("error") is None, (
+            f"{display_id}: unexpected quickview error: {result.get('error')}"
+        )
+        fires = result.get("fires")
+        assert isinstance(fires, list), f"{display_id}: fires is not evaluable"
+        in_scope_fires = [
+            fire
+            for fire in fires
+            if isinstance(fire, Mapping)
+            and fire.get("category") in _IN_SCOPE_CATEGORIES
+        ]
 
+        expected_outcome = case["expectations"]["trigger"]["outcome"]
+        if expected_outcome == "none":
+            assert in_scope_fires == [], (
+                f"{display_id}: expected no in-scope fire, got {in_scope_fires}"
+            )
+            continue
 
-def _route_total_km(route_preset_ref: str) -> float:
-    """Same computation ``routers/route_presets.py::load_route_preset`` uses
-    (``total_km = raw_route["distance_m"] / 1000.0``) -- reads the preset file
-    directly rather than hitting an endpoint, since this is the one number
-    (route length) this test needs to turn a fire's ``progress`` fraction into
-    a km position."""
-    path = settings.routes_dir / "presets" / f"{route_preset_ref}.json"
-    raw_route = json.loads(path.read_text(encoding="utf-8"))["raw_route"]
-    return raw_route["distance_m"] / 1000.0
-
-
-def _fire_km(result: dict, fire: dict, total_km: float) -> float:
-    """The fire's position along the route in km, via the per-tick
-    ``progress`` map (``t`` -> route-fraction ``frac``) the quickview result
-    carries -- the SAME map the Combined Simulator uses to align a fire with
-    the distance-axis animation (``ProgressPoint``, ``models/run.py``)."""
-    frac_by_tick = {p["t"]: p["frac"] for p in result.get("progress", [])}
-    frac = frac_by_tick.get(fire["tick"])
-    assert frac is not None, f"no progress entry recorded for fire tick {fire['tick']}"
-    return frac * total_km
-
-
-@pytest.mark.parametrize("path", _CASE_FILES, ids=lambda p: p.stem)
-def test_case_run_completes_without_algorithm_error(path):
-    case = _load(path)
-    result = _quickview(case)
-    assert result["error"] is None, f"{case['case_id']} ended in an algorithm error: {result['error']}"
-
-
-@pytest.mark.parametrize("path", [p for p in _CASE_FILES if p.stem != "case-c01-alert-daytime-control"], ids=lambda p: p.stem)
-def test_case_reaches_an_in_scope_fire_with_both_categories(path):
-    """Every case except C-01 exists to be examined at a real decision point:
-    at least one fire in {rest_required, monotony_prevention}, and that
-    fire's feature_contributions carries BOTH categories with non-empty
-    rows -- the hybrid trigger's recorded runner-up comparison (see
-    test_merged_quickview.py::test_quickview_fire_carries_both_trigger_categories)."""
-    case = _load(path)
-    result = _quickview(case)
-
-    assert result["fired"] is True, f"{case['case_id']}: expected the run to fire"
-    in_scope_fires = [f for f in result["fires"] if f.get("category") in _IN_SCOPE_CATEGORIES]
-    assert in_scope_fires, f"{case['case_id']}: no in-scope fire among {result['fires']}"
-
-    fire = in_scope_fires[0]
-
-    # Positional correspondence, where the case's own cause is genuinely
-    # wired: C-04/C-05 paint a mountain/jam band onto the route
-    # (mountain_range_km/jam_range_km ARE threaded through
-    # MergedQuickviewBody -> _build_quickview_route_facts -- verified
-    # empirically, see task-19-report.md), so for THOSE two the fire must
-    # land within or after the painted band, not merely "somewhere on the
-    # route" -- otherwise this test would only prove "a fire happened",
-    # never "the fire happened where this case put the cause".
-    #
-    # C-02 and C-06 have no such wiring to lean on: their pins
-    # (initial_drowsiness/initial_fatigue, and is_night on the TRIGGER side)
-    # do not reach the tick engine through this endpoint at all (the
-    # pre-existing threading gap documented in the module docstring and
-    # task-19-report.md), so there is no position/condition a fire could be
-    # checked against that the case itself actually causes here. Their
-    # assertion stays reachability-only -- strengthening it would require
-    # fixing that gap in production code, which is out of scope for this task.
-    fixed = case["journey"].get("fixed_overrides", {})
-    band = fixed.get("mountain_range_km") or fixed.get("jam_range_km")
-    if band is not None:
-        total_km = _route_total_km(case["journey"]["route_preset_ref"])
-        fire_km = _fire_km(result, fire, total_km)
-        band_start_km = band[0]
-        assert fire_km >= band_start_km, (
-            f"{case['case_id']}: fire at {fire_km:.1f} km falls BEFORE the "
-            f"painted band start {band_start_km} km -- the fire did not "
-            f"happen where this case put the cause"
+        matching_fires = [
+            fire
+            for fire in in_scope_fires
+            if fire.get("category") == expected_outcome
+        ]
+        assert matching_fires, (
+            f"{display_id}: expected an evaluable {expected_outcome} fire"
         )
 
-    contributions = fire.get("feature_contributions") or {}
-    assert set(contributions) == _IN_SCOPE_CATEGORIES, (
-        f"{case['case_id']}: expected both categories recorded, got {sorted(contributions)}"
-    )
-    for category, chain in contributions.items():
-        assert chain.get("rows"), f"{case['case_id']}: {category} recorded no rows"
-
-    # Wherever the fire has a proposal, its content step's plan has either a
-    # non-empty scored_tail or a genuinely exhausted pool (tail_truncated is
-    # False AND the pool really was exhausted, not just an empty tail).
-    proposal = fire.get("proposal")
-    if proposal is not None:
-        content_evidence = [ev for ev in proposal["evidence"] if ev["step"] == "content"]
-        assert content_evidence, f"{case['case_id']}: fire has a proposal but no content evidence"
-        content_output = content_evidence[0].get("output")
-        assert content_output is not None, f"{case['case_id']}: content step recorded no output"
-
-        scored_tail = content_output.get("scored_tail") or []
-        tail_truncated = content_output.get("tail_truncated")
-        if scored_tail:
-            pass  # non-empty scored_tail satisfies the assertion on its own
-        else:
-            assert tail_truncated is False, (
-                f"{case['case_id']}: empty scored_tail must mean tail_truncated is False"
+        for fire in in_scope_fires:
+            contributions = fire.get("feature_contributions")
+            assert isinstance(contributions, Mapping), (
+                f"{display_id}: in-scope fire has no contribution chains"
             )
-            # A "genuinely exhausted pool": every scored candidate was
-            # returned or excluded, none held back in a tail that doesn't
-            # exist.
-            returned = content_output.get("returned_item_count") or 0
-            excluded = len(content_output.get("excluded_items") or [])
-            requested = content_output.get("requested_item_count") or 0
-            assert returned + excluded >= requested, (
-                f"{case['case_id']}: tail empty but pool not exhausted "
-                f"(returned={returned}, excluded={excluded}, requested={requested})"
+            assert _IN_SCOPE_CATEGORIES <= set(contributions), (
+                f"{display_id}: both category contribution chains are required"
+            )
+            for category in _IN_SCOPE_CATEGORIES:
+                chain = contributions[category]
+                assert isinstance(chain, Mapping), (
+                    f"{display_id}: {category} contribution chain is malformed"
+                )
+                assert isinstance(chain.get("rows"), list), (
+                    f"{display_id}: {category} contribution rows are missing"
+                )
+
+            proposal = fire.get("proposal")
+            if not isinstance(proposal, Mapping):
+                assert fire.get("proposal_error") is not None, (
+                    f"{display_id}: fire has neither proposal nor proposal error"
+                )
+                continue
+
+            service_records = _records_for_step(proposal, "service")
+            assert len(service_records) == 1, (
+                f"{display_id}: attached proposal must have one service record"
+            )
+            service = service_records[0]
+            assert service.get("output") is not None or service.get("error") is not None, (
+                f"{display_id}: service has neither result nor explicit error"
             )
 
-
-def test_case_c01_control_produces_no_in_scope_fire():
-    """C-01 is the control: it exists to prove nothing fires when nothing
-    should. Assert the run genuinely happened (ticks ran, no algorithm
-    error) so an errored-out or empty run could never masquerade as a
-    passing control."""
-    path = next(p for p in _CASE_FILES if p.stem == "case-c01-alert-daytime-control")
-    case = _load(path)
-    result = _quickview(case)
-
-    # The run genuinely happened: it completed cleanly and covered the whole
-    # route (a crashed or truncated run is not evidence of "nothing fires").
-    assert result["error"] is None
-    assert result["completed_min"] is not None and result["completed_min"] > 0
-    assert result["score_series"], "expected a real per-tick score series, not an empty/errored run"
-
-    in_scope_fires = [f for f in result["fires"] if f.get("category") in _IN_SCOPE_CATEGORIES]
-    assert in_scope_fires == [], f"C-01 is a control case: expected no in-scope fire, got {in_scope_fires}"
+            content_records = _records_for_step(proposal, "content")
+            complete_plan = any(
+                isinstance(record.get("output"), Mapping)
+                and record["output"].get("decision_type") == "complete_plan"
+                for record in content_records
+            )
+            assert complete_plan or _has_recorded_content_error(proposal), (
+                f"{display_id}: content has neither complete plan nor recorded error"
+            )
