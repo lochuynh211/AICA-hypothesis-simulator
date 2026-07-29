@@ -1,39 +1,39 @@
 import { resolveCase, caseDispatches, differsFromCase } from '../src/lib/review/caseResolver'
 import { getCase } from '../src/lib/review/caseCatalog'
 
-const c01 = getCase('case-c01-alert-daytime-control')!
-const c03 = getCase('case-c03-monotonous-highway')!
+const r01 = getCase('case-tc-r01')!
+const m01 = getCase('case-tc-m01')!
 
 describe('resolveCase', () => {
   it('resolves the journey references', () => {
-    const setup = resolveCase(c03)
-    expect(setup.scenarioId).toBe('uc02_monotony_v0_1')
-    expect(setup.routePresetId).toBe('long_tokyo_osaka')
-    expect(setup.seed).toBe(1042)
+    const setup = resolveCase(m01)
+    expect(setup.scenarioId).toBe('semantic_tc_m01')
+    expect(setup.routePresetId).toBe('short_tokyo_chichibu')
+    expect(setup.seed).toBe(42)
     expect(setup.tickSeconds).toBe(180)
   })
 
   it('resolves all three algorithm defaults', () => {
-    const setup = resolveCase(c01)
+    const setup = resolveCase(r01)
     expect(setup.triggerPackageId).toBe('aica_transparent_hybrid_trigger_v1')
     expect(setup.servicePackageId).toBe('aica_transparent_service_selector_v1')
     expect(setup.contentPackageId).toBe('aica_transparent_content_selector_v1')
   })
 
   it('resolves the persona profile reference', () => {
-    expect(resolveCase(c01).profileRef).toBe('preset-journey-a-1-cruising-fresh')
+    expect(resolveCase(r01).profileRef).toBe('profile-semantic-neutral')
   })
 
   it('maps fixed overrides onto initial state and context overrides', () => {
-    const setup = resolveCase(c01)
-    expect(setup.initialDrowsiness).toBe(10)
-    expect(setup.initialFatigue).toBe(12)
-    expect(setup.contextOverrides.is_night).toBe(false)
+    const setup = resolveCase(r01)
+    expect(setup.initialDrowsiness).toBe(85)
+    expect(setup.initialFatigue).toBe(70)
+    expect(setup.contextOverrides.is_night).toBe(true)
     expect(setup.contextOverrides.child_passenger).toBe(false)
   })
 
   it('leaves unset overrides null rather than inventing a default', () => {
-    const bare = { ...c01, journey: { ...c01.journey, fixed_overrides: undefined } }
+    const bare = { ...r01, journey: { ...r01.journey, fixed_overrides: undefined } }
     const setup = resolveCase(bare)
     expect(setup.initialDrowsiness).toBeNull()
     expect(setup.initialFatigue).toBeNull()
@@ -43,24 +43,24 @@ describe('resolveCase', () => {
 
   it('carries painted ranges through when the case pins them', () => {
     const painted = {
-      ...c03,
-      journey: { ...c03.journey, fixed_overrides: { ...c03.journey.fixed_overrides, jam_range_km: [40, 60] } },
+      ...m01,
+      journey: { ...m01.journey, fixed_overrides: { ...m01.journey.fixed_overrides, jam_range_km: [40, 60] } },
     }
-    expect(resolveCase(painted as typeof c03).jamRangeKm).toEqual([40, 60])
+    expect(resolveCase(painted as typeof m01).jamRangeKm).toEqual([40, 60])
   })
 })
 
 describe('caseDispatches', () => {
-  const { run, proposal } = caseDispatches(resolveCase(c03))
+  const { run, proposal } = caseDispatches(resolveCase(m01))
   const runTypes = run.map((a) => a.type)
 
   it('selects the scenario even though it is hidden from the manual picker', () => {
-    expect(run).toContainEqual({ type: 'SELECT_SCENARIO', id: 'uc02_monotony_v0_1' })
+    expect(run).toContainEqual({ type: 'SELECT_SCENARIO', id: 'semantic_tc_m01' })
   })
 
   it('selects the trigger package and pins the seed and tick', () => {
     expect(runTypes).toContain('SELECT_PACKAGE')
-    expect(run).toContainEqual({ type: 'SET_RUN_SEED', seed: 1042 })
+    expect(run).toContainEqual({ type: 'SET_RUN_SEED', seed: 42 })
     expect(run).toContainEqual({ type: 'SET_TICK_SECONDS', seconds: 180 })
   })
 
@@ -77,7 +77,7 @@ describe('caseDispatches', () => {
   })
 
   it('emits no initial-state dispatch when the case pins none', () => {
-    const bare = { ...c01, journey: { ...c01.journey, fixed_overrides: undefined } }
+    const bare = { ...r01, journey: { ...r01.journey, fixed_overrides: undefined } }
     const types = caseDispatches(resolveCase(bare)).run.map((a) => a.type)
     expect(types).not.toContain('SET_INITIAL_DROWSINESS')
     expect(types).not.toContain('SET_CONTEXT_OVERRIDE')
@@ -92,11 +92,11 @@ describe('caseDispatches', () => {
   // it would fail against a `{ key, value }`-only payload (the field would be
   // absent, so `'default' in action` is false).
   it('pins a context override with a default distinct from the pinned value', () => {
-    const setup = resolveCase(c01)
+    const setup = resolveCase(r01)
     const { run } = caseDispatches(setup)
     const isNight = run.find((a) => a.type === 'SET_CONTEXT_OVERRIDE' && a.key === 'is_night')
     expect(isNight).toBeDefined()
-    expect(isNight?.value).toBe(false)
+    expect(isNight?.value).toBe(true)
     expect('default' in (isNight as object)).toBe(true)
     expect(isNight?.default).not.toBe(isNight?.value)
   })
@@ -106,8 +106,8 @@ describe('caseDispatches', () => {
   // `action.field`. This would fail against a `{ field, value }` payload.
   it('emits SET_SITUATION_FIELD with the key property the reducer expects', () => {
     const withTags = {
-      ...c01,
-      journey: { ...c01.journey, fixed_overrides: { ...c01.journey.fixed_overrides, route_tags: ['coastal'] } },
+      ...r01,
+      journey: { ...r01.journey, fixed_overrides: { ...r01.journey.fixed_overrides, route_tags: ['coastal'] } },
     }
     const { proposal: dispatchedProposal } = caseDispatches(resolveCase(withTags))
     expect(dispatchedProposal).toContainEqual({ type: 'SET_SITUATION_FIELD', key: 'route_tags', value: ['coastal'] })
@@ -115,7 +115,7 @@ describe('caseDispatches', () => {
 })
 
 describe('differsFromCase', () => {
-  const setup = resolveCase(c03)
+  const setup = resolveCase(m01)
   const asLive = {
     scenarioId: setup.scenarioId, routePresetId: setup.routePresetId,
     triggerPackageId: setup.triggerPackageId, servicePackageId: setup.servicePackageId,
@@ -151,9 +151,9 @@ describe('differsFromCase', () => {
   // decision as though the setup still matched the case (review MUST FIX 1).
   it('reports drift when a painted range is repainted', () => {
     const painted = resolveCase({
-      ...c03,
-      journey: { ...c03.journey, fixed_overrides: { ...c03.journey.fixed_overrides, jam_range_km: [40, 60] } },
-    } as typeof c03)
+      ...m01,
+      journey: { ...m01.journey, fixed_overrides: { ...m01.journey.fixed_overrides, jam_range_km: [40, 60] } },
+    } as typeof m01)
     const liveWithSamePainting = { ...asLive, jamRangeKm: painted.jamRangeKm }
     expect(differsFromCase(painted, liveWithSamePainting)).toEqual([])
     expect(differsFromCase(painted, { ...liveWithSamePainting, jamRangeKm: [10, 20] }))
@@ -161,7 +161,7 @@ describe('differsFromCase', () => {
   })
 
   it('reports no drift when neither side has a painted range (both null)', () => {
-    // c03 itself pins no mountain range — both sides are null, which must
+    // m01 itself pins no mountain range — both sides are null, which must
     // read as "matches", not as drift (null !== null-as-a-range would be a
     // bug in `sameRange`'s short-circuit).
     expect(setup.mountainRangeKm).toBeNull()
@@ -172,8 +172,7 @@ describe('differsFromCase', () => {
   // drift, or the right column keeps explaining the decision as though it
   // still happened at night (review MUST FIX 1).
   it('reports drift when a context override is flipped', () => {
-    const c02 = getCase('case-c02-night-highway-drowsiness')!
-    const nightSetup = resolveCase(c02)
+    const nightSetup = resolveCase(r01)
     const nightAsLive = {
       scenarioId: nightSetup.scenarioId, routePresetId: nightSetup.routePresetId,
       triggerPackageId: nightSetup.triggerPackageId, servicePackageId: nightSetup.servicePackageId,

@@ -1,0 +1,178 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "The same rested commuter leaves at the same late hour with the same neutral service and recovery history. They drive the identical long Tokyo–Osaka route home, but the congestion has cleared. AICA may still prevent monotony, but the first intervention should be later than in TC-M05, within 65–115 minutes.",
+    "ja": "同じ休養十分な通勤者が同じ遅い時刻に、同じ中立サービス・回復履歴で出発する。 同一の長距離東京–大阪ルートを帰宅するが、渋滞は解消している。 AICAは漫然予防を行ってよいが、最初の介入はTC-M05より遅い65–115分とする。"
+  },
+  "case_id": "case-tc-m06",
+  "contrast": {
+    "changed_inputs": [
+      "journey.scenario.jam_range_km",
+      "journey.scenario.route_tags",
+      "journey.scenario.traffic_events"
+    ],
+    "expected_delta": {
+      "en": "Painted congestion should advance TC-M05's intervention relative to free-flow TC-M06.",
+      "ja": "描画渋滞によりTC-M05の介入は自由流のTC-M06より早まる。"
+    },
+    "kind": "semantic_real_world",
+    "role": "variant",
+    "with_case_id": "TC-M05"
+  },
+  "display_id": "TC-M06",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist",
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "monotony_prevention",
+      "required_positive_feature_ids": [
+        "monotony_prevention_score"
+      ],
+      "time_window_min": [
+        65,
+        115
+      ]
+    }
+  },
+  "group": "monotony",
+  "hypothesis": {
+    "rationale": {
+      "en": "Removing both authored congestion events and painted jam range creates the route-faithful free-flow semantic contrast. Grounded in CDC-SU Slides 10–17 (familiar or monotonous driving and in-car recovery proposals).",
+      "ja": "設定渋滞イベントと描画jam_rangeの双方を除き、ルートに忠実な自由流の意味的対照を作る。 CDC-SUスライド10–17（慣れ・単調による漫然予兆と車内回復提案）に基づく。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 5,
+      "initial_fatigue": 5,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "night",
+        "familiar",
+        "free-flow"
+      ]
+    },
+    "narrative": {
+      "en": "They drive the identical long Tokyo–Osaka route home, but the congestion has cleared. Free-flowing traffic removes the prolonged low-speed load, leaving only gradual familiar-route monotony.",
+      "ja": "同一の長距離東京–大阪ルートを帰宅するが、渋滞は解消している。 自由流により長時間の低速負荷がなくなり、慣れたルートの緩やかな単調さだけが残る。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_m06",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 10–17 (familiar or monotonous driving and in-car recovery proposals).",
+        "ja": "CDC-SUスライド10–17（慣れ・単調による漫然予兆と車内回復提案）に基づく。"
+      },
+      {
+        "en": "The resolved profile-semantic-neutral history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-neutral履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Night commuter on a free-flowing familiar route",
+      "ja": "自由流の慣れたルートを走る夜間通勤者"
+    },
+    "narrative": {
+      "en": "Night commuter on a free-flowing familiar route. The same rested commuter leaves at the same late hour with the same neutral service and recovery history.",
+      "ja": "自由流の慣れたルートを走る夜間通勤者。同じ休養十分な通勤者が同じ遅い時刻に、同じ中立サービス・回復履歴で出発する。"
+    },
+    "persona_id": "persona-free-flow-m06",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-neutral",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA may still prevent monotony, but the first intervention should be later than in TC-M05, within 65–115 minutes.",
+    "ja": "AICAは漫然予防を行ってよいが、最初の介入はTC-M05より遅い65–115分とする。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "The same rested commuter leaves at the same late hour with the same neutral service and recovery history.",
+      "ja": "同じ休養十分な通勤者が同じ遅い時刻に、同じ中立サービス・回復履歴で出発する。"
+    },
+    "journey_evolution": {
+      "en": "Free-flowing traffic removes the prolonged low-speed load, leaving only gradual familiar-route monotony.",
+      "ja": "自由流により長時間の低速負荷がなくなり、慣れたルートの緩やかな単調さだけが残る。"
+    },
+    "state_at_departure": {
+      "en": "Drowsiness and fatigue remain at 5 initially, with familiar night context unchanged from TC-M05.",
+      "ja": "初期眠気・疲労は5のままで、慣れた夜間条件もTC-M05から変わらない。"
+    },
+    "trip_reason": {
+      "en": "They drive the identical long Tokyo–Osaka route home, but the congestion has cleared.",
+      "ja": "同一の長距離東京–大阪ルートを帰宅するが、渋滞は解消している。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Delay the intervention on the same route when traffic flows freely (contrast with test case ID TC-M05)",
+    "ja": "同じルートが自由流なら介入を遅らせる（TC-M05との対照）"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA may still prevent monotony, but the first intervention should be later than in TC-M05, within 65–115 minutes.",
+      "ja": "AICAは漫然予防を行ってよいが、最初の介入はTC-M05より遅い65–115分とする。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-M06.",
+      "ja": "TC-M06の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

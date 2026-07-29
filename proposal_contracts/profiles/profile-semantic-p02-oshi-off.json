@@ -1,0 +1,84 @@
+{
+  "builtin": true,
+  "label": {
+    "en": "Same registered artist with OSHI mode off",
+    "ja": "同じ推し登録・推しモードOFF"
+  },
+  "profile": {
+    "age_band": "30s",
+    "cancelled_content_plans": [],
+    "catalog_item_recency_state": {},
+    "catalog_item_usage_level": {},
+    "changed_from_items": [],
+    "completed_items": [],
+    "content_proposal_acceptance_confidence": {},
+    "content_proposal_acceptance_rate": {},
+    "content_recovery_confidence": {},
+    "content_recovery_rate": {},
+    "content_tag_recency_state": {},
+    "content_tag_usage_level": {},
+    "gender": "unspecified",
+    "genre_affinity_v1_enabled": true,
+    "hobby_interest_tags": [
+      "j-rock",
+      "anime"
+    ],
+    "manually_selected_items": [],
+    "oshi_id": "synthetic-artist-0068",
+    "oshi_mode": "off",
+    "oshi_registered": true,
+    "oshi_tags": [
+      "j-rock",
+      "anime"
+    ],
+    "oshi_type": "artist",
+    "played_items": [],
+    "repeated_items": [],
+    "scene_content_tag_usage_level": {},
+    "scene_genre_usage": {
+      "active_driving_content": {
+        "j-rock": "high"
+      }
+    },
+    "scene_service_usage_level": {},
+    "scheduled_event_tags": [],
+    "scheduled_event_timing": null,
+    "scheduled_event_type": null,
+    "service_proposal_acceptance_confidence": {
+      "humming_karaoke": 0.95,
+      "music_playlist": 0.98,
+      "radio_style": 0.9
+    },
+    "service_proposal_acceptance_rate": {
+      "humming_karaoke": 90,
+      "music_playlist": 98,
+      "radio_style": 5
+    },
+    "service_recency_state": {
+      "humming_karaoke": "long_unused",
+      "music_playlist": "long_unused",
+      "radio_style": "recent"
+    },
+    "service_recovery_confidence": {
+      "humming_karaoke": 0.95,
+      "music_playlist": 0.98,
+      "radio_style": 0.9
+    },
+    "service_recovery_rate": {
+      "humming_karaoke": 90,
+      "music_playlist": 98,
+      "radio_style": 5
+    },
+    "service_usage_level": {
+      "humming_karaoke": "high",
+      "music_playlist": "high",
+      "radio_style": "never"
+    },
+    "skipped_items": [],
+    "usage_by_genre": {
+      "anime": "high",
+      "j-rock": "high"
+    }
+  },
+  "profile_id": "profile-semantic-p02-oshi-off"
+}

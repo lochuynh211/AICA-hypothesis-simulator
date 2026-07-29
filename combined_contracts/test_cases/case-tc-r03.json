@@ -1,0 +1,177 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "A warehouse supervisor has been standing and coordinating urgent work for twelve hours but was not awake overnight. They take the night expressway home after the extended shift because public transport has ended. AICA should recognize rest need within 25 minutes with fatigue as positive evidence, without waiting for extreme drowsiness.",
+    "ja": "倉庫監督者は徹夜ではないものの、12時間立ち続けて緊急作業を調整していた。 公共交通が終わったため、長時間勤務後に夜間高速道路で帰宅する。 AICAは極端な眠気を待たず、疲労を正の根拠として25分以内に休憩必要を認識する。"
+  },
+  "case_id": "case-tc-r03",
+  "contrast": {
+    "changed_inputs": [
+      "journey.scenario.fatigue_model.base_growth_per_min",
+      "journey.scenario.initial_drowsiness",
+      "journey.scenario.initial_fatigue"
+    ],
+    "expected_delta": {
+      "en": "High post-shift fatigue should produce rest need in TC-R03; the ordinary-shift TC-R04 should not fire.",
+      "ja": "勤務後高疲労のTC-R03は休憩必要となり、通常勤務のTC-R04は発火しない。"
+    },
+    "kind": "semantic_real_world",
+    "role": "baseline",
+    "with_case_id": "TC-R04"
+  },
+  "display_id": "TC-R03",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist",
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "rest_required",
+      "required_positive_feature_ids": [
+        "fatigue"
+      ],
+      "time_window_min": [
+        0,
+        25
+      ]
+    }
+  },
+  "group": "rest",
+  "hypothesis": {
+    "rationale": {
+      "en": "Separating high fatigue from moderate drowsiness tests whether post-shift exhaustion remains independently visible in the rest decision. Grounded in CDC-SU Slides 1–2 (physical fatigue/drowsiness rest proposal through arrival at a rest facility); post-rest behavior is out of scope.",
+      "ja": "高疲労と中程度の眠気を分離し、勤務後の消耗が休憩判断に独立して現れるかを検証する。 CDC-SUスライド1–2（身体疲労・眠気から休憩施設到着までの休憩提案）に基づく。休憩後の挙動は対象外。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 35,
+      "initial_fatigue": 78,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "night",
+        "post-shift"
+      ]
+    },
+    "narrative": {
+      "en": "They take the night expressway home after the extended shift because public transport has ended. Physical fatigue rises quickly while drowsiness remains comparatively moderate on the first hour of highway driving.",
+      "ja": "公共交通が終わったため、長時間勤務後に夜間高速道路で帰宅する。 高速走行の最初の1時間で身体疲労は速く増える一方、眠気は比較的中程度に保たれる。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_r03",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 1–2 (physical fatigue/drowsiness rest proposal through arrival at a rest facility); post-rest behavior is out of scope.",
+        "ja": "CDC-SUスライド1–2（身体疲労・眠気から休憩施設到着までの休憩提案）に基づく。休憩後の挙動は対象外。"
+      },
+      {
+        "en": "The resolved profile-semantic-neutral history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-neutral履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Warehouse supervisor after an extended shift",
+      "ja": "長時間勤務後の倉庫監督者"
+    },
+    "narrative": {
+      "en": "Warehouse supervisor after an extended shift. A warehouse supervisor has been standing and coordinating urgent work for twelve hours but was not awake overnight.",
+      "ja": "長時間勤務後の倉庫監督者。倉庫監督者は徹夜ではないものの、12時間立ち続けて緊急作業を調整していた。"
+    },
+    "persona_id": "persona-post-shift-exhausted-r03",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-neutral",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should recognize rest need within 25 minutes with fatigue as positive evidence, without waiting for extreme drowsiness.",
+    "ja": "AICAは極端な眠気を待たず、疲労を正の根拠として25分以内に休憩必要を認識する。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "A warehouse supervisor has been standing and coordinating urgent work for twelve hours but was not awake overnight.",
+      "ja": "倉庫監督者は徹夜ではないものの、12時間立ち続けて緊急作業を調整していた。"
+    },
+    "journey_evolution": {
+      "en": "Physical fatigue rises quickly while drowsiness remains comparatively moderate on the first hour of highway driving.",
+      "ja": "高速走行の最初の1時間で身体疲労は速く増える一方、眠気は比較的中程度に保たれる。"
+    },
+    "state_at_departure": {
+      "en": "Fatigue starts at 78 while drowsiness is only 35; no service preference or recovery history competes with the physical-state evidence.",
+      "ja": "疲労は78だが眠気は35にとどまり、サービス嗜好や回復履歴は身体状態の根拠と競合しない。"
+    },
+    "trip_reason": {
+      "en": "They take the night expressway home after the extended shift because public transport has ended.",
+      "ja": "公共交通が終わったため、長時間勤務後に夜間高速道路で帰宅する。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Recognize post-shift exhaustion even before strong sleepiness appears",
+    "ja": "強い眠気が出る前でも勤務後の消耗を認識する"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should recognize rest need within 25 minutes with fatigue as positive evidence, without waiting for extreme drowsiness.",
+      "ja": "AICAは極端な眠気を待たず、疲労を正の根拠として25分以内に休憩必要を認識する。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-R03.",
+      "ja": "TC-R03の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

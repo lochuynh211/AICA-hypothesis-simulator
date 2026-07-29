@@ -1,0 +1,177 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "An experienced commuter is physically rested but has driven the same expressway home hundreds of times. They drive the mostly-highway Tokyo–Chichibu route home late at night after routine desk work. AICA should fire monotony prevention, not rest required, during the long repetitive section and offer supported alertness audio.",
+    "ja": "熟練通勤者は身体的には休めているが、同じ高速帰宅路を何百回も走っている。 通常のデスクワーク後、主に高速道路の東京–秩父ルートを深夜に帰宅する。 AICAは長い反復区間で休憩必要ではなく漫然予防を発火し、対応済みの覚醒音声を提示する。"
+  },
+  "case_id": "case-tc-m01",
+  "contrast": {
+    "changed_inputs": [
+      "journey.scenario.familiar_route",
+      "journey.scenario.route_tags"
+    ],
+    "expected_delta": {
+      "en": "Familiarity should produce monotony prevention in TC-M01, while the first-drive TC-M02 stays quiet.",
+      "ja": "慣れたTC-M01は漫然予防となり、初回走行のTC-M02は静観する。"
+    },
+    "kind": "semantic_real_world",
+    "role": "baseline",
+    "with_case_id": "TC-M02"
+  },
+  "display_id": "TC-M01",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist",
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "monotony_prevention",
+      "required_positive_feature_ids": [
+        "monotony_prevention_score"
+      ],
+      "time_window_min": [
+        30,
+        115
+      ]
+    }
+  },
+  "group": "monotony",
+  "hypothesis": {
+    "rationale": {
+      "en": "The proven low-rest-signal monotony recipe isolates familiarity, night driving, and uninterrupted road exposure from physical exhaustion. Grounded in CDC-SU Slides 10–17 (familiar or monotonous driving and in-car recovery proposals).",
+      "ja": "実証済みの低休養信号レシピにより、慣れ・夜間・連続道路曝露を身体的消耗から分離する。 CDC-SUスライド10–17（慣れ・単調による漫然予兆と車内回復提案）に基づく。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 5,
+      "initial_fatigue": 5,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "long",
+        "familiar",
+        "featureless"
+      ]
+    },
+    "narrative": {
+      "en": "They drive the mostly-highway Tokyo–Chichibu route home late at night after routine desk work. After the early rest point is passed, a long familiar and visually repetitive highway section continues with only a brief early slowdown.",
+      "ja": "通常のデスクワーク後、主に高速道路の東京–秩父ルートを深夜に帰宅する。 早い休憩地点を通過後、短い初期減速を除き、慣れた視覚的に反復する高速区間が長く続く。"
+    },
+    "route_preset_ref": "short_tokyo_chichibu",
+    "scenario_ref": "semantic_tc_m01",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 10–17 (familiar or monotonous driving and in-car recovery proposals).",
+        "ja": "CDC-SUスライド10–17（慣れ・単調による漫然予兆と車内回復提案）に基づく。"
+      },
+      {
+        "en": "The resolved profile-semantic-neutral history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-neutral履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Experienced commuter on the usual night route",
+      "ja": "いつもの夜道を走る熟練通勤者"
+    },
+    "narrative": {
+      "en": "Experienced commuter on the usual night route. An experienced commuter is physically rested but has driven the same expressway home hundreds of times.",
+      "ja": "いつもの夜道を走る熟練通勤者。熟練通勤者は身体的には休めているが、同じ高速帰宅路を何百回も走っている。"
+    },
+    "persona_id": "persona-familiar-commuter-m01",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-neutral",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should fire monotony prevention, not rest required, during the long repetitive section and offer supported alertness audio.",
+    "ja": "AICAは長い反復区間で休憩必要ではなく漫然予防を発火し、対応済みの覚醒音声を提示する。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "An experienced commuter is physically rested but has driven the same expressway home hundreds of times.",
+      "ja": "熟練通勤者は身体的には休めているが、同じ高速帰宅路を何百回も走っている。"
+    },
+    "journey_evolution": {
+      "en": "After the early rest point is passed, a long familiar and visually repetitive highway section continues with only a brief early slowdown.",
+      "ja": "早い休憩地点を通過後、短い初期減速を除き、慣れた視覚的に反復する高速区間が長く続く。"
+    },
+    "state_at_departure": {
+      "en": "Drowsiness and fatigue both start at 5, and the neutral history profile adds no recovery preference.",
+      "ja": "眠気と疲労はいずれも5から始まり、中立履歴には回復サービスの嗜好がない。"
+    },
+    "trip_reason": {
+      "en": "They drive the mostly-highway Tokyo–Chichibu route home late at night after routine desk work.",
+      "ja": "通常のデスクワーク後、主に高速道路の東京–秩父ルートを深夜に帰宅する。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Interrupt automatic driving on a familiar featureless night commute",
+    "ja": "慣れた特徴のない夜間通勤で自動化した運転を中断する"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should fire monotony prevention, not rest required, during the long repetitive section and offer supported alertness audio.",
+      "ja": "AICAは長い反復区間で休憩必要ではなく漫然予防を発火し、対応済みの覚醒音声を提示する。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-M01.",
+      "ja": "TC-M01の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

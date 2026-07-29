@@ -1,0 +1,167 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "A utility worker finishes emergency outdoor repairs after a long day and starts the return trip without a proper recovery break. They must cross the Tokyo–Karuizawa mountain corridor at night to return the service vehicle. AICA should require rest and rank low-interaction music playback first, with stopped-only or visually demanding services prohibited from the lead.",
+    "ja": "設備作業員は長時間の緊急屋外修理を終え、十分な回復休憩なしに帰路へ出る。 サービス車両を返却するため、夜間に東京–軽井沢の山間回廊を越える。 AICAは休憩を必要と判断し、低操作の音楽再生を首位にし、停車専用・視覚負荷サービスを首位から除外する。"
+  },
+  "case_id": "case-tc-e02",
+  "display_id": "TC-E02",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped",
+        "live_viewing"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "rest_required",
+      "required_positive_feature_ids": [
+        "fatigue"
+      ],
+      "time_window_min": [
+        0,
+        20
+      ]
+    }
+  },
+  "group": "environment",
+  "hypothesis": {
+    "rationale": {
+      "en": "Mountain workload is genuinely painted into route facts, but the preference for low-distraction audio is an exploratory safety hypothesis. Exploratory simulator hypothesis (not directly specified by CDC-SU); the case tests transparent wiring rather than claiming validated real-world causality.",
+      "ja": "山道負荷はルート事実へ実際に描画されるが、低注意散漫音声の優先は探索的安全仮説である。 CDC-SUに直接規定されない探索的シミュレータ仮説。実世界の因果を実証したものではなく、透明な配線を検証する。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 68,
+      "initial_fatigue": 82,
+      "is_night": true,
+      "mountain_range_km": [
+        20,
+        120
+      ],
+      "multiple_passengers": false,
+      "route_tags": [
+        "mountain",
+        "winding",
+        "night"
+      ]
+    },
+    "narrative": {
+      "en": "They must cross the Tokyo–Karuizawa mountain corridor at night to return the service vehicle. The painted 20–120 km mountain range adds winding-road workload while both physical signals continue to climb.",
+      "ja": "サービス車両を返却するため、夜間に東京–軽井沢の山間回廊を越える。 20–120kmに描画した山間区間が曲路負荷を加え、両身体信号も上昇し続ける。"
+    },
+    "route_preset_ref": "middle_tokyo_karuizawa",
+    "scenario_ref": "semantic_tc_e02",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Exploratory simulator hypothesis (not directly specified by CDC-SU); the case tests transparent wiring rather than claiming validated real-world causality.",
+        "ja": "CDC-SUに直接規定されない探索的シミュレータ仮説。実世界の因果を実証したものではなく、透明な配線を検証する。"
+      },
+      {
+        "en": "The resolved profile-semantic-neutral history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-neutral履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Exhausted utility worker crossing a mountain pass",
+      "ja": "峠を越える消耗した設備作業員"
+    },
+    "narrative": {
+      "en": "Exhausted utility worker crossing a mountain pass. A utility worker finishes emergency outdoor repairs after a long day and starts the return trip without a proper recovery break.",
+      "ja": "峠を越える消耗した設備作業員。設備作業員は長時間の緊急屋外修理を終え、十分な回復休憩なしに帰路へ出る。"
+    },
+    "persona_id": "persona-mountain-worker-e02",
+    "preferences": [
+      {
+        "en": "Prefer familiar background audio over interactive or visual activities on winding roads.",
+        "ja": "曲路では対話的・視覚的活動より慣れた背景音声を好む。"
+      }
+    ],
+    "profile_ref": "profile-semantic-neutral",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should require rest and rank low-interaction music playback first, with stopped-only or visually demanding services prohibited from the lead.",
+    "ja": "AICAは休憩を必要と判断し、低操作の音楽再生を首位にし、停車専用・視覚負荷サービスを首位から除外する。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "A utility worker finishes emergency outdoor repairs after a long day and starts the return trip without a proper recovery break.",
+      "ja": "設備作業員は長時間の緊急屋外修理を終え、十分な回復休憩なしに帰路へ出る。"
+    },
+    "journey_evolution": {
+      "en": "The painted 20–120 km mountain range adds winding-road workload while both physical signals continue to climb.",
+      "ja": "20–120kmに描画した山間区間が曲路負荷を加え、両身体信号も上昇し続ける。"
+    },
+    "state_at_departure": {
+      "en": "Fatigue is 82 and drowsiness 68; the neutral profile deliberately contributes no entertainment preference.",
+      "ja": "疲労82、眠気68で、中立プロファイルは娯楽嗜好を意図的に持たない。"
+    },
+    "trip_reason": {
+      "en": "They must cross the Tokyo–Karuizawa mountain corridor at night to return the service vehicle.",
+      "ja": "サービス車両を返却するため、夜間に東京–軽井沢の山間回廊を越える。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Prefer non-distracting support for an exhausted worker crossing a mountain pass",
+    "ja": "峠を越える消耗した勤務者に注意を奪わない支援を優先する"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should require rest and rank low-interaction music playback first, with stopped-only or visually demanding services prohibited from the lead.",
+      "ja": "AICAは休憩を必要と判断し、低操作の音楽再生を首位にし、停車専用・視覚負荷サービスを首位から除外する。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-E02.",
+      "ja": "TC-E02の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

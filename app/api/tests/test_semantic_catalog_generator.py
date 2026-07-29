@@ -540,11 +540,16 @@ def test_compiler_returns_sorted_paths_and_exact_bytes_on_repeat(tmp_path: Path)
     assert second_bytes == first_bytes
 
 
-def test_committed_source_contains_complete_r01_r02_semantic_pair(tmp_path: Path):
+def test_committed_source_contains_complete_36_case_semantic_catalog(tmp_path: Path):
     catalog = load_catalog(_SOURCE_CATALOG)
     cases = {case["display_id"]: case for case in catalog["cases"]}
 
-    assert set(cases) == {"TC-R01", "TC-R02"}
+    expected_ids = {
+        f"TC-{group}{number:02d}"
+        for group in ("R", "M", "E", "S", "P", "I")
+        for number in range(1, 7)
+    }
+    assert set(cases) == expected_ids
     assert cases["TC-R01"]["title"]["en"] == (
         "Protect a sleep-deprived late-shift worker with an early rest proposal"
     )
@@ -553,11 +558,14 @@ def test_committed_source_contains_complete_r01_r02_semantic_pair(tmp_path: Path
         "proposal (contrast with test case ID TC-R01)"
     )
     assert cases["TC-R01"]["contrast"]["kind"] == "semantic_real_world"
-    assert cases["TC-R02"]["contrast"]["changed_inputs"] == _CHANGED_SLEEP_INPUTS
+    assert set(cases["TC-R02"]["contrast"]["changed_inputs"]) == set(
+        _CHANGED_SLEEP_INPUTS
+    )
 
     written = compile_artifacts(catalog, tmp_path)
 
-    assert len(written) == 5
+    assert len(catalog["profiles"]) == 17
+    assert len(written) == 36 + 36 + 17
 
 
 def test_module_cli_compiles_without_runtime_warnings(tmp_path: Path):

@@ -1,0 +1,175 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "A commuter consistently accepts alertness playlists and reports reliable recovery; confidence in that evidence is high. They drive the same long familiar night highway used across the service-mechanics controls. music_playlist should rank first after monotony prevention and return a complete five-track plan.",
+    "ja": "通勤者は覚醒プレイリストを一貫して受諾し、確かな回復を報告し、その根拠信頼度も高い。 サービス機構対照で共有する、長く慣れた夜間高速道路を走る。 漫然予防後にmusic_playlistが首位となり、5曲の完全な計画を返す。"
+  },
+  "case_id": "case-tc-s03",
+  "contrast": {
+    "changed_inputs": [
+      "profile.service_recovery_rate.music_playlist"
+    ],
+    "expected_delta": {
+      "en": "Changing only playlist recovery should demote playlist beneath humming karaoke.",
+      "ja": "プレイリスト回復率だけの変更で、プレイリストが鼻歌カラオケより下がる。"
+    },
+    "kind": "controlled_one_factor",
+    "role": "baseline",
+    "with_case_id": "TC-S04"
+  },
+  "display_id": "TC-S03",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "monotony_prevention",
+      "required_positive_feature_ids": [
+        "monotony_prevention_score"
+      ],
+      "time_window_min": [
+        30,
+        115
+      ]
+    }
+  },
+  "group": "service",
+  "hypothesis": {
+    "rationale": {
+      "en": "The paired catalog changes only profile.service_recovery_rate.music_playlist while keeping acceptance and all journey inputs shared. Grounded in CDC-SU Slides 11–15 and 41–61 (driving services and history-informed prioritization).",
+      "ja": "対カタログでは受諾と全旅程入力を共有し、profile.service_recovery_rate.music_playlistだけを変える。 CDC-SUスライド11–15および41–61（走行中サービスと履歴に基づく優先順位）に基づく。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 5,
+      "initial_fatigue": 5,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "long",
+        "familiar",
+        "featureless"
+      ]
+    },
+    "narrative": {
+      "en": "They drive the same long familiar night highway used across the service-mechanics controls. Monotony accumulates after the early rest point on the uninterrupted highway.",
+      "ja": "サービス機構対照で共有する、長く慣れた夜間高速道路を走る。 早い休憩地点後、途切れない高速道路で単調さが蓄積する。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_s03",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 11–15 and 41–61 (driving services and history-informed prioritization).",
+        "ja": "CDC-SUスライド11–15および41–61（走行中サービスと履歴に基づく優先順位）に基づく。"
+      },
+      {
+        "en": "The resolved profile-semantic-s03-playlist-recovers history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-s03-playlist-recovers履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Driver with effective playlist history",
+      "ja": "効果的なプレイリスト履歴を持つ運転者"
+    },
+    "narrative": {
+      "en": "Driver with effective playlist history. A commuter consistently accepts alertness playlists and reports reliable recovery; confidence in that evidence is high.",
+      "ja": "効果的なプレイリスト履歴を持つ運転者。通勤者は覚醒プレイリストを一貫して受諾し、確かな回復を報告し、その根拠信頼度も高い。"
+    },
+    "persona_id": "persona-playlist-recovers-s03",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-s03-playlist-recovers",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "music_playlist should rank first after monotony prevention and return a complete five-track plan.",
+    "ja": "漫然予防後にmusic_playlistが首位となり、5曲の完全な計画を返す。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "A commuter consistently accepts alertness playlists and reports reliable recovery; confidence in that evidence is high.",
+      "ja": "通勤者は覚醒プレイリストを一貫して受諾し、確かな回復を報告し、その根拠信頼度も高い。"
+    },
+    "journey_evolution": {
+      "en": "Monotony accumulates after the early rest point on the uninterrupted highway.",
+      "ja": "早い休憩地点後、途切れない高速道路で単調さが蓄積する。"
+    },
+    "state_at_departure": {
+      "en": "Physical signals start at 5; playlist acceptance and recovery are both 96%, while humming remains a supported but weaker candidate.",
+      "ja": "身体信号は5から始まり、プレイリスト受諾・回復はいずれも96%、鼻歌は対応済みだが弱い候補である。"
+    },
+    "trip_reason": {
+      "en": "They drive the same long familiar night highway used across the service-mechanics controls.",
+      "ja": "サービス機構対照で共有する、長く慣れた夜間高速道路を走る。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Prioritize a playlist that this driver consistently accepts and benefits from",
+    "ja": "一貫して受諾され効果のあるプレイリストを優先する"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "music_playlist should rank first after monotony prevention and return a complete five-track plan.",
+      "ja": "漫然予防後にmusic_playlistが首位となり、5曲の完全な計画を返す。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-S03.",
+      "ja": "TC-S03の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

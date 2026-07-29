@@ -1,0 +1,164 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "A rested commuter leaves work thinking intensely about a difficult meeting and has no service history to predetermine the intervention. They drive the long familiar and repetitive night highway home. AICA should fire monotony prevention and offer supported audio that can redirect attention without a screen.",
+    "ja": "休養十分な通勤者が難しい会議を考え続けながら退勤し、介入を事前決定するサービス履歴はない。 長く慣れた反復的な夜間高速道路で帰宅する。 AICAは漫然予防を発火し、画面なしで注意を戻せる対応済み音声を提示する。"
+  },
+  "case_id": "case-tc-i04",
+  "display_id": "TC-I04",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist",
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "monotony_prevention",
+      "required_positive_feature_ids": [
+        "monotony_prevention_score"
+      ],
+      "time_window_min": [
+        30,
+        115
+      ]
+    }
+  },
+  "group": "integrated",
+  "hypothesis": {
+    "rationale": {
+      "en": "The executable cause is repetitive familiar-road exposure; mental preoccupation enriches the persona but is explicitly not claimed as an encoded causal feature. Grounded in CDC-SU Slides 10–17 for attention-restoring services; mental preoccupation itself is an exploratory narrative assumption.",
+      "ja": "実行原因は反復する慣れた道路曝露で、考え事はペルソナを豊かにするが符号化因果特徴とは主張しない。 注意回復サービスはCDC-SUスライド10–17に基づき、考え事自体は探索的な物語仮定である。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 5,
+      "initial_fatigue": 5,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "familiar",
+        "repetitive",
+        "commute"
+      ]
+    },
+    "narrative": {
+      "en": "They drive the long familiar and repetitive night highway home. After the early rest point, uninterrupted familiar-road exposure creates executable monotony while the commuter remains physically rested.",
+      "ja": "長く慣れた反復的な夜間高速道路で帰宅する。 早い休憩地点後、身体的には休養したまま、途切れない慣れた道路曝露が実行可能な単調さを作る。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_i04",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 10–17 for attention-restoring services; mental preoccupation itself is an exploratory narrative assumption.",
+        "ja": "注意回復サービスはCDC-SUスライド10–17に基づき、考え事自体は探索的な物語仮定である。"
+      },
+      {
+        "en": "The resolved profile-semantic-neutral history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-neutral履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Mentally preoccupied commuter",
+      "ja": "考え事を抱える通勤者"
+    },
+    "narrative": {
+      "en": "Mentally preoccupied commuter. A rested commuter leaves work thinking intensely about a difficult meeting and has no service history to predetermine the intervention.",
+      "ja": "考え事を抱える通勤者。休養十分な通勤者が難しい会議を考え続けながら退勤し、介入を事前決定するサービス履歴はない。"
+    },
+    "persona_id": "persona-preoccupied-i04",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-neutral",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should fire monotony prevention and offer supported audio that can redirect attention without a screen.",
+    "ja": "AICAは漫然予防を発火し、画面なしで注意を戻せる対応済み音声を提示する。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "A rested commuter leaves work thinking intensely about a difficult meeting and has no service history to predetermine the intervention.",
+      "ja": "休養十分な通勤者が難しい会議を考え続けながら退勤し、介入を事前決定するサービス履歴はない。"
+    },
+    "journey_evolution": {
+      "en": "After the early rest point, uninterrupted familiar-road exposure creates executable monotony while the commuter remains physically rested.",
+      "ja": "早い休憩地点後、身体的には休養したまま、途切れない慣れた道路曝露が実行可能な単調さを作る。"
+    },
+    "state_at_departure": {
+      "en": "Drowsiness and fatigue start at 5; mental preoccupation is narrative context because the simulator has no direct preoccupation input.",
+      "ja": "眠気と疲労は5で、シミュレータに直接の考え事入力がないため精神的没頭は物語文脈である。"
+    },
+    "trip_reason": {
+      "en": "They drive the long familiar and repetitive night highway home.",
+      "ja": "長く慣れた反復的な夜間高速道路で帰宅する。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Restore attention for a mentally preoccupied commuter on a repetitive route",
+    "ja": "反復ルートで考え事をする通勤者の注意を回復する"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should fire monotony prevention and offer supported audio that can redirect attention without a screen.",
+      "ja": "AICAは漫然予防を発火し、画面なしで注意を戻せる対応済み音声を提示する。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-I04.",
+      "ja": "TC-I04の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

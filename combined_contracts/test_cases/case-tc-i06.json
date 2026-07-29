@@ -1,0 +1,164 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "A well-rested J-rock fan has a concert scheduled soon and a strong supported-music recovery history. They drive a long repetitive daytime expressway to the concert venue. AICA should classify monotony prevention rather than rest required, rank supported audio, and return a complete energetic plan.",
+    "ja": "十分休んだJ-rockファンには間もなくコンサート予定があり、対応済み音楽の強い回復履歴がある。 コンサート会場へ長く反復的な昼間高速道路を走る。 AICAは休憩必要ではなく漫然予防に分類し、対応済み音声を上位にして完全な活性化計画を返す。"
+  },
+  "case_id": "case-tc-i06",
+  "display_id": "TC-I06",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist",
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "monotony_prevention",
+      "required_positive_feature_ids": [
+        "monotony_prevention_score"
+      ],
+      "time_window_min": [
+        45,
+        115
+      ]
+    }
+  },
+  "group": "integrated",
+  "hypothesis": {
+    "rationale": {
+      "en": "Low physical signals separate repetitive-road attention support from exhaustion, while profile and schedule personalize only downstream content. Grounded in CDC-SU Slides 10–17 and 66–80 for monotony recovery and preference inputs; concert context is not a fatigue proxy.",
+      "ja": "低い身体信号で反復道路の注意支援を消耗から分離し、プロファイルと予定は下流コンテンツだけを個別化する。 漫然回復と嗜好入力はCDC-SUスライド10–17および66–80に基づき、コンサート文脈を疲労代理にはしない。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "concert"
+      ],
+      "initial_drowsiness": 5,
+      "initial_fatigue": 5,
+      "is_night": false,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "long",
+        "concert",
+        "repetitive"
+      ]
+    },
+    "narrative": {
+      "en": "They drive a long repetitive daytime expressway to the concert venue. The early rest point passes and prolonged highway repetition accumulates while the driver remains physically rested.",
+      "ja": "コンサート会場へ長く反復的な昼間高速道路を走る。 早い休憩地点を通過し、身体的には休養したまま長時間の高速反復が蓄積する。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_i06",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 10–17 and 66–80 for monotony recovery and preference inputs; concert context is not a fatigue proxy.",
+        "ja": "漫然回復と嗜好入力はCDC-SUスライド10–17および66–80に基づき、コンサート文脈を疲労代理にはしない。"
+      },
+      {
+        "en": "The resolved profile-semantic-jrock-fan history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-jrock-fan履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Rested J-rock fan driving to a concert",
+      "ja": "コンサートへ向かう休養十分なJ-rockファン"
+    },
+    "narrative": {
+      "en": "Rested J-rock fan driving to a concert. A well-rested J-rock fan has a concert scheduled soon and a strong supported-music recovery history.",
+      "ja": "コンサートへ向かう休養十分なJ-rockファン。十分休んだJ-rockファンには間もなくコンサート予定があり、対応済み音楽の強い回復履歴がある。"
+    },
+    "persona_id": "persona-jrock-concert-i06",
+    "preferences": [
+      {
+        "en": "Favor energetic J-rock fitting the upcoming concert while keeping interaction hands-free.",
+        "ja": "操作をハンズフリーに保ち、間近のコンサートに合う活発なJ-rockを好む。"
+      }
+    ],
+    "profile_ref": "profile-semantic-jrock-fan",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should classify monotony prevention rather than rest required, rank supported audio, and return a complete energetic plan.",
+    "ja": "AICAは休憩必要ではなく漫然予防に分類し、対応済み音声を上位にして完全な活性化計画を返す。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "A well-rested J-rock fan has a concert scheduled soon and a strong supported-music recovery history.",
+      "ja": "十分休んだJ-rockファンには間もなくコンサート予定があり、対応済み音楽の強い回復履歴がある。"
+    },
+    "journey_evolution": {
+      "en": "The early rest point passes and prolonged highway repetition accumulates while the driver remains physically rested.",
+      "ja": "早い休憩地点を通過し、身体的には休養したまま長時間の高速反復が蓄積する。"
+    },
+    "state_at_departure": {
+      "en": "Drowsiness and fatigue both start at 5; J-rock genre affinity and the concert schedule shape content but not trigger severity.",
+      "ja": "眠気と疲労はいずれも5で、J-rockジャンル親和とコンサート予定はコンテンツを形作るがトリガー重症度には使わない。"
+    },
+    "trip_reason": {
+      "en": "They drive a long repetitive daytime expressway to the concert venue.",
+      "ja": "コンサート会場へ長く反復的な昼間高速道路を走る。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Energize a J-rock fan on the highway to a concert without confusing monotony with exhaustion",
+    "ja": "コンサートへ向かうJ-rockファンを消耗と混同せず高速道路で活性化する"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should classify monotony prevention rather than rest required, rank supported audio, and return a complete energetic plan.",
+      "ja": "AICAは休憩必要ではなく漫然予防に分類し、対応済み音声を上位にして完全な活性化計画を返す。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-I06.",
+      "ja": "TC-I06の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

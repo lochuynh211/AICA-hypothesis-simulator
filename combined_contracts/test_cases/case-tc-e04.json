@@ -1,0 +1,162 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "A rested-looking field engineer starts after repetitive lifting work but has no subjective sleepiness. They drive a daytime expressway leg to the next maintenance site. AICA should recognize rest need through fatigue evidence without requiring a drowsiness rise.",
+    "ja": "現場技術者は反復的な持ち上げ作業後に出発するが、主観的な眠気はない。 次の保守現場へ昼間の高速道路区間を走る。 AICAは眠気上昇を必要とせず、疲労の根拠から休憩必要を認識する。"
+  },
+  "case_id": "case-tc-e04",
+  "display_id": "TC-E04",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist",
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "rest_required",
+      "required_positive_feature_ids": [
+        "fatigue"
+      ],
+      "time_window_min": [
+        0,
+        30
+      ]
+    }
+  },
+  "group": "environment",
+  "hypothesis": {
+    "rationale": {
+      "en": "This is a transparent signal-isolation experiment for fatigue attribution, not a claim that real fatigue follows a fixed linear rate. Exploratory simulator hypothesis (not directly specified by CDC-SU); the case tests transparent wiring rather than claiming validated real-world causality.",
+      "ja": "疲労帰属の透明な信号分離実験であり、実際の疲労が固定線形率で進むという主張ではない。 CDC-SUに直接規定されない探索的シミュレータ仮説。実世界の因果を実証したものではなく、透明な配線を検証する。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 10,
+      "initial_fatigue": 55,
+      "is_night": false,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "day"
+      ]
+    },
+    "narrative": {
+      "en": "They drive a daytime expressway leg to the next maintenance site. Alertness remains steady as physical fatigue accumulates across the hour without weather or congestion.",
+      "ja": "次の保守現場へ昼間の高速道路区間を走る。 天候や渋滞のない1時間で、覚醒は安定したまま身体疲労が蓄積する。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_e04",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Exploratory simulator hypothesis (not directly specified by CDC-SU); the case tests transparent wiring rather than claiming validated real-world causality.",
+        "ja": "CDC-SUに直接規定されない探索的シミュレータ仮説。実世界の因果を実証したものではなく、透明な配線を検証する。"
+      },
+      {
+        "en": "The resolved profile-semantic-neutral history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-neutral履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Alert but physically tiring daytime driver",
+      "ja": "覚醒しているが身体疲労が増す昼間運転者"
+    },
+    "narrative": {
+      "en": "Alert but physically tiring daytime driver. A rested-looking field engineer starts after repetitive lifting work but has no subjective sleepiness.",
+      "ja": "覚醒しているが身体疲労が増す昼間運転者。現場技術者は反復的な持ち上げ作業後に出発するが、主観的な眠気はない。"
+    },
+    "persona_id": "persona-stable-alertness-e04",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-neutral",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should recognize rest need through fatigue evidence without requiring a drowsiness rise.",
+    "ja": "AICAは眠気上昇を必要とせず、疲労の根拠から休憩必要を認識する。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "A rested-looking field engineer starts after repetitive lifting work but has no subjective sleepiness.",
+      "ja": "現場技術者は反復的な持ち上げ作業後に出発するが、主観的な眠気はない。"
+    },
+    "journey_evolution": {
+      "en": "Alertness remains steady as physical fatigue accumulates across the hour without weather or congestion.",
+      "ja": "天候や渋滞のない1時間で、覚醒は安定したまま身体疲労が蓄積する。"
+    },
+    "state_at_departure": {
+      "en": "Drowsiness begins at 10 and is held nearly stable, while fatigue begins at 55 and rises 1.2 points per minute.",
+      "ja": "眠気は10からほぼ安定し、疲労は55から毎分1.2増える。"
+    },
+    "trip_reason": {
+      "en": "They drive a daytime expressway leg to the next maintenance site.",
+      "ja": "次の保守現場へ昼間の高速道路区間を走る。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Recognize accumulating fatigue even while alertness remains stable",
+    "ja": "覚醒が安定していても蓄積する疲労を認識する"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should recognize rest need through fatigue evidence without requiring a drowsiness rise.",
+      "ja": "AICAは眠気上昇を必要とせず、疲労の根拠から休憩必要を認識する。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-E04.",
+      "ja": "TC-E04の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

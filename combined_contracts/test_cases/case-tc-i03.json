@@ -1,0 +1,168 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "A physically rested office worker has driven the same night commute for years and uses no strongly preferred recovery service. They head home on the long familiar highway with congestion painted across km 110–170. AICA should fire monotony prevention before or during the congestion onset and offer a supported alertness-audio plan.",
+    "ja": "身体的に休養十分な会社員が何年も同じ夜間通勤路を走り、強い回復サービス嗜好はない。 110–170kmに渋滞を描画した長く慣れた高速道路で帰宅する。 AICAは渋滞開始前または開始時に漫然予防を発火し、対応済み覚醒音声計画を提示する。"
+  },
+  "case_id": "case-tc-i03",
+  "display_id": "TC-I03",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist",
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "monotony_prevention",
+      "required_positive_feature_ids": [
+        "monotony_prevention_score"
+      ],
+      "time_window_min": [
+        35,
+        90
+      ]
+    }
+  },
+  "group": "integrated",
+  "hypothesis": {
+    "rationale": {
+      "en": "Router-visible jam painting and the familiar-route recipe make the forecast congestion part of executable evidence rather than narrative only. Grounded in CDC-SU Slides 10–17 (familiar or monotonous driving and in-car recovery proposals).",
+      "ja": "ルータ可視の渋滞描画と慣れたルートレシピにより、予測渋滞を物語だけでなく実行根拠にする。 CDC-SUスライド10–17（慣れ・単調による漫然予兆と車内回復提案）に基づく。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 5,
+      "initial_fatigue": 5,
+      "is_night": true,
+      "jam_range_km": [
+        110,
+        170
+      ],
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "familiar",
+        "commute",
+        "congestion-ahead"
+      ]
+    },
+    "narrative": {
+      "en": "They head home on the long familiar highway with congestion painted across km 110–170. A long repetitive stretch leads toward a 35-minute low-speed congestion period beginning after 55 minutes.",
+      "ja": "110–170kmに渋滞を描画した長く慣れた高速道路で帰宅する。 長い反復区間が、55分後に始まる35分間の低速渋滞へ続く。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_i03",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 10–17 (familiar or monotonous driving and in-car recovery proposals).",
+        "ja": "CDC-SUスライド10–17（慣れ・単調による漫然予兆と車内回復提案）に基づく。"
+      },
+      {
+        "en": "The resolved profile-semantic-neutral history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-neutral履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Routine commuter approaching forecast congestion",
+      "ja": "予測渋滞へ近づく日常通勤者"
+    },
+    "narrative": {
+      "en": "Routine commuter approaching forecast congestion. A physically rested office worker has driven the same night commute for years and uses no strongly preferred recovery service.",
+      "ja": "予測渋滞へ近づく日常通勤者。身体的に休養十分な会社員が何年も同じ夜間通勤路を走り、強い回復サービス嗜好はない。"
+    },
+    "persona_id": "persona-commute-congestion-i03",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-neutral",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should fire monotony prevention before or during the congestion onset and offer a supported alertness-audio plan.",
+    "ja": "AICAは渋滞開始前または開始時に漫然予防を発火し、対応済み覚醒音声計画を提示する。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "A physically rested office worker has driven the same night commute for years and uses no strongly preferred recovery service.",
+      "ja": "身体的に休養十分な会社員が何年も同じ夜間通勤路を走り、強い回復サービス嗜好はない。"
+    },
+    "journey_evolution": {
+      "en": "A long repetitive stretch leads toward a 35-minute low-speed congestion period beginning after 55 minutes.",
+      "ja": "長い反復区間が、55分後に始まる35分間の低速渋滞へ続く。"
+    },
+    "state_at_departure": {
+      "en": "Drowsiness and fatigue begin at 5; familiarity and forecast congestion, not exhaustion, define the risk story.",
+      "ja": "眠気と疲労は5で、消耗ではなく慣れと予測渋滞がリスク物語を定義する。"
+    },
+    "trip_reason": {
+      "en": "They head home on the long familiar highway with congestion painted across km 110–170.",
+      "ja": "110–170kmに渋滞を描画した長く慣れた高速道路で帰宅する。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Break automatic driving before congestion on a familiar commute",
+    "ja": "慣れた通勤路の渋滞前に自動化した運転を中断する"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should fire monotony prevention before or during the congestion onset and offer a supported alertness-audio plan.",
+      "ja": "AICAは渋滞開始前または開始時に漫然予防を発火し、対応済み覚醒音声計画を提示する。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-I03.",
+      "ja": "TC-I03の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

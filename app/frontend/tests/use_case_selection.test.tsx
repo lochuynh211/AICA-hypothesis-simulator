@@ -16,8 +16,7 @@
  *
  * Only `api/proposalClient`'s profile/preset fetches and one synthetic direct
  * profile case are mocked — `resolveCase`/`caseDispatches` run for real over
- * the committed test cases
- * (`case-c01-alert-daytime-control`, `case-c03-monotonous-highway`), and the
+ * the committed semantic test cases (`case-tc-r01`, `case-tc-m01`), and the
  * real `runStore`/`proposalStore`/`reviewStore` reducers apply the dispatches.
  */
 import { render, act } from '@testing-library/react'
@@ -37,15 +36,26 @@ vi.mock('../src/lib/review/caseCatalog', async () => {
   return {
     ...actual,
     getCase: (caseId: string) => {
-      if (caseId !== 'case-direct-profile-test') return actual.getCase(caseId)
-      const base = actual.getCase('case-c01-alert-daytime-control')
+      const direct = actual.getCase(caseId)
+      if (direct) return direct
+      const baseId = caseId === 'case-preset-b-test' ? 'case-tc-m01' : 'case-tc-r01'
+      const base = actual.getCase(baseId)
       if (!base) return null
+      const profileRef =
+        caseId === 'case-preset-a-test'
+          ? 'preset-journey-a-1-cruising-fresh'
+          : caseId === 'case-preset-b-test'
+            ? 'preset-journey-a-2-monotony-building'
+            : caseId === 'case-direct-profile-test'
+              ? 'profile-semantic-neutral'
+              : null
+      if (!profileRef) return null
       return {
         ...base,
         case_id: caseId,
         persona: {
           ...base.persona,
-          profile_ref: 'profile-semantic-neutral',
+          profile_ref: profileRef,
         },
       }
     },
@@ -59,8 +69,8 @@ vi.mock('../src/api/proposalClient', async () => {
 
 import { getPreset, getProfile } from '../src/api/proposalClient'
 
-const CASE_A = 'case-c01-alert-daytime-control' // profile_ref: preset-journey-a-1-cruising-fresh
-const CASE_B = 'case-c03-monotonous-highway' // profile_ref: preset-journey-a-2-monotony-building
+const CASE_A = 'case-preset-a-test'
+const CASE_B = 'case-preset-b-test'
 const DIRECT_PROFILE_CASE = 'case-direct-profile-test'
 const PROFILE_A = 'preset-journey-a-1-cruising-fresh'
 const PROFILE_B = 'preset-journey-a-2-monotony-building'
@@ -216,7 +226,7 @@ describe('useCaseSelection', () => {
     vi.mocked(getPreset).mockResolvedValue(fullPreset(PROFILE_B, 'marker-b'))
     const { runRef, selectionRef } = renderHarness()
 
-    // case-c03-monotonous-highway pins is_night/child_passenger (via
+    // The semantic M01 case pins is_night/child_passenger (via
     // SET_CONTEXT_OVERRIDE) and initial drowsiness/fatigue. `runStore`'s real
     // SELECT_SCENARIO reducer case CLEARS contextOverrides/initial signals —
     // so these pins surviving in the final state is only possible if
@@ -227,11 +237,11 @@ describe('useCaseSelection', () => {
       await selectionRef.current!.handleSelectCase(CASE_B)
     })
 
-    expect(runRef.current!.state.selectedScenarioId).toBe('uc02_monotony_v0_1')
-    expect(runRef.current!.state.contextOverrides.is_night).toBe(false)
+    expect(runRef.current!.state.selectedScenarioId).toBe('semantic_tc_m01')
+    expect(runRef.current!.state.contextOverrides.is_night).toBe(true)
     expect(runRef.current!.state.contextOverrides.child_passenger).toBe(false)
-    expect(runRef.current!.state.initialDrowsiness).toBe(15)
-    expect(runRef.current!.state.initialFatigue).toBe(18)
+    expect(runRef.current!.state.initialDrowsiness).toBe(5)
+    expect(runRef.current!.state.initialFatigue).toBe(5)
   })
 
   it('resolves a direct profile-* reference and dispatches its DriverProfile', async () => {

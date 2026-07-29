@@ -1,0 +1,165 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "A driver begins after a double shift and has also driven the same featureless route for years. They attempt the long familiar night highway home, passing an early rest point before the repetitive section. AICA should select rest_required as the higher-priority trigger rather than treating entertainment as sufficient mitigation.",
+    "ja": "運転者は連続勤務後に出発し、同じ特徴のないルートを何年も走っている。 早い休憩地点を通過して反復区間へ入る、長く慣れた夜間高速で帰宅しようとする。 AICAは娯楽だけで十分とせず、より高優先のトリガーとしてrest_requiredを選ぶ。"
+  },
+  "case_id": "case-tc-e06",
+  "display_id": "TC-E06",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist",
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "rest_required",
+      "required_positive_feature_ids": [
+        "drowsiness",
+        "fatigue"
+      ],
+      "time_window_min": [
+        0,
+        15
+      ]
+    }
+  },
+  "group": "environment",
+  "hypothesis": {
+    "rationale": {
+      "en": "This combines the CDC-SU rest and monotony stories to test frozen priority logic; the exact conflict boundary is exploratory. Grounded in CDC-SU Slides 1–2 and 10–17; their simultaneous severity and priority boundary are an exploratory simulator composition.",
+      "ja": "CDC-SUの休憩と単調の物語を組み合わせて凍結優先ロジックを検証し、正確な競合境界は探索的である。 CDC-SUスライド1–2および10–17に基づくが、同時重症度と優先境界は探索的なシミュレータ合成である。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 88,
+      "initial_fatigue": 86,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "night",
+        "familiar",
+        "severe-fatigue"
+      ]
+    },
+    "narrative": {
+      "en": "They attempt the long familiar night highway home, passing an early rest point before the repetitive section. Severe physical risk and prolonged monotony compete from the start of the highway journey.",
+      "ja": "早い休憩地点を通過して反復区間へ入る、長く慣れた夜間高速で帰宅しようとする。 高速走行開始時から、重い身体リスクと長時間の単調さが競合する。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_e06",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 1–2 and 10–17; their simultaneous severity and priority boundary are an exploratory simulator composition.",
+        "ja": "CDC-SUスライド1–2および10–17に基づくが、同時重症度と優先境界は探索的なシミュレータ合成である。"
+      },
+      {
+        "en": "The resolved profile-semantic-neutral history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-neutral履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Severely fatigued driver on a familiar night highway",
+      "ja": "慣れた夜間高速を走る重度疲労の運転者"
+    },
+    "narrative": {
+      "en": "Severely fatigued driver on a familiar night highway. A driver begins after a double shift and has also driven the same featureless route for years.",
+      "ja": "慣れた夜間高速を走る重度疲労の運転者。運転者は連続勤務後に出発し、同じ特徴のないルートを何年も走っている。"
+    },
+    "persona_id": "persona-severe-combined-e06",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-neutral",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should select rest_required as the higher-priority trigger rather than treating entertainment as sufficient mitigation.",
+    "ja": "AICAは娯楽だけで十分とせず、より高優先のトリガーとしてrest_requiredを選ぶ。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "A driver begins after a double shift and has also driven the same featureless route for years.",
+      "ja": "運転者は連続勤務後に出発し、同じ特徴のないルートを何年も走っている。"
+    },
+    "journey_evolution": {
+      "en": "Severe physical risk and prolonged monotony compete from the start of the highway journey.",
+      "ja": "高速走行開始時から、重い身体リスクと長時間の単調さが競合する。"
+    },
+    "state_at_departure": {
+      "en": "Drowsiness is 88 and fatigue 86, while familiar-route and night monotony signals are also present.",
+      "ja": "眠気88、疲労86で、慣れたルートと夜間の単調信号も存在する。"
+    },
+    "trip_reason": {
+      "en": "They attempt the long familiar night highway home, passing an early rest point before the repetitive section.",
+      "ja": "早い休憩地点を通過して反復区間へ入る、長く慣れた夜間高速で帰宅しようとする。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Choose rest over entertainment when severe fatigue and monotony coexist",
+    "ja": "重い疲労と単調さが共存するとき娯楽より休憩を選ぶ"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should select rest_required as the higher-priority trigger rather than treating entertainment as sufficient mitigation.",
+      "ja": "AICAは娯楽だけで十分とせず、より高優先のトリガーとしてrest_requiredを選ぶ。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-E06.",
+      "ja": "TC-E06の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

@@ -1,0 +1,164 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "A parent slept only four hours after caring for a sick child and has two children secured in the rear seats. The family must make an overnight expressway trip home from relatives before the next school day. AICA should prioritize one early rest-required proposal and keep any downstream choice driving-capable and screen-free.",
+    "ja": "親は病気の子どもの世話で4時間しか眠れず、後席に子ども2人を安全に乗せている。 翌日の登校に間に合うよう、親族宅から夜通し高速道路で帰宅する必要がある。 AICAは早期の休憩必要提案を1回優先し、下流選択を走行中利用可能かつ画面不要に保つ。"
+  },
+  "case_id": "case-tc-e01",
+  "display_id": "TC-E01",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist",
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "rest_required",
+      "required_positive_feature_ids": [
+        "drowsiness",
+        "fatigue"
+      ],
+      "time_window_min": [
+        0,
+        20
+      ]
+    }
+  },
+  "group": "environment",
+  "hypothesis": {
+    "rationale": {
+      "en": "Severe sleep loss drives the safety decision; child presence is explicit context rather than a substitute for physical-state evidence. Grounded in CDC-SU Slides 1–2 for pre-rest safety and Slide 62 for child-passenger context; post-rest behavior is excluded.",
+      "ja": "重い睡眠不足が安全判断を主導し、子どもの同乗は身体状態根拠の代替ではなく明示的文脈となる。 休憩前安全はCDC-SUスライド1–2、子ども同乗文脈はスライド62に基づき、休憩後は除外する。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": true,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 78,
+      "initial_fatigue": 68,
+      "is_night": true,
+      "multiple_passengers": true,
+      "route_tags": [
+        "highway",
+        "night",
+        "family"
+      ]
+    },
+    "narrative": {
+      "en": "The family must make an overnight expressway trip home from relatives before the next school day. Both physical signals rise on the dark highway while the parent must also preserve a calm, non-distracting cabin for the children.",
+      "ja": "翌日の登校に間に合うよう、親族宅から夜通し高速道路で帰宅する必要がある。 暗い高速道路で両身体信号が上がり、親は子どものため落ち着いた非注意散漫の車内も維持する必要がある。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_e01",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 1–2 for pre-rest safety and Slide 62 for child-passenger context; post-rest behavior is excluded.",
+        "ja": "休憩前安全はCDC-SUスライド1–2、子ども同乗文脈はスライド62に基づき、休憩後は除外する。"
+      },
+      {
+        "en": "The resolved profile-semantic-family history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-family履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The parent cannot safely interact with a display and must avoid content that demands visual attention.",
+        "ja": "親は画面を安全に操作できず、視覚注意を求めるコンテンツを避ける必要がある。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Sleep-deprived parent driving two children",
+      "ja": "子ども2人を乗せる睡眠不足の親"
+    },
+    "narrative": {
+      "en": "Sleep-deprived parent driving two children. A parent slept only four hours after caring for a sick child and has two children secured in the rear seats.",
+      "ja": "子ども2人を乗せる睡眠不足の親。親は病気の子どもの世話で4時間しか眠れず、後席に子ども2人を安全に乗せている。"
+    },
+    "persona_id": "persona-parent-overnight-e01",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-family",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should prioritize one early rest-required proposal and keep any downstream choice driving-capable and screen-free.",
+    "ja": "AICAは早期の休憩必要提案を1回優先し、下流選択を走行中利用可能かつ画面不要に保つ。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "A parent slept only four hours after caring for a sick child and has two children secured in the rear seats.",
+      "ja": "親は病気の子どもの世話で4時間しか眠れず、後席に子ども2人を安全に乗せている。"
+    },
+    "journey_evolution": {
+      "en": "Both physical signals rise on the dark highway while the parent must also preserve a calm, non-distracting cabin for the children.",
+      "ja": "暗い高速道路で両身体信号が上がり、親は子どものため落ち着いた非注意散漫の車内も維持する必要がある。"
+    },
+    "state_at_departure": {
+      "en": "Drowsiness is 78 and fatigue 68; the family profile carries child-friendly preferences but no prior service recovery advantage.",
+      "ja": "眠気78、疲労68で、家族プロファイルには子ども向け嗜好があるがサービス回復の優位履歴はない。"
+    },
+    "trip_reason": {
+      "en": "The family must make an overnight expressway trip home from relatives before the next school day.",
+      "ja": "翌日の登校に間に合うよう、親族宅から夜通し高速道路で帰宅する必要がある。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Protect a sleep-deprived parent carrying children on an overnight drive",
+    "ja": "子どもを乗せた睡眠不足の親を夜間走行で守る"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should prioritize one early rest-required proposal and keep any downstream choice driving-capable and screen-free.",
+      "ja": "AICAは早期の休憩必要提案を1回優先し、下流選択を走行中利用可能かつ画面不要に保つ。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-E01.",
+      "ja": "TC-E01の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

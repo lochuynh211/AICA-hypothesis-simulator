@@ -1,0 +1,166 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "The same night courier begins with the same moderate drowsiness and fatigue after the same delivery workload. They instead take the long Tokyo–Osaka route, where the router-owned first service area remains substantially farther away. AICA should avoid a premature fire in this evaluation window; service and content remain not applicable unless a trigger exists.",
+    "ja": "同じ夜間配送員が同じ配達負荷を終え、同じ中程度の眠気と疲労で走り始める。 代わりに長距離の東京–大阪ルートを走り、ルータ所有の最初のサービスエリアはかなり先にある。 AICAは評価時間内の早すぎる発火を避け、発火がなければサービスとコンテンツは非該当とする。"
+  },
+  "case_id": "case-tc-r06",
+  "contrast": {
+    "changed_inputs": [
+      "journey.route_preset_ref",
+      "journey.scenario.primary_fraction",
+      "journey.scenario.rest_fraction",
+      "journey.scenario.route_distance_km",
+      "journey.scenario.route_tags"
+    ],
+    "expected_delta": {
+      "en": "The nearby mapped stop in TC-R05 should make an early proposal actionable; TC-R06 should avoid firing while its stop remains distant.",
+      "ja": "TC-R05の近い地図上停車地点は早期提案を実行可能にし、TC-R06は停車地点が遠い間の発火を避ける。"
+    },
+    "kind": "semantic_real_world",
+    "role": "variant",
+    "with_case_id": "TC-R05"
+  },
+  "display_id": "TC-R06",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "not_applicable",
+      "required_track_ids": [],
+      "returned_count": 0
+    },
+    "service": {
+      "rank_1_acceptable_ids": [],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 0,
+      "outcome": "none",
+      "required_positive_feature_ids": []
+    }
+  },
+  "group": "rest",
+  "hypothesis": {
+    "rationale": {
+      "en": "This route-aware negative control intentionally asks whether router-owned stop distance affects actionability; a failure remains a useful wiring diagnosis. Grounded in CDC-SU Slides 1–2 (physical fatigue/drowsiness rest proposal through arrival at a rest facility); post-rest behavior is out of scope.",
+      "ja": "ルータ所有の停車距離が実行可能性へ影響するかを問うルート認識型の負対照で、失敗しても配線診断として有用である。 CDC-SUスライド1–2（身体疲労・眠気から休憩施設到着までの休憩提案）に基づく。休憩後の挙動は対象外。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 62,
+      "initial_fatigue": 58,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "night",
+        "distant-rest"
+      ]
+    },
+    "narrative": {
+      "en": "They instead take the long Tokyo–Osaka route, where the router-owned first service area remains substantially farther away. The driver accumulates risk while the next mapped stopping opportunity is still distant, making an immediate stop instruction hard to execute.",
+      "ja": "代わりに長距離の東京–大阪ルートを走り、ルータ所有の最初のサービスエリアはかなり先にある。 次の地図上の停車機会がまだ遠い間にリスクが蓄積し、直ちに停車する指示は実行しにくい。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_r06",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 1–2 (physical fatigue/drowsiness rest proposal through arrival at a rest facility); post-rest behavior is out of scope.",
+        "ja": "CDC-SUスライド1–2（身体疲労・眠気から休憩施設到着までの休憩提案）に基づく。休憩後の挙動は対象外。"
+      },
+      {
+        "en": "The resolved profile-semantic-neutral history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-neutral履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Night courier with no nearby mapped stop",
+      "ja": "近くに地図上の停車地点がない夜間配送員"
+    },
+    "narrative": {
+      "en": "Night courier with no nearby mapped stop. The same night courier begins with the same moderate drowsiness and fatigue after the same delivery workload.",
+      "ja": "近くに地図上の停車地点がない夜間配送員。同じ夜間配送員が同じ配達負荷を終え、同じ中程度の眠気と疲労で走り始める。"
+    },
+    "persona_id": "persona-distant-rest-r06",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-neutral",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should avoid a premature fire in this evaluation window; service and content remain not applicable unless a trigger exists.",
+    "ja": "AICAは評価時間内の早すぎる発火を避け、発火がなければサービスとコンテンツは非該当とする。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "The same night courier begins with the same moderate drowsiness and fatigue after the same delivery workload.",
+      "ja": "同じ夜間配送員が同じ配達負荷を終え、同じ中程度の眠気と疲労で走り始める。"
+    },
+    "journey_evolution": {
+      "en": "The driver accumulates risk while the next mapped stopping opportunity is still distant, making an immediate stop instruction hard to execute.",
+      "ja": "次の地図上の停車機会がまだ遠い間にリスクが蓄積し、直ちに停車する指示は実行しにくい。"
+    },
+    "state_at_departure": {
+      "en": "Drowsiness is 62 and fatigue 58 with the same growth, profile, and automatic service choice as TC-R05.",
+      "ja": "眠気62、疲労58で、増加率・プロファイル・自動サービス選択はTC-R05と同一である。"
+    },
+    "trip_reason": {
+      "en": "They instead take the long Tokyo–Osaka route, where the router-owned first service area remains substantially farther away.",
+      "ja": "代わりに長距離の東京–大阪ルートを走り、ルータ所有の最初のサービスエリアはかなり先にある。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Avoid an unactionable early proposal while the next rest stop is still distant (contrast with test case ID TC-R05)",
+    "ja": "次の休憩所がまだ遠い間は実行不能な早期提案を避ける（TC-R05との対照）"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should avoid a premature fire in this evaluation window; service and content remain not applicable unless a trigger exists.",
+      "ja": "AICAは評価時間内の早すぎる発火を避け、発火がなければサービスとコンテンツは非該当とする。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-R06.",
+      "ja": "TC-R06の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

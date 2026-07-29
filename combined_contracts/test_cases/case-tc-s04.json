@@ -1,0 +1,175 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "The same commuter accepts and frequently uses the playlist, but repeated sessions have not improved alertness. They take the identical long familiar night-highway scenario and seed as TC-S03. humming_karaoke should move ahead of the ineffective playlist and still produce a complete content plan.",
+    "ja": "同じ通勤者はプレイリストを受諾し頻繁に使うが、繰り返しても覚醒は改善しなかった。 TC-S03と同一の長く慣れた夜間高速シナリオとseedを使う。 humming_karaokeが効果のないプレイリストを上回り、完全なコンテンツ計画を生成する。"
+  },
+  "case_id": "case-tc-s04",
+  "contrast": {
+    "changed_inputs": [
+      "profile.service_recovery_rate.music_playlist"
+    ],
+    "expected_delta": {
+      "en": "Changing only playlist recovery should demote playlist beneath humming karaoke.",
+      "ja": "プレイリスト回復率だけの変更で、プレイリストが鼻歌カラオケより下がる。"
+    },
+    "kind": "controlled_one_factor",
+    "role": "variant",
+    "with_case_id": "TC-S03"
+  },
+  "display_id": "TC-S04",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "monotony_prevention",
+      "required_positive_feature_ids": [
+        "monotony_prevention_score"
+      ],
+      "time_window_min": [
+        30,
+        115
+      ]
+    }
+  },
+  "group": "service",
+  "hypothesis": {
+    "rationale": {
+      "en": "This one-leaf control asks whether recovery effectiveness can demote a familiar, accepted service. Grounded in CDC-SU Slides 11–15 and 41–61 (driving services and history-informed prioritization).",
+      "ja": "単一葉対照により、回復効果が馴染み深く受諾されるサービスを降格できるかを問う。 CDC-SUスライド11–15および41–61（走行中サービスと履歴に基づく優先順位）に基づく。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 5,
+      "initial_fatigue": 5,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "long",
+        "familiar",
+        "featureless"
+      ]
+    },
+    "narrative": {
+      "en": "They take the identical long familiar night-highway scenario and seed as TC-S03. The monotony trigger receives exactly the same journey evidence as the baseline.",
+      "ja": "TC-S03と同一の長く慣れた夜間高速シナリオとseedを使う。 漫然トリガーは基準ケースと完全に同じ旅程根拠を受ける。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_s04",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 11–15 and 41–61 (driving services and history-informed prioritization).",
+        "ja": "CDC-SUスライド11–15および41–61（走行中サービスと履歴に基づく優先順位）に基づく。"
+      },
+      {
+        "en": "The resolved profile-semantic-s04-playlist-fails history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-s04-playlist-fails履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Driver whose familiar playlist has not helped",
+      "ja": "馴染みのプレイリストが効かなかった運転者"
+    },
+    "narrative": {
+      "en": "Driver whose familiar playlist has not helped. The same commuter accepts and frequently uses the playlist, but repeated sessions have not improved alertness.",
+      "ja": "馴染みのプレイリストが効かなかった運転者。同じ通勤者はプレイリストを受諾し頻繁に使うが、繰り返しても覚醒は改善しなかった。"
+    },
+    "persona_id": "persona-playlist-fails-s04",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-s04-playlist-fails",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "humming_karaoke should move ahead of the ineffective playlist and still produce a complete content plan.",
+    "ja": "humming_karaokeが効果のないプレイリストを上回り、完全なコンテンツ計画を生成する。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "The same commuter accepts and frequently uses the playlist, but repeated sessions have not improved alertness.",
+      "ja": "同じ通勤者はプレイリストを受諾し頻繁に使うが、繰り返しても覚醒は改善しなかった。"
+    },
+    "journey_evolution": {
+      "en": "The monotony trigger receives exactly the same journey evidence as the baseline.",
+      "ja": "漫然トリガーは基準ケースと完全に同じ旅程根拠を受ける。"
+    },
+    "state_at_departure": {
+      "en": "Every profile leaf matches TC-S03 except playlist recovery, which falls from 96% to 5%.",
+      "ja": "全プロファイル葉はTC-S03と同じで、プレイリスト回復率だけが96%から5%へ下がる。"
+    },
+    "trip_reason": {
+      "en": "They take the identical long familiar night-highway scenario and seed as TC-S03.",
+      "ja": "TC-S03と同一の長く慣れた夜間高速シナリオとseedを使う。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Demote a familiar playlist that has not improved alertness (contrast with test case ID TC-S03)",
+    "ja": "覚醒を改善しなかった馴染みのプレイリストを降格する（TC-S03との対照）"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "humming_karaoke should move ahead of the ineffective playlist and still produce a complete content plan.",
+      "ja": "humming_karaokeが効果のないプレイリストを上回り、完全なコンテンツ計画を生成する。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-S04.",
+      "ja": "TC-S04の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

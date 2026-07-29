@@ -1,0 +1,91 @@
+{
+  "builtin": true,
+  "label": {
+    "en": "Same favorite without recent playback",
+    "ja": "同じお気に入り曲・直近再生なし"
+  },
+  "profile": {
+    "age_band": "30s",
+    "cancelled_content_plans": [],
+    "catalog_item_recency_state": {
+      "synthetic-track-0058": "long_unused"
+    },
+    "catalog_item_usage_level": {
+      "synthetic-track-0058": "high"
+    },
+    "changed_from_items": [],
+    "completed_items": [],
+    "content_proposal_acceptance_confidence": {
+      "synthetic-track-0058": 0.98
+    },
+    "content_proposal_acceptance_rate": {
+      "synthetic-track-0058": 98
+    },
+    "content_recovery_confidence": {
+      "synthetic-track-0058": 0.95
+    },
+    "content_recovery_rate": {
+      "synthetic-track-0058": 95
+    },
+    "content_tag_recency_state": {},
+    "content_tag_usage_level": {},
+    "gender": "unspecified",
+    "genre_affinity_v1_enabled": false,
+    "hobby_interest_tags": [
+      "j-rock",
+      "anime"
+    ],
+    "manually_selected_items": [
+      {
+        "selected_at": "2026-07-01T09:00:00Z",
+        "track_id": "synthetic-track-0058"
+      }
+    ],
+    "oshi_id": null,
+    "oshi_mode": "off",
+    "oshi_registered": false,
+    "oshi_tags": [],
+    "oshi_type": null,
+    "played_items": [],
+    "repeated_items": [],
+    "scene_content_tag_usage_level": {},
+    "scene_genre_usage": null,
+    "scene_service_usage_level": {},
+    "scheduled_event_tags": [],
+    "scheduled_event_timing": null,
+    "scheduled_event_type": null,
+    "service_proposal_acceptance_confidence": {
+      "humming_karaoke": 0.95,
+      "music_playlist": 0.98,
+      "radio_style": 0.9
+    },
+    "service_proposal_acceptance_rate": {
+      "humming_karaoke": 90,
+      "music_playlist": 98,
+      "radio_style": 5
+    },
+    "service_recency_state": {
+      "humming_karaoke": "long_unused",
+      "music_playlist": "long_unused",
+      "radio_style": "recent"
+    },
+    "service_recovery_confidence": {
+      "humming_karaoke": 0.95,
+      "music_playlist": 0.98,
+      "radio_style": 0.9
+    },
+    "service_recovery_rate": {
+      "humming_karaoke": 90,
+      "music_playlist": 98,
+      "radio_style": 5
+    },
+    "service_usage_level": {
+      "humming_karaoke": "high",
+      "music_playlist": "high",
+      "radio_style": "never"
+    },
+    "skipped_items": [],
+    "usage_by_genre": null
+  },
+  "profile_id": "profile-semantic-p04-no-recent-play"
+}

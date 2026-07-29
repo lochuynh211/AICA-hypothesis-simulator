@@ -1,0 +1,164 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "A designated driver and two friends spent the day at a late event after little sleep; the driver has no personalized service history. They must use the night expressway to take everyone home safely. AICA should issue one early rest-required proposal and offer supported, screen-free audio until the mapped stop.",
+    "ja": "指定運転者と友人2人は睡眠不足で一日中遅いイベントに参加し、運転者には個別サービス履歴がない。 全員を安全に帰宅させるため夜間高速道路を使う必要がある。 AICAは早期に休憩必要を1回提案し、地図上の停車地点まで対応済み画面不要音声を提示する。"
+  },
+  "case_id": "case-tc-i02",
+  "display_id": "TC-I02",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist",
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "rest_required",
+      "required_positive_feature_ids": [
+        "drowsiness",
+        "fatigue"
+      ],
+      "time_window_min": [
+        0,
+        20
+      ]
+    }
+  },
+  "group": "integrated",
+  "hypothesis": {
+    "rationale": {
+      "en": "This directly carries the CDC-SU friends-returning-home persona through trigger, service, and supported content boundaries before rest. Grounded in CDC-SU Slides 1–2 (physical fatigue/drowsiness rest proposal through arrival at a rest facility); post-rest behavior is out of scope.",
+      "ja": "CDC-SUの友人と帰宅するペルソナを、休憩前のトリガー・サービス・対応済みコンテンツ境界まで一貫して扱う。 CDC-SUスライド1–2（身体疲労・眠気から休憩施設到着までの休憩提案）に基づく。休憩後の挙動は対象外。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 80,
+      "initial_fatigue": 66,
+      "is_night": true,
+      "multiple_passengers": true,
+      "route_tags": [
+        "highway",
+        "night",
+        "friends"
+      ]
+    },
+    "narrative": {
+      "en": "They must use the night expressway to take everyone home safely. Physical risk rises during the quiet highway drive while sleeping passengers provide little conversational stimulation.",
+      "ja": "全員を安全に帰宅させるため夜間高速道路を使う必要がある。 静かな高速走行中に身体リスクが上がり、眠る同乗者から会話刺激はほとんど得られない。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_i02",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 1–2 (physical fatigue/drowsiness rest proposal through arrival at a rest facility); post-rest behavior is out of scope.",
+        "ja": "CDC-SUスライド1–2（身体疲労・眠気から休憩施設到着までの休憩提案）に基づく。休憩後の挙動は対象外。"
+      },
+      {
+        "en": "The resolved profile-semantic-neutral history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-neutral履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Designated driver bringing friends home",
+      "ja": "友人を送る指定運転者"
+    },
+    "narrative": {
+      "en": "Designated driver bringing friends home. A designated driver and two friends spent the day at a late event after little sleep; the driver has no personalized service history.",
+      "ja": "友人を送る指定運転者。指定運転者と友人2人は睡眠不足で一日中遅いイベントに参加し、運転者には個別サービス履歴がない。"
+    },
+    "persona_id": "persona-friends-late-event-i02",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-neutral",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should issue one early rest-required proposal and offer supported, screen-free audio until the mapped stop.",
+    "ja": "AICAは早期に休憩必要を1回提案し、地図上の停車地点まで対応済み画面不要音声を提示する。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "A designated driver and two friends spent the day at a late event after little sleep; the driver has no personalized service history.",
+      "ja": "指定運転者と友人2人は睡眠不足で一日中遅いイベントに参加し、運転者には個別サービス履歴がない。"
+    },
+    "journey_evolution": {
+      "en": "Physical risk rises during the quiet highway drive while sleeping passengers provide little conversational stimulation.",
+      "ja": "静かな高速走行中に身体リスクが上がり、眠る同乗者から会話刺激はほとんど得られない。"
+    },
+    "state_at_departure": {
+      "en": "Drowsiness is 80 and fatigue 66, with multiple passengers but no child-passenger flag.",
+      "ja": "眠気80、疲労66で、複数同乗者はいるが子ども同乗フラグはない。"
+    },
+    "trip_reason": {
+      "en": "They must use the night expressway to take everyone home safely.",
+      "ja": "全員を安全に帰宅させるため夜間高速道路を使う必要がある。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Protect sleep-deprived friends returning from a late event",
+    "ja": "遅いイベントから帰る睡眠不足の友人たちを守る"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should issue one early rest-required proposal and offer supported, screen-free audio until the mapped stop.",
+      "ja": "AICAは早期に休憩必要を1回提案し、地図上の停車地点まで対応済み画面不要音声を提示する。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-I02.",
+      "ja": "TC-I02の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

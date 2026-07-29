@@ -1,0 +1,177 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "A logistics worker slept poorly during the day, completed a physically demanding late shift, and starts driving after only a brief pause. They must drive home at night on the Tokyo–Osaka expressway, where the first mapped service area is the practical stopping option. AICA should issue one rest-required proposal within 15 minutes, explain drowsiness positively, and then offer driving-capable audio support.",
+    "ja": "物流担当者は日中に十分眠れず、身体負荷の高い遅番勤務を終え、短い間を置いただけで運転を始める。 夜間に東京–大阪の高速道路で帰宅し、地図上の最初のサービスエリアが現実的な停車候補となる。 AICAは15分以内に休憩必要を1回提案し、眠気を正の根拠として説明した後、走行中に使える音声支援を提示する。"
+  },
+  "case_id": "case-tc-r01",
+  "contrast": {
+    "changed_inputs": [
+      "journey.scenario.drowsiness_model.base_growth_per_min",
+      "journey.scenario.fatigue_model.base_growth_per_min",
+      "journey.scenario.initial_drowsiness",
+      "journey.scenario.initial_fatigue"
+    ],
+    "expected_delta": {
+      "en": "TC-R01 should fire early for the sleep-deprived state while TC-R02 stays quiet on the same journey.",
+      "ja": "睡眠不足のTC-R01は早期発火し、同じ旅程で休養十分なTC-R02は静観する。"
+    },
+    "kind": "semantic_real_world",
+    "role": "baseline",
+    "with_case_id": "TC-R02"
+  },
+  "display_id": "TC-R01",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist",
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "rest_required",
+      "required_positive_feature_ids": [
+        "drowsiness"
+      ],
+      "time_window_min": [
+        0,
+        15
+      ]
+    }
+  },
+  "group": "rest",
+  "hypothesis": {
+    "rationale": {
+      "en": "High initial drowsiness and fatigue plus coherent growth encode the sleep-deprived shift, while the mapped service area keeps the proposal actionable. Grounded in CDC-SU Slides 1–2 (physical fatigue/drowsiness rest proposal through arrival at a rest facility); post-rest behavior is out of scope.",
+      "ja": "高い初期眠気・疲労と整合した増加率で睡眠不足の勤務を表し、地図上のサービスエリアにより提案を実行可能にする。 CDC-SUスライド1–2（身体疲労・眠気から休憩施設到着までの休憩提案）に基づく。休憩後の挙動は対象外。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 85,
+      "initial_fatigue": 70,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "night"
+      ]
+    },
+    "narrative": {
+      "en": "They must drive home at night on the Tokyo–Osaka expressway, where the first mapped service area is the practical stopping option. Both signals continue rising on the dark, uninterrupted highway before the first reachable rest area.",
+      "ja": "夜間に東京–大阪の高速道路で帰宅し、地図上の最初のサービスエリアが現実的な停車候補となる。 最初に到達可能な休憩所まで、暗く途切れない高速道路で両信号が上昇し続ける。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_r01",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 1–2 (physical fatigue/drowsiness rest proposal through arrival at a rest facility); post-rest behavior is out of scope.",
+        "ja": "CDC-SUスライド1–2（身体疲労・眠気から休憩施設到着までの休憩提案）に基づく。休憩後の挙動は対象外。"
+      },
+      {
+        "en": "The resolved profile-semantic-neutral history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-neutral履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Late-shift logistics worker",
+      "ja": "遅番勤務を終えた物流担当者"
+    },
+    "narrative": {
+      "en": "Late-shift logistics worker. A logistics worker slept poorly during the day, completed a physically demanding late shift, and starts driving after only a brief pause.",
+      "ja": "遅番勤務を終えた物流担当者。物流担当者は日中に十分眠れず、身体負荷の高い遅番勤務を終え、短い間を置いただけで運転を始める。"
+    },
+    "persona_id": "persona-late-shift-worker-r01",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-neutral",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should issue one rest-required proposal within 15 minutes, explain drowsiness positively, and then offer driving-capable audio support.",
+    "ja": "AICAは15分以内に休憩必要を1回提案し、眠気を正の根拠として説明した後、走行中に使える音声支援を提示する。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "A logistics worker slept poorly during the day, completed a physically demanding late shift, and starts driving after only a brief pause.",
+      "ja": "物流担当者は日中に十分眠れず、身体負荷の高い遅番勤務を終え、短い間を置いただけで運転を始める。"
+    },
+    "journey_evolution": {
+      "en": "Both signals continue rising on the dark, uninterrupted highway before the first reachable rest area.",
+      "ja": "最初に到達可能な休憩所まで、暗く途切れない高速道路で両信号が上昇し続ける。"
+    },
+    "state_at_departure": {
+      "en": "Drowsiness is 85 and fatigue is 70 at departure; the neutral profile contributes no preference or recovery-history shortcut.",
+      "ja": "出発時の眠気は85、疲労は70で、中立プロファイルには嗜好や回復履歴による近道がない。"
+    },
+    "trip_reason": {
+      "en": "They must drive home at night on the Tokyo–Osaka expressway, where the first mapped service area is the practical stopping option.",
+      "ja": "夜間に東京–大阪の高速道路で帰宅し、地図上の最初のサービスエリアが現実的な停車候補となる。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Protect a sleep-deprived late-shift worker with an early rest proposal",
+    "ja": "睡眠不足の遅番勤務者を早めの休憩提案で守る"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should issue one rest-required proposal within 15 minutes, explain drowsiness positively, and then offer driving-capable audio support.",
+      "ja": "AICAは15分以内に休憩必要を1回提案し、眠気を正の根拠として説明した後、走行中に使える音声支援を提示する。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-R01.",
+      "ja": "TC-R01の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

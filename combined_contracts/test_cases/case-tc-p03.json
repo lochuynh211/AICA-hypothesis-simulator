@@ -1,0 +1,178 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "A listener strongly favors synthetic-track-0058 and manually selected it before, but played it at 2026-07-29T11:40:00Z. At the 2026-07-29T12:00:00Z reference time they begin the shared familiar night-highway journey. The five-track plan should exclude synthetic-track-0058 despite its strong preference evidence.",
+    "ja": "リスナーはsynthetic-track-0058を強く好み以前に手動選択したが、2026-07-29T11:40:00Zに再生した。 基準時刻2026-07-29T12:00:00Zに、共有する慣れた夜間高速旅程を始める。 強い嗜好根拠があっても、5曲計画からsynthetic-track-0058を除外する。"
+  },
+  "case_id": "case-tc-p03",
+  "contrast": {
+    "changed_inputs": [
+      "profile.played_items"
+    ],
+    "expected_delta": {
+      "en": "Removing only the recent-play list should restore the favorite track to the plan.",
+      "ja": "直近再生リストだけを除くことで、お気に入り曲が計画へ復帰する。"
+    },
+    "kind": "controlled_one_factor",
+    "role": "baseline",
+    "with_case_id": "TC-P04"
+  },
+  "display_id": "TC-P03",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [
+        "synthetic-track-0058"
+      ],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist",
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "monotony_prevention",
+      "required_positive_feature_ids": [
+        "monotony_prevention_score"
+      ],
+      "time_window_min": [
+        30,
+        115
+      ]
+    }
+  },
+  "group": "content",
+  "hypothesis": {
+    "rationale": {
+      "en": "The pair changes only profile.played_items, isolating the recent-play exclusion from affinity, recovery, route, seed, and service choice. Grounded in CDC-SU Slides 66–80 (OSHI, preference, and recent-operation inputs to content prioritization).",
+      "ja": "対ではprofile.played_itemsだけを変え、直近再生除外を親和性・回復・ルート・seed・サービス選択から分離する。 CDC-SUスライド66–80（推し・嗜好・直近操作を用いたコンテンツ優先順位）に基づく。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 5,
+      "initial_fatigue": 5,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "long",
+        "familiar",
+        "featureless"
+      ]
+    },
+    "narrative": {
+      "en": "At the 2026-07-29T12:00:00Z reference time they begin the shared familiar night-highway journey. Monotony produces a supported content request without changing the fixed recent-play history.",
+      "ja": "基準時刻2026-07-29T12:00:00Zに、共有する慣れた夜間高速旅程を始める。 固定された直近再生履歴を変えず、単調さが対応済みコンテンツ要求を生む。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_p03",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 66–80 (OSHI, preference, and recent-operation inputs to content prioritization).",
+        "ja": "CDC-SUスライド66–80（推し・嗜好・直近操作を用いたコンテンツ優先順位）に基づく。"
+      },
+      {
+        "en": "The resolved profile-semantic-p03-recent-play history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-p03-recent-play履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Listener who just heard a favorite track",
+      "ja": "お気に入り曲を直前に聴いたリスナー"
+    },
+    "narrative": {
+      "en": "Listener who just heard a favorite track. A listener strongly favors synthetic-track-0058 and manually selected it before, but played it at 2026-07-29T11:40:00Z.",
+      "ja": "お気に入り曲を直前に聴いたリスナー。リスナーはsynthetic-track-0058を強く好み以前に手動選択したが、2026-07-29T11:40:00Zに再生した。"
+    },
+    "persona_id": "persona-recent-play-p03",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-p03-recent-play",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "The five-track plan should exclude synthetic-track-0058 despite its strong preference evidence.",
+    "ja": "強い嗜好根拠があっても、5曲計画からsynthetic-track-0058を除外する。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "A listener strongly favors synthetic-track-0058 and manually selected it before, but played it at 2026-07-29T11:40:00Z.",
+      "ja": "リスナーはsynthetic-track-0058を強く好み以前に手動選択したが、2026-07-29T11:40:00Zに再生した。"
+    },
+    "journey_evolution": {
+      "en": "Monotony produces a supported content request without changing the fixed recent-play history.",
+      "ja": "固定された直近再生履歴を変えず、単調さが対応済みコンテンツ要求を生む。"
+    },
+    "state_at_departure": {
+      "en": "Physical signals start at 5 and supported-service history strongly favors music or humming; the favorite was heard exactly twenty minutes ago.",
+      "ja": "身体信号は5で対応済みサービス履歴は音楽・鼻歌を強く支持し、お気に入りはちょうど20分前に再生済みである。"
+    },
+    "trip_reason": {
+      "en": "At the 2026-07-29T12:00:00Z reference time they begin the shared familiar night-highway journey.",
+      "ja": "基準時刻2026-07-29T12:00:00Zに、共有する慣れた夜間高速旅程を始める。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Avoid replaying a favorite song heard twenty minutes ago",
+    "ja": "20分前に聴いたお気に入り曲の再生を避ける"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "The five-track plan should exclude synthetic-track-0058 despite its strong preference evidence.",
+      "ja": "強い嗜好根拠があっても、5曲計画からsynthetic-track-0058を除外する。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-P03.",
+      "ja": "TC-P03の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

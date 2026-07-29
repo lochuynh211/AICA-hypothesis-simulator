@@ -1,0 +1,129 @@
+{
+  "allowed_actions": [
+    "accept_rest",
+    "postpone",
+    "decline",
+    "acknowledge"
+  ],
+  "anomaly_signal_params": {
+    "lambda_base": 0.0,
+    "lambda_gain": 0.0,
+    "theta": 100.0,
+    "window_min": 15.0
+  },
+  "child_passenger": false,
+  "driver_signal_params": {
+    "drowsiness_model": {
+      "base_growth_per_min": 0.15,
+      "monotony_add_per_min": 0.03,
+      "night_add_per_min": 0.05,
+      "traffic_jam_add_per_min": 0.02
+    },
+    "fatigue_model": {
+      "base_growth_per_min": 0.15,
+      "continuous_driving_add_per_min_after_60_min": 0.05,
+      "mountain_road_add_per_min": 0.0,
+      "traffic_jam_add_per_min": 0.02
+    },
+    "id": "semantic_tc_r04_driver",
+    "recovery_model": {}
+  },
+  "event_presets": {
+    "signal_duration_at_trigger": "persistent"
+  },
+  "familiar_route": false,
+  "id": "semantic_tc_r04",
+  "initial_state": {
+    "drowsiness_level": 18,
+    "fatigue_level": 20
+  },
+  "is_night": true,
+  "persona": {
+    "description": "Warehouse supervisor after an ordinary shift. The same supervisor finishes an ordinary staffed shift with normal breaks and no unusual physical workload.",
+    "name": "Warehouse supervisor after an ordinary shift"
+  },
+  "presets": {
+    "semantic_catalog": {
+      "catalog_id": "semantic-combined-experience-catalog",
+      "catalog_version": "1.0.0",
+      "display_id": "TC-R04"
+    },
+    "total_route_distance_km": 90,
+    "traffic_events": [],
+    "weather_events": []
+  },
+  "recovery_options": [],
+  "rest_drowsiness_ceiling": 100.0,
+  "review_focus": "TC-R04: Avoid mistaking an ordinary post-work drive for exhaustion (contrast with test case ID TC-R03)",
+  "route_intent": {
+    "rest_facility": {
+      "label": {
+        "en": "Planned Rest Area",
+        "ja": "予定休憩所"
+      }
+    },
+    "segments": [
+      {
+        "at": 0.0,
+        "id": "seg_start",
+        "is_rest_facility": false,
+        "length_band": "short",
+        "name": {
+          "en": "Start",
+          "ja": "出発地"
+        },
+        "speed_band": "slow",
+        "type": "start"
+      },
+      {
+        "at": 0.3,
+        "id": "seg_rest",
+        "is_rest_facility": true,
+        "length_band": "short",
+        "name": {
+          "en": "Planned Rest Area",
+          "ja": "予定休憩所"
+        },
+        "speed_band": "slow",
+        "type": "rest"
+      },
+      {
+        "at": 0.35,
+        "id": "seg_primary",
+        "is_rest_facility": false,
+        "length_band": "long",
+        "name": {
+          "en": "Primary Road",
+          "ja": "主要道路"
+        },
+        "speed_band": "fast",
+        "type": "highway"
+      },
+      {
+        "at": 1.0,
+        "id": "seg_end",
+        "is_rest_facility": false,
+        "length_band": "short",
+        "name": {
+          "en": "Destination",
+          "ja": "目的地"
+        },
+        "speed_band": "slow",
+        "type": "end"
+      }
+    ]
+  },
+  "run_seed_default": 42,
+  "speed_profile": {
+    "highway_kph": 100,
+    "mountain_road_kph": 40,
+    "normal_road_kph": 60,
+    "sightseeing_road_kph": 30,
+    "traffic_jam_kph": 20
+  },
+  "tick_seconds": 180,
+  "total_duration_seconds": 3600,
+  "type": "uc01_fatigue",
+  "version": "1.0.0",
+  "weather_risk": 0
+}

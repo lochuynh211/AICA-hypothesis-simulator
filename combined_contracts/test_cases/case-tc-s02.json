@@ -1,0 +1,175 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "The same commuter has the same high humming acceptance and usage history, but repeated sessions did not restore alertness. They take the identical long familiar night-highway journey with the same seed as TC-S01. After monotony prevention fires, music_playlist should replace failed humming at rank one and yield a complete plan.",
+    "ja": "同じ通勤者が同じ高い鼻歌受諾・利用履歴を持つが、繰り返し使用しても覚醒は回復しなかった。 TC-S01と同じseedで、同一の長く慣れた夜間高速旅程を走る。 漫然予防発火後、music_playlistが失敗した鼻歌に代わって首位となり、完全な計画を生成する。"
+  },
+  "case_id": "case-tc-s02",
+  "contrast": {
+    "changed_inputs": [
+      "profile.service_recovery_rate.humming_karaoke"
+    ],
+    "expected_delta": {
+      "en": "Changing only humming recovery should move rank one from humming karaoke to playlist.",
+      "ja": "鼻歌回復率だけの変更で、首位が鼻歌カラオケからプレイリストへ移る。"
+    },
+    "kind": "controlled_one_factor",
+    "role": "variant",
+    "with_case_id": "TC-S01"
+  },
+  "display_id": "TC-S02",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "monotony_prevention",
+      "required_positive_feature_ids": [
+        "monotony_prevention_score"
+      ],
+      "time_window_min": [
+        30,
+        115
+      ]
+    }
+  },
+  "group": "service",
+  "hypothesis": {
+    "rationale": {
+      "en": "A single resolved leaf tests whether recovery outcome can outweigh unchanged familiarity and acceptance. Grounded in CDC-SU Slides 11–15 and 41–61 (driving services and history-informed prioritization).",
+      "ja": "解決済みの単一葉により、回復結果が変わらない親しみや受諾を上回れるかを検証する。 CDC-SUスライド11–15および41–61（走行中サービスと履歴に基づく優先順位）に基づく。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 5,
+      "initial_fatigue": 5,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "long",
+        "familiar",
+        "featureless"
+      ]
+    },
+    "narrative": {
+      "en": "They take the identical long familiar night-highway journey with the same seed as TC-S01. The same monotony evidence accumulates after the early rest point.",
+      "ja": "TC-S01と同じseedで、同一の長く慣れた夜間高速旅程を走る。 早い休憩地点後、同じ単調根拠が蓄積する。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_s02",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 11–15 and 41–61 (driving services and history-informed prioritization).",
+        "ja": "CDC-SUスライド11–15および41–61（走行中サービスと履歴に基づく優先順位）に基づく。"
+      },
+      {
+        "en": "The resolved profile-semantic-s02-humming-fails history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-s02-humming-fails履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Commuter not helped by humming karaoke",
+      "ja": "鼻歌カラオケで回復しない通勤者"
+    },
+    "narrative": {
+      "en": "Commuter not helped by humming karaoke. The same commuter has the same high humming acceptance and usage history, but repeated sessions did not restore alertness.",
+      "ja": "鼻歌カラオケで回復しない通勤者。同じ通勤者が同じ高い鼻歌受諾・利用履歴を持つが、繰り返し使用しても覚醒は回復しなかった。"
+    },
+    "persona_id": "persona-humming-fails-s02",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-s02-humming-fails",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "After monotony prevention fires, music_playlist should replace failed humming at rank one and yield a complete plan.",
+    "ja": "漫然予防発火後、music_playlistが失敗した鼻歌に代わって首位となり、完全な計画を生成する。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "The same commuter has the same high humming acceptance and usage history, but repeated sessions did not restore alertness.",
+      "ja": "同じ通勤者が同じ高い鼻歌受諾・利用履歴を持つが、繰り返し使用しても覚醒は回復しなかった。"
+    },
+    "journey_evolution": {
+      "en": "The same monotony evidence accumulates after the early rest point.",
+      "ja": "早い休憩地点後、同じ単調根拠が蓄積する。"
+    },
+    "state_at_departure": {
+      "en": "Physical signals and every profile leaf match TC-S01 except humming recovery, which is 5% instead of 95%.",
+      "ja": "身体信号と全プロファイル葉はTC-S01と同一で、鼻歌回復率だけが95%ではなく5%である。"
+    },
+    "trip_reason": {
+      "en": "They take the identical long familiar night-highway journey with the same seed as TC-S01.",
+      "ja": "TC-S01と同じseedで、同一の長く慣れた夜間高速旅程を走る。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Offer an alternative after humming repeatedly failed (contrast with test case ID TC-S01)",
+    "ja": "鼻歌が繰り返し失敗した後は代替を提示する（TC-S01との対照）"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "After monotony prevention fires, music_playlist should replace failed humming at rank one and yield a complete plan.",
+      "ja": "漫然予防発火後、music_playlistが失敗した鼻歌に代わって首位となり、完全な計画を生成する。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-S02.",
+      "ja": "TC-S02の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

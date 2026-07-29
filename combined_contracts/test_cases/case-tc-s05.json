@@ -1,0 +1,175 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "A commuter has strong, high-confidence recovery from both hands-free call-and-response and quiz, but has not used either recently. They drive the shared long familiar night highway after routine work. call_response_driving should rank first; because the content selector does not support that service, the honest downstream expectation is unsupported_service with zero tracks.",
+    "ja": "通勤者はハンズフリー合いの手とクイズ双方で高信頼の強い回復実績があるが、どちらも直近利用していない。 通常勤務後、共有する長く慣れた夜間高速道路を走る。 call_response_drivingが首位となり、コンテンツ選択器が未対応のため、下流は正直にunsupported_service・0曲と期待する。"
+  },
+  "case_id": "case-tc-s05",
+  "contrast": {
+    "changed_inputs": [
+      "profile.service_recency_state.call_response_driving"
+    ],
+    "expected_delta": {
+      "en": "Changing only call-response recency should favor the long-unused tie-control quiz in TC-S06.",
+      "ja": "合いの手直近性だけの変更で、TC-S06では長期未使用の対照クイズを優先する。"
+    },
+    "kind": "controlled_one_factor",
+    "role": "baseline",
+    "with_case_id": "TC-S06"
+  },
+  "display_id": "TC-S05",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "unsupported_service",
+      "required_track_ids": [],
+      "returned_count": 0
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "call_response_driving"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "monotony_prevention",
+      "required_positive_feature_ids": [
+        "monotony_prevention_score"
+      ],
+      "time_window_min": [
+        30,
+        115
+      ]
+    }
+  },
+  "group": "service",
+  "hypothesis": {
+    "rationale": {
+      "en": "The tie-control quiz shares recovery and acceptance, while long-unused call response is the intended leading candidate before the recency-only variant. Grounded in CDC-SU Slides 11–15 and 41–61 (driving services and history-informed prioritization).",
+      "ja": "対照候補のクイズは回復と受諾を共有し、直近性だけを変える前は長期未使用の合いの手を首位候補とする。 CDC-SUスライド11–15および41–61（走行中サービスと履歴に基づく優先順位）に基づく。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 5,
+      "initial_fatigue": 5,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "long",
+        "familiar",
+        "featureless"
+      ]
+    },
+    "narrative": {
+      "en": "They drive the shared long familiar night highway after routine work. The monotony recipe passes its early rest point and builds prolonged familiar-road exposure.",
+      "ja": "通常勤務後、共有する長く慣れた夜間高速道路を走る。 単調レシピは早い休憩地点を通過し、慣れた道路への長時間曝露を蓄積する。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_s05",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 11–15 and 41–61 (driving services and history-informed prioritization).",
+        "ja": "CDC-SUスライド11–15および41–61（走行中サービスと履歴に基づく優先順位）に基づく。"
+      },
+      {
+        "en": "The resolved profile-semantic-s05-call-unused history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-s05-call-unused履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Driver with effective but underused call-and-response",
+      "ja": "有効だが未使用期間の長い合いの手履歴を持つ運転者"
+    },
+    "narrative": {
+      "en": "Driver with effective but underused call-and-response. A commuter has strong, high-confidence recovery from both hands-free call-and-response and quiz, but has not used either recently.",
+      "ja": "有効だが未使用期間の長い合いの手履歴を持つ運転者。通勤者はハンズフリー合いの手とクイズ双方で高信頼の強い回復実績があるが、どちらも直近利用していない。"
+    },
+    "persona_id": "persona-call-unused-s05",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-s05-call-unused",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "call_response_driving should rank first; because the content selector does not support that service, the honest downstream expectation is unsupported_service with zero tracks.",
+    "ja": "call_response_drivingが首位となり、コンテンツ選択器が未対応のため、下流は正直にunsupported_service・0曲と期待する。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "A commuter has strong, high-confidence recovery from both hands-free call-and-response and quiz, but has not used either recently.",
+      "ja": "通勤者はハンズフリー合いの手とクイズ双方で高信頼の強い回復実績があるが、どちらも直近利用していない。"
+    },
+    "journey_evolution": {
+      "en": "The monotony recipe passes its early rest point and builds prolonged familiar-road exposure.",
+      "ja": "単調レシピは早い休憩地点を通過し、慣れた道路への長時間曝露を蓄積する。"
+    },
+    "state_at_departure": {
+      "en": "Physical signals start at 5; call-and-response and quiz share 94% recovery and 90% acceptance, while music was used recently.",
+      "ja": "身体信号は5で、合いの手とクイズは回復94%・受諾90%を共有し、音楽は直近使用済みである。"
+    },
+    "trip_reason": {
+      "en": "They drive the shared long familiar night highway after routine work.",
+      "ja": "通常勤務後、共有する長く慣れた夜間高速道路を走る。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Surface underused call-and-response with strong recovery history",
+    "ja": "利用が少ないが回復実績の高い合いの手を浮上させる"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "call_response_driving should rank first; because the content selector does not support that service, the honest downstream expectation is unsupported_service with zero tracks.",
+      "ja": "call_response_drivingが首位となり、コンテンツ選択器が未対応のため、下流は正直にunsupported_service・0曲と期待する。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-S05.",
+      "ja": "TC-S05の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

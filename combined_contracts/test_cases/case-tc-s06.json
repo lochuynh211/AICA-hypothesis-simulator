@@ -1,0 +1,175 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "The same commuter has the same strong recovery and acceptance evidence, but call-and-response was just used while quiz remains long unused. They take the identical monotony scenario, route, seed, and automatic path as TC-S05. quiz should become the rank-one alternative; its unsupported content boundary should be reported honestly with zero tracks.",
+    "ja": "同じ通勤者が同じ強い回復・受諾根拠を持つが、合いの手だけを直前に使い、クイズは長期未使用のままである。 TC-S05と同一の単調シナリオ・ルート・seed・自動経路を使う。 quizが首位の代替となり、未対応コンテンツ境界を0曲として正直に報告する。"
+  },
+  "case_id": "case-tc-s06",
+  "contrast": {
+    "changed_inputs": [
+      "profile.service_recency_state.call_response_driving"
+    ],
+    "expected_delta": {
+      "en": "Changing only call-response recency should favor the long-unused tie-control quiz in TC-S06.",
+      "ja": "合いの手直近性だけの変更で、TC-S06では長期未使用の対照クイズを優先する。"
+    },
+    "kind": "controlled_one_factor",
+    "role": "variant",
+    "with_case_id": "TC-S05"
+  },
+  "display_id": "TC-S06",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "unsupported_service",
+      "required_track_ids": [],
+      "returned_count": 0
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "quiz"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "monotony_prevention",
+      "required_positive_feature_ids": [
+        "monotony_prevention_score"
+      ],
+      "time_window_min": [
+        30,
+        115
+      ]
+    }
+  },
+  "group": "service",
+  "hypothesis": {
+    "rationale": {
+      "en": "The exact one-leaf recency change tests immediate-repetition suppression against a recovery-matched tie-control candidate. Grounded in CDC-SU Slides 11–15 and 41–61 (driving services and history-informed prioritization).",
+      "ja": "正確な単一葉の直近性変更により、回復実績が同等の対照候補に対する即時反復抑制を検証する。 CDC-SUスライド11–15および41–61（走行中サービスと履歴に基づく優先順位）に基づく。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 5,
+      "initial_fatigue": 5,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "long",
+        "familiar",
+        "featureless"
+      ]
+    },
+    "narrative": {
+      "en": "They take the identical monotony scenario, route, seed, and automatic path as TC-S05. The same familiar-road monotony evidence accumulates after the early rest point.",
+      "ja": "TC-S05と同一の単調シナリオ・ルート・seed・自動経路を使う。 早い休憩地点後、同じ慣れた道路の単調根拠が蓄積する。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_s06",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 11–15 and 41–61 (driving services and history-informed prioritization).",
+        "ja": "CDC-SUスライド11–15および41–61（走行中サービスと履歴に基づく優先順位）に基づく。"
+      },
+      {
+        "en": "The resolved profile-semantic-s06-call-recent history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-s06-call-recent履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Driver who just used call-and-response",
+      "ja": "合いの手を直前に使った運転者"
+    },
+    "narrative": {
+      "en": "Driver who just used call-and-response. The same commuter has the same strong recovery and acceptance evidence, but call-and-response was just used while quiz remains long unused.",
+      "ja": "合いの手を直前に使った運転者。同じ通勤者が同じ強い回復・受諾根拠を持つが、合いの手だけを直前に使い、クイズは長期未使用のままである。"
+    },
+    "persona_id": "persona-call-recent-s06",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-s06-call-recent",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "quiz should become the rank-one alternative; its unsupported content boundary should be reported honestly with zero tracks.",
+    "ja": "quizが首位の代替となり、未対応コンテンツ境界を0曲として正直に報告する。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "The same commuter has the same strong recovery and acceptance evidence, but call-and-response was just used while quiz remains long unused.",
+      "ja": "同じ通勤者が同じ強い回復・受諾根拠を持つが、合いの手だけを直前に使い、クイズは長期未使用のままである。"
+    },
+    "journey_evolution": {
+      "en": "The same familiar-road monotony evidence accumulates after the early rest point.",
+      "ja": "早い休憩地点後、同じ慣れた道路の単調根拠が蓄積する。"
+    },
+    "state_at_departure": {
+      "en": "Every profile leaf matches TC-S05 except profile.service_recency_state.call_response_driving, now recent.",
+      "ja": "profile.service_recency_state.call_response_drivingがrecentになった以外、全葉はTC-S05と同じである。"
+    },
+    "trip_reason": {
+      "en": "They take the identical monotony scenario, route, seed, and automatic path as TC-S05.",
+      "ja": "TC-S05と同一の単調シナリオ・ルート・seed・自動経路を使う。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Reduce immediate repetition of call-and-response just used (contrast with test case ID TC-S05)",
+    "ja": "直前に使った合いの手の即時反復を抑える（TC-S05との対照）"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "quiz should become the rank-one alternative; its unsupported content boundary should be reported honestly with zero tracks.",
+      "ja": "quizが首位の代替となり、未対応コンテンツ境界を0曲として正直に報告する。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-S06.",
+      "ja": "TC-S06の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

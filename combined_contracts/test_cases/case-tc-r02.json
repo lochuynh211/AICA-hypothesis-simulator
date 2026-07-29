@@ -1,0 +1,164 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "The same logistics worker slept adequately before the late shift and took a proper meal break before departure. They make the same night trip home on the Tokyo–Osaka expressway with the same mapped rest opportunities. AICA should remain quiet: no trigger means service ranking and content planning are not applicable.",
+    "ja": "同じ物流担当者が遅番前に十分睡眠を取り、出発前にも適切な食事休憩を取った。 同じ東京–大阪の夜間高速ルートを、同じ休憩機会のもとで帰宅する。 AICAは発火せず静観し、サービス順位とコンテンツ計画は非該当となる。"
+  },
+  "case_id": "case-tc-r02",
+  "contrast": {
+    "changed_inputs": [
+      "journey.scenario.drowsiness_model.base_growth_per_min",
+      "journey.scenario.fatigue_model.base_growth_per_min",
+      "journey.scenario.initial_drowsiness",
+      "journey.scenario.initial_fatigue"
+    ],
+    "expected_delta": {
+      "en": "TC-R01 should fire early for the sleep-deprived state while TC-R02 stays quiet on the same journey.",
+      "ja": "睡眠不足のTC-R01は早期発火し、同じ旅程で休養十分なTC-R02は静観する。"
+    },
+    "kind": "semantic_real_world",
+    "role": "variant",
+    "with_case_id": "TC-R01"
+  },
+  "display_id": "TC-R02",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "not_applicable",
+      "required_track_ids": [],
+      "returned_count": 0
+    },
+    "service": {
+      "rank_1_acceptable_ids": [],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 0,
+      "outcome": "none",
+      "required_positive_feature_ids": []
+    }
+  },
+  "group": "rest",
+  "hypothesis": {
+    "rationale": {
+      "en": "This real-world contrast changes the worker's initial rest state and signal growth while keeping route, profile, and automation fixed. Grounded in CDC-SU Slides 1–2 (physical fatigue/drowsiness rest proposal through arrival at a rest facility); post-rest behavior is out of scope.",
+      "ja": "この実世界対照では、ルート・プロファイル・自動経路を固定し、勤務者の初期休養状態と信号増加だけを変える。 CDC-SUスライド1–2（身体疲労・眠気から休憩施設到着までの休憩提案）に基づく。休憩後の挙動は対象外。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 15,
+      "initial_fatigue": 15,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "night"
+      ]
+    },
+    "narrative": {
+      "en": "They make the same night trip home on the Tokyo–Osaka expressway with the same mapped rest opportunities. The quiet highway adds only modest strain during the 45-minute evaluation, with no congestion or adverse weather.",
+      "ja": "同じ東京–大阪の夜間高速ルートを、同じ休憩機会のもとで帰宅する。 45分の評価中、渋滞や悪天候はなく、静かな高速走行による負荷は小さい。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_r02",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 1–2 (physical fatigue/drowsiness rest proposal through arrival at a rest facility); post-rest behavior is out of scope.",
+        "ja": "CDC-SUスライド1–2（身体疲労・眠気から休憩施設到着までの休憩提案）に基づく。休憩後の挙動は対象外。"
+      },
+      {
+        "en": "The resolved profile-semantic-neutral history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-neutral履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Well-rested late-shift logistics worker",
+      "ja": "十分休んだ遅番勤務後の物流担当者"
+    },
+    "narrative": {
+      "en": "Well-rested late-shift logistics worker. The same logistics worker slept adequately before the late shift and took a proper meal break before departure.",
+      "ja": "十分休んだ遅番勤務後の物流担当者。同じ物流担当者が遅番前に十分睡眠を取り、出発前にも適切な食事休憩を取った。"
+    },
+    "persona_id": "persona-late-shift-worker-r02",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-neutral",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should remain quiet: no trigger means service ranking and content planning are not applicable.",
+    "ja": "AICAは発火せず静観し、サービス順位とコンテンツ計画は非該当となる。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "The same logistics worker slept adequately before the late shift and took a proper meal break before departure.",
+      "ja": "同じ物流担当者が遅番前に十分睡眠を取り、出発前にも適切な食事休憩を取った。"
+    },
+    "journey_evolution": {
+      "en": "The quiet highway adds only modest strain during the 45-minute evaluation, with no congestion or adverse weather.",
+      "ja": "45分の評価中、渋滞や悪天候はなく、静かな高速走行による負荷は小さい。"
+    },
+    "state_at_departure": {
+      "en": "Drowsiness and fatigue both begin at 15 and grow slowly; the neutral preference and history profile is identical to TC-R01.",
+      "ja": "眠気と疲労はいずれも15から緩やかに増え、嗜好・履歴の中立プロファイルはTC-R01と同一である。"
+    },
+    "trip_reason": {
+      "en": "They make the same night trip home on the Tokyo–Osaka expressway with the same mapped rest opportunities.",
+      "ja": "同じ東京–大阪の夜間高速ルートを、同じ休憩機会のもとで帰宅する。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Keep a well-rested late-shift worker driving without a premature rest proposal (contrast with test case ID TC-R01)",
+    "ja": "十分休んだ遅番勤務者に早すぎる休憩提案をせず走行を続けてもらう（TC-R01との対照）"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should remain quiet: no trigger means service ranking and content planning are not applicable.",
+      "ja": "AICAは発火せず静観し、サービス順位とコンテンツ計画は非該当となる。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-R02.",
+      "ja": "TC-R02の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

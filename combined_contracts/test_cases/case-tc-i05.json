@@ -1,0 +1,163 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "An older volunteer spends a long evening organizing a community event and prefers familiar enka or J-pop background audio. They take the familiar Tokyo–Karuizawa route home after the event. AICA should use monotony prevention and rank music_playlist first, returning a complete low-friction plan.",
+    "ja": "高齢ボランティアは夜まで地域行事を運営し、慣れた演歌やJ-popの背景音声を好む。 行事後、慣れた東京–軽井沢ルートで帰宅する。 AICAは漫然予防を使い、music_playlistを首位にして完全な低負荷計画を返す。"
+  },
+  "case_id": "case-tc-i05",
+  "display_id": "TC-I05",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "monotony_prevention",
+      "required_positive_feature_ids": [
+        "monotony_prevention_score"
+      ],
+      "time_window_min": [
+        30,
+        115
+      ]
+    }
+  },
+  "group": "integrated",
+  "hypothesis": {
+    "rationale": {
+      "en": "Age does not independently cause intervention; executable monotony and the authored familiar supported-audio history determine timing and service. Grounded in CDC-SU Slides 10–17 and 41–61 for familiar-route recovery choices; the older persona is not used as a risk multiplier.",
+      "ja": "年齢自体は介入原因ではなく、実行可能な単調さと設定した慣れた対応済み音声履歴が時機とサービスを決める。 慣れたルートの回復選択はCDC-SUスライド10–17および41–61に基づき、高齢ペルソナをリスク倍率には使わない。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 25,
+      "initial_fatigue": 45,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "night",
+        "familiar",
+        "community-event"
+      ]
+    },
+    "narrative": {
+      "en": "They take the familiar Tokyo–Karuizawa route home after the event. Moderate fatigue and familiar-road repetition accumulate without reaching the severe exhaustion encoded in rest cases.",
+      "ja": "行事後、慣れた東京–軽井沢ルートで帰宅する。 休憩ケースの重度消耗には達しないまま、中程度の疲労と慣れた道路の反復が蓄積する。"
+    },
+    "route_preset_ref": "middle_tokyo_karuizawa",
+    "scenario_ref": "semantic_tc_i05",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 10–17 and 41–61 for familiar-route recovery choices; the older persona is not used as a risk multiplier.",
+        "ja": "慣れたルートの回復選択はCDC-SUスライド10–17および41–61に基づき、高齢ペルソナをリスク倍率には使わない。"
+      },
+      {
+        "en": "The resolved profile-semantic-low-friction history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-low-friction履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Older volunteer returning from a community event",
+      "ja": "地域行事から帰る高齢ボランティア"
+    },
+    "narrative": {
+      "en": "Older volunteer returning from a community event. An older volunteer spends a long evening organizing a community event and prefers familiar enka or J-pop background audio.",
+      "ja": "地域行事から帰る高齢ボランティア。高齢ボランティアは夜まで地域行事を運営し、慣れた演歌やJ-popの背景音声を好む。"
+    },
+    "persona_id": "persona-older-community-i05",
+    "preferences": [
+      {
+        "en": "Prefer familiar background music with minimal interaction and no visual demand.",
+        "ja": "操作が少なく視覚負荷のない慣れた背景音楽を好む。"
+      }
+    ],
+    "profile_ref": "profile-semantic-low-friction",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should use monotony prevention and rank music_playlist first, returning a complete low-friction plan.",
+    "ja": "AICAは漫然予防を使い、music_playlistを首位にして完全な低負荷計画を返す。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "An older volunteer spends a long evening organizing a community event and prefers familiar enka or J-pop background audio.",
+      "ja": "高齢ボランティアは夜まで地域行事を運営し、慣れた演歌やJ-popの背景音声を好む。"
+    },
+    "journey_evolution": {
+      "en": "Moderate fatigue and familiar-road repetition accumulate without reaching the severe exhaustion encoded in rest cases.",
+      "ja": "休憩ケースの重度消耗には達しないまま、中程度の疲労と慣れた道路の反復が蓄積する。"
+    },
+    "state_at_departure": {
+      "en": "Drowsiness is 25 and fatigue 45; the profile strongly favors supported music with a high-confidence recovery history.",
+      "ja": "眠気25、疲労45で、プロファイルは高信頼の回復履歴を持つ対応済み音楽を強く好む。"
+    },
+    "trip_reason": {
+      "en": "They take the familiar Tokyo–Karuizawa route home after the event.",
+      "ja": "行事後、慣れた東京–軽井沢ルートで帰宅する。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Give an older driver familiar, low-friction support after a long community event",
+    "ja": "長い地域行事後の高齢運転者に慣れた低負荷支援を行う"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should use monotony prevention and rank music_playlist first, returning a complete low-friction plan.",
+      "ja": "AICAは漫然予防を使い、music_playlistを首位にして完全な低負荷計画を返す。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-I05.",
+      "ja": "TC-I05の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

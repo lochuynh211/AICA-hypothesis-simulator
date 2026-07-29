@@ -1,0 +1,170 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "The same rested sales engineer starts with the same blank preference and recovery history. They cover the same 160-km Tokyo–Karuizawa route, but road works divert the journey through varied local and winding mountain sections. AICA should remain quiet; with no trigger, service ranking and content planning are not applicable.",
+    "ja": "同じ休養十分な営業技術者が、同じ空の嗜好・回復履歴で出発する。 同じ160kmの東京–軽井沢ルートだが、工事迂回により変化のある一般道と曲がりくねった山間区間を走る。 AICAは発火せず、サービス順位とコンテンツ計画は非該当となる。"
+  },
+  "case_id": "case-tc-m04",
+  "contrast": {
+    "changed_inputs": [
+      "journey.scenario.familiar_route",
+      "journey.scenario.mountain_range_km",
+      "journey.scenario.primary_road_type",
+      "journey.scenario.route_tags"
+    ],
+    "expected_delta": {
+      "en": "The straight expressway should trigger TC-M03; equal-length varied painted roads should keep TC-M04 quiet.",
+      "ja": "直線高速のTC-M03は発火し、同距離で変化を描画したTC-M04は静観する。"
+    },
+    "kind": "semantic_real_world",
+    "role": "variant",
+    "with_case_id": "TC-M03"
+  },
+  "display_id": "TC-M04",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "not_applicable",
+      "required_track_ids": [],
+      "returned_count": 0
+    },
+    "service": {
+      "rank_1_acceptable_ids": [],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 0,
+      "outcome": "none",
+      "required_positive_feature_ids": []
+    }
+  },
+  "group": "monotony",
+  "hypothesis": {
+    "rationale": {
+      "en": "The shared route preset preserves equal resolved length, while genuine mountain-range painting interrupts the trigger's monotonous segment set. Exploratory simulator hypothesis (not directly specified by CDC-SU); the case tests transparent wiring rather than claiming validated real-world causality.",
+      "ja": "共有ルートプリセットで解決済み距離を等しく保ち、実際の山間区間描画でトリガーの単調区間集合を中断する。 CDC-SUに直接規定されない探索的シミュレータ仮説。実世界の因果を実証したものではなく、透明な配線を検証する。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 5,
+      "initial_fatigue": 5,
+      "is_night": false,
+      "mountain_range_km": [
+        10,
+        145
+      ],
+      "multiple_passengers": false,
+      "route_tags": [
+        "local",
+        "varied",
+        "winding",
+        "day"
+      ]
+    },
+    "narrative": {
+      "en": "They cover the same 160-km Tokyo–Karuizawa route, but road works divert the journey through varied local and winding mountain sections. Frequent curves, speed changes, and junctions interrupt continuous monotonous-road exposure while total resolved route length stays equal to TC-M03.",
+      "ja": "同じ160kmの東京–軽井沢ルートだが、工事迂回により変化のある一般道と曲がりくねった山間区間を走る。 カーブ・速度変化・交差が連続単調道路曝露を中断し、解決済み総距離はTC-M03と同一に保たれる。"
+    },
+    "route_preset_ref": "middle_tokyo_karuizawa",
+    "scenario_ref": "semantic_tc_m04",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Exploratory simulator hypothesis (not directly specified by CDC-SU); the case tests transparent wiring rather than claiming validated real-world causality.",
+        "ja": "CDC-SUに直接規定されない探索的シミュレータ仮説。実世界の因果を実証したものではなく、透明な配線を検証する。"
+      },
+      {
+        "en": "The resolved profile-semantic-neutral history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-neutral履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Rested driver on a varied local-road journey",
+      "ja": "変化に富む一般道を走る休養十分な運転者"
+    },
+    "narrative": {
+      "en": "Rested driver on a varied local-road journey. The same rested sales engineer starts with the same blank preference and recovery history.",
+      "ja": "変化に富む一般道を走る休養十分な運転者。同じ休養十分な営業技術者が、同じ空の嗜好・回復履歴で出発する。"
+    },
+    "persona_id": "persona-varied-road-m04",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-neutral",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should remain quiet; with no trigger, service ranking and content planning are not applicable.",
+    "ja": "AICAは発火せず、サービス順位とコンテンツ計画は非該当となる。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "The same rested sales engineer starts with the same blank preference and recovery history.",
+      "ja": "同じ休養十分な営業技術者が、同じ空の嗜好・回復履歴で出発する。"
+    },
+    "journey_evolution": {
+      "en": "Frequent curves, speed changes, and junctions interrupt continuous monotonous-road exposure while total resolved route length stays equal to TC-M03.",
+      "ja": "カーブ・速度変化・交差が連続単調道路曝露を中断し、解決済み総距離はTC-M03と同一に保たれる。"
+    },
+    "state_at_departure": {
+      "en": "Drowsiness and fatigue still start at 5; the route is unfamiliar and its broad 10–145 km section is painted as non-monotonous mountain/local driving.",
+      "ja": "眠気と疲労は同じく5で、ルートは不慣れ、10–145kmの広い区間を非単調な山間・一般道として描画する。"
+    },
+    "trip_reason": {
+      "en": "They cover the same 160-km Tokyo–Karuizawa route, but road works divert the journey through varied local and winding mountain sections.",
+      "ja": "同じ160kmの東京–軽井沢ルートだが、工事迂回により変化のある一般道と曲がりくねった山間区間を走る。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Stay quiet on an equally long but varied local-road trip (contrast with test case ID TC-M03)",
+    "ja": "同じ長さでも変化に富む一般道では静観する（TC-M03との対照）"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should remain quiet; with no trigger, service ranking and content planning are not applicable.",
+      "ja": "AICAは発火せず、サービス順位とコンテンツ計画は非該当となる。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-M04.",
+      "ja": "TC-M04の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

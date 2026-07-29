@@ -1,0 +1,178 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "A listener usually favors synthetic-track-0058 but skipped it at 2026-07-29T11:55:00Z, five minutes before the reference time. At 2026-07-29T12:00:00Z they begin the same long familiar night-highway journey. The five-track plan should exclude synthetic-track-0058 even though its long-term preference evidence is strong.",
+    "ja": "リスナーは通常synthetic-track-0058を好むが、基準時刻5分前の2026-07-29T11:55:00Zにスキップした。 2026-07-29T12:00:00Zに同じ長く慣れた夜間高速旅程を始める。 長期嗜好根拠が強くても、5曲計画からsynthetic-track-0058を除外する。"
+  },
+  "case_id": "case-tc-p05",
+  "contrast": {
+    "changed_inputs": [
+      "profile.skipped_items"
+    ],
+    "expected_delta": {
+      "en": "Removing only the recent-skip list should restore the favorite track to the plan.",
+      "ja": "直近スキップリストだけを除くことで、お気に入り曲が計画へ復帰する。"
+    },
+    "kind": "controlled_one_factor",
+    "role": "baseline",
+    "with_case_id": "TC-P06"
+  },
+  "display_id": "TC-P05",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [
+        "synthetic-track-0058"
+      ],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist",
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "monotony_prevention",
+      "required_positive_feature_ids": [
+        "monotony_prevention_score"
+      ],
+      "time_window_min": [
+        30,
+        115
+      ]
+    }
+  },
+  "group": "content",
+  "hypothesis": {
+    "rationale": {
+      "en": "The pair changes only profile.skipped_items, isolating an immediate negative operation from all positive preference and journey evidence. Grounded in CDC-SU Slides 66–80 (OSHI, preference, and recent-operation inputs to content prioritization).",
+      "ja": "対ではprofile.skipped_itemsだけを変え、即時の負操作を全ての正の嗜好・旅程根拠から分離する。 CDC-SUスライド66–80（推し・嗜好・直近操作を用いたコンテンツ優先順位）に基づく。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 5,
+      "initial_fatigue": 5,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "long",
+        "familiar",
+        "featureless"
+      ]
+    },
+    "narrative": {
+      "en": "At 2026-07-29T12:00:00Z they begin the same long familiar night-highway journey. The fixed skip remains current when monotony later requests a supported content plan.",
+      "ja": "2026-07-29T12:00:00Zに同じ長く慣れた夜間高速旅程を始める。 後に単調さが対応済みコンテンツ計画を要求する時点でも、固定スキップは直近のままである。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_p05",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 66–80 (OSHI, preference, and recent-operation inputs to content prioritization).",
+        "ja": "CDC-SUスライド66–80（推し・嗜好・直近操作を用いたコンテンツ優先順位）に基づく。"
+      },
+      {
+        "en": "The resolved profile-semantic-p05-recent-skip history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-p05-recent-skip履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Listener who just skipped a favorite track",
+      "ja": "お気に入り曲を直前にスキップしたリスナー"
+    },
+    "narrative": {
+      "en": "Listener who just skipped a favorite track. A listener usually favors synthetic-track-0058 but skipped it at 2026-07-29T11:55:00Z, five minutes before the reference time.",
+      "ja": "お気に入り曲を直前にスキップしたリスナー。リスナーは通常synthetic-track-0058を好むが、基準時刻5分前の2026-07-29T11:55:00Zにスキップした。"
+    },
+    "persona_id": "persona-recent-skip-p05",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-p05-recent-skip",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "The five-track plan should exclude synthetic-track-0058 even though its long-term preference evidence is strong.",
+    "ja": "長期嗜好根拠が強くても、5曲計画からsynthetic-track-0058を除外する。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "A listener usually favors synthetic-track-0058 but skipped it at 2026-07-29T11:55:00Z, five minutes before the reference time.",
+      "ja": "リスナーは通常synthetic-track-0058を好むが、基準時刻5分前の2026-07-29T11:55:00Zにスキップした。"
+    },
+    "journey_evolution": {
+      "en": "The fixed skip remains current when monotony later requests a supported content plan.",
+      "ja": "後に単調さが対応済みコンテンツ計画を要求する時点でも、固定スキップは直近のままである。"
+    },
+    "state_at_departure": {
+      "en": "Physical signals start at 5 and supported-service history is strong; the recent skip is the only negative item operation.",
+      "ja": "身体信号は5で対応済みサービス履歴は強く、直近スキップが唯一の負の項目操作である。"
+    },
+    "trip_reason": {
+      "en": "At 2026-07-29T12:00:00Z they begin the same long familiar night-highway journey.",
+      "ja": "2026-07-29T12:00:00Zに同じ長く慣れた夜間高速旅程を始める。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Exclude a song the driver skipped moments ago",
+    "ja": "運転者が数分前にスキップした曲を除外する"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "The five-track plan should exclude synthetic-track-0058 even though its long-term preference evidence is strong.",
+      "ja": "長期嗜好根拠が強くても、5曲計画からsynthetic-track-0058を除外する。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-P05.",
+      "ja": "TC-P05の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

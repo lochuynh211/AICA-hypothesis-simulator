@@ -1,0 +1,163 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "A driver leaves a family visit late, moderately tired but not yet at an obvious rest threshold. They travel home on the Tokyo–Osaka highway in persistent heavy rain. AICA should make a rest-required proposal and expose weather-related evidence alongside driver state.",
+    "ja": "運転者は家族訪問から遅く出発し、中程度に疲れているが明白な休憩閾値にはまだ達していない。 持続する大雨の中、東京–大阪高速道路で帰宅する。 AICAは休憩必要を提案し、運転者状態と並べて天候関連根拠を示す。"
+  },
+  "case_id": "case-tc-e05",
+  "display_id": "TC-E05",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist",
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "rest_required",
+      "required_positive_feature_ids": [
+        "weather_risk"
+      ],
+      "time_window_min": [
+        0,
+        35
+      ]
+    }
+  },
+  "group": "environment",
+  "hypothesis": {
+    "rationale": {
+      "en": "Persistent heavy rain is encoded through weather_risk because dynamic weather-event painting is not part of this catalog compiler; attribution is exploratory. Exploratory simulator hypothesis (not directly specified by CDC-SU); the case tests transparent wiring rather than claiming validated real-world causality.",
+      "ja": "動的天候イベント描画は本カタログコンパイラ対象外のため大雨をweather_riskで表し、帰属は探索的である。 CDC-SUに直接規定されない探索的シミュレータ仮説。実世界の因果を実証したものではなく、透明な配線を検証する。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 52,
+      "initial_fatigue": 48,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "night",
+        "heavy-rain"
+      ]
+    },
+    "narrative": {
+      "en": "They travel home on the Tokyo–Osaka highway in persistent heavy rain. Night conditions, rain risk, and gradual physical-state growth coexist throughout the one-hour evaluation.",
+      "ja": "持続する大雨の中、東京–大阪高速道路で帰宅する。 1時間の評価を通して、夜間条件・雨リスク・緩やかな身体状態増加が共存する。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_e05",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Exploratory simulator hypothesis (not directly specified by CDC-SU); the case tests transparent wiring rather than claiming validated real-world causality.",
+        "ja": "CDC-SUに直接規定されない探索的シミュレータ仮説。実世界の因果を実証したものではなく、透明な配線を検証する。"
+      },
+      {
+        "en": "The resolved profile-semantic-neutral history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-neutral履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Late-night driver in persistent heavy rain",
+      "ja": "持続する大雨の深夜運転者"
+    },
+    "narrative": {
+      "en": "Late-night driver in persistent heavy rain. A driver leaves a family visit late, moderately tired but not yet at an obvious rest threshold.",
+      "ja": "持続する大雨の深夜運転者。運転者は家族訪問から遅く出発し、中程度に疲れているが明白な休憩閾値にはまだ達していない。"
+    },
+    "persona_id": "persona-heavy-rain-e05",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-neutral",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should make a rest-required proposal and expose weather-related evidence alongside driver state.",
+    "ja": "AICAは休憩必要を提案し、運転者状態と並べて天候関連根拠を示す。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "A driver leaves a family visit late, moderately tired but not yet at an obvious rest threshold.",
+      "ja": "運転者は家族訪問から遅く出発し、中程度に疲れているが明白な休憩閾値にはまだ達していない。"
+    },
+    "journey_evolution": {
+      "en": "Night conditions, rain risk, and gradual physical-state growth coexist throughout the one-hour evaluation.",
+      "ja": "1時間の評価を通して、夜間条件・雨リスク・緩やかな身体状態増加が共存する。"
+    },
+    "state_at_departure": {
+      "en": "Drowsiness is 52 and fatigue 48; persistent weather risk is 0.95 and the profile is neutral.",
+      "ja": "眠気52、疲労48で、持続天候リスクは0.95、プロファイルは中立である。"
+    },
+    "trip_reason": {
+      "en": "They travel home on the Tokyo–Osaka highway in persistent heavy rain.",
+      "ja": "持続する大雨の中、東京–大阪高速道路で帰宅する。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Account for heavy rain during a late-night highway journey",
+    "ja": "深夜高速走行中の大雨を考慮する"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should make a rest-required proposal and expose weather-related evidence alongside driver state.",
+      "ja": "AICAは休憩必要を提案し、運転者状態と並べて天候関連根拠を示す。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-E05.",
+      "ja": "TC-E05の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

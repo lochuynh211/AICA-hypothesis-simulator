@@ -1,0 +1,71 @@
+{
+  "builtin": true,
+  "label": {
+    "en": "Strong call-and-response recovery, recently used",
+    "ja": "回復実績が高いが直近使用済みの合いの手"
+  },
+  "profile": {
+    "age_band": "30s",
+    "cancelled_content_plans": [],
+    "catalog_item_recency_state": {},
+    "catalog_item_usage_level": {},
+    "changed_from_items": [],
+    "completed_items": [],
+    "content_proposal_acceptance_confidence": {},
+    "content_proposal_acceptance_rate": {},
+    "content_recovery_confidence": {},
+    "content_recovery_rate": {},
+    "content_tag_recency_state": {},
+    "content_tag_usage_level": {},
+    "gender": "unspecified",
+    "genre_affinity_v1_enabled": false,
+    "hobby_interest_tags": [],
+    "manually_selected_items": [],
+    "oshi_id": null,
+    "oshi_mode": "off",
+    "oshi_registered": false,
+    "oshi_tags": [],
+    "oshi_type": null,
+    "played_items": [],
+    "repeated_items": [],
+    "scene_content_tag_usage_level": {},
+    "scene_genre_usage": null,
+    "scene_service_usage_level": {},
+    "scheduled_event_tags": [],
+    "scheduled_event_timing": null,
+    "scheduled_event_type": null,
+    "service_proposal_acceptance_confidence": {
+      "call_response_driving": 0.95,
+      "music_playlist": 0.9,
+      "quiz": 0.95
+    },
+    "service_proposal_acceptance_rate": {
+      "call_response_driving": 90,
+      "music_playlist": 65,
+      "quiz": 90
+    },
+    "service_recency_state": {
+      "call_response_driving": "recent",
+      "music_playlist": "recent",
+      "quiz": "long_unused"
+    },
+    "service_recovery_confidence": {
+      "call_response_driving": 0.95,
+      "music_playlist": 0.9,
+      "quiz": 0.95
+    },
+    "service_recovery_rate": {
+      "call_response_driving": 94,
+      "music_playlist": 60,
+      "quiz": 94
+    },
+    "service_usage_level": {
+      "call_response_driving": "low",
+      "music_playlist": "med",
+      "quiz": "low"
+    },
+    "skipped_items": [],
+    "usage_by_genre": null
+  },
+  "profile_id": "profile-semantic-s06-call-recent"
+}

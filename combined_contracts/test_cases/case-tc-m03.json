@@ -1,0 +1,179 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "A rested sales engineer begins after a full night's sleep and has no recent service-use history. They drive the 160-km Tokyo–Karuizawa route in daylight for a routine customer visit. AICA should detect monotony during the prolonged daytime expressway exposure while avoiding a rest-required classification.",
+    "ja": "営業技術者は一晩十分眠って出発し、直近のサービス利用履歴もない。 定例の顧客訪問のため、昼間に160kmの東京–軽井沢ルートを走る。 AICAは長時間の昼間高速曝露で単調さを検知し、休憩必要への誤分類を避ける。"
+  },
+  "case_id": "case-tc-m03",
+  "contrast": {
+    "changed_inputs": [
+      "journey.scenario.familiar_route",
+      "journey.scenario.mountain_range_km",
+      "journey.scenario.primary_road_type",
+      "journey.scenario.route_tags"
+    ],
+    "expected_delta": {
+      "en": "The straight expressway should trigger TC-M03; equal-length varied painted roads should keep TC-M04 quiet.",
+      "ja": "直線高速のTC-M03は発火し、同距離で変化を描画したTC-M04は静観する。"
+    },
+    "kind": "semantic_real_world",
+    "role": "baseline",
+    "with_case_id": "TC-M04"
+  },
+  "display_id": "TC-M03",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist",
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "monotony_prevention",
+      "required_positive_feature_ids": [
+        "monotony_prevention_score"
+      ],
+      "time_window_min": [
+        45,
+        115
+      ]
+    }
+  },
+  "group": "monotony",
+  "hypothesis": {
+    "rationale": {
+      "en": "Low signals and daytime context keep exhaustion weak, leaving long familiar expressway exposure as the proposed cause. Grounded in CDC-SU Slides 10–17 (familiar or monotonous driving and in-car recovery proposals).",
+      "ja": "低い信号と昼間条件で消耗を弱く保ち、長く慣れた高速曝露を提案原因として残す。 CDC-SUスライド10–17（慣れ・単調による漫然予兆と車内回復提案）に基づく。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 5,
+      "initial_fatigue": 5,
+      "is_night": false,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "long",
+        "straight",
+        "day"
+      ]
+    },
+    "narrative": {
+      "en": "They drive the 160-km Tokyo–Karuizawa route in daylight for a routine customer visit. After the early mapped stop, a long free-flowing expressway stretch continues without traffic or weather interruptions.",
+      "ja": "定例の顧客訪問のため、昼間に160kmの東京–軽井沢ルートを走る。 早い地図上の停車地点後、渋滞や天候による中断なしに長い高速区間が続く。"
+    },
+    "route_preset_ref": "middle_tokyo_karuizawa",
+    "scenario_ref": "semantic_tc_m03",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 10–17 (familiar or monotonous driving and in-car recovery proposals).",
+        "ja": "CDC-SUスライド10–17（慣れ・単調による漫然予兆と車内回復提案）に基づく。"
+      },
+      {
+        "en": "The resolved profile-semantic-neutral history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-neutral履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Rested daytime expressway driver",
+      "ja": "休養十分な昼間高速ドライバー"
+    },
+    "narrative": {
+      "en": "Rested daytime expressway driver. A rested sales engineer begins after a full night's sleep and has no recent service-use history.",
+      "ja": "休養十分な昼間高速ドライバー。営業技術者は一晩十分眠って出発し、直近のサービス利用履歴もない。"
+    },
+    "persona_id": "persona-day-expressway-m03",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-neutral",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should detect monotony during the prolonged daytime expressway exposure while avoiding a rest-required classification.",
+    "ja": "AICAは長時間の昼間高速曝露で単調さを検知し、休憩必要への誤分類を避ける。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "A rested sales engineer begins after a full night's sleep and has no recent service-use history.",
+      "ja": "営業技術者は一晩十分眠って出発し、直近のサービス利用履歴もない。"
+    },
+    "journey_evolution": {
+      "en": "After the early mapped stop, a long free-flowing expressway stretch continues without traffic or weather interruptions.",
+      "ja": "早い地図上の停車地点後、渋滞や天候による中断なしに長い高速区間が続く。"
+    },
+    "state_at_departure": {
+      "en": "Both physical-state signals start at 5; the route is familiar, straight, and predominantly expressway.",
+      "ja": "身体状態信号はいずれも5で、ルートは慣れており、直線的で高速道路が主体である。"
+    },
+    "trip_reason": {
+      "en": "They drive the 160-km Tokyo–Karuizawa route in daylight for a routine customer visit.",
+      "ja": "定例の顧客訪問のため、昼間に160kmの東京–軽井沢ルートを走る。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Detect monotony on a long straight daytime expressway while the driver remains rested",
+    "ja": "運転者が休養十分でも長く直線的な昼間高速で単調さを検知する"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should detect monotony during the prolonged daytime expressway exposure while avoiding a rest-required classification.",
+      "ja": "AICAは長時間の昼間高速曝露で単調さを検知し、休憩必要への誤分類を避ける。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-M03.",
+      "ja": "TC-M03の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

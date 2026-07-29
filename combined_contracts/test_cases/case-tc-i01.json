@@ -1,0 +1,164 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "A restaurant manager finishes a double closing shift and wants to get home quickly, usually preferring audio support over stopping. They start the long night expressway home with a reachable mapped service area ahead. AICA should prioritize an early rest-required proposal, explain the severe state clearly, and offer only interim driving-capable support.",
+    "ja": "飲食店責任者は連続の閉店勤務を終え、早く帰宅したく、普段は停車より音声支援を好む。 地図上の到達可能なサービスエリアが先にある長距離夜間高速で帰宅を始める。 AICAは早期の休憩必要を優先し、重い状態を明確に説明し、停車までの走行中支援だけを提示する。"
+  },
+  "case_id": "case-tc-i01",
+  "display_id": "TC-I01",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist",
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "rest_required",
+      "required_positive_feature_ids": [
+        "drowsiness",
+        "fatigue"
+      ],
+      "time_window_min": [
+        0,
+        15
+      ]
+    }
+  },
+  "group": "integrated",
+  "hypothesis": {
+    "rationale": {
+      "en": "The integrated story tests whether rest safety stays primary despite a profile that makes supported audio attractive. Grounded in CDC-SU Slides 1–2 (physical fatigue/drowsiness rest proposal through arrival at a rest facility); post-rest behavior is out of scope.",
+      "ja": "対応済み音声を魅力的にするプロファイルでも、休憩安全が最優先に残るかを統合的に検証する。 CDC-SUスライド1–2（身体疲労・眠気から休憩施設到着までの休憩提案）に基づく。休憩後の挙動は対象外。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 82,
+      "initial_fatigue": 72,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "night",
+        "home"
+      ]
+    },
+    "narrative": {
+      "en": "They start the long night expressway home with a reachable mapped service area ahead. Both signals rise as the worker presses on, so entertainment alone cannot make continued driving safe.",
+      "ja": "地図上の到達可能なサービスエリアが先にある長距離夜間高速で帰宅を始める。 勤務者が走り続ける間に両信号が上がり、娯楽だけでは走行継続を安全にできない。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_i01",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 1–2 (physical fatigue/drowsiness rest proposal through arrival at a rest facility); post-rest behavior is out of scope.",
+        "ja": "CDC-SUスライド1–2（身体疲労・眠気から休憩施設到着までの休憩提案）に基づく。休憩後の挙動は対象外。"
+      },
+      {
+        "en": "The resolved profile-semantic-rest-averse history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-rest-averse履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Time-pressed worker reluctant to stop",
+      "ja": "停車をためらう帰宅を急ぐ勤務者"
+    },
+    "narrative": {
+      "en": "Time-pressed worker reluctant to stop. A restaurant manager finishes a double closing shift and wants to get home quickly, usually preferring audio support over stopping.",
+      "ja": "停車をためらう帰宅を急ぐ勤務者。飲食店責任者は連続の閉店勤務を終え、早く帰宅したく、普段は停車より音声支援を好む。"
+    },
+    "persona_id": "persona-rest-averse-i01",
+    "preferences": [
+      {
+        "en": "The driver prefers to keep moving, but will consider a specific reachable stop when the safety reason is explicit.",
+        "ja": "運転者は走行継続を好むが、安全理由と到達可能な停車地点が明確なら検討する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-rest-averse",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should prioritize an early rest-required proposal, explain the severe state clearly, and offer only interim driving-capable support.",
+    "ja": "AICAは早期の休憩必要を優先し、重い状態を明確に説明し、停車までの走行中支援だけを提示する。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "A restaurant manager finishes a double closing shift and wants to get home quickly, usually preferring audio support over stopping.",
+      "ja": "飲食店責任者は連続の閉店勤務を終え、早く帰宅したく、普段は停車より音声支援を好む。"
+    },
+    "journey_evolution": {
+      "en": "Both signals rise as the worker presses on, so entertainment alone cannot make continued driving safe.",
+      "ja": "勤務者が走り続ける間に両信号が上がり、娯楽だけでは走行継続を安全にできない。"
+    },
+    "state_at_departure": {
+      "en": "Drowsiness is 82 and fatigue 72; supported audio has good history, but physical risk is severe.",
+      "ja": "眠気82、疲労72で、対応済み音声の履歴は良いが身体リスクは重い。"
+    },
+    "trip_reason": {
+      "en": "They start the long night expressway home with a reachable mapped service area ahead.",
+      "ja": "地図上の到達可能なサービスエリアが先にある長距離夜間高速で帰宅を始める。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Persuade a rest-averse worker rushing home to stop safely",
+    "ja": "帰宅を急ぎ休憩を嫌う勤務者に安全な停車を促す"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should prioritize an early rest-required proposal, explain the severe state clearly, and offer only interim driving-capable support.",
+      "ja": "AICAは早期の休憩必要を優先し、重い状態を明確に説明し、停車までの走行中支援だけを提示する。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-I01.",
+      "ja": "TC-I01の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

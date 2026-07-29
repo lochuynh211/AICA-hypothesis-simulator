@@ -1,0 +1,178 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "The same listener has the same strong favorite and manual-selection history, but no recent played_items entry exists. They start the identical journey at the same 2026-07-29T12:00:00Z reference time and seed. synthetic-track-0058 should remain eligible and appear in the five-track plan.",
+    "ja": "同じリスナーが同じ強いお気に入り・手動選択履歴を持つが、直近played_items項目はない。 同じ2026-07-29T12:00:00Z基準時刻とseedで同一旅程を始める。 synthetic-track-0058を候補に保ち、5曲計画に含める。"
+  },
+  "case_id": "case-tc-p04",
+  "contrast": {
+    "changed_inputs": [
+      "profile.played_items"
+    ],
+    "expected_delta": {
+      "en": "Removing only the recent-play list should restore the favorite track to the plan.",
+      "ja": "直近再生リストだけを除くことで、お気に入り曲が計画へ復帰する。"
+    },
+    "kind": "controlled_one_factor",
+    "role": "variant",
+    "with_case_id": "TC-P03"
+  },
+  "display_id": "TC-P04",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [
+        "synthetic-track-0058"
+      ],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist",
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "monotony_prevention",
+      "required_positive_feature_ids": [
+        "monotony_prevention_score"
+      ],
+      "time_window_min": [
+        30,
+        115
+      ]
+    }
+  },
+  "group": "content",
+  "hypothesis": {
+    "rationale": {
+      "en": "The exact list-leaf control makes recent playback, rather than changed affinity or service ranking, the only explanation for the delta. Grounded in CDC-SU Slides 66–80 (OSHI, preference, and recent-operation inputs to content prioritization).",
+      "ja": "正確なリスト葉対照により、親和性やサービス順位の変更ではなく直近再生だけを差分理由にする。 CDC-SUスライド66–80（推し・嗜好・直近操作を用いたコンテンツ優先順位）に基づく。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 5,
+      "initial_fatigue": 5,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "long",
+        "familiar",
+        "featureless"
+      ]
+    },
+    "narrative": {
+      "en": "They start the identical journey at the same 2026-07-29T12:00:00Z reference time and seed. The same monotony signal requests the same supported audio content plan.",
+      "ja": "同じ2026-07-29T12:00:00Z基準時刻とseedで同一旅程を始める。 同じ単調信号が同じ対応済み音声コンテンツ計画を要求する。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_p04",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 66–80 (OSHI, preference, and recent-operation inputs to content prioritization).",
+        "ja": "CDC-SUスライド66–80（推し・嗜好・直近操作を用いたコンテンツ優先順位）に基づく。"
+      },
+      {
+        "en": "The resolved profile-semantic-p04-no-recent-play history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-p04-no-recent-play履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Listener whose favorite was not recently played",
+      "ja": "お気に入り曲を直近再生していないリスナー"
+    },
+    "narrative": {
+      "en": "Listener whose favorite was not recently played. The same listener has the same strong favorite and manual-selection history, but no recent played_items entry exists.",
+      "ja": "お気に入り曲を直近再生していないリスナー。同じリスナーが同じ強いお気に入り・手動選択履歴を持つが、直近played_items項目はない。"
+    },
+    "persona_id": "persona-no-recent-play-p04",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-p04-no-recent-play",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "synthetic-track-0058 should remain eligible and appear in the five-track plan.",
+    "ja": "synthetic-track-0058を候補に保ち、5曲計画に含める。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "The same listener has the same strong favorite and manual-selection history, but no recent played_items entry exists.",
+      "ja": "同じリスナーが同じ強いお気に入り・手動選択履歴を持つが、直近played_items項目はない。"
+    },
+    "journey_evolution": {
+      "en": "The same monotony signal requests the same supported audio content plan.",
+      "ja": "同じ単調信号が同じ対応済み音声コンテンツ計画を要求する。"
+    },
+    "state_at_departure": {
+      "en": "All physical, preference, service, and history leaves match TC-P03 except the empty played_items list.",
+      "ja": "空のplayed_itemsリスト以外、全身体・嗜好・サービス・履歴葉はTC-P03と同じである。"
+    },
+    "trip_reason": {
+      "en": "They start the identical journey at the same 2026-07-29T12:00:00Z reference time and seed.",
+      "ja": "同じ2026-07-29T12:00:00Z基準時刻とseedで同一旅程を始める。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Keep the same favorite eligible when it has not been heard recently (contrast with test case ID TC-P03)",
+    "ja": "同じお気に入り曲を直近未再生なら候補に保つ（TC-P03との対照）"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "synthetic-track-0058 should remain eligible and appear in the five-track plan.",
+      "ja": "synthetic-track-0058を候補に保ち、5曲計画に含める。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-P04.",
+      "ja": "TC-P04の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

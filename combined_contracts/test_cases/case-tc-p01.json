@@ -1,0 +1,177 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "A J-rock listener has registered synthetic-artist-0068 as their OSHI artist and explicitly enabled OSHI mode before departure. They drive the shared long familiar night highway home after an evening event. The complete five-track plan should include the registered OSHI artist synthetic-artist-0068.",
+    "ja": "J-rockリスナーは出発前にsynthetic-artist-0068を推しアーティストとして登録し、推しモードを明示的に有効化した。 夜のイベント後、共有する長く慣れた夜間高速道路で帰宅する。 完全な5曲計画に登録済み推しアーティストsynthetic-artist-0068を含める。"
+  },
+  "case_id": "case-tc-p01",
+  "contrast": {
+    "changed_inputs": [
+      "profile.oshi_mode"
+    ],
+    "expected_delta": {
+      "en": "Changing only OSHI mode should remove the registered-artist requirement without changing the rest of the plan inputs.",
+      "ja": "推しモードだけの変更で、他の計画入力を変えず登録アーティスト要件を外す。"
+    },
+    "kind": "controlled_one_factor",
+    "role": "baseline",
+    "with_case_id": "TC-P02"
+  },
+  "display_id": "TC-P01",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "oshi_artist_id": "synthetic-artist-0068",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist",
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "monotony_prevention",
+      "required_positive_feature_ids": [
+        "monotony_prevention_score"
+      ],
+      "time_window_min": [
+        30,
+        115
+      ]
+    }
+  },
+  "group": "content",
+  "hypothesis": {
+    "rationale": {
+      "en": "The pair changes only profile.oshi_mode; artist identity, service bias, scenario, seed, and every other profile leaf remain identical. Grounded in CDC-SU Slides 66–80 (OSHI, preference, and recent-operation inputs to content prioritization).",
+      "ja": "対ではprofile.oshi_modeだけを変え、アーティスト識別子・サービス偏り・シナリオ・seed・他の全葉を同一に保つ。 CDC-SUスライド66–80（推し・嗜好・直近操作を用いたコンテンツ優先順位）に基づく。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 5,
+      "initial_fatigue": 5,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "long",
+        "familiar",
+        "featureless"
+      ]
+    },
+    "narrative": {
+      "en": "They drive the shared long familiar night highway home after an evening event. Monotony builds after the early rest point, causing a supported alertness-audio service to request content.",
+      "ja": "夜のイベント後、共有する長く慣れた夜間高速道路で帰宅する。 早い休憩地点後に単調さが蓄積し、対応済み覚醒音声サービスがコンテンツを要求する。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_p01",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 66–80 (OSHI, preference, and recent-operation inputs to content prioritization).",
+        "ja": "CDC-SUスライド66–80（推し・嗜好・直近操作を用いたコンテンツ優先順位）に基づく。"
+      },
+      {
+        "en": "The resolved profile-semantic-p01-oshi-on history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-p01-oshi-on履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "J-rock listener with OSHI mode enabled",
+      "ja": "推しモードを有効にしたJ-rockリスナー"
+    },
+    "narrative": {
+      "en": "J-rock listener with OSHI mode enabled. A J-rock listener has registered synthetic-artist-0068 as their OSHI artist and explicitly enabled OSHI mode before departure.",
+      "ja": "推しモードを有効にしたJ-rockリスナー。J-rockリスナーは出発前にsynthetic-artist-0068を推しアーティストとして登録し、推しモードを明示的に有効化した。"
+    },
+    "persona_id": "persona-oshi-on-p01",
+    "preferences": [
+      {
+        "en": "Use the explicitly registered OSHI artist when it fits the alertness plan.",
+        "ja": "覚醒計画に適合するとき、明示登録した推しアーティストを使う。"
+      }
+    ],
+    "profile_ref": "profile-semantic-p01-oshi-on",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "The complete five-track plan should include the registered OSHI artist synthetic-artist-0068.",
+    "ja": "完全な5曲計画に登録済み推しアーティストsynthetic-artist-0068を含める。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "A J-rock listener has registered synthetic-artist-0068 as their OSHI artist and explicitly enabled OSHI mode before departure.",
+      "ja": "J-rockリスナーは出発前にsynthetic-artist-0068を推しアーティストとして登録し、推しモードを明示的に有効化した。"
+    },
+    "journey_evolution": {
+      "en": "Monotony builds after the early rest point, causing a supported alertness-audio service to request content.",
+      "ja": "早い休憩地点後に単調さが蓄積し、対応済み覚醒音声サービスがコンテンツを要求する。"
+    },
+    "state_at_departure": {
+      "en": "Physical signals start at 5; supported music and humming services have strong shared history, while radio_style is deliberately weak.",
+      "ja": "身体信号は5で、対応済み音楽・鼻歌サービスは強い共有履歴を持ち、radio_styleは意図的に弱い。"
+    },
+    "trip_reason": {
+      "en": "They drive the shared long familiar night highway home after an evening event.",
+      "ja": "夜のイベント後、共有する長く慣れた夜間高速道路で帰宅する。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Personalize an alertness playlist with the driver’s registered OSHI artist",
+    "ja": "登録済み推しアーティストで覚醒プレイリストをパーソナライズする"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "The complete five-track plan should include the registered OSHI artist synthetic-artist-0068.",
+      "ja": "完全な5曲計画に登録済み推しアーティストsynthetic-artist-0068を含める。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-P01.",
+      "ja": "TC-P01の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

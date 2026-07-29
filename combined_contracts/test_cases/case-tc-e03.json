@@ -1,0 +1,162 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "A driver felt acceptable before departure but had fragmented sleep and knows sudden sleepiness can emerge after starting. They begin a necessary 45-minute night expressway transfer between work sites. AICA should make an early rest-required proposal with drowsiness named as positive evidence.",
+    "ja": "運転者は出発前には問題ないと感じたが睡眠は断片的で、走り始めてから急に眠くなることがある。 業務拠点間を移動するため、必要な45分の夜間高速走行を始める。 AICAは眠気を正の根拠として明示し、早期に休憩必要を提案する。"
+  },
+  "case_id": "case-tc-e03",
+  "display_id": "TC-E03",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "complete_plan",
+      "required_track_ids": [],
+      "returned_count": 5
+    },
+    "service": {
+      "rank_1_acceptable_ids": [
+        "music_playlist",
+        "humming_karaoke"
+      ],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [
+        "stretch_video",
+        "full_karaoke",
+        "call_response_stopped"
+      ],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 1,
+      "outcome": "rest_required",
+      "required_positive_feature_ids": [
+        "drowsiness"
+      ],
+      "time_window_min": [
+        0,
+        25
+      ]
+    }
+  },
+  "group": "environment",
+  "hypothesis": {
+    "rationale": {
+      "en": "The deliberately divergent growth rates isolate explanation wiring for drowsiness rather than model a clinically validated progression. Exploratory simulator hypothesis (not directly specified by CDC-SU); the case tests transparent wiring rather than claiming validated real-world causality.",
+      "ja": "意図的に分けた増加率で眠気の説明配線を分離し、臨床的に実証された進行を表すものではない。 CDC-SUに直接規定されない探索的シミュレータ仮説。実世界の因果を実証したものではなく、透明な配線を検証する。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 32,
+      "initial_fatigue": 20,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "night"
+      ]
+    },
+    "narrative": {
+      "en": "They begin a necessary 45-minute night expressway transfer between work sites. Sleepiness rapidly becomes the dominant physical signal on an otherwise uneventful highway.",
+      "ja": "業務拠点間を移動するため、必要な45分の夜間高速走行を始める。 他に出来事のない高速道路で、眠気が急速に支配的な身体信号となる。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_e03",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Exploratory simulator hypothesis (not directly specified by CDC-SU); the case tests transparent wiring rather than claiming validated real-world causality.",
+        "ja": "CDC-SUに直接規定されない探索的シミュレータ仮説。実世界の因果を実証したものではなく、透明な配線を検証する。"
+      },
+      {
+        "en": "The resolved profile-semantic-neutral history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-neutral履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Night driver with rapidly emerging sleepiness",
+      "ja": "眠気が急速に現れる夜間運転者"
+    },
+    "narrative": {
+      "en": "Night driver with rapidly emerging sleepiness. A driver felt acceptable before departure but had fragmented sleep and knows sudden sleepiness can emerge after starting.",
+      "ja": "眠気が急速に現れる夜間運転者。運転者は出発前には問題ないと感じたが睡眠は断片的で、走り始めてから急に眠くなることがある。"
+    },
+    "persona_id": "persona-rising-drowsiness-e03",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-neutral",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should make an early rest-required proposal with drowsiness named as positive evidence.",
+    "ja": "AICAは眠気を正の根拠として明示し、早期に休憩必要を提案する。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "A driver felt acceptable before departure but had fragmented sleep and knows sudden sleepiness can emerge after starting.",
+      "ja": "運転者は出発前には問題ないと感じたが睡眠は断片的で、走り始めてから急に眠くなることがある。"
+    },
+    "journey_evolution": {
+      "en": "Sleepiness rapidly becomes the dominant physical signal on an otherwise uneventful highway.",
+      "ja": "他に出来事のない高速道路で、眠気が急速に支配的な身体信号となる。"
+    },
+    "state_at_departure": {
+      "en": "Drowsiness starts at 32 and grows 2.1 points per minute, while fatigue starts at 20 and barely grows.",
+      "ja": "眠気は32から毎分2.1増え、疲労は20からほとんど増えない。"
+    },
+    "trip_reason": {
+      "en": "They begin a necessary 45-minute night expressway transfer between work sites.",
+      "ja": "業務拠点間を移動するため、必要な45分の夜間高速走行を始める。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Explain an early rest proposal primarily through rapidly rising drowsiness",
+    "ja": "急上昇する眠気を主因として早期休憩提案を説明する"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should make an early rest-required proposal with drowsiness named as positive evidence.",
+      "ja": "AICAは眠気を正の根拠として明示し、早期に休憩必要を提案する。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-E03.",
+      "ja": "TC-E03の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}

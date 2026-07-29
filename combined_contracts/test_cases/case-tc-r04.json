@@ -1,0 +1,164 @@
+{
+  "algorithm_defaults": {
+    "content": "aica_transparent_content_selector_v1",
+    "service": "aica_transparent_service_selector_v1",
+    "trigger": "aica_transparent_hybrid_trigger_v1"
+  },
+  "brief": {
+    "en": "The same supervisor finishes an ordinary staffed shift with normal breaks and no unusual physical workload. They make the same night expressway trip home after public transport has ended. AICA should not fire; service and content stages should remain not applicable.",
+    "ja": "同じ監督者が通常の人員体制と休憩のある勤務を終え、特別な身体負荷はなかった。 公共交通終了後、同じ夜間高速ルートで帰宅する。 AICAは発火せず、サービスとコンテンツ段階は非該当のままとする。"
+  },
+  "case_id": "case-tc-r04",
+  "contrast": {
+    "changed_inputs": [
+      "journey.scenario.fatigue_model.base_growth_per_min",
+      "journey.scenario.initial_drowsiness",
+      "journey.scenario.initial_fatigue"
+    ],
+    "expected_delta": {
+      "en": "High post-shift fatigue should produce rest need in TC-R03; the ordinary-shift TC-R04 should not fire.",
+      "ja": "勤務後高疲労のTC-R03は休憩必要となり、通常勤務のTC-R04は発火しない。"
+    },
+    "kind": "semantic_real_world",
+    "role": "variant",
+    "with_case_id": "TC-R03"
+  },
+  "display_id": "TC-R04",
+  "expectations": {
+    "content": {
+      "excluded_track_ids": [],
+      "expected_stage_outcome": "not_applicable",
+      "required_track_ids": [],
+      "returned_count": 0
+    },
+    "service": {
+      "rank_1_acceptable_ids": [],
+      "required_positive_feature_ids": [],
+      "top_3_prohibited_ids": [],
+      "top_3_required_ids": []
+    },
+    "trigger": {
+      "max_fire_count": 0,
+      "outcome": "none",
+      "required_positive_feature_ids": []
+    }
+  },
+  "group": "rest",
+  "hypothesis": {
+    "rationale": {
+      "en": "The paired route and profile stay fixed so the absence of exhaustion can be judged against TC-R03's high-fatigue state. Grounded in CDC-SU Slides 1–2 (physical fatigue/drowsiness rest proposal through arrival at a rest facility); post-rest behavior is out of scope.",
+      "ja": "対となるルートとプロファイルを固定し、TC-R03の高疲労状態に対して消耗がない場合を判断する。 CDC-SUスライド1–2（身体疲労・眠気から休憩施設到着までの休憩提案）に基づく。休憩後の挙動は対象外。"
+    }
+  },
+  "journey": {
+    "automatic_path": {
+      "service_choice": "rank_1"
+    },
+    "fixed_overrides": {
+      "child_passenger": false,
+      "destination_tags": [
+        "home"
+      ],
+      "initial_drowsiness": 18,
+      "initial_fatigue": 20,
+      "is_night": true,
+      "multiple_passengers": false,
+      "route_tags": [
+        "highway",
+        "night",
+        "post-shift"
+      ]
+    },
+    "narrative": {
+      "en": "They make the same night expressway trip home after public transport has ended. Both signals rise slowly during an otherwise ordinary first hour without congestion, weather, or passenger load.",
+      "ja": "公共交通終了後、同じ夜間高速ルートで帰宅する。 渋滞・悪天候・同乗者負荷のない通常の最初の1時間で、両信号は緩やかに増える。"
+    },
+    "route_preset_ref": "long_tokyo_osaka",
+    "scenario_ref": "semantic_tc_r04",
+    "seed": 42,
+    "tick_seconds": 180
+  },
+  "persona": {
+    "assumptions": [
+      {
+        "en": "Grounded in CDC-SU Slides 1–2 (physical fatigue/drowsiness rest proposal through arrival at a rest facility); post-rest behavior is out of scope.",
+        "ja": "CDC-SUスライド1–2（身体疲労・眠気から休憩施設到着までの休憩提案）に基づく。休憩後の挙動は対象外。"
+      },
+      {
+        "en": "The resolved profile-semantic-neutral history is fixed before the trip and is not changed during replay.",
+        "ja": "解決済みのprofile-semantic-neutral履歴は出発前に固定し、リプレイ中は変更しません。"
+      }
+    ],
+    "constraints": [
+      {
+        "en": "The driver must remain attentive and cannot operate a screen while moving.",
+        "ja": "走行中は注意を維持し、画面操作はできない。"
+      }
+    ],
+    "goals": [
+      {
+        "en": "Complete this necessary journey without compromising driving safety.",
+        "ja": "必要な移動を、運転の安全を損なわずに終える。"
+      }
+    ],
+    "name": {
+      "en": "Warehouse supervisor after an ordinary shift",
+      "ja": "通常勤務後の倉庫監督者"
+    },
+    "narrative": {
+      "en": "Warehouse supervisor after an ordinary shift. The same supervisor finishes an ordinary staffed shift with normal breaks and no unusual physical workload.",
+      "ja": "通常勤務後の倉庫監督者。同じ監督者が通常の人員体制と休憩のある勤務を終え、特別な身体負荷はなかった。"
+    },
+    "persona_id": "persona-post-shift-ordinary-r04",
+    "preferences": [
+      {
+        "en": "Use simple, driving-capable support when intervention is needed.",
+        "ja": "介入が必要なときは、走行中に使える簡潔な支援を利用する。"
+      }
+    ],
+    "profile_ref": "profile-semantic-neutral",
+    "profile_ref_version": "1.0.0"
+  },
+  "purpose": {
+    "en": "AICA should not fire; service and content stages should remain not applicable.",
+    "ja": "AICAは発火せず、サービスとコンテンツ段階は非該当のままとする。"
+  },
+  "real_world": {
+    "before_trip": {
+      "en": "The same supervisor finishes an ordinary staffed shift with normal breaks and no unusual physical workload.",
+      "ja": "同じ監督者が通常の人員体制と休憩のある勤務を終え、特別な身体負荷はなかった。"
+    },
+    "journey_evolution": {
+      "en": "Both signals rise slowly during an otherwise ordinary first hour without congestion, weather, or passenger load.",
+      "ja": "渋滞・悪天候・同乗者負荷のない通常の最初の1時間で、両信号は緩やかに増える。"
+    },
+    "state_at_departure": {
+      "en": "Fatigue is 20 and drowsiness 18 at departure, with the same neutral preference and history profile as TC-R03.",
+      "ja": "出発時の疲労は20、眠気は18で、嗜好・履歴はTC-R03と同じ中立プロファイルである。"
+    },
+    "trip_reason": {
+      "en": "They make the same night expressway trip home after public transport has ended.",
+      "ja": "公共交通終了後、同じ夜間高速ルートで帰宅する。"
+    }
+  },
+  "schema_version": "1.0.0",
+  "title": {
+    "en": "Avoid mistaking an ordinary post-work drive for exhaustion (contrast with test case ID TC-R03)",
+    "ja": "通常の仕事帰り運転を消耗状態と誤認しない（TC-R03との対照）"
+  },
+  "version": "1.0.0",
+  "what_to_watch": [
+    {
+      "en": "AICA should not fire; service and content stages should remain not applicable.",
+      "ja": "AICAは発火せず、サービスとコンテンツ段階は非該当のままとする。"
+    },
+    {
+      "en": "Whether the authored state and journey evidence remain visible in the explanation for TC-R04.",
+      "ja": "TC-R04の説明に、設定した状態と旅程の根拠が明示されるか。"
+    },
+    {
+      "en": "Whether downstream service and content behavior follows the declared expectation without hidden overrides.",
+      "ja": "下流のサービス・コンテンツ挙動が、隠れた上書きなしで宣言済み期待に従うか。"
+    }
+  ]
+}
