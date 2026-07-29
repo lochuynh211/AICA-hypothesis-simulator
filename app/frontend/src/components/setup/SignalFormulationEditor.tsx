@@ -49,15 +49,22 @@ type FieldSpec = {
 type FieldGroup = { title: BilingualLabel; fields: FieldSpec[] }
 
 type SignalConfig = {
-  /** Monospace state-update equation shown at the top (recurrence or rate). */
-  equation: string
+  /** Monospace state-update equation shown at the top (recurrence or rate).
+   *  BILINGUAL: the equation names its own terms, and a formula reading
+   *  `growth`/`recovery` inside a Japanese panel is the same leak as any
+   *  other English label. The SYMBOLS (Δt, λ, θ) are language-neutral and
+   *  stay identical in both. */
+  equation: BilingualLabel
   /** Plain-language note under the equation (explains Δt / recovery / rate). */
   lead: BilingualLabel
   groups: FieldGroup[]
 }
 
 const DROWSINESS_CONFIG: SignalConfig = {
-  equation: 'drowsiness[t] = drowsiness[t−1] + growth·Δt − recovery',
+  equation: {
+    en: 'drowsiness[t] = drowsiness[t−1] + growth·Δt − recovery',
+    ja: '眠気[t] = 眠気[t−1] + 増加量・Δt − 回復量',
+  },
   lead: {
     en: 'Δt = minutes since the previous step. "Growth" is the per-minute sum below. "Recovery" is a fixed amount subtracted once per rest activity — set it under Rest Options.',
     ja: 'Δt = 前ステップからの経過分数。「増加量」は下の1分あたりの合計。「回復量」は休憩アクティビティごとに1回引かれる固定量（下の「休憩オプション」で設定）。',
@@ -76,7 +83,10 @@ const DROWSINESS_CONFIG: SignalConfig = {
 }
 
 const FATIGUE_CONFIG: SignalConfig = {
-  equation: 'fatigue[t] = fatigue[t−1] + growth·Δt − recovery',
+  equation: {
+    en: 'fatigue[t] = fatigue[t−1] + growth·Δt − recovery',
+    ja: '疲労度[t] = 疲労度[t−1] + 増加量・Δt − 回復量',
+  },
   lead: {
     en: 'Δt = minutes since the previous step. "Growth" is the per-minute sum below. "Recovery" is a fixed amount subtracted once per rest activity — set it under Rest Options.',
     ja: 'Δt = 前ステップからの経過分数。「増加量」は下の1分あたりの合計。「回復量」は休憩アクティビティごとに1回引かれる固定量（下の「休憩オプション」で設定）。',
@@ -100,7 +110,10 @@ const FATIGUE_CONFIG: SignalConfig = {
 }
 
 const ANOMALY_CONFIG: SignalConfig = {
-  equation: 'λ = lambda_base + lambda_gain·max(0, drowsiness − θ)/100',
+  equation: {
+    en: 'λ = λ₀ + λ_gain·max(0, drowsiness − θ) / 100',
+    ja: 'λ = λ₀ + λ_gain・max(0, 眠気 − θ) / 100',
+  },
   lead: {
     en: 'Rare events (lane drifts, steering jerks) drawn from a seeded random stream — replayable from the run seed. The rate λ rises once drowsiness passes θ; the detected driving-anomaly count is tallied over the window.',
     ja: '稀な事象（車線のふらつき・急ハンドル）をシード付き乱数系列から生成（シードから再現可能）。眠気がθを超えると発生率λが上昇し、運転の乱れの検知件数はウィンドウ内で集計されます。',
@@ -223,7 +236,7 @@ export default function SignalFormulationEditor({ signalKey, label, scenario }: 
           wordBreak: 'break-word',
         }}
       >
-        {config.equation}
+        {t(config.equation, uiLanguage)}
       </div>
       <div
         data-testid={`signal-formula-lead-${signalKey}`}

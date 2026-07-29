@@ -284,6 +284,113 @@ export const FIELD_NAMES: Record<string, BilingualLabel> = {
   hobbies: { ja: '趣味の合致', en: 'Hobby fit' },
   genre_usage: { ja: 'ジャンルの利用', en: 'Genre usage' },
   scene_genre: { ja: '場面別のジャンル', en: 'Scene genre' },
+  multiple: { ja: '複数人の同乗', en: 'Multiple passengers' },
+  cancelled: { ja: '取り消し履歴', en: 'Cancellation history' },
+  item_recency: { ja: 'この曲の未再生期間', en: 'Time since this song was played' },
+  tag_recency: { ja: 'ジャンルの未再生期間', en: 'Time since the genre was played' },
+  schedule: { ja: '直近の予定', en: 'Upcoming schedule' },
+
+  // ── Content selector: `context_response_matrix` rows ──────────────────────
+  // Each row is a CONTEXT CONDITION, not a feature: the matrix says how a
+  // song's traits should respond when that condition holds. Named for the
+  // condition, so a row reads as the situation it describes.
+  traffic_congested: { ja: '渋滞している', en: 'Traffic is congested' },
+  motion_driving: { ja: '走行中である', en: 'The car is moving' },
+  highway: { ja: '高速道路', en: 'Highway' },
+  local: { ja: '一般道', en: 'Local road' },
+  mountain: { ja: '山道', en: 'Mountain road' },
+  parking: { ja: '駐車場', en: 'Parking' },
+
+  // The two coefficients of the context response: a song's response is
+  // `alpha × 高揚感 + beta × 明るさ`, and `directional` flips alpha's sign when
+  // the run is set to keep the driver alert rather than settle them
+  // (algorithm.py `_mood`).
+  alpha: { ja: '高揚感の係数', en: 'Arousal coefficient' },
+  beta: { ja: '明るさの係数', en: 'Brightness coefficient' },
+  directional: { ja: '覚醒重視で符号を反転', en: 'Flip sign when keeping alert' },
+
+  // ── Content selector: `age_era_affinity` ─────────────────────────────────
+  // Rows are the driver's age band, columns are the song's era. Same wording as
+  // the `age_band` entries in OPTION_LABELS — one band, one name, wherever it
+  // appears.
+  teens: { ja: '10代', en: 'Teens' },
+  '20s': { ja: '20代', en: '20s' },
+  '30s': { ja: '30代', en: '30s' },
+  '40s': { ja: '40代', en: '40s' },
+  '50s': { ja: '50代', en: '50s' },
+  '60plus': { ja: '60代以上', en: '60 and over' },
+
+  pre1980: { ja: '1970年代以前', en: 'Pre-1980s' },
+  '1980s': { ja: '1980年代', en: '1980s' },
+  '1990s': { ja: '1990年代', en: '1990s' },
+  '2000s': { ja: '2000年代', en: '2000s' },
+  '2010s': { ja: '2010年代', en: '2010s' },
+  '2020s': { ja: '2020年代', en: '2020s' },
+
+  // ── Content selector: `norm_bounds` ───────────────────────────────────────
+  // The raw-audio normalisation constants. Each names the quantity it bounds,
+  // in words — `tempo_ease_center` is the tempo that is EASIEST to sing to,
+  // and `*_span` is how far either side of it still counts as easy.
+  loudness_min: { ja: '音量の下限', en: 'Loudness floor' },
+  loudness_range: { ja: '音量の幅', en: 'Loudness range' },
+  tempo_min: { ja: 'テンポの下限', en: 'Tempo floor' },
+  tempo_range: { ja: 'テンポの幅', en: 'Tempo range' },
+  tempo_ease_center: { ja: '最も歌いやすいテンポ', en: 'Easiest tempo to sing to' },
+  tempo_ease_span: { ja: '歌いやすいテンポの許容幅', en: 'Tolerance around the easiest tempo' },
+  speech_ease_threshold: { ja: '語り成分の許容上限', en: 'Spoken-word tolerance limit' },
+  speech_ease_span: { ja: '語り成分の許容幅', en: 'Spoken-word tolerance range' },
+  duration_ease_center: { ja: '最も適した曲の長さ', en: 'Most suitable song length' },
+  duration_ease_span: { ja: '曲の長さの許容幅', en: 'Tolerance around that length' },
+
+  // ── Content selector: `history_curves` ────────────────────────────────────
+  changed_in_window: { ja: '直近に切り替えられた', en: 'Switched away from recently' },
+  skipped_older: { ja: '以前にスキップされた', en: 'Skipped some time ago' },
+  rate_scale: { ja: '比率の基準値', en: 'Rate scale' },
+  le_30m: { ja: '30分以内', en: 'Within 30 minutes' },
+  today: { ja: '当日中', en: 'Earlier today' },
+  le_7d: { ja: '7日以内', en: 'Within 7 days' },
+  else: { ja: 'それ以前', en: 'Longer ago' },
+
+  // ── Content selector: `lighting_lookup` ───────────────────────────────────
+  cue_basis: { ja: 'ライティングの判断基準', en: 'Lighting cue basis' },
+  high_threshold: { ja: '強い演出のしきい値', en: 'Strong-cue threshold' },
+  low_threshold: { ja: '弱い演出のしきい値', en: 'Soft-cue threshold' },
+  high_cue: { ja: '強いときの演出', en: 'Strong cue' },
+  mid_cue: { ja: '中程度のときの演出', en: 'Medium cue' },
+  low_cue: { ja: '弱いときの演出', en: 'Soft cue' },
+
+  // ── Content selector: `genre_affinity_maps` ───────────────────────────────
+  // Top-level groups, then the route / destination / hobby keys that sit under
+  // them. The route and destination names deliberately repeat the wording of
+  // the matching `OPTION_LABELS` entries: the same tag must read the same
+  // whether it is a value in a dropdown or a row in this map.
+  hobby: { ja: '趣味', en: 'Hobby' },
+  usage_curve: { ja: '利用頻度による重み', en: 'Weighting by usage' },
+  vocabulary: { ja: '対象ジャンル一覧', en: 'Genre vocabulary' },
+  coastal: { ja: '海沿い', en: 'Coastal' },
+  urban: { ja: '都市部', en: 'Urban' },
+  rural: { ja: '郊外', en: 'Rural' },
+  scenic_byway: { ja: '景観ルート', en: 'Scenic byway' },
+  coast: { ja: '海', en: 'Coast' },
+  resort: { ja: 'リゾート', en: 'Resort' },
+  nature: { ja: '自然', en: 'Nature' },
+  event: { ja: 'イベント', en: 'Event' },
+  oshi_venue: { ja: '推し関連スポット', en: 'Favourite-artist venue' },
+  event_hall: { ja: 'イベント会場', en: 'Event hall' },
+  home: { ja: '自宅', en: 'Home' },
+  shopping: { ja: '買い物', en: 'Shopping' },
+  'anime-fan': { ja: 'アニメ好き', en: 'Anime fan' },
+  fitness: { ja: '運動・フィットネス', en: 'Fitness' },
+  wellness: { ja: '健康・リラックス', en: 'Wellness' },
+  'idol/live': { ja: 'アイドル・ライブ', en: 'Idols and live shows' },
+  tradition: { ja: '伝統文化', en: 'Traditional culture' },
+
+  // Ordinal usage bands, as they appear as KEYS of a weighting curve rather
+  // than as a field's value. Same wording as the `OPTION_LABELS` usage bands.
+  never: { ja: '未利用', en: 'Never used' },
+  low: { ja: '低い', en: 'Low' },
+  med: { ja: '中程度', en: 'Medium' },
+  high: { ja: '高い', en: 'High' },
 }
 
 /** An unnamed feature is still SHOWN — a field we cannot name is still a field
@@ -411,6 +518,32 @@ export const NODE_LABELS: Record<string, BilingualLabel> = {
   upro_oshi: { ja: '推し活の嗜好', en: 'Favourite-artist preference' },
   usage: { ja: '利用状況', en: 'Usage' },
   outcomes: { ja: '提案の結果', en: 'Proposal outcomes' },
+
+  // ── The remaining subgroup keys the two real manifests actually ship ──────
+  //
+  // Every one of these is a row in the "Hierarchy weights" / "Purpose
+  // multipliers" tables inside the service- and content-package setup popups.
+  // They are grouped here in the order the spec's judgement axes run (Slide
+  // 66–70: 状況 → 好み → 過去実績) so the table reads as the spec's own model
+  // of how a proposal is weighted.
+  //
+  // 状況 (Situation)
+  route_context: { ja: 'ルートの状況', en: 'Route context' },
+  route_destination: { ja: 'ルートと目的地', en: 'Route and destination' },
+  passenger_composition: { ja: '同乗者構成', en: 'Passenger composition' },
+  driving_state: { ja: '走行状態', en: 'Driving state' },
+  song_singability: { ja: '曲の歌いやすさ', en: 'Song singability' },
+  // 好み (Preference)
+  oshi_preference: { ja: '推し活の嗜好', en: 'Favourite-artist preference' },
+  novelty: { ja: '目新しさ', en: 'Novelty' },
+  overall_usage: { ja: '全体の利用頻度', en: 'Overall usage' },
+  scene_preference: { ja: '場面別の好み', en: 'Scene-specific preference' },
+  operations: { ja: 'ユーザー操作の履歴', en: 'User-operation history' },
+  // 過去実績 (Past results)
+  proposal_acceptance: { ja: '提案の受諾実績', en: 'Proposal acceptance' },
+  content_acceptance: { ja: 'コンテンツの受諾実績', en: 'Content acceptance' },
+  recovery: { ja: '回復の実績', en: 'Recovery outcomes' },
+  content_recovery: { ja: 'コンテンツによる回復実績', en: 'Recovery from content' },
 }
 
 const UNNAMED_NODE: BilingualLabel = { ja: '名称未登録の区分', en: 'Unnamed group' }
@@ -481,6 +614,10 @@ export const OPTION_LABELS: Record<string, Record<string, BilingualLabel>> = {
     '60plus': { ja: '60代以上', en: '60 and over' },
   },
   motion_state: {
+    // The wire enum is `driving` / `stopped` (models/proposal/enums.py
+    // MotionState). The other spellings are older//trigger-side tokens kept so
+    // a value from either side still resolves.
+    driving: { ja: '走行中', en: 'In motion' },
     in_motion: { ja: '走行中', en: 'In motion' },
     moving: { ja: '走行中', en: 'In motion' },
     stopped: { ja: '停車中', en: 'Stopped' },

@@ -312,7 +312,7 @@ const HYBRID_TEMPLATE: PackageFormulationTemplate = {
           scoreKey: 'monotony_prevention_score',
           steps: [
             { label: { en: 'Watch', ja: '監視' }, coef: 'monotony_watch_threshold', meaning: { en: 'enters monitoring only', ja: '監視状態に入る' } },
-            { label: { en: 'Suggest', ja: '提案' }, coef: 'monotony_suggest_threshold', meaning: { en: 'a content/break suggestion becomes possible', ja: 'コンテンツ・休憩の提案が可能になる' } },
+            { label: { en: 'Suggest', ja: '提案' }, coef: 'monotony_suggest_threshold', meaning: { en: 'a content/break suggestion becomes possible', ja: 'コンテンツ提案・休憩推奨が可能になる' } },
             { label: { en: 'Recommend', ja: '推奨' }, coef: 'monotony_recommend_threshold', meaning: { en: 'escalates to a clear suggestion', ja: '明確な提案に格上げ' } },
             { label: { en: 'Urgent', ja: '緊急' }, coef: 'monotony_urgent_threshold', meaning: { en: 'strongest attention-drop alert', ja: '最も強い注意力低下の警告' } },
           ],

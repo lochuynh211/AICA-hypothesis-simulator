@@ -32,6 +32,8 @@ import {
 } from './matrixStyles'
 import {
   fieldName,
+  GENRE_LABELS,
+  genreLabel,
   isKnownService,
   NODE_LABELS,
   nodeLabel,
@@ -57,6 +59,10 @@ const LABELS = {
 function labelForKey(key: string, lang: UiLanguage): string {
   if (Object.prototype.hasOwnProperty.call(PURPOSE_LABELS, key)) return t(purposeLabel(key), lang)
   if (isKnownService(key)) return t(serviceLabel(key), lang)
+  // Genres before nodes/features: `genre_affinity_maps` keys its innermost
+  // level by genre name, and several of those ('anime', 'classical') would
+  // otherwise be looked up as if they were feature ids.
+  if (Object.prototype.hasOwnProperty.call(GENRE_LABELS, key)) return t(genreLabel(key), lang)
   if (Object.prototype.hasOwnProperty.call(NODE_LABELS, key)) return t(nodeLabel(key), lang)
   return t(fieldName(key), lang)
 }
