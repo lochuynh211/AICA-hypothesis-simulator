@@ -4746,7 +4746,7 @@
           ],
           "max_fire_count": 1,
           "required_positive_feature_ids": [
-            "weather_risk"
+            "env_load"
           ]
         },
         "service": {
