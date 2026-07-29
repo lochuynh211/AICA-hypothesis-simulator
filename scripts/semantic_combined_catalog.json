@@ -1,0 +1,471 @@
+{
+  "catalog_id": "semantic-combined-experience",
+  "catalog_version": "1.0.0",
+  "case_schema_version": "1.0.0",
+  "reference_time": "2026-07-29T12:00:00Z",
+  "profiles": [
+    {
+      "profile_id": "profile-semantic-neutral",
+      "version": "1.0.0",
+      "label": {
+        "ja": "セマンティック検証・中立プロファイル",
+        "en": "Semantic evaluation — neutral profile"
+      },
+      "builtin": true,
+      "profile": {
+        "oshi_registered": false,
+        "oshi_mode": "off",
+        "oshi_id": null,
+        "oshi_type": null,
+        "oshi_tags": [],
+        "age_band": "30s",
+        "gender": "unspecified",
+        "hobby_interest_tags": [],
+        "service_usage_level": {},
+        "service_recency_state": {},
+        "scene_service_usage_level": {},
+        "catalog_item_usage_level": {},
+        "catalog_item_recency_state": {},
+        "content_tag_usage_level": {},
+        "content_tag_recency_state": {},
+        "scene_content_tag_usage_level": {},
+        "played_items": [],
+        "skipped_items": [],
+        "changed_from_items": [],
+        "cancelled_content_plans": [],
+        "completed_items": [],
+        "manually_selected_items": [],
+        "repeated_items": [],
+        "service_proposal_acceptance_rate": {},
+        "service_recovery_rate": {},
+        "content_proposal_acceptance_rate": {},
+        "content_recovery_rate": {},
+        "service_proposal_acceptance_confidence": {},
+        "service_recovery_confidence": {},
+        "content_proposal_acceptance_confidence": {},
+        "content_recovery_confidence": {},
+        "scheduled_event_type": null,
+        "scheduled_event_timing": null,
+        "scheduled_event_tags": [],
+        "genre_affinity_v1_enabled": false,
+        "usage_by_genre": null,
+        "scene_genre_usage": null
+      }
+    }
+  ],
+  "cases": [
+    {
+      "display_id": "TC-R01",
+      "version": "1.0.0",
+      "title": {
+        "ja": "睡眠不足の遅番勤務者を早めの休憩提案で守る",
+        "en": "Protect a sleep-deprived late-shift worker with an early rest proposal"
+      },
+      "brief": {
+        "ja": "睡眠不足のまま遅番を終えた勤務者が、夜間の高速道路で帰宅します。出発時から高い眠気と疲労があり、AICAが早い段階で実行可能な休憩を提案できるかを確認します。",
+        "en": "A sleep-deprived worker drives home on the highway after a late shift. The case matters because AICA should make an actionable rest proposal early, before the journey compounds an already unsafe state."
+      },
+      "group": "rest",
+      "purpose": {
+        "ja": "出発時から眠気と疲労が高い運転者に対し、到達可能な休憩所があるうちに休憩を提案する。",
+        "en": "Propose rest while a reachable stopping opportunity remains for a driver who starts with high drowsiness and fatigue."
+      },
+      "what_to_watch": [
+        {
+          "ja": "休憩提案が走行開始後15分以内に出るか",
+          "en": "Whether the rest proposal appears within the first 15 minutes"
+        },
+        {
+          "ja": "眠気が休憩判断を正方向に支えるか",
+          "en": "Whether drowsiness positively supports the rest decision"
+        },
+        {
+          "ja": "走行中に利用できないサービスが上位に入らないか",
+          "en": "Whether stopped-only services stay out of the leading choices"
+        }
+      ],
+      "real_world": {
+        "before_trip": {
+          "ja": "日中に十分眠れないまま遅番勤務を終え、短い休憩だけで車に乗り込みます。",
+          "en": "The worker slept poorly during the day, completed a late shift, and gets into the car after only a short break."
+        },
+        "trip_reason": {
+          "ja": "深夜に職場から自宅へ戻るため、都市間の高速道路を約1時間走行します。",
+          "en": "The driver needs to travel home from work on an intercity highway late at night."
+        },
+        "state_at_departure": {
+          "ja": "出発時点ですでに強い眠気と蓄積した疲労があり、睡眠不足のため両方が速く悪化しやすい状態です。",
+          "en": "Drowsiness and fatigue are already high at departure, and poor sleep makes both signals worsen comparatively quickly."
+        },
+        "journey_evolution": {
+          "ja": "暗い高速道路を走り続ける間に眠気と疲労が上昇します。交通渋滞や悪天候はなく、判断の中心は運転者の状態です。",
+          "en": "Drowsiness and fatigue rise during the uninterrupted night drive. There is no congestion or adverse weather, keeping the driver's state central to the hypothesis."
+        }
+      },
+      "hypothesis": {
+        "rationale": {
+          "ja": "睡眠不足は出発時の高い眠気・疲労と、その後の速い増加の両方で表現します。この組み合わせなら、凍結済みアルゴリズムは早期に休憩必要性を認識し、走行中に利用可能な支援を提示すべきです。",
+          "en": "Poor sleep is represented coherently by both elevated initial signals and faster growth. With a reachable rest opportunity and no competing environmental cause, the frozen pipeline should recognize rest need early and offer driving-capable support."
+        }
+      },
+      "expectations": {
+        "trigger": {
+          "outcome": "rest_required",
+          "time_window_min": [
+            0,
+            15
+          ],
+          "max_fire_count": 1,
+          "required_positive_feature_ids": [
+            "drowsiness"
+          ]
+        },
+        "service": {
+          "rank_1_acceptable_ids": [
+            "music_playlist",
+            "humming_karaoke"
+          ],
+          "top_3_required_ids": [],
+          "top_3_prohibited_ids": [
+            "stretch_video",
+            "full_karaoke",
+            "call_response_stopped"
+          ],
+          "required_positive_feature_ids": []
+        },
+        "content": {
+          "expected_stage_outcome": "complete_plan",
+          "returned_count": 5,
+          "required_track_ids": [],
+          "excluded_track_ids": []
+        }
+      },
+      "contrast": {
+        "role": "baseline",
+        "with_case_id": "TC-R02",
+        "kind": "semantic_real_world",
+        "changed_inputs": [
+          "journey.scenario.initial_drowsiness",
+          "journey.scenario.initial_fatigue",
+          "journey.scenario.drowsiness_model.base_growth_per_min",
+          "journey.scenario.fatigue_model.base_growth_per_min"
+        ],
+        "expected_delta": {
+          "ja": "TC-R01では早期に休憩提案が発火し、十分に休んだTC-R02では同じ時間内に発火しないことを期待します。",
+          "en": "TC-R01 should fire an early rest proposal, while the adequately rested TC-R02 should remain quiet over the same journey."
+        }
+      },
+      "persona": {
+        "persona_id": "persona-late-shift-worker",
+        "name": {
+          "ja": "遅番勤務を終えた物流担当者",
+          "en": "Logistics worker finishing a late shift"
+        },
+        "narrative": {
+          "ja": "郊外の物流拠点で遅番を担当し、勤務後は自分の車で高速道路を使って帰宅します。",
+          "en": "A logistics worker who finishes late and normally drives home from a suburban depot using the highway."
+        },
+        "goals": [
+          {
+            "ja": "無理をせず安全に帰宅する",
+            "en": "Get home safely without pushing beyond a safe limit"
+          }
+        ],
+        "preferences": [
+          {
+            "ja": "特定の推しやサービス利用履歴は設定しない",
+            "en": "No OSHI or service-history preference is used in this trigger-focused case"
+          }
+        ],
+        "constraints": [
+          {
+            "ja": "深夜のため、休憩できる場所は高速道路上の施設に限られます。",
+            "en": "At this hour, practical stopping opportunities are limited to highway facilities."
+          }
+        ],
+        "assumptions": [
+          {
+            "ja": "出発前の睡眠不足は、初期状態と増加率にのみ反映します。",
+            "en": "Poor sleep is represented only through the authored initial state and signal growth rates."
+          }
+        ],
+        "profile_ref": "profile-semantic-neutral",
+        "profile_ref_version": "1.0.0"
+      },
+      "journey": {
+        "narrative": {
+          "ja": "遅番勤務後、夜間の高速道路を使って物流拠点から自宅へ向かいます。",
+          "en": "After the late shift, the worker takes the night highway from the logistics depot toward home."
+        },
+        "route_preset_ref": "long_tokyo_osaka",
+        "automatic_path": {
+          "service_choice": "rank_1"
+        },
+        "scenario": {
+          "version": "1.0.0",
+          "initial_drowsiness": 85,
+          "initial_fatigue": 70,
+          "drowsiness_model": {
+            "base_growth_per_min": 1.0,
+            "night_add_per_min": 0.05,
+            "monotony_add_per_min": 0.03,
+            "traffic_jam_add_per_min": 0.02
+          },
+          "fatigue_model": {
+            "base_growth_per_min": 0.5,
+            "continuous_driving_add_per_min_after_60_min": 0.05,
+            "mountain_road_add_per_min": 0.0,
+            "traffic_jam_add_per_min": 0.02
+          },
+          "anomaly_model": {
+            "lambda_base": 0.0,
+            "lambda_gain": 0.0,
+            "theta": 100.0,
+            "window_min": 15.0
+          },
+          "route_distance_km": 90,
+          "rest_fraction": 0.3,
+          "primary_fraction": 0.35,
+          "primary_road_type": "highway",
+          "traffic_events": [],
+          "weather_events": [],
+          "is_night": true,
+          "child_passenger": false,
+          "familiar_route": false,
+          "weather_risk": 0,
+          "route_tags": [
+            "highway",
+            "night"
+          ],
+          "destination_tags": [
+            "home"
+          ],
+          "multiple_passengers": false,
+          "total_duration_seconds": 2700,
+          "tick_seconds": 180,
+          "seed": 42,
+          "speed_profile": {
+            "normal_road_kph": 60,
+            "highway_kph": 100,
+            "mountain_road_kph": 40,
+            "sightseeing_road_kph": 30,
+            "traffic_jam_kph": 20
+          },
+          "allowed_actions": [
+            "accept_rest",
+            "postpone",
+            "decline",
+            "acknowledge"
+          ]
+        }
+      },
+      "algorithm_defaults": {
+        "trigger": "aica_transparent_hybrid_trigger_v1",
+        "service": "aica_transparent_service_selector_v1",
+        "content": "aica_transparent_content_selector_v1"
+      }
+    },
+    {
+      "display_id": "TC-R02",
+      "version": "1.0.0",
+      "title": {
+        "ja": "十分に休んだ遅番勤務者には早すぎる休憩提案をせず走行を続ける（テストケースID TC-R01との対照）",
+        "en": "Keep a well-rested late-shift worker driving without a premature rest proposal (contrast with test case ID TC-R01)"
+      },
+      "brief": {
+        "ja": "勤務前に十分な睡眠を取った同じ遅番勤務者が、同じ夜間ルートで帰宅します。ルートやアルゴリズムを変えず、初期状態と増加率が良好なときにAICAが早すぎる休憩提案を出さないかを確認します。",
+        "en": "The same late-shift worker drives the same route after adequate sleep. The case matters because AICA should not issue a premature rest proposal when the driver's starting state and progression remain healthy."
+      },
+      "group": "rest",
+      "purpose": {
+        "ja": "十分に休んだ運転者に対し、同じ夜間ルートだからという理由だけで早い休憩提案を出さない。",
+        "en": "Remain quiet when an adequately rested driver undertakes the same night journey without an emerging rest need."
+      },
+      "what_to_watch": [
+        {
+          "ja": "45分の走行中に休憩提案が発火しないか",
+          "en": "Whether the full 45-minute drive remains free of a rest proposal"
+        },
+        {
+          "ja": "TC-R01と同じルート・乱数シード・プロファイルが使われるか",
+          "en": "Whether route, seed, and profile remain identical to TC-R01"
+        },
+        {
+          "ja": "発火しない場合にサービスとコンテンツが評価対象外になるか",
+          "en": "Whether service and content remain not applicable when no trigger fires"
+        }
+      ],
+      "real_world": {
+        "before_trip": {
+          "ja": "勤務前に十分な睡眠を取り、遅番の間にも通常の休憩を確保してから車に乗り込みます。",
+          "en": "The worker slept adequately before the shift and took normal breaks during work before getting into the car."
+        },
+        "trip_reason": {
+          "ja": "TC-R01と同じく、深夜に職場から自宅へ戻るため同じ高速道路を走行します。",
+          "en": "As in TC-R01, the driver needs to travel home from work on the same intercity highway late at night."
+        },
+        "state_at_departure": {
+          "ja": "出発時の眠気と疲労は低く、十分な睡眠を取ったため両方の増加も緩やかです。",
+          "en": "Drowsiness and fatigue are low at departure, and adequate sleep is represented by slow growth in both signals."
+        },
+        "journey_evolution": {
+          "ja": "同じ暗い高速道路を走行しますが、45分の評価時間内では眠気と疲労は低い範囲にとどまります。",
+          "en": "The driver follows the same dark highway, but drowsiness and fatigue remain low throughout the 45-minute evaluation window."
+        }
+      },
+      "hypothesis": {
+        "rationale": {
+          "ja": "十分な睡眠は低い初期値と緩やかな増加率を同時にもたらすため、これは単一要因の感度試験ではなく現実的な意味対照です。同じ経路・アルゴリズム・乱数シード・プロファイルの下で、凍結済みアルゴリズムは休憩提案を控えるべきです。",
+          "en": "Adequate sleep coherently changes both starting signals and their growth, so this is a semantic real-world contrast rather than a one-factor sensitivity claim. With route, algorithms, seed, and profile held constant, the frozen trigger should remain quiet."
+        }
+      },
+      "expectations": {
+        "trigger": {
+          "outcome": "none",
+          "time_window_min": [
+            0,
+            45
+          ],
+          "max_fire_count": 0,
+          "required_positive_feature_ids": []
+        },
+        "service": {
+          "rank_1_acceptable_ids": [],
+          "top_3_required_ids": [],
+          "top_3_prohibited_ids": [],
+          "required_positive_feature_ids": []
+        },
+        "content": {
+          "expected_stage_outcome": "not_applicable",
+          "returned_count": 0,
+          "required_track_ids": [],
+          "excluded_track_ids": []
+        }
+      },
+      "contrast": {
+        "role": "variant",
+        "with_case_id": "TC-R01",
+        "kind": "semantic_real_world",
+        "changed_inputs": [
+          "journey.scenario.initial_drowsiness",
+          "journey.scenario.initial_fatigue",
+          "journey.scenario.drowsiness_model.base_growth_per_min",
+          "journey.scenario.fatigue_model.base_growth_per_min"
+        ],
+        "expected_delta": {
+          "ja": "十分に休んだTC-R02では発火せず、睡眠不足のTC-R01だけが早期の休憩提案を出すことを期待します。",
+          "en": "The well-rested TC-R02 should remain quiet, while only the sleep-deprived TC-R01 should produce an early rest proposal."
+        }
+      },
+      "persona": {
+        "persona_id": "persona-late-shift-worker",
+        "name": {
+          "ja": "遅番勤務を終えた物流担当者",
+          "en": "Logistics worker finishing a late shift"
+        },
+        "narrative": {
+          "ja": "郊外の物流拠点で遅番を担当し、勤務後は自分の車で高速道路を使って帰宅します。",
+          "en": "A logistics worker who finishes late and normally drives home from a suburban depot using the highway."
+        },
+        "goals": [
+          {
+            "ja": "不要な中断を避けながら安全に帰宅する",
+            "en": "Get home safely without an unnecessary interruption"
+          }
+        ],
+        "preferences": [
+          {
+            "ja": "特定の推しやサービス利用履歴は設定しない",
+            "en": "No OSHI or service-history preference is used in this trigger-focused case"
+          }
+        ],
+        "constraints": [
+          {
+            "ja": "深夜のため、休憩できる場所は高速道路上の施設に限られます。",
+            "en": "At this hour, practical stopping opportunities are limited to highway facilities."
+          }
+        ],
+        "assumptions": [
+          {
+            "ja": "十分な睡眠は、初期状態と増加率にのみ反映します。",
+            "en": "Adequate sleep is represented only through the authored initial state and signal growth rates."
+          }
+        ],
+        "profile_ref": "profile-semantic-neutral",
+        "profile_ref_version": "1.0.0"
+      },
+      "journey": {
+        "narrative": {
+          "ja": "十分な睡眠を取った遅番勤務者が、TC-R01と同じ夜間高速ルートで自宅へ向かいます。",
+          "en": "After adequate sleep, the late-shift worker takes the same night highway route home as in TC-R01."
+        },
+        "route_preset_ref": "long_tokyo_osaka",
+        "automatic_path": {
+          "service_choice": "rank_1"
+        },
+        "scenario": {
+          "version": "1.0.0",
+          "initial_drowsiness": 10,
+          "initial_fatigue": 12,
+          "drowsiness_model": {
+            "base_growth_per_min": 0.05,
+            "night_add_per_min": 0.05,
+            "monotony_add_per_min": 0.03,
+            "traffic_jam_add_per_min": 0.02
+          },
+          "fatigue_model": {
+            "base_growth_per_min": 0.03,
+            "continuous_driving_add_per_min_after_60_min": 0.05,
+            "mountain_road_add_per_min": 0.0,
+            "traffic_jam_add_per_min": 0.02
+          },
+          "anomaly_model": {
+            "lambda_base": 0.0,
+            "lambda_gain": 0.0,
+            "theta": 100.0,
+            "window_min": 15.0
+          },
+          "route_distance_km": 90,
+          "rest_fraction": 0.3,
+          "primary_fraction": 0.35,
+          "primary_road_type": "highway",
+          "traffic_events": [],
+          "weather_events": [],
+          "is_night": true,
+          "child_passenger": false,
+          "familiar_route": false,
+          "weather_risk": 0,
+          "route_tags": [
+            "highway",
+            "night"
+          ],
+          "destination_tags": [
+            "home"
+          ],
+          "multiple_passengers": false,
+          "total_duration_seconds": 2700,
+          "tick_seconds": 180,
+          "seed": 42,
+          "speed_profile": {
+            "normal_road_kph": 60,
+            "highway_kph": 100,
+            "mountain_road_kph": 40,
+            "sightseeing_road_kph": 30,
+            "traffic_jam_kph": 20
+          },
+          "allowed_actions": [
+            "accept_rest",
+            "postpone",
+            "decline",
+            "acknowledge"
+          ]
+        }
+      },
+      "algorithm_defaults": {
+        "trigger": "aica_transparent_hybrid_trigger_v1",
+        "service": "aica_transparent_service_selector_v1",
+        "content": "aica_transparent_content_selector_v1"
+      }
+    }
+  ]
+}
