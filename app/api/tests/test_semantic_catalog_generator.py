@@ -332,6 +332,50 @@ def test_controlled_pair_requires_the_declared_path_to_be_the_exact_changed_leaf
         validate_catalog(catalog)
 
 
+def test_controlled_pair_counts_each_leaf_when_automatic_path_is_added():
+    catalog = two_case_catalog()
+    catalog["cases"][1]["journey"]["scenario"] = copy.deepcopy(
+        catalog["cases"][0]["journey"]["scenario"]
+    )
+    del catalog["cases"][0]["journey"]["automatic_path"]
+    catalog["cases"][1]["journey"]["automatic_path"] = {
+        "service_choice": "rank_1",
+        "rest_response": "accept",
+        "sleep_minutes": 20,
+    }
+    for case in catalog["cases"]:
+        case["contrast"]["kind"] = "controlled_one_factor"
+        case["contrast"]["changed_inputs"] = ["journey.automatic_path"]
+
+    with pytest.raises(ValueError, match="exactly one business leaf difference"):
+        validate_catalog(catalog)
+
+
+def test_semantic_pair_reports_exact_undeclared_leaf_in_added_mapping():
+    catalog = two_case_catalog()
+    catalog["cases"][1]["journey"]["scenario"] = copy.deepcopy(
+        catalog["cases"][0]["journey"]["scenario"]
+    )
+    del catalog["cases"][0]["journey"]["automatic_path"]
+    catalog["cases"][1]["journey"]["automatic_path"] = {
+        "service_choice": "rank_1",
+        "rest_response": "accept",
+        "sleep_minutes": 20,
+    }
+    declared = [
+        "journey.automatic_path.rest_response",
+        "journey.automatic_path.service_choice",
+    ]
+    for case in catalog["cases"]:
+        case["contrast"]["changed_inputs"] = declared
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape("journey.automatic_path.sleep_minutes"),
+    ):
+        validate_catalog(catalog)
+
+
 @pytest.mark.parametrize(
     ("path", "expected_context"),
     [

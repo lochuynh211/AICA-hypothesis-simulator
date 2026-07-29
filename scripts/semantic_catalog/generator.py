@@ -516,13 +516,23 @@ def _business_inputs(
 
 
 def _diff_paths(left: Any, right: Any, prefix: str = "") -> set[str]:
-    if isinstance(left, Mapping) and isinstance(right, Mapping):
+    left_is_mapping = isinstance(left, Mapping)
+    right_is_mapping = isinstance(right, Mapping)
+    if left_is_mapping or right_is_mapping:
+        left_mapping = left if left_is_mapping else {}
+        right_mapping = right if right_is_mapping else {}
         differences: set[str] = set()
-        for key in sorted(set(left) | set(right)):
+        for key in sorted(set(left_mapping) | set(right_mapping)):
             child = f"{prefix}.{key}" if prefix else str(key)
             differences.update(
-                _diff_paths(left.get(key, _MISSING), right.get(key, _MISSING), child)
+                _diff_paths(
+                    left_mapping.get(key, _MISSING),
+                    right_mapping.get(key, _MISSING),
+                    child,
+                )
             )
+        if not differences and left != right:
+            return {prefix}
         return differences
     if left != right:
         return {prefix}
