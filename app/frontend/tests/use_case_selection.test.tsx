@@ -5,16 +5,18 @@
  * Covers what the review found untested:
  *   - `run` actions dispatch in `caseDispatches`' order (SELECT_SCENARIO
  *     before the pins it would otherwise clear);
- *   - LOAD_PROFILE carries a resolved `{ profileId, profile }` object, not
- *     just the id `caseDispatches` itself knows;
+ *   - LOAD_PROFILE carries a resolved `{ profileId, profile }` object from
+ *     either a direct profile or a preset, not just the id `caseDispatches`
+ *     itself knows;
  *   - THE RACE: selecting case A then case B before A's `getPreset` fetch
  *     resolves must leave the proposal store on B, never a stale mix of A's
  *     profile with B's selection;
  *   - a failed `getPreset` surfaces `caseError` and does not half-apply the
  *     proposal actions.
  *
- * Only `api/proposalClient`'s `getPreset` is mocked — `resolveCase`/
- * `caseDispatches` run for real over the two committed test cases
+ * Only `api/proposalClient`'s profile/preset fetches and one synthetic direct
+ * profile case are mocked — `resolveCase`/`caseDispatches` run for real over
+ * the committed test cases
  * (`case-c01-alert-daytime-control`, `case-c03-monotonous-highway`), and the
  * real `runStore`/`proposalStore`/`reviewStore` reducers apply the dispatches.
  */
@@ -28,17 +30,41 @@ import { useCaseSelection } from '../src/components/merged/useCaseSelection'
 import type { CaseSelection } from '../src/components/merged/useCaseSelection'
 import type { Preset, World, DriverProfile } from '../src/api/proposalClient'
 
-vi.mock('../src/api/proposalClient', async () => {
-  const actual = await vi.importActual<typeof import('../src/api/proposalClient')>('../src/api/proposalClient')
-  return { ...actual, getPreset: vi.fn() }
+vi.mock('../src/lib/review/caseCatalog', async () => {
+  const actual = await vi.importActual<typeof import('../src/lib/review/caseCatalog')>(
+    '../src/lib/review/caseCatalog',
+  )
+  return {
+    ...actual,
+    getCase: (caseId: string) => {
+      if (caseId !== 'case-direct-profile-test') return actual.getCase(caseId)
+      const base = actual.getCase('case-c01-alert-daytime-control')
+      if (!base) return null
+      return {
+        ...base,
+        case_id: caseId,
+        persona: {
+          ...base.persona,
+          profile_ref: 'profile-semantic-neutral',
+        },
+      }
+    },
+  }
 })
 
-import { getPreset } from '../src/api/proposalClient'
+vi.mock('../src/api/proposalClient', async () => {
+  const actual = await vi.importActual<typeof import('../src/api/proposalClient')>('../src/api/proposalClient')
+  return { ...actual, getPreset: vi.fn(), getProfile: vi.fn() }
+})
+
+import { getPreset, getProfile } from '../src/api/proposalClient'
 
 const CASE_A = 'case-c01-alert-daytime-control' // profile_ref: preset-journey-a-1-cruising-fresh
 const CASE_B = 'case-c03-monotonous-highway' // profile_ref: preset-journey-a-2-monotony-building
+const DIRECT_PROFILE_CASE = 'case-direct-profile-test'
 const PROFILE_A = 'preset-journey-a-1-cruising-fresh'
 const PROFILE_B = 'preset-journey-a-2-monotony-building'
+const DIRECT_PROFILE = 'profile-semantic-neutral'
 
 function fullWorld(oshiMarker: string): World {
   return {
@@ -123,6 +149,8 @@ function fakeProfile(oshiMarker: string): DriverProfile {
   }
 }
 
+const neutralDriverProfile = fakeProfile('neutral-profile')
+
 function fullPreset(profileRef: string, oshiMarker: string): Preset {
   return {
     preset_id: profileRef,
@@ -206,7 +234,26 @@ describe('useCaseSelection', () => {
     expect(runRef.current!.state.initialFatigue).toBe(18)
   })
 
-  it('LOAD_PROFILE carries a resolved { profileId, profile } object, not just the id', async () => {
+  it('resolves a direct profile-* reference and dispatches its DriverProfile', async () => {
+    vi.mocked(getProfile).mockResolvedValue({
+      profile_id: DIRECT_PROFILE,
+      label: { ja: '標準', en: 'Neutral' },
+      builtin: true,
+      profile: neutralDriverProfile,
+    })
+    const { proposalRef, selectionRef } = renderHarness()
+
+    await act(async () => {
+      await selectionRef.current!.handleSelectCase(DIRECT_PROFILE_CASE)
+    })
+
+    expect(vi.mocked(getProfile)).toHaveBeenCalledWith(DIRECT_PROFILE)
+    expect(vi.mocked(getPreset)).not.toHaveBeenCalled()
+    expect(proposalRef.current!.state.selectedProfileId).toBe(DIRECT_PROFILE)
+    expect(proposalRef.current!.state.world.driver_profile).toEqual(neutralDriverProfile)
+  })
+
+  it('keeps resolving preset-* references through getPreset', async () => {
     const preset = fullPreset(PROFILE_A, 'marker-a')
     vi.mocked(getPreset).mockResolvedValue(preset)
     const { proposalRef, selectionRef } = renderHarness()
@@ -216,6 +263,7 @@ describe('useCaseSelection', () => {
     })
 
     expect(vi.mocked(getPreset)).toHaveBeenCalledWith(PROFILE_A)
+    expect(vi.mocked(getProfile)).not.toHaveBeenCalled()
     expect(proposalRef.current!.state.selectedProfileId).toBe(PROFILE_A)
     // Not just the id — the actual resolved DriverProfile object landed in
     // the world (identifiable via the marker planted in oshi_id).

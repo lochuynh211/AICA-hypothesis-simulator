@@ -195,6 +195,10 @@ export type MergedQuickviewReq = {
   jam_speed_kph?: number
   hyperparameter_overrides?: Record<string, unknown>
   rest_option_id?: string | null
+  context_overrides?: Record<string, unknown> | null
+  initial_state?: Record<string, unknown> | null
+  profiles?: Record<string, unknown> | null
+  tick_seconds?: number | null
   world: World
   service_package_id: string
   content_package_id: string

@@ -5,9 +5,9 @@
  * Extracted out of `MergedShell`'s JSX (task-17 review, Finding 2) so the
  * async race below can be tested without mounting the whole shell.
  *
- * RACE GUARD (task-17 review, Finding 1): `getPreset(profileRef)` is awaited
- * before the `proposal` dispatches (LOAD_PROFILE needs the resolved
- * DriverProfile object; `caseDispatches` only knows the preset id). Without
+ * RACE GUARD (task-17 review, Finding 1): the case's profile/preset reference
+ * is resolved before the `proposal` dispatches (LOAD_PROFILE needs the resolved
+ * DriverProfile object; `caseDispatches` only knows the profile reference id). Without
  * a guard, selecting case A then case B before A's fetch resolves would land
  * A's SET_SERVICE_PACKAGE/SET_CONTENT_PACKAGE/LOAD_PROFILE dispatches AFTER
  * B's — the proposal store ends up on A's packages/profile while
@@ -25,7 +25,7 @@ import { t } from '../../i18n/t'
 import { getCase } from '../../lib/review/caseCatalog'
 import type { CombinedTestCase } from '../../lib/review/caseCatalog'
 import { resolveCase, caseDispatches } from '../../lib/review/caseResolver'
-import { getPreset } from '../../api/proposalClient'
+import { getPreset, getProfile } from '../../api/proposalClient'
 import type { DriverProfile } from '../../api/proposalClient'
 
 const LABELS = {
@@ -42,6 +42,13 @@ export type CaseSelection = {
   handleSelectCase: (caseId: string) => Promise<void>
   /** Drop back to "no test case", leaving the current setup untouched. */
   clearCase: () => void
+}
+
+async function resolveDriverProfile(profileRef: string): Promise<DriverProfile> {
+  if (profileRef.startsWith('profile-')) {
+    return (await getProfile(profileRef)).profile
+  }
+  return (await getPreset(profileRef)).world.driver_profile
 }
 
 export function useCaseSelection(): CaseSelection {
@@ -92,8 +99,7 @@ export function useCaseSelection(): CaseSelection {
     let profile: DriverProfile | null = null
     let fetchFailed = false
     try {
-      const preset = await getPreset(setup.profileRef)
-      profile = preset.world.driver_profile
+      profile = await resolveDriverProfile(setup.profileRef)
     } catch {
       fetchFailed = true
     }

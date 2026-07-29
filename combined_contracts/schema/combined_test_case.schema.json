@@ -2,12 +2,29 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "combined_test_case.schema.json",
   "title": "CombinedTestCase",
-  "description": "One reviewable experience test case. Phase 1 authors NO expectations: the expectation is what human review produces, not an input.",
+  "description": "One reviewable semantic experience test case and its pre-authored customer hypothesis.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["case_id", "schema_version", "version", "title", "brief", "what_to_watch", "persona", "journey", "algorithm_defaults"],
+  "required": [
+    "case_id",
+    "display_id",
+    "schema_version",
+    "version",
+    "title",
+    "brief",
+    "group",
+    "purpose",
+    "what_to_watch",
+    "real_world",
+    "hypothesis",
+    "expectations",
+    "persona",
+    "journey",
+    "algorithm_defaults"
+  ],
   "properties": {
     "case_id": { "type": "string", "pattern": "^case-[a-z0-9-]+$" },
+    "display_id": { "type": "string", "pattern": "^TC-[A-Z][0-9]{2}$" },
     "schema_version": { "type": "string", "const": "1.0.0" },
     "version": { "type": "string" },
     "title": { "$ref": "#/definitions/bilingual" },
@@ -20,6 +37,12 @@
       "type": "array", "minItems": 1,
       "items": { "$ref": "#/definitions/bilingual" }
     },
+    "group": { "$ref": "#/definitions/case_group" },
+    "purpose": { "$ref": "#/definitions/bilingual" },
+    "real_world": { "$ref": "#/definitions/real_world" },
+    "hypothesis": { "$ref": "#/definitions/hypothesis" },
+    "expectations": { "$ref": "#/definitions/expectations" },
+    "contrast": { "$ref": "#/definitions/contrast" },
     "persona": {
       "type": "object",
       "additionalProperties": false,
@@ -36,7 +59,7 @@
           "type": "array", "items": { "$ref": "#/definitions/bilingual" }
         },
         "profile_ref": {
-          "description": "A committed proposal preset id; its driver_profile is resolved and frozen into the run.",
+          "description": "A committed proposal preset or profile id; its driver_profile is resolved and frozen into the run.",
           "type": "string"
         },
         "profile_ref_version": { "type": "string" }
@@ -98,6 +121,145 @@
       "additionalProperties": false,
       "required": ["ja", "en"],
       "properties": { "ja": { "type": "string" }, "en": { "type": "string" } }
+    },
+    "case_group": {
+      "type": "string",
+      "enum": ["rest", "monotony", "environment", "service", "content", "integrated"]
+    },
+    "real_world": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["before_trip", "trip_reason", "state_at_departure", "journey_evolution"],
+      "properties": {
+        "before_trip": { "$ref": "#/definitions/bilingual" },
+        "trip_reason": { "$ref": "#/definitions/bilingual" },
+        "state_at_departure": { "$ref": "#/definitions/bilingual" },
+        "journey_evolution": { "$ref": "#/definitions/bilingual" }
+      }
+    },
+    "hypothesis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rationale"],
+      "properties": {
+        "rationale": { "$ref": "#/definitions/bilingual" }
+      }
+    },
+    "expectations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trigger", "service", "content"],
+      "properties": {
+        "trigger": { "$ref": "#/definitions/trigger_expectation" },
+        "service": { "$ref": "#/definitions/service_expectation" },
+        "content": { "$ref": "#/definitions/content_expectation" }
+      }
+    },
+    "trigger_expectation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome"],
+      "properties": {
+        "outcome": {
+          "type": "string",
+          "enum": ["rest_required", "monotony_prevention", "none"]
+        },
+        "time_window_min": { "$ref": "#/definitions/nonnegative_range" },
+        "max_fire_count": { "type": "integer", "minimum": 0 },
+        "required_positive_feature_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "service_expectation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rank_1_acceptable_ids",
+        "top_3_required_ids",
+        "top_3_prohibited_ids",
+        "required_positive_feature_ids"
+      ],
+      "properties": {
+        "rank_1_acceptable_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "top_3_required_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "top_3_prohibited_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "required_positive_feature_ids": {
+          "description": "Positive evidence required on the actual rank-1 candidate.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "content_expectation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expected_stage_outcome", "required_track_ids", "excluded_track_ids"],
+      "properties": {
+        "expected_stage_outcome": {
+          "type": "string",
+          "enum": ["complete_plan", "unsupported_service", "not_applicable"]
+        },
+        "returned_count": { "type": "integer", "minimum": 0 },
+        "required_track_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "excluded_track_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "oshi_artist_id": { "type": "string", "minLength": 1 },
+        "mean_arousal_range": { "$ref": "#/definitions/unit_range" }
+      }
+    },
+    "contrast": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "with_case_id", "kind", "changed_inputs", "expected_delta"],
+      "properties": {
+        "role": { "type": "string", "enum": ["baseline", "variant"] },
+        "with_case_id": { "type": "string", "pattern": "^TC-[A-Z][0-9]{2}$" },
+        "kind": {
+          "type": "string",
+          "enum": ["controlled_one_factor", "semantic_real_world"]
+        },
+        "changed_inputs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "expected_delta": { "$ref": "#/definitions/bilingual" }
+      }
+    },
+    "nonnegative_range": {
+      "type": "array",
+      "items": { "type": "number", "minimum": 0 },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "unit_range": {
+      "type": "array",
+      "items": { "type": "number", "minimum": 0, "maximum": 1 },
+      "minItems": 2,
+      "maxItems": 2
     }
   }
 }

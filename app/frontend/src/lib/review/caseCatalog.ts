@@ -15,6 +15,68 @@ import type { BilingualLabel } from './reviewVocabulary'
 
 export type { BilingualLabel }
 
+export type CaseGroup =
+  | 'rest'
+  | 'monotony'
+  | 'environment'
+  | 'service'
+  | 'content'
+  | 'integrated'
+
+export type TriggerOutcome = 'rest_required' | 'monotony_prevention' | 'none'
+
+export type CaseContrast = {
+  role: 'baseline' | 'variant'
+  with_case_id: string
+  kind: 'controlled_one_factor' | 'semantic_real_world'
+  changed_inputs: string[]
+  expected_delta: BilingualLabel
+}
+
+export type CaseRealWorld = {
+  before_trip: BilingualLabel
+  trip_reason: BilingualLabel
+  state_at_departure: BilingualLabel
+  journey_evolution: BilingualLabel
+}
+
+export type CaseHypothesis = {
+  rationale: BilingualLabel
+}
+
+export type CaseTriggerExpectation = {
+  outcome: TriggerOutcome
+  /** Inclusive [earliest, latest] first-fire window, in journey minutes. */
+  time_window_min?: [number, number]
+  max_fire_count?: number
+  required_positive_feature_ids?: string[]
+}
+
+export type CaseServiceExpectation = {
+  rank_1_acceptable_ids?: string[]
+  top_3_required_ids?: string[]
+  top_3_prohibited_ids?: string[]
+  /** Positive evidence required on the actual rank-1 candidate. */
+  required_positive_feature_ids?: string[]
+}
+
+export type ContentStageOutcome = 'complete_plan' | 'unsupported_service' | 'not_applicable'
+
+export type CaseContentExpectation = {
+  expected_stage_outcome: ContentStageOutcome
+  returned_count?: number
+  required_track_ids?: string[]
+  excluded_track_ids?: string[]
+  oshi_artist_id?: string
+  mean_arousal_range?: [number, number]
+}
+
+export type CaseExpectations = {
+  trigger: CaseTriggerExpectation
+  service: CaseServiceExpectation
+  content: CaseContentExpectation
+}
+
 export type CasePersona = {
   persona_id: string
   name: BilingualLabel
@@ -23,7 +85,7 @@ export type CasePersona = {
   preferences?: BilingualLabel[]
   constraints?: BilingualLabel[]
   assumptions?: BilingualLabel[]
-  /** A committed proposal preset id; its driver_profile is resolved into the run. */
+  /** A committed proposal preset/profile id; its driver_profile is resolved into the run. */
   profile_ref: string
   profile_ref_version?: string
 }
@@ -58,11 +120,18 @@ export type CaseAlgorithmDefaults = { trigger: string; service: string; content:
 
 export type CombinedTestCase = {
   case_id: string
+  display_id: string
   schema_version: string
   version: string
   title: BilingualLabel
   brief: BilingualLabel
+  group: CaseGroup
+  purpose: BilingualLabel
   what_to_watch: BilingualLabel[]
+  real_world: CaseRealWorld
+  hypothesis: CaseHypothesis
+  expectations: CaseExpectations
+  contrast?: CaseContrast
   persona: CasePersona
   journey: CaseJourney
   algorithm_defaults: CaseAlgorithmDefaults

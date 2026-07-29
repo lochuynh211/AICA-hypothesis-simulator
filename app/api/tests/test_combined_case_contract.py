@@ -25,8 +25,8 @@ def test_schema_file_exists():
     assert _SCHEMA.exists(), "the case schema must be committed beside the cases"
 
 
-def test_at_least_one_case_is_committed():
-    assert _CASE_FILES, "no case-*.json found in combined_contracts/test_cases"
+def test_exactly_36_semantic_cases_are_committed():
+    assert len(_CASE_FILES) == 36
 
 
 @pytest.mark.parametrize("path", _CASE_FILES, ids=lambda p: p.stem)
@@ -41,11 +41,30 @@ def test_case_id_matches_its_filename(path):
 
 
 @pytest.mark.parametrize("path", _CASE_FILES, ids=lambda p: p.stem)
-def test_case_carries_no_expectation_fields(path):
-    """Phase 1 authors NO expectations — the expectation is review's OUTPUT."""
+def test_case_has_customer_semantics(path):
     case = _load(path)
-    forbidden = {"checkpoints", "expected", "hypothesis", "top_fit_min", "contrast"}
-    assert forbidden.isdisjoint(case), f"{sorted(forbidden & set(case))} must not be authored"
+    assert case["display_id"].startswith("TC-")
+    assert case["purpose"]["en"].strip()
+    assert case["real_world"]["before_trip"]["en"].strip()
+    assert case["real_world"]["trip_reason"]["en"].strip()
+    assert case["real_world"]["state_at_departure"]["en"].strip()
+    assert case["real_world"]["journey_evolution"]["en"].strip()
+    assert case["hypothesis"]["rationale"]["en"].strip()
+    assert case["expectations"]["trigger"]["outcome"] in {
+        "rest_required",
+        "monotony_prevention",
+        "none",
+    }
+
+
+def test_contrast_titles_name_their_baseline():
+    by_id = {_load(path)["display_id"]: _load(path) for path in _CASE_FILES}
+    for case in by_id.values():
+        contrast = case.get("contrast")
+        if contrast and contrast["role"] == "variant":
+            baseline = contrast["with_case_id"]
+            assert f"(contrast with test case ID {baseline})" in case["title"]["en"]
+            assert baseline in by_id
 
 
 @pytest.mark.parametrize("path", _CASE_FILES, ids=lambda p: p.stem)
@@ -59,7 +78,9 @@ def test_every_referenced_artifact_exists(path):
     route = _REPO_ROOT / "routes" / "presets" / f"{journey['route_preset_ref']}.json"
     assert route.exists(), f"unknown route_preset_ref {journey['route_preset_ref']}"
 
-    profile = _REPO_ROOT / "proposal_contracts" / "presets" / f"{case['persona']['profile_ref']}.json"
+    profile_ref = case["persona"]["profile_ref"]
+    profile_kind = "profiles" if profile_ref.startswith("profile-") else "presets"
+    profile = _REPO_ROOT / "proposal_contracts" / profile_kind / f"{profile_ref}.json"
     assert profile.exists(), f"unknown profile_ref {case['persona']['profile_ref']}"
 
     for key, package_id in case["algorithm_defaults"].items():
