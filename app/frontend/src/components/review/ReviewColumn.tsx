@@ -1,8 +1,9 @@
 // app/frontend/src/components/review/ReviewColumn.tsx
 /**
- * The review column — stage tabs (Trigger / Service / Content) driving
- * `WhatDecidedIt` → `ParameterRationale` → (Task 16) `DecisionAssessment`
- * from ONE checkpoint's recorded evidence.
+ * The review column — a pinned `StageFeedbackPanel` (all three verdicts at
+ * once) above stage tabs (Trigger / Service / Content) driving
+ * `WhatDecidedIt` → `ParameterRationale` from ONE checkpoint's recorded
+ * evidence.
  *
  * Checkpoints, options and the default comparison are all DERIVED from
  * `result` + the store on every render rather than pushed into the store by
@@ -19,19 +20,22 @@
  * which would discard the specific evidence gap chains.ts already diagnosed.
  */
 import { useState } from 'react'
-import type { MergedInstantResult, MergedFirePoint, ReviewFeedbackBody } from '../../api/mergedClient'
+import type { MergedInstantResult, ReviewFeedbackBody } from '../../api/mergedClient'
 import { postReviewFeedback, getReviewFeedback } from '../../api/mergedClient'
 import type { ReviewOption } from '../../lib/review/types'
 import type { Unavailable } from '../../lib/review/types'
-import type { Checkpoint, ReviewStage, ReviewableCategory } from '../../lib/review/checkpoints'
+import type { Checkpoint, ReviewStage } from '../../lib/review/checkpoints'
 import { deriveCheckpoints } from '../../lib/review/checkpoints'
 import { triggerOptions, serviceOptions, contentOptions } from '../../lib/review/chains'
 import { getCase } from '../../lib/review/caseCatalog'
 import WhatDecidedIt from './WhatDecidedIt'
 import ParameterRationale from './ParameterRationale'
-import DecisionAssessment, { summarizeJudgments } from './DecisionAssessment'
+import StageFeedbackPanel, { type StageFeedbackRow } from './StageFeedbackPanel'
+import FeedbackSummaryModal from './FeedbackSummaryModal'
+import { collectCaseFeedback, toMarkdown } from '../../lib/review/feedbackSummary'
 import ErrorNotice from '../common/ErrorNotice'
 import { useReviewStore, judgmentKey } from '../../state/reviewStore'
+import { songDisplayName } from '../proposal/useSongNames'
 import { useLanguage } from '../../state/language'
 import { t } from '../../i18n/t'
 import type { BilingualLabel } from '../../lib/review/reviewVocabulary'
@@ -111,26 +115,6 @@ function isUnavailable(x: unknown): x is Unavailable {
   return typeof x === 'object' && x !== null && (x as { available?: unknown }).available === false
 }
 
-// The threshold in force for a category, read from whichever criteria key the
-// backend actually recorded for it (mirrors `services/preview.py`'s own
-// fallback chain for the score-strip threshold line) — never fabricated when
-// none was recorded.
-const THRESHOLD_CRITERIA_KEYS: Record<ReviewableCategory, string[]> = {
-  rest_required: ['rest_required_threshold', 'threshold_suggest', 'threshold_fire'],
-  monotony_prevention: ['monotony_prevention_threshold', 'monotony_suggest_threshold'],
-}
-
-function buildThresholdNote(
-  fire: MergedFirePoint,
-  category: ReviewableCategory,
-  lang: 'ja' | 'en',
-): string | null {
-  const criteria = fire.criteria ?? {}
-  const key = (THRESHOLD_CRITERIA_KEYS[category] ?? []).find((k) => criteria[k] !== undefined)
-  if (!key) return null
-  const value = criteria[key]
-  return lang === 'ja' ? `発火しきい値: ${value.toFixed(2)}` : `Firing threshold: ${value.toFixed(2)}`
-}
 
 type Comparison = { left: string | null; right: string | null }
 
@@ -172,16 +156,36 @@ const assessmentKey = (caseId: string, checkpointId: string, stage: string, targ
 export default function ReviewColumn({
   result,
   mergedRunId = null,
+  showParameterRationale = false,
+  songNames = {},
+  caseModified = false,
 }: {
   result: MergedInstantResult | null
   /** The live merged run's id, when one exists. `null` before any run has
    * been created — judgements still land in the store, but nothing is
    * persisted server-side until this is set (07-27 §10). */
   mergedRunId?: string | null
+  /**
+   * The per-input parameter-rationale table. HIDDEN by default (owner review)
+   * but deliberately kept as a switch rather than deleted: the component, the
+   * judgement wiring and the exported judgement records are all still here and
+   * still tested through this prop, so bringing the view back is flipping one
+   * flag rather than restoring deleted code.
+   */
+  showParameterRationale?: boolean
+  /** `item_id → song name`, so content options read as "Name (id)". Passed in
+   *  rather than fetched here: `MergedShell` already resolves it for the
+   *  content plan, and both must name songs from the SAME dataset. */
+  songNames?: Record<string, string>
+  /** The setup has been edited away from the case as authored — shown next to
+   *  the case name so a verdict is never filed against a case the reviewer
+   *  believes is verbatim when it is not. */
+  caseModified?: boolean
 }): JSX.Element {
   const { lang } = useLanguage()
   const { state, dispatch } = useReviewStore()
   const [persistError, setPersistError] = useState<string | null>(null)
+  const [summaryOpen, setSummaryOpen] = useState(false)
 
   const checkpoints = deriveCheckpoints(result)
 
@@ -230,7 +234,14 @@ export default function ReviewColumn({
 
   const triggerOpts = isUnavailable(triggerResult) ? [] : triggerResult
   const serviceOpts = isUnavailable(serviceResult) ? [] : serviceResult
-  const contentOpts = isUnavailable(contentResult) ? [] : contentResult.options
+  // Content options read as "Name (id)" — a bare Spotify track id tells the
+  // reviewer nothing about what was proposed. The id stays because it is what
+  // the recorded evidence is keyed by.
+  const rawContentOpts = isUnavailable(contentResult) ? [] : contentResult.options
+  const contentOpts = rawContentOpts.map((option) => {
+    const display = songDisplayName(option.id, songNames)
+    return display === option.id ? option : { ...option, label: { ja: display, en: display } }
+  })
 
   const triggerReason = isUnavailable(triggerResult) ? triggerResult.reason : null
   const serviceReason = isUnavailable(serviceResult) ? serviceResult.reason : null
@@ -271,8 +282,6 @@ export default function ReviewColumn({
   const handleChangeRight = (id: string) => {
     dispatch({ type: 'SET_COMPARISON', leftId: effectiveLeftId, rightId: id })
   }
-
-  const thresholdNote = stage === 'trigger' ? buildThresholdNote(fire, activeCheckpoint.category, lang) : null
 
   // `judgments` in the store is keyed by the full compound key so a
   // judgement made at one decision point never leaks into another; project
@@ -319,55 +328,116 @@ export default function ReviewColumn({
 
   // Decision-level assessment (Task 16) — keyed the same way minus the
   // feature, since a decision is judged as a whole, not per-input.
-  const decisionKey = effectiveTargetId != null
-    ? assessmentKey(caseId, activeCheckpoint.id, stage, effectiveTargetId)
-    : null
-  const existingAssessment = decisionKey ? (state.assessments[decisionKey] ?? null) : null
+  //
+  // Every stage is assessable at once (owner review), so each one resolves its
+  // OWN review target rather than borrowing the open tab's. For the active
+  // stage that is whatever the reviewer is actually inspecting; for the others
+  // it is that stage's default comparison target.
+  const stageTargetId = (s: ReviewStage): string | null => {
+    if (s === stage) return effectiveTargetId
+    if (s === 'trigger') return defaultTriggerComparison(triggerOpts, activeCheckpoint).left
+    if (s === 'service') return defaultServiceComparison(serviceOpts).left
+    return defaultContentComparison(contentOpts, null).left
+  }
 
-  const handleAssess = (assessment: string) => {
-    if (effectiveTargetId == null || decisionKey == null) return
-    const comment = existingAssessment?.comment ?? ''
-    dispatch({ type: 'SET_ASSESSMENT', key: decisionKey, assessment, comment })
+  const stageAssessmentKey = (s: ReviewStage): string | null => {
+    const target = stageTargetId(s)
+    return target != null ? assessmentKey(caseId, activeCheckpoint.id, s, target) : null
+  }
+
+  const handleAssessStage = (s: ReviewStage, assessment: string) => {
+    if (!caseId) return
+    const target = stageTargetId(s)
+    const key = stageAssessmentKey(s)
+    if (target == null || key == null) return
+    const comment = state.assessments[key]?.comment ?? ''
+    dispatch({ type: 'SET_ASSESSMENT', key, assessment, comment })
     void persist({
       scope: 'review_decision',
       case_id: caseId,
       checkpoint_id: activeCheckpoint.id,
-      stage,
-      review_target: effectiveTargetId,
+      stage: s,
+      review_target: target,
       labels: { assessment },
       comment,
     })
   }
 
-  // Every keystroke updates the store (cheap, no network — keeps the
-  // textarea responsive and lets the reviewer navigate away without losing
-  // what they typed), but does NOT persist. `handleCommentCommit` — fired on
-  // blur, not on change — is the persistence boundary: the review-feedback
-  // store is append-only, so committing on every keystroke would turn a
-  // single comment into dozens of near-duplicate `review_decision` events
-  // indistinguishable from its own typing history in any export or replay.
-  const handleComment = (comment: string) => {
-    if (effectiveTargetId == null || decisionKey == null) return
-    const assessment = existingAssessment?.assessment ?? ''
-    dispatch({ type: 'SET_ASSESSMENT', key: decisionKey, assessment, comment })
+  const handleCommentStage = (s: ReviewStage, comment: string) => {
+    if (!caseId) return
+    const key = stageAssessmentKey(s)
+    if (key == null) return
+    const assessment = state.assessments[key]?.assessment ?? ''
+    dispatch({ type: 'SET_ASSESSMENT', key, assessment, comment })
   }
 
-  const handleCommentCommit = (comment: string) => {
-    if (effectiveTargetId == null || decisionKey == null) return
-    // Deliberately '' (not skipped) when the reviewer writes a comment
-    // before picking an assessment — the record is still worth persisting
-    // (the comment itself is evidence), just with an empty `assessment`
-    // label rather than withholding the whole event until a choice is made.
-    const assessment = existingAssessment?.assessment ?? ''
+  const handleCommentCommitStage = (s: ReviewStage, comment: string) => {
+    if (!caseId) return
+    const target = stageTargetId(s)
+    const key = stageAssessmentKey(s)
+    if (target == null || key == null) return
+    // Deliberately '' (not skipped) when a comment is written before a verdict
+    // is picked — the comment itself is evidence.
+    const assessment = state.assessments[key]?.assessment ?? ''
     void persist({
       scope: 'review_decision',
       case_id: caseId,
       checkpoint_id: activeCheckpoint.id,
-      stage,
-      review_target: effectiveTargetId,
+      stage: s,
+      review_target: target,
       labels: { assessment },
       comment,
     })
+  }
+
+  const caseFeedback = collectCaseFeedback(state.assessments, state.judgments)
+  const selectedCaseTitleLabel = state.selectedCaseId ? (getCase(state.selectedCaseId)?.title ?? null) : null
+  const selectedCaseTitle = selectedCaseTitleLabel ? t(selectedCaseTitleLabel, lang) : null
+
+  /**
+   * Edit a record the popup already lists, for ANY case — not just the selected
+   * one. The record's own key names its case, checkpoint, stage and target, so
+   * this re-files it exactly where it was; nothing about the decision point is
+   * invented. A case with no record yet cannot be given one here, because there
+   * would be no decision point to attach it to.
+   */
+  const handleEditRecord = (
+    caseIdOfRecord: string,
+    checkpointId: string,
+    s2: string,
+    targetId: string,
+    next: { assessment?: string; comment?: string },
+    opts?: { persist?: boolean },
+  ) => {
+    const key = [caseIdOfRecord, checkpointId, s2, targetId].join('|')
+    const current = state.assessments[key] ?? { assessment: '', comment: '' }
+    const assessment = next.assessment ?? current.assessment
+    const comment = next.comment ?? current.comment
+    dispatch({ type: 'SET_ASSESSMENT', key, assessment, comment })
+    if (opts?.persist === false) return
+    void persist({
+      scope: 'review_decision',
+      case_id: caseIdOfRecord,
+      checkpoint_id: checkpointId,
+      stage: s2 as ReviewStage,
+      review_target: targetId,
+      labels: { assessment },
+      comment,
+    })
+  }
+
+  const handleExportMarkdown = () => {
+    const markdown = toMarkdown(caseFeedback, lang, new Date().toISOString())
+    const blob = new Blob([markdown], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'aica-review-feedback.md'
+    a.style.display = 'none'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
   const handleExport = async () => {
@@ -402,23 +472,32 @@ export default function ReviewColumn({
     for (const row of leftOption.rows) declaredWeights[row.featureId] = row.w
   }
 
+  // One verdict row per stage. The judged/total summary is only meaningful for
+  // the stage currently on screen — that is the only one whose per-input
+  // judgements are projected into `scopedJudgments` — so the others carry no
+  // count rather than a fabricated zero.
+  const feedbackRows: StageFeedbackRow[] = (['trigger', 'service', 'content'] as ReviewStage[]).map((s) => {
+    const key = stageAssessmentKey(s)
+    const stored = key ? state.assessments[key] : null
+    const available = s === 'trigger' ? triggerAvailable : s === 'service' ? serviceAvailable : contentAvailable
+    const reason = s === 'trigger' ? triggerReason : s === 'service' ? serviceReason : contentReason
+    return {
+      stage: s,
+      available: available && stageTargetId(s) != null,
+      unavailableReason: reason ? reasonText(reason, lang) : null,
+      assessment: stored?.assessment ?? null,
+      comment: stored?.comment ?? '',
+    }
+  })
+
   const stageTab = (targetStage: ReviewStage, label: BilingualLabel, available: boolean, reason: string | null) => (
     <button
       type="button"
       data-testid={`stage-tab-${targetStage}`}
+      className={stage === targetStage ? 'on' : undefined}
       disabled={!available}
       title={available ? '' : reasonText(reason ?? '', lang)}
       onClick={() => dispatch({ type: 'SELECT_STAGE', stage: targetStage })}
-      style={{
-        padding: '6px 12px',
-        fontSize: '0.82em',
-        fontWeight: 700,
-        border: '1px solid #e2e8f0',
-        borderBottom: stage === targetStage ? '2px solid #2563eb' : '1px solid #e2e8f0',
-        background: stage === targetStage ? '#eff6ff' : '#f8fafc',
-        color: available ? '#1e293b' : '#cbd5e1',
-        cursor: available ? 'pointer' : 'not-allowed',
-      }}
     >
       {t(label, lang)}
     </button>
@@ -426,7 +505,38 @@ export default function ReviewColumn({
 
   return (
     <div data-testid="review-column">
-      <div style={{ display: 'flex', gap: '4px', padding: '8px 8px 0' }}>
+      {/* Verdict FIRST and pinned (owner review): all three stages judged
+          together, above the tabbed evidence rather than buried under
+          whichever tab happens to be open. */}
+      <StageFeedbackPanel
+        rows={feedbackRows}
+        onAssess={handleAssessStage}
+        onComment={handleCommentStage}
+        onCommentCommit={handleCommentCommitStage}
+        onExport={() => void handleExport()}
+        onExportMarkdown={handleExportMarkdown}
+        onOpenSummary={() => setSummaryOpen(true)}
+        caseName={selectedCaseTitle}
+        caseModified={caseModified}
+        caseSelected={caseId !== ''}
+        hasRun={mergedRunId != null}
+      />
+
+      <FeedbackSummaryModal
+        open={summaryOpen}
+        cases={caseFeedback}
+        onClose={() => setSummaryOpen(false)}
+        onExportMarkdown={handleExportMarkdown}
+        onEditRecord={handleEditRecord}
+      />
+
+      {persistError && (
+        <div style={{ padding: '8px 12px 0' }}>
+          <ErrorNotice testid="review-feedback-error" message={persistError} onDismiss={() => setPersistError(null)} />
+        </div>
+      )}
+
+      <div className="stage-tabs" style={{ padding: '0 11px' }}>
         {stageTab('trigger', LABELS.tabTrigger, triggerAvailable, triggerReason)}
         {stageTab('service', LABELS.tabService, serviceAvailable, serviceReason)}
         {stageTab('content', LABELS.tabContent, contentAvailable, contentReason)}
@@ -445,9 +555,9 @@ export default function ReviewColumn({
             rightId={effectiveRightId ?? ''}
             onChangeLeft={handleChangeLeft}
             onChangeRight={handleChangeRight}
-            thresholdNote={thresholdNote}
           />
-          {leftOption && (
+          {/* Off by default — see `showParameterRationale`. */}
+          {showParameterRationale && leftOption && (
             <ParameterRationale
               stage={stage}
               left={leftOption}
@@ -456,29 +566,6 @@ export default function ReviewColumn({
               judgments={scopedJudgments}
               onJudge={handleJudge}
             />
-          )}
-          {leftOption && effectiveTargetId != null && (
-            <>
-              {persistError && (
-                <div style={{ padding: '0 12px' }}>
-                  <ErrorNotice testid="review-feedback-error" message={persistError} onDismiss={() => setPersistError(null)} />
-                </div>
-              )}
-              <DecisionAssessment
-                caseId={caseId}
-                checkpointId={activeCheckpoint.id}
-                stage={stage}
-                targetId={effectiveTargetId}
-                judgmentSummary={summarizeJudgments(scopedJudgments, leftOption.rows.length)}
-                assessment={existingAssessment?.assessment ?? null}
-                comment={existingAssessment?.comment ?? ''}
-                onAssess={handleAssess}
-                onComment={handleComment}
-                onCommentCommit={handleCommentCommit}
-                onExport={() => void handleExport()}
-                hasRun={mergedRunId != null}
-              />
-            </>
           )}
         </>
       )}

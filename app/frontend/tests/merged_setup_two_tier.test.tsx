@@ -174,6 +174,34 @@ const MATCHING_CASE_SETUP: ResolvedCaseSetup = {
   profileRef: '',
 }
 
+/** The shell always passes `selectedCase` alongside `caseSetup`; the
+ *  clear-on-edit effect keys off its `case_id`, so drift tests need one. */
+function caseNamed(caseId: string): CombinedTestCase {
+  return {
+    case_id: caseId,
+    schema_version: '1.0',
+    version: '1.0',
+    title: { ja: 'テストケース', en: 'Test case' },
+    brief: { ja: '', en: '' },
+    what_to_watch: [],
+    persona: {
+      persona_id: 'persona-test',
+      name: { ja: 'テスト太郎', en: 'Test Taro' },
+      narrative: { ja: '', en: '' },
+      preferences: [],
+      profile_ref: '',
+    },
+    journey: {
+      narrative: { ja: '', en: '' },
+      scenario_ref: 'scn_fatigue_1',
+      route_preset_ref: 'preset-route-1',
+      seed: 42,
+      tick_seconds: 180,
+    },
+    algorithm_defaults: { trigger: 'trigger_pkg_1', service: 'svc_pkg_1', content: 'content_pkg_1' },
+  }
+}
+
 function setupMocks() {
   vi.mocked(listRoutePresets).mockResolvedValue({
     presets: [
@@ -368,7 +396,7 @@ const PAUSED_TICK = {
 function renderPanel(
   caseSetup: ResolvedCaseSetup | null = null,
   lang: 'ja' | 'en' = 'en',
-  extra: { selectedCase?: CombinedTestCase | null; onResetToCase?: () => void | Promise<void> } = {},
+  extra: { selectedCase?: CombinedTestCase | null; onCaseDrift?: () => void } = {},
 ) {
   const runRef: { current: ReturnType<typeof useRunStore> | null } = { current: null }
   function Capture() {
@@ -384,7 +412,7 @@ function renderPanel(
             <MergedSetupPanel
               caseSetup={caseSetup}
               selectedCase={extra.selectedCase ?? null}
-              onResetToCase={extra.onResetToCase}
+              onCaseDrift={extra.onCaseDrift}
             />
           </ProposalStoreProvider>
         </RunStoreProvider>
@@ -495,41 +523,46 @@ describe('two-tier setup editors', () => {
     }
   })
 
-  it('notes when the setup differs from the case, and offers Reset', async () => {
-    renderPanel(MATCHING_CASE_SETUP)
+  // A case DEFINES a setup, so editing the setup means it is no longer that
+  // case: the selection is dropped rather than annotated. (This replaced the
+  // earlier "differs from case" note + Reset button.)
+  it('clears the case selection once the setup is edited away from it', async () => {
+    const onCaseDrift = vi.fn()
+    renderPanel(MATCHING_CASE_SETUP, 'en', { onCaseDrift, selectedCase: caseNamed('case-drift-1') })
     await waitForSettled()
+    expect(onCaseDrift).not.toHaveBeenCalled()
 
     // Change the tick duration — the setup now differs from the case's 180s.
     fireEvent.change(screen.getByTestId('merged-tick-seconds-input'), { target: { value: '240' } })
 
-    expect(await screen.findByTestId('differs-from-case')).toBeTruthy()
-    expect(screen.getByTestId('reset-to-case')).toBeTruthy()
+    await waitFor(() => expect(onCaseDrift).toHaveBeenCalled())
   })
 
-  it('shows no note while the setup matches the case', async () => {
-    renderPanel(MATCHING_CASE_SETUP)
+  it('keeps the case selected while the setup still matches it', async () => {
+    const onCaseDrift = vi.fn()
+    renderPanel(MATCHING_CASE_SETUP, 'en', { onCaseDrift, selectedCase: caseNamed('case-drift-2') })
     await waitForSettled()
 
-    expect(screen.queryByTestId('differs-from-case')).toBeNull()
+    expect(onCaseDrift).not.toHaveBeenCalled()
   })
 
   // ── Review MUST FIX 1: differsFromCase must see contextOverrides too ─────
   // C-02's whole premise is the night context — flipping it while exploring
-  // must surface the note, or the right column keeps explaining the
-  // decision as though the setup still matched the case.
-  it('notes when a case-pinned context override is flipped, and offers Reset', async () => {
+  // must drop the case, or the right column keeps explaining the decision as
+  // though the setup still matched the case.
+  it('clears the case selection when a case-pinned context override is flipped', async () => {
+    const onCaseDrift = vi.fn()
     const caseWithNightPin: ResolvedCaseSetup = { ...MATCHING_CASE_SETUP, contextOverrides: { is_night: true } }
-    renderPanel(caseWithNightPin)
+    renderPanel(caseWithNightPin, 'en', { onCaseDrift, selectedCase: caseNamed('case-drift-3') })
     await waitForSettled()
-    expect(screen.queryByTestId('differs-from-case')).toBeNull()
+    expect(onCaseDrift).not.toHaveBeenCalled()
 
     fireEvent.click(screen.getByTestId('edit-situation'))
     const checkbox = (await screen.findByTestId('basic-is_night')) as HTMLInputElement
     expect(checkbox.checked).toBe(true)
     fireEvent.click(checkbox) // flips to false, away from the case's pinned true
 
-    expect(await screen.findByTestId('differs-from-case')).toBeTruthy()
-    expect(screen.getByTestId('reset-to-case')).toBeTruthy()
+    await waitFor(() => expect(onCaseDrift).toHaveBeenCalled())
   })
 
   it('renders the basic trigger view bilingually, JA by default', async () => {
@@ -570,16 +603,16 @@ describe('two-tier setup editors', () => {
     expect('is_night' in runRef.current!.state.contextOverrides).toBe(true)
   })
 
-  // ── Review Finding 2: Reset shares the guarded selection path ────────────
-  it('Reset delegates to the shared guarded onResetToCase callback, not a local unguarded fetch', async () => {
-    const onResetToCase = vi.fn()
-    renderPanel(MATCHING_CASE_SETUP, 'en', { onResetToCase })
+  // Applying a case is not atomic (profile + route are fetched), so the
+  // half-applied setup reads as drift. Clearing on that would cancel the very
+  // selection the reviewer just made — the case could never be applied.
+  it('does not clear the case while it is still being applied', async () => {
+    const onCaseDrift = vi.fn()
+    const driftingSetup: ResolvedCaseSetup = { ...MATCHING_CASE_SETUP, tickSeconds: 240 }
+    renderPanel(driftingSetup, 'en', { onCaseDrift, selectedCase: caseNamed('case-drift-4') })
     await waitForSettled()
-    fireEvent.change(screen.getByTestId('merged-tick-seconds-input'), { target: { value: '240' } })
 
-    fireEvent.click(await screen.findByTestId('reset-to-case'))
-
-    expect(onResetToCase).toHaveBeenCalledTimes(1)
+    expect(onCaseDrift).not.toHaveBeenCalled()
   })
 
   // ── Review Finding 3: the CASE's authored preferences, not the resolved

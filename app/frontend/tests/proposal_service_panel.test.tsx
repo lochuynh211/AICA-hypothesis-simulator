@@ -456,8 +456,11 @@ describe('ServiceProposalPanel', () => {
     expect(body.content_package_id).toBe('mock_content_selector_v1')
   })
 
-  // P4 (US5, FR-022): eligible/excluded lists from the STEP-1 input_snapshot.
-  it('renders the eligible list and the excluded list with reason codes, and no score on exclusions', async () => {
+  // P4 (US5, FR-022): the ELIGIBLE list from the STEP-1 input_snapshot. The
+  // excluded list was dropped from the panel (owner review) — it is platform
+  // gate bookkeeping, not something a reviewer weighs against the services
+  // that are actually on the table. The data still travels in the run log.
+  it('renders the eligible services as tags, and no excluded list', async () => {
     vi.mocked(createRun).mockResolvedValue(
       runLogWithCandidates({
         eligible_candidates: [{ candidate_id: 'live_viewing' }, { candidate_id: 'stretch_video' }],
@@ -480,13 +483,10 @@ describe('ServiceProposalPanel', () => {
     expect(eligibleList).toHaveTextContent('live_viewing')
     expect(eligibleList).toHaveTextContent('stretch_video')
 
-    const excludedList = screen.getByTestId('excluded-list')
-    expect(excludedList).toHaveTextContent('full_karaoke')
-    expect(excludedList).toHaveTextContent('full_karaoke_requires_stopped')
-    expect(excludedList).toHaveTextContent('oshi_reexperience')
-    expect(excludedList).toHaveTextContent('missing_required_entity')
-    // No score anywhere in the excluded rows (contract invariant).
-    expect(excludedList.textContent).not.toMatch(/score|\+\d|0\.\d/)
+    expect(screen.queryByTestId('excluded-list')).not.toBeInTheDocument()
+    expect(screen.queryByText(/full_karaoke_requires_stopped/)).not.toBeInTheDocument()
+    // One tag per eligible service — no scores leak into this row.
+    expect(eligibleList.textContent).not.toMatch(/score|\+\d|0\.\d/)
   })
 
   it('renders a "none excluded" message when excluded_candidates is empty', async () => {
@@ -659,7 +659,7 @@ describe('ServiceProposalPanel', () => {
     }))
   }
 
-  it('renders a real-shaped candidate with all 17 feature rows, subtotals, and the dominance readout visible (T025)', async () => {
+  it('renders a real-shaped candidate with all 17 feature rows and subtotals, and no dominance readout (T025)', async () => {
     const realShapedRunLog = runLogWithCandidates()
     const [firstCandidate] = realShapedRunLog.evidence[0].output.ranked_candidates
     firstCandidate.feature_contributions = fullFeatureContributions()
@@ -701,11 +701,11 @@ describe('ServiceProposalPanel', () => {
     expect(screen.getByTestId('strongest-support')).toHaveTextContent('drowsiness_level')
     expect(screen.getByTestId('strongest-oppose')).toHaveTextContent('oshi_mode')
 
-    // Dominance readout visible: status + safety_share %.
-    const dominance = screen.getByTestId('service-dominance')
-    expect(dominance).toBeInTheDocument()
-    expect(screen.getByTestId('dominance-status')).toBeInTheDocument()
-    expect(screen.getByTestId('safety-share')).toHaveTextContent('82.3%')
+    // The safety-priority/dominance readout is deliberately NOT rendered
+    // (owner review) — it is configuration bookkeeping, not per-candidate
+    // evidence. It must stay gone.
+    expect(screen.queryByTestId('service-dominance')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('safety-share')).not.toBeInTheDocument()
 
     // All 17 feature rows present once expanded past the top-5 collapse.
     fireEvent.click(within(explain).getByTestId('trace-show-more'))
@@ -809,7 +809,7 @@ describe('ServiceProposalPanel', () => {
     await screen.findByText('mock_service_selector_v1')
     fireEvent.click(screen.getByTestId('service-run-button'))
     await waitFor(() => expect(createRun).toHaveBeenCalled())
-    await screen.findByTestId('service-dominance')
+    await screen.findByTestId('service-subtotals')
 
     const bodyText = document.body.textContent ?? ''
     expect(bodyText.toLowerCase()).not.toMatch(/probability|certified|certification/)

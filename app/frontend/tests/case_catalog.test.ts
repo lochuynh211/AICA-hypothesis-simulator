@@ -30,7 +30,7 @@ describe('listCases', () => {
     expect(j.scenario_ref).toBe('uc02_monotony_v0_1')
     expect(j.route_preset_ref).toBe('long_tokyo_osaka')
     expect(j.seed).toBe(1042)
-    expect(j.tick_seconds).toBe(60)
+    expect(j.tick_seconds).toBe(180)
   })
 
   it('exposes the three algorithm defaults', () => {

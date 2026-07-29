@@ -10,7 +10,7 @@ describe('resolveCase', () => {
     expect(setup.scenarioId).toBe('uc02_monotony_v0_1')
     expect(setup.routePresetId).toBe('long_tokyo_osaka')
     expect(setup.seed).toBe(1042)
-    expect(setup.tickSeconds).toBe(60)
+    expect(setup.tickSeconds).toBe(180)
   })
 
   it('resolves all three algorithm defaults', () => {
@@ -61,7 +61,7 @@ describe('caseDispatches', () => {
   it('selects the trigger package and pins the seed and tick', () => {
     expect(runTypes).toContain('SELECT_PACKAGE')
     expect(run).toContainEqual({ type: 'SET_RUN_SEED', seed: 1042 })
-    expect(run).toContainEqual({ type: 'SET_TICK_SECONDS', seconds: 60 })
+    expect(run).toContainEqual({ type: 'SET_TICK_SECONDS', seconds: 180 })
   })
 
   it('sets both proposal packages and loads the persona profile', () => {

@@ -1,7 +1,7 @@
 /**
  * ServiceResultOverlay (020 Task 10) — the docked STEP-1 result view for the
- * Combined Simulator: eligible/excluded candidate lists + ranked candidate
- * cards (score, ReasonBreakdown, ServiceExplainability, Choose). Extracted
+ * Combined Simulator: the eligible-service tag row + ranked candidate cards
+ * (score, subtotals/trace, why, Choose). Extracted
  * verbatim from ServiceProposalPanel's RESULT region so BOTH the original
  * proposal-screen panel AND the merged center dock render the identical
  * markup from one source (true DRY — see 020 Task 10 brief).
@@ -12,26 +12,27 @@
  * doesn't know or care which.
  */
 import { t } from '../../i18n/t'
-import { fitBand } from '../../lib/fitBand'
-import type { RankedCandidate, ExcludedCandidate, ProposalRunLog } from '../../api/proposalClient'
+import type { RankedCandidate, ProposalRunLog } from '../../api/proposalClient'
 import ReasonBreakdown, { type ReasonRow } from '../proposal/ReasonBreakdown'
 import ServiceExplainability, { hasFeatureTrace } from '../proposal/ServiceExplainability'
 import { useExplanation, type ExplanationProvider } from '../proposal/useExplanation'
+
+/**
+ * The services V1 can actually deliver. Everything else still ranks and still
+ * explains itself — a reviewer needs to see WHY an unsupported service scored
+ * where it did — but it cannot be chosen, because there is nothing behind it.
+ */
+export const SUPPORTED_SERVICE_IDS = new Set(['music_playlist', 'humming_karaoke', 'full_karaoke'])
 
 const LABELS = {
   recommended: { ja: '推奨サービス（最大3件）', en: 'Recommended (≤3)' },
   choose: { ja: 'これを選ぶ', en: 'Choose' },
   selected: { ja: '選択中 → STEP 2 へ', en: 'Selected → to STEP 2' },
   noProposal: { ja: '候補なし（no_proposal）', en: 'No candidates (no_proposal)' },
-  fitBand: { ja: '適合', en: 'fit' },
-  fitBandTitle: {
-    ja: '0〜100の目安スコア = (raw + 1) × 50。生スコアの表示用変換であり、判定には使用しません。',
-    en: 'A friendlier 0-100 band = (raw + 1) × 50. A display transform of the raw score only — never used in scoring.',
-  },
   outOfScope: { ja: 'V1対象外', en: 'Out of V1 scope' },
   eligibleTitle: { ja: '適格サービス', en: 'Eligible services' },
-  excludedTitle: { ja: '除外サービス（理由コード）', en: 'Excluded services (reason codes)' },
-  noneExcluded: { ja: 'なし', en: 'None' },
+  noneEligible: { ja: '適格なサービスはありません。', en: 'No eligible services.' },
+  notSupported: { ja: 'V1では未対応', en: 'not supported in V1' },
 }
 
 function serviceRows(candidate: RankedCandidate): ReasonRow[] {
@@ -80,7 +81,6 @@ function ServiceReason({
 export function ServiceResultOverlay(props: {
   output?: { decision_type: string; ranked_candidates: RankedCandidate[] }
   eligibleCandidates: { candidate_id: string }[]
-  excludedCandidates: ExcludedCandidate[]
   activeServiceId: string | null
   choosingId: string | null
   onChoose: (candidateId: string) => void
@@ -99,7 +99,6 @@ export function ServiceResultOverlay(props: {
   const {
     output,
     eligibleCandidates,
-    excludedCandidates,
     activeServiceId,
     choosingId,
     onChoose,
@@ -112,27 +111,22 @@ export function ServiceResultOverlay(props: {
 
   return (
     <>
+      {/* Eligible services only, as one line of tags (owner review). The
+          excluded list was dropped from this panel: it is platform-gate
+          bookkeeping, not something a reviewer weighs while comparing the
+          services that ARE on the table. */}
       <div style={sectionLabelStyle}>{t(LABELS.eligibleTitle, lang)}</div>
-      <ul data-testid="eligible-list" style={eligibilityListStyle}>
-        {eligibleCandidates.map(({ candidate_id }) => (
-          <li key={candidate_id} data-testid={`eligible-${candidate_id}`}>
-            {candidate_id}
-          </li>
-        ))}
-      </ul>
-
-      <div style={sectionLabelStyle}>{t(LABELS.excludedTitle, lang)}</div>
-      {excludedCandidates.length === 0 ? (
-        <p style={{ fontSize: '0.82em', color: '#6b7280' }}>{t(LABELS.noneExcluded, lang)}</p>
-      ) : (
-        <ul data-testid="excluded-list" style={eligibilityListStyle}>
-          {excludedCandidates.map((excluded) => (
-            <li key={excluded.candidate_id} data-testid={`excluded-${excluded.candidate_id}`}>
-              {excluded.candidate_id} — <code>{excluded.platform_reason}</code>
-            </li>
-          ))}
-        </ul>
-      )}
+      <div data-testid="eligible-list" style={eligibleTagRowStyle}>
+        {eligibleCandidates.length === 0 ? (
+          <span style={{ fontSize: '0.8em', color: '#6b7280' }}>{t(LABELS.noneEligible, lang)}</span>
+        ) : (
+          eligibleCandidates.map(({ candidate_id }) => (
+            <span key={candidate_id} data-testid={`eligible-${candidate_id}`} style={eligibleTagStyle}>
+              {candidate_id}
+            </span>
+          ))
+        )}
+      </div>
 
       {output && (
         <>
@@ -142,7 +136,11 @@ export function ServiceResultOverlay(props: {
           )}
           {output.ranked_candidates.slice(0, 3).map((candidate) => {
             const isActive = candidate.candidate_id === activeServiceId
-            const backed = isBacked(candidate.candidate_id)
+            const supported = SUPPORTED_SERVICE_IDS.has(candidate.candidate_id)
+            // Two independent reasons a Choose can be dead: the content package
+            // cannot serve it, or V1 does not implement it at all. Keep them
+            // distinct so the note explains the actual cause.
+            const backed = supported && isBacked(candidate.candidate_id)
             return (
               <div
                 key={candidate.candidate_id}
@@ -177,18 +175,9 @@ export function ServiceResultOverlay(props: {
                       {candidate.score.toFixed(3)}
                     </span>
                   )}
-                  {candidate.score !== null && (
-                    <span
-                      data-testid={`fit-band-${candidate.candidate_id}`}
-                      title={t(LABELS.fitBandTitle, lang)}
-                      style={fitBandBadgeStyle}
-                    >
-                      {t(LABELS.fitBand, lang)} {Math.round(fitBand(candidate.score))}/100
-                    </span>
-                  )}
                 </div>
-                <ServiceReason candidate={candidate} runId={runId} provider={explanationProvider} lang={lang} inlineProposal={inlineProposal} />
                 <ServiceExplainability candidate={candidate} lang={lang} />
+                <ServiceReason candidate={candidate} runId={runId} provider={explanationProvider} lang={lang} inlineProposal={inlineProposal} />
                 <div
                   style={{
                     display: 'flex',
@@ -235,7 +224,7 @@ export function ServiceResultOverlay(props: {
                       data-testid={`out-of-scope-${candidate.candidate_id}`}
                       style={{ fontSize: '0.72em', color: '#9ca3af' }}
                     >
-                      {t(LABELS.outOfScope, lang)}
+                      {supported ? t(LABELS.outOfScope, lang) : t(LABELS.notSupported, lang)}
                     </span>
                   )}
                 </div>
@@ -259,22 +248,20 @@ const sectionLabelStyle: React.CSSProperties = {
   margin: '16px 0 6px',
 }
 
-const eligibilityListStyle: React.CSSProperties = {
+const eligibleTagRowStyle: React.CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '4px',
   margin: '0 0 8px',
-  padding: '0 0 0 18px',
-  fontSize: '0.82em',
-  color: '#4b5563',
 }
 
-// feature 018 (US4) — the friendlier 0-100 fit-band badge, rendered next to
-// (never instead of) the raw score.
-const fitBandBadgeStyle: React.CSSProperties = {
-  fontSize: '0.68em',
-  fontWeight: 700,
-  color: '#1d4ed8',
-  background: '#eef2ff',
-  border: '1px solid #c7d2fe',
+const eligibleTagStyle: React.CSSProperties = {
+  fontSize: '0.72em',
+  padding: '1px 7px',
   borderRadius: '999px',
-  padding: '2px 8px',
-  fontFamily: 'monospace',
+  background: '#f1f5f9',
+  border: '1px solid #e2e8f0',
+  color: '#475569',
+  whiteSpace: 'nowrap',
 }
+

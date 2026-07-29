@@ -705,3 +705,245 @@ describe('MapSurface — road-class colored polyline', () => {
     )
   })
 })
+
+// ── Route changes must REBUILD the canvas ───────────────────────────────────
+// The init effect used to bail on `if (mapInstanceRef.current) return`, which
+// despite its "already initialized for this polyline" comment never compared
+// polylines. The canvas was built for the first route and every later route
+// change was skipped, so picking a different preset — or a test case pinning
+// its own route — left the map showing the original route.
+describe('MapSurface rebuilds when the selected route changes', () => {
+  const OTHER_POLYLINE = 'kwo}Fh`bxOoDmM{FyPaCiI'
+
+  function envelopeWith(routeId: string, polyline: string): RouteEnvelope {
+    return {
+      route_source: 'maps',
+      alternatives: [
+        {
+          route_id: routeId,
+          summary: routeId,
+          route_facts: {
+            total_route_distance_km: 200,
+            estimated_route_duration_min: 150,
+            route_segments: [],
+            rest_spot_positions: [],
+            route_progress_checkpoints: [],
+          },
+          display: {
+            summary: routeId,
+            encoded_polyline: polyline,
+            start_label: 'A',
+            end_label: 'B',
+          },
+          notices: [],
+        },
+      ],
+    }
+  }
+
+  beforeEach(() => {
+    vi.resetAllMocks()
+    setupGoogleMapsMock()
+  })
+
+  afterEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).google
+  })
+
+  it('builds the canvas again for a different polyline', () => {
+    const { mockMaps } = setupGoogleMapsMock()
+    const dispatchRef: { current: React.Dispatch<RunStoreAction> | null } = { current: null }
+    function Capture() {
+      const { dispatch } = useRunStore()
+      dispatchRef.current = dispatch
+      return null
+    }
+    render(
+      <RunStoreProvider>
+        <Capture />
+        <MapSurface />
+      </RunStoreProvider>,
+    )
+    act(() => {
+      dispatchRef.current!({ type: 'SET_MAPS_KEY', key: 'test-key' })
+      dispatchRef.current!({ type: 'SET_ALTERNATIVES', envelope: envelopeWith('route-a', TEST_POLYLINE) })
+      dispatchRef.current!({ type: 'SELECT_ROUTE', routeId: 'route-a' })
+    })
+    expect(mockMaps.Map).toHaveBeenCalledTimes(1)
+
+    // A different route → a different polyline → the canvas must be rebuilt.
+    act(() => {
+      dispatchRef.current!({ type: 'SET_ALTERNATIVES', envelope: envelopeWith('route-b', OTHER_POLYLINE) })
+      dispatchRef.current!({ type: 'SELECT_ROUTE', routeId: 'route-b' })
+    })
+    expect(mockMaps.Map).toHaveBeenCalledTimes(2)
+  })
+
+  it('does NOT rebuild when the polyline is unchanged', () => {
+    // Re-selecting the same geometry must not thrash the canvas on every
+    // unrelated store update.
+    const { mockMaps } = setupGoogleMapsMock()
+    const dispatchRef: { current: React.Dispatch<RunStoreAction> | null } = { current: null }
+    function Capture() {
+      const { dispatch } = useRunStore()
+      dispatchRef.current = dispatch
+      return null
+    }
+    render(
+      <RunStoreProvider>
+        <Capture />
+        <MapSurface />
+      </RunStoreProvider>,
+    )
+    act(() => {
+      dispatchRef.current!({ type: 'SET_MAPS_KEY', key: 'test-key' })
+      dispatchRef.current!({ type: 'SET_ALTERNATIVES', envelope: envelopeWith('route-a', TEST_POLYLINE) })
+      dispatchRef.current!({ type: 'SELECT_ROUTE', routeId: 'route-a' })
+    })
+    expect(mockMaps.Map).toHaveBeenCalledTimes(1)
+
+    act(() => {
+      dispatchRef.current!({ type: 'SET_ALTERNATIVES', envelope: envelopeWith('route-a2', TEST_POLYLINE) })
+      dispatchRef.current!({ type: 'SELECT_ROUTE', routeId: 'route-a2' })
+    })
+    expect(mockMaps.Map).toHaveBeenCalledTimes(1)
+  })
+})
+
+// ── Projected trigger / rest markers on the REAL canvas ─────────────────────
+// `fireMarkers`/`restMarkers` (the quickview projection) reached only the
+// keyless schematic, so with a Maps key the canvas showed a bare route until a
+// run had been played. They must be drawn on the real map too, and hand over to
+// the live markers once playback starts.
+describe('MapSurface projected markers (real SDK)', () => {
+  afterEach(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (window as any).google
+  })
+
+  function geoMock() {
+    const path = [
+      { lat: () => 35.0, lng: () => 135.0 },
+      { lat: () => 35.3, lng: () => 135.3 },
+      { lat: () => 35.6, lng: () => 135.6 },
+    ]
+    const markers: Array<Record<string, unknown>> = []
+    const Marker = vi.fn().mockImplementation((opts: Record<string, unknown>) => {
+      const m = {
+        ...opts,
+        setPosition: vi.fn(),
+        setMap: vi.fn(),
+        setIcon: vi.fn(),
+        addListener: vi.fn(),
+      }
+      markers.push(m)
+      return m
+    })
+    const mockMaps = {
+      Map: vi.fn().mockReturnValue({ fitBounds: vi.fn() }),
+      Polyline: vi.fn().mockReturnValue({ setMap: vi.fn() }),
+      LatLngBounds: vi.fn().mockReturnValue({ extend: vi.fn() }),
+      Marker,
+      SymbolPath: { CIRCLE: 0 },
+      geometry: {
+        encoding: { decodePath: vi.fn().mockReturnValue(path) },
+        spherical: {
+          computeDistanceBetween: vi.fn().mockReturnValue(30000),
+          interpolate: vi.fn().mockImplementation((a: unknown) => a),
+        },
+      },
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(window as any).google = { maps: mockMaps }
+    return { markers, Marker }
+  }
+
+  const envelope: RouteEnvelope = {
+    route_source: 'maps',
+    alternatives: [
+      {
+        route_id: 'route-proj',
+        summary: 'Projected',
+        route_facts: {
+          total_route_distance_km: 60,
+          estimated_route_duration_min: 60,
+          route_segments: [],
+          rest_spot_positions: [],
+          route_progress_checkpoints: [],
+        },
+        display: { summary: 'p', encoded_polyline: TEST_POLYLINE, start_label: 'A', end_label: 'B' },
+        notices: [],
+      },
+    ],
+  }
+
+  function mountWith(props: Record<string, unknown>) {
+    const dispatchRef: { current: React.Dispatch<RunStoreAction> | null } = { current: null }
+    function Capture() {
+      const { dispatch } = useRunStore()
+      dispatchRef.current = dispatch
+      return null
+    }
+    const utils = render(
+      <RunStoreProvider>
+        <Capture />
+        <MapSurface {...props} />
+      </RunStoreProvider>,
+    )
+    act(() => {
+      dispatchRef.current!({ type: 'SET_MAPS_KEY', key: 'test-key' })
+      dispatchRef.current!({ type: 'SET_ALTERNATIVES', envelope })
+      dispatchRef.current!({ type: 'SELECT_ROUTE', routeId: 'route-proj' })
+    })
+    return utils
+  }
+
+  it('draws the projected triggers and rest spots before playback starts', () => {
+    const { markers } = geoMock()
+    mountWith({
+      playback: false,
+      fireMarkers: [
+        { fraction: 0.25, index: 0, category: 'rest_required' },
+        { fraction: 0.75, index: 1, category: 'monotony_prevention' },
+      ],
+      restMarkers: [{ fraction: 0.5 }],
+    })
+
+    // start + end + car are created by the init effect; the projected markers
+    // are the ones carrying a click handler / rest title.
+    const clickable = markers.filter((m) => m.clickable === true)
+    expect(clickable).toHaveLength(2)
+    const rests = markers.filter((m) => typeof m.title === 'string' && String(m.title).includes('Rest'))
+    expect(rests.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('reports the projected fire index when a marker is clicked', () => {
+    const { markers } = geoMock()
+    const onFireMarkerClick = vi.fn()
+    mountWith({
+      playback: false,
+      fireMarkers: [{ fraction: 0.25, index: 0, category: 'rest_required' }],
+      onFireMarkerClick,
+    })
+
+    const clickable = markers.find((m) => m.clickable === true)!
+    const addListener = clickable.addListener as ReturnType<typeof vi.fn>
+    expect(addListener).toHaveBeenCalledWith('click', expect.any(Function))
+    // Fire the registered handler the way the SDK would.
+    ;(addListener.mock.calls[0][1] as () => void)()
+    expect(onFireMarkerClick).toHaveBeenCalledWith(0)
+  })
+
+  it('does NOT draw projected markers once playback owns the map', () => {
+    const { markers } = geoMock()
+    mountWith({
+      playback: true,
+      fireMarkers: [{ fraction: 0.25, index: 0, category: 'rest_required' }],
+      restMarkers: [{ fraction: 0.5 }],
+      proposalFractionsOverride: [],
+    })
+
+    expect(markers.filter((m) => m.clickable === true)).toHaveLength(0)
+  })
+})

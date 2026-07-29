@@ -365,7 +365,10 @@ export function MergedCoordinatorProvider({ children }: { children: React.ReactN
   const choosingRef = useRef<string | null>(null)
   // Playback speed read synchronously by play()'s loop (like runningRef) so a
   // mid-run speed change takes effect on the next tick without a re-render.
-  const speedRef = useRef<1 | 2 | 4>(1)
+  // Seeded from the SAME constant the reducer starts from — hardcoding `1` here
+  // meant the dropdown showed 4x while the loop still slept 1000ms per tick,
+  // until the reviewer happened to touch the control.
+  const speedRef = useRef<1 | 2 | 4>(initialMergedCoordinatorState.speed)
 
   const create = async (req: CreateMergedRunReq, scenarioId?: string): Promise<void> => {
     try {

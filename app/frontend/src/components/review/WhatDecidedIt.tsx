@@ -16,8 +16,7 @@
  */
 import type { ReviewOption, MarginRow } from '../../lib/review/types'
 import { scaleBound, marginRows } from '../../lib/review/reviewMath'
-import { domainGroup, groupLabel, phrase, bandWord } from '../../lib/review/reviewVocabulary'
-import type { DomainGroup } from '../../lib/review/reviewVocabulary'
+import { fieldName } from '../../lib/review/reviewVocabulary'
 import { useLanguage } from '../../state/language'
 import { t } from '../../i18n/t'
 
@@ -34,36 +33,32 @@ const LABELS = {
     ja: '比較対象の選択肢が見つかりません。',
     en: 'The selected comparison options could not be found.',
   },
-  because: { ja: 'が選ばれた主な決め手は', en: 'was chosen mainly because of' },
-  becauseEnd: { ja: 'でした。', en: '' },
-  despite: {
-    ja: 'は逆方向に働きましたが、及びませんでした。',
-    en: 'despite',
-  },
-  scaleBoundPrefix: { ja: '目盛りの上限', en: 'Scale bound' },
   clampNote: {
     ja: '一方の選択肢はクランプ（上限処理）されているため、寄与の合計が記録されたスコアを超え、割合は一致しません。',
     en: 'One option is clamped, so its contributions sum past the reported score — the shares will not reconcile.',
   },
-  groupShare: { ja: '寄与割合', en: 'share of contribution' },
 }
-
-const DOMAIN_ORDER: DomainGroup[] = [
-  'driver_state', 'road_environment', 'preferences_history', 'content_properties', 'other',
-]
 
 function findOption(options: ReviewOption[], id: string): ReviewOption | undefined {
   return options.find((o) => o.id === id)
 }
 
-/** value · bandWord(band, value) for a numeric row; the string itself for a categorical one. */
-function anchorText(
-  value: string | number,
-  band: string | null,
-  lang: 'ja' | 'en',
-): string {
-  if (typeof value !== 'number') return value
-  return `${value} · ${t(bandWord(band, value), lang)}`
+
+/**
+ * The recorded value, as a NUMBER only (owner review) — no "high"/"low" word.
+ *
+ * `drowsiness` and `fatigue` are authored on a 0-100 scale and recorded
+ * divided by 100 (see the trigger package), so they read back as `66/100`
+ * rather than `0.66`, which is the scale the reviewer set them on. Every other
+ * feature is a derived score and is shown as-is, trailing zeros trimmed.
+ */
+const PERCENT_OF_100 = new Set(['drowsiness', 'fatigue'])
+
+export function valueText(featureId: string, value: string | number): string {
+  if (typeof value === 'string') return value
+  if (PERCENT_OF_100.has(featureId)) return `${Math.round(value * 100)}/100`
+  // 1, 0.5, 0.125 — never 1.000.
+  return String(Number(value.toFixed(3)))
 }
 
 export default function WhatDecidedIt({
@@ -72,14 +67,12 @@ export default function WhatDecidedIt({
   rightId,
   onChangeLeft,
   onChangeRight,
-  thresholdNote,
 }: {
   options: ReviewOption[]
   leftId: string
   rightId: string
   onChangeLeft: (id: string) => void
   onChangeRight: (id: string) => void
-  thresholdNote: string | null
 }): JSX.Element {
   const { lang } = useLanguage()
 
@@ -100,49 +93,25 @@ export default function WhatDecidedIt({
     )
   }
 
+  // Only features that actually contributed to one side or the other. A row
+  // that is zero on BOTH tells the reviewer nothing and pushes the ones that
+  // matter off the screen.
+  const CONTRIBUTION_EPSILON = 1e-9
   const rows: MarginRow[] = marginRows(leftOption, rightOption)
+    .filter(
+      (r) =>
+        Math.abs(r.left) > CONTRIBUTION_EPSILON || Math.abs(r.right) > CONTRIBUTION_EPSILON,
+    )
+    // Ordered by A's own contribution, high → low: A is the decision under
+    // review, so its ranking is the one the reviewer is reading down.
+    .sort((a, b) => b.left - a.left)
   const bound = scaleBound(rows.flatMap((r) => [r.left, r.right]))
 
-  const winner = leftOption.score >= rightOption.score ? leftOption : rightOption
-  const winnerSide: 'left' | 'right' = winner === leftOption ? 'left' : 'right'
-  const topSupporting = rows.find((r) => r.lean === winnerSide)
-  const topOpposing = rows.find((r) => r.lean !== winnerSide && r.lean !== 'none')
-
-  const verdictSentence = (() => {
-    const winnerLabel = t(winner.label, lang)
-    const supportingPhrase = topSupporting ? t(phrase(topSupporting.featureId), lang) : ''
-    const opposingPhrase = topOpposing ? t(phrase(topOpposing.featureId), lang) : ''
-    if (lang === 'ja') {
-      const main = `${winnerLabel}${t(LABELS.because, lang)}「${supportingPhrase}」${t(LABELS.becauseEnd, lang)}`
-      const extra = topOpposing ? `「${opposingPhrase}」${t(LABELS.despite, lang)}` : ''
-      return `${main}${extra}`
-    }
-    const main = `${winnerLabel} ${t(LABELS.because, lang)} ${supportingPhrase}`
-    return topOpposing ? `${main}, ${t(LABELS.despite, lang)} ${opposingPhrase}.` : `${main}.`
-  })()
-
-  // Step 4: domain grouping — bucket both options' contributions, share of total |contribution| per side.
-  const groupTotals = new Map<DomainGroup, { left: number; right: number }>()
-  const addTo = (side: 'left' | 'right', option: ReviewOption) => {
-    for (const row of option.rows) {
-      const group = domainGroup(row.featureId)
-      const entry = groupTotals.get(group) ?? { left: 0, right: 0 }
-      entry[side] += Math.abs(row.contribution)
-      groupTotals.set(group, entry)
-    }
-  }
-  addTo('left', leftOption)
-  addTo('right', rightOption)
-  const leftTotal = leftOption.rows.reduce((sum, r) => sum + Math.abs(r.contribution), 0)
-  const rightTotal = rightOption.rows.reduce((sum, r) => sum + Math.abs(r.contribution), 0)
-  const groupEntries = DOMAIN_ORDER.filter((g) => groupTotals.has(g)).map((g) => {
-    const totals = groupTotals.get(g)!
-    return {
-      group: g,
-      leftShare: leftTotal === 0 ? 0 : totals.left / leftTotal,
-      rightShare: rightTotal === 0 ? 0 : totals.right / rightTotal,
-    }
-  })
+  // Step 4 (domain grouping) was REMOVED (owner review): the same group names
+  // do not mean the same thing for a trigger, a service and a content item, so
+  // one shared percentage split invited a comparison across stages that the
+  // numbers do not support. `domainGroup`/`groupLabel` stay in
+  // `reviewVocabulary` — the per-feature phrasing below still uses them.
 
   const clamped = leftOption.clamped || rightOption.clamped
 
@@ -162,10 +131,8 @@ export default function WhatDecidedIt({
   }
 
   return (
-    <div data-testid="what-decided-it" style={{ padding: '12px' }}>
-      <p style={{ fontSize: '0.72em', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8', margin: '0 0 8px' }}>
-        {t(LABELS.title, lang)}
-      </p>
+    <div data-testid="what-decided-it" className="review-card">
+      <p className="review-card-h">{t(LABELS.title, lang)}</p>
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '4px' }}>
         <div style={{ flex: 1 }}>
@@ -202,36 +169,11 @@ export default function WhatDecidedIt({
         </div>
       </div>
 
-      {thresholdNote != null && (
-        <p data-testid="threshold-note" style={{ fontSize: '0.72em', color: '#94a3b8', margin: '0 0 10px' }}>
-          {thresholdNote}
-        </p>
-      )}
-
-      <p data-testid="verdict-sentence" style={{ fontSize: '0.88em', lineHeight: 1.6, color: '#1e293b', margin: '4px 0 12px' }}>
-        {verdictSentence}
-      </p>
-
       {clamped && (
         <p data-testid="clamp-note" style={{ fontSize: '0.76em', color: '#b45309', background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '6px', padding: '6px 8px', margin: '0 0 12px' }}>
           {t(LABELS.clampNote, lang)}
         </p>
       )}
-
-      <div style={{ marginBottom: '12px' }}>
-        {groupEntries.map(({ group, leftShare, rightShare }) => (
-          <div key={group} data-testid="domain-group" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78em', color: '#334155', padding: '2px 0' }}>
-            <span>{t(groupLabel(group), lang)}</span>
-            <span style={{ color: '#64748b' }}>
-              {Math.round(leftShare * 100)}% / {Math.round(rightShare * 100)}% {t(LABELS.groupShare, lang)}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <p data-testid="margin-scale-bound" style={{ fontSize: '0.74em', color: '#94a3b8', margin: '0 0 6px' }}>
-        {t(LABELS.scaleBoundPrefix, lang)}: ±{bound}
-      </p>
 
       <div>
         {rows.map((row) => {
@@ -252,12 +194,9 @@ export default function WhatDecidedIt({
               style={{ padding: '6px 0', borderBottom: '1px solid #f1f5f9' }}
             >
               <div data-testid={`margin-row-${row.featureId}`} style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '3px' }}>
-                <span style={{ fontSize: '0.84em', color: '#1e293b' }}>{t(phrase(row.featureId), lang)}</span>
-                <span data-testid="margin-feature-id" style={{ fontSize: '0.68em', color: '#cbd5e1' }}>
-                  {row.featureId}
-                </span>
-                <span data-testid={`margin-anchor-${row.featureId}`} style={{ fontSize: '0.72em', color: '#64748b' }}>
-                  {anchorRow ? anchorText(anchorRow.value, anchorRow.band, lang) : '—'}
+                <span style={{ fontSize: '0.84em', color: '#1e293b' }}>{t(fieldName(row.featureId), lang)}</span>
+                <span data-testid={`margin-anchor-${row.featureId}`} style={{ fontSize: '0.76em', color: '#475569', fontFamily: 'ui-monospace, monospace' }}>
+                  {anchorRow ? valueText(row.featureId, anchorRow.value) : '—'}
                 </span>
                 <span data-testid={`margin-lean-${row.featureId}`} style={{ fontSize: '0.8em', fontWeight: 700, color: row.lean === 'left' ? '#2563eb' : row.lean === 'right' ? '#dc2626' : '#94a3b8' }}>
                   {lean}

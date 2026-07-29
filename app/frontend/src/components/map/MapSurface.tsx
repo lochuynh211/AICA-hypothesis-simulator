@@ -117,6 +117,9 @@ export default function MapSurface({
   onFireMarkerClick,
   startName,
   endName,
+  playback = false,
+  height = '52vh',
+  minHeight = '360px',
 }: {
   fractionOverride?: number | null
   /** Decision/fire positions (route_fraction 0-1) — the Combined Simulator feeds
@@ -142,6 +145,14 @@ export default function MapSurface({
   /** Start/destination place names for the keyless schematic. */
   startName?: string | null
   endName?: string | null
+  /** True once a run is under way. Until then the map shows the PROJECTED
+   *  trigger/rest markers; from then on it shows what actually happened. */
+  playback?: boolean
+  /** Canvas height. The Combined Simulator passes a shorter band because the
+   *  service/content proposals below it are that panel's main content; the
+   *  Trigger screen keeps the taller default. */
+  height?: string
+  minHeight?: string
 } = {}) {
   const { state } = useRunStore()
   const { mapsKey, alternatives, selectedRouteId } = state
@@ -167,6 +178,9 @@ export default function MapSurface({
   // Holds the google.maps.Map instance across renders — not React state
   // because we don't want re-renders on Map init.
   const mapInstanceRef = useRef<GMapsLib>(null)
+  /** The polyline the current canvas was built for — the map is rebuilt when
+   *  the selected route changes to a different one. */
+  const builtPolylineRef = useRef<string | null>(null)
 
   // ── Derive selected alternative display ───────────────────────────────────
   const selectedAlt = alternatives.find((a) => a.route_id === selectedRouteId) ?? null
@@ -181,6 +195,23 @@ export default function MapSurface({
   const currentFraction = fractionOverride ?? storeFraction
   const proposalFractions = proposalFractionsOverride ?? storeProposalFractions
   const positionPct = `${Math.round(currentFraction * 100)}%`
+
+  // PROJECTION vs PLAYBACK markers. Before a run exists there is nothing in
+  // `proposalFractions`/`restSpots` (those are recorded as the run happens), so
+  // without this the real Google canvas showed a bare route: the projected
+  // triggers and rest spots only ever reached the keyless schematic. Show the
+  // projection by default and hand over to the live markers once playback owns
+  // the map.
+  const projecting = !playback && (fireMarkers.length > 0 || restMarkers.length > 0)
+  const prevProjectingRef = useRef(projecting)
+  const geoFireFractions = projecting ? fireMarkers.map((f) => f.fraction) : proposalFractions
+  const geoRestFractions = projecting
+    ? restMarkers.map((r) => r.fraction)
+    : restSpots.map((s) => s.route_fraction)
+  // Depend on the VALUES — these arrays are rebuilt on every render, so using
+  // them directly as deps would re-run the marker effect continuously.
+  const fireKey = geoFireFractions.join(',')
+  const restKey = geoRestFractions.join(',')
   const shownFraction = useSmoothFraction(currentFraction)
 
   // Holds the decoded route path + cumulative distances + the live markers, so
@@ -262,8 +293,31 @@ export default function MapSurface({
     const gmaps = getGMaps()
     if (!gmaps?.geometry?.encoding) return
 
-    // Skip if already initialized for this polyline.
-    if (mapInstanceRef.current) return
+    // Skip if already initialized FOR THIS POLYLINE. The guard used to be just
+    // `if (mapInstanceRef.current) return`, which — despite the comment — never
+    // compared polylines: the canvas was built once and every later route
+    // change (picking a different preset, or a test case pinning its own
+    // route) was silently skipped, so the map kept showing the first route
+    // loaded. Selecting a new route must rebuild it.
+    const polylineKey = display.encoded_polyline
+    if (mapInstanceRef.current && builtPolylineRef.current === polylineKey) return
+
+    if (mapInstanceRef.current) {
+      // Detach the previous route's overlays before rebuilding, so the old
+      // route is not left drawn underneath the new one.
+      startRef.current?.setMap?.(null); startRef.current = null
+      carRef.current?.setMap?.(null); carRef.current = null
+      for (const m of fireRefs.current) m?.setMap?.(null)
+      fireRefs.current = []
+      for (const m of chosenRestRefs.current) m?.setMap?.(null)
+      chosenRestRefs.current = []
+      for (const p of jamPolyRefs.current) p?.setMap?.(null)
+      jamPolyRefs.current = []
+      pathRef.current = null
+      mapInstanceRef.current = null
+      setRealMarkers(false)
+    }
+    builtPolylineRef.current = polylineKey
 
     // I3 fix: wrap in try-catch so any SDK constructor error (e.g. thrown by an
     // invalid key or a Maps SDK version mismatch) is handled gracefully.
@@ -372,7 +426,7 @@ export default function MapSurface({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     // NOTE: `lang` is deliberately NOT a dependency here. This effect builds the
     // map canvas + Start/Destination markers once per polyline (guarded by
-    // `mapInstanceRef.current`); adding `lang` would either be a no-op (guard
+    // `builtPolylineRef`); adding `lang` would either be a no-op (guard
     // blocks re-creation, so titles wouldn't actually update) or, if the guard
     // were removed, would re-run full canvas/marker initialization on every
     // language switch. The Start/Destination marker titles and this fallback
@@ -390,26 +444,64 @@ export default function MapSurface({
     const sph = gmaps.geometry.spherical
     const { path, cum, total } = built
 
+    if (prevProjectingRef.current !== projecting) {
+      // Handover: projected markers carry click handlers and titles that the
+      // playback ones must not inherit, and they are reused by index.
+      for (const m of fireRefs.current) m?.setMap?.(null)
+      fireRefs.current = []
+      for (const m of chosenRestRefs.current) m?.setMap?.(null)
+      chosenRestRefs.current = []
+      prevProjectingRef.current = projecting
+    }
+
     // Car — interpolated position at the eased fraction.
     const carPos = latLngAt(path, cum, total, shownFraction, sph)
     if (carPos && carRef.current) carRef.current.setPosition(carPos)
 
-    // Fire markers (orange) — one per proposal that fired.
-    proposalFractions.forEach((pf, i) => {
+    // Trigger markers — the PROJECTED fires before playback, the ones that
+    // actually fired during it. Projected markers are clickable, so the map is
+    // the control for choosing which decision the review column examines.
+    geoFireFractions.forEach((pf, i) => {
       const fp = latLngAt(path, cum, total, pf, sph)
       if (!fp) return
+      const selected = projecting && inspectedFireIndex === i
       if (!fireRefs.current[i]) {
-        fireRefs.current[i] = new gmaps.Marker({
+        const marker = new gmaps.Marker({
           map: mapInstanceRef.current,
-          icon: { path: gmaps.SymbolPath.CIRCLE, scale: 7, fillColor: '#dc2626', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+          icon: {
+            path: gmaps.SymbolPath.CIRCLE,
+            scale: selected ? 10 : 7,
+            fillColor: '#dc2626',
+            fillOpacity: 1,
+            strokeColor: '#fff',
+            strokeWeight: selected ? 3 : 2,
+          },
+          title: projecting ? (fireMarkers[i]?.category ?? undefined) : undefined,
+          clickable: projecting,
           zIndex: 998,
+        })
+        if (projecting && onFireMarkerClick) {
+          const index = fireMarkers[i]?.index ?? i
+          marker.addListener?.('click', () => onFireMarkerClick(index))
+        }
+        fireRefs.current[i] = marker
+      } else if (projecting) {
+        // Keep the highlight in step with the current selection.
+        fireRefs.current[i].setIcon?.({
+          path: gmaps.SymbolPath.CIRCLE,
+          scale: selected ? 10 : 7,
+          fillColor: '#dc2626',
+          fillOpacity: 1,
+          strokeColor: '#fff',
+          strokeWeight: selected ? 3 : 2,
         })
       }
       fireRefs.current[i].setPosition(fp)
     })
-    // Remove stale markers when proposal count decreases (e.g. after reset).
-    if (fireRefs.current.length > proposalFractions.length) {
-      for (const m of fireRefs.current.splice(proposalFractions.length)) {
+    // Remove stale markers when the count decreases (e.g. after reset, or on
+    // the projection → playback handover).
+    if (fireRefs.current.length > geoFireFractions.length) {
+      for (const m of fireRefs.current.splice(geoFireFractions.length)) {
         m.setMap(null)
       }
     }
@@ -422,25 +514,30 @@ export default function MapSurface({
     // markers pick up the current language; a marker's title is set only once
     // at creation, so an already-created marker's title does not retroactively
     // relabel on a later language switch.
-    restSpots.forEach((spot, i) => {
-      const rsp = latLngAt(path, cum, total, spot.route_fraction, sph)
+    geoRestFractions.forEach((fraction, i) => {
+      const rsp = latLngAt(path, cum, total, fraction, sph)
       if (!rsp) return
       if (!chosenRestRefs.current[i]) {
+        const spot = projecting ? null : restSpots[i]
         chosenRestRefs.current[i] = new gmaps.Marker({
           map: mapInstanceRef.current,
           icon: { path: gmaps.SymbolPath.CIRCLE, scale: 8, fillColor: '#f59e0b', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3 },
-          title: spot.label ? t(spot.label, lang) : t(LABELS.chosenRestSpot, lang),
+          title: spot?.label ? t(spot.label, lang) : t(LABELS.chosenRestSpot, lang),
           zIndex: 999,
         })
       }
       chosenRestRefs.current[i].setPosition(rsp)
     })
-    if (chosenRestRefs.current.length > restSpots.length) {
-      for (const m of chosenRestRefs.current.splice(restSpots.length)) {
+    if (chosenRestRefs.current.length > geoRestFractions.length) {
+      for (const m of chosenRestRefs.current.splice(geoRestFractions.length)) {
         m.setMap(null)
       }
     }
-  }, [shownFraction, proposalFractions, restSpots.length])
+    // `projecting` and the marker arrays are part of what this draws, so they
+    // must be dependencies — otherwise the projected markers never appear
+    // (they arrive after the canvas is built) and the handover to playback
+    // markers never happens.
+  }, [shownFraction, fireKey, restKey, projecting, inspectedFireIndex, realMarkers])
 
   // ── Traffic-jam overlay (feature 020) ─────────────────────────────────────
   // Thick RED polylines over the painted jam km ranges. Redraws whenever the
@@ -489,7 +586,7 @@ export default function MapSurface({
           from the same polyline, so the reviewer still sees where the trigger
           fired and where the rest spots are. */}
       {!mapsKey ? (
-        <div style={{ height: '52vh', minHeight: '360px' }}>
+        <div style={{ height, minHeight }}>
           <FallbackRouteMap
             encodedPolyline={display?.encoded_polyline}
             startName={startName}
@@ -508,8 +605,8 @@ export default function MapSurface({
           data-testid="map-init-error"
           role="alert"
           style={{
-            height: '52vh',
-            minHeight: '360px',
+            height,
+            minHeight,
             background: '#fff3f3',
             border: '1px solid #fca5a5',
             borderRadius: '4px',
@@ -527,7 +624,7 @@ export default function MapSurface({
         <div
           ref={mapContainerRef}
           data-testid="map-container"
-          style={{ height: '52vh', minHeight: '360px', background: '#e8e8e8', borderRadius: '4px' }}
+          style={{ height, minHeight, background: '#e8e8e8', borderRadius: '4px' }}
         />
       )}
 

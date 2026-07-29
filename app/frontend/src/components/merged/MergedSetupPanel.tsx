@@ -138,28 +138,6 @@ const LABELS = {
   },
   casePinsProfile: { ja: 'このケースが固定するプロファイル', en: 'The profile this case pins' },
   maxCandidatesBasic: { ja: '最大候補数（top_k）', en: 'Max candidates (top_k)' },
-  differsFromCaseNote: {
-    ja: 'この設定はケースの定義と異なります（{fields}）。',
-    en: 'This setup differs from the case as defined ({fields}).',
-  },
-  resetToCase: { ja: 'ケースの定義にリセット', en: 'Reset to the case as defined' },
-}
-
-const DIFF_FIELD_LABELS: Record<string, BilingualLabel> = {
-  scenarioId: { ja: 'シナリオ', en: 'scenario' },
-  routePresetId: { ja: 'ルートプリセット', en: 'route preset' },
-  triggerPackageId: { ja: 'トリガーパッケージ', en: 'trigger package' },
-  servicePackageId: { ja: 'サービスパッケージ', en: 'service package' },
-  contentPackageId: { ja: 'コンテンツパッケージ', en: 'content package' },
-  seed: { ja: 'シード', en: 'seed' },
-  tickSeconds: { ja: 'ティック長', en: 'tick duration' },
-  initialDrowsiness: { ja: '初期眠気', en: 'initial drowsiness' },
-  initialFatigue: { ja: '初期疲労', en: 'initial fatigue' },
-  profileRef: { ja: 'ドライバープロファイル', en: 'driver profile' },
-  contextOverrides: { ja: '状況の上書き（夜間など）', en: 'context overrides (e.g. night)' },
-  situationFields: { ja: '状況フィールド', en: 'situation fields' },
-  mountainRangeKm: { ja: '山道区間', en: 'mountain range' },
-  jamRangeKm: { ja: '渋滞区間', en: 'jam range' },
 }
 
 // Scenarios hidden from the Combined scenario picker (owner review): the uc02
@@ -552,7 +530,8 @@ function BasicProfileView({
 export default function MergedSetupPanel({
   caseSetup = null,
   selectedCase = null,
-  onResetToCase,
+  caseModified = false,
+  onCaseDrift,
 }: {
   caseSetup?: ResolvedCaseSetup | null
   /** The case's own authored persona bullets (task-18 review Finding 3) — a
@@ -560,17 +539,14 @@ export default function MergedSetupPanel({
    * preferences" (07-27 §9.1) means the CASE's stated preferences, not the
    * resolved profile's scoring inputs. */
   selectedCase?: CombinedTestCase | null
+  /** Already-known drift, so a remount does not re-announce it. */
+  caseModified?: boolean
   /**
-   * Re-runs the case's run/proposal dispatches through the SAME guarded path
-   * as first selecting it (task-18 review Finding 2). Reset does NOT
-   * reimplement `caseDispatches`/`getPreset` locally — a bespoke unguarded
-   * copy of `useCaseSelection.handleSelectCase`'s async profile-fetch would
-   * reopen the exact cross-store race (Reset case A, then pick case B in the
-   * picker before A's `getPreset` resolves) that hook's `selectionRef` guard
-   * exists to close, entered through a different button. The parent
-   * (`MergedShell`) wires this straight to `useCaseSelection().handleSelectCase`.
+   * Called when the live setup no longer matches the selected case. The parent
+   * (`MergedShell`) wires this to `useCaseSelection().clearCase`, dropping the
+   * picker back to "no test case" — an edited setup is not that case any more.
    */
-  onResetToCase?: () => void | Promise<void>
+  onCaseDrift?: () => void
 } = {}) {
   const coordinator = useMergedCoordinator()
   const runStore = useRunStore()
@@ -649,17 +625,29 @@ export default function MergedSetupPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseSetup])
 
-  // SINGLE OWNER of the selected route preset. The case's route wins whenever a
-  // case is selected; otherwise the first registry entry is the default. Having
-  // one effect decide removes the race that let a stale default overwrite the
-  // case's route depending on which fetch resolved last.
-  const desiredRoutePresetId = caseSetup?.routePresetId ?? routePresets[0]?.id ?? null
+  // SINGLE OWNER of the selected route preset. Having one effect decide removes
+  // the race that let a stale default overwrite the case's route depending on
+  // which fetch resolved last.
+  //
+  // A selected case's route is a standing requirement — it re-applies whenever
+  // the case changes. The registry default is NOT: it only seeds the very first
+  // selection. Making the default standing too would fight the reviewer, since
+  // dropping back to "no test case" would then yank their manually chosen route
+  // back to the first registry entry.
+  const caseRoutePresetId = caseSetup?.routePresetId ?? null
   useEffect(() => {
-    if (!desiredRoutePresetId) return
-    if (desiredRoutePresetId === selectedRoutePresetId) return
-    void handleSelectRoutePreset(desiredRoutePresetId)
+    if (!caseRoutePresetId) return
+    if (caseRoutePresetId === selectedRoutePresetId) return
+    void handleSelectRoutePreset(caseRoutePresetId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [desiredRoutePresetId])
+  }, [caseRoutePresetId])
+
+  useEffect(() => {
+    if (selectedRoutePresetId || caseRoutePresetId) return
+    const seed = routePresets[0]?.id
+    if (seed) void handleSelectRoutePreset(seed)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routePresets, caseRoutePresetId])
 
   // ── Load registries + seed both scoped stores (auto-select first of each) ───
   useEffect(() => {
@@ -1000,18 +988,31 @@ export default function MergedSetupPanel({
   }
   const driftFields = caseSetup ? differsFromCase(caseSetup, liveSnapshot) : []
 
-  async function resetToCase() {
-    if (!caseSetup) return
-    // Only re-fetch the route when it actually differs (mirrors the
-    // `[caseSetup]` wiring effect's own guard) — avoids a redundant refetch
-    // in the (common) case where the route hasn't drifted.
-    if (caseSetup.routePresetId && caseSetup.routePresetId !== selectedRoutePresetId) {
-      void handleSelectRoutePreset(caseSetup.routePresetId)
-    }
-    setMountainRange(caseSetup.mountainRangeKm)
-    setJamRange(caseSetup.jamRangeKm)
-    await onResetToCase?.()
-  }
+  // A test case DEFINES a setup. The moment the reviewer changes any part of
+  // it, what is on screen is no longer that case, so the selection drops back
+  // to "no test case" rather than mislabelling an edited setup with a case id.
+  //
+  // This is EDGE-triggered: matched-then-differs, never merely differs.
+  // Applying a case is not atomic — the scenario, driver profile and route all
+  // land separately — so a partially applied case reads exactly like an edited
+  // one. Clearing on that would cancel the selection the reviewer just made,
+  // and a case that could never fully apply would be marked modified the
+  // moment it was picked. Requiring a clean match first makes the failure mode
+  // "the case reads as unedited" rather than "every case reads as edited".
+  const appliedCaseRef = useRef<string | null>(null)
+  useEffect(() => {
+    const caseId = selectedCase?.case_id ?? null
+    if (!caseSetup || !caseId) { appliedCaseRef.current = null; return }
+    if (driftFields.length === 0) { appliedCaseRef.current = caseId; return }
+    if (appliedCaseRef.current !== caseId) return // still landing, not an edit
+    if (caseModified) return // the parent already knows
+    onCaseDrift?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [caseSetup, selectedCase, driftFields.length, caseModified])
+
+  // NOTE: there is no "Reset to case" action any more. Editing the setup now
+  // clears the case selection outright, so re-picking the case from the picker
+  // IS the reset — a second path would only duplicate `handleSelectCase`.
 
   return (
     <div data-testid="merged-setup-panel" className="setup-panel">
@@ -1028,7 +1029,7 @@ export default function MergedSetupPanel({
       <details style={{ marginTop: '6px' }} open={rs.mapsKey !== ''}>
         <summary style={{ fontSize: '0.8em', color: '#475569', cursor: 'pointer' }}>{t(LABELS.customRoute, lang)}</summary>
         <label htmlFor="merged-maps-key" style={fieldLabel}>{t(LABELS.mapsKey, lang)} {rs.mapsKey !== '' && <span style={{ color: '#16a34a', fontWeight: 400 }}>{t(LABELS.fromEnv, lang)}</span>}</label>
-        <input id="merged-maps-key" type="password" autoComplete="off" style={inputStyle} value={rs.mapsKey} onChange={(e) => runStore.dispatch({ type: 'SET_MAPS_KEY', key: e.target.value })} placeholder={t(LABELS.mapsKeyPlaceholder, lang)} />
+        <input id="merged-maps-key" data-testid="merged-maps-key" type="password" autoComplete="off" style={inputStyle} value={rs.mapsKey} onChange={(e) => runStore.dispatch({ type: 'SET_MAPS_KEY', key: e.target.value })} placeholder={t(LABELS.mapsKeyPlaceholder, lang)} />
         <label htmlFor="merged-maps-start" style={fieldLabel}>{t(LABELS.start, lang)}</label>
         <input id="merged-maps-start" type="text" style={inputStyle} value={mapsStart} onChange={(e) => setMapsStart(e.target.value)} placeholder={t(LABELS.startPlaceholder, lang)} />
         <label htmlFor="merged-maps-end" style={fieldLabel}>{t(LABELS.end, lang)}</label>
@@ -1162,24 +1163,6 @@ export default function MergedSetupPanel({
       <p style={{ fontSize: '0.72em', color: '#94a3b8', marginTop: '10px' }}>
         {isComplete ? t(LABELS.ready, lang) : t(LABELS.incomplete, lang)}
       </p>
-
-      {/* ── Differs-from-case note + Reset (task 18) — visible whenever a case
-          is selected AND the live setup has drifted from it. Selecting a case
-          seeds the setup; it never locks it, so drift is reported, not
-          prevented. */}
-      {caseSetup && driftFields.length > 0 && (
-        <div data-testid="differs-from-case" style={{ ...summaryRow, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', padding: '7px 9px', marginTop: '8px' }}>
-          <p style={{ margin: '0 0 6px', color: '#92400e' }}>
-            {t(LABELS.differsFromCaseNote, lang).replace(
-              '{fields}',
-              driftFields.map((f) => t(DIFF_FIELD_LABELS[f] ?? { ja: f, en: f }, lang)).join(', '),
-            )}
-          </p>
-          <button type="button" data-testid="reset-to-case" onClick={() => void resetToCase()} style={editBtnStyle}>
-            {t(LABELS.resetToCase, lang)}
-          </button>
-        </div>
-      )}
 
       {/* ── Situation Edit popup (merged A/B/C fields, reused verbatim) ─────── */}
       <Modal open={openEdit === 'situation'} title={t(LABELS.situationTitle, lang)} size="wide" onClose={() => setOpenEdit(null)}>

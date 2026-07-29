@@ -16,10 +16,9 @@
  * quickview click-to-inspect lives in the center panel; this panel reads the
  * resulting `inspectedFireIndex`/`proposalLog` off the shared coordinator.
  */
-import { useEffect, useState } from 'react'
 import { useMergedCoordinator } from '../../state/mergedCoordinator'
 import type { RankedCandidate, ExcludedCandidate, CompletePlan, ProposalRunLog, EvidenceError } from '../../api/proposalClient'
-import { getDatasetCatalog } from '../../api/proposalClient'
+import { useSongNames } from '../proposal/useSongNames'
 import { ServiceResultOverlay } from './ServiceResultOverlay'
 import { ContentResultOverlay } from './ContentResultOverlay'
 import { useProposalStore } from '../../state/proposalStore'
@@ -73,7 +72,6 @@ type ProposalOverlayDerivation = {
   hasService: boolean
   serviceOutput: { decision_type: string; ranked_candidates: RankedCandidate[] } | undefined
   eligibleCandidates: { candidate_id: string }[]
-  excludedCandidates: ExcludedCandidate[]
   serviceError: EvidenceError | null | undefined
   contentPlan: CompletePlan | undefined
   contentError: EvidenceError | null | undefined
@@ -103,7 +101,6 @@ export function deriveProposalOverlay(proposalLog: ProposalRunLog | null): Propo
     hasService: serviceEv != null,
     serviceOutput,
     eligibleCandidates: serviceSnapshot.eligible_candidates ?? [],
-    excludedCandidates: serviceSnapshot.excluded_candidates ?? [],
     serviceError: serviceEv?.error,
     contentPlan: contentFresh ? (contentEv?.output as CompletePlan | undefined) : undefined,
     contentError: contentFresh ? contentEv?.error : undefined,
@@ -126,29 +123,9 @@ export default function MergedProposalPanel() {
   const { state: ps } = useProposalStore()
 
   // item_id → song display name, so the content plan shows "Name (id)" like the
-  // Proposal screen (issue #3). Fetched from the world's dataset catalog.
-  const datasetId = ps.world?.catalog_ref?.dataset_id
-  const [songNames, setSongNames] = useState<Record<string, string>>({})
-  useEffect(() => {
-    if (!datasetId) {
-      setSongNames({})
-      return
-    }
-    let cancelled = false
-    getDatasetCatalog(datasetId)
-      .then((resp) => {
-        if (cancelled) return
-        const map: Record<string, string> = {}
-        for (const song of resp.songs) map[song.spotify_track.id] = song.spotify_track.name
-        setSongNames(map)
-      })
-      .catch(() => {
-        if (!cancelled) setSongNames({})
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [datasetId])
+  // Proposal screen (issue #3). Shared with the review column via `useSongNames`
+  // so both resolve names from the SAME dataset.
+  const songNames = useSongNames(ps.world?.catalog_ref?.dataset_id)
 
   // Show a proposal IMMEDIATELY (owner review): before any run exists, fall back
   // to the FIRST projected fire so the reviewer sees a service+content result
@@ -277,14 +254,13 @@ export default function MergedProposalPanel() {
         </p>
       ) : (
         <>
-          <div style={splitStyle}>
+          <div data-testid="proposal-split" style={splitStyle}>
           {/* LEFT — Service proposal */}
           <div data-testid="service-result-overlay" style={halfStyle}>
             <p style={halfTitleStyle}>① {t(LABELS.service, lang)}</p>
             <ServiceResultOverlay
               output={overlay.serviceOutput}
               eligibleCandidates={overlay.eligibleCandidates}
-              excludedCandidates={overlay.excludedCandidates}
               activeServiceId={overlay.activeServiceId}
               choosingId={choosingId}
               onChoose={onChoose}

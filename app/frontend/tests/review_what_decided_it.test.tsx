@@ -26,14 +26,15 @@ const mount = (extra: Partial<React.ComponentProps<typeof WhatDecidedIt>> = {}) 
   wrap(
     <WhatDecidedIt
       options={options} leftId="rest_required" rightId="monotony_prevention"
-      onChangeLeft={() => {}} onChangeRight={() => {}} thresholdNote={null} {...extra}
+      onChangeLeft={() => {}} onChangeRight={() => {}} {...extra}
     />,
   )
 
 describe('WhatDecidedIt', () => {
-  it('displays the shared scale bound — bars are never shown without it', () => {
+  it('drops the scale-bound line (support info the reviewer did not want)', () => {
+    // The bars are still scaled by the bound — only the printed line is gone.
     mount()
-    expect(screen.getByTestId('margin-scale-bound')).toHaveTextContent(/±/)
+    expect(screen.queryByTestId('margin-scale-bound')).toBeNull()
   })
 
   it('draws each bar in proportion to the displayed bound', () => {
@@ -59,11 +60,26 @@ describe('WhatDecidedIt', () => {
     expect(screen.getAllByTestId('margin-row')).toHaveLength(2)
   })
 
-  it('orders rows by how much they decided the GAP, not by size in the winner', () => {
+  it('orders rows by A’s own contribution, high → low', () => {
+    // A (rest_required): fatigue 0.8*0.3 = 0.24, monotony 0.2*0.1 = 0.02.
+    // Ordering by the GAP instead would put monotony first (margin −0.34), so
+    // this fixture tells the two rules apart.
     mount()
-    // fatigue margin = +0.23; monotony margin = −0.34 → monotony decided more of the gap
-    const ids = screen.getAllByTestId('margin-feature-id').map((n) => n.textContent)
-    expect(ids[0]).toContain('monotony')
+    const order = screen.getAllByTestId('margin-row').map(
+      (n) => n.querySelector('[data-testid^="margin-row-"]')!.getAttribute('data-testid'),
+    )
+    expect(order).toEqual(['margin-row-fatigue', 'margin-row-monotony'])
+  })
+
+  it('drops features that contributed to neither side', () => {
+    const withDead: ReviewOption[] = [
+      { ...options[0], rows: [...options[0].rows, row('weather_risk', 0, 0)] },
+      { ...options[1], rows: [...options[1].rows, row('weather_risk', 0, 0)] },
+    ]
+    mount({ options: withDead })
+    // A row that is zero on BOTH sides says nothing and pushes real rows down.
+    expect(screen.queryByTestId('margin-row-weather_risk')).toBeNull()
+    expect(screen.getByTestId('margin-row-fatigue')).toBeTruthy()
   })
 
   it('marks which side each feature pulls toward, per row', () => {
@@ -75,30 +91,46 @@ describe('WhatDecidedIt', () => {
     expect(screen.getByTestId('margin-lean-monotony').textContent).toContain('▶')
   })
 
-  it('leads each row with the raw value the reviewer already understands', () => {
+  it('shows the value alone — no strength word', () => {
     mount()
-    expect(screen.getByTestId('margin-anchor-fatigue')).toHaveTextContent('high')
+    const anchor = screen.getByTestId('margin-anchor-fatigue')
+    // fatigue is authored 0-100 and recorded /100, so 0.8 reads back as 80/100.
+    expect(anchor).toHaveTextContent('80/100')
+    expect(anchor.textContent).not.toMatch(/high|低|高/)
   })
 
-  it('shows plain phrasing as the label and the identifier only in support', () => {
+  it('shows a plain value for features that are not 0-100 signals', () => {
     mount()
-    expect(screen.getByTestId('margin-row-fatigue')).toHaveTextContent('how tired the driver is')
+    // monotony is a derived score: shown as-is, trailing zeros trimmed.
+    expect(screen.getByTestId('margin-anchor-monotony')).toHaveTextContent('0.2')
   })
 
-  it('opens with a verdict sentence naming both sides', () => {
+  it('labels rows with the field NAME and never the raw variable id', () => {
     mount()
-    const verdict = screen.getByTestId('verdict-sentence').textContent ?? ''
-    expect(verdict.length).toBeGreaterThan(0)
+    const row = screen.getByTestId('margin-row-fatigue')
+    expect(row).toHaveTextContent('Fatigue')
+    // Neither the raw id nor the old prose fragment.
+    expect(row.textContent).not.toContain('fatigue')
+    expect(row.textContent).not.toContain('how tired the driver is')
+    expect(screen.queryAllByTestId('margin-feature-id')).toHaveLength(0)
   })
 
-  it('groups contributions into the four domains', () => {
+  it('drops the verdict sentence (support info the reviewer did not want)', () => {
     mount()
-    expect(screen.getAllByTestId('domain-group').length).toBeGreaterThan(0)
+    expect(screen.queryByTestId('verdict-sentence')).toBeNull()
   })
 
-  it('shows the threshold note under the pickers when one is given', () => {
-    mount({ thresholdNote: 'firing threshold 0.70 · clearance +0.010' })
-    expect(screen.getByTestId('threshold-note')).toHaveTextContent('0.70')
+  it('does NOT show a cross-stage domain-group split', () => {
+    // Removed on owner review: the same group names do not mean the same thing
+    // for a trigger, a service and a content item, so one shared percentage
+    // split invited a comparison the numbers do not support.
+    mount()
+    expect(screen.queryAllByTestId('domain-group')).toHaveLength(0)
+  })
+
+  it('shows no firing-threshold note', () => {
+    mount()
+    expect(screen.queryByTestId('threshold-note')).toBeNull()
   })
 
   it('reports the comparison change', () => {

@@ -90,13 +90,12 @@ function plan(): CompletePlan {
 }
 
 describe('ServiceResultOverlay', () => {
-  it('renders both ranked candidates with a Choose button; clicking one calls onChoose with its candidate_id', () => {
+  it('renders both ranked candidates; Choose is live only for a service V1 supports', () => {
     const onChoose = vi.fn()
     render(
       <ServiceResultOverlay
         output={{ decision_type: 'ranked_candidates', ranked_candidates: candidates() }}
         eligibleCandidates={[]}
-        excludedCandidates={[]}
         activeServiceId={null}
         choosingId={null}
         onChoose={onChoose}
@@ -105,13 +104,55 @@ describe('ServiceResultOverlay', () => {
       />,
     )
 
+    // Every candidate is still shown and still explains itself — a reviewer
+    // needs to see why an unsupported service ranked where it did.
     expect(screen.getByTestId('candidate-card-live_viewing')).toBeInTheDocument()
     expect(screen.getByTestId('candidate-card-stretch_video')).toBeInTheDocument()
-    expect(screen.getByTestId('choose-candidate-live_viewing')).toBeInTheDocument()
-    expect(screen.getByTestId('choose-candidate-stretch_video')).toBeInTheDocument()
 
+    // …but only music_playlist / humming_karaoke / full_karaoke can be chosen
+    // in V1; neither of these is one of them.
+    expect(screen.getByTestId('choose-candidate-stretch_video')).toBeDisabled()
     fireEvent.click(screen.getByTestId('choose-candidate-stretch_video'))
-    expect(onChoose).toHaveBeenCalledWith('stretch_video')
+    expect(onChoose).not.toHaveBeenCalled()
+    expect(screen.getByTestId('out-of-scope-stretch_video')).toHaveTextContent('not supported in V1')
+  })
+
+  it('lets a supported service be chosen', () => {
+    const onChoose = vi.fn()
+    const supported = candidates()
+    supported[0].candidate_id = 'music_playlist'
+    render(
+      <ServiceResultOverlay
+        output={{ decision_type: 'ranked_candidates', ranked_candidates: supported }}
+        eligibleCandidates={[]}
+        activeServiceId={null}
+        choosingId={null}
+        onChoose={onChoose}
+        explanationProvider="off"
+        lang="en"
+      />,
+    )
+
+    fireEvent.click(screen.getByTestId('choose-candidate-music_playlist'))
+    expect(onChoose).toHaveBeenCalledWith('music_playlist')
+  })
+
+  it('shows the eligible services as one row of tags, with no excluded list', () => {
+    render(
+      <ServiceResultOverlay
+        output={{ decision_type: 'ranked_candidates', ranked_candidates: candidates() }}
+        eligibleCandidates={[{ candidate_id: 'music_playlist' }, { candidate_id: 'full_karaoke' }]}
+        activeServiceId={null}
+        choosingId={null}
+        onChoose={() => {}}
+        explanationProvider="off"
+        lang="en"
+      />,
+    )
+
+    expect(screen.getByTestId('eligible-music_playlist')).toBeInTheDocument()
+    expect(screen.getByTestId('eligible-full_karaoke')).toBeInTheDocument()
+    expect(screen.queryByTestId('excluded-list')).not.toBeInTheDocument()
   })
 })
 
@@ -129,5 +170,79 @@ describe('ContentResultOverlay', () => {
     expect(screen.getByTestId('plan-item-track-1')).toHaveTextContent('Jessica')
     expect(screen.getByTestId('plan-item-track-2')).toHaveTextContent('Nightfall')
     expect(screen.getByTestId('plan-item-track-3')).toHaveTextContent('Horizon')
+  })
+})
+
+// ── Card section order (owner review) ───────────────────────────────────────
+// Subtotals → feature trace → why. The "why" disclosure is the row a reviewer
+// picks AFTER seeing the numbers, so it must come last; it used to be first.
+describe('card section order', () => {
+  function orderOf(card: HTMLElement, testids: string[]): string[] {
+    const found = testids
+      .map((id) => ({ id, el: card.querySelector(`[data-testid="${id}"]`) }))
+      .filter((x): x is { id: string; el: Element } => x.el !== null)
+    // Sort by document position within the card.
+    return found
+      .sort((a, b) =>
+        a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1,
+      )
+      .map((x) => x.id)
+  }
+
+  it('service card: explainability (subtotals + trace) before the why disclosure', () => {
+    const enriched = candidates()
+    enriched[0].situation_fit = 0.5
+    enriched[0].preference_fit = 0.2
+    enriched[0].history_fit = 0.1
+    render(
+      <ServiceResultOverlay
+        output={{ decision_type: 'ranked_candidates', ranked_candidates: enriched }}
+        eligibleCandidates={[]}
+        activeServiceId={null}
+        choosingId={null}
+        onChoose={() => {}}
+        explanationProvider="off"
+        lang="en"
+      />,
+    )
+
+    const card = screen.getByTestId('candidate-card-live_viewing')
+    expect(orderOf(card, ['reason-summary', 'service-explainability'])).toEqual([
+      'service-explainability',
+      'reason-summary',
+    ])
+    // And the safety-priority readout is gone for good.
+    expect(card.querySelector('[data-testid="service-dominance"]')).toBeNull()
+  })
+
+  it('content card: explainability before the why disclosure', () => {
+    const enrichedPlan = plan()
+    enrichedPlan.ordered_items[0].situation_fit = 0.4
+    enrichedPlan.ordered_items[0].preference_fit = 0.3
+    enrichedPlan.ordered_items[0].history_fit = 0.2
+    render(
+      <ContentResultOverlay
+        plan={enrichedPlan}
+        songNames={{}}
+        explanationProvider="off"
+        lang="en"
+      />,
+    )
+
+    const card = screen.getByTestId('plan-item-track-1')
+    expect(orderOf(card, ['reason-summary', 'content-explainability'])).toEqual([
+      'content-explainability',
+      'reason-summary',
+    ])
+  })
+
+  it('content card: the raw fit shows 3 decimals and no 0-100 band', () => {
+    render(
+      <ContentResultOverlay plan={plan()} songNames={{}} explanationProvider="off" lang="en" />,
+    )
+    const card = screen.getByTestId('plan-item-track-1')
+    expect(card.textContent).toContain('+0.810')
+    expect(card.querySelector('[data-testid="fit-band-track-1"]')).toBeNull()
+    expect(card.textContent).not.toMatch(/\/100/)
   })
 })

@@ -18,7 +18,7 @@ import type { MergedFirePoint } from '../../api/mergedClient'
 import type { ProposalRunLog, ServiceSelectorOutput, CompletePlan, ItemFeatureContribution } from '../../api/proposalClient'
 import { unavailable } from './types'
 import type { ReviewOption, Unavailable } from './types'
-import { CATEGORY_LABELS } from './reviewVocabulary'
+import { CATEGORY_LABELS, serviceLabel } from './reviewVocabulary'
 
 /**
  * The two trigger categories as comparable options.
@@ -90,7 +90,7 @@ export function serviceOptions(proposal: ProposalRunLog | null): ReviewOption[] 
     .filter((candidate) => candidate.score !== null)
     .map((candidate) => ({
       id: candidate.candidate_id,
-      label: { ja: candidate.candidate_id, en: candidate.candidate_id },
+      label: serviceLabel(candidate.candidate_id),
       score: candidate.score as number,
       rows: candidate.feature_contributions.map((fc) => ({
         featureId: fc.feature_id,

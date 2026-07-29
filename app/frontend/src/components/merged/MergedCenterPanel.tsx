@@ -29,8 +29,13 @@ import { useMergedCoordinator } from '../../state/mergedCoordinator'
 import { useRunStore } from '../../state/runStore'
 import { useReviewStore } from '../../state/reviewStore'
 import { deriveCheckpoints } from '../../lib/review/checkpoints'
-import CheckpointRail from '../review/CheckpointRail'
-import DecisionBand from '../review/DecisionBand'
+import PlaybackStatusLine from './PlaybackStatusLine'
+import { guidedState, stepPosition } from './guidedSteps'
+import { deriveProposalOverlay } from './MergedProposalPanel'
+import { ServiceResultOverlay } from './ServiceResultOverlay'
+import { ContentResultOverlay } from './ContentResultOverlay'
+import { useProposalStore } from '../../state/proposalStore'
+import { useSongNames } from '../proposal/useSongNames'
 import MergedProposalPanel from './MergedProposalPanel'
 import ScoreTimeline from '../playback/ScoreTimeline'
 import { mergedInstantResultToTimeline } from '../playback/timelineData'
@@ -58,6 +63,9 @@ const LABELS = {
   reset: { ja: '↺ リセット', en: '↺ Reset' },
   speed: { ja: '速度', en: 'Speed' },
   loadingSpots: { ja: '休憩スポットを読み込み中…', en: 'Loading rest spots…' },
+  stepCaption: { ja: 'ステップ {n} / {total}', en: 'Step {n} / {total}' },
+  stepService: { ja: 'サービスの提案', en: 'Service proposal' },
+  stepContent: { ja: '休憩地点までの再生リスト', en: 'Playlist for the drive there' },
 }
 
 export default function MergedCenterPanel() {
@@ -68,14 +76,14 @@ export default function MergedCenterPanel() {
   // runStore (whole shell is wrapped) — read them for the road bands + the
   // rest-spot fetch filters.
   const { state: rs } = useRunStore()
+  const { state: proposalState } = useProposalStore()
 
   // The reviewable decision points (task-17-brief) are derived from the SAME
   // ephemeral quickview projection `ReviewColumn` reads (`MergedShell` hands
-  // it the identical `state.quickviewResult`) — so the rail, the band and the
+  // it the identical `state.quickviewResult`) — so a map marker click and the
   // review column always agree on which fire is index N.
-  const { state: reviewState, dispatch: reviewDispatch } = useReviewStore()
+  const { dispatch: reviewDispatch } = useReviewStore()
   const checkpoints = deriveCheckpoints(state.quickviewResult)
-  const activeCheckpoint = checkpoints.find((c) => c.id === reviewState.checkpointId) ?? checkpoints[0] ?? null
 
   const selectedAltDisplay =
     rs.alternatives.find((a) => a.route_id === rs.selectedRouteId)?.display ?? null
@@ -93,8 +101,22 @@ export default function MergedCenterPanel() {
     timeMin: state.quickviewResult?.fires[i]?.time_min ?? null,
   }))
   const mapRestMarkers = (quickviewTimeline?.restDots ?? []).map((x) => ({ fraction: x }))
+  const quickviewFires = state.quickviewResult?.fires ?? []
 
   const hasRun = state.mergedRunId != null
+
+  /** Clicking a trigger marker both inspects that fire AND points the review
+   *  column at the matching checkpoint. The checkpoint rail used to be the only
+   *  way to do the latter; the map is now that control. Checkpoints are keyed
+   *  by CATEGORY, so the fire's category is the link. */
+  function selectFire(index: number): void {
+    const clearing = state.inspectedFireIndex === index
+    coordinator.inspectFire(clearing ? null : index)
+    if (clearing) return
+    const category = quickviewFires[index]?.category ?? null
+    const checkpoint = checkpoints.find((c) => c.id === category)
+    if (checkpoint) reviewDispatch({ type: 'SELECT_CHECKPOINT', checkpointId: checkpoint.id })
+  }
 
   // Decision (fire) positions + accepted rest spots for the map markers (the
   // merged run has no runStore trace/restHistory).
@@ -119,7 +141,20 @@ export default function MergedCenterPanel() {
   const [resolvedOpportunityId, setResolvedOpportunityId] = useState<string | null>(null)
 
   const restDecided = opportunity?.opportunity_id != null && opportunity.opportunity_id === resolvedOpportunityId
-  const showRestOverlay = showRestAccept && !restDecided
+
+  // A fire is a short conversation, walked one step at a time (owner review):
+  // rest → service → songs, or service → songs when nothing is being proposed
+  // about resting. `guidedState` reads the RECORDED log, so the overlay can
+  // never show a step the evidence does not support.
+  const overlay = deriveProposalOverlay(state.proposalLog)
+  const songNames = useSongNames(proposalState.world?.catalog_ref?.dataset_id)
+  const guided = guidedState({
+    proposalLog: state.proposalLog,
+    restDecided,
+    hasContentPlan: overlay.contentPlan != null,
+  })
+  const guidedActive = hasRun && guided.step !== 'done'
+  const showRestOverlay = guidedActive && guided.step === 'rest' && showRestAccept
 
   useEffect(() => {
     if (!showRestAccept || !state.scenarioId || !state.triggerRunId) return
@@ -181,7 +216,13 @@ export default function MergedCenterPanel() {
   return (
     <div
       data-testid="merged-center-panel"
-      style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '12px', minHeight: 0, overflowY: 'auto', gap: '10px' }}
+      // ONE scroll container for the whole middle column: `.center-panel`
+      // (the grid cell) owns `overflow-y: auto`. This inner element used to
+      // set `height: 100%` + `overflowY: auto` as well, so the column had two
+      // nested scrollers — the outer one scrolled the inner scroller rather
+      // than the content, which is what made the map appear to sit on top of
+      // the proposals instead of above them.
+      style={{ display: 'flex', flexDirection: 'column', padding: '12px', minHeight: 0, gap: '10px' }}
     >
       {/* The animated subtree: quickview + playback controls + live timeline
           + map, all redrawn every tick. `CheckpointRail`/`DecisionBand`/the
@@ -193,7 +234,7 @@ export default function MergedCenterPanel() {
         data-testid="merged-playback-subtree"
         style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: 0 }}
       >
-      {/* 2. Controls: Play/Continue · Pause · Step · Reset */}
+      {/* 1. Controls: Play/Continue · Pause · Step · Reset */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, flexWrap: 'wrap' }}>
         <button
           type="button"
@@ -244,10 +285,14 @@ export default function MergedCenterPanel() {
         </p>
       )}
 
-      {/* 2. GOOGLE MAP + on-map REST overlay. */}
-      <div style={{ flex: '1 1 auto', minHeight: '240px', display: 'flex', flexDirection: 'column' }}>
+      {/* 2. GOOGLE MAP (or keyless schematic) + on-map REST overlay. */}
+      {/* The map is a FIXED-height band, not a flex-grower: the proposals
+          below are the main content of this panel and must keep the space.
+          A growing map with a `52vh` child also overflowed its own box and
+          drew over them. */}
+      <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column' }}>
         <p style={{ fontSize: '0.72em', fontWeight: 700, color: '#6b7280', margin: '0 0 2px', flexShrink: 0 }}>{t(LABELS.map, lang)}</p>
-        <div data-testid="merged-map-surface" style={{ flex: '1 1 auto', minHeight: '220px', position: 'relative' }}>
+        <div data-testid="merged-map-surface" style={{ flex: '0 0 auto', position: 'relative', overflow: 'hidden' }}>
           <MapSurface
             fractionOverride={state.latestTrigger?.route_fraction ?? undefined}
             proposalFractionsOverride={decisionFractions}
@@ -261,10 +306,54 @@ export default function MergedCenterPanel() {
             fireMarkers={mapFireMarkers}
             restMarkers={mapRestMarkers}
             inspectedFireIndex={state.inspectedFireIndex}
-            onFireMarkerClick={(i) => coordinator.inspectFire(state.inspectedFireIndex === i ? null : i)}
+            onFireMarkerClick={selectFire}
+            // Hand the map over to LIVE markers once a run exists. Without
+            // this the map kept drawing the projection for the whole
+            // animation, so accepting a rest spot never changed what it
+            // showed.
+            playback={hasRun}
             startName={selectedAltDisplay?.start_label ?? null}
             endName={selectedAltDisplay?.end_label ?? null}
+            // Shorter than the Trigger screen's 52vh — the proposals below are
+            // this panel's main content and need the room.
+            // 1.5x the first pass (owner review) — the map is the primary
+            // spatial view and 300px read as cramped.
+            height="450px"
+            minHeight="330px"
           />
+
+          {/* STEP 2/3 — the service proposal, then the songs for the drive.
+              Rendered with the SAME components as the panel below (never a
+              second, drifting copy of the cards) inside the guided overlay. */}
+          {guidedActive && guided.step !== 'rest' && (
+            <div data-testid="guided-overlay" style={guidedOverlayStyle}>
+              <p style={guidedStepCaptionStyle}>
+                {t(LABELS.stepCaption, lang)
+                  .replace('{n}', String(stepPosition(guided.step, guided.isRestFlow).index))
+                  .replace('{total}', String(stepPosition(guided.step, guided.isRestFlow).total))}
+                {' · '}
+                {guided.step === 'service' ? t(LABELS.stepService, lang) : t(LABELS.stepContent, lang)}
+              </p>
+              {guided.step === 'service' ? (
+                <ServiceResultOverlay
+                  output={overlay.serviceOutput}
+                  eligibleCandidates={overlay.eligibleCandidates}
+                  activeServiceId={overlay.activeServiceId}
+                  choosingId={state.choosingId}
+                  onChoose={(candidateId) => void coordinator.selectService(candidateId)}
+                  explanationProvider="off"
+                  lang={lang}
+                />
+              ) : overlay.contentPlan ? (
+                <ContentResultOverlay
+                  plan={overlay.contentPlan}
+                  songNames={songNames}
+                  explanationProvider="off"
+                  lang={lang}
+                />
+              ) : null}
+            </div>
+          )}
 
           {showRestOverlay && (
             <div data-testid="rest-accept-panel" style={restOverlayStyle}>
@@ -308,18 +397,27 @@ export default function MergedCenterPanel() {
       </div>
 
       {/* Siblings of the animated subtree above — a playback tick redraws that
-          subtree but never these. */}
-      <CheckpointRail
-        checkpoints={checkpoints}
-        selectedId={activeCheckpoint?.id ?? null}
-        onSelect={(checkpointId) => reviewDispatch({ type: 'SELECT_CHECKPOINT', checkpointId })}
-      />
-      <DecisionBand checkpoint={activeCheckpoint} />
-      <div className="merged-proposal-split">
-        <MergedProposalPanel />
-      </div>
+          subtree but never these.
 
-      {/* 1. QUICKVIEW PROJECTION (top, persistent). */}
+          A read-only one-line status (owner review): during playback the car's
+          live status, before it the first projected trigger. It replaced the
+          checkpoint rail + decision band; picking WHICH decision the review
+          column examines is now done by clicking a trigger marker on the map,
+          which dispatches SELECT_CHECKPOINT below. */}
+      <PlaybackStatusLine
+        playback={hasRun}
+        latestTrigger={state.latestTrigger}
+        firstFire={quickviewFires[0] ?? null}
+        hasProjection={hasQuickview}
+      />
+      {/* 3. SERVICE | CONTENT proposals. The panel owns its own 40/60 split;
+          it must NOT be wrapped in a grid here. It used to be, and since that
+          grid had two columns but only this one child, the panel was confined
+          to the first column and the 40/60 ratio inside it was squeezed into
+          ~42% of the available width. */}
+      <MergedProposalPanel />
+
+      {/* 4. QUICKVIEW PROJECTION (persistent). */}
       {hasQuickview && (
         <section data-testid="quickview-strip" style={{ flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
@@ -358,6 +456,17 @@ export default function MergedCenterPanel() {
 
 // ── Inline styles ────────────────────────────────────────────────────────────
 
+/** The guided overlay sits over the map like the rest prompt, but wider and
+ *  scrollable — a ranked service list or a song list is taller than a prompt. */
+const guidedOverlayStyle: React.CSSProperties = {
+  position: 'absolute', top: '10px', left: '10px', right: '10px', bottom: '10px', zIndex: 20,
+  background: 'rgba(255,255,255,0.97)', border: '2px solid #5bc0be', borderRadius: '10px',
+  padding: '8px 12px', boxShadow: '0 4px 14px rgba(0,0,0,0.2)', overflowY: 'auto',
+}
+const guidedStepCaptionStyle: React.CSSProperties = {
+  fontSize: '0.7em', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
+  color: '#0f766e', margin: '0 0 6px',
+}
 const restOverlayStyle: React.CSSProperties = {
   position: 'absolute', top: '10px', left: '10px', maxWidth: 'min(340px, 72%)', zIndex: 20,
   background: 'rgba(255,255,255,0.97)', border: '2px solid #5bc0be', borderRadius: '10px',

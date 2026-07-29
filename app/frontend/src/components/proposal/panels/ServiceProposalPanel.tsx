@@ -353,7 +353,6 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
   // score is ever shown alongside an exclusion.
   const inputSnapshot = (serviceEvidence?.input_snapshot ?? {}) as ServiceInputSnapshot
   const eligibleCandidates = inputSnapshot.eligible_candidates ?? []
-  const excludedCandidates = inputSnapshot.excluded_candidates ?? []
 
   return (
     <section data-testid="service-panel" style={panelSectionStyle}>
@@ -425,7 +424,6 @@ export default function ServiceProposalPanel({ autoInit = false }: { autoInit?: 
           <ServiceResultOverlay
             output={output}
             eligibleCandidates={eligibleCandidates}
-            excludedCandidates={excludedCandidates}
             activeServiceId={activeServiceId}
             choosingId={choosingId}
             onChoose={handleChoose}

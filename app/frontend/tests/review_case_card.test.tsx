@@ -10,10 +10,13 @@ const c03 = getCase('case-c03-monotonous-highway')!
 const wrap = (ui: React.ReactNode) => render(<LanguageProvider>{ui}</LanguageProvider>)
 
 describe('ExperienceCasePicker', () => {
-  it('lists every committed case', () => {
+  it('lists every committed case, and nothing else', () => {
+    // No "no test case" entry any more (owner review): a case is always
+    // selected, so the empty option it needed is gone too.
     wrap(<ExperienceCasePicker selectedCaseId={null} flagCounts={{}} onSelect={() => {}} />)
     const select = screen.getByTestId('experience-case-select') as HTMLSelectElement
     expect(select.options.length).toBe(listCases().length)
+    expect(Array.from(select.options).some((o) => o.value === '')).toBe(false)
   })
 
   it('reports the chosen case id', () => {

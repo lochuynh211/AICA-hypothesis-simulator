@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, act } from '@testing-library/react'
+import { render, screen, fireEvent, act, cleanup } from '@testing-library/react'
 import { vi, beforeEach } from 'vitest'
 import React from 'react'
 import ReviewColumn from '../src/components/review/ReviewColumn'
@@ -39,11 +39,14 @@ const withFire = {
   }],
 } as unknown as MergedInstantResult
 
-const mount = (result: MergedInstantResult | null) =>
+/** `showParameterRationale` is OFF in the app (owner review hid the per-input
+ *  table) but the judgement wiring it drives is still live and still exported,
+ *  so tests that exercise that wiring switch it on explicitly. */
+const mount = (result: MergedInstantResult | null, showParameterRationale = false) =>
   render(
     <LanguageProvider>
       <ReviewStoreProvider>
-        <ReviewColumn result={result} />
+        <ReviewColumn result={result} showParameterRationale={showParameterRationale} />
       </ReviewStoreProvider>
     </LanguageProvider>,
   )
@@ -79,6 +82,35 @@ const withFireAndService = {
   }],
 } as unknown as MergedInstantResult
 
+/** A fire whose proposal recorded a CONTENT plan, so the content stage has two
+ *  comparable items. */
+const withFireAndContent = {
+  fires: [{
+    category: 'rest_required', strength: 'clear', tick: 20, time_min: 30,
+    proposal: {
+      evidence: [{
+        step: 'content',
+        output: {
+          ordered_items: [
+            { item_id: 'track-1', item_fit: 0.81, feature_contributions: [
+              { feature_id: 'song_arousal', e_i: 0.7, a_i: 1, effective_weight: 1, contribution: 0.7 },
+            ] },
+            { item_id: 'track-2', item_fit: 0.62, feature_contributions: [
+              { feature_id: 'song_arousal', e_i: 0.5, a_i: 1, effective_weight: 1, contribution: 0.5 },
+            ] },
+          ],
+        },
+      }],
+    },
+    proposal_error: null,
+    criteria: { threshold_suggest: 0.7 },
+    feature_contributions: {
+      rest_required: chain(0.72, [{ feature_id: 'fatigue', value: 0.8, weight: 0.3 }]),
+      monotony_prevention: chain(0.55, [{ feature_id: 'monotony', value: 0.9, weight: 0.4 }]),
+    },
+  }],
+} as unknown as MergedInstantResult
+
 describe('ReviewColumn', () => {
   it('offers the three stage tabs', () => {
     mount(withFire)
@@ -89,12 +121,15 @@ describe('ReviewColumn', () => {
 
   it('opens on the trigger stage with both categories compared', () => {
     mount(withFire)
-    expect(screen.getByTestId('margin-scale-bound')).toBeTruthy()
+    // The comparison itself is the evidence; the scale-bound and threshold
+    // notes that used to prove this were removed as support info.
+    expect(screen.getByTestId('what-decided-it')).toBeTruthy()
+    expect(screen.getAllByTestId('margin-row').length).toBeGreaterThan(0)
   })
 
-  it('shows the firing threshold under the pickers', () => {
+  it('shows no firing-threshold note', () => {
     mount(withFire)
-    expect(screen.getByTestId('threshold-note')).toHaveTextContent('0.7')
+    expect(screen.queryByTestId('threshold-note')).toBeNull()
   })
 
   it('disables a stage with no recorded evidence, and says why', () => {
@@ -138,7 +173,7 @@ describe('ReviewColumn', () => {
   })
 
   it('keeps a judgement scoped to its decision point', () => {
-    mount(withFire)
+    mount(withFire, true)
     fireEvent.change(screen.getByTestId('rationale-judge-fatigue'), { target: { value: 'too_strong' } })
     expect((screen.getByTestId('rationale-judge-fatigue') as HTMLSelectElement).value).toBe('too_strong')
   })
@@ -152,7 +187,7 @@ describe('ReviewColumn', () => {
 // green tests. These two tests pin actual rendered prose in each language.
 
 describe('ReviewColumn — language coverage', () => {
-  it('renders English stage-tab labels and threshold text under initialLanguage="en"', () => {
+  it('renders English stage-tab and field labels under initialLanguage="en"', () => {
     render(
       <LanguageProvider initialLanguage="en">
         <ReviewStoreProvider>
@@ -163,7 +198,8 @@ describe('ReviewColumn — language coverage', () => {
     expect(screen.getByTestId('stage-tab-trigger')).toHaveTextContent('Trigger')
     expect(screen.getByTestId('stage-tab-service')).toHaveTextContent('Service')
     expect(screen.getByTestId('stage-tab-content')).toHaveTextContent('Content')
-    expect(screen.getByTestId('threshold-note')).toHaveTextContent('Firing threshold')
+    // Field labels are names now, not the raw variable ids or prose fragments.
+    expect(screen.getByTestId('what-decided-it')).toHaveTextContent('Fatigue')
   })
 
   it('renders no stray English prose in the Japanese UI', () => {
@@ -176,7 +212,7 @@ describe('ReviewColumn — language coverage', () => {
     )
     // Stage tabs read in Japanese, not the English labels.
     expect(screen.getByTestId('stage-tab-trigger')).toHaveTextContent('トリガー')
-    expect(screen.getByTestId('threshold-note')).toHaveTextContent('発火しきい値')
+    expect(screen.getByTestId('what-decided-it')).toHaveTextContent('疲労')
     // No two consecutive lowercase English words (>=4 letters each) anywhere
     // in the column — the shape raw embedded English prose takes, as opposed
     // to a lone feature id or CSS-safe token.
@@ -301,11 +337,32 @@ const flush = () => act(async () => {
   await Promise.resolve()
 })
 
-const mountWithRun = (mergedRunId: string | null) =>
+/** Feedback is filed per test case, so a case must be selected for any of it to
+ *  be recordable. Pass `caseId: null` to exercise the no-case gate. */
+function SelectCase({ caseId }: { caseId: string | null }) {
+  const { dispatch } = useReviewStore()
+  const done = React.useRef(false)
+  if (!done.current) {
+    done.current = true
+    if (caseId) dispatch({ type: 'SELECT_CASE', caseId })
+  }
+  return null
+}
+
+const mountWithRun = (
+  mergedRunId: string | null,
+  caseId: string | null = 'case-c01-alert-daytime-control',
+  showParameterRationale = false,
+) =>
   render(
     <LanguageProvider initialLanguage="en">
       <ReviewStoreProvider>
-        <ReviewColumn result={withFire} mergedRunId={mergedRunId} />
+        <SelectCase caseId={caseId} />
+        <ReviewColumn
+          result={withFire}
+          mergedRunId={mergedRunId}
+          showParameterRationale={showParameterRationale}
+        />
       </ReviewStoreProvider>
     </LanguageProvider>,
   )
@@ -324,7 +381,7 @@ describe('ReviewColumn — persistence', () => {
   })
 
   it('posts exactly one review_input record per judgement', async () => {
-    mountWithRun('mrun-1')
+    mountWithRun('mrun-1', 'case-c01-alert-daytime-control', true)
     fireEvent.change(screen.getByTestId('rationale-judge-fatigue'), { target: { value: 'too_strong' } })
     await flush()
     expect(postReviewFeedback).toHaveBeenCalledTimes(1)
@@ -336,7 +393,7 @@ describe('ReviewColumn — persistence', () => {
 
   it('posts exactly one review_decision record per assessment click', async () => {
     mountWithRun('mrun-1')
-    fireEvent.click(screen.getByTestId('assess-appropriate'))
+    fireEvent.click(screen.getByTestId('assess-trigger-appropriate'))
     await flush()
     expect(postReviewFeedback).toHaveBeenCalledTimes(1)
     expect(postReviewFeedback).toHaveBeenCalledWith(
@@ -351,7 +408,7 @@ describe('ReviewColumn — persistence', () => {
   // fix report for the RED run) before the blur-commit fix made it pass.
   it('posts exactly ONE review_decision record for a completed comment, never one per keystroke', async () => {
     mountWithRun('mrun-1')
-    const textarea = screen.getByTestId('assess-comment')
+    const textarea = screen.getByTestId('assess-comment-trigger')
     fireEvent.focus(textarea)
     fireEvent.change(textarea, { target: { value: 'e' } })
     fireEvent.change(textarea, { target: { value: 'ex' } })
@@ -368,7 +425,7 @@ describe('ReviewColumn — persistence', () => {
 
   it('does not post when the comment field is blurred without an edit', async () => {
     mountWithRun('mrun-1')
-    const textarea = screen.getByTestId('assess-comment')
+    const textarea = screen.getByTestId('assess-comment-trigger')
     fireEvent.focus(textarea)
     fireEvent.blur(textarea)
     await flush()
@@ -378,7 +435,7 @@ describe('ReviewColumn — persistence', () => {
   it('renders the error notice when a POST is rejected', async () => {
     vi.mocked(postReviewFeedback).mockRejectedValueOnce(new Error('network down'))
     mountWithRun('mrun-1')
-    fireEvent.click(screen.getByTestId('assess-appropriate'))
+    fireEvent.click(screen.getByTestId('assess-trigger-appropriate'))
     await flush()
     expect(screen.getByTestId('review-feedback-error')).toBeTruthy()
     expect(screen.getByTestId('review-feedback-error').getAttribute('role')).toBe('alert')
@@ -387,11 +444,11 @@ describe('ReviewColumn — persistence', () => {
   it('clears a prior error once a later POST succeeds', async () => {
     vi.mocked(postReviewFeedback).mockRejectedValueOnce(new Error('network down'))
     mountWithRun('mrun-1')
-    fireEvent.click(screen.getByTestId('assess-appropriate'))
+    fireEvent.click(screen.getByTestId('assess-trigger-appropriate'))
     await flush()
     expect(screen.getByTestId('review-feedback-error')).toBeTruthy()
 
-    fireEvent.click(screen.getByTestId('assess-not-sure'))
+    fireEvent.click(screen.getByTestId('assess-trigger-not-sure'))
     await flush()
     expect(screen.queryByTestId('review-feedback-error')).toBeNull()
   })
@@ -399,8 +456,400 @@ describe('ReviewColumn — persistence', () => {
   it('attempts no POST and shows the persistence-begins-later note when no merged run exists yet', async () => {
     mountWithRun(null)
     expect(screen.getByTestId('assess-no-run-yet')).toBeTruthy()
-    fireEvent.click(screen.getByTestId('assess-appropriate'))
+    fireEvent.click(screen.getByTestId('assess-trigger-appropriate'))
     await flush()
     expect(postReviewFeedback).not.toHaveBeenCalled()
+  })
+})
+
+// ── All three stages judged at once (owner review) ──────────────────────────
+// The verdict used to live under whichever stage tab was open, so recording an
+// opinion about the service meant leaving the trigger's. A reviewer forms all
+// three together; these assert they can be recorded that way.
+describe('ReviewColumn — stage feedback panel', () => {
+  beforeEach(() => {
+    vi.mocked(postReviewFeedback).mockReset().mockResolvedValue(undefined)
+    vi.mocked(getReviewFeedback).mockReset().mockResolvedValue({
+      events: [],
+      package_versions: {
+        trigger: { id: null, version: null },
+        service: { id: null, version: null },
+        content: { id: null, version: null },
+      },
+    })
+  })
+
+  it('sits ABOVE the stage tabs', () => {
+    mountWithRun('mrun-1')
+    const panel = screen.getByTestId('stage-feedback-panel')
+    const tab = screen.getByTestId('stage-tab-trigger')
+    // compareDocumentPosition: FOLLOWING means `tab` comes after `panel`.
+    expect(panel.compareDocumentPosition(tab) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('offers a row per stage, each with the three verdicts', () => {
+    mountWithRun('mrun-1')
+    for (const stage of ['trigger', 'service', 'content']) {
+      expect(screen.getByTestId(`feedback-row-${stage}`)).toBeTruthy()
+    }
+    // Trigger always has recorded evidence in this fixture.
+    expect(screen.getByTestId('assess-trigger-appropriate')).toBeTruthy()
+    expect(screen.getByTestId('assess-trigger-not-appropriate')).toBeTruthy()
+    expect(screen.getByTestId('assess-trigger-not-sure')).toBeTruthy()
+  })
+
+  it('records each stage against its OWN target, without switching tabs', async () => {
+    mountWithRun('mrun-1')
+
+    fireEvent.click(screen.getByTestId('assess-trigger-appropriate'))
+    await flush()
+    fireEvent.click(screen.getByTestId('assess-trigger-not-appropriate'))
+    await flush()
+
+    // Two independent records, both for the trigger stage, and the second is
+    // the changed verdict — not a duplicate of the first.
+    expect(postReviewFeedback).toHaveBeenCalledTimes(2)
+    expect(postReviewFeedback).toHaveBeenNthCalledWith(
+      1, 'mrun-1',
+      expect.objectContaining({ stage: 'trigger', labels: { assessment: 'appropriate' } }),
+    )
+    expect(postReviewFeedback).toHaveBeenNthCalledWith(
+      2, 'mrun-1',
+      expect.objectContaining({ stage: 'trigger', labels: { assessment: 'not_appropriate' } }),
+    )
+  })
+
+  it('keeps each stage’s verdict separate — judging one leaves the others unset', async () => {
+    mountWithRun('mrun-1')
+    fireEvent.click(screen.getByTestId('assess-trigger-appropriate'))
+    await flush()
+
+    expect(screen.getByTestId('assess-trigger-appropriate').getAttribute('aria-pressed')).toBe('true')
+    // A stage with no recorded evidence renders its reason instead of buttons;
+    // either way it must NOT have inherited the trigger's verdict.
+    const serviceRow = screen.getByTestId('feedback-row-service')
+    const servicePressed = serviceRow.querySelectorAll('[aria-pressed="true"]')
+    expect(servicePressed).toHaveLength(0)
+  })
+
+  it('says why a stage cannot be judged instead of offering buttons for nothing', () => {
+    mountWithRun('mrun-1')
+    // `withFire` carries no proposal, so service/content have no evidence.
+    expect(screen.getByTestId('feedback-unavailable-service')).toBeTruthy()
+    expect(screen.queryByTestId('assess-service-appropriate')).toBeNull()
+  })
+})
+
+// ── Right-panel refinements (owner review) ──────────────────────────────────
+describe('ReviewColumn — feedback panel refinements', () => {
+  beforeEach(() => {
+    vi.mocked(postReviewFeedback).mockReset().mockResolvedValue(undefined)
+    vi.mocked(getReviewFeedback).mockReset().mockResolvedValue({
+      events: [],
+      package_versions: {
+        trigger: { id: null, version: null },
+        service: { id: null, version: null },
+        content: { id: null, version: null },
+      },
+    })
+  })
+
+  it('leaves the right column ONE scroll container', () => {
+    // The panel used to be `position: sticky`, which read as a second scroller
+    // over the evidence. `.right-panel` owns the scrolling; nothing inside the
+    // review column may scroll on its own.
+    mountWithRun('mrun-1')
+    const panel = screen.getByTestId('stage-feedback-panel')
+    expect(panel.style.position).not.toBe('sticky')
+    expect(panel.style.position).not.toBe('fixed')
+
+    const column = screen.getByTestId('review-column')
+    const scrollers = Array.from(column.querySelectorAll<HTMLElement>('*')).filter(
+      (el) => el.style.overflowY === 'auto' || el.style.overflowY === 'scroll',
+    )
+    expect(scrollers).toHaveLength(0)
+  })
+
+  it('gives the comment box room to write in', () => {
+    mountWithRun('mrun-1')
+    const textarea = screen.getByTestId('assess-comment-trigger') as HTMLTextAreaElement
+    expect(textarea.rows).toBe(6)
+  })
+
+  it('right-aligns the three verdict buttons', () => {
+    mountWithRun('mrun-1')
+    expect(screen.getByTestId('verdicts-trigger').style.marginLeft).toBe('auto')
+  })
+})
+
+describe('ReviewColumn — feedback needs a test case', () => {
+  beforeEach(() => {
+    vi.mocked(postReviewFeedback).mockReset().mockResolvedValue(undefined)
+  })
+
+  it('disables the verdicts and says a test case must be chosen', async () => {
+    mountWithRun('mrun-1', null)
+    expect(screen.getByTestId('feedback-needs-case')).toBeTruthy()
+    expect(screen.getByTestId('assess-trigger-appropriate')).toBeDisabled()
+    expect(screen.getByTestId('assess-comment-trigger')).toBeDisabled()
+
+    fireEvent.click(screen.getByTestId('assess-trigger-appropriate'))
+    await flush()
+    expect(postReviewFeedback).not.toHaveBeenCalled()
+  })
+})
+
+describe('ReviewColumn — per-case feedback summary + Markdown export', () => {
+  beforeEach(() => {
+    vi.mocked(postReviewFeedback).mockReset().mockResolvedValue(undefined)
+  })
+
+  it('opens a popup listing every test case and its feedback', () => {
+    mountWithRun('mrun-1')
+    fireEvent.click(screen.getByTestId('open-feedback-summary'))
+
+    expect(screen.getByTestId('feedback-summary-modal')).toBeTruthy()
+    // Every catalog case is listed, covered or not.
+    expect(screen.getByTestId('summary-case-case-c01-alert-daytime-control')).toBeTruthy()
+    expect(screen.getByTestId('summary-case-case-c03-monotonous-highway')).toBeTruthy()
+    expect(screen.getByTestId('summary-empty-case-c01-alert-daytime-control')).toBeTruthy()
+    expect(screen.getByTestId('feedback-coverage').textContent).toContain('0')
+  })
+
+  it('downloads the Markdown report when asked', () => {
+    const createObjectURL = vi.fn().mockReturnValue('blob:report')
+    const revokeObjectURL = vi.fn()
+    // jsdom implements neither.
+    Object.defineProperty(URL, 'createObjectURL', { value: createObjectURL, writable: true })
+    Object.defineProperty(URL, 'revokeObjectURL', { value: revokeObjectURL, writable: true })
+    const clicks: string[] = []
+    const realClick = HTMLAnchorElement.prototype.click
+    HTMLAnchorElement.prototype.click = function () { clicks.push(this.download) }
+
+    try {
+      mountWithRun('mrun-1')
+      fireEvent.click(screen.getByTestId('export-review-markdown'))
+
+      expect(createObjectURL).toHaveBeenCalledTimes(1)
+      const blob = createObjectURL.mock.calls[0][0] as Blob
+      expect(blob.type).toBe('text/markdown')
+      expect(clicks).toEqual(['aica-review-feedback.md'])
+      expect(revokeObjectURL).toHaveBeenCalledWith('blob:report')
+    } finally {
+      HTMLAnchorElement.prototype.click = realClick
+    }
+  })
+})
+
+// ── Right-panel round 2 (owner review) ──────────────────────────────────────
+describe('ReviewColumn — panel header and editable summary', () => {
+  const C1 = 'case-c01-alert-daytime-control'
+
+  beforeEach(() => {
+    vi.mocked(postReviewFeedback).mockReset().mockResolvedValue(undefined)
+    vi.mocked(getReviewFeedback).mockReset().mockResolvedValue({
+      events: [],
+      package_versions: {
+        trigger: { id: null, version: null },
+        service: { id: null, version: null },
+        content: { id: null, version: null },
+      },
+    })
+  })
+
+  it('names the test case the verdict is filed against, read-only', () => {
+    mountWithRun('mrun-1', C1)
+    const name = screen.getByTestId('feedback-case-name')
+    expect(name.textContent).toBeTruthy()
+    // Read-only: no control inside it.
+    expect(name.querySelectorAll('button, input, select, textarea')).toHaveLength(0)
+  })
+
+  it('says no case is selected rather than showing a blank line', () => {
+    mountWithRun('mrun-1', null)
+    expect(screen.getByTestId('feedback-case-name').textContent).toContain('no test case selected')
+  })
+
+  it('drops the judged/total count from the rows', () => {
+    mountWithRun('mrun-1', C1)
+    expect(screen.queryByTestId('feedback-summary-trigger')).toBeNull()
+    expect(screen.queryByTestId('feedback-summary-service')).toBeNull()
+    expect(screen.queryByTestId('feedback-summary-content')).toBeNull()
+  })
+
+  it('lets a recorded verdict be changed from the popup', async () => {
+    mountWithRun('mrun-1', C1)
+    // Record something first, so the popup has a row to edit.
+    fireEvent.click(screen.getByTestId('assess-trigger-appropriate'))
+    await flush()
+    vi.mocked(postReviewFeedback).mockClear()
+
+    fireEvent.click(screen.getByTestId('open-feedback-summary'))
+    fireEvent.click(screen.getByTestId(`summary-assess-${C1}-trigger-not_appropriate`))
+    await flush()
+
+    expect(postReviewFeedback).toHaveBeenCalledTimes(1)
+    expect(postReviewFeedback).toHaveBeenCalledWith(
+      'mrun-1',
+      expect.objectContaining({
+        case_id: C1,
+        stage: 'trigger',
+        labels: { assessment: 'not_appropriate' },
+      }),
+    )
+    // The popup reflects the change without reopening.
+    expect(screen.getByTestId(`summary-verdict-${C1}-trigger`).textContent).toContain('Not appropriate')
+  })
+
+  it('persists a popup comment ONCE on blur, never per keystroke', async () => {
+    mountWithRun('mrun-1', C1)
+    fireEvent.click(screen.getByTestId('assess-trigger-appropriate'))
+    await flush()
+    vi.mocked(postReviewFeedback).mockClear()
+
+    fireEvent.click(screen.getByTestId('open-feedback-summary'))
+    const box = screen.getByTestId(`summary-comment-${C1}-trigger`)
+    fireEvent.focus(box)
+    fireEvent.change(box, { target: { value: 'r' } })
+    fireEvent.change(box, { target: { value: 're' } })
+    fireEvent.change(box, { target: { value: 'rethought' } })
+    await flush()
+    // Still nothing posted — the store is append-only.
+    expect(postReviewFeedback).not.toHaveBeenCalled()
+
+    fireEvent.blur(box)
+    await flush()
+    expect(postReviewFeedback).toHaveBeenCalledTimes(1)
+    expect(postReviewFeedback).toHaveBeenCalledWith(
+      'mrun-1',
+      expect.objectContaining({ case_id: C1, comment: 'rethought' }),
+    )
+  })
+
+  it('offers no editing for a case with nothing recorded, and says why', () => {
+    mountWithRun('mrun-1', C1)
+    fireEvent.click(screen.getByTestId('open-feedback-summary'))
+
+    const other = 'case-c03-monotonous-highway'
+    expect(screen.getByTestId(`summary-empty-${other}`).textContent).toContain('select this case')
+    expect(screen.queryByTestId(`summary-assess-${other}-trigger-appropriate`)).toBeNull()
+  })
+})
+
+// ── Prototype styling (owner review 1A/1C) ──────────────────────────────────
+describe('ReviewColumn — prototype styling', () => {
+  const C1 = 'case-c01-alert-daytime-control'
+
+  it('gives each section the shared card + accent header', () => {
+    mountWithRun('mrun-1', C1)
+    expect(screen.getByTestId('stage-feedback-panel').className).toContain('review-card')
+    expect(screen.getByTestId('what-decided-it').className).toContain('review-card')
+    // The header class is what makes every section start the same way.
+    const header = screen.getByTestId('what-decided-it').querySelector('.review-card-h')
+    expect(header).not.toBeNull()
+  })
+
+  it('renders the stage tabs as one equal-width tab strip', () => {
+    mountWithRun('mrun-1', C1)
+    const strip = screen.getByTestId('stage-tab-trigger').parentElement!
+    expect(strip.className).toContain('stage-tabs')
+    // The active tab is marked by class, not by an ad-hoc inline border.
+    expect(screen.getByTestId('stage-tab-trigger').className).toContain('on')
+    expect(screen.getByTestId('stage-tab-service').className).not.toContain('on')
+  })
+
+  it('colour-codes the chosen verdict', () => {
+    mountWithRun('mrun-1', C1)
+    fireEvent.click(screen.getByTestId('assess-trigger-not-appropriate'))
+    expect(screen.getByTestId('assess-trigger-not-appropriate').className).toContain('bad')
+    expect(screen.getByTestId('assess-trigger-appropriate').className).not.toContain('good')
+  })
+
+  it('hides the parameter-rationale table by default, without removing it', () => {
+    mountWithRun('mrun-1', C1)
+    expect(screen.queryByTestId('parameter-rationale')).toBeNull()
+
+    // Still fully functional behind the switch — this is a hidden view, not
+    // deleted code.
+    cleanup()
+    mountWithRun('mrun-1', C1, true)
+    expect(screen.getByTestId('parameter-rationale')).toBeTruthy()
+  })
+})
+
+// ── Option labels read as names, not ids (owner review) ─────────────────────
+describe('ReviewColumn — readable option labels', () => {
+  it('names the service instead of showing its id', () => {
+    render(
+      <LanguageProvider initialLanguage="en">
+        <ReviewStoreProvider>
+          <ReviewColumn result={withFireAndService} />
+        </ReviewStoreProvider>
+      </LanguageProvider>,
+    )
+    fireEvent.click(screen.getByTestId('stage-tab-service'))
+    const left = screen.getByTestId('compare-left') as HTMLSelectElement
+    const labels = Array.from(left.options).map((o) => o.textContent)
+    expect(labels.some((l) => l?.includes('Music playlist'))).toBe(true)
+    expect(labels.some((l) => l === 'music_playlist')).toBe(false)
+  })
+
+  it('names the song, keeping its id, when song names are known', () => {
+    render(
+      <LanguageProvider initialLanguage="en">
+        <ReviewStoreProvider>
+          <ReviewColumn
+            result={withFireAndContent}
+            songNames={{ 'track-1': 'Jessica', 'track-2': 'Nightfall' }}
+          />
+        </ReviewStoreProvider>
+      </LanguageProvider>,
+    )
+    fireEvent.click(screen.getByTestId('stage-tab-content'))
+    const left = screen.getByTestId('compare-left') as HTMLSelectElement
+    const labels = Array.from(left.options).map((o) => o.textContent)
+    expect(labels).toContain('Jessica (track-1)')
+  })
+
+  it('falls back to the bare id when the catalog does not know the song', () => {
+    // Better an honest id than a name borrowed from another dataset.
+    render(
+      <LanguageProvider initialLanguage="en">
+        <ReviewStoreProvider>
+          <ReviewColumn result={withFireAndContent} songNames={{}} />
+        </ReviewStoreProvider>
+      </LanguageProvider>,
+    )
+    fireEvent.click(screen.getByTestId('stage-tab-content'))
+    const left = screen.getByTestId('compare-left') as HTMLSelectElement
+    expect(Array.from(left.options).map((o) => o.textContent)).toContain('track-1')
+  })
+})
+
+describe('ReviewColumn — edited-case label', () => {
+  const C1 = 'case-c01-alert-daytime-control'
+
+  it('says the setup was edited, so a verdict is never filed against a case that only looks verbatim', () => {
+    render(
+      <LanguageProvider initialLanguage="en">
+        <ReviewStoreProvider>
+          <SelectCase caseId={C1} />
+          <ReviewColumn result={withFire} mergedRunId="mrun-1" caseModified />
+        </ReviewStoreProvider>
+      </LanguageProvider>,
+    )
+    expect(screen.getByTestId('case-modified')).toHaveTextContent('setup edited')
+  })
+
+  it('shows no such label while the setup still matches the case', () => {
+    render(
+      <LanguageProvider initialLanguage="en">
+        <ReviewStoreProvider>
+          <SelectCase caseId={C1} />
+          <ReviewColumn result={withFire} mergedRunId="mrun-1" />
+        </ReviewStoreProvider>
+      </LanguageProvider>,
+    )
+    expect(screen.queryByTestId('case-modified')).toBeNull()
   })
 })

@@ -11,7 +11,7 @@
  * `state.triggerTrace` are populated via the coordinator's real
  * create()/step()/selectService() — never a stand-in spy.
  */
-import { render, screen, fireEvent, act } from '@testing-library/react'
+import { render, screen, fireEvent, act, within } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MergedCoordinatorProvider, useMergedCoordinator } from '../src/state/mergedCoordinator'
 import { LanguageProvider } from '../src/state/language'
@@ -355,6 +355,27 @@ describe('MergedCenterPanel', () => {
     expect(screen.getByTestId('service-result-overlay')).toBeInTheDocument()
     expect(screen.getByTestId('content-result-overlay')).toBeInTheDocument()
     expect(screen.getByTestId('plan-item-track-1')).toBeInTheDocument()
+
+    // The 40/60 ratio, and — the part that actually regressed — that the two
+    // halves are the grid's OWN children. A two-column grid holding a single
+    // child renders one empty column and squeezes the ratio into the other,
+    // which is exactly what an outer wrapper grid used to do here.
+    const split = screen.getByTestId('proposal-split')
+    expect(split.style.gridTemplateColumns).toBe('minmax(0, 40fr) minmax(0, 60fr)')
+    const columns = Array.from(split.children)
+    expect(columns).toHaveLength(2)
+    expect(columns[0]).toContainElement(screen.getByTestId('service-result-overlay'))
+    expect(columns[1]).toContainElement(screen.getByTestId('content-result-overlay'))
+
+    // No ancestor may re-impose a multi-column grid around the panel: that is
+    // the wrapper whose removal this guards.
+    for (let el = split.parentElement; el; el = el.parentElement) {
+      const tracks = el.style.gridTemplateColumns
+      if (tracks && tracks.trim() !== '' && tracks !== 'none') {
+        expect(el.children.length).toBeGreaterThan(1)
+      }
+      expect(el.className).not.toContain('merged-proposal-split')
+    }
   })
 
   it('clicking Choose on the docked overlay calls coordinator.selectService', async () => {
@@ -528,5 +549,83 @@ describe('MergedCenterPanel', () => {
 
     expect(tickMergedRun).toHaveBeenCalledWith('mrun_4')
     expect(screen.getByTestId('service-result-overlay')).toBeInTheDocument()
+  })
+})
+
+// ── Guided step-by-step overlay (owner review) ──────────────────────────────
+describe('MergedCenterPanel — guided proposal steps', () => {
+  it('shows the SERVICE step over the map once the rest is decided', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_g1', trigger_run_id: 'run_g1' })
+    // A monotony fire: no rest step, so the sequence opens on the service.
+    vi.mocked(tickMergedRun).mockResolvedValueOnce({
+      ...firedTickWithProposal(45),
+      proposal: baseProposalLog({
+        opportunity: { opportunity_id: 'opp-g1', trigger_purpose: 'monotony_prevention' } as never,
+        journey_state: {
+          lifecycle_stage: 'active_driving_content',
+          motion_state: 'driving',
+          active_service_id: null,
+          active_plan_id: null,
+        },
+        evidence: [serviceEvidence()],
+      }),
+    })
+
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => { await coordinatorRef.current!.step() })
+
+    const guided = screen.getByTestId('guided-overlay')
+    expect(guided).toBeInTheDocument()
+    expect(guided.textContent).toContain('Step 1 / 2')
+    expect(guided.textContent).toContain('Service proposal')
+  })
+
+  it('moves to the songs once a music service is running', async () => {
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_g2', trigger_run_id: 'run_g2' })
+    vi.mocked(tickMergedRun).mockResolvedValueOnce({
+      ...firedTickWithProposal(45),
+      proposal: baseProposalLog({
+        opportunity: { opportunity_id: 'opp-g2', trigger_purpose: 'monotony_prevention' } as never,
+        journey_state: {
+          lifecycle_stage: 'active_driving_content',
+          motion_state: 'driving',
+          active_service_id: 'music_playlist',
+          active_plan_id: 'plan_1',
+        },
+        evidence: [serviceEvidence(), contentEvidence()],
+      }),
+    })
+
+    const coordinatorRef = renderCenterPanel()
+    await act(async () => {
+      await coordinatorRef.current!.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+    await act(async () => { await coordinatorRef.current!.step() })
+
+    const guided = screen.getByTestId('guided-overlay')
+    expect(guided.textContent).toContain('Step 2 / 2')
+    expect(guided.textContent).toContain('Playlist')
+    // The songs themselves, rendered with the SAME component as the panel below.
+    expect(within(guided).getByTestId('plan-item-track-1')).toBeInTheDocument()
+  })
+
+  it('shows no guided overlay before a run exists', () => {
+    renderCenterPanel()
+    expect(screen.queryByTestId('guided-overlay')).toBeNull()
   })
 })

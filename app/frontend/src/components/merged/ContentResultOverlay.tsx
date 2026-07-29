@@ -13,7 +13,6 @@
  * Pure presentational: props only, no store coupling.
  */
 import { t } from '../../i18n/t'
-import { fitBand } from '../../lib/fitBand'
 import type { CompletePlan, EvidenceError, OrderedItem, ProposalRunLog } from '../../api/proposalClient'
 import ReasonBreakdown, { type ReasonRow } from '../proposal/ReasonBreakdown'
 import ContentExplainability, { hasContentExplainability } from '../proposal/ContentExplainability'
@@ -49,11 +48,6 @@ const LABELS = {
     en: 'No plan is available for this request.',
   },
   committedBadge: { ja: '確定済み', en: 'Committed' },
-  fitBand: { ja: '適合', en: 'fit' },
-  fitBandTitle: {
-    ja: '0〜100の目安スコア = (raw + 1) × 50。生スコアの表示用変換であり、判定には使用しません。',
-    en: 'A friendlier 0-100 band = (raw + 1) × 50. A display transform of the raw score only — never used in scoring.',
-  },
 }
 
 const _NON_PLAN_DECISION_LABELS: Record<string, { ja: string; en: string }> = {
@@ -184,21 +178,12 @@ export function ContentResultOverlay(props: {
                 {item.item_fit !== null && (
                   <span style={{ marginLeft: 'auto', fontFamily: 'monospace', fontWeight: 800, color: '#7c3aed' }}>
                     {item.item_fit >= 0 ? '+' : ''}
-                    {item.item_fit}
-                  </span>
-                )}
-                {item.item_fit !== null && (
-                  <span
-                    data-testid={`fit-band-${item.item_id}`}
-                    title={t(LABELS.fitBandTitle, lang)}
-                    style={fitBandBadgeStyle}
-                  >
-                    {t(LABELS.fitBand, lang)} {Math.round(fitBand(item.item_fit))}/100
+                    {item.item_fit.toFixed(3)}
                   </span>
                 )}
               </div>
-              <ContentReason item={item} runId={runId} provider={explanationProvider} lang={lang} inlineProposal={inlineProposal} />
               <ContentExplainability item={item} lang={lang} />
+              <ContentReason item={item} runId={runId} provider={explanationProvider} lang={lang} inlineProposal={inlineProposal} />
             </div>
           ))}
 
@@ -242,18 +227,6 @@ const planMetadataStyle: React.CSSProperties = {
   padding: '6px 10px',
 }
 
-// feature 018 (US4) — the friendlier 0-100 fit-band badge, rendered next to
-// (never instead of) the raw item_fit.
-const fitBandBadgeStyle: React.CSSProperties = {
-  fontSize: '0.68em',
-  fontWeight: 700,
-  color: '#7c3aed',
-  background: '#f5f3ff',
-  border: '1px solid #ddd6fe',
-  borderRadius: '999px',
-  padding: '2px 8px',
-  fontFamily: 'monospace',
-}
 
 const committedBadgeStyle: React.CSSProperties = {
   fontSize: '0.66em',

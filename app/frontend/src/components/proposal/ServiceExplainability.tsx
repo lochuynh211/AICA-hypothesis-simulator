@@ -2,7 +2,7 @@
  * ServiceExplainability (P5 Unit D, T024) — the §14 explainability
  * enrichment for a ranked service candidate: the situation/preference/
  * history subtotals, the strongest supporting/opposing feature, the §6.4
- * dominance readout (status + safety_share %), and an expandable
+ * and an expandable
  * per-feature table (`feature_id · raw_value → e·a = r × w = k` +
  * provenance).
  *
@@ -32,12 +32,6 @@ const LABELS = {
   strongestSupport: { ja: '最も支持する特徴量', en: 'Strongest support' },
   strongestOppose: { ja: '最も反対する特徴量', en: 'Strongest opposition' },
   none: { ja: 'なし', en: 'None' },
-  dominanceTitle: { ja: '安全優先度チェック', en: 'Safety-priority check' },
-  dominancePreserved: { ja: '安全優先が確保されています', en: 'Safety priority preserved' },
-  dominanceNotGuaranteed: { ja: '安全優先を確保できていません（設定要確認）', en: 'Safety priority NOT guaranteed — review configuration' },
-  safetyShare: { ja: '安全関連特徴量の配分', en: 'Safety-relevant weight share' },
-  requiredGap: { ja: '必要な差（この配分での目安）', en: 'Required gap (for this weight share)' },
-  safetyShareWarning: { ja: '配分が下限を下回っています', en: 'Below the safety-share warning floor' },
   tableSummary: { ja: '特徴量トレース（全項目）', en: 'Feature trace (all rows)' },
   colFeature: { ja: '特徴量', en: 'Feature' },
   colRaw: { ja: '元値', en: 'Raw' },
@@ -53,11 +47,6 @@ function fmt(n: number | null | undefined): string {
   return n.toFixed(3)
 }
 
-function fmtPercent(n: number | null | undefined): string {
-  if (n === null || n === undefined) return '—'
-  return `${(n * 100).toFixed(1)}%`
-}
-
 export type ServiceExplainabilityProps = {
   candidate: RankedCandidate
   lang: UiLanguage
@@ -68,7 +57,6 @@ export function hasExplainability(candidate: RankedCandidate): boolean {
   if (candidate.situation_fit != null || candidate.preference_fit != null || candidate.history_fit != null) {
     return true
   }
-  if (candidate.dominance != null) return true
   if (candidate.strongest_support != null || candidate.strongest_oppose != null) return true
   return candidate.feature_contributions.some((fc) => fc.normalized_evidence != null || fc.status != null)
 }
@@ -85,7 +73,6 @@ export default function ServiceExplainability({ candidate, lang }: ServiceExplai
 
   const hasSubtotals =
     candidate.situation_fit != null || candidate.preference_fit != null || candidate.history_fit != null
-  const dominance = candidate.dominance
   const showFeatureTrace = hasFeatureTrace(candidate)
 
   const TOP_N = 5
@@ -125,39 +112,6 @@ export default function ServiceExplainability({ candidate, lang }: ServiceExplai
                 : t(LABELS.none, lang)}
             </span>
           </div>
-        </div>
-      )}
-
-      {dominance && (
-        <div
-          data-testid="service-dominance"
-          style={{
-            marginBottom: '8px',
-            padding: '6px 9px',
-            borderRadius: '7px',
-            fontSize: '0.8em',
-            background: dominance.status === 'default_dominance_preserved' ? '#ecfdf5' : '#fffbeb',
-            border: `1px solid ${dominance.status === 'default_dominance_preserved' ? '#a7f3d0' : '#fcd34d'}`,
-          }}
-        >
-          <div style={{ fontWeight: 700 }}>{t(LABELS.dominanceTitle, lang)}</div>
-          <div data-testid="dominance-status">
-            {dominance.status === 'default_dominance_preserved'
-              ? t(LABELS.dominancePreserved, lang)
-              : t(LABELS.dominanceNotGuaranteed, lang)}
-          </div>
-          <div style={{ fontFamily: 'monospace' }}>
-            {t(LABELS.safetyShare, lang)}: <span data-testid="safety-share">{fmtPercent(dominance.safety_share)}</span>
-            {dominance.status !== 'default_dominance_preserved' && (
-              <>
-                {' · '}
-                {t(LABELS.requiredGap, lang)}: {fmt(dominance.required_gap)}
-              </>
-            )}
-          </div>
-          {dominance.safety_share_warning && (
-            <div style={{ color: '#b45309', fontWeight: 700 }}>{t(LABELS.safetyShareWarning, lang)}</div>
-          )}
         </div>
       )}
 

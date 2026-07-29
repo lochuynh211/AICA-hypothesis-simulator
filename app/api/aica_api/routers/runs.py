@@ -451,6 +451,13 @@ def get_run_endpoint(run_id: str):
 
 _REST_SPOTS_MAX = 5
 _REST_SPOTS_DEFAULT_MIN_DISTANCE_KM = 20.0
+# How far AHEAD of the car the nearest offered spot must be. This is a
+# SIMULATION-EXPERIENCE rule, not a safety one: a spot 2 km away is reached
+# before the reviewer can watch the proposal play out, so the journey to the
+# rest stop — the thing being demonstrated — never happens. Distinct from
+# _REST_SPOTS_DEFAULT_MIN_DISTANCE_KM above, which spaces the spots from EACH
+# OTHER.
+_REST_SPOTS_MIN_AHEAD_KM = 20.0
 
 
 @router.get("/api/runs/{run_id}/rest-spots")
@@ -544,8 +551,17 @@ def rest_spots_endpoint(
             for i, pos_km in enumerate(rs.route_facts.rest_spot_positions)
         ]
 
-    # ── Filter to spots strictly ahead of the current position ───────────────
-    ahead = [(pos_km, name) for pos_km, name in candidates if pos_km > current_distance_km]
+    # ── Filter to spots far enough ahead of the current position ─────────────
+    # Falls back to "anything ahead" when nothing clears the minimum, so a
+    # driver near the end of the route is never left with no option at all —
+    # an empty list reads as "no rest possible", which is a different claim.
+    ahead = [
+        (pos_km, name)
+        for pos_km, name in candidates
+        if pos_km > current_distance_km + _REST_SPOTS_MIN_AHEAD_KM
+    ]
+    if not ahead:
+        ahead = [(pos_km, name) for pos_km, name in candidates if pos_km > current_distance_km]
 
     # ── Sort ascending by position_km ─────────────────────────────────────────
     ahead.sort(key=lambda t: t[0])

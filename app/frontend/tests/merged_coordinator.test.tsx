@@ -388,4 +388,39 @@ describe('mergedCoordinator — create + step tick loop', () => {
     expect(result.current.state.triggerTrace).toHaveLength(3)
     expect(result.current.state.running).toBe(false)
   })
+
+  it('paces the FIRST run at the default speed, without waiting to be told', async () => {
+    // The loop reads a ref, which was hardcoded to 1x while the reducer's
+    // default (and therefore the dropdown) said 4x. The displayed speed was a
+    // lie until the reviewer touched the control: a 3-tick run took ~3s
+    // instead of ~0.75s. `setSpeed` is deliberately NOT called here — calling
+    // it would paper over exactly the bug this covers.
+    vi.mocked(createMergedRun).mockResolvedValue({ merged_run_id: 'mrun_speed', trigger_run_id: 'run_speed' })
+    vi.mocked(tickMergedRun)
+      .mockResolvedValueOnce(noProposalTick(1))
+      .mockResolvedValueOnce(noProposalTick(2))
+      .mockResolvedValueOnce(firedTickWithProposal(3))
+
+    const { result } = renderHook(() => useMergedCoordinator(), { wrapper })
+    await act(async () => {
+      await result.current.create({
+        trigger_plan_id: 'plan_1',
+        world: {} as never,
+        service_package_id: 'mock_service_selector_v1',
+        content_package_id: 'mock_content_selector_v1',
+        run_seed: '7',
+      })
+    })
+
+    expect(result.current.state.speed).toBe(4)
+
+    const startedAt = performance.now()
+    act(() => { result.current.play() })
+    await waitFor(() => expect(result.current.state.paused).toBe(true), { timeout: 3000 })
+    const elapsed = performance.now() - startedAt
+
+    // Two inter-tick waits: 4x → ~500ms, 1x → ~2000ms. The midpoint separates
+    // them without being tight enough to flake on a loaded machine.
+    expect(elapsed).toBeLessThan(1250)
+  })
 })

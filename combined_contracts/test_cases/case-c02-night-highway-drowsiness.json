@@ -2,31 +2,65 @@
   "case_id": "case-c02-night-highway-drowsiness",
   "schema_version": "1.0.0",
   "version": "1.0.0",
-  "title": { "ja": "C-02 夜間高速道路・眠気の高まり", "en": "C-02 Night highway drowsiness" },
+  "title": {
+    "ja": "C-02 夜間高速道路・眠気の高まり",
+    "en": "C-02 Night highway drowsiness"
+  },
   "brief": {
     "ja": "夜間の長距離高速走行で、出発時から眠気がすでに高まっているドライバーを走らせます。夜間という状況が、休憩提案とその後のサービス・コンテンツ選定にどう反映されるかを確認します。なお、この初期眠気の設定値は現状トリガーの投影には反映されません。反映されるのは夜間という状況のみで、それはサービス・コンテンツ選定側の世界状態に渡されます。",
-    "en": "A long night-time highway drive with a driver whose drowsiness is already elevated at departure. Checks how the night context feeds into the rest proposal and the service/content chosen in response. Note: the pinned initial drowsiness does not currently reach the trigger projection either — only the night context does, and only into the world state used for service/content selection."
+    "en": "A long night-time highway drive with a driver whose drowsiness is already elevated at departure. Checks how the night context feeds into the rest proposal and the service/content chosen in response."
   },
   "what_to_watch": [
-    { "ja": "夜間であることがサービス選定に反映されるか", "en": "Whether night context shapes the chosen service" },
-    { "ja": "記録上、眠気と疲労のどちらの寄与が実際に優勢か", "en": "Which of drowsiness or fatigue actually dominates the recorded contribution" },
-    { "ja": "夜間に適したコンテンツが選ばれるか", "en": "Whether the selected content suits a night drive" }
+    {
+      "ja": "夜間であることがサービス選定に反映されるか",
+      "en": "Whether night context shapes the chosen service"
+    },
+    {
+      "ja": "記録上、眠気と疲労のどちらの寄与が実際に優勢か",
+      "en": "Which of drowsiness or fatigue actually dominates the recorded contribution"
+    },
+    {
+      "ja": "夜間に適したコンテンツが選ばれるか",
+      "en": "Whether the selected content suits a night drive"
+    }
   ],
   "persona": {
     "persona_id": "persona-night-shift-commuter",
-    "name": { "ja": "夜勤明けの長距離ドライバー", "en": "Driver coming off a night shift" },
+    "name": {
+      "ja": "夜勤明けの長距離ドライバー",
+      "en": "Driver coming off a night shift"
+    },
     "narrative": {
       "ja": "夜勤を終えたあと、深夜の高速道路を長時間走行します。出発の時点ですでに眠気を感じており、単調な夜間走行でさらに悪化しやすい状態です。",
       "en": "Just off a night shift and facing a long stretch of highway in the dark. Already feels drowsy at departure, and the featureless night drive is likely to make it worse."
     },
-    "goals": [{ "ja": "眠気に負けず安全に走り切る", "en": "Stay safe despite the drowsiness" }],
-    "preferences": [{ "ja": "直近に聴いた曲の繰り返しを好まない", "en": "Dislikes hearing recently played tracks repeated" }],
+    "goals": [
+      {
+        "ja": "眠気に負けず安全に走り切る",
+        "en": "Stay safe despite the drowsiness"
+      }
+    ],
+    "preferences": [
+      {
+        "ja": "直近に聴いた曲の繰り返しを好まない",
+        "en": "Dislikes hearing recently played tracks repeated"
+      }
+    ],
     "constraints": [
-      { "ja": "深夜のため周囲に人が少なく、立ち寄れる場所が限られる", "en": "Few people around this late; fewer places to stop" }
+      {
+        "ja": "深夜のため周囲に人が少なく、立ち寄れる場所が限られる",
+        "en": "Few people around this late; fewer places to stop"
+      }
     ],
     "assumptions": [
-      { "ja": "出発時点で眠気はすでに高い", "en": "Drowsiness is already elevated at departure" },
-      { "ja": "走行はすべて夜間帯に行われる", "en": "The whole drive takes place at night" }
+      {
+        "ja": "出発時点で眠気はすでに高い",
+        "en": "Drowsiness is already elevated at departure"
+      },
+      {
+        "ja": "走行はすべて夜間帯に行われる",
+        "en": "The whole drive takes place at night"
+      }
     ],
     "profile_ref": "preset-recently-played-fatigue"
   },
@@ -38,14 +72,16 @@
     "scenario_ref": "uc01_fatigue_recovery_v0_1",
     "route_preset_ref": "long_tokyo_osaka",
     "seed": 42,
-    "tick_seconds": 60,
+    "tick_seconds": 180,
     "fixed_overrides": {
       "initial_drowsiness": 60,
       "initial_fatigue": 35,
       "is_night": true,
       "child_passenger": false
     },
-    "automatic_path": { "service_choice": "rank_1" }
+    "automatic_path": {
+      "service_choice": "rank_1"
+    }
   },
   "algorithm_defaults": {
     "trigger": "aica_transparent_hybrid_trigger_v1",

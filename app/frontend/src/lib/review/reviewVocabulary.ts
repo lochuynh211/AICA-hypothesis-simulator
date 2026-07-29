@@ -122,6 +122,69 @@ export const PHRASES: Record<string, BilingualLabel> = {
 export const phrase = (featureId: string): BilingualLabel =>
   PHRASES[featureId] ?? { ja: featureId, en: featureId }
 
+/**
+ * Short NOUN names for the comparison table (owner review) — `PHRASES` above
+ * are sentence fragments ("how drowsy the driver is") built for prose, which
+ * read badly as a column of labels.
+ */
+export const FIELD_NAMES: Record<string, BilingualLabel> = {
+  drowsiness: { ja: '眠気', en: 'Drowsiness' },
+  fatigue: { ja: '疲労', en: 'Fatigue' },
+  driving_anomaly: { ja: '運転の乱れ', en: 'Driving anomaly' },
+  driving_time: { ja: '連続運転時間', en: 'Driving time' },
+  env_load: { ja: '走行環境の負荷', en: 'Environment load' },
+  monotony: { ja: '道路の単調さ', en: 'Monotony' },
+  rest_window: { ja: '休憩機会の近さ', en: 'Rest window' },
+  rest_scarcity: { ja: '休憩機会の少なさ', en: 'Rest scarcity' },
+  familiar_route: { ja: 'ルートへの慣れ', en: 'Familiar route' },
+  child_passenger: { ja: '子供の同乗', en: 'Child aboard' },
+  oshi_affinity: { ja: '推しとの一致', en: 'Favourite-artist match' },
+  oshi_mode: { ja: '推し優先モード', en: 'Favourite-artist mode' },
+  genre_affinity: { ja: 'ジャンルの一致', en: 'Genre match' },
+  recent_play_penalty: { ja: '再生の新しさ', en: 'Recently played' },
+  skip_penalty: { ja: 'スキップ履歴', en: 'Skip history' },
+  changed_penalty: { ja: '切替履歴', en: 'Switch-away history' },
+  road_type: { ja: '道路の種類', en: 'Road type' },
+  traffic_jam: { ja: '渋滞', en: 'Traffic jam' },
+  night_state: { ja: '夜間', en: 'Night' },
+  weather_risk: { ja: '天候リスク', en: 'Weather risk' },
+  motion_state: { ja: '走行状態', en: 'Motion state' },
+  song_arousal: { ja: '曲の高揚感', en: 'Song energy' },
+  song_valence: { ja: '曲の明るさ', en: 'Song brightness' },
+  song_tempo: { ja: '曲のテンポ', en: 'Song tempo' },
+  song_loudness: { ja: '曲の音量感', en: 'Song loudness' },
+  song_singability: { ja: '歌いやすさ', en: 'Singability' },
+  song_era: { ja: '曲の年代', en: 'Song era' },
+  humming_ease: { ja: 'ハミングのしやすさ', en: 'Humming ease' },
+  full_karaoke_ease: { ja: 'フルカラオケ適性', en: 'Full-karaoke fit' },
+}
+
+/** An unnamed feature falls back to its raw id — a field we cannot name is
+ *  still a field that contributed, and hiding it would hide evidence. */
+export const fieldName = (featureId: string): BilingualLabel =>
+  FIELD_NAMES[featureId] ?? { ja: featureId, en: featureId }
+
+/** Readable names for the V1 service catalog (`service_capabilities.v1.json`). */
+export const SERVICE_LABELS: Record<string, BilingualLabel> = {
+  music_playlist: { ja: '音楽プレイリスト', en: 'Music playlist' },
+  humming_karaoke: { ja: 'ハミングカラオケ', en: 'Humming karaoke' },
+  full_karaoke: { ja: 'フルカラオケ', en: 'Full karaoke' },
+  call_response_driving: { ja: 'コール&レスポンス（走行中）', en: 'Call & response (driving)' },
+  call_response_stopped: { ja: 'コール&レスポンス（停車中）', en: 'Call & response (stopped)' },
+  conversation_audio: { ja: '会話・音声コンテンツ', en: 'Conversation audio' },
+  linked_video_recommendation: { ja: '関連動画レコメンド', en: 'Linked video recommendation' },
+  live_viewing: { ja: 'ライブ視聴', en: 'Live viewing' },
+  oshi_reexperience: { ja: '推し再体験', en: 'Favourite-artist re-experience' },
+  quiz: { ja: 'クイズ', en: 'Quiz' },
+  radio_style: { ja: 'ラジオ風', en: 'Radio style' },
+  ranking_creation: { ja: 'ランキング作成', en: 'Ranking creation' },
+  relaxation_multisensory: { ja: 'リラクゼーション（多感覚）', en: 'Relaxation (multisensory)' },
+  stretch_video: { ja: 'ストレッチ動画', en: 'Stretch video' },
+}
+
+export const serviceLabel = (serviceId: string): BilingualLabel =>
+  SERVICE_LABELS[serviceId] ?? { ja: serviceId, en: serviceId }
+
 const BAND_LABELS: Record<string, BilingualLabel> = {
   very_high: { ja: '非常に高い', en: 'very high' },
   high: { ja: '高い', en: 'high' },

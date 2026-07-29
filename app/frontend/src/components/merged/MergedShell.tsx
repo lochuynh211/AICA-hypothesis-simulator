@@ -27,7 +27,7 @@
  * catalog) so the panel's wiring effect only re-fires on an actual case
  * change, not every render.
  */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import MergedSetupPanel from './MergedSetupPanel'
 import MergedCenterPanel from './MergedCenterPanel'
 import MergedRunsScreen from './MergedRunsScreen'
@@ -39,7 +39,8 @@ import { caseFlagCounts } from '../review/DecisionAssessment'
 import { useCaseSelection } from './useCaseSelection'
 import { resolveCase } from '../../lib/review/caseResolver'
 import { RunStoreProvider } from '../../state/runStore'
-import { ProposalStoreProvider } from '../../state/proposalStore'
+import { ProposalStoreProvider, useProposalStore } from '../../state/proposalStore'
+import { useSongNames } from '../proposal/useSongNames'
 import { ReviewStoreProvider, useReviewStore } from '../../state/reviewStore'
 import { MergedCoordinatorProvider, useMergedCoordinator } from '../../state/mergedCoordinator'
 import { RunLanguageBridge, ProposalLanguageBridge } from '../../state/languageBridges'
@@ -47,6 +48,9 @@ import { useLanguage } from '../../state/language'
 import { t } from '../../i18n/t'
 
 type MergedView = 'live' | 'runs'
+
+/** The case the Combined screen opens on. */
+const DEFAULT_CASE_ID = 'case-c01-alert-daytime-control'
 
 const LABELS = {
   live: { ja: 'ライブ', en: 'Live' },
@@ -61,12 +65,42 @@ const LABELS = {
 function MergedLiveBody(): JSX.Element {
   const coordinator = useMergedCoordinator()
   const { state: reviewState } = useReviewStore()
-  const { selectedCaseId, selectedCase, detailsOpen, setDetailsOpen, caseError, handleSelectCase } = useCaseSelection()
+  const {
+    selectedCaseId, selectedCase, detailsOpen, setDetailsOpen, caseError,
+    handleSelectCase,
+  } = useCaseSelection()
+
+  // Editing the setup no longer CLEARS the case — with no null entry in the
+  // picker there is nowhere to clear to, and a null selection would make the
+  // picker display a case that had not been applied. Instead the case stays
+  // selected and is marked modified, so an edited setup is never silently
+  // presented as the case exactly as authored.
+  const [caseModified, setCaseModified] = useState(false)
+  const selectCase = async (caseId: string) => {
+    setCaseModified(false)
+    await handleSelectCase(caseId)
+  }
   const caseSetup = useMemo(() => (selectedCase ? resolveCase(selectedCase) : null), [selectedCase])
+
+  // A case is ALWAYS selected (owner review): the picker no longer offers a
+  // null entry, so C-01 is applied on first mount. Without this the store would
+  // still start at null and the picker would display C-01 while nothing had
+  // been applied — the exact mismatch the empty option used to paper over.
+  const bootstrapped = useRef(false)
+  useEffect(() => {
+    if (bootstrapped.current || selectedCaseId) return
+    bootstrapped.current = true
+    void selectCase(DEFAULT_CASE_ID)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCaseId])
   // Derived, not stored — `judgments` is the single source of truth (task-14
   // brief) and this is a pure roll-up of it, recomputed whenever a judgement
   // changes so the chip never goes stale relative to what was actually judged.
   const flagCounts = useMemo(() => caseFlagCounts(reviewState.judgments), [reviewState.judgments])
+  // Resolved once here and handed to the review column, so the content plan and
+  // the comparison name songs from the SAME dataset.
+  const { state: proposalState } = useProposalStore()
+  const songNames = useSongNames(proposalState.world?.catalog_ref?.dataset_id)
 
   return (
     <div className="merged-shell" data-testid="merged-shell">
@@ -74,7 +108,7 @@ function MergedLiveBody(): JSX.Element {
         <ExperienceCasePicker
           selectedCaseId={selectedCaseId}
           flagCounts={flagCounts}
-          onSelect={(caseId) => void handleSelectCase(caseId)}
+          onSelect={(caseId) => void selectCase(caseId)}
         />
         {caseError && (
           <p role="alert" style={{ fontSize: '0.78em', color: '#dc2626', margin: '0 0 8px' }}>
@@ -85,12 +119,9 @@ function MergedLiveBody(): JSX.Element {
         <MergedSetupPanel
           caseSetup={caseSetup}
           selectedCase={selectedCase}
-          // Reset routes through the SAME guarded selection path the case
-          // picker uses (task-18 review Finding 2) — re-selecting the
-          // already-selected case id is a safe, idempotent no-op on the
-          // review/run-store side, and shares `selectionRef` with any case
-          // switch a reviewer makes while Reset's own fetch is in flight.
-          onResetToCase={() => (selectedCaseId ? handleSelectCase(selectedCaseId) : undefined)}
+          caseModified={caseModified}
+          onCaseDrift={() => setCaseModified(true)}
+
         />
         <CaseDetailsModal open={detailsOpen} testCase={selectedCase} onClose={() => setDetailsOpen(false)} />
       </div>
@@ -98,7 +129,12 @@ function MergedLiveBody(): JSX.Element {
         <MergedCenterPanel />
       </div>
       <div className="right-panel">
-        <ReviewColumn result={coordinator.state.quickviewResult} mergedRunId={coordinator.state.mergedRunId} />
+        <ReviewColumn
+          result={coordinator.state.quickviewResult}
+          mergedRunId={coordinator.state.mergedRunId}
+          songNames={songNames}
+          caseModified={caseModified}
+        />
       </div>
     </div>
   )

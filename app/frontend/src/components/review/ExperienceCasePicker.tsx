@@ -5,6 +5,12 @@
  * A flat <select>: there are no case groups in V1 because contrast pairs were
  * removed, so optgroups would carry no information.
  *
+ * There is no "no test case" entry: a case is always selected (the shell
+ * applies C-01 on first mount). The empty option existed only while a null
+ * selection was reachable — with one, the browser displayed the first real
+ * case while the state said null, so the setup on screen belonged to no case
+ * and re-picking that case fired no change event.
+ *
  * The flag chip counts ONLY the three criticisms. "Not sure" is deliberately
  * excluded — it is a request for explanation, not a complaint, and must not
  * inflate a number that means "these need attention".

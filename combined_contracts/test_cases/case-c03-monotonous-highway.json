@@ -2,30 +2,61 @@
   "case_id": "case-c03-monotonous-highway",
   "schema_version": "1.0.0",
   "version": "1.0.0",
-  "title": { "ja": "C-03 単調な高速道路・低疲労", "en": "C-03 Monotonous highway, low fatigue" },
+  "title": {
+    "ja": "C-03 単調な高速道路・低疲労",
+    "en": "C-03 Monotonous highway, low fatigue"
+  },
   "brief": {
     "ja": "疲労は低いまま、変化の乏しい高速道路を長く走り続けます。介入の理由が疲労ではなく単調さであることを確認します。なお、この初期眠気・初期疲労の設定値も現状トリガーの投影には反映されません。今はシナリオ自体の既定値と一致しているため単調さと疲労の切り分けには影響しませんが、シナリオの既定値が今後変更された場合は、この一致が崩れて静かに結果へ影響する可能性があります。",
-    "en": "A long stretch of featureless highway while fatigue stays low. Checks that any intervention is caused by monotony rather than by fatigue. Note: the pinned initial drowsiness and fatigue do not currently reach the trigger projection either — they happen to equal this scenario's own defaults today, so the monotony-versus-fatigue comparison here is unaffected, but that could change silently if the scenario's defaults are ever retuned."
+    "en": "A long stretch of featureless highway while fatigue stays low. Checks that any intervention is caused by monotony rather than by fatigue."
   },
   "what_to_watch": [
-    { "ja": "単調さと疲労のどちらが決め手か", "en": "Monotony versus fatigue as the deciding input" },
-    { "ja": "走行中でも使えるサービスが選ばれるか", "en": "A driving-capable service is chosen" },
-    { "ja": "選ばれた曲の高揚感", "en": "How energising the chosen songs are" }
+    {
+      "ja": "単調さと疲労のどちらが決め手か",
+      "en": "Monotony versus fatigue as the deciding input"
+    },
+    {
+      "ja": "走行中でも使えるサービスが選ばれるか",
+      "en": "A driving-capable service is chosen"
+    },
+    {
+      "ja": "選ばれた曲の高揚感",
+      "en": "How energising the chosen songs are"
+    }
   ],
   "persona": {
     "persona_id": "persona-long-haul-regular",
-    "name": { "ja": "長距離運転に慣れたドライバー", "en": "Seasoned long-haul driver" },
+    "name": {
+      "ja": "長距離運転に慣れたドライバー",
+      "en": "Seasoned long-haul driver"
+    },
     "narrative": {
       "ja": "長距離運転に慣れており体力にも余裕がありますが、単調な高速道路では注意が散漫になりがちです。音楽や声かけによる働きかけを歓迎します。",
       "en": "Comfortable with long drives and physically fresh, but prone to drifting attention on featureless highway. Welcomes music or a spoken prompt."
     },
-    "goals": [{ "ja": "集中を保ったまま走り切る", "en": "Stay engaged for the whole drive" }],
-    "preferences": [{ "ja": "対話的なコンテンツを好む", "en": "Prefers interactive content" }],
+    "goals": [
+      {
+        "ja": "集中を保ったまま走り切る",
+        "en": "Stay engaged for the whole drive"
+      }
+    ],
+    "preferences": [
+      {
+        "ja": "対話的なコンテンツを好む",
+        "en": "Prefers interactive content"
+      }
+    ],
     "constraints": [
-      { "ja": "走行中は停車が必要なサービスを使えない", "en": "Cannot use services that require stopping" }
+      {
+        "ja": "走行中は停車が必要なサービスを使えない",
+        "en": "Cannot use services that require stopping"
+      }
     ],
     "assumptions": [
-      { "ja": "疲労は介入時点でも低いままである", "en": "Fatigue remains low at the moment of intervention" }
+      {
+        "ja": "疲労は介入時点でも低いままである",
+        "en": "Fatigue remains low at the moment of intervention"
+      }
     ],
     "profile_ref": "preset-journey-a-2-monotony-building"
   },
@@ -37,14 +68,16 @@
     "scenario_ref": "uc02_monotony_v0_1",
     "route_preset_ref": "long_tokyo_osaka",
     "seed": 1042,
-    "tick_seconds": 60,
+    "tick_seconds": 180,
     "fixed_overrides": {
       "initial_drowsiness": 15,
       "initial_fatigue": 18,
       "is_night": false,
       "child_passenger": false
     },
-    "automatic_path": { "service_choice": "rank_1" }
+    "automatic_path": {
+      "service_choice": "rank_1"
+    }
   },
   "algorithm_defaults": {
     "trigger": "aica_transparent_hybrid_trigger_v1",

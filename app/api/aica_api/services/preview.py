@@ -81,6 +81,11 @@ class PreviewFireEvent:
     rest_spot: RestSpot | None
 
 
+# Mirrors `_REST_SPOTS_MIN_AHEAD_KM` in routers/runs.py — the quickview must
+# offer the same spots the live run would, or the projection misrepresents it.
+_PREVIEW_REST_MIN_AHEAD_KM = 20.0
+
+
 def _pick_rest_spot(route_facts: RouteFacts, current_distance_km: float) -> RestSpot | None:
     """Deterministically pick the nearest rest spot ahead of the current position.
 
@@ -100,7 +105,16 @@ def _pick_rest_spot(route_facts: RouteFacts, current_distance_km: float) -> Rest
             for i, pos_km in enumerate(route_facts.rest_spot_positions)
         ]
 
-    ahead = sorted((km, name) for km, name in candidates if km > current_distance_km)
+    # Far enough ahead that the journey TO the rest spot is visible in the
+    # projection — same rule (and same fallback) as the rest-spots endpoint, so
+    # the quickview and the live run offer comparable spots.
+    ahead = sorted(
+        (km, name)
+        for km, name in candidates
+        if km > current_distance_km + _PREVIEW_REST_MIN_AHEAD_KM
+    )
+    if not ahead:
+        ahead = sorted((km, name) for km, name in candidates if km > current_distance_km)
     if not ahead:
         return None
 

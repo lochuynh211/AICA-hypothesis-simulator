@@ -42,6 +42,8 @@ export type CaseSelection = {
   setDetailsOpen: (open: boolean) => void
   caseError: string | null
   handleSelectCase: (caseId: string) => Promise<void>
+  /** Drop back to "no test case", leaving the current setup untouched. */
+  clearCase: () => void
 }
 
 export function useCaseSelection(): CaseSelection {
@@ -58,7 +60,17 @@ export function useCaseSelection(): CaseSelection {
   const selectedCaseId = reviewStore.state.selectedCaseId
   const selectedCase = selectedCaseId ? getCase(selectedCaseId) : null
 
+  /** Clearing shares `selectionRef` with `handleSelectCase`: bumping it here
+   *  stops an in-flight case load from landing its proposal dispatches after
+   *  the reviewer has already dropped back to "no test case". */
+  function clearCase(): void {
+    selectionRef.current++
+    setCaseError(null)
+    reviewStore.dispatch({ type: 'SELECT_CASE', caseId: null })
+  }
+
   async function handleSelectCase(caseId: string): Promise<void> {
+    if (!caseId) { clearCase(); return }
     const mySelection = ++selectionRef.current
     setCaseError(null)
     reviewStore.dispatch({ type: 'SELECT_CASE', caseId })
@@ -114,5 +126,8 @@ export function useCaseSelection(): CaseSelection {
     }
   }
 
-  return { selectedCaseId, selectedCase, detailsOpen, setDetailsOpen, caseError, handleSelectCase }
+  return {
+    selectedCaseId, selectedCase, detailsOpen, setDetailsOpen, caseError,
+    handleSelectCase, clearCase,
+  }
 }
