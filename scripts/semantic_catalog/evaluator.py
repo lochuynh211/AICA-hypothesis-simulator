@@ -778,6 +778,27 @@ def evaluate_case(
     service_expectation = _mapping(expectations.get("service")) or {}
     content_expectation = _mapping(expectations.get("content")) or {}
 
+    top_level_error = result.get("error")
+    if top_level_error is not None:
+        evaluation = _base_evaluation(case, _base_actual([]))
+        evaluation["checks"].append(
+            _check(
+                "execution.quickview",
+                "execution",
+                None,
+                top_level_error,
+                "EXECUTION_ERROR",
+                "The quickview run ended with an unexpected trigger/orchestration error.",
+                "$.error",
+            )
+        )
+        _append_downstream_not_evaluated(
+            evaluation["checks"],
+            expectations,
+            "Dependent stages were not evaluated because quickview execution failed.",
+        )
+        return _finish(evaluation)
+
     fire_values = _sequence(result.get("fires")) if "fires" in result else None
     if fire_values is None:
         evaluation = _base_evaluation(case, _base_actual([]))
@@ -829,26 +850,6 @@ def evaluate_case(
             checks,
             expectations,
             "Dependent stages cannot be evaluated from malformed fire evidence.",
-        )
-        return _finish(evaluation)
-
-    top_level_error = result.get("error")
-    if top_level_error is not None:
-        checks.append(
-            _check(
-                "execution.quickview",
-                "execution",
-                None,
-                top_level_error,
-                "EXECUTION_ERROR",
-                "The quickview run ended with an unexpected trigger/orchestration error.",
-                "$.error",
-            )
-        )
-        _append_downstream_not_evaluated(
-            checks,
-            expectations,
-            "Dependent stages were not evaluated because quickview execution failed.",
         )
         return _finish(evaluation)
 
@@ -912,8 +913,32 @@ def evaluate_case(
         )
         return _finish(evaluation)
 
+    requested_occurrence = trigger_expectation.get("occurrence", 1)
+    if (
+        isinstance(requested_occurrence, bool)
+        or not isinstance(requested_occurrence, int)
+        or requested_occurrence < 1
+    ):
+        checks.append(
+            _check(
+                "trigger.outcome",
+                "trigger",
+                expected_outcome,
+                None,
+                "UNVERIFIABLE",
+                "The authored trigger occurrence must be a positive integer.",
+                "$.expectations.trigger.occurrence",
+            )
+        )
+        _append_downstream_not_evaluated(
+            checks,
+            expectations,
+            "Dependent stages cannot be evaluated without a valid trigger occurrence.",
+        )
+        return _finish(evaluation)
+
     matching_fires = [fire for fire in in_scope_fires if fire.get("category") == expected_outcome]
-    if not matching_fires:
+    if len(matching_fires) < requested_occurrence:
         actual_categories = [fire.get("category") for fire in in_scope_fires]
         checks.append(
             _check(
@@ -922,7 +947,11 @@ def evaluate_case(
                 expected_outcome,
                 actual_categories if actual_categories else "none",
                 "MISMATCH",
-                f"No {expected_outcome} fire occurred during the declared journey.",
+                (
+                    f"The requested {expected_outcome} occurrence "
+                    f"{requested_occurrence} did not occur; "
+                    f"{len(matching_fires)} occurrence(s) were recorded."
+                ),
                 "$.fires",
             )
         )
@@ -938,9 +967,8 @@ def evaluate_case(
         )
         return _finish(evaluation)
 
-    # The schema declares the category; occurrence 1 is the catalog-wide anchor.
-    selected = matching_fires[0]
-    occurrence = 1
+    occurrence = requested_occurrence
+    selected = matching_fires[occurrence - 1]
     fire_base = f"$.fires[category={expected_outcome}][occurrence={occurrence}]"
     chain_container = _mapping(selected.get("feature_contributions"))
     chain = _mapping(chain_container.get(expected_outcome)) if chain_container is not None else None
@@ -973,8 +1001,12 @@ def evaluate_case(
             selected.get("category"),
             "MATCH",
             (
-                f"The first {expected_outcome} fire occurred at "
-                f"{selected.get('time_min')} min."
+                (
+                    f"The first {expected_outcome} fire"
+                    if occurrence == 1
+                    else f"The {expected_outcome} fire occurrence {occurrence}"
+                )
+                + f" occurred at {selected.get('time_min')} min."
             ),
             f"{fire_base}.category",
         )
@@ -1177,6 +1209,42 @@ def evaluate_case(
         return _finish(evaluation)
 
     service_output = _mapping(service_record.get("output"))
+    if (
+        service_output is not None
+        and service_output.get("decision_type") != "ranked_candidates"
+    ):
+        decision_type = service_output.get("decision_type")
+        checks.append(
+            _check(
+                "service.stage",
+                "service",
+                "ranked_candidates",
+                decision_type,
+                "MISMATCH",
+                (
+                    f"The service stage produced {decision_type!r}, not the "
+                    "required ranked_candidates outcome."
+                ),
+                f"{service_base}.output.decision_type",
+            )
+        )
+        evaluation["actual"]["service"] = {
+            "rank_1_id": None,
+            "top_3_ids": [],
+            "ranked_candidates": [],
+            "error": None,
+            "stage_outcome": decision_type,
+        }
+        checks.append(
+            _not_evaluated(
+                "content.stage",
+                "content",
+                content_expectation,
+                "Content depends on a ranked service outcome.",
+            )
+        )
+        return _finish(evaluation)
+
     candidate_values = (
         _sequence(service_output.get("ranked_candidates"))
         if service_output is not None

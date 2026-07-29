@@ -362,6 +362,24 @@ def test_unexpected_content_error_is_execution_error():
     assert evaluation["verdict"] == "EXECUTION_ERROR"
 
 
+def test_top_level_error_is_execution_error_even_without_fires_field():
+    result = {
+        "error": {
+            "error_type": "algorithm_error",
+            "message": "fixture quickview failure",
+        }
+    }
+
+    evaluation = evaluate_case(_case(), result)
+
+    execution = _check(evaluation, "execution.quickview")
+    assert execution["status"] == "EXECUTION_ERROR"
+    assert execution["evidence_path"] == "$.error"
+    assert _check(evaluation, "service.stage")["status"] == "NOT_EVALUATED"
+    assert _check(evaluation, "content.stage")["status"] == "NOT_EVALUATED"
+    assert evaluation["verdict"] == "EXECUTION_ERROR"
+
+
 def test_multiple_fires_selects_declared_category_and_occurrence():
     case = _case()
     case["expectations"]["trigger"]["max_fire_count"] = 3
@@ -387,6 +405,44 @@ def test_multiple_fires_selects_declared_category_and_occurrence():
     )
 
 
+def test_second_declared_occurrence_selects_second_category_fire():
+    case = _case()
+    case["expectations"]["trigger"]["occurrence"] = 2
+    case["expectations"]["trigger"]["max_fire_count"] = 2
+
+    evaluation = evaluate_case(
+        case,
+        _result(
+            _fire(tick=16, time_min=16.0),
+            _fire(tick=18, time_min=18.0),
+        ),
+    )
+
+    assert evaluation["actual"]["selected_fire"]["occurrence"] == 2
+    assert evaluation["actual"]["selected_fire"]["tick"] == 18
+    assert _check(evaluation, "trigger.outcome")["evidence_path"] == (
+        "$.fires[category=rest_required][occurrence=2].category"
+    )
+    assert "occurrence 2" in _check(evaluation, "trigger.outcome")["explanation"]
+    assert evaluation["verdict"] == "MATCH"
+
+
+def test_missing_declared_occurrence_is_mismatch_and_downstream_not_evaluated():
+    case = _case()
+    case["expectations"]["trigger"]["occurrence"] = 2
+
+    evaluation = evaluate_case(case, _result(_fire()))
+
+    assert _check(evaluation, "trigger.outcome")["status"] == "MISMATCH"
+    assert evaluation["actual"]["selected_fire"] is None
+    assert {
+        check["status"]
+        for check in evaluation["checks"]
+        if check["stage"] in {"service", "content"}
+    } == {"NOT_EVALUATED"}
+    assert evaluation["verdict"] == "MISMATCH"
+
+
 def test_empty_candidate_list_never_vacuously_matches():
     case = _case()
     case["expectations"]["service"] = {
@@ -402,6 +458,33 @@ def test_empty_candidate_list_never_vacuously_matches():
     assert _check(evaluation, "service.rank_1")["status"] == "MISMATCH"
     assert _check(evaluation, "content.stage")["status"] == "NOT_EVALUATED"
     assert evaluation["verdict"] == "MISMATCH"
+
+
+def test_wrong_service_decision_type_is_mismatch_and_content_not_evaluated():
+    wrong_type_output = {
+        **_service_output(),
+        "decision_type": "no_proposal",
+    }
+    proposal = _proposal(service_output=wrong_type_output)
+
+    evaluation = evaluate_case(_case(), _result(_fire(proposal=proposal)))
+
+    stage = _check(evaluation, "service.stage")
+    assert stage["actual"] == "no_proposal"
+    assert stage["status"] == "MISMATCH"
+    assert _check(evaluation, "content.stage")["status"] == "NOT_EVALUATED"
+    assert evaluation["verdict"] == "MISMATCH"
+
+
+def test_multiple_service_evidence_records_is_execution_error():
+    proposal = _proposal(content_output=_content_output())
+    proposal["evidence"].append(copy.deepcopy(proposal["evidence"][0]))
+
+    evaluation = evaluate_case(_case(), _result(_fire(proposal=proposal)))
+
+    assert _check(evaluation, "service.stage")["status"] == "EXECUTION_ERROR"
+    assert _check(evaluation, "content.stage")["status"] == "NOT_EVALUATED"
+    assert evaluation["verdict"] == "EXECUTION_ERROR"
 
 
 @pytest.mark.parametrize(
@@ -468,6 +551,19 @@ def test_evaluate_suite_attaches_reciprocal_contrast_deltas():
         "selected_fire_time_min_delta"
     ] == 4.0
     assert suite["summary"] == aggregate_suite(suite["case_results"])
+
+
+def test_evaluate_suite_marks_missing_run_result_as_execution_error():
+    suite = evaluate_suite(
+        {"catalog_version": "1.0.0", "cases": [_case()]},
+        {"case_results": []},
+    )
+
+    assert len(suite["case_results"]) == 1
+    evaluation = suite["case_results"][0]
+    assert _check(evaluation, "execution.quickview")["status"] == "EXECUTION_ERROR"
+    assert evaluation["verdict"] == "EXECUTION_ERROR"
+    assert suite["summary"]["verdict"] == "EXECUTION_ERROR"
 
 
 def test_evaluate_case_is_pure():
